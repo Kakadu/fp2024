@@ -1,7 +1,5 @@
 open Lambda_lib
 
-let run_repl _ = Format.eprintf "OCaml-style toplevel (ocamlc, utop) is not implemented"
-
 include struct
   open Ast
   open Utils

@@ -34,7 +34,8 @@ let () = out_term "lam_1+1.txt" (app plus @@ app one one)
 let () = out_term "lam_2x1.txt" (app (app mul two) one)
 let () = out_term "lam_3x2.txt" (app (app mul three) two)
 
-module NO = struct
+(** Definition for normal order *)
+module _ = struct
   let ite cond th el = app (app (app isZero cond) th) el
 
   let fact =
