@@ -1,0 +1,100 @@
+name: Build PR (only formatting)
+
+on:
+  pull_request:
+    branches:
+      - 'master'
+
+env:
+  OPAMROOT: /home/user/.opam
+  OPAMYES: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: kakadu18/ocaml:fp2023
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      #- name: Cancel Previous Runs
+      #  uses: styfle/cancel-workflow-action@0.9.1
+      #  with:
+      #    access_token: ${{ github.token }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0                # fix me later
+
+      - name: List installed OPAM packages
+        run: opam list
+
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-names@v6
+
+      ############# Detecting and compiling fp2023
+      # Smart link about setting environment variables
+      # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+      - if: ${{ github.event.pull_request.user.login != 'fp2022-helper' }}
+        run: |
+          sh -x ./detect_latest_pr.sh "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
+          echo "${{ env.latest }}"
+
+      - if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
+        run: |
+          opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
+          echo "${{ env.latest }}"
+
+      #- name: Installing dependencies
+      #  run: cd ${{ env.latest }} && opam install . --deps-only --with-test --with-doc
+
+      - name: Naive linting
+        run: |
+          cd ${{ env.latest }} && python3 ../lint_filesystem.py ${{ env.latest }}
+
+#      - name: Checking ocamlformat
+#        id: check-ocamlformat
+#        continue-on-error: true
+#        run: |
+#          echo "PROPERLY_FORMATTED=y" >> $GITHUB_ENV
+#          cd ${{ env.latest }} && opam exec -- dune build @fmt --profile=release || echo "PROPERLY_FORMATTED=n" >> $GITHUB_ENV
+
+      - name: Checking ocamlformat
+        run: cd ${{ env.latest }} && opam exec -- dune build @fmt --profile=release
+
+
+      # TODO: onfail post a comment how to fix it
+
+      # - name: Find a comment with OCamlformat report      
+      #   uses: peter-evans/find-comment@v2
+      #   id: fc
+      #   with:
+      #     issue-number: ${{ github.event.number }}
+      #     body-includes: OCamlformat report for
+      #     comment-author: github-actions[bot]
+
+      # - name: Remove comment if build is OK and a comment was found
+      #   if: steps.fc.outputs.comment-id != 0
+      #   run: |
+      #     curl -L https://api.github.com/repos/Kakadu/fp2023/pulls/comments/${{ steps.fc.outputs.comment-id }} \
+      #       -X DELETE -H "Accept: application/vnd.github+json" \
+      #       -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+      #       -H "X-GitHub-Api-Version: 2022-11-28"
+
+      # TODO: move to workflow with proper authorization
+      #- name: Create comment
+      #  if: ${{ env.PROPERLY_FORMATTED == 'n' }}
+      #  uses: peter-evans/create-or-update-comment@v1
+      #  with:
+      #    edit-mode: replace
+      #    issue-number: ${{ github.event.number }}
+      #    body: |
+      #      ### OCamlformat report for ${{ env.latest }}
+
+      #      Format check failed. It could have two reasons:
+      #      * You didn't configure VsCode extensions properly
+      #      * The versions of ocamlformat differ on your machine and on CI
