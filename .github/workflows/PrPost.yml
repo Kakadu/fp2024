@@ -16,7 +16,7 @@ jobs:
   upload_lints:
     runs-on: ubuntu-latest
     container:
-      image: kakadu18/ocaml:fp2023
+      image: kakadu18/ocaml:fp2024
 
     permissions:
       pull-requests: write
@@ -81,21 +81,21 @@ jobs:
 
 
       - name: Deploy found lints
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           #github_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
           #personal_token: ${{ secrets.CLASSIC_TOKEN }}
-          personal_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
+          personal_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
           # used only to publish in local repo
           publish_dir: ./lints
           external_repository: Kakadu/fp2021-ci-artifacts
           publish_branch: master
           keep_files: true
-          destination_dir: 2023fp/${{ env.LANG_NAME }}/
+          destination_dir: 2024fp/${{ env.LANG_NAME }}/
           # generate new token
           # https://github.com/settings/tokens
           # put it here
-          # https://github.com/Kakadu/fp2023/settings/secrets/actions/new
+          # https://github.com/Kakadu/fp2024/settings/secrets/actions/new
 
       - name: Prepare text with found lints
         shell: bash
@@ -209,7 +209,7 @@ jobs:
   upload_docs:
     runs-on: ubuntu-latest
     container:
-      image: kakadu18/ocaml:fp2023
+      image: kakadu18/ocaml:fp2024
       #options: --user root
     #permissions:
     #  pull-requests: write
@@ -335,7 +335,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           #github_token: ${{ secrets.GITHUB_TOKEN }}  # used only to publish in local repo
-          github_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
+          github_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
           publish_dir: ./_coverage
           publish_branch: gh-pages
           enable_jekyll: false

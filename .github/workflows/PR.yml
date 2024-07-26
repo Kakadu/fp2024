@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: kakadu18/ocaml:fp2023
+      image: kakadu18/ocaml:fp2024
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,7 +42,7 @@ jobs:
 
       - name: Get branch name
         id: branch-name
-        uses: tj-actions/branch-names@v6
+        uses: tj-actions/branch-names@v8
 
       - name: Print Ref brach name
         run: |
@@ -52,15 +52,16 @@ jobs:
       #- run: git branch -vvv
 
         #  Outputs: "main"
-      ############# Detecting and compiling fp2023
+      ############# Detecting and compiling fp2024
       # Smart link about setting environment variables
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-      - if: false
-        #if: ${{ github.event.pull_request.user.login != 'fp2022-helper' }}
-        run: |
-          sh -x ./detect_latest_pr.sh "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
-          echo "${{ env.latest }}"
+      # - if: false
+      #   #if: ${{ github.event.pull_request.user.login != 'fp2022-helper' }}
+      #   run: |
+      #     sh -x ./detect_latest_pr.sh "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
+      #     echo "${{ env.latest }}"
 
+      # TODO: remove ./detect_latest_pr.sh from repo (But it currently used in PRformat.yml)
       # TODO: set OCAMLRUNPARAM=b
       - run: |
           opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" -user Kakadu -repo fp2023 >> $GITHUB_ENV
@@ -78,10 +79,6 @@ jobs:
         run: |
           cd ${{ env.latest }} && python3 ../lint_filesystem.py ${{ env.latest }}
 
-      - if: false
-        name: Checking ocamlformat
-        run: |
-          cd ${{ env.latest }} && opam exec -- dune build @fmt --profile=release
 
       - name: Compiling ${{ env.latest }}...
         run: cd ${{ env.latest }} && opam exec -- dune build --profile=release

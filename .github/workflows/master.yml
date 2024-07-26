@@ -13,7 +13,7 @@ on:
 env:
   OPAMROOT: /home/user/.opam
   OPAMYES: true
-
+  OPAMCONFIRMLEVEL: unsafe-yes
 jobs:
   build:
     defaults:
@@ -22,7 +22,7 @@ jobs:
 
     runs-on: ubuntu-latest
     container:
-      image: kakadu18/ocaml:fp2023
+      image: kakadu18/ocaml:fp2024
       #options: --user user
       #options: -v /__w/test-ocaml-ci-docker/test-ocaml-ci-docker:/home/user/:rw -w /home/user/
 
@@ -41,7 +41,7 @@ jobs:
       #    access_token: ${{ github.token }}
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
         #  path: /__w/test-ocaml-ci-docker/test-ocaml-ci-docker
@@ -75,7 +75,7 @@ jobs:
           opam install odoc --yes
           cd ${{ env.latest }} && opam exec -- dune build @doc --profile=release
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: Kakadu/zanuda
           path: zanuda
@@ -84,7 +84,7 @@ jobs:
       - name: Installing linter
         run: opam install zanuda --yes --with-doc
 
-      - uses: reviewdog/action-setup@v1
+      #- uses: reviewdog/action-setup@v1
 
       - run: echo "RDJSON_DIR_PATH=_build/default/_found_lints" >> $GITHUB_ENV
       - run: cd ${{ env.latest }} && mkdir -p ${{ env.RDJSON_DIR_PATH }}

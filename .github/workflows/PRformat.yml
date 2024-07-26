@@ -8,11 +8,12 @@ on:
 env:
   OPAMROOT: /home/user/.opam
   OPAMYES: true
+  OPAMCONFIRMLEVEL: unsafe-yes
 jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: kakadu18/ocaml:fp2023
+      image: kakadu18/ocaml:fp2024
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +26,7 @@ jobs:
       #    access_token: ${{ github.token }}
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0                # fix me later
 
@@ -34,7 +35,7 @@ jobs:
 
       - name: Get branch name
         id: branch-name
-        uses: tj-actions/branch-names@v6
+        uses: tj-actions/branch-names@v8
 
       ############# Detecting and compiling fp2023
       # Smart link about setting environment variables
@@ -69,7 +70,7 @@ jobs:
 
       # TODO: onfail post a comment how to fix it
 
-      # - name: Find a comment with OCamlformat report      
+      # - name: Find a comment with OCamlformat report
       #   uses: peter-evans/find-comment@v2
       #   id: fc
       #   with:
