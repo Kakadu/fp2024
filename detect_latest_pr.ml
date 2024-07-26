@@ -55,9 +55,11 @@ let () =
         config.user
         config.repo
     in
-    let _ = commandf "git fetch upstream master" in
-    Format.eprintf "Upstream added\n%!";
-    ())
+    match commandf "git fetch upstream master" with
+    | 0 -> Format.eprintf "Upstream added\n%!"
+    | err ->
+        Format.eprintf "Adding upstream finished with error code %d\n" err;
+        exit 1)
 ;;
 
 let merge_base =

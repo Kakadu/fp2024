@@ -64,7 +64,7 @@ jobs:
       # TODO: remove ./detect_latest_pr.sh from repo (But it currently used in PRformat.yml)
       # TODO: set OCAMLRUNPARAM=b
       - run: |
-          opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" -user Kakadu -repo fp2023 >> $GITHUB_ENV
+          opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" -user Kakadu -repo fp2024 >> $GITHUB_ENV
           echo "${{ env.latest }}"
         #if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
 
