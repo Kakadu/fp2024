@@ -55,7 +55,7 @@ jobs:
 
       - name: Naive linting
         run: |
-          cd ${{ env.latest }} && python3 ../lint_filesystem.py ${{ env.latest }}
+          cd ${{ env.latest }} && python ../lint_filesystem.py ${{ env.latest }}
 
 #      - name: Checking ocamlformat
 #        id: check-ocamlformat

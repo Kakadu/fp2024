@@ -77,7 +77,7 @@ jobs:
 
       - name: Naive linting
         run: |
-          cd ${{ env.latest }} && python3 ../lint_filesystem.py ${{ env.latest }}
+          cd ${{ env.latest }} && python ../lint_filesystem.py ${{ env.latest }}
 
 
       - name: Compiling ${{ env.latest }}...
@@ -132,7 +132,7 @@ jobs:
       - name: Looking for clones
         run: |
           echo ${{ env.latest }} > projectname.txt
-          python3 ./find_clones.py ${{ env.latest }}
+          python ./find_clones.py ${{ env.latest }}
           #python3 -m trace --trace ./find_clones.py ${{ env.latest }}
 
       - run: echo ${{ github.event.number }} > PR_number.txt
