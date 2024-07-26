@@ -14,31 +14,30 @@ env:
 
 jobs:
   upload_lints:
+    if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     container:
       image: kakadu18/ocaml:fp2024
-
     permissions:
       pull-requests: write
-    if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1                # fix me later
+          fetch-depth: 1
           submodules: false
 
-      - run: echo "conclusion  = ${{ github.event.workflow_run.conclusion }}"
+      - run: echo "conclusion = ${{ github.event.workflow_run.conclusion }}"
 
       - run: echo "event = ${{ github.event.workflow_run.event }}"
 
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
+        #uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: review
-
 
       - run: ls
 
@@ -66,8 +65,8 @@ jobs:
       - name: Run reviewer
         run: |
           opam exec -- reviewer -token ${{ secrets.GITHUB_TOKEN }} \
-            -owner ${{env.CI_REPO_OWNER}} \
-            -repo ${{github.event.repository.name}} \
+            -owner ${{ env.CI_REPO_OWNER }} \
+            -repo ${{ github.event.repository.name }} \
             -pr_number ${{ env.CI_PULL_REQUEST }} \
             -commit ${{ env.CI_COMMIT }} \
             -irdjsonl lints.rdjsonl -review
@@ -83,8 +82,6 @@ jobs:
       - name: Deploy found lints
         uses: peaceiris/actions-gh-pages@v4
         with:
-          #github_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
-          #personal_token: ${{ secrets.CLASSIC_TOKEN }}
           personal_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
           # used only to publish in local repo
           publish_dir: ./lints
@@ -108,26 +105,26 @@ jobs:
 
       #- run: cat text.md
 
-      - name: Find a comment with linter report
-        uses: peter-evans/find-comment@v2
-        id: fc-linter
-        with:
-          issue-number: ${{ env.CI_PULL_REQUEST }}
-          body-includes: Linter report from
-          comment-author: Kakadu
+      # - name: Find a comment with linter report
+      #   uses: peter-evans/find-comment@v2
+      #   id: fc-linter
+      #   with:
+      #     issue-number: ${{ env.CI_PULL_REQUEST }}
+      #     body-includes: Linter report from
+      #     comment-author: Kakadu
 
-      - name: Tracing ${{ steps.fc-linter.outputs.comment-id }}
-        run: echo "${{ steps.fc-linter.outputs.comment-id }}"
+      # - name: Tracing ${{ steps.fc-linter.outputs.comment-id }}
+      #   run: echo "${{ steps.fc-linter.outputs.comment-id }}"
 
-      - name: Manually remove comment '${{ steps.fc-linter.outputs.comment-id }}' with lints
-        if: ${{ steps.fc-linter.outputs.comment-id != 0 }}
-        run: >
-          opam exec -- ocaml .github/add_comment.ml \
-            -token ${{ secrets.GITHUB_TOKEN }} \
-            -issue ${{ env.CI_PULL_REQUEST }} \
-            -delete-comment ${{ steps.fc-linter.outputs.comment-id }} \
-            -user Kakadu \
-            -repo comp23hw
+      # - name: Manually remove comment '${{ steps.fc-linter.outputs.comment-id }}' with lints
+      #   if: ${{ steps.fc-linter.outputs.comment-id != 0 }}
+      #   run: >
+      #     opam exec -- ocaml .github/add_comment.ml \
+      #       -token ${{ secrets.GITHUB_TOKEN }} \
+      #       -issue ${{ env.CI_PULL_REQUEST }} \
+      #       -delete-comment ${{ steps.fc-linter.outputs.comment-id }} \
+      #       -user Kakadu \
+      #       -repo ${{ github.event.repository.name }}
 
       # The way to remove comments changes to prevent pulling extra docker image should exist.
       #- name: Delete old comment
@@ -144,27 +141,28 @@ jobs:
 #          message: ${{ steps.read-escaped-markdown.outputs.contents }}
 #          issue: ${{ env.CI_PULL_REQUEST }}
 #          repo-owner: Kakadu
-#          repo-name: comp23hw
+#          repo-name: ${{ github.event.repository.name }}
 #          #refresh-message-position: true
 #          proxy-url: https://add-pr-comment-proxy-94idvmwyie-uc.a.run.app
 
-#      - uses: mshick/add-pr-comment@v2
-#        with:
-#          message: Hello from lints
-#          issue: ${{ env.CI_PULL_REQUEST }}
-#          repo-token: ${{ secrets.CLASSIC_TOKEN }}
-#          repo-owner: Kakadu
-#          repo-name: comp23hw
-#          proxy-url: https://add-pr-comment-proxy-94idvmwyie-uc.a.run.app
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-path:  text.md
+          message-id: linter-report
+          refresh-message-position: true
+          issue: ${{ env.CI_PULL_REQUEST }}
 
       - run: opam list
-      - name: Adding a comment from text.md via OCaml script
+      - name: Adding a comment about lints upload via OCaml script
+        continue-on-error: true
+        if: false
         run: >
-          opam exec -- ocaml .github/add_comment.ml -file text.md \
+          opam exec -- ocaml .github/add_comment.ml \
+            -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.CI_PULL_REQUEST }} \
-            -repo fp2023 \
-            -user Kakadu
+            -repo ${{ github.event.repository.name }} \
+            -user ${{ env.CI_REPO_OWNER }}
 
       - shell: bash
         run: echo "LINTER_RESOLUTION=$(bash .github/check_rdjson.sh lints.rdjsonl)" >> $GITHUB_ENV
@@ -207,15 +205,20 @@ jobs:
 
   ###################################################################################################
   upload_docs:
+    if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     container:
-      image: kakadu18/ocaml:fp2024
-      #options: --user root
-    #permissions:
-    #  pull-requests: write
-    if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
+      image: kakadu18/ocaml:fp2024  # At the moment OCaml is not required (July 2024)
 
     steps:
+      - name: Print
+        run: env | sort
+
+      # - name: List installed OPAM packages
+      #   run: opam list
+
+      # - run: opam exec -- ocamlopt --version
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -236,13 +239,10 @@ jobs:
          # LANG_NAME is required for uploading docs.
          # PR_NUMBER -- for adding a comment
 
-      - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Deploy documentation for ${{ env.LANG_NAME }}
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          #github_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
-          #personal_token: ${{ secrets.CLASSIC_TOKEN }}  # seems to be expired
-          #github_token: ${{ secrets.PAT1 }}  # used only to publish in local repo
+          personal_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
           publish_dir: ./_docs/_html
           publish_branch: gh-pages
           enable_jekyll: false
@@ -262,14 +262,14 @@ jobs:
 
       - run: cat text.md
 
-      - name: Find Comment
-        uses: peter-evans/find-comment@v2
-        id: fc-docs
-        if: ${{ always() }}
-        with:
-          issue-number: ${{ env.PR_NUMBER }}
-          body-includes: Документация и тестовое покрытие
-          comment-author: Kakadu
+      # - name: Find Comment
+      #   uses: peter-evans/find-comment@v2
+      #   id: fc-docs
+      #   if: ${{ always() }}
+      #   with:
+      #     issue-number: ${{ env.PR_NUMBER }}
+      #     body-includes: Документация и тестовое покрытие
+      #     comment-author: Kakadu
 
       #- run: |
       #    echo "${{ steps.fc.outputs.comment-id }}"
@@ -286,31 +286,33 @@ jobs:
       #    comment_id: ${{ steps.fc.outputs.comment-id }}
       #    token: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: opam install yojson curly --yes
+      # - name: Manually remove comment '${{ steps.fc-docs.outputs.comment-id }}' with docs info
+      #   if: ${{ steps.fc-docs.outputs.comment-id != 0 }}
+      #   run: >
+      #     opam exec -- ocaml .github/add_comment.ml \
+      #       -token ${{ secrets.GITHUB_TOKEN }} \
+      #       -issue ${{ env.PR_NUMBER }} \
+      #       -delete-comment ${{ steps.fc-docs.outputs.comment-id }} \
+      #       -user Kakadu \
+      #       -repo ${{ github.event.repository.name }}
 
-      - name: Manually remove comment '${{ steps.fc-docs.outputs.comment-id }}' with docs info
-        if: ${{ steps.fc-docs.outputs.comment-id != 0 }}
-        run: >
-          opam exec -- ocaml .github/add_comment.ml \
-            -token ${{ secrets.GITHUB_TOKEN }} \
-            -issue ${{ env.PR_NUMBER }} \
-            -delete-comment ${{ steps.fc-docs.outputs.comment-id }} \
-            -user Kakadu \
-            -repo comp23hw
+      - uses: mshick/add-pr-comment@v2
+        name: Add comment about uploaded docs
+        with:
+          message-path: text.md
+          message-id: docs-uploaded
+          refresh-message-position: true
+          issue: ${{ env.CI_PULL_REQUEST }}
 
-      - name: List installed OPAM packages
-        run: opam list
-
-      - run: opam exec -- ocamlopt --version
-
-      - name: Adding a comment from 'text.md' manually
-        run: >
-          opam exec -- ocaml .github/add_comment.ml \
-            -file text.md \
-            -token ${{ secrets.GITHUB_TOKEN }} \
-            -issue ${{ env.PR_NUMBER }} \
-            -repo fp2023 \
-            -user Kakadu
+      # - name: Adding a comment from 'text.md' manually
+      #   if: false
+      #   run: >
+      #     opam exec -- ocaml .github/add_comment.ml \
+      #       -file text.md \
+      #       -token ${{ secrets.GITHUB_TOKEN }} \
+      #       -issue ${{ env.PR_NUMBER }} \
+      #       -repo ${{ github.event.repository.name }} \
+      #       -user Kakadu
 
   upload_coverage:
     runs-on: ubuntu-latest
@@ -332,9 +334,8 @@ jobs:
         if: ${{ env.LANG_NAME == '' }}
 
       - name: Deploy coverage
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          #github_token: ${{ secrets.GITHUB_TOKEN }}  # used only to publish in local repo
           github_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
           publish_dir: ./_coverage
           publish_branch: gh-pages
@@ -345,12 +346,15 @@ jobs:
             Deploying coverage for ${{ env.LANG_NAME }}: https://kakadu.github.io/${{ github.event.repository.name }}/cov/${{ env.LANG_NAME }}
           user_name: '${{ github.event.repository.name }}[bot]'
           user_email: '${{ github.event.repository.name }}[bot]@users.noreply.github.com'
-
+          # generate new token
+          # https://github.com/settings/tokens
+          # put it here
+          # https://github.com/Kakadu/fp2024/settings/secrets/actions/new
 
   ###################################################################################################
   process_clones:
     runs-on: ubuntu-latest
-    if: false
+    if: false               # CURRENTLY DISABLED
     #if: >
     #  ${{ github.event.workflow_run.event == 'pull_request' &&
     #  github.event.workflow_run.conclusion == 'success' }}
@@ -388,7 +392,7 @@ jobs:
       #- name: Delete old comment
       #  if: ${{ steps.fc.outputs.comment-id != 0 }}
       #  run: |
-      #    curl -L https://api.github.com/repos/Kakadu/fp2023/pulls/comments/${{ steps.fc.outputs.comment-id }} \
+      #    curl -L https://api.github.com/repos/Kakadu/fp2024/pulls/comments/${{ steps.fc.outputs.comment-id }} \
       #      -X DELETE -H "Accept: application/vnd.github+json" \
       #      -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
       #      -H "X-GitHub-Api-Version: 2022-11-28"

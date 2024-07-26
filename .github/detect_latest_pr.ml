@@ -1,31 +1,35 @@
 #use "topfind";;
-
 #require "unix";;
-
 #require "str";;
 
+type mode = Master | PR
 type config =
   { mutable repo : string
   ; mutable user : string
   ; mutable user_branch : string
+  ; mutable mode: mode
   ; mutable verbose : bool
   }
 
-let config = { user = "Kakadu"; repo = "fp2023"; user_branch = "master"; verbose = false }
+let config = { user = "Kakadu"; repo = ""; user_branch = "master"; mode = PR; verbose = false }
+let eprintfn fmt = Format.kasprintf (Printf.eprintf "%s\n%!") fmt
+let log fmt = Format.kasprintf (fun s -> if config.verbose then Printf.eprintf "%s\n%!" s) fmt
 
 let () =
   Arg.parse
     [ "-repo", Arg.String (fun s -> config.repo <- s), " Github repository"
     ; "-user", Arg.String (fun s -> config.user <- s), " Github user"
+    ; "-master", Arg.Unit (fun () -> config.mode <- Master), " "
     ; "-v", Arg.Unit (fun () -> config.verbose <- true), " verbose logging"
     ]
     (fun s -> config.user_branch <- s)
-    "TODO: help"
+    "TODO: help";
+  if config.user = "" then (eprintfn "User is empty"; exit 1);
+  if config.repo = "" then (eprintfn "Repo is empty"; exit 1);
 ;;
 
 let red = "\027[0;31m"
 let no_color = "\027[0m"
-let log fmt = Format.kasprintf (fun s -> if config.verbose then print_endline s) fmt
 
 let get_output fmt =
   Format.kasprintf
@@ -55,22 +59,13 @@ let () =
         config.user
         config.repo
     in
-    let _ = commandf "git fetch upstream master" in
-    Format.eprintf "Upstream added\n%!";
-    ())
+    match commandf "git fetch upstream master" with
+    | 0 -> Format.eprintf "Upstream added\n%!"
+    | err ->
+        eprintfn "Adding upstream finished with error code %d" err;
+        exit 1)
 ;;
 
-let merge_base =
-  let s = get_output "git merge-base upstream/master %s" (* user_branch *) "HEAD" in
-  match Str.split (Str.regexp "\n") s |> List.filter (( <> ) "") with
-  | [ h ] -> h
-  | xs ->
-    Format.eprintf "After merge-base got a list of length %d\n%!" (List.length xs);
-    Format.eprintf "[ %s ]\n%!" (String.concat "; " xs);
-    exit 1
-;;
-
-let () = log "merge_base: %S" merge_base
 
 let calculate_common_subdir files =
   let module SS = Set.Make (String) in
@@ -88,13 +83,32 @@ let calculate_common_subdir files =
 
 let pp_str_list ppf xs = Format.fprintf ppf "[ %s ]" (String.concat ", " xs)
 
+let merge_base =
+  match config.mode with
+  | Master -> "HEAD~1"
+  | PR ->
+    let s = get_output "git merge-base upstream/master %s" (* user_branch *) "HEAD" in
+    match Str.split (Str.regexp "\n") s |> List.filter (( <> ) "") with
+    | [ h ] -> h
+    | xs ->
+      eprintfn "After merge-base got a list of length %d" (List.length xs);
+      eprintfn "[ %s ]" (String.concat "; " xs);
+      exit 1
+;;
+let the_HEAD =
+  match config.mode with
+  | Master -> "HEAD"
+  | PR -> config.user_branch
+
+let () = log "merge_base: %S" merge_base
+
 (*  *)
 let () =
   let s =
     get_output
       "git diff-tree %s..%s  | rev | cut -f 1 | rev"
       merge_base
-      config.user_branch
+      the_HEAD
   in
   log "%S " s;
   let changed_files =
@@ -110,15 +124,19 @@ let () =
   log "%s " (String.concat ", " changed_files);
   match changed_files with
   | [] ->
-    Format.eprintf "No changed files.\n%!";
-    exit 1
+    eprintfn "No changed files.\n%!";
+    print_endline "latest=Lambda";
+    exit 0
   | xs ->
     (match calculate_common_subdir xs with
      | [] -> assert false
+     | [ ".github" ] ->
+       Printf.printf "latest=%s\n%!" "Lambda";
+       exit 0
      | [ h ] ->
-       Format.printf "latest=%s\n" h;
+       Printf.printf "latest=%s\n%!" h;
        exit 0
      | ds ->
-       Format.eprintf "Too many directories has been changed: %a\n%!" pp_str_list ds;
+       eprintfn "Too many directories has been changed: %a" pp_str_list ds;
        exit 1)
 ;;

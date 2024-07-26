@@ -19,32 +19,18 @@ jobs:
     defaults:
       run:
         shell: bash
-
     runs-on: ubuntu-latest
     container:
       image: kakadu18/ocaml:fp2024
-      #options: --user user
-      #options: -v /__w/test-ocaml-ci-docker/test-ocaml-ci-docker:/home/user/:rw -w /home/user/
-
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
-      #cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
       cancel-in-progress: true
-        #${{ github.ref != 'refs/heads/main' }}
 
     steps:
-
-      # Tryign to use concurrency pecification instead of this action.
-      #- name: Cancel Previous Runs
-      #  uses: styfle/cancel-workflow-action@0.11.0
-      #  with:
-      #    access_token: ${{ github.token }}
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        #  path: /__w/test-ocaml-ci-docker/test-ocaml-ci-docker
 
       - run: ls -la
       #- run: git log
@@ -52,11 +38,12 @@ jobs:
       ############# Detecting and compiling fp202x
       # Smart link about setting environment variables
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-      - run: |
-          bash -x ./detect_latest.sh >> $GITHUB_ENV
+      - name: Detect latest changes in ${{ github.event.repository.name }}
+        run: |
+          opam exec -- ocaml .github/detect_latest_pr.ml -master -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
           echo "${{ env.latest }}"
 
-      - name: Installing dependencies
+      - name: Installing dependencies for ${{ env.latest }}
         run: cd ${{ env.latest }} && opam install . --deps-only --with-test --with-doc --yes
 
       - if: false
@@ -71,27 +58,27 @@ jobs:
         run: cd ${{ env.latest }} && opam exec -- dune runtest --profile=release
 
       - name: Build API documentation for ${{ env.latest }}...
+        if: false
         run: |
           opam install odoc --yes
           cd ${{ env.latest }} && opam exec -- dune build @doc --profile=release
 
-      - uses: actions/checkout@v4
-        with:
-          repository: Kakadu/zanuda
-          path: zanuda
+      # - uses: actions/checkout@v4
+      #   with:
+      #     repository: Kakadu/zanuda
+      #     path: zanuda
 
-      - run: opam pin add ./zanuda --no-action
-      - name: Installing linter
-        run: opam install zanuda --yes --with-doc
+      # - run: opam pin add ./zanuda --no-action
+      # - name: Installing linter
+      #   run: opam install zanuda --yes --with-doc
 
-      #- uses: reviewdog/action-setup@v1
 
-      - run: echo "RDJSON_DIR_PATH=_build/default/_found_lints" >> $GITHUB_ENV
-      - run: cd ${{ env.latest }} && mkdir -p ${{ env.RDJSON_DIR_PATH }}
-      - run: echo "RDJSON_FILE_PATH=${{ env.RDJSON_DIR_PATH }}/lints.rdjsonl" >> $GITHUB_ENV
+      # - run: echo "RDJSON_DIR_PATH=_build/default/_found_lints" >> $GITHUB_ENV
+      # - run: cd ${{ env.latest }} && mkdir -p ${{ env.RDJSON_DIR_PATH }}
+      # - run: echo "RDJSON_FILE_PATH=${{ env.RDJSON_DIR_PATH }}/lints.rdjsonl" >> $GITHUB_ENV
 
-      - name: Running linter in ${{ env.latest }}...
-        run: cd ${{ env.latest }} && opam exec -- zanuda -dir . -add-prefix ${{ env.latest }}/ -ordjsonl ${{ env.RDJSON_FILE_PATH }}
+      # - name: Running linter in ${{ env.latest }}...
+      #   run: cd ${{ env.latest }} && opam exec -- zanuda -dir . -add-prefix ${{ env.latest }}/ -ordjsonl ${{ env.RDJSON_FILE_PATH }}
 
 
       # github has a limit on annotations. pr-review seems not have this limitation

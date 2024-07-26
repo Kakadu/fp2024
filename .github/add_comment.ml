@@ -3,6 +3,8 @@
 #require "yojson";;
 #require "str";;
 
+let log fmt = Format.kasprintf print_endline fmt
+
 type filename = string
 type action =
   | Put_comment of filename
@@ -16,8 +18,9 @@ type config =
   ; mutable user: string
   ; mutable repo: string
   }
+
 let config =
-  let c = { action=No_action; token=""; issue = 0; user="Kakadu"; repo="comp23hw" } in
+  let c = { action=No_action; token=""; issue = 0; user=""; repo="" } in
   Arg.parse
     [ ("-file", Arg.String (fun s -> c.action <- Put_comment s), " input file ")
     ; ("-remove", Arg.String (fun s -> c.action <- Remove_comment s), " remove comments with text")
@@ -29,10 +32,10 @@ let config =
     ]
     (fun _ -> assert false)
     "";
+  if c.token = "" then (log "Token is empty"; exit 1);
+  if c.user = "" then (log "User is empty"; exit 1);
+  if c.repo = "" then (log "Repo is empty"; exit 1);
   c
-
-let log fmt =
-  Format.kasprintf (print_endline) fmt
 
 let headers =
   [ "Authorization", Printf.sprintf "Bearer %s" config.token
@@ -60,14 +63,16 @@ let add_comment ~filename =
     |> Yojson.Safe.pretty_to_string
   in
   (match Curly.(run (Request.make ~body ~headers ~url ~meth:`POST ())) with
-    | Ok ({ Curly.Response.code = 401; _ } as x) -> (* Bad credentials *)
-      Format.printf "status: %d\n" x.Curly.Response.code;
-      Format.printf "body: %s\n" x.Curly.Response.body;
+    | Ok { Curly.Response.code = 201; _ } -> true
+    | Ok ({ Curly.Response.code = 401; _ } as x) ->
+      Format.eprintf "Error (Bad credentials)\n%a\n%!" Curly.Response.pp x;
       exit 1
-    | Ok x ->
-      Format.printf "status: %d\n" x.Curly.Response.code;
-      Format.printf "body: %s\n" x.Curly.Response.body;
-      true
+    | Ok ({ Curly.Response.code = 403; _ } as x) ->
+      Format.eprintf "Error (Forbidden) \n%a\n%!" Curly.Response.pp x;
+      exit 1
+    | Ok ({ Curly.Response.code; _ } as x)->
+      Format.eprintf "Unknown reponse code %d\n%a\n%!" code Curly.Response.pp x;
+      exit 1
     | Error e ->
       Format.eprintf "Failed: %a" Curly.Error.pp e;
       false)
