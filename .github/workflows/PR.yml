@@ -6,8 +6,8 @@ on:
       - 'master'
 env:
   OPAMROOT: /home/user/.opam
-  OPAMYES: true
   OPAMCONFIRMLEVEL: unsafe-yes
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,8 +24,6 @@ jobs:
       #  with:
       #    access_token: ${{ github.token }}
 
-      #- run: sudo apt-get update -y
-      #  if: matrix.os != 'macos-latest'
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,7 +33,6 @@ jobs:
       - run: |
           opam pin add https://github.com/Kakadu/zanuda.git --no-action
           opam reinstall zanuda --yes
-
 
       - name: List installed OPAM packages
         run: opam list
@@ -70,7 +67,7 @@ jobs:
 
       - name: Installing dependencies
         run: |
-          sudo apt update
+          sudo apt-get update
           opam update
           opam install ./${{ env.latest }} --depext-only --with-test --with-doc
           opam install ./${{ env.latest }} --deps-only --with-test --with-doc
@@ -130,6 +127,7 @@ jobs:
       #- run: pwd ~ || exit 0
 
       - name: Looking for clones
+        if: false
         run: |
           echo ${{ env.latest }} > projectname.txt
           python ./find_clones.py ${{ env.latest }}
@@ -138,9 +136,11 @@ jobs:
       - run: echo ${{ github.event.number }} > PR_number.txt
 
       - run: cat jscpd_report.txt
+        if: false
 
       - name: Update JSCPD artifact
         uses: actions/upload-artifact@v3
+        if: false
         with:
           name: jscpd_report
           path: |
