@@ -11,7 +11,7 @@ type config =
   ; mutable verbose : bool
   }
 
-let config = { user = "Kakadu"; repo = "fp2023"; user_branch = "master"; verbose = false }
+let config = { user = "Kakadu"; repo = "fp2024"; user_branch = "master"; verbose = false }
 
 let () =
   Arg.parse

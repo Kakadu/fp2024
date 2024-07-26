@@ -163,7 +163,7 @@ jobs:
           opam exec -- ocaml .github/add_comment.ml -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.CI_PULL_REQUEST }} \
-            -repo fp2023 \
+            -repo fp2024 \
             -user Kakadu
 
       - shell: bash
@@ -309,7 +309,7 @@ jobs:
             -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.PR_NUMBER }} \
-            -repo fp2023 \
+            -repo fp2024 \
             -user Kakadu
 
   upload_coverage:
@@ -388,7 +388,7 @@ jobs:
       #- name: Delete old comment
       #  if: ${{ steps.fc.outputs.comment-id != 0 }}
       #  run: |
-      #    curl -L https://api.github.com/repos/Kakadu/fp2023/pulls/comments/${{ steps.fc.outputs.comment-id }} \
+      #    curl -L https://api.github.com/repos/Kakadu/fp2024/pulls/comments/${{ steps.fc.outputs.comment-id }} \
       #      -X DELETE -H "Accept: application/vnd.github+json" \
       #      -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
       #      -H "X-GitHub-Api-Version: 2022-11-28"

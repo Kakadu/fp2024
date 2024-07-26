@@ -3,7 +3,7 @@
 git remote | grep upstream
 if [ $? -ne 0 ]
 then
-  git remote add upstream https://github.com/Kakadu/fp2023.git
+  git remote add upstream https://github.com/Kakadu/fp2024.git
   git fetch upstream master
 fi
 

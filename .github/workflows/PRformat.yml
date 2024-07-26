@@ -37,7 +37,7 @@ jobs:
         id: branch-name
         uses: tj-actions/branch-names@v8
 
-      ############# Detecting and compiling fp2023
+      ############# Detecting and compiling fp2024
       # Smart link about setting environment variables
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
       - if: ${{ github.event.pull_request.user.login != 'fp2022-helper' }}
@@ -81,7 +81,7 @@ jobs:
       # - name: Remove comment if build is OK and a comment was found
       #   if: steps.fc.outputs.comment-id != 0
       #   run: |
-      #     curl -L https://api.github.com/repos/Kakadu/fp2023/pulls/comments/${{ steps.fc.outputs.comment-id }} \
+      #     curl -L https://api.github.com/repos/Kakadu/fp2024/pulls/comments/${{ steps.fc.outputs.comment-id }} \
       #       -X DELETE -H "Accept: application/vnd.github+json" \
       #       -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
       #       -H "X-GitHub-Api-Version: 2022-11-28"
