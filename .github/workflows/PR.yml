@@ -195,6 +195,7 @@ jobs:
 
       ###################### Upload Docs #####################################
       - run: ls $(opam exec -- odig cache path)/html
+        continue-on-error: true
 
       - name: Build API documentation for ${{ env.latest }}...
         run: |
