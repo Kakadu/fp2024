@@ -38,11 +38,6 @@ jobs:
       ############# Detecting and compiling fp202x
       # Smart link about setting environment variables
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-      - if: false
-        run: |
-          bash -x ./detect_latest.sh >> $GITHUB_ENV
-          echo "${{ env.latest }}"
-
       - name: Detect latest changes in ${{ github.event.repository.name }}
         run: |
           opam exec -- ocaml .github/detect_latest_pr.ml -master -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
