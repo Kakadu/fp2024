@@ -163,8 +163,8 @@ jobs:
           opam exec -- ocaml .github/add_comment.ml -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.CI_PULL_REQUEST }} \
-            -repo fp2024 \
-            -user Kakadu
+            -repo ${{ github.event.repository.name }} \
+            -user ${{ env.GITHUB_REPOSITORY_OWNER }}
 
       - shell: bash
         run: echo "LINTER_RESOLUTION=$(bash .github/check_rdjson.sh lints.rdjsonl)" >> $GITHUB_ENV
