@@ -148,19 +148,21 @@ jobs:
 #          #refresh-message-position: true
 #          proxy-url: https://add-pr-comment-proxy-94idvmwyie-uc.a.run.app
 
-#      - uses: mshick/add-pr-comment@v2
-#        with:
-#          message: Hello from lints
-#          issue: ${{ env.CI_PULL_REQUEST }}
-#          repo-token: ${{ secrets.CLASSIC_TOKEN }}
-#          repo-owner: Kakadu
-#          repo-name: comp23hw
-#          proxy-url: https://add-pr-comment-proxy-94idvmwyie-uc.a.run.app
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-path:  text.md
+          message-id: linter-report
+          issue: ${{ env.CI_PULL_REQUEST }}
+          #repo-token: ${{ secrets.CLASSIC_TOKEN }}
+          #repo-owner: Kakadu
+          #repo-name: ${{ github.event.repository.name }}
+          #proxy-url: https://add-pr-comment-proxy-94idvmwyie-uc.a.run.app
 
       - run: opam list
-      - name: Adding a comment from text.md via OCaml script
+      - name: Adding a comment about lints upload via OCaml script
         run: >
-          opam exec -- ocaml .github/add_comment.ml -file text.md \
+          opam exec -- ocaml .github/add_comment.ml \
+            -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.CI_PULL_REQUEST }} \
             -repo ${{ github.event.repository.name }} \
