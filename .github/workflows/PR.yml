@@ -194,6 +194,8 @@ jobs:
           path: ${{ env.latest }}/_coverage
 
       ###################### Upload Docs #####################################
+      - run: ls $(opam exec -- odig cache path)/html
+
       - name: Build API documentation for ${{ env.latest }}...
         run: |
           cd ${{ env.latest }}
@@ -202,9 +204,11 @@ jobs:
           opam exec -- dune install
           opam exec -- odig odoc --odoc-theme=odig.gruvbox.light --no-tag-index --no-pkg-deps ${{ env.latest }}
 
+      - run: ls $(opam exec -- odig cache path)/html
+
       - name: Prepare artifact part for ${{ env.latest }} API ...
         run: |
-          cp $(opam exec -- odig cache path)/_html/${{ env.latest }} _html -r
+          cp $(opam exec -- odig cache path)/html/${{ env.latest }} _html -r
           echo ${{ env.latest }}          > projectname.txt
           echo ${{ github.event.number }} > PR_number.txt
           cp ${{ env.latest }}/_coverage/percent.txt percent.txt
