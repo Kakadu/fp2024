@@ -193,8 +193,13 @@ jobs:
       - name: Build API documentation for ${{ env.latest }}...
         run: |
           opam exec -- make -C ${{ env.latest }} install odig
+          cd ${{ env.latest }} && dune b @install --profile=release
+          cd ${{ env.latest }} && dune install
+          cd ${{ env.latest }} && dune install
+          cd ${{ env.latest }} && odig odoc --odoc-theme=odig.gruvbox.light --no-tag-index --no-pkg-deps ${{ env.latest }}
 
-      - run: |
+      - name: Prepare artifact part for ${{ env.latest }} API ...
+        run: |
           cp $(opam exec -- odig cache path)/_html/${{ env.latest }} _html -r
           echo ${{ env.latest }}          > projectname.txt
           echo ${{ github.event.number }} > PR_number.txt
