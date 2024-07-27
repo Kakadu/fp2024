@@ -13,7 +13,7 @@ type config =
 
 let config = { user = "Kakadu"; repo = ""; user_branch = "master"; mode = PR; verbose = false }
 let eprintfn fmt = Format.kasprintf (Printf.eprintf "%s\n%!") fmt
-let log fmt = Format.kasprintf (fun s -> if config.verbose then print_endline s) fmt
+let log fmt = Format.kasprintf (fun s -> if config.verbose then Printf.eprintf "%s\n%!" s) fmt
 
 let () =
   Arg.parse
@@ -124,17 +124,17 @@ let () =
   log "%s " (String.concat ", " changed_files);
   match changed_files with
   | [] ->
-    Format.eprintf "No changed files.\n%!";
+    eprintfn "No changed files.\n%!";
     print_endline "latest=Lambda";
     exit 0
   | xs ->
     (match calculate_common_subdir xs with
      | [] -> assert false
      | [ ".github" ] ->
-       Format.printf "latest=%s\n%!" "Lambda";
+       Printf.printf "latest=%s\n%!" "Lambda";
        exit 0
      | [ h ] ->
-       Format.printf "latest=%s\n%!" h;
+       Printf.printf "latest=%s\n%!" h;
        exit 0
      | ds ->
        eprintfn "Too many directories has been changed: %a" pp_str_list ds;
