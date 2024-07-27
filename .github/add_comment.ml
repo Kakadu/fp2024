@@ -3,6 +3,8 @@
 #require "yojson";;
 #require "str";;
 
+let log fmt = Format.kasprintf print_endline fmt
+
 type filename = string
 type action =
   | Put_comment of filename
@@ -16,8 +18,9 @@ type config =
   ; mutable user: string
   ; mutable repo: string
   }
+
 let config =
-  let c = { action=No_action; token=""; issue = 0; user="Kakadu"; repo="comp23hw" } in
+  let c = { action=No_action; token=""; issue = 0; user=""; repo="" } in
   Arg.parse
     [ ("-file", Arg.String (fun s -> c.action <- Put_comment s), " input file ")
     ; ("-remove", Arg.String (fun s -> c.action <- Remove_comment s), " remove comments with text")
@@ -29,10 +32,10 @@ let config =
     ]
     (fun _ -> assert false)
     "";
+  if c.token = "" then (log "Token is empty"; exit 1);
+  if c.user = "" then (log "User is empty"; exit 1);
+  if c.repo = "" then (log "Repo is empty"; exit 1);
   c
-
-let log fmt =
-  Format.kasprintf (print_endline) fmt
 
 let headers =
   [ "Authorization", Printf.sprintf "Bearer %s" config.token

@@ -66,8 +66,8 @@ jobs:
       - name: Run reviewer
         run: |
           opam exec -- reviewer -token ${{ secrets.GITHUB_TOKEN }} \
-            -owner ${{env.CI_REPO_OWNER}} \
-            -repo ${{github.event.repository.name}} \
+            -owner ${{ env.CI_REPO_OWNER }} \
+            -repo ${{ github.event.repository.name }} \
             -pr_number ${{ env.CI_PULL_REQUEST }} \
             -commit ${{ env.CI_COMMIT }} \
             -irdjsonl lints.rdjsonl -review
@@ -127,7 +127,7 @@ jobs:
             -issue ${{ env.CI_PULL_REQUEST }} \
             -delete-comment ${{ steps.fc-linter.outputs.comment-id }} \
             -user Kakadu \
-            -repo comp23hw
+            -repo ${{ github.event.repository.name }}
 
       # The way to remove comments changes to prevent pulling extra docker image should exist.
       #- name: Delete old comment
@@ -144,7 +144,7 @@ jobs:
 #          message: ${{ steps.read-escaped-markdown.outputs.contents }}
 #          issue: ${{ env.CI_PULL_REQUEST }}
 #          repo-owner: Kakadu
-#          repo-name: comp23hw
+#          repo-name: ${{ github.event.repository.name }}
 #          #refresh-message-position: true
 #          proxy-url: https://add-pr-comment-proxy-94idvmwyie-uc.a.run.app
 
@@ -152,6 +152,7 @@ jobs:
         with:
           message-path:  text.md
           message-id: linter-report
+          refresh-message-position: true
           issue: ${{ env.CI_PULL_REQUEST }}
           #repo-token: ${{ secrets.CLASSIC_TOKEN }}
           #repo-owner: Kakadu
@@ -160,13 +161,15 @@ jobs:
 
       - run: opam list
       - name: Adding a comment about lints upload via OCaml script
+        continue-on-error: true
+        if: false
         run: >
           opam exec -- ocaml .github/add_comment.ml \
             -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.CI_PULL_REQUEST }} \
             -repo ${{ github.event.repository.name }} \
-            -user ${{ env.GITHUB_REPOSITORY_OWNER }}
+            -user ${{ env.CI_REPO_OWNER }}
 
       - shell: bash
         run: echo "LINTER_RESOLUTION=$(bash .github/check_rdjson.sh lints.rdjsonl)" >> $GITHUB_ENV
@@ -290,6 +293,7 @@ jobs:
       #    token: ${{ secrets.GITHUB_TOKEN }}
 
       - run: opam install yojson curly --yes
+        if: false
 
       - name: Manually remove comment '${{ steps.fc-docs.outputs.comment-id }}' with docs info
         if: ${{ steps.fc-docs.outputs.comment-id != 0 }}
@@ -299,20 +303,29 @@ jobs:
             -issue ${{ env.PR_NUMBER }} \
             -delete-comment ${{ steps.fc-docs.outputs.comment-id }} \
             -user Kakadu \
-            -repo comp23hw
+            -repo ${{ github.event.repository.name }}
 
       - name: List installed OPAM packages
         run: opam list
 
       - run: opam exec -- ocamlopt --version
 
+      - uses: mshick/add-pr-comment@v2
+        name: Add comment about uploaded docs
+        with:
+          message-path:  text.md
+          message-id: docs-uploaded
+          refresh-message-position: true
+          issue: ${{ env.CI_PULL_REQUEST }}
+
       - name: Adding a comment from 'text.md' manually
+        if: false
         run: >
           opam exec -- ocaml .github/add_comment.ml \
             -file text.md \
             -token ${{ secrets.GITHUB_TOKEN }} \
             -issue ${{ env.PR_NUMBER }} \
-            -repo fp2024 \
+            -repo ${{ github.event.repository.name }} \
             -user Kakadu
 
   upload_coverage:
