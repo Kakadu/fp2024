@@ -117,6 +117,9 @@ let () =
   | xs ->
     (match calculate_common_subdir xs with
      | [] -> assert false
+     | [ ".github" ] ->
+       print_endline "latest=Lambda";
+       exit 0
      | [ h ] ->
        Format.printf "latest=%s\n" h;
        exit 0
