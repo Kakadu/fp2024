@@ -60,6 +60,7 @@ jobs:
       #     sh -x ./detect_latest_pr.sh "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
       #     echo "${{ env.latest }}"
 
+      - run: echo ${{ github.event.repository.name }}
       # TODO: remove ./detect_latest_pr.sh from repo (But it currently used in PRformat.yml)
       # TODO: set OCAMLRUNPARAM=b
       - run: |
@@ -67,7 +68,7 @@ jobs:
           echo "${{ env.latest }}"
         #if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
 
-      - name: Installing dependencies
+      - name: Installing dependencies for ${{ env.latest }}
         if: false  # HACK!
         run: |
           sudo apt-get update
@@ -195,10 +196,11 @@ jobs:
       ###################### Upload Docs #####################################
       - name: Build API documentation for ${{ env.latest }}...
         run: |
-          cd ${{ env.latest }} && opam exec -- dune b @install --profile=release
-          cd ${{ env.latest }} && opam exec -- dune install
-          cd ${{ env.latest }} && opam exec -- dune install
-          cd ${{ env.latest }} && opam exec -- odig odoc --odoc-theme=odig.gruvbox.light --no-tag-index --no-pkg-deps ${{ env.latest }}
+          cd ${{ env.latest }}
+          opam exec -- dune b @install --profile=release
+          opam exec -- dune install
+          opam exec -- dune install
+          opam exec -- odig odoc --odoc-theme=odig.gruvbox.light --no-tag-index --no-pkg-deps ${{ env.latest }}
 
       - name: Prepare artifact part for ${{ env.latest }} API ...
         run: |
