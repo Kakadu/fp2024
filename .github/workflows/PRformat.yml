@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0                # fix me later
+          fetch-depth: 0
 
       - name: List installed OPAM packages
         run: opam list
@@ -35,26 +35,15 @@ jobs:
       ############# Detecting and compiling fp2024
       # Smart link about setting environment variables
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-      - if: false
-        run: |
-          sh -x ./detect_latest_pr.sh "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
-          echo "${{ env.latest }}"
-
-      - if: false
+      - name: Detect latest changes
         run: |
           opam exec -- ocaml .github/detect_latest_pr.ml -v "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
           echo "${{ env.latest }}"
-
-      - run: |
-          opam exec -- ocaml .github/detect_latest_pr.ml -v "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
-          echo "${{ env.latest }}"
-
-      #- name: Installing dependencies
-      #  run: cd ${{ env.latest }} && opam install . --deps-only --with-test --with-doc
 
       - name: Naive linting
         run: |
-          cd ${{ env.latest }} && python ../lint_filesystem.py ${{ env.latest }}
+          cd ${{ env.latest }}
+          python ../.github/lint_filesystem.py ${{ env.latest }}
 
 #      - name: Checking ocamlformat
 #        id: check-ocamlformat
@@ -63,8 +52,14 @@ jobs:
 #          echo "PROPERLY_FORMATTED=y" >> $GITHUB_ENV
 #          cd ${{ env.latest }} && opam exec -- dune build @fmt --profile=release || echo "PROPERLY_FORMATTED=n" >> $GITHUB_ENV
 
+      # TODO: Do we really don't need to install dependencies???
+      #- name: Installing dependencies
+      #  run: cd ${{ env.latest }} && opam install . --deps-only --with-test --with-doc
+
       - name: Checking ocamlformat
-        run: cd ${{ env.latest }} && opam exec -- dune build @fmt --profile=release
+        run: |
+          cd ${{ env.latest }}
+          opam exec -- dune build @fmt --profile=release
 
 
       # TODO: onfail post a comment how to fix it

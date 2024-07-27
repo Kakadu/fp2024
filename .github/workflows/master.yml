@@ -43,11 +43,12 @@ jobs:
           bash -x ./detect_latest.sh >> $GITHUB_ENV
           echo "${{ env.latest }}"
 
-      - run: |
+      - name: Detect latest changes in ${{ github.event.repository.name }}
+        run: |
           opam exec -- ocaml .github/detect_latest_pr.ml -master -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
           echo "${{ env.latest }}"
 
-      - name: Installing dependencies
+      - name: Installing dependencies for ${{ env.latest }}
         run: cd ${{ env.latest }} && opam install . --deps-only --with-test --with-doc --yes
 
       - if: false
