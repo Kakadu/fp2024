@@ -72,12 +72,15 @@ jobs:
           opam install ./${{ env.latest }} --depext-only --with-test --with-doc
           opam install ./${{ env.latest }} --deps-only --with-test --with-doc
 
+      - name: List installed OPAM packages
+        run: opam list
+
       - name: Naive linting
         run: |
           cd ${{ env.latest }} && python ../lint_filesystem.py ${{ env.latest }}
 
 
-      - name: Compiling ${{ env.latest }}...
+      - name: Compiling ${{ env.latest }} (profile=release)...
         run: cd ${{ env.latest }} && opam exec -- dune build --profile=release
 
       - name: Running tests in ${{ env.latest }}...
@@ -107,7 +110,7 @@ jobs:
       # TODO: maybe PR_number is not required
 
       - name: Upload linter (review.zip) artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: review
           path: |
@@ -139,7 +142,7 @@ jobs:
         if: false
 
       - name: Update JSCPD artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: false
         with:
           name: jscpd_report
@@ -181,7 +184,7 @@ jobs:
       - run: echo ${{ env.latest }} > ${{ env.latest }}/_coverage/projectname.txt
 
       - name: Update coverage artifact ${{ steps.calc-coverage.outputs.percent }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: ${{ env.latest }}/_coverage
@@ -189,16 +192,16 @@ jobs:
       ###################### Upload Docs #####################################
       - name: Build API documentation for ${{ env.latest }}...
         run: |
-          opam install odoc --yes
-          cd ${{ env.latest }} && opam exec -- dune build @doc --profile=release
+          opam exec -- make -C ${{ env.latest }} install odig
 
-      - run: echo ${{ github.event.number }} > ${{ env.latest }}/PR_number.txt
-      - run: echo ${{ env.latest }}          > ${{ env.latest }}/projectname.txt
-      - run: cp ${{ env.latest }}/_coverage/percent.txt .
-      - run: cp ${{ env.latest }}/_build/default/_doc/_html . -r
+      - run: |
+          cp $(opam exec -- odig cache path)/_html/${{ env.latest }} _html -r
+          echo ${{ env.latest }}          > projectname.txt
+          echo ${{ github.event.number }} > PR_number.txt
+          cp ${{ env.latest }}/_coverage/percent.txt percent.txt
 
       - name: Update docs artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docs
           path: |

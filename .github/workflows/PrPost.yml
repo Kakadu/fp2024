@@ -236,8 +236,8 @@ jobs:
          # LANG_NAME is required for uploading docs.
          # PR_NUMBER -- for adding a comment
 
-      - name: Deploy documentation
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Deploy documentation for ${{ env.LANG_NAME }}
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           #github_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
@@ -332,7 +332,7 @@ jobs:
         if: ${{ env.LANG_NAME == '' }}
 
       - name: Deploy coverage
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           #github_token: ${{ secrets.GITHUB_TOKEN }}  # used only to publish in local repo
           github_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
