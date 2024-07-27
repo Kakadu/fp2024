@@ -7,8 +7,8 @@ on:
 
 env:
   OPAMROOT: /home/user/.opam
-  OPAMYES: true
   OPAMCONFIRMLEVEL: unsafe-yes
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,11 +20,6 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      #- name: Cancel Previous Runs
-      #  uses: styfle/cancel-workflow-action@0.9.1
-      #  with:
-      #    access_token: ${{ github.token }}
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -40,13 +35,17 @@ jobs:
       ############# Detecting and compiling fp2024
       # Smart link about setting environment variables
       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-      - if: ${{ github.event.pull_request.user.login != 'fp2022-helper' }}
+      - if: false
         run: |
           sh -x ./detect_latest_pr.sh "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
           echo "${{ env.latest }}"
 
-      - if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
+      - if: false
         run: |
+          opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
+          echo "${{ env.latest }}"
+
+      - run: |
           opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" >> $GITHUB_ENV
           echo "${{ env.latest }}"
 
