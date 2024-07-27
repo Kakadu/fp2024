@@ -28,8 +28,7 @@ let rec next_name s old =
 
 (*  The call [subst x ~by:v e] means `[x/v]e` or `e[v -> x]` *)
 let subst x ~by:v =
-  let rec helper e =
-    match e with
+  let rec helper = function
     | Var y when String.equal y x -> v
     | Var y -> Var y
     | App (l, r) -> app (helper l) (helper r)
