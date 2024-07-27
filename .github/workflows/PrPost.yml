@@ -210,12 +210,12 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: kakadu18/ocaml:fp2024
-      #options: --user root
-    #permissions:
-    #  pull-requests: write
     if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
 
     steps:
+      - name: Print
+        run: env | sort
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -239,7 +239,8 @@ jobs:
       - name: Deploy documentation for ${{ env.LANG_NAME }}
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          #github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
           #github_token: ${{ secrets.FP2023_UPLOAD_LINTS }}
           #personal_token: ${{ secrets.CLASSIC_TOKEN }}  # seems to be expired
           #github_token: ${{ secrets.PAT1 }}  # used only to publish in local repo
