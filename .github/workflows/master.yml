@@ -58,7 +58,7 @@ jobs:
           echo "${{ env.latest }}"
 
       - run: |
-          opam exec -- ocaml ./detect_latest_pr.ml -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
+          opam exec -- ocaml ./detect_latest_pr.ml -master -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
           echo "${{ env.latest }}"
 
       - name: Installing dependencies
