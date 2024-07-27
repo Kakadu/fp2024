@@ -62,7 +62,7 @@ jobs:
       # TODO: set OCAMLRUNPARAM=b
       - name: Detect latest directory with changes in ${{ github.event.repository.name }}
         run: |
-          opam exec -- ocaml ./detect_latest_pr.ml "pull/${{ steps.branch-name.outputs.ref_branch }}" -user ${{ github.repository_owner }} -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
+          opam exec -- ocaml .github/detect_latest_pr.ml -v "pull/${{ steps.branch-name.outputs.ref_branch }}" -repo ${{ github.event.repository.name }} >> $GITHUB_ENV
           echo "${{ env.latest }}"
         #if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
 

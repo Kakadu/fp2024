@@ -12,6 +12,7 @@ type config =
   }
 
 let config = { user = "Kakadu"; repo = ""; user_branch = "master"; mode = PR; verbose = false }
+let eprintfn fmt = Format.kasprintf (Printf.eprintf "%s\n%!") fmt
 let log fmt = Format.kasprintf (fun s -> if config.verbose then print_endline s) fmt
 
 let () =
@@ -23,8 +24,8 @@ let () =
     ]
     (fun s -> config.user_branch <- s)
     "TODO: help";
-  if config.user = "" then (log "User is empty"; exit 1);
-  if config.repo = "" then (log "Repo is empty"; exit 1);
+  if config.user = "" then (eprintfn "User is empty"; exit 1);
+  if config.repo = "" then (eprintfn "Repo is empty"; exit 1);
 ;;
 
 let red = "\027[0;31m"
@@ -61,7 +62,7 @@ let () =
     match commandf "git fetch upstream master" with
     | 0 -> Format.eprintf "Upstream added\n%!"
     | err ->
-        Format.eprintf "Adding upstream finished with error code %d\n" err;
+        eprintfn "Adding upstream finished with error code %d" err;
         exit 1)
 ;;
 
@@ -90,8 +91,8 @@ let merge_base =
     match Str.split (Str.regexp "\n") s |> List.filter (( <> ) "") with
     | [ h ] -> h
     | xs ->
-      Format.eprintf "After merge-base got a list of length %d\n%!" (List.length xs);
-      Format.eprintf "[ %s ]\n%!" (String.concat "; " xs);
+      eprintfn "After merge-base got a list of length %d" (List.length xs);
+      eprintfn "[ %s ]" (String.concat "; " xs);
       exit 1
 ;;
 let the_HEAD =
@@ -130,12 +131,12 @@ let () =
     (match calculate_common_subdir xs with
      | [] -> assert false
      | [ ".github" ] ->
-       print_endline "latest=Lambda";
+       Format.printf "latest=%s\n%!" "Lambda";
        exit 0
      | [ h ] ->
-       Format.printf "latest=%s\n" h;
+       Format.printf "latest=%s\n%!" h;
        exit 0
      | ds ->
-       Format.eprintf "Too many directories has been changed: %a\n%!" pp_str_list ds;
+       eprintfn "Too many directories has been changed: %a" pp_str_list ds;
        exit 1)
 ;;
