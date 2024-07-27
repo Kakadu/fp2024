@@ -192,7 +192,6 @@ jobs:
       ###################### Upload Docs #####################################
       - name: Build API documentation for ${{ env.latest }}...
         run: |
-          opam exec -- make -C ${{ env.latest }} install odig
           cd ${{ env.latest }} && dune b @install --profile=release
           cd ${{ env.latest }} && dune install
           cd ${{ env.latest }} && dune install
