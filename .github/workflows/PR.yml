@@ -204,7 +204,6 @@ jobs:
 
       - name: Prepare artifact part for ${{ env.latest }} API ...
         run: |
-          mkdir _html
           cp $(opam exec -- odig cache path)/html _html -r
           rm _html/index.html
           echo ${{ env.latest }}          > projectname.txt
