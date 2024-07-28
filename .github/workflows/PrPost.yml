@@ -243,11 +243,11 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.FP2024_UPLOAD_LINTS }}
-          publish_dir: ./_docs/_html
           publish_branch: gh-pages
+          publish_dir: ./_docs/_html
+          destination_dir: docs/
           enable_jekyll: false
           keep_files: true
-          destination_dir: docs/${{ env.LANG_NAME }}
           commit_message: >
             Deploying documentation for ${{ env.LANG_NAME }}: https://kakadu.github.io/${{ github.event.repository.name }}/docs/${{ env.LANG_NAME }}
           user_name: '${{ github.event.repository.name }}[bot]'

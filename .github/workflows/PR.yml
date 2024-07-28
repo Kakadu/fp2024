@@ -204,7 +204,9 @@ jobs:
 
       - name: Prepare artifact part for ${{ env.latest }} API ...
         run: |
-          cp $(opam exec -- odig cache path)/html/${{ env.latest }} _html -r
+          mkdir _html
+          cp $(opam exec -- odig cache path)/html _html -r
+          rm _html/index.html
           echo ${{ env.latest }}          > projectname.txt
           echo ${{ github.event.number }} > PR_number.txt
           cp ${{ env.latest }}/_coverage/percent.txt percent.txt
