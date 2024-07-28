@@ -10,15 +10,16 @@
 
 (maintainers "FIXME Vasya Pupkin")
 
-(bug_reports "FIXME where to put bug reports about the code")
+(bug_reports "https://github.com/Kakadu/fp2024")
 
-(homepage "FIXME Homepage")
+(homepage "https://github.com/Kakadu/fp2024")
 
 (package
  (name Lambda) ; FIXME and regenerate .opam file using 'dune build @install'
  (synopsis "FIXME An interpreter for language")
  (description
   "FIXME. A longer description, for example, which are the most interesing features being supported, etc.")
+ (documentation "https://kakadu.github.io/fp2024/docs/Lambda")
  (version 0.1)
  (depends
   dune
