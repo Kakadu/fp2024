@@ -73,7 +73,7 @@
 
 Когда VsCode запустится, её плагин https://marketplace.visualstudio.com/items?itemName=ocamllabs.ocaml-platform слева снизу должен показать, что правильная версия компилятора подцепилась.
 
-![alt text](https://github.com/Kakadu/fp2024/blob/master/vscode.jpg?raw=true)
+![alt text](https://github.com/Kakadu/fp2024/blob/master/vscode.png?raw=true)
 
 
 Необходимо также в VsCode включить автоформатирование: `Settings`->`Text Editor`->`Formatting`->`Format On Paste` и `Format on Save`.
