@@ -144,6 +144,11 @@
      * Заставляет выводить менее полиморфные типы, потому что присваивание может нарушать типовую безопасность
      * https://users.cs.fiu.edu/~smithg/cop4555/valrestr.html
     </details>
+1. Scala + By-name Parameters <details><summary>Подробнее</summary>
+   * Всё, что есть в теме для E
+   * Другой парсер (!)
+   * [Параметры функций](https://docs.scala-lang.org/tour/by-name-parameters.html), которые не Call-by-Value (как в OCaml/Scala), а call-by-name (как в Haskell)
+   </details>
 1. Scheme + call/cc  <details><summary>Подробнее</summary>
    * относительно легко гуглящаяся особенность Scheme
    * call/cc
