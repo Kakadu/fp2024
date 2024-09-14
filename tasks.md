@@ -96,6 +96,11 @@
       | Odd -> printf "%d is odd\n" input
       ```
     </details>
+1. F# + Units of Measure <details><summary>Подробнее</summary>
+   * Всё, что есть в теме для  E
+   * Вещественные числа (обосновано следующим пунктом)
+   * Возможность объявлять и использовать [Units of Measure](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/units-of-measure)
+   </details>
 1. Haskell + стандартные типы данных + ленивость<details><summary>Подробнее</summary>
    * Всё, что есть в теме для  E
    * С ленивостью надо будет продемонстрировать работоспособность
@@ -129,11 +134,6 @@
 1. OCaml + weak type variables <details><summary>Подробнее</summary>
    * Всё, что есть в теме для E
    * https://ocamlverse.net/content/weak_type_variables.html. Присваивание неоходимо, так как без него тема бессодержательна.
-   </details>
-1. F# + Units of Measure <details><summary>Подробнее</summary>
-   * Всё, что есть в теме для  E
-   * Вещественные числа (обосновано следующим пунктом)
-   * Возможность объявлять и использовать [Units of Measure](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/units-of-measure)
    </details>
 1. SML + equality types + value restriction <details><summary>Подробнее</summary>
    + Почти предыдущая задача, но проще
@@ -245,6 +245,7 @@
    * Туториал в контексте OCaml https://github.com/ocamllabs/ocaml-effects-tutorial
    </details>
 <!--
+1. OCaml+ non prenex polymorphism?
 1. Ассемблер x86_64  <details><summary>Подробнее</summary>
     * Очень простой язык и для парсинга, не такой простой для реализации интерпретатора.
     * Язык должен быть настоящим ассемблером, т. е. входные программы должны компилироваться соответствующим компилятором (nasm) и выдавать ответ как в интерпретаторе. Сделайте cram тесты, демонстрирующие это.
