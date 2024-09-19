@@ -1,0 +1,34 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors "Maxim Rodionov" "Vladimir Zaikin")
+
+(maintainers "Maxim Rodionov" "Vladimir Zaikin")
+
+(bug_reports "https://github.com/RodionovMaxim05/OCamlPrintf")
+
+(homepage "https://github.com/RodionovMaxim05/OCamlPrintf")
+
+(package
+ (name OCamlPrintf)
+ (synopsis "OCaml interpreter with support for printf")
+ (description "OCaml interpreter with support for printf")
+ ; (documentation "https://kakadu.github.io/fp2024/docs/OCamlPrintf")
+ (version 0.1)
+ (depends
+  dune
+  angstrom
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ; base
+  ; After adding dependencies to 'dune' files and the same dependecies here too
+  ))
