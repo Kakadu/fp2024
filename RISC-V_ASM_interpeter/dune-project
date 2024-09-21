@@ -1,0 +1,35 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors "Vyacheslav Kochergin, Roman Mukovenkov")
+
+(maintainers "Vyacheslav Kochergin, Roman Mukovenkov")
+
+(bug_reports "https://github.com/Kakadu/fp2024")
+
+(homepage "https://github.com/Kakadu/fp2024")
+
+(package
+ (name RISC-V_ASM_interpreter) ; FIXME and regenerate .opam file using 'dune build @install'
+ (synopsis "An interpreter for mini-language similiar to RISC-V ASM")
+ (description
+  "Bitmanip and RVV supported (TODO).")
+ (documentation "https://kakadu.github.io/fp2024/docs/RISC-V_ASM_interpreter")
+ (version 0.1)
+ (depends
+  dune
+  angstrom
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ; base
+  ; After adding dependencies to 'dune' files and the same dependecies here too
+  ))
