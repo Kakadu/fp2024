@@ -1,0 +1,10 @@
+(library
+ (name riscv_asm_interpreter_lib)
+ (public_name RISC-V_ASM_interpreter.Lib)
+ (modules Ast)
+ (modules_without_implementation ast)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
