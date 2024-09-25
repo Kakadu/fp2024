@@ -1,3 +1,8 @@
+type constant =
+  | Const_integer of int (** integer as [52] **)
+  | Const_char of char (** char as ['w'] **)
+  | Const_string of string (** string as ["Kakadu"] **)
+
 type binop = 
 | Add (* + *)
 | Sub (* - *)
@@ -13,6 +18,7 @@ type binop =
 | Gre (* > *)
 | Geq (* >= *)
 
+(**Misha we can use  https://github.com/ocaml-ppx/ppx_deriving for generating this code if we are nerds**)
 let bop_add = Add
 let bop_sub = Sub
 let bop_mul = Mul
@@ -53,17 +59,34 @@ let downname str = DownName str
 
 type match_pattern (* TODO *)
 
+type rec_flag = 
+|	Nonrecursive
+|	Recursive
+
+type value_binding = 
+  {
+    pat: pattern;
+    expr: decl_expr;
+  }
+
+type case =
+{
+  left: pattern;
+  right: decl_expr;
+}
+
 type decl_expr = 
-| ExpInt of int
-| ExpString of string
-| ExpBool of bool
+| Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
 | ExpEmptyList
 | ExpVar of decl_name
-| ExpTuple of expr list
-| ExpFun of ?? * declaration_expr
-| ExpMatch of decl_expr * (match_pattern * decl_expr)
-| ExpIf of ?? * decl_expr * decl_expr (* describe the statement*)
-| ExpLet of decl_name * decl_expr (* *)
+| Exp_tuple of decl_expr list (** can be changed to [expr*expr*(expr list)] **)
+| Exp_function of case list
+| Exp_fun of pattern list * decl_expr
+| Exp_apply of decl_expr * decl_expr 
+| Exp_match of decl_expr * case list
+| Exp_try of decl_expr * case list
+| ExpIf of decl_expr * decl_expr * decl_expr 
+| Exp_Let of rec_flag * value_binding list * decl_expr
 | ExpBinOp of binop * decl_expr * decl_expr
 
 let expint num = ExpInt num
@@ -72,8 +95,8 @@ let expbool bool = ExpBool bool
 let expemptylist = ExpEmptyList
 let expvar decl_name = ExpVar (decl_name)
 let exptuple declaration_expression = ExpTuple declaration_expression
-let expfun ?? decl_expr = ExpFun (??, decl_expr)
-let expmatch decl_exp (match_pattern * decl_expr) list = ExpMatch (decl_exp, match_pattern, decl_exp)
+let expfun ??
+let expmatch decl_exp (match_pattern * decl_exp) list = ExpMatch (decl_exp, match_pattern, decl_exp)
 let expif decl_exp1 decl_exp2 decl_exp3 = ExpIf (decl_exp1, decl_exp2, decl_exp3) (* Statement is also a expression *)
 let explet decl_name decl_exp = ExpLet (decl_name, decl_exp)
 let expbinop binop decl_exp decl_exp = ExpBinOp (binop, decl_exp, decl_exp)
