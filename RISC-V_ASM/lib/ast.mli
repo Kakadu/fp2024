@@ -62,13 +62,47 @@ type float_register =
 type immediate (** immediate value, stored in opcode, not in registers or other memory *)
 
 type int_instruction =
-    | Add of int_register * int_register
-    | Sub of int_register * int_register
-    | Xor of int_register * int_register
-    | Or of  int_register * int_register
-    | And of int_register * int_register
-    | Sll of int_register * int_register
+    | Add of int_register * int_register * int_register (** Addition. rd = rs1 + rs2 *)
+    | Sub of int_register * int_register * int_register (** Subtraction. rd = rs1 - rs2 *)
+    | Xor of int_register * int_register * int_register (** Exclusive OR. rd = rs1 ^ rs2 *)
+    | Or of int_register * int_register * int_register (** OR. rd = rs1 | rs2 *)
+    | And of int_register * int_register * int_register (** AND. rd = rs1 & rs2 *)
+    | Sll of int_register * int_register * int_register (** Shift Left Logical. rd = rs1 << rs2 *)
+    | Srl of int_register * int_register * int_register (** Shift Right Logical. rd = rs1 >> rs2 *)
+    | Sra of int_register * int_register * int_register (** Shift Right Arithmetic. rd = rs1 >> rs2 *)
+    | Slt of int_register * int_register * int_register (** Set Less Than. rd = (rs1 < rs2) ? 1 : 0 *)
+    | Sltu of int_register * int_register * int_register (** Set Less Than (Unsigned) *)
+    | Addi of int_register * int_register * immediate (** Addition of immediate. rd = rs1 + imm *)
+    | Xori of int_register * int_register * immediate (** XOR with immediate. rd = rs1 ^ imm *)
+    | Ori of int_register * int_register * immediate (** OR with immediate. rd = rs1 | imm *)
+    | Andi of int_register * int_register * immediate (** AND with immediate. rd = rs1 & imm *)
+    | Slli of int_register * int_register * immediate (** Shift Left Logical with immediate. rd = rs1 << imm[0:4] *)
+    | Srli of int_register * int_register * immediate (** Shift Right Logical with immediate. rd = rs1 >> imm[0:4] logical *)
+    | Srai of int_register * int_register * immediate (** Shift Right Arithmetic with immediate. rd = rs1 >> imm[0:4] arithmetical *)
+    | Slti of int_register * int_register * immediate (** Set Less Than Imm. rd = (rs1 < imm) ? 1 : 0 *)
+    | Sltiu of int_register * int_register * immediate (** Set Less Than Imm (Unsigned) *)
+    | Lb of int_register * int_register * immediate (** Load Byte. rd = M[rs1 + imm][0:7] *)
+    | Lh of int_register * int_register * immediate (** Load Half. rd = M[rs1 + imm][0:15] *)
+    | Lw of int_register * int_register * immediate (** Load Word. rd = M[rs1 + imm][0:31] *)
+    | Lbu of int_register * int_register * immediate (** Load Byte Unsigned *)
+    | Lhu of int_register * int_register * immediate (** Load Half Unsigned *)
+    | Sb of int_register * immediate * int_register (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
+    | Sh of int_register * immediate * int_register (** Store Half. M[rs1 + imm][0:15] = rs2[0:15] *)
+    | Sw of int_register * immediate * int_register (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
+    | Beq of int_register * int_register * immediate (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
+    | Bne of int_register * int_register * immediate (** Branch !=. if (rs1 != rs2) PC += imm. *)
+    | Blt of int_register * int_register * immediate (** Branch <. if (rs1 < rs2) PC += imm. *)
+    | Bge of int_register * int_register * immediate (** Branch >=. if (rs1 >= rs2) PC += imm. *)
+    | Bltu of int_register * int_register * immediate (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
+    | Bgeu of int_register * int_register * immediate (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
 
-type label (** labels *)
+type label (** labels to jump on *)
 
 type comment (** comments in code *)
+
+type expr = 
+    | IntInstruction of int_instruction
+    | Label of label
+    | Comment of comment
+
+type ast = expr list
