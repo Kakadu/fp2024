@@ -59,7 +59,7 @@ type float_register =
     | F31 (** ft11 - temporary *)
 
 
-type immediate
+type immediate (** immediate value, stored in opcode, not in registers or other memory *)
 
 type int_instruction =
     | Add of int_register * int_register
@@ -69,8 +69,6 @@ type int_instruction =
     | And of int_register * int_register
     | Sll of int_register * int_register
 
-type label
+type label (** labels *)
 
-type directive = 
-    | Section
-    | Global
+type comment (** comments in code *)
