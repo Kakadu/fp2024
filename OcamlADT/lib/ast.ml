@@ -26,17 +26,6 @@ type decl_name =
   | Down_name of string (* types, constructors*)
 [@@deriving eq, show { with_path = false }]
 
-type decl_type =
-  | Type_int
-  | Type_string
-  | Type_bool
-  | Type_fun of decl_type * decl_type
-  | Type_var of string
-  | Type_list of decl_type
-  | Type_tuple of decl_type list
-  | Type_variant of decl_name * (decl_name * decl_type) list (* TODO *)
-[@@deriving eq, show { with_path = false }]
-
 type pattern =
   | Pat_any
   | Pat_var of decl_name
@@ -44,7 +33,7 @@ type pattern =
   | Pat_constant of constant
   | Pat_interval of constant * constant
   | Pat_tuple of pattern list
-  | Pat_construct (* Do we need it?*)
+  | Pat_construct of decl_name * pattern option (*wtf decl_name????????*)
 [@@deriving eq, show { with_path = false }]
 
 type rec_flag =
@@ -64,6 +53,7 @@ type decl_expr =
   | Exp_if of decl_expr * decl_expr * decl_expr option
   | Exp_let of rec_flag * value_binding list * decl_expr
   | Exp_binop of binop * decl_expr * decl_expr
+  | Exp_construct of decl_expr option
 [@@deriving eq, show { with_path = false }]
 
 and value_binding =
@@ -75,6 +65,17 @@ and case =
   { left : pattern
   ; right : decl_expr
   }
+
+type decl_type =
+  | Type_int
+  | Type_string
+  | Type_bool
+  | Type_fun of decl_type * decl_type
+  | Type_var of string
+  | Type_list of decl_type
+  | Type_tuple of decl_type list
+  | Type_variant of (decl_name * decl_type) list
+[@@deriving eq, show { with_path = false }]
 
 (*
    Example of factorial ast
