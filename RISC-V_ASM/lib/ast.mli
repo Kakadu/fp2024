@@ -58,7 +58,6 @@ type float_register =
     | F30 (** ft10 - temporary *)
     | F31 (** ft11 - temporary *)
 
-
 type immediate (** immediate value, stored in opcode, not in registers or other memory *)
 
 type int_instruction =
@@ -95,6 +94,18 @@ type int_instruction =
     | Bge of int_register * int_register * immediate (** Branch >=. if (rs1 >= rs2) PC += imm. *)
     | Bltu of int_register * int_register * immediate (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
     | Bgeu of int_register * int_register * immediate (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
+    | Jal of int_register * immediate (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
+    | Jalr of int_register * int_register * immediate (** Jump and Link Register. rd = PC + 4; PC = rs1 + imm *)
+    | Lui of int_register * immediate (** Load Upper Immediate. rd = imm << 12 *)
+    | Auipc of int_register * immediate (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
+    | Mul of int_register * int_register * int_register (** Multiply. rd = (rs1 * rs2)[31:0] *)
+    | Mulh of int_register * int_register * int_register (** Multiply High. rd = (rs1 * rs2)[63:32] *)
+    | Mulsu of int_register * int_register * int_register (** Multiply High (Signed * Unsigned). rd = (rs1 * rs2)[63:32] *)
+    | Mulu of int_register * int_register * int_register (** Multiply High (Unsigned * Unsigned). rd = (rs1 * rs2)[63:32] *)
+    | Div of int_register * int_register * int_register (** Division. rd = rs1 / rs2 *)
+    | Divu of int_register * int_register * int_register (** Division (Unsigned). rd = rs1 / rs2 *)
+    | Rem of int_register * int_register * int_register (** Remainder. rd = rs1 % rs2 *)
+    | Remu of int_register * int_register * int_register (** Remainder (Unsigned). rd = rs1 % rs2 *)
 
 type label (** labels to jump on *)
 
