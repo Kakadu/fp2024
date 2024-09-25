@@ -102,8 +102,8 @@ type int_instruction =
     (** RV32M instructions *)
     | Mul of int_register * int_register * int_register (** Multiply. rd = (rs1 * rs2)[31:0] *)
     | Mulh of int_register * int_register * int_register (** Multiply High. rd = (rs1 * rs2)[63:32] *)
-    | Mulsu of int_register * int_register * int_register (** Multiply High (Signed * Unsigned). rd = (rs1 * rs2)[63:32] *)
-    | Mulu of int_register * int_register * int_register (** Multiply High (Unsigned * Unsigned). rd = (rs1 * rs2)[63:32] *)
+    | Mulhsu of int_register * int_register * int_register (** Multiply High (Signed * Unsigned). rd = (rs1 * rs2)[63:32] *)
+    | Mulhu of int_register * int_register * int_register (** Multiply High (Unsigned * Unsigned). rd = (rs1 * rs2)[63:32] *)
     | Div of int_register * int_register * int_register (** Division. rd = rs1 / rs2 *)
     | Divu of int_register * int_register * int_register (** Division (Unsigned). rd = rs1 / rs2 *)
     | Rem of int_register * int_register * int_register (** Remainder. rd = rs1 % rs2 *)
@@ -121,6 +121,12 @@ type int_instruction =
     | Sllw of int_register * int_register * int_register (** Shifl Left Logical Word. rd = (rs1 << rs2)[31:0] *)
     | Srlw of int_register * int_register * int_register (** Shifl Right Logical Word. rd = (rs1 >> rs2)[31:0] *)
     | Sraw of int_register * int_register * int_register (** Shifl Right Arithmetical Word. rd = (rs1 >> rs2)[31:0] *)
+    (** RV64M instructions *)
+    | Mulw of int_register * int_register * int_register (** Multiply Word. rd = (rs1 * rs2)[31:0] *)
+    | Divw of int_register * int_register * int_register (** Division Word. rd = (rs1 / rs2)[31:0] *)
+    | Divuw of int_register * int_register * int_register (** Division Word (Unsigned). rd = (rs1 / rs2)[31:0] *)
+    | Remw of int_register * int_register * int_register (** Remainder Word. rd = (rs1 % rs2)[31:0] *)
+    | Remwu of int_register * int_register * int_register (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
 
 type label (** labels to jump on *)
 
