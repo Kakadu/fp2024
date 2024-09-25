@@ -1,0 +1,4 @@
+(cram
+ (applies_to interpret_tests)
+ (deps
+  ../bin/REPL.exe))
