@@ -23,7 +23,9 @@ type register =
     | X30 (** t5 - temporary *)
     | X31 (** t6 - temporary *)
 
-type immediate (** immediate value, stored in opcode, not in registers or other memory *)
+type immediate32
+
+type immediate64
 
 type instruction =
     (** RV32I instructions *)
@@ -37,33 +39,33 @@ type instruction =
     | Sra of register * register * register (** Shift Right Arithmetic. rd = rs1 >> rs2 *)
     | Slt of register * register * register (** Set Less Than. rd = (rs1 < rs2) ? 1 : 0 *)
     | Sltu of register * register * register (** Set Less Than (Unsigned) *)
-    | Addi of register * register * immediate (** Addition of Immediate. rd = rs1 + imm *)
-    | Xori of register * register * immediate (** XOR with Immediate. rd = rs1 ^ imm *)
-    | Ori of register * register * immediate (** OR with Immediate. rd = rs1 | imm *)
-    | Andi of register * register * immediate (** AND with Immediate. rd = rs1 & imm *)
-    | Slli of register * register * immediate (** Shift Left Logical with Immediate. rd = rs1 << imm[0:4] *)
-    | Srli of register * register * immediate (** Shift Right Logical with Immediate. rd = rs1 >> imm[0:4] logical *)
-    | Srai of register * register * immediate (** Shift Right Arithmetic with Immediate. rd = rs1 >> imm[0:4] arithmetical *)
-    | Slti of register * register * immediate (** Set Less Than Imm. rd = (rs1 < imm) ? 1 : 0 *)
-    | Sltiu of register * register * immediate (** Set Less Than Imm (Unsigned) *)
-    | Lb of register * register * immediate (** Load Byte. rd = M[rs1 + imm][0:7] *)
-    | Lh of register * register * immediate (** Load Half. rd = M[rs1 + imm][0:15] *)
-    | Lw of register * register * immediate (** Load Word. rd = M[rs1 + imm][0:31] *)
-    | Lbu of register * register * immediate (** Load Byte Unsigned *)
-    | Lhu of register * register * immediate (** Load Half Unsigned *)
-    | Sb of register * immediate * register (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
-    | Sh of register * immediate * register (** Store Half. M[rs1 + imm][0:15] = rs2[0:15] *)
-    | Sw of register * immediate * register (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
-    | Beq of register * register * immediate (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
-    | Bne of register * register * immediate (** Branch !=. if (rs1 != rs2) PC += imm. *)
-    | Blt of register * register * immediate (** Branch <. if (rs1 < rs2) PC += imm. *)
-    | Bge of register * register * immediate (** Branch >=. if (rs1 >= rs2) PC += imm. *)
-    | Bltu of register * register * immediate (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
-    | Bgeu of register * register * immediate (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
-    | Jal of register * immediate (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
-    | Jalr of register * register * immediate (** Jump and Link Register. rd = PC + 4; PC = rs1 + imm *)
-    | Lui of register * immediate (** Load Upper Immediate. rd = imm << 12 *)
-    | Auipc of register * immediate (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
+    | Addi of register * register * immediate32 (** Addition of Immediate. rd = rs1 + imm *)
+    | Xori of register * register * immediate32 (** XOR with Immediate. rd = rs1 ^ imm *)
+    | Ori of register * register * immediate32 (** OR with Immediate. rd = rs1 | imm *)
+    | Andi of register * register * immediate32 (** AND with Immediate. rd = rs1 & imm *)
+    | Slli of register * register * immediate32 (** Shift Left Logical with Immediate. rd = rs1 << imm[0:4] *)
+    | Srli of register * register * immediate32 (** Shift Right Logical with Immediate. rd = rs1 >> imm[0:4] logical *)
+    | Srai of register * register * immediate32 (** Shift Right Arithmetic with Immediate. rd = rs1 >> imm[0:4] arithmetical *)
+    | Slti of register * register * immediate32 (** Set Less Than Imm. rd = (rs1 < imm) ? 1 : 0 *)
+    | Sltiu of register * register * immediate32 (** Set Less Than Imm (Unsigned) *)
+    | Lb of register * register * immediate32 (** Load Byte. rd = M[rs1 + imm][0:7] *)
+    | Lh of register * register * immediate32 (** Load Half. rd = M[rs1 + imm][0:15] *)
+    | Lw of register * register * immediate32 (** Load Word. rd = M[rs1 + imm][0:31] *)
+    | Lbu of register * register * immediate32 (** Load Byte Unsigned *)
+    | Lhu of register * register * immediate32 (** Load Half Unsigned *)
+    | Sb of register * immediate32 * register (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
+    | Sh of register * immediate32 * register (** Store Half. M[rs1 + imm][0:15] = rs2[0:15] *)
+    | Sw of register * immediate32 * register (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
+    | Beq of register * register * immediate32 (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
+    | Bne of register * register * immediate32 (** Branch !=. if (rs1 != rs2) PC += imm. *)
+    | Blt of register * register * immediate32 (** Branch <. if (rs1 < rs2) PC += imm. *)
+    | Bge of register * register * immediate32 (** Branch >=. if (rs1 >= rs2) PC += imm. *)
+    | Bltu of register * register * immediate32 (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
+    | Bgeu of register * register * immediate32 (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
+    | Jal of register * immediate32 (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
+    | Jalr of register * register * immediate32 (** Jump and Link Register. rd = PC + 4; PC = rs1 + imm *)
+    | Lui of register * immediate32 (** Load Upper Immediate. rd = imm << 12 *)
+    | Auipc of register * immediate32 (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
     | Ecall (** EnvironmentCall - a syscall *)
     (** RV32M instructions *)
     | Mul of register * register * register (** Multiply. rd = (rs1 * rs2)[31:0] *)
@@ -75,13 +77,13 @@ type instruction =
     | Rem of register * register * register (** Remainder. rd = rs1 % rs2 *)
     | Remu of register * register * register (** Remainder (Unsigned). rd = rs1 % rs2 *)
     (** RV64I instructions *)
-    | Lwu of register * register * immediate (** Load Word (Unsigned). rd = M[rs1 + imm][0:31] *)
-    | Ld of register * register * immediate (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
-    | Sd of register * register * immediate (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
-    | Addiw  of register * register * immediate (** Addition of Immediate Word. rd = (rs1 + imm)[31:0] *)
-    | Slliw of register * register * immediate (** Shift Left Logical with Immediate Word. rd = (rs1 << imm)[31:0] *)
-    | Srliw of register * register * immediate (** Shift Right Logical with Immediate Word. rd = (rs1 >> imm)[31:0] *)
-    | Sraiw of register * register * immediate (** Shift Right Arithmetic with Immediate Word. rd = (rs1 >> imm)[31:0] *)
+    | Lwu of register * register * immediate64 (** Load Word (Unsigned). rd = M[rs1 + imm][0:31] *)
+    | Ld of register * register * immediate64 (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
+    | Sd of register * register * immediate64 (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
+    | Addiw  of register * register * immediate64 (** Addition of Immediate Word. rd = (rs1 + imm)[31:0] *)
+    | Slliw of register * register * immediate64 (** Shift Left Logical with Immediate Word. rd = (rs1 << imm)[31:0] *)
+    | Srliw of register * register * immediate64 (** Shift Right Logical with Immediate Word. rd = (rs1 >> imm)[31:0] *)
+    | Sraiw of register * register * immediate64 (** Shift Right Arithmetic with Immediate Word. rd = (rs1 >> imm)[31:0] *)
     | Addw of register * register * register (** Add Word. rd = (rs1 + rs2)[31:0] *)
     | Subw of register * register * register (** Add Word. rd = (rs1 - rs2)[31:0] *)
     | Sllw of register * register * register (** Shifl Left Logical Word. rd = (rs1 << rs2)[31:0] *)
@@ -94,13 +96,9 @@ type instruction =
     | Remw of register * register * register (** Remainder Word. rd = (rs1 % rs2)[31:0] *)
     | Remwu of register * register * register (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
 
-type label (** labels to jump on *)
-
-type comment (** comments in code *)
-
 type expr = 
-    | IntInstruction of instruction
-    | Label of label
-    | Comment of comment
+    | Instruction of instruction
+    | Label of string
+    | Comment of string
 
 type ast = expr list
