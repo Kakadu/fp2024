@@ -1,6 +1,7 @@
 (library
- (name lib)
+ (name OCamlRV_lib)
  (public_name OcamlRV.Lib)
+ (modules Ast)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation

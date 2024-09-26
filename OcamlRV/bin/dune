@@ -1,4 +1,4 @@
 (executable
- (public_name OcamlRV)
  (name main)
- (libraries lib))
+ (public_name OcamlRV)
+ (libraries OCamlRV_lib))
