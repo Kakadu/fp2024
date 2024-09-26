@@ -23,8 +23,11 @@ type register =
     | X30 (** t5 - temporary *)
     | X31 (** t6 - temporary *)
 
+(** immediate value is stored not in registers or other memory *)
+(** immediate type for 32-bit instructions *)
 type immediate32
 
+(** immediate type for 64-bit instructions *)
 type immediate64
 
 type instruction =
@@ -96,9 +99,11 @@ type instruction =
     | Remw of register * register * register (** Remainder Word. rd = (rs1 % rs2)[31:0] *)
     | Remwu of register * register * register (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
 
+(** Each expression is an instruction, label, comment, or directive (TODO) *)
 type expr = 
     | Instruction of instruction
     | Label of string
     | Comment of string
 
+(** AST is presented by a list of expressions *)
 type ast = expr list
