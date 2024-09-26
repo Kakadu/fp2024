@@ -1,7 +1,7 @@
 (executable
- (name main)
- (public_name main)
- (modules main)
+ (name REPL)
+ (public_name REPL)
+ (modules REPL)
  (libraries ocaml_printf_lib)
  (instrumentation
   (backend bisect_ppx)))
