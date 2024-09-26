@@ -1,7 +1,7 @@
 (library
  (name ocaml_printf_lib)
  (public_name OCamlPrintf.Lib)
- (modules hello Ast)
+ (modules Ast)
  (modules_without_implementation ast)
  (libraries base angstrom)
  (preprocess
