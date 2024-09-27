@@ -30,9 +30,6 @@ type immediate12
 (** immediate 20-bit type *)
 type immediate20
 
-(** shift amount immediate for shift instructions *)
-type shamt
-
 type instruction =
     (** RV32I instructions *)
     | Add of register * register * register (** Addition. rd = rs1 + rs2 *)
@@ -49,9 +46,9 @@ type instruction =
     | Xori of register * register * immediate12 (** XOR with Immediate. rd = rs1 ^ imm *)
     | Ori of register * register * immediate12 (** OR with Immediate. rd = rs1 | imm *)
     | Andi of register * register * immediate12 (** AND with Immediate. rd = rs1 & imm *)
-    | Slli of register * register * shamt (** Shift Left Logical with Immediate. rd = rs1 << shamt[0:4] *)
-    | Srli of register * register * shamt (** Shift Right Logical with Immediate. rd = rs1 >> shamt[0:4] logical *)
-    | Srai of register * register * shamt (** Shift Right Arithmetic with Immediate. rd = rs1 >> shamt[0:4] arithmetical *)
+    | Slli of register * register * immediate12 (** Shift Left Logical with Immediate. rd = rs1 << shamt[0:4] *)
+    | Srli of register * register * immediate12 (** Shift Right Logical with Immediate. rd = rs1 >> shamt[0:4] logical *)
+    | Srai of register * register * immediate12 (** Shift Right Arithmetic with Immediate. rd = rs1 >> shamt[0:4] arithmetical *)
     | Slti of register * register * immediate12 (** Set Less Than Imm. rd = (rs1 < imm) ? 1 : 0 *)
     | Sltiu of register * register * immediate12 (** Set Less Than Imm (Unsigned) *)
     | Lb of register * register * immediate12 (** Load Byte. rd = M[rs1 + imm][0:7] *)
@@ -87,9 +84,9 @@ type instruction =
     | Ld of register * register * immediate12 (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
     | Sd of register * register * immediate12 (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
     | Addiw  of register * register * immediate12 (** Addition of Immediate Word. rd = (rs1 + imm)[31:0] *)
-    | Slliw of register * register * shamt (** Shift Left Logical with Immediate Word. rd = (rs1 << shamt)[31:0] *)
-    | Srliw of register * register * shamt (** Shift Right Logical with Immediate Word. rd = (rs1 >> shamt)[31:0] *)
-    | Sraiw of register * register * shamt (** Shift Right Arithmetic with Immediate Word. rd = (rs1 >> shamt)[31:0] *)
+    | Slliw of register * register * immediate12 (** Shift Left Logical with Immediate Word. rd = (rs1 << shamt)[31:0] *)
+    | Srliw of register * register * immediate12 (** Shift Right Logical with Immediate Word. rd = (rs1 >> shamt)[31:0] *)
+    | Sraiw of register * register * immediate12 (** Shift Right Arithmetic with Immediate Word. rd = (rs1 >> shamt)[31:0] *)
     | Addw of register * register * register (** Add Word. rd = (rs1 + rs2)[31:0] *)
     | Subw of register * register * register (** Add Word. rd = (rs1 - rs2)[31:0] *)
     | Sllw of register * register * register (** Shifl Left Logical Word. rd = (rs1 << rs2)[31:0] *)
