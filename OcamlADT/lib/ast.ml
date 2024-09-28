@@ -26,7 +26,8 @@ type unop =
   | Not (* not *)
 [@@deriving eq, show { with_path = false }]
 
-type ident = string [@@deriving eq, show { with_path = false }]
+type ident = string 
+[@@deriving eq, show { with_path = false }]
 
 type pattern =
   | Pat_any
@@ -35,7 +36,7 @@ type pattern =
   | Pat_constant of constant
   | Pat_interval of constant * constant
   | Pat_tuple of pattern list
-  | Pat_construct of ident * pattern option (**!*)
+  | Pat_construct of ident * pattern option (**!*)  
   | Pat_or of pattern * pattern
 [@@deriving eq, show { with_path = false }]
 
@@ -56,7 +57,7 @@ type expression =
   | Exp_if of expression * expression * expression option
   | Exp_let of rec_flag * value_binding list * expression
   | Exp_binop of binop * expression * expression
-  | Exp_construct of ident * expression option (**!*)
+  | Exp_construct of ident * expression option 
 [@@deriving eq, show { with_path = false }]
 
 and value_binding =
@@ -78,7 +79,8 @@ type type_expr =
 
 type structure_item =
   | Str_value of rec_flag * value_binding list
-  | Str_type of (ident * type_decl) list
+  | Str_type of (ident * type_expr) list
 [@@deriving eq, show { with_path = false }]
 
-type program = structure_item list [@@deriving eq, show { with_path = false }]
+type program = structure_item list
+ [@@deriving eq, show { with_path = false }]
