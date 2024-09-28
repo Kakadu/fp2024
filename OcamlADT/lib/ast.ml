@@ -44,30 +44,29 @@ type rec_flag =
   | Recursive
 [@@deriving eq, show { with_path = false }]
 
-type decl_expr =
+type expression =
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
-  | Exp_emptyList
   | Exp_var of ident
-  | Exp_tuple of decl_expr list (** can be changed to [expr*expr*(expr list)] **)
+  | Exp_tuple of expression list (** can be changed to [expr*expr*(expr list)] **)
   | Exp_function of case list
-  | Exp_fun of pattern list * decl_expr
-  | Exp_apply of decl_expr * decl_expr
-  | Exp_match of decl_expr * case list
-  | Exp_try of decl_expr * case list
-  | Exp_if of decl_expr * decl_expr * decl_expr option
-  | Exp_let of rec_flag * value_binding list * decl_expr
-  | Exp_binop of binop * decl_expr * decl_expr
-  | Exp_construct of decl_expr option
+  | Exp_fun of pattern list * expression
+  | Exp_apply of expression * expression
+  | Exp_match of expression * case list
+  | Exp_try of expression * case list
+  | Exp_if of expression * expression * expression option
+  | Exp_let of rec_flag * value_binding list * expression
+  | Exp_binop of binop * expression * expression
+  | Exp_construct of expression option
 [@@deriving eq, show { with_path = false }]
 
 and value_binding =
   { pat : pattern
-  ; expr : decl_expr
+  ; expr : expression
   }
 
 and case =
   { left : pattern
-  ; right : decl_expr
+  ; right : expression
   }
 
 type decl_type =
