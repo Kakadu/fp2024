@@ -3,11 +3,12 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 (** Identifier *)
-type ident = string
+type ident = string [@@deriving show { with_path = false }]
 
 type rec_flag =
   | Recursive (** Recursive value binding *)
   | Nonrecursive (** Nonrecursive value binding *)
+[@@deriving show { with_path = false }]
 
 type fmt_item =
   | Simple_string of string (** Just a string *)
@@ -15,14 +16,16 @@ type fmt_item =
   | Fmt_char (** "%c" *)
   | Fmt_int (** "%d" *)
   | Fmt_string (** "%s" *)
+[@@deriving show { with_path = false }]
 
 (** Full string for printf *)
-type fstring = fmt_item list
+type fstring = fmt_item list [@@deriving show { with_path = false }]
 
 type constant =
   | Const_integer of int (** Integer constant such as [1] *)
   | Const_char of char (** Character such as ['a'] *)
   | Const_string of string (** Constant string such as ["constant"] *)
+[@@deriving show { with_path = false }]
 
 type pattern =
   | Pat_any (** The pattern [_] *)
@@ -33,18 +36,21 @@ type pattern =
   (** [Pat_construct(C, args)] represents:
       - [C] when [args] is [None],
       - [C P] when [args] is [Some ([], P)] *)
+[@@deriving show { with_path = false }]
 
 (** [let pat = exp] *)
 type value_binding =
   { pat : pattern
   ; exp : expression
   }
+[@@deriving show { with_path = false }]
 
 (** Values of type represents [(P -> E)] *)
 and case =
   { left : pattern
   ; right : expression
   }
+[@@deriving show { with_path = false }]
 
 and expression =
   | Exp_ident of ident (** Identifier such as [x] *)
@@ -67,6 +73,7 @@ and expression =
   | Exp_sequence of expression * expression (** [E1; E2] *)
   | Exp_printf of fstring (** printf "abc %d" 52 *)
   | Exp_get (** Expressions such as [get str i] or [str.[i]] *)
+[@@deriving show { with_path = false }]
 
 type structure_item =
   | Str_eval of expression (** [E] *)
@@ -74,5 +81,6 @@ type structure_item =
   (** [Str_value(rec, [(P1, E1 ; ... ; (Pn, En))])] represents:
       - [let P1 = E1 and ... and Pn = EN] when [rec] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = EN ] when [rec] is [Recursive]. *)
+[@@deriving show { with_path = false }]
 
-type structure = structure_item list
+type structure = structure_item list [@@deriving show { with_path = false }]
