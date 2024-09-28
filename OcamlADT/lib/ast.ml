@@ -26,19 +26,17 @@ type unop =
   | Not (* not *)
 [@@deriving eq, show { with_path = false }]
 
-type decl_name =
-  | Up_name of string (* vars / functions*)
-  | Down_name of string (* types, constructors*)
+type ident = string 
 [@@deriving eq, show { with_path = false }]
 
 type pattern =
   | Pat_any
-  | Pat_var of decl_name
-  | Pat_alias of pattern * decl_name
+  | Pat_var of ident
+  | Pat_alias of pattern * ident
   | Pat_constant of constant
   | Pat_interval of constant * constant
   | Pat_tuple of pattern list
-  | Pat_construct of decl_name * pattern option (*wtf decl_name????????*)
+  | Pat_construct of ident * pattern option
 [@@deriving eq, show { with_path = false }]
 
 type rec_flag =
@@ -49,7 +47,7 @@ type rec_flag =
 type decl_expr =
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
   | Exp_emptyList
-  | Exp_var of decl_name
+  | Exp_var of ident
   | Exp_tuple of decl_expr list (** can be changed to [expr*expr*(expr list)] **)
   | Exp_function of case list
   | Exp_fun of pattern list * decl_expr
@@ -80,5 +78,5 @@ type decl_type =
   | Type_var of string
   | Type_list of decl_type
   | Type_tuple of decl_type list
-  | Type_variant of (decl_name * decl_type) list
+  | Type_variant of (ident * decl_type) list
 [@@deriving eq, show { with_path = false }]
