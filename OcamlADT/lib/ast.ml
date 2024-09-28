@@ -46,6 +46,7 @@ type rec_flag =
 [@@deriving eq, show { with_path = false }]
 
 type expression =
+  | Exp_ident of ident
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
   | Exp_var of ident
   | Exp_tuple of expression * expression * expression list
@@ -53,7 +54,6 @@ type expression =
   | Exp_fun of pattern list * expression
   | Exp_apply of expression * expression
   | Exp_match of expression * case list
-  | Exp_try of expression * case list
   | Exp_if of expression * expression * expression option
   | Exp_let of rec_flag * value_binding list * expression
   | Exp_binop of binop * expression * expression
