@@ -70,13 +70,9 @@ and case =
   ; right : expression
   }
 
-type type_decl =
-  | Type_int
-  | Type_string
-  | Type_bool
-  | Type_fun of type_decl * type_decl
-  | Type_var of string
-  | Type_list of type_decl
-  | Type_tuple of type_decl list
-  | Type_variant of (ident * type_decl) list
+type type_expr =
+  | Type_arrow of type_expr * type_expr
+  | Type_var of ident
+  | Type_tuple of type_expr * type_expr
+  | Type_construct of ident * type_expr list
 [@@deriving eq, show { with_path = false }]
