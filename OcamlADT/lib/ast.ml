@@ -39,6 +39,7 @@ type pattern =
 type rec_flag =
   | Nonrecursive
   | Recursive
+[@@deriving eq, show { with_path = false }]
 
 type decl_expr =
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
