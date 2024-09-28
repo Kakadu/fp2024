@@ -21,6 +21,11 @@ type binop =
   | Geq (* >= *)
 [@@deriving eq, show { with_path = false }]
 
+type unop =
+  | Neg (* - *)
+  | Not (* not *)
+[@@deriving eq, show { with_path = false }]
+
 type decl_name =
   | Up_name of string (* vars / functions*)
   | Down_name of string (* types, constructors*)
