@@ -31,5 +31,5 @@
   (odoc :with-doc)
   (ocamlformat :build)
   ; base
-  ; After adding dependencies to 'dune' files and the same dependecies here too
+  ; After adding dependencies to 'dune' files add the same dependecies here too
   ))
