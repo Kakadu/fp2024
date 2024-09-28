@@ -2,7 +2,7 @@
  (name REPL)
  (public_name REPL)
  (modules REPL)
- (libraries OcamlADT.Lib))
+ (libraries ocamladt_lib))
 
 (cram
  (deps ./REPL.exe %{bin:REPL}))

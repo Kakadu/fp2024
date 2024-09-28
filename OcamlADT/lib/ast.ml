@@ -26,8 +26,7 @@ type unop =
   | Not (* not *)
 [@@deriving eq, show { with_path = false }]
 
-type ident = string 
-[@@deriving eq, show { with_path = false }]
+type ident = string [@@deriving eq, show { with_path = false }]
 
 type pattern =
   | Pat_any
@@ -76,3 +75,10 @@ type type_expr =
   | Type_tuple of type_expr * type_expr
   | Type_construct of ident * type_expr list
 [@@deriving eq, show { with_path = false }]
+
+type structure_item =
+  | Str_value of rec_flag * value_binding list
+  | Str_type of (ident * type_decl) list
+[@@deriving eq, show { with_path = false }]
+
+type program = structure_item list [@@deriving eq, show { with_path = false }]
