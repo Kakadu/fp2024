@@ -75,6 +75,7 @@ type type_expr =
 [@@deriving eq, show { with_path = false }]
 
 type structure_item =
+  | Pstr_eval of expression 
   | Str_value of rec_flag * value_binding list
   | Str_type of (ident * type_expr) list
 [@@deriving eq, show { with_path = false }]
