@@ -1,4 +1,9 @@
 (executable
+<<<<<<<<< Temporary merge branch 1
+ (public_name interpret)
+ (name main)
+ (libraries))
+=========
  (name REPL)
  (public_name REPL)
  (modules REPL)
@@ -6,4 +11,4 @@
 
 (cram
  (deps ./REPL.exe %{bin:REPL}))
-
+>>>>>>>>> Temporary merge branch 2
