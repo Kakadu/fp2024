@@ -36,7 +36,8 @@ type pattern =
   | Pat_constant of constant
   | Pat_interval of constant * constant
   | Pat_tuple of pattern list
-  | Pat_construct of ident * pattern option
+  | Pat_construct of ident * pattern option (**!*)
+  | Pat_or of pattern * pattern
 [@@deriving eq, show { with_path = false }]
 
 type rec_flag =
@@ -47,7 +48,7 @@ type rec_flag =
 type expression =
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
   | Exp_var of ident
-  | Exp_tuple of expression list (** can be changed to [expr*expr*(expr list)] **)
+  | Exp_tuple of expression * expression * expression list
   | Exp_function of case list
   | Exp_fun of pattern list * expression
   | Exp_apply of expression * expression
@@ -56,7 +57,7 @@ type expression =
   | Exp_if of expression * expression * expression option
   | Exp_let of rec_flag * value_binding list * expression
   | Exp_binop of binop * expression * expression
-  | Exp_construct of expression option
+  | Exp_construct of expression option (**!*)
 [@@deriving eq, show { with_path = false }]
 
 and value_binding =
