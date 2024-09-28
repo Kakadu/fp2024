@@ -1,3 +1,7 @@
+(** Copyright 2024, qrutyy, suvorovrain *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 type constant =
   | Const_integer of int (** integer as [52] **)
   | Const_char of char (** char as ['w'] **)
