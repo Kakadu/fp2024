@@ -6,8 +6,8 @@ description: "An interpreter for Ocaml language with ADT."
 maintainer: ["Rodion Suvorov Mikhail Gavrilenko"]
 authors: ["Rodion Suvorov Mikhail Gavrilenko"]
 license: "LGPL-3.0-or-later"
-homepage: "https://github.com/qrutyy/OcamlADT"
-bug-reports: "https://github.com/qrutyy/OcamlADT"
+homepage: "https://github.com/suvorovrain/OcamlADT"
+bug-reports: "https://github.com/suvorovrain/OcamlADT"
 depends: [
   "dune" {>= "3.7"}
   "angstrom"

@@ -1,16 +1,6 @@
 (library
- (name lambda_lib)
- (public_name Lambda.Lib)
- (modules Ast Lambda Interpret Parser Printast Pprintast utils)
- (modules_without_implementation ast)
- (libraries base angstrom)
- (preprocess
-  (pps ppx_deriving.show))
- (instrumentation
-  (backend bisect_ppx)))
-
-(library
- (name ocamladt_lib)
+ (name ocamladt)
  (public_name OcamlADT.Lib)
- (preprocess (pps ppx_deriving)))
- ; lib for deriving annotations ;
+ (modules Ast)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))
