@@ -1,4 +1,14 @@
 (executable
+<<<<<<< HEAD
  (public_name interpret)
  (name main)
  (libraries))
+=======
+ (name REPL)
+ (public_name REPL)
+ (modules REPL)
+ (libraries OcamlADT.Lib))
+
+(cram
+ (deps ./REPL.exe %{bin:REPL}))
+>>>>>>> 1a4060e09caba6a5df72aeb07b7ad126753ee66b
