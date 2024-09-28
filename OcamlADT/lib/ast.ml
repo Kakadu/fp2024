@@ -76,12 +76,3 @@ type decl_type =
   | Type_tuple of decl_type list
   | Type_variant of (decl_name * decl_type) list
 [@@deriving eq, show { with_path = false }]
-
-(*
-   Example of factorial ast
-
-Exp_let(
-  rec_flag(Recursive), 
-  value_binding() здесь становится непонято
-]
-*)
