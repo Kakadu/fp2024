@@ -1,5 +1,5 @@
 (library
- (name ocamladt)
+ (name ocamladt_lib)
  (public_name OcamlADT.Lib)
  (modules Ast)
  (preprocess

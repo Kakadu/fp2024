@@ -1,4 +1,9 @@
 (executable
- (public_name interpret)
- (name main)
- (libraries))
+ (name REPL)
+ (public_name REPL)
+ (modules REPL)
+ (libraries OcamlADT.Lib))
+
+(cram
+ (deps ./REPL.exe %{bin:REPL}))
+
