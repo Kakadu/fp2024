@@ -57,7 +57,7 @@ type expression =
   | Exp_if of expression * expression * expression option
   | Exp_let of rec_flag * value_binding list * expression
   | Exp_binop of binop * expression * expression
-  | Exp_construct of expression option (**!*)
+  | Exp_construct of ident * expression option (**!*)
 [@@deriving eq, show { with_path = false }]
 
 and value_binding =
