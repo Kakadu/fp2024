@@ -32,11 +32,9 @@ type ident = string
 type pattern =
   | Pat_any
   | Pat_var of ident
-  | Pat_alias of pattern * ident
   | Pat_constant of constant
-  | Pat_interval of constant * constant
   | Pat_tuple of pattern list
-  | Pat_construct of ident * pattern option (**!*)  
+  | Pat_construct of ident * pattern option 
   | Pat_or of pattern * pattern
 [@@deriving eq, show { with_path = false }]
 
@@ -56,7 +54,6 @@ type expression =
   | Exp_match of expression * case list
   | Exp_if of expression * expression * expression option
   | Exp_let of rec_flag * value_binding list * expression
-  | Exp_binop of binop * expression * expression
   | Exp_construct of ident * expression option 
 [@@deriving eq, show { with_path = false }]
 
