@@ -6,12 +6,11 @@ description: ""
 maintainer: ["Viacheslav Sidorov, Danila Rudnev-Stepanyan"]
 authors: ["Viacheslav Sidorov, Danila Rudnev-Stepanyan"]
 license: "LGPL-3.0-or-later"
-homepage: "https://github.com/Kakadu/fp2024"
-doc: "https://kakadu.github.io/fp2024/docs/Lambda"
-bug-reports: "https://github.com/Kakadu/fp2024"
+homepage: "https://github.com/xamelllion/OcamlRV"
+doc: "https://kakadu.github.io/fp2024/docs/OcamlRV"
+bug-reports: "https://github.com/xamelllion/OcamlRV"
 depends: [
   "dune" {>= "3.7"}
-  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"

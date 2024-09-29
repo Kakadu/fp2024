@@ -10,26 +10,23 @@
 
 (maintainers "Viacheslav Sidorov, Danila Rudnev-Stepanyan")
 
-(bug_reports "https://github.com/Kakadu/fp2024")
+(bug_reports "https://github.com/xamelllion/OcamlRV")
 
-(homepage "https://github.com/Kakadu/fp2024")
+(homepage "https://github.com/xamelllion/OcamlRV")
 
 (package
- (name OcamlRV) ; FIXME and regenerate .opam file using 'dune build @install'
+ (name OcamlRV)
  (synopsis "An interpreter for mini version of Ocaml with Recursive values")
  (description
   "")
- (documentation "https://kakadu.github.io/fp2024/docs/Lambda")
+ (documentation "https://kakadu.github.io/fp2024/docs/OcamlRV")
  (version 0.1)
  (depends
   dune
-  angstrom
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
   bisect_ppx
   (odoc :with-doc)
   (ocamlformat :build)
-  ; base
-  ; After adding dependencies to 'dune' files and the same dependecies here too
   ))
