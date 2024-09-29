@@ -1,10 +1,8 @@
-(** Copyright 2021-2024, Ilia Suponev *)
+(** Copyright 2024-2027, Ilia Suponev *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-(** Identifier of variables and other definitions.
-    Valid identifier maths on regex: `[a-zA-Z_][a-zA-Z_0-9]*` or `( [a-zA-Z_][a-zA-Z_0-9]* )`
-    **)
+(** Identifier of variables and other definitions. **)
 type identifier = string [@@deriving show { with_path = false }]
 
 (** Literals of miniML **)
@@ -16,9 +14,8 @@ type literal =
 
 (** Operators for unary expressions **)
 type unary_operator =
-  | UnaryMinus (* ~- *)
-  | UnaryPlus (* ~+ *)
-  | Not (* not *)
+  | Negate (* ~- *)
+  | Positive (* ~+ *)
 [@@deriving show { with_path = false }]
 
 (** Definitions types *)
@@ -47,8 +44,8 @@ type placement =
 
 (** Operators for binary expressions **)
 type binary_operator =
-  | BinaryPlus (* + *)
-  | BinaryMinus (* - *)
+  | Add (* + *)
+  | Subtract (* - *)
   | Multiply (* * *)
   | Division (* / *)
   | And (* && *)
@@ -67,10 +64,13 @@ type expression =
   | Variable of identifier (* x | y | factorial *)
   | UnaryExpression of unary_operator * expression (* ~+(12 + x) | ~-x | not true *)
   | BinaryExpression of expression * binary_operator * expression (* 12 + 34 | 56 / x *)
-  | Apply of identifier * expression list (* factorial (n / 2) *)
-  | Tuple of expression list (* 1,2,3,x,true *)
+  | Lambda of identifier list * statement list (* fun (ids) -> (..) *)
+  | Apply of expression * statement list (* factorial (n / 2) *)
+  | Tuple of statement list (* (1,2,3,true, (let x = 5 in x)) *)
   | IfExpression of
-      expression * statement list * statement list (* if x > 0 then (..) else (..) *)
+      statement list
+      * statement list
+      * statement list (* if (let x = 5 in x > 0) then (..) else (..) *)
 [@@deriving show { with_path = false }]
 
 (** Statements of miniML **)

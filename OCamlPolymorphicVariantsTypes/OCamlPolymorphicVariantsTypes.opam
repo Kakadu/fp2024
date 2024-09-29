@@ -3,16 +3,16 @@ opam-version: "2.0"
 version: "0.1"
 synopsis: "An interpreter for miniML language"
 description:
-  "An interpreter for miniML language similar by OCaml with polymorphic variants types"
+  "An interpreter for miniML language similar to OCaml with polymorphic variants types"
 maintainer: ["Ilia Suponev"]
 authors: ["Ilia Suponev"]
 license: "LGPL-3.0-or-later"
-homepage: "https://github.com/Kakadu/fp2024"
+homepage: "https://github.com/IliaSuponeff/OCaml-PolymorphicVariantsTypes/"
 doc: "https://kakadu.github.io/fp2024/docs/OCamlPolymorphicVariantsTypes"
-bug-reports: "https://github.com/Kakadu/fp2024"
+bug-reports:
+  "https://github.com/IliaSuponeff/OCaml-PolymorphicVariantsTypes/"
 depends: [
   "dune" {>= "3.7"}
-  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"

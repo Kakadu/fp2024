@@ -1,4 +1,4 @@
-(** Copyright 2021-2024, Ilia Suponev *)
+(** Copyright 2024-2027, Ilia Suponev *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -6,7 +6,7 @@ open Miniml.Ast
 
 let () =
   let fact_ast : program =
-    ( "factorial_example.ml"
+    ( "let rec factorial n = if (n > 1) then n * factorial(n-1) else 1"
     , [ DefinitionStatement
           ( Recursive
           , Global
@@ -14,15 +14,18 @@ let () =
           , [ "n" ]
           , [ EvalStatement
                 (IfExpression
-                   ( BinaryExpression (Variable "n", Gt, Const (IntLiteral 1))
+                   ( [ EvalStatement
+                         (BinaryExpression (Variable "n", Gt, Const (IntLiteral 1)))
+                     ]
                    , [ EvalStatement
                          (BinaryExpression
                             ( Variable "n"
                             , Multiply
                             , Apply
-                                ( "factorial"
-                                , [ BinaryExpression
-                                      (Variable "n", BinaryMinus, Const (IntLiteral 1))
+                                ( Variable "factorial"
+                                , [ EvalStatement
+                                      (BinaryExpression
+                                         (Variable "n", Subtract, Const (IntLiteral 1)))
                                   ] ) ))
                      ]
                    , [ EvalStatement (Const (IntLiteral 1)) ] ))
