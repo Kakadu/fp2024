@@ -21,32 +21,6 @@ type unary_operator =
   | Not (* not *)
 [@@deriving show { with_path = false }]
 
-(** Operators for binary expressions **)
-type binary_operator =
-  | BinaryPlus (* + *)
-  | BinaryMinus (* - *)
-  | Multiply (* * *)
-  | Division (* / *)
-  | And (* && *)
-  | Or (* || *)
-  | Gt (* > *)
-  | Lt (* < *)
-  | Gte (* >= *)
-  | Lte (* <= *)
-  | Equals (* = *)
-  | Unequals (* <> *)
-[@@deriving show { with_path = false }]
-
-(** Expression of miniML **)
-type expression =
-  | Const of literal (* 123 | true | () *)
-  | Variable of identifier (* x | y | factorial *)
-  | UnaryExpression of unary_operator * expression (* ~+(12 + x) | ~-x | not true *)
-  | BinaryExpression of expression * binary_operator * expression (* 12 + 34 | 56 / x *)
-  | Apply of identifier * expression list (* factorial (n / 2) *)
-  | Tuple of expression list (* 1,2,3,x,true *)
-[@@deriving show { with_path = false }]
-
 (** Definitions types *)
 type def_type =
   | Recursive (* let rec f = e *)
@@ -71,11 +45,37 @@ type placement =
   | Inline of identifier
 [@@deriving show { with_path = false }]
 
-(** Statements of miniML **)
-type statement =
-  | EvalStatement of expression (* x + y;; *)
-  | IfStatement of
+(** Operators for binary expressions **)
+type binary_operator =
+  | BinaryPlus (* + *)
+  | BinaryMinus (* - *)
+  | Multiply (* * *)
+  | Division (* / *)
+  | And (* && *)
+  | Or (* || *)
+  | Gt (* > *)
+  | Lt (* < *)
+  | Gte (* >= *)
+  | Lte (* <= *)
+  | Equals (* = *)
+  | Unequals (* <> *)
+[@@deriving show { with_path = false }]
+
+(** Expression of miniML **)
+type expression =
+  | Const of literal (* 123 | true | () *)
+  | Variable of identifier (* x | y | factorial *)
+  | UnaryExpression of unary_operator * expression (* ~+(12 + x) | ~-x | not true *)
+  | BinaryExpression of expression * binary_operator * expression (* 12 + 34 | 56 / x *)
+  | Apply of identifier * expression list (* factorial (n / 2) *)
+  | Tuple of expression list (* 1,2,3,x,true *)
+  | IfExpression of
       expression * statement list * statement list (* if x > 0 then (..) else (..) *)
+[@@deriving show { with_path = false }]
+
+(** Statements of miniML **)
+and statement =
+  | EvalStatement of expression (* x + y;; *)
   | DefinitionStatement of
       def_type
       * placement

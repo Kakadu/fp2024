@@ -12,18 +12,19 @@ in the dune file
   $ ../bin/REPL.exe
   ("factorial_example.ml",
    [(DefinitionStatement (Recursive, Global, "factorial", ["n"],
-       [(IfStatement (
-           (BinaryExpression ((Variable "n"), Gt, (Const (IntLiteral 1)))),
-           [(EvalStatement
-               (BinaryExpression ((Variable "n"), Multiply,
-                  (Apply ("factorial",
-                     [(BinaryExpression ((Variable "n"), BinaryMinus,
-                         (Const (IntLiteral 1))))
-                       ]
-                     ))
-                  )))
-             ],
-           [(EvalStatement (Const (IntLiteral 1)))]))
+       [(EvalStatement
+           (IfExpression (
+              (BinaryExpression ((Variable "n"), Gt, (Const (IntLiteral 1)))),
+              [(EvalStatement
+                  (BinaryExpression ((Variable "n"), Multiply,
+                     (Apply ("factorial",
+                        [(BinaryExpression ((Variable "n"), BinaryMinus,
+                            (Const (IntLiteral 1))))
+                          ]
+                        ))
+                     )))
+                ],
+              [(EvalStatement (Const (IntLiteral 1)))])))
          ]
        ))
      ])
