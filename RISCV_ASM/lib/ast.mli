@@ -17,7 +17,17 @@ type register =
   | X10 (** a0 - function argument or return value *)
   | X11 (** a1 - function argument or return value *)
   | X12 (** a2 - function argument *)
-  | X13 (** a3 - function arg0ter *)
+  | X13 (** a3 - function argument *)
+  | X14 (** a4 - function argument *)
+  | X15 (** a5 - function argument *)
+  | X16 (** a6 - function argument *)
+  | X17 (** a7 - function argument *)
+  | X18 (** s2 - saved register *)
+  | X19 (** s3 - saved register *)
+  | X20 (** s4 - saved register *)
+  | X21 (** s5 - saved register *)
+  | X22 (** s6 - saved register *)
+  | X23 (** s7 - saved register *)
   | X24 (** s8 - saved register *)
   | X25 (** s9 - saved register *)
   | X26 (** s10 - saved register *)
@@ -26,7 +36,6 @@ type register =
   | X29 (** t4 - temporary *)
   | X30 (** t5 - temporary *)
   | X31 (** t6 - temporary *)
-
 
 type immediate = 
     | Immediate12 of int
@@ -148,7 +157,6 @@ type instruction =
   | Li of register * immediate32 (** Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
   
-
 (** Expression in AST *)
 type expr =
   | Instruction of instruction (** Instruction *)
