@@ -33,6 +33,9 @@ type immediate12
 (** immediate 20-bit type *)
 type immediate20
 
+(** immediate 32-bit type*)
+type immediate32
+
 type instruction =
   | Add of register * register * register (** Addition. rd = rs1 + rs2 *)
   | Sub of register * register * register (** Subtraction. rd = rs1 - rs2 *)
@@ -125,6 +128,8 @@ type instruction =
   | Remwu of register * register * register
   (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
   | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0*)
+  | Li of register * immediate32 (**Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12*)
+  
 
 (** Expression in AST *)
 type expr =
