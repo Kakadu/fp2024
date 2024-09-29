@@ -30,16 +30,15 @@ type unop =
   | Not (* not *)
 [@@deriving eq, show { with_path = false }]
 
-type ident = string [@@deriving eq, show { with_path = false }]
+type ident = string 
+[@@deriving eq, show { with_path = false }]
 
 type pattern =
   | Pat_any
   | Pat_var of ident
-  | Pat_alias of pattern * ident
   | Pat_constant of constant
-  | Pat_interval of constant * constant
   | Pat_tuple of pattern list
-  | Pat_construct of ident * pattern option (**!*)
+  | Pat_construct of ident * pattern option 
   | Pat_or of pattern * pattern
 [@@deriving eq, show { with_path = false }]
 
@@ -49,6 +48,7 @@ type rec_flag =
 [@@deriving eq, show { with_path = false }]
 
 type expression =
+  | Exp_ident of ident
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
   | Exp_var of ident
   | Exp_tuple of expression * expression * expression list
@@ -56,11 +56,9 @@ type expression =
   | Exp_fun of pattern list * expression
   | Exp_apply of expression * expression
   | Exp_match of expression * case list
-  | Exp_try of expression * case list
   | Exp_if of expression * expression * expression option
   | Exp_let of rec_flag * value_binding list * expression
-  | Exp_binop of binop * expression * expression
-  | Exp_construct of expression option (**!*)
+  | Exp_construct of ident * expression option 
 [@@deriving eq, show { with_path = false }]
 
 and value_binding =
@@ -73,20 +71,18 @@ and case =
   ; right : expression
   }
 
-type type_decl =
-  | Type_int
-  | Type_string
-  | Type_bool
-  | Type_fun of type_decl * type_decl
-  | Type_var of string
-  | Type_list of type_decl
-  | Type_tuple of type_decl list
-  | Type_variant of (ident * type_decl) list
+type type_expr =
+  | Type_arrow of type_expr * type_expr
+  | Type_var of ident
+  | Type_tuple of type_expr * type_expr
+  | Type_construct of ident * type_expr list
 [@@deriving eq, show { with_path = false }]
 
 type structure_item =
+  | Pstr_eval of expression 
   | Str_value of rec_flag * value_binding list
-  | Str_type of (ident * type_decl) list
+  | Str_type of ident * (ident * type_expr list) list
 [@@deriving eq, show { with_path = false }]
 
-type program = structure_item list [@@deriving eq, show { with_path = false }]
+type program = structure_item list
+ [@@deriving eq, show { with_path = false }]
