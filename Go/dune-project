@@ -6,9 +6,9 @@
 
 (license MIT)
 
-(authors "Karim Shakirov <karimshak06@gmail.com>" "Alexei Dmitrievtsev")
+(authors "Karim Shakirov <karimshak06@gmail.com>" "Alexei Dmitrievtsev <dmt.alex2005@gmail.com>")
 
-(maintainers "Karim Shakirov <karimshak06@gmail.com>" "Alexei Dmitrievtsev")
+(maintainers "Karim Shakirov <karimshak06@gmail.com>" "Alexei Dmitrievtsev <dmt.alex2005@gmail.com>")
 
 (bug_reports "https://github.com/kar1mgh/go-interpreter")
 
@@ -28,7 +28,6 @@
  (version 0.1)
  (depends
   dune
-  angstrom
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
@@ -37,5 +36,4 @@
   (ocamlformat :build)
   base
   )
-  (allow_empty)
 )

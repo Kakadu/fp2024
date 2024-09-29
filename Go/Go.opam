@@ -11,14 +11,19 @@ Our interpeter supports:
   - functions (including recursive and closures)
   - channels
   - goroutines"""
-maintainer: ["Karim Shakirov <karimshak06@gmail.com>" "Alexei Dmitrievtsev"]
-authors: ["Karim Shakirov <karimshak06@gmail.com>" "Alexei Dmitrievtsev"]
+maintainer: [
+  "Karim Shakirov <karimshak06@gmail.com>"
+  "Alexei Dmitrievtsev <dmt.alex2005@gmail.com>"
+]
+authors: [
+  "Karim Shakirov <karimshak06@gmail.com>"
+  "Alexei Dmitrievtsev <dmt.alex2005@gmail.com>"
+]
 license: "MIT"
 homepage: "https://github.com/kar1mgh/go-interpreter"
 bug-reports: "https://github.com/kar1mgh/go-interpreter"
 depends: [
   "dune" {>= "3.7"}
-  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"
