@@ -27,14 +27,31 @@ type register =
   | X30 (** t5 - temporary *)
   | X31 (** t6 - temporary *)
 
-(** immediate 12-bit type *)
-type immediate12
+
+type immediate = 
+    | Immediate12 of int
+    | Immediate20 of int
+    | Immediate32 of int
+    
+(** im mediate 12-bit type *)
+type immediate12 = int
 
 (** immediate 20-bit type *)
-type immediate20
+type immediate20 = int
 
 (** immediate 32-bit type*)
-type immediate32
+type immediate32 = int
+
+(** Label type *)
+type label = string
+
+type address12 =
+    | Immediate of immediate12
+    | Label of label
+
+type address20 =
+    | Immediate of immediate20
+    | Label of label
 
 type instruction =
   | Add of register * register * register (** Addition. rd = rs1 + rs2 *)
@@ -71,18 +88,18 @@ type instruction =
   (** Store Half. M[rs1 + imm][0:15] = rs2[0:15] *)
   | Sw of register * immediate12 * register
   (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
-  | Beq of register * register * immediate12
+  | Beq of register * register * address12
   (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
-  | Bne of register * register * immediate12 (** Branch !=. if (rs1 != rs2) PC += imm. *)
-  | Blt of register * register * immediate12 (** Branch <. if (rs1 < rs2) PC += imm. *)
-  | Bge of register * register * immediate12 (** Branch >=. if (rs1 >= rs2) PC += imm. *)
-  | Bltu of register * register * immediate12
+  | Bne of register * register * address12 (** Branch !=. if (rs1 != rs2) PC += imm. *)
+  | Blt of register * register * address12 (** Branch <. if (rs1 < rs2) PC += imm. *)
+  | Bge of register * register * address12 (** Branch >=. if (rs1 >= rs2) PC += imm. *)
+  | Bltu of register * register * address12
   (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
-  | Bgeu of register * register * immediate12
+  | Bgeu of register * register * address12
   (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
-  | Jal of register * immediate20
+  | Jal of register * address20
   (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
-  | Jalr of register * register * immediate12
+  | Jalr of register * register * address12
   (** Jump and Link Register. rd = PC + 4; PC = rs1 + imm *)
   | Lui of register * immediate20 (** Load Upper Immediate. rd = imm << 12 *)
   | Auipc of register * immediate20
@@ -127,14 +144,15 @@ type instruction =
   | Remw of register * register * register (** Remainder Word. rd = (rs1 % rs2)[31:0] *)
   | Remwu of register * register * register
   (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
-  | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0*)
-  | Li of register * immediate32 (**Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12*)
+  | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0 *)
+  | Li of register * immediate32 (** Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12 *)
+  | Ret (** Return. Jalr x0, x1, 0 *)
   
 
 (** Expression in AST *)
 type expr =
   | Instruction of instruction (** Instruction *)
-  | Label of string (** Label *)
+  | Label of label (** Label *)
   | Comment of string (** Comment *)
 
 (** AST is presented by a list of expressions *)
