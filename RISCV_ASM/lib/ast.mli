@@ -36,18 +36,19 @@ type register =
   | X29 (** t4 - Temporary *)
   | X30 (** t5 - Temporary *)
   | X31 (** t6 - Temporary *)
+[@@deriving eq, show { with_path = false }]
 
 (** Immediate 12-bit Type *)
-type immediate12 = int
+type immediate12 = int [@@deriving eq, show { with_path = false }]
 
 (** Immediate 20-bit Type *)
-type immediate20 = int
+type immediate20 = int [@@deriving eq, show { with_path = false }]
 
 (** Immediate 32-bit Type*)
-type immediate32 = int
+type immediate32 = int [@@deriving eq, show { with_path = false }]
 
 (** Label Type *)
-type label = string
+type label = string [@@deriving eq, show { with_path = false }]
 
 (** Address12 Type to Jump to *)
 type address12 =
@@ -58,6 +59,7 @@ type address12 =
 type address20 =
   | Immediate20 of immediate20 (** Immediate20 to Jump to*)
   | Label of label (** Label to Jump to *)
+[@@deriving eq, show { with_path = false }]
 
 type instruction =
   | Add of register * register * register (** Addition. rd = rs1 + rs2 *)
@@ -152,14 +154,16 @@ type instruction =
   (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
   | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0 *)
   | Li of register * immediate32
-  (** Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12 *)
+  (** Load Immediate. lui rd, immediate20; addi rd, rd, immediate12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
+[@@deriving eq, show { with_path = false }]
 
 (** Expression in AST *)
 type expr =
   | Instruction of instruction (** Instruction *)
   | Label of label (** Label *)
   | Comment of string (** Comment *)
+[@@deriving eq, show { with_path = false }]
 
 (** AST is Presented by a List of Expressions *)
-type ast = expr list
+type ast = expr list [@@deriving eq, show { with_path = false }]
