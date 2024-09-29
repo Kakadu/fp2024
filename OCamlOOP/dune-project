@@ -1,0 +1,32 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors "Sultanov Muhammet" "Kudrya Alexander")
+
+(maintainers "Sultanov Muhammet" "Kudrya Alexander")
+
+(bug_reports "https://github.com/VersusXX/OCamlOOP")
+
+(homepage "https://github.com/VersusXX/OCamlOOP")
+
+(package
+ (name OCamlOOP)
+ (synopsis "OCaml interpreter with object-oriented programming support")
+ (description "OCaml interpreter with object-oriented programming support")
+ (documentation "https://kakadu.github.io/fp2024/docs/OCamlOOP")
+ (version 0.1)
+ (depends
+  dune
+  angstrom
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ))
