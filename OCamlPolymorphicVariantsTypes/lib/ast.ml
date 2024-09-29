@@ -16,8 +16,8 @@ type literal =
 
 (** Operators for unary expressions **)
 type unary_operator =
-  | UnaryMinus (* ~+ *)
-  | UnaryPlus (* ~- *)
+  | UnaryMinus (* ~- *)
+  | UnaryPlus (* ~+ *)
   | Not (* not *)
 [@@deriving show { with_path = false }]
 
