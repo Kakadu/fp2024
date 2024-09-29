@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-(* [a-zA-Z_0-9] *)
 type identifier = string [@@deriving show { with_path = false }]
 
 type binary_operator =
@@ -61,10 +60,11 @@ type expression =
   | ExprIf of expression * expression * expression (* if expr1 then expr2 else expr3 *)
   | ExprMatch of expression * case list (* match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of rec_flag * binding * expression (* let x = expr1 in expr2 *)
-  | ExprApply of identifier * expression list (* fact n *)
+  | ExprApply of expression * expression (* fact n *)
   | ExprTuple of expression list (* 1, 2, 3 *)
   | ExprCons of expression * expression (* t::tl *)
   | ExprPoly of identifier * expression option (* `Tag expr *)
+  | ExprFun of identifier (* fun p -> e *)
   | ExprDefinition of
       placement
       * rec_flag

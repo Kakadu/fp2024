@@ -21,10 +21,9 @@ let () =
                   ( Mul
                   , ExprVariable "n"
                   , ExprApply
-                      ( "fact"
-                      , [ ExprBinOperation
-                            (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1))
-                        ] ) ) )
+                      ( ExprFun "fact"
+                      , ExprBinOperation
+                          (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) ) )
           ] )
     ]
   in

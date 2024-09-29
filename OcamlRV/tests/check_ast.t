@@ -8,10 +8,9 @@ SPDX-License-Identifier: LGPL-3.0-or-later
              (ExprLiteral (IntLiteral 1)))),
           (ExprLiteral (IntLiteral 1)),
           (ExprBinOperation (Mul, (ExprVariable "n"),
-             (ExprApply ("fact",
-                [(ExprBinOperation (Sub, (ExprVariable "n"),
-                    (ExprLiteral (IntLiteral 1))))
-                  ]
+             (ExprApply ((ExprFun "fact"),
+                (ExprBinOperation (Sub, (ExprVariable "n"),
+                   (ExprLiteral (IntLiteral 1))))
                 ))
              ))
           ))
