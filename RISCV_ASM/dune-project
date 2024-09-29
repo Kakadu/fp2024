@@ -6,24 +6,23 @@
 
 (license LGPL-3.0-or-later)
 
-(authors "Vyacheslav Kochergin, Roman Mukovenkov")
+(authors "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com")
 
-(maintainers "Vyacheslav Kochergin, Roman Mukovenkov")
+(maintainers "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com")
 
-(bug_reports "https://github.com/Kakadu/fp2024")
+(bug_reports "https://github.com/VyacheslavIurevich/fp2024")
 
-(homepage "https://github.com/Kakadu/fp2024")
+(homepage "https://github.com/VyacheslavIurevich/fp2024")
 
 (package
  (name RISC-V_ASM_interpreter) ; FIXME and regenerate .opam file using 'dune build @install'
  (synopsis "An interpreter for mini-language similiar to RISC-V ASM")
  (description
-  "Bitmanip and RVV supported (TODO).")
+  "An interpreter for mini-language similiar to RISC-V ASM. Bitmanip and RVV supported (TODO).")
  (documentation "https://kakadu.github.io/fp2024/docs/RISC-V_ASM_interpreter")
  (version 0.1)
  (depends
   dune
-  angstrom
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
