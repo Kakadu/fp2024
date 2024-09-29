@@ -21,9 +21,9 @@ type binary_operator =
 [@@deriving show { with_path = false }]
 
 type unary_operator =
-  | UnPlus (* + *)
-  | UnMinus (* - *)
-  | UnNeg (* not *)
+  | UnaryPlus (* + *)
+  | UnaryMinus (* - *)
+  | UnaryNeg (* not *)
 [@@deriving show { with_path = false }]
 
 type rec_flag =
