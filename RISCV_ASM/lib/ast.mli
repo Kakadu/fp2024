@@ -124,6 +124,7 @@ type instruction =
   | Remw of register * register * register (** Remainder Word. rd = (rs1 % rs2)[31:0] *)
   | Remwu of register * register * register
   (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
+  | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0*)
 
 (** Expression in AST *)
 type expr =
