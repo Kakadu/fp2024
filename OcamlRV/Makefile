@@ -1,7 +1,7 @@
-.PHONY: all run fmt lint
+.PHONY: all run fmt lint zanuda
 
 all:
-	dune build
+	dune build -j4
 
 run:
 	./_build/default/bin/main.exe
@@ -11,3 +11,7 @@ fmt:
 
 lint:
 	dune build @lint --force
+
+zanuda:
+	dune build @check @runtest -j4
+	zanuda -dir .
