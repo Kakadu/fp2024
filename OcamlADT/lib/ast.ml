@@ -55,7 +55,7 @@ type expression =
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
   | Exp_var of ident (** A variable such as [x] *)
   | Exp_tuple of expression * expression * expression list
-  (** Expressions [(E1, ..., En)] *)
+  (** Expressions [E0, E1, (E2, ..., En)] *)
   | Exp_function of case list
   (** [Exp_function ([P1; ...; Pn])] represents
       [function P1 | ... | Pn]
@@ -64,10 +64,8 @@ type expression =
   (**[Exp_fun ([P1; ...; Pn], C)] represents:
      [fun P1 ... Pn -> E]
      A function must have parameters. Invariant: [n >= 1] *)
-  | Exp_apply of expression * expression
-  (** [Pexp_apply(E0, E1]) ]
-            represents [E0 E1]
-    *)
+  | Exp_apply of expression * expression (** [Pexp_apply(E0, E1)]
+                                             represents [E0 E1] *)
   | Exp_match of expression * case list (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
   | Exp_if of expression * expression * expression option (** [if E1 then E2 else E3] *)
   | Exp_let of rec_flag * value_binding list * expression
