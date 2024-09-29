@@ -2,65 +2,62 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-(** integer registers *)
+(** Integer Registers *)
 type register =
-  | X0 (** zero - zero constant *)
-  | X1 (** ra - return address *)
-  | X2 (** sp - stack pointer *)
-  | X3 (** gp - global pointer *)
-  | X4 (** tp - thread pointer *)
-  | X5 (** t0 - temporary *)
-  | X6 (** t1 - temporary *)
-  | X7 (** t2 - temporary *)
-  | X8 (** s0/fp - saved/frame pointer *)
-  | X9 (** s1 - saved register *)
-  | X10 (** a0 - function argument or return value *)
-  | X11 (** a1 - function argument or return value *)
-  | X12 (** a2 - function argument *)
-  | X13 (** a3 - function argument *)
-  | X14 (** a4 - function argument *)
-  | X15 (** a5 - function argument *)
-  | X16 (** a6 - function argument *)
-  | X17 (** a7 - function argument *)
-  | X18 (** s2 - saved register *)
-  | X19 (** s3 - saved register *)
-  | X20 (** s4 - saved register *)
-  | X21 (** s5 - saved register *)
-  | X22 (** s6 - saved register *)
-  | X23 (** s7 - saved register *)
-  | X24 (** s8 - saved register *)
-  | X25 (** s9 - saved register *)
-  | X26 (** s10 - saved register *)
-  | X27 (** s11 - saved register *)
-  | X28 (** t3 - temporary *)
-  | X29 (** t4 - temporary *)
-  | X30 (** t5 - temporary *)
-  | X31 (** t6 - temporary *)
+  | X0 (** zero - Zero Constant *)
+  | X1 (** ra - Return Address *)
+  | X2 (** sp - Stack Pointer *)
+  | X3 (** gp - Global Pointer *)
+  | X4 (** tp - Thread Pointer *)
+  | X5 (** t0 - Temporary *)
+  | X6 (** t1 - Temporary *)
+  | X7 (** t2 - Temporary *)
+  | X8 (** s0/fp - Saved/Frame Pointer *)
+  | X9 (** s1 - Saved Register *)
+  | X10 (** a0 - Function Argument or Return Value *)
+  | X11 (** a1 - Function Argument or Return Value *)
+  | X12 (** a2 - Function Argument *)
+  | X13 (** a3 - Function Argument *)
+  | X14 (** a4 - Function Argument *)
+  | X15 (** a5 - Function Argument *)
+  | X16 (** a6 - Function Argument *)
+  | X17 (** a7 - Function Argument *)
+  | X18 (** s2 - Saved Register *)
+  | X19 (** s3 - Saved Register *)
+  | X20 (** s4 - Saved Register *)
+  | X21 (** s5 - Saved Register *)
+  | X22 (** s6 - Saved Register *)
+  | X23 (** s7 - Saved Register *)
+  | X24 (** s8 - Saved Register *)
+  | X25 (** s9 - Saved Register *)
+  | X26 (** s10 - Saved Register *)
+  | X27 (** s11 - Saved Register *)
+  | X28 (** t3 - Temporary *)
+  | X29 (** t4 - Temporary *)
+  | X30 (** t5 - Temporary *)
+  | X31 (** t6 - Temporary *)
 
-type immediate = 
-    | Immediate12 of int
-    | Immediate20 of int
-    | Immediate32 of int
-    
-(** im mediate 12-bit type *)
+(** Immediate 12-bit Type *)
 type immediate12 = int
 
-(** immediate 20-bit type *)
+(** Immediate 20-bit Type *)
 type immediate20 = int
 
-(** immediate 32-bit type*)
+(** Immediate 32-bit Type*)
 type immediate32 = int
 
-(** Label type *)
+(** Label Type *)
 type label = string
 
+(** Address12 Type to Jump to *)
 type address12 =
-    | Immediate of immediate12
-    | Label of label
+  | Immediate12 of immediate12 (** Immediate12 to Jump to*)
+  | Label of label (** Label to Jump to *)
 
+(** Address20 Type to Jump to *)
 type address20 =
-    | Immediate of immediate20
-    | Label of label
+  | Immediate20 of immediate20 (** Immediate20 to Jump to*)
+  | Label of label (** Label to Jump to *)
 
 type instruction =
   | Add of register * register * register (** Addition. rd = rs1 + rs2 *)
@@ -154,14 +151,15 @@ type instruction =
   | Remwu of register * register * register
   (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
   | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0 *)
-  | Li of register * immediate32 (** Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12 *)
+  | Li of register * immediate32
+  (** Load Immediate. lui x5, immediate20; addi x5, x5, immediate 12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
-  
+
 (** Expression in AST *)
 type expr =
   | Instruction of instruction (** Instruction *)
   | Label of label (** Label *)
   | Comment of string (** Comment *)
 
-(** AST is presented by a list of expressions *)
+(** AST is Presented by a List of Expressions *)
 type ast = expr list

@@ -1,4 +1,4 @@
 (executable
-  (name ast_factorial)
-  (public_name ast_factorial)
-  (libraries riscv_asm_interpreter_lib))
+ (name ast_factorial)
+ (public_name ast_factorial)
+ (libraries riscv_asm_interpreter_lib))
