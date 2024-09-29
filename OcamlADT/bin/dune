@@ -1,8 +1,8 @@
 (executable
- (name REPL)
- (public_name REPL)
- (modules REPL)
+ (name main)
+ (public_name main)
+ (modules main)
  (libraries ocamladt_lib))
 
 (cram
- (deps ./REPL.exe %{bin:REPL}))
+ (deps ./main.exe %{bin:main}))
