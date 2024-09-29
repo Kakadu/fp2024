@@ -1,3 +1,7 @@
+(** Copyright 2024, Rodion Suvorov, Mikhail Gavrilenko*)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 type constant =
   | Const_integer of int (** integer as [52] *)
   | Const_char of char (** char as ['w'] *)
@@ -30,6 +34,7 @@ type ident = string
 [@@deriving eq, show { with_path = false }]
 
 type pattern =
+
   | Pat_any (** The pattern [_]. *)
   | Pat_var of ident (** A variable pattern such as [x] *)
   | Pat_constant of constant
@@ -43,6 +48,7 @@ type pattern =
                                            [Some (Pat_tuple [P1; ...; Pn])]
          *)
   | Pat_or of pattern * pattern (** Pattern [P1 | P2] *)
+
 [@@deriving eq, show { with_path = false }]
 
 type rec_flag =

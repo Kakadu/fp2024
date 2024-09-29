@@ -13,17 +13,26 @@ let () =
                 Exp_fun
                   ( [ Pat_var "n" ]
                   , Exp_if
-                      ( Exp_binop (Eq, Exp_var "n", Exp_constant (Const_integer 0))
+                      ( Exp_apply
+                          ( Exp_ident "="
+                          , Exp_tuple (Exp_var "n", Exp_constant (Const_integer 0), []) )
                       , Exp_constant (Const_integer 1)
                       , Some
-                          (Exp_binop
-                             ( Mul
-                             , Exp_var "n"
-                             , Exp_apply
-                                 ( Exp_var "fact"
-                                 , Exp_binop
-                                     (Sub, Exp_var "n", Exp_constant (Const_integer 1)) )
-                             )) ) )
+                          (Exp_apply
+                             ( Exp_apply
+                                 ( Exp_ident "*"
+                                 , Exp_tuple
+                                     ( Exp_var "n"
+                                     , Exp_apply
+                                         ( Exp_ident "fact"
+                                         , Exp_apply
+                                             ( Exp_ident "-"
+                                             , Exp_tuple
+                                                 ( Exp_var "n"
+                                                 , Exp_constant (Const_integer 1)
+                                                 , [] ) ) )
+                                     , [] ) )
+                             , Exp_constant (Const_integer 1) )) ) )
             }
           ] )
     ]
