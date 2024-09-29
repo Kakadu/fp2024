@@ -1,0 +1,8 @@
+(library
+ (name ast)
+ (public_name FSharpUnitsOfMeasure.Ast)
+ (libraries base)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))
