@@ -6,7 +6,7 @@ SPDX-License-Identifier: MIT
    (Stmt_block
       [(Stmt_if (None,
           (Expr_bin_oper
-             (Bin_equal ((Expr_ident "n"), (Expr_const (Const_int 0))))),
+             (Bin_equal ((Expr_ident "n"), (Expr_const (Const_int 1))))),
           (Stmt_return (Some (Expr_const (Const_int 1)))),
           (Some (Stmt_return
                    (Some (Expr_bin_oper
