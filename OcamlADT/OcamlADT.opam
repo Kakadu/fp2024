@@ -4,10 +4,13 @@ version: "0.1"
 synopsis: "An interpreter for Ocaml language with ADT"
 description: "An interpreter for Ocaml language with ADT."
 maintainer: ["Rodion Suvorov Mikhail Gavrilenko"]
-authors: ["Rodion Suvorov Mikhail Gavrilenko"]
+authors: [
+  "Rodion Suvorov <rodion.suvorov.94@mail.ru>"
+  "Mikhail Gavrilenko <qrutyq@gmail.com>"
+]
 license: "LGPL-3.0-or-later"
-homepage: "https://github.com/suvorovrain/OcamlADT"
-bug-reports: "https://github.com/suvorovrain/OcamlADT"
+homepage: "https://github.com/qrutyy/OcamlADT"
+bug-reports: "https://github.com/qrutyy/OcamlADT"
 depends: [
   "dune" {>= "3.7"}
   "ppx_inline_test" {with-test}
