@@ -3,8 +3,14 @@ opam-version: "2.0"
 version: "0.1"
 synopsis: "OCaml interpreter with support for printf"
 description: "OCaml interpreter with support for printf"
-maintainer: ["Maxim Rodionov" "Vladimir Zaikin"]
-authors: ["Maxim Rodionov" "Vladimir Zaikin"]
+maintainer: [
+  "Maxim Rodionov <rodionov.maxim05@gmail.com>"
+  "Vladimir Zaikin <friend.zva@yandex.ru>"
+]
+authors: [
+  "Maxim Rodionov <rodionov.maxim05@gmail.com>"
+  "Vladimir Zaikin <friend.zva@yandex.ru>"
+]
 license: "LGPL-3.0-or-later"
 homepage: "https://github.com/RodionovMaxim05/OCamlPrintf"
 bug-reports: "https://github.com/RodionovMaxim05/OCamlPrintf"
