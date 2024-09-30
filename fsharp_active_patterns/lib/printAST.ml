@@ -1,4 +1,4 @@
-(** Copyright 2021-2024, Ksenia Kotelnikova, Gleb Nasretdinov *)
+(** Copyright 2024, Ksenia Kotelnikova, Gleb Nasretdinov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
