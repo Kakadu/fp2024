@@ -54,6 +54,7 @@ type label = string [@@deriving eq, show { with_path = false }]
 type address12 =
   | Immediate12 of immediate12 (** Immediate12 to Jump to*)
   | Label of label (** Label to Jump to *)
+[@@deriving eq, show { with_path = false }]
 
 (** Address20 Type to Jump to *)
 type address20 =
@@ -162,7 +163,6 @@ type instruction =
 type expr =
   | Instruction of instruction (** Instruction *)
   | Label of label (** Label *)
-  | Comment of string (** Comment *)
 [@@deriving eq, show { with_path = false }]
 
 (** AST is Presented by a List of Expressions *)

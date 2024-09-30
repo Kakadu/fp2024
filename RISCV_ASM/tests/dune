@@ -1,0 +1,3 @@
+(cram
+ (applies_to ast_factorial_test)
+ (deps ../examples/ast_factorial/ast_factorial.exe))

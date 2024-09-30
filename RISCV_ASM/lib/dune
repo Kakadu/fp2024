@@ -1,6 +1,5 @@
 (library
  (name riscv_asm_interpreter_lib)
  (public_name RISC-V_ASM_interpreter.Lib)
- (modules_without_implementation ast)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))
