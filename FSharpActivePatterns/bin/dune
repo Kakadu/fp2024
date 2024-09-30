@@ -1,0 +1,4 @@
+(executable
+ (public_name exec)
+ (name exec)
+ (libraries fsharp_active_patterns_lib))
