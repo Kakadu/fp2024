@@ -5,7 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   [(Str_value (Recursive,
       [{ pat = (Pat_var "fact");
          expr =
-         (Exp_fun ([(Pat_var "n")],
+         (Exp_fun ((Pat_var "n"), [],
             (Exp_if (
                (Exp_apply ((Exp_ident "="),
                   (Exp_tuple ((Exp_var "n"), (Exp_constant (Const_integer 0)),

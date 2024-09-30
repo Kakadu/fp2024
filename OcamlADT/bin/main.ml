@@ -11,7 +11,8 @@ let () =
         , [ { pat = Pat_var "fact"
             ; expr =
                 Exp_fun
-                  ( [ Pat_var "n" ]
+                  ( Pat_var "n"
+                  , []
                   , Exp_if
                       ( Exp_apply
                           ( Exp_ident "="
