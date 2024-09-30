@@ -48,8 +48,8 @@ and print_bin_op indent = function
   | Binary_greater -> Printf.printf "%s| Binary Greater\n" (String.make indent '-')
   | Binary_greater_or_equal ->
     Printf.printf "%s| Binary Greater Or Equal\n" (String.make indent '-')
-  | Binary_plus -> Printf.printf "%s| Binary Plus\n" (String.make indent '-')
-  | Binary_minus -> Printf.printf "%s| Binary Minus\n" (String.make indent '-')
+  | Binary_add -> Printf.printf "%s| Binary Add\n" (String.make indent '-')
+  | Binary_subtract -> Printf.printf "%s| Binary Subtract\n" (String.make indent '-')
   | Binary_multiply -> Printf.printf "%s| Binary Multiply\n" (String.make indent '-')
   | Logical_or -> Printf.printf "%s| Logical Or\n" (String.make indent '-')
   | Logical_and -> Printf.printf "%s| Logical And\n" (String.make indent '-')
