@@ -21,7 +21,7 @@ let () =
                   , Variable (Ident "n")
                   , Function_call
                       ( "factorial"
-                      , [ Bin_expr (Binary_minus, Variable (Ident "n"), Const 1.0) ] ) )
+                      , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const 1.0) ] ) )
               ] )
         ] )
   in
