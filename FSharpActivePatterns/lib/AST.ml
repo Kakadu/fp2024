@@ -11,8 +11,8 @@ type binary_operator =
   | Binary_less_or_equal
   | Binary_greater
   | Binary_greater_or_equal
-  | Binary_plus
-  | Binary_minus
+  | Binary_add
+  | Binary_subtract
   | Binary_multiply
   | Logical_or
   | Logical_and
