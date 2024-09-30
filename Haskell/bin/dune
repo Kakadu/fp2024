@@ -2,4 +2,6 @@
  (name main)
  (public_name Main)
  (modules Main)
- (libraries haskell_lib))
+ (libraries haskell_lib)
+ (instrumentation
+  (backend bisect_ppx)))

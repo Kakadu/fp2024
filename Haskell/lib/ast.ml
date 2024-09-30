@@ -2,10 +2,12 @@ type const =
   | Int of int (*18*)
   | Bool of bool (*True*)
   | Unit (* () *)
+[@@deriving show { with_path = false }]
 
 type 'a maybe =
   | Nothing (* Nothing *)
   | Just of 'a (* Just 5 *)
+[@@deriving show { with_path = false }]
 
 type tp =
   (* explicit types *)
@@ -15,6 +17,7 @@ type tp =
   | ListParam of tp (* [Int] *)
   | TupleParams of tp * tp * tp list (* (Int, Bool) *)
   | FunctionType of tp * tp list (*Int -> Bool -> (Int,Bool)*)
+[@@deriving show { with_path = false }]
 
 type binop =
   | Plus (* + *)
@@ -28,22 +31,26 @@ type binop =
   | Greater (* > *)
   | EqualityOrLess (* <= *)
   | EqualityOrGreater (* >= *)
+[@@deriving show { with_path = false }]
 
 type unop =
   | Minus (* - *)
   | Not (* not *)
+[@@deriving show { with_path = false }]
 
 type ident =
   | Ident of
       string
       * tp option (* variable's / function's name and optionally its explicit type*)
+[@@deriving show { with_path = false }]
 
 type listpat =
   | Nil (* [] *)
   | PCons of pattern * pattern list (* x:xs *)
   | PEnum of pattern * pattern list (* [x, y, z] *)
+[@@deriving show { with_path = false }]
 
-and pattern = ident option * pat (* lst@(_:xs) *)
+and pattern = ident option * pat (* lst@(_:xs) *) [@@deriving show { with_path = false }]
 
 and pat =
   | PWildcard (* _ *)
@@ -55,11 +62,13 @@ and pat =
   | PNothing (* Nothing *)
   | PNul (* $*)
   | PNode of pattern * pattern * pattern (* (x; y; z)*)
+[@@deriving show { with_path = false }]
 
 type comprehension =
   | Condition of expr (* x < 10 *)
   | Generator of (pattern * expr)
 (* x <- [1 ..] *)
+[@@deriving show { with_path = false }]
 
 and ordinarylistbld =
   | ComprehensionList of
@@ -67,11 +76,13 @@ and ordinarylistbld =
       * comprehension
       * comprehension list (* [x * y | x <- [1, 10, 100], y <- [2, 3]], y mod 2 == 0 *)
   | IncomprehensionlList of expr (* [1,2] *)
+[@@deriving show { with_path = false }]
 
 and listbld =
   | LazyList of
       expr * expr option * expr option (* [1.. ] or [1..10] or [1, 2 .. 10] or [1, 3..] *)
   | OrdList of ordinarylistbld
+[@@deriving show { with_path = false }]
 
 and binding =
   | VarsBind of
@@ -82,6 +93,7 @@ and binding =
       * pattern list
       * bindingbody
       * binding list (* f x y = x + y + z where z = 2 *)
+[@@deriving show { with_path = false }]
 
 and bindingbody =
   (* examples below are for function binding with due body *)
@@ -89,6 +101,7 @@ and bindingbody =
   (* (condition, branch) pairs*)
   (* f x | x > 0 = x | otherwise = -1 *)
   | OrdBody of expr (* f x = if x > 0 then x else -1 *)
+[@@deriving show { with_path = false }]
 
 and binary_tree_bld =
   | Nul
@@ -97,6 +110,7 @@ and binary_tree_bld =
   | Node of expr * binary_tree_bld * binary_tree_bld
 (* node is data and two 'sons' *)
 (* (x^y; $; (2; $; $)) *)
+[@@deriving show { with_path = false }]
 
 and expr =
   | Const of const
@@ -125,3 +139,4 @@ and expr =
    in
    x + y
 *)
+[@@deriving show { with_path = false }]
