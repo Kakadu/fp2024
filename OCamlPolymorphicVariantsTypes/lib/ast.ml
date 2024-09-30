@@ -18,28 +18,10 @@ type unary_operator =
   | Positive (* ~+ *)
 [@@deriving show { with_path = false }]
 
-(** Definitions types *)
-type def_type =
+(** Definitions recurcive types *)
+type recursive_type =
   | Recursive (* let rec f = e *)
   | Nonrecursive (* let f = e*)
-[@@deriving show { with_path = false }]
-
-(** Definitions visability types:
-    - Global
-    - Inline
-
-    For example
-    [example.ml]
-    - 1 |
-    - 2 |[let f = ]
-    - 3 |[  let g x = e in]
-    - 4 |[  g 10]
-    - 5 |
-
-    In example [f] is global and [g] is inline definitions *)
-type placement =
-  | Global
-  | Inline of identifier
 [@@deriving show { with_path = false }]
 
 (** Operators for binary expressions **)
@@ -58,34 +40,34 @@ type binary_operator =
   | Unequals (* <> *)
 [@@deriving show { with_path = false }]
 
-(** Expression of miniML **)
-type expression =
-  | Const of literal (* 123 | true | () *)
-  | Variable of identifier (* x | y | factorial *)
-  | UnaryExpression of unary_operator * expression (* ~+(12 + x) | ~-x | not true *)
-  | BinaryExpression of expression * binary_operator * expression (* 12 + 34 | 56 / x *)
-  | Lambda of identifier list * statement list (* fun (ids) -> (..) *)
-  | Apply of expression * statement list (* factorial (n / 2) *)
-  | Tuple of statement list (* (1,2,3,true, (let x = 5 in x)) *)
-  | IfExpression of
-      statement list
-      * statement list
-      * statement list (* if (let x = 5 in x > 0) then (..) else (..) *)
+type pattern =
+  | PVar of identifier
+  | PTuple of pattern list
 [@@deriving show { with_path = false }]
 
-(** Statements of miniML **)
+type expresssion =
+  | Const of literal (* 123 | true *)
+  | Variable of identifier (* x | factorial *)
+  | Unary of unary_operator * expresssion (* ~-123 *)
+  | Binary of expresssion * binary_operator * expresssion (* 12 + 34 | true && (x > y) *)
+  | Tuple of statement list (* (1, 2, (let x = 6 in x)) *)
+  | If of statement * statement * statement (* if x then false else true *)
+  | Lambda of pattern list * statement (* fun (x, (y,z)) -> x / (y + z) *)
+  | Apply of expresssion * statement list
+    (* factorial (n / 2) | (fun (x, (y,z)) -> x / (y + z)) (5, (2, 1)) *)
+[@@deriving show { with_path = false }]
+
 and statement =
-  | EvalStatement of expression (* x + y;; *)
-  | DefinitionStatement of
-      def_type
-      * placement
-      * identifier
-      * identifier list
-      * statement list (* let [rec] f = (..) *)
+  | EvalStatement of expresssion (* (f x) | 12 + 45; *)
+  | DefineStatement of
+      identifier * recursive_type * pattern list * statement (* let g x y = x + y in *)
+  | StatementsBlock of statement list (* (let g x = x / 2 in g y); *)
 [@@deriving show { with_path = false }]
 
-(** miniMl's program:
-    - identifier: name of file which contains minML's code
-    - statement list: global statements of program
-      **)
-type program = identifier * statement list [@@deriving show { with_path = false }]
+type struct_item =
+  | DefineItem of
+      identifier * recursive_type * pattern list * statement (* let f x = x;; *)
+  | StatementItem of statement (* if x > 0 then f x else f (-x);; *)
+[@@deriving show { with_path = false }]
+
+type program = identifier * struct_item list [@@deriving show { with_path = false }]

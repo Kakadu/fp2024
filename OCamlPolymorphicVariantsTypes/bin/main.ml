@@ -5,32 +5,33 @@
 open Miniml.Ast
 
 let () =
-  let fact_ast : program =
-    ( "let rec factorial n = if (n > 1) then n * factorial(n-1) else 1"
-    , [ DefinitionStatement
-          ( Recursive
-          , Global
-          , "factorial"
-          , [ "n" ]
-          , [ EvalStatement
-                (IfExpression
-                   ( [ EvalStatement
-                         (BinaryExpression (Variable "n", Gt, Const (IntLiteral 1)))
-                     ]
-                   , [ EvalStatement
-                         (BinaryExpression
-                            ( Variable "n"
-                            , Multiply
-                            , Apply
-                                ( Variable "factorial"
-                                , [ EvalStatement
-                                      (BinaryExpression
-                                         (Variable "n", Subtract, Const (IntLiteral 1)))
-                                  ] ) ))
-                     ]
-                   , [ EvalStatement (Const (IntLiteral 1)) ] ))
-            ] )
+  (*
+     let rec factorial n =if (n > 1) then n * factorial(n-1) else 1;;
+     factorial 5;;
+  *)
+  let factorial_ast : program =
+    ( "factorial.ml"
+    , [ DefineItem
+          ( "factorial"
+          , Recursive
+          , [ PVar "n" ]
+          , EvalStatement
+              (If
+                 ( EvalStatement (Binary (Variable "n", Gt, Const (IntLiteral 1)))
+                 , EvalStatement
+                     (Binary
+                        ( Variable "n"
+                        , Multiply
+                        , Apply
+                            ( Variable "factorial"
+                            , [ EvalStatement
+                                  (Binary (Variable "n", Subtract, Const (IntLiteral 1)))
+                              ] ) ))
+                 , EvalStatement (Const (IntLiteral 1)) )) )
+      ; StatementItem
+          (EvalStatement
+             (Apply (Variable "factorial", [ EvalStatement (Const (IntLiteral 5)) ])))
       ] )
   in
-  print_endline (show_program fact_ast)
+  print_endline (show_program factorial_ast)
 ;;
