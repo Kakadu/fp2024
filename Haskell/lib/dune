@@ -1,0 +1,5 @@
+(library
+ (name haskell_lib)
+ (public_name Haskell.Lib)
+ (modules Ast)
+ (modules_without_implementation Ast))
