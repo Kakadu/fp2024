@@ -6,11 +6,3 @@
   (flags
    (:standard -alert @deprecated -warn-error +A -w +A-4-40-42-44-70))))
 
-; (executable
-;  (name REPL)
-;  (public_name REPL)
-;  (modules REPL)
-;  (libraries lambda_lib stdio))
-
-; (cram
-;  (deps ./REPL.exe %{bin:REPL}))
