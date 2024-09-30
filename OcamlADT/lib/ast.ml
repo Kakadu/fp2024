@@ -55,15 +55,15 @@ type expression =
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
   | Exp_var of ident (** A variable such as [x] *)
   | Exp_tuple of expression * expression * expression list
-  (** Expressions [E0, E1, (E2, ..., En)] *)
-  | Exp_function of case list
-  (** [Exp_function ([P1; ...; Pn])] represents
-      [function P1 | ... | Pn]
-      Invariant: [n >= 1] *)
-  | Exp_fun of pattern list * expression
-  (**[Exp_fun ([P1; ...; Pn], C)] represents:
-     [fun P1 ... Pn -> E]
-     A function must have parameters. Invariant: [n >= 1] *)
+  (** Expressions [(E1, E2, ..., En)] *)
+  | Exp_binop of binop * expression * expression
+  | Exp_unop of unop * expression
+  | Exp_function of case * case list
+  (** [Exp_function (P1, [P2; ...; Pn])] represents
+      [function P1 | ... | Pn] *)
+  | Exp_fun of pattern * pattern list * expression
+  (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
+     [fun P1 ... Pn -> E] *)
   | Exp_apply of expression * expression (** [Pexp_apply(E0, E1)]
                                              represents [E0 E1] *)
   | Exp_match of expression * case list (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
@@ -95,9 +95,8 @@ type type_expr =
   | Type_arrow of type_expr * type_expr (** [Type_arrow(T1, T2)] represents:
                                             [T1 -> T2] *)
   | Type_var of ident
-  | Type_tuple of type_expr * type_expr
-  (** [Type_tuple([T1 ; T2])]
-      represents a product type [T1 * T2]. *)
+  | Type_tuple of type_expr * type_expr * type_expr list
+  (** [Type_tuple([T1, T2, ... Tn])] *)
   | Type_construct of ident * type_expr list
   (** [Type_constr(ident, l)] represents:
       - [tconstr]               when [l=[]],
@@ -113,7 +112,7 @@ type structure_item =
         when [rec] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = EN ]
         when [rec] is [Recursive]. *)
-  | Str_type of ident * (ident * type_expr list) list
+  | Str_type of ident * (ident * type_expr list) * (ident * type_expr list) list
   (** [Str_type(C0, [(C1, [(T11; T12; ... ; T1n_1)]); (C2, [(T21;T22; ... ; T2n_2)]); ... ;
   (Cm, [(Tm1;Tm2; ... ; Tmn_n)]) ])] represents:
 
