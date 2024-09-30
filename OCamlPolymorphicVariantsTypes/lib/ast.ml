@@ -59,14 +59,15 @@ type expresssion =
 
 and statement =
   | EvalStatement of expresssion (* (f x) | 12 + 45; *)
-  | DefineStatement of
-      identifier * recursive_type * pattern list * statement (* let g x y = x + y in *)
+  | DefineStatement of definition (* let g x y = x + y in *)
   | StatementsBlock of statement list (* (let g x = x / 2 in g y); *)
 [@@deriving show { with_path = false }]
 
+and definition = identifier * recursive_type * pattern list * statement
+[@@deriving show { with_path = false }]
+
 type struct_item =
-  | DefineItem of
-      identifier * recursive_type * pattern list * statement (* let f x = x;; *)
+  | DefineItem of definition (* let f x = x;; *)
   | StatementItem of statement (* if x > 0 then f x else f (-x);; *)
 [@@deriving show { with_path = false }]
 
