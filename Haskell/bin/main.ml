@@ -2,7 +2,7 @@ open Haskell_lib.Ast
 
 (* fac n = if n < 0 then Nothing else Just (save_fac n) where save_fac y | y == 0  = 1 | otherwise = y * save_fac (y - 1) *)
 
-let n =
+let _ =
   FunBind
     ( Ident ("fac", None) (* name of the function *)
     , (None, PIdentificator (Ident ("n", None))) (* parameter *)
