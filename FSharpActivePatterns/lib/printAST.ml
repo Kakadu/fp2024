@@ -20,7 +20,9 @@ let rec print_expr indent = function
     Printf.printf "%sTHEN BRANCH\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 4)) then_body;
     Printf.printf "%sELSE BRANCH\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 4)) else_body
+    (match else_body with
+      | Some body -> List.iter (print_expr (indent + 4)) body
+      | None -> Printf.printf "No else body")
   | Function (name, args, body) ->
     Printf.printf
       "%s| Function(%s):\n"

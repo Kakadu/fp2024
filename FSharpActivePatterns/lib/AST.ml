@@ -25,7 +25,7 @@ type expr =
   | Const of float
   | Variable of (*name*) ident
   | Bin_expr of (*oper*) binary_operator * (*fst*) expr * (*snd*) expr
-  | If_then_else of (*condition*) expr * (*then body*) expr list * (*else body*) expr list
+  | If_then_else of (*condition*) expr * (*then body*) expr list * (*else body*) expr list option
   | Function of (*name*) string option * (*args*) expr list * (*body*) expr list
   | Function_call of (*name*) string * (*args*) expr list
   | Let of (*name*) ident * (*value*) expr (* * (*body*) expr list *)
