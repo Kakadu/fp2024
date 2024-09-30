@@ -16,13 +16,13 @@ let () =
                 , Bin_expr (Binary_equal, Variable (Ident "n"), Const 0.0)
                 , Bin_expr (Binary_equal, Variable (Ident "n"), Const 1.0) )
             , [ Const 1.0 ]
-            , [ Bin_expr
+            , Some([ Bin_expr
                   ( Binary_multiply
                   , Variable (Ident "n")
                   , Function_call
                       ( "factorial"
                       , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const 1.0) ] ) )
-              ] )
+              ]) )
         ] )
   in
   let program =
