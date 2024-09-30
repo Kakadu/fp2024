@@ -6,12 +6,12 @@ description: "An interpreter for Haskell language with standard types and lazy e
 maintainer: [
     "Kostya Oreshin <koreshin67@gmail.com>"
     "Nikita Shchutskii <nshchutskiy@gmail.com>"
-    ]
+]
 authors: [
     "Kostya Oreshin <koreshin67@gmail.com>"
     "Nikita Shchutskii <nshchutskiy@gmail.com>"
 ]
-license: "LGPL-3.0-or-later"
+license: "MIT"
 homepage: "https://github.com/TerrMen/Haskell"
 bug-reports: "https://github.com/TerrMen/Haskell"
 depends: [
