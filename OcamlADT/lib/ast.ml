@@ -89,7 +89,7 @@ type structure_item =
         when [rec] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = EN ]
         when [rec] is [Recursive]. *)
-  | Str_type of ident * (ident * type_expr list) * (ident * type_expr list) list
+  | Str_adt of ident * (ident * type_expr list) * (ident * type_expr list) list
   (** [Str_type(C0, [(C1, [(T11; T12; ... ; T1n_1)]); (C2, [(T21;T22; ... ; T2n_2)]); ... ;
   (Cm, [(Tm1;Tm2; ... ; Tmn_n)]) ])] represents:
 
