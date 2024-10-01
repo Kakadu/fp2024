@@ -8,7 +8,7 @@
 
 (authors "Rodion Suvorov <rodion.suvorov.94@mail.ru>" "Mikhail Gavrilenko <qrutyq@gmail.com>")
 
-(maintainers "Rodion Suvorov Mikhail Gavrilenko")
+(maintainers "Rodion Suvorov <rodion.suvorov.94@mail.ru>" "Mikhail Gavrilenko <qrutyq@gmail.com>")
 
 (bug_reports "https://github.com/qrutyy/OcamlADT")
 
