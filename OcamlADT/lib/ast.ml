@@ -9,27 +9,6 @@ type constant =
 [@@deriving eq, show { with_path = false }]
 (* Generates fun's for equality check, string type output and removing the full path to module*)
 
-type binop =
-  | Add (* + *)
-  | Sub (* - *)
-  | Mul (* * *)
-  | Div (* / *)
-  | Eq (* = *)
-  | And (* && *)
-  | Or (* || *)
-  | Cons (* :: *)
-  | Neq (* <> *)
-  | Les (* < *)
-  | Leq (* <= *)
-  | Gre (* > *)
-  | Geq (* >= *)
-[@@deriving eq, show { with_path = false }]
-
-type unop =
-  | Neg (* - *)
-  | Not (* not *)
-[@@deriving eq, show { with_path = false }]
-
 type ident = string [@@deriving eq, show { with_path = false }]
 
 type pattern =
@@ -56,8 +35,6 @@ type expression =
   | Exp_var of ident (** A variable such as [x] *)
   | Exp_tuple of expression * expression * expression list
   (** Expressions [(E1, E2, ..., En)] *)
-  | Exp_binop of binop * expression * expression
-  | Exp_unop of unop * expression
   | Exp_function of case * case list
   (** [Exp_function (P1, [P2; ...; Pn])] represents
       [function P1 | ... | Pn] *)
