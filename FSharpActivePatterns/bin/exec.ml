@@ -8,7 +8,8 @@ open Fsharp_active_patterns_lib.PrintAST
 let () =
   let factorial =
     Function
-      ( Some "factorial"
+      ( Rec
+      , Some "factorial"
       , [ Variable (Ident "n") ]
       , [ If_then_else
             ( Bin_expr
