@@ -1,0 +1,3 @@
+(cram
+ (applies_to print_expr)
+ (deps ../bin/exec.exe))
