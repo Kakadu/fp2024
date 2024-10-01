@@ -23,10 +23,13 @@ let rec print_expr indent = function
     (match else_body with
       | Some body -> List.iter (print_expr (indent + 4)) body
       | None -> Printf.printf "No else body")
-  | Function (name, args, body) ->
+  | Function (flag, name, args, body) ->
     Printf.printf
-      "%s| Function(%s):\n"
+      "%s| %s Function(%s):\n"
       (String.make indent '-')
+      (match flag with 
+        | None -> ""
+        | Rec -> "Rec")
       (match name with
        | Some n -> n
        | None -> "Anonymous");
