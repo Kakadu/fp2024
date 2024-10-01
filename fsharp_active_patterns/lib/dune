@@ -1,4 +1,0 @@
-(library
- (name fsharp_active_patterns_lib)
- (public_name fsharp_active_patterns.Lib)
- (modules AST PrintAST))
