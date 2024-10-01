@@ -7,7 +7,7 @@ open Fsharp_active_patterns_lib.PrintAST
 
 let () =
   let factorial =
-    Function
+    Function_def
       ( Rec
       , Some "factorial"
       , [ Variable (Ident "n") ]
