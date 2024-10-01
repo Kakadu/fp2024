@@ -43,7 +43,7 @@ type expression =
      [fun P1 ... Pn -> E] *)
   | Exp_apply of expression * expression (** [Pexp_apply(E0, E1)]
                                              represents [E0 E1] *)
-  | Exp_match of expression * case list (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
+  | Exp_match of expression * case * case list (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
   | Exp_if of expression * expression * expression option (** [if E1 then E2 else E3] *)
   | Exp_let of rec_flag * value_binding list * expression
   (** [Exp_let(flag, [(P1,E1) ; ... ; (Pn,En)], E)] represents:
