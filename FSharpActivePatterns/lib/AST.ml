@@ -4,8 +4,8 @@
 
 type ident = Ident of string
 
-type literal = 
-  | Int_lt of int 
+type literal =
+  | Int_lt of int
   | Bool_lt of bool
   | String_lt of string
   | Unit_lt
@@ -28,19 +28,27 @@ type binary_operator =
   | Binary_and_bitwise
 
 type unary_operator =
-  | Unary_plus 
+  | Unary_plus
   | Unary_minus
   | Unary_negative
 
-type function_flag = 
-  | None 
+type function_flag =
+  | None
   | Rec (* recursion flag *)
 
 type expr =
   | Const of literal
   | Variable of (*name*) ident
   | Bin_expr of (*oper*) binary_operator * (*fst expr*) expr * (*snd expr*) expr
-  | If_then_else of (*condition*) expr * (*then body*) expr list * (*else body*) expr list option
-  | Function of (*special characteristic*) function_flag * (*name*) string option * (*args*) expr list * (*body*) expr list
+  | If_then_else of
+      (*condition*) expr * (*then body*) expr list * (*else body*) expr list option
+  | Function of
+      (*special characteristic*) function_flag
+      * (*name*)
+      string option
+      * (*args*)
+      expr list
+      * (*body*)
+      expr list
   | Function_call of (*name*) string * (*args*) expr list
   | Let of (*name*) ident * (*value*) expr

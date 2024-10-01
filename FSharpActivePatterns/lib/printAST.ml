@@ -7,7 +7,8 @@ open AST
 let rec print_expr indent = function
   | Const (Int_lt i) -> Printf.printf "%s| Const(Int: %d)\n" (String.make indent '-') i
   | Const (Bool_lt b) -> Printf.printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
-  | Const (String_lt s) -> Printf.printf "%s| Const(String: \"%s\")\n" (String.make indent '-') s
+  | Const (String_lt s) ->
+    Printf.printf "%s| Const(String: \"%s\")\n" (String.make indent '-') s
   | Const Unit_lt -> Printf.printf "%s| Const(Unit)\n" (String.make indent '-')
   | Variable (Ident name) ->
     Printf.printf "%s| Variable(%s)\n" (String.make indent '-') name
@@ -24,15 +25,15 @@ let rec print_expr indent = function
     List.iter (print_expr (indent + 4)) then_body;
     Printf.printf "%sELSE BRANCH\n" (String.make (indent + 2) ' ');
     (match else_body with
-      | Some body -> List.iter (print_expr (indent + 4)) body
-      | None -> Printf.printf "No else body")
+     | Some body -> List.iter (print_expr (indent + 4)) body
+     | None -> Printf.printf "No else body")
   | Function (flag, name, args, body) ->
     Printf.printf
       "%s| %s Function(%s):\n"
       (String.make indent '-')
-      (match flag with 
-        | None -> ""
-        | Rec -> "Rec")
+      (match flag with
+       | None -> ""
+       | Rec -> "Rec")
       (match name with
        | Some n -> n
        | None -> "Anonymous");
