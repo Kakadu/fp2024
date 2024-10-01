@@ -15,7 +15,7 @@
 (homepage "https://github.com/VyacheslavIurevich/fp2024")
 
 (package
- (name RISC-V_ASM_interpreter) ; FIXME and regenerate .opam file using 'dune build @install'
+ (name RISCV_ASM) ; FIXME and regenerate .opam file using 'dune build @install'
  (synopsis "An interpreter for mini-language similiar to RISC-V ASM")
  (description
   "An interpreter for mini-language similiar to RISC-V ASM. Bitmanip and RVV supported (TODO).")
