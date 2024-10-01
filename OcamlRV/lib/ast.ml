@@ -57,24 +57,16 @@ type expression =
   | ExprLiteral of literal (* 123 | true | "string" *)
   | ExprBinOperation of binary_operator * expression * expression (* 1 + 1 | 2 * 2 *)
   | ExprUnOperation of unary_operator * expression (* -x | not true *)
-  | ExprIf of expression * expression * expression (* if expr1 then expr2 else expr3 *)
+  | ExprIf of
+      expression * expression * expression option (* if expr1 then expr2 else expr3 *)
   | ExprMatch of expression * case list (* match e with p_1 -> e_1 |...| p_n -> e_n *)
-  | ExprLet of rec_flag * binding * expression (* let x = expr1 in expr2 *)
+  | ExprLet of rec_flag * pattern list * expression list (* let x = expr1 in expr2 *)
   | ExprApply of expression * expression (* fact n *)
   | ExprTuple of expression list (* 1, 2, 3 *)
   | ExprCons of expression * expression (* t::tl *)
   | ExprPoly of identifier * expression option (* `Tag expr *)
-  | ExprFun of identifier (* fun p -> e *)
-  | ExprDefinition of
-      placement
-      * rec_flag
-      * identifier
-      * identifier list
-      * expression list (* let `rec` f a b = [ some_expressions ] *)
+  | ExprFun of pattern * pattern list * expression (* fun p -> e *)
 [@@deriving show { with_path = false }]
-
-(* Used in `let` expr *)
-and binding = pattern * expression [@@deriving show { with_path = false }]
 
 (* Used in `match` expr *)
 and case = pattern * expression [@@deriving show { with_path = false }]

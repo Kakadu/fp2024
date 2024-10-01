@@ -9,21 +9,20 @@ open OCamlRV_lib.Ast
 
 let () =
   let fact_ast : program =
-    [ ExprDefinition
-        ( Global
-        , Rec
-        , "fact"
-        , [ "n" ]
+    [ ExprLet
+        ( Rec
+        , [ PLiteral (StringLiteral "fact"); PLiteral (StringLiteral "n") ]
         , [ ExprIf
               ( ExprBinOperation (Lte, ExprVariable "n", ExprLiteral (IntLiteral 1))
               , ExprLiteral (IntLiteral 1)
-              , ExprBinOperation
-                  ( Mul
-                  , ExprVariable "n"
-                  , ExprApply
-                      ( ExprFun "fact"
-                      , ExprBinOperation
-                          (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) ) )
+              , Some
+                  (ExprBinOperation
+                     ( Mul
+                     , ExprVariable "n"
+                     , ExprApply
+                         ( ExprVariable "fact"
+                         , ExprBinOperation
+                             (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) )) )
           ] )
     ]
   in
