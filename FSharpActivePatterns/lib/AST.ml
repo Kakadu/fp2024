@@ -38,11 +38,12 @@ type function_flag =
 
 type expr =
   | Const of literal
+  | Tuple of expr list
   | Variable of (*name*) ident
   | Bin_expr of (*oper*) binary_operator * (*fst expr*) expr * (*snd expr*) expr
   | If_then_else of
       (*condition*) expr * (*then body*) expr list * (*else body*) expr list option
-  | Function of
+  | Function_def of
       (*special characteristic*) function_flag
       * (*name*)
       string option
@@ -50,5 +51,7 @@ type expr =
       expr list
       * (*body*)
       expr list
+  | Function_dec of
+      (*special characteristic*) function_flag * (*name*) string * (*args*) expr list
   | Function_call of (*name*) string * (*args*) expr list
   | Let of (*name*) ident * (*value*) expr

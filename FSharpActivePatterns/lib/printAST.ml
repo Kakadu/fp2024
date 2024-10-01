@@ -10,6 +10,7 @@ let rec print_expr indent = function
   | Const (String_lt s) ->
     Printf.printf "%s| Const(String: \"%s\")\n" (String.make indent '-') s
   | Const Unit_lt -> Printf.printf "%s| Const(Unit)\n" (String.make indent '-')
+  | Tuple list -> List.iter (print_expr indent) list
   | Variable (Ident name) ->
     Printf.printf "%s| Variable(%s)\n" (String.make indent '-') name
   | Bin_expr (op, left, right) ->
@@ -27,7 +28,7 @@ let rec print_expr indent = function
     (match else_body with
      | Some body -> List.iter (print_expr (indent + 4)) body
      | None -> Printf.printf "No else body")
-  | Function (flag, name, args, body) ->
+  | Function_def (flag, name, args, body) ->
     Printf.printf
       "%s| %s Function(%s):\n"
       (String.make indent '-')
@@ -41,8 +42,19 @@ let rec print_expr indent = function
     List.iter (print_expr (indent + 4)) args;
     Printf.printf "%sBODY\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 4)) body
+  | Function_dec (flag, name, args) ->
+    Printf.printf
+      "%s| %s Function Declaration(%s):\n"
+      (String.make indent '-')
+      (match flag with
+       | None -> ""
+       | Rec -> "Rec")
+      name;
+    Printf.printf "%sARGS\n" (String.make (indent + 2) ' ');
+    List.iter (print_expr (indent + 2)) args
   | Function_call (name, args) ->
     Printf.printf "%s| Function Call(%s):\n" (String.make indent '-') name;
+    Printf.printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 2)) args
   | Let (Ident name, value) ->
     Printf.printf "%s| Let %s =\n" (String.make indent '-') name;
