@@ -18,7 +18,7 @@
  (name FSharpActivePatterns)
  (synopsis "An interpreter for F# with active patterns")
  (description
-  "FIX LATER. A longer description, for example, which are the most interesing features being supported, etc.")
+  "An interpreter for F# with supported active patterns feature (mb fix later)")
  (documentation "FIX LATER https://kakadu.github.io/fp2024/docs/Lambda")
  (version 0.1)
  (depends
