@@ -5,7 +5,10 @@
 open AST
 
 let rec print_expr indent = function
-  | Const f -> Printf.printf "%s| Const(%f)\n" (String.make indent '-') f
+  | Const (Int_lt i) -> Printf.printf "%s| Const(Int: %d)\n" (String.make indent '-') i
+  | Const (Bool_lt b) -> Printf.printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
+  | Const (String_lt s) -> Printf.printf "%s| Const(String: \"%s\")\n" (String.make indent '-') s
+  | Const Unit_lt -> Printf.printf "%s| Const(Unit)\n" (String.make indent '-')
   | Variable (Ident name) ->
     Printf.printf "%s| Variable(%s)\n" (String.make indent '-') name
   | Bin_expr (op, left, right) ->

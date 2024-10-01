@@ -5,7 +5,7 @@
 open Fsharp_active_patterns_lib.AST
 open Fsharp_active_patterns_lib.PrintAST
 
-let () =
+let() = 
   let factorial =
     Function
       ( Rec
@@ -14,20 +14,20 @@ let () =
       , [ If_then_else
             ( Bin_expr
                 ( Logical_or
-                , Bin_expr (Binary_equal, Variable (Ident "n"), Const 0.0)
-                , Bin_expr (Binary_equal, Variable (Ident "n"), Const 1.0) )
-            , [ Const 1.0 ]
+                , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
+                , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
+            , [ Const (Int_lt 1) ]
             , Some([ Bin_expr
                   ( Binary_multiply
                   , Variable (Ident "n")
                   , Function_call
                       ( "factorial"
-                      , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const 1.0) ] ) )
+                      , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1)) ] ) )
               ]) )
         ] )
   in
   let program =
-    [ Let (Ident "a", Const 10.0)
+    [ Let (Ident "a", Const (Int_lt 10))
     ; factorial
     ; Function_call ("factorial", [ Variable (Ident "a") ])
     ]

@@ -4,6 +4,12 @@
 
 type ident = Ident of string
 
+type literal = 
+  | Int_lt of int 
+  | Bool_lt of bool
+  | String_lt of string
+  | Unit_lt
+
 type binary_operator =
   | Binary_equal
   | Binary_unequal
@@ -31,7 +37,7 @@ type function_flag =
   | Rec
 
 type expr =
-  | Const of float
+  | Const of literal
   | Variable of (*name*) ident
   | Bin_expr of (*oper*) binary_operator * (*fst*) expr * (*snd*) expr
   | If_then_else of (*condition*) expr * (*then body*) expr list * (*else body*) expr list option
