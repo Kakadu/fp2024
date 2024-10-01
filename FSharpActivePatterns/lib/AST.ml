@@ -21,6 +21,11 @@ type binary_operator =
   | Binary_xor_bitwise
   | Binary_and_bitwise
 
+type unary_operator =
+  | Unary_plus 
+  | Unary_minus
+  | Unary_negative
+
 type function_flag = 
   | None 
   | Rec
