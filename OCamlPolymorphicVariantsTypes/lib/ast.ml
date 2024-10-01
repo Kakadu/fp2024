@@ -48,12 +48,12 @@ type pattern =
 type expresssion =
   | Const of literal (* 123 | true *)
   | Variable of identifier (* x | factorial *)
-  | Unary of unary_operator * expresssion (* ~-123 *)
-  | Binary of expresssion * binary_operator * expresssion (* 12 + 34 | true && (x > y) *)
+  | Unary of unary_operator * statement (* ~-123 *)
+  | Binary of statement * binary_operator * statement (* 12 + 34 | true && (x > y) *)
   | Tuple of statement list (* (1, 2, (let x = 6 in x)) *)
   | If of statement * statement * statement (* if x then false else true *)
   | Lambda of pattern list * statement (* fun (x, (y,z)) -> x / (y + z) *)
-  | Apply of expresssion * statement list
+  | Apply of statement * statement list
     (* factorial (n / 2) | (fun (x, (y,z)) -> x / (y + z)) (5, (2, 1)) *)
 [@@deriving show { with_path = false }]
 

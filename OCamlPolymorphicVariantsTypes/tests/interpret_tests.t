@@ -8,19 +8,22 @@ SPDX-License-Identifier: CC0-1.0
         (EvalStatement
            (If (
               (EvalStatement
-                 (Binary ((Variable "n"), Gt, (Const (IntLiteral 1))))),
+                 (Binary ((EvalStatement (Variable "n")), Gt,
+                    (EvalStatement (Const (IntLiteral 1)))))),
               (EvalStatement
-                 (Binary ((Variable "n"), Multiply,
-                    (Apply ((Variable "factorial"),
-                       [(EvalStatement
-                           (Binary ((Variable "n"), Subtract,
-                              (Const (IntLiteral 1)))))
-                         ]
-                       ))
+                 (Binary ((EvalStatement (Variable "n")), Multiply,
+                    (EvalStatement
+                       (Apply ((EvalStatement (Variable "factorial")),
+                          [(EvalStatement
+                              (Binary ((EvalStatement (Variable "n")),
+                                 Subtract,
+                                 (EvalStatement (Const (IntLiteral 1))))))
+                            ]
+                          )))
                     ))),
               (EvalStatement (Const (IntLiteral 1))))))));
      (StatementItem
         (EvalStatement
-           (Apply ((Variable "factorial"),
+           (Apply ((EvalStatement (Variable "factorial")),
               [(EvalStatement (Const (IntLiteral 5)))]))))
      ])

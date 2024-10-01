@@ -17,20 +17,30 @@ let () =
           , [ PVar "n" ]
           , EvalStatement
               (If
-                 ( EvalStatement (Binary (Variable "n", Gt, Const (IntLiteral 1)))
+                 ( EvalStatement
+                     (Binary
+                        ( EvalStatement (Variable "n")
+                        , Gt
+                        , EvalStatement (Const (IntLiteral 1)) ))
                  , EvalStatement
                      (Binary
-                        ( Variable "n"
+                        ( EvalStatement (Variable "n")
                         , Multiply
-                        , Apply
-                            ( Variable "factorial"
-                            , [ EvalStatement
-                                  (Binary (Variable "n", Subtract, Const (IntLiteral 1)))
-                              ] ) ))
+                        , EvalStatement
+                            (Apply
+                               ( EvalStatement (Variable "factorial")
+                               , [ EvalStatement
+                                     (Binary
+                                        ( EvalStatement (Variable "n")
+                                        , Subtract
+                                        , EvalStatement (Const (IntLiteral 1)) ))
+                                 ] )) ))
                  , EvalStatement (Const (IntLiteral 1)) )) )
       ; StatementItem
           (EvalStatement
-             (Apply (Variable "factorial", [ EvalStatement (Const (IntLiteral 5)) ])))
+             (Apply
+                ( EvalStatement (Variable "factorial")
+                , [ EvalStatement (Const (IntLiteral 5)) ] )))
       ] )
   in
   print_endline (show_program factorial_ast)
