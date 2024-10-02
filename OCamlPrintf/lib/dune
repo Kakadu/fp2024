@@ -1,0 +1,8 @@
+(library
+ (name ocaml_printf_lib)
+ (public_name OCamlPrintf.Lib)
+ (modules Ast)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
