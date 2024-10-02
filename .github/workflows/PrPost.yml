@@ -306,7 +306,7 @@ jobs:
           message-path: text.md
           message-id: docs-uploaded
           refresh-message-position: true
-          issue: ${{ env.CI_PULL_REQUEST }}
+          issue: ${{ env.PR_NUMBER }}
 
       # - name: Adding a comment from 'text.md' manually
       #   if: false
