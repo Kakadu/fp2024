@@ -89,7 +89,6 @@ and listbld =
   | LazyList of expr * expr option * expr option
   (** e.g. [[1.. ] or [1..10] or [1, 2 .. 10] or [1, 3..]] *)
   | OrdList of ordinarylistbld
-[@@deriving show { with_path = false }]
 
 and binding =
   | VarsBind of pattern * bindingbody * binding list
