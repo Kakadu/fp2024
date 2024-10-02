@@ -1,0 +1,8 @@
+(library
+ (name schemecwcc_lib)
+ (public_name SchemeCWCC.Lib)
+ (modules Ast)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord))
+ (instrumentation
+  (backend bisect_ppx)))
