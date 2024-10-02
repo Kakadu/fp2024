@@ -2,7 +2,7 @@
 opam-version: "2.0"
 version: "0.1"
 synopsis: "An interpreter for a subset of Ocaml with bidirectional records"
-description: ""
+description: "An interpreter for a subset of Ocaml with bidirectional records"
 maintainers: ["Sofya Kozyreva <k81sofia@gmail.com>" "Maksim Shipilov <shipilovmaksim05@gmail.com>"]
 authors: ["Sofya Kozyreva <k81sofia@gmail.com>" "Maksim Shipilov <shipilovmaksim05@gmail.com>"]
 license: "LGPL-3.0-or-later"
