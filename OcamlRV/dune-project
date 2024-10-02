@@ -6,9 +6,9 @@
 
 (license LGPL-3.0-or-later)
 
-(authors "Viacheslav Sidorov me@xamelllion.ru" "Danila Rudnev-Stepanyan dabzelos@gmail.com")
+(authors "Viacheslav Sidorov <me@xamelllion.ru>" "Danila Rudnev-Stepanyan <dabzelos@gmail.com>")
 
-(maintainers "Viacheslav Sidorov me@xamelllion.ru" "Danila Rudnev-Stepanyan dabzelos@gmail.com")
+(maintainers "Viacheslav Sidorov <me@xamelllion.ru>" "Danila Rudnev-Stepanyan <dabzelos@gmail.com>")
 
 (bug_reports "https://github.com/xamelllion/OcamlRV")
 
