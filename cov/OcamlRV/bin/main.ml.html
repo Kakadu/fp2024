@@ -50,9 +50,8 @@
 <a id="L26"></a><span > </span>
 <a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
-<a id="L29"></a><span > </span>
-<a id="L30"></a><span class="visited"> </span>
-<a id="L31"></a><span > </span>
+<a id="L29"></a><span class="visited"> </span>
+<a id="L30"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -87,7 +86,6 @@
 <a href="#L28">28</a>
 <a href="#L29">29</a>
 <a href="#L30">30</a>
-<a href="#L31">31</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan *)
 
@@ -100,21 +98,20 @@ open OCamlRV_lib.Ast
 
 let () =
   let fact_ast : program =
-    [ ExprDefinition
-        ( Global
-        , Rec
-        , "fact"
-        , [ "n" ]
+    [ ExprLet
+        ( Rec
+        , [ PLiteral (StringLiteral "fact"); PLiteral (StringLiteral "n") ]
         , [ ExprIf
               ( ExprBinOperation (Lte, ExprVariable "n", ExprLiteral (IntLiteral 1))
               , ExprLiteral (IntLiteral 1)
-              , ExprBinOperation
-                  ( Mul
-                  , ExprVariable "n"
-                  , ExprApply
-                      ( ExprFun "fact"
-                      , ExprBinOperation
-                          (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) ) )
+              , Some
+                  (ExprBinOperation
+                     ( Mul
+                     , ExprVariable "n"
+                     , ExprApply
+                         ( ExprVariable "fact"
+                         , ExprBinOperation
+                             (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) )) )
           ] )
     ]
   in
