@@ -58,9 +58,8 @@ and expression =
   (** Tuple expressions: [(E1, ..., En)]
       Invariant: [n >= 2] *)
   | Expr_fun of pattern * expression
-  (** Anonimous functions: [Exp_fun(P, E)] represents [fun P -> E]
-      Invariant: [n >= 1] *)
-  | Expr_let of rec_flag * val_binding list * expression option
+  (** Anonimous functions: [Exp_fun(P, E)] represents [fun P -> E] *)
+  | Expr_let of rec_flag * val_binding list * expression
   (** [Expr_let(rec_flag, [(P1, E1); ...; (Pn, En)], E)] represents:
       - [let P1 = E1 and ... and Pn = En in E] when rec_flag is Nonrecursive
       - [let rec P1 = E1 and ... and Pn = En in E] when rec_flag is Recursive
