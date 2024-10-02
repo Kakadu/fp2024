@@ -15,7 +15,7 @@ type tp =
   | TreeParam of tp (** e.g. {Int} *)
   | ListParam of tp (** e.g. "[Int]" *)
   | TupleParams of tp * tp * tp list (** e.g.  (Int, Bool) *)
-  | FunctionType of tp * tp list (** e.g. Int -> Bool -> (Int,Bool) *)
+  | FunctionType of tp * tp * tp list (** e.g. Int -> Bool -> (Int,Bool) *)
 
 type binop =
   | Plus (** + *)
