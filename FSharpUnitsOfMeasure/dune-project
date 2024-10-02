@@ -8,9 +8,15 @@
 
 (license MIT)
 
-(authors "Daniel Vlasenco" "Andrew Strelnikov")
+(authors
+ "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
+ "Andrew Strelnikov <anbrew200212@gmail.com>"
+ )
 
-(maintainers "Daniel Vlasenco" "Andrew Strelnikov")
+(maintainers
+ "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
+ "Andrew Strelnikov <anbrew200212@gmail.com>"
+ )
 
 (bug_reports "https://github.com/DronShock/FSharpUnitsOfMeasure/issues")
 
@@ -31,6 +37,4 @@
   bisect_ppx
   (odoc :with-doc)
   (ocamlformat :build)
-  ; base
-  ; After adding dependencies to 'dune' files and the same dependecies here too
   ))
