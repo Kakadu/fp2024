@@ -12,35 +12,20 @@ let () =
   let factorial_ast : program =
     ( "factorial.ml"
     , [ DefineItem
-          ( "factorial"
-          , Recursive
-          , [ PVar "n" ]
-          , EvalStatement
-              (If
-                 ( EvalStatement
-                     (Binary
-                        ( EvalStatement (Variable "n")
-                        , Gt
-                        , EvalStatement (Const (IntLiteral 1)) ))
-                 , EvalStatement
-                     (Binary
-                        ( EvalStatement (Variable "n")
-                        , Multiply
-                        , EvalStatement
-                            (Apply
-                               ( EvalStatement (Variable "factorial")
-                               , [ EvalStatement
-                                     (Binary
-                                        ( EvalStatement (Variable "n")
-                                        , Subtract
-                                        , EvalStatement (Const (IntLiteral 1)) ))
-                                 ] )) ))
-                 , EvalStatement (Const (IntLiteral 1)) )) )
-      ; StatementItem
-          (EvalStatement
-             (Apply
-                ( EvalStatement (Variable "factorial")
-                , [ EvalStatement (Const (IntLiteral 5)) ] )))
+          ( Recursive
+          , [ ( "factorial"
+              , [ PVar "n" ]
+              , If
+                  ( Binary (Variable "n", Gt, Const (IntLiteral 1))
+                  , Binary
+                      ( Variable "n"
+                      , Multiply
+                      , Apply
+                          ( Variable "factorial"
+                          , [ Binary (Variable "n", Subtract, Const (IntLiteral 1)) ] ) )
+                  , Const (IntLiteral 1) ) )
+            ] )
+      ; EvalItem (Apply (Variable "factorial", [ Const (IntLiteral 5) ]))
       ] )
   in
   print_endline (show_program factorial_ast)

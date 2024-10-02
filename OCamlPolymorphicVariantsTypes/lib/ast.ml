@@ -45,30 +45,31 @@ type pattern =
   | PTuple of pattern list
 [@@deriving show { with_path = false }]
 
-type expresssion =
+type expression =
   | Const of literal (* 123 | true *)
   | Variable of identifier (* x | factorial *)
-  | Unary of unary_operator * statement (* ~-123 *)
-  | Binary of statement * binary_operator * statement (* 12 + 34 | true && (x > y) *)
-  | Tuple of statement list (* (1, 2, (let x = 6 in x)) *)
-  | If of statement * statement * statement (* if x then false else true *)
-  | Lambda of pattern list * statement (* fun (x, (y,z)) -> x / (y + z) *)
-  | Apply of statement * statement list
+  | Unary of unary_operator * expression (* ~-123 *)
+  | Binary of expression * binary_operator * expression (* 12 + 34 | true && (x > y) *)
+  | Tuple of expression list (* (1, 2, (let x = 6 in x)) *)
+  | If of expression * expression * expression (* if x then false else true *)
+  | Lambda of pattern list * expression (* fun (x, (y,z)) -> x / (y + z) *)
+  | Apply of expression * expression list
     (* factorial (n / 2) | (fun (x, (y,z)) -> x / (y + z)) (5, (2, 1)) *)
+  | Define of definition * expression (* let <definition> in <expr>*)
+  | EpressionBlock of expression list (* (let g x = x / 2 in g y; y); *)
 [@@deriving show { with_path = false }]
 
-and statement =
-  | EvalStatement of expresssion (* (f x) | 12 + 45; *)
-  | DefineStatement of definition (* let g x y = x + y in *)
-  | StatementsBlock of statement list (* (let g x = x / 2 in g y); *)
+and value_binding = identifier * pattern list * expression
 [@@deriving show { with_path = false }]
 
-and definition = identifier * recursive_type * pattern list * statement
+and definition =
+  recursive_type
+  * value_binding list (* [rec] <identifier1> P1 = E1 and ... and <identifierN> PN = EN *)
 [@@deriving show { with_path = false }]
 
 type struct_item =
   | DefineItem of definition (* let f x = x;; *)
-  | StatementItem of statement (* if x > 0 then f x else f (-x);; *)
+  | EvalItem of expression
 [@@deriving show { with_path = false }]
 
 type program = identifier * struct_item list [@@deriving show { with_path = false }]
