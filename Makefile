@@ -6,7 +6,7 @@ deps:
 NEW_NAME=Lambda2
 copy_template:
 	@$(RM) -r $(NEW_NAME)
-	cp Lambda $(NEW_NAME) -r
+	cp -r Lambda $(NEW_NAME)
 	@$(RM) $(NEW_NAME)/DONT_REMOVE_THIS_DIRECTORY.md
 	@sed 's/(name Lambda)/(name $(NEW_NAME))/g' $(NEW_NAME)/dune-project -i
 	@sed 's/public_name Lambda/public_name $(NEW_NAME)/g' $(NEW_NAME)/lib/dune -i
