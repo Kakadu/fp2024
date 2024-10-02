@@ -14,6 +14,7 @@ type 'a maybe =
 [@@deriving qcheck, show { with_path = false }]
 
 type functype = FuncT of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
+[@@deriving show { with_path = false }]
 
 (** explicit type indication*)
 type tp =
@@ -149,6 +150,7 @@ and listbld =
   | LazyList of expr * expr option * expr option
   (** e.g. [[1.. ] or [1..2] or [1, 2 .. 2] or [1, 3..]] *)
   | OrdList of ordinarylistbld
+[@@deriving show { with_path = false }]
 
 and binding =
   | VarsDef of pattern * bindingbody * binding_list
