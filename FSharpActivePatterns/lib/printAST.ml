@@ -33,7 +33,7 @@ let rec print_expr indent expr =
       "%s| %s Function(%s):\n"
       (String.make indent '-')
       (match flag with
-       | None -> ""
+       | Nonrec -> ""
        | Rec -> "Rec")
       (match name with
        | Some n -> n
@@ -47,7 +47,7 @@ let rec print_expr indent expr =
       "%s| %s Function Declaration(%s):\n"
       (String.make indent '-')
       (match flag with
-       | None -> ""
+       | Nonrec -> ""
        | Rec -> "Rec")
       name;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
