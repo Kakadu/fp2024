@@ -7,15 +7,17 @@ type 'a maybe =
   | Nothing (** Nothing *)
   | Just of 'a (** e.g. [Just 5] *)
 
+type functype = FuncT of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
+
 (** explicit type indication*)
-type tp =
+and tp =
   | TUnit (** () *)
   | TInt (** Int *)
   | TBool (** Bool *)
   | TreeParam of tp (** e.g. [{Int}] *)
   | ListParam of tp (** e.g. [[Int]] *)
   | TupleParams of tp * tp * tp list (** e.g. [(Int, Bool)] *)
-  | FunctionType of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
+  | FunctionType of functype
 
 type binop =
   | Plus (** + *)
@@ -76,7 +78,8 @@ and listbld =
 and binding =
   | VarsBind of pattern * bindingbody * binding list
   (** e.g [x = let y = 12 in y * z where z = 5] *)
-  | FunBind of ident * pattern * pattern list * bindingbody * binding list
+  | FunBind of
+      (ident * functype option) * pattern * pattern list * bindingbody * binding list
   (** e.g [f x y = x + y + z where z = 2 ]*)
 
 (** examples below are for function binding with due body *)
