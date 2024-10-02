@@ -10,13 +10,11 @@
 
 (authors
  "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
- "Andrew Strelnikov <anbrew200212@gmail.com>"
- )
+ "Andrew Strelnikov <anbrew200212@gmail.com>")
 
 (maintainers
  "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
- "Andrew Strelnikov <anbrew200212@gmail.com>"
- )
+ "Andrew Strelnikov <anbrew200212@gmail.com>")
 
 (bug_reports "https://github.com/DronShock/FSharpUnitsOfMeasure/issues")
 
@@ -30,11 +28,9 @@
  (allow_empty)
  (depends
   dune
-  angstrom
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
   bisect_ppx
   (odoc :with-doc)
-  (ocamlformat :build)
-  ))
+  (ocamlformat :build)))
