@@ -37,13 +37,17 @@ type unop =
 (** variable's / function's name*)
 type ident = Ident of string
 
-type listpat =
-  | Nil (** "[]" *)
-  | PCons of pattern * pattern list (** e.g. x:xs *)
-  | PEnum of pattern * pattern list (** e.g.  "[x, y, z]" *)
-
 (** e.g. "lst@(_:xs) :: [Int]" *)
-and pattern = ident option * pat * tp option
+type pattern = ident option * pat * tp option
+
+and listpat =
+  | Nil (** "[]" *)
+  | PCons of pattern * listpat (** e.g. x:xs *)
+  | PEnum of pattern * pattern list (** e.g. "[x, y, z]" *)
+
+and treepat =
+  | PNul (** nul tree i.e. $ *)
+  | PNode of pattern * treepat * treepat (** tree's node i.e (x; y; z)*)
 
 and pat =
   | PWildcard (** _ *)
@@ -53,8 +57,7 @@ and pat =
   | PTuple of pattern * pattern * pattern list (** e.g. (x, y, z)*)
   | PJust of pattern (** e.g. Just x *)
   | PNothing (** e.g. Nothing *)
-  | PNul (** nul tree i.e. $ *)
-  | PNode of pattern * pattern * pattern (** tree's node i.e (x; y; z)*)
+  | PTree of treepat
 
 type comprehension =
   | Condition of expr (** e.g. x < 10 *)
