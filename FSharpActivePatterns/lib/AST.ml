@@ -39,19 +39,12 @@ type function_flag =
 type expr =
   | Const of literal
   | Tuple of expr list
-  | Variable of (*name*) ident
-  | Bin_expr of (*oper*) binary_operator * (*fst expr*) expr * (*snd expr*) expr
-  | If_then_else of
-      (*condition*) expr * (*then body*) expr list * (*else body*) expr list option
-  | Function_def of
-      (*special characteristic*) function_flag
-      * (*name*)
-      string option
-      * (*args*)
-      expr list
-      * (*body*)
-      expr list
-  | Function_dec of
-      (*special characteristic*) function_flag * (*name*) string * (*args*) expr list
-  | Function_call of (*name*) string * (*args*) expr list
-  | Let of (*name*) ident * (*value*) expr
+  | Variable of ident
+  | Bin_expr of binary_operator * expr * expr (**operator, first operand, second operand*)
+  | If_then_else of expr * expr list * expr list option
+  (**condition, then body, else body*)
+  | Function_def of function_flag * string option * expr list * expr list
+  (**rec, name, body*)
+  | Function_dec of function_flag * string * expr list (**rec, name, args*)
+  | Function_call of string * expr list (**name, args*)
+  | Let of ident * expr (**name, expr*)
