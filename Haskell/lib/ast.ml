@@ -16,6 +16,8 @@ type 'a maybe =
 type functype = FuncT of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
 [@@deriving show { with_path = false }]
 
+type functype = FuncT of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
+
 (** explicit type indication*)
 and tp =
   | TUnit (** () *)
