@@ -83,6 +83,7 @@
       let g (x : s) = x.aa
       ```
     </details>
+1. OCaml + [labelled tuples](https://github.com/ocaml/ocaml/pull/13498)
 1. F# + active patterns <details><summary>Подробнее</summary>
    * Всё, что есть в теме для  E
    * возможность описывать [активные паттерны](https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/active-patterns), которые выглядят как алгебраические конструкторы
