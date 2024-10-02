@@ -1,0 +1,8 @@
+(library
+ (name parse)
+ (public_name FSharpUnitsOfMeasure.Parse)
+ (libraries base angstrom ast)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))
