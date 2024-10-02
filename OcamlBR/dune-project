@@ -7,12 +7,10 @@
 (license LGPL-3.0-or-later)
 
 (authors
- "Sofya Kozyreva <k81sofia@gmail.com>"
- "Maksim Shipilov <shipilovmaksim05@gmail.com>")
+ "Sofya Kozyreva <k81sofia@gmail.com>" "Maksim Shipilov <shipilovmaksim05@gmail.com>")
 
 (maintainers
- "Sofya Kozyreva <k81sofia@gmail.com>"
- "Maksim Shipilov <shipilovmaksim05@gmail.com>")
+ "Sofya Kozyreva <k81sofia@gmail.com>" "Maksim Shipilov <shipilovmaksim05@gmail.com>")
 
 (bug_reports "https://github.com/sofyak0zyreva/OcamlBR")
 
