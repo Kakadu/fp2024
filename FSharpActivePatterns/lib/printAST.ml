@@ -20,7 +20,7 @@ let rec print_expr indent expr =
     print_expr (indent + 2) right
   | If_then_else (cond, then_body, else_body) ->
     printf "%s| If Then Else(\n" (String.make indent '-');
-    printf "%sCONDITION\n" (String.make indent ' ');
+    printf "%sCONDITION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) cond;
     printf "%sTHEN BRANCH\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 4)) then_body;
