@@ -207,6 +207,10 @@ jobs:
   upload_docs:
     if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
+    permissions:
+      # An attempt to workaround 'Resource not accessible by integration'
+      # while adding a comment
+      pull-requests: write
     container:
       image: kakadu18/ocaml:fp2024  # At the moment OCaml is not required (July 2024)
 
