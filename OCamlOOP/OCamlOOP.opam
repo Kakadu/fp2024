@@ -3,8 +3,8 @@ opam-version: "2.0"
 version: "0.1"
 synopsis: "OCaml interpreter with object-oriented programming support"
 description: "OCaml interpreter with object-oriented programming support"
-maintainer: ["Sultanov Muhammet" "Kudrya Alexander"]
-authors: ["Sultanov Muhammet" "Kudrya Alexander"]
+maintainer: ["Sultanov Muhammet <sultanovmmt@gmail.com>" "Kudrya Alexander <alexandr.kudrya@gmail.com>"]
+authors: ["Sultanov Muhammet <sultanovmmt@gmail.com>" "Kudrya Alexander <alexandr.kudrya@gmail.com>"]
 license: "LGPL-3.0-or-later"
 homepage: "https://github.com/VersusXX/OCamlOOP"
 doc: "https://kakadu.github.io/fp2024/docs/OCamlOOP"
