@@ -1,0 +1,6 @@
+(executable
+ (name astExample)
+ (public_name astExample)
+ (libraries ast)
+ (instrumentation
+  (backend bisect_ppx)))
