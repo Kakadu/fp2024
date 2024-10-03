@@ -12,7 +12,7 @@ let%expect_test "print double func" =
   let args = [ var ] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
   let double = Function_def (recursive, name, args, [ binary_expr ]) in
-  print_expr 0 double;
+  print_expr double;
   [%expect
     {|
     |  Function(double):
@@ -40,7 +40,7 @@ let%expect_test "print tu ple of binary operators" =
     ; Bin_expr (Binary_and_bitwise, Const (Int_lt 3), Const (Int_lt 10))
     ]
   in
-  List.iter (print_expr 0) binary_operations;
+  List.iter print_expr binary_operations;
   [%expect
     {|
     | Binary expr(

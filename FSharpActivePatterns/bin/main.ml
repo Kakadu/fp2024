@@ -35,5 +35,5 @@ let () =
     ; Function_call ("factorial", [ Variable (Ident "a") ])
     ]
   in
-  List.iter (print_expr 0) program
+  List.iter print_expr program
 ;;
