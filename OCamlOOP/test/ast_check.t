@@ -6,7 +6,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
       [{ pat = (Pat_var "factorial");
          exp =
          (Exp_function ([(Pat_var "n")],
-            (Exp_if (
+            (Exp_ifthenelse (
                (Exp_apply ((Exp_ident "<="),
                   [(Exp_ident "n"); (Exp_constant (Int 1))])),
                (Exp_constant (Int 1)),
