@@ -8,5 +8,5 @@
   (backend bisect_ppx)))
 
 (cram
- (applies_to print_expr)
+ (applies_to print_ast)
  (deps ../bin/main.exe))
