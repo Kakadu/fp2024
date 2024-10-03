@@ -11,7 +11,6 @@ doc: "https://kakadu.github.io/fp2024/docs/OCamlOOP"
 bug-reports: "https://github.com/VersusXX/OCamlOOP"
 depends: [
   "dune" {>= "3.7"}
-  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"

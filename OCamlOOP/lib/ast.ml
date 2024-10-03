@@ -16,15 +16,15 @@ type recursion_flag =
 [@@deriving show { with_path = false }]
 
 type binary_operator = 
-  | Plus (** [+]*)
-  | Minus (** [-]*)
+  | Add (** [+]*)
+  | Subt (** [-]*)
   | Mult (** [*]*)
   | Div (** [/]*)
   | Mod (** [%]*)
   | And (** [&&]*)
   | Or (** [||]*)
   | Equal (** [=]*)
-  | NotEqual (** [<>]*)
+  | NotEqual (** [!>]*)
   | LessThan (** [<]*)
   | LessEqual (** [<=]*)
   | GreaterThan (** [>]*)
