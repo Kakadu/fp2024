@@ -1,4 +1,6 @@
 (executable
- (public_name exec)
- (name exec)
- (libraries fsharp_active_patterns_lib))
+ (public_name main)
+ (name main)
+ (libraries FSharpActivePatterns)
+ (instrumentation
+  (backend bisect_ppx)))

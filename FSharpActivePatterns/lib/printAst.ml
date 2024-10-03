@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open AST
+open Ast
 
 let rec print_expr indent expr =
   let open Printf in

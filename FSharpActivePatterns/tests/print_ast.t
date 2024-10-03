@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
  
-  $ ../bin/exec.exe
+  $ ../bin/main.exe
   | Let a =
   --| Const(Int: 10)
   | Rec Function(factorial):

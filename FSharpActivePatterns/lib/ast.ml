@@ -43,7 +43,8 @@ type expr =
   | Bin_expr of binary_operator * expr * expr (**operator, first operand, second operand*)
   | If_then_else of expr * expr list * expr list option
   (**condition, then body, else body*)
-  | Function_def of recursive * string option * expr list * expr list (**rec, name, body*)
+  | Function_def of recursive * string option * expr list * expr list
+  (**rec, name, args, body*)
   | Function_dec of recursive * string * expr list (**rec, name, args*)
   | Function_call of string * expr list (**name, args*)
   | Let of ident * expr (**name, expr*)

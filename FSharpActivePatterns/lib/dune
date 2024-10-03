@@ -1,4 +1,8 @@
 (library
- (name fsharp_active_patterns_lib)
- (public_name FSharpActivePatterns.Lib)
- (modules AST PrintAST))
+ (name FSharpActivePatterns)
+ (public_name FSharpActivePatterns)
+ (modules Ast PrintAst)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))
