@@ -9,7 +9,7 @@ let rec print_expr indent expr =
   match expr with
   | Const (Int_lt i) -> printf "%s| Const(Int: %d)\n" (String.make indent '-') i
   | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
-  | Const (String_lt s) -> printf "%s| Const(String: \"%S\")\n" (String.make indent '-') s
+  | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
   | Tuple list -> List.iter (print_expr indent) list
   | Variable (Ident name) -> printf "%s| Variable(%s)\n" (String.make indent '-') name
