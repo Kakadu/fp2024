@@ -42,7 +42,6 @@ type constant =
   | Bool of bool (** Boolean constant such as [true] or [false] *)
   | String of string (** String constant such as ["Hello, World!"] *)
   | Char of char (** Char constant such as ['a'] *)
-  | Null (** Null constant *)
 [@@deriving show { with_path = false }]
 
 type pattern =
