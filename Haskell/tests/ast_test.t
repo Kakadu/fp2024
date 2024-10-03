@@ -1,3 +1,6 @@
+Copyright 2024, Kostya Oreshin and Nikita Shchutskii
+SPDX-License-Identifier: MIT
+
   $ ../bin/main.exe
   (FunBind (((Ident "fac"), None), (None, (PIdentificator (Ident "n")), None),
      [],

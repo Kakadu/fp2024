@@ -1,3 +1,7 @@
+(** Copyright 2024, Kostya Oreshin and Nikita Shchutskii *)
+
+(** SPDX-License-Identifier: MIT *)
+
 type const =
   | Int of int (** e.g. [18] *)
   | Bool of bool (** e.g. [True] *)
@@ -113,7 +117,7 @@ and expression =
   | Identificator of ident (** e.g  [x] *)
   | TupleBld of expr * expr * expr list (** e.g  [(1+3, f x)] *)
   | OptionBld of expr maybe (** e.g  [Just (f x)] *)
-  | ListBld of expr list (** e.g [[(2 ^ 2 - 3) ..]] *)
+  | ListBld of listbld (** e.g [[(2 ^ 2 - 3) ..]] *)
   | Binop of expr * binop * expr (** e.g [1 > 0] *)
   | Unop of unop * expr (** e.g [(-1)] *)
   | IfThenEsle of expr * expr * expr (** e.g [if x >= 0 then x else (-x)] *)
