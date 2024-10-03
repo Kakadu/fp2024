@@ -4,4 +4,4 @@
 
 open Ast
 
-val print_expr : int -> expr -> unit
+val print_expr : expr -> unit
