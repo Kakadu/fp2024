@@ -1,0 +1,3 @@
+(cram
+ (applies_to factorialAstTest)
+ (deps ../../bin/main.exe))
