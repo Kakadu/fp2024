@@ -42,16 +42,6 @@ let rec print_expr indent expr =
     List.iter (print_expr (indent + 4)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 4)) body
-  | Function_dec (flag, name, args) ->
-    printf
-      "%s| %s Function Declaration(%s):\n"
-      (String.make indent '-')
-      (match flag with
-       | Nonrec -> ""
-       | Rec -> "Rec")
-      name;
-    printf "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 2)) args
   | Function_call (name, args) ->
     printf "%s| Function Call(%s):\n" (String.make indent '-') name;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
@@ -59,6 +49,12 @@ let rec print_expr indent expr =
   | Let (Ident name, value) ->
     printf "%s| Let %s =\n" (String.make indent '-') name;
     print_expr (indent + 2) value
+  | LetIn (Ident name, value, inner_expr) ->
+    printf "%s | LetIn %s =\n" (String.make indent '-') name;
+    printf "%sVALUE\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) value;
+    printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) inner_expr
 
 and print_bin_op indent bin_op =
   let open Printf in
