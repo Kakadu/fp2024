@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 
   $ ../bin/astExample.exe
   ("factorial",
-   { args = [(["n"], Type_int)]; return_types = (Only_types [Type_int]);
+   { args = [("n", Type_int)]; return_types = (Some (Only_types [Type_int]));
      body =
      [(Stmt_if (None,
          (Expr_bin_oper (Bin_equal, (Expr_ident "n"),

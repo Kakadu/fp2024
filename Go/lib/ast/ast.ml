@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+type size = int [@@deriving show { with_path = false }]
+
 (** Data types *)
 type type' =
   | Type_int (** Integer type: [int] *)
@@ -13,8 +15,6 @@ type type' =
       Empty lists mean that there is no arguments or return values *)
   | Type_chan of type' (** Channel type [chan int] *)
 [@@deriving show { with_path = false }]
-
-and size = int [@@deriving show { with_path = false }]
 
 (** Constants, a.k.a. literals *)
 type const =
@@ -50,6 +50,15 @@ type unary_oper =
   | Unary_minus (** Unary minus: [-]*)
 [@@deriving show { with_path = false }]
 
+(** Constructors for possible return constructions of a function.
+    Invariant: sizes of all lists are >= 1 *)
+type return_values =
+  | Only_types of type' list (** i.e.  [(int, bool, string)], [int]*)
+  | Ident_and_types of (ident * type') list
+  (** i.e.  [(a int, b string)], [(a , b int, c string)].
+      The second example will be processed at parsing as [(a int, b int, c string)] *)
+[@@deriving show { with_path = false }]
+
 (** Expressions that can be assigned to a variable or put in "if" statement *)
 type expr =
   | Expr_nil (** A value of an unitialized channel or function: [nil] *)
@@ -73,24 +82,17 @@ type expr =
     [func(a, b int) (sum int) { sum = a + b; return }]
     [func(s1 string, s2 string) [2]string { return [2]string{s1,s2} }] *)
 and anon_func =
-  { args : (ident list * type') list
+  { args : (ident * type') list
   (** Function arguments constructions such as:
       [func(a int, b string) ...],
       [func(a, b int, c string) ...].
       Empty list means that function doesn't take any arguments.
-      Invariant: ident list's size is >= 1 *)
-  ; return_types : return_values (** See return_values type *)
+      The second example will be processed at parsing
+      as [func(a int, b int, c string) ...] *)
+  ; return_types : return_values option
+  (** None if function doesn't return anything. See return_values type *)
   ; body : block (** function body *)
   }
-[@@deriving show { with_path = false }]
-
-(** Constructors for possible return constructions of a function.
-    Invariant: sizes of all lists are >= 1 *)
-and return_values =
-  | No_return_values
-  | Only_types of type' list (** i.e.  [(int, bool, string)], [int]*)
-  | Ident_all_types of (ident * type') list (** i.e.  [(a int, b string]*)
-  | Ident_one_type of (ident list * type') list (** i.e. [(a, b int, c string)]*)
 [@@deriving show { with_path = false }]
 
 (** function calls such as:
@@ -140,17 +142,19 @@ and stmt =
 (** Block of statements in curly braces *)
 and block = stmt list [@@deriving show { with_path = false }]
 
-(** Variable declarations such as:
-    [var my_int1, my_int2 int],
-    [var my_func = func() {}],
-    [var a, b = 1 + 2, "3"]
-    [var my_array = [3]int{1, 2, 3}],
-    [flag := true] - the last works only inside of a function body.
-    The first parameter represents type of the declared variables.
-    The second parameter represents pairs of variable identificators
-    and the values assigned to them. Invariant: size of the list is >= 1
-    and expr in all pair either Some or None *)
-and var_decl = type' option * (ident * expr option) list
+(** Variable declarations *)
+and var_decl =
+  | Decl_no_init of type' * ident list
+  (** Declarations without initialization such as [var my_int1, my_int2 int].
+      Invariant: size of the list is >= 1 *)
+  | Decl_with_init of type' option * (ident * expr) list
+  (** Declarations with initialization such as:
+      [var my_func func() = func() {}],
+      [var a int, b int = 1, 2],
+      [var a, b int = 1, 2],
+      [var a, b = 1 + 2, "3"],
+      [flag, count := true, 0].
+      Invariant: size of the list is >= 1 *)
 [@@deriving show { with_path = false }]
 
 (** Function declarations such as:
