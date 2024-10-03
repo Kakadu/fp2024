@@ -1,5 +1,5 @@
-open FSharpActivePatterns.Ast
-open FSharpActivePatterns.PrintAst
+open! FSharpActivePatterns.Ast
+open! FSharpActivePatterns.PrintAst
 
 let%expect_test "print double func" =
   let recursive = Nonrec in
