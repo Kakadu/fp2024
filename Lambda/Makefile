@@ -42,7 +42,7 @@ test_coverage: coverage
 coverage:
 	$(RM) -r $(TEST_COV_D)
 	mkdir -p $(TEST_COV_D)
-	BISECT_FILE=$(TEST_COV_D)/langauge dune runtest --no-print-directory \
+	BISECT_FILE=$(TEST_COV_D)/language dune runtest --no-print-directory \
           --instrument-with bisect_ppx --force
 	bisect-ppx-report html $(COVERAGE_OPTS)
 	bisect-ppx-report summary $(COVERAGE_OPTS)
