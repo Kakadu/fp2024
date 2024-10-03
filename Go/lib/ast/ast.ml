@@ -8,8 +8,9 @@ type type' =
   | Type_string (** String type: [string] *)
   | Type_bool (** Boolean type: [bool] *)
   | Type_array of type' * size (** Array types such as [[6]int], [[0]string] *)
-  | Type_func of type' list option * type' list option
-  (** Function types such as [func()], [func(string) (bool, int)] *)
+  | Type_func of type' list * type' list
+  (** Function types such as [func()], [func(string) (bool, int)].
+      Empty lists mean that there is no arguments or return values *)
   | Type_chan of type' (** Channel type [chan int] *)
 [@@deriving show { with_path = false }]
 
@@ -53,7 +54,10 @@ type unary_oper =
 type expr =
   | Expr_nil (** A value of an unitialized channel or function: [nil] *)
   | Expr_const of const (** Constants such as [5], ["hi"], [false] *)
-  | Expr_array of type' * expr list option (** Arrays such as [[3]int{3, get_four()}] *)
+  | Expr_array of type' * expr list
+  (** Arrays such as [[3]int{3, get_four()}]. Empty list means that there is
+      no initializers, array will be filled with default values
+      ([0] for int, [""] for string and [false] for bool arrays) *)
   | Expr_ident of ident (** An identificator for a variable such as [x] *)
   | Expr_index of expr * expr
   (** An access to an array element by its index such as: [my_array[i]], [get_array(1)[0]]*)
@@ -69,39 +73,54 @@ type expr =
     [func(a, b int) (sum int) { sum = a + b; return }]
     [func(s1 string, s2 string) [2]string { return [2]string{s1,s2} }] *)
 and anon_func =
-  { args : (ident * type' option) list option (** arguments *)
-  ; return_types : (ident option * type' option) list option
-  (** return types, optional var names *)
-  ; body : stmt option (** function body *)
+  { args : (ident list * type') list
+  (** Function arguments constructions such as:
+      [func(a int, b string) ...],
+      [func(a, b int, c string) ...].
+      Empty list means that function doesn't take any arguments.
+      Invariant: ident list's size is >= 1 *)
+  ; return_types : return_values (** See return_values type *)
+  ; body : block (** function body *)
   }
+[@@deriving show { with_path = false }]
+
+(** Constructors for possible return constructions of a function.
+    Invariant: sizes of all lists are >= 1 *)
+and return_values =
+  | No_return_values
+  | Only_types of type' list (** i.e.  [(int, bool, string)], [int]*)
+  | Ident_all_types of (ident * type') list (** i.e.  [(a int, b string]*)
+  | Ident_one_type of (ident list * type') list (** i.e. [(a, b int, c string)]*)
 [@@deriving show { with_path = false }]
 
 (** function calls such as:
     [my_func(arg1, arg2)],
     [c()()()],
-    [func() { println("hello") }()] *)
-and func_call = expr * expr list option [@@deriving show { with_path = false }]
+    [func() { println("hello") }()].
+    Empty list means that function doesn't take any arguments *)
+and func_call = expr * expr list [@@deriving show { with_path = false }]
 
 (** Statement, a syntactic unit of imperative programming *)
 and stmt =
   | Stmt_var_decl of var_decl (** See var_decl type *)
-  | Stmt_assign of ident list * expr list
-  (** Assignment to a variable such as [a = 3], [a, b = 4, 5] *)
+  | Stmt_assign of (ident * expr) list
+  (** Assignment to a variable such as [a = 3], [a, b = 4, 5].
+      Invariant: size of the list >= 1 *)
   | Stmt_incr of ident (** An increment of a variable: [a++] *)
   | Stmt_decr of ident (** A decrement of a variable: [a--] *)
-  | Stmt_if of stmt option * expr * stmt option * stmt option
+  | Stmt_if of stmt option * expr * block * block option
   (** An if statement such as:
       [if a := 5; a >= 4 {
           do()
       } else {
           do_else()
       }] *)
-  | Stmt_for of stmt option * expr option * stmt option * stmt option
+  | Stmt_for of stmt option * expr option * stmt option * block
   (** A for statement such as:
       [for i := 0; i < n; i++ {
           do()
       }] *)
-  | Stmt_range of ident * ident option * expr * stmt option
+  | Stmt_range of ident * ident option * expr * block
   (** For with range statement such as:
       [for i, elem := range array {
           check(elem)
@@ -110,7 +129,7 @@ and stmt =
   | Stmt_continue (** Continue statement: [continue] *)
   | Stmt_return of expr option
   (** Return statement such as [return some_expr] or [return] *)
-  | Stmt_block of stmt list (** Block of statements in curly braces *)
+  | Stmt_block of block (** See block type *)
   | Stmt_chan_send of ident * expr (** Channel send operation [c <- true] *)
   | Stmt_chan_recieve of ident * expr (** Channel recieve operation [z := <-c] *)
   | Stmt_call of func_call (** See func_call type *)
@@ -118,17 +137,20 @@ and stmt =
   | Stmt_go of func_call (** See func_call type *)
 [@@deriving show { with_path = false }]
 
+(** Block of statements in curly braces *)
+and block = stmt list [@@deriving show { with_path = false }]
+
 (** Variable declarations such as:
     [var my_int1, my_int2 int],
     [var my_func = func() {}],
     [var a, b = 1 + 2, "3"]
     [var my_array = [3]int{1, 2, 3}],
-    [flag := true] - the last works only inside of a function body *)
-and var_decl =
-  { var_name : ident list (** variables names *)
-  ; var_type : type' option (** variables data type, optional *)
-  ; init : expr list option (** variables initializers, optional *)
-  }
+    [flag := true] - the last works only inside of a function body.
+    The first parameter represents type of the declared variables.
+    The second parameter represents pairs of variable identificators
+    and the values assigned to them. Invariant: size of the list is >= 1
+    and expr in all pair either Some or None *)
+and var_decl = type' option * (ident * expr option) list
 [@@deriving show { with_path = false }]
 
 (** Function declarations such as:
