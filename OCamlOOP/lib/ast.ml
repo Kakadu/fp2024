@@ -65,7 +65,7 @@ type expression =
       - [let rec P1 = E1 and ... and Pn = EN in E] when [flag] is [Recursive]. *)
   | Exp_unary of unary_operator * expression (** Unary operators such as [-E], [not E] *)
   | Exp_binary of expression * binary_operator * expression (** Binary operators such as [E1 + E2], [E1 && E2] *)
-  | Exp_if of expression * expression * expression option (** [if E1 then E2 else E3] *)
+  | Exp_ifthenelse of expression * expression * expression option (** [if E1 then E2 else E3] *)
   | Exp_tuple of expression list (** Tuples such as [(E1, ..., En)] *)
   | Exp_function of pattern list * expression (** Function such as [fun P -> E] *)
   | Exp_apply of expression * expression list
