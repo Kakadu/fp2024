@@ -13,9 +13,7 @@ let () =
                 Exp_function
                   ( [ Pat_var "n" ]
                   , Exp_ifthenelse
-                      ( Exp_apply
-                          ( Exp_ident "<="
-                          , [ Exp_ident "n"; Exp_constant (Int 1) ] )
+                      ( Exp_apply (Exp_ident "<=", [ Exp_ident "n"; Exp_constant (Int 1) ])
                       , Exp_constant (Int 1)
                       , Some
                           (Exp_apply
@@ -25,9 +23,7 @@ let () =
                                    ( Exp_ident "factorial"
                                    , [ Exp_apply
                                          ( Exp_ident "-"
-                                         , [ Exp_ident "n"
-                                           ; Exp_constant (Int 1)
-                                           ] )
+                                         , [ Exp_ident "n"; Exp_constant (Int 1) ] )
                                      ] )
                                ] )) ) )
             }
