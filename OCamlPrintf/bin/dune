@@ -1,0 +1,7 @@
+(executable
+ (name main)
+ (public_name main)
+ (modules main)
+ (libraries ocaml_printf_lib)
+ (instrumentation
+  (backend bisect_ppx)))
