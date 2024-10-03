@@ -17,11 +17,13 @@ errors_found=False
 
 # A few warnings were disabled
 # 21: Field 'opam-version' doesn't match the current version
+# 23: Missing field 'maintainer'
 subpr = subprocess.Popen(["opam", "lint", "-s", "--warnings=-21-23", f"{PKG_OPAM}"], stdout=subprocess.PIPE)
 if subpr.wait() != 0:
   print("Linting failed")
   subpr_rez = subpr.stdout.read().decode('utf-8')
   print(subpr_rez)
+  print(subprocess.Popen(f"opam lint --warnings=-21-23 {PKG_OPAM}", shell=True, stdout=subprocess.PIPE).stdout.read().decode('utf-8'))
   exit(1)
 
 def check_spec(field):
