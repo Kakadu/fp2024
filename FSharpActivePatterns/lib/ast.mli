@@ -2,37 +2,38 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type ident = Ident of string [@@deriving eq, show { with_path = false }]
+type ident = Ident of string (** identifier *)
+[@@deriving eq, show { with_path = false }]
 
 type literal =
-  | Int_lt of int
-  | Bool_lt of bool
-  | String_lt of string
-  | Unit_lt
-  | Null_lt
+  | Int_lt of int (** 0, 1, 30 *)
+  | Bool_lt of bool (** false, true *)
+  | String_lt of string (** "Hello world" *)
+  | Unit_lt (** Unit *)
+  | Null_lt (** Null *)
 [@@deriving eq, show { with_path = false }]
 
 type binary_operator =
-  | Binary_equal
-  | Binary_unequal
-  | Binary_less
-  | Binary_less_or_equal
-  | Binary_greater
-  | Binary_greater_or_equal
-  | Binary_add
-  | Binary_subtract
-  | Binary_multiply
-  | Logical_or
-  | Logical_and
-  | Binary_divide
-  | Binary_or_bitwise
-  | Binary_xor_bitwise
-  | Binary_and_bitwise
+  | Binary_equal (** = *)
+  | Binary_unequal (** <> *)
+  | Binary_less (** < *)
+  | Binary_less_or_equal (** <= *)
+  | Binary_greater (** > *)
+  | Binary_greater_or_equal (** >= *)
+  | Binary_add (** + *)
+  | Binary_subtract (** - *)
+  | Binary_multiply (** * *)
+  | Logical_or (** || *)
+  | Logical_and (** && *)
+  | Binary_divide (** / *)
+  | Binary_or_bitwise (** ||| *)
+  | Binary_xor_bitwise (** ^^^ *)
+  | Binary_and_bitwise (** &&& *)
 [@@deriving eq, show { with_path = false }]
 
 type unary_operator =
-  | Unary_plus
-  | Unary_minus
+  | Unary_plus (** +5 *)
+  | Unary_minus (** -10 *)
   | Unary_negative
 [@@deriving eq, show { with_path = false }]
 
@@ -40,37 +41,37 @@ type pattern =
   | Wild (** _ *)
   | PCons of pattern * pattern (** hd :: tl*)
   | PConst of literal (** | 4 -> *)
-  | PVar of ident (** ident for other patterns *)
+  | PVar of ident (** pattern identifier *)
   | Variant of ident list (** | Blue, Green, Yellow -> *)
 [@@deriving eq, show { with_path = false }]
 
 type is_recursive =
-  | Nonrec
-  | Rec
+  | Nonrec (** let rec factorial n = ... *)
+  | Rec (** let factorial n = ... *)
 [@@deriving eq, show { with_path = false }]
 
 type expr =
-  | Const of literal
-  | Tuple of expr list
-  | List_expr of expr * expr (** List (1, List (2, Null)) *)
-  | Variable of ident
-  | Bin_expr of binary_operator * expr * expr (**operator, first operand, second operand*)
+  | Const of literal (** Int, Bool, String, Unit, Null *)
+  | Tuple of expr list (** (1, "Hello world", true) *)
+  | List_expr of expr * expr (** [1, 2, 3] *)
+  | Variable of ident (** x, y *)
+  | Bin_expr of binary_operator * expr * expr (** 1 + 2, 3 ||| 12 *)
   | If_then_else of expr * expr list * expr list option
-  (**condition, then body, else body*)
+  (** if n % 2 = 0 then "Even" else "Odd" *)
   | Function_def of is_recursive * string option * expr list * expr
   (**rec, name, args, body*)
   | Function_call of expr * expr list (** sum 1 2 *)
-  | Match of expr * (pattern * expr) list (**matching value, pattern-value list *)
-  | LetIn of ident * expr * expr (**name, value, inner value*)
+  | Match of expr * (pattern * expr) list (** matching value, pattern-value list *)
+  | LetIn of ident * expr * expr (** let x = 5 in x * y *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =
-  | Let of ident * expr (**name, value*)
+  | Let of ident * expr (** name, value *)
   | ActivePattern of ident list * expr
   (** let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd *)
 [@@deriving eq, show { with_path = false }]
 
 type construction =
-  | Expr of expr
-  | Statement of statement
+  | Expr of expr (** expression *)
+  | Statement of statement (** statement *)
 [@@deriving eq, show { with_path = false }]
