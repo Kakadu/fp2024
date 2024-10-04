@@ -16,17 +16,15 @@ let () =
               ( Logical_or
               , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
               , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
-          , [ Const (Int_lt 1) ]
+          , Const (Int_lt 1)
           , Some
-              [ Bin_expr
-                  ( Binary_multiply
-                  , Variable (Ident "n")
-                  , Function_call
-                      ( Variable (Ident "factorial")
-                      , [ Bin_expr
-                            (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
-                        ] ) )
-              ] ) )
+              (Bin_expr
+                 ( Binary_multiply
+                 , Variable (Ident "n")
+                 , Function_call
+                     ( Variable (Ident "factorial")
+                     , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                       ] ) )) ) )
   in
   let program =
     [ Statement (Let (Ident "a", Const (Int_lt 10)))

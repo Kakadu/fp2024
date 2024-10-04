@@ -55,8 +55,7 @@ type expr =
   | List_expr of expr * expr (** [1, 2, 3] *)
   | Variable of ident (** x, y *)
   | Bin_expr of binary_operator * expr * expr (** 1 + 2, 3 ||| 12 *)
-  | If_then_else of expr * expr list * expr list option
-  (** if n % 2 = 0 then "Even" else "Odd" *)
+  | If_then_else of expr * expr * expr option (** if n % 2 = 0 then "Even" else "Odd" *)
   | Function_def of is_recursive * string option * expr list * expr
   (**rec, name, args, body*)
   | Function_call of expr * expr list (** sum 1 2 *)
