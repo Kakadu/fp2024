@@ -51,6 +51,11 @@ let rec print_pattern indent = function
       variants
 ;;
 
+let print_unary_op indent = function
+  | Unary_minus -> printf "%s| Unary minus\n" (String.make indent '-')
+  | Unary_negative -> printf "%s| Unary negative\n" (String.make indent '-')
+;;
+
 let rec print_expr indent expr =
   match expr with
   | Const (Int_lt i) -> printf "%s| Const(Int: %d)\n" (String.make indent '-') i
@@ -74,6 +79,10 @@ let rec print_expr indent expr =
         print_expr (indent + 4) expr)
       patterns
   | Variable (Ident name) -> printf "%s| Variable(%s)\n" (String.make indent '-') name
+  | Unary_expr (op, expr) ->
+    printf "%s| Unary expr(\n" (String.make indent '-');
+    print_unary_op indent op;
+    print_expr (indent + 2) expr
   | Bin_expr (op, left, right) ->
     printf "%s| Binary expr(\n" (String.make indent '-');
     print_bin_op indent op;
