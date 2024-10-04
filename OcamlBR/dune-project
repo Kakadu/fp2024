@@ -19,10 +19,10 @@
 (homepage "https://github.com/sofyak0zyreva/OcamlBR")
 
 (package
- (name OcamlBR)
- (synopsis "An interpreter for a subset of Ocaml with bidirectional records")
+ (name OCamlBR)
+ (synopsis "An interpreter for a subset of OCaml with bidirectional records")
  (description
-  "An interpreter for a subset of Ocaml with bidirectional records")
+  "An interpreter for a subset of OCaml with bidirectional records")
  ;(documentation "https://kakadu.github.io/fp2024/docs/OcamlBR")
  (version 0.1)
  (depends
