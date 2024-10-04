@@ -56,11 +56,8 @@
 <a id="L32"></a><span > </span>
 <a id="L33"></a><span > </span>
 <a id="L34"></a><span > </span>
-<a id="L35"></a><span > </span>
+<a id="L35"></a><span class="visited"> </span>
 <a id="L36"></a><span > </span>
-<a id="L37"></a><span > </span>
-<a id="L38"></a><span class="visited"> </span>
-<a id="L39"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -101,9 +98,6 @@
 <a href="#L34">34</a>
 <a href="#L35">35</a>
 <a href="#L36">36</a>
-<a href="#L37">37</a>
-<a href="#L38">38</a>
-<a href="#L39">39</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Ksenia Kotelnikova &lt;xeniia.ka@gmail.com&gt;, Gleb Nasretdinov &lt;gleb.nasretdinov@proton.me&gt; *)
 
@@ -118,31 +112,28 @@ let () =
       ( Rec
       , Some "factorial"
       , [ Variable (Ident "n") ]
-      , [ If_then_else
-            ( Bin_expr
-                ( Logical_or
-                , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
-                , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
-            , [ Const (Int_lt 1) ]
-            , Some
-                [ Bin_expr
-                    ( Binary_multiply
-                    , Variable (Ident "n")
-                    , Function_call
-                        ( "factorial"
-                        , [ Bin_expr
-                              (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
-                          ] ) )
-                ] )
-        ] )
+      , If_then_else
+          ( Bin_expr
+              ( Logical_or
+              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
+              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
+          , Const (Int_lt 1)
+          , Some
+              (Bin_expr
+                 ( Binary_multiply
+                 , Variable (Ident "n")
+                 , Function_call
+                     ( Variable (Ident "factorial")
+                     , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                       ] ) )) ) )
   in
   let program =
-    [ Let (Ident "a", Const (Int_lt 10))
-    ; factorial
-    ; Function_call ("factorial", [ Variable (Ident "a") ])
+    [ Statement (Let (Ident "a", Const (Int_lt 10)))
+    ; Expr factorial
+    ; Expr (Function_call (Variable (Ident "factorial"), [ Variable (Ident "a") ]))
     ]
   in
-  List.ite<span data-count="1">r</span> print_expr program
+  List.ite<span data-count="1">r</span> print_construction program
 ;;
 </code></pre>
       </div>

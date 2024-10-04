@@ -65,12 +65,12 @@
 <a id="L41"></a><span > </span>
 <a id="L42"></a><span > </span>
 <a id="L43"></a><span > </span>
-<a id="L44"></a><span class="visited"> </span>
+<a id="L44"></a><span > </span>
 <a id="L45"></a><span > </span>
-<a id="L46"></a><span > </span>
+<a id="L46"></a><span class="visited"> </span>
 <a id="L47"></a><span > </span>
 <a id="L48"></a><span > </span>
-<a id="L49"></a><span > </span>
+<a id="L49"></a><span class="visited"> </span>
 <a id="L50"></a><span > </span>
 <a id="L51"></a><span > </span>
 <a id="L52"></a><span > </span>
@@ -110,8 +110,13 @@
 <a id="L86"></a><span > </span>
 <a id="L87"></a><span > </span>
 <a id="L88"></a><span > </span>
-<a id="L89"></a><span class="visited"> </span>
+<a id="L89"></a><span > </span>
 <a id="L90"></a><span > </span>
+<a id="L91"></a><span > </span>
+<a id="L92"></a><span > </span>
+<a id="L93"></a><span > </span>
+<a id="L94"></a><span class="visited"> </span>
+<a id="L95"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -206,6 +211,11 @@
 <a href="#L88">88</a>
 <a href="#L89">89</a>
 <a href="#L90">90</a>
+<a href="#L91">91</a>
+<a href="#L92">92</a>
+<a href="#L93">93</a>
+<a href="#L94">94</a>
+<a href="#L95">95</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Ksenia Kotelnikova &lt;xeniia.ka@gmail.com&gt;, Gleb Nasretdinov &lt;gleb.nasretdinov@proton.me&gt; *)
 
@@ -220,8 +230,8 @@ let%expect_test "print double func" =
   let var = Variable (Ident "n") in
   let args = [ var ] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
-  let double = Function_def (recursive, name, args, [ binary_expr ]) in
-  print_expr double;
+  let double = Function_def (recursive, name, args, binary_expr) in
+  print_construction @@ Expr double;
   <span data-count="1">[</span>%expect
     {|
     |  Function(double):
@@ -234,22 +244,27 @@ let%expect_test "print double func" =
     ------| Variable(n)|}<span data-count="5">]</span>
 ;;
 
-let%expect_test "print tu ple of binary operators" =
-  <span data-count="1">l</span>et binary_operations =
-    [ Bin_expr (Binary_unequal, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_less, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_less_or_equal, Const (Int_lt 10), Const (Int_lt (-45)))
-    ; Bin_expr (Binary_greater, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_greater_or_equal, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_add, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Logical_and, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_divide, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_or_bitwise, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_xor_bitwise, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_and_bitwise, Const (Int_lt 3), Const (Int_lt 10))
+let%expect_test "print tuple of binary operators" =
+  <span data-count="1">l</span>et first = Const (Int_lt 3) in
+  let second = Const (Int_lt 10) in
+  let operators =
+    [ Binary_unequal
+    ; Binary_less
+    ; Binary_less_or_equal
+    ; Binary_greater
+    ; Binary_greater_or_equal
+    ; Binary_add
+    ; Logical_and
+    ; Binary_divide
+    ; Binary_or_bitwise
+    ; Binary_xor_bitwise
+    ; Binary_and_bitwise
     ]
   in
-  List.iter print_expr binary_operations;
+  let print_binary_constr operator =
+    <span data-count="11">p</span>rint_construction @@ Expr (Bin_expr (operator, first, second))
+  in
+  List.iter print_binary_constr operators;
   <span data-count="1">[</span>%expect
     {|
     | Binary expr(
@@ -262,8 +277,8 @@ let%expect_test "print tu ple of binary operators" =
     --| Const(Int: 10)
     | Binary expr(
     | Binary Less Or Equal
+    --| Const(Int: 3)
     --| Const(Int: 10)
-    --| Const(Int: -45)
     | Binary expr(
     | Binary Greater
     --| Const(Int: 3)
