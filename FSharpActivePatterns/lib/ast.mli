@@ -34,7 +34,6 @@ type binary_operator =
 type unary_operator =
   | Unary_plus (** +5 *)
   | Unary_minus (** -10 *)
-  | Unary_negative
 [@@deriving eq, show { with_path = false }]
 
 type pattern =
