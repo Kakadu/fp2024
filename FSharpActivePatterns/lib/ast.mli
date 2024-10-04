@@ -38,7 +38,8 @@ type unary_operator =
 
 type pattern =
   | Wild (** _ *)
-  | PCons of pattern * pattern (** hd :: tl*)
+  | PCons of pattern * pattern (** | hd :: tl -> *)
+  | PTuple of pattern list (** | (a, b) -> *)
   | PConst of literal (** | 4 -> *)
   | PVar of ident (** pattern identifier *)
   | Variant of ident list (** | Blue, Green, Yellow -> *)
