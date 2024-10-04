@@ -58,7 +58,7 @@ type expr =
         [ 1, 2, 3 ]
       ]} *)
   | Variable of ident (** [x], [y] *)
-  | Unary_expr of unary_operator * expr
+  | Unary_expr of unary_operator * expr (** [-5], [not true] *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Function_def of is_recursive * string option * expr list * expr
