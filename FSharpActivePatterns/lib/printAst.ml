@@ -81,10 +81,10 @@ let rec print_expr indent expr =
     printf "%sCONDITION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) cond;
     printf "%sTHEN BRANCH\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 4)) then_body;
+    print_expr (indent + 4) then_body;
     printf "%sELSE BRANCH\n" (String.make (indent + 2) ' ');
     (match else_body with
-     | Some body -> List.iter (print_expr (indent + 4)) body
+     | Some body -> print_expr (indent + 4) body
      | None -> printf "No else body")
   | Function_def (flag, name, args, body) ->
     printf
