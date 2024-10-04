@@ -19,7 +19,7 @@
 (homepage "https://github.com/sofyak0zyreva/OcamlBR")
 
 (package
- (name OCamlBR)
+ (name OcamlBR)
  (synopsis "An interpreter for a subset of OCaml with bidirectional records")
  (description
   "An interpreter for a subset of OCaml with bidirectional records")
