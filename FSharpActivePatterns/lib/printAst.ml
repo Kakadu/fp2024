@@ -25,31 +25,71 @@ let print_bin_op indent bin_op =
   | Binary_and_bitwise -> printf "%s| Binary And Bitwise\n" (String.make indent '-')
 ;;
 
-let rec print_expr_helper indent expr =
+let rec print_pattern indent pattern =
+  match pattern with
+  | Wild ->
+    printf "%s| Wild\n" (String.make indent '-')
+  | PCons (head, tail) ->
+    printf "%s| PCons:\n" (String.make indent '-');
+    printf "%sHead:\n" (String.make (indent + 2) '-');
+    print_pattern (indent + 4) head;
+    printf "%sTail:\n" (String.make (indent + 2) '-');
+    print_pattern (indent + 4) tail
+  | PConst literal ->
+    printf "%s| PConst:\n" (String.make indent '-');
+    (match literal with
+    | Int_lt i -> printf "%sInt: %d\n" (String.make (indent + 2) '-') i
+    | Bool_lt b -> printf "%sBool: %b\n" (String.make (indent + 2) '-') b
+    | String_lt s -> printf "%sString: %S\n" (String.make (indent + 2) '-') s
+    | Unit_lt -> printf "%sUnit\n" (String.make (indent + 2) '-')
+    | Null_lt -> printf "%sNull\n" (String.make (indent + 2) '-'))
+  | PVar (Ident name) ->
+    printf "%s| PVar(%s)\n" (String.make indent '-') name
+  | Variant variants ->
+    printf "%s| Variant:\n" (String.make indent '-');
+    List.iter (fun (Ident v) ->
+      printf "%s- %s\n" (String.make (indent + 2) '-') v
+    ) variants
+;;
+
+
+let rec print_expr indent expr =
   match expr with
   | Const (Int_lt i) -> printf "%s| Const(Int: %d)\n" (String.make indent '-') i
   | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
   | Const Null_lt -> printf "%s| Const(Null)\n" (String.make indent '-')
-  | List_expr (_, _) -> printf "LIST_EXPR TODO"
-  | Tuple t -> List.iter (print_expr_helper indent) t
-  | Match (_, _) -> printf "MATCH TODO"
+  | List_expr (expr1, expr2) -> (
+    printf "%s| List expr:\n" (String.make indent '-');
+    print_expr (indent + 2) expr1;
+    print_expr (indent + 2) expr2;
+  )
+  | Tuple t -> List.iter (print_expr indent) t
+  | Match (value, patterns) ->
+    printf "%s| Match:\n" (String.make indent '-');
+    print_expr (indent + 2) value;
+    List.iter (fun (pat, expr) ->
+      printf "%s| Pattern:\n" (String.make (indent + 2) '-');
+      print_pattern (indent + 4) pat;
+      printf "%s| Inner expr:\n" (String.make (indent + 2) '-');
+      print_expr (indent + 4) expr
+    ) patterns
   | Variable (Ident name) -> printf "%s| Variable(%s)\n" (String.make indent '-') name
   | Bin_expr (op, left, right) ->
     printf "%s| Binary expr(\n" (String.make indent '-');
     print_bin_op indent op;
-    print_expr_helper (indent + 2) left;
-    print_expr_helper (indent + 2) right
+    print_expr (indent + 2) left;
+    print_expr(indent + 2) right
   | If_then_else (cond, then_body, else_body) ->
     printf "%s| If Then Else(\n" (String.make indent '-');
     printf "%sCONDITION\n" (String.make (indent + 2) ' ');
-    print_expr_helper (indent + 2) cond;
+    print_expr (indent + 2) cond;
     printf "%sTHEN BRANCH\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr_helper (indent + 4)) then_body;
+    List.iter (print_expr (indent + 4)) then_body;
     printf "%sELSE BRANCH\n" (String.make (indent + 2) ' ');
     (match else_body with
-     | Some body -> List.iter (print_expr_helper (indent + 4)) body
+     | Some body -> List.iter (print_expr (indent + 4)) body
      | None -> printf "No else body")
   | Function_def (flag, name, args, body) ->
     printf
@@ -62,34 +102,38 @@ let rec print_expr_helper indent expr =
        | Some n -> n
        | None -> "Anonymous");
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr_helper (indent + 4)) args;
+    List.iter (print_expr (indent + 4)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
-    print_expr_helper (indent + 4) body
+    print_expr (indent + 4) body
   | Function_call (func, args) ->
     printf "%s| Function Call:\n" (String.make indent '-');
     printf "%sFUNCTION\n" (String.make (indent + 2) ' ');
-    print_expr_helper (indent + 2) func;
+    print_expr (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr_helper (indent + 2)) args
+    List.iter (print_expr (indent + 2)) args
   | LetIn (Ident name, value, inner_expr) ->
     printf "%s | LetIn %s =\n" (String.make indent '-') name;
     printf "%sVALUE\n" (String.make (indent + 2) ' ');
-    print_expr_helper (indent + 2) value;
+    print_expr (indent + 2) value;
     printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
-    print_expr_helper (indent + 2) inner_expr
+    print_expr (indent + 2) inner_expr
 ;;
-
-let print_expr expr = print_expr_helper 0 expr
 
 let print_statement indent statement =
   match statement with
   | Let (Ident name, value) ->
     printf "%s| Let %s =\n" (String.make indent '-') name;
-    print_expr_helper (indent + 2) value
-  | ActivePattern _ -> printf "ACTIVE PATTERN TODO"
+    print_expr (indent + 2) value
+  | ActivePattern (patterns, expr) -> (
+    printf "%s| ActivePattern:\n" (String.make indent '-');
+    List.iter (fun (Ident param) ->
+      printf "%s- %s\n" (String.make (indent + 2) '-') param
+    ) patterns;
+    print_expr (indent + 2) expr
+  )
 ;;
 
 let print_construction = function
-  | Expr e -> print_expr e
+  | Expr e -> print_expr 0 e
   | Statement s -> print_statement 0 s
 ;;
