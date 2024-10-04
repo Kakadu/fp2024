@@ -4,4 +4,4 @@
 
 open Ast
 
-val print_expr : expr -> unit
+val print_construction : construction -> unit

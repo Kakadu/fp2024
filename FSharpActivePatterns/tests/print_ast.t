@@ -27,12 +27,16 @@
   --------| Binary expr(
   --------| Binary Multiply
   ----------| Variable(n)
-  ----------| Function Call(factorial):
+  ----------| Function Call:
+              FUNCTION
+  ------------| Variable(factorial)
               ARGS
   ------------| Binary expr(
   ------------| Binary Subtract
   --------------| Variable(n)
   --------------| Const(Int: 1)
-  | Function Call(factorial):
+  | Function Call:
+    FUNCTION
+  --| Variable(factorial)
     ARGS
   --| Variable(a)

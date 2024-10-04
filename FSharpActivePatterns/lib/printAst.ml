@@ -3,9 +3,9 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
+open Printf
 
 let print_bin_op indent bin_op =
-  let open Printf in
   match bin_op with
   | Binary_equal -> printf "%s| Binary Equal\n" (String.make indent '-')
   | Binary_unequal -> printf "%s| Binary Unequal\n" (String.make indent '-')
@@ -26,13 +26,15 @@ let print_bin_op indent bin_op =
 ;;
 
 let rec print_expr_helper indent expr =
-  let open Printf in
   match expr with
   | Const (Int_lt i) -> printf "%s| Const(Int: %d)\n" (String.make indent '-') i
   | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
-  | Tuple list -> List.iter (print_expr_helper indent) list
+  | Const Null_lt -> printf "%s| Const(Null)\n" (String.make indent '-')
+  | List_expr (_, _) -> printf "LIST_EXPR TODO"
+  | Tuple t -> List.iter (print_expr_helper indent) t
+  | Match (_, _) -> printf "MATCH TODO"
   | Variable (Ident name) -> printf "%s| Variable(%s)\n" (String.make indent '-') name
   | Bin_expr (op, left, right) ->
     printf "%s| Binary expr(\n" (String.make indent '-');
@@ -62,14 +64,13 @@ let rec print_expr_helper indent expr =
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr_helper (indent + 4)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr_helper (indent + 4)) body
-  | Function_call (name, args) ->
-    printf "%s| Function Call(%s):\n" (String.make indent '-') name;
+    print_expr_helper (indent + 4) body
+  | Function_call (func, args) ->
+    printf "%s| Function Call:\n" (String.make indent '-');
+    printf "%sFUNCTION\n" (String.make (indent + 2) ' ');
+    print_expr_helper (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr_helper (indent + 2)) args
-  | Let (Ident name, value) ->
-    printf "%s| Let %s =\n" (String.make indent '-') name;
-    print_expr_helper (indent + 2) value
   | LetIn (Ident name, value, inner_expr) ->
     printf "%s | LetIn %s =\n" (String.make indent '-') name;
     printf "%sVALUE\n" (String.make (indent + 2) ' ');
@@ -79,3 +80,16 @@ let rec print_expr_helper indent expr =
 ;;
 
 let print_expr expr = print_expr_helper 0 expr
+
+let print_statement indent statement =
+  match statement with
+  | Let (Ident name, value) ->
+    printf "%s| Let %s =\n" (String.make indent '-') name;
+    print_expr_helper (indent + 2) value
+  | ActivePattern _ -> printf "ACTIVE PATTERN TODO"
+;;
+
+let print_construction = function
+  | Expr e -> print_expr e
+  | Statement s -> print_statement 0 s
+;;

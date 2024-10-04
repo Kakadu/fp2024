@@ -11,8 +11,8 @@ let%expect_test "print double func" =
   let var = Variable (Ident "n") in
   let args = [ var ] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
-  let double = Function_def (recursive, name, args, [ binary_expr ]) in
-  print_expr double;
+  let double = Function_def (recursive, name, args, binary_expr) in
+  print_construction @@ Expr double;
   [%expect
     {|
     |  Function(double):
@@ -25,22 +25,27 @@ let%expect_test "print double func" =
     ------| Variable(n)|}]
 ;;
 
-let%expect_test "print tu ple of binary operators" =
-  let binary_operations =
-    [ Bin_expr (Binary_unequal, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_less, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_less_or_equal, Const (Int_lt 10), Const (Int_lt (-45)))
-    ; Bin_expr (Binary_greater, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_greater_or_equal, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_add, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Logical_and, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_divide, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_or_bitwise, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_xor_bitwise, Const (Int_lt 3), Const (Int_lt 10))
-    ; Bin_expr (Binary_and_bitwise, Const (Int_lt 3), Const (Int_lt 10))
+let%expect_test "print tuple of binary operators" =
+  let first = Const (Int_lt 3) in
+  let second = Const (Int_lt 10) in
+  let operators =
+    [ Binary_unequal
+    ; Binary_less
+    ; Binary_less_or_equal
+    ; Binary_greater
+    ; Binary_greater_or_equal
+    ; Binary_add
+    ; Logical_and
+    ; Binary_divide
+    ; Binary_or_bitwise
+    ; Binary_xor_bitwise
+    ; Binary_and_bitwise
     ]
   in
-  List.iter print_expr binary_operations;
+  let print_binary_constr operator =
+    print_construction @@ Expr (Bin_expr (operator, first, second))
+  in
+  List.iter print_binary_constr operators;
   [%expect
     {|
     | Binary expr(
@@ -53,8 +58,8 @@ let%expect_test "print tu ple of binary operators" =
     --| Const(Int: 10)
     | Binary expr(
     | Binary Less Or Equal
+    --| Const(Int: 3)
     --| Const(Int: 10)
-    --| Const(Int: -45)
     | Binary expr(
     | Binary Greater
     --| Const(Int: 3)
