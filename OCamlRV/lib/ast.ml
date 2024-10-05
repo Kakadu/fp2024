@@ -30,11 +30,6 @@ type rec_flag =
   | Rec (** let rec a *)
 [@@deriving show { with_path = false }]
 
-type placement =
-  | Global
-  | Inline of identifier
-[@@deriving show { with_path = false }]
-
 type literal =
   | IntLiteral of int (** 123 *)
   | BoolLiteral of bool (** true | false *)
@@ -60,7 +55,8 @@ type expression =
   | ExprIf of expression * expression * expression option
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of expression * case list (** match e with p_1 -> e_1 |...| p_n -> e_n *)
-  | ExprLet of rec_flag * pattern list * expression list (** let x = expr1 in expr2 *)
+  | ExprLet of rec_flag * binding list * expression option
+  (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of expression list (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
@@ -68,7 +64,10 @@ type expression =
   | ExprFun of pattern * pattern list * expression (** fun p -> e *)
 [@@deriving show { with_path = false }]
 
-(** Used in `match` expr *)
+(** Used in `match` expression *)
 and case = pattern * expression [@@deriving show { with_path = false }]
+
+(** Used in `let` expression*)
+and binding = pattern * expression [@@deriving show { with_path = false }]
 
 type program = expression list [@@deriving show { with_path = false }]

@@ -3,18 +3,20 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/main.exe
   [(ExprLet (Rec,
-      [(PLiteral (StringLiteral "fact")); (PLiteral (StringLiteral "n"))],
-      [(ExprIf (
-          (ExprBinOperation (Lte, (ExprVariable "n"),
-             (ExprLiteral (IntLiteral 1)))),
-          (ExprLiteral (IntLiteral 1)),
-          (Some (ExprBinOperation (Mul, (ExprVariable "n"),
-                   (ExprApply ((ExprVariable "fact"),
-                      (ExprBinOperation (Sub, (ExprVariable "n"),
-                         (ExprLiteral (IntLiteral 1))))
-                      ))
-                   )))
-          ))
-        ]
-      ))
+      [((PLiteral (StringLiteral "fact")),
+        (ExprFun ((PLiteral (StringLiteral "n")), [],
+           (ExprIf (
+              (ExprBinOperation (Lte, (ExprVariable "n"),
+                 (ExprLiteral (IntLiteral 1)))),
+              (ExprLiteral (IntLiteral 1)),
+              (Some (ExprBinOperation (Mul, (ExprVariable "n"),
+                       (ExprApply ((ExprVariable "fact"),
+                          (ExprBinOperation (Sub, (ExprVariable "n"),
+                             (ExprLiteral (IntLiteral 1))))
+                          ))
+                       )))
+              ))
+           )))
+        ],
+      None))
     ]

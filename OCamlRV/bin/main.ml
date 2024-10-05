@@ -11,19 +11,24 @@ let () =
   let fact_ast : program =
     [ ExprLet
         ( Rec
-        , [ PLiteral (StringLiteral "fact"); PLiteral (StringLiteral "n") ]
-        , [ ExprIf
-              ( ExprBinOperation (Lte, ExprVariable "n", ExprLiteral (IntLiteral 1))
-              , ExprLiteral (IntLiteral 1)
-              , Some
-                  (ExprBinOperation
-                     ( Mul
-                     , ExprVariable "n"
-                     , ExprApply
-                         ( ExprVariable "fact"
-                         , ExprBinOperation
-                             (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) )) )
-          ] )
+        , [ ( PLiteral (StringLiteral "fact")
+            , ExprFun
+                ( PLiteral (StringLiteral "n")
+                , []
+                , ExprIf
+                    ( ExprBinOperation (Lte, ExprVariable "n", ExprLiteral (IntLiteral 1))
+                    , ExprLiteral (IntLiteral 1)
+                    , Some
+                        (ExprBinOperation
+                           ( Mul
+                           , ExprVariable "n"
+                           , ExprApply
+                               ( ExprVariable "fact"
+                               , ExprBinOperation
+                                   (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) )
+                           )) ) ) )
+          ]
+        , None )
     ]
   in
   print_endline (show_program fact_ast)
