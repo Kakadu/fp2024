@@ -47,13 +47,8 @@
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span > </span>
 <a id="L25"></a><span > </span>
-<a id="L26"></a><span > </span>
+<a id="L26"></a><span class="visited"> </span>
 <a id="L27"></a><span > </span>
-<a id="L28"></a><span > </span>
-<a id="L29"></a><span > </span>
-<a id="L30"></a><span > </span>
-<a id="L31"></a><span class="visited"> </span>
-<a id="L32"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -85,11 +80,6 @@
 <a href="#L25">25</a>
 <a href="#L26">26</a>
 <a href="#L27">27</a>
-<a href="#L28">28</a>
-<a href="#L29">29</a>
-<a href="#L30">30</a>
-<a href="#L31">31</a>
-<a href="#L32">32</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2027, Ilia Suponev *)
 
@@ -99,27 +89,22 @@ open Miniml.Ast
 
 let () =
   (*
-     let rec factorial n =if (n &gt; 1) then n * factorial(n-1) else 1;;
+     let rec factorial n = if (n &gt; 1) then n * factorial(n-1) else 1;;
      factorial 5;;
   *)
   let factorial_ast : program =
-    ( "factorial.ml"
-    , [ DefineItem
-          ( Recursive
-          , [ ( "factorial"
-              , [ PVar "n" ]
-              , If
-                  ( Binary (Variable "n", Gt, Const (IntLiteral 1))
-                  , Binary
-                      ( Variable "n"
-                      , Multiply
-                      , Apply
-                          ( Variable "factorial"
-                          , [ Binary (Variable "n", Subtract, Const (IntLiteral 1)) ] ) )
-                  , Const (IntLiteral 1) ) )
-            ] )
-      ; EvalItem (Apply (Variable "factorial", [ Const (IntLiteral 5) ]))
-      ] )
+    [ DefineItem
+        ( Recursive
+        , [ ( PVar "factorial"
+            , Lambda
+                ( [ PVar "n" ]
+                , If
+                    ( Binary (Variable "n", Gt, Const (IntLiteral 1))
+                    , Binary (Variable "n", Multiply, Const (IntLiteral 1))
+                    , Some (Const (IntLiteral 1)) ) ) )
+          ] )
+    ; EvalItem (Apply (Variable "factorial", [ Const (IntLiteral 5) ]))
+    ]
   in
   print_endlin<span data-count="1">e</span> (show_progra<span data-count="1">m</span> factorial_ast)
 ;;
