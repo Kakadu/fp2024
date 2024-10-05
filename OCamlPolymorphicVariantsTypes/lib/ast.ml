@@ -56,7 +56,7 @@ type expression =
   | Apply of expression * expression list
     (* factorial (n / 2) | (fun (x, (y,z)) -> x / (y + z)) (5, (2, 1)) *)
   | Define of definition * expression (* let <definition> in <expr> *)
-  | EpressionBlock of expression list (* (let g x = x / 2 in g y; y); *)
+  | ExpressionBlock of expression list (* (let g x = x / 2 in g y; y); *)
 [@@deriving show { with_path = false }]
 
 and value_binding = pattern * expression [@@deriving show { with_path = false }]
