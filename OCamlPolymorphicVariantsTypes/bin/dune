@@ -1,0 +1,10 @@
+(executable
+ (name main)
+ (public_name main)
+ (modules main)
+ (libraries miniml)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (deps ./main.exe %{bin:main}))
