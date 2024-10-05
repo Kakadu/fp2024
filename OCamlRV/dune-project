@@ -10,15 +10,15 @@
 
 (maintainers "Viacheslav Sidorov <me@xamelllion.ru>" "Danila Rudnev-Stepanyan <dabzelos@gmail.com>")
 
-(bug_reports "https://github.com/xamelllion/OcamlRV")
+(bug_reports "https://github.com/xamelllion/OCamlRV")
 
-(homepage "https://github.com/xamelllion/OcamlRV")
+(homepage "https://github.com/xamelllion/OCamlRV")
 
 (package
- (name OcamlRV)
- (synopsis "Ocaml with Recursive values")
- (description "An interpreter for mini version of Ocaml with support of Recursive values")
- (documentation "https://kakadu.github.io/fp2024/docs/OcamlRV")
+ (name OCamlRV)
+ (synopsis "OCaml with Recursive values")
+ (description "An interpreter for mini version of OCaml with support of Recursive values")
+ (documentation "https://kakadu.github.io/fp2024/docs/OCamlRV")
  (version 0.1)
  (depends
   dune
