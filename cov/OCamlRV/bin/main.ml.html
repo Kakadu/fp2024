@@ -54,9 +54,8 @@
 <a id="L30"></a><span > </span>
 <a id="L31"></a><span > </span>
 <a id="L32"></a><span > </span>
-<a id="L33"></a><span > </span>
-<a id="L34"></a><span class="visited"> </span>
-<a id="L35"></a><span > </span>
+<a id="L33"></a><span class="visited"> </span>
+<a id="L34"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -95,7 +94,6 @@
 <a href="#L32">32</a>
 <a href="#L33">33</a>
 <a href="#L34">34</a>
-<a href="#L35">35</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan *)
 
@@ -107,8 +105,8 @@ open OCamlRV_lib.Ast
 (* let rec fact n = if n &lt;= 1 then 1 else n * fact (n - 1);; *)
 
 let () =
-  let fact_ast : program =
-    [ ExprLet
+  let fact_ast : structure =
+    [ SValue
         ( Rec
         , [ ( PLiteral (StringLiteral "fact")
             , ExprFun
@@ -126,11 +124,10 @@ let () =
                                , ExprBinOperation
                                    (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) )
                            )) ) ) )
-          ]
-        , None )
+          ] )
     ]
   in
-  print_endlin<span data-count="1">e</span> (show_progra<span data-count="1">m</span> fact_ast)
+  print_endlin<span data-count="1">e</span> (show_structur<span data-count="1">e</span> fact_ast)
 ;;
 </code></pre>
       </div>
