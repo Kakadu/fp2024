@@ -8,8 +8,8 @@ open OCamlRV_lib.Ast
 (* let rec fact n = if n <= 1 then 1 else n * fact (n - 1);; *)
 
 let () =
-  let fact_ast : program =
-    [ ExprLet
+  let fact_ast : structure =
+    [ SValue
         ( Rec
         , [ ( PLiteral (StringLiteral "fact")
             , ExprFun
@@ -27,9 +27,8 @@ let () =
                                , ExprBinOperation
                                    (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) )
                            )) ) ) )
-          ]
-        , None )
+          ] )
     ]
   in
-  print_endline (show_program fact_ast)
+  print_endline (show_structure fact_ast)
 ;;

@@ -2,7 +2,7 @@ Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan
 SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/main.exe
-  [(ExprLet (Rec,
+  [(SValue (Rec,
       [((PLiteral (StringLiteral "fact")),
         (ExprFun ((PLiteral (StringLiteral "n")), [],
            (ExprIf (
@@ -17,6 +17,6 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        )))
               ))
            )))
-        ],
-      None))
+        ]
+      ))
     ]
