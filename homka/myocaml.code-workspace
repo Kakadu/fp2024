@@ -1,0 +1,18 @@
+{
+    "folders": [
+        {
+            "path": "./"
+        },
+        {
+            "path": "../Lambda",
+            "name": "Lambda"
+        },
+        {
+            "path": "../",
+            "name": "fp2024"
+        }
+    ],
+    "settings": {
+        "editor.formatOnSave": true
+    }
+}

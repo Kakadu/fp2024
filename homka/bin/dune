@@ -1,0 +1,7 @@
+(executable
+ (name damir)
+ (public_name damir)
+ (modules damir)
+ (libraries lib)
+ (instrumentation
+  (backend bisect_ppx)))
