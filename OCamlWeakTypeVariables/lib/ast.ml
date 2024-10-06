@@ -1,3 +1,11 @@
+[@@@ocaml.text "/*"]
+
+(** Copyright 2024, Damir Yunosov and Ilhom Kombaev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
+
 (** literals *)
 type literal =
   | Int of int (** literal of int. Ex: 5 *)

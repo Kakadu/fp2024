@@ -1,4 +1,4 @@
-Copyright 2024-2025, Damir Yunusov, Ilhom Kombaev
+Copyright 2024, Damir Yunusov, Ilhom Kombaev
 SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/factorial_ast.exe
