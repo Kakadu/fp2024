@@ -1,4 +1,3 @@
 (cram
  (applies_to ast_fact)
- (deps
-  ../bin/ast_fact.exe ))
+ (deps ../bin/ast_fact.exe ))
