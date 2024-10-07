@@ -1,0 +1,20 @@
+(library
+ (name IshbaevMiniML)
+ (public_name IshbaevMiniML)
+ (modules Ast)
+ (modules_without_implementation ast)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
+
+; (library
+;  (name tests)
+;  (modules tests)
+;  (libraries lambda_lib)
+;  (preprocess
+;   (pps ppx_expect ppx_deriving.show))
+;  (instrumentation
+;   (backend bisect_ppx))
+;  (inline_tests))
