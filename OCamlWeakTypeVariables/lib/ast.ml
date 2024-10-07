@@ -48,7 +48,7 @@ type rec_flag =
 
 type expr =
   | Const of literal (** const of literal. Ex: 5, "Homka", true *)
-  | Variable of id (** varable with name. Ex: "homka" *)
+  | Variable of id (** variable with name. Ex: "homka" *)
   | Op_un of op_un * expr (** Unary operation. Ex: not true *)
   | Op_bin of op_bin * expr * expr (** Binary operation. Ex: 5 + 5 *)
   | Op_tern of op_tern * expr * expr * expr (** Ternary operation. Ex: If then else*)
