@@ -51,5 +51,5 @@ type expr =
   | ExpLet of is_rec * ident * expr * expr 
   (* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
   (* let x = 10 <=> ExpLet(false, "x", 10, "x")*)
-[@@deriving show]
+[@@deriving show {with_path=false}]
 

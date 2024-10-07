@@ -1,15 +1,16 @@
 
-  $ ../bin/main.exe
-
-  (Ast.ExpLet (true, "factorial",     
-   (Ast.ExpLambda ([(PatVariable "n")],
-      (Ast.ExpIfThenElse (
-         (Ast.ExpBinOper (LowerThan, (Ast.ExpIdent "n"),
-            (Ast.ExpConst (ConstInt 2)))),
-         (Ast.ExpConst (ConstInt 1)),
-         (Some (Ast.ExpBinOper (Multiply, (Ast.ExpIdent "n"),
-                  (Ast.ExpFunction ((Ast.ExpIdent "factorial"),
-                     (Ast.ExpBinOper (Minus, (Ast.ExpIdent "n"),
-                        (Ast.ExpConst (ConstInt 1))))
+   $ ../bin/main.exe
+   (ExpLet (true, "factorial",         
+   (ExpLambda ([(PatVariable "n")],
+      (ExpIfThenElse (
+         (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2)))),
+         (ExpConst (ConstInt 1)),
+         (Some (ExpBinOper (Multiply, (ExpIdent "n"),
+                  (ExpFunction ((ExpIdent "factorial"),
+                     (ExpBinOper (Minus, (ExpIdent "n"),
+                        (ExpConst (ConstInt 1))))
                      ))
-                     
+                  )))
+         ))
+      )),
+   (ExpIdent "factorial")))
