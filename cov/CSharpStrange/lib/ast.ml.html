@@ -406,10 +406,10 @@
   <span data-count="0">|</span> For of <span data-count="0">s</span>tmt option * <span data-count="0">e</span>xpr optio<span data-count="0">n</span> * <span data-count="0">e</span>xpr optio<span data-count="0">n</span> * stm<span data-count="0">t</span>
   (** For cycle: [for] (int i = 0, j = 3; i &lt; 4; i++, j--) \{\} *)
   <span data-count="0">|</span> If of expr * stmt * <span data-count="4">s</span>tmt optio<span data-count="1">n</span>
-  (** If condition: [if] (a) [then] { b } ([else] \{ c \} ) *)
+  (** If condition: [if] (a) [then] \{ b \} ([else] \{ c \} ) *)
   <span data-count="0">|</span> While of expr * stm<span data-count="0">t</span> (** While cycle: [while] (a) \{ \} *)
   <span data-count="0">|</span> Return of expr (** Return: return (a) *)
-  <span data-count="0">|</span> StmtsBlock of <span data-count="7">s</span>tmt lis<span data-count="2">t</span> (** Block of statements: \{ a \}; could be empty: {} *)
+  <span data-count="0">|</span> StmtsBlock of <span data-count="7">s</span>tmt lis<span data-count="2">t</span> (** Block of statements: \{ a \}; could be empty: \{\} *)
   <span data-count="0">|</span> Break (** Cycle break *)
   <span data-count="0">|</span> Continue (** Cycle continue *)
   <span data-count="0">|</span> Expr of expr (** Another expression *)
