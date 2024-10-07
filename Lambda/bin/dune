@@ -1,10 +1,7 @@
 (executable
- (name REPL)
- (public_name REPL)
- (modules REPL)
+ (name main)
+ (public_name main)
+ (modules main)
  (libraries lambda_lib)
  (instrumentation
   (backend bisect_ppx)))
-
-(cram
- (deps ./REPL.exe %{bin:REPL}))
