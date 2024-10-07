@@ -77,12 +77,12 @@ type expr =
 (** Language statements *)
 and stmt =
   | For of stmt option * expr option * expr option * stmt
-  (** For cycle: [for] (int i = 0, j = 3; i < 4; i++, j--) {} *)
+  (** For cycle: [for] (int i = 0, j = 3; i < 4; i++, j--) \{\} *)
   | If of expr * stmt * stmt option
-  (** If condition: [if] (a) [then] { b } ([else] { c } ) *)
-  | While of expr * stmt (** While cycle: [while] (a) { } *)
+  (** If condition: [if] (a) [then] { b } ([else] \{ c \} ) *)
+  | While of expr * stmt (** While cycle: [while] (a) \{ \} *)
   | Return of expr (** Return: return (a) *)
-  | StmtsBlock of stmt list (** Block of statements: { a }; could be empty: {} *)
+  | StmtsBlock of stmt list (** Block of statements: \{ a \}; could be empty: {} *)
   | Break (** Cycle break *)
   | Continue (** Cycle continue *)
   | Expr of expr (** Another expression *)
