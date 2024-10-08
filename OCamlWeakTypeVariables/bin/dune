@@ -1,0 +1,6 @@
+(executable
+ (name factorial_ast)
+ (public_name factorial_ast)
+ (libraries lib)
+ (instrumentation
+  (backend bisect_ppx)))
