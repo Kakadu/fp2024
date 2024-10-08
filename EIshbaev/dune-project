@@ -15,7 +15,7 @@
 (homepage "https://github.com/Kakadu/fp2024")
 
 (package
- (name IshbaevMiniML) ; FIXME and regenerate .opam file using 'dune build @install'
+ (name EIshbaev) ; FIXME and regenerate .opam file using 'dune build @install'
  (synopsis "An interpreter for MiniML")
  (description
   "FIXME. A longer description, for example, which are the most interesing features being supported, etc.")

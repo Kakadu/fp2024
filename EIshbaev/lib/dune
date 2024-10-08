@@ -1,8 +1,7 @@
 (library
- (name IshbaevMiniML)
- (public_name IshbaevMiniML)
+ (name EIshbaev_lib)
+ (public_name EIshbaev.Lib)
  (modules Ast)
- (modules_without_implementation ast)
  (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))

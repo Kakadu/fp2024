@@ -1,8 +1,0 @@
-(executable
- (name fact)
- (public_name fact)
- (modules )
- (libraries IshbaevMiniML)
- (instrumentation
-  (backend bisect_ppx)))
-
