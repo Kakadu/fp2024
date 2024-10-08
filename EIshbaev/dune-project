@@ -23,7 +23,6 @@
  (version 0.1)
  (depends
   dune
-  angstrom
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
