@@ -1,3 +1,7 @@
+(** Copyright 2024-2025, Danil Usoltsev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 type ident = string [@@deriving show {with_path = false}]
 and is_rec = bool [@@deriving show {with_path = false}]
 

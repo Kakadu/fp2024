@@ -6,9 +6,9 @@
 
 (license LGPL-3.0-or-later)
 
-(authors "FIXME Vasya Pupkin")
+(authors "Danil Usoltsev")
 
-(maintainers "FIXME Vasya Pupkin")
+(maintainers "Danil Usoltsev")
 
 (bug_reports "https://github.com/Kakadu/fp2024")
 
@@ -16,7 +16,7 @@
 
 (package
  (name EUsoltsev) ; FIXME and regenerate .opam file using 'dune build @install'
- (synopsis "FIXME An interpreter for language")
+ (synopsis "An interpreter for MiniML language")
  (description
   "FIXME. A longer description, for example, which are the most interesing features being supported, etc.")
  (documentation "https://kakadu.github.io/fp2024/docs/Lambda")

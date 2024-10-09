@@ -1,5 +1,8 @@
-open EUsoltsev_lib.Ast
+(** Copyright 2024-2025, Danil Usoltsev *)
 
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open EUsoltsev_lib.Ast
 
 let () =
   let factorial: expr = 
@@ -14,5 +17,4 @@ let () =
       Some( ExpBinOper(Multiply, ExpIdent "n", ExpFunction(ExpIdent "factorial",ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ))) ))
     , ExpIdent "factorial")
 
-  in print_endline(show_expr factorial)
-  ;;  
+  in print_endline(show_expr factorial);;  
