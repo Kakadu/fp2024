@@ -41,7 +41,15 @@
 <a id="L17"></a><span > </span>
 <a id="L18"></a><span > </span>
 <a id="L19"></a><span > </span>
-<a id="L20"></a><span class="visited"> </span>
+<a id="L20"></a><span > </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span > </span>
+<a id="L25"></a><span > </span>
+<a id="L26"></a><span > </span>
+<a id="L27"></a><span class="visited"> </span>
+<a id="L28"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -66,6 +74,14 @@
 <a href="#L18">18</a>
 <a href="#L19">19</a>
 <a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Danil Usoltsev *)
 
@@ -74,19 +90,27 @@
 open EUsoltsev_lib.Ast
 
 let () =
-  let factorial: expr = 
-    ExpLet(true, 
-    PatVariable "factorial", 
-    ExpLambda([PatVariable "n"], 
-      ExpIfThenElse(
-        ExpBinOper(LowerThan, 
-          ExpIdent "n", 
-          ExpConst( ConstInt 2)),
-      ExpConst( ConstInt 1),
-      Some( ExpBinOper(Multiply, ExpIdent "n", ExpFunction(ExpIdent "factorial",ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ))) ))
-    , ExpIdent "factorial")
-
-  in print_endlin<span data-count="1">e</span>(show_exp<span data-count="1">r</span> factorial);;  
+  let factorial : expr =
+    ExpLet
+      ( true
+      , PatVariable "factorial"
+      , ExpLambda
+          ( [ PatVariable "n" ]
+          , ExpIfThenElse
+              ( ExpBinOper (LowerThan, ExpIdent "n", ExpConst (ConstInt 2))
+              , ExpConst (ConstInt 1)
+              , Some
+                  (ExpBinOper
+                     ( Multiply
+                     , ExpIdent "n"
+                     , ExpFunction
+                         ( ExpIdent "factorial"
+                         , ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ) )) )
+          )
+      , ExpIdent "factorial" )
+  in
+  print_endlin<span data-count="1">e</span> (show_exp<span data-count="1">r</span> factorial)
+;;
 </code></pre>
       </div>
     </div>
