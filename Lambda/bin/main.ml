@@ -1,10 +1,10 @@
-open Lambda_lib.Ast
+open EUsoltsev_lib.Ast
 
 
 let () =
   let factorial: expr = 
     ExpLet(true, 
-    "factorial", 
+    PatVariable "factorial", 
     ExpLambda([PatVariable "n"], 
       ExpIfThenElse(
         ExpBinOper(LowerThan, 
@@ -13,7 +13,6 @@ let () =
       ExpConst( ConstInt 1),
       Some( ExpBinOper(Multiply, ExpIdent "n", ExpFunction(ExpIdent "factorial",ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ))) ))
     , ExpIdent "factorial")
-  in print_endline(show_expr factorial);;
 
-
-  
+  in print_endline(show_expr factorial)
+  ;;  

@@ -2,6 +2,6 @@
  (name main)
  (public_name main)
  (modules main)
- (libraries lambda_lib)
+ (libraries EUsoltsev_lib)
  (instrumentation
   (backend bisect_ppx)))

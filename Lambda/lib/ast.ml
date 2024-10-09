@@ -48,7 +48,7 @@ type expr =
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
   | ExpMatch of expr * (pattern * expr) list
   (* ExpMatch (x, [PatVariable "y", 10; PatConst (ConstInt 0), 0]) *)
-  | ExpLet of is_rec * ident * expr * expr 
+  | ExpLet of is_rec * pattern * expr * expr 
   (* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
   (* let x = 10 <=> ExpLet(false, "x", 10, "x")*)
 [@@deriving show {with_path=false}]

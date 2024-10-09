@@ -1,6 +1,6 @@
 (library
- (name lambda_lib)
- (public_name Lambda.Lib)
+ (name EUsoltsev_lib)
+ (public_name EUsoltsev.Lib)
  (modules Ast)
  (libraries base angstrom)
  (preprocess
