@@ -201,11 +201,16 @@ let sequence expected =
     [!] This checker returns also [ParseSuccess] or [ParseFail] *)
 let ssequence expected state = sequence (char_list_of_string expected) state
 
-(** Spacial parser to skip whitespaces *)
-let rec skip_ws state =
-  match dsatisfy is_whitespace is_whitespace state with
-  | ParseSuccess (is_ws, new_state) -> if is_ws then skip_ws new_state else new_state
-  | _ -> state
+(** Spacial parser to skip whitespaces
+
+    Returns: [unit parse_result] wich always [ParseSuccess] with updated state *)
+let skip_ws state =
+  let rec helper st =
+    match dsatisfy is_whitespace is_whitespace state with
+    | ParseSuccess (is_ws, new_state) -> if is_ws then helper new_state else new_state
+    | _ -> st
+  in
+  preturn () (helper state)
 ;;
 
 (** Parser of digit character which convert it to integer in range from [0] to [9].

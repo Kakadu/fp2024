@@ -51,6 +51,6 @@ val dsatisfy : char_predicate -> (char -> 'a) -> parser_state -> 'a parse_result
 val symbol : char -> char parser
 val sequence : char list -> char list parser
 val ssequence : string -> char list parser
-val skip_ws : parser_state -> parser_state
+val skip_ws : unit parser
 val digit : parser_state -> int parse_result
 val parse : 'a parser -> string -> 'a parse_result
