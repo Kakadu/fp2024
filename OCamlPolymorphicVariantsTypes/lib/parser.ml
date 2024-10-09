@@ -32,3 +32,15 @@ let boolean =
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let const_expr = skip_ws >>= fun _ -> integer <|> boolean >>= fun r -> preturn (Const r)
+
+(** Parser of basic expressions: [<unary>] | [<const>] | [<tuple>] | [<block>] *)
+let rec basic_expr state = (skip_ws >>= fun _ -> unary_expr <|> const_expr) state
+
+(** Parser of unary expression *)
+and unary_expr state =
+  let helper =
+    symbol '+' *> basic_expr
+    <|> (symbol '-' *> basic_expr >>= fun e -> preturn (Unary (Negate, e)))
+  in
+  (skip_ws >>= fun _ -> helper <|> symbol '~' *> helper) state
+;;

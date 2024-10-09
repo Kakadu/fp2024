@@ -31,5 +31,13 @@ let%expect_test _ =
   Format.printf "%s" (string_of_expression_parse_result (parse const_expr {|    true|}));
   [%expect {| (Const (BoolLiteral true)) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse const_expr "trua"));
-  [%expect {| Parse process failed |}]
+  [%expect {| Parse process failed |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse unary_expr "+  12"));
+  [%expect {| (Const (IntLiteral 12)) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse unary_expr "  ~-123"));
+  [%expect {| (Unary (Negate, (Const (IntLiteral 123)))) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "true"));
+  [%expect {| (Const (BoolLiteral true)) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "~-123"));
+  [%expect {| (Unary (Negate, (Const (IntLiteral 123)))) |}]
 ;;
