@@ -66,7 +66,7 @@ let ( >>= ) : 'a 'b. 'a parser -> ('a -> 'b parser) -> 'b parser =
   fun p f state ->
   match p state with
   | ParseFail -> ParseFail
-  | ParseError (msg, st) -> perror msg st
+  | ParseError _ as err -> err
   | ParseSuccess (res, st) -> f res st
 ;;
 
@@ -76,6 +76,15 @@ let ( *> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser = fun p1 p2 -> p1 >>= fu
 (** Parser combinator that allows to ignore right result *)
 let ( <* ) : 'a 'b. 'a parser -> 'b parser -> 'a parser =
   fun p1 p2 -> p1 >>= fun res -> p2 >>= fun _ -> preturn res
+;;
+
+(** Check succesed parsing 'a and run 'b parsing proccess from based state *)
+let ( >>> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser =
+  fun p1 p2 s ->
+  match p1 s with
+  | ParseError _ as err -> err
+  | ParseFail -> ParseFail
+  | ParseSuccess _ -> p2 s
 ;;
 
 (** Parser combinator that matches [*] in regular expressions (Kleene's star) *)

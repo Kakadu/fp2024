@@ -24,6 +24,7 @@ val ( <*> ) : 'a 'b. ('a -> 'b) parser -> 'a parser -> 'b parser
 val ( >>= ) : 'a 'b. 'a parser -> ('a -> 'b parser) -> 'b parser
 val ( *> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser
 val ( <* ) : 'a 'b. 'a parser -> 'b parser -> 'a parser
+val ( >>> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser
 val many : 'a parser -> 'a list parser
 val many1 : 'a parser -> 'a list parser
 val ( <|> ) : 'a parser -> 'a parser -> 'a parser

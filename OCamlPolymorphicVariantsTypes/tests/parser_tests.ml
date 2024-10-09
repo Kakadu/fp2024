@@ -36,6 +36,49 @@ let%expect_test _ =
   [%expect {| (Const (IntLiteral 12)) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse unary_expr "  ~-123"));
   [%expect {| (Unary (Negate, (Const (IntLiteral 123)))) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "-(1234)"));
+  [%expect {| (Unary (Negate, (Const (IntLiteral 1234)))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse basic_expr "(true, -12, (789; 45))"));
+  [%expect
+    {|
+    (Tuple
+       [(Const (BoolLiteral true)); (Unary (Negate, (Const (IntLiteral 12))));
+         (ExpressionBlock [(Const (IntLiteral 789)); (Const (IntLiteral 45))])]) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "(true, )"));
+  [%expect {|
+    ParseError(line=1 pos=6): Not found expression after separator: ',' |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse basic_expr "(true; 12  ;)"));
+  [%expect {|
+    ParseError(line=1 pos=12): Not found expression after separator: ';' |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "()"));
+  [%expect {|
+    (Const UnitLiteral) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "(12,34"));
+  [%expect {|
+    ParseError(line=1 pos=6): Not found close bracket |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result
+       (parse
+          basic_expr
+          {|     (  
+       12, 
+       ((((   (   
+       (   23  ; 
+          45))))   
+          ))   )
+          |}));
+  [%expect
+    {|
+    (Tuple
+       [(Const (IntLiteral 12));
+         (ExpressionBlock [(Const (IntLiteral 23)); (Const (IntLiteral 45))])]) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "~-123"));
+  [%expect {| (Unary (Negate, (Const (IntLiteral 123)))) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "true"));
   [%expect {| (Const (BoolLiteral true)) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "~-123"));
