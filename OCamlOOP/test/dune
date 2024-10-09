@@ -1,0 +1,3 @@
+(cram
+ (applies_to ast_check)
+ (deps ../bin/main.exe))

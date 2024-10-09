@@ -1,0 +1,36 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license MIT)
+
+(authors
+ "Kostya Oreshin <koreshin67@gmail.com>"
+ "Nikita Shchutskii <nshchutskiy@gmail.com>")
+
+(maintainers
+ "Kostya Oreshin <koreshin67@gmail.com>"
+ "Nikita Shchutskii <nshchutskiy@gmail.com>")
+
+(bug_reports "https://github.com/TerrMen/Haskell")
+
+(homepage "https://github.com/TerrMen/Haskell")
+
+(package
+ (name Haskell)
+ (synopsis "An interpreter for Haskell")
+ (description
+  "An interpreter for Haskell language with standard types and lazy evaluations")
+ (version 0.1)
+ (depends
+  dune
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ; base
+  ))

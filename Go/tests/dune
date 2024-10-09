@@ -1,0 +1,3 @@
+(cram
+ (applies_to test_ast)
+ (deps ../bin/astExample.exe))

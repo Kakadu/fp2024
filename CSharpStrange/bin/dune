@@ -1,0 +1,7 @@
+(executable
+ (name ast_fact)
+ (public_name ast_fact)
+ (modules ast_fact)
+ (libraries c_sharp_strange_lib)
+ (instrumentation
+  (backend bisect_ppx)))

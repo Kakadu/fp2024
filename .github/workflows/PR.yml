@@ -74,6 +74,16 @@ jobs:
           python ../.github/lint_filesystem.py ${{ env.latest }}
 
 
+      - name: Compiling ${{ env.latest }} (profile=dev)...
+        run: |
+          cd ${{ env.latest }}
+          opam exec -- dune build
+
+      - name: Running tests in ${{ env.latest }} (profile=dev)...
+        run: |
+          cd ${{ env.latest }}
+          opam exec -- dune runtest
+
       - name: Compiling ${{ env.latest }} (profile=release)...
         run: |
           cd ${{ env.latest }}

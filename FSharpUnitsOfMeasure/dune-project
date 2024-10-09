@@ -1,0 +1,40 @@
+(lang dune 3.7)
+
+(name FSharpUnitsOfMeasure)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license MIT)
+
+(authors
+ "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
+ "Andrew Strelnikov <anbrew200212@gmail.com>"
+ )
+
+(maintainers
+ "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
+ "Andrew Strelnikov <anbrew200212@gmail.com>"
+ )
+
+(bug_reports "https://github.com/DronShock/FSharpUnitsOfMeasure/issues")
+
+(homepage "https://github.com/DronShock/FSharpUnitsOfMeasure")
+
+(package
+ (name FSharpUnitsOfMeasure)
+ (synopsis "An interpreter for F# with support of units of measure")
+ (description "An interpreter for F# with support of units of measure")
+ (version 0.1)
+ (allow_empty)
+ (depends
+  dune
+  angstrom
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ))

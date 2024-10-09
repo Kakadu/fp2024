@@ -1,0 +1,9 @@
+(library
+ (name FSharpActivePatterns)
+ (public_name FSharpActivePatterns)
+ (modules Ast PrintAst)
+ (modules_without_implementation ast)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))
