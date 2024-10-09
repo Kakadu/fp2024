@@ -53,3 +53,4 @@ val sequence : char list -> char list parser
 val ssequence : string -> char list parser
 val skip_ws : parser_state -> parser_state
 val digit : parser_state -> int parse_result
+val parse : 'a parser -> string -> 'a parse_result

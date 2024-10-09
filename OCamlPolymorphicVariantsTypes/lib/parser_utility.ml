@@ -212,3 +212,11 @@ let rec skip_ws state =
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let digit state = satisfy is_digit (fun sym -> int_of_digit_char sym) None state
+
+(** Initialize started parser state *)
+let init_parser_state (input_string : string) =
+  { input = char_list_of_string input_string; line = 1; inline = 0 }
+;;
+
+(** Run parser [f] for input string *)
+let parse f inputs = f (init_parser_state inputs)
