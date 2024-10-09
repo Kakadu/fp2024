@@ -14,13 +14,15 @@ let integer =
     >>= (fun v -> helper (v + (counter * 10)))
     <|> (preturn counter >>= fun v -> preturn (IntLiteral v))
   in
-  digit >>= fun d -> helper d
+  skip_ws >>= fun _ -> digit >>= fun d -> helper d
 ;;
 
 (** Parser of boolean literals: [true], [false].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let boolean =
+  skip_ws
+  >>= fun _ ->
   ssequence "true"
   <|> ssequence "false"
   >>= fun cl -> preturn (BoolLiteral (List.length cl = 4))
@@ -29,4 +31,4 @@ let boolean =
 (** Parser of constants expression: [integer] and [boolean]
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let const_expr = integer <|> boolean >>= fun r -> preturn (Const r)
+let const_expr = skip_ws >>= fun _ -> integer <|> boolean >>= fun r -> preturn (Const r)

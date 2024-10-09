@@ -26,9 +26,9 @@ let%expect_test _ =
 
 (* Test for expressin parsers *)
 let%expect_test _ =
-  Format.printf "%s" (string_of_expression_parse_result (parse const_expr "123"));
+  Format.printf "%s" (string_of_expression_parse_result (parse const_expr {|  123|}));
   [%expect {| (Const (IntLiteral 123)) |}];
-  Format.printf "%s" (string_of_expression_parse_result (parse const_expr "true"));
+  Format.printf "%s" (string_of_expression_parse_result (parse const_expr {|    true|}));
   [%expect {| (Const (BoolLiteral true)) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse const_expr "trua"));
   [%expect {| Parse process failed |}]
