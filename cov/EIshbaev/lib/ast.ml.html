@@ -18,15 +18,15 @@
       <h2>42.31%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:8.77%"></span>
-      <span class="unvisited" style="top:15.79%"></span>
-      <span class="unvisited" style="top:26.32%"></span>
-      <span class="unvisited" style="bottom:47.37%"></span>
-      <span class="unvisited" style="bottom:29.82%"></span>
-      <span class="unvisited" style="bottom:28.07%"></span>
-      <span class="unvisited" style="bottom:26.32%"></span>
-      <span class="unvisited" style="bottom:14.04%"></span>
-      <span class="unvisited" style="bottom:5.26%"></span>
+      <span class="some-visited" style="top:8.47%"></span>
+      <span class="unvisited" style="top:16.95%"></span>
+      <span class="unvisited" style="top:27.12%"></span>
+      <span class="unvisited" style="bottom:45.76%"></span>
+      <span class="unvisited" style="bottom:28.81%"></span>
+      <span class="unvisited" style="bottom:27.12%"></span>
+      <span class="unvisited" style="bottom:25.42%"></span>
+      <span class="unvisited" style="bottom:13.56%"></span>
+      <span class="unvisited" style="bottom:5.08%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -37,16 +37,16 @@
 <a id="L4"></a><span > </span>
 <a id="L5"></a><span class="some-visited"> </span>
 <a id="L6"></a><span > </span>
-<a id="L7"></a><span class="visited"> </span>
+<a id="L7"></a><span > </span>
 <a id="L8"></a><span class="visited"> </span>
-<a id="L9"></a><span class="unvisited"> </span>
-<a id="L10"></a><span > </span>
+<a id="L9"></a><span class="visited"> </span>
+<a id="L10"></a><span class="unvisited"> </span>
 <a id="L11"></a><span > </span>
 <a id="L12"></a><span > </span>
 <a id="L13"></a><span > </span>
 <a id="L14"></a><span > </span>
-<a id="L15"></a><span class="unvisited"> </span>
-<a id="L16"></a><span > </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span class="unvisited"> </span>
 <a id="L17"></a><span > </span>
 <a id="L18"></a><span > </span>
 <a id="L19"></a><span > </span>
@@ -60,34 +60,36 @@
 <a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
 <a id="L29"></a><span > </span>
-<a id="L30"></a><span class="unvisited"> </span>
+<a id="L30"></a><span > </span>
 <a id="L31"></a><span > </span>
-<a id="L32"></a><span > </span>
+<a id="L32"></a><span class="unvisited"> </span>
 <a id="L33"></a><span > </span>
 <a id="L34"></a><span > </span>
-<a id="L35"></a><span class="visited"> </span>
+<a id="L35"></a><span > </span>
 <a id="L36"></a><span > </span>
-<a id="L37"></a><span > </span>
+<a id="L37"></a><span class="visited"> </span>
 <a id="L38"></a><span > </span>
 <a id="L39"></a><span > </span>
-<a id="L40"></a><span class="unvisited"> </span>
-<a id="L41"></a><span class="unvisited"> </span>
+<a id="L40"></a><span > </span>
+<a id="L41"></a><span > </span>
 <a id="L42"></a><span class="unvisited"> </span>
-<a id="L43"></a><span > </span>
-<a id="L44"></a><span > </span>
-<a id="L45"></a><span class="visited"> </span>
+<a id="L43"></a><span class="unvisited"> </span>
+<a id="L44"></a><span class="unvisited"> </span>
+<a id="L45"></a><span > </span>
 <a id="L46"></a><span > </span>
-<a id="L47"></a><span > </span>
+<a id="L47"></a><span class="visited"> </span>
 <a id="L48"></a><span > </span>
-<a id="L49"></a><span class="unvisited"> </span>
+<a id="L49"></a><span > </span>
 <a id="L50"></a><span > </span>
-<a id="L51"></a><span > </span>
-<a id="L52"></a><span class="visited"> </span>
+<a id="L51"></a><span class="unvisited"> </span>
+<a id="L52"></a><span > </span>
 <a id="L53"></a><span > </span>
-<a id="L54"></a><span class="unvisited"> </span>
+<a id="L54"></a><span class="visited"> </span>
 <a id="L55"></a><span > </span>
-<a id="L56"></a><span > </span>
-<a id="L57"></a><span class="visited"> </span>
+<a id="L56"></a><span class="unvisited"> </span>
+<a id="L57"></a><span > </span>
+<a id="L58"></a><span > </span>
+<a id="L59"></a><span class="visited"> </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -149,6 +151,8 @@
 <a href="#L55">55</a>
 <a href="#L56">56</a>
 <a href="#L57">57</a>
+<a href="#L58">58</a>
+<a href="#L59">59</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Azamat Ishbaev *)
 
@@ -156,54 +160,56 @@
 
 <span data-count="0">t</span>ype name = <span data-count="7">s</span>tring [@@deriving show { with_path = false }]
 
+(** Constants *)
 <span data-count="6">t</span>ype const =
-  | ConstInt of in<span data-count="3">t</span> (* integers *)
-  | ConstBool of boo<span data-count="0">l</span> (* true or false *)
-  | ConstUnit (* Unit () *)
-  | ConstNil (* [] *)
+  | ConstInt of in<span data-count="3">t</span> (** integers *)
+  | ConstBool of boo<span data-count="0">l</span> (** true or false *)
+  | ConstUnit (** Unit () *)
+  | ConstNil (** [] *)
 [@@deriving show { with_path = false }]
 
-(* Binary operations *)
+(** Binary operations *)
 <span data-count="0">t</span>ype binop =
-  | Add (* "+" *)
-  | Sub (* "-" *)
-  | Div (* "/" *)
-  | Mul (* "*" *)
-  | Lesq (* "&lt;=" *)
-  | Greq (* "&gt;=" *)
-  | Gre (* "&gt;" *)
-  | Les (* "&lt;" *)
-  | Eql (* "=" *)
-  | Neq (* "!=" *)
-  | And (* "&amp;&amp;" *)
-  | Or (* "||" *)
+  | Add (** "+" *)
+  | Sub (** "-" *)
+  | Div (** "/" *)
+  | Mul (** "*" *)
+  | Lesq (** "&lt;=" *)
+  | Greq (** "&gt;=" *)
+  | Gre (** "&gt;" *)
+  | Les (** "&lt;" *)
+  | Eql (** "=" *)
+  | Neq (** "!=" *)
+  | And (** "&amp;&amp;" *)
+  | Or (** "||" *)
 [@@deriving show { with_path = false }]
 
+(** Recursive flag *)
 <span data-count="0">t</span>ype recursive =
   | Rec (** recursive function *)
   | NotRec (** Non-recursive functions *)
 [@@deriving show { with_path = false }]
 
 <span data-count="2">t</span>ype pattern =
-  | PatConst of const (* const -&gt; ... *)
-  | PatVar of name (* var -&gt; ... *)
-  | PatWild (* _ -&gt; ... *)
-  | PatEmpty (* [] -&gt; ... *)
-  | PatTuple of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (* x_1 :: x_2, x_3 :: x_4 *)
-  | PatConc of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (* x_1 :: x_2 -&gt; ... *)
-  | PatOr of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (* x_1 | x_2  -&gt; ... *)
+  | PatConst of const (** const -&gt; ... *)
+  | PatVar of name (** var -&gt; ... *)
+  | PatWild (** _ -&gt; ... *)
+  | PatEmpty (** [] -&gt; ... *)
+  | PatTuple of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (** x_1 :: x_2, x_3 :: x_4 *)
+  | PatConc of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (** x_1 :: x_2 -&gt; ... *)
+  | PatOr of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (** x_1 | x_2  -&gt; ... *)
 [@@deriving show { with_path = false }]
 
 <span data-count="23">t</span>ype expr =
-  | ExprConst of const (* consts *)
-  | ExprVar of name (* variebles with names *)
-  | ExprBinop of binop * expr * expr (* x_1 binop x_2 *)
-  | ExprTuple of expr * expr * <span data-count="0">e</span>xpr lis<span data-count="0">t</span> (* list with x_i separeted via "," *)
-  | ExprFunc of name * expr (* anonymous functions *)
-  | ExprCond of expr * expr * expr (* if then else *)
-  | ExprLet of recursive * <span data-count="6">(</span><span data-count="2">p</span>attern * expr) lis<span data-count="2">t</span> * expr (* let rec fun *)
-  | ExprApp of expr * expr (* application *)
-  | ExprMatch of expr * <span data-count="0">(</span><span data-count="0">p</span>attern * expr) lis<span data-count="0">t</span> (* match x_1 with | x_2 -&gt; x_3 | ... *)
+  | ExprConst of const (** consts *)
+  | ExprVar of name (** variebles with names *)
+  | ExprBinop of binop * expr * expr (** x_1 binop x_2 *)
+  | ExprTuple of expr * expr * <span data-count="0">e</span>xpr lis<span data-count="0">t</span> (** list with x_i separeted via "," *)
+  | ExprFunc of name * expr (** anonymous functions *)
+  | ExprCond of expr * expr * expr (** if then else *)
+  | ExprLet of recursive * <span data-count="6">(</span><span data-count="2">p</span>attern * expr) lis<span data-count="2">t</span> * expr (** let rec fun *)
+  | ExprApp of expr * expr (** application *)
+  | ExprMatch of expr * <span data-count="0">(</span><span data-count="0">p</span>attern * expr) lis<span data-count="0">t</span> (** match x_1 with | x_2 -&gt; x_3 | ... *)
 [@@deriving show { with_path = false }]
 
 <span data-count="1">t</span>ype structure = <span data-count="5">e</span>xpr lis<span data-count="1">t</span> [@@deriving show { with_path = false }]
