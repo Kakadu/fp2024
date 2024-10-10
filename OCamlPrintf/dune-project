@@ -22,6 +22,8 @@
  (version 0.1)
  (depends
   dune
+  base
+  angstrom
   (ppx_inline_test :with-test)
   ppx_deriving
   bisect_ppx

@@ -1,7 +1,8 @@
 (library
  (name ocaml_printf_lib)
  (public_name OCamlPrintf.Lib)
- (modules Ast)
+ (modules Ast Parser)
+ (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation
