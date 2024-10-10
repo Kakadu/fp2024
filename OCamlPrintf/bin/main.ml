@@ -7,7 +7,7 @@ open Ocaml_printf_lib.Parser
 
 let () =
   let fact_ast : structure =
-    [ Str_value
+    [ Struct_value
         ( Recursive
         , [ { pat = Pat_var "factorial"
             ; exp =
