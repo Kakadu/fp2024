@@ -124,5 +124,46 @@ let%expect_test _ =
        (Binary (
           (Binary ((Const (IntLiteral 35)), Division, (Const (IntLiteral 2)))),
           Gt, (Const (IntLiteral 90))))
-       )) |}]
+       )) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse if_expr "if true || false then 12 else 34"));
+  [%expect
+    {|
+    (If ((Binary ((Const (BoolLiteral true)), Or, (Const (BoolLiteral false)))),
+       (Const (IntLiteral 12)), (Some (Const (IntLiteral 34))))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse if_expr "if true || false then 12"));
+  [%expect
+    {|
+    (If ((Binary ((Const (BoolLiteral true)), Or, (Const (BoolLiteral false)))),
+       (Const (IntLiteral 12)), None)) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse if_expr "if true || false then 12 else 34"));
+  [%expect
+    {|
+    (If ((Binary ((Const (BoolLiteral true)), Or, (Const (BoolLiteral false)))),
+       (Const (IntLiteral 12)), (Some (Const (IntLiteral 34))))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse if_expr "if true || false then 12 else"));
+  [%expect
+    {|
+    ParseError(line=1 pos=29): Expected expression of 'else' branch for if expression |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse if_expr "if true || false then"));
+  [%expect
+    {|
+    ParseError(line=1 pos=21): Expected expression of 'then' branch for if expression |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse if_expr "if true || false"));
+  [%expect {|
+    ParseError(line=1 pos=16): Not found 'then' branch for if-expression |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse if_expr "if"));
+  [%expect {|
+    ParseError(line=1 pos=0): Not found if expression after keyword 'if' |}]
 ;;

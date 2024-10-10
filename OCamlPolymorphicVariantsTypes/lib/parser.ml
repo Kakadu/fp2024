@@ -162,4 +162,27 @@ and boolean_expr state =
     compare_expr
     [ { oper_view = "&&"; oper_ast = And }; { oper_view = "||"; oper_ast = Or } ]
     state
+
+and if_expr state =
+  let else_block ex then_ex =
+    skip_ws *> (expr >>= fun else_ex -> preturn (If (ex, then_ex, Some else_ex)))
+    <|> perror "Expected expression of 'else' branch for if expression"
+  in
+  let then_block ex =
+    skip_ws
+    *> (expr
+        >>= fun then_ex ->
+        skip_ws *> (ssequence "else" *> else_block ex then_ex)
+        <|> preturn (If (ex, then_ex, None)))
+    <|> perror "Expected expression of 'then' branch for if expression"
+  in
+  (skip_ws
+   *> ssequence "if"
+   *> (expr
+       >>= fun ex ->
+       skip_ws
+       *> (ssequence "then" *> then_block ex
+           <|> perror "Not found 'then' branch for if-expression"))
+   <|> perror "Not found if expression after keyword 'if'")
+    state
 ;;
