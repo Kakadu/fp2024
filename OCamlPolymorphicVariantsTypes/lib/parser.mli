@@ -5,9 +5,11 @@
 open Ast
 open Parser_utility
 
+val ident : string parser
 val integer : literal parser
 val boolean : literal parser
 val const_expr : expression parser
+val variable : expression parser
 val basic_expr : expression parser
 val unary_expr : expression parser
 val bracket_expr : expression parser

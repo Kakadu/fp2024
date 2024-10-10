@@ -4,6 +4,7 @@
 
 open Ast
 open Parser_utility
+open Utils
 
 (** Data record which contains [Miniml.Ast]
     view of [binary_operator]
@@ -12,6 +13,13 @@ type binary_operator_parse_data =
   { oper_view : string
   ; oper_ast : binary_operator
   }
+
+(**  *)
+let is_keyword = function
+  | "true" | "false" -> true
+  | "if" | "then" | "else" -> true
+  | _ -> false
+;;
 
 (** Parser of some elements sequence:
     - [start]: first element of sequence
@@ -30,6 +38,22 @@ let element_sequence : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'b
   *> (ssequence sep
       >>> many (next_element sep)
       >>= fun l -> preturn (list_converter (List.append [ start ] l)))
+;;
+
+(** Parse [Miniml.identifier] value. *)
+let ident =
+  let ident_symbol = function
+    | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
+    | _ -> false
+  in
+  let helper = many1 (dsatisfy ident_symbol (fun c -> c)) in
+  skip_ws *> helper
+  >>= fun l ->
+  if is_digit (List.nth l 0)
+  then pfail
+  else
+    preturn (string_of_char_list l)
+    >>= fun id -> if is_keyword id then pfail else preturn id
 ;;
 
 (** Parser of integer literals: [0 .. Int64.max_int].
@@ -56,13 +80,16 @@ let boolean =
 (** Parser of constants expression: [integer] and [boolean]
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let const_expr = skip_ws *> integer <|> boolean >>= fun r -> preturn (Const r)
+let const_expr = skip_ws *> integer <|> boolean >>= fun id -> preturn (Const id)
+
+let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
 let rec expr state = boolean_expr state
 
-(** Parser of basic expressions: [<unary>] | [<const>] | [<tuple>] | [<block>] *)
-and basic_expr state = (skip_ws *> unary_expr <|> bracket_expr <|> const_expr) state
+(** Parser of basic expressions: [<unary>] | [<tuple>] | [<block>] | [<variable>] | [<const>] *)
+and basic_expr state =
+  (skip_ws *> unary_expr <|> bracket_expr <|> variable <|> const_expr) state
 
 (** Parser of unary expression *)
 and unary_expr state =

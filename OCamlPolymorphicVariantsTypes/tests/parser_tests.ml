@@ -6,7 +6,27 @@ open Miniml.Parser
 open Miniml.Parser_utility
 open Miniml.Printer
 
-(* Test for literal parsers *)
+(* Tests for identifier parser *)
+let%expect_test _ =
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "x"));
+  [%expect {| "x" |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "fact5"));
+  [%expect {| "fact5" |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "_"));
+  [%expect {| "_" |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "0var"));
+  [%expect {| Parse process failed |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident ""));
+  [%expect {| Parse process failed |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "123"));
+  [%expect {| Parse process failed |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "true"));
+  [%expect {| Parse process failed |}];
+  Format.printf "%s" (string_of_identifier_parse_result (parse ident "then"));
+  [%expect {| Parse process failed |}]
+;;
+
+(* Tests for literal parsers *)
 let%expect_test _ =
   Format.printf "%s" (string_of_literal_parse_result (parse integer "123"));
   [%expect {| (IntLiteral 123) |}];
@@ -24,13 +44,17 @@ let%expect_test _ =
   [%expect {| Parse process failed |}]
 ;;
 
-(* Test for expressin parsers *)
+(* Tests for expressin parsers *)
 let%expect_test _ =
   Format.printf "%s" (string_of_expression_parse_result (parse const_expr {|  123|}));
   [%expect {| (Const (IntLiteral 123)) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse const_expr {|    true|}));
   [%expect {| (Const (BoolLiteral true)) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse const_expr "trua"));
+  [%expect {| Parse process failed |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse variable "x"));
+  [%expect {| (Variable "x") |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse variable "if"));
   [%expect {| Parse process failed |}];
   Format.printf "%s" (string_of_expression_parse_result (parse unary_expr "+  12"));
   [%expect {| (Const (IntLiteral 12)) |}];

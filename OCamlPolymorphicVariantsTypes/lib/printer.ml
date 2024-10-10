@@ -13,6 +13,9 @@ let string_of_parse_result converter = function
   | ParseSuccess (r, _) -> converter r
 ;;
 
+(** Convert [identifier] parse result to string by function [show_identifier] *)
+let string_of_identifier_parse_result = string_of_parse_result show_identifier
+
 (** Convert [literal] parse result to string by function [show_literal] *)
 let string_of_literal_parse_result = string_of_parse_result show_literal
 
