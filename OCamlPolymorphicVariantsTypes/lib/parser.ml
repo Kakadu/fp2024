@@ -5,6 +5,14 @@
 open Ast
 open Parser_utility
 
+(** Data record which contains [Miniml.Ast]
+    view of [binary_operator]
+    and it's view in string *)
+type binary_operator_parse_data =
+  { oper_view : string
+  ; oper_ast : binary_operator
+  }
+
 (** Parser of some elements sequence:
     - [start]: first element of sequence
     - [element_parser]: parser of one element in sequence
@@ -51,7 +59,7 @@ let boolean =
 let const_expr = skip_ws *> integer <|> boolean >>= fun r -> preturn (Const r)
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
-let rec expr state = basic_expr state
+let rec expr state = boolean_expr state
 
 (** Parser of basic expressions: [<unary>] | [<const>] | [<tuple>] | [<block>] *)
 and basic_expr state = (skip_ws *> unary_expr <|> bracket_expr <|> const_expr) state
@@ -93,5 +101,65 @@ and bracket_expr state =
   (skip_ws
    *> (symbol '(' *> brackets_subexpr
        <* (skip_ws *> symbol ')' <|> perror "Not found close bracket")))
+    state
+
+(** Abstract parser of binary operations
+    - [subparser]: parser of subexpression
+    - [operations]: list of one priorety level binary operations *)
+and binary_expression subparser operations state =
+  let operation left oper =
+    skip_ws
+    *> ssequence oper.oper_view
+    *> (subparser
+        >>= (fun right -> preturn (Binary (left, oper.oper_ast, right)))
+        <|> perror
+              (Printf.sprintf
+                 "Not found right operand of '%s' binary operator"
+                 oper.oper_view))
+  in
+  let rec next ex =
+    skip_ws *> (one_of (List.map (operation ex) operations) >>= fun e -> next e)
+    <|> preturn ex
+  in
+  (skip_ws *> subparser >>= fun ex -> next ex) state
+
+(** Parser of binary expressions such as [<expr> * <expr>] and [<expr> / <expr>] *)
+and multiply_expr state =
+  binary_expression
+    basic_expr
+    [ { oper_view = "*"; oper_ast = Multiply }; { oper_view = "/"; oper_ast = Division } ]
+    state
+
+(** Parser of binary expressions such as [<expr> + <expr>] and [<expr> - <expr>] *)
+and summary_expr state =
+  binary_expression
+    multiply_expr
+    [ { oper_view = "+"; oper_ast = Add }; { oper_view = "-"; oper_ast = Subtract } ]
+    state
+
+(** Parser of binary expressions such as
+    - [<expr> = <expr>]
+    - [<expr> <> <expr>]
+    - [<expr> > <expr>]
+    - [<expr> < <expr>]
+    - [<expr> >= <expr>]
+    - [<expr> <= <expr>] *)
+and compare_expr state =
+  binary_expression
+    summary_expr
+    [ { oper_view = "="; oper_ast = Equals }
+    ; { oper_view = "<>"; oper_ast = Unequals }
+    ; { oper_view = ">="; oper_ast = Gte }
+    ; { oper_view = "<="; oper_ast = Lte }
+    ; { oper_view = ">"; oper_ast = Gt }
+    ; { oper_view = "<"; oper_ast = Lt }
+    ]
+    state
+
+(** Parser of binary expressions such as [<expr> && <expr>] and [<expr> || <expr>] *)
+and boolean_expr state =
+  binary_expression
+    compare_expr
+    [ { oper_view = "&&"; oper_ast = And }; { oper_view = "||"; oper_ast = Or } ]
     state
 ;;

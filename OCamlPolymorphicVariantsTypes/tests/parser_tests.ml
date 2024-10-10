@@ -48,12 +48,12 @@ let%expect_test _ =
          (ExpressionBlock [(Const (IntLiteral 789)); (Const (IntLiteral 45))])]) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "(true, )"));
   [%expect {|
-    ParseError(line=1 pos=6): Not found expression after separator: ',' |}];
+    ParseError(line=1 pos=6): Not found elements after separator: ',' |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result (parse basic_expr "(true; 12  ;)"));
   [%expect {|
-    ParseError(line=1 pos=12): Not found expression after separator: ';' |}];
+    ParseError(line=1 pos=12): Not found elements after separator: ';' |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "()"));
   [%expect {|
     (Const UnitLiteral) |}];
@@ -81,6 +81,48 @@ let%expect_test _ =
   [%expect {| (Unary (Negate, (Const (IntLiteral 123)))) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "true"));
   [%expect {| (Const (BoolLiteral true)) |}];
-  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "~-123"));
-  [%expect {| (Unary (Negate, (Const (IntLiteral 123)))) |}]
+  Format.printf "%s" (string_of_expression_parse_result (parse multiply_expr "12 * 45"));
+  [%expect {| (Binary ((Const (IntLiteral 12)), Multiply, (Const (IntLiteral 45)))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse multiply_expr "60 * 789 / 12"));
+  [%expect
+    {|
+    (Binary (
+       (Binary ((Const (IntLiteral 60)), Multiply, (Const (IntLiteral 789)))),
+       Division, (Const (IntLiteral 12)))) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse summary_expr "12 + 45"));
+  [%expect {| (Binary ((Const (IntLiteral 12)), Add, (Const (IntLiteral 45)))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse summary_expr "45 - 789 + 12"));
+  [%expect
+    {|
+    (Binary (
+       (Binary ((Const (IntLiteral 45)), Subtract, (Const (IntLiteral 789)))),
+       Add, (Const (IntLiteral 12)))) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse compare_expr "12 > 45"));
+  [%expect {| (Binary ((Const (IntLiteral 12)), Gt, (Const (IntLiteral 45)))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse compare_expr "12 <= 45 - 45"));
+  [%expect
+    {|
+    (Binary ((Const (IntLiteral 12)), Lte,
+       (Binary ((Const (IntLiteral 45)), Subtract, (Const (IntLiteral 45)))))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse boolean_expr "true && false"));
+  [%expect {| (Binary ((Const (BoolLiteral true)), And, (Const (BoolLiteral false)))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse boolean_expr "45 = 45 || 35 / 2 > 90"));
+  [%expect
+    {|
+    (Binary ((Binary ((Const (IntLiteral 45)), Equals, (Const (IntLiteral 45)))),
+       Or,
+       (Binary (
+          (Binary ((Const (IntLiteral 35)), Division, (Const (IntLiteral 2)))),
+          Gt, (Const (IntLiteral 90))))
+       )) |}]
 ;;
