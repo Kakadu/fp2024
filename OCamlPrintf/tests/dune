@@ -1,3 +1,3 @@
 (cram
- (applies_to interpret_tests)
+ (applies_to interpret_tests parser_binding)
  (deps ../bin/main.exe))

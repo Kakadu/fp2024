@@ -39,11 +39,10 @@ let () =
 ;;
 
 let () =
-  match parse " 1 " with
-  | None -> Printf.printf "Parsing failed\n"
-  | Some const ->
-    (match const with
-     | Const_integer value -> Printf.printf "Parsed an integer: %d\n" value
-     | Const_char value -> Printf.printf "Parsed a char: %c\n" value
-     | Const_string value -> Printf.printf "Parsed a string: %s\n" value)
+  let parser_binding : value_binding =
+    match parse "let n = 1" with
+    | None -> { pat = Pat_var "none"; exp = Exp_constant (Const_integer 0) }
+    | Some out -> out
+  in
+  print_endline (show_value_binding parser_binding)
 ;;
