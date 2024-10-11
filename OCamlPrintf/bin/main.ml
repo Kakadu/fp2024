@@ -39,10 +39,10 @@ let () =
 ;;
 
 let () =
-  let parser_binding : value_binding =
+  let parser_binding : structure =
     match parse "let n = 1" with
-    | None -> { pat = Pat_var "none"; exp = Exp_constant (Const_integer 0) }
+    | None -> []
     | Some out -> out
   in
-  print_endline (show_value_binding parser_binding)
+  print_endline (show_structure parser_binding)
 ;;
