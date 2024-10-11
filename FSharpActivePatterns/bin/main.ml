@@ -4,6 +4,7 @@
 
 open FSharpActivePatterns.Ast
 open FSharpActivePatterns.PrintAst
+open FSharpActivePatterns.ArithmParser
 
 let () =
   let factorial =
@@ -32,5 +33,9 @@ let () =
     ; Expr (Function_call (Variable (Ident "factorial"), [ Variable (Ident "a") ]))
     ]
   in
-  List.iter print_construction program
+  List.iter print_construction program;
+  Printf.printf "\n\n\n";
+  let input = " ( 5 + 1 ) + 8 " in
+  let result = parse input in
+  print_construction (Expr result)
 ;;
