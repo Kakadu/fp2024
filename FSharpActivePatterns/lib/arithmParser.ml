@@ -1,28 +1,29 @@
 open Angstrom
 open Ast
 
-let ws = skip_while (function ' ' -> true | _ -> false)
-let parens p = ws *> char '(' *> ws *> p <* ws <* char ')' <* ws
-let add = ws *> char '+' *> ws *> return Binary_add
-let sub = ws *> char '-' *> ws *> return Binary_subtract
-let mul = ws *> char '*' *> ws *> return Binary_multiply
-let div = ws *> char '/' *> ws *> return Binary_divide
-let integer =
+let skip_ws = skip_while (function ' ' -> true | _ -> false)
+let parse_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
+let add = skip_ws *> char '+' *> skip_ws *> return Binary_add
+let sub = skip_ws *> char '-' *> skip_ws *> return Binary_subtract
+let mul = skip_ws *> char '*' *> skip_ws *> return Binary_multiply
+let div = skip_ws *> char '/' *> skip_ws *> return Binary_divide
+let find_integer =
   take_while1 (function '0' .. '9' -> true | _ -> false) >>| (fun s -> Const (Int_lt (int_of_string s)))
 
-let chainl1 e op =
+(* find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
+let parse_chainl1 e op =
   let rec go acc =
     (lift2 (fun f x -> Bin_expr (f, acc, x)) op e >>= go) <|> return acc in
-  e >>= fun init -> go init <* ws
+  e >>= fun init -> go init <* skip_ws
 
-let expr : expr t =
+let find_expr : expr t =
   fix (fun expr ->
-    let factor = (ws *> parens expr) <|> (ws *> integer) in
-    let term   = chainl1 factor (mul <|> div) in
-    chainl1 term (add <|> sub))
+    let factor = (skip_ws *> parse_parens expr) <|> (skip_ws *> find_integer) in
+    let term   = parse_chainl1 factor (mul <|> div) in
+    parse_chainl1 term (add <|> sub))
 
 let parse (str:string) : expr =
-  match parse_string ~consume:All expr str with
+  match parse_string ~consume:All find_expr str with
   | Ok v      -> v
   | Error msg -> failwith msg
 
