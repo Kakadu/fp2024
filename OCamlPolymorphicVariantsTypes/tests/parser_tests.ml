@@ -26,6 +26,18 @@ let%expect_test _ =
   [%expect {| Parse process failed |}]
 ;;
 
+(* Tests for pattern parser *)
+let%expect_test _ =
+  Format.printf "%s" (string_of_pattern_parse_result (parse pvariable "x"));
+  [%expect {| (PVar "x") |}];
+  Format.printf "%s" (string_of_pattern_parse_result (parse ptuple "((), (x, y))"));
+  [%expect {| (PTuple [PUnit; (PTuple [(PVar "x"); (PVar "y")])]) |}];
+  Format.printf "%s" (string_of_pattern_parse_result (parse pattern_parser "x"));
+  [%expect {| (PVar "x") |}];
+  Format.printf "%s" (string_of_pattern_parse_result (parse pattern_parser "(x,y)"));
+  [%expect {| (PTuple [(PVar "x"); (PVar "y")]) |}]
+;;
+
 (* Tests for literal parsers *)
 let%expect_test _ =
   Format.printf "%s" (string_of_literal_parse_result (parse integer "123"));

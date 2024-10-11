@@ -77,6 +77,31 @@ let boolean =
   >>= fun cl -> preturn (BoolLiteral (List.length cl = 4))
 ;;
 
+(** Parser of patterns: [<pvar>] | [<ptuple>] *)
+let rec pattern_parser state = (skip_ws *> (pvariable <|> ptuple)) state
+
+(** Parser of variable pattern *)
+and pvariable state = (skip_ws *> (ident >>= fun id -> preturn (PVar id))) state
+
+(** Parser of tuple pattern and unit pattern *)
+and ptuple state =
+  let tuple_elements pfirst =
+    skip_ws *> element_sequence pfirst pattern_parser (fun l -> PTuple l) ","
+  in
+  let brackets_subexpr =
+    skip_ws *> pattern_parser
+    >>= (fun pfirst ->
+          tuple_elements pfirst
+          <|> (skip_ws *> symbol ')' >>> preturn pfirst)
+          <|> perror "Unsupported separator of tuple pattern")
+    <|> preturn PUnit
+  in
+  (skip_ws
+   *> (symbol '(' *> brackets_subexpr <* (symbol ')' <|> perror "Not found close bracket"))
+  )
+    state
+;;
+
 (** Parser of constants expression: [integer] and [boolean]
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)

@@ -8,6 +8,9 @@ open Parser_utility
 val ident : string parser
 val integer : literal parser
 val boolean : literal parser
+val pattern_parser : pattern parser
+val pvariable : pattern parser
+val ptuple : pattern parser
 val const_expr : expression parser
 val variable : expression parser
 val basic_expr : expression parser
