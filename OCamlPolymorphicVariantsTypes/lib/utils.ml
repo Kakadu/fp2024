@@ -10,3 +10,9 @@ let char_list_of_string s = List.of_seq (String.to_seq s)
 
 (** Converter list of characters value to string *)
 let string_of_char_list char_list = String.of_seq (List.to_seq char_list)
+
+(** Check length of list is 0 *)
+let is_empty = function
+  | [] -> true
+  | _ -> false
+;;

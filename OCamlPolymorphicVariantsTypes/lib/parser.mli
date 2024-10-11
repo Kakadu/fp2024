@@ -18,3 +18,4 @@ val multiply_expr : expression parser
 val compare_expr : expression parser
 val boolean_expr : expression parser
 val if_expr : expression parser
+val apply_expr : expression parser

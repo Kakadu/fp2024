@@ -82,14 +82,17 @@ let boolean =
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let const_expr = skip_ws *> integer <|> boolean >>= fun id -> preturn (Const id)
 
+(** Parser of variable expression *)
 let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
 let rec expr state = boolean_expr state
 
-(** Parser of basic expressions: [<unary>] | [<tuple>] | [<block>] | [<variable>] | [<const>] *)
-and basic_expr state =
-  (skip_ws *> unary_expr <|> bracket_expr <|> variable <|> const_expr) state
+(** Parser of applyable expressions: [<bracket_expr>] | [<variable>] *)
+and applyable_expr state = (skip_ws *> bracket_expr <|> variable) state
+
+(** Parser of basic expressions: [<unary>] | [<tuple>] | [<block>] | [<apply>] | [<const>] *)
+and basic_expr state = (skip_ws *> unary_expr <|> apply_expr <|> const_expr) state
 
 (** Parser of unary expression *)
 and unary_expr state =
@@ -211,5 +214,13 @@ and if_expr state =
        *> (ssequence "then" *> then_block ex
            <|> perror "Not found 'then' branch for if-expression"))
    <|> perror "Not found if expression after keyword 'if'")
+    state
+
+(** Parser of apply expressions such as [<applyable_expr>  <expr list>]*)
+and apply_expr state =
+  (skip_ws *> applyable_expr
+   >>= fun ex ->
+   many (skip_ws *> expr) >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
+  )
     state
 ;;

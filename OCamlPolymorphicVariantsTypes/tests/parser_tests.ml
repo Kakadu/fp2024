@@ -64,26 +64,29 @@ let%expect_test _ =
   [%expect {| (Unary (Negate, (Const (IntLiteral 1234)))) |}];
   Format.printf
     "%s"
-    (string_of_expression_parse_result (parse basic_expr "(true, -12, (789; 45))"));
+    (string_of_expression_parse_result
+       (parse basic_expr "(true, -12, (789; 45        ))"));
   [%expect
     {|
     (Tuple
        [(Const (BoolLiteral true)); (Unary (Negate, (Const (IntLiteral 12))));
          (ExpressionBlock [(Const (IntLiteral 789)); (Const (IntLiteral 45))])]) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "(f x; f y)"));
+  [%expect
+    {|
+    (ExpressionBlock
+       [(Apply ((Variable "f"), [(Variable "x")]));
+         (Apply ((Variable "f"), [(Variable "y")]))]) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "(true, )"));
-  [%expect {|
-    ParseError(line=1 pos=6): Not found elements after separator: ',' |}];
+  [%expect {| ParseError(line=1 pos=6): Not found elements after separator: ',' |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result (parse basic_expr "(true; 12  ;)"));
-  [%expect {|
-    ParseError(line=1 pos=12): Not found elements after separator: ';' |}];
+  [%expect {| ParseError(line=1 pos=12): Not found elements after separator: ';' |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "()"));
-  [%expect {|
-    (Const UnitLiteral) |}];
+  [%expect {| (Const UnitLiteral) |}];
   Format.printf "%s" (string_of_expression_parse_result (parse basic_expr "(12,34"));
-  [%expect {|
-    ParseError(line=1 pos=6): Not found close bracket |}];
+  [%expect {| ParseError(line=1 pos=6): Not found close bracket |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result
@@ -174,20 +177,33 @@ let%expect_test _ =
     "%s"
     (string_of_expression_parse_result (parse if_expr "if true || false then 12 else"));
   [%expect
-    {|
-    ParseError(line=1 pos=29): Expected expression of 'else' branch for if expression |}];
+    {| ParseError(line=1 pos=29): Expected expression of 'else' branch for if expression |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result (parse if_expr "if true || false then"));
   [%expect
-    {|
-    ParseError(line=1 pos=21): Expected expression of 'then' branch for if expression |}];
+    {| ParseError(line=1 pos=21): Expected expression of 'then' branch for if expression |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result (parse if_expr "if true || false"));
-  [%expect {|
-    ParseError(line=1 pos=16): Not found 'then' branch for if-expression |}];
+  [%expect {| ParseError(line=1 pos=16): Not found 'then' branch for if-expression |}];
   Format.printf "%s" (string_of_expression_parse_result (parse if_expr "if"));
-  [%expect {|
-    ParseError(line=1 pos=0): Not found if expression after keyword 'if' |}]
+  [%expect {| ParseError(line=1 pos=0): Not found if expression after keyword 'if' |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse apply_expr "print_int (12;true; -12)"));
+  [%expect
+    {|
+    (Apply ((Variable "print_int"),
+       [(ExpressionBlock
+           [(Const (IntLiteral 12)); (Const (BoolLiteral true));
+             (Unary (Negate, (Const (IntLiteral 12))))])
+         ]
+       )) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse apply_expr "(f x) y"));
+  [%expect
+    {|
+    (Apply ((Apply ((Variable "f"), [(Variable "x")])), [(Variable "y")])) |}]
 ;;
+
+(* applyable : var |  lambda | let .. in e *)
