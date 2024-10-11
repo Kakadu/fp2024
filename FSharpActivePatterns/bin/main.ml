@@ -35,7 +35,7 @@ let () =
   in
   List.iter print_construction program;
   Printf.printf "\n\n\n";
-  let input = " ( 5 + 1 ) + 8 " in
+  let input = " ( 5 + 1 ) * 8 " in
   let result = parse input in
   print_construction (Expr result)
 ;;
