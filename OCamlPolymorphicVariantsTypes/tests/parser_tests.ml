@@ -200,7 +200,7 @@ let%expect_test _ =
     (string_of_expression_parse_result (parse if_expr "if true || false"));
   [%expect {| ParseError(line=1 pos=16): Not found 'then' branch for if-expression |}];
   Format.printf "%s" (string_of_expression_parse_result (parse if_expr "if"));
-  [%expect {| ParseError(line=1 pos=0): Not found if expression after keyword 'if' |}];
+  [%expect {| ParseError(line=1 pos=2): Not found if expression after keyword 'if' |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result (parse apply_expr "print_int (12;true; -12)"));
@@ -233,5 +233,107 @@ let%expect_test _ =
     "%s"
     (string_of_expression_parse_result (parse apply_expr "(fun x -> x) y"));
   [%expect {|
-    (Apply ((Lambda ([(PVar "x")], (Variable "x"))), [(Variable "y")])) |}]
+    (Apply ((Lambda ([(PVar "x")], (Variable "x"))), [(Variable "y")])) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse define_expr "let x = 10 in x"));
+  [%expect
+    {|
+    (Define ((Nonrecursive, [((PVar "x"), (Const (IntLiteral 10)))]),
+       (Variable "x"))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse define_expr "let x = 10 in"));
+  [%expect {|
+    ParseError(line=1 pos=10): Not found in-expression of let-definition |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse define_expr "let x = 10"));
+  [%expect
+    {|
+    ParseError(line=1 pos=10): Not found  sequence 'in' of let-definition |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse define_expr "let x = "));
+  [%expect {|
+    ParseError(line=1 pos=6): Not found expression of let-definition |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse define_expr "let x "));
+  [%expect {|
+    ParseError(line=1 pos=6): Not found expression of let-definition |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse define_expr "let = 10"));
+  [%expect {|
+    ParseError(line=1 pos=4): Not found name-pattern of let-definition |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result
+       (parse if_expr "if (n > 1) then n * (factorial(n-1)) else 1"));
+  [%expect
+    {|
+    (If ((Binary ((Variable "n"), Gt, (Const (IntLiteral 1)))),
+       (Binary ((Variable "n"), Multiply,
+          (Apply ((Variable "factorial"),
+             [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))))]))
+          )),
+       (Some (Const (IntLiteral 1))))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result
+       (parse
+          define_expr
+          {|
+    let rec factorial n = 
+      if (n > 1) then n * factorial(n-1) else 1
+    in
+    factorial 5
+  |}));
+  [%expect
+    {|
+    (Define (
+       (Recursive,
+        [((PVar "factorial"),
+          (Lambda ([(PVar "n")],
+             (If ((Binary ((Variable "n"), Gt, (Const (IntLiteral 1)))),
+                (Apply (
+                   (Binary ((Variable "n"), Multiply, (Variable "factorial"))),
+                   [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))))]
+                   )),
+                (Some (Const (IntLiteral 1)))))
+             )))
+          ]),
+       (Apply ((Variable "factorial"), [(Const (IntLiteral 5))])))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result
+       (parse
+          define_expr
+          {|
+        let rec f x = 
+          if x > 0 then x + (g (x-1)) else 0 
+        and g x = 
+          (f (x / 2)) - x 
+        in
+        f 5
+        |}));
+  [%expect
+    {|
+    (Define (
+       (Recursive,
+        [((PVar "f"),
+          (Lambda ([(PVar "x")],
+             (If ((Binary ((Variable "x"), Gt, (Const (IntLiteral 0)))),
+                (Binary ((Variable "x"), Add,
+                   (Apply ((Variable "g"),
+                      [(Binary ((Variable "x"), Subtract, (Const (IntLiteral 1))
+                          ))
+                        ]
+                      ))
+                   )),
+                (Some (Const (IntLiteral 0)))))
+             )));
+          ((PVar "g"),
+           (Lambda ([(PVar "x")],
+              (Binary (
+                 (Apply ((Variable "f"),
+                    [(Binary ((Variable "x"), Division, (Const (IntLiteral 2))))]
+                    )),
+                 Subtract, (Variable "x")))
+              )))
+          ]),
+       (Apply ((Variable "f"), [(Const (IntLiteral 5))])))) |}]
 ;;

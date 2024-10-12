@@ -19,6 +19,7 @@ let is_keyword = function
   | "true" | "false" -> true
   | "if" | "then" | "else" -> true
   | "fun" -> true
+  | "let" | "rec" | "and" | "in" -> true
   | _ -> false
 ;;
 
@@ -116,7 +117,12 @@ let rec expr state = apply_expr state
 
 (** Parser of basic expressions: [<unary>] | [<const>] *)
 and basic_expr state =
-  (skip_ws *> unary_expr <|> bracket_expr <|> lambda_expr <|> variable <|> const_expr)
+  (skip_ws *> unary_expr
+   <|> bracket_expr
+   <|> if_expr
+   <|> lambda_expr
+   <|> variable
+   <|> const_expr)
     state
 
 (** Parser of unary expression *)
@@ -234,11 +240,11 @@ and if_expr state =
   (skip_ws
    *> ssequence "if"
    *> (expr
-       >>= fun ex ->
-       skip_ws
-       *> (ssequence "then" *> then_block ex
-           <|> perror "Not found 'then' branch for if-expression"))
-   <|> perror "Not found if expression after keyword 'if'")
+       >>= (fun ex ->
+             skip_ws
+             *> (ssequence "then" *> then_block ex
+                 <|> perror "Not found 'then' branch for if-expression"))
+       <|> perror "Not found if expression after keyword 'if'"))
     state
 
 (** Parser of apply expressions such as [<applyable_expr>  <expr list>]*)
@@ -253,12 +259,59 @@ and apply_expr state =
 and lambda_expr state =
   (skip_ws
    *> ssequence "fun"
-   *> (many1 pattern_parser
+   *> (many1 (skip_ws *> pattern_parser)
        >>= (fun pl ->
              skip_ws
              *> (ssequence "->" *> (expr >>= fun ex -> preturn (Lambda (pl, ex)))
                  <|> perror "Not found expression of lambda")
              <|> perror "Not found special sequence '->' of lambda definition")
        <|> perror "Not found patterns for lambda definition"))
+    state
+
+(** Parser of value-bindings: [<pattern> = <expr>]*)
+and value_binding_parser state =
+  (skip_ws
+   *> (pattern_parser
+       >>= fun p ->
+       many (skip_ws *> pattern_parser)
+       >>= fun pl ->
+       skip_ws
+       *> (ssequence "="
+           *> (skip_ws *> expr
+               >>= fun ex -> preturn (if is_empty pl then p, ex else p, Lambda (pl, ex)))
+           <|> perror "Not found expression of let-definition")
+       <|> perror "Not found special sequence '=' of let-definition")
+   <|> perror "Not found name-pattern of let-definition")
+    state
+
+(** Parser of let-definitions *)
+and define_expr state =
+  let nonrecursive state =
+    (value_binding_parser
+     >>= fun vb ->
+     skip_ws
+     *> (ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
+     *> (expr >>= fun ex -> preturn (Define ((Nonrecursive, [ vb ]), ex)))
+     <|> perror "Not found in-expression of let-definition")
+      state
+  in
+  let recursive state =
+    (skip_ws *> value_binding_parser
+     >>= fun vb ->
+     many
+       (skip_ws
+        *> (ssequence "and"
+            *> (value_binding_parser
+                <|> perror "Not found value binding one of recusion difinition")))
+     >>= fun vbl ->
+     (skip_ws *> ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
+     *> (expr
+         >>= fun ex ->
+         preturn (Define ((Recursive, vb :: vbl), ex))
+         <|> perror "Not found in-expression of let-definition"))
+      state
+  in
+  (skip_ws *> ssequence "let" *> skip_ws *> (ssequence "rec" *> recursive <|> nonrecursive)
+  )
     state
 ;;

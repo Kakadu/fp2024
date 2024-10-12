@@ -17,7 +17,14 @@ let () =
                 ( [ PVar "n" ]
                 , If
                     ( Binary (Variable "n", Gt, Const (IntLiteral 1))
-                    , Binary (Variable "n", Multiply, Const (IntLiteral 1))
+                    , Binary
+                        ( Variable "n"
+                        , Multiply
+                        , Apply
+                            ( Variable "factorial"
+                            , [ Binary
+                                  (Variable "factorial", Subtract, Const (IntLiteral 1))
+                              ] ) )
                     , Some (Const (IntLiteral 1)) ) ) )
           ] )
     ; EvalItem (Apply (Variable "factorial", [ Const (IntLiteral 5) ]))

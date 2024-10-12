@@ -23,3 +23,4 @@ val boolean_expr : expression parser
 val if_expr : expression parser
 val apply_expr : expression parser
 val lambda_expr : expression parser
+val define_expr : expression parser
