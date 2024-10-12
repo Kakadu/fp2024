@@ -302,7 +302,7 @@ and define_expr state =
        (skip_ws
         *> (ssequence "and"
             *> (value_binding_parser
-                <|> perror "Not found value binding one of recusion difinition")))
+                <|> perror "Not found value binding one of recusion definition")))
      >>= fun vbl ->
      (skip_ws *> ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
      *> (expr
@@ -315,3 +315,34 @@ and define_expr state =
   )
     state
 ;;
+
+(** Parser of definition item *)
+let define_item =
+  let nonrecursive =
+    value_binding_parser >>= fun vb -> preturn (DefineItem (Nonrecursive, [ vb ]))
+  in
+  let recursive state =
+    (skip_ws *> value_binding_parser
+     >>= fun vb ->
+     many
+       (skip_ws
+        *> (ssequence "and"
+            *> (value_binding_parser
+                <|> perror "Not found value binding one of recusion definition")))
+     >>= fun vbl -> preturn (DefineItem (Recursive, vb :: vbl)))
+      state
+  in
+  skip_ws *> ssequence "let" *> skip_ws *> (ssequence "rec" *> recursive <|> nonrecursive)
+;;
+
+(** Parser of eval item *)
+let eval_item = skip_ws *> expr >>= fun ex -> preturn (EvalItem ex)
+
+(** Parser of all stricture item *)
+let struct_item_parser =
+  skip_ws *> (define_item <|> eval_item)
+  >>= fun item -> skip_ws *> ssequence ";;" *> preturn item
+;;
+
+(** Parser of program item *)
+let program_parser = skip_ws *> many struct_item_parser

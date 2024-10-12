@@ -2,33 +2,17 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Miniml.Ast
+open Miniml.Parser
+open Miniml.Parser_utility
+open Miniml.Printer
 
 let () =
-  (*
-     let rec factorial n = if (n > 1) then n * factorial(n-1) else 1;;
-     factorial 5;;
-  *)
-  let factorial_ast : program =
-    [ DefineItem
-        ( Recursive
-        , [ ( PVar "factorial"
-            , Lambda
-                ( [ PVar "n" ]
-                , If
-                    ( Binary (Variable "n", Gt, Const (IntLiteral 1))
-                    , Binary
-                        ( Variable "n"
-                        , Multiply
-                        , Apply
-                            ( Variable "factorial"
-                            , [ Binary
-                                  (Variable "factorial", Subtract, Const (IntLiteral 1))
-                              ] ) )
-                    , Some (Const (IntLiteral 1)) ) ) )
-          ] )
-    ; EvalItem (Apply (Variable "factorial", [ Const (IntLiteral 5) ]))
-    ]
-  in
-  print_endline (show_program factorial_ast)
+  print_endline
+    (string_of_program_parse_result
+       (parse
+          program_parser
+          {|
+        let rec factorial n = if (n > 1) then n * (factorial(n-1)) else 1;;
+        factorial 5;;
+        |}))
 ;;

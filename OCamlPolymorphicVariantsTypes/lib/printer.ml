@@ -27,3 +27,6 @@ let string_of_struct_item_parse_result = string_of_parse_result show_struct_item
 
 (** Convert [pattern] parse result to string by function [show_pattern] *)
 let string_of_pattern_parse_result = string_of_parse_result show_pattern
+
+(** Convert [program] parse result to string by function [show_program] *)
+let string_of_program_parse_result = string_of_parse_result show_program

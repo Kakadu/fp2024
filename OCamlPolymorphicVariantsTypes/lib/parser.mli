@@ -24,3 +24,7 @@ val if_expr : expression parser
 val apply_expr : expression parser
 val lambda_expr : expression parser
 val define_expr : expression parser
+val define_item : struct_item parser
+val eval_item : struct_item parser
+val struct_item_parser : struct_item parser
+val program_parser : program parser

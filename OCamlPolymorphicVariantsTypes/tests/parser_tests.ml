@@ -337,3 +337,35 @@ let%expect_test _ =
           ]),
        (Apply ((Variable "f"), [(Const (IntLiteral 5))])))) |}]
 ;;
+
+(* Tests for program parser *)
+let%expect_test _ =
+  Format.printf
+    "%s"
+    (string_of_program_parse_result
+       (parse
+          program_parser
+          {|
+        let rec factorial n = if (n > 1) then n * (factorial(n-1)) else 1;;
+        factorial 5;;
+        |}));
+  [%expect
+    {|
+    [(DefineItem
+        (Recursive,
+         [((PVar "factorial"),
+           (Lambda ([(PVar "n")],
+              (If ((Binary ((Variable "n"), Gt, (Const (IntLiteral 1)))),
+                 (Binary ((Variable "n"), Multiply,
+                    (Apply ((Variable "factorial"),
+                       [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))
+                           ))
+                         ]
+                       ))
+                    )),
+                 (Some (Const (IntLiteral 1)))))
+              )))
+           ]));
+      (EvalItem (Apply ((Variable "factorial"), [(Const (IntLiteral 5))])))]
+     |}]
+;;

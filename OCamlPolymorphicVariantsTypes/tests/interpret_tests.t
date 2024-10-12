@@ -9,8 +9,8 @@ SPDX-License-Identifier: CC0-1.0
             (If ((Binary ((Variable "n"), Gt, (Const (IntLiteral 1)))),
                (Binary ((Variable "n"), Multiply,
                   (Apply ((Variable "factorial"),
-                     [(Binary ((Variable "factorial"), Subtract,
-                         (Const (IntLiteral 1))))
+                     [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))
+                         ))
                        ]
                      ))
                   )),
