@@ -37,7 +37,8 @@ let pint =
   let sign = choice [ pstoken "-"; pstoken "+"; pstoken "" ] in
   let rest = take_while1 Char.is_digit in
   let whole = lift2 (fun x y -> x ^ y) sign rest in
-  match Stdlib.int_of_string_opt whole with
+  whole >>= fun str ->
+  match Stdlib.int_of_string_opt str with
   | Some n -> return (Int n)
   | None -> fail "Integer value exceeds the allowable range for the int type"
 ;;
@@ -64,13 +65,14 @@ let const =
 
 let varname =
   ptoken
-    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '_')
+    (take_while (fun ch -> Char.is_digit ch)
      >>= function
      | "" ->
        take_while1 (fun ch -> Char.is_alpha ch || Char.is_digit ch || Char.equal ch '_')
        >>= fun str -> if is_keyword str then fail "Variable name conflicts with a keyword" else return str
-     | _ -> fail "invalid variable name")
+     | _ -> fail "Variable name must not start with a digit")
 ;;
+
 
 let pvar = varname >>| fun x -> PVar x
 let pconst = const >>| fun x -> PConst x
@@ -93,7 +95,7 @@ let mult = pbinop Mult "*"
 let div = pbinop Div "/"
 
 
-let rel =
+let relation =
   choice
     [ pbinop Eq "="
     ; pbinop Neq "<>"
@@ -136,10 +138,10 @@ let pEapp e = chain e (return (fun e1 e2 -> Efun_application (e1, e2)))
 
 let pbranch pexpr =
   lift3
-    (fun e1 e2 e3 -> Eif_then_else (e1, e2, Some e3))
+    (fun e1 e2 e3 -> Eif_then_else (e1, e2, e3))
     (pstoken "if" *> pexpr)
     (pstoken "then" *> pexpr)
-    (pstoken "else" *> pexpr)
+    ((pstoken "else" *> pexpr >>| fun e3 -> Some e3) <|> return None)
 ;;
 
 
@@ -149,7 +151,7 @@ let pexpr =
     let expr = pEapp expr <|> expr in
     let expr = chain expr (mult <|> div) in
     let expr = chain expr (add <|> sub) in
-    let expr = chain expr rel in
+    let expr = chain expr relation in
     let expr = pbranch expr <|> expr in
     let expr = plet expr <|> expr in
     expr)
