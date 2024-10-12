@@ -29,26 +29,34 @@ let integer =
   >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
 
-(* find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 let parse_binary_chainl1 e op =
   let rec go acc = lift2 (fun f x -> Bin_expr (f, acc, x)) op e >>= go <|> return acc in
   e >>= fun init -> go init <* skip_ws
 ;;
+(** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 
-let parse_binary_single e op =
+let parse_binary1 e op =
   e
   >>= fun e1_expr ->
   op >>= fun bin_op -> e >>= fun e2_expr -> return (Bin_expr (bin_op, e1_expr, e2_expr))
 ;;
+(** parse exactly one infix binary operation and returns Bin_expr (bin_op, e1, e2) *)
 
 let parse_unary_chainl1 e op =
   let rec go acc = lift (fun f -> Unary_expr (f, acc)) op >>= go <|> return acc in
   e >>= fun init -> go init
 ;;
+(** parse chain of unary left-associated expressions, such as - + - - 3 and returns Unary_expr (f, expr) *)
 
 let bool =
   string "true" <|> string "false" >>| fun s -> Const (Bool_lt (bool_of_string s))
 ;;
+(** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
+
+let string_expr =
+  skip_ws *> char '"' *> take_while (fun c -> c <> '"') >>| fun s -> Const (String_lt s)
+;;
+(** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
 
 let int_expr : expr t =
   fix (fun expr ->
@@ -56,13 +64,15 @@ let int_expr : expr t =
     let term = parse_binary_chainl1 factor (mul <|> div) in
     parse_binary_chainl1 term (add <|> sub))
 ;;
+(** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
 
 let comparison_expr : expr t =
-  parse_binary_single
+  parse_binary1
     int_expr
     (less <|> less_or_equal <|> greater <|> greater_or_equal <|> equal <|> unequal)
-  <|> parse_binary_single int_expr (equal <|> unequal)
+  <|> parse_binary1 (int_expr <|> bool <|> string_expr) (equal <|> unequal)
 ;;
+(** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
 
 let bool_expr : expr t =
   fix (fun expr ->
@@ -72,8 +82,9 @@ let bool_expr : expr t =
     let level4 = parse_binary_chainl1 level3 log_and in
     parse_binary_chainl1 level4 log_or)
 ;;
+(** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
 
-let expr = bool_expr <|> int_expr
+let expr = bool_expr <|> int_expr <|> string_expr
 
 let parse (str : string) : expr =
   match parse_string ~consume:All expr str with
