@@ -23,6 +23,7 @@ depends: [
   "odoc" {with-doc}
   "ocamlformat" {build}
   "base"
+  "angstrom"
 ]
 build: [
   ["dune" "subst"] {dev}

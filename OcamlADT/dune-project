@@ -28,5 +28,6 @@
   (odoc :with-doc)
   (ocamlformat :build)
   base
+  angstrom
   ; After adding dependencies to 'dune' files and the same dependecies here too
   ))
