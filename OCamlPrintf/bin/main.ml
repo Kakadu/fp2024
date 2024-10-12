@@ -39,10 +39,6 @@ let () =
 ;;
 
 let () =
-  let parser_binding : structure =
-    match parse "let n = 1" with
-    | None -> []
-    | Some out -> out
-  in
-  print_endline (show_structure parser_binding)
+  let parser : structure = parse "let rec f n = 1" in
+  print_endline (show_structure parser)
 ;;
