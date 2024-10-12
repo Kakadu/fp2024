@@ -1,7 +1,7 @@
 (library
  (name FSharpActivePatterns)
  (public_name FSharpActivePatterns)
- (modules Ast PrintAst ArithmParser)
+ (modules Ast PrintAst Parser)
  (modules_without_implementation ast)
  (libraries angstrom)
  (preprocess
