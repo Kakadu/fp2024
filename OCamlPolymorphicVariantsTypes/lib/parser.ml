@@ -18,6 +18,7 @@ type binary_operator_parse_data =
 let is_keyword = function
   | "true" | "false" -> true
   | "if" | "then" | "else" -> true
+  | "fun" -> true
   | _ -> false
 ;;
 
@@ -111,13 +112,12 @@ let const_expr = skip_ws *> integer <|> boolean >>= fun id -> preturn (Const id)
 let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
-let rec expr state = boolean_expr state
+let rec expr state = apply_expr state
 
-(** Parser of applyable expressions: [<bracket_expr>] | [<variable>] *)
-and applyable_expr state = (skip_ws *> bracket_expr <|> variable) state
-
-(** Parser of basic expressions: [<unary>] | [<tuple>] | [<block>] | [<apply>] | [<const>] *)
-and basic_expr state = (skip_ws *> unary_expr <|> apply_expr <|> const_expr) state
+(** Parser of basic expressions: [<unary>] | [<const>] *)
+and basic_expr state =
+  (skip_ws *> unary_expr <|> bracket_expr <|> lambda_expr <|> variable <|> const_expr)
+    state
 
 (** Parser of unary expression *)
 and unary_expr state =
@@ -243,9 +243,22 @@ and if_expr state =
 
 (** Parser of apply expressions such as [<applyable_expr>  <expr list>]*)
 and apply_expr state =
-  (skip_ws *> applyable_expr
+  (skip_ws *> boolean_expr
    >>= fun ex ->
    many (skip_ws *> expr) >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
   )
+    state
+
+(** Parser of lambdas definitions *)
+and lambda_expr state =
+  (skip_ws
+   *> ssequence "fun"
+   *> (many1 pattern_parser
+       >>= (fun pl ->
+             skip_ws
+             *> (ssequence "->" *> (expr >>= fun ex -> preturn (Lambda (pl, ex)))
+                 <|> perror "Not found expression of lambda")
+             <|> perror "Not found special sequence '->' of lambda definition")
+       <|> perror "Not found patterns for lambda definition"))
     state
 ;;

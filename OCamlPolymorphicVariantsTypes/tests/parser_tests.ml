@@ -215,7 +215,23 @@ let%expect_test _ =
   Format.printf "%s" (string_of_expression_parse_result (parse apply_expr "(f x) y"));
   [%expect
     {|
-    (Apply ((Apply ((Variable "f"), [(Variable "x")])), [(Variable "y")])) |}]
+    (Apply ((Apply ((Variable "f"), [(Variable "x")])), [(Variable "y")])) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse apply_expr "x + y"));
+  [%expect {|
+    (Binary ((Variable "x"), Add, (Variable "y"))) |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse lambda_expr "fun (x, ()) y -> x + y"));
+  [%expect
+    {|
+    (Lambda ([(PTuple [(PVar "x"); PUnit]); (PVar "y")],
+       (Binary ((Variable "x"), Add, (Variable "y"))))) |}];
+  Format.printf "%s" (string_of_expression_parse_result (parse lambda_expr "fun  -> 12"));
+  [%expect {|
+    ParseError(line=1 pos=3): Not found patterns for lambda definition |}];
+  Format.printf
+    "%s"
+    (string_of_expression_parse_result (parse apply_expr "(fun x -> x) y"));
+  [%expect {|
+    (Apply ((Lambda ([(PVar "x")], (Variable "x"))), [(Variable "y")])) |}]
 ;;
-
-(* applyable : var |  lambda | let .. in e *)
