@@ -36,6 +36,7 @@ let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
   e >>= go
 ;;
+(** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 
 let rec chainr1 e op =
   let* left = e in
@@ -44,10 +45,12 @@ let rec chainr1 e op =
    return (f left right))
   <|> return left
 ;;
+(** parse exactly one infix binary operation and returns Bin_expr (bin_op, e1, e2) *)
 
 let rec unary_chain op e =
   op >>= (fun unexpr -> unary_chain op e >>= fun expr -> return (unexpr expr)) <|> e
 ;;
+(** parse chain of unary left-associated expressions, such as - + - - 3 and returns Unary_expr (f, expr) *)
 
 (* SIMPLE PARSERS *)
 let expr_const_factory parser = parser >>| fun lit -> Const lit
@@ -59,6 +62,12 @@ let p_int =
      let* number = take_while1 Char.is_digit in
      return (Int_lt (Int.of_string (sign ^ number)))
 ;;
+(** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
+
+let string_expr =
+  skip_ws *> char '"' *> take_while (fun c -> c <> '"') >>| fun s -> Const (String_lt s)
+;;
+(** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
 
 let p_int_expr = expr_const_factory p_int
 let p_int_pat = pat_const_factory p_int
@@ -68,6 +77,7 @@ let p_bool =
   <|> skip_ws *> string "false"
   >>| fun s -> Bool_lt (Bool.of_string s)
 ;;
+(** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
 
 let p_bool_expr = expr_const_factory p_bool
 let p_bool_pat = pat_const_factory p_bool
@@ -83,6 +93,7 @@ let p_escaped_char =
       | 'r' -> return '\r'
       | other -> fail (Printf.sprintf "Unknown escape sequence: \\%c" other))
 ;;
+(** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
 
 let p_regular_char = satisfy (fun c -> Char.(c <> '"' && c <> '\\'))
 
@@ -90,6 +101,7 @@ let p_string =
   let+ s = skip_ws *> char '"' *> many (p_regular_char <|> p_escaped_char) <* char '"' in
   String_lt (String.of_char_list s)
 ;;
+(** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
 
 let p_string_expr = expr_const_factory p_string
 let p_string_pat = pat_const_factory p_string
