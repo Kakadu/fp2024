@@ -13,4 +13,4 @@
 
 (cram
  (applies_to parser_test)
- (deps fac.txt ../bin/REPL.exe))
+ (deps fac.txt ../bin/main.exe))
