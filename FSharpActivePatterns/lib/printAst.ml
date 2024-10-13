@@ -98,16 +98,8 @@ let rec print_expr indent expr =
     (match else_body with
      | Some body -> print_expr (indent + 4) body
      | None -> printf "No else body")
-  | Function_def (flag, name, args, body) ->
-    printf
-      "%s| %s Function(%s):\n"
-      (String.make indent '-')
-      (match flag with
-       | Nonrec -> ""
-       | Rec -> "Rec")
-      (match name with
-       | Some n -> n
-       | None -> "Anonymous");
+  | Function_def (args, body) ->
+    printf "%s| Func:\n" (String.make indent '-');
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 4)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
@@ -118,12 +110,29 @@ let rec print_expr indent expr =
     print_expr (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 2)) args
-  | LetIn (Ident name, value, inner_expr) ->
-    printf "%s | LetIn %s =\n" (String.make indent '-') name;
-    printf "%sVALUE\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) value;
-    printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) inner_expr
+  | Let (flag, name, args, body, in_expr) ->
+    printf "%s | Let %s %s =\n" (String.make indent '-') 
+    (match flag with
+       | Nonrec -> ""
+       | Rec -> "Rec")
+      (match name with
+       | Some Ident(n) -> n
+       | None -> "Anonymous");
+    printf "%sARGS\n" (String.make (indent + 2) ' ');
+    match args with
+      | None -> printf "NO ARGS";
+      | Some args -> (
+        printf "%sARGS\n" (String.make (indent + 2) ' ');
+        List.iter (print_expr (indent + 2)) args;
+      );
+    printf "%sBODY\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) body;
+    match in_expr with
+      | None -> printf "NO IN EXPR";
+      | Some in_expr -> (
+        printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
+        print_expr (indent + 2) in_expr;
+      );
 ;;
 
 let print_statement indent = function

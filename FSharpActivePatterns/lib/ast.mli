@@ -61,11 +61,11 @@ type expr =
   | Unary_expr of unary_operator * expr
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Function_def of is_recursive * string option * expr list * expr
+  | Function_def of expr list * expr
   (**rec, name, args, body*)
   | Function_call of expr * expr list (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
-  | LetIn of ident * expr * expr (** [let x = 5 in x * y] *)
+  | Let of is_recursive * ident option * expr list option * expr * expr option (** [let x = 5 in x * y] *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =
