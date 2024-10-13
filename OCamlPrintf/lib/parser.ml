@@ -16,6 +16,24 @@ let parse_comments =
 
 let ws = many parse_comments *> skip_whitespaces
 
+let is_keyword = function
+  (* https://ocaml.org/manual/5.2/lex.html#sss:keywords *)
+  | "and"
+  | "else"
+  | "false"
+  | "fun"
+  | "function"
+  | "if"
+  | "in"
+  | "let"
+  | "match"
+  | "rec"
+  | "then"
+  | "true"
+  | "with" -> true
+  | _ -> false
+;;
+
 let parse_ident =
   ws
   *>
@@ -31,10 +49,7 @@ let parse_ident =
       | _ -> false)
   in
   lift2 String.( ^ ) parse_start parse_rest
-  >>= fun ident ->
-  match ident with
-  | "let" | "fun" | "function" | "if" | "then" | "else" -> fail ident
-  | _ -> return ident
+  >>= fun ident -> if is_keyword ident then fail ident else return ident
 ;;
 
 let skip_parens exp = ws *> char '(' *> ws *> exp <* ws <* char ')'
@@ -98,8 +113,14 @@ let parse_pattern =
    ;; *)
 
 let chain_left_associative exp op =
-  let rec go acc = lift2 (fun f x -> f acc x) op exp >>= go <|> return acc in
-  exp >>= fun init -> go init
+  let rec go acc =
+    (let* f = op in
+     let* x = exp in
+     go (f acc x))
+    <|> return acc
+  in
+  let* init = exp in
+  go init
 ;;
 
 let parse_exp_ident = parse_ident >>| fun ident -> Exp_ident ident
@@ -118,6 +139,23 @@ let parse_exp_apply parse_exp =
     (skip_parens parse_exp)
     (* parse_exp *)
     (skip_parens (many parse_exp))
+;;
+
+let parse_cases exp =
+  let parse_case =
+    lift2
+      (fun pat exp -> { left = pat; right = exp })
+      (parse_pattern <* ws <* string "->")
+      (ws *> exp)
+  in
+  option () (char '|' *> return ()) *> sep_by1 (ws *> char '|' *> ws) parse_case
+;;
+
+let parse_exp_match exp =
+  lift2
+    (fun expression cases -> Exp_match (expression, cases))
+    (ws *> string "match" *> ws *> exp <* ws <* string "with")
+    (ws *> parse_cases exp)
 ;;
 
 let parse_exp_tuple exp =
@@ -152,23 +190,6 @@ let mul_div = select_operator [ "*"; "/" ]
 let add_sub = select_operator [ "+"; "-" ]
 let cmp = select_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
 
-let parse_cases exp =
-  let parse_case =
-    lift2
-      (fun left right -> { left; right })
-      (parse_pattern <* ws <* string "->" <* ws)
-      exp
-  in
-  sep_by (ws *> char '|' *> ws) parse_case
-;;
-
-let parse_exp_match exp =
-  lift2
-    (fun exprassion cases -> Exp_match (exprassion, cases))
-    (ws *> string "match" *> ws *> exp <* ws <* string "with")
-    (ws *> parse_cases exp)
-;;
-
 let parse_expression =
   ws
   *> fix (fun full_exp ->
@@ -177,7 +198,6 @@ let parse_expression =
       chain_left_associative current_exp (return (fun e1 e2 -> Exp_apply (e1, [ e2 ])))
     in
     let current_exp = left_bin_op current_exp mul_div in
-    let current_exp = left_bin_op current_exp add_sub in
     let current_exp = left_bin_op current_exp add_sub in
     let current_exp = left_bin_op current_exp cmp in
     let current_exp = parse_exp_tuple current_exp <|> current_exp in
