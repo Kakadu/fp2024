@@ -1,3 +1,16 @@
+(executable
+ (name gen_test)
+ (libraries haskell_lib)
+ (modules gen_test)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(rule
+ (deps ./gen_test.exe)
+ (targets fac.txt)
+ (action
+  (run %{deps})))
+
 (cram
  (applies_to qcheck)
  (deps ../lib/run_binding.exe))
