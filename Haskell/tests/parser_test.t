@@ -1,8 +1,8 @@
 Copyright 2024, Kostya Oreshin and Nikita Shchutskii
 SPDX-License-Identifier: MIT
 
-  $ ../bin/main.exe
-  (FunBind (((Ident "fac"), None), (None, (PIdentificator (Ident "n")), None),
+  $ ../bin/REPL.exe -dparsetree < fac.txt
+  (FunBind (((Ident "fac"), None), ([], (PIdentificator (Ident "n")), None),
      [],
      (OrdBody
         ((IfThenEsle (
@@ -19,7 +19,7 @@ SPDX-License-Identifier: MIT
             )),
          None)),
      [(FunBind (((Ident "save_fac"), None),
-         (None, (PIdentificator (Ident "y")), None), [],
+         ([], (PIdentificator (Ident "y")), None), [],
          (Guards (
             (((Binop (((Identificator (Ident "y")), None), Equality,
                  ((Const (Int 0)), None))),

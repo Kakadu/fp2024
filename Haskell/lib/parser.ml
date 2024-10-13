@@ -1,3 +1,7 @@
+(** Copyright 2024, Kostya Oreshin and Nikita Shchutskii *)
+
+(** SPDX-License-Identifier: MIT *)
+
 open Angstrom
 open Ast
 
@@ -260,22 +264,6 @@ let bo expr prios_list =
   helper prios_list
 ;;
 
-let is_digit = function
-  | '0' .. '9' -> true
-  | _ -> false
-;;
-
-let const =
-  choice
-    [ (let* y = take_while1 is_digit in
-       let x = int_of_string y in
-       return (Int x))
-    ; string "()" *> return Unit
-    ; string "True" *> return (Bool true)
-    ; string "False" *> return (Bool false)
-    ]
-;;
-
 let const_e =
   let+ c = const in
   Const c, etp
@@ -422,6 +410,8 @@ let%expect_test "fun_binding_guards" =
 
 let parse_and_print_line = test binding show_binding
 
-let parse_line = fun str -> match parse_string ~consume:Prefix binding str with
+let parse_line str =
+  match parse_string ~consume:Prefix binding str with
   | Result.Ok v -> v
   | Error msg -> failwith msg
+;;
