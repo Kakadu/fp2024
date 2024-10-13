@@ -12,7 +12,7 @@ let parens p = char '(' *> p <* char ')'
 
 let psemicolon = many @@ token ";;"
 
-let pconstint = 
+let pconstintexpr = 
   let* sign = choice [ token "+"; token "-"; token " "] in 
   let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
   return (Exp_constant(Const_integer (int_of_string (sign ^ n))))
@@ -25,7 +25,7 @@ let pconstint =
   return (Const_char (c))
 ;; *)
 
-let pconststring = 
+let pconststringexpr = 
   let* _ = token "\"" in
   let* str = take_while1 (function '"' -> false | _ -> true) in 
   return (Exp_constant(Const_string (str)))
@@ -43,36 +43,48 @@ let lchain p op =
 ;;
 
 
-let parithmexpr pfe = 
-  let pmul = lchain pfe (token "*" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pdiv = lchain pfe (token "/" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let psum = lchain pfe (token "+" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pdif = lchain pfe (token "-" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let peq = lchain pfe (token "=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let ples = lchain pfe (token "<" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pleq = lchain pfe (token "<=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pgre = lchain pfe (token ">" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pgrq = lchain pfe (token ">=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pneq = lchain pfe (token "<>" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let pand = lchain pfe (token "&&" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  let por = lchain pfe (token "||" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))) <|> pfe in
-  pfe
+(** Parser that takese pexpr (parser of expressions) and returns parsed arithm expression, will be a part of whole expression parser*)
+let parithmexpr pexpr = 
+  let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pdiv = lchain pexpr (token "/" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let psum = lchain pexpr (token "+" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pdif = lchain pexpr (token "-" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let peq = lchain pexpr (token "=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let ples = lchain pexpr (token "<" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pleq = lchain pexpr (token "<=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pgre = lchain pexpr (token ">" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pgrq = lchain pexpr (token ">=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pneq = lchain pexpr (token "<>" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let pand = lchain pexpr (token "&&" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  let por = lchain pexpr (token "||" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
+  pexpr
 ;;
 
+let pexpr = 
+  parithmexpr <|> ptupleexpr <|> pidentexpr <|> pletexpr <|> pifexpr <|> pconstintexpr <|> pconststringexpr
 
 
 (* Structure parser for multiple statements *)
 (* let pstructure = many (parithmexpr (pconststring <|> pconstint) <* psemicolon) *)
 
+(** It applies Str_eval to output of expression parser *)
+let pstr_item =
+  let pseval = 
+    let+ expr = pexpr in
+    Str_eval (expr)
+  in
 
+  let psvalue = 
+    (* we can use let+ bc values do not depend on each other*)
+    let+ rec = token "rec" *> return Recursive <|> return Nonrecursive in
+    Str_value (rec)
+    
 
-(* let pexpr  =  *)
+  in pseval <|> psvalue (*<|> psadt (* god bless us *)*)
 
-
-(* let pstr_item =  *)
-
-
-let pstructure str = psemicolon *> many (pstr_item str <* parse_semicolon)
+let pstructure =
+  let psemicolon = token ";;" in
+  many (pstr_item <* psemicolon)
 
 let parse str = parse_string ~consume:All pstructure str
 
