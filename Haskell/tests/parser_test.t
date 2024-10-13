@@ -1,7 +1,7 @@
 Copyright 2024, Kostya Oreshin and Nikita Shchutskii
 SPDX-License-Identifier: MIT
 
-  $ ../bin/REPL.exe -dparsetree < fac.txt
+  $ ../bin/main.exe < fac.txt
   (FunBind (((Ident "fac"), None), ([], (PIdentificator (Ident "n")), None),
      [],
      (OrdBody
