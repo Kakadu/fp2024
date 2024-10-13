@@ -8,6 +8,7 @@ open Ast
 let skip_ws =
   skip_while (function
     | ' ' -> true
+    | '\n' -> true
     | _ -> false)
 ;;
 
@@ -27,12 +28,18 @@ let log_or = skip_ws *> string "||" *> skip_ws *> return Logical_or
 let log_and = skip_ws *> string "&&" *> skip_ws *> return Logical_and
 let log_not = skip_ws *> string "not" *> skip_ws *> return Unary_negative
 
-let integer =
+let parse_integer =
   take_while1 (function
     | '0' .. '9' -> true
     | _ -> false)
   >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
+
+let parse_word = 
+  take_while1 (function
+    | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+    | _ -> false)
+  >>| fun s -> Variable(Ident(s))
 
 (** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 let parse_binary_chainl1 e op =
@@ -52,7 +59,7 @@ let rec parse_unary_chain e op =
 ;;
 
 (** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
-let bool =
+let parse_bool =
   skip_ws *> string "true"
   <|> string "false"
   >>| fun s -> Const (Bool_lt (bool_of_string s))
@@ -60,13 +67,13 @@ let bool =
 
 (** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
 let string_expr =
-  skip_ws *> char '"' *> take_while (fun c -> c <> '"') >>| fun s -> Const (String_lt s)
+  skip_ws *> char '\"' *> take_while (fun c -> c <> '\"') >>| fun s -> Const (String_lt s)
 ;;
 
 (** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
 let int_expr : expr t =
   fix (fun expr ->
-    let factor = skip_ws *> (parse_parens expr <|> integer) <* skip_ws in
+    let factor = skip_ws *> (parse_parens expr <|> parse_integer <|> parse_word) <* skip_ws in
     let term = parse_binary_chainl1 factor (mul <|> div) in
     parse_binary_chainl1 term (add <|> sub))
 ;;
@@ -76,20 +83,20 @@ let comparison_expr : expr t =
   parse_binary1
     int_expr
     (less_or_equal <|> greater_or_equal <|> unequal <|> less <|> greater <|> equal)
-  <|> parse_binary1 (int_expr <|> bool <|> string_expr) (equal <|> unequal)
+  <|> parse_binary1 (int_expr <|> parse_bool <|> string_expr) (equal <|> unequal)
 ;;
 
 (** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
 let bool_expr : expr t =
   fix (fun expr ->
-    let level1 = skip_ws *> (parse_parens expr <|> bool <|> comparison_expr) <* skip_ws in
+    let level1 = skip_ws *> (parse_parens expr <|> parse_bool <|> comparison_expr) <* skip_ws in
     let level2 = parse_unary_chain level1 log_not in
     let level3 = parse_binary_chainl1 level2 (equal <|> unequal) in
     let level4 = parse_binary_chainl1 level3 log_and in
     parse_binary_chainl1 level4 log_or)
 ;;
 
-let expr = bool_expr <|> int_expr <|> string_expr
+let parse_expr = bool_expr <|> int_expr <|> string_expr
 
 let parse_if =
   skip_ws
@@ -98,12 +105,14 @@ let parse_if =
   *> lift3
        (fun cond th el -> If_then_else (cond, th, el))
        bool_expr
-       (string "then" *> expr)
-       (string "else" *> (expr >>= (fun e -> return (Some e)) <|> return None))
-;;
+       (string "then" *> parse_expr)
+       (string "else" *> (parse_expr >>= fun e -> return (Some e)) <|> return None)
+;; 
+
+let parse_statement = parse_if <|> parse_expr
 
 let parse (str : string) : expr =
-  match parse_string ~consume:All expr str with
+  match parse_string ~consume:All parse_statement str with
   | Ok v -> v
   | Error msg -> failwith msg
 ;;
