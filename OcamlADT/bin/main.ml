@@ -16,20 +16,20 @@ let () =
                   , Exp_if
                       ( Exp_apply
                           ( Exp_ident "="
-                          , Exp_tuple (Exp_var "n", Exp_constant (Const_integer 0), []) )
+                          , Exp_tuple (Exp_ident "n", Exp_constant (Const_integer 0), []) )
                       , Exp_constant (Const_integer 1)
                       , Some
                           (Exp_apply
                              ( Exp_apply
                                  ( Exp_ident "*"
                                  , Exp_tuple
-                                     ( Exp_var "n"
+                                     ( Exp_ident "n"
                                      , Exp_apply
                                          ( Exp_ident "fact"
                                          , Exp_apply
                                              ( Exp_ident "-"
                                              , Exp_tuple
-                                                 ( Exp_var "n"
+                                                 ( Exp_ident "n"
                                                  , Exp_constant (Const_integer 1)
                                                  , [] ) ) )
                                      , [] ) )

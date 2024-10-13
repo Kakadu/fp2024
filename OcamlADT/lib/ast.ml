@@ -32,7 +32,6 @@ type rec_flag =
 type expression =
   | Exp_ident of ident (** Identifiers such as [x] *)
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
-  | Exp_var of ident (** A variable such as [x] *)
   | Exp_tuple of expression * expression * expression list
   (** Expressions [(E1, E2, ..., En)] *)
   | Exp_function of case * case list
