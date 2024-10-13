@@ -13,9 +13,6 @@ type 'a maybe =
   | Just of 'a (** e.g. [Just 5] *)
 [@@deriving qcheck, show { with_path = false }]
 
-type functype = FuncT of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
-[@@deriving show { with_path = false }]
-
 (** explicit type indication*)
 type tp =
   | TUnit (** () *)
