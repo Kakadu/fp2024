@@ -1,10 +1,12 @@
 (executable
- (name REPL)
- (public_name REPL)
- (modules REPL)
+ (name main)
+ (public_name Main)
+ (modules Main)
  (libraries haskell_lib)
  (instrumentation
-  (backend bisect_ppx)))
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_deriving.show)))
 
 (cram
  (deps ./REPL.exe %{bin:REPL}))
