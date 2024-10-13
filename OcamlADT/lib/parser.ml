@@ -63,22 +63,26 @@ let parithmexpr pexpr =
 let pexpr = 
   parithmexpr <|> ptupleexpr <|> pidentexpr <|> pletexpr <|> pifexpr <|> pconstintexpr <|> pconststringexpr
 
+let pvalue_binding = 
+  let* pat = ppattern in 
+  let* _ = token "=" in
+  let* expr = pexpr in
+  return { pat; expr }
 
-(* Structure parser for multiple statements *)
-(* let pstructure = many (parithmexpr (pconststring <|> pconstint) <* psemicolon) *)
 
 (** It applies Str_eval to output of expression parser *)
 let pstr_item =
   let pseval = 
-    let+ expr = pexpr in
+    let* expr = pexpr in
     Str_eval (expr)
   in
 
   let psvalue = 
-    (* we can use let+ bc values do not depend on each other*)
-    let+ rec = token "rec" *> return Recursive <|> return Nonrecursive in
-    Str_value (rec)
-    
+    (* we cant use let+ bc previous results are necessary *)
+    let* rec = token "rec" *> return Recursive <|> return Nonrecursive in
+    let* value_binding = many pvalue_binding in 
+    Str_value (rec, value_binding)
+  in
 
   in pseval <|> psvalue (*<|> psadt (* god bless us *)*)
 
