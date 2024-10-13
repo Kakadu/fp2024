@@ -66,7 +66,7 @@ let p_int =
 ;;
 
 (** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
-let bool =
+let parse_bool =
   skip_ws *> string "true"
   <|> string "false"
   >>| fun s -> Const (Bool_lt (bool_of_string s))
@@ -74,7 +74,7 @@ let bool =
 
 (** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
 let string_expr =
-  skip_ws *> char '"' *> take_while (fun c -> c <> '"') >>| fun s -> Const (String_lt s)
+  skip_ws *> char '\"' *> take_while (fun c -> c <> '\"') >>| fun s -> Const (String_lt s)
 ;;
 
 let p_int_expr = expr_const_factory p_int
