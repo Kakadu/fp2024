@@ -55,9 +55,9 @@ let%expect_test "int_expr" =
     ----| Const(Int: 7) |}]
 ;;
 
-let%expect_test "parse_unary_chainl1" =
+let%expect_test "parse_unary_chain" =
   let input = "not not ( not true && false || 3 > 5)" in
-  let result = parse (parse_unary_chainl1 bool_expr log_not) input in
+  let result = parse (parse_unary_chain bool_expr log_not) input in
   print_construction result;
   [%expect
     {|
@@ -77,4 +77,28 @@ let%expect_test "parse_unary_chainl1" =
     ------| Binary Greater
     --------| Const(Int: 3)
     --------| Const(Int: 5) |}]
+;;
+
+let%expect_test "parse_unary_chainl1" =
+  let input = "if 3 > 2 && false then 5 + 7 else 12" in
+  let result = parse parse_if input in
+  print_construction result;
+  [%expect
+    {|
+    | If Then Else(
+      CONDITION
+    --| Binary expr(
+    --| Logical And
+    ----| Binary expr(
+    ----| Binary Greater
+    ------| Const(Int: 3)
+    ------| Const(Int: 2)
+    ----| Const(Bool: false)
+      THEN BRANCH
+    ----| Binary expr(
+    ----| Binary Add
+    ------| Const(Int: 5)
+    ------| Const(Int: 7)
+      ELSE BRANCH
+    ----| Const(Int: 12) |}]
 ;;

@@ -11,6 +11,7 @@ let skip_ws =
     | _ -> false)
 ;;
 
+let skip_ws1 = char ' ' *> skip_ws
 let parse_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
 let add = skip_ws *> char '+' *> skip_ws *> return Binary_add
 let sub = skip_ws *> char '-' *> skip_ws *> return Binary_subtract
@@ -33,62 +34,73 @@ let integer =
   >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
 
+(** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 let parse_binary_chainl1 e op =
   let rec go acc = lift2 (fun f x -> Bin_expr (f, acc, x)) op e >>= go <|> return acc in
   e >>= fun init -> go init
 ;;
-(** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 
-let parse_binary1 e op =
-    lift3 (fun e1 bin_op e2 -> Bin_expr (bin_op, e1, e2)) e op e
-;;
 (** parse exactly one infix binary operation and returns Bin_expr (bin_op, e1, e2) *)
+let parse_binary1 e op = lift3 (fun e1 bin_op e2 -> Bin_expr (bin_op, e1, e2)) e op e
 
-let rec parse_unary_chainl1 e op =
-    (op >>= fun un_op -> parse_unary_chainl1 e op >>= fun expr -> return (Unary_expr (un_op, expr))) <|> e
-
-;;
-  (* >>= go <|> return acc in
-    op >>= fun init -> Unary_expr (init, go op ) *)
 (** parse chain of unary left-associated expressions, such as - + - - 3 and returns Unary_expr (f, expr) *)
-
-let bool =
-  skip_ws *> string "true" <|> string "false" >>| fun s -> Const (Bool_lt (bool_of_string s))
+let rec parse_unary_chain e op =
+  op
+  >>= (fun un_op ->
+        parse_unary_chain e op >>= fun expr -> return (Unary_expr (un_op, expr)))
+  <|> e
 ;;
-(** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
 
+(** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
+let bool =
+  skip_ws *> string "true"
+  <|> string "false"
+  >>| fun s -> Const (Bool_lt (bool_of_string s))
+;;
+
+(** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
 let string_expr =
   skip_ws *> char '"' *> take_while (fun c -> c <> '"') >>| fun s -> Const (String_lt s)
 ;;
-(** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
 
+(** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
 let int_expr : expr t =
   fix (fun expr ->
     let factor = skip_ws *> (parse_parens expr <|> integer) <* skip_ws in
     let term = parse_binary_chainl1 factor (mul <|> div) in
     parse_binary_chainl1 term (add <|> sub))
 ;;
-(** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
 
+(** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
 let comparison_expr : expr t =
   parse_binary1
     int_expr
     (less_or_equal <|> greater_or_equal <|> unequal <|> less <|> greater <|> equal)
   <|> parse_binary1 (int_expr <|> bool <|> string_expr) (equal <|> unequal)
 ;;
-(** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
 
+(** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
 let bool_expr : expr t =
   fix (fun expr ->
     let level1 = skip_ws *> (parse_parens expr <|> bool <|> comparison_expr) <* skip_ws in
-    let level2 = parse_unary_chainl1 level1 log_not in
+    let level2 = parse_unary_chain level1 log_not in
     let level3 = parse_binary_chainl1 level2 (equal <|> unequal) in
     let level4 = parse_binary_chainl1 level3 log_and in
     parse_binary_chainl1 level4 log_or)
 ;;
-(** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
 
 let expr = bool_expr <|> int_expr <|> string_expr
+
+let parse_if =
+  skip_ws
+  *> string "if"
+  *> skip_ws1
+  *> lift3
+       (fun cond th el -> If_then_else (cond, th, el))
+       bool_expr
+       (string "then" *> expr)
+       (string "else" *> (expr >>= (fun e -> return (Some e)) <|> return None))
+;;
 
 let parse (str : string) : expr =
   match parse_string ~consume:All expr str with
