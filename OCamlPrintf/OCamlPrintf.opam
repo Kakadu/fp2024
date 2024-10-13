@@ -20,6 +20,7 @@ depends: [
   "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_deriving"
+  "ppx_expect"
   "bisect_ppx"
   "odoc" {with-doc}
   "ocamlformat" {build}

@@ -15,7 +15,6 @@ let parse_comments =
 ;;
 
 let ws = many parse_comments *> skip_whitespaces
-
 let skip_parens parse_ = ws *> char '(' *> ws *> parse_ <* ws <* char ')'
 
 let is_keyword = function
@@ -257,8 +256,4 @@ let parse_structure =
 
 (* ==================== Execute ==================== *)
 
-let parse str =
-  match parse_string ~consume:All parse_structure str with
-  | Ok value -> value
-  | Error message -> failwith message
-;;
+let parse str = parse_string ~consume:All parse_structure str |> Result.ok

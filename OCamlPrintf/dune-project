@@ -6,9 +6,13 @@
 
 (license LGPL-3.0-or-later)
 
-(authors "Maxim Rodionov <rodionov.maxim05@gmail.com>" "Vladimir Zaikin <friend.zva@yandex.ru>")
+(authors
+ "Maxim Rodionov <rodionov.maxim05@gmail.com>"
+ "Vladimir Zaikin <friend.zva@yandex.ru>")
 
-(maintainers "Maxim Rodionov <rodionov.maxim05@gmail.com>" "Vladimir Zaikin <friend.zva@yandex.ru>")
+(maintainers
+ "Maxim Rodionov <rodionov.maxim05@gmail.com>"
+ "Vladimir Zaikin <friend.zva@yandex.ru>")
 
 (bug_reports "https://github.com/RodionovMaxim05/OCamlPrintf")
 
@@ -26,9 +30,7 @@
   angstrom
   (ppx_inline_test :with-test)
   ppx_deriving
+  ppx_expect
   bisect_ppx
   (odoc :with-doc)
-  (ocamlformat :build)
-  ; base
-  ; After adding dependencies to 'dune' files and the same dependecies here too
-  ))
+  (ocamlformat :build)))
