@@ -1,9 +1,10 @@
-(library
+ (library
  (name OCamlBR)
  (public_name OcamlBR)
  (modules Ast Parser)
  (libraries base angstrom)
- (preprocess
-  (pps ppx_deriving.show ppx_expect))
  (instrumentation
-  (backend bisect_ppx)))
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_deriving.show ppx_inline_test ppx_expect))
+ (inline_tests))
