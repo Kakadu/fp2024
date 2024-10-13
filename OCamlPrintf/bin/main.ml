@@ -5,8 +5,9 @@
 open Ocaml_printf_lib.Ast
 
 let () =
-  let fact_ast : structure =
-    [ Str_value
+  (* let rec factorial n = if n <= 1 then 1 else n * factorial (n - 1) *)
+  let ast_factorial : structure =
+    [ Struct_value
         ( Recursive
         , [ { pat = Pat_var "factorial"
             ; exp =
@@ -34,5 +35,5 @@ let () =
           ] )
     ]
   in
-  print_endline (show_structure fact_ast)
+  print_endline (show_structure ast_factorial)
 ;;
