@@ -9,7 +9,9 @@ open FSharpActivePatterns.Parser
 let () =
   Printf.printf "\n\n\n";
   Printf.printf "gleb loh\n";
-  let input = " 4 >= 5 " in
+  let input = "if ((n = 0) || (n = 1)) 
+                  then 1 
+                  else n" in
   let result = parse input in
   print_construction (Expr result)
 ;;
