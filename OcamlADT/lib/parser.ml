@@ -2,16 +2,24 @@ open Ast
 open Angstrom
 open Base
 
+
+(*                   Auxiliary parsers                     *)
+
 let is_whitespace = function
 | ' ' | '\t' | '\n' | '\r' -> true
 | _ -> false
-
 let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = pass_ws *> string s
-let parens p = char '(' *> p <* char ')'
-let psemicolon = many @@ token ";;" (* fix to take_while *)
+let pdsemicolon = 
+  let* str_part = take_while (function ';' -> false | _ -> true) in  
+  let* semi_part = peek_char in  (* Peek to see if we have encountered `;` *)
+  match semi_part with
+  | Some ';' ->
+    let* _ = string ";;" in  (* Ensure we consume both semicolons *)
+    return str_part
+  | _ -> fail "Expected ;;"
 let pletters = satisfy (function 'a'..'z' | 'A'..'Z' | '_' -> true | _ -> false)
 let ptowhitespace = function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' -> true | _ -> false
 
@@ -52,6 +60,8 @@ let pidentexpr =
   let* ident = pident in 
   return (Exp_ident(ident))
 
+(* FIX ASS. *)
+
 let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~oro =
   let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> mul exp1 exp2)) in
   let pdiv = lchain pmul (token "/" *> return (fun exp1 exp2 -> div exp1 exp2)) in
@@ -62,32 +72,38 @@ let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~or
   let pgre = lchain pleq (token ">" *> return (fun exp1 exp2 -> gre exp1 exp2)) in
   let pgrq = lchain pgre (token ">=" *> return (fun exp1 exp2 -> grq exp1 exp2)) in
   let peq = lchain pgrq (token "=" *> return (fun exp1 exp2 -> eq exp1 exp2)) in
-  let pneq = lchain peq (token "!=" *> return (fun exp1 exp2 -> neq exp1 exp2)) in
+  let pneq = lchain peq (token "<>" *> return (fun exp1 exp2 -> neq exp1 exp2)) in
   let pand = lchain pneq (token "&&" *> return (fun exp1 exp2 -> ando exp1 exp2)) in
   let por = lchain pand (token "||" *> return (fun exp1 exp2 -> oro exp1 exp2)) in
   por
 
-(* Define pexpr to handle different expression types *)
+(* Rule for parsing expressions inside parentheses *)
+
 let pexpr = fix (fun pexpr ->
-  parithmexpr pexpr
-    ~mul:(fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))
-    ~div:(fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))
-    ~add:(fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))
-    ~sub:(fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))
-    ~les:(fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))
-    ~leq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))
-    ~gre:(fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))
-    ~grq:(fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))
-    ~eq:(fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))
-    ~neq:(fun exp1 exp2 -> Exp_apply (Exp_ident "!=", Exp_tuple (exp1, exp2, [])))
-    ~ando:(fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))
-    ~oro:(fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))
-  (* <|> ptupleexpr *)
-  <|> pidentexpr
-  (* <|> pletexpr
-  <|> pifexpr *)
-  <|> pconstintexpr
-  <|> pconststringexpr
+  let pexpr_paren =
+    let* _ = token "(" in
+    let* e = pexpr in
+    let* _ = token ")" in
+    return e
+  in
+  
+  let parithm = 
+    parithmexpr pexpr
+      ~mul:(fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))
+      ~div:(fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))
+      ~add:(fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))
+      ~sub:(fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))
+      ~les:(fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))
+      ~leq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))
+      ~gre:(fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))
+      ~grq:(fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))
+      ~eq:(fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))
+      ~neq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))
+      ~ando:(fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))
+      ~oro:(fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))
+  in
+  (* Update to include pexpr_paren *)
+  pexpr_paren <|> parithm <|> pidentexpr <|> pconstintexpr <|> pconststringexpr  (* <|> pletexpr <|> pifexpr <|> ptupleexpr *)
 )
 
 (*                   Patterns                         *)
