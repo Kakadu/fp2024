@@ -10,17 +10,21 @@ let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = pass_ws *> string s
-
-(* Parentheses helper *)
 let parens p = char '(' *> p <* char ')'
+let psemicolon = many @@ token ";;" (* fix to take_while *)
+let pletters = satisfy (function 'a'..'z' | 'A'..'Z' | '_' -> true | _ -> false)
+let ptowhitespace = function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' -> true | _ -> false
 
-let psemicolon = many @@ token ";;"
+let pident =
+  let* first = pletters in
+  let* rest = take_while ptowhitespace in
+  return ((String.make 1 first) ^ rest)
 
+(*                   Constant expressions                         *)
 let pconstintexpr = 
   let* sign = choice [ token "+"; token "-"; token " "] in 
   let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
   return (Exp_constant(Const_integer (int_of_string (sign ^ n))))
-;;
 
 (* let pconstchar = 
   let* _ = token "'" in 
@@ -33,8 +37,8 @@ let pconststringexpr =
   let* _ = token "\"" in
   let* str = take_while1 (function '"' -> false | _ -> true) in 
   return (Exp_constant(Const_string (str)))
-;;
 
+(*                   Arithm + other expressions                         *)
 let lchain p op =
   let rec loop acc =
     (let* f = op in
@@ -44,51 +48,78 @@ let lchain p op =
   in
   let* x = p in
   loop x
-;;
+let pidentexpr = 
+  let* ident = pident in 
+  return (Exp_ident(ident))
 
+let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~oro =
+  let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> mul exp1 exp2)) in
+  let pdiv = lchain pmul (token "/" *> return (fun exp1 exp2 -> div exp1 exp2)) in
+  let psum = lchain pdiv (token "+" *> return (fun exp1 exp2 -> add exp1 exp2)) in
+  let pdif = lchain psum (token "-" *> return (fun exp1 exp2 -> sub exp1 exp2)) in
+  let ples = lchain pdif (token "<" *> return (fun exp1 exp2 -> les exp1 exp2)) in
+  let pleq = lchain ples (token "<=" *> return (fun exp1 exp2 -> leq exp1 exp2)) in
+  let pgre = lchain pleq (token ">" *> return (fun exp1 exp2 -> gre exp1 exp2)) in
+  let pgrq = lchain pgre (token ">=" *> return (fun exp1 exp2 -> grq exp1 exp2)) in
+  let peq = lchain pgrq (token "=" *> return (fun exp1 exp2 -> eq exp1 exp2)) in
+  let pneq = lchain peq (token "!=" *> return (fun exp1 exp2 -> neq exp1 exp2)) in
+  let pand = lchain pneq (token "&&" *> return (fun exp1 exp2 -> ando exp1 exp2)) in
+  let por = lchain pand (token "||" *> return (fun exp1 exp2 -> oro exp1 exp2)) in
+  por
 
-(** Parser that takese pexpr (parser of expressions) and returns parsed arithm expression, will be a part of whole expression parser*)
-let parithmexpr pexpr = 
-  let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pdiv = lchain pexpr (token "/" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let psum = lchain pexpr (token "+" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pdif = lchain pexpr (token "-" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let peq = lchain pexpr (token "=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let ples = lchain pexpr (token "<" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pleq = lchain pexpr (token "<=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pgre = lchain pexpr (token ">" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pgrq = lchain pexpr (token ">=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pneq = lchain pexpr (token "<>" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pand = lchain pexpr (token "&&" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let por = lchain pexpr (token "||" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  pexpr
-;;
+(* Define pexpr to handle different expression types *)
+let pexpr = fix (fun pexpr ->
+  parithmexpr pexpr
+    ~mul:(fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))
+    ~div:(fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))
+    ~add:(fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))
+    ~sub:(fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))
+    ~les:(fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))
+    ~leq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))
+    ~gre:(fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))
+    ~grq:(fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))
+    ~eq:(fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))
+    ~neq:(fun exp1 exp2 -> Exp_apply (Exp_ident "!=", Exp_tuple (exp1, exp2, [])))
+    ~ando:(fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))
+    ~oro:(fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))
+  (* <|> ptupleexpr *)
+  <|> pidentexpr
+  (* <|> pletexpr
+  <|> pifexpr *)
+  <|> pconstintexpr
+  <|> pconststringexpr
+)
 
-let pexpr = 
-  parithmexpr <|> ptupleexpr <|> pidentexpr <|> pletexpr <|> pifexpr <|> pconstintexpr <|> pconststringexpr
+(*                   Patterns                         *)
+let pany = token "_" *> return Pat_any
+let pvar =
+  let* ident = pident in
+  return (Pat_var ident)
+let ppattern =
+  pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
 
-let pvalue_binding = 
-  let* pat = ppattern in 
+(*                   Structure items                         *)
+
+let pvalue_binding =
+  let* pat = ppattern in
   let* _ = token "=" in
   let* expr = pexpr in
-  return { pat; expr }
+  let value_binding = { pat; expr } in
+  return value_binding
 
+let psvalue = 
+  (* we cant use let+ bc previous results are necessary *)
+  let* rec_fl = token "rec" *> return Recursive <|> return Nonrecursive in
+  let* value_binding_list = many pvalue_binding in 
+  return (Str_value (rec_fl, value_binding_list))
+
+let pseval = 
+  let* expr = pexpr in
+  return (Str_eval (expr))
 
 (** It applies Str_eval to output of expression parser *)
 let pstr_item =
-  let pseval = 
-    let* expr = pexpr in
-    Str_eval (expr)
-  in
-
-  let psvalue = 
-    (* we cant use let+ bc previous results are necessary *)
-    let* rec = token "rec" *> return Recursive <|> return Nonrecursive in
-    let* value_binding = many pvalue_binding in 
-    Str_value (rec, value_binding)
-  in
-
-  in pseval <|> psvalue (*<|> psadt (* god bless us *)*)
+  pseval <|> psvalue (*<|> psadt (* god bless us *)*)
 
 let pstructure =
   let psemicolon = token ";;" in
