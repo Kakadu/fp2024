@@ -1,3 +1,7 @@
+(** Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Angstrom
 open Ast
 
@@ -31,25 +35,25 @@ let integer =
 
 let parse_binary_chainl1 e op =
   let rec go acc = lift2 (fun f x -> Bin_expr (f, acc, x)) op e >>= go <|> return acc in
-  e >>= fun init -> go init <* skip_ws
+  e >>= fun init -> go init
 ;;
 (** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 
 let parse_binary1 e op =
-  e
-  >>= fun e1_expr ->
-  op >>= fun bin_op -> e >>= fun e2_expr -> return (Bin_expr (bin_op, e1_expr, e2_expr))
+    lift3 (fun e1 bin_op e2 -> Bin_expr (bin_op, e1, e2)) e op e
 ;;
 (** parse exactly one infix binary operation and returns Bin_expr (bin_op, e1, e2) *)
 
-let parse_unary_chainl1 e op =
-  let rec go acc = lift (fun f -> Unary_expr (f, acc)) op >>= go <|> return acc in
-  e >>= fun init -> go init
+let rec parse_unary_chainl1 e op =
+    (op >>= fun un_op -> parse_unary_chainl1 e op >>= fun expr -> return (Unary_expr (un_op, expr))) <|> e
+
 ;;
+  (* >>= go <|> return acc in
+    op >>= fun init -> Unary_expr (init, go op ) *)
 (** parse chain of unary left-associated expressions, such as - + - - 3 and returns Unary_expr (f, expr) *)
 
 let bool =
-  string "true" <|> string "false" >>| fun s -> Const (Bool_lt (bool_of_string s))
+  skip_ws *> string "true" <|> string "false" >>| fun s -> Const (Bool_lt (bool_of_string s))
 ;;
 (** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
 
@@ -69,7 +73,7 @@ let int_expr : expr t =
 let comparison_expr : expr t =
   parse_binary1
     int_expr
-    (less <|> less_or_equal <|> greater <|> greater_or_equal <|> equal <|> unequal)
+    (less_or_equal <|> greater_or_equal <|> unequal <|> less <|> greater <|> equal)
   <|> parse_binary1 (int_expr <|> bool <|> string_expr) (equal <|> unequal)
 ;;
 (** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
