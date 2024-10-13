@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>parser_utility.ml &mdash; Coverage report</title>
-    <meta name="description" content="71.43% coverage in lib/parser_utility.ml">
+    <meta name="description" content="71.17% coverage in lib/parser_utility.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>parser_utility.ml
         </a>
       </h1>
-      <h2>71.43%</h2>
+      <h2>71.17%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:5.08%"></span>
@@ -568,7 +568,7 @@ let pfail : _ parser = fun _ -&gt; <span data-count="101">P</span>arseFail
 let perror message : _ parser = <span data-count="2326">f</span>un state -&gt; <span data-count="37">P</span>arseError (message, state)
 
 (** Parser which always return [ParseSuccess] result with [value] *)
-let preturn value : _ parser = <span data-count="10360">f</span>un state -&gt; <span data-count="9984">P</span>arseSuccess (value, state)
+let preturn value : _ parser = <span data-count="10519">f</span>un state -&gt; <span data-count="10143">P</span>arseSuccess (value, state)
 
 (** Parser combinator that allows to apply function to argument
 
@@ -589,14 +589,14 @@ let ( &lt;*&gt; ) : 'a 'b. ('a -&gt; 'b) parser -&gt; 'a parser -&gt; 'b parser 
 (** Parser combinator that allows to build parser from result of another parser *)
 let ( &gt;&gt;= ) : 'a 'b. 'a parser -&gt; ('a -&gt; 'b parser) -&gt; 'b parser =
   fun p f state -&gt;
-  <span data-count="12948">m</span>atch p state with
+  <span data-count="13107">m</span>atch p state with
   | <span data-count="4939">P</span>arseFail -&gt; ParseFail
   | <span data-count="13">P</span>arseError _ as err -&gt; err
-  | <span data-count="7996">P</span>arseSuccess (res, st) -&gt; f res st
+  | <span data-count="8155">P</span>arseSuccess (res, st) -&gt; f res st
 ;;
 
 (** Parser combinator that allows to ignore left result *)
-let ( *&gt; ) : 'a 'b. 'a parser -&gt; 'b parser -&gt; 'b parser = fun p1 p2 -&gt; <span data-count="8709">p</span>1 &gt;&gt;= fun _ -&gt; <span data-count="5831">p</span>2
+let ( *&gt; ) : 'a 'b. 'a parser -&gt; 'b parser -&gt; 'b parser = fun p1 p2 -&gt; <span data-count="8868">p</span>1 &gt;&gt;= fun _ -&gt; <span data-count="5990">p</span>2
 
 (** Parser combinator that allows to ignore right result *)
 let ( &lt;* ) : 'a 'b. 'a parser -&gt; 'b parser -&gt; 'a parser =
@@ -647,7 +647,7 @@ let rec one_of : 'a parser list -&gt; 'a parser =
 (** Char predicate to defining witespaces characters *)
 let is_whitespace : char_predicate = function
   | <span data-count="2216">'</span> ' | <span data-count="0">'</span>\t' | <span data-count="148">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
-  | <span data-count="4935">_</span> -&gt; false
+  | <span data-count="5072">_</span> -&gt; false
 ;;
 
 (** Char predicate to defining digints characters *)
@@ -691,20 +691,20 @@ let rec satisfy
   -&gt; 'a parse_result
   =
   fun condition converter schanger state -&gt;
-  <span data-count="23812">m</span>atch schanger with
-  | <span data-count="11906">S</span>ome changer -&gt;
+  <span data-count="24130">m</span>atch schanger with
+  | <span data-count="12065">S</span>ome changer -&gt;
     (match state.input with
-     | <span data-count="10524">s</span>ym :: tl when conditio<span data-count="10524">n</span> sym -&gt;
+     | <span data-count="10661">s</span>ym :: tl when conditio<span data-count="10661">n</span> sym -&gt;
        <span data-count="2259">p</span>return (converte<span data-count="2259">r</span> sym) { (change<span data-count="2259">r</span> sym state) with input = tl }
-     | <span data-count="9647">_</span> -&gt; ParseFail)
-  | <span data-count="11906">N</span>one -&gt; satisfy condition converter (Some default_schanger) state
+     | <span data-count="9806">_</span> -&gt; ParseFail)
+  | <span data-count="12065">N</span>one -&gt; satisfy condition converter (Some default_schanger) state
 ;;
 
 (** Default satisfy, it's satisfy function with default [state_changer].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let dsatisfy : char_predicate -&gt; (char -&gt; 'a) -&gt; parser_state -&gt; 'a parse_result =
-  fun condition converter state -&gt; <span data-count="11618">s</span>atisfy condition converter None state
+  fun condition converter state -&gt; <span data-count="11777">s</span>atisfy condition converter None state
 ;;
 
 (** Check that [expected] character is found further in parsing text.
@@ -739,18 +739,18 @@ let ssequence expected state = <span data-count="2916">s</span>equence (char_lis
 
     Returns: [unit parse_result] wich always [ParseSuccess] with updated state *)
 let skip_ws state =
-  <span data-count="5665">l</span>et rec helper st =
-    <span data-count="6847">m</span>atch dsatisfy is_whitespace is_whitespace st with
+  <span data-count="5824">l</span>et rec helper st =
+    <span data-count="7006">m</span>atch dsatisfy is_whitespace is_whitespace st with
     | <span data-count="1182">P</span>arseSuccess (is_ws, new_state) -&gt; if is_ws then <span data-count="1182">h</span>elper new_state else <span data-count="0">n</span>ew_state
-    | <span data-count="5665">_</span> -&gt; st
+    | <span data-count="5824">_</span> -&gt; st
   in
-  preturn () (helpe<span data-count="5665">r</span> state)
+  preturn () (helpe<span data-count="5824">r</span> state)
 ;;
 
 (** Parser of digit character which convert it to integer in range from [0] to [9].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let digit state = <span data-count="288">s</span>atisfy is_digit (fun sym -&gt; <span data-count="139">i</span>nt_of_digit_char sym) None state
+let digit state = <span data-count="288">s</span>atisfy is_digit int_of_digit_char None state
 
 (** Initialize started parser state *)
 let init_parser_state (input_string : string) =
