@@ -91,25 +91,14 @@ let parse_pat_tuple parse_pat =
   >>| fun pat_list -> Pat_tuple pat_list
 ;;
 
-let parse_pat_construct parse_pat =
-  lift2
-    (fun ident pat -> Pat_construct (ident, pat))
-    parse_ident
-    (option None (ws >>| Option.some)
-     >>= function
-     | None -> return None
-     | Some _ -> parse_pat >>| Option.some)
-;;
-
 let parse_pattern =
-  fix (fun parse_pat ->
-    ws
-    *> choice
-         [ parse_pat_any
-         ; parse_pat_var
-         ; parse_pat_constant (* ; parse_pat_tuple parse_pat *)
-         ; parse_pat_construct parse_pat
-         ])
+  fix (fun parse_full_pat ->
+    let parse_cur_pat =
+      choice
+        [ skip_parens parse_full_pat; parse_pat_any; parse_pat_var; parse_pat_constant ]
+    in
+    let parse_cur_pat = parse_pat_tuple parse_cur_pat <|> parse_cur_pat in
+    parse_cur_pat)
 ;;
 
 (* ==================== Expression ==================== *)
@@ -172,16 +161,6 @@ let parse_exp_match parse_exp =
 let parse_exp_tuple parse_exp =
   lift2 List.cons parse_exp (many1 (ws *> string "," *> parse_exp))
   >>| fun exp_list -> Exp_tuple exp_list
-;;
-
-let parse_exp_construct parse_exp =
-  lift2
-    (fun ident exp -> Exp_construct (ident, exp))
-    parse_ident
-    (option None (ws >>| Option.some)
-     >>= function
-     | None -> return None
-     | Some _ -> parse_exp >>| Option.some)
 ;;
 
 let parse_exp_ifthenelse parse_exp =
