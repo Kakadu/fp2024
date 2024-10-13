@@ -2,6 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
-
-val parse : string -> structure_item list option
+val parse : string -> Ast.structure_item list option
