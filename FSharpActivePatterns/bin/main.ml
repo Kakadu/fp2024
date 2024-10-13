@@ -7,8 +7,6 @@ open FSharpActivePatterns.PrintAst
 open FSharpActivePatterns.Parser
 
 let () =
-  Printf.printf "\n\n\n";
-  Printf.printf "gleb loh\n";
   let input = "if ((n = 0) || (n = 1)) 
                   then 1 
                   else n" in
