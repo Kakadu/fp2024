@@ -4,6 +4,9 @@
 
 open Angstrom
 open Ast
+open PrintAst
+
+let keywords = ["if"; "then"; "else"; "let"; "in"]
 
 let skip_ws =
   skip_while (function
@@ -40,9 +43,12 @@ let parse_ident =
   take_while1 (function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
     | _ -> false)
-  >>| fun s -> Ident(s)
+  >>= fun str -> 
+    if List.mem str keywords then fail " no keywords pls " 
+    else return (Ident(str))
 
-let parse_word = parse_ident >>| (fun ident -> Variable(ident))
+let parse_word = 
+  parse_ident >>| fun ident -> Variable ident
 
 (** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 let parse_binary_chainl1 e op =
@@ -133,17 +139,25 @@ let parse_let parse_statement =
        (skip_ws *> string "in" *> (parse_statement >>= fun e -> return (Some e)) <|> return None)
 ;;
 
+let debug p =
+  p >>= fun result ->
+  print_expr 0 result;
+  return result
+;;
+
 let parse_statement = 
   fix
   (fun parse_statement -> 
   let statement = parse_let parse_statement in
   let statement = parse_if statement <|> statement in 
   let statement = parse_expr statement <|> statement in
-  statement)
+  debug statement)
 ;;
 
 let parse (str : string) : expr =
-  match parse_string ~consume:All parse_statement str with
+  match parse_string ~consume:All (skip_ws *> parse_statement <* skip_ws) str with
   | Ok v -> v
-  | Error msg -> failwith msg
+  | Error msg -> (
+    Printf.printf "%s " msg;
+    failwith msg)
 ;;
