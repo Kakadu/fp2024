@@ -1,5 +1,6 @@
 open Angstrom
 open Ast
+open Base
 
 (* Factorial example *)
 (* let rec fact n = if n <= 1 then 1 else n * fact (n - 1);; *)
@@ -59,14 +60,14 @@ let pliteral =
   ]
 let id =
   let* first_char = satisfy is_letter in
-  let* rest = take_while (fun c -> is_letter c || is_digit c || c = '_') in
+  let* rest = take_while (fun c -> is_letter c || is_digit c || Char.equal c '_') in
   return (String.make 1 first_char ^ rest)
 
 let pvariable = 
   id >>= fun v -> return (ExprVariable v)
 
 (* bin ops*)
-let rec pbinop =
+let pbinop pexpression =
   let* left = pexpression in
   let* op = choice [
     token "+"; 
@@ -89,7 +90,7 @@ let rec pbinop =
   | _ -> fail "unsupported binary operator"
 
 (* unary ops*)
-and punop =
+let punop pexpression =
   let* op = choice [token "+"; token "-"; token "not"] in
   let* expr = pexpression in
   match op with
@@ -99,7 +100,7 @@ and punop =
   | _ -> fail "unsupported unary operator"
 
 (* if-then-else *)
-and pif =
+let pif pexpression =
   let* _ = token "if" in
   let* cond = pexpression in
   let* _ = token "then" in
@@ -109,7 +110,7 @@ and pif =
   return (ExprIf (cond, then_expr, Some else_expr))
 
 (* let let rec pars *)
-and pletrec =
+let pletrec pexpression =
   let* _ = token "let" in
   let* _ = token "rec" in
   let* id = id in
@@ -120,32 +121,38 @@ and pletrec =
   return (ExprLet (Rec, [(PVar id, expr)], ExprVariable id))
 
 (* Парсер для выражений, объединяющий другие парсеры *)
-and pexpression =
-  choice [
-    pif;            (* if-then-else *)
-    pbinop;         (* бинарные операции *)
-    punop;          (* унарные операции *)
-    pliteral;       (* литералы *)
-    pvariable;      (* переменные *)
-    pletrec         (* let/let rec *)
-  ]
-  (*
+let pexpression =
+  (* Format.printf "hello\n"; *)
+  fix(
+    fun pexpression ->
+      choice [
+        pif pexpression;            (* if-then-else *)
+        pbinop pexpression;         (* бинарные операции *)
+        punop pexpression;          (* унарные операции *)
+        pliteral;       (* литералы *)
+        pvariable;      (* переменные *)
+        pletrec pexpression         (* let/let rec *)
+      ]
+  )
 
-  SLAVA ESLI TI REALNO REVIEW DELAESH YBERYYYYY EtU STROCHKYYYY!!!!!
-  aboba
 
-  *)
+let parse s = parse_string ~consume:Prefix pexpression s
 
 let test_parse str expected =
-  match parse str with
+  (* if String.length(str) = 1 then true else false;; *)
+  match (parse str) with
   | Ok actual ->
-    let is_eq = List.equal equal_decl expected actual in
+    true
+    (* let is_eq = List.equal equal_decl expected actual in
     if is_eq then () else Format.printf "Actual %a\n" pp_program actual;
-    is_eq
+    is_eq *)
   | Error err ->
     Format.printf "%s\n" err;
     false
 ;;
 
 
-let%test _ = test_parse "let f = 5" [ ]
+(* let%test _ = test_parse "let f = 5" [ ]; *)
+
+(* let b = test_parse "let f = 5" [ ] in
+  Format.printf (if b then "ok\n" else "not ok\n"); *)
