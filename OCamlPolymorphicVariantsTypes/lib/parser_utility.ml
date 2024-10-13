@@ -225,7 +225,7 @@ let skip_ws state =
 (** Parser of digit character which convert it to integer in range from [0] to [9].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let digit state = satisfy is_digit (fun sym -> int_of_digit_char sym) None state
+let digit state = satisfy is_digit int_of_digit_char None state
 
 (** Initialize started parser state *)
 let init_parser_state (input_string : string) =

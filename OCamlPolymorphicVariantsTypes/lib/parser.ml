@@ -67,7 +67,7 @@ let integer =
     >>= (fun v -> helper (v + (counter * 10)))
     <|> (preturn counter >>= fun v -> preturn (IntLiteral v))
   in
-  skip_ws *> digit >>= fun d -> helper d
+  skip_ws *> digit >>= helper
 ;;
 
 (** Parser of boolean literals: [true], [false].
@@ -113,7 +113,7 @@ let const_expr = skip_ws *> integer <|> boolean >>= fun id -> preturn (Const id)
 let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
-let rec expr state = boolean_expr state
+let rec expr state = (skip_ws *> boolean_expr) state
 
 (** Parser of applyable expressions *)
 and applyable_expr state = (skip_ws *> lambda_expr <|> variable <|> bracket_expr) state
@@ -176,10 +176,9 @@ and binary_expression subparser operations state =
                  oper.oper_view))
   in
   let rec next ex =
-    skip_ws *> (one_of (List.map (operation ex) operations) >>= fun e -> next e)
-    <|> preturn ex
+    skip_ws *> (one_of (List.map (operation ex) operations) >>= next) <|> preturn ex
   in
-  (skip_ws *> subparser >>= fun ex -> next ex) state
+  (skip_ws *> subparser >>= next) state
 
 (** Parser of binary expressions such as [<expr> * <expr>] and [<expr> / <expr>] *)
 and multiply_expr state =
