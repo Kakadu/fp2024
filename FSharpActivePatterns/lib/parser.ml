@@ -9,6 +9,7 @@ let skip_ws =
   skip_while (function
     | ' ' -> true
     | '\n' -> true
+    | '\t' -> true
     | _ -> false)
 ;;
 
@@ -35,11 +36,13 @@ let parse_integer =
   >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
 
-let parse_word = 
+let parse_ident = 
   take_while1 (function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
     | _ -> false)
-  >>| fun s -> Variable(Ident(s))
+  >>| fun s -> Ident(s)
+
+let parse_word = parse_ident >>| (fun ident -> Variable(ident))
 
 (** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
 let parse_binary_chainl1 e op =
@@ -96,20 +99,48 @@ let bool_expr : expr t =
     parse_binary_chainl1 level4 log_or)
 ;;
 
-let parse_expr = bool_expr <|> int_expr <|> string_expr
+let parse_expr parse_statement = 
+  choice
+  [
+    parse_parens parse_statement;
+    bool_expr;
+    string_expr;
+    int_expr;
+  ]
+;;
 
-let parse_if =
-  skip_ws
-  *> string "if"
-  *> skip_ws1
-  *> lift3
-       (fun cond th el -> If_then_else (cond, th, el))
-       bool_expr
-       (string "then" *> parse_expr)
-       (string "else" *> (parse_expr >>= fun e -> return (Some e)) <|> return None)
+let parse_if parse_statement =
+  fix 
+  (fun parse_if -> 
+    lift3
+      (fun cond th el -> If_then_else (cond, th, el))
+      (skip_ws *> string "if" *> skip_ws1 *> bool_expr)
+      (skip_ws *> string "then" *> (parse_if <|> parse_statement))
+      (skip_ws *> string "else" *> ((parse_if <|> parse_statement) >>= fun e -> return (Some e)) <|> return None)
+  )
 ;; 
 
-let parse_statement = parse_if <|> parse_expr
+let parse_let parse_statement = 
+  skip_ws
+  *> string "let"
+  *> skip_ws1
+  *> lift4 
+       (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
+       (string "rec" *> return Rec <|> return Nonrec)
+       (skip_ws *> parse_ident >>= fun ident -> return (Some(ident)) <|> return None)
+       (skip_ws *> many (parse_expr parse_statement) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
+       (skip_ws *> string "=" *> skip_ws *> parse_statement) <*>
+       (skip_ws *> string "in" *> (parse_statement >>= fun e -> return (Some e)) <|> return None)
+;;
+
+let parse_statement = 
+  fix
+  (fun parse_statement -> 
+  let statement = parse_let parse_statement in
+  let statement = parse_if statement <|> statement in 
+  let statement = parse_expr statement <|> statement in
+  statement)
+;;
 
 let parse (str : string) : expr =
   match parse_string ~consume:All parse_statement str with

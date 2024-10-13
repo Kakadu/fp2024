@@ -65,7 +65,7 @@ type expr =
   (**rec, name, args, body*)
   | Function_call of expr * expr list (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
-  | Let of is_recursive * ident option * expr list option * expr * expr option (** [let x = 5 in x * y] *)
+  | LetIn of is_recursive * ident option * expr list option * expr * expr option (** [let x = 5 in x * y] *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =

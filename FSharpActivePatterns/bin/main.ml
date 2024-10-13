@@ -8,8 +8,9 @@ open FSharpActivePatterns.Parser
 
 let () =
   let input = "if ((n = 0) || (n = 1)) 
-                  then 1 
-                  else n" in
+                then 1 
+                else (n + 1)
+              " in
   let result = parse input in
   print_construction (Expr result)
 ;;
