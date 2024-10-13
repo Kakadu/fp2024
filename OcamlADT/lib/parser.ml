@@ -2,7 +2,11 @@ open Ast
 open Angstrom
 open Base
 
-let pass_ws = skip_while Char.is_whitespace
+let is_whitespace = function
+| ' ' | '\t' | '\n' | '\r' -> true
+| _ -> false
+
+let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = pass_ws *> string s
