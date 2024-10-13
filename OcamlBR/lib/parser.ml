@@ -124,7 +124,7 @@ let plet pexpr =
   pstoken "let"
   *> lift4
        (fun r id e1 e2 -> Elet (r, id, e1, e2))
-       (pstoken "rec" *> return Rec <|> return NonRec)
+       (pstoken "rec" *> return Recursive <|> return Non_recursive)
        (pparens varname <|> varname)
        (pstoken "=" *> pexpr <|> pbody pexpr)
        (pstoken "in" *> pexpr <|> return (Econst Unit))
