@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>main.ml &mdash; Coverage report</title>
-    <meta name="description" content="100.00% coverage in bin/main.ml">
+    <title>utils.ml &mdash; Coverage report</title>
+    <meta name="description" content="100.00% coverage in lib/utils.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -12,7 +12,7 @@
     <div id="header">
       <h1>
         <a href="../index.html">
-          <span class="dirname">bin/</span>main.ml
+          <span class="dirname">lib/</span>utils.ml
         </a>
       </h1>
       <h2>100.00%</h2>
@@ -27,18 +27,18 @@
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span > </span>
 <a id="L5"></a><span > </span>
-<a id="L6"></a><span > </span>
+<a id="L6"></a><span class="visited"> </span>
 <a id="L7"></a><span > </span>
 <a id="L8"></a><span > </span>
-<a id="L9"></a><span > </span>
-<a id="L10"></a><span class="visited"> </span>
-<a id="L11"></a><span class="visited"> </span>
+<a id="L9"></a><span class="visited"> </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
 <a id="L12"></a><span class="visited"> </span>
 <a id="L13"></a><span > </span>
 <a id="L14"></a><span > </span>
 <a id="L15"></a><span > </span>
-<a id="L16"></a><span > </span>
-<a id="L17"></a><span > </span>
+<a id="L16"></a><span class="visited"> </span>
+<a id="L17"></a><span class="visited"> </span>
 <a id="L18"></a><span > </span>
 </pre>
       </div>
@@ -67,19 +67,19 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Miniml.Parser
-open Miniml.Parser_utility
-open Miniml.Printer
+(** Converter digit character value to integer value in range from [0] to [9] *)
+let int_of_digit_char symbol = <span data-count="139">i</span>nt_of_cha<span data-count="139">r</span> symbol - int_of_cha<span data-count="139">r</span> '0'
 
-let () =
-  print_endlin<span data-count="1">e</span>
-    (string_of_program_parse_resul<span data-count="1">t</span>
-       (pars<span data-count="1">e</span>
-          program_parser
-          {|
-        let rec factorial n = if (n &gt; 1) then n * factorial(n-1) else 1;;
-        factorial 5;;
-        |}))
+(** Converter string value to list of characters *)
+let char_list_of_string s = <span data-count="2982">L</span>ist.of_seq (String.to_se<span data-count="2982">q</span> s)
+
+(** Converter list of characters value to string *)
+let string_of_char_list char_list = <span data-count="103">S</span>tring.of_seq (List.to_se<span data-count="103">q</span> char_list)
+
+(** Check length of list is 0 *)
+let is_empty = function
+  | <span data-count="38">[</span>] -&gt; true
+  | <span data-count="21">_</span> -&gt; false
 ;;
 </code></pre>
       </div>

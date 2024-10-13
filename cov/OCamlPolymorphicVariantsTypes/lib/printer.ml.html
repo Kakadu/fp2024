@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>printer.ml &mdash; Coverage report</title>
+    <meta name="description" content="100.00% coverage in lib/printer.ml">
+    <link rel="stylesheet" href="../coverage.css"/>
+    <script src="../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../index.html">
+          <span class="dirname">lib/</span>printer.ml
+        </a>
+      </h1>
+      <h2>100.00%</h2>
+    </div>
+    <div id="navbar">
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span > </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span > </span>
+<a id="L10"></a><span class="visited"> </span>
+<a id="L11"></a><span class="visited"> </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span class="visited"> </span>
+<a id="L14"></a><span > </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span > </span>
+<a id="L17"></a><span class="visited"> </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span class="visited"> </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span class="visited"> </span>
+<a id="L24"></a><span > </span>
+<a id="L25"></a><span > </span>
+<a id="L26"></a><span class="visited"> </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span class="visited"> </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span > </span>
+<a id="L32"></a><span class="visited"> </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+<a href="#L32">32</a>
+</pre>
+<pre><code class="ocaml">(** Copyright 2024-2027, Ilia Suponev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open Ast
+open Parser_utility
+
+(** Convert custom parse result to string view *)
+let string_of_parse_result converter = function
+  | <span data-count="9">P</span>arseFail -&gt; "Parse process failed"
+  | <span data-count="13">P</span>arseError (msg, state) -&gt;
+    Printf.sprintf "ParseError(line=%d pos=%d): %s" state.line state.inline msg
+  | <span data-count="44">P</span>arseSuccess (r, _) -&gt; converter r
+;;
+
+(** Convert [identifier] parse result to string by function [show_identifier] *)
+let string_of_identifier_parse_result = string_of_parse_resul<span data-count="4">t</span> show_identifier
+
+(** Convert [literal] parse result to string by function [show_literal] *)
+let string_of_literal_parse_result = string_of_parse_resul<span data-count="4">t</span> show_literal
+
+(** Convert [expression] parse result to string by function [show_expression] *)
+let string_of_expression_parse_result = string_of_parse_resul<span data-count="4">t</span> show_expression
+
+(** Convert [struct_item] parse result to string by function [show_struct_item] *)
+let string_of_struct_item_parse_result = string_of_parse_resul<span data-count="4">t</span> show_struct_item
+
+(** Convert [pattern] parse result to string by function [show_pattern] *)
+let string_of_pattern_parse_result = string_of_parse_resul<span data-count="4">t</span> show_pattern
+
+(** Convert [program] parse result to string by function [show_program] *)
+let string_of_program_parse_result = string_of_parse_resul<span data-count="4">t</span> show_program
+</code></pre>
+      </div>
+    </div>
+    <script src="../coverage.js"></script>
+  </body>
+</html>
