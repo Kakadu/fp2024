@@ -56,11 +56,20 @@ let lchain p op =
   in
   let* x = p in
   loop x
+  let rchain p op =
+    let rec loop acc =
+      (let* f = op in
+       let* y = p in
+       let new_acc = f acc y in
+       loop new_acc)
+      <|> return acc
+    in
+    let* x = p in
+    loop x
+
 let pidentexpr = 
   let* ident = pident in 
   return (Exp_ident(ident))
-
-(* FIX ASS. *)
 
 let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~oro =
   let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> mul exp1 exp2)) in
@@ -73,8 +82,8 @@ let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~or
   let pgrq = lchain pgre (token ">=" *> return (fun exp1 exp2 -> grq exp1 exp2)) in
   let peq = lchain pgrq (token "=" *> return (fun exp1 exp2 -> eq exp1 exp2)) in
   let pneq = lchain peq (token "<>" *> return (fun exp1 exp2 -> neq exp1 exp2)) in
-  let pand = lchain pneq (token "&&" *> return (fun exp1 exp2 -> ando exp1 exp2)) in
-  let por = lchain pand (token "||" *> return (fun exp1 exp2 -> oro exp1 exp2)) in
+  let pand = rchain pneq (token "&&" *> return (fun exp1 exp2 -> ando exp1 exp2)) in
+  let por = rchain pand (token "||" *> return (fun exp1 exp2 -> oro exp1 exp2)) in
   por
 
 (* Rule for parsing expressions inside parentheses *)
@@ -86,7 +95,7 @@ let pexpr = fix (fun pexpr ->
     let* _ = token ")" in
     return e
   in
-  
+
   let parithm = 
     parithmexpr pexpr
       ~mul:(fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))
