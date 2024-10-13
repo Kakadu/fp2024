@@ -103,8 +103,10 @@ let pifexpr =
   ) in
   return (condition, expression, alternative)
 
-
-
+let papplyexpr =
+  let* func = pexrp in
+  let* argument = pexpr in
+  return (func, argument)
 
 (** It applies Str_eval to output of expression parser *)
 let pstr_item =
