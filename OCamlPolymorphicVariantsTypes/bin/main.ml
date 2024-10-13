@@ -12,7 +12,7 @@ let () =
        (parse
           program_parser
           {|
-        let rec factorial n = if (n > 1) then n * (factorial(n-1)) else 1;;
+        let rec factorial n = if (n > 1) then n * factorial(n-1) else 1;;
         factorial 5;;
         |}))
 ;;

@@ -113,17 +113,14 @@ let const_expr = skip_ws *> integer <|> boolean >>= fun id -> preturn (Const id)
 let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
-let rec expr state = apply_expr state
+let rec expr state = boolean_expr state
 
-(** Parser of basic expressions: [<unary>] | [<const>] *)
+(** Parser of applyable expressions *)
+and applyable_expr state = (skip_ws *> lambda_expr <|> variable <|> bracket_expr) state
+
+(** Parser of basic expressions: [<unary>] | [<if-expr>] | [<apply-expr>] | [<const>] *)
 and basic_expr state =
-  (skip_ws *> unary_expr
-   <|> bracket_expr
-   <|> if_expr
-   <|> lambda_expr
-   <|> variable
-   <|> const_expr)
-    state
+  (skip_ws *> unary_expr <|> if_expr <|> apply_expr <|> const_expr) state
 
 (** Parser of unary expression *)
 and unary_expr state =
@@ -249,10 +246,18 @@ and if_expr state =
 
 (** Parser of apply expressions such as [<applyable_expr>  <expr list>]*)
 and apply_expr state =
-  (skip_ws *> boolean_expr
-   >>= fun ex ->
-   many (skip_ws *> expr) >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
-  )
+  let bin_op_checker =
+    skip_ws
+    *> (one_of
+          (List.map
+             ssequence
+             [ "+"; "-"; "/"; "*"; "&&"; "||"; "<="; ">="; "<>"; "<"; ">"; "=" ])
+        >>= fun _ -> preturn ())
+  in
+  let helper ex =
+    many (skip_ws *> expr) >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
+  in
+  (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker >>> preturn ex <|> helper ex)
     state
 
 (** Parser of lambdas definitions *)

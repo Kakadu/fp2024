@@ -216,9 +216,6 @@ let%expect_test _ =
   [%expect
     {|
     (Apply ((Apply ((Variable "f"), [(Variable "x")])), [(Variable "y")])) |}];
-  Format.printf "%s" (string_of_expression_parse_result (parse apply_expr "x + y"));
-  [%expect {|
-    (Binary ((Variable "x"), Add, (Variable "y"))) |}];
   Format.printf
     "%s"
     (string_of_expression_parse_result (parse lambda_expr "fun (x, ()) y -> x + y"));
@@ -289,9 +286,12 @@ let%expect_test _ =
         [((PVar "factorial"),
           (Lambda ([(PVar "n")],
              (If ((Binary ((Variable "n"), Gt, (Const (IntLiteral 1)))),
-                (Apply (
-                   (Binary ((Variable "n"), Multiply, (Variable "factorial"))),
-                   [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))))]
+                (Binary ((Variable "n"), Multiply,
+                   (Apply ((Variable "factorial"),
+                      [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))
+                          ))
+                        ]
+                      ))
                    )),
                 (Some (Const (IntLiteral 1)))))
              )))
@@ -346,7 +346,7 @@ let%expect_test _ =
        (parse
           program_parser
           {|
-        let rec factorial n = if (n > 1) then n * (factorial(n-1)) else 1;;
+        let rec factorial n = if (n > 1) then n * factorial(n-1) else 1;;
         factorial 5;;
         |}));
   [%expect
