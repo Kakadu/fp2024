@@ -58,8 +58,9 @@
 <a id="L34"></a><span > </span>
 <a id="L35"></a><span > </span>
 <a id="L36"></a><span > </span>
-<a id="L37"></a><span class="visited"> </span>
-<a id="L38"></a><span > </span>
+<a id="L37"></a><span > </span>
+<a id="L38"></a><span class="visited"> </span>
+<a id="L39"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -102,6 +103,7 @@
 <a href="#L36">36</a>
 <a href="#L37">37</a>
 <a href="#L38">38</a>
+<a href="#L39">39</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Friend-zva, RodionovMaxim05 *)
 
@@ -110,8 +112,9 @@
 open Ocaml_printf_lib.Ast
 
 let () =
-  let fact_ast : structure =
-    [ Str_value
+  (* let rec factorial n = if n &lt;= 1 then 1 else n * factorial (n - 1) *)
+  let ast_factorial : structure =
+    [ Struct_value
         ( Recursive
         , [ { pat = Pat_var "factorial"
             ; exp =
@@ -139,7 +142,7 @@ let () =
           ] )
     ]
   in
-  print_endlin<span data-count="1">e</span> (show_structur<span data-count="1">e</span> fact_ast)
+  print_endlin<span data-count="1">e</span> (show_structur<span data-count="1">e</span> ast_factorial)
 ;;
 </code></pre>
       </div>
