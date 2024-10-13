@@ -17,6 +17,8 @@ let parse_comments =
 let ws = many parse_comments *> skip_whitespaces
 
 let parse_ident =
+  ws
+  *>
   let parse_start =
     satisfy (function
       | 'A' .. 'Z' | 'a' .. 'z' -> true
@@ -60,7 +62,9 @@ let parse_const_string =
   >>| fun str_value -> Const_string str_value
 ;;
 
-let parse_constant = choice [ parse_const_int; parse_const_char; parse_const_string ]
+let parse_constant =
+  ws *> choice [ parse_const_int; parse_const_char; parse_const_string ]
+;;
 
 (* ==================== Pattern ==================== *)
 
@@ -79,18 +83,23 @@ let parse_pattern =
          [ parse_pat_any
          ; parse_pat_var
          ; parse_pat_const
-         (* ; parse_pat_tuple parse_pat *)
-         (* ; parse_pat_construct *)
+           (* ; parse_pat_tuple parse_pat *)
+           (* ; parse_pat_construct *)
          ])
 ;;
 
 (* ==================== Expression ==================== *)
 
-let parse_bin_op =
-  take_while1 (function
-    | '+' | '-' | '*' | '/' | '=' | '<' | '>' -> true
-    | _ -> false)
-  >>| fun bin_op -> Exp_ident bin_op
+(* let parse_bin_op =
+   take_while1 (function
+   | '+' | '-' | '*' | '/' | '=' | '<' | '>' -> true
+   | _ -> false)
+   >>| fun bin_op -> Exp_ident bin_op
+   ;; *)
+
+let chain_left_associative exp op =
+  let rec go acc = lift2 (fun f x -> f acc x) op exp >>= go <|> return acc in
+  exp >>= fun init -> go init
 ;;
 
 let parse_exp_ident = parse_ident >>| fun ident -> Exp_ident ident
@@ -101,7 +110,6 @@ let parse_exp_fun parse_exp =
     (fun pat_list exp -> Exp_fun (pat_list, exp))
     (many parse_pattern)
     (skip_parens parse_exp)
-    (* parse_exp *)
 ;;
 
 let parse_exp_apply parse_exp =
@@ -110,43 +118,72 @@ let parse_exp_apply parse_exp =
     (skip_parens parse_exp)
     (* parse_exp *)
     (skip_parens (many parse_exp))
-    (* (many parse_exp) *)
 ;;
 
-let parse_exp_tuple parse_exp = lift (fun exp_list -> Exp_tuple exp_list) (many parse_exp)
+let parse_exp_tuple exp =
+  lift2 List.cons exp (many1 (ws *> string "," *> exp)) >>| fun x -> Exp_tuple x
+;;
 
 (** [TODO]: add "parse_exp" *)
 let parse_exp_construct = lift (fun ident -> Exp_construct (ident, None)) parse_ident
 
-(** [TODO] add "else" *)
-let parse_exp_ifthen parse_exp =
-  lift2
-    (fun if_ then_ -> Exp_ifthenelse (if_, then_, None))
+let parse_exp_ifthenelse parse_exp =
+  lift3
+    (fun if_ then_ else_ -> Exp_ifthenelse (if_, then_, else_))
     (ws *> string "if" *> parse_exp)
     (ws *> string "then" *> parse_exp)
+    (option None (ws *> string "else" >>| Option.some)
+     >>= function
+     | None -> return None
+     | Some _ -> parse_exp >>| Option.some)
+;;
+
+let bin_op chain1 exp ops =
+  chain1 exp (ops >>| fun op left right -> Exp_apply (op, [ left; right ]))
+;;
+
+let left_bin_op = bin_op chain_left_associative
+
+let select_operator operators =
+  choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) operators)
+;;
+
+let mul_div = select_operator [ "*"; "/" ]
+let add_sub = select_operator [ "+"; "-" ]
+let cmp = select_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
+
+let parse_cases exp =
+  let parse_case =
+    lift2
+      (fun left right -> { left; right })
+      (parse_pattern <* ws <* string "->" <* ws)
+      exp
+  in
+  sep_by (ws *> char '|' *> ws) parse_case
+;;
+
+let parse_exp_match exp =
+  lift2
+    (fun exprassion cases -> Exp_match (exprassion, cases))
+    (ws *> string "match" *> ws *> exp <* ws <* string "with")
+    (ws *> parse_cases exp)
 ;;
 
 let parse_expression =
-  fix (fun parse_exp ->
-    ws
-    *> choice
-         [ parse_bin_op
-         ; parse_exp_ident
-         ; parse_exp_const
-         ; parse_exp_fun parse_exp
-         ; parse_exp_apply parse_exp
-         (* ; parse_exp_tuple parse_exp *)
-         (* ; parse_exp_construct *)
-         (* ; parse_exp_ifthen parse_exp *)
-         ])
+  ws
+  *> fix (fun full_exp ->
+    let current_exp = choice [ skip_parens full_exp; parse_exp_ident; parse_exp_const ] in
+    let current_exp =
+      chain_left_associative current_exp (return (fun e1 e2 -> Exp_apply (e1, [ e2 ])))
+    in
+    let current_exp = left_bin_op current_exp mul_div in
+    let current_exp = left_bin_op current_exp add_sub in
+    let current_exp = left_bin_op current_exp add_sub in
+    let current_exp = left_bin_op current_exp cmp in
+    let current_exp = parse_exp_tuple current_exp <|> current_exp in
+    choice [ parse_exp_ifthenelse full_exp; parse_exp_match full_exp; current_exp ])
+  <* ws
 ;;
-
-(* ==================== Case ==================== *)
-
-let parse_case = 
-  lift2 (fun left right -> { left; right } )
-  (parse_pattern)
-  (ws *> string "->" *> parse_expression)
 
 (* ==================== Value_binding ==================== *)
 

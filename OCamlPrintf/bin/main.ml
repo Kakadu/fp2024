@@ -39,6 +39,8 @@ let () =
 ;;
 
 let () =
-  let parser : structure = parse "let rec f n = 1" in
+  let parser : structure =
+    parse "let factorial n = if n <= 1 then 1 else n * factorial (n - 1)"
+  in
   print_endline (show_structure parser)
 ;;
