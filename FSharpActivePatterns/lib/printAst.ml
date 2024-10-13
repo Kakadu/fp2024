@@ -110,7 +110,7 @@ let rec print_expr indent expr =
     print_expr (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 2)) args
-  | Let (flag, name, args, body, in_expr) ->
+  | LetIn (flag, name, args, body, in_expr) ->
     printf "%s | Let %s %s =\n" (String.make indent '-') 
     (match flag with
        | Nonrec -> ""
