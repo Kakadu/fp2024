@@ -7,6 +7,3 @@
   (backend bisect_ppx))
  (preprocess
   (pps ppx_deriving.show)))
-
-(cram
- (deps ./REPL.exe %{bin:REPL}))
