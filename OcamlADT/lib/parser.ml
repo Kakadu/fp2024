@@ -91,6 +91,19 @@ let ptupleexpr =
   let* _ = token ")" in
   return (expression1, expression2, expressiontl)
  
+let pifexpr =
+  let* _ = token "if" in
+  let* condition = pexpr in
+  let* _ = token "then" in
+  let* expression = pexpr in
+  let* alternative = option None (
+    let* _ = token "else" in
+    let expression = pexpr in
+    return (Some expression)
+  ) in
+  return (condition, expression, alternative)
+
+
 
 
 (** It applies Str_eval to output of expression parser *)
