@@ -50,6 +50,8 @@ let rec chainr1 e op =
 let rec unary_chain op e =
   op >>= (fun unexpr -> unary_chain op e >>= fun expr -> return (unexpr expr)) <|> e
 ;;
+  (* >>= go <|> return acc in
+    op >>= fun init -> Unary_expr (init, go op ) *)
 (** parse chain of unary left-associated expressions, such as - + - - 3 and returns Unary_expr (f, expr) *)
 
 (* SIMPLE PARSERS *)
