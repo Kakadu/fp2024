@@ -14,14 +14,16 @@ let token s = pass_ws *> string s
 (* Parentheses helper *)
 let parens p = char '(' *> p <* char ')'
 
-let psemicolon = many @@ token ";;"
+let pdsemicolon = many @@ token ";;"
+
+let psemicolon = token ";" 
 
 let pconstintexpr = 
   let* sign = choice [ token "+"; token "-"; token " "] in 
   let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
   return (Exp_constant(Const_integer (int_of_string (sign ^ n))))
 
-(* let pconstchar = 
+(* let pconstchar =   
   let* _ = token "'" in 
   let* c = satisfy (fun code -> code >= Char.to_int ' ' && code <= Char.to_int '~') in 
   let* _ = token "'" in 
@@ -75,12 +77,20 @@ let prec_flag =
 let pletexpr =
   let* _ = token "let" in
   let* rec_flag = prec_flag in
-  let* many1 value_binding = pvalue_binding in
+  let* many1 @@ value_binding = pvalue_binding in
   let* exrpession = pexpr in
   return (rec_flag, value_binding, expression)
 
 let ptupleexpr =
-  
+  let* _ = token "(" in
+  let* expression1 = identifier in
+  let* _ = token ";" in
+  let* expression2 = identifier in
+  let* _ = token ";" in
+  let* expressiontl = sep_by (char ';') identifier in
+  let* _ = token ")" in
+  return (expression1, expression2, expressiontl)
+ 
 
 
 (** It applies Str_eval to output of expression parser *)
