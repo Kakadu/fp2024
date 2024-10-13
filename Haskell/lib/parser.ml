@@ -96,7 +96,11 @@ let ident =
     ; "where"
     ]
   in
-  (let* x = satisfy is_alpha in
+  (let* x =
+     satisfy (function
+       | 'a' .. 'z' -> true
+       | _ -> false)
+   in
    let* y =
      take_while (fun c ->
        is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c)
