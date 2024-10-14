@@ -6,7 +6,7 @@ let is_not_colon = function
 let is_digit = function
     | '1'..'9' -> true
     | _ -> false
-let register = choice [
+let parse_register = choice [
     string "x0" *> return X0;
     string "x1" *> return X1;
     string "x2" *> return X2;
@@ -73,16 +73,16 @@ let register = choice [
     string "t6" *> return X30;
     string "t7" *> return X31;
 ]
-let immediate12 = lift(fun n -> return (Immediate12(n))) (let* str = take_while1 is_digit in return (int_of_string str))
-let label = lift (fun str -> return (Label(str))) (take_while1 is_not_colon)
-let address12 = lift (fun str -> return (Address12(str))) (take_while1 is_not_colon)
-let instruction = choice [
-    string "add" *> lift3 (fun r1 r2 r3 -> return (Add(r1, r2, r3))) register register register;
-    string "mv" *> lift2 (fun r1 r2 -> return (Mv(r1, r2))) register register;
-    string "beq" *> lift3 (fun r1 r2 adr -> return (Beq(r1, r2, adr))) register register address12;
+let parse_immediate12 = lift(fun n -> return (Immediate12(n))) (let* str = take_while1 is_digit in return (int_of_string str))
+let parse_label = lift (fun str -> return (LabelJ(str))) (take_while1 is_not_colon)
+let parse_address12 = choice [parse_immediate12; parse_label]
+let parse_instruction = choice [
+    string "add" *> lift3 (fun r1 r2 r3 -> return (Add(r1, r2, r3))) parse_register parse_register parse_register;
+    string "mv" *> lift2 (fun r1 r2 -> return (Mv(r1, r2))) parse_register parse_register;
+    string "beq" *> lift3 (fun r1 r2 adr -> return (Beq(r1, r2, adr))) parse_register parse_register parse_label;
 ]
-let expr = choice
-            [instruction;
-            label]
-let ast = many expr
+let parse_expr = choice
+            [parse_instruction >>= fun i-> return Instruction(i);
+            parse_label >>= fun l -> return LabelExpr(l);]
+let parse_ast = many parse_expr
 
