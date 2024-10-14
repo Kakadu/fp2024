@@ -36,7 +36,7 @@ let pconstintexpr =
 
 (* let pconstchar = 
   let* _ = token "'" in 
-  let* c = satisfy (fun code -> code >= Char.to_int ' ' && code <= Char.to_int '~') in 
+  let* c = satisfy (fun code -> Char.code(code) >= Char.code ' ' && Char.code code <= Char.code '~') in
   let* _ = token "'" in 
   return (Const_char (c))
 ;; *)
@@ -132,7 +132,7 @@ let pvalue_binding =
   let value_binding = { pat; expr } in
   return value_binding
 
-let psvalue = 
+let psvalue =
   (* we cant use let+ bc previous results are necessary *)
   let* rec_fl = token "rec" *> return Recursive <|> return Nonrecursive in
   let* value_binding_list = many pvalue_binding in 
@@ -158,6 +158,72 @@ let parse_fact str =
   | Error msg -> failwith msg
 
 
+(* Example test cases for the parser *)
+let test_cases = [
+  ("1 + 2;;", 
+   [Exp_apply (Exp_ident "+", Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), []))]);
+  
+  ("'hello';;", 
+   [Exp_constant (Const_string "hello")]);
+  
+  ("(1, 2, 3);;", 
+   [Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), [Exp_constant (Const_integer 3)])]);
+  
+  ("4 * (2 + 3);;", 
+   [Exp_apply (Exp_ident "*", Exp_tuple 
+                (Exp_constant (Const_integer 4), 
+                 Exp_apply (Exp_ident "+", Exp_tuple 
+                              (Exp_constant (Const_integer 2), 
+                               Exp_constant (Const_integer 3), [])), []))]);
+  
+  ("8 / 2;;", 
+   [Exp_apply (Exp_ident "/", Exp_tuple (Exp_constant (Const_integer 8), Exp_constant (Const_integer 2), []))]);
+  
+  ("3 - 4 + 5;;", 
+   [Exp_apply (Exp_ident "+", Exp_tuple 
+                (Exp_apply (Exp_ident "-", 
+                            Exp_tuple (Exp_constant (Const_integer 3), 
+                                       Exp_constant (Const_integer 4), [])), 
+                 Exp_constant (Const_integer 5), []))]);
+  
+  ("x + y;;", 
+   [Exp_apply (Exp_ident "+", Exp_tuple 
+                (Exp_ident "x", Exp_ident "y", []))]);
+
+]
+let const_to_string n = 
+  match n with 
+  (* | Const_char (n) -> return n *)
+  | Const_integer (n) -> string_of_int n
+  | Const_string (n) -> n
+
+let rec string_of_expr expr =
+  match expr with
+  | Exp_ident id -> id  (* Just return the identifier *)
+  | Exp_constant n -> Printf.sprintf "%s" (const_to_string n)  (* Convert integer constants to strings *)
+  | Exp_apply (exp1, exp2) ->
+      Printf.sprintf "(%s %s)" (string_of_expr exp1) (string_of_expr exp2)
+  | Exp_tuple (exp1, exp2 , exp_list) ->
+      let tuple_list = [exp1 ; exp2] @ exp_list in 
+      let exprs = List.map string_of_expr tuple_list in
+      Printf.sprintf "(%s)" (String.concat ", " exprs)
+
+let run_tests test_cases =
+  for i = 0 to List.length test_cases - 1 do
+    let (input, expected) = List.nth test_cases i in
+    match parse input with
+    | Ok result when result = expected ->
+        Printf.printf "Passed: %s\n" input
+    | Ok result ->
+        Printf.printf "Failed: %s\nExpected: %s, Got: %s\n"
+          input (string_of_expr expected) (string_of_expr result)
+    | Error msg ->
+        Printf.printf "Error parsing: %s -> %s\n" input msg
+  done
+;;
+
+let () =
+  run_tests test_cases
 
 
 
