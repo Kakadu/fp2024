@@ -1,0 +1,8 @@
+(library
+ (name ocaml_oop_lib)
+ (public_name OCamlOOP.Lib)
+ (modules Ast)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))

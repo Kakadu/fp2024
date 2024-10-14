@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (public_name EUsoltsev)
+ (libraries EUsoltsev_lib)
+ (instrumentation
+  (backend bisect_ppx)))

@@ -1,0 +1,35 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors "Dmitrii Kuznetsov dmitrvlkuznetsov@gmail.com")
+
+(maintainers "Dmitrii Kuznetsov dmitrvlkuznetsov@gmail.com")
+
+(bug_reports "https://github.com/f1i3g3/fp2024")
+
+(homepage "https://github.com/f1i3g3/fp2024")
+
+(package
+ (name CSharpStrange)
+ (synopsis "An interpreter for strange subset of C# language")
+ (description
+  "An interpreter for subset of C# language with async/await and LINQ (and some other stuff which will be added later)")
+ ; TODO: actual documentation (documentation "https://kakadu.github.io/fp2024/docs/Lambda")
+ (version 0.1)
+ (depends
+  dune
+  ; angstrom
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  base
+  ; After adding dependencies to 'dune' files add the same dependecies here too
+  ))
