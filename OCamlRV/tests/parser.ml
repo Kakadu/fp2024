@@ -32,5 +32,5 @@ let%test _ = test_parse_binop_expr "2 - 3"
 let%test _ = test_parse_binop_expr " 2 -2 -2"
 let%test _ = test_parse_binop_expr "4 * 4";;
 
-let b = test_parse "let rec fact n = if n <= 1 then 1 else n * fact (n - 1);;" in
-Format.printf (if b then "ok\n" else "not ok\n")
+let b = test_parse "let = 1" in
+  Format.printf (if b then "ok\n" else "not ok\n");;

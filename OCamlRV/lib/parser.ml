@@ -61,7 +61,22 @@ let id =
   return (String.make 1 first_char ^ rest)
 ;;
 
-let pvariable = id >>= fun v -> return (ExprVariable v)
+(* let pvariable = id >>= fun v -> return (ExprVariable v) *)
+
+let is_idc c = Char.is_alphanum c || Char.equal c '_'
+let pvariable =
+  let* fst =
+    ws
+    *> satisfy (function
+      | 'a' .. 'z' | '_' -> true
+      | _ -> false)
+  in
+  let* rest = take_while is_idc in
+  match String.of_char fst ^ rest with
+  | "_" -> fail "Wildcard can't be used as indetifier"
+  | s when is_keyword s -> fail "Keyword can't be used as identifier"
+  | _ as name -> return (ExprVariable name)
+;;
 
 (* Бинарные операции *)
 let pbinop =
@@ -111,6 +126,8 @@ let pletrec pexpression =
 ;;
 
 let primary_expr pexpression =
+  Format.printf "here3\n";
+  (* Format.printf "Parsed expression: %s\n" (Ast.show_expression pexpression); *)
   choice
     [ pliteral
     ; (* литералы *)
@@ -129,8 +146,11 @@ let pexpr_with_binop pexpression =
   (*можно всретить типо 5+5+5*)
   let* op_opt = option None (pbinop >>| fun op -> Some op) in
   match op_opt with
-  | None -> return left
+  | None -> 
+    Format.printf "here1\n";
+    return left
   | Some op ->
+    Format.printf "here2\n";
     let* right = primary_expr pexpression in
     return (ExprBinOperation (op, left, right))
 ;;
