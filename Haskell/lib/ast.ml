@@ -31,7 +31,7 @@ type binop =
   | Plus (** + *)
   | Minus (** - *)
   | Divide (** `div` *)
-  | Multiply (** () * *)
+  | Multiply (** * *)
   | Equality (** == *)
   | Pow (** ^ *)
   | Inequality (** /= *)
@@ -50,7 +50,7 @@ type unop =
 type ident = Ident of string [@@deriving show { with_path = false }]
 
 (** e.g. [lst@(_:xs) :: [Int]] *)
-type pattern = ident option * pat * tp option [@@deriving show { with_path = false }]
+type pattern = ident list * pat * tp option [@@deriving show { with_path = false }]
 
 and listpat =
   | Nil (** \[] *)
