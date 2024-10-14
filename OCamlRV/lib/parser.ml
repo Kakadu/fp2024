@@ -39,7 +39,7 @@ let token s = ws *> string s
 let pnumber =
   let* sign = choice [ token "-"; token "+"; token "" ] in
   let* digits = take_while1 is_digit in
-  return (int_of_string (sign ^ digits))
+  return (Int.of_string (sign ^ digits))
 ;;
 
 (* Parser of literals *)
@@ -198,6 +198,6 @@ let test_parse input =
 
 let check_parse input =
   match parse input with
-  | Ok structure -> Format.printf "%s\n" (show_structure structure)
-  | Error err -> Format.printf "%s\n" err
+  | Ok structure -> Stdlib.Format.printf "%s\n" (show_structure structure)
+  | Error err -> Stdlib.Format.printf "%s\n" err
 ;;
