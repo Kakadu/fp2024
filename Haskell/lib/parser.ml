@@ -17,7 +17,6 @@ let ( >>>= ) p f = ws *> p >>= f
 let ( let** ) = ( >>>= )
 let ( <**> ) f p = f <*> ws *> p
 let ( **> ) p f = ws *> p *> (ws *> f)
-let ( <** ) p f = ws *> p <* ws *> f
 let etp = (None : tp option) (* remove later (tp parser is required) *)
 let parens p = char '(' *> ws *> p <* (ws <* char ')')
 
@@ -153,12 +152,6 @@ let ptrn ptrn =
     return ([], pat, etp)
   in
   oth_ptrn <|> parens oth_ptrn
-;;
-
-let oth_ptrn =
-  let* pat = pat in
-  (* let* tp = tp in *)
-  return ([], pat, etp)
 ;;
 
 let pattern = ptrn (fix ptrn)
