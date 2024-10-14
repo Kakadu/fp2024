@@ -10,8 +10,8 @@ let is_not_colon = function
   | _ -> true
 ;;
 
-let is_digit = function
-  | '1' .. '9' -> true
+let is_digit_or_minus = function
+  | '1' .. '9' | '-' -> true
   | _ -> false
 ;;
 
@@ -95,11 +95,11 @@ let parse_register =
 ;;
 
 let parse_immediate12 =
-  ws_opt (take_while1 is_digit >>= fun str -> return (Immediate12 (int_of_string str)))
+  ws_opt (take_while1 is_digit_or_minus >>= fun str -> return (Immediate12 (int_of_string str)))
 ;;
 
 let parse_immediate32 =
-  ws_opt (take_while1 is_digit >>= fun str -> return (Immediate32 (int_of_string str)))
+  ws_opt (take_while1 is_digit_or_minus >>= fun str -> return (Immediate32 (int_of_string str)))
 ;;
 
 let parse_immediate_address12 =
