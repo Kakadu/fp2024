@@ -202,7 +202,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="0">t</span>ype identifier = <span data-count="4">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype identifier = <span data-count="8">s</span>tring [@@deriving show { with_path = false }]
 
 <span data-count="0">t</span>ype binary_operator =
   | Add (** + *)
@@ -230,15 +230,15 @@
   | Rec (** let rec a *)
 [@@deriving show { with_path = false }]
 
-<span data-count="10">t</span>ype literal =
-  | IntLiteral of in<span data-count="3">t</span> (** 123 *)
+<span data-count="20">t</span>ype literal =
+  | IntLiteral of in<span data-count="6">t</span> (** 123 *)
   | BoolLiteral of boo<span data-count="0">l</span> (** true | false *)
-  | StringLiteral of strin<span data-count="2">g</span> (** "string" *)
+  | StringLiteral of strin<span data-count="4">g</span> (** "string" *)
   | UnitLiteral (** () *)
   | NilLiteral (** [] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="4">t</span>ype pattern =
+<span data-count="8">t</span>ype pattern =
   | PAny (** _ *)
   | PLiteral of literal (** 123, true, "string" *)
   | PVar of identifier (** x *)
@@ -247,12 +247,12 @@
   | PPoly of identifier * <span data-count="0">p</span>attern optio<span data-count="0">n</span> (** `Tag p *)
 [@@deriving show { with_path = false }]
 
-<span data-count="20">t</span>ype expression =
+<span data-count="40">t</span>ype expression =
   | ExprVariable of identifier (** x | y | z*)
   | ExprLiteral of literal (** 123 | true | "string" *)
   | ExprBinOperation of binary_operator * expression * expression (** 1 + 1 | 2 * 2 *)
   | ExprUnOperation of unary_operator * expression (** -x | not true *)
-  | ExprIf of expression * expression * <span data-count="4">e</span>xpression optio<span data-count="1">n</span>
+  | ExprIf of expression * expression * <span data-count="8">e</span>xpression optio<span data-count="2">n</span>
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of expression * <span data-count="0">c</span>ase lis<span data-count="0">t</span> (** match e with p_1 -&gt; e_1 |...| p_n -&gt; e_n *)
   | ExprLet of rec_flag * <span data-count="0">b</span>inding lis<span data-count="0">t</span> * expression
@@ -261,22 +261,22 @@
   | ExprTuple of <span data-count="0">e</span>xpression lis<span data-count="0">t</span> (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
   | ExprPoly of identifier * <span data-count="0">e</span>xpression optio<span data-count="0">n</span> (** `Tag expr *)
-  | ExprFun of pattern * <span data-count="3">p</span>attern lis<span data-count="2">t</span> * expression (** fun p -&gt; e *)
+  | ExprFun of pattern * <span data-count="6">p</span>attern lis<span data-count="4">t</span> * expression (** fun p -&gt; e *)
 [@@deriving show { with_path = false }]
 
 (** Used in `match` expression *)
 <span data-count="0">a</span>nd case = <span data-count="0">p</span>attern * expression [@@deriving show { with_path = false }]
 
 (** Used in `let` expression*)
-<span data-count="0">a</span>nd binding = <span data-count="2">p</span>attern * expression [@@deriving show { with_path = false }]
+<span data-count="0">a</span>nd binding = <span data-count="4">p</span>attern * expression [@@deriving show { with_path = false }]
 
-<span data-count="1">t</span>ype structure_item =
+<span data-count="2">t</span>ype structure_item =
   | SEval of expression
-  | SValue of rec_flag * <span data-count="6">b</span>inding lis<span data-count="2">t</span>
+  | SValue of rec_flag * <span data-count="12">b</span>inding lis<span data-count="4">t</span>
   (** [SValue(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)])] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="1">t</span>ype structure = <span data-count="5">s</span>tructure_item lis<span data-count="1">t</span> [@@deriving show { with_path = false }]
+<span data-count="2">t</span>ype structure = <span data-count="10">s</span>tructure_item lis<span data-count="2">t</span> [@@deriving show { with_path = false }]
 </code></pre>
       </div>
     </div>
