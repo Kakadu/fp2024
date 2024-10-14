@@ -86,7 +86,11 @@ let parse_instruction = ws_opt (choice [
     string "add" *> lift3 (fun r1 r2 r3 -> InstructionExpr(Add(r1, r2, r3))) parse_register parse_register parse_register;
     string "mv" *> lift2 (fun r1 r2 -> InstructionExpr(Mv(r1, r2))) parse_register parse_register;
     string "beq" *> lift3 (fun r1 r2 adr -> InstructionExpr(Beq(r1, r2, adr))) parse_register parse_register parse_address12;
-])
+    string "addiw" *> lift3 (fun r1 r2 imm -> InstructionExpr(Addiw(r1, r2, imm))) parse_register parse_register parse_immediate12;
+    string "mulw" *> lift3 (fun r1 r2 r3 -> InstructionExpr(Mulw(r1, r2, r3))) parse_register parse_register parse_register;
+    string "bne" *> lift3 (fun r1 r2 adr -> InstructionExpr(Bne(r1, r2, adr))) parse_register parse_register parse_address12;
+    string "ret" *> return (InstructionExpr(Ret));
+    ])
 let parse_expr = ws_opt (choice [parse_instruction; parse_label_expr])
 
 let parse_ast = ws_opt (many parse_expr)
