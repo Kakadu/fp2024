@@ -203,7 +203,7 @@ let b e b =
   <**> option [] @@ (string "where" **> sep_by (ws *> char ';' *> ws) b)
 ;;
 
-let binding e = fix (b e) |> b @@ e
+let binding e = fix (b e) |> b e
 
 type assoc =
   | Left
@@ -234,8 +234,7 @@ let bo expr prios_list =
     | (Right, op, r) :: tl -> op acc (loop r tl)
     | ((Left | Non), op, r) :: tl -> loop (op acc r) tl
   in
-  let rec helper ?(prev_is_non_assoc = false) prios_list =
-    match prios_list with
+  let rec helper ?(prev_is_non_assoc = false) = function
     | [] -> ws *> expr
     | hd :: tl ->
       return loop
