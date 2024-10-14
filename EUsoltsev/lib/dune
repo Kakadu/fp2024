@@ -1,0 +1,9 @@
+(library
+ (name EUsoltsev_lib)
+ (public_name EUsoltsev.Lib)
+ (modules Ast)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))

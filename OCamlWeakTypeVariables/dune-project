@@ -1,0 +1,37 @@
+(lang dune 3.7)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors
+ "Damir Yunusov <kglwkglwgklw@gmail.com>"
+ "Ilhom Kombaev <kaytiridze@gmail.com>")
+
+(maintainers
+ "Damir Yunusov <kglwkglwgklw@gmail.com>"
+ "Ilhom Kombaev <kaytiridze@gmail.com>")
+
+(bug_reports "https://github.com/homka122/OCamlWeakTypeVariables")
+
+(homepage "https://github.com/homka122/OCamlWeakTypeVariables")
+
+(generate_opam_files true)
+
+(package
+ (name OCamlWeakTypeVariables)
+ (synopsis "An interpreter for Ocaml")
+ (description
+  "Our implementation of interpreter for Ocaml with support of weak type variables!!!!!!!")
+ (documentation
+  "https://kakadu.github.io/fp2024/docs/OCamlWeakTypeVariables")
+ (version 0.1)
+ (depends
+  dune
+  angstrom
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)))

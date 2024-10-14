@@ -1,0 +1,7 @@
+(executable
+ (name ast_factorial)
+ (public_name ast_factorial)
+ (modules ast_factorial)
+ (libraries riscv_asm_interpreter_lib)
+ (instrumentation
+  (backend bisect_ppx)))

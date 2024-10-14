@@ -1,0 +1,31 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors "Viacheslav Sidorov <me@xamelllion.ru>" "Danila Rudnev-Stepanyan <dabzelos@gmail.com>")
+
+(maintainers "Viacheslav Sidorov <me@xamelllion.ru>" "Danila Rudnev-Stepanyan <dabzelos@gmail.com>")
+
+(bug_reports "https://github.com/xamelllion/OCamlRV")
+
+(homepage "https://github.com/xamelllion/OCamlRV")
+
+(package
+ (name OCamlRV)
+ (synopsis "OCaml with Recursive values")
+ (description "An interpreter for mini version of OCaml with support of Recursive values")
+ (documentation "https://kakadu.github.io/fp2024/docs/OCamlRV")
+ (version 0.1)
+ (depends
+  dune
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ))

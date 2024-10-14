@@ -1,0 +1,8 @@
+(library
+ (name haskell_lib)
+ (public_name Haskell.Lib)
+ (modules Ast)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
