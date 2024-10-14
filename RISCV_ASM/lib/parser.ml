@@ -98,6 +98,10 @@ let parse_immediate12 =
   ws_opt (take_while1 is_digit >>= fun str -> return (Immediate12 (int_of_string str)))
 ;;
 
+let parse_immediate32 =
+  ws_opt (take_while1 is_digit >>= fun str -> return (Immediate32 (int_of_string str)))
+;;
+
 let parse_immediate_address12 =
   ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_immediate12)
 ;;
@@ -121,6 +125,11 @@ let parse_instruction =
               parse_register
               (string "," *> parse_register)
               (string "," *> parse_register)
+       ; string "li"
+       *> lift2
+            (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
+            parse_register
+            (string "," *> parse_immediate32)
        ; string "mv"
          *> lift2
               (fun r1 r2 -> InstructionExpr (Mv (r1, r2)))
