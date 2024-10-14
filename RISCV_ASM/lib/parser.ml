@@ -73,13 +73,14 @@ let register = choice [
     string "t6" *> return X30;
     string "t7" *> return X31;
 ]
-let immediate12 = lift(fun n: int -> return (Immediate12(n))) (take_while1 is_digit)
+let immediate12 = lift(fun n -> return (Immediate12(n))) (let* str = take_while1 is_digit in return (int_of_string str))
+let label = lift (fun str -> return (Label(str))) (take_while1 is_not_colon)
+let address12 = lift (fun str -> return (Address12(str))) (take_while1 is_not_colon)
 let instruction = choice [
     string "add" *> lift3 (fun r1 r2 r3 -> return (Add(r1, r2, r3))) register register register;
     string "mv" *> lift2 (fun r1 r2 -> return (Mv(r1, r2))) register register;
-    string "beq" *> lift3 (fun r1 r2 adr -> return (Beq(r1, r2))) register register int_of_string;
+    string "beq" *> lift3 (fun r1 r2 adr -> return (Beq(r1, r2, adr))) register register address12;
 ]
-let label = lift (fun str -> return (Label(str))) (take_while1 is_not_colon)
 let expr = choice
             [instruction;
             label]
