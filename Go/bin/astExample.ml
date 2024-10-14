@@ -10,7 +10,7 @@ let () =
     , (* function identificator *)
       { args = [ "n", Type_int ] (* arguments *)
       ; (* return types *)
-        return_types = Some (Only_types [ Type_int ])
+        returns = Some (Only_types [ Type_int ])
       ; (* function body *)
         body =
           [ Stmt_if
