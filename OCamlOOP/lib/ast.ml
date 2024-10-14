@@ -42,6 +42,7 @@ type constant =
   | Bool of bool (** Boolean constant such as [true] or [false] *)
   | String of string (** String constant such as ["Hello, World!"] *)
   | Char of char (** Char constant such as ['a'] *)
+  | Nil (** Represents empty list [[]] *)
 [@@deriving show { with_path = false }]
 
 type pattern =
@@ -49,6 +50,7 @@ type pattern =
   | Pat_var of ident (** A variable pattern such as [x] *)
   | Pat_constant of constant (** Patterns such as [24], ['3.14'], ["true"], ... *)
   | Pat_tuple of pattern list (** Patterns [(P1, ..., Pn)] *)
+  | Pat_cons of pattern * pattern (** The pattern such as [P1::P2] *)
   | Pat_constructor of ident * pattern option
   (** [Pat_construct(C, args)] represents:
       - [C] when [args] is [None],
@@ -67,13 +69,17 @@ type expression =
   (** Binary operators such as [E1 + E2], [E1 && E2] *)
   | Exp_ifthenelse of expression * expression * expression option
   (** [if E1 then E2 else E3] *)
+  | Exp_send of expression * ident (** [E # m]*)
+  | Exp_list of expression * expression
+  (** The expression such as [E1::E2]
+      This also represents lists [E1; ... En] via [E]*)
   | Exp_tuple of expression list (** Tuples such as [(E1, ..., En)] *)
   | Exp_function of pattern list * expression (** Function such as [fun P -> E] *)
   | Exp_apply of expression * expression list
   (** [Exp_apply(E0, [E1; ...; En])] represents [E0 E1 ... En] *)
   | Exp_object of obj (** [object ... end] *)
   | Exp_override of (ident * expression) list (** [{< x1 = E1; ...; xn = En >}] *)
-  | Exp_match of expression * case list
+  | Exp_match of expression * (pattern * expression) list
   (** [Exp_match(E, [C1; ...; Cn])] represents [match E with C1 | ... | Cn] *)
   | Exp_construct of ident * expression option
   (** [Exp_construct(C, exp)] represents:
@@ -86,12 +92,7 @@ and value_binding =
   { pat : pattern
   ; exp : expression
   }
-
-and case =
-  { left : pattern
-  ; right : expression
-  }
-
+  
 and obj =
   { self : pattern
   ; fields : object_field list
