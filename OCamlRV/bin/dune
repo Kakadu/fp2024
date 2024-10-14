@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (public_name OCamlRV)
+ (libraries OCamlRV_lib)
+ (instrumentation
+  (backend bisect_ppx)))
