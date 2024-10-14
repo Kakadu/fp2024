@@ -1,6 +1,6 @@
 (library
  (name tests)
- (modules Print_ast)
+ (modules Print_ast Parser)
  (libraries FSharpActivePatterns)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
