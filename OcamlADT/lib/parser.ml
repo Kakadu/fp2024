@@ -23,6 +23,7 @@ let pdsemicolon =
 let pletters = satisfy (function 'a'..'z' | 'A'..'Z' | '_' -> true | _ -> false)
 let ptowhitespace = function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' -> true | _ -> false
 
+
 let pident =
   let* first = pletters in
   let* rest = take_while ptowhitespace in
@@ -34,7 +35,7 @@ let pconstintexpr =
   let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
   return (Exp_constant(Const_integer (int_of_string (sign ^ n))))
 
-(* let pconstchar = 
+(* let pconstchar =   
   let* _ = token "'" in 
   let* c = satisfy (fun code -> Char.code(code) >= Char.code ' ' && Char.code code <= Char.code '~') in
   let* _ = token "'" in 
@@ -56,6 +57,7 @@ let lchain p op =
   in
   let* x = p in
   loop x
+
   let rchain p op =
     let rec loop acc =
       (let* f = op in
@@ -132,11 +134,56 @@ let pvalue_binding =
   let value_binding = { pat; expr } in
   return value_binding
 
-let psvalue =
-  (* we cant use let+ bc previous results are necessary *)
-  let* rec_fl = token "rec" *> return Recursive <|> return Nonrecursive in
-  let* value_binding_list = many pvalue_binding in 
-  return (Str_value (rec_fl, value_binding_list))
+let prec_flag = 
+  let* _ = token "rec" *> return Recursive <|> return Nonrecursive
+
+let pletexpr =
+  let* _ = token "let" in
+  let* rec_flag = prec_flag in
+  let* many1 @@ value_binding = pvalue_binding in
+  let* exrpession = pexpr in
+  return (rec_flag, value_binding, expression)
+
+let ptupleexpr =
+  let* _ = token "(" in
+  let* expression1 = identifier in
+  let* _ = token ";" in
+  let* expression2 = identifier in
+  let* _ = token ";" in
+  let* expressiontl = sep_by (char ';') identifier in
+  let* _ = token ")" in
+  return (expression1, expression2, expressiontl)
+ 
+let pifexpr =
+  let* _ = token "if" in
+  let* condition = pexpr in
+  let* _ = token "then" in
+  let* expression = pexpr in
+  let* alternative = option None (
+    let* _ = token "else" in
+    let expression = pexpr in
+    return (Some expression)
+  ) in
+  return (condition, expression, alternative)
+
+let papplyexpr =
+  let* func = pexrp in
+  let* argument = pexpr in
+  return (func, argument)
+
+(** It applies Str_eval to output of expression parser *)
+let pstr_item =
+  let pseval = 
+    let* expr = pexpr in
+    Str_eval (expr)
+  in
+
+  let psvalue = 
+    (* we cant use let+ bc previous results are necessary *)
+    let* rec_flag = prec_flag in
+    let* value_binding = many pvalue_binding in 
+    Str_value (rec, value_binding)
+  in
 
 let pseval = 
   let* expr = pexpr in
@@ -145,6 +192,7 @@ let pseval =
 (** It applies Str_eval to output of expression parser *)
 let pstr_item =
   pseval <|> psvalue (*<|> psadt (* god bless us *)*)
+
 
 let pstructure =
   let psemicolon = token ";;" in
