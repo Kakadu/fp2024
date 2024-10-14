@@ -104,12 +104,12 @@ let rec print_expr indent expr =
     List.iter (print_expr (indent + 4)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) body
-  | Function_call (func, args) ->
+  | Function_call (func, arg) ->
     printf "%s| Function Call:\n" (String.make indent '-');
     printf "%sFUNCTION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 2)) args
+    print_expr (indent + 2) arg
   | LetIn (flag, name, args, body, in_expr) ->
     printf "%s | Let %s %s =\n" (String.make indent '-') 
     (match flag with
@@ -119,8 +119,8 @@ let rec print_expr indent expr =
        | Some Ident(n) -> n
        | None -> "Anonymous");
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    match args with
-      | None -> printf "NO ARGS";
+    match args with 
+      | None -> printf "NO ARGS\n";
       | Some args -> (
         printf "%sARGS\n" (String.make (indent + 2) ' ');
         List.iter (print_expr (indent + 2)) args;

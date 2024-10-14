@@ -6,8 +6,7 @@ open Angstrom
 open Ast
 open PrintAst
 
-let keywords = ["if"; "then"; "else"; "let"; "in"]
-
+(* TECHNICAL FUNCTIONS *)
 let skip_ws =
   skip_while (function
     | ' ' -> true
@@ -15,157 +14,112 @@ let skip_ws =
     | '\t' -> true
     | _ -> false)
 ;;
-
 let skip_ws1 = char ' ' *> skip_ws
-let parse_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
-let add = skip_ws *> char '+' *> skip_ws *> return Binary_add
-let sub = skip_ws *> char '-' *> skip_ws *> return Binary_subtract
-let mul = skip_ws *> char '*' *> skip_ws *> return Binary_multiply
-let div = skip_ws *> char '/' *> skip_ws *> return Binary_divide
-let equal = skip_ws *> char '=' *> skip_ws *> return Binary_equal
-let unequal = skip_ws *> string "<>" *> skip_ws *> return Binary_unequal
-let less = skip_ws *> char '<' *> skip_ws *> return Binary_less
-let less_or_equal = skip_ws *> string "<=" *> skip_ws *> return Binary_less_or_equal
-let greater = skip_ws *> char '>' *> skip_ws *> return Binary_greater
-let greater_or_equal = skip_ws *> string ">=" *> skip_ws *> return Binary_greater_or_equal
-let log_or = skip_ws *> string "||" *> skip_ws *> return Logical_or
-let log_and = skip_ws *> string "&&" *> skip_ws *> return Logical_and
-let log_not = skip_ws *> string "not" *> skip_ws *> return Unary_negative
 
-let parse_integer =
+let chainl1 e op =
+  let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
+  e >>= go
+;;
+
+(* SIMPLE PARSERS *)
+let p_int =
   take_while1 (function
     | '0' .. '9' -> true
     | _ -> false)
   >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
 
-let parse_ident = 
+let keywords = ["if"; "then"; "else"; "let"; "in"]
+
+let p_ident = 
   take_while1 (function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
     | _ -> false)
   >>= fun str -> 
     if List.mem str keywords then fail " no keywords pls " 
-    else return (Ident(str))
+    else (
+      return (Ident(str)))
+;;  
 
-let parse_word = 
-  parse_ident >>| fun ident -> Variable ident
-
-(** find full chain of left-associated expressions on the same level of associativity, such as a-b+cc or a*b/c *)
-let parse_binary_chainl1 e op =
-  let rec go acc = lift2 (fun f x -> Bin_expr (f, acc, x)) op e >>= go <|> return acc in
-  e >>= fun init -> go init
+let p_var = 
+  p_ident >>| fun ident -> Variable ident
 ;;
 
-(** parse exactly one infix binary operation and returns Bin_expr (bin_op, e1, e2) *)
-let parse_binary1 e op = lift3 (fun e1 bin_op e2 -> Bin_expr (bin_op, e1, e2)) e op e
+(* EXPR PARSERS *)
+let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
 
-(** parse chain of unary left-associated expressions, such as - + - - 3 and returns Unary_expr (f, expr) *)
-let rec parse_unary_chain e op =
-  op
-  >>= (fun un_op ->
-        parse_unary_chain e op >>= fun expr -> return (Unary_expr (un_op, expr)))
-  <|> e
+let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2)
+let p_binexpr binop constr = skip_ws *> string binop *> skip_ws *> return (make_binexpr constr)
+let apply name arg = Function_call (name, arg)
+let add = p_binexpr "+" Binary_add
+let sub = p_binexpr "-" Binary_subtract
+let mul = p_binexpr "*" Binary_multiply
+let div = p_binexpr "/" Binary_divide
+let equal = p_binexpr "=" Binary_equal
+let unequal = p_binexpr "<>" Binary_unequal
+let less = p_binexpr "<" Binary_less
+let less_or_equal = p_binexpr "<=" Binary_less_or_equal
+let greater = p_binexpr ">" Binary_greater
+let greater_or_equal = p_binexpr ">=" Binary_greater_or_equal
+let log_or = p_binexpr "||" Logical_or
+let log_and = p_binexpr "&&" Logical_and
+let log_not = skip_ws *> string "not" *> skip_ws *> return Unary_negative
+
+let p_if p_expr =
+  fix (fun p_if ->
+    lift3 
+    (fun cond th el -> If_then_else (cond, th, el))
+    (skip_ws *> string "if" *> skip_ws1 *> (p_expr <|> p_if))
+    (skip_ws *> string "then" *> skip_ws1 *> (p_expr <|> p_if))
+    (skip_ws *> string "else" *> skip_ws1 *> ((p_expr <|> p_if) >>= fun e -> return (Some e)) <|> return None))
 ;;
 
-(** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
-let parse_bool =
-  skip_ws *> string "true"
-  <|> string "false"
-  >>| fun s -> Const (Bool_lt (bool_of_string s))
+let p_let p_expr = 
+  fix (fun p_let ->
+    skip_ws
+    *> string "let"
+    *> skip_ws1
+    *> lift4 
+        (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
+        (string "rec" *> return Rec <|> return Nonrec)
+        (skip_ws *> p_ident >>= fun ident -> return (Some(ident)) <|> return None)
+        (skip_ws *> many (skip_ws *> (p_expr <|> p_let)) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
+        (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_let)) <*>
+        ((skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_let) >>= fun e -> return (Some e)) <|> return None))
 ;;
 
-(** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
-let string_expr =
-  skip_ws *> char '\"' *> take_while (fun c -> c <> '\"') >>| fun s -> Const (String_lt s)
-;;
-
-let parse_function_call parse_statement : expr t =
-  parse_ident >>= fun func_name ->
-  skip_ws *> many (skip_ws *> parse_statement) >>= fun args ->
-  if List.length args > 0 then
-    return (Function_call (Variable func_name, args))
-  else return (Variable func_name) 
-;;
-
-(** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
-let int_expr parse_statement: expr t =
-  fix (fun expr ->
-    let factor = skip_ws *> (parse_function_call parse_statement <|> parse_parens expr <|> parse_integer <|> parse_word) <* skip_ws in
-    let term = parse_binary_chainl1 factor (mul <|> div) in
-    parse_binary_chainl1 term (add <|> sub))
-;;
-
-(** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
-let comparison_expr parse_statement : expr t =
-  parse_binary1
-    (int_expr parse_statement)
-    (less_or_equal <|> greater_or_equal <|> unequal <|> less <|> greater <|> equal)
-  <|> parse_binary1 (int_expr parse_statement <|> parse_bool <|> string_expr) (equal <|> unequal)
-;;
-
-(** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
-let bool_expr parse_statement : expr t =
-  fix (fun expr ->
-    let level1 = skip_ws *> (parse_parens expr <|> parse_bool <|> comparison_expr parse_statement) <* skip_ws in
-    let level2 = parse_unary_chain level1 log_not in
-    let level3 = parse_binary_chainl1 level2 (equal <|> unequal) in
-    let level4 = parse_binary_chainl1 level3 log_and in
-    parse_binary_chainl1 level4 log_or)
-;;
-
-let parse_expr parse_statement = 
-  choice
-  [
-    parse_function_call parse_statement;
-    int_expr parse_statement;
-    parse_parens parse_statement;
-    bool_expr parse_statement;
-    string_expr;
-  ]
-;;
-
-let parse_if parse_statement =
-  fix 
-  (fun parse_if -> 
-    lift3
-      (fun cond th el -> If_then_else (cond, th, el))
-      (skip_ws *> string "if" *> skip_ws1 *> bool_expr parse_statement)
-      (skip_ws *> string "then" *> parse_statement)
-      (skip_ws *> string "else" *> (parse_statement >>= fun e -> return (Some e)) <|> return None)
-  )
-;; 
-
-let parse_let parse_statement = 
-  skip_ws
-  *> string "let"
-  *> skip_ws1
-  *> lift4 
-       (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
-       (string "rec" *> return Rec <|> return Nonrec)
-       (skip_ws *> parse_ident >>= fun ident -> return (Some(ident)) <|> return None)
-       (skip_ws *> many (skip_ws *> parse_word) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
-       (skip_ws *> string "=" *> skip_ws *> parse_statement) <*>
-       (skip_ws *> string "in" *> (parse_statement >>= fun e -> return (Some e)) <|> return None)
-;;
+let p_apply expr = (
+  (*Printf.printf "\n\n\n\n here"; *)
+  chainl1 expr (return (fun e1 e2 -> Function_call(e1, e2)))) 
 
 let debug p =
   p >>= fun result ->
+  Printf.printf "\n\n\n\n";
   print_expr 0 result;
   return result
 ;;
 
-let parse_statement = 
-  skip_ws *>
+let p_expr = 
+  skip_ws *> 
   fix
-  (fun parse_statement -> 
-  let statement = parse_if parse_statement in
-  let statement = parse_expr statement <|> statement in 
-  let statement = parse_let statement <|> statement in
-  statement)
+  (fun p_expr -> 
+    let atom = choice [p_var; p_int; p_parens p_expr] in
+    let app = p_apply atom in
+    let factor = chainl1 app (mul <|> div) in
+    let term = chainl1 factor (add <|> sub) in
+    let comp_eq = chainl1 term (equal <|> unequal) in
+    let comp_less = chainl1 comp_eq (less_or_equal <|> less) in
+    let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
+    let comp_and = chainl1 comp_gr log_and in
+    let comp_or = chainl1 comp_and log_or in
+    let if_expr = p_if comp_or <|> comp_or in 
+    let let_expr = p_let if_expr <|> if_expr in
+    debug let_expr)
 ;;
 
+(* MAIN PARSE FUNCTION *)
 let parse (str : string) : expr =
-  match parse_string ~consume:All (skip_ws *> parse_statement <* skip_ws) str with
+  match parse_string ~consume:All (skip_ws *> p_expr <* skip_ws) str with
   | Ok v -> v
   | Error msg -> (
     Printf.printf "%s " msg;
