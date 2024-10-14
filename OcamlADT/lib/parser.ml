@@ -135,22 +135,22 @@ let pvalue_binding =
   return value_binding
 
 let prec_flag = 
-  let* _ = token "rec" *> return Recursive <|> return Nonrecursive
+  token "rec" *> return Recursive <|> return Nonrecursive
 
 let pletexpr =
   let* _ = token "let" in
   let* rec_flag = prec_flag in
-  let* many1 @@ value_binding = pvalue_binding in
-  let* exrpession = pexpr in
-  return (rec_flag, value_binding, expression)
+   let* value_binding = many1  pvalue_binding in
+  let* expr = pexpr in
+  return (rec_flag, value_binding, expr)
 
 let ptupleexpr =
   let* _ = token "(" in
-  let* expression1 = identifier in
+  let* expression1 = pident in
   let* _ = token ";" in
-  let* expression2 = identifier in
+  let* expression2 = pident in
   let* _ = token ";" in
-  let* expressiontl = sep_by (char ';') identifier in
+  let* expressiontl = sep_by (char ';') pident in
   let* _ = token ")" in
   return (expression1, expression2, expressiontl)
  
@@ -167,32 +167,26 @@ let pifexpr =
   return (condition, expression, alternative)
 
 let papplyexpr =
-  let* func = pexrp in
+  let* func = pexpr in
   let* argument = pexpr in
   return (func, argument)
 
-(** It applies Str_eval to output of expression parser *)
-let pstr_item =
-  let pseval = 
-    let* expr = pexpr in
-    Str_eval (expr)
-  in
-
-  let psvalue = 
-    (* we cant use let+ bc previous results are necessary *)
-    let* rec_flag = prec_flag in
-    let* value_binding = many pvalue_binding in 
-    Str_value (rec, value_binding)
-  in
 
 let pseval = 
-  let* expr = pexpr in
-  return (Str_eval (expr))
+    let* expr = pexpr in
+    return (Str_eval (expr))
+
+let psvalue = 
+  (* we cant use let+ bc previous results are necessary *)
+  let* rec_flag = prec_flag in
+  let* value_binding = many pvalue_binding in 
+  return (Str_value (rec_flag, value_binding))
 
 (** It applies Str_eval to output of expression parser *)
 let pstr_item =
   pseval <|> psvalue (*<|> psadt (* god bless us *)*)
 
+(** It applies Str_eval to output of expression parser *)
 
 let pstructure =
   let psemicolon = token ";;" in
@@ -205,6 +199,10 @@ let parse_fact str =
   | Ok str -> str
   | Error msg -> failwith msg
 
+let () =
+  let function_definition = "let rec fact n = if n = 0 then 1 else n * fact (n - 1);;" in
+  parse_fact function_definition
+(* 
 
 (* Example test cases for the parser *)
 let test_cases = [
@@ -271,7 +269,7 @@ let run_tests test_cases =
 ;;
 
 let () =
-  run_tests test_cases
+  run_tests test_cases *)
 
 
 
