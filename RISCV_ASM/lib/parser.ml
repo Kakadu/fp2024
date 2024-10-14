@@ -74,8 +74,8 @@ let parse_register = choice [
     string "t7" *> return X31;
 ]
 let parse_immediate12 = take_while1 is_digit >>= fun str -> return (Immediate12 (int_of_string str))
-let parse_label = take_while1 is_not_colon >>= fun str -> return (LabelAddress12 (str))
-let parse_address12 = choice [parse_immediate12; parse_label]
+let parse_label_address12 = take_while1 is_not_colon >>= fun str -> return (LabelAddress12 (str))
+let parse_address12 = choice [parse_immediate12; parse_label_address12]
 let parse_instruction = choice [
     string "add" *> lift3 (fun r1 r2 r3 -> return (Add(r1, r2, r3))) parse_register parse_register parse_register;
     string "mv" *> lift2 (fun r1 r2 -> return (Mv(r1, r2))) parse_register parse_register;
@@ -83,6 +83,6 @@ let parse_instruction = choice [
 ]
 let parse_expr = choice
             [parse_instruction >>= fun i -> return (Instruction i);
-            parse_label >>= fun l -> return (LabelExpr l);]
+            parse_label_address12 >>= fun l -> return (LabelExpr l);]
 let parse_ast = many parse_expr
 
