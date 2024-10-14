@@ -2,22 +2,19 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Angstrom
 open Base
 open Parser
+open Ast
 
-let parse p s show_program =
-  match parse_string ~consume:All p s with
-  | Ok ast -> print_endline (show_program ast)
+let parse str =
+  match parse_expr str with
+  | Ok ast -> Stdlib.print_endline (show_expr ast)
   | _ -> Stdlib.print_endline "Parsing failed"
 ;;
 
 (*factorial*)
 let%expect_test _ =
-  parse
-    pexpr
-    "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5"
-    Ast.show_expr;
+  parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {| 
    (Elet (Recursive, "factorial",
@@ -36,7 +33,7 @@ let%expect_test _ =
 
 (*calculetion sequence*)
 let%expect_test _ =
-  parse pexpr "1234 + 676 - 9002 * (52 / 2)" Ast.show_expr;
+  parse  "1234 + 676 - 9002 * (52 / 2)";
   [%expect
     {| 
   (Ebin_op (Sub, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 676)))),
@@ -48,7 +45,7 @@ let%expect_test _ =
 
 (*unallowed function name*)
 let%expect_test _ =
-  parse pexpr "let rec 5 = ()" Ast.show_expr;
+  parse "let rec 5 = ()";
   [%expect {| 
   Parsing failed
   |}]
@@ -56,7 +53,7 @@ let%expect_test _ =
 
 (*unallowable range for the int type*)
 let%expect_test _ =
-  parse pexpr "39482309482390842309482438208 + 2" Ast.show_expr;
+  parse "39482309482390842309482438208 + 2";
   [%expect {| 
   Parsing failed
   |}]
