@@ -1,4 +1,4 @@
- (library
+(library
  (name OCamlBR)
  (public_name OcamlBR)
  (modules Ast Parser Parser_tests)
