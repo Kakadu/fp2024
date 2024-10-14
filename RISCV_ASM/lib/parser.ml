@@ -15,6 +15,11 @@ let is_digit_or_minus = function
   | _ -> false
 ;;
 
+let in_one_word = function
+  | ' ' | '\t' | '\n' | '\r' -> false
+  | _ -> true
+;;
+
 let ws =
   take_while (function
     | ' ' | '\t' | '\n' | '\r' -> true
@@ -107,7 +112,7 @@ let parse_immediate_address12 =
 ;;
 
 let parse_label_address12 =
-    ws_opt (take_while1 is_not_colon <* char ':' >>= fun str -> return (LabelAddress12 str))
+    ws_opt (take_while1 in_one_word >>= fun str -> return (LabelAddress12 str))
   ;;
   
   let parse_label_expr =
