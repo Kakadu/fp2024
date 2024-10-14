@@ -7,6 +7,5 @@ open FSharpActivePatterns.Parser
 
 let () =
   let input = " f (4) (5)" in
-  let result = parse input in
-  print_construction result
+  print_p_res (parse input)
 ;;

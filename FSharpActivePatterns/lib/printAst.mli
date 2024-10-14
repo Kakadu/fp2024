@@ -5,3 +5,5 @@
 open Ast
 
 val print_construction : construction -> unit
+
+val print_p_res : construction option -> unit
