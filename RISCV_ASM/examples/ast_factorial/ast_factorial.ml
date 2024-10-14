@@ -3,7 +3,7 @@ open Riscv_asm_interpreter_lib.Parser
 open Angstrom
 open Printf
 
-let expected_ast : ast =
+let factorial_ast : ast =
   [ LabelExpr "factorial"
   ; (* factorial: *)
     InstructionExpr (Mv (X15, X10))
@@ -28,7 +28,7 @@ let expected_ast : ast =
   ]
 ;;
 
-let () = print_endline (show_ast expected_ast)
+let () = print_endline (show_ast factorial_ast)
 
 let read_file file_name =
   let input_channel = open_in file_name in
