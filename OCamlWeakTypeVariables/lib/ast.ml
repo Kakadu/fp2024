@@ -37,9 +37,6 @@ type op_un =
   | UnMinus (** unary minus. Ex: '-' in -4 *)
 [@@deriving show { with_path = false }]
 
-(** ternary operators *)
-type op_tern = IfThenElse [@@deriving show { with_path = false }]
-
 (** recursive flag *)
 type rec_flag =
   | Recursive
@@ -51,7 +48,8 @@ type expr =
   | Variable of id (** variable with name. Ex: "homka" *)
   | Op_un of op_un * expr (** Unary operation. Ex: not true *)
   | Op_bin of op_bin * expr * expr (** Binary operation. Ex: 5 + 5 *)
-  | Op_tern of op_tern * expr * expr * expr (** Ternary operation. Ex: If then else*)
+  | IfThenElse of expr * expr * expr option
+  (** If then else. Ex: If homka then hype else no_hype *)
   | Function of id * expr list (** Function: Ex: print a (5 + 5) b true *)
   | Binding of id * rec_flag * id list * expr (** Binding. Ex: let homka a = a + a *)
 [@@deriving show { with_path = false }]
