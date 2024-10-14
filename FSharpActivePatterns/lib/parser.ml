@@ -89,8 +89,8 @@ let p_letin p_expr =
          (string "rec" *> return Rec <|> return Nonrec)
          (skip_ws *> p_ident >>= fun ident -> return (Some ident) <|> return None)
          (many (skip_ws *> p_var)
-          >>= fun args -> if not (List.length args == 0) then return (Some args) else return None
-         )
+          >>= fun args ->
+          if not (List.length args == 0) then return (Some args) else return None)
          (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_letin))
     <*> skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_letin))
 ;;
@@ -104,7 +104,8 @@ let p_let p_expr =
        (string "rec" *> return Rec <|> return Nonrec)
        (skip_ws *> p_ident)
        (skip_ws *> many (skip_ws *> p_var)
-        >>= fun args -> if not (List.length args == 0) then return (Some args) else return None)
+        >>= fun args ->
+        if not (List.length args == 0) then return (Some args) else return None)
        (skip_ws *> string "=" *> skip_ws *> p_expr)
 ;;
 
