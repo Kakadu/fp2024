@@ -7,9 +7,11 @@ open FSharpActivePatterns.PrintAst
 open FSharpActivePatterns.Parser
 
 let () =
-  let input = "if ((n = 0) || (n = 1)) 
-                then 1 
-                else (n + 1)
+  let input = "let factorial n = 
+                  if ((n = 0) || (n = 1)) 
+                  then 1 
+                  else (n + 1)
+                in n * factorial (n-1)
               " in
   let result = parse input in
   print_construction (Expr result)
