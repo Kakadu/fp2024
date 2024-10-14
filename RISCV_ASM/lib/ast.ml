@@ -39,26 +39,26 @@ type register =
 [@@deriving eq, show { with_path = false }]
 
 (** Immediate 12-bit Type *)
-type immediate12 = int [@@deriving eq, show { with_path = false }]
+type immediate12 = Immediate12 of int [@@deriving eq, show { with_path = false }]
 
 (** Immediate 20-bit Type *)
-type immediate20 = int [@@deriving eq, show { with_path = false }]
+type immediate20 = Immediate20 of int [@@deriving eq, show { with_path = false }]
 
 (** Immediate 32-bit Type*)
-type immediate32 = int [@@deriving eq, show { with_path = false }]
+type immediate32 = Immediate32 of int [@@deriving eq, show { with_path = false }]
 
 (** Label Type *)
 type label = string [@@deriving eq, show { with_path = false }]
 
 (** Address12 Type to Jump to *)
 type address12 =
-  | Immediate12 of immediate12 (** Immediate12 to Jump to*)
+  | ImmediateAddress12 of immediate12 (** Immediate12 to Jump to*)
   | LabelAddress12 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }]
 
 (** Address20 Type to Jump to *)
 type address20 =
-  | Immediate20 of immediate20 (** Immediate20 to Jump to*)
+  | ImmediateAddress20 of immediate20 (** Immediate20 to Jump to*)
   | LabelAddress20 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }]
 
@@ -161,7 +161,7 @@ type instruction =
 
 (** Expression in AST *)
 type expr =
-  | Instruction of instruction (** Instruction *)
+  | InstructionExpr of instruction (** Instruction *)
   | LabelExpr of label (** Label *)
 [@@deriving eq, show { with_path = false }]
 

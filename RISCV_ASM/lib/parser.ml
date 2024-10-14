@@ -6,7 +6,11 @@ let is_not_colon = function
 let is_digit = function
     | '1'..'9' -> true
     | _ -> false
-let parse_register = choice [
+let ws = take_while (function
+    | ' ' | '\t' | '\n' -> true
+    | _ -> false)
+let ws_opt p = ws *> p <* ws
+let parse_register = ws_opt (choice [
     string "x0" *> return X0;
     string "x1" *> return X1;
     string "x2" *> return X2;
@@ -72,17 +76,18 @@ let parse_register = choice [
     string "t5" *> return X29;
     string "t6" *> return X30;
     string "t7" *> return X31;
-]
-let parse_immediate12 = take_while1 is_digit >>= fun str -> return (Immediate12 (int_of_string str))
-let parse_label_address12 = take_while1 is_not_colon >>= fun str -> return (LabelAddress12 (str))
-let parse_label_expr = take_while1 is_not_colon >>= fun str -> return (LabelExpr (str))
-let parse_address12 = choice [parse_immediate12; parse_label_address12]
-let parse_instruction = (choice [
+])
+let parse_immediate12 = ws_opt (take_while1 is_digit >>= fun str -> return ((Immediate12 (int_of_string str))))
+let parse_immediate_address12 = ws_opt (lift(fun imm -> ImmediateAddress12(imm)) parse_immediate12)
+let parse_label_address12 = ws_opt (take_while1 is_not_colon >>= fun str -> return (LabelAddress12 (str)))
+let parse_label_expr = ws_opt (take_while1 is_not_colon >>= fun str -> return (LabelExpr (str)))
+let parse_address12 = ws_opt (choice [parse_immediate_address12; parse_label_address12])
+let parse_instruction = ws_opt (choice [
     string "add" *> lift3 (fun r1 r2 r3 -> InstructionExpr(Add(r1, r2, r3))) parse_register parse_register parse_register;
     string "mv" *> lift2 (fun r1 r2 -> InstructionExpr(Mv(r1, r2))) parse_register parse_register;
     string "beq" *> lift3 (fun r1 r2 adr -> InstructionExpr(Beq(r1, r2, adr))) parse_register parse_register parse_address12;
 ])
-let parse_expr = choice [parse_instruction; parse_label_expr]
+let parse_expr = ws_opt (choice [parse_instruction; parse_label_expr])
 
-let parse_ast = many parse_expr
+let parse_ast = ws_opt (many parse_expr)
 
