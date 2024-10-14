@@ -1,6 +1,6 @@
-(** Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
+(* Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
 
-(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+(* SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open FSharpActivePatterns.Ast
 open FSharpActivePatterns.PrintAst
@@ -8,9 +8,7 @@ open FSharpActivePatterns.PrintAst
 let%expect_test "print factorial" =
   let factorial =
     Function_def
-      ( Rec
-      , Some "factorial"
-      , [ Variable (Ident "n") ]
+      ( [ Variable (Ident "n") ]
       , If_then_else
           ( Bin_expr
               ( Logical_or
@@ -23,21 +21,24 @@ let%expect_test "print factorial" =
                  , Variable (Ident "n")
                  , Function_call
                      ( Variable (Ident "factorial")
-                     , [ Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
-                       ] ) )) ) )
+                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                     ) )) ) )
   in
   let program =
-    [ Statement (Let (Ident "a", Const (Int_lt 10)))
+    [ Statement (Let (Nonrec, Ident "a", None, Const (Int_lt 10)))
     ; Expr factorial
-    ; Expr (Function_call (Variable (Ident "factorial"), [ Variable (Ident "a") ]))
+    ; Expr (Function_call (factorial, Variable (Ident "a")))
     ]
   in
   List.iter print_construction program;
   [%expect
     {|
-    | Let a =
+     | Let  a =
+      ARGS
+    --| No args
+      BODY
     --| Const(Int: 10)
-    | Rec Function(factorial):
+    | Func:
       ARGS
     ----| Variable(n)
       BODY
@@ -69,22 +70,49 @@ let%expect_test "print factorial" =
     --------------| Const(Int: 1)
     | Function Call:
       FUNCTION
-    --| Variable(factorial)
+    --| Func:
+        ARGS
+    ------| Variable(n)
+        BODY
+    ------| If Then Else(
+            CONDITION
+    --------| Binary expr(
+    --------| Logical Or
+    ----------| Binary expr(
+    ----------| Binary Equal
+    ------------| Variable(n)
+    ------------| Const(Int: 0)
+    ----------| Binary expr(
+    ----------| Binary Equal
+    ------------| Variable(n)
+    ------------| Const(Int: 1)
+            THEN BRANCH
+    ----------| Const(Int: 1)
+            ELSE BRANCH
+    ----------| Binary expr(
+    ----------| Binary Multiply
+    ------------| Variable(n)
+    ------------| Function Call:
+                  FUNCTION
+    --------------| Variable(factorial)
+                  ARGS
+    --------------| Binary expr(
+    --------------| Binary Subtract
+    ----------------| Variable(n)
+    ----------------| Const(Int: 1)
       ARGS
     --| Variable(a) |}]
 ;;
 
 let%expect_test "print double func" =
-  let recursive = Nonrec in
-  let name = Some "double" in
   let var = Variable (Ident "n") in
   let args = [ var ] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
-  let double = Function_def (recursive, name, args, binary_expr) in
+  let double = Function_def (args, binary_expr) in
   print_construction @@ Expr double;
   [%expect
     {|
-    |  Function(double):
+    | Func:
       ARGS
     ----| Variable(n)
       BODY

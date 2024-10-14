@@ -2,16 +2,11 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open FSharpActivePatterns.Ast
 open FSharpActivePatterns.PrintAst
 open FSharpActivePatterns.Parser
 
 let () =
-  let input =  "let factorial n =
-                  if ((n = 0)||(n = 1))
-                  then 1
-                  else n * factorial (n - 1)
-                in factorial (b)" in
+  let input = " f (4) (5)" in
   let result = parse input in
-  print_construction (Expr result)
+  print_construction result
 ;;

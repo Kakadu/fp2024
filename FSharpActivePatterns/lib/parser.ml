@@ -65,18 +65,21 @@ let p_int =
      return (Int_lt (Int.of_string (sign ^ number)))
 ;;
 
-let p_let p_expr = 
-  fix (fun p_let ->
+let p_letin p_expr =
+  fix (fun p_letin ->
     skip_ws
     *> string "let"
     *> skip_ws1
-    *> lift4 
-        (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
-        (string "rec" *> return Rec <|> return Nonrec)
-        (skip_ws *> p_ident >>= fun ident -> return (Some(ident)) <|> return None)
-        (skip_ws *> many (skip_ws *> (p_expr <|> p_let)) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
-        (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_let)) <*>
-        ((skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_let) >>= fun e -> return (Some e)) <|> return None))
+    *> lift4
+         (fun rec_flag name args body in_expr ->
+           LetIn (rec_flag, name, args, body, in_expr))
+         (string "rec" *> return Rec <|> return Nonrec)
+         (skip_ws *> p_ident >>= fun ident -> return (Some ident) <|> return None)
+         (many (skip_ws *> p_var)
+          >>= fun args -> if List.length args > 0 then return (Some args) else return None
+         )
+         (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_letin))
+    <*> skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_letin))
 ;;
 
 (** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
