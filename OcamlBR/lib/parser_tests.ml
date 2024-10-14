@@ -33,7 +33,7 @@ let%expect_test _ =
 
 (*calculetion sequence*)
 let%expect_test _ =
-  parse  "1234 + 676 - 9002 * (52 / 2)";
+  parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect
     {| 
   (Ebin_op (Sub, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 676)))),
