@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>ast.ml &mdash; Coverage report</title>
-    <meta name="description" content="31.58% coverage in lib/ast.ml">
+    <meta name="description" content="42.11% coverage in lib/ast.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>ast.ml
         </a>
       </h1>
-      <h2>31.58%</h2>
+      <h2>42.11%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:10.61%"></span>
@@ -27,7 +27,6 @@
       <span class="unvisited" style="bottom:33.33%"></span>
       <span class="unvisited" style="bottom:16.67%"></span>
       <span class="unvisited" style="bottom:13.64%"></span>
-      <span class="unvisited" style="bottom:4.55%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -94,7 +93,7 @@
 <a id="L60"></a><span > </span>
 <a id="L61"></a><span > </span>
 <a id="L62"></a><span > </span>
-<a id="L63"></a><span class="unvisited"> </span>
+<a id="L63"></a><span class="visited"> </span>
 <a id="L64"></a><span > </span>
 <a id="L65"></a><span > </span>
 <a id="L66"></a><span > </span>
@@ -173,8 +172,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="6">t</span>ype const =
-  | Int of in<span data-count="3">t</span>
+<span data-count="24">t</span>ype const =
+  | Int of in<span data-count="12">t</span>
   | String of strin<span data-count="0">g</span>
   | Bool of boo<span data-count="0">l</span>
   | Unit
@@ -202,7 +201,7 @@
 (* unary minus, logical NOT *)
 [@@deriving show { with_path = false }]
 
-<span data-count="0">t</span>ype id = <span data-count="6">s</span>tring
+<span data-count="0">t</span>ype id = <span data-count="13">s</span>tring
 (* maybe will add a position later, like string * pos, now used for clarity *)
 [@@deriving show { with_path = false }]
 
@@ -217,11 +216,11 @@
   | PConst of const
 [@@deriving show { with_path = false }]
 
-<span data-count="23">t</span>ype expr =
+<span data-count="65">t</span>ype expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
   | Evar of id (* identifiers, e.g. "x", "f"*)
   (* maybe later switch to id, or even now *)
-  | Eif_then_else of expr * expr * <span data-count="4">e</span>xpr optio<span data-count="1">n</span>
+  | Eif_then_else of expr * expr * <span data-count="8">e</span>xpr optio<span data-count="2">n</span>
   (* if E0 then E1 else E2; else expression is optional *)
   | Etuple of <span data-count="0">e</span>xpr lis<span data-count="0">t</span> (* expressions (E0, .., En), n &gt;= 2 *)
   (* or expr * expr * expr list, cause invariant n &gt;= 2 *)
@@ -231,7 +230,7 @@
   | Elet of rec_flag * id * expr * expr
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
   | Efun_application of expr * expr (* E0 E1, e.g. f x *)
-  | Efun of <span data-count="0">i</span>d lis<span data-count="0">t</span> * expr
+  | Efun of <span data-count="5">i</span>d lis<span data-count="1">t</span> * expr
 (* anonymous functions, e.g. fun x y -&gt; x + 1 - y, arguments num &gt;= 1  *)
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
