@@ -79,26 +79,34 @@ let string_expr =
   skip_ws *> char '\"' *> take_while (fun c -> c <> '\"') >>| fun s -> Const (String_lt s)
 ;;
 
+let parse_function_call parse_statement : expr t =
+  parse_ident >>= fun func_name ->
+  skip_ws *> many (skip_ws *> parse_statement) >>= fun args ->
+  if List.length args > 0 then
+    return (Function_call (Variable func_name, args))
+  else return (Variable func_name) 
+;;
+
 (** parse integer expression, such as [(3 + 5) * (12 - 5)] and returns Binary_expr (f, e1, e2) *)
-let int_expr : expr t =
+let int_expr parse_statement: expr t =
   fix (fun expr ->
-    let factor = skip_ws *> (parse_parens expr <|> parse_integer <|> parse_word) <* skip_ws in
+    let factor = skip_ws *> (parse_function_call parse_statement <|> parse_parens expr <|> parse_integer <|> parse_word) <* skip_ws in
     let term = parse_binary_chainl1 factor (mul <|> div) in
     parse_binary_chainl1 term (add <|> sub))
 ;;
 
 (** parse comparison expression with integers, bool literals and strings and return Bin_expr(comp_op, e1, e2) *)
-let comparison_expr : expr t =
+let comparison_expr parse_statement : expr t =
   parse_binary1
-    int_expr
+    (int_expr parse_statement)
     (less_or_equal <|> greater_or_equal <|> unequal <|> less <|> greater <|> equal)
-  <|> parse_binary1 (int_expr <|> parse_bool <|> string_expr) (equal <|> unequal)
+  <|> parse_binary1 (int_expr parse_statement <|> parse_bool <|> string_expr) (equal <|> unequal)
 ;;
 
 (** parse bool_expr, such as [3 > 2 || true <> false && 12 > 7] and returns boolean expr*)
-let bool_expr : expr t =
+let bool_expr parse_statement : expr t =
   fix (fun expr ->
-    let level1 = skip_ws *> (parse_parens expr <|> parse_bool <|> comparison_expr) <* skip_ws in
+    let level1 = skip_ws *> (parse_parens expr <|> parse_bool <|> comparison_expr parse_statement) <* skip_ws in
     let level2 = parse_unary_chain level1 log_not in
     let level3 = parse_binary_chainl1 level2 (equal <|> unequal) in
     let level4 = parse_binary_chainl1 level3 log_and in
@@ -108,10 +116,11 @@ let bool_expr : expr t =
 let parse_expr parse_statement = 
   choice
   [
+    parse_function_call parse_statement;
+    int_expr parse_statement;
     parse_parens parse_statement;
-    bool_expr;
+    bool_expr parse_statement;
     string_expr;
-    int_expr;
   ]
 ;;
 
@@ -120,9 +129,9 @@ let parse_if parse_statement =
   (fun parse_if -> 
     lift3
       (fun cond th el -> If_then_else (cond, th, el))
-      (skip_ws *> string "if" *> skip_ws1 *> bool_expr)
-      (skip_ws *> string "then" *> (parse_if <|> parse_statement))
-      (skip_ws *> string "else" *> ((parse_if <|> parse_statement) >>= fun e -> return (Some e)) <|> return None)
+      (skip_ws *> string "if" *> skip_ws1 *> bool_expr parse_statement)
+      (skip_ws *> string "then" *> parse_statement)
+      (skip_ws *> string "else" *> (parse_statement >>= fun e -> return (Some e)) <|> return None)
   )
 ;; 
 
@@ -134,7 +143,7 @@ let parse_let parse_statement =
        (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
        (string "rec" *> return Rec <|> return Nonrec)
        (skip_ws *> parse_ident >>= fun ident -> return (Some(ident)) <|> return None)
-       (skip_ws *> many (parse_expr parse_statement) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
+       (skip_ws *> many (skip_ws *> parse_word) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
        (skip_ws *> string "=" *> skip_ws *> parse_statement) <*>
        (skip_ws *> string "in" *> (parse_statement >>= fun e -> return (Some e)) <|> return None)
 ;;
@@ -146,12 +155,13 @@ let debug p =
 ;;
 
 let parse_statement = 
+  skip_ws *>
   fix
   (fun parse_statement -> 
-  let statement = parse_let parse_statement in
-  let statement = parse_if statement <|> statement in 
-  let statement = parse_expr statement <|> statement in
-  debug statement)
+  let statement = parse_if parse_statement in
+  let statement = parse_expr statement <|> statement in 
+  let statement = parse_let statement <|> statement in
+  statement)
 ;;
 
 let parse (str : string) : expr =
