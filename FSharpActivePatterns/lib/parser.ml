@@ -89,7 +89,7 @@ let p_letin p_expr =
          (string "rec" *> return Rec <|> return Nonrec)
          (skip_ws *> p_ident >>= fun ident -> return (Some ident) <|> return None)
          (many (skip_ws *> p_var)
-          >>= fun args -> if List.length args > 0 then return (Some args) else return None
+          >>= fun args -> if not (List.length args == 0) then return (Some args) else return None
          )
          (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_letin))
     <*> skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_letin))
@@ -104,7 +104,7 @@ let p_let p_expr =
        (string "rec" *> return Rec <|> return Nonrec)
        (skip_ws *> p_ident)
        (skip_ws *> many (skip_ws *> p_var)
-        >>= fun args -> if List.length args > 0 then return (Some args) else return None)
+        >>= fun args -> if not (List.length args == 0) then return (Some args) else return None)
        (skip_ws *> string "=" *> skip_ws *> p_expr)
 ;;
 
@@ -145,10 +145,8 @@ let p_construction =
 ;;
 
 (* MAIN PARSE FUNCTION *)
-let parse (str : string) : construction =
+let parse (str : string) : construction option =
   match parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str with
-  | Ok v -> v
-  | Error msg ->
-    print_endline msg;
-    failwith msg
+  | Ok ast -> Some ast
+  | Error _ -> None
 ;;

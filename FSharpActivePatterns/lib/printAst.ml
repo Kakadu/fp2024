@@ -157,3 +157,8 @@ let print_construction = function
   | Expr e -> print_expr 0 e
   | Statement s -> print_statement 0 s
 ;;
+
+let print_p_res = function 
+  | Some expr -> print_construction expr
+  | None -> Printf.printf "Error occured";
+;;

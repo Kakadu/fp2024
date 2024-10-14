@@ -7,8 +7,7 @@ open FSharpActivePatterns.PrintAst
 
 let%expect_test "parse logical expression" =
   let input = {| (3 + 5) >= 8 || true && (5 <> 4) |} in
-  let result = parse input in
-  print_construction result;
+  print_p_res (parse input);
   [%expect
     {|
     | Binary expr(
@@ -31,8 +30,7 @@ let%expect_test "parse logical expression" =
 
 let%expect_test "parse integer expression" =
   let input = " (3 + 5) - (12 / 7)" in
-  let result = parse input in
-  print_construction result;
+  print_p_res (parse input);
   [%expect
     {|
     | Binary expr(
@@ -71,8 +69,7 @@ let%expect_test "parse integer expression" =
 
 let%expect_test "parse if with comparison" =
   let input = "if 3 > 2 && false then 5 + 7 else 12" in
-  let result = parse input in
-  print_construction result;
+  print_p_res (parse input);
   [%expect
     {|
     | If Then Else(
