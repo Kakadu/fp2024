@@ -70,32 +70,32 @@ let parse_register =
        ; string "tp" *> return X4
        ; string "t0" *> return X5
        ; string "t1" *> return X6
-       ; string "s0" *> return X7
-       ; string "fp" *> return X7
-       ; string "s1" *> return X8
-       ; string "a0" *> return X9
-       ; string "a1" *> return X10
-       ; string "a2" *> return X11
-       ; string "a3" *> return X12
-       ; string "a4" *> return X13
-       ; string "a5" *> return X14
-       ; string "a6" *> return X15
-       ; string "a7" *> return X16
-       ; string "s2" *> return X17
-       ; string "s3" *> return X18
-       ; string "s4" *> return X19
-       ; string "s5" *> return X20
-       ; string "s6" *> return X21
-       ; string "s7" *> return X22
-       ; string "s8" *> return X23
-       ; string "s9" *> return X24
-       ; string "s10" *> return X25
-       ; string "s11" *> return X26
-       ; string "t3" *> return X27
-       ; string "t4" *> return X28
-       ; string "t5" *> return X29
-       ; string "t6" *> return X30
-       ; string "t7" *> return X31
+       ; string "t1" *> return X7
+       ; string "s0" *> return X8
+       ; string "fp" *> return X8
+       ; string "s1" *> return X9
+       ; string "a0" *> return X10
+       ; string "a1" *> return X11
+       ; string "a2" *> return X12
+       ; string "a3" *> return X13
+       ; string "a4" *> return X14
+       ; string "a5" *> return X15
+       ; string "a6" *> return X16
+       ; string "a7" *> return X17
+       ; string "s2" *> return X18
+       ; string "s3" *> return X19
+       ; string "s4" *> return X20
+       ; string "s5" *> return X21
+       ; string "s6" *> return X22
+       ; string "s7" *> return X23
+       ; string "s8" *> return X24
+       ; string "s9" *> return X25
+       ; string "s10" *> return X26
+       ; string "s11" *> return X27
+       ; string "t3" *> return X28
+       ; string "t4" *> return X29
+       ; string "t5" *> return X30
+       ; string "t6" *> return X31
        ])
 ;;
 
