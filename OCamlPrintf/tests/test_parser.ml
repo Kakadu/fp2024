@@ -3,12 +3,9 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 let run str =
-  let parser : Ocaml_printf_lib.Ast.structure =
-    match Ocaml_printf_lib.Parser.parse str with
-    | None -> []
-    | Some out -> out
-  in
-  print_endline (Ocaml_printf_lib.Ast.show_structure parser)
+  match Ocaml_printf_lib.Parser.parse str with
+  | Ok ast -> print_endline (Ocaml_printf_lib.Ast.show_structure ast)
+  | Error error -> print_endline error
 ;;
 
 let%expect_test "parse_factorial" =

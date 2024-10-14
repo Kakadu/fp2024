@@ -235,4 +235,4 @@ let parse_structure =
 
 (* ==================== Execute ==================== *)
 
-let parse str = parse_string ~consume:All parse_structure str |> Result.ok
+let parse str = parse_string ~consume:All parse_structure str
