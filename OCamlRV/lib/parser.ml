@@ -2,11 +2,6 @@ open Angstrom
 open Ast
 open Base
 
-(* Factorial example *)
-(* let rec fact n = if n <= 1 then 1 else n * fact (n - 1);; *)
-(*key words: let| rec| if | then| else|*)
-
-
 let is_letter c =
   match c with
   | 'a' .. 'z' -> true
@@ -18,10 +13,6 @@ let is_digit c =
   | '0' .. '9' -> true
   | _ -> false
 
-
-(* let is_whitespace c = 
-  Char.equal c ' ' || Char.equal c '\t' || Char.equal c '\n' || Char.equal c '\r' *)
-
 let is_keyword = function
   | "let"
   | "rec"
@@ -29,24 +20,17 @@ let is_keyword = function
   | "fun"
   | "match"
   | "with"
-  | "if"
+  | "if" 
   | "then"
   | "else"
   | "true"
   | "false" -> true
   | _ -> false
-;;
-
-(* specials:
-() ; ;;
-*)
-(**)
 
 let ws = take_while Char.is_whitespace
-(* let ws = take_while is_whitespace *) (*whitespaces*)
-let token s = ws *> string s (* takes symbols from ws to ws and convert to string*)
+let token s = ws *> string s
 
-(* parsing numbers*)
+(* Парсинг чисел *)
 let pnumber =
   let* sign = choice [ token "-"; token "+"; token "" ] in
   let* digits = take_while1 is_digit in
@@ -60,6 +44,7 @@ let pliteral =
     (token "()" *> return (ExprLiteral UnitLiteral));
     (token "nil" *> return (ExprLiteral NilLiteral))
   ]
+
 let id =
   let* first_char = satisfy is_letter in
   let* rest = take_while (fun c -> is_letter c || is_digit c || Char.equal c '_') in
@@ -68,103 +53,131 @@ let id =
 let pvariable = 
   id >>= fun v -> return (ExprVariable v)
 
-(* bin ops*)
+(* Бинарные операции *)
 let pbinop =
-  fix( fun pexpression ->
-  let* left = pexpression in
-  let* op = choice [
-    token "+"; 
-    token "-"; 
-    token "*"; 
-    token "/"; 
-    token "<"; 
-    token ">"; 
-    token "="
-  ] in
-  let* right = pexpression in
-  match op with
-  | "+" -> return (ExprBinOperation (Add, left, right))
-  | "-" -> return (ExprBinOperation (Sub, left, right))
-  | "*" -> return (ExprBinOperation (Mul, left, right))
-  | "/" -> return (ExprBinOperation (Div, left, right))
-  | "<" -> return (ExprBinOperation (Lt, left, right))
-  | ">" -> return (ExprBinOperation (Gt, left, right))
-  | "=" -> return (ExprBinOperation (Eq, left, right))
-  | _ -> fail "unsupported binary operator"
-  )
-(* unary ops*)
-let punop =
-  fix (fun pexpression ->
-    let* op = choice [token "+"; token "-"; token "not"] in
-    let* expr = pexpression in
-    match op with
-    | "+" -> return (ExprUnOperation (UnaryPlus, expr))
-    | "-" -> return (ExprUnOperation (UnaryMinus, expr))
-    | "not" -> return (ExprUnOperation (UnaryNeg, expr))
-    | _ -> fail "unsupported unary operator"
-  )
-
-
-(* if-then-else *)
-let pif =
-  fix(
-    fun pexpression ->
-      let* _ = token "if" in
-        let* cond = pexpression in
-        let* _ = token "then" in
-        let* then_expr = pexpression in
-        let* _ = token "else" in
-        let* else_expr = pexpression in
-        return (ExprIf (cond, then_expr, Some else_expr))
-  )
-
-
-(* let let rec pars *)
-let pletrec =
-  fix (
-    fun pexpression ->
-      let* _ = token "let" in
-      let* _ = token "rec" in
-      let* id = id in
-      let* _ = token "n" in
-      let* _ = token "=" in
-      let* expr = pexpression in
-       let* _ = token ";" in
-      return (ExprLet (Rec, [(PVar id, expr)], ExprVariable id))
-  )
-
-
-(* Парсер для выражений, объединяющий другие парсеры *)
-let pexpression =
   choice [
-    pif;            (*if-then-else *)
-    pbinop;         (* бинарные операции *)
-    punop;          (*унарные операции *)
-    pliteral;       (* литералы *)
-    pvariable;      (* переменные *)
-    pletrec         (* let/let rec *)
+    token "+" *> return Add;
+    token "-" *> return Sub;
+    token "*" *> return Mul;
+    token "/" *> return Div;
+    token "<" *> return Lt;
+    token ">" *> return Gt;
+    token "=" *> return Eq
   ]
-  (*
 
-  SLAVA ESLI TI REALNO REVIEW DELAESH YBERYYYYY EtU STROCHKYYYY!!!!!
-  aboba
+(* Унарные операции *)
+let punop pexpression =
+  let* op = choice [token "+"; token "-"; token "not"] in
+  let* expr = pexpression in
+  match op with
+  | "+" -> return (ExprUnOperation (UnaryPlus, expr))
+  | "-" -> return (ExprUnOperation (UnaryMinus, expr))
+  | "not" -> return (ExprUnOperation (UnaryNeg, expr))
+  | _ -> fail "unsupported unary operator"
 
-  *)
+(* Условный оператор *)
+let pif pexpression =
+  let* _ = token "if" in
+  let* cond = pexpression in
+  let* _ = token "then" in
+  let* then_expr = pexpression in
+  let* _ = token "else" in
+  let* else_expr = pexpression in
+  return (ExprIf (cond, then_expr, Some else_expr))
+
+(* let rec *)
+let pletrec pexpression =
+  let* _ = token "let" in
+  let* _ = token "rec" in
+  let* id = id in
+  let* _ = token "n" in
+  let* _ = token "=" in
+  let* expr = pexpression in
+  let* _ = token ";" in
+  return (ExprLet (Rec, [(PVar id, expr)], ExprVariable id))
+
+
+let primary_expr pexpression =
+  choice [
+    pliteral;       (* литералы *)     (* переменные *)
+    pif pexpression;  (* условные операторы *)
+    pletrec pexpression;  (* let rec *)
+    punop pexpression;    (* унарные операции *)
+    pvariable; 
+  ]
+
+
+let pexpr_with_binop pexpression =
+  let* left = primary_expr pexpression in
+  
+  (*можно всретить типо 5+5+5*)
+  let* op_opt = option None (pbinop >>| fun op -> Some op) in
+  match op_opt with
+  | None -> return left
+  | Some op ->
+    let* right = primary_expr pexpression in
+    return (ExprBinOperation (op, left, right))
+
+(* Финальный парсер для выражений *)
+let pexpression =
+  fix (fun p ->
+    choice [
+      pexpr_with_binop p;
+      primary_expr p;
+    ])
 
 let parse s = parse_string ~consume:Prefix pexpression s
 
-let test_parse str expected =
-  match parse str with
-  | Ok actual ->
-    (* Format.printf "Hello\n" *)
+
+
+
+
+
+
+let test_parse input =
+  match Angstrom.parse_string ~consume:Prefix pexpression input with
+  | Ok expr ->
+    Format.printf "Parsed expression: %s\n" (Ast.show_expression expr);
     true
-    (* let is_eq = List.equal equal_decl expected actual in
-    if is_eq then () else Format.printf "Actual %a\n" pp_program actual;
-    is_eq *)
   | Error err ->
-    Format.printf "%s\n" err;
+    Format.printf "Parse error: %s\n" err;
     false
-;;
 
 
-let%test "test" = test_parse "let f = 5" [ ]
+(* Функция для тестирования парсинга if-операторов *)
+let test_parse_pif input = 
+  match Angstrom.parse_string ~consume:Prefix (pif pexpression) input with
+  | Ok expr ->
+    Format.printf "Parsed expression: %s\n" (Ast.show_expression expr);
+    true
+  | Error err ->
+    Format.printf "Parse error: %s\n" err;
+    false
+
+let test_parse_unop input = 
+  match Angstrom.parse_string ~consume:Prefix (punop pexpression) input with
+  | Ok expr ->
+    Format.printf "Parsed expression: %s\n" (Ast.show_expression expr);
+    true
+  | Error err ->
+    Format.printf "Parse error: %s\n" err;
+    false
+
+let test_parse_pnumber input = 
+  match Angstrom.parse_string ~consume:Prefix pliteral input with
+  | Ok expr ->
+    Format.printf "Parsed expression: %s\n" (Ast.show_expression expr);
+    true
+  | Error err ->
+    Format.printf "Parse error: %s\n" err;
+    false
+
+let test_parse_binop_expr input = 
+  match Angstrom.parse_string ~consume:Prefix (pexpr_with_binop pexpression) input with
+  | Ok expr ->
+    Format.printf "Parsed expression: %s\n" (Ast.show_expression expr);
+    true
+  | Error err ->
+    Format.printf "Parse error: %s\n" err;
+    false
+
