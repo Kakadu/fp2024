@@ -1,7 +1,6 @@
 (library
  (name OCamlRV_lib)
  (public_name OCamlRV.Lib)
- (modules Ast Parser)
  (libraries angstrom)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq ppx_expect))
