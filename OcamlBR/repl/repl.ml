@@ -30,7 +30,7 @@ let run_single dump_parsetree stop_after eval input_source =
     | None -> In_channel.input_all stdin |> Stdlib.String.trim
   in
   match parse_expr text with
-  | Error e -> Stdlib.Format.printf "Parse Error: %s\n%!" e  (* Use Stdlib.Format *)
+  | Error e -> Stdlib.Format.printf "Parse Error: %s\n%!" e (* Use Stdlib.Format *)
   | Ok ast ->
     if dump_parsetree then print_endline (show_expr ast);
     (match stop_after with
@@ -43,10 +43,12 @@ let () =
   let () =
     Stdlib.Arg.parse
       [ ( "-dparsetree"
-        , Stdlib.Arg.Unit (fun () -> opts.dump_parsetree <- true)  (* Use Stdlib.Arg.Unit *)
+        , Stdlib.Arg.Unit (fun () -> opts.dump_parsetree <- true)
+          (* Use Stdlib.Arg.Unit *)
         , "Dump parse tree, don't evaluate anything" )
       ; ( "-stop-after"
-        , Stdlib.Arg.String  (* Use Stdlib.Arg.String *)
+        , Stdlib.Arg.String
+            (* Use Stdlib.Arg.String *)
             (function
               | "parsing" -> opts.stop_after <- SA_parsing
               | _ -> failwith "Bad argument for -stop-after")
@@ -56,7 +58,8 @@ let () =
         , "Read code from the specified file" )
       ]
       (fun _ ->
-        Stdlib.Format.eprintf "Positional arguments are not supported\n";  (* Use Stdlib.Format *)
+        Stdlib.Format.eprintf "Positional arguments are not supported\n";
+        (* Use Stdlib.Format *)
         Stdlib.exit 1)
       "Read-Eval-Print-Loop for custom language"
   in
