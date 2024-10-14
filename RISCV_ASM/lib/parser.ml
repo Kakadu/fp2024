@@ -100,11 +100,13 @@ let parse_register =
 ;;
 
 let parse_immediate12 =
-  ws_opt (take_while1 is_digit_or_minus >>= fun str -> return (Immediate12 (int_of_string str)))
+  ws_opt
+    (take_while1 is_digit_or_minus >>= fun str -> return (Immediate12 (int_of_string str)))
 ;;
 
 let parse_immediate32 =
-  ws_opt (take_while1 is_digit_or_minus >>= fun str -> return (Immediate32 (int_of_string str)))
+  ws_opt
+    (take_while1 is_digit_or_minus >>= fun str -> return (Immediate32 (int_of_string str)))
 ;;
 
 let parse_immediate_address12 =
@@ -112,11 +114,11 @@ let parse_immediate_address12 =
 ;;
 
 let parse_label_address12 =
-    ws_opt (take_while1 in_one_word >>= fun str -> return (LabelAddress12 str))
-  ;;
-  
-  let parse_label_expr =
-    ws_opt (take_while1 is_not_colon <* char ':' >>= fun str -> return (LabelExpr str))
+  ws_opt (take_while1 in_one_word >>= fun str -> return (LabelAddress12 str))
+;;
+
+let parse_label_expr =
+  ws_opt (take_while1 is_not_colon <* char ':' >>= fun str -> return (LabelExpr str))
 ;;
 
 let parse_address12 = ws_opt (choice [ parse_immediate_address12; parse_label_address12 ])
@@ -131,10 +133,10 @@ let parse_instruction =
               (string "," *> parse_register)
               (string "," *> parse_register)
        ; string "li"
-       *> lift2
-            (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
-            parse_register
-            (string "," *> parse_immediate32)
+         *> lift2
+              (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
+              parse_register
+              (string "," *> parse_immediate32)
        ; string "mv"
          *> lift2
               (fun r1 r2 -> InstructionExpr (Mv (r1, r2)))
@@ -169,8 +171,12 @@ let parse_instruction =
 ;;
 
 let parse_expr = ws_opt (choice [ parse_instruction; parse_label_expr ])
+
 let parse_ast =
-    ws_opt (many parse_expr)
-    <* (end_of_input <|> (Angstrom.peek_char >>= function
-            | None -> return ()  (* Handle graceful end of input *)
-            | Some c -> fail (Printf.sprintf "Unexpected character: '%c'" c)))
+  ws_opt (many parse_expr)
+  <* (end_of_input
+      <|> (Angstrom.peek_char
+           >>= function
+           | None -> return ()
+           | Some c -> fail (Printf.sprintf "Unexpected character: '%c'" c)))
+;;
