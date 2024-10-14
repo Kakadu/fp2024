@@ -140,7 +140,7 @@ let parse_instruction =
               (fun r1 r2 adr -> InstructionExpr (Beq (r1, r2, adr)))
               parse_register
               (string "," *> parse_register)
-              parse_address12
+              (string "," *> parse_address12)
        ; string "addiw"
          *> lift3
               (fun r1 r2 imm -> InstructionExpr (Addiw (r1, r2, imm)))
