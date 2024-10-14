@@ -89,7 +89,7 @@ and anon_func =
       Empty list means that function doesn't take any arguments.
       The second example will be processed at parsing
       as [func(a int, b int, c string) ...] *)
-  ; return_types : return_values option
+  ; returns : return_values option
   (** None if function doesn't return anything. See return_values type *)
   ; body : block (** function body *)
   }
@@ -150,7 +150,6 @@ and var_decl =
   | Decl_with_init of type' option * (ident * expr) list
   (** Declarations with initialization such as:
       [var my_func func() = func() {}],
-      [var a int, b int = 1, 2],
       [var a, b int = 1, 2],
       [var a, b = 1 + 2, "3"],
       [flag, count := true, 0].
