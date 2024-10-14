@@ -4,7 +4,6 @@
 
 open Angstrom
 open Ast
-open PrintAst
 
 (* TECHNICAL FUNCTIONS *)
 let skip_ws =
@@ -50,7 +49,6 @@ let p_binexpr binop constr =
   skip_ws *> string binop *> skip_ws *> return (make_binexpr constr)
 ;;
 
-let apply name arg = Function_call (name, arg)
 let add = p_binexpr "+" Binary_add
 let sub = p_binexpr "-" Binary_subtract
 let mul = p_binexpr "*" Binary_multiply
@@ -63,7 +61,6 @@ let greater = p_binexpr ">" Binary_greater
 let greater_or_equal = p_binexpr ">=" Binary_greater_or_equal
 let log_or = p_binexpr "||" Logical_or
 let log_and = p_binexpr "&&" Logical_and
-let log_not = skip_ws *> string "not" *> skip_ws *> return Unary_negative
 
 let p_if p_expr =
   fix (fun p_if ->
@@ -112,14 +109,6 @@ let p_let p_expr =
 let p_apply expr =
   (*Printf.printf "\n\n\n\n here"; *)
   chainl1 expr (return (fun f arg -> Function_call (f, arg)))
-;;
-
-let debug p =
-  p
-  >>= fun result ->
-  Printf.printf "\n\n\n\n";
-  print_construction result;
-  return result
 ;;
 
 let p_expr =
