@@ -65,11 +65,18 @@ let p_int =
      return (Int_lt (Int.of_string (sign ^ number)))
 ;;
 
-(** bool [b] accepts boolean_literal [b] and returns Const Bool_lt from it*)
-let parse_bool =
-  skip_ws *> string "true"
-  <|> string "false"
-  >>| fun s -> Const (Bool_lt (bool_of_string s))
+let p_let p_expr = 
+  fix (fun p_let ->
+    skip_ws
+    *> string "let"
+    *> skip_ws1
+    *> lift4 
+        (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
+        (string "rec" *> return Rec <|> return Nonrec)
+        (skip_ws *> p_ident >>= fun ident -> return (Some(ident)) <|> return None)
+        (skip_ws *> many (skip_ws *> (p_expr <|> p_let)) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
+        (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_let)) <*>
+        ((skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_let) >>= fun e -> return (Some e)) <|> return None))
 ;;
 
 (** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
