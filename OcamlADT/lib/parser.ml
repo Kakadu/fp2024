@@ -2,22 +2,34 @@ open Ast
 open Angstrom
 open Base
 
+
+(*                   Auxiliary parsers                     *)
+
 let is_whitespace = function
 | ' ' | '\t' | '\n' | '\r' -> true
 | _ -> false
-
 let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = pass_ws *> string s
+let pdsemicolon = 
+  let* str_part = take_while (function ';' -> false | _ -> true) in  
+  let* semi_part = peek_char in  (* Peek to see if we have encountered `;` *)
+  match semi_part with
+  | Some ';' ->
+    let* _ = string ";;" in  (* Ensure we consume both semicolons *)
+    return str_part
+  | _ -> fail "Expected ;;"
+let pletters = satisfy (function 'a'..'z' | 'A'..'Z' | '_' -> true | _ -> false)
+let ptowhitespace = function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' -> true | _ -> false
 
-(* Parentheses helper *)
-let parens p = char '(' *> p <* char ')'
 
-let pdsemicolon = many @@ token ";;"
+let pident =
+  let* first = pletters in
+  let* rest = take_while ptowhitespace in
+  return ((String.make 1 first) ^ rest)
 
-let psemicolon = token ";" 
-
+(*                   Constant expressions                         *)
 let pconstintexpr = 
   let* sign = choice [ token "+"; token "-"; token " "] in 
   let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
@@ -25,7 +37,7 @@ let pconstintexpr =
 
 (* let pconstchar =   
   let* _ = token "'" in 
-  let* c = satisfy (fun code -> code >= Char.to_int ' ' && code <= Char.to_int '~') in 
+  let* c = satisfy (fun code -> Char.code(code) >= Char.code ' ' && Char.code code <= Char.code '~') in
   let* _ = token "'" in 
   return (Const_char (c))
 ;; *)
@@ -35,6 +47,7 @@ let pconststringexpr =
   let* str = take_while1 (function '"' -> false | _ -> true) in 
   return (Exp_constant(Const_string (str)))
 
+(*                   Arithm + other expressions                         *)
 let lchain p op =
   let rec loop acc =
     (let* f = op in
@@ -45,31 +58,81 @@ let lchain p op =
   let* x = p in
   loop x
 
+  let rchain p op =
+    let rec loop acc =
+      (let* f = op in
+       let* y = p in
+       let new_acc = f acc y in
+       loop new_acc)
+      <|> return acc
+    in
+    let* x = p in
+    loop x
 
-(** Parser that takese pexpr (parser of expressions) and returns parsed arithm expression, will be a part of whole expression parser*)
-let parithmexpr pexpr = 
-  let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pdiv = lchain pexpr (token "/" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let psum = lchain pexpr (token "+" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pdif = lchain pexpr (token "-" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let peq = lchain pexpr (token "=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let ples = lchain pexpr (token "<" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pleq = lchain pexpr (token "<=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pgre = lchain pexpr (token ">" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pgrq = lchain pexpr (token ">=" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pneq = lchain pexpr (token "<>" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let pand = lchain pexpr (token "&&" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  let por = lchain pexpr (token "||" *> return (fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))) <|> pexpr in
-  pexpr
+let pidentexpr = 
+  let* ident = pident in 
+  return (Exp_ident(ident))
 
-let pexpr = 
-  parithmexpr <|> ptupleexpr <|> pidentexpr <|> pletexpr <|> pifexpr <|> pconstintexpr <|> pconststringexpr
+let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~oro =
+  let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> mul exp1 exp2)) in
+  let pdiv = lchain pmul (token "/" *> return (fun exp1 exp2 -> div exp1 exp2)) in
+  let psum = lchain pdiv (token "+" *> return (fun exp1 exp2 -> add exp1 exp2)) in
+  let pdif = lchain psum (token "-" *> return (fun exp1 exp2 -> sub exp1 exp2)) in
+  let ples = lchain pdif (token "<" *> return (fun exp1 exp2 -> les exp1 exp2)) in
+  let pleq = lchain ples (token "<=" *> return (fun exp1 exp2 -> leq exp1 exp2)) in
+  let pgre = lchain pleq (token ">" *> return (fun exp1 exp2 -> gre exp1 exp2)) in
+  let pgrq = lchain pgre (token ">=" *> return (fun exp1 exp2 -> grq exp1 exp2)) in
+  let peq = lchain pgrq (token "=" *> return (fun exp1 exp2 -> eq exp1 exp2)) in
+  let pneq = lchain peq (token "<>" *> return (fun exp1 exp2 -> neq exp1 exp2)) in
+  let pand = rchain pneq (token "&&" *> return (fun exp1 exp2 -> ando exp1 exp2)) in
+  let por = rchain pand (token "||" *> return (fun exp1 exp2 -> oro exp1 exp2)) in
+  por
 
-let pvalue_binding = 
-  let* pat = ppattern in 
+(* Rule for parsing expressions inside parentheses *)
+
+let pexpr = fix (fun pexpr ->
+  let pexpr_paren =
+    let* _ = token "(" in
+    let* e = pexpr in
+    let* _ = token ")" in
+    return e
+  in
+
+  let parithm = 
+    parithmexpr pexpr
+      ~mul:(fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))
+      ~div:(fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))
+      ~add:(fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))
+      ~sub:(fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))
+      ~les:(fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))
+      ~leq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))
+      ~gre:(fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))
+      ~grq:(fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))
+      ~eq:(fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))
+      ~neq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))
+      ~ando:(fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))
+      ~oro:(fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))
+  in
+  (* Update to include pexpr_paren *)
+  pexpr_paren <|> parithm <|> pidentexpr <|> pconstintexpr <|> pconststringexpr  (* <|> pletexpr <|> pifexpr <|> ptupleexpr *)
+)
+
+(*                   Patterns                         *)
+let pany = token "_" *> return Pat_any
+let pvar =
+  let* ident = pident in
+  return (Pat_var ident)
+let ppattern =
+  pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
+
+(*                   Structure items                         *)
+
+let pvalue_binding =
+  let* pat = ppattern in
   let* _ = token "=" in
   let* expr = pexpr in
-  return { pat; expr }
+  let value_binding = { pat; expr } in
+  return value_binding
 
 let prec_flag = 
   let* _ = token "rec" *> return Recursive <|> return Nonrecursive
@@ -122,7 +185,14 @@ let pstr_item =
     Str_value (rec, value_binding)
   in
 
-  in pseval <|> psvalue (*<|> psadt (* god bless us *)*)
+let pseval = 
+  let* expr = pexpr in
+  return (Str_eval (expr))
+
+(** It applies Str_eval to output of expression parser *)
+let pstr_item =
+  pseval <|> psvalue (*<|> psadt (* god bless us *)*)
+
 
 let pstructure =
   let psemicolon = token ";;" in
@@ -136,6 +206,72 @@ let parse_fact str =
   | Error msg -> failwith msg
 
 
+(* Example test cases for the parser *)
+let test_cases = [
+  ("1 + 2;;", 
+   [Exp_apply (Exp_ident "+", Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), []))]);
+  
+  ("'hello';;", 
+   [Exp_constant (Const_string "hello")]);
+  
+  ("(1, 2, 3);;", 
+   [Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), [Exp_constant (Const_integer 3)])]);
+  
+  ("4 * (2 + 3);;", 
+   [Exp_apply (Exp_ident "*", Exp_tuple 
+                (Exp_constant (Const_integer 4), 
+                 Exp_apply (Exp_ident "+", Exp_tuple 
+                              (Exp_constant (Const_integer 2), 
+                               Exp_constant (Const_integer 3), [])), []))]);
+  
+  ("8 / 2;;", 
+   [Exp_apply (Exp_ident "/", Exp_tuple (Exp_constant (Const_integer 8), Exp_constant (Const_integer 2), []))]);
+  
+  ("3 - 4 + 5;;", 
+   [Exp_apply (Exp_ident "+", Exp_tuple 
+                (Exp_apply (Exp_ident "-", 
+                            Exp_tuple (Exp_constant (Const_integer 3), 
+                                       Exp_constant (Const_integer 4), [])), 
+                 Exp_constant (Const_integer 5), []))]);
+  
+  ("x + y;;", 
+   [Exp_apply (Exp_ident "+", Exp_tuple 
+                (Exp_ident "x", Exp_ident "y", []))]);
+
+]
+let const_to_string n = 
+  match n with 
+  (* | Const_char (n) -> return n *)
+  | Const_integer (n) -> string_of_int n
+  | Const_string (n) -> n
+
+let rec string_of_expr expr =
+  match expr with
+  | Exp_ident id -> id  (* Just return the identifier *)
+  | Exp_constant n -> Printf.sprintf "%s" (const_to_string n)  (* Convert integer constants to strings *)
+  | Exp_apply (exp1, exp2) ->
+      Printf.sprintf "(%s %s)" (string_of_expr exp1) (string_of_expr exp2)
+  | Exp_tuple (exp1, exp2 , exp_list) ->
+      let tuple_list = [exp1 ; exp2] @ exp_list in 
+      let exprs = List.map string_of_expr tuple_list in
+      Printf.sprintf "(%s)" (String.concat ", " exprs)
+
+let run_tests test_cases =
+  for i = 0 to List.length test_cases - 1 do
+    let (input, expected) = List.nth test_cases i in
+    match parse input with
+    | Ok result when result = expected ->
+        Printf.printf "Passed: %s\n" input
+    | Ok result ->
+        Printf.printf "Failed: %s\nExpected: %s, Got: %s\n"
+          input (string_of_expr expected) (string_of_expr result)
+    | Error msg ->
+        Printf.printf "Error parsing: %s -> %s\n" input msg
+  done
+;;
+
+let () =
+  run_tests test_cases
 
 
 
