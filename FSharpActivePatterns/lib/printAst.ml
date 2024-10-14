@@ -110,35 +110,41 @@ let rec print_expr indent expr =
     print_expr (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) arg
-  | LetIn (flag, name, args, body, in_expr) ->
-    printf "%s | Let %s %s =\n" (String.make indent '-') 
-    (match flag with
+  | LetIn (rec_flag, name, args, body, in_expr) ->
+    printf
+      "%s | LetIn %s %s =\n"
+      (String.make indent '-')
+      (match rec_flag with
        | Nonrec -> ""
        | Rec -> "Rec")
       (match name with
-       | Some Ident(n) -> n
+       | Some (Ident n) -> n
        | None -> "Anonymous");
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    match args with 
-      | None -> printf "NO ARGS\n";
-      | Some args -> (
-        printf "%sARGS\n" (String.make (indent + 2) ' ');
-        List.iter (print_expr (indent + 2)) args;
-      );
+    (match args with
+     | None -> printf "%s| No args\n" (String.make (indent + 2) '-')
+     | Some args -> List.iter (print_expr (indent + 2)) args);
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) body;
-    match in_expr with
-      | None -> printf "NO IN EXPR";
-      | Some in_expr -> (
-        printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
-        print_expr (indent + 2) in_expr;
-      );
+    printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) in_expr
 ;;
 
 let print_statement indent = function
-  | Let (Ident name, value) ->
-    printf "%s| Let %s =\n" (String.make indent '-') name;
-    print_expr (indent + 2) value
+  | Let (rec_flag, Ident name, args, body) ->
+    printf
+      "%s | Let %s %s =\n"
+      (String.make indent '-')
+      (match rec_flag with
+       | Nonrec -> ""
+       | Rec -> "Rec")
+      name;
+    printf "%sARGS\n" (String.make (indent + 2) ' ');
+    (match args with
+     | None -> printf "%s| No args\n" (String.make (indent + 2) '-')
+     | Some args -> List.iter (print_expr (indent + 2)) args);
+    printf "%sBODY\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) body
   | ActivePattern (patterns, expr) ->
     printf "%s| ActivePattern:\n" (String.make indent '-');
     List.iter

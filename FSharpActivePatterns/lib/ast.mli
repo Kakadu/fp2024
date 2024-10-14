@@ -61,15 +61,15 @@ type expr =
   | Unary_expr of unary_operator * expr
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Function_def of expr list * expr
-  (**rec, name, args, body*)
+  | Function_def of expr list * expr (**rec, name, args, body*)
   | Function_call of expr * expr (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
-  | LetIn of is_recursive * ident option * expr list option * expr * expr option (** [let x = 5 in x * y] *)
+  | LetIn of is_recursive * ident option * expr list option * expr * expr
+  (** [let x = 5 in x * y] *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =
-  | Let of ident * expr (** [let name = expr] *)
+  | Let of is_recursive * ident * expr list option * expr (** [let name = expr] *)
   | ActivePattern of ident list * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving eq, show { with_path = false }]

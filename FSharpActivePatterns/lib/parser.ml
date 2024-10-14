@@ -14,6 +14,7 @@ let skip_ws =
     | '\t' -> true
     | _ -> false)
 ;;
+
 let skip_ws1 = char ' ' *> skip_ws
 
 let chainl1 e op =
@@ -29,27 +30,26 @@ let p_int =
   >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
 
-let keywords = ["if"; "then"; "else"; "let"; "in"]
+let keywords = [ "if"; "then"; "else"; "let"; "in" ]
 
-let p_ident = 
+let p_ident =
   take_while1 (function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
     | _ -> false)
-  >>= fun str -> 
-    if List.mem str keywords then fail " no keywords pls " 
-    else (
-      return (Ident(str)))
-;;  
-
-let p_var = 
-  p_ident >>| fun ident -> Variable ident
+  >>= fun str ->
+  if List.mem str keywords then fail " no keywords pls " else return (Ident str)
 ;;
+
+let p_var = p_ident >>| fun ident -> Variable ident
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
-
 let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2)
-let p_binexpr binop constr = skip_ws *> string binop *> skip_ws *> return (make_binexpr constr)
+
+let p_binexpr binop constr =
+  skip_ws *> string binop *> skip_ws *> return (make_binexpr constr)
+;;
+
 let apply name arg = Function_call (name, arg)
 let add = p_binexpr "+" Binary_add
 let sub = p_binexpr "-" Binary_subtract
@@ -67,43 +67,64 @@ let log_not = skip_ws *> string "not" *> skip_ws *> return Unary_negative
 
 let p_if p_expr =
   fix (fun p_if ->
-    lift3 
-    (fun cond th el -> If_then_else (cond, th, el))
-    (skip_ws *> string "if" *> skip_ws1 *> (p_expr <|> p_if))
-    (skip_ws *> string "then" *> skip_ws1 *> (p_expr <|> p_if))
-    (skip_ws *> string "else" *> skip_ws1 *> ((p_expr <|> p_if) >>= fun e -> return (Some e)) <|> return None))
+    lift3
+      (fun cond th el -> If_then_else (cond, th, el))
+      (skip_ws *> string "if" *> skip_ws1 *> (p_expr <|> p_if))
+      (skip_ws *> string "then" *> skip_ws1 *> (p_expr <|> p_if))
+      (skip_ws
+       *> string "else"
+       *> skip_ws1
+       *> (p_expr <|> p_if >>= fun e -> return (Some e))
+       <|> return None))
 ;;
 
-let p_let p_expr = 
-  fix (fun p_let ->
+let p_letin p_expr =
+  fix (fun p_letin ->
     skip_ws
     *> string "let"
     *> skip_ws1
-    *> lift4 
-        (fun rec_flag name args body in_expr -> LetIn(rec_flag, name, args, body, in_expr))
-        (string "rec" *> return Rec <|> return Nonrec)
-        (skip_ws *> p_ident >>= fun ident -> return (Some(ident)) <|> return None)
-        (skip_ws *> many (skip_ws *> (p_expr <|> p_let)) >>= fun args -> if List.length args > 0 then return (Some(args)) else return None)
-        (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_let)) <*>
-        ((skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_let) >>= fun e -> return (Some e)) <|> return None))
+    *> lift4
+         (fun rec_flag name args body in_expr ->
+           LetIn (rec_flag, name, args, body, in_expr))
+         (string "rec" *> return Rec <|> return Nonrec)
+         (skip_ws *> p_ident >>= fun ident -> return (Some ident) <|> return None)
+         (many (skip_ws *> p_var)
+          >>= fun args -> if List.length args > 0 then return (Some args) else return None
+         )
+         (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_letin))
+    <*> skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_letin))
 ;;
 
-let p_apply expr = (
+let p_let p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws1
+  *> lift4
+       (fun rec_flag name args body -> Let (rec_flag, name, args, body))
+       (string "rec" *> return Rec <|> return Nonrec)
+       (skip_ws *> p_ident)
+       (skip_ws *> many (skip_ws *> p_var)
+        >>= fun args -> if List.length args > 0 then return (Some args) else return None)
+       (skip_ws *> string "=" *> skip_ws *> p_expr)
+;;
+
+let p_apply expr =
   (*Printf.printf "\n\n\n\n here"; *)
-  chainl1 expr (return (fun e1 e2 -> Function_call(e1, e2)))) 
+  chainl1 expr (return (fun f arg -> Function_call (f, arg)))
+;;
 
 let debug p =
-  p >>= fun result ->
+  p
+  >>= fun result ->
   Printf.printf "\n\n\n\n";
-  print_expr 0 result;
+  print_construction result;
   return result
 ;;
 
-let p_expr = 
-  skip_ws *> 
-  fix
-  (fun p_expr -> 
-    let atom = choice [p_var; p_int; p_parens p_expr] in
+let p_expr =
+  skip_ws
+  *> fix (fun p_expr ->
+    let atom = choice [ p_var; p_int; p_parens p_expr ] in
     let app = p_apply atom in
     let factor = chainl1 app (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
@@ -112,16 +133,22 @@ let p_expr =
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    let if_expr = p_if comp_or <|> comp_or in 
-    let let_expr = p_let if_expr <|> if_expr in
-    debug let_expr)
+    let if_expr = p_if comp_or <|> comp_or in
+    let letin_expr = p_letin if_expr <|> if_expr in
+    letin_expr)
+;;
+
+let p_statement = p_let p_expr
+
+let p_construction =
+  p_expr >>= (fun e -> return (Expr e)) <|> (p_statement >>= fun s -> return (Statement s))
 ;;
 
 (* MAIN PARSE FUNCTION *)
-let parse (str : string) : expr =
-  match parse_string ~consume:All (skip_ws *> p_expr <* skip_ws) str with
+let parse (str : string) : construction =
+  match parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str with
   | Ok v -> v
-  | Error msg -> (
-    Printf.printf "%s " msg;
-    failwith msg)
+  | Error msg ->
+    print_endline msg;
+    failwith msg
 ;;
