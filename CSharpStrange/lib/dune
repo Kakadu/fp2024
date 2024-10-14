@@ -1,0 +1,7 @@
+(library
+ (name c_sharp_strange_lib)
+ (public_name CSharpStrange.Lib)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))

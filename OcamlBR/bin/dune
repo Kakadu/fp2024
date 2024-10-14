@@ -1,0 +1,6 @@
+(executable
+ (name astEx)
+ (public_name OCamlBR_main)
+ (libraries OCamlBR)
+ (instrumentation
+  (backend bisect_ppx)))
