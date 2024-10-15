@@ -4,6 +4,7 @@
 
 open Angstrom
 open Ast
+open Base
 
 (* TECHNICAL FUNCTIONS *)
 let skip_ws =
@@ -22,28 +23,30 @@ let chainl1 e op =
 ;;
 
 (* SIMPLE PARSERS *)
-let p_int =
-  take_while1 (function
-    | '0' .. '9' -> true
-    | _ -> false)
-  >>| fun s -> Const (Int_lt (int_of_string s))
-;;
+let p_int = take_while1 Char.is_digit >>| fun s -> Const (Int_lt (int_of_string s))
 
-let keywords = [ "if"; "then"; "else"; "let"; "in" ]
+let is_keyword = function
+  | "if" | "then" | "else" | "let" | "in" -> true
+  | _ -> false
+;;
 
 let p_ident =
   take_while1 (function
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+    | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
     | _ -> false)
   >>= fun str ->
-  if List.mem str keywords then fail " no keywords pls " else return (Ident str)
+  if is_keyword str
+  then fail "keyword in variable name"
+  else if Char.is_digit (String.get str 0)
+  then fail "variable name cannot start with a digit"
+  else return (Ident str)
 ;;
 
 let p_var = p_ident >>| fun ident -> Variable ident
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
-let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2)
+let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2) [@@inline always]
 
 let p_binexpr binop constr =
   skip_ws *> string binop *> skip_ws *> return (make_binexpr constr)
