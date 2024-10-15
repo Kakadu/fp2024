@@ -1,7 +1,7 @@
 Copyright 2024-2025, Friend-zva, RodionovMaxim05
 SPDX-License-Identifier: LGPL-3.0-or-later
 
-  $ ../repl/REPL.exe -dparsetree -fromfile factorial.ml
+  $ ../repl/REPL.exe -dparsetree -fromfile factorial.txt
   [(Struct_value (Recursive,
       [{ pat = (Pat_var "factorial");
          exp =

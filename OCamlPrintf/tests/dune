@@ -9,4 +9,4 @@
 
 (cram
  (applies_to run_tests)
- (deps ../repl/REPL.exe factorial.ml))
+ (deps ../repl/REPL.exe factorial.txt))
