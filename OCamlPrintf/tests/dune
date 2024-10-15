@@ -9,5 +9,5 @@
   (backend bisect_ppx)))
 
 (cram
- (applies_to interpret_tests)
- (deps ../bin/main.exe))
+ (applies_to run_tests)
+ (deps ../repl/REPL.exe factorial.ml))
