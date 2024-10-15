@@ -42,12 +42,12 @@ let%expect_test "parse_factorial" =
 
 let%expect_test "parse_factorial_with_match" =
   run
-    "let rec factorial n =\n\
-    \  match n with\n\
-    \  | 0 -> 1\n\
-    \  | 1 -> 1\n\
-    \  | _ -> n * factorial (n - 1)\n\
-     ;;";
+    {| let rec factorial n =
+        match n with
+        | 0 -> 1
+        | 1 -> 1
+        | _ -> n * factorial (n - 1)
+      ;; |};
   [%expect
     {|
     [(Struct_value (Recursive,

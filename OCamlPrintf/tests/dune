@@ -1,7 +1,6 @@
 (library
  (name tests)
  (libraries ocaml_printf_lib)
- (modules test_parser)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
