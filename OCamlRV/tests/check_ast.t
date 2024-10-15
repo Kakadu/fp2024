@@ -1,7 +1,7 @@
 Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan
 SPDX-License-Identifier: LGPL-3.0-or-later
 
-  $ ../bin/main.exe
+  $ echo "let rec fact n = if n <= 1 then 1 else n * fact (n - 1);;" | ../bin/main.exe -dparsetree
   [(SValue (Rec,
       [((PLiteral (StringLiteral "fact")),
         (ExprFun ((PLiteral (StringLiteral "n")), [],

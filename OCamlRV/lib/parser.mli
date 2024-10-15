@@ -4,3 +4,4 @@
 
 val test_parse : string -> bool
 val check_parse : string -> unit
+val parse_result : string -> string

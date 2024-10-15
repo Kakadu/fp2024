@@ -201,3 +201,9 @@ let check_parse input =
   | Ok structure -> Stdlib.Format.printf "%s\n" (show_structure structure)
   | Error err -> Stdlib.Format.printf "%s\n" err
 ;;
+
+let parse_result input =
+  match parse input with
+  | Ok structure -> show_structure structure
+  | Error err -> err
+;;
