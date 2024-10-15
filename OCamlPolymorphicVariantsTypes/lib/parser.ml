@@ -42,6 +42,11 @@ let element_sequence : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'b
       >>= fun l -> preturn (list_converter (List.append [ start ] l)))
 ;;
 
+(** Parser of keyword *)
+let keyword word =
+  skip_ws *> ssequence word *> dsatisfy is_whitespace is_whitespace *> preturn ()
+;;
+
 (** Parse [Miniml.identifier] value. *)
 let ident =
   let ident_symbol = function
@@ -74,9 +79,8 @@ let integer =
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let boolean =
-  skip_ws *> ssequence "true"
-  <|> ssequence "false"
-  >>= fun cl -> preturn (BoolLiteral (List.length cl = 4))
+  skip_ws *> (keyword "true" >>= fun _ -> preturn (BoolLiteral true))
+  <|> (keyword "false" >>= fun _ -> preturn (BoolLiteral false))
 ;;
 
 (** Parser of patterns: [<pvar>] | [<ptuple>] *)
@@ -107,7 +111,7 @@ and ptuple state =
 (** Parser of constants expression: [integer] and [boolean]
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let const_expr = skip_ws *> integer <|> boolean >>= fun id -> preturn (Const id)
+let const_expr = skip_ws *> integer <|> boolean >>= fun l -> preturn (Const l)
 
 (** Parser of variable expression *)
 let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
@@ -254,7 +258,7 @@ and apply_expr state =
         >>= fun _ -> preturn ())
   in
   let helper ex =
-    many (skip_ws *> expr) >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
+    many (skip_ws *> expr) >>= fun l -> preturn (if l = [] then ex else Apply (ex, l))
   in
   (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker >>> preturn ex <|> helper ex)
     state
@@ -282,7 +286,7 @@ and value_binding_parser state =
        skip_ws
        *> (ssequence "="
            *> (skip_ws *> expr
-               >>= fun ex -> preturn (if is_empty pl then p, ex else p, Lambda (pl, ex)))
+               >>= fun ex -> preturn (if pl = [] then p, ex else p, Lambda (pl, ex)))
            <|> perror "Not found expression of let-definition")
        <|> perror "Not found special sequence '=' of let-definition")
    <|> perror "Not found name-pattern of let-definition")

@@ -54,19 +54,16 @@ let ( <*> ) : 'a 'b. ('a -> 'b) parser -> 'a parser -> 'b parser =
   match pfun state with
   | ParseSuccess (f, st) ->
     (match parg st with
-     | ParseFail -> ParseFail
-     | ParseError (msg, st) -> perror msg st
+     | (ParseFail | ParseError _) as err -> err
      | ParseSuccess (arg, st) -> preturn (f arg) st)
-  | ParseFail -> ParseFail
-  | ParseError (msg, st) -> perror msg st
+  | (ParseFail | ParseError _) as err -> err
 ;;
 
 (** Parser combinator that allows to build parser from result of another parser *)
 let ( >>= ) : 'a 'b. 'a parser -> ('a -> 'b parser) -> 'b parser =
   fun p f state ->
   match p state with
-  | ParseFail -> ParseFail
-  | ParseError _ as err -> err
+  | (ParseFail | ParseError _) as err -> err
   | ParseSuccess (res, st) -> f res st
 ;;
 
@@ -82,8 +79,7 @@ let ( <* ) : 'a 'b. 'a parser -> 'b parser -> 'a parser =
 let ( >>> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser =
   fun p1 p2 s ->
   match p1 s with
-  | ParseError _ as err -> err
-  | ParseFail -> ParseFail
+  | (ParseFail | ParseError _) as err -> err
   | ParseSuccess _ -> p2 s
 ;;
 
@@ -104,8 +100,7 @@ let ( <|> ) : 'a parser -> 'a parser -> 'a parser =
   fun p1 p2 state ->
   match p1 state with
   | ParseFail -> p2 state
-  | ParseError (msg, st) -> perror msg st
-  | ParseSuccess _ as ok -> ok
+  | (ParseError _ | ParseSuccess _) as final -> final
 ;;
 
 (** Parser combinator that allows to get result as one of [N] parsers *)
@@ -185,7 +180,7 @@ let dsatisfy : char_predicate -> (char -> 'a) -> parser_state -> 'a parse_result
 (** Check that [expected] character is found further in parsing text.
 
     [!] This chacker returns also [ParseSuccess] or [ParseFail] *)
-let symbol expected = dsatisfy (fun c -> c = expected) (fun c -> c)
+let symbol expected = dsatisfy (( = ) expected) Fun.id
 
 (** Check that [expected] character sequence is found further in parsing text.
 
@@ -208,9 +203,9 @@ let sequence expected =
 (** Check that [expected] string is found further in parsing text.
 
     [!] This checker returns also [ParseSuccess] or [ParseFail] *)
-let ssequence expected state = sequence (char_list_of_string expected) state
+let ssequence expected = sequence (char_list_of_string expected)
 
-(** Spacial parser to skip whitespaces
+(** Special parser to skip whitespaces
 
     Returns: [unit parse_result] wich always [ParseSuccess] with updated state *)
 let skip_ws state =

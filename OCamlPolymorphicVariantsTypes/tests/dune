@@ -1,6 +1,5 @@
 (library
  (name tests)
- (modules ast_tests parser_tests)
  (libraries miniml)
  (preprocess
   (pps ppx_expect ppx_deriving.show))

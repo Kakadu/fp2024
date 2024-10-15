@@ -2,13 +2,15 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Miniml.Ast
 open Miniml.Parser
 open Miniml.Parser_utility
 open Miniml.Printer
 
 let () =
   print_endline
-    (string_of_program_parse_result
+    (string_of_parse_result
+       show_program
        (parse
           program_parser
           {|
