@@ -23,7 +23,9 @@ let chainl1 e op =
 ;;
 
 (* SIMPLE PARSERS *)
-let p_int = take_while1 Char.is_digit >>| fun s -> Const (Int_lt (int_of_string s))
+let p_int =
+  skip_ws *> take_while1 Char.is_digit >>| fun s -> Const (Int_lt (int_of_string s))
+;;
 
 let is_keyword = function
   | "if" | "then" | "else" | "let" | "in" -> true
@@ -31,7 +33,8 @@ let is_keyword = function
 ;;
 
 let p_ident =
-  take_while1 (function
+  skip_ws
+  *> take_while1 (function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
     | _ -> false)
   >>= fun str ->
@@ -87,7 +90,7 @@ let p_letin p_expr =
          (fun rec_flag name args body in_expr ->
            LetIn (rec_flag, name, args, body, in_expr))
          (string "rec" *> return Rec <|> return Nonrec)
-         (skip_ws *> p_ident >>= fun ident -> return (Some ident) <|> return None)
+         (p_ident >>= fun ident -> return (Some ident) <|> return None)
          (many (skip_ws *> p_var)
           >>= fun args ->
           if not (List.length args == 0) then return (Some args) else return None)
@@ -102,7 +105,7 @@ let p_let p_expr =
   *> lift4
        (fun rec_flag name args body -> Let (rec_flag, name, args, body))
        (string "rec" *> return Rec <|> return Nonrec)
-       (skip_ws *> p_ident)
+       p_ident
        (skip_ws *> many (skip_ws *> p_var)
         >>= fun args ->
         if not (List.length args == 0) then return (Some args) else return None)
