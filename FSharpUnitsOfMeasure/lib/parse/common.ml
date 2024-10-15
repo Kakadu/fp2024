@@ -2,12 +2,28 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(** This file contains parsers for parts of F# 4.1 grammar, taken from
+(** This file contains parsers for part of F# 4.1 grammar, taken from
     https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 292 *)
 
 open Base
 open Ast
 open Angstrom
+
+let ident_char = function
+  | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '\'' -> true
+  | _ -> false
+;;
+
+let ident_start_char = function
+  | '_' | 'a' .. 'z' | 'A' .. 'Z' -> true
+  | _ -> false
+;;
+
+let parse_ident =
+  let* first = satisfy ident_start_char >>| String.of_char in
+  let* tail = take_while ident_char in
+  return (first ^ tail)
+;;
 
 let parse_int = take_while1 Char.is_digit >>| Int.of_string
 let parse_char = char '\'' *> any_char <* char '\''
