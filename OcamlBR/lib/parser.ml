@@ -39,7 +39,7 @@ let pbool =
 ;;
 
 let pstr = char '"' *> take_till (Char.equal '"') <* char '"' >>| fun x -> String x
-let punit = pstoken "()" >>| fun _ -> Unit
+let punit = pstoken "()" *> return Unit
 let const = choice [ pint; pbool; pstr; punit ]
 
 let varname =
