@@ -37,10 +37,12 @@ let is_keyword = function
   | _ -> false
 ;;
 
+(* ==================== Ident ==================== *)
+
 let parse_ident =
   ws
   *>
-  let* parse_start =
+  let* start_ident =
     satisfy (function
       | 'A' .. 'Z' | 'a' .. 'z' -> true
       | _ -> false)
@@ -51,7 +53,7 @@ let parse_ident =
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
   in
-  let ident = String.( ^ ) parse_start parse_rest in
+  let ident = String.( ^ ) start_ident parse_rest in
   if is_keyword ident then fail ident else return ident
 ;;
 
@@ -96,12 +98,12 @@ let parse_pat_tuple parse_pat =
 
 let parse_pattern =
   fix (fun parse_full_pat ->
-    let parse_cur_pat =
+    let parse_pat =
       choice
         [ skip_parens parse_full_pat; parse_pat_any; parse_pat_var; parse_pat_constant ]
     in
-    let parse_cur_pat = parse_pat_tuple parse_cur_pat <|> parse_cur_pat in
-    parse_cur_pat)
+    let parse_pat = parse_pat_tuple parse_pat <|> parse_pat in
+    parse_pat)
 ;;
 
 (* ==================== Expression ==================== *)
@@ -111,12 +113,12 @@ let parse_pattern =
 let parse_chain_left_associative parse_exp parse_fun_op =
   let rec go acc_exp =
     (let* fun_op = parse_fun_op in
-     let* cur_exp = parse_exp in
-     go (fun_op acc_exp cur_exp))
+     let* exp = parse_exp in
+     go (fun_op acc_exp exp))
     <|> return acc_exp
   in
-  let* start_exp = parse_exp in
-  go start_exp
+  let* first_exp = parse_exp in
+  go first_exp
 ;;
 
 let bin_op chain1 parse_exp parse_fun_op =
@@ -139,12 +141,7 @@ let parse_operator parse_exp =
   parse_left_bin_op parse_cur_exp cmp
 ;;
 
-(* -------------------- Expression -------------------- *)
-
-let parse_exp_ident = parse_ident >>| fun ident -> Exp_ident ident
-let parse_exp_constant = parse_constant >>| fun const -> Exp_constant const
-
-(* ==================== Value_binding ==================== *)
+(* -------------------- Value_binding -------------------- *)
 
 let parse_fun_binding parse_exp =
   let* name = ws *> parse_pat_var in
@@ -164,6 +161,11 @@ let parse_value_binding_list parse_exp =
     (ws *> string "and")
     (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
 ;;
+
+(* -------------------- Expression -------------------- *)
+
+let parse_exp_ident = parse_ident >>| fun ident -> Exp_ident ident
+let parse_exp_constant = parse_constant >>| fun const -> Exp_constant const
 
 let parse_exp_let parse_exp =
   ws
@@ -191,9 +193,9 @@ let parse_exp_match parse_exp =
 ;;
 
 let parse_exp_tuple parse_exp =
-  let* first_pat = parse_exp in
-  let* rest_pats = many1 (ws *> string "," *> parse_exp) in
-  return (Exp_tuple (List.cons first_pat rest_pats))
+  let* first_exp = parse_exp in
+  let* rest_exps = many1 (ws *> string "," *> parse_exp) in
+  return (Exp_tuple (List.cons first_exp rest_exps))
 ;;
 
 let parse_exp_ifthenelse parse_exp =
@@ -211,22 +213,24 @@ let parse_exp_ifthenelse parse_exp =
 let parse_expression =
   ws
   *> fix (fun parse_full_exp ->
-    let parse_cur_exp =
-      choice [ skip_parens parse_full_exp; parse_exp_ident; parse_exp_constant ]
+    let parse_exp =
+      choice
+        [ skip_parens parse_full_exp
+        ; parse_exp_ident
+        ; parse_exp_constant
+        ; parse_exp_let parse_full_exp
+        ; parse_exp_match parse_full_exp
+        ; parse_exp_ifthenelse parse_full_exp
+        ]
     in
-    let parse_cur_exp =
+    let parse_exp =
       parse_chain_left_associative
-        parse_cur_exp
+        parse_exp
         (return (fun exp1 exp2 -> Exp_apply (exp1, [ exp2 ])))
     in
-    let parse_cur_exp = parse_operator parse_cur_exp in
-    let parse_cur_exp = parse_exp_tuple parse_cur_exp <|> parse_cur_exp in
-    choice
-      [ parse_exp_ifthenelse parse_full_exp
-      ; parse_exp_match parse_full_exp
-      ; parse_exp_let parse_full_exp
-      ; parse_cur_exp
-      ])
+    let parse_exp = parse_operator parse_exp in
+    let parse_exp = parse_exp_tuple parse_exp <|> parse_exp in
+    parse_exp)
 ;;
 
 (* ==================== Structure ==================== *)
