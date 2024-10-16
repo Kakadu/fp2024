@@ -147,15 +147,16 @@ let parse_exp_constant = parse_constant >>| fun const -> Exp_constant const
 (* ==================== Value_binding ==================== *)
 
 let parse_fun_binding parse_exp =
-  lift3
-    (fun name args exp -> { pat = name; exp = Exp_fun (args, exp) })
-    (ws *> parse_pat_var)
-    (ws *> sep_by1 ws parse_pattern)
-    (ws *> char '=' *> parse_exp)
+  let* name = ws *> parse_pat_var in
+  let* args = ws *> sep_by1 ws parse_pattern in
+  let* exp = ws *> char '=' *> parse_exp in
+  return { pat = name; exp = Exp_fun (args, exp) }
 ;;
 
 let parse_simple_binding parse_exp =
-  lift2 (fun pat exp -> { pat; exp }) parse_pattern (ws *> char '=' *> ws *> parse_exp)
+  let* pat = parse_pattern in
+  let* exp = ws *> char '=' *> ws *> parse_exp in
+  return { pat; exp }
 ;;
 
 let parse_value_binding_list parse_exp =
@@ -167,29 +168,26 @@ let parse_value_binding_list parse_exp =
 let parse_exp_let parse_exp =
   ws
   *> string "let"
-  *> lift3
-       (fun rec_flag value_bindings expression ->
-         Exp_let (rec_flag, value_bindings, expression))
-       parse_rec_flag
-       (ws *> parse_value_binding_list parse_exp <* ws <* string "in")
-       (ws *> parse_exp)
+  *>
+  let* rec_flag = parse_rec_flag in
+  let* value_binding = ws *> parse_value_binding_list parse_exp <* ws <* string "in" in
+  let* expression = ws *> parse_exp in
+  return (Exp_let (rec_flag, value_binding, expression))
 ;;
 
 let parse_cases parse_exp =
   let parse_case =
-    lift2
-      (fun pat exp -> { left = pat; right = exp })
-      (parse_pattern <* ws <* string "->")
-      (ws *> parse_exp)
+    let* pat = parse_pattern <* ws <* string "->" in
+    let* exp = ws *> parse_exp in
+    return { left = pat; right = exp }
   in
   option () (char '|' *> return ()) *> sep_by1 (ws *> char '|' *> ws) parse_case
 ;;
 
 let parse_exp_match parse_exp =
-  lift2
-    (fun expression cases -> Exp_match (expression, cases))
-    (ws *> string "match" *> ws *> parse_exp <* ws <* string "with")
-    (ws *> parse_cases parse_exp)
+  let* expression = ws *> string "match" *> ws *> parse_exp <* ws <* string "with" in
+  let* cases = ws *> parse_cases parse_exp in
+  return (Exp_match (expression, cases))
 ;;
 
 let parse_exp_tuple parse_exp =
@@ -199,14 +197,15 @@ let parse_exp_tuple parse_exp =
 ;;
 
 let parse_exp_ifthenelse parse_exp =
-  lift3
-    (fun if_ then_ else_ -> Exp_ifthenelse (if_, then_, else_))
-    (ws *> string "if" *> parse_exp)
-    (ws *> string "then" *> parse_exp)
-    (option None (ws *> string "else" >>| Option.some)
-     >>= function
-     | None -> return None
-     | Some _ -> parse_exp >>| Option.some)
+  let* if_ = ws *> string "if" *> parse_exp in
+  let* then_ = ws *> string "then" *> parse_exp in
+  let* else_ =
+    option None (ws *> string "else" >>| Option.some)
+    >>= function
+    | None -> return None
+    | Some _ -> parse_exp >>| Option.some
+  in
+  return (Exp_ifthenelse (if_, then_, else_))
 ;;
 
 let parse_expression =
@@ -234,10 +233,10 @@ let parse_expression =
 
 let parse_struct_value =
   string "let"
-  *> lift2
-       (fun rec_flag value_bindings -> Struct_value (rec_flag, value_bindings))
-       parse_rec_flag
-       (parse_value_binding_list parse_expression)
+  *>
+  let* rec_flag = parse_rec_flag in
+  let* value_bindings = parse_value_binding_list parse_expression in
+  return (Struct_value (rec_flag, value_bindings))
 ;;
 
 let parse_structure =
