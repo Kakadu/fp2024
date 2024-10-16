@@ -53,7 +53,7 @@ let rec print_pattern indent = function
 
 let print_unary_op indent = function
   | Unary_minus -> printf "%s| Unary minus\n" (String.make indent '-')
-  | Unary_negative -> printf "%s| Unary negative\n" (String.make indent '-')
+  | Unary_not -> printf "%s| Unary negative\n" (String.make indent '-')
 ;;
 
 let rec print_expr indent expr =

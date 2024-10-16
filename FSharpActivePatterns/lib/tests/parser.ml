@@ -115,7 +115,7 @@ let%expect_test "parse logical expression" =
     ----| Const(Int: 8)
     --| Binary expr(
     --| Logical And
-    ----| Variable(true)
+    ----| Const(Bool: true)
     ----| Binary expr(
     ----| Binary Unequal
     ------| Const(Int: 5)
@@ -127,20 +127,22 @@ let%expect_test "parse integer expression" =
   print_p_res std_formatter (parse input);
   [%expect
     {|
-    | Binary expr(
-    | Binary Subtract
+    | Function Call:
+      FUNCTION
     --| Binary expr(
     --| Binary Add
     ----| Const(Int: 3)
     ----| Const(Int: 5)
-    --| Binary expr(
-    --| Binary Divide
-    ----| Const(Int: 12)
-    ----| Const(Int: 7) |}]
+      ARGS
+    --| Unary expr(
+    --| Unary minus
+    ----| Binary expr(
+    ----| Binary Divide
+    ------| Const(Int: 12)
+    ------| Const(Int: 7) |}]
 ;;
 
-(*
-   let%expect_test "parse_unary_chain" =
+let%expect_test "parse_unary_chain" =
   let input = "not not ( not true && false || 3 > 5)" in
   let result = parse input in
   print_p_res std_formatter result;
@@ -177,7 +179,7 @@ let%expect_test "parse if with comparison" =
     ----| Binary Greater
     ------| Const(Int: 3)
     ------| Const(Int: 2)
-    ----| Variable(false)
+    ----| Const(Bool: false)
       THEN BRANCH
     ----| Binary expr(
     ----| Binary Add
