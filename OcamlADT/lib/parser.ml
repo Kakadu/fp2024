@@ -83,7 +83,7 @@ let ppattern =
 
 (*                   Exptessions                         *)
 
-let pvalue_binding =
+let pvalue_binding pexpr =
   let* pat = ppattern in
   let* _ = token "=" in
   let* expr = pexpr in
@@ -93,10 +93,10 @@ let pvalue_binding =
 let prec_flag = 
   token "rec" *> return Recursive <|> return Nonrecursive
 
-let pletexpr =
+let pletexpr pexpr =
   let* _ = token "let" in
   let* rec_flag = prec_flag in
-   let* value_binding = many1  pvalue_binding in
+  let* value_binding = many1 (pvalue_binding pexpr) in
   let* expr = pexpr in
   return (Exp_let(rec_flag, value_binding, expr))
 
@@ -130,7 +130,8 @@ let papplyexpr pexpr =
 
 
 let parsebinop binoptoken =
-  pass_ws *> token binoptoken *> return (fun e1 e2 -> Exp_apply (pidentexpr binoptoken, Exp_tuple(e1, e2, [])))
+  let* op = pass_ws *> token binoptoken in  (* Capture the operator from binoptoken *)
+  return (fun e1 e2 -> Exp_apply (Exp_ident op, Exp_tuple(e1, e2, [])))
 ;;
 
 let padd = parsebinop "+"
@@ -171,7 +172,7 @@ let pexpr = fix (fun expr ->
   let expr = rchain expr plogops in 
   let expr = pifexpr expr <|> expr in
   let expr = ptupleexpr <|> expr in 
-  let expr = pletexpr <|> expr in 
+  let expr = pletexpr expr <|> expr in 
   expr)
 ;;
 
