@@ -9,12 +9,14 @@ open Angstrom
 (* ==================== Utils ==================== *)
 
 let skip_whitespaces = skip_while Char.is_whitespace
+let skip_whitespaces1 = take_while1 Char.is_whitespace
 
 let parse_comments =
-  skip_whitespaces *> string "(*" *> many_till any_char (string "*)") <* return ()
+  skip_whitespaces *> string "(*" *> many_till any_char (string "*)") *> return ()
 ;;
 
 let ws = many parse_comments *> skip_whitespaces
+let ws1 = skip_whitespaces1 *> many parse_comments <|> many1 parse_comments
 let skip_parens parse_ = ws *> char '(' *> ws *> parse_ <* ws <* char ')'
 
 let is_keyword = function
@@ -38,24 +40,24 @@ let is_keyword = function
 let parse_ident =
   ws
   *>
-  let parse_start =
+  let* parse_start =
     satisfy (function
       | 'A' .. 'Z' | 'a' .. 'z' -> true
       | _ -> false)
     >>| String.of_char
   in
-  let parse_rest =
+  let* parse_rest =
     take_while (function
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
   in
-  lift2 String.( ^ ) parse_start parse_rest
-  >>= fun ident -> if is_keyword ident then fail ident else return ident
+  let ident = String.( ^ ) parse_start parse_rest in
+  if is_keyword ident then fail ident else return ident
 ;;
 
 (* ==================== Rec_flag ==================== *)
 
-let parse_rec_flag = ws *> option Nonrecursive (string "rec " *> return Recursive)
+let parse_rec_flag = ws1 *> option Nonrecursive (string "rec" *> ws1 *> return Recursive)
 
 (* ==================== Constant ==================== *)
 
@@ -87,8 +89,9 @@ let parse_pat_var = parse_ident >>| fun var -> Pat_var var
 let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
 let parse_pat_tuple parse_pat =
-  lift2 List.cons parse_pat (many1 (ws *> string ", " *> parse_pat))
-  >>| fun pat_list -> Pat_tuple pat_list
+  let* first_pat = parse_pat in
+  let* rest_pats = many1 (ws *> string "," *> parse_pat) in
+  return (Pat_tuple (List.cons first_pat rest_pats))
 ;;
 
 let parse_pattern =
@@ -105,7 +108,7 @@ let parse_pattern =
 
 (* -------------------- Operator -------------------- *)
 
-let parse_chain_left_associative (parse_exp : expression t) parse_fun_op =
+let parse_chain_left_associative parse_exp parse_fun_op =
   let rec go acc_exp =
     (let* fun_op = parse_fun_op in
      let* cur_exp = parse_exp in
@@ -116,7 +119,7 @@ let parse_chain_left_associative (parse_exp : expression t) parse_fun_op =
   go start_exp
 ;;
 
-let bin_op chain1 (parse_exp : expression t) parse_fun_op : expression t =
+let bin_op chain1 parse_exp parse_fun_op =
   chain1 parse_exp (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
 ;;
 
@@ -141,11 +144,42 @@ let parse_operator parse_exp =
 let parse_exp_ident = parse_ident >>| fun ident -> Exp_ident ident
 let parse_exp_constant = parse_constant >>| fun const -> Exp_constant const
 
+(* ==================== Value_binding ==================== *)
+
+let parse_fun_binding parse_exp =
+  lift3
+    (fun name args exp -> { pat = name; exp = Exp_fun (args, exp) })
+    (ws *> parse_pat_var)
+    (ws *> sep_by1 ws parse_pattern)
+    (ws *> char '=' *> parse_exp)
+;;
+
+let parse_simple_binding parse_exp =
+  lift2 (fun pat exp -> { pat; exp }) parse_pattern (ws *> char '=' *> ws *> parse_exp)
+;;
+
+let parse_value_binding_list parse_exp =
+  sep_by1
+    (ws *> string "and")
+    (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
+;;
+
+let parse_exp_let parse_exp =
+  ws
+  *> string "let"
+  *> lift3
+       (fun rec_flag value_bindings expression ->
+         Exp_let (rec_flag, value_bindings, expression))
+       parse_rec_flag
+       (ws *> parse_value_binding_list parse_exp <* ws <* string "in")
+       (ws *> parse_exp)
+;;
+
 let parse_cases parse_exp =
   let parse_case =
     lift2
       (fun pat exp -> { left = pat; right = exp })
-      (parse_pattern <* ws <* string "-> ")
+      (parse_pattern <* ws <* string "->")
       (ws *> parse_exp)
   in
   option () (char '|' *> return ()) *> sep_by1 (ws *> char '|' *> ws) parse_case
@@ -154,21 +188,22 @@ let parse_cases parse_exp =
 let parse_exp_match parse_exp =
   lift2
     (fun expression cases -> Exp_match (expression, cases))
-    (ws *> string "match " *> ws *> parse_exp <* ws <* string "with")
+    (ws *> string "match" *> ws *> parse_exp <* ws <* string "with")
     (ws *> parse_cases parse_exp)
 ;;
 
 let parse_exp_tuple parse_exp =
-  lift2 List.cons parse_exp (many1 (ws *> string ", " *> parse_exp))
-  >>| fun exp_list -> Exp_tuple exp_list
+  let* first_pat = parse_exp in
+  let* rest_pats = many1 (ws *> string "," *> parse_exp) in
+  return (Exp_tuple (List.cons first_pat rest_pats))
 ;;
 
 let parse_exp_ifthenelse parse_exp =
   lift3
     (fun if_ then_ else_ -> Exp_ifthenelse (if_, then_, else_))
-    (ws *> string "if " *> parse_exp)
-    (ws *> string "then " *> parse_exp)
-    (option None (ws *> string "else " >>| Option.some)
+    (ws *> string "if" *> parse_exp)
+    (ws *> string "then" *> parse_exp)
+    (option None (ws *> string "else" >>| Option.some)
      >>= function
      | None -> return None
      | Some _ -> parse_exp >>| Option.some)
@@ -190,41 +225,24 @@ let parse_expression =
     choice
       [ parse_exp_ifthenelse parse_full_exp
       ; parse_exp_match parse_full_exp
+      ; parse_exp_let parse_full_exp
       ; parse_cur_exp
       ])
-;;
-
-(* ==================== Value_binding ==================== *)
-
-let parse_fun_binding =
-  lift3
-    (fun name args exp -> { pat = name; exp = Exp_fun (args, exp) })
-    (ws *> parse_pat_var)
-    (ws *> sep_by1 ws parse_pattern)
-    (ws *> char '=' *> parse_expression)
-;;
-
-let parse_simple_binding =
-  lift2 (fun pat exp -> { pat; exp }) parse_pattern (ws *> char '=' *> parse_expression)
-;;
-
-let parse_value_binding_list =
-  sep_by1 (ws *> string "and ") (parse_fun_binding <|> parse_simple_binding)
 ;;
 
 (* ==================== Structure ==================== *)
 
 let parse_struct_value =
-  string "let "
+  string "let"
   *> lift2
        (fun rec_flag value_bindings -> Struct_value (rec_flag, value_bindings))
        parse_rec_flag
-       parse_value_binding_list
+       (parse_value_binding_list parse_expression)
 ;;
 
 let parse_structure =
   let parse_structure_item =
-    ws *> parse_struct_value <|> (parse_expression >>| fun exp -> Struct_eval exp)
+    ws *> (parse_expression >>| (fun exp -> Struct_eval exp) <|> parse_struct_value)
   in
   let semicolons = many (ws *> string ";;") in
   sep_by semicolons parse_structure_item <* semicolons <* ws
