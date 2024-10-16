@@ -52,7 +52,8 @@ let%expect_test "parse_unary_chain" =
   let input = "not not ( not true && false || 3 > 5)" in
   let result = parse input in
   print_p_res result;
-  [%expect{|
+  [%expect
+    {|
     | Unary expr(
     | Unary negative
     --| Unary expr(

@@ -6,12 +6,6 @@ open FSharpActivePatterns.PrintAst
 open FSharpActivePatterns.Parser
 
 let () =
-  let input =
-    {|let rec factorial n = 
-      if n = 0 || n = 1
-      then 1
-      else n * factorial (n-1)
-      in factorial b |}
-  in
+  let input = " if (if true then true else false) then 2 else 4  " in
   print_p_res (parse input)
 ;;
