@@ -25,7 +25,7 @@ let pparens p = pstoken "(" *> p <* pstoken ")"
 let pint =
   let sign = choice [ pstoken "-"; pstoken "+"; pstoken "" ] in
   let rest = take_while1 Char.is_digit in
-  let whole = lift2 (fun x y -> x ^ y) sign rest in
+  let whole = lift2 (^) sign rest in
   whole
   >>= fun str ->
   match Stdlib.int_of_string_opt str with
@@ -44,7 +44,7 @@ let const = choice [ pint; pbool; pstr; punit ]
 
 let varname =
   ptoken
-    (take_while (fun ch -> Char.is_digit ch)
+    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'')
      >>= function
      | "" ->
        take_while1 (fun ch -> Char.is_alpha ch || Char.is_digit ch || Char.equal ch '_')
@@ -85,7 +85,7 @@ let relation =
 
 let chain e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
-  e >>= fun init -> go init
+  e >>= go
 ;;
 
 let plet pexpr =
