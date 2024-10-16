@@ -47,7 +47,7 @@ let pconststringexpr =
   let* str = take_while1 (function '"' -> false | _ -> true) in 
   return (Exp_constant(Const_string (str)))
 
-(*                   Arithm + other expressions                         *)
+(*                   Arithm utils + ident parser                         *)
 let lchain p op =
   let rec loop acc =
     (let* f = op in
@@ -73,50 +73,6 @@ let pidentexpr =
   let* ident = pident in 
   return (Exp_ident(ident))
 
-let parithmexpr pexpr ~mul ~div ~add ~sub ~les ~leq ~gre ~grq ~eq ~neq ~ando ~oro =
-  let pmul = lchain pexpr (token "*" *> return (fun exp1 exp2 -> mul exp1 exp2)) in
-  let pdiv = lchain pmul (token "/" *> return (fun exp1 exp2 -> div exp1 exp2)) in
-  let psum = lchain pdiv (token "+" *> return (fun exp1 exp2 -> add exp1 exp2)) in
-  let pdif = lchain psum (token "-" *> return (fun exp1 exp2 -> sub exp1 exp2)) in
-  let ples = lchain pdif (token "<" *> return (fun exp1 exp2 -> les exp1 exp2)) in
-  let pleq = lchain ples (token "<=" *> return (fun exp1 exp2 -> leq exp1 exp2)) in
-  let pgre = lchain pleq (token ">" *> return (fun exp1 exp2 -> gre exp1 exp2)) in
-  let pgrq = lchain pgre (token ">=" *> return (fun exp1 exp2 -> grq exp1 exp2)) in
-  let peq = lchain pgrq (token "=" *> return (fun exp1 exp2 -> eq exp1 exp2)) in
-  let pneq = lchain peq (token "<>" *> return (fun exp1 exp2 -> neq exp1 exp2)) in
-  let pand = rchain pneq (token "&&" *> return (fun exp1 exp2 -> ando exp1 exp2)) in
-  let por = rchain pand (token "||" *> return (fun exp1 exp2 -> oro exp1 exp2)) in
-  por
-
-(* Rule for parsing expressions inside parentheses *)
-
-let pexpr = fix (fun pexpr ->
-  let pexpr_paren =
-    let* _ = token "(" in
-    let* e = pexpr in
-    let* _ = token ")" in
-    return e
-  in
-
-  let parithm = 
-    parithmexpr pexpr
-      ~mul:(fun exp1 exp2 -> Exp_apply (Exp_ident "*", Exp_tuple (exp1, exp2, [])))
-      ~div:(fun exp1 exp2 -> Exp_apply (Exp_ident "/", Exp_tuple (exp1, exp2, [])))
-      ~add:(fun exp1 exp2 -> Exp_apply (Exp_ident "+", Exp_tuple (exp1, exp2, [])))
-      ~sub:(fun exp1 exp2 -> Exp_apply (Exp_ident "-", Exp_tuple (exp1, exp2, [])))
-      ~les:(fun exp1 exp2 -> Exp_apply (Exp_ident "<", Exp_tuple (exp1, exp2, [])))
-      ~leq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<=", Exp_tuple (exp1, exp2, [])))
-      ~gre:(fun exp1 exp2 -> Exp_apply (Exp_ident ">", Exp_tuple (exp1, exp2, [])))
-      ~grq:(fun exp1 exp2 -> Exp_apply (Exp_ident ">=", Exp_tuple (exp1, exp2, [])))
-      ~eq:(fun exp1 exp2 -> Exp_apply (Exp_ident "=", Exp_tuple (exp1, exp2, [])))
-      ~neq:(fun exp1 exp2 -> Exp_apply (Exp_ident "<>", Exp_tuple (exp1, exp2, [])))
-      ~ando:(fun exp1 exp2 -> Exp_apply (Exp_ident "&&", Exp_tuple (exp1, exp2, [])))
-      ~oro:(fun exp1 exp2 -> Exp_apply (Exp_ident "||", Exp_tuple (exp1, exp2, [])))
-  in
-  (* Update to include pexpr_paren *)
-  pexpr_paren <|> parithm <|> pidentexpr <|> pconstintexpr <|> pconststringexpr  (* <|> pletexpr <|> pifexpr <|> ptupleexpr *)
-)
-
 (*                   Patterns                         *)
 let pany = token "_" *> return Pat_any
 let pvar =
@@ -125,7 +81,7 @@ let pvar =
 let ppattern =
   pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
 
-(*                   Structure items                         *)
+(*                   Exptessions                         *)
 
 let pvalue_binding =
   let* pat = ppattern in
@@ -154,7 +110,7 @@ let ptupleexpr =
   let* _ = token ")" in
   return (expression1, expression2, expressiontl)
  
-let pifexpr =
+let pifexpr pexpr =
   let* _ = token "if" in
   let* condition = pexpr in
   let* _ = token "then" in
@@ -166,11 +122,58 @@ let pifexpr =
   ) in
   return (condition, expression, alternative)
 
-let papplyexpr =
+let papplyexpr pexpr =
   let* func = pexpr in
   let* argument = pexpr in
   return (func, argument)
 
+let parsebinop binoptoken =
+  pass_ws *> token binoptoken *> return (fun e1 e2 -> Exp_apply (pidentexpr binoptoken, Exp_tuple(e1, e2, [])))
+;;
+
+let padd = parsebinop "+"
+let psub = parsebinop "-"
+let pdiv = parsebinop "/"
+let pmul = parsebinop "*"
+let pcompops = 
+  choice 
+    [
+      parsebinop ">";
+      parsebinop "<";
+      parsebinop ">=";
+      parsebinop "<=";
+      parsebinop "<>";
+      parsebinop "=";
+    ]
+  
+let plogops = 
+  choice 
+  [
+    parsebinop "||";
+    parsebinop "&&";
+  ]
+
+let pexpr = fix (fun expr ->
+  (* let pexpr_paren =
+    let* _ = token "(" in
+    let* e = pexpr in
+    let* _ = token ")" in
+    return e
+  in *)
+
+  let expr = choice [pconstintexpr; pconststringexpr] in 
+  let expr = papplyexpr expr <|> expr in 
+  let expr = lchain expr (pmul <|> pdiv) in
+  let expr = lchain expr (padd <|> psub) in
+  let expr = lchain expr pcompops in
+  let expr = rchain expr plogops in 
+  let expr = pifexpr expr <|> expr in
+  let expr = ptupleexpr <|> expr in 
+  let expr = pletexpr <|> expr in 
+  expr)
+;;
+
+(*                   Structure items                         *)
 
 let pseval = 
     let* expr = pexpr in
@@ -199,9 +202,6 @@ let parse_fact str =
   | Ok str -> str
   | Error msg -> failwith msg
 
-let () =
-  let function_definition = "let rec fact n = if n = 0 then 1 else n * fact (n - 1);;" in
-  parse_fact function_definition
 (* 
 
 (* Example test cases for the parser *)
