@@ -14,7 +14,7 @@ type binary_operator_parse_data =
   ; oper_ast : binary_operator
   }
 
-(**  *)
+(** Predicate to check string as keyword of Miniml *)
 let is_keyword = function
   | "true" | "false" -> true
   | "if" | "then" | "else" -> true
@@ -37,9 +37,8 @@ let element_sequence : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'b
         <|> perror (Printf.sprintf "Not found elements after separator: '%s'" sep))
   in
   skip_ws
-  *> (ssequence sep
-      >>> many (next_element sep)
-      >>= fun l -> preturn (list_converter (List.append [ start ] l)))
+  *> (assequence sep *> many (next_element sep)
+      >>| fun l -> list_converter (List.append [ start ] l))
 ;;
 
 (** Parser of keyword *)
@@ -50,16 +49,17 @@ let keyword word =
 (** Parse [Miniml.identifier] value. *)
 let ident =
   let ident_symbol = function
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
+    | 'a' .. 'z' | 'A' .. 'Z' | '_' | '\'' | '0' .. '9' -> true
     | _ -> false
   in
-  let helper = many1 (dsatisfy ident_symbol (fun c -> c)) in
-  skip_ws *> helper
-  >>= fun l ->
-  if is_digit (List.nth l 0)
+  let helper = many (dsatisfy ident_symbol Fun.id) in
+  skip_ws *> dsatisfy ident_symbol Fun.id
+  >>= fun s ->
+  if is_digit s || s = '\''
   then pfail
   else
-    preturn (string_of_char_list l)
+    helper
+    >>| (fun l -> string_of_char_list (s :: l))
     >>= fun id -> if is_keyword id then pfail else preturn id
 ;;
 
@@ -70,7 +70,7 @@ let integer =
   let rec helper counter =
     digit
     >>= (fun v -> helper (v + (counter * 10)))
-    <|> (preturn counter >>= fun v -> preturn (IntLiteral v))
+    <|> (preturn counter >>| fun v -> IntLiteral v)
   in
   skip_ws *> digit >>= helper
 ;;
@@ -79,15 +79,15 @@ let integer =
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let boolean =
-  skip_ws *> (keyword "true" >>= fun _ -> preturn (BoolLiteral true))
-  <|> (keyword "false" >>= fun _ -> preturn (BoolLiteral false))
+  skip_ws *> (keyword "true" >>| fun _ -> BoolLiteral true)
+  <|> (keyword "false" >>| fun _ -> BoolLiteral false)
 ;;
 
 (** Parser of patterns: [<pvar>] | [<ptuple>] *)
 let rec pattern_parser state = (skip_ws *> (pvariable <|> ptuple)) state
 
 (** Parser of variable pattern *)
-and pvariable state = (skip_ws *> (ident >>= fun id -> preturn (PVar id))) state
+and pvariable state = (skip_ws *> (ident >>| fun id -> PVar id)) state
 
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
@@ -98,23 +98,23 @@ and ptuple state =
     skip_ws *> pattern_parser
     >>= (fun pfirst ->
           tuple_elements pfirst
-          <|> (skip_ws *> symbol ')' >>> preturn pfirst)
+          <|> preturn pfirst
           <|> perror "Unsupported separator of tuple pattern")
     <|> preturn PUnit
   in
   (skip_ws
-   *> (symbol '(' *> brackets_subexpr <* (symbol ')' <|> perror "Not found close bracket"))
-  )
+   *> (symbol '(' *> brackets_subexpr
+       <* (skip_ws *> symbol ')' <|> perror "Not found close bracket")))
     state
 ;;
 
 (** Parser of constants expression: [integer] and [boolean]
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let const_expr = skip_ws *> integer <|> boolean >>= fun l -> preturn (Const l)
+let const_expr = skip_ws *> (integer <|> boolean) >>| fun l -> Const l
 
 (** Parser of variable expression *)
-let variable = skip_ws *> ident >>= fun s -> preturn (Variable s)
+let variable = skip_ws *> ident >>| fun s -> Variable s
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
 let rec expr state = (skip_ws *> boolean_expr) state
@@ -129,8 +129,7 @@ and basic_expr state =
 (** Parser of unary expression *)
 and unary_expr state =
   let helper =
-    symbol '+' *> basic_expr
-    <|> (symbol '-' *> skip_ws *> basic_expr >>= fun e -> preturn (Unary (Negate, e)))
+    symbol '+' *> basic_expr <|> (symbol '-' *> basic_expr >>| fun e -> Unary (Negate, e))
   in
   (skip_ws *> (helper <|> symbol '~' *> helper)) state
 
@@ -152,17 +151,13 @@ and bracket_expr state =
   in
   let tuple_expr ex = skip_ws *> expression_sequence ex (fun l -> Tuple l) "," in
   let brackets_subexpr =
-    skip_ws *> expr
-    >>= (fun ex ->
-          expr_block ex
-          <|> tuple_expr ex
-          <|> (skip_ws *> symbol ')' >>> preturn ex)
-          <|> perror "Unsupported separator of bracket expression")
-    <|> preturn (Const UnitLiteral)
+    skip_ws
+    *> (expr
+        >>= (fun ex -> expr_block ex <|> tuple_expr ex <|> preturn ex)
+        <|> preturn (Const UnitLiteral))
   in
-  (skip_ws
-   *> (symbol '(' *> brackets_subexpr
-       <* (skip_ws *> symbol ')' <|> perror "Not found close bracket")))
+  (skip_ws *> symbol '(' *> brackets_subexpr
+   <* (skip_ws *> symbol ')' <|> perror "Not found close bracket"))
     state
 
 (** Abstract parser of binary operations
@@ -173,7 +168,7 @@ and binary_expression subparser operations state =
     skip_ws
     *> ssequence oper.oper_view
     *> (subparser
-        >>= (fun right -> preturn (Binary (left, oper.oper_ast, right)))
+        >>| (fun right -> Binary (left, oper.oper_ast, right))
         <|> perror
               (Printf.sprintf
                  "Not found right operand of '%s' binary operator"
@@ -226,7 +221,7 @@ and boolean_expr state =
 
 and if_expr state =
   let else_block ex then_ex =
-    skip_ws *> (expr >>= fun else_ex -> preturn (If (ex, then_ex, Some else_ex)))
+    skip_ws *> (expr >>| fun else_ex -> If (ex, then_ex, Some else_ex))
     <|> perror "Expected expression of 'else' branch for if expression"
   in
   let then_block ex =
@@ -251,16 +246,15 @@ and if_expr state =
 and apply_expr state =
   let bin_op_checker =
     skip_ws
-    *> (one_of
-          (List.map
-             ssequence
-             [ "+"; "-"; "/"; "*"; "&&"; "||"; "<="; ">="; "<>"; "<"; ">"; "=" ])
-        >>= fun _ -> preturn ())
+    *> one_of
+         (List.map
+            assequence
+            [ "+"; "-"; "/"; "*"; "&&"; "||"; "<="; ">="; "<>"; "<"; ">"; "=" ])
   in
   let helper ex =
     many (skip_ws *> expr) >>= fun l -> preturn (if l = [] then ex else Apply (ex, l))
   in
-  (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker >>> preturn ex <|> helper ex)
+  (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker *> preturn ex <|> helper ex)
     state
 
 (** Parser of lambdas definitions *)
@@ -270,7 +264,7 @@ and lambda_expr state =
    *> (many1 (skip_ws *> pattern_parser)
        >>= (fun pl ->
              skip_ws
-             *> (ssequence "->" *> (expr >>= fun ex -> preturn (Lambda (pl, ex)))
+             *> (ssequence "->" *> (expr >>| fun ex -> Lambda (pl, ex))
                  <|> perror "Not found expression of lambda")
              <|> perror "Not found special sequence '->' of lambda definition")
        <|> perror "Not found patterns for lambda definition"))
@@ -285,8 +279,7 @@ and value_binding_parser state =
        >>= fun pl ->
        skip_ws
        *> (ssequence "="
-           *> (skip_ws *> expr
-               >>= fun ex -> preturn (if pl = [] then p, ex else p, Lambda (pl, ex)))
+           *> (skip_ws *> expr >>| fun ex -> if pl = [] then p, ex else p, Lambda (pl, ex))
            <|> perror "Not found expression of let-definition")
        <|> perror "Not found special sequence '=' of let-definition")
    <|> perror "Not found name-pattern of let-definition")
@@ -299,7 +292,7 @@ and define_expr state =
      >>= fun vb ->
      skip_ws
      *> (ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
-     *> (expr >>= fun ex -> preturn (Define ((Nonrecursive, [ vb ]), ex)))
+     *> (expr >>| fun ex -> Define ((Nonrecursive, [ vb ]), ex))
      <|> perror "Not found in-expression of let-definition")
       state
   in
@@ -314,8 +307,7 @@ and define_expr state =
      >>= fun vbl ->
      (skip_ws *> ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
      *> (expr
-         >>= fun ex ->
-         preturn (Define ((Recursive, vb :: vbl), ex))
+         >>| (fun ex -> Define ((Recursive, vb :: vbl), ex))
          <|> perror "Not found in-expression of let-definition"))
       state
   in
@@ -344,7 +336,7 @@ let define_item =
 ;;
 
 (** Parser of eval item *)
-let eval_item = skip_ws *> expr >>= fun ex -> preturn (EvalItem ex)
+let eval_item = skip_ws *> expr >>| fun ex -> EvalItem ex
 
 (** Parser of all stricture item *)
 let struct_item_parser =

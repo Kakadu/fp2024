@@ -75,14 +75,6 @@ let ( <* ) : 'a 'b. 'a parser -> 'b parser -> 'a parser =
   fun p1 p2 -> p1 >>= fun res -> p2 >>= fun _ -> preturn res
 ;;
 
-(** Check succesed parsing 'a and run 'b parsing proccess from based state *)
-let ( >>> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser =
-  fun p1 p2 s ->
-  match p1 s with
-  | (ParseFail | ParseError _) as err -> err
-  | ParseSuccess _ -> p2 s
-;;
-
 (** Parser combinator that matches [*] in regular expressions (Kleene's star) *)
 let rec many : 'a parser -> 'a list parser =
   fun p state ->
@@ -101,6 +93,14 @@ let ( <|> ) : 'a parser -> 'a parser -> 'a parser =
   match p1 state with
   | ParseFail -> p2 state
   | (ParseError _ | ParseSuccess _) as final -> final
+;;
+
+(** Parser combinator that allows to get result as one of two parser *)
+let ( >>| ) : 'a 'b. 'a parser -> ('a -> 'b) -> 'b parser =
+  fun p f state ->
+  match p state with
+  | (ParseFail | ParseError _) as err -> err
+  | ParseSuccess (value, s) -> preturn (f value) s
 ;;
 
 (** Parser combinator that allows to get result as one of [N] parsers *)
@@ -221,6 +221,16 @@ let skip_ws state =
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let digit state = satisfy is_digit int_of_digit_char None state
+
+(** Parser for checking occurrence of char sequence in input data *)
+let asequence expected =
+  sequence expected
+  >>= fun cl s ->
+  preturn () { s with input = List.append cl s.input; inline = s.inline - List.length cl }
+;;
+
+(** Parser for checking occurrence of substring in input data *)
+let assequence expected = asequence (char_list_of_string expected)
 
 (** Initialize started parser state *)
 let init_parser_state (input_string : string) =
