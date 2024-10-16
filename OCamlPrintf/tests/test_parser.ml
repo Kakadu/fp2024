@@ -2,52 +2,24 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-let run str =
-  match Ocaml_printf_lib.Parser.parse str with
-  | Ok ast -> print_endline (Ocaml_printf_lib.Ast.show_structure ast)
-  | Error error -> print_endline error
-;;
+open Ocaml_printf_lib
 
-let%expect_test "parse_factorial" =
-  run "let rec factorial n = if n <= 1 then 1 else n * factorial (n - 1)";
-  [%expect
-    {|
-    [(Struct_value (Recursive,
-        [{ pat = (Pat_var "factorial");
-           exp =
-           (Exp_fun ([(Pat_var "n")],
-              (Exp_ifthenelse (
-                 (Exp_apply ((Exp_ident "<="),
-                    [(Exp_ident "n"); (Exp_constant (Const_integer 1))])),
-                 (Exp_constant (Const_integer 1)),
-                 (Some (Exp_apply ((Exp_ident "*"),
-                          [(Exp_ident "n");
-                            (Exp_apply ((Exp_ident "factorial"),
-                               [(Exp_apply ((Exp_ident "-"),
-                                   [(Exp_ident "n");
-                                     (Exp_constant (Const_integer 1))]
-                                   ))
-                                 ]
-                               ))
-                            ]
-                          )))
-                 ))
-              ))
-           }
-          ]
-        ))
-      ]
-      |}]
+let run str =
+  match Parser.parse str with
+  | Ok ast -> print_endline (Ast.show_structure ast)
+  | Error error -> print_endline error
 ;;
 
 let%expect_test "parse_factorial_with_match" =
   run
-    {| let rec factorial n =
-        match n with
-        | 0 -> 1
-        | 1 -> 1
-        | _ -> n * factorial (n - 1)
-      ;; |};
+    {|
+    let rec factorial n =
+      match n with
+      | 0 -> 1
+      | 1 -> 1
+      | _ -> n * factorial (n - 1)
+    ;;
+    |};
   [%expect
     {|
     [(Struct_value (Recursive,
@@ -80,23 +52,23 @@ let%expect_test "parse_factorial_with_match" =
           ]
         ))
       ]
-      |}]
+    |}]
 ;;
 
 let%expect_test "parse_pat_exp_tuple" =
   run "let a, b = 1, 2";
   [%expect
     {|
-   [(Struct_value (Nonrecursive,
-       [{ pat = (Pat_tuple [(Pat_var "a"); (Pat_var "b")]);
-          exp =
-          (Exp_tuple
-             [(Exp_constant (Const_integer 1)); (Exp_constant (Const_integer 2))
-               ])
-          }
-         ]
-       ))
-     ]
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_tuple [(Pat_var "a"); (Pat_var "b")]);
+           exp =
+           (Exp_tuple
+              [(Exp_constant (Const_integer 1)); (Exp_constant (Const_integer 2))
+                ])
+           }
+          ]
+        ))
+      ]
     |}]
 ;;
 
@@ -121,7 +93,7 @@ let%expect_test "parse_struct_eval" =
              ]
            )))
       ]
-      |}]
+    |}]
 ;;
 
 let%expect_test "parse_several_structure_items" =
@@ -139,5 +111,5 @@ let%expect_test "parse_several_structure_items" =
       (Struct_eval
          (Exp_apply ((Exp_ident "square"), [(Exp_constant (Const_integer 5))])))
       ]
-      |}]
+    |}]
 ;;

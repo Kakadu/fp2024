@@ -11,7 +11,7 @@ open Angstrom
 let skip_whitespaces = skip_while Char.is_whitespace
 
 let parse_comments =
-  skip_whitespaces *> string "(*" *> many_till any_char (string "*)") *> return ()
+  skip_whitespaces *> string "(*" *> many_till any_char (string "*)") <* return ()
 ;;
 
 let ws = many parse_comments *> skip_whitespaces
@@ -55,7 +55,7 @@ let parse_ident =
 
 (* ==================== Rec_flag ==================== *)
 
-let parse_rec_flag = ws *> option Nonrecursive (string "rec" *> return Recursive)
+let parse_rec_flag = ws *> option Nonrecursive (string "rec " *> return Recursive)
 
 (* ==================== Constant ==================== *)
 
@@ -87,7 +87,7 @@ let parse_pat_var = parse_ident >>| fun var -> Pat_var var
 let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
 let parse_pat_tuple parse_pat =
-  lift2 List.cons parse_pat (many1 (ws *> string "," *> parse_pat))
+  lift2 List.cons parse_pat (many1 (ws *> string ", " *> parse_pat))
   >>| fun pat_list -> Pat_tuple pat_list
 ;;
 
@@ -105,19 +105,19 @@ let parse_pattern =
 
 (* -------------------- Operator -------------------- *)
 
-let parse_chain_left_associative parse_exp parse_fun_op =
-  let rec go acc =
-    (let* f = parse_fun_op in
-     let* x = parse_exp in
-     go (f acc x))
-    <|> return acc
+let parse_chain_left_associative (parse_exp : expression t) parse_fun_op =
+  let rec go acc_exp =
+    (let* fun_op = parse_fun_op in
+     let* cur_exp = parse_exp in
+     go (fun_op acc_exp cur_exp))
+    <|> return acc_exp
   in
-  let* init = parse_exp in
-  go init
+  let* start_exp = parse_exp in
+  go start_exp
 ;;
 
-let bin_op chain1 exp parse_op =
-  chain1 exp (parse_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
+let bin_op chain1 (parse_exp : expression t) parse_fun_op : expression t =
+  chain1 parse_exp (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
 ;;
 
 let parse_left_bin_op = bin_op parse_chain_left_associative
@@ -145,7 +145,7 @@ let parse_cases parse_exp =
   let parse_case =
     lift2
       (fun pat exp -> { left = pat; right = exp })
-      (parse_pattern <* ws <* string "->")
+      (parse_pattern <* ws <* string "-> ")
       (ws *> parse_exp)
   in
   option () (char '|' *> return ()) *> sep_by1 (ws *> char '|' *> ws) parse_case
@@ -154,21 +154,21 @@ let parse_cases parse_exp =
 let parse_exp_match parse_exp =
   lift2
     (fun expression cases -> Exp_match (expression, cases))
-    (ws *> string "match" *> ws *> parse_exp <* ws <* string "with")
+    (ws *> string "match " *> ws *> parse_exp <* ws <* string "with")
     (ws *> parse_cases parse_exp)
 ;;
 
 let parse_exp_tuple parse_exp =
-  lift2 List.cons parse_exp (many1 (ws *> string "," *> parse_exp))
+  lift2 List.cons parse_exp (many1 (ws *> string ", " *> parse_exp))
   >>| fun exp_list -> Exp_tuple exp_list
 ;;
 
 let parse_exp_ifthenelse parse_exp =
   lift3
     (fun if_ then_ else_ -> Exp_ifthenelse (if_, then_, else_))
-    (ws *> string "if" *> parse_exp)
-    (ws *> string "then" *> parse_exp)
-    (option None (ws *> string "else" >>| Option.some)
+    (ws *> string "if " *> parse_exp)
+    (ws *> string "then " *> parse_exp)
+    (option None (ws *> string "else " >>| Option.some)
      >>= function
      | None -> return None
      | Some _ -> parse_exp >>| Option.some)
@@ -205,20 +205,17 @@ let parse_fun_binding =
 ;;
 
 let parse_simple_binding =
-  lift2
-    (fun pat exp -> { pat; exp })
-    parse_pattern
-    (ws *> char '=' *> ws *> parse_expression)
+  lift2 (fun pat exp -> { pat; exp }) parse_pattern (ws *> char '=' *> parse_expression)
 ;;
 
 let parse_value_binding_list =
-  sep_by1 (ws *> string "and") (parse_fun_binding <|> parse_simple_binding)
+  sep_by1 (ws *> string "and ") (parse_fun_binding <|> parse_simple_binding)
 ;;
 
 (* ==================== Structure ==================== *)
 
 let parse_struct_value =
-  string "let"
+  string "let "
   *> lift2
        (fun rec_flag value_bindings -> Struct_value (rec_flag, value_bindings))
        parse_rec_flag
@@ -235,4 +232,4 @@ let parse_structure =
 
 (* ==================== Execute ==================== *)
 
-let parse str = parse_string ~consume:All parse_structure str
+let parse = parse_string ~consume:All parse_structure
