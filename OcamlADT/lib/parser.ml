@@ -98,34 +98,36 @@ let pletexpr =
   let* rec_flag = prec_flag in
    let* value_binding = many1  pvalue_binding in
   let* expr = pexpr in
-  return (rec_flag, value_binding, expr)
+  return (Exp_let(rec_flag, value_binding, expr))
 
 let ptupleexpr =
   let* _ = token "(" in
-  let* expression1 = pident in
+  let* expression1 = pidentexpr in
   let* _ = token ";" in
-  let* expression2 = pident in
+  let* expression2 = pidentexpr in
   let* _ = token ";" in
-  let* expressiontl = sep_by (char ';') pident in
+  let* expressiontl = sep_by (char ';') pidentexpr in
   let* _ = token ")" in
-  return (expression1, expression2, expressiontl)
+  return (Exp_tuple(expression1, expression2, expressiontl))
  
+
 let pifexpr pexpr =
   let* _ = token "if" in
   let* condition = pexpr in
   let* _ = token "then" in
-  let* expression = pexpr in
+  let* expr = pexpr in
   let* alternative = option None (
     let* _ = token "else" in
-    let expression = pexpr in
-    return (Some expression)
+    let* expr = pexpr in
+    return (Some expr)
   ) in
-  return (condition, expression, alternative)
+  return (Exp_if(condition, expr, alternative))
 
 let papplyexpr pexpr =
   let* func = pexpr in
   let* argument = pexpr in
-  return (func, argument)
+  return (Exp_apply(func, argument))
+
 
 let parsebinop binoptoken =
   pass_ws *> token binoptoken *> return (fun e1 e2 -> Exp_apply (pidentexpr binoptoken, Exp_tuple(e1, e2, [])))

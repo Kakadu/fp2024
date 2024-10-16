@@ -3,8 +3,9 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ocamladt_lib.Ast
+open Ocamladt_lib.Parser
 
-let () =
+(* let () =
   let factorial_ast : program =
     [ Str_value
         ( Recursive
@@ -38,5 +39,6 @@ let () =
           ] )
     ]
   in
-  print_endline (show_program factorial_ast)
-;;
+  print_endline (show_program factorial_ast) *)
+
+  let () = print_endline( ((parse_fact "let rec fact n = if n = 0 then 1 else n * fact (n - 1);;") |> fun _-> "hhh"))
