@@ -21,7 +21,9 @@ let run_single options =
         Stdlib.exit 1)
     else Stdlib.String.trim (In_channel.input_all stdin)
   in
-  if options.dump_parsetree then Stdlib.Format.printf "%s\n" (parse_result text) else ()
+  if options.dump_parsetree
+  then Stdlib.Format.printf "%s\n" (parse_to_string text)
+  else ()
 ;;
 
 let () =

@@ -5,36 +5,36 @@
 open OCamlRV_lib.Parser
 
 (* if-then-else tests *)
-let%test _ = test_parse "if x then y else z"
-let%test _ = test_parse "if 5 > 3 then true else false"
-let%test _ = test_parse "if a then b else c"
-let%test _ = test_parse "if x then 1 + 2 else 3"
-let%test _ = test_parse "if true then false else true"
+let%test _ = parse_to_bool "if x then y else z"
+let%test _ = parse_to_bool "if 5 > 3 then true else false"
+let%test _ = parse_to_bool "if a then b else c"
+let%test _ = parse_to_bool "if x then 1 + 2 else 3"
+let%test _ = parse_to_bool "if true then false else true"
 
 (* unary operator tests *)
-let%test _ = test_parse "- 5"
-let%test _ = test_parse "- x"
-let%test _ = test_parse "+ 5"
-let%test _ = test_parse "+ x"
-let%test _ = test_parse "notx"
+let%test _ = parse_to_bool "- 5"
+let%test _ = parse_to_bool "- x"
+let%test _ = parse_to_bool "+ 5"
+let%test _ = parse_to_bool "+ x"
+let%test _ = parse_to_bool "notx"
 
 (* number tests *)
-let%test _ = test_parse "-5"
-let%test _ = test_parse "2134324"
-let%test _ = test_parse "-525"
-let%test _ = test_parse "true"
-let%test _ = test_parse "false"
+let%test _ = parse_to_bool "-5"
+let%test _ = parse_to_bool "2134324"
+let%test _ = parse_to_bool "-525"
+let%test _ = parse_to_bool "true"
+let%test _ = parse_to_bool "false"
 
 (* binary operator tests *)
-let%test _ = test_parse "5 + 5"
-let%test _ = test_parse "5+5"
-let%test _ = test_parse "2 - 3"
-let%test _ = test_parse " 2 -2 -2"
-let%test _ = test_parse "4 * 4"
+let%test _ = parse_to_bool "5 + 5"
+let%test _ = parse_to_bool "5+5"
+let%test _ = parse_to_bool "2 - 3"
+let%test _ = parse_to_bool " 2 -2 -2"
+let%test _ = parse_to_bool "4 * 4"
 
 (* Factorial test *)
 let%expect_test _ =
-  check_parse "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
+  parse_to_unit "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
   [%expect
     {|
 [(SValue (Rec,

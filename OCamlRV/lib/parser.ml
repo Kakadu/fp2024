@@ -6,6 +6,8 @@ open Angstrom
 open Ast
 open Base
 
+let is_idc c = Char.is_alphanum c || Char.equal c '_'
+
 let is_letter = function
   | 'a' .. 'z' -> true
   | 'A' .. 'Z' -> true
@@ -35,42 +37,52 @@ let is_keyword = function
 let ws = take_while Char.is_whitespace
 let token s = ws *> string s
 
-(* Number of parser *)
-let pnumber =
-  let* sign = choice [ token "-"; token "+"; token "" ] in
-  let* digits = take_while1 is_digit in
-  return (Int.of_string (sign ^ digits))
-;;
-
-(* Parser of literals *)
-let pliteral =
-  choice
-    [ (let* n = pnumber in
-       return (ExprLiteral (IntLiteral n)))
-    ; token "true" *> return (ExprLiteral (BoolLiteral true))
-    ; token "false" *> return (ExprLiteral (BoolLiteral false))
-    ; token "()" *> return (ExprLiteral UnitLiteral)
-    ; token "nil" *> return (ExprLiteral NilLiteral)
-    ]
-;;
-
-(* Parser of patterns *)
-let ppattern =
-  let* p = take_while1 is_letter in
-  return p
-;;
-
-(* Parser of identifiers *)
 let id =
   let* first_char = satisfy is_letter in
   let* rest = take_while (fun c -> is_letter c || is_digit c || Char.equal c '_') in
   return (String.make 1 first_char ^ rest)
 ;;
 
-let is_idc c = Char.is_alphanum c || Char.equal c '_'
+let chainl1 e op =
+  let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
+  e >>= go
+;;
 
-(* Parser of variables *)
-let pvariable =
+(*--------------------------- Literals ---------------------------*)
+
+let integer =
+  let* sign = choice [ token "-"; token "+"; token "" ] in
+  let* digits = take_while1 is_digit in
+  return (Int.of_string (sign ^ digits))
+;;
+
+let pinteger = integer >>| fun i -> IntLiteral i
+
+let pbool =
+  let t = token "true" *> return (BoolLiteral true) in
+  let f = token "false" *> return (BoolLiteral false) in
+  choice [ t; f ]
+;;
+
+let pstring =
+  token "\""
+  *> take_while (function
+    | '"' -> false
+    | _ -> true)
+  <* char '"'
+  >>| fun s -> StringLiteral s
+;;
+
+let punit = token "()" *> return UnitLiteral
+let pnil = token "[]" *> return NilLiteral
+let pliteral = choice [ pinteger; pbool; pstring; punit; pnil ]
+
+(*--------------------------- Patterns ---------------------------*)
+
+let ppany = token "_" *> return PAny
+let ppliteral = pliteral >>| fun a -> PLiteral a
+
+let variable =
   let* fst =
     ws
     *> satisfy (function
@@ -81,129 +93,108 @@ let pvariable =
   match String.of_char fst ^ rest with
   | "_" -> fail "Wildcard can't be used as indetifier"
   | s when is_keyword s -> fail "Keyword can't be used as identifier"
-  | _ as name -> return (ExprVariable name)
+  | name -> return name
 ;;
 
-(* Parser of binary operators *)
-let pbinop =
+let ppvariable = variable >>| fun v -> PVar v
+let pparens p = token "(" *> p <* token ")"
+let pattern = fix (fun pat -> choice [ ppany; ppliteral; ppvariable; pparens pat ])
+
+(* need to add parsers for PTuple; PCons; PPoly *)
+
+(*--------------------------- Expressions ---------------------------*)
+
+let ebinop op e1 e2 = ExprBinOperation (op, e1, e2)
+let eapply e1 e2 = ExprApply (e1, e2)
+let elet f b e = ExprLet (f, b, e)
+let efun p e = ExprFun (p, e)
+let eif e1 e2 e3 = ExprIf (e1, e2, e3)
+let pevar = variable >>| fun v -> ExprVariable v
+let peliteral = pliteral >>| fun l -> ExprLiteral l
+let padd = token "+" *> return (ebinop Add)
+let psub = token "-" *> return (ebinop Sub)
+let pmul = token "*" *> return (ebinop Mul)
+let pdiv = token "/" *> return (ebinop Div)
+
+let pcmp =
   choice
-    [ token "<>" *> return Neq
-    ; token "&&" *> return And
-    ; token "||" *> return Or
-    ; token ">=" *> return Gte
-    ; token "<=" *> return Lte
-    ; token "+" *> return Add
-    ; token "-" *> return Sub
-    ; token "*" *> return Mul
-    ; token "/" *> return Div
-    ; token "<" *> return Lt
-    ; token ">" *> return Gt
-    ; token "=" *> return Eq
+    [ token "=" *> return (ebinop Eq)
+    ; token "<>" *> return (ebinop Neq)
+    ; token "<=" *> return (ebinop Lte)
+    ; token ">=" *> return (ebinop Gte)
+    ; token "<" *> return (ebinop Lt)
+    ; token ">" *> return (ebinop Gt)
+    ; token "&&" *> return (ebinop And)
+    ; token "||" *> return (ebinop Or)
     ]
 ;;
 
-(* Parser of unary operators *)
-let punop pexpression =
-  let* op = choice [ token "+"; token "-"; token "not" ] in
-  let* expr = pexpression in
-  match op with
-  | "+" -> return (ExprUnOperation (UnaryPlus, expr))
-  | "-" -> return (ExprUnOperation (UnaryMinus, expr))
-  | "not" -> return (ExprUnOperation (UnaryNeg, expr))
-  | _ -> fail "unsupported unary operator"
+let efunf ps e = List.fold_right ps ~f:efun ~init:e
+
+let pelet pe =
+  lift3
+    elet
+    (token "let" *> option NonRec (token "rec" *> return Rec))
+    (both pattern (lift2 efunf (many pattern <* token "=") pe))
+    (token "in" *> pe)
 ;;
 
-(* Parser of if-then-else *)
-let pif pexpression =
-  let* _ = token "if" in
-  let* cond = pexpression in
-  let* _ = token "then" in
-  let* then_expr = pexpression in
-  let* _ = token "else" in
-  let* else_expr = pexpression in
-  return (ExprIf (cond, then_expr, Some else_expr))
+let pefun pe =
+  lift2 efun (token "fun" *> pattern) (lift2 efunf (many pattern <* token "->") pe)
 ;;
 
-let parse_rec_flag = ws *> option NonRec (token "rec" *> return Rec)
-
-let primary_expr pexpression =
-  choice [ pliteral; pif pexpression; punop pexpression; pvariable ]
+let peif pe =
+  fix (fun peif ->
+    lift3
+      eif
+      (token "if" *> (peif <|> pe))
+      (token "then" *> (peif <|> pe))
+      (option None (token "else" *> (peif <|> pe) >>| Option.some)))
 ;;
 
-let papply pexpression =
-  let* expr1 = primary_expr pexpression in
-  ws
-  *>
-  let* expr2 = pexpression in
-  return (ExprApply (expr1, expr2))
+let expr =
+  fix (fun expr ->
+    let term = choice [ pevar; peliteral; pparens expr ] in
+    let apply = chainl1 term (return eapply) in
+    let ops1 = chainl1 apply (pmul <|> pdiv) in
+    let ops2 = chainl1 ops1 (padd <|> psub) in
+    let cmp = chainl1 ops2 pcmp in
+    let ife = peif cmp <|> cmp in
+    choice [ pelet expr; pefun expr; ife ])
 ;;
 
-(* Parser of binary expressions *)
-let pexpr_with_binop pexpression =
-  let* _ = ws *> option None (token "(" *> return None) in
-  ws
-  *>
-  let* left = primary_expr pexpression in
-  let* op_opt = option None (pbinop >>| fun op -> Some op) in
-  ws
-  *>
-  match op_opt with
-  | None -> return left
-  | Some op ->
-    ws
-    *>
-    let* right = pexpression in
-    let* _ = ws *> option None (token ")" *> return None) in
-    return (ExprBinOperation (op, left, right))
-;;
+(*--------------------------- Structure ---------------------------*)
 
-(* Main parser of expressions *)
-let pexpression = fix (fun p -> choice [ papply p; pexpr_with_binop p; primary_expr p ])
-
-(* Main parser of structures *)
 let pstructure =
+  let pseval = expr >>| fun e -> SEval e in
   let psvalue =
-    let* _ = token "let" in
-    let* rec_flag = parse_rec_flag in
-    ws
-    *>
-    let* id = id in
-    ws
-    *>
-    let* p = ppattern in
-    ws
-    *>
-    let* _ = token "=" in
-    ws
-    *>
-    let* expr = pexpression in
-    return
-      (SValue
-         ( rec_flag
-         , [ PLiteral (StringLiteral id), ExprFun (PLiteral (StringLiteral p), [], expr) ]
-         ))
+    lift2
+      (fun f b -> SValue (f, b))
+      (token "let" *> option NonRec (token "rec" *> return Rec))
+      (both pattern (lift2 efunf (many pattern <* token "=") expr))
   in
-  let pseval = pexpression >>| fun e -> SEval e in
-  choice [ psvalue; pseval ]
+  choice [ pseval; psvalue ]
 ;;
 
 let structure : structure t = sep_by (token ";;") pstructure
 let parse s = parse_string ~consume:Prefix structure s
 
-let test_parse input =
+(* Parsers [!!вынести в другое место!!] *)
+
+let parse_to_string input =
   match parse input with
-  | Ok _ -> true
-  | Error _ -> false
+  | Ok structure -> show_structure structure
+  | Error err -> err
 ;;
 
-let check_parse input =
+let parse_to_unit input =
   match parse input with
   | Ok structure -> Stdlib.Format.printf "%s\n" (show_structure structure)
   | Error err -> Stdlib.Format.printf "%s\n" err
 ;;
 
-let parse_result input =
+let parse_to_bool input =
   match parse input with
-  | Ok structure -> show_structure structure
-  | Error err -> err
+  | Ok _ -> true
+  | Error _ -> false
 ;;
