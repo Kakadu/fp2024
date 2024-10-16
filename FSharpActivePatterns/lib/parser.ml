@@ -28,13 +28,13 @@ let rec unary_chain op e =
 
 (* SIMPLE PARSERS *)
 let p_int =
-  skip_ws *> take_while1 Char.is_digit >>| fun s -> Const (Int_lt (int_of_string s))
+  skip_ws *> take_while1 Char.is_digit >>| fun s -> Const (Int_lt (Int.of_string s))
 ;;
 
 let p_bool =
   skip_ws *> string "true"
   <|> string "false"
-  >>| fun s -> Const (Bool_lt (bool_of_string s))
+  >>| fun s -> Const (Bool_lt (Bool.of_string s))
 ;;
 
 let is_keyword = function
@@ -120,7 +120,7 @@ let p_letin p_expr =
          (p_ident >>= fun ident -> return (Some ident) <|> return None)
          (many (skip_ws *> p_var)
           >>= fun args ->
-          if not (List.length args == 0) then return (Some args) else return None)
+          if not (List.length args = 0) then return (Some args) else return None)
          (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_letin))
     <*> skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_letin))
 ;;
@@ -135,7 +135,7 @@ let p_let p_expr =
        p_ident
        (skip_ws *> many (skip_ws *> p_var)
         >>= fun args ->
-        if not (List.length args == 0) then return (Some args) else return None)
+        if not (List.length args = 0) then return (Some args) else return None)
        (skip_ws *> string "=" *> skip_ws *> p_expr)
 ;;
 
