@@ -28,17 +28,13 @@ let is_keyword = function
     - [element_parser]: parser of one element in sequence
     - [list_converter]: coverter of elements sequence to one new element
     - [separator]: char sequence which splitted sequence elements *)
-let element_sequence : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'b parser =
-  fun start element_parser list_converter sep ->
-  let next_element sep =
-    skip_ws
-    *> ssequence sep
-    *> (element_parser
-        <|> perror (Printf.sprintf "Not found elements after separator: '%s'" sep))
-  in
+let element_sequence
+  : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'a parser -> 'b parser
+  =
+  fun start element_parser list_converter sep pnotfound ->
+  let next_element sep = skip_ws *> ssequence sep *> (element_parser <|> pnotfound) in
   skip_ws
-  *> (assequence sep *> many (next_element sep)
-      >>| fun l -> list_converter (List.append [ start ] l))
+  *> (many (next_element sep) >>| fun l -> list_converter (List.append [ start ] l))
 ;;
 
 (** Parser of keyword *)
@@ -92,14 +88,17 @@ and pvariable state = (skip_ws *> (ident >>| fun id -> PVar id)) state
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
   let tuple_elements pfirst =
-    skip_ws *> element_sequence pfirst pattern_parser (fun l -> PTuple l) ","
+    skip_ws
+    *> element_sequence
+         pfirst
+         pattern_parser
+         (fun l -> PTuple l)
+         ","
+         (perror "Not found expression after tuple separator: ','")
   in
   let brackets_subexpr =
     skip_ws *> pattern_parser
-    >>= (fun pfirst ->
-          tuple_elements pfirst
-          <|> preturn pfirst
-          <|> perror "Unsupported separator of tuple pattern")
+    >>= (fun pfirst -> tuple_elements pfirst <|> preturn pfirst)
     <|> preturn PUnit
   in
   (skip_ws
@@ -117,46 +116,65 @@ let const_expr = skip_ws *> (integer <|> boolean) >>| fun l -> Const l
 let variable = skip_ws *> ident >>| fun s -> Variable s
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
-let rec expr state = (skip_ws *> boolean_expr) state
+let rec expr state = (skip_ws *> block_expr) state
+
+(** Parser of expression block *)
+and block_expr state =
+  let helper ex =
+    element_sequence
+      ex
+      tuple_expr
+      (function
+        | ex :: [] -> ex
+        | _ as l -> ExpressionBlock l)
+      ";"
+      pfail
+    >>= fun block ->
+    assequence ";;" *> preturn block <|> ssequence ";" *> preturn block <|> preturn block
+  in
+  (skip_ws *> (tuple_expr >>= helper)) state
+
+(** Parser of tuple expression *)
+and tuple_expr state =
+  let helper ex =
+    element_sequence
+      ex
+      boolean_expr
+      (function
+        | ex :: [] -> ex
+        | _ as l -> Tuple l)
+      ","
+      (perror "Not found expression after tuple separator: ','")
+  in
+  (skip_ws *> (boolean_expr >>= helper)) state
 
 (** Parser of applyable expressions *)
-and applyable_expr state = (skip_ws *> lambda_expr <|> variable <|> bracket_expr) state
+and applyable_expr state = (skip_ws *> lambda_expr <|> variable) state
 
 (** Parser of basic expressions: [<unary>] | [<if-expr>] | [<apply-expr>] | [<const>] *)
-and basic_expr state =
-  (skip_ws *> unary_expr <|> if_expr <|> apply_expr <|> const_expr) state
+and basic_expr inapply state =
+  (skip_ws *> unary_expr inapply
+   <|> bracket_expr
+   <|> if_expr
+   <|> (if inapply then applyable_expr else apply_expr)
+   <|> const_expr)
+    state
 
 (** Parser of unary expression *)
-and unary_expr state =
+and unary_expr inapply state =
   let helper =
-    symbol '+' *> basic_expr <|> (symbol '-' *> basic_expr >>| fun e -> Unary (Negate, e))
+    symbol '+' *> basic_expr inapply
+    <|> (symbol '-' *> basic_expr inapply >>| fun e -> Unary (Negate, e))
   in
   (skip_ws *> (helper <|> symbol '~' *> helper)) state
 
-(** Parser of expression sequence:
-    - [start]: first element of sequence
-    - [converter]: coverter of elements sequence to one new element
-    - [separator]: char sequence which splitted sequence elements *)
-and expression_sequence start converter separator =
-  element_sequence start expr converter separator
+and state = skip_ws
 
 (** Parser of brackets expression:
     - unit: [()]
-    - one expression: [(<expr>)]
-    - expression block: [(<expr>; ...; <expr>)]
-    - tuple: [(<expr>, ..., <expr>)] *)
+    - else: [(<expr>)] *)
 and bracket_expr state =
-  let expr_block ex =
-    skip_ws *> expression_sequence ex (fun l -> ExpressionBlock l) ";"
-  in
-  let tuple_expr ex = skip_ws *> expression_sequence ex (fun l -> Tuple l) "," in
-  let brackets_subexpr =
-    skip_ws
-    *> (expr
-        >>= (fun ex -> expr_block ex <|> tuple_expr ex <|> preturn ex)
-        <|> preturn (Const UnitLiteral))
-  in
-  (skip_ws *> symbol '(' *> brackets_subexpr
+  (skip_ws *> symbol '(' *> (expr <|> preturn (Const UnitLiteral))
    <* (skip_ws *> symbol ')' <|> perror "Not found close bracket"))
     state
 
@@ -182,7 +200,7 @@ and binary_expression subparser operations state =
 (** Parser of binary expressions such as [<expr> * <expr>] and [<expr> / <expr>] *)
 and multiply_expr state =
   binary_expression
-    basic_expr
+    (basic_expr false)
     [ { oper_view = "*"; oper_ast = Multiply }; { oper_view = "/"; oper_ast = Division } ]
     state
 
@@ -252,7 +270,8 @@ and apply_expr state =
             [ "+"; "-"; "/"; "*"; "&&"; "||"; "<="; ">="; "<>"; "<"; ">"; "=" ])
   in
   let helper ex =
-    many (skip_ws *> expr) >>= fun l -> preturn (if l = [] then ex else Apply (ex, l))
+    many (skip_ws *> basic_expr true)
+    >>= fun l -> preturn (if l = [] then ex else Apply (ex, l))
   in
   (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker *> preturn ex <|> helper ex)
     state
