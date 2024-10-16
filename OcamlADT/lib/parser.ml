@@ -1,7 +1,7 @@
 open Ast
 open Angstrom
 open Base
-
+open Char
 
 (*                   Auxiliary parsers                     *)
 
@@ -12,6 +12,7 @@ let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = pass_ws *> string s
+let pparens stmt = token "(" *> stmt <* token ")"
 let pdsemicolon = 
   let* str_part = take_while (function ';' -> false | _ -> true) in  
   let* semi_part = peek_char in  (* Peek to see if we have encountered `;` *)
@@ -33,19 +34,18 @@ let pident =
 let pconstintexpr = 
   let* sign = choice [ token "+"; token "-"; token " "] in 
   let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
-  return (Exp_constant(Const_integer (int_of_string (sign ^ n))))
+  return (Exp_constant (Const_integer (int_of_string (sign ^ n))))
 
-(* let pconstchar =   
+let pconstcharexpr =   
   let* _ = token "'" in 
-  let* c = satisfy (fun code -> Char.code(code) >= Char.code ' ' && Char.code code <= Char.code '~') in
+  let* c = satisfy (fun code -> code >= ' ' && code <= '~') in 
   let* _ = token "'" in 
-  return (Const_char (c))
-;; *)
+  return (Exp_constant(Const_char c))
 
 let pconststringexpr = 
   let* _ = token "\"" in
   let* str = take_while1 (function '"' -> false | _ -> true) in 
-  return (Exp_constant(Const_string (str)))
+  return (Exp_constant(Const_string str))
 
 (*                   Arithm utils + ident parser                         *)
 let lchain p op =
@@ -109,7 +109,6 @@ let ptupleexpr =
   let* expressiontl = sep_by (char ';') pidentexpr in
   let* _ = token ")" in
   return (Exp_tuple(expression1, expression2, expressiontl))
- 
 
 let pifexpr pexpr =
   let* _ = token "if" in
@@ -128,6 +127,13 @@ let papplyexpr pexpr =
   let* argument = pexpr in
   return (Exp_apply(func, argument))
 
+let pfunexpr pexpr = 
+  lift3
+    (fun first_pattern rest_patterns body_expr -> 
+      Exp_fun (first_pattern, rest_patterns, body_expr))
+    (token "fun" *> ppattern)
+    (many ppattern)
+    (token "->" *> pexpr)
 
 let parsebinop binoptoken =
   let* op = pass_ws *> token binoptoken in  (* Capture the operator from binoptoken *)
@@ -148,7 +154,7 @@ let pcompops =
       parsebinop "<>";
       parsebinop "=";
     ]
-  
+
 let plogops = 
   choice 
   [
@@ -157,14 +163,7 @@ let plogops =
   ]
 
 let pexpr = fix (fun expr ->
-  (* let pexpr_paren =
-    let* _ = token "(" in
-    let* e = pexpr in
-    let* _ = token ")" in
-    return e
-  in *)
-
-  let expr = choice [pconstintexpr; pconststringexpr] in 
+  let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in 
   let expr = papplyexpr expr <|> expr in 
   let expr = lchain expr (pmul <|> pdiv) in
   let expr = lchain expr (padd <|> psub) in
@@ -172,7 +171,8 @@ let pexpr = fix (fun expr ->
   let expr = rchain expr plogops in 
   let expr = pifexpr expr <|> expr in
   let expr = ptupleexpr <|> expr in 
-  let expr = pletexpr expr <|> expr in 
+  let expr = pletexpr expr <|> expr in
+  let expr = pfunexpr expr <|> expr in 
   expr)
 ;;
 
@@ -185,7 +185,7 @@ let pseval =
 let psvalue = 
   (* we cant use let+ bc previous results are necessary *)
   let* rec_flag = prec_flag in
-  let* value_binding = many pvalue_binding in 
+  let* value_binding = many (pvalue_binding pexpr) in 
   return (Str_value (rec_flag, value_binding))
 
 (** It applies Str_eval to output of expression parser *)
