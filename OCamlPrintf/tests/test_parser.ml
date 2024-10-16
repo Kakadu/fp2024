@@ -55,7 +55,7 @@ let%expect_test "parse_factorial_with_match" =
     |}]
 ;;
 
-let%expect_test "parse_pat_exp_tuple" =
+let%expect_test "parse_pat_exp_tuples" =
   run "let a, b = 1, 2";
   [%expect
     {|
@@ -93,6 +93,22 @@ let%expect_test "parse_struct_eval" =
              ]
            )))
       ]
+    |}]
+;;
+
+let%expect_test "parse_exp_let" =
+  run "1 + let a = 1 in a";
+  [%expect
+    {|
+      [(Struct_eval
+          (Exp_apply ((Exp_ident "+"),
+             [(Exp_constant (Const_integer 1));
+               (Exp_let (Nonrecursive,
+                  [{ pat = (Pat_var "a"); exp = (Exp_constant (Const_integer 1)) }],
+                  (Exp_ident "a")))
+               ]
+             )))
+        ]
     |}]
 ;;
 
