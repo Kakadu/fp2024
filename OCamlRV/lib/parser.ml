@@ -6,18 +6,7 @@ open Angstrom
 open Ast
 open Base
 
-let is_idc c = Char.is_alphanum c || Char.equal c '_'
-
-let is_letter = function
-  | 'a' .. 'z' -> true
-  | 'A' .. 'Z' -> true
-  | _ -> false
-;;
-
-let is_digit = function
-  | '0' .. '9' -> true
-  | _ -> false
-;;
+let is_id c = Char.is_alphanum c || Char.equal c '_'
 
 let is_keyword = function
   | "let"
@@ -37,12 +26,6 @@ let is_keyword = function
 let ws = take_while Char.is_whitespace
 let token s = ws *> string s
 
-let id =
-  let* first_char = satisfy is_letter in
-  let* rest = take_while (fun c -> is_letter c || is_digit c || Char.equal c '_') in
-  return (String.make 1 first_char ^ rest)
-;;
-
 let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
   e >>= go
@@ -52,7 +35,7 @@ let chainl1 e op =
 
 let integer =
   let* sign = choice [ token "-"; token "+"; token "" ] in
-  let* digits = take_while1 is_digit in
+  let* digits = take_while1 Char.is_digit in
   return (Int.of_string (sign ^ digits))
 ;;
 
@@ -89,7 +72,7 @@ let variable =
       | 'a' .. 'z' | '_' -> true
       | _ -> false)
   in
-  let* rest = take_while is_idc in
+  let* rest = take_while is_id in
   match String.of_char fst ^ rest with
   | "_" -> fail "Wildcard can't be used as indetifier"
   | s when is_keyword s -> fail "Keyword can't be used as identifier"
@@ -129,12 +112,13 @@ let pcmp =
     ]
 ;;
 
+let parse_rec_flag = option NonRec (token "rec" *> return Rec)
 let efunf ps e = List.fold_right ps ~f:efun ~init:e
 
 let pelet pe =
   lift3
     elet
-    (token "let" *> option NonRec (token "rec" *> return Rec))
+    (token "let" *> parse_rec_flag)
     (both pattern (lift2 efunf (many pattern <* token "=") pe))
     (token "in" *> pe)
 ;;
@@ -170,7 +154,7 @@ let pstructure =
   let psvalue =
     lift2
       (fun f b -> SValue (f, b))
-      (token "let" *> option NonRec (token "rec" *> return Rec))
+      (token "let" *> parse_rec_flag)
       (both pattern (lift2 efunf (many pattern <* token "=") expr))
   in
   choice [ pseval; psvalue ]
