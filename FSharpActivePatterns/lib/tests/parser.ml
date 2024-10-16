@@ -21,7 +21,7 @@ let%expect_test "parse logical expression" =
     ----| Const(Int: 8)
     --| Binary expr(
     --| Logical And
-    ----| Variable(true)
+    ----| Const(Bool: true)
     ----| Binary expr(
     ----| Binary Unequal
     ------| Const(Int: 5)
@@ -33,39 +33,43 @@ let%expect_test "parse integer expression" =
   print_p_res (parse input);
   [%expect
     {|
-    | Binary expr(
-    | Binary Subtract
+    | Function Call:
+      FUNCTION
     --| Binary expr(
     --| Binary Add
     ----| Const(Int: 3)
     ----| Const(Int: 5)
-    --| Binary expr(
-    --| Binary Divide
-    ----| Const(Int: 12)
-    ----| Const(Int: 7) |}]
+      ARGS
+    --| Unary expr(
+    --| Unary minus
+    ----| Binary expr(
+    ----| Binary Divide
+    ------| Const(Int: 12)
+    ------| Const(Int: 7) |}]
 ;;
 
-(*
-   let%expect_test "parse_unary_chain" =
+let%expect_test "parse_unary_chain" =
   let input = "not not ( not true && false || 3 > 5)" in
   let result = parse input in
-  print_construction result;
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.(fun) in file "lib/tests/parser.ml", line 52, characters 15-26
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
-  : end_of_input |}]
-;; *)
+  print_p_res result;
+  [%expect{|
+    | Unary expr(
+    | Unary negative
+    --| Unary expr(
+    --| Unary negative
+    ----| Binary expr(
+    ----| Logical Or
+    ------| Binary expr(
+    ------| Logical And
+    --------| Unary expr(
+    --------| Unary negative
+    ----------| Const(Bool: true)
+    --------| Const(Bool: false)
+    ------| Binary expr(
+    ------| Binary Greater
+    --------| Const(Int: 3)
+    --------| Const(Int: 5) |}]
+;;
 
 let%expect_test "parse if with comparison" =
   let input = "if 3 > 2 && false then 5 + 7 else 12" in
@@ -80,7 +84,7 @@ let%expect_test "parse if with comparison" =
     ----| Binary Greater
     ------| Const(Int: 3)
     ------| Const(Int: 2)
-    ----| Variable(false)
+    ----| Const(Bool: false)
       THEN BRANCH
     ----| Binary expr(
     ----| Binary Add

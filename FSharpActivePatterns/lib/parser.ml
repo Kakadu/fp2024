@@ -22,13 +22,33 @@ let chainl1 e op =
   e >>= go
 ;;
 
+let rec unary_chain op e =
+  op >>= (fun unexpr -> unary_chain op e >>= fun expr -> return (unexpr expr)) <|> e
+;;
+
 (* SIMPLE PARSERS *)
 let p_int =
   skip_ws *> take_while1 Char.is_digit >>| fun s -> Const (Int_lt (int_of_string s))
 ;;
 
+let p_bool =
+  skip_ws *> string "true"
+  <|> string "false"
+  >>| fun s -> Const (Bool_lt (bool_of_string s))
+;;
+
 let is_keyword = function
-  | "if" | "then" | "else" | "let" | "in" -> true
+  | "if"
+  | "then"
+  | "else"
+  | "let"
+  | "in"
+  | "not"
+  | "true"
+  | "false"
+  | "fun"
+  | "match"
+  | "with" -> true
   | _ -> false
 ;;
 
@@ -50,11 +70,18 @@ let p_var = p_ident >>| fun ident -> Variable ident
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
 let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2) [@@inline always]
+let make_unexpr op expr = Unary_expr (op, expr) [@@inline always]
 
-let p_binexpr binop constr =
-  skip_ws *> string binop *> skip_ws *> return (make_binexpr constr)
+let p_binexpr binop_str binop =
+  skip_ws *> string binop_str *> skip_ws *> return (make_binexpr binop)
 ;;
 
+let p_unexpr unop_str unop =
+  skip_ws *> string unop_str *> skip_ws *> return (make_unexpr unop)
+;;
+
+let p_not = p_unexpr "not" Unary_not
+let unminus = p_unexpr "-" Unary_minus
 let add = p_binexpr "+" Binary_add
 let sub = p_binexpr "-" Binary_subtract
 let mul = p_binexpr "*" Binary_multiply
@@ -120,8 +147,9 @@ let p_apply expr =
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
-    let atom = choice [ p_var; p_int; p_parens p_expr ] in
-    let app = p_apply atom in
+    let atom = choice [ p_var; p_int; p_bool; p_parens p_expr ] in
+    let unary = choice [ unary_chain p_not atom; unary_chain unminus atom ] in
+    let app = p_apply unary in
     let factor = chainl1 app (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let comp_eq = chainl1 term (equal <|> unequal) in

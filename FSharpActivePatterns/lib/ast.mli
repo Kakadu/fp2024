@@ -33,7 +33,7 @@ type binary_operator =
 
 type unary_operator =
   | Unary_minus (** unary [-] *)
-  | Unary_negative (** unary [not] *)
+  | Unary_not (** unary [not] *)
 [@@deriving eq, show { with_path = false }]
 
 type pattern =
