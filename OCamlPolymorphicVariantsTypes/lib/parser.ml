@@ -278,7 +278,7 @@ and apply_expr state =
   in
   let helper ex =
     many (skip_ws *> basic_expr true)
-    >>= fun l -> preturn (if l = [] then ex else Apply (ex, l))
+    >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
   in
   (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker *> preturn ex <|> helper ex)
     state
@@ -305,7 +305,8 @@ and value_binding_parser state =
        >>= fun pl ->
        skip_ws
        *> (ssequence "="
-           *> (skip_ws *> expr >>| fun ex -> if pl = [] then p, ex else p, Lambda (pl, ex))
+           *> (skip_ws *> expr
+               >>| fun ex -> if is_empty pl then p, ex else p, Lambda (pl, ex))
            <|> perror "Not found expression of let-definition")
        <|> perror "Not found special sequence '=' of let-definition binding expresssion")
    <|> perror "Not found name-pattern of let-definition")
