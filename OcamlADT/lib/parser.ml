@@ -1,7 +1,11 @@
+(** Copyright 2024-2025, Rodion Suvorov, Mikhail Gavrilenko *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ast
 open Angstrom
 open Base
-
+open Char
 
 (*                   Auxiliary parsers                     *)
 
@@ -12,6 +16,7 @@ let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = pass_ws *> string s
+let pparens stmt = token "(" *> stmt <* token ")"
 let pdsemicolon = 
   let* str_part = take_while (function ';' -> false | _ -> true) in  
   let* semi_part = peek_char in  (* Peek to see if we have encountered `;` *)
@@ -25,27 +30,30 @@ let ptowhitespace = function 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' -> true | _ ->
 
 
 let pident =
-  let* first = pletters in
-  let* rest = take_while ptowhitespace in
-  return ((String.make 1 first) ^ rest)
+  lift2 (fun first rest -> (String.make 1 first) ^ rest)
+    pletters
+    (take_while ptowhitespace)
+
 
 (*                   Constant expressions                         *)
-let pconstintexpr = 
-  let* sign = choice [ token "+"; token "-"; token " "] in 
-  let* n = take_while1 (function '0' .. '9' -> true | _ -> false) in
-  return (Exp_constant(Const_integer (int_of_string (sign ^ n))))
+let pconstintexpr =
+  let parse_sign = choice [ token "+"; token "-"; token " "] in
+  let parse_number = take_while1 (function '0' .. '9' -> true | _ -> false) in
+  lift2 (fun sign n -> Exp_constant (Const_integer (int_of_string (sign ^ n))))
+    parse_sign
+    parse_number
 
-(* let pconstchar =   
+
+let pconstcharexpr =   
   let* _ = token "'" in 
-  let* c = satisfy (fun code -> Char.code(code) >= Char.code ' ' && Char.code code <= Char.code '~') in
+  let* c = satisfy (fun code -> code >= ' ' && code <= '~') in 
   let* _ = token "'" in 
-  return (Const_char (c))
-;; *)
+  return (Exp_constant(Const_char c))
 
 let pconststringexpr = 
-  let* _ = token "\"" in
-  let* str = take_while1 (function '"' -> false | _ -> true) in 
-  return (Exp_constant(Const_string (str)))
+  token "\"" *> lift 
+    (fun str -> Exp_constant(Const_string str)) 
+    (take_while1 (function '"' -> false | _ -> true))
 
 (*                   Arithm utils + ident parser                         *)
 let lchain p op =
@@ -69,36 +77,29 @@ let lchain p op =
     let* x = p in
     loop x
 
-let pidentexpr = 
-  let* ident = pident in 
-  return (Exp_ident(ident))
+let pidentexpr = lift (fun ident -> Exp_ident ident) pident
 
 (*                   Patterns                         *)
 let pany = token "_" *> return Pat_any
-let pvar =
-  let* ident = pident in
-  return (Pat_var ident)
+let pvar = lift (fun ident -> Pat_var ident) pident
 let ppattern =
   pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
 
 (*                   Exptessions                         *)
 
-let pvalue_binding =
-  let* pat = ppattern in
-  let* _ = token "=" in
-  let* expr = pexpr in
-  let value_binding = { pat; expr } in
-  return value_binding
 
-let prec_flag = 
-  token "rec" *> return Recursive <|> return Nonrecursive
-
-let pletexpr =
-  let* _ = token "let" in
-  let* rec_flag = prec_flag in
-   let* value_binding = many1  pvalue_binding in
-  let* expr = pexpr in
-  return (Exp_let(rec_flag, value_binding, expr))
+let pvalue_binding pexpr =
+  let parse_pattern_and_expr =
+    lift2 (fun pat expr -> { pat; expr }) ppattern (token "=" *> pexpr)
+  in
+  parse_pattern_and_expr
+;;
+let prec_flag = token "rec" *> return Recursive <|> return Nonrecursive
+;;
+let pletexpr pexpr =
+  token "let" *> lift3 (fun rec_flag value_binding expr -> Exp_let(rec_flag, value_binding, expr))
+  prec_flag (many1 (pvalue_binding pexpr)) pexpr
+;;
 
 let ptupleexpr =
   let* _ = token "(" in
@@ -109,7 +110,6 @@ let ptupleexpr =
   let* expressiontl = sep_by (char ';') pidentexpr in
   let* _ = token ")" in
   return (Exp_tuple(expression1, expression2, expressiontl))
- 
 
 let pifexpr pexpr =
   let* _ = token "if" in
@@ -124,14 +124,23 @@ let pifexpr pexpr =
   return (Exp_if(condition, expr, alternative))
 
 let papplyexpr pexpr =
-  let* func = pexpr in
-  let* argument = pexpr in
-  return (Exp_apply(func, argument))
+  lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr pexpr
+;;
 
+let pfunexpr pexpr = 
+  lift3 
+    (fun first_pattern rest_patterns body_expr -> 
+      Exp_fun (first_pattern, rest_patterns, body_expr))
+    (token "fun" *> ppattern)
+    (many ppattern)
+    (token "->" *> pexpr)
+;;
 
 let parsebinop binoptoken =
-  pass_ws *> token binoptoken *> return (fun e1 e2 -> Exp_apply (pidentexpr binoptoken, Exp_tuple(e1, e2, [])))
+  let parse_operator = pass_ws *> token binoptoken in
+  lift (fun op e1 e2 -> Exp_apply (Exp_ident op, Exp_tuple (e1, e2, []))) parse_operator
 ;;
+
 
 let padd = parsebinop "+"
 let psub = parsebinop "-"
@@ -147,7 +156,7 @@ let pcompops =
       parsebinop "<>";
       parsebinop "=";
     ]
-  
+
 let plogops = 
   choice 
   [
@@ -156,14 +165,7 @@ let plogops =
   ]
 
 let pexpr = fix (fun expr ->
-  (* let pexpr_paren =
-    let* _ = token "(" in
-    let* e = pexpr in
-    let* _ = token ")" in
-    return e
-  in *)
-
-  let expr = choice [pconstintexpr; pconststringexpr] in 
+  let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in 
   let expr = papplyexpr expr <|> expr in 
   let expr = lchain expr (pmul <|> pdiv) in
   let expr = lchain expr (padd <|> psub) in
@@ -171,21 +173,18 @@ let pexpr = fix (fun expr ->
   let expr = rchain expr plogops in 
   let expr = pifexpr expr <|> expr in
   let expr = ptupleexpr <|> expr in 
-  let expr = pletexpr <|> expr in 
+  let expr = pletexpr expr <|> expr in
+  let expr = pfunexpr expr <|> expr in 
   expr)
 ;;
 
 (*                   Structure items                         *)
 
-let pseval = 
-    let* expr = pexpr in
-    return (Str_eval (expr))
+let pseval = lift (fun expr -> Str_eval(expr)) pexpr
 
 let psvalue = 
-  (* we cant use let+ bc previous results are necessary *)
-  let* rec_flag = prec_flag in
-  let* value_binding = many pvalue_binding in 
-  return (Str_value (rec_flag, value_binding))
+  lift2 (fun rec_flag value_binding -> Str_value (rec_flag, value_binding)) prec_flag (many (pvalue_binding pexpr))
+;;
 
 (** It applies Str_eval to output of expression parser *)
 let pstr_item =
@@ -203,100 +202,3 @@ let parse_fact str =
   match parse str with
   | Ok str -> str
   | Error msg -> failwith msg
-
-(* 
-
-(* Example test cases for the parser *)
-let test_cases = [
-  ("1 + 2;;", 
-   [Exp_apply (Exp_ident "+", Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), []))]);
-  
-  ("'hello';;", 
-   [Exp_constant (Const_string "hello")]);
-  
-  ("(1, 2, 3);;", 
-   [Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), [Exp_constant (Const_integer 3)])]);
-  
-  ("4 * (2 + 3);;", 
-   [Exp_apply (Exp_ident "*", Exp_tuple 
-                (Exp_constant (Const_integer 4), 
-                 Exp_apply (Exp_ident "+", Exp_tuple 
-                              (Exp_constant (Const_integer 2), 
-                               Exp_constant (Const_integer 3), [])), []))]);
-  
-  ("8 / 2;;", 
-   [Exp_apply (Exp_ident "/", Exp_tuple (Exp_constant (Const_integer 8), Exp_constant (Const_integer 2), []))]);
-  
-  ("3 - 4 + 5;;", 
-   [Exp_apply (Exp_ident "+", Exp_tuple 
-                (Exp_apply (Exp_ident "-", 
-                            Exp_tuple (Exp_constant (Const_integer 3), 
-                                       Exp_constant (Const_integer 4), [])), 
-                 Exp_constant (Const_integer 5), []))]);
-  
-  ("x + y;;", 
-   [Exp_apply (Exp_ident "+", Exp_tuple 
-                (Exp_ident "x", Exp_ident "y", []))]);
-
-]
-let const_to_string n = 
-  match n with 
-  (* | Const_char (n) -> return n *)
-  | Const_integer (n) -> string_of_int n
-  | Const_string (n) -> n
-
-let rec string_of_expr expr =
-  match expr with
-  | Exp_ident id -> id  (* Just return the identifier *)
-  | Exp_constant n -> Printf.sprintf "%s" (const_to_string n)  (* Convert integer constants to strings *)
-  | Exp_apply (exp1, exp2) ->
-      Printf.sprintf "(%s %s)" (string_of_expr exp1) (string_of_expr exp2)
-  | Exp_tuple (exp1, exp2 , exp_list) ->
-      let tuple_list = [exp1 ; exp2] @ exp_list in 
-      let exprs = List.map string_of_expr tuple_list in
-      Printf.sprintf "(%s)" (String.concat ", " exprs)
-
-let run_tests test_cases =
-  for i = 0 to List.length test_cases - 1 do
-    let (input, expected) = List.nth test_cases i in
-    match parse input with
-    | Ok result when result = expected ->
-        Printf.printf "Passed: %s\n" input
-    | Ok result ->
-        Printf.printf "Failed: %s\nExpected: %s, Got: %s\n"
-          input (string_of_expr expected) (string_of_expr result)
-    | Error msg ->
-        Printf.printf "Error parsing: %s -> %s\n" input msg
-  done
-;;
-
-let () =
-  run_tests test_cases *)
-
-
-
-(* let parse str = 
-  match parse_string ~consume:All pstructure str with
-  | Ok result -> result  (* Assuming result is of type expression list *)
-  | Error msg -> failwith msg *)
-
-(* Example test cases for the parser *)
-(* let () =
-  let test_cases = [
-    ("1 + 2;;", [Exp_apply (Exp_ident "+", Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), []))]);
-    ("'hello';;", [Exp_constant (Const_string "hello")]);
-    ("(1, 2, 3);;", [Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), [Exp_constant (Const_integer 3)])]);
-    ("4 * (2 + 3);;", [Exp_apply (Exp_ident "*", Exp_tuple (Exp_constant (Const_integer 4), Exp_apply (Exp_ident "+", Exp_tuple (Exp_constant (Const_integer 2), Exp_constant (Const_integer 3), [])), []))]);
-    ("8 / 2;;", [Exp_apply (Exp_ident "/", Exp_tuple (Exp_constant (Const_integer 8), Exp_constant (Const_integer 2), []))]);
-    ("3 - 4 + 5;;", [Exp_apply (Exp_ident "+", Exp_tuple (Exp_apply (Exp_ident "-", Exp_tuple (Exp_constant (Const_integer 3), Exp_constant (Const_integer 4), [])), Exp_constant (Const_integer 5), []))]);
-  ] in
-  List.iter (fun (input, expected) ->
-    let result = parse input in  (* Get the result from the parse function *)
-    if result = expected then
-      Printf.printf "Passed: %s\n" input
-    else
-      Printf.printf "Failed: %s (expected: %s, got: %s)\n" 
-                    input 
-                    ?? expected) 
-                    (?? result)
-  ) test_cases *)
