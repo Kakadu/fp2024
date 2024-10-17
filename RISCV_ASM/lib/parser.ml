@@ -31,17 +31,7 @@ let ws_opt p = ws *> p <* ws
 let parse_register =
   ws_opt
     (choice
-       [ string "x0" *> return X0
-       ; string "x1" *> return X1
-       ; string "x2" *> return X2
-       ; string "x3" *> return X3
-       ; string "x4" *> return X4
-       ; string "x5" *> return X5
-       ; string "x6" *> return X6
-       ; string "x7" *> return X7
-       ; string "x8" *> return X8
-       ; string "x9" *> return X9
-       ; string "x10" *> return X10
+       [ string "x10" *> return X10
        ; string "x11" *> return X11
        ; string "x12" *> return X12
        ; string "x13" *> return X13
@@ -63,6 +53,16 @@ let parse_register =
        ; string "x29" *> return X29
        ; string "x30" *> return X30
        ; string "x31" *> return X31
+       ; string "x0" *> return X0
+       ; string "x1" *> return X1
+       ; string "x2" *> return X2
+       ; string "x3" *> return X3
+       ; string "x4" *> return X4
+       ; string "x5" *> return X5
+       ; string "x6" *> return X6
+       ; string "x7" *> return X7
+       ; string "x8" *> return X8
+       ; string "x9" *> return X9
        ; string "zero" *> return X0
        ; string "ra" *> return X1
        ; string "sp" *> return X2
@@ -70,9 +70,11 @@ let parse_register =
        ; string "tp" *> return X4
        ; string "t0" *> return X5
        ; string "t1" *> return X6
-       ; string "t1" *> return X7
+       ; string "t2" *> return X7
        ; string "s0" *> return X8
        ; string "fp" *> return X8
+       ; string "s10" *> return X26
+       ; string "s11" *> return X27
        ; string "s1" *> return X9
        ; string "a0" *> return X10
        ; string "a1" *> return X11
@@ -90,8 +92,6 @@ let parse_register =
        ; string "s7" *> return X23
        ; string "s8" *> return X24
        ; string "s9" *> return X25
-       ; string "s10" *> return X26
-       ; string "s11" *> return X27
        ; string "t3" *> return X28
        ; string "t4" *> return X29
        ; string "t5" *> return X30
