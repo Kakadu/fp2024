@@ -98,15 +98,8 @@ let const_float =
   | None -> fail "Invalid float"
 ;;
 
-let const_char =
-  token1 @@ take_while1 is_letter
-  >>= fun s ->
-  match s with
-  | s when String.length s = 1 -> return @@ Char s.[0]
-  | _ -> fail "Invalid char"
-;;
-
-let const = choice [ const_integer; const_float; const_bool; const_char ]
+let const_nil = token "[]" *> return Nil
+let const = choice [ const_integer; const_float; const_bool; const_nil ]
 
 (*=====================Identifiers=====================*)
 
@@ -196,12 +189,19 @@ let exp_fun expr =
 ;;
 
 let val_binding pat exp = { pat; exp }
+let efun i e = Exp_function ([ i ], e)
 
 let exp_decl expr =
-  let binding =
-    token1 pattern >>= fun pat -> token "=" *> expr >>| fun exp -> { pat; exp }
+  let exp =
+    ignore_spaces *> many pattern
+    >>= fun args ->
+    token "=" *> expr
+    >>= fun e ->
+    match List.rev args with
+    | h :: tl -> return (List.fold_left ~init:(efun h e) ~f:(fun acc x -> efun x acc) tl)
+    | _ -> return e
   in
-  many binding
+  token "let" *> lift2 val_binding (token1 pattern) exp
 ;;
 
 let exp_pattern_matching expr = lift2 (fun k v -> k, v) (pattern <* token "->") expr
@@ -216,12 +216,14 @@ let exp_match expr =
         >>= fun p -> many (token "|" *> exp_pattern_matching expr) >>| fun ps -> p :: ps)
 ;;
 
+let elet r d e = Exp_let (r, d, e)
+
 let exp_let expr =
   token "let"
   *> lift3
-       (fun d_rec bindings e -> Exp_let (d_rec, bindings, e))
+       elet
        (token "rec" *> return Rec <|> return Nonrec)
-       (exp_decl expr)
+       (exp_decl expr >>| fun d -> [ d ])
        (token "in" *> expr)
 ;;
 
@@ -325,21 +327,13 @@ let expr =
 ;;
 
 let del = (double_semicolon <|> ignore_spaces) *> ignore_spaces
-
-let decl =
-  token "let"
-  *> lift3
-       (fun d_rec d_bindings d_expr -> d_rec, [ { pat = d_bindings; exp = d_expr } ])
-       (token "rec" *> return Rec <|> return Nonrec)
-       (token1 pattern)
-       (token "=" *> expr)
-;;
+let val_binding = token1 (exp_decl expr)
 
 let str_item =
   expr
   >>| (fun e -> Str_eval e)
   <* double_semicolon
-  <|> (decl >>= fun (d_rec, bindings) -> return (Str_value (d_rec, bindings)))
+  <|> (val_binding >>| fun vb -> Str_value (Nonrec, [ vb ]))
 ;;
 
 let program = del *> many1 (str_item <* del)

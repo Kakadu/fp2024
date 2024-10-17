@@ -92,7 +92,7 @@ and value_binding =
   { pat : pattern
   ; exp : expression
   }
-  
+
 and obj =
   { self : pattern
   ; fields : object_field list
