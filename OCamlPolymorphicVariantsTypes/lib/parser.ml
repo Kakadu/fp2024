@@ -156,13 +156,14 @@ and tuple_expr state =
   (skip_ws *> (boolean_expr >>= helper)) state
 
 (** Parser of applyable expressions *)
-and applyable_expr state = (skip_ws *> lambda_expr <|> variable) state
+and applyable_expr state = (skip_ws *> bracket_expr <|> lambda_expr <|> variable) state
 
-(** Parser of basic expressions: [<unary>] | [<if-expr>] | [<apply-expr>] | [<const>] *)
+(** Parser of basic expressions:
+    [<unary>] | [<if-expr>] | [<define_expr>] | [<apply-expr>] | [<const>] *)
 and basic_expr inapply state =
   (skip_ws *> unary_expr inapply
-   <|> bracket_expr
    <|> if_expr
+   <|> define_expr
    <|> (if inapply then applyable_expr else apply_expr)
    <|> const_expr)
     state
@@ -174,8 +175,6 @@ and unary_expr inapply state =
     <|> (symbol '-' *> basic_expr inapply >>| fun e -> Unary (Negate, e))
   in
   (skip_ws *> (helper <|> symbol '~' *> helper)) state
-
-and state = skip_ws
 
 (** Parser of brackets expression:
     - unit: [()]

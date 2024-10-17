@@ -96,6 +96,28 @@ let%expect_test _ =
            [(Tuple [(Const (IntLiteral 1)); (Const (IntLiteral 2))]);
              (Tuple [(Const (IntLiteral 3)); (Const (IntLiteral 4))])]))
       ] |}];
+  test_program {|(let f x = -x in f) 10;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Apply (
+           (Define (
+              (Nonrecursive,
+               [((PVar "f"),
+                 (Lambda ([(PVar "x")], (Unary (Negate, (Variable "x"))))))]),
+              (Variable "f"))),
+           [(Const (IntLiteral 10))])))
+      ] |}];
+  test_program {|(let f x = -x in f 10);;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Define (
+           (Nonrecursive,
+            [((PVar "f"),
+              (Lambda ([(PVar "x")], (Unary (Negate, (Variable "x"))))))]),
+           (Apply ((Variable "f"), [(Const (IntLiteral 10))])))))
+      ] |}];
   test_program
     {|
    let rec factorial n = if (n > 1) then n * factorial(n-1) else 1;;
