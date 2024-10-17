@@ -1,3 +1,12 @@
+(library
+ (name tests)
+ (libraries miniml)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx))
+ (inline_tests))
+
 (cram
  (applies_to interpret_tests)
- (deps ../bin/main.exe))
+ (deps ../bin/REPL.exe ./factorial.test ./invalid-factorial.test))

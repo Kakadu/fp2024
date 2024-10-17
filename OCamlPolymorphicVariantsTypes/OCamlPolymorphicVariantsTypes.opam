@@ -13,6 +13,7 @@ bug-reports:
   "https://github.com/IliaSuponeff/OCaml-PolymorphicVariantsTypes/"
 depends: [
   "dune" {>= "3.7"}
+  "stdio"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"

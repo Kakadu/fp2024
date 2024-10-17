@@ -42,7 +42,8 @@ type binary_operator =
 
 type pattern =
   | PVar of identifier
-  | PTuple of pattern list
+  | PTuple of pattern list (* (<pattern>, ..., <pattern>) *)
+  | PUnit (* () *)
 [@@deriving show { with_path = false }]
 
 type expression =
