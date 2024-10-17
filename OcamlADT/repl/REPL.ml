@@ -3,6 +3,8 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Stdio
+open Ocamladt_lib.Ast
+open Ocamladt_lib.Parser
 
 type config = {
   mutable dump_parsetree : bool;
@@ -14,18 +16,12 @@ let read_source source_opt =
   | Some filename -> In_channel.with_file filename ~f:In_channel.input_all
   | None -> In_channel.input_all stdin
 
-let parse_code code =
-  if String.length code > 0 then
-    Ok ("Parsed AST for: " ^ code)
-  else
-    Error "Empty input, nothing to parse"
-
 let process_input cfg =
   let code = read_source cfg.source_file in
-  match parse_code code with
+  match parse code with
   | Ok ast ->
       if cfg.dump_parsetree then
-        printf "AST: %s\n" ast
+        printf "AST: %s\n" (show_program ast)
       else
         printf "Code executed: %s\n" code
   | Error err -> eprintf "Error during parsing: %s\n" err

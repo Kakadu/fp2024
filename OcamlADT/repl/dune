@@ -2,6 +2,6 @@
  (name REPL)
  (public_name REPL)
  (modules REPL)
- (libraries stdio)
+ (libraries stdio OcamlADT.Lib)
  (instrumentation
   (backend bisect_ppx)))
