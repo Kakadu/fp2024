@@ -9,4 +9,4 @@
 
 (cram
  (applies_to interpret_tests)
- (deps ../bin/main.exe))
+ (deps ../bin/REPL.exe  ./factorial.test ./invalid-factorial.test))

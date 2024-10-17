@@ -1,7 +1,9 @@
 Copyright 2024-2027, Ilia Suponev
 SPDX-License-Identifier: CC0-1.0
 
-  $ ../bin/main.exe
+  $ ../bin/REPL.exe -i=factorial.test
+  
+  $ ../bin/REPL.exe -dparsetree -i=factorial.test
   [(DefineItem
       (Recursive,
        [((PVar "factorial"),
@@ -18,3 +20,6 @@ SPDX-License-Identifier: CC0-1.0
             )))
          ]));
     (EvalItem (Apply ((Variable "factorial"), [(Const (IntLiteral 5))])))]
+
+  $ ../bin/REPL.exe -i=invalid-factorial.test
+  ParseError(line=1 pos=66): Not found expression after keyword 'in' of let-xpression
