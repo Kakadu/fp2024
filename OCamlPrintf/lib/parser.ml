@@ -126,19 +126,13 @@ let bin_op chain1 parse_exp parse_fun_op =
 
 let parse_left_bin_op = bin_op parse_chain_left_associative
 
-let select_operator op_list =
+let parse_operator op_list =
   choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) op_list)
 ;;
 
-let mul_div = select_operator [ "*"; "/" ]
-let add_sub = select_operator [ "+"; "-" ]
-let cmp = select_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
-
-let parse_operator parse_exp =
-  let parse_cur_exp = parse_left_bin_op parse_exp mul_div in
-  let parse_cur_exp = parse_left_bin_op parse_cur_exp add_sub in
-  parse_left_bin_op parse_cur_exp cmp
-;;
+let mul_div = parse_operator [ "*"; "/" ]
+let add_sub = parse_operator [ "+"; "-" ]
+let cmp = parse_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
 
 (* -------------------- Value_binding -------------------- *)
 
@@ -182,9 +176,15 @@ let parse_exp_apply_fun parse_exp =
   >>| fun exp_list -> if List.length exp_list = 0 then var else Exp_apply (var, exp_list)
 ;;
 
+let parse_exp_apply_op parse_exp =
+  let parse_cur_exp = parse_left_bin_op parse_exp mul_div in
+  let parse_cur_exp = parse_left_bin_op parse_cur_exp add_sub in
+  parse_left_bin_op parse_cur_exp cmp
+;;
+
 let parse_exp_apply parse_exp =
   let parse_cur_exp = parse_exp_apply_fun parse_exp in
-  parse_operator parse_cur_exp
+  parse_exp_apply_op parse_cur_exp
 ;;
 
 let parse_cases parse_exp =
