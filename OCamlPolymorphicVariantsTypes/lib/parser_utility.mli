@@ -49,6 +49,7 @@ val satisfy
   -> 'a parse_result
 
 val dsatisfy : char_predicate -> (char -> 'a) -> parser_state -> 'a parse_result
+val asatisfy : (char -> bool) -> parser_state -> unit parse_result
 val symbol : char -> char parser
 val sequence : char list -> char list parser
 val ssequence : string -> char list parser

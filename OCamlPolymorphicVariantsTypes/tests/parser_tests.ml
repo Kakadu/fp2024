@@ -11,8 +11,44 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|if f x then g 10;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (If ((Apply ((Variable "f"), [(Variable "x")])),
+           (Apply ((Variable "g"), [(Const (IntLiteral 10))])), None)))
+      ] |}];
+  test_program {|iff x then g 10;;|};
+  [%expect {| [] |}];
+  test_program {|if f x theng 10;;|};
+  [%expect {| ParseError(line=1 pos=15): Not found 'then' branch for if-expression |}];
+  test_program {|if f x then g 10 else ~-10;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (If ((Apply ((Variable "f"), [(Variable "x")])),
+           (Apply ((Variable "g"), [(Const (IntLiteral 10))])),
+           (Some (Unary (Negate, (Const (IntLiteral 10))))))))
+      ] |}];
+  test_program {|if f x then g 10 else~-10;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (If ((Apply ((Variable "f"), [(Variable "x")])),
+           (Apply ((Variable "g"), [(Const (IntLiteral 10))])),
+           (Some (Unary (Negate, (Const (IntLiteral 10))))))))
+      ] |}];
+  test_program {|if f x then g 10 else(~-10);;|};
+  [%expect
+    {|
+    [(EvalItem
+        (If ((Apply ((Variable "f"), [(Variable "x")])),
+           (Apply ((Variable "g"), [(Const (IntLiteral 10))])),
+           (Some (Unary (Negate, (Const (IntLiteral 10))))))))
+      ] |}];
   test_program {|1+(f x y) - (g x-y);;|};
-  [%expect {|
+  [%expect
+    {|
     [(EvalItem
         (Binary (
            (Binary ((Const (IntLiteral 1)), Add,
@@ -23,7 +59,8 @@ let%expect_test _ =
            )))
       ] |}];
   test_program {|(1,);;|};
-  [%expect {| ParseError(line=1 pos=3): Not found expression after tuple separator: ',' |}];
+  [%expect
+    {| ParseError(line=1 pos=3): Not found expression after tuple separator: ',' |}];
   test_program {|(1;);;|};
   [%expect {| [(EvalItem (Const (IntLiteral 1)))] |}];
   test_program {|((1,2);(3,4));;|};

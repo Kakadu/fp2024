@@ -23,9 +23,29 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let ident_symbol = function
+  | 'a' .. 'z' | 'A' .. 'Z' | '_' | '\'' | '0' .. '9' -> true
+  | _ -> false
+;;
+
+(** Parse [Miniml.identifier] value. *)
+let ident =
+  let helper = many (dsatisfy ident_symbol Fun.id) in
+  skip_ws *> dsatisfy ident_symbol Fun.id
+  >>= fun s ->
+  if is_digit s || s = '\''
+  then pfail
+  else
+    helper
+    >>| (fun l -> string_of_char_list (s :: l))
+    >>= fun id -> if is_keyword id then pfail else preturn id
+;;
+
 (** Parser of keyword *)
 let keyword word =
-  skip_ws *> ssequence word *> dsatisfy is_whitespace is_whitespace *> preturn ()
+  let helper c = not (ident_symbol c) in
+  let check_end = asatisfy helper in
+  skip_ws *> ssequence word *> check_end *> preturn ()
 ;;
 
 (** Parser of some elements sequence:
@@ -44,23 +64,6 @@ let element_sequence
   in
   skip_ws
   *> (many (next_element sep) >>| fun l -> list_converter (List.append [ start ] l))
-;;
-
-(** Parse [Miniml.identifier] value. *)
-let ident =
-  let ident_symbol = function
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' | '\'' | '0' .. '9' -> true
-    | _ -> false
-  in
-  let helper = many (dsatisfy ident_symbol Fun.id) in
-  skip_ws *> dsatisfy ident_symbol Fun.id
-  >>= fun s ->
-  if is_digit s || s = '\''
-  then pfail
-  else
-    helper
-    >>| (fun l -> string_of_char_list (s :: l))
-    >>= fun id -> if is_keyword id then pfail else preturn id
 ;;
 
 (** Parser of integer literals: [0 .. Int64.max_int].
@@ -250,16 +253,16 @@ and if_expr state =
     skip_ws
     *> (expr
         >>= fun then_ex ->
-        skip_ws *> (ssequence "else" *> else_block ex then_ex)
+        skip_ws *> (keyword "else" *> else_block ex then_ex)
         <|> preturn (If (ex, then_ex, None)))
     <|> perror "Expected expression of 'then' branch for if expression"
   in
   (skip_ws
-   *> ssequence "if"
+   *> keyword "if"
    *> (expr
        >>= (fun ex ->
              skip_ws
-             *> (ssequence "then" *> then_block ex
+             *> (keyword "then" *> then_block ex
                  <|> perror "Not found 'then' branch for if-expression"))
        <|> perror "Not found if expression after keyword 'if'"))
     state
@@ -283,7 +286,7 @@ and apply_expr state =
 (** Parser of lambdas definitions *)
 and lambda_expr state =
   (skip_ws
-   *> ssequence "fun"
+   *> keyword "fun"
    *> (many1 (skip_ws *> pattern_parser)
        >>= (fun pl ->
              skip_ws

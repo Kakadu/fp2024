@@ -177,6 +177,14 @@ let dsatisfy : char_predicate -> (char -> 'a) -> parser_state -> 'a parse_result
   fun condition converter state -> satisfy condition converter None state
 ;;
 
+(** Satisfy to assert sympol *)
+let asatisfy : (char -> bool) -> parser_state -> unit parse_result =
+  fun cond state ->
+  match state.input with
+  | sym :: _ when cond sym -> preturn () state
+  | _ -> pfail state
+;;
+
 (** Check that [expected] character is found further in parsing text.
 
     [!] This chacker returns also [ParseSuccess] or [ParseFail] *)
