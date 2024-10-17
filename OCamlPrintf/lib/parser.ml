@@ -92,8 +92,8 @@ let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
 let parse_pat_tuple parse_pat =
   let* first_pat = parse_pat in
-  let* rest_pats = many1 (ws *> string "," *> parse_pat) in
-  return (Pat_tuple (List.cons first_pat rest_pats))
+  let* rest_pat_list = many1 (ws *> string "," *> parse_pat) in
+  return (Pat_tuple (List.cons first_pat rest_pat_list))
 ;;
 
 let parse_pattern =
@@ -102,8 +102,7 @@ let parse_pattern =
       choice
         [ skip_parens parse_full_pat; parse_pat_any; parse_pat_var; parse_pat_constant ]
     in
-    let parse_pat = parse_pat_tuple parse_pat <|> parse_pat in
-    parse_pat)
+    parse_pat_tuple parse_pat <|> parse_pat)
 ;;
 
 (* ==================== Expression ==================== *)
@@ -127,8 +126,8 @@ let bin_op chain1 parse_exp parse_fun_op =
 
 let parse_left_bin_op = bin_op parse_chain_left_associative
 
-let select_operator operators =
-  choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) operators)
+let select_operator op_list =
+  choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) op_list)
 ;;
 
 let mul_div = select_operator [ "*"; "/" ]
@@ -177,6 +176,17 @@ let parse_exp_let parse_exp =
   return (Exp_let (rec_flag, value_binding, expression))
 ;;
 
+let parse_exp_apply_fun parse_exp =
+  let* var = parse_exp in
+  many parse_exp
+  >>| fun exp_list -> if List.length exp_list = 0 then var else Exp_apply (var, exp_list)
+;;
+
+let parse_exp_apply parse_exp =
+  let parse_cur_exp = parse_exp_apply_fun parse_exp in
+  parse_operator parse_cur_exp
+;;
+
 let parse_cases parse_exp =
   let parse_case =
     let* pat = parse_pattern <* ws <* string "->" in
@@ -194,8 +204,8 @@ let parse_exp_match parse_exp =
 
 let parse_exp_tuple parse_exp =
   let* first_exp = parse_exp in
-  let* rest_exps = many1 (ws *> string "," *> parse_exp) in
-  return (Exp_tuple (List.cons first_exp rest_exps))
+  let* rest_exp_list = many1 (ws *> string "," *> parse_exp) in
+  return (Exp_tuple (List.cons first_exp rest_exp_list))
 ;;
 
 let parse_exp_ifthenelse parse_exp =
@@ -223,14 +233,8 @@ let parse_expression =
         ; parse_exp_ifthenelse parse_full_exp
         ]
     in
-    let parse_exp =
-      parse_chain_left_associative
-        parse_exp
-        (return (fun exp1 exp2 -> Exp_apply (exp1, [ exp2 ])))
-    in
-    let parse_exp = parse_operator parse_exp in
-    let parse_exp = parse_exp_tuple parse_exp <|> parse_exp in
-    parse_exp)
+    let parse_exp = parse_exp_apply parse_exp in
+    parse_exp_tuple parse_exp <|> parse_exp)
 ;;
 
 (* ==================== Structure ==================== *)
@@ -239,8 +243,8 @@ let parse_struct_value =
   string "let"
   *>
   let* rec_flag = parse_rec_flag in
-  let* value_bindings = parse_value_binding_list parse_expression in
-  return (Struct_value (rec_flag, value_bindings))
+  let* value_binding_list = parse_value_binding_list parse_expression in
+  return (Struct_value (rec_flag, value_binding_list))
 ;;
 
 let parse_structure =

@@ -97,15 +97,25 @@ let%expect_test "parse_struct_eval" =
 ;;
 
 let%expect_test "parse_exp_let" =
-  run "1 + let a = 1 in a";
+  run "1 + let one = 1 in f one 2 (3 + 4)";
   [%expect
     {|
       [(Struct_eval
           (Exp_apply ((Exp_ident "+"),
              [(Exp_constant (Const_integer 1));
                (Exp_let (Nonrecursive,
-                  [{ pat = (Pat_var "a"); exp = (Exp_constant (Const_integer 1)) }],
-                  (Exp_ident "a")))
+                  [{ pat = (Pat_var "one"); exp = (Exp_constant (Const_integer 1))
+                     }
+                    ],
+                  (Exp_apply ((Exp_ident "f"),
+                     [(Exp_ident "one"); (Exp_constant (Const_integer 2));
+                       (Exp_apply ((Exp_ident "+"),
+                          [(Exp_constant (Const_integer 3));
+                            (Exp_constant (Const_integer 4))]
+                          ))
+                       ]
+                     ))
+                  ))
                ]
              )))
         ]
