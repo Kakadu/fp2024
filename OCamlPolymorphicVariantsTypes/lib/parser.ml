@@ -23,6 +23,11 @@ let is_keyword = function
   | _ -> false
 ;;
 
+(** Parser of keyword *)
+let keyword word =
+  skip_ws *> ssequence word *> dsatisfy is_whitespace is_whitespace *> preturn ()
+;;
+
 (** Parser of some elements sequence:
     - [start]: first element of sequence
     - [element_parser]: parser of one element in sequence
@@ -32,14 +37,13 @@ let element_sequence
   : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'a parser -> 'b parser
   =
   fun start element_parser list_converter sep pnotfound ->
-  let next_element sep = skip_ws *> ssequence sep *> (element_parser <|> pnotfound) in
+  let next_element sep =
+    skip_ws
+    *> (if is_keyword sep then keyword sep else ssequence sep >>| fun _ -> ())
+    *> (element_parser <|> pnotfound)
+  in
   skip_ws
   *> (many (next_element sep) >>| fun l -> list_converter (List.append [ start ] l))
-;;
-
-(** Parser of keyword *)
-let keyword word =
-  skip_ws *> ssequence word *> dsatisfy is_whitespace is_whitespace *> preturn ()
 ;;
 
 (** Parse [Miniml.identifier] value. *)
@@ -300,58 +304,63 @@ and value_binding_parser state =
        *> (ssequence "="
            *> (skip_ws *> expr >>| fun ex -> if pl = [] then p, ex else p, Lambda (pl, ex))
            <|> perror "Not found expression of let-definition")
-       <|> perror "Not found special sequence '=' of let-definition")
+       <|> perror "Not found special sequence '=' of let-definition binding expresssion")
    <|> perror "Not found name-pattern of let-definition")
+    state
+
+and value_bindings_parser state =
+  (skip_ws *> value_binding_parser
+   >>= (fun vb ->
+         element_sequence
+           vb
+           value_binding_parser
+           Fun.id
+           "and"
+           (perror "Not found value binding"))
+   <|> perror "Not found value binging")
     state
 
 (** Parser of let-definitions *)
 and define_expr state =
-  let nonrecursive state =
-    (value_binding_parser
-     >>= fun vb ->
-     skip_ws
-     *> (ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
-     *> (expr >>| fun ex -> Define ((Nonrecursive, [ vb ]), ex))
-     <|> perror "Not found in-expression of let-definition")
-      state
+  let inexpr =
+    skip_ws
+    *> (keyword "in"
+        *> (expr <|> perror "Not found expression after keyword 'in' of let-xpression"))
+    <|> perror "Not found keyword for let-expression"
   in
-  let recursive state =
-    (skip_ws *> value_binding_parser
-     >>= fun vb ->
-     many
-       (skip_ws
-        *> (ssequence "and"
-            *> (value_binding_parser
-                <|> perror "Not found value binding one of recusion definition")))
-     >>= fun vbl ->
-     (skip_ws *> ssequence "in" <|> perror "Not found  sequence 'in' of let-definition")
-     *> (expr
-         >>| (fun ex -> Define ((Recursive, vb :: vbl), ex))
-         <|> perror "Not found in-expression of let-definition"))
-      state
+  let recursive =
+    skip_ws *> keyword "rec" *> value_bindings_parser
+    >>= fun vbl -> inexpr >>| fun ex -> Define ((Recursive, vbl), ex)
   in
-  (skip_ws *> ssequence "let" *> skip_ws *> (ssequence "rec" *> recursive <|> nonrecursive)
-  )
-    state
+  let nonrecursive =
+    skip_ws *> value_bindings_parser
+    >>= fun vbl -> inexpr >>| fun ex -> Define ((Nonrecursive, vbl), ex)
+  in
+  (skip_ws *> keyword "let" *> (recursive <|> nonrecursive)) state
 ;;
 
 (** Parser of definition item *)
 let define_item =
+  let inexpr =
+    skip_ws
+    *> keyword "in"
+    *> (expr <|> perror "Not found expression after keyword 'in' of let-xpression")
+  in
+  let recursive =
+    skip_ws *> keyword "rec" *> value_bindings_parser
+    >>= fun vbl ->
+    inexpr
+    >>| (fun ex -> EvalItem (Define ((Recursive, vbl), ex)))
+    <|> preturn (DefineItem (Recursive, vbl))
+  in
   let nonrecursive =
-    value_binding_parser >>= fun vb -> preturn (DefineItem (Nonrecursive, [ vb ]))
+    skip_ws *> value_bindings_parser
+    >>= fun vbl ->
+    inexpr
+    >>| (fun ex -> EvalItem (Define ((Nonrecursive, vbl), ex)))
+    <|> preturn (DefineItem (Nonrecursive, vbl))
   in
-  let recursive state =
-    (skip_ws *> value_binding_parser
-     >>= fun vb ->
-     many
-       (skip_ws
-        *> (ssequence "and"
-            *> (value_binding_parser
-                <|> perror "Not found value binding one of recusion definition")))
-     >>= fun vbl -> preturn (DefineItem (Recursive, vb :: vbl)))
-      state
-  in
-  skip_ws *> ssequence "let" *> skip_ws *> (ssequence "rec" *> recursive <|> nonrecursive)
+  skip_ws *> keyword "let" *> (recursive <|> nonrecursive)
 ;;
 
 (** Parser of eval item *)
