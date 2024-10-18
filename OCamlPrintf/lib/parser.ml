@@ -37,6 +37,11 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let is_empty = function
+  | [] -> true
+  | _ -> false
+;;
+
 (* ==================== Ident ==================== *)
 
 let parse_ident =
@@ -96,11 +101,27 @@ let parse_pat_tuple parse_pat =
   return (Pat_tuple (List.cons first_pat rest_pat_list))
 ;;
 
+let parse_pat_construct parse_exp =
+  let rec parse_list = function
+    | [] -> Pat_construct ("[]", None)
+    | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_list xs ]))
+  in
+  let parse_elements =
+    ws *> string "[" *> sep_by (ws *> string ";") parse_exp <* string "]" >>| parse_list
+  in
+  parse_elements
+;;
+
 let parse_pattern =
   fix (fun parse_full_pat ->
     let parse_pat =
       choice
-        [ skip_parens parse_full_pat; parse_pat_any; parse_pat_var; parse_pat_constant ]
+        [ skip_parens parse_full_pat
+        ; parse_pat_any
+        ; parse_pat_var
+        ; parse_pat_constant
+        ; parse_pat_construct parse_full_pat
+        ]
     in
     parse_pat_tuple parse_pat <|> parse_pat)
 ;;
@@ -120,11 +141,11 @@ let parse_chain_left_associative parse_exp parse_fun_op =
   go first_exp
 ;;
 
-let bin_op chain1 parse_exp parse_fun_op =
-  chain1 parse_exp (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
+let parse_left_bin_op parse_exp parse_fun_op =
+  parse_chain_left_associative
+    parse_exp
+    (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
 ;;
-
-let parse_left_bin_op = bin_op parse_chain_left_associative
 
 let parse_operator op_list =
   choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) op_list)
@@ -173,7 +194,7 @@ let parse_exp_let parse_exp =
 let parse_exp_apply_fun parse_exp =
   let* var = parse_exp in
   many parse_exp
-  >>| fun exp_list -> if List.length exp_list = 0 then var else Exp_apply (var, exp_list)
+  >>| fun exp_list -> if is_empty exp_list then var else Exp_apply (var, exp_list)
 ;;
 
 let parse_exp_apply_op parse_exp =
@@ -208,6 +229,17 @@ let parse_exp_tuple parse_exp =
   return (Exp_tuple (List.cons first_exp rest_exp_list))
 ;;
 
+let parse_exp_construct parse_exp =
+  let rec parse_list = function
+    | [] -> Exp_construct ("[]", None)
+    | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_list xs ]))
+  in
+  let parse_elements =
+    ws *> string "[" *> sep_by (ws *> string ";") parse_exp <* string "]" >>| parse_list
+  in
+  parse_elements
+;;
+
 let parse_exp_ifthenelse parse_exp =
   let* if_ = ws *> string "if" *> parse_exp in
   let* then_ = ws *> string "then" *> parse_exp in
@@ -228,6 +260,7 @@ let parse_expression =
         [ skip_parens parse_full_exp
         ; parse_exp_ident
         ; parse_exp_constant
+        ; parse_exp_construct parse_full_exp
         ; parse_exp_let parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
@@ -249,7 +282,7 @@ let parse_struct_value =
 
 let parse_structure =
   let parse_structure_item =
-    ws *> (parse_expression >>| (fun exp -> Struct_eval exp) <|> parse_struct_value)
+    ws *> (parse_struct_value <|> (parse_expression >>| fun exp -> Struct_eval exp))
   in
   let semicolons = many (ws *> string ";;") in
   sep_by semicolons parse_structure_item <* semicolons <* ws
