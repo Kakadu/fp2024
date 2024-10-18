@@ -1,0 +1,6 @@
+(executable
+ (name repl)
+ (public_name OCamlBR_main)
+ (libraries OCamlBR base stdio)
+ (instrumentation
+  (backend bisect_ppx)))
