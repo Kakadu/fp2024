@@ -94,3 +94,63 @@ let%expect_test "parse if with comparison" =
       ELSE BRANCH
     ----| Const(Int: 12) |}]
 ;;
+
+let%expect_test "sum with if" =
+  let input = "a + if 3 > 2 then 2 else 1" in
+  print_p_res (parse input);
+  [%expect
+    {|
+    | Binary expr(
+    | Binary Add
+    --| Variable(a)
+    --| If Then Else(
+        CONDITION
+    ----| Binary expr(
+    ----| Binary Greater
+    ------| Const(Int: 3)
+    ------| Const(Int: 2)
+        THEN BRANCH
+    ------| Const(Int: 2)
+        ELSE BRANCH
+    ------| Const(Int: 1) |}]
+;;
+
+let%expect_test "inner expressions with LetIn and If" =
+  let input =
+    "if let x = true in let y = false in x || y then 3 else if 5 > 3 then 2 else 1"
+  in
+  print_p_res (parse input);
+  [%expect
+    {|
+    | If Then Else(
+      CONDITION
+    -- | LetIn  x =
+        ARGS
+    ----| No args
+        BODY
+    ----| Const(Bool: true)
+        INNER EXPRESSION
+    ---- | LetIn  y =
+          ARGS
+    ------| No args
+          BODY
+    ------| Const(Bool: false)
+          INNER EXPRESSION
+    ------| Binary expr(
+    ------| Logical Or
+    --------| Variable(x)
+    --------| Variable(y)
+      THEN BRANCH
+    ----| Const(Int: 3)
+      ELSE BRANCH
+    ----| If Then Else(
+          CONDITION
+    ------| Binary expr(
+    ------| Binary Greater
+    --------| Const(Int: 5)
+    --------| Const(Int: 3)
+          THEN BRANCH
+    --------| Const(Int: 2)
+          ELSE BRANCH
+    --------| Const(Int: 1) |}]
+;;
