@@ -9,7 +9,6 @@ open Angstrom
 (* ==================== Utils ==================== *)
 
 let skip_whitespaces = skip_while Char.is_whitespace
-let skip_whitespaces1 = take_while1 Char.is_whitespace
 
 let parse_comments =
   skip_whitespaces *> string "(*" *> many_till any_char (string "*)") *> return ()
@@ -123,17 +122,15 @@ let parse_bool_pat =
   ws *> string "true" <|> string "false" >>| fun name -> Pat_construct (name, None)
 ;;
 
-let parse_pat_construct parse_exp =
-  let rec parse_pat_list = function
+let parse_pat_construct parse_pat =
+  let rec parse_list = function
     | [] -> Pat_construct ("[]", None)
-    | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_pat_list xs ]))
+    | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_list xs ]))
   in
-  let parse_elements_pat_list =
-    ws *> string "[" *> sep_by (ws *> string ";") parse_exp
-    <* string "]"
-    >>| parse_pat_list
+  let parse_elements_list =
+    ws *> string "[" *> sep_by (ws *> string ";") parse_pat <* string "]" >>| parse_list
   in
-  parse_elements_pat_list <|> parse_bool_pat
+  parse_elements_list <|> parse_bool_pat
 ;;
 
 let parse_pattern =
@@ -165,11 +162,24 @@ let parse_chain_left_associative parse_exp parse_fun_op =
   go first_exp
 ;;
 
-let parse_left_bin_op parse_exp parse_fun_op =
-  parse_chain_left_associative
-    parse_exp
-    (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
+let parse_chain_right_associative parse_exp parse_fun_op =
+  let rec go acc_exp =
+    (let* fun_op = parse_fun_op in
+     let* exp = parse_exp in
+     let* next_exp = go exp in
+     return (fun_op acc_exp next_exp))
+    <|> return acc_exp
+  in
+  let* first_exp = parse_exp in
+  go first_exp
 ;;
+
+let bin_op chain1 parse_exp parse_fun_op =
+  chain1 parse_exp (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, [ exp1; exp2 ]))
+;;
+
+let parse_left_bin_op = bin_op parse_chain_left_associative
+let parse_right_bin_op = bin_op parse_chain_right_associative
 
 let parse_operator op_list =
   choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) op_list)
@@ -178,6 +188,8 @@ let parse_operator op_list =
 let mul_div = parse_operator [ "*"; "/" ]
 let add_sub = parse_operator [ "+"; "-" ]
 let cmp = parse_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
+let and_ = parse_operator [ "&&" ]
+let or_ = parse_operator [ "||" ]
 
 (* -------------------- Value_binding -------------------- *)
 
@@ -224,7 +236,9 @@ let parse_exp_apply_fun parse_exp =
 let parse_exp_apply_op parse_exp =
   let parse_cur_exp = parse_left_bin_op parse_exp mul_div in
   let parse_cur_exp = parse_left_bin_op parse_cur_exp add_sub in
-  parse_left_bin_op parse_cur_exp cmp
+  let parse_cur_exp = parse_left_bin_op parse_cur_exp cmp in
+  let parse_cur_exp = parse_right_bin_op parse_cur_exp and_ in
+  parse_right_bin_op parse_cur_exp or_
 ;;
 
 let parse_exp_apply parse_exp =
@@ -258,17 +272,17 @@ let parse_bool_exp =
 ;;
 
 let parse_exp_construct parse_exp =
-  let rec parse_exp_list = function
+  let rec parse_list = function
     | [] -> Exp_construct ("[]", None)
-    | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_exp_list xs ]))
+    | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_list xs ]))
   in
-  let parse_elements_exp_list =
+  let parse_elements_list =
     ws *> string "[" *> sep_by (ws *> string ";") parse_exp
     <* ws
     <* string "]"
-    >>| parse_exp_list
+    >>| parse_list
   in
-  parse_elements_exp_list <|> parse_bool_exp
+  parse_elements_list <|> parse_bool_exp
 ;;
 
 let parse_exp_ifthenelse parse_exp =
