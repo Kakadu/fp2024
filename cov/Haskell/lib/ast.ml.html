@@ -334,13 +334,13 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-<span data-count="42">t</span>ype const =
-  | Int of in<span data-count="19">t</span> (** e.g. [18] *)
+<span data-count="46">t</span>ype const =
+  | Int of in<span data-count="21">t</span> (** e.g. [18] *)
   | Bool of boo<span data-count="2">l</span> (** e.g. [True] *)
   | Unit (** () *)
 [@@deriving show { with_path = false }]
 
-<span data-count="2">t</span>ype 'a maybe =
+<span data-count="4">t</span>ype 'a maybe =
   | Nothing (** Nothing *)
   | Just of 'a (** e.g. [Just 5] *)
 [@@deriving show { with_path = false }]
@@ -381,7 +381,7 @@
 (** variable's / function's name*)
 <span data-count="46">t</span>ype ident = Ident of strin<span data-count="23">g</span> [@@deriving show { with_path = false }]
 
-(** e.g. [lst@(_:xs) :: [Int]] *)
+(** e.g. [a@my_list@lst@(_:xs) :: [Int]] *)
 <span data-count="0">t</span>ype pattern = <span data-count="32">i</span>dent lis<span data-count="8">t</span> * pat * <span data-count="16">t</span>p optio<span data-count="8">n</span> [@@deriving show { with_path = false }]
 
 <span data-count="0">a</span>nd listpat =
@@ -444,7 +444,7 @@
   (** node is data and two 'sons' e.g  [(x^y; $; (2; $; $))] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="82">a</span>nd expression =
+<span data-count="89">a</span>nd expression =
   | Const of const
   | Identificator of ident (** e.g  [x] *)
   | TupleBld of expr * expr * <span data-count="0">e</span>xpr lis<span data-count="0">t</span> (** e.g  [(1+3, f x)] *)
@@ -470,7 +470,7 @@
 [@@deriving show { with_path = false }]
 
 (** e.g. [(x + 1) :: Int]*)
-<span data-count="3">a</span>nd expr = <span data-count="96">e</span>xpression * <span data-count="96">t</span>p optio<span data-count="48">n</span> [@@deriving show { with_path = false }]
+<span data-count="4">a</span>nd expr = <span data-count="104">e</span>xpression * <span data-count="104">t</span>p optio<span data-count="52">n</span> [@@deriving show { with_path = false }]
 </code></pre>
       </div>
     </div>
