@@ -55,17 +55,17 @@ type expr =
   | Tuple of expr list (** [(1, "Hello world", true)] *)
   | List_expr of expr * expr
   (** {[
-        [ 1, 2, 3 ]
+        [ 1; 2; 3 ]
       ]} *)
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Function_def of expr list * expr (**rec, name, args, body*)
+  | Function_def of expr list * expr (** fun x y -> x + y *)
   | Function_call of expr * expr (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
   | LetIn of is_recursive * ident option * expr list option * expr * expr
-  (** [let x = 5 in x * y] *)
+  (** [let f x y = x + y in f 3 4] *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =
