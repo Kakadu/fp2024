@@ -9,6 +9,28 @@ open Base
 open Ast
 open Angstrom
 
+let skip_ws = skip_while Char.is_whitespace
+
+let keyword = function
+  | "and"
+  | "elif"
+  | "else"
+  | "false"
+  | "fun"
+  | "function"
+  | "if"
+  | "in"
+  | "let"
+  | "match"
+  | "or"
+  | "rec"
+  | "then"
+  | "true"
+  | "type"
+  | "with" -> true
+  | _ -> false
+;;
+
 let ident_char = function
   | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '\'' -> true
   | _ -> false
