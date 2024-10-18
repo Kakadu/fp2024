@@ -294,7 +294,11 @@ let parse_struct_value =
   *>
   let* rec_flag = parse_rec_flag in
   let* value_binding_list = parse_value_binding_list parse_expression in
-  return (Struct_value (rec_flag, value_binding_list))
+  ws
+  *> option
+       (Struct_value (rec_flag, value_binding_list))
+       (ws *> string "in" *> parse_expression
+        >>| fun exp -> Struct_eval (Exp_let (rec_flag, value_binding_list, exp)))
 ;;
 
 let parse_structure =
