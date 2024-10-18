@@ -159,10 +159,27 @@ type instruction =
   | Ret (** Return. Jalr x0, x1, 0 *)
 [@@deriving eq, show { with_path = false }]
 
+(** Compiler directive (most of them are not needed while interpreting) *)
+type directive =
+  | File of string (** .file string *)
+  | Option of string (** .option argument *)
+  | Attribute of string * string (** .attribute tag, value *)
+  | Text (** .text subsection *)
+  | Align of int (** .align abs-expr, abs-expr, abs-expr *) 
+  | Globl of string (** .globl symbol *)
+  | Type of int (** .type int *)
+  | CfiStartproc (** .cfi_startproc *)
+  | CfiEndproc (** .cfi_endproc *)
+  | Size of string * string (** .size *)
+  | Section of string * string * string * string (** .section name *)
+  | String of string (** .string "str" *)
+[@@deriving eq, show { with_path = false }]
+
 (** Expression in AST *)
 type expr =
   | InstructionExpr of instruction (** Instruction *)
   | LabelExpr of label (** Label *)
+  | DirectiveExpr of directive (** Directive *)
 [@@deriving eq, show { with_path = false }]
 
 (** AST is Presented by a List of Expressions *)
