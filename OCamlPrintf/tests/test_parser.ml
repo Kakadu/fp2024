@@ -72,6 +72,68 @@ let%expect_test "parse_pat_exp_tuples" =
     |}]
 ;;
 
+let%expect_test "parse_exp_construct" =
+  run "let spisok = [1; 2; 3]";
+  [%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "spisok");
+           exp =
+           (Exp_construct ("::",
+              (Some (Exp_tuple
+                       [(Exp_constant (Const_integer 1));
+                         (Exp_construct ("::",
+                            (Some (Exp_tuple
+                                     [(Exp_constant (Const_integer 2));
+                                       (Exp_construct ("::",
+                                          (Some (Exp_tuple
+                                                   [(Exp_constant
+                                                       (Const_integer 3));
+                                                     (Exp_construct ("[]", None))
+                                                     ]))
+                                          ))
+                                       ]))
+                            ))
+                         ]))
+              ))
+           }
+          ]
+        ))
+      ]
+      |}]
+;;
+
+let%expect_test "check parse_chain_right_associative" =
+  run "let f x y z = if x = 0 && y = 1 || z >= 2 then 2 else 26;;";
+  [%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "f");
+           exp =
+           (Exp_fun ([(Pat_var "x"); (Pat_var "y"); (Pat_var "z")],
+              (Exp_ifthenelse (
+                 (Exp_apply ((Exp_ident "||"),
+                    [(Exp_apply ((Exp_ident "&&"),
+                        [(Exp_apply ((Exp_ident "="),
+                            [(Exp_ident "x"); (Exp_constant (Const_integer 0))]));
+                          (Exp_apply ((Exp_ident "="),
+                             [(Exp_ident "y"); (Exp_constant (Const_integer 1))]
+                             ))
+                          ]
+                        ));
+                      (Exp_apply ((Exp_ident ">="),
+                         [(Exp_ident "z"); (Exp_constant (Const_integer 2))]))
+                      ]
+                    )),
+                 (Exp_constant (Const_integer 2)),
+                 (Some (Exp_constant (Const_integer 26)))))
+              ))
+           }
+          ]
+        ))
+      ] |}]
+;;
+
 let%expect_test "parse_struct_eval" =
   run "8 / 800 - 555 * (35 + 35)";
   [%expect
@@ -138,68 +200,4 @@ let%expect_test "parse_several_structure_items" =
          (Exp_apply ((Exp_ident "squared"), [(Exp_constant (Const_integer 5))])))
       ]
     |}]
-;;
-
-let%expect_test "parse_exp_construct" =
-  run "let spisok = [1; 2; 3]";
-  [%expect
-    {|
-    [(Struct_value (Nonrecursive,
-        [{ pat = (Pat_var "spisok");
-           exp =
-           (Exp_construct ("::",
-              (Some (Exp_tuple
-                       [(Exp_constant (Const_integer 1));
-                         (Exp_construct ("::",
-                            (Some (Exp_tuple
-                                     [(Exp_constant (Const_integer 2));
-                                       (Exp_construct ("::",
-                                          (Some (Exp_tuple
-                                                   [(Exp_constant
-                                                       (Const_integer 3));
-                                                     (Exp_construct ("[]", None))
-                                                     ]))
-                                          ))
-                                       ]))
-                            ))
-                         ]))
-              ))
-           }
-          ]
-        ))
-      ]
-      |}]
-;;
-
-let%expect_test "check parse_chain_right_associative" =
-  run "let f x = if x = 0 || x = 1 || x >= 121 then 2 else 26;;";
-  [%expect
-    {|
-    [(Struct_value (Nonrecursive,
-        [{ pat = (Pat_var "f");
-           exp =
-           (Exp_fun ([(Pat_var "x")],
-              (Exp_ifthenelse (
-                 (Exp_apply ((Exp_ident "||"),
-                    [(Exp_apply ((Exp_ident "="),
-                        [(Exp_ident "x"); (Exp_constant (Const_integer 0))]));
-                      (Exp_apply ((Exp_ident "||"),
-                         [(Exp_apply ((Exp_ident "="),
-                             [(Exp_ident "x"); (Exp_constant (Const_integer 1))]
-                             ));
-                           (Exp_apply ((Exp_ident ">="),
-                              [(Exp_ident "x");
-                                (Exp_constant (Const_integer 121))]
-                              ))
-                           ]
-                         ))
-                      ]
-                    )),
-                 (Exp_constant (Const_integer 2)),
-                 (Some (Exp_constant (Const_integer 26)))))
-              ))
-           }
-          ]
-        ))
-      ] |}]
 ;;
