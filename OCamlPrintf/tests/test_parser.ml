@@ -170,3 +170,36 @@ let%expect_test "parse_exp_construct" =
       ]
       |}]
 ;;
+
+let%expect_test "check parse_chain_right_associative" =
+  run "let f x = if x = 0 || x = 1 || x >= 121 then 2 else 26;;";
+  [%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "f");
+           exp =
+           (Exp_fun ([(Pat_var "x")],
+              (Exp_ifthenelse (
+                 (Exp_apply ((Exp_ident "||"),
+                    [(Exp_apply ((Exp_ident "="),
+                        [(Exp_ident "x"); (Exp_constant (Const_integer 0))]));
+                      (Exp_apply ((Exp_ident "||"),
+                         [(Exp_apply ((Exp_ident "="),
+                             [(Exp_ident "x"); (Exp_constant (Const_integer 1))]
+                             ));
+                           (Exp_apply ((Exp_ident ">="),
+                              [(Exp_ident "x");
+                                (Exp_constant (Const_integer 121))]
+                              ))
+                           ]
+                         ))
+                      ]
+                    )),
+                 (Exp_constant (Const_integer 2)),
+                 (Some (Exp_constant (Const_integer 26)))))
+              ))
+           }
+          ]
+        ))
+      ] |}]
+;;
