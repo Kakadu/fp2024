@@ -83,6 +83,10 @@ let%test "word_invalid" =
   = Result.Error ": couldn't parse word 'then'"
 ;;
 
+let is_char_suitable_for_ident c =
+  is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
+;;
+
 let ident =
   let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
