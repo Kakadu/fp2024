@@ -26,6 +26,9 @@ factorial:
 	.section	.rodata.str1.8,"aMS",@progbits,1
 	.align	3
 .LC0:
+	.string	"%d"
+	.align	3
+.LC1:
 	.string	"%d\n"
 	.section	.text.startup,"ax",@progbits
 	.align	1
@@ -52,7 +55,7 @@ main:
 	mulw	a2,a4,a2
 	bne	a5,zero,.L13
 .L14:
-	lla	a1,.LC0
+	lla	a1,.LC1
 	li	a0,2
 	call	__printf_chk@plt
 	li	a0,0
