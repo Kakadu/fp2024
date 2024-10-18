@@ -49,7 +49,7 @@ type unop =
 (** variable's / function's name*)
 type ident = Ident of string [@@deriving show { with_path = false }]
 
-(** e.g. [lst@(_:xs) :: [Int]] *)
+(** e.g. [a@my_list@lst@(_:xs) :: [Int]] *)
 type pattern = ident list * pat * tp option [@@deriving show { with_path = false }]
 
 and listpat =

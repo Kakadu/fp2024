@@ -63,53 +63,21 @@ let%test "const_invalid" =
   parse_string ~consume:Prefix const "beb" = Result.Error ": no more choices"
 ;;
 
+let is_char_suitable_for_ident c =
+  is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
+;;
+
 let ident =
-  let keywords =
-    [ "case"
-    ; "of"
-    ; "class"
-    ; "data"
-    ; "default"
-    ; "deriving"
-    ; "do"
-    ; "forall"
-    ; "foreign"
-    ; "hiding"
-    ; "if"
-    ; "then"
-    ; "else"
-    ; "import"
-    ; "infix"
-    ; "infixl"
-    ; "infixr"
-    ; "instance"
-    ; "let"
-    ; "in"
-    ; "mdo"
-    ; "module"
-    ; "newtype"
-    ; "proc"
-    ; "qualified"
-    ; "rec"
-    ; "type"
-    ; "where"
-    ]
-  in
+  let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
      satisfy (function
        | 'a' .. 'z' -> true
        | _ -> false)
    in
-   let* y =
-     take_while (fun c ->
-       is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c)
-   in
+   let* y = take_while is_char_suitable_for_ident in
    return (Printf.sprintf "%c%s" x y))
-  <|> (let* x = satisfy (fun c -> Char.equal '_' c) in
-       let* y =
-         take_while1 (fun c ->
-           is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c)
-       in
+  <|> (let* x = satisfy (Char.equal '_') in
+       let* y = take_while1 is_char_suitable_for_ident in
        return (Printf.sprintf "%c%s" x y))
   >>= fun identifier ->
   match List.find_opt (String.equal identifier) keywords with
@@ -130,8 +98,27 @@ let%test "ident_valid_'" =
 ;;
 
 let%test "ident_invalid_keyword" =
-  parse_string ~consume:Prefix ident "do"
-  = Result.Error ": keyword 'do' cannot be an identifier"
+  parse_string ~consume:Prefix ident "then"
+  = Result.Error ": keyword 'then' cannot be an identifier"
+;;
+
+let word req_word =
+  let open String in
+  if equal req_word empty then return empty else
+  let* fst_smb = satisfy (is_alpha) in
+  let* w = take_while is_char_suitable_for_ident in
+  if equal (Printf.sprintf "%c%s" fst_smb w) req_word
+  then return req_word
+  else Printf.sprintf "couldn't parse word '%s'" req_word |> fail
+;;
+
+let%test "word_valid" =
+  parse_string ~consume:Prefix (word "then") "then" = Result.Ok "then"
+;;
+
+let%test "word_invalid" =
+  parse_string ~consume:Prefix (word "then") "thena"
+  = Result.Error ": couldn't parse word 'then'"
 ;;
 
 let pat =
@@ -178,20 +165,20 @@ let bindingbody e =
    **> let* ex = e in
        return (OrdBody ex))
   <|>
-  let+ ee_pairs =
+  let* ee_pairs =
     many1
       (char '|'
-       **> let* ex1 = string "otherwise" *> return_true_expr <|> e in
+       **> let* ex1 = word "otherwise" *> return_true_expr <|> e in
            char '='
            **> let* ex2 = e in
                return (ex1, ex2))
   in
   match ee_pairs with
-  | [] -> failwith " many1 result can't be empty"
-  | hd :: tl -> Guards (hd, tl)
+  | [] -> fail " many1 result can't be empty"
+  | hd :: tl -> Guards (hd, tl) |> return
 ;;
 
-let b e b =
+let bnd e bnd =
   (let** ident = ident in
    (* let* ft = option None (functype <** char ';') in *)
    let** pt = pattern in
@@ -200,10 +187,10 @@ let b e b =
   <|> (let** pt = pattern in
        return (fun bb where_binds -> VarsBind (pt, bb, where_binds)))
   <**> bindingbody e
-  <**> option [] @@ (string "where" **> sep_by (ws *> char ';' *> ws) b)
+  <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
 ;;
 
-let binding e = fix (b e) |> b e
+let binding e = fix (bnd e) |> bnd e
 
 type assoc =
   | Left
@@ -271,24 +258,24 @@ let ident_e =
 ;;
 
 let if_then_else e =
-  let+ cond = string "if" **> e
-  and+ th_br = string "then" **> e
-  and+ el_br = string "else" **> e in
+  let+ cond = word "if" **> e
+  and+ th_br = word "then" **> e
+  and+ el_br = word "else" **> e in
   IfThenEsle (cond, th_br, el_br), etp
 ;;
 
 let inner_bindings e =
-  string "let"
+  word "let"
   **> let+ bnd = binding e
       and+ bnds = many @@ (char ';' **> binding e)
-      and+ ex = string "in" **> e in
+      and+ ex = word "in" **> e in
       InnerBindings (bnd, bnds, ex), etp
 ;;
 
 let opt_e e =
   ws *> (string "Nothing" *> return (OptionBld Nothing, etp))
-  <|> string "Just"
-      *> let** ex = e in
+  <|> word "Just"
+      *> let** ex = choice [ const_e; ident_e; parens e ] in
          return (OptionBld (Just ex), etp)
 ;;
 
@@ -300,10 +287,10 @@ let other_expr e fa =
 let binop e fa = bo (other_expr e fa) prios_list
 
 let function_apply ex e =
-  let+ r = many1 (ws *> (const_e <|> ident_e <|> parens e)) in
+  let* r = many1 (ws *> (const_e <|> ident_e <|> parens e)) in
   match r with
-  | [] -> failwith "many1 result can't be empty"
-  | hd :: tl -> FunctionApply (ex, hd, tl), etp
+  | [] -> fail "many1 result can't be empty"
+  | hd :: tl -> (FunctionApply (ex, hd, tl), etp) |> return
 ;;
 
 let e e =
@@ -317,7 +304,7 @@ let expr = e (fix e)
 let test call sh str =
   match parse_string ~consume:Prefix call str with
   | Ok v -> print_endline (sh v)
-  | Error msg -> failwith msg
+  | Error msg -> Printf.fprintf stderr "error: %s" msg
 ;;
 
 let%expect_test "expr_const" =
@@ -337,6 +324,15 @@ let%expect_test "expr_prio" =
               Multiply, ((Const (Int 2)), None))),
            None),
           Greater, ((Const (Int 1)), None))),
+       None) |}]
+;;
+
+let%expect_test "expr_with_Just" =
+  test expr show_expr "Just 2 + 1";
+  [%expect
+    {|
+      ((Binop (((OptionBld (Just ((Const (Int 2)), None))), None), Plus,
+          ((Const (Int 1)), None))),
        None) |}]
 ;;
 
@@ -405,9 +401,4 @@ let%expect_test "fun_binding_guards" =
 ;;
 
 let parse_and_print_line = test binding show_binding
-
-let parse_line str =
-  match parse_string ~consume:Prefix binding str with
-  | Result.Ok v -> v
-  | Error msg -> failwith msg
-;;
+let parse_line str = parse_string ~consume:Prefix binding str
