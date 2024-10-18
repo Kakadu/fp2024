@@ -1,7 +1,8 @@
 Copyright 2024, Kostya Oreshin and Nikita Shchutskii
 SPDX-License-Identifier: MIT
 
-  $ ../bin/main.exe < fac.txt
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > fac n = if n < 0 then Nothing else Just (save_fac n) where save_fac y | y == 0  = 1 | otherwise = y * save_fac (y - 1)
   (FunBind (((Ident "fac"), None), ([], (PIdentificator (Ident "n")), None),
      [],
      (OrdBody
