@@ -175,8 +175,11 @@ let parse_expr = ws_opt (choice [ parse_instruction; parse_label_expr ])
 let parse_ast =
   ws_opt (many parse_expr)
   <* (end_of_input
-      <|> (Angstrom.peek_char
+      <|> (Angstrom.pos >>= fun pos ->
+           Angstrom.peek_char
            >>= function
            | None -> return ()
-           | Some c -> fail (Printf.sprintf "Unexpected character: '%c'" c)))
+           | Some c ->
+             fail (Printf.sprintf "Unexpected character: '%c' at position %d" c pos)))
 ;;
+

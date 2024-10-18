@@ -42,7 +42,7 @@ let parse_input_file filename =
   let input = read_file filename in
   match parse_string ~consume:All parse_ast input with
   | Ok ast -> ast
-  | Error msg -> failwith (sprintf "Failed to parse file: %s" msg)
+  | Error msg -> failwith (sprintf "Failed to parse file%s" msg)
 ;;
 
 let () =
