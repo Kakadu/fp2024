@@ -123,11 +123,11 @@ let%expect_test "parse_exp_let" =
 ;;
 
 let%expect_test "parse_several_structure_items" =
-  run "let square x = x * x;; square 5";
+  run "let squared x = x * x;; squared 5";
   [%expect
     {|
     [(Struct_value (Nonrecursive,
-        [{ pat = (Pat_var "square");
+        [{ pat = (Pat_var "squared");
            exp =
            (Exp_fun ([(Pat_var "x")],
               (Exp_apply ((Exp_ident "*"), [(Exp_ident "x"); (Exp_ident "x")]))))
@@ -135,7 +135,7 @@ let%expect_test "parse_several_structure_items" =
           ]
         ));
       (Struct_eval
-         (Exp_apply ((Exp_ident "square"), [(Exp_constant (Const_integer 5))])))
+         (Exp_apply ((Exp_ident "squared"), [(Exp_constant (Const_integer 5))])))
       ]
     |}]
 ;;
@@ -167,5 +167,6 @@ let%expect_test "parse_exp_construct" =
            }
           ]
         ))
-      ] |}]
+      ]
+      |}]
 ;;

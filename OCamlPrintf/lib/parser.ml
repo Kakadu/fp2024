@@ -16,8 +16,16 @@ let parse_comments =
 ;;
 
 let ws = many parse_comments *> skip_whitespaces
-let ws1 = skip_whitespaces1 *> many parse_comments <|> many1 parse_comments
-let skip_parens parse_ = ws *> char '(' *> ws *> parse_ <* ws <* char ')'
+
+let skip_parens parse_ =
+  ws *> (string "(" *> ws *> parse_)
+  <* (ws <* string ")" <|> fail "There is no closing bracket.")
+;;
+
+let is_separator = function
+  | '(' | '[' | '\'' | '"' | ' ' | '\t' | '\n' -> true
+  | _ -> false
+;;
 
 let is_keyword = function
   (* https://ocaml.org/manual/5.2/lex.html#sss:keywords *)
@@ -37,6 +45,14 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let keyword str =
+  string str *> peek_char_fail
+  >>| fun char_value ->
+  if is_separator char_value
+  then return ()
+  else fail (String.concat [ "There is no separator after "; "\""; str; "\""; "." ])
+;;
+
 let is_empty = function
   | [] -> true
   | _ -> false
@@ -53,18 +69,20 @@ let parse_ident =
       | _ -> false)
     >>| String.of_char
   in
-  let* parse_rest =
+  let* rest_ident =
     take_while (function
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
   in
-  let ident = String.( ^ ) start_ident parse_rest in
-  if is_keyword ident then fail ident else return ident
+  let ident = String.( ^ ) start_ident rest_ident in
+  if is_keyword ident
+  then fail (String.concat [ "Impossible name: "; "\""; ident; "\""; "." ])
+  else return ident
 ;;
 
 (* ==================== Rec_flag ==================== *)
 
-let parse_rec_flag = ws1 *> option Nonrecursive (string "rec" *> ws1 *> return Recursive)
+let parse_rec_flag = ws *> option Nonrecursive (keyword "rec" *> return Recursive)
 
 (* ==================== Constant ==================== *)
 
@@ -76,12 +94,12 @@ let parse_const_int =
 ;;
 
 let parse_const_char =
-  char '\'' *> any_char <* char '\'' >>| fun char_value -> Const_char char_value
+  string "\'" *> any_char <* string "\'" >>| fun char_value -> Const_char char_value
 ;;
 
 let parse_const_string =
-  char '\"' *> take_till (Char.equal '\"')
-  <* char '\"'
+  string "\"" *> take_till (Char.equal '\"')
+  <* string "\""
   >>| fun str_value -> Const_string str_value
 ;;
 
@@ -91,7 +109,7 @@ let parse_constant =
 
 (* ==================== Pattern ==================== *)
 
-let parse_pat_any = char '_' *> return Pat_any
+let parse_pat_any = string "_" *> return Pat_any
 let parse_pat_var = parse_ident >>| fun var -> Pat_var var
 let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
@@ -106,14 +124,16 @@ let parse_bool_pat =
 ;;
 
 let parse_pat_construct parse_exp =
-  let rec parse_list = function
+  let rec parse_pat_list = function
     | [] -> Pat_construct ("[]", None)
-    | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_list xs ]))
+    | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_pat_list xs ]))
   in
-  let parse_list_elements =
-    ws *> string "[" *> sep_by (ws *> string ";") parse_exp <* string "]" >>| parse_list
+  let parse_elements_pat_list =
+    ws *> string "[" *> sep_by (ws *> string ";") parse_exp
+    <* string "]"
+    >>| parse_pat_list
   in
-  parse_list_elements <|> parse_bool_pat
+  parse_elements_pat_list <|> parse_bool_pat
 ;;
 
 let parse_pattern =
@@ -164,19 +184,19 @@ let cmp = parse_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
 let parse_fun_binding parse_exp =
   let* name = ws *> parse_pat_var in
   let* args = ws *> sep_by1 ws parse_pattern in
-  let* exp = ws *> char '=' *> parse_exp in
+  let* exp = ws *> string "=" *> parse_exp in
   return { pat = name; exp = Exp_fun (args, exp) }
 ;;
 
 let parse_simple_binding parse_exp =
   let* pat = parse_pattern in
-  let* exp = ws *> char '=' *> ws *> parse_exp in
+  let* exp = ws *> string "=" *> ws *> parse_exp in
   return { pat; exp }
 ;;
 
 let parse_value_binding_list parse_exp =
   sep_by1
-    (ws *> string "and")
+    (ws *> keyword "and")
     (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
 ;;
 
@@ -187,10 +207,10 @@ let parse_exp_constant = parse_constant >>| fun const -> Exp_constant const
 
 let parse_exp_let parse_exp =
   ws
-  *> string "let"
+  *> keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
-  let* value_binding = ws *> parse_value_binding_list parse_exp <* ws <* string "in" in
+  let* value_binding = ws *> parse_value_binding_list parse_exp <* ws <* keyword "in" in
   let* expression = ws *> parse_exp in
   return (Exp_let (rec_flag, value_binding, expression))
 ;;
@@ -218,11 +238,11 @@ let parse_cases parse_exp =
     let* exp = ws *> parse_exp in
     return { left = pat; right = exp }
   in
-  option () (char '|' *> return ()) *> sep_by1 (ws *> char '|' *> ws) parse_case
+  option () (string "|" *> return ()) *> sep_by1 (ws *> string "|" *> ws) parse_case
 ;;
 
 let parse_exp_match parse_exp =
-  let* expression = ws *> string "match" *> ws *> parse_exp <* ws <* string "with" in
+  let* expression = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
   let* cases = ws *> parse_cases parse_exp in
   return (Exp_match (expression, cases))
 ;;
@@ -238,24 +258,24 @@ let parse_bool_exp =
 ;;
 
 let parse_exp_construct parse_exp =
-  let rec parse_list = function
+  let rec parse_exp_list = function
     | [] -> Exp_construct ("[]", None)
-    | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_list xs ]))
+    | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_exp_list xs ]))
   in
-  let parse_list_elements =
+  let parse_elements_exp_list =
     ws *> string "[" *> sep_by (ws *> string ";") parse_exp
     <* ws
     <* string "]"
-    >>| parse_list
+    >>| parse_exp_list
   in
-  parse_list_elements <|> parse_bool_exp
+  parse_elements_exp_list <|> parse_bool_exp
 ;;
 
 let parse_exp_ifthenelse parse_exp =
-  let* if_ = ws *> string "if" *> parse_exp in
-  let* then_ = ws *> string "then" *> parse_exp in
+  let* if_ = ws *> keyword "if" *> parse_exp in
+  let* then_ = ws *> keyword "then" *> parse_exp in
   let* else_ =
-    option None (ws *> string "else" >>| Option.some)
+    option None (ws *> keyword "else" >>| Option.some)
     >>= function
     | None -> return None
     | Some _ -> parse_exp >>| Option.some
@@ -290,14 +310,14 @@ let parse_expression =
 (* ==================== Structure ==================== *)
 
 let parse_struct_value =
-  string "let"
+  keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
   let* value_binding_list = parse_value_binding_list parse_expression in
   ws
   *> option
        (Struct_value (rec_flag, value_binding_list))
-       (ws *> string "in" *> parse_expression
+       (ws *> keyword "in" *> parse_expression
         >>| fun exp -> Struct_eval (Exp_let (rec_flag, value_binding_list, exp)))
 ;;
 
