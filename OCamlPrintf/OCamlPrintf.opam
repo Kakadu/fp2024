@@ -16,8 +16,11 @@ homepage: "https://github.com/RodionovMaxim05/OCamlPrintf"
 bug-reports: "https://github.com/RodionovMaxim05/OCamlPrintf"
 depends: [
   "dune" {>= "3.7"}
+  "base"
+  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_deriving"
+  "ppx_expect"
   "bisect_ppx"
   "odoc" {with-doc}
   "ocamlformat" {build}
