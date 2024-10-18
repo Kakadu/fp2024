@@ -101,15 +101,19 @@ let parse_pat_tuple parse_pat =
   return (Pat_tuple (List.cons first_pat rest_pat_list))
 ;;
 
+let parse_bool_pat =
+  ws *> string "true" <|> string "false" >>| fun name -> Pat_construct (name, None)
+;;
+
 let parse_pat_construct parse_exp =
   let rec parse_list = function
     | [] -> Pat_construct ("[]", None)
     | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_list xs ]))
   in
-  let parse_elements =
+  let parse_list_elements =
     ws *> string "[" *> sep_by (ws *> string ";") parse_exp <* string "]" >>| parse_list
   in
-  parse_elements
+  parse_list_elements <|> parse_bool_pat
 ;;
 
 let parse_pattern =
@@ -229,15 +233,22 @@ let parse_exp_tuple parse_exp =
   return (Exp_tuple (List.cons first_exp rest_exp_list))
 ;;
 
+let parse_bool_exp =
+  ws *> string "true" <|> string "false" >>| fun name -> Exp_construct (name, None)
+;;
+
 let parse_exp_construct parse_exp =
   let rec parse_list = function
     | [] -> Exp_construct ("[]", None)
     | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_list xs ]))
   in
-  let parse_elements =
-    ws *> string "[" *> sep_by (ws *> string ";") parse_exp <* string "]" >>| parse_list
+  let parse_list_elements =
+    ws *> string "[" *> sep_by (ws *> string ";") parse_exp
+    <* ws
+    <* string "]"
+    >>| parse_list
   in
-  parse_elements
+  parse_list_elements <|> parse_bool_exp
 ;;
 
 let parse_exp_ifthenelse parse_exp =
@@ -252,6 +263,12 @@ let parse_exp_ifthenelse parse_exp =
   return (Exp_ifthenelse (if_, then_, else_))
 ;;
 
+let parse_exp_sequence parse_exp =
+  parse_chain_left_associative
+    parse_exp
+    (ws *> string ";" *> return (fun exp1 exp2 -> Exp_sequence (exp1, exp2)))
+;;
+
 let parse_expression =
   ws
   *> fix (fun parse_full_exp ->
@@ -260,13 +277,13 @@ let parse_expression =
         [ skip_parens parse_full_exp
         ; parse_exp_ident
         ; parse_exp_constant
-        ; parse_exp_construct parse_full_exp
         ; parse_exp_let parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
         ]
     in
     let parse_exp = parse_exp_apply parse_exp in
+    let parse_exp = parse_exp_sequence parse_exp <|> parse_exp_construct parse_exp in
     parse_exp_tuple parse_exp <|> parse_exp)
 ;;
 
