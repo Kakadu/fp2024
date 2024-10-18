@@ -1,8 +1,10 @@
 (library
  (name haskell_lib)
  (public_name Haskell.Lib)
- (modules Ast)
+ (libraries angstrom)
+ (inline_tests)
+ (modules Parser Ast)
  (preprocess
-  (pps ppx_deriving.show))
+  (pps ppx_deriving.show ppx_inline_test ppx_expect))
  (instrumentation
   (backend bisect_ppx)))
