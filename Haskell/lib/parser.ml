@@ -104,12 +104,14 @@ let%test "ident_invalid_keyword" =
 
 let word req_word =
   let open String in
-  if equal req_word empty then return empty else
-  let* fst_smb = satisfy (is_alpha) in
-  let* w = take_while is_char_suitable_for_ident in
-  if equal (Printf.sprintf "%c%s" fst_smb w) req_word
-  then return req_word
-  else Printf.sprintf "couldn't parse word '%s'" req_word |> fail
+  if equal req_word empty
+  then return empty
+  else
+    let* fst_smb = satisfy is_alpha in
+    let* w = take_while is_char_suitable_for_ident in
+    if equal (Printf.sprintf "%c%s" fst_smb w) req_word
+    then return req_word
+    else Printf.sprintf "couldn't parse word '%s'" req_word |> fail
 ;;
 
 let%test "word_valid" =
