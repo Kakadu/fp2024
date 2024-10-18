@@ -139,3 +139,33 @@ let%expect_test "parse_several_structure_items" =
       ]
     |}]
 ;;
+
+let%expect_test "parse_exp_construct" =
+  run "let spisok = [1; 2; 3]";
+  [%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "spisok");
+           exp =
+           (Exp_construct ("::",
+              (Some (Exp_tuple
+                       [(Exp_constant (Const_integer 1));
+                         (Exp_construct ("::",
+                            (Some (Exp_tuple
+                                     [(Exp_constant (Const_integer 2));
+                                       (Exp_construct ("::",
+                                          (Some (Exp_tuple
+                                                   [(Exp_constant
+                                                       (Const_integer 3));
+                                                     (Exp_construct ("[]", None))
+                                                     ]))
+                                          ))
+                                       ]))
+                            ))
+                         ]))
+              ))
+           }
+          ]
+        ))
+      ] |}]
+;;
