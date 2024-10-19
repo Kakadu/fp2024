@@ -50,25 +50,26 @@ type immediate32 = Immediate32 of int [@@deriving eq, show { with_path = false }
 (** Label Type *)
 type label = string [@@deriving eq, show { with_path = false }]
 
+(** Address32 Type to Jump to *)
 type address32 =
-  | ImmediateAddress32 of immediate32
-  | LabelAddress32 of label
+  | ImmediateAddress32 of immediate32 (** Immediate32 to Jump to *)
+  | LabelAddress32 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }]
 
 (** Address12 Type to Jump to *)
 type address12 =
   | ImmediateAddress12 of immediate12 (** Immediate12 to Jump to*)
   | LabelAddress12 of label (** Label to Jump to *)
-  | LoImmediateAddress12 of immediate32
-  | LoLabelAddress12 of label
+  | LoImmediateAddress12 of immediate32 (** %lo(imm12) *)
+  | LoLabelAddress12 of label (** %lo(label) *)
 [@@deriving eq, show { with_path = false }]
 
 (** Address20 Type to Jump to *)
 type address20 =
   | ImmediateAddress20 of immediate20 (** Immediate20 to Jump to*)
   | LabelAddress20 of label (** Label to Jump to *)
-  | HiImmediateAddress20 of immediate32
-  | HiLabelAddress20 of label
+  | HiImmediateAddress20 of immediate32 (** %hi(imm20) *)
+  | HiLabelAddress20 of label (** %hi(label) *)
 [@@deriving eq, show { with_path = false }]
 
 type instruction =
