@@ -203,7 +203,7 @@ let read_file file_name =
 
 let parse_input_file filename =
   let input = read_file filename in
-  match parse_string ~consume:Prefix parse_ast input with
+  match parse_string ~consume:All parse_ast input with
   | Ok ast -> ast
   | Error msg -> failwith (sprintf "Failed to parse file%s" msg)
 ;;

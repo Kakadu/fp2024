@@ -344,5 +344,5 @@ let parse_ast =
            Angstrom.peek_char
            >>= function
            | None -> return ()
-           | Some c -> return ()))
+           | Some c -> fail (Printf.sprintf "Unexpected character: '%c' at position %d" c pos)))
 ;;
