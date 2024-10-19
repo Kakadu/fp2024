@@ -117,14 +117,14 @@ type instruction =
   (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
   | Jal of register * address20
   (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
-  | Jalr of register * register * address12
-  | Jr of register
-  | J of address20
-  (** Jump and Link Register. rd = PC + 4; PC = rs1 + imm *)
+  | Jalr of register * register * address12 (** Jump and Link register. rd = PC + 4, PC = rs1 + imm *)
+  | Jr of register (** Jump Reg. jalr x0, rs1, 0 *)
+  | J of address20 (** Jump. jal x0, 2 * offset *)
   | Lui of register * address20 (** Load Upper Immediate. rd = imm << 12 *)
   | Auipc of register * immediate20
   (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
   | Ecall (** EnvironmentCall - a syscall *)
+  | Call of string (** call. - a syscall *)
   | Mul of register * register * register (** Multiply. rd = (rs1 * rs2)[31:0] *)
   | Mulh of register * register * register (** Multiply High. rd = (rs1 * rs2)[63:32] *)
   | Mulhsu of register * register * register
@@ -139,6 +139,8 @@ type instruction =
   (** Load Word (Unsigned). rd = M[rs1 + imm][0:31] *)
   | Ld of register * register * address12
   (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
+  | La of register * address32 (** Load Address. auipc rd, symbol[31:12]; addi rd, rd, symbol[11:0] *)
+  | Lla of register * address32 (** Load Local Address. auipc rd, %pcrel_hi(symbol); addi rd, rd, %pcrel_lo(label) *)
   | Sd of register * register * address12
   (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
   | Addiw of register * register * immediate12
@@ -195,11 +197,10 @@ type directive =
   | Section of string * string * type_dir * (int option) (** .section name *)
   | String of string (** .string "str" *)
   | CfiDefCfaOffset of int (** .cfi_def_cfa_offset int*)
-  | CfiOffset of int * int
-  | CfiRememberState
-  | CfiRestore of int
-  | Call of string
-  | Ident of string
+  | CfiOffset of int * int (** .cfi_offset int, int *)
+  | CfiRememberState (** .cfi_remember_state *)
+  | CfiRestore of int (** .cfi_restore int *)
+  | Ident of string (** .ident string *)
 [@@deriving eq, show { with_path = false }]
 
 (** Expression in AST *)
