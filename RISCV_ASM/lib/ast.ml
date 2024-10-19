@@ -114,7 +114,8 @@ type instruction =
   (** Branch >= (Unsigned). if (rs1 >= rs2) PC += imm. *)
   | Jal of register * address20
   (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
-  | Jalr of register * register * address12 (** Jump and Link register. rd = PC + 4, PC = rs1 + imm *)
+  | Jalr of register * register * address12
+  (** Jump and Link register. rd = PC + 4, PC = rs1 + imm *)
   | Jr of register (** Jump Reg. jalr x0, rs1, 0 *)
   | J of address20 (** Jump. jal x0, 2 * offset *)
   | Lui of register * address20 (** Load Upper Immediate. rd = imm << 12 *)
@@ -136,8 +137,10 @@ type instruction =
   (** Load Word (Unsigned). rd = M[rs1 + imm][0:31] *)
   | Ld of register * register * address12
   (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
-  | La of register * address32 (** Load Address. auipc rd, symbol[31:12]; addi rd, rd, symbol[11:0] *)
-  | Lla of register * address32 (** Load Local Address. auipc rd, %pcrel_hi(symbol); addi rd, rd, %pcrel_lo(label) *)
+  | La of register * address32
+  (** Load Address. auipc rd, symbol[31:12]; addi rd, rd, symbol[11:0] *)
+  | Lla of register * address32
+  (** Load Local Address. auipc rd, %pcrel_hi(symbol); addi rd, rd, %pcrel_lo(label) *)
   | Sd of register * register * address12
   (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
   | Addiw of register * register * immediate12
@@ -176,8 +179,7 @@ type string_or_int_value =
 [@@deriving eq, show { with_path = false }]
 
 (** Types that are assigned to symbols for the logic of the compiler*)
-type type_dir = Type of string
-[@@deriving eq, show { with_path = false }]
+type type_dir = Type of string [@@deriving eq, show { with_path = false }]
 
 (** Compiler directive (most of them are not needed while interpreting) *)
 type directive =
@@ -185,13 +187,13 @@ type directive =
   | Option of string (** .option argument *)
   | Attribute of string * string_or_int_value (** .attribute tag, value *)
   | Text (** .text subsection *)
-  | Align of int (** .align abs-expr, abs-expr, abs-expr *) 
+  | Align of int (** .align abs-expr, abs-expr, abs-expr *)
   | Globl of address12 (** .globl symbol *)
   | TypeDir of string * type_dir (** .type assigns type to a symbol *)
   | CfiStartproc (** .cfi_startproc *)
   | CfiEndproc (** .cfi_endproc *)
   | Size of address12 * string (** .size *)
-  | Section of string * string * type_dir * (int option) (** .section name *)
+  | Section of string * string * type_dir * int option (** .section name *)
   | String of string (** .string "str" *)
   | CfiDefCfaOffset of int (** .cfi_def_cfa_offset int*)
   | CfiOffset of int * int (** .cfi_offset int, int *)
