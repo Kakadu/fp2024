@@ -198,6 +198,7 @@ type directive =
   | CfiRememberState (** .cfi_remember_state *)
   | CfiRestore of int (** .cfi_restore int *)
   | Ident of string (** .ident string *)
+  | CfiRestoreState (** .cfi_restore_state *)
 [@@deriving eq, show { with_path = false }]
 
 (** Expression in AST *)
