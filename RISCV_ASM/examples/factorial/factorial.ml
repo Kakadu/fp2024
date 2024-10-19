@@ -211,6 +211,6 @@ let parse_input_file filename =
 ;;
 
 let () =
-  let parsed_ast = parse_input_file "../examples/ast_factorial/factorial.s" in
+  let parsed_ast = parse_input_file "../examples/factorial/factorial.s" in
   print_endline (show_ast parsed_ast)
 ;;

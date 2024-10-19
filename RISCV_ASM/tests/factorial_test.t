@@ -1,4 +1,4 @@
-  $ ../examples/ast_factorial/ast_factorial.exe
+  $ ../examples/factorial/factorial.exe
   [(DirectiveExpr (File "factorial.c")); (DirectiveExpr (Option "pic"));
     (DirectiveExpr
        (Attribute ("arch",
