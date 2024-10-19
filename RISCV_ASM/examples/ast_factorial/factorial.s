@@ -39,14 +39,20 @@ main:
 	.cfi_startproc
 	addi	sp,sp,-32
 	.cfi_def_cfa_offset 32
-	addi	a1,sp,12
+	sd	s0,16(sp)
+	.cfi_offset 8, -16
+	la	s0,__stack_chk_guard
+	ld	a5, 0(s0)
+	sd	a5, 8(sp)
+	li	a5, 0
+	addi	a1,sp,4
 	lla	a0,.LC0
 	sd	ra,24(sp)
 	.cfi_offset 1, -8
 	call	__isoc99_scanf@plt
 	li	a5,1
-	bne	a0,a5,.L15
-	lw	a5,12(sp)
+	bne	a0,a5,.L16
+	lw	a5,4(sp)
 	mv	a2,a0
 	beq	a5,zero,.L14
 .L13:
@@ -60,16 +66,25 @@ main:
 	call	__printf_chk@plt
 	li	a0,0
 .L12:
+	ld	a4, 8(sp)
+	ld	a5, 0(s0)
+	xor	a5, a4, a5
+	li	a4, 0
+	bne	a5,zero,.L22
 	ld	ra,24(sp)
 	.cfi_remember_state
 	.cfi_restore 1
+	ld	s0,16(sp)
+	.cfi_restore 8
 	addi	sp,sp,32
 	.cfi_def_cfa_offset 0
 	jr	ra
-.L15:
+.L16:
 	.cfi_restore_state
 	li	a0,-1
 	j	.L12
+.L22:
+	call	__stack_chk_fail@plt
 	.cfi_endproc
 .LFE24:
 	.size	main, .-main

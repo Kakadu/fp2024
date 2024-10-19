@@ -11,7 +11,7 @@ ASM=factorial.s
 all: $(TARGET)
 
 $(ASM): $(SRC)
-	@$(CC) $(CFLAGS) $< -fno-pie
+	@$(CC) $(CFLAGS) $<
 
 $(TARGET): $(ASM)
 	@$(CC) -o $@ $< -static
