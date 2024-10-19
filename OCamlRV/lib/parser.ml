@@ -6,7 +6,7 @@ open Angstrom
 open Ast
 open Base
 
-let is_id c = Char.is_alphanum c || Char.equal c '_'
+let is_id c = Char.is_alphanum c || Char.equal c '_' || Char.equal c '\''
 
 let is_keyword = function
   | "let"
