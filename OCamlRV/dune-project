@@ -22,6 +22,7 @@
  (version 0.1)
  (depends
   dune
+  core
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
