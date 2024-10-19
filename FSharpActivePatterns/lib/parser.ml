@@ -100,20 +100,18 @@ let log_or = p_binexpr "||" Logical_or
 let log_and = p_binexpr "&&" Logical_and
 
 let p_if p_expr =
-  fix (fun p_if ->
-    lift3
-      (fun cond th el -> If_then_else (cond, th, el))
-      (skip_ws *> string "if" *> skip_ws1 *> (p_expr <|> p_if))
-      (skip_ws *> string "then" *> skip_ws1 *> (p_expr <|> p_if))
-      (skip_ws
+  lift3
+    (fun cond th el -> If_then_else (cond, th, el))
+    (skip_ws *> string "if" *> skip_ws1 *> (p_expr))
+    (skip_ws *> string "then" *> skip_ws1 *> (p_expr))
+    (skip_ws
        *> string "else"
        *> skip_ws1
-       *> (p_expr <|> p_if >>= fun e -> return (Some e))
-       <|> return None))
+       *> (p_expr >>= fun e -> return (Some e))
+       <|> return None)
 ;;
 
 let p_letin p_expr =
-  fix (fun p_letin ->
     skip_ws
     *> string "let"
     *> skip_ws1
@@ -125,8 +123,8 @@ let p_letin p_expr =
          (many (skip_ws *> p_var)
           >>= fun args ->
           if not (List.length args = 0) then return (Some args) else return None)
-         (skip_ws *> string "=" *> skip_ws *> (p_expr <|> p_letin))
-    <*> skip_ws *> string "in" *> skip_ws *> (p_expr <|> p_letin))
+         (skip_ws *> string "=" *> skip_ws *> p_expr)
+    <*> skip_ws *> string "in" *> skip_ws *> p_expr
 ;;
 
 let p_let p_expr =
