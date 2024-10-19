@@ -5,6 +5,14 @@
 open Angstrom
 open Ast
 open Base
+(*open PrintAst*)
+
+(*
+let debug p =
+  p >>= fun result ->
+  print_expr 0 result;
+  return result
+;;*)
 
 (* TECHNICAL FUNCTIONS *)
 let skip_ws =
@@ -141,10 +149,28 @@ let p_let p_expr =
        (skip_ws *> string "=" *> skip_ws *> p_expr)
 ;;
 
+
+let app_first expr = 
+  skip_ws *> 
+  fix (fun a_exp -> 
+    let expr = choice [p_var; p_if expr; p_parens a_exp] in
+    expr
+    )
+;;
+
+let p_apply expr =
+  let* name = app_first expr in
+  let rec parse_args acc =
+    (skip_ws *> expr >>= fun arg ->
+     parse_args (Function_call (acc, arg))) <|> return acc
+  in
+  parse_args name
+;; 
+(*
 let p_apply expr =
   (*Printf.printf "\n\n\n\n here"; *)
   chainl1 expr (return (fun f arg -> Function_call (f, arg)))
-;;
+;; *)
 
 let p_expr =
   skip_ws
@@ -152,7 +178,7 @@ let p_expr =
     let atom = choice [ p_var; p_int; p_bool; p_parens p_expr ] in
     let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    let app = p_apply letin_expr in
+    let app = p_apply letin_expr <|> letin_expr in
     let factor = chainl1 app (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let comp_eq = chainl1 term (equal <|> unequal) in
