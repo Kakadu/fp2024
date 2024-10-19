@@ -160,8 +160,6 @@ let%test "pattern_valid_double_as" =
   = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Int 2), None)
 ;;
 
-let return_true_expr = return (Const (Bool true), None)
-
 let bindingbody e =
   (char '='
    **> let* ex = e in
@@ -170,7 +168,7 @@ let bindingbody e =
   let* ee_pairs =
     many1
       (char '|'
-       **> let* ex1 = word "otherwise" *> return_true_expr <|> e in
+       **> let* ex1 = e in
            char '='
            **> let* ex2 = e in
                return (ex1, ex2))
@@ -288,7 +286,7 @@ let other_expr e fa =
 
 let binop e fa = bo (other_expr e fa) prios_list
 
-let function_apply ex e =
+let function_application ex e =
   let* r = many1 (ws *> (const_e <|> ident_e <|> parens e)) in
   match r with
   | [] -> fail "many1 result can't be empty"
@@ -296,9 +294,9 @@ let function_apply ex e =
 ;;
 
 let e e =
-  binop e function_apply
-  <|> other_expr e function_apply
-  >>= fun ex -> function_apply ex e <|> return ex
+  binop e function_application
+  <|> other_expr e function_application
+  >>= fun ex -> function_application ex e <|> return ex
 ;;
 
 let expr = e (fix e)
@@ -398,7 +396,9 @@ let%expect_test "fun_binding_guards" =
                  ((Const (Int 1)), None))),
               None),
              ((Const (Int 0)), None)),
-            [(((Const (Bool true)), None), ((Const (Int 1)), None))])),
+            [(((Identificator (Ident "otherwise")), None), ((Const (Int 1)), None))
+              ]
+            )),
          [])) |}]
 ;;
 

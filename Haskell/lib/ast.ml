@@ -28,22 +28,22 @@ and tp =
 [@@deriving show { with_path = false }]
 
 type binop =
-  | Plus (** + *)
-  | Minus (** - *)
-  | Divide (** `div` *)
-  | Multiply (** * *)
-  | Equality (** == *)
-  | Pow (** ^ *)
-  | Inequality (** /= *)
-  | Less (** < *)
-  | Greater (** > *)
-  | EqualityOrLess (** <= *)
-  | EqualityOrGreater (** >= *)
+  | Plus (** [+] *)
+  | Minus (** [-] *)
+  | Divide (** [`div`] *)
+  | Multiply (** [*] *)
+  | Equality (** [==] *)
+  | Pow (** [^] *)
+  | Inequality (** [/=] *)
+  | Less (** [<] *)
+  | Greater (** [>] *)
+  | EqualityOrLess (** [<=] *)
+  | EqualityOrGreater (** [>=] *)
 [@@deriving show { with_path = false }]
 
 type unop =
-  | Minus (** - *)
-  | Not (** not *)
+  | Minus (** [-] *)
+  | Not (** [not] *)
 [@@deriving show { with_path = false }]
 
 (** variable's / function's name*)
