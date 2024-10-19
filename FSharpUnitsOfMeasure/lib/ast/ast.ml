@@ -2,9 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(** Identificators: [x], [foo], [_a] *)
-type ident = string [@@deriving show { with_path = false }]
-
 type rational_exp =
   | Integer of int (** Integer exponent: [2] *)
   | Rational of int * int (** Rational exponent: [3/2] *)
@@ -13,7 +10,7 @@ type rational_exp =
 [@@deriving show { with_path = false }]
 
 type measure =
-  | Measure_ident of ident (** Measure identificator: [m] *)
+  | Measure_ident of string (** Measure identificator: [m] *)
   | Measure_prod of measure * measure (** Measure product: [sec * h], [kg m] *)
   | Measure_div of measure * measure (** Measure division: [m / sec] *)
   | Measure_pow of measure * rational_exp (** Measure to the rational power: [cm^3] *)
@@ -35,8 +32,8 @@ type constant =
 [@@deriving show { with_path = false }]
 
 type pattern =
-  | Pattern_wild (** Wildcard patterns [_] *)
-  | Pattern_ident of ident (** Identificator patterns: [x] *)
+  | Pattern_wild (** Wildcard patterns [ _ ] *)
+  | Pattern_ident of string (** Identificator patterns: [x] *)
   | Pattern_const of constant
   (** Constant patterns: [1], ['a'], ["foo"], [3.14], [5.0<cm>] *)
   | Pattern_tuple of pattern list
@@ -59,7 +56,7 @@ type val_binding =
 and expression =
   | Expr_const of constant
   (** Constant expressions: [1], ['a'], ["foo"], [3.14], [true], [5.0<cm>] *)
-  | Expr_ident of ident (** Identificator name expressions: [x] *)
+  | Expr_ident of string (** Identificator expressions: [x] *)
   | Expr_tuple of expression list
   (** Tuple expressions: [(E1, ..., En)]
       Invariant: [n >= 2] *)
@@ -79,7 +76,7 @@ and expression =
 [@@deriving show { with_path = false }]
 
 type type_def =
-  | Measure_type_def of ident * measure option
+  | Measure_type_def of string * measure option
   (** Measure type definition:
       - [[<Measure>] type I] when measure is None
       - [[<Measure>] type I = M] when measure is Some M *)
