@@ -198,18 +198,25 @@ type assoc =
   | Non
 
 let prios_list =
-  [ [ (Non, string "==", fun a b -> Binop (a, Equality, b), etp)
+  [ [ (Right, string "||", fun a b -> Binop (a, Or, b), etp)
+    ]
+    ; [ (Right, string "&&", fun a b -> Binop (a, And, b), etp)
+    ]
+    ; [ (Non, string "==", fun a b -> Binop (a, Equality, b), etp)
     ; (Non, string "/=", fun a b -> Binop (a, Inequality, b), etp)
     ; (Non, string ">=", fun a b -> Binop (a, EqualityOrGreater, b), etp)
     ; (Non, string "<=", fun a b -> Binop (a, EqualityOrLess, b), etp)
     ; (Non, string ">", fun a b -> Binop (a, Greater, b), etp)
     ; (Non, string "<", fun a b -> Binop (a, Less, b), etp)
     ]
-  ; [ (Left, string "+", fun a b -> Binop (a, Plus, b), etp)
+  ; [ (Right, string ":", fun a b -> Binop (a, Cons, b), etp)
+    ]
+    ;[ (Left, string "+", fun a b -> Binop (a, Plus, b), etp)
     ; (Left, string "-", fun a b -> Binop (a, Minus, b), etp)
     ]
   ; [ (Left, string "`div`", fun a b -> Binop (a, Divide, b), etp)
     ; (Left, string "*", fun a b -> Binop (a, Multiply, b), etp)
+    ; (Left, string "`mod`", fun a b -> Binop (a, Mod, b), etp)
     ]
   ; [ (Right, string "^", fun a b -> Binop (a, Pow, b), etp) ]
   ]
@@ -302,25 +309,17 @@ let e e =
 
 let expr = e (fix e)
 
-(* let prs_ln call sh str =
-  match
-    try parse_string ~consume:Prefix call str with
-    | Non_assoc_ops_seq ->
-      Error "cannot mix two non-associative operators in the same infix expression"
-  with
-  | Ok v -> print_endline (sh v)
-  | Error msg -> Printf.fprintf stderr "error: %s" msg
-;; *)
-
 let prs_ln call str =
-    try parse_string ~consume:Prefix call str with
-    | Non_assoc_ops_seq ->
-      Error "cannot mix two non-associative operators in the same infix expression"
+  try parse_string ~consume:Prefix call str with
+  | Non_assoc_ops_seq ->
+    Error "cannot mix two non-associative operators in the same infix expression"
+;;
 
-let prs_and_prnt_ln call sh str = match prs_ln call str with 
+let prs_and_prnt_ln call sh str =
+  match prs_ln call str with
   | Ok v -> print_endline (sh v)
   | Error msg -> Printf.fprintf stderr "error: %s" msg
-
+;;
 
 let%expect_test "expr_const" =
   prs_and_prnt_ln expr show_expr "1";
@@ -341,6 +340,16 @@ let%expect_test "expr_prio" =
           Greater, ((Const (Int 1)), None))),
        None) |}]
 ;;
+
+let%expect_test "expr_right_assoc" =
+  prs_and_prnt_ln expr show_expr "2^3^4";
+  [%expect
+    {|
+      ((Binop (((Const (Int 2)), None), Pow,
+          ((Binop (((Const (Int 3)), None), Pow, ((Const (Int 4)), None))), None))),
+       None) |}]
+;;
+
 
 let%expect_test "expr_with_Just" =
   prs_and_prnt_ln expr show_expr "Just 2 + 1";
@@ -373,15 +382,27 @@ let%expect_test "expr_with_non-assoc_op_simple" =
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_invalid" =
-  prs_and_prnt_ln expr show_expr "x == y >= z";
+  prs_and_prnt_ln expr show_expr "x == y + 1 >= z";
   [%expect
     {|
       error: cannot mix two non-associative operators in the same infix expression |}]
 ;;
 
-(* let%expect_test "expr_with_non-assoc_ops_valid" =
-  prs_and_prnt_ln expr show_expr "x == y && z == z'";
-;; *)
+let%expect_test "expr_with_non-assoc_ops_valid" =
+   prs_and_prnt_ln expr show_expr "x == y && z == z'";
+     [%expect
+    {|
+      ((Binop (
+          ((Binop (((Identificator (Ident "x")), None), Equality,
+              ((Identificator (Ident "y")), None))),
+           None),
+          And,
+          ((Binop (((Identificator (Ident "z")), None), Equality,
+              ((Identificator (Ident "z'")), None))),
+           None)
+          )),
+       None) |}]
+;;
 
 let binding = binding expr
 
