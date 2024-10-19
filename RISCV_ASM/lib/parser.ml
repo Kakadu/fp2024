@@ -119,8 +119,16 @@ let parse_immediate12 =
   ws_opt (lift (fun imm -> Immediate12 imm) parse_number)
 ;;
 
+let parse_immediate20 =
+  ws_opt (lift (fun imm -> Immediate20 imm) parse_number)
+;;
+
 let parse_immediate32 =
   ws_opt (lift (fun imm -> Immediate32 imm) parse_number)
+;;
+
+let parse_immediate_address32 =
+  ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_immediate32)
 ;;
 
 let parse_label_address32 =
@@ -131,12 +139,16 @@ let parse_immediate_address12 =
   ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_immediate12)
 ;;
 
-let parse_immediate_address32 =
-  ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_immediate32)
-;;
-
 let parse_label_address12 =
   ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
+;;
+
+let parse_immediate_address20 =
+  ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_immediate20)
+;;
+
+let parse_label_address20 =
+  ws_opt (lift (fun str -> LabelAddress20 str) parse_string)
 ;;
 
 let parse_label_expr =
@@ -144,6 +156,10 @@ let parse_label_expr =
 ;;
 
 let parse_address12 = ws_opt (choice [ parse_immediate_address12; parse_label_address12 ])
+
+let parse_address20 = ws_opt (choice [ parse_immediate_address20; parse_label_address20 ])
+
+let parse_address32 = ws_opt (choice [ parse_immediate_address32; parse_label_address32 ])
 
 let parse_directive =
   ws_opt
@@ -205,7 +221,7 @@ let parse_directive =
               (fun int -> DirectiveExpr (CfiDefCfaOffset (int)))
               parse_number)
       ; string ".cfi_offset"
-        *> ws_opt(lift
+        *> ws_opt(lift2
               (fun int1 int2 -> DirectiveExpr (CfiOffset (int1, int2)))
               parse_number
               (ws_opt (char ',') *> ws_opt parse_number))
@@ -213,13 +229,9 @@ let parse_directive =
         *> ws_opt(lift
               (fun int -> DirectiveExpr (CfiRestore (int)))
               parse_number)
-      ; string "call"
-        *> ws_opt(lift
-              (fun str -> DirectiveExpr (Call (str)))
-              parse_string)
       ; string ".ident"
         *> ws_opt(lift
-              (fun str -> DirectiveExpr (Call (str)))
+              (fun str -> DirectiveExpr (Ident (str)))
               parse_string)
       ])
 ;;
@@ -271,13 +283,13 @@ let parse_instruction =
          *> lift3
               (fun r1 imm r2 -> InstructionExpr (Ld (r1, r2, imm)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_immediate_address12)
               (char '(' *> parse_register <* char ')')
        ; string "sd"
          *> lift3
               (fun r1 imm r2 -> InstructionExpr (Sd (r1, r2, imm)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_immediate_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lw"
           *> lift3
@@ -303,9 +315,23 @@ let parse_instruction =
               (fun r1 -> InstructionExpr (Jr (r1)))
               parse_register
        ; string "j"
-         *> lift3
+         *> lift
               (fun adr -> InstructionExpr (J (adr)))
               parse_address20
+        ; string "call"
+          *> ws_opt(lift
+              (fun str -> InstructionExpr (Call (str)))
+              parse_string)
+        ; string "la"
+          *> ws_opt(lift2
+              (fun r1 adr -> InstructionExpr (La (r1, adr)))
+              parse_register
+              (char ',' *> parse_address32))
+        ; string "lla"
+          *> ws_opt(lift2
+              (fun r1 adr -> InstructionExpr (Lla (r1, adr)))
+              parse_register
+              (char ',' *> parse_address32))
        ])
 ;;
 
