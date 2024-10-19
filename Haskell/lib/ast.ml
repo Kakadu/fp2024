@@ -28,9 +28,13 @@ and tp =
 [@@deriving show { with_path = false }]
 
 type binop =
+  | And (** [&&]*)
+  | Or (** [||] *)
   | Plus (** [+] *)
   | Minus (** [-] *)
   | Divide (** [`div`] *)
+  | Mod (** [`mod`]*)
+  | Cons (** [:] *)
   | Multiply (** [*] *)
   | Equality (** [==] *)
   | Pow (** [^] *)
