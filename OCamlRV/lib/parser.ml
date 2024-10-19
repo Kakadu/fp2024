@@ -23,11 +23,6 @@ let is_keyword = function
   | _ -> false
 ;;
 
-let is_separator = function
-  | '(' | '[' | ')' | ']' | '\'' | '"' | ' ' | '\t' | '\n' -> true
-  | _ -> false
-;;
-
 let ws = take_while Char.is_whitespace
 let token s = ws *> string s
 
