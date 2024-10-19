@@ -4,6 +4,4 @@
  (modules REPL)
  (libraries haskell_lib)
  (instrumentation
-  (backend bisect_ppx))
- (preprocess
-  (pps ppx_deriving.show)))
+  (backend bisect_ppx)))
