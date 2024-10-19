@@ -53,17 +53,21 @@ let is_keyword = function
 ;;
 
 let p_ident =
-  skip_ws
-  *> take_while1 (function
+  let find_string = 
+    skip_ws *>
+    lift2 (fun s1 s2 -> s1 ^ s2)
+    (take_while1 (function
+    | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+    | _ -> false))
+    (take_while (function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
-    | _ -> false)
-  >>= fun str ->
-  if is_keyword str
-  then fail "keyword in variable name"
-  else if Char.is_digit (String.get str 0)
-  then fail "variable name cannot start with a digit"
-  else return (Ident str)
-;;
+    | _ -> false))
+  in 
+  find_string >>= fun str -> 
+    if is_keyword str then fail "keywords are not allowed as variable names"
+    else if String.equal str "_" then fail "wildcard is not allowed as a variable name"
+    else return (Ident str)
+;; 
 
 let p_var = p_ident >>| fun ident -> Variable ident
 
@@ -132,7 +136,7 @@ let p_let p_expr =
   *> lift4
        (fun rec_flag name args body -> Let (rec_flag, name, args, body))
        (string "rec" *> return Rec <|> return Nonrec)
-       p_ident
+       (p_ident >>= fun ident -> return ident)
        (skip_ws *> many (skip_ws *> p_var)
         >>= fun args ->
         if not (List.length args = 0) then return (Some args) else return None)
