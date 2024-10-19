@@ -154,8 +154,7 @@ let p_expr =
     let atom = choice [ p_var; p_int; p_bool; p_parens p_expr ] in
     let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    let unary = choice [ unary_chain p_not letin_expr; unary_chain unminus letin_expr ] in
-    let app = p_apply unary in
+    let app = p_apply letin_expr in
     let factor = chainl1 app (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let comp_eq = chainl1 term (equal <|> unequal) in
@@ -163,7 +162,8 @@ let p_expr =
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    comp_or)
+    let unary = choice [ unary_chain p_not comp_or; unary_chain unminus comp_or ] in
+    unary)
 ;;
 
 let p_statement = p_let p_expr
