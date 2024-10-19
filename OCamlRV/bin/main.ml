@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open OCamlRV_lib.Parser
-open Core
+open Stdio
 
 type opts =
   { mutable dump_parsetree : bool
@@ -15,7 +15,7 @@ let run_single options =
   let text =
     if options.read_from_file
     then (
-      try Stdlib.String.trim (In_channel.read_all options.filename) with
+      try Stdlib.String.trim (Stdio.In_channel.read_all options.filename) with
       | Sys_error e ->
         Stdlib.Format.printf "%s\n" e;
         Stdlib.exit 1)
