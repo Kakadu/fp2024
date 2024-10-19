@@ -8,7 +8,7 @@ open Ast
 
 let () =
   let factorial_ast =
-    [ Str_value
+    [ Str_item_def
         ( Recursive
         , [ Binding
               ( Pattern_ident "factorial"
