@@ -11,7 +11,7 @@ open Angstrom
 
 let skip_ws = skip_while Char.is_whitespace
 
-let keyword = function
+let is_keyword = function
   | "and"
   | "elif"
   | "else"
@@ -31,40 +31,66 @@ let keyword = function
   | _ -> false
 ;;
 
-let ident_char = function
+let is_ident_char = function
   | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '\'' -> true
   | _ -> false
 ;;
 
-let ident_start_char = function
+let is_ident_start_char = function
   | '_' | 'a' .. 'z' | 'A' .. 'Z' -> true
   | _ -> false
 ;;
 
 let parse_ident =
-  let* first = satisfy ident_start_char >>| String.of_char in
-  let* tail = take_while ident_char in
-  return (first ^ tail)
+  let* first = satisfy is_ident_start_char >>| String.of_char in
+  let* rest =
+    if String.equal first "_" then take_while1 is_ident_char else take_while is_ident_char
+  in
+  return (first ^ rest)
 ;;
 
-let parse_int = take_while1 Char.is_digit >>| Int.of_string
-let parse_char = char '\'' *> any_char <* char '\''
-let parse_string = char '"' *> take_till (Char.equal '"') <* char '"'
-let parse_bool = string "true" <|> string "false" >>| Bool.of_string
+let parse_const_int =
+  let* int = take_while1 Char.is_digit >>| Int.of_string in
+  return (Const_int int)
+;;
 
-let parse_float =
+let parse_const_char =
+  let* char = char '\'' *> any_char <* char '\'' in
+  return (Const_char char)
+;;
+
+let parse_const_string =
+  let* str = char '"' *> take_till (Char.equal '"') <* char '"' in
+  return (Const_string str)
+;;
+
+let parse_const_bool =
+  let* bool = string "true" <|> string "false" >>| Bool.of_string in
+  return (Const_bool bool)
+;;
+
+(* Float parsing functions can be inside one big function *)
+(* Parse the float in form digit+ . digit* [f|F]) *)
+let parse_const_float_sim =
   let* int_part = take_while1 Char.is_digit in
   let* dot = string "." in
   let* fract_part = take_while Char.is_digit in
-  return (Float.of_string (int_part ^ dot ^ fract_part))
+  let* f = string "f" <|> string "F" <|> string "" in
+  let float = Float.of_string (int_part ^ dot ^ fract_part ^ f) in
+  return (Const_float float)
 ;;
+
+(* Parse the float in form digit+ (. digit* )? (e|E) (+|-)? digit+ [f|F]
+   Not yet implemented *)
+
+let parse_const_float = parse_const_float_sim
 
 let parse_const =
   choice
-    [ (parse_int >>| fun i -> Const_int i)
-    ; (parse_char >>| fun c -> Const_char c)
-    ; (parse_string >>| fun s -> Const_string s)
-    ; (parse_bool >>| fun b -> Const_bool b)
-    ; (parse_float >>| fun f -> Const_float f)
+    [ parse_const_int
+    ; parse_const_char
+    ; parse_const_string
+    ; parse_const_bool
+    ; parse_const_float
     ]
 ;;
