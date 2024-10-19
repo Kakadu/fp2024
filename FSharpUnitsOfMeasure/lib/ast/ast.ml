@@ -90,7 +90,7 @@ type structure_item =
       - [let P1 = E1 and ... and Pn = En] when rec_flag is Nonrecursive
       - [let rec P1 = E1 and ... and Pn = En] when rec_flag is Recursive
         Invariant: [n >= 1] *)
-  | Str_item_type_def of type_def
+  | Str_item_type_def of type_def (** Structure item which is type definition *)
 [@@deriving show { with_path = false }]
 
 type program = structure_item list [@@deriving show { with_path = false }]
