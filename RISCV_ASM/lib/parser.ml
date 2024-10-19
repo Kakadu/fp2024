@@ -7,9 +7,13 @@ open Ast
 
 let parse_number =
   let sign = option "" (string "-") in
-  let digits = take_while1 (function '0' .. '9' -> true | _ -> false) in
-  lift2 (fun s d -> s ^ d) sign digits >>= fun num_str ->
-  return (int_of_string num_str)
+  let digits =
+    take_while1 (function
+      | '0' .. '9' -> true
+      | _ -> false)
+  in
+  lift2 (fun s d -> s ^ d) sign digits >>= fun num_str -> return (int_of_string num_str)
+;;
 
 let ws =
   take_while (function
@@ -24,21 +28,20 @@ let parse_string =
 ;;
 
 let parse_quoted_string =
-  char '"' *> 
-  take_while (function
+  char '"'
+  *> take_while (function
     | '"' -> false
-    | _ -> true
-  ) <* char '"'
+    | _ -> true)
+  <* char '"'
 ;;
 
-let parse_type =
-  char '@' *> parse_string >>= fun str -> return (Type str)
-;;
+let parse_type = char '@' *> parse_string >>= fun str -> return (Type str)
 
 let parse_number_or_quoted_string =
-  peek_char >>= function
+  peek_char
+  >>= function
   | Some '"' -> parse_quoted_string >>= fun str -> return (StrValue str)
-  | Some ('0' .. '9') | Some '-' -> parse_number >>= fun num -> return (IntValue num)
+  | Some '0' .. '9' | Some '-' -> parse_number >>= fun num -> return (IntValue num)
   | _ -> fail "Expected number or quoted string"
 ;;
 
@@ -115,125 +118,100 @@ let parse_register =
        ])
 ;;
 
-let parse_immediate12 =
-  ws_opt (lift (fun imm -> Immediate12 imm) parse_number)
-;;
-
-let parse_immediate20 =
-  ws_opt (lift (fun imm -> Immediate20 imm) parse_number)
-;;
-
-let parse_immediate32 =
-  ws_opt (lift (fun imm -> Immediate32 imm) parse_number)
-;;
+let parse_immediate12 = ws_opt (lift (fun imm -> Immediate12 imm) parse_number)
+let parse_immediate20 = ws_opt (lift (fun imm -> Immediate20 imm) parse_number)
+let parse_immediate32 = ws_opt (lift (fun imm -> Immediate32 imm) parse_number)
 
 let parse_immediate_address32 =
   ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_immediate32)
 ;;
 
-let parse_label_address32 =
-  ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
-;;
+let parse_label_address32 = ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
 
 let parse_immediate_address12 =
   ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_immediate12)
 ;;
 
-let parse_label_address12 =
-  ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
-;;
+let parse_label_address12 = ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
 
 let parse_immediate_address20 =
   ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_immediate20)
 ;;
 
-let parse_label_address20 =
-  ws_opt (lift (fun str -> LabelAddress20 str) parse_string)
-;;
+let parse_label_address20 = ws_opt (lift (fun str -> LabelAddress20 str) parse_string)
 
 let parse_label_expr =
   ws_opt (lift (fun str -> LabelExpr str) (parse_string <* ws_opt (char ':')))
 ;;
 
 let parse_address12 = ws_opt (choice [ parse_immediate_address12; parse_label_address12 ])
-
 let parse_address20 = ws_opt (choice [ parse_immediate_address20; parse_label_address20 ])
-
 let parse_address32 = ws_opt (choice [ parse_immediate_address32; parse_label_address32 ])
 
 let parse_directive =
   ws_opt
     (choice
-      [ string ".file"
-        *> ws_opt(lift
-              (fun str -> DirectiveExpr (File (str)))
-              parse_quoted_string)
-      ; string ".option"
-        *> ws_opt(lift
-              (fun str -> DirectiveExpr (Option (str)))
-              parse_string)
-      ; string ".attribute"
-        *> ws_opt(lift2
-              (fun tag value -> DirectiveExpr (Attribute (tag, value)))
-              parse_string
-              (ws_opt(char ',') *> parse_number_or_quoted_string))
-      ; string ".text" *> return (DirectiveExpr Text)
-      ; string ".align"
-        *> ws_opt(lift
-              (fun int -> DirectiveExpr (Align (int)))
-              parse_number)
-      ; string ".globl"
-        *> ws_opt(lift
-              (fun label -> DirectiveExpr (Globl (label)))
-              parse_label_address12)
-      ; string ".type"
-        *> ws_opt(lift2
-              (fun str type_str -> DirectiveExpr (TypeDir (str, type_str)))
-              parse_string
-              (ws_opt(char ',') *> parse_type))
-      ; string ".cfi_startproc" *> return (DirectiveExpr CfiStartproc)
-      ; string ".cfi_endproc" *> return (DirectiveExpr CfiEndproc)
-      ; string ".cfi_remember_state" *> return (DirectiveExpr CfiRememberState)
-      ; string ".cfi_restore_state" *> return (DirectiveExpr CfiRestoreState)
-      ; string ".size"
-        *> ws_opt(lift2
-              (fun label size -> DirectiveExpr (Size (label, size))) (** FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
-              parse_label_address12
-              (ws_opt(char ',') *> parse_string))
-      ; string ".section"
-        *> ws_opt (lift4
-            (fun section_name section_type section_flags section_index ->
-              DirectiveExpr (Section (section_name, section_type, section_flags, section_index)))
-            parse_string
-            (ws_opt (char ',') *> ws_opt parse_quoted_string)
-            (ws_opt (char ',') *> ws_opt parse_type)
-            (peek_char >>= function
-              | Some ',' -> ws_opt (char ',') *> ws_opt (lift(fun i -> Some i) parse_number)
-              | _ -> return None
-            )
-          )
-      ; string ".string"
-        *> ws_opt(lift
-              (fun str -> DirectiveExpr (String (str)))
-              parse_quoted_string)
-      ; string ".cfi_def_cfa_offset"
-        *> ws_opt(lift
-              (fun int -> DirectiveExpr (CfiDefCfaOffset (int)))
-              parse_number)
-      ; string ".cfi_offset"
-        *> ws_opt(lift2
-              (fun int1 int2 -> DirectiveExpr (CfiOffset (int1, int2)))
-              parse_number
-              (ws_opt (char ',') *> ws_opt parse_number))
-      ; string ".cfi_restore"
-        *> ws_opt(lift
-              (fun int -> DirectiveExpr (CfiRestore (int)))
-              parse_number)
-      ; string ".ident"
-        *> ws_opt(lift
-              (fun str -> DirectiveExpr (Ident (str)))
-              parse_quoted_string)
-      ])
+       [ string ".file"
+         *> ws_opt (lift (fun str -> DirectiveExpr (File str)) parse_quoted_string)
+       ; string ".option"
+         *> ws_opt (lift (fun str -> DirectiveExpr (Option str)) parse_string)
+       ; string ".attribute"
+         *> ws_opt
+              (lift2
+                 (fun tag value -> DirectiveExpr (Attribute (tag, value)))
+                 parse_string
+                 (ws_opt (char ',') *> parse_number_or_quoted_string))
+       ; string ".text" *> return (DirectiveExpr Text)
+       ; string ".align"
+         *> ws_opt (lift (fun int -> DirectiveExpr (Align int)) parse_number)
+       ; string ".globl"
+         *> ws_opt (lift (fun label -> DirectiveExpr (Globl label)) parse_label_address12)
+       ; string ".type"
+         *> ws_opt
+              (lift2
+                 (fun str type_str -> DirectiveExpr (TypeDir (str, type_str)))
+                 parse_string
+                 (ws_opt (char ',') *> parse_type))
+       ; string ".cfi_startproc" *> return (DirectiveExpr CfiStartproc)
+       ; string ".cfi_endproc" *> return (DirectiveExpr CfiEndproc)
+       ; string ".cfi_remember_state" *> return (DirectiveExpr CfiRememberState)
+       ; string ".cfi_restore_state" *> return (DirectiveExpr CfiRestoreState)
+       ; string ".size"
+         *> ws_opt
+              (lift2
+                 (fun label size -> DirectiveExpr (Size (label, size)))
+                 (* FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
+                 parse_label_address12
+                 (ws_opt (char ',') *> parse_string))
+       ; string ".section"
+         *> ws_opt
+              (lift4
+                 (fun section_name section_type section_flags section_index ->
+                   DirectiveExpr
+                     (Section (section_name, section_type, section_flags, section_index)))
+                 parse_string
+                 (ws_opt (char ',') *> ws_opt parse_quoted_string)
+                 (ws_opt (char ',') *> ws_opt parse_type)
+                 (peek_char
+                  >>= function
+                  | Some ',' ->
+                    ws_opt (char ',') *> ws_opt (lift (fun i -> Some i) parse_number)
+                  | _ -> return None))
+       ; string ".string"
+         *> ws_opt (lift (fun str -> DirectiveExpr (String str)) parse_quoted_string)
+       ; string ".cfi_def_cfa_offset"
+         *> ws_opt (lift (fun int -> DirectiveExpr (CfiDefCfaOffset int)) parse_number)
+       ; string ".cfi_offset"
+         *> ws_opt
+              (lift2
+                 (fun int1 int2 -> DirectiveExpr (CfiOffset (int1, int2)))
+                 parse_number
+                 (ws_opt (char ',') *> ws_opt parse_number))
+       ; string ".cfi_restore"
+         *> ws_opt (lift (fun int -> DirectiveExpr (CfiRestore int)) parse_number)
+       ; string ".ident"
+         *> ws_opt (lift (fun str -> DirectiveExpr (Ident str)) parse_quoted_string)
+       ])
 ;;
 
 let parse_instruction =
@@ -292,13 +270,13 @@ let parse_instruction =
               (char ',' *> parse_immediate_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lw"
-          *> lift3
-                (fun r1 imm r2 -> InstructionExpr (Lw (r1, r2, imm)))
-                parse_register
-                (char ',' *> parse_immediate12)
-                (char '(' *> parse_register <* char ')')
+         *> lift3
+              (fun r1 imm r2 -> InstructionExpr (Lw (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_immediate12)
+              (char '(' *> parse_register <* char ')')
        ; string "addi"
-          *> lift3
+         *> lift3
               (fun r1 r2 imm -> InstructionExpr (Addi (r1, r2, imm)))
               parse_register
               (char ',' *> parse_register)
@@ -310,28 +288,22 @@ let parse_instruction =
               (char ',' *> parse_register)
               (char ',' *> parse_register)
        ; string "ret" *> return (InstructionExpr Ret)
-       ; string "jr"
-          *> lift
-              (fun r1 -> InstructionExpr (Jr (r1)))
-              parse_register
-       ; string "j"
-         *> lift
-              (fun adr -> InstructionExpr (J (adr)))
-              parse_address20
-        ; string "call"
-          *> ws_opt(lift
-              (fun str -> InstructionExpr (Call (str)))
-              parse_string)
-        ; string "la"
-          *> ws_opt(lift2
-              (fun r1 adr -> InstructionExpr (La (r1, adr)))
-              parse_register
-              (char ',' *> parse_address32))
-        ; string "lla"
-          *> ws_opt(lift2
-              (fun r1 adr -> InstructionExpr (Lla (r1, adr)))
-              parse_register
-              (char ',' *> parse_address32))
+       ; string "jr" *> lift (fun r1 -> InstructionExpr (Jr r1)) parse_register
+       ; string "j" *> lift (fun adr -> InstructionExpr (J adr)) parse_address20
+       ; string "call"
+         *> ws_opt (lift (fun str -> InstructionExpr (Call str)) parse_string)
+       ; string "la"
+         *> ws_opt
+              (lift2
+                 (fun r1 adr -> InstructionExpr (La (r1, adr)))
+                 parse_register
+                 (char ',' *> parse_address32))
+       ; string "lla"
+         *> ws_opt
+              (lift2
+                 (fun r1 adr -> InstructionExpr (Lla (r1, adr)))
+                 parse_register
+                 (char ',' *> parse_address32))
        ])
 ;;
 
@@ -340,9 +312,11 @@ let parse_expr = ws_opt (choice [ parse_directive; parse_instruction; parse_labe
 let parse_ast =
   ws_opt (many parse_expr)
   <* (end_of_input
-      <|> (Angstrom.pos >>= fun pos ->
+      <|> (Angstrom.pos
+           >>= fun pos ->
            Angstrom.peek_char
            >>= function
            | None -> return ()
-           | Some c -> fail (Printf.sprintf "Unexpected character: '%c' at position %d" c pos)))
+           | Some c ->
+             fail (Printf.sprintf "Unexpected character: '%c' at position %d" c pos)))
 ;;
