@@ -25,7 +25,7 @@ let parse_string =
 
 let parse_quoted_string =
   char '"' *> 
-  take_while1 (function
+  take_while (function
     | '"' -> false
     | _ -> true
   ) <* char '"'
@@ -194,7 +194,7 @@ let parse_directive =
       ; string ".cfi_startproc" *> return (DirectiveExpr CfiStartproc)
       ; string ".cfi_endproc" *> return (DirectiveExpr CfiEndproc)
       ; string ".cfi_remember_state" *> return (DirectiveExpr CfiRememberState)
-
+      ; string ".cfi_restore_state" *> return (DirectiveExpr CfiRestoreState)
       ; string ".size"
         *> ws_opt(lift2
               (fun label size -> DirectiveExpr (Size (label, size))) (** FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
@@ -232,7 +232,7 @@ let parse_directive =
       ; string ".ident"
         *> ws_opt(lift
               (fun str -> DirectiveExpr (Ident (str)))
-              parse_string)
+              parse_quoted_string)
       ])
 ;;
 
