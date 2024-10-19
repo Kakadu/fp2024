@@ -44,9 +44,14 @@ let is_ident_start_char = function
 let parse_ident =
   let* first = satisfy is_ident_start_char >>| String.of_char in
   let* rest =
-    if String.equal first "_" then take_while1 is_ident_char else take_while is_ident_char
+    match first with
+    | "_" -> take_while1 is_ident_char
+    | _ -> take_while is_ident_char
   in
-  return (first ^ rest)
+  let ident = first ^ rest in
+  if is_keyword ident
+  then fail "Keywords cannot be used as identificators"
+  else return ident
 ;;
 
 let parse_const_int =
@@ -69,7 +74,7 @@ let parse_const_bool =
   return (Const_bool bool)
 ;;
 
-(* Float parsing functions can be inside one big function *)
+(* Float parsing functions should probably be inside one big function *)
 (* Parse the float in form digit+ . digit* [f|F]) *)
 let parse_const_float_sim =
   let* int_part = take_while1 Char.is_digit in
