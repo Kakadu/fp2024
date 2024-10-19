@@ -50,16 +50,25 @@ type immediate32 = Immediate32 of int [@@deriving eq, show { with_path = false }
 (** Label Type *)
 type label = string [@@deriving eq, show { with_path = false }]
 
+type address32 =
+  | ImmediateAddress32 of immediate32
+  | LabelAddress32 of label
+[@@deriving eq, show { with_path = false }]
+
 (** Address12 Type to Jump to *)
 type address12 =
   | ImmediateAddress12 of immediate12 (** Immediate12 to Jump to*)
   | LabelAddress12 of label (** Label to Jump to *)
+  | LoImmediateAddress12 of immediate32
+  | LoLabelAddress12 of label
 [@@deriving eq, show { with_path = false }]
 
 (** Address20 Type to Jump to *)
 type address20 =
   | ImmediateAddress20 of immediate20 (** Immediate20 to Jump to*)
   | LabelAddress20 of label (** Label to Jump to *)
+  | HiImmediateAddress20 of immediate32
+  | HiLabelAddress20 of label
 [@@deriving eq, show { with_path = false }]
 
 type instruction =
@@ -109,8 +118,10 @@ type instruction =
   | Jal of register * address20
   (** Jump and Link. rd = PC + 4; PC += imm. 4 bytes = 32 bits - instuction size *)
   | Jalr of register * register * address12
+  | Jr of register
+  | J of address20
   (** Jump and Link Register. rd = PC + 4; PC = rs1 + imm *)
-  | Lui of register * immediate20 (** Load Upper Immediate. rd = imm << 12 *)
+  | Lui of register * address20 (** Load Upper Immediate. rd = imm << 12 *)
   | Auipc of register * immediate20
   (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
   | Ecall (** EnvironmentCall - a syscall *)
@@ -126,9 +137,9 @@ type instruction =
   | Remu of register * register * register (** Remainder (Unsigned). rd = rs1 % rs2 *)
   | Lwu of register * register * immediate12
   (** Load Word (Unsigned). rd = M[rs1 + imm][0:31] *)
-  | Ld of register * register * immediate12
+  | Ld of register * register * address12
   (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
-  | Sd of register * register * immediate12
+  | Sd of register * register * address12
   (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
   | Addiw of register * register * immediate12
   (** Addition of Immediate Word. rd = (rs1 + imm)[31:0] *)
@@ -159,20 +170,36 @@ type instruction =
   | Ret (** Return. Jalr x0, x1, 0 *)
 [@@deriving eq, show { with_path = false }]
 
+(** Attribute can either take in a string or an int as its value *)
+type string_or_int_value =
+  | StrValue of string (** A string value *)
+  | IntValue of int (** An integer value*)
+[@@deriving eq, show { with_path = false }]
+
+(** Types that are assigned to symbols for the logic of the compiler*)
+type type_dir = Type of string
+[@@deriving eq, show { with_path = false }]
+
 (** Compiler directive (most of them are not needed while interpreting) *)
 type directive =
   | File of string (** .file string *)
   | Option of string (** .option argument *)
-  | Attribute of string * string (** .attribute tag, value *)
+  | Attribute of string * string_or_int_value (** .attribute tag, value *)
   | Text (** .text subsection *)
   | Align of int (** .align abs-expr, abs-expr, abs-expr *) 
-  | Globl of string (** .globl symbol *)
-  | Type of int (** .type int *)
+  | Globl of address12 (** .globl symbol *)
+  | TypeDir of string * type_dir (** .type assigns type to a symbol *)
   | CfiStartproc (** .cfi_startproc *)
   | CfiEndproc (** .cfi_endproc *)
-  | Size of string * string (** .size *)
-  | Section of string * string * string * string (** .section name *)
+  | Size of address12 * string (** .size *)
+  | Section of string * string * type_dir * (int option) (** .section name *)
   | String of string (** .string "str" *)
+  | CfiDefCfaOffset of int (** .cfi_def_cfa_offset int*)
+  | CfiOffset of int * int
+  | CfiRememberState
+  | CfiRestore of int
+  | Call of string
+  | Ident of string
 [@@deriving eq, show { with_path = false }]
 
 (** Expression in AST *)

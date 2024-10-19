@@ -8,10 +8,10 @@ TARGET=factorial
 SRC=factorial.c
 ASM=factorial.s
 
-all: $(TARGET) run
+all: $(TARGET)
 
 $(ASM): $(SRC)
-	@$(CC) $(CFLAGS) $<
+	@$(CC) $(CFLAGS) $< -fno-pie
 
 $(TARGET): $(ASM)
 	@$(CC) -o $@ $< -static
