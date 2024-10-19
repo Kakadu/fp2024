@@ -9,6 +9,11 @@ open Char
 
 (*                   Auxiliary parsers                     *)
 
+let debug_parser name p =
+  p <|> (return () >>= fun () ->
+    Stdlib.Printf.printf "Debug: %s parser failed\n" name;
+    fail (Printf.sprintf "%s parser failed" name))
+
 let is_whitespace = function
 | ' ' | '\t' | '\n' | '\r' -> true
 | _ -> false
@@ -37,7 +42,7 @@ let pident =
 
 (*                   Constant expressions                         *)
 let pconstintexpr =
-  let parse_sign = choice [ token "+"; token "-"; token " "] in
+  let parse_sign = choice [ token "+"; token "-"; token ""] in
   let parse_number = take_while1 (function '0' .. '9' -> true | _ -> false) in
   lift2 (fun sign n -> Exp_constant (Const_integer (int_of_string (sign ^ n))))
     parse_sign
@@ -90,9 +95,9 @@ let ppattern =
 
 let pvalue_binding pexpr =
   let parse_pattern_and_expr =
-    lift2 (fun pat expr -> { pat; expr }) ppattern (token "=" *> pexpr)
+    lift2 (fun pat expr -> {pat;expr}) ppattern (token "=" *> pexpr)
   in
-  parse_pattern_and_expr
+  debug_parser "value_binding" parse_pattern_and_expr
 ;;
 let prec_flag = token "rec" *> return Recursive <|> return Nonrecursive
 ;;
@@ -165,16 +170,25 @@ let plogops =
   ]
 
 let pexpr = fix (fun expr ->
-  let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in 
-  let expr = papplyexpr expr <|> expr in 
+  (* let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in *)
+  let expr = choice [
+    debug_parser "parens" (pparens expr);
+    debug_parser "constint" pconstintexpr;
+    debug_parser "constchar" pconstcharexpr;
+    debug_parser "conststring" pconststringexpr;
+  ] in
+  (* let expr = debug_parser "apply" (papplyexpr expr) <|> expr in *)
+  let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
+  let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
+  (* let expr = papplyexpr expr <|> expr in 
   let expr = lchain expr (pmul <|> pdiv) in
-  let expr = lchain expr (padd <|> psub) in
-  let expr = lchain expr pcompops in
+  let expr = lchain expr (padd <|> psub) in *)
+  (* let expr = lchain expr pcompops in
   let expr = rchain expr plogops in 
   let expr = pifexpr expr <|> expr in
   let expr = ptupleexpr <|> expr in 
   let expr = pletexpr expr <|> expr in
-  let expr = pfunexpr expr <|> expr in 
+  let expr = pfunexpr expr <|> expr in  *)
   expr)
 ;;
 
@@ -183,12 +197,23 @@ let pexpr = fix (fun expr ->
 let pseval = lift (fun expr -> Str_eval(expr)) pexpr
 
 let psvalue = 
-  lift2 (fun rec_flag value_binding -> Str_value (rec_flag, value_binding)) prec_flag (many (pvalue_binding pexpr))
-;;
+  lift2 (fun rec_flag 
+  value_binding -> Str_value (rec_flag, value_binding))
+  prec_flag (many (pvalue_binding pexpr))
+;;    
 
 (** It applies Str_eval to output of expression parser *)
-let pstr_item =
-  pseval <|> psvalue (*<|> psadt (* god bless us *)*)
+(* let pstr_item =
+  pseval <|> psvalue *)
+
+  let pstr_item =
+    let debug_parser name p =
+      p <|> (return () >>= fun () ->
+        Stdlib.Printf.printf "Debug: %s parser failed\n" name;
+        fail (Printf.sprintf "%s parser failed" name))
+    in
+    debug_parser "pseval" pseval
+    <|> debug_parser "psvalue" psvalue
 
 (** It applies Str_eval to output of expression parser *)
 
@@ -196,9 +221,9 @@ let pstructure =
   let psemicolon = token ";;" in
   many (pstr_item <* psemicolon)
 
-let parse str = parse_string ~consume:All pstructure str
+let parse str = parse_string ~consume:Prefix pstructure str
 
-let parse_fact str = 
+let parse_str str = 
   match parse str with
   | Ok str -> str
   | Error msg -> failwith msg

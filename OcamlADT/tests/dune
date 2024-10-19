@@ -1,3 +1,12 @@
+(library
+ (name tests)
+ (libraries ocamladt_lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx))
+ (inline_tests))
+
 (cram
- (applies_to ast_check)
- (deps ../bin/main.exe))
+ (applies_to interpret_tests)
+ (deps ../repl/REPL.exe))
