@@ -177,22 +177,8 @@ let pstructure =
 let structure : structure t = sep_by (token ";;") pstructure
 let parse s = parse_string ~consume:Prefix structure s
 
-(* Parsers [!!вынести в другое место!!] *)
-
 let parse_to_string input =
   match parse input with
   | Ok structure -> show_structure structure
   | Error err -> err
-;;
-
-let parse_to_unit input =
-  match parse input with
-  | Ok structure -> Stdlib.Format.printf "%s\n" (show_structure structure)
-  | Error err -> Stdlib.Format.printf "%s\n" err
-;;
-
-let parse_to_bool input =
-  match parse input with
-  | Ok _ -> true
-  | Error _ -> false
 ;;

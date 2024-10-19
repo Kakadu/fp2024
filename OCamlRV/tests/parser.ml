@@ -2,7 +2,20 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open OCamlRV_lib.Ast
 open OCamlRV_lib.Parser
+
+let parse_to_unit input =
+  match parse input with
+  | Ok structure -> Stdlib.Format.printf "%s\n" (show_structure structure)
+  | Error err -> Stdlib.Format.printf "%s\n" err
+;;
+
+let parse_to_bool input =
+  match parse input with
+  | Ok _ -> true
+  | Error _ -> false
+;;
 
 (* if-then-else tests *)
 let%test _ = parse_to_bool "if x then y else z"
