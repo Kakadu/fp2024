@@ -106,13 +106,14 @@ let pletexpr pexpr =
   prec_flag (many1 (pvalue_binding pexpr)) pexpr
 ;;
 
+(*rewrite*)
 let ptupleexpr =
   let* _ = token "(" in
   let* expression1 = pidentexpr in
-  let* _ = token ";" in
+  let* _ = token "," in
   let* expression2 = pidentexpr in
-  let* _ = token ";" in
-  let* expressiontl = sep_by (char ';') pidentexpr in
+  let* _ = token "," in
+  let* expressiontl = sep_by (char ',') pidentexpr in
   let* _ = token ")" in
   return (Exp_tuple(expression1, expression2, expressiontl))
 
@@ -177,18 +178,18 @@ let pexpr = fix (fun expr ->
     debug_parser "constchar" pconstcharexpr;
     debug_parser "conststring" pconststringexpr;
   ] in
-  (* let expr = debug_parser "apply" (papplyexpr expr) <|> expr in *)
+  let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
   let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
   let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
   (* let expr = papplyexpr expr <|> expr in 
   let expr = lchain expr (pmul <|> pdiv) in
   let expr = lchain expr (padd <|> psub) in *)
-  (* let expr = lchain expr pcompops in
+  let expr = lchain expr pcompops in
   let expr = rchain expr plogops in 
   let expr = pifexpr expr <|> expr in
   let expr = ptupleexpr <|> expr in 
   let expr = pletexpr expr <|> expr in
-  let expr = pfunexpr expr <|> expr in  *)
+  let expr = pfunexpr expr <|> expr in 
   expr)
 ;;
 
@@ -221,7 +222,7 @@ let pstructure =
   let psemicolon = token ";;" in
   many (pstr_item <* psemicolon)
 
-let parse str = parse_string ~consume:Prefix pstructure str
+let parse str = parse_string ~consume:All pstructure str
 
 let parse_str str = 
   match parse str with
