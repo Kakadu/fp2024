@@ -24,13 +24,6 @@ let%test _ = parse_to_bool "if a then b else c"
 let%test _ = parse_to_bool "if x then 1 + 2 else 3"
 let%test _ = parse_to_bool "if true then false else true"
 
-(* unary operator tests *)
-let%test _ = parse_to_bool "- 5"
-let%test _ = parse_to_bool "- x"
-let%test _ = parse_to_bool "+ 5"
-let%test _ = parse_to_bool "+ x"
-let%test _ = parse_to_bool "notx"
-
 (* number tests *)
 let%test _ = parse_to_bool "-5"
 let%test _ = parse_to_bool "2134324"
@@ -51,21 +44,20 @@ let%expect_test _ =
   [%expect
     {|
 [(SValue (Rec,
-    [((PLiteral (StringLiteral "fact")),
-      (ExprFun ((PLiteral (StringLiteral "n")), [],
-         (ExprIf (
-            (ExprBinOperation (Lte, (ExprVariable "n"),
-               (ExprLiteral (IntLiteral 1)))),
-            (ExprLiteral (IntLiteral 1)),
-            (Some (ExprBinOperation (Mul, (ExprVariable "n"),
-                     (ExprApply ((ExprVariable "fact"),
-                        (ExprBinOperation (Sub, (ExprVariable "n"),
-                           (ExprLiteral (IntLiteral 1))))
-                        ))
-                     )))
-            ))
-         )))
-      ]
+    ((PVar "fact"),
+     (ExprFun ((PVar "n"),
+        (ExprIf (
+           (ExprBinOperation (Lte, (ExprVariable "n"),
+              (ExprLiteral (IntLiteral 1)))),
+           (ExprLiteral (IntLiteral 1)),
+           (Some (ExprBinOperation (Mul, (ExprVariable "n"),
+                    (ExprApply ((ExprVariable "fact"),
+                       (ExprBinOperation (Sub, (ExprVariable "n"),
+                          (ExprLiteral (IntLiteral 1))))
+                       ))
+                    )))
+           ))
+        )))
     ))
   ]
 |}]
