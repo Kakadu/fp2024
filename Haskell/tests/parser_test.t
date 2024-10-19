@@ -26,7 +26,7 @@ SPDX-License-Identifier: MIT
                  ((Const (Int 0)), None))),
               None),
              ((Const (Int 1)), None)),
-            [(((Const (Bool true)), None),
+            [(((Identificator (Ident "otherwise")), None),
               ((Binop (((Identificator (Ident "y")), None), Multiply,
                   ((FunctionApply (((Identificator (Ident "save_fac")), None),
                       ((Binop (((Identificator (Ident "y")), None), Minus,
