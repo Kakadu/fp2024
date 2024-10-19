@@ -135,22 +135,6 @@ let parse_immediate_address32 =
   ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_immediate32)
 ;;
 
-let parse_lo_label_address12 = 
-  ws_opt(string "%lo") *> ws_opt(char '(') *> ws_opt (lift (fun imm -> LoLabelAddress12 imm) parse_label_address32) <* ws_opt(char ')')
-;;
-
-let parse_hi_label_address20 = 
-  ws_opt(string "%hi") *> ws_opt(char '(') *> ws_opt (lift (fun imm -> HiLabelAddress20 imm) parse_label_address32) <* ws_opt(char ')')
-;;
-
-let parse_lo_immediate_address12 = 
-  ws_opt(string "%lo") *> ws_opt(char '(') *> ws_opt (lift (fun imm -> LoImmediateAddress12 imm) parse_immediate_address32) <* ws_opt(char ')')
-;;
-
-let parse_hi_immediate_address20 = 
-  ws_opt(string "%hi") *> ws_opt(char '(') *> ws_opt (lift (fun imm -> HiImmediateAddress20 imm) parse_immediate_address32) <* ws_opt(char ')')
-;;
-
 let parse_label_address12 =
   ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
 ;;
