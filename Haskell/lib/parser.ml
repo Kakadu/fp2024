@@ -215,34 +215,35 @@ let prios_list =
   ]
 ;;
 
+exception Non_assoc_ops_seq
+
+let non_assoc_ops_seq_check l =
+  List.fold_left
+    (fun (prev_assoc, error_flag) (ass, _, _) ->
+      ass, if error_flag || (prev_assoc == Non && ass == Non) then true else false)
+    (Left, false)
+    l
+  |> snd
+  |> fun error_flag -> if error_flag then raise Non_assoc_ops_seq else l
+;;
+
 let bo expr prios_list =
   let rec loop acc = function
     | [] -> acc
     | (Right, op, r) :: tl -> op acc (loop r tl)
     | ((Left | Non), op, r) :: tl -> loop (op acc r) tl
   in
-  let rec helper ?(prev_is_non_assoc = false) = function
+  let rec helper = function
     | [] -> ws *> expr
     | hd :: tl ->
       return loop
       <**> helper tl
-      <*> many
-            (choice
-               (List.map
-                  (fun (ass, op, f) ->
-                    match ass with
-                    | Non ->
-                      op **> helper tl ~prev_is_non_assoc:true
-                      >>>=
-                      if prev_is_non_assoc
-                      then
-                        fun _ ->
-                        fail
-                          "cannot mix two non-associative operators in the same infix \
-                           expression"
-                      else fun r -> return (ass, f, r)
-                    | _ -> op **> helper tl >>>= fun r -> return (ass, f, r))
-                  hd))
+      <*> (choice
+             (List.map
+                (fun (ass, op, f) -> op **> helper tl >>>= fun r -> return (ass, f, r))
+                hd)
+           |> many
+           >>| non_assoc_ops_seq_check)
   in
   helper prios_list
 ;;
@@ -301,20 +302,34 @@ let e e =
 
 let expr = e (fix e)
 
-let test call sh str =
-  match parse_string ~consume:Prefix call str with
+(* let prs_ln call sh str =
+  match
+    try parse_string ~consume:Prefix call str with
+    | Non_assoc_ops_seq ->
+      Error "cannot mix two non-associative operators in the same infix expression"
+  with
   | Ok v -> print_endline (sh v)
   | Error msg -> Printf.fprintf stderr "error: %s" msg
-;;
+;; *)
+
+let prs_ln call str =
+    try parse_string ~consume:Prefix call str with
+    | Non_assoc_ops_seq ->
+      Error "cannot mix two non-associative operators in the same infix expression"
+
+let prs_and_prnt_ln call sh str = match prs_ln call str with 
+  | Ok v -> print_endline (sh v)
+  | Error msg -> Printf.fprintf stderr "error: %s" msg
+
 
 let%expect_test "expr_const" =
-  test expr show_expr "1";
+  prs_and_prnt_ln expr show_expr "1";
   [%expect {|
       ((Const (Int 1)), None) |}]
 ;;
 
 let%expect_test "expr_prio" =
-  test expr show_expr "(1 + 1)*2 > 1";
+  prs_and_prnt_ln expr show_expr "(1 + 1)*2 > 1";
   [%expect
     {|
       ((Binop (
@@ -328,7 +343,7 @@ let%expect_test "expr_prio" =
 ;;
 
 let%expect_test "expr_with_Just" =
-  test expr show_expr "Just 2 + 1";
+  prs_and_prnt_ln expr show_expr "Just 2 + 1";
   [%expect
     {|
       ((Binop (((OptionBld (Just ((Const (Int 2)), None))), None), Plus,
@@ -337,7 +352,7 @@ let%expect_test "expr_with_Just" =
 ;;
 
 let%expect_test "expr_with_func_apply" =
-  test expr show_expr "f 2 2 + 1";
+  prs_and_prnt_ln expr show_expr "f 2 2 + 1";
   [%expect
     {|
       ((Binop (
@@ -348,10 +363,30 @@ let%expect_test "expr_with_func_apply" =
        None) |}]
 ;;
 
+let%expect_test "expr_with_non-assoc_op_simple" =
+  prs_and_prnt_ln expr show_expr "x == y";
+  [%expect
+    {|
+      ((Binop (((Identificator (Ident "x")), None), Equality,
+          ((Identificator (Ident "y")), None))),
+       None) |}]
+;;
+
+let%expect_test "expr_with_non-assoc_ops_invalid" =
+  prs_and_prnt_ln expr show_expr "x == y >= z";
+  [%expect
+    {|
+      error: cannot mix two non-associative operators in the same infix expression |}]
+;;
+
+(* let%expect_test "expr_with_non-assoc_ops_valid" =
+  prs_and_prnt_ln expr show_expr "x == y && z == z'";
+;; *)
+
 let binding = binding expr
 
 let%expect_test "var_binding_simple" =
-  test binding show_binding "x = 1";
+  prs_and_prnt_ln binding show_binding "x = 1";
   [%expect
     {|
       (VarsBind (([], (PIdentificator (Ident "x")), None),
@@ -359,7 +394,7 @@ let%expect_test "var_binding_simple" =
 ;;
 
 let%expect_test "var_binding_with_where" =
-  test binding show_binding "x = y where y = 1; k = 2 ";
+  prs_and_prnt_ln binding show_binding "x = y where y = 1; k = 2 ";
   [%expect
     {|
       (VarsBind (([], (PIdentificator (Ident "x")), None),
@@ -373,7 +408,7 @@ let%expect_test "var_binding_with_where" =
 ;;
 
 let%expect_test "fun_binding_simple" =
-  test binding show_binding "f x = x + 1";
+  prs_and_prnt_ln binding show_binding "f x = x + 1";
   [%expect
     {|
       (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), None),
@@ -386,7 +421,7 @@ let%expect_test "fun_binding_simple" =
 ;;
 
 let%expect_test "fun_binding_guards" =
-  test binding show_binding "f x |x > 1 = 0 | otherwise = 1";
+  prs_and_prnt_ln binding show_binding "f x |x > 1 = 0 | otherwise = 1";
   [%expect
     {|
       (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), None),
@@ -402,5 +437,5 @@ let%expect_test "fun_binding_guards" =
          [])) |}]
 ;;
 
-let parse_and_print_line = test binding show_binding
-let parse_line str = parse_string ~consume:Prefix binding str
+let parse_and_print_line = prs_and_prnt_ln binding show_binding
+let parse_line str = prs_ln binding str
