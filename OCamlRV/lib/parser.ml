@@ -23,6 +23,11 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let is_separator = function
+  | '(' | '[' | ')' | ']' | '\'' | '"' | ' ' | '\t' | '\n' -> true
+  | _ -> false
+;;
+
 let ws = take_while Char.is_whitespace
 let token s = ws *> string s
 
@@ -112,7 +117,16 @@ let pcmp =
     ]
 ;;
 
-let parse_rec_flag = option NonRec (token "rec" *> return Rec)
+let get_rec_keyword =
+  let* r = ws *> take_while1 is_id in
+  if String.compare r "rec" = 0 then return true else fail "There in no 'rec' keyword."
+;;
+
+let parse_rec_flag =
+  let* is_rec = get_rec_keyword <|> return false in
+  if is_rec then return Rec else return NonRec
+;;
+
 let efunf ps e = List.fold_right ps ~f:efun ~init:e
 
 let pelet pe =
