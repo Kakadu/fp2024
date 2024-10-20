@@ -6,8 +6,8 @@
     https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 292 *)
 
 open Base
-open Ast
 open Angstrom
+open Ast
 open Common
 
 let parse_pat_wild = char '_' *> return Pattern_wild
