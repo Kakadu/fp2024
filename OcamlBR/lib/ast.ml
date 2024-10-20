@@ -65,5 +65,4 @@ type expr =
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
 
-type structure = expr list 
-[@@deriving show { with_path = false }]
+type structure = expr list [@@deriving show { with_path = false }]

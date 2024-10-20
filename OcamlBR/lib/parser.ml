@@ -25,7 +25,7 @@ let pparens p = pstoken "(" *> p <* pstoken ")"
 let pint =
   let sign = choice [ pstoken "-"; pstoken "+"; pstoken "" ] in
   let rest = take_while1 Char.is_digit in
-  let whole = lift2 (^) sign rest in
+  let whole = lift2 ( ^ ) sign rest in
   whole
   >>= fun str ->
   match Stdlib.int_of_string_opt str with
@@ -57,10 +57,7 @@ let varname =
 
 let pvar = varname >>| fun x -> PVar x
 let pconst = const >>| fun x -> PConst x
-let ppattern =
-  choice
-    [pconst; pvar]
-;;
+let ppattern = choice [ pconst; pvar ]
 
 (*------------------Binary operators-----------------*)
 
@@ -131,9 +128,7 @@ let pexpr =
 ;;
 
 let parse_structure =
-  let parse_structure_item =
-    choice [ plet pexpr; pexpr ]
-  in
+  let parse_structure_item = choice [ plet pexpr; pexpr ] in
   let semicolons = pstoken ";;" in
   let items = sep_by semicolons parse_structure_item in
   items <* pwhitespace
