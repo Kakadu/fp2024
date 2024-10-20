@@ -165,12 +165,12 @@ let exp_list expr =
 let exp_tuple expr = tuple expr (fun es -> Exp_tuple es)
 let exp_apply expr = parse_left_assoc expr (return (fun f a -> Exp_apply (f, [ a ])))
 
-let exp_ifthenelse b t e =
+let exp_ifthenelse expr =
   lift3
     (fun b t e -> Exp_ifthenelse (b, t, e))
-    (token "if" *> b)
-    (token "then" *> t)
-    (token "else" *> e)
+    (token "if" *> expr)
+    (token "then" *> expr)
+    (option None (token "else" *> expr >>| Option.some))
 ;;
 
 let exp_fun expr =
@@ -316,7 +316,7 @@ let expr =
     let term = right_bin_op term or_op in
     let term = exp_tuple term <|> term in
     choice
-      [ exp_ifthenelse pexpr pexpr (option None (token "else" *> pexpr >>| Option.some))
+      [ exp_ifthenelse pexpr
       ; exp_let pexpr
       ; exp_match pexpr
       ; exp_fun pexpr
