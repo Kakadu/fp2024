@@ -12,7 +12,7 @@ let parse_number =
       | '0' .. '9' -> true
       | _ -> false)
   in
-  lift2 (fun s d -> s ^ d) sign digits >>= fun num_str -> return (int_of_string num_str)
+  lift2 ( ^ ) sign digits >>= fun num_str -> return (int_of_string num_str)
 ;;
 
 let ws =
