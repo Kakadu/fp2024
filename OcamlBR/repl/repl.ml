@@ -18,7 +18,7 @@ type opts =
   }
 
 let eval ast =
-  ignore (show_expr ast);
+  ignore (show_structure ast);
   (* eval will be here soon *)
   ()
 ;;
@@ -32,7 +32,7 @@ let run_single dump_parsetree stop_after eval input_source =
   match parse_expr text with
   | Error e -> Stdlib.Format.printf "Parse Error: %s\n%!" e (* Use Stdlib.Format *)
   | Ok ast ->
-    if dump_parsetree then print_endline (show_expr ast);
+    if dump_parsetree then print_endline (show_structure ast);
     (match stop_after with
      | SA_parsing -> ()
      | SA_never -> eval ast)

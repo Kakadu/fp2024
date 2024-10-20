@@ -25,7 +25,7 @@ let pparens p = pstoken "(" *> p <* pstoken ")"
 let pint =
   let sign = choice [ pstoken "-"; pstoken "+"; pstoken "" ] in
   let rest = take_while1 Char.is_digit in
-  let whole = lift2 (fun x y -> x ^ y) sign rest in
+  let whole = lift2 (^) sign rest in
   whole
   >>= fun str ->
   match Stdlib.int_of_string_opt str with
@@ -39,12 +39,12 @@ let pbool =
 ;;
 
 let pstr = char '"' *> take_till (Char.equal '"') <* char '"' >>| fun x -> String x
-let punit = pstoken "()" >>| fun _ -> Unit
+let punit = pstoken "()" *> return Unit
 let const = choice [ pint; pbool; pstr; punit ]
 
 let varname =
   ptoken
-    (take_while (fun ch -> Char.is_digit ch)
+    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'')
      >>= function
      | "" ->
        take_while1 (fun ch -> Char.is_alpha ch || Char.is_digit ch || Char.equal ch '_')
@@ -57,7 +57,10 @@ let varname =
 
 let pvar = varname >>| fun x -> PVar x
 let pconst = const >>| fun x -> PConst x
-let ppattern = choice [ pconst; pvar ]
+let ppattern =
+  choice
+    [pconst; pvar]
+;;
 
 (*------------------Binary operators-----------------*)
 
@@ -85,7 +88,7 @@ let relation =
 
 let chain e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
-  e >>= fun init -> go init
+  e >>= go
 ;;
 
 let plet pexpr =
@@ -124,8 +127,16 @@ let pexpr =
     let expr = chain expr (add <|> sub) in
     let expr = chain expr relation in
     let expr = pbranch expr <|> expr in
-    let expr = plet expr <|> expr in
     expr)
 ;;
 
-let parse_expr = parse_string ~consume:Consume.All (pexpr <* skip_while Char.is_whitespace)
+let parse_structure =
+  let parse_structure_item =
+    choice [ plet pexpr; pexpr ]
+  in
+  let semicolons = pstoken ";;" in
+  let items = sep_by semicolons parse_structure_item in
+  items <* pwhitespace
+;;
+
+let parse_expr str = parse_string ~consume:All parse_structure str
