@@ -14,4 +14,3 @@ int main() {
     printf("%d\n", factorial(n));
     return 0;
 }
-

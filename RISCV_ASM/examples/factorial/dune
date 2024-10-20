@@ -1,0 +1,7 @@
+(executable
+ (name factorial)
+ (public_name factorial)
+ (modules factorial)
+ (libraries riscv_asm_interpreter_lib)
+ (instrumentation
+  (backend bisect_ppx)))
