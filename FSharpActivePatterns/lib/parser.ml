@@ -66,19 +66,19 @@ let p_int =
 ;;
 
 let p_letin p_expr =
-    skip_ws
-    *> string "let"
-    *> skip_ws1
-    *> lift4
-         (fun rec_flag name args body in_expr ->
-           LetIn (rec_flag, name, args, body, in_expr))
-         (string "rec" *> return Rec <|> return Nonrec)
-         (p_ident >>= fun ident -> return (Some ident) <|> return None)
-         (many (skip_ws *> p_var)
-          >>= fun args ->
-          if not (List.length args = 0) then return (Some args) else return None)
-         (skip_ws *> string "=" *> skip_ws *> p_expr)
-    <*> skip_ws *> string "in" *> skip_ws *> p_expr
+  skip_ws
+  *> string "let"
+  *> skip_ws1
+  *> lift4
+       (fun rec_flag name args body in_expr ->
+         LetIn (rec_flag, name, args, body, in_expr))
+       (string "rec" *> return Rec <|> return Nonrec)
+       (p_ident >>= fun ident -> return (Some ident) <|> return None)
+       (many (skip_ws *> p_var)
+        >>= fun args ->
+        if not (List.length args = 0) then return (Some args) else return None)
+       (skip_ws *> string "=" *> skip_ws *> p_expr)
+  <*> skip_ws *> string "in" *> skip_ws *> p_expr
 ;;
 
 (** parse string literal [s] without escaping symbols and returns Const (String_lt [s]) *)
