@@ -57,7 +57,10 @@ let varname =
 
 let pvar = varname >>| fun x -> PVar x
 let pconst = const >>| fun x -> PConst x
-let ppattern = choice [ pconst; pvar ]
+let ppattern =
+  choice
+    [pconst; pvar]
+;;
 
 (*------------------Binary operators-----------------*)
 
@@ -124,8 +127,16 @@ let pexpr =
     let expr = chain expr (add <|> sub) in
     let expr = chain expr relation in
     let expr = pbranch expr <|> expr in
-    let expr = plet expr <|> expr in
     expr)
 ;;
 
-let parse_expr = parse_string ~consume:Consume.All (pexpr <* skip_while Char.is_whitespace)
+let parse_structure =
+  let parse_structure_item =
+    choice [ plet pexpr; pexpr ]
+  in
+  let semicolons = pstoken ";;" in
+  let items = sep_by semicolons parse_structure_item in
+  items <* pwhitespace
+;;
+
+let parse_expr str = parse_string ~consume:All parse_structure str
