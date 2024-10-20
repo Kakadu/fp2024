@@ -1,6 +1,7 @@
 (library
  (name riscv_asm_interpreter_lib)
  (public_name RISCV_ASM.Lib)
+ (libraries angstrom)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq))
  (instrumentation
