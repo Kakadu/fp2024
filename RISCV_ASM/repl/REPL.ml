@@ -3,6 +3,7 @@ open Riscv_asm_interpreter_lib.Parser
 open Angstrom
 open Printf
 open Stdio
+open Arg
 
 type opts =
   { mutable dump_parse_tree : bool
@@ -12,7 +13,6 @@ type opts =
 let () =
   let opts = { dump_parse_tree = false; file_path = None } in
   let _ =
-    let open Arg in
     parse
       [ "-dparsetree", Unit (fun () -> opts.dump_parse_tree <- true), "Dump AST\n"
       ; ( "-filepath"
