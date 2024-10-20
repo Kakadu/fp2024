@@ -6,18 +6,22 @@
     https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 292 *)
 
 open Base
-open Ast
 open Angstrom
+open Ast
 
-let skip_ws = skip_while Char.is_whitespace
-let skip_ws_before p = p <* skip_ws
-let skip_ws_after p = skip_ws *> p
-let skip_ws_around p = skip_ws *> p <* skip_ws
-let skip_token str = skip_ws_around (string str) *> return ()
+(* F# compiler forbids tabs by default *)
+let is_whitespace = function
+  | ' ' | '\n' | '\r' -> true
+  | _ -> false
+;;
+
+let skip_ws = skip_while is_whitespace
+let skip_ws1 = satisfy is_whitespace *> skip_ws
+let skip_ws_around1 p = skip_ws1 *> p <* skip_ws1
+let skip_token str = skip_ws_around1 (string str) *> return ()
 
 let is_keyword = function
   | "and"
-  | "elif"
   | "else"
   | "false"
   | "fun"

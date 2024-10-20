@@ -1,21 +1,29 @@
-open Base
-open Ast
-open Angstrom
+(** Copyright 2024, Vlasenco Daniel and Strelnikov Andrew *)
 
-(** [skip_ws] skips whitespaces and tabulation *)
+(** SPDX-License-Identifier: MIT *)
+
+(** This file contains parsers for part of F# 4.1 grammar, taken from
+    https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 292 *)
+
+open Base
+open Angstrom
+open Ast
+
+(** [' '], ['\n'] or ['\r'] *)
+val is_whitespace : char -> bool
+
+(** [skip_ws] skips whitespaces *)
 val skip_ws : unit t
 
-(** [skip_ws_before p] skips whitespaces, then runs [p] and returns its result *)
-val skip_ws_before : 'a t -> 'a t
+(** [skip_ws1] skips whitespaces at least once *)
+val skip_ws1 : unit t
 
-(** [skip_ws_after p] runs [p], skips whitespaces after it and returns [p]'s result *)
-val skip_ws_after : 'a t -> 'a t
+(** [skip_ws_around1 p] runs [p], skipping at least one whitespace before
+    and after it, and returns [p]'s result *)
+val skip_ws_around1 : 'a t -> 'a t
 
-(** [skip_ws_around p] skips whitespaces, then runs [p],
-    then skips whitespaces after it and returns [p]'s result *)
-val skip_ws_around : 'a t -> 'a t
-
-(** [skip_token str] skips [str] exactly, with whitespaces around it *)
+(** [skip_token str] skips [str] exactly, separated
+    with at least one whitespace before and after it *)
 val skip_token : string -> unit t
 
 (** [is_keyword] returns true if given string is a keyword of F# *)
