@@ -355,6 +355,14 @@ let just =
        , etp )
 ;;
 
+let lambda e =
+  char '\\'
+  *> let** pt = pattern in
+     let* pts = many (ws *> pattern) in
+     let* ex = string "->" **> e in
+     return (Lambda (pt, pts, ex), etp)
+;;
+
 let other_expr e fa =
   choice
     [ const_e
@@ -363,6 +371,7 @@ let other_expr e fa =
     ; just
     ; if_then_else e
     ; inner_bindings e
+    ; lambda e
     ; tuple_or_parensed_item
         e
         (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
@@ -486,6 +495,18 @@ let%expect_test "expr_tuple" =
                 ((Identificator (Ident "y")), None), [])),
              None)
             ]
+          )),
+       None) |}]
+;;
+
+let%expect_test "expr_lambda" =
+  prs_and_prnt_ln expr show_expr " \\x -> x+1";
+  [%expect
+    {|
+      ((Lambda (([], (PIdentificator (Ident "x")), None), [],
+          ((Binop (((Identificator (Ident "x")), None), Plus,
+              ((Const (Int 1)), None))),
+           None)
           )),
        None) |}]
 ;;
