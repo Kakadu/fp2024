@@ -64,3 +64,5 @@ type expr =
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1  *)
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
+
+type structure = expr list [@@deriving show { with_path = false }]
