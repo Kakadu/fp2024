@@ -10,12 +10,7 @@ open Ast
 open Angstrom
 open Common
 
-let parse_wild = char '_' <* (peek_char_fail >>| Char.is_whitespace)
-
-let parse_pat =
-  choice
-    [ (parse_ident >>| fun i -> Pattern_ident i)
-    ; (parse_wild >>| fun _ -> Pattern_wild)
-    ; (parse_const >>| fun c -> Pattern_const c)
-    ]
-;;
+let parse_pat_wild = char '_' *> return Pattern_wild
+let parse_pat_ident = parse_ident >>| fun i -> Pattern_ident i
+let parse_pat_const = parse_const >>| fun c -> Pattern_const c
+let parse_pat = choice [ parse_pat_ident; parse_pat_wild; parse_pat_const ]
