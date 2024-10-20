@@ -8,9 +8,9 @@ open Base
 open Char
 
 (*                   Auxiliary parsers                     *)
-
+  
 let debug_parser name p =
-  p <|> (return () >>= fun () ->
+  p  <|> (return () >>= fun () ->
     Stdlib.Printf.printf "Debug: %s parser failed\n" name;
     fail (Printf.sprintf "%s parser failed" name))
 
@@ -101,13 +101,14 @@ let pvalue_binding pexpr =
 ;;
 let prec_flag = token "rec" *> return Recursive <|> return Nonrecursive
 ;;
+(*rewrite*)
 let pletexpr pexpr =
-  token "let" *> lift3 (fun rec_flag value_binding expr -> Exp_let(rec_flag, value_binding, expr))
-  prec_flag (many1 (pvalue_binding pexpr)) pexpr
+  lift3 (fun rec_flag value_binding expr -> Exp_let(rec_flag, value_binding, expr))
+  (token "let" *> pass_ws *> prec_flag) (pass_ws *> many1(pvalue_binding pexpr)) (pass_ws *> token "in" *> pexpr)
 ;;
 
-(*rewrite*)
-let ptupleexpr =
+(*rewrite*) 
+  let ptupleexpr =
   let* _ = token "(" in
   let* expression1 = pidentexpr in
   let* _ = token "," in
@@ -176,20 +177,17 @@ let pexpr = fix (fun expr ->
     debug_parser "parens" (pparens expr);
     debug_parser "constint" pconstintexpr;
     debug_parser "constchar" pconstcharexpr;
-    debug_parser "conststring" pconststringexpr;
+    (* debug_parser "conststring" pconststringexpr; *)
   ] in
   let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
-  let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
-  let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
-  (* let expr = papplyexpr expr <|> expr in 
-  let expr = lchain expr (pmul <|> pdiv) in
-  let expr = lchain expr (padd <|> psub) in *)
-  let expr = lchain expr pcompops in
-  let expr = rchain expr plogops in 
-  let expr = pifexpr expr <|> expr in
-  let expr = ptupleexpr <|> expr in 
-  let expr = pletexpr expr <|> expr in
-  let expr = pfunexpr expr <|> expr in 
+  (* let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in *)
+  (* let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in *)
+  let expr = debug_parser "compare" (lchain expr pcompops) in
+  (* let expr = rchain expr plogops in  *)
+  (* let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in *)
+  (* let expr = debug_parser "tuple" ptupleexpr <|> expr in  *)
+  let expr = debug_parser "let" (pletexpr expr) <|> expr in
+  (* let expr = debug_parser "fun" (pfunexpr expr) <|> expr in  *)
   expr)
 ;;
 
@@ -208,11 +206,6 @@ let psvalue =
   pseval <|> psvalue *)
 
   let pstr_item =
-    let debug_parser name p =
-      p <|> (return () >>= fun () ->
-        Stdlib.Printf.printf "Debug: %s parser failed\n" name;
-        fail (Printf.sprintf "%s parser failed" name))
-    in
     debug_parser "pseval" pseval
     <|> debug_parser "psvalue" psvalue
 
