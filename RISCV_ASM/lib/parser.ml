@@ -27,12 +27,23 @@ let parse_string =
     | _ -> true)
 ;;
 
-let parse_quoted_string =
-  char '"'
-  *> take_while (function
-    | '"' -> false
+let parse_escaped_char = char '\\' *> (char 'n' *> return '\n')
+
+let parse_regular_char =
+  satisfy (function
+    | '"' | '\\' -> false
     | _ -> true)
+;;
+
+let char_list_to_string char_list =
+  let len = List.length char_list in
+  String.init len (List.nth char_list)
+;;
+
+let parse_quoted_string =
+  char '"' *> many (parse_escaped_char <|> parse_regular_char)
   <* char '"'
+  >>| char_list_to_string
 ;;
 
 let parse_type = char '@' *> parse_string >>= fun str -> return (Type str)
