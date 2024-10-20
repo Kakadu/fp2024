@@ -102,6 +102,20 @@ let%test "ident_invalid_keyword" =
   = Result.Error ": keyword 'then' cannot be an identifier"
 ;;
 
+exception Non_assoc_ops_seq
+
+let prs_ln call str =
+  try parse_string ~consume:Prefix call str with
+  | Non_assoc_ops_seq ->
+    Error "cannot mix two non-associative operators in the same infix expression"
+;;
+
+let prs_and_prnt_ln call sh str =
+  match prs_ln call str with
+  | Ok v -> print_endline (sh v)
+  | Error msg -> Printf.fprintf stderr "error: %s" msg
+;;
+
 let word req_word =
   let open String in
   if equal req_word empty
@@ -123,6 +137,15 @@ let%test "word_invalid" =
   = Result.Error ": couldn't parse word 'then'"
 ;;
 
+let tuple_or_parensed_item item_parser tuple_cons item_cons =
+  parens (sep_by1 (ws *> char ',' *> ws) item_parser)
+  >>= fun l ->
+  match l with
+  | hd :: [] -> item_cons hd
+  | fs :: sn :: tl -> tuple_cons fs sn tl
+  | [] -> fail "sep_by1 result can't be empty"
+;;
+
 let pat =
   (let* pt = const in
    return (PConst pt))
@@ -131,16 +154,17 @@ let pat =
 ;;
 
 let ptrn ptrn =
-  (let* ident = ident in
-   char '@'
-   *> (ptrn <|> parens ptrn >>= fun (idents, pat, tp) -> return (ident :: idents, pat, tp)))
-  <|>
-  let oth_ptrn =
-    let* pat = pat in
-    (* let* tp = tp in *)
-    return ([], pat, etp)
-  in
-  oth_ptrn <|> parens oth_ptrn
+  choice
+    [ (let* ident = ident in
+       char '@' *> (ptrn >>= fun (idents, pat, tp) -> return (ident :: idents, pat, tp)))
+    ; (let* pat = pat in
+       (* let* tp = tp in *)
+       return ([], pat, etp))
+    ; tuple_or_parensed_item
+        ptrn
+        (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), etp))
+        (fun p -> return p)
+    ]
 ;;
 
 let pattern = ptrn (fix ptrn)
@@ -158,6 +182,48 @@ let%test "pattern_valid_parens_oth" =
 let%test "pattern_valid_double_as" =
   parse_string ~consume:Prefix pattern "a@b@2"
   = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Int 2), None)
+;;
+
+let%test "pattern_valid_with_parens" =
+  parse_string ~consume:Prefix pattern "(a@(b@(2)))"
+  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Int 2), None)
+
+
+let%expect_test "pattern_valid_tuple" =
+  prs_and_prnt_ln pattern show_pattern "(x, y,(x,y))";
+  [%expect
+    {|
+      ([],
+       (PTuple (([], (PIdentificator (Ident "x")), None),
+          ([], (PIdentificator (Ident "y")), None),
+          [([],
+            (PTuple (([], (PIdentificator (Ident "x")), None),
+               ([], (PIdentificator (Ident "y")), None), [])),
+            None)]
+          )),
+       None) |}]
+;;
+
+let%expect_test "pattern_valid_tuple_labeled" =
+  prs_and_prnt_ln pattern show_pattern "a@(x, e@y,b@(x,y))";
+  [%expect
+    {|
+      ([(Ident "a")],
+       (PTuple (([], (PIdentificator (Ident "x")), None),
+          ([(Ident "e")], (PIdentificator (Ident "y")), None),
+          [([(Ident "b")],
+            (PTuple (([], (PIdentificator (Ident "x")), None),
+               ([], (PIdentificator (Ident "y")), None), [])),
+            None)]
+          )),
+       None) |}]
+;;
+
+let%expect_test "pattern_invalid_tuple_labeled" =
+  prs_and_prnt_ln pattern show_pattern "(x, e@y,(x,y)@(x,y))";
+  [%expect
+    {|
+      error: : no more choices |}]
 ;;
 
 let bindingbody e =
@@ -198,20 +264,17 @@ type assoc =
   | Non
 
 let prios_list =
-  [ [ (Right, string "||", fun a b -> Binop (a, Or, b), etp)
-    ]
-    ; [ (Right, string "&&", fun a b -> Binop (a, And, b), etp)
-    ]
-    ; [ (Non, string "==", fun a b -> Binop (a, Equality, b), etp)
+  [ [ (Right, string "||", fun a b -> Binop (a, Or, b), etp) ]
+  ; [ (Right, string "&&", fun a b -> Binop (a, And, b), etp) ]
+  ; [ (Non, string "==", fun a b -> Binop (a, Equality, b), etp)
     ; (Non, string "/=", fun a b -> Binop (a, Inequality, b), etp)
     ; (Non, string ">=", fun a b -> Binop (a, EqualityOrGreater, b), etp)
     ; (Non, string "<=", fun a b -> Binop (a, EqualityOrLess, b), etp)
     ; (Non, string ">", fun a b -> Binop (a, Greater, b), etp)
     ; (Non, string "<", fun a b -> Binop (a, Less, b), etp)
     ]
-  ; [ (Right, string ":", fun a b -> Binop (a, Cons, b), etp)
-    ]
-    ;[ (Left, string "+", fun a b -> Binop (a, Plus, b), etp)
+  ; [ (Right, string ":", fun a b -> Binop (a, Cons, b), etp) ]
+  ; [ (Left, string "+", fun a b -> Binop (a, Plus, b), etp)
     ; (Left, string "-", fun a b -> Binop (a, Minus, b), etp)
     ]
   ; [ (Left, string "`div`", fun a b -> Binop (a, Divide, b), etp)
@@ -221,8 +284,6 @@ let prios_list =
   ; [ (Right, string "^", fun a b -> Binop (a, Pow, b), etp) ]
   ]
 ;;
-
-exception Non_assoc_ops_seq
 
 let non_assoc_ops_seq_check l =
   List.fold_left
@@ -281,14 +342,24 @@ let inner_bindings e =
 ;;
 
 let opt_e e =
-  ws *> (string "Nothing" *> return (OptionBld Nothing, etp))
+  string "Nothing" *> return (OptionBld Nothing, etp)
   <|> word "Just"
       *> let** ex = choice [ const_e; ident_e; parens e ] in
          return (OptionBld (Just ex), etp)
 ;;
 
 let other_expr e fa =
-  choice [ const_e; ident_e; opt_e e; if_then_else e; inner_bindings e; parens e ]
+  choice
+    [ const_e
+    ; ident_e
+    ; opt_e e
+    ; if_then_else e
+    ; inner_bindings e
+    ; tuple_or_parensed_item
+        e
+        (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
+        (fun ex -> return ex)
+    ]
   >>= fun ex -> fa ex e <|> return ex
 ;;
 
@@ -308,18 +379,6 @@ let e e =
 ;;
 
 let expr = e (fix e)
-
-let prs_ln call str =
-  try parse_string ~consume:Prefix call str with
-  | Non_assoc_ops_seq ->
-    Error "cannot mix two non-associative operators in the same infix expression"
-;;
-
-let prs_and_prnt_ln call sh str =
-  match prs_ln call str with
-  | Ok v -> print_endline (sh v)
-  | Error msg -> Printf.fprintf stderr "error: %s" msg
-;;
 
 let%expect_test "expr_const" =
   prs_and_prnt_ln expr show_expr "1";
@@ -349,7 +408,6 @@ let%expect_test "expr_right_assoc" =
           ((Binop (((Const (Int 3)), None), Pow, ((Const (Int 4)), None))), None))),
        None) |}]
 ;;
-
 
 let%expect_test "expr_with_Just" =
   prs_and_prnt_ln expr show_expr "Just 2 + 1";
@@ -389,8 +447,8 @@ let%expect_test "expr_with_non-assoc_ops_invalid" =
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_valid" =
-   prs_and_prnt_ln expr show_expr "x == y && z == z'";
-     [%expect
+  prs_and_prnt_ln expr show_expr "x == y && z == z'";
+  [%expect
     {|
       ((Binop (
           ((Binop (((Identificator (Ident "x")), None), Equality,
@@ -400,6 +458,20 @@ let%expect_test "expr_with_non-assoc_ops_valid" =
           ((Binop (((Identificator (Ident "z")), None), Equality,
               ((Identificator (Ident "z'")), None))),
            None)
+          )),
+       None) |}]
+;;
+
+let%expect_test "expr_tuple" =
+  prs_and_prnt_ln expr show_expr " (x,1 , 2,(x, y))";
+  [%expect
+    {|
+      ((TupleBld (((Identificator (Ident "x")), None), ((Const (Int 1)), None),
+          [((Const (Int 2)), None);
+            ((TupleBld (((Identificator (Ident "x")), None),
+                ((Identificator (Ident "y")), None), [])),
+             None)
+            ]
           )),
        None) |}]
 ;;
