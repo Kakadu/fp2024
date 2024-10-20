@@ -98,7 +98,7 @@ let plet pexpr =
   pstoken "let"
   *> lift4
        (fun r id e1 e2 -> Elet (r, id, e1, e2))
-       (pstoken "rec" *> return Recursive <|> return Non_recursive)
+       (pstoken "rec " *> return Recursive <|> return Non_recursive)
        (pparens varname <|> varname)
        (pstoken "=" *> pexpr <|> pbody pexpr)
        (pstoken "in" *> pexpr <|> return (Econst Unit))
@@ -118,13 +118,17 @@ let pbranch pexpr =
 
 let pexpr =
   fix (fun expr ->
-    let expr = choice [ pEconst; pEvar; pparens expr ] in
-    let expr = pEapp expr <|> expr in
-    let expr = chain expr (mult <|> div) in
-    let expr = chain expr (add <|> sub) in
-    let expr = chain expr relation in
-    let expr = pbranch expr <|> expr in
-    expr)
+    let atom_expr = choice [ pEconst; pEvar; pparens expr ] in
+    (* parsing of nested if expressions and fallback to simpler atomic expressions
+       if the conditional expression parsing fails *)
+    let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
+    (* parsing function applications, where the left side can be
+       an if expression or a simpler atomic expression *)
+    let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
+    let factor_expr = chain app_expr (mult <|> div) in
+    let sum_expr = chain factor_expr (add <|> sub) in
+    let rel_expr = chain sum_expr relation in
+    rel_expr)
 ;;
 
 let parse_structure =
