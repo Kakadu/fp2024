@@ -173,10 +173,10 @@ let exp_ifthenelse expr =
     (option None (token "else" *> expr >>| Option.some))
 ;;
 
-let exp_fun expr =
+let exp_fun pexpr =
   token "fun" *> many1 pattern
   >>= fun args ->
-  token "->" *> expr
+  token "->" *> pexpr
   >>= fun e ->
   match List.rev args with
   | h :: tl ->
@@ -188,68 +188,67 @@ let exp_fun expr =
   | _ -> fail "Invalid function"
 ;;
 
-let val_binding pat exp = { pat; exp }
+(* let val_binding pat exp = { pat; exp } *)
 let efun i e = Exp_function ([ i ], e)
+let exp_pattern_matching pexpr = lift2 (fun k v -> k, v) (pattern <* token "->") pexpr
 
-let exp_decl expr =
+let exp_match pexpr =
+  token "match"
+  *> lift2
+       (fun v ptrns -> Exp_match (v, ptrns))
+       (pexpr <* token "with")
+       (exp_pattern_matching pexpr
+        <|> token "|" *> exp_pattern_matching pexpr
+        >>= fun p -> many (token "|" *> exp_pattern_matching pexpr) >>| fun ps -> p :: ps
+       )
+;;
+
+let exp_decl pexpr =
   let exp =
     ignore_spaces *> many pattern
     >>= fun args ->
-    token "=" *> expr
+    token "=" *> pexpr
     >>= fun e ->
     match List.rev args with
     | h :: tl -> return (List.fold_left ~init:(efun h e) ~f:(fun acc x -> efun x acc) tl)
     | _ -> return e
   in
-  token "let" *> lift2 val_binding (token1 pattern) exp
-;;
-
-let exp_pattern_matching expr = lift2 (fun k v -> k, v) (pattern <* token "->") expr
-
-let exp_match expr =
-  token "match"
-  *> lift2
-       (fun v ptrns -> Exp_match (v, ptrns))
-       (expr <* token "with")
-       (exp_pattern_matching expr
-        <|> token "|" *> exp_pattern_matching expr
-        >>= fun p -> many (token "|" *> exp_pattern_matching expr) >>| fun ps -> p :: ps)
-;;
-
-let elet r d e = Exp_let (r, d, e)
-
-let exp_let expr =
   token "let"
   *> lift3
-       elet
+       (fun d_rec d_pat d_exp -> { d_rec; d_pat; d_exp })
        (token "rec" *> return Rec <|> return Nonrec)
-       (exp_decl expr >>| fun d -> [ d ])
-       (token "in" *> expr)
+       (token1 pattern)
+       exp
 ;;
 
-let exp_sinvk expr =
+let elet d e = Exp_let (d, e)
+let exp_let pexpr = lift2 elet (exp_decl pexpr) (token "in" *> pexpr)
+
+let exp_sinvk pexpr =
   let iter = token "#" *> ident in
   let rec helper acc =
     iter >>= fun sub -> helper (Exp_send (acc, sub)) <|> return (Exp_send (acc, sub))
   in
-  let acc = lift2 (fun s m -> Exp_send (s, m)) expr (token "#" *> ident) in
+  let acc = lift2 (fun s m -> Exp_send (s, m)) pexpr (token "#" *> ident) in
   acc >>= helper <|> acc
 ;;
 
-let exp_override expr =
+let exp_override pexpr =
   token "{<"
   *> lift
        (fun es -> Exp_override es)
-       (sep_by (token ";") (ident >>= fun id -> token "=" *> expr >>| fun e -> id, e))
+       (sep_by (token ";") (ident >>= fun id -> token "=" *> pexpr >>| fun e -> id, e))
   <* token ">}"
 ;;
 
-let exp_object expr =
-  let ov = lift2 (fun a b -> Obj_val (a, b)) (token "val" *> ident) (token "=" *> expr) in
+let exp_object pexpr =
+  let ov =
+    lift2 (fun a b -> Obj_val (a, b)) (token "val" *> ident) (token "=" *> pexpr)
+  in
   let helper =
     ignore_spaces *> many pattern
     >>= fun args ->
-    token "=" *> expr
+    token "=" *> pexpr
     >>| fun e ->
     match List.rev args with
     | h :: tl ->
@@ -327,13 +326,12 @@ let expr =
 ;;
 
 let del = (double_semicolon <|> ignore_spaces) *> ignore_spaces
-let val_binding = token1 (exp_decl expr)
 
 let str_item =
   expr
   >>| (fun e -> Str_eval e)
   <* double_semicolon
-  <|> (val_binding >>| fun vb -> Str_value (Nonrec, [ vb ]))
+  <|> (token1 (exp_decl expr) >>| fun v -> Str_value v)
 ;;
 
 let program = del *> many1 (str_item <* del)
