@@ -16,7 +16,7 @@ let parse str =
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
-  {| 
+    {| 
  [(Elet (Recursive, "factorial",
      (Efun (["n"],
         (Eif_then_else ((Ebin_op (Eq, (Evar "n"), (Econst (Int 0)))),
