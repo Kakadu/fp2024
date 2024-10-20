@@ -710,6 +710,14 @@ let tuple_or_parensed_item_e e =
     return
 ;;
 
+let lambda e =
+  char '\\'
+  *> let** pt = pattern in
+     let* pts = many (ws *> pattern) in
+     let* ex = string "->" **> e in
+     return (Lambda (pt, pts, ex), etp)
+;;
+
 let other_expr e fa =
   let e' = e >>= ex_tp in
   choice
