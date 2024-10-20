@@ -5,14 +5,6 @@
 open Angstrom
 open Ast
 open Base
-(*open PrintAst*)
-
-(*
-let debug p =
-  p >>= fun result ->
-  print_expr 0 result;
-  return result
-;;*)
 
 (* TECHNICAL FUNCTIONS *)
 let skip_ws =
@@ -56,26 +48,29 @@ let is_keyword = function
   | "false"
   | "fun"
   | "match"
-  | "with" -> true
+  | "with"
+  | "_" -> true
   | _ -> false
 ;;
 
 let p_ident =
-  let find_string = 
-    skip_ws *>
-    lift2 (fun s1 s2 -> s1 ^ s2)
-    (take_while1 (function
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
-    | _ -> false))
-    (take_while (function
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
-    | _ -> false))
-  in 
-  find_string >>= fun str -> 
-    if is_keyword str then fail "keywords are not allowed as variable names"
-    else if String.equal str "_" then fail "wildcard is not allowed as a variable name"
-    else return (Ident str)
-;; 
+  let find_string =
+    skip_ws
+    *> lift2
+         (fun s1 s2 -> s1 ^ s2)
+         (take_while1 (function
+           | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+           | _ -> false))
+         (take_while (function
+           | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
+           | _ -> false))
+  in
+  find_string
+  >>= fun str ->
+  if is_keyword str
+  then fail "keywords are not allowed as variable names"
+  else return (Ident str)
+;;
 
 let p_var = p_ident >>| fun ident -> Variable ident
 
@@ -110,29 +105,26 @@ let log_and = p_binexpr "&&" Logical_and
 let p_if p_expr =
   lift3
     (fun cond th el -> If_then_else (cond, th, el))
-    (skip_ws *> string "if" *> skip_ws1 *> (p_expr))
-    (skip_ws *> string "then" *> skip_ws1 *> (p_expr))
-    (skip_ws
-       *> string "else"
-       *> skip_ws1
-       *> (p_expr >>= fun e -> return (Some e))
-       <|> return None)
+    (skip_ws *> string "if" *> skip_ws1 *> p_expr)
+    (skip_ws *> string "then" *> skip_ws1 *> p_expr)
+    (skip_ws *> string "else" *> skip_ws1 *> (p_expr >>= fun e -> return (Some e))
+     <|> return None)
 ;;
 
 let p_letin p_expr =
-    skip_ws
-    *> string "let"
-    *> skip_ws1
-    *> lift4
-         (fun rec_flag name args body in_expr ->
-           LetIn (rec_flag, name, args, body, in_expr))
-         (string "rec" *> return Rec <|> return Nonrec)
-         (p_ident >>= fun ident -> return (Some ident) <|> return None)
-         (many (skip_ws *> p_var)
-          >>= fun args ->
-          if not (List.length args = 0) then return (Some args) else return None)
-         (skip_ws *> string "=" *> skip_ws *> p_expr)
-    <*> skip_ws *> string "in" *> skip_ws *> p_expr
+  skip_ws
+  *> string "let"
+  *> skip_ws1
+  *> lift4
+       (fun rec_flag name args body in_expr ->
+         LetIn (rec_flag, name, args, body, in_expr))
+       (string "rec" *> return Rec <|> return Nonrec)
+       (p_ident >>= fun ident -> return (Some ident) <|> return None)
+       (many (skip_ws *> p_var)
+        >>= fun args ->
+        if not (List.length args = 0) then return (Some args) else return None)
+       (skip_ws *> string "=" *> skip_ws *> p_expr)
+  <*> skip_ws *> string "in" *> skip_ws *> p_expr
 ;;
 
 let p_let p_expr =
@@ -149,28 +141,22 @@ let p_let p_expr =
        (skip_ws *> string "=" *> skip_ws *> p_expr)
 ;;
 
-
-let app_first expr = 
-  skip_ws *> 
-  fix (fun a_exp -> 
-    let expr = choice [p_var; p_if expr; p_parens a_exp] in
-    expr
-    )
+let app_first expr =
+  skip_ws
+  *> fix (fun a_exp ->
+    let expr = choice [ p_var; p_if expr; p_letin expr; p_parens a_exp ] in
+    expr)
 ;;
 
 let p_apply expr =
   let* name = app_first expr in
   let rec parse_args acc =
-    (skip_ws *> expr >>= fun arg ->
-     parse_args (Function_call (acc, arg))) <|> return acc
+    skip_ws *> choice [ p_var; p_bool; p_int; p_if expr; p_letin expr; p_parens expr ]
+    >>= (fun arg -> parse_args (Function_call (acc, arg)))
+    <|> return acc
   in
   parse_args name
-;; 
-(*
-let p_apply expr =
-  (*Printf.printf "\n\n\n\n here"; *)
-  chainl1 expr (return (fun f arg -> Function_call (f, arg)))
-;; *)
+;;
 
 let p_expr =
   skip_ws
@@ -178,16 +164,16 @@ let p_expr =
     let atom = choice [ p_var; p_int; p_bool; p_parens p_expr ] in
     let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    let app = p_apply letin_expr <|> letin_expr in
-    let factor = chainl1 app (mul <|> div) in
+    let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in
+    let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
+    let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let comp_eq = chainl1 term (equal <|> unequal) in
     let comp_less = chainl1 comp_eq (less_or_equal <|> less) in
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    let unary = choice [ unary_chain p_not comp_or; unary_chain unminus comp_or ] in
-    unary)
+    comp_or)
 ;;
 
 let p_statement = p_let p_expr

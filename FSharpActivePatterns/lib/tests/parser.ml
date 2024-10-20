@@ -5,6 +5,101 @@
 open FSharpActivePatterns.Parser
 open FSharpActivePatterns.PrintAst
 
+let%expect_test "binary subtract" =
+  let input = {| a - 3|} in
+  print_p_res (parse input);
+  [%expect
+    {|
+    | Binary expr(
+    | Binary Subtract
+    --| Variable(a)
+    --| Const(Int: 3) |}]
+;;
+
+let%expect_test "function apply of letIn" =
+  let input = {| f let x = false in true || x|} in
+  print_p_res (parse input);
+  [%expect
+    {|
+    | Function Call:
+      FUNCTION
+    --| Variable(f)
+      ARGS
+    -- | LetIn  x =
+        ARGS
+    ----| No args
+        BODY
+    ----| Const(Bool: false)
+        INNER EXPRESSION
+    ----| Binary expr(
+    ----| Logical Or
+    ------| Const(Bool: true)
+    ------| Variable(x) |}]
+;;
+
+let%expect_test "arithmetic with unary operations and variables" =
+  let input = {| - a - - b + 4|} in
+  print_p_res (parse input);
+  [%expect
+    {|
+    | Binary expr(
+    | Binary Add
+    --| Binary expr(
+    --| Binary Subtract
+    ----| Unary expr(
+    ----| Unary minus
+    ------| Variable(a)
+    ----| Unary expr(
+    ----| Unary minus
+    ------| Variable(b)
+    --| Const(Int: 4) |}]
+;;
+
+let%expect_test "sum of function applying" =
+  let input = {| f 4 + g 3|} in
+  print_p_res (parse input);
+  [%expect
+    {|
+    | Binary expr(
+    | Binary Add
+    --| Function Call:
+        FUNCTION
+    ----| Variable(f)
+        ARGS
+    ----| Const(Int: 4)
+    --| Function Call:
+        FUNCTION
+    ----| Variable(g)
+        ARGS
+    ----| Const(Int: 3) |}]
+;;
+
+let%expect_test "order of logical expressions and function applying" =
+  let input = {| let x = true in not x || true && f 12|} in
+  print_p_res (parse input);
+  [%expect
+    {|
+     | LetIn  x =
+      ARGS
+    --| No args
+      BODY
+    --| Const(Bool: true)
+      INNER EXPRESSION
+    --| Binary expr(
+    --| Logical Or
+    ----| Unary expr(
+    ----| Unary negative
+    ------| Variable(x)
+    ----| Binary expr(
+    ----| Logical And
+    ------| Const(Bool: true)
+    ------| Function Call:
+            FUNCTION
+    --------| Variable(f)
+            ARGS
+    --------| Const(Int: 12) |}]
+;;
+
 let%expect_test "parse logical expression" =
   let input = {| (3 + 5) >= 8 || true && (5 <> 4) |} in
   print_p_res (parse input);
@@ -33,19 +128,16 @@ let%expect_test "parse integer expression" =
   print_p_res (parse input);
   [%expect
     {|
-    | Function Call:
-      FUNCTION
+    | Binary expr(
+    | Binary Subtract
     --| Binary expr(
     --| Binary Add
     ----| Const(Int: 3)
     ----| Const(Int: 5)
-      ARGS
-    --| Unary expr(
-    --| Unary minus
-    ----| Binary expr(
-    ----| Binary Divide
-    ------| Const(Int: 12)
-    ------| Const(Int: 7) |}]
+    --| Binary expr(
+    --| Binary Divide
+    ----| Const(Int: 12)
+    ----| Const(Int: 7) |}]
 ;;
 
 let%expect_test "parse_unary_chain" =
@@ -153,4 +245,38 @@ let%expect_test "inner expressions with LetIn and If" =
     --------| Const(Int: 2)
           ELSE BRANCH
     --------| Const(Int: 1) |}]
+;;
+
+let%expect_test "factorial" =
+  let input = "let factorial n = if n = 0 then 1 else factorial (n - 1) in factorial b" in
+  print_p_res (parse input);
+  [%expect
+    {|
+     | LetIn  factorial =
+      ARGS
+    --| Variable(n)
+      BODY
+    --| If Then Else(
+        CONDITION
+    ----| Binary expr(
+    ----| Binary Equal
+    ------| Variable(n)
+    ------| Const(Int: 0)
+        THEN BRANCH
+    ------| Const(Int: 1)
+        ELSE BRANCH
+    ------| Function Call:
+            FUNCTION
+    --------| Variable(factorial)
+            ARGS
+    --------| Binary expr(
+    --------| Binary Subtract
+    ----------| Variable(n)
+    ----------| Const(Int: 1)
+      INNER EXPRESSION
+    --| Function Call:
+        FUNCTION
+    ----| Variable(factorial)
+        ARGS
+    ----| Variable(b) |}]
 ;;

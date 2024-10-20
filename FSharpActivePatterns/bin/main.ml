@@ -6,6 +6,6 @@ open FSharpActivePatterns.PrintAst
 open FSharpActivePatterns.Parser
 
 let () =
-  let input = " if (if not true || false then true else false) then 2 else 4  " in
+  let input = " f 3 + if true then 12 else h 5 " in
   print_p_res (parse input)
 ;;
