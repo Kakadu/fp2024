@@ -10,6 +10,10 @@ open Ast
 open Angstrom
 
 let skip_ws = skip_while Char.is_whitespace
+let skip_ws_before p = p <* skip_ws
+let skip_ws_after p = skip_ws *> p
+let skip_ws_around p = skip_ws *> p <* skip_ws
+let skip_token str = skip_ws_around (string str) *> return ()
 
 let is_keyword = function
   | "and"
