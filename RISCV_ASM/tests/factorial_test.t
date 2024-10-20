@@ -1,4 +1,4 @@
- $ ../repl/REPL.exe -dparsetree -filepath="../examples/ast_factorial/factorial.s"
+  $ ../repl/REPL.exe -dparsetree -filepath="../examples/factorial/factorial.s"
   [(DirectiveExpr (File "factorial.c")); (DirectiveExpr (Option "pic"));
     (DirectiveExpr
        (Attribute ("arch",
@@ -7,7 +7,7 @@
     (DirectiveExpr (Attribute ("stack_align", (IntValue 16))));
     (DirectiveExpr Text); (DirectiveExpr (Align 1));
     (DirectiveExpr (Globl (LabelAddress12 "factorial")));
-    (DirectiveExpr (TypeDir ("factorial", (Type "factorial"))));
+    (DirectiveExpr (TypeDir ("factorial", (Type "function"))));
     (LabelExpr "factorial"); (LabelExpr ".LFB23");
     (DirectiveExpr CfiStartproc); (InstructionExpr (Mv (X15, X10)));
     (InstructionExpr (Li (X10, (Immediate32 1))));
@@ -51,7 +51,7 @@
     (InstructionExpr (Mulw (X12, X14, X12)));
     (InstructionExpr (Bne (X15, X0, (LabelAddress12 ".L13"))));
     (LabelExpr ".L14"); (InstructionExpr (Lla (X11, (LabelAddress32 ".LC1"))));
-    (InstructionExpr (Li (X0, (Immediate32 2))));
+    (InstructionExpr (Li (X10, (Immediate32 2))));
     (InstructionExpr (Call "__printf_chk@plt"));
     (InstructionExpr (Li (X10, (Immediate32 0)))); (LabelExpr ".L12");
     (InstructionExpr (Ld (X14, X2, (ImmediateAddress12 (Immediate12 8)))));
