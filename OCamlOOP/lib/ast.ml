@@ -60,7 +60,7 @@ type pattern =
 type expression =
   | Exp_ident of ident (** Identifier such as [x] *)
   | Exp_constant of constant (** Constants such as [24], ['3.14'], ["true"], ... *)
-  | Exp_let of recursion_flag * value_binding list * expression
+  | Exp_let of decl * expression
   (** [Exp_let(flag, [(P1,E1) ; ... ; (Pn,En)], E)] represents:
       - [let P1 = E1 and ... and Pn = EN in E] when [flag] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = EN in E] when [flag] is [Recursive]. *)
@@ -88,9 +88,10 @@ type expression =
       - [C (E1, ..., En)] when [exp] is [Some (Exp_tuple[E1;...;En])] *)
 [@@deriving show { with_path = false }]
 
-and value_binding =
-  { pat : pattern
-  ; exp : expression
+and decl =
+  { d_rec : recursion_flag
+  ; d_pat : pattern
+  ; d_exp : expression
   }
 
 and obj =
@@ -105,7 +106,7 @@ and object_field =
 
 type structure_item =
   | Str_eval of expression (** [E] *)
-  | Str_value of recursion_flag * value_binding list
+  | Str_value of decl
   (** [Str_value(rec, [(P1, E1 ; ... ; (Pn, En))])] represents:
       - [let P1 = E1 and ... and Pn = En] when [rec] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = En ] when [rec] is [Recursive]. *)
