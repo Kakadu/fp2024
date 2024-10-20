@@ -11,7 +11,6 @@ let parse_to_unit input =
   | Error err -> Stdlib.Format.printf "%s\n" err
 ;;
 
-
 let parse_to_bool input =
   match parse input with
   | Ok _ -> true
@@ -42,64 +41,73 @@ let%test _ = parse_to_bool "4 * 4"
 (* -------------------simple let expressions-------------------*)
 
 let%expect_test _ =
-   parse_to_unit "let x = 5";
-   [%expect{| [(SValue (NonRec, ((PVar "x"), (ExprLiteral (IntLiteral 5)))))] |}]
+  parse_to_unit "let x = 5";
+  [%expect {| [(SValue (NonRec, ((PVar "x"), (ExprLiteral (IntLiteral 5)))))] |}]
+;;
 
 let%expect_test _ =
-   parse_to_unit "let feets = 5280;;";
-   [%expect{| [(SValue (NonRec, ((PVar "feets"), (ExprLiteral (IntLiteral 5280)))))] |}]
+  parse_to_unit "let feets = 5280;;";
+  [%expect {| [(SValue (NonRec, ((PVar "feets"), (ExprLiteral (IntLiteral 5280)))))] |}]
+;;
 
 let%expect_test _ =
-   parse_to_unit "let lie = \"i love Ocaml\"";
-   [%expect{|
+  parse_to_unit "let lie = \"i love Ocaml\"";
+  [%expect
+    {|
      [(SValue (NonRec,
          ((PVar "lie"), (ExprLiteral (StringLiteral "i love Ocaml")))))
        ] |}]
+;;
 
 let%expect_test _ =
-   parse_to_unit "let list = []";
-   [%expect{| [(SValue (NonRec, ((PVar "list"), (ExprLiteral NilLiteral))))] |}]
+  parse_to_unit "let list = []";
+  [%expect {| [(SValue (NonRec, ((PVar "list"), (ExprLiteral NilLiteral))))] |}]
+;;
 
 (*-------------------if expressions-------------------*)
-   
-let%expect_test _ =
-   parse_to_unit "if 5 > 3 then true else false";
-   [%expect{|
-     [(SEval
-         (ExprIf (
-            (ExprBinOperation (Gt, (ExprLiteral (IntLiteral 5)),
-               (ExprLiteral (IntLiteral 3)))),
-            (ExprLiteral (BoolLiteral true)),
-            (Some (ExprLiteral (BoolLiteral false))))))
-       ] |}
-
-]
 
 let%expect_test _ =
-   parse_to_unit "if x then 1 + 2 else 3";
-   [%expect{|
+  parse_to_unit "if 5 > 3 then true else false";
+  [%expect
+    {|
+         [(SEval
+             (ExprIf (
+                (ExprBinOperation (Gt, (ExprLiteral (IntLiteral 5)),
+                   (ExprLiteral (IntLiteral 3)))),
+                (ExprLiteral (BoolLiteral true)),
+                (Some (ExprLiteral (BoolLiteral false))))))
+           ] |}]
+;;
+
+let%expect_test _ =
+  parse_to_unit "if x then 1 + 2 else 3";
+  [%expect
+    {|
      [(SEval
          (ExprIf ((ExprVariable "x"),
             (ExprBinOperation (Add, (ExprLiteral (IntLiteral 1)),
                (ExprLiteral (IntLiteral 2)))),
             (Some (ExprLiteral (IntLiteral 3))))))
        ] |}]
+;;
 
 let%expect_test _ =
-   parse_to_unit "if x > y then x * y else square x";
-   [%expect{|
+  parse_to_unit "if x > y then x * y else square x";
+  [%expect
+    {|
      [(SEval
          (ExprIf ((ExprBinOperation (Gt, (ExprVariable "x"), (ExprVariable "y"))),
             (ExprBinOperation (Mul, (ExprVariable "x"), (ExprVariable "y"))),
             (Some (ExprApply ((ExprVariable "square"), (ExprVariable "x")))))))
        ] |}]
-
+;;
 
 (*------------------- Factorial and Fibonacci -------------------*)
 
 let%expect_test _ =
-   parse_to_unit " let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2)";
-   [%expect{|
+  parse_to_unit " let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2)";
+  [%expect
+    {|
      [(SValue (Rec,
          ((PVar "fibo"),
           (ExprFun ((PVar "n"),
@@ -121,10 +129,12 @@ let%expect_test _ =
              )))
          ))
        ] |}]
+;;
 
 let%expect_test _ =
-   parse_to_unit "let rec fib_loop m n i = if i = 0 then m else fib_loop n (n + m) (i - 1)";
-   [%expect{|
+  parse_to_unit "let rec fib_loop m n i = if i = 0 then m else fib_loop n (n + m) (i - 1)";
+  [%expect
+    {|
      [(SValue (Rec,
          ((PVar "fib_loop"),
           (ExprFun ((PVar "m"),
@@ -150,6 +160,7 @@ let%expect_test _ =
              )))
          ))
        ] |}]
+;;
 
 (* Factorial test *)
 let%expect_test _ =
