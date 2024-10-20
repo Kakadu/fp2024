@@ -1,9 +1,12 @@
+(** Copyright 2024, Vyacheslav Kochergin and Roman Mukovenkov*)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Riscv_asm_interpreter_lib.Ast
 open Riscv_asm_interpreter_lib.Parser
 open Angstrom
 open Printf
 open Stdio
-open Arg
 
 type opts =
   { mutable dump_parse_tree : bool
@@ -13,10 +16,10 @@ type opts =
 let () =
   let opts = { dump_parse_tree = false; file_path = None } in
   let _ =
-    parse
-      [ "-dparsetree", Unit (fun () -> opts.dump_parse_tree <- true), "Dump AST\n"
+    Arg.parse
+      [ "-dparsetree", Arg.Unit (fun () -> opts.dump_parse_tree <- true), "Dump AST\n"
       ; ( "-filepath"
-        , String (fun file_path -> opts.file_path <- Some file_path)
+        , Arg.String (fun file_path -> opts.file_path <- Some file_path)
         , "Input code in file\n" )
       ]
       (fun _ ->
