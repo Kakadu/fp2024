@@ -7,15 +7,16 @@ open Ast
 open Base
 
 (* TECHNICAL FUNCTIONS *)
-let skip_ws =
-  skip_while (function
-    | ' ' -> true
-    | '\n' -> true
-    | '\t' -> true
-    | _ -> false)
+
+let is_ws = function
+  | ' ' -> true
+  | '\n' -> true
+  | '\t' -> true
+  | _ -> false
 ;;
 
-let skip_ws1 = char ' ' *> skip_ws
+let skip_ws = skip_while is_ws
+let skip_ws1 = satisfy is_ws *> skip_ws
 
 let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
