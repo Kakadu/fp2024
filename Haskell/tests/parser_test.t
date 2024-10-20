@@ -11,11 +11,16 @@ SPDX-License-Identifier: MIT
                 ((Const (Int 0)), None))),
              None),
             ((OptionBld Nothing), None),
-            ((OptionBld
-                (Just
-                   ((FunctionApply (((Identificator (Ident "save_fac")), None),
-                       ((Identificator (Ident "n")), None), [])),
-                    None))),
+            ((FunctionApply (
+                ((Lambda (([], (PIdentificator (Ident "X")), None), [],
+                    ((OptionBld (Just ((Identificator (Ident "X")), None))),
+                     None)
+                    )),
+                 None),
+                ((FunctionApply (((Identificator (Ident "save_fac")), None),
+                    ((Identificator (Ident "n")), None), [])),
+                 None),
+                [])),
              None)
             )),
          None)),

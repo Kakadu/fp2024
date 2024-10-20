@@ -147,10 +147,13 @@ let tuple_or_parensed_item item_parser tuple_cons item_cons =
 ;;
 
 let pat =
-  (let* pt = const in
-   return (PConst pt))
-  <|> let* pt = ident in
-      return (PIdentificator pt)
+  choice
+    [ (let* pt = const in
+       return (PConst pt))
+    ; (let* pt = ident in
+       return (PIdentificator pt))
+    ; char '_' *> return PWildcard
+    ]
 ;;
 
 let ptrn ptrn =
@@ -187,7 +190,7 @@ let%test "pattern_valid_double_as" =
 let%test "pattern_valid_with_parens" =
   parse_string ~consume:Prefix pattern "(a@(b@(2)))"
   = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Int 2), None)
-
+;;
 
 let%expect_test "pattern_valid_tuple" =
   prs_and_prnt_ln pattern show_pattern "(x, y,(x,y))";
@@ -221,8 +224,7 @@ let%expect_test "pattern_valid_tuple_labeled" =
 
 let%expect_test "pattern_invalid_tuple_labeled" =
   prs_and_prnt_ln pattern show_pattern "(x, e@y,(x,y)@(x,y))";
-  [%expect
-    {|
+  [%expect {|
       error: : no more choices |}]
 ;;
 
@@ -341,18 +343,24 @@ let inner_bindings e =
       InnerBindings (bnd, bnds, ex), etp
 ;;
 
-let opt_e e =
-  string "Nothing" *> return (OptionBld Nothing, etp)
-  <|> word "Just"
-      *> let** ex = choice [ const_e; ident_e; parens e ] in
-         return (OptionBld (Just ex), etp)
+let nothing = string "Nothing" *> return (OptionBld Nothing, etp)
+
+let just =
+  word "Just"
+  *> return
+       ( Lambda
+           ( ([], PIdentificator (Ident "X"), etp)
+           , []
+           , (OptionBld (Just (Identificator (Ident "X"), None)), etp) )
+       , etp )
 ;;
 
 let other_expr e fa =
   choice
     [ const_e
     ; ident_e
-    ; opt_e e
+    ; nothing
+    ; just
     ; if_then_else e
     ; inner_bindings e
     ; tuple_or_parensed_item
@@ -413,8 +421,14 @@ let%expect_test "expr_with_Just" =
   prs_and_prnt_ln expr show_expr "Just 2 + 1";
   [%expect
     {|
-      ((Binop (((OptionBld (Just ((Const (Int 2)), None))), None), Plus,
-          ((Const (Int 1)), None))),
+      ((Binop (
+          ((FunctionApply (
+              ((Lambda (([], (PIdentificator (Ident "X")), None), [],
+                  ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
+               None),
+              ((Const (Int 2)), None), [])),
+           None),
+          Plus, ((Const (Int 1)), None))),
        None) |}]
 ;;
 
