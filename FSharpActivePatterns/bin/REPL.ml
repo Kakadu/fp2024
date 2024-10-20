@@ -44,7 +44,10 @@ let run_repl dump_parsetree input_file =
     match run ic with
     | None -> Stdlib.Format.eprintf "Error occured\n"
     | Some ast ->
-      if dump_parsetree then print_construction ast;
+      if dump_parsetree
+      then (
+        print_construction ast;
+        flush stdout);
       run_repl_helper run
   in
   run_repl_helper run_single
