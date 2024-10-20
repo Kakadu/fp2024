@@ -1,5 +1,3 @@
 (cram
- (applies_to ast_factorial_test)
- (deps
-  ../examples/ast_factorial/ast_factorial.exe
-  ../examples/ast_factorial/factorial.s))
+ (applies_to factorial_test)
+ (deps ../repl/REPL.exe ../examples/factorial/factorial.s))
