@@ -25,7 +25,7 @@ let%expect_test "print Ast factorial" =
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Ident "a", None, Const (Int_lt 10)))
+    [ Statement (Let (Nonrec, Ident "a", [], Const (Int_lt 10)))
     ; Expr factorial
     ; Expr (Function_call (factorial, Variable (Ident "a")))
     ]
@@ -35,7 +35,6 @@ let%expect_test "print Ast factorial" =
     {|
      | Let  a =
       ARGS
-    --| No args
       BODY
     --| Const(Int: 10)
     | Func:

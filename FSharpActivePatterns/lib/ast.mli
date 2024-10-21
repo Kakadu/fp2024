@@ -68,7 +68,7 @@ type expr =
 [@@deriving eq, show { with_path = false }]
 
 type statement =
-  | Let of is_recursive * ident * expr list option * expr (** [let name = expr] *)
+  | Let of is_recursive * ident * expr list * expr (** [let name = expr] *)
   | ActivePattern of ident list * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving eq, show { with_path = false }]

@@ -136,9 +136,7 @@ let print_statement indent = function
        | Rec -> "Rec")
       name;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    (match args with
-     | None -> printf "%s| No args\n" (String.make (indent + 2) '-')
-     | Some args -> List.iter (print_expr (indent + 2)) args);
+    List.iter (print_expr (indent + 2)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) body
   | ActivePattern (patterns, expr) ->

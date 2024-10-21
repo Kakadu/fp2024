@@ -149,9 +149,7 @@ let p_let p_expr =
        (fun rec_flag name args body -> Let (rec_flag, name, args, body))
        (string "rec" *> return Rec <|> return Nonrec)
        (p_ident >>= fun ident -> return ident)
-       (skip_ws *> many (skip_ws *> p_var)
-        >>= fun args ->
-        if not (List.length args = 0) then return (Some args) else return None)
+       (skip_ws *> many (skip_ws *> p_var) >>= fun args -> return args)
        (skip_ws *> string "=" *> p_expr)
 ;;
 
