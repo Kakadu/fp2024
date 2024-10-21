@@ -390,6 +390,20 @@ let lambda e =
      return (Lambda (pt, pts, ex), etp)
 ;;
 
+let tree_e e =
+  tree
+    e
+    ((BinTreeBld Nul, etp) |> return)
+    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
+;;
+
+let tuple_or_parensed_item_e e =
+  tuple_or_parensed_item
+    e
+    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
+    (fun ex -> return ex)
+;;
+
 let other_expr e fa =
   choice
     [ const_e
@@ -399,14 +413,8 @@ let other_expr e fa =
     ; if_then_else e
     ; inner_bindings e
     ; lambda e
-    ; tree
-        e
-        ((BinTreeBld Nul, etp) |> return)
-        (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
-    ; tuple_or_parensed_item
-        e
-        (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
-        (fun ex -> return ex)
+    ; tree_e e
+    ; tuple_or_parensed_item_e e
     ]
   >>= fun ex -> fa ex e <|> return ex
 ;;
@@ -414,7 +422,18 @@ let other_expr e fa =
 let binop e fa = bo (other_expr e fa) prios_list
 
 let function_application ex e =
-  let* r = many1 (ws *> (const_e <|> ident_e <|> parens e)) in
+  let* r =
+    many1
+      (ws
+       *> choice
+            [ const_e
+            ; ident_e
+            ; just
+            ; nothing (return (OptionBld Nothing, etp))
+            ; tree_e e
+            ; tuple_or_parensed_item_e e
+            ])
+  in
   match r with
   | [] -> fail "many1 result can't be empty"
   | hd :: tl -> (FunctionApply (ex, hd, tl), etp) |> return
@@ -485,12 +504,24 @@ let%expect_test "expr_with_func_apply" =
        None) |}]
 ;;
 
-let%expect_test "expr_with_func_apply_strange_but_valid" =
+let%expect_test "expr_with_func_apply_strange_but_valid1" =
   prs_and_prnt_ln expr show_expr "f 9a";
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), None),
           ((Const (Int 9)), None), [((Identificator (Ident "a")), None)])),
+       None) |}]
+;;
+
+let%expect_test "expr_with_func_apply_strange_but_valid2" =
+  prs_and_prnt_ln expr show_expr "f Just(1)";
+  [%expect
+    {|
+      ((FunctionApply (((Identificator (Ident "f")), None),
+          ((Lambda (([], (PIdentificator (Ident "X")), None), [],
+              ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
+           None),
+          [((Const (Int 1)), None)])),
        None) |}]
 ;;
 
