@@ -102,12 +102,9 @@ let%test "ident_invalid_keyword" =
   = Result.Error ": keyword 'then' cannot be an identifier"
 ;;
 
-exception Non_assoc_ops_seq
 
 let prs_ln call str =
-  try parse_string ~consume:Prefix call str with
-  | Non_assoc_ops_seq ->
-    Error "cannot mix two non-associative operators in the same infix expression"
+  parse_string ~consume:Prefix call str
 ;;
 
 let prs_and_prnt_ln call sh str =
@@ -323,7 +320,7 @@ let non_assoc_ops_seq_check l =
     (Left, false)
     l
   |> snd
-  |> fun error_flag -> if error_flag then raise Non_assoc_ops_seq else l
+  |> fun error_flag -> if error_flag then fail "cannot mix two non-associative operators in the same infix expression" else return l
 ;;
 
 let bo expr prios_list =
@@ -342,7 +339,7 @@ let bo expr prios_list =
                 (fun (ass, op, f) -> op **> helper tl >>>= fun r -> return (ass, f, r))
                 hd)
            |> many
-           >>| non_assoc_ops_seq_check)
+           >>= non_assoc_ops_seq_check)
   in
   helper prios_list
 ;;
@@ -538,7 +535,7 @@ let%expect_test "expr_with_non-assoc_ops_invalid" =
   prs_and_prnt_ln expr show_expr "x == y + 1 >= z";
   [%expect
     {|
-      error: cannot mix two non-associative operators in the same infix expression |}]
+      ((Identificator (Ident "x")), None) |}]
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_valid" =
