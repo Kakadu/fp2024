@@ -31,8 +31,16 @@ let input_upto_sep sep ic =
 
 let run_single ic =
   let input = input_upto_sep ";;" ic in
-  parse input
+  let trimmed_input = String.trim input in
+  if trimmed_input = "" then
+    (None, false)  
+  else
+    match parse trimmed_input with
+    | Success ast -> (Some ast, true)  
+    | Error -> (None, true)  
 ;;
+
+
 
 let run_repl dump_parsetree input_file =
   let ic =
@@ -42,8 +50,9 @@ let run_repl dump_parsetree input_file =
   in
   let rec run_repl_helper run =
     match run ic with
-    | None -> Stdlib.Format.eprintf "Error occured\n"
-    | Some ast ->
+    | (None, true) -> Stdlib.Format.eprintf "Error occured\n"
+    | (None, false) -> Stdlib.Format.eprintf "\n"
+    | (Some ast, _) ->
       if dump_parsetree
       then (
         print_construction ast;

@@ -4,4 +4,9 @@
 
 open Ast
 
-val parse : string -> construction option
+type 'a parsing_result =
+  | Success of 'a
+  | Error 
+
+val parse : string -> construction parsing_result
+
