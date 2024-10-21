@@ -10,7 +10,6 @@ type literal =
   | Bool_lt of bool (** [false], [true] *)
   | String_lt of string (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
-  | Null_lt (** [Null] *)
 [@@deriving eq, show { with_path = false }]
 
 type binary_operator =
