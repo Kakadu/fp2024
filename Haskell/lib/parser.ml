@@ -718,6 +718,20 @@ let lambda e =
      return (Lambda (pt, pts, ex), etp)
 ;;
 
+let tree_e e =
+  tree
+    e
+    ((BinTreeBld Nul, etp) |> return)
+    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
+;;
+
+let tuple_or_parensed_item_e e =
+  tuple_or_parensed_item
+    e
+    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
+    (fun ex -> return ex)
+;;
+
 let other_expr e fa =
   let e' = e >>= ex_tp in
   choice
@@ -847,12 +861,24 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
        []) |}]
 ;;
 
-let%expect_test "expr_with_func_apply_strange_but_valid" =
+let%expect_test "expr_with_func_apply_strange_but_valid1" =
   prs_and_prnt_ln expr show_expr "f 9a";
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), None),
           ((Const (Int 9)), None), [((Identificator (Ident "a")), None)])),
+       None) |}]
+;;
+
+let%expect_test "expr_with_func_apply_strange_but_valid2" =
+  prs_and_prnt_ln expr show_expr "f Just(1)";
+  [%expect
+    {|
+      ((FunctionApply (((Identificator (Ident "f")), None),
+          ((Lambda (([], (PIdentificator (Ident "X")), None), [],
+              ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
+           None),
+          [((Const (Int 1)), None)])),
        None) |}]
 ;;
 
