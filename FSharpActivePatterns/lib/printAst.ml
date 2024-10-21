@@ -41,8 +41,7 @@ let rec print_pattern indent = function
      | Int_lt i -> printf "%sInt: %d\n" (String.make (indent + 2) '-') i
      | Bool_lt b -> printf "%sBool: %b\n" (String.make (indent + 2) '-') b
      | String_lt s -> printf "%sString: %S\n" (String.make (indent + 2) '-') s
-     | Unit_lt -> printf "%sUnit\n" (String.make (indent + 2) '-')
-     | Null_lt -> printf "%sNull\n" (String.make (indent + 2) '-'))
+     | Unit_lt -> printf "%sUnit\n" (String.make (indent + 2) '-'))
   | PVar (Ident name) -> printf "%s| PVar(%s)\n" (String.make indent '-') name
   | Variant variants ->
     printf "%s| Variant:\n" (String.make indent '-');
@@ -62,7 +61,6 @@ let rec print_expr indent expr =
   | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
-  | Const Null_lt -> printf "%s| Const(Null)\n" (String.make indent '-')
   | List_expr (expr1, expr2) ->
     printf "%s| List expr:\n" (String.make indent '-');
     print_expr (indent + 2) expr1;
@@ -121,9 +119,7 @@ let rec print_expr indent expr =
        | Some (Ident n) -> n
        | None -> "Anonymous");
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    (match args with
-     | None -> printf "%s| No args\n" (String.make (indent + 2) '-')
-     | Some args -> List.iter (print_expr (indent + 2)) args);
+    List.iter (print_expr (indent + 2)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) body;
     printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');

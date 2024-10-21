@@ -197,7 +197,7 @@ let%expect_test "print Ast of LetIn" =
       (LetIn
          ( Nonrec
          , Some (Ident "x")
-         , None
+         , []
          , Const (Int_lt 5)
          , Bin_expr (Binary_add, Variable (Ident "x"), Const (Int_lt 5)) ))
   in
@@ -206,7 +206,6 @@ let%expect_test "print Ast of LetIn" =
     {|
      | LetIn  x =
       ARGS
-    --| No args
       BODY
     --| Const(Int: 5)
       INNER EXPRESSION

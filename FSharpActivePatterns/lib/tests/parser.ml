@@ -121,7 +121,6 @@ let%expect_test "function apply of letIn" =
       ARGS
     -- | LetIn  x =
         ARGS
-    ----| No args
         BODY
     ----| Const(Bool: false)
         INNER EXPRESSION
@@ -175,7 +174,6 @@ let%expect_test "order of logical expressions and function applying" =
     {|
      | LetIn  x =
       ARGS
-    --| No args
       BODY
     --| Const(Bool: true)
       INNER EXPRESSION
