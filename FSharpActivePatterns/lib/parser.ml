@@ -70,7 +70,7 @@ let p_ident =
   let find_string =
     skip_ws
     *> lift2
-         (fun s1 s2 -> s1 ^ s2)
+         ( ^ )
          (take_while1 (function
            | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
            | _ -> false))
@@ -136,7 +136,7 @@ let p_letin p_expr =
          LetIn (rec_flag, name, args, body, in_expr))
        (string "rec" *> return Rec <|> return Nonrec)
        (p_ident >>= fun ident -> return (Some ident) <|> return None)
-       (many (skip_ws *> p_var) >>= fun args -> return args)
+       (many (skip_ws *> p_var))
        (skip_ws *> string "=" *> skip_ws *> p_expr)
   <*> skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
 ;;
@@ -148,8 +148,8 @@ let p_let p_expr =
   *> lift4
        (fun rec_flag name args body -> Let (rec_flag, name, args, body))
        (string "rec" *> return Rec <|> return Nonrec)
-       (p_ident >>= fun ident -> return ident)
-       (skip_ws *> many (skip_ws *> p_var) >>= fun args -> return args)
+       p_ident
+       (skip_ws *> many (skip_ws *> p_var))
        (skip_ws *> string "=" *> p_expr)
 ;;
 
