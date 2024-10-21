@@ -1,7 +1,6 @@
 (executable
  (name REPL)
  (public_name REPL)
- (modules REPL)
- (libraries haskell_lib)
+ (libraries ocaml_printf_lib stdio)
  (instrumentation
   (backend bisect_ppx)))
