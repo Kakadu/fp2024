@@ -8,10 +8,6 @@ open Base
 open KeywordChecker
 open TypedTree
 
-type 'a parsing_result =
-  | Success of 'a
-  | Error 
-
 (* TECHNICAL FUNCTIONS *)
 
 let is_ws = function

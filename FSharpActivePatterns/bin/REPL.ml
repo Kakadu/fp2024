@@ -86,8 +86,6 @@ let run_single ic =
   | Input input -> if String.trim input = "" then Empty else Result (parse input)
 ;;
 
-
-
 let run_repl dump_parsetree input_file =
   let ic =
     match input_file with
