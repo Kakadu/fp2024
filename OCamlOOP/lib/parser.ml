@@ -60,7 +60,7 @@ let parse_left_assoc expr oper =
   let rec continue acc =
     lift2 (fun func arg -> func acc arg) oper expr >>= continue <|> return acc
   in
-  expr >>= fun start -> continue start
+  expr >>= continue
 ;;
 
 let rec parse_right_assoc expr oper =
@@ -114,7 +114,7 @@ let ident =
   >>= (function
          | Some x when Char.equal x '_' || is_lowercase x -> return x
          | _ -> fail "Invalid identifier")
-  >>= fun _ -> take_while is_ident >>= fun s -> check_ident s
+  >>= fun _ -> take_while is_ident >>= check_ident
 ;;
 
 (*=====================Patterns=====================*)
@@ -123,7 +123,6 @@ let pat_const = const >>| fun p -> Pat_constant p
 let pat_cons = token "::" *> return (fun a b -> Pat_cons (a, b))
 let pat_any = token "_" *> ignore_spaces *> return Pat_any
 let pat_val = ident >>| fun c -> Pat_var c
-
 let tuple ident f = lift2 (fun h tl -> f @@ (h :: tl)) ident (many1 (token "," *> ident))
 let pat_tuple pat = parse_in_parens (tuple pat (fun ps -> Pat_tuple ps))
 
