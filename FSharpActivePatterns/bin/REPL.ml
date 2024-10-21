@@ -6,41 +6,51 @@ open FSharpActivePatterns.PrintAst
 open FSharpActivePatterns.Parser
 open Stdlib
 
+type input =
+  | Input of string
+  | EOF
+
+type 'a run_result =
+  | Result of 'a
+  | Fail
+  | Empty
+  | End
+
 let input_upto_sep sep ic =
   let sep_len = String.length sep in
   let take_line () = In_channel.input_line ic in
   let rec fill_buffer b =
     let line = take_line () in
     match line with
-    | None -> ()
+    | None -> EOF
     | Some line ->
       let len = String.length line in
       (match String.ends_with ~suffix:sep (String.trim line) with
        | true ->
          Buffer.add_substring b line 0 (len - sep_len);
-         Buffer.add_string b "\n"
+         Buffer.add_string b "\n";
+         Input (Buffer.contents b)
        | false ->
          Buffer.add_string b line;
          Buffer.add_string b "\n";
          fill_buffer b)
   in
   let buffer = Buffer.create 1024 in
-  let () = fill_buffer buffer in
-  Buffer.contents buffer
+  fill_buffer buffer
 ;;
 
 let run_single ic =
-  let input = input_upto_sep ";;" ic in
-  let trimmed_input = String.trim input in
-  if trimmed_input = "" then
-    (None, false)  
-  else
-    match parse trimmed_input with
-    | Success ast -> (Some ast, true)  
-    | Error -> (None, true)  
+  match input_upto_sep ";;" ic with
+  | EOF -> End
+  | Input input ->
+    let trimmed_input = String.trim input in
+    if trimmed_input = ""
+    then Empty
+    else (
+      match parse trimmed_input with
+      | Some ast -> Result ast
+      | None -> Fail)
 ;;
-
-
 
 let run_repl dump_parsetree input_file =
   let ic =
@@ -50,9 +60,10 @@ let run_repl dump_parsetree input_file =
   in
   let rec run_repl_helper run =
     match run ic with
-    | (None, true) -> Stdlib.Format.eprintf "Error occured\n"
-    | (None, false) -> Stdlib.Format.eprintf "\n"
-    | (Some ast, _) ->
+    | Fail -> Stdlib.Format.eprintf "Error occured\n"
+    | Empty -> Stdlib.Format.eprintf "\n"
+    | End -> ()
+    | Result ast ->
       if dump_parsetree
       then (
         print_construction ast;

@@ -4,9 +4,4 @@
 
 open Ast
 
-type 'a parsing_result =
-  | Success of 'a
-  | Error 
-
-val parse : string -> construction parsing_result
-
+val parse : string -> construction option

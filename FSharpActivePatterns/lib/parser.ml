@@ -6,10 +6,6 @@ open Angstrom
 open Ast
 open Base
 
-type 'a parsing_result =
-  | Success of 'a
-  | Error 
-
 (* TECHNICAL FUNCTIONS *)
 
 let is_ws = function
@@ -203,7 +199,8 @@ let p_construction =
 ;;
 
 (* MAIN PARSE FUNCTION *)
-let parse (str : string) : construction parsing_result =
+let parse (str : string) =
   match parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str with
-  | Ok ast -> Success ast
-  | Error _ -> Error 
+  | Ok ast -> Some ast
+  | Error _ -> None
+;;
