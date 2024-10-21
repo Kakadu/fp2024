@@ -63,7 +63,7 @@ let run_repl dump_parsetree input_file =
     match run ic with
     | Fail -> Stdlib.Format.eprintf "Error occured\n"
     | Empty ->
-      Stdlib.Format.printf "\n";
+      Printf.printf "\n";
       flush stdout;
       run_repl_helper run
     | End -> ()
