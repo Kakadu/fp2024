@@ -24,8 +24,9 @@ let input_upto_sep sep ic =
     match line with
     | None -> EOF
     | Some line ->
+      let line = String.trim line in
       let len = String.length line in
-      (match String.ends_with ~suffix:sep (String.trim line) with
+      (match String.ends_with ~suffix:sep line with
        | true ->
          Buffer.add_substring b line 0 (len - sep_len);
          Buffer.add_string b "\n";
