@@ -46,7 +46,6 @@ let is_keyword = function
 (*=====================Control characters=====================*)
 
 let ignore_spaces = take_while is_whitespace
-let ignore_spaces1 = take_while1 is_whitespace
 let token1 p = ignore_spaces *> p
 let token p = ignore_spaces *> string p
 let left_paren = token "("
@@ -127,11 +126,6 @@ let pat_val = ident >>| fun c -> Pat_var c
 
 let fold_patlist =
   List.fold_right ~f:(fun p1 p2 -> Pat_cons (p1, p2)) ~init:(Pat_constant Nil)
-;;
-
-let pat_list =
-  let item = pat_const <|> pat_val in
-  parse_in_brackets @@ sep_by (token ";") item >>| fold_patlist
 ;;
 
 let tuple ident f = lift2 (fun h tl -> f @@ (h :: tl)) ident (many1 (token "," *> ident))
@@ -352,8 +346,3 @@ let parse_prefix s =
   | Ok v -> Ok v
   | Error _ -> Error syntax_error_msg
 ;;
-
-(* Pretty-printer for errors, without custom types *)
-module PP = struct
-  let pp_error ppf msg = Format.fprintf ppf "%s" msg
-end
