@@ -53,9 +53,8 @@
 <a id="L29"></a><span > </span>
 <a id="L30"></a><span > </span>
 <a id="L31"></a><span > </span>
-<a id="L32"></a><span > </span>
-<a id="L33"></a><span class="visited"> </span>
-<a id="L34"></a><span > </span>
+<a id="L32"></a><span class="visited"> </span>
+<a id="L33"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -93,7 +92,6 @@
 <a href="#L31">31</a>
 <a href="#L32">32</a>
 <a href="#L33">33</a>
-<a href="#L34">34</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Sultanov Muhammet and Kudrya Alexander *)
 
@@ -102,29 +100,28 @@
 open Ocaml_oop_lib.Ast
 
 let () =
-  let fact_ast : structure =
+  let fact_ast : structure_item list =
     [ Str_value
-        ( Rec
-        , [ { pat = Pat_var "factorial"
-            ; exp =
-                Exp_function
-                  ( [ Pat_var "n" ]
-                  , Exp_ifthenelse
-                      ( Exp_apply (Exp_ident "&lt;=", [ Exp_ident "n"; Exp_constant (Int 1) ])
-                      , Exp_constant (Int 1)
-                      , Some
-                          (Exp_apply
-                             ( Exp_ident "*"
-                             , [ Exp_ident "n"
-                               ; Exp_apply
-                                   ( Exp_ident "factorial"
-                                   , [ Exp_apply
-                                         ( Exp_ident "-"
-                                         , [ Exp_ident "n"; Exp_constant (Int 1) ] )
-                                     ] )
-                               ] )) ) )
-            }
-          ] )
+        { d_rec = Rec
+        ; d_pat = Pat_var "factorial"
+        ; d_exp =
+            Exp_function
+              ( [ Pat_var "n" ]
+              , Exp_ifthenelse
+                  ( Exp_apply (Exp_ident "&lt;=", [ Exp_ident "n"; Exp_constant (Int 1) ])
+                  , Exp_constant (Int 1)
+                  , Some
+                      (Exp_apply
+                         ( Exp_ident "*"
+                         , [ Exp_ident "n"
+                           ; Exp_apply
+                               ( Exp_ident "factorial"
+                               , [ Exp_apply
+                                     ( Exp_ident "-"
+                                     , [ Exp_ident "n"; Exp_constant (Int 1) ] )
+                                 ] )
+                           ] )) ) )
+        }
     ]
   in
   print_endlin<span data-count="1">e</span> (show_structur<span data-count="1">e</span> fact_ast)
