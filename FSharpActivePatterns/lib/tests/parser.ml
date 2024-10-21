@@ -284,13 +284,14 @@ let%expect_test "factorial" =
 let%expect_test "fail in ITE with incorrect else expression" =
   let input = "if true then 1 else 2c" in
   print_p_res (parse input);
-  [%expect{| Error occured |}]
+  [%expect {| Error occured |}]
 ;;
 
 let%expect_test "call if with parentheses" =
   let input = "(if(false)then(a) else(b))c" in
   print_p_res (parse input);
-  [%expect{|
+  [%expect
+    {|
     | Function Call:
       FUNCTION
     --| If Then Else(
