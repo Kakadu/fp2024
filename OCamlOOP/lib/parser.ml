@@ -124,10 +124,6 @@ let pat_cons = token "::" *> return (fun a b -> Pat_cons (a, b))
 let pat_any = token "_" *> ignore_spaces *> return Pat_any
 let pat_val = ident >>| fun c -> Pat_var c
 
-let fold_patlist =
-  List.fold_right ~f:(fun p1 p2 -> Pat_cons (p1, p2)) ~init:(Pat_constant Nil)
-;;
-
 let tuple ident f = lift2 (fun h tl -> f @@ (h :: tl)) ident (many1 (token "," *> ident))
 let pat_tuple pat = parse_in_parens (tuple pat (fun ps -> Pat_tuple ps))
 
