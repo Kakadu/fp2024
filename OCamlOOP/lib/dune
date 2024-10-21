@@ -1,7 +1,8 @@
 (library
  (name ocaml_oop_lib)
  (public_name OCamlOOP.Lib)
- (modules Ast)
+ (modules Ast Parser)
+ (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation
