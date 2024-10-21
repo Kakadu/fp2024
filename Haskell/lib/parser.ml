@@ -137,8 +137,8 @@ let%test "word_invalid" =
   = Result.Error ": couldn't parse word 'then'"
 ;;
 
-let tuple_or_parensed_item item_parser tuple_cons item_cons =
-  parens (sep_by1 (ws *> char ',' *> ws) item_parser)
+let tuple_or_parensed_item item tuple_cons item_cons =
+  parens (sep_by1 (ws *> char ',' *> ws) item)
   >>= fun l ->
   match l with
   | hd :: [] -> item_cons hd
@@ -146,13 +146,25 @@ let tuple_or_parensed_item item_parser tuple_cons item_cons =
   | [] -> fail "sep_by1 result can't be empty"
 ;;
 
-let pat =
+let nothing f = string "Nothing" *> f
+
+let tree item nul_cons node_cons =
+  char '$' *> nul_cons
+  <|> (parens (sep_by (ws *> char ';' *> ws) item)
+       >>= function
+       | [ it1; it2; it3 ] -> node_cons it1 it2 it3
+       | _ -> fail "cannot parse tree")
+;;
+
+let pat ptrn =
   choice
     [ (let* pt = const in
        return (PConst pt))
     ; (let* pt = ident in
        return (PIdentificator pt))
     ; char '_' *> return PWildcard
+    ; nothing (return PNothing)
+    ; tree ptrn (return (PTree PNul)) (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
     ]
 ;;
 
@@ -160,7 +172,7 @@ let ptrn ptrn =
   choice
     [ (let* ident = ident in
        char '@' *> (ptrn >>= fun (idents, pat, tp) -> return (ident :: idents, pat, tp)))
-    ; (let* pat = pat in
+    ; (let* pat = pat ptrn in
        (* let* tp = tp in *)
        return ([], pat, etp))
     ; tuple_or_parensed_item
@@ -224,6 +236,23 @@ let%expect_test "pattern_valid_tuple_labeled" =
 
 let%expect_test "pattern_invalid_tuple_labeled" =
   prs_and_prnt_ln pattern show_pattern "(x, e@y,(x,y)@(x,y))";
+  [%expect {|
+      error: : no more choices |}]
+;;
+
+let%expect_test "pattern_valid_tree" =
+  prs_and_prnt_ln pattern show_pattern "(2; $; $)";
+  [%expect
+    {|
+      ([],
+       (PTree
+          (PNode (([], (PConst (Int 2)), None), ([], (PTree PNul), None),
+             ([], (PTree PNul), None)))),
+       None) |}]
+;;
+
+let%expect_test "pattern_invalid_tree" =
+  prs_and_prnt_ln pattern show_pattern "(2; $)";
   [%expect {|
       error: : no more choices |}]
 ;;
@@ -343,8 +372,6 @@ let inner_bindings e =
       InnerBindings (bnd, bnds, ex), etp
 ;;
 
-let nothing = string "Nothing" *> return (OptionBld Nothing, etp)
-
 let just =
   word "Just"
   *> return
@@ -367,11 +394,15 @@ let other_expr e fa =
   choice
     [ const_e
     ; ident_e
-    ; nothing
+    ; nothing (return (OptionBld Nothing, etp))
     ; just
     ; if_then_else e
     ; inner_bindings e
     ; lambda e
+    ; tree
+        e
+        ((BinTreeBld Nul, etp) |> return)
+        (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
     ; tuple_or_parensed_item
         e
         (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
@@ -506,6 +537,19 @@ let%expect_test "expr_lambda" =
       ((Lambda (([], (PIdentificator (Ident "x")), None), [],
           ((Binop (((Identificator (Ident "x")), None), Plus,
               ((Const (Int 1)), None))),
+           None)
+          )),
+       None) |}]
+;;
+
+let%expect_test "expr_tree" =
+  prs_and_prnt_ln expr show_expr "1 + (2; $; $)";
+  [%expect
+    {|
+      ((Binop (((Const (Int 1)), None), Plus,
+          ((BinTreeBld
+              (Node (((Const (Int 2)), None), ((BinTreeBld Nul), None),
+                 ((BinTreeBld Nul), None)))),
            None)
           )),
        None) |}]

@@ -64,7 +64,7 @@ and listpat =
 
 and treepat =
   | PNul (** nul tree i.e. [$] *)
-  | PNode of pattern * treepat * treepat (** tree's node e.g [(x; y; z)]*)
+  | PNode of pattern * pattern * pattern (** tree's node e.g [(x; y; z)]*)
 [@@deriving show { with_path = false }]
 
 and pat =
@@ -112,7 +112,7 @@ and bindingbody =
 
 and binary_tree_bld =
   | Nul (** node that not exists (notation: [$]) *)
-  | Node of expr * binary_tree_bld * binary_tree_bld
+  | Node of expr * expr * expr
   (** node is data and two 'sons' e.g  [(x^y; $; (2; $; $))] *)
 [@@deriving show { with_path = false }]
 
