@@ -280,3 +280,26 @@ let%expect_test "factorial" =
         ARGS
     ----| Variable(b) |}]
 ;;
+
+let%expect_test "fail in ITE with incorrect else expression" =
+  let input = "if true then 1 else 2c" in
+  print_p_res (parse input);
+  [%expect{| Error occured |}]
+;;
+
+let%expect_test "call if with parentheses" =
+  let input = "(if(false)then(a) else(b))c" in
+  print_p_res (parse input);
+  [%expect{|
+    | Function Call:
+      FUNCTION
+    --| If Then Else(
+        CONDITION
+    ----| Const(Bool: false)
+        THEN BRANCH
+    ------| Variable(a)
+        ELSE BRANCH
+    ------| Variable(b)
+      ARGS
+    --| Variable(c) |}]
+;;

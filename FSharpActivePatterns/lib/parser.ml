@@ -16,7 +16,19 @@ let is_ws = function
 ;;
 
 let skip_ws = skip_while is_ws
-let skip_ws1 = satisfy is_ws *> skip_ws
+
+let peek_sep1 =
+  peek_char
+  >>= fun c ->
+  match c with
+  | None -> return None
+  | Some c ->
+    if is_ws c || Char.equal c '(' || Char.equal c ')'
+    then return (Some c)
+    else fail "need a delimiter"
+;;
+
+let skip_ws_sep1 = peek_sep1 *> skip_ws
 
 let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
@@ -76,7 +88,7 @@ let p_ident =
 let p_var = p_ident >>| fun ident -> Variable ident
 
 (* EXPR PARSERS *)
-let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')' <* skip_ws
+let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
 let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2) [@@inline always]
 let make_unexpr op expr = Unary_expr (op, expr) [@@inline always]
 
@@ -106,16 +118,19 @@ let log_and = p_binexpr "&&" Logical_and
 let p_if p_expr =
   lift3
     (fun cond th el -> If_then_else (cond, th, el))
-    (skip_ws *> string "if" *> skip_ws1 *> p_expr)
-    (skip_ws *> string "then" *> skip_ws1 *> p_expr)
-    (skip_ws *> string "else" *> skip_ws1 *> (p_expr >>= fun e -> return (Some e))
+    (skip_ws *> string "if" *> skip_ws_sep1 *> p_expr)
+    (skip_ws *> string "then" *> skip_ws_sep1 *> p_expr)
+    (skip_ws
+     *> string "else"
+     *> skip_ws_sep1
+     *> (p_expr <* peek_sep1 >>= fun e -> return (Some e))
      <|> return None)
 ;;
 
 let p_letin p_expr =
   skip_ws
   *> string "let"
-  *> skip_ws1
+  *> skip_ws_sep1
   *> lift4
        (fun rec_flag name args body in_expr ->
          LetIn (rec_flag, name, args, body, in_expr))
@@ -125,13 +140,13 @@ let p_letin p_expr =
         >>= fun args ->
         if not (List.length args = 0) then return (Some args) else return None)
        (skip_ws *> string "=" *> skip_ws *> p_expr)
-  <*> skip_ws *> string "in" *> skip_ws *> p_expr
+  <*> skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
 ;;
 
 let p_let p_expr =
   skip_ws
   *> string "let"
-  *> skip_ws1
+  *> skip_ws_sep1
   *> lift4
        (fun rec_flag name args body -> Let (rec_flag, name, args, body))
        (string "rec" *> return Rec <|> return Nonrec)
@@ -139,7 +154,7 @@ let p_let p_expr =
        (skip_ws *> many (skip_ws *> p_var)
         >>= fun args ->
         if not (List.length args = 0) then return (Some args) else return None)
-       (skip_ws *> string "=" *> skip_ws *> p_expr)
+       (skip_ws *> string "=" *> p_expr)
 ;;
 
 let app_first expr =
