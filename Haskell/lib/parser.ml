@@ -847,6 +847,15 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
        []) |}]
 ;;
 
+let%expect_test "expr_with_func_apply_strange_but_valid" =
+  prs_and_prnt_ln expr show_expr "f 9a";
+  [%expect
+    {|
+      ((FunctionApply (((Identificator (Ident "f")), None),
+          ((Const (Int 9)), None), [((Identificator (Ident "a")), None)])),
+       None) |}]
+;;
+
 let%expect_test "expr_with_non-assoc_op_simple" =
   prs_and_prnt_ln (expr Allow_t) show_expr "x == y";
   [%expect
@@ -1121,6 +1130,28 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
                 ((Identificator (Ident "y")), []))),
              [])),
          [])) |}]
+;;
+
+let%expect_test "fun_binding_simple_strange_but_valid1" =
+  prs_and_prnt_ln binding show_binding "f(x)y = x + y";
+  [%expect
+    {|
+      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), None),
+         [([], (PIdentificator (Ident "y")), None)],
+         (OrdBody
+            ((Binop (((Identificator (Ident "x")), None), Plus,
+                ((Identificator (Ident "y")), None))),
+             None)),
+         [])) |}]
+;;
+
+let%expect_test "fun_binding_simple_strange_but_valid2" =
+  prs_and_prnt_ln binding show_binding "f 9y = y";
+  [%expect
+    {|
+      (FunBind (((Ident "f"), None), ([], (PConst (Int 9)), None),
+         [([], (PIdentificator (Ident "y")), None)],
+         (OrdBody ((Identificator (Ident "y")), None)), [])) |}]
 ;;
 
 let%expect_test "fun_binding_guards" =
