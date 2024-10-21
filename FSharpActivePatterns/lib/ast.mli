@@ -63,7 +63,7 @@ type expr =
   | Function_def of expr list * expr (** fun x y -> x + y *)
   | Function_call of expr * expr (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
-  | LetIn of is_recursive * ident option * expr list option * expr * expr
+  | LetIn of is_recursive * ident option * expr list * expr * expr
   (** [let f x y = x + y in f 3 4] *)
 [@@deriving eq, show { with_path = false }]
 
