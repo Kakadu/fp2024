@@ -81,12 +81,14 @@ let variable =
 
 let ppvariable = variable >>| fun v -> PVar v
 let pparens p = token "(" *> p <* token ")"
+let brackets p = token "[" *> p <* token "]"
 let pptuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> PTuple p
 
 let pattern =
   fix (fun pat ->
     let term = choice [ ppany; ppliteral; ppvariable; pparens pat ] in
-    let tuple = pptuple term <|> term in
+    let cons = chainl1 term (token "::" *> return (fun p1 p2 -> PCons (p1, p2))) in
+    let tuple = pptuple cons <|> cons in
     tuple)
 ;;
 
@@ -157,7 +159,8 @@ let expr =
   fix (fun expr ->
     let term = choice [ pevar; peliteral; pparens expr ] in
     let apply = chainl1 term (return eapply) in
-    let ops1 = chainl1 apply (pmul <|> pdiv) in
+    let cons = chainl1 apply (token "::" *> return (fun p1 p2 -> ExprCons (p1, p2))) in
+    let ops1 = chainl1 cons (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
     let tuple = petuple cmp <|> cmp in

@@ -77,6 +77,12 @@ let%expect_test _ =
       ] |}]
 ;;
 
+let%expect_test _ =
+  parse_to_unit "a::b";
+  [%expect {|
+    [(SEval (ExprCons ((ExprVariable "a"), (ExprVariable "b"))))] |}]
+;;
+
 (*-------------------if expressions-------------------*)
 
 let%expect_test _ =
