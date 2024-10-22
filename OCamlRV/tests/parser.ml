@@ -64,6 +64,19 @@ let%expect_test _ =
   [%expect {| [(SValue (NonRec, ((PVar "list"), (ExprLiteral NilLiteral))))] |}]
 ;;
 
+let%expect_test _ =
+  parse_to_unit "let t = (1, \"2\", 3)";
+  [%expect
+    {|
+    [(SValue (NonRec,
+        ((PVar "t"),
+         (ExprTuple
+            [(ExprLiteral (IntLiteral 1)); (ExprLiteral (StringLiteral "2"));
+              (ExprLiteral (IntLiteral 3))]))
+        ))
+      ] |}]
+;;
+
 (*-------------------if expressions-------------------*)
 
 let%expect_test _ =

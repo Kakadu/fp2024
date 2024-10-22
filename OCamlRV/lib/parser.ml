@@ -81,9 +81,16 @@ let variable =
 
 let ppvariable = variable >>| fun v -> PVar v
 let pparens p = token "(" *> p <* token ")"
-let pattern = fix (fun pat -> choice [ ppany; ppliteral; ppvariable; pparens pat ])
+let pptuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> PTuple p
 
-(* need to add parsers for PTuple; PCons; PPoly *)
+let pattern =
+  fix (fun pat ->
+    let term = choice [ ppany; ppliteral; ppvariable; pparens pat ] in
+    let tuple = pptuple term <|> term in
+    tuple)
+;;
+
+(* need to add parsers for PCons; PPoly *)
 
 (*--------------------------- Expressions ---------------------------*)
 
@@ -94,6 +101,7 @@ let efun p e = ExprFun (p, e)
 let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
 let peliteral = pliteral >>| fun l -> ExprLiteral l
+let petuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> ExprTuple p
 let padd = token "+" *> return (ebinop Add)
 let psub = token "-" *> return (ebinop Sub)
 let pmul = token "*" *> return (ebinop Mul)
@@ -152,7 +160,8 @@ let expr =
     let ops1 = chainl1 apply (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
-    let ife = peif cmp <|> cmp in
+    let tuple = petuple cmp <|> cmp in
+    let ife = peif tuple <|> tuple in
     choice [ pelet expr; pefun expr; ife ])
 ;;
 
