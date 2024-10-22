@@ -84,6 +84,13 @@ let pparens p = token "(" *> p <* token ")"
 let brackets p = token "[" *> p <* token "]"
 let pptuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> PTuple p
 
+let pplist p =
+  brackets @@ sep_by1 (token ";") p
+  >>| List.fold_right
+        ~f:(fun p1 p2 -> PCons (p1, p2))
+        ~init:((fun l -> PLiteral l) NilLiteral)
+;;
+
 let pattern =
   fix (fun pat ->
     let term = choice [ ppany; ppliteral; ppvariable; pparens pat ] in
@@ -104,6 +111,14 @@ let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
 let peliteral = pliteral >>| fun l -> ExprLiteral l
 let petuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> ExprTuple p
+
+let pelist p =
+  brackets @@ sep_by1 (token ";") p
+  >>| List.fold_right
+        ~f:(fun p1 p2 -> ExprCons (p1, p2))
+        ~init:((fun l -> ExprLiteral l) NilLiteral)
+;;
+
 let padd = token "+" *> return (ebinop Add)
 let psub = token "-" *> return (ebinop Sub)
 let pmul = token "*" *> return (ebinop Mul)
@@ -157,7 +172,7 @@ let peif pe =
 
 let expr =
   fix (fun expr ->
-    let term = choice [ pevar; peliteral; pparens expr ] in
+    let term = choice [ pevar; peliteral; pelist expr; pparens expr ] in
     let apply = chainl1 term (return eapply) in
     let cons = chainl1 apply (token "::" *> return (fun p1 p2 -> ExprCons (p1, p2))) in
     let ops1 = chainl1 cons (pmul <|> pdiv) in
