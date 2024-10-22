@@ -119,8 +119,8 @@ let pletexpr pexpr =
 
 let pifexpr pexpr =
   lift3 (fun condition thenexpr elseexpr -> Exp_if(condition, thenexpr, elseexpr))
-  (pass_ws *> token "if" *> pass_ws *> pexpr) (pass_ws *> token "then" *> pass_ws *> pexpr ) 
-    (option None (pass_ws *> token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
+  (token "if" *> pass_ws *> pexpr) (token "then" *> pass_ws *> pexpr ) 
+  (option None (token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
 
 let papplyexpr pexpr =
   lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr pexpr
@@ -172,8 +172,8 @@ let pexpr = fix (fun expr ->
     debug_parser "conststring" pconststringexpr;
   ] in
   let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
-  (* let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in *)
-  (* let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in *)
+  let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
+  let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
   let expr = debug_parser "compare" (lchain expr pcompops) in
   let expr = rchain expr plogops in
   let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in 

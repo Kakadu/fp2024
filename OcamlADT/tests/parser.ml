@@ -23,6 +23,8 @@ let%expect_test "empty program" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
@@ -45,6 +47,8 @@ let%expect_test "double semicolons" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -61,6 +65,8 @@ let%expect_test "double semicolons" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -83,6 +89,8 @@ test_programm {|       ;;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -99,6 +107,8 @@ test_programm {|       ;;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -132,6 +142,8 @@ test_programm {|       ;;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -165,6 +177,8 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: mul_div parser failed
+Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
@@ -198,6 +212,8 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: mul_div parser failed
+Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
@@ -231,6 +247,8 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: mul_div parser failed
+Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
@@ -264,6 +282,8 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: mul_div parser failed
+Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
@@ -297,6 +317,8 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: mul_div parser failed
+Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
@@ -330,6 +352,8 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: mul_div parser failed
+Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
@@ -347,7 +371,7 @@ let%expect_test "-111 5" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 340, characters 2-29
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 364, characters 2-29
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -365,6 +389,8 @@ let%expect_test "-111 5" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed |}]
@@ -381,7 +407,7 @@ let%expect_test "-111 5" =
     (Failure ": end_of_input")
     Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
     Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 374, characters 2-25
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 400, characters 2-25
     Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
     Trailing output
@@ -396,7 +422,17 @@ let%expect_test "-111 5" =
     Debug: constchar parser failed
     Debug: conststring parser failed
     Debug: apply parser failed
-    Debug: parens parser failed |}]
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: mul_div parser failed |}]
    
 (*good*)
 let%expect_test "substraction" =
@@ -421,6 +457,8 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
@@ -464,6 +502,8 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
@@ -491,6 +531,8 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: fun parser failed
@@ -518,6 +560,8 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
@@ -527,73 +571,98 @@ let%expect_test "substraction" =
 (*good*)
 let%expect_test "multiplication" =
     test_programm {|5*5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 529, characters 4-27
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed |}]
+  [%expect{|
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
+    Debug: compare parser failed
+    Debug: pseval parser failed
+    Debug: value_binding parser failed
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           (Exp_tuple ((Exp_constant (Const_integer 5)),
+              (Exp_constant (Const_integer 5)), []))
+           )))
+      ] |}]
 
 (*good*)
       let%expect_test "operators with different priorities" =
       test_programm {|5-5*1;;|};
-    [%expect.unreachable]
-      [@@expect.uncaught_exn {|
-        (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-           This is strongly discouraged as backtraces are fragile.
-           Please change this test to not include a backtrace. *)
-
-        (Failure ": end_of_input")
-        Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-        Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-        Called from Tests__Parser.(fun) in file "tests/parser.ml", line 558, characters 6-31
-        Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-        Trailing output
-        ---------------
-        Debug: fun parser failed
-        Debug: let parser failed
-        Debug: tuple parser failed
-        Debug: if_then_else parser failed
-        Debug: parens parser failed
-        Debug: parens parser failed |}]
+    [%expect{|
+      Debug: fun parser failed
+      Debug: let parser failed
+      Debug: tuple parser failed
+      Debug: if_then_else parser failed
+      Debug: parens parser failed
+      Debug: parens parser failed
+      Debug: parens parser failed
+      Debug: parens parser failed
+      Debug: constint parser failed
+      Debug: constchar parser failed
+      Debug: conststring parser failed
+      Debug: apply parser failed
+      Debug: parens parser failed
+      Debug: fun parser failed
+      Debug: let parser failed
+      Debug: tuple parser failed
+      Debug: if_then_else parser failed
+      Debug: parens parser failed
+      Debug: constint parser failed
+      Debug: constchar parser failed
+      Debug: conststring parser failed
+      Debug: apply parser failed
+      Debug: parens parser failed
+      Debug: constint parser failed
+      Debug: constchar parser failed
+      Debug: conststring parser failed
+      Debug: mul_div parser failed
+      Debug: add_sub parser failed
+      Debug: compare parser failed
+      Debug: pseval parser failed
+      Debug: value_binding parser failed
+      [(Str_eval
+          (Exp_apply ((Exp_ident "*"),
+             (Exp_tuple (
+                (Exp_apply ((Exp_constant (Const_integer 5)),
+                   (Exp_constant (Const_integer -5)))),
+                (Exp_constant (Const_integer 1)), []))
+             )))
+        ] |}]
     
 (*good*)
 let%expect_test "operators with different priorities" =
   test_programm {|5*5-1;;|};
-[%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 582, characters 2-27
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
+[%expect{|
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -604,35 +673,93 @@ let%expect_test "operators with different priorities" =
   Debug: constchar parser failed
   Debug: conststring parser failed
   Debug: apply parser failed
-  Debug: parens parser failed |}]
+  Debug: parens parser failed
+  Debug: parens parser failed
+  Debug: parens parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: apply parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
+  Debug: compare parser failed
+  Debug: pseval parser failed
+  Debug: value_binding parser failed
+  [(Str_eval
+      (Exp_apply ((Exp_ident "*"),
+         (Exp_tuple ((Exp_constant (Const_integer 5)),
+            (Exp_apply ((Exp_constant (Const_integer 5)),
+               (Exp_constant (Const_integer -1)))),
+            []))
+         )))
+    ] |}]
       (*good*)
 let%expect_test "parenthesis with operators with different priorities" =
     test_programm {|5*(5-1);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 610, characters 4-31
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed |}]
+  [%expect{|
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
+    Debug: compare parser failed
+    Debug: pseval parser failed
+    Debug: value_binding parser failed
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           (Exp_tuple ((Exp_constant (Const_integer 5)),
+              (Exp_apply ((Exp_constant (Const_integer 5)),
+                 (Exp_constant (Const_integer -1)))),
+              []))
+           )))
+      ] |}]
 
 (*bad*)
 let%expect_test "parenthesis4" =
@@ -646,7 +773,7 @@ let%expect_test "parenthesis4" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 639, characters 2-24
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 766, characters 2-24
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -668,6 +795,8 @@ let%expect_test "parenthesis4" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: parens parser failed
   Debug: constint parser failed
@@ -687,11 +816,15 @@ let%expect_test "parenthesis4" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed |}]
@@ -743,6 +876,8 @@ let%expect_test "parenthesis4" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
@@ -750,20 +885,7 @@ let%expect_test "parenthesis4" =
 (*bad*)
 let%expect_test "parenthesis1" =
   test_programm {|(5*(5-1));;|};
-[%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 752, characters 2-31
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
+[%expect{|
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -779,6 +901,23 @@ let%expect_test "parenthesis1" =
   Debug: conststring parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: parens parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: apply parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: parens parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
@@ -795,13 +934,49 @@ let%expect_test "parenthesis1" =
   Debug: conststring parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: parens parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: apply parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: parens parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: apply parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
+  Debug: value_binding parser failed
+  [(Str_eval
+      (Exp_apply ((Exp_ident "*"),
+         (Exp_tuple ((Exp_constant (Const_integer 5)),
+            (Exp_apply ((Exp_constant (Const_integer 5)),
+               (Exp_constant (Const_integer -1)))),
+            []))
+         )))
+    ] |}]
 
   (*bad*)
 let%expect_test "parenthesis2" =
@@ -841,6 +1016,8 @@ test_programm {|(5-1);;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -860,7 +1037,7 @@ test_programm {|(5,1)|};
       (Failure ": end_of_input")
       Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
       Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 853, characters 0-23
+      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1030, characters 0-23
       Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
       Trailing output
@@ -900,6 +1077,8 @@ test_programm {|(5,1)|};
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: mul_div parser failed
+      Debug: add_sub parser failed
       Debug: compare parser failed
       Debug: pseval parser failed
       Debug: value_binding parser failed |}]
@@ -918,7 +1097,7 @@ test_programm {|(5,1)|};
       (Failure ": end_of_input")
       Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
       Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 911, characters 6-32
+      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1090, characters 6-32
       Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
     
       Trailing output
@@ -971,6 +1150,8 @@ let%expect_test "let assignment" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -1016,6 +1197,8 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
@@ -1061,6 +1244,8 @@ let%expect_test "let assignment with recursion" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
@@ -1081,7 +1266,7 @@ let%expect_test "let assignment with recursion" =
     (Failure ": end_of_input")
     Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
     Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1074, characters 4-27
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1259, characters 4-27
     Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
     Trailing output
@@ -1099,6 +1284,8 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed |}]
@@ -1114,7 +1301,7 @@ let%expect_test "let assignment with recursion" =
     (Failure ": end_of_input")
     Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
     Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1107, characters 4-31
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1294, characters 4-31
     Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
     Trailing output
@@ -1132,6 +1319,8 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed |}]
@@ -1147,7 +1336,7 @@ let%expect_test "let assignment with recursion" =
     (Failure ": end_of_input")
     Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
     Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1140, characters 2-33
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1329, characters 2-33
     Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
     Trailing output
@@ -1165,6 +1354,8 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed |}]
@@ -1180,7 +1371,7 @@ let%expect_test "( let f x = x+5)" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1173, characters 2-37
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1364, characters 2-37
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -1199,6 +1390,8 @@ let%expect_test "( let f x = x+5)" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed |}]
@@ -1214,7 +1407,7 @@ let%expect_test "( let fact x = fact(x-1))" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1207, characters 4-46
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1400, characters 4-46
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -1233,12 +1426,95 @@ let%expect_test "( let fact x = fact(x-1))" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed |}]
 
-let%expect_test "( if x=5 then 6)" =
-    test_programm {|if (x=5) then 6;;|};
+let%expect_test "( if 6 then 6)" =
+    test_programm {|if (5=5) then 6;;|};
+  [%expect{|
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
+    Debug: compare parser failed
+    Debug: pseval parser failed
+    Debug: value_binding parser failed
+    [(Str_eval
+        (Exp_if (
+           (Exp_apply ((Exp_ident "="),
+              (Exp_tuple ((Exp_constant (Const_integer 5)),
+                 (Exp_constant (Const_integer 5)), []))
+              )),
+           (Exp_constant (Const_integer 6)), None)))
+      ] |}]
+
+let%expect_test "(if statement. condition from fact)" =
+    test_programm {|if n = 0 then 1 else 7;;|};
   [%expect.unreachable]
 [@@expect.uncaught_exn {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
@@ -1248,78 +1524,7 @@ let%expect_test "( if x=5 then 6)" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1241, characters 4-39
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: compare parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: compare parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: compare parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: compare parser failed
-  Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
-
-let%expect_test "(if x = 5 then 6 else 7)" =
-    test_programm {|if x = 5 then 6 else 7;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1312, characters 4-46
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1517, characters 4-46
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -1336,6 +1541,8 @@ let%expect_test "(if x = 5 then 6 else 7)" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
@@ -1347,6 +1554,8 @@ let%expect_test "(if x = 5 then 6 else 7)" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed |}]
@@ -1362,7 +1571,7 @@ let%expect_test "(if x = 5 then 6 else 7)" =
     (Failure ": end_of_input")
     Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
     Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1355, characters 2-50
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1564, characters 2-50
     Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
     Trailing output
@@ -1410,6 +1619,8 @@ let%expect_test "(if x = 5 then 6 else 7)" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed |}]
@@ -1425,7 +1636,7 @@ let%expect_test "(let rec fact x = if x = 0 then 1 else x * fact (x-1))" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1418, characters 4-75
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1629, characters 4-75
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -1444,6 +1655,8 @@ let%expect_test "(let rec fact x = if x = 0 then 1 else x * fact (x-1))" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed |}]
