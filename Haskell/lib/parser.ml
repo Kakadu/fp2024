@@ -725,6 +725,20 @@ let tree_e e =
     (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
 ;;
 
+let case e =
+  word "case"
+  *> let** ex = e in
+     word "of"
+     **>
+     let* br1, brs =
+       sep_by1 (ws *> char ';' *> ws) (both pattern (bindingbody e (string "->")))
+       >>= function
+       | [] -> fail "sep_by1 cant return empty list"
+       | hd :: tl -> return (hd, tl)
+     in
+     return (Case (ex, br1, brs), etp)
+;;
+
 let tuple_or_parensed_item_e e =
   tuple_or_parensed_item
     e
@@ -942,6 +956,34 @@ let%expect_test "expr_case_statement_with_guards" =
               ))),
           [(([], PWildcard, []), (OrdBody ((Const (Int 3)), [])))])),
        []) |}]
+;;
+
+let%expect_test "expr_case_statement" =
+  prs_and_prnt_ln expr show_expr "case x of 1 -> 1; _ -> 2 ";
+  [%expect
+    {|
+      ((Case (((Identificator (Ident "x")), None),
+          (([], (PConst (Int 1)), None), (OrdBody ((Const (Int 1)), None))),
+          [(([], PWildcard, None), (OrdBody ((Const (Int 2)), None)))])),
+       None) |}]
+;;
+
+let%expect_test "expr_case_statement_with_guards" =
+  prs_and_prnt_ln expr show_expr "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
+  [%expect
+    {|
+      ((Case (((Identificator (Ident "x")), None),
+          (([], (PIdentificator (Ident "y")), None),
+           (Guards (
+              (((Binop (((Identificator (Ident "y")), None), Greater,
+                   ((Const (Int 10)), None))),
+                None),
+               ((Const (Int 1)), None)),
+              [(((Identificator (Ident "otherwise")), None),
+                ((Const (Int 2)), None))]
+              ))),
+          [(([], PWildcard, None), (OrdBody ((Const (Int 3)), None)))])),
+       None) |}]
 ;;
 
 let%expect_test "expr_tuple" =
