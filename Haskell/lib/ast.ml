@@ -128,7 +128,7 @@ and expression =
   | FunctionApply of expr * expr * expr list (** e.g. [sum 1 2 or \x -> x + 1) 1] *)
   | Lambda of pattern * pattern list * expr (** e.g. [\x y -> x + y] *)
   | BinTreeBld of binary_tree_bld
-  | Case of pattern * (pattern * expr) * (pattern * expr) list
+  | Case of expr * (pattern * bindingbody) * (pattern * bindingbody) list
   (** e.g [case l of
       (x:xs) -> x
       [] -> 0] *)
