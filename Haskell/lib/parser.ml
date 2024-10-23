@@ -102,10 +102,7 @@ let%test "ident_invalid_keyword" =
   = Result.Error ": keyword 'then' cannot be an identifier"
 ;;
 
-
-let prs_ln call str =
-  parse_string ~consume:Prefix call str
-;;
+let prs_ln call str = parse_string ~consume:Prefix call str
 
 let prs_and_prnt_ln call sh str =
   match prs_ln call str with
@@ -254,8 +251,8 @@ let%expect_test "pattern_invalid_tree" =
       error: : no more choices |}]
 ;;
 
-let bindingbody e =
-  (char '='
+let bindingbody e sep =
+  (sep
    **> let* ex = e in
        return (OrdBody ex))
   <|>
@@ -263,7 +260,7 @@ let bindingbody e =
     many1
       (char '|'
        **> let* ex1 = e in
-           char '='
+           sep
            **> let* ex2 = e in
                return (ex1, ex2))
   in
@@ -280,7 +277,7 @@ let bnd e bnd =
    return (fun bb where_binds -> FunBind ((ident, None), pt, pts, bb, where_binds)))
   <|> (let** pt = pattern in
        return (fun bb where_binds -> VarsBind (pt, bb, where_binds)))
-  <**> bindingbody e
+  <**> bindingbody e (char '=')
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
 ;;
 
@@ -320,7 +317,10 @@ let non_assoc_ops_seq_check l =
     (Left, false)
     l
   |> snd
-  |> fun error_flag -> if error_flag then fail "cannot mix two non-associative operators in the same infix expression" else return l
+  |> fun error_flag ->
+  if error_flag
+  then fail "cannot mix two non-associative operators in the same infix expression"
+  else return l
 ;;
 
 let bo expr prios_list =
@@ -394,6 +394,20 @@ let tree_e e =
     (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
 ;;
 
+let case e =
+  word "case"
+  *> let** ex = e in
+     word "of"
+     **>
+     let* br1, brs =
+       sep_by1 (ws *> char ';' *> ws )(both pattern (bindingbody e (string "->")))
+       >>= function
+       | [] -> fail "sep_by1 cant return empty list"
+       | hd :: tl -> return (hd, tl)
+     in
+     return (Case (ex, br1, brs), etp)
+;;
+
 let tuple_or_parensed_item_e e =
   tuple_or_parensed_item
     e
@@ -408,6 +422,7 @@ let other_expr e fa =
     ; nothing (return (OptionBld Nothing, etp))
     ; just
     ; if_then_else e
+    ; case e
     ; inner_bindings e
     ; lambda e
     ; tree_e e
@@ -533,8 +548,7 @@ let%expect_test "expr_with_non-assoc_op_simple" =
 
 let%expect_test "expr_with_non-assoc_ops_invalid" =
   prs_and_prnt_ln expr show_expr "x == y + 1 >= z";
-  [%expect
-    {|
+  [%expect {|
       ((Identificator (Ident "x")), None) |}]
 ;;
 
@@ -551,6 +565,34 @@ let%expect_test "expr_with_non-assoc_ops_valid" =
               ((Identificator (Ident "z'")), None))),
            None)
           )),
+       None) |}]
+;;
+
+let%expect_test "expr_case_statement" =
+  prs_and_prnt_ln expr show_expr "case x of 1 -> 1; _ -> 2 ";
+  [%expect
+    {|
+      ((Case (((Identificator (Ident "x")), None),
+          (([], (PConst (Int 1)), None), (OrdBody ((Const (Int 1)), None))),
+          [(([], PWildcard, None), (OrdBody ((Const (Int 2)), None)))])),
+       None) |}]
+;;
+
+let%expect_test "expr_case_statement_with_guards" =
+  prs_and_prnt_ln expr show_expr "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
+  [%expect
+    {|
+      ((Case (((Identificator (Ident "x")), None),
+          (([], (PIdentificator (Ident "y")), None),
+           (Guards (
+              (((Binop (((Identificator (Ident "y")), None), Greater,
+                   ((Const (Int 10)), None))),
+                None),
+               ((Const (Int 1)), None)),
+              [(((Identificator (Ident "otherwise")), None),
+                ((Const (Int 2)), None))]
+              ))),
+          [(([], PWildcard, None), (OrdBody ((Const (Int 3)), None)))])),
        None) |}]
 ;;
 
