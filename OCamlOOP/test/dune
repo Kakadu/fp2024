@@ -1,3 +1,12 @@
+(library
+ (name tests)
+ (libraries ocaml_oop_lib)
+ (preprocess
+  (pps ppx_expect))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
+
 (cram
- (applies_to ast_check)
+ (applies_to ast_check parser_tests)
  (deps ../bin/main.exe))
