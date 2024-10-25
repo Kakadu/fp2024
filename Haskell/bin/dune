@@ -1,7 +1,7 @@
 (executable
- (name main)
- (public_name Main)
- (modules Main)
+ (name REPL)
+ (public_name REPL)
+ (modules REPL)
  (libraries haskell_lib)
  (instrumentation
   (backend bisect_ppx)))
