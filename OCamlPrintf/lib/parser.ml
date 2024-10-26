@@ -49,12 +49,7 @@ let keyword str =
   >>| fun char_value ->
   if is_separator char_value
   then return ()
-  else fail (String.concat [ "There is no separator after "; "\""; str; "\""; "." ])
-;;
-
-let is_empty = function
-  | [] -> true
-  | _ -> false
+  else fail (Printf.sprintf "There is no separator after \"%s\"." str)
 ;;
 
 (* ==================== Ident ==================== *)
@@ -62,20 +57,15 @@ let is_empty = function
 let parse_ident =
   ws
   *>
-  let* start_ident =
-    satisfy (function
-      | 'A' .. 'Z' | 'a' .. 'z' -> true
-      | _ -> false)
-    >>| String.of_char
-  in
+  let* start_ident = satisfy Char.is_alpha >>| String.of_char in
   let* rest_ident =
     take_while (function
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
   in
-  let ident = String.( ^ ) start_ident rest_ident in
+  let ident = start_ident ^ rest_ident in
   if is_keyword ident
-  then fail (String.concat [ "Impossible name: "; "\""; ident; "\""; "." ])
+  then fail (Printf.sprintf "Impossible name: \"%s\"." ident)
   else return ident
 ;;
 
@@ -86,10 +76,7 @@ let parse_rec_flag = ws *> option Nonrecursive (keyword "rec" *> return Recursiv
 (* ==================== Constant ==================== *)
 
 let parse_const_int =
-  take_while1 (function
-    | '0' .. '9' -> true
-    | _ -> false)
-  >>| fun int_value -> Const_integer (Int.of_string int_value)
+  take_while1 Char.is_digit >>| fun int_value -> Const_integer (Int.of_string int_value)
 ;;
 
 let parse_const_char =
@@ -123,12 +110,14 @@ let parse_bool_pat =
 ;;
 
 let parse_pat_construct parse_pat =
-  let rec parse_list = function
-    | [] -> Pat_construct ("[]", None)
-    | x :: xs -> Pat_construct ("::", Some (Pat_tuple [ x; parse_list xs ]))
-  in
   let parse_elements_list =
-    ws *> string "[" *> sep_by (ws *> string ";") parse_pat <* string "]" >>| parse_list
+    ws *> string "[" *> sep_by (ws *> string ";") parse_pat
+    <* string "]"
+    >>| fun list_ ->
+    List.fold_right
+      list_
+      ~init:(Pat_construct ("[]", None))
+      ~f:(fun acc x -> Pat_construct ("::", Some (Pat_tuple [ acc; x ])))
   in
   parse_elements_list <|> parse_bool_pat
 ;;
@@ -230,7 +219,7 @@ let parse_exp_let parse_exp =
 let parse_exp_apply_fun parse_exp =
   let* var = parse_exp in
   many parse_exp
-  >>| fun exp_list -> if is_empty exp_list then var else Exp_apply (var, exp_list)
+  >>| fun exp_list -> if List.is_empty exp_list then var else Exp_apply (var, exp_list)
 ;;
 
 let parse_exp_apply_op parse_exp =
@@ -272,15 +261,15 @@ let parse_bool_exp =
 ;;
 
 let parse_exp_construct parse_exp =
-  let rec parse_list = function
-    | [] -> Exp_construct ("[]", None)
-    | x :: xs -> Exp_construct ("::", Some (Exp_tuple [ x; parse_list xs ]))
-  in
   let parse_elements_list =
     ws *> string "[" *> sep_by (ws *> string ";") parse_exp
     <* ws
     <* string "]"
-    >>| parse_list
+    >>| fun list_ ->
+    List.fold_right
+      list_
+      ~init:(Exp_construct ("[]", None))
+      ~f:(fun acc x -> Exp_construct ("::", Some (Exp_tuple [ acc; x ])))
   in
   parse_elements_list <|> parse_bool_exp
 ;;
