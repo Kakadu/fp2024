@@ -55,6 +55,26 @@ let%expect_test "parse_factorial_with_match" =
     |}]
 ;;
 
+let%expect_test "parse_exp_fun" =
+  run "let sum = fun x -> (fun y -> x + y);;";
+  [%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "sum");
+           exp =
+           (Exp_fun ([(Pat_var "x")],
+              (Exp_fun ([(Pat_var "y")],
+                 (Exp_apply ((Exp_ident "+"), [(Exp_ident "x"); (Exp_ident "y")]
+                    ))
+                 ))
+              ))
+           }
+          ]
+        ))
+      ]
+    |}]
+;;
+
 let%expect_test "parse_pat_exp_tuples" =
   run "let a, b = 1, 2";
   [%expect

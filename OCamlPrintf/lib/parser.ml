@@ -101,8 +101,8 @@ let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
 let parse_pat_tuple parse_pat =
   let* first_pat = parse_pat in
-  let* rest_pat_list = many1 (ws *> string "," *> parse_pat) in
-  return (Pat_tuple (List.cons first_pat rest_pat_list))
+  let* rest_pats = many1 (ws *> string "," *> parse_pat) in
+  return (Pat_tuple (List.cons first_pat rest_pats))
 ;;
 
 let parse_bool_pat =
@@ -110,7 +110,7 @@ let parse_bool_pat =
 ;;
 
 let parse_pat_construct parse_pat =
-  let parse_elements_list =
+  let parse_elements =
     ws *> string "[" *> sep_by (ws *> string ";") parse_pat
     <* string "]"
     >>| fun list_ ->
@@ -119,7 +119,7 @@ let parse_pat_construct parse_pat =
       ~init:(Pat_construct ("[]", None))
       ~f:(fun acc x -> Pat_construct ("::", Some (Pat_tuple [ acc; x ])))
   in
-  parse_elements_list <|> parse_bool_pat
+  parse_elements <|> parse_bool_pat
 ;;
 
 let parse_pattern =
@@ -170,8 +170,8 @@ let bin_op chain1 parse_exp parse_fun_op =
 let parse_left_bin_op = bin_op parse_chain_left_associative
 let parse_right_bin_op = bin_op parse_chain_right_associative
 
-let parse_operator op_list =
-  choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) op_list)
+let parse_operator ops =
+  choice (List.map ~f:(fun op -> ws *> string op *> return (Exp_ident op)) ops)
 ;;
 
 let mul_div = parse_operator [ "*"; "/" ]
@@ -212,14 +212,22 @@ let parse_exp_let parse_exp =
   *>
   let* rec_flag = parse_rec_flag in
   let* value_binding = ws *> parse_value_binding_list parse_exp <* ws <* keyword "in" in
-  let* expression = ws *> parse_exp in
-  return (Exp_let (rec_flag, value_binding, expression))
+  let* exp = ws *> parse_exp in
+  return (Exp_let (rec_flag, value_binding, exp))
+;;
+
+let parse_exp_fun parse_exp =
+  ws
+  *> keyword "fun"
+  *>
+  let* pats = many1 parse_pattern <* ws <* string "->" in
+  let* exp = ws *> parse_exp in
+  return (Exp_fun (pats, exp))
 ;;
 
 let parse_exp_apply_fun parse_exp =
   let* var = parse_exp in
-  many parse_exp
-  >>| fun exp_list -> if List.is_empty exp_list then var else Exp_apply (var, exp_list)
+  many parse_exp >>| fun exps -> if List.is_empty exps then var else Exp_apply (var, exps)
 ;;
 
 let parse_exp_apply_op parse_exp =
@@ -245,15 +253,15 @@ let parse_cases parse_exp =
 ;;
 
 let parse_exp_match parse_exp =
-  let* expression = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
+  let* exp = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
   let* cases = ws *> parse_cases parse_exp in
-  return (Exp_match (expression, cases))
+  return (Exp_match (exp, cases))
 ;;
 
 let parse_exp_tuple parse_exp =
   let* first_exp = parse_exp in
-  let* rest_exp_list = many1 (ws *> string "," *> parse_exp) in
-  return (Exp_tuple (List.cons first_exp rest_exp_list))
+  let* rest_exps = many1 (ws *> string "," *> parse_exp) in
+  return (Exp_tuple (List.cons first_exp rest_exps))
 ;;
 
 let parse_bool_exp =
@@ -261,7 +269,7 @@ let parse_bool_exp =
 ;;
 
 let parse_exp_construct parse_exp =
-  let parse_elements_list =
+  let parse_elements =
     ws *> string "[" *> sep_by (ws *> string ";") parse_exp
     <* ws
     <* string "]"
@@ -271,7 +279,7 @@ let parse_exp_construct parse_exp =
       ~init:(Exp_construct ("[]", None))
       ~f:(fun acc x -> Exp_construct ("::", Some (Exp_tuple [ acc; x ])))
   in
-  parse_elements_list <|> parse_bool_exp
+  parse_elements <|> parse_bool_exp
 ;;
 
 let parse_exp_ifthenelse parse_exp =
@@ -301,6 +309,7 @@ let parse_expression =
         ; parse_exp_ident
         ; parse_exp_constant
         ; parse_exp_let parse_full_exp
+        ; parse_exp_fun parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
         ]
