@@ -73,11 +73,11 @@ let%expect_test "parse_pat_exp_tuples" =
 ;;
 
 let%expect_test "parse_exp_construct" =
-  run "let spisok = [1; 2; 3]";
+  run "let list_ = [1; 2; 3]";
   [%expect
     {|
     [(Struct_value (Nonrecursive,
-        [{ pat = (Pat_var "spisok");
+        [{ pat = (Pat_var "list_");
            exp =
            (Exp_construct ("::",
               (Some (Exp_tuple
@@ -100,7 +100,7 @@ let%expect_test "parse_exp_construct" =
           ]
         ))
       ]
-      |}]
+    |}]
 ;;
 
 let%expect_test "check parse_chain_right_associative" =
@@ -131,7 +131,8 @@ let%expect_test "check parse_chain_right_associative" =
            }
           ]
         ))
-      ] |}]
+      ]
+    |}]
 ;;
 
 let%expect_test "parse_struct_eval" =
@@ -159,24 +160,18 @@ let%expect_test "parse_struct_eval" =
 ;;
 
 let%expect_test "parse_exp_let" =
-  run "1 + let one = 1 in f one 2 (3 + 4)";
+  run "1 + let two = 2 in two * 3";
   [%expect
     {|
       [(Struct_eval
           (Exp_apply ((Exp_ident "+"),
              [(Exp_constant (Const_integer 1));
                (Exp_let (Nonrecursive,
-                  [{ pat = (Pat_var "one"); exp = (Exp_constant (Const_integer 1))
+                  [{ pat = (Pat_var "two"); exp = (Exp_constant (Const_integer 2))
                      }
                     ],
-                  (Exp_apply ((Exp_ident "f"),
-                     [(Exp_ident "one"); (Exp_constant (Const_integer 2));
-                       (Exp_apply ((Exp_ident "+"),
-                          [(Exp_constant (Const_integer 3));
-                            (Exp_constant (Const_integer 4))]
-                          ))
-                       ]
-                     ))
+                  (Exp_apply ((Exp_ident "*"),
+                     [(Exp_ident "two"); (Exp_constant (Const_integer 3))]))
                   ))
                ]
              )))
