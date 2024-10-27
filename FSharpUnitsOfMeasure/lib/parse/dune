@@ -1,8 +1,9 @@
 (library
  (name parse)
+ (inline_tests)
  (public_name FSharpUnitsOfMeasure.Parse)
  (libraries base angstrom ast)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq))
+  (pps ppx_expect ppx_inline_test))
  (instrumentation
   (backend bisect_ppx)))
