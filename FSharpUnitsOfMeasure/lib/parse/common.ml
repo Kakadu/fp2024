@@ -17,8 +17,7 @@ let is_whitespace = function
 
 let skip_ws = skip_while is_whitespace
 let skip_ws1 = satisfy is_whitespace *> skip_ws
-let skip_ws_around1 p = skip_ws1 *> p <* skip_ws1
-let skip_token str = skip_ws_around1 (string str) *> return ()
+let skip_token str = skip_ws *> string str <* skip_ws >>= fun _ -> return ()
 
 let is_keyword = function
   | "and"

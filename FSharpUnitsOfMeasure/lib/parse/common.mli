@@ -18,12 +18,8 @@ val skip_ws : unit t
 (** [skip_ws1] skips whitespaces at least once *)
 val skip_ws1 : unit t
 
-(** [skip_ws_around1 p] runs [p], skipping at least one whitespace before
-    and after it, and returns [p]'s result *)
-val skip_ws_around1 : 'a t -> 'a t
-
 (** [skip_token str] skips [str] exactly, separated
-    with at least one whitespace before and after it *)
+    with 0 or more whitespaces before and after it *)
 val skip_token : string -> unit t
 
 (** [is_keyword] returns true if given string is a keyword of F# *)
