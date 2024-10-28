@@ -155,3 +155,30 @@ let%expect_test "parse application of function to 5 arguments" =
           (Expr_ident "d"))),
        (Expr_ident "e"))) |}]
 ;;
+
+(************************** Parentheses **************************)
+
+let%expect_test "parse expression inside parentheses" =
+  pp pp_expression parse_expr {| (a b) |};
+  [%expect {| (Expr_apply ((Expr_ident "a"), (Expr_ident "b"))) |}]
+;;
+
+let%expect_test "parse expression in parentheses without closing parenthesis should fail" =
+  pp pp_expression parse_expr {| (a b |};
+  [%expect {| : no more choices |}]
+;;
+
+let%expect_test "parse expression in parentheses without opening parenthesis should fail" =
+  pp pp_expression parse_expr {| a b) |};
+  [%expect {| : end_of_input |}]
+;;
+
+let%expect_test "parse expression inside nested parentheses" =
+  pp pp_expression parse_expr {| (((a b))) |};
+  [%expect {| (Expr_apply ((Expr_ident "a"), (Expr_ident "b"))) |}]
+;;
+
+let%expect_test "parse expression inside unbalanced nested parentheses should fail" =
+  pp pp_expression parse_expr {| (((a b)))))) |};
+  [%expect {| : end_of_input |}]
+;;
