@@ -31,7 +31,14 @@ let parse_expr_app =
   skip_ws *> return (List.fold args ~init:f ~f:(fun acc arg -> Expr_apply (acc, arg)))
 ;;
 
+let parse_expr_paren parse_expr = skip_token "(" *> parse_expr <* skip_token ")"
+
 let parse_expr =
   fix (fun parse_expr ->
-    choice [ parse_expr_app; parse_expr_ite parse_expr; parse_expr_simple ])
+    choice
+      [ parse_expr_app
+      ; parse_expr_ite parse_expr
+      ; parse_expr_paren parse_expr
+      ; parse_expr_simple
+      ])
 ;;
