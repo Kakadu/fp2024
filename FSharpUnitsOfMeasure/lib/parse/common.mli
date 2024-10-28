@@ -12,10 +12,10 @@ open Ast
 (** [' '], ['\n'] or ['\r'] *)
 val is_whitespace : char -> bool
 
-(** [skip_ws] skips whitespaces *)
+(** [skip_ws] skips 0 or more whitespaces *)
 val skip_ws : unit t
 
-(** [skip_ws1] skips whitespaces at least once *)
+(** [skip_ws1] skips 1 or more whitespaces *)
 val skip_ws1 : unit t
 
 (** [skip_token str] skips [str] exactly, separated
