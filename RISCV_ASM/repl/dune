@@ -1,6 +1,6 @@
 (executable
- (public_name repl)
  (name REPL)
- (libraries FSharpActivePatterns stdlib)
+ (public_name REPL)
+ (libraries RISCV_ASM.Lib stdio)
  (instrumentation
   (backend bisect_ppx)))
