@@ -10,28 +10,28 @@ open Angstrom
 open Ast
 open Common
 
-let parse_expr_ident = parse_ident >>| fun i -> Expr_ident i
-let parse_expr_const = parse_const >>| fun c -> Expr_const c
+let parse_expr_ident = skip_ws *> parse_ident >>| fun i -> Expr_ident i
+let parse_expr_const = skip_ws *> parse_const >>| fun c -> Expr_const c
 
 let parse_expr_ite parse_expr =
-  let* cond = skip_token "if" *> parse_expr in
-  let* branch1 = skip_token "then" *> parse_expr in
-  let* branch2 = option None (skip_token "else" *> parse_expr >>| fun e -> Some e) in
+  let* cond = skip_token "if" *> parse_expr <* skip_ws in
+  let* branch1 = skip_token "then" *> parse_expr <* skip_ws in
+  let* branch2 =
+    option None (skip_token "else" *> parse_expr <* skip_ws >>| fun e -> Some e)
+  in
   return (Expr_ifthenelse (cond, branch1, branch2))
 ;;
 
-let parse_expr_app parse_expr =
-  let* expr1 = parse_expr in
-  let* expr2 = parse_expr in
-  return (Expr_apply (expr1, expr2))
+let parse_expr_simple_no_ws = choice [ parse_expr_ident; parse_expr_const ]
+let parse_expr_simple = skip_ws *> parse_expr_simple_no_ws <* skip_ws
+
+let parse_expr_app =
+  let* f = skip_ws *> parse_expr_simple_no_ws in
+  let* args = many1 (skip_ws1 *> parse_expr_simple_no_ws) in
+  skip_ws *> return (List.fold args ~init:f ~f:(fun acc arg -> Expr_apply (acc, arg)))
 ;;
 
 let parse_expr =
   fix (fun parse_expr ->
-    choice
-      [ parse_expr_const
-      ; parse_expr_ident
-      ; parse_expr_ite parse_expr
-      ; parse_expr_app parse_expr
-      ])
+    choice [ parse_expr_app; parse_expr_ite parse_expr; parse_expr_simple ])
 ;;
