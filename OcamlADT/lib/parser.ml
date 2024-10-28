@@ -8,9 +8,19 @@ open Base
 open Char
 
 (*                   Auxiliary parsers                     *)
+
+let is_not_keyword = function
+  | "let"
+  | "if"
+  | "then"
+  | "else"
+  | "rec" -> false
+  | _ -> true
   
 let debug_parser name p =
-  p  <|> (return () >>= fun () ->
+  (p >>= fun result ->
+    Stdlib.Printf.printf "Debug: %s parser SUCCEEDED\n" name;
+    return result) <|> (return () >>= fun () ->
     Stdlib.Printf.printf "Debug: %s parser failed\n" name;
     fail (Printf.sprintf "%s parser failed" name))
 
@@ -82,7 +92,7 @@ let lchain p op =
     let* x = p in
     loop x
 
-let pidentexpr = lift (fun ident -> Exp_ident ident) pident
+let pidentexpr = lift (fun ident -> if is_not_keyword ident then Exp_ident(ident) else failwith "123") pident
 
 (*                   Patterns                         *)
 let pany = token "_" *> return Pat_any
@@ -90,7 +100,7 @@ let pvar = lift (fun ident -> Pat_var ident) pident
 let ppattern =
   pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
 
-(*                   Exptessions                         *)
+(*                   Expressions                         *)
 
 
 let pvalue_binding pexpr =
@@ -123,7 +133,7 @@ let pifexpr pexpr =
   (option None (token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
 
 let papplyexpr pexpr =
-  lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr pexpr
+  lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr (   pexpr)
 ;;
 
 let pfunexpr pexpr = 
@@ -164,12 +174,13 @@ let plogops =
   ]
 
 let pexpr = fix (fun expr ->
-  (* let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in *)
+(* let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in *)
   let expr = choice [
     debug_parser "parens" (pparens expr);
     debug_parser "constint" pconstintexpr;
     debug_parser "constchar" pconstcharexpr;
     debug_parser "conststring" pconststringexpr;
+    debug_parser "ident" pidentexpr;
   ] in
   let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
   let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in

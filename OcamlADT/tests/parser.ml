@@ -18,16 +18,19 @@ let%expect_test "empty program" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [] |}]
 
     (*good*)
@@ -42,16 +45,19 @@ let%expect_test "double semicolons" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -60,16 +66,19 @@ let%expect_test "double semicolons" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_value (Nonrecursive, []))] |}]  
 
   (*good*)
@@ -84,16 +93,19 @@ test_programm {|       ;;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -102,16 +114,19 @@ test_programm {|       ;;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_value (Nonrecursive, []))] |}]
 
 (*good*)
@@ -123,12 +138,19 @@ test_programm {|       ;;|};
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -137,16 +159,19 @@ test_programm {|       ;;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_eval (Exp_constant (Const_integer -1)))] |}]
   
 (*good*)
@@ -158,12 +183,19 @@ Debug: let parser failed
 Debug: tuple parser failed
 Debug: if_then_else parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
+Debug: mul_div parser SUCCEEDED
+Debug: add_sub parser SUCCEEDED
+Debug: compare parser SUCCEEDED
+Debug: pseval parser SUCCEEDED
 Debug: fun parser failed
 Debug: let parser failed
 Debug: tuple parser failed
@@ -172,16 +204,19 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: mul_div parser failed
 Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
+Debug: psvalue parser SUCCEEDED
 [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 
 (*good*)
@@ -193,12 +228,19 @@ Debug: let parser failed
 Debug: tuple parser failed
 Debug: if_then_else parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
+Debug: mul_div parser SUCCEEDED
+Debug: add_sub parser SUCCEEDED
+Debug: compare parser SUCCEEDED
+Debug: pseval parser SUCCEEDED
 Debug: fun parser failed
 Debug: let parser failed
 Debug: tuple parser failed
@@ -207,16 +249,19 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: mul_div parser failed
 Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
+Debug: psvalue parser SUCCEEDED
 [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 
 (*good*)
@@ -228,12 +273,19 @@ Debug: let parser failed
 Debug: tuple parser failed
 Debug: if_then_else parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
+Debug: mul_div parser SUCCEEDED
+Debug: add_sub parser SUCCEEDED
+Debug: compare parser SUCCEEDED
+Debug: pseval parser SUCCEEDED
 Debug: fun parser failed
 Debug: let parser failed
 Debug: tuple parser failed
@@ -242,16 +294,19 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: mul_div parser failed
 Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
+Debug: psvalue parser SUCCEEDED
 [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 
 (*good*)
@@ -263,12 +318,19 @@ Debug: let parser failed
 Debug: tuple parser failed
 Debug: if_then_else parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
+Debug: mul_div parser SUCCEEDED
+Debug: add_sub parser SUCCEEDED
+Debug: compare parser SUCCEEDED
+Debug: pseval parser SUCCEEDED
 Debug: fun parser failed
 Debug: let parser failed
 Debug: tuple parser failed
@@ -277,16 +339,19 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: mul_div parser failed
 Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
+Debug: psvalue parser SUCCEEDED
 [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 
 (*good*)
@@ -298,12 +363,19 @@ Debug: let parser failed
 Debug: tuple parser failed
 Debug: if_then_else parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
+Debug: mul_div parser SUCCEEDED
+Debug: add_sub parser SUCCEEDED
+Debug: compare parser SUCCEEDED
+Debug: pseval parser SUCCEEDED
 Debug: fun parser failed
 Debug: let parser failed
 Debug: tuple parser failed
@@ -312,16 +384,19 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: mul_div parser failed
 Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
+Debug: psvalue parser SUCCEEDED
 [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 
 (*good*)
@@ -333,12 +408,19 @@ Debug: let parser failed
 Debug: tuple parser failed
 Debug: if_then_else parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
+Debug: constint parser SUCCEEDED
+Debug: mul_div parser SUCCEEDED
+Debug: add_sub parser SUCCEEDED
+Debug: compare parser SUCCEEDED
+Debug: pseval parser SUCCEEDED
 Debug: fun parser failed
 Debug: let parser failed
 Debug: tuple parser failed
@@ -347,16 +429,19 @@ Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: apply parser failed
 Debug: parens parser failed
 Debug: constint parser failed
 Debug: constchar parser failed
 Debug: conststring parser failed
+Debug: ident parser failed
 Debug: mul_div parser failed
 Debug: add_sub parser failed
 Debug: compare parser failed
 Debug: pseval parser failed
 Debug: value_binding parser failed
+Debug: psvalue parser SUCCEEDED
 [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 
 (*bad?*)
@@ -371,7 +456,7 @@ let%expect_test "-111 5" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 364, characters 2-29
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 449, characters 2-29
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -384,16 +469,19 @@ let%expect_test "-111 5" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
+  Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED |}]
 
   (*bad?*)
   let%expect_test "5+" =
@@ -407,7 +495,7 @@ let%expect_test "-111 5" =
     (Failure ": end_of_input")
     Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
     Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 400, characters 2-25
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 488, characters 2-25
     Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
     Trailing output
@@ -417,22 +505,31 @@ let%expect_test "-111 5" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
-    Debug: mul_div parser failed |}]
+    Debug: ident parser failed
+    Debug: mul_div parser failed
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED |}]
    
 (*good*)
 let%expect_test "substraction" =
@@ -443,7 +540,14 @@ let%expect_test "substraction" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: apply parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -452,16 +556,19 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval
         (Exp_apply ((Exp_constant (Const_integer 5)),
            (Exp_constant (Const_integer -11)))))
@@ -476,19 +583,31 @@ let%expect_test "substraction" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -497,16 +616,19 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval
         (Exp_apply ((Exp_ident "="),
            (Exp_tuple ((Exp_constant (Const_integer 5)),
@@ -526,47 +648,58 @@ let%expect_test "substraction" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
-    Debug: mul_div parser failed
-    Debug: add_sub parser failed
-    Debug: compare parser failed
-    Debug: pseval parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
-    Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
-    Debug: apply parser failed
-    Debug: parens parser failed
-    Debug: value_binding parser failed
-    Debug: fun parser failed
-    Debug: let parser failed
-    Debug: tuple parser failed
-    Debug: if_then_else parser failed
-    Debug: parens parser failed
-    Debug: constint parser failed
-    Debug: constchar parser failed
-    Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
-    [(Str_value (Nonrecursive,
-        [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 52)) }]))
+    Debug: psvalue parser SUCCEEDED
+    [(Str_eval
+        (Exp_apply ((Exp_ident "="),
+           (Exp_tuple ((Exp_ident "x"), (Exp_constant (Const_integer 52)), [])))))
       ] |}]
 (*good*)
 let%expect_test "multiplication" =
@@ -577,19 +710,29 @@ let%expect_test "multiplication" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -598,16 +741,19 @@ let%expect_test "multiplication" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval
         (Exp_apply ((Exp_ident "*"),
            (Exp_tuple ((Exp_constant (Const_integer 5)),
@@ -624,14 +770,24 @@ let%expect_test "multiplication" =
       Debug: tuple parser failed
       Debug: if_then_else parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
+      Debug: apply parser SUCCEEDED
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: apply parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
+      Debug: mul_div parser SUCCEEDED
+      Debug: add_sub parser SUCCEEDED
+      Debug: compare parser SUCCEEDED
+      Debug: pseval parser SUCCEEDED
       Debug: fun parser failed
       Debug: let parser failed
       Debug: tuple parser failed
@@ -640,16 +796,19 @@ let%expect_test "multiplication" =
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: apply parser failed
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: mul_div parser failed
       Debug: add_sub parser failed
       Debug: compare parser failed
       Debug: pseval parser failed
       Debug: value_binding parser failed
+      Debug: psvalue parser SUCCEEDED
       [(Str_eval
           (Exp_apply ((Exp_ident "*"),
              (Exp_tuple (
@@ -668,14 +827,24 @@ let%expect_test "operators with different priorities" =
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -684,16 +853,19 @@ let%expect_test "operators with different priorities" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_eval
       (Exp_apply ((Exp_ident "*"),
          (Exp_tuple ((Exp_constant (Const_integer 5)),
@@ -711,29 +883,51 @@ let%expect_test "parenthesis with operators with different priorities" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: apply parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: apply parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -742,16 +936,19 @@ let%expect_test "parenthesis with operators with different priorities" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval
         (Exp_apply ((Exp_ident "*"),
            (Exp_tuple ((Exp_constant (Const_integer 5)),
@@ -773,7 +970,7 @@ let%expect_test "parenthesis4" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 766, characters 2-24
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 963, characters 2-24
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -790,11 +987,13 @@ let%expect_test "parenthesis4" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
@@ -802,6 +1001,7 @@ let%expect_test "parenthesis4" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: fun parser failed
   Debug: let parser failed
@@ -811,11 +1011,13 @@ let%expect_test "parenthesis4" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
@@ -823,11 +1025,13 @@ let%expect_test "parenthesis4" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
+  Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED |}]
 
   let%expect_test "parenthesis3" =
   test_programm {|(5);;|};
@@ -841,28 +1045,47 @@ let%expect_test "parenthesis4" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -871,16 +1094,19 @@ let%expect_test "parenthesis4" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval (Exp_constant (Const_integer 5)))] |}]
 (*bad*)
 let%expect_test "parenthesis1" =
@@ -895,62 +1121,111 @@ let%expect_test "parenthesis1" =
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: parens parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: apply parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: apply parser failed
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: apply parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -959,16 +1234,19 @@ let%expect_test "parenthesis1" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_eval
       (Exp_apply ((Exp_ident "*"),
          (Exp_tuple ((Exp_constant (Const_integer 5)),
@@ -991,18 +1269,37 @@ test_programm {|(5-1);;|};
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -1011,16 +1308,19 @@ test_programm {|(5-1);;|};
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_eval
       (Exp_apply ((Exp_constant (Const_integer 5)),
          (Exp_constant (Const_integer -1)))))
@@ -1037,7 +1337,7 @@ test_programm {|(5,1)|};
       (Failure ": end_of_input")
       Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
       Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1030, characters 0-23
+      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1330, characters 0-23
       Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
       Trailing output
@@ -1051,37 +1351,52 @@ test_programm {|(5,1)|};
       Debug: tuple parser failed
       Debug: if_then_else parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: apply parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
+      Debug: mul_div parser SUCCEEDED
+      Debug: add_sub parser SUCCEEDED
+      Debug: compare parser SUCCEEDED
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: apply parser failed
       Debug: fun parser failed
       Debug: let parser failed
       Debug: tuple parser failed
       Debug: if_then_else parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: apply parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
+      Debug: mul_div parser SUCCEEDED
+      Debug: add_sub parser SUCCEEDED
+      Debug: compare parser SUCCEEDED
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: mul_div parser failed
       Debug: add_sub parser failed
       Debug: compare parser failed
       Debug: pseval parser failed
-      Debug: value_binding parser failed |}]
+      Debug: value_binding parser failed
+      Debug: psvalue parser SUCCEEDED |}]
 
 
 
@@ -1097,7 +1412,7 @@ test_programm {|(5,1)|};
       (Failure ": end_of_input")
       Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
       Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1090, characters 6-32
+      Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1405, characters 6-32
       Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
     
       Trailing output
@@ -1107,12 +1422,19 @@ test_programm {|(5,1)|};
       Debug: tuple parser failed
       Debug: if_then_else parser failed
       Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
       Debug: parens parser failed
       Debug: constint parser failed
       Debug: constchar parser failed
       Debug: conststring parser failed
+      Debug: ident parser failed
       Debug: apply parser failed
-      Debug: parens parser failed |}]
+      Debug: parens parser failed
+      Debug: constint parser SUCCEEDED
+      Debug: mul_div parser SUCCEEDED
+      Debug: add_sub parser SUCCEEDED
+      Debug: compare parser SUCCEEDED
+      Debug: pseval parser SUCCEEDED |}]
 
 let%expect_test "let assignment" =
   test_programm {|let x = 5 in 6;;|};
@@ -1121,22 +1443,37 @@ let%expect_test "let assignment" =
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: value_binding parser SUCCEEDED
   Debug: value_binding parser failed
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: let parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -1145,16 +1482,19 @@ let%expect_test "let assignment" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_eval
       (Exp_let (Nonrecursive,
          [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }],
@@ -1168,22 +1508,37 @@ let%expect_test "let assignment with recursion" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: value_binding parser SUCCEEDED
     Debug: value_binding parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: let parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -1192,16 +1547,19 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval
         (Exp_let (Recursive,
            [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }],
@@ -1215,22 +1573,37 @@ let%expect_test "let assignment with recursion" =
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: value_binding parser SUCCEEDED
   Debug: value_binding parser failed
   Debug: tuple parser failed
   Debug: if_then_else parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: let parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
   Debug: fun parser failed
   Debug: let parser failed
   Debug: tuple parser failed
@@ -1239,16 +1612,19 @@ let%expect_test "let assignment with recursion" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
   Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
   [(Str_eval
       (Exp_let (Recursive,
          [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }],
@@ -1256,21 +1632,8 @@ let%expect_test "let assignment with recursion" =
     ] |}]
 
   let%expect_test "apply" =
-    test_programm {|f x;;|};
-  [%expect.unreachable]
-  [@@expect.uncaught_exn {|
-    (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-       This is strongly discouraged as backtraces are fragile.
-       Please change this test to not include a backtrace. *)
-
-    (Failure ": end_of_input")
-    Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-    Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1259, characters 4-27
-    Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-    Trailing output
-    ---------------
+    test_programm {|f (x);;|};
+  [%expect{|
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -1279,33 +1642,62 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: apply parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
-    Debug: value_binding parser failed |}]
+    Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
+    [(Str_eval (Exp_apply ((Exp_ident "f"), (Exp_ident "x"))))] |}]
 
   let%expect_test "(f (x-1))" =
     test_programm {|f (x-1);;|};
-  [%expect.unreachable]
-  [@@expect.uncaught_exn {|
-    (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-       This is strongly discouraged as backtraces are fragile.
-       Please change this test to not include a backtrace. *)
-
-    (Failure ": end_of_input")
-    Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-    Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1294, characters 4-31
-    Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-    Trailing output
-    ---------------
+  [%expect{|
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -1314,70 +1706,58 @@ let%expect_test "let assignment with recursion" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: apply parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: apply parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
-    Debug: value_binding parser failed |}]
+    Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
+    [(Str_eval
+        (Exp_apply ((Exp_ident "f"),
+           (Exp_apply ((Exp_ident "x"), (Exp_constant (Const_integer -1)))))))
+      ] |}]
   
   let%expect_test "(x * f (x-1) )" =
-  test_programm {|x * f (X-1);;|};
-[%expect.unreachable]
-  [@@expect.uncaught_exn {|
-    (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-       This is strongly discouraged as backtraces are fragile.
-       Please change this test to not include a backtrace. *)
-
-    (Failure ": end_of_input")
-    Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-    Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1329, characters 2-33
-    Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-    Trailing output
-    ---------------
-    Debug: fun parser failed
-    Debug: let parser failed
-    Debug: tuple parser failed
-    Debug: if_then_else parser failed
-    Debug: parens parser failed
-    Debug: constint parser failed
-    Debug: constchar parser failed
-    Debug: conststring parser failed
-    Debug: apply parser failed
-    Debug: parens parser failed
-    Debug: constint parser failed
-    Debug: constchar parser failed
-    Debug: conststring parser failed
-    Debug: mul_div parser failed
-    Debug: add_sub parser failed
-    Debug: compare parser failed
-    Debug: pseval parser failed
-    Debug: value_binding parser failed |}]
-
-let%expect_test "( let f x = x+5)" =
-  test_programm {|let f x = x + 5;;|};
-[%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1364, characters 2-37
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
+  test_programm {|x * (f (x-1));;|};
+[%expect{|
   Debug: fun parser failed
-  Debug: value_binding parser failed
   Debug: let parser failed
   Debug: tuple parser failed
   Debug: if_then_else parser failed
@@ -1385,16 +1765,164 @@ let%expect_test "( let f x = x+5)" =
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: apply parser failed
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
   Debug: conststring parser failed
+  Debug: ident parser SUCCEEDED
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser SUCCEEDED
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: apply parser failed
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser SUCCEEDED
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser SUCCEEDED
+  Debug: parens parser failed
+  Debug: constint parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: apply parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: parens parser SUCCEEDED
+  Debug: mul_div parser SUCCEEDED
+  Debug: add_sub parser SUCCEEDED
+  Debug: compare parser SUCCEEDED
+  Debug: pseval parser SUCCEEDED
+  Debug: fun parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: apply parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
   Debug: mul_div parser failed
   Debug: add_sub parser failed
   Debug: compare parser failed
   Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
+  Debug: value_binding parser failed
+  Debug: psvalue parser SUCCEEDED
+  [(Str_eval
+      (Exp_apply ((Exp_ident "*"),
+         (Exp_tuple ((Exp_ident "x"),
+            (Exp_apply ((Exp_ident "f"),
+               (Exp_apply ((Exp_ident "x"), (Exp_constant (Const_integer -1))))
+               )),
+            []))
+         )))
+    ] |}]
+
+let%expect_test "( let f x = x+5)" =
+  test_programm {|let f = x in 6;;|};
+[%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure 123)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Angstrom__Parser.Monad.(>>|).(fun).succ' in file "lib/parser.ml", line 64, characters 61-66
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 221, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 224, characters 8-17
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1882, characters 2-36
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
+
+  Trailing output
+  ---------------
+  Debug: fun parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: apply parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed
+  Debug: ident parser failed
+  Debug: mul_div parser failed
+  Debug: add_sub parser failed
+  Debug: compare parser failed
+  Debug: value_binding parser failed
+  Debug: let parser failed
+  Debug: tuple parser failed
+  Debug: if_then_else parser failed
+  Debug: parens parser failed
+  Debug: constint parser failed
+  Debug: constchar parser failed
+  Debug: conststring parser failed |}]
 
 let%expect_test "( let fact x = fact(x-1))" =
     test_programm {|let fact x = fact(x-1);;|};
@@ -1404,10 +1932,14 @@ let%expect_test "( let fact x = fact(x-1))" =
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
 
-  (Failure ": end_of_input")
+  (Failure 123)
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Angstrom__Parser.Monad.(>>|).(fun).succ' in file "lib/parser.ml", line 64, characters 61-66
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 221, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 224, characters 8-17
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1400, characters 4-46
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1928, characters 4-46
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -1420,17 +1952,7 @@ let%expect_test "( let fact x = fact(x-1))" =
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: mul_div parser failed
-  Debug: add_sub parser failed
-  Debug: compare parser failed
-  Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
+  Debug: conststring parser failed |}]
 
 let%expect_test "( if 6 then 6)" =
     test_programm {|if (5=5) then 6;;|};
@@ -1443,49 +1965,85 @@ let%expect_test "( if 6 then 6)" =
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: if_then_else parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
     Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
@@ -1494,16 +2052,19 @@ let%expect_test "( if 6 then 6)" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
     Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
     [(Str_eval
         (Exp_if (
            (Exp_apply ((Exp_ident "="),
@@ -1515,98 +2076,70 @@ let%expect_test "( if 6 then 6)" =
 
 let%expect_test "(if statement. condition from fact)" =
     test_programm {|if n = 0 then 1 else 7;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1517, characters 4-46
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-  Trailing output
-  ---------------
-  Debug: fun parser failed
-  Debug: let parser failed
-  Debug: tuple parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: mul_div parser failed
-  Debug: add_sub parser failed
-  Debug: compare parser failed
-  Debug: if_then_else parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: mul_div parser failed
-  Debug: add_sub parser failed
-  Debug: compare parser failed
-  Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
-
-  let%expect_test "(let x = if 5=5 then 6 else 7)" =
-  test_programm {|let x = if 5=5 then 6 else 7;;|};
-[%expect.unreachable]
-  [@@expect.uncaught_exn {|
-    (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-       This is strongly discouraged as backtraces are fragile.
-       Please change this test to not include a backtrace. *)
-
-    (Failure ": end_of_input")
-    Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-    Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1564, characters 2-50
-    Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
-
-    Trailing output
-    ---------------
+  [%expect{|
     Debug: fun parser failed
+    Debug: let parser failed
     Debug: tuple parser failed
     Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
-    Debug: parens parser failed
-    Debug: parens parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
-    Debug: apply parser failed
+    Debug: ident parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
     Debug: parens parser failed
-    Debug: parens parser failed
-    Debug: parens parser failed
-    Debug: constint parser failed
-    Debug: constchar parser failed
-    Debug: conststring parser failed
-    Debug: apply parser failed
-    Debug: parens parser failed
-    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
-    Debug: value_binding parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: if_then_else parser SUCCEEDED
+    Debug: pseval parser SUCCEEDED
+    Debug: fun parser failed
     Debug: let parser failed
     Debug: tuple parser failed
     Debug: if_then_else parser failed
@@ -1614,16 +2147,155 @@ let%expect_test "(if statement. condition from fact)" =
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: apply parser failed
     Debug: parens parser failed
     Debug: constint parser failed
     Debug: constchar parser failed
     Debug: conststring parser failed
+    Debug: ident parser failed
     Debug: mul_div parser failed
     Debug: add_sub parser failed
     Debug: compare parser failed
     Debug: pseval parser failed
-    Debug: value_binding parser failed |}]
+    Debug: value_binding parser failed
+    Debug: psvalue parser SUCCEEDED
+    [(Str_eval
+        (Exp_if (
+           (Exp_apply ((Exp_ident "="),
+              (Exp_tuple ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+              )),
+           (Exp_constant (Const_integer 1)),
+           (Some (Exp_constant (Const_integer 7))))))
+      ] |}]
+
+  let%expect_test "(let x = if 5=5 then 6 else 7)" =
+  test_programm {|let x = if (5=5) then 6 else 7;;|};
+[%expect.unreachable]
+  [@@expect.uncaught_exn {|
+    (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+       This is strongly discouraged as backtraces are fragile.
+       Please change this test to not include a backtrace. *)
+
+    (Failure 123)
+    Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+    Called from Angstrom__Parser.Monad.(>>|).(fun).succ' in file "lib/parser.ml", line 64, characters 61-66
+    Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+    Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 221, characters 16-56
+    Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 224, characters 8-17
+    Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
+    Called from Tests__Parser.(fun) in file "tests/parser.ml", line 2173, characters 2-52
+    Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
+
+    Trailing output
+    ---------------
+    Debug: fun parser failed
+    Debug: tuple parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: fun parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed
+    Debug: ident parser failed
+    Debug: apply parser failed
+    Debug: parens parser failed
+    Debug: constint parser SUCCEEDED
+    Debug: mul_div parser SUCCEEDED
+    Debug: add_sub parser SUCCEEDED
+    Debug: compare parser SUCCEEDED
+    Debug: if_then_else parser SUCCEEDED
+    Debug: value_binding parser SUCCEEDED
+    Debug: value_binding parser failed
+    Debug: let parser failed
+    Debug: tuple parser failed
+    Debug: if_then_else parser failed
+    Debug: parens parser failed
+    Debug: constint parser failed
+    Debug: constchar parser failed
+    Debug: conststring parser failed |}]
 
 let%expect_test "(let rec fact x = if x = 0 then 1 else x * fact (x-1))" =
     test_programm {|let rec fact x = if x = 0 then 1 else x * fact(X-1);;|};
@@ -1633,10 +2305,14 @@ let%expect_test "(let rec fact x = if x = 0 then 1 else x * fact (x-1))" =
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
 
-  (Failure ": end_of_input")
+  (Failure 123)
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Angstrom__Parser.Monad.(>>|).(fun).succ' in file "lib/parser.ml", line 64, characters 61-66
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 221, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 224, characters 8-17
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 1629, characters 4-75
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 2301, characters 4-75
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19
 
   Trailing output
@@ -1649,17 +2325,7 @@ let%expect_test "(let rec fact x = if x = 0 then 1 else x * fact (x-1))" =
   Debug: parens parser failed
   Debug: constint parser failed
   Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: apply parser failed
-  Debug: parens parser failed
-  Debug: constint parser failed
-  Debug: constchar parser failed
-  Debug: conststring parser failed
-  Debug: mul_div parser failed
-  Debug: add_sub parser failed
-  Debug: compare parser failed
-  Debug: pseval parser failed
-  Debug: value_binding parser failed |}]
+  Debug: conststring parser failed |}]
   
 
 (* let%expect_test "let x = 5" =
