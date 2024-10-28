@@ -82,7 +82,7 @@ let parse_const_bool =
 ;;
 
 (* Float parsing functions should probably be inside one big function *)
-(* Parse the float in form digit+ . digit* [f|F]) *)
+(* Parse the float in form digit+ . digit* [f|F] *)
 let parse_const_float_sim =
   let* int_part = take_while1 Char.is_digit in
   let* dot = string "." in
