@@ -1,5 +1,5 @@
   $ ../../bin/main.exe
-  [(Str_value (Recursive,
+  [(Str_item_def (Recursive,
       [(Binding ((Pattern_ident "factorial"),
           (Expr_ifthenelse (
              (Expr_apply (

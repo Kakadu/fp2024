@@ -32,13 +32,10 @@ let parse_binding_val =
 let parse_binding_fun =
   let* name = parse_pat_ident (* ops are not yet supported *) in
   let* args = many1 (skip_ws *> parse_pat) in
-  skip_ws
-  *> char '='
-  *> skip_ws
+  skip_token "="
   *>
   let* expr = parse_expr in
-  let rec wrap args =
-    match args with
+  let rec wrap = function
     | h :: tl -> Expr_fun (h, wrap tl)
     | [] -> expr
   in
