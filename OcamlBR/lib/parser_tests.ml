@@ -17,7 +17,7 @@ let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {| 
- [(Elet (Recursive, "factorial",
+ [(SValue (Recursive, "factorial",
      (Efun (["n"],
         (Eif_then_else ((Ebin_op (Eq, (Evar "n"), (Econst (Int 0)))),
            (Econst (Int 1)),
@@ -36,12 +36,13 @@ let%expect_test _ =
 let%expect_test _ =
   parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect
-    {| 
-   [(Ebin_op (Sub, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 676)))),
-       (Ebin_op (Mult, (Econst (Int 9002)),
-          (Ebin_op (Div, (Econst (Int 52)), (Econst (Int 2))))))
-       ))
-     ]
+    {|
+  [(SEval
+      (Ebin_op (Sub, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 676)))),
+         (Ebin_op (Mult, (Econst (Int 9002)),
+            (Ebin_op (Div, (Econst (Int 52)), (Econst (Int 2))))))
+         )))
+    ]
   |}]
 ;;
 

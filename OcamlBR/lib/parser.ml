@@ -131,11 +131,15 @@ let pexpr =
     rel_expr)
 ;;
 
-let parse_structure =
-  let parse_structure_item = choice [ plet pexpr; pexpr ] in
-  let semicolons = pstoken ";;" in
-  let items = sep_by semicolons parse_structure_item in
-  items <* pwhitespace
+let pstructure =
+  let pseval = pexpr >>| fun e -> SEval e in
+  let psvalue =
+    plet pexpr >>| function
+    | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
+    | _ -> failwith "Expected a let expression"
+  in
+  choice [ pseval; psvalue ]
 ;;
 
-let parse_expr str = parse_string ~consume:All parse_structure str
+let structure : structure t = sep_by (pstoken ";;") pstructure
+let parse_expr str = parse_string ~consume:All structure str

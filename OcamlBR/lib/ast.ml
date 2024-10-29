@@ -65,4 +65,9 @@ type expr =
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
 
-type structure = expr list [@@deriving show { with_path = false }]
+type structure_item =
+  | SEval of expr
+  | SValue of rec_flag * id * expr * expr
+[@@deriving show { with_path = false }]
+
+type structure = structure_item list [@@deriving show { with_path = false }]
