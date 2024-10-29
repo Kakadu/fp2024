@@ -61,3 +61,11 @@ let%expect_test _ =
   Parsing failed
   |}]
 ;;
+
+
+let%expect_test _ =
+  parse "let x = 5 in let y = 2 in let b = x + y";
+  [%expect {| 
+  lol
+  |}]
+;;
