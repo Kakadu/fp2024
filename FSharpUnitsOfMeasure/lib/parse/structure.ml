@@ -13,7 +13,7 @@ open Expressions
 open Patterns
 
 let parse_structure_item_expr =
-  skip_token "do"
+  (skip_token "do" <|> skip_ws)
   *>
   let* expr = parse_expr in
   return (Str_item_eval expr)
