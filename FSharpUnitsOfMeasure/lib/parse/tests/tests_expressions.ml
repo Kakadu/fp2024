@@ -31,7 +31,7 @@ let%expect_test "parse ident with digits not first" =
 
 let%expect_test "parse ident with digit first should fail" =
   pp pp_expression parse_expr {| 7myname |};
-  [%expect {| |}]
+  [%expect {| : end_of_input |}]
 ;;
 
 (************************** Constants **************************)
