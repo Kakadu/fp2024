@@ -167,6 +167,12 @@ let%expect_test "parse a+b" =
        (Expr_ident_or_op "b"))) |}]
 ;;
 
+let%expect_test " parse a + + should fail " =
+  pp pp_expression parse_expr {| a + + |};
+  [%expect {|
+    : end_of_input |}]
+;;
+
 let%expect_test "parse 1+b" =
   pp pp_expression parse_expr {| 1+b |};
   [%expect
@@ -201,13 +207,11 @@ let%expect_test "parse a+b*c" =
   pp pp_expression parse_expr {| a+b*c |};
   [%expect
     {|
-      (Expr_apply (
-         (Expr_apply ((Expr_ident_or_op "*"),
-            (Expr_apply (
-               (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
-               (Expr_ident_or_op "b")))
-            )),
-         (Expr_ident_or_op "c"))) |}]
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "*"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
 ;;
 
 (************************** Parentheses **************************)
