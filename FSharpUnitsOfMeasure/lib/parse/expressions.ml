@@ -10,36 +10,65 @@ open Angstrom
 open Ast
 open Common
 
-let parse_expr_ident = skip_ws *> parse_ident >>| fun i -> Expr_ident i
-let parse_expr_const = skip_ws *> parse_const >>| fun c -> Expr_const c
+let parse_expr_ident = parse_ident >>| fun i -> Expr_ident_or_op i
+let parse_expr_const = parse_const >>| fun c -> Expr_const c
 
 let parse_expr_ite parse_expr =
-  let* cond = skip_token "if" *> parse_expr <* skip_ws in
-  let* branch1 = skip_token "then" *> parse_expr <* skip_ws in
+  let* cond = skip_ws *> string "if" *> parse_expr in
+  let* branch1 = skip_ws *> string "then" *> parse_expr in
   let* branch2 =
-    option None (skip_token "else" *> parse_expr <* skip_ws >>| fun e -> Some e)
+    option None (skip_ws *> string "else" *> parse_expr >>| fun e -> Some e)
   in
   return (Expr_ifthenelse (cond, branch1, branch2))
 ;;
 
-let parse_expr_simple_no_ws = choice [ parse_expr_ident; parse_expr_const ]
-let parse_expr_simple = skip_ws *> parse_expr_simple_no_ws <* skip_ws
+let parse_expr_simple = skip_ws *> choice [ parse_expr_ident; parse_expr_const ] <* skip_ws
 
-let parse_expr_app =
-  let* f = skip_ws *> parse_expr_simple_no_ws in
-  let* args = many1 (skip_ws1 *> parse_expr_simple_no_ws) in
-  skip_ws *> return (List.fold args ~init:f ~f:(fun acc arg -> Expr_apply (acc, arg)))
+let parse_expr_paren parse_expr =
+  skip_ws *> string "(" *> parse_expr <* skip_ws <* string ")" <* skip_ws
 ;;
 
-let parse_expr_paren parse_expr = skip_token "(" *> parse_expr <* skip_token ")"
+let chainl parse_expr parse_bin_op =
+  let rec wrap expr1 =
+    let* app_binop = parse_bin_op in
+    let* expr2 = parse_expr in
+    let binop = app_binop expr1 expr2 in
+    wrap binop <|> return binop
+  in
+  parse_expr >>= fun init -> wrap init
+;;
+
+let parse_bin_op_as_app bin_op =
+  skip_ws
+  *> string bin_op
+  *> return (fun e1 e2 -> Expr_apply (Expr_apply (Expr_ident_or_op bin_op, e1), e2))
+;;
+
+let parse_ws_as_app = skip_ws *> return (fun e1 e2 -> Expr_apply (e1, e2))
+
+let parse_expr_app parse_expr =
+  let parse_op =
+    choice
+      [ parse_bin_op_as_app "*"
+      ; parse_bin_op_as_app "/"
+      ; parse_bin_op_as_app "+"
+      ; parse_bin_op_as_app "-"
+      ; parse_bin_op_as_app "<"
+      ; parse_ws_as_app
+      ]
+  in
+  chainl parse_expr parse_op
+;;
 
 let parse_expr =
   fix (fun parse_expr ->
-    choice
-      [ parse_expr_paren parse_expr
-      ; parse_expr_app
-      ; parse_expr_ite parse_expr
-      ; parse_expr_paren parse_expr
-      ; parse_expr_simple
-      ])
+    let expr =
+      choice
+        [ parse_expr_paren parse_expr
+        ; parse_expr_simple
+        ]
+    in
+    let expr = parse_expr_ite parse_expr <|> expr in
+    let expr = parse_expr_app expr <|> expr in
+    expr)
 ;;
