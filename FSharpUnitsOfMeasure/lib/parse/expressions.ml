@@ -14,37 +14,34 @@ let parse_expr_ident = parse_ident >>| fun i -> Expr_ident_or_op i
 let parse_expr_const = parse_const >>| fun c -> Expr_const c
 
 let parse_expr_ite parse_expr =
-  let* cond = skip_ws *> string "if" *> parse_expr in
-  let* branch1 = skip_ws *> string "then" *> parse_expr in
+  let* cond = skip_ws *> string "if" *> skip_ws *> parse_expr in
+  let* branch1 = skip_ws *> string "then" *> skip_ws *> parse_expr in
   let* branch2 =
-    option None (skip_ws *> string "else" *> parse_expr >>| fun e -> Some e)
+    option None (skip_ws *> string "else" *> skip_ws *> parse_expr >>| fun e -> Some e)
   in
   return (Expr_ifthenelse (cond, branch1, branch2))
 ;;
 
-let parse_expr_simple = skip_ws *> choice [ parse_expr_ident; parse_expr_const ] <* skip_ws
-
 let parse_expr_paren parse_expr =
-  skip_ws *> string "(" *> parse_expr <* skip_ws <* string ")" <* skip_ws
+  string "(" *> skip_ws *> parse_expr <* skip_ws <* string ")"
 ;;
 
 let chainl parse_expr parse_bin_op =
   let rec wrap expr1 =
     let* app_binop = parse_bin_op in
-    let* expr2 = parse_expr in
+    let* expr2 = skip_ws *> parse_expr in
     let binop = app_binop expr1 expr2 in
     wrap binop <|> return binop
   in
-  parse_expr >>= fun init -> wrap init
+  skip_ws *> parse_expr >>= fun init -> wrap init
 ;;
 
 let parse_bin_op_as_app bin_op =
-  skip_ws
-  *> string bin_op
+  skip_ws *> string bin_op
   *> return (fun e1 e2 -> Expr_apply (Expr_apply (Expr_ident_or_op bin_op, e1), e2))
 ;;
 
-let parse_ws_as_app = skip_ws *> return (fun e1 e2 -> Expr_apply (e1, e2))
+let parse_ws_as_app = skip_ws1 *> return (fun e1 e2 -> Expr_apply (e1, e2))
 
 let parse_expr_app parse_expr =
   let parse_op =
@@ -65,10 +62,11 @@ let parse_expr =
     let expr =
       choice
         [ parse_expr_paren parse_expr
-        ; parse_expr_simple
+        ; parse_expr_ite parse_expr
+        ; parse_expr_const
+        ; parse_expr_ident
         ]
     in
-    let expr = parse_expr_ite parse_expr <|> expr in
     let expr = parse_expr_app expr <|> expr in
-    expr)
+    skip_ws *> expr <* skip_ws)
 ;;
