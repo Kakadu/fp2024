@@ -56,7 +56,7 @@ type val_binding =
 and expression =
   | Expr_const of constant
   (** Constant expressions: [1], ['a'], ["foo"], [3.14], [true], [5.0<cm>] *)
-  | Expr_ident of string (** Identificator expressions: [x] *)
+  | Expr_ident_or_op of string (** Identificator or operation expressions: [x], [+] *)
   | Expr_tuple of expression list
   (** Tuple expressions: [(E1, ..., En)]
       Invariant: [n >= 2] *)
