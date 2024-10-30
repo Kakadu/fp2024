@@ -16,22 +16,22 @@ let%expect_test "single underscore should not be parsed as an expression" =
 
 let%expect_test "parse ident starting with underscore" =
   pp pp_expression parse_expr {| _foo |};
-  [%expect {| (Expr_ident "_foo") |}]
+  [%expect {| (Expr_ident_or_op "_foo") |}]
 ;;
 
 let%expect_test "parse ident with apostrophe" =
   pp pp_expression parse_expr {| x' |};
-  [%expect {| (Expr_ident "x'") |}]
+  [%expect {| (Expr_ident_or_op "x'") |}]
 ;;
 
 let%expect_test "parse ident with digits not first" =
   pp pp_expression parse_expr {| foobar123 |};
-  [%expect {| (Expr_ident "foobar123") |}]
+  [%expect {| (Expr_ident_or_op "foobar123") |}]
 ;;
 
 let%expect_test "parse ident with digit first should fail" =
   pp pp_expression parse_expr {| 7myname |};
-  [%expect {| : end_of_input |}]
+  [%expect {| |}]
 ;;
 
 (************************** Constants **************************)
@@ -131,15 +131,15 @@ let%expect_test "parse ite with nested ite" =
 
 let%expect_test "parse application of function to 1 argument" =
   pp pp_expression parse_expr {| f a |};
-  [%expect {| (Expr_apply ((Expr_ident "f"), (Expr_ident "a"))) |}]
+  [%expect {| (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))) |}]
 ;;
 
 let%expect_test "parse application of function to 2 arguments" =
   pp pp_expression parse_expr {| f a b |};
   [%expect
     {|
-    (Expr_apply ((Expr_apply ((Expr_ident "f"), (Expr_ident "a"))),
-       (Expr_ident "b"))) |}]
+    (Expr_apply ((Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))),
+       (Expr_ident_or_op "b"))) |}]
 ;;
 
 let%expect_test "parse application of function to 5 arguments" =
@@ -149,18 +149,77 @@ let%expect_test "parse application of function to 5 arguments" =
     (Expr_apply (
        (Expr_apply (
           (Expr_apply (
-             (Expr_apply ((Expr_apply ((Expr_ident "f"), (Expr_ident "a"))),
-                (Expr_ident "b"))),
-             (Expr_ident "c"))),
-          (Expr_ident "d"))),
-       (Expr_ident "e"))) |}]
+             (Expr_apply (
+                (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))),
+                (Expr_ident_or_op "b"))),
+             (Expr_ident_or_op "c"))),
+          (Expr_ident_or_op "d"))),
+       (Expr_ident_or_op "e"))) |}]
+;;
+
+(************************** Binary operations **************************)
+
+let%expect_test "parse a+b" =
+  pp pp_expression parse_expr {| a+b |};
+  [%expect
+    {|
+    (Expr_apply ((Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+       (Expr_ident_or_op "b"))) |}]
+;;
+
+let%expect_test "parse 1+b" =
+  pp pp_expression parse_expr {| 1+b |};
+  [%expect
+    {|
+    (Expr_apply (
+       (Expr_apply ((Expr_ident_or_op "+"), (Expr_const (Const_int 1)))),
+       (Expr_ident_or_op "b"))) |}]
+;;
+
+let%expect_test "parse a+b+c" =
+  pp pp_expression parse_expr {| a+b+c |};
+  [%expect
+    {|
+    (Expr_apply (
+       (Expr_apply ((Expr_ident_or_op "+"),
+          (Expr_apply (
+             (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+             (Expr_ident_or_op "b")))
+          )),
+       (Expr_ident_or_op "c"))) |}]
+;;
+
+let%expect_test "parse n-1 " =
+  pp pp_expression parse_expr {| n-1 |};
+  [%expect
+    {|
+    (Expr_apply ((Expr_apply ((Expr_ident_or_op "-"), (Expr_ident_or_op "n"))),
+       (Expr_const (Const_int 1)))) |}]
+;;
+
+let%expect_test "parse a+b*c" =
+  pp pp_expression parse_expr {| a+b*c |};
+  [%expect
+    {|
+      (Expr_apply (
+         (Expr_apply ((Expr_ident_or_op "*"),
+            (Expr_apply (
+               (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+               (Expr_ident_or_op "b")))
+            )),
+         (Expr_ident_or_op "c"))) |}]
 ;;
 
 (************************** Parentheses **************************)
 
+let%expect_test "parse ident inside parentheses" =
+  pp pp_expression parse_expr {| (a) |};
+  [%expect {| (Expr_ident_or_op "a") |}]
+;;
+
 let%expect_test "parse expression inside parentheses" =
   pp pp_expression parse_expr {| (a b) |};
-  [%expect {| (Expr_apply ((Expr_ident "a"), (Expr_ident "b"))) |}]
+  [%expect {| (Expr_apply ((Expr_ident_or_op "a"), (Expr_ident_or_op "b"))) |}]
 ;;
 
 let%expect_test "parse expression in parentheses without closing parenthesis should fail" =
@@ -175,10 +234,37 @@ let%expect_test "parse expression in parentheses without opening parenthesis sho
 
 let%expect_test "parse expression inside nested parentheses" =
   pp pp_expression parse_expr {| (((a b))) |};
-  [%expect {| (Expr_apply ((Expr_ident "a"), (Expr_ident "b"))) |}]
+  [%expect {| (Expr_apply ((Expr_ident_or_op "a"), (Expr_ident_or_op "b"))) |}]
 ;;
 
 let%expect_test "parse expression inside unbalanced nested parentheses should fail" =
   pp pp_expression parse_expr {| (((a b)))))) |};
   [%expect {| : end_of_input |}]
+;;
+
+(************************** Mix **************************)
+
+let%expect_test _ =
+  pp pp_expression parse_expr {| if a then (if f b then c) else g d |};
+  [%expect
+    {|
+    (Expr_ifthenelse ((Expr_ident_or_op "a"),
+       (Expr_ifthenelse (
+          (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "b"))),
+          (Expr_ident_or_op "c"), None)),
+       (Some (Expr_apply ((Expr_ident_or_op "g"), (Expr_ident_or_op "d")))))) |}]
+;;
+
+let%expect_test _ =
+  pp pp_expression parse_expr {| 1 + if a then b else c + 2 |};
+  [%expect
+    {|
+    (Expr_apply (
+       (Expr_apply ((Expr_ident_or_op "+"), (Expr_const (Const_int 1)))),
+       (Expr_ifthenelse ((Expr_ident_or_op "a"), (Expr_ident_or_op "b"),
+          (Some (Expr_apply (
+                   (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "c"))),
+                   (Expr_const (Const_int 2)))))
+          ))
+       )) |}]
 ;;
