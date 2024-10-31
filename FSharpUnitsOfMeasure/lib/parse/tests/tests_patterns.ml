@@ -40,12 +40,14 @@ let%expect_test "parse pattern tuple with 1 element should fail" =
 
 let%expect_test "parse pattern tuple with 2 elements" =
   pp pp_pattern parse_pat {| 1, 2 |};
-  [%expect {| (Pattern_tuple [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2))]) |}]
+  [%expect
+    {| (Pattern_tuple [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2))]) |}]
 ;;
 
 let%expect_test "parse pattern tuple with 3 elements" =
   pp pp_pattern parse_pat {| 1, 2, myname |};
-  [%expect {|
+  [%expect
+    {|
     (Pattern_tuple
        [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2));
          (Pattern_ident "myname")]) |}]
@@ -53,7 +55,8 @@ let%expect_test "parse pattern tuple with 3 elements" =
 
 let%expect_test "parse tuples of tuples" =
   pp pp_pattern parse_pat {| (1, 2), (3, 4) |};
-  [%expect {|
+  [%expect
+    {|
     (Pattern_tuple
        [(Pattern_tuple
            [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2))]);
@@ -76,7 +79,8 @@ let%expect_test "parse pattern in unbalanced parentheses should fail" =
 
 let%expect_test "parse tuple in parentheses" =
   pp pp_pattern parse_pat {| (1, 2, 3, 4) |};
-  [%expect {|
+  [%expect
+    {|
     (Pattern_tuple
        [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2));
          (Pattern_const (Const_int 3)); (Pattern_const (Const_int 4))]) |}]
