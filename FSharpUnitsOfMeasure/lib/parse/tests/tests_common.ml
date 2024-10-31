@@ -37,7 +37,6 @@ let%expect_test "parse false as const bool" =
   [%expect {| (Const_bool false) |}]
 ;;
 
-(* Is incorrect *)
 let%expect_test "parse simple float as const float" =
   pp pp_constant parse_const {|1.0|};
 <<<<<<< HEAD
