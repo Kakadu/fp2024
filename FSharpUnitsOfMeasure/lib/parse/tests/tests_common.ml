@@ -40,5 +40,9 @@ let%expect_test "parse false as const bool" =
 (* Is incorrect *)
 let%expect_test "parse simple float as const float" =
   pp pp_constant parse_const {|1.0|};
+<<<<<<< HEAD
   [%expect {| (Const_float 1.) |}]
+=======
+  [%expect {| : end_of_input |}]
+>>>>>>> a5e8666 (Add main common, patterns, expressions and structure items parsers, sufficient for parsing factorial. (#5))
 ;;
