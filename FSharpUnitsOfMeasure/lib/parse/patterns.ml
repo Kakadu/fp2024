@@ -15,10 +15,27 @@ let parse_pat_ident = parse_ident >>| fun i -> Pattern_ident i
 let parse_pat_const = parse_const >>| fun c -> Pattern_const c
 
 let parse_pat_paren parse_pat =
-  string "(" *> skip_ws *> parse_pat <* skip_ws <* string "("
+  string "(" *> skip_ws *> parse_pat <* skip_ws <* string ")"
+;;
+
+(* Parses tuple without parentheses *)
+let parse_pat_tuple parse_pat =
+  let* pat1 = parse_pat in
+  skip_ws
+  *> char ','
+  *> skip_ws
+  *>
+  let* pat2 = parse_pat in
+  let* rest = many (skip_ws *> char ',' *> skip_ws *> parse_pat) in
+  return (Pattern_tuple (pat1 :: pat2 :: rest))
 ;;
 
 let parse_pat =
   fix (fun parse_pat ->
-    choice [ parse_pat_paren parse_pat; parse_pat_ident; parse_pat_wild; parse_pat_const ])
+    let pat =
+      choice
+        [ parse_pat_paren parse_pat; parse_pat_ident; parse_pat_wild; parse_pat_const ]
+    in
+    let pat = parse_pat_tuple pat <|> pat in
+    skip_ws *> pat <* skip_ws)
 ;;
