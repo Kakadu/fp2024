@@ -119,16 +119,13 @@ let pbranch pexpr =
 let pexpr =
   fix (fun expr ->
     let atom_expr = choice [ pEconst; pEvar; pparens expr ] in
-    (* parsing of nested if expressions and fallback to simpler atomic expressions
-       if the conditional expression parsing fails *)
+    let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
-    (* parsing function applications, where the left side can be
-       an if expression or a simpler atomic expression *)
     let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
     let factor_expr = chain app_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
-    rel_expr)
+    choice [let_expr; rel_expr])
 ;;
 
 let pstructure =
@@ -138,7 +135,7 @@ let pstructure =
     | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
     | _ -> failwith "Expected a let expression"
   in
-  choice [ pseval; psvalue ]
+  choice [psvalue ; pseval]
 ;;
 
 let structure : structure t = sep_by (pstoken ";;") pstructure
