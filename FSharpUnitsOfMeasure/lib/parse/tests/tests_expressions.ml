@@ -86,6 +86,7 @@ let%expect_test "parse string without closing double quotes should fail" =
   [%expect {| : no more choices |}]
 ;;
 
+<<<<<<< HEAD
 let%expect_test "parse simple float with rational part" =
   pp pp_expression parse_expr {| 3.14 |};
   [%expect {| (Expr_const (Const_float 3.14))  |}]
@@ -126,6 +127,14 @@ let%expect_test "parse float with rational part, (e|E) but without exponent shou
   [%expect {| : no more choices  |}]
 ;;
 
+=======
+(* Is incorrect *)
+let%expect_test "parse simple float as expr const float" =
+  pp pp_expression parse_expr {|5.0|};
+  [%expect {| : end_of_input  |}]
+;;
+
+>>>>>>> a5e8666 (Add main common, patterns, expressions and structure items parsers, sufficient for parsing factorial. (#5))
 (* Need to try to test measures *)
 
 (************************** If then else **************************)
