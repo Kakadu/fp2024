@@ -20,17 +20,29 @@ let parse_pat_paren parse_pat =
 
 (* Parses tuple without parentheses *)
 let parse_pat_tuple parse_pat =
-  let* tuple = sep_by (skip_ws *> char ',' <* skip_ws) parse_pat in
+  let* tuple = sep_by (char ',') (skip_ws *> parse_pat <* skip_ws) in
   if List.length tuple < 2
   then fail "Cannot parse tuple of less than 2 elements"
   else return (Pattern_tuple tuple)
+;;
+
+let parse_pat_list parse_pat =
+  char '['
+  *>
+  let* list = sep_by (char ';') (skip_ws *> parse_pat <* skip_ws) in
+  char ']' *> return (Pattern_list list)
 ;;
 
 let parse_pat =
   fix (fun parse_pat ->
     let pat =
       choice
-        [ parse_pat_paren parse_pat; parse_pat_ident; parse_pat_wild; parse_pat_const ]
+        [ parse_pat_paren parse_pat
+        ; parse_pat_list parse_pat
+        ; parse_pat_ident
+        ; parse_pat_wild
+        ; parse_pat_const
+        ]
     in
     let pat = parse_pat_tuple pat <|> pat in
     skip_ws *> pat <* skip_ws)
