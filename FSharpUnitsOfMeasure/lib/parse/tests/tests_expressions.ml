@@ -86,10 +86,44 @@ let%expect_test "parse string without closing double quotes should fail" =
   [%expect {| : no more choices |}]
 ;;
 
-(* Is incorrect *)
-let%expect_test "parse simple float as expr const float" =
-  pp pp_expression parse_expr {|5.0|};
+let%expect_test "parse simple float with rational part" =
+  pp pp_expression parse_expr {| 3.14 |};
+  [%expect {| (Expr_const (Const_float 3.14))  |}]
+;;
+
+let%expect_test "parse simple float with rational part and (f|F)" =
+  pp pp_expression parse_expr {| 3.14f |};
+  [%expect {| (Expr_const (Const_float 3.14)) |}]
+;;
+
+let%expect_test "parse simple float without rational part" =
+  pp pp_expression parse_expr {| 5. |};
+  [%expect {| (Expr_const (Const_float 5.))  |}]
+;;
+
+let%expect_test "parse float with rational part, (e|E) and signed exponent" =
+  pp pp_expression parse_expr {| 1.23e-2 |};
+  [%expect {| (Expr_const (Const_float 0.0123))  |}]
+;;
+
+let%expect_test "parse float with rational part, (e|E), signed exponent and (f|F)" =
+  pp pp_expression parse_expr {| 1.23e-2F |};
+  [%expect {| (Expr_const (Const_float 0.0123)) |}]
+;;
+
+let%expect_test "parse float with rational part, (e|E) and unsigned exponent" =
+  pp pp_expression parse_expr {| 1.23e2 |};
+  [%expect {| (Expr_const (Const_float 123.))  |}]
+;;
+
+let%expect_test "parse float without rational part, with (e|E) and signed exponent" =
+  pp pp_expression parse_expr {| 1e+2 |};
   [%expect {| : end_of_input  |}]
+;;
+
+let%expect_test "parse float with rational part, (e|E) but without exponent should fail" =
+  pp pp_expression parse_expr {| 1.23E+ |};
+  [%expect {| : no more choices  |}]
 ;;
 
 (* Need to try to test measures *)

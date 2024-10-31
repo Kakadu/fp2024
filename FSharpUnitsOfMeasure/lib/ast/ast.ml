@@ -27,7 +27,7 @@ type constant =
   | Const_int of int (** Integer constants: [1] *)
   | Const_char of char (** Char constants: ['a'] *)
   | Const_string of string (** String constants: ["foo"] *)
-  | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3] *)
+  | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3f] *)
   | Const_measure of measure_num * measure (** Measure constants: [5.0<cm>], [3<kg>] *)
 [@@deriving show { with_path = false }]
 
