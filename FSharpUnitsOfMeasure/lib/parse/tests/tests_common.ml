@@ -40,5 +40,5 @@ let%expect_test "parse false as const bool" =
 (* Is incorrect *)
 let%expect_test "parse simple float as const float" =
   pp pp_constant parse_const {|1.0|};
-  [%expect {| : end_of_input |}]
+  [%expect {| (Const_float 1.) |}]
 ;;
