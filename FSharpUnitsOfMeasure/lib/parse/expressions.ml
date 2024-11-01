@@ -9,6 +9,7 @@ open Base
 open Angstrom
 open Ast
 open Common
+open Patterns
 
 let parse_expr_ident = parse_ident >>| fun i -> Expr_ident_or_op i
 let parse_expr_const = parse_const >>| fun c -> Expr_const c
@@ -61,12 +62,27 @@ let parse_expr_app parse_expr =
   app
 ;;
 
+let parse_expr_fun parse_pat parse_expr =
+  skip_token "fun"
+  *>
+  let* args = many1 parse_pat in
+  skip_token "->"
+  *>
+  let* expr = parse_expr in
+  let rec wrap = function
+    | h :: tl -> Expr_fun (h, wrap tl)
+    | [] -> expr
+  in
+  return (wrap args)
+;;
+
 let parse_expr =
   fix (fun parse_expr ->
     let expr =
       choice
         [ parse_expr_paren parse_expr
         ; parse_expr_ite parse_expr
+        ; parse_expr_fun parse_pat parse_expr
         ; parse_expr_const
         ; parse_expr_ident
         ]
