@@ -19,38 +19,13 @@ let parse_structure_item_expr =
   return (Str_item_eval expr)
 ;;
 
-let parse_binding_val =
-  let* name = parse_pat in
-  skip_ws
-  *> char '='
-  *> skip_ws
-  *>
-  let* expr = parse_expr in
-  return (Binding (name, expr))
-;;
-
-let parse_binding_fun =
-  let* name = parse_pat_ident (* ops are not yet supported *) in
-  let* args = many1 (skip_ws *> parse_pat) in
-  skip_token "="
-  *>
-  let* expr = parse_expr in
-  let rec wrap = function
-    | h :: tl -> Expr_fun (h, wrap tl)
-    | [] -> expr
-  in
-  return (Binding (name, wrap args))
-;;
-
-let parse_binding = parse_binding_val <|> parse_binding_fun
-
 let parse_structure_item_def =
   skip_token "let"
   *>
   let* rec_flag = option Nonrecursive (string "rec" *> skip_ws *> return Recursive) in
-  let* bindings = sep_by1 (skip_token "and") parse_binding in
+  let* bindings = sep_by1 (skip_token "and") (parse_single_binding parse_expr) in
   return (Str_item_def (rec_flag, bindings))
 ;;
 
 let parse_structure_item = choice [ parse_structure_item_expr; parse_structure_item_def ]
-let parse_program = sep_by (skip_ws *> string ";;" *> skip_ws) parse_structure_item
+let parse_program = sep_by (skip_token ";;") parse_structure_item
