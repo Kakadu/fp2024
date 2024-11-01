@@ -35,7 +35,7 @@ let parse_parens p = token "(" *> p <* token ")"
 let parse_const_int =
   let sign = choice [ token "+"; token "-"; token "" ] in
   let num = take_while1 Char.is_digit in
-  lift2 (fun s n -> ConstInt (int_of_string (s ^ n))) sign num
+  lift2 (fun s n -> ConstInt (Int.of_string (s ^ n))) sign num
 ;;
 
 let parse_const_bool =
@@ -85,12 +85,6 @@ let parse_pattern =
 let parse_left_associative expr oper =
   let rec go acc = lift2 (fun f x -> f acc x) oper expr >>= go <|> return acc in
   expr >>= fun init -> go init
-;;
-
-let rec parse_right_associative expr oper =
-  expr
-  >>= fun acc ->
-  oper >>= (fun f -> parse_right_associative expr oper >>| f acc) <|> return acc
 ;;
 
 let parse_expr_bin_oper parse_bin_op tkn =
