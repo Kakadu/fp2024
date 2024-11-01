@@ -99,7 +99,7 @@ let parse_binding_fun parse_expr =
   return (Binding (name, wrap args))
 ;;
 
-let parse_binding parse_expr =
+let parse_single_binding parse_expr =
   parse_binding_val parse_expr <|> parse_binding_fun parse_expr
 ;;
 
@@ -107,7 +107,7 @@ let parse_expr_let parse_expr =
   skip_token "let"
   *>
   let* rec_flag = option Nonrecursive (skip_token "rec" *> return Recursive) in
-  let* bindings = sep_by1 (skip_token "and") (parse_binding parse_expr) in
+  let* bindings = sep_by1 (skip_token "and") (parse_single_binding parse_expr) in
   skip_token "in"
   *>
   let* last_expr = parse_expr in
