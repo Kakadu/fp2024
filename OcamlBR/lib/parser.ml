@@ -16,6 +16,7 @@ let is_keyword = function
 (*---------------------Control characters---------------------*)
 
 let pwhitespace = take_while Char.is_whitespace
+let pws1 = take_while1 Char.is_whitespace
 let pstoken s = pwhitespace *> string s
 let ptoken s = pwhitespace *> s
 let pparens p = pstoken "(" *> p <* pstoken ")"
@@ -25,10 +26,8 @@ let pparens p = pstoken "(" *> p <* pstoken ")"
 let pint =
   let sign = choice [ pstoken "-"; pstoken "+"; pstoken "" ] in
   let rest = take_while1 Char.is_digit in
-  let whole = lift2 ( ^ ) sign rest in
-  whole
-  >>= fun str ->
-  match Stdlib.int_of_string_opt str with
+  let* whole = lift2 ( ^ ) sign rest in
+  match Stdlib.int_of_string_opt whole with
   | Some n -> return (Int n)
   | None -> fail "Integer value exceeds the allowable range for the int type"
 ;;
@@ -47,7 +46,8 @@ let varname =
     (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'')
      >>= function
      | "" ->
-       take_while1 (fun ch -> Char.is_alpha ch || Char.is_digit ch || Char.equal ch '_')
+       take_while1 (fun ch ->
+         Char.is_alpha ch || Char.is_digit ch || Char.equal ch '_' || Char.equal ch '\'')
        >>= fun str ->
        if is_keyword str
        then fail "Variable name conflicts with a keyword"
@@ -55,9 +55,10 @@ let varname =
      | _ -> fail "Variable name must not start with a digit")
 ;;
 
-let pvar = varname >>| fun x -> PVar x
-let pconst = const >>| fun x -> PConst x
-let ppattern = choice [ pconst; pvar ]
+let pat_var = varname >>| fun x -> PVar x
+let pat_const = const >>| fun x -> PConst x
+let pat_any = pstoken "_" *> return PAny
+let ppattern = choice [ pat_const; pat_var; pat_any ]
 
 (*------------------Binary operators-----------------*)
 
@@ -81,6 +82,14 @@ let relation =
     ]
 ;;
 
+let logic = choice [ pbinop And "&&"; pbinop Or "||" ]
+
+(*------------------Unary operators-----------------*)
+
+let punop op token = pwhitespace *> pstoken token *> return (fun e1 -> Eun_op (op, e1))
+let negation = pws1 *> punop Not "not"
+let neg_sign = punop Negative "-"
+
 (*------------------------Expressions----------------------*)
 
 let chain e op =
@@ -88,17 +97,22 @@ let chain e op =
   e >>= go
 ;;
 
+let un_chain e op =
+  let rec go () = op >>= (fun unop -> go () >>= fun e -> return (unop e)) <|> e in
+  go ()
+;;
+
 let plet pexpr =
   let rec pbody pexpr =
     ppattern
     >>= function
-    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun ([ id ], e))
+    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun ([ PVar id ], e))
     | _ -> fail "Only variable patterns are supported"
   in
   pstoken "let"
   *> lift4
        (fun r id e1 e2 -> Elet (r, id, e1, e2))
-       (pstoken "rec " *> return Recursive <|> return Non_recursive)
+       (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
        (pparens varname <|> varname)
        (pstoken "=" *> pexpr <|> pbody pexpr)
        (pstoken "in" *> pexpr <|> return (Econst Unit))
@@ -122,21 +136,27 @@ let pexpr =
     let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
     let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
-    let factor_expr = chain app_expr (mult <|> div) in
+    let un_expr = choice [ un_chain app_expr negation; un_chain app_expr neg_sign ] in
+    let factor_expr = chain un_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
-    choice [let_expr; rel_expr])
+    let log_expr = chain rel_expr logic in
+    choice [ let_expr; log_expr ])
 ;;
 
 let pstructure =
   let pseval = pexpr >>| fun e -> SEval e in
   let psvalue =
-    plet pexpr >>| function
+    plet pexpr
+    >>| function
     | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
     | _ -> failwith "Expected a let expression"
   in
-  choice [psvalue ; pseval]
+  choice [ psvalue; pseval ]
 ;;
 
-let structure : structure t = sep_by (pstoken ";;") pstructure
+let structure : structure t =
+  sep_by (pstoken ";;") pstructure <* (pstoken ";;" <|> pwhitespace)
+;;
+
 let parse_expr str = parse_string ~consume:All structure str

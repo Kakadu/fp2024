@@ -44,6 +44,7 @@ type rec_flag =
 type pattern =
   | PVar of id
   | PConst of const
+  | PAny (* wildcard pattern '_' *)
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -60,7 +61,7 @@ type expr =
   | Elet of rec_flag * id * expr * expr
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
   | Efun_application of expr * expr (* E0 E1, e.g. f x *)
-  | Efun of id list * expr
+  | Efun of pattern list * expr
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1  *)
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
