@@ -1,7 +1,7 @@
 (library
  (name EUsoltsev_lib)
  (public_name EUsoltsev.Lib)
- (modules Ast)
+ (modules Ast Parser)
  (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))

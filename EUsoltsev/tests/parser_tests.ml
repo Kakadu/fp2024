@@ -14,24 +14,24 @@ let parse_test input =
 ;;
 
 let%expect_test "factorial" =
-  parse_test "let rec factorial n = if n < 2 then 1 else n * factorial(n-1);;";
+  parse_test "let rec factorial n = if n < 2 then 1 else n * factorial(n - 1);;";
   [%expect
     {|
-    [(ExpLet (true, (PatVariable "factorial"),  
-        (ExpLambda ([(PatVariable "n")],
-           (ExpBranch (
-              (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2)))),
-              (ExpConst (ConstInt 1)),
-              (Some (ExpBinOper (Multiply, (ExpIdent "n"),
-                       (ExpFunction ((ExpIdent "factorial"),
-                          (ExpFunction ((ExpIdent "n"), (ExpConst (ConstInt -1))
-                             ))
-                          ))
-                       )))
-              ))
-           )),
-        None))
-      ]
+  [(ExpLet (true, (PatVariable "factorial"),
+      (ExpLambda ([(PatVariable "n")],
+         (ExpBranch (
+            (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2)))),
+            (ExpConst (ConstInt 1)),
+            (Some (ExpBinOper (Multiply, (ExpIdent "n"),
+                     (ExpFunction ((ExpIdent "factorial"),
+                        (ExpBinOper (Minus, (ExpIdent "n"),
+                           (ExpConst (ConstInt 1))))
+                        ))
+                     )))
+            ))
+         )),
+      None))
+    ]  
 |}]
 ;;
 
