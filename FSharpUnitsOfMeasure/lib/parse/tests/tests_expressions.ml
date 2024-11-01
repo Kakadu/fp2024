@@ -257,6 +257,37 @@ let%expect_test "parse a+b*c" =
          )) |}]
 ;;
 
+
+(************************** Anon functions **************************)
+
+let%expect_test "parse anon function with 0 arguments should fail" =
+  pp pp_expression parse_expr {| fun -> e |};
+  [%expect
+    {| : no more choices |}]
+;;
+
+let%expect_test "parse anon function with 1 argument" =
+  pp pp_expression parse_expr {| fun x -> e |};
+  [%expect
+    {| (Expr_fun ((Pattern_ident "x"), (Expr_ident_or_op "e"))) |}]
+;;
+
+let%expect_test "parse anon function with 2 arguments" =
+  pp pp_expression parse_expr {| fun x y -> e |};
+  [%expect
+    {|
+    (Expr_fun ((Pattern_ident "x"),
+       (Expr_fun ((Pattern_ident "y"), (Expr_ident_or_op "e"))))) |}]
+;;
+
+let%expect_test "parse anon function chain argument" =
+  pp pp_expression parse_expr {| fun x -> fun y -> e |};
+  [%expect
+    {|
+      (Expr_fun ((Pattern_ident "x"),
+         (Expr_fun ((Pattern_ident "y"), (Expr_ident_or_op "e"))))) |}]
+;;
+
 (************************** Parentheses **************************)
 
 let%expect_test "parse ident inside parentheses" =
