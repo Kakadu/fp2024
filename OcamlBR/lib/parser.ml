@@ -24,13 +24,7 @@ let psqparens p = pstoken "[" *> p <* pstoken "]"
 
 (*-------------------------Constants/Variables-------------------------*)
 
-let pint =
-  let sign = choice [ pstoken "-"; pstoken "+"; pstoken "" ] in
-  let rest = take_while1 Char.is_digit in
-  let* whole = lift2 ( ^ ) sign rest in
-  match Stdlib.int_of_string_opt whole with
-  | Some n -> return (Int n)
-  | None -> fail "Integer value exceeds the allowable range for the int type"
+let pint = pwhitespace *> take_while1 Char.is_digit >>| fun n -> (Int(int_of_string n))
 ;;
 
 let pbool =
@@ -90,6 +84,7 @@ let logic = choice [ pbinop And "&&"; pbinop Or "||" ]
 let punop op token = pwhitespace *> pstoken token *> return (fun e1 -> Eun_op (op, e1))
 let negation = pws1 *> punop Not "not"
 let neg_sign = punop Negative "-"
+let pos_sign = punop Positive "+"
 
 (*------------------------Expressions----------------------*)
 
@@ -149,11 +144,13 @@ let pbranch pexpr =
 
 let pexpr =
   fix (fun expr ->
-    let atom_expr = choice [ pEconst; pEvar; pparens expr; pElist expr; pEtuple expr; pEfun expr ] in
+    let atom_expr =
+      choice [ pEconst; pEvar; pparens expr; pElist expr; pEtuple expr; pEfun expr ]
+    in
     let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
     let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
-    let un_expr = choice [ un_chain app_expr negation; un_chain app_expr neg_sign ] in
+    let un_expr = choice [ un_chain app_expr negation; un_chain app_expr neg_sign; un_chain app_expr pos_sign ] in
     let factor_expr = chain un_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in

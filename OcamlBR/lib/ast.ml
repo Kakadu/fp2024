@@ -27,6 +27,7 @@ type bin_op =
 
 type un_op =
   | Negative
+  | Positive
   | Not
 (* unary minus, logical NOT *)
 [@@deriving show { with_path = false }]
