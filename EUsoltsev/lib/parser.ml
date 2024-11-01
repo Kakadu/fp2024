@@ -6,8 +6,6 @@ open Ast
 open Base
 open Angstrom
 
-let parse input = parse_string ~consume:All input
-
 let is_keyword = function
   | "let" | "match" | "in" | "if" | "then" | "else" | "fun" | "rec" | "true" | "false" ->
     true
@@ -37,7 +35,7 @@ let parse_parens p = token "(" *> p <* token ")"
 let parse_const_int =
   let sign = choice [ token "+"; token "-"; token "" ] in
   let num = take_while1 Char.is_digit in
-  lift2 (fun s n -> ConstInt (int_of_string (s ^ n))) sign num
+  lift2 (fun s n -> ConstInt (Stdlib.int_of_string_opt (s ^ n))) sign num
 ;;
 
 let parse_const_bool =
