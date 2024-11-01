@@ -18,6 +18,7 @@ let is_keyword = function
   | "if"
   | "then"
   | "else"
+  | "and"
   | "true"
   | "false" -> true
   | _ -> false
@@ -153,7 +154,7 @@ let pelet pe =
   lift3
     elet
     (token "let" *> parse_rec_flag)
-    (both pattern (lift2 efunf (many pattern <* token "=") pe))
+    (sep_by (token "and") (both pattern (lift2 efunf (many pattern <* token "=") pe)))
     (token "in" *> pe)
 ;;
 
@@ -185,13 +186,15 @@ let expr =
 
 (*--------------------------- Structure ---------------------------*)
 
+let pbinding_list = None
+
 let pstructure =
   let pseval = expr >>| fun e -> SEval e in
   let psvalue =
     lift2
       (fun f b -> SValue (f, b))
       (token "let" *> parse_rec_flag)
-      (both pattern (lift2 efunf (many pattern <* token "=") expr))
+      (sep_by (token "and") (both pattern (lift2 efunf (many pattern <* token "=") expr)))
   in
   choice [ pseval; psvalue ]
 ;;

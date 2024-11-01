@@ -42,12 +42,12 @@ let%test _ = parse_to_bool "4 * 4"
 
 let%expect_test _ =
   parse_to_unit "let x = 5";
-  [%expect {| [(SValue (NonRec, ((PVar "x"), (ExprLiteral (IntLiteral 5)))))] |}]
+  [%expect {| [(SValue (NonRec, [((PVar "x"), (ExprLiteral (IntLiteral 5)))]))] |}]
 ;;
 
 let%expect_test _ =
   parse_to_unit "let feets = 5280;;";
-  [%expect {| [(SValue (NonRec, ((PVar "feets"), (ExprLiteral (IntLiteral 5280)))))] |}]
+  [%expect {| [(SValue (NonRec, [((PVar "feets"), (ExprLiteral (IntLiteral 5280)))]))] |}]
 ;;
 
 let%expect_test _ =
@@ -55,13 +55,13 @@ let%expect_test _ =
   [%expect
     {|
      [(SValue (NonRec,
-         ((PVar "lie"), (ExprLiteral (StringLiteral "i love Ocaml")))))
+         [((PVar "lie"), (ExprLiteral (StringLiteral "i love Ocaml")))]))
        ] |}]
 ;;
 
 let%expect_test _ =
   parse_to_unit "let list = []";
-  [%expect {| [(SValue (NonRec, ((PVar "list"), (ExprLiteral NilLiteral))))] |}]
+  [%expect {| [(SValue (NonRec, [((PVar "list"), (ExprLiteral NilLiteral))]))] |}]
 ;;
 
 let%expect_test _ =
@@ -69,10 +69,11 @@ let%expect_test _ =
   [%expect
     {|
     [(SValue (NonRec,
-        ((PVar "t"),
-         (ExprTuple
-            [(ExprLiteral (IntLiteral 1)); (ExprLiteral (StringLiteral "2"));
-              (ExprLiteral (IntLiteral 3))]))
+        [((PVar "t"),
+          (ExprTuple
+             [(ExprLiteral (IntLiteral 1)); (ExprLiteral (StringLiteral "2"));
+               (ExprLiteral (IntLiteral 3))]))
+          ]
         ))
       ] |}]
 ;;
@@ -128,24 +129,25 @@ let%expect_test _ =
   [%expect
     {|
      [(SValue (Rec,
-         ((PVar "fibo"),
-          (ExprFun ((PVar "n"),
-             (ExprIf (
-                (ExprBinOperation (Lte, (ExprVariable "n"),
-                   (ExprLiteral (IntLiteral 1)))),
-                (ExprVariable "n"),
-                (Some (ExprBinOperation (Add,
-                         (ExprApply ((ExprVariable "fibo"),
-                            (ExprBinOperation (Sub, (ExprVariable "n"),
-                               (ExprLiteral (IntLiteral 1))))
-                            )),
-                         (ExprApply ((ExprVariable "fibo"),
-                            (ExprBinOperation (Sub, (ExprVariable "n"),
-                               (ExprLiteral (IntLiteral 2))))
-                            ))
-                         )))
-                ))
-             )))
+         [((PVar "fibo"),
+           (ExprFun ((PVar "n"),
+              (ExprIf (
+                 (ExprBinOperation (Lte, (ExprVariable "n"),
+                    (ExprLiteral (IntLiteral 1)))),
+                 (ExprVariable "n"),
+                 (Some (ExprBinOperation (Add,
+                          (ExprApply ((ExprVariable "fibo"),
+                             (ExprBinOperation (Sub, (ExprVariable "n"),
+                                (ExprLiteral (IntLiteral 1))))
+                             )),
+                          (ExprApply ((ExprVariable "fibo"),
+                             (ExprBinOperation (Sub, (ExprVariable "n"),
+                                (ExprLiteral (IntLiteral 2))))
+                             ))
+                          )))
+                 ))
+              )))
+           ]
          ))
        ] |}]
 ;;
@@ -155,28 +157,29 @@ let%expect_test _ =
   [%expect
     {|
      [(SValue (Rec,
-         ((PVar "fib_loop"),
-          (ExprFun ((PVar "m"),
-             (ExprFun ((PVar "n"),
-                (ExprFun ((PVar "i"),
-                   (ExprIf (
-                      (ExprBinOperation (Eq, (ExprVariable "i"),
-                         (ExprLiteral (IntLiteral 0)))),
-                      (ExprVariable "m"),
-                      (Some (ExprApply (
-                               (ExprApply (
-                                  (ExprApply ((ExprVariable "fib_loop"),
-                                     (ExprVariable "n"))),
-                                  (ExprBinOperation (Add, (ExprVariable "n"),
-                                     (ExprVariable "m")))
-                                  )),
-                               (ExprBinOperation (Sub, (ExprVariable "i"),
-                                  (ExprLiteral (IntLiteral 1))))
-                               )))
-                      ))
-                   ))
-                ))
-             )))
+         [((PVar "fib_loop"),
+           (ExprFun ((PVar "m"),
+              (ExprFun ((PVar "n"),
+                 (ExprFun ((PVar "i"),
+                    (ExprIf (
+                       (ExprBinOperation (Eq, (ExprVariable "i"),
+                          (ExprLiteral (IntLiteral 0)))),
+                       (ExprVariable "m"),
+                       (Some (ExprApply (
+                                (ExprApply (
+                                   (ExprApply ((ExprVariable "fib_loop"),
+                                      (ExprVariable "n"))),
+                                   (ExprBinOperation (Add, (ExprVariable "n"),
+                                      (ExprVariable "m")))
+                                   )),
+                                (ExprBinOperation (Sub, (ExprVariable "i"),
+                                   (ExprLiteral (IntLiteral 1))))
+                                )))
+                       ))
+                    ))
+                 ))
+              )))
+           ]
          ))
        ] |}]
 ;;
@@ -187,20 +190,21 @@ let%expect_test _ =
   [%expect
     {|
 [(SValue (Rec,
-    ((PVar "fact"),
-     (ExprFun ((PVar "n"),
-        (ExprIf (
-           (ExprBinOperation (Lte, (ExprVariable "n"),
-              (ExprLiteral (IntLiteral 1)))),
-           (ExprLiteral (IntLiteral 1)),
-           (Some (ExprBinOperation (Mul, (ExprVariable "n"),
-                    (ExprApply ((ExprVariable "fact"),
-                       (ExprBinOperation (Sub, (ExprVariable "n"),
-                          (ExprLiteral (IntLiteral 1))))
-                       ))
-                    )))
-           ))
-        )))
+    [((PVar "fact"),
+      (ExprFun ((PVar "n"),
+         (ExprIf (
+            (ExprBinOperation (Lte, (ExprVariable "n"),
+               (ExprLiteral (IntLiteral 1)))),
+            (ExprLiteral (IntLiteral 1)),
+            (Some (ExprBinOperation (Mul, (ExprVariable "n"),
+                     (ExprApply ((ExprVariable "fact"),
+                        (ExprBinOperation (Sub, (ExprVariable "n"),
+                           (ExprLiteral (IntLiteral 1))))
+                        ))
+                     )))
+            ))
+         )))
+      ]
     ))
   ]
 |}]

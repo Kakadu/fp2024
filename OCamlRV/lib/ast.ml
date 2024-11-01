@@ -55,7 +55,8 @@ type expression =
   | ExprIf of expression * expression * expression option
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of expression * case list (** match e with p_1 -> e_1 |...| p_n -> e_n *)
-  | ExprLet of rec_flag * binding * expression (** [ExprLet(rec_flag, (p_1, e_1), e)] *)
+  | ExprLet of rec_flag * binding list * expression
+  (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of expression list (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
@@ -71,7 +72,7 @@ and binding = pattern * expression [@@deriving show { with_path = false }]
 
 type structure_item =
   | SEval of expression
-  | SValue of rec_flag * binding
+  | SValue of rec_flag * binding list
   (** [SValue(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)])] *)
 [@@deriving show { with_path = false }]
 
