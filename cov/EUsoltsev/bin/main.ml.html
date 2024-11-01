@@ -48,8 +48,9 @@
 <a id="L24"></a><span > </span>
 <a id="L25"></a><span > </span>
 <a id="L26"></a><span > </span>
-<a id="L27"></a><span class="visited"> </span>
-<a id="L28"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span class="visited"> </span>
+<a id="L29"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -82,6 +83,7 @@
 <a href="#L26">26</a>
 <a href="#L27">27</a>
 <a href="#L28">28</a>
+<a href="#L29">29</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Danil Usoltsev *)
 
@@ -90,26 +92,27 @@
 open EUsoltsev_lib.Ast
 
 let () =
-  let factorial : expr =
-    ExpLet
-      ( true
-      , PatVariable "factorial"
-      , ExpLambda
-          ( [ PatVariable "n" ]
-          , ExpIfThenElse
-              ( ExpBinOper (LowerThan, ExpIdent "n", ExpConst (ConstInt 2))
-              , ExpConst (ConstInt 1)
-              , Some
-                  (ExpBinOper
-                     ( Multiply
-                     , ExpIdent "n"
-                     , ExpFunction
-                         ( ExpIdent "factorial"
-                         , ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ) )) )
-          )
-      , ExpIdent "factorial" )
+  let factorial : program =
+    [ ExpLet
+        ( true
+        , PatVariable "factorial"
+        , ExpLambda
+            ( [ PatVariable "n" ]
+            , ExpBranch
+                ( ExpBinOper (LowerThan, ExpIdent "n", ExpConst (ConstInt 2))
+                , ExpConst (ConstInt 1)
+                , Some
+                    (ExpBinOper
+                       ( Multiply
+                       , ExpIdent "n"
+                       , ExpFunction
+                           ( ExpIdent "factorial"
+                           , ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ) ))
+                ) )
+        , None )
+    ]
   in
-  print_endlin<span data-count="1">e</span> (show_exp<span data-count="1">r</span> factorial)
+  print_endlin<span data-count="1">e</span> (show_progra<span data-count="1">m</span> factorial)
 ;;
 </code></pre>
       </div>
