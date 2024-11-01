@@ -35,7 +35,7 @@ let parse_parens p = token "(" *> p <* token ")"
 let parse_const_int =
   let sign = choice [ token "+"; token "-"; token "" ] in
   let num = take_while1 Char.is_digit in
-  lift2 (fun s n -> ConstInt (int_of_string (s ^ n))) sign num
+  lift2 (fun s n -> ConstInt (Int.of_string (s ^ n))) sign num
 ;;
 
 let parse_const_bool =
