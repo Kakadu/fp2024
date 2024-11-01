@@ -62,7 +62,7 @@ let parse_expr_app parse_expr =
   app
 ;;
 
-let parse_expr_fun parse_pat parse_expr =
+let parse_expr_lambda parse_expr =
   skip_token "fun"
   *>
   let* args = many1 parse_pat in
@@ -76,13 +76,52 @@ let parse_expr_fun parse_pat parse_expr =
   return (wrap args)
 ;;
 
+let parse_binding_val parse_expr =
+  let* name = parse_pat in
+  skip_ws
+  *> char '='
+  *> skip_ws
+  *>
+  let* expr = parse_expr in
+  return (Binding (name, expr))
+;;
+
+let parse_binding_fun parse_expr =
+  let* name = parse_pat_ident (* ops are not yet supported *) in
+  let* args = many1 (skip_ws *> parse_pat) in
+  skip_token "="
+  *>
+  let* expr = parse_expr in
+  let rec wrap = function
+    | h :: tl -> Expr_fun (h, wrap tl)
+    | [] -> expr
+  in
+  return (Binding (name, wrap args))
+;;
+
+let parse_binding parse_expr =
+  parse_binding_val parse_expr <|> parse_binding_fun parse_expr
+;;
+
+let parse_expr_let parse_expr =
+  skip_token "let"
+  *>
+  let* rec_flag = option Nonrecursive (skip_token "rec" *> return Recursive) in
+  let* bindings = sep_by1 (skip_token "and") (parse_binding parse_expr) in
+  skip_token "in"
+  *>
+  let* last_expr = parse_expr in
+  return (Expr_let (rec_flag, bindings, last_expr))
+;;
+
 let parse_expr =
   fix (fun parse_expr ->
     let expr =
       choice
         [ parse_expr_paren parse_expr
         ; parse_expr_ite parse_expr
-        ; parse_expr_fun parse_pat parse_expr
+        ; parse_expr_lambda parse_expr
+        ; parse_expr_let parse_expr
         ; parse_expr_const
         ; parse_expr_ident
         ]
