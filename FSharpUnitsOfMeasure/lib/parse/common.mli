@@ -35,5 +35,5 @@ val is_ident_start_char : char -> bool
 (** [parse_ident] parses identificator and returns it *)
 val parse_ident : string t
 
-(** [parse_const] parses constant and returns it *)
+(** [parse_const] parses constant and returns it. Cannot parse whitespaces. *)
 val parse_const : constant t
