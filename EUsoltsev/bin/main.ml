@@ -2,14 +2,28 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open EUsoltsev_lib
-open Ast
-open Parser
-open Printf
+open EUsoltsev_lib.Ast
 
-let parse_test input =
-  match parse input with
-  | Ok ast -> printf "%s\n" (show_program ast)
-  | Error fail -> printf "Ошибка: %s\n" fail
-
-let() = parse_test "let rec factorial n = if n < 2 then 1 else n * factorial(n - 1);;"
+let () =
+  let factorial : program =
+    [ ExpLet
+        ( true
+        , PatVariable "factorial"
+        , ExpLambda
+            ( [ PatVariable "n" ]
+            , ExpBranch
+                ( ExpBinOper (LowerThan, ExpIdent "n", ExpConst (ConstInt 2))
+                , ExpConst (ConstInt 1)
+                , Some
+                    (ExpBinOper
+                       ( Multiply
+                       , ExpIdent "n"
+                       , ExpFunction
+                           ( ExpIdent "factorial"
+                           , ExpBinOper (Minus, ExpIdent "n", ExpConst (ConstInt 1)) ) ))
+                ) )
+        , None )
+    ]
+  in
+  print_endline (show_program factorial)
+;;
