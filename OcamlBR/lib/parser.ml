@@ -20,6 +20,7 @@ let pws1 = take_while1 Char.is_whitespace
 let pstoken s = pwhitespace *> string s
 let ptoken s = pwhitespace *> s
 let pparens p = pstoken "(" *> p <* pstoken ")"
+let psqparens p = pstoken "[" *> p <* pstoken "]"
 
 (*-------------------------Constants/Variables-------------------------*)
 
@@ -118,6 +119,22 @@ let plet pexpr =
        (pstoken "in" *> pexpr <|> return (Econst Unit))
 ;;
 
+let pEfun pexpr =
+  pstoken "fun" *> many1 ppattern
+  >>= fun args -> pstoken "->" *> pexpr >>| fun body -> Efun (args, body)
+;;
+
+let pElist pexpr =
+  let semicols = pstoken ";" in
+  (* let pexpr = psqparens pexpr in *)
+  psqparens (sep_by semicols pexpr <* (semicols <|> pwhitespace) >>| fun x -> Elist x)
+;;
+
+let pEtuple pexpr =
+  let commas = pstoken "," in
+  pparens (sep_by commas pexpr <* (commas <|> pwhitespace) >>| fun x -> Etuple x)
+;;
+
 let pEconst = const >>| fun x -> Econst x
 let pEvar = varname >>| fun x -> Evar x
 let pEapp e = chain e (return (fun e1 e2 -> Efun_application (e1, e2)))
@@ -132,7 +149,7 @@ let pbranch pexpr =
 
 let pexpr =
   fix (fun expr ->
-    let atom_expr = choice [ pEconst; pEvar; pparens expr ] in
+    let atom_expr = choice [ pEconst; pEvar; pparens expr; pElist expr; pEtuple expr; pEfun expr ] in
     let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
     let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
