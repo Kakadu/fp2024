@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type ident = string [@@deriving show { with_path = false }]
-and is_rec = bool [@@deriving show { with_path = false }]
+type is_rec = bool [@@deriving show { with_path = false }]
 
 type bin_oper =
   | Plus (* [+] *)
@@ -20,7 +20,7 @@ type bin_oper =
   | NotEqual (* [<>] *)
 [@@deriving show { with_path = false }]
 
-and unar_oper =
+type unar_oper =
   | Negative (* [-x] *)
   | Not (* [not x]*)
 [@@deriving show { with_path = false }]
@@ -33,25 +33,24 @@ type const =
 
 type pattern =
   | PatVariable of ident (* [x] *)
-  | ParConst of const (* [21] or [true] or [false] *)
-  | PatTuple of pattern list (* (x1; x2 ... xn) *)
-  | PatOption of pattern option (* Matching with an optional value (Some/None) *)
+  | PatConst of const (* [21] or [true] or [false] *)
+  | PatTuple of pattern * pattern * pattern list (* (x1; x2 ... xn) *)
 [@@deriving show { with_path = false }]
 
 type expr =
-  | ExpIfThenElse of expr * expr * expr option
-  (* ExpIfThenElse (x > 5, 10, 20(may return null) *)
   | ExpIdent of ident (* ExpIdent "x" *)
   | ExpConst of const (* ExpConst (ConstInt 666) *)
+  | ExpBranch of expr * expr * expr option
+  (* ExpIfThenElse (x > 5, 10, 20(may return null) *)
   | ExpBinOper of bin_oper * expr * expr (* ExpBinOper(Plus, 1, 2) *)
   | ExpUnarOper of unar_oper * expr (* ExpUnarOper(not, x)*)
-  | ExpTuple of expr list (* ExpTuple[x1; x2 .. xn] *)
+  | ExpTuple of expr * expr * expr list (* ExpTuple[x1; x2 .. xn] *)
   | ExpList of expr list (* ExpList[x1; x2 .. xn] *)
   | ExpLambda of pattern list * expr (* ExpLambda([x;y;z], x+y+z)*)
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
-  | ExpMatch of expr * (pattern * expr) list
-  (* ExpMatch (x, [PatVariable "y", 10; PatConst (ConstInt 0), 0]) *)
-  | ExpLet of is_rec * pattern * expr * expr
+  | ExpLet of is_rec * pattern * expr * expr option
 (* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
 (* let x = 10 <=> ExpLet(false, "x", 10, "x")*)
 [@@deriving show { with_path = false }]
+
+type program = expr list [@@deriving show { with_path = false }]
