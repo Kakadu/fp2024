@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open EUsoltsev_lib
-
 open Ast
 open Parser
 open Printf

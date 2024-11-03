@@ -59,7 +59,7 @@ let parse_ident =
     take_while (fun ch ->
       is_lowercase ch || is_uppercase ch || is_digit ch || Char.equal ch '_')
   in
-  token1 @@ lift2 (^) parse_first_char parse_other_chars
+  token1 @@ lift2 ( ^ ) parse_first_char parse_other_chars
   >>= fun s -> if is_keyword s then fail "It is not identifier" else return s
 ;;
 
