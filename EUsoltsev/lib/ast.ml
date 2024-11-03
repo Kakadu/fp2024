@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type ident = string [@@deriving show { with_path = false }]
-and is_rec = bool [@@deriving show { with_path = false }]
+type is_rec = bool [@@deriving show { with_path = false }]
 
 type bin_oper =
   | Plus (* [+] *)
@@ -20,7 +20,7 @@ type bin_oper =
   | NotEqual (* [<>] *)
 [@@deriving show { with_path = false }]
 
-and unar_oper =
+type unar_oper =
   | Negative (* [-x] *)
   | Not (* [not x]*)
 [@@deriving show { with_path = false }]

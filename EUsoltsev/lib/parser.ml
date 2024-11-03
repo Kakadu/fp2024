@@ -53,13 +53,13 @@ let parse_unar_oper = choice [ token "-" *> return Negative; token "not" *> retu
 let parse_ident =
   let parse_first_char =
     satisfy (fun ch -> is_lowercase ch || is_uppercase ch || Char.equal ch '_')
-    >>| fun ch -> Char.escaped ch
+    >>| Char.escaped
   in
   let parse_other_chars =
     take_while (fun ch ->
       is_lowercase ch || is_uppercase ch || is_digit ch || Char.equal ch '_')
   in
-  token1 @@ lift2 (fun x y -> x ^ y) parse_first_char parse_other_chars
+  token1 @@ lift2 (^) parse_first_char parse_other_chars
   >>= fun s -> if is_keyword s then fail "It is not identifier" else return s
 ;;
 
@@ -84,7 +84,7 @@ let parse_pattern =
 
 let parse_left_associative expr oper =
   let rec go acc = lift2 (fun f x -> f acc x) oper expr >>= go <|> return acc in
-  expr >>= fun init -> go init
+  expr >>= go
 ;;
 
 let parse_expr_bin_oper parse_bin_op tkn =
