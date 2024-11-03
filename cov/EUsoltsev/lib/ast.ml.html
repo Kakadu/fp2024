@@ -150,7 +150,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 <span data-count="0">t</span>ype ident = <span data-count="30">s</span>tring [@@deriving show { with_path = false }]
-<span data-count="0">a</span>nd is_rec = <span data-count="9">b</span>ool [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype is_rec = <span data-count="9">b</span>ool [@@deriving show { with_path = false }]
 
 <span data-count="0">t</span>ype bin_oper =
   | Plus (* [+] *)
@@ -167,7 +167,7 @@
   | NotEqual (* [&lt;&gt;] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="0">a</span>nd unar_oper =
+<span data-count="0">t</span>ype unar_oper =
   | Negative (* [-x] *)
   | Not (* [not x]*)
 [@@deriving show { with_path = false }]
