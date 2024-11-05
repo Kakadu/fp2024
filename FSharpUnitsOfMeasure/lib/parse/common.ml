@@ -61,33 +61,22 @@ let parse_ident =
   else return ident
 ;;
 
-let parse_const_int =
+let parse_char = char '\'' *> any_char <* char '\''
+let parse_string = char '"' *> take_till (Char.equal '"') <* char '"'
+let parse_bool = string "true" <|> string "false" >>| Bool.of_string
+
+let parse_int =
   let* int = take_while1 Char.is_digit >>| Int.of_string in
   let* next_char = peek_char in
   match next_char with
   | Some x when Char.equal x '.' -> fail "Cannot parse int, met float"
-  | _ -> return (Const_int int)
-;;
-
-let parse_const_char =
-  let* char = char '\'' *> any_char <* char '\'' in
-  return (Const_char char)
-;;
-
-let parse_const_string =
-  let* str = char '"' *> take_till (Char.equal '"') <* char '"' in
-  return (Const_string str)
-;;
-
-let parse_const_bool =
-  let* bool = string "true" <|> string "false" >>| Bool.of_string in
-  return (Const_bool bool)
+  | _ -> return int
 ;;
 
 (* Floats can be in following forms:
    [0-9]+ . [0-9]* [f|F]
    [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
-let parse_const_float =
+let parse_float =
   let* int_part = take_while1 Char.is_digit in
   let* dot = option "" (string ".") in
   let* fract_part =
@@ -108,15 +97,15 @@ let parse_const_float =
   in
   let* _ = option "" (string "f" <|> string "F") in
   let float = Float.of_string (int_part ^ dot ^ fract_part ^ e ^ exp_sign ^ exp) in
-  return (Const_float float)
+  return float
 ;;
 
 let parse_const =
   choice
-    [ parse_const_int
-    ; parse_const_float
-    ; parse_const_char
-    ; parse_const_string
-    ; parse_const_bool
+    [ (parse_char >>| fun c -> Const_char c)
+    ; (parse_string >>| fun s -> Const_string s)
+    ; (parse_bool >>| fun b -> Const_bool b)
+    ; (parse_int >>| fun i -> Const_int i)
+    ; (parse_float >>| fun f -> Const_float f)
     ]
 ;;
