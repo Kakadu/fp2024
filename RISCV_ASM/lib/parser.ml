@@ -300,6 +300,60 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_immediate12)
+       ; string "ori"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Ori (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "andi"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Andi (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "slli"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Slli (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "srli"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Srli (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "srai"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Srai (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "slti"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Slti (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "sltiu"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Sltiu (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "lb"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Lb (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "lh"
+         *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Lh (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
        ; string "li"
          *> lift2
               (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
