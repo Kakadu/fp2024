@@ -294,7 +294,7 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_immediate12)
-       ; string "Xori"
+       ; string "xori"
          *> lift3
               (fun r1 r2 imm -> InstructionExpr (Xori (r1, r2, imm)))
               parse_register
