@@ -234,6 +234,72 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_register)
+       ; string "sub"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sub (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "xor"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Xor (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "or"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Or (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "and"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (And (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sll"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sll (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "srl"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Srl (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sra"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sra (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "slt"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Slt (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sltu"
+       *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sltu (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "addi"
+       *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Addi (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
+       ; string "Xori"
+       *> lift3
+              (fun r1 r2 imm -> InstructionExpr (Xori (r1, r2, imm)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_immediate12)
        ; string "li"
          *> lift2
               (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
@@ -286,18 +352,6 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_immediate12)
               (char '(' *> parse_register <* char ')')
-       ; string "addi"
-         *> lift3
-              (fun r1 r2 imm -> InstructionExpr (Addi (r1, r2, imm)))
-              parse_register
-              (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
-       ; string "xor"
-         *> lift3
-              (fun r1 r2 r3 -> InstructionExpr (Xor (r1, r2, r3)))
-              parse_register
-              (char ',' *> parse_register)
-              (char ',' *> parse_register)
        ; string "ret" *> return (InstructionExpr Ret)
        ; string "jr" *> lift (fun r1 -> InstructionExpr (Jr r1)) parse_register
        ; string "j" *> lift (fun adr -> InstructionExpr (J adr)) parse_address20
