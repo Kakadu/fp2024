@@ -131,9 +131,16 @@ let pifexpr pexpr =
   lift3 (fun condition thenexpr elseexpr -> Exp_if(condition, thenexpr, elseexpr))
   (token "if" *> pass_ws *> pexpr) (token "then" *> pass_ws *> pexpr ) 
   (option None (token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
+;;
 
 let papplyexpr pexpr =
-  lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr (   pexpr)
+  let rec collect_args acc =
+    let* arg = pexpr in
+    let* args = option [] (collect_args (arg :: acc)) in
+    return (arg :: args)
+  in
+  (* We ensure to only apply if we are not dealing with a binary operation *)
+  lift2 (fun f args -> Exp_apply(f, args)) (pparens pexpr <|> pidentexpr) (collect_args [])
 ;;
 
 let pfunexpr pexpr = 
@@ -146,10 +153,8 @@ let pfunexpr pexpr =
 ;;
 
 let parsebinop binoptoken =
-  let parse_operator = pass_ws *> token binoptoken in
-  lift (fun op e1 e2 -> Exp_apply (Exp_ident op, Exp_tuple (e1, e2, []))) parse_operator
+  pass_ws *> token binoptoken *> return (fun e1 e2 -> Exp_apply (Exp_ident binoptoken, [Exp_tuple (e1, e2, [])]))
 ;;
-
 
 let padd = parsebinop "+"
 let psub = parsebinop "-"
