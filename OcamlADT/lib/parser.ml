@@ -98,14 +98,18 @@ let pidentexpr = lift (fun ident -> if is_not_keyword ident then Exp_ident(ident
 let pany = token "_" *> return Pat_any
 let pvar = lift (fun ident -> Pat_var ident) pident
 let ppattern =
-  pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
+  let parse = 
+    pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
+  in debug_parser "pattern_parser" parse
 
 (*                   Expressions                         *)
 
 
 let pvalue_binding pexpr =
   let parse_pattern_and_expr =
-    lift2 (fun pat expr -> {pat;expr}) ppattern (token "=" *> pexpr)
+    let expr_parser = 
+      pexpr
+    in lift2 (fun pat expr -> {pat;expr}) ppattern (token "=" *> pass_ws *> debug_parser "expr_parser" expr_parser)
   in
   debug_parser "value_binding" parse_pattern_and_expr
 ;;
@@ -113,11 +117,11 @@ let prec_flag = token "rec" *> return Recursive <|> return Nonrecursive
 ;;
 let pletexpr pexpr =
   lift3 (fun rec_flag value_binding expr -> Exp_let(rec_flag, value_binding, expr))
-  (token "let" *> pass_ws *> prec_flag) (pass_ws *> many1(pvalue_binding pexpr)) (pass_ws *> token "in" *> pexpr)
+  (token "let" *> pass_ws *> prec_flag) (pass_ws *> many1(pvalue_binding pexpr))  (token "in" *> pass_ws *> pexpr)
 ;;
 
 (*rewrite*) 
-  let ptupleexpr =
+let ptupleexpr =
   let* _ = token "(" in
   let* expression1 = pidentexpr in
   let* _ = token "," in
@@ -126,6 +130,7 @@ let pletexpr pexpr =
   let* expressiontl = sep_by (char ',') pidentexpr in
   let* _ = token ")" in
   return (Exp_tuple(expression1, expression2, expressiontl))
+;;
 
 let pifexpr pexpr =
   lift3 (fun condition thenexpr elseexpr -> Exp_if(condition, thenexpr, elseexpr))
@@ -206,16 +211,16 @@ let pseval = lift (fun expr -> Str_eval(expr)) pexpr
 let psvalue = 
   lift2 (fun rec_flag 
   value_binding -> Str_value (rec_flag, value_binding))
-  prec_flag (many (pvalue_binding pexpr))
-;;    
+  (token "let" *> pass_ws *> prec_flag) (many (pvalue_binding pexpr))
+;;
 
 (** It applies Str_eval to output of expression parser *)
 (* let pstr_item =
   pseval <|> psvalue *)
 
-  let pstr_item =
-    debug_parser "pseval" pseval
-    <|> debug_parser "psvalue" psvalue
+let pstr_item =
+  debug_parser "psvalue" psvalue
+  <|> debug_parser "pseval" pseval
 
 (** It applies Str_eval to output of expression parser *)
 
