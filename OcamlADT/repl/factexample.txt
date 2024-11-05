@@ -1,1 +1,1 @@
-let rec fact n =\n if n = 0 then 1\n else n * fact (n - 1)\n;;
+let x = 5;;

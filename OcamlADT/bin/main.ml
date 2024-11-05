@@ -41,4 +41,4 @@ open Ocamladt_lib.Parser
   in
   print_endline (show_program factorial_ast) *)
 
-  (* let () = print_endline( ((parse_fact "let rec fact n = if n = 0 then 1 else n * fact (n - 1);;") |> fun _-> "hhh")) *)
+let () = print_endline(show_program(parse_str("-111 5")))

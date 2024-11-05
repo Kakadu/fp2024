@@ -206,12 +206,22 @@ let pexpr = fix (fun expr ->
 
 (*                   Structure items                         *)
 
-let pseval = lift (fun expr -> Str_eval(expr)) pexpr
+let pseval = debug_parser "ps_eval" (lift (fun expr -> Str_eval(expr)) pexpr)
 
 let psvalue = 
-  lift2 (fun rec_flag 
-  value_binding -> Str_value (rec_flag, value_binding))
-  (token "let" *> pass_ws *> prec_flag) (many (pvalue_binding pexpr))
+  debug_parser "ps_value" (let check_no_in =
+    let* next = peek_char in
+    match next with
+    | Some 'i' -> 
+      let* _ = string "in" in
+      fail "Unexpected 'in' found after let binding"
+    | _ -> return () 
+  in
+  lift2 (fun rec_flag value_bindings ->
+    Str_value (rec_flag, value_bindings))
+    (token "let" *> pass_ws *> prec_flag)
+    (many1 (pvalue_binding pexpr))
+  <* check_no_in)
 ;;
 
 (** It applies Str_eval to output of expression parser *)
@@ -219,10 +229,7 @@ let psvalue =
   pseval <|> psvalue *)
 
 let pstr_item =
-  debug_parser "psvalue" psvalue
-  <|> debug_parser "pseval" pseval
-
-(** It applies Str_eval to output of expression parser *)
+  psvalue<|> pseval
 
 let pstructure =
   let psemicolon = token ";;" in
