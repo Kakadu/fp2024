@@ -40,8 +40,8 @@ type expression =
   | Exp_fun of pattern * pattern list * expression
   (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
      [fun P1 ... Pn -> E] *)
-  | Exp_apply of expression * expression (** [Pexp_apply(E0, E1)]
-                                             represents [E0 E1] *)
+  | Exp_apply of expression * expression list (** [Pexp_apply(E0, [E1 ; ... ; En])]
+                                             represents [E0 E1 ... En] *)
   | Exp_match of expression * case * case list
   (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
   | Exp_if of expression * expression * expression option (** [if E1 then E2 else E3] *)
