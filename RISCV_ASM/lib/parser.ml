@@ -129,35 +129,20 @@ let parse_register =
        ])
 ;;
 
-let parse_immediate12 = ws_opt (lift (fun imm -> Immediate12 imm) parse_number)
-let parse_immediate20 = ws_opt (lift (fun imm -> Immediate20 imm) parse_number)
-let parse_immediate32 = ws_opt (lift (fun imm -> Immediate32 imm) parse_number)
-
-let parse_immediate_address32 =
-  ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_immediate32)
-;;
-
-let parse_label_address32 = ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
-
-let parse_immediate_address12 =
-  ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_immediate12)
-;;
-
+let parse_immediate12 = ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_number)
+let parse_immediate20 = ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_number)
+let parse_immediate32 = ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_number)
 let parse_label_address12 = ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
-
-let parse_immediate_address20 =
-  ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_immediate20)
-;;
-
 let parse_label_address20 = ws_opt (lift (fun str -> LabelAddress20 str) parse_string)
+let parse_label_address32 = ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
 
 let parse_label_expr =
   ws_opt (lift (fun str -> LabelExpr str) (parse_string <* ws_opt (char ':')))
 ;;
 
-let parse_address12 = ws_opt (choice [ parse_immediate_address12; parse_label_address12 ])
-let parse_address20 = ws_opt (choice [ parse_immediate_address20; parse_label_address20 ])
-let parse_address32 = ws_opt (choice [ parse_immediate_address32; parse_label_address32 ])
+let parse_address12 = ws_opt (choice [ parse_immediate12; parse_label_address12 ])
+let parse_address20 = ws_opt (choice [ parse_immediate20; parse_label_address20 ])
+let parse_address32 = ws_opt (choice [ parse_immediate32; parse_label_address32 ])
 
 let parse_directive =
   ws_opt
@@ -238,7 +223,7 @@ let parse_instruction =
          *> lift2
               (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
               parse_register
-              (char ',' *> parse_immediate32)
+              (char ',' *> parse_address32)
        ; string "mv"
          *> lift2
               (fun r1 r2 -> InstructionExpr (Mv (r1, r2)))
@@ -255,7 +240,7 @@ let parse_instruction =
               (fun r1 r2 imm -> InstructionExpr (Addiw (r1, r2, imm)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "mulw"
          *> lift3
               (fun r1 r2 r3 -> InstructionExpr (Mulw (r1, r2, r3)))
@@ -272,26 +257,26 @@ let parse_instruction =
          *> lift3
               (fun r1 imm r2 -> InstructionExpr (Ld (r1, r2, imm)))
               parse_register
-              (char ',' *> parse_immediate_address12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "sd"
          *> lift3
               (fun r1 imm r2 -> InstructionExpr (Sd (r1, r2, imm)))
               parse_register
-              (char ',' *> parse_immediate_address12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lw"
          *> lift3
               (fun r1 imm r2 -> InstructionExpr (Lw (r1, r2, imm)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "addi"
          *> lift3
               (fun r1 r2 imm -> InstructionExpr (Addi (r1, r2, imm)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "xor"
          *> lift3
               (fun r1 r2 r3 -> InstructionExpr (Xor (r1, r2, r3)))
