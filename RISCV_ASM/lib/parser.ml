@@ -526,9 +526,81 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
+       ; string "slliw"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Slliw (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "srliw"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Srliw (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "sraiw"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Sraiw (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "addw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Addw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "subw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Subw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sllw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sllw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "srlw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Srlw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sraw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sraw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
        ; string "mulw"
          *> lift3
               (fun r1 r2 r3 -> InstructionExpr (Mulw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "divw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Divw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "divuw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Divuw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "remw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Remw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "remwu"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Remwu (r1, r2, r3)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_register)
