@@ -129,34 +129,20 @@ let parse_register =
        ])
 ;;
 
-let parse_immediate12 = ws_opt (lift (fun imm -> Immediate12 imm) parse_number)
-let parse_immediate20 = ws_opt (lift (fun imm -> Immediate20 imm) parse_number)
-let parse_immediate32 = ws_opt (lift (fun imm -> Immediate32 imm) parse_number)
-
-let parse_immediate_address12 =
-  ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_immediate12)
-;;
-
+let parse_immediate12 = ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_number)
+let parse_immediate20 = ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_number)
+let parse_immediate32 = ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_number)
 let parse_label_address12 = ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
-
-let parse_immediate_address20 =
-  ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_immediate20)
-;;
-
-let parse_immediate_address32 =
-  ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_immediate32)
-;;
-
-let parse_label_address32 = ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
 let parse_label_address20 = ws_opt (lift (fun str -> LabelAddress20 str) parse_string)
+let parse_label_address32 = ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
 
 let parse_label_expr =
   ws_opt (lift (fun str -> LabelExpr str) (parse_string <* ws_opt (char ':')))
 ;;
 
-let parse_address12 = ws_opt (choice [ parse_immediate_address12; parse_label_address12 ])
-let parse_address20 = ws_opt (choice [ parse_immediate_address20; parse_label_address20 ])
-let parse_address32 = ws_opt (choice [ parse_immediate_address32; parse_label_address32 ])
+let parse_address12 = ws_opt (choice [ parse_immediate12; parse_label_address12 ])
+let parse_address20 = ws_opt (choice [ parse_immediate20; parse_label_address20 ])
+let parse_address32 = ws_opt (choice [ parse_immediate32; parse_label_address32 ])
 
 let parse_directive =
   ws_opt
@@ -289,105 +275,105 @@ let parse_instruction =
               (char ',' *> parse_register)
        ; string "addi"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Addi (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Addi (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "xori"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Xori (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Xori (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "ori"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Ori (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Ori (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "andi"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Andi (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Andi (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "slli"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Slli (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Slli (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "srli"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Srli (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Srli (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "srai"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Srai (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Srai (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "slti"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Slti (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Slti (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "sltiu"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Sltiu (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Sltiu (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "lb"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Lb (r1, r2, imm12)))
+              (fun r1 addr12 r2 -> InstructionExpr (Lb (r1, r2, addr12)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lh"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Lh (r1, r2, imm12)))
+              (fun r1 addr12 r2 -> InstructionExpr (Lh (r1, r2, addr12)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lw"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Lw (r1, r2, imm12)))
+              (fun r1 addr12 r2 -> InstructionExpr (Lw (r1, r2, addr12)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lbu"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Lbu (r1, r2, imm12)))
+              (fun r1 addr12 r2 -> InstructionExpr (Lbu (r1, r2, addr12)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "lhu"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Lhu (r1, r2, imm12)))
+              (fun r1 addr12 r2 -> InstructionExpr (Lhu (r1, r2, addr12)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "sb"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Sb (r1, imm12, r2)))
+              (fun r1 addr12 r2 -> InstructionExpr (Sb (r1, addr12, r2)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char ',' *> parse_register)
        ; string "sh"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Sh (r1, imm12, r2)))
+              (fun r1 addr12 r2 -> InstructionExpr (Sh (r1, addr12, r2)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char ',' *> parse_register)
        ; string "sw"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Sw (r1, imm12, r2)))
+              (fun r1 addr12 r2 -> InstructionExpr (Sw (r1, addr12, r2)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char ',' *> parse_register)
        ; string "beq"
          *> lift3
@@ -445,14 +431,14 @@ let parse_instruction =
               (char ',' *> parse_address20)
        ; string "li"
          *> lift2
-              (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
+              (fun r1 addr32 -> InstructionExpr (Li (r1, addr32)))
               parse_register
-              (char ',' *> parse_immediate32)
+              (char ',' *> parse_address32)
        ; string "auipc"
          *> lift2
-              (fun r1 imm20 -> InstructionExpr (Auipc (r1, imm20)))
+              (fun r1 addr20 -> InstructionExpr (Auipc (r1, addr20)))
               parse_register
-              (char ',' *> parse_immediate20)
+              (char ',' *> parse_address20)
        ; string "ecall" *> return (InstructionExpr Ecall)
        ; string "call"
          *> ws_opt (lift (fun str -> InstructionExpr (Call str)) parse_string)
@@ -506,9 +492,9 @@ let parse_instruction =
               (char ',' *> parse_register)
        ; string "lwu"
          *> lift3
-              (fun r1 imm12 r2 -> InstructionExpr (Lwu (r1, r2, imm12)))
+              (fun r1 addr12 r2 -> InstructionExpr (Lwu (r1, r2, addr12)))
               parse_register
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; string "ld"
          *> lift3
@@ -536,10 +522,10 @@ let parse_instruction =
               (char '(' *> parse_register <* char ')')
        ; string "addiw"
          *> lift3
-              (fun r1 r2 imm12 -> InstructionExpr (Addiw (r1, r2, imm12)))
+              (fun r1 r2 addr12 -> InstructionExpr (Addiw (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
-              (char ',' *> parse_immediate12)
+              (char ',' *> parse_address12)
        ; string "mulw"
          *> lift3
               (fun r1 r2 r3 -> InstructionExpr (Mulw (r1, r2, r3)))

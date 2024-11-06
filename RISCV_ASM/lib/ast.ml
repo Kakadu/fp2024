@@ -38,33 +38,24 @@ type register =
   | X31 (** t6 - Temporary *)
 [@@deriving eq, show { with_path = false }]
 
-(** Immediate 12-bit Type *)
-type immediate12 = Immediate12 of int [@@deriving eq, show { with_path = false }]
-
-(** Immediate 20-bit Type *)
-type immediate20 = Immediate20 of int [@@deriving eq, show { with_path = false }]
-
-(** Immediate 32-bit Type*)
-type immediate32 = Immediate32 of int [@@deriving eq, show { with_path = false }]
-
 (** Label Type *)
 type label = string [@@deriving eq, show { with_path = false }]
 
 (** Address32 Type to Jump to *)
 type address32 =
-  | ImmediateAddress32 of immediate32 (** Immediate32 to Jump to *)
+  | ImmediateAddress32 of int (** Immediate32 to Jump to *)
   | LabelAddress32 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }]
 
 (** Address12 Type to Jump to *)
 type address12 =
-  | ImmediateAddress12 of immediate12 (** Immediate12 to Jump to*)
+  | ImmediateAddress12 of int (** Immediate12 to Jump to*)
   | LabelAddress12 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }]
 
 (** Address20 Type to Jump to *)
 type address20 =
-  | ImmediateAddress20 of immediate20 (** Immediate20 to Jump to*)
+  | ImmediateAddress20 of int (** Immediate20 to Jump to*)
   | LabelAddress20 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }]
 
@@ -79,29 +70,28 @@ type instruction =
   | Sra of register * register * register (** Shift Right Arithmetic. rd = rs1 >> rs2 *)
   | Slt of register * register * register (** Set Less Than. rd = (rs1 < rs2) ? 1 : 0 *)
   | Sltu of register * register * register (** Set Less Than (Unsigned) *)
-  | Addi of register * register * immediate12 (** Addition of Immediate. rd = rs1 + imm *)
-  | Xori of register * register * immediate12 (** XOR with Immediate. rd = rs1 ^ imm *)
-  | Ori of register * register * immediate12 (** OR with Immediate. rd = rs1 | imm *)
-  | Andi of register * register * immediate12 (** AND with Immediate. rd = rs1 & imm *)
-  | Slli of register * register * immediate12
+  | Addi of register * register * address12 (** Addition of Immediate. rd = rs1 + imm *)
+  | Xori of register * register * address12 (** XOR with Immediate. rd = rs1 ^ imm *)
+  | Ori of register * register * address12 (** OR with Immediate. rd = rs1 | imm *)
+  | Andi of register * register * address12 (** AND with Immediate. rd = rs1 & imm *)
+  | Slli of register * register * address12
   (** Shift Left Logical with Immediate. rd = rs1 << shamt[0:4] *)
-  | Srli of register * register * immediate12
+  | Srli of register * register * address12
   (** Shift Right Logical with Immediate. rd = rs1 >> shamt[0:4] logical *)
-  | Srai of register * register * immediate12
+  | Srai of register * register * address12
   (** Shift Right Arithmetic with Immediate. rd = rs1 >> shamt[0:4] arithmetical *)
-  | Slti of register * register * immediate12
+  | Slti of register * register * address12
   (** Set Less Than Imm. rd = (rs1 < imm) ? 1 : 0 *)
-  | Sltiu of register * register * immediate12 (** Set Less Than Imm (Unsigned) *)
-  | Lb of register * register * immediate12 (** Load Byte. rd = M[rs1 + imm][0:7] *)
-  | Lh of register * register * immediate12 (** Load Half. rd = M[rs1 + imm][0:15] *)
-  | Lw of register * register * immediate12 (** Load Word. rd = M[rs1 + imm][0:31] *)
-  | Lbu of register * register * immediate12 (** Load Byte Unsigned *)
-  | Lhu of register * register * immediate12 (** Load Half Unsigned *)
-  | Sb of register * immediate12 * register
-  (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
-  | Sh of register * immediate12 * register
+  | Sltiu of register * register * address12 (** Set Less Than Imm (Unsigned) *)
+  | Lb of register * register * address12 (** Load Byte. rd = M[rs1 + imm][0:7] *)
+  | Lh of register * register * address12 (** Load Half. rd = M[rs1 + imm][0:15] *)
+  | Lw of register * register * address12 (** Load Word. rd = M[rs1 + imm][0:31] *)
+  | Lbu of register * register * address12 (** Load Byte Unsigned *)
+  | Lhu of register * register * address12 (** Load Half Unsigned *)
+  | Sb of register * address12 * register (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
+  | Sh of register * address12 * register
   (** Store Half. M[rs1 + imm][0:15] = rs2[0:15] *)
-  | Sw of register * immediate12 * register
+  | Sw of register * address12 * register
   (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
   | Beq of register * register * address12
   (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
@@ -119,8 +109,7 @@ type instruction =
   | Jr of register (** Jump Reg. jalr x0, rs1, 0 *)
   | J of address20 (** Jump. jal x0, 2 * offset *)
   | Lui of register * address20 (** Load Upper Immediate. rd = imm << 12 *)
-  | Auipc of register * immediate20
-  (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
+  | Auipc of register * address20 (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
   | Ecall (** EnvironmentCall - a syscall *)
   | Call of string (** call. - a syscall *)
   | Mul of register * register * register (** Multiply. rd = (rs1 * rs2)[31:0] *)
@@ -133,7 +122,7 @@ type instruction =
   | Divu of register * register * register (** Division (Unsigned). rd = rs1 / rs2 *)
   | Rem of register * register * register (** Remainder. rd = rs1 % rs2 *)
   | Remu of register * register * register (** Remainder (Unsigned). rd = rs1 % rs2 *)
-  | Lwu of register * register * immediate12
+  | Lwu of register * register * address12
   (** Load Word (Unsigned). rd = M[rs1 + imm][0:31] *)
   | Ld of register * register * address12
   (** Load Doubleword (Unsigned). rd = M[rs1 + imm][0:63] *)
@@ -143,13 +132,13 @@ type instruction =
   (** Load Local Address. auipc rd, %pcrel_hi(symbol); addi rd, rd, %pcrel_lo(label) *)
   | Sd of register * register * address12
   (** Store Doubleword. M[rs1 + imm][0:63] = rs2[0:63] *)
-  | Addiw of register * register * immediate12
+  | Addiw of register * register * address12
   (** Addition of Immediate Word. rd = (rs1 + imm)[31:0] *)
-  | Slliw of register * register * immediate12
+  | Slliw of register * register * address12
   (** Shift Left Logical with Immediate Word. rd = (rs1 << shamt)[31:0] *)
-  | Srliw of register * register * immediate12
+  | Srliw of register * register * address12
   (** Shift Right Logical with Immediate Word. rd = (rs1 >> shamt)[31:0] *)
-  | Sraiw of register * register * immediate12
+  | Sraiw of register * register * address12
   (** Shift Right Arithmetic with Immediate Word. rd = (rs1 >> shamt)[31:0] *)
   | Addw of register * register * register (** Add Word. rd = (rs1 + rs2)[31:0] *)
   | Subw of register * register * register (** Add Word. rd = (rs1 - rs2)[31:0] *)
@@ -167,7 +156,7 @@ type instruction =
   | Remwu of register * register * register
   (** Remainder Word (Unsigned). rd = (rs1 % rs2)[31:0] *)
   | Mv of register * register (** Copy from rs1 to rd. addi rd, rs1, 0 *)
-  | Li of register * immediate32
+  | Li of register * address32
   (** Load Immediate. lui rd, immediate20; addi rd, rd, immediate12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
 [@@deriving eq, show { with_path = false }]
