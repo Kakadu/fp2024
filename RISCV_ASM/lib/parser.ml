@@ -1,4 +1,4 @@
-(** Copyright 2024, Vyacheslav Kochergin and Roman Mukovenkov*)
+(** Copyright 2024, Vyacheslav Kochergin and Roman Mukovenkov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -219,25 +219,310 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_register)
-       ; string "li"
-         *> lift2
-              (fun r1 imm32 -> InstructionExpr (Li (r1, imm32)))
-              parse_register
-              (char ',' *> parse_address32)
-       ; string "mv"
-         *> lift2
-              (fun r1 r2 -> InstructionExpr (Mv (r1, r2)))
+       ; string "sub"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sub (r1, r2, r3)))
               parse_register
               (char ',' *> parse_register)
-       ; string "beq"
+              (char ',' *> parse_register)
+       ; string "xor"
          *> lift3
-              (fun r1 r2 adr -> InstructionExpr (Beq (r1, r2, adr)))
+              (fun r1 r2 r3 -> InstructionExpr (Xor (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "or"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Or (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "and"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (And (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sll"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sll (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "srl"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Srl (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sra"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sra (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "slt"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Slt (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "sltu"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sltu (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "addi"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Addi (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
+       ; string "xori"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Xori (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "ori"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Ori (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "andi"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Andi (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "slli"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Slli (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "srli"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Srli (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "srai"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Srai (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "slti"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Slti (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "sltiu"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Sltiu (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "lb"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Lb (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "lh"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Lh (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "lw"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Lw (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "lbu"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Lbu (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "lhu"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Lhu (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "sb"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Sb (r1, addr12, r2)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char ',' *> parse_register)
+       ; string "sh"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Sh (r1, addr12, r2)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char ',' *> parse_register)
+       ; string "sw"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Sw (r1, addr12, r2)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char ',' *> parse_register)
+       ; string "beq"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Beq (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "bne"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Bne (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "blt"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Blt (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "bge"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Bge (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "bltu"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Bltu (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "bgeu"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Bgeu (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "jal"
+         *> lift2
+              (fun r1 addr20 -> InstructionExpr (Jal (r1, addr20)))
+              parse_register
+              (char ',' *> parse_address20)
+       ; string "jalr"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Jalr (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; string "jr" *> lift (fun r1 -> InstructionExpr (Jr r1)) parse_register
+       ; string "j" *> lift (fun addr20 -> InstructionExpr (J addr20)) parse_address20
+       ; string "lui"
+         *> lift2
+              (fun r1 addr20 -> InstructionExpr (Lui (r1, addr20)))
+              parse_register
+              (char ',' *> parse_address20)
+       ; string "li"
+         *> lift2
+              (fun r1 addr32 -> InstructionExpr (Li (r1, addr32)))
+              parse_register
+              (char ',' *> parse_address32)
+       ; string "auipc"
+         *> lift2
+              (fun r1 addr20 -> InstructionExpr (Auipc (r1, addr20)))
+              parse_register
+              (char ',' *> parse_address20)
+       ; string "ecall" *> return (InstructionExpr Ecall)
+       ; string "call"
+         *> ws_opt (lift (fun str -> InstructionExpr (Call str)) parse_string)
+       ; string "mul"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Mul (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "mulh"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Mulh (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "mulhsu"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Mulhsu (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "mulhu"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Mulhu (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "div"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Div (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "divu"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Divu (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "rem"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Rem (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "remu"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Remu (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; string "lwu"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Lwu (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "ld"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Ld (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; string "la"
+         *> ws_opt
+              (lift2
+                 (fun r1 addr32 -> InstructionExpr (La (r1, addr32)))
+                 parse_register
+                 (char ',' *> parse_address32))
+       ; string "lla"
+         *> ws_opt
+              (lift2
+                 (fun r1 addr32 -> InstructionExpr (Lla (r1, addr32)))
+                 parse_register
+                 (char ',' *> parse_address32))
+       ; string "sd"
+         *> lift3
+              (fun r1 addr12 r2 -> InstructionExpr (Sd (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
        ; string "addiw"
          *> lift3
-              (fun r1 r2 imm -> InstructionExpr (Addiw (r1, r2, imm)))
+              (fun r1 r2 addr12 -> InstructionExpr (Addiw (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
@@ -247,59 +532,12 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_register)
-       ; string "bne"
-         *> lift3
-              (fun r1 r2 adr -> InstructionExpr (Bne (r1, r2, adr)))
+       ; string "mv"
+         *> lift2
+              (fun r1 r2 -> InstructionExpr (Mv (r1, r2)))
               parse_register
-              (char ',' *> parse_register)
-              (char ',' *> parse_address12)
-       ; string "ld"
-         *> lift3
-              (fun r1 imm r2 -> InstructionExpr (Ld (r1, r2, imm)))
-              parse_register
-              (char ',' *> parse_address12)
-              (char '(' *> parse_register <* char ')')
-       ; string "sd"
-         *> lift3
-              (fun r1 imm r2 -> InstructionExpr (Sd (r1, r2, imm)))
-              parse_register
-              (char ',' *> parse_address12)
-              (char '(' *> parse_register <* char ')')
-       ; string "lw"
-         *> lift3
-              (fun r1 imm r2 -> InstructionExpr (Lw (r1, r2, imm)))
-              parse_register
-              (char ',' *> parse_address12)
-              (char '(' *> parse_register <* char ')')
-       ; string "addi"
-         *> lift3
-              (fun r1 r2 imm -> InstructionExpr (Addi (r1, r2, imm)))
-              parse_register
-              (char ',' *> parse_register)
-              (char ',' *> parse_address12)
-       ; string "xor"
-         *> lift3
-              (fun r1 r2 r3 -> InstructionExpr (Xor (r1, r2, r3)))
-              parse_register
-              (char ',' *> parse_register)
               (char ',' *> parse_register)
        ; string "ret" *> return (InstructionExpr Ret)
-       ; string "jr" *> lift (fun r1 -> InstructionExpr (Jr r1)) parse_register
-       ; string "j" *> lift (fun adr -> InstructionExpr (J adr)) parse_address20
-       ; string "call"
-         *> ws_opt (lift (fun str -> InstructionExpr (Call str)) parse_string)
-       ; string "la"
-         *> ws_opt
-              (lift2
-                 (fun r1 adr -> InstructionExpr (La (r1, adr)))
-                 parse_register
-                 (char ',' *> parse_address32))
-       ; string "lla"
-         *> ws_opt
-              (lift2
-                 (fun r1 adr -> InstructionExpr (Lla (r1, adr)))
-                 parse_register
-                 (char ',' *> parse_address32))
        ])
 ;;
 
