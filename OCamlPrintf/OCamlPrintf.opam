@@ -18,6 +18,7 @@ depends: [
   "dune" {>= "3.7"}
   "base"
   "angstrom"
+  "qcheck"
   "ppx_inline_test" {with-test}
   "ppx_deriving"
   "ppx_expect"
