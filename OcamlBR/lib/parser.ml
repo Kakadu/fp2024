@@ -24,7 +24,13 @@ let psqparens p = pstoken "[" *> p <* pstoken "]"
 
 (*-------------------------Constants/Variables-------------------------*)
 
-let pint = pwhitespace *> take_while1 Char.is_digit >>| fun n -> (Int(int_of_string n))
+let pint =
+  pwhitespace 
+  *> take_while1 Char.is_digit
+  >>= fun str ->
+  match Stdlib.int_of_string_opt str with
+  | Some n -> return (Int n)
+  | None -> fail "Integer value exceeds the allowable range for the int type"
 ;;
 
 let pbool =
