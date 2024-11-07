@@ -10,11 +10,7 @@ open Char
 (*                   Auxiliary parsers                     *)
 
 let is_not_keyword = function
-  | "let"
-  | "if"
-  | "then"
-  | "else"
-  | "rec" -> false
+  | "let" | "if" | "then" | "else" | "in" | "fun" | "true" | "false" | "rec" -> false
   | _ -> true
   
 let debug_parser name p =
@@ -92,11 +88,23 @@ let lchain p op =
     let* x = p in
     loop x
 
-let pidentexpr = lift (fun ident -> Exp_ident(ident)) pident
+let pidentexpr =
+  pident >>= fun ident ->
+  if is_not_keyword ident then
+    return (Exp_ident ident)
+  else
+    fail "Found a keyword instead of an identifier"
 
 (*                   Patterns                         *)
 let pany = token "_" *> return Pat_any
-let pvar = lift (fun ident -> if is_not_keyword ident then Pat_var(ident) else failwith "Variable name conflicts with a keyword") pident
+
+let pvar =
+  pident >>= fun ident ->
+  if is_not_keyword ident then
+    return (Pat_var ident)
+  else
+    fail "Found a keyword instead of an variable"
+
 let ppattern =
   let parse = 
     pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
@@ -190,6 +198,7 @@ let pexpr = fix (fun expr ->
     debug_parser "constint" pconstintexpr;
     debug_parser "constchar" pconstcharexpr;
     debug_parser "conststring" pconststringexpr;
+    debug_parser "identexp" pidentexpr;
   ] in
   let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
   let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
