@@ -4,6 +4,7 @@
 
 open Angstrom
 open Ast
+open Integer
 
 let ws1 =
   many1
@@ -880,7 +881,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), None),
-          ((Const (Int 9)), None), [((Identificator (Ident "a")), None)])),
+          ((Const (Integer 9)), None), [((Identificator (Ident "a")), None)])),
        None) |}]
 ;;
 
@@ -892,7 +893,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
           ((Lambda (([], (PIdentificator (Ident "X")), None), [],
               ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
            None),
-          [((Const (Int 1)), None)])),
+          [((Const (Integer 1)), None)])),
        None) |}]
 ;;
 
@@ -963,8 +964,8 @@ let%expect_test "expr_case_statement" =
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), None),
-          (([], (PConst (Int 1)), None), (OrdBody ((Const (Int 1)), None))),
-          [(([], PWildcard, None), (OrdBody ((Const (Int 2)), None)))])),
+          (([], (PConst (Integer 1)), None), (OrdBody ((Const (Integer 1)), None))),
+          [(([], PWildcard, None), (OrdBody ((Const (Integer 2)), None)))])),
        None) |}]
 ;;
 
@@ -976,13 +977,13 @@ let%expect_test "expr_case_statement_with_guards" =
           (([], (PIdentificator (Ident "y")), None),
            (Guards (
               (((Binop (((Identificator (Ident "y")), None), Greater,
-                   ((Const (Int 10)), None))),
+                   ((Const (Integer 10)), None))),
                 None),
-               ((Const (Int 1)), None)),
+               ((Const (Integer 1)), None)),
               [(((Identificator (Ident "otherwise")), None),
-                ((Const (Int 2)), None))]
+                ((Const (Integer 2)), None))]
               ))),
-          [(([], PWildcard, None), (OrdBody ((Const (Int 3)), None)))])),
+          [(([], PWildcard, None), (OrdBody ((Const (Integer 3)), None)))])),
        None) |}]
 ;;
 
@@ -1217,7 +1218,7 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   prs_and_prnt_ln binding show_binding "f 9y = y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PConst (Int 9)), None),
+      (FunBind (((Ident "f"), None), ([], (PConst (Integer 9)), None),
          [([], (PIdentificator (Ident "y")), None)],
          (OrdBody ((Identificator (Ident "y")), None)), [])) |}]
 ;;
