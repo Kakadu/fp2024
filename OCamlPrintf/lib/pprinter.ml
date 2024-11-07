@@ -90,7 +90,9 @@ let rec pp_expression ppf = function
           | Exp_apply (Exp_ident op, _) when is_operator1 op -> true
           | _ -> false
         in
-        fprintf ppf "%a %s" pp_expression first_exp expression;
+        if is_operator expression
+        then fprintf ppf "%a %s" pp_expression first_exp expression
+        else fprintf ppf "%s %a" expression pp_expression first_exp;
         List.iter
           (fun arg ->
             if needs_parens arg
