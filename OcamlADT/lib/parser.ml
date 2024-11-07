@@ -92,11 +92,11 @@ let lchain p op =
     let* x = p in
     loop x
 
-let pidentexpr = lift (fun ident -> if is_not_keyword ident then Exp_ident(ident) else failwith "123") pident
+let pidentexpr = lift (fun ident -> Exp_ident(ident)) pident
 
 (*                   Patterns                         *)
 let pany = token "_" *> return Pat_any
-let pvar = lift (fun ident -> Pat_var ident) pident
+let pvar = lift (fun ident -> if is_not_keyword ident then Pat_var(ident) else failwith "Variable name conflicts with a keyword") pident
 let ppattern =
   let parse = 
     pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
@@ -190,7 +190,6 @@ let pexpr = fix (fun expr ->
     debug_parser "constint" pconstintexpr;
     debug_parser "constchar" pconstcharexpr;
     debug_parser "conststring" pconststringexpr;
-    debug_parser "ident" pidentexpr;
   ] in
   let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
   let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
@@ -229,11 +228,11 @@ let psvalue =
   pseval <|> psvalue *)
 
 let pstr_item =
-  psvalue<|> pseval
+  pseval <|> psvalue
 
 let pstructure =
   let psemicolon = token ";;" in
-  many (pstr_item <* psemicolon)
+  many (pstr_item <* psemicolon <* pass_ws)
 
 let parse str = parse_string ~consume:All pstructure str
 
