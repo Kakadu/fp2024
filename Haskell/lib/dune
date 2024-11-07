@@ -1,9 +1,9 @@
 (library
  (name haskell_lib)
  (public_name Haskell.Lib)
- (libraries angstrom)
+ (libraries angstrom zarith)
  (inline_tests)
- (modules Parser Ast)
+ (modules Parser Ast Integer)
  (preprocess
   (pps ppx_deriving.show ppx_inline_test ppx_expect))
  (instrumentation

@@ -2,8 +2,9 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+(* type nonnegative_integer =  *)
 type const =
-  | Int of int (** e.g. [18] *)
+  | Integer of Integer.nonnegative_integer (** e.g. [18] *)
   | Bool of bool (** e.g. [True] *)
   | Unit (** () *)
 [@@deriving show { with_path = false }]

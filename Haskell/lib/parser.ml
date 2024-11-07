@@ -4,6 +4,7 @@
 
 open Angstrom
 open Ast
+open Integer
 
 let ws =
   many
@@ -33,8 +34,9 @@ let is_digit = function
 let const =
   choice
     [ (let* y = take_while1 is_digit in
-       let x = int_of_string y in
-       return (Int x))
+       match Nonnegative_integer.of_string_opt y with
+        | None -> fail ""
+        | Some x -> return (Integer x))
     ; string "()" *> return Unit
     ; string "True" *> return (Bool true)
     ; string "False" *> return (Bool false)
@@ -42,13 +44,18 @@ let const =
 ;;
 
 let%test "const_valid_num" =
-  parse_string ~consume:Prefix const "123" = Result.Ok (Int 123)
+  parse_string ~consume:Prefix const "123" = Result.Ok (Integer (Nonnegative_integer.of_int 123))
 ;;
 
 let%test "const_invalid_num" =
-  parse_string ~consume:Prefix const "123ab" = Result.Ok (Int 123)
+  parse_string ~consume:Prefix const "123ab" = Result.Ok (Integer (Nonnegative_integer.of_int 123))
 ;;
 
+let%test "const_invalid_num_negative" =
+  parse_string ~consume:Prefix const "-123" = Result.Error ": no more choices"
+;;
+
+;;
 let%test "const_valid_unit" = parse_string ~consume:Prefix const "()" = Result.Ok Unit
 
 let%test "const_valid_true" =
@@ -190,12 +197,12 @@ let%test "pattern_valid_parens_oth" =
 
 let%test "pattern_valid_double_as" =
   parse_string ~consume:Prefix pattern "a@b@2"
-  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Int 2), None)
+  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Integer (Nonnegative_integer.of_int 2)), None)
 ;;
 
 let%test "pattern_valid_with_parens" =
   parse_string ~consume:Prefix pattern "(a@(b@(2)))"
-  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Int 2), None)
+  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Integer (Nonnegative_integer.of_int 2)), None)
 ;;
 
 let%expect_test "pattern_valid_tuple" =
@@ -240,7 +247,7 @@ let%expect_test "pattern_valid_tree" =
     {|
       ([],
        (PTree
-          (PNode (([], (PConst (Int 2)), None), ([], (PTree PNul), None),
+          (PNode (([], (PConst (Integer 2)), None), ([], (PTree PNul), None),
              ([], (PTree PNul), None)))),
        None) |}]
 ;;
@@ -460,9 +467,9 @@ let e e =
 let expr = e (fix e)
 
 let%expect_test "expr_const" =
-  prs_and_prnt_ln expr show_expr "1";
+  prs_and_prnt_ln expr show_expr "123456789012345678901234567890";
   [%expect {|
-      ((Const (Int 1)), None) |}]
+      ((Const (Integer 123456789012345678901234567890)), None) |}]
 ;;
 
 let%expect_test "expr_prio" =
@@ -471,11 +478,12 @@ let%expect_test "expr_prio" =
     {|
       ((Binop (
           ((Binop (
-              ((Binop (((Const (Int 1)), None), Plus, ((Const (Int 1)), None))),
+              ((Binop (((Const (Integer 1)), None), Plus,
+                  ((Const (Integer 1)), None))),
                None),
-              Multiply, ((Const (Int 2)), None))),
+              Multiply, ((Const (Integer 2)), None))),
            None),
-          Greater, ((Const (Int 1)), None))),
+          Greater, ((Const (Integer 1)), None))),
        None) |}]
 ;;
 
@@ -483,8 +491,10 @@ let%expect_test "expr_right_assoc" =
   prs_and_prnt_ln expr show_expr "2^3^4";
   [%expect
     {|
-      ((Binop (((Const (Int 2)), None), Pow,
-          ((Binop (((Const (Int 3)), None), Pow, ((Const (Int 4)), None))), None))),
+      ((Binop (((Const (Integer 2)), None), Pow,
+          ((Binop (((Const (Integer 3)), None), Pow, ((Const (Integer 4)), None))),
+           None)
+          )),
        None) |}]
 ;;
 
@@ -497,9 +507,9 @@ let%expect_test "expr_with_Just" =
               ((Lambda (([], (PIdentificator (Ident "X")), None), [],
                   ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
                None),
-              ((Const (Int 2)), None), [])),
+              ((Const (Integer 2)), None), [])),
            None),
-          Plus, ((Const (Int 1)), None))),
+          Plus, ((Const (Integer 1)), None))),
        None) |}]
 ;;
 
@@ -510,9 +520,9 @@ let%expect_test "expr_with_func_apply" =
       ((Binop (
           ((FunctionApply (((Identificator (Ident "f")), None),
               ((Identificator (Ident "x")), None),
-              [((Identificator (Ident "g")), None); ((Const (Int 2)), None)])),
+              [((Identificator (Ident "g")), None); ((Const (Integer 2)), None)])),
            None),
-          Plus, ((Const (Int 1)), None))),
+          Plus, ((Const (Integer 1)), None))),
        None) |}]
 ;;
 
@@ -521,7 +531,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), None),
-          ((Const (Int 9)), None), [((Identificator (Ident "a")), None)])),
+          ((Const (Integer 9)), None), [((Identificator (Ident "a")), None)])),
        None) |}]
 ;;
 
@@ -533,7 +543,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
           ((Lambda (([], (PIdentificator (Ident "X")), None), [],
               ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
            None),
-          [((Const (Int 1)), None)])),
+          [((Const (Integer 1)), None)])),
        None) |}]
 ;;
 
@@ -573,8 +583,8 @@ let%expect_test "expr_case_statement" =
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), None),
-          (([], (PConst (Int 1)), None), (OrdBody ((Const (Int 1)), None))),
-          [(([], PWildcard, None), (OrdBody ((Const (Int 2)), None)))])),
+          (([], (PConst (Integer 1)), None), (OrdBody ((Const (Integer 1)), None))),
+          [(([], PWildcard, None), (OrdBody ((Const (Integer 2)), None)))])),
        None) |}]
 ;;
 
@@ -586,13 +596,13 @@ let%expect_test "expr_case_statement_with_guards" =
           (([], (PIdentificator (Ident "y")), None),
            (Guards (
               (((Binop (((Identificator (Ident "y")), None), Greater,
-                   ((Const (Int 10)), None))),
+                   ((Const (Integer 10)), None))),
                 None),
-               ((Const (Int 1)), None)),
+               ((Const (Integer 1)), None)),
               [(((Identificator (Ident "otherwise")), None),
-                ((Const (Int 2)), None))]
+                ((Const (Integer 2)), None))]
               ))),
-          [(([], PWildcard, None), (OrdBody ((Const (Int 3)), None)))])),
+          [(([], PWildcard, None), (OrdBody ((Const (Integer 3)), None)))])),
        None) |}]
 ;;
 
@@ -600,8 +610,8 @@ let%expect_test "expr_tuple" =
   prs_and_prnt_ln expr show_expr " (x,1 , 2,(x, y))";
   [%expect
     {|
-      ((TupleBld (((Identificator (Ident "x")), None), ((Const (Int 1)), None),
-          [((Const (Int 2)), None);
+      ((TupleBld (((Identificator (Ident "x")), None), ((Const (Integer 1)), None),
+          [((Const (Integer 2)), None);
             ((TupleBld (((Identificator (Ident "x")), None),
                 ((Identificator (Ident "y")), None), [])),
              None)
@@ -616,7 +626,7 @@ let%expect_test "expr_lambda" =
     {|
       ((Lambda (([], (PIdentificator (Ident "x")), None), [],
           ((Binop (((Identificator (Ident "x")), None), Plus,
-              ((Const (Int 1)), None))),
+              ((Const (Integer 1)), None))),
            None)
           )),
        None) |}]
@@ -626,9 +636,9 @@ let%expect_test "expr_tree" =
   prs_and_prnt_ln expr show_expr "1 + (2; $; $)";
   [%expect
     {|
-      ((Binop (((Const (Int 1)), None), Plus,
+      ((Binop (((Const (Integer 1)), None), Plus,
           ((BinTreeBld
-              (Node (((Const (Int 2)), None), ((BinTreeBld Nul), None),
+              (Node (((Const (Integer 2)), None), ((BinTreeBld Nul), None),
                  ((BinTreeBld Nul), None)))),
            None)
           )),
@@ -642,7 +652,7 @@ let%expect_test "var_binding_simple" =
   [%expect
     {|
       (VarsBind (([], (PIdentificator (Ident "x")), None),
-         (OrdBody ((Const (Int 1)), None)), [])) |}]
+         (OrdBody ((Const (Integer 1)), None)), [])) |}]
 ;;
 
 let%expect_test "var_binding_with_where" =
@@ -652,9 +662,9 @@ let%expect_test "var_binding_with_where" =
       (VarsBind (([], (PIdentificator (Ident "x")), None),
          (OrdBody ((Identificator (Ident "y")), None)),
          [(VarsBind (([], (PIdentificator (Ident "y")), None),
-             (OrdBody ((Const (Int 1)), None)), []));
+             (OrdBody ((Const (Integer 1)), None)), []));
            (VarsBind (([], (PIdentificator (Ident "k")), None),
-              (OrdBody ((Const (Int 2)), None)), []))
+              (OrdBody ((Const (Integer 2)), None)), []))
            ]
          )) |}]
 ;;
@@ -667,7 +677,7 @@ let%expect_test "fun_binding_simple" =
          [],
          (OrdBody
             ((Binop (((Identificator (Ident "x")), None), Plus,
-                ((Const (Int 1)), None))),
+                ((Const (Integer 1)), None))),
              None)),
          [])) |}]
 ;;
@@ -689,7 +699,7 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   prs_and_prnt_ln binding show_binding "f 9y = y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PConst (Int 9)), None),
+      (FunBind (((Ident "f"), None), ([], (PConst (Integer 9)), None),
          [([], (PIdentificator (Ident "y")), None)],
          (OrdBody ((Identificator (Ident "y")), None)), [])) |}]
 ;;
@@ -702,11 +712,11 @@ let%expect_test "fun_binding_guards" =
          [],
          (Guards (
             (((Binop (((Identificator (Ident "x")), None), Greater,
-                 ((Const (Int 1)), None))),
+                 ((Const (Integer 1)), None))),
               None),
-             ((Const (Int 0)), None)),
-            [(((Identificator (Ident "otherwise")), None), ((Const (Int 1)), None))
-              ]
+             ((Const (Integer 0)), None)),
+            [(((Identificator (Ident "otherwise")), None),
+              ((Const (Integer 1)), None))]
             )),
          [])) |}]
 ;;
