@@ -14,6 +14,7 @@ let is_not_keyword = function
   | "if"
   | "then"
   | "else"
+  | "fun"
   | "rec" -> false
   | _ -> true
   
@@ -93,19 +94,20 @@ let lchain p op =
     loop x
 
 let pidentexpr = lift (fun ident -> if is_not_keyword ident then Exp_ident(ident) else failwith "123") pident
+(* let pidentexpr = lift (fun ident -> Exp_ident(ident)) pident *)
 
 (*                   Patterns                         *)
 let pany = token "_" *> return Pat_any
-let pvar = lift (fun ident -> Pat_var ident) pident
-let ppattern =
-  pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
+let pvar = lift (fun ident -> Pat_var ident) (pident)
+let ppattern =    
+  (debug_parser "pany" pany) <|> (debug_parser "pvar" pvar) (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
 
 (*                   Expressions                         *)
 
 
 let pvalue_binding pexpr =
   let parse_pattern_and_expr =
-    lift2 (fun pat expr -> {pat;expr}) ppattern (token "=" *> pexpr)
+    lift2 (fun pat expr -> {pat;expr}) (pass_ws *> ppattern) (token "=" *> pexpr)
   in
   debug_parser "value_binding" parse_pattern_and_expr
 ;;
@@ -113,7 +115,8 @@ let prec_flag = token "rec" *> return Recursive <|> return Nonrecursive
 ;;
 let pletexpr pexpr =
   lift3 (fun rec_flag value_binding expr -> Exp_let(rec_flag, value_binding, expr))
-  (token "let" *> pass_ws *> prec_flag) (pass_ws *> many1(pvalue_binding pexpr)) (pass_ws *> token "in" *> pexpr)
+  (token "let" *> pass_ws *> prec_flag) (pass_ws *> many1(pvalue_binding pexpr))
+ (token "in" *> pexpr)
 ;;
 
 (*rewrite*) 
@@ -133,16 +136,17 @@ let pifexpr pexpr =
   (option None (token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
 
 let papplyexpr pexpr =
-  lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr (   pexpr)
+  lift2 (fun fexpr sexpr -> Exp_apply(fexpr, sexpr)) pexpr pexpr
 ;;
 
 let pfunexpr pexpr = 
-  lift3 
+  fix @@ fun pfunexpr -> 
+  lift3
     (fun first_pattern rest_patterns body_expr -> 
       Exp_fun (first_pattern, rest_patterns, body_expr))
-    (token "fun" *> ppattern)
-    (many ppattern)
-    (token "->" *> pexpr)
+    (pass_ws *> ppattern)
+    (many (pass_ws *> ppattern))
+    (pfunexpr <|> token "->" *> pexpr)
 ;;
 
 let parsebinop binoptoken =
@@ -178,19 +182,19 @@ let pexpr = fix (fun expr ->
   let expr = choice [
     debug_parser "parens" (pparens expr);
     debug_parser "constint" pconstintexpr;
-    debug_parser "constchar" pconstcharexpr;
-    debug_parser "conststring" pconststringexpr;
+    (* debug_parser "constchar" pconstcharexpr; *)
+    (* debug_parser "conststring" pconststringexpr; *)
     debug_parser "ident" pidentexpr;
   ] in
-  let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
-  let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
-  let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
+  let expr = debug_parser "apply" (papplyexpr expr) <|> expr in 
+  (* let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in *)
+  (* let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in *)
   let expr = debug_parser "compare" (lchain expr pcompops) in
-  let expr = rchain expr plogops in
-  let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in 
-  let expr = debug_parser "tuple" ptupleexpr <|> expr in  
+  (* let expr = rchain expr plogops in *)
+  (* let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in  *)
+  (* let expr = debug_parser "tuple" ptupleexpr <|> expr in   *)
+  let expr = debug_parser "fun" (token "fun" *> pfunexpr expr) <|> expr in
   let expr = debug_parser "let" (pletexpr expr) <|> expr in
-  let expr = debug_parser "fun" (pfunexpr expr) <|> expr in  
   expr)
 ;;
 
