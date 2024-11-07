@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open OCamlRV_lib.Parser
+open OCamlRV_lib.Pprintast
 open Stdio
 
 type opts =
@@ -48,4 +49,17 @@ let () =
         "Read-Eval-Print-Loop for OCamlRV"
     in
     run_single opts)
+;;
+
+Format.printf
+  "%a\n"
+  pp_structure_item_list
+  [ SEval (ExprCons (ExprVariable "f", ExprVariable "x"))
+  ; SEval (ExprCons (ExprVariable "f", ExprVariable "y"))
+  ; SEval
+      (ExprIf
+         ( ExprBinOperation (Lt, ExprLiteral (IntLiteral 5), ExprLiteral (IntLiteral 3))
+         , ExprLiteral (BoolLiteral true)
+         , Some (ExprLiteral (BoolLiteral false)) ))
+  ]
 ;;
