@@ -48,7 +48,6 @@ type binop =
 
 type unop =
   | Minus (** [-] *)
-  | Not (** [not] *)
 [@@deriving show { with_path = false }]
 
 (** variable's / function's name*)
