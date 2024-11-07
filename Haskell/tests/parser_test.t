@@ -8,7 +8,7 @@ SPDX-License-Identifier: MIT
      (OrdBody
         ((IfThenEsle (
             ((Binop (((Identificator (Ident "n")), None), Less,
-                ((Const (Int 0)), None))),
+                ((Const (Integer 0)), None))),
              None),
             ((OptionBld Nothing), None),
             ((FunctionApply (
@@ -28,14 +28,14 @@ SPDX-License-Identifier: MIT
          ([], (PIdentificator (Ident "y")), None), [],
          (Guards (
             (((Binop (((Identificator (Ident "y")), None), Equality,
-                 ((Const (Int 0)), None))),
+                 ((Const (Integer 0)), None))),
               None),
-             ((Const (Int 1)), None)),
+             ((Const (Integer 1)), None)),
             [(((Identificator (Ident "otherwise")), None),
               ((Binop (((Identificator (Ident "y")), None), Multiply,
                   ((FunctionApply (((Identificator (Ident "save_fac")), None),
                       ((Binop (((Identificator (Ident "y")), None), Minus,
-                          ((Const (Int 1)), None))),
+                          ((Const (Integer 1)), None))),
                        None),
                       [])),
                    None)

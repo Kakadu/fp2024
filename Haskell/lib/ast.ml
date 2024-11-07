@@ -2,6 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+(* type nonnegative_integer = *)
 type const =
   | Int of (int[@gen QCheck.Gen.(0 -- Int.max_int)]) (** e.g. [18] *)
   | Bool of bool (** e.g. [True] *)
