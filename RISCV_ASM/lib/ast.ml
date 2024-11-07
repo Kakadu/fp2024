@@ -55,10 +55,10 @@ type instruction =
   | Lw of register * register * address12 (** Load Word. rd = M[rs1 + imm][0:31] *)
   | Lbu of register * register * address12 (** Load Byte Unsigned *)
   | Lhu of register * register * address12 (** Load Half Unsigned *)
-  | Sb of register * address12 * register (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
-  | Sh of register * address12 * register
+  | Sb of register * register * address12 (** Store Byte. M[rs1 + imm][0:7] = rs2[0:7] *)
+  | Sh of register * register * address12
   (** Store Half. M[rs1 + imm][0:15] = rs2[0:15] *)
-  | Sw of register * address12 * register
+  | Sw of register * register * address12
   (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
   | Beq of register * register * address12
   (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
