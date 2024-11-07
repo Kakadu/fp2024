@@ -146,15 +146,23 @@ let pifexpr pexpr =
   (option None (token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
 ;;
 
-let papplyexpr pexpr =
+let papplyexpr pexpr = lchain pexpr (return (fun ex1 ex2 -> Exp_apply(ex1, [ex2])))
+;;
+
+(*let papplyexpr pexpr =
   let rec collect_args acc =
     let* arg = pexpr in
     let* args = option [] (collect_args (arg :: acc)) in
     return (arg :: args)
   in
-  (* We ensure to only apply if we are not dealing with a binary operation *)
-  lift2 (fun f args -> Exp_apply(f, args)) (pparens pexpr <|> pidentexpr) (collect_args [])
-;;
+  let papplychain = 
+    let term = pidentexpr <|> pexpr in
+    (* We ensure to only apply if we are not dealing with a binary operation *)
+    lift2 (fun f args -> Exp_apply(f, args)) term (collect_args [])
+  in 
+  (* We apply lchain to handle the chain of applications *)
+  lchain papplychain pexpr
+;;*)
 
 let pfunexpr pexpr = 
   lift3 
@@ -194,11 +202,11 @@ let plogops =
 let pexpr = fix (fun expr ->
 (* let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in *)
   let expr = choice [
+    debug_parser "identexp" pidentexpr;
     debug_parser "parens" (pparens expr);
     debug_parser "constint" pconstintexpr;
     debug_parser "constchar" pconstcharexpr;
     debug_parser "conststring" pconststringexpr;
-    debug_parser "identexp" pidentexpr;
   ] in
   let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
   let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
