@@ -185,7 +185,7 @@ let pat ptrn =
     ; (let* pt = ident in
        return (PIdentificator pt))
     ; char '_' *> return PWildcard
-    ; nothing (return PNothing)
+    ; nothing (return (PMaybe Nothing))
     ; tree
         (ws *> (ptrn <|> pnegation))
         (return (PTree PNul))
@@ -235,8 +235,7 @@ let%test "pattern_valid_neg" =
 ;;
 
 let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban) "-1"
-  = Result.Error ": "
+  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": "
 ;;
 
 let%test "pattern_valid_double_as" =

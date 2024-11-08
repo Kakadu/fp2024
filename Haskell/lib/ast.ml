@@ -72,8 +72,7 @@ and pat =
   | PIdentificator of ident (** e.g. [x] *)
   | PList of listpat
   | PTuple of pattern * pattern * pattern list (** e.g. [(x, y, z)]*)
-  | PJust of pattern (** e.g. [Just x] *)
-  | PNothing (** i.e [Nothing] *)
+  | PMaybe of pattern maybe (** e.g. [Just x] *)
   | PTree of treepat
 [@@deriving show { with_path = false }]
 
