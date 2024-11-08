@@ -120,6 +120,10 @@ and treepat =
   | PNul (** nul tree i.e. [$] *)
   | PNode of pattern * pattern * pattern (** tree's node e.g [(x; y; z)]*)
 
+and pconst =
+  | OrdinaryPConst of const
+  | NegativePInteger of Integer.nonnegative_integer
+
 and pat =
   | PWildcard (** _ *)
   | PConst of pconst
