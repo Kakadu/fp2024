@@ -54,12 +54,25 @@ let () =
 Format.printf
   "%a\n"
   pp_structure_item_list
-  [ SEval (ExprCons (ExprVariable "f", ExprVariable "x"))
+  [ SEval (ExprApply (ExprVariable "f", ExprVariable "x"))
   ; SEval (ExprCons (ExprVariable "f", ExprVariable "y"))
-  ; SEval
-      (ExprIf
-         ( ExprBinOperation (Lt, ExprLiteral (IntLiteral 5), ExprLiteral (IntLiteral 3))
-         , ExprLiteral (BoolLiteral true)
-         , Some (ExprLiteral (BoolLiteral false)) ))
+  ; SValue (NonRec, [ PVar "x", ExprLiteral (IntLiteral 5) ])
+  ; SValue
+      ( Rec
+      , [ ( PVar "fact"
+          , ExprFun
+              ( PVar "n"
+              , ExprIf
+                  ( ExprBinOperation (Lte, ExprVariable "n", ExprLiteral (IntLiteral 1))
+                  , ExprLiteral (IntLiteral 1)
+                  , Some
+                      (ExprBinOperation
+                         ( Mul
+                         , ExprVariable "n"
+                         , ExprApply
+                             ( ExprVariable "fact"
+                             , ExprBinOperation
+                                 (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) ))
+                  ) ) )
+        ] )
   ]
-;;

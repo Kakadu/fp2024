@@ -27,7 +27,7 @@ let pp_binop =
 let pp_rec_flag =
   let rec helper ppf = function
     | NonRec -> fprintf ppf ""
-    | Rec -> fprintf ppf "rec"
+    | Rec -> fprintf ppf " rec"
   in
   helper
 ;;
@@ -48,9 +48,9 @@ let pp_pattern =
     | PAny -> fprintf ppf "_"
     | PLiteral l -> fprintf ppf "%a" pp_literal l
     | PVar v -> fprintf ppf "%s" v
-    | PTuple pl -> ()
+    | PTuple _ -> ()
     | PCons (p1, p2) -> fprintf ppf "%a::%a" helper p1 helper p2
-    | PPoly (id, po) -> ()
+    | PPoly _ -> ()
   in
   helper
 ;;
@@ -61,26 +61,40 @@ let pp_expr =
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
     | ExprBinOperation (op, e1, e2) ->
       fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
-    | ExprUnOperation (op, e) -> ()
+    | ExprUnOperation _ -> ()
     | ExprIf (c, th, el) ->
       (match el with
        | None -> fprintf ppf "if %a then %a" helper c helper th
        | Some x -> fprintf ppf "if %a then %a else %a" helper c helper th helper x)
-    | ExprMatch (e, cl) -> ()
+    | ExprMatch _ -> ()
     | ExprLet (rf, bl, e) -> ()
-    | ExprApply (e1, e2) -> fprintf ppf "%a %a" helper e1 helper e2
-    | ExprTuple el -> ()
+    | ExprApply (e1, e2) ->
+      (match e2 with
+       | ExprBinOperation _ -> fprintf ppf "%a (%a)" helper e1 helper e2
+       | _ -> fprintf ppf "%a %a" helper e1 helper e2)
+    | ExprTuple _ -> ()
     | ExprCons (e1, e2) -> fprintf ppf "%a::%a" helper e1 helper e2
-    | ExprPoly (id, e) -> ()
+    | ExprPoly _ -> ()
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
   in
   helper
 ;;
 
+let pp_binding ppf binding =
+  let p, e = binding in
+  match e with
+  | ExprFun (p1, e1) -> fprintf ppf "%a %a = %a" pp_pattern p pp_pattern p1 pp_expr e1
+  | _ -> fprintf ppf "%a = %a" pp_pattern p pp_expr e
+;;
+
+let pp_binding_list ppf binding_list =
+  List.iter (fun item -> fprintf ppf "%a" pp_binding item) binding_list
+;;
+
 let pp_structure =
   let rec helper ppf = function
     | SEval e -> fprintf ppf "%a" pp_expr e
-    | SValue (rf, bl) -> fprintf ppf "hi\n"
+    | SValue (rf, bl) -> fprintf ppf "let%a %a" pp_rec_flag rf pp_binding_list bl
   in
   helper
 ;;
