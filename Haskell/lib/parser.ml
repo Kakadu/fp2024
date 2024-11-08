@@ -6,14 +6,15 @@ open Angstrom
 open Ast
 open Integer
 
-let ws =
-  many
+let ws1 =
+  many1
   @@ satisfy
   @@ function
   | ' ' | '\t' -> true
   | _ -> false
 ;;
 
+let ws = option [] ws1
 let ( >>>= ) p f = ws *> p >>= f
 let ( let** ) = ( >>>= )
 let ( <**> ) f p = f <*> ws *> p
@@ -31,12 +32,17 @@ let is_digit = function
   | _ -> false
 ;;
 
+let nonnegative_integer =
+  let* y = take_while1 is_digit in
+  match Nonnegative_integer.of_string_opt y with
+  | None -> fail ""
+  | Some x -> return x
+;;
+
 let const =
   choice
-    [ (let* y = take_while1 is_digit in
-       match Nonnegative_integer.of_string_opt y with
-        | None -> fail ""
-        | Some x -> return (Integer x))
+    [ (let+ x = nonnegative_integer in
+       Integer x)
     ; string "()" *> return Unit
     ; string "True" *> return (Bool true)
     ; string "False" *> return (Bool false)
@@ -44,18 +50,19 @@ let const =
 ;;
 
 let%test "const_valid_num" =
-  parse_string ~consume:Prefix const "123" = Result.Ok (Integer (Nonnegative_integer.of_int 123))
+  parse_string ~consume:Prefix const "123"
+  = Result.Ok (Integer (Nonnegative_integer.of_int 123))
 ;;
 
 let%test "const_invalid_num" =
-  parse_string ~consume:Prefix const "123ab" = Result.Ok (Integer (Nonnegative_integer.of_int 123))
+  parse_string ~consume:Prefix const "123ab"
+  = Result.Ok (Integer (Nonnegative_integer.of_int 123))
 ;;
 
 let%test "const_invalid_num_negative" =
   parse_string ~consume:Prefix const "-123" = Result.Error ": no more choices"
 ;;
 
-;;
 let%test "const_valid_unit" = parse_string ~consume:Prefix const "()" = Result.Ok Unit
 
 let%test "const_valid_true" =
@@ -72,6 +79,16 @@ let%test "const_invalid" =
 
 let is_char_suitable_for_ident c =
   is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
+;;
+
+let is_char_suitable_for_oper = function
+  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' -> true
+  | _ -> false
+;;
+
+let oper expected =
+  let* parsed = take_while is_char_suitable_for_oper in
+  if String.equal expected parsed then return expected else fail ""
 ;;
 
 let ident =
@@ -151,21 +168,28 @@ let nothing f = string "Nothing" *> f
 
 let tree item nul_cons node_cons =
   char '$' *> nul_cons
-  <|> (parens (sep_by (ws *> char ';' *> ws) item)
+  <|> (parens (sep_by (ws *> char ';') item)
        >>= function
        | [ it1; it2; it3 ] -> node_cons it1 it2 it3
        | _ -> fail "cannot parse tree")
 ;;
 
+let pnegation =
+  oper "-" *> ws *> nonnegative_integer >>| fun a -> [], PConst (NegativePInteger a), etp
+;;
+
 let pat ptrn =
   choice
     [ (let* pt = const in
-       return (PConst pt))
+       return (PConst (OrdinaryPConst pt)))
     ; (let* pt = ident in
        return (PIdentificator pt))
     ; char '_' *> return PWildcard
     ; nothing (return PNothing)
-    ; tree ptrn (return (PTree PNul)) (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
+    ; tree
+        (ws *> (ptrn <|> pnegation))
+        (return (PTree PNul))
+        (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
     ]
 ;;
 
@@ -177,36 +201,62 @@ let ptrn ptrn =
        (* let* tp = tp in *)
        return ([], pat, etp))
     ; tuple_or_parensed_item
-        ptrn
+        (ptrn <|> pnegation)
         (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), etp))
         (fun p -> return p)
     ]
 ;;
 
-let pattern = ptrn (fix ptrn)
+type unparanced_neg_handling =
+  | Ban
+  | Allow
+
+let pattern unp_neg_h =
+  ptrn (fix ptrn)
+  <|>
+  match unp_neg_h with
+  | Ban -> fail ""
+  | Allow -> pnegation
+;;
 
 let%test "pattern_valid_as" =
-  parse_string ~consume:Prefix pattern "adada@(   x   )"
+  parse_string ~consume:Prefix (pattern Allow) "adada@(   x   )"
   = Result.Ok ([ Ident "adada" ], PIdentificator (Ident "x"), None)
 ;;
 
 let%test "pattern_valid_parens_oth" =
-  parse_string ~consume:Prefix pattern "(   x   )"
+  parse_string ~consume:Prefix (pattern Allow) "(   x   )"
   = Result.Ok ([], PIdentificator (Ident "x"), None)
 ;;
 
+let%test "pattern_valid_neg" =
+  parse_string ~consume:Prefix (pattern Allow) "-1"
+  = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), None)
+;;
+
+let%test "pattern_invalid_banned_neg" =
+  parse_string ~consume:Prefix (pattern Ban) "-1"
+  = Result.Error ": "
+;;
+
 let%test "pattern_valid_double_as" =
-  parse_string ~consume:Prefix pattern "a@b@2"
-  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Integer (Nonnegative_integer.of_int 2)), None)
+  parse_string ~consume:Prefix (pattern Allow) "a@b@2"
+  = Result.Ok
+      ( [ Ident "a"; Ident "b" ]
+      , PConst (OrdinaryPConst (Integer (Nonnegative_integer.of_int 2)))
+      , None )
 ;;
 
 let%test "pattern_valid_with_parens" =
-  parse_string ~consume:Prefix pattern "(a@(b@(2)))"
-  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (Integer (Nonnegative_integer.of_int 2)), None)
+  parse_string ~consume:Prefix (pattern Allow) "(a@(b@(2)))"
+  = Result.Ok
+      ( [ Ident "a"; Ident "b" ]
+      , PConst (OrdinaryPConst (Integer (Nonnegative_integer.of_int 2)))
+      , None )
 ;;
 
 let%expect_test "pattern_valid_tuple" =
-  prs_and_prnt_ln pattern show_pattern "(x, y,(x,y))";
+  prs_and_prnt_ln (pattern Allow) show_pattern "(x, y,(x,y))";
   [%expect
     {|
       ([],
@@ -221,7 +271,7 @@ let%expect_test "pattern_valid_tuple" =
 ;;
 
 let%expect_test "pattern_valid_tuple_labeled" =
-  prs_and_prnt_ln pattern show_pattern "a@(x, e@y,b@(x,y))";
+  prs_and_prnt_ln (pattern Allow) show_pattern "a@(x, e@y,b@(x,y))";
   [%expect
     {|
       ([(Ident "a")],
@@ -236,26 +286,26 @@ let%expect_test "pattern_valid_tuple_labeled" =
 ;;
 
 let%expect_test "pattern_invalid_tuple_labeled" =
-  prs_and_prnt_ln pattern show_pattern "(x, e@y,(x,y)@(x,y))";
+  prs_and_prnt_ln (pattern Allow) show_pattern "(x, e@y,(x,y)@(x,y))";
   [%expect {|
-      error: : no more choices |}]
+      error: : |}]
 ;;
 
 let%expect_test "pattern_valid_tree" =
-  prs_and_prnt_ln pattern show_pattern "(2; $; $)";
+  prs_and_prnt_ln (pattern Allow) show_pattern "(2; $; $)";
   [%expect
     {|
       ([],
        (PTree
-          (PNode (([], (PConst (Integer 2)), None), ([], (PTree PNul), None),
-             ([], (PTree PNul), None)))),
+          (PNode (([], (PConst (OrdinaryPConst (Integer 2))), None),
+             ([], (PTree PNul), None), ([], (PTree PNul), None)))),
        None) |}]
 ;;
 
 let%expect_test "pattern_invalid_tree" =
-  prs_and_prnt_ln pattern show_pattern "(2; $)";
+  prs_and_prnt_ln (pattern Allow) show_pattern "(2; $)";
   [%expect {|
-      error: : no more choices |}]
+      error: : |}]
 ;;
 
 let bindingbody e sep =
@@ -265,7 +315,7 @@ let bindingbody e sep =
   <|>
   let* ee_pairs =
     many1
-      (char '|'
+      (oper "|"
        **> let* ex1 = e in
            sep
            **> let* ex2 = e in
@@ -279,12 +329,12 @@ let bindingbody e sep =
 let bnd e bnd =
   (let** ident = ident in
    (* let* ft = option None (functype <** char ';') in *)
-   let** pt = pattern in
-   let* pts = many (ws *> pattern) in
+   let** pt = pattern Ban in
+   let* pts = many (ws *> pattern Ban) in
    return (fun bb where_binds -> FunBind ((ident, None), pt, pts, bb, where_binds)))
-  <|> (let** pt = pattern in
+  <|> (let** pt = pattern Ban in
        return (fun bb where_binds -> VarsBind (pt, bb, where_binds)))
-  <**> bindingbody e (char '=')
+  <**> bindingbody e (oper "=")
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
 ;;
 
@@ -296,24 +346,27 @@ type assoc =
   | Non
 
 let prios_list =
-  [ [ (Right, string "||", fun a b -> Binop (a, Or, b), etp) ]
-  ; [ (Right, string "&&", fun a b -> Binop (a, And, b), etp) ]
-  ; [ (Non, string "==", fun a b -> Binop (a, Equality, b), etp)
-    ; (Non, string "/=", fun a b -> Binop (a, Inequality, b), etp)
-    ; (Non, string ">=", fun a b -> Binop (a, EqualityOrGreater, b), etp)
-    ; (Non, string "<=", fun a b -> Binop (a, EqualityOrLess, b), etp)
-    ; (Non, string ">", fun a b -> Binop (a, Greater, b), etp)
-    ; (Non, string "<", fun a b -> Binop (a, Less, b), etp)
-    ]
-  ; [ (Right, string ":", fun a b -> Binop (a, Cons, b), etp) ]
-  ; [ (Left, string "+", fun a b -> Binop (a, Plus, b), etp)
-    ; (Left, string "-", fun a b -> Binop (a, Minus, b), etp)
-    ]
-  ; [ (Left, string "`div`", fun a b -> Binop (a, Divide, b), etp)
-    ; (Left, string "*", fun a b -> Binop (a, Multiply, b), etp)
-    ; (Left, string "`mod`", fun a b -> Binop (a, Mod, b), etp)
-    ]
-  ; [ (Right, string "^", fun a b -> Binop (a, Pow, b), etp) ]
+  [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), etp) ]
+  ; None, [ (Right, oper "&&", fun a b -> Binop (a, And, b), etp) ]
+  ; ( None
+    , [ (Non, oper "==", fun a b -> Binop (a, Equality, b), etp)
+      ; (Non, oper "/=", fun a b -> Binop (a, Inequality, b), etp)
+      ; (Non, oper ">=", fun a b -> Binop (a, EqualityOrGreater, b), etp)
+      ; (Non, oper "<=", fun a b -> Binop (a, EqualityOrLess, b), etp)
+      ; (Non, oper ">", fun a b -> Binop (a, Greater, b), etp)
+      ; (Non, oper "<", fun a b -> Binop (a, Less, b), etp)
+      ] )
+  ; ( Some (oper "-", fun a -> Neg a, etp)
+    , [ (Right, oper ":", fun a b -> Binop (a, Cons, b), etp)
+      ; (Left, oper "+", fun a b -> Binop (a, Plus, b), etp)
+      ; (Left, oper "-", fun a b -> Binop (a, Minus, b), etp)
+      ] )
+  ; ( None
+    , [ (Left, oper "`div`", fun a b -> Binop (a, Divide, b), etp)
+      ; (Left, oper "*", fun a b -> Binop (a, Multiply, b), etp)
+      ; (Left, oper "`mod`", fun a b -> Binop (a, Mod, b), etp)
+      ] )
+  ; None, [ (Right, string "^", fun a b -> Binop (a, Pow, b), etp) ]
   ]
 ;;
 
@@ -343,10 +396,14 @@ let bo expr prios_list =
       <**> helper tl
       <*> (choice
              (List.map
-                (fun (ass, op, f) -> op **> helper tl >>>= fun r -> return (ass, f, r))
-                hd)
+                (fun (ass, op, f) -> op **> helper tl >>= fun r -> return (ass, f, r))
+                (snd hd))
            |> many
            >>= non_assoc_ops_seq_check)
+      <|>
+        (match fst hd with
+        | Some (op, f) -> ws *> (op **> helper tl) >>= fun a -> return (f a)
+        | _ -> fail "")
   in
   helper prios_list
 ;;
@@ -387,9 +444,9 @@ let just =
 ;;
 
 let lambda e =
-  char '\\'
-  *> let** pt = pattern in
-     let* pts = many (ws *> pattern) in
+  oper "\\"
+  *> let** pt = pattern Ban in
+     let* pts = many (ws *> pattern Ban) in
      let* ex = string "->" **> e in
      return (Lambda (pt, pts, ex), etp)
 ;;
@@ -407,7 +464,7 @@ let case e =
      word "of"
      **>
      let* br1, brs =
-       sep_by1 (ws *> char ';' *> ws )(both pattern (bindingbody e (string "->")))
+       sep_by1 (ws *> char ';' *> ws) (both (pattern Allow) (bindingbody e (string "->")))
        >>= function
        | [] -> fail "sep_by1 cant return empty list"
        | hd :: tl -> return (hd, tl)
@@ -583,7 +640,8 @@ let%expect_test "expr_case_statement" =
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), None),
-          (([], (PConst (Integer 1)), None), (OrdBody ((Const (Integer 1)), None))),
+          (([], (PConst (OrdinaryPConst (Integer 1))), None),
+           (OrdBody ((Const (Integer 1)), None))),
           [(([], PWildcard, None), (OrdBody ((Const (Integer 2)), None)))])),
        None) |}]
 ;;
@@ -645,6 +703,47 @@ let%expect_test "expr_tree" =
        None) |}]
 ;;
 
+let%expect_test "expr_plus_neg" =
+  prs_and_prnt_ln expr show_expr "1 + -1";
+  [%expect {|
+      ((Const (Integer 1)), None) |}]
+;;
+
+let%expect_test "expr_and_neg" =
+  prs_and_prnt_ln expr show_expr "1 && -1";
+  [%expect
+    {|
+      ((Binop (((Const (Integer 1)), None), And,
+          ((Neg ((Const (Integer 1)), None)), None))),
+       None) |}]
+;;
+
+let%expect_test "expr_tuple_neg" =
+  prs_and_prnt_ln expr show_expr "(-1, 1)";
+  [%expect
+    {|
+      ((TupleBld (((Neg ((Const (Integer 1)), None)), None),
+          ((Const (Integer 1)), None), [])),
+       None) |}]
+;;
+
+let%expect_test "expr_lambda neg" =
+  prs_and_prnt_ln expr show_expr " \\ -1 -> 1";
+  [%expect {|
+      error: : no more choices |}]
+;;
+
+let%expect_test "expr_case_neg" =
+  prs_and_prnt_ln expr show_expr "case-1of-1->1";
+  [%expect
+    {|
+      ((Case (((Neg ((Const (Integer 1)), None)), None),
+          (([], (PConst (NegativePInteger 1)), None),
+           (OrdBody ((Const (Integer 1)), None))),
+          [])),
+       None) |}]
+;;
+
 let binding = binding expr
 
 let%expect_test "var_binding_simple" =
@@ -699,7 +798,8 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   prs_and_prnt_ln binding show_binding "f 9y = y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PConst (Integer 9)), None),
+      (FunBind (((Ident "f"), None),
+         ([], (PConst (OrdinaryPConst (Integer 9))), None),
          [([], (PIdentificator (Ident "y")), None)],
          (OrdBody ((Identificator (Ident "y")), None)), [])) |}]
 ;;

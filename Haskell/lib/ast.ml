@@ -84,7 +84,7 @@ type comprehension =
 
 and ordinarylistbld =
   | ComprehensionList of expr * comprehension * comprehension list
-  (** e.g [[x * y | x <- [1, 10, 100], y <- [2, 3]], y mod 2 == 0] *)
+  (** e.g [[x * y | x <- [1, 10, 100], y <- [2, 3]], y `mod` 2 == 0] *)
   | IncomprehensionlList of expr (**e.g. [[1,2]] *)
 [@@deriving show { with_path = false }]
 
