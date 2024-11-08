@@ -98,4 +98,15 @@ Format.printf
          , ExprCons
              ( ExprLiteral (IntLiteral 2)
              , ExprCons (ExprLiteral (IntLiteral 3), ExprLiteral NilLiteral) ) ))
+  ; SEval
+      (ExprBinOperation
+         ( Add
+         , ExprLiteral (IntLiteral 1)
+         , ExprBinOperation (Mul, ExprLiteral (IntLiteral 2), ExprLiteral (IntLiteral 2))
+         ))
+  ; SEval
+      (ExprBinOperation
+         ( Mul
+         , ExprBinOperation (Add, ExprLiteral (IntLiteral 1), ExprLiteral (IntLiteral 2))
+         , ExprLiteral (IntLiteral 2) ))
   ]

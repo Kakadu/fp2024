@@ -49,7 +49,7 @@ let pp_expr =
     | ExprVariable v -> fprintf ppf "%s" v
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
     | ExprBinOperation (op, e1, e2) ->
-      fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
+      fprintf ppf "(%a %a %a)" helper e1 pp_binop op helper e2
     | ExprUnOperation _ -> ()
     | ExprIf (c, th, el) ->
       (match el with
