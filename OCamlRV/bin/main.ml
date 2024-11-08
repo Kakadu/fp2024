@@ -86,4 +86,16 @@ Format.printf
                   , [ PVar "c", ExprLiteral (IntLiteral 1) ]
                   , ExprBinOperation (Add, ExprVariable "b", ExprVariable "c") ) ) )
         ] )
+  ; SEval
+      (ExprTuple
+         [ ExprLiteral (IntLiteral 1)
+         ; ExprLiteral (StringLiteral "2")
+         ; ExprLiteral (IntLiteral 3)
+         ])
+  ; SEval
+      (ExprCons
+         ( ExprLiteral (IntLiteral 1)
+         , ExprCons
+             ( ExprLiteral (IntLiteral 2)
+             , ExprCons (ExprLiteral (IntLiteral 3), ExprLiteral NilLiteral) ) ))
   ]

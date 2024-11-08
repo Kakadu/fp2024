@@ -42,7 +42,6 @@ type pattern =
   | PAny (** _ *)
   | PLiteral of literal (** 123, true, "string" *)
   | PVar of identifier (** x *)
-  | PTuple of pattern list (** p_1 ,..., p_n *)
   | PCons of pattern * pattern (** p1::p2 *)
   | PPoly of identifier * pattern option (** `Tag p *)
 [@@deriving show { with_path = false }]
