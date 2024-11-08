@@ -88,6 +88,16 @@ let is_char_suitable_for_ident c =
   is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
 ;;
 
+let is_char_suitable_for_oper = function
+  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' -> true
+  | _ -> false
+;;
+
+let oper expected =
+  let* parsed = take_while is_char_suitable_for_oper in
+  if String.equal expected parsed then return expected else fail ""
+;;
+
 let ident =
   let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
@@ -262,7 +272,7 @@ let list_enum item f = sq_brackets (sep_by (ws *> char ',' *> ws) item) >>= f
 
 let tree item nul_cons node_cons =
   char '$' *> nul_cons
-  <|> (parens (sep_by (ws *> char ';' *> ws) item)
+  <|> (parens (sep_by (ws *> char ';') item)
        >>= function
        | [ it1; it2; it3 ] -> node_cons it1 it2 it3
        | _ -> fail "cannot parse tree")
@@ -363,6 +373,15 @@ let%test "pattern_invalid_banned_neg" =
   = Result.Error ": no more choices"
 ;;
 
+let%test "pattern_valid_neg" =
+  parse_string ~consume:Prefix (pattern Allow) "-1"
+  = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), None)
+;;
+
+let%test "pattern_invalid_banned_neg" =
+  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": "
+;;
+
 let%test "pattern_valid_double_as" =
   parse_string ~consume:Prefix (pattern Allow_p Allow_t) "a@b@2"
   = Result.Ok ([ Ident "a"; Ident "b" ], PConst (OrdinaryPConst (Int 2)), [])
@@ -436,7 +455,7 @@ let%expect_test "pattern_just_valid" =
 let%expect_test "pattern_just_invalid_ban_unparansed" =
   prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "Just 1";
   [%expect {|
-      error: : no more choices |}]
+      error: : |}]
 ;;
 
 let%expect_test "pattern_just_invalid_neg" =
@@ -712,9 +731,9 @@ let tuple_or_parensed_item_e e =
 ;;
 
 let lambda e =
-  char '\\'
-  *> let** pt = pattern in
-     let* pts = many (ws *> pattern) in
+  oper "\\"
+  *> let** pt = pattern Ban in
+     let* pts = many (ws *> pattern Ban) in
      let* ex = string "->" **> e in
      return (Lambda (pt, pts, ex), etp)
 ;;
@@ -964,7 +983,8 @@ let%expect_test "expr_case_statement" =
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), None),
-          (([], (PConst (Integer 1)), None), (OrdBody ((Const (Integer 1)), None))),
+          (([], (PConst (OrdinaryPConst (Integer 1))), None),
+           (OrdBody ((Const (Integer 1)), None))),
           [(([], PWildcard, None), (OrdBody ((Const (Integer 2)), None)))])),
        None) |}]
 ;;
@@ -1218,7 +1238,8 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   prs_and_prnt_ln binding show_binding "f 9y = y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PConst (Integer 9)), None),
+      (FunBind (((Ident "f"), None),
+         ([], (PConst (OrdinaryPConst (Integer 9))), None),
          [([], (PIdentificator (Ident "y")), None)],
          (OrdBody ((Identificator (Ident "y")), None)), [])) |}]
 ;;
