@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(* type nonnegative_integer =  *)
 type const =
   | Integer of Integer.nonnegative_integer (** e.g. [18] *)
   | Bool of bool (** e.g. [True] *)
@@ -46,10 +45,6 @@ type binop =
   | EqualityOrGreater (** [>=] *)
 [@@deriving show { with_path = false }]
 
-type unop =
-  | Minus (** [-] *)
-[@@deriving show { with_path = false }]
-
 (** variable's / function's name*)
 type ident = Ident of string [@@deriving show { with_path = false }]
 
@@ -67,9 +62,13 @@ and treepat =
   | PNode of pattern * pattern * pattern (** tree's node e.g [(x; y; z)]*)
 [@@deriving show { with_path = false }]
 
+and pconst =
+  | OrdinaryPConst of const
+  | NegativePInteger of Integer.nonnegative_integer
+
 and pat =
   | PWildcard (** _ *)
-  | PConst of const
+  | PConst of pconst
   | PIdentificator of ident (** e.g. [x] *)
   | PList of listpat
   | PTuple of pattern * pattern * pattern list (** e.g. [(x, y, z)]*)
@@ -123,15 +122,13 @@ and expression =
   | OptionBld of expr maybe (** e.g  [Just (f x)] *)
   | ListBld of listbld (** e.g [[(2 ^ 2 - 3) ..]] *)
   | Binop of expr * binop * expr (** e.g [1 > 0] *)
-  | Unop of unop * expr (** e.g [(-1)] *)
+  | Neg of expr (** e.g [(-1)] *)
   | IfThenEsle of expr * expr * expr (** e.g [if x >= 0 then x else (-x)] *)
   | FunctionApply of expr * expr * expr list (** e.g. [sum 1 2 or \x -> x + 1) 1] *)
   | Lambda of pattern * pattern list * expr (** e.g. [\x y -> x + y] *)
   | BinTreeBld of binary_tree_bld
   | Case of expr * (pattern * bindingbody) * (pattern * bindingbody) list
-  (** e.g [case l of
-      (x:xs) -> x
-      [] -> 0] *)
+  (** e.g [case l of (x:xs) -> x; [] -> 0] *)
   | InnerBindings of binding * binding list * expr
   (** e.g.
       [let
