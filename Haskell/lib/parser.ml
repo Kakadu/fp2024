@@ -293,6 +293,8 @@ let pcons_tail head ptrn_ext =
   >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
 ;;
 
+let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), etp)
+
 let pat ptrn =
   let ptrn_extended ptrn_extended =
     let* p = ptrn <|> pnegation <|> just_p ptrn in
@@ -454,6 +456,19 @@ let%expect_test "pattern_just_valid" =
 
 let%expect_test "pattern_just_invalid_ban_unparansed" =
   prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "Just 1";
+  [%expect {|
+      error: : satisfy: '(' |}]
+;;
+
+let%expect_test "pattern_just_valid" =
+  prs_and_prnt_ln (pattern Allow) show_pattern "Just 1";
+  [%expect
+    {|
+      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), None))), None) |}]
+;;
+
+let%expect_test "pattern_just_invalid_ban_unparansed" =
+  prs_and_prnt_ln (pattern Ban) show_pattern "Just 1";
   [%expect {|
       error: : |}]
 ;;
