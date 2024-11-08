@@ -52,7 +52,7 @@ type ident = Ident of string [@@deriving show { with_path = false }]
 type pattern = ident list * pat * tp option [@@deriving show { with_path = false }]
 
 and listpat =
-  | PCons of pattern * listpat (** e.g. [x:xs] *)
+  | PCons of pattern * pattern (** e.g. [x:xs] *)
   | PEnum of pattern list (** e.g. [[x, y, z]] *)
 [@@deriving show { with_path = false }]
 
