@@ -295,6 +295,17 @@ let pcons_tail head ptrn_ext =
 
 let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), etp)
 
+let pcons_tail head ptrn_ext =
+  let rec loop constr = function
+    | [] -> constr ([], PList (PEnum []), etp)
+    | hd :: [] -> constr hd
+    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), etp)) tl
+  in
+  many1 (oper ":" **> ptrn_ext)
+  >>| List.rev
+  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), etp)
+;;
+
 let pat ptrn =
   let ptrn_extended ptrn_extended =
     let* p = ptrn <|> pnegation <|> just_p ptrn in
@@ -381,7 +392,7 @@ let%test "pattern_valid_neg" =
 ;;
 
 let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": "
+  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": no more choices"
 ;;
 
 let%test "pattern_valid_double_as" =
