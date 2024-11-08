@@ -6,19 +6,18 @@ open Ast
 open Printf
 
 let print_bin_op indent = function
-  | Binary_equal -> printf "%s| Binary Equal\n" (String.make indent '-')
-  | Binary_unequal -> printf "%s| Binary Unequal\n" (String.make indent '-')
-  | Binary_less -> printf "%s| Binary Less\n" (String.make indent '-')
-  | Binary_less_or_equal -> printf "%s| Binary Less Or Equal\n" (String.make indent '-')
-  | Binary_greater -> printf "%s| Binary Greater\n" (String.make indent '-')
-  | Binary_greater_or_equal ->
-    printf "%s| Binary Greater Or Equal\n" (String.make indent '-')
-  | Binary_add -> printf "%s| Binary Add\n" (String.make indent '-')
-  | Binary_subtract -> printf "%s| Binary Subtract\n" (String.make indent '-')
-  | Binary_multiply -> printf "%s| Binary Multiply\n" (String.make indent '-')
-  | Logical_or -> printf "%s| Logical Or\n" (String.make indent '-')
-  | Logical_and -> printf "%s| Logical And\n" (String.make indent '-')
-  | Binary_divide -> printf "%s| Binary Divide\n" (String.make indent '-')
+  | Binary_equal -> printf "= " 
+  | Binary_unequal -> printf "<> " 
+  | Binary_less -> printf "< "
+  | Binary_less_or_equal -> printf "<= " 
+  | Binary_greater -> printf "> " 
+  | Binary_greater_or_equal -> printf ">= " 
+  | Binary_add -> printf "+ "
+  | Binary_subtract -> printf "- "
+  | Binary_multiply -> printf "* "
+  | Logical_or -> printf "|| " 
+  | Logical_and -> printf "&& " 
+  | Binary_divide -> printf "/ "
   | Binary_or_bitwise -> printf "%s| Binary Or Bitwise\n" (String.make indent '-')
   | Binary_xor_bitwise -> printf "%s| Binary Xor Bitwise\n" (String.make indent '-')
   | Binary_and_bitwise -> printf "%s| Binary And Bitwise\n" (String.make indent '-')
@@ -50,14 +49,14 @@ let rec print_pattern indent = function
       variants
 ;;
 
-let print_unary_op indent = function
-  | Unary_minus -> printf "%s| Unary minus\n" (String.make indent '-')
-  | Unary_not -> printf "%s| Unary negative\n" (String.make indent '-')
+let print_unary_op = function
+  | Unary_minus -> printf "-"
+  | Unary_not -> printf "not "
 ;;
 
 let rec print_expr indent expr =
   match expr with
-  | Const (Int_lt i) -> printf "%s| Const(Int: %d)\n" (String.make indent '-') i
+  | Const (Int_lt i) -> printf "%d " i
   | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
@@ -76,26 +75,24 @@ let rec print_expr indent expr =
         printf "%s| Inner expr:\n" (String.make (indent + 2) '-');
         print_expr (indent + 4) expr)
       patterns
-  | Variable (Ident name) -> printf "%s| Variable(%s)\n" (String.make indent '-') name
+  | Variable (Ident name) -> printf "%s " name
   | Unary_expr (op, expr) ->
-    printf "%s| Unary expr(\n" (String.make indent '-');
-    print_unary_op indent op;
+    print_unary_op op;
     print_expr (indent + 2) expr
   | Bin_expr (op, left, right) ->
-    printf "%s| Binary expr(\n" (String.make indent '-');
-    print_bin_op indent op;
     print_expr (indent + 2) left;
+    print_bin_op indent op;
     print_expr (indent + 2) right
   | If_then_else (cond, then_body, else_body) ->
-    printf "%s| If Then Else(\n" (String.make indent '-');
-    printf "%sCONDITION\n" (String.make (indent + 2) ' ');
+    printf "if ";
     print_expr (indent + 2) cond;
-    printf "%sTHEN BRANCH\n" (String.make (indent + 2) ' ');
+    printf "then ";
     print_expr (indent + 4) then_body;
-    printf "%sELSE BRANCH\n" (String.make (indent + 2) ' ');
     (match else_body with
-     | Some body -> print_expr (indent + 4) body
-     | None -> printf "No else body")
+     | Some body -> (
+      printf "else ";
+      print_expr (indent + 4) body)
+     |None -> printf ";\n")
   | Function_def (args, body) ->
     printf "%s| Func:\n" (String.make indent '-');
     printf "%sARGS\n" (String.make (indent + 2) ' ');
@@ -103,41 +100,33 @@ let rec print_expr indent expr =
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) body
   | Function_call (func, arg) ->
-    printf "%s| Function Call:\n" (String.make indent '-');
-    printf "%sFUNCTION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) func;
-    printf "%sARGS\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) arg
   | LetIn (rec_flag, name, args, body, in_expr) ->
     printf
-      "%s | LetIn %s %s =\n"
-      (String.make indent '-')
+      "let %s %s = "
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "Rec")
+       | Rec -> "rec")
       (match name with
        | Some (Ident n) -> n
-       | None -> "Anonymous");
-    printf "%sARGS\n" (String.make (indent + 2) ' ');
+       | None -> "()");
     List.iter (print_expr (indent + 2)) args;
-    printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) body;
-    printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) in_expr
+    printf "in\n";
+    print_expr (indent + 2) in_expr;
+    printf "\n"
 ;;
 
 let print_statement indent = function
   | Let (rec_flag, Ident name, args, body) ->
     printf
-      "%s | Let %s %s =\n"
-      (String.make indent '-')
+      "let %s %s = "
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "Rec")
+       | Rec -> "rec")
       name;
-    printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 2)) args;
-    printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) body
   | ActivePattern (patterns, expr) ->
     printf "%s| ActivePattern:\n" (String.make indent '-');
@@ -148,8 +137,12 @@ let print_statement indent = function
 ;;
 
 let print_construction = function
-  | Expr e -> print_expr 0 e
-  | Statement s -> print_statement 0 s
+  | Expr e -> 
+    (print_expr 0 e;
+    printf ";;\n")
+  | Statement s -> 
+    (print_statement 0 s;
+    printf ";;\n")
 ;;
 
 let print_p_res = function
