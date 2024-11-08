@@ -75,4 +75,15 @@ Format.printf
                                  (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) ))
                   ) ) )
         ] )
+  ; SValue
+      ( NonRec
+      , [ ( PVar "a"
+          , ExprLet
+              ( NonRec
+              , [ PVar "b", ExprLiteral (IntLiteral 1) ]
+              , ExprLet
+                  ( NonRec
+                  , [ PVar "c", ExprLiteral (IntLiteral 1) ]
+                  , ExprBinOperation (Add, ExprVariable "b", ExprVariable "c") ) ) )
+        ] )
   ]

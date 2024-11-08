@@ -3,44 +3,34 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Parser
 open Format
 
-let pp_binop =
-  let rec helper ppf = function
-    | Add -> fprintf ppf "+"
-    | Sub -> fprintf ppf "-"
-    | Mul -> fprintf ppf "*"
-    | Div -> fprintf ppf "/"
-    | Lt -> fprintf ppf "<"
-    | Gt -> fprintf ppf ">"
-    | Eq -> fprintf ppf "="
-    | Neq -> fprintf ppf "<>"
-    | Lte -> fprintf ppf "<="
-    | Gte -> fprintf ppf ">="
-    | And -> fprintf ppf "&&"
-    | Or -> fprintf ppf "||"
-  in
-  helper
+let pp_binop ppf = function
+  | Add -> fprintf ppf "+"
+  | Sub -> fprintf ppf "-"
+  | Mul -> fprintf ppf "*"
+  | Div -> fprintf ppf "/"
+  | Lt -> fprintf ppf "<"
+  | Gt -> fprintf ppf ">"
+  | Eq -> fprintf ppf "="
+  | Neq -> fprintf ppf "<>"
+  | Lte -> fprintf ppf "<="
+  | Gte -> fprintf ppf ">="
+  | And -> fprintf ppf "&&"
+  | Or -> fprintf ppf "||"
 ;;
 
-let pp_rec_flag =
-  let rec helper ppf = function
-    | NonRec -> fprintf ppf ""
-    | Rec -> fprintf ppf " rec"
-  in
-  helper
+let pp_rec_flag ppf = function
+  | NonRec -> fprintf ppf ""
+  | Rec -> fprintf ppf " rec"
 ;;
 
-let pp_literal =
-  let rec helper ppf = function
-    | IntLiteral i -> fprintf ppf "%d" i
-    | BoolLiteral b -> fprintf ppf "%b" b
-    | StringLiteral s -> fprintf ppf "%s" s
-    | UnitLiteral -> fprintf ppf "()"
-    | NilLiteral -> fprintf ppf "[]"
-  in
-  helper
+let pp_literal ppf = function
+  | IntLiteral i -> fprintf ppf "%d" i
+  | BoolLiteral b -> fprintf ppf "%b" b
+  | StringLiteral s -> fprintf ppf "%s" s
+  | UnitLiteral -> fprintf ppf "()"
+  | NilLiteral -> fprintf ppf "[]"
 ;;
 
 let pp_pattern =
@@ -67,7 +57,18 @@ let pp_expr =
        | None -> fprintf ppf "if %a then %a" helper c helper th
        | Some x -> fprintf ppf "if %a then %a else %a" helper c helper th helper x)
     | ExprMatch _ -> ()
-    | ExprLet (rf, bl, e) -> ()
+    | ExprLet (rf, bl, e) ->
+      let pp_binding ppf binding =
+        let p, e = binding in
+        match e with
+        | ExprFun (p1, e1) ->
+          fprintf ppf "%a %a = %a" pp_pattern p pp_pattern p1 helper e1
+        | _ -> fprintf ppf "%a = %a" pp_pattern p helper e
+      in
+      let pp_binding_list ppf binding_list =
+        List.iter (fun item -> fprintf ppf "%a" pp_binding item) binding_list
+      in
+      fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list bl helper e
     | ExprApply (e1, e2) ->
       (match e2 with
        | ExprBinOperation _ -> fprintf ppf "%a (%a)" helper e1 helper e2
@@ -91,12 +92,9 @@ let pp_binding_list ppf binding_list =
   List.iter (fun item -> fprintf ppf "%a" pp_binding item) binding_list
 ;;
 
-let pp_structure =
-  let rec helper ppf = function
-    | SEval e -> fprintf ppf "%a" pp_expr e
-    | SValue (rf, bl) -> fprintf ppf "let%a %a" pp_rec_flag rf pp_binding_list bl
-  in
-  helper
+let pp_structure ppf = function
+  | SEval e -> fprintf ppf "%a" pp_expr e
+  | SValue (rf, bl) -> fprintf ppf "let%a %a" pp_rec_flag rf pp_binding_list bl
 ;;
 
 let pp_structure_item_list ppf structure_list =
