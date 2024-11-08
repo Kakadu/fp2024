@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Stdlib
 open Ast
 open Format
 
@@ -15,6 +14,11 @@ let is_operator = function
 let is_operator1 = function
   | "+" | "-" -> true
   | _ -> false
+;;
+
+let let_flag_str = function
+  | Recursive -> "let rec"
+  | Nonrecursive -> "let"
 ;;
 
 let pp_escape_sequence ppf () = fprintf ppf "\n"
@@ -39,8 +43,7 @@ let rec pp_pattern ppf = function
     (match pat with
      | Pat_tuple [ head; tail ] ->
        fprintf ppf "[%a" pp_pattern head;
-       let rec pp_tail tail =
-         match tail with
+       let rec pp_tail = function
          | Pat_construct (_, None) -> fprintf ppf "]"
          | Pat_construct (_, Some pat_tail) ->
            (match pat_tail with
@@ -58,10 +61,6 @@ let rec pp_expression ppf = function
   | Exp_ident id -> pp_ident ppf id
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, value_binding_list, exp) ->
-    let flag_str = function
-      | Recursive -> "let rec"
-      | Nonrecursive -> "let"
-    in
     let bindings_str =
       String.concat
         " and "
@@ -69,7 +68,7 @@ let rec pp_expression ppf = function
            (fun b -> asprintf "%a = %a" pp_pattern b.pat pp_expression b.exp)
            value_binding_list)
     in
-    fprintf ppf "%s %s in %a" (flag_str rec_flag) bindings_str pp_expression exp
+    fprintf ppf "%s %s in %a" (let_flag_str rec_flag) bindings_str pp_expression exp
   | Exp_fun (pat_list, exp) ->
     fprintf
       ppf
@@ -117,8 +116,7 @@ let rec pp_expression ppf = function
     (match exp with
      | Exp_tuple [ head; tail ] ->
        fprintf ppf "[%a" pp_expression head;
-       let rec print_tail tail =
-         match tail with
+       let rec print_tail = function
          | Exp_construct (_, None) -> fprintf ppf "]"
          | Exp_construct (_, Some exp_tail) ->
            (match exp_tail with
@@ -149,10 +147,6 @@ let rec pp_expression ppf = function
 let pp_structure_item ppf = function
   | Struct_eval exp -> fprintf ppf "%a;;" pp_expression exp
   | Struct_value (rec_flag, value_binding_list) ->
-    let flag_str = function
-      | Recursive -> "let rec"
-      | Nonrecursive -> "let"
-    in
     let bindings_str =
       String.concat
         " and "
@@ -160,9 +154,9 @@ let pp_structure_item ppf = function
            (fun value -> asprintf "%a = %a" pp_pattern value.pat pp_expression value.exp)
            value_binding_list)
     in
-    fprintf ppf "%s %s;;" (flag_str rec_flag) bindings_str
+    fprintf ppf "%s %s;;" (let_flag_str rec_flag) bindings_str
 ;;
 
-let pp_structure ppf structure =
-  fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item) structure
+let pp_structure ppf =
+  fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item)
 ;;
