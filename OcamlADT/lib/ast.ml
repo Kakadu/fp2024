@@ -37,7 +37,7 @@ type expression =
   | Exp_function of case * case list
   (** [Exp_function (P1, [P2; ...; Pn])] represents
       [function P1 | ... | Pn] *)
-  | Exp_fun of pattern * pattern list * expression
+  | Exp_fun of pattern * expression
   (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
      [fun P1 ... Pn -> E] *)
   | Exp_apply of expression * expression list (** [Pexp_apply(E0, [E1 ; ... ; En])]

@@ -15,7 +15,7 @@ let is_not_keyword = function
   
 let debug_parser name p =
   (p >>= fun result ->
-    Stdlib.Printf.printf "Debug: %s parser SUCCEEDED\n" name;
+    Stdlib.Printf.printf "Debug: %s parser SUCCEEDED\n" name ;
     return result) <|> (return () >>= fun () ->
     Stdlib.Printf.printf "Debug: %s parser failed\n" name;
     fail (Printf.sprintf "%s parser failed" name))
@@ -26,7 +26,7 @@ let is_whitespace = function
 let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
-let token s = pass_ws *> string s
+let token s = debug_parser "token_parser" (pass_ws *> string s)
 let pparens stmt = token "(" *> stmt <* token ")"
 let pdsemicolon = 
   let* str_part = take_while (function ';' -> false | _ -> true) in  
@@ -89,15 +89,10 @@ let lchain p op =
     loop x
 
 
-let pidentexpr =
-  pident >>= fun ident ->
-  if is_not_keyword ident then
-    return (Exp_ident ident)
-  else
-    fail "Found a keyword instead of an identifier"
+
 
 (*                   Patterns                         *)
-let pany = token "_" *> return Pat_any
+let pany =  token "_" *> return Pat_any
 
 let pvar =
   pident >>= fun ident ->
@@ -109,12 +104,18 @@ let pvar =
 let ppattern =
   let parse = 
     pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
-  in debug_parser "pattern_parser" parse
+  in debug_parser "pattern_parser"  parse
 
 
 (*                   Expressions                         *)
 
-
+let pidentexpr =
+  pident >>= fun ident ->
+  if is_not_keyword ident then
+    return (Exp_ident ident)
+  else
+    fail "Found a keyword instead of an identifier"
+;;
 let pvalue_binding pexpr =
   let parse_pattern_and_expr =
     let expr_parser = 
@@ -166,14 +167,13 @@ let papplyexpr pexpr = lchain pexpr (return (fun ex1 ex2 -> Exp_apply(ex1, [ex2]
   lchain papplychain pexpr
 ;;*)
 
-let pfunexpr pexpr = 
-  fix @@ fun pfunexpr -> 
-  lift3
-    (fun first_pattern rest_patterns body_expr -> 
-      Exp_fun (first_pattern, rest_patterns, body_expr))
-    (pass_ws *> ppattern)
-    (many (pass_ws *> ppattern))
-    (pfunexpr <|> token "->" *> pexpr)
+let pfunexpr pexpr =  
+    lift2
+    (fun first_pattern body_expr -> 
+      Exp_fun (first_pattern, body_expr))
+    (token "fun" *> pass_ws *> ppattern)
+    (* (many (pass_ws *> ppattern)) *)
+    (token "->" *> pass_ws *> pexpr )
 ;;
 
 let parsebinop binoptoken =
@@ -198,34 +198,35 @@ let pcompops =
 let plogops = 
   choice 
   [
-    parsebinop "||";
     parsebinop "&&";
+    parsebinop "||";  
   ]
 
 
 let pexpr = fix (fun expr ->
   (* let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in *)
-    let expr = choice [
-      debug_parser "identexp" pidentexpr;
+    let expr = pass_ws *> choice [
       debug_parser "parens" (pparens expr);
       debug_parser "constint" pconstintexpr;
       debug_parser "constchar" pconstcharexpr;
       debug_parser "conststring" pconststringexpr;
+      debug_parser "identexp" pidentexpr;
+      debug_parser "apply" (papplyexpr expr);
+      debug_parser "mul_div" (lchain expr (pmul <|> pdiv));
+      debug_parser "add_sub" (lchain expr (padd <|> psub));
+      debug_parser "compare" (lchain expr pcompops);
+      rchain expr plogops;
+      debug_parser "if_then_else" (pifexpr expr);
+      debug_parser "tuple" ptupleexpr;
+      debug_parser "let" (pletexpr expr);
+      debug_parser "fun" (pfunexpr expr);
     ] in
-    let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
-    let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
-    let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
-    let expr = debug_parser "compare" (lchain expr pcompops) in
-    let expr = rchain expr plogops in
-    let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in 
-    let expr = debug_parser "tuple" ptupleexpr <|> expr in  
-    let expr = debug_parser "let" (pletexpr expr) <|> expr in
-    let expr = debug_parser "fun" (pfunexpr expr) <|> expr in  
+    
     expr)
   ;;
 (*                   Structure items                         *)
 
-let pseval = debug_parser "ps_eval" (lift (fun expr -> Str_eval(expr)) pexpr)
+let pseval = debug_parser "ps_eval" (lift (fun expr -> Str_eval(expr)) (pexpr))
 
 let psvalue = 
   debug_parser "ps_value" (let check_no_in =
@@ -251,7 +252,7 @@ let pstr_item =
   pseval <|> psvalue
 
 let pstructure =
-  let psemicolon = token ";;" in
+  let psemicolon = token ";;" in (*change on default token*)
   many (pstr_item <* psemicolon <* pass_ws)
 
 let parse str = parse_string ~consume:All pstructure str
