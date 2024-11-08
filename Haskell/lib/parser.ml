@@ -21,6 +21,7 @@ let ( <**> ) f p = f <*> ws *> p
 let ( **> ) p f = ws *> p *> (ws *> f)
 let etp = (None : tp option) (* remove later (tp parser is required) *)
 let parens p = char '(' *> ws *> p <* (ws <* char ')')
+let sq_brackets p = char '[' *> ws *> p <* (ws <* char ']')
 
 let is_alpha = function
   | 'a' .. 'z' | 'A' .. 'Z' -> true
@@ -166,6 +167,7 @@ let tuple_or_parensed_item item tuple_cons item_cons =
 
 let nothing f = word "Nothing" *> f
 let just f = word "Just" *> ws *> f
+let list_enum item f = sq_brackets (sep_by (ws *> char ',' *> ws) item) >>= f
 
 let tree item nul_cons node_cons =
   char '$' *> nul_cons
@@ -181,7 +183,22 @@ let pnegation =
 
 let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), etp)
 
+let pcons_tail head ptrn_ext =
+  let rec loop constr = function
+    | [] -> constr ([], PList (PEnum []), etp)
+    | hd :: [] -> constr hd
+    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), etp)) tl
+  in
+  many1 (oper ":" **> ptrn_ext)
+  >>| List.rev
+  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), etp)
+;;
+
 let pat ptrn =
+  let ptrn_extended ptrn_extended =
+    let* p = ptrn <|> pnegation <|> just_p ptrn in
+    option p (pcons_tail p ptrn_extended)
+  in
   choice
     [ (let* pt = const in
        return (PConst (OrdinaryPConst pt)))
@@ -190,9 +207,10 @@ let pat ptrn =
     ; char '_' *> return PWildcard
     ; nothing (return (PMaybe Nothing))
     ; tree
-        (ws *> (ptrn <|> pnegation <|> just_p ptrn))
+        (ws *> fix ptrn_extended)
         (return (PTree PNul))
         (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
+    ; list_enum (fix ptrn_extended) (fun pts -> return (PList (PEnum pts)))
     ]
 ;;
 
@@ -210,17 +228,19 @@ let ptrn ptrn =
     ]
 ;;
 
-type unparanced_neg_and_just_handling =
+type unparanced_pseudoops_handling =
   | Ban
   | Allow
 
 let pattern unp_neg_h =
   let p = ptrn (fix ptrn) in
-  p
-  <|>
   match unp_neg_h with
-  | Ban -> fail ""
-  | Allow -> pnegation <|> just_p p
+  | Ban -> p
+  | Allow ->
+    let ptr' ptr' =
+      p <|> pnegation <|> just_p p >>= fun hd -> option hd (pcons_tail hd ptr')
+    in
+    ptr' (fix ptr')
 ;;
 
 let%test "pattern_valid_as" =
@@ -239,7 +259,7 @@ let%test "pattern_valid_neg" =
 ;;
 
 let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": "
+  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": no more choices"
 ;;
 
 let%test "pattern_valid_double_as" =
@@ -317,28 +337,60 @@ let%expect_test "pattern_just_valid" =
     {|
       ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), None))), None) |}]
 ;;
+
 let%expect_test "pattern_just_invalid_ban_unparansed" =
   prs_and_prnt_ln (pattern Ban) show_pattern "Just 1";
-  [%expect
-    {|
-      error: : |}]
+  [%expect {|
+      error: : no more choices |}]
 ;;
 
 let%expect_test "pattern_just_invalid_neg" =
   prs_and_prnt_ln (pattern Allow) show_pattern "Just -1";
-  [%expect
-    {|
+  [%expect {|
       error: : no more choices |}]
 ;;
 
-let%expect_test "pattern_just_valid" =
-  prs_and_prnt_ln
-    (pattern Allow |> many)
-    (List.fold_left (fun acc el -> String.concat acc [ show_pattern el ]) "")
-    "Just (1)";
+
+let%expect_test "pattern_nil_valid" =
+  prs_and_prnt_ln (pattern Allow) show_pattern "[]";
+  [%expect {| ([], (PList (PEnum [])), None) |}]
+;;
+
+let%expect_test "pattern_enum_valid" =
+  prs_and_prnt_ln (pattern Allow) show_pattern "[1, 2,1  ,1]";
+  [%expect {|
+    ([],
+     (PList
+        (PEnum
+           [([], (PConst (OrdinaryPConst (Integer 1))), None);
+             ([], (PConst (OrdinaryPConst (Integer 2))), None);
+             ([], (PConst (OrdinaryPConst (Integer 1))), None);
+             ([], (PConst (OrdinaryPConst (Integer 1))), None)])),
+     None)
+       |}]
+;;
+
+
+let%expect_test "pattern_listcons_invalid_ban_unparansed" =
+  prs_and_prnt_ln (pattern Ban) show_pattern "x:xs";
+  [%expect {|
+      ([], (PIdentificator (Ident "x")), None) |}]
+;;
+
+let%expect_test "pattern_listcons_valid" =
+  prs_and_prnt_ln (pattern Allow) show_pattern "x:xs:ys";
   [%expect
     {|
-      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), None))), None) |}]
+      ([],
+       (PList
+          (PCons (([], (PIdentificator (Ident "x")), None),
+             ([],
+              (PList
+                 (PCons (([], (PIdentificator (Ident "xs")), None),
+                    ([], (PIdentificator (Ident "ys")), None)))),
+              None)
+             ))),
+       None) |}]
 ;;
 
 let bindingbody e sep =
