@@ -63,8 +63,8 @@ and treepat =
 [@@deriving show { with_path = false }]
 
 and pconst =
-  | OrdinaryPConst of const
-  | NegativePInteger of Integer.nonnegative_integer
+  | OrdinaryPConst of const (** e.g [True]*)
+  | NegativePInteger of Integer.nonnegative_integer (** e.g [-12]*)
 
 and pat =
   | PWildcard (** _ *)
