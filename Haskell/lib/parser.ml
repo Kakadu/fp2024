@@ -164,7 +164,8 @@ let tuple_or_parensed_item item tuple_cons item_cons =
   | [] -> fail "sep_by1 result can't be empty"
 ;;
 
-let nothing f = string "Nothing" *> f
+let nothing f = word "Nothing" *> f
+let just f = word "Just" *> ws *> f
 
 let tree item nul_cons node_cons =
   char '$' *> nul_cons
@@ -178,6 +179,8 @@ let pnegation =
   oper "-" *> ws *> nonnegative_integer >>| fun a -> [], PConst (NegativePInteger a), etp
 ;;
 
+let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), etp)
+
 let pat ptrn =
   choice
     [ (let* pt = const in
@@ -187,7 +190,7 @@ let pat ptrn =
     ; char '_' *> return PWildcard
     ; nothing (return (PMaybe Nothing))
     ; tree
-        (ws *> (ptrn <|> pnegation))
+        (ws *> (ptrn <|> pnegation <|> just_p ptrn))
         (return (PTree PNul))
         (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
     ]
@@ -207,16 +210,17 @@ let ptrn ptrn =
     ]
 ;;
 
-type unparanced_neg_handling =
+type unparanced_neg_and_just_handling =
   | Ban
   | Allow
 
 let pattern unp_neg_h =
-  ptrn (fix ptrn)
+  let p = ptrn (fix ptrn) in
+  p
   <|>
   match unp_neg_h with
   | Ban -> fail ""
-  | Allow -> pnegation
+  | Allow -> pnegation <|> just_p p
 ;;
 
 let%test "pattern_valid_as" =
@@ -287,7 +291,7 @@ let%expect_test "pattern_valid_tuple_labeled" =
 let%expect_test "pattern_invalid_tuple_labeled" =
   prs_and_prnt_ln (pattern Allow) show_pattern "(x, e@y,(x,y)@(x,y))";
   [%expect {|
-      error: : |}]
+      error: : satisfy: '(' |}]
 ;;
 
 let%expect_test "pattern_valid_tree" =
@@ -304,7 +308,37 @@ let%expect_test "pattern_valid_tree" =
 let%expect_test "pattern_invalid_tree" =
   prs_and_prnt_ln (pattern Allow) show_pattern "(2; $)";
   [%expect {|
+      error: : satisfy: '(' |}]
+;;
+
+let%expect_test "pattern_just_valid" =
+  prs_and_prnt_ln (pattern Allow) show_pattern "Just 1";
+  [%expect
+    {|
+      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), None))), None) |}]
+;;
+let%expect_test "pattern_just_invalid_ban_unparansed" =
+  prs_and_prnt_ln (pattern Ban) show_pattern "Just 1";
+  [%expect
+    {|
       error: : |}]
+;;
+
+let%expect_test "pattern_just_invalid_neg" =
+  prs_and_prnt_ln (pattern Allow) show_pattern "Just -1";
+  [%expect
+    {|
+      error: : no more choices |}]
+;;
+
+let%expect_test "pattern_just_valid" =
+  prs_and_prnt_ln
+    (pattern Allow |> many)
+    (List.fold_left (fun acc el -> String.concat acc [ show_pattern el ]) "")
+    "Just (1)";
+  [%expect
+    {|
+      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), None))), None) |}]
 ;;
 
 let bindingbody e sep =
@@ -432,14 +466,14 @@ let inner_bindings e =
       InnerBindings (bnd, bnds, ex), etp
 ;;
 
-let just =
-  word "Just"
-  *> return
+let just_e =
+  just
+    (return
        ( Lambda
            ( ([], PIdentificator (Ident "X"), etp)
            , []
            , (OptionBld (Just (Identificator (Ident "X"), None)), etp) )
-       , etp )
+       , etp ))
 ;;
 
 let lambda e =
@@ -483,7 +517,7 @@ let other_expr e fa =
     [ const_e
     ; ident_e
     ; nothing (return (OptionBld Nothing, etp))
-    ; just
+    ; just_e
     ; if_then_else e
     ; case e
     ; inner_bindings e
@@ -503,7 +537,7 @@ let function_application ex e =
        *> choice
             [ const_e
             ; ident_e
-            ; just
+            ; just_e
             ; nothing (return (OptionBld Nothing, etp))
             ; tree_e e
             ; tuple_or_parensed_item_e e
