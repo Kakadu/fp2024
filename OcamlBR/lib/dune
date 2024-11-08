@@ -1,7 +1,7 @@
 (library
  (name OCamlBR)
  (public_name OcamlBR)
- (modules Ast Parser Parser_tests)
+ (modules Ast Parser Parser_tests Pretty_printer Pretty_printer_tests)
  (libraries base angstrom)
  (instrumentation
   (backend bisect_ppx))

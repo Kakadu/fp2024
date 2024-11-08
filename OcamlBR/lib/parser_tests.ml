@@ -18,7 +18,7 @@ let%expect_test _ =
   [%expect
     {| 
  [(SValue (Recursive, "factorial",
-     (Efun (["n"],
+     (Efun ([(PVar "n")],
         (Eif_then_else ((Ebin_op (Eq, (Evar "n"), (Econst (Int 0)))),
            (Econst (Int 1)),
            (Some (Ebin_op (Mult, (Evar "n"),
