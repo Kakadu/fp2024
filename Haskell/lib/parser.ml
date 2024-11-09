@@ -262,14 +262,14 @@ type unparanced_pseudoops_handling =
   | Allow
 
 let pattern unp_neg_h =
-  let p = ptrn (fix ptrn) in
+  let p = fix ptrn in
   match unp_neg_h with
   | Ban -> p
   | Allow ->
     let ptr' ptr' =
       p <|> pnegation <|> just_p p >>= fun hd -> option hd (pcons_tail hd ptr')
     in
-    ptr' (fix ptr')
+    fix ptr'
 ;;
 
 let%test "pattern_valid_as" =
@@ -451,7 +451,7 @@ let bnd e bnd =
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
 ;;
 
-let binding e = fix (bnd e) |> bnd e
+let binding e = fix (bnd e)
 
 type assoc =
   | Left
@@ -658,7 +658,7 @@ let e e =
   >>= fun ex -> function_application ex e <|> return ex
 ;;
 
-let expr = e (fix e)
+let expr = fix e
 
 let%expect_test "expr_const" =
   prs_and_prnt_ln expr show_expr "123456789012345678901234567890";
@@ -944,7 +944,9 @@ let%expect_test "expr_list_comprehensional_gen" =
 ;;
 
 let%expect_test "expr_list_lazy_valid" =
-  List.iter (prs_and_prnt_ln expr show_expr) ["[1..]"; "[1, 3 .. 10]" ;"[1..10]"; "[1,3..]" ];
+  List.iter
+    (prs_and_prnt_ln expr show_expr)
+    [ "[1..]"; "[1, 3 .. 10]"; "[1..10]"; "[1,3..]" ];
   [%expect
     {|
       ((ListBld (LazyList (((Const (Integer 1)), None), None, None))), None)
