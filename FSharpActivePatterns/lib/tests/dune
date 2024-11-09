@@ -1,9 +1,13 @@
 (library
  (name tests)
- (modules Print_ast Parser)
- (libraries FSharpActivePatterns)
+ (modules Print_ast Parser Gen_construction)
+ (libraries FSharpActivePatterns qcheck)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (instrumentation
-  (backend bisect_ppx))
- (inline_tests))
+  (backend bisect_ppx)))
+
+(executable
+ (name run_construction)
+ (modules run_construction)
+ (libraries tests FSharpActivePatterns qcheck))

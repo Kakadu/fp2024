@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open FSharpActivePatterns.PrintAst
+open FSharpActivePatterns.Ast
 open FSharpActivePatterns.Parser
 open Stdlib
 
@@ -60,18 +61,20 @@ let run_repl dump_parsetree input_file =
     | Some n -> open_in n
   in
   let rec run_repl_helper run =
+    let open Format in
     match run ic with
-    | Fail -> Stdlib.Format.eprintf "Error occured\n"
+    | Fail -> fprintf err_formatter "Error occured\n"
     | Empty ->
-      Printf.printf "\n";
-      flush stdout;
+      fprintf std_formatter "\n";
+      print_flush ();
       run_repl_helper run
     | End -> ()
     | Result ast ->
       if dump_parsetree
       then (
-        print_construction ast;
-        flush stdout);
+        fprintf std_formatter "- : ";
+        print_construction std_formatter ast;
+        print_flush ());
       run_repl_helper run
   in
   run_repl_helper run_single
