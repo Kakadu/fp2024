@@ -62,7 +62,7 @@ let print_unary_op = function
 let rec print_expr indent expr =
   match expr with
   | Const (Int_lt i) -> printf "%d " i
-  | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
+  | Const (Bool_lt b) -> printf "%b " b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
   | List_expr (expr1, expr2) ->
