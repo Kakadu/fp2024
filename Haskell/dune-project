@@ -25,6 +25,7 @@
   "An interpreter for Haskell language with standard types and lazy evaluations")
  (version 0.1)
  (depends
+  zarith
   dune
   angstrom
   (ppx_inline_test :with-test)
