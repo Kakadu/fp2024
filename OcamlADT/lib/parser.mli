@@ -11,5 +11,4 @@ open Angstrom
 *)
 val parse : string -> (Ast.program, string) result
 val parse_str : string -> program
-val ptupleexpr: expression t
-val pletexpr: expression t -> expression t
+(* val ptupleexpr: expression t *)
