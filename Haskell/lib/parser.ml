@@ -288,17 +288,17 @@ let pcons_tail head ptrn_ext =
   >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
 ;;
 
-let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), etp)
+let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), [])
 
 let pcons_tail head ptrn_ext =
   let rec loop constr = function
-    | [] -> constr ([], PList (PEnum []), etp)
+    | [] -> constr ([], PList (PEnum []), [])
     | hd :: [] -> constr hd
-    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), etp)) tl
+    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), [])) tl
   in
   many1 (oper ":" **> ptrn_ext)
   >>| List.rev
-  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), etp)
+  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
 ;;
 
 let pat ptrn =
@@ -759,14 +759,14 @@ let lambda e =
   *> let** pt = pattern Ban_p Ban_t in
      let* pts = many (ws *> pattern Ban_p Ban_t) in
      let* ex = string "->" **> e in
-     return (Lambda (pt, pts, ex), etp)
+     return (Lambda (pt, pts, ex), [])
 ;;
 
 let tree_e e =
   tree
     e
-    ((BinTreeBld Nul, etp) |> return)
-    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
+    ((BinTreeBld Nul, []) |> return)
+    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), []))
 ;;
 
 let case e =
@@ -780,11 +780,11 @@ let case e =
        | [] -> fail "sep_by1 cant return empty list"
        | hd :: tl -> return (hd, tl)
      in
-     return (Case (ex, br1, brs), etp)
+     return (Case (ex, br1, brs), [])
 ;;
 
 let list_e e =
-  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), etp))
+  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), []))
   <|>
   let condition = return (fun exp -> Condition exp) <*> e in
   let generator =
@@ -801,14 +801,14 @@ let list_e e =
         both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
         >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
      ]
-   >>| fun l -> ListBld l, etp)
+   >>| fun l -> ListBld l, [])
   |> sq_brackets
 ;;
 
 let tuple_or_parensed_item_e e =
   tuple_or_parensed_item
     e
-    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
+    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), []))
     (fun ex -> return ex)
 ;;
 
