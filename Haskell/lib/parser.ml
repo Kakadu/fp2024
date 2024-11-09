@@ -20,8 +20,13 @@ let ( let** ) = ( >>>= )
 let ( <**> ) f p = f <*> ws *> p
 let ( **> ) p f = ws *> p *> (ws *> f)
 let etp = (None : tp option) (* remove later (tp parser is required) *)
-let parens p = char '(' *> ws *> p <* (ws <* char ')')
-let sq_brackets p = char '[' *> ws *> p <* (ws <* char ']')
+
+let parens, sq_brackets, backticks =
+  let bounded (ch1, ch2) p = char ch1 *> ws *> p <* (ws <* char ch2) in
+  ( (fun p -> bounded ('(', ')') p)
+  , (fun p -> bounded ('[', ']') p)
+  , fun p -> bounded ('`', '`') p )
+;;
 
 let is_alpha = function
   | 'a' .. 'z' | 'A' .. 'Z' -> true
@@ -87,11 +92,6 @@ let is_char_suitable_for_oper = function
   | _ -> false
 ;;
 
-let oper expected =
-  let* parsed = take_while is_char_suitable_for_oper in
-  if String.equal expected parsed then return expected else fail ""
-;;
-
 let ident =
   let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
@@ -133,6 +133,35 @@ let prs_and_prnt_ln call sh str =
   match prs_ln call str with
   | Ok v -> print_endline (sh v)
   | Error msg -> Printf.fprintf stderr "error: %s" msg
+;;
+
+let oper expected =
+  let* parsed =
+    backticks ident
+    >>| (fun (Ident s) ->
+          let open String in
+          concat empty [ "`"; s; "`" ])
+    <|> take_while is_char_suitable_for_oper
+  in
+  if String.equal expected parsed then return expected else fail ""
+;;
+
+let%expect_test "oper_valid" =
+  prs_and_prnt_ln (oper "+-+") (fun x -> x) "+-+awq";
+  [%expect {|
+      +-+|}]
+;;
+
+let%expect_test "oper_invalid" =
+  prs_and_prnt_ln (oper "+-+") (fun x -> x) "+-+>";
+  [%expect {|
+      error: :|}]
+;;
+
+let%expect_test "oper_with_backticks" =
+  prs_and_prnt_ln (oper "`a`") (fun x -> x) "`a`";
+  [%expect {|
+      `a`|}]
 ;;
 
 let word req_word =
@@ -350,7 +379,6 @@ let%expect_test "pattern_just_invalid_neg" =
       error: : no more choices |}]
 ;;
 
-
 let%expect_test "pattern_nil_valid" =
   prs_and_prnt_ln (pattern Allow) show_pattern "[]";
   [%expect {| ([], (PList (PEnum [])), None) |}]
@@ -358,7 +386,8 @@ let%expect_test "pattern_nil_valid" =
 
 let%expect_test "pattern_enum_valid" =
   prs_and_prnt_ln (pattern Allow) show_pattern "[1, 2,1  ,1]";
-  [%expect {|
+  [%expect
+    {|
     ([],
      (PList
         (PEnum
@@ -369,7 +398,6 @@ let%expect_test "pattern_enum_valid" =
      None)
        |}]
 ;;
-
 
 let%expect_test "pattern_listcons_invalid_ban_unparansed" =
   prs_and_prnt_ln (pattern Ban) show_pattern "x:xs";
@@ -451,7 +479,7 @@ let prios_list =
       ; (Left, oper "*", fun a b -> Binop (a, Multiply, b), etp)
       ; (Left, oper "`mod`", fun a b -> Binop (a, Mod, b), etp)
       ] )
-  ; None, [ (Right, string "^", fun a b -> Binop (a, Pow, b), etp) ]
+  ; None, [ (Right, oper "^", fun a b -> Binop (a, Pow, b), etp) ]
   ]
 ;;
 
@@ -468,7 +496,7 @@ let non_assoc_ops_seq_check l =
   else return l
 ;;
 
-let bo expr prios_list =
+let op expr prios_list =
   let rec loop acc = function
     | [] -> acc
     | (Right, op, r) :: tl -> op acc (loop r tl)
@@ -549,7 +577,7 @@ let case e =
      word "of"
      **>
      let* br1, brs =
-       sep_by1 (ws *> char ';' *> ws) (both (pattern Allow) (bindingbody e (string "->")))
+       sep_by1 (ws *> char ';' *> ws) (both (pattern Allow) (bindingbody e (oper "->")))
        >>= function
        | [] -> fail "sep_by1 cant return empty list"
        | hd :: tl -> return (hd, tl)
@@ -580,7 +608,7 @@ let other_expr e fa =
   >>= fun ex -> fa ex e <|> return ex
 ;;
 
-let binop e fa = bo (other_expr e fa) prios_list
+let oper e fa = op (other_expr e fa) prios_list
 
 let function_application ex e =
   let* r =
@@ -601,7 +629,7 @@ let function_application ex e =
 ;;
 
 let e e =
-  binop e function_application
+  oper e function_application
   <|> other_expr e function_application
   >>= fun ex -> function_application ex e <|> return ex
 ;;
@@ -626,6 +654,18 @@ let%expect_test "expr_prio" =
               Multiply, ((Const (Integer 2)), None))),
            None),
           Greater, ((Const (Integer 1)), None))),
+       None) |}]
+;;
+
+let%expect_test "expr_div_mod" =
+  prs_and_prnt_ln expr show_expr "10 `div` 3 `mod` 2";
+  [%expect
+    {|
+      ((Binop (
+          ((Binop (((Const (Integer 10)), None), Divide,
+              ((Const (Integer 3)), None))),
+           None),
+          Mod, ((Const (Integer 2)), None))),
        None) |}]
 ;;
 
