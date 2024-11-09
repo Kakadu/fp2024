@@ -89,7 +89,7 @@ let is_char_suitable_for_ident c =
 ;;
 
 let is_char_suitable_for_oper = function
-  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' -> true
+  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' | '.' -> true
   | _ -> false
 ;;
 
@@ -267,7 +267,7 @@ let list_enum item f = sq_brackets (sep_by (ws *> char ',' *> ws) item) >>= f
 
 let tree item nul_cons node_cons =
   char '$' *> nul_cons
-  <|> (parens (sep_by (ws *> char ';') item)
+  <|> (parens (sep_by (ws *> char ';' *> ws) item)
        >>= function
        | [ it1; it2; it3 ] -> node_cons it1 it2 it3
        | _ -> fail "cannot parse tree")
@@ -778,6 +778,28 @@ let case e =
        | hd :: tl -> return (hd, tl)
      in
      return (Case (ex, br1, brs), etp)
+;;
+
+let list_e e =
+  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), etp))
+  <|>
+  let condition = return (fun exp -> Condition exp) <*> e in
+  let generator =
+    return (fun (pat, exp) -> Generator (pat, exp))
+    <*> both (pattern Allow <* ws <* oper "<-" <* ws) e
+  in
+  (let** ex1 = e in
+   choice
+     [ (oper "|" **> sep_by1 (ws *> char ',' *> ws) (generator <|> condition)
+        >>= function
+        | [] -> fail ""
+        | hd :: tl -> return (OrdList (ComprehensionList (ex1, hd, tl))))
+     ; (let option_ex f = option None (f >>| fun x -> Some x) in
+        both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
+        >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
+     ]
+   >>| fun l -> ListBld l, etp)
+  |> sq_brackets
 ;;
 
 let tuple_or_parensed_item_e e =
