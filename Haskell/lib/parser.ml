@@ -42,10 +42,10 @@ let is_char_suitable_for_ident c =
   is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
 ;;
 
-let prs_ln call str = parse_string ~consume:Prefix call str
+let prs_ln ?(consume=Consume.Prefix) call str = parse_string ~consume:consume call str
 
-let prs_and_prnt_ln call sh str =
-  match prs_ln call str with
+let prs_and_prnt_ln ?(consume=Consume.Prefix) call sh str =
+  match prs_ln  ~consume call str with
   | Ok v -> print_endline (sh v)
   | Error msg -> Printf.fprintf stderr "error: %s" msg
 ;;
@@ -529,7 +529,7 @@ let%expect_test "pattern_listcons_valid_with_tp" =
        |}]
 ;;
 
-let bindingbody e sep =
+let defbody e sep =
   (sep
    **> let* ex = e in
        return (OrdBody ex))
@@ -551,11 +551,13 @@ let bnd e bnd =
   (let** ident = ident in
    let** pt = pattern Ban_p Ban_t in
    let* pts = many (ws *> pattern Ban_p Ban_t) in
-   return (fun bb where_binds -> FunBind ((ident, None), pt, pts, bb, where_binds)))
+   return (fun bb where_binds -> FunDef (ident, pt, pts, bb, where_binds)))
   <|> (let** pt = pattern Ban_p Allow_t in
-       return (fun bb where_binds -> VarsBind (pt, bb, where_binds)))
-  <**> bindingbody e (oper "=")
+       return (fun bb where_binds -> VarsDef (pt, bb, where_binds)))
+  <**> defbody e (oper "=")
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
+  <|> let** pt = pattern Ban_p Allow_t in
+      oper "::" **> tp >>| fun t -> Decl (pt, t)
 ;;
 
 let binding e = fix (bnd e)
@@ -688,7 +690,7 @@ let case e =
      let* br1, brs =
        sep_by1
          (ws *> char ';' *> ws)
-         (both (pattern Allow_p Ban_t) (bindingbody e (oper "->")))
+         (both (pattern Allow_p Ban_t) (defbody e (oper "->")))
        >>= function
        | [] -> fail "sep_by1 cant return empty list"
        | hd :: tl -> return (hd, tl)
@@ -1107,7 +1109,7 @@ let%expect_test "var_binding_simple" =
   prs_and_prnt_ln binding show_binding "x = 1";
   [%expect
     {|
-      (VarsBind (([], (PIdentificator (Ident "x")), []),
+      (VarsDef (([], (PIdentificator (Ident "x")), []),
          (OrdBody ((Const (Integer 1)), [])), [])) |}]
 ;;
 
@@ -1115,11 +1117,11 @@ let%expect_test "var_binding_with_where" =
   prs_and_prnt_ln binding show_binding "x = y where y = 1; k = 2 ";
   [%expect
     {|
-      (VarsBind (([], (PIdentificator (Ident "x")), []),
+      (VarsDef (([], (PIdentificator (Ident "x")), []),
          (OrdBody ((Identificator (Ident "y")), [])),
-         [(VarsBind (([], (PIdentificator (Ident "y")), []),
+         [(VarsDef (([], (PIdentificator (Ident "y")), []),
              (OrdBody ((Const (Integer 1)), [])), []));
-           (VarsBind (([], (PIdentificator (Ident "k")), []),
+           (VarsDef (([], (PIdentificator (Ident "k")), []),
               (OrdBody ((Const (Integer 2)), [])), []))
            ]
          )) |}]
@@ -1129,8 +1131,7 @@ let%expect_test "fun_binding_simple" =
   prs_and_prnt_ln binding show_binding "f x = x + 1";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), []),
-         [],
+      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
          (OrdBody
             ((Binop (((Identificator (Ident "x")), []), Plus,
                 ((Const (Integer 1)), []))),
@@ -1142,7 +1143,7 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
   prs_and_prnt_ln binding show_binding "f(x)y = x + y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), []),
+      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []),
          [([], (PIdentificator (Ident "y")), [])],
          (OrdBody
             ((Binop (((Identificator (Ident "x")), []), Plus,
@@ -1155,8 +1156,7 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   prs_and_prnt_ln binding show_binding "f 9y = y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None),
-         ([], (PConst (OrdinaryPConst (Integer 9))), []),
+      (FunDef ((Ident "f"), ([], (PConst (OrdinaryPConst (Integer 9))), []),
          [([], (PIdentificator (Ident "y")), [])],
          (OrdBody ((Identificator (Ident "y")), [])), [])) |}]
 ;;
@@ -1165,8 +1165,7 @@ let%expect_test "fun_binding_guards" =
   prs_and_prnt_ln binding show_binding "f x |x > 1 = 0 | otherwise = 1";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), []),
-         [],
+      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
          (Guards (
             (((Binop (((Identificator (Ident "x")), []), Greater,
                  ((Const (Integer 1)), []))),
@@ -1178,5 +1177,16 @@ let%expect_test "fun_binding_guards" =
          [])) |}]
 ;;
 
-let parse_and_print_line = prs_and_prnt_ln binding show_binding
-let parse_line str = prs_ln binding str
+let%expect_test "decl" =
+  prs_and_prnt_ln binding show_binding "f :: Int -> Int -> Int";
+  [%expect
+    {|
+      (Decl (([], (PIdentificator (Ident "f")), []),
+         (FunctionType (FuncT (TInt, TInt, [TInt])))))
+      |}]
+;;
+
+let bindings_list = sep_by1 (ws *> char ';' *> ws) binding
+type bl = binding list [@@deriving show { with_path = false }]
+let parse_and_print_line = prs_and_prnt_ln ~consume:Consume.All bindings_list show_bl
+let parse_line str = prs_ln ~consume:Consume.All bindings_list str

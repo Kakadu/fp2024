@@ -93,11 +93,11 @@ and listbld =
 [@@deriving show { with_path = false }]
 
 and binding =
-  | VarsBind of pattern * bindingbody * binding list
+  | VarsDef of pattern * bindingbody * binding list
   (** e.g [x = let y = 12 in y * z where z = 5] *)
-  | FunBind of
-      (ident * functype option) * pattern * pattern list * bindingbody * binding list
+  | FunDef of ident * pattern * pattern list * bindingbody * binding list
   (** e.g [f x y = x + y + z where z = 2 ]*)
+  | Decl of pattern * tp (** e.g [f :: Int -> Int]*)
 [@@deriving show { with_path = false }]
 
 (** examples below are for function binding with due body *)
