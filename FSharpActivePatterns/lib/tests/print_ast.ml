@@ -1,4 +1,4 @@
-(** Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
+(* * Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me>
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -256,4 +256,4 @@ let%expect_test "print Ast of match_expr" =
     --------| PVar(xs)
     --| Inner expr:
     ----| Const(Int: 4) |}]
-;;
+;; *)
