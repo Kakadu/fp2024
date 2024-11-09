@@ -252,6 +252,8 @@ let tree item nul_cons node_cons =
        | _ -> fail "cannot parse tree")
 ;;
 
+let pt_tp ((a, p, tps) as pt) = option pt (oper "::" **> tp >>| fun tp -> a, p, tp :: tps)
+
 let pnegation =
   oper "-" *> ws *> nonnegative_integer >>| fun a -> [], PConst (NegativePInteger a), etp
 ;;
@@ -282,10 +284,10 @@ let pat ptrn =
     ; char '_' *> return PWildcard
     ; nothing (return (PMaybe Nothing))
     ; tree
-        (ws *> fix ptrn_extended)
+        (ws *> fix ptrn_extended >>= pt_tp)
         (return (PTree PNul))
         (fun d t1 t2 -> return (PTree (PNode (d, t1, t2))))
-    ; list_enum (fix ptrn_extended) (fun pts -> return (PList (PEnum pts)))
+    ; list_enum (fix ptrn_extended >>= pt_tp) (fun pts -> return (PList (PEnum pts)))
     ]
 ;;
 
@@ -300,7 +302,7 @@ let ptrn ptrn =
     ; (let* pat = pat ptrn in
        return ([], pat, etp))
     ; tuple_or_parensed_item
-        (fix ptrn_extended)
+        (fix ptrn_extended >>= pt_tp)
         (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), etp))
         (fun p -> return p)
     ]
@@ -314,7 +316,7 @@ type unparnsed_tp_handling =
   | Ban_t
   | Allow_t
 
-let pattern unp_ps_h =
+let pattern unp_ps_h unp_tp_h =
   let p = fix ptrn in
   match unp_ps_h with
   | Ban_p -> p
@@ -323,29 +325,34 @@ let pattern unp_ps_h =
       p <|> pnegation <|> just_p p >>= fun hd -> option hd (pcons_tail hd ptr')
     in
     fix ptr'
+    >>=
+      (match unp_tp_h with
+      | Ban_t -> return
+      | Allow_t -> pt_tp)
 ;;
 
 let%test "pattern_valid_as" =
-  parse_string ~consume:Prefix (pattern Allow_p) "adada@(   x   )"
+  parse_string ~consume:Prefix (pattern Allow_p Allow_t) "adada@(   x   )"
   = Result.Ok ([ Ident "adada" ], PIdentificator (Ident "x"), [])
 ;;
 
 let%test "pattern_valid_parens_oth" =
-  parse_string ~consume:Prefix (pattern Allow_p) "(   x   )"
+  parse_string ~consume:Prefix (pattern Allow_p Allow_t) "(   x   )"
   = Result.Ok ([], PIdentificator (Ident "x"), [])
 ;;
 
 let%test "pattern_valid_neg" =
-  parse_string ~consume:Prefix (pattern Allow_p) "-1"
+  parse_string ~consume:Prefix (pattern Allow_p Allow_t) "-1"
   = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), [])
 ;;
 
 let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban_p) "-1" = Result.Error ": no more choices"
+  parse_string ~consume:Prefix (pattern Ban_p Allow_t) "-1"
+  = Result.Error ": no more choices"
 ;;
 
 let%test "pattern_valid_double_as" =
-  parse_string ~consume:Prefix (pattern Allow_p) "a@b@2"
+  parse_string ~consume:Prefix (pattern Allow_p Allow_t) "a@b@2"
   = Result.Ok
       ( [ Ident "a"; Ident "b" ]
       , PConst (OrdinaryPConst (Integer (Nonnegative_integer.of_int 2)))
@@ -353,7 +360,7 @@ let%test "pattern_valid_double_as" =
 ;;
 
 let%test "pattern_valid_with_parens" =
-  parse_string ~consume:Prefix (pattern Allow_p) "(a@(b@(2)))"
+  parse_string ~consume:Prefix (pattern Allow_p Allow_t) "(a@(b@(2)))"
   = Result.Ok
       ( [ Ident "a"; Ident "b" ]
       , PConst (OrdinaryPConst (Integer (Nonnegative_integer.of_int 2)))
@@ -361,7 +368,7 @@ let%test "pattern_valid_with_parens" =
 ;;
 
 let%expect_test "pattern_valid_tuple" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "(x, y,(x,y))";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "(x, y,(x,y))";
   [%expect
     {|
       ([],
@@ -376,7 +383,7 @@ let%expect_test "pattern_valid_tuple" =
 ;;
 
 let%expect_test "pattern_valid_tuple_labeled" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "a@(x, e@y,b@(x,y))";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "a@(x, e@y,b@(x,y))";
   [%expect
     {|
       ([(Ident "a")],
@@ -391,13 +398,13 @@ let%expect_test "pattern_valid_tuple_labeled" =
 ;;
 
 let%expect_test "pattern_invalid_tuple_labeled" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "(x, e@y,(x,y)@(x,y))";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "(x, e@y,(x,y)@(x,y))";
   [%expect {|
       error: : satisfy: '(' |}]
 ;;
 
 let%expect_test "pattern_valid_tree" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "(2; $; $)";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "(2; $; $)";
   [%expect
     {|
       ([],
@@ -408,37 +415,37 @@ let%expect_test "pattern_valid_tree" =
 ;;
 
 let%expect_test "pattern_invalid_tree" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "(2; $)";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "(2; $)";
   [%expect {|
       error: : satisfy: '(' |}]
 ;;
 
 let%expect_test "pattern_just_valid" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "Just 1";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "Just 1";
   [%expect
     {|
       ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), []))), []) |}]
 ;;
 
 let%expect_test "pattern_just_invalid_ban_unparansed" =
-  prs_and_prnt_ln (pattern Ban_p) show_pattern "Just 1";
+  prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "Just 1";
   [%expect {|
       error: : no more choices |}]
 ;;
 
 let%expect_test "pattern_just_invalid_neg" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "Just -1";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "Just -1";
   [%expect {|
       error: : no more choices |}]
 ;;
 
 let%expect_test "pattern_nil_valid" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "[]";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "[]";
   [%expect {| ([], (PList (PEnum [])), []) |}]
 ;;
 
 let%expect_test "pattern_enum_valid" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "[1, 2,1  ,1]";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "[1, 2,1  ,1]";
   [%expect
     {|
     ([],
@@ -453,13 +460,13 @@ let%expect_test "pattern_enum_valid" =
 ;;
 
 let%expect_test "pattern_listcons_invalid_ban_unparansed" =
-  prs_and_prnt_ln (pattern Ban_p) show_pattern "x:xs";
+  prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "x:xs";
   [%expect {|
       ([], (PIdentificator (Ident "x")), []) |}]
 ;;
 
 let%expect_test "pattern_listcons_valid" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "x:(y:z):w";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:(y:z):w";
   [%expect
     {|
       ([],
@@ -477,6 +484,36 @@ let%expect_test "pattern_listcons_valid" =
               [])
              ))),
        []) |}]
+;;
+
+let%expect_test "pattern_simple_valid_tp" =
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Int";
+  [%expect {|
+    ([], (PIdentificator (Ident "x")), [TInt])
+       |}]
+;;
+
+let%expect_test "pattern_simple_invalid_tp_ban" =
+  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Int";
+  [%expect {|
+    ([], (PIdentificator (Ident "x")), [])
+       |}]
+;;
+
+let%expect_test "pattern_listcons_valid_with_tp" =
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Int]";
+  [%expect {|
+    ([],
+     (PList
+        (PCons (([], (PIdentificator (Ident "x")), []),
+           ([],
+            (PList
+               (PCons (([], (PIdentificator (Ident "y")), []),
+                  ([], (PIdentificator (Ident "z")), [])))),
+            [])
+           ))),
+     [(ListParam TInt)])
+       |}]
 ;;
 
 let bindingbody e sep =
@@ -499,10 +536,10 @@ let bindingbody e sep =
 
 let bnd e bnd =
   (let** ident = ident in
-   let** pt = pattern Ban_p in
-   let* pts = many (ws *> pattern Ban_p) in
+   let** pt = pattern Ban_p Ban_t in
+   let* pts = many (ws *> pattern Ban_p Ban_t) in
    return (fun bb where_binds -> FunBind ((ident, None), pt, pts, bb, where_binds)))
-  <|> (let** pt = pattern Ban_p in
+  <|> (let** pt = pattern Ban_p Allow_t in
        return (fun bb where_binds -> VarsBind (pt, bb, where_binds)))
   <**> bindingbody e (oper "=")
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
@@ -615,8 +652,8 @@ let just_e =
 
 let lambda e =
   oper "\\"
-  *> let** pt = pattern Ban_p in
-     let* pts = many (ws *> pattern Ban_p) in
+  *> let** pt = pattern Ban_p Ban_t in
+     let* pts = many (ws *> pattern Ban_p Ban_t) in
      let* ex = string "->" **> e in
      return (Lambda (pt, pts, ex), etp)
 ;;
@@ -634,7 +671,9 @@ let case e =
      word "of"
      **>
      let* br1, brs =
-       sep_by1 (ws *> char ';' *> ws) (both (pattern Allow_p) (bindingbody e (oper "->")))
+       sep_by1
+         (ws *> char ';' *> ws)
+         (both (pattern Allow_p Ban_t) (bindingbody e (oper "->")))
        >>= function
        | [] -> fail "sep_by1 cant return empty list"
        | hd :: tl -> return (hd, tl)
@@ -648,7 +687,7 @@ let list_e e =
   let condition = return (fun exp -> Condition exp) <*> e in
   let generator =
     return (fun (pat, exp) -> Generator (pat, exp))
-    <*> both (pattern Allow_p <* ws <* oper "<-" <* ws) e
+    <*> both (pattern Allow_p Allow_t <* ws <* oper "<-" <* ws) e
   in
   (let** ex1 = e in
    choice
