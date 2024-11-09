@@ -387,7 +387,8 @@ let%test "pattern_valid_neg" =
 ;;
 
 let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban_p) "-1" = Result.Error ": no more choices"
+  parse_string ~consume:Prefix (pattern Ban_p Allow_t) "-1"
+  = Result.Error ": no more choices"
 ;;
 
 let%test "pattern_valid_double_as" =
@@ -467,14 +468,14 @@ let%expect_test "pattern_just_invalid_ban_unparansed" =
 ;;
 
 let%expect_test "pattern_just_valid" =
-  prs_and_prnt_ln (pattern Allow_p) show_pattern "Just 1";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "Just 1";
   [%expect
     {|
       ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), []))), []) |}]
 ;;
 
 let%expect_test "pattern_just_invalid_ban_unparansed" =
-  prs_and_prnt_ln (pattern Ban_p) show_pattern "Just 1";
+  prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "Just 1";
   [%expect {|
       error: : |}]
 ;;
@@ -753,8 +754,8 @@ let tuple_or_parensed_item_e e =
 
 let lambda e =
   oper "\\"
-  *> let** pt = pattern Ban_p in
-     let* pts = many (ws *> pattern Ban_p) in
+  *> let** pt = pattern Ban_p Ban_t in
+     let* pts = many (ws *> pattern Ban_p Ban_t) in
      let* ex = string "->" **> e in
      return (Lambda (pt, pts, ex), etp)
 ;;
@@ -786,7 +787,7 @@ let list_e e =
   let condition = return (fun exp -> Condition exp) <*> e in
   let generator =
     return (fun (pat, exp) -> Generator (pat, exp))
-    <*> both (pattern Allow_p <* ws <* oper "<-" <* ws) e
+    <*> both (pattern Allow_p Allow_t <* ws <* oper "<-" <* ws) e
   in
   (let** ex1 = e in
    choice
