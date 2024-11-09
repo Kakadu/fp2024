@@ -10,6 +10,7 @@ open Angstrom
 open Ast
 open Common
 open Patterns
+open Constants
 
 let parse_expr_ident = parse_ident >>| fun i -> Expr_ident_or_op i
 let parse_expr_const = parse_const >>| fun c -> Expr_const c
@@ -78,9 +79,7 @@ let parse_expr_lambda parse_expr =
 
 let parse_binding_val parse_expr =
   let* name = parse_pat in
-  skip_ws
-  *> char '='
-  *> skip_ws
+  skip_token "="
   *>
   let* expr = parse_expr in
   return (Binding (name, expr))

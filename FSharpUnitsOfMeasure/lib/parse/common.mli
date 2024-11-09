@@ -49,6 +49,3 @@ val parse_int : int t
 
 (** [parse_float] parses float and returns it. Cannot parse surrouning whitespaces. *)
 val parse_float : float t
-
-(** [parse_const] parses any constant and returns it as a constant type. Cannot parse surrouning whitespaces. *)
-val parse_const : constant t
