@@ -58,81 +58,75 @@ let parse_number_or_quoted_string =
 
 let ws_opt p = ws *> p <* ws
 
-let register_map =
-  List.sort
-    (fun (name1, _) (name2, _) -> compare (String.length name2) (String.length name1))
-    [ "x0", 0
-    ; "zero", 0
-    ; "x1", 1
-    ; "ra", 1
-    ; "x2", 2
-    ; "sp", 2
-    ; "x3", 3
-    ; "gp", 3
-    ; "x4", 4
-    ; "tp", 4
-    ; "x5", 5
-    ; "t0", 5
-    ; "x6", 6
-    ; "t1", 6
-    ; "x7", 7
-    ; "t2", 7
-    ; "x8", 8
-    ; "s0", 8
-    ; "fp", 8
-    ; "x9", 9
-    ; "s1", 9
-    ; "x10", 10
-    ; "a0", 10
-    ; "x11", 11
-    ; "a1", 11
-    ; "x12", 12
-    ; "a2", 12
-    ; "x13", 13
-    ; "a3", 13
-    ; "x14", 14
-    ; "a4", 14
-    ; "x15", 15
-    ; "a5", 15
-    ; "x16", 16
-    ; "a6", 16
-    ; "x17", 17
-    ; "a7", 17
-    ; "x18", 18
-    ; "s2", 18
-    ; "x19", 19
-    ; "s3", 19
-    ; "x20", 20
-    ; "s4", 20
-    ; "x21", 21
-    ; "s5", 21
-    ; "x22", 22
-    ; "s6", 22
-    ; "x23", 23
-    ; "s7", 23
-    ; "x24", 24
-    ; "s8", 24
-    ; "x25", 25
-    ; "s9", 25
-    ; "x26", 26
-    ; "s10", 26
-    ; "x27", 27
-    ; "s11", 27
-    ; "x28", 28
-    ; "t3", 28
-    ; "x29", 29
-    ; "t4", 29
-    ; "x30", 30
-    ; "t5", 30
-    ; "x31", 31
-    ; "t6", 31
-    ]
-;;
-
 let parse_register =
   ws_opt
     (choice
-       (List.map (fun (name, num) -> string name *> return (Register num)) register_map))
+       [ string "x10" *> return X10
+       ; string "x11" *> return X11
+       ; string "x12" *> return X12
+       ; string "x13" *> return X13
+       ; string "x14" *> return X14
+       ; string "x15" *> return X15
+       ; string "x16" *> return X16
+       ; string "x17" *> return X17
+       ; string "x18" *> return X18
+       ; string "x19" *> return X19
+       ; string "x20" *> return X20
+       ; string "x21" *> return X21
+       ; string "x22" *> return X22
+       ; string "x23" *> return X23
+       ; string "x24" *> return X24
+       ; string "x25" *> return X25
+       ; string "x26" *> return X26
+       ; string "x27" *> return X27
+       ; string "x28" *> return X28
+       ; string "x29" *> return X29
+       ; string "x30" *> return X30
+       ; string "x31" *> return X31
+       ; string "x0" *> return X0
+       ; string "x1" *> return X1
+       ; string "x2" *> return X2
+       ; string "x3" *> return X3
+       ; string "x4" *> return X4
+       ; string "x5" *> return X5
+       ; string "x6" *> return X6
+       ; string "x7" *> return X7
+       ; string "x8" *> return X8
+       ; string "x9" *> return X9
+       ; string "zero" *> return X0
+       ; string "ra" *> return X1
+       ; string "sp" *> return X2
+       ; string "gp" *> return X3
+       ; string "tp" *> return X4
+       ; string "t0" *> return X5
+       ; string "t1" *> return X6
+       ; string "t2" *> return X7
+       ; string "s0" *> return X8
+       ; string "fp" *> return X8
+       ; string "s10" *> return X26
+       ; string "s11" *> return X27
+       ; string "s1" *> return X9
+       ; string "a0" *> return X10
+       ; string "a1" *> return X11
+       ; string "a2" *> return X12
+       ; string "a3" *> return X13
+       ; string "a4" *> return X14
+       ; string "a5" *> return X15
+       ; string "a6" *> return X16
+       ; string "a7" *> return X17
+       ; string "s2" *> return X18
+       ; string "s3" *> return X19
+       ; string "s4" *> return X20
+       ; string "s5" *> return X21
+       ; string "s6" *> return X22
+       ; string "s7" *> return X23
+       ; string "s8" *> return X24
+       ; string "s9" *> return X25
+       ; string "t3" *> return X28
+       ; string "t4" *> return X29
+       ; string "t5" *> return X30
+       ; string "t6" *> return X31
+       ])
 ;;
 
 let parse_immediate12 = ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_number)
