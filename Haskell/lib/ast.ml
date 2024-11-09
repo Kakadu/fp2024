@@ -49,7 +49,7 @@ type binop =
 type ident = Ident of string [@@deriving show { with_path = false }]
 
 (** e.g. [a@my_list@lst@(_:xs) :: [Int]] *)
-type pattern = ident list * pat * tp option [@@deriving show { with_path = false }]
+type pattern = ident list * pat * tp list [@@deriving show { with_path = false }]
 
 and listpat =
   | PCons of pattern * pattern (** e.g. [x:xs] *)
@@ -137,4 +137,4 @@ and expression =
 [@@deriving show { with_path = false }]
 
 (** e.g. [(x + 1) :: Int]*)
-and expr = expression * tp option [@@deriving show { with_path = false }]
+and expr = expression * tp list [@@deriving show { with_path = false }]
