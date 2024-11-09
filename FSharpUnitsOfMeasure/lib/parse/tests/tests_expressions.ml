@@ -298,8 +298,7 @@ let%expect_test "parse let ... in with single variable" =
 
 let%expect_test "parse let without in expression should fail" =
   pp pp_expression parse_expr {| let a = 5 |};
-  [%expect
-    {|
+  [%expect {|
     : no more choices |}]
 ;;
 

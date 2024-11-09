@@ -9,6 +9,7 @@ open Base
 open Angstrom
 open Ast
 open Common
+open Constants
 
 let parse_pat_wild = char '_' *> return Pattern_wild
 let parse_pat_ident = parse_ident >>| fun i -> Pattern_ident i

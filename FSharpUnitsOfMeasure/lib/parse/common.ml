@@ -7,7 +7,6 @@
 
 open Base
 open Angstrom
-open Ast
 
 (* F# compiler forbids tabs by default *)
 let is_whitespace = function
@@ -98,14 +97,4 @@ let parse_float =
   let* _ = option "" (string "f" <|> string "F") in
   let float = Float.of_string (int_part ^ dot ^ fract_part ^ e ^ exp_sign ^ exp) in
   return float
-;;
-
-let parse_const =
-  choice
-    [ (parse_char >>| fun c -> Const_char c)
-    ; (parse_string >>| fun s -> Const_string s)
-    ; (parse_bool >>| fun b -> Const_bool b)
-    ; (parse_int >>| fun i -> Const_int i)
-    ; (parse_float >>| fun f -> Const_float f)
-    ]
 ;;
