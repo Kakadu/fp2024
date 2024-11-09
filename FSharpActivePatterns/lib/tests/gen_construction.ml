@@ -15,36 +15,37 @@ let int_e x = Const (Int_lt x)
 let bool_e x = Const (Bool_lt x)
 let unit_e = Const Unit_lt
 let string_e x = Const (String_lt x)
+let variable_e x = Variable (Ident x)
 
 let gen_const =
   QCheck.Gen.(
     frequency
-      [ 1, map int_e nat; 1, map bool_e bool; 1, return unit_e; 0, map string_e string ])
+      [ 1, map int_e nat; 1, map bool_e bool; 0, return unit_e; 0, map string_e string ])
 ;;
 
-let variable_e x = Variable (Ident x)
-
-let gen_variable_name =
+let gen_varname =
   let open QCheck.Gen in
   let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
   let gen_first_char =
     oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
   in
   let gen_next_char = oneof [ gen_first_char; gen_char_of_range '0' '9' ] in
-  let gen_varname =
-    map2
-      (fun first rest ->
-        String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
-      gen_first_char
-      (list_size (1 -- 5) gen_next_char)
-  in
-  map variable_e gen_varname
+  map2
+    (fun first rest ->
+      String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
+    gen_first_char
+    (list_size (1 -- 5) gen_next_char)
 ;;
 
+let gen_variable = QCheck.Gen.map variable_e gen_varname
+let gen_ident = QCheck.Gen.map (fun s -> Ident s) gen_varname
 let tuple_e l = Tuple l
 let un_e unop e = Unary_expr (unop, e)
 let gen_unop = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ])
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
+let if_e i t e = If_then_else (i, t, e)
+let func_def args body = Function_def (args, body)
+let letin rec_flag ident args e inner_e = LetIn (rec_flag, ident, args, e, inner_e)
 
 let gen_binop =
   QCheck.Gen.(
@@ -74,12 +75,27 @@ let gen_expr =
     sized
     @@ fix (fun self n ->
       match n with
-      | 0 -> frequency [ 1, gen_const; 1, gen_variable_name ]
+      | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
       | n ->
         frequency
           [ 0, map tuple_e (list_size (0 -- 15) (self (n / 2)))
           ; 0, map2 un_e gen_unop (self (n / 2))
           ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
+          ; ( 1
+            , map3
+                if_e
+                (self (n / 2))
+                (self (n / 2))
+                (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
+          ; 1, map2 func_def (list gen_variable) (self (n / 2))
+          ; ( 1
+            , map3
+                letin
+                (oneof [ return Rec; return Nonrec ])
+                (map (fun i -> Some i) gen_ident)
+                (list gen_variable)
+              <*> self (n / 2)
+              <*> self (n / 2) )
           ]))
 ;;
 
@@ -103,6 +119,16 @@ let rec shrink_expr =
     of_list [ e1; e2 ]
     <+> (shrink_expr e1 >|= fun a' -> bin_e op a' e2)
     <+> (shrink_expr e2 >|= fun a' -> bin_e op e1 a')
+  | If_then_else (i, t, Some _) -> return (If_then_else (i, t, None))
+  | If_then_else (i, t, None) ->
+    shrink_expr i
+    >|= (fun a' -> If_then_else (a', t, None))
+    <+> (shrink_expr t >|= fun a' -> If_then_else (i, a', None))
+  | LetIn (rec_flag, ident, args, e, inner_e) ->
+    QCheck.Shrink.list ~shrink:shrink_expr args
+    >|= (fun a' -> LetIn (rec_flag, ident, a', e, inner_e))
+    <+> (shrink_expr e >|= fun a' -> LetIn (rec_flag, ident, args, a', inner_e))
+    <+> (shrink_expr inner_e >|= fun a' -> LetIn (rec_flag, ident, args, e, a'))
   | _ -> empty
 ;;
 
