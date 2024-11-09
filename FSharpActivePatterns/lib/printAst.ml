@@ -64,7 +64,13 @@ let rec print_expr indent expr =
     printf "%s| List expr:\n" (String.make indent '-');
     print_expr (indent + 2) expr1;
     print_expr (indent + 2) expr2
-  | Tuple t -> List.iter (print_expr indent) t
+  | Tuple (fst, snd, tail) -> (
+    printf "(";
+    print_expr (indent + 2) fst;
+    printf ", ";
+    print_expr (indent + 2) snd;
+    List.iter (fun e -> printf ", "; print_expr indent e) tail;
+    printf ") ")
   | Match (value, patterns) ->
     printf "%s| Match:\n" (String.make indent '-');
     print_expr (indent + 2) value;
@@ -116,6 +122,12 @@ let rec print_expr indent expr =
     printf "in\n";
     print_expr (indent + 2) in_expr;
     printf "\n"
+  | Option (expr) ->
+    match expr with 
+    | None -> printf "None "
+    | Some (expr) -> (
+      printf "Some ";
+      print_expr (indent +2) expr)
 ;;
 
 let print_statement indent = function
