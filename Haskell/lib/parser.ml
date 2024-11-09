@@ -604,6 +604,8 @@ type assoc =
   | Right
   | Non
 
+let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: tps)
+
 let prios_list =
   [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), []) ]
   ; None, [ (Right, oper "&&", fun a b -> Binop (a, And, b), []) ]
@@ -891,7 +893,7 @@ let%expect_test "expr_div_mod" =
 ;;
 
 let%expect_test "expr_div_mod" =
-  prs_and_prnt_ln expr show_expr "10 `div` 3 `mod` 2";
+  prs_and_prnt_ln (expr Allow_t) show_expr "10 `div` 3 `mod` 2";
   [%expect
     {|
       ((Binop (
@@ -951,7 +953,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid1" =
-  prs_and_prnt_ln expr show_expr "f 9a";
+  prs_and_prnt_ln (expr Allow_t) show_expr "f 9a";
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), []),
@@ -960,7 +962,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid2" =
-  prs_and_prnt_ln expr show_expr "f Just(1)";
+  prs_and_prnt_ln (expr Allow_t) show_expr "f Just(1)";
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), []),
@@ -1045,7 +1047,10 @@ let%expect_test "expr_case_statement" =
 ;;
 
 let%expect_test "expr_case_statement_with_guards" =
-  prs_and_prnt_ln expr show_expr "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
+  prs_and_prnt_ln
+    (expr Allow_t)
+    show_expr
+    "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), []),
