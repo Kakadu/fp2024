@@ -55,7 +55,7 @@ and print_expr fmt expr =
   | Variable (Ident name) -> fprintf fmt "%s " name
   | Unary_expr (op, expr) -> fprintf fmt "%a %a" print_unary_op op print_expr expr
   | Bin_expr (op, left, right) ->
-    fprintf fmt "%a %a %a" print_expr left print_bin_op op print_expr right
+    fprintf fmt "(%a) %a (%a)" print_expr left print_bin_op op print_expr right
   | If_then_else (cond, then_body, else_body) ->
     let begin_if = asprintf "if %a then %a " print_expr cond print_expr then_body in
     (match else_body with
