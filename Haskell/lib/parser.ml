@@ -19,7 +19,6 @@ let ( >>>= ) p f = ws *> p >>= f
 let ( let** ) = ( >>>= )
 let ( <**> ) f p = f <*> ws *> p
 let ( **> ) p f = ws *> p *> (ws *> f)
-let etp = [] (* remove later (tp parser is required) *)
 
 let parens, sq_brackets, backticks, braces =
   let bounded (ch1, ch2) p = char ch1 *> ws *> p <* (ws <* char ch2) in
@@ -268,20 +267,20 @@ let tree item nul_cons node_cons =
 let pt_tp ((a, p, tps) as pt) = option pt (oper "::" **> tp >>| fun tp -> a, p, tp :: tps)
 
 let pnegation =
-  oper "-" *> ws *> nonnegative_integer >>| fun a -> [], PConst (NegativePInteger a), etp
+  oper "-" *> ws *> nonnegative_integer >>| fun a -> [], PConst (NegativePInteger a), []
 ;;
 
-let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), etp)
+let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), [])
 
 let pcons_tail head ptrn_ext =
   let rec loop constr = function
-    | [] -> constr ([], PList (PEnum []), etp)
+    | [] -> constr ([], PList (PEnum []), [])
     | hd :: [] -> constr hd
-    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), etp)) tl
+    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), [])) tl
   in
   many1 (oper ":" **> ptrn_ext)
   >>| List.rev
-  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), etp)
+  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
 ;;
 
 let pat ptrn =
@@ -313,10 +312,10 @@ let ptrn ptrn =
     [ (let* ident = ident in
        char '@' *> (ptrn >>= fun (idents, pat, tp) -> return (ident :: idents, pat, tp)))
     ; (let* pat = pat ptrn in
-       return ([], pat, etp))
+       return ([], pat, []))
     ; tuple_or_parensed_item
         (fix ptrn_extended >>= pt_tp)
-        (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), etp))
+        (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), []))
         (fun p -> return p)
     ]
 ;;
@@ -569,27 +568,27 @@ type assoc =
 let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: tps)
 
 let prios_list =
-  [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), etp) ]
-  ; None, [ (Right, oper "&&", fun a b -> Binop (a, And, b), etp) ]
+  [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), []) ]
+  ; None, [ (Right, oper "&&", fun a b -> Binop (a, And, b), []) ]
   ; ( None
-    , [ (Non, oper "==", fun a b -> Binop (a, Equality, b), etp)
-      ; (Non, oper "/=", fun a b -> Binop (a, Inequality, b), etp)
-      ; (Non, oper ">=", fun a b -> Binop (a, EqualityOrGreater, b), etp)
-      ; (Non, oper "<=", fun a b -> Binop (a, EqualityOrLess, b), etp)
-      ; (Non, oper ">", fun a b -> Binop (a, Greater, b), etp)
-      ; (Non, oper "<", fun a b -> Binop (a, Less, b), etp)
+    , [ (Non, oper "==", fun a b -> Binop (a, Equality, b), [])
+      ; (Non, oper "/=", fun a b -> Binop (a, Inequality, b), [])
+      ; (Non, oper ">=", fun a b -> Binop (a, EqualityOrGreater, b), [])
+      ; (Non, oper "<=", fun a b -> Binop (a, EqualityOrLess, b), [])
+      ; (Non, oper ">", fun a b -> Binop (a, Greater, b), [])
+      ; (Non, oper "<", fun a b -> Binop (a, Less, b), [])
       ] )
-  ; ( Some (oper "-", fun a -> Neg a, etp)
-    , [ (Right, oper ":", fun a b -> Binop (a, Cons, b), etp)
-      ; (Left, oper "+", fun a b -> Binop (a, Plus, b), etp)
-      ; (Left, oper "-", fun a b -> Binop (a, Minus, b), etp)
+  ; ( Some (oper "-", fun a -> Neg a, [])
+    , [ (Right, oper ":", fun a b -> Binop (a, Cons, b), [])
+      ; (Left, oper "+", fun a b -> Binop (a, Plus, b), [])
+      ; (Left, oper "-", fun a b -> Binop (a, Minus, b), [])
       ] )
   ; ( None
-    , [ (Left, oper "`div`", fun a b -> Binop (a, Divide, b), etp)
-      ; (Left, oper "*", fun a b -> Binop (a, Multiply, b), etp)
-      ; (Left, oper "`mod`", fun a b -> Binop (a, Mod, b), etp)
+    , [ (Left, oper "`div`", fun a b -> Binop (a, Divide, b), [])
+      ; (Left, oper "*", fun a b -> Binop (a, Multiply, b), [])
+      ; (Left, oper "`mod`", fun a b -> Binop (a, Mod, b), [])
       ] )
-  ; None, [ (Right, oper "^", fun a b -> Binop (a, Pow, b), etp) ]
+  ; None, [ (Right, oper "^", fun a b -> Binop (a, Pow, b), []) ]
   ]
 ;;
 
@@ -633,19 +632,19 @@ let op expr prios_list =
 
 let const_e =
   let+ c = const in
-  Const c, etp
+  Const c, []
 ;;
 
 let ident_e =
   let+ i = ident in
-  Identificator i, etp
+  Identificator i, []
 ;;
 
 let if_then_else e =
   let+ cond = word "if" **> e
   and+ th_br = word "then" **> e
   and+ el_br = word "else" **> e in
-  IfThenEsle (cond, th_br, el_br), etp
+  IfThenEsle (cond, th_br, el_br), []
 ;;
 
 let inner_bindings e =
@@ -653,17 +652,17 @@ let inner_bindings e =
   **> let+ bnd = binding e
       and+ bnds = many @@ (char ';' **> binding e)
       and+ ex = word "in" **> e >>= ex_tp in
-      InnerBindings (bnd, bnds, ex), etp
+      InnerBindings (bnd, bnds, ex), []
 ;;
 
 let just_e =
   just
     (return
        ( Lambda
-           ( ([], PIdentificator (Ident "X"), etp)
+           ( ([], PIdentificator (Ident "X"), [])
            , []
-           , (OptionBld (Just (Identificator (Ident "X"), [])), etp) )
-       , etp ))
+           , (OptionBld (Just (Identificator (Ident "X"), [])), []) )
+       , [] ))
 ;;
 
 let lambda e =
@@ -671,14 +670,14 @@ let lambda e =
   *> let** pt = pattern Ban_p Ban_t in
      let* pts = many (ws *> pattern Ban_p Ban_t) in
      let* ex = string "->" **> e in
-     return (Lambda (pt, pts, ex), etp)
+     return (Lambda (pt, pts, ex), [])
 ;;
 
 let tree_e e =
   tree
     e
-    ((BinTreeBld Nul, etp) |> return)
-    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), etp))
+    ((BinTreeBld Nul, []) |> return)
+    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), []))
 ;;
 
 let case e =
@@ -694,11 +693,11 @@ let case e =
        | [] -> fail "sep_by1 cant return empty list"
        | hd :: tl -> return (hd, tl)
      in
-     return (Case (ex, br1, brs), etp)
+     return (Case (ex, br1, brs), [])
 ;;
 
 let list_e e =
-  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), etp))
+  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), []))
   <|>
   let condition = return (fun exp -> Condition exp) <*> e in
   let generator =
@@ -715,14 +714,14 @@ let list_e e =
         both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
         >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
      ]
-   >>| fun l -> ListBld l, etp)
+   >>| fun l -> ListBld l, [])
   |> sq_brackets
 ;;
 
 let tuple_or_parensed_item_e e =
   tuple_or_parensed_item
     e
-    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), etp))
+    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), []))
     (fun ex -> return ex)
 ;;
 
@@ -731,7 +730,7 @@ let other_expr e fa =
   choice
     [ const_e
     ; ident_e
-    ; nothing (return (OptionBld Nothing, etp))
+    ; nothing (return (OptionBld Nothing, []))
     ; just_e
     ; if_then_else e'
     ; case e'
@@ -754,7 +753,7 @@ let function_application ex e =
             [ const_e
             ; ident_e
             ; just_e
-            ; nothing (return (OptionBld Nothing, etp))
+            ; nothing (return (OptionBld Nothing, []))
             ; tree_e e
             ; list_e e
             ; tuple_or_parensed_item_e e
@@ -762,7 +761,7 @@ let function_application ex e =
   in
   match r with
   | [] -> fail "many1 result can't be empty"
-  | hd :: tl -> (FunctionApply (ex, hd, tl), etp) |> return
+  | hd :: tl -> (FunctionApply (ex, hd, tl), []) |> return
 ;;
 
 let e e =
