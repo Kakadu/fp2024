@@ -95,7 +95,7 @@ let parse_constant =
 
 (* ==================== Pattern ==================== *)
 
-let parse_pat_any = string "_" *> return Pat_any
+let parse_pat_any = ws *> string "_" *> return Pat_any
 let parse_pat_var = parse_ident >>| fun var -> Pat_var var
 let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
@@ -314,8 +314,8 @@ let parse_expression =
         ; parse_exp_ifthenelse parse_full_exp
         ]
     in
-    let parse_exp = parse_exp_apply parse_exp in
     let parse_exp = parse_exp_sequence parse_exp <|> parse_exp_construct parse_exp in
+    let parse_exp = parse_exp_apply parse_exp in
     parse_exp_tuple parse_exp <|> parse_exp)
 ;;
 
