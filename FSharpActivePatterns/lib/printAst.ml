@@ -41,11 +41,16 @@ let rec print_pattern indent = function
      | Bool_lt b -> printf "%sBool: %b\n" (String.make (indent + 2) '-') b
      | String_lt s -> printf "%sString: %S\n" (String.make (indent + 2) '-') s
      | Unit_lt -> printf "%sUnit\n" (String.make (indent + 2) '-'))
-  | PVar (Ident name) -> printf "%s| PVar(%s)\n" (String.make indent '-') name
+  | PVar (Ident (name, var_type)) -> (
+    printf "%s " name;
+    match var_type with
+    | None -> printf ""
+    | Some str -> printf ": %s " str
+    )
   | Variant variants ->
     printf "%s| Variant:\n" (String.make indent '-');
     List.iter
-      (fun (Ident v) -> printf "%s- %s\n" (String.make (indent + 2) '-') v)
+      (fun (Ident (v, _)) -> printf "%s- %s\n" (String.make (indent + 2) '-') v)
       variants
 ;;
 
@@ -81,7 +86,11 @@ let rec print_expr indent expr =
         printf "%s| Inner expr:\n" (String.make (indent + 2) '-');
         print_expr (indent + 4) expr)
       patterns
-  | Variable (Ident name) -> printf "%s " name
+  | Variable (Ident (name, var_type)) -> (
+    printf "%s " name;
+    match var_type with
+    | None -> printf ""
+    | Some str -> printf ": %s " str)
   | Unary_expr (op, expr) ->
     print_unary_op op;
     print_expr (indent + 2) expr
@@ -109,14 +118,19 @@ let rec print_expr indent expr =
     print_expr (indent + 2) func;
     print_expr (indent + 2) arg
   | LetIn (rec_flag, name, args, body, in_expr) ->
-    printf
-      "let %s %s = "
+    printf "let %s "
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "rec")
-      (match name with
-       | Some (Ident n) -> n
-       | None -> "()");
+       | Rec -> "rec");
+    (match name with
+     | Some (Ident (name, var_type)) -> (
+         printf "%s " name; 
+         match var_type with
+         | None -> ()
+         | Some str -> printf ": %s " str
+       )
+     | None -> printf "()"
+    );
     List.iter (print_expr (indent + 2)) args;
     print_expr (indent + 2) body;
     printf "in\n";
@@ -131,19 +145,21 @@ let rec print_expr indent expr =
 ;;
 
 let print_statement indent = function
-  | Let (rec_flag, Ident name, args, body) ->
-    printf
-      "let %s %s = "
+  | Let (rec_flag, Ident (name, var_type), args, body) ->
+    printf "let %s "
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "rec")
-      name;
+       | Rec -> "rec");
+    printf "%s " name; 
+    (match var_type with
+     | None -> ()
+     | Some str -> printf ": %s " str);
     List.iter (print_expr (indent + 2)) args;
-    print_expr (indent + 2) body
+    print_expr (indent + 2) body;
   | ActivePattern (patterns, expr) ->
     printf "%s| ActivePattern:\n" (String.make indent '-');
     List.iter
-      (fun (Ident param) -> printf "%s- %s\n" (String.make (indent + 2) '-') param)
+      (fun (Ident (param, _)) -> printf "%s- %s\n" (String.make (indent + 2) '-') param)
       patterns;
     print_expr (indent + 2) expr
 ;;
