@@ -247,3 +247,11 @@ let init_parser_state (input_string : string) =
 
 (** Run parser [f] for input string *)
 let parse f inputs = f (init_parser_state inputs)
+
+(** Convert custom parse result to string view *)
+let string_of_parse_result converter = function
+  | ParseFail -> "Parse process failed"
+  | ParseError (msg, state) ->
+    Printf.sprintf "ParseError(line=%d pos=%d): %s" state.line state.inline msg
+  | ParseSuccess (r, _) -> converter r
+;;

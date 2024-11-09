@@ -5,7 +5,6 @@
 open Miniml.Ast
 open Miniml.Parser
 open Miniml.Parser_utility
-open Miniml.Printer
 
 let test conv p input = print_string (string_of_parse_result conv (parse p input))
 let test_program = test show_program program_parser
