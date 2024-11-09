@@ -1,4 +1,4 @@
-let  a = 6 in
-if a = 5 then b else func a b c 
+let a : bool = true in
+if a:int = 5 then None else func a b c
 ;;
-let a b c = if a then b else c;;
+let a b c = if a then Some (c, b) else ( a , b , c );;
