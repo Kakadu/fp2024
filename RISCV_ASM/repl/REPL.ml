@@ -40,7 +40,8 @@ let () =
 ;;
 
 let pp_register = function
-  | Register x -> Printf.sprintf "x%d" x
+  | X0 -> Printf.sprintf "x0"
+  | X1 -> Printf.sprintf "x1"
 
 type address = 
   | Address12 of address12
