@@ -28,7 +28,7 @@ let pp_rec_flag ppf = function
 let pp_literal ppf = function
   | IntLiteral i -> fprintf ppf "%d" i
   | BoolLiteral b -> fprintf ppf "%b" b
-  | StringLiteral s -> fprintf ppf "\"%s\"" s
+  | StringLiteral s -> fprintf ppf "%S" s
   | UnitLiteral -> fprintf ppf "()"
   | NilLiteral -> fprintf ppf "[]"
 ;;
