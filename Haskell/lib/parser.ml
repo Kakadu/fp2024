@@ -382,12 +382,12 @@ let%test "pattern_invalid_banned_neg" =
 ;;
 
 let%test "pattern_valid_neg" =
-  parse_string ~consume:Prefix (pattern Allow) "-1"
-  = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), None)
+  parse_string ~consume:Prefix (pattern Allow_p) "-1"
+  = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), [])
 ;;
 
 let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban) "-1" = Result.Error ": no more choices"
+  parse_string ~consume:Prefix (pattern Ban_p) "-1" = Result.Error ": no more choices"
 ;;
 
 let%test "pattern_valid_double_as" =
@@ -467,14 +467,14 @@ let%expect_test "pattern_just_invalid_ban_unparansed" =
 ;;
 
 let%expect_test "pattern_just_valid" =
-  prs_and_prnt_ln (pattern Allow) show_pattern "Just 1";
+  prs_and_prnt_ln (pattern Allow_p) show_pattern "Just 1";
   [%expect
     {|
-      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), None))), None) |}]
+      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), []))), []) |}]
 ;;
 
 let%expect_test "pattern_just_invalid_ban_unparansed" =
-  prs_and_prnt_ln (pattern Ban) show_pattern "Just 1";
+  prs_and_prnt_ln (pattern Ban_p) show_pattern "Just 1";
   [%expect {|
       error: : |}]
 ;;
@@ -753,8 +753,8 @@ let tuple_or_parensed_item_e e =
 
 let lambda e =
   oper "\\"
-  *> let** pt = pattern Ban in
-     let* pts = many (ws *> pattern Ban) in
+  *> let** pt = pattern Ban_p in
+     let* pts = many (ws *> pattern Ban_p) in
      let* ex = string "->" **> e in
      return (Lambda (pt, pts, ex), etp)
 ;;
@@ -786,7 +786,7 @@ let list_e e =
   let condition = return (fun exp -> Condition exp) <*> e in
   let generator =
     return (fun (pat, exp) -> Generator (pat, exp))
-    <*> both (pattern Allow <* ws <* oper "<-" <* ws) e
+    <*> both (pattern Allow_p <* ws <* oper "<-" <* ws) e
   in
   (let** ex1 = e in
    choice
@@ -894,11 +894,10 @@ let%expect_test "expr_div_mod" =
   [%expect
     {|
       ((Binop (
-          ((Binop (((Const (Integer 10)), None), Divide,
-              ((Const (Integer 3)), None))),
-           None),
-          Mod, ((Const (Integer 2)), None))),
-       None) |}]
+          ((Binop (((Const (Integer 10)), []), Divide, ((Const (Integer 3)), []))),
+           []),
+          Mod, ((Const (Integer 2)), []))),
+       []) |}]
 ;;
 
 let%expect_test "expr_right_assoc" =
@@ -954,21 +953,21 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
   prs_and_prnt_ln expr show_expr "f 9a";
   [%expect
     {|
-      ((FunctionApply (((Identificator (Ident "f")), None),
-          ((Const (Integer 9)), None), [((Identificator (Ident "a")), None)])),
-       None) |}]
+      ((FunctionApply (((Identificator (Ident "f")), []),
+          ((Const (Integer 9)), []), [((Identificator (Ident "a")), [])])),
+       []) |}]
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid2" =
   prs_and_prnt_ln expr show_expr "f Just(1)";
   [%expect
     {|
-      ((FunctionApply (((Identificator (Ident "f")), None),
-          ((Lambda (([], (PIdentificator (Ident "X")), None), [],
-              ((OptionBld (Just ((Identificator (Ident "X")), None))), None))),
-           None),
-          [((Const (Integer 1)), None)])),
-       None) |}]
+      ((FunctionApply (((Identificator (Ident "f")), []),
+          ((Lambda (([], (PIdentificator (Ident "X")), []), [],
+              ((OptionBld (Just ((Identificator (Ident "X")), []))), []))),
+           []),
+          [((Const (Integer 1)), [])])),
+       []) |}]
 ;;
 
 let%expect_test "expr_with_non-assoc_op_simple" =
@@ -1037,29 +1036,29 @@ let%expect_test "expr_case_statement" =
   prs_and_prnt_ln expr show_expr "case x of 1 -> 1; _ -> 2 ";
   [%expect
     {|
-      ((Case (((Identificator (Ident "x")), None),
-          (([], (PConst (OrdinaryPConst (Integer 1))), None),
-           (OrdBody ((Const (Integer 1)), None))),
-          [(([], PWildcard, None), (OrdBody ((Const (Integer 2)), None)))])),
-       None) |}]
+      ((Case (((Identificator (Ident "x")), []),
+          (([], (PConst (OrdinaryPConst (Integer 1))), []),
+           (OrdBody ((Const (Integer 1)), []))),
+          [(([], PWildcard, []), (OrdBody ((Const (Integer 2)), [])))])),
+       []) |}]
 ;;
 
 let%expect_test "expr_case_statement_with_guards" =
   prs_and_prnt_ln expr show_expr "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
   [%expect
     {|
-      ((Case (((Identificator (Ident "x")), None),
-          (([], (PIdentificator (Ident "y")), None),
+      ((Case (((Identificator (Ident "x")), []),
+          (([], (PIdentificator (Ident "y")), []),
            (Guards (
-              (((Binop (((Identificator (Ident "y")), None), Greater,
-                   ((Const (Integer 10)), None))),
-                None),
-               ((Const (Integer 1)), None)),
-              [(((Identificator (Ident "otherwise")), None),
-                ((Const (Integer 2)), None))]
+              (((Binop (((Identificator (Ident "y")), []), Greater,
+                   ((Const (Integer 10)), []))),
+                []),
+               ((Const (Integer 1)), [])),
+              [(((Identificator (Ident "otherwise")), []),
+                ((Const (Integer 2)), []))]
               ))),
-          [(([], PWildcard, None), (OrdBody ((Const (Integer 3)), None)))])),
-       None) |}]
+          [(([], PWildcard, []), (OrdBody ((Const (Integer 3)), [])))])),
+       []) |}]
 ;;
 
 let%expect_test "expr_tuple" =
@@ -1280,12 +1279,12 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
   prs_and_prnt_ln binding show_binding "f(x)y = x + y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), None),
-         [([], (PIdentificator (Ident "y")), None)],
+      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), []),
+         [([], (PIdentificator (Ident "y")), [])],
          (OrdBody
-            ((Binop (((Identificator (Ident "x")), None), Plus,
-                ((Identificator (Ident "y")), None))),
-             None)),
+            ((Binop (((Identificator (Ident "x")), []), Plus,
+                ((Identificator (Ident "y")), []))),
+             [])),
          [])) |}]
 ;;
 
@@ -1294,9 +1293,9 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   [%expect
     {|
       (FunBind (((Ident "f"), None),
-         ([], (PConst (OrdinaryPConst (Integer 9))), None),
-         [([], (PIdentificator (Ident "y")), None)],
-         (OrdBody ((Identificator (Ident "y")), None)), [])) |}]
+         ([], (PConst (OrdinaryPConst (Integer 9))), []),
+         [([], (PIdentificator (Ident "y")), [])],
+         (OrdBody ((Identificator (Ident "y")), [])), [])) |}]
 ;;
 
 let%expect_test "fun_binding_guards" =
