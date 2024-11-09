@@ -1285,7 +1285,7 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
   prs_and_prnt_ln binding show_binding "f(x)y = x + y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None), ([], (PIdentificator (Ident "x")), []),
+      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []),
          [([], (PIdentificator (Ident "y")), [])],
          (OrdBody
             ((Binop (((Identificator (Ident "x")), []), Plus,
@@ -1298,8 +1298,7 @@ let%expect_test "fun_binding_simple_strange_but_valid2" =
   prs_and_prnt_ln binding show_binding "f 9y = y";
   [%expect
     {|
-      (FunBind (((Ident "f"), None),
-         ([], (PConst (OrdinaryPConst (Integer 9))), []),
+      (FunDef ((Ident "f"), ([], (PConst (OrdinaryPConst (Integer 9))), []),
          [([], (PIdentificator (Ident "y")), [])],
          (OrdBody ((Identificator (Ident "y")), [])), [])) |}]
 ;;
