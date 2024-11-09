@@ -66,6 +66,11 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let p_type =
+  skip_ws *> char ':' *> skip_ws *>
+  (choice [string "int"; string "bool"] >>| fun var_type -> Some var_type)
+  <|> return None
+
 let p_ident =
   let find_string =
     skip_ws
@@ -82,7 +87,9 @@ let p_ident =
   >>= fun str ->
   if is_keyword str
   then fail "keywords are not allowed as variable names"
-  else return (Ident str)
+  else (
+    p_type >>| fun type_opt -> Ident (str, type_opt)
+  )
 ;;
 
 let p_var = p_ident >>| fun ident -> Variable ident

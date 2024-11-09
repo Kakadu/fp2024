@@ -8,26 +8,26 @@ open FSharpActivePatterns.PrintAst
 let%expect_test "print Ast factorial" =
   let factorial =
     Function_def
-      ( [ Variable (Ident "n") ]
+      ( [ Variable (Ident ("n", None)) ]
       , If_then_else
           ( Bin_expr
               ( Logical_or
-              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
-              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
+              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 0))
+              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 1)) )
           , Const (Int_lt 1)
           , Some
               (Bin_expr
                  ( Binary_multiply
-                 , Variable (Ident "n")
+                 , Variable (Ident ("n", None))
                  , Function_call
-                     ( Variable (Ident "factorial")
-                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                     ( Variable (Ident ("factorial", None))
+                     , Bin_expr (Binary_subtract, Variable (Ident ("n", None)), Const (Int_lt 1))
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Ident "a", [], Const (Int_lt 10)))
+    [ Statement (Let (Nonrec, Ident ("a", None), [], Const (Int_lt 10)))
     ; Expr factorial
-    ; Expr (Function_call (factorial, Variable (Ident "a")))
+    ; Expr (Function_call (factorial, Variable (Ident ("a", None))))
     ]
   in
   List.iter print_construction program;
@@ -104,7 +104,7 @@ let%expect_test "print Ast factorial" =
 ;;
 
 let%expect_test "print Ast double func" =
-  let var = Variable (Ident "n") in
+  let var = Variable (Ident ("n", None)) in
   let args = [ var ] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
   let double = Function_def (args, binary_expr) in
@@ -195,10 +195,10 @@ let%expect_test "print Ast of LetIn" =
     Expr
       (LetIn
          ( Nonrec
-         , Some (Ident "x")
+         , Some (Ident ("x", None))
          , []
          , Const (Int_lt 5)
-         , Bin_expr (Binary_add, Variable (Ident "x"), Const (Int_lt 5)) ))
+         , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
   in
   print_construction sum;
   [%expect
@@ -218,12 +218,12 @@ let%expect_test "print Ast of match_expr" =
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
-    ; Variant [ Ident "Green"; Ident "Blue"; Ident "Red" ]
-    ; PCons (Wild, PVar (Ident "xs"))
+    ; Variant [ Ident ("Green", None); Ident ("Blue", None); Ident ("Red", None) ]
+    ; PCons (Wild, PVar (Ident ("xs", None)))
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
-  let match_expr = Match (Variable (Ident "x"), pattern_values) in
+  let match_expr = Match (Variable (Ident ("x", None)), pattern_values) in
   print_construction (Expr match_expr);
   [%expect
     {|

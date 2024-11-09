@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type ident = Ident of string (** identifier *)
+type ident = Ident of string * string option (** identifier *)
 [@@deriving eq, show { with_path = false }]
 
 type literal =
