@@ -21,7 +21,8 @@ let%expect_test "print Ast factorial" =
                  , Variable (Ident ("n", None))
                  , Function_call
                      ( Variable (Ident ("factorial", None))
-                     , Bin_expr (Binary_subtract, Variable (Ident ("n", None)), Const (Int_lt 1))
+                     , Bin_expr
+                         (Binary_subtract, Variable (Ident ("n", None)), Const (Int_lt 1))
                      ) )) ) )
   in
   let program =

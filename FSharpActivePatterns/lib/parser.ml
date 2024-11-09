@@ -372,9 +372,8 @@ let p_constraint_expr p_expr =
 ;;
 
 let p_option p_expr =
-  skip_ws *> 
-    (string "None" *> return (Option None))
-    <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
+  skip_ws *> (string "None" *> return (Option None))
+  <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
 ;;
 
 let p_expr =
