@@ -6,6 +6,7 @@ open Base
 open Ast
 open Pp
 open Parse.Patterns
+open Parse.Constants
 
 (************************** Idents **************************)
 

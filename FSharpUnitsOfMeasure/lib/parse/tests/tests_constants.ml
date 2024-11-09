@@ -6,6 +6,7 @@ open Base
 open Ast
 open Pp
 open Parse.Common
+open Parse.Constants
 
 let%expect_test "parse int as const int" =
   pp pp_constant parse_const {|5|};
