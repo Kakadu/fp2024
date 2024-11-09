@@ -67,9 +67,12 @@ let is_keyword = function
 ;;
 
 let p_type =
-  skip_ws *> char ':' *> skip_ws *>
-  (choice [string "int"; string "bool"] >>| fun var_type -> Some var_type)
+  skip_ws
+  *> char ':'
+  *> skip_ws
+  *> (choice [ string "int"; string "bool" ] >>| fun var_type -> Some var_type)
   <|> return None
+;;
 
 let p_ident =
   let find_string =
@@ -87,9 +90,7 @@ let p_ident =
   >>= fun str ->
   if is_keyword str
   then fail "keywords are not allowed as variable names"
-  else (
-    p_type >>| fun type_opt -> Ident (str, type_opt)
-  )
+  else p_type >>| fun type_opt -> Ident (str, type_opt)
 ;;
 
 let p_var = p_ident >>| fun ident -> Variable ident
@@ -122,15 +123,17 @@ let greater_or_equal = p_binexpr ">=" Binary_greater_or_equal
 let log_or = p_binexpr "||" Logical_or
 let log_and = p_binexpr "&&" Logical_and
 
-let p_tuple p_expr = 
-  skip_ws *>
-  string "(" *>
-  lift3
-    (fun fst snd tail -> Tuple(fst, snd, tail))
-    (p_expr)
-    (skip_ws *> string "," *> skip_ws *> p_expr)
-    (many (skip_ws *> string "," *> skip_ws *> p_expr)) 
-  <* skip_ws <* string ")"
+let p_tuple p_expr =
+  skip_ws
+  *> string "("
+  *> lift3
+       (fun fst snd tail -> Tuple (fst, snd, tail))
+       p_expr
+       (skip_ws *> string "," *> skip_ws *> p_expr)
+       (many (skip_ws *> string "," *> skip_ws *> p_expr))
+  <* skip_ws
+  <* string ")"
+;;
 
 let p_if p_expr =
   lift3
@@ -188,9 +191,8 @@ let p_apply expr =
 ;;
 
 let p_option p_expr =
-  skip_ws *> 
-    (string "None" *> return (Option None))
-    <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
+  skip_ws *> (string "None" *> return (Option None))
+  <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
 ;;
 
 let p_expr =
