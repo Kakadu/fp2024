@@ -150,6 +150,51 @@ let%expect_test "oper_with_backticks" =
       `a`|}]
 ;;
 
+let func_tp_tail hd ord_tp =
+  many (oper "->" **> ord_tp)
+  >>= function
+  | sn :: tl -> return (FunctionType (FuncT (hd, sn, tl)))
+  | _ -> fail ""
+;;
+
+let ord_tp tp =
+  let w = word in
+  choice
+    [ string "()" *> return TUnit
+    ; w "Int" *> return TInt
+    ; w "Bool" *> return TBool
+    ; (sq_brackets tp >>| fun x -> ListParam x)
+    ; (braces tp >>| fun x -> TreeParam x)
+    ; tuple_or_parensed_item tp (fun fs sn tl -> return (TupleParams (fs, sn, tl))) return
+    ]
+;;
+
+let tp =
+  let t t = ord_tp t >>= fun res -> option res (func_tp_tail res (ord_tp t)) in
+  fix t
+;;
+
+let%expect_test "tp_list_of_func" =
+  prs_and_prnt_ln tp show_tp "[Int -> Int] ";
+  [%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}]
+;;
+
+let%expect_test "tp_tree_of_func" =
+  prs_and_prnt_ln tp show_tp "{Bool -> ()} ";
+  [%expect {| (TreeParam (FunctionType (FuncT (TBool, TUnit, [])))) |}]
+;;
+
+let%expect_test "tp_lnested_func" =
+  prs_and_prnt_ln tp show_tp "Int -> ((Int -> Int)) -> Int";
+  [%expect
+    {| (FunctionType (FuncT (TInt, (FunctionType (FuncT (TInt, TInt, []))), [TInt]))) |}]
+;;
+
+let%expect_test "tp_tuple" =
+  prs_and_prnt_ln tp show_tp "(Int, Bool, Int -> Bool)";
+  [%expect {| (TupleParams (TInt, TBool, [(FunctionType (FuncT (TInt, TBool, [])))])) |}]
+;;
+
 let nonnegative_integer =
   let* y = take_while1 is_digit in
   match Nonnegative_integer.of_string_opt y with
