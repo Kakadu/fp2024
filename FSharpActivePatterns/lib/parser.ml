@@ -115,6 +115,16 @@ let greater_or_equal = p_binexpr ">=" Binary_greater_or_equal
 let log_or = p_binexpr "||" Logical_or
 let log_and = p_binexpr "&&" Logical_and
 
+let p_tuple p_expr = 
+  skip_ws *>
+  string "(" *>
+  lift3
+    (fun fst snd tail -> Tuple(fst, snd, tail))
+    (p_expr)
+    (skip_ws *> string "," *> skip_ws *> p_expr)
+    (many (skip_ws *> string "," *> skip_ws *> p_expr)) 
+  <* skip_ws <* string ")"
+
 let p_if p_expr =
   lift3
     (fun cond th el -> If_then_else (cond, th, el))
@@ -170,11 +180,18 @@ let p_apply expr =
   parse_args name
 ;;
 
+let p_option p_expr =
+  skip_ws *> 
+    (string "None" *> return (Option None))
+    <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
+;;
+
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
     let atom = choice [ p_var; p_int; p_bool; p_parens p_expr ] in
-    let if_expr = p_if (p_expr <|> atom) <|> atom in
+    let tuple = p_tuple atom <|> atom in
+    let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in
     let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
@@ -185,7 +202,8 @@ let p_expr =
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    comp_or)
+    let option = p_option comp_or <|> comp_or in
+    option)
 ;;
 
 let p_statement = p_let p_expr

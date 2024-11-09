@@ -51,7 +51,7 @@ type is_recursive =
 
 type expr =
   | Const of literal (** [Int], [Bool], [String], [Unit], [Null] *)
-  | Tuple of expr list (** [(1, "Hello world", true)] *)
+  | Tuple of expr * expr * expr list (** [(1, "Hello world", true)] *)
   | List_expr of expr * expr
   (** {[
         [ 1; 2; 3 ]
@@ -65,6 +65,7 @@ type expr =
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
   | LetIn of is_recursive * ident option * expr list * expr * expr
   (** [let f x y = x + y in f 3 4] *)
+  | Option of expr option (** [int option] *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =
