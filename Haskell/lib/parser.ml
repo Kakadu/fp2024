@@ -21,11 +21,12 @@ let ( <**> ) f p = f <*> ws *> p
 let ( **> ) p f = ws *> p *> (ws *> f)
 let etp = (None : tp option) (* remove later (tp parser is required) *)
 
-let parens, sq_brackets, backticks =
+let parens, sq_brackets, backticks, braces =
   let bounded (ch1, ch2) p = char ch1 *> ws *> p <* (ws <* char ch2) in
   ( (fun p -> bounded ('(', ')') p)
   , (fun p -> bounded ('[', ']') p)
-  , fun p -> bounded ('`', '`') p )
+  , (fun p -> bounded ('`', '`') p)
+  , fun p -> bounded ('{', '}') p )
 ;;
 
 let is_alpha = function
@@ -36,6 +37,117 @@ let is_alpha = function
 let is_digit = function
   | '0' .. '9' -> true
   | _ -> false
+;;
+
+let is_char_suitable_for_ident c =
+  is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
+;;
+
+let prs_ln call str = parse_string ~consume:Prefix call str
+
+let prs_and_prnt_ln call sh str =
+  match prs_ln call str with
+  | Ok v -> print_endline (sh v)
+  | Error msg -> Printf.fprintf stderr "error: %s" msg
+;;
+
+let word req_word =
+  let open String in
+  if equal req_word empty
+  then return empty
+  else
+    let* fst_smb = satisfy is_alpha in
+    let* w = take_while is_char_suitable_for_ident in
+    if equal (Printf.sprintf "%c%s" fst_smb w) req_word
+    then return req_word
+    else Printf.sprintf "couldn't parse word '%s'" req_word |> fail
+;;
+
+let%test "word_valid" =
+  parse_string ~consume:Prefix (word "then") "then" = Result.Ok "then"
+;;
+
+let%test "word_invalid" =
+  parse_string ~consume:Prefix (word "then") "thena"
+  = Result.Error ": couldn't parse word 'then'"
+;;
+
+let ident =
+  let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
+  (let* x =
+     satisfy (function
+       | 'a' .. 'z' -> true
+       | _ -> false)
+   in
+   let* y = take_while is_char_suitable_for_ident in
+   return (Printf.sprintf "%c%s" x y))
+  <|> (let* x = satisfy (Char.equal '_') in
+       let* y = take_while1 is_char_suitable_for_ident in
+       return (Printf.sprintf "%c%s" x y))
+  >>= fun identifier ->
+  match List.find_opt (String.equal identifier) keywords with
+  | None -> return (Ident identifier)
+  | Some k -> fail (Printf.sprintf "keyword '%s' cannot be an identifier" k)
+;;
+
+let%test "ident_valid_starts_with_underline" =
+  parse_string ~consume:Prefix ident "_123abc" = Result.Ok (Ident "_123abc")
+;;
+
+let%test "ident_invalid" =
+  parse_string ~consume:Prefix ident "_" = Result.Error ": count_while1"
+;;
+
+let%test "ident_valid_'" =
+  parse_string ~consume:Prefix ident "x'" = Result.Ok (Ident "x'")
+;;
+
+let%test "ident_invalid_keyword" =
+  parse_string ~consume:Prefix ident "then"
+  = Result.Error ": keyword 'then' cannot be an identifier"
+;;
+
+let tuple_or_parensed_item item tuple_cons item_cons =
+  parens (sep_by1 (ws *> char ',' *> ws) item)
+  >>= fun l ->
+  match l with
+  | hd :: [] -> item_cons hd
+  | fs :: sn :: tl -> tuple_cons fs sn tl
+  | [] -> fail "sep_by1 result can't be empty"
+;;
+
+let is_char_suitable_for_oper = function
+  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' | '.' -> true
+  | _ -> false
+;;
+
+let oper expected =
+  let* parsed =
+    backticks ident
+    >>| (fun (Ident s) ->
+          let open String in
+          concat empty [ "`"; s; "`" ])
+    <|> take_while is_char_suitable_for_oper
+  in
+  if String.equal expected parsed then return expected else fail ""
+;;
+
+let%expect_test "oper_valid" =
+  prs_and_prnt_ln (oper "+-+") Fun.id "+-+awq";
+  [%expect {|
+      +-+|}]
+;;
+
+let%expect_test "oper_invalid" =
+  prs_and_prnt_ln (oper "+-+") Fun.id "+-+>";
+  [%expect {|
+      error: :|}]
+;;
+
+let%expect_test "oper_with_backticks" =
+  prs_and_prnt_ln (oper "`a`") Fun.id "`a`";
+  [%expect {|
+      `a`|}]
 ;;
 
 let nonnegative_integer =
@@ -81,117 +193,6 @@ let%test "const_valid_false" =
 
 let%test "const_invalid" =
   parse_string ~consume:Prefix const "beb" = Result.Error ": no more choices"
-;;
-
-let is_char_suitable_for_ident c =
-  is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
-;;
-
-let is_char_suitable_for_oper = function
-  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' | '.' -> true
-  | _ -> false
-;;
-
-let ident =
-  let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
-  (let* x =
-     satisfy (function
-       | 'a' .. 'z' -> true
-       | _ -> false)
-   in
-   let* y = take_while is_char_suitable_for_ident in
-   return (Printf.sprintf "%c%s" x y))
-  <|> (let* x = satisfy (Char.equal '_') in
-       let* y = take_while1 is_char_suitable_for_ident in
-       return (Printf.sprintf "%c%s" x y))
-  >>= fun identifier ->
-  match List.find_opt (String.equal identifier) keywords with
-  | None -> return (Ident identifier)
-  | Some k -> fail (Printf.sprintf "keyword '%s' cannot be an identifier" k)
-;;
-
-let%test "ident_valid_starts_with_underline" =
-  parse_string ~consume:Prefix ident "_123abc" = Result.Ok (Ident "_123abc")
-;;
-
-let%test "ident_invalid" =
-  parse_string ~consume:Prefix ident "_" = Result.Error ": count_while1"
-;;
-
-let%test "ident_valid_'" =
-  parse_string ~consume:Prefix ident "x'" = Result.Ok (Ident "x'")
-;;
-
-let%test "ident_invalid_keyword" =
-  parse_string ~consume:Prefix ident "then"
-  = Result.Error ": keyword 'then' cannot be an identifier"
-;;
-
-let prs_ln call str = parse_string ~consume:Prefix call str
-
-let prs_and_prnt_ln call sh str =
-  match prs_ln call str with
-  | Ok v -> print_endline (sh v)
-  | Error msg -> Printf.fprintf stderr "error: %s" msg
-;;
-
-let oper expected =
-  let* parsed =
-    backticks ident
-    >>| (fun (Ident s) ->
-          let open String in
-          concat empty [ "`"; s; "`" ])
-    <|> take_while is_char_suitable_for_oper
-  in
-  if String.equal expected parsed then return expected else fail ""
-;;
-
-let%expect_test "oper_valid" =
-  prs_and_prnt_ln (oper "+-+") (fun x -> x) "+-+awq";
-  [%expect {|
-      +-+|}]
-;;
-
-let%expect_test "oper_invalid" =
-  prs_and_prnt_ln (oper "+-+") (fun x -> x) "+-+>";
-  [%expect {|
-      error: :|}]
-;;
-
-let%expect_test "oper_with_backticks" =
-  prs_and_prnt_ln (oper "`a`") (fun x -> x) "`a`";
-  [%expect {|
-      `a`|}]
-;;
-
-let word req_word =
-  let open String in
-  if equal req_word empty
-  then return empty
-  else
-    let* fst_smb = satisfy is_alpha in
-    let* w = take_while is_char_suitable_for_ident in
-    if equal (Printf.sprintf "%c%s" fst_smb w) req_word
-    then return req_word
-    else Printf.sprintf "couldn't parse word '%s'" req_word |> fail
-;;
-
-let%test "word_valid" =
-  parse_string ~consume:Prefix (word "then") "then" = Result.Ok "then"
-;;
-
-let%test "word_invalid" =
-  parse_string ~consume:Prefix (word "then") "thena"
-  = Result.Error ": couldn't parse word 'then'"
-;;
-
-let tuple_or_parensed_item item tuple_cons item_cons =
-  parens (sep_by1 (ws *> char ',' *> ws) item)
-  >>= fun l ->
-  match l with
-  | hd :: [] -> item_cons hd
-  | fs :: sn :: tl -> tuple_cons fs sn tl
-  | [] -> fail "sep_by1 result can't be empty"
 ;;
 
 let nothing f = word "Nothing" *> f
@@ -244,6 +245,10 @@ let pat ptrn =
 ;;
 
 let ptrn ptrn =
+  let ptrn_extended ptrn_extended =
+    let* p = ptrn <|> pnegation <|> just_p ptrn in
+    option p (pcons_tail p ptrn_extended)
+  in
   choice
     [ (let* ident = ident in
        char '@' *> (ptrn >>= fun (idents, pat, tp) -> return (ident :: idents, pat, tp)))
@@ -251,7 +256,7 @@ let ptrn ptrn =
        (* let* tp = tp in *)
        return ([], pat, etp))
     ; tuple_or_parensed_item
-        (ptrn <|> pnegation)
+        (fix ptrn_extended)
         (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), etp))
         (fun p -> return p)
     ]
@@ -406,7 +411,7 @@ let%expect_test "pattern_listcons_invalid_ban_unparansed" =
 ;;
 
 let%expect_test "pattern_listcons_valid" =
-  prs_and_prnt_ln (pattern Allow) show_pattern "x:xs:ys";
+  prs_and_prnt_ln (pattern Allow) show_pattern "x:(y:z):w";
   [%expect
     {|
       ([],
@@ -414,8 +419,13 @@ let%expect_test "pattern_listcons_valid" =
           (PCons (([], (PIdentificator (Ident "x")), None),
              ([],
               (PList
-                 (PCons (([], (PIdentificator (Ident "xs")), None),
-                    ([], (PIdentificator (Ident "ys")), None)))),
+                 (PCons (
+                    ([],
+                     (PList
+                        (PCons (([], (PIdentificator (Ident "y")), None),
+                           ([], (PIdentificator (Ident "z")), None)))),
+                     None),
+                    ([], (PIdentificator (Ident "w")), None)))),
               None)
              ))),
        None) |}]
