@@ -2,18 +2,16 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-type rational_exp =
-  | Integer of int (** Integer exponent: [2] *)
-  | Rational of int * int (** Rational exponent: [3/2] *)
-  | Negate of rational_exp (** Negation of exponent: [-1], [-(1/2)] *)
-  | Paren of rational_exp (** Parentheses around exponent: [(2/3)] *)
+type integer_exp =
+  | Int_exp_pos of int (** Integer exponent: [2] *)
+  | Int_exp_neg of int (** Negation of exponent: [-1] *)
 [@@deriving show { with_path = false }]
 
 type measure =
   | Measure_ident of string (** Measure identificator: [m] *)
   | Measure_prod of measure * measure (** Measure product: [sec * h], [kg m] *)
   | Measure_div of measure * measure (** Measure division: [m / sec] *)
-  | Measure_pow of measure * rational_exp (** Measure to the rational power: [cm^3] *)
+  | Measure_pow of measure * integer_exp (** Measure to the integer power: [cm^3] *)
   | Measure_paren of measure (** Parentheses around measure: [(kg / m^3)]*)
 [@@deriving show { with_path = false }]
 
@@ -22,13 +20,18 @@ type measure_num =
   | Mnum_float of float (** Real numbers with units of measure *)
 [@@deriving show { with_path = false }]
 
+(** Units of measure: [1<m>], [9.8<kg m / s>], [0.3<kg^3>] etc. *)
+type unit_of_measure = Unit_of_measure of measure_num * measure
+[@@deriving show { with_path = false }]
+
 type constant =
   | Const_bool of bool (** Boolean constants [true] and [false] *)
   | Const_int of int (** Integer constants: [1] *)
   | Const_char of char (** Char constants: ['a'] *)
   | Const_string of string (** String constants: ["foo"] *)
   | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3f] *)
-  | Const_measure of measure_num * measure (** Measure constants: [5.0<cm>], [3<kg>] *)
+  | Const_unit_of_measure of unit_of_measure
+  (** Units of measure constants: [5.0<cm>], [3<kg>] *)
 [@@deriving show { with_path = false }]
 
 type pattern =
@@ -39,8 +42,8 @@ type pattern =
   | Pattern_tuple of pattern list
   (** Tuple patterns: [(P1; ..., Pn)]
       Invariant: [n >= 2] *)
-  | Pattern_or of pattern * pattern (** Or patterns: [P1 | P2] *)
-  | Pattern_cons of pattern * pattern (** Cons patterns: [P1 :: P2] *)
+  | Pattern_or of pattern * pattern (** WIP Or patterns: [P1 | P2] *)
+  | Pattern_cons of pattern * pattern (** WIP Cons patterns: [P1 :: P2] *)
   | Pattern_list of pattern list (** List patterns: [P1, ..., Pn] *)
 [@@deriving show { with_path = false }]
 
