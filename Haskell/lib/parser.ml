@@ -51,13 +51,26 @@ let prs_and_prnt_ln call sh str =
   | Error msg -> Printf.fprintf stderr "error: %s" msg
 ;;
 
-let word req_word =
+type point_handling =
+  | Allow_point
+  | Ban_point
+
+let word ?(point_allowed = Ban_point) req_word =
   let open String in
   if equal req_word empty
   then return empty
   else
     let* fst_smb = satisfy is_alpha in
-    let* w = take_while is_char_suitable_for_ident in
+    let* w =
+      let suitable_but_not_a_point = take_while (fun c -> is_char_suitable_for_ident c) in
+      match point_allowed with
+      | Ban_point -> suitable_but_not_a_point
+      | Allow_point ->
+        sep_by (char '.') suitable_but_not_a_point
+        >>|
+        let open String in
+        concat empty
+    in
     if equal (Printf.sprintf "%c%s" fst_smb w) req_word
     then return req_word
     else Printf.sprintf "couldn't parse word '%s'" req_word |> fail
@@ -158,7 +171,7 @@ let func_tp_tail hd ord_tp =
 ;;
 
 let ord_tp tp =
-  let w = word in
+  let w = word ~point_allowed:Allow_point in
   choice
     [ string "()" *> return TUnit
     ; w "Int" *> return TInt
@@ -240,8 +253,8 @@ let%test "const_invalid" =
   parse_string ~consume:Prefix const "beb" = Result.Error ": no more choices"
 ;;
 
-let nothing f = word "Nothing" *> f
-let just f = word "Just" *> ws *> f
+let nothing f = word ~point_allowed:Allow_point "Nothing" *> f
+let just f = word ~point_allowed:Allow_point "Just" *> ws *> f
 let list_enum item f = sq_brackets (sep_by (ws *> char ',' *> ws) item) >>= f
 
 let tree item nul_cons node_cons =
@@ -502,7 +515,8 @@ let%expect_test "pattern_simple_invalid_tp_ban" =
 
 let%expect_test "pattern_listcons_valid_with_tp" =
   prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Int]";
-  [%expect {|
+  [%expect
+    {|
     ([],
      (PList
         (PCons (([], (PIdentificator (Ident "x")), []),
@@ -551,6 +565,8 @@ type assoc =
   | Left
   | Right
   | Non
+
+let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: tps)
 
 let prios_list =
   [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), etp) ]
@@ -636,7 +652,7 @@ let inner_bindings e =
   word "let"
   **> let+ bnd = binding e
       and+ bnds = many @@ (char ';' **> binding e)
-      and+ ex = word "in" **> e in
+      and+ ex = word "in" **> e >>= ex_tp in
       InnerBindings (bnd, bnds, ex), etp
 ;;
 
@@ -711,18 +727,19 @@ let tuple_or_parensed_item_e e =
 ;;
 
 let other_expr e fa =
+  let e' = e >>= ex_tp in
   choice
     [ const_e
     ; ident_e
     ; nothing (return (OptionBld Nothing, etp))
     ; just_e
-    ; if_then_else e
-    ; case e
+    ; if_then_else e'
+    ; case e'
     ; inner_bindings e
-    ; lambda e
-    ; tree_e e
-    ; list_e e
-    ; tuple_or_parensed_item_e e
+    ; lambda e'
+    ; tree_e e'
+    ; list_e e'
+    ; tuple_or_parensed_item_e e'
     ]
   >>= fun ex -> fa ex e <|> return ex
 ;;
@@ -754,16 +771,19 @@ let e e =
   >>= fun ex -> function_application ex e <|> return ex
 ;;
 
-let expr = fix e
+let expr = function
+  | Ban_t -> fix e
+  | Allow_t -> fix e >>= ex_tp
+;;
 
 let%expect_test "expr_const" =
-  prs_and_prnt_ln expr show_expr "123456789012345678901234567890";
+  prs_and_prnt_ln (expr Allow_t) show_expr "123456789012345678901234567890";
   [%expect {|
       ((Const (Integer 123456789012345678901234567890)), []) |}]
 ;;
 
 let%expect_test "expr_prio" =
-  prs_and_prnt_ln expr show_expr "(1 + 1)*2 > 1";
+  prs_and_prnt_ln (expr Allow_t) show_expr "(1 + 1)*2 > 1";
   [%expect
     {|
       ((Binop (
@@ -777,7 +797,7 @@ let%expect_test "expr_prio" =
 ;;
 
 let%expect_test "expr_div_mod" =
-  prs_and_prnt_ln expr show_expr "10 `div` 3 `mod` 2";
+  prs_and_prnt_ln (expr Allow_t) show_expr "10 `div` 3 `mod` 2";
   [%expect
     {|
       ((Binop (
@@ -788,7 +808,7 @@ let%expect_test "expr_div_mod" =
 ;;
 
 let%expect_test "expr_right_assoc" =
-  prs_and_prnt_ln expr show_expr "2^3^4";
+  prs_and_prnt_ln (expr Allow_t) show_expr "2^3^4";
   [%expect
     {|
       ((Binop (((Const (Integer 2)), []), Pow,
@@ -798,7 +818,7 @@ let%expect_test "expr_right_assoc" =
 ;;
 
 let%expect_test "expr_with_Just" =
-  prs_and_prnt_ln expr show_expr "Just 2 + 1";
+  prs_and_prnt_ln (expr Allow_t) show_expr "Just 2 + 1";
   [%expect
     {|
       ((Binop (
@@ -813,7 +833,7 @@ let%expect_test "expr_with_Just" =
 ;;
 
 let%expect_test "expr_with_func_apply" =
-  prs_and_prnt_ln expr show_expr "f(x) g(2) + 1";
+  prs_and_prnt_ln (expr Allow_t) show_expr "f(x) g(2) + 1";
   [%expect
     {|
       ((Binop (
@@ -826,7 +846,7 @@ let%expect_test "expr_with_func_apply" =
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid1" =
-  prs_and_prnt_ln expr show_expr "f 9a";
+  prs_and_prnt_ln (expr Allow_t) show_expr "f 9a";
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), []),
@@ -835,7 +855,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid2" =
-  prs_and_prnt_ln expr show_expr "f Just(1)";
+  prs_and_prnt_ln (expr Allow_t) show_expr "f Just(1)";
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), []),
@@ -847,7 +867,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
 ;;
 
 let%expect_test "expr_with_non-assoc_op_simple" =
-  prs_and_prnt_ln expr show_expr "x == y";
+  prs_and_prnt_ln (expr Allow_t) show_expr "x == y";
   [%expect
     {|
       ((Binop (((Identificator (Ident "x")), []), Equality,
@@ -856,13 +876,13 @@ let%expect_test "expr_with_non-assoc_op_simple" =
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_invalid" =
-  prs_and_prnt_ln expr show_expr "x == y + 1 >= z";
+  prs_and_prnt_ln (expr Allow_t) show_expr "x == y + 1 >= z";
   [%expect {|
       ((Identificator (Ident "x")), []) |}]
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_valid" =
-  prs_and_prnt_ln expr show_expr "x == y && z == z'";
+  prs_and_prnt_ln (expr Allow_t) show_expr "x == y && z == z'";
   [%expect
     {|
       ((Binop (
@@ -878,7 +898,7 @@ let%expect_test "expr_with_non-assoc_ops_valid" =
 ;;
 
 let%expect_test "expr_case_statement" =
-  prs_and_prnt_ln expr show_expr "case x of 1 -> 1; _ -> 2 ";
+  prs_and_prnt_ln (expr Allow_t) show_expr "case x of 1 -> 1; _ -> 2 ";
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), []),
@@ -889,7 +909,10 @@ let%expect_test "expr_case_statement" =
 ;;
 
 let%expect_test "expr_case_statement_with_guards" =
-  prs_and_prnt_ln expr show_expr "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
+  prs_and_prnt_ln
+    (expr Allow_t)
+    show_expr
+    "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), []),
@@ -907,7 +930,7 @@ let%expect_test "expr_case_statement_with_guards" =
 ;;
 
 let%expect_test "expr_tuple" =
-  prs_and_prnt_ln expr show_expr " (x,1 , 2,(x, y))";
+  prs_and_prnt_ln (expr Allow_t) show_expr " (x,1 , 2,(x, y))";
   [%expect
     {|
       ((TupleBld (((Identificator (Ident "x")), []), ((Const (Integer 1)), []),
@@ -921,7 +944,7 @@ let%expect_test "expr_tuple" =
 ;;
 
 let%expect_test "expr_lambda" =
-  prs_and_prnt_ln expr show_expr " \\x -> x+1";
+  prs_and_prnt_ln (expr Allow_t) show_expr " \\x -> x+1";
   [%expect
     {|
       ((Lambda (([], (PIdentificator (Ident "x")), []), [],
@@ -933,7 +956,7 @@ let%expect_test "expr_lambda" =
 ;;
 
 let%expect_test "expr_tree" =
-  prs_and_prnt_ln expr show_expr "1 + (2; $; $)";
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 + (2; $; $)";
   [%expect
     {|
       ((Binop (((Const (Integer 1)), []), Plus,
@@ -946,13 +969,13 @@ let%expect_test "expr_tree" =
 ;;
 
 let%expect_test "expr_plus_neg" =
-  prs_and_prnt_ln expr show_expr "1 + -1";
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 + -1";
   [%expect {|
       ((Const (Integer 1)), []) |}]
 ;;
 
 let%expect_test "expr_and_neg" =
-  prs_and_prnt_ln expr show_expr "1 && -1";
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 && -1";
   [%expect
     {|
       ((Binop (((Const (Integer 1)), []), And,
@@ -961,7 +984,7 @@ let%expect_test "expr_and_neg" =
 ;;
 
 let%expect_test "expr_tuple_neg" =
-  prs_and_prnt_ln expr show_expr "(-1, 1)";
+  prs_and_prnt_ln (expr Allow_t) show_expr "(-1, 1)";
   [%expect
     {|
       ((TupleBld (((Neg ((Const (Integer 1)), [])), []), ((Const (Integer 1)), []),
@@ -970,13 +993,13 @@ let%expect_test "expr_tuple_neg" =
 ;;
 
 let%expect_test "expr_lambda neg" =
-  prs_and_prnt_ln expr show_expr " \\ -1 -> 1";
+  prs_and_prnt_ln (expr Allow_t) show_expr " \\ -1 -> 1";
   [%expect {|
       error: : no more choices |}]
 ;;
 
 let%expect_test "expr_case_neg" =
-  prs_and_prnt_ln expr show_expr "case-1of-1->1";
+  prs_and_prnt_ln (expr Allow_t) show_expr "case-1of-1->1";
   [%expect
     {|
       ((Case (((Neg ((Const (Integer 1)), [])), []),
@@ -987,7 +1010,7 @@ let%expect_test "expr_case_neg" =
 ;;
 
 let%expect_test "expr_list_incomprehensional" =
-  prs_and_prnt_ln expr show_expr "[1, f 2, ()]";
+  prs_and_prnt_ln (expr Allow_t) show_expr "[1, f 2, ()]";
   [%expect
     {|
       ((ListBld
@@ -1002,7 +1025,7 @@ let%expect_test "expr_list_incomprehensional" =
 ;;
 
 let%expect_test "expr_list_comprehensional_cond" =
-  prs_and_prnt_ln expr show_expr "[ x | x > 2]";
+  prs_and_prnt_ln (expr Allow_t) show_expr "[ x | x > 2]";
   [%expect
     {|
       ((ListBld
@@ -1017,7 +1040,7 @@ let%expect_test "expr_list_comprehensional_cond" =
 ;;
 
 let%expect_test "expr_list_comprehensional_gen" =
-  prs_and_prnt_ln expr show_expr "[ x | x <- [1, 2, 3]]";
+  prs_and_prnt_ln (expr Allow_t) show_expr "[ x | x <- [1, 2, 3]]";
   [%expect
     {|
       ((ListBld
@@ -1038,7 +1061,7 @@ let%expect_test "expr_list_comprehensional_gen" =
 
 let%expect_test "expr_list_lazy_valid" =
   List.iter
-    (prs_and_prnt_ln expr show_expr)
+    (prs_and_prnt_ln (expr Allow_t) show_expr)
     [ "[1..]"; "[1, 3 .. 10]"; "[1..10]"; "[1,3..]" ];
   [%expect
     {|
@@ -1057,7 +1080,29 @@ let%expect_test "expr_list_lazy_valid" =
        []) |}]
 ;;
 
-let binding = binding expr
+let%expect_test "expr_binop_invlid_tp" =
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Int + 3";
+  [%expect
+    {|
+      ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 2)), []))), [TInt]) |}]
+;;
+
+let%expect_test "expr_valid_tp" =
+  prs_and_prnt_ln
+    (expr Allow_t)
+    show_expr
+    "if x>(2::Int) :: Bool then 0::Int else 1 :: Int :: () ";
+  [%expect
+    {|
+      ((IfThenEsle (
+          ((Binop (((Identificator (Ident "x")), []), Greater,
+              ((Const (Integer 2)), [TInt]))),
+           [TBool]),
+          ((Const (Integer 0)), [TInt]), ((Const (Integer 1)), [TInt]))),
+       [TUnit]) |}]
+;;
+
+let binding = binding (expr Allow_t)
 
 let%expect_test "var_binding_simple" =
   prs_and_prnt_ln binding show_binding "x = 1";
