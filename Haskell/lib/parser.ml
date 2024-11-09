@@ -88,7 +88,7 @@ let is_char_suitable_for_ident c =
 ;;
 
 let is_char_suitable_for_oper = function
-  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' -> true
+  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' | '.' -> true
   | _ -> false
 ;;
 
@@ -200,7 +200,7 @@ let list_enum item f = sq_brackets (sep_by (ws *> char ',' *> ws) item) >>= f
 
 let tree item nul_cons node_cons =
   char '$' *> nul_cons
-  <|> (parens (sep_by (ws *> char ';') item)
+  <|> (parens (sep_by (ws *> char ';' *> ws) item)
        >>= function
        | [ it1; it2; it3 ] -> node_cons it1 it2 it3
        | _ -> fail "cannot parse tree")
@@ -585,6 +585,28 @@ let case e =
      return (Case (ex, br1, brs), etp)
 ;;
 
+let list_e e =
+  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), etp))
+  <|>
+  let condition = return (fun exp -> Condition exp) <*> e in
+  let generator =
+    return (fun (pat, exp) -> Generator (pat, exp))
+    <*> both (pattern Allow <* ws <* oper "<-" <* ws) e
+  in
+  (let** ex1 = e in
+   choice
+     [ (oper "|" **> sep_by1 (ws *> char ',' *> ws) (generator <|> condition)
+        >>= function
+        | [] -> fail ""
+        | hd :: tl -> return (OrdList (ComprehensionList (ex1, hd, tl))))
+     ; (let option_ex f = option None (f >>| fun x -> Some x) in
+        both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
+        >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
+     ]
+   >>| fun l -> ListBld l, etp)
+  |> sq_brackets
+;;
+
 let tuple_or_parensed_item_e e =
   tuple_or_parensed_item
     e
@@ -603,6 +625,7 @@ let other_expr e fa =
     ; inner_bindings e
     ; lambda e
     ; tree_e e
+    ; list_e e
     ; tuple_or_parensed_item_e e
     ]
   >>= fun ex -> fa ex e <|> return ex
@@ -620,6 +643,7 @@ let function_application ex e =
             ; just_e
             ; nothing (return (OptionBld Nothing, etp))
             ; tree_e e
+            ; list_e e
             ; tuple_or_parensed_item_e e
             ])
   in
@@ -866,6 +890,76 @@ let%expect_test "expr_case_neg" =
           (([], (PConst (NegativePInteger 1)), None),
            (OrdBody ((Const (Integer 1)), None))),
           [])),
+       None) |}]
+;;
+
+let%expect_test "expr_list_incomprehensional" =
+  prs_and_prnt_ln expr show_expr "[1, f 2, ()]";
+  [%expect
+    {|
+      ((ListBld
+          (OrdList
+             (IncomprehensionlList
+                [((Const (Integer 1)), None);
+                  ((FunctionApply (((Identificator (Ident "f")), None),
+                      ((Const (Integer 2)), None), [])),
+                   None);
+                  ((Const Unit), None)]))),
+       None) |}]
+;;
+
+let%expect_test "expr_list_comprehensional_cond" =
+  prs_and_prnt_ln expr show_expr "[ x | x > 2]";
+  [%expect
+    {|
+      ((ListBld
+          (OrdList
+             (ComprehensionList (((Identificator (Ident "x")), None),
+                (Condition
+                   ((Binop (((Identificator (Ident "x")), None), Greater,
+                       ((Const (Integer 2)), None))),
+                    None)),
+                [])))),
+       None) |}]
+;;
+
+let%expect_test "expr_list_comprehensional_gen" =
+  prs_and_prnt_ln expr show_expr "[ x | x <- [1, 2, 3]]";
+  [%expect
+    {|
+      ((ListBld
+          (OrdList
+             (ComprehensionList (((Identificator (Ident "x")), None),
+                (Generator
+                   (([], (PIdentificator (Ident "x")), None),
+                    ((ListBld
+                        (OrdList
+                           (IncomprehensionlList
+                              [((Const (Integer 1)), None);
+                                ((Const (Integer 2)), None);
+                                ((Const (Integer 3)), None)]))),
+                     None))),
+                [])))),
+       None) |}]
+;;
+
+let%expect_test "expr_list_lazy_valid" =
+  List.iter (prs_and_prnt_ln expr show_expr) ["[1..]"; "[1, 3 .. 10]" ;"[1..10]"; "[1,3..]" ];
+  [%expect
+    {|
+      ((ListBld (LazyList (((Const (Integer 1)), None), None, None))), None)
+      ((ListBld
+          (LazyList (((Const (Integer 1)), None),
+             (Some ((Const (Integer 3)), None)),
+             (Some ((Const (Integer 10)), None))))),
+       None)
+      ((ListBld
+          (LazyList (((Const (Integer 1)), None), None,
+             (Some ((Const (Integer 10)), None))))),
+       None)
+      ((ListBld
+          (LazyList (((Const (Integer 1)), None),
+             (Some ((Const (Integer 3)), None)), None))),
        None) |}]
 ;;
 
