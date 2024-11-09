@@ -93,11 +93,6 @@ let is_char_suitable_for_oper = function
   | _ -> false
 ;;
 
-let oper expected =
-  let* parsed = take_while is_char_suitable_for_oper in
-  if String.equal expected parsed then return expected else fail ""
-;;
-
 let ident =
   let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
@@ -870,6 +865,18 @@ let%expect_test "expr_div_mod" =
           ((Binop (((Const (Int 10)), []), Divide, ((Const (Int 3)), []))), []),
           Mod, ((Const (Int 2)), []))),
        []) |}]
+;;
+
+let%expect_test "expr_div_mod" =
+  prs_and_prnt_ln expr show_expr "10 `div` 3 `mod` 2";
+  [%expect
+    {|
+      ((Binop (
+          ((Binop (((Const (Integer 10)), None), Divide,
+              ((Const (Integer 3)), None))),
+           None),
+          Mod, ((Const (Integer 2)), None))),
+       None) |}]
 ;;
 
 let%expect_test "expr_right_assoc" =
