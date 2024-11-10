@@ -13,6 +13,9 @@ type opts =
   ; mutable file_path : string option
   }
 
+
+let print_ast ast = pp_ast Format.std_formatter ast
+
 let () =
   let opts = { dump_parse_tree = false; file_path = None } in
   let _ =
@@ -33,7 +36,7 @@ let () =
     | Some path -> In_channel.read_all path |> String.trim
   in
   match parse_string ~consume:All parse_ast input with
-  | Ok ast -> if opts.dump_parse_tree then Format.printf "%a" pp_ast ast
+  | Ok ast -> if opts.dump_parse_tree then print_ast ast
   | Error msg -> failwith (sprintf "Failed to parse file%s" msg)
 ;;
 
@@ -110,11 +113,11 @@ type address =
   | Address20 of address20
   | Address32 of address32
 
-let pp_instruction_3reg_helper ppf instruction r1 r2 r3 =
+let pp_instruction_3reg_helper ppf mnemonic r1 r2 r3 =
   Format.fprintf
     ppf
     "%s %s, %s, %s"
-    instruction
+    mnemonic
     (pp_register r1)
     (pp_register r2)
     (pp_register r3)
@@ -129,21 +132,21 @@ let pp_address = function
   | Address32 (ImmediateAddress32 imm) -> Format.sprintf "%d" imm
 ;;
 
-let pp_instruction_2reg_1imm_helper ppf instruction r1 r2 addr =
+let pp_instruction_2reg_1imm_helper ppf mnemonic r1 r2 addr =
   Format.fprintf
     ppf
     "%s %s,%s,%s"
-    instruction
+    mnemonic
     (pp_register r1)
     (pp_register r2)
     (pp_address addr)
 ;;
 
-let pp_instruction_2reg_1offset_helper ppf instruction r1 r2 addr =
+let pp_instruction_2reg_1offset_helper ppf mnemonic r1 r2 addr =
   Format.fprintf
     ppf
     "%s %s,%s(%s)"
-    instruction
+    mnemonic
     (pp_register r1)
     (pp_address addr)
     (pp_register r2)
@@ -296,5 +299,5 @@ let pp_expr ppf = function
 ;;
 
 let pp_ast ppf (ast : ast) =
-  List.iter (fun expr -> Format.fprintf ppf "%a\n" pp_expr expr) ast
+  List.iter (fun expr -> pp_expr ppf expr) ast
 ;;
