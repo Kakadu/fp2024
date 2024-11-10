@@ -34,7 +34,7 @@ type rec_flag =
 type expression =
   | Exp_ident of ident (** Identifiers such as [x] *)
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
-  | Exp_tuple of expression list2(** Expressions [(E1, E2, ..., En)] *)
+  | Exp_tuple of expression list2 (** Expressions [(E1, E2, ..., En)] *)
   | Exp_function of case list1
   (** [Exp_function (P1, [P2; ...; Pn])] represents
       [function P1 | ... | Pn] *)
@@ -74,8 +74,7 @@ type type_expr =
   | Type_arrow of type_expr * type_expr (** [Type_arrow(T1, T2)] represents:
                                             [T1 -> T2] *)
   | Type_var of ident
-  | Type_tuple of type_expr list2
-  (** [Type_tuple([T1, T2, ... Tn])] *)
+  | Type_tuple of type_expr list2 (** [Type_tuple([T1, T2, ... Tn])] *)
   | Type_construct of ident * type_expr list
   (** [Type_constr(ident, l)] represents:
       - [tconstr]               when [l=[]],
