@@ -24,6 +24,7 @@ depends: [
   "ocamlformat" {build}
   "base"
   "angstrom"
+  "qcheck"
 ]
 build: [
   ["dune" "subst"] {dev}

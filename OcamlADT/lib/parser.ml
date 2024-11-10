@@ -65,6 +65,10 @@ let pconststringexpr =
   token "\"" *> lift 
     (fun str -> Exp_constant(Const_string str)) 
     (take_while1 (function '"' -> false | _ -> true))
+  <* token "\""
+
+let pconst = 
+  pconstcharexpr <|> pconstintexpr <|> pconststringexpr
 
 (*                   Arithm utils + ident parser                         *)
 let lchain p op =
@@ -106,20 +110,14 @@ let pvar =
     fail "Found a keyword instead of an variable"
 
 let ppattern =
-  let parse = 
     pany <|> pvar (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
-  in debug_parser "pattern_parser" parse
+  
 
 (*                   Expressions                         *)
 
 
 let pvalue_binding pexpr =
-  let parse_pattern_and_expr =
-    let expr_parser = 
-      pexpr
-    in lift2 (fun pat expr -> {pat;expr}) ppattern (token "=" *> pass_ws *> debug_parser "expr_parser" expr_parser)
-  in
-  debug_parser "value_binding" parse_pattern_and_expr
+  lift2 (fun pat expr -> {pat;expr}) ppattern (token "=" *> pass_ws *> pexpr)
 ;;
 let prec_flag = token "rec" *> return Recursive <|> return Nonrecursive
 ;;
@@ -202,30 +200,30 @@ let plogops =
 let pexpr = fix (fun expr ->
 (* let expr = choice [pparens expr; pconstintexpr; pconstcharexpr; pconststringexpr; ] in *)
   let expr = choice [
-    debug_parser "identexp" pidentexpr;
-    debug_parser "parens" (pparens expr);
-    debug_parser "constint" pconstintexpr;
-    debug_parser "constchar" pconstcharexpr;
-    debug_parser "conststring" pconststringexpr;
+    pidentexpr;
+    (pparens expr);
+    pconstintexpr;
+    pconstcharexpr;
+    pconststringexpr;
   ] in
-  let expr = debug_parser "apply" (papplyexpr expr) <|> expr in
-  let expr = debug_parser "mul_div" (lchain expr (pmul <|> pdiv)) in
-  let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
-  let expr = debug_parser "compare" (lchain expr pcompops) in
+  let expr = (papplyexpr expr) <|> expr in
+  let expr = (lchain expr (pmul <|> pdiv)) in
+  let expr = (lchain expr (padd <|> psub)) in
+  let expr = (lchain expr pcompops) in
   let expr = rchain expr plogops in
-  let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in 
-  let expr = debug_parser "tuple" ptupleexpr <|> expr in  
-  let expr = debug_parser "let" (pletexpr expr) <|> expr in
-  let expr = debug_parser "fun" (pfunexpr expr) <|> expr in  
+  let expr =  (pifexpr expr) <|> expr in 
+  let expr =  ptupleexpr <|> expr in  
+  let expr =  (pletexpr expr) <|> expr in
+  let expr =  (pfunexpr expr) <|> expr in  
   expr)
 ;;
 
 (*                   Structure items                         *)
 
-let pseval = debug_parser "ps_eval" (lift (fun expr -> Str_eval(expr)) pexpr)
+let pseval =  (lift (fun expr -> Str_eval(expr)) pexpr)
 
 let psvalue = 
-  debug_parser "ps_value" (let check_no_in =
+  (let check_no_in =
     let* next = peek_char in
     match next with
     | Some 'i' -> 
