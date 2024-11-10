@@ -10,21 +10,19 @@ open Char
 (*                   Auxiliary parsers *)
 
 let is_not_keyword = function
-  | "let" | "if" | "then" | "else" | "in" | "fun" | "true" | "false" | "rec" | "and" ->
+  | "let" | "if" | "then" | "else" | "in" | "fun" | "true" | "false" | "rec" | "and" | "function" | "match" | "with"->
     false
   | _ -> true
 ;;
 
-let debug_parser name p =
-  p
-  >>= (fun result ->
-        Stdlib.Printf.printf "Debug: %s parser SUCCEEDED\n" name;
-        return result)
-  <|> (return ()
-       >>= fun () ->
-       Stdlib.Printf.printf "Debug: %s parser failed\n" name;
-       fail (Printf.sprintf "%s parser failed" name))
-;;
+let debug_parser name p = p
+(* >>= (fun result ->
+   Stdlib.Printf.printf "Debug: %s parser SUCCEEDED\n" name;
+   return result)
+   <|> (return ()
+   >>= fun () ->
+   Stdlib.Printf.printf "Debug: %s parser failed\n" name;
+   fail (Printf.sprintf "%s parser failed" name)) *)
 
 let is_whitespace = function
   | ' ' | '\t' | '\n' | '\r' -> true
@@ -126,6 +124,13 @@ let rchain p op =
 (*                   Patterns *)
 let pany = token "_" *> return Pat_any
 
+let ptuplepat ppattern =
+  let* el1 = pass_ws *> ppattern in
+  let* el2 = token "," *> pass_ws *> ppattern in
+  let* rest = pass_ws *> sep_by (token ",") ppattern in
+  return (Pat_tuple (el1, el2, rest))
+;;
+
 let pvar =
   pident
   >>= fun ident ->
@@ -135,14 +140,11 @@ let pvar =
 ;;
 
 let ppattern =
-  let parse =
-    pany <|> pvar
-    (* <|> pconstant <|> ptuple <|> pconstruct, will be added in future, not necessary for fact *)
-  in
-  debug_parser "pattern_parser" parse
+  let simplevar = choice [ pany; pvar ] in
+  ptuplepat simplevar <|> simplevar
 ;;
 
-(*                   Expressions                 *)
+(*                   Expressions *)
 
 let pidentexpr =
   pident
@@ -151,6 +153,29 @@ let pidentexpr =
   then return (Exp_ident ident)
   else fail "Found a keyword instead of an identifier"
 ;;
+
+let pcase pexpr =
+  let* pat = pass_ws *> ppattern in
+  (*todo: pass ws rework*)
+  let* expr = token "->" *> pexpr in
+  return { left = pat; right = expr }
+;;
+
+let ppatternmatching pexpr =
+  let* casefs = option "" (token "|") *> pcase pexpr in
+  let* casetl = option "" (token "|") *> (sep_by (token "|") @@ pcase pexpr) in (*todo: remove option *)
+  return (casefs, casetl)
+;;
+
+let pfunction pexpr =
+  let* cases = token "function" *> ppatternmatching pexpr in
+  return @@ Exp_function cases
+;;
+
+let pmatch pexpr = 
+  let* expr = token "match" *> pexpr in
+  let* cases = token "with" *> ppatternmatching pexpr in
+  return @@ Exp_match(expr,cases)
 
 let pletbinding pexpr =
   let psimple =
@@ -177,17 +202,12 @@ let plet pexpr =
   return @@ Exp_let (recflag, (bindingfs, bindingtl), expr)
 ;;
 
-(*rewrite*)
-(* let ptupleexpr =
-   let* _ = token "(" in
-   let* expression1 = pidentexpr in
-   let* _ = token "," in
-   let* expression2 = pidentexpr in
-   let* _ = token "," in
-   let* expressiontl = sep_by (char ',') pidentexpr in
-   let* _ = token ")" in
-   return (Exp_tuple (expression1, expression2, expressiontl))
-   ;; *)
+let ptupleexpr pexpr =
+  let* el1 = pass_ws *> pexpr in
+  let* el2 = token "," *> pass_ws *> pexpr in
+  let* rest = pass_ws *> sep_by (token ",") pexpr in
+  return (Exp_tuple (el1, el2, rest))
+;;
 
 let pifexpr pexpr =
   lift3
@@ -196,6 +216,9 @@ let pifexpr pexpr =
     (token "then" *> pass_ws *> pexpr)
     (option None (token "else" *> pass_ws *> pexpr >>| fun x -> Some x))
 ;;
+
+let pconstructexpr =
+  
 
 let papplyexpr pexpr = lchain pexpr (return (fun ex1 ex2 -> Exp_apply (ex1, (ex2, []))))
 
@@ -257,19 +280,20 @@ let pexpr =
            ; debug_parser "constchar" pconstcharexpr
            ; debug_parser "conststring" pconststringexpr
            ; debug_parser "parens" (pparens pexpr)
+           ; debug_parser "function" (pfunction pexpr)
            ; debug_parser "fun" (pfunexpr pexpr)
            ; debug_parser "let" (plet pexpr)
-             (* debug_parser "if_then_else" (pifexpr pexpr) *)
+           ; debug_parser "if_then_else" (pifexpr pexpr)
+           ; debug_parser "match" (pmatch pexpr)
            ]
     in
     let papply = debug_parser "apply" (papplyexpr poprnd) in
     let expr = debug_parser "mul_div" (lchain papply (pmul <|> pdiv)) in
-    (* let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in *)
-    (* let expr = debug_parser "compare" (lchain expr pcompops) in *)
-    (* let expr = rchain expr plogops in *)
-    (* let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in  *)
-    (* let expr = debug_parser "tuple" ptupleexpr <|> expr in   *)
-    expr)
+    let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
+    let expr = debug_parser "compare" (lchain expr pcompops) in
+    let expr = rchain expr plogops in
+    (* let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in *)
+    debug_parser "tuple" (ptupleexpr expr) <|> expr)
 ;;
 
 (*                   Structure items *)
@@ -285,7 +309,7 @@ let pstrlet =
   let* recflag = token "let" *> precflag in
   let* bindingfs = pletbinding pexpr in
   let* bindingtl = sep_by (token "and") (pletbinding pexpr) in
-  return @@ Str_value (recflag, (bindingfs,bindingtl))
+  return @@ Str_value (recflag, (bindingfs, bindingtl))
 ;;
 
 let psvalue = pstrlet (*<|> prsadt*)
