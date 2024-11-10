@@ -43,7 +43,7 @@ let pp_pattern =
   helper
 ;;
 
-let pp_expr =
+let rec pp_expr =
   let rec helper ppf = function
     | ExprVariable v -> fprintf ppf "%s" v
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
@@ -56,23 +56,6 @@ let pp_expr =
        | Some x -> fprintf ppf "if %a then %a else %a" helper c helper th helper x)
     | ExprMatch _ -> ()
     | ExprLet (rf, bl, e) ->
-      let pp_binding ppf binding =
-        let p, e = binding in
-        match e with
-        | ExprFun (p1, e1) ->
-          fprintf ppf "%a %a = %a" pp_pattern p pp_pattern p1 helper e1
-        | _ -> fprintf ppf "%a = %a" pp_pattern p helper e
-      in
-      let pp_binding_list ppf binding_list =
-        let rec helper = function
-          | [] -> ()
-          | [ x ] -> fprintf ppf "%a" pp_binding x
-          | x :: xs ->
-            fprintf ppf "%a and " pp_binding x;
-            helper xs
-        in
-        helper binding_list
-      in
       fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list bl helper e
     | ExprApply (e1, e2) ->
       (match e2 with
@@ -93,16 +76,14 @@ let pp_expr =
     | OptSome x -> fprintf ppf "Some (%a)" helper x
   in
   helper
-;;
 
-let pp_binding ppf binding =
-  let p, e = binding in
-  match e with
-  | ExprFun (p1, e1) -> fprintf ppf "%a %a = %a" pp_pattern p pp_pattern p1 pp_expr e1
-  | _ -> fprintf ppf "%a = %a" pp_pattern p pp_expr e
-;;
-
-let pp_binding_list ppf binding_list =
+and pp_binding_list ppf =
+  let pp_binding ppf binding =
+    let p, e = binding in
+    match e with
+    | ExprFun (p1, e1) -> fprintf ppf "%a %a = %a" pp_pattern p pp_pattern p1 pp_expr e1
+    | _ -> fprintf ppf "%a = %a" pp_pattern p pp_expr e
+  in
   let rec helper = function
     | [] -> ()
     | [ x ] -> fprintf ppf "%a" pp_binding x
@@ -110,7 +91,7 @@ let pp_binding_list ppf binding_list =
       fprintf ppf "%a and " pp_binding x;
       helper xs
   in
-  helper binding_list
+  helper
 ;;
 
 let pp_structure ppf = function
