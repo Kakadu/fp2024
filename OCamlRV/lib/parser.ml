@@ -84,13 +84,6 @@ let ppvariable = variable >>| fun v -> PVar v
 let pparens p = token "(" *> p <* token ")"
 let brackets p = token "[" *> p <* token "]"
 
-let pplist p =
-  brackets @@ sep_by1 (token ";") p
-  >>| List.fold_right
-        ~f:(fun p1 p2 -> PCons (p1, p2))
-        ~init:((fun l -> PLiteral l) NilLiteral)
-;;
-
 let pattern =
   fix (fun pat ->
     let term = choice [ ppany; ppliteral; ppvariable; pparens pat ] in
