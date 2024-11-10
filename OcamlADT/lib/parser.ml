@@ -361,7 +361,7 @@ let pstrlet =
   let precflag = token "rec" *> return Recursive <|> return Nonrecursive in
   let* recflag = token "let" *> precflag in
   let* bindingfs = pletbinding pexpr in
-  let* bindingtl = sep_by (token "and") (pletbinding pexpr) in
+  let* bindingtl = many (token "and" *> pletbinding pexpr) in
   return @@ Str_value (recflag, (bindingfs, bindingtl))
 ;;
 
