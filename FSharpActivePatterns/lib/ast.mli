@@ -172,6 +172,8 @@ let gen_let_bind =
     gen_let_bind_sized n)
 ;;
 
+and and_bind = And_bind of ident * expr list * expr (** [and sum n m = n+m] *)
+
 type statement =
   | Let of
       is_recursive

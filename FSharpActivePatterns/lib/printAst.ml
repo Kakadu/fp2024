@@ -120,7 +120,7 @@ let rec print_expr indent expr =
   | Function_call (func, arg) ->
     print_expr (indent + 2) func;
     print_expr (indent + 2) arg
-  | LetIn (rec_flag, name, args, body, in_expr) ->
+  | LetIn (rec_flag, name, args, body, and_list, in_expr) ->
     printf
       "let %s "
       (match rec_flag with
@@ -136,6 +136,7 @@ let rec print_expr indent expr =
     List.iter (print_expr (indent + 2)) args;
     printf "= ";
     print_expr (indent + 2) body;
+    List.iter (print_and) and_list;
     printf "in\n";
     print_expr (indent + 2) in_expr;
     printf "\n"
@@ -145,10 +146,19 @@ let rec print_expr indent expr =
      | Some expr ->
        printf "Some ";
        print_expr (indent + 2) expr)
+and print_and (And_bind(Ident(name, var_type), args, body)) =
+  printf "\nand "; 
+  printf "%s " name;
+  (match var_type with
+     | None -> ()
+     | Some str -> printf ": %s " str);
+  List.iter (fun arg -> print_expr 0 arg) args;
+  printf "= ";
+  print_expr 6 body
 ;;
 
 let print_statement indent = function
-  | Let (rec_flag, Ident (name, var_type), args, body) ->
+  | Let (rec_flag, Ident (name, var_type), args, body, and_list) ->
     printf
       "let %s "
       (match rec_flag with
@@ -158,9 +168,10 @@ let print_statement indent = function
     (match var_type with
      | None -> ()
      | Some str -> printf ": %s " str);
-    printf "= ";
     List.iter (print_expr (indent + 2)) args;
-    print_expr (indent + 2) body
+    printf "= ";
+    print_expr (indent + 2) body;
+    List.iter (print_and) and_list
   | ActivePattern (patterns, expr) ->
     printf "%s| ActivePattern:\n" (String.make indent '-');
     List.iter

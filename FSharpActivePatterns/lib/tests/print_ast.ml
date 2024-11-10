@@ -26,7 +26,7 @@ let%expect_test "print Ast factorial" =
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Ident ("a", None), [], Const (Int_lt 10)))
+    [ Statement (Let (Nonrec, Ident ("a", None), [], Const (Int_lt 10), []))
     ; Expr factorial
     ; Expr (Function_call (factorial, Variable (Ident ("a", None))))
     ]
@@ -199,6 +199,7 @@ let%expect_test "print Ast of LetIn" =
          , Some (Ident ("x", None))
          , []
          , Const (Int_lt 5)
+         , []
          , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
   in
   print_construction sum;
