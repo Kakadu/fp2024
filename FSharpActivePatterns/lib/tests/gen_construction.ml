@@ -25,16 +25,19 @@ let gen_const =
 
 let gen_varname =
   let open QCheck.Gen in
-  let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
-  let gen_first_char =
-    oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
+  let rec loop =
+    let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
+    let gen_first_char =
+      oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
+    in
+    let gen_next_char = oneof [ gen_first_char; gen_char_of_range '0' '9' ] in
+    map2
+      (fun first rest ->
+        String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
+      gen_first_char
+      (list_size (1 -- 5) gen_next_char)
   in
-  let gen_next_char = oneof [ gen_first_char; gen_char_of_range '0' '9' ] in
-  map2
-    (fun first rest ->
-      String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
-    gen_first_char
-    (list_size (1 -- 5) gen_next_char)
+  loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
 let gen_variable = QCheck.Gen.map variable_e gen_varname
@@ -81,13 +84,13 @@ let gen_expr =
           [ 0, map tuple_e (list_size (0 -- 15) (self (n / 2)))
           ; 0, map2 un_e gen_unop (self (n / 2))
           ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
-          ; ( 1
+          ; ( 0
             , map3
                 if_e
                 (self (n / 2))
                 (self (n / 2))
                 (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
-          ; 1, map2 func_def (list gen_variable) (self (n / 2))
+          ; 0, map2 func_def (list gen_variable) (self (n / 2))
           ; ( 1
             , map3
                 letin

@@ -32,6 +32,13 @@ let print_unary_op fmt =
   | Unary_not -> fprintf fmt "not "
 ;;
 
+let print_rec_flag fmt =
+  let open Format in
+  function
+  | Rec -> fprintf fmt "rec"
+  | Nonrec -> ()
+;;
+
 let rec print_pattern fmt =
   let open Format in
   function
@@ -57,19 +64,35 @@ and print_expr fmt expr =
   | Bin_expr (op, left, right) ->
     fprintf fmt "(%a) %a (%a)" print_expr left print_bin_op op print_expr right
   | If_then_else (cond, then_body, else_body) ->
-    let begin_if = asprintf "if %a then %a " print_expr cond print_expr then_body in
+    fprintf fmt "if %a then %a " print_expr cond print_expr then_body;
     (match else_body with
-     | Some body -> fprintf fmt "%s else %a" begin_if print_expr body
-     | None -> fprintf fmt "%s" begin_if)
-  | Function_def (args, body) -> fprintf fmt "func TODO"
-  | Function_call (func, arg) -> fprintf fmt "func_appl TODO"
-  | LetIn (rec_flag, name, args, body, in_expr) -> fprintf fmt "LetIn TODO"
+     | Some body -> fprintf fmt "else %a " print_expr body
+     | None -> ())
+  | Function_def (args, body) ->
+    fprintf fmt "fun ";
+    print_args fmt args;
+    fprintf fmt "-> %a " print_expr body
+  | Function_call (func, arg) -> fprintf fmt "%a %a" print_expr func print_expr arg
+  | LetIn (rec_flag, name, args, body, in_expr) ->
+    (fprintf fmt "let %a " print_rec_flag rec_flag;
+     match name with
+     | Some (Ident ident) -> fprintf fmt "%s " ident
+     | None -> ());
+    print_args fmt args;
+    fprintf fmt "= %a in %a " print_expr body print_expr in_expr
+
+and print_args fmt args =
+  let open Format in
+  pp_print_list ~pp_sep:pp_print_space print_expr fmt args
 ;;
 
 let print_statement fmt =
   let open Format in
   function
-  | Let (rec_flag, Ident name, args, body) -> fprintf fmt "Let TODO"
+  | Let (rec_flag, Ident ident, args, body) ->
+    fprintf fmt "let %a %s " print_rec_flag rec_flag ident;
+    print_args fmt args;
+    fprintf fmt "= %a " print_expr body
   | ActivePattern (patterns, expr) -> fprintf fmt "Active pattern TODO"
 ;;
 
