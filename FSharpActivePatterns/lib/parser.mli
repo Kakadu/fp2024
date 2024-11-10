@@ -5,3 +5,4 @@
 open Ast
 
 val parse : string -> construction option
+val is_keyword : string -> bool
