@@ -6,23 +6,21 @@ open! Base
 open Ast
 open Angstrom
 
-val pp : (Format.formatter -> 'a -> unit) -> 'a t -> ident -> unit
-
 val ws : unit t
-
 val ws_line : unit t
-
-val token : ident -> ident t
-
+val token : string -> string t
 val parens : 'a t -> 'a t
+val square_brackets : 'a t -> 'a t
+val curly_braces : 'a t -> 'a t
+val sep_by_comma : 'a t -> 'a list t
+val sep_by_comma1 : 'a t -> 'a list t
+val parse_int : int t
 
-val many_sep : sep:'a t -> parser:'b t -> 'b list t
-
-(** Separator for the statements, [;] or [\n] *)
+(** Parses separator for the statements, [;] or [\n], returns nothing *)
 val parse_stmt_sep : unit t
 
-val parse_const: const t
+(** Parses identifiers that can be used as lvalues in variable declarations
+    and as function name (includes blank identifier [_]) *)
+val parse_ident : ident t
 
-val parse_ident: string t
-
-val parse_type: type' t
+val parse_type : type' t

@@ -13,149 +13,205 @@ let chainl1 e op =
 ;;
 
 let rec chainr1 e op = e >>= fun a -> op >>= (fun f -> chainr1 e op >>| f a) <|> return a
-let penot expr = token "!" *> expr >>= fun expr -> return @@ Expr_un_oper (Unary_not, expr)
 
-let peusb expr =
-  token "-" *> expr >>= fun expr -> return @@ Expr_un_oper (Unary_minus, expr)
+let parse_unary_not =
+  char '!' *> ws *> return (fun expr -> Expr_un_oper (Unary_not, expr))
 ;;
 
-let pesum = token "+" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_sum, exp1, exp2))
+let parse_unary_minus =
+  char '-' *> ws *> return (fun expr -> Expr_un_oper (Unary_minus, expr))
+;;
 
-let pemul =
+let parse_unary_plus =
+  char '+' *> ws *> return (fun expr -> Expr_un_oper (Unary_plus, expr))
+;;
+
+let parse_unary_receive =
+  string "<-" *> ws *> return (fun expr -> Expr_un_oper (Unary_recieve, expr))
+;;
+
+let parse_mult_unary_op pexpr =
+  let rec helper acc =
+    choice [ parse_unary_not; parse_unary_minus; parse_unary_plus; parse_unary_receive ]
+    >>= (fun new_oper -> helper (fun expr -> acc @@ new_oper @@ expr))
+    <|> return acc
+  in
+  let* unary_operators = helper Fun.id in
+  let* expr = pexpr in
+  return (unary_operators expr)
+;;
+
+let parse_sum = token "+" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_sum, exp1, exp2))
+
+let parse_mult =
   token "*" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_multiply, exp1, exp2))
 ;;
 
-let pesub =
+let parse_subtraction =
   token "-" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_subtract, exp1, exp2))
 ;;
 
-let pediv = token "/" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_divide, exp1, exp2))
-let pemod = token "%" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_modulus, exp1, exp2))
-let peeql = token "==" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_equal, exp1, exp2))
+let parse_division =
+  token "/" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_divide, exp1, exp2))
+;;
 
-let penql =
+let parse_modulus =
+  token "%" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_modulus, exp1, exp2))
+;;
+
+let parse_equal =
+  token "==" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_equal, exp1, exp2))
+;;
+
+let parse_not_equal =
   token "!= " *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_not_equal, exp1, exp2))
 ;;
 
-let pegrt = token ">" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_greater, exp1, exp2))
+let parse_greater =
+  token ">" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_greater, exp1, exp2))
+;;
 
-let pegre =
+let parse_greater_equal =
   token ">=" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_greater_equal, exp1, exp2))
 ;;
 
-let pelss = token "<" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_less, exp1, exp2))
+let parse_less =
+  token "<" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_less, exp1, exp2))
+;;
 
-let pelse =
+let parse_less_equal =
   token "<=" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_less_equal, exp1, exp2))
 ;;
 
-let peand = token "&&" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_and, exp1, exp2))
-let peor = token "||" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_or, exp1, exp2))
-
-let parse_simple_expr =
-  parse_const
-  >>| (fun const -> Expr_const const)
-  <|> (parse_ident >>| fun id -> Expr_ident id)
+let parse_and =
+  token "&&" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_and, exp1, exp2))
 ;;
 
-(* нужно переиспользовать в стейтментах *)
-let parse_func_call pexpr =
-  lift2
-    (fun id ls -> Expr_call (Expr_ident id, ls))
-    (ws *> parse_ident <* ws_line)
-    (parens (many_sep ~sep:(ws_line *> char ',' *> ws) ~parser:pexpr))
+let parse_or = token "||" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_or, exp1, exp2))
+let parse_const_int = parse_int >>| fun num -> Const_int num
+
+let parse_const_string =
+  char '"' *> take_till (Char.equal '"') <* char '"' >>| fun string -> Const_string string
 ;;
 
-let parse_expr =
-  fix (fun expr ->
-    let arg = choice [ parse_func_call expr; parse_simple_expr ] in
-    let arg = penot arg <|> arg in
-    let arg = peusb arg <|> arg in
-    let arg = chainl1 arg (pemul <|> pemod <|> pediv) in
-    let arg = chainl1 arg (pesum <|> pesub) in
-    let arg = chainl1 arg (pegre <|> pelse <|> pegrt <|> pelss <|> peeql <|> penql) in
-    let arg = fix (fun _ -> arg) <|> arg in
-    arg)
-;;
-
-(* only (a, b, c int) args supported, TODO: (a string, b int) *)
-let parse_func_args =
-  parens
-    (lift2
-       (fun args t -> List.map ~f:(fun arg -> arg, t) args)
-       (many_sep ~sep:(ws_line *> char ',' *> ws) ~parser:parse_ident <* ws_line)
-       parse_type)
-;;
-
-(* TODO: (a int, b string) *)
-let parse_func_return_values =
-  parse_type >>| (fun t -> Only_types [ t ]) <|> return (Only_types [])
-;;
-
-let construct_anon_func args returns body =
-  let returns : return_values option =
-    match returns with
-    | Only_types (_ :: _) | Ident_and_types _ -> Some returns
-    | Only_types [] -> None
+let parse_idents_with_types =
+  let* args_lists =
+    sep_by_comma1
+      (let* idents = sep_by_comma1 parse_ident in
+       let* t = ws_line *> parse_type in
+       return (List.map ~f:(fun id -> id, t) idents))
   in
-  { args; returns; body }
+  return (List.concat args_lists)
 ;;
 
-let parse_anon_func parse_block =
-  lift3
-    construct_anon_func
-    (parse_func_args <* ws_line)
-    (parse_func_return_values <* ws_line)
-    parse_block
+let parse_func_args = parens parse_idents_with_types <|> (parens ws >>| fun _ -> [])
+
+let parse_func_return_values =
+  choice
+    [ (parens parse_idents_with_types >>| fun returns -> Some (Ident_and_types returns))
+    ; (parens (sep_by_comma1 parse_type) >>| fun types -> Some (Only_types types))
+    ; (parse_type >>| fun t -> Some (Only_types [ t ]))
+    ; (let* _ = parens ws <|> return () in
+       let* char = ws_line *> peek_char_fail in
+       match char with
+       | '{' -> return None
+       | _ -> fail "Incorrect func return values")
+    ]
 ;;
 
-let parse_expr_anon_func parse_block = string "func" *> ws *> parse_anon_func parse_block
-
-(******************************* Tests ********************************)
-
-let%expect_test "expr_call test" =
-  pp pp_expr parse_expr "fac(4 + fac(4 + 4))";
-  [%expect
-    {|
-    (Expr_call
-       ((Expr_ident "fac"),
-        [(Expr_bin_oper (Bin_sum, (Expr_const (Const_int 4)),
-            (Expr_call
-               ((Expr_ident "fac"),
-                [(Expr_bin_oper (Bin_sum, (Expr_const (Const_int 4)),
-                    (Expr_const (Const_int 4))))
-                  ]))
-            ))
-          ]))|}]
+let parse_func_args_returns_and_body pblock =
+  let* args = parse_func_args <* ws_line in
+  let* returns = parse_func_return_values <* ws_line in
+  let* body = pblock in
+  return { args; returns; body }
 ;;
 
-let%expect_test "fac_piece1 test" =
-  pp pp_expr parse_expr "n * fac(n-1)";
-  [%expect
-    {|
-    (Expr_bin_oper (Bin_multiply, (Expr_ident "n"),
-       (Expr_call
-          ((Expr_ident "fac"),
-           [(Expr_bin_oper (Bin_subtract, (Expr_ident "n"),
-               (Expr_const (Const_int 1))))
-             ]))
-       ))|}]
+let parse_const_func pblock =
+  string "func" *> ws *> parse_func_args_returns_and_body pblock
+  >>| fun anon_func -> Const_func anon_func
 ;;
 
-let%expect_test "fac_piece2 test" =
-  pp pp_expr parse_expr "n <= 1";
-  [%expect
-    {|
-    (Expr_bin_oper (Bin_less_equal, (Expr_ident "n"), (Expr_const (Const_int 1))
-       ))|}]
+let rec default_init = function
+  | Type_int -> Expr_const (Const_int 0)
+  | Type_string -> Expr_const (Const_string "")
+  | Type_bool -> Expr_const (Const_bool false)
+  | Type_chan _ | Type_func _ -> Expr_const Const_nil
+  | Type_array (size, type') ->
+    Expr_const
+      (Const_array (size, type', List.init size ~f:(fun _ -> default_init type')))
 ;;
 
-let%expect_test "unary_min test" =
-  pp pp_expr parse_expr "-n + 2 + -1";
-  [%expect
-    {|
-    (Expr_bin_oper (Bin_sum,
-       (Expr_bin_oper (Bin_sum, (Expr_un_oper (Unary_minus, (Expr_ident "n"))),
-          (Expr_const (Const_int 2)))),
-       (Expr_un_oper (Unary_minus, (Expr_const (Const_int 1))))))|}]
+let parse_const_array pexpr =
+  let* size =
+    square_brackets (parse_int >>| Option.some <|> string "..." *> return None)
+  in
+  let* type' = ws *> parse_type in
+  let* inits = curly_braces (sep_by_comma pexpr) in
+  let size =
+    match size with
+    | Some size -> size
+    | None -> List.length inits
+  in
+  return (Const_array (size, type', inits))
+;;
+
+let parse_const pexpr pblock =
+  choice
+    [ parse_const_int
+    ; parse_const_string
+    ; parse_const_array pexpr
+    ; parse_const_func pblock
+    ]
+  >>| fun const -> Expr_const const
+;;
+
+let parse_expr_ident = parse_ident >>| fun ident -> Expr_ident ident
+
+let parse_expr_func_call pexpr func =
+  let* args = parens (sep_by_comma pexpr) in
+  return (Expr_call (func, args))
+;;
+
+let parse_index pexpr array =
+  let* index = square_brackets pexpr in
+  return (array, index)
+;;
+
+let parse_expr_index pexpr array =
+  let* array, index = parse_index pexpr array in
+  return (Expr_index (array, index))
+;;
+
+let parse_nested_calls_and_indices pexpr parse_func_or_array =
+  let rec helper acc =
+    parse_expr_func_call pexpr acc
+    <|> parse_expr_index pexpr acc
+    >>= helper
+    <|> return acc
+  in
+  parse_func_or_array >>= helper
+;;
+
+let parse_expr pblock =
+  fix (fun pexpr ->
+    let arg = parens pexpr <|> parse_const pexpr pblock <|> parse_expr_ident in
+    let arg = parse_nested_calls_and_indices pexpr arg in
+    let arg = parse_mult_unary_op arg in
+    let arg = chainl1 arg (parse_mult <|> parse_modulus <|> parse_division) in
+    let arg = chainl1 arg (parse_sum <|> parse_subtraction) in
+    let arg =
+      chainl1
+        arg
+        (choice
+           [ parse_greater_equal
+           ; parse_less_equal
+           ; parse_greater
+           ; parse_less
+           ; parse_equal
+           ; parse_not_equal
+           ])
+    in
+    let arg = chainr1 arg parse_and in
+    let arg = chainr1 arg parse_or in
+    arg)
 ;;
