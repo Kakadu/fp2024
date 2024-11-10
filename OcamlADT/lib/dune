@@ -4,8 +4,8 @@
  (modules 
  Ast
  Parser)
- (libraries angstrom base ppx_let)
+ (libraries angstrom base)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq ppx_let))
+  (pps ppx_deriving.show ppx_deriving.eq ))
  (instrumentation
   (backend bisect_ppx)))
