@@ -160,3 +160,16 @@ let%expect_test _ =
     ];
   [%expect {| let a = let x = 1 and y = 2 in (x + y);; |}]
 ;;
+
+let%expect_test _ =
+  Format.printf "%a\n" pp_structure_item_list [ SValue (NonRec, [ PVar "a", OptNone ]) ];
+  [%expect {| let a = None;; |}]
+;;
+
+let%expect_test _ =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue (NonRec, [ PVar "a", OptSome (ExprLiteral (IntLiteral 1)) ]) ];
+  [%expect {| let a = Some (1);; |}]
+;;

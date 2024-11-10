@@ -167,6 +167,10 @@ let peif pe =
       (option None (token "else" *> (peif <|> pe) >>| Option.some)))
 ;;
 
+let p_option_none = ws *> token "None" *> return OptNone
+let p_option_some pe = ws *> token "Some" *> pe >>| fun x -> OptSome x
+let p_option pe = choice [ p_option_none; p_option_some pe ]
+
 let expr =
   fix (fun expr ->
     let term = choice [ pevar; peliteral; pelist expr; pparens expr ] in
@@ -175,7 +179,8 @@ let expr =
     let ops1 = chainl1 cons (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
-    let tuple = petuple cmp <|> cmp in
+    let opt = p_option cmp <|> cmp in
+    let tuple = petuple opt <|> opt in
     let ife = peif tuple <|> tuple in
     choice [ pelet expr; pefun expr; ife ])
 ;;

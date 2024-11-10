@@ -89,6 +89,8 @@ let pp_expr =
       fprintf ppf "(%a)" pp_tuple t
     | ExprCons (e1, e2) -> fprintf ppf "%a::%a" helper e1 helper e2
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
+    | OptNone -> fprintf ppf "None"
+    | OptSome x -> fprintf ppf "Some (%a)" helper x
   in
   helper
 ;;

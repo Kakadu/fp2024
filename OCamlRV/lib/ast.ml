@@ -59,6 +59,8 @@ type expression =
   | ExprTuple of expression list (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
   | ExprFun of pattern * expression (** fun p -> e *)
+  | OptNone (** None *)
+  | OptSome of expression (** Some x *)
 [@@deriving show { with_path = false }]
 
 (** Used in `match` expression *)
