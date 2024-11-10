@@ -134,7 +134,7 @@ let rec print_expr indent expr =
         | Some str -> printf ": %s " str)
      | None -> printf "()");
     List.iter (print_expr (indent + 2)) args;
-    printf "= ";
+    printf "=\n";
     print_expr (indent + 2) body;
     List.iter print_and and_list;
     printf "in\n";
@@ -154,7 +154,7 @@ and print_and (And_bind (Ident (name, var_type), args, body)) =
    | None -> ()
    | Some str -> printf ": %s " str);
   List.iter (fun arg -> print_expr 0 arg) args;
-  printf "= ";
+  printf "=\n";
   print_expr 6 body
 ;;
 
@@ -170,7 +170,7 @@ let print_statement indent = function
      | None -> ()
      | Some str -> printf ": %s " str);
     List.iter (print_expr (indent + 2)) args;
-    printf "= ";
+    printf "=\n";
     print_expr (indent + 2) body;
     List.iter print_and and_list
   | ActivePattern (patterns, expr) ->
