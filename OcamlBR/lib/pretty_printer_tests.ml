@@ -29,19 +29,15 @@ let parse str =
 
 
 
-(* Основная функция, возвращающая строку *)
 let parse str =
   match parse_expr str with
   | Ok structure -> Stdlib.print_endline( Format.asprintf "%a" pp_structure structure)
   | Error _ -> Stdlib.print_endline "Parsing failed"
 
-(* Вспомогательная функция, выводящая результат *)
 (*let parse_and_print str =
   Stdlib.print_endline (parse str)*)
 
 
-
-(* factorial *)
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
@@ -53,7 +49,6 @@ let%expect_test _ =
     |}]
 ;;
 (*
-(* factorial *)
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
@@ -65,7 +60,6 @@ let%expect_test _ =
     |}]
 ;;
 
-(* simple calculation *)
 let%expect_test _ =
   parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect
@@ -75,7 +69,6 @@ let%expect_test _ =
     |}]
 ;;
 
-(* if-then-else with let inside *)
 let%expect_test _ =
   parse "if 1234 + 1 = 1235 then let x = 4";
   [%expect
@@ -85,7 +78,6 @@ let%expect_test _ =
     |}]
 ;;
 
-(* unallowed function name (starts with number) *)
 let%expect_test _ =
   parse "let rec 5 = ()";
   [%expect {| 
@@ -93,7 +85,6 @@ let%expect_test _ =
   |}]
 ;;
 
-(* unallowable range for the int type (too large number) *)
 let%expect_test _ =
   parse "39482309482390842309482438208 + 2";
   [%expect {| 
@@ -101,7 +92,6 @@ let%expect_test _ =
   |}]
 ;;
 
-(* complex expression with multiple let bindings and an if-then statement *)
 let%expect_test _ =
   parse "let x = 5 in let y = 3 in let n = x + y;; if 13 > 12 then let a = 2";
   [%expect {|
@@ -113,7 +103,6 @@ let%expect_test _ =
   |}]
 ;;
 
-(* simple let statement and conditional *)
 let%expect_test _ =
   parse "let x = 5 ;; if 13 > 12 then let a = 2";
   [%expect {|
@@ -123,7 +112,7 @@ let%expect_test _ =
   |}]
 ;;
 
-(* let with more complex function call *)
+
 let%expect_test _ =
   parse "let rec sum n = if n = 0 then 0 else n + sum (n - 1) in sum 10";
   [%expect {|
@@ -134,7 +123,7 @@ let%expect_test _ =
   |}]
 ;;
 
-(* nested let and recursion with conditional *)
+
 let%expect_test _ =
   parse "let rec fib n = if n = 0 then 0 else if n = 1 then 1 else fib (n - 1) + fib (n - 2) in fib 6";
   [%expect {|

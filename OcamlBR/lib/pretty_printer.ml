@@ -1,6 +1,5 @@
 (*open Ast
 
-(* Функция для красивого отображения выражений (expr) *)
 let rec pretty_print_expr = function
   | Econst (Int i) -> string_of_int i
   | Econst (String s) -> "\"" ^ s ^ "\""
@@ -29,7 +28,7 @@ let rec pretty_print_expr = function
   | Elist es -> 
       "[" ^ String.concat "; " (List.map pretty_print_expr es) ^ "]"
 
-(* Функция для красивого отображения бинарных операций *)
+
 and pretty_print_bin_op = function
   | Add -> "+"
   | Mult -> "*"
@@ -44,19 +43,19 @@ and pretty_print_bin_op = function
   | And -> "&&"
   | Or -> "||"
 
-(* Функция для красивого отображения унарных операций *)
+
 and pretty_print_un_op = function
   | Negative -> "-"
   | Positive -> "+"
   | Not -> "not"
 
-(* Функция для красивого отображения паттернов *)
+
 and pretty_print_pattern = function
   | PVar id -> id
   | PConst c -> pretty_print_const c
   | PAny -> "_"
 
-(* Функция для красивого отображения констант *)
+
 and pretty_print_const = function
   | Int i -> string_of_int i
   | String s -> "\"" ^ s ^ "\""
@@ -64,12 +63,11 @@ and pretty_print_const = function
   | Unit -> "unit"
 ;;
 
-(* Функция для красивого отображения структуры *)
+
 let rec pretty_print_structure structure =
   String.concat "\n" (List.map pretty_print_structure_item structure)
 
 
-(* Функция для красивого отображения элементов структуры *)
 and pretty_print_structure_item = function
   | SEval expr -> pretty_print_expr expr
   | SValue (flag, id, expr, body) -> 

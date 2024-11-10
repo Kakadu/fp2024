@@ -257,31 +257,7 @@ let rec pp_expr = function
       pp_expr e1 ^ " " ^ pp_expr e2
 ;;
 
-(**
-let pp_structure_item (item: structure_item) : unit =
-  Stdlib.print_endline (show_structure [item])
-  (*match item with
-  | SEval e -> pp_expr e ^ ";"
-  | SValue (rec_flag, id, e1, e2) ->
-      "let " ^ pp_rec_flag rec_flag ^ " " ^ id ^ " = " ^ pp_expr e1 ^ " in " ^ pp_expr e2*)
-;;
 
-let rec join (separator: string) (l: string list) : string =
-  match l with
-  | [] -> ""
-  | [hd] -> hd
-  | hd :: tl -> hd ^ separator ^ (join separator tl)
-;;
-*)
-(*
-let pp_structure (structure : structure_item list) =
-  String.concat ~sep:"\n" (List.map structure pp_structure_item)
-  (*Stdlib.print_endline (show_structure structure)*)
-  (*join ("\n") (List.map pp_structure_item structure)*)
-;;
-*)
-
-(* Function to pretty-print a single structure item *)
 let pp_structure_item (item: structure_item) : string =
   match item with
   | SEval e -> pp_expr e ^ ";"
@@ -291,46 +267,3 @@ let pp_structure_item (item: structure_item) : string =
 
 let pp_structure fmt structure =
   List.iter structure (fun item -> Format.fprintf fmt "%s@." (pp_structure_item item))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  (*
-(* Function to pretty-print a list of structure items *)
-let pp_structure (fmt: Format.formatter) (structure: structure_item list) =
-  List.iter (fun item -> 
-    Format.fprintf fmt "%s@." (pp_structure_item item)  (* Use @. for a newline in Format *)
-  ) structure
-*)
-(*
-let pp_structure (fmt: Format.formatter) (structurew: structure_item list) : string =
-  String.concat ~sep:"@." (Base.List.map structurew ~f:(fun item -> (pp_structure_item item)))
-  (*
-  Base.List.iter structurew ~f:(fun item -> 
-   Format.fprintf fmt "%s@." (pp_structure_item item);
-  )
-   *)
-*)
-
-(*
-let pp_structure (fmt : Format.formatter) (structure : structure_item list) : unit =
-  Base.List.iter structure ~f:(fun item -> Format.fprintf fmt "%s@." (pp_structure_item item))
-*)
-
-(*
-let pp_structure fmt structure =
-Base.List.iter print_element my_list
-*)
-
