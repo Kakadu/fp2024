@@ -128,3 +128,35 @@ let%expect_test _ =
     ];
   [%expect {| ((1 + 2) * 2);; |}]
 ;;
+
+let%expect_test _ =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue
+        ( NonRec
+        , [ PVar "a", ExprLiteral (IntLiteral 1)
+          ; PVar "b", ExprLiteral (IntLiteral 2)
+          ; PVar "c", ExprLiteral (IntLiteral 3)
+          ] )
+    ];
+  [%expect {| let a = 1 and b = 2 and c = 3;; |}]
+;;
+
+let%expect_test _ =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue
+        ( NonRec
+        , [ ( PVar "a"
+            , ExprLet
+                ( NonRec
+                , [ PVar "x", ExprLiteral (IntLiteral 1)
+                  ; PVar "y", ExprLiteral (IntLiteral 2)
+                  ]
+                , ExprBinOperation (Add, ExprVariable "x", ExprVariable "y") ) )
+          ] )
+    ];
+  [%expect {| let a = let x = 1 and y = 2 in (x + y);; |}]
+;;

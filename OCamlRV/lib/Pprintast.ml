@@ -65,7 +65,14 @@ let pp_expr =
         | _ -> fprintf ppf "%a = %a" pp_pattern p helper e
       in
       let pp_binding_list ppf binding_list =
-        List.iter (fun item -> fprintf ppf "%a" pp_binding item) binding_list
+        let rec helper = function
+          | [] -> ()
+          | [ x ] -> fprintf ppf "%a" pp_binding x
+          | x :: xs ->
+            fprintf ppf "%a and " pp_binding x;
+            helper xs
+        in
+        helper binding_list
       in
       fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list bl helper e
     | ExprApply (e1, e2) ->
@@ -96,7 +103,14 @@ let pp_binding ppf binding =
 ;;
 
 let pp_binding_list ppf binding_list =
-  List.iter (fun item -> fprintf ppf "%a" pp_binding item) binding_list
+  let rec helper = function
+    | [] -> ()
+    | [ x ] -> fprintf ppf "%a" pp_binding x
+    | x :: xs ->
+      fprintf ppf "%a and " pp_binding x;
+      helper xs
+  in
+  helper binding_list
 ;;
 
 let pp_structure ppf = function
