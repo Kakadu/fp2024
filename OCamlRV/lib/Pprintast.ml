@@ -39,7 +39,6 @@ let pp_pattern =
     | PLiteral l -> fprintf ppf "%a" pp_literal l
     | PVar v -> fprintf ppf "%s" v
     | PCons (p1, p2) -> fprintf ppf "%a::%a" helper p1 helper p2
-    | PPoly _ -> ()
   in
   helper
 ;;
@@ -89,7 +88,6 @@ let pp_expr =
       in
       fprintf ppf "(%a)" pp_tuple t
     | ExprCons (e1, e2) -> fprintf ppf "%a::%a" helper e1 helper e2
-    | ExprPoly _ -> ()
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
   in
   helper

@@ -98,8 +98,6 @@ let pattern =
     cons)
 ;;
 
-(* need to add parsers for PCons; PPoly *)
-
 (*--------------------------- Expressions ---------------------------*)
 
 let ebinop op e1 e2 = ExprBinOperation (op, e1, e2)
@@ -183,8 +181,6 @@ let expr =
 ;;
 
 (*--------------------------- Structure ---------------------------*)
-
-let pbinding_list = None
 
 let pstructure =
   let pseval = expr >>| fun e -> SEval e in

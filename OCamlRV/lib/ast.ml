@@ -43,7 +43,6 @@ type pattern =
   | PLiteral of literal (** 123, true, "string" *)
   | PVar of identifier (** x *)
   | PCons of pattern * pattern (** p1::p2 *)
-  | PPoly of identifier * pattern option (** `Tag p *)
 [@@deriving show { with_path = false }]
 
 type expression =
@@ -59,7 +58,6 @@ type expression =
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of expression list (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
-  | ExprPoly of identifier * expression option (** `Tag expr *)
   | ExprFun of pattern * expression (** fun p -> e *)
 [@@deriving show { with_path = false }]
 
