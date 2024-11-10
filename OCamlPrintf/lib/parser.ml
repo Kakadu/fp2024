@@ -45,10 +45,11 @@ let is_keyword = function
 ;;
 
 let keyword str =
-  string str *> peek_char_fail
-  >>| fun char_value ->
+  string str
+  *>
+  let* char_value = peek_char_fail in
   if is_separator char_value
-  then return ()
+  then return str
   else fail (Printf.sprintf "There is no separator after \"%s\"." str)
 ;;
 
@@ -106,7 +107,7 @@ let parse_pat_tuple parse_pat =
 ;;
 
 let parse_bool_pat =
-  ws *> string "true" <|> string "false" >>| fun name -> Pat_construct (name, None)
+  ws *> keyword "true" <|> keyword "false" >>| fun name -> Pat_construct (name, None)
 ;;
 
 let parse_pat_construct parse_pat =
@@ -133,7 +134,7 @@ let parse_pattern =
         ; parse_pat_construct parse_full_pat
         ]
     in
-    parse_pat_tuple parse_pat <|> parse_pat)
+    choice [ parse_pat_tuple parse_pat; parse_pat ])
 ;;
 
 (* ==================== Expression ==================== *)
@@ -265,7 +266,7 @@ let parse_exp_tuple parse_exp =
 ;;
 
 let parse_bool_exp =
-  ws *> string "true" <|> string "false" >>| fun name -> Exp_construct (name, None)
+  ws *> keyword "true" <|> keyword "false" >>| fun name -> Exp_construct (name, None)
 ;;
 
 let parse_exp_construct parse_exp =
@@ -305,18 +306,22 @@ let parse_expression =
   *> fix (fun parse_full_exp ->
     let parse_exp =
       choice
-        [ skip_parens parse_full_exp
-        ; parse_exp_ident
+        [ parse_exp_ident
         ; parse_exp_constant
+        ; skip_parens parse_full_exp
         ; parse_exp_let parse_full_exp
         ; parse_exp_fun parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
+        ; parse_exp_construct parse_full_exp
         ]
     in
-    let parse_exp = parse_exp_sequence parse_exp <|> parse_exp_construct parse_exp in
-    let parse_exp = parse_exp_apply parse_exp in
-    parse_exp_tuple parse_exp <|> parse_exp)
+    choice
+      [ parse_exp_tuple parse_exp
+      ; parse_exp_apply parse_exp
+      ; parse_exp_sequence parse_exp
+      ; parse_exp
+      ])
 ;;
 
 (* ==================== Structure ==================== *)

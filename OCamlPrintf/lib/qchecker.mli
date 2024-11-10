@@ -2,4 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val pp_structure : Format.formatter -> Ast.structure -> unit
+module TestQCheck :
+  sig
+    val run_manual : unit -> int
+  end
