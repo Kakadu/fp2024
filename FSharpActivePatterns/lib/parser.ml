@@ -62,6 +62,7 @@ let is_keyword = function
   | "fun"
   | "match"
   | "with"
+  | "and"
   | "_" -> true
   | _ -> false
 ;;
@@ -147,31 +148,71 @@ let p_if p_expr =
      <|> return None)
 ;;
 
+let p_and p_expr = 
+  skip_ws *> string "and" *> skip_ws_sep1 *>
+  lift3
+    (fun name args body -> And_bind(name, args, body))
+    p_ident
+    (many (skip_ws *> p_var))
+    (skip_ws *> string "=" *> skip_ws *> p_expr)
+;;
+(*
 let p_letin p_expr =
   skip_ws
   *> string "let"
   *> skip_ws_sep1
   *> lift4
-       (fun rec_flag name args body in_expr ->
-         LetIn (rec_flag, name, args, body, in_expr))
+       (fun rec_flag name args body and_list in_expr ->
+         LetIn (rec_flag, name, args, body, and_list, in_expr))
        (string "rec" *> return Rec <|> return Nonrec)
        (p_ident >>= fun ident -> return (Some ident) <|> return None)
        (many (skip_ws *> p_var))
        (skip_ws *> string "=" *> skip_ws *> p_expr)
-  <*> skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
+       <*> skip_ws *> many (skip_ws *> p_and p_expr)
+       <*> skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
+;; *)
+
+let p_letin p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *> (string "rec" *> return Rec <|> return Nonrec)
+  >>= fun rec_flag ->
+  (p_ident >>= fun name -> return (Some name)) <|> return None  >>= fun name_option ->
+  (skip_ws *> many (skip_ws *> p_var)) >>= fun args ->
+  (skip_ws *> string "=" *> skip_ws *> p_expr) >>= fun body ->
+  (skip_ws *> many (skip_ws *> p_and p_expr)) >>= fun and_list ->
+  skip_ws *> string "in" *> skip_ws_sep1 *> p_expr >>= fun in_expr ->
+  return (LetIn (rec_flag, name_option, args, body, and_list, in_expr))
 ;;
 
+(*
 let p_let p_expr =
   skip_ws
   *> string "let"
   *> skip_ws_sep1
   *> lift4
-       (fun rec_flag name args body -> Let (rec_flag, name, args, body))
+       (fun rec_flag name args body and_list -> Let (rec_flag, name, args, body, and_list))
        (string "rec" *> return Rec <|> return Nonrec)
        p_ident
        (skip_ws *> many (skip_ws *> p_var))
        (skip_ws *> string "=" *> p_expr)
+       <*> skip_ws *> many (skip_ws *> p_and p_expr)
+;; *)
+
+let p_let p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *> (string "rec" *> return Rec <|> return Nonrec)
+  >>= fun rec_flag ->
+  p_ident >>= fun name ->
+  (skip_ws *> many (skip_ws *> p_var)) >>= fun args ->
+  (skip_ws *> string "=" *> skip_ws *> p_expr) >>= fun body ->
+  (skip_ws *> many (skip_ws *> p_and p_expr)) >>= fun and_list ->
+  return (Let (rec_flag, name, args, body, and_list))
 ;;
+
 
 let app_first expr =
   skip_ws
