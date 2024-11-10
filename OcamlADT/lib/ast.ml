@@ -10,12 +10,14 @@ type constant =
 (* Generates fun's for equality check, string type output and removing the full path to module*)
 
 type ident = string [@@deriving eq, show { with_path = false }]
+type 'a list1 = 'a * 'a list [@@deriving eq, show { with_path = false }]
+type 'a list2 = 'a * 'a * 'a list [@@deriving eq, show { with_path = false }]
 
 type pattern =
   | Pat_any (** The pattern [_]. *)
   | Pat_var of ident (** A variable pattern such as [x] *)
   | Pat_constant of constant (** Patterns such as [52], ['w'], ["uwu"] *)
-  | Pat_tuple of pattern * pattern * pattern list (** Patterns [(P1, ..., Pn)]. *)
+  | Pat_tuple of pattern list2 (** Patterns [(P1, ..., Pn)]. *)
   | Pat_construct of ident * pattern option
   (** [Pat_construct(C, args)] represents:
       - [C]               when [args] is [None],
@@ -32,20 +34,20 @@ type rec_flag =
 type expression =
   | Exp_ident of ident (** Identifiers such as [x] *)
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
-  | Exp_tuple of expression * expression * expression list
-  (** Expressions [(E1, E2, ..., En)] *)
-  | Exp_function of case * case list
+  | Exp_tuple of expression list2 (** Expressions [(E1, E2, ..., En)] *)
+  | Exp_function of case list1
   (** [Exp_function (P1, [P2; ...; Pn])] represents
       [function P1 | ... | Pn] *)
-  | Exp_fun of pattern * pattern list * expression
+  | Exp_fun of pattern list1 * expression
   (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
      [fun P1 ... Pn -> E] *)
-  | Exp_apply of expression * expression list (** [Pexp_apply(E0, [E1 ; ... ; En])]
-                                             represents [E0 E1 ... En] *)
-  | Exp_match of expression * case * case list
-  (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
+  | Exp_apply of expression * expression list1
+  (** [Pexp_apply(E0, [E1 ; ... ; En])]
+      represents [E0 E1 ... En] *)
+  | Exp_match of expression * case list1
+  (** [match E0 with P1 -> E1 |[@@deriving eq, show { with_path = false }] | Pn -> En] *)
   | Exp_if of expression * expression * expression option (** [if E1 then E2 else E3] *)
-  | Exp_let of rec_flag * value_binding list * expression
+  | Exp_let of rec_flag * value_binding list1 * expression
   (** [Exp_let(flag, [(P1,E1) ; ... ; (Pn,En)], E)] represents:
       - [let P1 = E1 and ... and Pn = EN in E]
         when [flag] is [Nonrecursive],
@@ -72,8 +74,7 @@ type type_expr =
   | Type_arrow of type_expr * type_expr (** [Type_arrow(T1, T2)] represents:
                                             [T1 -> T2] *)
   | Type_var of ident
-  | Type_tuple of type_expr * type_expr * type_expr list
-  (** [Type_tuple([T1, T2, ... Tn])] *)
+  | Type_tuple of type_expr list2 (** [Type_tuple([T1, T2, ... Tn])] *)
   | Type_construct of ident * type_expr list
   (** [Type_constr(ident, l)] represents:
       - [tconstr]               when [l=[]],
@@ -83,13 +84,13 @@ type type_expr =
 
 type structure_item =
   | Str_eval of expression
-  | Str_value of rec_flag * value_binding list
+  | Str_value of rec_flag * value_binding list1
   (** [Str_value(rec, [(P1, E1 ; ... ; (Pn, En))])] represents:
       - [let P1 = E1 and ... and Pn = EN]
         when [rec] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = EN ]
         when [rec] is [Recursive]. *)
-  (* | Str_adt of ident * (ident * type_expr list) * (ident * type_expr list) list *)
+  | Str_adt of ident * (ident * type_expr) list1 (*think about type_expr list*)
   (** [Str_type(C0, [(C1, [(T11; T12; ... ; T1n_1)]); (C2, [(T21;T22; ... ; T2n_2)]); ... ;
   (Cm, [(Tm1;Tm2; ... ; Tmn_n)]) ])] represents:
 
