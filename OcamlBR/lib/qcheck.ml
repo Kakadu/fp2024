@@ -8,7 +8,7 @@ open Pr_printer
 open Parser
 
 (*------------------Generator-----------------*)
-let const_gen =
+let gen_const =
   let open Gen in
   oneof
     [ (*  Gen.map (fun i -> Int i) Gen.int *)
@@ -46,20 +46,20 @@ let gen_id =
 let gen_pattern =
   Gen.oneof
     [ Gen.map (fun id -> PVar id) gen_id
-    ; Gen.map (fun c -> PConst c) const_gen
-    ; Gen.return PAny
+      (* ; Gen.map (fun c -> PConst c) gen_const *)
+      (* ; Gen.return PAny *)
     ]
 ;;
 
-let expr_gen =
+let gen_expr =
   let open Gen in
   sized
   @@ fix (fun self n ->
     match n with
-    | 0 -> oneof [ map (fun c -> Econst c) const_gen; map (fun v -> Evar v) gen_id ]
+    | 0 -> oneof [ map (fun c -> Econst c) gen_const; map (fun v -> Evar v) gen_id ]
     | n ->
       frequency
-        [ 1, map (fun c -> Econst c) const_gen
+        [ 1, map (fun c -> Econst c) gen_const
         ; 1, map (fun v -> Evar v) gen_id
         ; ( 2
           , map3
@@ -103,13 +103,13 @@ let expr_gen =
 let gen_structure_item =
   let open Gen in
   frequency
-    [ 1, map (fun e -> SEval e) expr_gen
+    [ 1, map (fun e -> SEval e) gen_expr
     ; ( 2
       , gen_rec_flag
         >>= fun r ->
         gen_id
         >>= fun id ->
-        expr_gen >>= fun e1 -> expr_gen >>= fun e2 -> return (SValue (r, id, e1, e2)) )
+        gen_expr >>= fun e1 -> gen_expr >>= fun e2 -> return (SValue (r, id, e1, e2)) )
     ]
 ;;
 
@@ -226,7 +226,7 @@ let shrink_structure structure : structure Iter.t =
 ;;
 
 let arbitrary_structure_manual =
-  make gen_structure ~print:(Format.asprintf "%a" prpr_structure)
+  make gen_structure ~print:(Format.asprintf "%a" prpr_structure) ~shrink:shrink_structure
 ;;
 
 let run_manual () =
