@@ -1,4 +1,4 @@
-(* * Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me>
+(** Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -101,7 +101,7 @@ let%expect_test "order of logical expressions and function applying" =
 
 let%expect_test "binary subtract" =
   let input = {| a - 3|} in
-  print_p_res (parse input);
+  print_p_res std_formatter (parse input);
   [%expect
     {|
     | Binary expr(
@@ -112,7 +112,7 @@ let%expect_test "binary subtract" =
 
 let%expect_test "function apply of letIn" =
   let input = {| f let x = false in true || x|} in
-  print_p_res (parse input);
+  print_p_res std_formatter (parse input);
   [%expect
     {|
     | Function Call:
@@ -132,7 +132,7 @@ let%expect_test "function apply of letIn" =
 
 let%expect_test "arithmetic with unary operations and variables" =
   let input = {| - a - - b + 4|} in
-  print_p_res (parse input);
+  print_p_res std_formatter (parse input);
   [%expect
     {|
     | Binary expr(
@@ -150,7 +150,7 @@ let%expect_test "arithmetic with unary operations and variables" =
 
 let%expect_test "sum of function applying" =
   let input = {| f 4 + g 3|} in
-  print_p_res (parse input);
+  print_p_res std_formatter (parse input);
   [%expect
     {|
     | Binary expr(
@@ -169,7 +169,7 @@ let%expect_test "sum of function applying" =
 
 let%expect_test "order of logical expressions and function applying" =
   let input = {| let x = true in not x || true && f 12|} in
-  print_p_res (parse input);
+  print_p_res std_formatter (parse input);
   [%expect
     {|
      | LetIn  x =
@@ -393,4 +393,4 @@ let%expect_test "call if with parentheses" =
     ------| Variable(b)
       ARGS
     --| Variable(c) |}]
-;; *)
+;;

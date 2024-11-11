@@ -6,10 +6,10 @@
 
 [@@@ocaml.text "/*"]
 
-open QCheck
 open FSharpActivePatterns.Ast
-open FSharpActivePatterns.PrintAst
+open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
+open FSharpActivePatterns.PrettyPrinter
 
 let int_e x = Const (Int_lt x)
 let bool_e x = Const (Bool_lt x)
@@ -25,7 +25,7 @@ let gen_const =
 
 let gen_varname =
   let open QCheck.Gen in
-  let rec loop =
+  let loop =
     let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
     let gen_first_char =
       oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
@@ -84,14 +84,14 @@ let gen_expr =
           [ 0, map tuple_e (list_size (0 -- 15) (self (n / 2)))
           ; 0, map2 un_e gen_unop (self (n / 2))
           ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
-          ; ( 0
+          ; ( 1
             , map3
                 if_e
                 (self (n / 2))
                 (self (n / 2))
                 (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
           ; 0, map2 func_def (list gen_variable) (self (n / 2))
-          ; ( 1
+          ; ( 0
             , map3
                 letin
                 (oneof [ return Rec; return Nonrec ])
@@ -136,7 +136,7 @@ let rec shrink_expr =
 ;;
 
 (* TODO *)
-let rec shrink_statement =
+let shrink_statement =
   let open QCheck.Iter in
   function
   | Let (rec_flag, ident, args, expr) ->
@@ -164,6 +164,6 @@ let run n =
   QCheck_runner.run_tests
     [ QCheck.(
         Test.make arbitrary_construction ~count:n (fun c ->
-          Some c = parse (Format.asprintf "%a\n" print_construction c)))
+          Some c = parse (Format.asprintf "%a\n" pp_construction c)))
     ]
 ;;
