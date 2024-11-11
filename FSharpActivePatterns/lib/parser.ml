@@ -194,6 +194,33 @@ let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> return Unit_lt
 let p_unit_expr = expr_const_factory p_unit
 let p_unit_pat = pat_const_factory p_unit
 
+(*
+let make_list expr1 expr2 = Cons_list (expr1, expr2)
+
+let cons p_expr =
+  skip_ws *> string "::" *> skip_ws *> 
+  lift2 (fun expr1 expr2 -> Cons_list (expr1, expr2)) p_expr p_expr
+;;
+*)
+
+let p_empty_list = skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws >>= fun _ -> return Empty_list
+
+let make_list expr1 expr2 = Cons_list (expr1, expr2)
+
+let p_cons_list p_expr = chainr1 (p_expr <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
+;;
+
+let p_semicolon_list p_expr = 
+  skip_ws *> string "[" *> skip_ws *> 
+  fix (fun p_cons_list ->
+    (p_expr <* skip_ws <* string "]" >>| fun expr -> Cons_list(expr, Empty_list)) <|>
+    (p_expr <* skip_ws <* string ";" >>= fun expr -> p_cons_list >>= fun rest -> return (Cons_list(expr, rest))) <|>
+    (string "]" *> skip_ws >>= fun _ -> return Empty_list)
+  )
+;;
+
+let p_list p_expr = p_semicolon_list p_expr <|> p_cons_list p_expr
+
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
 let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2) [@@inline always]
