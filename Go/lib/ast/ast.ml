@@ -50,18 +50,9 @@ type unary_oper =
   | Unary_recieve (** Unary channel recieve [<-] *)
 [@@deriving show { with_path = false }]
 
-(** Constructors for possible return constructions of a function.
-    Invariant: sizes of all lists are >= 1 *)
-type return_values =
-  | Only_types of type' list (** i.e.  [(int, bool, string)], [int]*)
-  | Ident_and_types of (ident * type') list
-  (** i.e.  [(a int, b string)], [(a , b int, c string)].
-      The second example will be processed at parsing as [(a int, b int, c string)] *)
-[@@deriving show { with_path = false }]
-
 (** Expressions that can be assigned to a variable or put in "if" statement *)
 type expr =
-  | Expr_const of const (** Constants such as [5], ["hi"], [false] *)
+  | Expr_const of const (** Constants such as [5], ["hi"], [func()] *)
   | Expr_ident of ident (** An identificator for a variable such as [x] *)
   | Expr_index of expr * expr
   (** An access to an array element by its index such as: [my_array[i]], [get_array(1)[0]]*)
@@ -75,13 +66,11 @@ type expr =
 and const =
   | Const_int of int (** Integer constants such as [0], [123] *)
   | Const_string of string (** Constant strings such as ["my_string"] *)
-  | Const_bool of bool (** Constant bool such as [false] *)
   | Const_array of int * type' * expr list
   (** Arrays such as [[3]int{3, get_four()}]. Empty list means that there is
       no initializers, array will be filled with default values
       ([0] for int, [""] for string and [false] for bool arrays) *)
   | Const_func of anon_func (** See anon_func type *)
-  | Const_nil (** nil *)
 [@@deriving show { with_path = false }]
 
 (** An anonymous functions such as:
@@ -100,6 +89,15 @@ and anon_func =
   (** None if function doesn't return anything. See return_values type *)
   ; body : block (** function body *)
   }
+[@@deriving show { with_path = false }]
+
+(** Constructors for possible return constructions of a function.
+    Invariant: sizes of all lists are >= 1 *)
+and return_values =
+  | Only_types of type' list (** i.e.  [(int, bool, string)], [int]*)
+  | Ident_and_types of (ident * type') list
+  (** i.e.  [(a int, b string)], [(a , b int, c string)].
+      The second example will be processed at parsing as [(a int, b int, c string)] *)
 [@@deriving show { with_path = false }]
 
 (** function calls such as:
@@ -181,8 +179,6 @@ and long_var_decl =
       [var my_func func() = func() {}],
       [var a, b int = 1, 2],
       [var a, b = 1 + 2, "3"]
-      And declarations without initialization such as [var my_int1, my_int2 int],
-      where variables will be initialized with default values at parsing.
       Invariant: size of the list is >= 1 *)
   | Long_decl_one_init of type' option * ident list * expr
   (** Declarations with one initializer that is a function call

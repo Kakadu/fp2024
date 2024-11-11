@@ -3,8 +3,8 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
+open Parser.Common
 open Pp
-open Common
 
 (********** ident **********)
 

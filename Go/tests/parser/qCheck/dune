@@ -1,0 +1,7 @@
+(executable
+ (name ppParseId)
+ (libraries ast parser qcheck)
+ (instrumentation
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_expect)))

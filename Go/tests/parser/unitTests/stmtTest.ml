@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
-open Stmt
+open Parser.Stmt
 open Pp
 
 let pstmt = parse_stmt parse_block
@@ -235,11 +235,8 @@ let%expect_test "stmt assign mult unequal lvalues and rvalues" =
 
 let%expect_test "stmt long single var decl without init" =
   pp pp_stmt pstmt {|var a string|};
-  [%expect
-    {|
-    (Stmt_long_var_decl
-       (Long_decl_mult_init ((Some Type_string),
-          [("a", (Expr_const (Const_string "")))]))) |}]
+  [%expect {|
+    (Stmt_long_var_decl (Long_decl_no_init (Type_string, ["a"]))) |}]
 ;;
 
 let%expect_test "stmt long single var decl without init with mult array type" =
@@ -247,41 +244,9 @@ let%expect_test "stmt long single var decl without init with mult array type" =
   [%expect
     {|
     (Stmt_long_var_decl
-       (Long_decl_mult_init (
-          (Some (Type_array (2, (Type_array (3, (Type_array (1, Type_bool))))))),
-          [("a",
-            (Expr_const
-               (Const_array (2, (Type_array (3, (Type_array (1, Type_bool)))),
-                  [(Expr_const
-                      (Const_array (3, (Type_array (1, Type_bool)),
-                         [(Expr_const
-                             (Const_array (1, Type_bool,
-                                [(Expr_const (Const_bool false))])));
-                           (Expr_const
-                              (Const_array (1, Type_bool,
-                                 [(Expr_const (Const_bool false))])));
-                           (Expr_const
-                              (Const_array (1, Type_bool,
-                                 [(Expr_const (Const_bool false))])))
-                           ]
-                         )));
-                    (Expr_const
-                       (Const_array (3, (Type_array (1, Type_bool)),
-                          [(Expr_const
-                              (Const_array (1, Type_bool,
-                                 [(Expr_const (Const_bool false))])));
-                            (Expr_const
-                               (Const_array (1, Type_bool,
-                                  [(Expr_const (Const_bool false))])));
-                            (Expr_const
-                               (Const_array (1, Type_bool,
-                                  [(Expr_const (Const_bool false))])))
-                            ]
-                          )))
-                    ]
-                  ))))
-            ]
-          ))) |}]
+       (Long_decl_no_init (
+          (Type_array (2, (Type_array (3, (Type_array (1, Type_bool)))))),
+          ["a"]))) |}]
 ;;
 
 let%expect_test "stmt long single var decl no type" =
@@ -503,7 +468,8 @@ let%expect_test "stmt if with empty init" =
 
 let%expect_test "stmt if with wrong init" =
   pp pp_stmt pstmt {|if var a = 5; cond {}|};
-  [%expect {|
+  [%expect
+    {|
     : Incorrect statement |}]
 ;;
 

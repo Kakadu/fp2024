@@ -3,9 +3,9 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
+open Parser.Expr
+open Parser.Stmt
 open Pp
-open Expr
-open Stmt
 
 let pexpr = parse_expr parse_block
 

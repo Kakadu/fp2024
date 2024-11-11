@@ -131,16 +131,6 @@ let parse_const_func pblock =
   >>| fun anon_func -> Const_func anon_func
 ;;
 
-let rec default_init = function
-  | Type_int -> Expr_const (Const_int 0)
-  | Type_string -> Expr_const (Const_string "")
-  | Type_bool -> Expr_const (Const_bool false)
-  | Type_chan _ | Type_func _ -> Expr_const Const_nil
-  | Type_array (size, type') ->
-    Expr_const
-      (Const_array (size, type', List.init size ~f:(fun _ -> default_init type')))
-;;
-
 let parse_const_array pexpr =
   let* size =
     square_brackets (parse_int >>| Option.some <|> string "..." *> return None)
