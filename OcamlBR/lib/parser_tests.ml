@@ -18,7 +18,7 @@ let%expect_test _ =
   [%expect
     {| 
  [(SValue (Recursive, "factorial",
-     (Efun (["n"],
+     (Efun ([(PVar "n")],
         (Eif_then_else ((Ebin_op (Eq, (Evar "n"), (Econst (Int 0)))),
            (Econst (Int 1)),
            (Some (Ebin_op (Mult, (Evar "n"),
@@ -59,7 +59,6 @@ let%expect_test _ =
   |}]
 ;;
 
-
 (*unallowed function name*)
 let%expect_test _ =
   parse "let rec 5 = ()";
@@ -76,10 +75,10 @@ let%expect_test _ =
   |}]
 ;;
 
-
 let%expect_test _ =
   parse "let x = 5 in let y = 3 in let n = x + y;; if 13 > 12 then let a = 2";
-  [%expect {|
+  [%expect
+    {|
   [(SValue (Non_recursive, "x", (Econst (Int 5)),
       (Elet (Non_recursive, "y", (Econst (Int 3)),
          (Elet (Non_recursive, "n", (Ebin_op (Add, (Evar "x"), (Evar "y"))),
@@ -94,7 +93,8 @@ let%expect_test _ =
 
 let%expect_test _ =
   parse "let x = 5 ;; if 13 > 12 then let a = 2";
-  [%expect {|
+  [%expect
+    {|
   [(SValue (Non_recursive, "x", (Econst (Int 5)), (Econst Unit)));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),

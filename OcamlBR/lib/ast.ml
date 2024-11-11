@@ -27,6 +27,7 @@ type bin_op =
 
 type un_op =
   | Negative
+  | Positive
   | Not
 (* unary minus, logical NOT *)
 [@@deriving show { with_path = false }]
@@ -44,6 +45,7 @@ type rec_flag =
 type pattern =
   | PVar of id
   | PConst of const
+  | PAny (* wildcard pattern '_' *)
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -52,6 +54,7 @@ type expr =
   (* maybe later switch to id, or even now *)
   | Eif_then_else of expr * expr * expr option
   (* if E0 then E1 else E2; else expression is optional *)
+  | Eoption of expr option (* option type, Some e, None *)
   | Etuple of expr list (* expressions (E0, .., En), n >= 2 *)
   (* or expr * expr * expr list, cause invariant n >= 2 *)
   | Elist of expr list (* expressions [E0; ..; En], n >= 0 *)
@@ -60,7 +63,7 @@ type expr =
   | Elet of rec_flag * id * expr * expr
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
   | Efun_application of expr * expr (* E0 E1, e.g. f x *)
-  | Efun of id list * expr
+  | Efun of pattern list * expr
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1  *)
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
