@@ -296,7 +296,9 @@ let%test "pp pattern with capture, with type" =
   asprintf
     "%a"
     pp_pattern
-    ([ Ident "my"; Ident "first"; Ident "variable" ], PIdentificator (Ident "x"), [ TInteger ])
+    ( [ Ident "my"; Ident "first"; Ident "variable" ]
+    , PIdentificator (Ident "x")
+    , [ TInteger ] )
   = "((my@first@variable@x) :: Integer)"
 ;;
 
