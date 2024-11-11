@@ -181,7 +181,7 @@ let ord_tp tp =
   let w = word ~point_allowed:Allow_point in
   choice
     [ string "()" *> return TUnit
-    ; w "Int" *> return TInt
+    ; w "Integer" *> return TInteger
     ; w "Bool" *> return TBool
     ; (sq_brackets tp >>| fun x -> ListParam x)
     ; (braces tp >>| fun x -> TreeParam x)
@@ -195,8 +195,8 @@ let tp =
 ;;
 
 let%expect_test "tp_list_of_func" =
-  prs_and_prnt_ln tp show_tp "[Int -> Int] ";
-  [%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}]
+  prs_and_prnt_ln tp show_tp "[Integer -> Integer] ";
+  [%expect {| (ListParam (FunctionType (FuncT (TInteger, TInteger, [])))) |}]
 ;;
 
 let%expect_test "tp_tree_of_func" =
@@ -205,7 +205,7 @@ let%expect_test "tp_tree_of_func" =
 ;;
 
 let%expect_test "tp_lnested_func" =
-  prs_and_prnt_ln tp show_tp "Int -> ((Int -> Int)) -> Int";
+  prs_and_prnt_ln tp show_tp "Integer -> ((Integer -> Integer)) -> Integer";
   [%expect
     {|
       (FunctionType (FuncT (TInt, (FunctionType (FuncT (TInt, TInt, []))), [TInt]))) |}]
@@ -534,21 +534,21 @@ let%expect_test "pattern_listcons_valid" =
 ;;
 
 let%expect_test "pattern_simple_valid_tp" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Int";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Integer";
   [%expect {|
-    ([], (PIdentificator (Ident "x")), [TInt])
+    ([], (PIdentificator (Ident "x")), [TInteger])
        |}]
 ;;
 
 let%expect_test "pattern_simple_invalid_tp_ban" =
-  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Int";
+  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Integer";
   [%expect {|
     ([], (PIdentificator (Ident "x")), [])
        |}]
 ;;
 
 let%expect_test "pattern_listcons_valid_with_tp" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Int]";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Integer]";
   [%expect
     {|
     ([],
@@ -560,7 +560,7 @@ let%expect_test "pattern_listcons_valid_with_tp" =
                   ([], (PIdentificator (Ident "z")), [])))),
             [])
            ))),
-     [(ListParam TInt)])
+     [(ListParam TInteger)])
        |}]
 ;;
 
@@ -1211,24 +1211,35 @@ let%expect_test "expr_list_lazy_valid" =
 ;;
 
 let%expect_test "expr_binop_invlid_tp" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Int + 3";
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Integer + 3";
   [%expect
     {|
+<<<<<<< HEAD
       ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 2)), []))), [TInt]) |}]
+=======
+      ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 2)), []))),
+       [TInteger]) |}]
+>>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
 ;;
 
 let%expect_test "expr_valid_tp" =
   prs_and_prnt_ln
     (expr Allow_t)
     show_expr
-    "if x>(2::Int) :: Bool then 0::Int else 1 :: Int :: () ";
+    "if x>(2::Integer) :: Bool then 0::Integer else 1 :: Integer :: () ";
   [%expect
     {|
       ((IfThenEsle (
           ((Binop (((Identificator (Ident "x")), []), Greater,
+<<<<<<< HEAD
               ((Const (Int 2)), [TInt]))),
            [TBool]),
           ((Const (Int 0)), [TInt]), ((Const (Int 1)), [TInt]))),
+=======
+              ((Const (Integer 2)), [TInteger]))),
+           [TBool]),
+          ((Const (Integer 0)), [TInteger]), ((Const (Integer 1)), [TInteger]))),
+>>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
        [TUnit]) |}]
 ;;
 
@@ -1318,10 +1329,15 @@ let%expect_test "fun_binding_guards" =
 ;;
 
 let%expect_test "decl" =
-  prs_and_prnt_ln binding show_binding "f :: Int -> Int -> Int";
+  prs_and_prnt_ln binding show_binding "f :: Integer -> Integer -> Integer";
   [%expect
     {|
+<<<<<<< HEAD
       (Decl ((Ident "f"), (FunctionType (FuncT (TInt, TInt, [TInt])))))
+=======
+      (Decl (([], (PIdentificator (Ident "f")), []),
+         (FunctionType (FuncT (TInteger, TInteger, [TInteger])))))
+>>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
       |}]
 ;;
 
