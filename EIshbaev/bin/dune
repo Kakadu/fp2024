@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (public_name EIshbaev)
+ (libraries EIshbaev_lib)
+ (instrumentation
+  (backend bisect_ppx)))
