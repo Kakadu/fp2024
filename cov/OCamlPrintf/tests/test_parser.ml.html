@@ -239,22 +239,22 @@
 <a id="L214"></a><span > </span>
 <a id="L215"></a><span > </span>
 <a id="L216"></a><span > </span>
-<a id="L217"></a><span class="visited"> </span>
+<a id="L217"></a><span > </span>
 <a id="L218"></a><span > </span>
 <a id="L219"></a><span > </span>
 <a id="L220"></a><span > </span>
-<a id="L221"></a><span class="visited"> </span>
-<a id="L222"></a><span class="visited"> </span>
+<a id="L221"></a><span > </span>
+<a id="L222"></a><span > </span>
 <a id="L223"></a><span > </span>
 <a id="L224"></a><span > </span>
 <a id="L225"></a><span > </span>
 <a id="L226"></a><span > </span>
-<a id="L227"></a><span > </span>
+<a id="L227"></a><span class="visited"> </span>
 <a id="L228"></a><span > </span>
 <a id="L229"></a><span > </span>
 <a id="L230"></a><span > </span>
-<a id="L231"></a><span > </span>
-<a id="L232"></a><span > </span>
+<a id="L231"></a><span class="visited"> </span>
+<a id="L232"></a><span class="visited"> </span>
 <a id="L233"></a><span > </span>
 <a id="L234"></a><span > </span>
 <a id="L235"></a><span > </span>
@@ -721,24 +721,6 @@ let%expect_test "parse_exp_let" =
     |}<span data-count="7">]</span>
 ;;
 
-let%expect_test "parse_several_structure_items" =
-  <span data-count="1">r</span>un "let squared x = x * x;; squared 5";
-  <span data-count="1">[</span>%expect
-    {|
-    [(Struct_value (Nonrecursive,
-        [{ pat = (Pat_var "squared");
-           exp =
-           (Exp_fun ([(Pat_var "x")],
-              (Exp_apply ((Exp_ident "*"), [(Exp_ident "x"); (Exp_ident "x")]))))
-           }
-          ]
-        ));
-      (Struct_eval
-         (Exp_apply ((Exp_ident "squared"), [(Exp_constant (Const_integer 5))])))
-      ]
-    |}<span data-count="7">]</span>
-;;
-
 let%expect_test "parse_sequence_and_construct" =
   <span data-count="1">r</span>un {| [1; 2; 3]; "qwerty123" |};
   <span data-count="1">[</span>%expect
@@ -763,6 +745,24 @@ let%expect_test "parse_sequence_and_construct" =
                          ]))
               )),
            (Exp_constant (Const_string "qwerty123")))))
+      ]
+    |}<span data-count="7">]</span>
+;;
+
+let%expect_test "parse_several_structure_items" =
+  <span data-count="1">r</span>un "let squared x = x * x;; squared 5";
+  <span data-count="1">[</span>%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "squared");
+           exp =
+           (Exp_fun ([(Pat_var "x")],
+              (Exp_apply ((Exp_ident "*"), [(Exp_ident "x"); (Exp_ident "x")]))))
+           }
+          ]
+        ));
+      (Struct_eval
+         (Exp_apply ((Exp_ident "squared"), [(Exp_constant (Const_integer 5))])))
       ]
     |}<span data-count="7">]</span>
 ;;
