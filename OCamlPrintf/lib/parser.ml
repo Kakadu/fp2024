@@ -118,7 +118,7 @@ let parse_pat_construct parse_pat =
     List.fold_right
       list_
       ~init:(Pat_construct ("[]", None))
-      ~f:(fun acc x -> Pat_construct ("::", Some (Pat_tuple [ acc; x ])))
+      ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple [ pat; acc ])))
   in
   parse_elements <|> parse_bool_pat
 ;;
@@ -278,7 +278,7 @@ let parse_exp_construct parse_exp =
     List.fold_right
       list_
       ~init:(Exp_construct ("[]", None))
-      ~f:(fun acc x -> Exp_construct ("::", Some (Exp_tuple [ acc; x ])))
+      ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple [ exp; acc ])))
   in
   parse_elements <|> parse_bool_exp
 ;;

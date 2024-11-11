@@ -242,6 +242,5 @@ let%expect_test "parse_sequence_and_construct" =
               )),
            (Exp_constant (Const_string "qwerty123")))))
       ]
-    
     |}]
 ;;
