@@ -9,7 +9,17 @@ open Ast
 (*---------------------Check conditions---------------------*)
 
 let is_keyword = function
-  | "let" | "in" | "fun" | "rec" | "if" | "then" | "else" | "true" | "false" -> true
+  | "let"
+  | "in"
+  | "fun"
+  | "rec"
+  | "if"
+  | "then"
+  | "else"
+  | "true"
+  | "false"
+  | "Some"
+  | "None" -> true
   | _ -> false
 ;;
 
@@ -155,24 +165,47 @@ let pbranch pexpr =
 
 let pexpr =
   fix (fun expr ->
-    let atom_expr = choice [ pEconst; pEvar; pparens expr ] in
-    (* parsing of nested if expressions and fallback to simpler atomic expressions
-       if the conditional expression parsing fails *)
+    let atom_expr =
+      choice
+        [ pEconst
+        ; pEvar
+        ; pparens expr
+        ; pElist expr
+        ; pEtuple expr
+        ; pEfun expr
+        ; pEoption expr
+        ]
+    in
+    let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
-    (* parsing function applications, where the left side can be
-       an if expression or a simpler atomic expression *)
     let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
-    let factor_expr = chain app_expr (mult <|> div) in
+    let un_expr =
+      choice
+        [ un_chain app_expr negation
+        ; un_chain app_expr neg_sign
+        ; un_chain app_expr pos_sign
+        ]
+    in
+    let factor_expr = chain un_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
-    rel_expr)
+    let log_expr = chain rel_expr logic in
+    choice [ let_expr; log_expr ])
 ;;
 
-let parse_structure =
-  let parse_structure_item = choice [ plet pexpr; pexpr ] in
-  let semicolons = pstoken ";;" in
-  let items = sep_by semicolons parse_structure_item in
-  items <* pwhitespace
+let pstructure =
+  let pseval = pexpr >>| fun e -> SEval e in
+  let psvalue =
+    plet pexpr
+    >>| function
+    | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
+    | _ -> failwith "Expected a let expression"
+  in
+  choice [ psvalue; pseval ]
 ;;
 
-let parse_expr str = parse_string ~consume:All parse_structure str
+let structure : structure t =
+  sep_by (pstoken ";;") pstructure <* (pstoken ";;" <|> pwhitespace)
+;;
+
+let parse_expr str = parse_string ~consume:All structure str
