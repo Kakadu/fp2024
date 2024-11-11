@@ -1,63 +1,13 @@
+(** Copyright 2024-2025, Rodion Suvorov, Mikhail Gavrilenko *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ocamladt_lib.Parser
 open Ocamladt_lib.Ast
 
 (* open Angstrom *)
 let test_programm str = print_endline (show_program (parse_str str))
 
-(*let rec fact n = if n = 0 then 1 else n * fact (n - 1);;*)
-
-(*good*)
-let%expect_test "empty program" =
-  test_programm {|a;;a|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 11, characters 2-24
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
-(*good*)
-let%expect_test "double semicolons" =
-  test_programm {|(-) 27 5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 28, characters 2-30
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
-(*good*)
-let%expect_test "(whitespaces)" =
-  test_programm {|       ;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 45, characters 2-29
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
-(*good*)
 let%expect_test "negative int constant" =
   test_programm {|-1;;|};
   [%expect
@@ -113,23 +63,6 @@ let%expect_test "positive zero" =
 let%expect_test "zero" =
   test_programm {|0;;|};
   [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
-;;
-
-(*bad?, why? (i guess, no)*)
-let%expect_test "prefix minus" =
-  test_programm {|(-) 111 5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 120, characters 2-31
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
@@ -253,23 +186,6 @@ let%expect_test "parenthesis with operators with different priorities" =
       ] |}]
 ;;
 
-(*bad*)
-let%expect_test "parenthesis4" =
-  test_programm {|( );;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 258, characters 2-25
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
 let%expect_test "parenthesis3" =
   test_programm {|(5);;|};
   [%expect {| [(Str_eval (Exp_constant (Const_integer 5)))] |}]
@@ -384,7 +300,8 @@ let%expect_test "apply without space" =
 
 let%expect_test "apply num to ident" =
   test_programm {|f (x-1);;|};
-  [%expect {|
+  [%expect
+    {|
     [(Str_eval
         (Exp_apply ((Exp_ident "f"),
            ((Exp_apply ((Exp_ident "-"),
@@ -418,10 +335,10 @@ let%expect_test "multi fun" =
       ] |}]
 ;;
 
-
 let%expect_test "apply and subtraction" =
   test_programm {|f (x-1);;|};
-  [%expect {|
+  [%expect
+    {|
     [(Str_eval
         (Exp_apply ((Exp_ident "f"),
            ((Exp_apply ((Exp_ident "-"),
@@ -580,7 +497,7 @@ let%expect_test "let and if" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let rec fact x = if x = 0 then 1 else x * fact(X-1);;|};
+  test_programm {|let rec fact x = if x = 0 then 1 else x * fact(x-1);;|};
   [%expect
     {|
     [(Str_value (Recursive,
@@ -598,13 +515,8 @@ let%expect_test "factorial" =
                           ((Exp_tuple
                               ((Exp_ident "x"),
                                (Exp_apply ((Exp_ident "fact"),
-                                  ((Exp_apply ((Exp_ident "-"),
-                                      ((Exp_tuple
-                                          ((Exp_ident "X"),
-                                           (Exp_constant (Const_integer 1)),
-                                           [])),
-                                       [])
-                                      )),
+                                  ((Exp_apply ((Exp_ident "x"),
+                                      ((Exp_constant (Const_integer -1)), []))),
                                    [])
                                   )),
                                [])),

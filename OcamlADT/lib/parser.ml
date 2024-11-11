@@ -63,15 +63,9 @@ let pident_cap =
     satisfy (function
       | 'A' .. 'Z' -> true
       | _ -> false)
-    >>| String.of_char
   in
-  let rem_string =
-    lift2
-      (fun first rest -> String.make 1 first ^ rest)
-      plettersdig
-      (take_while ptowhitespace)
-  in
-  lift2 (fun fc rs -> fc ^ rs) first_char_str rem_string
+  let rem_string = lift (fun rest -> rest) (take_while ptowhitespace) in
+  lift2 (fun fc rs -> String.make 1 fc ^ rs) first_char_str rem_string
 ;;
 
 let pident_lc =
@@ -79,15 +73,9 @@ let pident_lc =
     satisfy (function
       | 'a' .. 'z' -> true
       | _ -> false)
-    >>| String.of_char
   in
-  let rem_string =
-    lift2
-      (fun first rest -> String.make 1 first ^ rest)
-      plettersdig
-      (take_while ptowhitespace)
-  in
-  lift2 (fun fc rs -> fc ^ rs) first_char_str rem_string
+  let rem_string = lift (fun rest -> rest) (take_while ptowhitespace) in
+  lift2 (fun fc rs -> String.make 1 fc ^ rs) first_char_str rem_string
 ;;
 
 (*
@@ -198,7 +186,6 @@ let ppattern =
 *)
 
 let pidentexpr =
-  (* upper/lower ?*)
   pident_lc
   >>= fun ident ->
   if is_not_keyword ident

@@ -6,8 +6,8 @@ open Ocamladt_lib.Ast
 open Ocamladt_lib.Parser
 
 (* let () =
-  let factorial_ast : program =
-    [ Str_value
+   let factorial_ast : program =
+   [ Str_value
         ( Recursive
         , [ { pat = Pat_var "fact"
             ; expr =
@@ -38,7 +38,7 @@ open Ocamladt_lib.Parser
             }
           ] )
     ]
-  in
-  print_endline (show_program factorial_ast) *)
+   in
+   print_endline (show_program factorial_ast) *)
 
-let () = print_endline(show_program(parse_str("-111 5")))
+let () = print_endline (show_program (parse_str "-111 5"))

@@ -1,3 +1,7 @@
+(** Copyright 2024-2025, Rodion Suvorov, Mikhail Gavrilenko *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Base
 open Ocamladt_lib.Ast
 
@@ -138,23 +142,19 @@ let pprint_structure_item fmt = function
           ~sep:" and "
           (List.map vbindl ~f:(fun vb -> Format.asprintf "%a" pprint_value_binding vb))
     in
-    let expr_to_print =
-      match vbindl with
-      | [] -> vbind1.expr (* If vbindl is empty, use the expression from vbind1 *)
-      | _ -> (List.hd_exn vbindl).expr
-      (* Otherwise, use the expression from the head of vbindl *)
-    in
     Format.fprintf
       fmt
-      "let %a %a %s in %a ;; "
+      "let %a %a %s;; "
       pprint_rec
       rec_flag
       pprint_value_binding
       vbind1
       (if bindings_str == "" then "" else "and " ^ bindings_str)
-      pprint_expression
-      expr_to_print
-  | Str_adt (id, id_t_l) -> Format.fprintf fmt "%s" id
+  | Str_adt (id, id_t_l) ->
+    (* Stub: just using the variables id and id_t_l (ftm) *)
+    let _ = id in
+    let _ = id_t_l in
+    ()
 ;;
 
 let pprint_program fmt = List.iter ~f:(pprint_structure_item fmt)

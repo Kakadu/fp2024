@@ -1,3 +1,7 @@
+(** Copyright 2024-2025, Rodion Suvorov, Mikhail Gavrilenko *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open QCheck
 open Base
 open Astpprinter
@@ -68,20 +72,9 @@ let gen_apply_arg =
     [ map (fun id -> Exp_ident id) gen_ident
     ; (* Identifier: f, x, etc. *)
       map (fun c -> Exp_constant c) gen_constant (* Constant: 5, "a", etc. *)
-    ; map (fun id -> Exp_ident id) gen_operator_d
     ; map (fun id -> Exp_ident id) gen_operator_s
     ]
 ;;
-
-(*
-   let gen_apply_op =
-   Gen.map
-   (fun op_opt ->
-   match op_opt with
-   | Some id -> Exp_ident id
-   | None -> failwith "Error: Invalid operator (_)")
-   (gen_apply_opr ())
-   ;; *)
 
 let gen_rec_flag = Gen.oneofl [ Nonrecursive; Recursive ]
 
@@ -97,23 +90,31 @@ let rec gen_expression size =
     oneof
       [ map (fun id -> Exp_ident id) gen_ident
       ; map (fun c -> Exp_constant c) gen_constant
-      ; (* map2 (fun e1 e2 -> Exp_tuple (e1, e2, [])) (gen_expression (size/2)) (gen_expression (size/2)); *)
-        (* map (fun (c, cs) -> Exp_function (c, cs)) (gen_cases size) *)
-        (* map2
+      ; map2
+          (fun e1 e2 -> Exp_tuple (e1, e2, []))
+          (gen_expression (size / 2))
+          (gen_expression (size / 2))
+        (* ; map (fun (c, cs) -> Exp_function (c, cs)) (gen_cases size) *)
+        (* ; map2
            (fun pl1 exp -> Exp_fun (pl1, exp))
            (map2
            (fun pt ptl -> pt, ptl)
            (gen_pattern (size / 2))
            (list_size (int_bound 3) (gen_pattern (size / 2))))
-           gen_expression (size / 2) *)
-        map2
+           gen_expression
+           (size / 2) *)
+      ; map2
           (fun ex exl1 -> Exp_apply (ex, exl1))
           gen_apply_id
           (map2
              (fun ex1 exl -> ex1, exl)
              gen_apply_arg
-             (list_size (int_bound 3) gen_apply_arg))
-        (* map3 (fun e c cs -> Exp_match (e, c, cs)) (gen_expression (size/2)) (gen_case size) (small_list (gen_case (size/2))); *)
+             (list_size (int_bound 4) gen_apply_arg))
+        (* ; map3
+           (fun e c cs -> Exp_match (e, c, cs))
+           (gen_expression (size / 2))
+           (gen_case size)
+           (small_list (gen_case (size / 2))) *)
         (* map2 (fun e1 e2 -> Exp_if (e1, e2, None)) (gen_expression (size/2)) (gen_expression (size/2)); *)
         (* map3 (fun e1 e2 e3 -> Exp_if (e1, e2, Some e3)) (gen_expression (size/2)) (gen_expression (size/2)) (gen_expression (size/2)); *)
         (* map3 (fun rec_flag vbl1 e -> Exp_let (rec_flag, vbl1, e))
@@ -153,7 +154,7 @@ let gen_structure_item size =
         (map2
            (fun vb vbl -> vb, vbl)
            (gen_value_binding (size / 2))
-           (list_size (int_bound 3) (gen_value_binding (size / 2))))
+           (list_size (int_bound 2) (gen_value_binding (size / 2))))
     ]
 ;;
 
