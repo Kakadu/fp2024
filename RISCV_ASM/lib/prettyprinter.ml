@@ -178,8 +178,7 @@ let pp_instruction ppf = function
   | Sw (rd, rs1, imm) ->
     pp_instruction_2reg_1offset_helper ppf "sw" rd rs1 (Address12 imm)
   | Beq (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "beq" rd rs1 (Address12 imm)
-  | Bne (rd, rs1, imm) ->
-    pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
+  | Bne (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
   | Blt (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "blt" rd rs1 (Address12 imm)
   | Bge (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bge" rd rs1 (Address12 imm)
   | Bltu (rd, rs1, imm) ->

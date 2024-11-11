@@ -378,7 +378,10 @@ let run () =
 ;;
 
 let () =
-  print_endline "Testing manual generator.";
+  Arg.parse
+    [ "-seed", Arg.Int QCheck_runner.set_seed, " Set seed" ]
+    print_endline
+    "Testing manual generator.";
   let _ : int = run () in
   ()
 ;;
