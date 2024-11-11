@@ -161,7 +161,7 @@ let parse_directive =
        ; string ".align"
          *> ws_opt (lift (fun int -> DirectiveExpr (Align int)) parse_number)
        ; string ".globl"
-         *> ws_opt (lift (fun label -> DirectiveExpr (Globl label)) parse_label_address12)
+         *> ws_opt (lift (fun label -> DirectiveExpr (Globl label)) parse_address12)
        ; string ".type"
          *> ws_opt
               (lift2
@@ -177,7 +177,7 @@ let parse_directive =
               (lift2
                  (fun label size -> DirectiveExpr (Size (label, size)))
                  (* FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
-                 parse_label_address12
+                 parse_address12
                  (ws_opt (char ',') *> parse_string))
        ; string ".section"
          *> ws_opt
@@ -361,20 +361,20 @@ let parse_instruction =
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Sb (r1, addr12, r2)))
               parse_register
-              (char '(' *> parse_register <* char ')')
               (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
        ; string "sh"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Sh (r1, addr12, r2)))
               parse_register
-              (char '(' *> parse_register <* char ')')
               (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
        ; string "sw"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Sw (r1, addr12, r2)))
               parse_register
-              (char '(' *> parse_register <* char ')')
               (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
        ; string "beq"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Beq (r1, r2, addr12)))

@@ -179,7 +179,7 @@ let pp_instruction ppf = function
     pp_instruction_2reg_1offset_helper ppf "sw" rd rs1 (Address12 imm)
   | Beq (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "beq" rd rs1 (Address12 imm)
   | Bne (rd, rs1, imm) ->
-    pp_instruction_2reg_1imm_helper ppf "bnee" rd rs1 (Address12 imm)
+    pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
   | Blt (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "blt" rd rs1 (Address12 imm)
   | Bge (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bge" rd rs1 (Address12 imm)
   | Bltu (rd, rs1, imm) ->
@@ -216,7 +216,7 @@ let pp_instruction ppf = function
     Format.fprintf ppf "lla %s,%s" (pp_register rd) (pp_address (Address32 imm))
   | Mv (rd, rs1) -> Format.fprintf ppf "mv %s,%s" (pp_register rd) (pp_register rs1)
   | Li (rd, imm) ->
-    Format.fprintf ppf "mv %s,%s" (pp_register rd) (pp_address (Address32 imm))
+    Format.fprintf ppf "li %s,%s" (pp_register rd) (pp_address (Address32 imm))
   | Ret -> Format.fprintf ppf "ret"
   | _ -> Format.fprintf ppf "_Unknown instruction_"
 ;;

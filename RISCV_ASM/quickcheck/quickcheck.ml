@@ -82,42 +82,31 @@ let register_gen =
 ;;
 
 let address12_gen =
-  QCheck.Gen.(
-    oneof
-      [ map (fun imm -> ImmediateAddress12 imm) (int_range (-2048) 2047)
-      ; map (fun lbl -> LabelAddress12 lbl) label_gen
-      ])
+  QCheck.Gen.(map (fun imm -> ImmediateAddress12 imm) (int_range (-2048) 2047))
 ;;
 
 let address20_gen =
-  QCheck.Gen.(
-    oneof
-      [ map (fun imm -> ImmediateAddress20 imm) (int_range (-524288) 524287)
-      ; map (fun lbl -> LabelAddress20 lbl) label_gen
-      ])
+  QCheck.Gen.(map (fun imm -> ImmediateAddress20 imm) (int_range (-524288) 524287))
 ;;
 
 let address32_gen =
   QCheck.Gen.(
-    oneof
-      [ map (fun imm -> ImmediateAddress32 imm) (int_range (-2147483648) 2147483647)
-      ; map (fun lbl -> LabelAddress32 lbl) label_gen
-      ])
+    map (fun imm -> ImmediateAddress32 imm) (int_range (-2147483648) 2147483647))
 ;;
 
 let string_or_int_value_gen =
   QCheck.Gen.(
-    oneof [ map (fun str -> StrValue str) string; map (fun imm -> IntValue imm) int ])
+    oneof [ map (fun str -> StrValue str) label_gen; map (fun imm -> IntValue imm) int ])
 ;;
 
-let type_dir_gen = map (fun str -> Type str) string
+let type_dir_gen = map (fun str -> Type str) label_gen
 
 let section_gen =
   QCheck.Gen.(
     map3
       (fun str1 str2 typ opt -> Section (str1, str2, typ, opt))
-      string
-      string
+      label_gen
+      label_gen
       type_dir_gen
     >>= fun f -> option int >>= fun opt -> return (f opt))
 ;;
@@ -125,23 +114,23 @@ let section_gen =
 let directive_gen =
   QCheck.Gen.(
     oneof
-      [ map (fun str -> File str) string
-      ; map (fun str -> Option str) string
-      ; map2 (fun str value -> Attribute (str, value)) string string_or_int_value_gen
+      [ map (fun str -> File str) label_gen
+      ; map (fun str -> Option str) label_gen
+      ; map2 (fun str value -> Attribute (str, value)) label_gen string_or_int_value_gen
       ; return Text
       ; map (fun imm -> Align imm) (int_range 0 32)
       ; map (fun imm -> Globl imm) address12_gen
-      ; map2 (fun str typ -> TypeDir (str, typ)) string type_dir_gen
+      ; map2 (fun str typ -> TypeDir (str, typ)) label_gen type_dir_gen
       ; return CfiStartproc
       ; return CfiEndproc
-      ; map2 (fun imm str -> Size (imm, str)) address12_gen string
+      ; map2 (fun imm str -> Size (imm, str)) address12_gen label_gen
       ; section_gen
-      ; map (fun str -> String str) string
+      ; map (fun str -> String str) label_gen
       ; map (fun imm -> CfiDefCfaOffset imm) int
       ; map2 (fun imm1 imm2 -> CfiOffset (imm1, imm2)) int int
       ; return CfiRememberState
       ; map (fun imm -> CfiRestore imm) int
-      ; map (fun str -> Ident str) string
+      ; map (fun str -> Ident str) label_gen
       ; return CfiRestoreState
       ])
 ;;
@@ -208,22 +197,6 @@ let instruction_gen =
           register_gen
           register_gen
           address12_gen
-      ; map3 (fun rd rs1 imm -> Lb (rd, rs1, imm)) register_gen register_gen address12_gen
-      ; map3 (fun rd rs1 imm -> Lh (rd, rs1, imm)) register_gen register_gen address12_gen
-      ; map3 (fun rd rs1 imm -> Lw (rd, rs1, imm)) register_gen register_gen address12_gen
-      ; map3
-          (fun rd rs1 imm -> Lbu (rd, rs1, imm))
-          register_gen
-          register_gen
-          address12_gen
-      ; map3
-          (fun rd rs1 imm -> Lhu (rd, rs1, imm))
-          register_gen
-          register_gen
-          address12_gen
-      ; map3 (fun rd rs1 imm -> Sb (rd, rs1, imm)) register_gen register_gen address12_gen
-      ; map3 (fun rd rs1 imm -> Sh (rd, rs1, imm)) register_gen register_gen address12_gen
-      ; map3 (fun rd rs1 imm -> Sw (rd, rs1, imm)) register_gen register_gen address12_gen
       ; map3
           (fun rd rs1 imm -> Beq (rd, rs1, imm))
           register_gen
@@ -265,7 +238,7 @@ let instruction_gen =
       ; map2 (fun rd imm -> Lui (rd, imm)) register_gen address20_gen
       ; map2 (fun rd imm -> Auipc (rd, imm)) register_gen address20_gen
       ; return Ecall
-      ; map (fun str -> Call str) string
+      ; map (fun str -> Call str) label_gen
       ; map3 (fun rd rs1 rs2 -> Mul (rd, rs1, rs2)) register_gen register_gen register_gen
       ; map3
           (fun rd rs1 rs2 -> Mulh (rd, rs1, rs2))
@@ -294,15 +267,6 @@ let instruction_gen =
           register_gen
           register_gen
           register_gen
-      ; map3
-          (fun rd rs1 imm -> Lwu (rd, rs1, imm))
-          register_gen
-          register_gen
-          address12_gen
-      ; map3 (fun rd rs1 imm -> Ld (rd, rs1, imm)) register_gen register_gen address12_gen
-      ; map2 (fun rd imm -> La (rd, imm)) register_gen address32_gen
-      ; map2 (fun rd imm -> Lla (rd, imm)) register_gen address32_gen
-      ; map3 (fun rd rs1 imm -> Sd (rd, rs1, imm)) register_gen register_gen address12_gen
       ; map3
           (fun rd rs1 imm -> Addiw (rd, rs1, imm))
           register_gen
