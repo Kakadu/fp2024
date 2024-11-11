@@ -57,8 +57,36 @@ let ptowhitespace = function
   | _ -> false
 ;;
 
-let pident =
-  lift2 (fun first rest -> String.make 1 first ^ rest) pletters (take_while ptowhitespace)
+let pident_cap =
+  let first_char_str =
+    satisfy (function
+      | 'A' .. 'Z' -> true
+      | _ -> false)
+    >>| String.of_char
+  in
+  let rem_string =
+    lift2
+      (fun first rest -> String.make 1 first ^ rest)
+      pletters
+      (take_while ptowhitespace)
+  in
+  lift2 (fun fc rs -> fc ^ rs) first_char_str rem_string
+;;
+
+let pident_lc =
+  let first_char_str =
+    satisfy (function
+      | 'a' .. 'z' -> true
+      | _ -> false)
+    >>| String.of_char
+  in
+  let rem_string =
+    lift2
+      (fun first rest -> String.make 1 first ^ rest)
+      pletters
+      (take_while ptowhitespace)
+  in
+  lift2 (fun fc rs -> fc ^ rs) first_char_str rem_string
 ;;
 
 (*
@@ -145,7 +173,7 @@ let ptuplepat ppattern =
 ;;
 
 let pvar =
-  pident
+  pident_lc
   >>= fun ident ->
   if is_not_keyword ident
   then return (Pat_var ident)
@@ -169,7 +197,8 @@ let ppattern =
 *)
 
 let pidentexpr =
-  pident
+  (* upper/lower ?*)
+  pident_lc
   >>= fun ident ->
   if is_not_keyword ident
   then return (Exp_ident ident)
