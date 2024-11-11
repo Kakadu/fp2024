@@ -4,7 +4,10 @@
 
 open QCheck
 open Ast
+open Pr_printer
+open Parser
 
+(*------------------Generator-----------------*)
 let const_gen =
   let open Gen in
   oneof
@@ -48,7 +51,6 @@ let gen_pattern =
     ]
 ;;
 
-(*works*)
 let expr_gen =
   let open Gen in
   sized
@@ -67,8 +69,8 @@ let expr_gen =
               (self (n / 2)) )
         ; 2, map (fun es -> Elist es) (list_size (int_bound 10) (self (n / 2)))
           (* ; 2, map (fun es -> Elist es) (list (self (n / 2))) *)
-        (* ; 1, map (fun e -> Eoption (Some e)) (self (n / 2))
-        ; 1, map (fun _ -> Eoption None) (self (n / 2)) *)
+          (* ; 1, map (fun e -> Eoption (Some e)) (self (n / 2))
+             ; 1, map (fun _ -> Eoption None) (self (n / 2)) *)
         ; ( 2
           , map3
               (fun op e1 e2 -> Ebin_op (op, e1, e2))
@@ -117,12 +119,14 @@ let gen_structure =
   list_size (int_bound 2) gen_structure_item
 ;;
 
+(*------------------Shrinker-----------------*)
+
 let rec shrink_expr expr =
   match expr with
   | Econst (Int _) -> Iter.return (Econst (Int 1))
   | Econst (Bool b) -> Iter.return (Econst (Bool b))
-  | Econst _ -> Iter.empty 
-  | Evar _ -> Iter.return (Evar "a") 
+  | Econst _ -> Iter.empty
+  | Evar _ -> Iter.return (Evar "a")
   | Ebin_op (op, e1, e2) ->
     Iter.(
       return e1
@@ -151,7 +155,7 @@ let rec shrink_expr expr =
       <+> map (fun cond_e' -> Eif_then_else (cond_e', then_e, None)) (shrink_expr cond_e)
       <+> map (fun then_e' -> Eif_then_else (cond_e, then_e', None)) (shrink_expr then_e))
   (* | Eoption (Some e) -> shrink_expr e
-  | Eoption None -> Iter.empty *)
+     | Eoption None -> Iter.empty *)
   | Elist es ->
     Iter.(
       (*removing elements from the list *)
@@ -219,4 +223,15 @@ let shrink_structure structure : structure Iter.t =
           empty
       in
       QCheck.Shrink.list structure <+> shrink_elements)
+;;
+
+let arbitrary_structure_manual =
+  make gen_structure ~print:(Format.asprintf "%a" prpr_structure)
+;;
+
+let run_manual () =
+  QCheck_runner.run_tests
+    [ Test.make arbitrary_structure_manual (fun structure ->
+        Result.ok structure = parse_expr (Format.asprintf "%a" prpr_structure structure))
+    ]
 ;;
