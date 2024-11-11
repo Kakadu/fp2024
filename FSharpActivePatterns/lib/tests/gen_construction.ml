@@ -48,6 +48,7 @@ let gen_unop = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ])
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
 let if_e i t e = If_then_else (i, t, e)
 let func_def args body = Function_def (args, body)
+let func_call f arg = Function_call (f, arg)
 let letin rec_flag ident args e inner_e = LetIn (rec_flag, ident, args, e, inner_e)
 
 let gen_binop =
@@ -93,6 +94,8 @@ let gen_expr =
                 (self (n / 2))
                 (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
           ; 0, map2 func_def (list gen_variable) (self (n / 2))
+          ; 1, map2 func_call gen_variable (self (n / 2))
+            (* TODO: make apply of arbitrary expr*)
           ; ( 1
             , map3
                 letin
