@@ -1,0 +1,4 @@
+(library
+ (name riscv_asm_interpreter_quickcheck)
+ (public_name RISCV_ASM.Quickcheck)
+ (libraries RISCV_ASM.Lib qcheck))
