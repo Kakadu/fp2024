@@ -22,11 +22,11 @@ let tp_gen =
     sized
     @@ fix (fun self n ->
       match n with
-      | 0 -> oneof [ return TUnit; return TInt; return TBool ]
+      | 0 -> oneof [ return TUnit; return TInteger; return TBool ]
       | n ->
         oneof
           [ return TUnit
-          ; return TInt
+          ; return TInteger
           ; return TBool
           ; map treeparam (self (n / 5))
           ; map listparam (self (n / 5))

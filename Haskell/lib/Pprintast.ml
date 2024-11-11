@@ -49,7 +49,7 @@ and wrap_into fmt left right ppf pp_item =
 
 and pp_tp fmt = function
   | TUnit -> fprintf fmt "%s" "()"
-  | TInt -> fprintf fmt "%s" "Int"
+  | TInteger -> fprintf fmt "%s" "Integer"
   | TBool -> fprintf fmt "%s" "Bool"
   | TreeParam tp -> wrap_into fmt "{" "}" pp_tp tp
   | ListParam tp -> wrap_into fmt "[" "]" pp_tp tp
@@ -68,19 +68,19 @@ and pp_tp fmt = function
 ;;
 
 let%test "pp functype" =
-  asprintf "%a" pp_functype (FuncT (TInt, TBool, [ TBool; TUnit ]))
-  = "Int -> Bool -> Bool -> ()"
+  asprintf "%a" pp_functype (FuncT (TInteger, TBool, [ TBool; TUnit ]))
+  = "Integer -> Bool -> Bool -> ()"
 ;;
 
 let%test "pp tp TUnit" = asprintf "%a" pp_tp TUnit = "()"
-let%test "pp tp TInt" = asprintf "%a" pp_tp TInt = "Int"
+let%test "pp tp TInteger" = asprintf "%a" pp_tp TInteger = "Integer"
 let%test "pp tp TBool" = asprintf "%a" pp_tp TBool = "Bool"
-let%test "pp tp TreeParam" = asprintf "%a" pp_tp (TreeParam TInt) = "{Int}"
+let%test "pp tp TreeParam" = asprintf "%a" pp_tp (TreeParam TInteger) = "{Integer}"
 let%test "pp tp ListParam" = asprintf "%a" pp_tp (ListParam TBool) = "[Bool]"
 
 let%test "pp tp TupleParams" =
-  asprintf "%a" pp_tp (TupleParams (TInt, TBool, [ TBool; TInt ]))
-  = "(Int, Bool, Bool, Int)"
+  asprintf "%a" pp_tp (TupleParams (TInteger, TBool, [ TBool; TInteger ]))
+  = "(Integer, Bool, Bool, Integer)"
 ;;
 
 let%test "pp tp FunctionType" =
@@ -296,8 +296,8 @@ let%test "pp pattern with capture, with type" =
   asprintf
     "%a"
     pp_pattern
-    ([ Ident "my"; Ident "first"; Ident "variable" ], PIdentificator (Ident "x"), [ TInt ])
-  = "((my@first@variable@x) :: Int)"
+    ([ Ident "my"; Ident "first"; Ident "variable" ], PIdentificator (Ident "x"), [ TInteger ])
+  = "((my@first@variable@x) :: Integer)"
 ;;
 
 let rec pp_comprehension fmt = function

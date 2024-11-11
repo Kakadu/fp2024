@@ -42,10 +42,10 @@ let is_char_suitable_for_ident c =
   is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
 ;;
 
-let prs_ln ?(consume=Consume.Prefix) call str = parse_string ~consume:consume call str
+let prs_ln ?(consume = Consume.Prefix) call str = parse_string ~consume call str
 
-let prs_and_prnt_ln ?(consume=Consume.Prefix) call sh str =
-  match prs_ln  ~consume call str with
+let prs_and_prnt_ln ?(consume = Consume.Prefix) call sh str =
+  match prs_ln ~consume call str with
   | Ok v -> print_endline (sh v)
   | Error msg -> Printf.fprintf stderr "error: %s" msg
 ;;
@@ -173,7 +173,7 @@ let ord_tp tp =
   let w = word ~point_allowed:Allow_point in
   choice
     [ string "()" *> return TUnit
-    ; w "Int" *> return TInt
+    ; w "Integer" *> return TInteger
     ; w "Bool" *> return TBool
     ; (sq_brackets tp >>| fun x -> ListParam x)
     ; (braces tp >>| fun x -> TreeParam x)
@@ -187,8 +187,8 @@ let tp =
 ;;
 
 let%expect_test "tp_list_of_func" =
-  prs_and_prnt_ln tp show_tp "[Int -> Int] ";
-  [%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}]
+  prs_and_prnt_ln tp show_tp "[Integer -> Integer] ";
+  [%expect {| (ListParam (FunctionType (FuncT (TInteger, TInteger, [])))) |}]
 ;;
 
 let%expect_test "tp_tree_of_func" =
@@ -197,14 +197,20 @@ let%expect_test "tp_tree_of_func" =
 ;;
 
 let%expect_test "tp_lnested_func" =
-  prs_and_prnt_ln tp show_tp "Int -> ((Int -> Int)) -> Int";
+  prs_and_prnt_ln tp show_tp "Integer -> ((Integer -> Integer)) -> Integer";
   [%expect
-    {| (FunctionType (FuncT (TInt, (FunctionType (FuncT (TInt, TInt, []))), [TInt]))) |}]
+    {|
+      (FunctionType
+         (FuncT (TInteger, (FunctionType (FuncT (TInteger, TInteger, []))),
+            [TInteger]))) |}]
 ;;
 
 let%expect_test "tp_tuple" =
-  prs_and_prnt_ln tp show_tp "(Int, Bool, Int -> Bool)";
-  [%expect {| (TupleParams (TInt, TBool, [(FunctionType (FuncT (TInt, TBool, [])))])) |}]
+  prs_and_prnt_ln tp show_tp "(Integer, Bool, Integer -> Bool)";
+  [%expect
+    {|
+      (TupleParams (TInteger, TBool, [(FunctionType (FuncT (TInteger, TBool, [])))]
+         )) |}]
 ;;
 
 let nonnegative_integer =
@@ -499,21 +505,21 @@ let%expect_test "pattern_listcons_valid" =
 ;;
 
 let%expect_test "pattern_simple_valid_tp" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Int";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Integer";
   [%expect {|
-    ([], (PIdentificator (Ident "x")), [TInt])
+    ([], (PIdentificator (Ident "x")), [TInteger])
        |}]
 ;;
 
 let%expect_test "pattern_simple_invalid_tp_ban" =
-  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Int";
+  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Integer";
   [%expect {|
     ([], (PIdentificator (Ident "x")), [])
        |}]
 ;;
 
 let%expect_test "pattern_listcons_valid_with_tp" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Int]";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Integer]";
   [%expect
     {|
     ([],
@@ -525,7 +531,7 @@ let%expect_test "pattern_listcons_valid_with_tp" =
                   ([], (PIdentificator (Ident "z")), [])))),
             [])
            ))),
-     [(ListParam TInt)])
+     [(ListParam TInteger)])
        |}]
 ;;
 
@@ -1082,24 +1088,25 @@ let%expect_test "expr_list_lazy_valid" =
 ;;
 
 let%expect_test "expr_binop_invlid_tp" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Int + 3";
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Integer + 3";
   [%expect
     {|
-      ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 2)), []))), [TInt]) |}]
+      ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 2)), []))),
+       [TInteger]) |}]
 ;;
 
 let%expect_test "expr_valid_tp" =
   prs_and_prnt_ln
     (expr Allow_t)
     show_expr
-    "if x>(2::Int) :: Bool then 0::Int else 1 :: Int :: () ";
+    "if x>(2::Integer) :: Bool then 0::Integer else 1 :: Integer :: () ";
   [%expect
     {|
       ((IfThenEsle (
           ((Binop (((Identificator (Ident "x")), []), Greater,
-              ((Const (Integer 2)), [TInt]))),
+              ((Const (Integer 2)), [TInteger]))),
            [TBool]),
-          ((Const (Integer 0)), [TInt]), ((Const (Integer 1)), [TInt]))),
+          ((Const (Integer 0)), [TInteger]), ((Const (Integer 1)), [TInteger]))),
        [TUnit]) |}]
 ;;
 
@@ -1178,15 +1185,17 @@ let%expect_test "fun_binding_guards" =
 ;;
 
 let%expect_test "decl" =
-  prs_and_prnt_ln binding show_binding "f :: Int -> Int -> Int";
+  prs_and_prnt_ln binding show_binding "f :: Integer -> Integer -> Integer";
   [%expect
     {|
       (Decl (([], (PIdentificator (Ident "f")), []),
-         (FunctionType (FuncT (TInt, TInt, [TInt])))))
+         (FunctionType (FuncT (TInteger, TInteger, [TInteger])))))
       |}]
 ;;
 
 let bindings_list = sep_by1 (ws *> char ';' *> ws) binding
+
 type bl = binding list [@@deriving show { with_path = false }]
+
 let parse_and_print_line = prs_and_prnt_ln ~consume:Consume.All bindings_list show_bl
 let parse_line str = prs_ln ~consume:Consume.All bindings_list str

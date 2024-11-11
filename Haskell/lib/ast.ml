@@ -13,17 +13,18 @@ type 'a maybe =
   | Just of 'a (** e.g. [Just 5] *)
 [@@deriving show { with_path = false }]
 
-type functype = FuncT of tp * tp * tp list (** e.g. [Int -> Bool -> (Int,Bool)] *)
+type functype =
+  | FuncT of tp * tp * tp list (** e.g. [Integer-> Bool -> (Integer,Bool)] *)
 [@@deriving show { with_path = false }]
 
 (** explicit type indication*)
 and tp =
   | TUnit (** () *)
-  | TInt (** Int *)
+  | TInteger (** Integer *)
   | TBool (** Bool *)
-  | TreeParam of tp (** e.g. [{Int}] *)
-  | ListParam of tp (** e.g. [[Int]] *)
-  | TupleParams of tp * tp * tp list (** e.g. [(Int, Bool)] *)
+  | TreeParam of tp (** e.g. [{Integer}] *)
+  | ListParam of tp (** e.g. [[Integer]] *)
+  | TupleParams of tp * tp * tp list (** e.g. [(Integer, Bool)] *)
   | FunctionType of functype
 [@@deriving show { with_path = false }]
 
@@ -48,7 +49,7 @@ type binop =
 (** variable's / function's name*)
 type ident = Ident of string [@@deriving show { with_path = false }]
 
-(** e.g. [a@my_list@lst@(_:xs) :: [Int]] *)
+(** e.g. [(a@my_list@lst@(_:xs) :: [Integer]) :: [Bool]] *)
 type pattern = ident list * pat * tp list [@@deriving show { with_path = false }]
 
 and listpat =
@@ -97,7 +98,7 @@ and binding =
   (** e.g [x = let y = 12 in y * z where z = 5] *)
   | FunDef of ident * pattern * pattern list * bindingbody * binding list
   (** e.g [f x y = x + y + z where z = 2 ]*)
-  | Decl of pattern * tp (** e.g [f :: Int -> Int]*)
+  | Decl of pattern * tp (** e.g [f :: Integer -> Integer]*)
 [@@deriving show { with_path = false }]
 
 (** examples below are for function binding with due body *)
@@ -127,14 +128,8 @@ and expression =
   | BinTreeBld of binary_tree_bld
   | Case of expr * (pattern * bindingbody) * (pattern * bindingbody) list
   (** e.g [case l of (x:xs) -> x; [] -> 0] *)
-  | InnerBindings of binding * binding list * expr
-  (** e.g.
-      [let
-        x = 1
-        y = 2
-      in
-      x + y] *)
+  | InnerBindings of binding * binding list * expr (** e.g. [let x = 1; y = 2 in x + y] *)
 [@@deriving show { with_path = false }]
 
-(** e.g. [(x + 1) :: Int]*)
+(** e.g. [((x + 1) :: Integer  ) :: Bool]*)
 and expr = expression * tp list [@@deriving show { with_path = false }]
