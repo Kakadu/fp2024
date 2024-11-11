@@ -15,7 +15,7 @@ let int_e x = Const (Int_lt x)
 let bool_e x = Const (Bool_lt x)
 let unit_e = Const Unit_lt
 let string_e x = Const (String_lt x)
-let variable_e x = Variable (Ident x)
+let variable_e x = Variable (Ident (x, None))
 
 let gen_const =
   QCheck.Gen.(
@@ -40,16 +40,20 @@ let gen_varname =
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
-let gen_ident = QCheck.Gen.map (fun s -> Ident s) gen_varname
+let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
 let gen_variable = QCheck.Gen.map variable_e gen_varname
-let tuple_e l = Tuple l
-let un_e unop e = Unary_expr (unop, e)
 let gen_unop = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ])
+let tuple_e e1 e2 rest = Tuple (e1, e2, rest)
+let un_e unop e = Unary_expr (unop, e)
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
 let if_e i t e = If_then_else (i, t, e)
 let func_def args body = Function_def (args, body)
 let func_call f arg = Function_call (f, arg)
-let letin rec_flag ident args e inner_e = LetIn (rec_flag, ident, args, e, inner_e)
+let let_bind name args body = Let_bind (name, args, body)
+
+let letin rec_flag let_bind let_bind_list inner_e =
+  LetIn (rec_flag, let_bind, let_bind_list, inner_e)
+;;
 
 let gen_binop =
   QCheck.Gen.(
@@ -76,6 +80,10 @@ let gen_binop =
 
 let gen_rec_flag = QCheck.Gen.(oneof [ return Rec; return Nonrec ])
 
+let gen_let_bind gen =
+  QCheck.Gen.(map3 let_bind gen_ident (list_size (0 -- 15) gen_ident) gen)
+;;
+
 let gen_expr =
   QCheck.Gen.(
     sized
@@ -84,25 +92,29 @@ let gen_expr =
       | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
       | n ->
         frequency
-          [ 0, map tuple_e (list_size (2 -- 15) (self (n / 2)))
-          ; 1, map2 un_e gen_unop (self (n / 2))
-          ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
+          [ ( 0
+            , map3
+                tuple_e
+                (self (n / 2))
+                (self (n / 2))
+                (list_size (0 -- 15) (self (n / 2))) )
+          ; 0, map2 un_e gen_unop (self (n / 2))
+          ; 0, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
           ; ( 1
             , map3
                 if_e
                 (self (n / 2))
                 (self (n / 2))
                 (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
-          ; 0, map2 func_def (list gen_variable) (self (n / 2))
-          ; 1, map2 func_call gen_variable (self (n / 2))
+          ; 0, map2 func_def (list gen_ident) (self (n / 2))
+          ; 0, map2 func_call gen_variable (self (n / 2))
             (* TODO: make apply of arbitrary expr*)
-          ; ( 1
+          ; ( 0
             , map3
                 letin
                 gen_rec_flag
-                (map (fun i -> Some i) gen_ident)
-                (list gen_variable)
-              <*> self (n / 2)
+                (gen_let_bind (self (n / 2)))
+                (list_size (0 -- 15) (gen_let_bind (self (n / 2))))
               <*> self (n / 2) )
           ]))
 ;;
@@ -116,12 +128,25 @@ let shrink_lt =
   | String_lt x -> QCheck.Shrink.string x >|= string_e
 ;;
 
-let rec shrink_expr =
+let rec shrink_let_bind =
+  let open QCheck.Iter in
+  function
+  | Let_bind (name, args, e) ->
+    shrink_expr e
+    >|= (fun a' -> Let_bind (name, args, a'))
+    <+> (QCheck.Shrink.list args >|= fun a' -> Let_bind (name, a', e))
+
+and shrink_expr =
   let open QCheck.Iter in
   function
   | Const lt -> shrink_lt lt
   | Variable _ -> empty
-  | Tuple t -> QCheck.Shrink.list ~shrink:shrink_expr t >|= fun a' -> Tuple a'
+  | Tuple (e1, e2, rest) ->
+    shrink_expr e1
+    >|= (fun a' -> Tuple (a', e2, rest))
+    <+> shrink_expr e2
+    >|= (fun a' -> Tuple (e1, a', rest))
+    <+> (QCheck.Shrink.list ~shrink:shrink_expr rest >|= fun a' -> Tuple (e1, e2, a'))
   | Unary_expr (op, e) -> return e <+> shrink_expr e >|= fun a' -> un_e op a'
   | Bin_expr (op, e1, e2) ->
     of_list [ e1; e2 ]
@@ -132,30 +157,42 @@ let rec shrink_expr =
     shrink_expr i
     >|= (fun a' -> If_then_else (a', t, None))
     <+> (shrink_expr t >|= fun a' -> If_then_else (i, a', None))
-  | LetIn (rec_flag, ident, args, e, inner_e) ->
-    QCheck.Shrink.list ~shrink:shrink_expr args
-    >|= (fun a' -> LetIn (rec_flag, ident, a', e, inner_e))
-    <+> (shrink_expr e >|= fun a' -> LetIn (rec_flag, ident, args, a', inner_e))
-    <+> (shrink_expr inner_e >|= fun a' -> LetIn (rec_flag, ident, args, e, a'))
+  | LetIn (rec_flag, let_bind, let_bind_list, inner_e) ->
+    shrink_let_bind let_bind
+    >|= (fun a' -> LetIn (rec_flag, a', let_bind_list, inner_e))
+    <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
+         >|= fun a' -> LetIn (rec_flag, let_bind, a', inner_e))
+    <+> shrink_expr inner_e
+    >|= fun a' -> LetIn (rec_flag, let_bind, let_bind_list, a')
+  | Function_call (f, arg) ->
+    shrink_expr f
+    >|= (fun a' -> Function_call (a', arg))
+    <+> shrink_expr arg
+    >|= fun a' -> Function_call (f, a')
   | _ -> empty
 ;;
 
-let let_st rec_flag ident args body = Let (rec_flag, ident, args, body)
+let let_st rec_flag let_bind let_bind_list = Let (rec_flag, let_bind, let_bind_list)
 
 (* TODO: Active Pattern*)
 let gen_statement =
-  QCheck.Gen.(map3 let_st gen_rec_flag gen_ident (list gen_variable) <*> gen_expr)
+  QCheck.Gen.(
+    map3
+      let_st
+      gen_rec_flag
+      (gen_let_bind gen_expr)
+      (list_size (0 -- 15) (gen_let_bind gen_expr)))
 ;;
 
 (* TODO: Active Pattern *)
 let shrink_statement =
   let open QCheck.Iter in
   function
-  | Let (rec_flag, ident, args, expr) ->
-    shrink_expr expr
-    >|= (fun a' -> Let (rec_flag, ident, args, a'))
-    <+> (QCheck.Shrink.list ~shrink:shrink_expr args
-         >|= fun a' -> Let (rec_flag, ident, a', expr))
+  | Let (rec_flag, let_bind, let_bind_list) ->
+    shrink_let_bind let_bind
+    >|= (fun a' -> Let (rec_flag, a', let_bind_list))
+    <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
+         >|= fun a' -> Let (rec_flag, let_bind, a'))
   | _ -> empty
 ;;
 
@@ -174,7 +211,7 @@ let shrink_construction =
 let arbitrary_construction =
   QCheck.make
     gen_construction
-    ~print:(Format.asprintf "%a" print_construction)
+    ~print:(Format.asprintf "%a" pp_construction)
     ~shrink:shrink_construction
 ;;
 

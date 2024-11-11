@@ -39,7 +39,7 @@ let rec pp_pattern fmt = function
   | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
   | PTuple tuple -> fprintf fmt "TUPLE PAT WIP"
   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
-  | PVar (Ident name) -> fprintf fmt "%s " name
+  | PVar (Ident (name, _)) -> fprintf fmt "%s " name
   | Variant variants -> fprintf fmt "VARIANTS PAT WIP"
 
 and pp_expr fmt expr =
@@ -48,13 +48,14 @@ and pp_expr fmt expr =
   | Const (Bool_lt b) -> fprintf fmt "%b " b
   | Const (String_lt s) -> fprintf fmt "%S " s
   | Const Unit_lt -> fprintf fmt "() "
-  | List_expr (expr1, expr2) -> fprintf fmt "LIST WIP"
-  | Tuple t ->
+  | Cons_list (hd, tl) -> fprintf fmt "LIST WIP"
+  | Empty_list -> fprintf fmt "[] "
+  | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
-    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt t;
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
     fprintf fmt ")"
   | Match (value, patterns) -> fprintf fmt "MATCH WIP"
-  | Variable (Ident name) -> fprintf fmt "%s " name
+  | Variable (Ident (name, _)) -> fprintf fmt "%s " name
   | Unary_expr (op, expr) -> fprintf fmt "%a (%a)" pp_unary_op op pp_expr expr
   | Bin_expr (op, left, right) ->
     fprintf fmt "(%a) %a (%a)" pp_expr left pp_bin_op op pp_expr right
@@ -68,24 +69,46 @@ and pp_expr fmt expr =
     pp_args fmt args;
     fprintf fmt "-> %a " pp_expr body
   | Function_call (func, arg) -> fprintf fmt "%a %a" pp_expr func pp_expr arg
-  | LetIn (rec_flag, name, args, body, in_expr) ->
-    (fprintf fmt "let %a " pp_rec_flag rec_flag;
-     match name with
-     | Some (Ident ident) -> fprintf fmt "%s " ident
-     | None -> ());
-    pp_args fmt args;
-    fprintf fmt "= %a in %a " pp_expr body pp_expr in_expr
+  | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
+    fprintf fmt "let %a " pp_rec_flag rec_flag;
+    pp_let_bind fmt let_bind;
+    pp_print_list
+      ~pp_sep:(fun fmt () -> fprintf fmt "\n\nand ")
+      pp_let_bind
+      fmt
+      let_bind_list;
+    fprintf fmt "in\n";
+    fprintf fmt "%a " pp_expr in_expr
+  | Option e ->
+    (match e with
+     | None -> fprintf fmt "None "
+     | Some e -> fprintf fmt "Some (%a)" pp_expr e)
 
 and pp_args fmt args =
   let open Format in
-  pp_print_list ~pp_sep:pp_print_space pp_expr fmt args
+  pp_print_list
+    ~pp_sep:pp_print_space
+    (fun fmt name -> fprintf fmt "%s" name)
+    fmt
+    (List.map
+       (function
+         | Ident (s, _) -> s)
+       args)
+
+and pp_let_bind fmt = function
+  | Let_bind (Ident (name, _), args, body) ->
+    fprintf fmt "%s %a = %a " name pp_args args pp_expr body
 ;;
 
 let pp_statement fmt = function
-  | Let (rec_flag, Ident ident, args, body) ->
-    fprintf fmt "let %a %s " pp_rec_flag rec_flag ident;
-    pp_args fmt args;
-    fprintf fmt "= %a " pp_expr body
+  | Let (rec_flag, let_bind, let_bind_list) ->
+    fprintf fmt "let %a " pp_rec_flag rec_flag;
+    pp_let_bind fmt let_bind;
+    pp_print_list
+      ~pp_sep:(fun fmt () -> fprintf fmt "\n\nand ")
+      pp_let_bind
+      fmt
+      let_bind_list
   | ActivePattern (patterns, expr) -> fprintf fmt "Active pattern TODO"
 ;;
 

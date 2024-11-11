@@ -9,7 +9,7 @@ open Format
 let%expect_test "print Ast factorial" =
   let factorial =
     Function_def
-      ( [ Variable (Ident ("n", None)) ]
+      ( [ Ident ("n", None) ]
       , If_then_else
           ( Bin_expr
               ( Logical_or
@@ -27,7 +27,7 @@ let%expect_test "print Ast factorial" =
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Ident ("a", None), [], Const (Int_lt 10), []))
+    [ Statement (Let (Nonrec, Let_bind (Ident ("a", None), [], Const (Int_lt 10)), []))
     ; Expr factorial
     ; Expr (Function_call (factorial, Variable (Ident ("a", None))))
     ]
@@ -106,9 +106,9 @@ let%expect_test "print Ast factorial" =
 ;;
 
 let%expect_test "print Ast double func" =
-  let var = Variable (Ident ("n", None)) in
-  let args = [ var ] in
-  let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
+  let ident = Ident ("n", None) in
+  let args = [ ident ] in
+  let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), Variable ident) in
   let double = Function_def (args, binary_expr) in
   print_construction std_formatter @@ Expr double;
   [%expect
@@ -197,9 +197,7 @@ let%expect_test "print Ast of LetIn" =
     Expr
       (LetIn
          ( Nonrec
-         , Some (Ident ("x", None))
-         , []
-         , Const (Int_lt 5)
+         , Let_bind (Ident ("x", None), [], Const (Int_lt 5))
          , []
          , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
   in
@@ -226,7 +224,7 @@ let%expect_test "print Ast of match_expr" =
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
-  let match_expr = Match (Variable (Ident "x"), pattern_values) in
+  let match_expr = Match (Variable (Ident ("x", None)), pattern_values) in
   print_construction std_formatter (Expr match_expr);
   [%expect
     {|

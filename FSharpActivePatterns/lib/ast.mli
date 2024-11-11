@@ -61,19 +61,18 @@ type expr =
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Function_def of expr list * expr (** fun x y -> x + y *)
+  | Function_def of ident list * expr (** fun x y -> x + y *)
   | Function_call of expr * expr (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
-  | LetIn of is_recursive * ident option * expr list * expr * and_bind list * expr
-  (** [let f x y = x + y in f 3 4 and g = f-x in f (g 10 5) 2] *)
+  | LetIn of is_recursive * let_bind * let_bind list * expr
+  (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
 [@@deriving eq, show { with_path = false }]
 
-and and_bind = And_bind of ident * expr list * expr (** [and sum n m = n+m] *)
+and let_bind = Let_bind of ident * ident list * expr (** [and sum n m = n+m] *)
 
 type statement =
-  | Let of is_recursive * ident * expr list * expr * and_bind list
-  (** [let name = expr] *)
+  | Let of is_recursive * let_bind * let_bind list (** [let name = expr] *)
   | ActivePattern of ident list * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving eq, show { with_path = false }]

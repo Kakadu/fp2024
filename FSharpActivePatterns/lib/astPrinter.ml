@@ -39,11 +39,11 @@ let rec print_pattern indent fmt = function
      | Bool_lt b -> fprintf fmt "%sBool: %b\n" (String.make (indent + 2) '-') b
      | String_lt s -> fprintf fmt "%sString: %S\n" (String.make (indent + 2) '-') s
      | Unit_lt -> fprintf fmt "%sUnit\n" (String.make (indent + 2) '-'))
-  | PVar (Ident name) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
+  | PVar (Ident (name, _)) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
   | Variant variants ->
     fprintf fmt "%s| Variant:\n" (String.make indent '-');
     List.iter
-      (fun (Ident v) -> fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') v)
+      (fun (Ident (v, _)) -> fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') v)
       variants
 ;;
 
@@ -52,18 +52,35 @@ let print_unary_op indent fmt = function
   | Unary_not -> fprintf fmt "%s| Unary negative\n" (String.make indent '-')
 ;;
 
-let rec print_expr indent fmt expr =
+let tag_of_ident = function
+  | Ident (s, _) -> s
+;;
+
+let rec print_let_bind indent fmt = function
+  | Let_bind (name, args, body) ->
+    let name = tag_of_ident name in
+    let args = List.map tag_of_ident args in
+    fprintf fmt "%s| Let_bind:\n" (String.make indent '-');
+    fprintf fmt "%sNAME:\n" (String.make (indent + 4) ' ');
+    fprintf fmt "%s| %s\n" (String.make (indent + 2) '-') name;
+    fprintf fmt "%sARGS:\n" (String.make (indent + 4) ' ');
+    List.iter (fun arg -> fprintf fmt "%s| %s\n" (String.make (indent + 2) '-') arg) args;
+    fprintf fmt "%sBODY:\n" (String.make (indent + 4) ' ');
+    print_expr (indent + 2) fmt body
+
+and print_expr indent fmt expr =
   match expr with
   | Const (Int_lt i) -> fprintf fmt "%s| Const(Int: %d)\n" (String.make indent '-') i
   | Const (Bool_lt b) -> fprintf fmt "%s| Const(Bool: %b)\n" (String.make indent '-') b
   | Const (String_lt s) ->
     fprintf fmt "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> fprintf fmt "%s| Const(Unit)\n" (String.make indent '-')
-  | List_expr (expr1, expr2) ->
-    fprintf fmt "%s| List expr:\n" (String.make indent '-');
+  | Cons_list (expr1, expr2) ->
+    fprintf fmt "%s| Cons_list expr:\n" (String.make indent '-');
     print_expr (indent + 2) fmt expr1;
     print_expr (indent + 2) fmt expr2
-  | Tuple t -> List.iter (print_expr indent fmt) t
+  | Empty_list -> fprintf fmt "%s| Empty_list expr:\n" (String.make indent '-')
+  | Tuple (e1, e2, rest) -> List.iter (print_expr indent fmt) (e1 :: e2 :: rest)
   | Match (value, patterns) ->
     fprintf fmt "%s| Match:\n" (String.make indent '-');
     print_expr (indent + 2) fmt value;
@@ -74,7 +91,7 @@ let rec print_expr indent fmt expr =
         fprintf fmt "%s| Inner expr:\n" (String.make (indent + 2) '-');
         print_expr (indent + 4) fmt expr)
       patterns
-  | Variable (Ident name) ->
+  | Variable (Ident (name, _)) ->
     fprintf fmt "%s| Variable(%s)\n" (String.make indent '-') name
   | Unary_expr (op, expr) ->
     fprintf fmt "%s| Unary expr(\n" (String.make indent '-');
@@ -96,9 +113,10 @@ let rec print_expr indent fmt expr =
      | Some body -> print_expr (indent + 2) fmt body
      | None -> fprintf fmt "%s| No else body\n" (String.make (indent + 2) '-'))
   | Function_def (args, body) ->
+    let args = List.map tag_of_ident args in
     fprintf fmt "%s| Func:\n" (String.make indent '-');
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 4) fmt) args;
+    List.iter (fun arg -> fprintf fmt "%s %s\n" (String.make (indent + 2) '-') arg) args;
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body
   | Function_call (func, arg) ->
@@ -107,43 +125,42 @@ let rec print_expr indent fmt expr =
     print_expr (indent + 2) fmt func;
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) fmt arg
-  | LetIn (rec_flag, name, args, body, in_expr) ->
+  | LetIn (rec_flag, let_bind, let_bind_list, inner_e) ->
     fprintf
       fmt
-      "%s | LetIn %s %s =\n"
+      "%s | %s LetIn=\n"
       (String.make indent '-')
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "Rec")
-      (match name with
-       | Some (Ident n) -> n
-       | None -> "Anonymous");
-    fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 2) fmt) args;
-    fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) fmt body;
-    fprintf fmt "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) fmt in_expr
+       | Rec -> "Rec");
+    fprintf fmt "%sLet_binds\n" (String.make (indent + 2) ' ');
+    List.iter (print_let_bind (indent + 2) fmt) (let_bind :: let_bind_list);
+    fprintf fmt "%sINNER_EXPRESSION\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) fmt inner_e
+  | Option e ->
+    (match e with
+     | None -> fprintf fmt "%s| Option: None\n" (String.make indent '-')
+     | Some e ->
+       fprintf fmt "%s| Option: Some\n" (String.make indent '-');
+       print_expr (indent + 2) fmt e)
 ;;
 
 let print_statement indent fmt = function
-  | Let (rec_flag, Ident name, args, body) ->
+  | Let (rec_flag, let_bind, let_bind_list) ->
     fprintf
       fmt
-      "%s | Let %s %s =\n"
+      "%s | %s Let=\n"
       (String.make indent '-')
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "Rec")
-      name;
-    fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 2) fmt) args;
-    fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) fmt body
+       | Rec -> "Rec");
+    fprintf fmt "%sLet_binds\n" (String.make (indent + 2) ' ');
+    List.iter (print_let_bind (indent + 2) fmt) (let_bind :: let_bind_list)
   | ActivePattern (patterns, expr) ->
     fprintf fmt "%s| ActivePattern:\n" (String.make indent '-');
     List.iter
-      (fun (Ident param) -> fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') param)
+      (fun (Ident (param, _)) ->
+        fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') param)
       patterns;
     print_expr (indent + 2) fmt expr
 ;;
