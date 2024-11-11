@@ -1,4 +1,6 @@
-(* CFG grammar for OCaml https://askra.de/software/ocaml-doc/4.02/full-grammar.html#sec91 *)
+(* Copyright 2024, Victoria Lutsyuk *)
+
+(* SPDX-License-Identifier: MIT *)
 
 type id = string (* expression identificator *) [@@deriving show { with_path = false }]
 
