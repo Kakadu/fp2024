@@ -9,7 +9,17 @@ open Ast
 (*---------------------Check conditions---------------------*)
 
 let is_keyword = function
-  | "let" | "in" | "fun" | "rec" | "if" | "then" | "else" | "true" | "false" -> true
+  | "let"
+  | "in"
+  | "fun"
+  | "rec"
+  | "if"
+  | "then"
+  | "else"
+  | "true"
+  | "false"
+  | "Some"
+  | "None" -> true
   | _ -> false
 ;;
 
@@ -139,6 +149,12 @@ let pEconst = const >>| fun x -> Econst x
 let pEvar = varname >>| fun x -> Evar x
 let pEapp e = chain e (return (fun e1 e2 -> Efun_application (e1, e2)))
 
+let pEoption pexpr =
+  lift
+    (fun e -> Eoption e)
+    (pstoken "Some" *> pexpr >>| (fun e -> Some e) <|> (pstoken "None" >>| fun _ -> None))
+;;
+
 let pbranch pexpr =
   lift3
     (fun e1 e2 e3 -> Eif_then_else (e1, e2, e3))
@@ -150,7 +166,15 @@ let pbranch pexpr =
 let pexpr =
   fix (fun expr ->
     let atom_expr =
-      choice [ pEconst; pEvar; pparens expr; pElist expr; pEtuple expr; pEfun expr ]
+      choice
+        [ pEconst
+        ; pEvar
+        ; pparens expr
+        ; pElist expr
+        ; pEtuple expr
+        ; pEfun expr
+        ; pEoption expr
+        ]
     in
     let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in

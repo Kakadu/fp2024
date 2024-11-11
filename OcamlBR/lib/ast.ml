@@ -54,6 +54,7 @@ type expr =
   (* maybe later switch to id, or even now *)
   | Eif_then_else of expr * expr * expr option
   (* if E0 then E1 else E2; else expression is optional *)
+  | Eoption of expr option (* option type, Some e, None *)
   | Etuple of expr list (* expressions (E0, .., En), n >= 2 *)
   (* or expr * expr * expr list, cause invariant n >= 2 *)
   | Elist of expr list (* expressions [E0; ..; En], n >= 0 *)

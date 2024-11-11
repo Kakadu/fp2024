@@ -50,6 +50,8 @@ let rec pp_expr = function
   | Eif_then_else (e1, e2, None) -> "if " ^ pp_expr e1 ^ " then " ^ pp_expr e2
   | Eif_then_else (e1, e2, Some e3) ->
     "if " ^ pp_expr e1 ^ " then " ^ pp_expr e2 ^ " else " ^ pp_expr e3
+  | Eoption (Some e) -> "Some " ^ pp_expr e
+  | Eoption None -> "None "
   | Etuple es -> "(" ^ String.concat ~sep:", " (List.map ~f:pp_expr es) ^ ")"
   | Elist es -> "[" ^ String.concat ~sep:"; " (List.map ~f:pp_expr es) ^ "]"
   | Efun (patterns, e) ->
