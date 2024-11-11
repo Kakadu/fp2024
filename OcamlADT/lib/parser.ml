@@ -97,6 +97,7 @@ let pconststringexpr =
        (take_while1 (function
          | '"' -> false
          | _ -> true))
+  <* token "\""
 ;;
 
 let pconst = pconstcharexpr <|> pconstintexpr <|> pconststringexpr
