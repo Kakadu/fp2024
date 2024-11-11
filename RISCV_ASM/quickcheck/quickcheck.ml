@@ -369,7 +369,7 @@ let arbitrary_ast =
 ;;
 
 let run () =
-  QCheck_runner.run_tests
+  QCheck_base_runner.run_tests
     [ QCheck.(
         Test.make arbitrary_ast (fun ast ->
           Result.ok ast
@@ -379,7 +379,7 @@ let run () =
 
 let () =
   Arg.parse
-    [ "-seed", Arg.Int QCheck_runner.set_seed, " Set seed" ]
+    [ "-seed", Arg.Int QCheck_base_runner.set_seed, " Set seed" ]
     print_endline
     "Testing manual generator.";
   let _ : int = run () in
