@@ -17,7 +17,7 @@ type 'a maybe =
 (** explicit type indication*)
 type tp =
   | TUnit (** () *)
-  | TInt (** Int *)
+  | TInteger (** Integer *)
   | TBool (** Bool *)
   | TreeParam of tp (** e.g. [{Int}] *)
   | ListParam of tp (** e.g. [[Int]] *)
@@ -209,6 +209,7 @@ and expression =
   | BinTreeBld of binary_tree_bld
   | Case of expr * (pattern * bindingbody) * pattern_bindinbody_list
   (** e.g [case l of (x:xs) -> x; [] -> 0] *)
+<<<<<<< HEAD
   (* had to do such a manual generator because of where shadowing*)
   | InnerBindings of binding * (binding_list[@gen QCheck.Gen.return []]) * expr
   (** e.g. [let x = 1; y = 2 in x + y] *)
@@ -227,3 +228,10 @@ and expr_expr_list =
       list_size
         (return (Int.min 2 (n / 7)))
         (pair (gen_expr_sized (n / 7)) (gen_expr_sized (n / 7))))])
+=======
+  | InnerBindings of binding * binding list * expr (** e.g. [let x = 1; y = 2 in x + y] *)
+[@@deriving show { with_path = false }]
+
+(** e.g. [((x + 1) :: Integer  ) :: Bool]*)
+and expr = expression * tp list [@@deriving show { with_path = false }]
+>>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
