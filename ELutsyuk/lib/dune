@@ -1,5 +1,5 @@
 (library
- (name mini_ml_lib)
+ (name ast)
  (public_name ELutsyuk.Lib)
  (modules Ast)
  (libraries base angstrom)

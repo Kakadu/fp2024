@@ -1,6 +1,0 @@
-(executable
- (name gen_tests)
- (libraries mini_ml_lib)
- (modules GenTests)
- (instrumentation
-  (backend bisect_ppx)))

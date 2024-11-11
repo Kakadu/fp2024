@@ -1,7 +1,6 @@
 (executable
- (name examples)
- (public_name examples)
- (modules Examples)
- (libraries mini_ml_lib)
+ (name factorial_ast)
+ (public_name factorial_ast)
+ (libraries ast)
  (instrumentation
   (backend bisect_ppx)))
