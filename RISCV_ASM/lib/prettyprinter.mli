@@ -4,4 +4,5 @@
 
 open Ast
 
+val pp_ast : Format.formatter -> expr list -> unit
 val print_ast : expr list -> unit

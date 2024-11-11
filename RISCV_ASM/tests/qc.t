@@ -1,2 +1,3 @@
-  ../quickcheck/quickcheck.exe
+  $ ../quickcheck/quickcheck.exe
     1
+    

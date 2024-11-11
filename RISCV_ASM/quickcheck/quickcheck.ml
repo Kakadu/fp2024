@@ -4,6 +4,8 @@
 
 open QCheck.Gen
 open Riscv_asm_interpreter_lib.Ast
+open Riscv_asm_interpreter_lib.Parser
+open Riscv_asm_interpreter_lib.Prettyprinter
 
 let label_name_gen = map Char.chr (int_range (Char.code 'a') (Char.code 'z'))
 let label_gen = map (fun c -> String.make 1 c) label_name_gen
@@ -402,7 +404,14 @@ let arbitrary_ast =
          (Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt "\n") pp_expr))
 ;;
 
-let run () = QCheck_runner.run_tests [ QCheck.(Test.make arbitrary_ast (fun _ -> true)) ]
+let run () =
+  QCheck_runner.run_tests
+    [ QCheck.(
+        Test.make arbitrary_ast (fun ast ->
+          Result.ok ast
+          = Angstrom.parse_string ~consume:All parse_ast (Format.asprintf "%a" pp_ast ast)))
+    ]
+;;
 
 let () =
   print_endline "Testing manual generator.";
