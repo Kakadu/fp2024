@@ -40,8 +40,8 @@ let gen_varname =
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
-let gen_variable = QCheck.Gen.map variable_e gen_varname
 let gen_ident = QCheck.Gen.map (fun s -> Ident s) gen_varname
+let gen_variable = QCheck.Gen.map variable_e gen_varname
 let tuple_e l = Tuple l
 let un_e unop e = Unary_expr (unop, e)
 let gen_unop = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ])
@@ -73,6 +73,8 @@ let gen_binop =
          ])
 ;;
 
+let gen_rec_flag = QCheck.Gen.(oneof [ return Rec; return Nonrec ])
+
 let gen_expr =
   QCheck.Gen.(
     sized
@@ -94,7 +96,7 @@ let gen_expr =
           ; ( 1
             , map3
                 letin
-                (oneof [ return Rec; return Nonrec ])
+                gen_rec_flag
                 (map (fun i -> Some i) gen_ident)
                 (list gen_variable)
               <*> self (n / 2)
@@ -135,16 +137,29 @@ let rec shrink_expr =
   | _ -> empty
 ;;
 
-(* TODO *)
+let let_st rec_flag ident args body = Let (rec_flag, ident, args, body)
+
+(* TODO: Active Pattern*)
+let gen_statement =
+  QCheck.Gen.(map3 let_st gen_rec_flag gen_ident (list gen_variable) <*> gen_expr)
+;;
+
+(* TODO: Active Pattern *)
 let shrink_statement =
   let open QCheck.Iter in
   function
   | Let (rec_flag, ident, args, expr) ->
-    shrink_expr expr >|= fun a' -> Let (rec_flag, ident, args, a')
+    shrink_expr expr
+    >|= (fun a' -> Let (rec_flag, ident, args, a'))
+    <+> (QCheck.Shrink.list ~shrink:shrink_expr args
+         >|= fun a' -> Let (rec_flag, ident, a', expr))
   | _ -> empty
 ;;
 
-let gen_construction = QCheck.Gen.map (fun e -> Expr e) gen_expr
+let gen_construction =
+  QCheck.Gen.(
+    oneof [ (gen_expr >|= fun a' -> Expr a'); (gen_statement >|= fun a' -> Statement a') ])
+;;
 
 let shrink_construction =
   let open QCheck.Iter in
