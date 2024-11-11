@@ -263,4 +263,4 @@ let test expression_gen pat_gen =
        | Result.Error _ -> false)
 ;;
 
-QCheck_runner.run_tests [ test expression_gen pat_gen ]
+QCheck_base_runner.run_tests [ test expression_gen pat_gen ]
