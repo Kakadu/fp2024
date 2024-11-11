@@ -2,14 +2,13 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Angstrom
 open Base
 open Ast
 
 let pp_const = function
-  | Int i -> string_of_int i
+  | Int i -> Stdlib.string_of_int i
   | String s -> "\"" ^ s ^ "\""
-  | Bool b -> string_of_bool b
+  | Bool b -> Stdlib.string_of_bool b
   | Unit -> "()"
 ;;
 
@@ -70,5 +69,7 @@ let pp_structure_item (item : structure_item) : string =
 ;;
 
 let prpr_structure fmt structure =
-  List.iter ~f:(fun item -> Format.fprintf fmt "%s@." (pp_structure_item item)) structure
+  List.iter
+    ~f:(fun item -> Stdlib.Format.fprintf fmt "%s@." (pp_structure_item item))
+    structure
 ;;
