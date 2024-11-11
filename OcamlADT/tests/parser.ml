@@ -10,7 +10,8 @@ let test_programm str = print_endline (show_program (parse_str str))
 let%expect_test "empty program" =
   test_programm {|a;;a|};
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -26,7 +27,8 @@ let%expect_test "empty program" =
 let%expect_test "double semicolons" =
   test_programm {|(-) 27 5;;|};
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -34,7 +36,7 @@ let%expect_test "double semicolons" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 27, characters 2-30
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 28, characters 2-30
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -51,20 +53,28 @@ let%expect_test "(whitespaces)" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 43, characters 2-29
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 45, characters 2-29
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
 let%expect_test "negative int constant" =
   test_programm {|-1;;|};
-  [%expect {| [(Str_eval (Exp_constant (Const_integer -1)))] |}]
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "-"), ((Exp_constant (Const_integer 1)), []))))
+      ] |}]
 ;;
 
 (*good*)
 let%expect_test "positive int constant" =
   test_programm {|+1;;|};
-  [%expect {| [(Str_eval (Exp_constant (Const_integer 1)))] |}]
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "+"), ((Exp_constant (Const_integer 1)), []))))
+      ] |}]
 ;;
 
 (*good*)
@@ -82,13 +92,21 @@ let%expect_test "whitespace befor int constant" =
 (*good*)
 let%expect_test "negative zero" =
   test_programm {|-0;;|};
-  [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "-"), ((Exp_constant (Const_integer 0)), []))))
+      ] |}]
 ;;
 
 (*good*)
 let%expect_test "positive zero" =
   test_programm {|+0;;|};
-  [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "+"), ((Exp_constant (Const_integer 0)), []))))
+      ] |}]
 ;;
 
 (*good*)
@@ -110,7 +128,7 @@ let%expect_test "prefix minus" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 102, characters 2-31
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 120, characters 2-31
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -120,8 +138,12 @@ let%expect_test "substraction" =
   [%expect
     {|
     [(Str_eval
-        (Exp_apply ((Exp_constant (Const_integer 5)),
-           ((Exp_constant (Const_integer -11)), []))))
+        (Exp_apply ((Exp_ident "-"),
+           ((Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_integer 11)), [])),
+            [])
+           )))
       ] |}]
 ;;
 
@@ -174,11 +196,16 @@ let%expect_test "operators with different priorities" =
   [%expect
     {|
     [(Str_eval
-        (Exp_apply ((Exp_ident "*"),
+        (Exp_apply ((Exp_ident "-"),
            ((Exp_tuple
-               ((Exp_apply ((Exp_constant (Const_integer 5)),
-                   ((Exp_constant (Const_integer -5)), []))),
-                (Exp_constant (Const_integer 1)), [])),
+               ((Exp_constant (Const_integer 5)),
+                (Exp_apply ((Exp_ident "*"),
+                   ((Exp_tuple
+                       ((Exp_constant (Const_integer 5)),
+                        (Exp_constant (Const_integer 1)), [])),
+                    [])
+                   )),
+                [])),
             [])
            )))
       ] |}]
@@ -190,12 +217,15 @@ let%expect_test "operators with different priorities" =
   [%expect
     {|
     [(Str_eval
-        (Exp_apply ((Exp_ident "*"),
+        (Exp_apply ((Exp_ident "-"),
            ((Exp_tuple
-               ((Exp_constant (Const_integer 5)),
-                (Exp_apply ((Exp_constant (Const_integer 5)),
-                   ((Exp_constant (Const_integer -1)), []))),
-                [])),
+               ((Exp_apply ((Exp_ident "*"),
+                   ((Exp_tuple
+                       ((Exp_constant (Const_integer 5)),
+                        (Exp_constant (Const_integer 5)), [])),
+                    [])
+                   )),
+                (Exp_constant (Const_integer 1)), [])),
             [])
            )))
       ] |}]
@@ -211,8 +241,12 @@ let%expect_test "parenthesis with operators with different priorities" =
         (Exp_apply ((Exp_ident "*"),
            ((Exp_tuple
                ((Exp_constant (Const_integer 5)),
-                (Exp_apply ((Exp_constant (Const_integer 5)),
-                   ((Exp_constant (Const_integer -1)), []))),
+                (Exp_apply ((Exp_ident "-"),
+                   ((Exp_tuple
+                       ((Exp_constant (Const_integer 5)),
+                        (Exp_constant (Const_integer 1)), [])),
+                    [])
+                   )),
                 [])),
             [])
            )))
@@ -232,7 +266,7 @@ let%expect_test "parenthesis4" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
-  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 224, characters 2-25
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 258, characters 2-25
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -250,8 +284,12 @@ let%expect_test "parenthesis1" =
         (Exp_apply ((Exp_ident "*"),
            ((Exp_tuple
                ((Exp_constant (Const_integer 5)),
-                (Exp_apply ((Exp_constant (Const_integer 5)),
-                   ((Exp_constant (Const_integer -1)), []))),
+                (Exp_apply ((Exp_ident "-"),
+                   ((Exp_tuple
+                       ((Exp_constant (Const_integer 5)),
+                        (Exp_constant (Const_integer 1)), [])),
+                    [])
+                   )),
                 [])),
             [])
            )))
@@ -264,8 +302,12 @@ let%expect_test "parenthesis2" =
   [%expect
     {|
     [(Str_eval
-        (Exp_apply ((Exp_constant (Const_integer 5)),
-           ((Exp_constant (Const_integer -1)), []))))
+        (Exp_apply ((Exp_ident "-"),
+           ((Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_integer 1)), [])),
+            [])
+           )))
       ] |}]
 ;;
 
@@ -342,15 +384,8 @@ let%expect_test "apply without space" =
 
 let%expect_test "apply num to ident" =
   test_programm {|f (x-1);;|};
-  [%expect
-    {|
-    [(Str_eval
-        (Exp_apply ((Exp_ident "f"),
-           ((Exp_apply ((Exp_ident "x"), ((Exp_constant (Const_integer -1)), [])
-               )),
-            [])
-           )))
-      ] |}]
+  [%expect {|
+    [(Str_eval (Exp_apply ((Exp_ident "f"), ((Exp_ident "x-1"), []))))] |}]
 ;;
 
 let%expect_test "simple fun" =
@@ -376,15 +411,8 @@ let%expect_test "multi fun" =
 
 let%expect_test "apply and subtraction" =
   test_programm {|f (x-1);;|};
-  [%expect
-    {|
-    [(Str_eval
-        (Exp_apply ((Exp_ident "f"),
-           ((Exp_apply ((Exp_ident "x"), ((Exp_constant (Const_integer -1)), [])
-               )),
-            [])
-           )))
-      ] |}]
+  [%expect {|
+    [(Str_eval (Exp_apply ((Exp_ident "f"), ((Exp_ident "x-1"), []))))] |}]
 ;;
 
 let%expect_test "exprlet and" =
@@ -470,12 +498,7 @@ let%expect_test "let and apply v2" =
         ({ pat = (Pat_var "fact");
            expr =
            (Exp_fun (((Pat_var "x"), []),
-              (Exp_apply ((Exp_ident "fact"),
-                 ((Exp_apply ((Exp_ident "x"),
-                     ((Exp_constant (Const_integer -1)), []))),
-                  [])
-                 ))
-              ))
+              (Exp_apply ((Exp_ident "fact"), ((Exp_ident "x-1"), [])))))
            },
          [])
         ))
@@ -548,10 +571,7 @@ let%expect_test "factorial" =
                           ((Exp_tuple
                               ((Exp_ident "x"),
                                (Exp_apply ((Exp_ident "fact"),
-                                  ((Exp_apply ((Exp_ident "X"),
-                                      ((Exp_constant (Const_integer -1)), []))),
-                                   [])
-                                  )),
+                                  ((Exp_ident "X-1"), []))),
                                [])),
                            [])
                           )))

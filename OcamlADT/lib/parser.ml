@@ -62,7 +62,7 @@ let pletters =
 ;;
 
 let ptowhitespace = function
-  | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
+  | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '+' | '-' | '/' | '*' -> true
   | _ -> false
 ;;
 
@@ -88,16 +88,8 @@ let pident =
    ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░
 *)
 let pconstintexpr =
-  let parse_sign = choice [ token "+"; token "-"; token "" ] in
-  let parse_number =
-    take_while1 (function
-      | '0' .. '9' -> true
-      | _ -> false)
-  in
-  lift2
-    (fun sign n -> Exp_constant (Const_integer (int_of_string (sign ^ n))))
-    parse_sign
-    parse_number
+  let* number = int_of_string <$> take_while1 is_digit in
+  return @@ Exp_constant (Const_integer number)
 ;;
 
 let pconstcharexpr =
@@ -107,9 +99,6 @@ let pconstcharexpr =
   return (Exp_constant (Const_char c))
 ;;
 
-let pconst = 
-  pconstcharexpr <|> pconstintexpr <|> pconststringexpr
-
 let pconststringexpr =
   token "\""
   *> lift
@@ -118,6 +107,8 @@ let pconststringexpr =
          | '"' -> false
          | _ -> true))
 ;;
+
+let pconst = pconstcharexpr <|> pconstintexpr <|> pconststringexpr
 
 (*                   Arithm utils + ident parser *)
 let lchain p op =
@@ -171,12 +162,9 @@ let pvar =
 
 let ppattern =
   fix (fun ppattern ->
-  let parenth = pparenth ppattern in
-  let simplevar = choice [ pany; pvar ] <|> parenth in
-  ptuplepat simplevar <|> simplevar
-  )
-
-  
+    let parenth = pparenth ppattern in
+    let simplevar = choice [ pany; pvar ] <|> parenth in
+    ptuplepat simplevar <|> simplevar)
 ;;
 
 (*
@@ -275,9 +263,19 @@ let pfunexpr pexpr =
     (token "->" *> pass_ws *> pexpr)
 ;;
 
+let rec parseprefop pexpr pop =
+  (let* head = pop in
+   let* tail = parseprefop pexpr pop in
+   return @@ Exp_apply (head, (tail, [])))
+  <|> pexpr
+;;
+
+(* let* token = choice [token "+"; token "-"] in
+  let* expr = pass_ws *> pexpr in
+  return @@ Exp_apply(Exp_ident(token),(expr,[])) *)
+
 let parsebinop binoptoken =
-  pass_ws
-  *> token binoptoken
+  token binoptoken
   *> return (fun e1 e2 -> Exp_apply (Exp_ident binoptoken, (Exp_tuple (e1, e2, []), [])))
 ;;
 
@@ -317,7 +315,11 @@ let pexpr =
            ]
     in
     let papply = debug_parser "apply" (papplyexpr poprnd) in
-    let pmuldiv = debug_parser "mul_div" (lchain papply (pmul <|> pdiv)) in
+    let prefop =
+      parseprefop papply (choice [ token "+"; token "-" ] >>| fun a -> Exp_ident a)
+      <|> papply
+    in
+    let pmuldiv = debug_parser "mul_div" (lchain prefop (pmul <|> pdiv)) in
     let paddsub = debug_parser "add_sub" (lchain pmuldiv (padd <|> psub)) in
     let pcompare = debug_parser "compare" (lchain paddsub pcompops) in
     let plogop = rchain pcompare plogops in
@@ -325,7 +327,7 @@ let pexpr =
 ;;
 
 (*
-   ░▒▓███████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓████████▓▒░
+   |░▒▓███████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓████████▓▒░
    ░▒▓█▓▒░         ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
    ░▒▓█▓▒░         ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
    |░▒▓██████▓▒░   ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓██████▓▒░
