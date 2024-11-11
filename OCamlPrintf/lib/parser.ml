@@ -313,15 +313,12 @@ let parse_expression =
         ; parse_exp_fun parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
-        ; parse_exp_construct parse_full_exp
         ]
     in
-    choice
-      [ parse_exp_tuple parse_exp
-      ; parse_exp_apply parse_exp
-      ; parse_exp_sequence parse_exp
-      ; parse_exp
-      ])
+    let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_sequence parse_exp in
+    let parse_exp = parse_exp_apply parse_exp in
+    parse_exp_tuple parse_exp <|> parse_exp)
 ;;
 
 (* ==================== Structure ==================== *)
