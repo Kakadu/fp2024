@@ -5,4 +5,7 @@
 open Ast
 open Parser_utility
 
+val is_keyword : string -> bool
+val pattern_parser : pattern parser
+val expr : expression parser
 val program_parser : program parser

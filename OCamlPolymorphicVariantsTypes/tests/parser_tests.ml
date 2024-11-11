@@ -10,6 +10,23 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|~+false;;|};
+  [%expect {|
+    [(EvalItem (Unary (Positive, (Const (BoolLiteral false)))))] |}];
+  test_program {|(1) x y;;|};
+  [%expect
+    {|
+    [(EvalItem (Apply ((Const (IntLiteral 1)), [(Variable "x"); (Variable "y")])))
+      ] |}];
+  test_program {|(true) x y;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Apply ((Const (BoolLiteral true)), [(Variable "x"); (Variable "y")])))
+      ] |}];
+  test_program {|fun '_7 -> '_7;;|};
+  [%expect {|
+    ParseError(line=1 pos=3): Not found patterns for lambda definition |}];
   test_program {|if f x then g 10;;|};
   [%expect
     {|

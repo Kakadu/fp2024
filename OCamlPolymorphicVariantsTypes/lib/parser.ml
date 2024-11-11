@@ -172,6 +172,7 @@ and basic_expr inapply state =
 and unary_expr inapply state =
   let helper =
     symbol '+' *> basic_expr inapply
+    >>| (fun e -> Unary (Positive, e))
     <|> (symbol '-' *> basic_expr inapply >>| fun e -> Unary (Negate, e))
   in
   (skip_ws *> (helper <|> symbol '~' *> helper)) state

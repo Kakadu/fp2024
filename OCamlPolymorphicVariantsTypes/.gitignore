@@ -5,3 +5,4 @@ _coverage
 /esy.lock
 /.melange.eobjs
 /.testformatting
+/tests.log
