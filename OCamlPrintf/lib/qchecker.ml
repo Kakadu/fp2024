@@ -5,6 +5,81 @@
 open Ast
 open Pprinter
 
+module ShrinkQCheck = struct
+  open QCheck.Iter
+  open QCheck.Shrink
+
+  let rec shrink_pattern = function
+    | Pat_any -> empty
+    | Pat_var id -> string id >|= fun id' -> Pat_var id'
+    | Pat_constant const ->
+      (match const with
+       | Const_integer i -> int i >|= fun i' -> Pat_constant (Const_integer i')
+       | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
+       | Const_string str -> string str >|= fun str' -> Pat_constant (Const_string str'))
+    | Pat_tuple pat_list ->
+      list ~shrink:shrink_pattern pat_list >|= fun pat_list' -> Pat_tuple pat_list'
+    | Pat_construct (_, None) -> empty
+    | Pat_construct (id, Some pat) ->
+      shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat')
+  ;;
+
+  let rec shrink_expression = function
+    | Exp_ident id -> string id >|= fun id' -> Exp_ident id'
+    | Exp_constant const ->
+      (match const with
+       | Const_integer i -> int i >|= fun i' -> Exp_constant (Const_integer i')
+       | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
+       | Const_string str -> string str >|= fun str' -> Exp_constant (Const_string str'))
+    | Exp_let (rec_flag, value_binding_list, exp) -> empty
+    | Exp_fun (pat_list, exp) ->
+      list ~shrink:shrink_pattern pat_list
+      >|= (fun pat_list' -> Exp_fun (pat_list', exp))
+      <+> (shrink_expression exp >|= fun exp' -> Exp_fun (pat_list, exp'))
+    | Exp_apply (exp, exp_list) ->
+      list ~shrink:shrink_expression exp_list
+      >|= (fun exp_list' -> Exp_apply (exp, exp_list'))
+      <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', exp_list))
+    | Exp_match (exp, case_list) -> empty
+    | Exp_tuple exp_list ->
+      list ~shrink:shrink_expression exp_list >|= fun exp_list' -> Exp_tuple exp_list'
+    | Exp_construct (_, None) -> empty
+    | Exp_construct (id, Some exp) ->
+      shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp')
+    | Exp_ifthenelse (if_exp, then_exp, None) ->
+      of_list [ if_exp; then_exp ]
+      <+> (shrink_expression if_exp
+           >|= fun if_exp' -> Exp_ifthenelse (if_exp', then_exp, None))
+      <+> (shrink_expression then_exp
+           >|= fun then_exp' -> Exp_ifthenelse (if_exp, then_exp', None))
+    | Exp_ifthenelse (if_exp, then_exp, Some else_exp) ->
+      of_list [ if_exp; then_exp; else_exp ]
+      <+> (shrink_expression if_exp
+           >|= fun if_exp' -> Exp_ifthenelse (if_exp', then_exp, Some else_exp))
+      <+> (shrink_expression then_exp
+           >|= fun then_exp' -> Exp_ifthenelse (if_exp, then_exp', Some else_exp))
+      <+> (shrink_expression else_exp
+           >|= fun else_exp' -> Exp_ifthenelse (if_exp, then_exp, Some else_exp'))
+    | Exp_sequence (exp1, exp2) ->
+      of_list [ exp1; exp2 ]
+      <+> (shrink_expression exp1 >|= fun exp1' -> Exp_sequence (exp1', exp2))
+      <+> (shrink_expression exp2 >|= fun exp2' -> Exp_sequence (exp1, exp2'))
+  ;;
+
+  let shrink_value_binding =
+    map2 (fun pat exp -> { pat; exp }) shrink_pattern shrink_expression
+  ;;
+
+  let shrink_structure_item = function
+    | Struct_eval exp -> shrink_expression exp >|= fun exp' -> Struct_eval exp'
+    | Struct_value (rec_flag, value_binding_list) ->
+      list ~shrink:shrink_value_binding value_binding_list
+      >|= fun value_binding_list' -> Struct_value (rec_flag, value_binding_list')
+  ;;
+
+  let shrink_structure items = list ~shrink:shrink_structure_item items
+end
+
 (* Only for debug *)
 let coefficient = 50
 
@@ -150,7 +225,10 @@ module TestQCheck = struct
   let gen_structure = list_size (int_range 1 1) gen_structure_item
 
   let arbitrary_lam_manual =
-    QCheck.make gen_structure ~print:(Format.asprintf "%a" pp_structure)
+    QCheck.make
+      gen_structure
+      ~print:(Format.asprintf "%a" pp_structure)
+      ~shrink:ShrinkQCheck.shrink_structure
   ;;
 
   let run_manual () =
