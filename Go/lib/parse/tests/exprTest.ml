@@ -450,7 +450,8 @@ let%expect_test "channel recieve test" =
 
 let%expect_test "channel recieve with unop test" =
   pp pp_expr pexpr "-<-c";
-  [%expect {|
+  [%expect
+    {|
     (Expr_un_oper (Unary_minus, (Expr_un_oper (Unary_recieve, (Expr_ident "c")))
        ))|}]
 ;;
@@ -467,7 +468,8 @@ let%expect_test "channel recieve with binop test" =
 
 let%expect_test "channel neseted recieve test" =
   pp pp_expr pexpr "<-<-<-c";
-  [%expect {|
+  [%expect
+    {|
     (Expr_un_oper (Unary_recieve,
        (Expr_un_oper (Unary_recieve,
           (Expr_un_oper (Unary_recieve, (Expr_ident "c")))))

@@ -69,7 +69,7 @@ let%expect_test "incr stmt with ws_line" =
 
 let%expect_test "incr stmt with blank ident" =
   pp pp_stmt pstmt {|_++|};
-  [%expect {| : Incorrect statement |}]
+  [%expect {| (Stmt_incr "_") |}]
 ;;
 
 let%expect_test "decr stmt" =
@@ -84,7 +84,7 @@ let%expect_test "decr stmt with ws_line" =
 
 let%expect_test "decr stmt with blank ident" =
   pp pp_stmt pstmt {|_--|};
-  [%expect {| : Incorrect statement |}]
+  [%expect {| (Stmt_decr "_") |}]
 ;;
 
 (********** return **********)
@@ -326,7 +326,8 @@ let%expect_test "stmt long mult var decl with type" =
 
 let%expect_test "stmt long mult var decl with type" =
   pp pp_stmt pstmt {|var a, b, c [2]int = [2]int{1, 2}, [2]int{}, [2]int{10, 20}|};
-  [%expect{|
+  [%expect
+    {|
     (Stmt_long_var_decl
        (Long_decl_mult_init ((Some (Type_array (2, Type_int))),
           [("a",
@@ -651,7 +652,8 @@ let%expect_test "stmt range without idents" =
 
 let%expect_test "stmt range with const array" =
   pp pp_stmt pstmt {|for i, elem := range [3]int{1, 2, 3} {}|};
-  [%expect{|
+  [%expect
+    {|
     (Stmt_range
        Range_decl {index = "i"; element = (Some "elem");
          array =
