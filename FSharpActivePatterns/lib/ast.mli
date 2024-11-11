@@ -52,7 +52,8 @@ type is_recursive =
 type expr =
   | Const of literal (** [Int], [Bool], [String], [Unit], [Null] *)
   | Tuple of expr * expr * expr list (** [(1, "Hello world", true)] *)
-  | List_expr of expr * expr
+  | Empty_list (** [] *)
+  | Cons_list of expr * expr
   (** {[
         [ 1; 2; 3 ]
       ]} *)

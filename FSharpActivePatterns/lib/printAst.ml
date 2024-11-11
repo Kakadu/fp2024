@@ -64,10 +64,15 @@ let rec print_expr indent expr =
   | Const (Bool_lt b) -> printf "%b " b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
-  | List_expr (expr1, expr2) ->
-    printf "%s| List expr:\n" (String.make indent '-');
+  | Empty_list -> print_list indent Empty_list
+  | Cons_list (expr1, expr2) ->
+    printf "[";
     print_expr (indent + 2) expr1;
-    print_expr (indent + 2) expr2
+    if expr2 <> Empty_list then begin
+      printf "; ";
+      print_list indent expr2
+    end;
+      printf "]"
   | Tuple (fst, snd, tail) ->
     printf "(";
     print_expr (indent + 2) fst;
@@ -156,6 +161,17 @@ and print_and (And_bind (Ident (name, var_type), args, body)) =
   List.iter (fun arg -> print_expr 0 arg) args;
   printf "=\n";
   print_expr 6 body
+
+and print_list indent = function
+  | Empty_list -> 
+      printf "[]"
+  | Cons_list (head, Empty_list) ->
+      print_expr indent head
+  | Cons_list (head, tail) ->
+      print_expr indent head;
+      printf "; ";
+      print_list indent tail
+  | _ -> printf ""
 ;;
 
 let print_statement indent = function
