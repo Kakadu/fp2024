@@ -3,5 +3,5 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 module TestQCheck : sig
-  val run_manual : unit -> int
+  val run_manual : unit -> unit
 end

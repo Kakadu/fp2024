@@ -2,7 +2,7 @@
  (name ocaml_printf_lib)
  (public_name OCamlPrintf.Lib)
  (modules Ast Parser Pprinter Qchecker)
- (libraries base angstrom qcheck)
+ (libraries base angstrom qcheck-core)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation

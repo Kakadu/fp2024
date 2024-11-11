@@ -28,7 +28,7 @@
   dune
   base
   angstrom
-  qcheck
+  qcheck-core
   (ppx_inline_test :with-test)
   ppx_deriving
   ppx_expect
