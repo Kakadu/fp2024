@@ -230,8 +230,7 @@ let arbitrary_structure_manual =
 ;;
 
 let run_manual () =
-  QCheck.Test.check_exn(
-    Test.make arbitrary_structure_manual (fun structure ->
-        Result.ok structure = parse_expr (Format.asprintf "%a" prpr_structure structure))
-  )
+  QCheck.Test.check_exn
+    (Test.make arbitrary_structure_manual (fun structure ->
+       Result.ok structure = parse_expr (Format.asprintf "%a" prpr_structure structure)))
 ;;
