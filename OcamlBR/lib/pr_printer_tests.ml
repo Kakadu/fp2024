@@ -10,7 +10,7 @@ open Pr_printer
 let parse str =
   match parse_expr str with
   | Ok structure ->
-    Stdlib.print_endline (Format.asprintf "%a" prpr_structure structure);
+    Stdlib.print_endline (Stdlib.Format.asprintf "%a" prpr_structure structure);
     Stdlib.print_endline (show_structure structure)
   | Error _ -> Stdlib.print_endline "Parsing failed"
 ;;
