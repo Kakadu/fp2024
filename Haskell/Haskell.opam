@@ -16,7 +16,7 @@ license: "MIT"
 homepage: "https://github.com/TerrMen/Haskell"
 bug-reports: "https://github.com/TerrMen/Haskell"
 depends: [
-  "qcheck"
+  "qcheck-core"
   "zarith"
   "dune" {>= "3.7"}
   "angstrom"
