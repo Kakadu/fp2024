@@ -25,6 +25,7 @@
   "An interpreter for Haskell language with standard types and lazy evaluations")
  (version 0.1)
  (depends
+  qcheck
   zarith
   dune
   angstrom

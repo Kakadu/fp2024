@@ -9,24 +9,6 @@ let pp_list sep pp_item =
   Format.pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf sep) pp_item
 ;;
 
-let wrap_into fmt left right ppf pp_item =
-  fprintf fmt "%s" left;
-  ppf fmt pp_item;
-  fprintf fmt "%s" right
-;;
-
-let pp_condition_branch fmt (condition, branch) =
-  pp_expr fmt condition;
-  fprintf fmt "%s" " = ";
-  pp_expr fmt branch
-;;
-
-let pp_case_branch fmt (case, branch) =
-  pp_pattern fmt case;
-  fprintf fmt "%s" " -> ";
-  pp_bindingbody fmt branch
-;;
-
 let rec pp_brackets fmt = function
   | [] -> ()
   | _ :: t ->
@@ -50,12 +32,6 @@ let%test "pp Integer" =
 let%test "pp const Bool" = asprintf "%a" pp_const (Bool true) = "True"
 let%test "pp const Unit" = asprintf "%a" pp_const Unit = "()"
 
-let pp_maybe fmt = function
-  (*TODO*)
-  | Nothing -> fprintf fmt "%s" "Nothing"
-  | Just x -> fprintf fmt "%s" x
-;;
-
 let rec pp_functype fmt (FuncT (first, second, list)) =
   pp_tp fmt first;
   fprintf fmt "%s" " -> ";
@@ -65,6 +41,11 @@ let rec pp_functype fmt (FuncT (first, second, list)) =
   | _ ->
     fprintf fmt " -> ";
     fprintf fmt "%a" (pp_list " -> " pp_tp) list
+
+and wrap_into fmt left right ppf pp_item =
+  fprintf fmt "%s" left;
+  ppf fmt pp_item;
+  fprintf fmt "%s" right
 
 and pp_tp fmt = function
   | TUnit -> fprintf fmt "%s" "()"
@@ -159,11 +140,11 @@ let rec pp_pattern fmt ((list, pat, tp_list) : pattern) =
 
 and pp_listpat fmt = function
   | PCons (first, second) ->
-    fprintf fmt "%s" "[";
+    fprintf fmt "%s" "(";
     pp_pattern fmt first;
     fprintf fmt "%s" ":";
     pp_pattern fmt second;
-    fprintf fmt "%s" "]"
+    fprintf fmt "%s" ")"
   | PEnum list -> fprintf fmt "[%a]" (pp_list ", " pp_pattern) list
 
 and pp_treepat fmt = function
@@ -194,8 +175,11 @@ and pp_pat fmt = function
     pp_pattern fmt first;
     fprintf fmt "%s" ", ";
     pp_pattern fmt second;
-    fprintf fmt "%s" ", ";
-    fprintf fmt "%a" (pp_list ", " pp_pattern) list;
+    (match list with
+     | [] -> ()
+     | _ ->
+       fprintf fmt "%s" ", ";
+       fprintf fmt "%a" (pp_list ", " pp_pattern) list);
     fprintf fmt "%s" ")"
   | PMaybe pattern ->
     (match pattern with
@@ -213,7 +197,7 @@ let%test "pp listpat PCons" =
     "%a"
     pp_listpat
     (PCons (([], PIdentificator (Ident "x"), []), ([], PIdentificator (Ident "xs"), [])))
-  = "[(x):(xs)]"
+  = "((x):(xs))"
 ;;
 
 let%test "pp listpat PEnum" =
@@ -264,7 +248,7 @@ let%test "pp pat PList" =
     pp_pat
     (PList
        (PCons (([], PIdentificator (Ident "x"), []), ([], PIdentificator (Ident "xs"), []))))
-  = "[(x):(xs)]"
+  = "((x):(xs))"
 ;;
 
 let%test "pp pat PTuple" =
@@ -325,6 +309,7 @@ let rec pp_comprehension fmt = function
 
 and pp_ordinarylistbld fmt = function
   | ComprehensionList (expr, comprehension, list) ->
+    fprintf fmt "%s" "[";
     pp_expr fmt expr;
     fprintf fmt "%s" " | ";
     pp_comprehension fmt comprehension;
@@ -332,7 +317,8 @@ and pp_ordinarylistbld fmt = function
      | [] -> ()
      | _ ->
        fprintf fmt "%s" ", ";
-       fprintf fmt "%a" (pp_list ", " pp_comprehension) list)
+       fprintf fmt "%a" (pp_list ", " pp_comprehension) list);
+    fprintf fmt "%s" "]"
   | IncomprehensionlList list -> fprintf fmt "[%a]" (pp_list ", " pp_expr) list
 
 and pp_listbld fmt = function
@@ -354,7 +340,9 @@ and pp_listbld fmt = function
 and pp_binding fmt = function
   | VarsDef (pattern, bindingbody, list) ->
     pp_pattern fmt pattern;
-    fprintf fmt " = ";
+    (match bindingbody with
+     | Guards _ -> ()
+     | OrdBody _ -> fprintf fmt " = ");
     pp_bindingbody fmt bindingbody;
     (match list with
      | [] -> ()
@@ -370,7 +358,9 @@ and pp_binding fmt = function
      | _ ->
        fprintf fmt "%s" " ";
        fprintf fmt "%a" (pp_list " " pp_pattern) parameters_list);
-    fprintf fmt "%s" " = ";
+    (match bindingbody with
+     | OrdBody _ -> fprintf fmt "%s" " = "
+     | _ -> fprintf fmt "%s" " ");
     pp_bindingbody fmt bindingbody;
     (match binding_list with
      | [] -> ()
@@ -382,12 +372,18 @@ and pp_binding fmt = function
     fprintf fmt "%s" " :: ";
     pp_tp fmt tp
 
+and pp_condition_branch sep fmt (condition, branch) =
+  pp_expr fmt condition;
+  fprintf fmt "%s" sep;
+  pp_expr fmt branch
+
 and pp_bindingbody fmt = function
   | Guards ((condition, branch), list) ->
-    pp_condition_branch fmt (condition, branch);
+    fprintf fmt "%s" "|";
+    pp_condition_branch " = " fmt (condition, branch);
     (match list with
      | [] -> ()
-     | _ -> fprintf fmt "%a" (pp_list " | " pp_condition_branch) list)
+     | _ -> fprintf fmt "%a" (pp_list " | " (pp_condition_branch " = ")) list)
   | OrdBody expr -> pp_expr fmt expr
 
 and pp_binary_tree_bld fmt = function
@@ -400,6 +396,19 @@ and pp_binary_tree_bld fmt = function
     fprintf fmt "%s" "; ";
     pp_expr fmt right_son;
     fprintf fmt "%s" ")"
+
+and pp_case_branch fmt (case, branch) =
+  pp_pattern fmt case;
+  match branch with
+  | OrdBody _ ->
+    fprintf fmt "%s" " -> ";
+    pp_bindingbody fmt branch
+  | Guards ((condition, branch), list) ->
+    fprintf fmt "%s" "|";
+    pp_condition_branch " -> " fmt (condition, branch);
+    (match list with
+     | [] -> ()
+     | _ -> fprintf fmt "%a" (pp_list " | " (pp_condition_branch " -> ")) list)
 
 and pp_expression fmt = function
   | Const const -> pp_const fmt const

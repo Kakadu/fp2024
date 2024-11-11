@@ -1,10 +1,13 @@
 (library
  (name haskell_lib)
  (public_name Haskell.Lib)
- (libraries angstrom zarith)
+ (libraries angstrom zarith qcheck)
  (inline_tests)
- (modules Parser Ast Integer Pprintast)
+ (modules Parser Ast Integer Pprintast Qcheck)
  (preprocess
   (pps ppx_deriving.show ppx_inline_test ppx_expect))
  (instrumentation
   (backend bisect_ppx)))
+
+(cram
+ (deps ./qcheck.exe))
