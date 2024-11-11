@@ -48,8 +48,11 @@ and pp_expr fmt expr =
   | Const (Bool_lt b) -> fprintf fmt "%b " b
   | Const (String_lt s) -> fprintf fmt "%S " s
   | Const Unit_lt -> fprintf fmt "() "
-  | List_expr (expr1, expr2) -> fprintf fmt "[%a; %a]" pp_expr expr1 pp_expr expr2
-  | Tuple t -> fprintf fmt "TUPLE WIP"
+  | List_expr (expr1, expr2) -> fprintf fmt "LIST WIP"
+  | Tuple t ->
+    fprintf fmt "(";
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt t;
+    fprintf fmt ")"
   | Match (value, patterns) -> fprintf fmt "MATCH WIP"
   | Variable (Ident name) -> fprintf fmt "%s " name
   | Unary_expr (op, expr) -> fprintf fmt "%a (%a)" pp_unary_op op pp_expr expr
