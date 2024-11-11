@@ -2,7 +2,7 @@
  (name OCamlBR)
  (public_name OcamlBR)
  (modules Ast Parser Parser_tests Pr_printer Pr_printer_tests Qcheck)
- (libraries base angstrom qcheck)
+ (libraries base angstrom qcheck-core)
  (instrumentation
   (backend bisect_ppx))
  (preprocess
@@ -13,4 +13,4 @@
  (name run_qcheck)
  (public_name run_qcheck)
  (modules run_qcheck)
- (libraries qcheck OcamlBR))
+ (libraries OcamlBR))
