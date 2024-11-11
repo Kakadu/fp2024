@@ -33,7 +33,6 @@
   (odoc :with-doc)
   (ocamlformat :build)
   qcheck
-  ppx_deriving_qcheck
   ; base
   ; After adding dependencies to 'dune' files and the same dependecies here too
   ))
