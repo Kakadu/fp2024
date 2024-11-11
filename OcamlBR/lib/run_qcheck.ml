@@ -6,6 +6,6 @@ open OCamlBR.Qcheck
 
 let () =
   print_endline "Testing manual generator.";
-  let _ : int = run_manual () in
+  let _ = run_manual () in
   ()
 ;;
