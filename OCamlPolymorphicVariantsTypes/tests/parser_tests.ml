@@ -10,9 +10,35 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|
+  let y = 10;;
+  let g x = x + y;;
+  |};
+  [%expect
+    {|
+    [(DefineItem (Nonrecursive, [((PVar "y"), (Const (IntLiteral 10)))]));
+      (DefineItem
+         (Nonrecursive,
+          [((PVar "g"),
+            (Lambda ([(PVar "x")], (Binary ((Variable "x"), Add, (Variable "y")))
+               )))
+            ]))
+      ] |}];
+  test_program {|let y = ;;|};
+  [%expect {|
+    ParseError(line=1 pos=6): Not found expression of let-definition |}];
+  (* TODO: Add printing of all errors, not also first error *)
+  test_program {|
+  let y = ;;
+  let f y = fun x -> x / y;;
+  (y, f y,);;
+  |};
+  [%expect {|
+    ParseError(line=2 pos=8): Not found expression of let-definition |}];
   test_program {|~+false;;|};
   [%expect {|
     [(EvalItem (Unary (Positive, (Const (BoolLiteral false)))))] |}];
+  (* TODO: Validate bracket expression as applyable if it is in apply *)
   test_program {|(1) x y;;|};
   [%expect
     {|
