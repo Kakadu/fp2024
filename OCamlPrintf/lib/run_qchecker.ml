@@ -6,6 +6,6 @@ open Ocaml_printf_lib.Qchecker
 
 let () =
   print_endline "Testing manual generator.";
-  let () = TestQCheck.run_manual () in
+  let _ : int = TestQCheck.run_manual () in
   ()
 ;;

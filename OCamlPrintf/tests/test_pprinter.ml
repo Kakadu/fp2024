@@ -111,3 +111,89 @@ let%expect_test "check pp_chain_right_associative" =
     ];
   [%expect "let f = fun x y z -> if x = 0 && y = 1 || z >= 2 then 2 else 26;;"]
 ;;
+
+let%expect_test "pp_struct_eval" =
+  run
+    [ Struct_eval
+        (Exp_apply
+           ( Exp_ident "-"
+           , [ Exp_apply
+                 ( Exp_ident "/"
+                 , [ Exp_constant (Const_integer 8); Exp_constant (Const_integer 800) ] )
+             ; Exp_apply
+                 ( Exp_ident "*"
+                 , [ Exp_constant (Const_integer 555)
+                   ; Exp_apply
+                       ( Exp_ident "+"
+                       , [ Exp_constant (Const_integer 35)
+                         ; Exp_constant (Const_integer 35)
+                         ] )
+                   ] )
+             ] ))
+    ];
+  [%expect "8 / 800 - 555 * (35 + 35);;"]
+;;
+
+let%expect_test "pp_exp_let" =
+  run
+    [ Struct_eval
+        (Exp_apply
+           ( Exp_ident "+"
+           , [ Exp_constant (Const_integer 1)
+             ; Exp_let
+                 ( Nonrecursive
+                 , [ { pat = Pat_var "two"; exp = Exp_constant (Const_integer 2) } ]
+                 , Exp_apply
+                     (Exp_ident "*", [ Exp_ident "two"; Exp_constant (Const_integer 3) ])
+                 )
+             ] ))
+    ];
+  [%expect "1 + let two = 2 in two * 3;;"]
+;;
+
+let%expect_test "pp_sequence_and_construct" =
+  run
+    [ Struct_eval
+        (Exp_sequence
+           ( Exp_construct
+               ( "::"
+               , Some
+                   (Exp_tuple
+                      [ Exp_constant (Const_integer 1)
+                      ; Exp_construct
+                          ( "::"
+                          , Some
+                              (Exp_tuple
+                                 [ Exp_constant (Const_integer 2)
+                                 ; Exp_construct
+                                     ( "::"
+                                     , Some
+                                         (Exp_tuple
+                                            [ Exp_constant (Const_integer 3)
+                                            ; Exp_construct ("[]", None)
+                                            ]) )
+                                 ]) )
+                      ]) )
+           , Exp_constant (Const_string "qwerty123") ))
+    ];
+  [%expect {| [1; 2; 3]; "qwerty123";;|}]
+;;
+
+let%expect_test "parse_several_structure_items" =
+  run
+    [ Struct_value
+        ( Nonrecursive
+        , [ { pat = Pat_var "squared"
+            ; exp =
+                Exp_fun
+                  ( [ Pat_var "x" ]
+                  , Exp_apply (Exp_ident "*", [ Exp_ident "x"; Exp_ident "x" ]) )
+            }
+          ] )
+    ; Struct_eval (Exp_apply (Exp_ident "squared", [ Exp_constant (Const_integer 5) ]))
+    ];
+  [%expect {|
+    let squared = fun x -> x * x;;
+    squared 5;;
+    |}]
+;;

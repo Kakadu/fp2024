@@ -154,10 +154,11 @@ module TestQCheck = struct
   ;;
 
   let run_manual () =
-    QCheck.Test.check_exn
-      QCheck.(
-        Test.make arbitrary_lam_manual (fun str ->
-          Format.printf "%a \n" Pprinter.pp_structure str;
-          Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
+    QCheck_base_runner.run_tests
+      [ QCheck.(
+          Test.make arbitrary_lam_manual (fun str ->
+            Format.printf "%a \n" Pprinter.pp_structure str;
+            Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
+      ]
   ;;
 end
