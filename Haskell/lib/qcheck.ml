@@ -259,7 +259,7 @@ let test expression_gen pat_gen =
     (arbitrary_binding expression_gen pat_gen)
     (fun t ->
        match parse_line (asprintf "%a" pp_binding t) with
-       | Result.Ok _ -> true
+       | Result.Ok ast -> ast = [ t ]
        | Result.Error _ -> false)
 ;;
 
