@@ -68,11 +68,11 @@ let rec print_expr indent expr =
   | Cons_list (expr1, expr2) ->
     printf "[";
     print_expr (indent + 2) expr1;
-    if expr2 <> Empty_list then begin
+    if expr2 <> Empty_list
+    then (
       printf "; ";
-      print_list indent expr2
-    end;
-      printf "]"
+      print_list indent expr2);
+    printf "]"
   | Tuple (fst, snd, tail) ->
     printf "(";
     print_expr (indent + 2) fst;
@@ -163,14 +163,12 @@ and print_and (And_bind (Ident (name, var_type), args, body)) =
   print_expr 6 body
 
 and print_list indent = function
-  | Empty_list -> 
-      printf "[]"
-  | Cons_list (head, Empty_list) ->
-      print_expr indent head
+  | Empty_list -> printf "[]"
+  | Cons_list (head, Empty_list) -> print_expr indent head
   | Cons_list (head, tail) ->
-      print_expr indent head;
-      printf "; ";
-      print_list indent tail
+    print_expr indent head;
+    printf "; ";
+    print_list indent tail
   | _ -> printf ""
 ;;
 
