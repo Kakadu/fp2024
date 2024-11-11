@@ -16,15 +16,35 @@ let%expect_test "empty program" =
 (*good*)
 let%expect_test "double semicolons" =
   test_programm {|;;|};
-  [%expect {|
-  [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 18, characters 2-22
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
 let%expect_test "(whitespaces)" =
   test_programm {|       ;;|};
-  [%expect {|
-  [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 35, characters 2-29
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
@@ -79,15 +99,35 @@ let%expect_test "zero" =
 (*bad?, why? (i guess, no)*)
 let%expect_test "-111 5" =
   test_programm {|- 111 5;;|};
-  [%expect {|
-  [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 101, characters 2-29
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*bad?*)
 let%expect_test "5+" =
   test_programm {|5 +;;|};
-  [%expect {|
-  [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 118, characters 2-25
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
@@ -198,8 +238,18 @@ let%expect_test "parenthesis with operators with different priorities" =
 (*bad*)
 let%expect_test "parenthesis4" =
   test_programm {|( );;|};
-  [%expect {|
-    [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 240, characters 2-25
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "parenthesis3" =
@@ -227,7 +277,7 @@ let%expect_test "parenthesis1" =
 
 (*bad*)
 let%expect_test "parenthesis2" =
-  test_programm {|(5-1);;|};
+  test_programm {|( 5-1 );;|};
   [%expect
     {|
   [(Str_eval
@@ -238,15 +288,29 @@ let%expect_test "parenthesis2" =
 
 (* good fr *)
 let%expect_test "tuple" =
-  test_programm {|(5,1)|};
-  [%expect {|
-  [] |}]
+  test_programm {|(5,1);;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_tuple
+           ((Exp_constant (Const_integer 5)), (Exp_constant (Const_integer 1)),
+            [])))
+      ] |}]
 ;;
 
-let%expect_test "in" =
-  test_programm {|5 in 6;;|};
-  [%expect {|
-      [] |}]
+(* good fr *)
+let%expect_test "int + a" =
+  test_programm {|5+'a';;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "+"),
+           ((Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_char 'a')), [])),
+            [])
+           )))
+      ] |}]
 ;;
 
 let%expect_test "let assignment" =
@@ -361,6 +425,17 @@ let%expect_test "exprlet and" =
               [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 20)) }]),
              (Exp_constant (Const_integer 5)))))
         ] |}]
+;;
+
+let%expect_test "let and tuple" =
+  test_programm {|let (a,b) = (a,b);;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_tuple ((Pat_var "a"), (Pat_var "b"), []));
+           expr = (Exp_tuple ((Exp_ident "a"), (Exp_ident "b"), [])) },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "let and" =
