@@ -27,9 +27,9 @@ type binary_op =
 [@@deriving show { with_path = false }]
 
 type pattern =
-  | PatVar of id (* | var -> ... *)
-  | PatAny (* | _ -> ... *)
-  | PatLiteral of literal (* | literal -> ... *)
+  | PatVar of id (* [var] *)
+  | PatAny (* [_] *)
+  | PatLiteral of literal (* [literal] *)
   | PatCons of pattern * pattern (* | expr1 :: expr2 -> ... *)
   | PatSome of pattern (* | Some(pattern) -> ... *)
   | PatNone (* | None -> ... *)
@@ -56,3 +56,5 @@ type expression =
   | ExpOptNone (* None *)
   | ExpMatch of expression * (pattern * expression) list
 [@@deriving show { with_path = false }]
+
+type program = expression list [@@deriving show { with_path = false }]
