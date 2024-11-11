@@ -107,6 +107,9 @@ let pconstcharexpr =
   return (Exp_constant (Const_char c))
 ;;
 
+let pconst = 
+  pconstcharexpr <|> pconstintexpr <|> pconststringexpr
+
 let pconststringexpr =
   token "\""
   *> lift

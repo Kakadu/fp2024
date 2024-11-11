@@ -29,5 +29,6 @@
   (ocamlformat :build)
   base
   angstrom
+  qcheck
   ; After adding dependencies to 'dune' files and the same dependecies here too
   ))
