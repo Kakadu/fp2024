@@ -41,8 +41,7 @@ let rec print_pattern indent = function
      | Int_lt i -> printf "%sInt: %d\n" (String.make (indent + 2) '-') i
      | Bool_lt b -> printf "%sBool: %b\n" (String.make (indent + 2) '-') b
      | String_lt s -> printf "%sString: %S\n" (String.make (indent + 2) '-') s
-     | Unit_lt -> printf "%sUnit\n" (String.make (indent + 2) '-')
-     | Null_lt -> printf "%sNull\n" (String.make (indent + 2) '-'))
+     | Unit_lt -> printf "%sUnit\n" (String.make (indent + 2) '-'))
   | PVar (Ident name) -> printf "%s| PVar(%s)\n" (String.make indent '-') name
   | Variant variants ->
     printf "%s| Variant:\n" (String.make indent '-');
@@ -53,7 +52,7 @@ let rec print_pattern indent = function
 
 let print_unary_op indent = function
   | Unary_minus -> printf "%s| Unary minus\n" (String.make indent '-')
-  | Unary_negative -> printf "%s| Unary negative\n" (String.make indent '-')
+  | Unary_not -> printf "%s| Unary negative\n" (String.make indent '-')
 ;;
 
 let rec print_expr indent expr =
@@ -62,7 +61,6 @@ let rec print_expr indent expr =
   | Const (Bool_lt b) -> printf "%s| Const(Bool: %b)\n" (String.make indent '-') b
   | Const (String_lt s) -> printf "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> printf "%s| Const(Unit)\n" (String.make indent '-')
-  | Const Null_lt -> printf "%s| Const(Null)\n" (String.make indent '-')
   | List_expr (expr1, expr2) ->
     printf "%s| List expr:\n" (String.make indent '-');
     print_expr (indent + 2) expr1;
@@ -98,38 +96,49 @@ let rec print_expr indent expr =
     (match else_body with
      | Some body -> print_expr (indent + 4) body
      | None -> printf "No else body")
-  | Function_def (flag, name, args, body) ->
-    printf
-      "%s| %s Function(%s):\n"
-      (String.make indent '-')
-      (match flag with
-       | Nonrec -> ""
-       | Rec -> "Rec")
-      (match name with
-       | Some n -> n
-       | None -> "Anonymous");
+  | Function_def (args, body) ->
+    printf "%s| Func:\n" (String.make indent '-');
     printf "%sARGS\n" (String.make (indent + 2) ' ');
     List.iter (print_expr (indent + 4)) args;
     printf "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) body
-  | Function_call (func, args) ->
+  | Function_call (func, arg) ->
     printf "%s| Function Call:\n" (String.make indent '-');
     printf "%sFUNCTION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) func;
     printf "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (print_expr (indent + 2)) args
-  | LetIn (Ident name, value, inner_expr) ->
-    printf "%s | LetIn %s =\n" (String.make indent '-') name;
-    printf "%sVALUE\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) value;
+    print_expr (indent + 2) arg
+  | LetIn (rec_flag, name, args, body, in_expr) ->
+    printf
+      "%s | LetIn %s %s =\n"
+      (String.make indent '-')
+      (match rec_flag with
+       | Nonrec -> ""
+       | Rec -> "Rec")
+      (match name with
+       | Some (Ident n) -> n
+       | None -> "Anonymous");
+    printf "%sARGS\n" (String.make (indent + 2) ' ');
+    List.iter (print_expr (indent + 2)) args;
+    printf "%sBODY\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) body;
     printf "%sINNER EXPRESSION\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) inner_expr
+    print_expr (indent + 2) in_expr
 ;;
 
 let print_statement indent = function
-  | Let (Ident name, value) ->
-    printf "%s| Let %s =\n" (String.make indent '-') name;
-    print_expr (indent + 2) value
+  | Let (rec_flag, Ident name, args, body) ->
+    printf
+      "%s | Let %s %s =\n"
+      (String.make indent '-')
+      (match rec_flag with
+       | Nonrec -> ""
+       | Rec -> "Rec")
+      name;
+    printf "%sARGS\n" (String.make (indent + 2) ' ');
+    List.iter (print_expr (indent + 2)) args;
+    printf "%sBODY\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) body
   | ActivePattern (patterns, expr) ->
     printf "%s| ActivePattern:\n" (String.make indent '-');
     List.iter
@@ -141,4 +150,9 @@ let print_statement indent = function
 let print_construction = function
   | Expr e -> print_expr 0 e
   | Statement s -> print_statement 0 s
+;;
+
+let print_p_res = function
+  | Some expr -> print_construction expr
+  | None -> Printf.printf "Error occured"
 ;;
