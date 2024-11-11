@@ -385,7 +385,16 @@ let%expect_test "apply without space" =
 let%expect_test "apply num to ident" =
   test_programm {|f (x-1);;|};
   [%expect {|
-    [(Str_eval (Exp_apply ((Exp_ident "f"), ((Exp_ident "x-1"), []))))] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_ident "f"),
+           ((Exp_apply ((Exp_ident "-"),
+               ((Exp_tuple
+                   ((Exp_ident "x"), (Exp_constant (Const_integer 1)), [])),
+                [])
+               )),
+            [])
+           )))
+      ] |}]
 ;;
 
 let%expect_test "simple fun" =
@@ -409,10 +418,20 @@ let%expect_test "multi fun" =
       ] |}]
 ;;
 
+
 let%expect_test "apply and subtraction" =
   test_programm {|f (x-1);;|};
   [%expect {|
-    [(Str_eval (Exp_apply ((Exp_ident "f"), ((Exp_ident "x-1"), []))))] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_ident "f"),
+           ((Exp_apply ((Exp_ident "-"),
+               ((Exp_tuple
+                   ((Exp_ident "x"), (Exp_constant (Const_integer 1)), [])),
+                [])
+               )),
+            [])
+           )))
+      ] |}]
 ;;
 
 let%expect_test "exprlet and" =
@@ -498,7 +517,15 @@ let%expect_test "let and apply v2" =
         ({ pat = (Pat_var "fact");
            expr =
            (Exp_fun (((Pat_var "x"), []),
-              (Exp_apply ((Exp_ident "fact"), ((Exp_ident "x-1"), [])))))
+              (Exp_apply ((Exp_ident "fact"),
+                 ((Exp_apply ((Exp_ident "-"),
+                     ((Exp_tuple
+                         ((Exp_ident "x"), (Exp_constant (Const_integer 1)), [])),
+                      [])
+                     )),
+                  [])
+                 ))
+              ))
            },
          [])
         ))
@@ -571,7 +598,15 @@ let%expect_test "factorial" =
                           ((Exp_tuple
                               ((Exp_ident "x"),
                                (Exp_apply ((Exp_ident "fact"),
-                                  ((Exp_ident "X-1"), []))),
+                                  ((Exp_apply ((Exp_ident "-"),
+                                      ((Exp_tuple
+                                          ((Exp_ident "X"),
+                                           (Exp_constant (Const_integer 1)),
+                                           [])),
+                                       [])
+                                      )),
+                                   [])
+                                  )),
                                [])),
                            [])
                           )))

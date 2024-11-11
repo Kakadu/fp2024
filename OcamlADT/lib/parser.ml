@@ -34,15 +34,6 @@ let is_not_keyword = function
   | _ -> true
 ;;
 
-let debug_parser name p = p
-(* >>= (fun result ->
-   Stdlib.Printf.printf "Debug: %s parser SUCCEEDED\n" name;
-   return result)
-   <|> (return ()
-   >>= fun () ->
-   Stdlib.Printf.printf "Debug: %s parser failed\n" name;
-   fail (Printf.sprintf "%s parser failed" name)) *)
-
 let is_whitespace = function
   | ' ' | '\t' | '\n' | '\r' -> true
   | _ -> false
@@ -51,7 +42,7 @@ let is_whitespace = function
 let pass_ws = skip_while is_whitespace
 
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
-let token s = debug_parser "token_parser" (pass_ws *> string s)
+let token s = pass_ws *> string s
 
 let pparenth stmt = token "(" *> stmt <* token ")"
 
@@ -62,7 +53,7 @@ let pletters =
 ;;
 
 let ptowhitespace = function
-  | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '+' | '-' | '/' | '*' -> true
+  | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
   | _ -> false
 ;;
 
@@ -162,9 +153,8 @@ let pvar =
 
 let ppattern =
   fix (fun ppattern ->
-    let parenth = pparenth ppattern in
-    let simplevar = choice [ pany; pvar ] <|> parenth in
-    ptuplepat simplevar <|> simplevar)
+    let poprnd = choice [ pany; pvar; pparenth ppattern ] in
+    ptuplepat poprnd <|> poprnd)
 ;;
 
 (*
@@ -264,9 +254,9 @@ let pfunexpr pexpr =
 ;;
 
 let rec parseprefop pexpr pop =
-  (let* head = pop in
-   let* tail = parseprefop pexpr pop in
-   return @@ Exp_apply (head, (tail, [])))
+  (let* f = pop in
+   let* expr = parseprefop pexpr pop in
+   return @@ f expr)
   <|> pexpr
 ;;
 
@@ -302,28 +292,31 @@ let pexpr =
     let poprnd =
       pass_ws
       *> choice
-           [ debug_parser "identexp" pidentexpr
-           ; debug_parser "constint" pconstintexpr
-           ; debug_parser "constchar" pconstcharexpr
-           ; debug_parser "conststring" pconststringexpr
-           ; debug_parser "parens" (pparenth pexpr)
-           ; debug_parser "function" (pfunction pexpr)
-           ; debug_parser "fun" (pfunexpr pexpr)
-           ; debug_parser "let" (plet pexpr)
-           ; debug_parser "if_then_else" (pifexpr pexpr)
-           ; debug_parser "match" (pmatch pexpr)
+           [ pidentexpr
+           ; pconstintexpr
+           ; pconstcharexpr
+           ; pconststringexpr
+           ; pparenth pexpr
+           ; pfunction pexpr
+           ; pfunexpr pexpr
+           ; plet pexpr
+           ; pifexpr pexpr
+           ; pmatch pexpr
            ]
     in
-    let papply = debug_parser "apply" (papplyexpr poprnd) in
+    let papply = papplyexpr poprnd in
     let prefop =
-      parseprefop papply (choice [ token "+"; token "-" ] >>| fun a -> Exp_ident a)
+      parseprefop
+        papply
+        (choice [ token "+"; token "-" ]
+         >>| fun id expr -> Exp_apply (Exp_ident id, (expr, [])))
       <|> papply
     in
-    let pmuldiv = debug_parser "mul_div" (lchain prefop (pmul <|> pdiv)) in
-    let paddsub = debug_parser "add_sub" (lchain pmuldiv (padd <|> psub)) in
-    let pcompare = debug_parser "compare" (lchain paddsub pcompops) in
+    let pmuldiv = lchain prefop (pmul <|> pdiv) in
+    let paddsub = lchain pmuldiv (padd <|> psub) in
+    let pcompare = lchain paddsub pcompops in
     let plogop = rchain pcompare plogops in
-    debug_parser "tuple" (ptupleexpr plogop) <|> plogop)
+    ptupleexpr plogop <|> plogop)
 ;;
 
 (*
@@ -344,11 +337,7 @@ let pexpr =
    ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░
 *)
 
-let pseval = debug_parser "ps_eval" (lift (fun expr -> Str_eval expr) pexpr)
-
-(** It applies Str_eval to output of expression parser *)
-(* let pstr_item =
-   pseval <|> psvalue *)
+let pseval = lift (fun expr -> Str_eval expr) pexpr
 
 let pstrlet =
   let precflag = token "rec" *> return Recursive <|> return Nonrecursive in
