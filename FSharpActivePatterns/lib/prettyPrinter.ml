@@ -71,12 +71,11 @@ and pp_expr fmt expr =
   | Function_call (func, arg) -> fprintf fmt "%a %a" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
-    pp_let_bind fmt let_bind;
     pp_print_list
       ~pp_sep:(fun fmt () -> fprintf fmt "\n\nand ")
       pp_let_bind
       fmt
-      let_bind_list;
+      (let_bind :: let_bind_list);
     fprintf fmt "in\n";
     fprintf fmt "%a " pp_expr in_expr
   | Option e ->
@@ -103,12 +102,11 @@ and pp_let_bind fmt = function
 let pp_statement fmt = function
   | Let (rec_flag, let_bind, let_bind_list) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
-    pp_let_bind fmt let_bind;
     pp_print_list
       ~pp_sep:(fun fmt () -> fprintf fmt "\n\nand ")
       pp_let_bind
       fmt
-      let_bind_list
+      (let_bind :: let_bind_list)
   | ActivePattern (patterns, expr) -> fprintf fmt "Active pattern TODO"
 ;;
 
