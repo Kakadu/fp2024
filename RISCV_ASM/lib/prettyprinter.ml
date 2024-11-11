@@ -221,7 +221,7 @@ let pp_instruction ppf = function
 ;;
 
 let pp_str_or_int = function
-  | StrValue str -> Format.sprintf "\"%s\"" str
+  | StrValue str -> Format.sprintf {|%S|} str
   | IntValue imm -> Format.sprintf "%d" imm
 ;;
 
@@ -230,7 +230,7 @@ let pp_type_dir = function
 ;;
 
 let pp_directive ppf = function
-  | File str -> Format.fprintf ppf {|.file "%s"|} str
+  | File str -> Format.fprintf ppf {|.file %S|} str
   | Option str -> Format.fprintf ppf ".option %s" str
   | Attribute (str, str_or_int) ->
     Format.fprintf ppf ".attribute %s, %s" str (pp_str_or_int str_or_int)
@@ -245,15 +245,14 @@ let pp_directive ppf = function
   | Section (str1, str2, str_type, none_or_int) ->
     (match none_or_int with
      | Some imm ->
-       Format.fprintf ppf {|.section %s,"%s",@%s,%d|} str1 str2 (pp_type_dir str_type) imm
-     | None ->
-       Format.fprintf ppf {|.section %s,"%s",@%s|} str1 str2 (pp_type_dir str_type))
-  | String str -> Format.fprintf ppf {|.string "%s"|} (String.escaped str)
+       Format.fprintf ppf {|.section %s,%S,@%s,%d|} str1 str2 (pp_type_dir str_type) imm
+     | None -> Format.fprintf ppf {|.section %s,%S,@%s|} str1 str2 (pp_type_dir str_type))
+  | String str -> Format.fprintf ppf {|.string %S|} (String.escaped str)
   | CfiDefCfaOffset imm -> Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
   | CfiOffset (imm1, imm2) -> Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
   | CfiRememberState -> Format.fprintf ppf ".cfi_remember_state"
   | CfiRestore imm -> Format.fprintf ppf ".cfi_restore %d" imm
-  | Ident str -> Format.fprintf ppf {|.ident "%s"|} str
+  | Ident str -> Format.fprintf ppf {|.ident %S|} str
   | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
 ;;
 
