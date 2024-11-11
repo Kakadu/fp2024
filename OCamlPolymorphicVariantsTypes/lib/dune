@@ -1,7 +1,6 @@
 (library
  (name miniml)
  (public_name OCamlPolymorphicVariantsTypes.Lib)
- (modules Ast)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation

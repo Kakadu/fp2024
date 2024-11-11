@@ -9,17 +9,7 @@ open Ast
 (*---------------------Check conditions---------------------*)
 
 let is_keyword = function
-  | "let"
-  | "in"
-  | "fun"
-  | "rec"
-  | "if"
-  | "then"
-  | "else"
-  | "true"
-  | "false"
-  | "Some"
-  | "None" -> true
+  | "let" | "in" | "fun" | "rec" | "if" | "then" | "else" | "true" | "false" -> true
   | _ -> false
 ;;
 
@@ -165,121 +155,24 @@ let pbranch pexpr =
 
 let pexpr =
   fix (fun expr ->
-    let atom_expr =
-      choice
-        [ pEconst
-        ; pEvar
-        ; pparens expr
-        ; pElist expr
-        ; pEtuple expr
-        ; pEfun expr
-        ; pEoption expr
-        ]
-    in
-    let let_expr = plet expr in
+    let atom_expr = choice [ pEconst; pEvar; pparens expr ] in
+    (* parsing of nested if expressions and fallback to simpler atomic expressions
+       if the conditional expression parsing fails *)
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
+    (* parsing function applications, where the left side can be
+       an if expression or a simpler atomic expression *)
     let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
-    let un_expr =
-      choice
-        [ un_chain app_expr negation
-        ; un_chain app_expr neg_sign
-        ; un_chain app_expr pos_sign
-        ]
-    in
-    let factor_expr = chain un_expr (mult <|> div) in
+    let factor_expr = chain app_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
-    let log_expr = chain rel_expr logic in
-    choice [ let_expr; log_expr ])
+    rel_expr)
 ;;
 
-let pstructure =
-  let pseval = pexpr >>| fun e -> SEval e in
-  let psvalue =
-    plet pexpr
-    >>| function
-    | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
-    | _ -> failwith "Expected a let expression"
-  in
-  choice [ psvalue; pseval ]
+let parse_structure =
+  let parse_structure_item = choice [ plet pexpr; pexpr ] in
+  let semicolons = pstoken ";;" in
+  let items = sep_by semicolons parse_structure_item in
+  items <* pwhitespace
 ;;
 
-let structure : structure t =
-  sep_by (pstoken ";;") pstructure <* (pstoken ";;" <|> pwhitespace)
-;;
-
-let parse_expr str = parse_string ~consume:All structure str
-
-(*
-   let pp_const = function
-   | Int i -> string_of_int i
-   | String s -> "\"" ^ s ^ "\""
-   | Bool b -> string_of_bool b
-   | Unit -> "()"
-   ;;
-
-   let pp_bin_op = function
-   | Add -> "+"
-   | Mult -> "*"
-   | Sub -> "-"
-   | Div -> "/"
-   | Gt -> ">"
-   | Lt -> "<"
-   | Eq -> "="
-   | Neq -> "<>"
-   | Gte -> ">="
-   | Lte -> "<="
-   | And -> "&&"
-   | Or -> "||"
-   ;;
-
-   let pp_un_op = function
-   | Negative -> "-"
-   | Positive -> "+"
-   | Not -> "not"
-   ;;
-
-   let pp_rec_flag = function
-   | Recursive -> "rec"
-   | Non_recursive -> ""
-   ;;
-
-   let pp_pattern = function
-   | PVar id -> id
-   | PConst c -> pp_const c
-   | PAny -> "_"
-   ;;
-
-   let rec pp_expr = function
-   | Econst c -> pp_const c
-   | Evar id -> id
-   | Eif_then_else (e1, e2, None) ->
-   "if " ^ pp_expr e1 ^ " then " ^ pp_expr e2
-   | Eif_then_else (e1, e2, Some e3) ->
-   "if " ^ pp_expr e1 ^ " then " ^ pp_expr e2 ^ " else " ^ pp_expr e3
-   | Etuple es ->
-   "(" ^ String.concat ~sep:", " (List.map ~f:pp_expr es) ^ ")"
-   | Elist es ->
-   "[" ^ String.concat ~sep:"; " (List.map ~f:pp_expr es) ^ "]"
-   | Efun (patterns, e) ->
-   "fun " ^ String.concat ~sep:" " (List.map ~f:pp_pattern patterns) ^ " -> " ^ pp_expr e
-   | Ebin_op (op, e1, e2) ->
-   "(" ^ pp_expr e1 ^ " " ^ pp_bin_op op ^ " " ^ pp_expr e2 ^ ")"
-   | Eun_op (op, e) ->
-   pp_un_op op ^ pp_expr e
-   | Elet (rec_flag, id, e1, e2) ->
-   "let " ^ pp_rec_flag rec_flag ^ " " ^ id ^ " = " ^ pp_expr e1 ^ " in " ^ pp_expr e2
-   | Efun_application (e1, e2) ->
-   pp_expr e1 ^ " " ^ pp_expr e2
-   ;;
-
-   let pp_structure_item (item: structure_item) : string =
-   match item with
-   | SEval e -> pp_expr e ^ ";"
-   | SValue (rec_flag, id, e1, e2) ->
-   "let " ^ pp_rec_flag rec_flag ^ " " ^ id ^ " = " ^ pp_expr e1 ^ " in " ^ pp_expr e2
-
-   let prpr_structure fmt structure =
-   List.iter ~f:(fun item -> Format.fprintf fmt "%s@." (pp_structure_item item)) structure
-   ;;
-*)
+let parse_expr str = parse_string ~consume:All parse_structure str

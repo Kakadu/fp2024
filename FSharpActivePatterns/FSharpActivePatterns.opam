@@ -12,6 +12,7 @@ doc: "FIX LATER https://kakadu.github.io/fp2024/docs/Lambda"
 bug-reports: "https://github.com/Ycyken/fp2024"
 depends: [
   "dune" {>= "3.7"}
+  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"
