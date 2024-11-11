@@ -56,7 +56,7 @@ and pp_expr fmt expr =
   | Bin_expr (op, left, right) ->
     fprintf fmt "(%a) %a (%a)" pp_expr left pp_bin_op op pp_expr right
   | If_then_else (cond, then_body, else_body) ->
-    fprintf fmt "if %a then %a " pp_expr cond pp_expr then_body;
+    fprintf fmt "if (%a) then (%a) " pp_expr cond pp_expr then_body;
     (match else_body with
      | Some body -> fprintf fmt "else %a " pp_expr body
      | None -> ())
