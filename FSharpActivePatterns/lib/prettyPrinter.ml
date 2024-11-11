@@ -52,7 +52,7 @@ and pp_expr fmt expr =
   | Tuple t -> fprintf fmt "TUPLE WIP"
   | Match (value, patterns) -> fprintf fmt "MATCH WIP"
   | Variable (Ident name) -> fprintf fmt "%s " name
-  | Unary_expr (op, expr) -> fprintf fmt "%a %a" pp_unary_op op pp_expr expr
+  | Unary_expr (op, expr) -> fprintf fmt "%a (%a)" pp_unary_op op pp_expr expr
   | Bin_expr (op, left, right) ->
     fprintf fmt "(%a) %a (%a)" pp_expr left pp_bin_op op pp_expr right
   | If_then_else (cond, then_body, else_body) ->
