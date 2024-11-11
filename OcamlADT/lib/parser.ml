@@ -53,23 +53,7 @@ let pass_ws = skip_while is_whitespace
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let token s = debug_parser "token_parser" (pass_ws *> string s)
 
-let pparens stmt = token "(" *> stmt <* token ")"
-
-let pdsemicolon =
-  let* str_part =
-    take_while (function
-      | ';' -> false
-      | _ -> true)
-  in
-  let* semi_part = peek_char in
-  (* Peek to see if we have encountered `;` *)
-  match semi_part with
-  | Some ';' ->
-    let* _ = string ";;" in
-    (* Ensure we consume both semicolons *)
-    return str_part
-  | _ -> fail "Expected ;;"
-;;
+let pparenth stmt = token "(" *> stmt <* token ")"
 
 let pletters =
   satisfy (function
@@ -186,8 +170,13 @@ let pvar =
 ;;
 
 let ppattern =
-  let simplevar = choice [ pany; pvar ] in
+  fix (fun ppattern ->
+  let parenth = pparenth ppattern in
+  let simplevar = choice [ pany; pvar ] <|> parenth in
   ptuplepat simplevar <|> simplevar
+  )
+
+  
 ;;
 
 (*
@@ -319,7 +308,7 @@ let pexpr =
            ; debug_parser "constint" pconstintexpr
            ; debug_parser "constchar" pconstcharexpr
            ; debug_parser "conststring" pconststringexpr
-           ; debug_parser "parens" (pparens pexpr)
+           ; debug_parser "parens" (pparenth pexpr)
            ; debug_parser "function" (pfunction pexpr)
            ; debug_parser "fun" (pfunexpr pexpr)
            ; debug_parser "let" (plet pexpr)
@@ -328,19 +317,18 @@ let pexpr =
            ]
     in
     let papply = debug_parser "apply" (papplyexpr poprnd) in
-    let expr = debug_parser "mul_div" (lchain papply (pmul <|> pdiv)) in
-    let expr = debug_parser "add_sub" (lchain expr (padd <|> psub)) in
-    let expr = debug_parser "compare" (lchain expr pcompops) in
-    let expr = rchain expr plogops in
-    (* let expr = debug_parser "if_then_else" (pifexpr expr) <|> expr in *)
-    debug_parser "tuple" (ptupleexpr expr) <|> expr)
+    let pmuldiv = debug_parser "mul_div" (lchain papply (pmul <|> pdiv)) in
+    let paddsub = debug_parser "add_sub" (lchain pmuldiv (padd <|> psub)) in
+    let pcompare = debug_parser "compare" (lchain paddsub pcompops) in
+    let plogop = rchain pcompare plogops in
+    debug_parser "tuple" (ptupleexpr plogop) <|> plogop)
 ;;
 
 (*
    ░▒▓███████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓████████▓▒░
    ░▒▓█▓▒░         ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
    ░▒▓█▓▒░         ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   ░▒▓██████▓▒░   ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓██████▓▒░
+   |░▒▓██████▓▒░   ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓██████▓▒░
    |      ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
    |      ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
    ░▒▓███████▓▒░   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ░▒▓█▓▒░    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░
@@ -377,7 +365,7 @@ let pstructure =
   many (pstr_item <* psemicolon <* pass_ws)
 ;;
 
-let parse str = parse_string ~consume:Prefix pstructure str
+let parse str = parse_string ~consume:All pstructure str
 
 let parse_str str =
   match parse str with

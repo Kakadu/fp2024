@@ -8,86 +8,110 @@ let test_programm str = print_endline (show_program (parse_str str))
 
 (*good*)
 let%expect_test "empty program" =
-  test_programm {|1;;|};
-  [%expect {|
-    [(Str_eval (Exp_constant (Const_integer 1)))] |}]
+  test_programm {|a;;a|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 11, characters 2-24
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
 let%expect_test "double semicolons" =
-  test_programm {|;;|};
-  [%expect {|
-  [] |}]
+  test_programm {|(-) 27 5;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 27, characters 2-30
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
 let%expect_test "(whitespaces)" =
   test_programm {|       ;;|};
-  [%expect {|
-  [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 43, characters 2-29
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
 let%expect_test "negative int constant" =
   test_programm {|-1;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer -1)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer -1)))] |}]
 ;;
 
 (*good*)
 let%expect_test "positive int constant" =
   test_programm {|+1;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer 1)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 ;;
 
 (*good*)
 let%expect_test " nt constant" =
   test_programm {|1;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer 1)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 ;;
 
 (*good*)
 let%expect_test "whitespace befor int constant" =
   test_programm {|     1;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer 1)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 ;;
 
 (*good*)
 let%expect_test "negative zero" =
   test_programm {|-0;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer 0)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 ;;
 
 (*good*)
 let%expect_test "positive zero" =
   test_programm {|+0;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer 0)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 ;;
 
 (*good*)
 let%expect_test "zero" =
   test_programm {|0;;|};
-  [%expect {|
-  [(Str_eval (Exp_constant (Const_integer 0)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 ;;
 
 (*bad?, why? (i guess, no)*)
-let%expect_test "-111 5" =
-  test_programm {|- 111 5;;|};
-  [%expect {|
-  [] |}]
-;;
+let%expect_test "prefix minus" =
+  test_programm {|(-) 111 5;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
 
-(*bad?*)
-let%expect_test "5+" =
-  test_programm {|5 +;;|};
-  [%expect {|
-  [] |}]
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 102, characters 2-31
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*good*)
@@ -149,15 +173,15 @@ let%expect_test "operators with different priorities" =
   test_programm {|5-5*1;;|};
   [%expect
     {|
-      [(Str_eval
-          (Exp_apply ((Exp_ident "*"),
-             ((Exp_tuple
-                 ((Exp_apply ((Exp_constant (Const_integer 5)),
-                     ((Exp_constant (Const_integer -5)), []))),
-                  (Exp_constant (Const_integer 1)), [])),
-              [])
-             )))
-        ] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           ((Exp_tuple
+               ((Exp_apply ((Exp_constant (Const_integer 5)),
+                   ((Exp_constant (Const_integer -5)), []))),
+                (Exp_constant (Const_integer 1)), [])),
+            [])
+           )))
+      ] |}]
 ;;
 
 (*good*)
@@ -165,16 +189,16 @@ let%expect_test "operators with different priorities" =
   test_programm {|5*5-1;;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_apply ((Exp_ident "*"),
-         ((Exp_tuple
-             ((Exp_constant (Const_integer 5)),
-              (Exp_apply ((Exp_constant (Const_integer 5)),
-                 ((Exp_constant (Const_integer -1)), []))),
-              [])),
-          [])
-         )))
-    ] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           ((Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_apply ((Exp_constant (Const_integer 5)),
+                   ((Exp_constant (Const_integer -1)), []))),
+                [])),
+            [])
+           )))
+      ] |}]
 ;;
 
 (*good*)
@@ -198,14 +222,23 @@ let%expect_test "parenthesis with operators with different priorities" =
 (*bad*)
 let%expect_test "parenthesis4" =
   test_programm {|( );;|};
-  [%expect {|
-    [] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 52-67
+  Called from Tests__Parser.(fun) in file "tests/parser.ml", line 224, characters 2-25
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "parenthesis3" =
   test_programm {|(5);;|};
-  [%expect {|
-    [(Str_eval (Exp_constant (Const_integer 5)))] |}]
+  [%expect {| [(Str_eval (Exp_constant (Const_integer 5)))] |}]
 ;;
 
 (*bad*)
@@ -213,51 +246,65 @@ let%expect_test "parenthesis1" =
   test_programm {|(5*(5-1));;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_apply ((Exp_ident "*"),
-         ((Exp_tuple
-             ((Exp_constant (Const_integer 5)),
-              (Exp_apply ((Exp_constant (Const_integer 5)),
-                 ((Exp_constant (Const_integer -1)), []))),
-              [])),
-          [])
-         )))
-    ] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           ((Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_apply ((Exp_constant (Const_integer 5)),
+                   ((Exp_constant (Const_integer -1)), []))),
+                [])),
+            [])
+           )))
+      ] |}]
 ;;
 
 (*bad*)
 let%expect_test "parenthesis2" =
-  test_programm {|(5-1);;|};
+  test_programm {|( 5-1 );;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_apply ((Exp_constant (Const_integer 5)),
-         ((Exp_constant (Const_integer -1)), []))))
-    ] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_constant (Const_integer 5)),
+           ((Exp_constant (Const_integer -1)), []))))
+      ] |}]
 ;;
 
 (* good fr *)
 let%expect_test "tuple" =
-  test_programm {|(5,1)|};
-  [%expect {|
-  [] |}]
+  test_programm {|(5,1);;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_tuple
+           ((Exp_constant (Const_integer 5)), (Exp_constant (Const_integer 1)),
+            [])))
+      ] |}]
 ;;
 
-let%expect_test "in" =
-  test_programm {|5 in 6;;|};
-  [%expect {|
-      [] |}]
+(* good fr *)
+let%expect_test "int + a" =
+  test_programm {|5+'a';;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "+"),
+           ((Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_char 'a')), [])),
+            [])
+           )))
+      ] |}]
 ;;
 
 let%expect_test "let assignment" =
   test_programm {|let x = 5 in 6;;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_let (Nonrecursive,
-         ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
-         (Exp_constant (Const_integer 6)))))
-    ] |}]
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
+           (Exp_constant (Const_integer 6)))))
+      ] |}]
 ;;
 
 let%expect_test "let assignment with recursion" =
@@ -276,23 +323,21 @@ let%expect_test "let assignment with recursion" =
   test_programm {|let rec x = 5 in 7;;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_let (Recursive,
-         ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
-         (Exp_constant (Const_integer 7)))))
-    ] |}]
+    [(Str_eval
+        (Exp_let (Recursive,
+           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
+           (Exp_constant (Const_integer 7)))))
+      ] |}]
 ;;
 
 let%expect_test "apply" =
   test_programm {|x;;|};
-  [%expect {|
-    [(Str_eval (Exp_ident "x"))] |}]
+  [%expect {| [(Str_eval (Exp_ident "x"))] |}]
 ;;
 
 let%expect_test "apply without space" =
   test_programm {|f(x);;|};
-  [%expect {|
-    [(Str_eval (Exp_apply ((Exp_ident "f"), ((Exp_ident "x"), []))))] |}]
+  [%expect {| [(Str_eval (Exp_apply ((Exp_ident "f"), ((Exp_ident "x"), []))))] |}]
 ;;
 
 let%expect_test "apply num to ident" =
@@ -310,25 +355,23 @@ let%expect_test "apply num to ident" =
 
 let%expect_test "simple fun" =
   test_programm {|fun x -> y;;|};
-  [%expect {|
-      [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
+  [%expect {| [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
 ;;
 
 let%expect_test "multi pattern fun" =
   test_programm {|fun x z -> y;;|};
   [%expect
-    {|
-      [(Str_eval (Exp_fun (((Pat_var "x"), [(Pat_var "z")]), (Exp_ident "y"))))] |}]
+    {| [(Str_eval (Exp_fun (((Pat_var "x"), [(Pat_var "z")]), (Exp_ident "y"))))] |}]
 ;;
 
 let%expect_test "multi fun" =
   test_programm {|fun p -> fun x -> z;;|};
   [%expect
     {|
-      [(Str_eval
-          (Exp_fun (((Pat_var "p"), []),
-             (Exp_fun (((Pat_var "x"), []), (Exp_ident "z"))))))
-        ] |}]
+    [(Str_eval
+        (Exp_fun (((Pat_var "p"), []),
+           (Exp_fun (((Pat_var "x"), []), (Exp_ident "z"))))))
+      ] |}]
 ;;
 
 let%expect_test "apply and subtraction" =
@@ -348,63 +391,75 @@ let%expect_test "exprlet and" =
   test_programm {|let rec x x x x x x x = y and x = 20 in 5;;|};
   [%expect
     {|
-      [(Str_eval
-          (Exp_let (Recursive,
-             ({ pat = (Pat_var "x");
-                expr =
-                (Exp_fun (
-                   ((Pat_var "x"),
-                    [(Pat_var "x"); (Pat_var "x"); (Pat_var "x"); (Pat_var "x");
-                      (Pat_var "x")]),
-                   (Exp_ident "y")))
-                },
-              [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 20)) }]),
-             (Exp_constant (Const_integer 5)))))
-        ] |}]
+    [(Str_eval
+        (Exp_let (Recursive,
+           ({ pat = (Pat_var "x");
+              expr =
+              (Exp_fun (
+                 ((Pat_var "x"),
+                  [(Pat_var "x"); (Pat_var "x"); (Pat_var "x"); (Pat_var "x");
+                    (Pat_var "x")]),
+                 (Exp_ident "y")))
+              },
+            [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 20)) }]),
+           (Exp_constant (Const_integer 5)))))
+      ] |}]
+;;
+
+let%expect_test "let and tuple" =
+  test_programm {|let (a,b) = (a,b);;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_tuple ((Pat_var "a"), (Pat_var "b"), []));
+           expr = (Exp_tuple ((Exp_ident "a"), (Exp_ident "b"), [])) },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "let and" =
   test_programm {|let rec x x x x x x x = y and x = 20;;|};
   [%expect
     {|
-        [(Str_value (Recursive,
-            ({ pat = (Pat_var "x");
-               expr =
-               (Exp_fun (
-                  ((Pat_var "x"),
-                   [(Pat_var "x"); (Pat_var "x"); (Pat_var "x"); (Pat_var "x");
-                     (Pat_var "x")]),
-                  (Exp_ident "y")))
-               },
-             [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 20)) }])
-            ))
-          ] |}]
+    [(Str_value (Recursive,
+        ({ pat = (Pat_var "x");
+           expr =
+           (Exp_fun (
+              ((Pat_var "x"),
+               [(Pat_var "x"); (Pat_var "x"); (Pat_var "x"); (Pat_var "x");
+                 (Pat_var "x")]),
+              (Exp_ident "y")))
+           },
+         [{ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 20)) }])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "multiplication and apply" =
   test_programm {|x * f x;;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_apply ((Exp_ident "*"),
-         ((Exp_tuple
-             ((Exp_ident "x"),
-              (Exp_apply ((Exp_ident "f"), ((Exp_ident "x"), []))), [])),
-          [])
-         )))
-    ] |}]
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           ((Exp_tuple
+               ((Exp_ident "x"),
+                (Exp_apply ((Exp_ident "f"), ((Exp_ident "x"), []))), [])),
+            [])
+           )))
+      ] |}]
 ;;
 
 let%expect_test "let and apply" =
   test_programm {|let f x = x;;|};
   [%expect
     {|
-  [(Str_value (Nonrecursive,
-      ({ pat = (Pat_var "f");
-         expr = (Exp_fun (((Pat_var "x"), []), (Exp_ident "x"))) },
-       [])
-      ))
-    ] |}]
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "f");
+           expr = (Exp_fun (((Pat_var "x"), []), (Exp_ident "x"))) },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "let and apply v2" =
@@ -456,22 +511,22 @@ let%expect_test "let and if" =
   test_programm {|let x = if n = 0 then 6 else 7 in 6;;|};
   [%expect
     {|
-  [(Str_eval
-      (Exp_let (Nonrecursive,
-         ({ pat = (Pat_var "x");
-            expr =
-            (Exp_if (
-               (Exp_apply ((Exp_ident "="),
-                  ((Exp_tuple
-                      ((Exp_ident "n"), (Exp_constant (Const_integer 0)), [])),
-                   [])
-                  )),
-               (Exp_constant (Const_integer 6)),
-               (Some (Exp_constant (Const_integer 7)))))
-            },
-          []),
-         (Exp_constant (Const_integer 6)))))
-    ] |}]
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "x");
+              expr =
+              (Exp_if (
+                 (Exp_apply ((Exp_ident "="),
+                    ((Exp_tuple
+                        ((Exp_ident "n"), (Exp_constant (Const_integer 0)), [])),
+                     [])
+                    )),
+                 (Exp_constant (Const_integer 6)),
+                 (Some (Exp_constant (Const_integer 7)))))
+              },
+            []),
+           (Exp_constant (Const_integer 6)))))
+      ] |}]
 ;;
 
 let%expect_test "factorial" =
