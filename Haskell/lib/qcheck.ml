@@ -241,6 +241,10 @@ let expression_gen =
               (fun x y -> InnerBindings (x, [], y))
               (binding_gen (self (n / 5)) pat_gen)
               (expr_gen (self (n / 5)))
+          ; oneof
+              [ map (fun x -> OptionBld (Just x)) (expr_gen (self (n / 5)))
+              ; return (OptionBld Nothing)
+              ]
           ]))
 ;;
 
@@ -254,7 +258,6 @@ let test expression_gen pat_gen =
     ~count:1
     (arbitrary_binding expression_gen pat_gen)
     (fun t ->
-       printf "%a" pp_binding t;
        match parse_line (asprintf "%a" pp_binding t) with
        | Result.Ok _ -> true
        | Result.Error _ -> false)
