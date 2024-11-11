@@ -10,7 +10,6 @@ type literal =
   | Bool_lt of bool (** [false], [true] *)
   | String_lt of string (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
-  | Null_lt (** [Null] *)
 [@@deriving eq, show { with_path = false }]
 
 type binary_operator =
@@ -33,7 +32,7 @@ type binary_operator =
 
 type unary_operator =
   | Unary_minus (** unary [-] *)
-  | Unary_negative (** unary [not] *)
+  | Unary_not (** unary [not] *)
 [@@deriving eq, show { with_path = false }]
 
 type pattern =
@@ -55,21 +54,21 @@ type expr =
   | Tuple of expr list (** [(1, "Hello world", true)] *)
   | List_expr of expr * expr
   (** {[
-        [ 1, 2, 3 ]
+        [ 1; 2; 3 ]
       ]} *)
   | Variable of ident (** [x], [y] *)
-  | Unary_expr of unary_operator * expr
+  | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Function_def of is_recursive * string option * expr list * expr
-  (**rec, name, args, body*)
-  | Function_call of expr * expr list (** [sum 1 ] *)
+  | Function_def of expr list * expr (** fun x y -> x + y *)
+  | Function_call of expr * expr (** [sum 1 ] *)
   | Match of expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
-  | LetIn of ident * expr * expr (** [let x = 5 in x * y] *)
+  | LetIn of is_recursive * ident option * expr list * expr * expr
+  (** [let f x y = x + y in f 3 4] *)
 [@@deriving eq, show { with_path = false }]
 
 type statement =
-  | Let of ident * expr (** [let name = expr] *)
+  | Let of is_recursive * ident * expr list * expr (** [let name = expr] *)
   | ActivePattern of ident list * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving eq, show { with_path = false }]
