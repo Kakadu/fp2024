@@ -6,9 +6,7 @@
 
 [@@@ocaml.text "/*"]
 
-open FSharpActivePatterns.PrintAst
 open Tests.Gen_construction
-open FSharpActivePatterns.Ast
 
 (* let generate n =
    List.iter

@@ -2,9 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open FSharpActivePatterns.PrintAst
-open FSharpActivePatterns.Ast
+open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
+open FSharpActivePatterns.PrettyPrinter
 open Stdlib
 
 type input =
@@ -70,11 +70,12 @@ let run_repl dump_parsetree input_file =
       run_repl_helper run
     | End -> ()
     | Result ast ->
-      if dump_parsetree
-      then (
-        fprintf std_formatter "- : ";
-        print_construction std_formatter ast;
-        print_flush ());
+      (match dump_parsetree with
+       | true -> print_construction std_formatter ast
+       | false ->
+         fprintf std_formatter "- : ";
+         pp_construction std_formatter ast);
+      print_flush ();
       run_repl_helper run
   in
   run_repl_helper run_single

@@ -1,6 +1,6 @@
 (library
  (name tests)
- (modules Print_ast Parser Gen_construction)
+ (modules Ast_printer Parser Gen_construction)
  (libraries FSharpActivePatterns qcheck)
  (preprocess
   (pps ppx_expect ppx_deriving.show))

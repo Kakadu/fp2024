@@ -1,9 +1,10 @@
-(* * Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me>
+(** Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open FSharpActivePatterns.Ast
-open FSharpActivePatterns.PrintAst
+open FSharpActivePatterns.AstPrinter
+open Format
 
 let%expect_test "print Ast factorial" =
   let factorial =
@@ -31,7 +32,7 @@ let%expect_test "print Ast factorial" =
     ; Expr (Function_call (factorial, Variable (Ident ("a", None))))
     ]
   in
-  List.iter print_construction program;
+  List.iter (print_construction std_formatter) program;
   [%expect
     {|
      | Let  a =
@@ -109,7 +110,7 @@ let%expect_test "print Ast double func" =
   let args = [ var ] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
   let double = Function_def (args, binary_expr) in
-  print_construction @@ Expr double;
+  print_construction std_formatter @@ Expr double;
   [%expect
     {|
     | Func:
@@ -140,7 +141,7 @@ let%expect_test "print Ast tuple of binary operators" =
     ]
   in
   let print_binary_constr operator =
-    print_construction @@ Expr (Bin_expr (operator, first, second))
+    print_construction std_formatter @@ Expr (Bin_expr (operator, first, second))
   in
   List.iter print_binary_constr operators;
   [%expect
@@ -202,7 +203,7 @@ let%expect_test "print Ast of LetIn" =
          , []
          , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
   in
-  print_construction sum;
+  print_construction std_formatter sum;
   [%expect
     {|
      | LetIn  x =
@@ -225,8 +226,8 @@ let%expect_test "print Ast of match_expr" =
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
-  let match_expr = Match (Variable (Ident ("x", None)), pattern_values) in
-  print_construction (Expr match_expr);
+  let match_expr = Match (Variable (Ident "x"), pattern_values) in
+  print_construction std_formatter (Expr match_expr);
   [%expect
     {|
     | Match:
@@ -256,4 +257,4 @@ let%expect_test "print Ast of match_expr" =
     --------| PVar(xs)
     --| Inner expr:
     ----| Const(Int: 4) |}]
-;; *)
+;;
