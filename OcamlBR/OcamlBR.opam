@@ -20,6 +20,7 @@ depends: [
   "ppx_inline_test" {with-test}
   "ppx_deriving"
   "bisect_ppx"
+  "qcheck"
   "odoc" {with-doc}
   "ocamlformat" {build}
 ]
