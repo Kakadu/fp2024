@@ -98,16 +98,16 @@ let gen_expr =
                 (self (n / 2))
                 (self (n / 2))
                 (list_size (0 -- 15) (self (n / 2))) )
-          ; 0, map2 un_e gen_unop (self (n / 2))
-          ; 0, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
+          ; 1, map2 un_e gen_unop (self (n / 2))
+          ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
           ; ( 1
             , map3
                 if_e
                 (self (n / 2))
                 (self (n / 2))
                 (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
-          ; 0, map2 func_def (list gen_ident) (self (n / 2))
-          ; 0, map2 func_call gen_variable (self (n / 2))
+          ; 0, map2 func_def (list_size (0 -- 15) gen_ident) (self (n / 2))
+          ; 1, map2 func_call gen_variable (self (n / 2))
             (* TODO: make apply of arbitrary expr*)
           ; ( 0
             , map3
@@ -169,6 +169,10 @@ and shrink_expr =
     >|= (fun a' -> Function_call (a', arg))
     <+> shrink_expr arg
     >|= fun a' -> Function_call (f, a')
+  | Function_def (args, body) ->
+    QCheck.Shrink.list args
+    >|= (fun a' -> Function_def (a', body))
+    <+> (shrink_expr body >|= fun a' -> Function_def (args, a'))
   | _ -> empty
 ;;
 
