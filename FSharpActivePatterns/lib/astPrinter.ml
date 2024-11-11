@@ -1,5 +1,13 @@
-open Ast
+[@@@ocaml.text "/*"]
+
+(** Copyright 2024-2025, Ksenia Kotelnikova <xeniia.ka@gmail.com>, Gleb Nasretdinov <gleb.nasretdinov@proton.me> *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
+
 open Format
+open Ast
 
 let print_bin_op indent fmt = function
   | Binary_equal -> fprintf fmt "%s| Binary Equal\n" (String.make indent '-')

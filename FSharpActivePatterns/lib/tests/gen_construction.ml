@@ -87,36 +87,36 @@ let gen_let_bind gen =
 let gen_expr =
   QCheck.Gen.(
     sized
-    @@ fix (fun self n ->
-      match n with
-      | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
-      | n ->
-        frequency
-          [ ( 0
-            , map3
-                tuple_e
-                (self (n / 2))
-                (self (n / 2))
-                (list_size (0 -- 15) (self (n / 2))) )
-          ; 1, map2 un_e gen_unop (self (n / 2))
-          ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
-          ; ( 1
-            , map3
-                if_e
-                (self (n / 2))
-                (self (n / 2))
-                (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
-          ; 0, map2 func_def (list_size (0 -- 15) gen_ident) (self (n / 2))
-          ; 1, map2 func_call gen_variable (self (n / 2))
-            (* TODO: make apply of arbitrary expr*)
-          ; ( 0
-            , map3
-                letin
-                gen_rec_flag
-                (gen_let_bind (self (n / 2)))
-                (list_size (0 -- 15) (gen_let_bind (self (n / 2))))
-              <*> self (n / 2) )
-          ]))
+    @@ fix (fun self ->
+         function
+         | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
+         | n ->
+           frequency
+             [ ( 0
+               , map3
+                   tuple_e
+                   (self (n / 2))
+                   (self (n / 2))
+                   (list_size (0 -- 15) (self (n / 2))) )
+             ; 1, map2 un_e gen_unop (self (n / 2))
+             ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
+             ; ( 1
+               , map3
+                   if_e
+                   (self (n / 2))
+                   (self (n / 2))
+                   (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
+             ; 0, map2 func_def (list_size (0 -- 15) gen_ident) (self (n / 2))
+             ; 1, map2 func_call gen_variable (self (n / 2))
+               (* TODO: make apply of arbitrary expr*)
+             ; ( 0
+               , map3
+                   letin
+                   gen_rec_flag
+                   (gen_let_bind (self (n / 2)))
+                   (list_size (0 -- 15) (gen_let_bind (self (n / 2))))
+                 <*> self (n / 2) )
+             ]))
 ;;
 
 let shrink_lt =
@@ -215,7 +215,7 @@ let shrink_construction =
 let arbitrary_construction =
   QCheck.make
     gen_construction
-    ~print:(Format.asprintf "%a" pp_construction)
+    ~print:(Format.asprintf "%a" print_construction)
     ~shrink:shrink_construction
 ;;
 

@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Printf
 open Format
 
 let pp_bin_op fmt = function
@@ -37,10 +36,10 @@ let pp_rec_flag fmt = function
 let rec pp_pattern fmt = function
   | Wild -> fprintf fmt "_ "
   | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
-  | PTuple tuple -> fprintf fmt "TUPLE PAT WIP"
+  | PTuple _ -> fprintf fmt "TUPLE PAT WIP"
   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
-  | Variant variants -> fprintf fmt "VARIANTS PAT WIP"
+  | Variant _ -> fprintf fmt "VARIANTS PAT WIP"
 
 and pp_expr fmt expr =
   match expr with
@@ -48,13 +47,13 @@ and pp_expr fmt expr =
   | Const (Bool_lt b) -> fprintf fmt "%b " b
   | Const (String_lt s) -> fprintf fmt "%S " s
   | Const Unit_lt -> fprintf fmt "() "
-  | Cons_list (hd, tl) -> fprintf fmt "LIST WIP"
+  | Cons_list _ -> fprintf fmt "LIST WIP"
   | Empty_list -> fprintf fmt "[] "
   | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
     pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
     fprintf fmt ")"
-  | Match (value, patterns) -> fprintf fmt "MATCH WIP"
+  | Match _ -> fprintf fmt "MATCH WIP"
   | Variable (Ident (name, _)) -> fprintf fmt "%s " name
   | Unary_expr (op, expr) -> fprintf fmt "%a (%a)" pp_unary_op op pp_expr expr
   | Bin_expr (op, left, right) ->
@@ -107,7 +106,7 @@ let pp_statement fmt = function
       pp_let_bind
       fmt
       (let_bind :: let_bind_list)
-  | ActivePattern (patterns, expr) -> fprintf fmt "Active pattern TODO"
+  | ActivePattern _ -> fprintf fmt "Active pattern TODO"
 ;;
 
 let pp_construction fmt = function
