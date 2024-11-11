@@ -9,8 +9,9 @@ open Ast
     @return An [Ok] containing the parsed structure or an [Error] message. *)
 open Angstrom
 
+val pident_cap : string t
+val pident_lc : string t
 val pconst : expression t
-val pident : string t
 val pconstintexpr : expression t
 val pconstcharexpr : expression t
 val pconststringexpr : expression t

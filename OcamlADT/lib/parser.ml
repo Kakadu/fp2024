@@ -46,9 +46,9 @@ let token s = pass_ws *> string s
 
 let pparenth stmt = token "(" *> stmt <* token ")"
 
-let pletters =
+let plettersdig =
   satisfy (function
-    | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+    | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
     | _ -> false)
 ;;
 
@@ -57,6 +57,7 @@ let ptowhitespace = function
   | _ -> false
 ;;
 
+(* add check for keyword + prefix and infix sym + Some *)
 let pident_cap =
   let first_char_str =
     satisfy (function
@@ -67,7 +68,7 @@ let pident_cap =
   let rem_string =
     lift2
       (fun first rest -> String.make 1 first ^ rest)
-      pletters
+      plettersdig
       (take_while ptowhitespace)
   in
   lift2 (fun fc rs -> fc ^ rs) first_char_str rem_string
@@ -83,7 +84,7 @@ let pident_lc =
   let rem_string =
     lift2
       (fun first rest -> String.make 1 first ^ rest)
-      pletters
+      plettersdig
       (take_while ptowhitespace)
   in
   lift2 (fun fc rs -> fc ^ rs) first_char_str rem_string
