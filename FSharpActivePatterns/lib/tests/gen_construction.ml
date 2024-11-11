@@ -81,8 +81,8 @@ let gen_expr =
       | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
       | n ->
         frequency
-          [ 0, map tuple_e (list_size (0 -- 15) (self (n / 2)))
-          ; 0, map2 un_e gen_unop (self (n / 2))
+          [ 0, map tuple_e (list_size (2 -- 15) (self (n / 2)))
+          ; 1, map2 un_e gen_unop (self (n / 2))
           ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
           ; ( 1
             , map3
@@ -91,7 +91,7 @@ let gen_expr =
                 (self (n / 2))
                 (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
           ; 0, map2 func_def (list gen_variable) (self (n / 2))
-          ; ( 0
+          ; ( 1
             , map3
                 letin
                 (oneof [ return Rec; return Nonrec ])
