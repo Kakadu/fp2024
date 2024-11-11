@@ -9,3 +9,9 @@ let () =
   let _ : int = TestQCheck.run_manual () in
   ()
 ;;
+
+let () =
+  print_endline "Testing auto generator.";
+  let _ : int = TestQCheck.run_auto () in
+  ()
+;;

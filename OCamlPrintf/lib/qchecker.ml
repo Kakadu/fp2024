@@ -17,9 +17,8 @@ module ShrinkQCheck = struct
        | Const_integer i -> int i >|= fun i' -> Pat_constant (Const_integer i')
        | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
        | Const_string str -> string str >|= fun str' -> Pat_constant (Const_string str'))
-    | Pat_tuple pat_list ->
-      list ~shrink:shrink_pattern pat_list >|= fun pat_list' -> Pat_tuple pat_list'
-    | Pat_construct (_, None) -> empty
+    | Pat_tuple pats -> list ~shrink:shrink_pattern pats >|= fun pats' -> Pat_tuple pats'
+    | Pat_construct (id, None) -> string id >|= fun id' -> Pat_construct (id', None)
     | Pat_construct (id, Some pat) ->
       shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat')
   ;;
@@ -31,7 +30,10 @@ module ShrinkQCheck = struct
        | Const_integer i -> int i >|= fun i' -> Exp_constant (Const_integer i')
        | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
        | Const_string str -> string str >|= fun str' -> Exp_constant (Const_string str'))
-    | Exp_let (rec_flag, value_binding_list, exp) -> empty
+    | Exp_let (rec_flag, value_bindings, exp) ->
+      list ~shrink:shrink_value_binding value_bindings
+      >|= (fun value_bindings' -> Exp_let (rec_flag, value_bindings', exp))
+      <+> (shrink_expression exp >|= fun exp' -> Exp_let (rec_flag, value_bindings, exp'))
     | Exp_fun (pat_list, exp) ->
       list ~shrink:shrink_pattern pat_list
       >|= (fun pat_list' -> Exp_fun (pat_list', exp))
@@ -40,10 +42,13 @@ module ShrinkQCheck = struct
       list ~shrink:shrink_expression exp_list
       >|= (fun exp_list' -> Exp_apply (exp, exp_list'))
       <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', exp_list))
-    | Exp_match (exp, case_list) -> empty
-    | Exp_tuple exp_list ->
-      list ~shrink:shrink_expression exp_list >|= fun exp_list' -> Exp_tuple exp_list'
-    | Exp_construct (_, None) -> empty
+    | Exp_match (exp, cases) ->
+      shrink_expression exp
+      >|= (fun exp' -> Exp_match (exp', cases))
+      <+> (list ~shrink:shrink_case cases >|= fun cases' -> Exp_match (exp, cases'))
+    | Exp_tuple exps ->
+      list ~shrink:shrink_expression exps >|= fun exps' -> Exp_tuple exps'
+    | Exp_construct (id, None) -> string id >|= fun id' -> Exp_construct (id', None)
     | Exp_construct (id, Some exp) ->
       shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp')
     | Exp_ifthenelse (if_exp, then_exp, None) ->
@@ -64,10 +69,17 @@ module ShrinkQCheck = struct
       of_list [ exp1; exp2 ]
       <+> (shrink_expression exp1 >|= fun exp1' -> Exp_sequence (exp1', exp2))
       <+> (shrink_expression exp2 >|= fun exp2' -> Exp_sequence (exp1, exp2'))
-  ;;
 
-  let shrink_value_binding =
-    map2 (fun pat exp -> { pat; exp }) shrink_pattern shrink_expression
+  and shrink_value_binding value_binding =
+    shrink_pattern value_binding.pat
+    >|= (fun pat' -> { value_binding with pat = pat' })
+    <+> (shrink_expression value_binding.exp
+         >|= fun exp' -> { value_binding with exp = exp' })
+
+  and shrink_case case =
+    shrink_pattern case.left
+    >|= (fun left' -> { case with left = left' })
+    <+> (shrink_expression case.right >|= fun right' -> { case with right = right' })
   ;;
 
   let shrink_structure_item = function
@@ -231,12 +243,30 @@ module TestQCheck = struct
       ~shrink:ShrinkQCheck.shrink_structure
   ;;
 
+  let arbitrary_lam_auto =
+    QCheck.make
+      gen_structure
+      ~print:(Format.asprintf "%a" pp_structure)
+      ~shrink:ShrinkQCheck.shrink_structure
+  ;;
+
   let run_manual () =
     QCheck_runner.run_tests
       [ QCheck.(
           Test.make arbitrary_lam_manual (fun str ->
             Format.printf "%a \n" Pprinter.pp_structure str;
             Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
+      ]
+  ;;
+
+  let run_auto () =
+    QCheck_runner.run_tests
+      [ QCheck.(
+          Test.make arbitrary_lam_auto (fun str ->
+            match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str) with
+            | Result.Ok after when after = str -> true
+            | Result.Ok _after -> false
+            | Result.Error _ -> false))
       ]
   ;;
 end

@@ -4,4 +4,5 @@
 
 module TestQCheck : sig
   val run_manual : unit -> int
+  val run_auto : unit -> int
 end
