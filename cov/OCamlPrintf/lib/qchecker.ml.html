@@ -443,21 +443,21 @@ module TestQCheck = struct
 
   (* Manual generator *)
 
-  let gen_char = ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'a') (Char.cod<span data-count="2">e</span> 'h'))
-  let gen_int = int_rang<span data-count="2">e</span> 0 10000
-  let gen_ident = string_siz<span data-count="2">e</span> (int_rang<span data-count="2">e</span> 1 3) ~gen:gen_char
+  let gen_char = ma<span data-count="3">p</span> Char.chr (int_rang<span data-count="3">e</span> (Char.cod<span data-count="3">e</span> 'a') (Char.cod<span data-count="3">e</span> 'h'))
+  let gen_int = int_rang<span data-count="3">e</span> 0 10000
+  let gen_ident = string_siz<span data-count="3">e</span> (int_rang<span data-count="3">e</span> 1 3) ~gen:gen_char
 
   let gen_constant =
-    frequenc<span data-count="2">y</span>
-      [ 1, ma<span data-count="2">p</span> (fun i -&gt; <span data-count="0">C</span>onst_integer i) gen_int
-      ; 1, ma<span data-count="2">p</span> (fun c -&gt; <span data-count="0">C</span>onst_char c) gen_char
-      ; 1, ma<span data-count="2">p</span> (fun s -&gt; <span data-count="0">C</span>onst_string s) gen_ident
+    frequenc<span data-count="3">y</span>
+      [ 1, ma<span data-count="3">p</span> (fun i -&gt; <span data-count="0">C</span>onst_integer i) gen_int
+      ; 1, ma<span data-count="3">p</span> (fun c -&gt; <span data-count="0">C</span>onst_char c) gen_char
+      ; 1, ma<span data-count="3">p</span> (fun s -&gt; <span data-count="0">C</span>onst_string s) gen_ident
       ]
   ;;
 
   let gen_pattern =
-    size<span data-count="2">d</span>
-    @@ fi<span data-count="2">x</span> (fun self -&gt;
+    size<span data-count="3">d</span>
+    @@ fi<span data-count="3">x</span> (fun self -&gt;
          function
          | <span data-count="0">0</span> -&gt;
            frequency
@@ -489,8 +489,8 @@ module TestQCheck = struct
   ;;
 
   let gen_expression =
-    size<span data-count="2">d</span>
-    @@ fi<span data-count="2">x</span> (fun self -&gt;
+    size<span data-count="3">d</span>
+    @@ fi<span data-count="3">x</span> (fun self -&gt;
          function
          | <span data-count="0">0</span> -&gt;
            frequency
@@ -563,24 +563,24 @@ module TestQCheck = struct
              ])
   ;;
 
-  let gen_value_binding = map<span data-count="2">2</span> (fun pat exp -&gt; <span data-count="0">{</span> pat; exp }) gen_pattern gen_expression
+  let gen_value_binding = map<span data-count="3">2</span> (fun pat exp -&gt; <span data-count="0">{</span> pat; exp }) gen_pattern gen_expression
 
   let gen_structure_item =
-    frequenc<span data-count="2">y</span>
-      [ 1, ma<span data-count="2">p</span> (fun exp -&gt; <span data-count="0">S</span>truct_eval exp) gen_expression
+    frequenc<span data-count="3">y</span>
+      [ 1, ma<span data-count="3">p</span> (fun exp -&gt; <span data-count="0">S</span>truct_eval exp) gen_expression
       ; ( 1
-        , map<span data-count="2">2</span>
+        , map<span data-count="3">2</span>
             (fun rec_flag value_binding_list -&gt;
               <span data-count="0">S</span>truct_value (rec_flag, value_binding_list))
-            (frequenc<span data-count="2">y</span> [ 1, retur<span data-count="2">n</span> Nonrecursive; 1, retur<span data-count="2">n</span> Recursive ])
-            (list_siz<span data-count="2">e</span> (int_rang<span data-count="2">e</span> 1 3) gen_value_binding) )
+            (frequenc<span data-count="3">y</span> [ 1, retur<span data-count="3">n</span> Nonrecursive; 1, retur<span data-count="3">n</span> Recursive ])
+            (list_siz<span data-count="3">e</span> (int_rang<span data-count="3">e</span> 1 3) gen_value_binding) )
       ]
   ;;
 
-  let gen_structure = list_siz<span data-count="2">e</span> (int_rang<span data-count="2">e</span> 1 1) gen_structure_item
+  let gen_structure = list_siz<span data-count="3">e</span> (int_rang<span data-count="3">e</span> 1 1) gen_structure_item
 
   let arbitrary_lam_manual =
-    QCheck.mak<span data-count="2">e</span> gen_structure ~print:(Format.asprint<span data-count="2">f</span> "%a" pp_structure)
+    QCheck.mak<span data-count="3">e</span> gen_structure ~print:(Format.asprint<span data-count="3">f</span> "%a" pp_structure)
   ;;
 
   let run_manual () =

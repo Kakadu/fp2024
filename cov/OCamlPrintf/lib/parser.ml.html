@@ -748,13 +748,13 @@ open Angstrom
 
 (* ==================== Utils ==================== *)
 
-let skip_whitespaces = skip_whil<span data-count="4">e</span> Char.is_whitespace
+let skip_whitespaces = skip_whil<span data-count="5">e</span> Char.is_whitespace
 
 let parse_comments =
-  skip_whitespaces *<span data-count="4">&gt;</span> strin<span data-count="4">g</span> "(*" *<span data-count="4">&gt;</span> many_til<span data-count="4">l</span> any_char (strin<span data-count="4">g</span> "*)") *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> ()
+  skip_whitespaces *<span data-count="5">&gt;</span> strin<span data-count="5">g</span> "(*" *<span data-count="5">&gt;</span> many_til<span data-count="5">l</span> any_char (strin<span data-count="5">g</span> "*)") *<span data-count="5">&gt;</span> retur<span data-count="5">n</span> ()
 ;;
 
-let ws = man<span data-count="4">y</span> parse_comments *<span data-count="4">&gt;</span> skip_whitespaces
+let ws = man<span data-count="5">y</span> parse_comments *<span data-count="5">&gt;</span> skip_whitespaces
 
 let skip_parens parse_ =
   <span data-count="6">w</span>s *<span data-count="6">&gt;</span> (strin<span data-count="6">g</span> "(" *<span data-count="6">&gt;</span> ws *<span data-count="6">&gt;</span> parse_)
@@ -785,20 +785,20 @@ let is_keyword = function
 ;;
 
 let keyword str =
-  <span data-count="71">s</span>trin<span data-count="71">g</span> str
+  <span data-count="77">s</span>trin<span data-count="77">g</span> str
   *&gt;
   let* char_value = peek_char_fail in
   <span data-count="86">i</span>f is_separator char_value
   then <span data-count="86">r</span>eturn str
-  else <span data-count="0">f</span>ail (Printf.sprint<span data-count="0">f</span> "There is no separator after \"%s\"." str)
+  else <span data-count="0">f</span>ail (Printf.sprint<span data-count="0">f</span> "There is no separator after %S." str)
 ;;
 
 (* ==================== Ident ==================== *)
 
 let parse_ident =
   ws
-  *<span data-count="4">&gt;</span>
-  let* start_ident = satisf<span data-count="4">y</span> Char.is_alpha &gt;&gt;<span data-count="4">|</span> String.of_char in
+  *<span data-count="5">&gt;</span>
+  let* start_ident = satisf<span data-count="5">y</span> Char.is_alpha &gt;&gt;<span data-count="5">|</span> String.of_char in
   <span data-count="342">l</span>et* rest_ident =
     take_whil<span data-count="342">e</span> (function
       | <span data-count="0">'</span>A' .. 'Z' | <span data-count="493">'</span>a' .. 'z' | <span data-count="0">'</span>0' .. '9' | <span data-count="21">'</span>_' | <span data-count="0">'</span>\'' -&gt; true
@@ -806,39 +806,39 @@ let parse_ident =
   in
   <span data-count="342">l</span>et ident = start_ident ^ rest_ident in
   if is_keyword ident
-  then <span data-count="80">f</span>ail (Printf.sprint<span data-count="80">f</span> "Impossible name: \"%s\"." ident)
+  then <span data-count="80">f</span>ail (Printf.sprint<span data-count="80">f</span> "Impossible name: %S." ident)
   else <span data-count="262">r</span>eturn ident
 ;;
 
 (* ==================== Rec_flag ==================== *)
 
-let parse_rec_flag = ws *<span data-count="4">&gt;</span> optio<span data-count="4">n</span> Nonrecursive (keywor<span data-count="4">d</span> "rec" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Recursive)
+let parse_rec_flag = ws *<span data-count="5">&gt;</span> optio<span data-count="5">n</span> Nonrecursive (keywor<span data-count="5">d</span> "rec" *<span data-count="5">&gt;</span> retur<span data-count="5">n</span> Recursive)
 
 (* ==================== Constant ==================== *)
 
 let parse_const_int =
-  take_while<span data-count="4">1</span> Char.is_digit &gt;&gt;<span data-count="4">|</span> fun int_value -&gt; <span data-count="164">C</span>onst_integer (Int.of_strin<span data-count="164">g</span> int_value)
+  take_while<span data-count="5">1</span> Char.is_digit &gt;&gt;<span data-count="5">|</span> fun int_value -&gt; <span data-count="164">C</span>onst_integer (Int.of_strin<span data-count="164">g</span> int_value)
 ;;
 
 let parse_const_char =
-  strin<span data-count="4">g</span> "\'" *<span data-count="4">&gt;</span> any_char &lt;<span data-count="4">*</span> strin<span data-count="4">g</span> "\'" &gt;&gt;<span data-count="4">|</span> fun char_value -&gt; <span data-count="0">C</span>onst_char char_value
+  strin<span data-count="5">g</span> "\'" *<span data-count="5">&gt;</span> any_char &lt;<span data-count="5">*</span> strin<span data-count="5">g</span> "\'" &gt;&gt;<span data-count="5">|</span> fun char_value -&gt; <span data-count="0">C</span>onst_char char_value
 ;;
 
 let parse_const_string =
-  strin<span data-count="4">g</span> "\"" *<span data-count="4">&gt;</span> take_til<span data-count="4">l</span> (Char.equa<span data-count="4">l</span> '\"')
-  &lt;<span data-count="4">*</span> strin<span data-count="4">g</span> "\""
-  &gt;&gt;<span data-count="4">|</span> fun str_value -&gt; <span data-count="2">C</span>onst_string str_value
+  strin<span data-count="5">g</span> "\"" *<span data-count="5">&gt;</span> take_til<span data-count="5">l</span> (Char.equa<span data-count="5">l</span> '\"')
+  &lt;<span data-count="5">*</span> strin<span data-count="5">g</span> "\""
+  &gt;&gt;<span data-count="5">|</span> fun str_value -&gt; <span data-count="2">C</span>onst_string str_value
 ;;
 
 let parse_constant =
-  ws *<span data-count="4">&gt;</span> choic<span data-count="4">e</span> [ parse_const_int; parse_const_char; parse_const_string ]
+  ws *<span data-count="5">&gt;</span> choic<span data-count="5">e</span> [ parse_const_int; parse_const_char; parse_const_string ]
 ;;
 
 (* ==================== Pattern ==================== *)
 
-let parse_pat_any = ws *<span data-count="4">&gt;</span> strin<span data-count="4">g</span> "_" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Pat_any
-let parse_pat_var = parse_ident &gt;&gt;<span data-count="4">|</span> fun var -&gt; <span data-count="64">P</span>at_var var
-let parse_pat_constant = parse_constant &gt;&gt;<span data-count="4">|</span> fun const -&gt; <span data-count="32">P</span>at_constant const
+let parse_pat_any = ws *<span data-count="5">&gt;</span> strin<span data-count="5">g</span> "_" *<span data-count="5">&gt;</span> retur<span data-count="5">n</span> Pat_any
+let parse_pat_var = parse_ident &gt;&gt;<span data-count="5">|</span> fun var -&gt; <span data-count="64">P</span>at_var var
+let parse_pat_constant = parse_constant &gt;&gt;<span data-count="5">|</span> fun const -&gt; <span data-count="32">P</span>at_constant const
 
 let parse_pat_tuple parse_pat =
   <span data-count="3">l</span>et* first_pat = parse_pat in
@@ -847,7 +847,7 @@ let parse_pat_tuple parse_pat =
 ;;
 
 let parse_bool_pat =
-  ws *<span data-count="4">&gt;</span> keywor<span data-count="4">d</span> "true" &lt;|<span data-count="4">&gt;</span> keywor<span data-count="4">d</span> "false" &gt;&gt;<span data-count="4">|</span> fun name -&gt; <span data-count="0">P</span>at_construct (name, None)
+  ws *<span data-count="5">&gt;</span> keywor<span data-count="5">d</span> "true" &lt;|<span data-count="5">&gt;</span> keywor<span data-count="5">d</span> "false" &gt;&gt;<span data-count="5">|</span> fun name -&gt; <span data-count="0">P</span>at_construct (name, None)
 ;;
 
 let parse_pat_construct parse_pat =
@@ -864,7 +864,7 @@ let parse_pat_construct parse_pat =
 ;;
 
 let parse_pattern =
-  fi<span data-count="4">x</span> (fun parse_full_pat -&gt;
+  fi<span data-count="5">x</span> (fun parse_full_pat -&gt;
     <span data-count="3">l</span>et parse_pat =
       choice
         [ skip_paren<span data-count="3">s</span> parse_full_pat
@@ -908,18 +908,18 @@ let bin_op chain1 parse_exp parse_fun_op =
   <span data-count="15">c</span>hain1 parse_exp (parse_fun_op &gt;&gt;<span data-count="15">|</span> fun op exp1 exp2 -&gt; <span data-count="130">E</span>xp_apply (op, [ exp1; exp2 ]))
 ;;
 
-let parse_left_bin_op = bin_o<span data-count="4">p</span> parse_chain_left_associative
-let parse_right_bin_op = bin_o<span data-count="4">p</span> parse_chain_right_associative
+let parse_left_bin_op = bin_o<span data-count="5">p</span> parse_chain_left_associative
+let parse_right_bin_op = bin_o<span data-count="5">p</span> parse_chain_right_associative
 
 let parse_operator ops =
-  <span data-count="20">c</span>hoice (List.ma<span data-count="20">p</span> ~f:(fun op -&gt; <span data-count="48">w</span>s *<span data-count="48">&gt;</span> strin<span data-count="48">g</span> op *&gt; retur<span data-count="48">n</span> (Exp_ident op)) ops)
+  <span data-count="25">c</span>hoice (List.ma<span data-count="25">p</span> ~f:(fun op -&gt; <span data-count="60">w</span>s *<span data-count="60">&gt;</span> strin<span data-count="60">g</span> op *&gt; retur<span data-count="60">n</span> (Exp_ident op)) ops)
 ;;
 
-let mul_div = parse_operato<span data-count="4">r</span> [ "*"; "/" ]
-let add_sub = parse_operato<span data-count="4">r</span> [ "+"; "-" ]
-let cmp = parse_operato<span data-count="4">r</span> [ "&gt;="; "&lt;="; "&lt;&gt;"; "="; "&gt;"; "&lt;" ]
-let and_ = parse_operato<span data-count="4">r</span> [ "&amp;&amp;" ]
-let or_ = parse_operato<span data-count="4">r</span> [ "||" ]
+let mul_div = parse_operato<span data-count="5">r</span> [ "*"; "/" ]
+let add_sub = parse_operato<span data-count="5">r</span> [ "+"; "-" ]
+let cmp = parse_operato<span data-count="5">r</span> [ "&gt;="; "&lt;="; "&lt;&gt;"; "="; "&gt;"; "&lt;" ]
+let and_ = parse_operato<span data-count="5">r</span> [ "&amp;&amp;" ]
+let or_ = parse_operato<span data-count="5">r</span> [ "||" ]
 
 (* -------------------- Value_binding -------------------- *)
 
@@ -944,8 +944,8 @@ let parse_value_binding_list parse_exp =
 
 (* -------------------- Expression -------------------- *)
 
-let parse_exp_ident = parse_ident &gt;&gt;<span data-count="4">|</span> fun ident -&gt; <span data-count="198">E</span>xp_ident ident
-let parse_exp_constant = parse_constant &gt;&gt;<span data-count="4">|</span> fun const -&gt; <span data-count="134">E</span>xp_constant const
+let parse_exp_ident = parse_ident &gt;&gt;<span data-count="5">|</span> fun ident -&gt; <span data-count="198">E</span>xp_ident ident
+let parse_exp_constant = parse_constant &gt;&gt;<span data-count="5">|</span> fun const -&gt; <span data-count="134">E</span>xp_constant const
 
 let parse_exp_let parse_exp =
   <span data-count="3">w</span>s
@@ -1006,7 +1006,7 @@ let parse_exp_tuple parse_exp =
 ;;
 
 let parse_bool_exp =
-  ws *<span data-count="4">&gt;</span> keywor<span data-count="4">d</span> "true" &lt;|<span data-count="4">&gt;</span> keywor<span data-count="4">d</span> "false" &gt;&gt;<span data-count="4">|</span> fun name -&gt; <span data-count="24">E</span>xp_construct (name, None)
+  ws *<span data-count="5">&gt;</span> keywor<span data-count="5">d</span> "true" &lt;|<span data-count="5">&gt;</span> keywor<span data-count="5">d</span> "false" &gt;&gt;<span data-count="5">|</span> fun name -&gt; <span data-count="24">E</span>xp_construct (name, None)
 ;;
 
 let parse_exp_construct parse_exp =
@@ -1043,7 +1043,7 @@ let parse_exp_sequence parse_exp =
 
 let parse_expression =
   ws
-  *<span data-count="4">&gt;</span> fi<span data-count="4">x</span> (fun parse_full_exp -&gt;
+  *<span data-count="5">&gt;</span> fi<span data-count="5">x</span> (fun parse_full_exp -&gt;
     <span data-count="3">l</span>et parse_exp =
       choice
         [ parse_exp_ident
@@ -1064,8 +1064,8 @@ let parse_expression =
 (* ==================== Structure ==================== *)
 
 let parse_struct_value =
-  keywor<span data-count="4">d</span> "let"
-  *<span data-count="4">&gt;</span>
+  keywor<span data-count="5">d</span> "let"
+  *<span data-count="5">&gt;</span>
   let* rec_flag = parse_rec_flag in
   <span data-count="8">l</span>et* value_binding_list = parse_value_binding_lis<span data-count="8">t</span> parse_expression in
   <span data-count="8">w</span>s
@@ -1077,15 +1077,15 @@ let parse_struct_value =
 
 let parse_structure =
   let parse_structure_item =
-    ws *&gt; (parse_struct_value &lt;|<span data-count="4">&gt;</span> (parse_expression &gt;&gt;<span data-count="4">|</span> fun exp -&gt; <span data-count="4">S</span>truct_eval exp))
+    ws *&gt; (parse_struct_value &lt;|<span data-count="5">&gt;</span> (parse_expression &gt;&gt;<span data-count="5">|</span> fun exp -&gt; <span data-count="4">S</span>truct_eval exp))
   in
-  <span data-count="4">l</span>et semicolons = many (ws *<span data-count="4">&gt;</span> strin<span data-count="4">g</span> ";;") in
-  <span data-count="4">s</span>ep_b<span data-count="4">y</span> semicolons parse_structure_item &lt;<span data-count="4">*</span> semicolons &lt;<span data-count="4">*</span> ws
+  <span data-count="5">l</span>et semicolons = many (ws *<span data-count="5">&gt;</span> strin<span data-count="5">g</span> ";;") in
+  <span data-count="5">s</span>ep_b<span data-count="5">y</span> semicolons parse_structure_item &lt;<span data-count="5">*</span> semicolons &lt;<span data-count="5">*</span> ws
 ;;
 
 (* ==================== Execute ==================== *)
 
-let parse = parse_strin<span data-count="4">g</span> ~consume:All parse_structure
+let parse = parse_strin<span data-count="5">g</span> ~consume:All parse_structure
 </code></pre>
       </div>
     </div>

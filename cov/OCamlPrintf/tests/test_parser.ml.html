@@ -574,7 +574,7 @@ let%expect_test "parse_factorial_with_match" =
           ]
         ))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_exp_fun" =
@@ -594,7 +594,7 @@ let%expect_test "parse_exp_fun" =
           ]
         ))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_pat_exp_tuples" =
@@ -611,7 +611,7 @@ let%expect_test "parse_pat_exp_tuples" =
           ]
         ))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_exp_construct" =
@@ -642,7 +642,7 @@ let%expect_test "parse_exp_construct" =
           ]
         ))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "check parse_chain_right_associative" =
@@ -674,7 +674,7 @@ let%expect_test "check parse_chain_right_associative" =
           ]
         ))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_struct_eval" =
@@ -698,7 +698,7 @@ let%expect_test "parse_struct_eval" =
              ]
            )))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_exp_let" =
@@ -718,7 +718,7 @@ let%expect_test "parse_exp_let" =
                ]
              )))
         ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_several_structure_items" =
@@ -736,7 +736,7 @@ let%expect_test "parse_several_structure_items" =
       (Struct_eval
          (Exp_apply ((Exp_ident "squared"), [(Exp_constant (Const_integer 5))])))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 
 let%expect_test "parse_sequence_and_construct" =
@@ -764,7 +764,7 @@ let%expect_test "parse_sequence_and_construct" =
               )),
            (Exp_constant (Const_string "qwerty123")))))
       ]
-    |}<span data-count="5">]</span>
+    |}<span data-count="7">]</span>
 ;;
 </code></pre>
       </div>
