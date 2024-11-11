@@ -515,8 +515,13 @@ let%expect_test "factorial" =
                           ((Exp_tuple
                               ((Exp_ident "x"),
                                (Exp_apply ((Exp_ident "fact"),
-                                  ((Exp_apply ((Exp_ident "x"),
-                                      ((Exp_constant (Const_integer -1)), []))),
+                                  ((Exp_apply ((Exp_ident "-"),
+                                      ((Exp_tuple
+                                          ((Exp_ident "x"),
+                                           (Exp_constant (Const_integer 1)),
+                                           [])),
+                                       [])
+                                      )),
                                    [])
                                   )),
                                [])),
@@ -529,35 +534,3 @@ let%expect_test "factorial" =
         ))
       ] |}]
 ;;
-
-(* let%expect_test "let x = 5" =
-    test_programm{|let x = 52;;|};
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Tests__Parser.test_programm in file "tests/parser.ml", line 5, characters 50-65
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}] *)
-
-(* let print_list to_string fr sc lst =
-   Printf.printf "var %s" fr;
-   Printf.printf "var2 %s" sc;
-   Printf.printf "[";
-    List.iteri (fun i x ->
-      if i > 0 then Printf.printf "; ";
-      Printf.printf "%s" (to_string x)
-    ) lst;
-    Printf.printf "]\n" *)
-(*
-   let test_let str = parse_string ~consume:All pletexpr str
-
-let%expect_test "let" =
-        match test_let {|let|} with
-        | Ok expr -> 
-            print_endline (show_expression expr)
-        | Error msg -> 
-            print_endline ("Error: " ^ msg);
-        [%expect {| Error: : string |}] *)
