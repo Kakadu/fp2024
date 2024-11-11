@@ -62,7 +62,7 @@ let rec pp_expression ff = function
   | Apply (ex, l) ->
     fprintf
       ff
-      "(%a %a)"
+      "((%a) %a)"
       pp_expression
       ex
       (pp_print_list ~pp_sep:pp_print_space pp_expression)

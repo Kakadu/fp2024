@@ -29,7 +29,7 @@ let ident_symbol = function
 ;;
 
 (** Parse [Miniml.identifier] value. *)
-let ident =
+let ident ?(on_keyword = fun _ -> pfail) =
   let helper = many (dsatisfy ident_symbol Fun.id) in
   skip_ws *> dsatisfy ident_symbol Fun.id
   >>= fun s ->
@@ -38,7 +38,7 @@ let ident =
   else
     helper
     >>| (fun l -> string_of_char_list (s :: l))
-    >>= fun id -> if is_keyword id then pfail else preturn id
+    >>= fun id -> if is_keyword id then on_keyword id else preturn id
 ;;
 
 (** Parser of keyword *)
@@ -90,7 +90,13 @@ let boolean =
 let rec pattern_parser state = (skip_ws *> (pvariable <|> ptuple)) state
 
 (** Parser of variable pattern *)
-and pvariable state = (skip_ws *> (ident >>| fun id -> PVar id)) state
+and pvariable state =
+  (skip_ws
+   *> (ident ~on_keyword:(fun id ->
+         perror
+           (Format.sprintf "Unexpected identifier of pattern: '%s'. It is keyword." id))
+       >>| fun id -> PVar id))
+    state
 
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
@@ -160,20 +166,25 @@ and applyable_expr state = (skip_ws *> bracket_expr <|> lambda_expr <|> variable
 
 (** Parser of basic expressions:
     [<unary>] | [<if-expr>] | [<define_expr>] | [<apply-expr>] | [<const>] *)
-and basic_expr inapply state =
-  (skip_ws *> unary_expr inapply
+and basic_expr applyable state =
+  (skip_ws *> unary_expr applyable
    <|> if_expr
    <|> define_expr
-   <|> (if inapply then applyable_expr else apply_expr)
+   <|> (if applyable then applyable_expr else apply_expr)
    <|> const_expr)
     state
 
 (** Parser of unary expression *)
-and unary_expr inapply state =
+and unary_expr applyable state =
   let helper =
-    symbol '+' *> basic_expr inapply
-    >>| (fun e -> Unary (Positive, e))
-    <|> (symbol '-' *> basic_expr inapply >>| fun e -> Unary (Negate, e))
+    symbol '+'
+    *> (basic_expr applyable
+        >>| (fun e -> Unary (Positive, e))
+        <|> perror "Not found sub-expression of positive unary")
+    <|> symbol '-'
+        *> (basic_expr applyable
+            >>| (fun e -> Unary (Negate, e))
+            <|> perror "Not found sub-expression of negate unary")
   in
   (skip_ws *> (helper <|> symbol '~' *> helper)) state
 
@@ -372,8 +383,13 @@ let eval_item = skip_ws *> expr >>| fun ex -> EvalItem ex
 
 (** Parser of all stricture item *)
 let struct_item_parser =
-  skip_ws *> (define_item <|> eval_item)
-  >>= fun item -> skip_ws *> ssequence ";;" *> preturn item
+  skip_ws
+  *> (define_item
+      <|> eval_item
+      >>= fun item ->
+      skip_ws
+      *> (ssequence ";;" *> preturn item
+          <|> perror "Not found close semicolons ';;' of structure item"))
 ;;
 
 (** Parser of program item *)

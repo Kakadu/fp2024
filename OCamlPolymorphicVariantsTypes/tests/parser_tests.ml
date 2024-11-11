@@ -10,6 +10,30 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|10 + (fun in -> x) 10;;|};
+  [%expect
+    {|
+    ParseError(line=1 pos=12): Unexpected identifier of pattern: 'in'. It is keyword. |}];
+  test_program {|10 + (fun x -> x) 10;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Binary ((Const (IntLiteral 10)), Add,
+           (Apply ((Lambda ([(PVar "x")], (Variable "x"))),
+              [(Const (IntLiteral 10))]))
+           )))
+      ] |}];
+  test_program {|-  ;;|};
+  [%expect {|
+    ParseError(line=1 pos=1): Not found sub-expression of negate unary |}];
+  test_program {|10 -   |};
+  [%expect
+    {|
+    ParseError(line=1 pos=4): Not found right operand of '-' binary operator |}];
+  test_program {|10 - ()|};
+  [%expect
+    {|
+    ParseError(line=1 pos=7): Not found close semicolons ';;' of structure item |}];
   test_program {|
   let y = 10;;
   let g x = x + y;;
@@ -27,7 +51,6 @@ let%expect_test _ =
   test_program {|let y = ;;|};
   [%expect {|
     ParseError(line=1 pos=6): Not found expression of let-definition |}];
-  (* TODO: Add printing of all errors, not also first error *)
   test_program {|
   let y = ;;
   let f y = fun x -> x / y;;
@@ -38,7 +61,6 @@ let%expect_test _ =
   test_program {|~+false;;|};
   [%expect {|
     [(EvalItem (Unary (Positive, (Const (BoolLiteral false)))))] |}];
-  (* TODO: Validate bracket expression as applyable if it is in apply *)
   test_program {|(1) x y;;|};
   [%expect
     {|
@@ -61,7 +83,8 @@ let%expect_test _ =
            (Apply ((Variable "g"), [(Const (IntLiteral 10))])), None)))
       ] |}];
   test_program {|iff x then g 10;;|};
-  [%expect {| [] |}];
+  [%expect
+    {| ParseError(line=1 pos=6): Not found close semicolons ';;' of structure item |}];
   test_program {|if f x theng 10;;|};
   [%expect {| ParseError(line=1 pos=15): Not found 'then' branch for if-expression |}];
   test_program {|if f x then g 10 else ~-10;;|};
