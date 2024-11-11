@@ -29,7 +29,7 @@ let pp_ident ppf id = fprintf ppf "%s" id
 let pp_constant ppf = function
   | Const_integer n -> fprintf ppf "%d" n
   | Const_char c -> fprintf ppf "'%c'" c
-  | Const_string s -> fprintf ppf "\"%s\"" s
+  | Const_string s -> fprintf ppf "%S" s
 ;;
 
 let rec pp_pattern ppf = function

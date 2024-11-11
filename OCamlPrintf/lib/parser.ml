@@ -50,7 +50,7 @@ let keyword str =
   let* char_value = peek_char_fail in
   if is_separator char_value
   then return str
-  else fail (Printf.sprintf "There is no separator after \"%s\"." str)
+  else fail (Printf.sprintf "There is no separator after %S." str)
 ;;
 
 (* ==================== Ident ==================== *)
@@ -66,7 +66,7 @@ let parse_ident =
   in
   let ident = start_ident ^ rest_ident in
   if is_keyword ident
-  then fail (Printf.sprintf "Impossible name: \"%s\"." ident)
+  then fail (Printf.sprintf "Impossible name: %S." ident)
   else return ident
 ;;
 
