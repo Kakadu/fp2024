@@ -17,6 +17,7 @@ bug-reports: "https://github.com/DronShock/FSharpUnitsOfMeasure/issues"
 depends: [
   "dune" {>= "3.7"}
   "angstrom"
+  "qcheck"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"

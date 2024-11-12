@@ -28,6 +28,8 @@
  (allow_empty)
  (depends
   dune
+  angstrom
+  qcheck
   (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
