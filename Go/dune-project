@@ -6,6 +6,7 @@
 
 (license MIT)
 
+
 (authors
  "Karim Shakirov <karimshak06@gmail.com>"
  "Alexei Dmitrievtsev <dmt.alex2005@gmail.com>")
@@ -30,6 +31,7 @@
   ppx_expect
   base
   angstrom
+  qcheck
   ppx_deriving
   bisect_ppx
   (odoc :with-doc)

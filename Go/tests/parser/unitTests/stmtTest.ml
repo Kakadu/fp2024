@@ -468,8 +468,7 @@ let%expect_test "stmt if with empty init" =
 
 let%expect_test "stmt if with wrong init" =
   pp pp_stmt pstmt {|if var a = 5; cond {}|};
-  [%expect
-    {|
+  [%expect {|
     : Incorrect statement |}]
 ;;
 

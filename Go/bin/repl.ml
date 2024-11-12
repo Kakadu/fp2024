@@ -14,7 +14,6 @@ type 'a result =
   | Result of 'a
   | End
   | Empty
-  | Error
 
 let input_upto_sep inp_chan =
   let take_line () = In_channel.input_line inp_chan in
@@ -50,7 +49,6 @@ let run_repl show_ast =
     | Empty ->
       flush stdout;
       run_repl_helper run
-    | Error -> Printf.eprintf "Runtime error\n"
     | End -> ()
   in
   run_repl_helper run_task

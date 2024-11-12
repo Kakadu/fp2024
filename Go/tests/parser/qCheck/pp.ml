@@ -134,7 +134,7 @@ let rec print_lvalue fmt lv =
     print_lvalue fmt lv
 ;;
 
-let rec print_block a f = List.iter f a
+let print_block a f = List.iter f a
 
 let rec print_stmt fmt stmt =
   match stmt with
@@ -215,7 +215,7 @@ let rec print_stmt fmt stmt =
     fprintf fmt "%s " idnt;
     fprintf fmt " <- ";
     print_expr fmt ex
-  | Stmt_range rng -> fprintf fmt " "
+  | Stmt_range _ -> fprintf fmt " "
   | Stmt_break -> fprintf fmt " break "
   | Stmt_continue -> fprintf fmt " continue "
   | Stmt_return exl ->
