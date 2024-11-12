@@ -20,7 +20,11 @@ let variable_e x = Variable (Ident (x, None))
 let gen_const =
   QCheck.Gen.(
     frequency
-      [ 1, map int_e nat; 1, map bool_e bool; 0, return unit_e; 0, map string_e string ])
+      [ 1, map int_e nat
+      ; 1, map bool_e bool
+      ; 0, return unit_e
+      ; 0, map string_e (string ?gen:None)
+      ])
 ;;
 
 let gen_varname =
