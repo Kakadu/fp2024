@@ -68,11 +68,11 @@ let rec pp_expression ppf = function
            (fun b -> asprintf "%a = %a" pp_pattern b.pat pp_expression b.exp)
            value_binding_list)
     in
-    fprintf ppf "%s %s in %a" (let_flag_str rec_flag) bindings_str pp_expression exp
+    fprintf ppf "(%s %s in %a)" (let_flag_str rec_flag) bindings_str pp_expression exp
   | Exp_fun (pat_list, exp) ->
     fprintf
       ppf
-      "fun %a -> %a"
+      "(fun %a -> %a)"
       (pp_print_list ~pp_sep:pp_space pp_pattern)
       pat_list
       pp_expression
@@ -81,7 +81,7 @@ let rec pp_expression ppf = function
     let expression = asprintf "%a" pp_expression exp in
     let handle_exp_list = function
       | [] -> fprintf ppf "%s" expression
-      | [ expr ] -> fprintf ppf "%s %a" expression pp_expression expr
+      | [ expr ] -> fprintf ppf "(%s %a)" expression pp_expression expr
       | _ ->
         let first_exp = List.hd exp_list in
         let rest_exp = List.tl exp_list in
@@ -90,14 +90,18 @@ let rec pp_expression ppf = function
           | _ -> false
         in
         if is_operator expression
-        then fprintf ppf "%a %s" pp_expression first_exp expression
-        else fprintf ppf "%s %a" expression pp_expression first_exp;
-        List.iter
-          (fun arg ->
-            if needs_parens arg
-            then fprintf ppf " (%a)" pp_expression arg
-            else fprintf ppf " %a" pp_expression arg)
-          rest_exp
+        then (
+          fprintf ppf "%a %s" pp_expression first_exp expression;
+          List.iter
+            (fun arg ->
+              if needs_parens arg
+              then fprintf ppf " (%a)" pp_expression arg
+              else fprintf ppf " %a" pp_expression arg)
+            rest_exp)
+        else (
+          fprintf ppf "(%s %a" expression pp_expression first_exp;
+          List.iter (fun arg -> fprintf ppf " %a" pp_expression arg) rest_exp;
+          fprintf ppf ")")
     in
     handle_exp_list exp_list
   | Exp_match (exp, case_list) ->
@@ -108,7 +112,7 @@ let rec pp_expression ppf = function
            (fun c -> asprintf "| %a -> %a" pp_pattern c.left pp_expression c.right)
            case_list)
     in
-    fprintf ppf "match %a with %s" pp_expression exp case_list_str
+    fprintf ppf "(match %a with %s)" pp_expression exp case_list_str
   | Exp_tuple exp_list ->
     fprintf ppf "(%a)" (pp_print_list ~pp_sep:pp_comma pp_expression) exp_list
   | Exp_construct (_, None) -> fprintf ppf "[]"
@@ -129,11 +133,11 @@ let rec pp_expression ppf = function
        print_tail tail
      | _ -> ())
   | Exp_ifthenelse (exp1, exp2, None) ->
-    fprintf ppf "if %a then %a" pp_expression exp1 pp_expression exp2
+    fprintf ppf "(if %a then %a)" pp_expression exp1 pp_expression exp2
   | Exp_ifthenelse (exp1, exp2, Some exp3) ->
     fprintf
       ppf
-      "if %a then %a else %a"
+      "(if %a then %a else %a)"
       pp_expression
       exp1
       pp_expression
@@ -141,7 +145,7 @@ let rec pp_expression ppf = function
       pp_expression
       exp3
   | Exp_sequence (exp1, exp2) ->
-    fprintf ppf "%a; %a" pp_expression exp1 pp_expression exp2
+    fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
 ;;
 
 let pp_structure_item ppf = function
