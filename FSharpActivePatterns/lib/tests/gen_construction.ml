@@ -220,7 +220,7 @@ let arbitrary_construction =
 ;;
 
 let run n =
-  QCheck_runner.run_tests
+  QCheck_base_runner.run_tests
     [ QCheck.(
         Test.make arbitrary_construction ~count:n (fun c ->
           Some c = parse (Format.asprintf "%a\n" pp_construction c)))

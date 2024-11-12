@@ -21,7 +21,7 @@ let run_tests n =
 
 let () =
   Arg.parse
-    [ "-seed", Arg.Int QCheck_runner.set_seed, " Set seed"
+    [ "-seed", Arg.Int QCheck_base_runner.set_seed, " Set seed"
     ; "-stop", Arg.Unit (fun _ -> exit 0), " Exit"
     ; "-gen", Arg.Int run_tests, " Number of runs"
     ]
