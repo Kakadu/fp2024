@@ -105,7 +105,7 @@ let prop_round_trip =
     | _ -> true)
 ;;
 
-let () =
-  QCheck_runner.set_seed 12345;
-  QCheck_runner.run_tests_main [ prop_round_trip ]
+let run_manual =
+  QCheck_base_runner.set_seed 12345;
+  QCheck_base_runner.run_tests [ prop_round_trip ]
 ;;

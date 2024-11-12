@@ -12,7 +12,7 @@
 (executable
  (name quickcheck)
  (public_name quickcheck)
- (libraries OCamlRV_lib qcheck)
+ (libraries OCamlRV_lib qcheck-core qcheck-core.runner)
  (modules quickcheck)
  (instrumentation
   (backend bisect_ppx)))
