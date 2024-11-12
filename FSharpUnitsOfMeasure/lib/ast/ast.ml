@@ -3,8 +3,8 @@
 (** SPDX-License-Identifier: MIT *)
 
 type integer_exp =
-  | Int_exp_pos of int (** Integer exponent: [2] *)
-  | Int_exp_neg of int (** Negation of exponent: [-1] *)
+  | Pos_int_exp of int (** Positive integer exponent: [2] *)
+  | Neg_int_exp of int (** Negative integer exponent: [-1] *)
 [@@deriving show { with_path = false }]
 
 type measure =
