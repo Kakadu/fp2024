@@ -10,4 +10,4 @@
 (executable
  (name run_construction)
  (modules run_construction)
- (libraries tests FSharpActivePatterns qcheck))
+ (libraries tests FSharpActivePatterns qcheck-core.runner))
