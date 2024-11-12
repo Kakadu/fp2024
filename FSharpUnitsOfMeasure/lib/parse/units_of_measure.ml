@@ -19,13 +19,13 @@ let parse_exp =
   let* sign = option "" (string "-") in
   let* num = skip_ws *> parse_int in
   match sign with
-  | "-" -> return (Int_exp_neg num)
-  | _ -> return (Int_exp_pos num)
+  | "-" -> return (Neg_int_exp num)
+  | _ -> return (Pos_int_exp num)
 ;;
 
 let parse_measure_power parse_measure =
   let* measure = parse_measure in
-  let* exp = option (Int_exp_pos 1) (skip_token "^" *> parse_exp) in
+  let* exp = option (Pos_int_exp 1) (skip_token "^" *> parse_exp) in
   return (Measure_pow (measure, exp))
 ;;
 
