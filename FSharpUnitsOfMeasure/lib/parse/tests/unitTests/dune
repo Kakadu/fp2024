@@ -1,5 +1,5 @@
 (library
- (name test)
+ (name unit_tests)
  (inline_tests)
  (libraries base angstrom ast parse)
  (preprocess
