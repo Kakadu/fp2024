@@ -251,7 +251,7 @@ module TestQCheck = struct
   ;;
 
   let run_manual () =
-    QCheck_runner.run_tests
+    QCheck_base_runner.run_tests
       [ QCheck.(
           Test.make arbitrary_lam_manual (fun str ->
             Format.printf "%a \n" Pprinter.pp_structure str;
@@ -260,7 +260,7 @@ module TestQCheck = struct
   ;;
 
   let run_auto () =
-    QCheck_runner.run_tests
+    QCheck_base_runner.run_tests
       [ QCheck.(
           Test.make arbitrary_lam_auto (fun str ->
             match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str) with

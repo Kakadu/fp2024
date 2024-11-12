@@ -1,8 +1,10 @@
 (executable
- (name main)
- (public_name main)
- (modules main)
- (libraries miniml)
+ (name REPL)
+ (public_name REPL)
+ (modules REPL)
+ (libraries miniml stdio)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))
 

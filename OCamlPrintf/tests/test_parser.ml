@@ -199,6 +199,34 @@ let%expect_test "parse_exp_let" =
     |}]
 ;;
 
+let%expect_test "parse_sequence_and_construct" =
+  run {| [1; 2; 3]; "qwerty123" |};
+  [%expect
+    {|
+    [(Struct_eval
+        (Exp_sequence (
+           (Exp_construct ("::",
+              (Some (Exp_tuple
+                       [(Exp_constant (Const_integer 1));
+                         (Exp_construct ("::",
+                            (Some (Exp_tuple
+                                     [(Exp_constant (Const_integer 2));
+                                       (Exp_construct ("::",
+                                          (Some (Exp_tuple
+                                                   [(Exp_constant
+                                                       (Const_integer 3));
+                                                     (Exp_construct ("[]", None))
+                                                     ]))
+                                          ))
+                                       ]))
+                            ))
+                         ]))
+              )),
+           (Exp_constant (Const_string "qwerty123")))))
+      ]
+    |}]
+;;
+
 let%expect_test "parse_several_structure_items" =
   run "let squared x = x * x;; squared 5";
   [%expect
