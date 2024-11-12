@@ -43,7 +43,6 @@ type pattern =
   (** Tuple patterns: [(P1; ..., Pn)]
       Invariant: [n >= 2] *)
   | Pattern_or of pattern * pattern (** WIP Or patterns: [P1 | P2] *)
-  | Pattern_cons of pattern * pattern (** WIP Cons patterns: [P1 :: P2] *)
   | Pattern_list of pattern list (** List patterns: [P1, ..., Pn] *)
 [@@deriving show { with_path = false }]
 
