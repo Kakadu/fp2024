@@ -1,6 +1,6 @@
 (executable
  (name repl)
  (public_name repl)
- (libraries ast parse stdio stdlib)
+ (libraries ast parser stdio stdlib)
  (instrumentation
   (backend bisect_ppx)))

@@ -1,6 +1,8 @@
 open Base
 open Stdlib
 open Stdlib.Arg
+open Parser
+open Ast
 
 type input =
   | Input of string
@@ -25,10 +27,16 @@ let input_upto_sep inp_chan =
   read_code
 ;;
 
+let print_result str =
+  match Parse.parse TopLevel.parse_file str with
+  | Ok res -> pp_file Format.std_formatter res
+  | Error err -> print_endline err
+;;
+
 let run_task inp_chan =
   match input_upto_sep inp_chan with
   | EOF -> End
-  | Input input -> if input = "" then Empty else Result (Parse.pp_repl input)
+  | Input input -> if input = "" then Empty else Result (print_result input)
 ;;
 
 let run_repl show_ast =

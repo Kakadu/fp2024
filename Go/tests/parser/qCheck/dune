@@ -1,7 +1,13 @@
-(executable
- (name ppParseId)
- (libraries ast parser qcheck)
+(library
+ (name qCheckTest)
+ (libraries ast qcheck)
+ (modules astGenerator pp)
  (instrumentation
   (backend bisect_ppx))
  (preprocess
   (pps ppx_expect)))
+
+(executable
+ (name qCheckRun)
+ (libraries parser qCheckTest)
+ (modules qCheckRun))
