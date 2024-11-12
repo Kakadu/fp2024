@@ -43,7 +43,7 @@ let%expect_test "pp_factorial_with_match" =
     ];
   [%expect
     {|
-    let rec factorial = fun n -> match n with | 0 -> 1 | 1 -> 1 | _ -> n * factorial n - 1;;
+    let rec factorial = (fun n -> (match n with | 0 -> 1 | 1 -> 1 | _ -> n * (factorial n - 1)));;
     |}]
 ;;
 
@@ -61,7 +61,7 @@ let%expect_test "pp_exp_fun" =
             }
           ] )
     ];
-  [%expect "let sum = fun x -> fun y -> x + y;;"]
+  [%expect "let sum = (fun x -> (fun y -> x + y));;"]
 ;;
 
 let%expect_test "pp_pat_exp_tuples" =
@@ -109,7 +109,7 @@ let%expect_test "check pp_chain_right_associative" =
             }
           ] )
     ];
-  [%expect "let f = fun x y z -> if x = 0 && y = 1 || z >= 2 then 2 else 26;;"]
+  [%expect "let f = (fun x y z -> (if x = 0 && y = 1 || z >= 2 then 2 else 26));;"]
 ;;
 
 let%expect_test "pp_struct_eval" =
@@ -148,7 +148,7 @@ let%expect_test "pp_exp_let" =
                  )
              ] ))
     ];
-  [%expect "1 + let two = 2 in two * 3;;"]
+  [%expect "1 + (let two = 2 in two * 3);;"]
 ;;
 
 let%expect_test "pp_sequence_and_construct" =
@@ -176,7 +176,7 @@ let%expect_test "pp_sequence_and_construct" =
                       ]) )
            , Exp_constant (Const_string "qwerty123") ))
     ];
-  [%expect {| [1; 2; 3]; "qwerty123";;|}]
+  [%expect {| ([1; 2; 3]); ("qwerty123");;|}]
 ;;
 
 let%expect_test "parse_several_structure_items" =
@@ -193,7 +193,7 @@ let%expect_test "parse_several_structure_items" =
     ; Struct_eval (Exp_apply (Exp_ident "squared", [ Exp_constant (Const_integer 5) ]))
     ];
   [%expect {|
-    let squared = fun x -> x * x;;
-    squared 5;;
+    let squared = (fun x -> x * x);;
+    (squared 5);;
     |}]
 ;;
