@@ -33,15 +33,15 @@ let pp_rec_flag fmt = function
   | Nonrec -> ()
 ;;
 
-let rec pp_pattern fmt = function
-  | Wild -> fprintf fmt "_ "
-  | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
-  | PTuple _ -> fprintf fmt "TUPLE PAT WIP"
-  | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
-  | PVar (Ident (name, _)) -> fprintf fmt "%s " name
-  | Variant _ -> fprintf fmt "VARIANTS PAT WIP"
+(* let rec pp_pattern fmt = function
+   | Wild -> fprintf fmt "_ "
+   | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
+   | PTuple _ -> fprintf fmt "TUPLE PAT WIP"
+   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
+   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
+   | Variant _ -> fprintf fmt "VARIANTS PAT WIP" *)
 
-and pp_expr fmt expr =
+let rec pp_expr fmt expr =
   match expr with
   | Const (Int_lt i) -> fprintf fmt "%d " i
   | Const (Bool_lt b) -> fprintf fmt "%b " b
