@@ -1,7 +1,7 @@
 (library
  (name tests)
  (modules Ast_printer Parser Gen_construction)
- (libraries FSharpActivePatterns qcheck)
+ (libraries FSharpActivePatterns qcheck-core qcheck-core.runner)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (instrumentation

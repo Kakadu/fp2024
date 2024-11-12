@@ -23,7 +23,7 @@
  (version 0.1)
  (depends
   dune
-  qcheck
+  qcheck-core
   angstrom
   (ppx_inline_test :with-test)
   ppx_expect
