@@ -38,6 +38,10 @@ let chainl parse_expr parse_bin_op =
   skip_ws *> parse_expr >>= fun init -> wrap init
 ;;
 
+let rec chainr e op =
+  e >>= fun a -> op >>= (fun f -> chainr (skip_ws *> e) op >>| f a) <|> return a
+;;
+
 let parse_bin_op_as_app bin_op =
   skip_ws
   *> string bin_op
@@ -59,7 +63,16 @@ let parse_expr_app parse_expr =
   let app = chainl parse_expr parse_ws_as_app <|> parse_expr in
   let app = chainl app (parse_bin_op_as_app "*" <|> parse_bin_op_as_app "/") <|> app in
   let app = chainl app (parse_bin_op_as_app "+" <|> parse_bin_op_as_app "-") <|> app in
-  let app = chainl app (parse_bin_op_as_app "<") <|> app in
+  let app =
+    chainl
+      app
+      (parse_bin_op_as_app "<="
+       <|> parse_bin_op_as_app "<"
+       <|> parse_bin_op_as_app ">="
+       <|> parse_bin_op_as_app ">")
+    <|> app
+  in
+  let app = chainr app (parse_bin_op_as_app "||" <|> parse_bin_op_as_app "&&") <|> app in
   app
 ;;
 
