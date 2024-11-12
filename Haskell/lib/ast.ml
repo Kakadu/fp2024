@@ -28,29 +28,29 @@ and tp =
 [@@deriving show { with_path = false }]
 
 type binop =
-  | Plus (** + *)
-  | Minus (** - *)
-  | Divide (** `div` *)
-  | Multiply (** () * *)
-  | Equality (** == *)
-  | Pow (** ^ *)
-  | Inequality (** /= *)
-  | Less (** < *)
-  | Greater (** > *)
-  | EqualityOrLess (** <= *)
-  | EqualityOrGreater (** >= *)
+  | Plus (** [+] *)
+  | Minus (** [-] *)
+  | Divide (** [`div`] *)
+  | Multiply (** [*] *)
+  | Equality (** [==] *)
+  | Pow (** [^] *)
+  | Inequality (** [/=] *)
+  | Less (** [<] *)
+  | Greater (** [>] *)
+  | EqualityOrLess (** [<=] *)
+  | EqualityOrGreater (** [>=] *)
 [@@deriving show { with_path = false }]
 
 type unop =
-  | Minus (** - *)
-  | Not (** not *)
+  | Minus (** [-] *)
+  | Not (** [not] *)
 [@@deriving show { with_path = false }]
 
 (** variable's / function's name*)
 type ident = Ident of string [@@deriving show { with_path = false }]
 
-(** e.g. [lst@(_:xs) :: [Int]] *)
-type pattern = ident option * pat * tp option [@@deriving show { with_path = false }]
+(** e.g. [a@my_list@lst@(_:xs) :: [Int]] *)
+type pattern = ident list * pat * tp option [@@deriving show { with_path = false }]
 
 and listpat =
   | Nil (** \[] *)

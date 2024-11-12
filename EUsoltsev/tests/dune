@@ -1,3 +1,12 @@
+(library
+ (name tests)
+ (libraries EUsoltsev_lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
+
 (cram
  (applies_to ast_check)
  (deps ../bin/main.exe))

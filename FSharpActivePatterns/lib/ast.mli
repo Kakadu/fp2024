@@ -56,6 +56,7 @@ type expr =
   | Cons_list of expr * expr
   (** {[
         [ 1; 2; 3 ]
+        [ 1; 2; 3 ]
       ]} *)
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
