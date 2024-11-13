@@ -21,10 +21,10 @@ let parse_pat_paren parse_pat =
 
 (* Parses tuple without parentheses *)
 let parse_pat_tuple parse_pat =
-  let* tuple = sep_by (char ',') (skip_ws *> parse_pat <* skip_ws) in
-  if List.length tuple < 2
-  then fail "Cannot parse tuple of less than 2 elements"
-  else return (Pattern_tuple tuple)
+  let* tuple_fst = skip_ws *> parse_pat <* skip_ws <* char ',' in
+  let* tuple_snd = skip_ws *> parse_pat <* skip_ws in
+  let* tuple_rest = many (skip_token "," *> parse_pat) in
+  return (Pattern_tuple (tuple_fst, tuple_snd, tuple_rest))
 ;;
 
 let parse_pat_list parse_pat =

@@ -23,16 +23,15 @@ let%expect_test "parse structure item which is single let binding" =
   pp pp_structure_item parse_structure_item {| let x = y |};
   [%expect
     {|
-    (Str_item_def (Nonrecursive,
-       [(Binding ((Pattern_ident "x"), (Expr_ident_or_op "y")))])) |}]
+    (Str_item_def (Nonrecursive, ((Pattern_ident "x"), (Expr_ident_or_op "y")),
+       [])) |}]
 ;;
 
 let%expect_test "parse structure item which is single rec let binding" =
   pp pp_structure_item parse_structure_item {| let rec x = x |};
   [%expect
     {|
-    (Str_item_def (Recursive,
-       [(Binding ((Pattern_ident "x"), (Expr_ident_or_op "x")))])) |}]
+    (Str_item_def (Recursive, ((Pattern_ident "x"), (Expr_ident_or_op "x")), [])) |}]
 ;;
 
 let%expect_test "parse structure item which is multiple let bindings" =
@@ -45,11 +44,10 @@ let%expect_test "parse structure item which is multiple let bindings" =
       and i = j|};
   [%expect
     {|
-    (Str_item_def (Nonrecursive,
-       [(Binding ((Pattern_ident "a"), (Expr_ident_or_op "b")));
-         (Binding ((Pattern_ident "c"), (Expr_ident_or_op "d")));
-         (Binding ((Pattern_ident "e"), (Expr_ident_or_op "f")));
-         (Binding ((Pattern_ident "i"), (Expr_ident_or_op "j")))]
+    (Str_item_def (Nonrecursive, ((Pattern_ident "a"), (Expr_ident_or_op "b")),
+       [((Pattern_ident "c"), (Expr_ident_or_op "d"));
+         ((Pattern_ident "e"), (Expr_ident_or_op "f"));
+         ((Pattern_ident "i"), (Expr_ident_or_op "j"))]
        ))|}]
 ;;
 
@@ -66,14 +64,14 @@ let%expect_test "parse structure item which is nested let bindings" =
   [%expect
     {|
     (Str_item_eval
-       (Expr_let (Nonrecursive,
-          [(Binding ((Pattern_ident "a"), (Expr_ident_or_op "b")))],
-          (Expr_let (Nonrecursive,
-             [(Binding ((Pattern_ident "c"), (Expr_ident_or_op "d")))],
+       (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_ident_or_op "b")),
+          [],
+          (Expr_let (Nonrecursive, ((Pattern_ident "c"), (Expr_ident_or_op "d")),
+             [],
              (Expr_let (Nonrecursive,
-                [(Binding ((Pattern_ident "e"), (Expr_ident_or_op "f")))],
+                ((Pattern_ident "e"), (Expr_ident_or_op "f")), [],
                 (Expr_let (Nonrecursive,
-                   [(Binding ((Pattern_ident "i"), (Expr_ident_or_op "j")))],
+                   ((Pattern_ident "i"), (Expr_ident_or_op "j")), [],
                    (Expr_ident_or_op "somefunc")))
                 ))
              ))
@@ -90,28 +88,26 @@ let%expect_test "parse factorial" =
   [%expect
     {|
     (Str_item_def (Recursive,
-       [(Binding ((Pattern_ident "factorial"),
-           (Expr_fun ((Pattern_ident "n"),
-              (Expr_ifthenelse (
-                 (Expr_apply (
-                    (Expr_apply ((Expr_ident_or_op "<"), (Expr_ident_or_op "n"))),
-                    (Expr_const (Const_int 2)))),
-                 (Expr_const (Const_int 1)),
-                 (Some (Expr_apply (
-                          (Expr_apply ((Expr_ident_or_op "*"),
-                             (Expr_ident_or_op "n"))),
-                          (Expr_apply ((Expr_ident_or_op "factorial"),
-                             (Expr_apply (
-                                (Expr_apply ((Expr_ident_or_op "-"),
-                                   (Expr_ident_or_op "n"))),
-                                (Expr_const (Const_int 1))))
-                             ))
-                          )))
-                 ))
+       ((Pattern_ident "factorial"),
+        (Expr_fun ((Pattern_ident "n"),
+           (Expr_ifthenelse (
+              (Expr_apply (
+                 (Expr_apply ((Expr_ident_or_op "<"), (Expr_ident_or_op "n"))),
+                 (Expr_const (Const_int 2)))),
+              (Expr_const (Const_int 1)),
+              (Some (Expr_apply (
+                       (Expr_apply ((Expr_ident_or_op "*"),
+                          (Expr_ident_or_op "n"))),
+                       (Expr_apply ((Expr_ident_or_op "factorial"),
+                          (Expr_apply (
+                             (Expr_apply ((Expr_ident_or_op "-"),
+                                (Expr_ident_or_op "n"))),
+                             (Expr_const (Const_int 1))))
+                          ))
+                       )))
               ))
-           ))
-         ]
-       ))|}]
+           ))),
+       []))|}]
 ;;
 
 (************************** Programs **************************)
@@ -120,8 +116,8 @@ let%expect_test "parse simple binding as a program" =
   pp pp_program parse_program {| let x = y |};
   [%expect
     {|
-    [(Str_item_def (Nonrecursive,
-        [(Binding ((Pattern_ident "x"), (Expr_ident_or_op "y")))]))
+    [(Str_item_def (Nonrecursive, ((Pattern_ident "x"), (Expr_ident_or_op "y")),
+        []))
       ] |}]
 ;;
 
@@ -131,10 +127,10 @@ let%expect_test "parse program of bindings separated by ;;" =
      |};
   [%expect
     {|
-    [(Str_item_def (Nonrecursive,
-        [(Binding ((Pattern_ident "x"), (Expr_ident_or_op "y")))]));
+    [(Str_item_def (Nonrecursive, ((Pattern_ident "x"), (Expr_ident_or_op "y")),
+        []));
       (Str_item_def (Nonrecursive,
-         [(Binding ((Pattern_ident "z"), (Expr_const (Const_int 5000))))]))
+         ((Pattern_ident "z"), (Expr_const (Const_int 5000))), []))
       ] |}]
 ;;
 
