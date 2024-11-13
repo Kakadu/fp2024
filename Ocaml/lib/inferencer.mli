@@ -5,6 +5,7 @@ type error =
   [ `No_variable of string
   | `Occurs_check
   | `Unapplicable_type of Ast.type_expr option * Typedtree.ty
+  | `Unexpected_error
   | `Unification_failed of Typedtree.ty * Typedtree.ty
   ]
 
@@ -143,7 +144,9 @@ val lookup_env
   -> (Subst.t * Typedtree.ty) R.t
 
 val pp_env : Subst.t -> Format.formatter -> (string * Typedtree.scheme) list -> unit
-val infer : TypeEnv.t -> Ast.expr -> (Subst.t * Typedtree.ty) R.t
-val w : Ast.expr -> (Typedtree.ty, error) result
+val uncover_item : 'a list -> 'a R.t
+val infer : TypeEnv.t -> Ast.expr -> (Subst.t * Typedtree.ty list) R.t
+val w : Ast.expr -> (Typedtree.ty list, error) result
+val show_ty_list : Typedtree.ty list -> string
 val test_infer : Ast.expr -> unit
 val test_var : string -> (string, Typedtree.scheme) Base.List.Assoc.t -> unit
