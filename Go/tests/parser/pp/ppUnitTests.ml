@@ -838,7 +838,8 @@ let%expect_test "file with factorial func" =
                  ]
              } )
        ]);
-  [%expect {|
+  [%expect
+    {|
     func fac(n int) (int) {
         if (n) == (1) {
             return 1
