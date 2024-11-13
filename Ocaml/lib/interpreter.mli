@@ -8,6 +8,8 @@ val pp_error : Format.formatter -> error -> unit
 
 module R : sig
   type 'a t = ('a, error) result
+
+  val bind : 'a t -> f:('a -> 'b t) -> 'b t
 end
 
 module Interpret : sig
