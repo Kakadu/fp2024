@@ -4,49 +4,62 @@
 
 open Ast
 open Pprinter
-open Parser
-open Parser_utility
 
 module QChecker = struct
   open QCheck.Gen
 
-  let max_var_len = 16
-  let max_tuple_len = 4
-  let max_pattern_depth = 2
-  let max_petterns_len = 2
-  let max_expr_block_len = 4
-  let max_expr_depth = 1
-  let max_value_binding_len = 2
-  let max_program_len = 2
-  let gen_integer = int_range 0 Int.max_int
+  let positive_number =
+    let p = Random.float 1.0 in
+    if p < 0.5
+    then int_range 1 100
+    else if p < 0.75
+    then int_range 100 1000
+    else int_range 1000 10000
+  ;;
+
+  let gen_integer = oneof [ positive_number; return 0 ]
   let gen_boolean = oneof [ return true; return false ]
+  let tuple_size = int_range 2 4
+  let definition_size = int_range 1 10
+  let patterns_size = int_range 1 6
+  let pattern_depth = int_range 1 2
+  let expr_depth = int_range 1 6
+  let apply_size = int_range 1 6
+  let expr_block_size = int_range 2 8
+  let program_size = int_range 1 20
 
   let gen_identifier =
-    let gen_var_char is_first =
-      frequency
-        [ 3, map Char.chr (int_range (int_of_char 'a') (int_of_char 'z'))
-        ; 1, return '_'
-        ; (if is_first then 0 else 1), return '\''
-        ; ( (if is_first then 0 else 2)
-          , map Char.chr (int_range (int_of_char '0') (int_of_char '9')) )
-        ]
-    in
-    let first_char_gen = gen_var_char true in
-    let tail_gen start_length =
+    let helper =
       string_size
-        (int_range start_length (max_var_len - start_length))
-        ~gen:(gen_var_char false)
+        (int_range 1 10)
+        ~gen:(oneof [ char_range 'a' 'z'; char_range 'A' 'Z'; return '_' ])
     in
-    let params = map2 (fun first tail -> first, tail) first_char_gen (tail_gen 0) in
-    let result =
-      params
-      >>= fun (first, tail) ->
-      let id = Format.sprintf "%c%s" first tail in
-      if is_keyword id
-      then tail_gen 1 >>= fun tl -> return (Format.sprintf "%s%s" id tl)
-      else return id
+    helper
+    >>= fun s ->
+    if Parser.is_keyword s
+    then helper >>= fun addicted -> return (Format.sprintf "%s%s" s addicted)
+    else return s
+  ;;
+
+  let gen_pattern =
+    let gen_ptuple subpattern_gen =
+      map (fun l -> PTuple l) (list_size tuple_size subpattern_gen)
     in
-    result
+    sized_size pattern_depth
+    @@ fix (fun self ->
+         function
+         | 0 -> oneof [ map (fun i -> PVar i) gen_identifier; return PUnit ]
+         | depth -> gen_ptuple (self (depth - 1)))
+  ;;
+
+  let gen_recursive_type = oneof [ return Recursive; return Nonrecursive ]
+  let gen_value_binding expr_gen = map2 (fun p expr -> p, expr) gen_pattern expr_gen
+
+  let gen_definition expr_gen =
+    map2
+      (fun r vbl -> r, vbl)
+      gen_recursive_type
+      (list_size definition_size (gen_value_binding expr_gen))
   ;;
 
   let gen_literal =
@@ -57,155 +70,111 @@ module QChecker = struct
       ]
   ;;
 
-  let gen_pattern =
-    let rec gen_patterns_seq depth = list_size (int_range 2 max_tuple_len) (helper depth)
-    and gen_ptuple depth =
-      map
-        (fun patters ->
-          match patters with
-          | [] -> PUnit
-          | p :: [] -> p
-          | _ :: _ -> PTuple patters)
-        (gen_patterns_seq (depth - 1))
-    and helper depth =
-      if depth <= 1
-      then oneof [ return PUnit; map (fun i -> PVar i) gen_identifier ]
-      else gen_ptuple depth
-    in
-    helper max_pattern_depth
-  ;;
-
-  let gen_patterns = list_size (int_range 1 max_petterns_len) gen_pattern
-  let gen_recursive_type = oneof [ return Recursive; return Nonrecursive ]
-
-  let gen_value_binding gen_expression =
-    map2 (fun pattern expr -> pattern, expr) gen_pattern gen_expression
-  ;;
-
-  let gen_definition gen_expression =
-    tup2
-      gen_recursive_type
-      (list_size (int_range 1 max_value_binding_len) (gen_value_binding gen_expression))
-  ;;
-
   let gen_variable = map (fun i -> Variable i) gen_identifier
   let gen_const = map (fun c -> Const c) gen_literal
 
-  let rec gen_unary inapply depth =
-    let gen_unary_operator = oneof [ return Negate; return Positive ] in
-    map2
-      (fun operator expr -> Unary (operator, expr))
-      gen_unary_operator
-      (gen_expr inapply (depth - 1))
-
-  and gen_binary inapply depth =
-    let gen_binary_operator =
-      oneof
-        [ return Add
-        ; return Subtract
-        ; return Multiply
-        ; return Division
-        ; return Equals
-        ; return Unequals
-        ; return Gt
-        ; return Lt
-        ; return Gte
-        ; return Lte
-        ; return And
-        ; return Or
-        ]
+  let gen_expr =
+    let gen_define_expr expr_gen =
+      map2 (fun def ex -> Define (def, ex)) (gen_definition expr_gen) expr_gen
     in
-    map3
-      (fun left operator right -> Binary (left, operator, right))
-      (gen_expr inapply (depth - 1))
-      gen_binary_operator
-      (gen_expr inapply (depth - 1))
-
-  and gen_tuple depth =
-    map
-      (fun exprs -> Tuple exprs)
-      (list_size (int_range 2 max_tuple_len) (gen_expr false (depth - 1)))
-
-  and gen_expr_block inapply depth =
-    let tail = list_size (int_range 1 max_expr_block_len) (gen_expr false (depth - 1)) in
-    map2
-      (fun exprs expr ->
-        match exprs with
-        | [] -> expr
-        | _ -> ExpressionBlock (exprs @ [ expr ]))
-      tail
-      (gen_expr inapply (depth - 1))
-
-  and gen_if_expr inapply depth =
-    let gen_else_branch = option (gen_expr inapply (depth - 1)) in
-    map3
-      (fun ex1 ex2 ex3 -> If (ex1, ex2, ex3))
-      (gen_expr false (depth - 1))
-      (gen_expr inapply (depth - 1))
-      gen_else_branch
-
-  and gen_lambda depth =
-    map2
-      (fun patterns expr -> Lambda (patterns, expr))
-      gen_patterns
-      (gen_expr false (depth - 1))
-
-  and gen_applyable_expr depth =
-    if depth = 0
-    then gen_variable
-    else oneof [ gen_expr true (depth - 1); gen_lambda depth ]
-
-  and gen_apply_expr depth =
-    map2
-      (fun expr exprs -> Apply (expr, exprs))
-      (gen_applyable_expr depth)
-      (list_size (int_range 1 max_petterns_len) (gen_expr false (depth - 1)))
-
-  and gen_define_expr inapply depth =
-    map2
-      (fun name expr -> Define (name, expr))
-      (gen_definition (gen_expr false max_expr_depth))
-      (gen_expr inapply (depth - 1))
-
-  and gen_expr inapply depth =
-    if depth = 0
-    then if inapply then gen_variable else oneof [ gen_variable; gen_const ]
-    else
-      oneof
-        [ gen_unary inapply depth
-        ; gen_binary inapply depth
-        ; gen_expr_block inapply depth
-        ; gen_if_expr inapply depth (* ; gen_define_expr inapply depth *)
-        ; gen_lambda depth
-        ; gen_apply_expr depth
-        ; gen_tuple depth
-        ]
+    let gen_unary_expr subexpr_gen =
+      map2
+        (fun op ex -> Unary (op, ex))
+        (oneof [ return Positive; return Negate ])
+        subexpr_gen
+    in
+    let gen_binary_expr subexpr_gen =
+      map3
+        (fun left op right -> Binary (left, op, right))
+        subexpr_gen
+        (oneof
+           [ return Add
+           ; return Subtract
+           ; return Multiply
+           ; return Division
+           ; return And
+           ; return Or
+           ; return Equals
+           ; return Unequals
+           ; return Gt
+           ; return Lt
+           ; return Gte
+           ; return Lte
+           ])
+        subexpr_gen
+    in
+    let gen_tuple_expr subexpr_gen =
+      map (fun l -> Tuple l) (list_size tuple_size subexpr_gen)
+    in
+    let gen_if_expr subexpr_gen block_gen =
+      let helper = oneof [ return None; map (fun ex -> Some ex) block_gen ] in
+      map3
+        (fun ex then_ex else_ex -> If (ex, then_ex, else_ex))
+        subexpr_gen
+        block_gen
+        helper
+    in
+    let gen_lambda subexpr_gen =
+      map2
+        (fun pl ex -> Lambda (pl, ex))
+        (list_size patterns_size gen_pattern)
+        subexpr_gen
+    in
+    let gen_apply subexpr_gen =
+      map2 (fun ex l -> Apply (ex, l)) subexpr_gen (list_size apply_size subexpr_gen)
+    in
+    let gen_expr_block subexpr_gen =
+      map (fun l -> ExpressionBlock l) (list_size expr_block_size subexpr_gen)
+    in
+    sized_size expr_depth
+    @@ fix (fun self ->
+         function
+         | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
+         | depth ->
+           frequency
+             [ 1, gen_unary_expr (self (depth - 1))
+             ; 1, gen_binary_expr (self (depth - 1))
+             ; 1, gen_tuple_expr (self (depth - 1))
+             ; 1, gen_define_expr (self (depth - 1))
+             ; 1, gen_if_expr (self (depth / 2)) (self (depth - 1))
+             ; 1, gen_lambda (self (depth - 1))
+             ; 1, gen_apply (self (depth - 1))
+             ; 1, gen_expr_block (self (depth - 1))
+             ])
   ;;
 
   let gen_struct_item =
     oneof
-      [ map (fun def -> DefineItem def) (gen_definition (gen_expr false max_expr_depth))
-      ; map (fun ex -> EvalItem ex) (gen_expr false max_expr_depth)
+      [ map (fun def -> DefineItem def) (gen_definition gen_expr)
+      ; map (fun ex -> EvalItem ex) gen_expr
       ]
   ;;
 
-  let gen_program = list_size (int_range 1 max_program_len) gen_struct_item
+  let gen_program = list_size program_size gen_struct_item
 
   let arbitrary_lam_manual =
     QCheck.make gen_program ~print:(Format.asprintf "%a" pp_program)
   ;;
 
   let run_manual () =
+    let open Parser in
+    let open Parser_utility in
     QCheck_runner.run_tests
       [ QCheck.(
-          Test.make arbitrary_lam_manual (fun l ->
-            (* Format.printf "\nTree:\n%s\n" (show_program l);
-               Format.printf "PPrinting:\n%a\n----------------\n" pp_program l; *)
-            Format.printf "%a\n" pp_program l;
-            let r = parse program_parser (Format.asprintf "%a" pp_program l) in
+          Test.make (* ~count:100 *) arbitrary_lam_manual (fun p ->
+            let r = parse program_parser (Format.asprintf "%a" pp_program p) in
             match r with
-            | ParseSuccess (r, _) -> l = r
-            | _ -> false))
+            | ParseSuccess (r, _) ->
+              let res = p = r in
+              if not res
+              then (
+                Format.printf "IntputTree:\n%s\n" (show_program p);
+                Format.printf "Result:\n%s\n" (show_program r));
+              res
+            | _ ->
+              Format.printf "Intput:\n%a\n" pp_program p;
+              Format.printf "Result:\n%s\n" (string_of_parse_result show_program r);
+              false))
       ]
   ;;
 end
