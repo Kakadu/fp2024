@@ -1,7 +1,7 @@
 (library
  (name property_based_tests)
  (inline_tests)
- (libraries base ast qcheck)
+ (libraries base ast parse qcheck)
  (preprocess
   (pps ppx_expect ppx_inline_test))
  (instrumentation
