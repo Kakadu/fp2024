@@ -23,8 +23,9 @@ let parse_structure_item_def =
   skip_token "let"
   *>
   let* rec_flag = option Nonrecursive (string "rec" *> skip_ws *> return Recursive) in
-  let* bindings = sep_by1 (skip_token "and") (parse_single_binding parse_expr) in
-  return (Str_item_def (rec_flag, bindings))
+  let* binding_fst = parse_single_binding parse_expr in
+  let* binding_rest = many (skip_token "and" *> parse_single_binding parse_expr) in
+  return (Str_item_def (rec_flag, binding_fst, binding_rest))
 ;;
 
 let parse_structure_item = choice [ parse_structure_item_expr; parse_structure_item_def ]

@@ -95,7 +95,7 @@ let parse_binding_val parse_expr =
   skip_token "="
   *>
   let* expr = parse_expr in
-  return (Binding (name, expr))
+  return (name, expr)
 ;;
 
 let parse_binding_fun parse_expr =
@@ -108,7 +108,7 @@ let parse_binding_fun parse_expr =
     | h :: tl -> Expr_fun (h, wrap tl)
     | [] -> expr
   in
-  return (Binding (name, wrap args))
+  return (name, wrap args)
 ;;
 
 let parse_single_binding parse_expr =
@@ -119,11 +119,12 @@ let parse_expr_let parse_expr =
   skip_token "let"
   *>
   let* rec_flag = option Nonrecursive (skip_token "rec" *> return Recursive) in
-  let* bindings = sep_by1 (skip_token "and") (parse_single_binding parse_expr) in
+  let* binding_fst = parse_single_binding parse_expr in
+  let* binding_rest = many (skip_token "and" *> parse_single_binding parse_expr) in
   skip_token "in"
   *>
   let* last_expr = parse_expr in
-  return (Expr_let (rec_flag, bindings, last_expr))
+  return (Expr_let (rec_flag, binding_fst, binding_rest, last_expr))
 ;;
 
 let parse_expr =
