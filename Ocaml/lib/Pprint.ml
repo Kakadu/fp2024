@@ -108,34 +108,3 @@ let pp_val ppf t = function
       ppf
       com_l
 ;;
-(* | VDeclaration(x) ->
-   match t with
-   | Ty_And l ->
-   let com_l = List.combine x l in
-   let _ = Format.pp_print_list
-   ~pp_sep:(fun ppf () -> Format.pp_print_newline ppf ())
-   pp_dec
-   ppf
-   (com_l) *)
-(* | _ -> (match x with | (n, e) :: [] -> pp_dec ppf ((n,e), t)) *)
-
-(*
-   let paired = List.map2 (fun x y -> (x, y)) list1 list2 *)
-(*
-   | VConst of expr
-   | VClosure of string option * value Env.t * expr
-   | VRecClosure of string option * value Env.t * string list * expr
-   | VDeclaration of (string * expr) list *)
-(*   let pp_expr =
-     let open Parsetree in
-     let rec helper ppf = function
-     | EConst n -> fprintf ppf "%d" n
-     | EIf (c, th, el) -> fprintf ppf "if %a then %a else %a" helper c helper th helper el
-     | EVar s -> pp_print_string ppf s
-     | EApp (l, r) -> fprintf ppf "(%a %a)" helper l helper r
-     | ELam (PVar name, e) -> fprintf ppf "(fun %s -> %a)" name helper e
-     | ELet (_flg, PVar name, body, in_) ->
-     fprintf ppf "let %s%s = %a in %a" "?" name helper body helper in_
-     in
-     helper
-     ;; *)

@@ -1,3 +1,7 @@
+(** Copyright 2021-2023, Daniil Kadochnikov *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ast
 
 type error =
@@ -7,7 +11,6 @@ type error =
   ]
 
 let pp_error ppf : error -> _ = function
-  (* | `Occurs_check -> Format.fprintf ppf "Type Checker Error: occurs check failed" *)
   | `Unfound_var name ->
     Format.fprintf
       ppf

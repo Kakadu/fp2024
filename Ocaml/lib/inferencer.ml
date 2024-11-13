@@ -1,10 +1,7 @@
-(** Copyright 2021-2023, Kakadu *)
+(** Copyright 2021-2023, Daniil Kadochnikov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-(* Type checker for miniML. Some bug are left intentionally. *)
-
-(* open Base *)
 open Typedtree
 open Ast
 

@@ -1,3 +1,7 @@
+(** Copyright 2021-2023, Daniil Kadochnikov *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 type error =
   [ `Division_by_zero
   | `Unexpected_error
