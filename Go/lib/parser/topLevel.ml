@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open! Base
 open Ast
 open Angstrom
 open Common

@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open! Base
 open Ast
 open Angstrom
 open Common
@@ -99,7 +98,7 @@ let parse_idents_with_types =
     sep_by_comma1
       (let* idents = sep_by_comma1 parse_ident in
        let* t = ws_line *> parse_type in
-       return (List.map ~f:(fun id -> id, t) idents))
+       return (Base.List.map ~f:(fun id -> id, t) idents))
   in
   return (List.concat args_lists)
 ;;

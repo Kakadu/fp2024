@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open! Base
 open Ast
 open Angstrom
 open Common
@@ -39,7 +38,7 @@ let parse_long_var_decl pblock =
       | _ :: _, false ->
         if List.length rvalues = 1
         then (
-          match List.nth rvalues 0 with
+          match Base.List.nth rvalues 0 with
           | Some (Expr_call _ as expr) ->
             return (Long_decl_one_init (vars_type, lvalues, expr))
           | Some _ | None ->
@@ -63,7 +62,7 @@ let parse_short_var_decl pblock =
   then
     if List.length rvalues = 1
     then (
-      match List.nth rvalues 0 with
+      match Base.List.nth rvalues 0 with
       | Some (Expr_call _ as expr) ->
         return (Stmt_short_var_decl (Short_decl_one_init (lvalues, expr)))
       | Some _ | None ->
@@ -97,9 +96,9 @@ let parse_assign pblock =
   then fail "No identifiers or initializers in assignment"
   else if List.length lvalues != List.length rvalues
   then
-    if List.length rvalues == 1
+    if List.length rvalues = 1
     then (
-      match List.nth rvalues 0 with
+      match Base.List.nth rvalues 0 with
       | Some (Expr_call _ as expr) ->
         return (Stmt_assign (Assign_one_expr (lvalues, expr)))
       | Some _ | None ->

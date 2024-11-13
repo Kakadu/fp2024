@@ -2,13 +2,13 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open QCheckTest.AstGenerator
-open QCheckTest.Pp
+open AstGenerator
+open Pp.Printer
 open Parser
+open Format
 
-(* tmp *)
-let gen = gen_expr (gen_block gen_stmt)
 let parse_file = Parse.parse TopLevel.parse_file
+let print_file fmt file = fprintf fmt "%s" (print_file file)
 let arbitrary_file = QCheck.make gen_file ~print:(Format.asprintf "%a" print_file)
 
 let run_tests () =

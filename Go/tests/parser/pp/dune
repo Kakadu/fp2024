@@ -1,6 +1,6 @@
 (library
- (name parser)
- (libraries base angstrom ast)
+ (name pp)
+ (libraries ast str)
  (inline_tests)
  (instrumentation
   (backend bisect_ppx))

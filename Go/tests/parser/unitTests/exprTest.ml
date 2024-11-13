@@ -59,6 +59,11 @@ let%expect_test "unary not" =
   [%expect {| (Expr_un_oper (Unary_not, (Expr_ident "t"))) |}]
 ;;
 
+let%expect_test "unary recieve" =
+  pp pp_expr pexpr {|<-t|};
+  [%expect {| (Expr_un_oper (Unary_recieve, (Expr_ident "t"))) |}]
+;;
+
 let%expect_test "multiple unary operators" =
   pp pp_expr pexpr {|-+!--!+t|};
   [%expect
@@ -104,6 +109,12 @@ let%expect_test "equality binop test" =
   pp pp_expr pexpr {|t == 5|};
   [%expect
     {| (Expr_bin_oper (Bin_equal, (Expr_ident "t"), (Expr_const (Const_int 5)))) |}]
+;;
+
+let%expect_test "non equality binop test" =
+  pp pp_expr pexpr {|t != 5|};
+  [%expect
+    {| (Expr_bin_oper (Bin_not_equal, (Expr_ident "t"), (Expr_const (Const_int 5)))) |}]
 ;;
 
 let%expect_test "less binop test" =

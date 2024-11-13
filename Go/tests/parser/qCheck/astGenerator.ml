@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open! Base
 open QCheck.Gen
 open Ast
 
@@ -17,7 +16,7 @@ let gen_ident_char =
 let gen_ident =
   let* first_char = gen_ident_first_char in
   let* rest_chars = string_size ~gen:gen_ident_char int5 in
-  return (Char.to_string first_char ^ rest_chars)
+  return (Base.Char.to_string first_char ^ rest_chars)
 ;;
 
 (********** types **********)
