@@ -1,3 +1,7 @@
+(** Copyright 2021-2023, Daniil Kadochnikov *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Parser
 open Inferencer
 open Interpreter
@@ -193,4 +197,12 @@ let%expect_test "multiple non-recursive function declarations" =
   run "let f = fun x -> x + 1";
   [%expect {|
     val f : (int -> int) = <fun> |}]
+;;
+
+let%expect_test "fixed point combinator test" =
+  run
+    "let rec y f x = f (y f) x in let factorial fac n = if n = 1 then 1 else n * fac (n \
+     - 1) in y factorial 5";
+  [%expect {|
+    - : int = 120 |}]
 ;;
