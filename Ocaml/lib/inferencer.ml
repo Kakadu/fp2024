@@ -21,6 +21,7 @@ type error =
   | `No_variable of string
   | `Unification_failed of ty * ty
   | `Unapplicable_type of type_expr option * ty
+  | `Unexpected_error
   ]
 
 let pp_error ppf : error -> _ = function
@@ -42,6 +43,7 @@ let pp_error ppf : error -> _ = function
       inf
       Pprint.pp_typ_expr
       par
+  | `Unexpected_error -> Format.fprintf ppf "Type Checker Error: unexpected Error"
 ;;
 
 module R : sig
@@ -117,7 +119,6 @@ module Type = struct
     | TyList t -> occurs_in v t
     | TyOption t -> occurs_in v t
     | TyTuple tl -> List.exists (occurs_in v) tl
-    | Ty_And t -> List.exists (occurs_in v) t
     | TyInt | TyBool | TyString -> false
   ;;
 
@@ -128,7 +129,6 @@ module Type = struct
       | TyList t -> helper acc t
       | TyOption t -> helper acc t
       | TyTuple tl -> List.fold_left helper acc tl
-      | Ty_And t -> List.fold_left helper acc t
       | TyInt | TyBool | TyString -> acc
     in
     helper VarSet.empty
@@ -384,12 +384,18 @@ let pp_env subst ppf env =
   TypeEnv.pp ppf env
 ;;
 
+let uncover_item l =
+  match l with
+  | t :: [] -> return t
+  | _ -> fail `Unexpected_error
+;;
+
 let infer =
-  let rec (helper : TypeEnv.t -> Ast.expr -> (Subst.t * ty) R.t) =
+  let rec (helper : TypeEnv.t -> Ast.expr -> (Subst.t * ty list) R.t) =
     fun env -> function
-    | EInt _ -> return (Subst.empty, TyInt)
-    | EBool _ -> return (Subst.empty, TyBool)
-    | EString _ -> return (Subst.empty, TyString)
+    | EInt _ -> return (Subst.empty, [ TyInt ])
+    | EBool _ -> return (Subst.empty, [ TyBool ])
+    | EString _ -> return (Subst.empty, [ TyString ])
     | EVar (name, ex_type) ->
       let* s, t = lookup_env name env in
       let* s' =
@@ -398,11 +404,13 @@ let infer =
         | Ok subst -> return subst
       in
       let* s = Subst.compose s s' in
-      return (s, t)
+      return (s, [ t ])
     | EBinOp (op, e1, e2) ->
       let* s1, t1 = helper env e1 in
+      let* t1 = uncover_item t1 in
       let env' = TypeEnv.apply s1 env in
       let* s2, t2 = helper env' e2 in
+      let* t2 = uncover_item t2 in
       let* s3, result_type =
         match op with
         | Add | Sub | Mul | Div ->
@@ -420,40 +428,45 @@ let infer =
           return (s, TyBool)
       in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
-      return (final_subst, Subst.apply final_subst result_type)
+      return (final_subst, [ Subst.apply final_subst result_type ])
     | EFun (PVar (x, _), e1) ->
       let* tv = fresh_var in
       let env2 = TypeEnv.extend env (x, S (VarSet.empty, tv)) in
       let* s, ty = helper env2 e1 in
+      let* ty = uncover_item ty in
       let trez = Arrow (Subst.apply s tv, ty) in
-      return (s, trez)
+      return (s, [ trez ])
     | EApp (e1, e2) ->
       let* s1, t1 = helper env e1 in
+      let* t1 = uncover_item t1 in
       let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
+      let* t2 = uncover_item t2 in
       let* tv = fresh_var in
       let* s3 = unify (Subst.apply s2 t1) (Arrow (t2, tv)) in
       let trez = Subst.apply s3 tv in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
-      return (final_subst, trez)
+      return (final_subst, [ trez ])
     | ETuple exprs ->
       let infer_list =
         List.fold_left
           (fun acc t ->
             let* sub, typ = acc in
             let* s, t = helper env t in
+            let* t = uncover_item t in
             return (s :: sub, t :: typ))
           (return ([], []))
           exprs
       in
       let* s, t = infer_list in
       let* final_subst = Subst.compose_all s in
-      return (final_subst, TyTuple (List.rev t))
+      return (final_subst, [ TyTuple (List.rev t) ])
     | EList exprs ->
       let* fresh_tv = fresh_var in
       let rec infer_list acc = function
         | [] -> return (acc, TyList fresh_tv)
         | hd :: tl ->
           let* sub, ty = helper env hd in
+          let* ty = uncover_item ty in
           let* sub2 = Subst.unify ty fresh_tv in
           let* sub = Subst.compose sub sub2 in
           infer_list (sub :: acc) tl
@@ -461,13 +474,14 @@ let infer =
       let* sub, ty = infer_list [] exprs in
       let* sub = Subst.compose_all sub in
       let ty = Subst.apply sub ty in
-      return (sub, ty)
+      return (sub, [ ty ])
     | ESome e ->
       let* s, t = helper env e in
-      return (s, TyOption t)
+      let* t = uncover_item t in
+      return (s, [ TyOption t ])
     | ENone ->
       let* tv = fresh_var in
-      return (Subst.empty, TyOption tv)
+      return (Subst.empty, [ TyOption tv ])
     | ELet (Recursive, bindings, body) ->
       let extend_env env (PVar (x, _)) =
         let* fresh_tv = fresh_var in
@@ -487,6 +501,7 @@ let infer =
           (fun acc (pattern, expr) fresh_type ->
             let* env', s_acc = acc in
             let* s, t = helper env' expr in
+            let* t = uncover_item t in
             let* s = Subst.compose s_acc s in
             match pattern with
             | PVar (name, pat_type) ->
@@ -511,8 +526,9 @@ let infer =
         match body with
         | Some expr_body ->
           let* s_body, t_body = helper extended_env expr_body in
+          let* t_body = uncover_item t_body in
           let* final_subst' = Subst.compose s_body final_subst in
-          return (final_subst', t_body)
+          return (final_subst', [ t_body ])
         | None ->
           let find_type env bindings =
             List.fold_left
@@ -526,7 +542,7 @@ let infer =
               bindings
           in
           let* types = find_type extended_env bindings in
-          return (final_subst, Ty_And (List.rev types))
+          return (final_subst, List.rev types)
       in
       return (s, t)
     | ELet (NonRecursive, bindings, body) ->
@@ -535,6 +551,7 @@ let infer =
           (fun acc (pattern, expr) ->
             let* env', acc' = acc in
             let* s, t = helper env' expr in
+            let* t = uncover_item t in
             let env' = TypeEnv.apply s env' in
             match pattern with
             | PVar (name, pat_type) ->
@@ -556,8 +573,9 @@ let infer =
         match body with
         | Some expr_body ->
           let* s_body, t_body = helper extended_env expr_body in
+          let* t_body = uncover_item t_body in
           let* final_subst' = Subst.compose s_body substs in
-          return (final_subst', t_body)
+          return (final_subst', [ t_body ])
         | None ->
           let find_type env bindings =
             List.fold_left
@@ -571,27 +589,31 @@ let infer =
               bindings
           in
           let* types = find_type extended_env bindings in
-          return (substs, Ty_And (List.rev types))
+          return (substs, List.rev types)
       in
       return (s, t)
     | EIf (c, th, el) ->
       let* s1, t1 = helper env c in
+      let* t1 = uncover_item t1 in
       let* s2, t2 = helper env th in
+      let* t2 = uncover_item t2 in
       let* s3, t3 = helper env el in
+      let* t3 = uncover_item t3 in
       let* s4 = unify t1 TyBool in
       let* s5 = unify t2 t3 in
       let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
-      R.return (final_subst, Subst.apply s5 t2)
+      return (final_subst, [ Subst.apply s5 t2 ])
   in
   helper
 ;;
 
 let w e = Result.map snd (run (infer TypeEnv.empty e))
+let show_ty_list l = List.fold_left (fun acc t -> acc ^ show_ty t) "" l
 
 let test_infer subst =
   match w subst with
   | Result.Error er -> pp_error Format.std_formatter er
-  | Ok subst -> print_endline (show_ty subst)
+  | Ok subst -> print_endline (show_ty_list subst)
 ;;
 
 let%expect_test "infer: int" =

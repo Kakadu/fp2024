@@ -25,7 +25,6 @@ type ty =
   | TyOption of ty
   | Ty_var of binder
   | Arrow of ty * ty
-  | Ty_And of ty list
 [@@deriving show { with_path = false }]
 
 type scheme = S of binder_set * ty [@@deriving show { with_path = false }]

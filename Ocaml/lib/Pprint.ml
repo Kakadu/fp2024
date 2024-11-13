@@ -19,12 +19,6 @@ let rec pp_typ ppf = function
   | TyList ty -> fprintf ppf "%a list" pp_typ ty
   | TyOption ty -> fprintf ppf "%a option" pp_typ ty
   | Arrow (l, r) -> fprintf ppf "(%a -> %a)" pp_typ l pp_typ r
-  | Ty_And l ->
-    Format.pp_print_list
-      ~pp_sep:(fun ppf () -> Format.pp_print_newline ppf ())
-      pp_typ
-      ppf
-      l
 ;;
 
 let rec pp_typ_expr ppf = function
@@ -89,27 +83,30 @@ let pp_dec ppf ((name, expr), t) =
   pp_expr ppf expr
 ;;
 
+let uncover_item l =
+  match l with
+  | t :: [] -> t
+  | _ -> failwith "Value printing error"
+;;
+
 let pp_val ppf t = function
   | VConst x ->
     fprintf ppf "- : ";
-    pp_typ ppf t;
+    pp_typ ppf (uncover_item t);
     fprintf ppf " = ";
     pp_expr ppf x
   | VClosure (_, _, x) | VRecClosure (_, _, _, x) ->
     fprintf ppf "- : ";
-    pp_typ ppf t;
+    pp_typ ppf (uncover_item t);
     fprintf ppf " = ";
     pp_expr ppf x
   | VDeclaration x ->
-    (match t with
-     | Ty_And l ->
-       let com_l = List.combine x l in
-       Format.pp_print_list
-         ~pp_sep:(fun ppf () -> Format.pp_print_newline ppf ())
-         pp_dec
-         ppf
-         com_l
-     | _ -> failwith "Printer: Unexpected Error")
+    let com_l = List.combine x t in
+    Format.pp_print_list
+      ~pp_sep:(fun ppf () -> Format.pp_print_newline ppf ())
+      pp_dec
+      ppf
+      com_l
 ;;
 (* | VDeclaration(x) ->
    match t with
