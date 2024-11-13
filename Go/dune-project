@@ -6,7 +6,6 @@
 
 (license MIT)
 
-
 (authors
  "Karim Shakirov <karimshak06@gmail.com>"
  "Alexei Dmitrievtsev <dmt.alex2005@gmail.com>")
@@ -29,7 +28,6 @@
   dune
   (ppx_inline_test :with-test)
   ppx_expect
-  base
   angstrom
   qcheck
   ppx_deriving

@@ -40,18 +40,18 @@ let run_task inp_chan =
 
 let run_repl show_ast =
   let inp_chan = stdin in
-  let rec run_repl_helper run =
+  let rec helper run =
     match run inp_chan with
     | Result () ->
       if show_ast then Printf.printf "\n";
       flush stdout;
-      run_repl_helper run
+      helper run
     | Empty ->
       flush stdout;
-      run_repl_helper run
+      helper run
     | End -> ()
   in
-  run_repl_helper run_task
+  helper run_task
 ;;
 
 let () =
@@ -59,7 +59,7 @@ let () =
   let arg_list =
     [ ( "--ast-tree"
       , Unit (fun _ -> options.show_ast <- true)
-      , "View ASR representation of code" )
+      , "View AST representation of code" )
     ]
   in
   let doc = "Read-Eval-Print-Loop for Go" in

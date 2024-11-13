@@ -32,7 +32,7 @@ let parse_unary_receive =
 let parse_mult_unary_op pexpr =
   let rec helper acc =
     choice [ parse_unary_not; parse_unary_minus; parse_unary_plus; parse_unary_receive ]
-    >>= (fun new_oper -> helper (fun expr -> acc @@ new_oper @@ expr))
+    >>= (fun new_oper -> helper (fun expr -> acc @@ new_oper expr))
     <|> return acc
   in
   let* unary_operators = helper Fun.id in

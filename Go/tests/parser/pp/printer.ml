@@ -285,6 +285,5 @@ let print_top_decl = function
 ;;
 
 let print_expr = print_expr print_block
-let print_const const = print_const print_expr print_block const
 let print_stmt = print_stmt print_block
 let print_file file = sep_by "\n\n" file print_top_decl
