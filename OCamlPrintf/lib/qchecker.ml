@@ -11,25 +11,27 @@ module ShrinkQCheck = struct
 
   let rec shrink_pattern = function
     | Pat_any -> empty
-    | Pat_var id -> string id >|= fun id' -> Pat_var id'
+    | Pat_var id -> string ~shrink:char id >|= fun id' -> Pat_var id'
     | Pat_constant const ->
       (match const with
        | Const_integer i -> int i >|= fun i' -> Pat_constant (Const_integer i')
        | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
-       | Const_string str -> string str >|= fun str' -> Pat_constant (Const_string str'))
+       | Const_string str ->
+         string ~shrink:char str >|= fun str' -> Pat_constant (Const_string str'))
     | Pat_tuple pats -> list ~shrink:shrink_pattern pats >|= fun pats' -> Pat_tuple pats'
-    | Pat_construct (id, None) -> string id >|= fun id' -> Pat_construct (id', None)
+    | Pat_construct (_, None) -> return (Pat_construct ("::", None))
     | Pat_construct (id, Some pat) ->
       shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat')
   ;;
 
   let rec shrink_expression = function
-    | Exp_ident id -> string id >|= fun id' -> Exp_ident id'
+    | Exp_ident id -> string ~shrink:char id >|= fun id' -> Exp_ident id'
     | Exp_constant const ->
       (match const with
        | Const_integer i -> int i >|= fun i' -> Exp_constant (Const_integer i')
        | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
-       | Const_string str -> string str >|= fun str' -> Exp_constant (Const_string str'))
+       | Const_string str ->
+         string ~shrink:char str >|= fun str' -> Exp_constant (Const_string str'))
     | Exp_let (rec_flag, value_bindings, exp) ->
       list ~shrink:shrink_value_binding value_bindings
       >|= (fun value_bindings' -> Exp_let (rec_flag, value_bindings', exp))
@@ -48,7 +50,7 @@ module ShrinkQCheck = struct
       <+> (list ~shrink:shrink_case cases >|= fun cases' -> Exp_match (exp, cases'))
     | Exp_tuple exps ->
       list ~shrink:shrink_expression exps >|= fun exps' -> Exp_tuple exps'
-    | Exp_construct (id, None) -> string id >|= fun id' -> Exp_construct (id', None)
+    | Exp_construct (_, None) -> return (Exp_construct ("::", None))
     | Exp_construct (id, Some exp) ->
       shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp')
     | Exp_ifthenelse (if_exp, then_exp, None) ->
@@ -89,7 +91,7 @@ module ShrinkQCheck = struct
       >|= fun value_binding_list' -> Struct_value (rec_flag, value_binding_list')
   ;;
 
-  let shrink_structure items = list ~shrink:shrink_structure_item items
+  let shrink_structure = list ~shrink:shrink_structure_item
 end
 
 (* Only for debug *)
