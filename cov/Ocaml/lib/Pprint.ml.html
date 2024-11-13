@@ -18,13 +18,13 @@
       <h2>89.39%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:25.53%"></span>
-      <span class="unvisited" style="top:26.24%"></span>
-      <span class="unvisited" style="top:28.37%"></span>
-      <span class="unvisited" style="top:31.91%"></span>
-      <span class="unvisited" style="bottom:47.52%"></span>
-      <span class="unvisited" style="bottom:36.88%"></span>
-      <span class="some-visited" style="bottom:30.50%"></span>
+      <span class="unvisited" style="top:32.73%"></span>
+      <span class="unvisited" style="top:33.64%"></span>
+      <span class="unvisited" style="top:36.36%"></span>
+      <span class="unvisited" style="top:40.91%"></span>
+      <span class="unvisited" style="bottom:32.73%"></span>
+      <span class="unvisited" style="bottom:19.09%"></span>
+      <span class="some-visited" style="bottom:10.91%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -139,37 +139,6 @@
 <a id="L108"></a><span > </span>
 <a id="L109"></a><span > </span>
 <a id="L110"></a><span > </span>
-<a id="L111"></a><span > </span>
-<a id="L112"></a><span > </span>
-<a id="L113"></a><span > </span>
-<a id="L114"></a><span > </span>
-<a id="L115"></a><span > </span>
-<a id="L116"></a><span > </span>
-<a id="L117"></a><span > </span>
-<a id="L118"></a><span > </span>
-<a id="L119"></a><span > </span>
-<a id="L120"></a><span > </span>
-<a id="L121"></a><span > </span>
-<a id="L122"></a><span > </span>
-<a id="L123"></a><span > </span>
-<a id="L124"></a><span > </span>
-<a id="L125"></a><span > </span>
-<a id="L126"></a><span > </span>
-<a id="L127"></a><span > </span>
-<a id="L128"></a><span > </span>
-<a id="L129"></a><span > </span>
-<a id="L130"></a><span > </span>
-<a id="L131"></a><span > </span>
-<a id="L132"></a><span > </span>
-<a id="L133"></a><span > </span>
-<a id="L134"></a><span > </span>
-<a id="L135"></a><span > </span>
-<a id="L136"></a><span > </span>
-<a id="L137"></a><span > </span>
-<a id="L138"></a><span > </span>
-<a id="L139"></a><span > </span>
-<a id="L140"></a><span > </span>
-<a id="L141"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -284,37 +253,6 @@
 <a href="#L108">108</a>
 <a href="#L109">109</a>
 <a href="#L110">110</a>
-<a href="#L111">111</a>
-<a href="#L112">112</a>
-<a href="#L113">113</a>
-<a href="#L114">114</a>
-<a href="#L115">115</a>
-<a href="#L116">116</a>
-<a href="#L117">117</a>
-<a href="#L118">118</a>
-<a href="#L119">119</a>
-<a href="#L120">120</a>
-<a href="#L121">121</a>
-<a href="#L122">122</a>
-<a href="#L123">123</a>
-<a href="#L124">124</a>
-<a href="#L125">125</a>
-<a href="#L126">126</a>
-<a href="#L127">127</a>
-<a href="#L128">128</a>
-<a href="#L129">129</a>
-<a href="#L130">130</a>
-<a href="#L131">131</a>
-<a href="#L132">132</a>
-<a href="#L133">133</a>
-<a href="#L134">134</a>
-<a href="#L135">135</a>
-<a href="#L136">136</a>
-<a href="#L137">137</a>
-<a href="#L138">138</a>
-<a href="#L139">139</a>
-<a href="#L140">140</a>
-<a href="#L141">141</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2021-2023, Kakadu *)
 
@@ -426,37 +364,6 @@ let pp_val ppf t = function
       ppf
       com_l
 ;;
-(* | VDeclaration(x) -&gt;
-   match t with
-   | Ty_And l -&gt;
-   let com_l = List.combine x l in
-   let _ = Format.pp_print_list
-   ~pp_sep:(fun ppf () -&gt; Format.pp_print_newline ppf ())
-   pp_dec
-   ppf
-   (com_l) *)
-(* | _ -&gt; (match x with | (n, e) :: [] -&gt; pp_dec ppf ((n,e), t)) *)
-
-(*
-   let paired = List.map2 (fun x y -&gt; (x, y)) list1 list2 *)
-(*
-   | VConst of expr
-   | VClosure of string option * value Env.t * expr
-   | VRecClosure of string option * value Env.t * string list * expr
-   | VDeclaration of (string * expr) list *)
-(*   let pp_expr =
-     let open Parsetree in
-     let rec helper ppf = function
-     | EConst n -&gt; fprintf ppf "%d" n
-     | EIf (c, th, el) -&gt; fprintf ppf "if %a then %a else %a" helper c helper th helper el
-     | EVar s -&gt; pp_print_string ppf s
-     | EApp (l, r) -&gt; fprintf ppf "(%a %a)" helper l helper r
-     | ELam (PVar name, e) -&gt; fprintf ppf "(fun %s -&gt; %a)" name helper e
-     | ELet (_flg, PVar name, body, in_) -&gt;
-     fprintf ppf "let %s%s = %a in %a" "?" name helper body helper in_
-     in
-     helper
-     ;; *)
 </code></pre>
       </div>
     </div>
