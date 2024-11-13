@@ -135,7 +135,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="53">t</span>ype type_expr =
+<span data-count="39">t</span>ype type_expr =
   | TInt
   | TBool
   | TString
@@ -145,7 +145,7 @@
   | TFun of type_expr * type_expr
 [@@deriving show { with_path = false }]
 
-<span data-count="37">t</span>ype pattern = PVar of strin<span data-count="35">g</span> * <span data-count="82">t</span>ype_expr optio<span data-count="35">n</span> [@@deriving show { with_path = false }]
+<span data-count="33">t</span>ype pattern = PVar of strin<span data-count="33">g</span> * <span data-count="76">t</span>ype_expr optio<span data-count="33">n</span> [@@deriving show { with_path = false }]
 
 <span data-count="0">t</span>ype binary_operator =
   | Add (* + *)
@@ -167,10 +167,10 @@
   | NonRecursive
 [@@deriving show { with_path = false }]
 
-<span data-count="530">t</span>ype expr =
+<span data-count="558">t</span>ype expr =
   | EInt of in<span data-count="116">t</span>
   | EBool of boo<span data-count="21">l</span>
-  | EVar of strin<span data-count="53">g</span> * <span data-count="108">t</span>ype_expr optio<span data-count="53">n</span>
+  | EVar of strin<span data-count="67">g</span> * <span data-count="164">t</span>ype_expr optio<span data-count="67">n</span>
   | EString of strin<span data-count="5">g</span>
   | EBinOp of binary_operator * expr * expr
   | EApp of expr * expr

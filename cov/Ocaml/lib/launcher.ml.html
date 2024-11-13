@@ -463,7 +463,7 @@ let run input =
         | <span data-count="33">O</span>k v -&gt; Pprint.pp_val Format.std_formatter t v
         | <span data-count="0">E</span>rror e -&gt; Interpreter.pp_error Format.std_formatter e)
      | <span data-count="0">E</span>rror err -&gt; Inferencer.pp_error Format.std_formatter err)
-  | <span data-count="0">E</span>rror e -&gt; Format.fprintf Format.std_formatter "Parsing error: (%S)" e
+  | <span data-count="0">E</span>rror e -&gt; Parser.pp_error Format.std_formatter e
 ;;
 
 let%expect_test "basic arithmetic" =
