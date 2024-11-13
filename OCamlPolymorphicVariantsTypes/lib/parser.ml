@@ -52,7 +52,8 @@ let keyword word =
     - [start]: first element of sequence
     - [element_parser]: parser of one element in sequence
     - [list_converter]: coverter of elements sequence to one new element
-    - [separator]: char sequence which splitted sequence elements *)
+    - [separator]: char sequence which splitted sequence elements
+    - [notfound]: parser which will exec if after separator not found next element *)
 let element_sequence
   : 'a 'b. 'a -> 'a parser -> ('a list -> 'b) -> string -> 'a parser -> 'b parser
   =
@@ -126,7 +127,7 @@ and ptuple state =
 let const_expr = skip_ws *> (integer <|> boolean) >>| fun l -> Const l
 
 (** Parser of variable expression *)
-let variable = skip_ws *> ident >>| fun s -> Variable s
+let variable = skip_ws *> ident ~on_keyword:(fun _ -> pfail) >>| fun s -> Variable s
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
 let rec expr state = (skip_ws *> block_expr) state
@@ -170,6 +171,7 @@ and basic_expr applyable state =
   (skip_ws *> unary_expr applyable
    <|> if_expr
    <|> define_expr
+   <|> list_expr
    <|> (if applyable then applyable_expr else apply_expr)
    <|> const_expr)
     state
@@ -194,6 +196,13 @@ and unary_expr applyable state =
 and bracket_expr state =
   (skip_ws *> symbol '(' *> (expr <|> preturn (Const UnitLiteral))
    <* (skip_ws *> symbol ')' <|> perror "Not found close bracket"))
+    state
+
+(** Parser of list expression *)
+and list_expr state =
+  let helper ex = element_sequence ex tuple_expr (fun l -> ExpressionsList l) ";" pfail in
+  (skip_ws *> symbol '[' *> (tuple_expr >>= helper <|> preturn (ExpressionsList []))
+   <* skip_ws *> symbol ']')
     state
 
 (** Abstract parser of binary operations

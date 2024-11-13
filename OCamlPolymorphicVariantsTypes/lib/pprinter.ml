@@ -41,6 +41,7 @@ let pp_recursive_type ff = function
 
 let pp_tuple_sep ff () = fprintf ff ", "
 let pp_expr_block_sep ff () = fprintf ff "; "
+let pp_list_sep ff () = fprintf ff "; "
 let pp_definition_sep ff () = fprintf ff " and "
 let pp_struct_item_sep ff () = fprintf ff "\n"
 
@@ -57,6 +58,8 @@ let rec pp_expression ff = function
   | Binary (left, op, right) ->
     fprintf ff "(%a %a %a)" pp_expression left pp_binary_operator op pp_expression right
   | Tuple l -> fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_expression) l
+  | ExpressionsList l ->
+    fprintf ff "[%a]" (pp_print_list ~pp_sep:pp_list_sep pp_expression) l
   | ExpressionBlock l ->
     fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_expr_block_sep pp_expression) l
   | Apply (ex, l) ->

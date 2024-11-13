@@ -58,4 +58,4 @@ val digit : parser_state -> int parse_result
 val asequence : char list -> unit parser
 val assequence : string -> unit parser
 val parse : 'a parser -> string -> 'a parse_result
-val string_of_parse_result: ('a -> string) -> 'a parse_result -> string
+val string_of_parse_result : ('a -> string) -> 'a parse_result -> string
