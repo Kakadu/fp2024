@@ -1,4 +1,4 @@
-(** Copyright 2021-2023, Kakadu *)
+(** Copyright 2021-2023, Daniil Kadochnikov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -49,7 +49,7 @@ let pp_expr =
   let rec helper ppf = function
     | EInt n -> fprintf ppf "%d" n
     | EBool n -> fprintf ppf "%b" n
-    | EString n -> fprintf ppf "\"%s\"" n
+    | EString n -> fprintf ppf "%S" n
     | ETuple expr ->
       fprintf ppf "(";
       Format.pp_print_list
@@ -71,7 +71,7 @@ let pp_expr =
       helper ppf expr
     | ENone -> fprintf ppf "None"
     | EFun (_, _) -> fprintf ppf "<fun>"
-    | _ -> failwith "Expr printing error"
+    | _ -> fprintf ppf "PPrint: unexpected error while printing expr"
   in
   helper
 ;;
@@ -83,21 +83,20 @@ let pp_dec ppf ((name, expr), t) =
   pp_expr ppf expr
 ;;
 
-let uncover_item l =
-  match l with
-  | t :: [] -> t
-  | _ -> failwith "Value printing error"
+let print_type ppf = function
+  | t :: [] -> pp_typ ppf t
+  | _ -> fprintf ppf "PPrint: unexpected error while uncovering value for printing"
 ;;
 
 let pp_val ppf t = function
   | VConst x ->
     fprintf ppf "- : ";
-    pp_typ ppf (uncover_item t);
+    print_type ppf t;
     fprintf ppf " = ";
     pp_expr ppf x
   | VClosure (_, _, x) | VRecClosure (_, _, _, x) ->
     fprintf ppf "- : ";
-    pp_typ ppf (uncover_item t);
+    print_type ppf t;
     fprintf ppf " = ";
     pp_expr ppf x
   | VDeclaration x ->

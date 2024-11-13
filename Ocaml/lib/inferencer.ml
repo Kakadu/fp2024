@@ -240,8 +240,7 @@ end = struct
 
   and compose s1 s2 = RList.fold_left s2 ~init:(return s1) ~f:extend
 
-  let rec type_transform par =
-    match par with
+  let rec type_transform = function
     | TInt -> TyInt
     | TBool -> TyBool
     | TString -> TyString
@@ -381,8 +380,7 @@ let pp_env subst ppf env =
   TypeEnv.pp ppf env
 ;;
 
-let uncover_item l =
-  match l with
+let uncover_item = function
   | t :: [] -> return t
   | _ -> fail `Unexpected_error
 ;;

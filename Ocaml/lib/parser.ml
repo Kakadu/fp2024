@@ -4,6 +4,17 @@
 
 open Angstrom
 open Ast
+open Result
+
+type error =
+  [ `Parsing_Error of string
+  | `Some_Error
+  ]
+
+let pp_error ppf : error -> _ = function
+  | `Parsing_Error msg -> Format.fprintf ppf "Parser Error: %s" msg
+  | `Some_Error -> Format.fprintf ppf "Parser Error:"
+;;
 
 (* Tools for parsers*)
 let spaces = skip_many (char ' ' <|> char '\t' <|> char '\n')
@@ -13,12 +24,12 @@ let with_spaces parse_expr = spaces *> parse_expr <* spaces
 (* functions for chains of operations *)
 let chainl1 p op =
   let rec go acc = lift2 (fun f x -> f acc x) op p >>= go <|> return acc in
-  p >>= fun init -> go init
+  p >>= go
 ;;
 
 let chainl1_pat p op =
   let rec go acc = lift (fun f -> f acc) op >>= go <|> return acc in
-  p >>= fun init -> go init
+  p >>= go
 ;;
 
 let chainr1 p op =
@@ -270,238 +281,185 @@ let parse_expr =
 ;;
 
 (* Функция для парсинга строки *)
-let parse s = parse_string ~consume:All (spaces *> parse_expr <* spaces <* end_of_input) s
+let parse s =
+  match parse_string ~consume:All (spaces *> parse_expr <* spaces <* end_of_input) s with
+  | Ok ast -> Ok ast
+  | Error msg -> Error (`Parsing_Error msg)
+;;
 
 (* type_expr tests *)
-let parse_type_expr_test s =
-  match parse_string ~consume:All (parse_type_expr <* end_of_input) s with
-  | Ok ast -> ast
-  | Error msg -> failwith ("Type parsing error: " ^ msg)
+let parse_test s =
+  match parse s with
+  | Ok ast -> print_endline (show_expr ast)
+  | Error msg -> pp_error Format.std_formatter msg
 ;;
 
 let%expect_test "parsing type: int" =
-  let ast = parse_type_expr_test "int" in
-  print_endline (show_type_expr ast);
-  [%expect {| TInt |}]
+  parse_test "(x: int)";
+  [%expect {| (EVar ("x", (Some TInt))) |}]
 ;;
 
 let%expect_test "parsing type: bool" =
-  let ast = parse_type_expr_test "bool" in
-  print_endline (show_type_expr ast);
-  [%expect {| TBool |}]
+  parse_test "(x: bool)";
+  [%expect {| (EVar ("x", (Some TBool))) |}]
 ;;
 
 let%expect_test "parsing type: string" =
-  let ast = parse_type_expr_test "string" in
-  print_endline (show_type_expr ast);
-  [%expect {| TString |}]
+  parse_test "(x: string)";
+  [%expect {| (EVar ("x", (Some TString))) |}]
 ;;
 
 let%expect_test "parsing type: tuple" =
-  let ast = parse_type_expr_test "int * bool" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TTuple [TInt; TBool]) |}]
+  parse_test "(x: int * bool)";
+  [%expect {| (EVar ("x", (Some (TTuple [TInt; TBool])))) |}]
 ;;
 
 let%expect_test "parsing type: nested tuple" =
-  let ast = parse_type_expr_test "int * (bool * string)" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TTuple [TInt; (TTuple [TBool; TString])]) |}]
+  parse_test "(x: int * (bool * string))";
+  [%expect {| (EVar ("x", (Some (TTuple [TInt; (TTuple [TBool; TString])])))) |}]
 ;;
 
 let%expect_test "parsing type: list" =
-  let ast = parse_type_expr_test "int list" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TList TInt) |}]
+  parse_test "(x: int list)";
+  [%expect {| (EVar ("x", (Some (TList TInt)))) |}]
 ;;
 
 let%expect_test "parsing type: list of tuples" =
-  let ast = parse_type_expr_test "(int * bool) list" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TList (TTuple [TInt; TBool])) |}]
+  parse_test "(x: (int * bool) list)";
+  [%expect {| (EVar ("x", (Some (TList (TTuple [TInt; TBool]))))) |}]
 ;;
 
 let%expect_test "parsing type: option" =
-  let ast = parse_type_expr_test "int option" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TOption TInt) |}]
+  parse_test "(x: int option)";
+  [%expect {| (EVar ("x", (Some (TOption TInt)))) |}]
 ;;
 
 let%expect_test "parsing type: option of lists" =
-  let ast = parse_type_expr_test "int list option" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TOption (TList TInt)) |}]
+  parse_test "(x: int list option)";
+  [%expect {| (EVar ("x", (Some (TOption (TList TInt))))) |}]
 ;;
 
 let%expect_test "parsing type: function" =
-  let ast = parse_type_expr_test "int -> bool" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TFun (TInt, TBool)) |}]
+  parse_test "(x: int -> bool)";
+  [%expect {| (EVar ("x", (Some (TFun (TInt, TBool))))) |}]
 ;;
 
 let%expect_test "parsing type: function with multiple arguments" =
-  let ast = parse_type_expr_test "int -> bool -> string" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TFun (TInt, (TFun (TBool, TString)))) |}]
+  parse_test "(x: int -> bool -> string)";
+  [%expect {| (EVar ("x", (Some (TFun (TInt, (TFun (TBool, TString))))))) |}]
 ;;
 
 let%expect_test "parsing type: function with tuple argument" =
-  let ast = parse_type_expr_test "(int * bool) -> string" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TFun ((TTuple [TInt; TBool]), TString)) |}]
+  parse_test "(x: (int * bool) -> string)";
+  [%expect {| (EVar ("x", (Some (TFun ((TTuple [TInt; TBool]), TString))))) |}]
 ;;
 
 let%expect_test "parsing type: function returning a function" =
-  let ast = parse_type_expr_test "int -> (bool -> string)" in
-  print_endline (show_type_expr ast);
-  [%expect {| (TFun (TInt, (TFun (TBool, TString)))) |}]
+  parse_test "(x: int -> (bool -> string))";
+  [%expect {| (EVar ("x", (Some (TFun (TInt, (TFun (TBool, TString))))))) |}]
 ;;
 
 let%expect_test "parsing type: complex type" =
-  let ast =
-    parse_type_expr_test
-      "(int -> bool) list option -> (string * int) -> string option list"
-  in
-  print_endline (show_type_expr ast);
+  parse_test "(x: (int -> bool) list option -> (string * int) -> string option list)";
   [%expect
     {| 
-      (TFun ((TOption (TList (TFun (TInt, TBool)))), 
-         (TFun ((TTuple [TString; TInt]), (TList (TOption TString)))))) |}]
-;;
-
-(* pattern tests *)
-let parse_pattern_test s =
-  match parse_string ~consume:All (parse_pattern <* end_of_input) s with
-  | Ok ast -> ast
-  | Error msg -> failwith ("Pattern parsing error: " ^ msg)
-;;
-
-let%expect_test "parsing pattern: variable" =
-  let ast = parse_pattern_test "x" in
-  print_endline (show_pattern ast);
-  [%expect {| (PVar ("x", None)) |}]
-;;
-
-let%expect_test "parsing pattern: variable with type annotation" =
-  let ast = parse_pattern_test "(x : int)" in
-  print_endline (show_pattern ast);
-  [%expect {| (PVar ("x", (Some TInt))) |}]
+      (EVar ("x",
+         (Some (TFun ((TOption (TList (TFun (TInt, TBool)))),
+                  (TFun ((TTuple [TString; TInt]), (TList (TOption TString)))))))
+         )) |}]
 ;;
 
 (* expr tests *)
-let parse_expr_test s =
-  match parse_string ~consume:All (spaces *> parse_expr <* spaces <* end_of_input) s with
-  | Ok ast -> ast
-  | Error msg -> failwith msg
-;;
-
 (* int test *)
 let%expect_test "parsing expr: integer" =
-  let ast = parse_expr_test "123" in
-  print_endline (show_expr ast);
+  parse_test "123";
   [%expect {| (EInt 123) |}]
 ;;
 
 (* bool test *)
 let%expect_test "parsing expr: boolean true" =
-  let ast = parse_expr_test "true" in
-  print_endline (show_expr ast);
+  parse_test "true";
   [%expect {| (EBool true) |}]
 ;;
 
 let%expect_test "parsing expr: boolean false" =
-  let ast = parse_expr_test "false" in
-  print_endline (show_expr ast);
+  parse_test "false";
   [%expect {| (EBool false) |}]
 ;;
 
 (* var test *)
 let%expect_test "parsing expr: identifier 1" =
-  let ast = parse_expr_test "my_variable" in
-  print_endline (show_expr ast);
+  parse_test "my_variable";
   [%expect {| (EVar ("my_variable", None)) |}]
 ;;
 
 let%expect_test "parsing expr: identifier 2" =
-  let ast = parse_expr_test "_123" in
-  print_endline (show_expr ast);
+  parse_test "_123";
   [%expect {| (EVar ("_123", None)) |}]
 ;;
 
 let%expect_test "parsing expr: identifier 3" =
-  let ast = parse_expr_test "Papa__123" in
-  print_endline (show_expr ast);
+  parse_test "Papa__123";
   [%expect {| (EVar ("Papa__123", None)) |}]
 ;;
 
 let%expect_test "parsing expr: identifier 4" =
-  let ast = parse_expr_test "(smth : int)" in
-  print_endline (show_expr ast);
+  parse_test "(smth : int)";
   [%expect {| (EVar ("smth", (Some TInt))) |}]
 ;;
 
 (* string test *)
 let%expect_test "parsing expr: string" =
-  let ast = parse_expr_test "\"hello, world!\"" in
-  print_endline (show_expr ast);
+  parse_test "\"hello, world!\"";
   [%expect {| (EString "hello, world!") |}]
 ;;
 
 let%expect_test "parsing expr: empty string" =
-  let ast = parse_expr_test "\"\"" in
-  print_endline (show_expr ast);
+  parse_test "\"\"";
   [%expect {| (EString "") |}]
 ;;
 
 (* binOp test *)
 let%expect_test "parsing expr: simple addition" =
-  let ast = parse_expr_test "1 + 2" in
-  print_endline (show_expr ast);
+  parse_test "1 + 2";
   [%expect {| (EBinOp (Add, (EInt 1), (EInt 2))) |}]
 ;;
 
 let%expect_test "parsing expr: simple subtraction" =
-  let ast = parse_expr_test "5 - 3" in
-  print_endline (show_expr ast);
+  parse_test "5 - 3";
   [%expect {| (EBinOp (Sub, (EInt 5), (EInt 3))) |}]
 ;;
 
 let%expect_test "parsing expr: simple multiplication" =
-  let ast = parse_expr_test "4 * 2" in
-  print_endline (show_expr ast);
+  parse_test "4 * 2";
   [%expect {| (EBinOp (Mul, (EInt 4), (EInt 2))) |}]
 ;;
 
 let%expect_test "parsing expr: simple division" =
-  let ast = parse_expr_test "8 / 4" in
-  print_endline (show_expr ast);
+  parse_test "8 / 4";
   [%expect {| (EBinOp (Div, (EInt 8), (EInt 4))) |}]
 ;;
 
 let%expect_test "parsing expr: addition and multiplication" =
-  let ast = parse_expr_test "1 + 2 * 3" in
-  print_endline (show_expr ast);
+  parse_test "1 + 2 * 3";
   [%expect {|
       (EBinOp (Add, (EInt 1), (EBinOp (Mul, (EInt 2), (EInt 3))))) |}]
 ;;
 
 let%expect_test "parsing expr: subtraction and division" =
-  let ast = parse_expr_test "10 - 8 / 2" in
-  print_endline (show_expr ast);
+  parse_test "10 - 8 / 2";
   [%expect {|
       (EBinOp (Sub, (EInt 10), (EBinOp (Div, (EInt 8), (EInt 2))))) |}]
 ;;
 
 let%expect_test "parsing expr: parentheses with multiplication" =
-  let ast = parse_expr_test "(1 + 2) * 3" in
-  print_endline (show_expr ast);
+  parse_test "(1 + 2) * 3";
   [%expect {|
       (EBinOp (Mul, (EBinOp (Add, (EInt 1), (EInt 2))), (EInt 3))) |}]
 ;;
 
 let%expect_test "parsing expr: nested parentheses" =
-  let ast = parse_expr_test "((1 + 2) * (3 - 4)) / 5" in
-  print_endline (show_expr ast);
+  parse_test "((1 + 2) * (3 - 4)) / 5";
   [%expect
     {|
     (EBinOp (Div,
@@ -511,33 +469,28 @@ let%expect_test "parsing expr: nested parentheses" =
 ;;
 
 let%expect_test "parsing expr: equality" =
-  let ast = parse_expr_test "1 + 2 = 3" in
-  print_endline (show_expr ast);
+  parse_test "1 + 2 = 3";
   [%expect {|
       (EBinOp (Eq, (EBinOp (Add, (EInt 1), (EInt 2))), (EInt 3))) |}]
 ;;
 
 let%expect_test "parsing expr: inequality" =
-  let ast = parse_expr_test "4 <> 5" in
-  print_endline (show_expr ast);
+  parse_test "4 <> 5";
   [%expect {| (EBinOp (Neq, (EInt 4), (EInt 5))) |}]
 ;;
 
 let%expect_test "parsing expr: less than" =
-  let ast = parse_expr_test "2 < 3" in
-  print_endline (show_expr ast);
+  parse_test "2 < 3";
   [%expect {| (EBinOp (Lt, (EInt 2), (EInt 3))) |}]
 ;;
 
 let%expect_test "parsing expr: greater than or equal" =
-  let ast = parse_expr_test "5 >= 4" in
-  print_endline (show_expr ast);
+  parse_test "5 >= 4";
   [%expect {| (EBinOp (Ge, (EInt 5), (EInt 4))) |}]
 ;;
 
 let%expect_test "parsing expr: mixed arithmetic and comparison" =
-  let ast = parse_expr_test "1 + 2 * 3 > 5" in
-  print_endline (show_expr ast);
+  parse_test "1 + 2 * 3 > 5";
   [%expect
     {|
       (EBinOp (Gt, (EBinOp (Add, (EInt 1), (EBinOp (Mul, (EInt 2), (EInt 3))))),
@@ -545,8 +498,7 @@ let%expect_test "parsing expr: mixed arithmetic and comparison" =
 ;;
 
 let%expect_test "parsing expr: arithmetic and logical and" =
-  let ast = parse_expr_test "1 < 2 && 3 > 2" in
-  print_endline (show_expr ast);
+  parse_test "1 < 2 && 3 > 2";
   [%expect
     {|
       (EBinOp (And, (EBinOp (Lt, (EInt 1), (EInt 2))),
@@ -554,16 +506,14 @@ let%expect_test "parsing expr: arithmetic and logical and" =
 ;;
 
 let%expect_test "parsing expr: logical or and and" =
-  let ast = parse_expr_test "true || false && true" in
-  print_endline (show_expr ast);
+  parse_test "true || false && true";
   [%expect
     {|
       (EBinOp (Or, (EBool true), (EBinOp (And, (EBool false), (EBool true))))) |}]
 ;;
 
 let%expect_test "parsing expr: logical and with comparison" =
-  let ast = parse_expr_test "1 + 2 * 3 <= 7 && 4 > 2" in
-  print_endline (show_expr ast);
+  parse_test "1 + 2 * 3 <= 7 && 4 > 2";
   [%expect
     {|
       (EBinOp (And,
@@ -573,8 +523,7 @@ let%expect_test "parsing expr: logical and with comparison" =
 ;;
 
 let%expect_test "parsing expr: logical or with comparison" =
-  let ast = parse_expr_test "true || 1 + 2 * 3 < 7" in
-  print_endline (show_expr ast);
+  parse_test "true || 1 + 2 * 3 < 7";
   [%expect
     {|
       (EBinOp (Or, (EBool true),
@@ -585,16 +534,14 @@ let%expect_test "parsing expr: logical or with comparison" =
 
 (* Fun test *)
 let%expect_test "parsing expr: function" =
-  let ast = parse_expr_test "fun x -> x + 1" in
-  print_endline (show_expr ast);
+  parse_test "fun x -> x + 1";
   [%expect
     {|
        (EFun ((PVar ("x", None)), (EBinOp (Add, (EVar ("x", None)), (EInt 1))))) |}]
 ;;
 
 let%expect_test "parsing expr: function with multiple arguments" =
-  let ast = parse_expr_test "fun x y z -> x + y * z" in
-  print_endline (show_expr ast);
+  parse_test "fun x y z -> x + y * z";
   [%expect
     {|
     (EFun ((PVar ("x", None)),
@@ -608,16 +555,14 @@ let%expect_test "parsing expr: function with multiple arguments" =
 ;;
 
 let%expect_test "parsing expr: function in parentheses" =
-  let ast = parse_expr_test "(fun x -> x + 1)" in
-  print_endline (show_expr ast);
+  parse_test "(fun x -> x + 1)";
   [%expect
     {|
       (EFun ((PVar ("x", None)), (EBinOp (Add, (EVar ("x", None)), (EInt 1))))) |}]
 ;;
 
 let%expect_test "parsing expr: function returning another function" =
-  let ast = parse_expr_test "fun x -> fun y -> x + y" in
-  print_endline (show_expr ast);
+  parse_test "fun x -> fun y -> x + y";
   [%expect
     {|
     (EFun ((PVar ("x", None)),
@@ -628,35 +573,30 @@ let%expect_test "parsing expr: function returning another function" =
 
 (* App test *)
 let%expect_test "parsing expr: application" =
-  let ast = parse_expr_test "x y" in
-  print_endline (show_expr ast);
+  parse_test "x y";
   [%expect {| (EApp ((EVar ("x", None)), (EVar ("y", None)))) |}]
 ;;
 
 let%expect_test "parsing expr: application with parentheses" =
-  let ast = parse_expr_test "(x) (y)" in
-  print_endline (show_expr ast);
+  parse_test "(x) (y)";
   [%expect {| (EApp ((EVar ("x", None)), (EVar ("y", None)))) |}]
 ;;
 
 let%expect_test "parsing expr: nested application left associative" =
-  let ast = parse_expr_test "x y z" in
-  print_endline (show_expr ast);
+  parse_test "x y z";
   [%expect
     {| (EApp ((EApp ((EVar ("x", None)), (EVar ("y", None)))), (EVar ("z", None)))) |}]
 ;;
 
 let%expect_test "parsing expr: nested application with parentheses" =
-  let ast = parse_expr_test "x (y z)" in
-  print_endline (show_expr ast);
+  parse_test "x (y z)";
   [%expect
     {| (EApp ((EVar ("x", None)), (EApp ((EVar ("y", None)), (EVar ("z", None)))))) |}]
 ;;
 
 (* Let test *)
 let%expect_test "parsing expr: let variable" =
-  let ast = parse_expr_test "let x = 5 in x" in
-  print_endline (show_expr ast);
+  parse_test "let x = 5 in x";
   [%expect
     {|
       (ELet (NonRecursive, [((PVar ("x", None)), (EInt 5))],
@@ -664,14 +604,12 @@ let%expect_test "parsing expr: let variable" =
 ;;
 
 let%expect_test "parsing expr: let variable" =
-  let ast = parse_expr_test "let x = 5" in
-  print_endline (show_expr ast);
+  parse_test "let x = 5";
   [%expect {| (ELet (NonRecursive, [((PVar ("x", None)), (EInt 5))], None)) |}]
 ;;
 
 let%expect_test "parsing expr: let typed variable" =
-  let ast = parse_expr_test "let (x : int) = x + 1 in x" in
-  print_endline (show_expr ast);
+  parse_test "let (x : int) = x + 1 in x";
   [%expect
     {|
        (ELet (NonRecursive,
@@ -681,8 +619,7 @@ let%expect_test "parsing expr: let typed variable" =
 ;;
 
 let%expect_test "parsing expr: let function with multiple patterns" =
-  let ast = parse_expr_test "let f x y = 5 in f x y" in
-  print_endline (show_expr ast);
+  parse_test "let f x y = 5 in f x y";
   [%expect
     {|
        (ELet (NonRecursive,
@@ -694,8 +631,7 @@ let%expect_test "parsing expr: let function with multiple patterns" =
 ;;
 
 let%expect_test "parsing expr: let function with multiple typed patterns" =
-  let ast = parse_expr_test "let f x (y : int) = x + y in f" in
-  print_endline (show_expr ast);
+  parse_test "let f x (y : int) = x + y in f";
   [%expect
     {|
        (ELet (NonRecursive,
@@ -709,8 +645,7 @@ let%expect_test "parsing expr: let function with multiple typed patterns" =
 ;;
 
 let%expect_test "parsing expr: let rec with multiple patterns" =
-  let ast = parse_expr_test "let rec f (x: string) y = x + y in f" in
-  print_endline (show_expr ast);
+  parse_test "let rec f (x: string) y = x + y in f";
   [%expect
     {|
        (ELet (Recursive,
@@ -724,8 +659,7 @@ let%expect_test "parsing expr: let rec with multiple patterns" =
 ;;
 
 let%expect_test "parsing expr: mutual recursion with two functions" =
-  let ast = parse_expr_test "let rec even x = x + 1 and odd x = x + 2 in even 4" in
-  print_endline (show_expr ast);
+  parse_test "let rec even x = x + 1 and odd x = x + 2 in even 4";
   [%expect
     {|
     (ELet (Recursive,
@@ -740,8 +674,7 @@ let%expect_test "parsing expr: mutual recursion with two functions" =
 ;;
 
 let%expect_test "parsing expr: mutual recursion with three functions" =
-  let ast = parse_expr_test "let rec f x = g x and g x = h x and h x = x in f 5" in
-  print_endline (show_expr ast);
+  parse_test "let rec f x = g x and g x = h x and h x = x in f 5";
   [%expect
     {|
     (ELet (Recursive,
@@ -757,94 +690,80 @@ let%expect_test "parsing expr: mutual recursion with three functions" =
 
 (* Tuple test *)
 let%expect_test "parsing expr: tuple" =
-  let ast = parse_expr_test "(1, 2, 3)" in
-  print_endline (show_expr ast);
+  parse_test "(1, 2, 3)";
   [%expect {| (ETuple [(EInt 1); (EInt 2); (EInt 3)]) |}]
 ;;
 
 let%expect_test "parsing expr: nested tuple" =
-  let ast = parse_expr_test "((1, 2), (3, 4))" in
-  print_endline (show_expr ast);
+  parse_test "((1, 2), (3, 4))";
   [%expect
     {|
     (ETuple [(ETuple [(EInt 1); (EInt 2)]); (ETuple [(EInt 3); (EInt 4)])]) |}]
 ;;
 
 let%expect_test "parsing expr: tuple with different types" =
-  let ast = parse_expr_test "(1, true, \"hello\")" in
-  print_endline (show_expr ast);
+  parse_test "(1, true, \"hello\")";
   [%expect {| (ETuple [(EInt 1); (EBool true); (EString "hello")]) |}]
 ;;
 
 (* List test *)
 let%expect_test "parsing expr: empty list" =
-  let ast = parse_expr_test "[]" in
-  print_endline (show_expr ast);
+  parse_test "[]";
   [%expect {| (EList []) |}]
 ;;
 
 let%expect_test "parsing expr: list" =
-  let ast = parse_expr_test "[1; 2; 3]" in
-  print_endline (show_expr ast);
+  parse_test "[1; 2; 3]";
   [%expect {| (EList [(EInt 1); (EInt 2); (EInt 3)]) |}]
 ;;
 
 let%expect_test "parsing expr: nested list" =
-  let ast = parse_expr_test "[[1; 2]; [3; 4]]" in
-  print_endline (show_expr ast);
+  parse_test "[[1; 2]; [3; 4]]";
   [%expect {|
     (EList [(EList [(EInt 1); (EInt 2)]); (EList [(EInt 3); (EInt 4)])]) |}]
 ;;
 
 let%expect_test "parsing expr: list with different types" =
-  let ast = parse_expr_test "[1; true; \"hello\"]" in
-  print_endline (show_expr ast);
+  parse_test "[1; true; \"hello\"]";
   [%expect {| (EList [(EInt 1); (EBool true); (EString "hello")]) |}]
 ;;
 
 (* Some test *)
 let%expect_test "parsing expr: Some with integer literal" =
-  let ast = parse_expr_test "Some 10" in
-  print_endline (show_expr ast);
+  parse_test "Some 10";
   [%expect {| (ESome (EInt 10)) |}]
 ;;
 
 let%expect_test "parsing expr: Some with variable" =
-  let ast = parse_expr_test "Some x" in
-  print_endline (show_expr ast);
+  parse_test "Some x";
   [%expect {| (ESome (EVar ("x", None))) |}]
 ;;
 
 (* None test *)
 let%expect_test "parsing expr: None" =
-  let ast = parse_expr_test "None" in
-  print_endline (show_expr ast);
+  parse_test "None";
   [%expect {| ENone |}]
 ;;
 
 (* Eif test *)
 let%expect_test "parsing expr: if-then-else true case" =
-  let ast = parse_expr_test "if true then 1 else 0" in
-  print_endline (show_expr ast);
+  parse_test "if true then 1 else 0";
   [%expect {| (EIf ((EBool true), (EInt 1), (EInt 0))) |}]
 ;;
 
 let%expect_test "parsing expr: if-then-else false case" =
-  let ast = parse_expr_test "if false then 42 else 99" in
-  print_endline (show_expr ast);
+  parse_test "if false then 42 else 99";
   [%expect {| (EIf ((EBool false), (EInt 42), (EInt 99))) |}]
 ;;
 
 let%expect_test "parsing expr: nested if-then-else" =
-  let ast = parse_expr_test "if true then (if false then 1 else 2) else 3" in
-  print_endline (show_expr ast);
+  parse_test "if true then (if false then 1 else 2) else 3";
   [%expect
     {| (EIf ((EBool true), (EIf ((EBool false), (EInt 1), (EInt 2))), (EInt 3))) |}]
 ;;
 
 let%expect_test "parsing expr: if-then-else with expressions" =
-  let ast = parse_expr_test "if x > 0 then x + 1 else x - 1" in
-  print_endline (show_expr ast);
+  parse_test "if x > 0 then x + 1 else x - 1";
   [%expect
     {|
       (EIf ((EBinOp (Gt, (EVar ("x", None)), (EInt 0))),

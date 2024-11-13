@@ -15,7 +15,7 @@ let run input =
         | Ok v -> Pprint.pp_val Format.std_formatter t v
         | Error e -> Interpreter.pp_error Format.std_formatter e)
      | Error err -> Inferencer.pp_error Format.std_formatter err)
-  | Error e -> Format.fprintf Format.std_formatter "Parsing error: (%S)" e
+  | Error e -> Parser.pp_error Format.std_formatter e
 ;;
 
 let%expect_test "basic arithmetic" =
