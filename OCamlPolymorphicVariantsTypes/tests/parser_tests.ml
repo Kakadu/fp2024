@@ -10,6 +10,37 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|[];;|};
+  [%expect {|
+    [(EvalItem (ExpressionsList []))] |}];
+  test_program {|[(fun x -> x * x) 10; not y && x];;|};
+  [%expect
+    {|
+    [(EvalItem
+        (ExpressionsList
+           [(Apply (
+               (Lambda ([(PVar "x")],
+                  (Binary ((Variable "x"), Multiply, (Variable "x"))))),
+               [(Const (IntLiteral 10))]));
+             (Binary ((Apply ((Variable "not"), [(Variable "y")])), And,
+                (Variable "x")))
+             ]))
+      ] |}];
+  test_program {|[((fun x -> x * x) 10; not y && x;)];;|};
+  [%expect
+    {|
+    [(EvalItem
+        (ExpressionsList
+           [(ExpressionBlock
+               [(Apply (
+                   (Lambda ([(PVar "x")],
+                      (Binary ((Variable "x"), Multiply, (Variable "x"))))),
+                   [(Const (IntLiteral 10))]));
+                 (Binary ((Apply ((Variable "not"), [(Variable "y")])), And,
+                    (Variable "x")))
+                 ])
+             ]))
+      ] |}];
   test_program {|10 + (fun in -> x) 10;;|};
   [%expect
     {|

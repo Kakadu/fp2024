@@ -52,6 +52,7 @@ type expression =
   | Unary of unary_operator * expression (* ~-123 *)
   | Binary of expression * binary_operator * expression (* 12 + 34 | true && (x > y) *)
   | Tuple of expression list (* (1, 2, (let x = 6 in x)) *)
+  | ExpressionsList of expression list (* [1; 2; (let x = 6 in x)] *)
   | If of expression * expression * expression option (* if x then false else true *)
   | Lambda of pattern list * expression (* fun (x, (y,z)) -> x / (y + z) *)
   | Apply of expression * expression list

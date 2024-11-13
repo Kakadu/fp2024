@@ -20,6 +20,7 @@ module QChecker = struct
   let gen_integer = oneof [ positive_number; return 0 ]
   let gen_boolean = oneof [ return true; return false ]
   let tuple_size = int_range 2 4
+  let elist_size = int_range 0 4
   let definition_size = int_range 1 10
   let patterns_size = int_range 1 6
   let pattern_depth = int_range 1 2
@@ -106,6 +107,9 @@ module QChecker = struct
     let gen_tuple_expr subexpr_gen =
       map (fun l -> Tuple l) (list_size tuple_size subexpr_gen)
     in
+    let gen_list_expr subexpr_gen =
+      map (fun l -> ExpressionsList l) (list_size elist_size subexpr_gen)
+    in
     let gen_if_expr subexpr_gen block_gen =
       let helper = oneof [ return None; map (fun ex -> Some ex) block_gen ] in
       map3
@@ -135,6 +139,7 @@ module QChecker = struct
              [ 1, gen_unary_expr (self (depth - 1))
              ; 1, gen_binary_expr (self (depth - 1))
              ; 1, gen_tuple_expr (self (depth - 1))
+             ; 1, gen_list_expr (self (depth - 1))
              ; 1, gen_define_expr (self (depth - 1))
              ; 1, gen_if_expr (self (depth / 2)) (self (depth - 1))
              ; 1, gen_lambda (self (depth - 1))
