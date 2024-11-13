@@ -327,7 +327,7 @@ open Interpreter.Interpret
 
 let rec pp_typ ppf = function
   | <span data-count="1">T</span>y_var n -&gt; fprintf ppf "'_%d" n
-  | <span data-count="54">T</span>yInt -&gt; pp_print_string ppf "int"
+  | <span data-count="55">T</span>yInt -&gt; pp_print_string ppf "int"
   | <span data-count="8">T</span>yBool -&gt; pp_print_string ppf "bool"
   | <span data-count="2">T</span>yString -&gt; pp_print_string ppf "string"
   | <span data-count="3">T</span>yTuple ty -&gt;
@@ -365,7 +365,7 @@ let pp_scheme ppf = function
 
 let pp_expr =
   let rec helper ppf = function
-    | <span data-count="26">E</span>Int n -&gt; fprintf ppf "%d" n
+    | <span data-count="27">E</span>Int n -&gt; fprintf ppf "%d" n
     | <span data-count="2">E</span>Bool n -&gt; fprintf ppf "%b" n
     | <span data-count="1">E</span>String n -&gt; fprintf ppf "\"%s\"" n
     | <span data-count="2">E</span>Tuple expr -&gt;
@@ -402,17 +402,17 @@ let pp_dec ppf ((name, expr), t) =
 ;;
 
 let uncover_item l =
-  <span data-count="23">m</span>atch l with
-  | <span data-count="23">t</span> :: [] -&gt; t
+  <span data-count="24">m</span>atch l with
+  | <span data-count="24">t</span> :: [] -&gt; t
   | <span data-count="0">_</span> -&gt; failwith "Value printing error"
 ;;
 
 let pp_val ppf t = function
-  | <span data-count="20">V</span>Const x -&gt;
+  | <span data-count="21">V</span>Const x -&gt;
     fprintf ppf "- : ";
-    <span data-count="20">p</span>p_typ ppf (uncover_ite<span data-count="20">m</span> t);
-    <span data-count="20">f</span>printf ppf " = ";
-    <span data-count="20">p</span>p_expr ppf x
+    <span data-count="21">p</span>p_typ ppf (uncover_ite<span data-count="21">m</span> t);
+    <span data-count="21">f</span>printf ppf " = ";
+    <span data-count="21">p</span>p_expr ppf x
   | <span data-count="3">V</span>Closure (_, _, x) | <span data-count="0">V</span>RecClosure (_, _, _, x) -&gt;
     fprintf ppf "- : ";
     <span data-count="3">p</span>p_typ ppf (uncover_ite<span data-count="3">m</span> t);
