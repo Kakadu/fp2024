@@ -39,10 +39,10 @@ type pattern =
   | Pattern_ident of string (** Identificator patterns: [x] *)
   | Pattern_const of constant
   (** Constant patterns: [1], ['a'], ["foo"], [3.14], [5.0<cm>] *)
-  | Pattern_tuple of pattern list
-  (** Tuple patterns: [(P1; ..., Pn)]
-      Invariant: [n >= 2] *)
-  | Pattern_or of pattern * pattern (** WIP Or patterns: [P1 | P2] *)
+  | Pattern_tuple of pattern * pattern * pattern list
+  (** [Pattern_tuple(P1, P2, [P3, ..., Pn])] represents:
+      - [(P1, P2)] when pattern list is []
+      - [(P1, P2, P3, ..., Pn)] when pattern list is (::) *)
   | Pattern_list of pattern list (** List patterns: [P1, ..., Pn] *)
 [@@deriving qcheck, show { with_path = false }]
 
@@ -51,30 +51,28 @@ type rec_flag =
   | Recursive (** For recursive function declarations *)
 [@@deriving qcheck, show { with_path = false }]
 
-type val_binding =
-  | Binding of pattern * expression (** [Binding(P, E)] represents [let P = E] *)
-[@@deriving qcheck, show { with_path = false }]
+(** [(P, E)] represents [let P = E] or [let rec P = E] *)
+type val_binding = pattern * expression [@@deriving qcheck, show { with_path = false }]
 
 and expression =
   | Expr_const of constant
   (** Constant expressions: [1], ['a'], ["foo"], [3.14], [true], [5.0<cm>] *)
   | Expr_ident_or_op of string (** Identificator or operation expressions: [x], [+] *)
-  | Expr_tuple of expression list
-  (** Tuple expressions: [(E1, ..., En)]
-      Invariant: [n >= 2] *)
+  | Expr_tuple of expression * expression * expression list
+  (** [Expr_tuple(E1, E2, [E3, ..., En])] represents:
+      - [(E1, E2)] when pattern list is []
+      - [(E1, E2, E3, ..., En)] when pattern list is (::) *)
   | Expr_fun of pattern * expression
   (** Anonimous functions: [Expr_fun(P, E)] represents [fun P -> E] *)
-  | Expr_let of rec_flag * val_binding list * expression
-  (** [Expr_let(rec_flag, [(P1, E1); ...; (Pn, En)], E)] represents:
-      - [let P1 = E1 and ... and Pn = En in E] when rec_flag is Nonrecursive
-      - [let rec P1 = E1 and ... and Pn = En in E] when rec_flag is Recursive
-        Invariant: [n >= 1] *)
+  | Expr_let of rec_flag * val_binding * val_binding list * expression
+  (** [Expr_let(rec_flag, (P1, E1), [(P2, E2); ...; (Pn, En)], E)] represents:
+      - [let P1 = E1 in E] when val_binding list is [] and rec_flag is Nonrecursive
+      - [let rec P1 = E1 in E] when val_binding list is [] and rec_flag is Recursive
+      - [let P1 = E1 and ... and Pn = En in E] when val_binding list is (::) A B and rec_flag is Nonrecursive
+      - [let rec P1 = E1 and ... and Pn = En in E] when val_binding list is (::) A B and rec_flag is Recursive *)
   | Expr_ifthenelse of expression * expression * expression option
   (** [if E1 then E2 else E3] *)
   | Expr_apply of expression * expression (** Application [E1 E2] *)
-  | Expr_match of expression * (pattern * expression) list
-  (** [match E with P1 -> E1 | ... | Pn -> En]
-      Invariant: [n >= 1] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type type_def =
@@ -87,11 +85,12 @@ type type_def =
 type structure_item =
   | Str_item_eval of expression
   (** Structure item which is single expression: [E] or [do E] *)
-  | Str_item_def of rec_flag * val_binding list
-  (** [Str_item_def(rec_flag, [(P1, E1); ...; (Pn, En)])] represents:
-      - [let P1 = E1 and ... and Pn = En] when rec_flag is Nonrecursive
-      - [let rec P1 = E1 and ... and Pn = En] when rec_flag is Recursive
-        Invariant: [n >= 1] *)
+  | Str_item_def of rec_flag * val_binding * val_binding list
+  (** [Str_item_def(rec_flag, (P1, E1), [(P2, E2); ...; (Pn, En)])] represents:
+      - [let P1 = E1] when val_binding list is [] and rec_flag is Nonrecursive
+      - [let rec P1 = E1] when val_binding list is [] and rec_flag is Recursive
+      - [let P1 = E1 and ... and Pn = En] when val_binding list is (::) A B and rec_flag is Nonrecursive
+      - [let rec P1 = E1 and ... and Pn = En] when val_binding list is (::) A B and rec_flag is Recursive *)
   | Str_item_type_def of type_def (** Structure item which is type definition *)
 [@@deriving qcheck, show { with_path = false }]
 
