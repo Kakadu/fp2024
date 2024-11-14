@@ -1,6 +1,6 @@
 (executable
- (name factorial_ast)
- (public_name factorial_ast)
- (libraries ast)
+ (name print_ast)
+ (public_name ELutsyuk)
+ (libraries MiniML)
  (instrumentation
   (backend bisect_ppx)))

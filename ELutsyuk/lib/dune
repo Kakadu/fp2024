@@ -1,8 +1,8 @@
 (library
- (name ast)
+ (name MiniML)
  (public_name ELutsyuk.Lib)
- (modules Ast)
  (libraries base angstrom)
+ (modules Ast)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation
