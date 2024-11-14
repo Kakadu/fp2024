@@ -2,11 +2,12 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocaml_printf_lib
+open Ocaml_printf_lib.Ast
+open Ocaml_printf_lib.Parser
 
 let run str =
-  match Parser.parse str with
-  | Ok ast -> print_endline (Ast.show_structure ast)
+  match parse str with
+  | Ok ast -> print_endline (show_structure ast)
   | Error error -> print_endline error
 ;;
 

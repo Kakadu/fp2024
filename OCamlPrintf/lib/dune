@@ -1,15 +1,8 @@
 (library
  (name ocaml_printf_lib)
  (public_name OCamlPrintf.Lib)
- (modules Ast Parser Pprinter Qchecker)
  (libraries base angstrom qcheck-core qcheck-core.runner)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))
-
-(executable
- (name run_qchecker)
- (public_name run_qchecker)
- (modules run_qchecker)
- (libraries ocaml_printf_lib))

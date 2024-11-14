@@ -1,11 +1,17 @@
 (library
  (name tests)
  (libraries ocaml_printf_lib)
+ (modules Test_parser Test_pprinter)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
  (instrumentation
   (backend bisect_ppx)))
+
+(executable
+ (name run_qchecker)
+ (libraries ocaml_printf_lib)
+ (modules Run_qchecker))
 
 (cram
  (applies_to run_tests)

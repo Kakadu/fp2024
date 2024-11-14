@@ -2,9 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocaml_printf_lib
+open Ocaml_printf_lib.Pprinter
 
-let run = Format.printf "%a \n" Pprinter.pp_structure
+let run = Format.printf "%a \n" pp_structure
 
 let%expect_test "pp_factorial_with_match" =
   run

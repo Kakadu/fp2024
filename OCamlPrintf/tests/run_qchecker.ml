@@ -2,16 +2,16 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocaml_printf_lib.Qchecker
+open Ocaml_printf_lib.Qchecker.TestQCheck
 
 let () =
   print_endline "Testing manual generator.";
-  let _ : int = TestQCheck.run_manual () in
+  let _ : int = run_manual () in
   ()
 ;;
 
 let () =
   print_endline "Testing auto generator.";
-  let _ : int = TestQCheck.run_auto () in
+  let _ : int = run_auto () in
   ()
 ;;
