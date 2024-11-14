@@ -34,9 +34,20 @@ type constant =
   (** Units of measure constants: [5.0<cm>], [3<kg>] *)
 [@@deriving qcheck, show { with_path = false }]
 
+type core_type =
+  | Type_paren of core_type (** Type inside parentheses: [(T)] *)
+  | Type_func of core_type * core_type (** Function type: [(T1 -> T2)] *)
+  | Type_tuple of core_type * core_type * core_type list
+  (** [Type_tuple(T1, T2, [T3, ..., Tn])] represents:
+      - [(T1, T2)] when core_type list is []
+      - [(T1, T2, T3, ..., Tn)] when core_type list is (::) A B *)
+  | Type_ident of string (** Type identificator, such as [int] *)
+[@@deriving qcheck, show { with_path = false }]
+
 type pattern =
   | Pattern_wild (** Wildcard patterns [ _ ] *)
   | Pattern_ident of string (** Identificator patterns: [x] *)
+  | Pattern_typed of pattern * core_type (** Typed pattern [x : int] *)
   | Pattern_const of constant
   (** Constant patterns: [1], ['a'], ["foo"], [3.14], [5.0<cm>] *)
   | Pattern_tuple of pattern * pattern * pattern list
@@ -44,6 +55,7 @@ type pattern =
       - [(P1, P2)] when pattern list is []
       - [(P1, P2, P3, ..., Pn)] when pattern list is (::) *)
   | Pattern_list of pattern list (** List patterns: [P1, ..., Pn] *)
+  | Pattern_or of pattern * pattern (** Or patterns in pattern matching: [P1 | P2] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type rec_flag =
@@ -53,6 +65,9 @@ type rec_flag =
 
 (** [(P, E)] represents [let P = E] or [let rec P = E] *)
 type val_binding = pattern * expression [@@deriving qcheck, show { with_path = false }]
+
+(** [Rule(P, E)] represents [P -> E] in pattern matching *)
+and rule = Rule of pattern * expression [@@deriving qcheck, show { with_path = false }]
 
 and expression =
   | Expr_const of constant
@@ -73,6 +88,10 @@ and expression =
   | Expr_ifthenelse of expression * expression * expression option
   (** [if E1 then E2 else E3] *)
   | Expr_apply of expression * expression (** Application [E1 E2] *)
+  | Expr_match of expression * rule * rule list
+  (** [Expr_match(E, Rule(P1, E1), [Rule(P2, E2); ...; Rule(Pn, En)])] represents:
+      - [match E with P1 -> E1] if rule list is []
+      - [match E with P1 -> E1 | P2 -> E2 | ... | Pn -> En] if rule list is (::) A B *)
 [@@deriving qcheck, show { with_path = false }]
 
 type type_def =
