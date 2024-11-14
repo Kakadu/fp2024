@@ -27,12 +27,10 @@ let is_separator = function
 ;;
 
 let is_keyword = function
-  (* https://ocaml.org/manual/5.2/lex.html#sss:keywords *)
   | "and"
   | "else"
   | "false"
   | "fun"
-  | "function"
   | "if"
   | "in"
   | "let"
@@ -40,7 +38,9 @@ let is_keyword = function
   | "rec"
   | "then"
   | "true"
-  | "with" -> true
+  | "with"
+  | "Some"
+  | "None" -> true
   | _ -> false
 ;;
 
@@ -106,8 +106,12 @@ let parse_pat_tuple parse_pat =
   return (Pat_tuple (List.cons first_pat rest_pats))
 ;;
 
-let parse_bool_pat =
-  ws *> keyword "true" <|> keyword "false" >>| fun name -> Pat_construct (name, None)
+let parse_keyword_constructs_pat parse_pat =
+  let* id =
+    ws *> choice [ keyword "true"; keyword "false"; keyword "Some"; keyword "None" ]
+  in
+  let* arg = ws *> option None (parse_pat >>| Option.some) in
+  return (Pat_construct (id, arg))
 ;;
 
 let parse_pat_construct parse_pat =
@@ -120,7 +124,7 @@ let parse_pat_construct parse_pat =
       ~init:(Pat_construct ("[]", None))
       ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple [ pat; acc ])))
   in
-  parse_elements <|> parse_bool_pat
+  choice [ parse_elements; parse_keyword_constructs_pat parse_pat ]
 ;;
 
 let parse_pattern =
@@ -265,8 +269,12 @@ let parse_exp_tuple parse_exp =
   return (Exp_tuple (List.cons first_exp rest_exps))
 ;;
 
-let parse_bool_exp =
-  ws *> keyword "true" <|> keyword "false" >>| fun name -> Exp_construct (name, None)
+let parse_keyword_constructs_exp parse_pat =
+  let* id =
+    ws *> choice [ keyword "true"; keyword "false"; keyword "Some"; keyword "None" ]
+  in
+  let* arg = ws *> option None (parse_pat >>| Option.some) in
+  return (Exp_construct (id, arg))
 ;;
 
 let parse_exp_construct parse_exp =
@@ -280,7 +288,7 @@ let parse_exp_construct parse_exp =
       ~init:(Exp_construct ("[]", None))
       ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple [ exp; acc ])))
   in
-  parse_elements <|> parse_bool_exp
+  choice [ parse_elements; parse_keyword_constructs_exp parse_exp ]
 ;;
 
 let parse_exp_ifthenelse parse_exp =

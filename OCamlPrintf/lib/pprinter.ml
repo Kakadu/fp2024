@@ -80,7 +80,6 @@ let rec pp_expression ppf = function
   | Exp_apply (exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in
     let handle_exp_list = function
-      | [] -> fprintf ppf "%s" expression
       | [ expr ] -> fprintf ppf "(%s %a)" expression pp_expression expr
       | _ ->
         let first_exp = List.hd exp_list in
@@ -115,8 +114,8 @@ let rec pp_expression ppf = function
     fprintf ppf "(match %a with %s)" pp_expression exp case_list_str
   | Exp_tuple exp_list ->
     fprintf ppf "(%a)" (pp_print_list ~pp_sep:pp_comma pp_expression) exp_list
-  | Exp_construct (_, None) -> fprintf ppf "[]"
-  | Exp_construct (_, Some exp) ->
+  | Exp_construct ("::", None) -> fprintf ppf "[]"
+  | Exp_construct ("::", Some exp) ->
     (match exp with
      | Exp_tuple [ head; tail ] ->
        fprintf ppf "[%a" pp_expression head;
@@ -132,6 +131,9 @@ let rec pp_expression ppf = function
        in
        print_tail tail
      | _ -> ())
+  | Exp_construct (tag, None) -> fprintf ppf "%s" tag
+  | Exp_construct ("Some", Some exp) -> fprintf ppf "Some (%a)" pp_expression exp
+  | Exp_construct (_, _) -> ()
   | Exp_ifthenelse (exp1, exp2, None) ->
     fprintf ppf "(if %a then %a)" pp_expression exp1 pp_expression exp2
   | Exp_ifthenelse (exp1, exp2, Some exp3) ->

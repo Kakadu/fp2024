@@ -245,7 +245,7 @@ let%expect_test "parse_several_structure_items" =
     |}]
 ;;
 
-let%expect_test "parse_sequence_and_construct" =
+let%expect_test "parse_sequence_and_list" =
   run {| [1; 2; 3]; "qwerty123" |};
   [%expect
     {|
@@ -269,6 +269,35 @@ let%expect_test "parse_sequence_and_construct" =
                          ]))
               )),
            (Exp_constant (Const_string "qwerty123")))))
+      ]
+    |}]
+;;
+
+let%expect_test "parse_option_and_bool" =
+  run {|
+  let f a =
+    match a with
+    | Some _ -> true
+    | None -> false
+  ;;
+  |};
+  [%expect
+    {|
+    [(Struct_value (Nonrecursive,
+        [{ pat = (Pat_var "f");
+           exp =
+           (Exp_fun ([(Pat_var "a")],
+              (Exp_match ((Exp_ident "a"),
+                 [{ left = (Pat_construct ("Some", (Some Pat_any)));
+                    right = (Exp_construct ("true", None)) };
+                   { left = (Pat_construct ("None", None));
+                     right = (Exp_construct ("false", None)) }
+                   ]
+                 ))
+              ))
+           }
+          ]
+        ))
       ]
     |}]
 ;;
