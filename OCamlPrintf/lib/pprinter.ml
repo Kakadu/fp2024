@@ -61,14 +61,14 @@ let rec pp_expression ppf = function
   | Exp_ident id -> pp_ident ppf id
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, value_binding_list, exp) ->
-    let bindings_str =
+    let binding_list_str =
       String.concat
         " and "
         (List.map
            (fun b -> asprintf "%a = %a" pp_pattern b.pat pp_expression b.exp)
            value_binding_list)
     in
-    fprintf ppf "(%s %s in %a)" (let_flag_str rec_flag) bindings_str pp_expression exp
+    fprintf ppf "(%s %s in %a)" (let_flag_str rec_flag) binding_list_str pp_expression exp
   | Exp_fun (pat_list, exp) ->
     fprintf
       ppf
@@ -80,7 +80,7 @@ let rec pp_expression ppf = function
   | Exp_apply (exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in
     let handle_exp_list = function
-      | [ expr ] -> fprintf ppf "(%s %a)" expression pp_expression expr
+      | [ exp ] -> fprintf ppf "(%s %a)" expression pp_expression exp
       | _ ->
         let first_exp = List.hd exp_list in
         let rest_exp = List.tl exp_list in
@@ -153,14 +153,14 @@ let rec pp_expression ppf = function
 let pp_structure_item ppf = function
   | Struct_eval exp -> fprintf ppf "%a;;" pp_expression exp
   | Struct_value (rec_flag, value_binding_list) ->
-    let bindings_str =
+    let binding_list_str =
       String.concat
         " and "
         (List.map
            (fun value -> asprintf "%a = %a" pp_pattern value.pat pp_expression value.exp)
            value_binding_list)
     in
-    fprintf ppf "%s %s;;" (let_flag_str rec_flag) bindings_str
+    fprintf ppf "%s %s;;" (let_flag_str rec_flag) binding_list_str
 ;;
 
 let pp_structure ppf =
