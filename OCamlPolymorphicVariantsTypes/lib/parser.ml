@@ -202,7 +202,7 @@ and bracket_expr state =
 and list_expr state =
   let helper ex = element_sequence ex tuple_expr (fun l -> ExpressionsList l) ";" pfail in
   (skip_ws *> symbol '[' *> (tuple_expr >>= helper <|> preturn (ExpressionsList []))
-   <* skip_ws *> symbol ']')
+   <* (skip_ws *> symbol ']' <|> perror "Not found close bracket of list expression"))
     state
 
 (** Abstract parser of binary operations
