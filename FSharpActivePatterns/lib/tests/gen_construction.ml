@@ -146,10 +146,9 @@ and shrink_expr =
   | Const lt -> shrink_lt lt
   | Variable _ -> empty
   | Tuple (e1, e2, rest) ->
-    shrink_expr e1
-    >|= (fun a' -> Tuple (a', e2, rest))
-    <+> shrink_expr e2
-    >|= (fun a' -> Tuple (e1, a', rest))
+    of_list [ e1; e2 ]
+    <+> (shrink_expr e1 >|= fun a' -> Tuple (a', e2, rest))
+    <+> (shrink_expr e2 >|= fun a' -> Tuple (e1, a', rest))
     <+> (QCheck.Shrink.list ~shrink:shrink_expr rest >|= fun a' -> Tuple (e1, e2, a'))
   | Unary_expr (op, e) -> return e <+> shrink_expr e >|= fun a' -> un_e op a'
   | Bin_expr (op, e1, e2) ->
@@ -158,12 +157,13 @@ and shrink_expr =
     <+> (shrink_expr e2 >|= fun a' -> bin_e op e1 a')
   | If_then_else (i, t, Some _) -> return (If_then_else (i, t, None))
   | If_then_else (i, t, None) ->
-    shrink_expr i
-    >|= (fun a' -> If_then_else (a', t, None))
+    of_list [ i; t ]
+    <+> (shrink_expr i >|= fun a' -> If_then_else (a', t, None))
     <+> (shrink_expr t >|= fun a' -> If_then_else (i, a', None))
   | LetIn (rec_flag, let_bind, let_bind_list, inner_e) ->
-    shrink_let_bind let_bind
-    >|= (fun a' -> LetIn (rec_flag, a', let_bind_list, inner_e))
+    return inner_e
+    <+> (shrink_let_bind let_bind
+         >|= fun a' -> LetIn (rec_flag, a', let_bind_list, inner_e))
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> LetIn (rec_flag, let_bind, a', inner_e))
     <+> shrink_expr inner_e
@@ -174,8 +174,8 @@ and shrink_expr =
     <+> shrink_expr arg
     >|= fun a' -> Function_call (f, a')
   | Lambda (args, body) ->
-    QCheck.Shrink.list args
-    >|= (fun a' -> Lambda (a', body))
+    return body
+    <+> (QCheck.Shrink.list args >|= fun a' -> Lambda (a', body))
     <+> (shrink_expr body >|= fun a' -> Lambda (args, a'))
   | _ -> empty
 ;;
