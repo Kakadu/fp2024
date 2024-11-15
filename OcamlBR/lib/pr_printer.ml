@@ -65,16 +65,31 @@ let rec pp_expr = function
     "fun " ^ String.concat ~sep:" " (List.map ~f:pp_pattern patterns) ^ " -> " ^ pp_expr e
   | Ebin_op (op, e1, e2) -> "(" ^ pp_expr e1 ^ " " ^ pp_bin_op op ^ " " ^ pp_expr e2 ^ ")"
   | Eun_op (op, e) -> pp_un_op op ^ pp_expr e
-  | Elet (rec_flag, id, e1, e2) ->
-    "let " ^ pp_rec_flag rec_flag ^ " " ^ id ^ " = " ^ pp_expr e1 ^ " in " ^ pp_expr e2
+  | Elet (rec_flag, vb, vb_l, e) ->
+    "let "
+    ^ pp_rec_flag rec_flag
+    ^ " "
+    ^ pp_value_binding vb
+    ^ String.concat ~sep:" and " (List.map ~f:pp_value_binding vb_l)
+    ^ " in "
+    ^ pp_expr e
   | Efun_application (e1, e2) -> pp_expr e1 ^ " " ^ pp_expr e2
+
+and pp_value_binding = function
+  | Evalue_binding (id, e) -> id ^ " = " ^ pp_expr e
 ;;
 
 let pp_structure_item (item : structure_item) : string =
   match item with
   | SEval e -> pp_expr e ^ ";"
-  | SValue (rec_flag, id, e1, e2) ->
-    "let " ^ pp_rec_flag rec_flag ^ " " ^ id ^ " = " ^ pp_expr e1 ^ " in " ^ pp_expr e2
+  | SValue (rec_flag, vb, vb_l, e2) ->
+    "let "
+    ^ pp_rec_flag rec_flag
+    ^ " "
+    ^ pp_value_binding vb
+    ^ String.concat ~sep:" and " (List.map ~f:pp_value_binding vb_l)
+    ^ " in "
+    ^ pp_expr e2
 ;;
 
 let prpr_structure fmt structure =
