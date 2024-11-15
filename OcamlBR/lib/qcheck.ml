@@ -56,18 +56,28 @@ let gen_expr =
   sized
   @@ fix (fun self ->
        function
-       | 0 -> oneof [ map (fun c-> Econst c) gen_const; map (fun v -> Evar v) gen_id ]
+       | 0 -> oneof [ map (fun c -> Econst c) gen_const; map (fun v -> Evar v) gen_id ]
        | n ->
          frequency
            [ 1, map (fun c -> Econst c) gen_const
            ; 1, map (fun v -> Evar v) gen_id
            ; ( 2
              , map3
-                 (fun e1 e2 e3 -> Eif_then_else (e1, e2, Some e3))
+                 (fun e1 e2 e3 -> Eif_then_else (e1, e2, e3))
                  (self (n / 2))
                  (self (n / 2))
-                 (self (n / 2)) )
+                 (oneof [ map (fun e -> Some e) (self (n / 2)); return None ]) )
            ; 2, map (fun es -> Elist es) (list_size (int_bound 10) (self (n / 2)))
+           ; ( 2
+             , map3
+                 (fun e1 e2 rest -> Etuple (e1, e2, rest))
+                 (self (n / 2))
+                 (self (n / 2))
+                 (list_size (int_bound 5) (self (n / 2))) )
+           ; ( 2
+             , map
+                 (fun e -> Eoption e)
+                 (oneof [ map (fun e -> Some e) (self (n / 2)); return None ]) )
              (* ; 2, map (fun es -> Elist es) (list (self (n / 2))) *)
              (* ; 1, map (fun e -> Eoption (Some e)) (self (n / 2))
                 ; 1, map (fun _ -> Eoption None) (self (n / 2)) *)
@@ -80,15 +90,19 @@ let gen_expr =
            ; 2, map2 (fun op e -> Eun_op (op, e)) gen_un_op (self (n / 2))
            ; ( 1
              , map3
-                 (fun id e1 e2 -> Elet (Recursive, id, e1, e2))
-                 gen_id
-                 (self (n / 2))
+                 (fun vb vbl e2 -> Elet (Recursive, vb, vbl, e2))
+                 (map2 (fun id e -> Evalue_binding (id, e)) gen_id (self (n / 2)))
+                 (list_size
+                    (int_bound 10)
+                    (map2 (fun id e -> Evalue_binding (id, e)) gen_id (self (n / 2))))
                  (self (n / 2)) )
            ; ( 1
              , map3
                  (fun id e1 e2 -> Elet (Non_recursive, id, e1, e2))
-                 gen_id
-                 (self (n / 2))
+                 (map2 (fun id e -> Evalue_binding (id, e)) gen_id (self (n / 2)))
+                 (list_size
+                    (int_bound 10)
+                    (map2 (fun id e -> Evalue_binding (id, e)) gen_id (self (n / 2))))
                  (self (n / 2)) )
            ; ( 2
              , map2 (fun e1 e2 -> Efun_application (e1, e2)) (self (n / 2)) (self (n / 2))
@@ -102,6 +116,8 @@ let gen_expr =
            ])
 ;;
 
+let gen_value_binding = Gen.map2 (fun id e -> Evalue_binding (id, e)) gen_id gen_expr
+
 let gen_structure_item =
   let open Gen in
   frequency
@@ -109,9 +125,10 @@ let gen_structure_item =
     ; ( 2
       , gen_rec_flag
         >>= fun r ->
-        gen_id
-        >>= fun id ->
-        gen_expr >>= fun e1 -> gen_expr >>= fun e2 -> return (SValue (r, id, e1, e2)) )
+        gen_value_binding
+        >>= fun vb ->
+        list_size (int_bound 2) gen_value_binding
+        >>= fun vb_l -> gen_expr >>= fun e2 -> return (SValue (r, vb, vb_l, e2)) )
     ]
 ;;
 
@@ -155,8 +172,8 @@ let rec shrink_expr = function
       return then_e
       <+> map (fun cond_e' -> Eif_then_else (cond_e', then_e, None)) (shrink_expr cond_e)
       <+> map (fun then_e' -> Eif_then_else (cond_e, then_e', None)) (shrink_expr then_e))
-  (* | Eoption (Some e) -> shrink_expr e
-     | Eoption None -> Iter.empty *)
+  | Eoption (Some e) -> shrink_expr e
+  | Eoption None -> Iter.empty
   | Elist es ->
     Iter.(
       (*removing elements from the list *)
@@ -175,11 +192,21 @@ let rec shrink_expr = function
           empty
       in
       shrink_list_length <+> shrink_elements)
-  | Elet (flag, id, e1, e2) ->
+  | Etuple (e1, e2, e3) ->
     Iter.(
-      return e2
-      <+> map (fun e1' -> Elet (flag, id, e1', e2)) (shrink_expr e1)
-      <+> map (fun e2' -> Elet (flag, id, e1, e2')) (shrink_expr e2))
+      map (fun e1' -> Etuple (e1', e2, e3)) (shrink_expr e1)
+      <+> map (fun e2' -> Etuple (e1, e2', e3)) (shrink_expr e2)
+      <+> map
+            (fun e3' -> Etuple (e1, e2, e3'))
+            (QCheck.Shrink.list ~shrink:shrink_expr e3))
+  | Elet (flag, vb, vb_l, e) ->
+    Iter.(
+      let shrink_value_binding_length =
+        map (fun vb_l' -> Elet (flag, vb, vb_l', e)) (QCheck.Shrink.list vb_l)
+      in
+      return e
+      <+> map (fun e' -> Elet (flag, vb, vb_l, e')) (shrink_expr e)
+      <+> shrink_value_binding_length)
   | Efun (patterns, body) ->
     Iter.(
       let shrink_patterns_length =
@@ -193,16 +220,18 @@ let rec shrink_expr = function
       <+> return e2
       <+> map (fun e1' -> Efun_application (e1', e2)) (shrink_expr e1)
       <+> map (fun e2' -> Efun_application (e1, e2')) (shrink_expr e2))
-  | _ -> Iter.empty
 ;;
 
 let shrink_structure_item = function
   | SEval e -> Iter.(map (fun e' -> SEval e') (shrink_expr e))
-  | SValue (r, id, e1, e2) ->
+  | SValue (r, vb, vb_l, e) ->
     (* Iter.(return e1 <+> return e2 <+> shrink_expr e1 <+> shrink_expr e2) *)
     Iter.(
-      map (fun e1' -> SValue (r, id, e1', e2)) (shrink_expr e1)
-      <+> map (fun e2' -> SValue (r, id, e1, e2')) (shrink_expr e2))
+      let shrink_value_binding_length =
+        map (fun vb_l' -> SValue (r, vb, vb_l', e)) (QCheck.Shrink.list vb_l)
+      in
+      map (fun e' -> SValue (r, vb, vb_l, e')) (shrink_expr e)
+      <+> shrink_value_binding_length)
 ;;
 
 let shrink_structure structure : structure Iter.t =
@@ -230,7 +259,9 @@ let arbitrary_structure_manual =
 ;;
 
 let run_manual () =
-  QCheck.Test.check_exn
-    (Test.make arbitrary_structure_manual (fun structure ->
-       Result.ok structure = parse_expr (Format.asprintf "%a" prpr_structure structure)))
+  QCheck_base_runner.run_tests
+    [ QCheck.(
+        Test.make arbitrary_structure_manual (fun structure ->
+          Result.ok structure = parse_expr (Format.asprintf "%a" prpr_structure structure)))
+    ]
 ;;
