@@ -52,7 +52,14 @@ let rec pp_expr = function
     "if " ^ pp_expr e1 ^ " then " ^ pp_expr e2 ^ " else " ^ pp_expr e3
   | Eoption (Some e) -> "Some " ^ pp_expr e
   | Eoption None -> "None "
-  | Etuple es -> "(" ^ String.concat ~sep:", " (List.map ~f:pp_expr es) ^ ")"
+  | Etuple (e1, e2, es) ->
+    "("
+    ^ pp_expr e1
+    ^ ", "
+    ^ pp_expr e2
+    ^ ", "
+    ^ String.concat ~sep:", " (List.map ~f:pp_expr es)
+    ^ ")"
   | Elist es -> "[" ^ String.concat ~sep:"; " (List.map ~f:pp_expr es) ^ "]"
   | Efun (patterns, e) ->
     "fun " ^ String.concat ~sep:" " (List.map ~f:pp_pattern patterns) ^ " -> " ^ pp_expr e

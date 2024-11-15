@@ -81,7 +81,7 @@ let%expect_test _ =
     let  a = (1, 2, 3) in ()
 
     [(SValue (Non_recursive, "a",
-        (Etuple [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]),
+        (Etuple ((Econst (Int 1)), (Econst (Int 2)), [(Econst (Int 3))])),
         (Econst Unit)))
       ]
   |}]

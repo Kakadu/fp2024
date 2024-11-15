@@ -142,7 +142,13 @@ let pElist pexpr =
 
 let pEtuple pexpr =
   let commas = pstoken "," in
-  pparens (sep_by commas pexpr <* (commas <|> pwhitespace) >>| fun x -> Etuple x)
+  pparens
+    (lift3
+       (fun e1 e2 rest -> Etuple (e1, e2, rest))
+       pexpr
+       (commas *> pexpr)
+       (many (commas *> pexpr))
+     <* pwhitespace)
 ;;
 
 let pEconst = const >>| fun x -> Econst x

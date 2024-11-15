@@ -55,7 +55,7 @@ type expr =
   | Eif_then_else of expr * expr * expr option
   (* if E0 then E1 else E2; else expression is optional *)
   | Eoption of expr option (* option type, Some e, None *)
-  | Etuple of expr list (* expressions (E0, .., En), n >= 2 *)
+  | Etuple of expr * expr * expr list (* expressions (E0, .., En), n >= 2 *)
   (* or expr * expr * expr list, cause invariant n >= 2 *)
   | Elist of expr list (* expressions [E0; ..; En], n >= 0 *)
   | Ebin_op of bin_op * expr * expr (* E0 bin_op E1, e.g. 1 + 3 *)
