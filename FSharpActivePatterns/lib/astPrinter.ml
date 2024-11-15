@@ -31,6 +31,7 @@ let print_bin_op indent fmt = function
 
 let rec print_pattern indent fmt = function
   | Wild -> fprintf fmt "%s| Wild\n" (String.make indent '-')
+  | PEmptyList -> fprintf fmt "%s| EmptyList\n" (String.make indent '-')
   | PCons (head, tail) ->
     fprintf fmt "%s| PCons:\n" (String.make indent '-');
     fprintf fmt "%sHead:\n" (String.make (indent + 2) '-');
@@ -89,9 +90,11 @@ and print_expr indent fmt expr =
     print_expr (indent + 2) fmt expr2
   | Empty_list -> fprintf fmt "%s| Empty_list expr:\n" (String.make indent '-')
   | Tuple (e1, e2, rest) -> List.iter (print_expr indent fmt) (e1 :: e2 :: rest)
-  | Match (value, patterns) ->
+  | Match (value, pat1, expr1, patterns) ->
     fprintf fmt "%s| Match:\n" (String.make indent '-');
     print_expr (indent + 2) fmt value;
+    print_pattern (indent + 2) fmt pat1;
+    print_expr (indent + 2) fmt expr1;
     List.iter
       (fun (pat, expr) ->
         fprintf fmt "%s| Pattern:\n" (String.make (indent + 2) '-');

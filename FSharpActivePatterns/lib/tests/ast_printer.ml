@@ -224,7 +224,7 @@ let%expect_test "print Ast of match_expr" =
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
-  let match_expr = Match (Variable (Ident ("x", None)), pattern_values) in
+  let match_expr = Match (Variable (Ident ("x", None)), PConst (Int_lt 4), Const (Int_lt 4), pattern_values) in
   print_construction std_formatter (Expr match_expr);
   [%expect
     {|

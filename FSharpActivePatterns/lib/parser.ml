@@ -238,6 +238,30 @@ let p_option p_expr =
   <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
 ;;
 
+let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
+(*
+let p_cons_pat p_pat =
+  skip_ws
+  *> chainr1
+       (p_pat <|> p_empty_list)
+       (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
+
+let p_pat = 
+  fix (fun p_pat -> 
+    skip_ws *> string "|" *> skip_ws *> 
+    choice [
+      string "_" *> skip_ws  *> string "->" *> skip_ws >>= fun _ -> return Wild
+    ])
+;;
+
+let p_match p_expr = 
+  lift4 (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
+  (skip_ws *> string "match" *> skip_ws *> p_expr <* skip_ws <* string "with" <* skip_ws)
+  (skip_ws *> p_pat <* skip_ws)
+  (skip_ws *> p_expr <* skip_ws)
+  (many (skip_ws *> p_pat >>= fun pat -> p_expr <* skip_ws >>= fun expr -> return (pat, expr)))
+;;
+
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
@@ -255,7 +279,8 @@ let p_expr =
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
     let cons_list = p_cons_list comp_or <|> comp_or in 
-    let option = p_option cons_list <|> cons_list in
+    let ematch = p_match cons_list <|> cons_list in
+    let option = p_option ematch <|> ematch in
     option)
 ;;
 
