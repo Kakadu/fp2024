@@ -51,7 +51,7 @@ let tuple_e e1 e2 rest = Tuple (e1, e2, rest)
 let un_e unop e = Unary_expr (unop, e)
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
 let if_e i t e = If_then_else (i, t, e)
-let func_def args body = Function_def (args, body)
+let func_def args body = Lambda (args, body)
 let func_call f arg = Function_call (f, arg)
 let let_bind name args body = Let_bind (name, args, body)
 
@@ -173,10 +173,10 @@ and shrink_expr =
     >|= (fun a' -> Function_call (a', arg))
     <+> shrink_expr arg
     >|= fun a' -> Function_call (f, a')
-  | Function_def (args, body) ->
+  | Lambda (args, body) ->
     QCheck.Shrink.list args
-    >|= (fun a' -> Function_def (a', body))
-    <+> (shrink_expr body >|= fun a' -> Function_def (args, a'))
+    >|= (fun a' -> Lambda (a', body))
+    <+> (shrink_expr body >|= fun a' -> Lambda (args, a'))
   | _ -> empty
 ;;
 
