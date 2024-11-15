@@ -49,3 +49,11 @@ val parse_int : int t
 
 (** [parse_float] parses float and returns it. Cannot parse surrouning whitespaces. *)
 val parse_float : float t
+
+(** [chainl parse_alpha parse_sep] runs [parse_alpha]'s with [parse_sep]'s in betweens,
+    applying [parse_sep]'s returned functions left-associatively *)
+val chainl: 'a t -> ('a -> 'a -> 'a) t -> 'a t
+
+(** [chainr parse_alpha parse_sep] runs [parse_alpha]'s with [parse_sep]'s in betweens,
+    applying [parse_sep]'s returned functions right-associatively *)
+val chainr : 'a t -> ('a -> 'a -> 'a) t -> 'a t

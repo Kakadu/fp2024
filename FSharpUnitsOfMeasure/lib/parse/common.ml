@@ -98,3 +98,21 @@ let parse_float =
   let float = Float.of_string (int_part ^ dot ^ fract_part ^ e ^ exp_sign ^ exp) in
   return float
 ;;
+
+let chainl parse_alpha parse_sep =
+  let rec wrap alpha1 =
+    let* app_sep = parse_sep in
+    let* alpha2 = skip_ws *> parse_alpha in
+    let binop = app_sep alpha1 alpha2 in
+    wrap binop <|> return binop
+  in
+  skip_ws *> parse_alpha >>= fun init -> wrap init
+;;
+
+let rec chainr parse_alpha parse_sep =
+  parse_alpha
+  >>= fun a ->
+  parse_sep
+  >>= (fun f -> chainr (skip_ws *> parse_alpha) parse_sep >>| f a)
+  <|> return a
+;;
