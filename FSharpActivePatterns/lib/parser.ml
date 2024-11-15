@@ -185,22 +185,6 @@ let p_let_bind p_expr =
        (skip_ws *> string "=" *> skip_ws *> p_expr)
 ;;
 
-(*
-   let p_letin p_expr =
-   skip_ws
-   *> string "let"
-   *> skip_ws_sep1
-   *> lift4
-   (fun rec_flag name args body and_list in_expr ->
-   LetIn (rec_flag, name, args, body, and_list, in_expr))
-   (string "rec" *> return Rec <|> return Nonrec)
-   (p_ident >>= fun ident -> return (Some ident) <|> return None)
-   (many (skip_ws *> p_var))
-   (skip_ws *> string "=" *> skip_ws *> p_expr)
-   <*> skip_ws *> many (skip_ws *> p_and p_expr)
-   <*> skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
-   ;; *)
-
 let p_letin p_expr =
   skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
   >>= fun rec_flag ->
@@ -217,20 +201,6 @@ let p_letin p_expr =
   >>= fun in_expr ->
   return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
 ;;
-
-(*
-   let p_let p_expr =
-   skip_ws
-   *> string "let"
-   *> skip_ws_sep1
-   *> lift4
-   (fun rec_flag name args body and_list -> Let (rec_flag, name, args, body, and_list))
-   (string "rec" *> return Rec <|> return Nonrec)
-   p_ident
-   (skip_ws *> many (skip_ws *> p_var))
-   (skip_ws *> string "=" *> p_expr)
-   <*> skip_ws *> many (skip_ws *> p_and p_expr)
-   ;; *)
 
 let p_let p_expr =
   skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
