@@ -19,7 +19,8 @@ let is_keyword = function
   | "true"
   | "false"
   | "Some"
-  | "None" -> true
+  | "None"
+  | "and" -> true
   | _ -> false
 ;;
 
@@ -53,7 +54,7 @@ let const = choice [ pint; pbool; pstr; punit ]
 
 let varname =
   ptoken
-    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'')
+    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'' || Char.is_uppercase ch)
      >>= function
      | "" ->
        take_while1 (fun ch ->
@@ -120,12 +121,18 @@ let plet pexpr =
     | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun ([ PVar id ], e))
     | _ -> fail "Only variable patterns are supported"
   in
+  let pvalue_binding pexpr =
+    lift2
+      (fun id e -> Evalue_binding (id, e))
+      (pparens varname <|> varname)
+      (pstoken "=" *> pexpr <|> pbody pexpr)
+  in
   pstoken "let"
   *> lift4
-       (fun r id e1 e2 -> Elet (r, id, e1, e2))
+       (fun r id id_list e2 -> Elet (r, id, id_list, e2))
        (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
-       (pparens varname <|> varname)
-       (pstoken "=" *> pexpr <|> pbody pexpr)
+       (pvalue_binding pexpr)
+       (many (pstoken "and" *> pvalue_binding pexpr))
        (pstoken "in" *> pexpr <|> return (Econst Unit))
 ;;
 
@@ -204,7 +211,7 @@ let pstructure =
   let psvalue =
     plet pexpr
     >>| function
-    | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
+    | Elet (r, vb, vb_l, e) -> SValue (r, vb, vb_l, e)
     | _ -> failwith "Expected a let expression"
   in
   choice [ psvalue; pseval ]

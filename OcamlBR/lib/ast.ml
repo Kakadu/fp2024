@@ -60,7 +60,7 @@ type expr =
   | Elist of expr list (* expressions [E0; ..; En], n >= 0 *)
   | Ebin_op of bin_op * expr * expr (* E0 bin_op E1, e.g. 1 + 3 *)
   | Eun_op of un_op * expr (* E0 un_op E1, e.g. Negative 2, Not true *)
-  | Elet of rec_flag * id * expr * expr
+  | Elet of rec_flag * value_binding * value_binding list * expr
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
   | Efun_application of expr * expr (* E0 E1, e.g. f x *)
   | Efun of pattern list * expr
@@ -68,9 +68,11 @@ type expr =
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
 
+and value_binding = Evalue_binding of id * expr [@@deriving show { with_path = false }]
+
 type structure_item =
   | SEval of expr
-  | SValue of rec_flag * id * expr * expr
+  | SValue of rec_flag * value_binding * value_binding list * expr
 [@@deriving show { with_path = false }]
 
 type structure = structure_item list [@@deriving show { with_path = false }]
