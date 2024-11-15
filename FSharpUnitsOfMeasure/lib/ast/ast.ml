@@ -35,7 +35,6 @@ type constant =
 [@@deriving qcheck, show { with_path = false }]
 
 type core_type =
-  | Type_paren of core_type (** Type inside parentheses: [(T)] *)
   | Type_func of core_type * core_type (** Function type: [(T1 -> T2)] *)
   | Type_tuple of core_type * core_type * core_type list
   (** [Type_tuple(T1, T2, [T3, ..., Tn])] represents:
