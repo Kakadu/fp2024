@@ -43,7 +43,7 @@ let%expect_test "pp_factorial_with_match" =
     ];
   [%expect
     {|
-    let rec factorial = (fun n -> (match n with | 0 -> 1 | 1 -> 1 | _ -> n * (factorial n - 1)));;
+    let rec factorial = (fun n -> (match n with | 0 -> 1 | 1 -> 1 | _ -> n * (factorial (n - 1))));;
     |}]
 ;;
 
@@ -109,7 +109,7 @@ let%expect_test "check pp_chain_right_associative" =
             }
           ] )
     ];
-  [%expect "let f = (fun x y z -> (if x = 0 && (y = 1) || (z >= 2) then 2 else 26));;"]
+  [%expect "let f = (fun x y z -> (if x = 0 && y = 1 || z >= 2 then 2 else 26));;"]
 ;;
 
 let%expect_test "pp_struct_eval" =
@@ -131,7 +131,7 @@ let%expect_test "pp_struct_eval" =
                    ] )
              ] ))
     ];
-  [%expect "8 / 800 - (555 * (35 + 35));;"]
+  [%expect "8 / 800 - 555 * (35 + 35);;"]
 ;;
 
 let%expect_test "pp_exp_let" =

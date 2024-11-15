@@ -5,9 +5,34 @@
 open Ast
 open Format
 
-let is_operator = function
-  | "*" | "/" | "+" | "-" | ">=" | "<=" | "<>" | "=" | ">" | "<" | "&&" | "||" -> true
+let op_list =
+  [ "*", 1
+  ; "/", 1
+  ; "+", 2
+  ; "-", 2
+  ; ">=", 3
+  ; "<=", 3
+  ; "<>", 3
+  ; "=", 3
+  ; ">", 3
+  ; "<", 3
+  ; "&&", 4
+  ; "||", 5
+  ]
+;;
+
+let is_operator op = List.exists (fun (str, _) -> str = op) op_list
+let get_priority op = List.assoc op op_list
+
+let needs_parens = function
+  | Exp_apply (Exp_ident op, _) when is_operator op -> true
   | _ -> false
+;;
+
+let compare_priority op1 op2 =
+  let priority1 = get_priority op1 in
+  let priority2 = get_priority op2 in
+  priority1 <= priority2
 ;;
 
 let let_flag_str = function
@@ -33,8 +58,8 @@ let rec pp_pattern ppf = function
   | Pat_constant const -> pp_constant ppf const
   | Pat_tuple pat_list ->
     fprintf ppf "(%a)" (pp_print_list ~pp_sep:pp_comma pp_pattern) pat_list
-  | Pat_construct (_, None) -> fprintf ppf "[]"
-  | Pat_construct (_, Some pat) ->
+  | Pat_construct ("::", None) -> fprintf ppf "[]"
+  | Pat_construct ("::", Some pat) ->
     (match pat with
      | Pat_tuple [ head; tail ] ->
        fprintf ppf "[%a" pp_pattern head;
@@ -50,6 +75,9 @@ let rec pp_pattern ppf = function
        in
        pp_tail tail
      | _ -> ())
+  | Pat_construct (tag, None) -> fprintf ppf "%s" tag
+  | Pat_construct ("Some", Some pat) -> fprintf ppf "Some (%a)" pp_pattern pat
+  | Pat_construct (_, _) -> ()
 ;;
 
 let rec pp_expression ppf = function
@@ -75,27 +103,73 @@ let rec pp_expression ppf = function
       exp
   | Exp_apply (exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in
+    let fprintf_with_parens_condition ppf exp =
+      if needs_parens exp
+      then fprintf ppf " (%a)" pp_expression exp
+      else fprintf ppf " %a" pp_expression exp
+    in
     let handle_exp_list = function
-      | [ exp ] -> fprintf ppf "(%s %a)" expression pp_expression exp
+      | [ exp ] ->
+        fprintf ppf "(%s" expression;
+        fprintf_with_parens_condition ppf exp;
+        fprintf ppf ")"
       | _ ->
         let first_exp = List.hd exp_list in
         let rest_exp = List.tl exp_list in
-        let needs_parens = function
-          | Exp_apply (Exp_ident op, _) when is_operator op -> true
+        let needs_parens_by_priority = function
+          | Exp_apply (Exp_ident op, _) when is_operator op ->
+            compare_priority expression op
           | _ -> false
         in
         if is_operator expression
-        then (
-          fprintf ppf "%a %s" pp_expression first_exp expression;
+        then
           List.iter
-            (fun arg ->
-              if needs_parens arg
-              then fprintf ppf " (%a)" pp_expression arg
-              else fprintf ppf " %a" pp_expression arg)
-            rest_exp)
+            (fun exp ->
+              if needs_parens_by_priority exp
+              then
+                if needs_parens_by_priority first_exp
+                then
+                  fprintf
+                    ppf
+                    "(%a) %s (%a)"
+                    pp_expression
+                    first_exp
+                    expression
+                    pp_expression
+                    exp
+                else
+                  fprintf
+                    ppf
+                    "%a %s (%a)"
+                    pp_expression
+                    first_exp
+                    expression
+                    pp_expression
+                    exp
+              else if needs_parens_by_priority first_exp
+              then
+                fprintf
+                  ppf
+                  "(%a) %s %a"
+                  pp_expression
+                  first_exp
+                  expression
+                  pp_expression
+                  exp
+              else
+                fprintf
+                  ppf
+                  "%a %s %a"
+                  pp_expression
+                  first_exp
+                  expression
+                  pp_expression
+                  exp)
+            rest_exp
         else (
-          fprintf ppf "(%s %a" expression pp_expression first_exp;
-          List.iter (fun arg -> fprintf ppf " %a" pp_expression arg) rest_exp;
+          fprintf ppf "(%s" expression;
+          fprintf_with_parens_condition ppf first_exp;
+          List.iter (fun arg -> fprintf_with_parens_condition ppf arg) rest_exp;
           fprintf ppf ")")
     in
     handle_exp_list exp_list

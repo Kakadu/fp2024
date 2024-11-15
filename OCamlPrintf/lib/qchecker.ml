@@ -104,6 +104,24 @@ module TestQCheck = struct
 
   let gen_char = map Char.chr (int_range (Char.code 'a') (Char.code 'h'))
   let gen_int = int_range 0 10000
+
+  let gen_bin_op =
+    oneofl
+      [ Exp_ident "*"
+      ; Exp_ident "/"
+      ; Exp_ident "+"
+      ; Exp_ident "-"
+      ; Exp_ident ">="
+      ; Exp_ident "<="
+      ; Exp_ident "<>"
+      ; Exp_ident "="
+      ; Exp_ident ">"
+      ; Exp_ident "<"
+      ; Exp_ident "&&"
+      ; Exp_ident "||"
+      ]
+  ;;
+
   let gen_ident = string_size (int_range 1 3) ~gen:gen_char
 
   let gen_constant =
@@ -180,6 +198,11 @@ module TestQCheck = struct
                    (fun exp exp_list -> Exp_apply (exp, exp_list))
                    (self 0)
                    (list_size (int_range 1 3) (self (n / coefficient))) )
+             ; ( 1
+               , map2
+                   (fun op exp_list -> Exp_apply (op, exp_list))
+                   gen_bin_op
+                   (list_size (int_range 2 2) (self (n / coefficient))) )
              ; ( 1
                , map2
                    (fun exp case_list -> Exp_match (exp, case_list))
