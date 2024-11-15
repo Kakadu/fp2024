@@ -76,9 +76,9 @@ and pp_expr fmt expr =
     (match else_body with
      | Some body -> fprintf fmt "else %a " pp_expr body
      | None -> ())
-  | Function_def (args, body) ->
+  | Lambda (args, body) ->
     fprintf fmt "fun ";
-    pp_args fmt args;
+    if args = [] then fprintf fmt "() " else pp_args fmt args;
     fprintf fmt "-> %a " pp_expr body
   | Function_call (func, arg) -> fprintf fmt "%a (%a)" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->

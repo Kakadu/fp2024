@@ -62,9 +62,10 @@ type expr =
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Function_def of ident list * expr (** fun x y -> x + y *)
+  | Lambda of ident list * expr (** fun x y -> x + y *)
   | Function_call of expr * expr (** [sum 1 ] *)
-  | Match of expr * pattern * expr * (pattern * expr) list (** [match x with | x -> ... | y -> ...] *)
+  | Match of expr * pattern * expr * (pattern * expr) list
+  (** [match x with | x -> ... | y -> ...] *)
   | LetIn of is_recursive * let_bind * let_bind list * expr
   (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)

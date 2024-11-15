@@ -123,7 +123,7 @@ and print_expr indent fmt expr =
     (match else_body with
      | Some body -> print_expr (indent + 2) fmt body
      | None -> fprintf fmt "%s| No else body\n" (String.make (indent + 2) '-'))
-  | Function_def (args, body) ->
+  | Lambda (args, body) ->
     let args = List.map tag_of_ident args in
     fprintf fmt "%s| Func:\n" (String.make indent '-');
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
