@@ -100,15 +100,6 @@ let p_ident =
 
 let p_var = p_ident >>| fun ident -> Variable ident
 
-(*
-   let make_list expr1 expr2 = Cons_list (expr1, expr2)
-
-   let cons p_expr =
-   skip_ws *> string "::" *> skip_ws *>
-   lift2 (fun expr1 expr2 -> Cons_list (expr1, expr2)) p_expr p_expr
-   ;;
-*)
-
 let p_empty_list =
   skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws >>= fun _ -> return Empty_list
 ;;
@@ -116,26 +107,20 @@ let p_empty_list =
 let make_list expr1 expr2 = Cons_list (expr1, expr2)
 
 let p_cons_list p_expr =
-  chainr1 (p_expr <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
-;;
-
-let p_semicolon_list p_expr =
   skip_ws
-  *> string "["
-  *> skip_ws
-  *> fix (fun p_cons_list ->
-    p_expr
-    <* skip_ws
-    <* string "]"
-    >>| (fun expr -> Cons_list (expr, Empty_list))
-    <|> (p_expr
-         <* skip_ws
-         <* string ";"
-         >>= fun expr -> p_cons_list >>= fun rest -> return (Cons_list (expr, rest)))
-    <|> (string "]" *> skip_ws >>= fun _ -> return Empty_list))
+  *> chainr1
+       (p_expr <|> p_empty_list)
+       (skip_ws *> string "::" *> skip_ws *> return make_list)
 ;;
 
-let p_list p_expr = p_semicolon_list p_expr <|> p_cons_list p_expr
+let p_semicolon_list p_expr = 
+  skip_ws *> string "[" *> skip_ws *> 
+  fix (fun p_semi_list -> 
+  choice [
+  (p_expr <* skip_ws <* string ";" <* skip_ws >>= fun expr -> p_semi_list >>= fun rest -> return (Cons_list (expr, rest)));
+  (p_expr <* skip_ws <* string "]" <* skip_ws >>| fun expr -> Cons_list (expr, Empty_list));
+  (string "]" *> skip_ws >>= fun _ -> return Empty_list) ] )
+;; 
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
@@ -286,9 +271,8 @@ let p_option p_expr =
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
-    let atom = choice [ p_var; p_int; p_bool; p_parens p_expr ] in
-    let list = p_list atom <|> atom in
-    let tuple = p_tuple list <|> list in
+    let atom = choice [ p_var; p_int; p_bool; p_parens p_expr; p_semicolon_list p_expr] in
+    let tuple = p_tuple atom <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in
@@ -300,7 +284,8 @@ let p_expr =
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    let option = p_option comp_or <|> comp_or in
+    let cons_list = p_cons_list comp_or <|> comp_or in 
+    let option = p_option cons_list <|> cons_list in
     option)
 ;;
 

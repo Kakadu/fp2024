@@ -47,8 +47,15 @@ let rec pp_expr fmt expr =
   | Const (Bool_lt b) -> fprintf fmt "%b " b
   | Const (String_lt s) -> fprintf fmt "%S " s
   | Const Unit_lt -> fprintf fmt "() "
-  | Cons_list _ -> fprintf fmt "LIST WIP"
-  | Empty_list -> fprintf fmt "[] "
+  | Empty_list -> fprintf fmt "%a " pp_list Empty_list
+  | Cons_list (expr1, expr2) ->
+    fprintf fmt "[";
+    fprintf fmt "%a " pp_expr expr1;
+    if expr2 <> Empty_list
+    then (
+      fprintf fmt "; ";
+      fprintf fmt "%a " pp_list expr2);
+    fprintf fmt "]"
   | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
     pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
@@ -96,6 +103,15 @@ and pp_args fmt args =
 and pp_let_bind fmt = function
   | Let_bind (Ident (name, _), args, body) ->
     fprintf fmt "%s %a = %a " name pp_args args pp_expr body
+
+and pp_list fmt = function
+  | Empty_list -> fprintf fmt "[]"
+  | Cons_list (head, Empty_list) -> fprintf fmt "%a " pp_expr head
+  | Cons_list (head, tail) ->
+    fprintf fmt "%a " pp_expr head;
+    fprintf fmt "; ";
+    fprintf fmt "%a " pp_list tail
+  | other -> fprintf fmt "%a" pp_expr other
 ;;
 
 let pp_statement fmt = function
