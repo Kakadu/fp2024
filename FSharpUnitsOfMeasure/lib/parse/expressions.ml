@@ -28,20 +28,6 @@ let parse_expr_paren parse_expr =
   string "(" *> skip_ws *> parse_expr <* skip_ws <* string ")"
 ;;
 
-let chainl parse_expr parse_bin_op =
-  let rec wrap expr1 =
-    let* app_binop = parse_bin_op in
-    let* expr2 = skip_ws *> parse_expr in
-    let binop = app_binop expr1 expr2 in
-    wrap binop <|> return binop
-  in
-  skip_ws *> parse_expr >>= fun init -> wrap init
-;;
-
-let rec chainr e op =
-  e >>= fun a -> op >>= (fun f -> chainr (skip_ws *> e) op >>| f a) <|> return a
-;;
-
 let parse_bin_op_as_app bin_op =
   skip_ws
   *> string bin_op
@@ -127,11 +113,27 @@ let parse_expr_let parse_expr =
   return (Expr_let (rec_flag, binding_fst, binding_rest, last_expr))
 ;;
 
+(* Parses tuple without parentheses *)
+let parse_expr_tuple parse_expr =
+  let* tuple_fst = skip_ws *> parse_expr <* skip_ws <* char ',' in
+  let* tuple_snd = skip_ws *> parse_expr <* skip_ws in
+  let* tuple_rest = many (skip_token "," *> parse_expr) in
+  return (Expr_tuple (tuple_fst, tuple_snd, tuple_rest))
+;;
+
+let parse_expr_list parse_expr =
+  let* list =
+    char '[' *> sep_by (char ';') (skip_ws *> parse_expr <* skip_ws) <* char ']'
+  in
+  return (Expr_list list)
+;;
+
 let parse_expr =
   fix (fun parse_expr ->
     let expr =
       choice
         [ parse_expr_paren parse_expr
+        ; parse_expr_list parse_expr
         ; parse_expr_ite parse_expr
         ; parse_expr_lambda parse_expr
         ; parse_expr_let parse_expr
@@ -139,6 +141,6 @@ let parse_expr =
         ; parse_expr_ident
         ]
     in
-    let expr = parse_expr_app expr <|> expr in
+    let expr = parse_expr_tuple expr <|> parse_expr_app expr <|> expr in
     skip_ws *> expr <* skip_ws)
 ;;

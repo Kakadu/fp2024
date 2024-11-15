@@ -28,10 +28,10 @@ let parse_pat_tuple parse_pat =
 ;;
 
 let parse_pat_list parse_pat =
-  char '['
-  *>
-  let* list = sep_by (char ';') (skip_ws *> parse_pat <* skip_ws) in
-  char ']' *> return (Pattern_list list)
+  let* list =
+    char '[' *> sep_by (char ';') (skip_ws *> parse_pat <* skip_ws) <* char ']'
+  in
+  return (Pattern_list list)
 ;;
 
 let parse_pat =
