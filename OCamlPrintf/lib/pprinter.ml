@@ -24,6 +24,7 @@ let let_flag_str = function
 let pp_escape_sequence ppf () = fprintf ppf "\n"
 let pp_space ppf () = fprintf ppf " "
 let pp_comma ppf () = fprintf ppf ", "
+let pp_and ppf () = fprintf ppf " and "
 let pp_ident ppf id = fprintf ppf "%s" id
 
 let pp_constant ppf = function
@@ -61,14 +62,15 @@ let rec pp_expression ppf = function
   | Exp_ident id -> pp_ident ppf id
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, value_binding_list, exp) ->
-    let binding_list_str =
-      String.concat
-        " and "
-        (List.map
-           (fun b -> asprintf "%a = %a" pp_pattern b.pat pp_expression b.exp)
-           value_binding_list)
-    in
-    fprintf ppf "(%s %s in %a)" (let_flag_str rec_flag) binding_list_str pp_expression exp
+    fprintf
+      ppf
+      "(%s %a in %a)"
+      (let_flag_str rec_flag)
+      (pp_print_list ~pp_sep:pp_and (fun ppf value ->
+         fprintf ppf "%a = %a" pp_pattern value.pat pp_expression value.exp))
+      value_binding_list
+      pp_expression
+      exp
   | Exp_fun (pat_list, exp) ->
     fprintf
       ppf
@@ -104,14 +106,14 @@ let rec pp_expression ppf = function
     in
     handle_exp_list exp_list
   | Exp_match (exp, case_list) ->
-    let case_list_str =
-      String.concat
-        " "
-        (List.map
-           (fun c -> asprintf "| %a -> %a" pp_pattern c.left pp_expression c.right)
-           case_list)
-    in
-    fprintf ppf "(match %a with %s)" pp_expression exp case_list_str
+    fprintf
+      ppf
+      "(match %a with %a)"
+      pp_expression
+      exp
+      (pp_print_list ~pp_sep:pp_space (fun ppf case ->
+         fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
+      case_list
   | Exp_tuple exp_list ->
     fprintf ppf "(%a)" (pp_print_list ~pp_sep:pp_comma pp_expression) exp_list
   | Exp_construct ("::", None) -> fprintf ppf "[]"
@@ -153,14 +155,13 @@ let rec pp_expression ppf = function
 let pp_structure_item ppf = function
   | Struct_eval exp -> fprintf ppf "%a;;" pp_expression exp
   | Struct_value (rec_flag, value_binding_list) ->
-    let binding_list_str =
-      String.concat
-        " and "
-        (List.map
-           (fun value -> asprintf "%a = %a" pp_pattern value.pat pp_expression value.exp)
-           value_binding_list)
-    in
-    fprintf ppf "%s %s;;" (let_flag_str rec_flag) binding_list_str
+    fprintf
+      ppf
+      "%s %a;;"
+      (let_flag_str rec_flag)
+      (pp_print_list ~pp_sep:pp_and (fun ppf value ->
+         fprintf ppf "%a = %a" pp_pattern value.pat pp_expression value.exp))
+      value_binding_list
 ;;
 
 let pp_structure ppf =
