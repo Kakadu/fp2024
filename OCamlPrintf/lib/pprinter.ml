@@ -10,12 +10,6 @@ let is_operator = function
   | _ -> false
 ;;
 
-(* Operators that may require parentheses *)
-let is_operator1 = function
-  | "+" | "-" -> true
-  | _ -> false
-;;
-
 let let_flag_str = function
   | Recursive -> "let rec"
   | Nonrecursive -> "let"
@@ -87,7 +81,7 @@ let rec pp_expression ppf = function
         let first_exp = List.hd exp_list in
         let rest_exp = List.tl exp_list in
         let needs_parens = function
-          | Exp_apply (Exp_ident op, _) when is_operator1 op -> true
+          | Exp_apply (Exp_ident op, _) when is_operator op -> true
           | _ -> false
         in
         if is_operator expression
