@@ -51,11 +51,11 @@ and pp_expr fmt expr =
   | Empty_list -> fprintf fmt "%a " pp_list Empty_list
   | Cons_list (expr1, expr2) ->
     fprintf fmt "[";
-    fprintf fmt "%a " pp_expr expr1;
+    fprintf fmt "%a" pp_expr expr1;
     if expr2 <> Empty_list
     then (
       fprintf fmt "; ";
-      fprintf fmt "%a " pp_list expr2);
+      fprintf fmt "%a" pp_list expr2);
     fprintf fmt "]"
   | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
@@ -114,9 +114,9 @@ and pp_list fmt = function
   | Empty_list -> fprintf fmt "[]"
   | Cons_list (head, Empty_list) -> fprintf fmt "%a " pp_expr head
   | Cons_list (head, tail) ->
-    fprintf fmt "%a " pp_expr head;
+    fprintf fmt "%a" pp_expr head;
     fprintf fmt "; ";
-    fprintf fmt "%a " pp_list tail
+    fprintf fmt "%a" pp_list tail
   | other -> fprintf fmt "%a" pp_expr other
 ;;
 
