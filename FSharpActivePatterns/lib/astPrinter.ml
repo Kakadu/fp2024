@@ -89,7 +89,9 @@ and print_expr indent fmt expr =
     print_expr (indent + 2) fmt expr1;
     print_expr (indent + 2) fmt expr2
   | Empty_list -> fprintf fmt "%s| Empty_list expr:\n" (String.make indent '-')
-  | Tuple (e1, e2, rest) -> List.iter (print_expr indent fmt) (e1 :: e2 :: rest)
+  | Tuple (e1, e2, rest) ->
+    fprintf fmt "%s| Tuple:\n" (String.make indent '-');
+    List.iter (print_expr (indent + 2) fmt) (e1 :: e2 :: rest)
   | Match (value, pat1, expr1, patterns) ->
     fprintf fmt "%s| Match:\n" (String.make indent '-');
     print_expr (indent + 2) fmt value;
