@@ -378,6 +378,89 @@ let%expect_test "parse nested let .. in expressions " =
        )) |}]
 ;;
 
+(************************** Tuples **************************)
+
+let%expect_test "parse expression tuple with 0 elements should fail" =
+  pp pp_expression parse_expr {| , |};
+  [%expect {| : no more choices |}]
+;;
+
+let%expect_test "parse expression tuple with 1 element should fail" =
+  pp pp_expression parse_expr {| 1, |};
+  [%expect {| : end_of_input |}]
+;;
+
+let%expect_test "parse expression tuple with 2 elements" =
+  pp pp_expression parse_expr {| 1,2 |};
+  [%expect
+    {|
+      (Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), [])) |}]
+;;
+
+let%expect_test "parse expression tuple with 3 elements" =
+  pp pp_expression parse_expr {| 1, 2, myname |};
+  [%expect
+    {|
+    (Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)),
+       [(Expr_ident_or_op "myname")])) |}]
+;;
+
+let%expect_test "parse expression tuple of tuples" =
+  pp pp_expression parse_expr {| (1, 2), (3, 4) |};
+  [%expect
+    {|
+    (Expr_tuple (
+       (Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), [])),
+       (Expr_tuple ((Expr_const (Const_int 3)), (Expr_const (Const_int 4)), [])),
+       [])) |}]
+;;
+
+let%expect_test "parse expression tuple of lists" =
+  pp pp_expression parse_expr {| ( [1; 2], [3; 4] ) |};
+  [%expect {|
+    (Expr_tuple (
+       (Expr_list [(Expr_const (Const_int 1)); (Expr_const (Const_int 2))]),
+       (Expr_list [(Expr_const (Const_int 3)); (Expr_const (Const_int 4))]),
+       []))  |}]
+;;
+
+(************************** Lists **************************)
+
+let%expect_test "parse expression empty list" =
+  pp pp_expression parse_expr {| [] |};
+  [%expect {| (Expr_list [])  |}]
+;;
+
+let%expect_test "parse expression list of 1 element" =
+  pp pp_expression parse_expr {| [a] |};
+  [%expect {| (Expr_list [(Expr_ident_or_op "a")])  |}]
+;;
+
+let%expect_test "parse expression list of 2 elements" =
+  pp pp_expression parse_expr {| [a; b] |};
+  [%expect {| (Expr_list [(Expr_ident_or_op "a"); (Expr_ident_or_op "b")])  |}]
+;;
+
+let%expect_test "parse expression list of list" =
+  pp pp_expression parse_expr {| [ [ 1; 2; 3] ] |};
+  [%expect {|
+    (Expr_list
+       [(Expr_list
+           [(Expr_const (Const_int 1)); (Expr_const (Const_int 2));
+             (Expr_const (Const_int 3))])
+         ])  |}]
+;;
+
+let%expect_test "parse expression list of tuples without parentheses" =
+  pp pp_expression parse_expr {| [ 1, 2; 3, 4 ] |};
+  [%expect {|
+    (Expr_list
+       [(Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), []));
+         (Expr_tuple ((Expr_const (Const_int 3)), (Expr_const (Const_int 4)),
+            []))
+         ])  |}]
+;;
+
 (************************** Parentheses **************************)
 
 let%expect_test "parse ident inside parentheses" =

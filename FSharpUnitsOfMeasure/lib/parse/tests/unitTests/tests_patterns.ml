@@ -55,7 +55,7 @@ let%expect_test "parse pattern tuple with 3 elements" =
        [(Pattern_ident "myname")])) |}]
 ;;
 
-let%expect_test "parse tuples of tuples" =
+let%expect_test "parse pattern tuples of tuples" =
   pp pp_pattern parse_pat {| (1, 2), (3, 4) |};
   [%expect
     {|
@@ -67,9 +67,10 @@ let%expect_test "parse tuples of tuples" =
        [])) |}]
 ;;
 
-let%expect_test "parse tuple of lists" =
+let%expect_test "parse pattern tuple of lists" =
   pp pp_pattern parse_pat {| ( [1; 2], [3; 4] ) |};
-  [%expect {|
+  [%expect
+    {|
     (Pattern_tuple (
        (Pattern_list
           [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2))]),
@@ -80,24 +81,25 @@ let%expect_test "parse tuple of lists" =
 
 (************************** Lists **************************)
 
-let%expect_test "parse empty list pattern" =
+let%expect_test "parse pattern empty list" =
   pp pp_pattern parse_pat {| [] |};
   [%expect {| (Pattern_list [])  |}]
 ;;
 
-let%expect_test "parse list pattern of 1 element" =
+let%expect_test "parse pattern list of 1 element" =
   pp pp_pattern parse_pat {| [a] |};
   [%expect {| (Pattern_list [(Pattern_ident "a")])  |}]
 ;;
 
-let%expect_test "parse list pattern of 2 element" =
+let%expect_test "parse pattern list of 2 element" =
   pp pp_pattern parse_pat {| [a; b] |};
   [%expect {| (Pattern_list [(Pattern_ident "a"); (Pattern_ident "b")])  |}]
 ;;
 
-let%expect_test "parse list of list" =
+let%expect_test "parse pattern list of list" =
   pp pp_pattern parse_pat {| [ [ 1; 2; 3] ] |};
-  [%expect {|
+  [%expect
+    {|
     (Pattern_list
        [(Pattern_list
            [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2));
@@ -105,9 +107,10 @@ let%expect_test "parse list of list" =
          ])  |}]
 ;;
 
-let%expect_test "parse list of tuples without parentheses" =
+let%expect_test "parse pattern list of tuples without parentheses" =
   pp pp_pattern parse_pat {| [ 1, 2; 3, 4 ] |};
-  [%expect {|
+  [%expect
+    {|
     (Pattern_list
        [(Pattern_tuple ((Pattern_const (Const_int 1)),
            (Pattern_const (Const_int 2)), []));
@@ -128,7 +131,7 @@ let%expect_test "parse pattern in unbalanced parentheses should fail" =
   [%expect {| : end_of_input |}]
 ;;
 
-let%expect_test "parse tuple in parentheses" =
+let%expect_test "parse pattern tuple in parentheses" =
   pp pp_pattern parse_pat {| (1, 2, 3, 4) |};
   [%expect
     {|
@@ -136,7 +139,7 @@ let%expect_test "parse tuple in parentheses" =
        [(Pattern_const (Const_int 3)); (Pattern_const (Const_int 4))])) |}]
 ;;
 
-let%expect_test "parse list in parentheses" =
+let%expect_test "parse pattern list in parentheses" =
   pp pp_pattern parse_pat {| ([1; 2; 3; 4]) |};
   [%expect
     {|

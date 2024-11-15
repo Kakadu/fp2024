@@ -39,8 +39,8 @@ type core_type =
   | Type_func of core_type * core_type (** Function type: [(T1 -> T2)] *)
   | Type_tuple of core_type * core_type * core_type list
   (** [Type_tuple(T1, T2, [T3, ..., Tn])] represents:
-      - [(T1, T2)] when core_type list is []
-      - [(T1, T2, T3, ..., Tn)] when core_type list is (::) A B *)
+      - [(T1 * T2)] when core_type list is []
+      - [(T1 * T2 * T3 * ... * Tn)] when core_type list is (::) A B *)
   | Type_ident of string (** Type identificator, such as [int] *)
 [@@deriving qcheck, show { with_path = false }]
 
@@ -77,6 +77,7 @@ and expression =
   (** [Expr_tuple(E1, E2, [E3, ..., En])] represents:
       - [(E1, E2)] when pattern list is []
       - [(E1, E2, E3, ..., En)] when pattern list is (::) *)
+  | Expr_list of expression list (** List expressions: [E1; ...; En] *)
   | Expr_fun of pattern * expression
   (** Anonimous functions: [Expr_fun(P, E)] represents [fun P -> E] *)
   | Expr_let of rec_flag * val_binding * val_binding list * expression
