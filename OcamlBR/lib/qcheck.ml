@@ -54,50 +54,52 @@ let gen_pattern =
 let gen_expr =
   let open Gen in
   sized
-  @@ fix (fun self n ->
-    match n with
-    | 0 -> oneof [ map (fun c -> Econst c) gen_const; map (fun v -> Evar v) gen_id ]
-    | n ->
-      frequency
-        [ 1, map (fun c -> Econst c) gen_const
-        ; 1, map (fun v -> Evar v) gen_id
-        ; ( 2
-          , map3
-              (fun e1 e2 e3 -> Eif_then_else (e1, e2, Some e3))
-              (self (n / 2))
-              (self (n / 2))
-              (self (n / 2)) )
-        ; 2, map (fun es -> Elist es) (list_size (int_bound 10) (self (n / 2)))
-          (* ; 2, map (fun es -> Elist es) (list (self (n / 2))) *)
-          (* ; 1, map (fun e -> Eoption (Some e)) (self (n / 2))
-             ; 1, map (fun _ -> Eoption None) (self (n / 2)) *)
-        ; ( 2
-          , map3
-              (fun op e1 e2 -> Ebin_op (op, e1, e2))
-              gen_bin_op
-              (self (n / 2))
-              (self (n / 2)) )
-        ; 2, map2 (fun op e -> Eun_op (op, e)) gen_un_op (self (n / 2))
-        ; ( 1
-          , map3
-              (fun id e1 e2 -> Elet (Recursive, id, e1, e2))
-              gen_id
-              (self (n / 2))
-              (self (n / 2)) )
-        ; ( 1
-          , map3
-              (fun id e1 e2 -> Elet (Non_recursive, id, e1, e2))
-              gen_id
-              (self (n / 2))
-              (self (n / 2)) )
-        ; 2, map2 (fun e1 e2 -> Efun_application (e1, e2)) (self (n / 2)) (self (n / 2))
-        ; ( 2
-          , map2
-              (fun patterns body -> Efun (patterns, body))
-              (list_size (int_bound 10) gen_pattern)
-              (* (list gen_pattern) *)
-              (self (n / 2)) )
-        ])
+  @@ fix (fun self ->
+       function
+       | 0 -> oneof [ map (fun c-> Econst c) gen_const; map (fun v -> Evar v) gen_id ]
+       | n ->
+         frequency
+           [ 1, map (fun c -> Econst c) gen_const
+           ; 1, map (fun v -> Evar v) gen_id
+           ; ( 2
+             , map3
+                 (fun e1 e2 e3 -> Eif_then_else (e1, e2, Some e3))
+                 (self (n / 2))
+                 (self (n / 2))
+                 (self (n / 2)) )
+           ; 2, map (fun es -> Elist es) (list_size (int_bound 10) (self (n / 2)))
+             (* ; 2, map (fun es -> Elist es) (list (self (n / 2))) *)
+             (* ; 1, map (fun e -> Eoption (Some e)) (self (n / 2))
+                ; 1, map (fun _ -> Eoption None) (self (n / 2)) *)
+           ; ( 2
+             , map3
+                 (fun op e1 e2 -> Ebin_op (op, e1, e2))
+                 gen_bin_op
+                 (self (n / 2))
+                 (self (n / 2)) )
+           ; 2, map2 (fun op e -> Eun_op (op, e)) gen_un_op (self (n / 2))
+           ; ( 1
+             , map3
+                 (fun id e1 e2 -> Elet (Recursive, id, e1, e2))
+                 gen_id
+                 (self (n / 2))
+                 (self (n / 2)) )
+           ; ( 1
+             , map3
+                 (fun id e1 e2 -> Elet (Non_recursive, id, e1, e2))
+                 gen_id
+                 (self (n / 2))
+                 (self (n / 2)) )
+           ; ( 2
+             , map2 (fun e1 e2 -> Efun_application (e1, e2)) (self (n / 2)) (self (n / 2))
+             )
+           ; ( 2
+             , map2
+                 (fun patterns body -> Efun (patterns, body))
+                 (list_size (int_bound 10) gen_pattern)
+                 (* (list gen_pattern) *)
+                 (self (n / 2)) )
+           ])
 ;;
 
 let gen_structure_item =
@@ -121,8 +123,7 @@ let gen_structure =
 
 (*------------------Shrinker-----------------*)
 
-let rec shrink_expr expr =
-  match expr with
+let rec shrink_expr = function
   | Econst (Int _) -> Iter.return (Econst (Int 1))
   | Econst (Bool b) -> Iter.return (Econst (Bool b))
   | Econst _ -> Iter.empty
@@ -167,7 +168,7 @@ let rec shrink_expr expr =
         List.fold_right
           (fun e acc ->
             map
-              (fun e' -> Elist (List.map2 (fun x y -> if x == e then e' else y) es es))
+              (fun e' -> Elist (List.map2 (fun x y -> if x = e then e' else y) es es))
               (shrink_expr e)
             <+> acc)
           es
@@ -195,8 +196,7 @@ let rec shrink_expr expr =
   | _ -> Iter.empty
 ;;
 
-let shrink_structure_item structure_item =
-  match structure_item with
+let shrink_structure_item = function
   | SEval e -> Iter.(map (fun e' -> SEval e') (shrink_expr e))
   | SValue (r, id, e1, e2) ->
     (* Iter.(return e1 <+> return e2 <+> shrink_expr e1 <+> shrink_expr e2) *)
