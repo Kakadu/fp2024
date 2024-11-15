@@ -283,7 +283,7 @@ let p_expr =
     let atom =
       choice [ p_var; p_int; p_bool; p_parens p_expr; p_semicolon_list p_expr ]
     in
-    let tuple = p_tuple atom <|> atom in
+    let tuple = p_tuple (p_expr <|> atom) <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in
