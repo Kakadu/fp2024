@@ -34,13 +34,13 @@ let pp_rec_flag fmt = function
 ;;
 
 let rec pp_pattern fmt = function
-   | Wild -> fprintf fmt "_ "
-   | PEmptyList -> fprintf fmt "[] "
-   | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
-   | PTuple _ -> fprintf fmt "TUPLE PAT WIP"
-   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
-   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
-   | Variant _ -> fprintf fmt "VARIANTS PAT WIP" 
+  | Wild -> fprintf fmt "_ "
+  | PEmptyList -> fprintf fmt "[] "
+  | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
+  | PTuple _ -> fprintf fmt "TUPLE PAT WIP"
+  | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
+  | PVar (Ident (name, _)) -> fprintf fmt "%s " name
+  | Variant _ -> fprintf fmt "VARIANTS PAT WIP"
 
 and pp_expr fmt expr =
   match expr with
@@ -64,7 +64,9 @@ and pp_expr fmt expr =
   | Match (value, pat1, expr1, list) ->
     fprintf fmt "match %a with \n" pp_expr value;
     fprintf fmt "| %a -> %a \n" pp_pattern pat1 pp_expr expr1;
-    List.iter (fun (pat, expr) -> fprintf fmt "| %a -> %a \n" pp_pattern pat pp_expr expr) list
+    List.iter
+      (fun (pat, expr) -> fprintf fmt "| %a -> %a \n" pp_pattern pat pp_expr expr)
+      list
   | Variable (Ident (name, _)) -> fprintf fmt "%s " name
   | Unary_expr (op, expr) -> fprintf fmt "%a (%a)" pp_unary_op op pp_expr expr
   | Bin_expr (op, left, right) ->
