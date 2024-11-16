@@ -16,6 +16,16 @@ type constant =
   | Const_string of string (** Constant string such as ["constant"] *)
 [@@deriving show { with_path = false }]
 
+type core_type =
+  | Type_any (** [_] *)
+  | Type_char (** [char] *)
+  | Type_int (** [int] *)
+  | Type_string (** [string] *)
+  | Type_bool (** [bool] *)
+  | Type_list of core_type (** [T list] *)
+  | Type_tuple of core_type list (** [T1 * ... * Tn] *)
+[@@deriving show { with_path = false }]
+
 type pattern =
   | Pat_any (** The pattern [_] *)
   | Pat_var of ident (** A variable pattern such as [x] *)
@@ -25,6 +35,7 @@ type pattern =
   (** [Pat_construct(C, args)] represents:
       - [C]   when [args] is [None],
       - [C P] when [args] is [Some P] *)
+  | Pat_constraint of pattern * core_type (** Pattern [(P : T)] *)
 [@@deriving show { with_path = false }]
 
 (** [let pat = exp] *)
@@ -63,6 +74,7 @@ and expression =
   | Exp_ifthenelse of expression * expression * expression option
   (** [if E1 then E2 else E3] *)
   | Exp_sequence of expression * expression (** [E1; E2] *)
+  | Exp_constraint of expression * core_type (** [(E : T)] *)
 [@@deriving show { with_path = false }]
 
 type structure_item =

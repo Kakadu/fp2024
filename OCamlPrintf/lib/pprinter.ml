@@ -44,12 +44,24 @@ let pp_escape_sequence ppf () = fprintf ppf "\n"
 let pp_space ppf () = fprintf ppf " "
 let pp_comma ppf () = fprintf ppf ", "
 let pp_and ppf () = fprintf ppf " and "
+let pp_asterisk ppf () = fprintf ppf " * "
 let pp_ident ppf id = fprintf ppf "%s" id
 
 let pp_constant ppf = function
   | Const_integer n -> fprintf ppf "%d" n
   | Const_char c -> fprintf ppf "'%c'" c
   | Const_string s -> fprintf ppf "%S" s
+;;
+
+let rec pp_type ppf = function
+  | Type_any -> fprintf ppf "_"
+  | Type_int -> fprintf ppf "int"
+  | Type_char -> fprintf ppf "char"
+  | Type_string -> fprintf ppf "string"
+  | Type_bool -> fprintf ppf "bool"
+  | Type_list type' -> fprintf ppf "%a list" pp_type type'
+  | Type_tuple type_list ->
+    fprintf ppf "%a" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
 ;;
 
 let rec pp_pattern ppf = function
@@ -81,29 +93,36 @@ let rec pp_pattern ppf = function
   | Pat_construct (tag, None) -> fprintf ppf "%s" tag
   | Pat_construct ("Some", Some pat) -> fprintf ppf "Some (%a)" pp_pattern pat
   | Pat_construct (_, _) -> ()
+  | Pat_constraint (pat, core_type) ->
+    fprintf ppf "(%a : %a)" pp_pattern pat pp_type core_type
 ;;
 
 let rec pp_expression ppf = function
   | Exp_ident id -> pp_ident ppf id
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, value_binding_list, exp) ->
+    let pp_exp_constraint = function
+      | Exp_constraint (exp', core_type) ->
+        fprintf ppf ": %a = %a" pp_type core_type pp_expression exp'
+      | exp' -> fprintf ppf "= %a" pp_expression exp'
+    in
+    fprintf ppf "(%s " (let_flag_str rec_flag);
     fprintf
       ppf
-      "(%s %a in %a)"
-      (let_flag_str rec_flag)
+      "%a"
       (pp_print_list ~pp_sep:pp_and (fun ppf value ->
-         fprintf ppf "%a = %a" pp_pattern value.pat pp_expression value.exp))
-      value_binding_list
-      pp_expression
-      exp
+         fprintf ppf "%a " pp_pattern value.pat;
+         pp_exp_constraint value.exp))
+      value_binding_list;
+    fprintf ppf " in %a)" pp_expression exp
   | Exp_fun (pat_list, exp) ->
-    fprintf
-      ppf
-      "(fun %a -> %a)"
-      (pp_print_list ~pp_sep:pp_space pp_pattern)
-      pat_list
-      pp_expression
-      exp
+    let pp_exp_constraint = function
+      | Exp_constraint (exp', core_type) ->
+        fprintf ppf ": %a -> %a)" pp_type core_type pp_expression exp'
+      | exp' -> fprintf ppf "-> %a)" pp_expression exp'
+    in
+    fprintf ppf "(fun %a " (pp_print_list ~pp_sep:pp_space pp_pattern) pat_list;
+    pp_exp_constraint exp
   | Exp_apply (exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in
     let fprintf_with_parens_condition ppf exp =
@@ -224,17 +243,24 @@ let rec pp_expression ppf = function
       exp3
   | Exp_sequence (exp1, exp2) ->
     fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
+  | Exp_constraint (_, _) -> ()
 ;;
 
 let pp_structure_item ppf = function
   | Struct_eval exp -> fprintf ppf "%a;;" pp_expression exp
   | Struct_value (rec_flag, value_binding_list) ->
+    let pp_exp_constraint = function
+      | Exp_constraint (exp', core_type) ->
+        fprintf ppf ": %a = %a" pp_type core_type pp_expression exp'
+      | exp' -> fprintf ppf "= %a" pp_expression exp'
+    in
+    fprintf ppf "%s " (let_flag_str rec_flag);
     fprintf
       ppf
-      "%s %a;;"
-      (let_flag_str rec_flag)
+      "%a;;"
       (pp_print_list ~pp_sep:pp_and (fun ppf value ->
-         fprintf ppf "%a = %a" pp_pattern value.pat pp_expression value.exp))
+         fprintf ppf "%a " pp_pattern value.pat;
+         pp_exp_constraint value.exp))
       value_binding_list
 ;;
 

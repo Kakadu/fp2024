@@ -114,3 +114,32 @@ let%expect_test "parsing sequence and exepression construct" =
   ([1; 2; 3]); ("qwerty123");;
   |}]
 ;;
+
+let%expect_test "parsing identifiers with explicitly assigned types 1" =
+  run {|
+  let f : int list = [1; 2; 3];;
+  |};
+  [%expect {| 
+  let f : int list = [1; 2; 3];;
+  |}]
+;;
+
+let%expect_test "parsing identifiers with explicitly assigned types 2" =
+  run
+    {|
+  let f : int * char * string list = (1, 'a', ["first"; "second"; "third"]);;
+  |};
+  [%expect
+    {| 
+  let f : int * char * string list = (1, 'a', ["first"; "second"; "third"]);;
+  |}]
+;;
+
+let%expect_test "parsing identifiers with explicitly assigned types 3" =
+  run {|
+  let f (a : int) (b : int) : int = a + b;;
+  |};
+  [%expect {| 
+  let f = (fun (a : int) (b : int) : int -> a + b);;
+  |}]
+;;

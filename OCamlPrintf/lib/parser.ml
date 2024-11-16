@@ -94,6 +94,28 @@ let parse_constant =
   ws *> choice [ parse_const_int; parse_const_char; parse_const_string ]
 ;;
 
+(* =================== Core_type =================== *)
+
+let parse_core_type =
+  let base_type =
+    ws
+    *> choice
+         [ string "_" *> return Type_any
+         ; string "int" *> return Type_int
+         ; string "char" *> return Type_char
+         ; string "string" *> return Type_string
+         ; string "bool" *> return Type_bool
+         ]
+  in
+  let list_type = base_type <* ws <* string "list" >>= fun t -> return (Type_list t) in
+  let tuple_type =
+    let* first_type = list_type <|> base_type in
+    let* rest_type_list = many1 (ws *> string "*" *> (list_type <|> base_type)) in
+    return (Type_tuple (first_type :: rest_type_list))
+  in
+  ws *> choice [ tuple_type; list_type; base_type ] <* ws
+;;
+
 (* ==================== Pattern ==================== *)
 
 let parse_pat_any = ws *> string "_" *> return Pat_any
@@ -133,6 +155,15 @@ let parse_pat_construct parse_pat =
   choice [ parse_elements; parse_pat_construct_keyword parse_pat ]
 ;;
 
+let parse_pat_constraint parse_pat =
+  ws
+  *> string "("
+  *>
+  let* q = parse_pat in
+  let* type' = ws *> string ":" *> parse_core_type <* string ")" in
+  return (Pat_constraint (q, type'))
+;;
+
 let parse_pattern =
   fix (fun parse_full_pat ->
     let parse_pat =
@@ -144,7 +175,7 @@ let parse_pattern =
         ; parse_pat_construct parse_full_pat
         ]
     in
-    choice [ parse_pat_tuple parse_pat; parse_pat ])
+    choice [ parse_pat_constraint parse_pat; parse_pat_tuple parse_pat; parse_pat ])
 ;;
 
 (* ==================== Expression ==================== *)
@@ -193,16 +224,29 @@ let or_ = parse_operator [ "||" ]
 
 (* -------------------- Value_binding -------------------- *)
 
+let parse_exp_constraint parse_exp op =
+  let parse_exp_with_constraint =
+    let* type' = ws *> string ":" *> parse_core_type in
+    let* exp = ws *> string op *> parse_exp in
+    return (Exp_constraint (exp, type'))
+  in
+  let parse_exp_without_constraint =
+    let* exp = ws *> string op *> parse_exp in
+    return exp
+  in
+  ws *> choice [ parse_exp_with_constraint; parse_exp_without_constraint ]
+;;
+
 let parse_fun_binding parse_exp =
   let* name = ws *> parse_pat_var in
   let* pat_list = ws *> sep_by1 ws parse_pattern in
-  let* exp = ws *> string "=" *> parse_exp in
+  let* exp = parse_exp_constraint parse_exp "=" in
   return { pat = name; exp = Exp_fun (pat_list, exp) }
 ;;
 
 let parse_simple_binding parse_exp =
   let* pat = parse_pattern in
-  let* exp = ws *> string "=" *> ws *> parse_exp in
+  let* exp = parse_exp_constraint parse_exp "=" in
   return { pat; exp }
 ;;
 
@@ -231,8 +275,8 @@ let parse_exp_fun parse_exp =
   ws
   *> keyword "fun"
   *>
-  let* pat_list = many1 parse_pattern <* ws <* string "->" in
-  let* exp = ws *> parse_exp in
+  let* pat_list = many1 parse_pattern in
+  let* exp = parse_exp_constraint parse_exp "->" in
   return (Exp_fun (pat_list, exp))
 ;;
 
@@ -282,11 +326,11 @@ let parse_exp_tuple parse_exp =
   return (Exp_tuple (first_exp, second_exp, rest_exp_list))
 ;;
 
-let parse_exp_construct_keyword parse_pat =
+let parse_exp_construct_keyword parse_exp =
   let* id =
     ws *> choice [ keyword "true"; keyword "false"; keyword "Some"; keyword "None" ]
   in
-  let* arg = ws *> option None (parse_pat >>| Option.some) in
+  let* arg = ws *> option None (parse_exp >>| Option.some) in
   return (Exp_construct (id, arg))
 ;;
 
