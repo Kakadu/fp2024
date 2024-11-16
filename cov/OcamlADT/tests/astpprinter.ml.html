@@ -385,16 +385,16 @@ open Base
 open Ocamladt_lib.Ast
 
 let pprint_constant fmt = function
-  | <span data-count="51">C</span>onst_integer n -&gt; Stdlib.Format.fprintf fmt "%d" n
-  | <span data-count="48">C</span>onst_char c -&gt; Stdlib.Format.fprintf fmt "'%c'" c
+  | <span data-count="52">C</span>onst_integer n -&gt; Stdlib.Format.fprintf fmt "%d" n
+  | <span data-count="41">C</span>onst_char c -&gt; Stdlib.Format.fprintf fmt "'%c'" c
   | <span data-count="0">C</span>onst_string s -&gt; Stdlib.Format.fprintf fmt "\"%s\"" s
 ;;
 
 let rec pprint_pattern fmt = function
   | <span data-count="0">P</span>at_any -&gt; Stdlib.Format.fprintf fmt "_"
-  | <span data-count="114">P</span>at_var id -&gt; Stdlib.Format.fprintf fmt "%s" id
+  | <span data-count="82">P</span>at_var id -&gt; Stdlib.Format.fprintf fmt "%s" id
   | <span data-count="0">P</span>at_constant c -&gt; pprint_constant fmt c
-  | <span data-count="37">P</span>at_tuple (p1, p2, pl) -&gt;
+  | <span data-count="17">P</span>at_tuple (p1, p2, pl) -&gt;
     Stdlib.Format.fprintf
       fmt
       "(%a, %a%s)"
@@ -402,22 +402,22 @@ let rec pprint_pattern fmt = function
       p1
       pprint_pattern
       p2
-      (String.conca<span data-count="37">t</span>
+      (String.conca<span data-count="17">t</span>
          ~sep:", "
-         (List.ma<span data-count="37">p</span> pl ~f:(fun p -&gt; <span data-count="0">S</span>tdlib.Format.asprintf "%a" pprint_pattern p)))
+         (List.ma<span data-count="17">p</span> pl ~f:(fun p -&gt; <span data-count="0">S</span>tdlib.Format.asprintf "%a" pprint_pattern p)))
   | <span data-count="6">P</span>at_construct (id, None) -&gt; Stdlib.Format.fprintf fmt "%s" id
-  | <span data-count="20">P</span>at_construct (id, Some p) -&gt; Stdlib.Format.fprintf fmt "%s(%a)" id pprint_pattern p
+  | <span data-count="22">P</span>at_construct (id, Some p) -&gt; Stdlib.Format.fprintf fmt "%s(%a)" id pprint_pattern p
 ;;
 
 let pprint_rec fmt = function
-  | <span data-count="14">N</span>onrecursive -&gt; Stdlib.Format.fprintf fmt ""
-  | <span data-count="23">R</span>ecursive -&gt; Stdlib.Format.fprintf fmt "rec "
+  | <span data-count="20">N</span>onrecursive -&gt; Stdlib.Format.fprintf fmt ""
+  | <span data-count="15">R</span>ecursive -&gt; Stdlib.Format.fprintf fmt "rec "
 ;;
 
 let rec pprint_expression fmt = function
-  | <span data-count="184">E</span>xp_ident id -&gt; Stdlib.Format.fprintf fmt "%s" id
-  | <span data-count="99">E</span>xp_constant ct -&gt; pprint_constant fmt ct
-  | <span data-count="33">E</span>xp_tuple (ex1, ex2, exl) -&gt;
+  | <span data-count="169">E</span>xp_ident id -&gt; Stdlib.Format.fprintf fmt "%s" id
+  | <span data-count="93">E</span>xp_constant ct -&gt; pprint_constant fmt ct
+  | <span data-count="26">E</span>xp_tuple (ex1, ex2, exl) -&gt;
     Stdlib.Format.fprintf
       fmt
       "(%a, %a%s)"
@@ -425,9 +425,9 @@ let rec pprint_expression fmt = function
       ex1
       pprint_expression
       ex2
-      (String.conca<span data-count="33">t</span>
+      (String.conca<span data-count="26">t</span>
          ~sep:", "
-         (List.ma<span data-count="33">p</span> exl ~f:(fun ex -&gt; <span data-count="0">S</span>tdlib.Format.asprintf "%a" pprint_expression ex)))
+         (List.ma<span data-count="26">p</span> exl ~f:(fun ex -&gt; <span data-count="0">S</span>tdlib.Format.asprintf "%a" pprint_expression ex)))
   | <span data-count="0">E</span>xp_function (cs1, csl) -&gt;
     Stdlib.Format.fprintf
       fmt
@@ -449,7 +449,7 @@ let rec pprint_expression fmt = function
          (List.ma<span data-count="0">p</span> ptl ~f:(fun p -&gt; <span data-count="0">S</span>tdlib.Format.asprintf " %a" pprint_pattern p)))
       pprint_expression
       exp
-  | <span data-count="48">E</span>xp_apply (ex, exl1) -&gt;
+  | <span data-count="43">E</span>xp_apply (ex, exl1) -&gt;
     let ex1, exl = exl1 in
     Stdlib.Format.fprintf
       fmt
@@ -458,9 +458,9 @@ let rec pprint_expression fmt = function
       ex
       pprint_expression
       ex1
-      (String.conca<span data-count="48">t</span>
+      (String.conca<span data-count="43">t</span>
          ~sep:" "
-         (List.ma<span data-count="48">p</span> exl ~f:(fun ex -&gt; <span data-count="86">S</span>tdlib.Format.asprintf "%a" pprint_expression ex)))
+         (List.ma<span data-count="43">p</span> exl ~f:(fun ex -&gt; <span data-count="90">S</span>tdlib.Format.asprintf "%a" pprint_expression ex)))
   | <span data-count="0">E</span>xp_match (ex, csl1) -&gt;
     let cs1, csl = csl1 in
     Stdlib.Format.fprintf
@@ -505,24 +505,24 @@ let rec pprint_expression fmt = function
     Stdlib.Format.fprintf fmt "%s %a" id pprint_expression exp
 
 and pprint_value_binding fmt { pat; expr } =
-  <span data-count="83">S</span>tdlib.Format.fprintf fmt "%a = %a" pprint_pattern pat pprint_expression expr
+  <span data-count="71">S</span>tdlib.Format.fprintf fmt "%a = %a" pprint_pattern pat pprint_expression expr
 
 and pprint_case fmt { left; right } =
   <span data-count="0">S</span>tdlib.Format.fprintf fmt "%a = %a" pprint_pattern left pprint_expression right
 ;;
 
 let pprint_structure_item fmt = function
-  | <span data-count="33">S</span>tr_eval exp -&gt; Stdlib.Format.fprintf fmt "%a ;; " pprint_expression exp
-  | <span data-count="37">S</span>tr_value (rec_flag, vbindl1) -&gt;
+  | <span data-count="32">S</span>tr_eval exp -&gt; Stdlib.Format.fprintf fmt "%a ;; " pprint_expression exp
+  | <span data-count="35">S</span>tr_value (rec_flag, vbindl1) -&gt;
     let vbind1, vbindl = vbindl1 in
     let bindings_str =
       match vbindl with
-      | <span data-count="6">[</span>] -&gt; ""
-      | <span data-count="31">_</span> -&gt;
-        String.conca<span data-count="31">t</span>
+      | <span data-count="13">[</span>] -&gt; ""
+      | <span data-count="22">_</span> -&gt;
+        String.conca<span data-count="22">t</span>
           ~sep:" and "
-          (List.ma<span data-count="31">p</span> vbindl ~f:(fun vb -&gt;
-             <span data-count="46">S</span>tdlib.Format.asprintf "%a" pprint_value_binding vb))
+          (List.ma<span data-count="22">p</span> vbindl ~f:(fun vb -&gt;
+             <span data-count="36">S</span>tdlib.Format.asprintf "%a" pprint_value_binding vb))
     in
     Stdlib.Format.fprintf
       fmt
@@ -531,7 +531,7 @@ let pprint_structure_item fmt = function
       rec_flag
       pprint_value_binding
       vbind1
-      (if phys_equal bindings_str "" then <span data-count="6">"</span>" else <span data-count="31">"</span>and " ^ bindings_str)
+      (if phys_equal bindings_str "" then <span data-count="13">"</span>" else <span data-count="22">"</span>and " ^ bindings_str)
   | <span data-count="0">S</span>tr_adt (id, id_t_l) -&gt;
     (* Stub: just using the variables id and id_t_l (ftm) *)
     let _ = id in
@@ -539,7 +539,7 @@ let pprint_structure_item fmt = function
     ()
 ;;
 
-let pprint_program fmt = <span data-count="103">L</span>ist.iter ~f:(pprint_structure_ite<span data-count="103">m</span> fmt)
+let pprint_program fmt = <span data-count="93">L</span>ist.iter ~f:(pprint_structure_ite<span data-count="93">m</span> fmt)
 </code></pre>
       </div>
     </div>

@@ -479,7 +479,7 @@ let gen_char =
 let gen_constant =
   let open Gen in
   oneo<span data-count="22">f</span>
-    [ ma<span data-count="22">p</span> (fun i -&gt; <span data-count="29">C</span>onst_integer (i <span data-count="29">%</span> 100)) int; ma<span data-count="22">p</span> (fun c -&gt; <span data-count="29">C</span>onst_char c) gen_char ]
+    [ ma<span data-count="22">p</span> (fun i -&gt; <span data-count="32">C</span>onst_integer (i <span data-count="32">%</span> 100)) int; ma<span data-count="22">p</span> (fun c -&gt; <span data-count="22">C</span>onst_char c) gen_char ]
 ;;
 
 let gen_ident = Gen.string_siz<span data-count="22">e</span> ~gen:gen_char (Gen.int_rang<span data-count="22">e</span> 1 5)
@@ -500,20 +500,20 @@ let rec gen_pattern size =
   then
     <span data-count="132">o</span>neof
       [ (* return Pat_any; *)
-        ma<span data-count="132">p</span> (fun id -&gt; <span data-count="54">P</span>at_var id) gen_ident
+        ma<span data-count="132">p</span> (fun id -&gt; <span data-count="35">P</span>at_var id) gen_ident
         (* map (fun c -&gt; Pat_constant c) gen_constant; *)
       ]
   else
     <span data-count="44">o</span>neof
       [ (* return Pat_any; *)
-        ma<span data-count="44">p</span> (fun id -&gt; <span data-count="13">P</span>at_var id) gen_ident
+        ma<span data-count="44">p</span> (fun id -&gt; <span data-count="14">P</span>at_var id) gen_ident
       ; (* map (fun c -&gt; Pat_constant c) gen_constant; *)
         map<span data-count="44">2</span>
-          (fun p1 p2 -&gt; <span data-count="22">P</span>at_tuple (p1, p2, []))
+          (fun p1 p2 -&gt; <span data-count="12">P</span>at_tuple (p1, p2, []))
           (gen_patter<span data-count="44">n</span> (size / 2))
           (gen_patter<span data-count="44">n</span> (size / 2))
       ; map<span data-count="44">2</span>
-          (fun id p_opt -&gt; <span data-count="13">P</span>at_construct (id, p_opt))
+          (fun id p_opt -&gt; <span data-count="14">P</span>at_construct (id, p_opt))
           gen_ident
           (optio<span data-count="44">n</span> (gen_patter<span data-count="44">n</span> (size / 2)))
       ]
@@ -524,18 +524,18 @@ let rec gen_pattern size =
 let gen_apply_id =
   let open Gen in
   oneo<span data-count="22">f</span>
-    [ ma<span data-count="22">p</span> (fun id -&gt; <span data-count="10">E</span>xp_ident id) gen_ident
-    ; ma<span data-count="22">p</span> (fun id -&gt; <span data-count="16">E</span>xp_ident id) gen_operator_s
+    [ ma<span data-count="22">p</span> (fun id -&gt; <span data-count="9">E</span>xp_ident id) gen_ident
+    ; ma<span data-count="22">p</span> (fun id -&gt; <span data-count="13">E</span>xp_ident id) gen_operator_s
     ]
 ;;
 
 let gen_apply_arg =
   let open Gen in
   oneo<span data-count="22">f</span>
-    [ ma<span data-count="22">p</span> (fun id -&gt; <span data-count="28">E</span>xp_ident id) gen_ident
+    [ ma<span data-count="22">p</span> (fun id -&gt; <span data-count="26">E</span>xp_ident id) gen_ident
     ; (* Identifier: f, x, etc. *)
-      ma<span data-count="22">p</span> (fun c -&gt; <span data-count="23">E</span>xp_constant c) gen_constant (* Constant: 5, "a", etc. *)
-    ; ma<span data-count="22">p</span> (fun id -&gt; <span data-count="18">E</span>xp_ident id) gen_operator_s
+      ma<span data-count="22">p</span> (fun c -&gt; <span data-count="25">E</span>xp_constant c) gen_constant (* Constant: 5, "a", etc. *)
+    ; ma<span data-count="22">p</span> (fun id -&gt; <span data-count="16">E</span>xp_ident id) gen_operator_s
     ]
 ;;
 
@@ -546,15 +546,15 @@ let rec gen_expression size =
   if size &lt;= 0
   then
     <span data-count="264">o</span>neof
-      [ ma<span data-count="264">p</span> (fun id -&gt; <span data-count="10">E</span>xp_ident id) gen_ident
-      ; ma<span data-count="264">p</span> (fun c -&gt; <span data-count="12">E</span>xp_constant c) gen_constant
+      [ ma<span data-count="264">p</span> (fun id -&gt; <span data-count="5">E</span>xp_ident id) gen_ident
+      ; ma<span data-count="264">p</span> (fun c -&gt; <span data-count="13">E</span>xp_constant c) gen_constant
       ]
   else
     <span data-count="198">o</span>neof
-      [ ma<span data-count="198">p</span> (fun id -&gt; <span data-count="21">E</span>xp_ident id) gen_ident
-      ; ma<span data-count="198">p</span> (fun c -&gt; <span data-count="23">E</span>xp_constant c) gen_constant
+      [ ma<span data-count="198">p</span> (fun id -&gt; <span data-count="24">E</span>xp_ident id) gen_ident
+      ; ma<span data-count="198">p</span> (fun c -&gt; <span data-count="16">E</span>xp_constant c) gen_constant
       ; map<span data-count="198">2</span>
-          (fun e1 e2 -&gt; <span data-count="19">E</span>xp_tuple (e1, e2, []))
+          (fun e1 e2 -&gt; <span data-count="16">E</span>xp_tuple (e1, e2, []))
           (gen_expressio<span data-count="198">n</span> (size / 2))
           (gen_expressio<span data-count="198">n</span> (size / 2))
         (* ; map (fun (c, cs) -&gt; Exp_function (c, cs)) (gen_cases size) *)
@@ -567,10 +567,10 @@ let rec gen_expression size =
            gen_expression
            (size / 2) *)
       ; map<span data-count="198">2</span>
-          (fun ex exl1 -&gt; <span data-count="26">E</span>xp_apply (ex, exl1))
+          (fun ex exl1 -&gt; <span data-count="22">E</span>xp_apply (ex, exl1))
           gen_apply_id
           (map<span data-count="198">2</span>
-             (fun ex1 exl -&gt; <span data-count="26">e</span>x1, exl)
+             (fun ex1 exl -&gt; <span data-count="22">e</span>x1, exl)
              gen_apply_arg
              (list_siz<span data-count="198">e</span> (int_boun<span data-count="198">d</span> 4) gen_apply_arg))
         (* ; map3
@@ -590,7 +590,7 @@ let rec gen_expression size =
 and gen_value_binding size =
   <span data-count="44">l</span>et open Gen in
   map2
-    (fun pat expr -&gt; <span data-count="48">{</span> pat; expr })
+    (fun pat expr -&gt; <span data-count="40">{</span> pat; expr })
     (gen_patter<span data-count="44">n</span> (size / 2))
     (gen_expressio<span data-count="44">n</span> (size / 2))
 
@@ -610,12 +610,12 @@ and gen_cases size =
 let gen_structure_item size =
   <span data-count="22">l</span>et open Gen in
   oneof
-    [ ma<span data-count="22">p</span> (fun e -&gt; <span data-count="25">S</span>tr_eval e) (gen_expressio<span data-count="22">n</span> size)
+    [ ma<span data-count="22">p</span> (fun e -&gt; <span data-count="24">S</span>tr_eval e) (gen_expressio<span data-count="22">n</span> size)
     ; map<span data-count="22">2</span>
-        (fun rec_flag vbl1 -&gt; <span data-count="23">S</span>tr_value (rec_flag, vbl1))
+        (fun rec_flag vbl1 -&gt; <span data-count="21">S</span>tr_value (rec_flag, vbl1))
         gen_rec_flag
         (map<span data-count="22">2</span>
-           (fun vb vbl -&gt; <span data-count="23">v</span>b, vbl)
+           (fun vb vbl -&gt; <span data-count="21">v</span>b, vbl)
            (gen_value_bindin<span data-count="22">g</span> (size / 2))
            (list_siz<span data-count="22">e</span> (int_boun<span data-count="22">d</span> 2) (gen_value_bindin<span data-count="22">g</span> (size / 2))))
     ]
@@ -642,34 +642,34 @@ let () =
       ~name:"round trip parsing and pretty printing"
       arbitrary_program
       (fun program -&gt;
-         <span data-count="81">l</span>et program_str = Stdlib.Format.asprintf "%a" pprint_program program in
-         <span data-count="81">m</span>atch parse program_str with
-         | <span data-count="73">O</span>k ast -&gt;
+         <span data-count="71">l</span>et program_str = Stdlib.Format.asprintf "%a" pprint_program program in
+         <span data-count="71">m</span>atch parse program_str with
+         | <span data-count="64">O</span>k ast -&gt;
            let is_equal = equal_program ast program in
-           <span data-count="73">i</span>f not is_equal
-           then <span data-count="14">(</span>
+           <span data-count="64">i</span>f not is_equal
+           then <span data-count="15">(</span>
              let error_message =
                Printf.sprintf
                  "Error: Programs are not structurally identical.\n\
                  \ Gen AST: %s\n\
                  \ Middle representation: %s\n\
                  \ Program: %s"
-                 (show_progra<span data-count="14">m</span> program)
+                 (show_progra<span data-count="15">m</span> program)
                  program_str
-                 (show_progra<span data-count="14">m</span> ast)
+                 (show_progra<span data-count="15">m</span> ast)
              in
-             <span data-count="14">f</span>ailwith error_message)
-           else <span data-count="59">t</span>rue
-         | <span data-count="8">E</span>rror err -&gt;
+             <span data-count="15">f</span>ailwith error_message)
+           else <span data-count="49">t</span>rue
+         | <span data-count="7">E</span>rror err -&gt;
            (* If parsing failed, show the error *)
            let error_message =
              Printf.sprintf
                "Parsing failed on program:\n %s\nError: %s\n"
                program_str
                (match err with
-                | <span data-count="8">m</span>sg -&gt; msg)
+                | <span data-count="7">m</span>sg -&gt; msg)
            in
-           <span data-count="8">f</span>ailwith error_message)
+           <span data-count="7">f</span>ailwith error_message)
   in
   <span data-count="22">i</span>gnore (run_test<span data-count="22">s</span> ~verbose:true [ test_round_trip ])
 ;;

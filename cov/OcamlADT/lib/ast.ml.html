@@ -266,23 +266,23 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="256">t</span>ype constant =
-  <span data-count="18">|</span> Const_integer of in<span data-count="105">t</span> (** integer as [52] *)
-  <span data-count="22">|</span> Const_char of cha<span data-count="22">r</span> (** char as ['w'] *)
+<span data-count="252">t</span>ype constant =
+  <span data-count="30">|</span> Const_integer of in<span data-count="95">t</span> (** integer as [52] *)
+  <span data-count="8">|</span> Const_char of cha<span data-count="30">r</span> (** char as ['w'] *)
   <span data-count="0">|</span> Const_string of strin<span data-count="1">g</span> (** string as ["Kakadu"] *)
 [@@deriving eq, show { with_path = false }]
 (* Generates fun's for equality check, string type output and removing the full path to module*)
 
-<span data-count="0">t</span>ype ident = <span data-count="283">s</span>tring [@@deriving eq, show { with_path = false }]
-<span data-count="0">t</span>ype 'a list1 = <span data-count="252">'</span>a * <span data-count="608">'</span>a lis<span data-count="281">t</span> [@@deriving eq, show { with_path = false }]
-<span data-count="0">t</span>ype 'a list2 = <span data-count="154">'</span>a * <span data-count="77">'</span><span data-count="77">a</span> * <span data-count="231">'</span>a lis<span data-count="154">t</span> [@@deriving eq, show { with_path = false }]
+<span data-count="0">t</span>ype ident = <span data-count="269">s</span>tring [@@deriving eq, show { with_path = false }]
+<span data-count="0">t</span>ype 'a list1 = <span data-count="286">'</span>a * <span data-count="667">'</span>a lis<span data-count="320">t</span> [@@deriving eq, show { with_path = false }]
+<span data-count="0">t</span>ype 'a list2 = <span data-count="108">'</span>a * <span data-count="54">'</span><span data-count="54">a</span> * <span data-count="162">'</span>a lis<span data-count="108">t</span> [@@deriving eq, show { with_path = false }]
 
-<span data-count="311">t</span>ype pattern =
+<span data-count="208">t</span>ype pattern =
   <span data-count="0">|</span> Pat_any (** The pattern [_]. *)
-  <span data-count="33">|</span> Pat_var of ident (** A variable pattern such as [x] *)
+  <span data-count="24">|</span> Pat_var of ident (** A variable pattern such as [x] *)
   <span data-count="0">|</span> Pat_constant of constant (** Patterns such as [52], ['w'], ["uwu"] *)
-  <span data-count="12">|</span> Pat_tuple of pattern list<span data-count="12">2</span> (** Patterns [(P1, ..., Pn)]. *)
-  <span data-count="0">|</span> Pat_construct of ident * <span data-count="38">p</span>attern optio<span data-count="11">n</span>
+  <span data-count="8">|</span> Pat_tuple of pattern list<span data-count="8">2</span> (** Patterns [(P1, ..., Pn)]. *)
+  <span data-count="0">|</span> Pat_construct of ident * <span data-count="34">p</span>attern optio<span data-count="10">n</span>
   (** [Pat_construct(C, args)] represents:
       - [C]               when [args] is [None],
       - [C P]             when [args] is [Some (P)]
@@ -291,21 +291,21 @@
 [@@deriving eq, show { with_path = false }]
 
 <span data-count="0">t</span>ype rec_flag =
-  <span data-count="8">|</span> Nonrecursive
-  <span data-count="12">|</span> Recursive
+  <span data-count="9">|</span> Nonrecursive
+  <span data-count="8">|</span> Recursive
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="759">t</span>ype expression =
-  <span data-count="33">|</span> Exp_ident of ident (** Identifiers such as [x] *)
-  <span data-count="20">|</span> Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
-  <span data-count="8">|</span> Exp_tuple of expression list<span data-count="8">2</span> (** Expressions [(E1, E2, ..., En)] *)
+<span data-count="804">t</span>ype expression =
+  <span data-count="25">|</span> Exp_ident of ident (** Identifiers such as [x] *)
+  <span data-count="19">|</span> Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"]**)
+  <span data-count="9">|</span> Exp_tuple of expression list<span data-count="9">2</span> (** Expressions [(E1, E2, ..., En)] *)
   <span data-count="0">|</span> Exp_function of case list<span data-count="0">1</span>
   (** [Exp_function (P1, [P2; ...; Pn])] represents
       [function P1 | ... | Pn] *)
   <span data-count="0">|</span> Exp_fun of pattern list1 * expressio<span data-count="0">n</span>
   (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
      [fun P1 ... Pn -&gt; E] *)
-  <span data-count="16">|</span> Exp_apply of expression * expression list<span data-count="16">1</span>
+  <span data-count="12">|</span> Exp_apply of expression * expression list<span data-count="12">1</span>
   (** [Pexp_apply(E0, [E1 ; ... ; En])]
       represents [E0 E1 ... En] *)
   <span data-count="0">|</span> Exp_match of expression * case list<span data-count="0">1</span>
@@ -324,10 +324,10 @@
       - [C (E1, ..., En)] when [exp] is [Some (Exp_tuple[E1;...;En])] *)
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="483">a</span>nd value_binding =
+<span data-count="385">a</span>nd value_binding =
   { pat : pattern
-  <span data-count="30">;</span> <span data-count="21">e</span>xpr : expression
-  <span data-count="138">}</span>
+  <span data-count="23">;</span> <span data-count="16">e</span>xpr : expression
+  <span data-count="110">}</span>
 
 <span data-count="14">a</span>nd case =
   { left : pattern
@@ -346,9 +346,9 @@
       - [(T1, ..., Tn) tconstr] when [l=[T1 ; ... ; Tn]]. *)
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="107">t</span>ype structure_item =
-  <span data-count="20">|</span> Str_eval of expression
-  <span data-count="40">|</span> Str_value of rec_flag * value_binding list<span data-count="40">1</span>
+<span data-count="113">t</span>ype structure_item =
+  <span data-count="21">|</span> Str_eval of expression
+  <span data-count="34">|</span> Str_value of rec_flag * value_binding list<span data-count="34">1</span>
   (** [Str_value(rec, [(P1, E1 ; ... ; (Pn, En))])] represents:
       - [let P1 = E1 and ... and Pn = EN]
         when [rec] is [Nonrecursive],
@@ -368,7 +368,7 @@
       Invariant: [m &gt; 0] *)
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="140">t</span>ype program = <span data-count="335">s</span>tructure_item lis<span data-count="67">t</span> [@@deriving eq, show { with_path = false }]
+<span data-count="133">t</span>ype program = <span data-count="345">s</span>tructure_item lis<span data-count="69">t</span> [@@deriving eq, show { with_path = false }]
 </code></pre>
       </div>
     </div>
