@@ -18,7 +18,7 @@ let unit_e = Const Unit_lt
 let string_e x = Const (String_lt x)
 let variable_e x = Variable (Ident (x, None))
 
-let gen_const =
+let gen_const_manual =
   QCheck.Gen.(
     frequency
       [ 1, map int_e nat
@@ -28,7 +28,7 @@ let gen_const =
       ])
 ;;
 
-let gen_varname =
+let gen_varname_manual =
   let open QCheck.Gen in
   let loop =
     let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
@@ -45,9 +45,9 @@ let gen_varname =
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
-let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
-let gen_variable = QCheck.Gen.map variable_e gen_varname
-let gen_unop = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ])
+let gen_ident_manual = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname_manual
+let gen_variable_manual = QCheck.Gen.map variable_e gen_varname_manual
+let gen_unop_manual = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ])
 let tuple_e e1 e2 rest = Tuple (e1, e2, rest)
 let un_e unop e = Unary_expr (unop, e)
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
@@ -60,7 +60,7 @@ let letin rec_flag let_bind let_bind_list inner_e =
   LetIn (rec_flag, let_bind, let_bind_list, inner_e)
 ;;
 
-let gen_binop =
+let gen_binop_manual =
   QCheck.Gen.(
     oneof
     @@ List.map
@@ -83,18 +83,18 @@ let gen_binop =
          ])
 ;;
 
-let gen_rec_flag = QCheck.Gen.(oneof [ return Rec; return Nonrec ])
+let gen_is_recursive_manual = QCheck.Gen.(oneof [ return Rec; return Nonrec ])
 
-let gen_let_bind gen =
-  QCheck.Gen.(map3 let_bind gen_ident (list_size (0 -- 15) gen_ident) gen)
+let gen_let_bind_manual gen =
+  QCheck.Gen.(map3 let_bind gen_ident_manual (list_size (0 -- 15) gen_ident_manual) gen)
 ;;
 
-let gen_expr =
+let gen_expr_manual =
   QCheck.Gen.(
     sized
     @@ fix (fun self ->
          function
-         | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
+         | 0 -> frequency [ 1, gen_const_manual; 1, gen_variable_manual ]
          | n ->
            frequency
              [ ( 0
@@ -103,23 +103,23 @@ let gen_expr =
                    (self (n / 2))
                    (self (n / 2))
                    (list_size (0 -- 15) (self (n / 2))) )
-             ; 1, map2 un_e gen_unop (self (n / 2))
-             ; 1, map3 bin_e gen_binop (self (n / 2)) (self (n / 2))
+             ; 1, map2 un_e gen_unop_manual (self (n / 2))
+             ; 1, map3 bin_e gen_binop_manual (self (n / 2)) (self (n / 2))
              ; ( 1
                , map3
                    if_e
                    (self (n / 2))
                    (self (n / 2))
                    (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
-             ; 0, map2 func_def (list_size (0 -- 15) gen_ident) (self (n / 2))
-             ; 1, map2 func_call gen_variable (self (n / 2))
+             ; 0, map2 func_def (list_size (0 -- 15) gen_ident_manual) (self (n / 2))
+             ; 1, map2 func_call gen_variable_manual (self (n / 2))
                (* TODO: make apply of arbitrary expr*)
              ; ( 0
                , map3
                    letin
-                   gen_rec_flag
-                   (gen_let_bind (self (n / 2)))
-                   (list_size (0 -- 15) (gen_let_bind (self (n / 2))))
+                   gen_is_recursive_manual
+                   (gen_let_bind_manual (self (n / 2)))
+                   (list_size (0 -- 15) (gen_let_bind_manual (self (n / 2))))
                  <*> self (n / 2) )
              ]))
 ;;
@@ -145,18 +145,24 @@ and shrink_expr =
   let open QCheck.Iter in
   function
   | Const lt -> shrink_lt lt
-  | Variable _ -> empty
   | Tuple (e1, e2, rest) ->
     of_list [ e1; e2 ]
     <+> (shrink_expr e1 >|= fun a' -> Tuple (a', e2, rest))
     <+> (shrink_expr e2 >|= fun a' -> Tuple (e1, a', rest))
     <+> (QCheck.Shrink.list ~shrink:shrink_expr rest >|= fun a' -> Tuple (e1, e2, a'))
+  | Cons_list (e1, e2) ->
+    of_list [ e1; e2 ]
+    <+> (shrink_expr e1 >|= fun a' -> Cons_list (a', e2))
+    <+> (shrink_expr e2 >|= fun a' -> Cons_list (e1, a'))
   | Unary_expr (op, e) -> return e <+> shrink_expr e >|= fun a' -> un_e op a'
   | Bin_expr (op, e1, e2) ->
     of_list [ e1; e2 ]
     <+> (shrink_expr e1 >|= fun a' -> bin_e op a' e2)
     <+> (shrink_expr e2 >|= fun a' -> bin_e op e1 a')
-  | If_then_else (i, t, Some _) -> return (If_then_else (i, t, None))
+  | If_then_else (i, t, Some e) ->
+    of_list [ i; t; e; If_then_else (i, e, None) ]
+    <+> (shrink_expr i >|= fun a' -> If_then_else (a', t, Some e))
+    <+> (shrink_expr t >|= fun a' -> If_then_else (i, a', Some e))
   | If_then_else (i, t, None) ->
     of_list [ i; t ]
     <+> (shrink_expr i >|= fun a' -> If_then_else (a', t, None))
@@ -167,33 +173,40 @@ and shrink_expr =
          >|= fun a' -> LetIn (rec_flag, a', let_bind_list, inner_e))
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> LetIn (rec_flag, let_bind, a', inner_e))
-    <+> shrink_expr inner_e
-    >|= fun a' -> LetIn (rec_flag, let_bind, let_bind_list, a')
+    <+> (shrink_expr inner_e >|= fun a' -> LetIn (rec_flag, let_bind, let_bind_list, a'))
   | Function_call (f, arg) ->
-    shrink_expr f
-    >|= (fun a' -> Function_call (a', arg))
-    <+> shrink_expr arg
-    >|= fun a' -> Function_call (f, a')
+    of_list [ f; arg ]
+    <+> (shrink_expr f >|= fun a' -> Function_call (a', arg))
+    <+> (shrink_expr arg >|= fun a' -> Function_call (f, a'))
   | Lambda (args, body) ->
     return body
     <+> (QCheck.Shrink.list args >|= fun a' -> Lambda (a', body))
     <+> (shrink_expr body >|= fun a' -> Lambda (args, a'))
+  | Match (value, pat1, expr1, cases) ->
+    of_list [ value; expr1 ]
+    <+> (shrink_expr value >|= fun a' -> Match (a', pat1, expr1, cases))
+    <+> (shrink_expr expr1 >|= fun a' -> Match (value, pat1, a', cases))
+    <+> (QCheck.Shrink.list
+           ~shrink:(fun (p, e) -> shrink_expr e >|= fun a' -> p, a')
+           cases
+         >|= fun a' -> Match (value, pat1, expr1, a'))
+  | Option (Some e) ->
+    of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
   | _ -> empty
 ;;
 
 let let_st rec_flag let_bind let_bind_list = Let (rec_flag, let_bind, let_bind_list)
 
 (* TODO: Active Pattern*)
-let gen_statement =
+let gen_statement_manual =
   QCheck.Gen.(
     map3
       let_st
-      gen_rec_flag
-      (gen_let_bind gen_expr)
-      (list_size (0 -- 15) (gen_let_bind gen_expr)))
+      gen_is_recursive_manual
+      (gen_let_bind_manual gen_expr)
+      (list_size (0 -- 15) (gen_let_bind_manual gen_expr)))
 ;;
 
-(* TODO: Active Pattern *)
 let shrink_statement =
   let open QCheck.Iter in
   function
@@ -202,12 +215,18 @@ let shrink_statement =
     >|= (fun a' -> Let (rec_flag, a', let_bind_list))
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> Let (rec_flag, let_bind, a'))
-  | _ -> empty
+  | ActivePattern (cases, e) ->
+    QCheck.Shrink.list cases
+    >|= (fun a' -> ActivePattern (a', e))
+    <+> (shrink_expr e >|= fun a' -> ActivePattern (cases, a'))
 ;;
 
-let gen_construction =
+let gen_construction_manual =
   QCheck.Gen.(
-    oneof [ (gen_expr >|= fun a' -> Expr a'); (gen_statement >|= fun a' -> Statement a') ])
+    oneof
+      [ (gen_expr_manual >|= fun a' -> Expr a')
+      ; (gen_statement_manual >|= fun a' -> Statement a')
+      ])
 ;;
 
 let shrink_construction =
@@ -219,7 +238,7 @@ let shrink_construction =
 
 let arbitrary_construction =
   QCheck.make
-    gen_construction
+    gen_construction_manual
     ~print:(Format.asprintf "%a" print_construction)
     ~shrink:shrink_construction
 ;;
