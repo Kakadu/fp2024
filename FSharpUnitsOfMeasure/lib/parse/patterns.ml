@@ -35,6 +35,11 @@ let parse_pat_list parse_pat =
   return (Pattern_list list)
 ;;
 
+let parse_pat_or parse_pat =
+  let parse_pipe = skip_ws *> string "|" *> return (fun p1 p2 -> Pattern_or (p1, p2)) in
+  chainl parse_pat parse_pipe
+;;
+
 let parse_pat_typed parse_pat =
   let* pat = parse_pat in
   let* core_type = skip_token ":" *> parse_type in
@@ -53,6 +58,7 @@ let parse_pat =
         ]
     in
     let pat = parse_pat_tuple pat <|> pat in
+    let pat = parse_pat_or pat <|> pat in
     let pat = parse_pat_typed pat <|> pat in
     skip_ws *> pat <* skip_ws)
 ;;
