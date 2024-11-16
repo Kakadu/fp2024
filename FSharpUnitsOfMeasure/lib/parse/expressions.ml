@@ -149,7 +149,8 @@ let parse_expr_function parse_expr =
   let* rules = skip_token "function" *> parse_rules parse_expr in
   match rules with
   | h :: tl ->
-    return (Expr_fun (Pattern_ident "x", Expr_match (Expr_ident_or_op "x", h, tl)))
+    let id = "x" in
+    return (Expr_fun (Pattern_ident id, Expr_match (Expr_ident_or_op id, h, tl)))
   | _ -> fail "Failed to parse function expression"
 ;;
 
