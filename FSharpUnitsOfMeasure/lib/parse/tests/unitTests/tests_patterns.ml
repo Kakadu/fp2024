@@ -147,3 +147,32 @@ let%expect_test "parse pattern list in parentheses" =
        [(Pattern_const (Const_int 1)); (Pattern_const (Const_int 2));
          (Pattern_const (Const_int 3)); (Pattern_const (Const_int 4))]) |}]
 ;;
+
+(************************** Typed patterns **************************)
+
+let%expect_test "parse pattern with builtin type" =
+  pp pp_pattern parse_pat {| x : int |};
+  [%expect
+    {|
+    (Pattern_typed ((Pattern_ident "x"), (Type_ident "int"))) |}]
+;;
+
+let%expect_test "parse typed pattern without colon should fail" =
+  pp pp_pattern parse_pat {| x int |};
+  [%expect {|
+    : end_of_input |}]
+;;
+
+let%expect_test "parse typed tuple" =
+  pp pp_pattern parse_pat {| (x, b) : int * string |};
+  [%expect {|
+    (Pattern_typed (
+       (Pattern_tuple ((Pattern_ident "x"), (Pattern_ident "b"), [])),
+       (Type_tuple ((Type_ident "int"), (Type_ident "string"), [])))) |}]
+;;
+
+let%expect_test "parse typed tuple of typed identificators should fail" =
+  pp pp_pattern parse_pat {| (x : int, b : string) : int * string |};
+  [%expect {|
+    : no more choices |}]
+;;
