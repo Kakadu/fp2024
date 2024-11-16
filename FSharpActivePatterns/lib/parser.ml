@@ -45,15 +45,18 @@ let rec unary_chain op e =
 ;;
 
 (* SIMPLE PARSERS *)
-let p_int =
-  skip_ws *> take_while1 Char.is_digit >>| fun s -> Const (Int_lt (Int.of_string s))
-;;
+let expr_const_factory parser = parser >>| fun lit -> Const lit
+let pat_const_factory parser = parser >>| fun lit -> PConst lit
+let p_int = skip_ws *> take_while1 Char.is_digit >>| fun s -> Int_lt (Int.of_string s)
+let p_int_expr = expr_const_factory p_int
+let p_int_pat = pat_const_factory p_int
 
 let p_bool =
-  skip_ws *> string "true"
-  <|> string "false"
-  >>| fun s -> Const (Bool_lt (Bool.of_string s))
+  skip_ws *> string "true" <|> string "false" >>| fun s -> Bool_lt (Bool.of_string s)
 ;;
+
+let p_bool_expr = expr_const_factory p_bool
+let p_bool_pat = pat_const_factory p_bool
 
 let p_type =
   skip_ws
@@ -120,6 +123,9 @@ let p_semicolon_list p empty_list cons_list =
 
 let p_semicolon_list_expr p_expr = p_semicolon_list p_expr Empty_list make_cons_expr
 let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat
+let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> skip_ws *> return Unit_lt
+let p_unit_expr = expr_const_factory p_unit
+let p_unit_pat = pat_const_factory p_unit
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
@@ -231,7 +237,15 @@ let p_apply expr =
   let* name = app_first expr in
   let rec parse_args acc =
     skip_ws
-    *> choice [ p_var_expr; p_bool; p_int; p_if expr; p_letin expr; p_parens expr ]
+    *> choice
+         [ p_var_expr
+         ; p_bool_expr
+         ; p_unit_expr
+         ; p_int_expr
+         ; p_if expr
+         ; p_letin expr
+         ; p_parens expr
+         ]
     >>= (fun arg -> parse_args (Function_call (acc, arg)))
     <|> return acc
   in
@@ -251,6 +265,8 @@ let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
    (p_pat <|> p_empty_list)
    (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
 
+let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat ]
+
 let p_pat =
   fix (fun self ->
     skip_ws
@@ -260,6 +276,7 @@ let p_pat =
          ; p_semicolon_list_pat self
          ; p_cons_list_pat p_var_pat
          ; p_var_pat
+         ; p_pat_const
          ; string "_" *> return Wild
          ])
   <* skip_ws
@@ -281,7 +298,14 @@ let p_expr =
   skip_ws
   *> fix (fun p_expr ->
     let atom =
-      choice [ p_var_expr; p_int; p_bool; p_parens p_expr; p_semicolon_list_expr p_expr ]
+      choice
+        [ p_var_expr
+        ; p_int_expr
+        ; p_unit_expr
+        ; p_bool_expr
+        ; p_parens p_expr
+        ; p_semicolon_list_expr p_expr
+        ]
     in
     let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
