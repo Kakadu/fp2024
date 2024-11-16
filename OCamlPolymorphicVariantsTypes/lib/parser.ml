@@ -28,8 +28,18 @@ let ident_symbol = function
   | _ -> false
 ;;
 
+let is_constructor id =
+  match id.[0] with
+  | 'A' .. 'Z' -> true
+  | _ -> false
+;;
+
 (** Parse [Miniml.identifier] value. *)
-let ident ?(on_keyword = fun _ -> pfail) =
+let ident
+  ?(on_keyword = fun _ -> pfail)
+  ?(on_constructor = fun id -> preturn id)
+  ?(on_simple = fun id -> preturn id)
+  =
   let helper = many (dsatisfy ident_symbol Fun.id) in
   skip_ws *> dsatisfy ident_symbol Fun.id
   >>= fun s ->
@@ -38,7 +48,12 @@ let ident ?(on_keyword = fun _ -> pfail) =
   else
     helper
     >>| (fun l -> string_of_char_list (s :: l))
-    >>= fun id -> if is_keyword id then on_keyword id else preturn id
+    >>= fun id ->
+    if is_keyword id
+    then on_keyword id
+    else if is_constructor id
+    then on_constructor id
+    else on_simple id
 ;;
 
 (** Parser of keyword *)
@@ -92,12 +107,16 @@ let rec pattern_parser state = (skip_ws *> (pvariable <|> ptuple)) state
 
 (** Parser of variable pattern *)
 and pvariable state =
-  (skip_ws
-   *> (ident ~on_keyword:(fun id ->
-         perror
-           (Format.sprintf "Unexpected identifier of pattern: '%s'. It is keyword." id))
-       >>| fun id -> PVar id))
-    state
+  let helper =
+    ident
+      ~on_keyword:(fun id ->
+        perror
+          (Format.sprintf "Unexpected identifier of pattern: '%s'. It is keyword." id))
+      ~on_constructor:(fun id ->
+        perror (Format.sprintf "Unexpected constructor on pattern position: '%s'." id))
+      ~on_simple:(fun id -> preturn id)
+  in
+  (skip_ws *> (helper >>| fun id -> PVar id)) state
 
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
@@ -127,7 +146,26 @@ and ptuple state =
 let const_expr = skip_ws *> (integer <|> boolean) >>| fun l -> Const l
 
 (** Parser of variable expression *)
-let variable = skip_ws *> ident ~on_keyword:(fun _ -> pfail) >>| fun s -> Variable s
+let variable =
+  let helper =
+    ident
+      ~on_keyword:(fun _ -> pfail)
+      ~on_constructor:(fun id ->
+        perror (Format.sprintf "Invalid variable identifier: '%s'." id))
+      ~on_simple:(fun id -> preturn id)
+  in
+  skip_ws *> helper >>| fun s -> Variable s
+;;
+
+let constructor_name =
+  let helper =
+    ident
+      ~on_keyword:(fun _ -> pfail)
+      ~on_constructor:(fun id -> preturn id)
+      ~on_simple:(fun _ -> pfail)
+  in
+  skip_ws *> helper
+;;
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
 let rec expr state = (skip_ws *> block_expr) state
@@ -172,8 +210,17 @@ and basic_expr applyable state =
    <|> if_expr
    <|> define_expr
    <|> list_expr
+   <|> constructor
    <|> (if applyable then applyable_expr else apply_expr)
    <|> const_expr)
+    state
+
+and constructor state =
+  (skip_ws *> constructor_name
+   >>= fun name ->
+   expr
+   >>= (fun ex -> preturn (Construct (name, Some ex)))
+   <|> preturn (Construct (name, None)))
     state
 
 (** Parser of unary expression *)

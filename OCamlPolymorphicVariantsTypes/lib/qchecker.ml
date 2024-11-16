@@ -19,21 +19,38 @@ module QChecker = struct
 
   let gen_integer = oneof [ positive_number; return 0 ]
   let gen_boolean = oneof [ return true; return false ]
+  let identifier_size = int_range 1 10
   let tuple_size = int_range 2 4
   let elist_size = int_range 0 4
-  let definition_size = int_range 1 10
-  let patterns_size = int_range 1 6
-  let pattern_depth = int_range 1 2
-  let expr_depth = int_range 1 6
-  let apply_size = int_range 1 6
-  let expr_block_size = int_range 2 8
+  let definition_size = int_range 1 5
+  let patterns_size = int_range 1 4
+  let pattern_depth = int_range 1 4
+  let expr_depth = int_range 1 8
+  let apply_size = int_range 1 4
+  let expr_block_size = int_range 2 4
   let program_size = int_range 1 20
 
-  let gen_identifier =
+  let gen_identifier is_constructor_name =
     let helper =
+      let first_char =
+        if is_constructor_name
+        then oneof [ char_range 'A' 'Z' ]
+        else oneof [ char_range 'a' 'z'; return '_' ]
+      in
+      first_char
+      >>= fun c ->
       string_size
-        (int_range 1 10)
-        ~gen:(oneof [ char_range 'a' 'z'; char_range 'A' 'Z'; return '_' ])
+        identifier_size
+        ~gen:
+          (oneof
+             [ char_range 'a' 'z'
+             ; char_range 'A' 'Z'
+             ; char_range '0' '9'
+             ; (if is_constructor_name
+                then return '_'
+                else oneof [ return '\''; return '_' ])
+             ])
+      >>= fun res -> return (Format.sprintf "%c%s" c res)
     in
     helper
     >>= fun s ->
@@ -49,7 +66,7 @@ module QChecker = struct
     sized_size pattern_depth
     @@ fix (fun self ->
          function
-         | 0 -> oneof [ map (fun i -> PVar i) gen_identifier; return PUnit ]
+         | 0 -> oneof [ map (fun i -> PVar i) (gen_identifier false); return PUnit ]
          | depth -> gen_ptuple (self (depth - 1)))
   ;;
 
@@ -71,7 +88,7 @@ module QChecker = struct
       ]
   ;;
 
-  let gen_variable = map (fun i -> Variable i) gen_identifier
+  let gen_variable = map (fun i -> Variable i) (gen_identifier false)
   let gen_const = map (fun c -> Const c) gen_literal
 
   let gen_expr =
@@ -130,6 +147,12 @@ module QChecker = struct
     let gen_expr_block subexpr_gen =
       map (fun l -> ExpressionBlock l) (list_size expr_block_size subexpr_gen)
     in
+    let constructor_expr subexpr_gen =
+      map2
+        (fun id opt_expr -> Construct (id, opt_expr))
+        (gen_identifier true)
+        (oneof [ return None; map (fun ex -> Some ex) subexpr_gen ])
+    in
     sized_size expr_depth
     @@ fix (fun self ->
          function
@@ -142,6 +165,7 @@ module QChecker = struct
              ; 1, gen_list_expr (self (depth - 1))
              ; 1, gen_define_expr (self (depth - 1))
              ; 1, gen_if_expr (self (depth / 2)) (self (depth - 1))
+             ; 1, constructor_expr (self (depth - 1))
              ; 1, gen_lambda (self (depth - 1))
              ; 1, gen_apply (self (depth - 1))
              ; 1, gen_expr_block (self (depth - 1))
@@ -166,7 +190,7 @@ module QChecker = struct
     let open Parser_utility in
     QCheck_runner.run_tests
       [ QCheck.(
-          Test.make (* ~count:100 *) arbitrary_lam_manual (fun p ->
+          Test.make (* ~count:1 *) arbitrary_lam_manual (fun p ->
             let r = parse program_parser (Format.asprintf "%a" pp_program p) in
             match r with
             | ParseSuccess (r, _) ->
@@ -177,6 +201,7 @@ module QChecker = struct
                 Format.printf "Result:\n%s\n" (show_program r));
               res
             | _ ->
+              Format.printf "IntputTree:\n%s\n" (show_program p);
               Format.printf "Intput:\n%a\n" pp_program p;
               Format.printf "Result:\n%s\n" (string_of_parse_result show_program r);
               false))

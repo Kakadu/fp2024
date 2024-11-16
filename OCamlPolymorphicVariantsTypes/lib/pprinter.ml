@@ -60,6 +60,8 @@ let rec pp_expression ff = function
   | Tuple l -> fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_expression) l
   | ExpressionsList l ->
     fprintf ff "[%a]" (pp_print_list ~pp_sep:pp_list_sep pp_expression) l
+  | Construct (name, None) -> fprintf ff "(%a)" pp_identifier name
+  | Construct (name, Some ex) -> fprintf ff "(%a %a)" pp_identifier name pp_expression ex
   | ExpressionBlock l ->
     fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_expr_block_sep pp_expression) l
   | Apply (ex, l) ->
