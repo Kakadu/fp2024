@@ -54,6 +54,25 @@ let gen_string =
   String.concat "" atoms
 ;;
 
+let gen_varname =
+  let open QCheck.Gen in
+  let loop =
+    let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
+    let gen_first_char =
+      oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
+    in
+    let gen_next_char = oneof [ gen_first_char; gen_char_of_range '0' '9' ] in
+    map2
+      (fun first rest ->
+        String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
+      gen_first_char
+      (list_size (1 -- 5) gen_next_char)
+  in
+  loop >>= fun name -> if is_keyword name then loop else return name
+;;
+
+let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
+
 type literal =
   | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
@@ -172,7 +191,7 @@ let gen_let_bind =
     gen_let_bind_sized n)
 ;;
 
-and let_bind = Let_bind of ident * ident list * expr (** [and sum n m = n+m] *)
+and let_bind = Let_bind of ident * ident list * expr (** [and sum n m = n+m] *)[@@deriving eq, show {with_path = false}, qcheck]
 
 type statement =
   | Let of
@@ -185,6 +204,6 @@ type statement =
 [@@deriving show { with_path = false }, qcheck]
 
 type construction =
-  | Expr of expr (** expression *)
+  | Expr of expr (** expression *) [@gen QCheck.Gen.sized gen_expr_sized]
   | Statement of statement (** statement *)
 [@@deriving show { with_path = false }, qcheck]
