@@ -203,8 +203,8 @@ let gen_statement_manual =
     map3
       let_st
       gen_is_recursive_manual
-      (gen_let_bind_manual gen_expr)
-      (list_size (0 -- 15) (gen_let_bind_manual gen_expr)))
+      (gen_let_bind_manual gen_expr_manual)
+      (list_size (0 -- 15) (gen_let_bind_manual gen_expr_manual)))
 ;;
 
 let shrink_statement =
