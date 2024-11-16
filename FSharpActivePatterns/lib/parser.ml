@@ -229,6 +229,9 @@ let p_semicolon_list p empty_list cons_list =
 
 let p_semicolon_list_expr p_expr = p_semicolon_list p_expr Empty_list make_cons_expr
 let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat
+let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> skip_ws *> return Unit_lt
+let p_unit_expr = expr_const_factory p_unit
+let p_unit_pat = pat_const_factory p_unit
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
@@ -417,6 +420,8 @@ let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
    (p_pat <|> p_empty_list)
    (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
 
+let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat ]
+
 let p_pat =
   fix (fun self ->
     skip_ws
@@ -426,6 +431,7 @@ let p_pat =
          ; p_semicolon_list_pat self
          ; p_cons_list_pat p_var_pat
          ; p_var_pat
+         ; p_pat_const
          ; string "_" *> return Wild
          ])
   <* skip_ws
