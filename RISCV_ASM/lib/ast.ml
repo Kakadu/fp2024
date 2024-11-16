@@ -69,28 +69,28 @@ type register =
   | T4 (** a.k.a. X29 *)
   | T5 (** a.k.a. X30 *)
   | T6 (** a.k.a. X31s *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Label Type *)
-type label = string [@@deriving eq, show { with_path = false }]
+type label = string [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Address32 Type to Jump to *)
 type address32 =
   | ImmediateAddress32 of int (** Immediate32 to Jump to *)
   | LabelAddress32 of label (** Label to Jump to *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Address12 Type to Jump to *)
 type address12 =
   | ImmediateAddress12 of int (** Immediate12 to Jump to*)
   | LabelAddress12 of label (** Label to Jump to *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Address20 Type to Jump to *)
 type address20 =
   | ImmediateAddress20 of int (** Immediate20 to Jump to*)
   | LabelAddress20 of label (** Label to Jump to *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 type instruction =
   | Add of register * register * register (** Addition. rd = rs1 + rs2 *)
@@ -192,16 +192,16 @@ type instruction =
   | Li of register * address32
   (** Load Immediate. lui rd, immediate20; addi rd, rd, immediate12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
 type string_or_int_value =
   | StrValue of string (** A string value *)
   | IntValue of int (** An integer value*)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Types that are assigned to symbols for the logic of the compiler*)
-type type_dir = Type of string [@@deriving eq, show { with_path = false }]
+type type_dir = Type of string [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Compiler directive (most of them are not needed while interpreting) *)
 type directive =
@@ -223,14 +223,14 @@ type directive =
   | CfiRestore of int (** .cfi_restore int *)
   | Ident of string (** .ident string *)
   | CfiRestoreState (** .cfi_restore_state *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Expression in AST *)
 type expr =
   | InstructionExpr of instruction (** Instruction *)
   | LabelExpr of label (** Label *)
   | DirectiveExpr of directive (** Directive *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** AST is Presented by a List of Expressions *)
-type ast = expr list [@@deriving eq, show { with_path = false }]
+type ast = expr list [@@deriving eq, show { with_path = false }, qcheck]
