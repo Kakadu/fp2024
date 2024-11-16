@@ -10,6 +10,7 @@ open Angstrom
 open Ast
 open Common
 open Constants
+open Types
 
 let parse_pat_wild = char '_' *> return Pattern_wild
 let parse_pat_ident = parse_ident >>| fun i -> Pattern_ident i
@@ -34,6 +35,12 @@ let parse_pat_list parse_pat =
   return (Pattern_list list)
 ;;
 
+let parse_pat_typed parse_pat =
+  let* pat = parse_pat in
+  let* core_type = skip_token ":" *> parse_type in
+  return (Pattern_typed (pat, core_type))
+;;
+
 let parse_pat =
   fix (fun parse_pat ->
     let pat =
@@ -46,5 +53,6 @@ let parse_pat =
         ]
     in
     let pat = parse_pat_tuple pat <|> pat in
+    let pat = parse_pat_typed pat <|> pat in
     skip_ws *> pat <* skip_ws)
 ;;
