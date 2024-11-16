@@ -169,6 +169,8 @@ let pp_instruction ppf = function
     pp_instruction_2reg_1offset_helper ppf "lh" rd rs1 (Address12 imm)
   | Lw (rd, rs1, imm) ->
     pp_instruction_2reg_1offset_helper ppf "lw" rd rs1 (Address12 imm)
+  | Lbu (rd, rs1, imm) ->
+    pp_instruction_2reg_1offset_helper ppf "lbu" rd rs1 (Address12 imm)
   | Lhu (rd, rs1, imm) ->
     pp_instruction_2reg_1offset_helper ppf "lhu" rd rs1 (Address12 imm)
   | Sb (rd, rs1, imm) ->
@@ -217,7 +219,6 @@ let pp_instruction ppf = function
   | Li (rd, imm) ->
     Format.fprintf ppf "li %s,%s" (pp_register rd) (pp_address (Address32 imm))
   | Ret -> Format.fprintf ppf "ret"
-  | _ -> Format.fprintf ppf "_Unknown instruction_"
 ;;
 
 let pp_str_or_int = function
