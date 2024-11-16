@@ -82,45 +82,51 @@ let p_ident =
   else p_type >>| fun type_opt -> Ident (str, type_opt)
 ;;
 
-let p_var = p_ident >>| fun ident -> Variable ident
+let p_var_expr = p_ident >>| fun ident -> Variable ident
+let p_var_pat = p_ident >>| fun ident -> PVar ident
 
-let p_empty_list =
-  skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws >>= fun _ -> return Empty_list
+let p_empty_list empty_list =
+  skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return empty_list
 ;;
 
-let make_list expr1 expr2 = Cons_list (expr1, expr2)
+let p_empty_list_expr = p_empty_list Empty_list
+let p_empty_list_pat = p_empty_list PEmptyList
+let make_cons_expr e1 e2 = Cons_list (e1, e2)
+let make_cons_pat p1 p2 = PCons (p1, p2)
 
-let p_cons_list p_expr =
+let p_cons_list p p_empty_list make_list =
   skip_ws
-  *> chainr1
-       (p_expr <|> p_empty_list)
-       (skip_ws *> string "::" *> skip_ws *> return make_list)
+  *> chainr1 (p <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
 ;;
 
-let p_semicolon_list p_expr =
+let p_cons_list_expr p_expr = p_cons_list p_expr p_empty_list_expr make_cons_expr
+let p_cons_list_pat p_pat = p_cons_list p_pat p_empty_list_pat make_cons_pat
+
+let p_semicolon_list p empty_list cons_list =
   skip_ws
   *> string "["
   *> skip_ws
   *> fix (fun p_semi_list ->
     choice
-      [ (p_expr
+      [ (p
          <* skip_ws
          <* string ";"
          <* skip_ws
-         >>= fun expr -> p_semi_list >>= fun rest -> return (Cons_list (expr, rest)))
-      ; (p_expr
-         <* skip_ws
-         <* string "]"
-         <* skip_ws
-         >>| fun expr -> Cons_list (expr, Empty_list))
-      ; (string "]" *> skip_ws >>= fun _ -> return Empty_list)
+         >>= fun hd -> p_semi_list >>= fun tl -> return (cons_list hd tl))
+      ; (p <* skip_ws <* string "]" <* skip_ws >>| fun hd -> cons_list hd empty_list)
+      ; string "]" *> skip_ws *> return empty_list
       ])
 ;;
+
+let p_semicolon_list_expr p_expr = p_semicolon_list p_expr Empty_list make_cons_expr
+let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
 let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2) [@@inline always]
 let make_unexpr op expr = Unary_expr (op, expr) [@@inline always]
+let make_tuple_expr e1 e2 rest = Tuple (e1, e2, rest) [@@inline always]
+let make_tuple_pat p1 p2 rest = PTuple (p1, p2, rest)
 
 let p_binexpr binop_str binop =
   skip_ws *> string binop_str *> skip_ws *> return (make_binexpr binop)
@@ -145,17 +151,20 @@ let greater_or_equal = p_binexpr ">=" Binary_greater_or_equal
 let log_or = p_binexpr "||" Logical_or
 let log_and = p_binexpr "&&" Logical_and
 
-let p_tuple p_expr =
+let p_tuple make p =
   skip_ws
   *> string "("
   *> lift3
-       (fun fst snd tail -> Tuple (fst, snd, tail))
-       p_expr
-       (skip_ws *> string "," *> skip_ws *> p_expr)
-       (many (skip_ws *> string "," *> skip_ws *> p_expr))
+       (fun fst snd tail -> make fst snd tail)
+       p
+       (skip_ws *> string "," *> skip_ws *> p)
+       (many (skip_ws *> string "," *> skip_ws *> p))
   <* skip_ws
   <* string ")"
 ;;
+
+let p_tuple_expr p_expr = p_tuple make_tuple_expr p_expr
+let p_tuple_pat p_pat = p_tuple make_tuple_pat p_pat
 
 let p_if p_expr =
   lift3
@@ -184,7 +193,7 @@ let p_letin p_expr =
   skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
   >>= fun rec_flag ->
   p_ident
-  >>= (fun name -> return name)
+  >>= return
   >>= fun name ->
   skip_ws *> many (skip_ws *> p_ident)
   >>= fun args ->
@@ -214,14 +223,15 @@ let p_let p_expr =
 let app_first expr =
   skip_ws
   *> fix (fun a_exp ->
-    let expr = choice [ p_var; p_if expr; p_letin expr; p_parens a_exp ] in
+    let expr = choice [ p_var_expr; p_if expr; p_letin expr; p_parens a_exp ] in
     expr)
 ;;
 
 let p_apply expr =
   let* name = app_first expr in
   let rec parse_args acc =
-    skip_ws *> choice [ p_var; p_bool; p_int; p_if expr; p_letin expr; p_parens expr ]
+    skip_ws
+    *> choice [ p_var_expr; p_bool; p_int; p_if expr; p_letin expr; p_parens expr ]
     >>= (fun arg -> parse_args (Function_call (acc, arg)))
     <|> return acc
   in
@@ -242,32 +252,38 @@ let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
    (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
 
 let p_pat =
-  fix (fun p_pat ->
+  fix (fun self ->
     skip_ws
-    *> string "|"
-    *> skip_ws
     *> choice
-         [ (string "_" *> skip_ws *> string "->" *> skip_ws >>= fun _ -> return Wild) ])
+         [ p_tuple_pat self
+         ; p_empty_list_pat
+         ; p_semicolon_list_pat self
+         ; p_cons_list_pat p_var_pat
+         ; p_var_pat
+         ; string "_" *> return Wild
+         ])
+  <* skip_ws
+  <* string "->"
 ;;
 
 let p_match p_expr =
   lift4
     (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
-    (skip_ws *> string "match" *> skip_ws *> p_expr <* skip_ws <* string "with" <* skip_ws)
-    (skip_ws *> p_pat <* skip_ws)
-    (skip_ws *> p_expr <* skip_ws)
+    (skip_ws *> string "match" *> p_expr <* skip_ws <* string "with")
+    (skip_ws *> string "|" *> p_pat)
+    (skip_ws *> p_expr)
     (many
-       (skip_ws *> p_pat
-        >>= fun pat -> p_expr <* skip_ws >>= fun expr -> return (pat, expr)))
+       (skip_ws *> string "|" *> p_pat
+        >>= fun pat -> p_expr >>= fun expr -> return (pat, expr)))
 ;;
 
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
     let atom =
-      choice [ p_var; p_int; p_bool; p_parens p_expr; p_semicolon_list p_expr ]
+      choice [ p_var_expr; p_int; p_bool; p_parens p_expr; p_semicolon_list_expr p_expr ]
     in
-    let tuple = p_tuple (p_expr <|> atom) <|> atom in
+    let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in
@@ -279,7 +295,7 @@ let p_expr =
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    let cons_list = p_cons_list comp_or <|> comp_or in
+    let cons_list = p_cons_list_expr comp_or <|> comp_or in
     let ematch = p_match cons_list <|> cons_list in
     let option = p_option ematch <|> ematch in
     option)
