@@ -12,17 +12,21 @@ let pp_list sep pp_item =
 let rec pp_brackets fmt = function
   | [] -> ()
   | _ :: t ->
-    fprintf fmt "%s" "(";
+    fprintf fmt "(";
     pp_brackets fmt t
 ;;
 
-let pp_const fmt = function
-  | Integer n -> fprintf fmt "%s" (Integer.Nonnegative_integer.to_string n)
-  | Bool b ->
-    (match b with
-     | true -> fprintf fmt "%s" "True"
-     | false -> fprintf fmt "%s" "False")
-  | Unit -> fprintf fmt "%s" "()"
+let pp_const fmt const =
+  fprintf
+    fmt
+    "%s"
+    (match const with
+     | Integer n -> Integer.Nonnegative_integer.to_string n
+     | Bool b ->
+       (match b with
+        | true -> "True"
+        | false -> "False")
+     | Unit -> "()")
 ;;
 
 let%test "pp Integer" =
@@ -33,36 +37,22 @@ let%test "pp const Bool" = asprintf "%a" pp_const (Bool true) = "True"
 let%test "pp const Unit" = asprintf "%a" pp_const Unit = "()"
 
 let rec pp_functype fmt (FuncT (first, second, list)) =
-  pp_tp fmt first;
-  fprintf fmt "%s" " -> ";
-  pp_tp fmt second;
+  fprintf fmt "%a -> %a" pp_tp first pp_tp second;
   match list with
   | [] -> ()
-  | _ ->
-    fprintf fmt " -> ";
-    fprintf fmt "%a" (pp_list " -> " pp_tp) list
-
-and wrap_into fmt left right ppf pp_item =
-  fprintf fmt "%s" left;
-  ppf fmt pp_item;
-  fprintf fmt "%s" right
+  | _ -> fprintf fmt " -> %a" (pp_list " -> " pp_tp) list
 
 and pp_tp fmt = function
-  | TUnit -> fprintf fmt "%s" "()"
-  | TInteger -> fprintf fmt "%s" "Integer"
-  | TBool -> fprintf fmt "%s" "Bool"
-  | TreeParam tp -> wrap_into fmt "{" "}" pp_tp tp
-  | ListParam tp -> wrap_into fmt "[" "]" pp_tp tp
+  | TUnit -> fprintf fmt "()"
+  | TInteger -> fprintf fmt "Integer"
+  | TBool -> fprintf fmt "Bool"
+  | TreeParam tp -> fprintf fmt "{%a}" pp_tp tp
+  | ListParam tp -> fprintf fmt "[%a]" pp_tp tp
   | TupleParams (first, second, list) ->
-    fprintf fmt "(";
-    pp_tp fmt first;
-    fprintf fmt ", ";
-    pp_tp fmt second;
+    fprintf fmt "(%a, %a" pp_tp first pp_tp second;
     (match list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" ", ";
-       fprintf fmt "%a" (pp_list ", " pp_tp) list);
+     | _ -> fprintf fmt ", %a" (pp_list ", " pp_tp) list);
     fprintf fmt ")"
   | FunctionType functype -> pp_functype fmt functype
 ;;
@@ -88,21 +78,21 @@ let%test "pp tp FunctionType" =
 ;;
 
 let pp_binop fmt = function
-  | And -> fprintf fmt "%s" "&&"
-  | Or -> fprintf fmt "%s" "||"
-  | Plus -> fprintf fmt "%s" "+"
-  | Minus -> fprintf fmt "%s" "-"
-  | Divide -> fprintf fmt "%s" "`div`"
-  | Mod -> fprintf fmt "%s" "`mod`"
-  | Cons -> fprintf fmt "%s" ":"
-  | Multiply -> fprintf fmt "%s" "*"
-  | Equality -> fprintf fmt "%s" "=="
-  | Pow -> fprintf fmt "%s" "^"
-  | Inequality -> fprintf fmt "%s" "/="
-  | Less -> fprintf fmt "%s" "<"
-  | Greater -> fprintf fmt "%s" ">"
-  | EqualityOrLess -> fprintf fmt "%s" "<="
-  | EqualityOrGreater -> fprintf fmt "%s" ">="
+  | And -> fprintf fmt "&&"
+  | Or -> fprintf fmt "||"
+  | Plus -> fprintf fmt "+"
+  | Minus -> fprintf fmt "-"
+  | Divide -> fprintf fmt "`div`"
+  | Mod -> fprintf fmt "`mod`"
+  | Cons -> fprintf fmt ":"
+  | Multiply -> fprintf fmt "*"
+  | Equality -> fprintf fmt "=="
+  | Pow -> fprintf fmt "^"
+  | Inequality -> fprintf fmt "/="
+  | Less -> fprintf fmt "<"
+  | Greater -> fprintf fmt ">"
+  | EqualityOrLess -> fprintf fmt "<="
+  | EqualityOrGreater -> fprintf fmt ">="
 ;;
 
 let%test "pp binop And" = asprintf "%a" pp_binop And = "&&"
@@ -122,73 +112,43 @@ let pp_ident fmt (Ident ident) = fprintf fmt "%s" ident
 let%test "pp ident" = asprintf "%a" pp_ident (Ident "x") = "x"
 
 let rec pp_pattern fmt ((list, pat, tp_list) : pattern) =
-  pp_brackets fmt tp_list;
-  fprintf fmt "%s" "(";
+  fprintf fmt "%a(" pp_brackets tp_list;
   (match list with
    | [] -> ()
-   | _ ->
-     fprintf fmt "%a" (pp_list "@" pp_ident) list;
-     fprintf fmt "%s" "@");
-  pp_pat fmt pat;
-  fprintf fmt "%s" ")";
+   | _ -> fprintf fmt "%a@" (pp_list "@" pp_ident) list);
+  fprintf fmt "%a)" pp_pat pat;
   match tp_list with
   | [] -> ()
-  | _ ->
-    fprintf fmt "%s" " :: ";
-    fprintf fmt "%a" (pp_list ") :: " pp_tp) tp_list;
-    fprintf fmt "%s" ")"
+  | _ -> fprintf fmt " :: %a)" (pp_list ") :: " pp_tp) tp_list
 
 and pp_listpat fmt = function
-  | PCons (first, second) ->
-    fprintf fmt "%s" "(";
-    pp_pattern fmt first;
-    fprintf fmt "%s" ":";
-    pp_pattern fmt second;
-    fprintf fmt "%s" ")"
+  | PCons (first, second) -> fprintf fmt "(%a%s%a)" pp_pattern first ":" pp_pattern second
   | PEnum list -> fprintf fmt "[%a]" (pp_list ", " pp_pattern) list
 
 and pp_treepat fmt = function
-  | PNul -> fprintf fmt "%s" "$"
+  | PNul -> fprintf fmt "$"
   | PNode (node, left_son, right_son) ->
-    fprintf fmt "%s" "(";
-    pp_pattern fmt node;
-    fprintf fmt "%s" "; ";
-    pp_pattern fmt left_son;
-    fprintf fmt "%s" "; ";
-    pp_pattern fmt right_son;
-    fprintf fmt "%s" ")"
+    fprintf fmt "(%a; %a; %a)" pp_pattern node pp_pattern left_son pp_pattern right_son
 
 and pp_pconst fmt = function
   | OrdinaryPConst const -> pp_const fmt const
-  | NegativePInteger n ->
-    fprintf fmt "%s" "(-";
-    fprintf fmt "%s" (Integer.Nonnegative_integer.to_string n);
-    fprintf fmt "%s" ")"
+  | NegativePInteger n -> fprintf fmt "(-%s)" (Integer.Nonnegative_integer.to_string n)
 
 and pp_pat fmt = function
-  | PWildcard -> fprintf fmt "%s" "_"
+  | PWildcard -> fprintf fmt "_"
   | PConst pconst -> pp_pconst fmt pconst
   | PIdentificator ident -> pp_ident fmt ident
   | PList listpat -> pp_listpat fmt listpat
   | PTuple (first, second, list) ->
-    fprintf fmt "%s" "(";
-    pp_pattern fmt first;
-    fprintf fmt "%s" ", ";
-    pp_pattern fmt second;
+    fprintf fmt "(%a, %a" pp_pattern first pp_pattern second;
     (match list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" ", ";
-       fprintf fmt "%a" (pp_list ", " pp_pattern) list);
-    fprintf fmt "%s" ")"
+     | _ -> fprintf fmt ", %a" (pp_list ", " pp_pattern) list);
+    fprintf fmt ")"
   | PMaybe pattern ->
     (match pattern with
-     | Nothing -> fprintf fmt "%s" "Nothing"
-     | Just pattern ->
-       fprintf fmt "%s" "(";
-       fprintf fmt "%s" "Just ";
-       pp_pattern fmt pattern;
-       fprintf fmt "%s" ")")
+     | Nothing -> fprintf fmt "Nothing"
+     | Just pattern -> fprintf fmt "(Just %a)" pp_pattern pattern)
   | PTree treepat -> pp_treepat fmt treepat
 ;;
 
@@ -304,39 +264,28 @@ let%test "pp pattern with capture, with type" =
 
 let rec pp_comprehension fmt = function
   | Condition expr -> pp_expr fmt expr
-  | Generator (pattern, expr) ->
-    pp_pattern fmt pattern;
-    fprintf fmt "%s" " <- ";
-    pp_expr fmt expr
+  | Generator (pattern, expr) -> fprintf fmt "%a <- %a" pp_pattern pattern pp_expr expr
 
 and pp_ordinarylistbld fmt = function
   | ComprehensionList (expr, comprehension, list) ->
-    fprintf fmt "%s" "[";
-    pp_expr fmt expr;
-    fprintf fmt "%s" " | ";
-    pp_comprehension fmt comprehension;
+    fprintf fmt "[%a | %a" pp_expr expr pp_comprehension comprehension;
     (match list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" ", ";
-       fprintf fmt "%a" (pp_list ", " pp_comprehension) list);
-    fprintf fmt "%s" "]"
+     | _ -> fprintf fmt ", %a" (pp_list ", " pp_comprehension) list);
+    fprintf fmt "]"
   | IncomprehensionlList list -> fprintf fmt "[%a]" (pp_list ", " pp_expr) list
 
 and pp_listbld fmt = function
   | LazyList (first, step, last) ->
-    fprintf fmt "%s" "[";
-    pp_expr fmt first;
+    fprintf fmt "[%a" pp_expr first;
     (match step with
      | None -> ()
-     | Some step ->
-       fprintf fmt ", ";
-       pp_expr fmt step);
-    fprintf fmt "%s" "..";
+     | Some step -> fprintf fmt ", %a" pp_expr step);
+    fprintf fmt "..";
     (match last with
      | None -> ()
      | Some last -> pp_expr fmt last);
-    fprintf fmt "%s" "]"
+    fprintf fmt "]"
   | OrdList ordinarylistbld -> pp_ordinarylistbld fmt ordinarylistbld
 
 and pp_binding fmt = function
@@ -348,40 +297,27 @@ and pp_binding fmt = function
     pp_bindingbody fmt bindingbody;
     (match list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" " where ";
-       fprintf fmt "%a" (pp_list "; " pp_binding) list)
+     | _ -> fprintf fmt " where %a" (pp_list "; " pp_binding) list)
   | FunDef (name, parameter, parameters_list, bindingbody, binding_list) ->
-    pp_ident fmt name;
-    fprintf fmt "%s" " ";
-    pp_pattern fmt parameter;
+    fprintf fmt "%a %a" pp_ident name pp_pattern parameter;
     (match parameters_list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" " ";
-       fprintf fmt "%a" (pp_list " " pp_pattern) parameters_list);
+     | _ -> fprintf fmt " %a" (pp_list " " pp_pattern) parameters_list);
     (match bindingbody with
-     | OrdBody _ -> fprintf fmt "%s" " = "
-     | _ -> fprintf fmt "%s" " ");
+     | OrdBody _ -> fprintf fmt " = "
+     | _ -> fprintf fmt " ");
     pp_bindingbody fmt bindingbody;
     (match binding_list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" " where ";
-       fprintf fmt "%a" (pp_list "; " pp_binding) binding_list)
-  | Decl (pattern, tp) ->
-    pp_pattern fmt pattern;
-    fprintf fmt "%s" " :: ";
-    pp_tp fmt tp
+     | _ -> fprintf fmt " where %a" (pp_list "; " pp_binding) binding_list)
+  | Decl (pattern, tp) -> fprintf fmt "%a :: %a" pp_pattern pattern pp_tp tp
 
 and pp_condition_branch sep fmt (condition, branch) =
-  pp_expr fmt condition;
-  fprintf fmt "%s" sep;
-  pp_expr fmt branch
+  fprintf fmt "%a%s%a" pp_expr condition sep pp_expr branch
 
 and pp_bindingbody fmt = function
   | Guards ((condition, branch), list) ->
-    fprintf fmt "%s" "|";
+    fprintf fmt "|";
     pp_condition_branch " = " fmt (condition, branch);
     (match list with
      | [] -> ()
@@ -389,24 +325,16 @@ and pp_bindingbody fmt = function
   | OrdBody expr -> pp_expr fmt expr
 
 and pp_binary_tree_bld fmt = function
-  | Nul -> fprintf fmt "%s" "$"
+  | Nul -> fprintf fmt "$"
   | Node (node, left_son, right_son) ->
-    fprintf fmt "%s" "(";
-    pp_expr fmt node;
-    fprintf fmt "%s" "; ";
-    pp_expr fmt left_son;
-    fprintf fmt "%s" "; ";
-    pp_expr fmt right_son;
-    fprintf fmt "%s" ")"
+    fprintf fmt "(%a; %a; %a)" pp_expr node pp_expr left_son pp_expr right_son
 
 and pp_case_branch fmt (case, branch) =
   pp_pattern fmt case;
   match branch with
-  | OrdBody _ ->
-    fprintf fmt "%s" " -> ";
-    pp_bindingbody fmt branch
+  | OrdBody _ -> fprintf fmt " -> %a" pp_bindingbody branch
   | Guards ((condition, branch), list) ->
-    fprintf fmt "%s" "|";
+    fprintf fmt "|";
     pp_condition_branch " -> " fmt (condition, branch);
     (match list with
      | [] -> ()
@@ -416,82 +344,49 @@ and pp_expression fmt = function
   | Const const -> pp_const fmt const
   | Identificator ident -> pp_ident fmt ident
   | TupleBld (first, second, list) ->
-    fprintf fmt "(";
-    pp_expr fmt first;
-    fprintf fmt "%s" ", ";
-    pp_expr fmt second;
+    fprintf fmt "(%a, %a" pp_expr first pp_expr second;
     (match list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" ", ";
-       fprintf fmt "%a" (pp_list ", " pp_expr) list);
-    fprintf fmt "%s" ")"
+     | _ -> fprintf fmt ", %a" (pp_list ", " pp_expr) list);
+    fprintf fmt ")"
   | OptionBld expr ->
     (match expr with
-     | Nothing -> fprintf fmt "%s" "Nothing"
-     | Just expr ->
-       fprintf fmt "%s" "Just ";
-       fprintf fmt "%s" "(";
-       pp_expr fmt expr;
-       fprintf fmt "%s" ")")
+     | Nothing -> fprintf fmt "Nothing"
+     | Just expr -> fprintf fmt "Just (%a)" pp_expr expr)
   | ListBld listbld -> pp_listbld fmt listbld
   | Binop (first, binop, second) ->
-    pp_expr fmt first;
-    pp_binop fmt binop;
-    pp_expr fmt second
-  | Neg expr ->
-    fprintf fmt "%s" "(-";
-    pp_expr fmt expr;
-    fprintf fmt "%s" ")"
+    fprintf fmt "%a%a%a" pp_expr first pp_binop binop pp_expr second
+  | Neg expr -> fprintf fmt "(-%a)" pp_expr expr
   | IfThenEsle (condition, case, else_case) ->
-    fprintf fmt "%s" "if ";
-    pp_expr fmt condition;
-    fprintf fmt "%s" " then ";
-    pp_expr fmt case;
-    fprintf fmt "%s" " else ";
-    pp_expr fmt else_case
+    fprintf fmt "if %a then %a else %a" pp_expr condition pp_expr case pp_expr else_case
   | FunctionApply (name, argument, arguments) ->
-    pp_expr fmt name;
-    fprintf fmt "%s" " ";
-    pp_expr fmt argument;
-    fprintf fmt "%a" (pp_list " " pp_expr) arguments
+    fprintf fmt "%a %a %a" pp_expr name pp_expr argument (pp_list " " pp_expr) arguments
   | Lambda (argument, arguments, body) ->
-    fprintf fmt "%s" "\\";
-    pp_pattern fmt argument;
-    fprintf fmt "%a" (pp_list " " pp_pattern) arguments;
-    fprintf fmt "%s" " -> ";
-    pp_expr fmt body
+    fprintf
+      fmt
+      "\\%a %a -> %a"
+      pp_pattern
+      argument
+      (pp_list " " pp_pattern)
+      arguments
+      pp_expr
+      body
   | BinTreeBld binary_tree_bld -> pp_binary_tree_bld fmt binary_tree_bld
   | Case (expr, (case, branch), list) ->
-    fprintf fmt "%s" "case ";
-    pp_expr fmt expr;
-    fprintf fmt "%s" " of ";
-    pp_case_branch fmt (case, branch);
+    fprintf fmt "case %a of %a" pp_expr expr pp_case_branch (case, branch);
     (match list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" "; ";
-       fprintf fmt "%a" (pp_list "; " pp_case_branch) list)
+     | _ -> fprintf fmt "; %a" (pp_list "; " pp_case_branch) list)
   | InnerBindings (binding, binding_list, expr) ->
-    fprintf fmt "%s" "let ";
-    pp_binding fmt binding;
+    fprintf fmt "let %a" pp_binding binding;
     (match binding_list with
      | [] -> ()
-     | _ ->
-       fprintf fmt "%s" "; ";
-       fprintf fmt "%a" (pp_list "; " pp_binding) binding_list);
-    fprintf fmt "%s" " in ";
-    pp_expr fmt expr
+     | _ -> fprintf fmt "; %a" (pp_list "; " pp_binding) binding_list);
+    fprintf fmt " in %a" pp_expr expr
 
 and pp_expr fmt ((expression, tp_list) : expr) =
-  pp_brackets fmt tp_list;
-  fprintf fmt "%s" "(";
-  pp_expression fmt expression;
-  fprintf fmt "%s" ")";
+  fprintf fmt "%a(%a)" pp_brackets tp_list pp_expression expression;
   match tp_list with
   | [] -> ()
-  | _ ->
-    fprintf fmt "%s" " :: ";
-    fprintf fmt "%a" (pp_list ") :: " pp_tp) tp_list;
-    fprintf fmt "%s" ")"
+  | _ -> fprintf fmt " :: %a)" (pp_list ") :: " pp_tp) tp_list
 ;;
