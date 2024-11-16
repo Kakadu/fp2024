@@ -18,7 +18,13 @@ module ShrinkQCheck = struct
        | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
        | Const_string str ->
          string ~shrink:char str >|= fun str' -> Pat_constant (Const_string str'))
-    | Pat_tuple pats -> list ~shrink:shrink_pattern pats >|= fun pats' -> Pat_tuple pats'
+    | Pat_tuple (first_pat, second_pat, pat_list) ->
+      shrink_pattern first_pat
+      >|= (fun first_pat' -> Pat_tuple (first_pat', second_pat, pat_list))
+      <+> shrink_pattern second_pat
+      >|= (fun second_pat' -> Pat_tuple (first_pat, second_pat', pat_list))
+      <+> (list ~shrink:shrink_pattern pat_list
+           >|= fun pat_list' -> Pat_tuple (first_pat, second_pat, pat_list'))
     | Pat_construct (_, None) -> return (Pat_construct ("::", None))
     | Pat_construct (id, Some pat) ->
       shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat')
@@ -48,8 +54,13 @@ module ShrinkQCheck = struct
       shrink_expression exp
       >|= (fun exp' -> Exp_match (exp', cases))
       <+> (list ~shrink:shrink_case cases >|= fun cases' -> Exp_match (exp, cases'))
-    | Exp_tuple exps ->
-      list ~shrink:shrink_expression exps >|= fun exps' -> Exp_tuple exps'
+    | Exp_tuple (first_exp, second_exp, exp_list) ->
+      shrink_expression first_exp
+      >|= (fun first_exp' -> Exp_tuple (first_exp', second_exp, exp_list))
+      <+> shrink_expression second_exp
+      >|= (fun second_exp' -> Exp_tuple (first_exp, second_exp', exp_list))
+      <+> (list ~shrink:shrink_expression exp_list
+           >|= fun exp_list' -> Exp_tuple (first_exp, second_exp, exp_list'))
     | Exp_construct (_, None) -> return (Exp_construct ("::", None))
     | Exp_construct (id, Some exp) ->
       shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp')
@@ -145,9 +156,11 @@ module TestQCheck = struct
          | n ->
            frequency
              [ ( 1
-               , map
-                   (fun t -> Pat_tuple t)
-                   (list_size (int_range 2 5) (self (n / coefficient))) )
+               , map3
+                   (fun f s l -> Pat_tuple (f, s, l))
+                   (self (n / coefficient))
+                   (self (n / coefficient))
+                   (list_size (int_range 0 5) (self (n / coefficient))) )
              ; 1, return (Pat_construct ("[]", None))
              ; ( 1
                , let rec gen_list n =
@@ -157,7 +170,7 @@ module TestQCheck = struct
                      let element = self 0 in
                      let tail = gen_list (n - 1) in
                      map2
-                       (fun e t -> Pat_construct ("::", Some (Pat_tuple [ e; t ])))
+                       (fun e t -> Pat_construct ("::", Some (Pat_tuple (e, t, []))))
                        element
                        tail)
                  in
@@ -214,9 +227,11 @@ module TestQCheck = struct
                          gen_pattern
                          (self (Random.int 3)))) )
              ; ( 1
-               , map
-                   (fun exp_list -> Exp_tuple exp_list)
-                   (list_size (int_range 2 5) (self 0)) )
+               , map3
+                   (fun first second list -> Exp_tuple (first, second, list))
+                   (self (n / coefficient))
+                   (self (n / coefficient))
+                   (list_size (int_range 0 5) (self (n / coefficient))) )
              ; 1, return (Exp_construct ("[]", None))
              ; ( 1
                , let rec gen_list n =
@@ -226,7 +241,7 @@ module TestQCheck = struct
                      let element = self 0 in
                      let tail = gen_list (n - 1) in
                      map2
-                       (fun e t -> Exp_construct ("::", Some (Exp_tuple [ e; t ])))
+                       (fun e t -> Exp_construct ("::", Some (Exp_tuple (e, t, []))))
                        element
                        tail)
                  in

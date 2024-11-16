@@ -56,18 +56,21 @@ let rec pp_pattern ppf = function
   | Pat_any -> fprintf ppf "_"
   | Pat_var id -> pp_ident ppf id
   | Pat_constant const -> pp_constant ppf const
-  | Pat_tuple pat_list ->
-    fprintf ppf "(%a)" (pp_print_list ~pp_sep:pp_comma pp_pattern) pat_list
+  | Pat_tuple (first_pat, second_pat, pat_list) ->
+    fprintf ppf "(%a, %a" pp_pattern first_pat pp_pattern second_pat;
+    if Base.List.is_empty pat_list
+    then fprintf ppf ")"
+    else fprintf ppf ", %a)" (pp_print_list ~pp_sep:pp_comma pp_pattern) pat_list
   | Pat_construct ("::", None) -> fprintf ppf "[]"
   | Pat_construct ("::", Some pat) ->
     (match pat with
-     | Pat_tuple [ head; tail ] ->
+     | Pat_tuple (head, tail, []) ->
        fprintf ppf "[%a" pp_pattern head;
        let rec pp_tail = function
          | Pat_construct (_, None) -> fprintf ppf "]"
          | Pat_construct (_, Some pat_tail) ->
            (match pat_tail with
-            | Pat_tuple [ next_head; next_tail ] ->
+            | Pat_tuple (next_head, next_tail, []) ->
               fprintf ppf "; %a" pp_pattern next_head;
               pp_tail next_tail
             | _ -> ())
@@ -182,18 +185,21 @@ let rec pp_expression ppf = function
       (pp_print_list ~pp_sep:pp_space (fun ppf case ->
          fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
       case_list
-  | Exp_tuple exp_list ->
-    fprintf ppf "(%a)" (pp_print_list ~pp_sep:pp_comma pp_expression) exp_list
+  | Exp_tuple (first_exp, second_exp, exp_list) ->
+    fprintf ppf "(%a, %a" pp_expression first_exp pp_expression second_exp;
+    if Base.List.is_empty exp_list
+    then fprintf ppf ")"
+    else fprintf ppf ", %a)" (pp_print_list ~pp_sep:pp_comma pp_expression) exp_list
   | Exp_construct ("::", None) -> fprintf ppf "[]"
   | Exp_construct ("::", Some exp) ->
     (match exp with
-     | Exp_tuple [ head; tail ] ->
+     | Exp_tuple (head, tail, []) ->
        fprintf ppf "[%a" pp_expression head;
        let rec print_tail = function
          | Exp_construct (_, None) -> fprintf ppf "]"
          | Exp_construct (_, Some exp_tail) ->
            (match exp_tail with
-            | Exp_tuple [ next_head; next_tail ] ->
+            | Exp_tuple (next_head, next_tail, []) ->
               fprintf ppf "; %a" pp_expression next_head;
               print_tail next_tail
             | _ -> ())

@@ -20,7 +20,7 @@ type pattern =
   | Pat_any (** The pattern [_] *)
   | Pat_var of ident (** A variable pattern such as [x] *)
   | Pat_constant of constant (** Patterns such as [1], ['a'], ["true"] *)
-  | Pat_tuple of pattern list (** Patterns [(P1, ... , Pn)] *)
+  | Pat_tuple of pattern * pattern * pattern list (** Patterns [(P1, ... , Pn)] *)
   | Pat_construct of ident * pattern option
   (** [Pat_construct(C, args)] represents:
       - [C]   when [args] is [None],
@@ -53,7 +53,8 @@ and expression =
   | Exp_apply of expression * expression list
   (** [Exp_apply(E0, [E1; ... ; En])] represents [E0 E1 ... En] *)
   | Exp_match of expression * case list (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
-  | Exp_tuple of expression list (** Expressions [(E1, ... , En)] *)
+  | Exp_tuple of expression * expression * expression list
+  (** Expressions [(E1, ... , En)] *)
   | Exp_construct of ident * expression option
   (** [Exp_construct(C, exp)] represents:
       - [C]                when [exp] is [None],

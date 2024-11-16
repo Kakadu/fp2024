@@ -62,7 +62,8 @@ let%expect_test "parsing option and bool types" =
     | None -> false
   ;;
   |};
-  [%expect {|
+  [%expect
+    {|
   let f = (fun a -> (match a with | Some (_) -> true | None -> false));;
   |}]
 ;;

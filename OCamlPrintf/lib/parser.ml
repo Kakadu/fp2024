@@ -101,9 +101,15 @@ let parse_pat_var = parse_ident >>| fun var -> Pat_var var
 let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
 let parse_pat_tuple parse_pat =
+  ws
+  *>
   let* first_pat = parse_pat in
-  let* rest_pat_list = many1 (ws *> string "," *> parse_pat) in
-  return (Pat_tuple (first_pat :: rest_pat_list))
+  ws
+  *> string ","
+  *>
+  let* second_pat = parse_pat in
+  let* rest_pat_list = many (ws *> string "," *> parse_pat) in
+  return (Pat_tuple (first_pat, second_pat, rest_pat_list))
 ;;
 
 let parse_pat_construct_keyword parse_pat =
@@ -122,7 +128,7 @@ let parse_pat_construct parse_pat =
     List.fold_right
       list_
       ~init:(Pat_construct ("[]", None))
-      ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple [ pat; acc ])))
+      ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple (pat, acc, []))))
   in
   choice [ parse_elements; parse_pat_construct_keyword parse_pat ]
 ;;
@@ -265,9 +271,15 @@ let parse_exp_match parse_exp =
 ;;
 
 let parse_exp_tuple parse_exp =
+  ws
+  *>
   let* first_exp = parse_exp in
-  let* rest_exp = many1 (ws *> string "," *> parse_exp) in
-  return (Exp_tuple (first_exp :: rest_exp))
+  ws
+  *> string ","
+  *>
+  let* second_exp = parse_exp in
+  let* rest_exp_list = many (ws *> string "," *> parse_exp) in
+  return (Exp_tuple (first_exp, second_exp, rest_exp_list))
 ;;
 
 let parse_exp_construct_keyword parse_pat =
@@ -287,7 +299,7 @@ let parse_exp_construct parse_exp =
     List.fold_right
       list_
       ~init:(Exp_construct ("[]", None))
-      ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple [ exp; acc ])))
+      ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple (exp, acc, []))))
   in
   choice [ parse_elements; parse_exp_construct_keyword parse_exp ]
 ;;
