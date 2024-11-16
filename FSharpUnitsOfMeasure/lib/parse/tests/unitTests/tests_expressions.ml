@@ -417,7 +417,8 @@ let%expect_test "parse expression tuple of tuples" =
 
 let%expect_test "parse expression tuple of lists" =
   pp pp_expression parse_expr {| ( [1; 2], [3; 4] ) |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_tuple (
        (Expr_list [(Expr_const (Const_int 1)); (Expr_const (Const_int 2))]),
        (Expr_list [(Expr_const (Const_int 3)); (Expr_const (Const_int 4))]),
@@ -443,7 +444,8 @@ let%expect_test "parse expression list of 2 elements" =
 
 let%expect_test "parse expression list of list" =
   pp pp_expression parse_expr {| [ [ 1; 2; 3] ] |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_list
        [(Expr_list
            [(Expr_const (Const_int 1)); (Expr_const (Const_int 2));
@@ -453,12 +455,89 @@ let%expect_test "parse expression list of list" =
 
 let%expect_test "parse expression list of tuples without parentheses" =
   pp pp_expression parse_expr {| [ 1, 2; 3, 4 ] |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_list
        [(Expr_tuple ((Expr_const (Const_int 1)), (Expr_const (Const_int 2)), []));
          (Expr_tuple ((Expr_const (Const_int 3)), (Expr_const (Const_int 4)),
             []))
          ])  |}]
+;;
+
+(************************** Match expressions **************************)
+
+let%expect_test "parse match with one rule" =
+  pp pp_expression parse_expr {| match x with | P1 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))), []))  |}]
+;;
+
+let%expect_test "parse match with two rules" =
+  pp pp_expression parse_expr {| match x with | P1 -> E2 | P2 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))),
+       [(Rule ((Pattern_ident "P2"), (Expr_ident_or_op "E2")))]))  |}]
+;;
+
+let%expect_test "parse match with rules containing OR pattern as the first" =
+  pp pp_expression parse_expr {| match x with | P1 | P2 | P3 -> E1 | P4 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule (
+          (Pattern_or ((Pattern_or ((Pattern_ident "P1"), (Pattern_ident "P2"))),
+             (Pattern_ident "P3"))),
+          (Expr_ident_or_op "E1"))),
+       [(Rule ((Pattern_ident "P4"), (Expr_ident_or_op "E2")))]))  |}]
+;;
+
+let%expect_test "parse match with rules containing OR pattern as the last" =
+  pp pp_expression parse_expr {| match x with | P1 -> E1 | P2 | P3 | P4 -> E2 |};
+  [%expect
+    {|
+    (Expr_match ((Expr_ident_or_op "x"),
+       (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E1"))),
+       [(Rule (
+           (Pattern_or (
+              (Pattern_or ((Pattern_ident "P2"), (Pattern_ident "P3"))),
+              (Pattern_ident "P4"))),
+           (Expr_ident_or_op "E2")))
+         ]
+       ))  |}]
+;;
+
+let%expect_test "parse match without argument should fail" =
+  pp pp_expression parse_expr {| match with | P1 -> E2 | P2 -> E2 |};
+  [%expect
+    {|
+    : no more choices  |}]
+;;
+
+(************************** Function expressions **************************)
+
+let%expect_test "parse match with one rule" =
+  pp pp_expression parse_expr {| function | P1 -> E2 |};
+  [%expect
+    {|
+    (Expr_fun ((Pattern_ident "x"),
+       (Expr_match ((Expr_ident_or_op "x"),
+          (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))), []))
+       ))  |}]
+;;
+
+let%expect_test "parse match with two rules" =
+  pp pp_expression parse_expr {| function | P1 -> E2 | P2 -> E2 |};
+  [%expect
+    {|
+    (Expr_fun ((Pattern_ident "x"),
+       (Expr_match ((Expr_ident_or_op "x"),
+          (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))),
+          [(Rule ((Pattern_ident "P2"), (Expr_ident_or_op "E2")))]))
+       ))  |}]
 ;;
 
 (************************** Parentheses **************************)

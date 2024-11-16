@@ -55,7 +55,7 @@ type pattern =
       - [(P1, P2, P3, ..., Pn)] when pattern list is (::) *)
   | Pattern_list of pattern list (** List patterns: [P1, ..., Pn] *)
   | Pattern_or of pattern * pattern
-  (** Or patterns mean multiple satisfying patterns in pattern matching: [P1 | P2] *)
+  (** Or patterns represent multiple satisfying patterns in pattern matching: [P1 | P2] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type rec_flag =
