@@ -194,38 +194,41 @@ let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> return Unit_lt
 let p_unit_expr = expr_const_factory p_unit
 let p_unit_pat = pat_const_factory p_unit
 
-let p_empty_list =
-  skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws >>= fun _ -> return Empty_list
+let p_empty_list empty_list =
+  skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return empty_list
 ;;
 
-let make_list expr1 expr2 = Cons_list (expr1, expr2)
+let p_empty_list_expr = p_empty_list Empty_list
+let p_empty_list_pat = p_empty_list PEmptyList
+let make_cons_expr e1 e2 = Cons_list (e1, e2)
+let make_cons_pat p1 p2 = PCons (p1, p2)
 
-let p_cons_list p_expr =
+let p_cons_list p p_empty_list make_list =
   skip_ws
-  *> chainr1
-       (p_expr <|> p_empty_list)
-       (skip_ws *> string "::" *> skip_ws *> return make_list)
+  *> chainr1 (p <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
 ;;
 
-let p_semicolon_list p_expr =
+let p_cons_list_expr p_expr = p_cons_list p_expr p_empty_list_expr make_cons_expr
+let p_cons_list_pat p_pat = p_cons_list p_pat p_empty_list_pat make_cons_pat
+
+let p_semicolon_list p empty_list cons_list =
   skip_ws
   *> string "["
   *> skip_ws
   *> fix (fun p_semi_list ->
     choice
-      [ (p_expr
+      [ (p
          <* skip_ws
          <* string ";"
          <* skip_ws
-         >>= fun expr -> p_semi_list >>= fun rest -> return (Cons_list (expr, rest)))
-      ; (p_expr
-         <* skip_ws
-         <* string "]"
-         <* skip_ws
-         >>| fun expr -> Cons_list (expr, Empty_list))
-      ; (string "]" *> skip_ws >>= fun _ -> return Empty_list)
+         >>= fun hd -> p_semi_list >>= fun tl -> return (cons_list hd tl))
+      ; (p <* skip_ws <* string "]" <* skip_ws >>| fun hd -> cons_list hd empty_list)
+      ; string "]" *> skip_ws *> return empty_list
       ])
 ;;
+
+let p_semicolon_list_expr p_expr = p_semicolon_list p_expr Empty_list make_cons_expr
+let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat
 
 (* EXPR PARSERS *)
 let p_parens p = skip_ws *> char '(' *> skip_ws *> p <* skip_ws <* char ')'
@@ -415,23 +418,29 @@ let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
    (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
 
 let p_pat =
-  fix (fun p_pat ->
+  fix (fun self ->
     skip_ws
-    *> string "|"
-    *> skip_ws
     *> choice
-         [ (string "_" *> skip_ws *> string "->" *> skip_ws >>= fun _ -> return Wild) ])
+         [ p_tuple_pat self
+         ; p_empty_list_pat
+         ; p_semicolon_list_pat self
+         ; p_cons_list_pat p_var_pat
+         ; p_var_pat
+         ; string "_" *> return Wild
+         ])
+  <* skip_ws
+  <* string "->"
 ;;
 
 let p_match p_expr =
   lift4
     (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
-    (skip_ws *> string "match" *> skip_ws *> p_expr <* skip_ws <* string "with" <* skip_ws)
-    (skip_ws *> p_pat <* skip_ws)
-    (skip_ws *> p_expr <* skip_ws)
+    (skip_ws *> string "match" *> p_expr <* skip_ws <* string "with")
+    (skip_ws *> string "|" *> p_pat)
+    (skip_ws *> p_expr)
     (many
-       (skip_ws *> p_pat
-        >>= fun pat -> p_expr <* skip_ws >>= fun expr -> return (pat, expr)))
+       (skip_ws *> string "|" *> p_pat
+        >>= fun pat -> p_expr >>= fun expr -> return (pat, expr)))
 ;;
 
 let p_expr =
