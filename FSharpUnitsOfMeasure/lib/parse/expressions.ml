@@ -128,6 +128,31 @@ let parse_expr_list parse_expr =
   return (Expr_list list)
 ;;
 
+let parse_rules parse_expr =
+  let parse_rule =
+    let* pat = parse_pat <* skip_token "->" in
+    let* expr = parse_expr in
+    return (Rule (pat, expr))
+  in
+  (skip_token "|" <|> skip_ws) *> sep_by1 (skip_token "|") parse_rule
+;;
+
+let parse_expr_match parse_expr =
+  let* expr = skip_token "match" *> parse_expr <* skip_token "with" in
+  let* rules = parse_rules parse_expr in
+  match rules with
+  | h :: tl -> return (Expr_match (expr, h, tl))
+  | _ -> fail "Failed to parse match expression"
+;;
+
+let parse_expr_function parse_expr =
+  let* rules = skip_token "function" *> parse_rules parse_expr in
+  match rules with
+  | h :: tl ->
+    return (Expr_fun (Pattern_ident "x", Expr_match (Expr_ident_or_op "x", h, tl)))
+  | _ -> fail "Failed to parse function expression"
+;;
+
 let parse_expr =
   fix (fun parse_expr ->
     let expr =
@@ -135,6 +160,8 @@ let parse_expr =
         [ parse_expr_paren parse_expr
         ; parse_expr_list parse_expr
         ; parse_expr_ite parse_expr
+        ; parse_expr_match parse_expr
+        ; parse_expr_function parse_expr
         ; parse_expr_lambda parse_expr
         ; parse_expr_let parse_expr
         ; parse_expr_const
