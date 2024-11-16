@@ -68,8 +68,6 @@ type pattern =
     (* [@gen QCheck.Gen.(list_size (0 -- 15) gen_ident ) ] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
-let gen_pattern = QCheck.Gen.sized gen_pattern_sized
-
 type is_recursive =
   | Nonrec (** let factorial n = ... *)
   | Rec (** let rec factorial n = ... *)
