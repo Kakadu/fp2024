@@ -253,8 +253,8 @@ let p_apply expr =
 ;;
 
 let p_option p_expr =
-  skip_ws *> (string "None" *> return (Option None))
-  <|> (skip_ws *> string "Some" *> p_expr >>| fun expr -> Option (Some expr))
+  skip_ws *> (string "None" *> skip_ws_sep1 *> return (Option None))
+  <|> (skip_ws *> string "Some" *> skip_ws_sep1 *> p_expr >>| fun expr -> Option (Some expr))
 ;;
 
 let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
