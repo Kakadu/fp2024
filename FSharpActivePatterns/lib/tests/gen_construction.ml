@@ -10,6 +10,7 @@ open FSharpActivePatterns.Ast
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
 open FSharpActivePatterns.PrettyPrinter
+open FSharpActivePatterns.KeywordChecker
 
 let int_e x = Const (Int_lt x)
 let bool_e x = Const (Bool_lt x)
