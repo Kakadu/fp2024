@@ -2,6 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
-
-val parse : string -> construction option
+val is_keyword : string -> bool

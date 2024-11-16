@@ -38,9 +38,9 @@ let rec print_pattern indent fmt = function
     print_pattern (indent + 4) fmt head;
     fprintf fmt "%sTail:\n" (String.make (indent + 2) '-');
     print_pattern (indent + 4) fmt tail
-  | PTuple tuple ->
+  | PTuple (p1, p2, rest) ->
     fprintf fmt "%s| PTuple:\n" (String.make indent '-');
-    List.iter (print_pattern (indent + 2) fmt) tuple
+    List.iter (print_pattern (indent + 2) fmt) (p1 :: p2 :: rest)
   | PConst literal ->
     fprintf fmt "%s| PConst:\n" (String.make indent '-');
     (match literal with

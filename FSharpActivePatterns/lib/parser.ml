@@ -5,6 +5,7 @@
 open Angstrom
 open Ast
 open Base
+open KeywordChecker
 
 (* TECHNICAL FUNCTIONS *)
 
@@ -52,23 +53,6 @@ let p_bool =
   skip_ws *> string "true"
   <|> string "false"
   >>| fun s -> Const (Bool_lt (Bool.of_string s))
-;;
-
-let is_keyword = function
-  | "if"
-  | "then"
-  | "else"
-  | "let"
-  | "in"
-  | "not"
-  | "true"
-  | "false"
-  | "fun"
-  | "match"
-  | "with"
-  | "and"
-  | "_" -> true
-  | _ -> false
 ;;
 
 let p_type =
