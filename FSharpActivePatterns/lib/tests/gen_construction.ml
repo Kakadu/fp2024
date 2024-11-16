@@ -97,30 +97,30 @@ let gen_expr_manual =
          | 0 -> frequency [ 1, gen_const_manual; 1, gen_variable_manual ]
          | n ->
            frequency
-             [ ( 0
+             [ ( 1
                , map3
                    tuple_e
-                   (self (n / 2))
-                   (self (n / 2))
-                   (list_size (0 -- 15) (self (n / 2))) )
-             ; 1, map2 un_e gen_unop_manual (self (n / 2))
-             ; 1, map3 bin_e gen_binop_manual (self (n / 2)) (self (n / 2))
+                   (self (n / 4))
+                   (self (n / 4))
+                   (list_size (0 -- 15) (self (n / 4))) )
+             ; 1, map2 un_e gen_unop_manual (self (n / 4))
+             ; 1, map3 bin_e gen_binop_manual (self (n / 4)) (self (n / 4))
              ; ( 1
                , map3
                    if_e
-                   (self (n / 2))
-                   (self (n / 2))
-                   (oneof [ return None; map (fun e -> Some e) (self (n / 2)) ]) )
-             ; 0, map2 func_def (list_size (0 -- 15) gen_ident_manual) (self (n / 2))
-             ; 1, map2 func_call gen_variable_manual (self (n / 2))
+                   (self (n / 4))
+                   (self (n / 4))
+                   (oneof [ return None; map (fun e -> Some e) (self (n / 4)) ]) )
+             ; 0, map2 func_def (list_size (0 -- 15) gen_ident_manual) (self (n / 4))
+             ; 1, map2 func_call gen_variable_manual (self (n / 4))
                (* TODO: make apply of arbitrary expr*)
              ; ( 0
                , map3
                    letin
                    gen_is_recursive_manual
-                   (gen_let_bind_manual (self (n / 2)))
-                   (list_size (0 -- 15) (gen_let_bind_manual (self (n / 2))))
-                 <*> self (n / 2) )
+                   (gen_let_bind_manual (self (n / 4)))
+                   (list_size (0 -- 15) (gen_let_bind_manual (self (n / 4))))
+                 <*> self (n / 4) )
              ]))
 ;;
 
