@@ -47,7 +47,11 @@ let pp_struct_item_sep ff () = fprintf ff "\n"
 
 let rec pp_pattern ff = function
   | PVar id -> pp_identifier ff id
-  | PTuple l -> fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_pattern) l
+  | PTuple (p1, p2, pl) ->
+    fprintf ff "(%a, %a" pp_pattern p1 pp_pattern p2;
+    (match pl with
+     | [] -> fprintf ff ")"
+     | _ -> fprintf ff ", %a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_pattern) pl)
   | PUnit -> fprintf ff "()"
 ;;
 
@@ -57,7 +61,11 @@ let rec pp_expression ff = function
   | Unary (op, ex) -> fprintf ff "(%a%a)" pp_unary_operator op pp_expression ex
   | Binary (left, op, right) ->
     fprintf ff "(%a %a %a)" pp_expression left pp_binary_operator op pp_expression right
-  | Tuple l -> fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_expression) l
+  | Tuple (ex1, ex2, l) ->
+    fprintf ff "(%a, %a" pp_expression ex1 pp_expression ex2;
+    (match l with
+     | [] -> fprintf ff ")"
+     | _ -> fprintf ff ", %a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_expression) l)
   | ExpressionsList l ->
     fprintf ff "[%a]" (pp_print_list ~pp_sep:pp_list_sep pp_expression) l
   | Construct (name, None) -> fprintf ff "(%a)" pp_identifier name

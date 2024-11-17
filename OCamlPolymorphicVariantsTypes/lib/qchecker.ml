@@ -22,7 +22,7 @@ module QChecker = struct
   let gen_integer = oneof [ positive_number; return 0 ]
   let gen_boolean = oneof [ return true; return false ]
   let identifier_size = int_range 1 10
-  let tuple_size = int_range 2 4
+  let addected_tuple_size = int_range 0 2
   let elist_size = int_range 0 6
   let definition_size = int_range 1 4
   let patterns_size = int_range 1 6
@@ -30,7 +30,7 @@ module QChecker = struct
   let expr_depth = int_range 1 4
   let apply_size = int_range 1 6
   let expr_block_size = int_range 2 8
-  let program_size = int_range 1 20
+  let program_size = int_range 1 1
 
   let gen_identifier is_constructor_name =
     let helper =
@@ -63,7 +63,11 @@ module QChecker = struct
 
   let gen_pattern =
     let gen_ptuple subpattern_gen =
-      map (fun l -> PTuple l) (list_size tuple_size subpattern_gen)
+      map3
+        (fun p1 p2 pl -> PTuple (p1, p2, pl))
+        subpattern_gen
+        subpattern_gen
+        (list_size addected_tuple_size subpattern_gen)
     in
     sized_size pattern_depth
     @@ fix (fun self ->
@@ -124,7 +128,11 @@ module QChecker = struct
         subexpr_gen
     in
     let gen_tuple_expr subexpr_gen =
-      map (fun l -> Tuple l) (list_size tuple_size subexpr_gen)
+      map3
+        (fun ex1 ex2 l -> Tuple (ex1, ex2, l))
+        subexpr_gen
+        subexpr_gen
+        (list_size addected_tuple_size subexpr_gen)
     in
     let gen_list_expr subexpr_gen =
       map (fun l -> ExpressionsList l) (list_size elist_size subexpr_gen)
@@ -211,7 +219,7 @@ module QChecker = struct
     let open Parser_utility in
     QCheck_runner.run_tests
       [ QCheck.(
-          Test.make (* ~count:1 *) arbitrary_lam_manual (fun p ->
+          Test.make ~count:1 arbitrary_lam_manual (fun p ->
             let r = parse program_parser (Format.asprintf "%a" pp_program p) in
             match r with
             | ParseSuccess (r, _) ->

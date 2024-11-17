@@ -42,7 +42,7 @@ type binary_operator =
 
 type pattern =
   | PVar of identifier
-  | PTuple of pattern list (* (<pattern>, ..., <pattern>) *)
+  | PTuple of pattern * pattern * pattern list (* (<pattern>, ..., <pattern>) *)
   | PUnit (* () *)
 [@@deriving show { with_path = false }]
 
@@ -51,7 +51,7 @@ and expression =
   | Variable of identifier (* x | factorial *)
   | Unary of unary_operator * expression (* ~-123 *)
   | Binary of expression * binary_operator * expression (* 12 + 34 | true && (x > y) *)
-  | Tuple of expression list (* (1, 2, (let x = 6 in x)) *)
+  | Tuple of expression * expression * expression list (* (E1, E2, E3 ... EN) *)
   | ExpressionsList of expression list (* [1; 2; (let x = 6 in x)] *)
   | Construct of identifier * expression option (* For example: None or Some <expr> *)
   | Match of expression * case list (* match E with <cases> *)

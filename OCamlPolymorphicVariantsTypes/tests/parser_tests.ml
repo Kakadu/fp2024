@@ -10,6 +10,12 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|(fun (x) -> x) 10;;|};
+  [%expect {|
+    [(EvalItem
+        (Apply ((Lambda ([(PVar "x")], (Variable "x"))),
+           [(Const (IntLiteral 10))])))
+      ] |}];
   test_program {|64_000_000;;|};
   [%expect {|
     [(EvalItem (Const (IntLiteral 64000000)))] |}];
@@ -167,33 +173,32 @@ let%expect_test _ =
     {|
     [(EvalItem
         (ExpressionBlock
-           [(Tuple [(Const (IntLiteral 1)); (Const (IntLiteral 2))]);
-             (Tuple [(Const (IntLiteral 3)); (Const (IntLiteral 4))])]))
+           [(Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), []));
+             (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), []))]))
       ] |}];
   test_program {|   (   1   ,   (    2    ;   3 )   ,  4    )   ;;|};
   [%expect
     {|
     [(EvalItem
-        (Tuple
-           [(Const (IntLiteral 1));
-             (ExpressionBlock [(Const (IntLiteral 2)); (Const (IntLiteral 3))]);
-             (Const (IntLiteral 4))]))
+        (Tuple ((Const (IntLiteral 1)),
+           (ExpressionBlock [(Const (IntLiteral 2)); (Const (IntLiteral 3))]),
+           [(Const (IntLiteral 4))])))
       ] |}];
   test_program {| 1  ,  2  ;  3  ,  4  ;;|};
   [%expect
     {|
     [(EvalItem
         (ExpressionBlock
-           [(Tuple [(Const (IntLiteral 1)); (Const (IntLiteral 2))]);
-             (Tuple [(Const (IntLiteral 3)); (Const (IntLiteral 4))])]))
+           [(Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), []));
+             (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), []))]))
       ] |}];
   test_program {|(1,2);3,4;;|};
   [%expect
     {|
     [(EvalItem
         (ExpressionBlock
-           [(Tuple [(Const (IntLiteral 1)); (Const (IntLiteral 2))]);
-             (Tuple [(Const (IntLiteral 3)); (Const (IntLiteral 4))])]))
+           [(Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), []));
+             (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), []))]))
       ] |}];
   test_program {|(let f x = -x in f) 10;;|};
   [%expect
@@ -286,10 +291,10 @@ let%expect_test _ =
     [(DefineItem
         (Nonrecursive,
          [((PVar "t1"),
-           (Tuple
-              [(Const (IntLiteral 1)); (Const (IntLiteral 2));
-                (Const (IntLiteral 3));
-                (Apply ((Variable "f"), [(Variable "x")]))]))
+           (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)),
+              [(Const (IntLiteral 3)); (Apply ((Variable "f"), [(Variable "x")]))
+                ]
+              )))
            ]));
       (DefineItem
          (Nonrecursive,
@@ -303,7 +308,7 @@ let%expect_test _ =
                     ))
                  ]))
             ]));
-      (EvalItem (Tuple [(Variable "t1"); (Variable "t2")]))] |}];
+      (EvalItem (Tuple ((Variable "t1"), (Variable "t2"), [])))] |}];
   test_program
     {|
    let t1 = 1,2,3, f x;;
@@ -315,10 +320,10 @@ let%expect_test _ =
     [(DefineItem
         (Nonrecursive,
          [((PVar "t1"),
-           (Tuple
-              [(Const (IntLiteral 1)); (Const (IntLiteral 2));
-                (Const (IntLiteral 3));
-                (Apply ((Variable "f"), [(Variable "x")]))]))
+           (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)),
+              [(Const (IntLiteral 3)); (Apply ((Variable "f"), [(Variable "x")]))
+                ]
+              )))
            ]));
       (DefineItem
          (Nonrecursive,
@@ -332,7 +337,7 @@ let%expect_test _ =
                     ))
                  ]))
             ]));
-      (EvalItem (Tuple [(Variable "t1"); (Variable "t2")]))] |}];
+      (EvalItem (Tuple ((Variable "t1"), (Variable "t2"), [])))] |}];
   test_program {|
    let f = fun x -> fun y -> x / (y - 2);;
    f ~-x ~-(f 10 30);;

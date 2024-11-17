@@ -128,7 +128,9 @@ and ptuple state =
     *> element_sequence
          pfirst
          pattern_parser
-         (fun l -> PTuple l)
+         (function
+           | p1 :: p2 :: pl -> PTuple (p1, p2, pl)
+           | _ -> pfirst)
          ","
          (perror "Not found expression after tuple separator: ','")
   in
@@ -196,8 +198,8 @@ and tuple_expr state =
       ex
       boolean_expr
       (function
-        | ex :: [] -> ex
-        | _ as l -> Tuple l)
+        | ex1 :: ex2 :: l -> Tuple (ex1, ex2, l)
+        | _ -> ex)
       ","
       (perror "Not found expression after tuple separator: ','")
   in
