@@ -512,8 +512,7 @@ let%expect_test "parse match with rules containing OR pattern as the last" =
 
 let%expect_test "parse match without argument should fail" =
   pp pp_expression parse_expr {| match with | P1 -> E2 | P2 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     : no more choices  |}]
 ;;
 
@@ -570,6 +569,18 @@ let%expect_test "parse expression inside nested parentheses" =
 let%expect_test "parse expression inside unbalanced nested parentheses should fail" =
   pp pp_expression parse_expr {| (((a b)))))) |};
   [%expect {| : end_of_input |}]
+;;
+
+let%expect_test "parse (a+b)*c with priorities" =
+  pp pp_expression parse_expr {| (a+b)*c |};
+  [%expect {|
+    (Expr_apply (
+       (Expr_apply ((Expr_ident_or_op "*"),
+          (Expr_apply (
+             (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+             (Expr_ident_or_op "b")))
+          )),
+       (Expr_ident_or_op "c")))  |}]
 ;;
 
 (************************** Mix **************************)

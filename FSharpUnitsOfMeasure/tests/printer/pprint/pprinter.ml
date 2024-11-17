@@ -7,6 +7,10 @@ open Ast
 open Format
 
 let pprint_ident ppf ident = fprintf ppf "%s" ident
+let pprint_sep ppf sep () = fprintf ppf " %s " sep
+let pprint_sep_star ppf = pprint_sep ppf "*"
+let pprint_sep_colon ppf = pprint_sep ppf ";"
+let pprint_sep_comma ppf = pprint_sep ppf ","
 
 let pprint_const ppf = function
   | Const_bool b -> fprintf ppf "%b" b
@@ -15,6 +19,18 @@ let pprint_const ppf = function
   | Const_string s -> fprintf ppf "%S" s
   | Const_float f -> fprintf ppf "%f" f
   | Const_unit_of_measure _ -> fprintf ppf "unit of measure"
+;;
+
+let rec pprint_type ppf = function
+  | Type_ident t -> fprintf ppf "%s" t
+  | Type_func (arg, ret) ->
+    (match arg with
+     | Type_func _ ->
+       fprintf ppf "(%a) -> %a" pprint_type arg pprint_type ret
+     | _ -> fprintf ppf "%a -> %a" pprint_type arg pprint_type ret)
+  | Type_tuple (fst, snd, rest) ->
+    let list = fst :: snd :: rest in
+    fprintf ppf "%a" (pp_print_list pprint_type ~pp_sep:pprint_sep_star) list
 ;;
 
 let rec pprint_pat ppf = function

@@ -25,29 +25,29 @@ type unit_of_measure = Unit_of_measure of measure_num * measure
 [@@deriving qcheck, show { with_path = false }]
 
 type constant =
-  | Const_bool of bool (** Boolean constants [true] and [false] *)
   | Const_int of int (** Integer constants: [1] *)
+  | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3f] *)
+  | Const_bool of bool (** Boolean constants [true] and [false] *)
   | Const_char of char (** Char constants: ['a'] *)
   | Const_string of string (** String constants: ["foo"] *)
-  | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3f] *)
   | Const_unit_of_measure of unit_of_measure
   (** Units of measure constants: [5.0<cm>], [3<kg>] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type core_type =
-  | Type_func of core_type * core_type (** Function type: [(T1 -> T2)] *)
+  | Type_ident of string (** Type identificator, such as [int] *)
+  | Type_func of core_type * core_type (** Function type: [T1 -> T2] *)
   | Type_tuple of core_type * core_type * core_type list
   (** [Type_tuple(T1, T2, [T3, ..., Tn])] represents:
       - [(T1 * T2)] when core_type list is []
       - [(T1 * T2 * T3 * ... * Tn)] when core_type list is (::) A B *)
-  | Type_ident of string (** Type identificator, such as [int] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type pattern =
-  | Pattern_wild (** Wildcard patterns [ _ ] *)
   | Pattern_ident of string (** Identificator patterns: [x] *)
-  | Pattern_typed of pattern * core_type (** Typed pattern [x : int] *)
   | Pattern_const of constant
+  | Pattern_wild (** Wildcard patterns [ _ ] *)
+  | Pattern_typed of pattern * core_type (** Typed pattern [x : int] *)
   (** Constant patterns: [1], ['a'], ["foo"], [3.14], [5.0<cm>] *)
   | Pattern_tuple of pattern * pattern * pattern list
   (** [Pattern_tuple(P1, P2, [P3, ..., Pn])] represents:
