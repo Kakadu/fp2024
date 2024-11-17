@@ -18,16 +18,18 @@ module ShrinkQCheck = struct
        | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
        | Const_string str ->
          string ~shrink:char str >|= fun str' -> Pat_constant (Const_string str'))
-    | Pat_tuple (first_pat, second_pat, pat_list) ->
+    | Pat_tuple (first_pat, second_pat, rest_pat_list) ->
       shrink_pattern first_pat
-      >|= (fun first_pat' -> Pat_tuple (first_pat', second_pat, pat_list))
+      >|= (fun first_pat' -> Pat_tuple (first_pat', second_pat, rest_pat_list))
       <+> shrink_pattern second_pat
-      >|= (fun second_pat' -> Pat_tuple (first_pat, second_pat', pat_list))
-      <+> (list ~shrink:shrink_pattern pat_list
-           >|= fun pat_list' -> Pat_tuple (first_pat, second_pat, pat_list'))
+      >|= (fun second_pat' -> Pat_tuple (first_pat, second_pat', rest_pat_list))
+      <+> (list ~shrink:shrink_pattern rest_pat_list
+           >|= fun rest_pat_list' -> Pat_tuple (first_pat, second_pat, rest_pat_list'))
     | Pat_construct (_, None) -> return (Pat_construct ("::", None))
     | Pat_construct (id, Some pat) ->
       shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat')
+    | Pat_constraint (pat, core_type) ->
+      shrink_pattern pat >|= fun pat' -> Pat_constraint (pat', core_type)
   ;;
 
   let rec shrink_expression = function
@@ -50,17 +52,20 @@ module ShrinkQCheck = struct
       list ~shrink:shrink_expression exp_list
       >|= (fun exp_list' -> Exp_apply (exp, exp_list'))
       <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', exp_list))
-    | Exp_match (exp, cases) ->
+    | Exp_match (exp, first_case, rest_case_list) ->
       shrink_expression exp
-      >|= (fun exp' -> Exp_match (exp', cases))
-      <+> (list ~shrink:shrink_case cases >|= fun cases' -> Exp_match (exp, cases'))
-    | Exp_tuple (first_exp, second_exp, exp_list) ->
+      >|= (fun exp' -> Exp_match (exp', first_case, rest_case_list))
+      <+> (shrink_case first_case
+           >|= fun first_case' -> Exp_match (exp, first_case', rest_case_list))
+      <+> (list ~shrink:shrink_case rest_case_list
+           >|= fun rest_case_list' -> Exp_match (exp, first_case, rest_case_list'))
+    | Exp_tuple (first_exp, second_exp, rest_exp_list) ->
       shrink_expression first_exp
-      >|= (fun first_exp' -> Exp_tuple (first_exp', second_exp, exp_list))
+      >|= (fun first_exp' -> Exp_tuple (first_exp', second_exp, rest_exp_list))
       <+> shrink_expression second_exp
-      >|= (fun second_exp' -> Exp_tuple (first_exp, second_exp', exp_list))
-      <+> (list ~shrink:shrink_expression exp_list
-           >|= fun exp_list' -> Exp_tuple (first_exp, second_exp, exp_list'))
+      >|= (fun second_exp' -> Exp_tuple (first_exp, second_exp', rest_exp_list))
+      <+> (list ~shrink:shrink_expression rest_exp_list
+           >|= fun rest_exp_list' -> Exp_tuple (first_exp, second_exp, rest_exp_list'))
     | Exp_construct (_, None) -> return (Exp_construct ("::", None))
     | Exp_construct (id, Some exp) ->
       shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp')
@@ -82,6 +87,8 @@ module ShrinkQCheck = struct
       of_list [ exp1; exp2 ]
       <+> (shrink_expression exp1 >|= fun exp1' -> Exp_sequence (exp1', exp2))
       <+> (shrink_expression exp2 >|= fun exp2' -> Exp_sequence (exp1, exp2'))
+    | Exp_constraint (exp, core_type) ->
+      shrink_expression exp >|= fun exp' -> Exp_constraint (exp', core_type)
 
   and shrink_value_binding value_binding =
     shrink_pattern value_binding.pat
@@ -217,9 +224,14 @@ module TestQCheck = struct
                    gen_bin_op
                    (list_size (int_range 2 2) (self (n / coefficient))) )
              ; ( 1
-               , map2
-                   (fun exp case_list -> Exp_match (exp, case_list))
+               , map3
+                   (fun exp first_case case_list ->
+                     Exp_match (exp, first_case, case_list))
                    (self (n / coefficient))
+                   (map2
+                      (fun left right -> { left; right })
+                      gen_pattern
+                      (self (Random.int 3)))
                    (list_size
                       (int_range 1 3)
                       (map2

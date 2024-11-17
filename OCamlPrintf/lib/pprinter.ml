@@ -195,15 +195,25 @@ let rec pp_expression ppf = function
           fprintf ppf ")")
     in
     handle_exp_list exp_list
-  | Exp_match (exp, case_list) ->
+  | Exp_match (exp, first_case, rest_case_list) ->
     fprintf
       ppf
-      "(match %a with %a)"
+      "(match %a with | %a -> %a"
       pp_expression
       exp
-      (pp_print_list ~pp_sep:pp_space (fun ppf case ->
-         fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
-      case_list
+      pp_pattern
+      first_case.left
+      pp_expression
+      first_case.right;
+    if Base.List.is_empty rest_case_list
+    then fprintf ppf ")"
+    else
+      fprintf
+        ppf
+        " %a)"
+        (pp_print_list ~pp_sep:pp_space (fun ppf case ->
+           fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
+        rest_case_list
   | Exp_tuple (first_exp, second_exp, exp_list) ->
     fprintf ppf "(%a, %a" pp_expression first_exp pp_expression second_exp;
     if Base.List.is_empty exp_list

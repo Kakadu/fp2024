@@ -63,7 +63,8 @@ and expression =
   (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
   | Exp_apply of expression * expression list
   (** [Exp_apply(E0, [E1; ... ; En])] represents [E0 E1 ... En] *)
-  | Exp_match of expression * case list (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
+  | Exp_match of expression * case * case list
+  (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
   | Exp_tuple of expression * expression * expression list
   (** Expressions [(E1, ... , En)] *)
   | Exp_construct of ident * expression option

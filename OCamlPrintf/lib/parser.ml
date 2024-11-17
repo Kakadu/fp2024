@@ -299,19 +299,19 @@ let parse_exp_apply parse_exp =
   parse_exp_apply_op parse_cur_exp
 ;;
 
-let parse_cases parse_exp =
-  let parse_case =
-    let* pat = parse_pattern <* ws <* string "->" in
-    let* exp = ws *> parse_exp in
-    return { left = pat; right = exp }
-  in
-  option () (string "|" *> return ()) *> sep_by1 (ws *> string "|" *> ws) parse_case
+let parse_case parse_exp =
+  option () (string "|" *> return ())
+  *>
+  let* pat = parse_pattern <* ws <* string "->" in
+  let* exp = ws *> parse_exp in
+  return { left = pat; right = exp }
 ;;
 
 let parse_exp_match parse_exp =
   let* exp = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
-  let* case_list = ws *> parse_cases parse_exp in
-  return (Exp_match (exp, case_list))
+  let* first_case = ws *> parse_case parse_exp in
+  let* rest_case_list = ws *> sep_by (ws *> string "|" *> ws) (parse_case parse_exp) in
+  return (Exp_match (exp, first_case, rest_case_list))
 ;;
 
 let parse_exp_tuple parse_exp =
