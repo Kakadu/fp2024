@@ -93,11 +93,6 @@ let%expect_test "print type int * int -> int" =
 
 (************************** Patterns **************************)
 
-let%expect_test "print wildcard pattern" =
-  printf "%a\n" pprint_pat Pattern_wild;
-  [%expect {| _ |}]
-;;
-
 let%expect_test "print identificator pattern" =
   printf "%a\n" pprint_pat (Pattern_ident "ident");
   [%expect {| ident |}]
@@ -108,9 +103,58 @@ let%expect_test "print int constant pattern" =
   [%expect {| 123 |}]
 ;;
 
+let%expect_test "print wildcard pattern" =
+  printf "%a\n" pprint_pat Pattern_wild;
+  [%expect {| _ |}]
+;;
+
 let%expect_test "print OR pattern" =
   printf "%a\n" pprint_pat (Pattern_or (Pattern_ident "P1", Pattern_ident "P2"));
   [%expect {| P1 | P2 |}]
+;;
+
+let%expect_test "print typed pattern x : int" =
+  printf "%a\n" pprint_pat (Pattern_typed (Pattern_ident "x", Type_ident "int"));
+  [%expect {| x : int |}]
+;;
+
+let%expect_test "print tuple pattern (x, y)" =
+  printf "%a\n" pprint_pat (Pattern_tuple (Pattern_ident "x", Pattern_ident "y", []));
+  [%expect {| (x, y) |}]
+;;
+
+let%expect_test "print tuple pattern (x, y, z)" =
+  printf
+    "%a\n"
+    pprint_pat
+    (Pattern_tuple (Pattern_ident "x", Pattern_ident "y", [ Pattern_ident "z" ]));
+  [%expect {| (x, y, z) |}]
+;;
+
+let%expect_test "print tuple of typed idents pattern (x : int, y: int)" =
+  printf
+    "%a\n"
+    pprint_pat
+    (Pattern_tuple
+       ( Pattern_typed (Pattern_ident "x", Type_ident "int")
+       , Pattern_typed (Pattern_ident "y", Type_ident "int")
+       , [] ));
+  [%expect {| (x : int, y : int) |}]
+;;
+
+let%expect_test "print [] list pattern" =
+  printf "%a\n" pprint_pat (Pattern_list []);
+  [%expect {| [] |}]
+;;
+
+let%expect_test "print [x] list pattern" =
+  printf "%a\n" pprint_pat (Pattern_list [ Pattern_ident "x" ]);
+  [%expect {| [x] |}]
+;;
+
+let%expect_test "print [x; y] list pattern" =
+  printf "%a\n" pprint_pat (Pattern_list [ Pattern_ident "x"; Pattern_ident "y" ]);
+  [%expect {| [x; y] |}]
 ;;
 
 (************************** Expressions **************************)
