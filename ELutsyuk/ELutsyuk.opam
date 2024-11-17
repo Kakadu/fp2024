@@ -12,6 +12,7 @@ bug-reports: "https://github.com/vicitori/miniML-interpreter"
 depends: [
   "dune" {>= "3.7"}
   "ppx_inline_test" {with-test}
+  "angstrom"
   "ppx_expect"
   "ppx_deriving"
   "bisect_ppx"
