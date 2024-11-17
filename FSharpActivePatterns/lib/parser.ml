@@ -227,8 +227,8 @@ let p_letin p_expr =
   *> string "let"
   *> skip_ws_sep1
   *>
-  let* rec_flag = string "rec" *> return Rec <|> return Nonrec in
-  let* name = skip_ws_sep1 *> p_ident in
+  let* rec_flag = string "rec" *> skip_ws_sep1 *> return Rec <|> return Nonrec in
+  let* name = p_ident in
   let* args = skip_ws *> many (skip_ws *> p_ident) in
   let* body = skip_ws *> string "=" *> skip_ws *> p_expr in
   let* let_bind_list = skip_ws *> many (skip_ws *> p_let_bind p_expr) in
@@ -256,8 +256,8 @@ let p_let p_expr =
   *> string "let"
   *> skip_ws_sep1
   *>
-  let* rec_flag = string "rec" *> return Rec <|> return Nonrec in
-  let* name = skip_ws_sep1 *> p_ident in
+  let* rec_flag = string "rec" *> skip_ws_sep1 *> return Rec <|> return Nonrec in
+  let* name = p_ident in
   let* args = skip_ws *> many (skip_ws *> p_ident) in
   let* body = skip_ws *> string "=" *> skip_ws *> p_expr in
   let* let_bind_list = skip_ws *> many (skip_ws *> p_let_bind p_expr) in
