@@ -47,7 +47,6 @@ let rec pp_pattern fmt = function
     fprintf fmt ")"
   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
-  | Variant _ -> fprintf fmt "VARIANTS PAT WIP"
 
 and pp_expr fmt expr =
   match expr with

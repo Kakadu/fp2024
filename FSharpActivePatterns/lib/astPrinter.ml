@@ -49,11 +49,6 @@ let rec print_pattern indent fmt = function
      | String_lt s -> fprintf fmt "%sString: %S\n" (String.make (indent + 2) '-') s
      | Unit_lt -> fprintf fmt "%sUnit\n" (String.make (indent + 2) '-'))
   | PVar (Ident (name, _)) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
-  | Variant variants ->
-    fprintf fmt "%s| Variant:\n" (String.make indent '-');
-    List.iter
-      (fun (Ident (v, _)) -> fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') v)
-      variants
 ;;
 
 let print_unary_op indent fmt = function

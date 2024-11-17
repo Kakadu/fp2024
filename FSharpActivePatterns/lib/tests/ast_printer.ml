@@ -221,7 +221,6 @@ let%expect_test "print Ast of match_expr" =
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
-    ; Variant [ Ident ("Green", None); Ident ("Blue", None); Ident ("Red", None) ]
     ; PCons (Wild, PVar (Ident ("xs", None)))
     ]
   in
