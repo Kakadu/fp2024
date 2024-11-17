@@ -37,7 +37,10 @@ let rec pp_pattern fmt = function
   | Wild -> fprintf fmt "_ "
   | PEmptyList -> fprintf fmt "[] "
   | PCons (hd, tl) -> fprintf fmt "%a :: %a" pp_pattern hd pp_pattern tl
-  | PTuple _ -> fprintf fmt "TUPLE PAT WIP"
+  | PTuple (p1, p2, rest) -> 
+    fprintf fmt "(";
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_pattern fmt (p1 :: p2 :: rest);
+    fprintf fmt ")"
   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
   | Variant _ -> fprintf fmt "VARIANTS PAT WIP"
