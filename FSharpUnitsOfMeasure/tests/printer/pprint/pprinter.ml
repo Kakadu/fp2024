@@ -7,10 +7,9 @@ open Ast
 open Format
 
 let pprint_ident ppf ident = fprintf ppf "%s" ident
-let pprint_sep ppf sep () = fprintf ppf " %s " sep
-let pprint_sep_star ppf = pprint_sep ppf "*"
-let pprint_sep_colon ppf = pprint_sep ppf ";"
-let pprint_sep_comma ppf = pprint_sep ppf ","
+let pprint_sep_star ppf () = fprintf ppf " * "
+let pprint_sep_colon ppf () = fprintf ppf "; "
+let pprint_sep_comma ppf () = fprintf ppf ", "
 
 let pprint_const ppf = function
   | Const_bool b -> fprintf ppf "%b" b
@@ -25,20 +24,24 @@ let rec pprint_type ppf = function
   | Type_ident t -> fprintf ppf "%s" t
   | Type_func (arg, ret) ->
     (match arg with
-     | Type_func _ ->
-       fprintf ppf "(%a) -> %a" pprint_type arg pprint_type ret
+     | Type_func _ -> fprintf ppf "(%a) -> %a" pprint_type arg pprint_type ret
      | _ -> fprintf ppf "%a -> %a" pprint_type arg pprint_type ret)
-  | Type_tuple (fst, snd, rest) ->
-    let list = fst :: snd :: rest in
+  | Type_tuple (t1, t2, rest) ->
+    let list = t1 :: t2 :: rest in
     fprintf ppf "%a" (pp_print_list pprint_type ~pp_sep:pprint_sep_star) list
 ;;
 
 let rec pprint_pat ppf = function
-  | Pattern_wild -> fprintf ppf "_"
   | Pattern_ident p -> fprintf ppf "%a" pprint_ident p
   | Pattern_const p -> fprintf ppf "%a" pprint_const p
+  | Pattern_wild -> fprintf ppf "_"
+  | Pattern_typed (p, t) -> fprintf ppf "%a : %a" pprint_pat p pprint_type t
+  | Pattern_tuple (p1, p2, rest) ->
+    let list = p1 :: p2 :: rest in
+    fprintf ppf "(%a)" (pp_print_list pprint_pat ~pp_sep:pprint_sep_comma) list
+  | Pattern_list list ->
+    fprintf ppf "[%a]" (pp_print_list pprint_pat ~pp_sep:pprint_sep_colon) list
   | Pattern_or (p1, p2) -> fprintf ppf "%a | %a" pprint_pat p1 pprint_pat p2
-  | _ -> fprintf ppf "failed to print pattern"
 ;;
 
 let rec pprint_expr ppf = function
