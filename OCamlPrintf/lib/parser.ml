@@ -110,8 +110,8 @@ let parse_core_type =
   let list_type = base_type <* ws <* string "list" >>= fun t -> return (Type_list t) in
   let tuple_type =
     let* first_type = list_type <|> base_type in
-    let* rest_type_list = many1 (ws *> string "*" *> (list_type <|> base_type)) in
-    return (Type_tuple (first_type :: rest_type_list))
+    let* type_list = many1 (ws *> string "*" *> (list_type <|> base_type)) in
+    return (Type_tuple (first_type :: type_list))
   in
   ws *> choice [ tuple_type; list_type; base_type ] <* ws
 ;;
@@ -130,8 +130,8 @@ let parse_pat_tuple parse_pat =
   *> string ","
   *>
   let* second_pat = parse_pat in
-  let* rest_pat_list = many (ws *> string "," *> parse_pat) in
-  return (Pat_tuple (first_pat, second_pat, rest_pat_list))
+  let* pat_list = many (ws *> string "," *> parse_pat) in
+  return (Pat_tuple (first_pat, second_pat, pat_list))
 ;;
 
 let parse_pat_construct_keyword parse_pat =
@@ -250,10 +250,16 @@ let parse_simple_binding parse_exp =
   return { pat; exp }
 ;;
 
+let parse_value_binding parse_exp =
+  parse_fun_binding parse_exp <|> parse_simple_binding parse_exp
+;;
+
 let parse_value_binding_list parse_exp =
-  sep_by1
-    (ws *> keyword "and")
-    (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
+  ws
+  *> option () (string "and" *> return ())
+  *> sep_by
+       (ws *> keyword "and")
+       (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
 ;;
 
 (* -------------------- Expression -------------------- *)
@@ -266,9 +272,12 @@ let parse_exp_let parse_exp =
   *> keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
-  let* value_binding = ws *> parse_value_binding_list parse_exp <* ws <* keyword "in" in
+  let* first_value_binding = ws *> parse_value_binding parse_exp in
+  let* value_binding_list =
+    ws *> parse_value_binding_list parse_exp <* ws <* keyword "in"
+  in
   let* exp = ws *> parse_exp in
-  return (Exp_let (rec_flag, value_binding, exp))
+  return (Exp_let (rec_flag, first_value_binding, value_binding_list, exp))
 ;;
 
 let parse_exp_fun parse_exp =
@@ -310,8 +319,8 @@ let parse_case parse_exp =
 let parse_exp_match parse_exp =
   let* exp = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
   let* first_case = ws *> parse_case parse_exp in
-  let* rest_case_list = ws *> sep_by (ws *> string "|" *> ws) (parse_case parse_exp) in
-  return (Exp_match (exp, first_case, rest_case_list))
+  let* case_list = ws *> sep_by (ws *> string "|" *> ws) (parse_case parse_exp) in
+  return (Exp_match (exp, first_case, case_list))
 ;;
 
 let parse_exp_tuple parse_exp =
@@ -322,8 +331,8 @@ let parse_exp_tuple parse_exp =
   *> string ","
   *>
   let* second_exp = parse_exp in
-  let* rest_exp_list = many (ws *> string "," *> parse_exp) in
-  return (Exp_tuple (first_exp, second_exp, rest_exp_list))
+  let* exp_list = many (ws *> string "," *> parse_exp) in
+  return (Exp_tuple (first_exp, second_exp, exp_list))
 ;;
 
 let parse_exp_construct_keyword parse_exp =
@@ -392,12 +401,14 @@ let parse_struct_value =
   keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
+  let* first_value_binding = parse_value_binding parse_expression in
   let* value_binding_list = parse_value_binding_list parse_expression in
   ws
   *> option
-       (Struct_value (rec_flag, value_binding_list))
+       (Struct_value (rec_flag, first_value_binding, value_binding_list))
        (ws *> keyword "in" *> parse_expression
-        >>| fun exp -> Struct_eval (Exp_let (rec_flag, value_binding_list, exp)))
+        >>| fun exp ->
+        Struct_eval (Exp_let (rec_flag, first_value_binding, value_binding_list, exp)))
 ;;
 
 let parse_structure =

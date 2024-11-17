@@ -18,13 +18,13 @@ module ShrinkQCheck = struct
        | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
        | Const_string str ->
          string ~shrink:char str >|= fun str' -> Pat_constant (Const_string str'))
-    | Pat_tuple (first_pat, second_pat, rest_pat_list) ->
+    | Pat_tuple (first_pat, second_pat, pat_list) ->
       shrink_pattern first_pat
-      >|= (fun first_pat' -> Pat_tuple (first_pat', second_pat, rest_pat_list))
+      >|= (fun first_pat' -> Pat_tuple (first_pat', second_pat, pat_list))
       <+> shrink_pattern second_pat
-      >|= (fun second_pat' -> Pat_tuple (first_pat, second_pat', rest_pat_list))
-      <+> (list ~shrink:shrink_pattern rest_pat_list
-           >|= fun rest_pat_list' -> Pat_tuple (first_pat, second_pat, rest_pat_list'))
+      >|= (fun second_pat' -> Pat_tuple (first_pat, second_pat', pat_list))
+      <+> (list ~shrink:shrink_pattern pat_list
+           >|= fun pat_list' -> Pat_tuple (first_pat, second_pat, pat_list'))
     | Pat_construct (_, None) -> return (Pat_construct ("::", None))
     | Pat_construct (id, Some pat) ->
       shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat')
@@ -40,10 +40,15 @@ module ShrinkQCheck = struct
        | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
        | Const_string str ->
          string ~shrink:char str >|= fun str' -> Exp_constant (Const_string str'))
-    | Exp_let (rec_flag, value_bindings, exp) ->
-      list ~shrink:shrink_value_binding value_bindings
-      >|= (fun value_bindings' -> Exp_let (rec_flag, value_bindings', exp))
-      <+> (shrink_expression exp >|= fun exp' -> Exp_let (rec_flag, value_bindings, exp'))
+    | Exp_let (rec_flag, first_value_binding, value_bindings, exp) ->
+      shrink_value_binding first_value_binding
+      >|= (fun first_value_binding' ->
+            Exp_let (rec_flag, first_value_binding', value_bindings, exp))
+      <+> (list ~shrink:shrink_value_binding value_bindings
+           >|= fun value_bindings' ->
+           Exp_let (rec_flag, first_value_binding, value_bindings', exp))
+      <+> (shrink_expression exp
+           >|= fun exp' -> Exp_let (rec_flag, first_value_binding, value_bindings, exp'))
     | Exp_fun (pat_list, exp) ->
       list ~shrink:shrink_pattern pat_list
       >|= (fun pat_list' -> Exp_fun (pat_list', exp))
@@ -52,20 +57,20 @@ module ShrinkQCheck = struct
       list ~shrink:shrink_expression exp_list
       >|= (fun exp_list' -> Exp_apply (exp, exp_list'))
       <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', exp_list))
-    | Exp_match (exp, first_case, rest_case_list) ->
+    | Exp_match (exp, first_case, case_list) ->
       shrink_expression exp
-      >|= (fun exp' -> Exp_match (exp', first_case, rest_case_list))
+      >|= (fun exp' -> Exp_match (exp', first_case, case_list))
       <+> (shrink_case first_case
-           >|= fun first_case' -> Exp_match (exp, first_case', rest_case_list))
-      <+> (list ~shrink:shrink_case rest_case_list
-           >|= fun rest_case_list' -> Exp_match (exp, first_case, rest_case_list'))
-    | Exp_tuple (first_exp, second_exp, rest_exp_list) ->
+           >|= fun first_case' -> Exp_match (exp, first_case', case_list))
+      <+> (list ~shrink:shrink_case case_list
+           >|= fun case_list' -> Exp_match (exp, first_case, case_list'))
+    | Exp_tuple (first_exp, second_exp, exp_list) ->
       shrink_expression first_exp
-      >|= (fun first_exp' -> Exp_tuple (first_exp', second_exp, rest_exp_list))
+      >|= (fun first_exp' -> Exp_tuple (first_exp', second_exp, exp_list))
       <+> shrink_expression second_exp
-      >|= (fun second_exp' -> Exp_tuple (first_exp, second_exp', rest_exp_list))
-      <+> (list ~shrink:shrink_expression rest_exp_list
-           >|= fun rest_exp_list' -> Exp_tuple (first_exp, second_exp, rest_exp_list'))
+      >|= (fun second_exp' -> Exp_tuple (first_exp, second_exp', exp_list))
+      <+> (list ~shrink:shrink_expression exp_list
+           >|= fun exp_list' -> Exp_tuple (first_exp, second_exp, exp_list'))
     | Exp_construct (_, None) -> return (Exp_construct ("::", None))
     | Exp_construct (id, Some exp) ->
       shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp')
@@ -104,9 +109,13 @@ module ShrinkQCheck = struct
 
   let shrink_structure_item = function
     | Struct_eval exp -> shrink_expression exp >|= fun exp' -> Struct_eval exp'
-    | Struct_value (rec_flag, value_binding_list) ->
-      list ~shrink:shrink_value_binding value_binding_list
-      >|= fun value_binding_list' -> Struct_value (rec_flag, value_binding_list')
+    | Struct_value (rec_flag, first_value_binding, value_binding_list) ->
+      shrink_value_binding first_value_binding
+      >|= (fun first_value_binding' ->
+            Struct_value (rec_flag, first_value_binding', value_binding_list))
+      <+> (list ~shrink:shrink_value_binding value_binding_list
+           >|= fun value_binding_list' ->
+           Struct_value (rec_flag, first_value_binding, value_binding_list'))
   ;;
 
   let shrink_structure = list ~shrink:shrink_structure_item
@@ -198,16 +207,17 @@ module TestQCheck = struct
            frequency
              [ ( 1
                , map3
-                   (fun rec_fl value_binding_list exp ->
-                     Exp_let (rec_fl, value_binding_list, exp))
+                   (fun rec_fl first_value_binding value_binding_list exp ->
+                     Exp_let (rec_fl, first_value_binding, value_binding_list, exp))
                    (frequency [ 1, return Nonrecursive; 1, return Recursive ])
+                   (map2 (fun pat exp -> { pat; exp }) gen_pattern (self (Random.int 3)))
                    (list_size
                       (int_range 1 3)
                       (map2
                          (fun pat exp -> { pat; exp })
                          gen_pattern
                          (self (Random.int 3))))
-                   (self (n / coefficient)) )
+                 <*> self (n / coefficient) )
              ; ( 1
                , map2
                    (fun pat exp -> Exp_fun (pat, exp))
@@ -278,10 +288,11 @@ module TestQCheck = struct
     frequency
       [ 1, map (fun exp -> Struct_eval exp) gen_expression
       ; ( 1
-        , map2
-            (fun rec_flag value_binding_list ->
-              Struct_value (rec_flag, value_binding_list))
+        , map3
+            (fun rec_flag first_value_binding value_binding_list ->
+              Struct_value (rec_flag, first_value_binding, value_binding_list))
             (frequency [ 1, return Nonrecursive; 1, return Recursive ])
+            gen_value_binding
             (list_size (int_range 1 3) gen_value_binding) )
       ]
   ;;

@@ -55,7 +55,7 @@ and case =
 and expression =
   | Exp_ident of ident (** Identifier such as [x] *)
   | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"] *)
-  | Exp_let of rec_flag * value_binding list * expression
+  | Exp_let of rec_flag * value_binding * value_binding list * expression
   (** [Exp_let(flag, [(P1, E1); ... ; (Pn, En)], E)] represents:
       - [let     P1 = E1 and ... and Pn = En in E] when [flag] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
@@ -80,7 +80,7 @@ and expression =
 
 type structure_item =
   | Struct_eval of expression (** [E] *)
-  | Struct_value of rec_flag * value_binding list
+  | Struct_value of rec_flag * value_binding * value_binding list
   (** [Struct_value(flag, [(P1, E1); ... ; (Pn, En))])] represents:
       - [let     P1 = E1 and ... and Pn = En] when [flag] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = En] when [flag] is [Recursive]. *)
