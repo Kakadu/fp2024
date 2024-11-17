@@ -19,7 +19,6 @@ let rec pow base = function
 let shrink_string str =
   string str
   |> filter (fun s -> String.length s < String.length str && not (String.contains s '\\'))
-  |> map (fun s -> s)
 ;;
 
 let shrink_int_to_k_bits x k = int x |> filter (fun x -> abs x < pow 2 k)
