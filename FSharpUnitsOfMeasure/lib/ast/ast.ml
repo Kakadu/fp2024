@@ -64,7 +64,7 @@ type rec_flag =
 [@@deriving qcheck, show { with_path = false }]
 
 (** [(P, E)] represents [let P = E] or [let rec P = E] *)
-type val_binding = pattern * expression [@@deriving qcheck, show { with_path = false }]
+type val_binding = Bind of pattern * expression [@@deriving qcheck, show { with_path = false }]
 
 (** [Rule(P, E)] represents [P -> E] in pattern matching *)
 and rule = Rule of pattern * expression [@@deriving qcheck, show { with_path = false }]
@@ -81,7 +81,7 @@ and expression =
   | Expr_fun of pattern * expression
   (** Anonimous functions: [Expr_fun(P, E)] represents [fun P -> E] *)
   | Expr_let of rec_flag * val_binding * val_binding list * expression
-  (** [Expr_let(rec_flag, (P1, E1), [(P2, E2); ...; (Pn, En)], E)] represents:
+  (** [Expr_let(rec_flag, Bind(P1, E1), [Bind(P2, E2); ...; Bind(Pn, En)], E)] represents:
       - [let P1 = E1 in E] when val_binding list is [] and rec_flag is Nonrecursive
       - [let rec P1 = E1 in E] when val_binding list is [] and rec_flag is Recursive
       - [let P1 = E1 and ... and Pn = En in E] when val_binding list is (::) A B and rec_flag is Nonrecursive
