@@ -421,7 +421,7 @@ let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
    (p_pat <|> p_empty_list)
    (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
 
-let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat ]
+let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat ]
 
 let p_pat =
   fix (fun self ->
