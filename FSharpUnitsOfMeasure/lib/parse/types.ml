@@ -30,8 +30,7 @@ let parse_type_tuple parse_type =
 ;;
 
 let parse_type_paren parse_type =
-  let* core_type = string "(" *> skip_ws *> parse_type <* skip_ws <* string ")" in
-  return core_type
+  string "(" *> skip_ws *> parse_type <* skip_ws <* string ")"
 ;;
 
 let parse_type_func parse_type =
