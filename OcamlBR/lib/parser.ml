@@ -20,8 +20,10 @@ let is_keyword = function
   | "false"
   | "Some"
   | "None"
-  | "and" 
-  | "or" -> true
+  | "and"
+  | "or"
+  | "match"
+  | "with" -> true
   | _ -> false
 ;;
 
@@ -177,19 +179,17 @@ let pbranch pexpr =
     (pstoken "else" *> pexpr >>| (fun e3 -> Some e3) <|> return None)
 ;;
 
-let parse_cases pexpr =
+let pEmatch pexpr =
   let parse_case =
     let* pat = ppattern <* pstoken "->" in
     let* exp = pwhitespace *> pexpr in
     return { left = pat; right = exp }
   in
-  option () (pstoken "|" *> return ()) *> sep_by1 (pstoken "|" *> pwhitespace) parse_case
-;;
-
-let pEmatch pexpr =
-  let* exp = pstoken "match" *> pexpr <* pstoken "with" in
-  let* cases = pwhitespace *> parse_cases pexpr in
-  return (Ematch (exp, cases))
+  lift3
+    (fun e case case_l -> Ematch (e, case, case_l))
+    (pstoken "match" *> pexpr <* pstoken "with")
+    ((pstoken "|" <|> pwhitespace) *> parse_case)
+    (many (pstoken "|" *> parse_case))
 ;;
 
 let pexpr =
