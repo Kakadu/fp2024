@@ -8,13 +8,15 @@ open Pprinter
 module QChecker = struct
   open QCheck.Gen
 
+  let max_number_value = 64_000_000
+
   let positive_number =
-    let p = Random.float 1.0 in
-    if p < 0.5
-    then int_range 1 100
-    else if p < 0.75
-    then int_range 100 1000
-    else int_range 1000 10000
+    match Random.float 1. with
+    | p when p < 0.25 -> int_range 0 (max_number_value / 16)
+    | p when p < 0.5 -> int_range (max_number_value / 16) (max_number_value / 8)
+    | p when p < 0.75 -> int_range (max_number_value / 8) (max_number_value / 4)
+    | p when p < 0.875 -> int_range (max_number_value / 4) (max_number_value / 2)
+    | _ -> int_range (max_number_value / 2) max_number_value
   ;;
 
   let gen_integer = oneof [ positive_number; return 0 ]

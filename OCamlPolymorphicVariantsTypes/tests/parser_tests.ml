@@ -10,6 +10,9 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|64_000_000;;|};
+  [%expect {|
+    [(EvalItem (Const (IntLiteral 64000000)))] |}];
   test_program {|[];;|};
   [%expect {|
     [(EvalItem (ExpressionsList []))] |}];

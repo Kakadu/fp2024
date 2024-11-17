@@ -90,7 +90,8 @@ let element_sequence
 let integer =
   let rec helper counter =
     digit
-    >>= (fun v -> helper (v + (counter * 10)))
+    <|> ssequence "_" *> preturn (-1)
+    >>= (fun v -> if v < 0 then helper counter else helper (v + (counter * 10)))
     <|> (preturn counter >>| fun v -> IntLiteral v)
   in
   skip_ws *> digit >>= helper
