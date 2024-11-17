@@ -238,7 +238,7 @@ let shrink_construction =
 
 let arbitrary_construction =
   QCheck.make
-    gen_construction_manual
+    gen_construction
     ~print:(Format.asprintf "%a" print_construction)
     ~shrink:shrink_construction
 ;;
