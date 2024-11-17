@@ -436,18 +436,30 @@ let p_pat =
          ; p_pat_const
          ; string "_" *> return Wild
          ])
-  <* skip_ws
-  <* string "->"
+;;
+
+let p_lambda p_expr =
+  skip_ws
+  *> string "fun"
+  *> skip_ws_sep1
+  *>
+  let* pat = skip_ws *> p_pat <* skip_ws in
+  let* pat_list = many (skip_ws *> p_pat) <* skip_ws in
+  let* _ = skip_ws *> string "->" in
+  let* body = p_expr in
+  return (Lambda (pat, pat_list, body))
 ;;
 
 let p_match p_expr =
   lift4
     (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
     (skip_ws *> string "match" *> p_expr <* skip_ws <* string "with")
-    (skip_ws *> string "|" *> p_pat)
+    (skip_ws *> string "|" *> p_pat <* skip_ws <* string "->")
     (skip_ws *> p_expr)
     (many
        (skip_ws *> string "|" *> p_pat
+        <* skip_ws
+        <* string "->"
         >>= fun pat -> p_expr >>= fun expr -> return (pat, expr)))
 ;;
 
