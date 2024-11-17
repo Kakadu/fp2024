@@ -58,8 +58,10 @@ let p_bool =
 let p_bool_expr = expr_const_factory p_bool
 let p_bool_pat = pat_const_factory p_bool
 
-let p_string = 
-  char '"' *> take_while (fun c -> not (Char.equal c '"')) <* char '"' >>| fun x -> String_lt x
+let p_string =
+  char '"' *> take_while (fun c -> not (Char.equal c '"'))
+  <* char '"'
+  >>| fun x -> String_lt x
 ;;
 
 let p_string_expr = expr_const_factory p_string
@@ -203,55 +205,61 @@ let p_let_bind p_expr =
 ;;
 
 (*
-let p_letin2 p_expr =
-  skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
-  >>= fun rec_flag ->
-  p_ident
-  >>= return
-  >>= fun name ->
-  skip_ws *> many (skip_ws *> p_ident)
-  >>= fun args ->
-  skip_ws *> string "=" *> skip_ws *> p_expr
-  >>= fun body ->
-  skip_ws *> many (skip_ws *> p_let_bind p_expr)
-  >>= fun let_bind_list ->
-  skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
-  >>= fun in_expr ->
-  return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
-;; *)
+   let p_letin2 p_expr =
+   skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
+   >>= fun rec_flag ->
+   p_ident
+   >>= return
+   >>= fun name ->
+   skip_ws *> many (skip_ws *> p_ident)
+   >>= fun args ->
+   skip_ws *> string "=" *> skip_ws *> p_expr
+   >>= fun body ->
+   skip_ws *> many (skip_ws *> p_let_bind p_expr)
+   >>= fun let_bind_list ->
+   skip_ws *> string "in" *> skip_ws_sep1 *> p_expr
+   >>= fun in_expr ->
+   return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
+   ;; *)
 
 let p_letin p_expr =
-  skip_ws *> string "let" *> skip_ws_sep1 *>
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
   let* rec_flag = string "rec" *> return Rec <|> return Nonrec in
   let* name = skip_ws_sep1 *> p_ident in
   let* args = skip_ws *> many (skip_ws *> p_ident) in
-  let* body = skip_ws *> string "=" *> skip_ws *> p_expr in 
+  let* body = skip_ws *> string "=" *> skip_ws *> p_expr in
   let* let_bind_list = skip_ws *> many (skip_ws *> p_let_bind p_expr) in
   let* in_expr = skip_ws *> string "in" *> skip_ws_sep1 *> p_expr in
   return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
 ;;
 
 (*
-let p_let p_expr =
-  skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
-  >>= fun rec_flag ->
-  p_ident
-  >>= fun name ->
-  skip_ws *> many (skip_ws *> p_ident)
-  >>= fun args ->
-  skip_ws *> string "=" *> skip_ws *> p_expr
-  >>= fun body ->
-  skip_ws *> many (skip_ws *> p_let_bind p_expr)
-  >>= fun let_bind_list ->
-  return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
-;; *)
+   let p_let p_expr =
+   skip_ws *> string "let" *> skip_ws_sep1 *> (string "rec" *> return Rec <|> return Nonrec)
+   >>= fun rec_flag ->
+   p_ident
+   >>= fun name ->
+   skip_ws *> many (skip_ws *> p_ident)
+   >>= fun args ->
+   skip_ws *> string "=" *> skip_ws *> p_expr
+   >>= fun body ->
+   skip_ws *> many (skip_ws *> p_let_bind p_expr)
+   >>= fun let_bind_list ->
+   return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
+   ;; *)
 
 let p_let p_expr =
-  skip_ws *> string "let" *> skip_ws_sep1 *>
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
   let* rec_flag = string "rec" *> return Rec <|> return Nonrec in
-  let* name = skip_ws_sep1 *> p_ident in 
+  let* name = skip_ws_sep1 *> p_ident in
   let* args = skip_ws *> many (skip_ws *> p_ident) in
-  let* body = skip_ws *> string "=" *> skip_ws *> p_expr in 
+  let* body = skip_ws *> string "=" *> skip_ws *> p_expr in
   let* let_bind_list = skip_ws *> many (skip_ws *> p_let_bind p_expr) in
   return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
 ;;
@@ -285,7 +293,8 @@ let p_apply expr =
 
 let p_option p_expr =
   skip_ws *> (string "None" *> skip_ws_sep1 *> return (Option None))
-  <|> (skip_ws *> string "Some" *> skip_ws_sep1 *> p_expr >>| fun expr -> Option (Some expr))
+  <|> (skip_ws *> string "Some" *> skip_ws_sep1 *> p_expr
+       >>| fun expr -> Option (Some expr))
 ;;
 
 let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
