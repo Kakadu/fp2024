@@ -58,6 +58,13 @@ let p_bool =
 let p_bool_expr = expr_const_factory p_bool
 let p_bool_pat = pat_const_factory p_bool
 
+let p_string = 
+  char '"' *> take_while (fun c -> not (Char.equal c '"')) <* char '"' >>| fun x -> String_lt x
+;;
+
+let p_string_expr = expr_const_factory p_string
+let p_string_pat = pat_const_factory p_string
+
 let p_type =
   skip_ws
   *> char ':'
@@ -265,6 +272,7 @@ let p_apply expr =
          ; p_bool_expr
          ; p_unit_expr
          ; p_int_expr
+         ; p_string_expr
          ; p_if expr
          ; p_letin expr
          ; p_parens expr
@@ -288,7 +296,7 @@ let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
    (p_pat <|> p_empty_list)
    (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
 
-let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat ]
+let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat ]
 
 let p_pat =
   fix (fun self ->
@@ -324,6 +332,7 @@ let p_expr =
       choice
         [ p_var_expr
         ; p_int_expr
+        ; p_string_expr
         ; p_unit_expr
         ; p_bool_expr
         ; p_parens p_expr
