@@ -328,8 +328,9 @@ let%expect_test "parse let ... in with single variable" =
   pp pp_expression parse_expr {| let a = 5 in a |};
   [%expect
     {|
-    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
-       [], (Expr_ident_or_op "a"))) |}]
+    (Expr_let (Nonrecursive,
+       (Bind ((Pattern_ident "a"), (Expr_const (Const_int 5)))), [],
+       (Expr_ident_or_op "a"))) |}]
 ;;
 
 let%expect_test "parse let without in expression should fail" =
@@ -338,44 +339,61 @@ let%expect_test "parse let without in expression should fail" =
     : no more choices |}]
 ;;
 
-let%expect_test "parse let rec ... in expression" =
+let%expect_test "parse let rec a = 5 in a expression" =
   pp pp_expression parse_expr {| let rec a = 5 in a |};
   [%expect
     {|
-    (Expr_let (Recursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
-       [], (Expr_ident_or_op "a"))) |}]
+    (Expr_let (Recursive,
+       (Bind ((Pattern_ident "a"), (Expr_const (Const_int 5)))), [],
+       (Expr_ident_or_op "a"))) |}]
 ;;
 
 let%expect_test "parse let ... in expression with function application" =
   pp pp_expression parse_expr {| let a = 5 in f a |};
   [%expect
     {|
-    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
-       [], (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))))) |}]
+    (Expr_let (Nonrecursive,
+       (Bind ((Pattern_ident "a"), (Expr_const (Const_int 5)))), [],
+       (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))))) |}]
 ;;
 
-let%expect_test "parse let ... and ... in expression" =
-  pp pp_expression parse_expr {| let a = 5 and b=4 in e |};
+let%expect_test "parse let a = 5 and b = 4 in e expression" =
+  pp pp_expression parse_expr {| let a = 5 and b = 4 in e |};
   [%expect
     {|
-    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 5))),
-       [((Pattern_ident "b"), (Expr_const (Const_int 4)))],
+    (Expr_let (Nonrecursive,
+       (Bind ((Pattern_ident "a"), (Expr_const (Const_int 5)))),
+       [(Bind ((Pattern_ident "b"), (Expr_const (Const_int 4))))],
        (Expr_ident_or_op "e"))) |}]
 ;;
 
-let%expect_test "parse nested let .. in expressions " =
+let%expect_test "parse nested let .. in expressions" =
   pp pp_expression parse_expr {| let a = 1 in let b = 2 in let c = 3 in e |};
   [%expect
     {|
-    (Expr_let (Nonrecursive, ((Pattern_ident "a"), (Expr_const (Const_int 1))),
-       [],
+    (Expr_let (Nonrecursive,
+       (Bind ((Pattern_ident "a"), (Expr_const (Const_int 1)))), [],
        (Expr_let (Nonrecursive,
-          ((Pattern_ident "b"), (Expr_const (Const_int 2))), [],
+          (Bind ((Pattern_ident "b"), (Expr_const (Const_int 2)))), [],
           (Expr_let (Nonrecursive,
-             ((Pattern_ident "c"), (Expr_const (Const_int 3))), [],
+             (Bind ((Pattern_ident "c"), (Expr_const (Const_int 3)))), [],
              (Expr_ident_or_op "e")))
           ))
        )) |}]
+;;
+
+let%expect_test "parse let f a b c = x in e" =
+  pp pp_expression parse_expr {| let f a b c = x in e |};
+  [%expect
+    {|
+    (Expr_let (Nonrecursive,
+       (Bind ((Pattern_ident "f"),
+          (Expr_fun ((Pattern_ident "a"),
+             (Expr_fun ((Pattern_ident "b"),
+                (Expr_fun ((Pattern_ident "c"), (Expr_ident_or_op "x")))))
+             ))
+          )),
+       [], (Expr_ident_or_op "e"))) |}]
 ;;
 
 (************************** Tuples **************************)
@@ -573,7 +591,8 @@ let%expect_test "parse expression inside unbalanced nested parentheses should fa
 
 let%expect_test "parse (a+b)*c with priorities" =
   pp pp_expression parse_expr {| (a+b)*c |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_apply (
        (Expr_apply ((Expr_ident_or_op "*"),
           (Expr_apply (

@@ -81,7 +81,7 @@ let parse_binding_val parse_expr =
   skip_token "="
   *>
   let* expr = parse_expr in
-  return (name, expr)
+  return (Bind (name, expr))
 ;;
 
 let parse_binding_fun parse_expr =
@@ -94,7 +94,7 @@ let parse_binding_fun parse_expr =
     | h :: tl -> Expr_fun (h, wrap tl)
     | [] -> expr
   in
-  return (name, wrap args)
+  return (Bind (name, wrap args))
 ;;
 
 let parse_single_binding parse_expr =
