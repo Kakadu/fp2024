@@ -1,4 +1,4 @@
-  $ ../quickcheck/quickcheck.exe -seed 123123123
-  random seed: 123123123
+  $ ../quickcheck/quickcheck.exe -seed 113131
+  random seed: 113131
   ================================================================================
   success (ran 1 tests)

@@ -16,12 +16,24 @@ let rec pow base = function
     a * a * if n mod 2 = 0 then 1 else base
 ;;
 
-let shrink_string str =
-  string str
-  |> filter (fun s -> String.length s < String.length str && not (String.contains s '\\'))
+let rec shrink_string str =
+  if String.length str > 10
+  then (
+    let half_len = String.length str / 2 in
+    let first_half = String.sub str 0 half_len in
+    let second_half = String.sub str half_len (String.length str - half_len) in
+    let shrink_half half = shrink_string half in
+    append
+      (return first_half)
+      (append
+         (return second_half)
+         (append (shrink_half first_half) (shrink_half second_half))))
+  else empty
 ;;
 
-let shrink_int_to_k_bits x k = int x |> filter (fun x -> abs x < pow 2 k)
+let rec shrink_int_to_k_bits x k =
+  if abs x < pow 2 k then empty else shrink_int_to_k_bits (x / 2) k
+;;
 
 let shrink_address12 addr =
   match addr with
