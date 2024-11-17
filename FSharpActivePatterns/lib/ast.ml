@@ -72,6 +72,7 @@ let gen_varname =
 ;;
 
 let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
+let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 5) gen_ident)
 
 type literal =
   | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
@@ -191,7 +192,10 @@ let gen_let_bind =
     gen_let_bind_sized n)
 ;;
 
-and let_bind = Let_bind of ident * ident list * expr (** [and sum n m = n+m] *)[@@deriving eq, show {with_path = false}, qcheck]
+and let_bind =
+  | Let_bind of ident * (ident list[@gen gen_ident_small_list]) * expr
+  (** [and sum n m = n+m] *)
+[@@deriving eq, show { with_path = false }, qcheck]
 
 type statement =
   | Let of
@@ -204,6 +208,6 @@ type statement =
 [@@deriving show { with_path = false }, qcheck]
 
 type construction =
-  | Expr of expr (** expression *) [@gen QCheck.Gen.sized gen_expr_sized]
+  | Expr of expr (** expression *)
   | Statement of statement (** statement *)
 [@@deriving show { with_path = false }, qcheck]
