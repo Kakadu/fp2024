@@ -28,3 +28,6 @@ end
 (* type integer = Z.t *)
 
 type nonnegative_integer = Nonnegative_integer.t [@@deriving show { with_path = false }]
+
+let integer n = Nonnegative_integer.of_int n
+let gen_nonnegative_integer = QCheck.Gen.(map integer nat)

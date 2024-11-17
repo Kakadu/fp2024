@@ -5,7 +5,7 @@
  (inline_tests)
  (modules Parser Ast Integer Pprintast Qcheck)
  (preprocess
-  (pps ppx_deriving.show ppx_inline_test ppx_expect))
+  (pps ppx_deriving.show ppx_inline_test ppx_expect ppx_deriving_qcheck))
  (instrumentation
   (backend bisect_ppx)))
 
