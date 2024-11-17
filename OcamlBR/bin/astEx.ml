@@ -1,7 +1,7 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
-
+(*
 open OCamlBR.Ast
 
 let () =
@@ -22,3 +22,4 @@ let () =
   in
   print_endline (show_expr fact_ast)
 ;;
+*)

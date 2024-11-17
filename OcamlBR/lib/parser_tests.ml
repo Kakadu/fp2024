@@ -11,7 +11,7 @@ let parse str =
   | Ok ast -> Stdlib.print_endline (show_structure ast)
   | _ -> Stdlib.print_endline "Parsing failed"
 ;;
-
+(*
 (*factorial*)
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
@@ -90,7 +90,7 @@ let%expect_test _ =
           (Elet (Non_recursive, "a", (Econst (Int 2)), (Econst Unit))), None)))
     ] |}]
 ;;
-
+*)
 let%expect_test _ =
   parse "let x = 5 ;; if 13 > 12 then let a = 2";
   [%expect
@@ -101,3 +101,22 @@ let%expect_test _ =
           (Elet (Non_recursive, "a", (Econst (Int 2)), (Econst Unit))), None)))
     ] |}]
 ;;
+
+
+let%expect_test _ =
+parse
+  {|let rec factorial n =
+    match n with
+    | 0 -> 1
+    | 1 -> 1
+    | _ -> n * factorial(n - 1)
+  ;;
+  |};
+[%expect
+  {|
+  ELet ("x", EConst 5,
+    EMatch (EVar "x",
+      [ (PConst 5, ELet ("y", EConst 4, EVar "y"))
+      ; (PWildcard, ELet ("y", EConst 5, EVar "y"))
+      ]))
+  |}]

@@ -20,7 +20,8 @@ let is_keyword = function
   | "false"
   | "Some"
   | "None"
-  | "and" -> true
+  | "and" 
+  | "or" -> true
   | _ -> false
 ;;
 
@@ -63,7 +64,7 @@ let varname =
        if is_keyword str
        then fail "Variable name conflicts with a keyword"
        else return str
-     | _ -> fail "Variable name must not start with a digit")
+     | _ -> fail "Variable name must not start with a digit, uppercase letter and \' ")
 ;;
 
 let pat_var = varname >>| fun x -> PVar x
@@ -176,6 +177,21 @@ let pbranch pexpr =
     (pstoken "else" *> pexpr >>| (fun e3 -> Some e3) <|> return None)
 ;;
 
+let parse_cases pexpr =
+  let parse_case =
+    let* pat = ppattern <* pstoken "->" in
+    let* exp = pwhitespace *> pexpr in
+    return { left = pat; right = exp }
+  in
+  option () (pstoken "|" *> return ()) *> sep_by1 (pstoken "|" *> pwhitespace) parse_case
+;;
+
+let pEmatch pexpr =
+  let* exp = pstoken "match" *> pexpr <* pstoken "with" in
+  let* cases = pwhitespace *> parse_cases pexpr in
+  return (Ematch (exp, cases))
+;;
+
 let pexpr =
   fix (fun expr ->
     let atom_expr =
@@ -187,6 +203,7 @@ let pexpr =
         ; pEtuple expr
         ; pEfun expr
         ; pEoption expr
+        ; pEmatch expr
         ]
     in
     let let_expr = plet expr in

@@ -59,6 +59,7 @@ type expr =
   (* or expr * expr * expr list, cause invariant n >= 2 *)
   | Elist of expr list (* expressions [E0; ..; En], n >= 0 *)
   | Ebin_op of bin_op * expr * expr (* E0 bin_op E1, e.g. 1 + 3 *)
+  | Ematch of expr * case list (** match E with P1 -> E1 ... Pn -> Pn *)
   | Eun_op of un_op * expr (* E0 un_op E1, e.g. Negative 2, Not true *)
   | Elet of rec_flag * value_binding * value_binding list * expr
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
@@ -67,6 +68,11 @@ type expr =
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1  *)
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }]
+
+(*and case = pattern * expr [@@deriving show { with_path = false }]*)
+and case = {left: pattern; right: expr}
+[@@deriving show {with_path= false}]
+
 
 and value_binding = Evalue_binding of id * expr [@@deriving show { with_path = false }]
 
