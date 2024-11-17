@@ -2,6 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Ast
 open Base
 open Pprinter
 open Format
@@ -31,6 +32,63 @@ let%expect_test "print string constant" =
 let%expect_test "print float constant" =
   printf "%a\n" pprint_const (Const_float 3.142222222);
   [%expect {| 3.142222 |}]
+;;
+
+(************************** Types **************************)
+
+let%expect_test "print type int" =
+  printf "%a\n" pprint_type (Type_ident "int");
+  [%expect {| int |}]
+;;
+
+let%expect_test "print type int -> int" =
+  printf "%a\n" pprint_type (Type_func (Type_ident "int", Type_ident "int"));
+  [%expect {| int -> int |}]
+;;
+
+let%expect_test "print type int -> int -> int" =
+  printf
+    "%a\n"
+    pprint_type
+    (Type_func (Type_ident "int", Type_func (Type_ident "int", Type_ident "int")));
+  [%expect {| int -> int -> int |}]
+;;
+
+let%expect_test "print type int -> (int -> int) and omit parentheses" =
+  printf
+    "%a\n"
+    pprint_type
+    (Type_func (Type_ident "int", Type_func (Type_ident "int", Type_ident "int")));
+  [%expect {| int -> int -> int |}]
+;;
+
+let%expect_test "print type (int -> int) -> int" =
+  printf
+    "%a\n"
+    pprint_type
+    (Type_func (Type_func (Type_ident "int", Type_ident "int"), Type_ident "int"));
+  [%expect {| (int -> int) -> int |}]
+;;
+
+let%expect_test "print type int * int" =
+  printf "%a\n" pprint_type (Type_tuple (Type_ident "int", Type_ident "int", []));
+  [%expect {| int * int |}]
+;;
+
+let%expect_test "print type int * int * int" =
+  printf
+    "%a\n"
+    pprint_type
+    (Type_tuple (Type_ident "int", Type_ident "int", [ Type_ident "int" ]));
+  [%expect {| int * int * int |}]
+;;
+
+let%expect_test "print type int * int -> int" =
+  printf
+    "%a\n"
+    pprint_type
+    (Type_func (Type_tuple (Type_ident "int", Type_ident "int", []), Type_ident "int"));
+  [%expect {| int * int -> int |}]
 ;;
 
 (************************** Patterns **************************)

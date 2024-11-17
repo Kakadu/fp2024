@@ -1,5 +1,6 @@
 (library
- (name property_based_tests)
+ (name pprint)
+ (public_name FSharpUnitsOfMeasure.Pprint)
  (inline_tests)
  (libraries base ast parse qcheck)
  (preprocess
