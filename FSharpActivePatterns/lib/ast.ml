@@ -92,7 +92,10 @@ type expr =
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
-  | Lambda of (ident list[@gen gen_ident_small_list]) * expr (** fun x y -> x + y *)
+  | Lambda of
+      pattern
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 4)))])
+      * expr (** fun x y -> x + y *)
   | Function_call of expr * expr (** [sum 1 ] *)
   | Match of
       expr

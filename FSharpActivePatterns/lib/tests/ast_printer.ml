@@ -9,7 +9,8 @@ open Format
 let%expect_test "print Ast factorial" =
   let factorial =
     Lambda
-      ( [ Ident ("n", None) ]
+      ( PConst (Int_lt 4)
+      , []
       , If_then_else
           ( Bin_expr
               ( Logical_or
@@ -107,9 +108,10 @@ let%expect_test "print Ast factorial" =
 
 let%expect_test "print Ast double func" =
   let ident = Ident ("n", None) in
-  let args = [ ident ] in
+  let pat = PConst (Int_lt 4) in
+  let args = [] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), Variable ident) in
-  let double = Lambda (args, binary_expr) in
+  let double = Lambda (pat, args, binary_expr) in
   print_construction std_formatter @@ Expr double;
   [%expect
     {|

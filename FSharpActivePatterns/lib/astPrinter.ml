@@ -124,11 +124,12 @@ and print_expr indent fmt expr =
     (match else_body with
      | Some body -> print_expr (indent + 2) fmt body
      | None -> fprintf fmt "%s| No else body\n" (String.make (indent + 2) '-'))
-  | Lambda (args, body) ->
-    let args = List.map tag_of_ident args in
+  | Lambda (pat1, pat_list, body) ->
+    (*let args = List.map tag_of_ident args in*)
     fprintf fmt "%s| Func:\n" (String.make indent '-');
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
-    List.iter (fun arg -> fprintf fmt "%s %s\n" (String.make (indent + 2) '-') arg) args;
+    print_pattern (indent + 4) fmt pat1;
+    List.iter (fun pat -> print_pattern (indent + 4) fmt pat) pat_list;
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body
   | Function_call (func, arg) ->
