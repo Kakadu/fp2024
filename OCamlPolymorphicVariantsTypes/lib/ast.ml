@@ -54,12 +54,22 @@ and expression =
   | Tuple of expression list (* (1, 2, (let x = 6 in x)) *)
   | ExpressionsList of expression list (* [1; 2; (let x = 6 in x)] *)
   | Construct of identifier * expression option (* For example: None or Some <expr> *)
+  | Match of expression * case list (* match E with <cases> *)
   | If of expression * expression * expression option (* if x then false else true *)
   | Lambda of pattern list * expression (* fun (x, (y,z)) -> x / (y + z) *)
+  | Func of case list (* function <cases>*)
   | Apply of expression * expression list
     (* factorial (n / 2) | (fun (x, (y,z)) -> x / (y + z)) (5, (2, 1)) *)
   | Define of definition * expression (* let <definition> in <expr> *)
   | ExpressionBlock of expression list (* (let g x = x / 2 in g y; y); *)
+[@@deriving show { with_path = false }]
+
+and case =
+  { pattern : pattern
+  ; filter : expression option
+  ; result : expression
+  }
+(* [(pattern -> E)] or [(pattern when filter -> result)] *)
 [@@deriving show { with_path = false }]
 
 and value_binding = pattern * expression [@@deriving show { with_path = false }]

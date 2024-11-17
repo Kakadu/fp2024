@@ -20,6 +20,8 @@ let is_keyword = function
   | "if" | "then" | "else" -> true
   | "fun" -> true
   | "let" | "rec" | "and" | "in" -> true
+  | "function" -> true
+  | "match" | "with" | "when" -> true
   | _ -> false
 ;;
 
@@ -201,7 +203,8 @@ and tuple_expr state =
   (skip_ws *> (boolean_expr >>= helper)) state
 
 (** Parser of applyable expressions *)
-and applyable_expr state = (skip_ws *> bracket_expr <|> lambda_expr <|> variable) state
+and applyable_expr state =
+  (skip_ws *> bracket_expr <|> func_expr <|> lambda_expr <|> variable) state
 
 (** Parser of basic expressions:
     [<unary>] | [<if-expr>] | [<define_expr>] | [<apply-expr>] | [<const>] *)
@@ -210,9 +213,68 @@ and basic_expr applyable state =
    <|> if_expr
    <|> define_expr
    <|> list_expr
+   <|> match_expr
    <|> constructor
    <|> (if applyable then applyable_expr else apply_expr)
    <|> const_expr)
+    state
+
+(** Parser of case expressions:
+    - [| <pattern> when <expr> -> <expr>]
+    - [| <pattern> -> <expr>]
+
+    If [is_first] is [true] then
+    first case of case expression not expected of '|' sympol at start *)
+and case_parser is_first =
+  let result_helper p f =
+    skip_ws
+    *> (ssequence "->" <|> perror "Not found special sequence '->' in case")
+    *> skip_ws
+    *> (expr <|> perror "Not found expression after special sequence '->' in case")
+    >>= fun ex -> preturn { pattern = p; filter = f; result = ex }
+  in
+  let filter_helper =
+    let filter_expr =
+      skip_ws
+      *> (expr
+          <|> perror "Not found expression of when clause"
+          >>= fun f -> preturn (Some f))
+    in
+    skip_ws *> (keyword "when" *> filter_expr) <|> preturn None
+  in
+  let main_helper =
+    skip_ws *> (pattern_parser <|> perror "Not found pattern of case expression")
+    >>= fun p -> filter_helper >>= fun f -> result_helper p f
+  in
+  skip_ws *> (symbol '|' *> main_helper) <|> if is_first then main_helper else pfail
+
+(** Parser of cases list *)
+and cases_list on_not_found_first state =
+  (skip_ws *> (case_parser true <|> on_not_found_first)
+   >>= fun c -> many (case_parser false) >>= fun cl -> preturn (c :: cl))
+    state
+
+(** Parser of function expression:
+    - [function <case> ... <case> ]*)
+and func_expr state =
+  (skip_ws
+   *> keyword "function"
+   *> cases_list (perror "Not found first case of function expression")
+   >>= fun cl -> preturn (Func cl))
+    state
+
+(** Parser of match expression:
+    - [match <expr> with <case> ... <case> ]*)
+and match_expr state =
+  (skip_ws
+   *> keyword "match"
+   *> skip_ws
+   *> (expr <|> perror "Not found expression after keyword 'match'")
+   >>= fun ex ->
+   skip_ws
+   *> (keyword "with" <|> perror "Not found keyword 'with' of match expression")
+   *> cases_list (perror "Not found first case of match expression")
+   >>= fun cl -> preturn (Match (ex, cl)))
     state
 
 and constructor state =
@@ -256,9 +318,16 @@ and list_expr state =
     - [subparser]: parser of subexpression
     - [operations]: list of one priorety level binary operations *)
 and binary_expression subparser operations state =
+  let helper oper =
+    ssequence oper.oper_view
+    >>= fun cl ->
+    if oper.oper_view = "-"
+    then reverse (ssequence ">") (preturn cl) pfail
+    else preturn cl
+  in
   let operation left oper =
     skip_ws
-    *> ssequence oper.oper_view
+    *> helper oper
     *> (subparser
         >>| (fun right -> Binary (left, oper.oper_ast, right))
         <|> perror

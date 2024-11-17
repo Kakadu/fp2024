@@ -29,6 +29,7 @@ val many : 'a parser -> 'a list parser
 val many1 : 'a parser -> 'a list parser
 val ( <|> ) : 'a parser -> 'a parser -> 'a parser
 val one_of : 'a parser list -> 'a parser
+val reverse : 'a parser -> 'a parser -> 'a parser -> 'a parser
 
 type char_predicate = char -> bool [@@deriving show { with_path = false }]
 

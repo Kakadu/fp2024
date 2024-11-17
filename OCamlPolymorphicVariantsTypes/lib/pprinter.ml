@@ -62,6 +62,16 @@ let rec pp_expression ff = function
     fprintf ff "[%a]" (pp_print_list ~pp_sep:pp_list_sep pp_expression) l
   | Construct (name, None) -> fprintf ff "(%a)" pp_identifier name
   | Construct (name, Some ex) -> fprintf ff "(%a %a)" pp_identifier name pp_expression ex
+  | Match (ex, cases) ->
+    fprintf
+      ff
+      "(match %a with %a)"
+      pp_expression
+      ex
+      (pp_print_list ~pp_sep:pp_print_space pp_case)
+      cases
+  | Func cases ->
+    fprintf ff "(function %a)" (pp_print_list ~pp_sep:pp_print_space pp_case) cases
   | ExpressionBlock l ->
     fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_expr_block_sep pp_expression) l
   | Apply (ex, l) ->
@@ -95,6 +105,20 @@ let rec pp_expression ff = function
       ex
   | Define (defines, ex) ->
     fprintf ff "(let %a in %a)" pp_definition defines pp_expression ex
+
+and pp_case ff c =
+  match c.filter with
+  | None -> fprintf ff "| %a -> (%a)" pp_pattern c.pattern pp_expression c.result
+  | Some f ->
+    fprintf
+      ff
+      "| %a when %a -> (%a)"
+      pp_pattern
+      c.pattern
+      pp_expression
+      f
+      pp_expression
+      c.result
 
 and pp_value_binding ff (p, ex) = fprintf ff "%a = %a" pp_pattern p pp_expression ex
 

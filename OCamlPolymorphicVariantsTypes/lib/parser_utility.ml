@@ -111,6 +111,14 @@ let rec one_of : 'a parser list -> 'a parser =
   | [] -> ParseFail
 ;;
 
+let reverse : 'a parser -> 'a parser -> 'a parser -> 'a parser =
+  fun p pf ps state ->
+  match p state with
+  | ParseFail -> pf state
+  | ParseSuccess (_, ns) -> ps ns
+  | _ as err -> err
+;;
+
 (** Char predicate is function for defining characters *)
 type char_predicate = char -> bool [@@deriving show { with_path = false }]
 

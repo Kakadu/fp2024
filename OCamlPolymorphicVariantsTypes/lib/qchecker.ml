@@ -21,13 +21,13 @@ module QChecker = struct
   let gen_boolean = oneof [ return true; return false ]
   let identifier_size = int_range 1 10
   let tuple_size = int_range 2 4
-  let elist_size = int_range 0 4
-  let definition_size = int_range 1 5
-  let patterns_size = int_range 1 4
+  let elist_size = int_range 0 6
+  let definition_size = int_range 1 4
+  let patterns_size = int_range 1 6
   let pattern_depth = int_range 1 4
-  let expr_depth = int_range 1 8
-  let apply_size = int_range 1 4
-  let expr_block_size = int_range 2 4
+  let expr_depth = int_range 1 4
+  let apply_size = int_range 1 6
+  let expr_block_size = int_range 2 8
   let program_size = int_range 1 20
 
   let gen_identifier is_constructor_name =
@@ -127,12 +127,12 @@ module QChecker = struct
     let gen_list_expr subexpr_gen =
       map (fun l -> ExpressionsList l) (list_size elist_size subexpr_gen)
     in
-    let gen_if_expr subexpr_gen block_gen =
-      let helper = oneof [ return None; map (fun ex -> Some ex) block_gen ] in
+    let gen_if_expr subexpr_gen =
+      let helper = oneof [ return None; map (fun ex -> Some ex) subexpr_gen ] in
       map3
         (fun ex then_ex else_ex -> If (ex, then_ex, else_ex))
         subexpr_gen
-        block_gen
+        subexpr_gen
         helper
     in
     let gen_lambda subexpr_gen =
@@ -153,22 +153,41 @@ module QChecker = struct
         (gen_identifier true)
         (oneof [ return None; map (fun ex -> Some ex) subexpr_gen ])
     in
+    let gen_case subexpr_gen =
+      map3
+        (fun p f res -> { pattern = p; filter = f; result = res })
+        gen_pattern
+        (oneof [ return None; map (fun ex -> Some ex) subexpr_gen ])
+        subexpr_gen
+    in
+    let gen_match_with_expr subexpr_gen =
+      map2
+        (fun ex cases -> Match (ex, cases))
+        subexpr_gen
+        (list_size definition_size (gen_case subexpr_gen))
+    in
+    let gen_function_expr subexpr_gen =
+      map (fun cases -> Func cases) (list_size definition_size (gen_case subexpr_gen))
+    in
     sized_size expr_depth
     @@ fix (fun self ->
          function
          | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
          | depth ->
+           let subexpr_gen = self (depth - 1) in
            frequency
-             [ 1, gen_unary_expr (self (depth - 1))
-             ; 1, gen_binary_expr (self (depth - 1))
-             ; 1, gen_tuple_expr (self (depth - 1))
-             ; 1, gen_list_expr (self (depth - 1))
-             ; 1, gen_define_expr (self (depth - 1))
-             ; 1, gen_if_expr (self (depth / 2)) (self (depth - 1))
-             ; 1, constructor_expr (self (depth - 1))
-             ; 1, gen_lambda (self (depth - 1))
-             ; 1, gen_apply (self (depth - 1))
-             ; 1, gen_expr_block (self (depth - 1))
+             [ 1, gen_unary_expr subexpr_gen
+             ; 1, gen_binary_expr subexpr_gen
+             ; 1, gen_tuple_expr subexpr_gen
+             ; 1, gen_list_expr subexpr_gen
+             ; 1, gen_define_expr subexpr_gen
+             ; 1, gen_if_expr subexpr_gen
+             ; 1, constructor_expr subexpr_gen
+             ; 1, gen_lambda subexpr_gen
+             ; 1, gen_apply subexpr_gen
+             ; 1, gen_expr_block subexpr_gen
+             ; 1, gen_match_with_expr subexpr_gen
+             ; 1, gen_function_expr subexpr_gen
              ])
   ;;
 
