@@ -338,6 +338,7 @@ let p_letin p_expr =
   return (LetIn (rec_flag, let_bind1, let_binds, in_expr))
 ;;
 
+(*
 let p_let p_expr =
   skip_ws
   *> string "let"
