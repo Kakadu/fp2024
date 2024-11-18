@@ -202,6 +202,18 @@ and let_bind =
   (** [and sum n m = n+m] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
+let gen_expr =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_expr_sized n)
+;;
+
+let gen_let_bind =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_let_bind_sized n)
+;;
+
 type statement =
   | Let of
       is_recursive
