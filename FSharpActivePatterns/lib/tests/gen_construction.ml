@@ -197,9 +197,11 @@ and shrink_expr =
     <+> (shrink_expr expr1 >|= fun a' -> Match (value, pat1, a', cases))
     <+> (QCheck.Shrink.list
            ~shrink:(fun (p, e) ->
-             let* p_shr = shrink_pattern p in
+             (let* p_shr = shrink_pattern p in
+              return (p_shr, e))
+             <+>
              let* e_shr = shrink_expr e in
-             return (p_shr, e_shr))
+             return (p, e_shr))
            cases
          >|= fun a' -> Match (value, pat1, expr1, a'))
   | Option (Some e) ->
