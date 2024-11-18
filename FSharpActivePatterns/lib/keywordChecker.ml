@@ -15,6 +15,8 @@ let is_keyword = function
   | "match"
   | "with"
   | "and"
+  | "Some"
+  | "None"
   | "_" -> true
   | _ -> false
 ;;

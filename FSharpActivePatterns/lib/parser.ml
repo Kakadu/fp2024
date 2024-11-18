@@ -335,7 +335,7 @@ let p_expr =
     let apply = p_apply comp_or <|> comp_or in
     let cons_list = p_cons_list_expr apply <|> apply in
     let ematch = p_match cons_list <|> cons_list in
-    let efun = p_lambda ematch <|> ematch in
+    let efun = p_lambda (p_expr <|> ematch) <|> ematch in
     let option = p_option efun <|> efun in
     option)
 ;;
