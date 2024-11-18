@@ -86,7 +86,7 @@ let pident =
 
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
-
+(*
 let pat_tuple =
   let commas = pstoken "," in
   pparens
@@ -102,11 +102,11 @@ let pat_list =
   let semicols = pstoken ";" in
   psqparens (sep_by semicols ppattern <* (semicols <|> pwhitespace) >>| fun patterns -> PList patterns)
 ;;
-
+*)
 let pat_any = pstoken "_" *> return PAny
 
 let ppattern =
-  choice [ pat_tuple; pat_list; pat_const; pat_var; pat_any ]
+  choice [ (*pat_tuple; pat_list;*) pat_const; pat_var; pat_any ]
 
 (*------------------Binary operators-----------------*)
 
