@@ -60,7 +60,7 @@ let p_int_expr = expr_const_factory p_int
 let p_int_pat = pat_const_factory p_int
 
 let p_bool =
-  skip_ws *> string "true" <|> string "false" >>| fun s -> Bool_lt (Bool.of_string s)
+  (skip_ws *> string "true") <|> (skip_ws *> string "false") >>| fun s -> Bool_lt (Bool.of_string s)
 ;;
 
 let p_bool_expr = expr_const_factory p_bool
@@ -274,6 +274,7 @@ let p_pat =
          ; p_cons_list_pat p_var_pat
          ; p_var_pat
          ; p_pat_const
+         ; p_string_pat
          ; string "_" *> return Wild
          ])
 ;;
