@@ -470,6 +470,7 @@ let p_pat =
          ; p_cons_list_pat p_var_pat
          ; p_var_pat
          ; p_pat_const
+         ; p_string_pat
          ; string "_" *> return Wild
          ])
 ;;
