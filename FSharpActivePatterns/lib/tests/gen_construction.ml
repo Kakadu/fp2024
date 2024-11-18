@@ -218,11 +218,12 @@ let shrink_statement =
     >|= (fun a' -> Let (rec_flag, a', let_bind_list))
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> Let (rec_flag, let_bind, a'))
-  | ActivePattern (cases, e) ->
-    QCheck.Shrink.list cases
-    >|= (fun a' -> ActivePattern (a', e))
-    <+> (shrink_expr e >|= fun a' -> ActivePattern (cases, a'))
 ;;
+
+(*| ActivePattern (cases, e) ->
+  QCheck.Shrink.list cases
+  >|= (fun a' -> ActivePattern (a', e))
+  <+> (shrink_expr e >|= fun a' -> ActivePattern (cases, a')) *)
 
 (*
    let gen_construction_manual =

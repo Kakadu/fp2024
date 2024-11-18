@@ -134,7 +134,6 @@ let pp_statement fmt = function
       pp_let_bind
       fmt
       (let_bind :: let_bind_list)
-  | ActivePattern _ -> fprintf fmt "Active pattern TODO"
 ;;
 
 let pp_construction fmt = function

@@ -30,7 +30,7 @@ let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 5) gen_ident)
 type literal =
   | Int_lt of int (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
-  | String_lt of string (** ["Hello world"] *)
+  | String_lt of (string[@gen QCheck.Gen.string_printable]) (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
@@ -125,8 +125,8 @@ type statement =
       * let_bind
       * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 5) gen_let_bind)])
   (** [let name = expr] *)
-  | ActivePattern of (ident list[@gen gen_ident_small_list]) * expr
-  (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
+(*| ActivePattern of (ident list[@gen gen_ident_small_list]) * expr
+  (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)*)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 type construction =
