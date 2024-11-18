@@ -104,43 +104,6 @@ let p_ident =
 let p_var_expr = p_ident >>| fun ident -> Variable ident
 let p_var_pat = p_ident >>| fun ident -> PVar ident
 
-(*
-   let p_empty_list empty_list =
-   skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return empty_list
-   ;;
-   let p_empty_list_expr = p_empty_list Empty_list
-   let p_empty_list_pat = p_empty_list EmptyList
-   let make_cons_expr e1 e2 = Cons_list (e1, e2)
-   let make_cons_pat p1 p2 = PCons (p1, p2)
-
-   let p_cons_list p p_empty_list make_list =
-   skip_ws
-   *> chainr1 (p <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
-   ;;
-
-   let p_cons_list_expr p_expr = p_cons_list p_expr p_empty_list_expr make_cons_expr
-   let p_cons_list_pat p_pat = p_cons_list p_pat p_empty_list_pat make_cons_pat *)
-
-(*
-   let p_semicolon_list p empty_list cons_list =
-  skip_ws
-  *> string "["
-  *> skip_ws
-  *> fix (fun p_semi_list ->
-    choice
-      [ (p
-         <* skip_ws
-         <* string ";"
-         <* skip_ws
-         >>= fun hd -> p_semi_list >>= fun tl -> return (cons_list hd tl))
-      ; (p <* skip_ws <* string "]" <* skip_ws >>| fun hd -> cons_list hd empty_list)
-      ; string "]" *> skip_ws *> return empty_list
-      ])
-;;
-
-let p_semicolon_list_expr p_expr = p_semicolon_list p_expr Empty_list make_cons_expr
-let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat *)
-
 let p_empty_list =
   skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return Empty_list
 ;;
