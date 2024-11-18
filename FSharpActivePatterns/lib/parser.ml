@@ -198,20 +198,16 @@ let p_empty_list empty_list =
   skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return empty_list
 ;;
 
-let p_empty_list_expr = p_empty_list Empty_list
-let p_empty_list_pat = p_empty_list PEmptyList
-let make_cons_expr e1 e2 = Cons_list (e1, e2)
-let make_cons_pat p1 p2 = PCons (p1, p2)
+   let p_cons_list p p_empty_list make_list =
+   skip_ws
+   *> chainr1 (p <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
+   ;;
 
-let p_cons_list p p_empty_list make_list =
-  skip_ws
-  *> chainr1 (p <|> p_empty_list) (skip_ws *> string "::" *> skip_ws *> return make_list)
-;;
+   let p_cons_list_expr p_expr = p_cons_list p_expr p_empty_list_expr make_cons_expr
+   let p_cons_list_pat p_pat = p_cons_list p_pat p_empty_list_pat make_cons_pat *)
 
-let p_cons_list_expr p_expr = p_cons_list p_expr p_empty_list_expr make_cons_expr
-let p_cons_list_pat p_pat = p_cons_list p_pat p_empty_list_pat make_cons_pat
-
-let p_semicolon_list p empty_list cons_list =
+(*
+   let p_semicolon_list p empty_list cons_list =
   skip_ws
   *> string "["
   *> skip_ws
@@ -228,7 +224,54 @@ let p_semicolon_list p empty_list cons_list =
 ;;
 
 let p_semicolon_list_expr p_expr = p_semicolon_list p_expr Empty_list make_cons_expr
-let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat
+let p_semicolon_list_pat p_pat = p_semicolon_list p_pat PEmptyList make_cons_pat *)
+
+let p_empty_list =
+  skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return Empty_list
+;;
+
+let make_list e1 e2 = Cons_list (e1, e2)
+
+(* elem because it is for both patterns and expressions *)
+let p_cons_list p_elem =
+  let rec p_cons_tail acc =
+    skip_ws *> string "::" *> skip_ws *> p_elem
+    >>= (fun next -> p_cons_tail (Cons_list (next, acc)))
+    <|> return acc
+  in
+  p_elem
+  >>= fun hd ->
+  skip_ws *> string "::" *> skip_ws *> p_elem
+  >>= fun next -> p_cons_tail (Cons_list (next, Cons_list (hd, Empty_list)))
+;;
+
+let p_cons_list_expr p_expr = p_cons_list p_expr >>= fun l -> return (List l)
+let p_cons_list_pat p_pat = p_cons_list p_pat >>= fun l -> return (PList l)
+
+let p_semicolon_list p_elem empty_list =
+  skip_ws
+  *> string "["
+  *> skip_ws
+  *> fix (fun p_semi_list ->
+    choice
+      [ (p_elem
+         <* skip_ws
+         <* string ";"
+         <* skip_ws
+         >>= fun hd -> p_semi_list >>= fun tl -> return (make_list hd tl))
+      ; (p_elem <* skip_ws <* string "]" <* skip_ws >>| fun hd -> make_list hd empty_list)
+      ; string "]" *> skip_ws *> return empty_list
+      ])
+;;
+
+let p_semicolon_list_expr p_expr =
+  p_semicolon_list p_expr Empty_list >>= fun l -> return (List l)
+;;
+
+let p_semicolon_list_pat p_pat =
+  p_semicolon_list p_pat Empty_list >>= fun l -> return (PList l)
+;;
+
 let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> skip_ws *> return Unit_lt
 let p_unit_expr = expr_const_factory p_unit
 let p_unit_pat = pat_const_factory p_unit
@@ -414,15 +457,8 @@ let p_option p_expr =
        >>| fun expr -> Option (Some expr))
 ;;
 
-let make_cons_pat pat1 pat2 = PCons (pat1, pat2)
-(*
-   let p_cons_pat p_pat =
-   skip_ws
-   *> chainr1
-   (p_pat <|> p_empty_list)
-   (skip_ws *> string "::" *> skip_ws *> return make_cons_pat) *)
-
 let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat ]
+let p_empty_list_pat = p_empty_list >>= fun _ -> return (PList Empty_list)
 
 let p_pat =
   fix (fun self ->

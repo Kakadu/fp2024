@@ -35,14 +35,19 @@ let pp_rec_flag fmt = function
   | Nonrec -> ()
 ;;
 
-let rec pp_list pp fmt =
-  fprintf fmt "[";
-  function
-  | Empty_list -> fprintf fmt "]"
-  | Cons_list (hd, Empty_list) -> fprintf fmt "%a]" pp hd
+let pp_list pp fmt = function
+  | Empty_list -> fprintf fmt "[]"
+  | Cons_list (hd, Empty_list) -> fprintf fmt "[%a]" pp hd
   | Cons_list (hd, tl) ->
-    fprintf fmt "%a; " pp hd;
-    fprintf fmt "%a" (pp_list pp) tl
+    fprintf fmt "[%a" pp hd;
+    let rec pp_tail fmt = function
+      | Empty_list -> fprintf fmt "]"
+      | Cons_list (hd, Empty_list) -> fprintf fmt "; %a]" pp hd
+      | Cons_list (hd, tl) ->
+        fprintf fmt "; %a" pp hd;
+        pp_tail fmt tl
+    in
+    pp_tail fmt tl
 ;;
 
 let rec pp_pattern fmt = function
