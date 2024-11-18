@@ -183,7 +183,9 @@ and shrink_expr =
     <+> (shrink_expr f >|= fun a' -> Function_call (a', arg))
     <+> (shrink_expr arg >|= fun a' -> Function_call (f, a'))
   | Lambda (pat, pat_list, body) ->
-    shrink_expr body >|= fun body' -> Lambda (pat, pat_list, body')
+    shrink_expr body
+    >|= (fun body' -> Lambda (pat, pat_list, body'))
+    <+> (QCheck.Shrink.list pat_list >|= fun pat_list' -> Lambda (pat, pat_list', body))
   | Match (value, pat1, expr1, cases) ->
     of_list [ value; expr1 ]
     <+> (shrink_expr value >|= fun a' -> Match (a', pat1, expr1, cases))
