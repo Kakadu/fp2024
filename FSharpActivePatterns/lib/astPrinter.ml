@@ -29,15 +29,17 @@ let print_bin_op indent fmt = function
   | Binary_and_bitwise -> fprintf fmt "%s| Binary And Bitwise\n" (String.make indent '-')
 ;;
 
+let rec print_list printer indent fmt = function
+  | Empty_list -> fprintf fmt "%s| Empty_list:\n" (String.make indent ' ')
+  | Cons_list (hd, tl) ->
+    fprintf fmt "%s| Cons_list:\n" (String.make indent ' ');
+    printer (indent + 2) fmt hd;
+    print_list printer (indent + 2) fmt tl
+;;
+
 let rec print_pattern indent fmt = function
   | Wild -> fprintf fmt "%s| Wild\n" (String.make indent '-')
-  | PEmptyList -> fprintf fmt "%s| Empty_list\n" (String.make indent '-')
-  | PCons (head, tail) ->
-    fprintf fmt "%s| PCons:\n" (String.make indent '-');
-    fprintf fmt "%sHead:\n" (String.make (indent + 2) '-');
-    print_pattern (indent + 4) fmt head;
-    fprintf fmt "%sTail:\n" (String.make (indent + 2) '-');
-    print_pattern (indent + 4) fmt tail
+  | PList l -> print_list print_pattern indent fmt l
   | PTuple (p1, p2, rest) ->
     fprintf fmt "%s| PTuple:\n" (String.make indent '-');
     List.iter (print_pattern (indent + 2) fmt) (p1 :: p2 :: rest)
@@ -79,11 +81,7 @@ and print_expr indent fmt expr =
   | Const (String_lt s) ->
     fprintf fmt "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> fprintf fmt "%s| Const(Unit)\n" (String.make indent '-')
-  | Cons_list (expr1, expr2) ->
-    fprintf fmt "%s| Cons_list expr:\n" (String.make indent '-');
-    print_expr (indent + 2) fmt expr1;
-    print_expr (indent + 2) fmt expr2
-  | Empty_list -> fprintf fmt "%s| Empty_list\n" (String.make indent '-')
+  | List l -> print_list print_expr indent fmt l
   | Tuple (e1, e2, rest) ->
     fprintf fmt "%s| Tuple:\n" (String.make indent '-');
     List.iter (print_expr (indent + 2) fmt) (e1 :: e2 :: rest)

@@ -57,10 +57,14 @@ type unary_operator =
   | Unary_not (** unary [not] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
+type 'a list_type =
+  | Cons_list of 'a * 'a list_type
+  | Empty_list
+[@@deriving eq, show { with_path = false }, qcheck]
+
 type pattern =
   | Wild (** [_] *)
-  | PEmptyList (** [] *)
-  | PCons of pattern * pattern (** | [hd :: tl] -> *)
+  | PList of pattern list_type (**[ [], hd :: tl, [1;2;3] ]*)
   | PTuple of
       pattern
       * pattern
@@ -83,11 +87,7 @@ type expr =
       * expr
       * (expr list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_expr_sized (n / 4)))])
   (** [(1, "Hello world", true)] *)
-  | Empty_list (** [] *)
-  | Cons_list of expr * expr
-  (** {[
-        [ 1; 2; 3 ] [ 1; 2; 3 ]
-      ]} *)
+  | List of expr list_type (** [], hd :: tl, [1;2;3] *)
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)

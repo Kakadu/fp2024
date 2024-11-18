@@ -221,7 +221,7 @@ let%expect_test "print Ast of match_expr" =
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
-    ; PCons (Wild, PVar (Ident ("xs", None)))
+    ; PList (Cons_list (Wild, Cons_list (PVar (Ident ("xs", None)), Empty_list)))
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
