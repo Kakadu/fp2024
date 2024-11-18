@@ -106,11 +106,7 @@ let p_ident =
 
 let p_var_expr = p_ident >>| fun ident -> Variable ident
 let p_var_pat = p_ident >>| fun ident -> PVar ident
-
-let p_empty_list =
-  skip_ws *> string "[" *> skip_ws *> string "]" *> skip_ws *> return Empty_list
-;;
-
+let p_empty_list = skip_ws *> string "[" *> skip_ws *> string "]" *> return Empty_list
 let make_list e1 e2 = Cons_list (e1, e2)
 
 (* elem because it is for both patterns and expressions *)
@@ -140,8 +136,8 @@ let p_semicolon_list p_elem empty_list =
          <* string ";"
          <* skip_ws
          >>= fun hd -> p_semi_list >>= fun tl -> return (make_list hd tl))
-      ; (p_elem <* skip_ws <* string "]" <* skip_ws >>| fun hd -> make_list hd empty_list)
-      ; string "]" *> skip_ws *> return empty_list
+      ; (p_elem <* skip_ws <* string "]" >>| fun hd -> make_list hd empty_list)
+      ; string "]" *> return empty_list
       ])
 ;;
 
@@ -163,15 +159,8 @@ let make_binexpr op expr1 expr2 = Bin_expr (op, expr1, expr2) [@@inline always]
 let make_unexpr op expr = Unary_expr (op, expr) [@@inline always]
 let make_tuple_expr e1 e2 rest = Tuple (e1, e2, rest) [@@inline always]
 let make_tuple_pat p1 p2 rest = PTuple (p1, p2, rest)
-
-let p_binexpr binop_str binop =
-  skip_ws *> string binop_str *> skip_ws *> return (make_binexpr binop)
-;;
-
-let p_unexpr unop_str unop =
-  skip_ws *> string unop_str *> skip_ws *> return (make_unexpr unop)
-;;
-
+let p_binexpr binop_str binop = skip_ws *> string binop_str *> return (make_binexpr binop)
+let p_unexpr unop_str unop = skip_ws *> string unop_str *> return (make_unexpr unop)
 let p_not = p_unexpr "not" Unary_not
 let unminus = p_unexpr "-" Unary_minus
 let add = p_binexpr "+" Binary_add
