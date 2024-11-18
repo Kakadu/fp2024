@@ -51,7 +51,10 @@ let pbool =
   >>| fun x -> Bool x
 ;;
 
-let pstr = char '"' *> take_till (Char.equal '"') <* char '"' >>| fun x -> String x
+let pstr =
+  pwhitespace *> char '"' *> take_till (Char.equal '"') <* char '"' >>| fun x -> String x
+;;
+
 let punit = pstoken "()" *> return Unit
 let const = choice [ pint; pbool; pstr; punit ]
 
@@ -121,6 +124,9 @@ let plet pexpr =
     ppattern
     >>= function
     | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
+    (* | PConst c ->
+      pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
+    | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
     | _ -> fail "Only variable patterns are supported"
   in
   let pvalue_binding pexpr =
