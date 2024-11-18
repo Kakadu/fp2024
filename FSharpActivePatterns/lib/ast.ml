@@ -27,10 +27,22 @@ let gen_varname =
 let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
 let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 5) gen_ident)
 
+let gen_char =
+  let open QCheck.Gen in
+  let rec loop () =
+    let* char = char_range (Char.chr 32) (Char.chr 126) in
+    match char with
+    | '\\' -> loop ()
+    | '"' -> loop ()
+    | _ -> return char
+  in
+  loop ()
+;;
+
 type literal =
   | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
-  | String_lt of (string[@gen QCheck.Gen.string_printable]) (** ["Hello world"] *)
+  | String_lt of (string[@gen QCheck.Gen.string_of gen_char]) (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
