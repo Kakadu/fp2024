@@ -24,7 +24,7 @@ let peek_sep1 =
   match c with
   | None -> return None
   | Some c ->
-    if is_ws c || Char.equal c '(' || Char.equal c ')'
+    if is_ws c || Char.equal c '(' || Char.equal c ')' || Char.equal c ','
     then return (Some c)
     else fail "need a delimiter"
 ;;
@@ -151,7 +151,7 @@ let p_semicolon_list_pat p_pat =
   p_semicolon_list p_pat Empty_list >>= fun l -> return (PList l)
 ;;
 
-let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> skip_ws *> return Unit_lt
+let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> return Unit_lt
 let p_unit_expr = expr_const_factory p_unit
 let p_unit_pat = pat_const_factory p_unit
 
