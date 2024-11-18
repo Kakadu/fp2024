@@ -63,6 +63,8 @@ type rec_flag =
 type pattern =
   | PVar of id
   | PConst of const
+  | PTuple of pattern * pattern * pattern list
+  | PList of pattern list
   | PAny (* wildcard pattern '_' *)
 [@@deriving show { with_path = false }, qcheck]
 
