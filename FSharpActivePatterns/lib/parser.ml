@@ -47,7 +47,14 @@ let rec unary_chain op e =
 (* SIMPLE PARSERS *)
 let expr_const_factory parser = parser >>| fun lit -> Const lit
 let pat_const_factory parser = parser >>| fun lit -> PConst lit
-let p_int = skip_ws *> take_while1 Char.is_digit >>| fun s -> Int_lt (Int.of_string s)
+
+let p_int =
+  skip_ws
+  *> let* sign = string "+" <|> string "-" <|> string "" in
+     let* number = take_while1 Char.is_digit in
+     return (Int_lt (Int.of_string (sign ^ number)))
+;;
+
 let p_int_expr = expr_const_factory p_int
 let p_int_pat = pat_const_factory p_int
 

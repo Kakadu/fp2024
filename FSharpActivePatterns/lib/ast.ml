@@ -28,7 +28,7 @@ let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
 let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 5) gen_ident)
 
 type literal =
-  | Int_lt of int (** [0], [1], [30] *)
+  | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
   | String_lt of (string[@gen QCheck.Gen.string_printable]) (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
