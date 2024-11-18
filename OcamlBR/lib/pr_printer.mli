@@ -4,5 +4,4 @@
 
 open Ast
 
-val prpr_structure : Format.formatter -> Ast.structure_item list -> unit
-val pp_structure_item : structure_item -> string
+val prpr_structure : Format.formatter -> Ast.structure -> unit
