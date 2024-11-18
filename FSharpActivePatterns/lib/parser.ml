@@ -189,7 +189,7 @@ let p_tuple make p =
   skip_ws
   *> string "("
   *> lift3
-       (fun fst snd tail -> make fst snd tail)
+       make
        p
        (skip_ws *> string "," *> skip_ws *> p)
        (many (skip_ws *> string "," *> skip_ws *> p))
