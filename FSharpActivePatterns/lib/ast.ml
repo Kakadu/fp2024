@@ -105,6 +105,11 @@ type unary_operator =
   | Unary_not (** unary [not] *)
 [@@deriving show { with_path = false }, qcheck]
 
+type 'a list_type =
+  | Cons_list of 'a * 'a list_type
+  | Empty_list
+[@@deriving eq, show { with_path = false }, qcheck]
+
 type pattern =
   | Wild (** [_] *)
   | PList of

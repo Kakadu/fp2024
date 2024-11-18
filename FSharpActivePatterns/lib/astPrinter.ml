@@ -31,6 +31,14 @@ let print_bin_op indent fmt = function
   | Binary_cons -> fprintf fmt "%s| Binary Cons\n" (String.make indent '-')
 ;;
 
+let rec print_list printer indent fmt = function
+  | Empty_list -> fprintf fmt "%s| Empty_list:\n" (String.make indent ' ')
+  | Cons_list (hd, tl) ->
+    fprintf fmt "%s| Cons_list:\n" (String.make indent ' ');
+    printer (indent + 2) fmt hd;
+    print_list printer (indent + 2) fmt tl
+;;
+
 let rec print_pattern indent fmt = function
   | Wild -> fprintf fmt "%s| Wild\n" (String.make indent '-')
   | PList l ->
