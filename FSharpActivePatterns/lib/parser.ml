@@ -184,6 +184,9 @@ let greater = p_binexpr ">" Binary_greater
 let greater_or_equal = p_binexpr ">=" Binary_greater_or_equal
 let log_or = p_binexpr "||" Logical_or
 let log_and = p_binexpr "&&" Logical_and
+let bitwise_or = p_binexpr "|||" Binary_or_bitwise
+let bitwise_and = p_binexpr "&&&" Binary_and_bitwise
+let bitwise_xor = p_binexpr "^^^" Binary_xor_bitwise
 
 let p_tuple make p =
   skip_ws
@@ -323,7 +326,10 @@ let p_expr =
     let comp_eq = chainl1 term (equal <|> unequal) in
     let comp_less = chainl1 comp_eq (less_or_equal <|> less) in
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
-    let comp_and = chainl1 comp_gr log_and in
+    let bit_xor = chainl1 comp_gr bitwise_xor in
+    let bit_and = chainl1 bit_xor bitwise_and in
+    let bit_or = chainl1 bit_and bitwise_or in
+    let comp_and = chainl1 bit_or log_and in
     let comp_or = chainl1 comp_and log_or in
     let apply = p_apply comp_or <|> comp_or in
     let cons_list = p_cons_list_expr apply <|> apply in
