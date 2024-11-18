@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Pprinter
 
 module ShrinkQCheck = struct
   open QCheck.Iter
@@ -139,12 +138,10 @@ module ShrinkQCheck = struct
 end
 
 (* Only for debug *)
-let coefficient = 50
+let coef = 50
 
-module TestQCheck = struct
+module TestQCheckManual = struct
   open QCheck.Gen
-
-  (* Manual generator *)
 
   let gen_char = map Char.chr (int_range (Char.code 'a') (Char.code 'h'))
   let gen_int = int_range 0 10000
@@ -191,9 +188,9 @@ module TestQCheck = struct
              [ ( 1
                , map3
                    (fun f s l -> Pat_tuple (f, s, l))
-                   (self (n / coefficient))
-                   (self (n / coefficient))
-                   (list_size (int_range 0 5) (self (n / coefficient))) )
+                   (self (n / coef))
+                   (self (n / coef))
+                   (list_size (int_range 0 5) (self (n / coef))) )
              ; 1, return (Pat_construct ("[]", None))
              ; ( 1
                , let rec gen_list n =
@@ -234,29 +231,29 @@ module TestQCheck = struct
                          (fun pat exp -> { pat; exp })
                          gen_pattern
                          (self (Random.int 3))))
-                 <*> self (n / coefficient) )
+                 <*> self (n / coef) )
              ; ( 1
                , map2
                    (fun pat exp -> Exp_fun (pat, exp))
                    (list_size (int_range 1 3) gen_pattern)
-                   (self (n / coefficient)) )
+                   (self (n / coef)) )
              ; ( 1
                , map3
                    (fun exp first_exp exp_list -> Exp_apply (exp, first_exp, exp_list))
                    (self 0)
-                   (self (n / coefficient))
-                   (list_size (int_range 1 3) (self (n / coefficient))) )
+                   (self (n / coef))
+                   (list_size (int_range 1 3) (self (n / coef))) )
              ; ( 1
                , map3
                    (fun op exp1 exp2 -> Exp_apply (op, exp1, exp2))
                    gen_bin_op
-                   (self (n / coefficient))
-                   (list_size (int_range 1 1) (self (n / coefficient))) )
+                   (self (n / coef))
+                   (list_size (int_range 1 1) (self (n / coef))) )
              ; ( 1
                , map3
                    (fun exp first_case case_list ->
                      Exp_match (exp, first_case, case_list))
-                   (self (n / coefficient))
+                   (self (n / coef))
                    (map2
                       (fun left right -> { left; right })
                       gen_pattern
@@ -270,9 +267,9 @@ module TestQCheck = struct
              ; ( 1
                , map3
                    (fun first second list -> Exp_tuple (first, second, list))
-                   (self (n / coefficient))
-                   (self (n / coefficient))
-                   (list_size (int_range 0 5) (self (n / coefficient))) )
+                   (self (n / coef))
+                   (self (n / coef))
+                   (list_size (int_range 0 5) (self (n / coef))) )
              ; 1, return (Exp_construct ("[]", None))
              ; ( 1
                , let rec gen_list n =
@@ -290,14 +287,14 @@ module TestQCheck = struct
              ; ( 1
                , map3
                    (fun i t e -> Exp_ifthenelse (i, t, e))
-                   (self (n / coefficient))
-                   (self (n / coefficient))
-                   (option (self (n / coefficient))) )
+                   (self (n / coef))
+                   (self (n / coef))
+                   (option (self (n / coef))) )
              ; ( 1
                , map2
                    (fun exp1 exp2 -> Exp_sequence (exp1, exp2))
-                   (self (n / coefficient))
-                   (self (n / coefficient)) )
+                   (self (n / coef))
+                   (self (n / coef)) )
              ])
   ;;
 
@@ -325,13 +322,6 @@ module TestQCheck = struct
       ~shrink:ShrinkQCheck.shrink_structure
   ;;
 
-  let arbitrary_lam_auto =
-    QCheck.make
-      gen_structure
-      ~print:(Format.asprintf "%a" pp_structure)
-      ~shrink:ShrinkQCheck.shrink_structure
-  ;;
-
   let run_manual () =
     QCheck_base_runner.run_tests
       [ QCheck.(
@@ -340,11 +330,125 @@ module TestQCheck = struct
             Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
       ]
   ;;
+end
+
+module TestQCheckAuto = struct
+  open QCheck.Gen
+
+  type 'a list_ = ('a list[@gen small_list gen_a]) [@@deriving qcheck]
+
+  let gen_ident =
+    small_string ~gen:(map Char.chr (int_range (Char.code 'a') (Char.code 'h')))
+  ;;
+
+  type ident = (Ast.ident[@gen gen_ident]) [@@deriving qcheck]
+
+  type rec_flag = Ast.rec_flag =
+    | Recursive
+    | Nonrecursive
+  [@@deriving qcheck]
+
+  type constant = Ast.constant =
+    | Const_integer of int
+    | Const_char of char
+    | Const_string of (string[@gen small_string])
+  [@@deriving qcheck]
+
+  type core_type = Ast.core_type =
+    | Type_any
+    | Type_char
+    | Type_int
+    | Type_string
+    | Type_bool
+    | Type_list of core_type
+    | Type_tuple of core_type list_
+  [@@deriving qcheck]
+
+  type patt = Ast.pattern =
+    | Pat_any
+    | Pat_var of ident
+    | Pat_constant of constant
+    | Pat_tuple of
+        (patt[@gen gen_patt_sized (n / coef)])
+        * (patt[@gen gen_patt_sized (n / coef)])
+        * (patt list[@gen small_list (gen_patt_sized (n / coef))])
+    | Pat_construct of ident * (patt[@gen gen_patt_sized (n / coef)]) option
+    | Pat_constraint of (patt[@gen gen_patt_sized (n / coef)]) * core_type
+  [@@deriving qcheck]
+
+  type expr = Ast.expression =
+    | Exp_ident of ident
+    | Exp_constant of constant
+    | Exp_let of
+        rec_flag
+        * (value_binding
+          [@gen map2 (fun pat exp -> { pat; exp }) gen_patt (gen_expr_sized (n / coef))])
+        * (value_binding
+          [@gen map2 (fun pat exp -> { pat; exp }) gen_patt (gen_expr_sized (n / coef))])
+            list_
+        * (expr[@gen gen_expr_sized (n / coef)])
+    | Exp_fun of
+        (patt list[@gen small_list gen_patt]) * (expr[@gen gen_expr_sized (n / coef)])
+    | Exp_apply of
+        (expr[@gen gen_expr_sized (n / coef)])
+        * (expr[@gen gen_expr_sized (n / coef)])
+        * (expr list[@gen small_list (gen_expr_sized (n / coef))])
+    | Exp_match of
+        (expr[@gen gen_expr_sized (n / coef)])
+        * (case
+          [@gen
+            map2 (fun left right -> { left; right }) gen_patt (gen_expr_sized (n / coef))])
+        * (case
+          [@gen
+            map2 (fun left right -> { left; right }) gen_patt (gen_expr_sized (n / coef))])
+            list_
+    | Exp_tuple of
+        (expr[@gen gen_expr_sized (n / coef)])
+        * (expr[@gen gen_expr_sized (n / coef)])
+        * (expr list[@gen small_list (gen_expr_sized (n / coef))])
+    | Exp_construct of ident * (expr[@gen gen_expr_sized (n / coef)]) option
+    | Exp_ifthenelse of
+        (expr[@gen gen_expr_sized (n / coef)])
+        * (expr[@gen gen_expr_sized (n / coef)])
+        * (expr[@gen gen_expr_sized (n / coef)]) option
+    | Exp_sequence of
+        (expr[@gen gen_expr_sized (n / coef)]) * (expr[@gen gen_expr_sized (n / coef)])
+    | Exp_constraint of (expr[@gen gen_expr_sized (n / coef)]) * core_type
+  [@@deriving qcheck]
+
+  type value_binding = Ast.value_binding =
+    { pat : patt
+    ; exp : expr
+    }
+  [@@deriving qcheck]
+
+  type case = Ast.case =
+    { left : patt
+    ; right : expr
+    }
+  [@@deriving qcheck]
+
+  type structure_item = Ast.structure_item =
+    | Struct_eval of expr
+    | Struct_value of
+        rec_flag * value_binding * (value_binding list[@gen small_list gen_value_binding])
+  [@@deriving qcheck]
+
+  type structure = (structure_item list[@gen small_list gen_structure_item])
+  [@@deriving qcheck]
+
+  let arbitrary_lam_auto =
+    QCheck.make
+      gen_structure
+      ~print:(Format.asprintf "%a" Pprinter.pp_structure)
+      ~shrink:ShrinkQCheck.shrink_structure
+  ;;
 
   let run_auto () =
     QCheck_base_runner.run_tests
       [ QCheck.(
-          Test.make arbitrary_lam_auto (fun str ->
+          Test.make ~count:1 arbitrary_lam_auto (fun str ->
+            Format.printf "%a \n" Pprinter.pp_structure str;
             match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str) with
             | Result.Ok after when after = str -> true
             | Result.Ok _after -> false
