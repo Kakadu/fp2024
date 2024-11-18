@@ -165,6 +165,7 @@ and shrink_expr =
     of_list [ e1; e2 ]
     <+> (shrink_expr e1 >|= fun a' -> bin_e op a' e2)
     <+> (shrink_expr e2 >|= fun a' -> bin_e op e1 a')
+  | Unary_expr (op, e) -> return e <+> (shrink_expr e >|= fun e' -> Unary_expr (op, e'))
   | If_then_else (i, t, Some e) ->
     of_list [ i; t; e; If_then_else (i, e, None) ]
     <+> (shrink_expr i >|= fun a' -> If_then_else (a', t, Some e))
@@ -203,7 +204,9 @@ and shrink_expr =
          >|= fun a' -> Match (value, pat1, expr1, a'))
   | Option (Some e) ->
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
-  | _ -> empty
+  | Option None -> empty
+  | Variable _ -> empty
+  | List Empty_list -> empty
 
 and shrink_pattern =
   let open QCheck.Iter in
@@ -226,7 +229,9 @@ and shrink_pattern =
     <+> (QCheck.Shrink.list ~shrink:shrink_pattern rest
          >|= fun rest' -> PTuple (p1, p2, rest'))
   | PConst lt -> shrink_lt lt >|= fun lt' -> PConst lt'
-  | _ -> empty
+  | PList Empty_list -> empty
+  | Wild -> empty
+  | PVar _ -> empty
 ;;
 
 (*
