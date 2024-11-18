@@ -49,7 +49,7 @@ let un_e unop e = Unary_expr (unop, e)
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
 let if_e i t e = If_then_else (i, t, e)
 let func_def pat pat_list body = Lambda (pat, pat_list, body)
-let func_call f arg = Function_call (f, arg)
+let apply f arg = Apply (f, arg)
 let let_bind name args body = Let_bind (name, args, body)
 
 let letin rec_flag let_bind let_bind_list inner_e =
@@ -172,10 +172,10 @@ and shrink_expr =
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> LetIn (rec_flag, let_bind, a', inner_e))
     <+> (shrink_expr inner_e >|= fun a' -> LetIn (rec_flag, let_bind, let_bind_list, a'))
-  | Function_call (f, arg) ->
+  | Apply (f, arg) ->
     of_list [ f; arg ]
-    <+> (shrink_expr f >|= fun a' -> Function_call (a', arg))
-    <+> (shrink_expr arg >|= fun a' -> Function_call (f, a'))
+    <+> (shrink_expr f >|= fun a' -> Apply (a', arg))
+    <+> (shrink_expr arg >|= fun a' -> Apply (f, a'))
   | Lambda (pat, pat_list, body) ->
     shrink_expr body
     >|= (fun body' -> Lambda (pat, pat_list, body'))
