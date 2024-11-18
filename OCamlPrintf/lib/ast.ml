@@ -23,7 +23,7 @@ type core_type =
   | Type_string (** [string] *)
   | Type_bool (** [bool] *)
   | Type_list of core_type (** [T list] *)
-  | Type_tuple of core_type list (** [T1 * ... * Tn] *)
+  | Type_tuple of core_type * core_type * core_type list (** [T1 * ... * Tn] *)
 [@@deriving show { with_path = false }]
 
 type pattern =

@@ -228,7 +228,7 @@ module TestQCheckAuto = struct
     | Type_string
     | Type_bool
     | Type_list of core_type
-    | Type_tuple of core_type list_
+    | Type_tuple of core_type * core_type * core_type list_
   [@@deriving qcheck]
 
   type patt = Ast.pattern =

@@ -110,8 +110,9 @@ let parse_core_type =
   let list_type = base_type <* ws <* string "list" >>= fun t -> return (Type_list t) in
   let tuple_type =
     let* first_type = list_type <|> base_type in
-    let* type_list = many1 (ws *> string "*" *> (list_type <|> base_type)) in
-    return (Type_tuple (first_type :: type_list))
+    let* second_type = ws *> string "*" *> (list_type <|> base_type) in
+    let* type_list = many (ws *> string "*" *> (list_type <|> base_type)) in
+    return (Type_tuple (first_type, second_type, type_list))
   in
   ws *> choice [ tuple_type; list_type; base_type ] <* ws
 ;;

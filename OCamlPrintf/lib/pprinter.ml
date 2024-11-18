@@ -60,8 +60,10 @@ let rec pp_type ppf = function
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
   | Type_list type' -> fprintf ppf "%a list" pp_type type'
-  | Type_tuple type_list ->
-    fprintf ppf "%a" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
+  | Type_tuple (first_type, second_type, type_list) ->
+    fprintf ppf "%a * %a" pp_type first_type pp_type second_type;
+    if not (Base.List.is_empty type_list)
+    then fprintf ppf " * %a" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
 ;;
 
 let rec pp_pattern ppf = function
