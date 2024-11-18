@@ -200,3 +200,14 @@ let%expect_test _ =
   ]
   |}]
 ;;
+
+
+let%expect_test _ =
+  parse "((5 + 6) * (4 - 7)) - 1232";
+  [%expect
+    {|
+  [
+
+  ]
+  |}]
+;;
