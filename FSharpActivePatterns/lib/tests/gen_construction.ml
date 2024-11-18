@@ -12,12 +12,6 @@ open FSharpActivePatterns.Parser
 open FSharpActivePatterns.PrettyPrinter
 (*open FSharpActivePatterns.KeywordChecker*)
 
-let int_e x = Const (Int_lt x)
-let bool_e x = Const (Bool_lt x)
-let unit_e = Const Unit_lt
-let string_e x = Const (String_lt x)
-let variable_e x = Variable (Ident (x, None))
-
 (*
    let gen_const_manual =
    QCheck.Gen.(
@@ -131,10 +125,10 @@ let gen_let_bind_manual gen =
 let shrink_lt =
   let open QCheck.Iter in
   function
-  | Int_lt x -> QCheck.Shrink.int x >|= int_e
+  | Int_lt x -> QCheck.Shrink.int x >|= fun a' -> Int_lt a'
   | Bool_lt _ -> empty
   | Unit_lt -> empty
-  | String_lt x -> QCheck.Shrink.string x >|= string_e
+  | String_lt x -> QCheck.Shrink.string x >|= fun a' -> String_lt a'
 ;;
 
 let rec shrink_let_bind =
@@ -148,7 +142,7 @@ let rec shrink_let_bind =
 and shrink_expr =
   let open QCheck.Iter in
   function
-  | Const lt -> shrink_lt lt
+  | Const lt -> shrink_lt lt >|= fun a' -> Const a'
   | Tuple (e1, e2, rest) ->
     of_list [ e1; e2 ]
     <+> (shrink_expr e1 >|= fun a' -> Tuple (a', e2, rest))
@@ -185,17 +179,38 @@ and shrink_expr =
   | Lambda (pat, pat_list, body) ->
     shrink_expr body
     >|= (fun body' -> Lambda (pat, pat_list, body'))
-    <+> (QCheck.Shrink.list pat_list >|= fun pat_list' -> Lambda (pat, pat_list', body))
+    <+> (QCheck.Shrink.list ~shrink:shrink_pattern pat_list
+         >|= fun pat_list' -> Lambda (pat, pat_list', body))
   | Match (value, pat1, expr1, cases) ->
     of_list [ value; expr1 ]
     <+> (shrink_expr value >|= fun a' -> Match (a', pat1, expr1, cases))
+    <+> (shrink_pattern pat1 >|= fun a' -> Match (value, a', expr1, cases))
     <+> (shrink_expr expr1 >|= fun a' -> Match (value, pat1, a', cases))
     <+> (QCheck.Shrink.list
-           ~shrink:(fun (p, e) -> shrink_expr e >|= fun a' -> p, a')
+           ~shrink:(fun (p, e) ->
+             let* p_shr = shrink_pattern p in
+             let* e_shr = shrink_expr e in
+             return (p_shr, e_shr))
            cases
          >|= fun a' -> Match (value, pat1, expr1, a'))
   | Option (Some e) ->
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
+  | _ -> empty
+
+and shrink_pattern =
+  let open QCheck.Iter in
+  function
+  | PCons (p1, p2) ->
+    of_list [ p1; p2 ]
+    <+> (shrink_pattern p1 >|= fun p1' -> PCons (p1', p2))
+    <+> (shrink_pattern p2 >|= fun p2' -> PCons (p1, p2'))
+  | PTuple (p1, p2, rest) ->
+    of_list [ p1; p2 ]
+    <+> (shrink_pattern p1 >|= fun p1' -> PTuple (p1', p2, rest))
+    <+> (shrink_pattern p2 >|= fun p2' -> PTuple (p1, p2', rest))
+    <+> (QCheck.Shrink.list ~shrink:shrink_pattern rest
+         >|= fun rest' -> PTuple (p1, p2, rest'))
+  | PConst lt -> shrink_lt lt >|= fun lt' -> PConst lt'
   | _ -> empty
 ;;
 
