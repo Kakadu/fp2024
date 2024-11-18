@@ -42,7 +42,7 @@ let gen_char =
 type literal =
   | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
-  | String_lt of (string[@gen QCheck.Gen.string_of gen_char]) (** ["Hello world"] *)
+  | String_lt of (string[@gen QCheck.Gen.string_small_of gen_char]) (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
