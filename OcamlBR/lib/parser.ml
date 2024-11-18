@@ -113,9 +113,7 @@ let chain e op =
 ;;
 
 let un_chain e op =
-  fix (fun self ->
-    op >>= (fun unop -> self >>= fun e -> return (unop e)) <|> e
-  )
+  fix (fun self -> op >>= (fun unop -> self >>= fun e -> return (unop e)) <|> e)
 ;;
 
 let plet pexpr =
@@ -147,7 +145,6 @@ let pEfun pexpr =
 
 let pElist pexpr =
   let semicols = pstoken ";" in
-  (* let pexpr = psqparens pexpr in *)
   psqparens (sep_by semicols pexpr <* (semicols <|> pwhitespace) >>| fun x -> Elist x)
 ;;
 
@@ -230,7 +227,7 @@ let pstructure =
     plet pexpr
     >>| function
     | Elet (r, vb, vb_l, e) -> SValue (r, vb, vb_l, e)
-    | _ -> fail "Expected a let expression"
+    | _ -> failwith "Expected a let expression"
   in
   choice [ psvalue; pseval ]
 ;;
