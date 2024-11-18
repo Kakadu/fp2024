@@ -72,7 +72,19 @@ let varname =
      | _ -> fail "Variable name must not start with a digit, uppercase letter and \' ")
 ;;
 
-let pat_var = varname >>| fun x -> PVar x
+let ptype =
+  let pbasic_type =
+    choice [ pstoken "int"; pstoken "string"; pstoken "bool" ] >>| fun t -> Some t
+  in
+  pstoken ":" *> pbasic_type <|> return None
+;;
+
+let pident = 
+  lift2 (fun t v -> Id (t, v))
+  varname
+  ptype
+
+let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
 let pat_any = pstoken "_" *> return PAny
 let ppattern = choice [ pat_const; pat_var; pat_any ]
@@ -125,14 +137,14 @@ let plet pexpr =
     >>= function
     | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
     (* | PConst c ->
-      pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
-    | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
+       pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
+       | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
     | _ -> fail "Only variable patterns are supported"
   in
   let pvalue_binding pexpr =
     lift2
       (fun id e -> Evalue_binding (id, e))
-      (pparens varname <|> varname)
+      (pparens pident <|> pident)
       (pstoken "=" *> pexpr <|> pbody pexpr)
   in
   pstoken "let"
@@ -169,7 +181,7 @@ let pEtuple pexpr =
 ;;
 
 let pEconst = const >>| fun x -> Econst x
-let pEvar = varname >>| fun x -> Evar x
+let pEvar = pident >>| fun x -> Evar x
 let pEapp e = chain e (return (fun e1 e2 -> Efun_application (e1, e2)))
 
 let pEoption pexpr =

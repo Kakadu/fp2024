@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-let gen_id =
+let gen_id_name =
   let open QCheck.Gen in
   let first_char = oneof [ char_range 'a' 'z'; return '_' ] in
   let rest_char =
@@ -19,6 +19,10 @@ let gen_id =
   (* combine the first character with the generated rest part *)
   map2 (fun start rest -> String.make 1 start ^ rest) first_char gen_rest
 ;;
+
+type id = Id of string * string option [@@deriving show { with_path = false }]
+
+let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
 
 type const =
   | Int of (int[@gen QCheck.Gen.int])
@@ -49,8 +53,6 @@ type un_op =
   | Not
 (* unary minus, logical NOT *)
 [@@deriving show { with_path = false }, qcheck]
-
-type id = (string[@gen gen_id]) [@@deriving show { with_path = false }, qcheck]
 
 type rec_flag =
   | Recursive
