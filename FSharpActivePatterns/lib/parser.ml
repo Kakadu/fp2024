@@ -60,7 +60,9 @@ let p_int_expr = expr_const_factory p_int
 let p_int_pat = pat_const_factory p_int
 
 let p_bool =
-  (skip_ws *> string "true") <|> (skip_ws *> string "false") >>| fun s -> Bool_lt (Bool.of_string s)
+  skip_ws *> string "true"
+  <|> skip_ws *> string "false"
+  >>| fun s -> Bool_lt (Bool.of_string s)
 ;;
 
 let p_bool_expr = expr_const_factory p_bool
@@ -334,7 +336,7 @@ let p_expr =
     let comp_or = chainl1 comp_and log_or in
     let apply = p_apply comp_or <|> comp_or in
     let cons_list = p_cons_list_expr apply <|> apply in
-    let ematch = p_match cons_list <|> cons_list in
+    let ematch = p_match (p_expr <|> cons_list) <|> cons_list in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
     let option = p_option efun <|> efun in
     option)
