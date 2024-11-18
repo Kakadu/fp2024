@@ -43,18 +43,20 @@ open FSharpActivePatterns.PrettyPrinter
 (*
    let gen_ident_manual = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname_manual
 let gen_variable_manual = QCheck.Gen.map variable_e gen_varname_manual
-let gen_unop_manual = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ]) *)
+let gen_unop_manual = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ]) 
 let tuple_e e1 e2 rest = Tuple (e1, e2, rest)
-let un_e unop e = Unary_expr (unop, e)
+let un_e unop e = Unary_expr (unop, e)*)
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
-let if_e i t e = If_then_else (i, t, e)
-let func_def pat pat_list body = Lambda (pat, pat_list, body)
-let apply f arg = Apply (f, arg)
-let let_bind name args body = Let_bind (name, args, body)
+(*
+   let if_e i t e = If_then_else (i, t, e)
+   let func_def pat pat_list body = Lambda (pat, pat_list, body)
+   let apply f arg = Apply (f, arg)
+   let let_bind name args body = Let_bind (name, args, body) *)
 
-let letin rec_flag let_bind let_bind_list inner_e =
-  LetIn (rec_flag, let_bind, let_bind_list, inner_e)
-;;
+(*
+   let letin rec_flag let_bind let_bind_list inner_e =
+   LetIn (rec_flag, let_bind, let_bind_list, inner_e)
+   ;; *)
 
 (*
    let gen_binop_manual =
@@ -227,7 +229,8 @@ and shrink_pattern =
   | _ -> empty
 ;;
 
-let let_st rec_flag let_bind let_bind_list = Let (rec_flag, let_bind, let_bind_list)
+(*
+   let let_st rec_flag let_bind let_bind_list = Let (rec_flag, let_bind, let_bind_list)*)
 
 (* TODO: Active Pattern*)
 (*

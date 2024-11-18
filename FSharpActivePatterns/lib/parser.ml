@@ -36,9 +36,10 @@ let chainl1 e op =
   e >>= go
 ;;
 
-let rec chainr1 e op =
-  e >>= fun rest -> op >>= (fun f -> chainr1 e op >>| f rest) <|> return rest
-;;
+(*
+   let rec chainr1 e op =
+   e >>= fun rest -> op >>= (fun f -> chainr1 e op >>| f rest) <|> return rest
+   ;;*)
 
 let rec unary_chain op e =
   op >>= (fun unexpr -> unary_chain op e >>= fun expr -> return (unexpr expr)) <|> e
@@ -196,7 +197,7 @@ let p_tuple make p =
   <* string ")"
 ;;
 
-let p_tuple_expr p_expr = p_tuple make_tuple_expr p_expr
+(*let p_tuple_expr p_expr = p_tuple make_tuple_expr p_expr*)
 let p_tuple_pat p_pat = p_tuple make_tuple_pat p_pat
 
 let p_if p_expr =
