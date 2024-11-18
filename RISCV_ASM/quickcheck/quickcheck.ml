@@ -34,7 +34,7 @@ let () =
   Arg.parse
     [ "-seed", Arg.Int QCheck_base_runner.set_seed, " Set seed" ]
     print_endline
-    "Testing automatic generator.";
+    "Testing deriving generator.";
   let _ : int = run () in
   ()
 ;;
