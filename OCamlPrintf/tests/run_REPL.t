@@ -7,18 +7,14 @@ SPDX-License-Identifier: LGPL-3.0-or-later
         exp =
         (Exp_fun ([(Pat_var "n")],
            (Exp_ifthenelse (
-              (Exp_apply ((Exp_ident "<="),
-                 [(Exp_ident "n"); (Exp_constant (Const_integer 1))])),
+              (Exp_apply ((Exp_ident "<="), (Exp_ident "n"),
+                 [(Exp_constant (Const_integer 1))])),
               (Exp_constant (Const_integer 1)),
-              (Some (Exp_apply ((Exp_ident "*"),
-                       [(Exp_ident "n");
-                         (Exp_apply ((Exp_ident "factorial"),
-                            [(Exp_apply ((Exp_ident "-"),
-                                [(Exp_ident "n");
-                                  (Exp_constant (Const_integer 1))]
-                                ))
-                              ]
-                            ))
+              (Some (Exp_apply ((Exp_ident "*"), (Exp_ident "n"),
+                       [(Exp_apply ((Exp_ident "factorial"),
+                           (Exp_apply ((Exp_ident "-"), (Exp_ident "n"),
+                              [(Exp_constant (Const_integer 1))])),
+                           []))
                          ]
                        )))
               ))
@@ -52,19 +48,16 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                       [{ left = Pat_any;
                          right =
                          (Exp_apply ((Exp_ident "&&"),
-                            [(Exp_apply ((Exp_ident "<>"),
-                                [(Exp_apply ((Exp_ident "x"),
-                                    [(Exp_ident "mod"); (Exp_ident "d")]));
-                                  (Exp_constant (Const_integer 0))]
-                                ));
-                              (Exp_apply ((Exp_ident "check_zero"),
-                                 [(Exp_ident "x");
-                                   (Exp_apply ((Exp_ident "-"),
-                                      [(Exp_ident "d");
-                                        (Exp_constant (Const_integer 1))]
-                                      ))
-                                   ]
-                                 ))
+                            (Exp_apply ((Exp_ident "<>"),
+                               (Exp_apply ((Exp_ident "x"), (Exp_ident "mod"),
+                                  [(Exp_ident "d")])),
+                               [(Exp_constant (Const_integer 0))])),
+                            [(Exp_apply ((Exp_ident "check_zero"),
+                                (Exp_ident "x"),
+                                [(Exp_apply ((Exp_ident "-"), (Exp_ident "d"),
+                                    [(Exp_constant (Const_integer 1))]))
+                                  ]
+                                ))
                               ]
                             ))
                          }
@@ -80,12 +73,9 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                     right = (Exp_construct ("false", None)) };
                    { left = Pat_any;
                      right =
-                     (Exp_apply ((Exp_ident "check_zero"),
-                        [(Exp_ident "n");
-                          (Exp_apply ((Exp_ident "-"),
-                             [(Exp_ident "n"); (Exp_constant (Const_integer 1))
-                               ]
-                             ))
+                     (Exp_apply ((Exp_ident "check_zero"), (Exp_ident "n"),
+                        [(Exp_apply ((Exp_ident "-"), (Exp_ident "n"),
+                            [(Exp_constant (Const_integer 1))]))
                           ]
                         ))
                      }

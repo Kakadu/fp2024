@@ -53,10 +53,13 @@ module ShrinkQCheck = struct
       list ~shrink:shrink_pattern pat_list
       >|= (fun pat_list' -> Exp_fun (pat_list', exp))
       <+> (shrink_expression exp >|= fun exp' -> Exp_fun (pat_list, exp'))
-    | Exp_apply (exp, exp_list) ->
-      list ~shrink:shrink_expression exp_list
-      >|= (fun exp_list' -> Exp_apply (exp, exp_list'))
-      <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', exp_list))
+    | Exp_apply (exp, first_exp, exp_list) ->
+      shrink_expression exp
+      >|= (fun exp' -> Exp_apply (exp', first_exp, exp_list))
+      <+> (shrink_expression first_exp
+           >|= fun first_exp' -> Exp_apply (exp, first_exp', exp_list))
+      <+> (list ~shrink:shrink_expression exp_list
+           >|= fun exp_list' -> Exp_apply (exp, first_exp, exp_list'))
     | Exp_match (exp, first_case, case_list) ->
       shrink_expression exp
       >|= (fun exp' -> Exp_match (exp', first_case, case_list))
@@ -224,15 +227,17 @@ module TestQCheck = struct
                    (list_size (int_range 1 3) gen_pattern)
                    (self (n / coefficient)) )
              ; ( 1
-               , map2
-                   (fun exp exp_list -> Exp_apply (exp, exp_list))
+               , map3
+                   (fun exp first_exp exp_list -> Exp_apply (exp, first_exp, exp_list))
                    (self 0)
+                   (self (n / coefficient))
                    (list_size (int_range 1 3) (self (n / coefficient))) )
              ; ( 1
-               , map2
-                   (fun op exp_list -> Exp_apply (op, exp_list))
+               , map3
+                   (fun op exp1 exp2 -> Exp_apply (op, exp1, exp2))
                    gen_bin_op
-                   (list_size (int_range 2 2) (self (n / coefficient))) )
+                   (self (n / coefficient))
+                   (list_size (int_range 1 1) (self (n / coefficient))) )
              ; ( 1
                , map3
                    (fun exp first_case case_list ->

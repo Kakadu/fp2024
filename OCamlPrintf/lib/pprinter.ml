@@ -24,8 +24,8 @@ let op_list =
 let is_operator op = List.exists (fun (str, _) -> str = op) op_list
 let get_priority op = List.assoc op op_list
 
-let needs_parens = function
-  | Exp_apply (Exp_ident op, _) when is_operator op -> true
+let is_operator_in_exp = function
+  | Exp_apply (Exp_ident op, _, _) when is_operator op -> true
   | _ -> false
 ;;
 
@@ -132,23 +132,21 @@ let rec pp_expression ppf = function
     in
     fprintf ppf "(fun %a " (pp_print_list ~pp_sep:pp_space pp_pattern) pat_list;
     pp_exp_constraint exp
-  | Exp_apply (exp, exp_list) ->
+  | Exp_apply (exp, first_exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in
     let fprintf_with_parens_condition ppf exp =
-      if needs_parens exp
+      if is_operator_in_exp exp
       then fprintf ppf " (%a)" pp_expression exp
       else fprintf ppf " %a" pp_expression exp
     in
     let handle_exp_list = function
-      | [ exp ] ->
+      | exp, [] ->
         fprintf ppf "(%s" expression;
         fprintf_with_parens_condition ppf exp;
         fprintf ppf ")"
-      | _ ->
-        let first_exp = List.hd exp_list in
-        let rest_exp_list = List.tl exp_list in
+      | first_exp, rest_exp_list ->
         let needs_parens_by_priority = function
-          | Exp_apply (Exp_ident op, _) when is_operator op ->
+          | Exp_apply (Exp_ident op, _, _) when is_operator op ->
             compare_priority expression op
           | _ -> false
         in
@@ -203,7 +201,7 @@ let rec pp_expression ppf = function
           List.iter (fun arg -> fprintf_with_parens_condition ppf arg) rest_exp_list;
           fprintf ppf ")")
     in
-    handle_exp_list exp_list
+    handle_exp_list (first_exp, exp_list)
   | Exp_match (exp, first_case, case_list) ->
     fprintf
       ppf
