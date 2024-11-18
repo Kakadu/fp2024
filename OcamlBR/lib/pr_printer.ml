@@ -53,13 +53,14 @@ let rec pp_expr ppf = function
     fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
   | Eif_then_else (e1, e2, Some e3) ->
     fprintf ppf "if %a then %a else %a" pp_expr e1 pp_expr e2 pp_expr e3
-  | Ematch (exp, case_list) ->
+  | Ematch (exp, first_case, rest_cases) ->
+    let case_to_string { left; right } =
+      asprintf "| %a -> %a" pp_pattern left pp_expr right
+    in
     let case_list_str =
       String.concat
         ~sep:" "
-        (List.map
-            ~f:(fun c -> asprintf "| %a -> %a" pp_pattern c.left pp_expr c.right)
-            case_list)
+        (case_to_string first_case :: List.map ~f:case_to_string rest_cases)
     in
     fprintf ppf "match %a with %s" pp_expr exp case_list_str
   | Eoption (Some e) -> fprintf ppf "Some %a" pp_expr e
@@ -106,15 +107,11 @@ let pp_structure_item ppf (item : structure_item) =
            fprintf ppf " and %a" pp_value_binding vb')) ()
       pp_expr e
 ;;
-(*
-let prpr_structure fmt structure =
-  List.iter ~f:(fun item -> fprintf fmt "%a@." pp_structure_item item) structure
-;; *)
 
-let pp_escape_sequence ppf () = fprintf ppf "\n"
+let pp_new_line ppf () = fprintf ppf "\n"
 
 let prpr_structure ppf =
-  fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item)
+  fprintf ppf "%a" (pp_print_list ~pp_sep:pp_new_line pp_structure_item)
 ;;
 
 

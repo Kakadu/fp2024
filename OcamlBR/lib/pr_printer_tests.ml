@@ -185,3 +185,18 @@ let%expect_test _ =
       ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;";
+  [%expect
+    {|
+  [
+    (SValue (Non_recursive, "x",
+      (EMatch (EConst (Int 3), [
+        { left = PConst (Int 1); right = EConst (Int 10) };
+        { left = PConst (Int 2); right = EConst (Int 20) };
+        { left = PWildcard; right = EConst (Int 30) }
+      ])), (Econst Unit)))
+  ]
+  |}]
+;;
