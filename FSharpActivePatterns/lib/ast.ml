@@ -68,7 +68,7 @@ type pattern =
   | PTuple of
       pattern
       * pattern
-      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 4)))])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 2)))])
   (** | [(a, b)] -> *)
   | PConst of literal (** | [4] -> *)
   | PVar of ident (** pattern identifier *)
@@ -85,7 +85,7 @@ type expr =
   | Tuple of
       expr
       * expr
-      * (expr list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_expr_sized (n / 4)))])
+      * (expr list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_expr_sized (n / 2)))])
   (** [(1, "Hello world", true)] *)
   | List of expr list_type (** [], hd :: tl, [1;2;3] *)
   | Variable of ident (** [x], [y] *)
@@ -93,23 +93,23 @@ type expr =
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
-      pattern
-      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 4)))])
+      (pattern[@gen gen_pattern_sized (n / 2)])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 2)))])
       * expr (** fun x y -> x + y *)
   | Apply of expr * expr (** [sum 1 ] *)
   | Match of
       expr
-      * pattern
+      * (pattern[@gen gen_pattern_sized (n / 2)])
       * expr
       * ((pattern * expr) list
         [@gen
           QCheck.Gen.(
-            list_size (0 -- 5) (pair (gen_pattern_sized (n / 4)) (gen_expr_sized (n / 4))))])
+            list_size (0 -- 5) (pair (gen_pattern_sized (n / 2)) (gen_expr_sized (n / 2))))])
   (** [match x with | x -> ... | y -> ...] *)
   | LetIn of
       is_recursive
       * let_bind
-      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_let_bind_sized (n / 4)))])
+      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_let_bind_sized (n / 2)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
 [@@deriving eq, show { with_path = false }, qcheck]
@@ -118,6 +118,18 @@ and let_bind =
   | Let_bind of ident * (ident list[@gen gen_ident_small_list]) * expr
   (** [and sum n m = n+m] *)
 [@@deriving eq, show { with_path = false }, qcheck]
+
+let gen_expr =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_expr_sized n)
+;;
+
+let gen_let_bind =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_let_bind_sized n)
+;;
 
 type statement =
   | Let of
