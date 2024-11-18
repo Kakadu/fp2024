@@ -96,7 +96,7 @@ type expr =
       pattern
       * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 4)))])
       * expr (** fun x y -> x + y *)
-  | Function_call of expr * expr (** [sum 1 ] *)
+  | Apply of expr * expr (** [sum 1 ] *)
   | Match of
       expr
       * pattern

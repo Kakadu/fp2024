@@ -271,8 +271,7 @@ let p_let p_expr =
   return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
 ;;
 
-let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Function_call (expr1, expr2)))
-;;
+let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 
 let p_option p_expr =
   skip_ws *> (string "None" *> skip_ws_sep1 *> return (Option None))
@@ -346,7 +345,6 @@ let p_expr =
     let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    (*let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in*)
     let unary = choice [ unary_chain p_not letin_expr; unary_chain unminus letin_expr ] in
     let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in

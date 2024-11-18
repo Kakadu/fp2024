@@ -86,7 +86,7 @@ and pp_expr fmt expr =
     fprintf fmt "%a " pp_pattern pat1;
     List.iter (fun pat -> fprintf fmt "%a " pp_pattern pat) pat_list;
     fprintf fmt "-> %a " pp_expr body
-  | Function_call (func, arg) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
+  | Apply (func, arg) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
     pp_print_list
