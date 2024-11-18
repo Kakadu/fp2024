@@ -259,8 +259,8 @@ let p_semicolon_list p_elem empty_list =
          <* string ";"
          <* skip_ws
          >>= fun hd -> p_semi_list >>= fun tl -> return (make_list hd tl))
-      ; (p_elem <* skip_ws <* string "]" <* skip_ws >>| fun hd -> make_list hd empty_list)
-      ; string "]" *> skip_ws *> return empty_list
+      ; (p_elem <* skip_ws <* string "]" >>| fun hd -> make_list hd empty_list)
+      ; string "]" *> return empty_list
       ])
 ;;
 
