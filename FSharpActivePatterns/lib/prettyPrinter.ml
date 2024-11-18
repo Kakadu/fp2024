@@ -88,10 +88,10 @@ and pp_expr fmt expr =
      | Some body -> fprintf fmt "else %a " pp_expr body
      | None -> ())
   | Lambda (pat1, pat_list, body) ->
-    fprintf fmt "fun ";
+    fprintf fmt "(fun ";
     fprintf fmt "%a " pp_pattern pat1;
     List.iter (fun pat -> fprintf fmt "%a " pp_pattern pat) pat_list;
-    fprintf fmt "-> %a " pp_expr body
+    fprintf fmt "-> %a )" pp_expr body
   | Apply (func, arg) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
