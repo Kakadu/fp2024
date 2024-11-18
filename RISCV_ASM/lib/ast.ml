@@ -72,24 +72,28 @@ type register =
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Label Type *)
-type label = string [@@deriving eq, show { with_path = false }, qcheck]
-
-(** Address32 Type to Jump to *)
-type address32 =
-  | ImmediateAddress32 of int (** Immediate32 to Jump to *)
-  | LabelAddress32 of label (** Label to Jump to *)
+type label = (string[@gen Generators.gen_my_label])
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Address12 Type to Jump to *)
 type address12 =
-  | ImmediateAddress12 of int (** Immediate12 to Jump to*)
+  | ImmediateAddress12 of (int[@gen QCheck.Gen.(-2048 -- 2047)])
+  (** Immediate12 to Jump to*)
   | LabelAddress12 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Address20 Type to Jump to *)
 type address20 =
-  | ImmediateAddress20 of int (** Immediate20 to Jump to*)
+  | ImmediateAddress20 of (int[@gen QCheck.Gen.(-524288 -- 524287)])
+  (** Immediate20 to Jump to*)
   | LabelAddress20 of label (** Label to Jump to *)
+[@@deriving eq, show { with_path = false }, qcheck]
+
+(** Address32 Type to Jump to *)
+type address32 =
+  | ImmediateAddress32 of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
+  (** Immediate32 to Jump to *)
+  | LabelAddress32 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 type instruction =
@@ -144,7 +148,7 @@ type instruction =
   | Lui of register * address20 (** Load Upper Immediate. rd = imm << 12 *)
   | Auipc of register * address20 (** Add Upper Immediate to PC. rd = PC + (imm << 12) *)
   | Ecall (** EnvironmentCall - a syscall *)
-  | Call of string (** call. - a syscall *)
+  | Call of (string[@gen Generators.gen_my_string]) (** call. - a syscall *)
   | Mul of register * register * register (** Multiply. rd = (rs1 * rs2)[31:0] *)
   | Mulh of register * register * register (** Multiply High. rd = (rs1 * rs2)[63:32] *)
   | Mulhsu of register * register * register
@@ -196,32 +200,44 @@ type instruction =
 
 (** Attribute can either take in a string or an int as its value *)
 type string_or_int_value =
-  | StrValue of string (** A string value *)
-  | IntValue of int (** An integer value*)
+  | StrValue of (string[@gen Generators.gen_my_string]) (** A string value *)
+  | IntValue of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)]) (** An integer value*)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Types that are assigned to symbols for the logic of the compiler*)
-type type_dir = Type of string [@@deriving eq, show { with_path = false }, qcheck]
+type type_dir = Type of (string[@gen Generators.gen_my_string])
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Compiler directive (most of them are not needed while interpreting) *)
 type directive =
-  | File of string (** .file string *)
-  | Option of string (** .option argument *)
-  | Attribute of string * string_or_int_value (** .attribute tag, value *)
+  | File of (string[@gen Generators.gen_my_string]) (** .file string *)
+  | Option of (string[@gen Generators.gen_my_string]) (** .option argument *)
+  | Attribute of (string[@gen Generators.gen_my_string]) * string_or_int_value
+  (** .attribute tag, value *)
   | Text (** .text subsection *)
-  | Align of int (** .align abs-expr, abs-expr, abs-expr *)
+  | Align of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
+  (** .align abs-expr, abs-expr, abs-expr *)
   | Globl of address12 (** .globl symbol *)
-  | TypeDir of string * type_dir (** .type assigns type to a symbol *)
+  | TypeDir of (string[@gen Generators.gen_my_string]) * type_dir
+  (** .type assigns type to a symbol *)
   | CfiStartproc (** .cfi_startproc *)
   | CfiEndproc (** .cfi_endproc *)
-  | Size of address12 * string (** .size *)
-  | Section of string * string * type_dir * int option (** .section name *)
-  | String of string (** .string "str" *)
-  | CfiDefCfaOffset of int (** .cfi_def_cfa_offset int*)
-  | CfiOffset of int * int (** .cfi_offset int, int *)
+  | Size of address12 * (string[@gen Generators.gen_my_string]) (** .size *)
+  | Section of
+      (string[@gen Generators.gen_my_string])
+      * (string[@gen Generators.gen_my_string])
+      * type_dir
+      * int option (** .section name *)
+  | String of (string[@gen Generators.gen_my_string]) (** .string "str" *)
+  | CfiDefCfaOffset of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
+  (** .cfi_def_cfa_offset int*)
+  | CfiOffset of
+      (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
+      * (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)]) (** .cfi_offset int, int *)
   | CfiRememberState (** .cfi_remember_state *)
-  | CfiRestore of int (** .cfi_restore int *)
-  | Ident of string (** .ident string *)
+  | CfiRestore of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
+  (** .cfi_restore int *)
+  | Ident of (string[@gen Generators.gen_my_string]) (** .ident string *)
   | CfiRestoreState (** .cfi_restore_state *)
 [@@deriving eq, show { with_path = false }, qcheck]
 

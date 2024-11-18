@@ -23,7 +23,7 @@ let ws =
 
 let parse_string =
   take_while1 (function
-    | ' ' | '\t' | '\n' | '\r' | ',' | ':' -> false
+    | ' ' | '\t' | '\n' | '\r' | ',' -> false
     | _ -> true)
 ;;
 
@@ -54,6 +54,12 @@ let parse_number_or_quoted_string =
   | Some '"' -> parse_quoted_string >>= fun str -> return (StrValue str)
   | Some '0' .. '9' | Some '-' -> parse_number >>= fun num -> return (IntValue num)
   | _ -> fail "Expected number or quoted string"
+;;
+
+let parse_label_string =
+  take_while1 (function
+    | ' ' | '\t' | '\n' | '\r' | ',' | ':' | '(' -> false
+    | _ -> true)
 ;;
 
 let ws_opt p = ws *> p <* ws
@@ -132,12 +138,21 @@ let parse_register =
 let parse_immediate12 = ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_number)
 let parse_immediate20 = ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_number)
 let parse_immediate32 = ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_number)
-let parse_label_address12 = ws_opt (lift (fun str -> LabelAddress12 str) parse_string)
-let parse_label_address20 = ws_opt (lift (fun str -> LabelAddress20 str) parse_string)
-let parse_label_address32 = ws_opt (lift (fun str -> LabelAddress32 str) parse_string)
+
+let parse_label_address12 =
+  ws_opt (lift (fun str -> LabelAddress12 str) parse_label_string)
+;;
+
+let parse_label_address20 =
+  ws_opt (lift (fun str -> LabelAddress20 str) parse_label_string)
+;;
+
+let parse_label_address32 =
+  ws_opt (lift (fun str -> LabelAddress32 str) parse_label_string)
+;;
 
 let parse_label_expr =
-  ws_opt (lift (fun str -> LabelExpr str) (parse_string <* ws_opt (char ':')))
+  ws_opt (lift (fun str -> LabelExpr str) (parse_label_string <* ws_opt (char ':')))
 ;;
 
 let parse_address12 = ws_opt (choice [ parse_immediate12; parse_label_address12 ])
@@ -146,7 +161,7 @@ let parse_address32 = ws_opt (choice [ parse_immediate32; parse_label_address32 
 
 let parse_string_with_spaces str =
   string str
-  *> take_while (function
+  *> take_while1 (function
     | ' ' | '\t' -> true
     | _ -> false)
 ;;

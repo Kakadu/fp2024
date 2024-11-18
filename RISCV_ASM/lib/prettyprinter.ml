@@ -145,7 +145,8 @@ let pp_instruction ppf = function
   | Divuw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "divuw" rd rs1 rs2
   | Remw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "remw" rd rs1 rs2
   | Remwu (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "remwu" rd rs1 rs2
-  | Lwu (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "lwu" rd rs1 (Address12 imm)
+  | Lwu (rd, rs1, imm) ->
+    pp_instruction_2reg_1offset_helper ppf "lwu" rd rs1 (Address12 imm)
   | Addi (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "addi" rd rs1 (Address12 imm)
   | Xori (rd, rs1, imm) ->
