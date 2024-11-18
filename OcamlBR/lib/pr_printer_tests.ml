@@ -211,3 +211,15 @@ let%expect_test _ =
   ]
   |}]
 ;;
+
+
+
+let%expect_test _ =
+  parse "let x = 5";
+  [%expect
+    {|
+  [
+
+  ]
+  |}]
+;;
