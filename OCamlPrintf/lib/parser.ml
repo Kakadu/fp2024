@@ -137,7 +137,7 @@ let parse_pat_tuple parse_pat =
 
 let parse_pat_construct_keyword parse_pat =
   let* id =
-    ws *> choice [ keyword "true"; keyword "false"; keyword "Some"; keyword "None" ]
+    ws *> choice [ string "true"; string "false"; string "Some"; string "None" ]
   in
   let* arg = ws *> option None (parse_pat >>| Option.some) in
   return (Pat_construct (id, arg))
@@ -341,7 +341,7 @@ let parse_exp_tuple parse_exp =
 
 let parse_exp_construct_keyword parse_exp =
   let* id =
-    ws *> choice [ keyword "true"; keyword "false"; keyword "Some"; keyword "None" ]
+    ws *> choice [ string "true"; string "false"; string "Some"; string "None" ]
   in
   let* arg = ws *> option None (parse_exp >>| Option.some) in
   return (Exp_construct (id, arg))
