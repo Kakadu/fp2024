@@ -271,31 +271,7 @@ let p_let p_expr =
   return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
 ;;
 
-let app_first expr =
-  skip_ws
-  *> fix (fun a_exp ->
-    let expr = choice [ p_var_expr; p_if expr; p_letin expr; p_parens a_exp ] in
-    expr)
-;;
-
-let p_apply expr =
-  let* name = app_first expr in
-  let rec parse_args acc =
-    skip_ws
-    *> choice
-         [ p_var_expr
-         ; p_bool_expr
-         ; p_unit_expr
-         ; p_int_expr
-         ; p_string_expr
-         ; p_if expr
-         ; p_letin expr
-         ; p_parens expr
-         ]
-    >>= (fun arg -> parse_args (Function_call (acc, arg)))
-    <|> return acc
-  in
-  parse_args name
+let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Function_call (expr1, expr2)))
 ;;
 
 let p_option p_expr =
@@ -370,8 +346,8 @@ let p_expr =
     let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in
-    let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
+    (*let apply = p_apply (p_expr <|> letin_expr) <|> letin_expr in*)
+    let unary = choice [ unary_chain p_not letin_expr; unary_chain unminus letin_expr ] in
     let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let comp_eq = chainl1 term (equal <|> unequal) in
@@ -379,7 +355,8 @@ let p_expr =
     let comp_gr = chainl1 comp_less (greater_or_equal <|> greater) in
     let comp_and = chainl1 comp_gr log_and in
     let comp_or = chainl1 comp_and log_or in
-    let cons_list = p_cons_list_expr comp_or <|> comp_or in
+    let apply = p_apply comp_or <|> comp_or in
+    let cons_list = p_cons_list_expr apply <|> apply in
     let ematch = p_match cons_list <|> cons_list in
     let efun = p_lambda ematch <|> ematch in
     let option = p_option efun <|> efun in
