@@ -4,72 +4,72 @@
 
 open Ast
 
-let pp_register = function
-  | X0 -> Format.sprintf "x0"
-  | X1 -> Format.sprintf "x1"
-  | X2 -> Format.sprintf "x2"
-  | X3 -> Format.sprintf "x3"
-  | X4 -> Format.sprintf "x4"
-  | X5 -> Format.sprintf "x5"
-  | X6 -> Format.sprintf "x6"
-  | X7 -> Format.sprintf "x7"
-  | X8 -> Format.sprintf "x8"
-  | X9 -> Format.sprintf "x9"
-  | X10 -> Format.sprintf "x10"
-  | X11 -> Format.sprintf "x11"
-  | X12 -> Format.sprintf "x12"
-  | X13 -> Format.sprintf "x13"
-  | X14 -> Format.sprintf "x14"
-  | X15 -> Format.sprintf "x15"
-  | X16 -> Format.sprintf "x16"
-  | X17 -> Format.sprintf "x17"
-  | X18 -> Format.sprintf "x18"
-  | X19 -> Format.sprintf "x19"
-  | X20 -> Format.sprintf "x20"
-  | X21 -> Format.sprintf "x21"
-  | X22 -> Format.sprintf "x22"
-  | X23 -> Format.sprintf "x23"
-  | X24 -> Format.sprintf "x24"
-  | X25 -> Format.sprintf "x25"
-  | X26 -> Format.sprintf "x26"
-  | X27 -> Format.sprintf "x27"
-  | X28 -> Format.sprintf "x28"
-  | X29 -> Format.sprintf "x29"
-  | X30 -> Format.sprintf "x30"
-  | X31 -> Format.sprintf "x31"
-  | Zero -> Format.sprintf "zero"
-  | Ra -> Format.sprintf "ra"
-  | Sp -> Format.sprintf "sp"
-  | Gp -> Format.sprintf "gp"
-  | Tp -> Format.sprintf "tp"
-  | T0 -> Format.sprintf "t0"
-  | T1 -> Format.sprintf "t1"
-  | T2 -> Format.sprintf "t2"
-  | S0 -> Format.sprintf "s0"
-  | Fp -> Format.sprintf "fp"
-  | S1 -> Format.sprintf "s1"
-  | A0 -> Format.sprintf "a0"
-  | A1 -> Format.sprintf "a1"
-  | A2 -> Format.sprintf "a2"
-  | A3 -> Format.sprintf "a3"
-  | A4 -> Format.sprintf "a4"
-  | A5 -> Format.sprintf "a5"
-  | A6 -> Format.sprintf "a6"
-  | A7 -> Format.sprintf "a7"
-  | S2 -> Format.sprintf "s2"
-  | S3 -> Format.sprintf "s3"
-  | S4 -> Format.sprintf "s4"
-  | S5 -> Format.sprintf "s5"
-  | S6 -> Format.sprintf "s6"
-  | S7 -> Format.sprintf "s7"
-  | S8 -> Format.sprintf "s8"
-  | S9 -> Format.sprintf "s9"
-  | S10 -> Format.sprintf "s10"
-  | S11 -> Format.sprintf "s11"
-  | T3 -> Format.sprintf "t3"
-  | T4 -> Format.sprintf "t4"
-  | T5 -> Format.sprintf "t5"
-  | T6 -> Format.sprintf "t6"
+let pp_register ppf = function
+  | X0 -> Format.fprintf ppf "x0"
+  | X1 -> Format.fprintf ppf "x1"
+  | X2 -> Format.fprintf ppf "x2"
+  | X3 -> Format.fprintf ppf "x3"
+  | X4 -> Format.fprintf ppf "x4"
+  | X5 -> Format.fprintf ppf "x5"
+  | X6 -> Format.fprintf ppf "x6"
+  | X7 -> Format.fprintf ppf "x7"
+  | X8 -> Format.fprintf ppf "x8"
+  | X9 -> Format.fprintf ppf "x9"
+  | X10 -> Format.fprintf ppf "x10"
+  | X11 -> Format.fprintf ppf "x11"
+  | X12 -> Format.fprintf ppf "x12"
+  | X13 -> Format.fprintf ppf "x13"
+  | X14 -> Format.fprintf ppf "x14"
+  | X15 -> Format.fprintf ppf "x15"
+  | X16 -> Format.fprintf ppf "x16"
+  | X17 -> Format.fprintf ppf "x17"
+  | X18 -> Format.fprintf ppf "x18"
+  | X19 -> Format.fprintf ppf "x19"
+  | X20 -> Format.fprintf ppf "x20"
+  | X21 -> Format.fprintf ppf "x21"
+  | X22 -> Format.fprintf ppf "x22"
+  | X23 -> Format.fprintf ppf "x23"
+  | X24 -> Format.fprintf ppf "x24"
+  | X25 -> Format.fprintf ppf "x25"
+  | X26 -> Format.fprintf ppf "x26"
+  | X27 -> Format.fprintf ppf "x27"
+  | X28 -> Format.fprintf ppf "x28"
+  | X29 -> Format.fprintf ppf "x29"
+  | X30 -> Format.fprintf ppf "x30"
+  | X31 -> Format.fprintf ppf "x31"
+  | Zero -> Format.fprintf ppf "zero"
+  | Ra -> Format.fprintf ppf "ra"
+  | Sp -> Format.fprintf ppf "sp"
+  | Gp -> Format.fprintf ppf "gp"
+  | Tp -> Format.fprintf ppf "tp"
+  | T0 -> Format.fprintf ppf "t0"
+  | T1 -> Format.fprintf ppf "t1"
+  | T2 -> Format.fprintf ppf "t2"
+  | S0 -> Format.fprintf ppf "s0"
+  | Fp -> Format.fprintf ppf "fp"
+  | S1 -> Format.fprintf ppf "s1"
+  | A0 -> Format.fprintf ppf "a0"
+  | A1 -> Format.fprintf ppf "a1"
+  | A2 -> Format.fprintf ppf "a2"
+  | A3 -> Format.fprintf ppf "a3"
+  | A4 -> Format.fprintf ppf "a4"
+  | A5 -> Format.fprintf ppf "a5"
+  | A6 -> Format.fprintf ppf "a6"
+  | A7 -> Format.fprintf ppf "a7"
+  | S2 -> Format.fprintf ppf "s2"
+  | S3 -> Format.fprintf ppf "s3"
+  | S4 -> Format.fprintf ppf "s4"
+  | S5 -> Format.fprintf ppf "s5"
+  | S6 -> Format.fprintf ppf "s6"
+  | S7 -> Format.fprintf ppf "s7"
+  | S8 -> Format.fprintf ppf "s8"
+  | S9 -> Format.fprintf ppf "s9"
+  | S10 -> Format.fprintf ppf "s10"
+  | S11 -> Format.fprintf ppf "s11"
+  | T3 -> Format.fprintf ppf "t3"
+  | T4 -> Format.fprintf ppf "t4"
+  | T5 -> Format.fprintf ppf "t5"
+  | T6 -> Format.fprintf ppf "t6"
 ;;
 
 type address =
@@ -78,42 +78,24 @@ type address =
   | Address32 of address32
 
 let pp_instruction_3reg_helper ppf mnemonic r1 r2 r3 =
-  Format.fprintf
-    ppf
-    "%s %s, %s, %s"
-    mnemonic
-    (pp_register r1)
-    (pp_register r2)
-    (pp_register r3)
+  Format.fprintf ppf "%s %a, %a, %a" mnemonic pp_register r1 pp_register r2 pp_register r3
 ;;
 
-let pp_address = function
-  | Address12 (LabelAddress12 str) -> Format.sprintf "%s" str
-  | Address20 (LabelAddress20 str) -> Format.sprintf "%s" str
-  | Address32 (LabelAddress32 str) -> Format.sprintf "%s" str
-  | Address12 (ImmediateAddress12 imm) -> Format.sprintf "%d" imm
-  | Address20 (ImmediateAddress20 imm) -> Format.sprintf "%d" imm
-  | Address32 (ImmediateAddress32 imm) -> Format.sprintf "%d" imm
+let pp_address ppf = function
+  | Address12 (LabelAddress12 str) -> Format.fprintf ppf "%s" str
+  | Address20 (LabelAddress20 str) -> Format.fprintf ppf "%s" str
+  | Address32 (LabelAddress32 str) -> Format.fprintf ppf "%s" str
+  | Address12 (ImmediateAddress12 imm) -> Format.fprintf ppf "%d" imm
+  | Address20 (ImmediateAddress20 imm) -> Format.fprintf ppf "%d" imm
+  | Address32 (ImmediateAddress32 imm) -> Format.fprintf ppf "%d" imm
 ;;
 
 let pp_instruction_2reg_1imm_helper ppf mnemonic r1 r2 addr =
-  Format.fprintf
-    ppf
-    "%s %s,%s,%s"
-    mnemonic
-    (pp_register r1)
-    (pp_register r2)
-    (pp_address addr)
+  Format.fprintf ppf "%s %a,%a,%a" mnemonic pp_register r1 pp_register r2 pp_address addr
 ;;
 
 let pp_instruction_2reg_1offset_helper ppf mnemonic r1 r2 addr =
-  Format.fprintf
-    ppf
-    "%s %s,%s(%s)"
-    mnemonic
-    (pp_register r1)
-    (pp_address addr)
-    (pp_register r2)
+  Format.fprintf ppf "%s %a,%a(%a)" mnemonic pp_register r1 pp_address addr pp_register r2
 ;;
 
 let pp_instruction ppf = function
@@ -203,54 +185,54 @@ let pp_instruction ppf = function
   | Sraiw (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "sraiw" rd rs1 (Address12 imm)
   | Jal (rd, imm) ->
-    Format.fprintf ppf "jal %s, %s" (pp_register rd) (pp_address (Address20 imm))
-  | Jr rs1 -> Format.fprintf ppf "jr %s" (pp_register rs1)
-  | J imm -> Format.fprintf ppf "j %s" (pp_address (Address20 imm))
+    Format.fprintf ppf "jal %a, %a" pp_register rd pp_address (Address20 imm)
+  | Jr rs1 -> Format.fprintf ppf "jr %a" pp_register rs1
+  | J imm -> Format.fprintf ppf "j %a" pp_address (Address20 imm)
   | Lui (rd, imm) ->
-    Format.fprintf ppf "lui %s,%s" (pp_register rd) (pp_address (Address20 imm))
+    Format.fprintf ppf "lui %a,%a" pp_register rd pp_address (Address20 imm)
   | Auipc (rd, imm) ->
-    Format.fprintf ppf "auipc %s,%s" (pp_register rd) (pp_address (Address20 imm))
+    Format.fprintf ppf "auipc %a,%a" pp_register rd pp_address (Address20 imm)
   | Ecall -> Format.fprintf ppf "ecall"
   | Call str -> Format.fprintf ppf "call %s" str
   | La (rd, imm) ->
-    Format.fprintf ppf "la %s,%s" (pp_register rd) (pp_address (Address32 imm))
+    Format.fprintf ppf "la %a,%a" pp_register rd pp_address (Address32 imm)
   | Lla (rd, imm) ->
-    Format.fprintf ppf "lla %s,%s" (pp_register rd) (pp_address (Address32 imm))
-  | Mv (rd, rs1) -> Format.fprintf ppf "mv %s,%s" (pp_register rd) (pp_register rs1)
+    Format.fprintf ppf "lla %a,%a" pp_register rd pp_address (Address32 imm)
+  | Mv (rd, rs1) -> Format.fprintf ppf "mv %a,%a" pp_register rd pp_register rs1
   | Li (rd, imm) ->
-    Format.fprintf ppf "li %s,%s" (pp_register rd) (pp_address (Address32 imm))
+    Format.fprintf ppf "li %a,%a" pp_register rd pp_address (Address32 imm)
   | Ret -> Format.fprintf ppf "ret"
 ;;
 
-let pp_str_or_int = function
-  | StrValue str -> Format.sprintf {|%S|} str
-  | IntValue imm -> Format.sprintf "%d" imm
+let pp_str_or_int ppf = function
+  | StrValue str -> Format.fprintf ppf "%S" str
+  | IntValue imm -> Format.fprintf ppf "%d" imm
 ;;
 
-let pp_type_dir = function
-  | Type str -> Format.sprintf "%s" str
+let pp_type_dir ppf = function
+  | Type str -> Format.fprintf ppf "%s" str
 ;;
 
 let pp_directive ppf = function
   | File str -> Format.fprintf ppf ".file %S" str
   | Option str -> Format.fprintf ppf ".option %s" str
   | Attribute (str, str_or_int) ->
-    Format.fprintf ppf ".attribute %s, %s" str (pp_str_or_int str_or_int)
+    Format.fprintf ppf ".attribute %s, %a" str pp_str_or_int str_or_int
   | Text -> Format.fprintf ppf ".text"
   | Align imm -> Format.fprintf ppf ".align %d" imm
-  | Globl imm -> Format.fprintf ppf ".globl %s" (pp_address (Address12 imm))
-  | TypeDir (str, str_type) ->
-    Format.fprintf ppf ".type %s,@%s" str (pp_type_dir str_type)
+  | Globl imm -> Format.fprintf ppf ".globl %a" pp_address (Address12 imm)
+  | TypeDir (str, str_type) -> Format.fprintf ppf ".type %s,@%a" str pp_type_dir str_type
   | CfiStartproc -> Format.fprintf ppf ".cfi_startproc"
   | CfiEndproc -> Format.fprintf ppf ".cfi_endproc"
-  | Size (imm, str) -> Format.fprintf ppf ".size %s,%s" (pp_address (Address12 imm)) str
+  | Size (imm, str) -> Format.fprintf ppf ".size %a,%s" pp_address (Address12 imm) str
   | Section (str1, str2, str_type, none_or_int) ->
     Format.fprintf
       ppf
-      ".section %s,%S,@%s%s"
+      ".section %s,%S,@%a%s"
       str1
       str2
-      (pp_type_dir str_type)
+      pp_type_dir
+      str_type
       (match none_or_int with
        | Some imm -> Format.sprintf ",%d" imm
        | None -> "")
@@ -263,9 +245,11 @@ let pp_directive ppf = function
   | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
 ;;
 
+let pp_label ppf label = Format.fprintf ppf "%s:" label
+
 let pp_expr ppf = function
   | InstructionExpr instruction -> pp_instruction ppf instruction
-  | LabelExpr label -> Format.fprintf ppf "%s:" label
+  | LabelExpr label -> pp_label ppf label
   | DirectiveExpr directive -> pp_directive ppf directive
 ;;
 

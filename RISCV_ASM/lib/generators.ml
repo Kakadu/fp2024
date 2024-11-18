@@ -21,8 +21,9 @@ let gen_alpha_or_digit =
 ;;
 
 let gen_my_label =
+  let* length = int_range 2 50 in
   let* first_char = gen_alpha in
-  let* rest_chars = list_repeat 9 gen_alpha_or_digit in
+  let* rest_chars = list_repeat (length - 1) gen_alpha_or_digit in
   let all_chars = first_char :: rest_chars in
   return (String.concat "" (List.map (String.make 1) all_chars))
 ;;
@@ -41,7 +42,7 @@ let gen_char_for_string =
 ;;
 
 let gen_my_string =
-  map
-    (fun chars -> String.init 10 (fun _ -> List.nth chars 0))
-    (list_repeat 10 gen_char_for_string)
+  let* length = int_range 1 50 in
+  let* chars = list_repeat length gen_char_for_string in
+  return (String.concat "" (List.map (String.make 1) chars))
 ;;
