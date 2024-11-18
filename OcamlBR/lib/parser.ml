@@ -120,7 +120,7 @@ let plet pexpr =
   let rec pbody pexpr =
     ppattern
     >>= function
-    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun ([ PVar id ], e))
+    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
     | _ -> fail "Only variable patterns are supported"
   in
   let pvalue_binding pexpr =
@@ -139,8 +139,11 @@ let plet pexpr =
 ;;
 
 let pEfun pexpr =
-  pstoken "fun" *> many1 ppattern
-  >>= fun args -> pstoken "->" *> pexpr >>| fun body -> Efun (args, body)
+  lift3
+    (fun arg args body -> Efun (arg, args, body))
+    (pstoken "fun" *> ppattern)
+    (many ppattern)
+    (pstoken "->" *> pexpr)
 ;;
 
 let pElist pexpr =
@@ -179,9 +182,10 @@ let pbranch pexpr =
 
 let pEmatch pexpr =
   let parse_case =
-    let* pat = ppattern <* pstoken "->" in
-    let* exp = pwhitespace *> pexpr in
-    return { left = pat; right = exp }
+    lift2
+      (fun pat exp -> Ecase (pat, exp))
+      (ppattern <* pstoken "->")
+      (pwhitespace *> pexpr)
   in
   lift3
     (fun e case case_l -> Ematch (e, case, case_l))
