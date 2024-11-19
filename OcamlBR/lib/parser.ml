@@ -136,7 +136,7 @@ let logic = choice [ pbinop And "&&"; pbinop Or "||" ]
 (*------------------Unary operators-----------------*)
 
 let punop op token = pwhitespace *> pstoken token *> return (fun e1 -> Eun_op (op, e1))
-let negation = pws1 *> punop Not "not"
+let negation = punop Not "not" <* pws1
 let neg_sign = punop Negative "-"
 let pos_sign = punop Positive "+"
 
