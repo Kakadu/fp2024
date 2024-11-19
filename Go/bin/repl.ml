@@ -1,7 +1,4 @@
-open Base
-open Stdlib
-open Stdlib.Arg
-open Parser
+open Parse
 open Ast
 
 type input =
@@ -27,7 +24,7 @@ let input_upto_sep inp_chan =
 ;;
 
 let print_result str =
-  match Parse.parse TopLevel.parse_file str with
+  match parse parse_file str with
   | Ok res -> pp_file Format.std_formatter res
   | Error err -> print_endline err
 ;;
@@ -58,7 +55,7 @@ let () =
   let options = { show_ast = false } in
   let arg_list =
     [ ( "--ast-tree"
-      , Unit (fun _ -> options.show_ast <- true)
+      , Arg.Unit (fun _ -> options.show_ast <- true)
       , "View AST representation of code" )
     ]
   in
@@ -67,6 +64,6 @@ let () =
     Printf.eprintf "Some of this arguments aren't supported\n";
     Stdlib.exit 255
   in
-  let () = parse arg_list invalid_arg doc in
+  let () = Arg.parse arg_list invalid_arg doc in
   run_repl options.show_ast
 ;;

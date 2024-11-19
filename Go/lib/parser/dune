@@ -1,5 +1,5 @@
 (library
- (name parser)
+ (name parse)
  (libraries base angstrom ast)
  (inline_tests)
  (instrumentation

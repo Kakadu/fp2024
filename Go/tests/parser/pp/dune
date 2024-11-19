@@ -1,5 +1,5 @@
 (library
- (name pp)
+ (name pprinter)
  (libraries ast str)
  (inline_tests)
  (instrumentation

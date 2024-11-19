@@ -2,25 +2,24 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open AstGenerator
-open Pp.Printer
-open Parser
-open Format
+open Pprinter.Printer
+open Parse
 
-let parse_file = Parse.parse TopLevel.parse_file
-let print_file fmt file = fprintf fmt "%s" (print_file file)
-let arbitrary_file = QCheck.make gen_file ~print:(Format.asprintf "%a" print_file)
-
-let run_tests () =
-  QCheck_runner.run_tests
-    [ QCheck.(
-        Test.make ~name:"QCheck test" ~count:10 arbitrary_file (fun file ->
-          Result.ok file = parse_file (Format.asprintf "%a" print_file file)))
-    ]
+let print_file_with_ast file =
+  Format.asprintf "Program:\n\n%s\nAST:\n\n%s" (print_file file) (Ast.show_file file)
 ;;
 
-let () =
-  let _ = print_endline "Running QCheck random generated tests" in
-  let _ = run_tests in
-  ()
+let arbitrary_file_manual =
+  QCheck.make
+    AstGenerator.gen_file
+    ~shrink:AstShrinker.shrink_file
+    ~print:print_file_with_ast
 ;;
+
+let manual_test =
+  QCheck.(
+    Test.make ~name:"QCheck test" ~count:10 arbitrary_file_manual (fun file ->
+      Result.ok file = parse parse_file (print_file file)))
+;;
+
+let () = QCheck_base_runner.run_tests_main [ manual_test ]

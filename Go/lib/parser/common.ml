@@ -6,6 +6,8 @@ open Base
 open Ast
 open Angstrom
 
+let fail = fail ""
+let fail_if cond = if cond then fail else return ()
 let skip_whitespace = skip_many1 (satisfy Char.is_whitespace)
 let skip_line_whitespace = skip_many1 (char ' ' <|> char '\t')
 let parse_line_comment = string "//" *> many_till any_char (char '\n') *> return ()
@@ -20,26 +22,32 @@ let curly_braces p = char '{' *> ws *> p <* ws_line <* char '}'
 let sep_by_comma p = sep_by (token ",") p
 let sep_by_comma1 p = sep_by1 (token ",") p
 let parse_stmt_sep = ws_line *> (char '\n' <|> char ';') *> ws
-let parse_int = take_while1 Char.is_digit >>| fun num -> Int.of_string num
+
+let parse_int =
+  take_while1 Char.is_digit
+  >>= fun str ->
+  match int_of_string_opt str with
+  | Some num -> return num
+  | None -> fail
+;;
 
 let is_keyword = function
-  (* https://go.dev/ref/spec#Keywords *)
   | "break"
-  | "chan"
-  | "defer"
-  | "else"
-  | "for"
   | "func"
+  | "defer"
   | "go"
+  | "chan"
   | "if"
-  | "range"
+  | "else"
+  | "continue"
+  | "for"
   | "return"
   | "var" -> true
   | _ -> false
 ;;
 
 let parse_ident =
-  let is_first_char_valid = function
+  let is_first_char = function
     | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
     | _ -> false
   in
@@ -47,14 +55,13 @@ let parse_ident =
     | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
     | _ -> false
   in
-  let* first_char = peek_char in
-  match first_char with
-  | Some chr when is_first_char_valid chr ->
-    let* ident = take_while is_valid_char in
-    if is_keyword ident then fail "Ident cannot be a keyword" else return ident
-  | _ -> fail "Invalid ident"
+  let* first_char = satisfy is_first_char >>| Char.to_string in
+  let* rest = take_while is_valid_char in
+  let ident = first_char ^ rest in
+  fail_if (is_keyword ident) *> return ident
 ;;
 
+(** [parse_simple_type] parses [int], [bool] and [string] types *)
 let parse_simple_type =
   choice
     [ string "int" *> return Type_int
@@ -81,16 +88,15 @@ let parse_array_type ptype =
 ;;
 
 let parse_chan_type ptype =
-  let parse_direction =
+  let* chan_direction =
     choice
-      [ string "<-" *> ws *> string "chan" *> return (fun type' -> Chan_receive type')
-      ; string "chan" *> ws *> string "<-" *> return (fun type' -> Chan_send type')
-      ; string "chan" *> return (fun type' -> Chan_bidirectional type')
+      [ string "<-" *> ws *> string "chan" *> return Chan_receive
+      ; string "chan" *> ws *> string "<-" *> return Chan_send
+      ; string "chan" *> return Chan_bidirectional
       ]
   in
-  let* chan_direction = parse_direction <* ws in
-  let* chan_type = ptype in
-  return (Type_chan (chan_direction chan_type))
+  let* chan_type = ws *> ptype in
+  return (Type_chan (chan_direction, chan_type))
 ;;
 
 let parse_type =

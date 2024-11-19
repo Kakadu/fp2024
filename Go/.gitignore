@@ -53,4 +53,5 @@ _opam/
 .envrc
 
 # notes
+*.notes
 *.txt

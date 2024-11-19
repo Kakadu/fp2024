@@ -8,7 +8,7 @@ open Common
 
 let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
-  e >>= fun init -> go init
+  e >>= go
 ;;
 
 let rec chainr1 e op = e >>= fun a -> op >>= (fun f -> chainr1 e op >>| f a) <|> return a
@@ -25,13 +25,13 @@ let parse_unary_plus =
   char '+' *> ws *> return (fun expr -> Expr_un_oper (Unary_plus, expr))
 ;;
 
-let parse_unary_receive =
-  string "<-" *> ws *> return (fun expr -> Expr_un_oper (Unary_recieve, expr))
-;;
+let parse_chan_receive = string "<-" *> ws *> return (fun expr -> Expr_chan_receive expr)
 
+(** [parse_mult_unary_op pexpr] parses expressions with multiple unary operators such as:
+    [-+-+a[0]], [<-<-<-c()] *)
 let parse_mult_unary_op pexpr =
   let rec helper acc =
-    choice [ parse_unary_not; parse_unary_minus; parse_unary_plus; parse_unary_receive ]
+    choice [ parse_unary_not; parse_unary_minus; parse_unary_plus; parse_chan_receive ]
     >>= (fun new_oper -> helper (fun expr -> acc @@ new_oper expr))
     <|> return acc
   in
@@ -63,7 +63,7 @@ let parse_equal =
 ;;
 
 let parse_not_equal =
-  token "!= " *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_not_equal, exp1, exp2))
+  token "!=" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_not_equal, exp1, exp2))
 ;;
 
 let parse_greater =
@@ -90,9 +90,28 @@ let parse_or = token "||" *> return (fun exp1 exp2 -> Expr_bin_oper (Bin_or, exp
 let parse_const_int = parse_int >>| fun num -> Const_int num
 
 let parse_const_string =
-  char '"' *> take_till (Char.equal '"') <* char '"' >>| fun string -> Const_string string
+  let escaped_char =
+    char '\\'
+    *> choice
+         [ char '\"' *> return '\"'
+         ; char '\\' *> return '\\'
+         ; char 'n' *> return '\n'
+         ; char 't' *> return '\t'
+         ; char 'r' *> return '\r'
+         ]
+  in
+  let string_char = escaped_char <|> satisfy (fun c -> c <> '"' && c <> '\\') in
+  char '\"' *> many string_char
+  <* char '\"'
+  >>| fun chars -> Const_string (String.of_seq (List.to_seq chars))
 ;;
 
+(* let parse_const_string =
+   char '"' *> take_till (Char.equal '"') <* char '"' >>| fun string -> Const_string string
+   ;; *)
+
+(** [parse_idents_with_types] parses {i one} or more identificators with types,
+    separated by comma such as: [a int], [a int, b string], [a, b int, c, d bool] *)
 let parse_idents_with_types =
   let* args_lists =
     sep_by_comma1
@@ -103,21 +122,34 @@ let parse_idents_with_types =
   return (List.concat args_lists)
 ;;
 
-let parse_func_args = parens parse_idents_with_types <|> (parens ws >>| fun _ -> [])
+(** [parse_func_args] parses function arguments in function declarations or
+    anonymous functions such as: [()], [(a int)], [(a, b int, c string)] *)
+let parse_func_args = parens parse_idents_with_types <|> parens ws *> return []
 
+(** [parse_func_return_values] parses function return values such as: [], [()], [int],
+    [(int)], [[(int, string)], [(a int, b string)], [(a, b int, c string)]] *)
 let parse_func_return_values =
   choice
-    [ (parens parse_idents_with_types >>| fun returns -> Some (Ident_and_types returns))
-    ; (parens (sep_by_comma1 parse_type) >>| fun types -> Some (Only_types types))
-    ; (parse_type >>| fun t -> Some (Only_types [ t ]))
-    ; (let* _ = parens ws <|> return () in
-       let* char = ws_line *> peek_char_fail in
-       match char with
-       | '{' -> return None
-       | _ -> fail "Incorrect func return values")
+    [ (parens parse_idents_with_types
+       >>| function
+       | hd :: tl -> Some (Ident_and_types (hd, tl))
+       | [] -> None)
+    ; (parens (sep_by_comma1 parse_type)
+       >>| function
+       | hd :: tl -> Some (Only_types (hd, tl))
+       | [] -> None)
+    ; (parse_type >>| fun t -> Some (Only_types (t, [])))
+    ; (parens ws <|> return ()) *> return None
     ]
 ;;
 
+(** [parse_func_args_returns_and_body pblock] returns
+    parser for arguments, return values and body of a function such as:
+    [() {}], [(a int) string { return "" }],
+    [(a, b int, c string) (d, e bool) { 
+        d, e := true, false;
+        return 
+    }] *)
 let parse_func_args_returns_and_body pblock =
   let* args = parse_func_args <* ws_line in
   let* returns = parse_func_return_values <* ws_line in
@@ -125,11 +157,15 @@ let parse_func_args_returns_and_body pblock =
   return { args; returns; body }
 ;;
 
+(** [parse_const_func pblock] parses anonymous function suc as:
+    [func() {}], [func(a int), (b string) { return "" }] *)
 let parse_const_func pblock =
   string "func" *> ws *> parse_func_args_returns_and_body pblock
   >>| fun anon_func -> Const_func anon_func
 ;;
 
+(** [parse_const_array pexpr] parses constant arrays such as
+    [[3]string{}], [[3]int{1, 2}] *)
 let parse_const_array pexpr =
   let* size =
     square_brackets (parse_int >>| Option.some <|> string "..." *> return None)
@@ -166,11 +202,15 @@ let parse_index pexpr array =
   return (array, index)
 ;;
 
+(** [parse_expr_index pexpr array] takes [array] and parses array index call for [array]
+    such as [a[i]], where array in [Expr_ident "a"] *)
 let parse_expr_index pexpr array =
   let* array, index = parse_index pexpr array in
   return (Expr_index (array, index))
 ;;
 
+(** [parse_nested_calls_and_indices pexpr parse_func_or_array] parses nested function
+    and array index calls such as [a(2, 3)[0]()()[1][2]] *)
 let parse_nested_calls_and_indices pexpr parse_func_or_array =
   let rec helper acc =
     parse_expr_func_call pexpr acc
@@ -201,6 +241,5 @@ let parse_expr pblock =
            ])
     in
     let arg = chainr1 arg parse_and in
-    let arg = chainr1 arg parse_or in
-    arg)
+    chainr1 arg parse_or)
 ;;

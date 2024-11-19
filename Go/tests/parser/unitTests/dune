@@ -1,6 +1,6 @@
 (library
  (name unitTest)
- (libraries ast parser)
+ (libraries ast parse pprinter)
  (inline_tests)
  (instrumentation
   (backend bisect_ppx))

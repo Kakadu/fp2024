@@ -9,7 +9,7 @@ open Expr
 open Stmt
 
 let parse_func_decl : func_decl t =
-  let* _ = string "func" *> ws in
+  let* () = string "func" *> ws in
   let* func_name = parse_ident <* ws_line in
   let* args_returns_and_body = parse_func_args_returns_and_body parse_block in
   return (func_name, args_returns_and_body)
