@@ -141,7 +141,7 @@ let%expect_test _ =
          (Ematch ((Econst (Int 3)),
             (Ecase ((PConst (Int 1)), (Econst (Int 10)))),
             [(Ecase ((PConst (Int 2)), (Econst (Int 20))));
-              (Ecase ((PVar (Id ("_", None))), (Econst (Int 30))))]
+              (Ecase (PAny, (Econst (Int 30))))]
             ))
          )),
       [], (Econst Unit)))
