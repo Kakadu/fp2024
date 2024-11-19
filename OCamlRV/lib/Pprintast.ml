@@ -44,7 +44,7 @@ let pp_pattern =
     | PAny -> fprintf ppf "_"
     | PLiteral l -> fprintf ppf "%a" pp_literal l
     | PVar v -> fprintf ppf "%s" v
-    | PCons (p1, p2) -> fprintf ppf "%a::%a" helper p1 helper p2
+    | PCons (p1, p2) -> fprintf ppf "(%a::%a)" helper p1 helper p2
   in
   helper
 ;;
@@ -81,7 +81,7 @@ let rec pp_expr =
           pp_tuple ppf xs
       in
       fprintf ppf "(%a)" pp_tuple t
-    | ExprCons (e1, e2) -> fprintf ppf "%a::%a" helper e1 helper e2
+    | ExprCons (e1, e2) -> fprintf ppf "(%a::%a)" helper e1 helper e2
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
     | OptNone -> fprintf ppf "None"
     | OptSome x -> fprintf ppf "Some (%a)" helper x
