@@ -4,14 +4,26 @@
 
 open QCheck.Gen
 
-(* For the generator's speed. *)
-let coef = 50
+let coef = 50 (* For the generator's speed. *)
 
 type 'a list_ = ('a list[@gen small_list gen_a])
 [@@deriving show { with_path = false }, qcheck]
 
+let gen_char = oneof [ char_range '!' '['; char_range ']' 'z' ]
+
 let gen_ident =
-  small_string ~gen:(map Char.chr (int_range (Char.code 'a') (Char.code 'h')))
+  map2
+    (fun start_ident rest_ident -> Base.Char.to_string start_ident ^ rest_ident)
+    (oneof [ char_range 'a' 'z'; return '_' ])
+    (small_string
+       ~gen:
+         (oneof
+            [ char_range '0' '9'
+            ; char_range 'A' 'Z'
+            ; char_range 'a' 'z'
+            ; return '_'
+            ; return '\''
+            ]))
 ;;
 
 type ident = (string[@gen gen_ident]) [@@deriving show { with_path = false }, qcheck]
@@ -22,9 +34,9 @@ type rec_flag =
 [@@deriving show { with_path = false }, qcheck]
 
 type constant =
-  | Const_integer of (int[@gen big_nat])
-  | Const_char of (char[@gen printable])
-  | Const_string of (string[@gen string_printable])
+  | Const_integer of (int[@gen nat])
+  | Const_char of (char[@gen gen_char])
+  | Const_string of (string[@gen small_string ~gen:gen_char])
 [@@deriving show { with_path = false }, qcheck]
 
 type core_type =
@@ -37,7 +49,7 @@ type core_type =
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])
       * (core_type[@gen gen_core_type_sized (n / coef)])
-      * (core_type list[@gen small_list (gen_core_type_sized (n / coef))])
+      * (core_type[@gen gen_core_type_sized (n / coef)]) list_
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
@@ -47,7 +59,7 @@ type pattern =
   | Pat_tuple of
       (pattern[@gen gen_pattern_sized (n / coef)])
       * (pattern[@gen gen_pattern_sized (n / coef)])
-      * (pattern list[@gen small_list (gen_pattern_sized (n / coef))])
+      * (pattern[@gen gen_pattern_sized (n / coef)]) list_
   | Pat_construct of ident * (pattern[@gen gen_pattern_sized (n / coef)]) option
   | Pat_constraint of (pattern[@gen gen_pattern_sized (n / coef)]) * core_type
 [@@deriving show { with_path = false }, qcheck]
@@ -79,12 +91,11 @@ module Expression = struct
           [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
             list_
         * (t[@gen gen_sized (n / coef)])
-    | Exp_fun of
-        (pattern list[@gen small_list gen_pattern]) * (t[@gen gen_sized (n / coef)])
+    | Exp_fun of pattern list_ * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
         (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)])
-        * (t list[@gen small_list (gen_sized (n / coef))])
+        * (t[@gen gen_sized (n / coef)]) list_
     | Exp_match of
         (t[@gen gen_sized (n / coef)])
         * (case_exp
@@ -97,7 +108,7 @@ module Expression = struct
     | Exp_tuple of
         (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)])
-        * (t list[@gen small_list (gen_sized (n / coef))])
+        * (t[@gen gen_sized (n / coef)]) list_
     | Exp_construct of ident * (t[@gen gen_sized (n / coef)]) option
     | Exp_ifthenelse of
         (t[@gen gen_sized (n / coef)])
@@ -111,11 +122,7 @@ end
 type structure_item =
   | Struct_eval of Expression.t
   | Struct_value of
-      rec_flag
-      * Expression.t value_binding
-      * (Expression.t value_binding list
-        [@gen small_list (gen_value_binding Expression.gen)])
+      rec_flag * Expression.t value_binding * Expression.t value_binding list_
 [@@deriving show { with_path = false }, qcheck]
 
-type structure = (structure_item list[@gen small_list gen_structure_item])
-[@@deriving show { with_path = false }, qcheck]
+type structure = structure_item list_ [@@deriving show { with_path = false }, qcheck]

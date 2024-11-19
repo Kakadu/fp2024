@@ -7,10 +7,9 @@ open Ast.Expression
 open QCheck.Gen
 
 module TestQCheckManual = struct
-  (* For the generator's speed. *)
-  let coef = 50
-  let gen_char = map Char.chr (int_range (Char.code 'a') (Char.code 'h'))
-  let gen_int = int_range 0 10000
+  let coef = 50 (* For the generator's speed. *)
+  let gen_char = map Char.chr (int_range (Char.code 'a') (Char.code 'z'))
+  let gen_int = nat
 
   let gen_bin_op =
     oneofl
@@ -211,10 +210,7 @@ module TestQCheckAuto = struct
       [ QCheck.(
           Test.make ~count:1 arbitrary_lam_auto (fun str ->
             Format.printf "%a \n" Pprinter.pp_structure str;
-            match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str) with
-            | Result.Ok after when after = str -> true
-            | Result.Ok _after -> false
-            | Result.Error _ -> false))
+            Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
       ]
   ;;
 end

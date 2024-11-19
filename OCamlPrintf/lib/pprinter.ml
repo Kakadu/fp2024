@@ -294,6 +294,8 @@ let pp_structure_item ppf = function
         value_binding_list
 ;;
 
-let pp_structure ppf =
-  fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item)
+let pp_structure ppf str =
+  if Base.List.is_empty str
+  then fprintf ppf ";;"
+  else fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item) str
 ;;

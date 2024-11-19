@@ -59,7 +59,12 @@ let keyword str =
 let parse_ident =
   ws
   *>
-  let* start_ident = satisfy Char.is_alpha >>| String.of_char in
+  let* start_ident =
+    satisfy (function
+      | 'a' .. 'z' -> true
+      | _ -> false)
+    >>| String.of_char
+  in
   let* rest_ident =
     take_while (function
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
