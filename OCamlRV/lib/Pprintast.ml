@@ -34,7 +34,7 @@ let pp_rec_flag ppf = function
 let pp_literal ppf = function
   | IntLiteral i -> fprintf ppf "%d" i
   | BoolLiteral b -> fprintf ppf "%b" b
-  | StringLiteral s -> fprintf ppf "%S" s
+  | StringLiteral s -> fprintf ppf "\"%s\"" s
   | UnitLiteral -> fprintf ppf "()"
   | NilLiteral -> fprintf ppf "[]"
 ;;
@@ -45,6 +45,15 @@ let pp_pattern =
     | PLiteral l -> fprintf ppf "%a" pp_literal l
     | PVar v -> fprintf ppf "%s" v
     | PCons (p1, p2) -> fprintf ppf "(%a::%a)" helper p1 helper p2
+    | PTuple (p1, p2, rest) ->
+      let rec pp_tuple ppf = function
+        | [] -> fprintf ppf ""
+        | [ x ] -> fprintf ppf "%a" helper x
+        | x :: xs ->
+          fprintf ppf "%a, " helper x;
+          pp_tuple ppf xs
+      in
+      fprintf ppf "(%a)" pp_tuple (p1 :: p2 :: rest)
   in
   helper
 ;;
@@ -75,9 +84,14 @@ let rec pp_expr =
     | ExprTuple t ->
       let rec pp_tuple ppf = function
         | [] -> ()
-        | [ x ] -> fprintf ppf "%a" helper x
+        | [ x ] ->
+          (match x with
+           | ExprMatch _ -> fprintf ppf "(%a)" helper x
+           | _ -> fprintf ppf "%a" helper x)
         | x :: xs ->
-          fprintf ppf "%a, " helper x;
+          (match x with
+           | ExprMatch _ -> fprintf ppf "(%a), " helper x
+           | _ -> fprintf ppf "%a, " helper x);
           pp_tuple ppf xs
       in
       fprintf ppf "(%a)" pp_tuple t

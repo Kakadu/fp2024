@@ -84,11 +84,19 @@ let ppvariable = variable >>| fun v -> PVar v
 let pparens p = token "(" *> p <* token ")"
 let brackets p = token "[" *> p <* token "]"
 
+let pptuple ppattern =
+  let* el1 = ws *> ppattern in
+  let* el2 = token "," *> ws *> ppattern in
+  let* rest = many (token "," *> ppattern) in
+  return (PTuple (el1, el2, rest))
+;;
+
 let pattern =
   fix (fun pat ->
     let term = choice [ ppany; ppliteral; ppvariable; pparens pat ] in
     let cons = chainl1 term (token "::" *> return (fun p1 p2 -> PCons (p1, p2))) in
-    cons)
+    let tuple = pptuple term <|> cons in
+    tuple)
 ;;
 
 (*--------------------------- Expressions ---------------------------*)
@@ -183,7 +191,7 @@ let expr =
     let cmp = chainl1 ops2 pcmp in
     let opt = p_option cmp <|> cmp in
     let tuple = petuple opt <|> opt in
-    choice [ pelet expr; pematch expr; pefun expr; tuple ])
+    choice [ tuple; pelet expr; pematch expr; pefun expr ])
 ;;
 
 (*--------------------------- Structure ---------------------------*)

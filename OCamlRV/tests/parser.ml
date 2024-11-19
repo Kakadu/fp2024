@@ -119,6 +119,18 @@ let%expect_test _ =
        ] |}]
 ;;
 
+let%expect_test _ =
+  parse_to_unit "let (a, b) = (1, 2)";
+  [%expect
+    {|
+  [(SValue (NonRec,
+      [((PTuple ((PVar "a"), (PVar "b"), [])),
+        (ExprTuple [(ExprLiteral (IntLiteral 1)); (ExprLiteral (IntLiteral 2))]))
+        ]
+      ))
+    ] |}]
+;;
+
 (*------------------- Factorial and Fibonacci -------------------*)
 
 let%expect_test "fibo test" =

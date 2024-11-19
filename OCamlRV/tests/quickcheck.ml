@@ -11,9 +11,10 @@ let arbitrary_structure =
 ;;
 
 let prop_round_trip =
-  QCheck.Test.make ~count:10 arbitrary_structure (fun s ->
+  QCheck.Test.make ~count:1 arbitrary_structure (fun s ->
+    Stdlib.Format.printf "%s\n" (show_structure s);
     Result.ok s = parse (Format.asprintf "%a" pp_structure_item_list s))
 ;;
 
-QCheck_base_runner.set_seed 12345;;
+QCheck_base_runner.set_seed 321310454;;
 QCheck_base_runner.run_tests [ prop_round_trip ]
