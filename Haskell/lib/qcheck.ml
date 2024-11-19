@@ -219,11 +219,11 @@ and shrink_expr_expr (x, y) =
   shrink_expr x >|= (fun a' -> a', y) <+> (shrink_expr y >|= fun b' -> x, b')
 ;;
 
-let n =
+let run n =
   QCheck_base_runner.run_tests
     [ QCheck.Test.make
         ~name:"test"
-        ~count:1
+        ~count:n
         (QCheck.make
            gen_binding
            ~print:(asprintf "%a" Pprintast.pp_binding)

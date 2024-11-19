@@ -9,5 +9,10 @@
  (instrumentation
   (backend bisect_ppx)))
 
+(executable
+ (name run_binding)
+ (modules run_binding)
+ (libraries haskell_lib qcheck-core.runner))
+
 (cram
  (deps ./qcheck.exe))
