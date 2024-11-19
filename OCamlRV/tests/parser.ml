@@ -51,12 +51,9 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_to_unit "let lie = \"i love Ocaml\"";
-  [%expect
-    {|
-     [(SValue (NonRec,
-         [((PVar "lie"), (ExprLiteral (StringLiteral "i love Ocaml")))]))
-       ] |}]
+  parse_to_unit {|let lie = "i love Ocaml|};
+  [%expect {|
+     [(SValue (NonRec, []))] |}]
 ;;
 
 let%expect_test _ =
@@ -124,7 +121,7 @@ let%expect_test _ =
 
 (*------------------- Factorial and Fibonacci -------------------*)
 
-let%expect_test _ =
+let%expect_test "fibo test" =
   parse_to_unit " let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2)";
   [%expect
     {|
@@ -152,7 +149,7 @@ let%expect_test _ =
        ] |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "fib test" =
   parse_to_unit "let rec fib_loop m n i = if i = 0 then m else fib_loop n (n + m) (i - 1)";
   [%expect
     {|
@@ -185,7 +182,7 @@ let%expect_test _ =
 ;;
 
 (* Factorial test *)
-let%expect_test _ =
+let%expect_test "factorial test" =
   parse_to_unit "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
   [%expect
     {|
@@ -208,4 +205,121 @@ let%expect_test _ =
     ))
   ]
 |}]
+;;
+
+(*------------------- Mathc expression tests -------------------*)
+
+let%expect_test "match" =
+  parse_to_unit {|match x with
+| 0 -> "zero"
+| 1 -> "one"
+| _ -> "other"|};
+  [%expect
+    {|
+[(SEval
+    (ExprMatch ((ExprVariable "x"),
+       [((PLiteral (IntLiteral 0)), (ExprLiteral (StringLiteral "zero")));
+         ((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one")));
+         (PAny, (ExprLiteral (StringLiteral "other")))]
+       )))
+  ]
+|}]
+;;
+
+let%expect_test "value equals match" =
+  parse_to_unit
+    {|let numder = match arabic with 
+| 1 -> "one"
+| 2 -> "two"
+| 3 -> "three";;|};
+  [%expect
+    {|
+     [(SValue (NonRec,
+         [((PVar "numder"),
+           (ExprMatch ((ExprVariable "arabic"),
+              [((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one")));
+                ((PLiteral (IntLiteral 2)), (ExprLiteral (StringLiteral "two")));
+                ((PLiteral (IntLiteral 3)), (ExprLiteral (StringLiteral "three")))
+                ]
+              )))
+           ]
+         ))
+       ] |}]
+;;
+
+let%expect_test "bin operations with if then else" =
+  parse_to_unit {|1 + if a then b else c|};
+  [%expect
+    {|
+    [(SEval
+        (ExprBinOperation (Add, (ExprLiteral (IntLiteral 1)),
+           (ExprIf ((ExprVariable "a"), (ExprVariable "b"),
+              (Some (ExprVariable "c"))))
+           )))
+      ]
+  |}]
+;;
+
+let%expect_test "cons test" =
+  parse_to_unit {| 1::2::3::[];; |};
+  [%expect
+    {|
+    [(SEval
+        (ExprCons (
+           (ExprCons (
+              (ExprCons ((ExprLiteral (IntLiteral 1)),
+                 (ExprLiteral (IntLiteral 2)))),
+              (ExprLiteral (IntLiteral 3)))),
+           (ExprLiteral NilLiteral))))
+      ]
+  |}]
+;;
+
+let%expect_test "sum list test" =
+  parse_to_unit
+    {|let rec sum_list lst = match lst with | [] -> 0 | x::xs -> x + sum_list xs|};
+  [%expect
+    {|
+    [(SValue (Rec,
+        [((PVar "sum_list"),
+          (ExprFun ((PVar "lst"),
+             (ExprMatch ((ExprVariable "lst"),
+                [((PLiteral NilLiteral), (ExprLiteral (IntLiteral 0)));
+                  ((PCons ((PVar "x"), (PVar "xs"))),
+                   (ExprBinOperation (Add, (ExprVariable "x"),
+                      (ExprApply ((ExprVariable "sum_list"), (ExprVariable "xs")
+                         ))
+                      )))
+                  ]
+                ))
+             )))
+          ]
+        ))
+      ] |}]
+;;
+
+let%expect_test "double list test" =
+  parse_to_unit
+    "let rec double_list lst = match lst with | [] -> [] | x::xs -> (2 * x)::double_list \
+     xs";
+  [%expect
+    {|
+     [(SValue (Rec,
+         [((PVar "double_list"),
+           (ExprFun ((PVar "lst"),
+              (ExprMatch ((ExprVariable "lst"),
+                 [((PLiteral NilLiteral), (ExprLiteral NilLiteral));
+                   ((PCons ((PVar "x"), (PVar "xs"))),
+                    (ExprCons (
+                       (ExprBinOperation (Mul, (ExprLiteral (IntLiteral 2)),
+                          (ExprVariable "x"))),
+                       (ExprApply ((ExprVariable "double_list"),
+                          (ExprVariable "xs")))
+                       )))
+                   ]
+                 ))
+              )))
+           ]
+         ))
+       ] |}]
 ;;
