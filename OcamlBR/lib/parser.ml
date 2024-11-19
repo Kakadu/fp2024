@@ -79,15 +79,10 @@ let ptype =
   pstoken ":" *> pbasic_type <|> return None
 ;;
 
-let pident = 
-  lift2 (fun t v -> Id (t, v))
-  varname
-  ptype
-;;
-
+let pident = lift2 (fun t v -> Id (t, v)) varname ptype
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
-let pat_any = pstoken "_" *> return PAny
+let pat_any = pstoken "_" *> return PAny <* pws1
 
 let pat_tuple pat =
   let commas = pstoken "," in
@@ -96,14 +91,12 @@ let pat_tuple pat =
        (fun p1 p2 rest -> PTuple (p1, p2, rest))
        pat
        (commas *> pat)
-       (many (commas *> pat))
-    )
+       (many (commas *> pat)))
 ;;
 
 let pat_list pat =
   let semicols = pstoken ";" in
-  psqparens
-    (sep_by semicols pat >>| fun patterns -> PList patterns)
+  psqparens (sep_by semicols pat >>| fun patterns -> PList patterns)
 ;;
 
 let ppattern =
@@ -113,7 +106,7 @@ let ppattern =
     let ppany = pat_any in
     let pplist = pat_list pat in
     let pptuple = pat_tuple pat in
-    choice [ ppconst; ppvar; ppany; pplist; pptuple ])
+    choice [ ppany; ppconst; ppvar; pplist; pptuple ])
 ;;
 
 (*------------------Binary operators-----------------*)
@@ -131,10 +124,10 @@ let relation =
   choice
     [ pbinop Eq "="
     ; pbinop Neq "<>"
-    ; pbinop Lt "<"
-    ; pbinop Gt ">"
     ; pbinop Lte "<="
     ; pbinop Gte ">="
+    ; pbinop Lt "<"
+    ; pbinop Gt ">"
     ]
 ;;
 
