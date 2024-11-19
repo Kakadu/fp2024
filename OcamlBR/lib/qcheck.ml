@@ -416,12 +416,12 @@ type structure = structure_item list [@@deriving qcheck, show] *)
     ] *)
 
 (*------------------Shrinker-----------------*)
-(*
+
 let rec shrink_expr = function
   | Econst (Int _) -> Iter.return (Econst (Int 1))
   | Econst (Bool b) -> Iter.return (Econst (Bool b))
   | Econst _ -> Iter.empty
-  | Evar _ -> Iter.return (Evar "a")
+  (* | Evar _ -> Iter.return (Evar "a") *)
   | Ebin_op (op, e1, e2) ->
     Iter.(
       return e1
@@ -505,6 +505,7 @@ let rec shrink_expr = function
         map (fun cases' -> Ematch (e, case, cases')) (QCheck.Shrink.list case_l)
       in
       map (fun e' -> Ematch (e', case, case_l)) (shrink_expr e) <+> shrink_cases_length)
+  | _ -> Iter.empty
 ;;
 
 let shrink_structure_item = function
@@ -541,7 +542,8 @@ let shrink_structure structure : structure Iter.t =
 
 let arbitrary_structure =
   (* QCheck.make gen_structure ~print:(fun s -> Format.asprintf "%a" show_structure s) *)
-  make gen_structure ~print:(Format.asprintf "%a" prpr_structure) ~shrink:shrink_structure
+  make gen_structure ~print:(Format.asprintf "%a" prpr_structure) 
+  ~shrink:shrink_structure
 ;;
 
 let arbitrary_expr =
@@ -621,5 +623,13 @@ let test_shrinking_expr =
         shrunk_exprs)
 ;;
 
-
-*)
+let run_auto2 =
+  Test.make ~name:"property-based testing" ~count:1 arbitrary_structure (fun structure ->
+    match parse_expr (Format.asprintf "%a\n" prpr_structure structure) with
+    | Result.Ok parsed_structure ->
+      (* Check if the parsed structure matches the original one *)
+      parsed_structure = structure
+    | Result.Error _ ->
+      (* If parsing fails, the test fails *)
+      false)
+;;
