@@ -34,7 +34,6 @@ let gen_char = QCheck.Gen.(map Char.chr (int_range (Char.code '0') (Char.code '9
 let varname = QCheck.Gen.(string_size ~gen:gen_char (1 -- 20))
 
 let nonnegative_integer x =
-  printf "%s" x;
   match Nonnegative_integer.of_string_opt x with
   | None -> Nonnegative_integer.of_int 0
   | Some x -> x
