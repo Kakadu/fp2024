@@ -77,8 +77,8 @@ type pattern =
   | PVar of id
   | PConst of const
   | PTuple of
-      pattern
-      * pattern
+      (pattern[@gen gen_pattern_sized (n / divisor)])
+      * (pattern[@gen gen_pattern_sized (n / divisor)])
       * (pattern list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
   | PAny (* wildcard pattern '_' *)
@@ -91,45 +91,60 @@ type expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
   | Evar of id (* identifiers, e.g. "x", "f"*)
   (* maybe later switch to id, or even now *)
-  | Eif_then_else of expr * expr * expr option
+  | Eif_then_else of
+      (expr[@gen gen_expr_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)]) option
   (* if E0 then E1 else E2; else expression is optional *)
-  | Eoption of expr option (* option type, Some e, None *)
+  | Eoption of
+      (expr[@gen gen_expr_sized (n / divisor)]) option (* option type, Some e, None *)
   | Etuple of
-      expr
-      * expr
+      (expr[@gen gen_expr_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
       * (expr list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_expr_sized (n / divisor)))])
   (* expressions (E0, .., En), n >= 2 *)
   (* or expr * expr * expr list, cause invariant n >= 2 *)
   | Elist of
       (expr list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_expr_sized (n / divisor)))])
     (* expressions [E0; ..; En], n >= 0 *)
-  | Ebin_op of bin_op * expr * expr (** match E with P1 -> E1 ... Pn -> Pn *)
+  | Ebin_op of
+      bin_op
+      * (expr[@gen gen_expr_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
+  (** match E with P1 -> E1 ... Pn -> Pn *)
   (* E0 bin_op E1, e.g. 1 + 3 *)
   | Ematch of
-      expr
-      * case
+      (expr[@gen gen_expr_sized (n / divisor)])
+      * (case[@gen gen_case_sized (n / divisor)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / divisor)))])
-  | Eun_op of un_op * expr (* E0 un_op E1, e.g. Negative 2, Not true *)
+  | Eun_op of un_op * (expr[@gen gen_expr_sized (n / divisor)])
+    (* E0 un_op E1, e.g. Negative 2, Not true *)
   | Elet of
       rec_flag
-      * value_binding
+      * (value_binding[@gen gen_value_binding_sized (n / divisor)])
       * (value_binding list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_value_binding_sized (n / divisor)))])
-      * expr
+      * (expr[@gen gen_expr_sized (n / divisor)])
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
-  | Efun_application of expr * expr (* E0 E1, e.g. f x *)
+  | Efun_application of
+      (expr[@gen gen_expr_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
+    (* E0 E1, e.g. f x *)
   | Efun of
       (pattern[@gen gen_pattern_sized (n / divisor)])
       * (pattern list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
-      * expr
+      * (expr[@gen gen_expr_sized (n / divisor)])
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
 [@@deriving show { with_path = false }, qcheck]
 
-and case = Ecase of (pattern[@gen gen_pattern_sized (n / divisor)]) * expr
+and case =
+  | Ecase of
+      (pattern[@gen gen_pattern_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-and value_binding = Evalue_binding of id * expr
+and value_binding = Evalue_binding of id * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
 let gen_expr =
