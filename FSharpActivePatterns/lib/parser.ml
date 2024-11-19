@@ -36,10 +36,12 @@ let chainl1 e op =
   e >>= go
 ;;
 
-(*
-   let rec chainr1 e op =
-   e >>= fun rest -> op >>= (fun f -> chainr1 e op >>| f rest) <|> return rest
-   ;;*)
+let rec chainr1_cons e op =
+  let* left = e in
+  (let* f = op in
+   chainr1_cons e op >>| f left)
+  <|> return (Cons_list (left, Empty_list))
+;;
 
 let rec unary_chain op e =
   op >>= (fun unexpr -> unary_chain op e >>= fun expr -> return (unexpr expr)) <|> e
@@ -109,17 +111,11 @@ let p_var_pat = p_ident >>| fun ident -> PVar ident
 let p_empty_list = skip_ws *> string "[" *> skip_ws *> string "]" *> return Empty_list
 let make_list e1 e2 = Cons_list (e1, e2)
 
-(* elem because it is for both patterns and expressions *)
 let p_cons_list p_elem =
-  let rec p_cons_tail acc =
-    skip_ws *> string "::" *> skip_ws *> p_elem
-    >>= (fun next -> p_cons_tail (Cons_list (next, acc)))
-    <|> return acc
-  in
-  p_elem
-  >>= fun hd ->
-  skip_ws *> string "::" *> skip_ws *> p_elem
-  >>= fun next -> p_cons_tail (Cons_list (next, Cons_list (hd, Empty_list)))
+  let p_cons = skip_ws *> (string "::" *> return (fun l r -> Cons_list (l, r))) in
+  let* first_elem = skip_ws *> p_elem <* skip_ws <* string "::" in
+  let* rest = chainr1_cons p_elem p_cons in
+  return (Cons_list (first_elem, rest))
 ;;
 
 let p_cons_list_expr p_expr = p_cons_list p_expr >>= fun l -> return (List l)
