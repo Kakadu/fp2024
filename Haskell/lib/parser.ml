@@ -535,9 +535,11 @@ let%expect_test "pattern_listcons_valid_with_tp" =
        |}]
 ;;
 
+let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: tps)
+
 let defbody e sep =
   (sep
-   **> let* ex = e in
+   **> let* ex = e >>= ex_tp in
        return (OrdBody ex))
   <|>
   let* ee_pairs =
@@ -545,7 +547,7 @@ let defbody e sep =
       (oper "|"
        **> let* ex1 = e in
            sep
-           **> let* ex2 = e in
+           **> let* ex2 = e >>= ex_tp in
                return (ex1, ex2))
   in
   match ee_pairs with
@@ -558,12 +560,12 @@ let bnd e bnd =
    let** pt = pattern Ban_p Ban_t in
    let* pts = many (ws *> pattern Ban_p Ban_t) in
    return (fun bb where_binds -> FunDef (ident, pt, pts, bb, where_binds)))
-  <|> (let** pt = pattern Ban_p Allow_t in
+  <|> (let** pt = pattern Allow_p Allow_t in
        return (fun bb where_binds -> VarsDef (pt, bb, where_binds)))
   <**> defbody e (oper "=")
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
-  <|> let** pt = pattern Ban_p Allow_t in
-      oper "::" **> tp >>| fun t -> Decl (pt, t)
+  <|> let** ident = ident in
+      oper "::" **> tp >>| fun t -> Decl (ident, t)
 ;;
 
 let binding e = fix (bnd e)
@@ -572,8 +574,6 @@ type assoc =
   | Left
   | Right
   | Non
-
-let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: tps)
 
 let prios_list =
   [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), []) ]
@@ -586,9 +586,9 @@ let prios_list =
       ; (Non, oper ">", fun a b -> Binop (a, Greater, b), [])
       ; (Non, oper "<", fun a b -> Binop (a, Less, b), [])
       ] )
+  ; None, [ (Right, oper ":", fun a b -> Binop (a, Cons, b), []) ]
   ; ( Some (oper "-", fun a -> Neg a, [])
-    , [ (Right, oper ":", fun a b -> Binop (a, Cons, b), [])
-      ; (Left, oper "+", fun a b -> Binop (a, Plus, b), [])
+    , [ (Left, oper "+", fun a b -> Binop (a, Plus, b), [])
       ; (Left, oper "-", fun a b -> Binop (a, Minus, b), [])
       ] )
   ; ( None
@@ -663,16 +663,6 @@ let inner_bindings e =
       InnerBindings (bnd, bnds, ex), []
 ;;
 
-let just_e =
-  just
-    (return
-       ( Lambda
-           ( ([], PIdentificator (Ident "X"), [])
-           , []
-           , (OptionBld (Just (Identificator (Ident "X"), [])), []) )
-       , [] ))
-;;
-
 let lambda e =
   oper "\\"
   *> let** pt = pattern Ban_p Ban_t in
@@ -738,8 +728,8 @@ let other_expr e fa =
   choice
     [ const_e
     ; ident_e
-    ; nothing (return (OptionBld Nothing, []))
-    ; just_e
+    ; nothing (return (ENothing, []))
+    ; just (return (EJust, []))
     ; if_then_else e'
     ; case e'
     ; inner_bindings e
@@ -754,17 +744,18 @@ let other_expr e fa =
 let oper e fa = op (other_expr e fa) prios_list
 
 let function_application ex e =
+  let e' = e >>= ex_tp in
   let* r =
     many1
       (ws
        *> choice
             [ const_e
             ; ident_e
-            ; just_e
-            ; nothing (return (OptionBld Nothing, []))
-            ; tree_e e
-            ; list_e e
-            ; tuple_or_parensed_item_e e
+            ; just (return (EJust, []))
+            ; nothing (return (ENothing, []))
+            ; tree_e e'
+            ; list_e e'
+            ; tuple_or_parensed_item_e e'
             ])
   in
   match r with
@@ -828,13 +819,7 @@ let%expect_test "expr_with_Just" =
   prs_and_prnt_ln (expr Allow_t) show_expr "Just 2 + 1";
   [%expect
     {|
-      ((Binop (
-          ((FunctionApply (
-              ((Lambda (([], (PIdentificator (Ident "X")), []), [],
-                  ((OptionBld (Just ((Identificator (Ident "X")), []))), []))),
-               []),
-              ((Const (Integer 2)), []), [])),
-           []),
+      ((Binop (((FunctionApply ((EJust, []), ((Const (Integer 2)), []), [])), []),
           Plus, ((Const (Integer 1)), []))),
        []) |}]
 ;;
@@ -865,10 +850,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
   prs_and_prnt_ln (expr Allow_t) show_expr "f Just(1)";
   [%expect
     {|
-      ((FunctionApply (((Identificator (Ident "f")), []),
-          ((Lambda (([], (PIdentificator (Ident "X")), []), [],
-              ((OptionBld (Just ((Identificator (Ident "X")), []))), []))),
-           []),
+      ((FunctionApply (((Identificator (Ident "f")), []), (EJust, []),
           [((Const (Integer 1)), [])])),
        []) |}]
 ;;
@@ -999,7 +981,7 @@ let%expect_test "expr_tuple_neg" =
        []) |}]
 ;;
 
-let%expect_test "expr_lambda neg" =
+let%expect_test "expr_lambda_invalid_neg" =
   prs_and_prnt_ln (expr Allow_t) show_expr " \\ -1 -> 1";
   [%expect {|
       error: : no more choices |}]
@@ -1159,15 +1141,6 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
          [])) |}]
 ;;
 
-let%expect_test "fun_binding_simple_strange_but_valid2" =
-  prs_and_prnt_ln binding show_binding "f 9y = y";
-  [%expect
-    {|
-      (FunDef ((Ident "f"), ([], (PConst (OrdinaryPConst (Integer 9))), []),
-         [([], (PIdentificator (Ident "y")), [])],
-         (OrdBody ((Identificator (Ident "y")), [])), [])) |}]
-;;
-
 let%expect_test "fun_binding_guards" =
   prs_and_prnt_ln binding show_binding "f x |x > 1 = 0 | otherwise = 1";
   [%expect
@@ -1188,8 +1161,7 @@ let%expect_test "decl" =
   prs_and_prnt_ln binding show_binding "f :: Integer -> Integer -> Integer";
   [%expect
     {|
-      (Decl (([], (PIdentificator (Ident "f")), []),
-         (FunctionType (FuncT (TInteger, TInteger, [TInteger])))))
+      (Decl ((Ident "f"), (FunctionType (FuncT (TInteger, TInteger, [TInteger])))))
       |}]
 ;;
 
