@@ -26,7 +26,7 @@ let pp_const fmt const =
     fmt
     "%s"
     (match const with
-     | Integer n -> Integer.Nonnegative_integer.to_string n
+     | Int n -> Int.to_string n
      | Bool b ->
        (match b with
         | true -> "True"
@@ -34,10 +34,7 @@ let pp_const fmt const =
      | Unit -> "()")
 ;;
 
-let%test "pp Integer" =
-  asprintf "%a" pp_const (Integer (Integer.Nonnegative_integer.of_int 18)) = "18"
-;;
-
+let%test "pp Int" = asprintf "%a" pp_const (Int 18) = "18"
 let%test "pp const Bool" = asprintf "%a" pp_const (Bool true) = "True"
 let%test "pp const Unit" = asprintf "%a" pp_const Unit = "()"
 
@@ -55,7 +52,7 @@ and pp_part_of_functype fmt tp =
 
 and pp_tp fmt = function
   | TUnit -> fprintf fmt "()"
-  | TInteger -> fprintf fmt "Integer"
+  | TInt -> fprintf fmt "Int"
   | TBool -> fprintf fmt "Bool"
   | TreeParam tp -> fprintf fmt "{%a}" pp_tp tp
   | ListParam tp -> fprintf fmt "[%a]" pp_tp tp
@@ -65,19 +62,19 @@ and pp_tp fmt = function
 ;;
 
 let%test "pp functype" =
-  asprintf "%a" pp_functype (FuncT (TInteger, TBool, [ TBool; TUnit ]))
-  = "Integer -> Bool -> Bool -> ()"
+  asprintf "%a" pp_functype (FuncT (TInt, TBool, [ TBool; TUnit ]))
+  = "Int -> Bool -> Bool -> ()"
 ;;
 
 let%test "pp tp TUnit" = asprintf "%a" pp_tp TUnit = "()"
-let%test "pp tp TInteger" = asprintf "%a" pp_tp TInteger = "Integer"
+let%test "pp tp TInt" = asprintf "%a" pp_tp TInt = "Int"
 let%test "pp tp TBool" = asprintf "%a" pp_tp TBool = "Bool"
-let%test "pp tp TreeParam" = asprintf "%a" pp_tp (TreeParam TInteger) = "{Integer}"
+let%test "pp tp TreeParam" = asprintf "%a" pp_tp (TreeParam TInt) = "{Int}"
 let%test "pp tp ListParam" = asprintf "%a" pp_tp (ListParam TBool) = "[Bool]"
 
 let%test "pp tp TupleParams" =
-  asprintf "%a" pp_tp (TupleParams (TInteger, TBool, [ TBool; TInteger ]))
-  = "(Integer, Bool, Bool, Integer)"
+  asprintf "%a" pp_tp (TupleParams (TInt, TBool, [ TBool; TInt ]))
+  = "(Int, Bool, Bool, Int)"
 ;;
 
 let%test "pp tp FunctionType" =
@@ -131,7 +128,7 @@ let rec pp_pattern fmt ((list, pat, tp_list) : pattern) =
   fprintf
     fmt
     (match pat with
-     | PMaybe (Just _) | PList (PCons _) | PConst (NegativePInteger _) ->
+     | PMaybe (Just _) | PList (PCons _) | PConst (NegativePInt _) ->
        (match list with
         | [] -> "%a"
         | _ -> "(%a)")
@@ -162,14 +159,14 @@ and pp_treepat fmt = function
 
 and pp_pconst fmt = function
   | OrdinaryPConst const -> pp_const fmt const
-  | NegativePInteger n -> fprintf fmt "-%s" (Integer.Nonnegative_integer.to_string n)
+  | NegativePInt n -> fprintf fmt "-%s" (Int.to_string n)
 
 and pp_pattern_sometimes_parensed cases fmt pattern =
   fprintf
     fmt
     (match cases, pattern with
      | ( Tp_and_some_constrs
-       , ([], (PMaybe (Just _) | PList (PCons _) | PConst (NegativePInteger _)), _) )
+       , ([], (PMaybe (Just _) | PList (PCons _) | PConst (NegativePInt _)), _) )
      | (Tp_and_some_constrs | Tp_only), (_, _, _ :: _) -> "(%a)"
      | _ -> "%a")
     pp_pattern
@@ -227,11 +224,7 @@ let%test "pp pconst OrdinaryPConst" =
   asprintf "%a" pp_pconst (OrdinaryPConst (Bool true)) = "True"
 ;;
 
-let%test "pp pconst NegativePInteger" =
-  asprintf "%a" pp_pconst (NegativePInteger (Integer.Nonnegative_integer.of_int 18))
-  = "-18"
-;;
-
+let%test "pp pconst NegativePInt" = asprintf "%a" pp_pconst (NegativePInt 18) = "-18"
 let%test "pp pat PWildcard" = asprintf "%a" pp_pat PWildcard = "_"
 
 let%test "pp pat PConst" =
@@ -294,10 +287,8 @@ let%test "pp pattern with capture, with type" =
   asprintf
     "%a"
     pp_pattern
-    ( [ Ident "my"; Ident "first"; Ident "variable" ]
-    , PIdentificator (Ident "x")
-    , [ TInteger ] )
-  = "my@first@variable@x :: Integer"
+    ([ Ident "my"; Ident "first"; Ident "variable" ], PIdentificator (Ident "x"), [ TInt ])
+  = "my@first@variable@x :: Int"
 ;;
 
 let get_prior = function
@@ -496,7 +487,7 @@ and pp_expr fmt ((expression, tp_list) : expr) =
   | _ -> fprintf fmt " :: %a" (pp_list ") :: " pp_tp) (List.rev tp_list)
 ;;
 
-let i_const x = Const (Integer (Integer.Nonnegative_integer.of_int x)), []
+let i_const x = Const (Int x), []
 
 let%expect_test "expr_with_prio" =
   printf
@@ -516,13 +507,12 @@ let%expect_test "expr_with_prio_tp" =
     "%a"
     pp_expr
     ( Binop
-        ( ( Binop ((Binop (i_const 1, Plus, i_const 0), [ TInteger ]), Multiply, i_const 2)
-          , [] )
+        ( (Binop ((Binop (i_const 1, Plus, i_const 0), [ TInt ]), Multiply, i_const 2), [])
         , Greater
         , i_const 1 )
     , [ TBool ] );
   [%expect {|
-      (1 + 0 :: Integer) * 2 > 1 :: Bool |}]
+      (1 + 0 :: Int) * 2 > 1 :: Bool |}]
 ;;
 
 let%expect_test "expr_with_fun_app_tp" =
@@ -531,16 +521,15 @@ let%expect_test "expr_with_fun_app_tp" =
     pp_expr
     ( Binop
         ( ( FunctionApply
-              ( ( Identificator (Ident "f")
-                , [ FunctionType (FuncT (TInteger, TInteger, [])) ] )
-              , (Identificator (Ident "x"), [ TInteger ])
+              ( (Identificator (Ident "f"), [ FunctionType (FuncT (TInt, TInt, [])) ])
+              , (Identificator (Ident "x"), [ TInt ])
               , [ Identificator (Ident "g"), []; i_const 2 ] )
           , [] )
         , Plus
         , i_const 1 )
     , [] );
   [%expect {|
-      (f :: Integer -> Integer) (x :: Integer) g 2 + 1 |}]
+      (f :: Int -> Int) (x :: Int) g 2 + 1 |}]
 ;;
 
 let%expect_test "expr_case_neg" =
@@ -549,8 +538,7 @@ let%expect_test "expr_case_neg" =
     pp_expr
     ( Case
         ( (Neg (i_const 1), [])
-        , ( ([], PConst (NegativePInteger (Integer.Nonnegative_integer.of_int 1)), [])
-          , OrdBody (i_const 1) )
+        , (([], PConst (NegativePInt 1), []), OrdBody (i_const 1))
         , [] )
     , [] );
   [%expect {|
@@ -562,17 +550,12 @@ let%expect_test "expr_case_tp" =
     "%a"
     pp_expr
     ( Case
-        ( (Neg (i_const 1), [ TInteger ])
-        , ( ( []
-            , PConst (NegativePInteger (Integer.Nonnegative_integer.of_int 1))
-            , [ TInteger ] )
-          , OrdBody (Const (Integer (Integer.Nonnegative_integer.of_int 1)), [ TInteger ])
-          )
+        ( (Neg (i_const 1), [ TInt ])
+        , (([], PConst (NegativePInt 1), [ TInt ]), OrdBody (Const (Int 1), [ TInt ]))
         , [] )
-    , [ TInteger ] );
-  [%expect
-    {|
-      (case - 1 :: Integer of (-1 :: Integer) -> 1 :: Integer) :: Integer |}]
+    , [ TInt ] );
+  [%expect {|
+      (case - 1 :: Int of (-1 :: Int) -> 1 :: Int) :: Int |}]
 ;;
 
 let%expect_test "expr_doble_cons_and_lam" =
