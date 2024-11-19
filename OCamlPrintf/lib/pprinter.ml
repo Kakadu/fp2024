@@ -30,6 +30,11 @@ let is_operator_in_exp = function
   | _ -> false
 ;;
 
+let is_type_arrow = function
+  | Type_arrow (_, _) -> true
+  | _ -> false
+;;
+
 let compare_priority op1 op2 =
   let priority1 = get_priority op1 in
   let priority2 = get_priority op2 in
@@ -62,9 +67,14 @@ let rec pp_type ppf = function
   | Type_bool -> fprintf ppf "bool"
   | Type_list type' -> fprintf ppf "%a list" pp_type type'
   | Type_tuple (first_type, second_type, type_list) ->
-    fprintf ppf "%a * %a" pp_type first_type pp_type second_type;
-    if not (Base.List.is_empty type_list)
-    then fprintf ppf " * %a" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
+    fprintf ppf "(%a * %a" pp_type first_type pp_type second_type;
+    if Base.List.is_empty type_list
+    then fprintf ppf ")"
+    else fprintf ppf " * %a)" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
+  | Type_arrow (first_type, second_type) ->
+    if is_type_arrow first_type
+    then fprintf ppf "(%a) -> %a" pp_type first_type pp_type second_type
+    else fprintf ppf "%a -> %a" pp_type first_type pp_type second_type
 ;;
 
 let rec pp_pattern ppf = function
@@ -263,7 +273,8 @@ let rec pp_expression ppf = function
       exp3
   | Exp_sequence (exp1, exp2) ->
     fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
-  | Exp_constraint (_, _) -> ()
+  | Exp_constraint (exp, core_type) ->
+    fprintf ppf "(%a : %a)" pp_expression exp pp_type core_type
 ;;
 
 let pp_structure_item ppf = function

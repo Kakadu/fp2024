@@ -102,25 +102,40 @@ let parse_constant =
 
 (* =================== Core_type =================== *)
 
+let parse_base_type =
+  ws
+  *> choice
+       [ string "_" *> return Type_any
+       ; string "int" *> return Type_int
+       ; string "char" *> return Type_char
+       ; string "string" *> return Type_string
+       ; string "bool" *> return Type_bool
+       ]
+;;
+
+let parse_list_type =
+  ws *> parse_base_type <* ws <* string "list" >>= fun t -> return (Type_list t)
+;;
+
+let parse_tuple_type parse_type =
+  let* first_type = ws *> parse_type in
+  let* second_type = ws *> string "*" *> ws *> parse_type in
+  let* type_list = many (ws *> string "*" *> ws *> parse_type) in
+  return (Type_tuple (first_type, second_type, type_list))
+;;
+
+let rec parse_arrow_type parse_type =
+  let* type1 = ws *> parse_type in
+  let* _ = ws *> string "->" *> ws in
+  let* type2 = parse_arrow_type parse_type <|> parse_type in
+  return (Type_arrow (type1, type2))
+;;
+
 let parse_core_type =
-  let base_type =
-    ws
-    *> choice
-         [ string "_" *> return Type_any
-         ; string "int" *> return Type_int
-         ; string "char" *> return Type_char
-         ; string "string" *> return Type_string
-         ; string "bool" *> return Type_bool
-         ]
-  in
-  let list_type = base_type <* ws <* string "list" >>= fun t -> return (Type_list t) in
-  let tuple_type =
-    let* first_type = list_type <|> base_type in
-    let* second_type = ws *> string "*" *> (list_type <|> base_type) in
-    let* type_list = many (ws *> string "*" *> (list_type <|> base_type)) in
-    return (Type_tuple (first_type, second_type, type_list))
-  in
-  ws *> choice [ tuple_type; list_type; base_type ] <* ws
+  ws
+  *> fix (fun parse_type ->
+    let cur_type = choice [ skip_parens parse_type; parse_list_type; parse_base_type ] in
+    choice [ parse_arrow_type cur_type; parse_tuple_type cur_type; cur_type ])
 ;;
 
 (* ==================== Pattern ==================== *)
@@ -232,6 +247,12 @@ let and_ = parse_operator [ "&&" ]
 let or_ = parse_operator [ "||" ]
 
 (* -------------------- Value_binding -------------------- *)
+
+let parse_constraint parse_exp =
+  let* exp = ws *> string "(" *> parse_exp in
+  let* type' = ws *> string ":" *> parse_core_type <* ws <* string ")" in
+  return (Exp_constraint (exp, type'))
+;;
 
 let parse_exp_constraint parse_exp op =
   let parse_exp_with_constraint =
@@ -394,7 +415,8 @@ let parse_expression =
   *> fix (fun parse_full_exp ->
     let parse_exp =
       choice
-        [ parse_exp_ident
+        [ parse_constraint parse_full_exp
+        ; parse_exp_ident
         ; parse_exp_constant
         ; skip_parens parse_full_exp
         ; parse_exp_let parse_full_exp

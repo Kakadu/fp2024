@@ -33,6 +33,7 @@ type core_type =
   | Type_bool (** [bool] *)
   | Type_list of core_type (** [T list] *)
   | Type_tuple of core_type * core_type * core_type list_ (** [T1 * ... * Tn] *)
+  | Type_arrow of core_type * core_type (** [T1 -> T2]*)
 
 val show_core_type : core_type -> string
 

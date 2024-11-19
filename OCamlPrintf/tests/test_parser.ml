@@ -131,7 +131,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 2" =
   |};
   [%expect
     {| 
-  let f : int * char * string list = (1, 'a', ["first"; "second"; "third"]);;
+  let f : (int * char * string list) = (1, 'a', ["first"; "second"; "third"]);;
   |}]
 ;;
 
@@ -141,5 +141,14 @@ let%expect_test "parsing identifiers with explicitly assigned types 3" =
   |};
   [%expect {| 
   let f = (fun (a : int) (b : int) : int -> a + b);;
+  |}]
+;;
+
+let%expect_test "parsing identifiers with explicitly assigned types 4" =
+  run {|
+  let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
+  |};
+  [%expect {| 
+  let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
   |}]
 ;;

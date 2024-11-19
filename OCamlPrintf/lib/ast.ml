@@ -45,11 +45,14 @@ type core_type =
   | Type_int
   | Type_string
   | Type_bool
-  | Type_list of core_type
+  | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])
       * (core_type[@gen gen_core_type_sized (n / coef)])
       * (core_type[@gen gen_core_type_sized (n / coef)]) list_
+  | Type_arrow of
+      (core_type[@gen gen_core_type_sized (n / coef)])
+      * (core_type[@gen gen_core_type_sized (n / coef)])
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
