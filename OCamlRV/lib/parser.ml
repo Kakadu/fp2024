@@ -176,8 +176,8 @@ let peif pe =
       (option None (token "else" *> (peif <|> pe) >>| Option.some)))
 ;;
 
-let p_option_none = ws *> token "None" *> return OptNone
-let p_option_some pe = ws *> token "Some" *> pe >>| fun x -> OptSome x
+let p_option_none = ws *> token "None" *> return (ExprOption None)
+let p_option_some pe = ws *> token "Some" *> pe >>| fun x -> ExprOption (Some x)
 let p_option pe = choice [ p_option_none; p_option_some pe ]
 
 let expr =
