@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 type const =
-  | Integer of Integer.nonnegative_integer [@gen gen_nonnegative_integer] (** e.g. [18] *)
+  | Int of (int[@gen QCheck.Gen.(0 -- Int.max_int)]) (** e.g. [18] *)
   | Bool of bool (** e.g. [True] *)
   | Unit (** () *)
 [@@deriving qcheck, show { with_path = false }]
@@ -16,15 +16,15 @@ type 'a maybe =
 (** explicit type indication*)
 type tp =
   | TUnit (** () *)
-  | TInteger (** Integer *)
+  | TInt (** Int *)
   | TBool (** Bool *)
-  | TreeParam of tp (** e.g. [{Integer}] *)
-  | ListParam of tp (** e.g. [[Integer]] *)
-  | TupleParams of tp * tp * tp_list (** e.g. [(Integer, Bool)] *)
+  | TreeParam of tp (** e.g. [{Int}] *)
+  | ListParam of tp (** e.g. [[Int]] *)
+  | TupleParams of tp * tp * tp_list (** e.g. [(Int, Bool)] *)
   | FunctionType of functype
 [@@deriving qcheck, show { with_path = false }]
 
-and functype = FuncT of tp * tp * tp_list (** e.g. [Integer-> Bool -> (Integer,Bool)] *)
+and functype = FuncT of tp * tp * tp_list (** e.g. [Int-> Bool -> (Int,Bool)] *)
 
 and tp_list =
   (tp list
@@ -51,7 +51,7 @@ type binop =
 
 (** variable's / function's name*)
 type ident = Ident of string [@@deriving qcheck, show { with_path = false }]
-(** e.g. [(a@my_list@lst@(_:xs) :: [Integer]) :: [Bool]] *)
+(** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
 
 let gen_first_symbol =
   QCheck.Gen.(
@@ -116,7 +116,7 @@ and treepat =
 
 and pconst =
   | OrdinaryPConst of const (** e.g [True]*)
-  | NegativePInteger of Integer.nonnegative_integer (** e.g [-12]*)
+  | NegativePInt of (int[@gen QCheck.Gen.(0 -- Int.max_int)]) (** e.g [-12]*)
 
 and pat =
   | PWildcard (** _ *)
@@ -152,7 +152,7 @@ and binding =
   (** e.g [x = let y = 12 in y * z where z = 5] *)
   | FunDef of ident * pattern * pattern_list * bindingbody * binding_list
   (** e.g [f x y = x + y + z where z = 2 ]*)
-  | Decl of ident * tp (** e.g [f :: Integer -> Integer]*)
+  | Decl of ident * tp (** e.g [f :: Int -> Int]*)
 
 (* had to do such a manual generator because of where shadowing*)
 and binding_list =
@@ -204,7 +204,7 @@ and expression =
   (** e.g [case l of (x:xs) -> x; [] -> 0] *)
   | InnerBindings of binding * binding_list * expr (** e.g. [let x = 1; y = 2 in x + y] *)
 
-(** e.g. [((x + 1) :: Integer  ) :: Bool]*)
+(** e.g. [((x + 1) :: Int  ) :: Bool]*)
 and expr = expression * tp_list [@@deriving qcheck, show { with_path = false }]
 
 and expr_list =

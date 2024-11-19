@@ -10,7 +10,7 @@ let rec shrink_tp =
   let open QCheck.Iter in
   function
   | TUnit -> empty
-  | TInteger -> empty
+  | TInt -> empty
   | TBool -> empty
   | TreeParam tp -> shrink_tp tp >|= fun a' -> TreeParam a'
   | ListParam tp -> shrink_tp tp >|= fun a' -> ListParam a'

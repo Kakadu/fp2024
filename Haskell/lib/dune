@@ -1,9 +1,9 @@
 (library
  (name haskell_lib)
  (public_name Haskell.Lib)
- (libraries angstrom zarith qcheck-core.runner)
+ (libraries angstrom qcheck-core.runner)
  (inline_tests)
- (modules Parser Ast Integer Pprintast Qcheck)
+ (modules Parser Ast Pprintast Qcheck)
  (preprocess
   (pps ppx_deriving.show ppx_inline_test ppx_expect ppx_deriving_qcheck))
  (instrumentation

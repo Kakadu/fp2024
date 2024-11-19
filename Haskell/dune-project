@@ -26,7 +26,6 @@
  (version 0.1)
  (depends
   qcheck-core
-  zarith
   dune
   angstrom
   (ppx_inline_test :with-test)

@@ -4,7 +4,6 @@
 
 open Angstrom
 open Ast
-open Integer
 
 let ws1 =
   many1
@@ -173,7 +172,7 @@ let ord_tp tp =
   let w = word ~point_allowed:Allow_point in
   choice
     [ string "()" *> return TUnit
-    ; w "Integer" *> return TInteger
+    ; w "Int" *> return TInt
     ; w "Bool" *> return TBool
     ; (sq_brackets tp >>| fun x -> ListParam x)
     ; (braces tp >>| fun x -> TreeParam x)
@@ -187,8 +186,8 @@ let tp =
 ;;
 
 let%expect_test "tp_list_of_func" =
-  prs_and_prnt_ln tp show_tp "[Integer -> Integer] ";
-  [%expect {| (ListParam (FunctionType (FuncT (TInteger, TInteger, [])))) |}]
+  prs_and_prnt_ln tp show_tp "[Int -> Int] ";
+  [%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}]
 ;;
 
 let%expect_test "tp_tree_of_func" =
@@ -197,47 +196,40 @@ let%expect_test "tp_tree_of_func" =
 ;;
 
 let%expect_test "tp_lnested_func" =
-  prs_and_prnt_ln tp show_tp "Integer -> ((Integer -> Integer)) -> Integer";
+  prs_and_prnt_ln tp show_tp "Int -> ((Int -> Int)) -> Int";
   [%expect
     {|
-      (FunctionType
-         (FuncT (TInteger, (FunctionType (FuncT (TInteger, TInteger, []))),
-            [TInteger]))) |}]
+      (FunctionType (FuncT (TInt, (FunctionType (FuncT (TInt, TInt, []))), [TInt]))) |}]
 ;;
 
 let%expect_test "tp_tuple" =
-  prs_and_prnt_ln tp show_tp "(Integer, Bool, Integer -> Bool)";
+  prs_and_prnt_ln tp show_tp "(Int, Bool, Int -> Bool)";
   [%expect
     {|
-      (TupleParams (TInteger, TBool, [(FunctionType (FuncT (TInteger, TBool, [])))]
-         )) |}]
+      (TupleParams (TInt, TBool, [(FunctionType (FuncT (TInt, TBool, [])))])) |}]
 ;;
 
-let nonnegative_integer =
+let int =
   let* y = take_while1 is_digit in
-  match Nonnegative_integer.of_string_opt y with
+  match int_of_string_opt y with
   | None -> fail ""
   | Some x -> return x
 ;;
 
 let const =
   choice
-    [ (let+ x = nonnegative_integer in
-       Integer x)
+    [ (let+ x = int in
+       Int x)
     ; string "()" *> return Unit
     ; string "True" *> return (Bool true)
     ; string "False" *> return (Bool false)
     ]
 ;;
 
-let%test "const_valid_num" =
-  parse_string ~consume:Prefix const "123"
-  = Result.Ok (Integer (Nonnegative_integer.of_int 123))
-;;
+let%test "const_valid_num" = parse_string ~consume:Prefix const "123" = Result.Ok (Int 123)
 
 let%test "const_invalid_num" =
-  parse_string ~consume:Prefix const "123ab"
-  = Result.Ok (Integer (Nonnegative_integer.of_int 123))
+  parse_string ~consume:Prefix const "123ab" = Result.Ok (Int 123)
 ;;
 
 let%test "const_invalid_num_negative" =
@@ -271,11 +263,7 @@ let tree item nul_cons node_cons =
 ;;
 
 let pt_tp ((a, p, tps) as pt) = option pt (oper "::" **> tp >>| fun tp -> a, p, tp :: tps)
-
-let pnegation =
-  oper "-" *> ws *> nonnegative_integer >>| fun a -> [], PConst (NegativePInteger a), []
-;;
-
+let pnegation = oper "-" *> ws *> int >>| fun a -> [], PConst (NegativePInt a), []
 let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), [])
 
 let pcons_tail head ptrn_ext =
@@ -361,7 +349,7 @@ let%test "pattern_valid_parens_oth" =
 
 let%test "pattern_valid_neg" =
   parse_string ~consume:Prefix (pattern Allow_p Allow_t) "-1"
-  = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), [])
+  = Result.Ok ([], PConst (NegativePInt 1), [])
 ;;
 
 let%test "pattern_invalid_banned_neg" =
@@ -371,18 +359,12 @@ let%test "pattern_invalid_banned_neg" =
 
 let%test "pattern_valid_double_as" =
   parse_string ~consume:Prefix (pattern Allow_p Allow_t) "a@b@2"
-  = Result.Ok
-      ( [ Ident "a"; Ident "b" ]
-      , PConst (OrdinaryPConst (Integer (Nonnegative_integer.of_int 2)))
-      , [] )
+  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (OrdinaryPConst (Int 2)), [])
 ;;
 
 let%test "pattern_valid_with_parens" =
   parse_string ~consume:Prefix (pattern Allow_p Allow_t) "(a@(b@(2)))"
-  = Result.Ok
-      ( [ Ident "a"; Ident "b" ]
-      , PConst (OrdinaryPConst (Integer (Nonnegative_integer.of_int 2)))
-      , [] )
+  = Result.Ok ([ Ident "a"; Ident "b" ], PConst (OrdinaryPConst (Int 2)), [])
 ;;
 
 let%expect_test "pattern_valid_tuple" =
@@ -427,7 +409,7 @@ let%expect_test "pattern_valid_tree" =
     {|
       ([],
        (PTree
-          (PNode (([], (PConst (OrdinaryPConst (Integer 2))), []),
+          (PNode (([], (PConst (OrdinaryPConst (Int 2))), []),
              ([], (PTree PNul), []), ([], (PTree PNul), [])))),
        []) |}]
 ;;
@@ -442,7 +424,7 @@ let%expect_test "pattern_just_valid" =
   prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "Just 1";
   [%expect
     {|
-      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), []))), []) |}]
+      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Int 1))), []))), []) |}]
 ;;
 
 let%expect_test "pattern_just_invalid_ban_unparansed" =
@@ -469,10 +451,10 @@ let%expect_test "pattern_enum_valid" =
     ([],
      (PList
         (PEnum
-           [([], (PConst (OrdinaryPConst (Integer 1))), []);
-             ([], (PConst (OrdinaryPConst (Integer 2))), []);
-             ([], (PConst (OrdinaryPConst (Integer 1))), []);
-             ([], (PConst (OrdinaryPConst (Integer 1))), [])])),
+           [([], (PConst (OrdinaryPConst (Int 1))), []);
+             ([], (PConst (OrdinaryPConst (Int 2))), []);
+             ([], (PConst (OrdinaryPConst (Int 1))), []);
+             ([], (PConst (OrdinaryPConst (Int 1))), [])])),
      [])
        |}]
 ;;
@@ -505,21 +487,21 @@ let%expect_test "pattern_listcons_valid" =
 ;;
 
 let%expect_test "pattern_simple_valid_tp" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Integer";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x :: Int";
   [%expect {|
-    ([], (PIdentificator (Ident "x")), [TInteger])
+    ([], (PIdentificator (Ident "x")), [TInt])
        |}]
 ;;
 
 let%expect_test "pattern_simple_invalid_tp_ban" =
-  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Integer";
+  prs_and_prnt_ln (pattern Allow_p Ban_t) show_pattern "x :: Int";
   [%expect {|
     ([], (PIdentificator (Ident "x")), [])
        |}]
 ;;
 
 let%expect_test "pattern_listcons_valid_with_tp" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Integer]";
+  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "x:y:z :: [Int]";
   [%expect
     {|
     ([],
@@ -531,7 +513,7 @@ let%expect_test "pattern_listcons_valid_with_tp" =
                   ([], (PIdentificator (Ident "z")), [])))),
             [])
            ))),
-     [(ListParam TInteger)])
+     [(ListParam TInt)])
        |}]
 ;;
 
@@ -777,7 +759,7 @@ let expr = function
 let%expect_test "expr_const" =
   prs_and_prnt_ln (expr Allow_t) show_expr "123456789012345678901234567890";
   [%expect {|
-      ((Const (Integer 123456789012345678901234567890)), []) |}]
+      error: : no more choices |}]
 ;;
 
 let%expect_test "expr_prio" =
@@ -786,11 +768,10 @@ let%expect_test "expr_prio" =
     {|
       ((Binop (
           ((Binop (
-              ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 1)), []))),
-               []),
-              Multiply, ((Const (Integer 2)), []))),
+              ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 1)), []))), []),
+              Multiply, ((Const (Int 2)), []))),
            []),
-          Greater, ((Const (Integer 1)), []))),
+          Greater, ((Const (Int 1)), []))),
        []) |}]
 ;;
 
@@ -799,9 +780,8 @@ let%expect_test "expr_div_mod" =
   [%expect
     {|
       ((Binop (
-          ((Binop (((Const (Integer 10)), []), Divide, ((Const (Integer 3)), []))),
-           []),
-          Mod, ((Const (Integer 2)), []))),
+          ((Binop (((Const (Int 10)), []), Divide, ((Const (Int 3)), []))), []),
+          Mod, ((Const (Int 2)), []))),
        []) |}]
 ;;
 
@@ -809,9 +789,8 @@ let%expect_test "expr_right_assoc" =
   prs_and_prnt_ln (expr Allow_t) show_expr "2^3^4";
   [%expect
     {|
-      ((Binop (((Const (Integer 2)), []), Pow,
-          ((Binop (((Const (Integer 3)), []), Pow, ((Const (Integer 4)), []))), [])
-          )),
+      ((Binop (((Const (Int 2)), []), Pow,
+          ((Binop (((Const (Int 3)), []), Pow, ((Const (Int 4)), []))), []))),
        []) |}]
 ;;
 
@@ -819,8 +798,8 @@ let%expect_test "expr_with_Just" =
   prs_and_prnt_ln (expr Allow_t) show_expr "Just 2 + 1";
   [%expect
     {|
-      ((Binop (((FunctionApply ((EJust, []), ((Const (Integer 2)), []), [])), []),
-          Plus, ((Const (Integer 1)), []))),
+      ((Binop (((FunctionApply ((EJust, []), ((Const (Int 2)), []), [])), []),
+          Plus, ((Const (Int 1)), []))),
        []) |}]
 ;;
 
@@ -831,9 +810,9 @@ let%expect_test "expr_with_func_apply" =
       ((Binop (
           ((FunctionApply (((Identificator (Ident "f")), []),
               ((Identificator (Ident "x")), []),
-              [((Identificator (Ident "g")), []); ((Const (Integer 2)), [])])),
+              [((Identificator (Ident "g")), []); ((Const (Int 2)), [])])),
            []),
-          Plus, ((Const (Integer 1)), []))),
+          Plus, ((Const (Int 1)), []))),
        []) |}]
 ;;
 
@@ -841,8 +820,8 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
   prs_and_prnt_ln (expr Allow_t) show_expr "f 9a";
   [%expect
     {|
-      ((FunctionApply (((Identificator (Ident "f")), []),
-          ((Const (Integer 9)), []), [((Identificator (Ident "a")), [])])),
+      ((FunctionApply (((Identificator (Ident "f")), []), ((Const (Int 9)), []),
+          [((Identificator (Ident "a")), [])])),
        []) |}]
 ;;
 
@@ -851,7 +830,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
   [%expect
     {|
       ((FunctionApply (((Identificator (Ident "f")), []), (EJust, []),
-          [((Const (Integer 1)), [])])),
+          [((Const (Int 1)), [])])),
        []) |}]
 ;;
 
@@ -891,9 +870,9 @@ let%expect_test "expr_case_statement" =
   [%expect
     {|
       ((Case (((Identificator (Ident "x")), []),
-          (([], (PConst (OrdinaryPConst (Integer 1))), []),
-           (OrdBody ((Const (Integer 1)), []))),
-          [(([], PWildcard, []), (OrdBody ((Const (Integer 2)), [])))])),
+          (([], (PConst (OrdinaryPConst (Int 1))), []),
+           (OrdBody ((Const (Int 1)), []))),
+          [(([], PWildcard, []), (OrdBody ((Const (Int 2)), [])))])),
        []) |}]
 ;;
 
@@ -908,13 +887,12 @@ let%expect_test "expr_case_statement_with_guards" =
           (([], (PIdentificator (Ident "y")), []),
            (Guards (
               (((Binop (((Identificator (Ident "y")), []), Greater,
-                   ((Const (Integer 10)), []))),
+                   ((Const (Int 10)), []))),
                 []),
-               ((Const (Integer 1)), [])),
-              [(((Identificator (Ident "otherwise")), []),
-                ((Const (Integer 2)), []))]
+               ((Const (Int 1)), [])),
+              [(((Identificator (Ident "otherwise")), []), ((Const (Int 2)), []))]
               ))),
-          [(([], PWildcard, []), (OrdBody ((Const (Integer 3)), [])))])),
+          [(([], PWildcard, []), (OrdBody ((Const (Int 3)), [])))])),
        []) |}]
 ;;
 
@@ -922,8 +900,8 @@ let%expect_test "expr_tuple" =
   prs_and_prnt_ln (expr Allow_t) show_expr " (x,1 , 2,(x, y))";
   [%expect
     {|
-      ((TupleBld (((Identificator (Ident "x")), []), ((Const (Integer 1)), []),
-          [((Const (Integer 2)), []);
+      ((TupleBld (((Identificator (Ident "x")), []), ((Const (Int 1)), []),
+          [((Const (Int 2)), []);
             ((TupleBld (((Identificator (Ident "x")), []),
                 ((Identificator (Ident "y")), []), [])),
              [])
@@ -937,8 +915,7 @@ let%expect_test "expr_lambda" =
   [%expect
     {|
       ((Lambda (([], (PIdentificator (Ident "x")), []), [],
-          ((Binop (((Identificator (Ident "x")), []), Plus,
-              ((Const (Integer 1)), []))),
+          ((Binop (((Identificator (Ident "x")), []), Plus, ((Const (Int 1)), []))),
            [])
           )),
        []) |}]
@@ -948,9 +925,9 @@ let%expect_test "expr_tree" =
   prs_and_prnt_ln (expr Allow_t) show_expr "1 + (2; $; $)";
   [%expect
     {|
-      ((Binop (((Const (Integer 1)), []), Plus,
+      ((Binop (((Const (Int 1)), []), Plus,
           ((BinTreeBld
-              (Node (((Const (Integer 2)), []), ((BinTreeBld Nul), []),
+              (Node (((Const (Int 2)), []), ((BinTreeBld Nul), []),
                  ((BinTreeBld Nul), [])))),
            [])
           )),
@@ -960,24 +937,21 @@ let%expect_test "expr_tree" =
 let%expect_test "expr_plus_neg" =
   prs_and_prnt_ln (expr Allow_t) show_expr "1 + -1";
   [%expect {|
-      ((Const (Integer 1)), []) |}]
+      ((Const (Int 1)), []) |}]
 ;;
 
 let%expect_test "expr_and_neg" =
   prs_and_prnt_ln (expr Allow_t) show_expr "1 && -1";
   [%expect
     {|
-      ((Binop (((Const (Integer 1)), []), And,
-          ((Neg ((Const (Integer 1)), [])), []))),
-       []) |}]
+      ((Binop (((Const (Int 1)), []), And, ((Neg ((Const (Int 1)), [])), []))), []) |}]
 ;;
 
 let%expect_test "expr_tuple_neg" =
   prs_and_prnt_ln (expr Allow_t) show_expr "(-1, 1)";
   [%expect
     {|
-      ((TupleBld (((Neg ((Const (Integer 1)), [])), []), ((Const (Integer 1)), []),
-          [])),
+      ((TupleBld (((Neg ((Const (Int 1)), [])), []), ((Const (Int 1)), []), [])),
        []) |}]
 ;;
 
@@ -991,9 +965,8 @@ let%expect_test "expr_case_neg" =
   prs_and_prnt_ln (expr Allow_t) show_expr "case-1of-1->1";
   [%expect
     {|
-      ((Case (((Neg ((Const (Integer 1)), [])), []),
-          (([], (PConst (NegativePInteger 1)), []),
-           (OrdBody ((Const (Integer 1)), []))),
+      ((Case (((Neg ((Const (Int 1)), [])), []),
+          (([], (PConst (NegativePInt 1)), []), (OrdBody ((Const (Int 1)), []))),
           [])),
        []) |}]
 ;;
@@ -1005,9 +978,9 @@ let%expect_test "expr_list_incomprehensional" =
       ((ListBld
           (OrdList
              (IncomprehensionlList
-                [((Const (Integer 1)), []);
+                [((Const (Int 1)), []);
                   ((FunctionApply (((Identificator (Ident "f")), []),
-                      ((Const (Integer 2)), []), [])),
+                      ((Const (Int 2)), []), [])),
                    []);
                   ((Const Unit), [])]))),
        []) |}]
@@ -1022,7 +995,7 @@ let%expect_test "expr_list_comprehensional_cond" =
              (ComprehensionList (((Identificator (Ident "x")), []),
                 (Condition
                    ((Binop (((Identificator (Ident "x")), []), Greater,
-                       ((Const (Integer 2)), []))),
+                       ((Const (Int 2)), []))),
                     [])),
                 [])))),
        []) |}]
@@ -1040,9 +1013,8 @@ let%expect_test "expr_list_comprehensional_gen" =
                     ((ListBld
                         (OrdList
                            (IncomprehensionlList
-                              [((Const (Integer 1)), []);
-                                ((Const (Integer 2)), []);
-                                ((Const (Integer 3)), [])]))),
+                              [((Const (Int 1)), []); ((Const (Int 2)), []);
+                                ((Const (Int 3)), [])]))),
                      []))),
                 [])))),
        []) |}]
@@ -1054,41 +1026,38 @@ let%expect_test "expr_list_lazy_valid" =
     [ "[1..]"; "[1, 3 .. 10]"; "[1..10]"; "[1,3..]" ];
   [%expect
     {|
-      ((ListBld (LazyList (((Const (Integer 1)), []), None, None))), [])
+      ((ListBld (LazyList (((Const (Int 1)), []), None, None))), [])
       ((ListBld
-          (LazyList (((Const (Integer 1)), []), (Some ((Const (Integer 3)), [])),
-             (Some ((Const (Integer 10)), []))))),
+          (LazyList (((Const (Int 1)), []), (Some ((Const (Int 3)), [])),
+             (Some ((Const (Int 10)), []))))),
        [])
       ((ListBld
-          (LazyList (((Const (Integer 1)), []), None,
-             (Some ((Const (Integer 10)), []))))),
+          (LazyList (((Const (Int 1)), []), None, (Some ((Const (Int 10)), []))))),
        [])
       ((ListBld
-          (LazyList (((Const (Integer 1)), []), (Some ((Const (Integer 3)), [])),
-             None))),
+          (LazyList (((Const (Int 1)), []), (Some ((Const (Int 3)), [])), None))),
        []) |}]
 ;;
 
 let%expect_test "expr_binop_invlid_tp" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Integer + 3";
+  prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Int + 3";
   [%expect
     {|
-      ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 2)), []))),
-       [TInteger]) |}]
+      ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 2)), []))), [TInt]) |}]
 ;;
 
 let%expect_test "expr_valid_tp" =
   prs_and_prnt_ln
     (expr Allow_t)
     show_expr
-    "if x>(2::Integer) :: Bool then 0::Integer else 1 :: Integer :: () ";
+    "if x>(2::Int) :: Bool then 0::Int else 1 :: Int :: () ";
   [%expect
     {|
       ((IfThenEsle (
           ((Binop (((Identificator (Ident "x")), []), Greater,
-              ((Const (Integer 2)), [TInteger]))),
+              ((Const (Int 2)), [TInt]))),
            [TBool]),
-          ((Const (Integer 0)), [TInteger]), ((Const (Integer 1)), [TInteger]))),
+          ((Const (Int 0)), [TInt]), ((Const (Int 1)), [TInt]))),
        [TUnit]) |}]
 ;;
 
@@ -1099,7 +1068,7 @@ let%expect_test "var_binding_simple" =
   [%expect
     {|
       (VarsDef (([], (PIdentificator (Ident "x")), []),
-         (OrdBody ((Const (Integer 1)), [])), [])) |}]
+         (OrdBody ((Const (Int 1)), [])), [])) |}]
 ;;
 
 let%expect_test "var_binding_with_where" =
@@ -1109,9 +1078,9 @@ let%expect_test "var_binding_with_where" =
       (VarsDef (([], (PIdentificator (Ident "x")), []),
          (OrdBody ((Identificator (Ident "y")), [])),
          [(VarsDef (([], (PIdentificator (Ident "y")), []),
-             (OrdBody ((Const (Integer 1)), [])), []));
+             (OrdBody ((Const (Int 1)), [])), []));
            (VarsDef (([], (PIdentificator (Ident "k")), []),
-              (OrdBody ((Const (Integer 2)), [])), []))
+              (OrdBody ((Const (Int 2)), [])), []))
            ]
          )) |}]
 ;;
@@ -1122,8 +1091,8 @@ let%expect_test "fun_binding_simple" =
     {|
       (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
          (OrdBody
-            ((Binop (((Identificator (Ident "x")), []), Plus,
-                ((Const (Integer 1)), []))),
+            ((Binop (((Identificator (Ident "x")), []), Plus, ((Const (Int 1)), [])
+                )),
              [])),
          [])) |}]
 ;;
@@ -1148,20 +1117,18 @@ let%expect_test "fun_binding_guards" =
       (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
          (Guards (
             (((Binop (((Identificator (Ident "x")), []), Greater,
-                 ((Const (Integer 1)), []))),
+                 ((Const (Int 1)), []))),
               []),
-             ((Const (Integer 0)), [])),
-            [(((Identificator (Ident "otherwise")), []), ((Const (Integer 1)), []))
-              ]
-            )),
+             ((Const (Int 0)), [])),
+            [(((Identificator (Ident "otherwise")), []), ((Const (Int 1)), []))])),
          [])) |}]
 ;;
 
 let%expect_test "decl" =
-  prs_and_prnt_ln binding show_binding "f :: Integer -> Integer -> Integer";
+  prs_and_prnt_ln binding show_binding "f :: Int -> Int -> Int";
   [%expect
     {|
-      (Decl ((Ident "f"), (FunctionType (FuncT (TInteger, TInteger, [TInteger])))))
+      (Decl ((Ident "f"), (FunctionType (FuncT (TInt, TInt, [TInt])))))
       |}]
 ;;
 
