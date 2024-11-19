@@ -101,6 +101,14 @@ let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
 let peliteral = pliteral >>| fun l -> ExprLiteral l
 let petuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> ExprTuple p
+let ematch e cl = ExprMatch (e, cl)
+let grd = token "|"
+
+let pematch pe =
+  let pexpr = token "match" *> pe <* token "with" <* option "" grd in
+  let pcase = lift2 (fun p e -> p, e) (pattern <* token "->") pe in
+  lift2 ematch pexpr (sep_by1 grd pcase)
+;;
 
 let pelist p =
   brackets @@ sep_by1 (token ";") p
@@ -169,13 +177,13 @@ let expr =
     let term = choice [ pevar; peliteral; pelist expr; pparens expr ] in
     let apply = chainl1 term (return eapply) in
     let cons = chainl1 apply (token "::" *> return (fun p1 p2 -> ExprCons (p1, p2))) in
-    let ops1 = chainl1 cons (pmul <|> pdiv) in
+    let ife = peif expr <|> cons in
+    let ops1 = chainl1 ife (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
     let opt = p_option cmp <|> cmp in
     let tuple = petuple opt <|> opt in
-    let ife = peif tuple <|> tuple in
-    choice [ pelet expr; pefun expr; ife ])
+    choice [ pelet expr; pematch expr; pefun expr; tuple ])
 ;;
 
 (*--------------------------- Structure ---------------------------*)
