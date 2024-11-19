@@ -2,8 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Format
-
+let asprintf = Format.asprintf
+let printf = Format.printf
 let pp_const = Haskell_lib.Pprintast.pp_const
 let pp_functype = Haskell_lib.Pprintast.pp_functype
 let pp_binop = Haskell_lib.Pprintast.pp_binop
