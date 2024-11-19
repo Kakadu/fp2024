@@ -83,30 +83,38 @@ let pident =
   lift2 (fun t v -> Id (t, v))
   varname
   ptype
+;;
 
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
-(*
-let pat_tuple =
+let pat_any = pstoken "_" *> return PAny
+
+let pat_tuple pat =
   let commas = pstoken "," in
   pparens
     (lift3
        (fun p1 p2 rest -> PTuple (p1, p2, rest))
-       ppattern
-       (commas *> ppattern)
-       (many (commas *> ppattern))
-     <* pwhitespace)
+       pat
+       (commas *> pat)
+       (many (commas *> pat))
+    )
 ;;
 
-let pat_list =
+let pat_list pat =
   let semicols = pstoken ";" in
-  psqparens (sep_by semicols ppattern <* (semicols <|> pwhitespace) >>| fun patterns -> PList patterns)
+  psqparens
+    (sep_by semicols pat >>| fun patterns -> PList patterns)
 ;;
-*)
-let pat_any = pstoken "_" *> return PAny
 
 let ppattern =
-  choice [ (*pat_tuple; pat_list;*) pat_const; pat_var; pat_any ]
+  fix (fun pat ->
+    let ppconst = pat_const in
+    let ppvar = pat_var in
+    let ppany = pat_any in
+    let pplist = pat_list pat in
+    let pptuple = pat_tuple pat in
+    choice [ ppconst; ppvar; ppany; pplist; pptuple ])
+;;
 
 (*------------------Binary operators-----------------*)
 

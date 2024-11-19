@@ -223,3 +223,16 @@ let%expect_test _ =
   ]
   |}]
 ;;
+
+
+
+let%expect_test _ =
+  parse "[1; 2; 3] = 1";
+  [%expect
+    {|
+  [
+
+  ]
+  |}]
+;;
+

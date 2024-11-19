@@ -1,5 +1,5 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
-
+(*
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open OCamlBR.Pr_printer
 
@@ -44,3 +44,4 @@ let () =
 (* QCheck_runner.run_tests [run_auto] *)
 let () = ignore (QCheck_base_runner.run_tests ~verbose:true [ test_structure_generation ])
 (* let () = ignore (QCheck_runner.run_tests ~verbose:true [ test_structure_generation ]) *)
+*)

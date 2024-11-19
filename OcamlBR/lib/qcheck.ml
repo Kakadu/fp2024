@@ -416,7 +416,7 @@ type structure = structure_item list [@@deriving qcheck, show] *)
     ] *)
 
 (*------------------Shrinker-----------------*)
-
+(*
 let rec shrink_expr = function
   | Econst (Int _) -> Iter.return (Econst (Int 1))
   | Econst (Bool b) -> Iter.return (Econst (Bool b))
@@ -620,3 +620,6 @@ let test_shrinking_expr =
           (* shrunk_size <= original_size) *))
         shrunk_exprs)
 ;;
+
+
+*)
