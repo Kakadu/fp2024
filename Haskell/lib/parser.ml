@@ -60,7 +60,7 @@ let word ?(point_allowed = Ban_point) req_word =
   else
     let* fst_smb = satisfy is_alpha in
     let* w =
-      let suitable_but_not_a_point = take_while (fun c -> is_char_suitable_for_ident c) in
+      let suitable_but_not_a_point = take_while is_char_suitable_for_ident in
       match point_allowed with
       | Ban_point -> suitable_but_not_a_point
       | Allow_point ->
@@ -120,8 +120,7 @@ let%test "ident_invalid_keyword" =
 
 let tuple_or_parensed_item item tuple_cons item_cons =
   parens (sep_by1 (ws *> char ',' *> ws) item)
-  >>= fun l ->
-  match l with
+  >>= function
   | hd :: [] -> item_cons hd
   | fs :: sn :: tl -> tuple_cons fs sn tl
   | [] -> fail "sep_by1 result can't be empty"
@@ -312,7 +311,7 @@ let ptrn ptrn =
     ; tuple_or_parensed_item
         (fix ptrn_extended >>= pt_tp)
         (fun p1 p2 pp -> return ([], PTuple (p1, p2, pp), []))
-        (fun p -> return p)
+        return
     ]
 ;;
 
@@ -587,7 +586,7 @@ let prios_list =
 let non_assoc_ops_seq_check l =
   List.fold_left
     (fun (prev_assoc, error_flag) (ass, _, _) ->
-      ass, if error_flag || (prev_assoc == Non && ass == Non) then true else false)
+      ass, error_flag || (prev_assoc = Non && ass = Non))
     (Left, false)
     l
   |> snd
@@ -704,7 +703,7 @@ let tuple_or_parensed_item_e e =
   tuple_or_parensed_item
     e
     (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), []))
-    (fun ex -> return ex)
+    return
 ;;
 
 let other_expr e fa =

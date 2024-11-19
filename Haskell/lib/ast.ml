@@ -96,6 +96,11 @@ type ident = Ident of (string[@gen gen_string])
 [@@deriving qcheck, show { with_path = false }]
 (** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
 
+type pconst =
+  | OrdinaryPConst of const (** e.g [True]*)
+  | NegativePInt of (int[@gen QCheck.Gen.(0 -- Int.max_int)]) (** e.g [-12]*)
+[@@deriving qcheck, show { with_path = false }]
+
 type pattern =
   (ident list[@gen QCheck.Gen.(list_size (return (Int.min 2 (n / 7))) gen_ident)])
   * pat
@@ -113,10 +118,6 @@ and listpat =
 and treepat =
   | PNul (** nul tree i.e. [$] *)
   | PNode of pattern * pattern * pattern (** tree's node e.g [(x; y; z)]*)
-
-and pconst =
-  | OrdinaryPConst of const (** e.g [True]*)
-  | NegativePInt of (int[@gen QCheck.Gen.(0 -- Int.max_int)]) (** e.g [-12]*)
 
 and pat =
   | PWildcard (** _ *)

@@ -25,10 +25,7 @@ let pp_const fmt const =
     "%s"
     (match const with
      | Int n -> Int.to_string n
-     | Bool b ->
-       (match b with
-        | true -> "True"
-        | false -> "False")
+     | Bool b -> if b then "True" else "False"
      | Unit -> "()")
 ;;
 
