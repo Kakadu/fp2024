@@ -96,7 +96,25 @@ module Expression = struct
         * (t[@gen gen_sized (n / coef)])
     | Exp_fun of pattern list_ * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
-        (t[@gen gen_sized (n / coef)])
+        (t
+        [@gen
+          oneof
+            [ gen_sized (n / coef)
+            ; oneofl
+                [ Exp_ident "*"
+                ; Exp_ident "/"
+                ; Exp_ident "+"
+                ; Exp_ident "-"
+                ; Exp_ident ">="
+                ; Exp_ident "<="
+                ; Exp_ident "<>"
+                ; Exp_ident "="
+                ; Exp_ident ">"
+                ; Exp_ident "<"
+                ; Exp_ident "&&"
+                ; Exp_ident "||"
+                ]
+            ]])
         * (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)]) list_
     | Exp_match of

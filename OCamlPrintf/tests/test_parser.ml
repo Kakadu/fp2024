@@ -110,7 +110,7 @@ let%expect_test "parsing sequence and exepression construct" =
   run {|
   [1; 2; 3]; "qwerty123"
   |};
-  [%expect {| 
+  [%expect {|
   ([1; 2; 3]); ("qwerty123");;
   |}]
 ;;
@@ -119,7 +119,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 1" =
   run {|
   let f : int list = [1; 2; 3];;
   |};
-  [%expect {| 
+  [%expect {|
   let f : int list = [1; 2; 3];;
   |}]
 ;;
@@ -130,7 +130,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 2" =
   let f : int * char * string list = (1, 'a', ["first"; "second"; "third"]);;
   |};
   [%expect
-    {| 
+    {|
   let f : (int * char * string list) = (1, 'a', ["first"; "second"; "third"]);;
   |}]
 ;;
@@ -139,7 +139,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 3" =
   run {|
   let f (a : int) (b : int) : int = a + b;;
   |};
-  [%expect {| 
+  [%expect {|
   let f = (fun (a : int) (b : int) : int -> a + b);;
   |}]
 ;;
@@ -148,7 +148,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
   run {|
   let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
   |};
-  [%expect {| 
+  [%expect {|
   let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
   |}]
 ;;
