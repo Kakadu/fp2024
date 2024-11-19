@@ -4,6 +4,7 @@
 
 open Base
 open Ast
+open Ast.Expression
 open Angstrom
 
 (* ==================== Utils ==================== *)

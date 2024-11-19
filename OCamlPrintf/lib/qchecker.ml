@@ -3,13 +3,12 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-
-(* Only for debug *)
-let coef = 50
+open Ast.Expression
+open QCheck.Gen
 
 module TestQCheckManual = struct
-  open QCheck.Gen
-
+  (* For the generator's speed. *)
+  let coef = 50
   let gen_char = map Char.chr (int_range (Char.code 'a') (Char.code 'h'))
   let gen_int = int_range 0 10000
 
@@ -185,14 +184,14 @@ module TestQCheckManual = struct
   let arbitrary_lam_manual =
     QCheck.make
       gen_structure
-      ~print:(Format.asprintf "%a" pp_structure)
+      ~print:(Format.asprintf "%a" Pprinter.pp_structure)
       ~shrink:Shrinker.shrink_structure
   ;;
 
   let run_manual () =
     QCheck_base_runner.run_tests
       [ QCheck.(
-          Test.make arbitrary_lam_manual (fun str ->
+          Test.make ~count:1 arbitrary_lam_manual (fun str ->
             Format.printf "%a \n" Pprinter.pp_structure str;
             Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
       ]
@@ -200,110 +199,6 @@ module TestQCheckManual = struct
 end
 
 module TestQCheckAuto = struct
-  open QCheck.Gen
-
-  type 'a list_ = ('a list[@gen small_list gen_a]) [@@deriving qcheck]
-
-  let gen_ident =
-    small_string ~gen:(map Char.chr (int_range (Char.code 'a') (Char.code 'h')))
-  ;;
-
-  type ident = (Ast.ident[@gen gen_ident]) [@@deriving qcheck]
-
-  type rec_flag = Ast.rec_flag =
-    | Recursive
-    | Nonrecursive
-  [@@deriving qcheck]
-
-  type constant = Ast.constant =
-    | Const_integer of int
-    | Const_char of char
-    | Const_string of (string[@gen small_string])
-  [@@deriving qcheck]
-
-  type core_type = Ast.core_type =
-    | Type_any
-    | Type_char
-    | Type_int
-    | Type_string
-    | Type_bool
-    | Type_list of core_type
-    | Type_tuple of core_type * core_type * core_type list_
-  [@@deriving qcheck]
-
-  type patt = Ast.pattern =
-    | Pat_any
-    | Pat_var of ident
-    | Pat_constant of constant
-    | Pat_tuple of
-        (patt[@gen gen_patt_sized (n / coef)])
-        * (patt[@gen gen_patt_sized (n / coef)])
-        * (patt list[@gen small_list (gen_patt_sized (n / coef))])
-    | Pat_construct of ident * (patt[@gen gen_patt_sized (n / coef)]) option
-    | Pat_constraint of (patt[@gen gen_patt_sized (n / coef)]) * core_type
-  [@@deriving qcheck]
-
-  type expr = Ast.expression =
-    | Exp_ident of ident
-    | Exp_constant of constant
-    | Exp_let of
-        rec_flag
-        * (value_binding
-          [@gen map2 (fun pat exp -> { pat; exp }) gen_patt (gen_expr_sized (n / coef))])
-        * (value_binding
-          [@gen map2 (fun pat exp -> { pat; exp }) gen_patt (gen_expr_sized (n / coef))])
-            list_
-        * (expr[@gen gen_expr_sized (n / coef)])
-    | Exp_fun of
-        (patt list[@gen small_list gen_patt]) * (expr[@gen gen_expr_sized (n / coef)])
-    | Exp_apply of
-        (expr[@gen gen_expr_sized (n / coef)])
-        * (expr[@gen gen_expr_sized (n / coef)])
-        * (expr list[@gen small_list (gen_expr_sized (n / coef))])
-    | Exp_match of
-        (expr[@gen gen_expr_sized (n / coef)])
-        * (case
-          [@gen
-            map2 (fun left right -> { left; right }) gen_patt (gen_expr_sized (n / coef))])
-        * (case
-          [@gen
-            map2 (fun left right -> { left; right }) gen_patt (gen_expr_sized (n / coef))])
-            list_
-    | Exp_tuple of
-        (expr[@gen gen_expr_sized (n / coef)])
-        * (expr[@gen gen_expr_sized (n / coef)])
-        * (expr list[@gen small_list (gen_expr_sized (n / coef))])
-    | Exp_construct of ident * (expr[@gen gen_expr_sized (n / coef)]) option
-    | Exp_ifthenelse of
-        (expr[@gen gen_expr_sized (n / coef)])
-        * (expr[@gen gen_expr_sized (n / coef)])
-        * (expr[@gen gen_expr_sized (n / coef)]) option
-    | Exp_sequence of
-        (expr[@gen gen_expr_sized (n / coef)]) * (expr[@gen gen_expr_sized (n / coef)])
-    | Exp_constraint of (expr[@gen gen_expr_sized (n / coef)]) * core_type
-  [@@deriving qcheck]
-
-  type value_binding = Ast.value_binding =
-    { pat : patt
-    ; exp : expr
-    }
-  [@@deriving qcheck]
-
-  type case = Ast.case =
-    { left : patt
-    ; right : expr
-    }
-  [@@deriving qcheck]
-
-  type structure_item = Ast.structure_item =
-    | Struct_eval of expr
-    | Struct_value of
-        rec_flag * value_binding * (value_binding list[@gen small_list gen_value_binding])
-  [@@deriving qcheck]
-
-  type structure = (structure_item list[@gen small_list gen_structure_item])
-  [@@deriving qcheck]
-
   let arbitrary_lam_auto =
     QCheck.make
       gen_structure
