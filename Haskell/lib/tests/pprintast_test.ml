@@ -2,57 +2,62 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-let asprintf = Format.asprintf
-let printf = Format.printf
-let pp_const = Haskell_lib.Pprintast.pp_const
-let pp_functype = Haskell_lib.Pprintast.pp_functype
-let pp_binop = Haskell_lib.Pprintast.pp_binop
-let pp_tp = Haskell_lib.Pprintast.pp_tp
-let pp_ident = Haskell_lib.Pprintast.pp_ident
-let pp_pat = Haskell_lib.Pprintast.pp_pat
-let pp_pattern = Haskell_lib.Pprintast.pp_pattern
-let pp_listpat = Haskell_lib.Pprintast.pp_listpat
-let pp_treepat = Haskell_lib.Pprintast.pp_treepat
-let pp_pconst = Haskell_lib.Pprintast.pp_pconst
-let pp_expr = Haskell_lib.Pprintast.pp_expr
-let i_const = Haskell_lib.Pprintast.i_const
-let pp_binding = Haskell_lib.Pprintast.pp_binding
-let%test "pp Int" = asprintf "%a" pp_const (Int 18) = "18"
-let%test "pp const Bool" = asprintf "%a" pp_const (Bool true) = "True"
-let%test "pp const Unit" = asprintf "%a" pp_const Unit = "()"
+let%test "pp Int" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_const (Int 18) = "18"
+
+let%test "pp const Bool" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_const (Bool true) = "True"
+;;
+
+let%test "pp const Unit" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_const Unit = "()"
 
 let%test "pp functype" =
-  asprintf "%a" pp_functype (FuncT (TInt, TBool, [ TBool; TUnit ]))
+  Format.asprintf
+    "%a"
+    Haskell_lib.Pprintast.pp_functype
+    (FuncT (TInt, TBool, [ TBool; TUnit ]))
   = "Int -> Bool -> Bool -> ()"
 ;;
 
-let%test "pp tp TUnit" = asprintf "%a" pp_tp TUnit = "()"
-let%test "pp tp TInt" = asprintf "%a" pp_tp TInt = "Int"
-let%test "pp tp TBool" = asprintf "%a" pp_tp TBool = "Bool"
-let%test "pp tp TreeParam" = asprintf "%a" pp_tp (TreeParam TInt) = "{Int}"
-let%test "pp tp ListParam" = asprintf "%a" pp_tp (ListParam TBool) = "[Bool]"
+let%test "pp tp TUnit" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp TUnit = "()"
+let%test "pp tp TInt" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp TInt = "Int"
+let%test "pp tp TBool" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp TBool = "Bool"
+
+let%test "pp tp TreeParam" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp (TreeParam TInt) = "{Int}"
+;;
+
+let%test "pp tp ListParam" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp (ListParam TBool) = "[Bool]"
+;;
 
 let%test "pp tp TupleParams" =
-  asprintf "%a" pp_tp (TupleParams (TInt, TBool, [ TBool; TInt ]))
+  Format.asprintf
+    "%a"
+    Haskell_lib.Pprintast.pp_tp
+    (TupleParams (TInt, TBool, [ TBool; TInt ]))
   = "(Int, Bool, Bool, Int)"
 ;;
 
 let%test "pp tp FunctionType" =
-  asprintf "%a" pp_tp (FunctionType (FuncT (TBool, TUnit, []))) = "Bool -> ()"
+  Format.asprintf
+    "%a"
+    Haskell_lib.Pprintast.pp_tp
+    (FunctionType (FuncT (TBool, TUnit, [])))
+  = "Bool -> ()"
 ;;
 
 let%test "pp listpat PCons" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_listpat
+    Haskell_lib.Pprintast.pp_listpat
     (PCons (([], PIdentificator (Ident "x"), []), ([], PIdentificator (Ident "xs"), [])))
   = "x : xs"
 ;;
 
 let%test "pp listpat PEnum" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_listpat
+    Haskell_lib.Pprintast.pp_listpat
     (PEnum
        [ [], PIdentificator (Ident "x"), []
        ; [], PIdentificator (Ident "y"), []
@@ -61,12 +66,14 @@ let%test "pp listpat PEnum" =
   = "[x, y, z]"
 ;;
 
-let%test "pp treepat PNul" = asprintf "%a" pp_treepat PNul = "$"
+let%test "pp treepat PNul" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_treepat PNul = "$"
+;;
 
 let%test "pp treepat PNode" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_treepat
+    Haskell_lib.Pprintast.pp_treepat
     (PNode
        ( ([], PIdentificator (Ident "x"), [])
        , ([], PIdentificator (Ident "y"), [])
@@ -75,31 +82,40 @@ let%test "pp treepat PNode" =
 ;;
 
 let%test "pp pconst OrdinaryPConst" =
-  asprintf "%a" pp_pconst (OrdinaryPConst (Bool true)) = "True"
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_pconst (OrdinaryPConst (Bool true))
+  = "True"
 ;;
 
-let%test "pp pconst NegativePInt" = asprintf "%a" pp_pconst (NegativePInt 18) = "-18"
-let%test "pp pat PWildcard" = asprintf "%a" pp_pat PWildcard = "_"
+let%test "pp pconst NegativePInt" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_pconst (NegativePInt 18) = "-18"
+;;
+
+let%test "pp pat PWildcard" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_pat PWildcard = "_"
+;;
 
 let%test "pp pat PConst" =
-  asprintf "%a" pp_pat (PConst (OrdinaryPConst (Bool true))) = "True"
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_pat (PConst (OrdinaryPConst (Bool true)))
+  = "True"
 ;;
 
-let%test "pp pat PIdentificator" = asprintf "%a" pp_pat (PIdentificator (Ident "x")) = "x"
+let%test "pp pat PIdentificator" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_pat (PIdentificator (Ident "x")) = "x"
+;;
 
 let%test "pp pat PList" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_pat
+    Haskell_lib.Pprintast.pp_pat
     (PList
        (PCons (([], PIdentificator (Ident "x"), []), ([], PIdentificator (Ident "xs"), []))))
   = "x : xs"
 ;;
 
 let%test "pp pat PTuple" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_pat
+    Haskell_lib.Pprintast.pp_pat
     (PTuple
        ( ([], PIdentificator (Ident "a"), [])
        , ([], PIdentificator (Ident "b"), [])
@@ -107,16 +123,22 @@ let%test "pp pat PTuple" =
   = "(a, b, c, d)"
 ;;
 
-let%test "pp pat PMaybe Nothing" = asprintf "%a" pp_pat (PMaybe Nothing) = "Nothing"
+let%test "pp pat PMaybe Nothing" =
+  Format.asprintf "%a" Haskell_lib.Pprintast.pp_pat (PMaybe Nothing) = "Nothing"
+;;
 
 let%test "pp pat PMaybe Just" =
-  asprintf "%a" pp_pat (PMaybe (Just ([], PIdentificator (Ident "x"), []))) = "Just x"
+  Format.asprintf
+    "%a"
+    Haskell_lib.Pprintast.pp_pat
+    (PMaybe (Just ([], PIdentificator (Ident "x"), [])))
+  = "Just x"
 ;;
 
 let%test "pp pat PTree" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_pat
+    Haskell_lib.Pprintast.pp_pat
     (PTree
        (PNode
           ( ([], PIdentificator (Ident "x"), [])
@@ -126,75 +148,95 @@ let%test "pp pat PTree" =
 ;;
 
 let%test "pp pattern without capture, without type" =
-  asprintf "%a" pp_pattern ([], PIdentificator (Ident "x"), []) = "x"
+  Format.asprintf
+    "%a"
+    Haskell_lib.Pprintast.pp_pattern
+    ([], PIdentificator (Ident "x"), [])
+  = "x"
 ;;
 
 let%test "pp pattern with capture, without type" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_pattern
+    Haskell_lib.Pprintast.pp_pattern
     ([ Ident "my"; Ident "first"; Ident "variable" ], PIdentificator (Ident "x"), [])
   = "my@first@variable@x"
 ;;
 
 let%test "pp pattern with capture, with type" =
-  asprintf
+  Format.asprintf
     "%a"
-    pp_pattern
+    Haskell_lib.Pprintast.pp_pattern
     ([ Ident "my"; Ident "first"; Ident "variable" ], PIdentificator (Ident "x"), [ TInt ])
   = "my@first@variable@x :: Int"
 ;;
 
 let%expect_test "expr_with_prio" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Binop
-        ( (Binop ((Binop (i_const 1, Plus, i_const 0), []), Multiply, i_const 2), [])
+        ( ( Binop
+              ( ( Binop
+                    ( Haskell_lib.Pprintast.i_const 1
+                    , Plus
+                    , Haskell_lib.Pprintast.i_const 0 )
+                , [] )
+              , Multiply
+              , Haskell_lib.Pprintast.i_const 2 )
+          , [] )
         , Greater
-        , i_const 1 )
+        , Haskell_lib.Pprintast.i_const 1 )
     , [] );
   [%expect {|
       (1 + 0) * 2 > 1 |}]
 ;;
 
 let%expect_test "expr_with_prio_tp" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Binop
-        ( (Binop ((Binop (i_const 1, Plus, i_const 0), [ TInt ]), Multiply, i_const 2), [])
+        ( ( Binop
+              ( ( Binop
+                    ( Haskell_lib.Pprintast.i_const 1
+                    , Plus
+                    , Haskell_lib.Pprintast.i_const 0 )
+                , [ TInt ] )
+              , Multiply
+              , Haskell_lib.Pprintast.i_const 2 )
+          , [] )
         , Greater
-        , i_const 1 )
+        , Haskell_lib.Pprintast.i_const 1 )
     , [ TBool ] );
   [%expect {|
       (1 + 0 :: Int) * 2 > 1 :: Bool |}]
 ;;
 
 let%expect_test "expr_with_fun_app_tp" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Binop
         ( ( FunctionApply
               ( (Identificator (Ident "f"), [ FunctionType (FuncT (TInt, TInt, [])) ])
               , (Identificator (Ident "x"), [ TInt ])
-              , [ Identificator (Ident "g"), []; i_const 2 ] )
+              , [ Identificator (Ident "g"), []; Haskell_lib.Pprintast.i_const 2 ] )
           , [] )
         , Plus
-        , i_const 1 )
+        , Haskell_lib.Pprintast.i_const 1 )
     , [] );
   [%expect {|
       (f :: Int -> Int) (x :: Int) g 2 + 1 |}]
 ;;
 
 let%expect_test "expr_case_neg" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Case
-        ( (Neg (i_const 1), [])
-        , (([], PConst (NegativePInt 1), []), OrdBody (i_const 1))
+        ( (Neg (Haskell_lib.Pprintast.i_const 1), [])
+        , (([], PConst (NegativePInt 1), []), OrdBody (Haskell_lib.Pprintast.i_const 1))
         , [] )
     , [] );
   [%expect {|
@@ -202,11 +244,11 @@ let%expect_test "expr_case_neg" =
 ;;
 
 let%expect_test "expr_case_tp" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Case
-        ( (Neg (i_const 1), [ TInt ])
+        ( (Neg (Haskell_lib.Pprintast.i_const 1), [ TInt ])
         , (([], PConst (NegativePInt 1), [ TInt ]), OrdBody (Const (Int 1), [ TInt ]))
         , [] )
     , [ TInt ] );
@@ -215,9 +257,9 @@ let%expect_test "expr_case_tp" =
 ;;
 
 let%expect_test "expr_doble_cons_and_lam" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Lambda
         ( ( []
           , PList
@@ -241,9 +283,9 @@ let%expect_test "expr_doble_cons_and_lam" =
 ;;
 
 let%expect_test "expr_cons_lin" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Binop
         ( (Identificator (Ident "xs"), [])
         , Cons
@@ -256,9 +298,9 @@ let%expect_test "expr_cons_lin" =
 ;;
 
 let%expect_test "expr_cons_lin_tp" =
-  printf
+  Format.printf
     "%a"
-    pp_expr
+    Haskell_lib.Pprintast.pp_expr
     ( Binop
         ( (Identificator (Ident "xs"), [ TUnit ])
         , Cons
@@ -271,16 +313,20 @@ let%expect_test "expr_cons_lin_tp" =
 ;;
 
 let%expect_test "fac" =
-  printf
+  Format.printf
     "%a"
-    pp_binding
+    Haskell_lib.Pprintast.pp_binding
     (FunDef
        ( Ident "fac"
        , ([], PIdentificator (Ident "n"), [])
        , []
        , OrdBody
            ( IfThenEsle
-               ( (Binop ((Identificator (Ident "n"), []), Less, i_const 0), [])
+               ( ( Binop
+                     ( (Identificator (Ident "n"), [])
+                     , Less
+                     , Haskell_lib.Pprintast.i_const 0 )
+                 , [] )
                , (ENothing, [])
                , ( FunctionApply
                      ( (EJust, [])
@@ -297,8 +343,12 @@ let%expect_test "fac" =
              , ([], PIdentificator (Ident "y"), [])
              , []
              , Guards
-                 ( ( (Binop ((Identificator (Ident "y"), []), Equality, i_const 0), [])
-                   , i_const 1 )
+                 ( ( ( Binop
+                         ( (Identificator (Ident "y"), [])
+                         , Equality
+                         , Haskell_lib.Pprintast.i_const 0 )
+                     , [] )
+                   , Haskell_lib.Pprintast.i_const 1 )
                  , [ ( (Identificator (Ident "otherwise"), [])
                      , ( Binop
                            ( (Identificator (Ident "y"), [])
@@ -306,7 +356,9 @@ let%expect_test "fac" =
                            , ( FunctionApply
                                  ( (Identificator (Ident "save_fac"), [])
                                  , ( Binop
-                                       ((Identificator (Ident "y"), []), Minus, i_const 1)
+                                       ( (Identificator (Ident "y"), [])
+                                       , Minus
+                                       , Haskell_lib.Pprintast.i_const 1 )
                                    , [] )
                                  , [] )
                              , [] ) )
