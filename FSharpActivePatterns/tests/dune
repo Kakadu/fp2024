@@ -1,3 +1,3 @@
 (cram
  (applies_to qcheck)
- (deps ../lib/tests/run_construction.exe))
+ (deps ../lib/tests/run_qcheck.exe))

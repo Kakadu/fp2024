@@ -6,7 +6,7 @@
 
 [@@@ocaml.text "/*"]
 
-open Tests.Gen_construction
+open Tests.Qcheck_utils
 
 (* let generate n =
    List.iter
