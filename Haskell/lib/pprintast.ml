@@ -5,9 +5,7 @@
 open Ast
 open Format
 
-let pp_list sep pp_item =
-  Format.pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf sep) pp_item
-;;
+let pp_list sep pp_item = pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf sep) pp_item
 
 let pp_brackets fmt list =
   let rec helper = function
