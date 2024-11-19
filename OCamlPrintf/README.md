@@ -21,12 +21,31 @@
 - [x] [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree)
   - [x] Factorial
   - [x] MiniML
-- [ ] Parser
+- [x] Parser
   - [x] Factorial
-  - [ ] MiniML
+  - [x] MiniML
 - [x] [REPL](https://en.wikipedia.org/wiki/Read–eval–print_loop)
-- [ ] Type check / Type inference
+- [x] Pretty Printer
+- [x] [Quick Checker](https://en.wikipedia.org/wiki/QuickCheck)
+  - [x] Manual
+  - [x] Auto
+- [x] Shrinker
+- [ ] Type Checker
 - [ ] Interpreter
+
+## Build
+
+```shell
+cd OcamlPrinf/
+dune build # Build the project.
+```
+
+## Run
+
+```shell
+dune test # Run all tests.
+dune exec ./_build/default/tests/run_qchecker.exe # Run manual and auto generators with shrinker.
+```
 
 ## Authors
 
