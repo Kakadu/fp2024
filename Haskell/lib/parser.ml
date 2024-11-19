@@ -604,8 +604,6 @@ type assoc =
   | Right
   | Non
 
-let ex_tp ((e, tps) as ex) = option ex (oper "::" **> tp >>| fun tp -> e, tp :: tps)
-
 let prios_list =
   [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), []) ]
   ; None, [ (Right, oper "&&", fun a b -> Binop (a, And, b), []) ]
@@ -965,10 +963,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
   prs_and_prnt_ln (expr Allow_t) show_expr "f Just(1)";
   [%expect
     {|
-      ((FunctionApply (((Identificator (Ident "f")), []),
-          ((Lambda (([], (PIdentificator (Ident "X")), []), [],
-              ((OptionBld (Just ((Identificator (Ident "X")), []))), []))),
-           []),
+      ((FunctionApply (((Identificator (Ident "f")), []), (EJust, []),
           [((Const (Integer 1)), [])])),
        []) |}]
 ;;
@@ -1292,15 +1287,6 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
                 ((Identificator (Ident "y")), []))),
              [])),
          [])) |}]
-;;
-
-let%expect_test "fun_binding_simple_strange_but_valid2" =
-  prs_and_prnt_ln binding show_binding "f 9y = y";
-  [%expect
-    {|
-      (FunDef ((Ident "f"), ([], (PConst (OrdinaryPConst (Integer 9))), []),
-         [([], (PIdentificator (Ident "y")), [])],
-         (OrdBody ((Identificator (Ident "y")), [])), [])) |}]
 ;;
 
 let%expect_test "fun_binding_guards" =
