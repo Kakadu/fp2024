@@ -25,8 +25,19 @@ type id = Id of string * string option [@@deriving show { with_path = false }]
 let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
 
 type const =
-  | Int of (int[@gen QCheck.Gen.int])
-  | String of (string[@gen QCheck.Gen.(string_size ~gen:printable (0 -- 20))])
+  | Int of (int[@gen QCheck.Gen.int_range 0 1000])
+  (* | String of (string[@gen QCheck.Gen.(string_size ~gen:printable (0 -- 20))]) *)
+  | String of
+      (string
+      [@gen
+        QCheck.Gen.(
+          let printable_without_quotes =
+            oneof
+              [ char_range '\032' '!' (* Characters before '"' *)
+              ; char_range '#' '\126' (* Characters after '"' *)
+              ]
+          in
+          string_size ~gen:printable_without_quotes (0 -- 20))]) (* remove double quote character *)
   | Bool of (bool[@gen QCheck.Gen.bool])
   | Unit
 (* language constants of type int, string, bool, and unit respectively *)
@@ -63,9 +74,15 @@ type rec_flag =
 type pattern =
   | PVar of id
   | PConst of const
-  | PTuple of pattern * pattern * pattern list
-  | PList of pattern list
+  | PTuple of
+      pattern
+      * pattern
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
+    (* | PList of
+       (pattern list[@gen QCheck.Gen.(list_size (0 -- 1) (gen_pattern_sized (n / 2)))]) *)
   | PAny (* wildcard pattern '_' *)
+  | PList of
+      (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
 [@@deriving show { with_path = false }, qcheck]
 
 type expr =
@@ -78,42 +95,63 @@ type expr =
   | Etuple of
       expr
       * expr
-      * (expr list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_expr_sized (n / 4)))])
+      * (expr list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_expr_sized (n / 2)))])
   (* expressions (E0, .., En), n >= 2 *)
   (* or expr * expr * expr list, cause invariant n >= 2 *)
-  | Elist of (expr list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_expr_sized (n / 4)))])
+  | Elist of (expr list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_expr_sized (n / 2)))])
     (* expressions [E0; ..; En], n >= 0 *)
   | Ebin_op of bin_op * expr * expr (** match E with P1 -> E1 ... Pn -> Pn *)
   (* E0 bin_op E1, e.g. 1 + 3 *)
   | Ematch of
       expr
       * case
-      * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / 4)))])
+      * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / 2)))])
   | Eun_op of un_op * expr (* E0 un_op E1, e.g. Negative 2, Not true *)
   | Elet of
       rec_flag
       * value_binding
       * (value_binding list
-        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_value_binding_sized (n / 4)))])
+        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_value_binding_sized (n / 2)))])
       * expr
   (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
   | Efun_application of expr * expr (* E0 E1, e.g. f x *)
   | Efun of
-      pattern * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) gen_pattern)]) * expr
+      (pattern[@gen gen_pattern_sized (n / 2)])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
+      * expr
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1  *)
 (* should probably change id to pattern later *)
 [@@deriving show { with_path = false }, qcheck]
 
-and case = Ecase of pattern * expr [@@deriving show { with_path = false }, qcheck]
+and case = Ecase of (pattern[@gen gen_pattern_sized (n / 2)]) * expr
+[@@deriving show { with_path = false }, qcheck]
 
 and value_binding = Evalue_binding of id * expr
 [@@deriving show { with_path = false }, qcheck]
+
+let gen_expr =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_expr_sized n)
+;;
+
+let gen_value_binding =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_value_binding_sized n)
+;;
+
+let gen_case =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_case_sized n)
+;;
 
 type structure_item =
   | SEval of expr
   | SValue of
       rec_flag
-      * value_binding
+      * (value_binding[@gen gen_value_binding])
       * (value_binding list[@gen QCheck.Gen.(list_size (0 -- 4) gen_value_binding)])
       * expr
 [@@deriving show { with_path = false }, qcheck]
