@@ -40,4 +40,4 @@ let nonnegative_integer x =
   | Some x -> x
 ;;
 
-let gen_nonnegative_integer = QCheck.Gen.(map integer varname)
+let gen_nonnegative_integer = QCheck.Gen.(map nonnegative_integer varname)
