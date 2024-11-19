@@ -76,8 +76,7 @@ type expression =
   (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
   | ExprFun of (pattern[@gen gen_pattern_sized (n / 2)]) * expression (** fun p -> e *)
-  | OptNone (** None *)
-  | OptSome of expression (** Some x *)
+  | ExprOption of expression option
 [@@deriving show { with_path = false }, qcheck]
 
 (** Used in `match` expression *)

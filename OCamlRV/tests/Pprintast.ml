@@ -162,7 +162,10 @@ let%expect_test "complex let epressions" =
 ;;
 
 let%expect_test "let none expression" =
-  Format.printf "%a\n" pp_structure_item_list [ SValue (NonRec, [ PVar "a", OptNone ]) ];
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue (NonRec, [ PVar "a", ExprOption None ]) ];
   [%expect {| let a = None;; |}]
 ;;
 
@@ -170,7 +173,7 @@ let%expect_test "let some expression" =
   Format.printf
     "%a\n"
     pp_structure_item_list
-    [ SValue (NonRec, [ PVar "a", OptSome (ExprLiteral (IntLiteral 1)) ]) ];
+    [ SValue (NonRec, [ PVar "a", ExprOption (Some (ExprLiteral (IntLiteral 1))) ]) ];
   [%expect {| let a = Some (1);; |}]
 ;;
 
