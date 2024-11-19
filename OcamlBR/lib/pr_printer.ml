@@ -1,11 +1,10 @@
-
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Base
 open Ast
-open Format
+open Stdlib.Format
 
 let pp_const ppf = function
   | Int i -> fprintf ppf "%d" i
@@ -32,7 +31,7 @@ let pp_bin_op ppf = function
 let pp_un_op ppf = function
   | Negative -> fprintf ppf "-"
   | Positive -> fprintf ppf "+"
-  | Not -> fprintf ppf "not"
+  | Not -> fprintf ppf "not "
 ;;
 
 let pp_rec_flag ppf = function
@@ -41,30 +40,27 @@ let pp_rec_flag ppf = function
 ;;
 
 let rec pp_pattern ppf = function
-  | PVar (Id (name, None)) ->
-    Format.fprintf ppf "%s" name
-  | PVar (Id (name, Some suffix)) ->
-    Format.fprintf ppf "%s%s" name suffix
-  | PConst c ->
-    pp_const ppf c
-  | PAny ->
-    Format.fprintf ppf "_"
+  | PVar (Id (name, None)) -> fprintf ppf "%s" name
+  | PVar (Id (name, Some suffix)) -> fprintf ppf "%s%s" name suffix
+  | PConst c -> pp_const ppf c
+  | PAny -> fprintf ppf "_"
   | PTuple (p1, p2, rest) ->
-    let patterns = String.concat ~sep:", " (List.map ~f:(asprintf "%a" pp_pattern) (p1 :: p2 :: rest)) in
-    Format.fprintf ppf "(%s)" patterns
+    let patterns =
+      String.concat ~sep:", " (List.map ~f:(asprintf "%a" pp_pattern) (p1 :: p2 :: rest))
+    in
+    fprintf ppf "(%s)" patterns
   | PList patterns ->
-    let patterns_str = String.concat ~sep:"; " (List.map ~f:(asprintf "%a" pp_pattern) patterns) in
-    Format.fprintf ppf "[%s]" patterns_str
+    let patterns_str =
+      String.concat ~sep:"; " (List.map ~f:(asprintf "%a" pp_pattern) patterns)
+    in
+    fprintf ppf "[%s]" patterns_str
 ;;
 
 let rec pp_expr ppf = function
   | Econst c -> pp_const ppf c
-  | Evar (Id (name, None)) ->
-    Format.fprintf ppf "%s" name
-  | Evar (Id (name, Some suffix)) ->
-    Format.fprintf ppf "%s.%s" name suffix
-  | Eif_then_else (e1, e2, None) ->
-    fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
+  | Evar (Id (name, None)) -> fprintf ppf "%s" name
+  | Evar (Id (name, Some suffix)) -> fprintf ppf "%s.%s" name suffix
+  | Eif_then_else (e1, e2, None) -> fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
   | Eif_then_else (e1, e2, Some e3) ->
     fprintf ppf "if %a then %a else %a" pp_expr e1 pp_expr e2 pp_expr e3
   | Ematch (exp, Ecase (first_pat, first_expr), rest_cases) ->
@@ -75,58 +71,77 @@ let rec pp_expr ppf = function
       String.concat
         ~sep:" "
         (case_to_string (Ecase (first_pat, first_expr))
-          :: List.map ~f:case_to_string rest_cases)
+         :: List.map ~f:case_to_string rest_cases)
     in
     fprintf ppf "match %a with %s" pp_expr exp case_list_str
   | Eoption (Some e) -> fprintf ppf "Some %a" pp_expr e
   | Eoption None -> fprintf ppf "None"
   | Etuple (e1, e2, es) ->
-    fprintf ppf "(%a, %a%a)"
-      pp_expr e1
-      pp_expr e2
-      (fun ppf -> List.iter ~f:(fprintf ppf ", %a" pp_expr)) es
+    fprintf
+      ppf
+      "(%a, %a%a)"
+      pp_expr
+      e1
+      pp_expr
+      e2
+      (fun ppf -> List.iter ~f:(fprintf ppf ", %a" pp_expr))
+      es
   | Elist es ->
-    fprintf ppf "[%a]"
-      (fun ppf -> List.iteri ~f:(fun i e -> if i > 0 then fprintf ppf "; %a" pp_expr e else pp_expr ppf e)) es
+    fprintf
+      ppf
+      "[%a]"
+      (fun ppf ->
+        List.iteri ~f:(fun i e ->
+          if i > 0 then fprintf ppf "; %a" pp_expr e else pp_expr ppf e))
+      es
   | Efun (first_pattern, rest_patterns, e) ->
-    Format.fprintf ppf "fun %a%a -> %a"
-      pp_pattern first_pattern
+    fprintf
+      ppf
+      "fun %a%a -> %a"
+      pp_pattern
+      first_pattern
       (fun ppf patterns ->
-        List.iter patterns ~f:(fun pat -> Format.fprintf ppf " %a" pp_pattern pat))
+        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_pattern pat))
       rest_patterns
-      pp_expr e
-  | Ebin_op (op, e1, e2) ->
-    fprintf ppf "(%a %a %a)" pp_expr e1 pp_bin_op op pp_expr e2
+      pp_expr
+      e
+  | Ebin_op (op, e1, e2) -> fprintf ppf "(%a %a %a)" pp_expr e1 pp_bin_op op pp_expr e2
   | Eun_op (op, e) -> fprintf ppf "%a%a" pp_un_op op pp_expr e
   | Elet (rec_flag, vb, vb_l, e) ->
-    fprintf ppf "let %a %a in %a"
-      pp_rec_flag rec_flag
+    fprintf
+      ppf
+      "let %a %a in %a"
+      pp_rec_flag
+      rec_flag
       (fun ppf () ->
-         fprintf ppf "%a" pp_value_binding vb;
-         List.iter vb_l ~f:(fun vb' ->
-           fprintf ppf " and %a" pp_value_binding vb')) ()
-      pp_expr e
-  | Efun_application (e1, e2) ->
-    fprintf ppf "%a %a" pp_expr e1 pp_expr e2
+        fprintf ppf "%a" pp_value_binding vb;
+        List.iter vb_l ~f:(fun vb' -> fprintf ppf " and %a" pp_value_binding vb'))
+      ()
+      pp_expr
+      e
+  | Efun_application (e1, e2) -> fprintf ppf "%a %a" pp_expr e1 pp_expr e2
 
 and pp_value_binding ppf = function
-| Evalue_binding (Id (name, None), e) ->
-  fprintf ppf "%s = %a" name pp_expr e
-| Evalue_binding (Id (name, Some suffix), e) ->
-  fprintf ppf "%s%s = %a" name suffix pp_expr e
+  | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
+  | Evalue_binding (Id (name, Some suffix), e) ->
+    fprintf ppf "%s%s = %a" name suffix pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =
   match item with
-  | SEval e -> fprintf ppf "%a;" pp_expr e
+  | SEval e -> fprintf ppf "%a ;;" pp_expr e
   | SValue (rec_flag, vb, vb_l, e) ->
-    fprintf ppf "let %a %a in %a"
-      pp_rec_flag rec_flag
+    fprintf
+      ppf
+      "let %a %a in %a ;;"
+      pp_rec_flag
+      rec_flag
       (fun ppf () ->
-         fprintf ppf "%a" pp_value_binding vb;
-         List.iter vb_l ~f:(fun vb' ->
-           fprintf ppf " and %a" pp_value_binding vb')) ()
-      pp_expr e
+        fprintf ppf "%a" pp_value_binding vb;
+        List.iter vb_l ~f:(fun vb' -> fprintf ppf " and %a" pp_value_binding vb'))
+      ()
+      pp_expr
+      e
 ;;
 
 let pp_new_line ppf () = fprintf ppf "\n"

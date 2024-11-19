@@ -2,6 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
-
 val prpr_structure : Format.formatter -> Ast.structure -> unit
