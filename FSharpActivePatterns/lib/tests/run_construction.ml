@@ -7,14 +7,12 @@
 [@@@ocaml.text "/*"]
 
 open Tests.Gen_construction
-open FSharpActivePatterns.Ast
-open FSharpActivePatterns.AstPrinter
 
-let generate n =
-  List.iter
-    Format.(fprintf std_formatter "%a\n" print_construction)
-    (QCheck.Gen.generate ~n gen_construction)
-;;
+(* let generate n =
+   List.iter
+   Format.(fprintf std_formatter "%a\n" print_construction)
+   (QCheck.Gen.generate ~n gen_construction)
+   ;; *)
 
 let run_tests n =
   let _ = run n in
