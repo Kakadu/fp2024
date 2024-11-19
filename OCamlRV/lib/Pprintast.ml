@@ -20,6 +20,12 @@ let pp_binop ppf = function
   | Or -> fprintf ppf "||"
 ;;
 
+(* let pp_unop ppf = function
+   | UnaryPlus -> fprintf ppf "+"
+   | UnaryMinus -> fprintf ppf "-"
+   | UnaryNeg -> fprintf ppf "not"
+   ;; *)
+
 let pp_rec_flag ppf = function
   | NonRec -> fprintf ppf ""
   | Rec -> fprintf ppf " rec"
@@ -38,7 +44,7 @@ let pp_pattern =
     | PAny -> fprintf ppf "_"
     | PLiteral l -> fprintf ppf "%a" pp_literal l
     | PVar v -> fprintf ppf "%s" v
-    | PCons (p1, p2) -> fprintf ppf "%a::%a" helper p1 helper p2
+    | PCons (p1, p2) -> fprintf ppf "(%a::%a)" helper p1 helper p2
   in
   helper
 ;;
@@ -49,7 +55,7 @@ let rec pp_expr =
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
     | ExprBinOperation (op, e1, e2) ->
       fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
-    | ExprUnOperation _ -> ()
+    (* | ExprUnOperation (op, e) -> fprintf ppf "%a %a" pp_unop op helper e *)
     | ExprIf (c, th, el) ->
       (match el with
        | None -> fprintf ppf "if %a then %a" helper c helper th
@@ -75,7 +81,7 @@ let rec pp_expr =
           pp_tuple ppf xs
       in
       fprintf ppf "(%a)" pp_tuple t
-    | ExprCons (e1, e2) -> fprintf ppf "%a::%a" helper e1 helper e2
+    | ExprCons (e1, e2) -> fprintf ppf "(%a::%a)" helper e1 helper e2
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
     | OptNone -> fprintf ppf "None"
     | OptSome x -> fprintf ppf "Some (%a)" helper x
