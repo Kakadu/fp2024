@@ -49,11 +49,6 @@ type binop =
   | EqualityOrGreater (** [>=] *)
 [@@deriving qcheck, show { with_path = false }]
 
-(** variable's / function's name*)
-type ident = Ident of string [@gen gen_ident]
-[@@deriving qcheck, show { with_path = false }]
-(** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
-
 let gen_first_symbol =
   QCheck.Gen.(
     map
@@ -88,14 +83,18 @@ let varname =
 ;;
 
 let correct_varname x = QCheck.Gen.map (fun y -> Printf.sprintf "%s%c" x y) gen_char
-let ident x = Ident x
 
-let gen_ident =
+let gen_string =
   let open QCheck.Gen in
   let x = varname in
   map is_keyword_or_underscore x
-  >>= fun y -> if y then map correct_varname x >>= fun y -> map ident y else map ident x
+  >>= fun y -> if y then map correct_varname x >>= fun y -> y else x
 ;;
+
+(** variable's / function's name*)
+type ident = Ident of (string[@gen gen_string])
+[@@deriving qcheck, show { with_path = false }]
+(** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
 
 type pattern =
   (ident list[@gen QCheck.Gen.(list_size (return (Int.min 2 (n / 7))) gen_ident)])
