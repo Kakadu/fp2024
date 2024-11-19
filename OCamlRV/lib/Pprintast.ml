@@ -48,13 +48,18 @@ let rec pp_expr =
     | ExprVariable v -> fprintf ppf "%s" v
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
     | ExprBinOperation (op, e1, e2) ->
-      fprintf ppf "(%a %a %a)" helper e1 pp_binop op helper e2
+      fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
     | ExprUnOperation _ -> ()
     | ExprIf (c, th, el) ->
       (match el with
        | None -> fprintf ppf "if %a then %a" helper c helper th
        | Some x -> fprintf ppf "if %a then %a else %a" helper c helper th helper x)
-    | ExprMatch _ -> ()
+    | ExprMatch (e, branches) ->
+      fprintf ppf "match %a with\n" helper e;
+      List.iter
+        (fun (pattern, branch_expr) ->
+          fprintf ppf "| %a -> %a\n" pp_pattern pattern helper branch_expr)
+        branches
     | ExprLet (rf, bl, e) ->
       fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list bl helper e
     | ExprApply (e1, e2) ->
