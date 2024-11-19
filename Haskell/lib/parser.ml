@@ -1214,12 +1214,7 @@ let%expect_test "expr_binop_invlid_tp" =
   prs_and_prnt_ln (expr Allow_t) show_expr "1 + 2 :: Integer + 3";
   [%expect
     {|
-<<<<<<< HEAD
       ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 2)), []))), [TInt]) |}]
-=======
-      ((Binop (((Const (Integer 1)), []), Plus, ((Const (Integer 2)), []))),
-       [TInteger]) |}]
->>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
 ;;
 
 let%expect_test "expr_valid_tp" =
@@ -1231,15 +1226,9 @@ let%expect_test "expr_valid_tp" =
     {|
       ((IfThenEsle (
           ((Binop (((Identificator (Ident "x")), []), Greater,
-<<<<<<< HEAD
               ((Const (Int 2)), [TInt]))),
            [TBool]),
           ((Const (Int 0)), [TInt]), ((Const (Int 1)), [TInt]))),
-=======
-              ((Const (Integer 2)), [TInteger]))),
-           [TBool]),
-          ((Const (Integer 0)), [TInteger]), ((Const (Integer 1)), [TInteger]))),
->>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
        [TUnit]) |}]
 ;;
 
@@ -1332,12 +1321,7 @@ let%expect_test "decl" =
   prs_and_prnt_ln binding show_binding "f :: Integer -> Integer -> Integer";
   [%expect
     {|
-<<<<<<< HEAD
       (Decl ((Ident "f"), (FunctionType (FuncT (TInt, TInt, [TInt])))))
-=======
-      (Decl (([], (PIdentificator (Ident "f")), []),
-         (FunctionType (FuncT (TInteger, TInteger, [TInteger])))))
->>>>>>> b81dd87 (fix: use Integer type parameter instead of Int)
       |}]
 ;;
 
