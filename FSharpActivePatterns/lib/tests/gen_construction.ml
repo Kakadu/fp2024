@@ -10,119 +10,8 @@ open FSharpActivePatterns.Ast
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
 open FSharpActivePatterns.PrettyPrinter
-(*open FSharpActivePatterns.KeywordChecker*)
 
-(*
-   let gen_const_manual =
-   QCheck.Gen.(
-   frequency
-   [ 1, map int_e nat
-      ; 1, map bool_e bool
-      ; 0, return unit_e
-      ; 0, map string_e (string ?gen:None)
-      ])
-   ;;
-
-   let gen_varname_manual =
-   let open QCheck.Gen in
-   let loop =
-   let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
-   let gen_first_char =
-   oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
-   in
-   let gen_next_char = oneof [ gen_first_char; gen_char_of_range '0' '9' ] in
-   map2
-   (fun first rest ->
-   String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
-   gen_first_char
-   (list_size (1 -- 5) gen_next_char)
-   in
-   loop >>= fun name -> if is_keyword name then loop else return name
-   ;; *)
-
-(*
-   let gen_ident_manual = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname_manual
-let gen_variable_manual = QCheck.Gen.map variable_e gen_varname_manual
-let gen_unop_manual = QCheck.Gen.(oneof @@ List.map return [ Unary_minus; Unary_not ]) 
-let tuple_e e1 e2 rest = Tuple (e1, e2, rest)
-let un_e unop e = Unary_expr (unop, e)*)
 let bin_e op e1 e2 = Bin_expr (op, e1, e2)
-(*
-   let if_e i t e = If_then_else (i, t, e)
-   let func_def pat pat_list body = Lambda (pat, pat_list, body)
-   let apply f arg = Apply (f, arg)
-   let let_bind name args body = Let_bind (name, args, body) *)
-
-(*
-   let letin rec_flag let_bind let_bind_list inner_e =
-   LetIn (rec_flag, let_bind, let_bind_list, inner_e)
-   ;; *)
-
-(*
-   let gen_binop_manual =
-  QCheck.Gen.(
-    oneof
-    @@ List.map
-         return
-         [ Binary_equal
-         ; Binary_unequal
-         ; Binary_less
-         ; Binary_less_or_equal
-         ; Binary_greater
-         ; Binary_greater_or_equal
-         ; Binary_add
-         ; Binary_subtract
-         ; Binary_multiply
-         ; Logical_or
-         ; Logical_and
-         ; Binary_divide
-           (* ; Binary_or_bitwise
-              ; Binary_xor_bitwise
-              ; Binary_and_bitwise *)
-         ])
-;;
-
-let gen_is_recursive_manual = QCheck.Gen.(oneof [ return Rec; return Nonrec ])
-
-let gen_let_bind_manual gen =
-  QCheck.Gen.(map3 let_bind gen_ident_manual (list_size (0 -- 15) gen_ident_manual) gen)
-;; *)
-
-(*
-   let gen_expr_manual =
-  QCheck.Gen.(
-    sized
-    @@ fix (fun self ->
-         function
-         | 0 -> frequency [ 1, gen_const_manual; 1, gen_variable_manual ]
-         | n ->
-           frequency
-             [ ( 1
-               , map3
-                   tuple_e
-                   (self (n / 4))
-                   (self (n / 4))
-                   (list_size (0 -- 15) (self (n / 4))) )
-             ; 1, map2 un_e gen_unop_manual (self (n / 4))
-             ; 1, map3 bin_e gen_binop_manual (self (n / 4)) (self (n / 4))
-             ; ( 1
-               , map3
-                   if_e
-                   (self (n / 4))
-                   (self (n / 4))
-                   (oneof [ return None; map (fun e -> Some e) (self (n / 4)) ]) )
-             ; 0, map2 func_def (list_size (0 -- 15) gen_ident_manual) (self (n / 4))
-             ; 1, map2 func_call gen_variable_manual (self (n / 4))
-               (* TODO: make apply of arbitrary expr*)
-             ; ( 0
-               , map3
-                   letin
-                   gen_is_recursive_manual
-                   (gen_let_bind_manual (self (n / 4)))
-                   (list_size (0 -- 15) (gen_let_bind_manual (self (n / 4))))
-                 <*> self (n / 4) )
-             ]))
-;; *)
 
 let shrink_lt =
   let open QCheck.Iter in
@@ -236,20 +125,6 @@ and shrink_pattern =
   | PVar _ -> empty
 ;;
 
-(*
-   let let_st rec_flag let_bind let_bind_list = Let (rec_flag, let_bind, let_bind_list)*)
-
-(* TODO: Active Pattern*)
-(*
-   let gen_statement_manual =
-   QCheck.Gen.(
-   map3
-   let_st
-   gen_is_recursive_manual
-   (gen_let_bind_manual gen_expr_manual)
-   (list_size (0 -- 15) (gen_let_bind_manual gen_expr_manual)))
-   ;; *)
-
 let shrink_statement =
   let open QCheck.Iter in
   function
@@ -259,20 +134,6 @@ let shrink_statement =
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> Let (rec_flag, let_bind, a'))
 ;;
-
-(*| ActivePattern (cases, e) ->
-  QCheck.Shrink.list cases
-  >|= (fun a' -> ActivePattern (a', e))
-  <+> (shrink_expr e >|= fun a' -> ActivePattern (cases, a')) *)
-
-(*
-   let gen_construction_manual =
-   QCheck.Gen.(
-   oneof
-   [ (gen_expr_manual >|= fun a' -> Expr a')
-      ; (gen_statement_manual >|= fun a' -> Statement a')
-      ])
-   ;; *)
 
 let shrink_construction =
   let open QCheck.Iter in
