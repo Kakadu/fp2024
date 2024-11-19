@@ -50,7 +50,8 @@ type binop =
 [@@deriving qcheck, show { with_path = false }]
 
 (** variable's / function's name*)
-type ident = Ident of string [@@deriving qcheck, show { with_path = false }]
+type ident = Ident of string [@gen gen_ident]
+[@@deriving qcheck, show { with_path = false }]
 (** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
 
 let gen_first_symbol =
