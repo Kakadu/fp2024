@@ -53,6 +53,49 @@ type binop =
 type ident = Ident of string [@@deriving qcheck, show { with_path = false }]
 (** e.g. [(a@my_list@lst@(_:xs) :: [Integer]) :: [Bool]] *)
 
+let gen_first_symbol =
+  QCheck.Gen.(
+    map
+      Char.chr
+      (oneof [ int_range (Char.code 'a') (Char.code 'z'); return (Char.code '_') ]))
+;;
+
+let gen_char =
+  QCheck.Gen.(
+    map
+      Char.chr
+      (oneof
+         [ int_range (Char.code 'a') (Char.code 'z')
+         ; int_range (Char.code 'A') (Char.code 'Z')
+         ; int_range (Char.code '0') (Char.code '9')
+         ; return (Char.code '_')
+         ; return (Char.code '\'')
+         ]))
+;;
+
+let is_keyword_or_underscore = function
+  | "case" | "of" | "if" | "then" | "else" | "let" | "in" | "where" | "_" -> true
+  | _ -> false
+;;
+
+let varname =
+  QCheck.Gen.(
+    map2
+      (fun x y -> Printf.sprintf "%c%s" x y)
+      gen_first_symbol
+      (string_size ~gen:gen_char (1 -- 7)))
+;;
+
+let correct_varname x = QCheck.Gen.map (fun y -> Printf.sprintf "%s%c" x y) gen_char
+let ident x = Ident x
+
+let gen_ident =
+  let open QCheck.Gen in
+  let x = varname in
+  map is_keyword_or_underscore x
+  >>= fun y -> if y then map correct_varname x >>= fun y -> map ident y else map ident x
+;;
+
 type pattern =
   (ident list[@gen QCheck.Gen.(list_size (return (Int.min 2 (n / 7))) gen_ident)])
   * pat
