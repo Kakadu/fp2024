@@ -226,7 +226,9 @@ let const =
     ]
 ;;
 
-let%test "const_valid_num" = parse_string ~consume:Prefix const "123" = Result.Ok (Int 123)
+let%test "const_valid_num" =
+  parse_string ~consume:Prefix const "123" = Result.Ok (Int 123)
+;;
 
 let%test "const_invalid_num" =
   parse_string ~consume:Prefix const "123ab" = Result.Ok (Int 123)
