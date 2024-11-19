@@ -18,7 +18,7 @@ let%expect_test "cons test" =
     "%a\n"
     pp_structure_item_list
     [ SEval (ExprCons (ExprVariable "f", ExprVariable "x")) ];
-  [%expect {| f::x;; |}]
+  [%expect {| (f::x);; |}]
 ;;
 
 let%expect_test "let epression test" =
@@ -99,7 +99,7 @@ let%expect_test _ =
                ( ExprLiteral (IntLiteral 2)
                , ExprCons (ExprLiteral (IntLiteral 3), ExprLiteral NilLiteral) ) ))
     ];
-  [%expect {| 1::2::3::[];; |}]
+  [%expect {| (1::(2::(3::[])));; |}]
 ;;
 
 let%expect_test "bin op with parentheses" =

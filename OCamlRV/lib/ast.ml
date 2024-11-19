@@ -47,6 +47,11 @@ type pattern =
   | PLiteral of literal (** 123, true, "string" *)
   | PVar of identifier (** x *)
   | PCons of pattern * pattern (** p1::p2 *)
+  | PTuple of
+      pattern
+      * pattern
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
+  (** p_1 ,..., p_n *)
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =
@@ -58,11 +63,11 @@ type expression =
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of
       expression
-      * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / 2)))])
+      * (case list[@gen QCheck.Gen.(list_size (1 -- 4) (gen_case_sized (n / 2)))])
   (** match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of
       rec_flag
-      * (binding list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_binding_sized (n / 2)))])
+      * (binding list[@gen QCheck.Gen.(list_size (1 -- 4) (gen_binding_sized (n / 2)))])
       * expression (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of
@@ -70,16 +75,18 @@ type expression =
       [@gen QCheck.Gen.(list_size (0 -- 4) (gen_expression_sized (n / 2)))])
   (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
-  | ExprFun of pattern * expression (** fun p -> e *)
+  | ExprFun of (pattern[@gen gen_pattern_sized (n / 2)]) * expression (** fun p -> e *)
   | OptNone (** None *)
   | OptSome of expression (** Some x *)
 [@@deriving show { with_path = false }, qcheck]
 
 (** Used in `match` expression *)
-and case = pattern * expression [@@deriving show { with_path = false }, qcheck]
+and case = (pattern[@gen gen_pattern_sized (n / 2)]) * expression
+[@@deriving show { with_path = false }, qcheck]
 
 (** Used in `let` expression*)
-and binding = pattern * expression [@@deriving show { with_path = false }, qcheck]
+and binding = (pattern[@gen gen_pattern_sized (n / 2)]) * expression
+[@@deriving show { with_path = false }, qcheck]
 
 let gen_expression =
   QCheck.Gen.(
