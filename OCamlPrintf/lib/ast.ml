@@ -65,73 +65,56 @@ type 'exp case =
 [@@deriving show { with_path = false }, qcheck]
 
 module Expression = struct
-  type value_binding_exp = expression value_binding
-  and case_exp = expression case
+  type value_binding_exp = t value_binding
+  and case_exp = t case
 
-  and expression =
+  and t =
     | Exp_ident of ident
     | Exp_constant of constant
     | Exp_let of
         rec_flag
         * (value_binding_exp
-          [@gen
-            map2
-              (fun pat exp -> { pat; exp })
-              gen_pattern
-              (gen_expression_sized (n / coef))])
+          [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
         * (value_binding_exp
-          [@gen
-            map2
-              (fun pat exp -> { pat; exp })
-              gen_pattern
-              (gen_expression_sized (n / coef))])
+          [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
             list_
-        * (expression[@gen gen_expression_sized (n / coef)])
+        * (t[@gen gen_sized (n / coef)])
     | Exp_fun of
-        (pattern list[@gen small_list gen_pattern])
-        * (expression[@gen gen_expression_sized (n / coef)])
+        (pattern list[@gen small_list gen_pattern]) * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
-        (expression[@gen gen_expression_sized (n / coef)])
-        * (expression[@gen gen_expression_sized (n / coef)])
-        * (expression list[@gen small_list (gen_expression_sized (n / coef))])
+        (t[@gen gen_sized (n / coef)])
+        * (t[@gen gen_sized (n / coef)])
+        * (t list[@gen small_list (gen_sized (n / coef))])
     | Exp_match of
-        (expression[@gen gen_expression_sized (n / coef)])
+        (t[@gen gen_sized (n / coef)])
         * (case_exp
           [@gen
-            map2
-              (fun left right -> { left; right })
-              gen_pattern
-              (gen_expression_sized (n / coef))])
+            map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
         * (case_exp
           [@gen
-            map2
-              (fun left right -> { left; right })
-              gen_pattern
-              (gen_expression_sized (n / coef))])
+            map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
             list_
     | Exp_tuple of
-        (expression[@gen gen_expression_sized (n / coef)])
-        * (expression[@gen gen_expression_sized (n / coef)])
-        * (expression list[@gen small_list (gen_expression_sized (n / coef))])
-    | Exp_construct of ident * (expression[@gen gen_expression_sized (n / coef)]) option
+        (t[@gen gen_sized (n / coef)])
+        * (t[@gen gen_sized (n / coef)])
+        * (t list[@gen small_list (gen_sized (n / coef))])
+    | Exp_construct of ident * (t[@gen gen_sized (n / coef)]) option
     | Exp_ifthenelse of
-        (expression[@gen gen_expression_sized (n / coef)])
-        * (expression[@gen gen_expression_sized (n / coef)])
-        * (expression[@gen gen_expression_sized (n / coef)]) option
-    | Exp_sequence of
-        (expression[@gen gen_expression_sized (n / coef)])
-        * (expression[@gen gen_expression_sized (n / coef)])
-    | Exp_constraint of (expression[@gen gen_expression_sized (n / coef)]) * core_type
+        (t[@gen gen_sized (n / coef)])
+        * (t[@gen gen_sized (n / coef)])
+        * (t[@gen gen_sized (n / coef)]) option
+    | Exp_sequence of (t[@gen gen_sized (n / coef)]) * (t[@gen gen_sized (n / coef)])
+    | Exp_constraint of (t[@gen gen_sized (n / coef)]) * core_type
   [@@deriving show { with_path = false }, qcheck]
 end
 
 type structure_item =
-  | Struct_eval of Expression.expression
+  | Struct_eval of Expression.t
   | Struct_value of
       rec_flag
-      * Expression.expression value_binding
-      * (Expression.expression value_binding list
-        [@gen small_list (gen_value_binding Expression.gen_expression)])
+      * Expression.t value_binding
+      * (Expression.t value_binding list
+        [@gen small_list (gen_value_binding Expression.gen)])
 [@@deriving show { with_path = false }, qcheck]
 
 type structure = (structure_item list[@gen small_list gen_structure_item])
@@ -177,45 +160,45 @@ type pattern =
 (** [let pat = exp] *)
 type value_binding =
   { pat : pattern
-  ; exp : expression
+  ; exp : t
   }
 [@@deriving show { with_path = false }]
 
 (** Values of type represents [(P -> E)] *)
 and case =
   { left : pattern
-  ; right : expression
+  ; right : t
   }
 [@@deriving show { with_path = false }]
 
-and expression =
+and t =
   | Exp_ident of ident (** Identifier such as [x] *)
-  | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"] *)
-  | Exp_let of rec_flag * value_binding * value_binding list * expression
+  | Exp_constant of constant (** ts constant such as [1], ['a'], ["true"] *)
+  | Exp_let of rec_flag * value_binding * value_binding list * t
   (** [Exp_let(flag, [(P1, E1); ... ; (Pn, En)], E)] represents:
       - [let     P1 = E1 and ... and Pn = En in E] when [flag] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
-  | Exp_fun of pattern list * expression
+  | Exp_fun of pattern list * t
   (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
-  | Exp_apply of expression * expression * expression list
+  | Exp_apply of t * t * t list
   (** [Exp_apply(E0, [E1; ... ; En])] represents [E0 E1 ... En] *)
-  | Exp_match of expression * case * case list
+  | Exp_match of t * case * case list
   (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
-  | Exp_tuple of expression * expression * expression list
-  (** Expressions [(E1, ... , En)] *)
-  | Exp_construct of ident * expression option
+  | Exp_tuple of t * t * t list
+  (** ts [(E1, ... , En)] *)
+  | Exp_construct of ident * t option
   (** [Exp_construct(C, exp)] represents:
       - [C]                when [exp] is [None],
       - [C E]              when [exp] is [Some E],
       - [C (E1, ... , En)] when [exp] is [Some (Exp_tuple[E1; ... ; En])] *)
-  | Exp_ifthenelse of expression * expression * expression option
+  | Exp_ifthenelse of t * t * t option
   (** [if E1 then E2 else E3] *)
-  | Exp_sequence of expression * expression (** [E1; E2] *)
-  | Exp_constraint of expression * core_type (** [(E : T)] *)
+  | Exp_sequence of t * t (** [E1; E2] *)
+  | Exp_constraint of t * core_type (** [(E : T)] *)
 [@@deriving show { with_path = false }]
 
 type structure_item =
-  | Struct_eval of expression (** [E] *)
+  | Struct_eval of t (** [E] *)
   | Struct_value of rec_flag * value_binding * value_binding list
   (** [Struct_value(flag, [(P1, E1); ... ; (Pn, En))])] represents:
       - [let     P1 = E1 and ... and Pn = En] when [flag] is [Nonrecursive],

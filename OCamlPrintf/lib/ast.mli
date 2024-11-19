@@ -91,45 +91,45 @@ val gen_case : 'a QCheck.Gen.t -> 'a case QCheck.Gen.t
 val arb_case : 'a QCheck.Gen.t -> 'a case QCheck.arbitrary
 
 module Expression : sig
-  type expression =
+  type t =
     | Exp_ident of ident (** Identifier such as [x] *)
-    | Exp_constant of constant (** Expressions constant such as [1], ['a'], ["true"] *)
+    | Exp_constant of constant (** ts constant such as [1], ['a'], ["true"] *)
     | Exp_let of
-        rec_flag * expression value_binding * expression value_binding list_ * expression
+        rec_flag * t value_binding * t value_binding list_ * t
     (** [Exp_let(flag, [(P1, E1); ... ; (Pn, En)], E)] represents:
         - [let     P1 = E1 and ... and Pn = En in E] when [flag] is [Nonrecursive],
         - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
-    | Exp_fun of pattern list_ * expression
+    | Exp_fun of pattern list_ * t
     (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
-    | Exp_apply of expression * expression * expression list_
+    | Exp_apply of t * t * t list_
     (** [Exp_apply(E0, [E1; ... ; En])] represents [E0 E1 ... En] *)
-    | Exp_match of expression * expression case * expression case list_
+    | Exp_match of t * t case * t case list_
     (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
-    | Exp_tuple of expression * expression * expression list_
-    (** Expressions [(E1, ... , En)] *)
-    | Exp_construct of ident * expression option
+    | Exp_tuple of t * t * t list_
+    (** ts [(E1, ... , En)] *)
+    | Exp_construct of ident * t option
     (** [Exp_construct(C, exp)] represents:
         - [C]                when [exp] is [None],
         - [C E]              when [exp] is [Some E],
         - [C (E1, ... , En)] when [exp] is [Some (Exp_tuple[E1; ... ; En])] *)
-    | Exp_ifthenelse of expression * expression * expression option
+    | Exp_ifthenelse of t * t * t option
     (** [if E1 then E2 else E3] *)
-    | Exp_sequence of expression * expression (** [E1; E2] *)
-    | Exp_constraint of expression * core_type (** [(E : T)] *)
+    | Exp_sequence of t * t (** [E1; E2] *)
+    | Exp_constraint of t * core_type (** [(E : T)] *)
 
-  val show_expression : expression -> ident
-  val gen_expression_sized : int -> expression QCheck.Gen.t
-  val gen_expression : expression QCheck.Gen.t
-  val arb_expression_sized : int -> expression QCheck.arbitrary
-  val arb_expression : expression QCheck.arbitrary
+  val show : t -> ident
+  val gen_sized : int -> t QCheck.Gen.t
+  val gen : t QCheck.Gen.t
+  val arb_sized : int -> t QCheck.arbitrary
+  val arb : t QCheck.arbitrary
 end
 
 type structure_item =
-  | Struct_eval of Expression.expression (** [E] *)
+  | Struct_eval of Expression.t (** [E] *)
   | Struct_value of
       rec_flag
-      * Expression.expression value_binding
-      * Expression.expression value_binding list_
+      * Expression.t value_binding
+      * Expression.t value_binding list_
   (** [Struct_value(flag, [(P1, E1); ... ; (Pn, En))])] represents:
       - [let     P1 = E1 and ... and Pn = En] when [flag] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = En] when [flag] is [Recursive]. *)
