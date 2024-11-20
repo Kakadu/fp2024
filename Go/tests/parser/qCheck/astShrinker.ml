@@ -13,8 +13,7 @@ let list ~shrink l =
   | [] -> empty
 ;;
 
-let shrink_ident id =
-  match id with
+let shrink_ident = function
   | "a" -> empty
   | _ -> return "a"
 ;;

@@ -93,7 +93,8 @@ let parse_const_string =
   let escaped_char =
     char '\\'
     *> choice
-         [ char '\"' *> return '\"'
+         [ char '\'' *> return '\''
+         ; char '\"' *> return '\"'
          ; char '\\' *> return '\\'
          ; char 'n' *> return '\n'
          ; char 't' *> return '\t'

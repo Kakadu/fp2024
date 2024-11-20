@@ -137,7 +137,11 @@ let parse_if pblock =
     let* init =
       parse_if_for_init pblock >>| Option.some <* parse_stmt_sep <|> return None
     in
-    let* () = if init = None then parse_stmt_sep <|> return () else return () in
+    let* () =
+      match init with
+      | None -> parse_stmt_sep <|> return ()
+      | Some _ -> return ()
+    in
     let* cond = ws *> parse_expr pblock in
     let* if_body = ws_line *> pblock <* ws_line in
     let* else_body =

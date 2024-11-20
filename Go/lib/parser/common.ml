@@ -26,7 +26,7 @@ let parse_stmt_sep = ws_line *> (char '\n' <|> char ';') *> ws
 let parse_int =
   take_while1 Char.is_digit
   >>= fun str ->
-  match int_of_string_opt str with
+  match Stdlib.int_of_string_opt str with
   | Some num -> return num
   | None -> fail
 ;;

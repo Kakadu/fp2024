@@ -23,7 +23,6 @@ type type' =
       [chan int], [<-chan string], [chan<- bool] *)
 [@@deriving show { with_path = false }]
 
-(** identificator for a variable or a function *)
 type ident = string [@@deriving show { with_path = false }]
 
 (** Binary operators *)
@@ -179,9 +178,10 @@ and if' =
   }
 [@@deriving show { with_path = false }]
 
+(** Variants of else body in if statement *)
 and else_body =
-  | Else_block of block
-  | Else_if of if'
+  | Else_block of block (** Else body of statement block such as [else {}] *)
+  | Else_if of if' (** Else body of another if statement such as [else if true {}] *)
 [@@deriving show { with_path = false }]
 
 (** Statement, a syntactic unit of imperative programming *)
@@ -225,7 +225,9 @@ type func_decl = ident * anon_func [@@deriving show { with_path = false }]
 (** Top-level declarations *)
 type top_decl =
   | Decl_var of long_var_decl
+  (** Top level variable declaration such as: [var a int], [var a, b = 1, "hi"] *)
   | Decl_func of func_decl
+  (** Top level function declaration such as: [func f() {}], [func f(a, b int) string {}] *)
 [@@deriving show { with_path = false }]
 
 (** The whole interpreted file, the root of the abstract syntax tree *)

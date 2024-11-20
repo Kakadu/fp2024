@@ -1,7 +1,4 @@
 (library
  (name ast)
- (libraries base)
  (preprocess
-  (pps ppx_deriving.show))
- (instrumentation
-  (backend bisect_ppx)))
+  (pps ppx_deriving.show)))

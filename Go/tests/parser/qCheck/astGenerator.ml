@@ -7,11 +7,6 @@ open Ast
 
 let size4 = int_range 0 4
 let list4 gen = list_size size4 gen
-let gen_ident_first_char = oneof [ char_range 'a' 'z'; char_range 'A' 'Z'; return '_' ]
-
-let gen_ident_char =
-  oneof [ char_range 'a' 'z'; char_range 'A' 'Z'; return '_'; char_range '0' '9' ]
-;;
 
 let is_keyword = function
   | "break"
@@ -29,8 +24,12 @@ let is_keyword = function
 ;;
 
 let gen_ident =
-  let* first_char = gen_ident_first_char in
-  let* rest_chars = string_size ~gen:gen_ident_char size4 in
+  let* first_char = oneof [ char_range 'a' 'z'; char_range 'A' 'Z'; return '_' ] in
+  let* rest_chars =
+    small_string
+      ~gen:
+        (oneof [ char_range 'a' 'z'; char_range 'A' 'Z'; return '_'; char_range '0' '9' ])
+  in
   let ident = Base.Char.to_string first_char ^ rest_chars in
   return (if is_keyword ident then "_" ^ ident else ident)
 ;;
@@ -56,7 +55,7 @@ let gen_chan_type gtype =
 ;;
 
 let gen_type =
-  sized_size (int_range 0 3)
+  sized_size size4
   @@ fix (fun self ->
        function
        | 0 -> oneofl [ Type_int; Type_string; Type_bool ]
@@ -79,7 +78,7 @@ let gen_const_int =
 ;;
 
 let gen_const_string =
-  let* str = string_size ~gen:printable size4 in
+  let* str = small_string ~gen:printable in
   return (Const_string str)
 ;;
 
@@ -171,7 +170,7 @@ let gen_expr_un_oper gexpr =
   return (Expr_un_oper (operator, operand))
 ;;
 
-let gen_func_call gexpr : func_call t =
+let gen_func_call gexpr =
   let* func = gexpr in
   let* args = list4 gexpr in
   return (func, args)
@@ -242,7 +241,7 @@ let gen_assign_lvalue gblock =
     let* ident = gen_ident in
     return (Lvalue_ident ident)
   in
-  sized_size (int_range 0 3)
+  sized_size size4
   @@ fix (fun self ->
        function
        | 0 -> gen_lvalue_ident
@@ -310,7 +309,7 @@ let gen_if_for_init gstmt =
 ;;
 
 let gen_if gstmt =
-  sized_size (int_range 0 2)
+  sized_size size4
   @@ fix (fun self n ->
     let* init = option (gen_if_for_init gstmt) in
     let* cond = gen_expr (gen_block gstmt) in
@@ -340,7 +339,7 @@ let gen_stmt_for gstmt =
 ;;
 
 let gen_stmt =
-  sized_size (int_range 0 5)
+  sized_size size4
   @@ fix (fun self ->
        function
        | 0 ->

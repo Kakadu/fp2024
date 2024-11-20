@@ -5,10 +5,12 @@
 open Ast
 open Format
 
+let concat = String.concat ""
+
 let sep_by sep list print =
   let rec helper acc = function
     | fst :: snd :: tl ->
-      let acc = acc ^ print fst ^ sep in
+      let acc = concat [ acc; print fst; sep ] in
       helper acc (snd :: tl)
     | fst :: _ -> acc ^ print fst
     | [] -> acc
@@ -50,9 +52,9 @@ let rec print_type = function
 let print_idents_with_types list =
   let rec helper acc = function
     | (id, t) :: snd :: tl ->
-      let acc = acc ^ id ^ " " ^ print_type t ^ ", " in
+      let acc = concat [ acc; id; " "; print_type t; ", " ] in
       helper acc (snd :: tl)
-    | (id, t) :: _ -> acc ^ id ^ " " ^ print_type t
+    | (id, t) :: _ -> concat [ acc; id; " "; print_type t ]
     | [] -> acc
   in
   helper "" list
@@ -76,17 +78,18 @@ let print_func_args_returns_and_body pblock anon_func =
 let print_const pexpr pblock = function
   | Const_int num -> asprintf "%i" num
   | Const_string str ->
-    let buffer = Buffer.create (String.length str) in
-    String.iter
-      (function
-        | '\\' -> Buffer.add_string buffer "\\\\"
-        | '"' -> Buffer.add_string buffer "\\\""
-        | '\n' -> Buffer.add_string buffer "\\n"
-        | '\t' -> Buffer.add_string buffer "\\t"
-        | '\r' -> Buffer.add_string buffer "\\r"
-        | c -> Buffer.add_char buffer c)
-      str;
-    "\"" ^ Buffer.contents buffer ^ "\""
+    let rec string_builder acc = function
+      | char :: tl ->
+        let new_piece =
+          match char with
+          | '\"' -> "\\\""
+          | _ -> Char.escaped char
+        in
+        string_builder (acc ^ new_piece) tl
+      | [] -> acc
+    in
+    let chars = List.of_seq (String.to_seq str) in
+    concat [ "\""; string_builder "" chars; "\"" ]
   | Const_array (size, type', inits) ->
     asprintf "[%i]%s{%s}" size (print_type type') (sep_by_comma inits pexpr)
   | Const_func anon_func -> "func" ^ print_func_args_returns_and_body pblock anon_func
