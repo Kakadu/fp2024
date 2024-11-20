@@ -189,7 +189,7 @@ let%expect_test "bin op with if then else" =
            , ExprLiteral (IntLiteral 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
-  [%expect {| 1 + if a then b else c;; |}]
+  [%expect {| 1 + (if a then b else c);; |}]
 ;;
 
 let%expect_test "bin op with if then else" =
@@ -202,7 +202,7 @@ let%expect_test "bin op with if then else" =
            , ExprLiteral (IntLiteral 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
-  [%expect {| 1 + if a then b else c;; |}]
+  [%expect {| 1 + (if a then b else c);; |}]
 ;;
 
 let%expect_test "pretty print match with multiple branches" =
@@ -218,11 +218,11 @@ let%expect_test "pretty print match with multiple branches" =
              ] ))
     ];
   [%expect {|
-match x with
+(match x with
 | 0 -> "zero"
 | 1 -> "one"
 | _ -> "other"
-;;
+);;
 |}]
 ;;
 
@@ -243,11 +243,11 @@ let%expect_test "let expr with match match with multiple branches" =
     ];
   [%expect
     {|
-let numder = match arabic with
+let numder = (match arabic with
 | 1 -> "one"
 | 2 -> "two"
 | 3 -> "three"
-;;
+);;
 |}]
 ;;
 

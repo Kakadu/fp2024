@@ -201,12 +201,12 @@ let expr =
     let apply = chainl1 term (return eapply) in
     let cons = chainl1 apply (token "::" *> return (fun p1 p2 -> ExprCons (p1, p2))) in
     let ife = peif expr <|> cons in
-    let unary = lift2 (fun op e -> ExprUnOperation (op, e)) punary_op ife <|> ife in
+    let opt = p_option ife <|> ife in
+    let unary = lift2 (fun op e -> ExprUnOperation (op, e)) punary_op opt <|> opt in
     let ops1 = chainl1 unary (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
-    let opt = p_option cmp <|> cmp in
-    let tuple = petuple opt <|> opt in
+    let tuple = petuple cmp <|> cmp in
     choice [ tuple; pelet expr; pematch expr; pefun expr ])
 ;;
 
