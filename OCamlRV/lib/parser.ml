@@ -92,9 +92,13 @@ let pptuple ppattern =
   return (PTuple (el1, el2, rest))
 ;;
 
+let pp_option_none = ws *> token "None" *> return (POption None)
+let pp_option_some pe = ws *> token "Some" *> pe >>| fun x -> POption (Some x)
+let pp_option pe = choice [ pp_option_none; pp_option_some pe ]
+
 let pattern =
   fix (fun pat ->
-    let term = choice [ ppany; ppliteral; ppvariable; pparens pat ] in
+    let term = choice [ ppany; ppliteral; ppvariable; pparens pat; pp_option pat ] in
     let cons = chainl1 term (token "::" *> return (fun p1 p2 -> PCons (p1, p2))) in
     let tuple = pptuple term <|> cons in
     tuple)

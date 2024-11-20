@@ -54,6 +54,10 @@ let pp_pattern =
           pp_tuple ppf xs
       in
       fprintf ppf "(%a)" pp_tuple (p1 :: p2 :: rest)
+    | POption x ->
+      (match x with
+       | Some x -> fprintf ppf "Some %a" helper x
+       | None -> fprintf ppf "None")
   in
   helper
 ;;
@@ -99,7 +103,7 @@ let rec pp_expr =
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
     | ExprOption x ->
       (match x with
-       | Some x -> fprintf ppf "Some (%a)" helper x
+       | Some x -> fprintf ppf "Some %a" helper x
        | None -> fprintf ppf "None")
   in
   helper
