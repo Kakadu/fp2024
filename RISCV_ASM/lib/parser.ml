@@ -161,9 +161,11 @@ let parse_address32 = ws_opt (choice [ parse_immediate32; parse_label_address32 
 
 let parse_string_with_spaces str =
   string str
-  *> take_while1 (function
-    | ' ' | '\t' -> true
-    | _ -> false)
+  *> (peek_char
+      >>= function
+      | Some (' ' | '\n' | '\t') -> return ()
+      | None -> return ()
+      | _ -> fail "")
 ;;
 
 let parse_directive =
@@ -179,7 +181,7 @@ let parse_directive =
                  (fun tag value -> DirectiveExpr (Attribute (tag, value)))
                  parse_string
                  (ws_opt (char ',') *> parse_number_or_quoted_string))
-       ; string ".text" *> return (DirectiveExpr Text)
+       ; parse_string_with_spaces ".text" *> return (DirectiveExpr Text)
        ; parse_string_with_spaces ".align"
          *> ws_opt (lift (fun int -> DirectiveExpr (Align int)) parse_number)
        ; parse_string_with_spaces ".globl"
@@ -190,10 +192,12 @@ let parse_directive =
                  (fun str type_str -> DirectiveExpr (TypeDir (str, type_str)))
                  parse_string
                  (ws_opt (char ',') *> parse_type))
-       ; string ".cfi_startproc" *> return (DirectiveExpr CfiStartproc)
-       ; string ".cfi_endproc" *> return (DirectiveExpr CfiEndproc)
-       ; string ".cfi_remember_state" *> return (DirectiveExpr CfiRememberState)
-       ; string ".cfi_restore_state" *> return (DirectiveExpr CfiRestoreState)
+       ; parse_string_with_spaces ".cfi_startproc" *> return (DirectiveExpr CfiStartproc)
+       ; parse_string_with_spaces ".cfi_endproc" *> return (DirectiveExpr CfiEndproc)
+       ; parse_string_with_spaces ".cfi_remember_state"
+         *> return (DirectiveExpr CfiRememberState)
+       ; parse_string_with_spaces ".cfi_restore_state"
+         *> return (DirectiveExpr CfiRestoreState)
        ; parse_string_with_spaces ".size"
          *> ws_opt
               (lift2
@@ -463,7 +467,7 @@ let parse_instruction =
               (fun r1 addr20 -> InstructionExpr (Auipc (r1, addr20)))
               parse_register
               (char ',' *> parse_address20)
-       ; string "ecall" *> return (InstructionExpr Ecall)
+       ; parse_string_with_spaces "ecall" *> return (InstructionExpr Ecall)
        ; parse_string_with_spaces "call"
          *> ws_opt (lift (fun str -> InstructionExpr (Call str)) parse_string)
        ; parse_string_with_spaces "mul"
@@ -633,7 +637,7 @@ let parse_instruction =
               (fun r1 r2 -> InstructionExpr (Mv (r1, r2)))
               parse_register
               (char ',' *> parse_register)
-       ; string "ret" *> return (InstructionExpr Ret)
+       ; parse_string_with_spaces "ret" *> return (InstructionExpr Ret)
        ])
 ;;
 
