@@ -27,17 +27,6 @@ let gen_ident =
             ]))
 ;;
 
-let gen_ident_construct =
-  oneof
-    [ return "::"
-    ; return "[]"
-    ; return "Some"
-    ; return "None"
-    ; return "true"
-    ; return "false"
-    ]
-;;
-
 type ident = (string[@gen gen_ident]) [@@deriving show { with_path = false }, qcheck]
 
 type rec_flag =
@@ -76,8 +65,26 @@ type pattern =
       * (pattern[@gen gen_pattern_sized (n / coef)])
       * (pattern[@gen gen_pattern_sized (n / coef)]) list_
   | Pat_construct of
-      (ident[@gen gen_ident_construct])
-      * (pattern[@gen gen_pattern_sized (n / coef)]) option
+      ((ident * pattern option)
+      [@gen
+        oneof
+          [ (let rec gen_list n =
+               if n = 0
+               then return ("[]", None)
+               else (
+                 let element = gen_pattern_sized 0 in
+                 let tail = gen_list (n / coef) in
+                 map2
+                   (fun e t -> "::", Some (Pat_tuple (e, Pat_construct t, [])))
+                   element
+                   tail)
+             in
+             gen_list n)
+          ; return ("true", None)
+          ; return ("false", None)
+          ; map (fun i -> "Some", Some i) (gen_pattern_sized (n / coef))
+          ; return ("None", None)
+          ]])
   | Pat_constraint of (pattern[@gen gen_pattern_sized (n / coef)]) * core_type
 [@@deriving show { with_path = false }, qcheck]
 
@@ -145,7 +152,26 @@ module Expression = struct
         * (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)]) list_
     | Exp_construct of
-        (ident[@gen gen_ident_construct]) * (t[@gen gen_sized (n / coef)]) option
+        ((ident * t option)
+        [@gen
+          oneof
+            [ (let rec gen_list n =
+                 if n = 0
+                 then return ("[]", None)
+                 else (
+                   let element = gen_sized 0 in
+                   let tail = gen_list (n / coef) in
+                   map2
+                     (fun e t -> "::", Some (Exp_tuple (e, Exp_construct t, [])))
+                     element
+                     tail)
+               in
+               gen_list n)
+            ; return ("true", None)
+            ; return ("false", None)
+            ; map (fun i -> "Some", Some i) (gen_sized (n / coef))
+            ; return ("None", None)
+            ]])
     | Exp_ifthenelse of
         (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)])

@@ -216,9 +216,10 @@ let parse_pattern =
         ; parse_pat_var
         ; parse_pat_constant
         ; parse_pat_construct parse_full_pat
+        ; parse_pat_constraint parse_full_pat
         ]
     in
-    choice [ parse_pat_constraint parse_pat; parse_pat_tuple parse_pat; parse_pat ])
+    choice [ parse_pat_tuple parse_pat; parse_pat ])
 ;;
 
 (* ==================== Expression ==================== *)

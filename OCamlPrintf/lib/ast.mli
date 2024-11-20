@@ -39,7 +39,7 @@ type pattern =
   | Pat_var of ident (** A variable pattern such as [x] *)
   | Pat_constant of constant (** Patterns such as [1], ['a'], ["true"] *)
   | Pat_tuple of pattern * pattern * pattern list_ (** Patterns [(P1, ... , Pn)] *)
-  | Pat_construct of ident * pattern option
+  | Pat_construct of (ident * pattern option)
   (** [Pat_construct(C, args)] represents:
       - [C]   when [args] is [None],
       - [C P] when [args] is [Some P] *)
@@ -81,7 +81,7 @@ module Expression : sig
     | Exp_match of t * t case * t case list_
     (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
     | Exp_tuple of t * t * t list_ (** ts [(E1, ... , En)] *)
-    | Exp_construct of ident * t option
+    | Exp_construct of (ident * t option)
     (** [Exp_construct(C, exp)] represents:
         - [C]                when [exp] is [None],
         - [C E]              when [exp] is [Some E],
