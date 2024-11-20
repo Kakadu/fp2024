@@ -97,7 +97,7 @@ let rec pp_expr ppf = function
   | Efun (first_pattern, rest_patterns, e) ->
     fprintf
       ppf
-      "fun %a%a -> %a"
+      "(fun %a%a -> %a)"
       pp_pattern
       first_pattern
       (fun ppf patterns ->
