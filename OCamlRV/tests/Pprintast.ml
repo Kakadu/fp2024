@@ -78,14 +78,16 @@ let%expect_test "tuple test" =
   Format.printf
     "%a\n"
     pp_structure_item_list
-    [ SEval
-        (ExprTuple
-           [ ExprLiteral (IntLiteral 1)
-           ; ExprLiteral (StringLiteral "2")
-           ; ExprLiteral (IntLiteral 3)
-           ])
+    [ SValue
+        ( NonRec
+        , [ ( PVar "a"
+            , ExprTuple
+                ( ExprLiteral (IntLiteral 1)
+                , ExprLiteral (StringLiteral "2")
+                , [ ExprLiteral (IntLiteral 3) ] ) )
+          ] )
     ];
-  [%expect {| (1, "2", 3);; |}]
+  [%expect {| let a = (1, "2", 3);; |}]
 ;;
 
 let%expect_test _ =
@@ -174,7 +176,7 @@ let%expect_test "let some expression" =
     "%a\n"
     pp_structure_item_list
     [ SValue (NonRec, [ PVar "a", ExprOption (Some (ExprLiteral (IntLiteral 1))) ]) ];
-  [%expect {| let a = Some (1);; |}]
+  [%expect {| let a = Some 1;; |}]
 ;;
 
 let%expect_test "bin op with if then else" =

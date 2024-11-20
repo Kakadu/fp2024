@@ -72,8 +72,10 @@ type expression =
       * expression (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of
-      (expression list
-      [@gen QCheck.Gen.(list_size (0 -- 4) (gen_expression_sized (n / 2)))])
+      expression
+      * expression
+      * (expression list
+        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_expression_sized (n / 2)))])
   (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
   | ExprFun of (pattern[@gen gen_pattern_sized (n / 2)]) * expression (** fun p -> e *)
