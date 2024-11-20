@@ -86,19 +86,19 @@ open Expr
 open Stmt
 
 let parse_func_decl : func_decl t =
-  let* _ = strin<span data-count="7">g</span> "func" *<span data-count="7">&gt;</span> ws in
-  <span data-count="7">l</span>et* func_name = parse_ident &lt;<span data-count="7">*</span> ws_line in
-  <span data-count="7">l</span>et* args_returns_and_body = parse_func_args_returns_and_bod<span data-count="7">y</span> parse_block in
-  <span data-count="7">r</span>eturn (func_name, args_returns_and_body)
+  let* () = strin<span data-count="8">g</span> "func" *<span data-count="8">&gt;</span> ws in
+  <span data-count="26">l</span>et* func_name = parse_ident &lt;<span data-count="26">*</span> ws_line in
+  <span data-count="26">l</span>et* args_returns_and_body = parse_func_args_returns_and_bod<span data-count="26">y</span> parse_block in
+  <span data-count="26">r</span>eturn (func_name, args_returns_and_body)
 ;;
 
 let parse_top_decl =
-  parse_long_var_dec<span data-count="7">l</span> parse_block
-  &gt;&gt;<span data-count="7">|</span> (fun decl -&gt; <span data-count="5">D</span>ecl_var decl)
-  &lt;|<span data-count="7">&gt;</span> (parse_func_decl &gt;&gt;<span data-count="7">|</span> fun decl -&gt; <span data-count="7">D</span>ecl_func decl)
+  parse_long_var_dec<span data-count="8">l</span> parse_block
+  &gt;&gt;<span data-count="8">|</span> (fun decl -&gt; <span data-count="27">D</span>ecl_var decl)
+  &lt;|<span data-count="8">&gt;</span> (parse_func_decl &gt;&gt;<span data-count="8">|</span> fun decl -&gt; <span data-count="26">D</span>ecl_func decl)
 ;;
 
-let parse_file : file t = ws *<span data-count="7">&gt;</span> sep_b<span data-count="7">y</span> parse_stmt_sep parse_top_decl &lt;<span data-count="7">*</span> ws
+let parse_file : file t = ws *<span data-count="8">&gt;</span> sep_b<span data-count="8">y</span> parse_stmt_sep parse_top_decl &lt;<span data-count="8">*</span> ws
 </code></pre>
       </div>
     </div>

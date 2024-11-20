@@ -50,9 +50,9 @@
 (** SPDX-License-Identifier: MIT *)
 
 let pp printer parser str =
-  <span data-count="159">m</span>atch Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
-  | <span data-count="144">O</span>k res -&gt; printer Format.std_formatter res
-  | <span data-count="15">E</span>rror res -&gt; print_endline res
+  <span data-count="192">m</span>atch Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
+  | <span data-count="157">O</span>k res -&gt; print_endline (printe<span data-count="157">r</span> res)
+  | <span data-count="35">E</span>rror _ -&gt; print_endline ": syntax error"
 ;;
 </code></pre>
       </div>

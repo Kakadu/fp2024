@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>parse.ml &mdash; Coverage report</title>
-    <meta name="description" content="0.00% coverage in lib/parser/parse.ml">
+    <meta name="description" content="100.00% coverage in lib/parser/parse.ml">
     <link rel="stylesheet" href="../../coverage.css"/>
     <script src="../../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,9 @@
           <span class="dirname">lib/parser/</span>parse.ml
         </a>
       </h1>
-      <h2>0.00%</h2>
+      <h2>100.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="bottom:0.00%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -27,22 +26,103 @@
 <a id="L2"></a><span > </span>
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span > </span>
-<a id="L5"></a><span class="unvisited"> </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span > </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span > </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span > </span>
+<a id="L14"></a><span > </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span > </span>
+<a id="L17"></a><span > </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span > </span>
+<a id="L21"></a><span class="visited"> </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span > </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span > </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span > </span>
+<a id="L32"></a><span class="visited"> </span>
 </pre>
       </div>
       <div id="text-layer">
         <pre id="line-numbers">
-<a href="#L1">1</a>
-<a href="#L2">2</a>
-<a href="#L3">3</a>
-<a href="#L4">4</a>
-<a href="#L5">5</a>
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+<a href="#L32">32</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
-let parse parser str = <span data-count="0">A</span>ngstrom.parse_string ~consume:Angstrom.Consume.All parser str
+open Common
+open Expr
+open Stmt
+open TopLevel
+
+(** [parse_ident] parses identifiers that can be used as veriables and function names.
+    Identifiers has to start with latin letter or ['_']
+    and consist only of latin letters, digits and ['_'] *)
+let parse_ident = parse_ident
+
+(** [parse_type] parses integer, boolean, string, array, function and channel types sucn as:
+    [int], [bool], [string], [[3]int], [func()], [func(int) (string, bool)],
+    [chan int], [&lt;-chan int], [chan&lt;- int], [chan chan bool] *)
+let parse_type = parse_type
+
+(** [parse_expr ] parses any expressions such as [2], [var], [-(2 + var)], [&lt;-call[0]()]*)
+let parse_expr = parse_exp<span data-count="8">r</span> parse_block
+
+(** [parse_stmt] parses any statements such as
+    [call()], [i++], [c := 9], [if true {} else {}], etc. *)
+let parse_stmt = parse_stm<span data-count="8">t</span> parse_block
+
+(** [parse_file] parses the whole program *)
+let parse_file = parse_file
+
+(** [parse parser str] runs [parser] on [str] and returns [Ok result] if it succeds,
+    where [result] is an AST, or [Error msg] if not *)
+let parse parser str = <span data-count="10">A</span>ngstrom.parse_string ~consume:Angstrom.Consume.All parser str
 </code></pre>
       </div>
     </div>
