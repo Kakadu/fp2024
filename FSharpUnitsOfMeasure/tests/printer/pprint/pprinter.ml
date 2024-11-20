@@ -8,6 +8,7 @@ open Format
 let pprint_ident ppf ident = fprintf ppf "%s" ident
 let pprint_sep_star ppf () = fprintf ppf " * "
 let pprint_sep_colon ppf () = fprintf ppf "; "
+let pprint_sep_double_colon ppf () = fprintf ppf ";;\n\n"
 let pprint_sep_comma ppf () = fprintf ppf ", "
 let pprint_sep_and ppf () = fprintf ppf " and "
 let pprint_sep_or ppf () = fprintf ppf " | "
@@ -46,7 +47,7 @@ let rec pprint_pat ppf = function
   | Pattern_or (p1, p2) -> fprintf ppf "%a | %a" pprint_pat p1 pprint_pat p2
 ;;
 
-(* Prints let f x = y in e as let f = fun x -> y in e*)
+(* Prints let f x = y in e as let f = fun x -> y in e *)
 let rec pprint_binds ppf =
   let pprint_bind ppf (Bind (p, e)) = fprintf ppf "%a = %a" pprint_pat p pprint_expr e in
   pprint_sep_by pprint_bind pprint_sep_and ppf
@@ -58,11 +59,12 @@ and pprint_rules ppf =
 and pprint_expr ppf = function
   | Expr_const e -> fprintf ppf "%a" pprint_const e
   | Expr_ident_or_op e -> fprintf ppf "%a" pprint_ident e
+  | Expr_typed (e, t) -> fprintf ppf "%a : %a" pprint_expr e pprint_type t
   | Expr_tuple (e1, e2, rest) ->
     let list = e1 :: e2 :: rest in
     fprintf ppf "(%a)" (pprint_sep_by pprint_expr pprint_sep_comma) list
   | Expr_list list -> fprintf ppf "[%a]" (pprint_sep_by pprint_expr pprint_sep_colon) list
-  | Expr_fun (p, e) -> fprintf ppf "fun %a -> %a" pprint_pat p pprint_expr e
+  | Expr_lam (p, e) -> fprintf ppf "fun %a -> %a" pprint_pat p pprint_expr e
   | Expr_let (flag, b1, rest, e) ->
     let flag = if flag = Recursive then " rec " else " " in
     let list = b1 :: rest in
@@ -75,7 +77,7 @@ and pprint_expr ppf = function
   | Expr_apply (e1, e2) ->
     let pprint_expr_paren ppf e =
       match e with
-      | Expr_fun _ | Expr_let _ | Expr_ifthenelse _ | Expr_match _ | Expr_apply _ ->
+      | Expr_lam _ | Expr_let _ | Expr_ifthenelse _ | Expr_match _ | Expr_apply _ ->
         fprintf ppf "(%a)" pprint_expr e
       | _ -> fprintf ppf "%a" pprint_expr e
     in
@@ -83,4 +85,20 @@ and pprint_expr ppf = function
   | Expr_match (e, r1, rest) ->
     let list = r1 :: rest in
     fprintf ppf "match %a with %a" pprint_expr e pprint_rules list
+  | Expr_function (r1, rest) ->
+    let list = r1 :: rest in
+    fprintf ppf "function %a" pprint_rules list
+;;
+
+let pprint_struct_item ppf = function
+  | Str_item_eval e -> fprintf ppf "%a" pprint_expr e
+  | Str_item_def (flag, b1, rest) ->
+    let flag = if flag = Recursive then " rec " else " " in
+    let list = b1 :: rest in
+    fprintf ppf "let%s%a" flag pprint_binds list
+  | _ -> fprintf ppf "failed to pprint structure item"
+;;
+
+let pprint_program ppf =
+  fprintf ppf "%a;;\n" (pprint_sep_by pprint_struct_item pprint_sep_double_colon)
 ;;

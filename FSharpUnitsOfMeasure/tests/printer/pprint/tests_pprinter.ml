@@ -198,7 +198,7 @@ let%expect_test "print [x; y] list expression" =
 ;;
 
 let%expect_test "print lambda expression" =
-  printf "%a\n" pprint_expr (Expr_fun (Pattern_ident "x", Expr_ident_or_op "x"));
+  printf "%a\n" pprint_expr (Expr_lam (Pattern_ident "x", Expr_ident_or_op "x"));
   [%expect {| fun x -> x |}]
 ;;
 
@@ -266,10 +266,10 @@ let%expect_test "print let f a b c = x in e" =
        ( Nonrecursive
        , Bind
            ( Pattern_ident "f"
-           , Expr_fun
+           , Expr_lam
                ( Pattern_ident "a"
-               , Expr_fun
-                   (Pattern_ident "b", Expr_fun (Pattern_ident "c", Expr_ident_or_op "x"))
+               , Expr_lam
+                   (Pattern_ident "b", Expr_lam (Pattern_ident "c", Expr_ident_or_op "x"))
                ) )
        , []
        , Expr_ident_or_op "e" ));
@@ -342,9 +342,47 @@ let%expect_test "print match x with P1 | P2 | P3 -> E1 | P4 -> E2 expression" =
   [%expect {| match x with P1 -> E1 | P2 | P3 | P4 -> E2 |}]
 ;;
 
+let%expect_test "print function P1 -> E1 expression" =
+  printf
+    "%a\n"
+    pprint_expr
+    (Expr_function (Rule (Pattern_ident "P1", Expr_ident_or_op "E1"), []));
+  [%expect {| function P1 -> E1 |}]
+;;
+
+let%expect_test "print function P1 -> E1 | P2 -> E2 expression" =
+  printf
+    "%a\n"
+    pprint_expr
+    (Expr_function
+       ( Rule (Pattern_ident "P1", Expr_ident_or_op "E1")
+       , [ Rule (Pattern_ident "P2", Expr_ident_or_op "E2") ] ));
+  [%expect {| function P1 -> E1 | P2 -> E2 |}]
+;;
+
+let%expect_test "print function P1 | P2 -> E1 | P3 -> E2 expression" =
+  printf
+    "%a\n"
+    pprint_expr
+    (Expr_function
+       ( Rule (Pattern_ident "P1", Expr_ident_or_op "E1")
+       , [ Rule (Pattern_ident "P2", Expr_ident_or_op "E2") ] ));
+  [%expect {| function P1 -> E1 | P2 -> E2 |}]
+;;
+
+let%expect_test "print function P1 -> E1 | P2 | P3 -> E2 expression" =
+  printf
+    "%a\n"
+    pprint_expr
+    (Expr_function
+       ( Rule (Pattern_ident "P1", Expr_ident_or_op "E1")
+       , [ Rule (Pattern_ident "P2", Expr_ident_or_op "E2") ] ));
+  [%expect {| function P1 -> E1 | P2 -> E2 |}]
+;;
+
 let%expect_test "print f x expression" =
   printf "%a\n" pprint_expr (Expr_apply (Expr_ident_or_op "f", Expr_ident_or_op "x"));
-  [%expect {| match x with P1 -> E1 | P2 | P3 | P4 -> E2 |}]
+  [%expect {| f x |}]
 ;;
 
 let%expect_test "print (if true then f else g) x (with parentheses)" =
@@ -357,7 +395,7 @@ let%expect_test "print (if true then f else g) x (with parentheses)" =
            , Expr_ident_or_op "f"
            , Some (Expr_ident_or_op "g") )
        , Expr_ident_or_op "x" ));
-  [%expect {| match x with P1 -> E1 | P2 | P3 | P4 -> E2 |}]
+  [%expect {| (if true then f else g) x |}]
 ;;
 
 let%expect_test "print f (if true then x else y) (with parentheses)" =
@@ -370,5 +408,55 @@ let%expect_test "print f (if true then x else y) (with parentheses)" =
            ( Expr_const (Const_bool true)
            , Expr_ident_or_op "x"
            , Some (Expr_ident_or_op "y") ) ));
-  [%expect {| match x with P1 -> E1 | P2 | P3 | P4 -> E2 |}]
+  [%expect {| f (if true then x else y) |}]
+;;
+
+let%expect_test "print single structure item expression" =
+  printf "%a\n" pprint_program [ Str_item_eval (Expr_const (Const_int 1)) ];
+  [%expect {| 1;; |}]
+;;
+
+let%expect_test "print two structure item expressions sep by ;;" =
+  printf
+    "%a\n"
+    pprint_program
+    [ Str_item_eval
+        (Expr_let
+           ( Nonrecursive
+           , Bind (Pattern_ident "a", Expr_const (Const_int 1))
+           , []
+           , Expr_ident_or_op "a" ))
+    ; Str_item_eval
+        (Expr_let
+           ( Nonrecursive
+           , Bind (Pattern_ident "b", Expr_const (Const_int 2))
+           , []
+           , Expr_ident_or_op "b" ))
+    ];
+  [%expect {|
+    let a = 1 in a;;
+
+    let b = 2 in b;; |}]
+;;
+
+let%expect_test "print single structure item definition" =
+  printf
+    "%a\n"
+    pprint_program
+    [ Str_item_def (Nonrecursive, Bind (Pattern_ident "a", Expr_const (Const_int 1)), [])
+    ];
+  [%expect {| let a = 1;; |}]
+;;
+
+let%expect_test "print two structure item definitions sep by ;;" =
+  printf
+    "%a\n"
+    pprint_program
+    [ Str_item_def (Nonrecursive, Bind (Pattern_ident "a", Expr_const (Const_int 1)), [])
+    ; Str_item_def (Nonrecursive, Bind (Pattern_ident "b", Expr_const (Const_int 2)), [])
+    ];
+  [%expect {|
+    let a = 1;;
+
+    let b = 2;; |}]
 ;;
