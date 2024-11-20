@@ -3,48 +3,29 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Haskell_lib.Pprintast
+
 let%test "pp Int" = Format.asprintf "%a" pp_const (Int 18) = "18"
-
-let%test "pp const Bool" =
-  Format.asprintf "%a" pp_const (Bool true) = "True"
-;;
-
+let%test "pp const Bool" = Format.asprintf "%a" pp_const (Bool true) = "True"
 let%test "pp const Unit" = Format.asprintf "%a" pp_const Unit = "()"
 
 let%test "pp functype" =
-  Format.asprintf
-    "%a"
-    pp_functype
-    (FuncT (TInt, TBool, [ TBool; TUnit ]))
+  Format.asprintf "%a" pp_functype (FuncT (TInt, TBool, [ TBool; TUnit ]))
   = "Int -> Bool -> Bool -> ()"
 ;;
 
 let%test "pp tp TUnit" = Format.asprintf "%a" pp_tp TUnit = "()"
 let%test "pp tp TInt" = Format.asprintf "%a" pp_tp TInt = "Int"
 let%test "pp tp TBool" = Format.asprintf "%a" pp_tp TBool = "Bool"
-
-let%test "pp tp TreeParam" =
-  Format.asprintf "%a" pp_tp (TreeParam TInt) = "{Int}"
-;;
-
-let%test "pp tp ListParam" =
-  Format.asprintf "%a" pp_tp (ListParam TBool) = "[Bool]"
-;;
+let%test "pp tp TreeParam" = Format.asprintf "%a" pp_tp (TreeParam TInt) = "{Int}"
+let%test "pp tp ListParam" = Format.asprintf "%a" pp_tp (ListParam TBool) = "[Bool]"
 
 let%test "pp tp TupleParams" =
-  Format.asprintf
-    "%a"
-    pp_tp
-    (TupleParams (TInt, TBool, [ TBool; TInt ]))
+  Format.asprintf "%a" pp_tp (TupleParams (TInt, TBool, [ TBool; TInt ]))
   = "(Int, Bool, Bool, Int)"
 ;;
 
 let%test "pp tp FunctionType" =
-  Format.asprintf
-    "%a"
-    pp_tp
-    (FunctionType (FuncT (TBool, TUnit, [])))
-  = "Bool -> ()"
+  Format.asprintf "%a" pp_tp (FunctionType (FuncT (TBool, TUnit, []))) = "Bool -> ()"
 ;;
 
 let%test "pp listpat PCons" =
@@ -69,9 +50,7 @@ let%test "pp listpat PEnum" =
   = "[x, y, z]"
 ;;
 
-let%test "pp treepat PNul" =
-  Format.asprintf "%a" pp_pat (PTree PNul) = "$"
-;;
+let%test "pp treepat PNul" = Format.asprintf "%a" pp_pat (PTree PNul) = "$"
 
 let%test "pp treepat PNode" =
   Format.asprintf
@@ -86,21 +65,17 @@ let%test "pp treepat PNode" =
 ;;
 
 let%test "pp pconst OrdinaryPConst" =
-  Format.asprintf "%a" pp_pat (PConst (OrdinaryPConst (Bool true)))
-  = "True"
+  Format.asprintf "%a" pp_pat (PConst (OrdinaryPConst (Bool true))) = "True"
 ;;
 
 let%test "pp pconst NegativePInt" =
   Format.asprintf "%a" pp_pat (PConst (NegativePInt 18)) = "-18"
 ;;
 
-let%test "pp pat PWildcard" =
-  Format.asprintf "%a" pp_pat PWildcard = "_"
-;;
+let%test "pp pat PWildcard" = Format.asprintf "%a" pp_pat PWildcard = "_"
 
 let%test "pp pat PConst" =
-  Format.asprintf "%a" pp_pat (PConst (OrdinaryPConst (Bool true)))
-  = "True"
+  Format.asprintf "%a" pp_pat (PConst (OrdinaryPConst (Bool true))) = "True"
 ;;
 
 let%test "pp pat PIdentificator" =
@@ -132,10 +107,7 @@ let%test "pp pat PMaybe Nothing" =
 ;;
 
 let%test "pp pat PMaybe Just" =
-  Format.asprintf
-    "%a"
-    pp_pat
-    (PMaybe (Just ([], PIdentificator (Ident "x"), [])))
+  Format.asprintf "%a" pp_pat (PMaybe (Just ([], PIdentificator (Ident "x"), [])))
   = "Just x"
 ;;
 
@@ -152,11 +124,7 @@ let%test "pp pat PTree" =
 ;;
 
 let%test "pp pattern without capture, without type" =
-  Format.asprintf
-    "%a"
-    pp_pattern
-    ([], PIdentificator (Ident "x"), [])
-  = "x"
+  Format.asprintf "%a" pp_pattern ([], PIdentificator (Ident "x"), []) = "x"
 ;;
 
 let%test "pp pattern with capture, without type" =
@@ -180,15 +148,7 @@ let%expect_test "expr_with_prio" =
     "%a"
     pp_expr
     ( Binop
-        ( ( Binop
-              ( ( Binop
-                    ( i_const 1
-                    , Plus
-                    , i_const 0 )
-                , [] )
-              , Multiply
-              , i_const 2 )
-          , [] )
+        ( (Binop ((Binop (i_const 1, Plus, i_const 0), []), Multiply, i_const 2), [])
         , Greater
         , i_const 1 )
     , [] );
@@ -201,15 +161,7 @@ let%expect_test "expr_with_prio_tp" =
     "%a"
     pp_expr
     ( Binop
-        ( ( Binop
-              ( ( Binop
-                    ( i_const 1
-                    , Plus
-                    , i_const 0 )
-                , [ TInt ] )
-              , Multiply
-              , i_const 2 )
-          , [] )
+        ( (Binop ((Binop (i_const 1, Plus, i_const 0), [ TInt ]), Multiply, i_const 2), [])
         , Greater
         , i_const 1 )
     , [ TBool ] );
@@ -326,11 +278,7 @@ let%expect_test "fac" =
        , []
        , OrdBody
            ( IfThenEsle
-               ( ( Binop
-                     ( (Identificator (Ident "n"), [])
-                     , Less
-                     , i_const 0 )
-                 , [] )
+               ( (Binop ((Identificator (Ident "n"), []), Less, i_const 0), [])
                , (ENothing, [])
                , ( FunctionApply
                      ( (EJust, [])
@@ -347,11 +295,7 @@ let%expect_test "fac" =
              , ([], PIdentificator (Ident "y"), [])
              , []
              , Guards
-                 ( ( ( Binop
-                         ( (Identificator (Ident "y"), [])
-                         , Equality
-                         , i_const 0 )
-                     , [] )
+                 ( ( (Binop ((Identificator (Ident "y"), []), Equality, i_const 0), [])
                    , i_const 1 )
                  , [ ( (Identificator (Ident "otherwise"), [])
                      , ( Binop
@@ -360,9 +304,7 @@ let%expect_test "fac" =
                            , ( FunctionApply
                                  ( (Identificator (Ident "save_fac"), [])
                                  , ( Binop
-                                       ( (Identificator (Ident "y"), [])
-                                       , Minus
-                                       , i_const 1 )
+                                       ((Identificator (Ident "y"), []), Minus, i_const 1)
                                    , [] )
                                  , [] )
                              , [] ) )
