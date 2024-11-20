@@ -15,7 +15,7 @@ let gen_id_name =
       ]
   in
   (* limit the total length to 15 characters *)
-  let gen_rest = string_size ~gen:rest_char (int_range 0 14) in
+  let gen_rest = string_size ~gen:rest_char (int_range 1 14) in
   (* combine the first character with the generated rest part *)
   map2 (fun start rest -> String.make 1 start ^ rest) first_char gen_rest
 ;;
