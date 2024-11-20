@@ -74,7 +74,7 @@ let rec pp_expr ppf = function
          :: List.map ~f:case_to_string rest_cases)
     in
     fprintf ppf "match %a with %s" pp_expr exp case_list_str
-  | Eoption (Some e) -> fprintf ppf "Some %a" pp_expr e
+  | Eoption (Some e) -> fprintf ppf "(Some %a)" pp_expr e
   | Eoption None -> fprintf ppf "None"
   | Etuple (e1, e2, es) ->
     fprintf
@@ -119,7 +119,7 @@ let rec pp_expr ppf = function
       ()
       pp_expr
       e
-  | Efun_application (e1, e2) -> fprintf ppf "%a %a" pp_expr e1 pp_expr e2
+  | Efun_application (e1, e2) -> fprintf ppf "(%a %a)" pp_expr e1 pp_expr e2
 
 and pp_value_binding ppf = function
   | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
