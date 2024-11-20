@@ -91,7 +91,7 @@ let%expect_test "parse factorial" =
     {|
     (Str_item_def (Recursive,
        (Bind ((Pattern_ident "factorial"),
-          (Expr_fun ((Pattern_ident "n"),
+          (Expr_lam ((Pattern_ident "n"),
              (Expr_ifthenelse (
                 (Expr_apply (
                    (Expr_apply ((Expr_ident_or_op "<"), (Expr_ident_or_op "n"))),
