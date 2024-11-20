@@ -52,6 +52,7 @@ type pattern =
       * pattern
       * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
   (** p_1 ,..., p_n *)
+  | POption of pattern option
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =

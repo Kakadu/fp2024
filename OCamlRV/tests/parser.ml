@@ -131,6 +131,22 @@ let%expect_test _ =
     ] |}]
 ;;
 
+let%expect_test _ =
+  parse_to_unit {|
+  match a with 
+    | None -> ()
+    | Some e -> ()
+  |};
+  [%expect
+    {|
+    [(SEval
+        (ExprMatch ((ExprVariable "a"),
+           [((POption None), (ExprLiteral UnitLiteral));
+             ((POption (Some (PVar "e"))), (ExprLiteral UnitLiteral))]
+           )))
+      ] |}]
+;;
+
 (*------------------- Factorial and Fibonacci -------------------*)
 
 let%expect_test "fibo test" =
