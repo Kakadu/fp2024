@@ -243,7 +243,7 @@ let%expect_test "expr_case_neg" =
         , [] )
     , [] );
   [%expect {|
-      case - 1 of -1 -> 1 |}]
+      (case - 1 of -1 -> 1) |}]
 ;;
 
 let%expect_test "expr_case_tp" =
@@ -256,7 +256,7 @@ let%expect_test "expr_case_tp" =
         , [] )
     , [ TInt ] );
   [%expect {|
-      (case - 1 :: Int of (-1 :: Int) -> 1 :: Int) :: Int |}]
+      ((case - 1 :: Int of (-1 :: Int) -> 1 :: Int)) :: Int |}]
 ;;
 
 let%expect_test "expr_doble_cons_and_lam" =
@@ -282,7 +282,7 @@ let%expect_test "expr_doble_cons_and_lam" =
           , [] ) )
     , [] );
   [%expect {|
-      \ (x : xs) -> (x1 : x2) : xs |}]
+      (\ (x : xs) -> (x1 : x2) : xs) |}]
 ;;
 
 let%expect_test "expr_cons_lin" =
@@ -371,5 +371,5 @@ let%expect_test "fac" =
          ] ));
   [%expect
     {|
-      fac n = if n < 0 then Nothing else Just (save_fac n) where save_fac y | y == 0 = 1 | otherwise = y * save_fac (y - 1) |}]
+      fac n = (if n < 0 then Nothing else Just (save_fac n)) where save_fac y | y == 0 = 1 | otherwise = y * save_fac (y - 1) |}]
 ;;

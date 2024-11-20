@@ -203,7 +203,9 @@ and expression =
   | BinTreeBld of binary_tree_bld
   | Case of expr * (pattern * bindingbody) * pattern_bindinbody_list
   (** e.g [case l of (x:xs) -> x; [] -> 0] *)
-  | InnerBindings of binding * binding_list * expr (** e.g. [let x = 1; y = 2 in x + y] *)
+  (* had to do such a manual generator because of where shadowing*)
+  | InnerBindings of binding * (binding_list[@gen QCheck.Gen.return []]) * expr
+  (** e.g. [let x = 1; y = 2 in x + y] *)
 
 (** e.g. [((x + 1) :: Int  ) :: Bool]*)
 and expr = expression * tp_list [@@deriving qcheck, show { with_path = false }]

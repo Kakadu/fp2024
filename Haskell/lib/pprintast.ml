@@ -294,14 +294,7 @@ and pp_expr_apl_arg fmt expr =
   fprintf
     fmt
     (match expr with
-     | ( ( Binop _
-         | Neg _
-         | IfThenEsle _
-         | FunctionApply _
-         | Lambda _
-         | InnerBindings _
-         | Case _ )
-       , [] ) -> "(%a)"
+     | (Binop _ | Neg _ | FunctionApply _), [] -> "(%a)"
      | _ -> "%a")
     pp_expr_parenced_tp
     expr
@@ -310,7 +303,8 @@ and pp_expr fmt ((expression, tp_list) : expr) =
   fprintf
     fmt
     (match expression, tp_list with
-     | (IfThenEsle _ | Lambda _ | InnerBindings _ | Case _), _ :: _ -> "%a(%a)"
+     | (IfThenEsle _ | Lambda _ | Case _ | InnerBindings _), [] -> "(%a%a)"
+     | (IfThenEsle _ | Lambda _ | Case _ | InnerBindings _), _ -> "(%a(%a))"
      | _ -> "%a%a")
     pp_brackets
     tp_list
