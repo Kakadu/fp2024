@@ -67,9 +67,8 @@ let%expect_test _ =
     {|
     [(SValue (NonRec,
         [((PVar "t"),
-          (ExprTuple
-             [(ExprLiteral (IntLiteral 1)); (ExprLiteral (StringLiteral "2"));
-               (ExprLiteral (IntLiteral 3))]))
+          (ExprTuple ((ExprLiteral (IntLiteral 1)),
+             (ExprLiteral (StringLiteral "2")), [(ExprLiteral (IntLiteral 3))])))
           ]
         ))
       ] |}]
@@ -125,7 +124,8 @@ let%expect_test _ =
     {|
   [(SValue (NonRec,
       [((PTuple ((PVar "a"), (PVar "b"), [])),
-        (ExprTuple [(ExprLiteral (IntLiteral 1)); (ExprLiteral (IntLiteral 2))]))
+        (ExprTuple ((ExprLiteral (IntLiteral 1)), (ExprLiteral (IntLiteral 2)),
+           [])))
         ]
       ))
     ] |}]

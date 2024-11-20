@@ -85,9 +85,9 @@ let rec pp_expr =
       (match e2 with
        | ExprBinOperation _ -> fprintf ppf "%a (%a)" helper e1 helper e2
        | _ -> fprintf ppf "%a %a" helper e1 helper e2)
-    | ExprTuple t ->
+    | ExprTuple (p1, p2, rest) ->
       let rec pp_tuple ppf = function
-        | [] -> ()
+        | [] -> fprintf ppf ""
         | [ x ] ->
           (match x with
            | ExprMatch _ -> fprintf ppf "(%a)" helper x
@@ -98,7 +98,7 @@ let rec pp_expr =
            | _ -> fprintf ppf "%a, " helper x);
           pp_tuple ppf xs
       in
-      fprintf ppf "(%a)" pp_tuple t
+      fprintf ppf "(%a)" pp_tuple (p1 :: p2 :: rest)
     | ExprCons (e1, e2) -> fprintf ppf "(%a::%a)" helper e1 helper e2
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
     | ExprOption x ->

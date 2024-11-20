@@ -112,7 +112,6 @@ let efun p e = ExprFun (p, e)
 let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
 let peliteral = pliteral >>| fun l -> ExprLiteral l
-let petuple p = lift2 List.cons p (many1 (token "," *> p)) >>| fun p -> ExprTuple p
 let ematch e cl = ExprMatch (e, cl)
 let grd = token "|"
 
@@ -127,6 +126,13 @@ let pelist p =
   >>| List.fold_right
         ~f:(fun p1 p2 -> ExprCons (p1, p2))
         ~init:((fun l -> ExprLiteral l) NilLiteral)
+;;
+
+let petuple ppattern =
+  let* el1 = ws *> ppattern in
+  let* el2 = token "," *> ws *> ppattern in
+  let* rest = many (token "," *> ppattern) in
+  return (ExprTuple (el1, el2, rest))
 ;;
 
 let padd = token "+" *> return (ebinop Add)
