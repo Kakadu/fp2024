@@ -7,20 +7,20 @@ open Ast.Expression
 open QCheck.Iter
 open QCheck.Shrink
 
-let shrink_ident = function
+let shrink_string = function
   | "a" -> empty
   | _ -> return "a"
 ;;
 
 let rec shrink_pattern = function
   | Pat_any -> empty
-  | Pat_var id -> shrink_ident id >|= fun id' -> Pat_var id'
+  | Pat_var id -> shrink_string id >|= fun id' -> Pat_var id'
   | Pat_constant const ->
     (match const with
      | Const_integer i -> int i >|= fun i' -> Pat_constant (Const_integer i')
      | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
      | Const_string str ->
-       string ~shrink:char str >|= fun str' -> Pat_constant (Const_string str'))
+       shrink_string str >|= fun str' -> Pat_constant (Const_string str'))
   | Pat_tuple (first_pat, second_pat, pat_list) ->
     of_list [ first_pat; second_pat ]
     <+> of_list pat_list
@@ -38,13 +38,13 @@ let rec shrink_pattern = function
 ;;
 
 let rec shrink_expression = function
-  | Exp_ident id -> shrink_ident id >|= fun id' -> Exp_ident id'
+  | Exp_ident id -> shrink_string id >|= fun id' -> Exp_ident id'
   | Exp_constant const ->
     (match const with
      | Const_integer i -> int i >|= fun i' -> Exp_constant (Const_integer i')
      | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
      | Const_string str ->
-       string ~shrink:char str >|= fun str' -> Exp_constant (Const_string str'))
+       shrink_string str >|= fun str' -> Exp_constant (Const_string str'))
   | Exp_let (rec_flag, first_value_binding, value_binding_list, exp) ->
     return exp
     <+> (shrink_expression exp

@@ -5,13 +5,8 @@
 open Ocaml_printf_lib.Qchecker
 
 let () =
-  print_endline "Testing manual generator.";
-  let _ : int = TestQCheckManual.run_manual () in
-  ()
-;;
-
-let () =
-  print_endline "Testing auto generator.";
-  let _ : int = TestQCheckAuto.run_auto () in
+  let _ : int = TestQCheckManual.run_gen_manual 1 in
+  ();
+  let _ : int = TestQCheckAuto.run_gen_auto 1 in
   ()
 ;;

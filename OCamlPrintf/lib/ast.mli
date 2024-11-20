@@ -4,9 +4,6 @@
 
 type 'a list_ = 'a list
 
-val pp_list_ : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list_ -> unit
-val show_list_ : (Format.formatter -> 'a -> unit) -> 'a list_ -> string
-
 (** Identifier *)
 type ident = string
 

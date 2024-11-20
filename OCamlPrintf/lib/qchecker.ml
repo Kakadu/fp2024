@@ -4,11 +4,14 @@
 
 open Ast
 open Ast.Expression
-open QCheck.Gen
 
 module TestQCheckManual = struct
+  open QCheck.Gen
+
   let coef = 50 (* For the generator's speed. *)
-  let gen_char = map Char.chr (int_range (Char.code 'a') (Char.code 'z'))
+  let gen_char = oneof [ return '!'; char_range '#' '&'; char_range '(' '~' ]
+  (* Exception quotation marks. *)
+
   let gen_int = nat
 
   let gen_bin_op =
@@ -28,7 +31,20 @@ module TestQCheckManual = struct
       ]
   ;;
 
-  let gen_ident = string_size (int_range 1 3) ~gen:gen_char
+  let gen_ident =
+    map2
+      (fun start_ident rest_ident -> Base.Char.to_string start_ident ^ rest_ident)
+      (oneof [ char_range 'a' 'z'; return '_' ])
+      (small_string
+         ~gen:
+           (oneof
+              [ char_range '0' '9'
+              ; char_range 'A' 'Z'
+              ; char_range 'a' 'z'
+              ; return '_'
+              ; return '\''
+              ]))
+  ;;
 
   let gen_constant =
     frequency
@@ -180,37 +196,35 @@ module TestQCheckManual = struct
 
   let gen_structure = list_size (int_range 1 1) gen_structure_item
 
-  let arbitrary_lam_manual =
+  let gen_manual =
     QCheck.make
       gen_structure
       ~print:(Format.asprintf "%a" Pprinter.pp_structure)
       ~shrink:Shrinker.shrink_structure
   ;;
 
-  let run_manual () =
+  let run_gen_manual count =
     QCheck_base_runner.run_tests
-      [ QCheck.(
-          Test.make ~count:1 arbitrary_lam_manual (fun str ->
-            Format.printf "%a \n" Pprinter.pp_structure str;
-            Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
+      [ QCheck.Test.make ~name:"the manual generator" ~count gen_manual (fun ast ->
+          Format.printf "%a \n" Pprinter.pp_structure ast;
+          Result.ok ast = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast))
       ]
   ;;
 end
 
 module TestQCheckAuto = struct
-  let arbitrary_lam_auto =
+  let gen_auto =
     QCheck.make
       gen_structure
       ~print:(Format.asprintf "%a" Pprinter.pp_structure)
       ~shrink:Shrinker.shrink_structure
   ;;
 
-  let run_auto () =
+  let run_gen_auto count =
     QCheck_base_runner.run_tests
-      [ QCheck.(
-          Test.make ~count:1 arbitrary_lam_auto (fun str ->
-            Format.printf "%a \n" Pprinter.pp_structure str;
-            Result.ok str = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure str)))
+      [ QCheck.Test.make ~name:"the auto generator" ~count gen_auto (fun ast ->
+          Format.printf "%a \n" Pprinter.pp_structure ast;
+          Result.ok ast = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast))
       ]
   ;;
 end

@@ -23,7 +23,26 @@ let skip_parens parse_ =
 ;;
 
 let is_separator = function
-  | '(' | '[' | '\'' | '"' | ' ' | '\t' | '\n' | ';' | ',' -> true
+  | ')'
+  | '('
+  | '<'
+  | '>'
+  | '@'
+  | ','
+  | ';'
+  | ':'
+  | '\\'
+  | '"'
+  | '/'
+  | '['
+  | ']'
+  | '?'
+  | '='
+  | '{'
+  | '}'
+  | ' '
+  | '\t'
+  | '\n' -> true
   | _ -> false
 ;;
 
@@ -61,7 +80,7 @@ let parse_ident =
   *>
   let* start_ident =
     satisfy (function
-      | 'a' .. 'z' -> true
+      | 'a' .. 'z' | '_' -> true
       | _ -> false)
     >>| String.of_char
   in
@@ -140,7 +159,7 @@ let parse_core_type =
 
 (* ==================== Pattern ==================== *)
 
-let parse_pat_any = ws *> string "_" *> return Pat_any
+let parse_pat_any = ws *> keyword "_" *> return Pat_any
 let parse_pat_var = parse_ident >>| fun var -> Pat_var var
 let parse_pat_constant = parse_constant >>| fun const -> Pat_constant const
 
