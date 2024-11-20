@@ -418,15 +418,15 @@ let gen_id_name =
   (* limit the total length to 15 characters *)
   <span data-count="4">l</span>et gen_rest = string_size ~gen:rest_char (int_rang<span data-count="4">e</span> 1 14) in
   (* combine the first character with the generated rest part *)
-  <span data-count="4">m</span>ap<span data-count="4">2</span> (fun start rest -&gt; <span data-count="9">S</span>tring.mak<span data-count="9">e</span> 1 start ^ rest) first_char gen_rest
+  <span data-count="4">m</span>ap<span data-count="4">2</span> (fun start rest -&gt; <span data-count="15">S</span>tring.mak<span data-count="15">e</span> 1 start ^ rest) first_char gen_rest
 ;;
 
-<span data-count="37">t</span>ype id = Id of strin<span data-count="37">g</span> * <span data-count="74">s</span>trin<span data-count="0">g</span> optio<span data-count="37">n</span> [@@deriving show { with_path = false }]
+<span data-count="44">t</span>ype id = Id of strin<span data-count="44">g</span> * <span data-count="88">s</span>trin<span data-count="0">g</span> optio<span data-count="44">n</span> [@@deriving show { with_path = false }]
 
-let gen_id = QCheck.Gen.ma<span data-count="4">p</span> (fun name -&gt; <span data-count="9">I</span>d (name, None)) gen_id_name
+let gen_id = QCheck.Gen.ma<span data-count="4">p</span> (fun name -&gt; <span data-count="15">I</span>d (name, None)) gen_id_name
 
-<span data-count="176">t</span>ype const =
-  | Int of (in<span data-count="85">t</span>[@gen QCheck.Gen.int_rang<span data-count="4">e</span> 0 1000])
+<span data-count="185">t</span>ype const =
+  | Int of (in<span data-count="90">t</span>[@gen QCheck.Gen.int_rang<span data-count="4">e</span> 0 1000])
   | String of
       (strin<span data-count="0">g</span>
       [@gen
@@ -474,7 +474,7 @@ let gen_id = QCheck.Gen.ma<span data-count="4">p</span> (fun name -&gt; <span da
 
 let divisor = 20
 
-<span data-count="47">t</span>ype pattern =
+<span data-count="36">t</span>ype pattern =
   | PVar of id
   | PConst of const
   | PTuple of
@@ -486,78 +486,78 @@ let divisor = 20
   | PList of
       (<span data-count="0">p</span>attern lis<span data-count="0">t</span>
       [@gen QCheck.Gen.(list_siz<span data-count="0">e</span> (0 -<span data-count="0">-</span> 4) (gen_pattern_size<span data-count="0">d</span> (n / divisor)))])
-[@@deriving show { with_path = false }, qcheck<span data-count="56">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="44">]</span>
 
-<span data-count="504">t</span>ype expr =
+<span data-count="488">t</span>ype expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
   | Evar of id (* identifiers, e.g. "x", "f"*)
   (* maybe later switch to id, or even now *)
   | Eif_then_else of
-      (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * <span data-count="22">(</span>expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)]) optio<span data-count="9">n</span>
+      (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * <span data-count="22">(</span>expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)]) optio<span data-count="9">n</span>
   (* if E0 then E1 else E2; else expression is optional *)
   | Eoption of
-      <span data-count="0">(</span>expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)]) option (* option type, Some e, None *)
+      <span data-count="0">(</span>expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)]) option (* option type, Some e, None *)
   | Etuple of
-      (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * (<span data-count="6">e</span>xpr lis<span data-count="2">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) (gen_expr_size<span data-count="4">d</span> (n / divisor)))])
+      (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * (<span data-count="9">e</span>xpr lis<span data-count="4">t</span>[@gen QCheck.Gen.(list_siz<span data-count="3">e</span> (0 -<span data-count="3">-</span> 4) (gen_expr_size<span data-count="3">d</span> (n / divisor)))])
   (* expressions (E0, .., En), n &gt;= 2 *)
   (* or expr * expr * expr list, cause invariant n &gt;= 2 *)
   | Elist of
-      (<span data-count="50">e</span>xpr lis<span data-count="12">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) (gen_expr_size<span data-count="4">d</span> (n / divisor)))])
+      (<span data-count="50">e</span>xpr lis<span data-count="12">t</span>[@gen QCheck.Gen.(list_siz<span data-count="3">e</span> (0 -<span data-count="3">-</span> 4) (gen_expr_size<span data-count="3">d</span> (n / divisor)))])
     (* expressions [E0; ..; En], n &gt;= 0 *)
   | Ebin_op of
       bin_op
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
   (** match E with P1 -&gt; E1 ... Pn -&gt; Pn *)
   (* E0 bin_op E1, e.g. 1 + 3 *)
   | Ematch of
-      (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * (case[@gen gen_case_size<span data-count="4">d</span> (n / divisor)])
-      * (<span data-count="20">c</span>ase lis<span data-count="6">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) (gen_case_size<span data-count="4">d</span> (n / divisor)))])
-  | Eun_op of un_op * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
+      (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * (case[@gen gen_case_size<span data-count="3">d</span> (n / divisor)])
+      * (<span data-count="20">c</span>ase lis<span data-count="6">t</span>[@gen QCheck.Gen.(list_siz<span data-count="3">e</span> (0 -<span data-count="3">-</span> 4) (gen_case_size<span data-count="3">d</span> (n / divisor)))])
+  | Eun_op of un_op * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
     (* E0 un_op E1, e.g. Negative 2, Not true *)
   | Elet of
       rec_flag
-      * (value_binding[@gen gen_value_binding_size<span data-count="4">d</span> (n / divisor)])
-      * (<span data-count="33">v</span>alue_binding lis<span data-count="22">t</span>
-        [@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) (gen_value_binding_size<span data-count="4">d</span> (n / divisor)))])
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-  (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
+      * (value_binding[@gen gen_value_binding_size<span data-count="3">d</span> (n / divisor)])
+      * (<span data-count="39">v</span>alue_binding lis<span data-count="26">t</span>
+        [@gen QCheck.Gen.(list_siz<span data-count="3">e</span> (0 -<span data-count="3">-</span> 4) (gen_value_binding_size<span data-count="3">d</span> (n / divisor)))])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+  (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 in x - 10 *)
   | Efun_application of
-      (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
+      (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
     (* E0 E1, e.g. f x *)
   | Efun of
-      (pattern[@gen gen_pattern_size<span data-count="4">d</span> (n / divisor)])
+      (pattern[@gen gen_pattern_size<span data-count="3">d</span> (n / divisor)])
       * (<span data-count="6">p</span>attern lis<span data-count="4">t</span>
-        [@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) (gen_pattern_size<span data-count="4">d</span> (n / divisor)))])
-      * (expr[@gen gen_expr_size<span data-count="4">d</span> (n / divisor)])
+        [@gen QCheck.Gen.(list_siz<span data-count="3">e</span> (0 -<span data-count="3">-</span> 4) (gen_pattern_size<span data-count="3">d</span> (n / divisor)))])
+      * (expr[@gen gen_expr_size<span data-count="3">d</span> (n / divisor)])
 (* anonymous functions, e.g. fun x y -&gt; x + 1 - y, arguments num &gt;= 1 *)
 [@@deriving show { with_path = false }, qcheck]
 
 <span data-count="6">a</span>nd case =
   | Ecase of
-      (pattern[@gen gen_pattern_size<span data-count="8">d</span> (n / divisor)])
-      * (expr[@gen gen_expr_size<span data-count="8">d</span> (n / divisor)])
+      (pattern[@gen gen_pattern_size<span data-count="6">d</span> (n / divisor)])
+      * (expr[@gen gen_expr_size<span data-count="6">d</span> (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-<span data-count="21">a</span>nd value_binding = Evalue_binding of id * (expr[@gen gen_expr_size<span data-count="9">d</span> (n / divisor)])
-[@@deriving show { with_path = false }, qcheck<span data-count="339">]</span>
+<span data-count="19">a</span>nd value_binding = Evalue_binding of id * (expr[@gen gen_expr_size<span data-count="15">d</span> (n / divisor)])
+[@@deriving show { with_path = false }, qcheck<span data-count="295">]</span>
 
 let gen_expr =
   QCheck.Gen.(
     let* n = small_nat in
-    <span data-count="4">g</span>en_expr_sized n)
+    <span data-count="2">g</span>en_expr_sized n)
 ;;
 
 let gen_value_binding =
   QCheck.Gen.(
     let* n = small_nat in
-    <span data-count="1">g</span>en_value_binding_sized n)
+    <span data-count="9">g</span>en_value_binding_sized n)
 ;;
 
 let gen_case =
@@ -566,13 +566,13 @@ let gen_case =
     <span data-count="0">g</span>en_case_sized n)
 ;;
 
-<span data-count="44">t</span>ype structure_item =
+<span data-count="49">t</span>ype structure_item =
   | SEval of expr
   | SValue of
       rec_flag
       * (value_binding[@gen gen_value_binding])
-      * (<span data-count="30">v</span>alue_binding lis<span data-count="20">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) gen_value_binding)])
-      * expr
+      * (<span data-count="18">v</span>alue_binding lis<span data-count="12">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) gen_value_binding)])
+    (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En e.g. let x = 5 *)
 [@@deriving show { with_path = false }, qcheck<span data-count="20">]</span>
 
 <span data-count="21">t</span>ype structure =

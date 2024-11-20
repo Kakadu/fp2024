@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>pr_printer.ml &mdash; Coverage report</title>
-    <meta name="description" content="66.22% coverage in lib/pr_printer.ml">
+    <meta name="description" content="70.27% coverage in lib/pr_printer.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,32 +15,29 @@
           <span class="dirname">lib/</span>pr_printer.ml
         </a>
       </h1>
-      <h2>66.22%</h2>
+      <h2>70.27%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:14.57%"></span>
-      <span class="unvisited" style="top:16.56%"></span>
-      <span class="unvisited" style="top:17.22%"></span>
-      <span class="unvisited" style="top:17.88%"></span>
-      <span class="unvisited" style="top:18.54%"></span>
-      <span class="unvisited" style="top:21.19%"></span>
-      <span class="unvisited" style="top:21.85%"></span>
-      <span class="unvisited" style="top:22.52%"></span>
-      <span class="unvisited" style="top:29.14%"></span>
-      <span class="unvisited" style="top:31.13%"></span>
-      <span class="unvisited" style="top:32.45%"></span>
-      <span class="unvisited" style="top:33.77%"></span>
-      <span class="unvisited" style="top:34.44%"></span>
-      <span class="unvisited" style="top:35.76%"></span>
-      <span class="unvisited" style="top:37.09%"></span>
-      <span class="unvisited" style="top:41.06%"></span>
-      <span class="unvisited" style="bottom:49.01%"></span>
-      <span class="unvisited" style="bottom:48.34%"></span>
-      <span class="some-visited" style="bottom:31.13%"></span>
-      <span class="unvisited" style="bottom:27.81%"></span>
-      <span class="some-visited" style="bottom:21.85%"></span>
-      <span class="unvisited" style="bottom:16.56%"></span>
-      <span class="some-visited" style="bottom:6.62%"></span>
+      <span class="unvisited" style="top:14.77%"></span>
+      <span class="unvisited" style="top:16.78%"></span>
+      <span class="unvisited" style="top:17.45%"></span>
+      <span class="unvisited" style="top:18.12%"></span>
+      <span class="unvisited" style="top:18.79%"></span>
+      <span class="unvisited" style="top:22.15%"></span>
+      <span class="unvisited" style="top:22.82%"></span>
+      <span class="unvisited" style="top:29.53%"></span>
+      <span class="unvisited" style="top:31.54%"></span>
+      <span class="unvisited" style="top:32.89%"></span>
+      <span class="unvisited" style="top:34.23%"></span>
+      <span class="unvisited" style="top:34.90%"></span>
+      <span class="unvisited" style="top:36.24%"></span>
+      <span class="unvisited" style="top:37.58%"></span>
+      <span class="unvisited" style="top:41.61%"></span>
+      <span class="unvisited" style="bottom:48.32%"></span>
+      <span class="unvisited" style="bottom:47.65%"></span>
+      <span class="some-visited" style="bottom:30.20%"></span>
+      <span class="some-visited" style="bottom:20.81%"></span>
+      <span class="unvisited" style="bottom:15.44%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -76,7 +73,7 @@
 <a id="L29"></a><span > </span>
 <a id="L30"></a><span > </span>
 <a id="L31"></a><span > </span>
-<a id="L32"></a><span class="unvisited"> </span>
+<a id="L32"></a><span class="visited"> </span>
 <a id="L33"></a><span class="unvisited"> </span>
 <a id="L34"></a><span class="unvisited"> </span>
 <a id="L35"></a><span > </span>
@@ -153,7 +150,7 @@
 <a id="L106"></a><span > </span>
 <a id="L107"></a><span > </span>
 <a id="L108"></a><span class="visited"> </span>
-<a id="L109"></a><span class="unvisited"> </span>
+<a id="L109"></a><span class="visited"> </span>
 <a id="L110"></a><span class="visited"> </span>
 <a id="L111"></a><span > </span>
 <a id="L112"></a><span > </span>
@@ -185,17 +182,15 @@
 <a id="L138"></a><span > </span>
 <a id="L139"></a><span > </span>
 <a id="L140"></a><span class="visited"> </span>
-<a id="L141"></a><span class="some-visited"> </span>
+<a id="L141"></a><span class="visited"> </span>
 <a id="L142"></a><span > </span>
 <a id="L143"></a><span > </span>
 <a id="L144"></a><span > </span>
-<a id="L145"></a><span > </span>
+<a id="L145"></a><span class="visited"> </span>
 <a id="L146"></a><span > </span>
-<a id="L147"></a><span class="visited"> </span>
-<a id="L148"></a><span > </span>
+<a id="L147"></a><span > </span>
+<a id="L148"></a><span class="visited"> </span>
 <a id="L149"></a><span > </span>
-<a id="L150"></a><span class="visited"> </span>
-<a id="L151"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -349,8 +344,6 @@
 <a href="#L147">147</a>
 <a href="#L148">148</a>
 <a href="#L149">149</a>
-<a href="#L150">150</a>
-<a href="#L151">151</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
@@ -361,16 +354,16 @@ open Ast
 open Stdlib.Format
 
 let pp_const ppf = function
-  | <span data-count="57">I</span>nt i -&gt; fprintf ppf "%d" i
+  | <span data-count="59">I</span>nt i -&gt; fprintf ppf "%d" i
   | <span data-count="1">S</span>tring s -&gt; fprintf ppf "\"%s\"" s
   | <span data-count="2">B</span>ool b -&gt; fprintf ppf "%b" b
-  | <span data-count="11">U</span>nit -&gt; fprintf ppf "()"
+  | <span data-count="1">U</span>nit -&gt; fprintf ppf "()"
 ;;
 
 let pp_bin_op ppf = function
-  | <span data-count="6">A</span>dd -&gt; fprintf ppf "+"
+  | <span data-count="7">A</span>dd -&gt; fprintf ppf "+"
   | <span data-count="4">M</span>ult -&gt; fprintf ppf "*"
-  | <span data-count="5">S</span>ub -&gt; fprintf ppf "-"
+  | <span data-count="6">S</span>ub -&gt; fprintf ppf "-"
   | <span data-count="1">D</span>iv -&gt; fprintf ppf "/"
   | <span data-count="3">G</span>t -&gt; fprintf ppf "&gt;"
   | <span data-count="0">L</span>t -&gt; fprintf ppf "&lt;"
@@ -383,21 +376,21 @@ let pp_bin_op ppf = function
 ;;
 
 let pp_un_op ppf = function
-  | <span data-count="0">N</span>egative -&gt; fprintf ppf "-"
+  | <span data-count="2">N</span>egative -&gt; fprintf ppf "-"
   | <span data-count="0">P</span>ositive -&gt; fprintf ppf "+"
   | <span data-count="0">N</span>ot -&gt; fprintf ppf "not "
 ;;
 
 let pp_rec_flag ppf = function
-  | <span data-count="1">R</span>ecursive -&gt; fprintf ppf "rec"
-  | <span data-count="12">N</span>on_recursive -&gt; ()
+  | <span data-count="3">R</span>ecursive -&gt; fprintf ppf "rec"
+  | <span data-count="11">N</span>on_recursive -&gt; ()
 ;;
 
 let rec pp_pattern ppf = function
-  | <span data-count="2">P</span>Var (Id (name, None)) -&gt; fprintf ppf "%s" name
+  | <span data-count="1">P</span>Var (Id (name, None)) -&gt; fprintf ppf "%s" name
   | <span data-count="0">P</span>Var (Id (name, Some suffix)) -&gt; fprintf ppf "%s%s" name suffix
-  | <span data-count="4">P</span>Const c -&gt; pp_const ppf c
-  | <span data-count="3">P</span>Any -&gt; fprintf ppf "_"
+  | <span data-count="2">P</span>Const c -&gt; pp_const ppf c
+  | <span data-count="1">P</span>Any -&gt; fprintf ppf "_"
   | <span data-count="0">P</span>Tuple (p1, p2, rest) -&gt;
     let patterns =
       String.concat ~sep:", " (List.ma<span data-count="0">p</span> ~f:(asprint<span data-count="0">f</span> "%a" pp_pattern) (p1 :: p2 :: rest))
@@ -411,26 +404,26 @@ let rec pp_pattern ppf = function
 ;;
 
 let rec pp_expr ppf = function
-  | <span data-count="67">E</span>const c -&gt; pp_const ppf c
-  | <span data-count="14">E</span>var (Id (name, None)) -&gt; fprintf ppf "%s" name
+  | <span data-count="61">E</span>const c -&gt; pp_const ppf c
+  | <span data-count="18">E</span>var (Id (name, None)) -&gt; fprintf ppf "%s" name
   | <span data-count="0">E</span>var (Id (name, Some suffix)) -&gt; fprintf ppf "%s.%s" name suffix
   | <span data-count="4">E</span>if_then_else (e1, e2, None) -&gt; fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
   | <span data-count="1">E</span>if_then_else (e1, e2, Some e3) -&gt;
     fprintf ppf "if %a then %a else %a" pp_expr e1 pp_expr e2 pp_expr e3
-  | <span data-count="2">E</span>match (exp, Ecase (first_pat, first_expr), rest_cases) -&gt;
+  | <span data-count="1">E</span>match (exp, Ecase (first_pat, first_expr), rest_cases) -&gt;
     let case_to_string (Ecase (pat, expr)) =
-      <span data-count="8">a</span>sprintf "| %a -&gt; %a" pp_pattern pat pp_expr expr
+      <span data-count="3">a</span>sprintf "| %a -&gt; %a" pp_pattern pat pp_expr expr
     in
     let case_list_str =
       String.concat
         ~sep:" "
-        (case_to_strin<span data-count="2">g</span> (Ecase (first_pat, first_expr))
-         :: List.ma<span data-count="2">p</span> ~f:case_to_string rest_cases)
+        (case_to_strin<span data-count="1">g</span> (Ecase (first_pat, first_expr))
+         :: List.ma<span data-count="1">p</span> ~f:case_to_string rest_cases)
     in
-    <span data-count="2">f</span>printf ppf "match %a with %s" pp_expr exp case_list_str
+    <span data-count="1">f</span>printf ppf "match %a with %s" pp_expr exp case_list_str
   | <span data-count="0">E</span>option (Some e) -&gt; fprintf ppf "Some %a" pp_expr e
   | <span data-count="0">E</span>option None -&gt; fprintf ppf "None"
-  | <span data-count="1">E</span>tuple (e1, e2, es) -&gt;
+  | <span data-count="2">E</span>tuple (e1, e2, es) -&gt;
     fprintf
       ppf
       "(%a, %a%a)"
@@ -438,7 +431,7 @@ let rec pp_expr ppf = function
       e1
       pp_expr
       e2
-      (fun ppf -&gt; <span data-count="1">L</span>ist.iter ~f:(fprint<span data-count="1">f</span> ppf ", %a" pp_expr))
+      (fun ppf -&gt; <span data-count="2">L</span>ist.iter ~f:(fprint<span data-count="2">f</span> ppf ", %a" pp_expr))
       es
   | <span data-count="5">E</span>list es -&gt;
     fprintf
@@ -459,35 +452,12 @@ let rec pp_expr ppf = function
       rest_patterns
       pp_expr
       e
-  | <span data-count="23">E</span>bin_op (op, e1, e2) -&gt; fprintf ppf "(%a %a %a)" pp_expr e1 pp_bin_op op pp_expr e2
-  | <span data-count="0">E</span>un_op (op, e) -&gt; fprintf ppf "%a%a" pp_un_op op pp_expr e
-  | <span data-count="6">E</span>let (rec_flag, vb, vb_l, e) -&gt;
+  | <span data-count="25">E</span>bin_op (op, e1, e2) -&gt; fprintf ppf "(%a %a %a)" pp_expr e1 pp_bin_op op pp_expr e2
+  | <span data-count="2">E</span>un_op (op, e) -&gt; fprintf ppf "%a%a" pp_un_op op pp_expr e
+  | <span data-count="7">E</span>let (rec_flag, vb, vb_l, e) -&gt;
     fprintf
       ppf
       "let %a %a in %a"
-      pp_rec_flag
-      rec_flag
-      (fun ppf () -&gt;
-        <span data-count="6">f</span>printf ppf "%a" pp_value_binding vb;
-        <span data-count="6">L</span>ist.iter vb_l ~f:(fun vb' -&gt; <span data-count="0">f</span>printf ppf " and %a" pp_value_binding vb'))
-      ()
-      pp_expr
-      e
-  | <span data-count="3">E</span>fun_application (e1, e2) -&gt; fprintf ppf "%a %a" pp_expr e1 pp_expr e2
-
-and pp_value_binding ppf = function
-  | <span data-count="13">E</span>value_binding (Id (name, None), e) -&gt; fprintf ppf "%s = %a" name pp_expr e
-  | <span data-count="0">E</span>value_binding (Id (name, Some suffix), e) -&gt;
-    fprintf ppf "%s%s = %a" name suffix pp_expr e
-;;
-
-let pp_structure_item ppf (item : structure_item) =
-  <span data-count="20">m</span>atch item with
-  | <span data-count="13">S</span>Eval e -&gt; fprintf ppf "%a ;;" pp_expr e
-  | <span data-count="7">S</span>Value (rec_flag, vb, vb_l, e) -&gt;
-    fprintf
-      ppf
-      "let %a %a in %a ;;"
       pp_rec_flag
       rec_flag
       (fun ppf () -&gt;
@@ -496,9 +466,30 @@ let pp_structure_item ppf (item : structure_item) =
       ()
       pp_expr
       e
+  | <span data-count="2">E</span>fun_application (e1, e2) -&gt; fprintf ppf "%a %a" pp_expr e1 pp_expr e2
+
+and pp_value_binding ppf = function
+  | <span data-count="20">E</span>value_binding (Id (name, None), e) -&gt; fprintf ppf "%s = %a" name pp_expr e
+  | <span data-count="0">E</span>value_binding (Id (name, Some suffix), e) -&gt;
+    fprintf ppf "%s%s = %a" name suffix pp_expr e
 ;;
 
-let pp_new_line ppf () = <span data-count="3">f</span>printf ppf "\n"
+let pp_structure_item ppf (item : structure_item) =
+  <span data-count="21">m</span>atch item with
+  | <span data-count="14">S</span>Eval e -&gt; fprintf ppf "%a ;;" pp_expr e
+  | <span data-count="7">S</span>Value (rec_flag, vb, vb_l) -&gt;
+    fprintf
+      ppf
+      "let %a %a ;;"
+      pp_rec_flag
+      rec_flag
+      (fun ppf () -&gt;
+        <span data-count="7">f</span>printf ppf "%a" pp_value_binding vb;
+        <span data-count="7">L</span>ist.iter vb_l ~f:(fun vb' -&gt; <span data-count="6">f</span>printf ppf " and %a" pp_value_binding vb'))
+      ()
+;;
+
+let pp_new_line ppf () = <span data-count="4">f</span>printf ppf "\n"
 
 let prpr_structure ppf =
   <span data-count="17">f</span>printf ppf "%a" (pp_print_lis<span data-count="17">t</span> ~pp_sep:pp_new_line pp_structure_item)
