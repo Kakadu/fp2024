@@ -158,8 +158,7 @@ let shrink_id_with_expr shblock id_and_expr =
       return (id, new_expr)
 ;;
 
-let shrink_type_option type' =
-  match type' with
+let shrink_type_option = function
   | Some t -> return None <+> (shrink_type t >|= Option.some)
   | None -> empty
 ;;
