@@ -66,6 +66,24 @@ let pliteral = choice [ pinteger; pbool; pstring; punit; pnil ]
 let ppany = token "_" *> return PAny
 let ppliteral = pliteral >>| fun a -> PLiteral a
 
+let parse_type_annotation =
+  let annot =
+    let tvar =
+      char '\''
+      *> (satisfy is_id
+          >>= fun varname -> return (PType (AVar ("'" ^ String.make 1 varname))))
+    in
+    choice
+      [ token "int" *> return (PType AInt)
+      ; token "string" *> return (PType AString)
+      ; token "bool" *> return (PType ABool)
+      ; token "()" *> return (PType AUnit)
+      ; tvar
+      ]
+  in
+  token ":" *> ws *> annot
+;;
+
 let variable =
   let* fst =
     ws
@@ -97,7 +115,16 @@ let pp_option pe = choice [ pp_option_none; pp_option_some pe ]
 
 let pattern =
   fix (fun pat ->
-    let term = choice [ ppany; ppliteral; ppvariable; pparens pat; pp_option pat ] in
+    let term =
+      choice
+        [ ppany
+        ; ppliteral
+        ; ppvariable
+        ; pparens pat
+        ; pp_option pat
+        ; parse_type_annotation
+        ]
+    in
     let cons = chainl1 term (token "::" *> return (fun p1 p2 -> PCons (p1, p2))) in
     let tuple = pptuple term <|> cons in
     tuple)

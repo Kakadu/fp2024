@@ -351,3 +351,8 @@ let%expect_test "double list test" =
          ))
        ] |}]
 ;;
+
+let%expect_test "double list test" =
+  parse_to_unit "let b : int = 5";
+  [%expect]
+;;

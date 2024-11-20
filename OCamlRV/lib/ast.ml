@@ -42,6 +42,14 @@ type literal =
   | NilLiteral
 [@@deriving show { with_path = false }, qcheck]
 
+type type_annotation =
+  | AInt (** 1 : int *)
+  | ABool (** b : bool *)
+  | AString (** s : string *)
+  | AUnit (** () : unit*)
+  | AVar of identifier
+[@@deriving show { with_path = false }, qcheck]
+
 type pattern =
   | PAny (** _ *)
   | PLiteral of literal (** 123, true, "string" *)
@@ -53,6 +61,7 @@ type pattern =
       * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
   (** p_1 ,..., p_n *)
   | POption of pattern option
+  | PType of type_annotation
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =
