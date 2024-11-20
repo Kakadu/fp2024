@@ -151,29 +151,31 @@ let un_chain e op =
   fix (fun self -> op >>= (fun unop -> self >>= fun e -> return (unop e)) <|> e)
 ;;
 
+let rec pbody pexpr =
+  ppattern
+  >>= function
+  | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
+  (* | PConst c ->
+     pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
+     | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
+  | _ -> fail "Only variable patterns are supported"
+;;
+
+let pvalue_binding pexpr =
+  lift2
+    (fun id e -> Evalue_binding (id, e))
+    (pparens pident <|> pident)
+    (pstoken "=" *> pexpr <|> pbody pexpr)
+;;
+
 let plet pexpr =
-  let rec pbody pexpr =
-    ppattern
-    >>= function
-    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
-    (* | PConst c ->
-       pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
-       | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
-    | _ -> fail "Only variable patterns are supported"
-  in
-  let pvalue_binding pexpr =
-    lift2
-      (fun id e -> Evalue_binding (id, e))
-      (pparens pident <|> pident)
-      (pstoken "=" *> pexpr <|> pbody pexpr)
-  in
   pstoken "let"
   *> lift4
        (fun r id id_list e2 -> Elet (r, id, id_list, e2))
        (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
        (pvalue_binding pexpr)
        (many (pstoken "and" *> pvalue_binding pexpr))
-       (pstoken "in" *> pexpr <|> return (Econst Unit))
+       (pstoken "in" *> pexpr)
 ;;
 
 let pEfun pexpr =
@@ -266,12 +268,14 @@ let pexpr =
 let pstructure =
   let pseval = pexpr >>| fun e -> SEval e in
   let psvalue =
-    plet pexpr
-    >>| function
-    | Elet (r, vb, vb_l, e) -> SValue (r, vb, vb_l, e)
-    | _ -> failwith "Expected a let expression"
+    pstoken "let"
+    *> lift3
+         (fun r id id_list -> SValue (r, id, id_list))
+         (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
+         (pvalue_binding pexpr)
+         (many (pstoken "and" *> pvalue_binding pexpr))
   in
-  choice [ psvalue; pseval ]
+  choice [ pseval; psvalue ]
 ;;
 
 let structure : structure t =
