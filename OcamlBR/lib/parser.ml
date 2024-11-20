@@ -19,7 +19,11 @@ let is_keyword = function
   | "true"
   | "false"
   | "Some"
-  | "None" -> true
+  | "None"
+  | "and"
+  | "or"
+  | "match"
+  | "with" -> true
   | _ -> false
 ;;
 
@@ -47,13 +51,16 @@ let pbool =
   >>| fun x -> Bool x
 ;;
 
-let pstr = char '"' *> take_till (Char.equal '"') <* char '"' >>| fun x -> String x
+let pstr =
+  pwhitespace *> char '"' *> take_till (Char.equal '"') <* char '"' >>| fun x -> String x
+;;
+
 let punit = pstoken "()" *> return Unit
 let const = choice [ pint; pbool; pstr; punit ]
 
 let varname =
   ptoken
-    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'')
+    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'' || Char.is_uppercase ch)
      >>= function
      | "" ->
        take_while1 (fun ch ->
@@ -62,13 +69,45 @@ let varname =
        if is_keyword str
        then fail "Variable name conflicts with a keyword"
        else return str
-     | _ -> fail "Variable name must not start with a digit")
+     | _ -> fail "Variable name must not start with a digit, uppercase letter and \' ")
 ;;
 
-let pat_var = varname >>| fun x -> PVar x
+let ptype =
+  let pbasic_type =
+    choice [ pstoken "int"; pstoken "string"; pstoken "bool" ] >>| fun t -> Some t
+  in
+  pstoken ":" *> pbasic_type <|> return None
+;;
+
+let pident = lift2 (fun t v -> Id (t, v)) varname ptype
+let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
-let pat_any = pstoken "_" *> return PAny
-let ppattern = choice [ pat_const; pat_var; pat_any ]
+let pat_any = pstoken "_" *> return PAny <* pws1
+
+let pat_tuple pat =
+  let commas = pstoken "," in
+  pparens
+    (lift3
+       (fun p1 p2 rest -> PTuple (p1, p2, rest))
+       pat
+       (commas *> pat)
+       (many (commas *> pat)))
+;;
+
+let pat_list pat =
+  let semicols = pstoken ";" in
+  psqparens (sep_by semicols pat >>| fun patterns -> PList patterns)
+;;
+
+let ppattern =
+  fix (fun pat ->
+    let ppconst = pat_const in
+    let ppvar = pat_var in
+    let ppany = pat_any in
+    let pplist = pat_list pat in
+    let pptuple = pat_tuple pat in
+    choice [ ppany; ppconst; ppvar; pplist; pptuple ])
+;;
 
 (*------------------Binary operators-----------------*)
 
@@ -85,10 +124,10 @@ let relation =
   choice
     [ pbinop Eq "="
     ; pbinop Neq "<>"
-    ; pbinop Lt "<"
-    ; pbinop Gt ">"
     ; pbinop Lte "<="
     ; pbinop Gte ">="
+    ; pbinop Lt "<"
+    ; pbinop Gt ">"
     ]
 ;;
 
@@ -97,7 +136,7 @@ let logic = choice [ pbinop And "&&"; pbinop Or "||" ]
 (*------------------Unary operators-----------------*)
 
 let punop op token = pwhitespace *> pstoken token *> return (fun e1 -> Eun_op (op, e1))
-let negation = pws1 *> punop Not "not"
+let negation = punop Not "not" <* pws1
 let neg_sign = punop Negative "-"
 let pos_sign = punop Positive "+"
 
@@ -109,44 +148,60 @@ let chain e op =
 ;;
 
 let un_chain e op =
-  let rec go () = op >>= (fun unop -> go () >>= fun e -> return (unop e)) <|> e in
-  go ()
+  fix (fun self -> op >>= (fun unop -> self >>= fun e -> return (unop e)) <|> e)
 ;;
 
 let plet pexpr =
   let rec pbody pexpr =
     ppattern
     >>= function
-    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun ([ PVar id ], e))
+    | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
+    (* | PConst c ->
+       pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
+       | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
     | _ -> fail "Only variable patterns are supported"
+  in
+  let pvalue_binding pexpr =
+    lift2
+      (fun id e -> Evalue_binding (id, e))
+      (pparens pident <|> pident)
+      (pstoken "=" *> pexpr <|> pbody pexpr)
   in
   pstoken "let"
   *> lift4
-       (fun r id e1 e2 -> Elet (r, id, e1, e2))
+       (fun r id id_list e2 -> Elet (r, id, id_list, e2))
        (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
-       (pparens varname <|> varname)
-       (pstoken "=" *> pexpr <|> pbody pexpr)
+       (pvalue_binding pexpr)
+       (many (pstoken "and" *> pvalue_binding pexpr))
        (pstoken "in" *> pexpr <|> return (Econst Unit))
 ;;
 
 let pEfun pexpr =
-  pstoken "fun" *> many1 ppattern
-  >>= fun args -> pstoken "->" *> pexpr >>| fun body -> Efun (args, body)
+  lift3
+    (fun arg args body -> Efun (arg, args, body))
+    (pstoken "fun" *> ppattern)
+    (many ppattern)
+    (pstoken "->" *> pexpr)
 ;;
 
 let pElist pexpr =
   let semicols = pstoken ";" in
-  (* let pexpr = psqparens pexpr in *)
   psqparens (sep_by semicols pexpr <* (semicols <|> pwhitespace) >>| fun x -> Elist x)
 ;;
 
 let pEtuple pexpr =
   let commas = pstoken "," in
-  pparens (sep_by commas pexpr <* (commas <|> pwhitespace) >>| fun x -> Etuple x)
+  pparens
+    (lift3
+       (fun e1 e2 rest -> Etuple (e1, e2, rest))
+       pexpr
+       (commas *> pexpr)
+       (many (commas *> pexpr))
+     <* pwhitespace)
 ;;
 
 let pEconst = const >>| fun x -> Econst x
-let pEvar = varname >>| fun x -> Evar x
+let pEvar = pident >>| fun x -> Evar x
 let pEapp e = chain e (return (fun e1 e2 -> Efun_application (e1, e2)))
 
 let pEoption pexpr =
@@ -163,6 +218,20 @@ let pbranch pexpr =
     (pstoken "else" *> pexpr >>| (fun e3 -> Some e3) <|> return None)
 ;;
 
+let pEmatch pexpr =
+  let parse_case =
+    lift2
+      (fun pat exp -> Ecase (pat, exp))
+      (ppattern <* pstoken "->")
+      (pwhitespace *> pexpr)
+  in
+  lift3
+    (fun e case case_l -> Ematch (e, case, case_l))
+    (pstoken "match" *> pexpr <* pstoken "with")
+    ((pstoken "|" <|> pwhitespace) *> parse_case)
+    (many (pstoken "|" *> parse_case))
+;;
+
 let pexpr =
   fix (fun expr ->
     let atom_expr =
@@ -174,6 +243,7 @@ let pexpr =
         ; pEtuple expr
         ; pEfun expr
         ; pEoption expr
+        ; pEmatch expr
         ]
     in
     let let_expr = plet expr in
@@ -198,7 +268,7 @@ let pstructure =
   let psvalue =
     plet pexpr
     >>| function
-    | Elet (r, id, e1, e2) -> SValue (r, id, e1, e2)
+    | Elet (r, vb, vb_l, e) -> SValue (r, vb, vb_l, e)
     | _ -> failwith "Expected a let expression"
   in
   choice [ psvalue; pseval ]

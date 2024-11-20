@@ -4,8 +4,17 @@
 
 open OCamlBR.Qcheck
 
-let () =
-  print_endline "Testing manual generator.";
-  let _ = run_manual () in
+let run_tests n =
+  let _ = run_auto n in
   ()
+;;
+
+let () =
+  Arg.parse
+    [ "-seed", Arg.Int QCheck_base_runner.set_seed, " Set seed"
+    ; "-stop", Arg.Unit (fun _ -> exit 0), " Exit"
+    ; "-gen", Arg.Int run_tests, " Number of runs"
+    ]
+    (fun _ -> assert false)
+    "help"
 ;;
