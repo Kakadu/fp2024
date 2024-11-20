@@ -9,12 +9,17 @@ let coef = 50 (* For the generator's speed. *)
 type 'a list_ = ('a list[@gen small_list gen_a])
 [@@deriving show { with_path = false }, qcheck]
 
-let gen_char = oneof [ return '!'; char_range '#' '&'; char_range '(' '~' ]
-(* Exception quotation marks. *)
+let gen_char =
+  (* Exception quotation marks and backslash. *)
+  oneof [ return '!'; char_range '#' '&'; char_range '(' '['; char_range ']' '~' ]
+;;
 
 let gen_ident =
   map2
-    (fun start_ident rest_ident -> Base.Char.to_string start_ident ^ rest_ident)
+    (fun start_ident rest_ident ->
+      match Base.Char.to_string start_ident ^ rest_ident with
+      | "_" -> "id"
+      | id -> id)
     (oneof [ char_range 'a' 'z'; return '_' ])
     (small_string
        ~gen:

@@ -2,4 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val shrink_structure : Ast.structure_item list QCheck.Shrink.t
+val shrink_structure : Ast.structure QCheck.Shrink.t

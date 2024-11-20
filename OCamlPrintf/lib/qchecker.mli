@@ -3,9 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 module TestQCheckManual : sig
-  val run_gen_manual : int -> int
+  val gen_structure : Ast.structure QCheck.Gen.t
 end
 
-module TestQCheckAuto : sig
-  val run_gen_auto : int -> int
-end
+val run_gen : Ast.structure QCheck.Gen.t -> int

@@ -211,15 +211,16 @@ let parse_pattern =
   fix (fun parse_full_pat ->
     let parse_pat =
       choice
-        [ skip_parens parse_full_pat
-        ; parse_pat_any
+        [ parse_pat_any
         ; parse_pat_var
         ; parse_pat_constant
+        ; skip_parens parse_full_pat
         ; parse_pat_construct parse_full_pat
         ; parse_pat_constraint parse_full_pat
         ]
     in
-    choice [ parse_pat_tuple parse_pat; parse_pat ])
+    let parse_pat = parse_pat_construct parse_pat <|> parse_pat in
+    parse_pat_tuple parse_pat <|> parse_pat)
 ;;
 
 (* ==================== Expression ==================== *)
@@ -435,14 +436,15 @@ let parse_expression =
   *> fix (fun parse_full_exp ->
     let parse_exp =
       choice
-        [ parse_constraint parse_full_exp
-        ; parse_exp_ident
+        [ parse_exp_ident
         ; parse_exp_constant
         ; skip_parens parse_full_exp
         ; parse_exp_let parse_full_exp
         ; parse_exp_fun parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
+        ; parse_exp_construct parse_full_exp
+        ; parse_constraint parse_full_exp
         ]
     in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in

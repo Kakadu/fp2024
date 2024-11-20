@@ -106,5 +106,5 @@ val show_structure_item : structure_item -> string
 type structure = structure_item list_
 
 val show_structure : structure -> string
-val gen_structure : structure_item list QCheck.Gen.t
-val arb_structure : structure_item list QCheck.arbitrary
+val gen_structure : structure QCheck.Gen.t
+val arb_structure : structure QCheck.arbitrary
