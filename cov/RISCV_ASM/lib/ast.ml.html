@@ -778,27 +778,27 @@
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="2">]</span>
 
 (** Address12 Type to Jump to *)
-<span data-count="2921">t</span>ype address12 =
+<span data-count="10941">t</span>ype address12 =
   <span data-count="0">|</span> ImmediateAddress12 of (in<span data-count="14">t</span>[@gen QCheck.Gen.(-2048 -<span data-count="2">-</span> 2047)])
   (** Immediate12 to Jump to*)
   <span data-count="0">|</span> LabelAddress12 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="8">]</span>
 
 (** Address20 Type to Jump to *)
-<span data-count="304">t</span>ype address20 =
+<span data-count="1127">t</span>ype address20 =
   <span data-count="0">|</span> ImmediateAddress20 of (in<span data-count="0">t</span>[@gen QCheck.Gen.(-524288 -<span data-count="2">-</span> 524287)])
   (** Immediate20 to Jump to*)
   <span data-count="0">|</span> LabelAddress20 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="8">]</span>
 
 (** Address32 Type to Jump to *)
-<span data-count="208">t</span>ype address32 =
+<span data-count="765">t</span>ype address32 =
   <span data-count="0">|</span> ImmediateAddress32 of (in<span data-count="7">t</span>[@gen QCheck.Gen.(-2147483648 -<span data-count="2">-</span> 2147483647)])
   (** Immediate32 to Jump to *)
   <span data-count="0">|</span> LabelAddress32 of label (** Label to Jump to *)
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="8">]</span>
 
-<span data-count="5116">t</span>ype instruction =
+<span data-count="19105">t</span>ype instruction =
   <span data-count="0">|</span> Add of register * register * registe<span data-count="0">r</span> (** Addition. rd = rs1 + rs2 *)
   <span data-count="0">|</span> Sub of register * register * registe<span data-count="0">r</span> (** Subtraction. rd = rs1 - rs2 *)
   <span data-count="0">|</span> Xor of register * register * registe<span data-count="0">r</span> (** Exclusive OR. rd = rs1 ^ rs2 *)
@@ -901,17 +901,17 @@
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="278">]</span>
 
 (** Attribute can either take in a string or an int as its value *)
-<span data-count="294">t</span>ype string_or_int_value =
+<span data-count="1159">t</span>ype string_or_int_value =
   <span data-count="0">|</span> StrValue of (strin<span data-count="1">g</span>[@gen Generators.gen_my_string]) (** A string value *)
   <span data-count="0">|</span> IntValue of (in<span data-count="2">t</span>[@gen QCheck.Gen.(-2147483648 -<span data-count="2">-</span> 2147483647)]) (** An integer value*)
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="8">]</span>
 
 (** Types that are assigned to symbols for the logic of the compiler*)
-<span data-count="620">t</span>ype type_dir = <span data-count="0">T</span>ype of (strin<span data-count="5">g</span>[@gen Generators.gen_my_string])
+<span data-count="2213">t</span>ype type_dir = <span data-count="0">T</span>ype of (strin<span data-count="5">g</span>[@gen Generators.gen_my_string])
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="4">]</span>
 
 (** Compiler directive (most of them are not needed while interpreting) *)
-<span data-count="3820">t</span>ype directive =
+<span data-count="14557">t</span>ype directive =
   <span data-count="0">|</span> File of (strin<span data-count="1">g</span>[@gen Generators.gen_my_string]) (** .file string *)
   <span data-count="0">|</span> Option of (strin<span data-count="1">g</span>[@gen Generators.gen_my_string]) (** .option argument *)
   <span data-count="0">|</span> Attribute of (strin<span data-count="3">g</span>[@gen Generators.gen_my_string]) * string_or_int_valu<span data-count="0">e</span>
@@ -944,7 +944,7 @@
 [@@deriving eq, show { with_path = false }, qcheck<span data-count="52">]</span>
 
 (** Expression in AST *)
-<span data-count="15768">t</span>ype expr =
+<span data-count="59891">t</span>ype expr =
   <span data-count="0">|</span> InstructionExpr of instruction (** Instruction *)
   <span data-count="0">|</span> LabelExpr of label (** Label *)
   <span data-count="0">|</span> DirectiveExpr of directive (** Directive *)

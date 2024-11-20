@@ -555,71 +555,71 @@
 open Ast
 
 let pp_register ppf = function
-  | <span data-count="167">X</span>0 -&gt; Format.fprintf ppf "x0"
-  | <span data-count="185">X</span>1 -&gt; Format.fprintf ppf "x1"
-  | <span data-count="180">X</span>2 -&gt; Format.fprintf ppf "x2"
-  | <span data-count="193">X</span>3 -&gt; Format.fprintf ppf "x3"
-  | <span data-count="177">X</span>4 -&gt; Format.fprintf ppf "x4"
-  | <span data-count="166">X</span>5 -&gt; Format.fprintf ppf "x5"
-  | <span data-count="168">X</span>6 -&gt; Format.fprintf ppf "x6"
-  | <span data-count="172">X</span>7 -&gt; Format.fprintf ppf "x7"
-  | <span data-count="177">X</span>8 -&gt; Format.fprintf ppf "x8"
-  | <span data-count="181">X</span>9 -&gt; Format.fprintf ppf "x9"
-  | <span data-count="181">X</span>10 -&gt; Format.fprintf ppf "x10"
-  | <span data-count="183">X</span>11 -&gt; Format.fprintf ppf "x11"
-  | <span data-count="182">X</span>12 -&gt; Format.fprintf ppf "x12"
-  | <span data-count="190">X</span>13 -&gt; Format.fprintf ppf "x13"
-  | <span data-count="183">X</span>14 -&gt; Format.fprintf ppf "x14"
-  | <span data-count="147">X</span>15 -&gt; Format.fprintf ppf "x15"
-  | <span data-count="178">X</span>16 -&gt; Format.fprintf ppf "x16"
-  | <span data-count="180">X</span>17 -&gt; Format.fprintf ppf "x17"
-  | <span data-count="178">X</span>18 -&gt; Format.fprintf ppf "x18"
-  | <span data-count="154">X</span>19 -&gt; Format.fprintf ppf "x19"
-  | <span data-count="171">X</span>20 -&gt; Format.fprintf ppf "x20"
-  | <span data-count="183">X</span>21 -&gt; Format.fprintf ppf "x21"
-  | <span data-count="187">X</span>22 -&gt; Format.fprintf ppf "x22"
-  | <span data-count="162">X</span>23 -&gt; Format.fprintf ppf "x23"
-  | <span data-count="169">X</span>24 -&gt; Format.fprintf ppf "x24"
-  | <span data-count="185">X</span>25 -&gt; Format.fprintf ppf "x25"
-  | <span data-count="181">X</span>26 -&gt; Format.fprintf ppf "x26"
-  | <span data-count="194">X</span>27 -&gt; Format.fprintf ppf "x27"
-  | <span data-count="166">X</span>28 -&gt; Format.fprintf ppf "x28"
-  | <span data-count="170">X</span>29 -&gt; Format.fprintf ppf "x29"
-  | <span data-count="179">X</span>30 -&gt; Format.fprintf ppf "x30"
-  | <span data-count="187">X</span>31 -&gt; Format.fprintf ppf "x31"
-  | <span data-count="165">Z</span>ero -&gt; Format.fprintf ppf "zero"
-  | <span data-count="160">R</span>a -&gt; Format.fprintf ppf "ra"
-  | <span data-count="176">S</span>p -&gt; Format.fprintf ppf "sp"
-  | <span data-count="190">G</span>p -&gt; Format.fprintf ppf "gp"
-  | <span data-count="168">T</span>p -&gt; Format.fprintf ppf "tp"
-  | <span data-count="173">T</span>0 -&gt; Format.fprintf ppf "t0"
-  | <span data-count="181">T</span>1 -&gt; Format.fprintf ppf "t1"
-  | <span data-count="170">T</span>2 -&gt; Format.fprintf ppf "t2"
-  | <span data-count="174">S</span>0 -&gt; Format.fprintf ppf "s0"
-  | <span data-count="148">F</span>p -&gt; Format.fprintf ppf "fp"
-  | <span data-count="194">S</span>1 -&gt; Format.fprintf ppf "s1"
-  | <span data-count="170">A</span>0 -&gt; Format.fprintf ppf "a0"
-  | <span data-count="189">A</span>1 -&gt; Format.fprintf ppf "a1"
-  | <span data-count="191">A</span>2 -&gt; Format.fprintf ppf "a2"
-  | <span data-count="159">A</span>3 -&gt; Format.fprintf ppf "a3"
-  | <span data-count="177">A</span>4 -&gt; Format.fprintf ppf "a4"
-  | <span data-count="187">A</span>5 -&gt; Format.fprintf ppf "a5"
-  | <span data-count="156">A</span>6 -&gt; Format.fprintf ppf "a6"
-  | <span data-count="159">A</span>7 -&gt; Format.fprintf ppf "a7"
-  | <span data-count="183">S</span>2 -&gt; Format.fprintf ppf "s2"
-  | <span data-count="166">S</span>3 -&gt; Format.fprintf ppf "s3"
-  | <span data-count="174">S</span>4 -&gt; Format.fprintf ppf "s4"
-  | <span data-count="179">S</span>5 -&gt; Format.fprintf ppf "s5"
-  | <span data-count="185">S</span>6 -&gt; Format.fprintf ppf "s6"
-  | <span data-count="193">S</span>7 -&gt; Format.fprintf ppf "s7"
-  | <span data-count="166">S</span>8 -&gt; Format.fprintf ppf "s8"
-  | <span data-count="173">S</span>9 -&gt; Format.fprintf ppf "s9"
-  | <span data-count="168">S</span>10 -&gt; Format.fprintf ppf "s10"
-  | <span data-count="184">S</span>11 -&gt; Format.fprintf ppf "s11"
-  | <span data-count="164">T</span>3 -&gt; Format.fprintf ppf "t3"
-  | <span data-count="197">T</span>4 -&gt; Format.fprintf ppf "t4"
-  | <span data-count="160">T</span>5 -&gt; Format.fprintf ppf "t5"
-  | <span data-count="187">T</span>6 -&gt; Format.fprintf ppf "t6"
+  | <span data-count="676">X</span>0 -&gt; Format.fprintf ppf "x0"
+  | <span data-count="662">X</span>1 -&gt; Format.fprintf ppf "x1"
+  | <span data-count="685">X</span>2 -&gt; Format.fprintf ppf "x2"
+  | <span data-count="631">X</span>3 -&gt; Format.fprintf ppf "x3"
+  | <span data-count="680">X</span>4 -&gt; Format.fprintf ppf "x4"
+  | <span data-count="608">X</span>5 -&gt; Format.fprintf ppf "x5"
+  | <span data-count="648">X</span>6 -&gt; Format.fprintf ppf "x6"
+  | <span data-count="666">X</span>7 -&gt; Format.fprintf ppf "x7"
+  | <span data-count="623">X</span>8 -&gt; Format.fprintf ppf "x8"
+  | <span data-count="675">X</span>9 -&gt; Format.fprintf ppf "x9"
+  | <span data-count="650">X</span>10 -&gt; Format.fprintf ppf "x10"
+  | <span data-count="620">X</span>11 -&gt; Format.fprintf ppf "x11"
+  | <span data-count="673">X</span>12 -&gt; Format.fprintf ppf "x12"
+  | <span data-count="682">X</span>13 -&gt; Format.fprintf ppf "x13"
+  | <span data-count="655">X</span>14 -&gt; Format.fprintf ppf "x14"
+  | <span data-count="661">X</span>15 -&gt; Format.fprintf ppf "x15"
+  | <span data-count="617">X</span>16 -&gt; Format.fprintf ppf "x16"
+  | <span data-count="650">X</span>17 -&gt; Format.fprintf ppf "x17"
+  | <span data-count="624">X</span>18 -&gt; Format.fprintf ppf "x18"
+  | <span data-count="669">X</span>19 -&gt; Format.fprintf ppf "x19"
+  | <span data-count="626">X</span>20 -&gt; Format.fprintf ppf "x20"
+  | <span data-count="678">X</span>21 -&gt; Format.fprintf ppf "x21"
+  | <span data-count="682">X</span>22 -&gt; Format.fprintf ppf "x22"
+  | <span data-count="647">X</span>23 -&gt; Format.fprintf ppf "x23"
+  | <span data-count="666">X</span>24 -&gt; Format.fprintf ppf "x24"
+  | <span data-count="731">X</span>25 -&gt; Format.fprintf ppf "x25"
+  | <span data-count="679">X</span>26 -&gt; Format.fprintf ppf "x26"
+  | <span data-count="637">X</span>27 -&gt; Format.fprintf ppf "x27"
+  | <span data-count="619">X</span>28 -&gt; Format.fprintf ppf "x28"
+  | <span data-count="639">X</span>29 -&gt; Format.fprintf ppf "x29"
+  | <span data-count="626">X</span>30 -&gt; Format.fprintf ppf "x30"
+  | <span data-count="669">X</span>31 -&gt; Format.fprintf ppf "x31"
+  | <span data-count="670">Z</span>ero -&gt; Format.fprintf ppf "zero"
+  | <span data-count="656">R</span>a -&gt; Format.fprintf ppf "ra"
+  | <span data-count="641">S</span>p -&gt; Format.fprintf ppf "sp"
+  | <span data-count="672">G</span>p -&gt; Format.fprintf ppf "gp"
+  | <span data-count="659">T</span>p -&gt; Format.fprintf ppf "tp"
+  | <span data-count="631">T</span>0 -&gt; Format.fprintf ppf "t0"
+  | <span data-count="662">T</span>1 -&gt; Format.fprintf ppf "t1"
+  | <span data-count="652">T</span>2 -&gt; Format.fprintf ppf "t2"
+  | <span data-count="714">S</span>0 -&gt; Format.fprintf ppf "s0"
+  | <span data-count="678">F</span>p -&gt; Format.fprintf ppf "fp"
+  | <span data-count="663">S</span>1 -&gt; Format.fprintf ppf "s1"
+  | <span data-count="668">A</span>0 -&gt; Format.fprintf ppf "a0"
+  | <span data-count="649">A</span>1 -&gt; Format.fprintf ppf "a1"
+  | <span data-count="651">A</span>2 -&gt; Format.fprintf ppf "a2"
+  | <span data-count="650">A</span>3 -&gt; Format.fprintf ppf "a3"
+  | <span data-count="665">A</span>4 -&gt; Format.fprintf ppf "a4"
+  | <span data-count="662">A</span>5 -&gt; Format.fprintf ppf "a5"
+  | <span data-count="664">A</span>6 -&gt; Format.fprintf ppf "a6"
+  | <span data-count="689">A</span>7 -&gt; Format.fprintf ppf "a7"
+  | <span data-count="624">S</span>2 -&gt; Format.fprintf ppf "s2"
+  | <span data-count="636">S</span>3 -&gt; Format.fprintf ppf "s3"
+  | <span data-count="662">S</span>4 -&gt; Format.fprintf ppf "s4"
+  | <span data-count="637">S</span>5 -&gt; Format.fprintf ppf "s5"
+  | <span data-count="672">S</span>6 -&gt; Format.fprintf ppf "s6"
+  | <span data-count="700">S</span>7 -&gt; Format.fprintf ppf "s7"
+  | <span data-count="695">S</span>8 -&gt; Format.fprintf ppf "s8"
+  | <span data-count="692">S</span>9 -&gt; Format.fprintf ppf "s9"
+  | <span data-count="628">S</span>10 -&gt; Format.fprintf ppf "s10"
+  | <span data-count="629">S</span>11 -&gt; Format.fprintf ppf "s11"
+  | <span data-count="653">T</span>3 -&gt; Format.fprintf ppf "t3"
+  | <span data-count="689">T</span>4 -&gt; Format.fprintf ppf "t4"
+  | <span data-count="682">T</span>5 -&gt; Format.fprintf ppf "t5"
+  | <span data-count="671">T</span>6 -&gt; Format.fprintf ppf "t6"
 ;;
 
 type address =
@@ -628,154 +628,154 @@ type address =
   | Address32 of address32
 
 let pp_instruction_3reg_helper ppf mnemonic r1 r2 r3 =
-  <span data-count="2090">F</span>ormat.fprintf ppf "%s %a, %a, %a" mnemonic pp_register r1 pp_register r2 pp_register r3
+  <span data-count="7665">F</span>ormat.fprintf ppf "%s %a, %a, %a" mnemonic pp_register r1 pp_register r2 pp_register r3
 ;;
 
 let pp_address ppf = function
-  | <span data-count="1412">A</span>ddress12 (LabelAddress12 str) -&gt; Format.fprintf ppf "%s" str
-  | <span data-count="147">A</span>ddress20 (LabelAddress20 str) -&gt; Format.fprintf ppf "%s" str
-  | <span data-count="99">A</span>ddress32 (LabelAddress32 str) -&gt; Format.fprintf ppf "%s" str
-  | <span data-count="1461">A</span>ddress12 (ImmediateAddress12 imm) -&gt; Format.fprintf ppf "%d" imm
-  | <span data-count="155">A</span>ddress20 (ImmediateAddress20 imm) -&gt; Format.fprintf ppf "%d" imm
-  | <span data-count="89">A</span>ddress32 (ImmediateAddress32 imm) -&gt; Format.fprintf ppf "%d" imm
+  | <span data-count="5431">A</span>ddress12 (LabelAddress12 str) -&gt; Format.fprintf ppf "%s" str
+  | <span data-count="558">A</span>ddress20 (LabelAddress20 str) -&gt; Format.fprintf ppf "%s" str
+  | <span data-count="354">A</span>ddress32 (LabelAddress32 str) -&gt; Format.fprintf ppf "%s" str
+  | <span data-count="5462">A</span>ddress12 (ImmediateAddress12 imm) -&gt; Format.fprintf ppf "%d" imm
+  | <span data-count="567">A</span>ddress20 (ImmediateAddress20 imm) -&gt; Format.fprintf ppf "%d" imm
+  | <span data-count="391">A</span>ddress32 (ImmediateAddress32 imm) -&gt; Format.fprintf ppf "%d" imm
 ;;
 
 let pp_instruction_2reg_1imm_helper ppf mnemonic r1 r2 addr =
-  <span data-count="1449">F</span>ormat.fprintf ppf "%s %a,%a,%a" mnemonic pp_register r1 pp_register r2 pp_address addr
+  <span data-count="5748">F</span>ormat.fprintf ppf "%s %a,%a,%a" mnemonic pp_register r1 pp_register r2 pp_address addr
 ;;
 
 let pp_instruction_2reg_1offset_helper ppf mnemonic r1 r2 addr =
-  <span data-count="815">F</span>ormat.fprintf ppf "%s %a,%a(%a)" mnemonic pp_register r1 pp_address addr pp_register r2
+  <span data-count="2942">F</span>ormat.fprintf ppf "%s %a,%a(%a)" mnemonic pp_register r1 pp_address addr pp_register r2
 ;;
 
 let pp_instruction ppf = function
-  | <span data-count="86">A</span>dd (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "add" rd rs1 rs2
-  | <span data-count="78">S</span>ub (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sub" rd rs1 rs2
-  | <span data-count="75">X</span>or (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "xor" rd rs1 rs2
-  | <span data-count="75">O</span>r (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "or" rd rs1 rs2
-  | <span data-count="76">A</span>nd (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "and" rd rs1 rs2
-  | <span data-count="66">S</span>ll (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sll" rd rs1 rs2
-  | <span data-count="78">S</span>rl (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "srl" rd rs1 rs2
-  | <span data-count="68">S</span>ra (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sra" rd rs1 rs2
-  | <span data-count="78">S</span>lt (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "slt" rd rs1 rs2
-  | <span data-count="85">S</span>ltu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sltu" rd rs1 rs2
-  | <span data-count="90">M</span>ul (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mul" rd rs1 rs2
-  | <span data-count="73">M</span>ulh (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulh" rd rs1 rs2
-  | <span data-count="69">M</span>ulhsu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulhsu" rd rs1 rs2
-  | <span data-count="64">M</span>ulhu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulhu" rd rs1 rs2
-  | <span data-count="76">D</span>iv (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "div" rd rs1 rs2
-  | <span data-count="78">D</span>ivu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "divu" rd rs1 rs2
-  | <span data-count="70">R</span>em (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "rem" rd rs1 rs2
-  | <span data-count="71">R</span>emu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "remu" rd rs1 rs2
-  | <span data-count="77">A</span>ddw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "addw" rd rs1 rs2
-  | <span data-count="70">S</span>ubw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "subw" rd rs1 rs2
-  | <span data-count="68">S</span>llw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sllw" rd rs1 rs2
-  | <span data-count="76">S</span>rlw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "srlw" rd rs1 rs2
-  | <span data-count="77">S</span>raw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sraw" rd rs1 rs2
-  | <span data-count="72">M</span>ulw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulw" rd rs1 rs2
-  | <span data-count="64">D</span>ivw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "divw" rd rs1 rs2
-  | <span data-count="70">D</span>ivuw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "divuw" rd rs1 rs2
-  | <span data-count="88">R</span>emw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "remw" rd rs1 rs2
-  | <span data-count="72">R</span>emwu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "remwu" rd rs1 rs2
-  | <span data-count="63">L</span>wu (rd, rs1, imm) -&gt;
+  | <span data-count="273">A</span>dd (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "add" rd rs1 rs2
+  | <span data-count="279">S</span>ub (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sub" rd rs1 rs2
+  | <span data-count="265">X</span>or (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "xor" rd rs1 rs2
+  | <span data-count="277">O</span>r (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "or" rd rs1 rs2
+  | <span data-count="277">A</span>nd (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "and" rd rs1 rs2
+  | <span data-count="260">S</span>ll (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sll" rd rs1 rs2
+  | <span data-count="249">S</span>rl (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "srl" rd rs1 rs2
+  | <span data-count="281">S</span>ra (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sra" rd rs1 rs2
+  | <span data-count="300">S</span>lt (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "slt" rd rs1 rs2
+  | <span data-count="277">S</span>ltu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sltu" rd rs1 rs2
+  | <span data-count="273">M</span>ul (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mul" rd rs1 rs2
+  | <span data-count="246">M</span>ulh (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulh" rd rs1 rs2
+  | <span data-count="304">M</span>ulhsu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulhsu" rd rs1 rs2
+  | <span data-count="299">M</span>ulhu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulhu" rd rs1 rs2
+  | <span data-count="276">D</span>iv (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "div" rd rs1 rs2
+  | <span data-count="297">D</span>ivu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "divu" rd rs1 rs2
+  | <span data-count="268">R</span>em (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "rem" rd rs1 rs2
+  | <span data-count="253">R</span>emu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "remu" rd rs1 rs2
+  | <span data-count="253">A</span>ddw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "addw" rd rs1 rs2
+  | <span data-count="268">S</span>ubw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "subw" rd rs1 rs2
+  | <span data-count="240">S</span>llw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sllw" rd rs1 rs2
+  | <span data-count="267">S</span>rlw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "srlw" rd rs1 rs2
+  | <span data-count="273">S</span>raw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "sraw" rd rs1 rs2
+  | <span data-count="285">M</span>ulw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "mulw" rd rs1 rs2
+  | <span data-count="262">D</span>ivw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "divw" rd rs1 rs2
+  | <span data-count="256">D</span>ivuw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "divuw" rd rs1 rs2
+  | <span data-count="322">R</span>emw (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "remw" rd rs1 rs2
+  | <span data-count="285">R</span>emwu (rd, rs1, rs2) -&gt; pp_instruction_3reg_helper ppf "remwu" rd rs1 rs2
+  | <span data-count="271">L</span>wu (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "lwu" rd rs1 (Address12 imm)
-  | <span data-count="66">A</span>ddi (rd, rs1, imm) -&gt;
+  | <span data-count="284">A</span>ddi (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "addi" rd rs1 (Address12 imm)
-  | <span data-count="81">X</span>ori (rd, rs1, imm) -&gt;
+  | <span data-count="290">X</span>ori (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "xori" rd rs1 (Address12 imm)
-  | <span data-count="65">O</span>ri (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "ori" rd rs1 (Address12 imm)
-  | <span data-count="68">A</span>ndi (rd, rs1, imm) -&gt;
+  | <span data-count="274">O</span>ri (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "ori" rd rs1 (Address12 imm)
+  | <span data-count="250">A</span>ndi (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "andi" rd rs1 (Address12 imm)
-  | <span data-count="47">S</span>lli (rd, rs1, imm) -&gt;
+  | <span data-count="293">S</span>lli (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "slli" rd rs1 (Address12 imm)
-  | <span data-count="77">S</span>rli (rd, rs1, imm) -&gt;
+  | <span data-count="284">S</span>rli (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "srli" rd rs1 (Address12 imm)
-  | <span data-count="80">S</span>rai (rd, rs1, imm) -&gt;
+  | <span data-count="319">S</span>rai (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "srai" rd rs1 (Address12 imm)
-  | <span data-count="83">S</span>lti (rd, rs1, imm) -&gt;
+  | <span data-count="306">S</span>lti (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "slti" rd rs1 (Address12 imm)
-  | <span data-count="74">S</span>ltiu (rd, rs1, imm) -&gt;
+  | <span data-count="293">S</span>ltiu (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "sltiu" rd rs1 (Address12 imm)
-  | <span data-count="72">L</span>b (rd, rs1, imm) -&gt;
+  | <span data-count="272">L</span>b (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "lb" rd rs1 (Address12 imm)
-  | <span data-count="72">L</span>h (rd, rs1, imm) -&gt;
+  | <span data-count="279">L</span>h (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "lh" rd rs1 (Address12 imm)
-  | <span data-count="82">L</span>w (rd, rs1, imm) -&gt;
+  | <span data-count="254">L</span>w (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "lw" rd rs1 (Address12 imm)
-  | <span data-count="79">L</span>bu (rd, rs1, imm) -&gt;
+  | <span data-count="272">L</span>bu (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "lbu" rd rs1 (Address12 imm)
-  | <span data-count="71">L</span>hu (rd, rs1, imm) -&gt;
+  | <span data-count="249">L</span>hu (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "lhu" rd rs1 (Address12 imm)
-  | <span data-count="74">S</span>b (rd, rs1, imm) -&gt;
+  | <span data-count="249">S</span>b (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "sb" rd rs1 (Address12 imm)
-  | <span data-count="78">S</span>h (rd, rs1, imm) -&gt;
+  | <span data-count="259">S</span>h (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "sh" rd rs1 (Address12 imm)
-  | <span data-count="75">S</span>w (rd, rs1, imm) -&gt;
+  | <span data-count="293">S</span>w (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "sw" rd rs1 (Address12 imm)
-  | <span data-count="59">B</span>eq (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "beq" rd rs1 (Address12 imm)
-  | <span data-count="74">B</span>ne (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
-  | <span data-count="82">B</span>lt (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "blt" rd rs1 (Address12 imm)
-  | <span data-count="83">B</span>ge (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "bge" rd rs1 (Address12 imm)
-  | <span data-count="67">B</span>ltu (rd, rs1, imm) -&gt;
+  | <span data-count="268">B</span>eq (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "beq" rd rs1 (Address12 imm)
+  | <span data-count="286">B</span>ne (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
+  | <span data-count="304">B</span>lt (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "blt" rd rs1 (Address12 imm)
+  | <span data-count="264">B</span>ge (rd, rs1, imm) -&gt; pp_instruction_2reg_1imm_helper ppf "bge" rd rs1 (Address12 imm)
+  | <span data-count="331">B</span>ltu (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "bltu" rd rs1 (Address12 imm)
-  | <span data-count="79">B</span>geu (rd, rs1, imm) -&gt;
+  | <span data-count="288">B</span>geu (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "bgeu" rd rs1 (Address12 imm)
-  | <span data-count="76">J</span>alr (rd, rs1, imm) -&gt;
+  | <span data-count="269">J</span>alr (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "jalr" rd rs1 (Address12 imm)
-  | <span data-count="80">L</span>d (rd, rs1, imm) -&gt;
+  | <span data-count="268">L</span>d (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "ld" rd rs1 (Address12 imm)
-  | <span data-count="69">S</span>d (rd, rs1, imm) -&gt;
+  | <span data-count="276">S</span>d (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1offset_helper ppf "sd" rd rs1 (Address12 imm)
-  | <span data-count="69">A</span>ddiw (rd, rs1, imm) -&gt;
+  | <span data-count="288">A</span>ddiw (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "addiw" rd rs1 (Address12 imm)
-  | <span data-count="68">S</span>lliw (rd, rs1, imm) -&gt;
+  | <span data-count="281">S</span>lliw (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "slliw" rd rs1 (Address12 imm)
-  | <span data-count="76">S</span>rliw (rd, rs1, imm) -&gt;
+  | <span data-count="284">S</span>rliw (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "srliw" rd rs1 (Address12 imm)
-  | <span data-count="75">S</span>raiw (rd, rs1, imm) -&gt;
+  | <span data-count="292">S</span>raiw (rd, rs1, imm) -&gt;
     pp_instruction_2reg_1imm_helper ppf "sraiw" rd rs1 (Address12 imm)
-  | <span data-count="79">J</span>al (rd, imm) -&gt;
+  | <span data-count="274">J</span>al (rd, imm) -&gt;
     Format.fprintf ppf "jal %a, %a" pp_register rd pp_address (Address20 imm)
-  | <span data-count="80">J</span>r rs1 -&gt; Format.fprintf ppf "jr %a" pp_register rs1
-  | <span data-count="74">J</span> imm -&gt; Format.fprintf ppf "j %a" pp_address (Address20 imm)
-  | <span data-count="76">L</span>ui (rd, imm) -&gt;
+  | <span data-count="272">J</span>r rs1 -&gt; Format.fprintf ppf "jr %a" pp_register rs1
+  | <span data-count="277">J</span> imm -&gt; Format.fprintf ppf "j %a" pp_address (Address20 imm)
+  | <span data-count="279">L</span>ui (rd, imm) -&gt;
     Format.fprintf ppf "lui %a,%a" pp_register rd pp_address (Address20 imm)
-  | <span data-count="73">A</span>uipc (rd, imm) -&gt;
+  | <span data-count="295">A</span>uipc (rd, imm) -&gt;
     Format.fprintf ppf "auipc %a,%a" pp_register rd pp_address (Address20 imm)
-  | <span data-count="76">E</span>call -&gt; Format.fprintf ppf "ecall"
-  | <span data-count="81">C</span>all str -&gt; Format.fprintf ppf "call %s" str
-  | <span data-count="64">L</span>a (rd, imm) -&gt;
+  | <span data-count="286">E</span>call -&gt; Format.fprintf ppf "ecall"
+  | <span data-count="271">C</span>all str -&gt; Format.fprintf ppf "call %s" str
+  | <span data-count="265">L</span>a (rd, imm) -&gt;
     Format.fprintf ppf "la %a,%a" pp_register rd pp_address (Address32 imm)
-  | <span data-count="64">L</span>la (rd, imm) -&gt;
+  | <span data-count="248">L</span>la (rd, imm) -&gt;
     Format.fprintf ppf "lla %a,%a" pp_register rd pp_address (Address32 imm)
-  | <span data-count="64">M</span>v (rd, rs1) -&gt; Format.fprintf ppf "mv %a,%a" pp_register rd pp_register rs1
-  | <span data-count="60">L</span>i (rd, imm) -&gt;
+  | <span data-count="290">M</span>v (rd, rs1) -&gt; Format.fprintf ppf "mv %a,%a" pp_register rd pp_register rs1
+  | <span data-count="232">L</span>i (rd, imm) -&gt;
     Format.fprintf ppf "li %a,%a" pp_register rd pp_address (Address32 imm)
-  | <span data-count="75">R</span>et -&gt; Format.fprintf ppf "ret"
+  | <span data-count="260">R</span>et -&gt; Format.fprintf ppf "ret"
 ;;
 
 let pp_str_or_int ppf = function
-  | <span data-count="137">S</span>trValue str -&gt; Format.fprintf ppf "%S" str
-  | <span data-count="151">I</span>ntValue imm -&gt; Format.fprintf ppf "%d" imm
+  | <span data-count="555">S</span>trValue str -&gt; Format.fprintf ppf "%S" str
+  | <span data-count="598">I</span>ntValue imm -&gt; Format.fprintf ppf "%d" imm
 ;;
 
 let pp_type_dir ppf = function
-  | <span data-count="610">T</span>ype str -&gt; Format.fprintf ppf "%s" str
+  | <span data-count="2203">T</span>ype str -&gt; Format.fprintf ppf "%s" str
 ;;
 
 let pp_directive ppf = function
-  | <span data-count="275">F</span>ile str -&gt; Format.fprintf ppf ".file %S" str
-  | <span data-count="272">O</span>ption str -&gt; Format.fprintf ppf ".option %s" str
-  | <span data-count="288">A</span>ttribute (str, str_or_int) -&gt;
+  | <span data-count="1152">F</span>ile str -&gt; Format.fprintf ppf ".file %S" str
+  | <span data-count="1097">O</span>ption str -&gt; Format.fprintf ppf ".option %s" str
+  | <span data-count="1153">A</span>ttribute (str, str_or_int) -&gt;
     Format.fprintf ppf ".attribute %s, %a" str pp_str_or_int str_or_int
-  | <span data-count="271">T</span>ext -&gt; Format.fprintf ppf ".text"
-  | <span data-count="302">A</span>lign imm -&gt; Format.fprintf ppf ".align %d" imm
-  | <span data-count="304">G</span>lobl imm -&gt; Format.fprintf ppf ".globl %a" pp_address (Address12 imm)
-  | <span data-count="304">T</span>ypeDir (str, str_type) -&gt; Format.fprintf ppf ".type %s,@%a" str pp_type_dir str_type
-  | <span data-count="288">C</span>fiStartproc -&gt; Format.fprintf ppf ".cfi_startproc"
-  | <span data-count="292">C</span>fiEndproc -&gt; Format.fprintf ppf ".cfi_endproc"
-  | <span data-count="305">S</span>ize (imm, str) -&gt; Format.fprintf ppf ".size %a,%s" pp_address (Address12 imm) str
-  | <span data-count="306">S</span>ection (str1, str2, str_type, none_or_int) -&gt;
+  | <span data-count="1130">T</span>ext -&gt; Format.fprintf ppf ".text"
+  | <span data-count="1095">A</span>lign imm -&gt; Format.fprintf ppf ".align %d" imm
+  | <span data-count="1154">G</span>lobl imm -&gt; Format.fprintf ppf ".globl %a" pp_address (Address12 imm)
+  | <span data-count="1094">T</span>ypeDir (str, str_type) -&gt; Format.fprintf ppf ".type %s,@%a" str pp_type_dir str_type
+  | <span data-count="1070">C</span>fiStartproc -&gt; Format.fprintf ppf ".cfi_startproc"
+  | <span data-count="1132">C</span>fiEndproc -&gt; Format.fprintf ppf ".cfi_endproc"
+  | <span data-count="1049">S</span>ize (imm, str) -&gt; Format.fprintf ppf ".size %a,%s" pp_address (Address12 imm) str
+  | <span data-count="1109">S</span>ection (str1, str2, str_type, none_or_int) -&gt;
     Format.fprintf
       ppf
       ".section %s,%S,@%a%s"
@@ -784,27 +784,27 @@ let pp_directive ppf = function
       pp_type_dir
       str_type
       (match none_or_int with
-       | <span data-count="266">S</span>ome imm -&gt; Format.sprint<span data-count="266">f</span> ",%d" imm
-       | <span data-count="40">N</span>one -&gt; "")
-  | <span data-count="265">S</span>tring str -&gt; Format.fprintf ppf ".string %S" (String.escape<span data-count="265">d</span> str)
-  | <span data-count="270">C</span>fiDefCfaOffset imm -&gt; Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
-  | <span data-count="292">C</span>fiOffset (imm1, imm2) -&gt; Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
-  | <span data-count="301">C</span>fiRememberState -&gt; Format.fprintf ppf ".cfi_remember_state"
-  | <span data-count="299">C</span>fiRestore imm -&gt; Format.fprintf ppf ".cfi_restore %d" imm
-  | <span data-count="296">I</span>dent str -&gt; Format.fprintf ppf ".ident %S" str
-  | <span data-count="283">C</span>fiRestoreState -&gt; Format.fprintf ppf ".cfi_restore_state"
+       | <span data-count="948">S</span>ome imm -&gt; Format.sprint<span data-count="948">f</span> ",%d" imm
+       | <span data-count="161">N</span>one -&gt; "")
+  | <span data-count="1143">S</span>tring str -&gt; Format.fprintf ppf ".string %S" (String.escape<span data-count="1143">d</span> str)
+  | <span data-count="1174">C</span>fiDefCfaOffset imm -&gt; Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
+  | <span data-count="1071">C</span>fiOffset (imm1, imm2) -&gt; Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
+  | <span data-count="1081">C</span>fiRememberState -&gt; Format.fprintf ppf ".cfi_remember_state"
+  | <span data-count="1133">C</span>fiRestore imm -&gt; Format.fprintf ppf ".cfi_restore %d" imm
+  | <span data-count="1091">I</span>dent str -&gt; Format.fprintf ppf ".ident %S" str
+  | <span data-count="1150">C</span>fiRestoreState -&gt; Format.fprintf ppf ".cfi_restore_state"
 ;;
 
-let pp_label ppf label = <span data-count="5151">F</span>ormat.fprintf ppf "%s:" label
+let pp_label ppf label = <span data-count="20025">F</span>ormat.fprintf ppf "%s:" label
 
 let pp_expr ppf = function
-  | <span data-count="5220">I</span>nstructionExpr instruction -&gt; pp_instruction ppf instruction
-  | <span data-count="5151">L</span>abelExpr label -&gt; pp_label ppf label
-  | <span data-count="5213">D</span>irectiveExpr directive -&gt; pp_directive ppf directive
+  | <span data-count="19604">I</span>nstructionExpr instruction -&gt; pp_instruction ppf instruction
+  | <span data-count="20025">L</span>abelExpr label -&gt; pp_label ppf label
+  | <span data-count="20078">D</span>irectiveExpr directive -&gt; pp_directive ppf directive
 ;;
 
 let pp_ast ppf (ast : ast) =
-  <span data-count="100">F</span>ormat.pp_print_list ~pp_sep:(fun ppf () -&gt; <span data-count="15489">F</span>ormat.fprintf ppf "\n") pp_expr ppf ast
+  <span data-count="100">F</span>ormat.pp_print_list ~pp_sep:(fun ppf () -&gt; <span data-count="59613">F</span>ormat.fprintf ppf "\n") pp_expr ppf ast
 ;;
 
 let print_ast ast = <span data-count="0">p</span>p_ast Format.std_formatter ast

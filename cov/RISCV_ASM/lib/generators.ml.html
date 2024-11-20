@@ -147,10 +147,10 @@ let gen_alpha_or_digit =
 
 let gen_my_label =
   let* length = int_rang<span data-count="2">e</span> 2 50 in
-  <span data-count="6809">l</span>et* first_char = gen_alpha in
-  <span data-count="6809">l</span>et* rest_chars = list_repea<span data-count="6809">t</span> (length - 1) gen_alpha_or_digit in
-  <span data-count="6809">l</span>et all_chars = first_char :: rest_chars in
-  return (String.conca<span data-count="6809">t</span> "" (List.ma<span data-count="6809">p</span> (String.mak<span data-count="6809">e</span> 1) all_chars))
+  <span data-count="26368">l</span>et* first_char = gen_alpha in
+  <span data-count="26368">l</span>et* rest_chars = list_repea<span data-count="26368">t</span> (length - 1) gen_alpha_or_digit in
+  <span data-count="26368">l</span>et all_chars = first_char :: rest_chars in
+  return (String.conca<span data-count="26368">t</span> "" (List.ma<span data-count="26368">p</span> (String.mak<span data-count="26368">e</span> 1) all_chars))
 ;;
 
 let gen_char_for_string =
@@ -168,8 +168,8 @@ let gen_char_for_string =
 
 let gen_my_string =
   let* length = int_rang<span data-count="2">e</span> 1 50 in
-  <span data-count="3445">l</span>et* chars = list_repea<span data-count="3445">t</span> length gen_char_for_string in
-  <span data-count="3445">r</span>eturn (String.conca<span data-count="3445">t</span> "" (List.ma<span data-count="3445">p</span> (String.mak<span data-count="3445">e</span> 1) chars))
+  <span data-count="13026">l</span>et* chars = list_repea<span data-count="13026">t</span> length gen_char_for_string in
+  <span data-count="13026">r</span>eturn (String.conca<span data-count="13026">t</span> "" (List.ma<span data-count="13026">p</span> (String.mak<span data-count="13026">e</span> 1) chars))
 ;;
 </code></pre>
       </div>
