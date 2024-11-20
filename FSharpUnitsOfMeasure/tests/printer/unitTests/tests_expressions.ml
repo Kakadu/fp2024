@@ -303,23 +303,23 @@ let%expect_test "parse anon function with 0 arguments should fail" =
 
 let%expect_test "parse anon function with 1 argument" =
   pp pp_expression parse_expr {| fun x -> e |};
-  [%expect {| (Expr_fun ((Pattern_ident "x"), (Expr_ident_or_op "e"))) |}]
+  [%expect {| (Expr_lam ((Pattern_ident "x"), (Expr_ident_or_op "e"))) |}]
 ;;
 
 let%expect_test "parse anon function with 2 arguments" =
   pp pp_expression parse_expr {| fun x y -> e |};
   [%expect
     {|
-    (Expr_fun ((Pattern_ident "x"),
-       (Expr_fun ((Pattern_ident "y"), (Expr_ident_or_op "e"))))) |}]
+    (Expr_lam ((Pattern_ident "x"),
+       (Expr_lam ((Pattern_ident "y"), (Expr_ident_or_op "e"))))) |}]
 ;;
 
 let%expect_test "parse anon function chain argument" =
   pp pp_expression parse_expr {| fun x -> fun y -> e |};
   [%expect
     {|
-      (Expr_fun ((Pattern_ident "x"),
-         (Expr_fun ((Pattern_ident "y"), (Expr_ident_or_op "e"))))) |}]
+      (Expr_lam ((Pattern_ident "x"),
+         (Expr_lam ((Pattern_ident "y"), (Expr_ident_or_op "e"))))) |}]
 ;;
 
 (************************** Let ... in expressions **************************)
@@ -388,9 +388,9 @@ let%expect_test "parse let f a b c = x in e" =
     {|
     (Expr_let (Nonrecursive,
        (Bind ((Pattern_ident "f"),
-          (Expr_fun ((Pattern_ident "a"),
-             (Expr_fun ((Pattern_ident "b"),
-                (Expr_fun ((Pattern_ident "c"), (Expr_ident_or_op "x")))))
+          (Expr_lam ((Pattern_ident "a"),
+             (Expr_lam ((Pattern_ident "b"),
+                (Expr_lam ((Pattern_ident "c"), (Expr_ident_or_op "x")))))
              ))
           )),
        [], (Expr_ident_or_op "e"))) |}]
@@ -540,7 +540,7 @@ let%expect_test "parse match with one rule" =
   pp pp_expression parse_expr {| function | P1 -> E2 |};
   [%expect
     {|
-    (Expr_fun ((Pattern_ident "x"),
+    (Expr_lam ((Pattern_ident "x"),
        (Expr_match ((Expr_ident_or_op "x"),
           (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))), []))
        ))  |}]
@@ -550,7 +550,7 @@ let%expect_test "parse match with two rules" =
   pp pp_expression parse_expr {| function | P1 -> E2 | P2 -> E2 |};
   [%expect
     {|
-    (Expr_fun ((Pattern_ident "x"),
+    (Expr_lam ((Pattern_ident "x"),
        (Expr_match ((Expr_ident_or_op "x"),
           (Rule ((Pattern_ident "P1"), (Expr_ident_or_op "E2"))),
           [(Rule ((Pattern_ident "P2"), (Expr_ident_or_op "E2")))]))

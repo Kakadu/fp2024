@@ -11,6 +11,7 @@ open Ast
 open Common
 open Patterns
 open Constants
+open Types
 
 let parse_expr_ident = parse_ident >>| fun i -> Expr_ident_or_op i
 let parse_expr_const = parse_const >>| fun c -> Expr_const c
@@ -70,7 +71,7 @@ let parse_expr_lambda parse_expr =
   *>
   let* expr = parse_expr in
   let rec wrap = function
-    | h :: tl -> Expr_fun (h, wrap tl)
+    | h :: tl -> Expr_lam (h, wrap tl)
     | [] -> expr
   in
   return (wrap args)
@@ -91,7 +92,7 @@ let parse_binding_fun parse_expr =
   *>
   let* expr = parse_expr in
   let rec wrap = function
-    | h :: tl -> Expr_fun (h, wrap tl)
+    | h :: tl -> Expr_lam (h, wrap tl)
     | [] -> expr
   in
   return (Bind (name, wrap args))
@@ -148,10 +149,14 @@ let parse_expr_match parse_expr =
 let parse_expr_function parse_expr =
   let* rules = skip_token "function" *> parse_rules parse_expr in
   match rules with
-  | h :: tl ->
-    let id = "x" in
-    return (Expr_fun (Pattern_ident id, Expr_match (Expr_ident_or_op id, h, tl)))
+  | h :: tl -> return (Expr_function (h, tl))
   | _ -> fail "Failed to parse function expression"
+;;
+
+let parse_expr_typed parse_expr =
+  let* expr = parse_expr <* skip_token ":" in
+  let* core_type = parse_type in
+  return (Expr_typed (expr, core_type))
 ;;
 
 let parse_expr =
@@ -170,5 +175,6 @@ let parse_expr =
         ]
     in
     let expr = parse_expr_tuple expr <|> parse_expr_app expr <|> expr in
+    let expr = parse_expr_typed expr <|> expr in
     skip_ws *> expr <* skip_ws)
 ;;
