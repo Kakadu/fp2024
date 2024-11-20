@@ -234,8 +234,11 @@ and pp_expression fmt expression =
       binop;
     fprintf
       fmt
-      (match tp2, get_prior expresion2 < get_prior expression with
-       | [], true -> "(%a)"
+      (match
+         tp2, Int.compare (get_prior expresion2) (get_prior expression), expresion2
+       with
+       | [], k, _ when k < 0 -> "(%a)"
+       | [], 0, Neg _ -> "(%a)"
        | _ -> "%a")
       pp_expr_parenced_tp
       second
