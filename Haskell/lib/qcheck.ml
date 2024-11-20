@@ -9,9 +9,7 @@ open Parser
 let rec shrink_tp =
   let open QCheck.Iter in
   function
-  | TUnit -> empty
-  | TInt -> empty
-  | TBool -> empty
+  | TUnit | TInt | TBool -> empty
   | TreeParam tp -> shrink_tp tp >|= fun a' -> TreeParam a'
   | ListParam tp -> shrink_tp tp >|= fun a' -> ListParam a'
   | TupleParams (first, second, rest) ->
@@ -35,9 +33,7 @@ and shrink_functype : functype QCheck.Shrink.t =
 let rec shrink_pat =
   let open QCheck.Iter in
   function
-  | PWildcard -> empty
-  | PConst _ -> empty
-  | PIdentificator _ -> empty
+  | PWildcard | PConst _ | PIdentificator _ -> empty
   | PList x -> shrink_listpat x >|= fun a' -> PList a'
   | PTuple (first, second, rest) ->
     shrink_pattern first
@@ -81,15 +77,12 @@ and shrink_treepat =
 let rec shrink_expression =
   let open QCheck.Iter in
   function
-  | Const _ -> empty
-  | Identificator _ -> empty
+  | Const _ | Identificator _ | ENothing | EJust -> empty
   | TupleBld (x, y, rest) ->
     shrink_expr x
     >|= (fun a' -> TupleBld (a', y, rest))
     <+> (shrink_expr y >|= fun b' -> TupleBld (x, b', rest))
     <+> (QCheck.Shrink.list ~shrink:shrink_expr rest >|= fun c' -> TupleBld (x, y, c'))
-  | ENothing -> empty
-  | EJust -> empty
   | ListBld x -> shrink_listbld x >|= fun a' -> ListBld a'
   | Binop (x, binop, y) ->
     shrink_expr x

@@ -8,15 +8,7 @@ open Format
 let pp_list sep pp_item = pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf sep) pp_item
 
 let pp_brackets fmt list =
-  let rec helper = function
-    | [] -> ()
-    | _ :: t ->
-      fprintf fmt "(";
-      helper t
-  in
-  match list with
-  | _ :: x :: xs -> helper (x :: xs)
-  | _ -> ()
+  fprintf fmt "%s" (String.make (max 0 (List.length list - 1)) '(')
 ;;
 
 let pp_const fmt const =
@@ -96,28 +88,6 @@ let rec pp_pattern fmt ((list, pat, tp_list) : pattern) =
   | [] -> ()
   | _ -> fprintf fmt " :: %a" (pp_list ") :: " pp_tp) (List.rev tp_list)
 
-and pp_listpat fmt = function
-  | PCons (first, second) ->
-    fprintf
-      fmt
-      (match first with
-       | [], PList (PCons _), [] -> "(%a) : %a"
-       | _ -> "%a : %a")
-      (pp_pattern_sometimes_parensed Tp_only)
-      first
-      (pp_pattern_sometimes_parensed Tp_only)
-      second
-  | PEnum list -> fprintf fmt "[%a]" (pp_list ", " pp_pattern) list
-
-and pp_treepat fmt = function
-  | PNul -> fprintf fmt "$"
-  | PNode (node, left_son, right_son) ->
-    fprintf fmt "(%a; %a; %a)" pp_pattern node pp_pattern left_son pp_pattern right_son
-
-and pp_pconst fmt = function
-  | OrdinaryPConst const -> pp_const fmt const
-  | NegativePInt n -> fprintf fmt "-%s" (Int.to_string n)
-
 and pp_pattern_sometimes_parensed cases fmt pattern =
   fprintf
     fmt
@@ -131,17 +101,28 @@ and pp_pattern_sometimes_parensed cases fmt pattern =
 
 and pp_pat fmt = function
   | PWildcard -> fprintf fmt "_"
-  | PConst pconst -> pp_pconst fmt pconst
+  | PConst (OrdinaryPConst const) -> pp_const fmt const
+  | PConst (NegativePInt n) -> fprintf fmt "-%s" (Int.to_string n)
   | PIdentificator ident -> pp_ident fmt ident
-  | PList listpat -> pp_listpat fmt listpat
   | PTuple (first, second, list) ->
     fprintf fmt "(%a)" (pp_list ", " pp_pattern) (first :: second :: list)
-  | PMaybe pattern ->
-    (match pattern with
-     | Nothing -> fprintf fmt "Nothing"
-     | Just pattern ->
-       fprintf fmt "Just %a" (pp_pattern_sometimes_parensed Tp_and_some_constrs) pattern)
-  | PTree treepat -> pp_treepat fmt treepat
+  | PMaybe Nothing -> fprintf fmt "Nothing"
+  | PMaybe (Just pattern) ->
+    fprintf fmt "Just %a" (pp_pattern_sometimes_parensed Tp_and_some_constrs) pattern
+  | PTree PNul -> fprintf fmt "$"
+  | PTree (PNode (node, left_son, right_son)) ->
+    fprintf fmt "(%a; %a; %a)" pp_pattern node pp_pattern left_son pp_pattern right_son
+  | PList (PEnum list) -> fprintf fmt "[%a]" (pp_list ", " pp_pattern) list
+  | PList (PCons (first, second)) ->
+    fprintf
+      fmt
+      (match first with
+       | [], PList (PCons _), [] -> "(%a) : %a"
+       | _ -> "%a : %a")
+      (pp_pattern_sometimes_parensed Tp_only)
+      first
+      (pp_pattern_sometimes_parensed Tp_only)
+      second
 ;;
 
 let get_prior = function
