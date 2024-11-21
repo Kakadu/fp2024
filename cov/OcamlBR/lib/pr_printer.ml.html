@@ -421,7 +421,7 @@ let rec pp_expr ppf = function
          :: List.ma<span data-count="1">p</span> ~f:case_to_string rest_cases)
     in
     <span data-count="1">f</span>printf ppf "match %a with %s" pp_expr exp case_list_str
-  | <span data-count="0">E</span>option (Some e) -&gt; fprintf ppf "Some %a" pp_expr e
+  | <span data-count="0">E</span>option (Some e) -&gt; fprintf ppf "(Some %a)" pp_expr e
   | <span data-count="0">E</span>option None -&gt; fprintf ppf "None"
   | <span data-count="2">E</span>tuple (e1, e2, es) -&gt;
     fprintf
@@ -444,7 +444,7 @@ let rec pp_expr ppf = function
   | <span data-count="1">E</span>fun (first_pattern, rest_patterns, e) -&gt;
     fprintf
       ppf
-      "fun %a%a -&gt; %a"
+      "(fun %a%a -&gt; %a)"
       pp_pattern
       first_pattern
       (fun ppf patterns -&gt;
@@ -466,7 +466,7 @@ let rec pp_expr ppf = function
       ()
       pp_expr
       e
-  | <span data-count="2">E</span>fun_application (e1, e2) -&gt; fprintf ppf "%a %a" pp_expr e1 pp_expr e2
+  | <span data-count="2">E</span>fun_application (e1, e2) -&gt; fprintf ppf "(%a %a)" pp_expr e1 pp_expr e2
 
 and pp_value_binding ppf = function
   | <span data-count="20">E</span>value_binding (Id (name, None), e) -&gt; fprintf ppf "%s = %a" name pp_expr e
