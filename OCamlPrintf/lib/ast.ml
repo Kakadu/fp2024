@@ -5,8 +5,13 @@
 open QCheck.Gen
 
 let coef = 50 (* For the generator's speed. *)
+let min_range = int_range 0 10
+let gen_string_min gen = string_size min_range ~gen
+let gen_list gen = list_size min_range gen
+let gen_list_nat gen = list_size (int_range 1 10) gen (** [gen_list] without zero size *)
+let gen_operand gen = list_size (int_range 1 1) gen
 
-type 'a list_ = ('a list[@gen small_list gen_a])
+type 'a list_ = ('a list[@gen list_size min_range gen_a])
 [@@deriving show { with_path = false }, qcheck]
 
 let gen_char =
@@ -40,15 +45,14 @@ let gen_ident =
         | "_" -> "id"
         | id -> id)
       (oneof [ char_range 'a' 'z'; return '_' ])
-      (small_string
-         ~gen:
-           (oneof
-              [ char_range '0' '9'
-              ; char_range 'A' 'Z'
-              ; char_range 'a' 'z'
-              ; return '_'
-              ; return '\''
-              ]))
+      (gen_string_min
+         (oneof
+            [ char_range '0' '9'
+            ; char_range 'A' 'Z'
+            ; char_range 'a' 'z'
+            ; return '_'
+            ; return '\''
+            ]))
   in
   gen_var >>= fun name -> if is_keyword name then gen_var else return name
 ;;
@@ -63,7 +67,7 @@ type rec_flag =
 type constant =
   | Const_integer of (int[@gen nat])
   | Const_char of (char[@gen gen_char])
-  | Const_string of (string[@gen small_string ~gen:gen_char])
+  | Const_string of (string[@gen gen_string_min gen_char])
 [@@deriving show { with_path = false }, qcheck]
 
 type core_type =
@@ -141,16 +145,17 @@ module Expression = struct
           [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
             list_
         * (t[@gen gen_sized (n / coef)])
-    | Exp_fun of pattern list_ * (t[@gen gen_sized (n / coef)])
+    | Exp_fun of
+        (pattern list[@gen gen_list_nat gen_pattern]) * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
-        ((t * t * t list_)
+        ((t * t * t list)
         [@gen
           oneof
             [ map3
                 (fun exp first_exp exp_list -> exp, first_exp, exp_list)
                 (gen_sized 0)
                 (gen_sized (n / coef))
-                (small_list (gen_sized (n / coef)))
+                (gen_list (gen_sized (n / coef)))
             ; map3
                 (fun op exp1 exp2 -> op, exp1, exp2)
                 (oneofl
@@ -168,7 +173,7 @@ module Expression = struct
                    ; Exp_ident "||"
                    ])
                 (gen_sized (n / coef))
-                (list_size (int_range 1 1) (gen_sized (n / coef)))
+                (gen_operand (gen_sized (n / coef)))
             ]])
     | Exp_match of
         (t[@gen gen_sized (n / coef)])

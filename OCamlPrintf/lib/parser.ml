@@ -119,7 +119,7 @@ let parse_base_type =
 let parse_list_type parse_type =
   ws *> (parse_base_type <|> skip_parens parse_type)
   <* ws
-  <* string "list"
+  <* keyword "list"
   >>= fun t -> return (Type_list t)
 ;;
 
@@ -139,12 +139,12 @@ let rec parse_arrow_type parse_type =
 
 let parse_core_type =
   ws
-  *> fix (fun parse_type ->
-    let cur_type =
-      choice [ parse_list_type parse_type; parse_base_type; skip_parens parse_type ]
+  *> fix (fun parse_full_type ->
+    let parse_type =
+      choice [ parse_list_type parse_full_type; parse_base_type; skip_parens parse_full_type ]
     in
-    let cur_type = parse_tuple_type cur_type <|> cur_type in
-    parse_arrow_type cur_type <|> cur_type)
+    let parse_type = parse_tuple_type parse_type <|> parse_type in
+    parse_arrow_type parse_type <|> parse_type)
 ;;
 
 (* ==================== Pattern ==================== *)

@@ -4,14 +4,12 @@
 
 open Ocaml_printf_lib.Qchecker
 
-(* The manual generator *)
 let () =
-  let _ : int = run_gen TestQCheckManual.gen_structure in
+  let _ : int = run_gen "the manual generator" TestQCheckManual.gen_structure in
   ()
 ;;
 
-(* The auto generator *)
-(* let () =
-   let _ : int = run_gen Ocaml_printf_lib.Ast.gen_structure in
-   ()
-   ;; *)
+let () =
+  let _ : int = run_gen "the auto generator" Ocaml_printf_lib.Ast.gen_structure in
+  ()
+;;
