@@ -120,6 +120,8 @@ and shrink_pattern =
     <+> (QCheck.Shrink.list ~shrink:shrink_pattern rest
          >|= fun rest' -> PTuple (p1, p2, rest'))
   | PConst lt -> shrink_lt lt >|= fun lt' -> PConst lt'
+  | POption (Some p) -> return p
+  | POption None -> empty
   | PList Empty_list -> empty
   | Wild -> empty
   | PVar _ -> empty

@@ -84,6 +84,7 @@ type pattern =
   (** | [(a, b)] -> *)
   | PConst of literal (** | [4] -> *)
   | PVar of ident (** pattern identifier *)
+  | POption of pattern option
     (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
 [@@deriving eq, show { with_path = false }, qcheck]
 

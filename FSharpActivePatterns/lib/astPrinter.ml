@@ -51,6 +51,13 @@ let rec print_pattern indent fmt = function
      | String_lt s -> fprintf fmt "%sString: %S\n" (String.make (indent + 2) '-') s
      | Unit_lt -> fprintf fmt "%sUnit\n" (String.make (indent + 2) '-'))
   | PVar (Ident (name, _)) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
+  | POption p ->
+    fprintf fmt "%s| POption: " (String.make indent '-');
+    (match p with
+     | None -> fprintf fmt "None\n"
+     | Some p ->
+       fprintf fmt "Some:\n";
+       print_pattern (indent + 2) fmt p)
 ;;
 
 let print_unary_op indent fmt = function

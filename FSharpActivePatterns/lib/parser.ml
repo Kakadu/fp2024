@@ -242,12 +242,14 @@ let p_let p_expr =
 
 let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 
-let p_option p_expr =
-  skip_ws *> (string "None" *> skip_ws_sep1 *> return (Option None))
-  <|> (skip_ws *> string "Some" *> skip_ws_sep1 *> p_expr
-       >>| fun expr -> Option (Some expr))
+let p_option p make_option =
+  skip_ws *> (string "None" *> skip_ws_sep1 *> return (make_option None))
+  <|> let+ inner = skip_ws *> string "Some" *> skip_ws_sep1 *> p in
+      make_option (Some inner)
 ;;
 
+let make_option_expr expr = Option expr
+let make_option_pat pat = POption pat
 let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat ]
 let p_empty_list_pat = p_empty_list >>= fun _ -> return (PList Empty_list)
 
@@ -255,14 +257,15 @@ let p_pat =
   fix (fun self ->
     skip_ws
     *> choice
-         [ p_tuple_pat self
+         [ p_parens self
+         ; p_tuple_pat self
          ; p_empty_list_pat
          ; p_semicolon_list_pat self
          ; p_cons_list_pat p_var_pat
          ; p_var_pat
          ; p_pat_const
-         ; p_string_pat
          ; string "_" *> return Wild
+         ; p_option self make_option_pat
          ])
 ;;
 
@@ -323,7 +326,7 @@ let p_expr =
     let cons_list = p_cons_list_expr apply <|> apply in
     let ematch = p_match (p_expr <|> cons_list) <|> cons_list in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    let option = p_option efun <|> efun in
+    let option = p_option efun make_option_expr <|> efun in
     option)
 ;;
 

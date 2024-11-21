@@ -61,6 +61,10 @@ let rec pp_pattern fmt = function
     fprintf fmt ")"
   | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
+  | POption p ->
+    (match p with
+     | None -> fprintf fmt "None "
+     | Some p -> fprintf fmt "Some (%a) " pp_pattern p)
 
 and pp_expr fmt expr =
   match expr with
