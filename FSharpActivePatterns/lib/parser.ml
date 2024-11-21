@@ -475,10 +475,10 @@ let p_pat =
 let p_lambda p_expr =
   skip_ws
   *> string "fun"
-  *> skip_ws_sep1
+  *> peek_sep1
   *>
-  let* pat = skip_ws *> p_pat <* skip_ws in
-  let* pat_list = many (skip_ws *> p_pat) <* skip_ws in
+  let* pat = p_pat in
+  let* pat_list = many p_pat in
   let* _ = skip_ws *> string "->" in
   let* body = p_expr in
   return (Lambda (pat, pat_list, body))
@@ -489,7 +489,7 @@ let p_match p_expr =
     (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
     (skip_ws *> string "match" *> p_expr <* skip_ws <* string "with")
     (skip_ws *> string "|" *> p_pat <* skip_ws <* string "->")
-    (skip_ws *> p_expr)
+    p_expr
     (many
        (skip_ws *> string "|" *> p_pat
         <* skip_ws
