@@ -8,7 +8,7 @@ open Stdlib.Format
 
 let pp_const ppf = function
   | Int i -> fprintf ppf "%d" i
-  | String s -> fprintf ppf "\"%s\"" s
+  | String s -> fprintf ppf "%S" s
   | Bool b -> fprintf ppf "%b" b
   | Unit -> fprintf ppf "()"
 ;;

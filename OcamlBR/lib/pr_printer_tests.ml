@@ -255,3 +255,14 @@ let%expect_test _ =
     ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let x = \"hey\" ";
+  [%expect
+    {|
+  let  x = "hey" ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("x", None)), (Econst (String "hey")))), []))
+    ]
+  |}]
+;;
