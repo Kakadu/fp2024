@@ -76,15 +76,26 @@ let rec pp_type ppf = function
        fprintf ppf "(%a) list" pp_type type'
      | type' -> fprintf ppf "%a list" pp_type type')
   | Type_tuple (first_type, second_type, type_list) ->
-    fprintf ppf "(%a * %a" pp_type first_type pp_type second_type;
-    if Base.List.is_empty type_list
-    then fprintf ppf ")"
-    else fprintf ppf " * %a)" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
+    let pp_with_condition_on_arrow type' =
+      match type' with
+      | type' when is_type_arrow type' -> fprintf ppf "(%a)" pp_type type'
+      | _ -> fprintf ppf "%a" pp_type type'
+    in
+    fprintf ppf "(";
+    pp_with_condition_on_arrow first_type;
+    fprintf ppf " * ";
+    pp_with_condition_on_arrow second_type;
+    List.iter
+      (fun type' ->
+        fprintf ppf " * ";
+        pp_with_condition_on_arrow type')
+      type_list;
+    fprintf ppf ")"
   | Type_arrow (first_type, second_type) ->
     (match first_type with
      | first_type when is_type_arrow first_type ->
-       fprintf ppf "((%a) -> %a)" pp_type first_type pp_type second_type
-     | first_type -> fprintf ppf "(%a -> %a)" pp_type first_type pp_type second_type)
+       fprintf ppf "(%a) -> %a" pp_type first_type pp_type second_type
+     | first_type -> fprintf ppf "%a -> %a" pp_type first_type pp_type second_type)
 ;;
 
 let rec pp_pattern ppf = function
