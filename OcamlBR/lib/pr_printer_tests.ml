@@ -19,26 +19,24 @@ let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {|
-    let rec factorial = fun n -> if (n = 0) then 1 else (n * factorial (n - 1)) in factorial 5 ;;
-    [(SEval
-        (Elet (Recursive,
-           (Evalue_binding ((Id ("factorial", None)),
-              (Efun ((PVar (Id ("n", None))), [],
-                 (Eif_then_else (
-                    (Ebin_op (Eq, (Evar (Id ("n", None))), (Econst (Int 0)))),
-                    (Econst (Int 1)),
-                    (Some (Ebin_op (Mult, (Evar (Id ("n", None))),
-                             (Efun_application ((Evar (Id ("factorial", None))),
-                                (Ebin_op (Sub, (Evar (Id ("n", None))),
-                                   (Econst (Int 1))))
-                                ))
-                             )))
-                    ))
+    let rec factorial = (fun n -> if (n = 0) then 1 else (n * (factorial (n - 1)))) in (factorial 5) ;;
+    [(SValue (Recursive,
+        (Evalue_binding ((Id ("factorial", None)),
+           (Efun ((PVar (Id ("n", None))), [],
+              (Eif_then_else (
+                 (Ebin_op (Eq, (Evar (Id ("n", None))), (Econst (Int 0)))),
+                 (Econst (Int 1)),
+                 (Some (Ebin_op (Mult, (Evar (Id ("n", None))),
+                          (Efun_application ((Evar (Id ("factorial", None))),
+                             (Ebin_op (Sub, (Evar (Id ("n", None))),
+                                (Econst (Int 1))))
+                             ))
+                          )))
                  ))
-              )),
-           [],
-           (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))
-           )))
+              ))
+           )),
+        [],
+        (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))))
       ]
     |}]
 ;;
