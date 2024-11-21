@@ -54,7 +54,6 @@ let is_keyword = function
 
 let skip_separators = skip_while is_separator
 let parse_token t = skip_separators *> t
-let parse_string_token st = skip_separators *> string st
 
 (** Parse first letter then try parse rest of id *)
 let parse_id =
@@ -87,4 +86,21 @@ let parse_str =
   let parse_content = string "{|" *> take_till (Char.equal '|') <* string "|}" in
   let* str = parse_empty_string <|> parse_content in
   return (Str str)
+;;
+
+let parse_string_token st = skip_separators *> string st
+
+let parse_bool =
+  choice
+    [ (parse_string_token "true" *> peek_char
+       >>= function
+       | None -> return (Bool true)
+       | Some ch when is_separator ch -> return (Bool true)
+       | _ -> fail "Invalid char after 'true'")
+    ; (parse_string_token "false" *> peek_char
+       >>= function
+       | None -> return (Bool false)
+       | Some ch when is_separator ch -> return (Bool false)
+       | _ -> fail "Invalid char after 'false'")
+    ]
 ;;
