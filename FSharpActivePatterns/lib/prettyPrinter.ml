@@ -74,7 +74,7 @@ and pp_expr fmt expr =
     pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
     fprintf fmt ")"
   | Match (value, pat1, expr1, cases) ->
-    fprintf fmt "match %a with \n" pp_expr value;
+    fprintf fmt "match (%a) with \n" pp_expr value;
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
       ((pat1, expr1) :: cases)
@@ -88,10 +88,9 @@ and pp_expr fmt expr =
      | Some body -> fprintf fmt "else %a " pp_expr body
      | None -> ())
   | Lambda (pat1, pat_list, body) ->
-    fprintf fmt "(fun ";
-    fprintf fmt "%a " pp_pattern pat1;
-    List.iter (fun pat -> fprintf fmt "%a " pp_pattern pat) pat_list;
-    fprintf fmt "-> %a )" pp_expr body
+    fprintf fmt "fun ";
+    List.iter (fun pat -> fprintf fmt "%a " pp_pattern pat) (pat1 :: pat_list);
+    fprintf fmt "-> %a " pp_expr body
   | Apply (func, arg) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
