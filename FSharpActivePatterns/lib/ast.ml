@@ -76,7 +76,9 @@ type 'a list_type =
 
 type pattern =
   | Wild (** [_] *)
-  | PList of pattern list_type (**[ [], hd :: tl, [1;2;3] ]*)
+  | PList of
+      (pattern list_type[@gen gen_list_type_sized (gen_pattern_sized (n / 2)) (n / 2)])
+  (**[ [], hd :: tl, [1;2;3] ]*)
   | PTuple of
       pattern
       * pattern
@@ -100,7 +102,8 @@ type expr =
       * expr
       * (expr list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_expr_sized (n / 2)))])
   (** [(1, "Hello world", true)] *)
-  | List of expr list_type (** [], hd :: tl, [1;2;3] *)
+  | List of (expr list_type[@gen gen_list_type_sized (gen_expr_sized (n / 2)) (n / 2)])
+  (** [], hd :: tl, [1;2;3] *)
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
