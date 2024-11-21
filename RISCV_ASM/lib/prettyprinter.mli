@@ -2,4 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val parse_ast : Ast.expr list Angstrom.t
+open Ast
+
+val pp_ast : Format.formatter -> expr list -> unit
+val print_ast : expr list -> unit
