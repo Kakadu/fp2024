@@ -71,18 +71,20 @@ let rec pp_type ppf = function
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
   | Type_list type' ->
-    if is_type_arrow type' || is_type_list type'
-    then fprintf ppf "(%a) list" pp_type type'
-    else fprintf ppf "%a list" pp_type type'
+    (match type' with
+     | type' when is_type_arrow type' || is_type_list type' ->
+       fprintf ppf "(%a) list" pp_type type'
+     | type' -> fprintf ppf "%a list" pp_type type')
   | Type_tuple (first_type, second_type, type_list) ->
     fprintf ppf "(%a * %a" pp_type first_type pp_type second_type;
     if Base.List.is_empty type_list
     then fprintf ppf ")"
     else fprintf ppf " * %a)" (pp_print_list ~pp_sep:pp_asterisk pp_type) type_list
   | Type_arrow (first_type, second_type) ->
-    if is_type_arrow first_type
-    then fprintf ppf "((%a) -> %a)" pp_type first_type pp_type second_type
-    else fprintf ppf "(%a -> %a)" pp_type first_type pp_type second_type
+    (match first_type with
+     | first_type when is_type_arrow first_type ->
+       fprintf ppf "((%a) -> %a)" pp_type first_type pp_type second_type
+     | first_type -> fprintf ppf "(%a -> %a)" pp_type first_type pp_type second_type)
 ;;
 
 let rec pp_pattern ppf = function
@@ -145,13 +147,15 @@ let rec pp_expression ppf = function
            pp_exp_constraint value.exp))
         value_binding_list;
     fprintf ppf " in %a)" pp_expression exp
-  | Exp_fun (pat_list, exp) ->
+  | Exp_fun (first_pat, pat_list, exp) ->
     let pp_exp_constraint = function
       | Exp_constraint (exp', core_type) ->
         fprintf ppf ": %a -> %a)" pp_type core_type pp_expression exp'
       | exp' -> fprintf ppf "-> %a)" pp_expression exp'
     in
-    fprintf ppf "(fun %a " (pp_print_list ~pp_sep:pp_space pp_pattern) pat_list;
+    fprintf ppf "(fun %a " pp_pattern first_pat;
+    if not (Base.List.is_empty pat_list)
+    then fprintf ppf "%a " (pp_print_list ~pp_sep:pp_space pp_pattern) pat_list;
     pp_exp_constraint exp
   | Exp_apply (exp, first_exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in

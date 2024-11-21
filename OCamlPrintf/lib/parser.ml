@@ -281,9 +281,10 @@ let parse_exp_constraint parse_exp op =
 
 let parse_fun_binding parse_exp =
   let* name = ws *> parse_pat_var in
-  let* pat_list = ws *> sep_by1 ws parse_pattern in
+  let* first_pat = ws *> parse_pattern in
+  let* pat_list = ws *> sep_by ws parse_pattern in
   let* exp = parse_exp_constraint parse_exp "=" in
-  return { pat = name; exp = Exp_fun (pat_list, exp) }
+  return { pat = name; exp = Exp_fun (first_pat, pat_list, exp) }
 ;;
 
 let parse_simple_binding parse_exp =
@@ -326,9 +327,10 @@ let parse_exp_fun parse_exp =
   ws
   *> keyword "fun"
   *>
-  let* pat_list = many1 parse_pattern in
+  let* first_pat = parse_pattern in
+  let* pat_list = many parse_pattern in
   let* exp = parse_exp_constraint parse_exp "->" in
-  return (Exp_fun (pat_list, exp))
+  return (Exp_fun (first_pat, pat_list, exp))
 ;;
 
 let parse_exp_apply_fun parse_exp =

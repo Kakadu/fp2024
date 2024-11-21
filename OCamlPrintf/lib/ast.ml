@@ -8,10 +8,6 @@ let coef = 50 (* For the generator's speed. *)
 let min_range = int_range 0 10
 let gen_string gen = string_size min_range ~gen
 let gen_list gen = list_size min_range gen
-
-(** [gen_list] without zero size *)
-let gen_list_nat gen = list_size (int_range 1 10) gen
-
 let gen_operand gen = list_size (int_range 1 1) gen
 
 type 'a list_ = ('a list[@gen gen_list gen_a])
@@ -149,7 +145,9 @@ module Expression = struct
             list_
         * (t[@gen gen_sized (n / coef)])
     | Exp_fun of
-        (pattern list[@gen gen_list_nat gen_pattern]) * (t[@gen gen_sized (n / coef)])
+        (pattern[@gen gen_pattern])
+        * (pattern list[@gen gen_list gen_pattern])
+        * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
         ((t * t * t list)
         [@gen

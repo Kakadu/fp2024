@@ -154,8 +154,9 @@ module TestQCheckManual = struct
                  (gen_list
                     (map2 (fun pat exp -> { pat; exp }) gen_pattern (self (Random.int 3))))
                <*> self (n / coef)
-             ; map2
-                 (fun pat exp -> Exp_fun (pat, exp))
+             ; map3
+                 (fun first_pat pat_list exp -> Exp_fun (first_pat, pat_list, exp))
+                 gen_pattern
                  (gen_list_nat gen_pattern)
                  (self (n / coef))
              ; map3

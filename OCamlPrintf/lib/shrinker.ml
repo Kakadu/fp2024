@@ -59,11 +59,13 @@ let rec shrink_expression = function
     <+> (shrink_expression exp
          >|= fun exp' -> Exp_let (rec_flag, first_value_binding, value_binding_list, exp')
         )
-  | Exp_fun (pat_list, exp) ->
+  | Exp_fun (first_pat, pat_list, exp) ->
     return exp
-    <+> (list ~shrink:shrink_pattern pat_list >|= fun pat_list' -> Exp_fun (pat_list', exp)
+    <+> (shrink_pattern first_pat >|= fun first_pat' -> Exp_fun (first_pat', pat_list, exp)
         )
-    <+> (shrink_expression exp >|= fun exp' -> Exp_fun (pat_list, exp'))
+    <+> (list ~shrink:shrink_pattern pat_list
+         >|= fun pat_list' -> Exp_fun (first_pat, pat_list', exp))
+    <+> (shrink_expression exp >|= fun exp' -> Exp_fun (first_pat, pat_list, exp'))
   | Exp_apply (exp, first_exp, exp_list) ->
     return first_exp
     <+> of_list exp_list

@@ -76,7 +76,7 @@ module Expression : sig
     (** [Exp_let(flag, [(P1, E1); ... ; (Pn, En)], E)] represents:
         - [let     P1 = E1 and ... and Pn = En in E] when [flag] is [Nonrecursive],
         - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
-    | Exp_fun of pattern list_ * t
+    | Exp_fun of pattern * pattern list_ * t
     (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
     | Exp_apply of (t * t * t list_)
     (** [Exp_apply(E0, [E1; ... ; En])] represents [E0 E1 ... En] *)

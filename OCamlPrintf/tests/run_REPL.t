@@ -5,7 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   [(Struct_value (Recursive,
       { pat = (Pat_var "factorial");
         exp =
-        (Exp_fun ([(Pat_var "n")],
+        (Exp_fun ((Pat_var "n"), [],
            (Exp_ifthenelse (
               (Exp_apply
                  ((Exp_ident "<="), (Exp_ident "n"),
@@ -40,11 +40,11 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   [(Struct_value (Nonrecursive,
       { pat = (Pat_var "prime");
         exp =
-        (Exp_fun ([(Pat_var "n")],
+        (Exp_fun ((Pat_var "n"), [],
            (Exp_let (Recursive,
               { pat = (Pat_var "check_zero");
                 exp =
-                (Exp_fun ([(Pat_var "x"); (Pat_var "d")],
+                (Exp_fun ((Pat_var "x"), [(Pat_var "d")],
                    (Exp_match ((Exp_ident "d"),
                       { left = (Pat_constant (Const_integer 1));
                         right = (Exp_construct ("true", None)) },
