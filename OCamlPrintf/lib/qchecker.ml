@@ -254,24 +254,25 @@ let failure ast =
      | Error error -> error)
 ;;
 
-let run_gen ?(show_passed = false) ?(show_shrinker = false) name type_gen =
+let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) name type_gen =
   let gen = QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure in
   QCheck_base_runner.run_tests
-    [ QCheck.Test.make ~name gen (fun ast ->
+    ~verbose:true
+    [ QCheck.Test.make ~count ~name gen (fun ast ->
         match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
         | Ok ast_parsed ->
           if ast = ast_parsed
           then (
             if show_passed
-            then Format.printf "*** PPrinter *** \n%a\n\n" Pprinter.pp_structure ast;
+            then Format.printf "*** PPrinter ***\n%a\n\n" Pprinter.pp_structure ast;
             true)
           else (
             if show_shrinker
-            then Format.printf "*** Shrinker *** \n%a\n\n" Pprinter.pp_structure ast;
+            then Format.printf "*** Shrinker ***\n%a\n\n" Pprinter.pp_structure ast;
             false)
         | Error _ ->
           if show_shrinker
-          then Format.printf "*** Shrinker *** \n%a\n\n" Pprinter.pp_structure ast;
+          then Format.printf "*** Shrinker ***\n%a\n\n" Pprinter.pp_structure ast;
           false)
     ]
 ;;

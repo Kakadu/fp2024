@@ -5,7 +5,7 @@
 open QCheck.Gen
 
 let coef = 50 (* For the generator's speed. *)
-let min_range = int_range 0 10
+let min_range = int_range 0 10 (* For the generator's speed. *)
 let gen_string gen = string_size min_range ~gen
 let gen_list gen = list_size min_range gen
 let gen_operand gen = list_size (int_range 1 1) gen
@@ -144,10 +144,7 @@ module Expression = struct
           [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
             list_
         * (t[@gen gen_sized (n / coef)])
-    | Exp_fun of
-        (pattern[@gen gen_pattern])
-        * (pattern list[@gen gen_list gen_pattern])
-        * (t[@gen gen_sized (n / coef)])
+    | Exp_fun of pattern * pattern list_ * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
         ((t * t * t list)
         [@gen

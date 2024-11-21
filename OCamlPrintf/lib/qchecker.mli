@@ -9,6 +9,7 @@ end
 val run_gen
   :  ?show_passed:bool
   -> ?show_shrinker:bool
+  -> ?count:int
   -> string
   -> Ast.structure QCheck.Gen.t
   -> int

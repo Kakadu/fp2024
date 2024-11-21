@@ -78,7 +78,7 @@ module Expression : sig
         - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
     | Exp_fun of pattern * pattern list_ * t
     (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
-    | Exp_apply of (t * t * t list_)
+    | Exp_apply of (t * t * t list)
     (** [Exp_apply(E0, [E1; ... ; En])] represents [E0 E1 ... En] *)
     | Exp_match of t * t case * t case list_
     (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
