@@ -193,11 +193,11 @@ let p_tuple_pat p_pat = p_tuple make_tuple_pat p_pat
 let p_if p_expr =
   lift3
     (fun cond th el -> If_then_else (cond, th, el))
-    (skip_ws *> string "if" *> skip_ws_sep1 *> p_expr)
-    (skip_ws *> string "then" *> skip_ws_sep1 *> p_expr)
+    (skip_ws *> string "if" *> peek_sep1 *> p_expr)
+    (skip_ws *> string "then" *> peek_sep1 *> p_expr)
     (skip_ws
      *> string "else"
-     *> skip_ws_sep1
+     *> peek_sep1
      *> (p_expr <* peek_sep1 >>= fun e -> return (Some e))
      <|> return None)
 ;;
@@ -205,12 +205,12 @@ let p_if p_expr =
 let p_let_bind p_expr =
   skip_ws
   *> string "and"
-  *> skip_ws_sep1
+  *> peek_sep1
   *> lift3
        (fun name args body -> Let_bind (name, args, body))
        p_ident
-       (many (skip_ws *> p_ident))
-       (skip_ws *> string "=" *> skip_ws *> p_expr)
+       (many p_ident)
+       (skip_ws *> string "=" *> p_expr)
 ;;
 
 let p_letin p_expr =
@@ -218,12 +218,12 @@ let p_letin p_expr =
   *> string "let"
   *> skip_ws_sep1
   *>
-  let* rec_flag = string "rec" *> skip_ws_sep1 *> return Rec <|> return Nonrec in
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
   let* name = p_ident in
-  let* args = skip_ws *> many (skip_ws *> p_ident) in
-  let* body = skip_ws *> string "=" *> skip_ws *> p_expr in
-  let* let_bind_list = skip_ws *> many (skip_ws *> p_let_bind p_expr) in
-  let* in_expr = skip_ws *> string "in" *> skip_ws_sep1 *> p_expr in
+  let* args = many p_ident in
+  let* body = skip_ws *> string "=" *> p_expr in
+  let* let_bind_list = many (p_let_bind p_expr) in
+  let* in_expr = skip_ws *> string "in" *> peek_sep1 *> p_expr in
   return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
 ;;
 
@@ -232,11 +232,11 @@ let p_let p_expr =
   *> string "let"
   *> skip_ws_sep1
   *>
-  let* rec_flag = string "rec" *> skip_ws_sep1 *> return Rec <|> return Nonrec in
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
   let* name = p_ident in
-  let* args = skip_ws *> many (skip_ws *> p_ident) in
-  let* body = skip_ws *> string "=" *> skip_ws *> p_expr in
-  let* let_bind_list = skip_ws *> many (skip_ws *> p_let_bind p_expr) in
+  let* args = many p_ident in
+  let* body = skip_ws *> string "=" *> p_expr in
+  let* let_bind_list = many (p_let_bind p_expr) in
   return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
 ;;
 
@@ -272,10 +272,10 @@ let p_pat =
 let p_lambda p_expr =
   skip_ws
   *> string "fun"
-  *> skip_ws_sep1
+  *> peek_sep1
   *>
-  let* pat = skip_ws *> p_pat <* skip_ws in
-  let* pat_list = many (skip_ws *> p_pat) <* skip_ws in
+  let* pat = p_pat in
+  let* pat_list = many p_pat in
   let* _ = skip_ws *> string "->" in
   let* body = p_expr in
   return (Lambda (pat, pat_list, body))
@@ -286,7 +286,7 @@ let p_match p_expr =
     (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
     (skip_ws *> string "match" *> p_expr <* skip_ws <* string "with")
     (skip_ws *> string "|" *> p_pat <* skip_ws <* string "->")
-    (skip_ws *> p_expr)
+    p_expr
     (many
        (skip_ws *> string "|" *> p_pat
         <* skip_ws
