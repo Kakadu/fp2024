@@ -355,7 +355,7 @@ open Stdlib.Format
 
 let pp_const ppf = function
   | <span data-count="59">I</span>nt i -&gt; fprintf ppf "%d" i
-  | <span data-count="1">S</span>tring s -&gt; fprintf ppf "\"%s\"" s
+  | <span data-count="2">S</span>tring s -&gt; fprintf ppf "%S" s
   | <span data-count="2">B</span>ool b -&gt; fprintf ppf "%b" b
   | <span data-count="1">U</span>nit -&gt; fprintf ppf "()"
 ;;
@@ -383,7 +383,7 @@ let pp_un_op ppf = function
 
 let pp_rec_flag ppf = function
   | <span data-count="3">R</span>ecursive -&gt; fprintf ppf "rec"
-  | <span data-count="11">N</span>on_recursive -&gt; ()
+  | <span data-count="12">N</span>on_recursive -&gt; ()
 ;;
 
 let rec pp_pattern ppf = function
@@ -404,7 +404,7 @@ let rec pp_pattern ppf = function
 ;;
 
 let rec pp_expr ppf = function
-  | <span data-count="61">E</span>const c -&gt; pp_const ppf c
+  | <span data-count="62">E</span>const c -&gt; pp_const ppf c
   | <span data-count="18">E</span>var (Id (name, None)) -&gt; fprintf ppf "%s" name
   | <span data-count="0">E</span>var (Id (name, Some suffix)) -&gt; fprintf ppf "%s.%s" name suffix
   | <span data-count="4">E</span>if_then_else (e1, e2, None) -&gt; fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
@@ -469,30 +469,30 @@ let rec pp_expr ppf = function
   | <span data-count="2">E</span>fun_application (e1, e2) -&gt; fprintf ppf "(%a %a)" pp_expr e1 pp_expr e2
 
 and pp_value_binding ppf = function
-  | <span data-count="20">E</span>value_binding (Id (name, None), e) -&gt; fprintf ppf "%s = %a" name pp_expr e
+  | <span data-count="21">E</span>value_binding (Id (name, None), e) -&gt; fprintf ppf "%s = %a" name pp_expr e
   | <span data-count="0">E</span>value_binding (Id (name, Some suffix), e) -&gt;
     fprintf ppf "%s%s = %a" name suffix pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =
-  <span data-count="21">m</span>atch item with
+  <span data-count="22">m</span>atch item with
   | <span data-count="14">S</span>Eval e -&gt; fprintf ppf "%a ;;" pp_expr e
-  | <span data-count="7">S</span>Value (rec_flag, vb, vb_l) -&gt;
+  | <span data-count="8">S</span>Value (rec_flag, vb, vb_l) -&gt;
     fprintf
       ppf
       "let %a %a ;;"
       pp_rec_flag
       rec_flag
       (fun ppf () -&gt;
-        <span data-count="7">f</span>printf ppf "%a" pp_value_binding vb;
-        <span data-count="7">L</span>ist.iter vb_l ~f:(fun vb' -&gt; <span data-count="6">f</span>printf ppf " and %a" pp_value_binding vb'))
+        <span data-count="8">f</span>printf ppf "%a" pp_value_binding vb;
+        <span data-count="8">L</span>ist.iter vb_l ~f:(fun vb' -&gt; <span data-count="6">f</span>printf ppf " and %a" pp_value_binding vb'))
       ()
 ;;
 
 let pp_new_line ppf () = <span data-count="4">f</span>printf ppf "\n"
 
 let prpr_structure ppf =
-  <span data-count="17">f</span>printf ppf "%a" (pp_print_lis<span data-count="17">t</span> ~pp_sep:pp_new_line pp_structure_item)
+  <span data-count="18">f</span>printf ppf "%a" (pp_print_lis<span data-count="18">t</span> ~pp_sep:pp_new_line pp_structure_item)
 ;;
 </code></pre>
       </div>

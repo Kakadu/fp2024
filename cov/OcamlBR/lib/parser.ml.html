@@ -624,7 +624,7 @@ open Ast
 (*---------------------Check conditions---------------------*)
 
 let is_keyword = function
-  | <span data-count="108">"</span>let"
+  | <span data-count="117">"</span>let"
   | <span data-count="34">"</span>in"
   | <span data-count="0">"</span>fun"
   | <span data-count="0">"</span>rec"
@@ -639,7 +639,7 @@ let is_keyword = function
   | <span data-count="0">"</span>or"
   | <span data-count="22">"</span>match"
   | <span data-count="44">"</span>with" -&gt; true
-  | <span data-count="106">_</span> -&gt; false
+  | <span data-count="108">_</span> -&gt; false
 ;;
 
 (*---------------------Control characters---------------------*)
@@ -667,7 +667,7 @@ let pbool =
 ;;
 
 let pstr =
-  pwhitespace *<span data-count="4">&gt;</span> cha<span data-count="4">r</span> '"' *<span data-count="4">&gt;</span> take_til<span data-count="4">l</span> (Char.equa<span data-count="4">l</span> '"') &lt;<span data-count="4">*</span> cha<span data-count="4">r</span> '"' &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="2">S</span>tring x
+  pwhitespace *<span data-count="4">&gt;</span> cha<span data-count="4">r</span> '"' *<span data-count="4">&gt;</span> take_til<span data-count="4">l</span> (Char.equa<span data-count="4">l</span> '"') &lt;<span data-count="4">*</span> cha<span data-count="4">r</span> '"' &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="4">S</span>tring x
 ;;
 
 let punit = pstoke<span data-count="4">n</span> "()" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Unit
@@ -675,15 +675,15 @@ let const = choic<span data-count="4">e</span> [ pint; pbool; pstr; punit ]
 
 let varname =
   ptoke<span data-count="4">n</span>
-    (take_whil<span data-count="4">e</span> (fun ch -&gt; <span data-count="1160">C</span>har.is_digi<span data-count="1160">t</span> c<span data-count="526">h</span> || Char.equa<span data-count="634">l</span> ch '\'<span data-count="0">'</span> || Char.is_uppercase ch)
+    (take_whil<span data-count="4">e</span> (fun ch -&gt; <span data-count="1171">C</span>har.is_digi<span data-count="1171">t</span> c<span data-count="526">h</span> || Char.equa<span data-count="645">l</span> ch '\'<span data-count="0">'</span> || Char.is_uppercase ch)
      &gt;&gt;<span data-count="4">=</span> function
-     | <span data-count="713">"</span>" -&gt;
-       take_while<span data-count="713">1</span> (fun ch -&gt;
-         <span data-count="1824">C</span>har.is_alph<span data-count="1824">a</span> c<span data-count="1164">h</span> || Char.is_digi<span data-count="660">t</span> c<span data-count="27">h</span> || Char.equa<span data-count="633">l</span> ch '_<span data-count="21">'</span> || Char.equal ch '\'')
+     | <span data-count="728">"</span>" -&gt;
+       take_while<span data-count="728">1</span> (fun ch -&gt;
+         <span data-count="1864">C</span>har.is_alph<span data-count="1864">a</span> c<span data-count="1193">h</span> || Char.is_digi<span data-count="671">t</span> c<span data-count="27">h</span> || Char.equa<span data-count="644">l</span> ch '_<span data-count="21">'</span> || Char.equal ch '\'')
        &gt;&gt;= fun str -&gt;
-       <span data-count="362">i</span>f is_keyword str
-       then <span data-count="256">f</span>ail "Variable name conflicts with a keyword"
-       else <span data-count="106">r</span>eturn str
+       <span data-count="373">i</span>f is_keyword str
+       then <span data-count="265">f</span>ail "Variable name conflicts with a keyword"
+       else <span data-count="108">r</span>eturn str
      | <span data-count="22">_</span> -&gt; fail "Variable name must not start with a digit, uppercase letter and \' ")
 ;;
 
@@ -694,7 +694,7 @@ let ptype =
   <span data-count="4">p</span>stoke<span data-count="4">n</span> ":" *<span data-count="4">&gt;</span> pbasic_type &lt;|<span data-count="4">&gt;</span> retur<span data-count="4">n</span> None
 ;;
 
-let pident = lift<span data-count="4">2</span> (fun t v -&gt; <span data-count="106">I</span>d (t, v)) varname ptype
+let pident = lift<span data-count="4">2</span> (fun t v -&gt; <span data-count="108">I</span>d (t, v)) varname ptype
 let pat_var = pident &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="4">P</span>Var x
 let pat_const = const &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="26">P</span>Const x
 let pat_any = pstoke<span data-count="4">n</span> "_" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> PAny &lt;<span data-count="4">*</span> pws1
@@ -758,7 +758,7 @@ let pos_sign = puno<span data-count="4">p</span> Positive "+"
 (*------------------------Expressions----------------------*)
 
 let chain e op =
-  <span data-count="15">l</span>et rec go acc = <span data-count="900">l</span>ift<span data-count="900">2</span> (fun f x -&gt; <span data-count="47">f</span> acc x) op e &gt;&gt;<span data-count="900">=</span> go &lt;|&gt; retur<span data-count="900">n</span> acc in
+  <span data-count="15">l</span>et rec go acc = <span data-count="910">l</span>ift<span data-count="910">2</span> (fun f x -&gt; <span data-count="47">f</span> acc x) op e &gt;&gt;<span data-count="910">=</span> go &lt;|&gt; retur<span data-count="910">n</span> acc in
   e &gt;&gt;= go
 ;;
 
@@ -778,7 +778,7 @@ let rec pbody pexpr =
 
 let pvalue_binding pexpr =
   <span data-count="14">l</span>ift2
-    (fun id e -&gt; <span data-count="45">E</span>value_binding (id, e))
+    (fun id e -&gt; <span data-count="47">E</span>value_binding (id, e))
     (pparen<span data-count="14">s</span> pident &lt;|<span data-count="14">&gt;</span> pident)
     (pstoke<span data-count="14">n</span> "=" *<span data-count="14">&gt;</span> pexpr &lt;|<span data-count="14">&gt;</span> pbod<span data-count="14">y</span> pexpr)
 ;;
@@ -817,7 +817,7 @@ let pEtuple pexpr =
      &lt;<span data-count="3">*</span> pwhitespace)
 ;;
 
-let pEconst = const &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="114">E</span>const x
+let pEconst = const &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="116">E</span>const x
 let pEvar = pident &gt;&gt;<span data-count="4">|</span> fun x -&gt; <span data-count="55">E</span>var x
 let pEapp e = <span data-count="3">c</span>hain e (retur<span data-count="3">n</span> (fun e1 e2 -&gt; <span data-count="4">E</span>fun_application (e1, e2)))
 
@@ -885,7 +885,7 @@ let pstructure =
   <span data-count="4">l</span>et psvalue =
     pstoke<span data-count="4">n</span> "let"
     *&gt; lift<span data-count="4">3</span>
-         (fun r id id_list -&gt; <span data-count="9">S</span>Value (r, id, id_list))
+         (fun r id id_list -&gt; <span data-count="10">S</span>Value (r, id, id_list))
          (pstoke<span data-count="4">n</span> "rec" *<span data-count="4">&gt;</span> (pws1 *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Recursive) &lt;|<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Non_recursive)
          (pvalue_bindin<span data-count="4">g</span> pexpr)
          (man<span data-count="4">y</span> (pstoke<span data-count="4">n</span> "and" *<span data-count="4">&gt;</span> pvalue_bindin<span data-count="4">g</span> pexpr))
@@ -897,7 +897,7 @@ let structure : structure t =
   sep_b<span data-count="4">y</span> (pstoke<span data-count="4">n</span> ";;") pstructure &lt;<span data-count="4">*</span> (pstoke<span data-count="4">n</span> ";;" &lt;|<span data-count="4">&gt;</span> pwhitespace)
 ;;
 
-let parse_expr str = <span data-count="30">p</span>arse_string ~consume:All structure str
+let parse_expr str = <span data-count="31">p</span>arse_string ~consume:All structure str
 </code></pre>
       </div>
     </div>

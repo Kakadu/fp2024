@@ -279,6 +279,17 @@
 <a id="L255"></a><span > </span>
 <a id="L256"></a><span class="visited"> </span>
 <a id="L257"></a><span > </span>
+<a id="L258"></a><span > </span>
+<a id="L259"></a><span > </span>
+<a id="L260"></a><span class="visited"> </span>
+<a id="L261"></a><span class="visited"> </span>
+<a id="L262"></a><span > </span>
+<a id="L263"></a><span > </span>
+<a id="L264"></a><span > </span>
+<a id="L265"></a><span > </span>
+<a id="L266"></a><span > </span>
+<a id="L267"></a><span class="visited"> </span>
+<a id="L268"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -540,6 +551,17 @@
 <a href="#L255">255</a>
 <a href="#L256">256</a>
 <a href="#L257">257</a>
+<a href="#L258">258</a>
+<a href="#L259">259</a>
+<a href="#L260">260</a>
+<a href="#L261">261</a>
+<a href="#L262">262</a>
+<a href="#L263">263</a>
+<a href="#L264">264</a>
+<a href="#L265">265</a>
+<a href="#L266">266</a>
+<a href="#L267">267</a>
+<a href="#L268">268</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
@@ -551,10 +573,10 @@ open Parser
 open Pr_printer
 
 let parse str =
-  <span data-count="17">m</span>atch parse_expr str with
-  | <span data-count="14">O</span>k structure -&gt;
-    Stdlib.print_endline (Stdlib.Format.asprint<span data-count="14">f</span> "%a" prpr_structure structure);
-    <span data-count="14">S</span>tdlib.print_endline (show_structur<span data-count="14">e</span> structure)
+  <span data-count="18">m</span>atch parse_expr str with
+  | <span data-count="15">O</span>k structure -&gt;
+    Stdlib.print_endline (Stdlib.Format.asprint<span data-count="15">f</span> "%a" prpr_structure structure);
+    <span data-count="15">S</span>tdlib.print_endline (show_structur<span data-count="15">e</span> structure)
   | <span data-count="3">E</span>rror _ -&gt; Stdlib.print_endline "Parsing failed"
 ;;
 
@@ -795,6 +817,17 @@ let%expect_test _ =
       (Ebin_op (Eq,
          (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]),
          (Econst (Int 1)))))
+    ]
+  |}<span data-count="7">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">p</span>arse "let x = \"hey\" ";
+  <span data-count="1">[</span>%expect
+    {|
+  let  x = "hey" ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("x", None)), (Econst (String "hey")))), []))
     ]
   |}<span data-count="7">]</span>
 ;;
