@@ -130,18 +130,16 @@ and pp_value_binding ppf = function
 let pp_structure_item ppf (item : structure_item) =
   match item with
   | SEval e -> fprintf ppf "%a ;;" pp_expr e
-  | SValue (rec_flag, vb, vb_l, e) ->
+  | SValue (rec_flag, vb, vb_l) ->
     fprintf
       ppf
-      "let %a %a in %a ;;"
+      "let %a %a ;;"
       pp_rec_flag
       rec_flag
       (fun ppf () ->
         fprintf ppf "%a" pp_value_binding vb;
         List.iter vb_l ~f:(fun vb' -> fprintf ppf " and %a" pp_value_binding vb'))
       ()
-      pp_expr
-      e
 ;;
 
 let pp_new_line ppf () = fprintf ppf "\n"

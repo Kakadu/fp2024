@@ -50,15 +50,15 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "if 5 > 6 then let x = 5";
+  parse "if 5 > 6 then let x = 5 in x + 5";
   [%expect
     {|
-    if (5 > 6) then let  x = 5 in () ;;
+    if (5 > 6) then let  x = 5 in (x + 5) ;;
     [(SEval
         (Eif_then_else ((Ebin_op (Gt, (Econst (Int 5)), (Econst (Int 6)))),
            (Elet (Non_recursive,
               (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
-              (Econst Unit))),
+              (Ebin_op (Add, (Evar (Id ("x", None))), (Econst (Int 5)))))),
            None)))
       ]
     |}]
@@ -102,11 +102,11 @@ let%expect_test _ =
   parse "let a = (1, 2, 3)";
   [%expect
     {|
-    let  a = (1, 2, 3) in () ;;
+    let  a = (1, 2, 3) ;;
     [(SValue (Non_recursive,
         (Evalue_binding ((Id ("a", None)),
            (Etuple ((Econst (Int 1)), (Econst (Int 2)), [(Econst (Int 3))])))),
-        [], (Econst Unit)))
+        []))
       ]
   |}]
 ;;
@@ -126,17 +126,17 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "if 1234 + 1 = 1235 then let x = 4";
+  parse "if 1234 + 1 = 1235 then let x = 4 in (x, 2)";
   [%expect
     {|
-    if ((1234 + 1) = 1235) then let  x = 4 in () ;;
+    if ((1234 + 1) = 1235) then let  x = 4 in (x, 2) ;;
     [(SEval
         (Eif_then_else (
            (Ebin_op (Eq, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 1)))),
               (Econst (Int 1235)))),
            (Elet (Non_recursive,
               (Evalue_binding ((Id ("x", None)), (Econst (Int 4)))), [],
-              (Econst Unit))),
+              (Etuple ((Evar (Id ("x", None))), (Econst (Int 2)), [])))),
            None)))
       ]
     |}]
@@ -157,47 +157,42 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "let x = 5 in let y = 3 in let n = x + y;; if 13 > 12 then let a = 2";
+  parse "let x = 5 in let y = 3 in x + y;; if 13 > 12 then let a = 2 in a - 4";
   [%expect
     {|
-    let  x = 5 in let  y = 3 in let  n = (x + y) in () ;;
-    if (13 > 12) then let  a = 2 in () ;;
-    [(SValue (Non_recursive,
-        (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
+    let  x = 5 in let  y = 3 in (x + y) ;;
+    if (13 > 12) then let  a = 2 in (a - 4) ;;
+    [(SEval
         (Elet (Non_recursive,
-           (Evalue_binding ((Id ("y", None)), (Econst (Int 3)))), [],
+           (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
            (Elet (Non_recursive,
-              (Evalue_binding ((Id ("n", None)),
-                 (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
-                    ))
-                 )),
-              [], (Econst Unit)))
-           ))
-        ));
+              (Evalue_binding ((Id ("y", None)), (Econst (Int 3)))), [],
+              (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))))))
+           )));
       (SEval
          (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
             (Elet (Non_recursive,
                (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-               (Econst Unit))),
+               (Ebin_op (Sub, (Evar (Id ("a", None))), (Econst (Int 4)))))),
             None)))
       ]
   |}]
 ;;
 
 let%expect_test _ =
-  parse "let x = 5 ;; if 13 > 12 then let a = 2";
+  parse "let x = 5 ;; if 13 > 12 then let a = 2 in a + x";
   [%expect
     {|
-    let  x = 5 in () ;;
-    if (13 > 12) then let  a = 2 in () ;;
+    let  x = 5 ;;
+    if (13 > 12) then let  a = 2 in (a + x) ;;
     [(SValue (Non_recursive,
-        (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [], (Econst Unit)
-        ));
+        (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []));
       (SEval
          (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
             (Elet (Non_recursive,
                (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-               (Econst Unit))),
+               (Ebin_op (Add, (Evar (Id ("a", None))), (Evar (Id ("x", None)))))
+               )),
             None)))
       ]
   |}]
@@ -207,7 +202,7 @@ let%expect_test _ =
   parse "let x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;";
   [%expect
     {|
-  let  x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 in () ;;
+  let  x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((Id ("x", None)),
          (Ematch ((Econst (Int 3)),
@@ -216,7 +211,7 @@ let%expect_test _ =
               (Ecase (PAny, (Econst (Int 30))))]
             ))
          )),
-      [], (Econst Unit)))
+      []))
     ]
   |}]
 ;;
@@ -239,10 +234,9 @@ let%expect_test _ =
   parse "let x = 5";
   [%expect
     {|
-  let  x = 5 in () ;;
+  let  x = 5 ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [], (Econst Unit)
-      ))
+      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []))
     ]
   |}]
 ;;

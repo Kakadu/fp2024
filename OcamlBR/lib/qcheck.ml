@@ -7,6 +7,37 @@ open Ast
 open Pr_printer
 open Parser
 
+let rec shrink_pattern = function
+  | PVar _ -> Iter.empty
+  | PAny -> Iter.empty
+  | PConst (Int _) -> Iter.return (PConst (Int 1))
+  | PConst (Bool b) -> Iter.return (PConst (Bool b))
+  | PConst _ -> Iter.empty
+  | PList ls ->
+    Iter.(
+      let shrink_list_length =
+        map (fun ls' -> PList ls') (QCheck.Shrink.list ~shrink:shrink_pattern ls)
+      in
+      let shrink_elements =
+        List.fold_right
+          (fun e acc ->
+            map
+              (fun e' -> PList (List.map2 (fun x y -> if x = e then e' else y) ls ls))
+              (shrink_pattern e)
+            <+> acc)
+          ls
+          empty
+      in
+      shrink_list_length <+> shrink_elements)
+  | PTuple (p1, p2, p3) ->
+    Iter.(
+      map (fun p1' -> PTuple (p1', p2, p3)) (shrink_pattern p1)
+      <+> map (fun p2' -> PTuple (p1, p2', p3)) (shrink_pattern p2)
+      <+> map
+            (fun p3' -> PTuple (p1, p2, p3'))
+            (QCheck.Shrink.list ~shrink:shrink_pattern p3))
+;;
+
 let rec shrink_expr = function
   | Econst (Int _) -> Iter.return (Econst (Int 1))
   | Econst (Bool b) -> Iter.return (Econst (Bool b))
@@ -70,18 +101,30 @@ let rec shrink_expr = function
       let shrink_value_binding_length =
         map (fun vb_l' -> Elet (flag, vb, vb_l', e)) (QCheck.Shrink.list vb_l)
       in
+      let shrink_elements =
+        List.fold_right
+          (fun a acc ->
+            map
+              (fun e' ->
+                Elet
+                  (flag, vb, List.map2 (fun x y -> if x = a then e' else y) vb_l vb_l, e))
+              (shrink_value_binding a)
+            <+> acc)
+          vb_l
+          empty
+      in
       return e
       <+> map (fun e' -> Elet (flag, vb, vb_l, e')) (shrink_expr e)
-      <+> shrink_value_binding_length)
+      <+> shrink_value_binding_length
+      <+> map (fun vb' -> Elet (flag, vb', vb_l, e)) (shrink_value_binding vb)
+      <+> shrink_elements)
   | Efun (pattern, patterns, body) ->
     Iter.(
-      let shrink_patterns_length =
-        map
-          (fun patterns' -> Efun (pattern, patterns', body))
-          (QCheck.Shrink.list patterns)
-      in
       map (fun body' -> Efun (pattern, patterns, body')) (shrink_expr body)
-      <+> shrink_patterns_length)
+      <+> map (fun pattern' -> Efun (pattern', patterns, body)) (shrink_pattern pattern)
+      <+> map
+            (fun patterns' -> Efun (pattern, patterns', body))
+            (QCheck.Shrink.list patterns))
   | Efun_application (e1, e2) ->
     Iter.(
       return e1
@@ -95,16 +138,20 @@ let rec shrink_expr = function
       in
       map (fun e' -> Ematch (e', case, case_l)) (shrink_expr e) <+> shrink_cases_length)
   | _ -> Iter.empty
+
+and shrink_value_binding = function
+  | Evalue_binding (id, e) ->
+    Iter.(map (fun e' -> Evalue_binding (id, e')) (shrink_expr e))
 ;;
 
 let shrink_structure_item = function
   | SEval e -> Iter.(map (fun e' -> SEval e') (shrink_expr e))
-  | SValue (r, vb, vb_l, e) ->
+  | SValue (r, vb, vb_l) ->
     Iter.(
       let shrink_value_binding_length =
-        map (fun vb_l' -> SValue (r, vb, vb_l', e)) (QCheck.Shrink.list vb_l)
+        map (fun vb_l' -> SValue (r, vb, vb_l')) (QCheck.Shrink.list vb_l)
       in
-      map (fun e' -> SValue (r, vb, vb_l, e')) (shrink_expr e)
+      map (fun vb' -> SValue (r, vb', vb_l)) (shrink_value_binding vb)
       <+> shrink_value_binding_length)
 ;;
 

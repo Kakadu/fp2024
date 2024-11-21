@@ -17,23 +17,25 @@ let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {|
- [(SValue (Recursive,
-     (Evalue_binding ((Id ("factorial", None)),
-        (Efun ((PVar (Id ("n", None))), [],
-           (Eif_then_else (
-              (Ebin_op (Eq, (Evar (Id ("n", None))), (Econst (Int 0)))),
-              (Econst (Int 1)),
-              (Some (Ebin_op (Mult, (Evar (Id ("n", None))),
-                       (Efun_application ((Evar (Id ("factorial", None))),
-                          (Ebin_op (Sub, (Evar (Id ("n", None))),
-                             (Econst (Int 1))))
-                          ))
-                       )))
+ [(SEval
+     (Elet (Recursive,
+        (Evalue_binding ((Id ("factorial", None)),
+           (Efun ((PVar (Id ("n", None))), [],
+              (Eif_then_else (
+                 (Ebin_op (Eq, (Evar (Id ("n", None))), (Econst (Int 0)))),
+                 (Econst (Int 1)),
+                 (Some (Ebin_op (Mult, (Evar (Id ("n", None))),
+                          (Efun_application ((Evar (Id ("factorial", None))),
+                             (Ebin_op (Sub, (Evar (Id ("n", None))),
+                                (Econst (Int 1))))
+                             ))
+                          )))
+                 ))
               ))
-           ))
-        )),
-     [],
-     (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))))
+           )),
+        [],
+        (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))
+        )))
    ]
  |}]
 ;;
@@ -53,7 +55,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "if 1234 + 1 = 1235 then let x = 4";
+  parse "if 1234 + 1 = 1235 then let x = 4 in x * 2";
   [%expect
     {|
     [(SEval
@@ -62,7 +64,7 @@ let%expect_test _ =
               (Econst (Int 1235)))),
            (Elet (Non_recursive,
               (Evalue_binding ((Id ("x", None)), (Econst (Int 4)))), [],
-              (Econst Unit))),
+              (Ebin_op (Mult, (Evar (Id ("x", None))), (Econst (Int 2)))))),
            None)))
       ]
   |}]
@@ -85,42 +87,37 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "let x = 5 in let y = 3 in let n = x + y;; if 13 > 12 then let a = 2";
+  parse "let x = 5 in let y = 3 in x + y;; if 13 > 12 then let a = 2 in a - 4";
   [%expect
     {|
-  [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
+  [(SEval
       (Elet (Non_recursive,
-         (Evalue_binding ((Id ("y", None)), (Econst (Int 3)))), [],
+         (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
          (Elet (Non_recursive,
-            (Evalue_binding ((Id ("n", None)),
-               (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
-                  ))
-               )),
-            [], (Econst Unit)))
-         ))
-      ));
+            (Evalue_binding ((Id ("y", None)), (Econst (Int 3)))), [],
+            (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))))))
+         )));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
           (Elet (Non_recursive,
              (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-             (Econst Unit))),
+             (Ebin_op (Sub, (Evar (Id ("a", None))), (Econst (Int 4)))))),
           None)))
     ] |}]
 ;;
 
 let%expect_test _ =
-  parse "let x = 5 ;; if 13 > 12 then let a = 2";
+  parse "let x = 5 ;; if 13 > 12 then let a = 2 in a + x";
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [], (Econst Unit)
-      ));
+      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
           (Elet (Non_recursive,
              (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-             (Econst Unit))),
+             (Ebin_op (Add, (Evar (Id ("a", None))), (Evar (Id ("x", None)))))
+             )),
           None)))
     ] |}]
 ;;
@@ -144,7 +141,7 @@ let%expect_test _ =
               (Ecase (PAny, (Econst (Int 30))))]
             ))
          )),
-      [], (Econst Unit)))
+      []))
     ]
   |}]
 ;;

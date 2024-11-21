@@ -125,7 +125,7 @@ type expr =
       * (value_binding list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_value_binding_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
-  (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 *)
+  (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En in E, e.g. let x = 5 in x - 10 *)
   | Efun_application of
       (expr[@gen gen_expr_sized (n / divisor)])
       * (expr[@gen gen_expr_sized (n / divisor)])
@@ -171,7 +171,7 @@ type structure_item =
       rec_flag
       * (value_binding[@gen gen_value_binding])
       * (value_binding list[@gen QCheck.Gen.(list_size (0 -- 4) gen_value_binding)])
-      * expr
+    (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En e.g. let x = 5 *)
 [@@deriving show { with_path = false }, qcheck]
 
 type structure =
