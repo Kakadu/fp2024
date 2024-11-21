@@ -19,7 +19,10 @@ module TestQCheckManual = struct
   let gen_int = nat
   let gen_string_min gen = string_size min_range ~gen
   let gen_list gen = list_size (int_range 0 5) gen
+
+  (** [gen_list] without zero size *)
   let gen_list_nat gen = list_size (int_range 1 3) gen
+
   let gen_operand gen = list_size (int_range 1 1) gen
 
   let gen_bin_op =
@@ -164,7 +167,7 @@ module TestQCheckManual = struct
                  (fun op exp1 exp2 -> Exp_apply (op, exp1, exp2))
                  gen_bin_op
                  (self (n / coef))
-                 (list_size (int_range 1 1) (self (n / coef)))
+                 (gen_operand (self (n / coef)))
              ; map3
                  (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
                  (self (n / coef))
@@ -172,8 +175,7 @@ module TestQCheckManual = struct
                     (fun left right -> { left; right })
                     gen_pattern
                     (self (Random.int 3)))
-                 (list_size
-                    (int_range 1 3)
+                 (gen_list
                     (map2
                        (fun left right -> { left; right })
                        gen_pattern

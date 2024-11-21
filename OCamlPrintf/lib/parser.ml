@@ -141,7 +141,8 @@ let parse_core_type =
   ws
   *> fix (fun parse_full_type ->
     let parse_type =
-      choice [ parse_list_type parse_full_type; parse_base_type; skip_parens parse_full_type ]
+      choice
+        [ parse_list_type parse_full_type; parse_base_type; skip_parens parse_full_type ]
     in
     let parse_type = parse_tuple_type parse_type <|> parse_type in
     parse_arrow_type parse_type <|> parse_type)

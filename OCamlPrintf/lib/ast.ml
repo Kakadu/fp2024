@@ -8,10 +8,13 @@ let coef = 50 (* For the generator's speed. *)
 let min_range = int_range 0 10
 let gen_string_min gen = string_size min_range ~gen
 let gen_list gen = list_size min_range gen
-let gen_list_nat gen = list_size (int_range 1 10) gen (** [gen_list] without zero size *)
+
+(** [gen_list] without zero size *)
+let gen_list_nat gen = list_size (int_range 1 10) gen
+
 let gen_operand gen = list_size (int_range 1 1) gen
 
-type 'a list_ = ('a list[@gen list_size min_range gen_a])
+type 'a list_ = ('a list[@gen gen_list gen_a])
 [@@deriving show { with_path = false }, qcheck]
 
 let gen_char =
@@ -98,18 +101,18 @@ type pattern =
       ((ident * pattern option)
       [@gen
         oneof
-          [ (let rec gen_list n =
+          [ (let rec gen_list_pat n =
                if n = 0
                then return ("[]", None)
                else (
                  let element = gen_pattern_sized 0 in
-                 let tail = gen_list (n / coef) in
+                 let tail = gen_list_pat (n / coef) in
                  map2
                    (fun e t -> "::", Some (Pat_tuple (e, Pat_construct t, [])))
                    element
                    tail)
              in
-             gen_list n)
+             gen_list_pat n)
           ; return ("true", None)
           ; return ("false", None)
           ; map (fun i -> "Some", Some i) (gen_pattern_sized (n / coef))
@@ -192,18 +195,18 @@ module Expression = struct
         ((ident * t option)
         [@gen
           oneof
-            [ (let rec gen_list n =
+            [ (let rec gen_list_exp n =
                  if n = 0
                  then return ("[]", None)
                  else (
                    let element = gen_sized 0 in
-                   let tail = gen_list (n / coef) in
+                   let tail = gen_list_exp (n / coef) in
                    map2
                      (fun e t -> "::", Some (Exp_tuple (e, Exp_construct t, [])))
                      element
                      tail)
                in
-               gen_list n)
+               gen_list_exp n)
             ; return ("true", None)
             ; return ("false", None)
             ; map (fun i -> "Some", Some i) (gen_sized (n / coef))
