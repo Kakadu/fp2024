@@ -55,7 +55,6 @@ let pp_escape_sequence ppf () = fprintf ppf "\n"
 let pp_space ppf () = fprintf ppf " "
 let pp_comma ppf () = fprintf ppf ", "
 let pp_and ppf () = fprintf ppf " and "
-let pp_asterisk ppf () = fprintf ppf " * "
 let pp_ident ppf id = fprintf ppf "%s" id
 
 let pp_constant ppf = function
