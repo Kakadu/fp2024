@@ -8,6 +8,10 @@ open Ast
 (*
    from homk: >>| : 'a t -> ('a -> 'b) -> 'b
    let* is a bind
+   >>= "bind" -- выполняет первый парсер, значение подаёт функции, которая делает второй парсер
+   >>| "map" -- выполняет парсер, а к результату применяет функцию и получается значение
+   <$> -- синтаксический сахар для "apply" (меняет местами f и p)
+   <*> "apply" -- выполняет парсер для функции, затем парсер для значения и затем применяет (если сделать "apply" над результатом "bind")
 *)
 
 let parse_vica =
@@ -48,40 +52,38 @@ let is_keyword = function
   | _ -> false
 ;;
 
-let parse_spaces = skip_while is_space
-let parse_token t = parse_spaces *> t
+let skip_spaces = skip_while is_space
+let parse_token t = skip_spaces *> t
 
 (** Parse first letter then try parse rest of id *)
 let parse_id =
-  let parse_first =
-    satisfy (fun ch -> is_letter ch || Char.equal '_' ch) >>| fun ch -> Char.escaped ch
-  in
-  let parse_rest =
+  parse_token
+  @@
+  let* parse_first = satisfy is_letter <|> satisfy (Char.equal '_') >>| Char.escaped in
+  let* parse_rest =
     take_while1 (fun ch -> is_letter ch || is_digit ch || Char.equal '_' ch)
   in
-  (* мб функцию применения вынести? *)
-  parse_token @@ lift2 (fun x y -> x ^ y) parse_first parse_rest
-  >>= fun id ->
+  let id = parse_first ^ parse_rest in
   if is_keyword id then fail "Identifier must not match the keyword." else return id
 ;;
 
-(* take_while захватывает любое кличество символов
-   take_while1 захватывает хотя бы 1 символ*)
+(*
+   take_while захватывает любое количество символов
+   take_while1 захватывает хотя бы 1 символ
+*)
 let parse_int =
-  parse_token @@ take_while1 is_digit >>| fun digit -> Int (int_of_string digit)
+  parse_token
+  @@
+  let* sign = char '+' *> return 1 <|> char '-' *> return (-1) <|> return 1 in
+  let* digit = take_while1 is_digit >>| int_of_string in
+  return (Int (sign * digit))
 ;;
 
-let parse_string =
+let parse_str =
   parse_token
-  @@ (char '"'
-      *> many
-           (choice
-              [ take_while1 (function
-                  | '"' | '\\' -> false
-                  | _ -> true)
-              ; string "\\\"" *> return "\""
-              ; string "\\\\" *> return "\\"
-              ]))
-  <* char '"'
-  >>| fun chars -> Str (String.concat "" chars)
+  @@
+  let parse_empty_string = string "{||}" >>| fun _ -> "" in
+  let parse_content = string "{|" *> take_till (Char.equal '|') <* string "|}" in
+  let* str = parse_empty_string <|> parse_content in
+  return (Str str)
 ;;
