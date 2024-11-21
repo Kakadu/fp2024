@@ -6,7 +6,7 @@ open QCheck.Gen
 
 let coef = 50 (* For the generator's speed. *)
 let min_range = int_range 0 10
-let gen_string_min gen = string_size min_range ~gen
+let gen_string gen = string_size min_range ~gen
 let gen_list gen = list_size min_range gen
 
 (** [gen_list] without zero size *)
@@ -48,7 +48,7 @@ let gen_ident =
         | "_" -> "id"
         | id -> id)
       (oneof [ char_range 'a' 'z'; return '_' ])
-      (gen_string_min
+      (gen_string
          (oneof
             [ char_range '0' '9'
             ; char_range 'A' 'Z'
@@ -70,7 +70,7 @@ type rec_flag =
 type constant =
   | Const_integer of (int[@gen nat])
   | Const_char of (char[@gen gen_char])
-  | Const_string of (string[@gen gen_string_min gen_char])
+  | Const_string of (string[@gen gen_string gen_char])
 [@@deriving show { with_path = false }, qcheck]
 
 type core_type =

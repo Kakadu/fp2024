@@ -6,4 +6,9 @@ module TestQCheckManual : sig
   val gen_structure : Ast.structure QCheck.Gen.t
 end
 
-val run_gen : string -> Ast.structure QCheck.Gen.t -> int
+val run_gen
+  :  ?show_passed:bool
+  -> ?show_shrinker:bool
+  -> string
+  -> Ast.structure QCheck.Gen.t
+  -> int

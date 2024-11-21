@@ -17,7 +17,7 @@ module TestQCheckManual = struct
 
   let min_range = int_range 0 10
   let gen_int = nat
-  let gen_string_min gen = string_size min_range ~gen
+  let gen_string gen = string_size min_range ~gen
   let gen_list gen = list_size (int_range 0 5) gen
 
   (** [gen_list] without zero size *)
@@ -50,7 +50,7 @@ module TestQCheckManual = struct
           | "_" -> "id"
           | id -> id)
         (oneof [ char_range 'a' 'z'; return '_' ])
-        (gen_string_min
+        (gen_string
            (oneof
               [ char_range '0' '9'
               ; char_range 'A' 'Z'
@@ -66,7 +66,7 @@ module TestQCheckManual = struct
     oneof
       [ map (fun i -> Const_integer i) gen_int
       ; map (fun c -> Const_char c) gen_char
-      ; map (fun s -> Const_string s) (gen_string_min gen_char)
+      ; map (fun s -> Const_string s) (gen_string gen_char)
       ]
   ;;
 
@@ -253,10 +253,24 @@ let failure ast =
      | Error error -> error)
 ;;
 
-let run_gen name type_gen =
+let run_gen ?(show_passed = false) ?(show_shrinker = false) name type_gen =
   let gen = QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure in
   QCheck_base_runner.run_tests
     [ QCheck.Test.make ~name gen (fun ast ->
-        Result.Ok ast = Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast))
+        match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
+        | Ok ast_parsed ->
+          if ast = ast_parsed
+          then (
+            if show_passed
+            then Format.printf "*** PPrinter *** \n%a\n\n" Pprinter.pp_structure ast;
+            true)
+          else (
+            if show_shrinker
+            then Format.printf "*** Shrinker *** \n%a\n\n" Pprinter.pp_structure ast;
+            false)
+        | Error _ ->
+          if show_shrinker
+          then Format.printf "*** Shrinker *** \n%a\n\n" Pprinter.pp_structure ast;
+          false)
     ]
 ;;
