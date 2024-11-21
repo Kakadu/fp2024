@@ -35,21 +35,24 @@ module TestQCheckManual = struct
   ;;
 
   let gen_ident =
-    map2
-      (fun start_ident rest_ident ->
-        match Base.Char.to_string start_ident ^ rest_ident with
-        | "_" -> "id"
-        | id -> id)
-      (oneof [ char_range 'a' 'z'; return '_' ])
-      (small_string
-         ~gen:
-           (oneof
-              [ char_range '0' '9'
-              ; char_range 'A' 'Z'
-              ; char_range 'a' 'z'
-              ; return '_'
-              ; return '\''
-              ]))
+    let gen_var =
+      map2
+        (fun start_ident rest_ident ->
+          match Base.Char.to_string start_ident ^ rest_ident with
+          | "_" -> "id"
+          | id -> id)
+        (oneof [ char_range 'a' 'z'; return '_' ])
+        (small_string
+           ~gen:
+             (oneof
+                [ char_range '0' '9'
+                ; char_range 'A' 'Z'
+                ; char_range 'a' 'z'
+                ; return '_'
+                ; return '\''
+                ]))
+    in
+    gen_var >>= fun name -> if is_keyword name then gen_var else return name
   ;;
 
   let gen_constant =
@@ -94,7 +97,10 @@ module TestQCheckManual = struct
              ]
          | n ->
            oneof
-             [ map3
+             [ return Pat_any
+             ; map (fun i -> Pat_var i) gen_ident
+             ; map (fun c -> Pat_constant c) gen_constant
+             ; map3
                  (fun f s l -> Pat_tuple (f, s, l))
                  (self (n / coef))
                  (self (n / coef))
@@ -131,7 +137,9 @@ module TestQCheckManual = struct
              ]
          | n ->
            oneof
-             [ map3
+             [ map (fun i -> Exp_ident i) gen_ident
+             ; map (fun c -> Exp_constant c) gen_constant
+             ; map3
                  (fun rec_fl first_value_binding value_binding_list exp ->
                    Exp_let (rec_fl, first_value_binding, value_binding_list, exp))
                  (frequency [ 1, return Nonrecursive; 1, return Recursive ])
@@ -217,7 +225,7 @@ module TestQCheckManual = struct
       ]
   ;;
 
-  let gen_structure = list_size (int_range 1 1) gen_structure_item
+  let gen_structure = list_size (int_range 1 3) gen_structure_item
 end
 
 let run_gen type_gen =
@@ -228,7 +236,7 @@ let run_gen type_gen =
       ~shrink:Shrinker.shrink_structure
   in
   QCheck_base_runner.run_tests
-    [ QCheck.Test.make ~name:"the auto generator" ~count:1 gen (fun ast ->
+    [ QCheck.Test.make ~count:1 gen (fun ast ->
         match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
         | Ok ast_parsed ->
           if ast = ast_parsed

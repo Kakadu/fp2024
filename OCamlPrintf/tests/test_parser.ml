@@ -149,6 +149,6 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
   let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
   |};
   [%expect {|
-  let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
+  let (a : (int -> (((char -> int)) -> int))) = 1 + (x : (char -> int));;
   |}]
 ;;

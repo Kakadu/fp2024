@@ -65,7 +65,7 @@ let rec shrink_expression = function
         )
     <+> (shrink_expression exp >|= fun exp' -> Exp_fun (pat_list, exp'))
   | Exp_apply (exp, first_exp, exp_list) ->
-    of_list [ exp; first_exp ]
+    return first_exp
     <+> of_list exp_list
     <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', first_exp, exp_list))
     <+> (shrink_expression first_exp

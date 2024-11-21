@@ -14,22 +14,43 @@ let gen_char =
   oneof [ return '!'; char_range '#' '&'; char_range '(' '['; char_range ']' '~' ]
 ;;
 
+let is_keyword = function
+  | "and"
+  | "else"
+  | "false"
+  | "fun"
+  | "if"
+  | "in"
+  | "let"
+  | "match"
+  | "rec"
+  | "then"
+  | "true"
+  | "with"
+  | "Some"
+  | "None" -> true
+  | _ -> false
+;;
+
 let gen_ident =
-  map2
-    (fun start_ident rest_ident ->
-      match Base.Char.to_string start_ident ^ rest_ident with
-      | "_" -> "id"
-      | id -> id)
-    (oneof [ char_range 'a' 'z'; return '_' ])
-    (small_string
-       ~gen:
-         (oneof
-            [ char_range '0' '9'
-            ; char_range 'A' 'Z'
-            ; char_range 'a' 'z'
-            ; return '_'
-            ; return '\''
-            ]))
+  let gen_var =
+    map2
+      (fun start_ident rest_ident ->
+        match Base.Char.to_string start_ident ^ rest_ident with
+        | "_" -> "id"
+        | id -> id)
+      (oneof [ char_range 'a' 'z'; return '_' ])
+      (small_string
+         ~gen:
+           (oneof
+              [ char_range '0' '9'
+              ; char_range 'A' 'Z'
+              ; char_range 'a' 'z'
+              ; return '_'
+              ; return '\''
+              ]))
+  in
+  gen_var >>= fun name -> if is_keyword name then gen_var else return name
 ;;
 
 type ident = (string[@gen gen_ident]) [@@deriving show { with_path = false }, qcheck]
@@ -122,27 +143,33 @@ module Expression = struct
         * (t[@gen gen_sized (n / coef)])
     | Exp_fun of pattern list_ * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
-        (t
+        ((t * t * t list_)
         [@gen
           oneof
-            [ gen_sized (n / coef)
-            ; oneofl
-                [ Exp_ident "*"
-                ; Exp_ident "/"
-                ; Exp_ident "+"
-                ; Exp_ident "-"
-                ; Exp_ident ">="
-                ; Exp_ident "<="
-                ; Exp_ident "<>"
-                ; Exp_ident "="
-                ; Exp_ident ">"
-                ; Exp_ident "<"
-                ; Exp_ident "&&"
-                ; Exp_ident "||"
-                ]
+            [ map3
+                (fun exp first_exp exp_list -> exp, first_exp, exp_list)
+                (gen_sized 0)
+                (gen_sized (n / coef))
+                (small_list (gen_sized (n / coef)))
+            ; map3
+                (fun op exp1 exp2 -> op, exp1, exp2)
+                (oneofl
+                   [ Exp_ident "*"
+                   ; Exp_ident "/"
+                   ; Exp_ident "+"
+                   ; Exp_ident "-"
+                   ; Exp_ident ">="
+                   ; Exp_ident "<="
+                   ; Exp_ident "<>"
+                   ; Exp_ident "="
+                   ; Exp_ident ">"
+                   ; Exp_ident "<"
+                   ; Exp_ident "&&"
+                   ; Exp_ident "||"
+                   ])
+                (gen_sized (n / coef))
+                (list_size (int_range 1 1) (gen_sized (n / coef)))
             ]])
-        * (t[@gen gen_sized (n / coef)])
-        * (t[@gen gen_sized (n / coef)]) list_
     | Exp_match of
         (t[@gen gen_sized (n / coef)])
         * (case_exp

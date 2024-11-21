@@ -42,25 +42,9 @@ let is_separator = function
   | '}'
   | ' '
   | '\t'
-  | '\n' -> true
-  | _ -> false
-;;
-
-let is_keyword = function
-  | "and"
-  | "else"
-  | "false"
-  | "fun"
-  | "if"
-  | "in"
-  | "let"
-  | "match"
-  | "rec"
-  | "then"
-  | "true"
-  | "with"
-  | "Some"
-  | "None" -> true
+  | '\n'
+  | '*'
+  | '-' -> true
   | _ -> false
 ;;
 
@@ -124,16 +108,19 @@ let parse_constant =
 let parse_base_type =
   ws
   *> choice
-       [ string "_" *> return Type_any
-       ; string "int" *> return Type_int
-       ; string "char" *> return Type_char
-       ; string "string" *> return Type_string
-       ; string "bool" *> return Type_bool
+       [ keyword "_" *> return Type_any
+       ; keyword "int" *> return Type_int
+       ; keyword "char" *> return Type_char
+       ; keyword "string" *> return Type_string
+       ; keyword "bool" *> return Type_bool
        ]
 ;;
 
-let parse_list_type =
-  ws *> parse_base_type <* ws <* string "list" >>= fun t -> return (Type_list t)
+let parse_list_type parse_type =
+  ws *> (parse_base_type <|> skip_parens parse_type)
+  <* ws
+  <* string "list"
+  >>= fun t -> return (Type_list t)
 ;;
 
 let parse_tuple_type parse_type =
@@ -153,8 +140,11 @@ let rec parse_arrow_type parse_type =
 let parse_core_type =
   ws
   *> fix (fun parse_type ->
-    let cur_type = choice [ skip_parens parse_type; parse_list_type; parse_base_type ] in
-    choice [ parse_arrow_type cur_type; parse_tuple_type cur_type; cur_type ])
+    let cur_type =
+      choice [ parse_list_type parse_type; parse_base_type; skip_parens parse_type ]
+    in
+    let cur_type = parse_tuple_type cur_type <|> cur_type in
+    parse_arrow_type cur_type <|> cur_type)
 ;;
 
 (* ==================== Pattern ==================== *)
