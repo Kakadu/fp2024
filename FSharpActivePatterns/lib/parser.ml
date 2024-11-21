@@ -243,8 +243,8 @@ let p_let p_expr =
 let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 
 let p_option p make_option =
-  skip_ws *> (string "None" *> skip_ws_sep1 *> return (make_option None))
-  <|> let+ inner = skip_ws *> string "Some" *> skip_ws_sep1 *> p in
+  skip_ws *> string "None" *> peek_sep1 *> return (make_option None)
+  <|> let+ inner = skip_ws *> string "Some" *> peek_sep1 *> p in
       make_option (Some inner)
 ;;
 
