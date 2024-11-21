@@ -1,10 +1,18 @@
 (library
  (name haskell_lib)
  (public_name Haskell.Lib)
- (libraries angstrom)
+ (libraries angstrom qcheck-core.runner)
  (inline_tests)
- (modules Parser Ast)
+ (modules Parser Ast Pprintast Qcheck)
  (preprocess
-  (pps ppx_deriving.show ppx_inline_test ppx_expect))
+  (pps ppx_deriving.show ppx_inline_test ppx_expect ppx_deriving_qcheck))
  (instrumentation
   (backend bisect_ppx)))
+
+(executable
+ (name run_binding)
+ (modules run_binding)
+ (libraries haskell_lib qcheck-core.runner))
+
+(cram
+ (deps ./qcheck.exe))
