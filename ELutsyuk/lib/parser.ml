@@ -32,7 +32,7 @@ let is_digit = function
   | _ -> false
 ;;
 
-let is_space = function
+let is_separator = function
   | ' ' | '\t' | '\n' | '\r' -> true
   | _ -> false
 ;;
@@ -52,8 +52,9 @@ let is_keyword = function
   | _ -> false
 ;;
 
-let skip_spaces = skip_while is_space
-let parse_token t = skip_spaces *> t
+let skip_separators = skip_while is_separator
+let parse_token t = skip_separators *> t
+let parse_string_token st = skip_separators *> string st
 
 (** Parse first letter then try parse rest of id *)
 let parse_id =
