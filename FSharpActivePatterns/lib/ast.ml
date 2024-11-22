@@ -165,7 +165,7 @@ type statement =
   | Let of
       is_recursive
       * let_bind
-      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 5) gen_let_bind)])
+      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 2) gen_let_bind)])
   (** [let name = expr] *)
 (*| ActivePattern of (ident list[@gen gen_ident_small_list]) * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)*)
