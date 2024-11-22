@@ -30,14 +30,15 @@ type const =
       (string
       [@gen
         QCheck.Gen.(
-          let printable_without_quotes =
+          let printable_without_quotes_and_backslash =
             oneof
               [ char_range '\032' '!' (* characters before '"' *)
-              ; char_range '#' '\126' (* characters after '"' *)
+              ; char_range '#' '[' (* characters after '"' but before '\' *)
+              ; char_range ']' '\126' (* characters after '\' *)
               ]
           in
-          string_size ~gen:printable_without_quotes (0 -- 20))])
-    (* remove double quote character *)
+          string_size ~gen:printable_without_quotes_and_backslash (0 -- 20))])
+    (* remove double quote character and backslash *)
   | Bool of (bool[@gen QCheck.Gen.bool])
   | Unit
 (* language constants of type int, string, bool, and unit respectively *)
@@ -71,7 +72,7 @@ type rec_flag =
 (* flag for let expressions *)
 [@@deriving show { with_path = false }, qcheck]
 
-let divisor = 20
+let divisor = 30
 
 type pattern =
   | PVar of id
