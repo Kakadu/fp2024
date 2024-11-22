@@ -59,18 +59,18 @@ let const = choice [ pint; pbool; pstr; punit ]
 
 let varname =
   ptoken
-    (take_while (fun ch -> Char.is_digit ch || Char.equal ch '\'' || Char.is_uppercase ch)
-     >>= function
-     | "" ->
-       take_while1 (fun ch ->
+    (let* first_char =
+       take_while1 (fun ch -> Char.is_lowercase ch || Char.equal ch '_')
+     in
+     let* rest =
+       take_while (fun ch ->
          Char.is_alpha ch || Char.is_digit ch || Char.equal ch '_' || Char.equal ch '\'')
-       >>= fun str ->
-       if is_keyword str
-       then fail "Variable name conflicts with a keyword"
-       else if String.equal str "_" 
-       then fail "Variable name cannot be _"
-       else return str
-     | _ -> fail "Variable name must not start with a digit, uppercase letter and \' ")
+     in
+     match first_char, rest with
+     | _, _ when is_keyword (first_char ^ rest) ->
+       fail "Variable name conflicts with a keyword"
+     | "_", "" -> fail "Variable cannot be called _"
+     | _ -> return (first_char ^ rest))
 ;;
 
 let ptype =
@@ -83,7 +83,7 @@ let ptype =
 let pident = lift2 (fun t v -> Id (t, v)) varname ptype
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
-let pat_any = pstoken "_" *> return PAny <* pws1
+let pat_any = pstoken "_" *> return PAny
 
 let pat_tuple pat =
   let commas = pstoken "," in
@@ -92,7 +92,8 @@ let pat_tuple pat =
        (fun p1 p2 rest -> PTuple (p1, p2, rest))
        pat
        (commas *> pat)
-       (many (commas *> pat)))
+       (many (commas *> pat))
+     <* pwhitespace)
 ;;
 
 let pat_list pat =
@@ -107,7 +108,7 @@ let ppattern =
     let ppany = pat_any in
     let pplist = pat_list pat in
     let pptuple = pat_tuple pat in
-    choice [ ppany; ppconst; ppvar; pplist; pptuple ])
+    choice [ ppconst; ppvar; ppany; pplist; pptuple ])
 ;;
 
 (*------------------Binary operators-----------------*)
