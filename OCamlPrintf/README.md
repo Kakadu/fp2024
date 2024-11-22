@@ -36,7 +36,7 @@
 ## Build
 
 ```shell
-cd OcamlPrinf/
+cd OCamlPrintf/
 dune build # Build the project.
 ```
 
@@ -44,7 +44,7 @@ dune build # Build the project.
 
 ```shell
 dune test # Run all tests.
-dune exec ./_build/default/tests/run_qchecker.exe # Run manual and auto generators with shrinker.
+dune exec tests/run_qchecker.exe # Run manual and auto generators with verbose response.
 ```
 
 ## Authors
