@@ -15,10 +15,11 @@ let gen_varname =
       frequency
         [ 26, gen_char_of_range 'a' 'z'; 26, gen_char_of_range 'A' 'Z'; 1, return '_' ]
     in
-    let gen_next_char = frequency [ 53, gen_first_char; 10, gen_char_of_range '0' '9' ] in
+    let gen_next_char =
+      frequency [ 26 + 26 + 1, gen_first_char; 10, gen_char_of_range '0' '9' ]
+    in
     map2
-      (fun first rest ->
-        String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
+      (fun first rest -> String.make 1 first ^ Base.String.of_char_list rest)
       gen_first_char
       (list_size (1 -- 3) gen_next_char)
   in
@@ -28,22 +29,34 @@ let gen_varname =
 let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
 let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 3) gen_ident)
 
-let gen_char =
+let gen_escape_sequence =
   let open QCheck.Gen in
-  let rec loop () =
-    let* char = char_range (Char.chr 32) (Char.chr 126) in
-    match char with
-    | '\\' | '"' -> loop ()
-    | _ -> return char
+  oneofl [ "\\\""; "\\\\"; "\\n"; "\\t" ]
+;;
+
+let gen_string_of_regular_char =
+  let open QCheck.Gen in
+  let gen_int =
+    frequency
+      [ 33 - 32 + 1, int_range 32 33
+      ; 91 - 35 + 1, int_range 35 91
+      ; 126 - 93 + 1, int_range 93 126
+      ]
   in
-  loop ()
+  map (fun c -> String.make 1 c) (map Char.chr gen_int)
+;;
+
+let gen_string =
+  let open QCheck.Gen in
+  let atom = frequency [ 1, gen_escape_sequence; 30, gen_string_of_regular_char ] in
+  let+ atoms = list_size (0 -- 20) atom in
+  String.concat "" atoms
 ;;
 
 type literal =
   | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
-  | String_lt of (string[@gen QCheck.Gen.(string_size (0 -- 5) ~gen:gen_char)])
-  (** ["Hello world"] *)
+  | String_lt of (string[@gen gen_string]) (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
