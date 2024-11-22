@@ -20,6 +20,12 @@ let pp_binop ppf = function
   | Or -> fprintf ppf "||"
 ;;
 
+let pp_unop ppf = function
+  | UnaryPlus -> fprintf ppf "+"
+  | UnaryMinus -> fprintf ppf "-"
+  | UnaryNeg -> fprintf ppf "not "
+;;
+
 let pp_rec_flag ppf = function
   | NonRec -> fprintf ppf ""
   | Rec -> fprintf ppf " rec"
@@ -49,7 +55,7 @@ let rec pp_expr =
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
     | ExprBinOperation (op, e1, e2) ->
       fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
-    | ExprUnOperation _ -> ()
+    | ExprUnOperation (op, e) -> fprintf ppf "%a%a" pp_unop op helper e
     | ExprIf (c, th, el) ->
       (match el with
        | None -> fprintf ppf "if %a then %a" helper c helper th

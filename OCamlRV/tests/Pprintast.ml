@@ -245,3 +245,11 @@ let numder = match arabic with
 ;;
 |}]
 ;;
+
+let%expect_test "" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SEval (ExprUnOperation (UnaryNeg, ExprVariable "a")) ];
+  [%expect {| not a;; |}]
+;;

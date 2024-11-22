@@ -48,7 +48,6 @@ type pattern =
 type expression =
   | ExprVariable of identifier (** x | y | z*)
   | ExprLiteral of literal (** 123 | true | "string" *)
-  | ExprUnaryOperation of unary_operator * expression
   | ExprBinOperation of binary_operator * expression * expression (** 1 + 1 | 2 * 2 *)
   | ExprUnOperation of unary_operator * expression (** -x | not true *)
   | ExprIf of expression * expression * expression option

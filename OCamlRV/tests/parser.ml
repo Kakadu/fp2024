@@ -330,7 +330,7 @@ let%expect_test "unary tests" =
     {|
     [(SValue (NonRec,
         [((PVar "b"),
-          (ExprUnaryOperation (UnaryNeg,
+          (ExprUnOperation (UnaryNeg,
              (ExprBinOperation (Gt, (ExprVariable "x"),
                 (ExprLiteral (IntLiteral 5))))
              )))
