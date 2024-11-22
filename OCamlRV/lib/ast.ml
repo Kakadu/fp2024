@@ -5,7 +5,7 @@
 type identifier = string [@@deriving show { with_path = false }, qcheck]
 
 let gen_identifier = Qcheck_utils.gen_identifier
-let div = 4
+let div = 5
 
 type binary_operator =
   | Add (** + *)
@@ -49,7 +49,10 @@ type type_annotation =
   | AString (** s : string *)
   | AUnit (** () : unit*)
   | AList of type_annotation (** l : int list *)
-  | ATuple of type_annotation list (** t : int * int *)
+  | ATuple of
+      (type_annotation list
+      [@gen QCheck.Gen.(list_size small_nat (gen_type_annotation_sized (n / div)))])
+  (** t : int * int *)
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
