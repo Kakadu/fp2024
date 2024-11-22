@@ -51,7 +51,8 @@ type pattern =
   | PTuple of
       pattern
       * pattern
-      * (pattern list[@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
+      * (pattern list
+        [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
   | POption of pattern option
 [@@deriving show { with_path = false }, qcheck]
@@ -60,7 +61,7 @@ type expression =
   | ExprVariable of identifier (** x | y | z*)
   | ExprLiteral of literal (** 123 | true | "string" *)
   | ExprBinOperation of binary_operator * expression * expression (** 1 + 1 | 2 * 2 *)
-  (* | ExprUnOperation of unary_operator * expression (** -x | not true *) *)
+  | ExprUnOperation of unary_operator * expression (** -x | not true *)
   | ExprIf of expression * expression * expression option
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of
@@ -69,7 +70,8 @@ type expression =
   (** match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of
       rec_flag
-      * (binding list[@gen QCheck.Gen.(list_size small_nat (gen_binding_sized (n / div)))])
+      * (binding list
+        [@gen QCheck.Gen.(list_size small_nat (gen_binding_sized (n / div)))])
       * expression (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of

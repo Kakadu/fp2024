@@ -66,7 +66,7 @@ let rec pp_expr =
   let rec helper ppf = function
     | ExprVariable v -> fprintf ppf "%s" v
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
-    | ExprBinOperation (op, e1, e2) ->    
+    | ExprBinOperation (op, e1, e2) ->
       (match e1, e2 with
        | ExprIf _, _ | ExprLet _, _ ->
          fprintf ppf "(%a) %a %a" helper e1 pp_binop op helper e2
