@@ -66,21 +66,20 @@ let gen_varname =
       (fun first rest ->
         String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
       gen_first_char
-      (list_size (1 -- 5) gen_next_char)
+      (list_size (1 -- 3) gen_next_char)
   in
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
 let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
-let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 5) gen_ident)
+let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 3) gen_ident)
 
 let gen_char =
   let open QCheck.Gen in
   let rec loop () =
     let* char = char_range (Char.chr 32) (Char.chr 126) in
     match char with
-    | '\\' -> loop ()
-    | '"' -> loop ()
+    | '\\' | '"' -> loop ()
     | _ -> return char
   in
   loop ()
