@@ -19,21 +19,20 @@ let gen_varname =
       (fun first rest ->
         String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
       gen_first_char
-      (list_size (1 -- 5) gen_next_char)
+      (list_size (1 -- 3) gen_next_char)
   in
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
 let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
-let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 5) gen_ident)
+let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 3) gen_ident)
 
 let gen_char =
   let open QCheck.Gen in
   let rec loop () =
     let* char = char_range (Char.chr 32) (Char.chr 126) in
     match char with
-    | '\\' -> loop ()
-    | '"' -> loop ()
+    | '\\' | '"' -> loop ()
     | _ -> return char
   in
   loop ()
@@ -42,7 +41,8 @@ let gen_char =
 type literal =
   | Int_lt of (int[@gen QCheck.Gen.pint]) (** [0], [1], [30] *)
   | Bool_lt of bool (** [false], [true] *)
-  | String_lt of (string[@gen QCheck.Gen.string_small_of gen_char]) (** ["Hello world"] *)
+  | String_lt of (string[@gen QCheck.Gen.(string_size (0 -- 5) ~gen:gen_char)])
+  (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
@@ -77,12 +77,12 @@ type 'a list_type =
 type pattern =
   | Wild (** [_] *)
   | PList of
-      (pattern list_type[@gen gen_list_type_sized (gen_pattern_sized (n / 2)) (n / 2)])
+      (pattern list_type[@gen gen_list_type_sized (gen_pattern_sized (n / 8)) (n / 2)])
   (**[ [], hd :: tl, [1;2;3] ]*)
   | PTuple of
       pattern
       * pattern
-      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 2)))])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_pattern_sized (n / 8)))])
   (** | [(a, b)] -> *)
   | PConst of literal (** | [4] -> *)
   | PVar of ident (** pattern identifier *)
@@ -100,9 +100,9 @@ type expr =
   | Tuple of
       expr
       * expr
-      * (expr list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_expr_sized (n / 2)))])
+      * (expr list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_expr_sized (n / 8)))])
   (** [(1, "Hello world", true)] *)
-  | List of (expr list_type[@gen gen_list_type_sized (gen_expr_sized (n / 2)) (n / 2)])
+  | List of (expr list_type[@gen gen_list_type_sized (gen_expr_sized (n / 8)) (n / 2)])
   (** [], hd :: tl, [1;2;3] *)
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
@@ -110,7 +110,7 @@ type expr =
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
       (pattern[@gen gen_pattern_sized (n / 2)])
-      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_pattern_sized (n / 2)))])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_pattern_sized (n / 8)))])
       * expr (** fun x y -> x + y *)
   | Apply of expr * expr (** [sum 1 ] *)
   | Match of
@@ -120,12 +120,12 @@ type expr =
       * ((pattern * expr) list
         [@gen
           QCheck.Gen.(
-            list_size (0 -- 5) (pair (gen_pattern_sized (n / 2)) (gen_expr_sized (n / 2))))])
+            list_size (0 -- 2) (pair (gen_pattern_sized (n / 8)) (gen_expr_sized (n / 8))))])
   (** [match x with | x -> ... | y -> ...] *)
   | LetIn of
       is_recursive
       * let_bind
-      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 5) (gen_let_bind_sized (n / 2)))])
+      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 8)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
 [@@deriving eq, show { with_path = false }, qcheck]
