@@ -70,10 +70,23 @@ let p_bool =
 let p_bool_expr = expr_const_factory p_bool
 let p_bool_pat = pat_const_factory p_bool
 
+let p_escaped_char =
+  char '\\'
+  *> (any_char
+      >>= function
+      | '"' -> return '"'
+      | '\\' -> return '\\'
+      | 'n' -> return '\n'
+      | 't' -> return '\t'
+      | 'r' -> return '\r'
+      | other -> fail (Printf.sprintf "Unknown escape sequence: \\%c" other))
+;;
+
+let p_regular_char = satisfy (fun c -> Char.(c <> '"' && c <> '\\'))
+
 let p_string =
-  skip_ws *> char '"' *> take_while (fun c -> not (Char.equal c '"'))
-  <* char '"'
-  >>| fun x -> String_lt x
+  let+ s = skip_ws *> char '"' *> many (p_regular_char <|> p_escaped_char) <* char '"' in
+  String_lt (String.of_char_list s)
 ;;
 
 let p_string_expr = expr_const_factory p_string

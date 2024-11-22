@@ -70,7 +70,7 @@ and pp_expr fmt expr =
   match expr with
   | Const (Int_lt i) -> fprintf fmt "%d " i
   | Const (Bool_lt b) -> fprintf fmt "%b " b
-  | Const (String_lt s) -> fprintf fmt "\"%s\"" s
+  | Const (String_lt s) -> fprintf fmt "%S" s
   | Const Unit_lt -> fprintf fmt "() "
   | List l -> fprintf fmt "%a " (pp_list pp_expr) l
   | Tuple (e1, e2, rest) ->
