@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>ast.ml &mdash; Coverage report</title>
-    <meta name="description" content="84.03% coverage in lib/ast.ml">
+    <meta name="description" content="83.19% coverage in lib/ast.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,11 @@
           <span class="dirname">lib/</span>ast.ml
         </a>
       </h1>
-      <h2>84.03%</h2>
+      <h2>83.19%</h2>
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:12.85%"></span>
+      <span class="unvisited" style="top:16.76%"></span>
       <span class="unvisited" style="top:22.91%"></span>
       <span class="unvisited" style="top:25.70%"></span>
       <span class="unvisited" style="top:34.08%"></span>
@@ -64,7 +65,7 @@
 <a id="L27"></a><span class="visited"> </span>
 <a id="L28"></a><span class="visited"> </span>
 <a id="L29"></a><span > </span>
-<a id="L30"></a><span class="visited"> </span>
+<a id="L30"></a><span class="unvisited"> </span>
 <a id="L31"></a><span > </span>
 <a id="L32"></a><span > </span>
 <a id="L33"></a><span > </span>
@@ -420,14 +421,14 @@ let gen_id_name =
   <span data-count="4">m</span>ap<span data-count="4">2</span> (fun start rest -&gt; <span data-count="15">S</span>tring.mak<span data-count="15">e</span> 1 start ^ rest) first_char gen_rest
 ;;
 
-<span data-count="45">t</span>ype id = Id of strin<span data-count="45">g</span> * <span data-count="90">s</span>trin<span data-count="0">g</span> optio<span data-count="45">n</span> [@@deriving show { with_path = false }]
+<span data-count="44">t</span>ype id = Id of strin<span data-count="44">g</span> * <span data-count="88">s</span>trin<span data-count="0">g</span> optio<span data-count="44">n</span> [@@deriving show { with_path = false }]
 
 let gen_id = QCheck.Gen.ma<span data-count="4">p</span> (fun name -&gt; <span data-count="15">I</span>d (name, None)) gen_id_name
 
-<span data-count="187">t</span>ype const =
+<span data-count="185">t</span>ype const =
   | Int of (in<span data-count="90">t</span>[@gen QCheck.Gen.int_rang<span data-count="4">e</span> 0 1000])
   | String of
-      (strin<span data-count="1">g</span>
+      (strin<span data-count="0">g</span>
       [@gen
         QCheck.Gen.(
           let printable_without_quotes =
@@ -487,7 +488,7 @@ let divisor = 20
       [@gen QCheck.Gen.(list_siz<span data-count="0">e</span> (0 -<span data-count="0">-</span> 4) (gen_pattern_size<span data-count="0">d</span> (n / divisor)))])
 [@@deriving show { with_path = false }, qcheck<span data-count="44">]</span>
 
-<span data-count="490">t</span>ype expr =
+<span data-count="488">t</span>ype expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
   | Evar of id (* identifiers, e.g. "x", "f"*)
   (* maybe later switch to id, or even now *)
@@ -544,7 +545,7 @@ let divisor = 20
       * (expr[@gen gen_expr_size<span data-count="6">d</span> (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-<span data-count="20">a</span>nd value_binding = Evalue_binding of id * (expr[@gen gen_expr_size<span data-count="15">d</span> (n / divisor)])
+<span data-count="19">a</span>nd value_binding = Evalue_binding of id * (expr[@gen gen_expr_size<span data-count="15">d</span> (n / divisor)])
 [@@deriving show { with_path = false }, qcheck<span data-count="295">]</span>
 
 let gen_expr =
@@ -565,17 +566,17 @@ let gen_case =
     <span data-count="0">g</span>en_case_sized n)
 ;;
 
-<span data-count="50">t</span>ype structure_item =
+<span data-count="49">t</span>ype structure_item =
   | SEval of expr
   | SValue of
       rec_flag
       * (value_binding[@gen gen_value_binding])
-      * (<span data-count="21">v</span>alue_binding lis<span data-count="14">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) gen_value_binding)])
+      * (<span data-count="18">v</span>alue_binding lis<span data-count="12">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (0 -<span data-count="4">-</span> 4) gen_value_binding)])
     (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En e.g. let x = 5 *)
 [@@deriving show { with_path = false }, qcheck<span data-count="20">]</span>
 
-<span data-count="22">t</span>ype structure =
-  (<span data-count="126">s</span>tructure_item lis<span data-count="26">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (1 -<span data-count="4">-</span> 2) gen_structure_item)])
+<span data-count="21">t</span>ype structure =
+  (<span data-count="121">s</span>tructure_item lis<span data-count="25">t</span>[@gen QCheck.Gen.(list_siz<span data-count="4">e</span> (1 -<span data-count="4">-</span> 2) gen_structure_item)])
 [@@deriving show { with_path = false }, qcheck<span data-count="4">]</span>
 </code></pre>
       </div>
