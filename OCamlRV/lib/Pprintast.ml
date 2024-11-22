@@ -20,11 +20,11 @@ let pp_binop ppf = function
   | Or -> fprintf ppf "||"
 ;;
 
-(* let pp_unop ppf = function
-   | UnaryPlus -> fprintf ppf "+"
-   | UnaryMinus -> fprintf ppf "-"
-   | UnaryNeg -> fprintf ppf "not"
-   ;; *)
+let pp_unop ppf = function
+  | UnaryPlus -> fprintf ppf "+"
+  | UnaryMinus -> fprintf ppf "-"
+  | UnaryNeg -> fprintf ppf "not "
+;;
 
 let pp_rec_flag ppf = function
   | NonRec -> fprintf ppf ""
@@ -58,6 +58,7 @@ let pp_pattern =
       (match x with
        | Some x -> fprintf ppf "Some %a" helper x
        | None -> fprintf ppf "None")
+    | PType _ -> ()
   in
   helper
 ;;
@@ -67,18 +68,24 @@ let rec pp_expr =
     | ExprVariable v -> fprintf ppf "%s" v
     | ExprLiteral l -> fprintf ppf "%a" pp_literal l
     | ExprBinOperation (op, e1, e2) ->
-      fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
-    (* | ExprUnOperation (op, e) -> fprintf ppf "%a %a" pp_unop op helper e *)
+      (match e1, e2 with
+       | ExprIf _, _ | ExprLet _, _ ->
+         fprintf ppf "(%a) %a %a" helper e1 pp_binop op helper e2
+       | _, ExprIf _ | _, ExprLet _ ->
+         fprintf ppf "%a %a (%a)" helper e1 pp_binop op helper e2
+       | _ -> fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2)
+    | ExprUnOperation (op, e) -> fprintf ppf "%a%a" pp_unop op helper e
     | ExprIf (c, th, el) ->
       (match el with
        | None -> fprintf ppf "if %a then %a" helper c helper th
        | Some x -> fprintf ppf "if %a then %a else %a" helper c helper th helper x)
     | ExprMatch (e, branches) ->
-      fprintf ppf "match %a with\n" helper e;
+      fprintf ppf "(match %a with\n" helper e;
       List.iter
         (fun (pattern, branch_expr) ->
           fprintf ppf "| %a -> %a\n" pp_pattern pattern helper branch_expr)
-        branches
+        branches;
+      fprintf ppf ")"
     | ExprLet (rf, bl, e) ->
       fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list bl helper e
     | ExprApply (e1, e2) ->
@@ -100,7 +107,7 @@ let rec pp_expr =
       in
       fprintf ppf "(%a)" pp_tuple (p1 :: p2 :: rest)
     | ExprCons (e1, e2) -> fprintf ppf "(%a::%a)" helper e1 helper e2
-    | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
+    | ExprFun (p, e) -> fprintf ppf "(fun %a -> %a)" pp_pattern p helper e
     | ExprOption x ->
       (match x with
        | Some x -> fprintf ppf "Some %a" helper x

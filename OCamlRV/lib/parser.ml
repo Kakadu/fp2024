@@ -19,6 +19,7 @@ let is_keyword = function
   | "then"
   | "else"
   | "and"
+  | "not"
   | "true"
   | "false" -> true
   | _ -> false
@@ -133,6 +134,10 @@ let pattern =
 (*--------------------------- Expressions ---------------------------*)
 
 let ebinop op e1 e2 = ExprBinOperation (op, e1, e2)
+let punary_neg = token "-" *> return UnaryMinus
+let punary_not = token "not" *> return UnaryNeg
+let punary_add = token "+" *> return UnaryPlus
+let punary_op = choice [ punary_neg; punary_not; punary_add ]
 let eapply e1 e2 = ExprApply (e1, e2)
 let elet f b e = ExprLet (f, b, e)
 let efun p e = ExprFun (p, e)
@@ -223,11 +228,12 @@ let expr =
     let apply = chainl1 term (return eapply) in
     let cons = chainl1 apply (token "::" *> return (fun p1 p2 -> ExprCons (p1, p2))) in
     let ife = peif expr <|> cons in
-    let ops1 = chainl1 ife (pmul <|> pdiv) in
+    let opt = p_option ife <|> ife in
+    let unary = lift2 (fun op e -> ExprUnOperation (op, e)) punary_op opt <|> opt in
+    let ops1 = chainl1 unary (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
-    let opt = p_option cmp <|> cmp in
-    let tuple = petuple opt <|> opt in
+    let tuple = petuple cmp <|> cmp in
     choice [ tuple; pelet expr; pematch expr; pefun expr ])
 ;;
 

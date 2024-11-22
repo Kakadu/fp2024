@@ -352,6 +352,21 @@ let%expect_test "double list test" =
        ] |}]
 ;;
 
+let%expect_test "unary tests" =
+  parse_to_unit "let b = not (x > 5)";
+  [%expect
+    {|
+    [(SValue (NonRec,
+        [((PVar "b"),
+          (ExprUnOperation (UnaryNeg,
+             (ExprBinOperation (Gt, (ExprVariable "x"),
+                (ExprLiteral (IntLiteral 5))))
+             )))
+          ]
+        ))
+      ] |}]
+;;
+
 let%expect_test "double list test" =
   parse_to_unit "let b : int = 5";
   [%expect]

@@ -5,6 +5,7 @@
 type identifier = string [@@deriving show { with_path = false }, qcheck]
 
 let gen_identifier = Qcheck_utils.gen_identifier
+let div = 4
 
 type binary_operator =
   | Add (** + *)
@@ -58,7 +59,8 @@ type pattern =
   | PTuple of
       pattern
       * pattern
-      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / 2)))])
+      * (pattern list
+        [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
   | POption of pattern option
   | PType of type_annotation
@@ -68,35 +70,36 @@ type expression =
   | ExprVariable of identifier (** x | y | z*)
   | ExprLiteral of literal (** 123 | true | "string" *)
   | ExprBinOperation of binary_operator * expression * expression (** 1 + 1 | 2 * 2 *)
-  (* | ExprUnOperation of unary_operator * expression (** -x | not true *) *)
+  | ExprUnOperation of unary_operator * expression (** -x | not true *)
   | ExprIf of expression * expression * expression option
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of
       expression
-      * (case list[@gen QCheck.Gen.(list_size (1 -- 4) (gen_case_sized (n / 2)))])
+      * (case list[@gen QCheck.Gen.(list_size small_nat (gen_case_sized (n / div)))])
   (** match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of
       rec_flag
-      * (binding list[@gen QCheck.Gen.(list_size (1 -- 4) (gen_binding_sized (n / 2)))])
+      * (binding list
+        [@gen QCheck.Gen.(list_size small_nat (gen_binding_sized (n / div)))])
       * expression (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of
       expression
       * expression
       * (expression list
-        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_expression_sized (n / 2)))])
+        [@gen QCheck.Gen.(list_size small_nat (gen_expression_sized (n / div)))])
   (** 1, 2, 3 *)
   | ExprCons of expression * expression (** t::tl *)
-  | ExprFun of (pattern[@gen gen_pattern_sized (n / 2)]) * expression (** fun p -> e *)
+  | ExprFun of (pattern[@gen gen_pattern_sized (n / div)]) * expression (** fun p -> e *)
   | ExprOption of expression option
 [@@deriving show { with_path = false }, qcheck]
 
 (** Used in `match` expression *)
-and case = (pattern[@gen gen_pattern_sized (n / 2)]) * expression
+and case = (pattern[@gen gen_pattern_sized (n / div)]) * expression
 [@@deriving show { with_path = false }, qcheck]
 
 (** Used in `let` expression*)
-and binding = (pattern[@gen gen_pattern_sized (n / 2)]) * expression
+and binding = (pattern[@gen gen_pattern_sized (n / div)]) * expression
 [@@deriving show { with_path = false }, qcheck]
 
 let gen_expression =
