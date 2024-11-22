@@ -194,7 +194,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="0">t</span>ype identifier = <span data-count="60">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype identifier = <span data-count="62">s</span>tring [@@deriving show { with_path = false }]
 
 <span data-count="0">t</span>ype binary_operator =
   | Add (** + *)
@@ -222,22 +222,22 @@
   | Rec (** let rec a *)
 [@@deriving show { with_path = false }]
 
-<span data-count="74">t</span>ype literal =
-  | IntLiteral of in<span data-count="28">t</span> (** 123 *)
+<span data-count="76">t</span>ype literal =
+  | IntLiteral of in<span data-count="29">t</span> (** 123 *)
   | BoolLiteral of boo<span data-count="2">l</span> (** true | false *)
   | StringLiteral of strin<span data-count="7">g</span> (** "string" *)
   | UnitLiteral (** () *)
   | NilLiteral (** [] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="58">t</span>ype pattern =
+<span data-count="60">t</span>ype pattern =
   | PAny (** _ *)
   | PLiteral of literal (** 123, true, "string" *)
   | PVar of identifier (** x *)
   | PCons of pattern * pattern (** p1::p2 *)
 [@@deriving show { with_path = false }]
 
-<span data-count="199">t</span>ype expression =
+<span data-count="205">t</span>ype expression =
   | ExprVariable of identifier (** x | y | z*)
   | ExprLiteral of literal (** 123 | true | "string" *)
   | ExprBinOperation of binary_operator * expression * expression (** 1 + 1 | 2 * 2 *)
@@ -259,15 +259,15 @@
 <span data-count="0">a</span>nd case = <span data-count="20">p</span>attern * expression [@@deriving show { with_path = false }]
 
 (** Used in `let` expression*)
-<span data-count="0">a</span>nd binding = <span data-count="20">p</span>attern * expression [@@deriving show { with_path = false }]
+<span data-count="0">a</span>nd binding = <span data-count="22">p</span>attern * expression [@@deriving show { with_path = false }]
 
-<span data-count="25">t</span>ype structure_item =
+<span data-count="26">t</span>ype structure_item =
   | SEval of expression
-  | SValue of rec_flag * <span data-count="63">b</span>inding lis<span data-count="22">t</span>
+  | SValue of rec_flag * <span data-count="69">b</span>inding lis<span data-count="24">t</span>
   (** [SValue(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)])] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="18">t</span>ype structure = <span data-count="90">s</span>tructure_item lis<span data-count="18">t</span> [@@deriving show { with_path = false }]
+<span data-count="19">t</span>ype structure = <span data-count="95">s</span>tructure_item lis<span data-count="19">t</span> [@@deriving show { with_path = false }]
 </code></pre>
       </div>
     </div>

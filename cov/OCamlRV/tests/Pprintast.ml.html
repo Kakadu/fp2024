@@ -269,6 +269,14 @@
 <a id="L245"></a><span > </span>
 <a id="L246"></a><span class="visited"> </span>
 <a id="L247"></a><span > </span>
+<a id="L248"></a><span > </span>
+<a id="L249"></a><span > </span>
+<a id="L250"></a><span class="visited"> </span>
+<a id="L251"></a><span > </span>
+<a id="L252"></a><span > </span>
+<a id="L253"></a><span > </span>
+<a id="L254"></a><span class="visited"> </span>
+<a id="L255"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -520,6 +528,14 @@
 <a href="#L245">245</a>
 <a href="#L246">246</a>
 <a href="#L247">247</a>
+<a href="#L248">248</a>
+<a href="#L249">249</a>
+<a href="#L250">250</a>
+<a href="#L251">251</a>
+<a href="#L252">252</a>
+<a href="#L253">253</a>
+<a href="#L254">254</a>
+<a href="#L255">255</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan *)
 
@@ -767,6 +783,14 @@ let numder = match arabic with
 | 3 -&gt; "three"
 ;;
 |}<span data-count="7">]</span>
+;;
+
+let%expect_test "" =
+  <span data-count="1">F</span>ormat.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SEval (ExprUnOperation (UnaryNeg, ExprVariable "a")) ];
+  <span data-count="1">[</span>%expect {| not a;; |}<span data-count="7">]</span>
 ;;
 </code></pre>
       </div>

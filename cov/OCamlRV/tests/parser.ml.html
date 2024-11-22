@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>parser.ml &mdash; Coverage report</title>
-    <meta name="description" content="97.37% coverage in tests/parser.ml">
+    <meta name="description" content="97.47% coverage in tests/parser.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,11 +15,11 @@
           <span class="dirname">tests/</span>parser.ml
         </a>
       </h1>
-      <h2>97.37%</h2>
+      <h2>97.47%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:3.38%"></span>
-      <span class="unvisited" style="top:5.23%"></span>
+      <span class="unvisited" style="top:3.24%"></span>
+      <span class="unvisited" style="top:5.00%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -349,6 +349,21 @@
 <a id="L323"></a><span > </span>
 <a id="L324"></a><span class="visited"> </span>
 <a id="L325"></a><span > </span>
+<a id="L326"></a><span > </span>
+<a id="L327"></a><span > </span>
+<a id="L328"></a><span class="visited"> </span>
+<a id="L329"></a><span class="visited"> </span>
+<a id="L330"></a><span > </span>
+<a id="L331"></a><span > </span>
+<a id="L332"></a><span > </span>
+<a id="L333"></a><span > </span>
+<a id="L334"></a><span > </span>
+<a id="L335"></a><span > </span>
+<a id="L336"></a><span > </span>
+<a id="L337"></a><span > </span>
+<a id="L338"></a><span > </span>
+<a id="L339"></a><span class="visited"> </span>
+<a id="L340"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -678,6 +693,21 @@
 <a href="#L323">323</a>
 <a href="#L324">324</a>
 <a href="#L325">325</a>
+<a href="#L326">326</a>
+<a href="#L327">327</a>
+<a href="#L328">328</a>
+<a href="#L329">329</a>
+<a href="#L330">330</a>
+<a href="#L331">331</a>
+<a href="#L332">332</a>
+<a href="#L333">333</a>
+<a href="#L334">334</a>
+<a href="#L335">335</a>
+<a href="#L336">336</a>
+<a href="#L337">337</a>
+<a href="#L338">338</a>
+<a href="#L339">339</a>
+<a href="#L340">340</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan *)
 
@@ -687,8 +717,8 @@ open OCamlRV_lib.Ast
 open OCamlRV_lib.Parser
 
 let parse_to_unit input =
-  <span data-count="18">m</span>atch parse input with
-  | <span data-count="18">O</span>k structure -&gt; Stdlib.Format.printf "%s\n" (show_structur<span data-count="18">e</span> structure)
+  <span data-count="19">m</span>atch parse input with
+  | <span data-count="19">O</span>k structure -&gt; Stdlib.Format.printf "%s\n" (show_structur<span data-count="19">e</span> structure)
   | <span data-count="0">E</span>rror err -&gt; Stdlib.Format.printf "%s\n" err
 ;;
 
@@ -1003,6 +1033,21 @@ let%expect_test "double list test" =
            ]
          ))
        ] |}<span data-count="7">]</span>
+;;
+
+let%expect_test "unary tests" =
+  <span data-count="1">p</span>arse_to_unit "let b = not (x &gt; 5)";
+  <span data-count="1">[</span>%expect
+    {|
+    [(SValue (NonRec,
+        [((PVar "b"),
+          (ExprUnOperation (UnaryNeg,
+             (ExprBinOperation (Gt, (ExprVariable "x"),
+                (ExprLiteral (IntLiteral 5))))
+             )))
+          ]
+        ))
+      ] |}<span data-count="7">]</span>
 ;;
 </code></pre>
       </div>
