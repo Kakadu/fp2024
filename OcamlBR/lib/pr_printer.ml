@@ -106,7 +106,7 @@ let rec pp_expr ppf = function
       pp_expr
       e
   | Ebin_op (op, e1, e2) -> fprintf ppf "(%a %a %a)" pp_expr e1 pp_bin_op op pp_expr e2
-  | Eun_op (op, e) -> fprintf ppf "%a%a" pp_un_op op pp_expr e
+  | Eun_op (op, e) -> fprintf ppf "%a(%a)" pp_un_op op pp_expr e
   | Elet (rec_flag, vb, vb_l, e) ->
     fprintf
       ppf
@@ -119,7 +119,7 @@ let rec pp_expr ppf = function
       ()
       pp_expr
       e
-  | Efun_application (e1, e2) -> fprintf ppf "(%a %a)" pp_expr e1 pp_expr e2
+  | Efun_application (e1, e2) -> fprintf ppf "((%a) (%a))" pp_expr e1 pp_expr e2
 
 and pp_value_binding ppf = function
   | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e

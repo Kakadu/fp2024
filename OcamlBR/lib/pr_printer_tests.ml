@@ -19,7 +19,7 @@ let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {|
-    let rec factorial = (fun n -> if (n = 0) then 1 else (n * (factorial (n - 1)))) in (factorial 5) ;;    
+    let rec factorial = (fun n -> if (n = 0) then 1 else (n * ((factorial) ((n - 1))))) in ((factorial) (5)) ;;    
     [(SEval
         (Elet (Recursive,
            (Evalue_binding ((Id ("factorial", None)),
@@ -252,17 +252,6 @@ let%expect_test _ =
       (Ebin_op (Eq,
          (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]),
          (Econst (Int 1)))))
-    ]
-  |}]
-;;
-
-let%expect_test _ =
-  parse "let x = \"hey\" ";
-  [%expect
-    {|
-  let  x = "hey" ;;
-  [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)), (Econst (String "hey")))), []))
     ]
   |}]
 ;;

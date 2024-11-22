@@ -21,7 +21,6 @@ let is_keyword = function
   | "Some"
   | "None"
   | "and"
-  | "or"
   | "match"
   | "with" -> true
   | _ -> false
@@ -68,6 +67,8 @@ let varname =
        >>= fun str ->
        if is_keyword str
        then fail "Variable name conflicts with a keyword"
+       else if String.equal str "_" 
+       then fail "Variable name cannot be _"
        else return str
      | _ -> fail "Variable name must not start with a digit, uppercase letter and \' ")
 ;;
