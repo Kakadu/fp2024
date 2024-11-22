@@ -64,26 +64,36 @@ let pliteral = choice [ pinteger; pbool; pstring; punit; pnil ]
 
 (*--------------------------- Patterns ---------------------------*)
 
-let ppany = token "_" *> return PAny
-let ppliteral = pliteral >>| fun a -> PLiteral a
+let rec annot_list t =
+  let* base = t in
+  let* _ = ws *> string "list" in
+  annot_list (return (AList base)) <|> return (AList base)
+;;
+
+let annot_tuple p =
+  let* t = ws *> p in
+  let* ts = many1 (ws *> char '*' *> ws *> p) in
+  return (ATuple (t :: ts))
+;;
+
+let annot_alone =
+  choice
+    [ token "int" *> return AInt
+    ; token "string" *> return AString
+    ; token "bool" *> return ABool
+    ; token "unit" *> return AUnit
+    ]
+;;
 
 let parse_type_annotation =
-  let annot =
-    let tvar =
-      char '\''
-      *> (satisfy is_id
-          >>= fun varname -> return (PType (AVar ("'" ^ String.make 1 varname))))
-    in
-    choice
-      [ token "int" *> return (PType AInt)
-      ; token "string" *> return (PType AString)
-      ; token "bool" *> return (PType ABool)
-      ; token "()" *> return (PType AUnit)
-      ; tvar
-      ]
-  in
-  token ":" *> ws *> annot
+  let alone = annot_alone in
+  let list_type = annot_list alone <|> alone in
+  let tuple_type = annot_tuple list_type <|> list_type in
+  tuple_type
 ;;
+
+let ppany = token "_" *> return PAny
+let ppliteral = pliteral >>| fun a -> PLiteral a
 
 let variable =
   let* fst =
@@ -115,6 +125,11 @@ let pp_option_some pe = ws *> token "Some" *> pe >>| fun x -> POption (Some x)
 let pp_option pe = choice [ pp_option_none; pp_option_some pe ]
 
 let pattern =
+  let pattern_with_type ppat =
+    let* pat = ws *> token "(" *> ppat in
+    let* constr = ws *> token ":" *> ws *> parse_type_annotation <* ws <* token ")" in
+    return (PType (pat, constr))
+  in
   fix (fun pat ->
     let term =
       choice
@@ -123,7 +138,7 @@ let pattern =
         ; ppvariable
         ; pparens pat
         ; pp_option pat
-        ; parse_type_annotation
+        ; pattern_with_type pat
         ]
     in
     let cons = chainl1 term (token "::" *> return (fun p1 p2 -> PCons (p1, p2))) in

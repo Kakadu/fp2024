@@ -367,7 +367,79 @@ let%expect_test "unary tests" =
       ] |}]
 ;;
 
-let%expect_test "double list test" =
-  parse_to_unit "let b : int = 5";
-  [%expect]
+(* type annotation tests *)
+
+let%expect_test "" =
+  parse_to_unit "let (a : int) = 5";
+  [%expect
+    {|
+    [(SValue (NonRec,
+        [((PType ((PVar "a"), AInt)), (ExprLiteral (IntLiteral 5)))]))
+      ] |}]
+;;
+
+let%expect_test "" =
+  parse_to_unit {| let (a : string) = "hello" |};
+  [%expect
+    {|
+    [(SValue (NonRec,
+        [((PType ((PVar "a"), AString)), (ExprLiteral (StringLiteral "hello")))]
+        ))
+      ] |}]
+;;
+
+let%expect_test "" =
+  parse_to_unit "let (a : bool) = true";
+  [%expect
+    {|
+    [(SValue (NonRec,
+        [((PType ((PVar "a"), ABool)), (ExprLiteral (BoolLiteral true)))]))
+      ] |}]
+;;
+
+let%expect_test "" =
+  parse_to_unit "let (a : unit) = ()";
+  [%expect
+    {|
+    [(SValue (NonRec, [((PType ((PVar "a"), AUnit)), (ExprLiteral UnitLiteral))]
+        ))
+      ] |}]
+;;
+
+let%expect_test "" =
+  parse_to_unit "let (a : int list) = []";
+  [%expect
+    {|
+   [(SValue (NonRec,
+       [((PType ((PVar "a"), (AList AInt))), (ExprLiteral NilLiteral))]))
+     ] |}]
+;;
+
+let%expect_test "" =
+  parse_to_unit "let (a : int * int) = (1, 2)";
+  [%expect
+    {|
+  [(SValue (NonRec,
+      [((PType ((PVar "a"), (ATuple [AInt; AInt]))),
+        (ExprTuple ((ExprLiteral (IntLiteral 1)), (ExprLiteral (IntLiteral 2)),
+           [])))
+        ]
+      ))
+    ] |}]
+;;
+
+let%expect_test "" =
+  parse_to_unit "let f (x : int) (y : int) = x + y;;";
+  [%expect
+    {|
+      [(SValue (NonRec,
+          [((PVar "f"),
+            (ExprFun ((PType ((PVar "x"), AInt)),
+               (ExprFun ((PType ((PVar "y"), AInt)),
+                  (ExprBinOperation (Add, (ExprVariable "x"), (ExprVariable "y")))
+                  ))
+               )))
+            ]
+          ))
+        ] |}]
 ;;

@@ -26,6 +26,26 @@ let pp_unop ppf = function
   | UnaryNeg -> fprintf ppf "not "
 ;;
 
+let pp_annot =
+  let rec helper ppf = function
+    | AInt -> fprintf ppf "int"
+    | ABool -> fprintf ppf "bool"
+    | AString -> fprintf ppf "string"
+    | AUnit -> fprintf ppf "unit"
+    | AList t -> fprintf ppf "%a list" helper t
+    | ATuple l ->
+      let rec pp_tuple_types ppf = function
+        | [] -> fprintf ppf ""
+        | [ x ] -> fprintf ppf "%a" helper x
+        | x :: xs ->
+          fprintf ppf "%a * " helper x;
+          pp_tuple_types ppf xs
+      in
+      fprintf ppf "%a" pp_tuple_types l
+  in
+  helper
+;;
+
 let pp_rec_flag ppf = function
   | NonRec -> fprintf ppf ""
   | Rec -> fprintf ppf " rec"
@@ -58,7 +78,7 @@ let pp_pattern =
       (match x with
        | Some x -> fprintf ppf "Some %a" helper x
        | None -> fprintf ppf "None")
-    | PType _ -> ()
+    | PType (pat, tp) -> fprintf ppf "(%a : %a)" helper pat pp_annot tp
   in
   helper
 ;;

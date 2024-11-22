@@ -258,3 +258,49 @@ let%expect_test "" =
     [ SEval (ExprUnOperation (UnaryNeg, ExprVariable "a")) ];
   [%expect {| not a;; |}]
 ;;
+
+let%expect_test "" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue (NonRec, [ PType (PVar "a", AInt), ExprLiteral (IntLiteral 5) ]) ];
+  [%expect {| let (a : int) = 5;; |}]
+;;
+
+let%expect_test "" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue
+        ( NonRec
+        , [ ( PVar "f"
+            , ExprFun
+                ( PType (PVar "x", AInt)
+                , ExprFun
+                    ( PType (PVar "y", AInt)
+                    , ExprBinOperation (Add, ExprVariable "x", ExprVariable "y") ) ) )
+          ] )
+    ];
+  [%expect {| let f (x : int) = (fun (y : int) -> x + y);; |}]
+;;
+
+let%expect_test "" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue (NonRec, [ PType (PVar "a", AList AInt), ExprLiteral NilLiteral ]) ];
+  [%expect {| let (a : int list) = [];; |}]
+;;
+
+let%expect_test "" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue
+        ( NonRec
+        , [ ( PType (PVar "a", ATuple [ AInt; AInt ])
+            , ExprTuple (ExprLiteral (IntLiteral 1), ExprLiteral (IntLiteral 2), []) )
+          ] )
+    ];
+  [%expect {| let (a : int * int) = (1, 2);; |}]
+;;

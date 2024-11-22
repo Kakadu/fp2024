@@ -48,7 +48,8 @@ type type_annotation =
   | ABool (** b : bool *)
   | AString (** s : string *)
   | AUnit (** () : unit*)
-  | AVar of identifier
+  | AList of type_annotation (** l : int list *)
+  | ATuple of type_annotation list (** t : int * int *)
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
@@ -63,7 +64,7 @@ type pattern =
         [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
   | POption of pattern option
-  | PType of type_annotation
+  | PType of pattern * type_annotation
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =
