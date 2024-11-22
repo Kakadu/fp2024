@@ -12,9 +12,10 @@ let gen_varname =
   let loop =
     let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
     let gen_first_char =
-      oneof [ gen_char_of_range 'a' 'z'; gen_char_of_range 'A' 'Z'; return '_' ]
+      frequency
+        [ 26, gen_char_of_range 'a' 'z'; 26, gen_char_of_range 'A' 'Z'; 1, return '_' ]
     in
-    let gen_next_char = oneof [ gen_first_char; gen_char_of_range '0' '9' ] in
+    let gen_next_char = frequency [ 53, gen_first_char; 10, gen_char_of_range '0' '9' ] in
     map2
       (fun first rest ->
         String.make 1 first ^ String.concat "" (List.map (String.make 1) rest))
