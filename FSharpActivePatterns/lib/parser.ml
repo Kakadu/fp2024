@@ -232,40 +232,26 @@ let p_empty_list =
 
 let make_list e1 e2 = Cons_list (e1, e2)
 
-let p_cons_list p_elem =
-  let p_cons = skip_ws *> (string "::" *> return (fun l r -> Cons_list (l, r))) in
-  let* first_elem = skip_ws *> p_elem <* skip_ws <* string "::" in
-  let* rest = chainr1_cons p_elem p_cons in
-  return (Cons_list (first_elem, rest))
-;;
-
-let p_cons_list_expr p_expr = p_cons_list p_expr >>= fun l -> return (List l)
-let p_cons_list_pat p_pat = p_cons_list p_pat >>= fun l -> return (PList l)
-
-let p_semicolon_list p_elem empty_list =
+let p_semicolon_list p_elem =
   skip_ws
   *> string "["
   *> skip_ws
-  *> fix (fun p_semi_list ->
-    choice
-      [ (p_elem
-         <* skip_ws
-         <* string ";"
-         <* skip_ws
-         >>= fun hd -> p_semi_list >>= fun tl -> return (make_list hd tl))
-      ; (p_elem <* skip_ws <* string "]" >>| fun hd -> make_list hd empty_list)
-      ; string "]" *> return empty_list
-      ])
+  *> let+ list =
+       fix (fun p_semi_list ->
+         choice
+           [ (let* hd = p_elem <* skip_ws <* string ";" in
+              let* tl = p_semi_list in
+              return (hd :: tl))
+           ; (let* hd = p_elem <* skip_ws <* string "]" in
+              return [ hd ])
+           ; skip_ws *> string "]" *> return []
+           ])
+     in
+     list
 ;;
 
-let p_semicolon_list_expr p_expr =
-  p_semicolon_list p_expr Empty_list >>= fun l -> return (List l)
-;;
-
-let p_semicolon_list_pat p_pat =
-  p_semicolon_list p_pat Empty_list >>= fun l -> return (PList l)
-;;
-
+let p_semicolon_list_expr p_expr = p_semicolon_list p_expr >>| fun l -> List l
+let p_semicolon_list_pat p_pat = p_semicolon_list p_pat >>| fun l -> PList l
 let p_unit = skip_ws *> string "(" *> skip_ws *> string ")" *> return Unit_lt
 let p_unit_expr = expr_const_factory p_unit
 let p_unit_pat = pat_const_factory p_unit
@@ -454,7 +440,6 @@ let p_option p make_option =
 let make_option_expr expr = Option expr
 let make_option_pat pat = POption pat
 let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat ]
-let p_empty_list_pat = p_empty_list >>= fun _ -> return (PList Empty_list)
 
 let p_pat =
   fix (fun self ->
@@ -462,9 +447,8 @@ let p_pat =
     *> choice
          [ p_parens self
          ; p_tuple_pat self
-         ; p_empty_list_pat
          ; p_semicolon_list_pat self
-         ; p_cons_list_pat p_var_pat
+         ; p_cons_list_pat self
          ; p_var_pat
          ; p_pat_const
          ; string "_" *> return Wild
