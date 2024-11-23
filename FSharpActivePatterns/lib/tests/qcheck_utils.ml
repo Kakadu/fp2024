@@ -39,17 +39,7 @@ and shrink_expr =
     <+> (shrink_expr e1 >|= fun a' -> Tuple (a', e2, rest))
     <+> (shrink_expr e2 >|= fun a' -> Tuple (e1, a', rest))
     <+> (QCheck.Shrink.list ~shrink:shrink_expr rest >|= fun a' -> Tuple (e1, e2, a'))
-  | List (Cons_list (hd, Cons_list (hd2, tl))) ->
-    of_list
-      [ List (Cons_list (hd, Empty_list))
-      ; List (Cons_list (hd2, tl))
-      ; List (Cons_list (hd, tl))
-      ; List tl
-      ]
-    <+> (shrink_expr hd >|= fun hd' -> List (Cons_list (hd', Cons_list (hd2, tl))))
-    <+> (shrink_expr hd2 >|= fun hd2' -> List (Cons_list (hd, Cons_list (hd2', tl))))
-  | List (Cons_list (hd, Empty_list)) ->
-    shrink_expr hd >|= fun hd' -> List (Cons_list (hd', Empty_list))
+  | List l -> QCheck.Shrink.list ~shrink:shrink_expr l >|= fun l' -> List l'
   | Bin_expr (op, e1, e2) ->
     of_list [ e1; e2 ]
     <+> (shrink_expr e1 >|= fun a' -> bin_e op a' e2)
@@ -97,22 +87,15 @@ and shrink_expr =
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
   | Option None -> empty
   | Variable _ -> empty
-  | List Empty_list -> empty
 
 and shrink_pattern =
   let open QCheck.Iter in
   function
-  | PList (Cons_list (hd, Cons_list (hd2, tl))) ->
-    of_list
-      [ PList (Cons_list (hd, Empty_list))
-      ; PList (Cons_list (hd2, tl))
-      ; PList (Cons_list (hd, tl))
-      ; PList tl
-      ]
-    <+> (shrink_pattern hd >|= fun hd' -> PList (Cons_list (hd', Cons_list (hd2, tl))))
-    <+> (shrink_pattern hd2 >|= fun hd2' -> PList (Cons_list (hd, Cons_list (hd2', tl))))
-  | PList (Cons_list (hd, Empty_list)) ->
-    shrink_pattern hd >|= fun hd' -> PList (Cons_list (hd', Empty_list))
+  | PList l -> QCheck.Shrink.list ~shrink:shrink_pattern l >|= fun l' -> PList l'
+  | PCons (l, r) ->
+    shrink_pattern l
+    >|= (fun l' -> PCons (l', r))
+    <+> (shrink_pattern r >|= fun r' -> PCons (l, r'))
   | PTuple (p1, p2, rest) ->
     of_list [ p1; p2 ]
     <+> (shrink_pattern p1 >|= fun p1' -> PTuple (p1', p2, rest))
@@ -122,7 +105,6 @@ and shrink_pattern =
   | PConst lt -> shrink_lt lt >|= fun lt' -> PConst lt'
   | POption (Some p) -> return p
   | POption None -> empty
-  | PList Empty_list -> empty
   | Wild -> empty
   | PVar _ -> empty
 ;;

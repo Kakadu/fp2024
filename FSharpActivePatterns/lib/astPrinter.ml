@@ -27,19 +27,14 @@ let print_bin_op indent fmt = function
   | Binary_or_bitwise -> fprintf fmt "%s| Binary Or Bitwise\n" (String.make indent '-')
   | Binary_xor_bitwise -> fprintf fmt "%s| Binary Xor Bitwise\n" (String.make indent '-')
   | Binary_and_bitwise -> fprintf fmt "%s| Binary And Bitwise\n" (String.make indent '-')
-;;
-
-let rec print_list printer indent fmt = function
-  | Empty_list -> fprintf fmt "%s| Empty_list:\n" (String.make indent ' ')
-  | Cons_list (hd, tl) ->
-    fprintf fmt "%s| Cons_list:\n" (String.make indent ' ');
-    printer (indent + 2) fmt hd;
-    print_list printer (indent + 2) fmt tl
+  | Binary_cons -> fprintf fmt "%s| Binary Cons\n" (String.make indent '-')
 ;;
 
 let rec print_pattern indent fmt = function
   | Wild -> fprintf fmt "%s| Wild\n" (String.make indent '-')
-  | PList l -> print_list print_pattern indent fmt l
+  | PList l ->
+    fprintf fmt "%s| PList:\n" (String.make indent '-');
+    List.iter (print_pattern (indent + 2) fmt) l
   | PTuple (p1, p2, rest) ->
     fprintf fmt "%s| PTuple:\n" (String.make indent '-');
     List.iter (print_pattern (indent + 2) fmt) (p1 :: p2 :: rest)
@@ -50,6 +45,10 @@ let rec print_pattern indent fmt = function
      | Bool_lt b -> fprintf fmt "%sBool: %b\n" (String.make (indent + 2) '-') b
      | String_lt s -> fprintf fmt "%sString: %S\n" (String.make (indent + 2) '-') s
      | Unit_lt -> fprintf fmt "%sUnit\n" (String.make (indent + 2) '-'))
+  | PCons (l, r) ->
+    fprintf fmt "%s| PCons:\n" (String.make indent '-');
+    print_pattern (indent + 2) fmt l;
+    print_pattern (indent + 2) fmt r
   | PVar (Ident (name, _)) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
   | POption p ->
     fprintf fmt "%s| POption: " (String.make indent '-');
@@ -88,7 +87,9 @@ and print_expr indent fmt expr =
   | Const (String_lt s) ->
     fprintf fmt "%s| Const(String: %S)\n" (String.make indent '-') s
   | Const Unit_lt -> fprintf fmt "%s| Const(Unit)\n" (String.make indent '-')
-  | List l -> print_list print_expr indent fmt l
+  | List l ->
+    fprintf fmt "%s| PList:\n" (String.make indent '-');
+    List.iter (print_expr (indent + 2) fmt) l
   | Tuple (e1, e2, rest) ->
     fprintf fmt "%s| Tuple:\n" (String.make indent '-');
     List.iter (print_expr (indent + 2) fmt) (e1 :: e2 :: rest)

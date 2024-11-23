@@ -21,6 +21,7 @@ let pp_bin_op fmt = function
   | Binary_or_bitwise -> fprintf fmt "||| "
   | Binary_xor_bitwise -> fprintf fmt "^^^ "
   | Binary_and_bitwise -> fprintf fmt "&&& "
+  | Binary_cons -> fprintf fmt "::"
 ;;
 
 let pp_unary_op fmt = function
@@ -33,24 +34,16 @@ let pp_rec_flag fmt = function
   | Nonrec -> ()
 ;;
 
-let pp_list pp fmt = function
-  | Empty_list -> fprintf fmt "[]"
-  | Cons_list (hd, Empty_list) -> fprintf fmt "[%a]" pp hd
-  | Cons_list (hd, tl) ->
-    fprintf fmt "[%a" pp hd;
-    let rec pp_tail fmt = function
-      | Empty_list -> fprintf fmt "]"
-      | Cons_list (hd, Empty_list) -> fprintf fmt "; %a]" pp hd
-      | Cons_list (hd, tl) ->
-        fprintf fmt "; %a" pp hd;
-        pp_tail fmt tl
-    in
-    pp_tail fmt tl
-;;
-
 let rec pp_pattern fmt = function
   | Wild -> fprintf fmt "_ "
-  | PList l -> pp_list pp_pattern fmt l
+  | PList l ->
+    fprintf fmt "[";
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") pp_pattern fmt l;
+    fprintf fmt "]"
+  | PCons (l, r) ->
+    pp_pattern fmt l;
+    fprintf fmt ":: ";
+    pp_pattern fmt r
   | PTuple (p1, p2, rest) ->
     fprintf fmt "(";
     pp_print_list
@@ -59,7 +52,7 @@ let rec pp_pattern fmt = function
       fmt
       (p1 :: p2 :: rest);
     fprintf fmt ")"
-  | PConst literal -> fprintf fmt "%a" pp_expr (Const literal)
+  | PConst literal -> fprintf fmt "%a " pp_expr (Const literal)
   | PVar (Ident (name, _)) -> fprintf fmt "%s " name
   | POption p ->
     (match p with
@@ -72,7 +65,10 @@ and pp_expr fmt expr =
   | Const (Bool_lt b) -> fprintf fmt "%b " b
   | Const (String_lt s) -> fprintf fmt "%S" s
   | Const Unit_lt -> fprintf fmt "() "
-  | List l -> fprintf fmt "%a " (pp_list pp_expr) l
+  | List l ->
+    fprintf fmt "[";
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") pp_expr fmt l;
+    fprintf fmt "]"
   | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
     pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);

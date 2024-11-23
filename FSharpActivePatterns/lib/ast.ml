@@ -76,6 +76,7 @@ type binary_operator =
   | Binary_or_bitwise (** [|||] *)
   | Binary_xor_bitwise (** [^^^] *)
   | Binary_and_bitwise (** [&&&] *)
+  | Binary_cons (** [::] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 type unary_operator =
@@ -83,16 +84,12 @@ type unary_operator =
   | Unary_not (** unary [not] *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
-type 'a list_type =
-  | Cons_list of 'a * 'a list_type
-  | Empty_list
-[@@deriving eq, show { with_path = false }, qcheck]
-
 type pattern =
   | Wild (** [_] *)
   | PList of
-      (pattern list_type[@gen gen_list_type_sized (gen_pattern_sized (n / 20)) (n / 20)])
-  (**[ [], hd :: tl, [1;2;3] ]*)
+      (pattern list[@gen QCheck.Gen.(list_size (0 -- 3) (gen_pattern_sized (n / 20)))])
+  (**[ [], [1;2;3] ] *)
+  | PCons of pattern * pattern (**[ hd :: tl ] *)
   | PTuple of
       pattern
       * pattern
@@ -116,11 +113,11 @@ type expr =
       * expr
       * (expr list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_expr_sized (n / 20)))])
   (** [(1, "Hello world", true)] *)
-  | List of (expr list_type[@gen gen_list_type_sized (gen_expr_sized (n / 20)) (n / 20)])
-  (** [], hd :: tl, [1;2;3] *)
+  | List of (expr list[@gen QCheck.Gen.(list_size (0 -- 3) (gen_expr_sized (n / 20)))])
+  (** [], [1;2;3] *)
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
-  | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12] *)
+  | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12], hd :: tl *)
   | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
       (pattern[@gen gen_pattern_sized (n / 2)])
@@ -134,12 +131,15 @@ type expr =
       * ((pattern * expr) list
         [@gen
           QCheck.Gen.(
-            list_size (0 -- 2) (pair (gen_pattern_sized (n / 20)) (gen_expr_sized (n / 20))))])
+            list_size
+              (0 -- 2)
+              (pair (gen_pattern_sized (n / 20)) (gen_expr_sized (n / 20))))])
   (** [match x with | x -> ... | y -> ...] *)
   | LetIn of
       is_recursive
       * let_bind
-      * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 20)))])
+      * (let_bind list
+        [@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 20)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
 [@@deriving eq, show { with_path = false }, qcheck]
