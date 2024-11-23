@@ -155,7 +155,7 @@ let punary_add = token "+" *> return UnaryPlus
 let punary_op = choice [ punary_neg; punary_not; punary_add ]
 let peunop pe = lift2 (fun op e -> ExprUnOperation (op, e)) punary_op pe
 let eapply e1 e2 = ExprApply (e1, e2)
-let elet f b e = ExprLet (f, b, e)
+let elet f b bl e = ExprLet (f, b, bl, e)
 let efun p e = ExprFun (p, e)
 let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
@@ -212,12 +212,14 @@ let parse_rec_flag =
 ;;
 
 let efunf ps e = List.fold_right ps ~f:efun ~init:e
+let pbinding pe = both pattern (lift2 efunf (many pattern <* token "=") pe)
 
 let pelet pe =
-  lift3
+  lift4
     elet
     (token "let" *> parse_rec_flag)
-    (sep_by (token "and") (both pattern (lift2 efunf (many pattern <* token "=") pe)))
+    (pbinding pe)
+    (many (token "and" *> pbinding pe))
     (token "in" *> pe)
 ;;
 
@@ -257,10 +259,11 @@ let expr =
 let pstructure =
   let pseval = expr >>| fun e -> SEval e in
   let psvalue =
-    lift2
-      (fun f b -> SValue (f, b))
+    lift3
+      (fun f b bl -> SValue (f, b, bl))
       (token "let" *> parse_rec_flag)
-      (sep_by (token "and") (both pattern (lift2 efunf (many pattern <* token "=") expr)))
+      (pbinding expr)
+      (many (token "and" *> pbinding expr))
   in
   choice [ pseval; psvalue ]
 ;;

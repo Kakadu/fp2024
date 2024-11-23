@@ -106,8 +106,8 @@ let rec pp_expr =
           fprintf ppf "| %a -> %a\n" pp_pattern pattern helper branch_expr)
         branches;
       fprintf ppf ")"
-    | ExprLet (rf, bl, e) ->
-      fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list bl helper e
+    | ExprLet (rf, b, bl, e) ->
+      fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list (b :: bl) helper e
     | ExprApply (e1, e2) ->
       (match e2 with
        | ExprBinOperation _ -> fprintf ppf "%a (%a)" helper e1 helper e2
@@ -154,7 +154,7 @@ and pp_binding_list ppf =
 
 let pp_structure ppf = function
   | SEval e -> fprintf ppf "%a" pp_expr e
-  | SValue (rf, bl) -> fprintf ppf "let%a %a" pp_rec_flag rf pp_binding_list bl
+  | SValue (rf, b, bl) -> fprintf ppf "let%a %a" pp_rec_flag rf pp_binding_list (b :: bl)
 ;;
 
 let pp_structure_item_list ppf structure_list =

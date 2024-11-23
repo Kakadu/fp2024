@@ -83,9 +83,11 @@ type expression =
   (** match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of
       rec_flag
+      * binding
       * (binding list
         [@gen QCheck.Gen.(list_size small_nat (gen_binding_sized (n / div)))])
-      * expression (** [ExprLet(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)], e)] *)
+      * expression
+  (** [ExprLet(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
   | ExprTuple of
       expression
@@ -126,10 +128,13 @@ let gen_binding =
 
 type structure_item =
   | SEval of expression
-  | SValue of rec_flag * (binding list[@gen QCheck.Gen.(list_size (1 -- 4) gen_binding)])
-  (** [SValue(rec_flag, [(p_1, e_1) ; ... ; (p_n, e_n)])] *)
+  | SValue of
+      rec_flag
+      * binding
+      * (binding list[@gen QCheck.Gen.(list_size small_nat gen_binding)])
+  (** [SValue(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)])] *)
 [@@deriving show { with_path = false }, qcheck]
 
 type structure =
-  (structure_item list[@gen QCheck.Gen.(list_size (1 -- 2) gen_structure_item)])
+  (structure_item list[@gen QCheck.Gen.(list_size (1 -- 4) gen_structure_item)])
 [@@deriving show { with_path = false }, qcheck]
