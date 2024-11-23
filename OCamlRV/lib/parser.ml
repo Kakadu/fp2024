@@ -169,18 +169,27 @@ let pematch pe =
   lift2 ematch pexpr (sep_by1 grd pcase)
 ;;
 
-let pelist p =
-  brackets @@ sep_by1 (token ";") p
-  >>| List.fold_right
-        ~f:(fun p1 p2 -> ExprCons (p1, p2))
-        ~init:((fun l -> ExprLiteral l) NilLiteral)
+let petuple pe =
+  let* el1 = ws *> pe in
+  let* el2 = token "," *> ws *> pe in
+  let* rest = many (token "," *> pe) in
+  return (ExprTuple (el1, el2, rest))
 ;;
 
-let petuple ppattern =
-  let* el1 = ws *> ppattern in
-  let* el2 = token "," *> ws *> ppattern in
-  let* rest = many (token "," *> ppattern) in
-  return (ExprTuple (el1, el2, rest))
+let pelist pe = brackets @@ sep_by1 (token ";") pe >>| fun l -> ExprList l
+
+let pecons pe =
+  let* e1 = pe in
+  let* rest = many (token "::" *> pe) in
+  if List.length rest = 0
+  then return e1
+  else (
+    let rec helper = function
+      | [] -> ExprLiteral NilLiteral (* unreachable *)
+      | [ x ] -> x
+      | x :: xs -> ExprCons (x, helper xs)
+    in
+    return (helper (e1 :: rest)))
 ;;
 
 let padd = token "+" *> return (ebinop Add)
@@ -244,7 +253,7 @@ let expr =
   fix (fun expr ->
     let term = choice [ pevar; peliteral; pelist expr; pparens expr ] in
     let apply = chainl1 term (return eapply) in
-    let cons = chainl1 apply (token "::" *> return (fun p1 p2 -> ExprCons (p1, p2))) in
+    let cons = pecons apply in
     let ife = peif expr <|> cons in
     let opt = p_option ife <|> ife in
     let ops1 = chainl1 opt (pmul <|> pdiv) in

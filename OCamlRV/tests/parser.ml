@@ -287,12 +287,11 @@ let%expect_test "cons test" =
   [%expect
     {|
     [(SEval
-        (ExprCons (
-           (ExprCons (
-              (ExprCons ((ExprLiteral (IntLiteral 1)),
-                 (ExprLiteral (IntLiteral 2)))),
-              (ExprLiteral (IntLiteral 3)))),
-           (ExprLiteral NilLiteral))))
+        (ExprCons ((ExprLiteral (IntLiteral 1)),
+           (ExprCons ((ExprLiteral (IntLiteral 2)),
+              (ExprCons ((ExprLiteral (IntLiteral 3)), (ExprLiteral NilLiteral)))
+              ))
+           )))
       ]
   |}]
 ;;

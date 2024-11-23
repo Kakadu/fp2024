@@ -18,7 +18,7 @@ let%expect_test "cons test" =
     "%a\n"
     pp_structure_item_list
     [ SEval (ExprCons (ExprVariable "f", ExprVariable "x")) ];
-  [%expect {| (f::x);; |}]
+  [%expect {| f::x;; |}]
 ;;
 
 let%expect_test "let expression test" =
@@ -103,7 +103,7 @@ let%expect_test _ =
                ( ExprLiteral (IntLiteral 2)
                , ExprCons (ExprLiteral (IntLiteral 3), ExprLiteral NilLiteral) ) ))
     ];
-  [%expect {| (1::(2::(3::[])));; |}]
+  [%expect {| 1::2::3::[];; |}]
 ;;
 
 let%expect_test "bin op with parentheses" =
@@ -189,7 +189,7 @@ let%expect_test "bin op with if then else" =
            , ExprLiteral (IntLiteral 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
-  [%expect {| 1 + (if a then b else c);; |}]
+  [%expect {| 1 + if a then b else c;; |}]
 ;;
 
 let%expect_test "bin op with if then else" =
@@ -202,7 +202,7 @@ let%expect_test "bin op with if then else" =
            , ExprLiteral (IntLiteral 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
-  [%expect {| 1 + (if a then b else c);; |}]
+  [%expect {| 1 + if a then b else c;; |}]
 ;;
 
 let%expect_test "pretty print match with multiple branches" =
@@ -218,11 +218,11 @@ let%expect_test "pretty print match with multiple branches" =
              ] ))
     ];
   [%expect {|
-(match x with
+match x with
 | 0 -> "zero"
 | 1 -> "one"
 | _ -> "other"
-);;
+;;
 |}]
 ;;
 
@@ -243,11 +243,11 @@ let%expect_test "let expr with match match with multiple branches" =
     ];
   [%expect
     {|
-let numder = (match arabic with
+let numder = match arabic with
 | 1 -> "one"
 | 2 -> "two"
 | 3 -> "three"
-);;
+;;
 |}]
 ;;
 
@@ -281,7 +281,7 @@ let%expect_test "" =
                   , ExprBinOperation (Add, ExprVariable "x", ExprVariable "y") ) ) )
         , [] )
     ];
-  [%expect {| let f (x : int) = (fun (y : int) -> x + y);; |}]
+  [%expect {| let f (x : int) = fun (y : int) -> x + y;; |}]
 ;;
 
 let%expect_test "" =

@@ -95,6 +95,9 @@ type expression =
       * (expression list
         [@gen QCheck.Gen.(list_size small_nat (gen_expression_sized (n / div)))])
   (** 1, 2, 3 *)
+  | ExprList of
+      (expression list
+      [@gen QCheck.Gen.(list_size small_nat (gen_expression_sized (n / div)))])
   | ExprCons of expression * expression (** t::tl *)
   | ExprFun of (pattern[@gen gen_pattern_sized (n / div)]) * expression (** fun p -> e *)
   | ExprOption of expression option
