@@ -187,9 +187,12 @@ let rec print_expr pblock = function
     in
     print_un_op operator ^ print_operand
   | Expr_chan_receive operand as expr ->
-    if precedence expr > precedence operand
-    then asprintf "<-(%s)" ((print_expr pblock) operand)
-    else asprintf "<-%s" ((print_expr pblock) operand)
+    let print_operand =
+      if precedence expr > precedence operand
+      then asprintf "(%s)" ((print_expr pblock) operand)
+      else (print_expr pblock) operand
+    in
+    asprintf "<-%s" print_operand
   | Expr_call call -> print_func_call (print_expr pblock) call
 ;;
 
