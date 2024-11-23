@@ -252,21 +252,23 @@ let p_option p make_option =
 
 let make_option_expr expr = Option expr
 let make_option_pat pat = POption pat
-let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat ]
+let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat ]
 
 let p_pat =
-  fix (fun self ->
-    skip_ws
-    *> choice
-         [ p_parens self
-         ; p_tuple_pat self
-         ; p_semicolon_list_pat self
-         ; p_cons_list_pat self
-         ; p_var_pat
-         ; p_pat_const
-         ; string "_" *> return Wild
-         ; p_option self make_option_pat
-         ])
+  skip_ws
+  *> fix (fun self ->
+    let atom =
+      choice
+        [ p_pat_const
+        ; string "_" *> return Wild
+        ; p_tuple_pat self
+        ; p_semicolon_list_pat self
+        ; p_parens self
+        ]
+    in
+    let cons = skip_ws *> p_cons_list_pat atom  <|> atom in
+    let opt = p_option cons make_option_pat <|> cons in
+    opt)
 ;;
 
 let p_lambda p_expr =
@@ -274,23 +276,23 @@ let p_lambda p_expr =
   *> string "fun"
   *> peek_sep1
   *>
-  let* pat = p_pat in
-  let* pat_list = many p_pat in
-  let* _ = skip_ws *> string "->" in
-  let* body = p_expr in
+  let* pat = skip_ws *> p_pat <* skip_ws in
+  let* pat_list = (many p_pat) <* skip_ws <* string "->" in
+  let* body = skip_ws *> p_expr <* skip_ws in
   return (Lambda (pat, pat_list, body))
 ;;
 
 let p_match p_expr =
   lift4
-    (fun value pat1 expr1 list -> Match (value, pat1, expr1, list))
-    (skip_ws *> string "match" *> p_expr <* skip_ws <* string "with")
-    (skip_ws *> string "|" *> p_pat <* skip_ws <* string "->")
-    p_expr
+    (fun value first_pat first_expr cases -> Match (value, first_pat, first_expr, cases))
+    (skip_ws *> string "match" *> skip_ws *> p_expr <* skip_ws <* string "with")
+    (skip_ws *> string "|" *> skip_ws *> p_pat <* skip_ws <* string "->" <* skip_ws)
+    (p_expr <* skip_ws)
     (many
-       (skip_ws *> string "|" *> p_pat
+       (skip_ws *> string "|" *> skip_ws *> p_pat
         <* skip_ws
         <* string "->"
+        <* skip_ws
         >>= fun pat -> p_expr >>= fun expr -> return (pat, expr)))
 ;;
 
