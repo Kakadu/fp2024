@@ -48,7 +48,6 @@ let gen_ident =
   gen_filtered_ident base_gen
 ;;
 
-(* Генератор идентификаторов с заглавной буквы *)
 let gen_ident_uc =
   let base_gen =
     map2
@@ -62,7 +61,6 @@ let gen_ident_uc =
   gen_filtered_ident base_gen
 ;;
 
-(* Генератор идентификаторов с маленькой буквы, с возможностью включать '_' *)
 let gen_ident_lc include_us =
   let start_sym =
     if include_us then oneof [ char_range 'a' 'z'; return '_' ] else char_range 'a' 'z'
@@ -89,7 +87,6 @@ module List2 = struct
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
-(* Constants *)
 module Constant = struct
   type t =
     | Const_integer of (int[@gen small_nat]) (** integer as [52] *)
@@ -99,7 +96,6 @@ module Constant = struct
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
-(* Type Expressions *)
 module TypeExpr = struct
   type t =
     | Type_arrow of t * t (** [Type_arrow(T1, T2)] represents:
@@ -109,7 +105,6 @@ module TypeExpr = struct
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
-(* Patterns *)
 module Pattern = struct
   type t =
     | Pat_constraint of t * (TypeExpr.t[@gen TypeExpr.gen_sized (n / 2)])
@@ -127,7 +122,6 @@ module Pattern = struct
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
-(* Expressions *)
 module Expression = struct
   type rec_flag =
     | Nonrecursive
