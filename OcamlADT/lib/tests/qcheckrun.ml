@@ -7,7 +7,7 @@ open Stdio
 open Ocamladt_lib.Parser
 open Ocamladt_lib.Ast
 open Ocamladt_lib.Pprinter
-open Format
+open Stdlib.Format
 
 let arbitrary =
   QCheck.make

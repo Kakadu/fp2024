@@ -5,7 +5,7 @@
 open Base
 open Angstrom
 open Ast
-open Format
+open Stdlib.Format
 
 let get_op_pr id =
   let open Expression in
@@ -321,5 +321,5 @@ let pprint_program fmt = List.iter ~f:(pprint_structure_item fmt 0)
 let pp printer parser str =
   match parse_string ~consume:Angstrom.Consume.All parser str with
   | Ok res -> printer std_formatter res
-  | Error _ -> print_endline "Syntax error"
+  | Error _ -> Stdio.print_endline "Syntax error"
 ;;
