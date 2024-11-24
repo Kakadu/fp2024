@@ -134,5 +134,5 @@ let prop_round_trip =
     Result.ok s = parse (Format.asprintf "%a" pp_structure_item_list s))
 ;;
 
-QCheck_base_runner.set_seed 52987003;;
+(* QCheck_base_runner.set_seed 280237465;; *)
 QCheck_base_runner.run_tests [ prop_round_trip ]

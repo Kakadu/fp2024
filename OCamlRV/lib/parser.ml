@@ -151,8 +151,7 @@ let pattern =
         ; ppliteral
         ; ppvariable
         ; pparens pat
-        ; pp_option pat
-        (* ; pattern_with_type pat *)
+        ; pp_option pat (* ; pattern_with_type pat *)
         ]
     in
     let cons = ppcons term in
@@ -174,7 +173,13 @@ let efun p e = ExprFun (p, e)
 let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
 let peliteral = pliteral >>| fun l -> ExprLiteral l
-let ematch e cl = ExprMatch (e, cl)
+
+let ematch e cl =
+  match cl with
+  | [ x ] -> ExprMatch (e, x, [])
+  | x :: xs -> ExprMatch (e, x, xs)
+;;
+
 let grd = token "|"
 
 let pematch pe =
@@ -190,13 +195,14 @@ let petuple pe =
   return (ExprTuple (el1, el2, rest))
 ;;
 
-let pelist pe = brackets @@ sep_by1 (token ";") pe >>| 
-(fun l ->
+let pelist pe =
+  brackets @@ sep_by1 (token ";") pe
+  >>| fun l ->
   match l with
-  | [] -> ExprLiteral (NilLiteral)
+  | [] -> ExprLiteral NilLiteral
   | [ x ] -> ExprList (x, [])
-  | x::xs -> ExprList (x, xs)
-)
+  | x :: xs -> ExprList (x, xs)
+;;
 
 let pecons pe =
   let* e1 = pe in

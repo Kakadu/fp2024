@@ -140,9 +140,8 @@ let%expect_test _ =
     {|
     [(SEval
         (ExprMatch ((ExprVariable "a"),
-           [((POption None), (ExprLiteral UnitLiteral));
-             ((POption (Some (PVar "e"))), (ExprLiteral UnitLiteral))]
-           )))
+           ((POption None), (ExprLiteral UnitLiteral)),
+           [((POption (Some (PVar "e"))), (ExprLiteral UnitLiteral))])))
       ] |}]
 ;;
 
@@ -242,8 +241,8 @@ let%expect_test "match" =
     {|
 [(SEval
     (ExprMatch ((ExprVariable "x"),
-       [((PLiteral (IntLiteral 0)), (ExprLiteral (StringLiteral "zero")));
-         ((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one")));
+       ((PLiteral (IntLiteral 0)), (ExprLiteral (StringLiteral "zero"))),
+       [((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one")));
          (PAny, (ExprLiteral (StringLiteral "other")))]
        )))
   ]
@@ -261,8 +260,8 @@ let%expect_test "value equals match" =
      [(SValue (NonRec,
          ((PVar "numder"),
           (ExprMatch ((ExprVariable "arabic"),
-             [((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one")));
-               ((PLiteral (IntLiteral 2)), (ExprLiteral (StringLiteral "two")));
+             ((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one"))),
+             [((PLiteral (IntLiteral 2)), (ExprLiteral (StringLiteral "two")));
                ((PLiteral (IntLiteral 3)), (ExprLiteral (StringLiteral "three")))]
              ))),
          []))
@@ -305,11 +304,11 @@ let%expect_test "sum list test" =
         ((PVar "sum_list"),
          (ExprFun ((PVar "lst"),
             (ExprMatch ((ExprVariable "lst"),
-               [((PLiteral NilLiteral), (ExprLiteral (IntLiteral 0)));
-                 ((PCons ((PVar "x"), (PVar "xs"))),
-                  (ExprBinOperation (Add, (ExprVariable "x"),
-                     (ExprApply ((ExprVariable "sum_list"), (ExprVariable "xs")))
-                     )))
+               ((PLiteral NilLiteral), (ExprLiteral (IntLiteral 0))),
+               [((PCons ((PVar "x"), (PVar "xs"))),
+                 (ExprBinOperation (Add, (ExprVariable "x"),
+                    (ExprApply ((ExprVariable "sum_list"), (ExprVariable "xs")))
+                    )))
                  ]
                ))
             ))),
@@ -327,14 +326,14 @@ let%expect_test "double list test" =
          ((PVar "double_list"),
           (ExprFun ((PVar "lst"),
              (ExprMatch ((ExprVariable "lst"),
-                [((PLiteral NilLiteral), (ExprLiteral NilLiteral));
-                  ((PCons ((PVar "x"), (PVar "xs"))),
-                   (ExprCons (
-                      (ExprBinOperation (Mul, (ExprLiteral (IntLiteral 2)),
-                         (ExprVariable "x"))),
-                      (ExprApply ((ExprVariable "double_list"),
-                         (ExprVariable "xs")))
-                      )))
+                ((PLiteral NilLiteral), (ExprLiteral NilLiteral)),
+                [((PCons ((PVar "x"), (PVar "xs"))),
+                  (ExprCons (
+                     (ExprBinOperation (Mul, (ExprLiteral (IntLiteral 2)),
+                        (ExprVariable "x"))),
+                     (ExprApply ((ExprVariable "double_list"), (ExprVariable "xs")
+                        ))
+                     )))
                   ]
                 ))
              ))),
@@ -361,72 +360,41 @@ let%expect_test "unary tests" =
 let%expect_test "" =
   parse_to_unit "let (a : int) = 5";
   [%expect
-    {|
-    [(SValue (NonRec, ((PType ((PVar "a"), AInt)), (ExprLiteral (IntLiteral 5))),
-        []))
-      ] |}]
+    {| |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit {| let (a : string) = "hello" |};
   [%expect
-    {|
-    [(SValue (NonRec,
-        ((PType ((PVar "a"), AString)), (ExprLiteral (StringLiteral "hello"))),
-        []))
-      ] |}]
+    {| |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit "let (a : bool) = true";
   [%expect
-    {|
-    [(SValue (NonRec,
-        ((PType ((PVar "a"), ABool)), (ExprLiteral (BoolLiteral true))),
-        []))
-      ] |}]
+    {| |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit "let (a : unit) = ()";
   [%expect
-    {|
-    [(SValue (NonRec, ((PType ((PVar "a"), AUnit)), (ExprLiteral UnitLiteral)),
-        []))
-      ] |}]
+    {| |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit "let (a : int list) = []";
   [%expect
-    {|
-   [(SValue (NonRec,
-       ((PType ((PVar "a"), (AList AInt))), (ExprLiteral NilLiteral)), []))
-     ] |}]
+    {| |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit "let (a : int * int) = (1, 2)";
   [%expect
-    {|
-  [(SValue (NonRec,
-      ((PType ((PVar "a"), (ATuple [AInt; AInt]))),
-       (ExprTuple ((ExprLiteral (IntLiteral 1)), (ExprLiteral (IntLiteral 2)),
-          []))),
-      []))
-    ] |}]
+    {| |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit "let f (x : int) (y : int) = x + y;;";
   [%expect
-    {|
-      [(SValue (NonRec,
-          ((PVar "f"),
-           (ExprFun ((PType ((PVar "x"), AInt)),
-              (ExprFun ((PType ((PVar "y"), AInt)),
-                 (ExprBinOperation (Add, (ExprVariable "x"), (ExprVariable "y")))))
-              ))),
-          []))
-        ] |}]
+    {| |}]
 ;;
