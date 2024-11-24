@@ -120,10 +120,10 @@ let rec pprint_expression fmt (n : int) =
              (List.map exl ~f:(fun ex ->
                 let op_pr_t = get_op_pr ex in
                 asprintf "%a" (fun fmt -> pprint_expression fmt (op_pr_t + 1)) ex)))
+  | Exp_function (cs1, csl) when n > 0 ->
+    fprintf fmt "(%a)" pprint_function_with_cases (cs1, csl, n + 1)
   | Exp_function (cs1, csl) ->
-    if n > 0
-    then fprintf fmt "(%a)" pprint_function_with_cases (cs1, csl, n + 1)
-    else fprintf fmt "%a" pprint_function_with_cases (cs1, csl, n + 1)
+    fprintf fmt "%a" pprint_function_with_cases (cs1, csl, n + 1)
   | Exp_fun (ptl1, exp) ->
     let pt1, ptl = ptl1 in
     let if_string =
