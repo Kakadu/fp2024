@@ -4,20 +4,41 @@
 
 let gen_id_name =
   let open QCheck.Gen in
-  let first_char = oneof [ char_range 'a' 'z'; return '_' ] in
-  let rest_char =
-    frequency
-      [ 26, char_range 'a' 'z'
-      ; 26, char_range 'A' 'Z'
-      ; 10, char_range '0' '9'
-      ; 1, return '_'
-      ; 1, return '\''
-      ]
+  let varname =
+    let first_char = oneof [ char_range 'a' 'z'; return '_' ] in
+    let rest_char =
+      frequency
+        [ 26, char_range 'a' 'z'
+        ; 26, char_range 'A' 'Z'
+        ; 10, char_range '0' '9'
+        ; 1, return '_'
+        ; 1, return '\''
+        ]
+    in
+    (* limit the total length to 15 characters *)
+    let gen_rest = string_size ~gen:rest_char (int_range 1 14) in
+    (* combine the first character with the generated rest part *)
+    map2 (fun start rest -> String.make 1 start ^ rest) first_char gen_rest
   in
-  (* limit the total length to 15 characters *)
-  let gen_rest = string_size ~gen:rest_char (int_range 1 14) in
-  (* combine the first character with the generated rest part *)
-  map2 (fun start rest -> String.make 1 start ^ rest) first_char gen_rest
+  let is_keyword = function
+    | "let"
+    | "in"
+    | "fun"
+    | "rec"
+    | "if"
+    | "then"
+    | "else"
+    | "true"
+    | "false"
+    | "Some"
+    | "None"
+    | "and"
+    | "match"
+    | "with" -> true
+    | _ -> false
+  in
+  (* unallow varname same as keyword *)
+  varname >>= fun name -> if is_keyword name then varname else return name
 ;;
 
 type id = Id of string * string option [@@deriving show { with_path = false }]
