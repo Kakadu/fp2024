@@ -70,12 +70,6 @@ let rec annot_list t =
   annot_list (return (AList base)) <|> return (AList base)
 ;;
 
-let annot_tuple p =
-  let* t = ws *> token "(" *> p in
-  let* ts = many1 (ws *> char '*' *> ws *> p) <* token ")" in
-  return (ATuple (t :: ts))
-;;
-
 let annot_alone =
   choice
     [ token "int" *> return AInt
@@ -88,8 +82,7 @@ let annot_alone =
 let parse_type_annotation =
   let alone = annot_alone in
   let list_type = annot_list alone <|> alone in
-  let tuple_type = annot_tuple list_type <|> list_type in
-  tuple_type
+  list_type
 ;;
 
 let ppany = token "_" *> return PAny
@@ -142,7 +135,7 @@ let pattern =
   let pattern_with_type ppat =
     let* pat = ws *> token "(" *> ppat in
     let* constr = ws *> token ":" *> ws *> parse_type_annotation <* ws <* token ")" in
-    return ()
+    return (PType (pat, constr))
   in
   fix (fun pat ->
     let term =
@@ -151,7 +144,8 @@ let pattern =
         ; ppliteral
         ; ppvariable
         ; pparens pat
-        ; pp_option pat (* ; pattern_with_type pat *)
+        ; pp_option pat
+        ; pattern_with_type pat
         ]
     in
     let cons = ppcons term in

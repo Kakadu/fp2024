@@ -17,6 +17,6 @@
  (instrumentation
   (backend bisect_ppx)))
 
-; (cram
-;  (applies_to quickcheck)
-;  (deps ../tests/quickcheck.exe))
+(cram
+ (applies_to quickcheck)
+ (deps ../tests/quickcheck.exe))

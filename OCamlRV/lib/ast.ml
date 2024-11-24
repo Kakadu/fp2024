@@ -5,7 +5,7 @@
 type identifier = string [@@deriving show { with_path = false }, qcheck]
 
 let gen_identifier = Qcheck_utils.gen_identifier
-let div = 10
+let div = 15
 
 type binary_operator =
   | Add (** + *)
@@ -49,10 +49,6 @@ type type_annotation =
   | AString (** s : string *)
   | AUnit (** () : unit*)
   | AList of type_annotation (** l : int list *)
-  | ATuple of
-      (type_annotation list
-      [@gen QCheck.Gen.(list_size small_nat (gen_type_annotation_sized (n / div)))])
-  (** t : int * int *)
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
@@ -66,7 +62,8 @@ type pattern =
       * (pattern list
         [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
-  | POption of pattern option (* | PType of pattern * type_annotation *)
+  | POption of pattern option
+  | PType of pattern * type_annotation
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =

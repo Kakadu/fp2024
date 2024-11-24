@@ -33,15 +33,6 @@ let pp_annot =
     | AString -> fprintf ppf "string"
     | AUnit -> fprintf ppf "unit"
     | AList t -> fprintf ppf "%a list" helper t
-    | ATuple l ->
-      let rec pp_tuple_types ppf = function
-        | [] -> fprintf ppf ""
-        | [ x ] -> fprintf ppf "%a" helper x
-        | x :: xs ->
-          fprintf ppf "%a * " helper x;
-          pp_tuple_types ppf xs
-      in
-      fprintf ppf "(%a)" pp_tuple_types l
   in
   helper
 ;;
@@ -91,7 +82,7 @@ let pp_pattern =
       (match x with
        | Some x -> fprintf ppf "Some (%a)" helper x
        | None -> fprintf ppf "None")
-    (* | PType (pat, tp) -> fprintf ppf "(%a : %a)" helper pat pp_annot tp *)
+    | PType (pat, tp) -> fprintf ppf "(%a : %a)" helper pat pp_annot tp
   in
   helper
 ;;
@@ -136,7 +127,10 @@ let rec pp_expr =
       fprintf ppf "match %a with\n" helper e;
       let ppmatch ppf branches =
         let pattern, branch_expr = branches in
-        fprintf ppf "| %a -> (%a)" pp_pattern pattern helper branch_expr
+        match branch_expr with
+        | ExprVariable _ | ExprLiteral _ ->
+          fprintf ppf "| %a -> %a" pp_pattern pattern helper branch_expr
+        | _ -> fprintf ppf "| %a -> (%a)" pp_pattern pattern helper branch_expr
       in
       let rec ppmatch_helper ppf = function
         | [] -> ()
