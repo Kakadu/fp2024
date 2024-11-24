@@ -439,23 +439,21 @@ let p_option p make_option =
 
 let make_option_expr expr = Option expr
 let make_option_pat pat = POption pat
-let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat ]
+let p_wild_pat = skip_ws *> string "_" *> return Wild
+
+let p_pat_const =
+  choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat; p_wild_pat ]
+;;
 
 let p_pat =
   skip_ws
   *> fix (fun self ->
-    let atom =
-      choice
-        [ p_pat_const
-        ; string "_" *> return Wild
-        ; p_tuple_pat self
-        ; p_semicolon_list_pat self
-        ; p_parens self
-        ]
-    in
-    let cons = skip_ws *> p_cons_list_pat atom  <|> atom in
-    let opt = p_option cons make_option_pat <|> cons in
-    opt)
+    let atom = choice [ p_pat_const; p_parens self ] in
+    let tuple = p_tuple_pat (self <|> atom) <|> atom in
+    let semicolon_list = p_semicolon_list_pat (self <|> tuple) <|> tuple in
+    let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
+    let cons = p_cons_list_pat opt in
+    cons)
 ;;
 
 let p_lambda p_expr =
@@ -464,7 +462,7 @@ let p_lambda p_expr =
   *> peek_sep1
   *>
   let* pat = skip_ws *> p_pat <* skip_ws in
-  let* pat_list = (many p_pat) <* skip_ws <* string "->" in
+  let* pat_list = many p_pat <* skip_ws <* string "->" in
   let* body = skip_ws *> p_expr <* skip_ws in
   return (Lambda (pat, pat_list, body))
 ;;
