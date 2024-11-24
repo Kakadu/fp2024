@@ -13,7 +13,7 @@ open Patterns
 open Constants
 open Types
 
-let parse_expr_ident = parse_ident >>| fun i -> Expr_ident_or_op i
+let parse_expr_ident_or_op = parse_ident_or_op >>| fun i -> Expr_ident_or_op i
 let parse_expr_const = parse_const >>| fun c -> Expr_const c
 
 let parse_expr_ite parse_expr =
@@ -46,10 +46,13 @@ let parse_ws_as_app =
   | _ -> fail "cannot apply function to non-identificator"
 ;;
 
+(* For now, doesn't halt when trying to parse float operations *)
 let parse_expr_app parse_expr =
   let app = chainl parse_expr parse_ws_as_app <|> parse_expr in
   let app = chainl app (parse_bin_op_as_app "*" <|> parse_bin_op_as_app "/") <|> app in
   let app = chainl app (parse_bin_op_as_app "+" <|> parse_bin_op_as_app "-") <|> app in
+  (* let app = chainl app (parse_bin_op_as_app "*." <|> parse_bin_op_as_app "/.") <|> app in *)
+  (* let app = chainl app (parse_bin_op_as_app "+." <|> parse_bin_op_as_app "-.") <|> app in *)
   let app =
     chainl
       app
@@ -86,7 +89,7 @@ let parse_binding_val parse_expr =
 ;;
 
 let parse_binding_fun parse_expr =
-  let* name = parse_pat_ident (* ops are not yet supported *) in
+  let* name = parse_pat_ident_or_op in
   let* args = many1 (skip_ws *> parse_pat) in
   skip_token "="
   *>
@@ -170,8 +173,8 @@ let parse_expr =
         ; parse_expr_function parse_expr
         ; parse_expr_lambda parse_expr
         ; parse_expr_let parse_expr
+        ; parse_expr_ident_or_op
         ; parse_expr_const
-        ; parse_expr_ident
         ]
     in
     let expr = parse_expr_tuple expr <|> parse_expr_app expr <|> expr in

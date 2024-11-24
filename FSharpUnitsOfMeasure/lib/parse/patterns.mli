@@ -15,8 +15,8 @@ val parse_pat : pattern t
 (** [parse_pat_wild] accepts [ _ ] pattern and returns it *)
 val parse_pat_wild : pattern t
 
-(** [parse_pat_ident] accepts identificator pattern and returns it *)
-val parse_pat_ident : pattern t
+(** [parse_pat_ident_or_op] accepts identificator or operator pattern and returns it *)
+val parse_pat_ident_or_op : pattern t
 
 (** [parse_pat_const] accepts constant pattern and returns it *)
 val parse_pat_const : pattern t
