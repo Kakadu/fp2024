@@ -1,12 +1,6 @@
 (library
  (name qcheckrun)
- (libraries
-  stdio
-  ocamladt_lib
-  qcheck-core
-  qcheck-core.runner
-  qshrinker
-  qcheck)
+ (libraries stdio ocamladt_lib qcheck-core qcheck-core.runner qshrinker)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (instrumentation
