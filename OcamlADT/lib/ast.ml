@@ -9,6 +9,11 @@ open Stdlib
 
 type ident = string [@@deriving eq, show { with_path = false }]
 
+let small_list gen_a =
+  let* a = gen_a in
+  return [ a ]
+;;
+
 let gen_charc = map Char.chr (int_range (Char.code 'a') (Char.code 'z'))
 
 let is_not_keyword = function
@@ -212,7 +217,7 @@ module Structure = struct
     Printf.printf "n =  %d\n\n" n;
     frequency
       [ 1, map (fun expr -> Str_eval expr) (Expression.gen_sized (n / 2))
-      ; ( 0
+      ; ( 1
         , let* rec_flag =
             oneof [ return Expression.Nonrecursive; return Expression.Recursive ]
           in
@@ -228,5 +233,5 @@ end
 type program = Structure.structure_item list [@@deriving eq, show { with_path = false }]
 
 module Program = struct
-  let gen_program n = list_size (int_bound 5) (Structure.gen_structure_item (n / 3))
+  let gen_program n = list_size (int_bound 1) (Structure.gen_structure_item (n / 2))
 end

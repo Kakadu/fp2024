@@ -8,19 +8,18 @@ open Ocamladt_lib.Parser
 open Ocamladt_lib.Ast
 open Ocamladt_lib.Pprinter
 open Format
-open Qshrinker
 
 let arbitrary =
   QCheck.make
     ~print:(fun p -> Format.asprintf "%a" pp_program p)
-    (* ~shrink:Shrinker.ShrinkQCheck.shrink_structure *)
-    (Program.gen_program 6)
+    (*    ~shrink:Shrinker.ShrinkQCheck.shrink_structure *)
+    (Program.gen_program 26)
 ;;
 
 let test_round_trip2 =
   QCheck.Test.make
     ~name:"round-trip parsing and pretty printing"
-    ~count:2
+    ~count:10
     arbitrary
     (fun program ->
        let program_ast = show_program program in
@@ -37,8 +36,9 @@ let test_round_trip2 =
            then printf "Success!\n"
            else
              printf
-               "Mismatch! Original: %s\nParsed: %s\n"
+               "Mismatch! Original: %s\nPprinted: %s\nParsed: %s\n"
                (show_program program)
+               printed_program
                (show_program parsed_program);
            result
          | Error err ->
