@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>qcheckrun.ml &mdash; Coverage report</title>
+    <meta name="description" content="65.22% coverage in lib/tests/qcheckrun.ml">
+    <link rel="stylesheet" href="../../coverage.css"/>
+    <script src="../../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../../index.html">
+          <span class="dirname">lib/tests/</span>qcheckrun.ml
+        </a>
+      </h1>
+      <h2>65.22%</h2>
+    </div>
+    <div id="navbar">
+      <span class="unvisited" style="top:25.93%"></span>
+      <span class="unvisited" style="bottom:29.63%"></span>
+      <span class="unvisited" style="bottom:25.93%"></span>
+      <span class="unvisited" style="bottom:22.22%"></span>
+      <span class="unvisited" style="bottom:18.52%"></span>
+      <span class="unvisited" style="bottom:14.81%"></span>
+      <span class="unvisited" style="bottom:12.96%"></span>
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span > </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span > </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span class="visited"> </span>
+<a id="L14"></a><span class="unvisited"> </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span class="visited"> </span>
+<a id="L17"></a><span > </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span class="visited"> </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span > </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span class="visited"> </span>
+<a id="L27"></a><span class="visited"> </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span class="visited"> </span>
+<a id="L30"></a><span class="visited"> </span>
+<a id="L31"></a><span > </span>
+<a id="L32"></a><span class="visited"> </span>
+<a id="L33"></a><span class="visited"> </span>
+<a id="L34"></a><span > </span>
+<a id="L35"></a><span class="visited"> </span>
+<a id="L36"></a><span class="visited"> </span>
+<a id="L37"></a><span > </span>
+<a id="L38"></a><span class="unvisited"> </span>
+<a id="L39"></a><span > </span>
+<a id="L40"></a><span class="unvisited"> </span>
+<a id="L41"></a><span > </span>
+<a id="L42"></a><span class="unvisited"> </span>
+<a id="L43"></a><span > </span>
+<a id="L44"></a><span class="unvisited"> </span>
+<a id="L45"></a><span > </span>
+<a id="L46"></a><span class="unvisited"> </span>
+<a id="L47"></a><span class="unvisited"> </span>
+<a id="L48"></a><span > </span>
+<a id="L49"></a><span > </span>
+<a id="L50"></a><span > </span>
+<a id="L51"></a><span > </span>
+<a id="L52"></a><span class="visited"> </span>
+<a id="L53"></a><span class="visited"> </span>
+<a id="L54"></a><span > </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+<a href="#L32">32</a>
+<a href="#L33">33</a>
+<a href="#L34">34</a>
+<a href="#L35">35</a>
+<a href="#L36">36</a>
+<a href="#L37">37</a>
+<a href="#L38">38</a>
+<a href="#L39">39</a>
+<a href="#L40">40</a>
+<a href="#L41">41</a>
+<a href="#L42">42</a>
+<a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
+<a href="#L46">46</a>
+<a href="#L47">47</a>
+<a href="#L48">48</a>
+<a href="#L49">49</a>
+<a href="#L50">50</a>
+<a href="#L51">51</a>
+<a href="#L52">52</a>
+<a href="#L53">53</a>
+<a href="#L54">54</a>
+</pre>
+<pre><code class="ocaml">(** Copyright 2024, Rodion Suvorov, Mikhail Gavrilenko*)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open Base
+open Stdio
+open Ocamladt_lib.Parser
+open Ocamladt_lib.Ast
+open Ocamladt_lib.Pprinter
+open Stdlib.Format
+
+let arbitrary =
+  QCheck.mak<span data-count="40">e</span>
+    ~print:(fun p -&gt; <span data-count="0">a</span>sprintf "%a" pp_program p)
+    (*    ~shrink:Shrinker.ShrinkQCheck.shrink_structure *)
+    (Program.gen_progra<span data-count="40">m</span> 26)
+;;
+
+let test_round_trip2 =
+  QCheck.Test.mak<span data-count="40">e</span>
+    ~name:"round-trip parsing and pretty printing"
+    ~count:30
+    arbitrary
+    (fun program -&gt;
+       <span data-count="1200">l</span>et program_ast = show_program program in
+       <span data-count="1200">i</span>f String.equal program_ast "[]"
+       then <span data-count="205">(</span>
+         printf "Generated empty AST. Skipping...\n";
+         <span data-count="205">t</span>rue)
+       else <span data-count="995">(</span>
+         let printed_program = asprintf "%a" pprint_program program in
+         <span data-count="995">m</span>atch parse printed_program with
+         | <span data-count="995">O</span>k parsed_program -&gt;
+           let result = List.equal Poly.equal parsed_program program in
+           <span data-count="995">i</span>f result
+           then <span data-count="995">p</span>rint<span data-count="995">f</span> "Success!\n"
+           else
+             <span data-count="0">p</span>rint<span data-count="0">f</span>
+               "Mismatch! Original: %s\nPprinted: %s\nParsed: %s\n"
+               (show_progra<span data-count="0">m</span> program)
+               printed_program
+               (show_progra<span data-count="0">m</span> parsed_program);
+           result
+         | <span data-count="0">E</span>rror err -&gt;
+           printf "Generated program:\n%s\n\n" printed_program;
+           <span data-count="0">p</span>rintf "Parsing failed with error: %s\n" err;
+           <span data-count="0">f</span>alse))
+;;
+
+let () =
+  print_endline "Testing manual generator.";
+  <span data-count="40">l</span>et _ : int = QCheck_base_runner.run_tests [ test_round_trip2 ] in
+  <span data-count="40">(</span>)
+;;
+</code></pre>
+      </div>
+    </div>
+    <script src="../../coverage.js"></script>
+  </body>
+</html>
