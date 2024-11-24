@@ -35,7 +35,6 @@ let ptowhitespace = function
   | _ -> false
 ;;
 
-(* add check for keyword + prefix and infix sym + Some *)
 let pident_cap =
   let first_char_str =
     satisfy (function
@@ -397,11 +396,13 @@ let pexpr =
            ]
     in
     let pconstructor_apply =
-      let* constr = pparenth (pident_cap >>| fun id -> Expression.Exp_construct (id, None)) in
+      let* constr =
+        pparenth (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
+      in
       let* arg = poprnd in
       return (Expression.Exp_apply (constr, arg))
-      in
-      let papply = lchain (pconstructor_apply <|> poprnd) papplyexpr in
+    in
+    let papply = lchain (pconstructor_apply <|> poprnd) papplyexpr in
     let prefop =
       parseprefop
         papply
