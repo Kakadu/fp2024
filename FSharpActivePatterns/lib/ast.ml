@@ -221,7 +221,7 @@ let gen_let_bind =
 and let_bind =
   | Let_bind of ident * (ident list[@gen gen_ident_small_list]) * expr
   (** [and sum n m = n+m] *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 let gen_expr =
   QCheck.Gen.(
