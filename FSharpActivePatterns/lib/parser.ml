@@ -274,9 +274,9 @@ let p_lambda p_expr =
   *> string "fun"
   *> peek_sep1
   *>
-  let* pat = skip_ws *> p_pat <* skip_ws in
+  let* pat = p_pat in
   let* pat_list = many p_pat <* skip_ws <* string "->" in
-  let* body = skip_ws *> p_expr <* skip_ws in
+  let* body = p_expr in
   return (Lambda (pat, pat_list, body))
 ;;
 
@@ -287,11 +287,9 @@ let p_match p_expr =
     (skip_ws *> string "|" *> skip_ws *> p_pat <* skip_ws <* string "->" <* skip_ws)
     (p_expr <* skip_ws)
     (many
-       (skip_ws *> string "|" *> skip_ws *> p_pat
-        <* skip_ws
-        <* string "->"
-        <* skip_ws
-        >>= fun pat -> p_expr >>= fun expr -> return (pat, expr)))
+       (let* pat = skip_ws *> string "|" *> p_pat <* skip_ws <* string "->" in
+        let* expr = p_expr in
+        return (pat, expr)))
 ;;
 
 let p_expr =
