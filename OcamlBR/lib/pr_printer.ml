@@ -119,7 +119,20 @@ let rec pp_expr ppf = function
       ()
       pp_expr
       e
-  | Efun_application (e1, e2) -> fprintf ppf "((%a) (%a))" pp_expr e1 pp_expr e2
+  | Efun_application (e1, e2) ->
+    let needs_parens = function
+      | Econst _ | Evar _ | Ebin_op _ -> false
+      | _ -> true
+    in
+    fprintf
+      ppf
+      "%a %a"
+      (fun ppf e ->
+        if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
+      e1
+      (fun ppf e ->
+        if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
+      e2
 
 and pp_value_binding ppf = function
   | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
