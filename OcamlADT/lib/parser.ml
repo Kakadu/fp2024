@@ -325,14 +325,6 @@ let pifexpr pexpr =
   return (Expression.Exp_if (condition, thenexpr, elseexpr))
 ;;
 
-let papplyexpr =
-  pass_ws
-  >>| fun _ lhs rhs ->
-  match lhs with
-  | Expression.Exp_construct (id, None) -> Expression.Exp_construct (id, Some rhs)
-  | _ -> Exp_apply (lhs, rhs)
-;;
-
 let pfunexpr pexpr =
   lift3
     (fun first_pattern rest_patterns body_expr ->
@@ -379,16 +371,24 @@ let pepxrconstraint pexpr =
   return (Expression.Exp_constraint (expr, exprtype))
 ;;
 
+let papplyexpr =
+  pass_ws
+  >>| fun _ lhs rhs ->
+  match lhs with
+  | Expression.Exp_construct (id, None) -> Expression.Exp_construct (id, Some rhs)
+  | _ -> Exp_apply (lhs, rhs)
+;;
+
 let pexpr =
   fix (fun pexpr ->
     let poprnd =
       pass_ws
       *> choice
-           [ pidentexpr
+           [ pparenth pexpr
+           ; pidentexpr
            ; pepxrconstraint pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
-           ; pparenth pexpr
            ; pfunction pexpr
            ; pfunexpr pexpr
            ; pletexpr pexpr
@@ -396,7 +396,12 @@ let pexpr =
            ; pmatch pexpr
            ]
     in
-    let papply = lchain poprnd papplyexpr in
+    let pconstructor_apply =
+      let* constr = pparenth (pident_cap >>| fun id -> Expression.Exp_construct (id, None)) in
+      let* arg = poprnd in
+      return (Expression.Exp_apply (constr, arg))
+      in
+      let papply = lchain (pconstructor_apply <|> poprnd) papplyexpr in
     let prefop =
       parseprefop
         papply

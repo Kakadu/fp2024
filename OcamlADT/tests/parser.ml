@@ -1036,26 +1036,10 @@ let%expect_test "_" =
 
 let%expect_test "keyword" =
   test_programm
-    {|let _ = 6 and
-  p_ = uH and
-  k8 = o_NE534912 and
-  hhq = 'z' and
-  if = e_ and
-  _ = "axsqjjc" and
-  "vixhafjt" = fz and
-  _ = 'q' and
-  jS_I5_7o__ = "csfay" and
-  "cp" = ea0_d;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1038, characters 2-203
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+    {|(Kakadu_52) (fun x -> x);;|};
+  [%expect{|
+    [(Str_eval
+        (Exp_apply ((Exp_construct ("Kakadu_52", None)),
+           (Exp_fun (((Pat_var "x"), []), (Exp_ident "x"))))))
+      ] |}]
 ;;
