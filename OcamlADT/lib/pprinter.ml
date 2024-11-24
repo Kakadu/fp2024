@@ -35,7 +35,7 @@ let pprint_constant fmt =
   function
   | Const_integer n -> fprintf fmt "%d" n
   | Const_char c -> fprintf fmt "'%c'" c
-  | Const_string s -> fprintf fmt "\"%s\"" s
+  | Const_string s -> fprintf fmt "%S" s
 ;;
 
 let rec pprint_type fmt =
