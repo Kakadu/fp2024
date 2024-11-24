@@ -15,33 +15,31 @@ module ShrinkQCheck = struct
 
   let shrink_list1 ~shrink_head ~shrink_tail (head, tail) =
     Printf.printf "shrink list1\n";
-    if tail = []
-    then shrink_head head >|= fun head' -> head', tail
-    else
-      let open QCheck.Iter in
-      shrink_head head
-      >|= (fun head' -> head', tail)
-      <+> (QCheck.Shrink.list ~shrink:shrink_tail tail >|= fun tail' -> head, tail')
-      |> filter (fun (_, t) -> t <> [])
-  ;;
+    match tail with
+    | [] -> shrink_head head >|= fun head' -> head', tail
+    | _ ->
+    let open QCheck.Iter in
+    shrink_head head
+    >|= (fun head' -> head', tail)
+    <+> (QCheck.Shrink.list ~shrink:shrink_tail tail >|= fun tail' -> head, tail')
+    |> filter (fun (_, t) -> match t with [] -> false | _ -> true)
 
   let shrink_list2 ~shrink_first ~shrink_second ~shrink_tail (first, second, tail) =
     Printf.printf "shrink list2\n";
-    if tail = []
-    then
-      let open QCheck.Iter in
-      shrink_first first
-      >|= (fun first' -> first', second, tail)
-      <+> (shrink_second second >|= fun second' -> first, second', tail)
-    else
-      let open QCheck.Iter in
-      shrink_first first
-      >|= (fun first' -> first', second, tail)
-      <+> (shrink_second second >|= fun second' -> first, second', tail)
-      <+> (QCheck.Shrink.list ~shrink:shrink_tail tail
-           >|= fun tail' -> first, second, tail')
-      |> filter (fun (_, _, t) -> t <> [])
-  ;;
+    match tail with
+    | [] ->
+    let open QCheck.Iter in
+    shrink_first first
+    >|= (fun first' -> first', second, tail)
+    <+> (shrink_second second >|= fun second' -> first, second', tail)
+    | _ ->
+    let open QCheck.Iter in
+    shrink_first first
+    >|= (fun first' -> first', second, tail)
+    <+> (shrink_second second >|= fun second' -> first, second', tail)
+    <+> (QCheck.Shrink.list ~shrink:shrink_tail tail
+    >|= fun tail' -> first, second, tail')
+    |> filter (fun (_, _, t) -> match t with [] -> false | _ -> true)
 
   let rec shrink_pattern =
     Printf.printf "shrink pattern\n";
