@@ -168,8 +168,8 @@ let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
 let peliteral = pliteral >>| fun l -> ExprLiteral l
 
-let ematch e cl =
-  match cl with
+let ematch e = function
+  | [] -> ExprOption None (* unreachable *)
   | [ x ] -> ExprMatch (e, x, [])
   | x :: xs -> ExprMatch (e, x, xs)
 ;;
@@ -191,8 +191,7 @@ let petuple pe =
 
 let pelist pe =
   brackets @@ sep_by1 (token ";") pe
-  >>| fun l ->
-  match l with
+  >>| function
   | [] -> ExprLiteral NilLiteral
   | [ x ] -> ExprList (x, [])
   | x :: xs -> ExprList (x, xs)

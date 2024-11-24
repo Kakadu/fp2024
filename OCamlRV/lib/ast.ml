@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type identifier = string [@@deriving show { with_path = false }, qcheck]
+type identifier = string [@@deriving show { with_path = false }]
 
 let gen_identifier = Qcheck_utils.gen_identifier
 let div = 15
