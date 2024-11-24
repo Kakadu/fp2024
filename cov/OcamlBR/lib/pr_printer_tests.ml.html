@@ -562,7 +562,7 @@ let%expect_test _ =
   <span data-count="1">p</span>arse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   <span data-count="1">[</span>%expect
     {|
-    let rec factorial = (fun n -&gt; if (n = 0) then 1 else (n * ((factorial) ((n - 1))))) in ((factorial) (5)) ;;    
+    let rec factorial = (fun n -&gt; if (n = 0) then 1 else (n * factorial (n - 1))) in factorial 5 ;;
     [(SEval
         (Elet (Recursive,
            (Evalue_binding ((Id ("factorial", None)),
