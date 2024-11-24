@@ -168,16 +168,16 @@ let test_round_trip2 =
     (fun program -&gt;
        <span data-count="1200">l</span>et program_ast = show_program program in
        <span data-count="1200">i</span>f String.equal program_ast "[]"
-       then <span data-count="210">(</span>
+       then <span data-count="187">(</span>
          printf "Generated empty AST. Skipping...\n";
-         <span data-count="210">t</span>rue)
-       else <span data-count="990">(</span>
+         <span data-count="187">t</span>rue)
+       else <span data-count="1013">(</span>
          let printed_program = asprintf "%a" pprint_program program in
-         <span data-count="990">m</span>atch parse printed_program with
-         | <span data-count="990">O</span>k parsed_program -&gt;
+         <span data-count="1013">m</span>atch parse printed_program with
+         | <span data-count="1013">O</span>k parsed_program -&gt;
            let result = List.equal Poly.equal parsed_program program in
-           <span data-count="990">i</span>f result
-           then <span data-count="990">p</span>rint<span data-count="990">f</span> "Success!\n"
+           <span data-count="1013">i</span>f result
+           then <span data-count="1013">p</span>rint<span data-count="1013">f</span> "Success!\n"
            else
              <span data-count="0">p</span>rint<span data-count="0">f</span>
                "Mismatch! Original: %s\nPprinted: %s\nParsed: %s\n"

@@ -958,8 +958,8 @@ open Char
 *)
 
 let is_whitespace = function
-  | <span data-count="883657259">'</span> ' | <span data-count="0">'</span>\t' | <span data-count="252144531">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
-  | <span data-count="1332275878">_</span> -&gt; false
+  | <span data-count="933337715">'</span> ' | <span data-count="0">'</span>\t' | <span data-count="270226751">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
+  | <span data-count="1397420327">_</span> -&gt; false
 ;;
 
 let pass_ws = skip_whil<span data-count="47">e</span> is_whitespace
@@ -967,38 +967,38 @@ let pass_ws = skip_whil<span data-count="47">e</span> is_whitespace
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let pass_ws1 = ski<span data-count="47">p</span> is_whitespace *<span data-count="47">&gt;</span> pass_ws
 
-let token s = <span data-count="57761543">p</span>ass_ws *&gt; strin<span data-count="57761543">g</span> s
+let token s = <span data-count="60586315">p</span>ass_ws *&gt; strin<span data-count="60586315">g</span> s
 let pparenth stmt = <span data-count="164">t</span>oke<span data-count="164">n</span> "(" *<span data-count="164">&gt;</span> stmt &lt;* toke<span data-count="164">n</span> ")"
 
 let ptowhitespace = function
-  | <span data-count="171678108">'</span>a' .. 'z' | <span data-count="142847010">'</span>A' .. 'Z' | <span data-count="142801234">'</span>0' .. '9' | <span data-count="142634264">'</span>_' -&gt; true
-  | <span data-count="65097339">_</span> -&gt; false
+  | <span data-count="179930534">'</span>a' .. 'z' | <span data-count="150545644">'</span>A' .. 'Z' | <span data-count="150644654">'</span>0' .. '9' | <span data-count="150625378">'</span>_' -&gt; true
+  | <span data-count="67879991">_</span> -&gt; false
 ;;
 
 let pident_cap =
   let first_char_str =
     satisfy (function
-      | <span data-count="1730710">'</span>A' .. 'Z' -&gt; true
-      | <span data-count="59418334">_</span> -&gt; false)
+      | <span data-count="1774616">'</span>A' .. 'Z' -&gt; true
+      | <span data-count="62339894">_</span> -&gt; false)
   in
-  <span data-count="47">l</span>ift<span data-count="47">2</span> (fun fc rs -&gt; <span data-count="1730710">S</span>tring.mak<span data-count="1730710">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="47">e</span> ptowhitespace)
+  <span data-count="47">l</span>ift<span data-count="47">2</span> (fun fc rs -&gt; <span data-count="1774616">S</span>tring.mak<span data-count="1774616">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="47">e</span> ptowhitespace)
   &gt;&gt;<span data-count="47">=</span> fun ident -&gt;
-  <span data-count="1730710">i</span>f Ast.is_not_keyword ident
-  then <span data-count="1730710">r</span>eturn ident
+  <span data-count="1774616">i</span>f Ast.is_not_keyword ident
+  then <span data-count="1774616">r</span>eturn ident
   else <span data-count="0">f</span>ail "Found a keyword instead of an identifier"
 ;;
 
 let pident_lc =
   let first_char_str =
     satisfy (function
-      | <span data-count="38166437">'</span>a' .. 'z' | <span data-count="25200192">'</span>_' -&gt; true
-      | <span data-count="62634924">_</span> -&gt; false)
+      | <span data-count="39709593">'</span>a' .. 'z' | <span data-count="26395782">'</span>_' -&gt; true
+      | <span data-count="66069708">_</span> -&gt; false)
   in
-  <span data-count="47">l</span>ift<span data-count="47">2</span> (fun fc rs -&gt; <span data-count="63366629">S</span>tring.mak<span data-count="63366629">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="47">e</span> ptowhitespace)
+  <span data-count="47">l</span>ift<span data-count="47">2</span> (fun fc rs -&gt; <span data-count="66105375">S</span>tring.mak<span data-count="66105375">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="47">e</span> ptowhitespace)
   &gt;&gt;<span data-count="47">=</span> fun ident -&gt;
-  <span data-count="63366629">i</span>f Ast.is_not_keyword ident
-  then <span data-count="50418831">r</span>eturn ident
-  else <span data-count="12947798">f</span>ail "Found a keyword instead of an identifier"
+  <span data-count="66105375">i</span>f Ast.is_not_keyword ident
+  then <span data-count="52890577">r</span>eturn ident
+  else <span data-count="13214798">f</span>ail "Found a keyword instead of an identifier"
 ;;
 
 (*
@@ -1020,21 +1020,21 @@ let pident_lc =
 *)
 let pconstint =
   let* number = Int.of_string &lt;$<span data-count="47">&gt;</span> take_while<span data-count="47">1</span> is_digit in
-  <span data-count="11036626">r</span>eturn (Constant.Const_integer number)
+  <span data-count="11653804">r</span>eturn (Constant.Const_integer number)
 ;;
 
 let pconstchar =
   let* c = toke<span data-count="47">n</span> "'" *<span data-count="47">&gt;</span> any_char &lt;<span data-count="47">*</span> toke<span data-count="47">n</span> "'" in
-  <span data-count="11085814">r</span>eturn (Constant.Const_char c)
+  <span data-count="11523406">r</span>eturn (Constant.Const_char c)
 ;;
 
 let pconststring =
   toke<span data-count="47">n</span> "\""
   *<span data-count="47">&gt;</span> lif<span data-count="47">t</span>
-       (fun str -&gt; <span data-count="11033892">C</span>onstant.Const_string str)
+       (fun str -&gt; <span data-count="11676480">C</span>onstant.Const_string str)
        (take_whil<span data-count="47">e</span> (function
-         | <span data-count="11033892">'</span>"' -&gt; false
-         | <span data-count="172277222">_</span> -&gt; true))
+         | <span data-count="11676480">'</span>"' -&gt; false
+         | <span data-count="184283734">_</span> -&gt; true))
   &lt;<span data-count="47">*</span> toke<span data-count="47">n</span> "\""
 ;;
 
@@ -1043,25 +1043,25 @@ let pconst = pconstchar &lt;|<span data-count="47">&gt;</span> pconstint &lt;|<s
 (*                   Arithm utils + ident parser *)
 let lchain p op =
   <span data-count="164">l</span>et rec loop acc =
-    <span data-count="150112284">(</span>let* f = op in
-     <span data-count="37927798">l</span>et* y = p in
-     <span data-count="532754">l</span>oop (<span data-count="532754">f</span> acc y))
-    &lt;|&gt; retur<span data-count="150112284">n</span> acc
+    <span data-count="157455560">(</span>let* f = op in
+     <span data-count="39771054">l</span>et* y = p in
+     <span data-count="542670">l</span>oop (<span data-count="542670">f</span> acc y))
+    &lt;|&gt; retur<span data-count="157455560">n</span> acc
   in
   let* x = p in
-  <span data-count="149579530">l</span>oop x
+  <span data-count="156912890">l</span>oop x
 ;;
 
 let rchain p op =
   <span data-count="82">l</span>et rec loop acc =
-    <span data-count="38157554">(</span>let* f = op in
-     <span data-count="47036">l</span>et* y = p in
-     <span data-count="47036">l</span>et new_acc = f acc y in
-     <span data-count="47036">l</span>oop new_acc)
-    &lt;|&gt; retur<span data-count="38157554">n</span> acc
+    <span data-count="40020038">(</span>let* f = op in
+     <span data-count="48332">l</span>et* y = p in
+     <span data-count="48332">l</span>et new_acc = f acc y in
+     <span data-count="48332">l</span>oop new_acc)
+    &lt;|&gt; retur<span data-count="40020038">n</span> acc
   in
   let* x = p in
-  <span data-count="38110518">l</span>oop x
+  <span data-count="39971706">l</span>oop x
 ;;
 
 (*
@@ -1082,18 +1082,18 @@ let rchain p op =
    ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░
 *)
 
-let ptypearrow = pass_ws *<span data-count="47">&gt;</span> toke<span data-count="47">n</span> "-&gt;" &gt;&gt;<span data-count="47">|</span> fun _ lhs rhs -&gt; <span data-count="47016">T</span>ypeExpr.Type_arrow (lhs, rhs)
+let ptypearrow = pass_ws *<span data-count="47">&gt;</span> toke<span data-count="47">n</span> "-&gt;" &gt;&gt;<span data-count="47">|</span> fun _ lhs rhs -&gt; <span data-count="48312">T</span>ypeExpr.Type_arrow (lhs, rhs)
 
 let ptypevar =
   let* id = pass_ws *<span data-count="47">&gt;</span> (pident_lc &lt;|<span data-count="47">&gt;</span> pident_cap) in
-  <span data-count="2173594">r</span>eturn (TypeExpr.Type_var id)
+  <span data-count="2240294">r</span>eturn (TypeExpr.Type_var id)
 ;;
 
 let ptypetuple ptype =
   <span data-count="41">l</span>et* el1 = pass_ws *<span data-count="41">&gt;</span> ptype in
-  <span data-count="762810">l</span>et* el2 = toke<span data-count="762810">n</span> "*" *<span data-count="762810">&gt;</span> pass_ws *<span data-count="762810">&gt;</span> ptype in
-  <span data-count="46960">l</span>et* rest = man<span data-count="46960">y</span> (toke<span data-count="46960">n</span> "*" *<span data-count="46960">&gt;</span> pass_ws *<span data-count="46960">&gt;</span> ptype) in
-  <span data-count="46960">r</span>eturn (TypeExpr.Type_tuple (el1, el2, rest))
+  <span data-count="791954">l</span>et* el2 = toke<span data-count="791954">n</span> "*" *<span data-count="791954">&gt;</span> pass_ws *<span data-count="791954">&gt;</span> ptype in
+  <span data-count="48964">l</span>et* rest = man<span data-count="48964">y</span> (toke<span data-count="48964">n</span> "*" *<span data-count="48964">&gt;</span> pass_ws *<span data-count="48964">&gt;</span> ptype) in
+  <span data-count="48964">r</span>eturn (TypeExpr.Type_tuple (el1, el2, rest))
 ;;
 
 let ptype =
@@ -1118,33 +1118,33 @@ let ptype =
 
 let ppatconst =
   let* const = pconst in
-  <span data-count="15815258">r</span>eturn (Pattern.Pat_constant const)
+  <span data-count="16600590">r</span>eturn (Pattern.Pat_constant const)
 ;;
 
 let ptuplepat ppattern =
   <span data-count="41">l</span>et* el1 = ppattern in
-  <span data-count="20373344">l</span>et* el2 = toke<span data-count="20373344">n</span> "," *<span data-count="20373344">&gt;</span> ppattern in
-  <span data-count="498826">l</span>et* rest = man<span data-count="498826">y</span> (toke<span data-count="498826">n</span> "," *<span data-count="498826">&gt;</span> ppattern) in
-  <span data-count="498826">r</span>eturn (Pattern.Pat_tuple (el1, el2, rest))
+  <span data-count="21407500">l</span>et* el2 = toke<span data-count="21407500">n</span> "," *<span data-count="21407500">&gt;</span> ppattern in
+  <span data-count="511280">l</span>et* rest = man<span data-count="511280">y</span> (toke<span data-count="511280">n</span> "," *<span data-count="511280">&gt;</span> ppattern) in
+  <span data-count="511280">r</span>eturn (Pattern.Pat_tuple (el1, el2, rest))
 ;;
 
 let ppatvar =
   let* id = pident_lc in
-  <span data-count="31616407">m</span>atch id with
-  | <span data-count="15801328">"</span>_" -&gt; return Pattern.Pat_any
-  | <span data-count="15815079">_</span> -&gt; return (Pattern.Pat_var id)
+  <span data-count="33229507">m</span>atch id with
+  | <span data-count="16593862">"</span>_" -&gt; return Pattern.Pat_any
+  | <span data-count="16635645">_</span> -&gt; return (Pattern.Pat_var id)
 ;;
 
 let ppatconstruct (ppattern : Pattern.t Angstrom.t) =
   <span data-count="41">l</span>et* name = pident_cap in
-  <span data-count="562630">l</span>et* arg = optio<span data-count="562630">n</span> None (ppattern &gt;&gt;<span data-count="562630">|</span> Option.some) in
-  <span data-count="562630">r</span>eturn (Pattern.Pat_construct (name, arg))
+  <span data-count="582628">l</span>et* arg = optio<span data-count="582628">n</span> None (ppattern &gt;&gt;<span data-count="582628">|</span> Option.some) in
+  <span data-count="582628">r</span>eturn (Pattern.Pat_construct (name, arg))
 ;;
 
 let ppatconstraint ppattern =
   <span data-count="41">l</span>et* pat = toke<span data-count="41">n</span> "(" *<span data-count="41">&gt;</span> ppattern in
-  <span data-count="477480">l</span>et* pattype = toke<span data-count="477480">n</span> ":" *<span data-count="477480">&gt;</span> pass_ws *<span data-count="477480">&gt;</span> ptype &lt;<span data-count="477480">*</span> toke<span data-count="477480">n</span> ")" in
-  <span data-count="477480">r</span>eturn (Pattern.Pat_constraint (pat, pattype))
+  <span data-count="497748">l</span>et* pattype = toke<span data-count="497748">n</span> ":" *<span data-count="497748">&gt;</span> pass_ws *<span data-count="497748">&gt;</span> ptype &lt;<span data-count="497748">*</span> toke<span data-count="497748">n</span> ")" in
+  <span data-count="497748">r</span>eturn (Pattern.Pat_constraint (pat, pattype))
 ;;
 
 let ppattern =
@@ -1175,50 +1175,50 @@ let ppattern =
 
 let pexprconst =
   let* const = pconst in
-  <span data-count="17341074">r</span>eturn (Expression.Exp_constant const)
+  <span data-count="18253100">r</span>eturn (Expression.Exp_constant const)
 ;;
 
 let pidentexpr =
   pident_lc
   &gt;&gt;<span data-count="47">=</span> fun ident -&gt;
-  <span data-count="17360342">i</span>f is_not_keyword ident
-  then <span data-count="17360342">r</span>eturn (Expression.Exp_ident ident)
+  <span data-count="18171292">i</span>f is_not_keyword ident
+  then <span data-count="18171292">r</span>eturn (Expression.Exp_ident ident)
   else <span data-count="0">f</span>ail "Found a keyword instead of an identifier"
 ;;
 
 let pcase pexpr =
-  <span data-count="858515">l</span>et* first = ppattern in
+  <span data-count="888741">l</span>et* first = ppattern in
   (*todo: pass ws rework*)
-  <span data-count="9298688">l</span>et* second = toke<span data-count="9298688">n</span> "-&gt;" *<span data-count="9298688">&gt;</span> pexpr in
-  <span data-count="9298688">r</span>eturn { Expression.first; second }
+  <span data-count="9948012">l</span>et* second = toke<span data-count="9948012">n</span> "-&gt;" *<span data-count="9948012">&gt;</span> pexpr in
+  <span data-count="9948012">r</span>eturn { Expression.first; second }
 ;;
 
 let ppatternmatching pexpr =
-  <span data-count="287135">l</span>et* casefs = optio<span data-count="287135">n</span> "" (toke<span data-count="287135">n</span> "|") *<span data-count="287135">&gt;</span> pcas<span data-count="287135">e</span> pexpr in
-  <span data-count="571380">l</span>et* casetl = optio<span data-count="571380">n</span> "" (toke<span data-count="571380">n</span> "|") *<span data-count="571380">&gt;</span> (sep_by (toke<span data-count="571380">n</span> "|"<span data-count="571380">)</span> @@ pcas<span data-count="571380">e</span> pexpr) in
+  <span data-count="296607">l</span>et* casefs = optio<span data-count="296607">n</span> "" (toke<span data-count="296607">n</span> "|") *<span data-count="296607">&gt;</span> pcas<span data-count="296607">e</span> pexpr in
+  <span data-count="592134">l</span>et* casetl = optio<span data-count="592134">n</span> "" (toke<span data-count="592134">n</span> "|") *<span data-count="592134">&gt;</span> (sep_by (toke<span data-count="592134">n</span> "|"<span data-count="592134">)</span> @@ pcas<span data-count="592134">e</span> pexpr) in
   (*todo: remove option *)
-  <span data-count="571380">r</span>eturn (casefs, casetl)
+  <span data-count="592134">r</span>eturn (casefs, casetl)
 ;;
 
 let pfunction pexpr =
   <span data-count="41">l</span>et* cases = toke<span data-count="41">n</span> "function" *<span data-count="41">&gt;</span> ppatternmatchin<span data-count="41">g</span> pexpr in
-  <span data-count="284286">r</span>eturn (Expression.Exp_function cases)
+  <span data-count="295568">r</span>eturn (Expression.Exp_function cases)
 ;;
 
 let pmatch pexpr =
   <span data-count="41">l</span>et* expr = toke<span data-count="41">n</span> "match" *<span data-count="41">&gt;</span> pexpr in
-  <span data-count="287094">l</span>et* cases = toke<span data-count="287094">n</span> "with" *<span data-count="287094">&gt;</span> ppatternmatchin<span data-count="287094">g</span> pexpr in
-  <span data-count="287094">r</span>eturn (Expression.Exp_match (expr, cases))
+  <span data-count="296566">l</span>et* cases = toke<span data-count="296566">n</span> "with" *<span data-count="296566">&gt;</span> ppatternmatchin<span data-count="296566">g</span> pexpr in
+  <span data-count="296566">r</span>eturn (Expression.Exp_match (expr, cases))
 ;;
 
 let pletbinding pexpr =
-  <span data-count="576318">l</span>et psimple =
+  <span data-count="607894">l</span>et psimple =
     let* pat = ppattern in
-    <span data-count="4969152">l</span>et* expr = toke<span data-count="4969152">n</span> "=" *<span data-count="4969152">&gt;</span> pexpr in
-    <span data-count="4969125">r</span>eturn { Expression.pat; expr }
+    <span data-count="5035918">l</span>et* expr = toke<span data-count="5035918">n</span> "=" *<span data-count="5035918">&gt;</span> pexpr in
+    <span data-count="5035891">r</span>eturn { Expression.pat; expr }
   in
   let pfun =
-    let* pat = pass_ws *<span data-count="576318">&gt;</span> ppatvar in
+    let* pat = pass_ws *<span data-count="607894">&gt;</span> ppatvar in
     <span data-count="27">l</span>et* parameterfs = ppattern in
     <span data-count="27">l</span>et* parametertl = man<span data-count="27">y</span> ppattern in
     <span data-count="27">l</span>et* exprw = toke<span data-count="27">n</span> "=" *<span data-count="27">&gt;</span> pexpr in
@@ -1234,40 +1234,40 @@ let plethelper pexpr =
     &lt;|&gt; retur<span data-count="88">n</span> Expression.Nonrecursive
   in
   <span data-count="88">l</span>et* recflag = toke<span data-count="88">n</span> "let" *<span data-count="88">&gt;</span> precflag in
-  <span data-count="288159">l</span>et* bindingfs = pletbindin<span data-count="288159">g</span> pexpr in
-  <span data-count="288159">l</span>et* bindingtl = man<span data-count="288159">y</span> (toke<span data-count="288159">n</span> "and" *<span data-count="288159">&gt;</span> pletbindin<span data-count="288159">g</span> pexpr) in
-  <span data-count="288159">r</span>eturn (recflag, bindingfs, bindingtl)
+  <span data-count="303947">l</span>et* bindingfs = pletbindin<span data-count="303947">g</span> pexpr in
+  <span data-count="303947">l</span>et* bindingtl = man<span data-count="303947">y</span> (toke<span data-count="303947">n</span> "and" *<span data-count="303947">&gt;</span> pletbindin<span data-count="303947">g</span> pexpr) in
+  <span data-count="303947">r</span>eturn (recflag, bindingfs, bindingtl)
 ;;
 
 let pletexpr pexpr =
   <span data-count="41">l</span>et* recflag, bindingfs, bindingtl = plethelpe<span data-count="41">r</span> pexpr in
-  <span data-count="286692">l</span>et* expr = toke<span data-count="286692">n</span> "in" *<span data-count="286692">&gt;</span> pass_ws *<span data-count="286692">&gt;</span> pexpr in
-  <span data-count="280824">r</span>eturn (Expression.Exp_let (recflag, (bindingfs, bindingtl), expr))
+  <span data-count="302418">l</span>et* expr = toke<span data-count="302418">n</span> "in" *<span data-count="302418">&gt;</span> pass_ws *<span data-count="302418">&gt;</span> pexpr in
+  <span data-count="296302">r</span>eturn (Expression.Exp_let (recflag, (bindingfs, bindingtl), expr))
 ;;
 
 let ptupleexpr pexpr =
   <span data-count="41">l</span>et* el1 = pexpr in
-  <span data-count="17578421">l</span>et* el2 = toke<span data-count="17578421">n</span> "," *<span data-count="17578421">&gt;</span> pexpr in
-  <span data-count="141720">l</span>et* rest = man<span data-count="141720">y</span> (toke<span data-count="141720">n</span> "," *<span data-count="141720">&gt;</span> pexpr) in
-  <span data-count="141720">r</span>eturn (Expression.Exp_tuple (el1, el2, rest))
+  <span data-count="18430575">l</span>et* el2 = toke<span data-count="18430575">n</span> "," *<span data-count="18430575">&gt;</span> pexpr in
+  <span data-count="150680">l</span>et* rest = man<span data-count="150680">y</span> (toke<span data-count="150680">n</span> "," *<span data-count="150680">&gt;</span> pexpr) in
+  <span data-count="150680">r</span>eturn (Expression.Exp_tuple (el1, el2, rest))
 ;;
 
 let pifexpr pexpr =
   <span data-count="41">l</span>et* condition = toke<span data-count="41">n</span> "if" *<span data-count="41">&gt;</span> pass_ws1 *<span data-count="41">&gt;</span> pexpr in
-  <span data-count="277124">l</span>et* thenexpr = toke<span data-count="277124">n</span> "then" *<span data-count="277124">&gt;</span> pass_ws1 *<span data-count="277124">&gt;</span> pexpr in
-  <span data-count="277124">l</span>et* elseexpr =
-    optio<span data-count="277124">n</span> None (pass_ws1 *<span data-count="277124">&gt;</span> toke<span data-count="277124">n</span> "else" &gt;&gt;<span data-count="277124">|</span> Option.some)
-    &gt;&gt;<span data-count="277124">=</span> function
-    | <span data-count="40794">N</span>one -&gt; return None
-    | <span data-count="236330">S</span>ome _ -&gt; pexpr &gt;&gt;| Option.some
+  <span data-count="291498">l</span>et* thenexpr = toke<span data-count="291498">n</span> "then" *<span data-count="291498">&gt;</span> pass_ws1 *<span data-count="291498">&gt;</span> pexpr in
+  <span data-count="291498">l</span>et* elseexpr =
+    optio<span data-count="291498">n</span> None (pass_ws1 *<span data-count="291498">&gt;</span> toke<span data-count="291498">n</span> "else" &gt;&gt;<span data-count="291498">|</span> Option.some)
+    &gt;&gt;<span data-count="291498">=</span> function
+    | <span data-count="43608">N</span>one -&gt; return None
+    | <span data-count="247890">S</span>ome _ -&gt; pexpr &gt;&gt;| Option.some
   in
-  <span data-count="277124">r</span>eturn (Expression.Exp_if (condition, thenexpr, elseexpr))
+  <span data-count="291498">r</span>eturn (Expression.Exp_if (condition, thenexpr, elseexpr))
 ;;
 
 let pfunexpr pexpr =
   <span data-count="41">l</span>ift3
     (fun first_pattern rest_patterns body_expr -&gt;
-      <span data-count="280242">E</span>xpression.Exp_fun ((first_pattern, rest_patterns), body_expr))
+      <span data-count="293574">E</span>xpression.Exp_fun ((first_pattern, rest_patterns), body_expr))
     (toke<span data-count="41">n</span> "fun" *<span data-count="41">&gt;</span> ppattern)
     (man<span data-count="41">y</span> ppattern)
     (toke<span data-count="41">n</span> "-&gt;" *<span data-count="41">&gt;</span> pexpr)
@@ -1306,16 +1306,16 @@ let plogops = choic<span data-count="47">e</span> [ parsebino<span data-count="4
 
 let pepxrconstraint pexpr =
   <span data-count="41">l</span>et* expr = toke<span data-count="41">n</span> "(" *<span data-count="41">&gt;</span> pexpr in
-  <span data-count="144414">l</span>et* exprtype = toke<span data-count="144414">n</span> ":" *<span data-count="144414">&gt;</span> ptype &lt;<span data-count="144414">*</span> toke<span data-count="144414">n</span> ")" in
-  <span data-count="144414">r</span>eturn (Expression.Exp_constraint (expr, exprtype))
+  <span data-count="148694">l</span>et* exprtype = toke<span data-count="148694">n</span> ":" *<span data-count="148694">&gt;</span> ptype &lt;<span data-count="148694">*</span> toke<span data-count="148694">n</span> ")" in
+  <span data-count="148694">r</span>eturn (Expression.Exp_constraint (expr, exprtype))
 ;;
 
 let papplyexpr =
   pass_ws
   &gt;&gt;<span data-count="47">|</span> fun _ lhs rhs -&gt;
-  <span data-count="532454">m</span>atch lhs with
-  | <span data-count="247714">E</span>xpression.Exp_construct (id, None) -&gt; Expression.Exp_construct (id, Some rhs)
-  | <span data-count="284740">_</span> -&gt; Exp_apply (lhs, rhs)
+  <span data-count="542370">m</span>atch lhs with
+  | <span data-count="250498">E</span>xpression.Exp_construct (id, None) -&gt; Expression.Exp_construct (id, Some rhs)
+  | <span data-count="291872">_</span> -&gt; Exp_apply (lhs, rhs)
 ;;
 
 let pexpr =
@@ -1326,7 +1326,7 @@ let pexpr =
            [ pparent<span data-count="41">h</span> pexpr
            ; pidentexpr
            ; pepxrconstrain<span data-count="41">t</span> pexpr
-           ; (pident_cap &gt;&gt;<span data-count="41">|</span> fun id -&gt; <span data-count="290658">E</span>xpression.Exp_construct (id, None))
+           ; (pident_cap &gt;&gt;<span data-count="41">|</span> fun id -&gt; <span data-count="293818">E</span>xpression.Exp_construct (id, None))
            ; pexprconst
            ; pfunctio<span data-count="41">n</span> pexpr
            ; pfunexp<span data-count="41">r</span> pexpr
@@ -1337,10 +1337,10 @@ let pexpr =
     in
     <span data-count="41">l</span>et pconstructor_apply =
       let* constr =
-        pparent<span data-count="41">h</span> (pident_cap &gt;&gt;<span data-count="41">|</span> fun id -&gt; <span data-count="145910">E</span>xpression.Exp_construct (id, None))
+        pparent<span data-count="41">h</span> (pident_cap &gt;&gt;<span data-count="41">|</span> fun id -&gt; <span data-count="147654">E</span>xpression.Exp_construct (id, None))
       in
-      <span data-count="22142">l</span>et* arg = poprnd in
-      <span data-count="670">r</span>eturn (Expression.Exp_apply (constr, arg))
+      <span data-count="22474">l</span>et* arg = poprnd in
+      <span data-count="834">r</span>eturn (Expression.Exp_apply (constr, arg))
     in
     let papply = lchain (pconstructor_apply &lt;|<span data-count="41">&gt;</span> poprnd) papplyexpr in
     <span data-count="41">l</span>et prefop =
@@ -1375,11 +1375,11 @@ let pexpr =
    ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░
 *)
 
-let pseval = lif<span data-count="47">t</span> (fun expr -&gt; <span data-count="1575">S</span>tructure.Str_eval expr) pexpr
+let pseval = lif<span data-count="47">t</span> (fun expr -&gt; <span data-count="1587">S</span>tructure.Str_eval expr) pexpr
 
 let pstrlet =
   let* recflag, bindingfs, bindingtl = plethelpe<span data-count="47">r</span> pexpr in
-  <span data-count="1467">r</span>eturn (Structure.Str_value (recflag, (bindingfs, bindingtl)))
+  <span data-count="1529">r</span>eturn (Structure.Str_value (recflag, (bindingfs, bindingtl)))
 ;;
 
 (* let psvalue = pstrlet &lt;|&gt; prsadt *)
@@ -1390,7 +1390,7 @@ let pstructure =
   <span data-count="47">m</span>an<span data-count="47">y</span> (pstr_item &lt;<span data-count="47">*</span> psemicolon &lt;<span data-count="47">*</span> pass_ws)
 ;;
 
-let parse str = <span data-count="1058">p</span>arse_string ~consume:All pstructure str
+let parse str = <span data-count="1081">p</span>arse_string ~consume:All pstructure str
 let parse_str str = <span data-count="68">p</span>arse str |&gt; <span data-count="68">R</span>esult.ok_or_failwith
 </code></pre>
       </div>
