@@ -40,10 +40,7 @@ let rec pp_pattern fmt = function
     fprintf fmt "[";
     pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") pp_pattern fmt l;
     fprintf fmt "]"
-  | PCons (l, r) ->
-    pp_pattern fmt l;
-    fprintf fmt ":: ";
-    pp_pattern fmt r
+  | PCons (l, r) -> fprintf fmt "(%a) :: (%a) " pp_pattern l pp_pattern r
   | PTuple (p1, p2, rest) ->
     fprintf fmt "(";
     pp_print_list
