@@ -14,6 +14,7 @@ let arbitrary =
     ~print:(fun p -> Format.asprintf "%a" pp_program p)
     (*    ~shrink:Shrinker.ShrinkQCheck.shrink_structure *)
     (Program.gen_program 26)
+
 ;;
 
 let test_round_trip2 =
