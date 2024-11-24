@@ -196,6 +196,177 @@ let%expect_test "parenthesis1" =
       ] |}]
 ;;
 
+let%expect_test "parenthesis2" =
+  test_programm {|105 * 64 / 27 - 2 * (5*(5-1)) + 47 / 64 - (56 * (57 *4) - 5);;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "-"),
+           (Exp_tuple
+              ((Exp_apply ((Exp_ident "+"),
+                  (Exp_tuple
+                     ((Exp_apply ((Exp_ident "-"),
+                         (Exp_tuple
+                            ((Exp_apply ((Exp_ident "/"),
+                                (Exp_tuple
+                                   ((Exp_apply ((Exp_ident "*"),
+                                       (Exp_tuple
+                                          ((Exp_constant (Const_integer 105)),
+                                           (Exp_constant (Const_integer 64)),
+                                           []))
+                                       )),
+                                    (Exp_constant (Const_integer 27)), []))
+                                )),
+                             (Exp_apply ((Exp_ident "*"),
+                                (Exp_tuple
+                                   ((Exp_constant (Const_integer 2)),
+                                    (Exp_apply ((Exp_ident "*"),
+                                       (Exp_tuple
+                                          ((Exp_constant (Const_integer 5)),
+                                           (Exp_apply ((Exp_ident "-"),
+                                              (Exp_tuple
+                                                 ((Exp_constant (Const_integer 5)),
+                                                  (Exp_constant (Const_integer 1)),
+                                                  []))
+                                              )),
+                                           []))
+                                       )),
+                                    []))
+                                )),
+                             []))
+                         )),
+                      (Exp_apply ((Exp_ident "/"),
+                         (Exp_tuple
+                            ((Exp_constant (Const_integer 47)),
+                             (Exp_constant (Const_integer 64)), []))
+                         )),
+                      []))
+                  )),
+               (Exp_apply ((Exp_ident "-"),
+                  (Exp_tuple
+                     ((Exp_apply ((Exp_ident "*"),
+                         (Exp_tuple
+                            ((Exp_constant (Const_integer 56)),
+                             (Exp_apply ((Exp_ident "*"),
+                                (Exp_tuple
+                                   ((Exp_constant (Const_integer 57)),
+                                    (Exp_constant (Const_integer 4)), []))
+                                )),
+                             []))
+                         )),
+                      (Exp_constant (Const_integer 5)), []))
+                  )),
+               []))
+           )))
+      ] |}]
+;;
+
+let%expect_test "parenthesis3" =
+  test_programm {|1 + (2 + 3);;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "+"),
+           (Exp_tuple
+              ((Exp_constant (Const_integer 1)),
+               (Exp_apply ((Exp_ident "+"),
+                  (Exp_tuple
+                     ((Exp_constant (Const_integer 2)),
+                      (Exp_constant (Const_integer 3)), []))
+                  )),
+               []))
+           )))
+      ] |}]
+;;
+
+let%expect_test "logical ops + parenthesis" =
+  test_programm
+    {|
+    ((3 * (9 - 12 / 4) < 7 && 1) || 1 && 5 < 6) || 20 - 100 / (4 + 16) && 10 < 12 ;; 
+|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "&&"),
+           (Exp_tuple
+              ((Exp_apply ((Exp_ident "||"),
+                  (Exp_tuple
+                     ((Exp_apply ((Exp_ident "&&"),
+                         (Exp_tuple
+                            ((Exp_apply ((Exp_ident "||"),
+                                (Exp_tuple
+                                   ((Exp_apply ((Exp_ident "&&"),
+                                       (Exp_tuple
+                                          ((Exp_apply ((Exp_ident "<"),
+                                              (Exp_tuple
+                                                 ((Exp_apply ((Exp_ident "*"),
+                                                     (Exp_tuple
+                                                        ((Exp_constant
+                                                            (Const_integer 3)),
+                                                         (Exp_apply (
+                                                            (Exp_ident "-"),
+                                                            (Exp_tuple
+                                                               ((Exp_constant
+                                                                   (Const_integer
+                                                                      9)),
+                                                                (Exp_apply (
+                                                                   (Exp_ident "/"),
+                                                                   (Exp_tuple
+                                                                      ((Exp_constant
+                                                                        (Const_integer
+                                                                        12)),
+                                                                       (Exp_constant
+                                                                        (Const_integer
+                                                                        4)),
+                                                                       []))
+                                                                   )),
+                                                                []))
+                                                            )),
+                                                         []))
+                                                     )),
+                                                  (Exp_constant (Const_integer 7)),
+                                                  []))
+                                              )),
+                                           (Exp_constant (Const_integer 1)),
+                                           []))
+                                       )),
+                                    (Exp_constant (Const_integer 1)), []))
+                                )),
+                             (Exp_apply ((Exp_ident "<"),
+                                (Exp_tuple
+                                   ((Exp_constant (Const_integer 5)),
+                                    (Exp_constant (Const_integer 6)), []))
+                                )),
+                             []))
+                         )),
+                      (Exp_apply ((Exp_ident "-"),
+                         (Exp_tuple
+                            ((Exp_constant (Const_integer 20)),
+                             (Exp_apply ((Exp_ident "/"),
+                                (Exp_tuple
+                                   ((Exp_constant (Const_integer 100)),
+                                    (Exp_apply ((Exp_ident "+"),
+                                       (Exp_tuple
+                                          ((Exp_constant (Const_integer 4)),
+                                           (Exp_constant (Const_integer 16)),
+                                           []))
+                                       )),
+                                    []))
+                                )),
+                             []))
+                         )),
+                      []))
+                  )),
+               (Exp_apply ((Exp_ident "<"),
+                  (Exp_tuple
+                     ((Exp_constant (Const_integer 10)),
+                      (Exp_constant (Const_integer 12)), []))
+                  )),
+               []))
+           )))
+      ] |}]
+;;
+
 let%expect_test "parenthesis4" =
   test_programm {|((5-1)*5);;|};
   [%expect
@@ -876,7 +1047,8 @@ let%expect_test "keyword" =
   jS_I5_7o__ = "csfay" and
   "cp" = ea0_d;;|};
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -884,6 +1056,6 @@ let%expect_test "keyword" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 867, characters 2-203
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1038, characters 2-203
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
