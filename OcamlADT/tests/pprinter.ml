@@ -387,3 +387,111 @@ let%expect_test "if with parenthesis" =
       then _T
       else 80), (let 69 = 8 and 5 = 'd' in 4)) ;; |}]
 ;;
+
+let%expect_test "let binding with integer" =
+  let program =
+    [ Str_value
+        (Nonrecursive, ({ pat = Pat_var "x"; expr = Exp_constant (Const_integer 42) }, []))
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    let  x = 42;;
+  |}]
+;;
+
+let%expect_test "if expression" =
+  let program =
+    [ Str_eval
+        (Exp_if
+           ( Exp_apply
+               ( Exp_ident ">"
+               , Exp_tuple (Exp_ident "x", Exp_constant (Const_integer 10), []) )
+           , Exp_ident "large"
+           , Some (Exp_ident "small") ))
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    if x > 10
+      then large
+      else small ;;
+  |}]
+;;
+
+let%expect_test "tuple and match expression" =
+  let program =
+    [ Str_eval
+        (Exp_match
+           ( Exp_tuple (Exp_ident "a", Exp_ident "b", [ Exp_ident "c" ])
+           , ( { first = Pat_tuple (Pat_var "x", Pat_var "y", [ Pat_var "z" ])
+               ; second =
+                   Exp_apply (Exp_ident "f", Exp_tuple (Exp_ident "x", Exp_ident "y", []))
+               }
+             , [] ) ))
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    match (a, b, c) with
+      | (x, y, z) -> (f (x, y)) ;;
+  |}]
+;;
+
+let%expect_test "nested constructs" =
+  let program =
+    [ Str_eval
+        (Exp_apply
+           ( Exp_ident "map"
+           , Exp_tuple
+               ( Exp_function
+                   ( { first = Pat_var "x"
+                     ; second =
+                         Exp_apply
+                           ( Exp_ident "*"
+                           , Exp_tuple (Exp_ident "x", Exp_constant (Const_integer 2), [])
+                           )
+                     }
+                   , [] )
+               , Exp_ident "list"
+               , [] ) ))
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    (map ((function
+      | x -> x * 2), list)) ;;
+  |}]
+;;
+
+let%expect_test "construct with optional arguments" =
+  let program =
+    [ Str_eval (Exp_construct ("Some", Some (Exp_constant (Const_string "Hello")))) ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    (Some ("Hello")) ;;
+  |}]
+;;
+
+let%expect_test "complex program" =
+  let program =
+    [ Str_eval
+        (Exp_let
+           ( Nonrecursive
+           , ({ pat = Pat_var "x"; expr = Exp_constant (Const_integer 5) }, [])
+           , Exp_if
+               ( Exp_apply
+                   ( Exp_ident ">"
+                   , Exp_tuple (Exp_ident "x", Exp_constant (Const_integer 0), []) )
+               , Exp_construct ("Some", Some (Exp_ident "x"))
+               , Some (Exp_construct ("None", None)) ) ))
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    let x = 5 in (if x > 0
+      then (Some (x))
+      else (None)) ;;
+  |}]
+;;
