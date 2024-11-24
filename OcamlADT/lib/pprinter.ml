@@ -21,14 +21,7 @@ let get_op_pr id =
   | Exp_ident "+" | Exp_ident "-" -> 5
   | Exp_ident "*" | Exp_ident "/" -> 6
   | Exp_if (_, _, _) -> 1
-  | Exp_let (_, _, _)
-  | Exp_match (_, _)
-  | Exp_function _
-  | Exp_fun (_, _)
-  | Exp_constant _ | Exp_ident _
-  | Exp_apply (_, _)
-  | Exp_construct _ -> 0
-  | _ -> 7
+  | _ -> 0
 ;;
 
 let get_ident_pr id =
@@ -93,10 +86,10 @@ let rec pprint_pattern fmt =
          ^ String.concat
              ~sep:", "
              (List.map pl ~f:(fun p -> asprintf "%a" pprint_pattern p)))
-  | Pat_construct (id, None) -> fprintf fmt "%s" id
+  | Pat_construct (id, None) -> fprintf fmt "(%s)" id
   | Pat_construct (id, Some p) ->
     (match p with
-     | Pat_tuple _ -> fprintf fmt "%s (%a)" id pprint_pattern p
+     | Pat_tuple _ -> fprintf fmt "(%s (%a))" id pprint_pattern p
      | _ -> fprintf fmt "%s %a" id pprint_pattern p)
 ;;
 
@@ -267,7 +260,7 @@ let rec pprint_expression fmt (n : int) =
   | Exp_construct (id, Some exp) ->
     if n > 0
     then fprintf fmt "(%s (%a))" id (fun fmt -> pprint_expression fmt (n + 1)) exp
-    else fprintf fmt "%s (%a)" id (fun fmt -> pprint_expression fmt (n + 1)) exp
+    else fprintf fmt "(%s (%a))" id (fun fmt -> pprint_expression fmt (n + 1)) exp
 
 and pprint_value_binding fmt n vb =
   let open Expression in
@@ -292,7 +285,7 @@ and pprint_case fmt n case =
 and pprint_function_with_cases fmt (cs, csl, n) =
   fprintf
     fmt
-    "function \n| %a%s"
+    "function \n  | %a%s"
     (fun fmt -> pprint_case fmt n)
     cs
     (String.concat
