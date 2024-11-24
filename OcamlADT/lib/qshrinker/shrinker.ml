@@ -5,7 +5,6 @@
 open QCheck.Iter
 open QCheck.Shrink
 open Ocamladt_lib.Ast
-open Format
 
 module ShrinkQCheck = struct
   (* Shrinker for Patterns *)

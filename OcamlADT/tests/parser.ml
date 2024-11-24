@@ -1035,9 +1035,9 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "keyword" =
-  test_programm
-    {|(Kakadu_52) (fun x -> x);;|};
-  [%expect{|
+  test_programm {|(Kakadu_52) (fun x -> x);;|};
+  [%expect
+    {|
     [(Str_eval
         (Exp_apply ((Exp_construct ("Kakadu_52", None)),
            (Exp_fun (((Pat_var "x"), []), (Exp_ident "x"))))))

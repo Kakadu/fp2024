@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Format
 
 val pprint_constant : Format.formatter -> Constant.t -> unit
 val pprint_type : Format.formatter -> TypeExpr.t -> unit

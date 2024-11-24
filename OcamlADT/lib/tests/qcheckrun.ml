@@ -11,7 +11,7 @@ open Format
 
 let arbitrary =
   QCheck.make
-    ~print:(fun p -> Format.asprintf "%a" pp_program p)
+    ~print:(fun p -> asprintf "%a" pp_program p)
     (*    ~shrink:Shrinker.ShrinkQCheck.shrink_structure *)
     (Program.gen_program 26)
 ;;
@@ -19,7 +19,7 @@ let arbitrary =
 let test_round_trip2 =
   QCheck.Test.make
     ~name:"round-trip parsing and pretty printing"
-    ~count:25
+    ~count:30
     arbitrary
     (fun program ->
        let program_ast = show_program program in

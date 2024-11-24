@@ -162,9 +162,8 @@ module Expression = struct
     | Exp_fun of (Pattern.t[@gen Pattern.gen_sized (n / 2)]) List1.t * t
     (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
        [fun P1 ... Pn -> E] *)
-    | Exp_apply of t * t
-    (** [Pexp_apply(E0, E1])]
-                             represents [E0 E1*)
+    | Exp_apply of t * t (** [Pexp_apply(E0, E1)]
+                             represents [E0 E1]*)
     | Exp_match of t * (t case[@gen gen_case gen_sized (n / 2)]) List1.t
     (** [match E0 with P1 -> E1 || Pn -> En] *)
     | Exp_constraint of t * (TypeExpr.t[@gen TypeExpr.gen_sized (n / 2)]) (** [(E : T)] *)

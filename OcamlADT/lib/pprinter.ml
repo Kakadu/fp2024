@@ -30,16 +30,6 @@ let get_op_pr id =
   | _ -> 0
 ;;
 
-let get_ident_pr id =
-  match id with
-  | "&&" -> 3
-  | "||" -> 2
-  | ">" | "<" | ">=" | "<=" | "<>" | "=" -> 4
-  | "+" | "-" -> 5
-  | "*" | "/" -> 6
-  | _ -> 0
-;;
-
 let pprint_constant fmt =
   let open Constant in
   function
