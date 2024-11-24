@@ -533,38 +533,38 @@ open Base
 open Gen
 open Stdlib
 
-<span data-count="0">t</span>ype ident = <span data-count="866734">s</span>tring [@@deriving eq, show { with_path = false }]
+<span data-count="0">t</span>ype ident = <span data-count="912982">s</span>tring [@@deriving eq, show { with_path = false }]
 
 let gen_charc = ma<span data-count="48">p</span> Char.chr (int_rang<span data-count="48">e</span> (Char.cod<span data-count="48">e</span> 'a') (Char.cod<span data-count="48">e</span> 'z'))
 
 let is_not_keyword = function
-  | <span data-count="277624">"</span>let"
-  | <span data-count="279267">"</span>if"
-  | <span data-count="559764">"</span>then"
-  | <span data-count="476404">"</span>else"
-  | <span data-count="542971">"</span>in"
-  | <span data-count="275114">"</span>fun"
+  | <span data-count="301440">"</span>let"
+  | <span data-count="300915">"</span>if"
+  | <span data-count="602992">"</span>then"
+  | <span data-count="514524">"</span>else"
+  | <span data-count="590527">"</span>in"
+  | <span data-count="301204">"</span>fun"
   | <span data-count="0">"</span>true"
   | <span data-count="0">"</span>false"
   | <span data-count="0">"</span>rec"
-  | <span data-count="8697934">"</span>and"
-  | <span data-count="282008">"</span>function"
-  | <span data-count="281766">"</span>match"
-  | <span data-count="564856">"</span>with" -&gt; false
-  | <span data-count="69456003">_</span> -&gt; true
+  | <span data-count="9405618">"</span>and"
+  | <span data-count="300848">"</span>function"
+  | <span data-count="306034">"</span>match"
+  | <span data-count="613460">"</span>with" -&gt; false
+  | <span data-count="75294945">_</span> -&gt; true
 ;;
 
 let rec gen_filtered_ident base_gen =
-  <span data-count="5305051">l</span>et open QCheck.Gen in
+  <span data-count="5646620">l</span>et open QCheck.Gen in
   base_gen
   &gt;&gt;= fun ident -&gt;
-  <span data-count="866566">i</span>f is_not_keyword ident then <span data-count="866526">r</span>eturn ident else <span data-count="40">g</span>en_filtered_ident base_gen
+  <span data-count="912812">i</span>f is_not_keyword ident then <span data-count="912774">r</span>eturn ident else <span data-count="38">g</span>en_filtered_ident base_gen
 ;;
 
 let gen_ident =
   let base_gen =
     map2
-      (fun start_sym rest_sym -&gt; <span data-count="89361">B</span>ase.Char.to_strin<span data-count="89361">g</span> start_sym ^ rest_sym)
+      (fun start_sym rest_sym -&gt; <span data-count="88990">B</span>ase.Char.to_strin<span data-count="88990">g</span> start_sym ^ rest_sym)
       (oneo<span data-count="48">f</span> [ char_rang<span data-count="48">e</span> 'A' 'Z'; char_rang<span data-count="48">e</span> 'a' 'z'; retur<span data-count="48">n</span> '_' ])
       (small_string
          ~gen:
@@ -577,7 +577,7 @@ let gen_ident =
 let gen_ident_uc =
   let base_gen =
     map2
-      (fun start_sym rest_sym -&gt; <span data-count="37633">B</span>ase.Char.to_strin<span data-count="37633">g</span> start_sym ^ rest_sym)
+      (fun start_sym rest_sym -&gt; <span data-count="40133">B</span>ase.Char.to_strin<span data-count="40133">g</span> start_sym ^ rest_sym)
       (char_rang<span data-count="48">e</span> 'A' 'Z')
       (small_string
          ~gen:
@@ -588,64 +588,64 @@ let gen_ident_uc =
 ;;
 
 let gen_ident_lc include_us =
-  <span data-count="5304915">l</span>et start_sym =
-    if include_us then <span data-count="3944271">o</span>neo<span data-count="3944271">f</span> [ char_rang<span data-count="3944271">e</span> 'a' 'z'; retur<span data-count="3944271">n</span> '_' ] else <span data-count="1360644">c</span>har_rang<span data-count="1360644">e</span> 'a' 'z'
+  <span data-count="5646486">l</span>et start_sym =
+    if include_us then <span data-count="4198767">o</span>neo<span data-count="4198767">f</span> [ char_rang<span data-count="4198767">e</span> 'a' 'z'; retur<span data-count="4198767">n</span> '_' ] else <span data-count="1447719">c</span>har_rang<span data-count="1447719">e</span> 'a' 'z'
   in
   let base_gen =
     map2
-      (fun start_sym rest_sym -&gt; <span data-count="739572">B</span>ase.Char.to_strin<span data-count="739572">g</span> start_sym ^ rest_sym)
+      (fun start_sym rest_sym -&gt; <span data-count="783689">B</span>ase.Char.to_strin<span data-count="783689">g</span> start_sym ^ rest_sym)
       start_sym
       (small_string
          ~gen:
-           (oneo<span data-count="5304915">f</span>
-              [ char_rang<span data-count="5304915">e</span> 'A' 'Z'; char_rang<span data-count="5304915">e</span> 'a' 'z'; char_rang<span data-count="5304915">e</span> '0' '9'; retur<span data-count="5304915">n</span> '_' ]))
+           (oneo<span data-count="5646486">f</span>
+              [ char_rang<span data-count="5646486">e</span> 'A' 'Z'; char_rang<span data-count="5646486">e</span> 'a' 'z'; char_rang<span data-count="5646486">e</span> '0' '9'; retur<span data-count="5646486">n</span> '_' ]))
   in
-  <span data-count="5304915">g</span>en_filtered_ident base_gen
+  <span data-count="5646486">g</span>en_filtered_ident base_gen
 ;;
 
 module List1 = struct
-  <span data-count="1284005">t</span>ype 'a t = <span data-count="82404">'</span>a * (<span data-count="2668100">'</span>a lis<span data-count="689978">t</span>[@gen small_lis<span data-count="1244364">t</span> gen_a])
-  [@@deriving eq, show { with_path = false }, qcheck<span data-count="1244364">]</span>
+  <span data-count="1368097">t</span>ype 'a t = <span data-count="87310">'</span>a * (<span data-count="2837919">'</span>a lis<span data-count="733819">t</span>[@gen small_lis<span data-count="1326012">t</span> gen_a])
+  [@@deriving eq, show { with_path = false }, qcheck<span data-count="1326012">]</span>
 end
 
 module List2 = struct
-  <span data-count="418135">t</span>ype 'a t = <span data-count="81652">'</span>a * <span data-count="40826">'</span><span data-count="40826">a</span> * (<span data-count="2679007">'</span>a lis<span data-count="692585">t</span>[@gen small_lis<span data-count="377377">t</span> gen_a])
-  [@@deriving eq, show { with_path = false }, qcheck<span data-count="377377">]</span>
+  <span data-count="444213">t</span>ype 'a t = <span data-count="85880">'</span>a * <span data-count="42940">'</span><span data-count="42940">a</span> * (<span data-count="2801816">'</span>a lis<span data-count="724396">t</span>[@gen small_lis<span data-count="401341">t</span> gen_a])
+  [@@deriving eq, show { with_path = false }, qcheck<span data-count="401341">]</span>
 end
 
 module Constant = struct
-  <span data-count="2220765">t</span>ype t =
-    <span data-count="0">|</span> Const_integer of (in<span data-count="247104">t</span>[@gen small_nat]) (** integer as [52] *)
-    <span data-count="0">|</span> Const_char of (cha<span data-count="246627">r</span>[@gen gen_charc]) (** char as ['w'] *)
-    <span data-count="0">|</span> Const_string of (strin<span data-count="246564">g</span>[@gen small_string ~gen:gen_charc])
+  <span data-count="2347887">t</span>ype t =
+    <span data-count="0">|</span> Const_integer of (in<span data-count="261585">t</span>[@gen small_nat]) (** integer as [52] *)
+    <span data-count="0">|</span> Const_char of (cha<span data-count="260545">r</span>[@gen gen_charc]) (** char as ['w'] *)
+    <span data-count="0">|</span> Const_string of (strin<span data-count="260539">g</span>[@gen small_string ~gen:gen_charc])
     (** string as ["Kakadu"] *)
   [@@deriving eq, show { with_path = false }, qcheck<span data-count="240">]</span>
 end
 
 module TypeExpr = struct
-  <span data-count="1151079">t</span>ype t =
+  <span data-count="1204555">t</span>ype t =
     <span data-count="0">|</span> Type_arrow of t * <span data-count="0">t</span> (** [Type_arrow(T1, T2)] represents:
                               [T1 -&gt; T2] *)
     <span data-count="0">|</span> Type_var of (ident[@gen gen_ident])
     <span data-count="0">|</span> Type_tuple of t List2.<span data-count="0">t</span> (** [Type_tuple([T1, T2, ... Tn])] *)
-  [@@deriving eq, show { with_path = false }, qcheck<span data-count="228416">]</span>
+  [@@deriving eq, show { with_path = false }, qcheck<span data-count="242408">]</span>
 end
 
 module Pattern = struct
-  <span data-count="5218615">t</span>ype t =
-    <span data-count="0">|</span> Pat_constraint of t * (TypeExpr.t[@gen TypeExpr.gen_size<span data-count="37746">d</span> (n / 2)]<span data-count="0">)</span>
+  <span data-count="5538124">t</span>ype t =
+    <span data-count="0">|</span> Pat_constraint of t * (TypeExpr.t[@gen TypeExpr.gen_size<span data-count="39549">d</span> (n / 2)]<span data-count="0">)</span>
     (** Pattern [(P : T)] *)
     <span data-count="0">|</span> Pat_any (** The pattern [_]. *)
-    <span data-count="0">|</span> Pat_var of (ident[@gen gen_ident_l<span data-count="1360644">c</span> false]) (** A variable pattern such as [x] *)
+    <span data-count="0">|</span> Pat_var of (ident[@gen gen_ident_l<span data-count="1447719">c</span> false]) (** A variable pattern such as [x] *)
     <span data-count="0">|</span> Pat_constant of Constant.t (** Patterns such as [52], ['w'], ["uwu"] *)
     <span data-count="0">|</span> Pat_tuple of t List2.<span data-count="0">t</span> (** Patterns [(P1, ..., Pn)]. *)
-    <span data-count="0">|</span> Pat_construct of (ident[@gen gen_ident_uc]) * <span data-count="102922">t</span> optio<span data-count="27832">n</span>
+    <span data-count="0">|</span> Pat_construct of (ident[@gen gen_ident_uc]) * <span data-count="109086">t</span> optio<span data-count="29512">n</span>
     (** [Pat_construct(C, args)] represents:
         - [C]               when [args] is [None],
         - [C P]             when [args] is [Some (P)]
         - [C (P1, ..., Pn)] when [args] is
           [Some (Pat_tuple [P1; ...; Pn])] *)
-  [@@deriving eq, show { with_path = false }, qcheck<span data-count="4459488">]</span>
+  [@@deriving eq, show { with_path = false }, qcheck<span data-count="4738743">]</span>
 end
 
 module Expression = struct
@@ -654,63 +654,63 @@ module Expression = struct
     <span data-count="0">|</span> Recursive
   [@@deriving eq, show { with_path = false }, qcheck<span data-count="192">]</span>
 
-  <span data-count="1334060">t</span>ype 'expr value_binding =
+  <span data-count="1387484">t</span>ype 'expr value_binding =
     { pat : Pattern.t
     <span data-count="0">;</span> <span data-count="0">e</span>xpr : 'expr
     }
-  [@@deriving eq, show { with_path = false }<span data-count="381160">]</span>
+  [@@deriving eq, show { with_path = false }<span data-count="396424">]</span>
 
   let gen_value_binding gen_expr n =
-    <span data-count="314133">l</span>et* pat = Pattern.gen_size<span data-count="314133">d</span> (n / 2) in
-    <span data-count="190551">l</span>et* expr = gen_exp<span data-count="190551">r</span> (n / 2) in
-    <span data-count="190551">r</span>eturn { pat; expr }
+    <span data-count="334563">l</span>et* pat = Pattern.gen_size<span data-count="334563">d</span> (n / 2) in
+    <span data-count="198183">l</span>et* expr = gen_exp<span data-count="198183">r</span> (n / 2) in
+    <span data-count="198183">r</span>eturn { pat; expr }
   ;;
 
-  <span data-count="2321774">t</span>ype 'expr case =
+  <span data-count="2478098">t</span>ype 'expr case =
     { first : Pattern.t
     <span data-count="0">;</span> <span data-count="0">s</span>econd : 'expr
     }
-  [@@deriving eq, show { with_path = false }<span data-count="663364">]</span>
+  [@@deriving eq, show { with_path = false }<span data-count="708028">]</span>
 
   let gen_case gen_expr n =
-    <span data-count="622182">l</span>et* first = Pattern.gen_size<span data-count="622182">d</span> (n / 2) in
-    <span data-count="331679">l</span>et* second = gen_exp<span data-count="331679">r</span> (n / 2) in
-    <span data-count="331679">r</span>eturn { first; second }
+    <span data-count="663006">l</span>et* first = Pattern.gen_size<span data-count="663006">d</span> (n / 2) in
+    <span data-count="354011">l</span>et* second = gen_exp<span data-count="354011">r</span> (n / 2) in
+    <span data-count="354011">r</span>eturn { first; second }
   ;;
 
-  <span data-count="10224820">t</span>ype t =
-    <span data-count="0">|</span> Exp_ident of (ident[@gen gen_ident_l<span data-count="3944271">c</span> true]) (** Identifiers such as [x] *)
+  <span data-count="10870875">t</span>ype t =
+    <span data-count="0">|</span> Exp_ident of (ident[@gen gen_ident_l<span data-count="4198767">c</span> true]) (** Identifiers such as [x] *)
     <span data-count="0">|</span> Exp_constant of Constant.t (** Expressions constant such as [1], ['a'], ["true"]**)
     <span data-count="0">|</span> Exp_tuple of t List2.<span data-count="0">t</span> (** Expressions [(E1, E2, ..., En)] *)
-    <span data-count="0">|</span> Exp_function of (t case[@gen gen_cas<span data-count="311091">e</span> gen_sized (n / 2)]) List1.<span data-count="0">t</span>
+    <span data-count="0">|</span> Exp_function of (t case[@gen gen_cas<span data-count="331503">e</span> gen_sized (n / 2)]) List1.<span data-count="0">t</span>
     (** [Exp_function (P1, [P2; ...; Pn])] represents
         [function P1 | ... | Pn] *)
-    <span data-count="0">|</span> Exp_fun of (Pattern.t[@gen Pattern.gen_size<span data-count="311091">d</span> (n / 2)]) List1.t * <span data-count="0">t</span>
+    <span data-count="0">|</span> Exp_fun of (Pattern.t[@gen Pattern.gen_size<span data-count="331503">d</span> (n / 2)]) List1.t * <span data-count="0">t</span>
     (**[Exp_fun (P1, [P2; ...; Pn], E)] represents:
        [fun P1 ... Pn -&gt; E] *)
     <span data-count="0">|</span> Exp_apply of t * <span data-count="0">t</span> (** [Pexp_apply(E0, E1)]
                              represents [E0 E1]*)
-    <span data-count="0">|</span> Exp_match of t * (t case[@gen gen_cas<span data-count="311091">e</span> gen_sized (n / 2)]) List1.<span data-count="0">t</span>
+    <span data-count="0">|</span> Exp_match of t * (t case[@gen gen_cas<span data-count="331503">e</span> gen_sized (n / 2)]) List1.<span data-count="0">t</span>
     (** [match E0 with P1 -&gt; E1 || Pn -&gt; En] *)
-    <span data-count="0">|</span> Exp_constraint of t * (TypeExpr.t[@gen TypeExpr.gen_size<span data-count="311091">d</span> (n / 2)]<span data-count="0">)</span> (** [(E : T)] *)
-    <span data-count="0">|</span> Exp_if of t * t * <span data-count="36936">t</span> optio<span data-count="9986">n</span> (** [if E1 then E2 else E3] *)
+    <span data-count="0">|</span> Exp_constraint of t * (TypeExpr.t[@gen TypeExpr.gen_size<span data-count="331503">d</span> (n / 2)]<span data-count="0">)</span> (** [(E : T)] *)
+    <span data-count="0">|</span> Exp_if of t * t * <span data-count="39288">t</span> optio<span data-count="10626">n</span> (** [if E1 then E2 else E3] *)
     <span data-count="0">|</span> Exp_let of
-        rec_flag * (t value_binding[@gen gen_value_bindin<span data-count="311091">g</span> gen_sized (n / 2)]) List1.t * <span data-count="0">t</span>
+        rec_flag * (t value_binding[@gen gen_value_bindin<span data-count="331503">g</span> gen_sized (n / 2)]) List1.t * <span data-count="0">t</span>
     (** [Exp_let(flag, [(P1,E1) ; ... ; (Pn,En)], E)] represents:
         - [let P1 = E1 and ... and Pn = EN in E]
           when [flag] is [Nonrecursive],
         - [let rec P1 = E1 and ... and Pn = EN in E]
           when [flag] is [Recursive]. *)
-    <span data-count="0">|</span> Exp_construct of (ident[@gen gen_ident_uc]) * <span data-count="36324">t</span> optio<span data-count="9817">n</span>
+    <span data-count="0">|</span> Exp_construct of (ident[@gen gen_ident_uc]) * <span data-count="39404">t</span> optio<span data-count="10637">n</span>
     (** [Exp_construct(C, exp)] represents:
         - [C]               when [exp] is [None],
         - [C E]             when [exp] is [Some E],
         - [C (E1, ..., En)] when [exp] is [Some (Exp_tuple[E1;...;En])] *)
-  [@@deriving eq, show { with_path = false }, qcheck<span data-count="18465732">]</span>
+  [@@deriving eq, show { with_path = false }, qcheck<span data-count="19668732">]</span>
 end
 
 module Structure = struct
-  <span data-count="4691">t</span>ype structure_item =
+  <span data-count="4672">t</span>ype structure_item =
     <span data-count="0">|</span> Str_eval of Expression.t
     <span data-count="0">|</span> Str_value of Expression.rec_flag * Expression.t Expression.value_binding List1.<span data-count="0">t</span>
     (** [Str_value(rec, [(P1, E1 ; ... ; (Pn, En))])] represents:
@@ -736,21 +736,21 @@ module Structure = struct
   let gen_structure_item n =
     <span data-count="40">P</span>rintf.printf "n =  %d\n\n" n;
     <span data-count="40">f</span>requency
-      [ 1, ma<span data-count="40">p</span> (fun expr -&gt; <span data-count="1526">S</span>tr_eval expr) (Expression.gen_size<span data-count="40">d</span> (n / 2))
+      [ 1, ma<span data-count="40">p</span> (fun expr -&gt; <span data-count="1512">S</span>tr_eval expr) (Expression.gen_size<span data-count="40">d</span> (n / 2))
       ; ( 1
         , let* rec_flag =
             oneo<span data-count="40">f</span> [ retur<span data-count="40">n</span> Expression.Nonrecursive; retur<span data-count="40">n</span> Expression.Recursive ]
           in
-          <span data-count="1521">l</span>et* bind1 = Expression.gen_value_bindin<span data-count="1521">g</span> Expression.gen_sized (n / 2) in
-          <span data-count="1521">l</span>et* bindl =
-            small_lis<span data-count="1521">t</span> (Expression.gen_value_bindin<span data-count="1521">g</span> Expression.gen_sized (n / 2))
+          <span data-count="1530">l</span>et* bind1 = Expression.gen_value_bindin<span data-count="1530">g</span> Expression.gen_sized (n / 2) in
+          <span data-count="1530">l</span>et* bindl =
+            small_lis<span data-count="1530">t</span> (Expression.gen_value_bindin<span data-count="1530">g</span> Expression.gen_sized (n / 2))
           in
-          <span data-count="1521">r</span>eturn (Str_value (rec_flag, (bind1, bindl))) )
+          <span data-count="1530">r</span>eturn (Str_value (rec_flag, (bind1, bindl))) )
       ]
   ;;
 end
 
-<span data-count="1269">t</span>ype program = <span data-count="13920">S</span>tructure.structure_item lis<span data-count="3303">t</span> [@@deriving eq, show { with_path = false }]
+<span data-count="1269">t</span>ype program = <span data-count="13902">S</span>tructure.structure_item lis<span data-count="3300">t</span> [@@deriving eq, show { with_path = false }]
 
 module Program = struct
   let gen_program n = <span data-count="40">l</span>ist_size (int_boun<span data-count="40">d</span> 5) (Structure.gen_structure_ite<span data-count="40">m</span> (n / 2))
