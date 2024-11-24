@@ -13,4 +13,4 @@ open Ast
 val parse_expr : expression t
 
 (** [parse_single_binding] parses one function or value binding and returns it *)
-val parse_single_binding: expression t -> val_binding t
+val parse_single_binding : expression t -> val_binding t
