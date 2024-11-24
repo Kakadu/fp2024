@@ -113,12 +113,10 @@ let shrink_statement =
   let open QCheck.Iter in
   function
   | Let (rec_flag, let_bind, let_bind_list) ->
-    (let+ let_bind_shr = shrink_let_bind let_bind in
-     Let (rec_flag, let_bind_shr, let_bind_list))
-    <+> (let+ let_bind_list_shr =
-           QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
-         in
-         Let (rec_flag, let_bind, let_bind_list_shr))
+    shrink_let_bind let_bind
+    >|= (fun a' -> Let (rec_flag, a', let_bind_list))
+    <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
+         >|= fun a' -> Let (rec_flag, let_bind, a'))
     <+>
       (match let_bind_list with
       | [] -> empty
