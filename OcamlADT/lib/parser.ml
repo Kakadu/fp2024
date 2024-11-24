@@ -453,7 +453,5 @@ let pstructure =
 let parse str = parse_string ~consume:All pstructure str
 
 let parse_str str =
-  match parse str with
-  | Ok str -> str
-  | Error msg -> failwith msg
+  parse str |> Result.ok_or_failwith
 ;;
