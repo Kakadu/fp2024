@@ -5,7 +5,7 @@
 open KeywordChecker
 
 type ident = Ident of string * string option (** identifier *)
-[@@deriving eq, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
 let gen_varname =
   let open QCheck.Gen in
@@ -58,7 +58,7 @@ type literal =
   | Bool_lt of bool (** [false], [true] *)
   | String_lt of (string[@gen gen_string]) (** ["Hello world"] *)
   | Unit_lt (** [Unit] *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 type binary_operator =
   | Binary_equal (** [=] *)
@@ -77,12 +77,12 @@ type binary_operator =
   | Binary_xor_bitwise (** [^^^] *)
   | Binary_and_bitwise (** [&&&] *)
   | Binary_cons (** [::] *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 type unary_operator =
   | Unary_minus (** unary [-] *)
   | Unary_not (** unary [not] *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 type pattern =
   | Wild (** [_] *)
@@ -99,12 +99,12 @@ type pattern =
   | PVar of ident (** pattern identifier *)
   | POption of pattern option
     (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 type is_recursive =
   | Nonrec (** let factorial n = ... *)
   | Rec (** let rec factorial n = ... *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 type expr =
   | Const of literal (** [Int], [Bool], [String], [Unit], [Null] *)
@@ -142,12 +142,12 @@ type expr =
         [@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 20)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 and let_bind =
   | Let_bind of ident * (ident list[@gen gen_ident_small_list]) * expr
   (** [and sum n m = n+m] *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 let gen_expr =
   QCheck.Gen.(
@@ -169,9 +169,9 @@ type statement =
   (** [let name = expr] *)
 (*| ActivePattern of (ident list[@gen gen_ident_small_list]) * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)*)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]
 
 type construction =
   | Expr of expr (** expression *)
   | Statement of statement (** statement *)
-[@@deriving eq, show { with_path = false }, qcheck]
+[@@deriving show { with_path = false }, qcheck]

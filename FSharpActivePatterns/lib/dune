@@ -4,6 +4,6 @@
  (modules Ast Parser AstPrinter PrettyPrinter KeywordChecker)
  (libraries angstrom base)
  (preprocess
-  (pps ppx_deriving_qcheck ppx_deriving.show ppx_deriving.eq))
+  (pps ppx_deriving_qcheck ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))
