@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>pprinter.ml &mdash; Coverage report</title>
-    <meta name="description" content="94.32% coverage in lib/pprinter.ml">
+    <meta name="description" content="94.89% coverage in lib/pprinter.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,9 @@
           <span class="dirname">lib/</span>pprinter.ml
         </a>
       </h1>
-      <h2>94.32%</h2>
+      <h2>94.89%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:4.62%"></span>
       <span class="unvisited" style="top:5.23%"></span>
       <span class="unvisited" style="top:5.54%"></span>
       <span class="unvisited" style="top:5.85%"></span>
@@ -46,7 +45,7 @@
 <a id="L12"></a><span > </span>
 <a id="L13"></a><span class="visited"> </span>
 <a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span class="unvisited"> </span>
+<a id="L15"></a><span class="visited"> </span>
 <a id="L16"></a><span class="visited"> </span>
 <a id="L17"></a><span class="unvisited"> </span>
 <a id="L18"></a><span class="unvisited"> </span>
@@ -697,42 +696,42 @@ open Ast
 open Stdlib.Format
 
 let get_op_pr id =
-  <span data-count="213206">l</span>et open Expression in
+  <span data-count="185099">l</span>et open Expression in
   match id with
   | <span data-count="3">E</span>xp_ident "&amp;&amp;" -&gt; 3
   | <span data-count="2">E</span>xp_ident "||" -&gt; 2
-  | <span data-count="0">E</span>xp_ident "&gt;"
+  | <span data-count="2">E</span>xp_ident "&gt;"
   | <span data-count="3">E</span>xp_ident "&lt;"
   | <span data-count="0">E</span>xp_ident "&gt;="
   | <span data-count="0">E</span>xp_ident "&lt;="
   | <span data-count="0">E</span>xp_ident "&lt;&gt;"
   | <span data-count="0">E</span>xp_ident "=" -&gt; 4
   | <span data-count="12">E</span>xp_ident "+" | <span data-count="9">E</span>xp_ident "-" -&gt; 5
-  | <span data-count="12">E</span>xp_ident "*" | <span data-count="8">E</span>xp_ident "/" -&gt; 6
-  | <span data-count="5235">E</span>xp_if (_, _, _) -&gt; 1
-  | <span data-count="5327">E</span>xp_let (_, _, _)
-  | <span data-count="5276">E</span>xp_match (_, _)
-  | <span data-count="5315">E</span>xp_function _
-  | <span data-count="5230">E</span>xp_fun (_, _)
-  | <span data-count="82815">E</span>xp_constant _ | <span data-count="82668">E</span>xp_ident _ -&gt; 0
-  | <span data-count="5347">E</span>xp_apply (_, _) | <span data-count="5244">E</span>xp_construct _ -&gt; 7
-  | <span data-count="10700">_</span> -&gt; 0
+  | <span data-count="13">E</span>xp_ident "*" | <span data-count="8">E</span>xp_ident "/" -&gt; 6
+  | <span data-count="4443">E</span>xp_if (_, _, _) -&gt; 1
+  | <span data-count="4526">E</span>xp_let (_, _, _)
+  | <span data-count="4612">E</span>xp_match (_, _)
+  | <span data-count="4414">E</span>xp_function _
+  | <span data-count="4563">E</span>xp_fun (_, _)
+  | <span data-count="72095">E</span>xp_constant _ | <span data-count="72149">E</span>xp_ident _ -&gt; 0
+  | <span data-count="4615">E</span>xp_apply (_, _) | <span data-count="4509">E</span>xp_construct _ -&gt; 7
+  | <span data-count="9121">_</span> -&gt; 0
 ;;
 
 let pprint_constant fmt =
-  <span data-count="790654">l</span>et open Constant in
+  <span data-count="703943">l</span>et open Constant in
   function
-  | <span data-count="264125">C</span>onst_integer n -&gt; fprintf fmt "%d" n
-  | <span data-count="262429">C</span>onst_char c -&gt; fprintf fmt "'%c'" c
-  | <span data-count="264100">C</span>onst_string s -&gt; fprintf fmt "%S" s
+  | <span data-count="234474">C</span>onst_integer n -&gt; fprintf fmt "%d" n
+  | <span data-count="234282">C</span>onst_char c -&gt; fprintf fmt "'%c'" c
+  | <span data-count="235187">C</span>onst_string s -&gt; fprintf fmt "%S" s
 ;;
 
 let rec pprint_type fmt =
-  <span data-count="95102">l</span>et open TypeExpr in
+  <span data-count="89803">l</span>et open TypeExpr in
   function
-  | <span data-count="2794">T</span>ype_arrow (tye1, tye2) -&gt; fprintf fmt "(%a -&gt; %a)" pprint_type tye1 pprint_type tye2
-  | <span data-count="89445">T</span>ype_var id -&gt; fprintf fmt "%s" id
-  | <span data-count="2863">T</span>ype_tuple (tye1, tye2, tyel) -&gt;
+  | <span data-count="2666">T</span>ype_arrow (tye1, tye2) -&gt; fprintf fmt "(%a -&gt; %a)" pprint_type tye1 pprint_type tye2
+  | <span data-count="84508">T</span>ype_var id -&gt; fprintf fmt "%s" id
+  | <span data-count="2629">T</span>ype_tuple (tye1, tye2, tyel) -&gt;
     fprintf
       fmt
       "(%a * %a%s)"
@@ -741,22 +740,22 @@ let rec pprint_type fmt =
       pprint_type
       tye2
       (if List.is_empty tyel
-       then <span data-count="241">"</span>"
+       then <span data-count="207">"</span>"
        else
-         <span data-count="2622">"</span> * "
-         ^ String.conca<span data-count="2622">t</span>
+         <span data-count="2422">"</span> * "
+         ^ String.conca<span data-count="2422">t</span>
              ~sep:" * "
-             (List.ma<span data-count="2622">p</span> tyel ~f:(fun t -&gt; <span data-count="43565">a</span>sprintf "%a" pprint_type t)))
+             (List.ma<span data-count="2422">p</span> tyel ~f:(fun t -&gt; <span data-count="42925">a</span>sprintf "%a" pprint_type t)))
 ;;
 
 let rec pprint_pattern fmt =
-  <span data-count="1316478">l</span>et open Pattern in
+  <span data-count="1181273">l</span>et open Pattern in
   function
-  | <span data-count="29613">P</span>at_constraint (p, tye) -&gt; fprintf fmt "(%a : %a)" pprint_pattern p pprint_type tye
-  | <span data-count="408501">P</span>at_any -&gt; fprintf fmt "_"
-  | <span data-count="409751">P</span>at_var id -&gt; fprintf fmt "%s" id
-  | <span data-count="409513">P</span>at_constant c -&gt; pprint_constant fmt c
-  | <span data-count="29441">P</span>at_tuple (p1, p2, pl) -&gt;
+  | <span data-count="26869">P</span>at_constraint (p, tye) -&gt; fprintf fmt "(%a : %a)" pprint_pattern p pprint_type tye
+  | <span data-count="365661">P</span>at_any -&gt; fprintf fmt "_"
+  | <span data-count="367797">P</span>at_var id -&gt; fprintf fmt "%s" id
+  | <span data-count="367199">P</span>at_constant c -&gt; pprint_constant fmt c
+  | <span data-count="26896">P</span>at_tuple (p1, p2, pl) -&gt;
     fprintf
       fmt
       "(%a, %a%s)"
@@ -765,71 +764,71 @@ let rec pprint_pattern fmt =
       pprint_pattern
       p2
       (if List.is_empty pl
-       then <span data-count="2391">"</span>"
+       then <span data-count="2155">"</span>"
        else
-         <span data-count="27050">"</span>, "
-         ^ String.conca<span data-count="27050">t</span>
+         <span data-count="24741">"</span>, "
+         ^ String.conca<span data-count="24741">t</span>
              ~sep:", "
-             (List.ma<span data-count="27050">p</span> pl ~f:(fun p -&gt; <span data-count="469377">a</span>sprintf "%a" pprint_pattern p)))
-  | <span data-count="4437">P</span>at_construct (id, None) -&gt; fprintf fmt "(%s)" id
-  | <span data-count="25222">P</span>at_construct (id, Some p) -&gt;
+             (List.ma<span data-count="24741">p</span> pl ~f:(fun p -&gt; <span data-count="420521">a</span>sprintf "%a" pprint_pattern p)))
+  | <span data-count="3973">P</span>at_construct (id, None) -&gt; fprintf fmt "(%s)" id
+  | <span data-count="22878">P</span>at_construct (id, Some p) -&gt;
     (match p with
-     | <span data-count="669">P</span>at_tuple _ -&gt; fprintf fmt "(%s (%a))" id pprint_pattern p
-     | <span data-count="24553">_</span> -&gt; fprintf fmt "%s %a" id pprint_pattern p)
+     | <span data-count="605">P</span>at_tuple _ -&gt; fprintf fmt "(%s (%a))" id pprint_pattern p
+     | <span data-count="22273">_</span> -&gt; fprintf fmt "%s %a" id pprint_pattern p)
 ;;
 
 let pprint_rec fmt =
-  <span data-count="12078">l</span>et open Expression in
+  <span data-count="10906">l</span>et open Expression in
   function
-  | <span data-count="6084">N</span>onrecursive -&gt; fprintf fmt ""
-  | <span data-count="5994">R</span>ecursive -&gt; fprintf fmt "rec "
+  | <span data-count="5434">N</span>onrecursive -&gt; fprintf fmt ""
+  | <span data-count="5472">R</span>ecursive -&gt; fprintf fmt "rec "
 ;;
 
 let rec pprint_expression fmt (n : int) =
-  <span data-count="856284">l</span>et open Expression in
+  <span data-count="758395">l</span>et open Expression in
   function
-  | <span data-count="380125">E</span>xp_ident id -&gt; fprintf fmt "%s" id
-  | <span data-count="381141">E</span>xp_constant ct -&gt; pprint_constant fmt ct
-  | <span data-count="10679">E</span>xp_tuple (ex1, ex2, exl) -&gt;
+  | <span data-count="336621">E</span>xp_ident id -&gt; fprintf fmt "%s" id
+  | <span data-count="336744">E</span>xp_constant ct -&gt; pprint_constant fmt ct
+  | <span data-count="9505">E</span>xp_tuple (ex1, ex2, exl) -&gt;
     let op_pr1 = get_op_pr ex1 in
-    <span data-count="10679">l</span>et op_pr2 = get_op_pr ex2 in
-    <span data-count="10679">f</span>printf
+    <span data-count="9505">l</span>et op_pr2 = get_op_pr ex2 in
+    <span data-count="9505">f</span>printf
       fmt
       "(%a, %a%s)"
-      (fun fmt -&gt; <span data-count="10679">p</span>print_expression fmt (op_pr1 + 1))
+      (fun fmt -&gt; <span data-count="9505">p</span>print_expression fmt (op_pr1 + 1))
       ex1
-      (fun fmt -&gt; <span data-count="10679">p</span>print_expression fmt (op_pr2 + 1))
+      (fun fmt -&gt; <span data-count="9505">p</span>print_expression fmt (op_pr2 + 1))
       ex2
       (if List.is_empty exl
-       then <span data-count="858">"</span>"
+       then <span data-count="741">"</span>"
        else
-         <span data-count="9821">"</span>, "
-         ^ String.conca<span data-count="9821">t</span>
+         <span data-count="8764">"</span>, "
+         ^ String.conca<span data-count="8764">t</span>
              ~sep:", "
-             (List.ma<span data-count="9821">p</span> exl ~f:(fun ex -&gt;
-                <span data-count="170722">l</span>et op_pr_t = get_op_pr ex in
-                <span data-count="170722">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="170722">p</span>print_expression fmt (op_pr_t + 1)) ex)))
-  | <span data-count="10680">E</span>xp_function (cs1, csl) when n &gt; 0 -&gt;
-    <span data-count="10538">f</span>printf fmt "(%a)" pprint_function_with_cases (cs1, csl, n + 1)
-  | <span data-count="142">E</span>xp_function (cs1, csl) -&gt;
+             (List.ma<span data-count="8764">p</span> exl ~f:(fun ex -&gt;
+                <span data-count="146935">l</span>et op_pr_t = get_op_pr ex in
+                <span data-count="146935">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="146935">p</span>print_expression fmt (op_pr_t + 1)) ex)))
+  | <span data-count="9343">E</span>xp_function (cs1, csl) when n &gt; 0 -&gt;
+    <span data-count="9202">f</span>printf fmt "(%a)" pprint_function_with_cases (cs1, csl, n + 1)
+  | <span data-count="141">E</span>xp_function (cs1, csl) -&gt;
     fprintf fmt "%a" pprint_function_with_cases (cs1, csl, n + 1)
-  | <span data-count="10435">E</span>xp_fun (ptl1, exp) -&gt;
+  | <span data-count="9370">E</span>xp_fun (ptl1, exp) -&gt;
     let pt1, ptl = ptl1 in
     let if_string =
       asprintf
         "fun %a%s -&gt; %a"
         pprint_pattern
         pt1
-        (String.conca<span data-count="10435">t</span>
+        (String.conca<span data-count="9370">t</span>
            ~sep:""
-           (List.ma<span data-count="10435">p</span> ptl ~f:(fun p -&gt; <span data-count="162348">a</span>sprintf " %a" pprint_pattern p)))
-        (fun fmt -&gt; <span data-count="10435">p</span>print_expression fmt n)
+           (List.ma<span data-count="9370">p</span> ptl ~f:(fun p -&gt; <span data-count="148485">a</span>sprintf " %a" pprint_pattern p)))
+        (fun fmt -&gt; <span data-count="9370">p</span>print_expression fmt n)
         exp
     in
-    <span data-count="10435">i</span>f n &gt; 0 then <span data-count="10283">f</span>printf fmt "(%s)" if_string else <span data-count="152">f</span>printf fmt "%s" if_string
-  | <span data-count="10540">E</span>xp_apply (ex1, ex2) -&gt;
+    <span data-count="9370">i</span>f n &gt; 0 then <span data-count="9242">f</span>printf fmt "(%s)" if_string else <span data-count="128">f</span>printf fmt "%s" if_string
+  | <span data-count="9534">E</span>xp_apply (ex1, ex2) -&gt;
     let op_pr = get_op_pr ex1 in
-    <span data-count="10540">(</span>match op_pr with
+    <span data-count="9534">(</span>match op_pr with
      | <span data-count="2">2</span> | <span data-count="3">3</span> -&gt;
        (match ex2 with
         | <span data-count="5">E</span>xpression.Exp_tuple (first, second, _) -&gt;
@@ -847,154 +846,154 @@ let rec pprint_expression fmt (n : int) =
           then <span data-count="1">f</span>printf fmt "(%s)" apply_binop_r_string
           else <span data-count="4">f</span>printf fmt "%s" apply_binop_r_string
         | <span data-count="0">_</span> -&gt; fprintf fmt "not covered\n")
-     | <span data-count="21">5</span> | <span data-count="20">6</span> | <span data-count="3">4</span> -&gt;
+     | <span data-count="21">5</span> | <span data-count="21">6</span> | <span data-count="5">4</span> -&gt;
        (match ex2 with
-        | <span data-count="44">E</span>xpression.Exp_tuple (first, second, _) -&gt;
+        | <span data-count="47">E</span>xpression.Exp_tuple (first, second, _) -&gt;
           let apply_binop_l_string =
             asprintf
               "%a %a %a"
-              (fun fmt -&gt; <span data-count="44">p</span>print_expression fmt op_pr)
+              (fun fmt -&gt; <span data-count="47">p</span>print_expression fmt op_pr)
               first
-              (fun fmt -&gt; <span data-count="44">p</span>print_expression fmt (op_pr + 1))
+              (fun fmt -&gt; <span data-count="47">p</span>print_expression fmt (op_pr + 1))
               ex1
-              (fun fmt -&gt; <span data-count="44">p</span>print_expression fmt (op_pr + 1))
+              (fun fmt -&gt; <span data-count="47">p</span>print_expression fmt (op_pr + 1))
               second
           in
-          <span data-count="44">i</span>f n &gt; op_pr
+          <span data-count="47">i</span>f n &gt; op_pr
           then <span data-count="14">f</span>printf fmt "(%s)" apply_binop_l_string
-          else <span data-count="30">f</span>printf fmt "%s" apply_binop_l_string
+          else <span data-count="33">f</span>printf fmt "%s" apply_binop_l_string
         | <span data-count="0">_</span> -&gt; fprintf fmt "not covered\n")
-     | <span data-count="10491">_</span> -&gt;
+     | <span data-count="9482">_</span> -&gt;
        let apply_string =
          asprintf
            "%a %a"
-           (fun fmt -&gt; <span data-count="10491">p</span>print_expression fmt (op_pr + 1))
+           (fun fmt -&gt; <span data-count="9482">p</span>print_expression fmt (op_pr + 1))
            ex1
-           (fun fmt -&gt; <span data-count="10491">p</span>print_expression fmt (op_pr + 1))
+           (fun fmt -&gt; <span data-count="9482">p</span>print_expression fmt (op_pr + 1))
            ex2
        in
-       <span data-count="10491">f</span>printf fmt "(%s)" apply_string)
-  | <span data-count="10586">E</span>xp_match (ex, csl1) -&gt;
+       <span data-count="9482">f</span>printf fmt "(%s)" apply_string)
+  | <span data-count="9620">E</span>xp_match (ex, csl1) -&gt;
     let cs, csl = csl1 in
     let op_pr1 = get_op_pr ex in
-    <span data-count="10586">l</span>et match_string =
+    <span data-count="9620">l</span>et match_string =
       asprintf
         "match %a with\n  | %a%s"
-        (fun fmt -&gt; <span data-count="10586">p</span>print_expression fmt (op_pr1 + 1))
+        (fun fmt -&gt; <span data-count="9620">p</span>print_expression fmt (op_pr1 + 1))
         ex
-        (fun fmt -&gt; <span data-count="10586">p</span>print_case fmt n)
+        (fun fmt -&gt; <span data-count="9620">p</span>print_case fmt n)
         cs
         (if List.is_empty csl
-         then <span data-count="818">"</span>"
+         then <span data-count="731">"</span>"
          else
-           <span data-count="9768">"</span> | "
-           ^ String.conca<span data-count="9768">t</span>
+           <span data-count="8889">"</span> | "
+           ^ String.conca<span data-count="8889">t</span>
                ~sep:"\n  | "
-               (List.ma<span data-count="9768">p</span> csl ~f:(fun cs -&gt;
-                  <span data-count="165745">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="165745">p</span>print_case fmt n) cs)))
+               (List.ma<span data-count="8889">p</span> csl ~f:(fun cs -&gt;
+                  <span data-count="151784">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="151784">p</span>print_case fmt n) cs)))
     in
-    <span data-count="10586">i</span>f n &gt; 0 then <span data-count="10421">f</span>printf fmt "(%s)" match_string else <span data-count="165">f</span>printf fmt "%s" match_string
-  | <span data-count="10610">E</span>xp_constraint (ex, tye) -&gt;
-    fprintf fmt "(%a : %a)" (fun fmt -&gt; <span data-count="10610">p</span>print_expression fmt (n + 1)) ex pprint_type tye
-  | <span data-count="1593">E</span>xp_if (ex1, ex2, None) -&gt;
+    <span data-count="9620">i</span>f n &gt; 0 then <span data-count="9447">f</span>printf fmt "(%s)" match_string else <span data-count="173">f</span>printf fmt "%s" match_string
+  | <span data-count="9419">E</span>xp_constraint (ex, tye) -&gt;
+    fprintf fmt "(%a : %a)" (fun fmt -&gt; <span data-count="9419">p</span>print_expression fmt (n + 1)) ex pprint_type tye
+  | <span data-count="1463">E</span>xp_if (ex1, ex2, None) -&gt;
     let if_string =
       asprintf
         "if %a\n  then %a"
-        (fun fmt -&gt; <span data-count="1593">p</span>print_expression fmt (n + 1))
+        (fun fmt -&gt; <span data-count="1463">p</span>print_expression fmt (n + 1))
         ex1
-        (fun fmt -&gt; <span data-count="1593">p</span>print_expression fmt (n + 1))
+        (fun fmt -&gt; <span data-count="1463">p</span>print_expression fmt (n + 1))
         ex2
     in
-    <span data-count="1593">i</span>f n &gt; 0 then <span data-count="1566">f</span>printf fmt "(%s)" if_string else <span data-count="27">f</span>printf fmt "%s" if_string
-  | <span data-count="8903">E</span>xp_if (ex1, ex2, Some ex3) -&gt;
+    <span data-count="1463">i</span>f n &gt; 0 then <span data-count="1440">f</span>printf fmt "(%s)" if_string else <span data-count="23">f</span>printf fmt "%s" if_string
+  | <span data-count="7860">E</span>xp_if (ex1, ex2, Some ex3) -&gt;
     let if_string =
       asprintf
         "if %a\n  then %a\n  else %a"
-        (fun fmt -&gt; <span data-count="8903">p</span>print_expression fmt (n + 1))
+        (fun fmt -&gt; <span data-count="7860">p</span>print_expression fmt (n + 1))
         ex1
-        (fun fmt -&gt; <span data-count="8903">p</span>print_expression fmt (n + 1))
+        (fun fmt -&gt; <span data-count="7860">p</span>print_expression fmt (n + 1))
         ex2
-        (fun fmt -&gt; <span data-count="8903">p</span>print_expression fmt (n + 1))
+        (fun fmt -&gt; <span data-count="7860">p</span>print_expression fmt (n + 1))
         ex3
     in
-    <span data-count="8903">i</span>f n &gt; 0 then <span data-count="8767">f</span>printf fmt "(%s)" if_string else <span data-count="136">f</span>printf fmt "%s" if_string
-  | <span data-count="10568">E</span>xp_let (rec_fl, vbindl1, ex) -&gt;
+    <span data-count="7860">i</span>f n &gt; 0 then <span data-count="7719">f</span>printf fmt "(%s)" if_string else <span data-count="141">f</span>printf fmt "%s" if_string
+  | <span data-count="9467">E</span>xp_let (rec_fl, vbindl1, ex) -&gt;
     let vbind1, vbindl = vbindl1 in
     let let_string =
       asprintf
         "let %a%a%s in %a"
         pprint_rec
         rec_fl
-        (fun fmt -&gt; <span data-count="10568">p</span>print_value_binding fmt n)
+        (fun fmt -&gt; <span data-count="9467">p</span>print_value_binding fmt n)
         vbind1
         (if List.is_empty vbindl
-         then <span data-count="847">"</span>"
+         then <span data-count="764">"</span>"
          else
-           <span data-count="9721">"</span> and "
-           ^ String.conca<span data-count="9721">t</span>
+           <span data-count="8703">"</span> and "
+           ^ String.conca<span data-count="8703">t</span>
                ~sep:" and "
-               (List.ma<span data-count="9721">p</span> vbindl ~f:(fun vb -&gt;
-                  <span data-count="164024">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="164024">p</span>print_value_binding fmt n) vb)))
-        (fun fmt -&gt; <span data-count="10568">p</span>print_expression fmt (n + 1))
+               (List.ma<span data-count="8703">p</span> vbindl ~f:(fun vb -&gt;
+                  <span data-count="146831">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="146831">p</span>print_value_binding fmt n) vb)))
+        (fun fmt -&gt; <span data-count="9467">p</span>print_expression fmt (n + 1))
         ex
     in
-    <span data-count="10568">i</span>f n &gt; 0 then <span data-count="10394">f</span>printf fmt "(%s)" let_string else <span data-count="174">f</span>printf fmt "%s" let_string
-  | <span data-count="1596">E</span>xp_construct (id, None) -&gt; fprintf fmt "(%s)" id
-  | <span data-count="8828">E</span>xp_construct (id, Some exp) -&gt;
-    fprintf fmt "(%s (%a))" id (fun fmt -&gt; <span data-count="8828">p</span>print_expression fmt (n + 1)) exp
+    <span data-count="9467">i</span>f n &gt; 0 then <span data-count="9303">f</span>printf fmt "(%s)" let_string else <span data-count="164">f</span>printf fmt "%s" let_string
+  | <span data-count="1411">E</span>xp_construct (id, None) -&gt; fprintf fmt "(%s)" id
+  | <span data-count="8038">E</span>xp_construct (id, Some exp) -&gt;
+    fprintf fmt "(%s (%a))" id (fun fmt -&gt; <span data-count="8038">p</span>print_expression fmt (n + 1)) exp
 
 and pprint_value_binding fmt n vb =
-  <span data-count="200779">l</span>et open Expression in
+  <span data-count="180356">l</span>et open Expression in
   fprintf
     fmt
     "%a = %a"
     pprint_pattern
     vb.pat
-    (fun fmt -&gt; <span data-count="200779">p</span>print_expression fmt (n + 1))
+    (fun fmt -&gt; <span data-count="180356">p</span>print_expression fmt (n + 1))
     vb.expr
 
 and pprint_case fmt n case =
-  <span data-count="359822">l</span>et open Expression in
+  <span data-count="319002">l</span>et open Expression in
   fprintf
     fmt
     "%a -&gt; %a"
     pprint_pattern
     case.first
-    (fun fmt -&gt; <span data-count="359822">p</span>print_expression fmt (n + 1))
+    (fun fmt -&gt; <span data-count="319002">p</span>print_expression fmt (n + 1))
     case.second
 
 and pprint_function_with_cases fmt (cs, csl, n) =
-  <span data-count="10680">f</span>printf
+  <span data-count="9343">f</span>printf
     fmt
     "function \n  | %a%s"
-    (fun fmt -&gt; <span data-count="10680">p</span>print_case fmt n)
+    (fun fmt -&gt; <span data-count="9343">p</span>print_case fmt n)
     cs
-    (String.conca<span data-count="10680">t</span>
-       (List.ma<span data-count="10680">p</span> csl ~f:(fun c -&gt; <span data-count="172811">a</span>sprintf "\n  | %a" (fun fmt -&gt; <span data-count="172811">p</span>print_case fmt n) c)))
+    (String.conca<span data-count="9343">t</span>
+       (List.ma<span data-count="9343">p</span> csl ~f:(fun c -&gt; <span data-count="148255">a</span>sprintf "\n  | %a" (fun fmt -&gt; <span data-count="148255">p</span>print_case fmt n) c)))
 ;;
 
 let pprint_structure_item fmt n =
-  <span data-count="1015">l</span>et open Structure in
+  <span data-count="999">l</span>et open Structure in
   function
   | <span data-count="1540">S</span>tr_eval exp -&gt; fprintf fmt "%a ;;\n" (fun fmt -&gt; <span data-count="1540">p</span>print_expression fmt n) exp
-  | <span data-count="1510">S</span>tr_value (rec_flag, vbindl1) -&gt;
+  | <span data-count="1439">S</span>tr_value (rec_flag, vbindl1) -&gt;
     let vbind1, vbindl = vbindl1 in
     let bindings_str =
       match vbindl with
-      | <span data-count="99">[</span>] -&gt; ""
-      | <span data-count="1411">_</span> -&gt;
+      | <span data-count="128">[</span>] -&gt; ""
+      | <span data-count="1311">_</span> -&gt;
         " and "
-        ^ String.conca<span data-count="1411">t</span>
+        ^ String.conca<span data-count="1311">t</span>
             ~sep:" and\n  "
-            (List.ma<span data-count="1411">p</span> vbindl ~f:(fun vb -&gt;
-               <span data-count="24677">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="24677">p</span>print_value_binding fmt n) vb))
+            (List.ma<span data-count="1311">p</span> vbindl ~f:(fun vb -&gt;
+               <span data-count="22619">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="22619">p</span>print_value_binding fmt n) vb))
     in
     fprintf
       fmt
       "let %a %a%s;;\n\n"
       pprint_rec
       rec_flag
-      (fun fmt -&gt; <span data-count="1510">p</span>print_value_binding fmt n)
+      (fun fmt -&gt; <span data-count="1439">p</span>print_value_binding fmt n)
       vbind1
       bindings_str
 ;;
@@ -1005,7 +1004,7 @@ let pprint_structure_item fmt n =
    let _ = id_t_l in
    () *)
 
-let pprint_program fmt = <span data-count="1015">L</span>ist.iter ~f:(pprint_structure_ite<span data-count="1015">m</span> fmt 0)
+let pprint_program fmt = <span data-count="999">L</span>ist.iter ~f:(pprint_structure_ite<span data-count="999">m</span> fmt 0)
 
 let pp printer parser str =
   <span data-count="0">m</span>atch parse_string ~consume:Angstrom.Consume.All parser str with
