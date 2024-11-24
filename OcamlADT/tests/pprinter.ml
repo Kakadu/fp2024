@@ -352,7 +352,7 @@ let%expect_test "let and construct" =
   in
   pprint_program std_formatter program;
   [%expect {|
-    (let _ = s and "fgo" = ilm in j_9) (Tep (ha9)) ;; |}]
+    ((let _ = s and "fgo" = ilm in j_9) (Tep (ha9))) ;; |}]
 ;;
 
 (*(let _ s = "fgo" -> __im in j_9) Tep (ha9);;*)

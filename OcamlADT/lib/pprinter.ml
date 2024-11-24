@@ -21,6 +21,12 @@ let get_op_pr id =
   | Exp_ident "+" | Exp_ident "-" -> 5
   | Exp_ident "*" | Exp_ident "/" -> 6
   | Exp_if (_, _, _) -> 1
+  | Exp_let (_, _, _)
+  | Exp_match (_, _)
+  | Exp_function _
+  | Exp_fun (_, _)
+  | Exp_constant _ | Exp_ident _ -> 0
+  | Exp_apply (_, _) | Exp_construct _ -> 7
   | _ -> 0
 ;;
 
@@ -188,9 +194,7 @@ let rec pprint_expression fmt (n : int) =
            (fun fmt -> pprint_expression fmt (op_pr + 1))
            ex2
        in
-       if n > op_pr
-       then fprintf fmt "(%s)" apply_string
-       else fprintf fmt "%s" apply_string)
+       fprintf fmt "(%s)" apply_string)
   | Exp_match (ex, csl1) ->
     let cs, csl = csl1 in
     let op_pr1 = get_op_pr ex in
@@ -258,9 +262,7 @@ let rec pprint_expression fmt (n : int) =
     if n > 0 then fprintf fmt "(%s)" let_string else fprintf fmt "%s" let_string
   | Exp_construct (id, None) -> fprintf fmt "(%s)" id
   | Exp_construct (id, Some exp) ->
-    if n > 0
-    then fprintf fmt "(%s (%a))" id (fun fmt -> pprint_expression fmt (n + 1)) exp
-    else fprintf fmt "(%s (%a))" id (fun fmt -> pprint_expression fmt (n + 1)) exp
+    fprintf fmt "(%s (%a))" id (fun fmt -> pprint_expression fmt (n + 1)) exp
 
 and pprint_value_binding fmt n vb =
   let open Expression in
