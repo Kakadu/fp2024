@@ -37,6 +37,29 @@ let is_keyword = function
   | _ -> false
 ;;
 
+let is_op_char = function
+  | '+' | '-' | '*' | '/' | '<' | '>' | '=' | '|' | '.' -> true
+  | _ -> false
+;;
+
+let is_builtin_op = function
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "<="
+  | "<"
+  | ">="
+  | ">"
+  | "||"
+  | "&&"
+  | "+."
+  | "-."
+  | "*."
+  | "/." -> true
+  | _ -> false
+;;
+
 let is_ident_char = function
   | '_' | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '\'' -> true
   | _ -> false
@@ -58,6 +81,19 @@ let parse_ident =
   if is_keyword ident
   then fail "Keywords cannot be used as identificators"
   else return ident
+;;
+
+let parse_op_builtin =
+  let* op = take_while is_op_char in
+  match op with
+  | op when is_builtin_op op -> return op
+  | _ -> fail "Failed to parse builtin op"
+;;
+
+let parse_ident_or_op =
+  let parse_op = skip_token "(" *> parse_op_builtin <* skip_token ")" in
+  let* ident_or_op = parse_ident <|> parse_op in
+  return ident_or_op
 ;;
 
 let parse_char = char '\'' *> any_char <* char '\''
@@ -112,7 +148,5 @@ let chainl parse_alpha parse_sep =
 let rec chainr parse_alpha parse_sep =
   parse_alpha
   >>= fun a ->
-  parse_sep
-  >>= (fun f -> chainr (skip_ws *> parse_alpha) parse_sep >>| f a)
-  <|> return a
+  parse_sep >>= (fun f -> chainr (skip_ws *> parse_alpha) parse_sep >>| f a) <|> return a
 ;;

@@ -44,7 +44,7 @@ type core_type =
 [@@deriving qcheck, show { with_path = false }]
 
 type pattern =
-  | Pattern_ident of string (** Identificator patterns: [x] *)
+  | Pattern_ident_or_op of string (** Identificator or operation patterns: [x], [(+)] *)
   | Pattern_const of constant
   (** Constant patterns: [1], ['a'], ["foo"], [3.14], [5.0<cm>] *)
   | Pattern_wild (** Wildcard patterns [ _ ] *)
