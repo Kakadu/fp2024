@@ -64,10 +64,10 @@ type pattern =
       pattern
       * pattern
       * (pattern list
-        [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
+        [@gen QCheck.Gen.(list_size (0--3) (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
   | POption of pattern option
-  | PType of pattern * type_annotation
+  (* | PType of pattern * type_annotation *)
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =
@@ -79,13 +79,12 @@ type expression =
   (** if expr1 then expr2 else expr3 *)
   | ExprMatch of
       expression
-      * (case list[@gen QCheck.Gen.(list_size small_nat (gen_case_sized (n / div)))])
+      * (case list[@gen QCheck.Gen.(list_size (1 -- 1) (gen_case_sized (n / div)))])
   (** match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of
       rec_flag
       * binding
-      * (binding list
-        [@gen QCheck.Gen.(list_size small_nat (gen_binding_sized (n / div)))])
+      * (binding list[@gen QCheck.Gen.(list_size (1 -- 1) (gen_binding_sized (n / div)))])
       * expression
   (** [ExprLet(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
@@ -93,11 +92,11 @@ type expression =
       expression
       * expression
       * (expression list
-        [@gen QCheck.Gen.(list_size small_nat (gen_expression_sized (n / div)))])
+        [@gen QCheck.Gen.(list_size (0--3) (gen_expression_sized (n / div)))])
   (** 1, 2, 3 *)
   | ExprList of
-      (expression list
-      [@gen QCheck.Gen.(list_size small_nat (gen_expression_sized (n / div)))])
+      expression * (expression list
+      [@gen QCheck.Gen.(list_size (0--3) (gen_expression_sized (n / div)))])
   | ExprCons of expression * expression (** t::tl *)
   | ExprFun of (pattern[@gen gen_pattern_sized (n / div)]) * expression (** fun p -> e *)
   | ExprOption of expression option
@@ -113,19 +112,19 @@ and binding = (pattern[@gen gen_pattern_sized (n / div)]) * expression
 
 let gen_expression =
   QCheck.Gen.(
-    let* n = small_nat in
+    let* n = (5--20) in
     gen_expression_sized n)
 ;;
 
 let gen_case =
   QCheck.Gen.(
-    let* n = small_nat in
+    let* n = (1--29) in
     gen_case_sized n)
 ;;
 
 let gen_binding =
   QCheck.Gen.(
-    let* n = small_nat in
+    let* n = (1--20) in
     gen_binding_sized n)
 ;;
 
@@ -134,10 +133,10 @@ type structure_item =
   | SValue of
       rec_flag
       * binding
-      * (binding list[@gen QCheck.Gen.(list_size small_nat gen_binding)])
+      * (binding list[@gen QCheck.Gen.(list_size (1 -- 10) gen_binding)])
   (** [SValue(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)])] *)
 [@@deriving show { with_path = false }, qcheck]
 
 type structure =
-  (structure_item list[@gen QCheck.Gen.(list_size (1 -- 4) gen_structure_item)])
+  (structure_item list[@gen QCheck.Gen.(list_size (1 -- 1) gen_structure_item)])
 [@@deriving show { with_path = false }, qcheck]

@@ -71,8 +71,8 @@ let rec annot_list t =
 ;;
 
 let annot_tuple p =
-  let* t = ws *> p in
-  let* ts = many1 (ws *> char '*' *> ws *> p) in
+  let* t = ws *> token "(" *> p in
+  let* ts = many1 (ws *> char '*' *> ws *> p) <* token ")" in
   return (ATuple (t :: ts))
 ;;
 
@@ -124,11 +124,25 @@ let pp_option_none = ws *> token "None" *> return (POption None)
 let pp_option_some pe = ws *> token "Some" *> pe >>| fun x -> POption (Some x)
 let pp_option pe = choice [ pp_option_none; pp_option_some pe ]
 
+let ppcons pe =
+  let* e1 = pe in
+  let* rest = many (token "::" *> pe) in
+  if List.length rest = 0
+  then return e1
+  else (
+    let rec helper = function
+      | [] -> PAny (* unreachable *)
+      | [ x ] -> x
+      | x :: xs -> PCons (x, helper xs)
+    in
+    return (helper (e1 :: rest)))
+;;
+
 let pattern =
   let pattern_with_type ppat =
     let* pat = ws *> token "(" *> ppat in
     let* constr = ws *> token ":" *> ws *> parse_type_annotation <* ws <* token ")" in
-    return (PType (pat, constr))
+    return ()
   in
   fix (fun pat ->
     let term =
@@ -138,10 +152,10 @@ let pattern =
         ; ppvariable
         ; pparens pat
         ; pp_option pat
-        ; pattern_with_type pat
+        (* ; pattern_with_type pat *)
         ]
     in
-    let cons = chainl1 term (token "::" *> return (fun p1 p2 -> PCons (p1, p2))) in
+    let cons = ppcons term in
     let tuple = pptuple term <|> cons in
     tuple)
 ;;
@@ -176,7 +190,13 @@ let petuple pe =
   return (ExprTuple (el1, el2, rest))
 ;;
 
-let pelist pe = brackets @@ sep_by1 (token ";") pe >>| fun l -> ExprList l
+let pelist pe = brackets @@ sep_by1 (token ";") pe >>| 
+(fun l ->
+  match l with
+  | [] -> ExprLiteral (NilLiteral)
+  | [ x ] -> ExprList (x, [])
+  | x::xs -> ExprList (x, xs)
+)
 
 let pecons pe =
   let* e1 = pe in
@@ -258,9 +278,10 @@ let expr =
     let opt = p_option ife <|> ife in
     let ops1 = chainl1 opt (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
-    let cmp = chainl1 ops2 pcmp in
+    let unops = ops2 <|> peunop ops2 in
+    let cmp = chainl1 unops pcmp in
     let tuple = petuple cmp <|> cmp in
-    choice [ tuple; pelet expr; pematch expr; pefun expr; peunop expr ])
+    choice [ tuple; pelet expr; pematch expr; pefun expr ])
 ;;
 
 (*--------------------------- Structure ---------------------------*)

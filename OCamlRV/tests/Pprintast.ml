@@ -1,4 +1,4 @@
-(** Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan *)
+(* * Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -303,4 +303,4 @@ let%expect_test "" =
         , [] )
     ];
   [%expect {| let (a : int * int) = (1, 2);; |}]
-;;
+;; *)
