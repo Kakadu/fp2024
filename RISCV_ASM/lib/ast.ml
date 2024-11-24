@@ -107,6 +107,74 @@ type vector_register =
   | V31 (** Vector Register 31 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
+(** Float Registers *)
+type float_register =
+  | F0 (** ft0 - Temporary *)
+  | F1 (** ft1 - Temporary *)
+  | F2 (** ft2 - Temporary *)
+  | F3 (** ft3 - Temporary *)
+  | F4 (** ft4 - Temporary *)
+  | F5 (** ft5 - Temporary *)
+  | F6 (** ft6 - Temporary *)
+  | F7 (** ft7 - Temporary *)
+  | F8 (** fs0 - Saved Register *)
+  | F9 (** fs1 - Saved Register *)
+  | F10 (** fa0 - Function Argument or Return Value *)
+  | F11 (** fa1 - Function Argument or Return Value *)
+  | F12 (** fa2 - Function Argument *)
+  | F13 (** fa3 - Function Argument *)
+  | F14 (** fa4 - Function Argument *)
+  | F15 (** fa5 - Function Argument *)
+  | F16 (** fa6 - Function Argument *)
+  | F17 (** fa7 - Function Argument *)
+  | F18 (** fs2 - Saved Register *)
+  | F19 (** fs3 - Saved Register *)
+  | F20 (** fs4 - Saved Register *)
+  | F21 (** fs5 - Saved Register *)
+  | F22 (** fs6 - Saved Register *)
+  | F23 (** fs7 - Saved Register *)
+  | F24 (** fs8 - Saved Register *)
+  | F25 (** fs9 - Saved Register *)
+  | F26 (** fs10 - Saved Register *)
+  | F27 (** fs11 - Saved Register *)
+  | F28 (** t8 - Temporary *)
+  | F29 (** t9 - Temporary *)
+  | F30 (** t10 - Temporary *)
+  | F31 (** t11 - Temporary *)
+  | Ft0 (** a.k.a F0 *)
+  | Ft1 (** a.k.a F1 *)
+  | Ft2 (** a.k.a F2 *)
+  | Ft3 (** a.k.a F3 *)
+  | Ft4 (** a.k.a F4 *)
+  | Ft5 (** a.k.a F5 *)
+  | Ft6 (** a.k.a F6 *)
+  | Ft7 (** a.k.a F7 *)
+  | Fs0 (** a.k.a F8 *)
+  | Fs1 (** a.k.a F9 *)
+  | Fa0 (** a.k.a F10 *)
+  | Fa1 (** a.k.a F11 *)
+  | Fa2 (** a.k.a F12 *)
+  | Fa3 (** a.k.a F13 *)
+  | Fa4 (** a.k.a F14 *)
+  | Fa5 (** a.k.a F15 *)
+  | Fa6 (** a.k.a F16 *)
+  | Fa7 (** a.k.a F17 *)
+  | Fs2 (** a.k.a F18 *)
+  | Fs3 (** a.k.a F19 *)
+  | Fs4 (** a.k.a F20 *)
+  | Fs5 (** a.k.a F21 *)
+  | Fs6 (** a.k.a F22 *)
+  | Fs7 (** a.k.a F23 *)
+  | Fs8 (** a.k.a F24 *)
+  | Fs9 (** a.k.a F25 *)
+  | Fs10 (** a.k.a F26 *)
+  | Fs11 (** a.k.a F27 *)
+  | Ft8 (** a.k.a F28 *)
+  | Ft9 (** a.k.a F29 *)
+  | Ft10 (** a.k.a F30 *)
+  | Ft11 (** a.k.a F31 *)
+[@@deriving eq, show { with_path = false }, qcheck]
+
 (** Label Type *)
 type label = (string[@gen Generators.gen_my_label])
 [@@deriving eq, show { with_path = false }, qcheck]
@@ -298,6 +366,125 @@ type instruction =
   (** Vector Equals. Vmseq.vv vd, vs1, vs2 *)
   | Vmseqvx of vector_register * vector_register * register
   (** Vector Equals with Scalar. vmseq.vx vd, vs1, rs2 *)
+  | FmaddS of float_register * float_register * float_register * float_register
+  (** Fused Mul-Add Single precision. rd = rs1 * rs2 + rs3 *)
+  | FmsubS of float_register * float_register * float_register * float_register
+  (** Fused Mul-Sub Single precision. rd = rs1 * rs2 - rs3 *)
+  | FnmsubS of float_register * float_register * float_register * float_register
+  (** Fused Negative Mul-Sub Single precision. rd = -rs1 * rs2 + rs3 *)
+  | FnmaddS of float_register * float_register * float_register * float_register
+  (** Fused Negative Mul-Sub Single precision. rd = -rs1 * rs2 - rs3 *)
+  | FaddS of float_register * float_register * float_register
+  (** Addition Single precision. rd = rs1 + rs2 *)
+  | FsubS of float_register * float_register * float_register
+  (** Subtraction Single precision. rd = rs1 - rs2 *)
+  | FmulS of float_register * float_register * float_register
+  (** Multiplication Single precision. rd = rs1 * rs2 *)
+  | FdivS of float_register * float_register * float_register
+  (** Division Single precision. rd = rs1 / rs2 *)
+  | FsqrtS of float_register * float_register
+  (** Square root Single precision. rd = sqrt(rs1) *)
+  | FsgnjS of float_register * float_register * float_register
+  (** Sign Injection Single precision. rd = [rs2[31], rs1[30:0]]. Sign bit from rs2, other bits from rs1 *)
+  | FsgnjnS of float_register * float_register * float_register
+  (** Sign Injection Negative Single precision. rd = [~rs2[31], rs1[30:0]] *)
+  | FsgnjxS of float_register * float_register * float_register
+  (** Sign Injection Xor Single precision. rd = [rs1[31] ^ rs2[31], rs1[30:0]] *)
+  | FminS of float_register * float_register * float_register
+  (** Min Single precision. rd = min(rs1, rs2) *)
+  | FmaxS of float_register * float_register * float_register
+  (** Max Single precision. rd = max(rs1, rs2) *)
+  | FcvtWS of register * float_register
+  (** Convert single precision float to signed 32-bit integer *)
+  | FcvtWuS of register * float_register
+  (** Convert single precision float to unsigned 32-bit integer *)
+  | FmvXW of register * float_register
+  (** Move single precision float to lower 32 bits of integer register *)
+  | FeqS of register * float_register * float_register
+  (** Equality Single precision. Result stored in integer register. rd = (rs1 == rs2) *)
+  | FltS of register * float_register * float_register
+  (** Less Single precision. rd = (rs1 < rs2) *)
+  | FleS of register * float_register * float_register
+  (** Less or Equal Single precision. rd = (rs1 <= rs2) *)
+  | FclassS of register * float_register
+  (** Classification of Single precision float *)
+  | FcvtSW of float_register * register
+  (** Converts 32-bit signed integer to Single precision float *)
+  | FcvtSWu of float_register * register
+  (** Converts 32-bit unsigned integer to Single precision float *)
+  | FmvWX of float_register * register
+  (** Move single precision float from lower 32 bits of integer register to float register *)
+  | FmaddD of float_register * float_register * float_register * float_register
+  (** Fused Mul-Add Single precision. rd = rs1 * rs2 + rs3 *)
+  | FmsubD of float_register * float_register * float_register * float_register
+  (** Fused Mul-Sub Single precision. rd = rs1 * rs2 - rs3 *)
+  | FnmsubD of float_register * float_register * float_register * float_register
+  (** Fused Negative Mul-Sub Single precision. rd = -rs1 * rs2 + rs3 *)
+  | FnmaddD of float_register * float_register * float_register * float_register
+  (** Fused Negative Mul-Sub Single precision. rd = -rs1 * rs2 - rs3 *)
+  | FaddD of float_register * float_register * float_register
+  (** Addition Single precision. rd = rs1 + rs2 *)
+  | FsubD of float_register * float_register * float_register
+  (** Subtraction Single precision. rd = rs1 - rs2 *)
+  | FmulD of float_register * float_register * float_register
+  (** Multiplication Single precision. rd = rs1 * rs2 *)
+  | FdivD of float_register * float_register * float_register
+  (** Division Single precision. rd = rs1 / rs2 *)
+  | FsqrtD of float_register * float_register
+  (** Square root Single precision. rd = sqrt(rs1) *)
+  | FsgnjD of float_register * float_register * float_register
+  (** Sign Injection Single precision. rd = [rs2[63], rs1[62:0]]. Sign bit from rs2, other bits from rs1 *)
+  | FsgnjnD of float_register * float_register * float_register
+  (** Sign Injection Negative Single precision. rd = [~rs2[63], rs1[62:0]] *)
+  | FsgnjxD of float_register * float_register * float_register
+  (** Sign Injection Xor Single precision. rd = [rs1[63] ^ rs2[63], rs1[62:0]] *)
+  | FminD of float_register * float_register * float_register
+  (** Min Single precision. rd = min(rs1, rs2) *)
+  | FmaxD of float_register * float_register * float_register
+  (** Max Single precision. rd = max(rs1, rs2) *)
+  | FcvtSD of float_register * float_register
+  (** Converts double floating-point register into a floating-point number *)
+  | FcvtDS of float_register * float_register
+  (** Converts single floating-point register into a double floating-point number *)
+  | FeqD of register * float_register * float_register
+  (** Equality Single precision. Result stored in integer register. rd = (rs1 == rs2) *)
+  | FltD of register * float_register * float_register
+  (** Less Single precision. rd = (rs1 < rs2) *)
+  | FleD of register * float_register * float_register
+  (** Less or Equal Single precision. rd = (rs1 <= rs2) *)
+  | FclassD of register * float_register
+  | FcvtWD of register * float_register
+  (** Converts a double-precision floating-point number to a signed 32-bit integer *)
+  | FcvtWuD of register * float_register
+  (** Converts a double-precision floating-point number to a unsigned 32-bit integer *)
+  | FcvtDW of float_register * register
+  (** Converts a 32-bit signed integer into a double-precision floating-point number *)
+  | FcvtDWu of float_register * register
+  (** Converts a 32-bit unsigned integer into a double-precision floating-point number *)
+  | Flw of float_register * float_register * address12
+  (** Load a single-precision floating-point value from memory into floating-point register. f[rd] = M[x[rs1] + sext(offset)][31:0] *)
+  | Fsw of float_register * float_register * address12
+  (** Store a single-precision value from floating-point register rs2 to memory. M[x[rs1] + sext(offset)] = f[rs2][31:0] *)
+  | Fld of float_register * float_register * address12
+  (** Load a double-precision floating-point value from memory into floating-point register rd. f[rd] = M[x[rs1] + sext(offset)][63:0] *)
+  | Fsd of float_register * float_register * address12
+  (** Store a double-precision value from the floating-point registers to memory. M[x[rs1] + sext(offset)] = f[rs2][63:0] *)
+  | FcvtLS of register * float_register
+  (** Convert single-precision floating-point to 64-bit integer *)
+  | FcvtLuS of register * float_register
+  (** Convert single-precision floating-point to unsigned 64-bit integer *)
+  | FcvtSL of float_register * register
+  (** Convert 64-bit integer to single-precision floating-point *)
+  | FcvtSLu of float_register * register
+  (** Convert 64-bit unsigned integer to single-precision floating-point *)
+  | FcvtLD of register * float_register
+  (** Convert double-precision floating-point to 64-bit integer *)
+  | FcvtLuD of register * float_register
+  (** Convert double-precision floating-point to unsigned 64-bit integer *)
+  | FcvtDL of float_register * register
+  (** Convert 64-bit integer to double-precision floating-point *)
+  | FcvtDLu of float_register * register
+  (** Convert 64-bit unsigned integer to double-precision floating-point *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
