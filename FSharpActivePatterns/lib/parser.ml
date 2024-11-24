@@ -252,23 +252,21 @@ let p_option p make_option =
 
 let make_option_expr expr = Option expr
 let make_option_pat pat = POption pat
-let p_pat_const = choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat ]
+let p_wild_pat = skip_ws *> string "_" *> return Wild
+
+let p_pat_const =
+  choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat; p_wild_pat ]
+;;
 
 let p_pat =
   skip_ws
   *> fix (fun self ->
-    let atom =
-      choice
-        [ p_pat_const
-        ; string "_" *> return Wild
-        ; p_tuple_pat self
-        ; p_semicolon_list_pat self
-        ; p_parens self
-        ]
-    in
-    let cons = skip_ws *> p_cons_list_pat atom  <|> atom in
-    let opt = p_option cons make_option_pat <|> cons in
-    opt)
+    let atom = choice [ p_pat_const; p_parens self ] in
+    let tuple = p_tuple_pat (self <|> atom) <|> atom in
+    let semicolon_list = p_semicolon_list_pat (self <|> tuple) <|> tuple in
+    let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
+    let cons = p_cons_list_pat opt in
+    cons)
 ;;
 
 let p_lambda p_expr =
@@ -277,7 +275,7 @@ let p_lambda p_expr =
   *> peek_sep1
   *>
   let* pat = skip_ws *> p_pat <* skip_ws in
-  let* pat_list = (many p_pat) <* skip_ws <* string "->" in
+  let* pat_list = many p_pat <* skip_ws <* string "->" in
   let* body = skip_ws *> p_expr <* skip_ws in
   return (Lambda (pat, pat_list, body))
 ;;
@@ -313,7 +311,9 @@ let p_expr =
     let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
     let if_expr = p_if (p_expr <|> tuple) <|> tuple in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    let unary = choice [ unary_chain p_not letin_expr; unary_chain unminus letin_expr ] in
+    let option = p_option letin_expr make_option_expr <|> letin_expr in
+    let apply = p_apply option <|> option in
+    let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
     let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let cons_op = chainr1 term cons in
@@ -325,11 +325,9 @@ let p_expr =
     let bit_or = chainl1 bit_and bitwise_or in
     let comp_and = chainl1 bit_or log_and in
     let comp_or = chainl1 comp_and log_or in
-    let apply = p_apply comp_or <|> comp_or in
-    let ematch = p_match (p_expr <|> apply) <|> apply in
+    let ematch = p_match (p_expr <|> comp_or) <|> comp_or in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    let option = p_option efun make_option_expr <|> efun in
-    option)
+    efun)
 ;;
 
 let p_statement = p_let p_expr
