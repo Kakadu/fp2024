@@ -43,23 +43,6 @@ module ShrinkQCheck = struct
       |> filter (fun (_, _, t) -> t <> [])
   ;;
 
-  (*
-     let rec shrink_type_expr = function
-     | TypeExpr.Type_arrow (tye1, tye2) ->
-     shrink_type_expr tye1
-     >|= (fun tye1' -> TypeExpr.Type_arrow (tye1', tye2))
-     <+> shrink_type_expr tye2
-     >|= fun tye2' -> TypeExpr.Type_arrow (tye1, tye2')
-     | TypeExpr.Type_var id -> string ~shrink:char id >|= fun id' -> TypeExpr.Type_var id'
-     | TypeExpr.Type_tuple tyes ->
-     shrink_list2
-     ~shrink_first:shrink_type_expr
-     ~shrink_second:shrink_type_expr
-     ~shrink_tail:shrink_type_expr
-     tyes
-     >|= fun tyes' -> TypeExpr.Type_tuple tyes'
-     ;;
-  *)
   let rec shrink_pattern =
     Printf.printf "shrink pattern\n";
     function
