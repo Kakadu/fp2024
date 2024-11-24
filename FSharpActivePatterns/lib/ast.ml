@@ -109,8 +109,8 @@ type is_recursive =
 type expr =
   | Const of literal (** [Int], [Bool], [String], [Unit], [Null] *)
   | Tuple of
-      expr
-      * expr
+      (expr[@gen gen_expr_sized (n / 4)])
+      * (expr[@gen gen_expr_sized (n / 4)])
       * (expr list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_expr_sized (n / 20)))])
   (** [(1, "Hello world", true)] *)
   | List of (expr list[@gen QCheck.Gen.(list_size (0 -- 3) (gen_expr_sized (n / 20)))])
@@ -118,16 +118,21 @@ type expr =
   | Variable of ident (** [x], [y] *)
   | Unary_expr of unary_operator * expr (** -x *)
   | Bin_expr of binary_operator * expr * expr (** [1 + 2], [3 ||| 12], hd :: tl *)
-  | If_then_else of expr * expr * expr option (** [if n % 2 = 0 then "Even" else "Odd"] *)
+  | If_then_else of
+      (expr[@gen gen_expr_sized (n / 4)])
+      * (expr[@gen gen_expr_sized (n / 4)])
+      * (expr option[@gen QCheck.Gen.option (gen_expr_sized (n / 4))])
+  (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
       (pattern[@gen gen_pattern_sized (n / 2)])
       * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_pattern_sized (n / 20)))])
       * expr (** fun x y -> x + y *)
-  | Apply of expr * expr (** [sum 1 ] *)
+  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
+  (** [sum 1 ] *)
   | Match of
-      expr
-      * (pattern[@gen gen_pattern_sized (n / 2)])
-      * expr
+      (expr[@gen gen_expr_sized (n / 4)])
+      * (pattern[@gen gen_pattern_sized (n / 4)])
+      * (expr[@gen gen_expr_sized (n / 4)])
       * ((pattern * expr) list
         [@gen
           QCheck.Gen.(
