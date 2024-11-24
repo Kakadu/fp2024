@@ -11,8 +11,7 @@ type config =
   ; mutable source_file : string option
   }
 
-let read_source source_opt =
-  match source_opt with
+let read_source = function
   | Some filename -> In_channel.with_file filename ~f:In_channel.input_all
   | None -> In_channel.input_all stdin
 ;;
