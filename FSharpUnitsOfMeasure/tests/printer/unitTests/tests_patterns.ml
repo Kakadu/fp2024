@@ -17,7 +17,17 @@ let%expect_test "single underscore should be parsed as a wildcard" =
 
 let%expect_test "parse ident as pattern ident" =
   pp pp_pattern parse_pat {| x |};
-  [%expect {| (Pattern_ident "x") |}]
+  [%expect {| (Pattern_ident_or_op "x") |}]
+;;
+
+let%expect_test "parse + inside parentheses as pattern ident" =
+  pp pp_pattern parse_pat {| (+) |};
+  [%expect {| (Pattern_ident_or_op "+") |}]
+;;
+
+let%expect_test "parse +. operator inside parentheses as pattern ident" =
+  pp pp_pattern parse_pat {| (+.) |};
+  [%expect {| (Pattern_ident_or_op "+.") |}]
 ;;
 
 (************************** Consts **************************)
@@ -52,7 +62,7 @@ let%expect_test "parse pattern tuple with 3 elements" =
   [%expect
     {|
     (Pattern_tuple ((Pattern_const (Const_int 1)), (Pattern_const (Const_int 2)),
-       [(Pattern_ident "myname")])) |}]
+       [(Pattern_ident_or_op "myname")])) |}]
 ;;
 
 let%expect_test "parse pattern tuples of tuples" =
@@ -88,12 +98,12 @@ let%expect_test "parse pattern empty list" =
 
 let%expect_test "parse pattern list of 1 element" =
   pp pp_pattern parse_pat {| [a] |};
-  [%expect {| (Pattern_list [(Pattern_ident "a")])  |}]
+  [%expect {| (Pattern_list [(Pattern_ident_or_op "a")])  |}]
 ;;
 
 let%expect_test "parse pattern list of 2 element" =
   pp pp_pattern parse_pat {| [a; b] |};
-  [%expect {| (Pattern_list [(Pattern_ident "a"); (Pattern_ident "b")])  |}]
+  [%expect {| (Pattern_list [(Pattern_ident_or_op "a"); (Pattern_ident_or_op "b")])  |}]
 ;;
 
 let%expect_test "parse pattern list of list" =
@@ -152,33 +162,35 @@ let%expect_test "parse pattern list in parentheses" =
 
 let%expect_test "parse OR pattern of two ident patterns" =
   pp pp_pattern parse_pat {| x | y |};
-  [%expect
-    {|
-    (Pattern_or ((Pattern_ident "x"), (Pattern_ident "y"))) |}]
+  [%expect {|
+    (Pattern_or ((Pattern_ident_or_op "x"), (Pattern_ident_or_op "y"))) |}]
 ;;
 
 let%expect_test "parse OR pattern of three ident patterns" =
   pp pp_pattern parse_pat {| x | y | z |};
   [%expect
     {|
-    (Pattern_or ((Pattern_or ((Pattern_ident "x"), (Pattern_ident "y"))),
-       (Pattern_ident "z"))) |}]
+    (Pattern_or (
+       (Pattern_or ((Pattern_ident_or_op "x"), (Pattern_ident_or_op "y"))),
+       (Pattern_ident_or_op "z"))) |}]
 ;;
 
 let%expect_test "parse OR pattern of tuple and ident patterns" =
   pp pp_pattern parse_pat {| x | (y, z) |};
   [%expect
     {|
-    (Pattern_or ((Pattern_ident "x"),
-       (Pattern_tuple ((Pattern_ident "y"), (Pattern_ident "z"), [])))) |}]
+    (Pattern_or ((Pattern_ident_or_op "x"),
+       (Pattern_tuple ((Pattern_ident_or_op "y"), (Pattern_ident_or_op "z"), []))
+       )) |}]
 ;;
 
 let%expect_test "parse OR pattern of ident and tuple patterns" =
   pp pp_pattern parse_pat {| (x, y) | z |};
   [%expect
     {|
-    (Pattern_or ((Pattern_tuple ((Pattern_ident "x"), (Pattern_ident "y"), [])),
-       (Pattern_ident "z"))) |}]
+    (Pattern_or (
+       (Pattern_tuple ((Pattern_ident_or_op "x"), (Pattern_ident_or_op "y"), [])),
+       (Pattern_ident_or_op "z"))) |}]
 ;;
 
 (************************** Typed patterns **************************)
@@ -186,7 +198,7 @@ let%expect_test "parse OR pattern of ident and tuple patterns" =
 let%expect_test "parse pattern with builtin type" =
   pp pp_pattern parse_pat {| x : int |};
   [%expect {|
-    (Pattern_typed ((Pattern_ident "x"), (Type_ident "int"))) |}]
+    (Pattern_typed ((Pattern_ident_or_op "x"), (Type_ident "int"))) |}]
 ;;
 
 let%expect_test "parse typed pattern without colon should fail" =
@@ -200,7 +212,7 @@ let%expect_test "parse typed tuple" =
   [%expect
     {|
     (Pattern_typed (
-       (Pattern_tuple ((Pattern_ident "x"), (Pattern_ident "b"), [])),
+       (Pattern_tuple ((Pattern_ident_or_op "x"), (Pattern_ident_or_op "b"), [])),
        (Type_tuple ((Type_ident "int"), (Type_ident "string"), [])))) |}]
 ;;
 
