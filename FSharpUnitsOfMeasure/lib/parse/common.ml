@@ -83,7 +83,7 @@ let parse_ident =
   else return ident
 ;;
 
-let parse_op_builtin =
+let parse_builtin_op =
   let* op = take_while is_op_char in
   match op with
   | op when is_builtin_op op -> return op
@@ -91,7 +91,7 @@ let parse_op_builtin =
 ;;
 
 let parse_ident_or_op =
-  let parse_op = skip_token "(" *> parse_op_builtin <* skip_token ")" in
+  let parse_op = skip_token "(" *> parse_builtin_op <* skip_token ")" in
   let* ident_or_op = parse_ident <|> parse_op in
   return ident_or_op
 ;;
@@ -105,6 +105,7 @@ let parse_int =
   let* next_char = peek_char in
   match next_char with
   | Some x when Char.equal x '.' -> fail "Cannot parse int, met float"
+  | Some x when is_ident_char x -> fail "Cannot parse int, met ident"
   | _ -> return int
 ;;
 
@@ -119,7 +120,11 @@ let parse_float =
     | "." -> take_while Char.is_digit
     | _ -> return ""
   in
-  let* e = option "" (string "e" <|> string "E") in
+  let* e =
+    if String.equal dot ""
+    then string "e" <|> string "E"
+    else option "" (string "e" <|> string "E")
+  in
   let* exp_sign =
     match e with
     | "e" | "E" -> option "" (string "+" <|> string "-")

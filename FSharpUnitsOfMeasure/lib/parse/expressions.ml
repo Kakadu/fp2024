@@ -29,40 +29,45 @@ let parse_expr_paren parse_expr =
   string "(" *> skip_ws *> parse_expr <* skip_ws <* string ")"
 ;;
 
-let parse_bin_op_as_app bin_op =
+let parse_prefix_app = skip_ws *> return (fun e1 e2 -> Expr_apply (e1, e2))
+
+let parse_infix_app op =
   skip_ws
-  *> string bin_op
-  *> return (fun e1 e2 -> Expr_apply (Expr_apply (Expr_ident_or_op bin_op, e1), e2))
+  *> string op
+  *> return (fun e1 e2 -> Expr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
 ;;
 
-let parse_ws_as_app =
-  skip_ws1
-  *>
-  let* char = peek_char in
-  match char with
-  | None -> fail "cannot apply function to end of input"
-  | Some x when is_ident_start_char x || Char.equal x '(' ->
-    return (fun e1 e2 -> Expr_apply (e1, e2))
-  | _ -> fail "cannot apply function to non-identificator"
-;;
-
-(* For now, doesn't halt when trying to parse float operations *)
+(* Need to refactor this with explicit operations priorities *)
 let parse_expr_app parse_expr =
-  let app = chainl parse_expr parse_ws_as_app <|> parse_expr in
-  let app = chainl app (parse_bin_op_as_app "*" <|> parse_bin_op_as_app "/") <|> app in
-  let app = chainl app (parse_bin_op_as_app "+" <|> parse_bin_op_as_app "-") <|> app in
-  (* let app = chainl app (parse_bin_op_as_app "*." <|> parse_bin_op_as_app "/.") <|> app in *)
-  (* let app = chainl app (parse_bin_op_as_app "+." <|> parse_bin_op_as_app "-.") <|> app in *)
+  let app = chainl parse_expr parse_prefix_app <|> parse_expr in
   let app =
     chainl
       app
-      (parse_bin_op_as_app "<="
-       <|> parse_bin_op_as_app "<"
-       <|> parse_bin_op_as_app ">="
-       <|> parse_bin_op_as_app ">")
+      (parse_infix_app "*."
+       <|> parse_infix_app "/."
+       <|> parse_infix_app "*"
+       <|> parse_infix_app "/")
     <|> app
   in
-  let app = chainr app (parse_bin_op_as_app "||" <|> parse_bin_op_as_app "&&") <|> app in
+  let app =
+    chainl
+      app
+      (parse_infix_app "+."
+       <|> parse_infix_app "-."
+       <|> parse_infix_app "+"
+       <|> parse_infix_app "-")
+    <|> app
+  in
+  let app =
+    chainl
+      app
+      (parse_infix_app "<="
+       <|> parse_infix_app "<"
+       <|> parse_infix_app ">="
+       <|> parse_infix_app ">")
+    <|> app
+  in
+  let app = chainr app (parse_infix_app "||" <|> parse_infix_app "&&") <|> app in
   app
 ;;
 
