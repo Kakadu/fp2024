@@ -2,6 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
-
-val parse_expr : string -> (structure, string) result
+val run_auto : int -> int
