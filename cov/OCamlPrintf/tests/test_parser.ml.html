@@ -362,7 +362,7 @@ let%expect_test "parsing value structure and factorial with `match'" =
   <span data-count="1">[</span>%expect
     {|
   let rec factorial = (fun n -&gt; (match n with | 0 -&gt; 1 | 1 -&gt; 1 | _ -&gt; n * (factorial (n - 1))));;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing expression with `fun'" =
@@ -371,7 +371,7 @@ let%expect_test "parsing expression with `fun'" =
   |};
   <span data-count="1">[</span>%expect {|
   let sum = (fun x -&gt; (fun y -&gt; x + y));;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing pattern and expression tuples" =
@@ -380,7 +380,7 @@ let%expect_test "parsing pattern and expression tuples" =
   |};
   <span data-count="1">[</span>%expect {|
   let (a, b) = (1, 2);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing expression list" =
@@ -389,7 +389,7 @@ let%expect_test "parsing expression list" =
   |};
   <span data-count="1">[</span>%expect {|
   let list_ = [1; 2; 3];;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing option and bool types" =
@@ -403,7 +403,7 @@ let%expect_test "parsing option and bool types" =
   <span data-count="1">[</span>%expect
     {|
   let f = (fun a -&gt; (match a with | Some (_) -&gt; true | None -&gt; false));;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing chain right associative" =
@@ -413,7 +413,7 @@ let%expect_test "parsing chain right associative" =
   <span data-count="1">[</span>%expect
     {|
   let f = (fun x y z -&gt; (if x = 0 &amp;&amp; y = 1 || z &gt;= 2 then 2 else 26));;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing evaluation structure and chain left associative" =
@@ -422,7 +422,7 @@ let%expect_test "parsing evaluation structure and chain left associative" =
   |};
   <span data-count="1">[</span>%expect {|
   8 / 800 - 555 * (35 + 35);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing expression with `let'" =
@@ -431,7 +431,7 @@ let%expect_test "parsing expression with `let'" =
   |};
   <span data-count="1">[</span>%expect {|
   1 + (let two = 2 in two * 3);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing several structure items" =
@@ -441,7 +441,7 @@ let%expect_test "parsing several structure items" =
   <span data-count="1">[</span>%expect {|
   let squared = (fun x -&gt; x * x);;
   (squared 5);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing sequence and exepression construct" =
@@ -450,7 +450,7 @@ let%expect_test "parsing sequence and exepression construct" =
   |};
   <span data-count="1">[</span>%expect {|
   ([1; 2; 3]); ("qwerty123");;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 1" =
@@ -459,7 +459,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 1" =
   |};
   <span data-count="1">[</span>%expect {|
   let f : int list = [1; 2; 3];;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 2" =
@@ -470,7 +470,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 2" =
   <span data-count="1">[</span>%expect
     {|
   let f : (int * char * string list) = (1, 'a', ["first"; "second"; "third"]);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 3" =
@@ -479,7 +479,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 3" =
   |};
   <span data-count="1">[</span>%expect {|
   let f = (fun (a : int) (b : int) : int -&gt; a + b);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 4" =
@@ -488,7 +488,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
   |};
   <span data-count="1">[</span>%expect {|
   let (a : int -&gt; (char -&gt; int) -&gt; int) = 1 + (x : char -&gt; int);;
-  |}<span data-count="5">]</span>
+  |}<span data-count="103">]</span>
 ;;
 </code></pre>
       </div>
