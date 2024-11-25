@@ -120,15 +120,12 @@ let pp_option pe = choice [ pp_option_none; pp_option_some pe ]
 let ppcons pe =
   let* e1 = pe in
   let* rest = many (token "::" *> pe) in
-  if List.length rest = 0
-  then return e1
-  else (
-    let rec helper = function
-      | [] -> PAny (* unreachable *)
-      | [ x ] -> x
-      | x :: xs -> PCons (x, helper xs)
-    in
-    return (helper (e1 :: rest)))
+  let rec helper = function
+    | [] -> e1
+    | [ x ] -> x
+    | x :: xs -> PCons (x, helper xs)
+  in
+  return (helper (e1 :: rest))
 ;;
 
 let pattern =
@@ -200,15 +197,12 @@ let pelist pe =
 let pecons pe =
   let* e1 = pe in
   let* rest = many (token "::" *> pe) in
-  if List.length rest = 0
-  then return e1
-  else (
-    let rec helper = function
-      | [] -> ExprLiteral NilLiteral (* unreachable *)
-      | [ x ] -> x
-      | x :: xs -> ExprCons (x, helper xs)
-    in
-    return (helper (e1 :: rest)))
+  let rec helper = function
+    | [] -> e1
+    | [ x ] -> x
+    | x :: xs -> ExprCons (x, helper xs)
+  in
+  return (helper (e1 :: rest))
 ;;
 
 let padd = token "+" *> return (ebinop Add)
