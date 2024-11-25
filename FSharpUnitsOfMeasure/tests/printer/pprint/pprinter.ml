@@ -35,7 +35,7 @@ let rec pprint_type ppf = function
 ;;
 
 let rec pprint_pat ppf = function
-  | Pattern_ident p -> fprintf ppf "%a" pprint_ident p
+  | Pattern_ident_or_op p -> fprintf ppf "%a" pprint_ident p
   | Pattern_const p -> fprintf ppf "%a" pprint_const p
   | Pattern_wild -> fprintf ppf "_"
   | Pattern_typed (p, t) -> fprintf ppf "%a : %a" pprint_pat p pprint_type t
