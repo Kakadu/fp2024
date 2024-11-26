@@ -3,34 +3,37 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open FSharpActivePatterns.Ast
-open FSharpActivePatterns.PrintAst
+open FSharpActivePatterns.AstPrinter
+open Format
 
 let%expect_test "print Ast factorial" =
   let factorial =
-    Function_def
-      ( [ Variable (Ident "n") ]
+    Lambda
+      ( PConst (Int_lt 4)
+      , []
       , If_then_else
           ( Bin_expr
               ( Logical_or
-              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
-              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
+              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 0))
+              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 1)) )
           , Const (Int_lt 1)
           , Some
               (Bin_expr
                  ( Binary_multiply
-                 , Variable (Ident "n")
-                 , Function_call
-                     ( Variable (Ident "factorial")
-                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                 , Variable (Ident ("n", None))
+                 , Apply
+                     ( Variable (Ident ("factorial", None))
+                     , Bin_expr
+                         (Binary_subtract, Variable (Ident ("n", None)), Const (Int_lt 1))
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Ident "a", [], Const (Int_lt 10)))
+    [ Statement (Let (Nonrec, Let_bind (Ident ("a", None), [], Const (Int_lt 10)), []))
     ; Expr factorial
-    ; Expr (Function_call (factorial, Variable (Ident "a")))
+    ; Expr (Apply (factorial, Variable (Ident ("a", None))))
     ]
   in
-  List.iter print_construction program;
+  List.iter (print_construction std_formatter) program;
   [%expect
     {|
      | Let  a =
@@ -104,11 +107,12 @@ let%expect_test "print Ast factorial" =
 ;;
 
 let%expect_test "print Ast double func" =
-  let var = Variable (Ident "n") in
-  let args = [ var ] in
-  let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), var) in
-  let double = Function_def (args, binary_expr) in
-  print_construction @@ Expr double;
+  let ident = Ident ("n", None) in
+  let pat = PConst (Int_lt 4) in
+  let args = [] in
+  let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), Variable ident) in
+  let double = Lambda (pat, args, binary_expr) in
+  print_construction std_formatter @@ Expr double;
   [%expect
     {|
     | Func:
@@ -139,7 +143,7 @@ let%expect_test "print Ast tuple of binary operators" =
     ]
   in
   let print_binary_constr operator =
-    print_construction @@ Expr (Bin_expr (operator, first, second))
+    print_construction std_formatter @@ Expr (Bin_expr (operator, first, second))
   in
   List.iter print_binary_constr operators;
   [%expect
@@ -195,12 +199,11 @@ let%expect_test "print Ast of LetIn" =
     Expr
       (LetIn
          ( Nonrec
-         , Some (Ident "x")
+         , Let_bind (Ident ("x", None), [], Const (Int_lt 5))
          , []
-         , Const (Int_lt 5)
-         , Bin_expr (Binary_add, Variable (Ident "x"), Const (Int_lt 5)) ))
+         , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
   in
-  print_construction sum;
+  print_construction std_formatter sum;
   [%expect
     {|
      | LetIn  x =
@@ -218,13 +221,15 @@ let%expect_test "print Ast of match_expr" =
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
-    ; Variant [ Ident "Green"; Ident "Blue"; Ident "Red" ]
-    ; PCons (Wild, PVar (Ident "xs"))
+    ; PList [ Wild; PVar (Ident ("xs", None)) ]
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
-  let match_expr = Match (Variable (Ident "x"), pattern_values) in
-  print_construction (Expr match_expr);
+  let match_expr =
+    Match
+      (Variable (Ident ("x", None)), PConst (Int_lt 4), Const (Int_lt 4), pattern_values)
+  in
+  print_construction std_formatter (Expr match_expr);
   [%expect
     {|
     | Match:

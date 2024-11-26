@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
+open Format
 
-val print_construction : construction -> unit
-val print_p_res : construction option -> unit
+val pp_construction : formatter -> construction -> unit
+val pp_p_res : formatter -> construction option -> unit
