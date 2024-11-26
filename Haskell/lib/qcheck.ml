@@ -12,6 +12,7 @@ let rec shrink_tp =
   | TUnit | TInt | TBool -> empty
   | TreeParam tp -> shrink_tp tp >|= fun a' -> TreeParam a'
   | ListParam tp -> shrink_tp tp >|= fun a' -> ListParam a'
+  | MaybeParam tp -> shrink_tp tp >|= fun a' -> MaybeParam a'
   | TupleParams (first, second, rest) ->
     of_list [ first; second ]
     <+> (shrink_tp first >|= fun a' -> TupleParams (a', second, rest))
