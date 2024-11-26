@@ -42,13 +42,12 @@ let%test _ = parse_to_bool "4 * 4"
 
 let%expect_test _ =
   parse_to_unit "let x = 5";
-  [%expect {| [(SValue (NonRec, ((PVar "x"), (ExprLiteral (IntLiteral 5))), []))] |}]
+  [%expect {| [(SValue (NonRec, ((PVar "x"), (ExprConstant (CInt 5))), []))] |}]
 ;;
 
 let%expect_test _ =
   parse_to_unit "let feets = 5280;;";
-  [%expect
-    {| [(SValue (NonRec, ((PVar "feets"), (ExprLiteral (IntLiteral 5280))), []))] |}]
+  [%expect {| [(SValue (NonRec, ((PVar "feets"), (ExprConstant (CInt 5280))), []))] |}]
 ;;
 
 let%expect_test _ =
@@ -59,7 +58,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   parse_to_unit "let list = []";
-  [%expect {| [(SValue (NonRec, ((PVar "list"), (ExprLiteral NilLiteral)), []))] |}]
+  [%expect {| [(SValue (NonRec, ((PVar "list"), (ExprConstant CNil)), []))] |}]
 ;;
 
 let%expect_test _ =
@@ -68,8 +67,8 @@ let%expect_test _ =
     {|
     [(SValue (NonRec,
         ((PVar "t"),
-         (ExprTuple ((ExprLiteral (IntLiteral 1)),
-            (ExprLiteral (StringLiteral "2")), [(ExprLiteral (IntLiteral 3))]))),
+         (ExprTuple ((ExprConstant (CInt 1)), (ExprConstant (CString "2")),
+            [(ExprConstant (CInt 3))]))),
         []))
       ] |}]
 ;;
@@ -88,10 +87,9 @@ let%expect_test _ =
     {|
          [(SEval
              (ExprIf (
-                (ExprBinOperation (Gt, (ExprLiteral (IntLiteral 5)),
-                   (ExprLiteral (IntLiteral 3)))),
-                (ExprLiteral (BoolLiteral true)),
-                (Some (ExprLiteral (BoolLiteral false))))))
+                (ExprBinOperation (Gt, (ExprConstant (CInt 5)),
+                   (ExprConstant (CInt 3)))),
+                (ExprConstant (CBool true)), (Some (ExprConstant (CBool false))))))
            ] |}]
 ;;
 
@@ -101,9 +99,9 @@ let%expect_test _ =
     {|
      [(SEval
          (ExprIf ((ExprVariable "x"),
-            (ExprBinOperation (Add, (ExprLiteral (IntLiteral 1)),
-               (ExprLiteral (IntLiteral 2)))),
-            (Some (ExprLiteral (IntLiteral 3))))))
+            (ExprBinOperation (Add, (ExprConstant (CInt 1)),
+               (ExprConstant (CInt 2)))),
+            (Some (ExprConstant (CInt 3))))))
        ] |}]
 ;;
 
@@ -124,8 +122,7 @@ let%expect_test _ =
     {|
   [(SValue (NonRec,
       ((PTuple ((PVar "a"), (PVar "b"), [])),
-       (ExprTuple ((ExprLiteral (IntLiteral 1)), (ExprLiteral (IntLiteral 2)),
-          []))),
+       (ExprTuple ((ExprConstant (CInt 1)), (ExprConstant (CInt 2)), []))),
       []))
     ] |}]
 ;;
@@ -139,9 +136,8 @@ let%expect_test _ =
   [%expect
     {|
     [(SEval
-        (ExprMatch ((ExprVariable "a"),
-           ((POption None), (ExprLiteral UnitLiteral)),
-           [((POption (Some (PVar "e"))), (ExprLiteral UnitLiteral))])))
+        (ExprMatch ((ExprVariable "a"), ((POption None), (ExprConstant CUnit)),
+           [((POption (Some (PVar "e"))), (ExprConstant CUnit))])))
       ] |}]
 ;;
 
@@ -156,16 +152,16 @@ let%expect_test "fibo test" =
           (ExprFun ((PVar "n"),
              (ExprIf (
                 (ExprBinOperation (Lte, (ExprVariable "n"),
-                   (ExprLiteral (IntLiteral 1)))),
+                   (ExprConstant (CInt 1)))),
                 (ExprVariable "n"),
                 (Some (ExprBinOperation (Add,
                          (ExprApply ((ExprVariable "fibo"),
                             (ExprBinOperation (Sub, (ExprVariable "n"),
-                               (ExprLiteral (IntLiteral 1))))
+                               (ExprConstant (CInt 1))))
                             )),
                          (ExprApply ((ExprVariable "fibo"),
                             (ExprBinOperation (Sub, (ExprVariable "n"),
-                               (ExprLiteral (IntLiteral 2))))
+                               (ExprConstant (CInt 2))))
                             ))
                          )))
                 ))
@@ -185,7 +181,7 @@ let%expect_test "fib test" =
                 (ExprFun ((PVar "i"),
                    (ExprIf (
                       (ExprBinOperation (Eq, (ExprVariable "i"),
-                         (ExprLiteral (IntLiteral 0)))),
+                         (ExprConstant (CInt 0)))),
                       (ExprVariable "m"),
                       (Some (ExprApply (
                                (ExprApply (
@@ -195,7 +191,7 @@ let%expect_test "fib test" =
                                      (ExprVariable "m")))
                                   )),
                                (ExprBinOperation (Sub, (ExprVariable "i"),
-                                  (ExprLiteral (IntLiteral 1))))
+                                  (ExprConstant (CInt 1))))
                                )))
                       ))
                    ))
@@ -215,12 +211,12 @@ let%expect_test "factorial test" =
      (ExprFun ((PVar "n"),
         (ExprIf (
            (ExprBinOperation (Lte, (ExprVariable "n"),
-              (ExprLiteral (IntLiteral 1)))),
-           (ExprLiteral (IntLiteral 1)),
+              (ExprConstant (CInt 1)))),
+           (ExprConstant (CInt 1)),
            (Some (ExprBinOperation (Mul, (ExprVariable "n"),
                     (ExprApply ((ExprVariable "fact"),
                        (ExprBinOperation (Sub, (ExprVariable "n"),
-                          (ExprLiteral (IntLiteral 1))))
+                          (ExprConstant (CInt 1))))
                        ))
                     )))
            ))
@@ -241,9 +237,9 @@ let%expect_test "match" =
     {|
 [(SEval
     (ExprMatch ((ExprVariable "x"),
-       ((PLiteral (IntLiteral 0)), (ExprLiteral (StringLiteral "zero"))),
-       [((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one")));
-         (PAny, (ExprLiteral (StringLiteral "other")))]
+       ((PConstant (CInt 0)), (ExprConstant (CString "zero"))),
+       [((PConstant (CInt 1)), (ExprConstant (CString "one")));
+         (PAny, (ExprConstant (CString "other")))]
        )))
   ]
 |}]
@@ -260,9 +256,9 @@ let%expect_test "value equals match" =
      [(SValue (NonRec,
          ((PVar "numder"),
           (ExprMatch ((ExprVariable "arabic"),
-             ((PLiteral (IntLiteral 1)), (ExprLiteral (StringLiteral "one"))),
-             [((PLiteral (IntLiteral 2)), (ExprLiteral (StringLiteral "two")));
-               ((PLiteral (IntLiteral 3)), (ExprLiteral (StringLiteral "three")))]
+             ((PConstant (CInt 1)), (ExprConstant (CString "one"))),
+             [((PConstant (CInt 2)), (ExprConstant (CString "two")));
+               ((PConstant (CInt 3)), (ExprConstant (CString "three")))]
              ))),
          []))
        ] |}]
@@ -273,7 +269,7 @@ let%expect_test "bin operations with if then else" =
   [%expect
     {|
     [(SEval
-        (ExprBinOperation (Add, (ExprLiteral (IntLiteral 1)),
+        (ExprBinOperation (Add, (ExprConstant (CInt 1)),
            (ExprIf ((ExprVariable "a"), (ExprVariable "b"),
               (Some (ExprVariable "c"))))
            )))
@@ -286,10 +282,9 @@ let%expect_test "cons test" =
   [%expect
     {|
     [(SEval
-        (ExprCons ((ExprLiteral (IntLiteral 1)),
-           (ExprCons ((ExprLiteral (IntLiteral 2)),
-              (ExprCons ((ExprLiteral (IntLiteral 3)), (ExprLiteral NilLiteral)))
-              ))
+        (ExprCons ((ExprConstant (CInt 1)),
+           (ExprCons ((ExprConstant (CInt 2)),
+              (ExprCons ((ExprConstant (CInt 3)), (ExprConstant CNil)))))
            )))
       ]
   |}]
@@ -304,7 +299,7 @@ let%expect_test "sum list test" =
         ((PVar "sum_list"),
          (ExprFun ((PVar "lst"),
             (ExprMatch ((ExprVariable "lst"),
-               ((PLiteral NilLiteral), (ExprLiteral (IntLiteral 0))),
+               ((PConstant CNil), (ExprConstant (CInt 0))),
                [((PCons ((PVar "x"), (PVar "xs"))),
                  (ExprBinOperation (Add, (ExprVariable "x"),
                     (ExprApply ((ExprVariable "sum_list"), (ExprVariable "xs")))
@@ -326,10 +321,10 @@ let%expect_test "double list test" =
          ((PVar "double_list"),
           (ExprFun ((PVar "lst"),
              (ExprMatch ((ExprVariable "lst"),
-                ((PLiteral NilLiteral), (ExprLiteral NilLiteral)),
+                ((PConstant CNil), (ExprConstant CNil)),
                 [((PCons ((PVar "x"), (PVar "xs"))),
                   (ExprCons (
-                     (ExprBinOperation (Mul, (ExprLiteral (IntLiteral 2)),
+                     (ExprBinOperation (Mul, (ExprConstant (CInt 2)),
                         (ExprVariable "x"))),
                      (ExprApply ((ExprVariable "double_list"), (ExprVariable "xs")
                         ))
@@ -348,8 +343,7 @@ let%expect_test "unary tests" =
     [(SValue (NonRec,
         ((PVar "b"),
          (ExprUnOperation (UnaryNeg,
-            (ExprBinOperation (Gt, (ExprVariable "x"),
-               (ExprLiteral (IntLiteral 5))))
+            (ExprBinOperation (Gt, (ExprVariable "x"), (ExprConstant (CInt 5))))
             ))),
         []))
       ] |}]
@@ -361,8 +355,7 @@ let%expect_test "" =
   parse_to_unit "let (a : int) = 5";
   [%expect
     {|
-      [(SValue (NonRec, ((PType ((PVar "a"), AInt)), (ExprLiteral (IntLiteral 5))),
-          []))
+      [(SValue (NonRec, ((PType ((PVar "a"), AInt)), (ExprConstant (CInt 5))), []))
         ] |}]
 ;;
 
@@ -371,7 +364,7 @@ let%expect_test "" =
   [%expect
     {|
       [(SValue (NonRec,
-          ((PType ((PVar "a"), AString)), (ExprLiteral (StringLiteral "hello"))),
+          ((PType ((PVar "a"), AString)), (ExprConstant (CString "hello"))),
           []))
         ] |}]
 ;;
@@ -380,8 +373,7 @@ let%expect_test "" =
   parse_to_unit "let (a : bool) = true";
   [%expect
     {|
-      [(SValue (NonRec,
-          ((PType ((PVar "a"), ABool)), (ExprLiteral (BoolLiteral true))),
+      [(SValue (NonRec, ((PType ((PVar "a"), ABool)), (ExprConstant (CBool true))),
           []))
         ] |}]
 ;;
@@ -390,17 +382,15 @@ let%expect_test "" =
   parse_to_unit "let (a : unit) = ()";
   [%expect
     {|
-      [(SValue (NonRec, ((PType ((PVar "a"), AUnit)), (ExprLiteral UnitLiteral)),
-          []))
-        ] |}]
+      [(SValue (NonRec, ((PType ((PVar "a"), AUnit)), (ExprConstant CUnit)), []))] |}]
 ;;
 
 let%expect_test "" =
   parse_to_unit "let (a : int list) = []";
   [%expect
     {|
-      [(SValue (NonRec,
-          ((PType ((PVar "a"), (AList AInt))), (ExprLiteral NilLiteral)), []))
+      [(SValue (NonRec, ((PType ((PVar "a"), (AList AInt))), (ExprConstant CNil)),
+          []))
         ] |}]
 ;;
 
