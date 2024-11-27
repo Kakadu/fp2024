@@ -19,7 +19,7 @@ let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {|
-    let rec factorial = (fun n -> if (n = 0) then 1 else (n * factorial (n - 1))) in factorial 5 ;;
+    let rec factorial = (fun n -> if n = 0 then 1 else n * factorial n - 1) in factorial 5 ;;
     [(SEval
         (Elet (Recursive,
            (Evalue_binding ((Id ("factorial", None)),
@@ -55,7 +55,7 @@ let%expect_test _ =
   parse "if 5 > 6 then let x = 5 in x + 5";
   [%expect
     {|
-    if (5 > 6) then let  x = 5 in (x + 5) ;;
+    if 5 > 6 then let  x = 5 in x + 5 ;;
     [(SEval
         (Eif_then_else ((Ebin_op (Gt, (Econst (Int 5)), (Econst (Int 6)))),
            (Elet (Non_recursive,
@@ -90,7 +90,7 @@ let%expect_test _ =
   parse "[1 + 2; 3 * 4; 5 - 6]";
   [%expect
     {|
-  [(1 + 2); (3 * 4); (5 - 6)] ;;
+  [1 + 2; 3 * 4; 5 - 6] ;;
   [(SEval
       (Elist
          [(Ebin_op (Add, (Econst (Int 1)), (Econst (Int 2))));
@@ -117,7 +117,7 @@ let%expect_test _ =
   parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect
     {|
-    ((1234 + 676) - (9002 * (52 / 2))) ;;
+    1234 + 676 - 9002 * 52 / 2 ;;
     [(SEval
         (Ebin_op (Sub, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 676)))),
            (Ebin_op (Mult, (Econst (Int 9002)),
@@ -131,7 +131,7 @@ let%expect_test _ =
   parse "if 1234 + 1 = 1235 then let x = 4 in (x, 2)";
   [%expect
     {|
-    if ((1234 + 1) = 1235) then let  x = 4 in (x, 2) ;;
+    if 1234 + 1 = 1235 then let  x = 4 in (x, 2) ;;
     [(SEval
         (Eif_then_else (
            (Ebin_op (Eq, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 1)))),
@@ -162,8 +162,8 @@ let%expect_test _ =
   parse "let x = 5 in let y = 3 in x + y;; if 13 > 12 then let a = 2 in a - 4";
   [%expect
     {|
-    let  x = 5 in let  y = 3 in (x + y) ;;
-    if (13 > 12) then let  a = 2 in (a - 4) ;;
+    let  x = 5 in let  y = 3 in x + y ;;
+    if 13 > 12 then let  a = 2 in a - 4 ;;
     [(SEval
         (Elet (Non_recursive,
            (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
@@ -186,7 +186,7 @@ let%expect_test _ =
   [%expect
     {|
     let  x = 5 ;;
-    if (13 > 12) then let  a = 2 in (a + x) ;;
+    if 13 > 12 then let  a = 2 in a + x ;;
     [(SValue (Non_recursive,
         (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []));
       (SEval
@@ -222,7 +222,7 @@ let%expect_test _ =
   parse "((5 + 6) * (4 - 7)) - 1232";
   [%expect
     {|
-  (((5 + 6) * (4 - 7)) - 1232) ;;
+  (5 + 6) * (4 - 7) - 1232 ;;
   [(SEval
       (Ebin_op (Sub,
          (Ebin_op (Mult, (Ebin_op (Add, (Econst (Int 5)), (Econst (Int 6)))),
@@ -247,7 +247,7 @@ let%expect_test _ =
   parse "[1; 2; 3] = 1";
   [%expect
     {|
-  ([1; 2; 3] = 1) ;;
+  [1; 2; 3] = 1 ;;
   [(SEval
       (Ebin_op (Eq,
          (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]),
