@@ -295,8 +295,12 @@ let pstructure =
   choice [ pseval; psvalue ]
 ;;
 
-let structure : structure t = sep_by (token ";;") pstructure
-let parse s = parse_string ~consume:Prefix structure s
+let structure =
+  let psemicolon = token ";;" in
+  many (pstructure <* psemicolon <* ws)
+;;
+
+let parse s = parse_string ~consume:All structure s
 
 let parse_to_string input =
   match parse input with
