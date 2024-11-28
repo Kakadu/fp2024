@@ -6,6 +6,31 @@ open Base
 open Ast
 open Stdlib.Format
 
+let rec pp_id_type ppf typ =
+  match typ with
+  | TInt -> fprintf ppf "int"
+  | TString -> fprintf ppf "string"
+  | TBool -> fprintf ppf "bool"
+  | Tlist t -> fprintf ppf "%a list" pp_nested_type t
+  | TTuple (t1, t2, rest) ->
+    let tuple_content =
+      String.concat ~sep:" * " (List.map ~f:(asprintf "%a" pp_nested_type) (t1 :: t2 :: rest))
+    in
+    fprintf ppf "(%s)" tuple_content
+  | TFun (t1, t2) ->
+    fprintf ppf "%a -> %a" pp_nested_type t1 pp_nested_type t2
+
+and pp_nested_type ppf typ =
+  match typ with
+  | TFun _ -> fprintf ppf "(%a)" pp_id_type typ
+  | _ -> pp_id_type ppf typ
+;;
+
+let pp_id ppf = function
+  | Id (name, None) -> fprintf ppf "%s" name
+  | Id (name, Some t) -> fprintf ppf "%s : %a" name pp_id_type t
+;;
+
 let pp_const ppf = function
   | Int i -> fprintf ppf "%d" i
   | String s -> fprintf ppf "%S" s
@@ -40,8 +65,7 @@ let pp_rec_flag ppf = function
 ;;
 
 let rec pp_pattern ppf = function
-  | PVar (Id (name, None)) -> fprintf ppf "%s" name
-  | PVar (Id (name, Some suffix)) -> fprintf ppf "%s%s" name suffix
+  | PVar id -> pp_id ppf id
   | PConst c -> pp_const ppf c
   | PAny -> fprintf ppf "_"
   | PTuple (p1, p2, rest) ->
@@ -58,8 +82,7 @@ let rec pp_pattern ppf = function
 
 let rec pp_expr ppf = function
   | Econst c -> pp_const ppf c
-  | Evar (Id (name, None)) -> fprintf ppf "%s" name
-  | Evar (Id (name, Some suffix)) -> fprintf ppf "%s.%s" name suffix
+  | Evar id -> pp_id ppf id
   | Eif_then_else (e1, e2, None) -> fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
   | Eif_then_else (e1, e2, Some e3) ->
     fprintf ppf "if %a then %a else %a" pp_expr e1 pp_expr e2 pp_expr e3
@@ -137,7 +160,7 @@ let rec pp_expr ppf = function
 and pp_value_binding ppf = function
   | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
   | Evalue_binding (Id (name, Some suffix), e) ->
-    fprintf ppf "%s%s = %a" name suffix pp_expr e
+    fprintf ppf "%s : %a = %a" name pp_id_type suffix pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =

@@ -255,3 +255,98 @@ let%expect_test _ =
     ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let x : int = 42;;";
+  [%expect
+    {|
+  let  x : int = 42 ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("x", (Some TInt))), (Econst (Int 42)))), []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f : int -> string = fun x -> string_of_int x;;";
+  [%expect
+    {|
+  let  f : int -> string = (fun x -> string_of_int x) ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("f", (Some (TFun (TInt, TString))))),
+         (Efun ((PVar (Id ("x", None))), [],
+            (Efun_application ((Evar (Id ("string_of_int", None))),
+               (Evar (Id ("x", None)))))
+            ))
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let y : int * string * bool = (1, \"hello\", true);;";
+  [%expect
+    {|
+  let  y : (int * string * bool) = (1, "hello", true) ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("y", (Some (TTuple (TInt, TString, [TBool]))))),
+         (Etuple ((Econst (Int 1)), (Econst (String "hello")),
+            [(Econst (Bool true))]))
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let l : int list = [1; 2; 3];;";
+  [%expect
+    {|
+  let  l : int list = [1; 2; 3] ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("l", (Some (Tlist TInt)))),
+         (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]))),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)];;";
+  [%expect
+    {|
+  let  g : (int -> bool) list = [(fun x -> (x > 0)); (fun x -> (x < 0))] ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("g", (Some (Tlist (TFun (TInt, TBool)))))),
+         (Elist
+            [(Efun ((PVar (Id ("x", None))), [],
+                (Ebin_op (Gt, (Evar (Id ("x", None))), (Econst (Int 0))))));
+              (Efun ((PVar (Id ("x", None))), [],
+                 (Ebin_op (Lt, (Evar (Id ("x", None))), (Econst (Int 0))))))
+              ])
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y" ;
+  [%expect
+    {|
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> (x + y))) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding (
+          (Id ("f", (Some (TFun (TString, (TFun (TInt, TBool))))))),
+          (Efun ((PVar (Id ("x", None))), [],
+             (Efun ((PVar (Id ("y", None))), [],
+                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
+                   ))
+                ))
+             ))
+          )),
+       []))
+     ]
+  |}]
+;;
