@@ -22,9 +22,6 @@ val skip_ws1 : unit t
     with 0 or more whitespaces before and after it. *)
 val skip_token : string -> unit t
 
-(** [is_keyword] returns true if given string is a keyword of F#. *)
-val is_keyword : string -> bool
-
 (** [is_ident_char] returns true if char can be used in an identificator. *)
 val is_ident_char : char -> bool
 
