@@ -12,15 +12,15 @@ type measure =
   | Measure_prod of measure * measure (** Measure product: [sec * h], [kg m] *)
   | Measure_div of measure * measure (** Measure division: [m / sec] *)
   | Measure_pow of measure * integer_exp (** Measure to the integer power: [cm^3] *)
-  | Measure_paren of measure (** Parentheses around measure: [(kg / m^3)]*)
+  | Measure_paren of measure (** Parentheses around measure: [(kg / m^3)] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type measure_num =
-  | Mnum_int of int (** Integer numbers with units of measure *)
-  | Mnum_float of float (** Real numbers with units of measure *)
+  | Mnum_int of int (** Integer number in unit of measure *)
+  | Mnum_float of float (** Real number in unit of measure *)
 [@@deriving qcheck, show { with_path = false }]
 
-(** Units of measure: [1<m>], [9.8<kg m / s>], [0.3<kg^3>] etc. *)
+(** Unit of measure: [1<m>], [9.8<kg m / s>], [0.3<kg^3>] etc. *)
 type unit_of_measure = Unit_of_measure of measure_num * measure
 [@@deriving qcheck, show { with_path = false }]
 
