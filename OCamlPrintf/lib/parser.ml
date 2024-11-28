@@ -57,6 +57,11 @@ let keyword str =
   else fail (Printf.sprintf "There is no separator after %S." str)
 ;;
 
+let safe_tl = function
+  | [] -> []
+  | _ :: tail -> tail
+;;
+
 (* ==================== Ident ==================== *)
 
 let parse_ident =
@@ -180,11 +185,9 @@ let parse_pat_construct parse_pat =
   let parse_elements =
     ws *> string "[" *> sep_by (ws *> string ";") parse_pat
     <* string "]"
-    >>| fun list_ ->
-    List.fold_right
-      list_
-      ~init:(Pat_construct ("[]", None))
-      ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple (pat, acc, []))))
+    >>| List.fold_right
+          ~init:(Pat_construct ("[]", None))
+          ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple (pat, acc, []))))
   in
   choice [ parse_elements; parse_pat_construct_keyword parse_pat ]
 ;;
@@ -193,9 +196,9 @@ let parse_pat_constraint parse_pat =
   ws
   *> string "("
   *>
-  let* q = parse_pat in
+  let* pat = parse_pat in
   let* type' = ws *> string ":" *> parse_core_type <* string ")" in
-  return (Pat_constraint (q, type'))
+  return (Pat_constraint (pat, type'))
 ;;
 
 let parse_pattern =
@@ -272,19 +275,15 @@ let parse_exp_constraint parse_exp op =
     let* exp = ws *> string op *> parse_exp in
     return (Exp_constraint (exp, type'))
   in
-  let parse_exp_without_constraint =
-    let* exp = ws *> string op *> parse_exp in
-    return exp
-  in
+  let parse_exp_without_constraint = ws *> string op *> parse_exp in
   ws *> choice [ parse_exp_with_constraint; parse_exp_without_constraint ]
 ;;
 
 let parse_fun_binding parse_exp =
   let* name = ws *> parse_pat_var in
-  let* first_pat = ws *> parse_pattern in
-  let* pat_list = ws *> sep_by ws parse_pattern in
+  let* pat_list = ws *> sep_by1 ws parse_pattern in
   let* exp = parse_exp_constraint parse_exp "=" in
-  return { pat = name; exp = Exp_fun (first_pat, pat_list, exp) }
+  return { pat = name; exp = Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp) }
 ;;
 
 let parse_simple_binding parse_exp =
@@ -293,14 +292,9 @@ let parse_simple_binding parse_exp =
   return { pat; exp }
 ;;
 
-let parse_value_binding parse_exp =
-  parse_fun_binding parse_exp <|> parse_simple_binding parse_exp
-;;
-
 let parse_value_binding_list parse_exp =
   ws
-  *> option () (string "and" *> return ())
-  *> sep_by
+  *> sep_by1
        (ws *> keyword "and")
        (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
 ;;
@@ -315,31 +309,30 @@ let parse_exp_let parse_exp =
   *> keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
-  let* first_value_binding = ws *> parse_value_binding parse_exp in
   let* value_binding_list =
     ws *> parse_value_binding_list parse_exp <* ws <* keyword "in"
   in
   let* exp = ws *> parse_exp in
-  return (Exp_let (rec_flag, first_value_binding, value_binding_list, exp))
+  return
+    (Exp_let (rec_flag, List.hd_exn value_binding_list, safe_tl value_binding_list, exp))
 ;;
 
 let parse_exp_fun parse_exp =
   ws
   *> keyword "fun"
   *>
-  let* first_pat = parse_pattern in
-  let* pat_list = many parse_pattern in
+  let* pat_list = many1 parse_pattern in
   let* exp = parse_exp_constraint parse_exp "->" in
-  return (Exp_fun (first_pat, pat_list, exp))
+  return (Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp))
 ;;
 
 let parse_exp_apply_fun parse_exp =
-  let* var = parse_exp in
+  let* exp = parse_exp in
   many parse_exp
   >>| fun exp_list ->
   if List.is_empty exp_list
-  then var
-  else Exp_apply (var, List.hd_exn exp_list, List.tl_exn exp_list)
+  then exp
+  else Exp_apply (exp, List.hd_exn exp_list, List.tl_exn exp_list)
 ;;
 
 let parse_exp_apply_op parse_exp =
@@ -365,9 +358,8 @@ let parse_case parse_exp =
 
 let parse_exp_match parse_exp =
   let* exp = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
-  let* first_case = ws *> parse_case parse_exp in
-  let* case_list = ws *> sep_by (ws *> string "|" *> ws) (parse_case parse_exp) in
-  return (Exp_match (exp, first_case, case_list))
+  let* case_list = ws *> sep_by1 (ws *> string "|" *> ws) (parse_case parse_exp) in
+  return (Exp_match (exp, List.hd_exn case_list, safe_tl case_list))
 ;;
 
 let parse_exp_tuple parse_exp =
@@ -397,11 +389,9 @@ let parse_exp_construct parse_exp =
     ws *> string "[" *> sep_by (ws *> string ";") parse_exp
     <* ws
     <* string "]"
-    >>| fun list_ ->
-    List.fold_right
-      list_
-      ~init:(Exp_construct ("[]", None))
-      ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple (exp, acc, []))))
+    >>| List.fold_right
+          ~init:(Exp_construct ("[]", None))
+          ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple (exp, acc, []))))
   in
   choice [ parse_elements; parse_exp_construct_keyword parse_exp ]
 ;;
@@ -452,14 +442,16 @@ let parse_struct_value =
   keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
-  let* first_value_binding = parse_value_binding parse_expression in
   let* value_binding_list = parse_value_binding_list parse_expression in
   ws
   *> option
-       (Struct_value (rec_flag, first_value_binding, value_binding_list))
+       (Struct_value (rec_flag, List.hd_exn value_binding_list, safe_tl value_binding_list))
        (ws *> keyword "in" *> parse_expression
         >>| fun exp ->
-        Struct_eval (Exp_let (rec_flag, first_value_binding, value_binding_list, exp)))
+        Struct_eval
+          (Exp_let
+             (rec_flag, List.hd_exn value_binding_list, safe_tl value_binding_list, exp))
+       )
 ;;
 
 let parse_structure =

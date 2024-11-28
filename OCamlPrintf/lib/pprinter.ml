@@ -82,13 +82,11 @@ let rec pp_type ppf = function
     in
     fprintf ppf "(";
     pp_with_condition_on_arrow first_type;
-    fprintf ppf " * ";
-    pp_with_condition_on_arrow second_type;
     List.iter
       (fun type' ->
         fprintf ppf " * ";
         pp_with_condition_on_arrow type')
-      type_list;
+      (second_type :: type_list);
     fprintf ppf ")"
   | Type_arrow (first_type, second_type) ->
     (match first_type with
@@ -102,10 +100,11 @@ let rec pp_pattern ppf = function
   | Pat_var id -> pp_ident ppf id
   | Pat_constant const -> pp_constant ppf const
   | Pat_tuple (first_pat, second_pat, pat_list) ->
-    fprintf ppf "(%a, %a" pp_pattern first_pat pp_pattern second_pat;
-    if Base.List.is_empty pat_list
-    then fprintf ppf ")"
-    else fprintf ppf ", %a)" (pp_print_list ~pp_sep:pp_comma pp_pattern) pat_list
+    fprintf
+      ppf
+      "(%a)"
+      (pp_print_list ~pp_sep:pp_comma pp_pattern)
+      (first_pat :: second_pat :: pat_list)
   | Pat_construct ("::", None) -> fprintf ppf "[]"
   | Pat_construct ("::", Some pat) ->
     (match pat with
@@ -134,28 +133,11 @@ let rec pp_expression ppf = function
   | Exp_ident id -> pp_ident ppf id
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, first_value_binding, value_binding_list, exp) ->
-    let pp_exp_constraint = function
-      | Exp_constraint (exp', core_type) ->
-        fprintf ppf ": %a = %a" pp_type core_type pp_expression exp'
-      | exp' -> fprintf ppf "= %a" pp_expression exp'
-    in
-    fprintf ppf "(%s " (let_flag_str rec_flag);
-    fprintf
+    fprintf ppf "(";
+    pp_rec_flag_and_value_binding_list
       ppf
-      "%a"
-      (fun ppf value ->
-        fprintf ppf "%a " pp_pattern value.pat;
-        pp_exp_constraint value.exp)
-      first_value_binding;
-    if not (Base.List.is_empty value_binding_list)
-    then
-      fprintf
-        ppf
-        " and %a"
-        (pp_print_list ~pp_sep:pp_and (fun ppf value ->
-           fprintf ppf "%a " pp_pattern value.pat;
-           pp_exp_constraint value.exp))
-        value_binding_list;
+      rec_flag
+      (first_value_binding :: value_binding_list);
     fprintf ppf " in %a)" pp_expression exp
   | Exp_fun (first_pat, pat_list, exp) ->
     let pp_exp_constraint = function
@@ -163,9 +145,11 @@ let rec pp_expression ppf = function
         fprintf ppf ": %a -> %a)" pp_type core_type pp_expression exp'
       | exp' -> fprintf ppf "-> %a)" pp_expression exp'
     in
-    fprintf ppf "(fun %a " pp_pattern first_pat;
-    if not (Base.List.is_empty pat_list)
-    then fprintf ppf "%a " (pp_print_list ~pp_sep:pp_space pp_pattern) pat_list;
+    fprintf
+      ppf
+      "(fun %a "
+      (pp_print_list ~pp_sep:pp_space pp_pattern)
+      (first_pat :: pat_list);
     pp_exp_constraint exp
   | Exp_apply (exp, first_exp, exp_list) ->
     let expression = asprintf "%a" pp_expression exp in
@@ -238,29 +222,19 @@ let rec pp_expression ppf = function
     in
     handle_exp_list (first_exp, exp_list)
   | Exp_match (exp, first_case, case_list) ->
+    fprintf ppf "(match %a with" pp_expression exp;
     fprintf
       ppf
-      "(match %a with | %a -> %a"
-      pp_expression
-      exp
-      pp_pattern
-      first_case.left
-      pp_expression
-      first_case.right;
-    if Base.List.is_empty case_list
-    then fprintf ppf ")"
-    else
-      fprintf
-        ppf
-        " %a)"
-        (pp_print_list ~pp_sep:pp_space (fun ppf case ->
-           fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
-        case_list
+      " %a)"
+      (pp_print_list ~pp_sep:pp_space (fun ppf case ->
+         fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
+      (first_case :: case_list)
   | Exp_tuple (first_exp, second_exp, exp_list) ->
-    fprintf ppf "(%a, %a" pp_expression first_exp pp_expression second_exp;
-    if Base.List.is_empty exp_list
-    then fprintf ppf ")"
-    else fprintf ppf ", %a)" (pp_print_list ~pp_sep:pp_comma pp_expression) exp_list
+    fprintf
+      ppf
+      "(%a)"
+      (pp_print_list ~pp_sep:pp_comma pp_expression)
+      (first_exp :: second_exp :: exp_list)
   | Exp_construct ("::", None) -> fprintf ppf "[]"
   | Exp_construct ("::", Some exp) ->
     (match exp with
@@ -297,34 +271,31 @@ let rec pp_expression ppf = function
     fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
   | Exp_constraint (exp, core_type) ->
     fprintf ppf "(%a : %a)" pp_expression exp pp_type core_type
+
+and pp_rec_flag_and_value_binding_list ppf rec_flag value_binding_list =
+  let pp_exp_constraint = function
+    | Exp_constraint (exp', core_type) ->
+      fprintf ppf ": %a = %a" pp_type core_type pp_expression exp'
+    | exp' -> fprintf ppf "= %a" pp_expression exp'
+  in
+  fprintf ppf "%s " (let_flag_str rec_flag);
+  fprintf
+    ppf
+    "%a"
+    (pp_print_list ~pp_sep:pp_and (fun ppf value ->
+       fprintf ppf "%a " pp_pattern value.pat;
+       pp_exp_constraint value.exp))
+    value_binding_list
 ;;
 
 let pp_structure_item ppf = function
   | Struct_eval exp -> fprintf ppf "%a;;" pp_expression exp
   | Struct_value (rec_flag, first_value_binding, value_binding_list) ->
-    let pp_exp_constraint = function
-      | Exp_constraint (exp', core_type) ->
-        fprintf ppf ": %a = %a" pp_type core_type pp_expression exp'
-      | exp' -> fprintf ppf "= %a" pp_expression exp'
-    in
-    fprintf ppf "%s " (let_flag_str rec_flag);
-    fprintf
+    pp_rec_flag_and_value_binding_list
       ppf
-      "%a"
-      (fun ppf value ->
-        fprintf ppf "%a " pp_pattern value.pat;
-        pp_exp_constraint value.exp)
-      first_value_binding;
-    if Base.List.is_empty value_binding_list
-    then fprintf ppf ";;"
-    else
-      fprintf
-        ppf
-        " and %a;;"
-        (pp_print_list ~pp_sep:pp_and (fun ppf value ->
-           fprintf ppf "%a " pp_pattern value.pat;
-           pp_exp_constraint value.exp))
-        value_binding_list
+      rec_flag
+      (first_value_binding :: value_binding_list);
+    fprintf ppf ";;"
 ;;
 
 let pp_structure ppf str =
