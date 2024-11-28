@@ -2,7 +2,7 @@
  (name parse)
  (inline_tests)
  (public_name FSharpUnitsOfMeasure.Parse)
- (libraries base angstrom ast)
+ (libraries base angstrom ast keywords)
  (preprocess
   (pps ppx_expect ppx_inline_test))
  (instrumentation
