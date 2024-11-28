@@ -9,11 +9,7 @@ open Base
 open Angstrom
 open Ast
 open Common
-
-let is_builtin_type = function
-  | "int" | "bool" | "float" | "char" | "string" | "" -> true
-  | _ -> false
-;;
+open Keywords
 
 let parse_type_ident_builtin =
   let* type_ident = parse_ident in

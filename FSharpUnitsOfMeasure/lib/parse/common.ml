@@ -7,6 +7,7 @@
 
 open Base
 open Angstrom
+open Keywords
 
 (* F# compiler forbids tabs by default *)
 let is_whitespace = function
@@ -17,25 +18,6 @@ let is_whitespace = function
 let skip_ws = skip_while is_whitespace
 let skip_ws1 = satisfy is_whitespace *> skip_ws
 let skip_token str = skip_ws *> string str <* skip_ws >>= fun _ -> return ()
-
-let is_keyword = function
-  | "and"
-  | "else"
-  | "false"
-  | "fun"
-  | "function"
-  | "if"
-  | "in"
-  | "let"
-  | "match"
-  | "or"
-  | "rec"
-  | "then"
-  | "true"
-  | "type"
-  | "with" -> true
-  | _ -> false
-;;
 
 let is_op_char = function
   | '+' | '-' | '*' | '/' | '<' | '>' | '=' | '|' | '.' -> true
