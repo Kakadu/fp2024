@@ -1,0 +1,8 @@
+(library
+ (name haskell_lib_test)
+ (public_name Haskell.Lib.Test)
+ (libraries haskell_lib)
+ (inline_tests)
+ (modules Pprintast_test)
+ (preprocess
+  (pps ppx_inline_test ppx_expect)))

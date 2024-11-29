@@ -1,3 +1,3 @@
 (cram
- (applies_to ast_test)
- (deps ../bin/astEx.exe))
+ (applies_to qcheck)
+ (deps ../lib/run_qcheck.exe))

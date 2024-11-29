@@ -27,9 +27,6 @@
 *.cmxs
 *.cmxa
 
-# direnv
-.envrc
-
 # ocamlbuild working directory
 _build/
 
@@ -51,3 +48,10 @@ setup.log
 _opam/
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,ocaml
+
+# direnv
+.envrc
+
+# notes
+*.notes
+*.txt
