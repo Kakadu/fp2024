@@ -14,14 +14,6 @@ open Ast
    <*> "apply" -- выполняет парсер для функции, затем парсер для значения и затем применяет (если сделать "apply" над результатом "bind")
 *)
 
-let parse_vica =
-  let* v = char 'V' in
-  let* i = char 'i' in
-  let* c = char 'c' in
-  let* a = char 'a' in
-  return [ v; i; c; a ]
-;;
-
 let is_letter = function
   | 'a' .. 'z' | 'A' .. 'Z' -> true
   | _ -> false
@@ -53,12 +45,15 @@ let is_keyword = function
 ;;
 
 let skip_separators = skip_while is_separator
-let parse_token t = skip_separators *> t
+let trim t = skip_separators *> t <* skip_separators
+let token t = skip_separators *> string t <* skip_separators
+let parens p = token "(" *> p <* token ")"
+let square_parens p = token "[]" *> p <* token "]"
+
+(* ============================= id ============================ *)
 
 (** Parse first letter then try parse rest of id *)
 let parse_id =
-  parse_token
-  @@
   let* parse_first = satisfy is_letter <|> satisfy (Char.equal '_') >>| Char.escaped in
   let* parse_rest =
     take_while1 (fun ch -> is_letter ch || is_digit ch || Char.equal '_' ch)
@@ -67,12 +62,10 @@ let parse_id =
   if is_keyword id then fail "Identifier must not match the keyword." else return id
 ;;
 
-(*
-   take_while захватывает любое количество символов
-   take_while1 захватывает хотя бы 1 символ
-*)
+(* ========================== literals ========================= *)
+
 let parse_int =
-  parse_token
+  trim
   @@
   let* sign = char '+' *> return 1 <|> char '-' *> return (-1) <|> return 1 in
   let* digit = take_while1 is_digit >>| int_of_string in
@@ -80,27 +73,45 @@ let parse_int =
 ;;
 
 let parse_str =
-  parse_token
-  @@
   let parse_empty_string = string "{||}" >>| fun _ -> "" in
   let parse_content = string "{|" *> take_till (Char.equal '|') <* string "|}" in
   let* str = parse_empty_string <|> parse_content in
   return (Str str)
 ;;
 
-let parse_string_token st = skip_separators *> string st
-
 let parse_bool =
-  choice
-    [ (parse_string_token "true" *> peek_char
-       >>= function
-       | None -> return (Bool true)
-       | Some ch when is_separator ch -> return (Bool true)
-       | _ -> fail "Invalid char after 'true'")
-    ; (parse_string_token "false" *> peek_char
-       >>= function
-       | None -> return (Bool false)
-       | Some ch when is_separator ch -> return (Bool false)
-       | _ -> fail "Invalid char after 'false'")
-    ]
+  let* parsed_bool =
+    choice [ token "true" *> return true; token "false" *> return false ]
+  in
+  return (Bool parsed_bool)
+;;
+
+let parse_unit =
+  let* _ = token "()" in
+  return Unit
+;;
+
+let parse_literal = parse_int <|> parse_str <|> parse_bool <|> parse_unit
+
+(* ======================== expressions ======================== *)
+let parse_expr_var =
+  let* var = parse_id in
+  return (ExpVar var)
+;;
+
+let parse_expr_literal =
+  let* literal = parse_literal in
+  return (ExpConst literal)
+;;
+
+let parse_expr_list parse_expression =
+  let* parsed_list = square_parens @@ sep_by (token ";") parse_expression in
+  return (ExpList parsed_list)
+;;
+
+(* wip *)
+let parse_expr_tuple parse_expression =
+  let* first = parse_expression in
+  let* rest = many1 (token "," *> parse_expression) in
+  return (ExpTuple (first :: rest)) |> parens
 ;;
