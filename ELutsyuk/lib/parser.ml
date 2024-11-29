@@ -45,27 +45,27 @@ let is_keyword = function
 ;;
 
 let skip_separators = skip_while is_separator
-let trim t = skip_separators *> t <* skip_separators
+let clean_up t = skip_separators *> t <* skip_separators
 let token t = skip_separators *> string t <* skip_separators
-let parens p = token "(" *> p <* token ")"
-let square_parens p = token "[]" *> p <* token "]"
+let round_parens p = token "(" *> p <* token ")"
+let square_brackets p = token "[]" *> p <* token "]"
 
-(* ============================= id ============================ *)
+(* ============================ name =========================== *)
 
-(** Parse first letter then try parse rest of id *)
-let parse_id =
+(** Parse first letter then try parse the rest of name *)
+let parse_name =
   let* parse_first = satisfy is_letter <|> satisfy (Char.equal '_') >>| Char.escaped in
   let* parse_rest =
     take_while1 (fun ch -> is_letter ch || is_digit ch || Char.equal '_' ch)
   in
-  let id = parse_first ^ parse_rest in
-  if is_keyword id then fail "Identifier must not match the keyword." else return id
+  let name = parse_first ^ parse_rest in
+  if is_keyword name then fail "Name must not match the keyword." else return name
 ;;
 
 (* ========================== literals ========================= *)
 
 let parse_int =
-  trim
+  clean_up
   @@
   let* sign = char '+' *> return 1 <|> char '-' *> return (-1) <|> return 1 in
   let* digit = take_while1 is_digit >>| int_of_string in
@@ -95,7 +95,7 @@ let parse_literal = parse_int <|> parse_str <|> parse_bool <|> parse_unit
 
 (* ======================== expressions ======================== *)
 let parse_expr_var =
-  let* var = parse_id in
+  let* var = parse_name in
   return (ExpVar var)
 ;;
 
@@ -105,8 +105,8 @@ let parse_expr_literal =
 ;;
 
 let parse_expr_list parse_expression =
-  let* parsed_list = square_parens @@ sep_by (token ";") parse_expression in
-  return (ExpList parsed_list)
+  let* list = square_brackets @@ sep_by (token ";") parse_expression in
+  return (ExpList list)
 ;;
 
 (* wip *)
