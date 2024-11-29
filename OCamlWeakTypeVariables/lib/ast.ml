@@ -6,36 +6,25 @@
 
 [@@@ocaml.text "/*"]
 
-(** literals *)
-type literal =
-  | Int of int (** literal of int. Ex: 5 *)
-  | String of string (** literal of string. Ex: "homka" *)
-  | Boolean of bool (** literal of boolean. Ex: true *)
+(** constants *)
+type constant =
+  | Pconst_int of int (** constant of int. Ex: 5 *)
+  | Pconst_string of string (** constant of string. Ex: "homka" *)
+  | Pconst_boolean of bool (** constant of boolean. Ex: true *)
+  | Pconst_float of float (** constant of float. Ex: 1.22 *)
 [@@deriving show { with_path = false }]
 
-(** indetificator *)
-type id = string [@@deriving show { with_path = false }]
+(** identificator *)
+type id = Id of string [@@deriving show { with_path = false }]
 
-(** binary operators *)
-type op_bin =
-  | Plus (** [ + ] *)
-  | Minus (** [ - ] *)
-  | Mul (** [ * ] *)
-  | Div (** [ / ] *)
-  | Equal (** [ = ] *)
-  | Greater (** [ > ] *)
-  | GreaterEqual (** [ >= ] *)
-  | Less (** [ < ] *)
-  | LessEqual (** [ <= ] *)
-  | And (** [ && ] *)
-  | Or (** [ || ] *)
+type pattern =
+  | Ppat_any (** The pattern _. *)
+  | Ppat_var of string (** A variable pattern such as x *)
+  | Ppat_constant of constant (** Patterns such as 1, 'a', "true", 1.0 *)
+  | Ppat_interval of constant * constant (** Patterns such as 'a'..'z'. *)
+  | Ppat_tuple of pattern list (** Patterns (P1, ..., Pn). Invariant: n >= 2 *)
 [@@deriving show { with_path = false }]
 
-(** unary operators *)
-type op_un =
-  | Not (** [ not ] *)
-  | UnMinus (** unary minus. Ex: '-' in -4 *)
-[@@deriving show { with_path = false }]
 
 (** recursive flag *)
 type rec_flag =
@@ -44,12 +33,19 @@ type rec_flag =
 [@@deriving show { with_path = false }]
 
 type expr =
-  | Const of literal (** const of literal. Ex: 5, "Homka", true *)
-  | Variable of id (** variable with name. Ex: "homka" *)
-  | Op_un of op_un * expr (** Unary operation. Ex: not true *)
-  | Op_bin of op_bin * expr * expr (** Binary operation. Ex: 5 + 5 *)
-  | IfThenElse of expr * expr * expr option
+  | Pexpr_ident of id (** variable with name. Ex: "homka" *)
+  | Pexpr_const of constant (** const of literal. Ex: 5, "Homka", true *)
+  (** Pexp_let(flag, P1, E1, E) represents: *)
+  (** let P1 = E1 in E when flag is NotRecursive *)
+  (** let rec P1 = E1 in E when flag is Recursive. *)
+  | Pexpr_let of rec_flag * pattern * expr * expr 
+  | Pexpr_ifThenElse of expr * expr * expr option
   (** If then else. Ex: If homka then hype else no_hype *)
-  | Function of id * expr list (** Function: Ex: print a (5 + 5) b true *)
-  | Binding of id * rec_flag * id list * expr (** Binding. Ex: let homka a = a + a *)
+  | Pexpr_apply of expr * expr list (** Function: Ex: print a (5 + 5) b true *)
+  | Pexpr_fun of pattern * expr (** fun P -> E1 *)
+[@@deriving show { with_path = false }]
+
+type structure_item =
+  | Pstr_value of rec_flag * pattern * expr (** let homka = 5 *)
+  | Pstr_expr of expr 
 [@@deriving show { with_path = false }]

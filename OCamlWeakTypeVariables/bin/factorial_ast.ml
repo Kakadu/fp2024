@@ -10,20 +10,28 @@
 open Lib.Ast
 
 let () =
-  let fact : expr =
-    Binding
-      ( "factorial"
-      , Recursive
-      , [ "n" ]
-      , IfThenElse
-          ( Op_bin (Equal, Variable "n", Const (Int 0))
-          , Const (Int 1)
-          , Some
-              (Op_bin
-                 ( Mul
-                 , Variable "n"
-                 , Function ("factorial", [ Op_bin (Minus, Variable "n", Const (Int 1)) ])
-                 )) ) )
+  let fact : structure_item =
+    Pstr_value
+      ( Recursive
+      , Ppat_var "factorial"
+      , Pexpr_fun
+          ( Ppat_var "n"
+          , Pexpr_ifThenElse
+              ( Pexpr_apply
+                  ( Pexpr_ident (Id "=")
+                  , [ Pexpr_ident (Id "n"); Pexpr_const (Pconst_int 5) ] )
+              , Pexpr_const (Pconst_int 1)
+              , Some
+                  (Pexpr_apply
+                     ( Pexpr_ident (Id "*")
+                     , [ Pexpr_ident (Id "n")
+                       ; Pexpr_apply
+                           ( Pexpr_ident (Id "factorial")
+                           , [ Pexpr_apply
+                                 ( Pexpr_ident (Id "-")
+                                 , [ Pexpr_ident (Id "n"); Pexpr_const (Pconst_int 1) ] )
+                             ] )
+                       ] )) ) ) )
   in
-  print_endline (show_expr fact)
+  print_endline (show_structure_item fact)
 ;;
