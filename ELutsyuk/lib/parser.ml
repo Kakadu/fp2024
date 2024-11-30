@@ -150,3 +150,18 @@ let parse_expr_lambda parse_expr =
   in
   token "fun" *> parse_body parse_expr
 ;;
+
+let parse_expr_let parse_expr =
+  let rec parse_let_bindings parse_expr =
+    let* name = parse_name in
+    let* _ = token "=" in
+    let* expr = parse_expr in
+    return @@ (name, expr)
+  in
+  token "let"
+  *>
+  let* is_rec = token "rec" *> return Rec <|> return NonRec in
+  let* expr = many @@ parse_let_bindings parse_expr in
+  let* in_expr = token "in" *> parse_expr <|> return ExpUnit in
+  return @@ ExpLet (is_rec, expr, in_expr)
+;;
