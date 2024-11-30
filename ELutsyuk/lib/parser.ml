@@ -141,3 +141,12 @@ let parse_expr_tuple parse_expression =
   let* rest = many1 (token "," *> parse_expression) in
   return (ExpTuple (first :: rest)) |> parens
 ;;
+
+let parse_expr_lambda parse_expr =
+  let rec parse_body parse_expr =
+    let* lambda_name = parse_pattern in
+    let* exp = parse_body parse_expr <|> token "->" *> parse_expr in
+    return @@ ExpLambda (lambda_name, exp)
+  in
+  token "fun" *> parse_body parse_expr
+;;
