@@ -130,22 +130,29 @@ let parse_expr_literal =
   return @@ ExpConst literal
 ;;
 
-let parse_expr_list parse_expression =
-  let* list = square_brackets @@ sep_by (token ";") parse_expression in
-  return @@ ExpList list
+let parse_expr_list parse_expr =
+  square_brackets
+  @@
+  let* first_element = parse_expr in
+  let* rest_list = many (token ";" *> parse_expr) in
+  return @@ ExpList (first_element :: rest_list)
 ;;
 
-(* wip *)
-let parse_expr_tuple parse_expression =
-  let* first = parse_expression in
-  let* rest = many1 (token "," *> parse_expression) in
-  return (ExpTuple (first :: rest)) |> parens
+let parse_expr_tuple parse_expr =
+  round_parens
+  @@
+  let* exp1 = parse_expr in
+  let* _ = token "," in
+  let* exp2 = parse_expr in
+  let* rest = many (token "," *> parse_expr) in
+  return (ExpTuple (exp1, exp2, rest))
 ;;
 
 let parse_expr_lambda parse_expr =
-  let rec parse_body parse_expr =
+  let parse_body parse_expr =
     let* lambda_name = parse_pattern in
-    let* exp = parse_body parse_expr <|> token "->" *> parse_expr in
+    let* _ = token "->" in
+    let* exp = parse_expr in
     return @@ ExpLambda (lambda_name, exp)
   in
   token "fun" *> parse_body parse_expr
