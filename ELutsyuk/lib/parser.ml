@@ -85,21 +85,21 @@ let parse_int =
   @@
   let* sign = char '+' *> return 1 <|> char '-' *> return (-1) <|> return 1 in
   let* digit = take_while1 is_digit >>| int_of_string in
-  return (Int (sign * digit))
+  return @@ Int (sign * digit)
 ;;
 
 let parse_str =
   let parse_empty_string = string "{||}" >>| fun _ -> "" in
   let parse_content = string "{|" *> take_till (Char.equal '|') <* string "|}" in
   let* str = parse_empty_string <|> parse_content in
-  return (Str str)
+  return @@ Str str
 ;;
 
 let parse_bool =
   let* parsed_bool =
     choice [ token "true" *> return true; token "false" *> return false ]
   in
-  return (Bool parsed_bool)
+  return @@ Bool parsed_bool
 ;;
 
 let parse_unit =
@@ -111,7 +111,7 @@ let parse_literal = parse_int <|> parse_str <|> parse_bool <|> parse_unit
 
 (* ====================== binary operations ==================== *)
 let parse_bin_op op_name op_char =
-  token op_char *> return (fun exp1 exp2 -> ExpBinOp (op_name, exp1, exp2))
+  token op_char *> (return @@ fun exp1 exp2 -> ExpBinOp (op_name, exp1, exp2))
 ;;
 
 let parse_mul = parse_bin_op Mul "*"
@@ -122,17 +122,17 @@ let parse_div = parse_bin_op Div "/"
 (* ======================== expressions ======================== *)
 let parse_expr_var =
   let* var = parse_name in
-  return (ExpVar var)
+  return @@ ExpVar var
 ;;
 
 let parse_expr_literal =
   let* literal = parse_literal in
-  return (ExpConst literal)
+  return @@ ExpConst literal
 ;;
 
 let parse_expr_list parse_expression =
   let* list = square_brackets @@ sep_by (token ";") parse_expression in
-  return (ExpList list)
+  return @@ ExpList list
 ;;
 
 (* wip *)
