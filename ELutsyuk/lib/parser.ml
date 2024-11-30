@@ -182,8 +182,8 @@ let parse_expr_tuple parse_expr =
 ;;
 
 let parse_expr_lambda parse_expr =
-  let parse_body parse_expr =
-    let* lambda_name = parse_pattern in
+  let rec parse_body parse_expr =
+    let* lambda_name = parse_name in
     let* _ = token "->" in
     let* exp = parse_expr in
     return @@ ExpLambda (lambda_name, exp)
