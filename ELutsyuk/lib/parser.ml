@@ -14,6 +14,22 @@ open Ast
    <*> "apply" -- выполняет парсер для функции, затем парсер для значения и затем применяет (если сделать "apply" над результатом "bind")
 *)
 
+let rec chainr1 pexpr op =
+  let* left_operand = pexpr in
+  let* f = op in
+  chainr1 pexpr op >>| f left_operand <|> return left_operand
+;;
+
+let chainl1 pexpr op =
+  let rec go acc =
+    let* f = op in
+    let* right_operand = pexpr in
+    go (f acc right_operand) <|> return acc
+  in
+  let* init = pexpr in
+  go init
+;;
+
 let is_letter = function
   | 'a' .. 'z' | 'A' .. 'Z' -> true
   | _ -> false
