@@ -109,6 +109,16 @@ let parse_unit =
 
 let parse_literal = parse_int <|> parse_str <|> parse_bool <|> parse_unit
 
+(* ====================== binary operations ==================== *)
+let parse_bin_op op_name op_char =
+  token op_char *> return (fun exp1 exp2 -> ExpBinOp (op_name, exp1, exp2))
+;;
+
+let parse_mul = parse_bin_op Mul "*"
+let parse_add = parse_bin_op Add "+"
+let parse_sub = parse_bin_op Sub "-"
+let parse_div = parse_bin_op Div "/"
+
 (* ======================== expressions ======================== *)
 let parse_expr_var =
   let* var = parse_name in
