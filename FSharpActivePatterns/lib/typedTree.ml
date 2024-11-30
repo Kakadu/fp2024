@@ -24,3 +24,8 @@ type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
 (* binder_set here -- list of all type vars in context (?) *)
 type scheme = S of binder_set * typ [@@deriving show { with_path = false }]
+
+let int_typ = Primary "int"
+let bool_typ = Primary "bool"
+let string_typ = Primary "string"
+let unit_typ = Primary "unit"

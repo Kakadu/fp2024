@@ -189,6 +189,7 @@ end = struct
   let rec unify fst snd =
     match fst, snd with
     | Primary fst, Primary snd when String.equal fst snd -> return empty
+    | Primary _, Primary _ -> fail (`Unification_failed (fst, snd))
     | Type_var f, Type_var s when Int.equal f s -> return empty
     | Type_var b, t | t, Type_var b -> singleton b t
     | Arrow (f1, s1), Arrow (f2, s2) ->
@@ -222,9 +223,9 @@ end
 (* module for scheme treatment *)
 module Scheme = struct
   type t = scheme
-  
+
   (* occurs check for both type vars set and typ in sheme *)
-  let occurs_in value = function 
+  let occurs_in value = function
     | S (vars, t) -> (not (VarSet.mem value vars)) && Type.occurs_in value t
   ;;
 
@@ -233,7 +234,7 @@ module Scheme = struct
     | S (vars, t) -> VarSet.diff (Type.free_vars t) vars
   ;;
 
-  (* take substitution and scheme, remove its free vars from substitution, 
+  (* take substitution and scheme, remove its free vars from substitution,
      form new scheme according to substitution (apply it to typ) *)
   let apply subst (S (vars, t)) =
     let subst2 = VarSet.fold (fun key s -> Substitution.remove s key) vars subst in
@@ -250,16 +251,13 @@ module TypeEnvironment = struct
   type t = (ident, scheme, String.comparator_witness) Map.t
 
   (* if pair (key, some old value) exists in map env, then replace old value
-  with new, else add pair (key, value) into map *)
+     with new, else add pair (key, value) into map *)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-
   let remove env key = Map.remove env key
-
   let empty = Map.empty (module String)
 
   (* apply given substitution to all elements of environment *)
   let apply subst env = Map.map env ~f:(Scheme.apply subst)
-
   let find key env = Map.find env key
 
   (* collect all free vars from environment *)
@@ -274,5 +272,68 @@ module TypeEnvironment = struct
     Map.iteri map ~f:(fun ~key:n ~data:s ->
       Stdlib.Format.fprintf fmt "%s -> %a; " n pp_scheme s);
     Stdlib.Format.fprintf fmt "|}%!"
-  ;;  
+  ;;
 end
+
+open R
+open R.Syntax
+
+let unify = Substitution.unify
+let make_fresh_var = fresh >>| fun n -> Type_var n
+
+(* replace all type vars with fresh ones *)
+let instantiate : scheme -> typ R.t =
+  fun (S (vars, t)) ->
+  VarSet.fold
+    (fun name ty ->
+      let* ty = ty in
+      let* fr_var = make_fresh_var in
+      let* subst = Substitution.singleton name fr_var in
+      return (Substitution.apply subst ty))
+    vars
+    (return t)
+;;
+
+(* take free vars of type t and environment, put difference between them
+   in S constructor so all vars are context independent *)
+let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
+  fun env t ->
+  let free = VarSet.diff (Type.free_vars t) (TypeEnvironment.free_vars env) in
+  S (free, t)
+;;
+
+let infer_expr =
+  let rec helper env = function
+    | Const const ->
+      (match const with
+       | Int_lt _ -> return (Substitution.empty, int_typ)
+       | Bool_lt _ -> return (Substitution.empty, bool_typ)
+       | String_lt _ -> return (Substitution.empty, string_typ)
+       | Unit_lt -> return (Substitution.empty, unit_typ))
+    | Bin_expr (op, e1, e2) ->
+      let* subst1, typ1 = helper env e1 in
+      let* subst2, typ2 = helper (TypeEnvironment.apply subst1 env) e2 in
+      let* e1typ, e2typ, etyp =
+        match op with
+        | Logical_and | Logical_or -> return (bool_typ, bool_typ, bool_typ)
+        | Binary_add | Binary_subtract | Binary_multiply | Binary_divide ->
+          return (int_typ, int_typ, int_typ)
+        | _ -> failwith "WIP"
+      in
+      let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
+      (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
+      Format.printf "Checking types: res_typ2 = %a\n" pp_typ (Substitution.apply subst3 typ2);*)
+      let* subst4 = Substitution.unify (Substitution.apply subst3 typ2) e2typ in
+      let* subst_res = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
+      return (subst_res, Substitution.apply subst_res etyp)
+    | _ -> failwith "WIP"
+  in
+  helper
+;;
+
+let infer_construction env = function
+  | Expr exp -> infer_expr env exp
+  | _ -> failwith "WIP"
+;;
+
+let infer e = run (infer_construction TypeEnvironment.empty e)
