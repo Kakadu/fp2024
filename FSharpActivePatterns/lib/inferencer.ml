@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
 open TypedTree
 open TypesPp
 open Format
