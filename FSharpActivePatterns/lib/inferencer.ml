@@ -2,6 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Ast
 open TypedTree
 open TypesPp
 open Format
@@ -169,7 +170,8 @@ end = struct
   let remove map key = Map.remove map key
 
   (* search for input in given map, if there is no match, output
-     input type, else output found typ value associated w this key *)
+     input type, else output found typ value associated w this key.
+     Basically narrow given type to conditions given in substitution *)
   let apply map =
     let rec helper = function
       | Type_var b as typ ->
@@ -215,4 +217,62 @@ end = struct
 
   (* compose list of maps together *)
   let compose_all maps = RList.fold_left maps ~init:(return empty) ~f:compose
+end
+
+(* module for scheme treatment *)
+module Scheme = struct
+  type t = scheme
+  
+  (* occurs check for both type vars set and typ in sheme *)
+  let occurs_in value = function 
+    | S (vars, t) -> (not (VarSet.mem value vars)) && Type.occurs_in value t
+  ;;
+
+  (* take all vars that are not bound in typ *)
+  let free_vars = function
+    | S (vars, t) -> VarSet.diff (Type.free_vars t) vars
+  ;;
+
+  (* take substitution and scheme, remove its free vars from substitution, 
+     form new scheme according to substitution (apply it to typ) *)
+  let apply subst (S (vars, t)) =
+    let subst2 = VarSet.fold (fun key s -> Substitution.remove s key) vars subst in
+    S (vars, Substitution.apply subst2 t)
+  ;;
+
+  let pp = pp_scheme
+end
+
+module TypeEnvironment = struct
+  open Base
+
+  (* environment (context?) -- pairs of names and their types list *)
+  type t = (ident, scheme, String.comparator_witness) Map.t
+
+  (* if pair (key, some old value) exists in map env, then replace old value
+  with new, else add pair (key, value) into map *)
+  let extend env key value = Map.update env key ~f:(fun _ -> value)
+
+  let remove env key = Map.remove env key
+
+  let empty = Map.empty (module String)
+
+  (* apply given substitution to all elements of environment *)
+  let apply subst env = Map.map env ~f:(Scheme.apply subst)
+
+  let find key env = Map.find env key
+
+  (* collect all free vars from environment *)
+  let free_vars : t -> VarSet.t =
+    Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
+      VarSet.union acc (Scheme.free_vars s))
+  ;;
+
+  (* TODO: custom pp_scheme? not from deriving *)
+  let pp fmt map =
+    Stdlib.Format.fprintf fmt "{| ";
+    Map.iteri map ~f:(fun ~key:n ~data:s ->
+      Stdlib.Format.fprintf fmt "%s -> %a; " n pp_scheme s);
+    Stdlib.Format.fprintf fmt "|}%!"
+  ;;  
 end

@@ -19,3 +19,8 @@ module VarSet = struct
     Format.fprintf fmt "]"
   ;;
 end
+
+type binder_set = VarSet.t [@@deriving show { with_path = false }]
+
+(* binder_set here -- list of all type vars in context (?) *)
+type scheme = S of binder_set * typ [@@deriving show { with_path = false }]
