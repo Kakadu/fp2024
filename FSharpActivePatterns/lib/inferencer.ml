@@ -2,10 +2,10 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
 open TypedTree
 open TypesPp
 open Format
+open Base
 
 type error =
   [ `Occurs_check
@@ -41,6 +41,10 @@ module R : sig
 
   val fresh : int t
   val run : 'a t -> ('a, error) Result.t
+
+  module RMap : sig
+    val fold : ('a, 'b, 'c) Map.t -> init:'d t -> f:('a -> 'b -> 'd -> 'd t) -> 'd t
+  end
 end = struct
   (* takes current state, runs smth, outputs new state and success / error *)
   type 'a t = int -> int * ('a, error) Result.t
@@ -85,6 +89,16 @@ end = struct
     ;;
   end
 
+  (* analogically to list. let* acc = acc is to extract value from type t *)
+  module RMap = struct
+    let fold map ~init ~f =
+      Map.fold map ~init ~f:(fun ~key ~data acc ->
+        let open Syntax in
+        let* acc = acc in
+        f key data acc)
+    ;;
+  end
+
   (* takes current state, returns state + 1 *)
   let fresh : int t = fun last -> last + 1, Result.Ok last
   let run m = snd (m 0)
@@ -116,24 +130,89 @@ module Type = struct
 end
 
 (* module of substitution *)
-(*
-   module Substitution : sig
-   type t
 
-   val empty : t
-   val singleton : fresh -> typ -> t R.t
-   val find : t -> fresh -> typ option
-   val remove : t -> fresh -> t
-   val apply : t -> typ -> typ
-   val unify : typ -> typ -> t R.t
-   val compose : t -> t -> t R.t
-   val compose_all : t list -> t R.t
-   end = struct
-   open R
-   open R.Syntax
+module Substitution : sig
+  type t
 
-   type t = (fresh, typ, Int.comparator_witness) Map.OrderedType
+  val empty : t
+  val mapping : fresh -> typ -> (fresh * typ) R.t
+  val singleton : fresh -> typ -> t R.t
+  val find : t -> fresh -> typ option
+  val remove : t -> fresh -> t
+  val apply : t -> typ -> typ
+  val unify : typ -> typ -> t R.t
+  val compose : t -> t -> t R.t
+  val compose_all : t list -> t R.t
+end = struct
+  open R
+  open R.Syntax
 
-   let empty = Map.empty (module Int)
+  (* t in this module is map of key fresh to value typ. last arg specifies
+     keys as int values (see fresh def) *)
+  type t = (fresh, typ, Int.comparator_witness) Map.t
 
-   end*)
+  (* empty map *)
+  let empty = Map.empty (module Int)
+
+  (* perform mapping of fresh var to typ with occurs check, if correct,
+     output new pair *)
+  let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
+
+  (* perform mapping, if correct, create map w 1 element as described in type t *)
+  let singleton k v =
+    let* k, v = mapping k v in
+    return (Map.singleton (module Int) k v)
+  ;;
+
+  (* aliases for Map actions *)
+  let find map key = Map.find map key
+  let remove map key = Map.remove map key
+
+  (* search for input in given map, if there is no match, output
+     input type, else output found typ value associated w this key *)
+  let apply map =
+    let rec helper = function
+      | Type_var b as typ ->
+        (match find map b with
+         | None -> typ
+         | Some x -> x)
+      | Arrow (fst, snd) -> Arrow (helper fst, helper snd)
+      | other -> other
+    in
+    helper
+  ;;
+
+  (* check that two types are compatible. in third case put new pair of type_var
+     and type into context (map) *)
+  let rec unify fst snd =
+    match fst, snd with
+    | Primary fst, Primary snd when String.equal fst snd -> return empty
+    | Type_var f, Type_var s when Int.equal f s -> return empty
+    | Type_var b, t | t, Type_var b -> singleton b t
+    | Arrow (f1, s1), Arrow (f2, s2) ->
+      let* subst1 = unify f1 f2 in
+      let* subst2 = unify s1 s2 in
+      compose subst1 subst2
+    | _ -> fail (`Unification_failed (fst, snd))
+
+  (* if value associated w this key exists in map, try to unify them, otherwise
+     get old substitution, form new singleton, update map so in contains new info *)
+  and extend key value map =
+    match find map key with
+    | Some value2 ->
+      let* map2 = unify value value2 in
+      compose map map2
+    | None ->
+      let value = apply map value in
+      let* map2 = singleton key value in
+      RMap.fold map ~init:(return map2) ~f:(fun key value acc ->
+        let value = apply map2 value in
+        let* key, value = mapping key value in
+        return (Map.update acc key ~f:(fun _ -> value)))
+
+  (* compose two maps together *)
+  and compose map1 map2 = RMap.fold map2 ~init:(return map1) ~f:extend
+
+  (* compose list of maps together *)
+  let compose_all maps = RList.fold_left maps ~init:(return empty) ~f:compose
+end
