@@ -109,6 +109,37 @@ let parse_unit =
 
 let parse_literal = parse_int <|> parse_str <|> parse_bool <|> parse_unit
 
+(* ========================== patterns ========================= *)
+
+let parse_pat_var =
+  let* name = parse_name in
+  return @@ PatVar name
+;;
+
+let parse_pat_any =
+  let* _ = token "_" in
+  return @@ PatAny
+;;
+
+let parse_pat_lit =
+  let* literal = parse_literal in
+  return @@ PatLiteral literal
+;;
+
+let parse_pat_tup parse_pattern =
+  round_parens @@ sep_by1 (token ",") parse_pattern
+  >>= function
+  | first :: second :: rest -> return @@ PatTuple (first, second, rest)
+  | _ -> fail "Tuple pattern must have at least two elements."
+;;
+
+let parse_pattern =
+  let parse_body parse_pattern =
+    choice [ parse_pat_var; parse_pat_any; parse_pat_lit; parse_pat_tup parse_pattern ]
+  in
+  fix parse_body
+;;
+
 (* ====================== binary operations ==================== *)
 let parse_bin_op op_name op_char =
   token op_char *> (return @@ fun exp1 exp2 -> ExpBinOp (op_name, exp1, exp2))
