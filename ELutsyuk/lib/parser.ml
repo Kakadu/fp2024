@@ -75,7 +75,9 @@ let parse_name =
     take_while1 (fun ch -> is_letter ch || is_digit ch || Char.equal '_' ch)
   in
   let name = parse_first ^ parse_rest in
-  if is_keyword name then fail "Name must not match the keyword." else return name
+  if is_keyword name
+  then fail "Error! parse_name: Name must not match the keyword."
+  else return name
 ;;
 
 (* ========================== literals ========================= *)
@@ -130,7 +132,7 @@ let parse_pat_tup parse_pattern =
   round_parens @@ sep_by1 (token ",") parse_pattern
   >>= function
   | first :: second :: rest -> return @@ PatTuple (first, second, rest)
-  | _ -> fail "Tuple pattern must have at least two elements."
+  | _ -> fail "Error! parse_pat_tuple: Tuple pattern must have at least two elements."
 ;;
 
 let parse_pattern =
