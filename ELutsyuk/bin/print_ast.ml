@@ -4,45 +4,28 @@
 
 open MiniML.Ast
 
-(* let fac_ast =
-   let rec aux n acc =
-   match n with
-   | 0 -> acc
-   | _ -> aux (n - 1) (acc * n)
-   in
-   aux n 1
+(* let rec fact n =
+   if n <= 1 then 1 else n * fact (n-1)
    ;; *)
 
 let () =
-  let fac : program =
-    [ ExpLet
-        ( NonRec
-        , [ ( "fac"
-            , ExpLambda
-                ( "n"
-                , ExpLet
-                    ( Rec
-                    , [ ( "aux"
-                        , ExpLambda
-                            ( "n"
-                            , ExpLambda
-                                ( "acc"
-                                , ExpMatch
-                                    ( ExpVar "n"
-                                    , [ PatLiteral (Int 0), ExpVar "acc"
-                                      ; ( PatAny
-                                        , ExpApp
-                                            ( ExpApp
-                                                ( ExpVar "aux"
-                                                , ExpBinop
-                                                    (Sub, ExpVar "n", ExpConst (Int 1)) )
-                                            , ExpBinop (Mul, ExpVar "acc", ExpVar "n") ) )
-                                      ] ) ) ) )
-                      ]
-                    , ExpApp (ExpApp (ExpVar "aux", ExpVar "n"), ExpConst (Int 1)) ) ) )
-          ]
-        , ExpOptNone )
+  let fact : program =
+    [ Binding
+        { is_rec = Rec
+        ; pat = PVar "fact"
+        ; expr =
+            Fun
+              ( PVar "n"
+              , Branch
+                  ( BinaryOp (LtEq, Var "n", Lit (Int 1))
+                  , Lit (Int 1)
+                  , Some
+                      (BinaryOp
+                         ( Mult
+                         , Var "n"
+                         , App (Var "fact", BinaryOp (Sub, Var "n", Lit (Int 1))) )) ) )
+        }
     ]
   in
-  print_endline (show_program fac)
+  print_endline (show_program fact)
 ;;
