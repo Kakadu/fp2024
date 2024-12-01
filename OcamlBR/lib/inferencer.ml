@@ -103,8 +103,8 @@ module Type = struct
     | TList t -> occurs_in v t
   ;;
 
-  (* computes the set of free type variables in a given type; primarily used to generalize types during type inference *)
-  let free_vars =
+  (* computes the set of all type variables in a given type; primarily used to generalize types during type inference *)
+  let type_vars =
     let rec helper acc = function
       | TVar b -> VarSet.add b acc
       | TPrim _ -> acc
