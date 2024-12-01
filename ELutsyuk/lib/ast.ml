@@ -1,60 +1,88 @@
 (* Copyright 2024, Victoria Lutsyuk *)
 
 (* SPDX-License-Identifier: MIT *)
+type id = string (* expression identifier *) [@@deriving show { with_path = false }]
 
-type id = string (* expression identificator *) [@@deriving show { with_path = false }]
-
-(* constants *)
 type literal =
-  | Int of int (* ex: 1, 2, 3 *)
-  | Str of string (* ex: "hello", "miniML" *)
-  | Bool of bool (* true, false *)
+  | Int of int (** e.g. [ -1 ], [ 2 ], [ 3 ] *)
+  | Str of string (** e.g. [ "hello" ], [ "miniML" ] *)
+  | Bool of bool (** [ true ], [ false ] *)
+  | Unit (** [ () ] *)
+[@@deriving show { with_path = false }]
+
+type types =
+  | TyInt
+  | TyString
+  | TyBool
+  | TyUnit
+  | TyList of types
 [@@deriving show { with_path = false }]
 
 type binary_op =
-  | Eq (* = *)
-  | NotEq (* != *)
-  | Lt (* < *)
-  | LtEq (* <= *)
-  | Gt (* > *)
-  | GtEq (* >= *)
-  | And (* && *)
-  | Or (* || *)
-  | Add (* + *)
-  | Sub (* - *)
-  | Mul (* * *)
-  | Div (* / *)
+  | Mult (** [ * ] *)
+  | Div (** [ / ] *)
+  | Add (** [ + ] *)
+  | Sub (** [ - ] *)
+  | Eq (** [ = ] *)
+  | NonEq (** [ <> ] *)
+  | Lt (** [ < ] *)
+  | LtEq (** [ <= ] *)
+  | Gt (** [ > ] *)
+  | GtEq (** [ >= ] *)
+  | And (** [ && ] *)
+  | Or (** [ || ] *)
 [@@deriving show { with_path = false }]
 
 type pattern =
-  | PatVar of id (* [var] *)
-  | PatAny (* [_] *)
-  | PatLiteral of literal (* [literal] *)
-  | PatCons of pattern * pattern (* | expr1 :: expr2 -> ... *)
-  | PatSome of pattern (* | Some(pattern) -> ... *)
-  | PatNone (* | None -> ... *)
+  | PLit of literal (** [ literal ] *)
+  | PVar of id (** [ var ] *)
+  | PAny (** [ _ ] *)
+  | PTuple of pattern * pattern * pattern list (** [ | (p1, p2) -> ... ] *)
+    (* | PTypes of pattern * types *)
 [@@deriving show { with_path = false }]
 
 type recursion_state =
-  | Rec
-  | NonRec
+  | Rec (** [let rec ...] *)
+  | NonRec (** [ let ... ]*)
 [@@deriving show { with_path = false }]
 
 type expression =
-  | ExpVar of id (* variable name *)
-  | ExpConst of literal (* literal *)
-  | ExpBinop of binary_op * expression * expression (* expr binop expr *)
-  | ExpLet of
-      recursion_state * (id * expression) list * expression (* let [rec] expr in expr *)
-  | ExpApp of expression * expression (* expr expr *)
-  | ExpLambda of id * expression (* fun id -> expr *)
-  | ExpIf of expression * expression * expression option (* if exp then exp else exp *)
-  | ExpWhile of expression * expression (* while expr do expr done *)
-  | ExpTuple of expression * expression * expression list (* at least two elements *)
-  | ExpList of expression list
-  | ExpOptSome of expression (* Some(expr) *)
-  | ExpOptNone (* None *)
-  | ExpMatch of expression * (pattern * expression) list
+  | Var of id (** e.g. [ x ], [ variable ] *)
+  | Lit of literal (** e.g. [ 42 ], [ {|meow|} ], [ true ] *)
+  | BinaryOp of binary_op * expression * expression
+  (** e.g. [ exp1 >= exp2 ], [ exp1 + exp2 ] *)
+  | Let of let_binding * expression option (** [ let (rec) pat =  in f 5 ] *)
+  | App of expression * expression (** foo x ==> App (Var "foo", Var "x") *)
+  | Fun of pattern * expression (** fun x y -> e ==> Fun ("x", Fun ("y", Var "e")) *)
+  | Branch of expression * expression * expression option
+  (** [ if exp then exp else Some(exp) ] *)
+  | Tuple of expression * expression * expression list
+  (** contain at least two elements, e.g. [ (exp, exp) ] *)
+  | List of expression list (** [ [exp; exp; exp] ]*)
+  | Match of expression * match_case * match_case list
+  (** [ match exp with | pat1 -> exp1 | pat2 -> exp2 ] *)
 [@@deriving show { with_path = false }]
 
-type program = expression list [@@deriving show { with_path = false }]
+(** represents binding of a variable or function in a [ let ] expression *)
+and let_binding =
+  { is_rec : recursion_state
+  ; pat : pattern
+  ; expr : expression
+  }
+[@@deriving show { with_path = false }]
+
+(** represents a case in a [match] expression *)
+and match_case =
+  { match_pat : pattern
+  ; match_expr : expression
+  }
+[@@deriving show { with_path = false }]
+
+(** represents constructs that can appear in a program *)
+type program_item =
+  | Evaluation of expression (** expr that are run but not saved in variable *)
+  | Binding of let_binding (** variable of function that can be used later in program *)
+[@@deriving show { with_path = false }]
+
+(** represents the entire program as a list of [ program_item ] *)
+type program = program_item list [@@deriving show { with_path = false }]
