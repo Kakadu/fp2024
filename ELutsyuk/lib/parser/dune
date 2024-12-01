@@ -1,8 +1,8 @@
 (library
  (name parser)
  (public_name ELutsyuk.Parser)
- (libraries base angstrom)
- (modules Parser)
+ (libraries base angstrom ast)
+ (modules Parser Auxiliaries Literals Patterns Expressions Binops)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation
