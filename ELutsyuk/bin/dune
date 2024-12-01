@@ -1,6 +1,6 @@
 (executable
  (name print_ast)
  (public_name ELutsyuk)
- (libraries MiniML)
+ (libraries ast)
  (instrumentation
   (backend bisect_ppx)))

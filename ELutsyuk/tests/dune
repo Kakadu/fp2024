@@ -1,6 +1,6 @@
 (library
  (name tests)
- (libraries MiniML angstrom)
+ (libraries ast angstrom)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (instrumentation

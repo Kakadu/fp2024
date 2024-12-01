@@ -3,16 +3,7 @@
 (* SPDX-License-Identifier: MIT *)
 
 open Angstrom
-open Ast
-
-(*
-   from homk: >>| : 'a t -> ('a -> 'b) -> 'b
-   let* is a bind
-   >>= "bind" -- выполняет первый парсер, значение подаёт функции, которая делает второй парсер
-   >>| "map" -- выполняет парсер, а к результату применяет функцию и получается значение
-   <$> -- синтаксический сахар для "apply" (меняет местами f и p)
-   <*> "apply" -- выполняет парсер для функции, затем парсер для значения и затем применяет (если сделать "apply" над результатом "bind")
-*)
+open MiniML.Ast
 
 let rec chainr1 pexpr op =
   let* left_operand = pexpr in
@@ -143,14 +134,24 @@ let parse_pattern =
 ;;
 
 (* ====================== binary operations ==================== *)
-let parse_bin_op op_name op_char =
-  token op_char *> (return @@ fun exp1 exp2 -> ExpBinOp (op_name, exp1, exp2))
+
+let parse_bin_op op_token op_constructor =
+  clean_up
+  @@ (token op_token *> (return @@ fun exp1 exp2 -> ExpBinOp (op_constructor, exp1, exp2)))
 ;;
 
-let parse_mul = parse_bin_op Mul "*"
-let parse_add = parse_bin_op Add "+"
-let parse_sub = parse_bin_op Sub "-"
-let parse_div = parse_bin_op Div "/"
+let parse_mul = parse_bin_op "*" Mul
+let parse_add = parse_bin_op "+" Add
+let parse_sub = parse_bin_op "-" Sub
+let parse_div = parse_bin_op "/" Div
+let parse_equal = parse_bin_op "=" Eq
+let parse_non_equal = parse_bin_op "<>" NonEq
+let parse_less = parse_bin_op "<" Lt
+let parse_less_equal = parse_bin_op "<=" LtEq
+let parse_greater = parse_bin_op "=" Gt
+let parse_greater_equal = parse_bin_op "=" GtEq
+let parse_and = parse_bin_op "&&" And
+let parse_or = parse_bin_op "||" Or
 
 (* ======================== expressions ======================== *)
 let parse_expr_var =
@@ -204,4 +205,48 @@ let parse_expr_let parse_expr =
   let* expr = many @@ parse_let_bindings parse_expr in
   let* in_expr = token "in" *> parse_expr <|> return ExpUnit in
   return @@ ExpLet (is_rec, expr, in_expr)
+;;
+
+let parse_exp_app pexpr =
+  let operator = return @@ fun exp1 exp2 -> ExpApp (exp1, exp2) in
+  chainl1 pexpr operator
+;;
+
+let parse_exp_branch parse_expr =
+  let* if_cond = token "if" *> parse_expr in
+  let* then_cond = token "then" *> parse_expr in
+  let* else_cond = token "else" *> parse_expr >>| (fun exp1 -> Some exp1) <|> None in
+  return @@ ExpBranch (if_cond, then_cond, else_cond)
+;;
+
+let parse_expr =
+  fix
+  @@ fun expr ->
+  let base_expr =
+    choice
+      [ parse_expr_literal
+      ; parse_expr_var
+      ; round_parens expr
+      ; parse_expr_list expr
+      ; parse_expr_lambda expr
+      ]
+  in
+  let expr_applications = parse_exp_app base_expr <|> base_expr in
+  let expr_mul_div = chainl1 expr_applications (parse_mul <|> parse_div) in
+  let expr_add_sub = chainl1 expr_mul_div (parse_add <|> parse_sub) in
+  let expr_compare =
+    chainl1
+      expr_add_sub
+      (parse_equal
+       <|> parse_less
+       <|> parse_less_equal
+       <|> parse_greater
+       <|> parse_greater_equal
+       <|> parse_non_equal)
+  in
+  let expr_logical = chainr1 expr_compare (parse_or <|> parse_and) in
+  let expr_tuples = parse_expr_tuple expr_logical <|> expr_logical in
+  let expr_branches = parse_exp_branch expr_tuples <|> expr_tuples in
+  let expr_let = parse_expr_let expr_branches <|> expr_branches in
+  expr_let
 ;;
