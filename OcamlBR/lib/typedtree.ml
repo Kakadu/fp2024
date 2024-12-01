@@ -34,3 +34,10 @@ type error =
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
   ]
+
+let pp_error ppf = function
+  | `Occurs_check -> Format.fprintf ppf {|Occurs check failed|}
+  | `Undefined_variable s -> Format.fprintf ppf {|Undefined variable "%s"|} s
+  | `Unification_failed (l, r) ->
+    Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
+;;
