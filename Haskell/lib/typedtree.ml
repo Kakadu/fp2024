@@ -17,8 +17,8 @@ end
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
 type ty =
-  | Ty_unit
   | Ty_prim of string
+  | Ty_maybe of ty
   | Ty_var of binder
   | Ty_arrow of ty * ty
   | Ty_list of ty
