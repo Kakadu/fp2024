@@ -3,7 +3,7 @@
  (public_name Haskell.Lib)
  (libraries angstrom qcheck-core.runner)
  (inline_tests)
- (modules Parser Ast Pprintast Qcheck)
+ (modules Parser Ast Pprintast Qcheck Typedtree Inferencer Pprint)
  (preprocess
   (pps ppx_deriving.show ppx_inline_test ppx_expect ppx_deriving_qcheck))
  (instrumentation
