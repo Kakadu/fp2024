@@ -78,12 +78,12 @@ let gen_ident_lc include_us =
 ;;
 
 module List1 = struct
-  type 'a t = 'a * ('a list[@gen small_list gen_a])
+  type 'a t = 'a * ('a list[@gen list_size (int_bound 5) gen_a])
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
 module List2 = struct
-  type 'a t = 'a * 'a * ('a list[@gen small_list gen_a])
+  type 'a t = 'a * 'a * ('a list[@gen list_size (int_bound 5) gen_a])
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
@@ -102,6 +102,7 @@ module TypeExpr = struct
                               [T1 -> T2] *)
     | Type_var of (ident[@gen gen_ident])
     | Type_tuple of t List2.t (** [Type_tuple([T1, T2, ... Tn])] *)
+    | Type_param of (ident[@gen gen_ident]) (** [Type_param(I)] represents ['I]*)
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
@@ -191,27 +192,25 @@ module Structure = struct
         - [let P1 = E1 and ... and Pn = EN]
           when [rec] is [Nonrecursive],
         - [let rec P1 = E1 and ... and Pn = EN ]
-          when [rec] is [Recursive]. *)
-  (* | Str_adt of
-     ident * (ident * TypeExpr.t option) List1.t todo: add in pprinter and parser
-     [Str_type(C0, [(C1, [(T11; T12; ... ; T1n_1)]); (C2, [(T21;T22; ... ; T2n_2)]); ... ;
+          when [rec] is [Recursiv e ee]. *)
+    | Str_adt of TypeExpr.t option * ident * (ident * TypeExpr.t option) List1.t
+    (** [Str_type(C0, [(C1, [(T11; T12; ... ; T1n_1)]); (C2, [(T21;T22; ... ; T2n_2)]); ... ;
       (Cm, [(Tm1;Tm2; ... ; Tmn_n)]) ])] represents:
 
-     [type C0 =
+        [type C0 =
       | C1 of T11 * ... * T1n_1
       | ...
       | Cm of Tm1 * ... * Tmn_n
       ]
 
-     n_i: [n_i >= 0]
-     Invariant: [m > 0] *)
+        n_i: [n_i >= 0]
+        Invariant: [m > 0] *)
   [@@deriving eq, show { with_path = false }]
 
   let gen_structure_item n =
-    Printf.printf "n =  %d\n\n" n;
     frequency
-      [ 1, map (fun expr -> Str_eval expr) (Expression.gen_sized (n / 2))
-      ; ( 1
+      [ 0, map (fun expr -> Str_eval expr) (Expression.gen_sized (n / 2))
+      ; ( 0
         , let* rec_flag =
             oneof [ return Expression.Nonrecursive; return Expression.Recursive ]
           in
@@ -220,6 +219,17 @@ module Structure = struct
             small_list (Expression.gen_value_binding Expression.gen_sized (n / 2))
           in
           return (Str_value (rec_flag, (bind1, bindl))) )
+      ; ( 1
+        , let* tparam = Gen.option (TypeExpr.gen_sized 0) in
+          let* idt = gen_ident_lc true in
+          let* cons1 =
+            Gen.pair (gen_ident_lc true) (Gen.option (TypeExpr.gen_sized (n / 2)))
+          in
+          let* consl =
+            small_list
+              (Gen.pair (gen_ident_lc true) (Gen.option (TypeExpr.gen_sized (n / 2))))
+          in
+          return (Str_adt (tparam, idt, (cons1, consl))) )
       ]
   ;;
 end
@@ -227,5 +237,5 @@ end
 type program = Structure.structure_item list [@@deriving eq, show { with_path = false }]
 
 module Program = struct
-  let gen_program n = list_size (int_bound 5) (Structure.gen_structure_item (n / 2))
+  let gen_program n = list_size (int_bound 1) (Structure.gen_structure_item (n / 2))
 end

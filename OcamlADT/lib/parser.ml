@@ -442,8 +442,33 @@ let pstrlet =
   return (Structure.Str_value (recflag, (bindingfs, bindingtl)))
 ;;
 
+let pstradt =
+  let* type_name = token "type" *> pident_cap in
+  let* type_param =
+    option
+      None
+      (let* tparam = ptype in
+       return (Some tparam))
+  in
+  let* _ = token "=" in
+  let constr =
+    let* cname = pident_cap in
+    let* ctype =
+      option
+        None
+        (let* _ = token "of" in
+         let* typ = ptype in
+         return (Some typ))
+    in
+    return (cname, ctype)
+  in
+  let* fconstr = constr in
+  let* constrl = many (token "|" *> constr) in
+  return (Structure.Str_adt (type_param, type_name, (fconstr, constrl)))
+;;
+
 (* let psvalue = pstrlet <|> prsadt *)
-let pstr_item = pseval <|> pstrlet (* fix |^*)
+let pstr_item = pseval <|> pstrlet <|> pstradt
 
 let pstructure =
   let psemicolon = token ";;" in

@@ -58,6 +58,7 @@ let rec pprint_type fmt =
          ^ String.concat
              ~sep:" * "
              (List.map tyel ~f:(fun t -> asprintf "%a" pprint_type t)))
+  | Type_param id -> fprintf fmt "'%s" id
 ;;
 
 let rec pprint_pattern fmt =
@@ -284,6 +285,12 @@ and pprint_function_with_cases fmt (cs, csl, n) =
        (List.map csl ~f:(fun c -> asprintf "\n  | %a" (fun fmt -> pprint_case fmt n) c)))
 ;;
 
+let pprint_type_cons fmt (id, typ) =
+  match typ with
+  | Some typ -> fprintf fmt "%s of %a" id pprint_type typ
+  | None -> fprintf fmt "%s" id
+;;
+
 let pprint_structure_item fmt n =
   let open Structure in
   function
@@ -308,6 +315,42 @@ let pprint_structure_item fmt n =
       (fun fmt -> pprint_value_binding fmt n)
       vbind1
       bindings_str
+  | Str_adt (Some tparam, id, (constr1, constrl)) ->
+    let constr_str =
+      match constrl with
+      | [] -> ""
+      | _ ->
+        " | "
+        ^ String.concat
+            ~sep:" |\n  "
+            (List.map constrl ~f:(fun (id, typ) ->
+               match typ with
+               | Some t -> asprintf "%s of %a" id pprint_type t
+               | None -> id))
+    in
+    fprintf
+      fmt
+      "type %a %s = %a%s;;\n\n"
+      pprint_type
+      tparam
+      id
+      pprint_type_cons
+      constr1
+      constr_str
+  | Str_adt (None, id, (constr1, constrl)) ->
+    let constr_str =
+      match constrl with
+      | [] -> ""
+      | _ ->
+        " | "
+        ^ String.concat
+            ~sep:" |\n  "
+            (List.map constrl ~f:(fun (id, typ) ->
+               match typ with
+               | Some t -> asprintf "%s of %a" id pprint_type t
+               | None -> id))
+    in
+    fprintf fmt "type %s = %a%s;;\n\n" id pprint_type_cons constr1 constr_str
 ;;
 
 (* | Str_adt (id, id_t_l) ->
