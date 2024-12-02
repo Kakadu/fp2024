@@ -17,7 +17,7 @@ let parse_const =
     [ (parse_char >>| fun c -> Const_char c)
     ; (parse_string >>| fun s -> Const_string s)
     ; (parse_bool >>| fun b -> Const_bool b)
-    ; (parse_unit_of_measure >>| fun u -> Const_unit_of_measure u)
+    (* ; (parse_unit_of_measure >>| fun u -> Const_unit_of_measure u) *)
     ; (parse_int >>| fun i -> Const_int i)
     ; (parse_float >>| fun f -> Const_float f)
     ]

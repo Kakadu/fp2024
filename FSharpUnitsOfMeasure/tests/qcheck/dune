@@ -1,6 +1,6 @@
 (executable
  (name qCheckRun)
- (libraries parse pprint qcheck))
+ (libraries parse pprint qcheck ast))
 
 (cram
  (applies_to qcheck)
