@@ -3,8 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Typedtree
-
-(* let () = Format.printf "%a" Pprint.pp_ty Ty_unit *)
+open Ast
 
 module R : sig
   type 'a t
@@ -75,8 +74,8 @@ module Type = struct
   let rec occurs_in v = function
     | Ty_var b -> b = v
     | Ty_arrow (l, r) -> occurs_in v l || occurs_in v r
-    | Ty_prim _ | Ty_unit -> false
-    | Ty_list ty | Ty_tree ty -> occurs_in v ty
+    | Ty_prim _ -> false
+    | Ty_list ty | Ty_tree ty | Ty_maybe ty -> occurs_in v ty
     | Ty_tuple ty_list -> List.exists (fun ty -> occurs_in v ty) ty_list
   ;;
 
@@ -84,8 +83,8 @@ module Type = struct
     let rec helper acc = function
       | Ty_var b -> VarSet.add b acc
       | Ty_arrow (l, r) -> helper (helper acc l) r
-      | Ty_prim _ | Ty_unit -> acc
-      | Ty_list ty | Ty_tree ty -> helper acc ty
+      | Ty_prim _ -> acc
+      | Ty_list ty | Ty_tree ty | Ty_maybe ty -> helper acc ty
       | Ty_tuple ty_list -> List.fold_left (fun acc ty -> helper acc ty) acc ty_list
     in
     helper VarSet.empty
@@ -152,6 +151,7 @@ end = struct
       | Ty_list ty -> Ty_list (helper ty)
       | Ty_tuple ty_list -> Ty_tuple (List.map ty_list ~f:helper)
       | Ty_tree ty -> Ty_tree (helper ty)
+      | Ty_maybe ty -> Ty_maybe (helper ty)
       | other -> other
     in
     helper
@@ -180,6 +180,7 @@ end = struct
       in
       helper ty_list1 ty_list2 empty
     | Ty_tree ty1, Ty_tree ty2 -> unify ty1 ty2
+    | Ty_maybe ty1, Ty_maybe ty2 -> unify ty1 ty2
     | _ -> fail (`Unification_failed (l, r))
 
   and extend s (k, v) =
@@ -232,3 +233,155 @@ module Scheme = struct
 
   (* let pp = Pprint.pp_scheme *)
 end
+
+module TypeEnv = struct
+  open Base
+
+  type t = (string * scheme) list
+
+  let extend e h = h :: e
+  let empty = []
+
+  let free_vars : t -> VarSet.t =
+    List.fold_left ~init:VarSet.empty ~f:(fun acc (_, s) ->
+      VarSet.union acc (Scheme.free_vars s))
+  ;;
+
+  let apply s env = List.Assoc.map env ~f:(Scheme.apply s)
+  let find_exn name xs = List.Assoc.find_exn ~equal:String.equal xs name
+end
+
+open R
+open R.Syntax
+
+let unify = Subst.unify
+let fresh_var = fresh >>| fun n -> Ty_var n
+
+let instantiate : scheme -> ty R.t =
+  fun (S (bs, t)) ->
+  VarSet.fold_left_m
+    (fun typ name ->
+      let* f1 = fresh_var in
+      let* s = Subst.singleton name f1 in
+      return (Subst.apply s typ))
+    bs
+    (return t)
+;;
+
+let generalize : TypeEnv.t -> Type.t -> Scheme.t =
+  fun env ty ->
+  let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
+  S (free, ty)
+;;
+
+let lookup_env e xs =
+  match Base.List.Assoc.find_exn xs ~equal:String.equal e with
+  | (exception Stdlib.Not_found) | (exception Base.Not_found_s _) -> fail (`No_variable e)
+  | scheme ->
+    let* ans = instantiate scheme in
+    return (Subst.empty, ans)
+;;
+
+let check_for_single_type = function
+  | [] -> true
+  | h :: t ->
+    let rec helper acc = function
+      | h :: t -> if acc = h then helper acc t else false
+      | [] -> true
+    in
+    helper h t
+;;
+
+let are_types_match t = function
+  | [] -> true
+  | h :: _ ->
+    let rec helper h t =
+      match h, t with
+      | _, Ty_var _ -> true (*TODO: проверять что номер соответствует типу*)
+      | TUnit, Ty_prim "()" | TInt, Ty_prim "Int" | TBool, Ty_prim "Bool" -> true
+      | MaybeParam tp, Ty_maybe ty | ListParam tp, Ty_list ty | TreeParam tp, Ty_tree ty
+        -> helper tp ty
+      | TupleParams (tp1, tp2, tp_list), Ty_list ty_list ->
+        true (*TODO: заменить в typedtree ty list на (ty, ty, ty list)*)
+      | FunctionType (FuncT (tp1, tp2, tp_list)), Ty_arrow (ty1, ty2) ->
+        true (*TODO: как то проверить это*)
+      | _ -> false
+    in
+    helper h t
+;;
+
+let rec infer_expression env = function
+  | Const const ->
+    (match const with
+     | Int _ -> return (Subst.empty, Ty_prim "Int")
+     | Bool _ -> return (Subst.empty, Ty_prim "Bool")
+     | Unit -> return (Subst.empty, Ty_prim "()"))
+  | Identificator (Ident i) -> lookup_env i env
+  (* | TupleBld *)
+  (* | EJust | ENothing -> return Ty_maybe *)
+  (* | ListBld  *)
+  | Binop ((e1, type1), op, (e2, type2)) ->
+    (match check_for_single_type type1, check_for_single_type type2 with
+     | true, true ->
+       let* elem_ty, expr_ty =
+         match op with
+         | And | Or -> return (Ty_prim "Bool", Ty_prim "Bool")
+         | Plus | Minus | Divide | Mod | Multiply | Pow ->
+           return (Ty_prim "Int", Ty_prim "Int")
+         | _ ->
+           let* t = fresh_var in
+           return (t, Ty_prim "Bool")
+       in
+       let* s1, t1 = infer_expression env e1 in
+       let* s2, t2 = infer_expression env e2 in
+       (match are_types_match t1 type1, are_types_match t2 type2 with
+        | true, true ->
+          let* s3 = unify t1 elem_ty in
+          let* s4 = unify (Subst.apply s1 t2) elem_ty in
+          let* s = Subst.compose_all [ s1; s2; s3; s4 ] in
+          return (s, expr_ty)
+        | _ -> fail `Occurs_check)
+     | _ -> fail `Occurs_check)
+  | Neg (e, tp_list) ->
+    if check_for_single_type tp_list
+    then
+      let* s, t = infer_expression env e in
+      if are_types_match t tp_list
+      then
+        let* subs1 = unify t (Ty_prim "Int") in
+        let* subs2 = Subst.compose s subs1 in
+        return (subs2, Ty_prim "Int")
+      else fail `Occurs_check
+    else fail `Occurs_check
+  | IfThenEsle ((c, c_type), (b1, b1_type), (b2, b2_type)) ->
+    (match
+       ( check_for_single_type c_type
+       , check_for_single_type b1_type
+       , check_for_single_type b2_type )
+     with
+     | true, true, true ->
+       let* s1, t1 = infer_expression env c in
+       let* s2, t2 = infer_expression env b1 in
+       let* s3, t3 = infer_expression env b2 in
+       (match
+          ( are_types_match t1 c_type
+          , are_types_match t2 b1_type
+          , are_types_match t3 b2_type )
+        with
+        | true, true, true ->
+          let* s4 = unify t1 (Ty_prim "Bool") in
+          let* t = fresh_var in
+          let* s5 = unify t t2 in
+          let* s6 = unify t t3 in
+          let* s = Subst.compose_all [ s1; s2; s3; s4; s5; s6 ] in
+          return (s, Subst.apply s t2)
+        | _ -> fail `Occurs_check)
+     | _ -> fail `Occurs_check)
+  | BinTreeBld Nul ->
+    let* t = fresh_var in
+    return (Subst.empty, Ty_tree t)
+  (* | BinTreeBld Node () *)
+  (* | Case *)
+  (* | InnerBindings *)
+  | _ -> return (Subst.empty, Ty_prim "")
+;;

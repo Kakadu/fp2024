@@ -7,7 +7,7 @@ open Typedtree
 
 let rec pp_ty fmt ty =
   let rec helper fmt = function
-    | Ty_unit -> fprintf fmt "()"
+    | Ty_maybe ty -> fprintf fmt "Maybe %a" helper ty
     | Ty_prim s -> pp_print_string fmt s
     | Ty_var b -> fprintf fmt "t%d" b
     | Ty_arrow (ty1, ty2) ->
