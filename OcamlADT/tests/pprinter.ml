@@ -7,6 +7,7 @@ open Ocamladt_lib.Ast.Constant
 open Ocamladt_lib.Ast.Pattern
 open Ocamladt_lib.Pprinter
 open Ocamladt_lib.Ast.Structure
+open Ocamladt_lib.Ast.TypeExpr
 open Format
 
 let test_pprint_expression input_expr =
@@ -493,5 +494,29 @@ let%expect_test "complex program" =
     let x = 5 in (if x > 0
       then (Some (x))
       else (None)) ;;
+  |}]
+;;
+
+let%expect_test "adt v1" =
+  let program =
+    [ Str_adt (None, "shape", (("Circle", None), [ "Square", Some (Type_var "int") ])) ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    type shape = Circle | Square of int;;
+  |}]
+;;
+
+let%expect_test "adt with poly" =
+  let program =
+    [ Str_adt
+        ( Some (Type_param "a")
+        , "shape"
+        , (("Circle", None), [ "Square", Some (Type_param "a") ]) )
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    type shape = Circle | Square of int;;
   |}]
 ;;
