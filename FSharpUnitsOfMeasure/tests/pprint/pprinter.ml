@@ -77,7 +77,7 @@ and pprint_expr ppf = function
   | Expr_apply (e1, e2) ->
     let pprint_expr_paren ppf e =
       match e with
-      | Expr_lam _ | Expr_let _ | Expr_ifthenelse _ | Expr_match _ | Expr_apply _ ->
+      | Expr_lam _ | Expr_let _ | Expr_ifthenelse _ | Expr_match _  | Expr_function _ | Expr_apply _ ->
         fprintf ppf "(%a)" pprint_expr e
       | _ -> fprintf ppf "%a" pprint_expr e
     in

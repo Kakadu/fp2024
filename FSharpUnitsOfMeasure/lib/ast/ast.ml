@@ -81,7 +81,7 @@ type core_type =
   | Type_tuple of
       core_type
       * core_type
-      * (core_type list[@gen list_size (0 -- 3) (gen_core_type_sized (n / 2))])
+      * (core_type list[@gen small_list (gen_core_type_sized (n / 2))])
   (** [Type_tuple(T1, T2, [T3, ..., Tn])] represents:
       - [(T1 * T2)] when core_type list is []
       - [(T1 * T2 * T3 * ... * Tn)] when core_type list is Cons (A, B) *)
@@ -98,7 +98,7 @@ type pattern =
   (** [Pattern_tuple(P1, P2, [P3, ..., Pn])] represents:
       - [(P1, P2)] when pattern list is []
       - [(P1, P2, P3, ..., Pn)] when pattern list is Cons (A, B) *)
-  | Pattern_list of (pattern list[@gen list_size (0 -- 3) (gen_pattern_sized (n / 2))])
+  | Pattern_list of (pattern list[@gen small_list (gen_pattern_sized (n / 2))])
   (** List patterns: [P1, ..., Pn] *)
   | Pattern_or of pattern * pattern
   (** OR patterns represent multiple satisfying patterns in pattern matching: [P1 | P2] *)
@@ -109,14 +109,29 @@ type rec_flag =
   | Recursive (** For recursive function declarations *)
 [@@deriving qcheck, show { with_path = false }]
 
+(* ['expr] just to avoid recursion, needs custom generator and no [deriving qcheck] *)
+
 (** [Bind(P, E)] represents [let P = E] or [let rec P = E] *)
-type val_binding = Bind of pattern * expression
-[@@deriving qcheck, show { with_path = false }]
+type 'expr val_binding = Bind of pattern * 'expr [@@deriving show { with_path = false }]
+
+let gen_val_binding gen_expr_sized n =
+  let* pat = gen_pattern_sized (n / 2) in
+  let* expr = gen_expr_sized (n / 2) in
+  return (Bind (pat, expr))
+;;
+
+(* ['expr] just to avoid recursion, needs custom generator and no [deriving qcheck] *)
 
 (** [Rule(P, E)] represents [P -> E] in pattern matching *)
-and rule = Rule of pattern * expression [@@deriving qcheck, show { with_path = false }]
+type 'expr rule = Rule of pattern * 'expr [@@deriving show { with_path = false }]
 
-and expression =
+let gen_rule gen_expr_sized n =
+  let* pat = gen_pattern_sized (n / 2) in
+  let* expr = gen_expr_sized (n / 2) in
+  return (Rule (pat, expr))
+;;
+
+type expression =
   | Expr_const of constant
   (** Constant expressions: [1], ['a'], ["foo"], [3.14], [true], [5.0<cm>] *)
   | Expr_ident_or_op of (string[@gen gen_ident])
@@ -125,19 +140,20 @@ and expression =
   | Expr_tuple of
       expression
       * expression
-      * (expression list[@gen list_size (0 -- 3) (gen_expression_sized (n / 2))])
+      * (expression list[@gen small_list (gen_expression_sized (n / 2))])
   (** [Expr_tuple(E1, E2, [E3, ..., En])] represents:
       - [(E1, E2)] when pattern list is []
       - [(E1, E2, E3, ..., En)] when pattern list is Cons (A, B) *)
-  | Expr_list of (expression list[@gen list_size (0 -- 3) (gen_expression_sized (n / 2))])
+  | Expr_list of (expression list[@gen small_list (gen_expression_sized (n / 2))])
   (** List expressions: [E1; ...; En] *)
-  | Expr_lam of pattern * expression
+  | Expr_lam of (pattern[@gen gen_pattern_sized (n / 2)]) * expression
   (** Anonimous functions: [Expr_lam(P, E)] represents [fun P -> E] *)
   | Expr_let of
       rec_flag
-      * val_binding
-      * (val_binding list[@gen list_size (0 -- 3) (gen_val_binding_sized (n / 2))])
-      * expression
+      * (expression val_binding[@gen gen_val_binding gen_expression_sized (n / 2)])
+      * (expression val_binding list
+        [@gen small_list (gen_val_binding gen_expression_sized (n / 2))])
+      * (expression[@gen gen_expression_sized (n / 2)])
   (** [Expr_let(rec_flag, Bind(P1, E1), [Bind(P2, E2); ...; Bind(Pn, En)], E)] represents:
       - [let P1 = E1 in E] when val_binding list is [] and rec_flag is Nonrecursive
       - [let rec P1 = E1 in E] when val_binding list is [] and rec_flag is Recursive
@@ -147,11 +163,15 @@ and expression =
   (** [if E1 then E2 else E3] *)
   | Expr_apply of expression * expression (** Application [E1 E2] *)
   | Expr_match of
-      expression * rule * (rule list[@gen list_size (0 -- 3) (gen_rule_sized (n / 2))])
+      expression
+      * (expression rule[@gen gen_rule gen_expression_sized (n / 2)])
+      * (expression rule list[@gen small_list (gen_rule gen_expression_sized (n / 2))])
   (** [Expr_match(E, Rule(P1, E1), [Rule(P2, E2); ...; Rule(Pn, En)])] represents:
       - [match E with P1 -> E1] if rule list is []
       - [match E with P1 -> E1 | P2 -> E2 | ... | Pn -> En] if rule list is Cons (A, B) *)
-  | Expr_function of rule * (rule list[@gen list_size (0 -- 3) (gen_rule_sized (n / 2))])
+  | Expr_function of
+      (expression rule[@gen gen_rule gen_expression_sized (n / 2)])
+      * (expression rule list[@gen small_list (gen_rule gen_expression_sized (n / 2))])
   (** [Expr_function(Rule(P1, E1), [Rule(P2, E2); ...; Rule(Pn, En)])] represents:
       - [function P1 -> E1] if rule list is []
       - [function P1 -> E1 | P2 -> E2 | ... | Pn -> En] if rule list is Cons (A, B) *)
@@ -167,15 +187,28 @@ type type_def =
 type structure_item =
   | Str_item_eval of expression
   (** Structure item which is single expression: [E] or [do E] *)
-  | Str_item_def of
-      rec_flag * val_binding * (val_binding list[@gen list_size (0 -- 3) gen_val_binding])
+  | Str_item_def of rec_flag * expression val_binding * expression val_binding list
   (** [Str_item_def(rec_flag, (P1, E1), [(P2, E2); ...; (Pn, En)])] represents:
       - [let P1 = E1] when val_binding list is [] and rec_flag is Nonrecursive
       - [let rec P1 = E1] when val_binding list is [] and rec_flag is Recursive
       - [let P1 = E1 and ... and Pn = En] when val_binding list is Cons (A, B) and rec_flag is Nonrecursive
       - [let rec P1 = E1 and ... and Pn = En] when val_binding list is Cons (A, B) and rec_flag is Recursive *)
   | Str_item_type_def of type_def (** Structure item which is type definition *)
-[@@deriving qcheck, show { with_path = false }]
+[@@deriving show { with_path = false }]
 
-type program = (structure_item list[@gen list_size (0 -- 10) gen_structure_item])
-[@@deriving qcheck, show { with_path = false }]
+let gen_structure_item n =
+  let gen_str_item_def_sized n =
+    let* flag = frequency [ 5, return Nonrecursive; 1, return Recursive ] in
+    let* bind_fst = gen_val_binding gen_expression_sized (n / 2) in
+    let* bind_rest = small_list (gen_val_binding gen_expression_sized (n / 2)) in
+    return (Str_item_def (flag, bind_fst, bind_rest))
+  in
+  frequency
+    [ (1, gen_expression_sized (n / 2) >|= fun e -> Str_item_eval e)
+    ; 1, gen_str_item_def_sized (n / 2)
+    ]
+;;
+
+type program = structure_item list [@@deriving show { with_path = false }]
+
+let gen_program n = list_size (1 -- 5) (gen_structure_item (n / 2))
