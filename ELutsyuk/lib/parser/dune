@@ -2,8 +2,8 @@
  (name parser)
  (public_name ELutsyuk.Parser)
  (libraries base angstrom ast)
- (modules Parser Auxiliaries Literals Patterns Expressions Binops)
  (preprocess
-  (pps ppx_deriving.show))
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests)
  (instrumentation
   (backend bisect_ppx)))

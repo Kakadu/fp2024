@@ -7,7 +7,7 @@ open Auxiliaries
 open Ast
 
 let parse_int =
-  clean_up
+  trim
   @@
   let* sign = choice [ char '+' *> return 1; char '-' *> return (-1); return 1 ] in
   let* digit = take_while1 is_digit >>| int_of_string in
@@ -22,8 +22,10 @@ let parse_str =
 ;;
 
 let parse_bool =
-  let* bool = choice [ token "true" *> return true; token "false" *> return false ] in
-  return @@ Bool bool
+  let* bool =
+    choice [ trim @@ (string "true" *> return true); token "false" *> return false ]
+  in
+  skip_separators *> (return @@ Bool bool)
 ;;
 
 let parse_unit =
@@ -31,4 +33,4 @@ let parse_unit =
   return Unit
 ;;
 
-let parse_literal = choice [ parse_int; parse_str; parse_bool; parse_unit ]
+let parse_lit = choice [ parse_int; parse_str; parse_bool; parse_unit ]
