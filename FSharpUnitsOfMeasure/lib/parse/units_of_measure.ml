@@ -18,18 +18,21 @@ let parse_measure_ident = parse_ident >>| fun id -> Measure_ident id
 let parse_exp =
   let* sign = option "" (string "-") in
   let* num = skip_ws *> parse_int in
-  match sign with
-  | "-" -> return (Neg_int_exp num)
-  | _ -> return (Pos_int_exp num)
+  (* match sign with
+     | "-" -> return (Neg_int_exp num)
+     | _ -> return (Pos_int_exp num)
+  *)
+  return num
 ;;
 
+(* Power has highest priority*)
 let parse_measure_power parse_measure =
   let* measure = parse_measure in
-  let* exp = option (Pos_int_exp 1) (skip_token "^" *> parse_exp) in
+  let* exp = option 1 (skip_token "^" *> parse_exp) in
   return (Measure_pow (measure, exp))
 ;;
 
-(* Sequence should have higher priority than product and division*)
+(* Sequence should have higher priority than product and division *)
 (* I think that chainls are needed to save left associativity *)
 let parse_measure_power_seq parse_measure =
   let* seq = many1 (skip_ws *> parse_measure_power parse_measure) in

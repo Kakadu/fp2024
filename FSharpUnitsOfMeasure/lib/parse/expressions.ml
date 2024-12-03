@@ -171,7 +171,8 @@ let parse_expr =
   fix (fun parse_expr ->
     let expr =
       choice
-        [ parse_expr_paren parse_expr
+        [ parse_expr_paren (parse_expr_typed parse_expr)
+        ; parse_expr_paren parse_expr
         ; parse_expr_list parse_expr
         ; parse_expr_ite parse_expr
         ; parse_expr_match parse_expr
@@ -183,6 +184,6 @@ let parse_expr =
         ]
     in
     let expr = parse_expr_tuple expr <|> parse_expr_app expr <|> expr in
-    let expr = parse_expr_typed expr <|> expr in
+    (* let expr = parse_expr_typed expr <|> expr in *)
     skip_ws *> expr <* skip_ws)
 ;;
