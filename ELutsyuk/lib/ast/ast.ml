@@ -51,10 +51,10 @@ type expression =
   | Lit of literal (** e.g. [ 42 ], [ {|meow|} ], [ true ] *)
   | BinaryOp of binary_op * expression * expression
   (** e.g. [ exp1 >= exp2 ], [ exp1 + exp2 ] *)
-  | Let of let_binding * expression option (** [ let (rec) pat =  in f 5 ] *)
+  | Let of let_binding * expression (** [ let (rec) pat =  in f 5 ] *)
   | App of expression * expression (** foo x ==> App (Var "foo", Var "x") *)
   | Fun of pattern * expression (** fun x y -> e ==> Fun ("x", Fun ("y", Var "e")) *)
-  | Branch of expression * expression * expression option
+  | Branch of expression * expression * expression
   (** [ if exp then exp else Some(exp) ] *)
   | Tuple of expression * expression * expression list
   (** contain at least two elements, e.g. [ (exp, exp) ] *)
