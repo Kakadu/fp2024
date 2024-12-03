@@ -203,14 +203,16 @@ let%expect_test "parse application of function to 5 arguments" =
 
 let%expect_test "parse application (+)a b" =
   pp pp_expression parse_expr {| (+)a b |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_apply ((Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
        (Expr_ident_or_op "b"))) |}]
 ;;
 
 let%expect_test "parse application (+.) a b" =
   pp pp_expression parse_expr {| (+.) a b |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_apply ((Expr_apply ((Expr_ident_or_op "+."), (Expr_ident_or_op "a"))),
        (Expr_ident_or_op "b"))) |}]
 ;;
@@ -274,7 +276,8 @@ let%expect_test "parse a+b*c" =
 
 let%expect_test "parse a <= b <= c" =
   pp pp_expression parse_expr {| a <= b <= c |};
-  [%expect {|
+  [%expect
+    {|
       (Expr_apply (
          (Expr_apply ((Expr_ident_or_op "<="),
             (Expr_apply (
@@ -495,6 +498,27 @@ let%expect_test "parse expression list of tuples without parentheses" =
          (Expr_tuple ((Expr_const (Const_int 3)), (Expr_const (Const_int 4)),
             []))
          ])  |}]
+;;
+
+(************************** Typed **************************)
+
+let%expect_test "parse typed expression" =
+  pp pp_expression parse_expr {| (a : int) |};
+  [%expect {|
+    (Expr_typed ((Expr_ident_or_op "a"), (Type_ident "int")))  |}]
+;;
+
+let%expect_test "parse doubly typed expression" =
+  pp pp_expression parse_expr {| ((a : int) : int) |};
+  [%expect {|
+    (Expr_typed ((Expr_typed ((Expr_ident_or_op "a"), (Type_ident "int"))),
+       (Type_ident "int")))  |}]
+;;
+
+let%expect_test "parse typed expression without parentheses should fail" =
+  pp pp_expression parse_expr {| a : int |};
+  [%expect {|
+    : end_of_input  |}]
 ;;
 
 (************************** Match expressions **************************)
