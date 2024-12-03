@@ -37,16 +37,8 @@ let gen_type_ident =
   gen_builtin_type_ident
 ;;
 
-(* Small integers (0 <= |a| < 100) *)
-let gen_small_pint = small_nat
-let gen_small_nint = small_nat >>= fun n -> return (-n)
-
-type integer_exp =
-  | Pos_int_exp of (int[@gen gen_small_pint])
-  (** Positive (or zero) integer exponent: [2] *)
-  | Neg_int_exp of (int[@gen gen_small_nint])
-  (** Negative (or zero) integer exponent: [-1] *)
-[@@deriving qcheck, show { with_path = false }]
+(* Small positive integers (1 < |a| < 100) *)
+let rec gen_posint = small_nat >>= fun n -> if n > 1 then return n else small_nat
 
 type measure_num =
   | Mnum_int of int (** Integer number in unit of measure *)
@@ -57,8 +49,10 @@ type measure =
   | Measure_ident of (string[@gen gen_ident]) (** Measure identificator: [m] *)
   | Measure_prod of measure * measure (** Measure product: [sec * h], [kg m] *)
   | Measure_div of measure * measure (** Measure division: [m / sec] *)
-  | Measure_pow of measure * integer_exp (** Measure to the integer power: [cm^3] *)
-  | Measure_paren of measure (** Parentheses around measure: [(kg / m^3)] *)
+  | Measure_pow of measure * (int[@gen gen_posint])
+  (** Measure to the positive integer power: [m ^ n].
+      Invariant: [n > 1] *)
+  | Measure_dimless (** Dimensionless values, written as [1], as in [<1>] or [<1 / m>] *)
 [@@deriving qcheck, show { with_path = false }]
 
 (** Unit of measure: [1<m>], [9.8<kg m / s>], [0.3<kg^3>] etc. *)
@@ -69,8 +63,9 @@ type constant =
   | Const_int of int (** Integer constants: [1] *)
   | Const_float of float (** Float constants: [3.14], [1e+5], [5.9E-3f] *)
   | Const_bool of bool (** Boolean constants [true] and [false] *)
-  | Const_char of char (** Char constants: ['a'] *)
-  | Const_string of string (** String constants: ["foo"] *)
+  | Const_char of (char[@gen printable]) (** Char constants: ['a'] *)
+  | Const_string of (string[@gen small_string ~gen:printable])
+  (** String constants: ["foo"] *)
   | Const_unit_of_measure of unit_of_measure
   (** Units of measure constants: [5.0<cm>], [3<kg>] *)
 [@@deriving qcheck, show { with_path = false }]

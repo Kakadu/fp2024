@@ -12,6 +12,76 @@ let%expect_test "print identificator" =
   [%expect {| myident |}]
 ;;
 
+(************************** Measures **************************)
+
+let%expect_test "print measure ident" =
+  printf "%a\n" pprint_measure (Measure_ident "kg");
+  [%expect {| kg |}]
+;;
+
+let%expect_test "print measure product" =
+  printf "%a\n" pprint_measure (Measure_prod (Measure_ident "kg", Measure_ident "m"));
+  [%expect {| kg m |}]
+;;
+
+let%expect_test "print dimless measure" =
+  printf "%a\n" pprint_measure Measure_dimless;
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "print measure product 1 kg" =
+  printf "%a\n" pprint_measure (Measure_prod (Measure_dimless, Measure_ident "kg"));
+  [%expect {| kg |}]
+;;
+
+let%expect_test "print measure product kg 1" =
+  printf "%a\n" pprint_measure (Measure_prod (Measure_ident "kg", Measure_dimless));
+  [%expect {| kg |}]
+;;
+
+let%expect_test "print measure product 1 1" =
+  printf "%a\n" pprint_measure (Measure_prod (Measure_dimless, Measure_dimless));
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "print measure product 1 1" =
+  printf "%a\n" pprint_measure (Measure_prod (Measure_dimless, Measure_dimless));
+  [%expect {| 1 |}]
+;;
+
+(* [kg / m / s] should be [kg / (m s)];
+   [kg / (s / m)] should be [kg m / s] ----- division is left-associative *)
+let%expect_test "print measure division" =
+  printf "%a\n" pprint_measure (Measure_div (Measure_ident "kg", Measure_ident "m"));
+  [%expect {| kg/m |}]
+;;
+
+let%expect_test "print measure division 1 / kg" =
+  printf "%a\n" pprint_measure (Measure_div (Measure_dimless, Measure_ident "kg"));
+  [%expect {| /kg |}]
+;;
+
+let%expect_test "print measure division kg / 1" =
+  printf "%a\n" pprint_measure (Measure_div (Measure_ident "kg", Measure_dimless));
+  [%expect {| kg |}]
+;;
+
+let%expect_test "print measure division 1 / 1" =
+  printf "%a\n" pprint_measure (Measure_div (Measure_dimless, Measure_dimless));
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "print measure in positive power" =
+  printf "%a\n" pprint_measure (Measure_pow (Measure_ident "m", 1));
+  [%expect {| m ^ 1 |}]
+;;
+
+(* F# compiler parses [<m^-2>] as [</ m^2>] and [<(kg s)^2>] as [<kg ^ 2 s ^ 2>] *)
+let%expect_test "print measure in negative power" =
+  printf "%a\n" pprint_measure (Measure_pow (Measure_ident "m", 1));
+  [%expect {| m ^ 1 |}]
+;;
+
 (************************** Constants **************************)
 
 let%expect_test "print int constant" =
@@ -32,6 +102,14 @@ let%expect_test "print string constant" =
 let%expect_test "print float constant" =
   printf "%a\n" pprint_const (Const_float 3.142222222);
   [%expect {| 3.142222 |}]
+;;
+
+let%expect_test "print measure constant" =
+  printf
+    "%a\n"
+    pprint_const
+    (Const_unit_of_measure (Unit_of_measure (Mnum_float 3.14, Measure_ident "cm")));
+  [%expect {| 3.140000<cm> |}]
 ;;
 
 (************************** Types **************************)

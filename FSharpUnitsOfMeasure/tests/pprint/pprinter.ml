@@ -14,13 +14,38 @@ let pprint_sep_and ppf () = fprintf ppf " and "
 let pprint_sep_or ppf () = fprintf ppf " | "
 let pprint_sep_by pprint_alpha sep_by = pp_print_list pprint_alpha ~pp_sep:sep_by
 
+let rec pprint_measure ppf =
+  let pprint_exp ppf = fprintf ppf "%d" in
+  function
+  | Measure_ident mid -> fprintf ppf "%s" mid
+  | Measure_prod (m1, m2) ->
+    (match m1 with
+     | Measure_dimless -> fprintf ppf "%a" pprint_measure m2
+     | _ ->
+       (match m2 with
+        | Measure_dimless -> fprintf ppf "%a" pprint_measure m1
+        | _ -> fprintf ppf "%a %a" pprint_measure m1 pprint_measure m2))
+  | Measure_div (m1, m2) ->
+    (match m2 with
+     | Measure_dimless -> fprintf ppf "%a" pprint_measure m1
+     | _ ->
+       (match m1 with
+        | Measure_dimless -> fprintf ppf "/%a" pprint_measure m2
+        | _ -> fprintf ppf "%a/%a" pprint_measure m1 pprint_measure m2))
+  | Measure_pow (m, exp) -> fprintf ppf "%a ^ %a" pprint_measure m pprint_exp exp
+  | Measure_dimless -> fprintf ppf "1"
+;;
+
 let pprint_const ppf = function
   | Const_bool b -> fprintf ppf "%b" b
   | Const_int i -> fprintf ppf "%d" i
   | Const_char c -> fprintf ppf "%C" c
   | Const_string s -> fprintf ppf "%S" s
   | Const_float f -> fprintf ppf "%f" f
-  | Const_unit_of_measure _ -> fprintf ppf "unit of measure"
+  | Const_unit_of_measure (Unit_of_measure (n, m)) ->
+    (match n with
+     | Mnum_float f -> fprintf ppf "%f<%a>" f pprint_measure m
+     | Mnum_int i -> fprintf ppf "%d<%a>" i pprint_measure m)
 ;;
 
 let rec pprint_type ppf = function
@@ -77,8 +102,12 @@ and pprint_expr ppf = function
   | Expr_apply (e1, e2) ->
     let pprint_expr_paren ppf e =
       match e with
-      | Expr_lam _ | Expr_let _ | Expr_ifthenelse _ | Expr_match _  | Expr_function _ | Expr_apply _ ->
-        fprintf ppf "(%a)" pprint_expr e
+      | Expr_lam _
+      | Expr_let _
+      | Expr_ifthenelse _
+      | Expr_match _
+      | Expr_function _
+      | Expr_apply _ -> fprintf ppf "(%a)" pprint_expr e
       | _ -> fprintf ppf "%a" pprint_expr e
     in
     fprintf ppf "%a %a" pprint_expr_paren e1 pprint_expr_paren e2
