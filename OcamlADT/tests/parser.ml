@@ -1044,66 +1044,47 @@ let%expect_test "keyword" =
       ] |}]
 ;;
 
+let%expect_test "adt v0" =
+  test_programm {|type shape = Circle;;|};
+  [%expect{| [(Str_adt (None, "shape", (("Circle", None), [])))] |}]
+;;
+
 let%expect_test "adt v1" =
   test_programm {|type shape = Circle | Square of int;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1048, characters 2-57
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    [(Str_adt (None, "shape",
+        (("Circle", None), [("Square", (Some (Type_var "int")))])))
+      ] |}]
 ;;
 
 let%expect_test "adt v2" =
   test_programm {|type shape = Circle | Square;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1064, characters 2-50
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| [(Str_adt (None, "shape", (("Circle", None), [("Square", None)])))] |}]
 ;;
 
 let%expect_test "adt v3" =
   test_programm {|type shape = Circle | Square of int * int;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1080, characters 2-63
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    [(Str_adt (None, "shape",
+        (("Circle", None),
+         [("Square", (Some (Type_tuple ((Type_var "int"), (Type_var "int"), []))))
+           ])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "adt with poly" =
   test_programm {|type 'a shape = Circle | Square of 'a;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
+  [%expect{|
+    [(Str_adt ((Some (Type_var "'a")), "shape",
+        (("Circle", None), [("Square", (Some (Type_var "'a")))])))
+      ] |}]
+;;
 
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1096, characters 2-59
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+let%expect_test "bad adt with poly (wrong types)" =
+  test_programm {|type 'a shape = Circle | Square of int;;|};
+  [%expect{|
+    [(Str_adt ((Some (Type_var "'a")), "shape",
+        (("Circle", None), [("Square", (Some (Type_var "int")))])))
+      ] |}]
 ;;

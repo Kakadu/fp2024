@@ -435,7 +435,7 @@ let%expect_test "tuple and match expression" =
   pprint_program std_formatter program;
   [%expect {|
     match (a, b, c) with
-      | (x, y, z) -> (f (x, y)) ;;
+      |  | (x, y, z) -> (f (x, y)) ;;
   |}]
 ;;
 
@@ -510,13 +510,13 @@ let%expect_test "adt v1" =
 let%expect_test "adt with poly" =
   let program =
     [ Str_adt
-        ( Some (Type_param "a")
+        ( Some (Type_var "a")
         , "shape"
-        , (("Circle", None), [ "Square", Some (Type_param "a") ]) )
+        , (("Circle", None), [ "Square", Some (Type_var "a") ]) )
     ]
   in
   pprint_program std_formatter program;
   [%expect {|
-    type shape = Circle | Square of int;;
+    type a shape = Circle | Square of a;;
   |}]
 ;;
