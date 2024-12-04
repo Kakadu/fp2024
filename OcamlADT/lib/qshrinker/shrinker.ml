@@ -7,8 +7,6 @@ open QCheck.Shrink
 open Ocamladt_lib.Ast
 
 module ShrinkQCheck = struct
-  (* Shrinker for Patterns *)
-
   let filter predicate iter =
     iter >>= fun x -> if predicate x then QCheck.Iter.return x else QCheck.Iter.empty
   ;;
@@ -72,8 +70,6 @@ module ShrinkQCheck = struct
       shrink_pattern pat >|= fun pat' -> Pattern.Pat_construct (id, Some pat')
     | Pattern.Pat_constraint (pat, core_type) ->
       shrink_pattern pat >|= fun pat' -> Pattern.Pat_constraint (pat', core_type)
-  (* <+> shrink_type_expr core_type
-     >|= fun core_type' -> Pattern.Pat_constraint (pat, core_type') *)
 
   and shrink_expression = function
     | Expression.Exp_ident id ->

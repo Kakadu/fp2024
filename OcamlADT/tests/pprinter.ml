@@ -353,7 +353,7 @@ let%expect_test "let and construct" =
   in
   pprint_program std_formatter program;
   [%expect {|
-    ((let _ = s and "fgo" = ilm in j_9) (Tep (ha9))) ;; |}]
+    (let _ = s and "fgo" = ilm in j_9) (Tep (ha9)) ;; |}]
 ;;
 
 (*(let _ s = "fgo" -> __im in j_9) Tep (ha9);;*)
@@ -435,7 +435,7 @@ let%expect_test "tuple and match expression" =
   pprint_program std_formatter program;
   [%expect {|
     match (a, b, c) with
-      |  | (x, y, z) -> (f (x, y)) ;;
+      | (x, y, z) -> (f (x, y)) ;;
   |}]
 ;;
 
@@ -460,8 +460,8 @@ let%expect_test "nested constructs" =
   in
   pprint_program std_formatter program;
   [%expect {|
-    (map ((function
-      | x -> x * 2), list)) ;;
+    map ((function
+      | x -> x * 2), list) ;;
   |}]
 ;;
 
