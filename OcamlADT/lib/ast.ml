@@ -24,7 +24,9 @@ let is_not_keyword = function
   | "and"
   | "function"
   | "match"
-  | "with" -> false
+  | "with"
+  | "type"
+  | "of" -> false
   | _ -> true
 ;;
 
@@ -102,7 +104,6 @@ module TypeExpr = struct
                               [T1 -> T2] *)
     | Type_var of (ident[@gen gen_ident])
     | Type_tuple of t List2.t (** [Type_tuple([T1, T2, ... Tn])] *)
-    | Type_param of (ident[@gen gen_ident]) (** [Type_param(I)] represents ['I]*)
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
@@ -136,9 +137,7 @@ module Expression = struct
   [@@deriving eq, show { with_path = false }]
 
   let gen_value_binding gen_expr n =
-    let* pat = Pattern.gen_sized (n / 2) in
-    let* expr = gen_expr (n / 2) in
-    return { pat; expr }
+    map2 (fun pat expr -> { pat; expr }) (Pattern.gen_sized (n / 2)) (gen_expr (n / 2))
   ;;
 
   type 'expr case =
@@ -148,9 +147,10 @@ module Expression = struct
   [@@deriving eq, show { with_path = false }]
 
   let gen_case gen_expr n =
-    let* first = Pattern.gen_sized (n / 2) in
-    let* second = gen_expr (n / 2) in
-    return { first; second }
+    map2
+      (fun first second -> { first; second })
+      (Pattern.gen_sized (n / 2))
+      (gen_expr (n / 2))
   ;;
 
   type t =
