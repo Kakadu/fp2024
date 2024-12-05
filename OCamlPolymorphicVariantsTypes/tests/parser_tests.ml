@@ -16,10 +16,12 @@ let%expect_test _ =
   [%expect
     {|
       [(EvalItem
-          (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
-             (Lambda ([(PConstrain ((PVar "y"), (TypeIdentifier "int")))],
-                (Binary ((Variable "x"), Add, (Variable "y")))))
-             )))
+          (Func
+             [{ pattern = PAny; filter = (Some (Const (IntLiteral 0)));
+                result = (Const (IntLiteral 52194407)) };
+               { pattern = PAny; filter = (Some (Const (BoolLiteral true)));
+                 result = (Const (BoolLiteral false)) }
+               ]))
         ] |}];
   test_program {|fun x:int -> (fun y:int -> x + y);;|};
   [%expect
