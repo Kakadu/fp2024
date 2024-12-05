@@ -75,17 +75,40 @@ let ( <* ) : 'a 'b. 'a parser -> 'b parser -> 'a parser =
   fun p1 p2 -> p1 >>= fun res -> p2 >>= fun _ -> preturn res
 ;;
 
-(** Parser combinator that matches [*] in regular expressions (Kleene's star) *)
-let rec many : 'a parser -> 'a list parser =
+(** Parser combinator that matches [*] in regular expressions (Kleene's star)
+    and сounting the number of successfully parsed elements *)
+let rec lmany : 'a parser -> (int * 'a list) parser =
   fun p state ->
   match p state with
-  | ParseFail -> preturn [] state
+  | ParseFail -> preturn (0, []) state
   | ParseError (msg, st) -> perror msg st
-  | ParseSuccess (res, st) -> (many p >>= fun tl -> preturn (res :: tl)) st
+  | ParseSuccess (res, st) -> (lmany p >>= fun (l, tl) -> preturn (l + 1, res :: tl)) st
+;;
+
+(** Parser combinator that matches [*] in regular expressions (Kleene's star) *)
+let many : 'a parser -> 'a list parser =
+  fun p state -> (lmany p >>= fun (_, res) -> preturn res) state
+;;
+
+(** Parser combinator that matches [+] in regular expressions
+    and сounting the number of successfully parsed elements *)
+let lmany1 : 'a parser -> (int * 'a list) parser =
+  fun p -> p >>= fun x -> lmany p >>= fun (l, xs) -> preturn (l + 1, x :: xs)
 ;;
 
 (** Parser combinator that matches [+] in regular expressions *)
-let many1 p : _ list parser = p >>= fun x -> many p >>= fun xs -> preturn (x :: xs)
+let many1 : 'a parser -> 'a list parser =
+  fun p -> lmany1 p >>= fun (_, res) -> preturn res
+;;
+
+let rec repeat : 'a parser -> int -> 'a list parser =
+  fun p count state ->
+  if count < 0
+  then perror "Negative count for repeat parser" state
+  else if count = 0
+  then preturn [] state
+  else (p >>= fun x -> repeat p (count - 1) >>= fun xs -> preturn (x :: xs)) state
+;;
 
 (** Parser combinator that allows to get result as one of two parser *)
 let ( <|> ) : 'a parser -> 'a parser -> 'a parser =
@@ -117,6 +140,28 @@ let reverse : 'a parser -> 'a parser -> 'a parser -> 'a parser =
   | ParseFail -> pf state
   | ParseSuccess (_, ns) -> ps ns
   | _ as err -> err
+;;
+
+let debug_parser : 'a parser -> string -> ('a -> string) -> 'a parser =
+  fun p m pp state ->
+  print_string (Format.sprintf "\ndebug: %s. Result is " m);
+  match p state with
+  | ParseFail ->
+    print_endline "failed";
+    ParseFail
+  | ParseError (msg, st) ->
+    print_endline (Format.sprintf "error[line=%d pos=%d]: %s" st.line st.inline msg);
+    ParseError (msg, st)
+  | ParseSuccess (v, st) ->
+    print_endline (Format.sprintf "success: %s" (pp v));
+    ParseSuccess (v, st)
+;;
+
+let handle_error : 'a parser -> (string -> 'a parser) -> 'a parser =
+  fun p f state ->
+  match p state with
+  | (ParseFail | ParseSuccess _) as res -> res
+  | ParseError (msg, _) -> f msg state
 ;;
 
 (** Char predicate is function for defining characters *)

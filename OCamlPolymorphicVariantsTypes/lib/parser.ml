@@ -84,6 +84,71 @@ let element_sequence
   *> (many (next_element sep) >>| fun l -> list_converter (List.append [ start ] l))
 ;;
 
+let bracket_sequence subparser state =
+  (skip_ws *> symbol '(' *> subparser
+   <* (skip_ws *> symbol ')' <|> perror "Not found close bracket"))
+    state
+;;
+
+(* let rec type_parser state : core_type parse_result = (skip_ws *> type_identifier) state *)
+
+let type_identifier state =
+  let ident_parser =
+    ident
+      ~on_keyword:(fun k ->
+        perror (Format.sprintf "Not found type identifier, finded keyword '%s'" k))
+      ~on_constructor:(fun c ->
+        perror (Format.sprintf "Not found type identifier, finded constructor '%s'" c))
+      ~on_simple:(fun s -> preturn s)
+  in
+  let helper =
+    ident_parser
+    >>= fun s ->
+    match s with
+    | "_" -> preturn AnyType
+    | _ -> preturn (TypeIdentifier s)
+  in
+  (skip_ws *> helper) state
+;;
+
+let rec core_type_parser need_arrow state =
+  (skip_ws *> tuple_type
+   >>= fun t1 -> if need_arrow then arrow_type t1 <|> preturn t1 else preturn t1)
+    state
+
+and arrow_type t1 state =
+  (skip_ws *> handle_error (ssequence "->" *> core_type_parser false) (fun _ -> pfail)
+   >>= fun t2 -> preturn (ArrowType (t1, t2)))
+    state
+
+and tuple_type state =
+  let helper t1 =
+    element_sequence
+      t1
+      type_constructor
+      (function
+        | t1 :: t2 :: tl -> TupleType (t1, t2, tl)
+        | _ -> t1)
+      "*"
+      (perror "Not found expression after tuple separator: '*'")
+  in
+  (skip_ws *> type_constructor >>= helper) state
+
+and type_constructor state =
+  let rec builder t1 tl =
+    match tl with
+    | [] -> t1
+    | t2 :: tail -> builder (TypeConstructor (t2, t1)) tail
+  in
+  (skip_ws *> basic_type
+   >>= fun t1 -> many type_identifier >>= fun tl -> preturn (builder t1 tl))
+    state
+
+and basic_type state =
+  (skip_ws *> bracket_type <|> type_identifier <|> perror "Not found type") state
+
+and bracket_type state = bracket_sequence (core_type_parser true) state
+
 (** Parser of integer literals: [0 .. Int64.max_int].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
@@ -106,7 +171,12 @@ let boolean =
 ;;
 
 (** Parser of patterns: [<pvar>] | [<ptuple>] *)
-let rec pattern_parser state = (skip_ws *> (pvariable <|> ptuple)) state
+let rec pattern_parser expect_type state =
+  let helper = function
+    | PConstrain _ as p -> preturn p
+    | p -> if expect_type then ptype true p else preturn p
+  in
+  (skip_ws *> (pvariable <|> ptuple) >>= helper) state
 
 (** Parser of variable pattern *)
 and pvariable state =
@@ -119,7 +189,13 @@ and pvariable state =
         perror (Format.sprintf "Unexpected constructor on pattern position: '%s'." id))
       ~on_simple:(fun id -> preturn id)
   in
-  (skip_ws *> (helper >>| fun id -> PVar id)) state
+  (skip_ws
+   *> (helper
+       >>| fun id ->
+       match id with
+       | "_" -> PAny
+       | _ -> PVar id))
+    state
 
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
@@ -127,7 +203,7 @@ and ptuple state =
     skip_ws
     *> element_sequence
          pfirst
-         pattern_parser
+         (pattern_parser true)
          (function
            | p1 :: p2 :: pl -> PTuple (p1, p2, pl)
            | _ -> pfirst)
@@ -135,14 +211,23 @@ and ptuple state =
          (perror "Not found expression after tuple separator: ','")
   in
   let brackets_subexpr =
-    skip_ws *> pattern_parser
-    >>= (fun pfirst -> tuple_elements pfirst <|> preturn pfirst)
+    skip_ws *> pattern_parser true
+    >>= (fun pfirst -> tuple_elements pfirst >>= ptype true)
     <|> preturn PUnit
   in
-  (skip_ws
-   *> (symbol '(' *> brackets_subexpr
-       <* (skip_ws *> symbol ')' <|> perror "Not found close bracket")))
-    state
+  bracket_sequence brackets_subexpr state
+
+and ptype : bool -> pattern -> pattern parser =
+  fun need_arrow p ->
+  let helper =
+    skip_ws
+    *> symbol ':'
+    *> (core_type_parser need_arrow <|> perror "Not found type of pattern")
+  in
+  match p with
+  | PAny -> preturn p
+  | PTuple _ | PUnit | PConstrain _ | PVar _ ->
+    skip_ws *> (helper >>= (fun t -> preturn (PConstrain (p, t))) <|> preturn p)
 ;;
 
 (** Parser of constants expression: [integer] and [boolean]
@@ -246,7 +331,7 @@ and case_parser is_first =
     skip_ws *> (keyword "when" *> filter_expr) <|> preturn None
   in
   let main_helper =
-    skip_ws *> (pattern_parser <|> perror "Not found pattern of case expression")
+    skip_ws *> (pattern_parser true <|> perror "Not found pattern of case expression")
     >>= fun p -> filter_helper >>= fun f -> result_helper p f
   in
   skip_ws *> (symbol '|' *> main_helper) <|> if is_first then main_helper else pfail
@@ -306,9 +391,8 @@ and unary_expr applyable state =
     - unit: [()]
     - else: [(<expr>)] *)
 and bracket_expr state =
-  (skip_ws *> symbol '(' *> (expr <|> preturn (Const UnitLiteral))
-   <* (skip_ws *> symbol ')' <|> perror "Not found close bracket"))
-    state
+  let helper = expr <|> preturn (Const UnitLiteral) in
+  bracket_sequence helper state
 
 (** Parser of list expression *)
 and list_expr state =
@@ -424,29 +508,45 @@ and apply_expr state =
 
 (** Parser of lambdas definitions *)
 and lambda_expr state =
-  (skip_ws
-   *> keyword "fun"
-   *> (many1 (skip_ws *> pattern_parser)
-       >>= (fun pl ->
-             skip_ws
-             *> (ssequence "->" *> (expr >>| fun ex -> Lambda (pl, ex))
-                 <|> perror "Not found expression of lambda")
-             <|> perror "Not found special sequence '->' of lambda definition")
-       <|> perror "Not found patterns for lambda definition"))
+  let patterns = skip_ws *> lmany1 (pattern_parser true) in
+  let subexp pl =
+    expr >>| (fun ex -> Lambda (pl, ex)) <|> perror "Not found expression of lambda"
+  in
+  let helper l =
+    repeat (pattern_parser true) (l - 1)
+    >>= fun pl ->
+    pattern_parser false
+    >>= ptype false
+    >>= fun p ->
+    skip_ws
+    *> (ssequence "->" <|> perror "Not found special sequence '->' of lambda definition")
+    *> preturn (pl @ [ p ])
+  in
+  (skip_ws *> keyword "fun"
+   >>= fun _ s ->
+   (patterns
+    >>= (fun (l, pl) ->
+          skip_ws *> (ssequence "->" *> subexp pl) <|> fun _ -> (helper l >>= subexp) s)
+    <|> perror "Not found patterns for lambda definition")
+     s)
     state
 
 (** Parser of value-bindings: [<pattern> = <expr>]*)
 and value_binding_parser state =
+  let subpatterns = skip_ws *> many (skip_ws *> pattern_parser true) in
+  let helper =
+    pattern_parser true
+    >>= fun p ->
+    subpatterns >>= fun pl -> ptype true p >>= fun typedp -> preturn (typedp, pl)
+  in
   (skip_ws
-   *> (pattern_parser
-       >>= fun p ->
-       many (skip_ws *> pattern_parser)
-       >>= fun pl ->
+   *> (helper
+       >>= fun (p, pl) ->
        skip_ws
-       *> (ssequence "="
-           *> (skip_ws *> expr
-               >>| fun ex -> if is_empty pl then p, ex else p, Lambda (pl, ex))
-           <|> perror "Not found expression of let-definition")
+       *> ssequence "="
+       *> skip_ws
+       *> (expr >>| fun ex -> if is_empty pl then p, ex else p, Lambda (pl, ex))
+       <|> perror "Not found expression of let-definition"
        <|> perror "Not found special sequence '=' of let-definition binding expresssion")
    <|> perror "Not found name-pattern of let-definition")
     state

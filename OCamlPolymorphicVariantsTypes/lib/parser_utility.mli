@@ -27,9 +27,14 @@ val ( *> ) : 'a 'b. 'a parser -> 'b parser -> 'b parser
 val ( <* ) : 'a 'b. 'a parser -> 'b parser -> 'a parser
 val many : 'a parser -> 'a list parser
 val many1 : 'a parser -> 'a list parser
+val lmany : 'a parser -> (int * 'a list) parser
+val lmany1 : 'a parser -> (int * 'a list) parser
+val repeat : 'a parser -> int -> 'a list parser
 val ( <|> ) : 'a parser -> 'a parser -> 'a parser
 val one_of : 'a parser list -> 'a parser
 val reverse : 'a parser -> 'a parser -> 'a parser -> 'a parser
+val debug_parser : 'a parser -> string -> ('a -> string) -> 'a parser
+val handle_error : 'a parser -> (string -> 'a parser) -> 'a parser
 
 type char_predicate = char -> bool [@@deriving show { with_path = false }]
 

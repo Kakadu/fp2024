@@ -40,10 +40,21 @@ type binary_operator =
   | Unequals (* <> *)
 [@@deriving show { with_path = false }]
 
+type core_type =
+  | ArrowType of core_type * core_type (* T1 -> T2, example int -> bool *)
+  | TypeConstructor of
+      core_type * core_type (* T1 T2, exmaple int list: int - T1, list - T2 *)
+  | TupleType of core_type * core_type * core_type list (* T1 * T2 * ... * TN *)
+  | TypeIdentifier of identifier (* int *)
+  | AnyType (* _ *)
+[@@deriving show { with_path = false }]
+
 type pattern =
+  | PAny (* _ *)
+  | PUnit (* () *)
   | PVar of identifier
   | PTuple of pattern * pattern * pattern list (* (<pattern>, ..., <pattern>) *)
-  | PUnit (* () *)
+  | PConstrain of pattern * core_type (* <pattern> : <core_type> *)
 [@@deriving show { with_path = false }]
 
 and expression =

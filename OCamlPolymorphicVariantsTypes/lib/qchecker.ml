@@ -21,15 +21,16 @@ module QChecker = struct
 
   let gen_integer = oneof [ positive_number; return 0 ]
   let gen_boolean = oneof [ return true; return false ]
-  let identifier_size = int_range 1 10
+  let identifier_size = int_range 1 5
   let addected_tuple_size = int_range 0 2
-  let elist_size = int_range 0 6
-  let definition_size = int_range 1 4
-  let patterns_size = int_range 1 6
-  let pattern_depth = int_range 1 4
-  let expr_depth = int_range 1 4
-  let apply_size = int_range 1 6
-  let expr_block_size = int_range 2 8
+  let elist_size = int_range 0 2
+  let definition_size = int_range 1 2
+  let patterns_size = int_range 1 2
+  let core_type_size = int_range 1 3
+  let pattern_depth = int_range 1 1
+  let expr_depth = int_range 1 2
+  let apply_size = int_range 1 2
+  let expr_block_size = int_range 2 2
   let program_size = int_range 1 1
 
   let gen_identifier is_constructor_name =
@@ -61,6 +62,29 @@ module QChecker = struct
     else return s
   ;;
 
+  let gen_core_type =
+    let gen_ttuple subtypes_gen =
+      map3
+        (fun p1 p2 pl -> TupleType (p1, p2, pl))
+        subtypes_gen
+        subtypes_gen
+        (list_size addected_tuple_size subtypes_gen)
+    in
+    sized_size core_type_size
+    @@ fix (fun self ->
+         function
+         | 0 ->
+           oneof
+             [ map (fun i -> TypeIdentifier i) (gen_identifier false); return AnyType ]
+         | depth ->
+           let subtype_gen = self (depth - 1) in
+           frequency
+             [ 1, map2 (fun t1 t2 -> TypeConstructor (t1, t2)) subtype_gen subtype_gen
+             ; 1, gen_ttuple subtype_gen
+             ; 1, map2 (fun t1 t2 -> ArrowType (t1, t2)) subtype_gen subtype_gen
+             ])
+  ;;
+
   let gen_pattern =
     let gen_ptuple subpattern_gen =
       map3
@@ -72,8 +96,15 @@ module QChecker = struct
     sized_size pattern_depth
     @@ fix (fun self ->
          function
-         | 0 -> oneof [ map (fun i -> PVar i) (gen_identifier false); return PUnit ]
-         | depth -> gen_ptuple (self (depth - 1)))
+         | 0 ->
+           oneof
+             [ map (fun i -> PVar i) (gen_identifier false); return PUnit; return PAny ]
+         | depth ->
+           let subpattern_gen = self (depth - 1) in
+           frequency
+             [ 1, map2 (fun p1 p2 -> PConstrain (p1, p2)) subpattern_gen gen_core_type
+             ; 1, gen_ptuple subpattern_gen
+             ])
   ;;
 
   let gen_recursive_type = oneof [ return Recursive; return Nonrecursive ]

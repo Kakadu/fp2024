@@ -40,10 +40,23 @@ let pp_recursive_type ff = function
 ;;
 
 let pp_tuple_sep ff () = fprintf ff ", "
+let pp_type_tuple ff () = fprintf ff " * "
 let pp_expr_block_sep ff () = fprintf ff "; "
 let pp_list_sep ff () = fprintf ff "; "
 let pp_definition_sep ff () = fprintf ff " and "
 let pp_struct_item_sep ff () = fprintf ff "\n"
+
+let rec pp_core_type ff = function
+  | AnyType -> fprintf ff "_"
+  | ArrowType (t1, t2) -> fprintf ff "(%a -> %a)" pp_core_type t1 pp_core_type t2
+  | TypeConstructor (t1, t2) -> fprintf ff "%a %a" pp_core_type t1 pp_core_type t2
+  | TypeIdentifier id -> fprintf ff "%a" pp_identifier id
+  | TupleType (t1, t2, tl) ->
+    fprintf ff "(%a * %a" pp_core_type t1 pp_core_type t2;
+    (match tl with
+     | [] -> fprintf ff ")"
+     | _ -> fprintf ff " * %a)" (pp_print_list ~pp_sep:pp_type_tuple pp_core_type) tl)
+;;
 
 let rec pp_pattern ff = function
   | PVar id -> pp_identifier ff id
@@ -53,6 +66,8 @@ let rec pp_pattern ff = function
      | [] -> fprintf ff ")"
      | _ -> fprintf ff ", %a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_pattern) pl)
   | PUnit -> fprintf ff "()"
+  | PConstrain (p, t) -> fprintf ff "(%a : %a)" pp_pattern p pp_core_type t
+  | PAny -> fprintf ff "_"
 ;;
 
 let rec pp_expression ff = function

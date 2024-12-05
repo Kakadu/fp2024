@@ -10,11 +10,112 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
-  test_program {|(fun (x) -> x) 10;;|};
-  [%expect {|
+  test_program {|function
+  | (_)  when 0 -> 52194407
+  | (_) when true -> false;;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
+             (Lambda ([(PConstrain ((PVar "y"), (TypeIdentifier "int")))],
+                (Binary ((Variable "x"), Add, (Variable "y")))))
+             )))
+        ] |}];
+  test_program {|fun x:int -> (fun y:int -> x + y);;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
+             (Lambda ([(PConstrain ((PVar "y"), (TypeIdentifier "int")))],
+                (Binary ((Variable "x"), Add, (Variable "y")))))
+             )))
+        ] |}];
+  test_program {|fun x:int -> x;;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
+             (Variable "x"))))
+        ] |}];
+  test_program {|fun (x:int -> float)  (y:int) -> ( x y );;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Lambda (
+             [(PConstrain ((PVar "x"),
+                 (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
+               (PConstrain ((PVar "y"), (TypeIdentifier "int")))],
+             (Apply ((Variable "x"), [(Variable "y")])))))
+        ] |}];
+  test_program {|fun x:int -> (x);;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
+             (Variable "x"))))
+        ] |}];
+  test_program {|fun x:int -> 10;;|};
+  [%expect
+    {|
     [(EvalItem
-        (Apply ((Lambda ([(PVar "x")], (Variable "x"))),
-           [(Const (IntLiteral 10))])))
+        (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
+           (Const (IntLiteral 10)))))
+      ] |}];
+  test_program {|let f (x:int) :int  = ~-x;;|};
+  [%expect
+    {|
+    [(DefineItem
+        (Nonrecursive,
+         [((PConstrain ((PVar "f"), (TypeIdentifier "int"))),
+           (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
+              (Unary (Negate, (Variable "x"))))))
+           ]))
+      ] |}];
+  test_program {|let f:int -> int = fun x -> ~-x;;|};
+  [%expect
+    {|
+    [(DefineItem
+        (Nonrecursive,
+         [((PConstrain ((PVar "f"),
+              (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "int"))))),
+           (Lambda ([(PVar "x")], (Unary (Negate, (Variable "x"))))))]))
+      ] |}];
+  test_program {|(fun (((x:int),(y:int)):int*int) z -> x + y + z) (10,20, 30);;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Apply (
+           (Lambda (
+              [(PConstrain (
+                  (PTuple ((PConstrain ((PVar "x"), (TypeIdentifier "int"))),
+                     (PConstrain ((PVar "y"), (TypeIdentifier "int"))), [])),
+                  (TupleType ((TypeIdentifier "int"), (TypeIdentifier "int"),
+                     []))
+                  ));
+                (PVar "z")],
+              (Binary ((Binary ((Variable "x"), Add, (Variable "y"))), Add,
+                 (Variable "z")))
+              )),
+           [(Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)),
+               [(Const (IntLiteral 30))]))
+             ]
+           )))
+      ] |}];
+  test_program {|(fun ((x:int),(y:int)):int*int -> x + y) (10, 20);;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Apply (
+           (Lambda (
+              [(PConstrain (
+                  (PTuple ((PConstrain ((PVar "x"), (TypeIdentifier "int"))),
+                     (PConstrain ((PVar "y"), (TypeIdentifier "int"))), [])),
+                  (TupleType ((TypeIdentifier "int"), (TypeIdentifier "int"),
+                     []))
+                  ))
+                ],
+              (Binary ((Variable "x"), Add, (Variable "y"))))),
+           [(Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)), []))])))
       ] |}];
   test_program {|64_000_000;;|};
   [%expect {|
