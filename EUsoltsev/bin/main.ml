@@ -2,7 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open EUsoltsev_lib.Ast
+open EUsoltsev_lib
+open Ast
 
 let () =
   let factorial : program =
