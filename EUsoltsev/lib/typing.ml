@@ -43,7 +43,6 @@ let rec pp_ty fmt = function
     (match ty with
      | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) option" pp_ty ty
      | _ -> fprintf fmt "%a option" pp_ty ty)
-  | _ -> fprintf fmt "not implemented"
 ;;
 
 let pp_error fmt = function
