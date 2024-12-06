@@ -1,3 +1,9 @@
+(** Copyright 2024-2025, Danil Usoltsev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+(* Template: https://gitlab.com/Kakadu/fp2020course-materials/-/tree/master/code/miniml?ref_type=heads*)
+
 open Typing
 
 module R : sig
@@ -69,8 +75,6 @@ end = struct
 end
 
 module Type = struct
-  type t = ty
-
   let rec occurs_in v = function
     | TyVar x -> x = v
     | TyArrow (l, r) -> occurs_in v l || occurs_in v r
@@ -78,18 +82,6 @@ module Type = struct
     | TyTuple ty_list -> List.exists (occurs_in v) ty_list
     | TyOption ty -> occurs_in v ty
     | TyPrim _ -> false
-  ;;
-
-  let type_vars_acc =
-    let rec helper acc = function
-      | TyVar x -> VarSet.add x acc
-      | TyArrow (l, r) -> helper (helper acc l) r
-      | TyList ty -> helper acc ty
-      | TyTuple ty_list -> List.fold_left helper acc ty_list
-      | TyOption ty -> helper acc ty
-      | TyPrim _ -> acc
-    in
-    helper VarSet.empty
   ;;
 end
 
@@ -182,14 +174,6 @@ end = struct
 end
 
 module Scheme = struct
-  let free_vars (Scheme (bind_vars, ty)) = VarSet.diff (Type.type_vars_acc ty) bind_vars
-
-  (** check whether a type variable occurs in a type scheme *)
-  let occurs_in tvar (Scheme (bind_vars, ty)) =
-    (not (VarSet.mem tvar bind_vars)) && Type.occurs_in tvar ty
-  ;;
-
-  (** apply a substitution to a type scheme *)
   let apply s (Scheme (bind_vars, ty)) =
     let s' = VarSet.fold (fun s k -> Subst.remove k s) bind_vars s in
     Scheme (bind_vars, Subst.apply s' ty)
@@ -201,18 +185,12 @@ module TypeEnv = struct
 
   let empty : t = Base.Map.empty (module Base.String)
 
-  let free_vars env =
-    Base.Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data acc ->
-      VarSet.union acc (Scheme.free_vars data))
-  ;;
-
   let extend : t -> string -> scheme -> t =
     fun env k scheme -> Base.Map.update env k ~f:(fun _ -> scheme)
   ;;
 
   let apply env s = Base.Map.map env ~f:(Scheme.apply s)
   let find env k = Base.Map.find env k
-  let update map k v = Base.Map.update map k ~f:(fun _ -> v)
 end
 
 open R
@@ -228,11 +206,6 @@ let instantiate (Scheme (bind_vars, ty)) =
     return (Subst.apply sub acc)
   in
   VarSet.fold fold_acc bind_vars (return ty)
-;;
-
-let generalize env ty =
-  let free = VarSet.diff (Type.type_vars_acc ty) (TypeEnv.free_vars env) in
-  Scheme (free, ty)
 ;;
 
 open Ast
@@ -279,8 +252,6 @@ let pattern_to_string = function
   | PatVariable name -> name
   | _ -> failwith "Unsupported pattern: only variables are supported in the environment"
 ;;
-
-let apply_subst_to_env s env = Base.Map.map env ~f:(Scheme.apply s)
 
 let infer_expr =
   let rec helper env = function
@@ -406,17 +377,3 @@ let infer_expr =
 ;;
 
 let run_inference expr = Result.map snd (run (infer_expr TypeEnv.empty expr))
-
-module PP = struct
-  open Format
-  open Typing
-
-  let print_typ typ = printf "%a\n" pp_ty typ
-  let print_type_error error = printf "%a\n" pp_error error
-
-  let print_result expr =
-    match run_inference expr with
-    | Ok typ -> print_typ typ
-    | Error x -> print_type_error x
-  ;;
-end
