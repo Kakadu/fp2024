@@ -4,12 +4,6 @@
 
 open EUsoltsev_lib
 open Ast
-open Inferencer
-open Inferencer.PP
-open Format
-open Ast
-open Typing
-open Parser
 
 let () =
   let factorial : program =
