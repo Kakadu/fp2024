@@ -158,7 +158,7 @@ let parse_expr_lambda parse_expr =
 ;;
 
 let parse_expr_let parse_expr =
-  let rec parse_lambda_params () = sep_by1 white_space parse_pattern in
+  let parse_lambda_params () = sep_by1 white_space parse_pattern in
   let parse_body parse_expr =
     parse_lambda_params ()
     >>= fun params -> token "=" *> parse_expr >>| fun body -> ExpLambda (params, body)
