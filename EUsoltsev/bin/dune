@@ -1,5 +1,6 @@
-executable
-  (name main)
-  (public_name main)
-  (libraries EUsoltsev_lib)
-  (instrumentation (backend bisect_ppx))
+(executable
+ (name main)
+ (public_name main)
+ (libraries EUsoltsev_lib)
+ (instrumentation
+  (backend bisect_ppx)))
