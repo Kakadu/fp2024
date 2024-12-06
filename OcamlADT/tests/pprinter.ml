@@ -397,7 +397,7 @@ let%expect_test "let binding with integer" =
   in
   pprint_program std_formatter program;
   [%expect {|
-    let  x = 42;;
+    let x = 42;;
   |}]
 ;;
 
@@ -499,24 +499,115 @@ let%expect_test "complex program" =
 
 let%expect_test "adt v1" =
   let program =
-    [ Str_adt (None, "shape", (("Circle", None), [ "Square", Some (Type_var "int") ])) ]
-  in
-  pprint_program std_formatter program;
-  [%expect {|
-    type shape = Circle | Square of int;;
-  |}]
-;;
-
-let%expect_test "adt with poly" =
-  let program =
-    [ Str_adt
-        ( Some (Type_var "a")
-        , "shape"
-        , (("Circle", None), [ "Square", Some (Type_var "a") ]) )
+    [ Str_adt ([], "shape", (("Circle", []), [ "Square", [ Type_construct ("int", []) ] ]))
     ]
   in
   pprint_program std_formatter program;
   [%expect {|
-    type a shape = Circle | Square of a;;
+    type shape =
+      | Circle
+      | Square of int
+    ;;
   |}]
+;;
+
+(*should be constr (shape, [int])*)
+
+let%expect_test "adt with poly" =
+  let program =
+    [ Str_adt ([ "a" ], "shape", (("Circle", []), [ "Square", [ Type_var "a" ] ])) ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    type 'a shape =
+      | Circle
+      | Square of 'a
+    ;;
+  |}]
+;;
+
+let%expect_test "adt v2" =
+  let program = [ Str_adt ([], "shape", (("Circle", []), [ "Square", [] ])) ] in
+  pprint_program std_formatter program;
+  [%expect {|
+    type shape =
+      | Circle
+      | Square
+    ;; |}]
+;;
+
+let%expect_test "adt v3" =
+  let program =
+    [ Str_adt
+        ( []
+        , "shape"
+        , ( ("Circle", [])
+          , [ ( "Square"
+              , [ Type_tuple (Type_construct ("int", []), Type_construct ("int", []), [])
+                ] )
+            ] ) )
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    type shape =
+      | Circle
+      | Square of (int * int)
+    ;; |}]
+;;
+
+let%expect_test "adt with poly" =
+  let program =
+    [ Str_adt ([ "a" ], "shape", (("Circle", []), [ "Square", [ Type_var "a" ] ])) ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    type 'a shape =
+      | Circle
+      | Square of 'a
+    ;; |}]
+;;
+
+let%expect_test "adt with poly (v.easy)" =
+  let program = [ Str_adt ([ "a" ], "shape", (("Circle", []), [])) ] in
+  pprint_program std_formatter program;
+  [%expect {|
+    type 'a shape =
+      | Circle
+    ;; |}]
+;;
+
+let%expect_test "bad adt with multiple poly" =
+  let program =
+    [ Str_adt
+        ( [ "a"; "b" ]
+        , "shape"
+        , (("Circle", []), [ "Square", [ Type_construct ("", [ Type_var "a" ]) ] ]) )
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect {|
+    type ('a, 'b) shape =
+      | Circle
+      | Square of 'a
+    ;; |}]
+;;
+
+let%expect_test "adt with multiple poly v2" =
+  let program =
+    [ Str_adt
+        ( [ "a"; "b" ]
+        , "shape"
+        , ( ("Circle", [])
+          , [ "Square", [ Type_construct ("shape", [ Type_var "a"; Type_var "b" ]) ] ] )
+        )
+    ]
+  in
+  pprint_program std_formatter program;
+  [%expect
+    {|
+    type ('a, 'b) shape =
+      | Circle
+      | Square of ('a, 'b) shape
+    ;; |}]
 ;;

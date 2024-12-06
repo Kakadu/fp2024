@@ -1141,7 +1141,7 @@ let%expect_test "adt with poly (con poly variant)" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1132, characters 2-74
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1133, characters 2-74
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
