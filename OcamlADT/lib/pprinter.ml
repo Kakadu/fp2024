@@ -50,6 +50,23 @@ let rec pprint_type fmt =
       (String.concat
          ~sep:" * "
          (List.map (tye1 :: tye2 :: tyel) ~f:(fun t -> asprintf "%a" pprint_type t)))
+  | Type_construct (id, tyel) ->
+    let tyel_str =
+      String.concat
+        ~sep:", "
+        (List.map tyel ~f:(fun t ->
+           match t with
+           | Type_var tye -> asprintf "'%s" tye
+           | _ -> ""))
+      (*todo: i guess it shouldn't be presented in ast -> add error*)
+    in
+    let tyel_strf =
+      match List.length tyel with
+      | 0 -> ""
+      | 1 -> tyel_str ^ " "
+      | _ -> "(" ^ tyel_str ^ ") "
+    in
+    fprintf fmt "%s%s" tyel_strf id
 ;;
 
 let rec pprint_pattern fmt =
@@ -221,12 +238,6 @@ and pprint_function_with_cases fmt (cs, csl, n) =
           asprintf "\n  | %a" (fun fmt -> pprint_case fmt n) c)))
 ;;
 
-let pprint_type_cons fmt (id, typ) =
-  match typ with
-  | Some typ -> fprintf fmt "%s of %a" id pprint_type typ
-  | None -> fprintf fmt "%s" id
-;;
-
 let pprint_structure_item fmt n =
   let open Structure in
   function
@@ -242,40 +253,38 @@ let pprint_structure_item fmt n =
              asprintf "%a" (fun fmt -> pprint_value_binding fmt n) vb))
     in
     fprintf fmt "let %a%s;;\n\n" pprint_rec rec_flag bindings_str
-  | Str_adt (Some tparam, id, (constr1, constrl)) ->
-    let constr_str =
-      match constr1 :: constrl with
-      | [] -> ""
+  | Str_adt (tparam, id, (constr1, constrl)) ->
+    let tparam_ident_str =
+      match List.length tparam with
+      | 0 -> ""
+      | 1 -> asprintf "'%s " (List.hd_exn tparam)
       | _ ->
-        String.concat
-          ~sep:" |\n  "
-          (List.map (constr1 :: constrl) ~f:(fun (id, typ) ->
-             match typ with
-             | Some t -> asprintf "%s of %a" id pprint_type t
-             | None -> id))
+        "('"
+        ^ String.concat ~sep:", '" (List.map tparam ~f:(fun param -> asprintf "%s" param))
+        ^ ") "
     in
-    fprintf fmt "type %a %s = %s;;\n\n" pprint_type tparam id constr_str
-  | Str_adt (None, id, (constr1, constrl)) ->
-    let constr_str =
+    let tyl_str typ =
+      String.concat
+        ~sep:" * "
+        (List.map typ ~f:(fun tye ->
+           match tye with
+           | TypeExpr.Type_var _ -> asprintf "'%a" pprint_type tye
+           | _ -> asprintf "%a" pprint_type tye))
+    in
+    let var_t_str =
       match constr1 :: constrl with
-      | [] -> ""
+      | [] -> failwith "No variants in type after eq sign\n"
       | _ ->
-        " | "
+        "  | "
         ^ String.concat
-            ~sep:" |\n  "
+            ~sep:"\n  | "
             (List.map (constr1 :: constrl) ~f:(fun (id, typ) ->
                match typ with
-               | Some t -> asprintf "%s of %a" id pprint_type t
-               | None -> id))
+               | [] -> id
+               | _ -> asprintf "%s of %s" id (tyl_str typ)))
     in
-    fprintf fmt "type %s = %s;;\n\n" id constr_str
+    fprintf fmt "type %s%s =\n%s\n;;\n\n" tparam_ident_str id var_t_str
 ;;
-
-(* | Str_adt (id, id_t_l) ->
-   (* Stub: just using the variables id and id_t_l (ftm) *)
-   let _ = id in
-   let _ = id_t_l in
-   () *)
 
 let pprint_program fmt = List.iter ~f:(pprint_structure_item fmt 0)
 

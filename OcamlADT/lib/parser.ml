@@ -6,6 +6,7 @@ open Ast
 open Angstrom
 open Base
 open Char
+open Stdlib.Format
 
 (*
    |░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░
@@ -100,7 +101,6 @@ let pconststring =
 
 let pconst = pconstchar <|> pconstint <|> pconststring
 
-(*                   Arithm utils + ident parser *)
 let lchain p op =
   let rec loop acc =
     (let* f = op in
@@ -151,19 +151,46 @@ let ptypevar =
 
 let ptypetuple ptype =
   let* el1 = pass_ws *> ptype in
-  let* el2 = token "*" *> pass_ws *> ptype in
-  let* rest = many (token "*" *> pass_ws *> ptype) in
+  let* el2 = token "*" *> ptype in
+  let* rest = many (token "*" *> ptype) in
   return (TypeExpr.Type_tuple (el1, el2, rest))
+;;
+
+let ptypeconstr =
+  let* tparams =
+    option
+      []
+      (pparenth (sep_by (token ",") (token "'" *> ptypevar))
+       <|> many (token "'" *> ptypevar))
+  in
+  let* tname =
+    option
+      None
+      (let* name = pass_ws *> pident_lc in
+       return (Some name))
+  in
+  return
+    (match tname with
+     | Some name -> TypeExpr.Type_construct (name, tparams)
+     | None -> TypeExpr.Type_construct ("", tparams))
 ;;
 
 let ptype =
   pass_ws
   *> fix (fun ptype ->
     let ptvar = choice [ pparenth ptype; ptypevar ] in
-    (* pass_ws *> pparenth ptype in *)
-    (* let ptvar = ptypevar in *)
     let pttuple = ptypetuple ptvar <|> ptvar in
     rchain pttuple ptypearrow <|> pttuple)
+;;
+
+let ptype_adt =
+  pass_ws
+  *> fix (fun ptype ->
+    let ptvar = choice [ pparenth ptype; ptypevar ] in
+    let pttuple =
+      pparenth (ptypetuple ptypeconstr) <|> token "'" *> ptvar <|> ptypeconstr
+    in
+    pttuple)
 ;;
 
 (*
@@ -248,7 +275,6 @@ let pidentexpr =
 
 let pcase pexpr =
   let* first = ppattern in
-  (*todo: pass ws rework*)
   let* second = token "->" *> pexpr in
   return { Expression.first; second }
 ;;
@@ -256,7 +282,6 @@ let pcase pexpr =
 let ppatternmatching pexpr =
   let* casefs = option "" (token "|") *> pcase pexpr in
   let* casetl = option "" (token "|") *> (sep_by (token "|") @@ pcase pexpr) in
-  (*todo: remove option *)
   return (casefs, casetl)
 ;;
 
@@ -364,7 +389,7 @@ let pcompops =
 
 let plogops = choice [ parsebinop "&&"; parsebinop "||" ]
 
-let pepxrconstraint pexpr =
+let pexprconstraint pexpr =
   let* expr = token "(" *> pexpr in
   let* exprtype = token ":" *> ptype <* token ")" in
   return (Expression.Exp_constraint (expr, exprtype))
@@ -385,7 +410,7 @@ let pexpr =
       *> choice
            [ pparenth pexpr
            ; pidentexpr
-           ; pepxrconstraint pexpr
+           ; pexprconstraint pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
            ; pfunction pexpr
@@ -443,31 +468,24 @@ let pstrlet =
 ;;
 
 let pstradt =
-  let* type_name = token "type" *> pident_cap in
+  let* _ = token "type" in
   let* type_param =
     option
-      None
-      (let* tparam = ptype in
-       return (Some tparam))
+      []
+      (pparenth (sep_by (token ",") (token "'" *> pident_lc))
+       <|> many (token "'" *> pident_lc))
   in
-  let* _ = token "=" in
-  let constr =
-    let* cname = pident_cap in
-    let* ctype =
-      option
-        None
-        (let* _ = token "of" in
-         let* typ = ptype in
-         return (Some typ))
-    in
+  let* type_name = pass_ws *> pident_lc in
+  let var =
+    let* cname = pass_ws *> pident_cap in
+    let* ctype = option [] (token "of" *> sep_by (token "*") ptype_adt) in
     return (cname, ctype)
   in
-  let* fconstr = constr in
-  let* constrl = many (token "|" *> constr) in
-  return (Structure.Str_adt (type_param, type_name, (fconstr, constrl)))
+  let* fvar = token "=" *> var in
+  let* varl = many (token "|" *> var) in
+  return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
 ;;
 
-(* let psvalue = pstrlet <|> prsadt *)
 let pstr_item = pseval <|> pstrlet <|> pstradt
 
 let pstructure =
