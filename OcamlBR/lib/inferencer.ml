@@ -115,3 +115,186 @@ module Type = struct
     helper VarSet.empty
   ;;
 end
+
+module Subst : sig
+  type t
+
+  val pp : Stdlib.Format.formatter -> t -> unit
+  val empty : t
+  val singleton : type_var -> ty -> t R.t
+
+  (** Getting value from substitution. May raise [Not_found] *)
+  val find_exn : type_var -> t -> ty
+
+  val find : type_var -> t -> ty option
+  val apply : t -> ty -> ty
+  val unify : ty -> ty -> t R.t
+
+  (** Composition of substitutions *)
+  val compose : t -> t -> t R.t
+
+  val compose_all : t list -> t R.t
+  val remove : t -> type_var -> t
+end = struct
+  open R
+  open R.Syntax
+  open Base
+
+  (* an association list for substitutions *)
+  type t = (type_var * ty) list
+
+  let pp ppf subst =
+    let open Stdlib.Format in
+    fprintf
+      ppf
+      "[ %a ]"
+      (pp_print_list
+         ~pp_sep:(fun ppf () -> fprintf ppf ", ")
+         (fun ppf (k, v) -> fprintf ppf "%d -> %a" k pp_ty v))
+      subst
+  ;;
+
+  let empty = []
+
+  (* creates a substitution for variable [v] with type [ty] if no occurence is found *)
+  let mapping v ty =
+    if Type.occurs_in v ty then fail `Occurs_check else return (v, ty)
+
+  let singleton v ty =
+    let* mapping = mapping v ty in
+    return [ mapping ]
+  ;;
+
+  let find_exn v subst =
+    match List.Assoc.find ~equal:Int.equal subst v with
+    | Some ty -> ty
+    | None -> failwith "Variable not found in substitution"
+  ;;
+
+  let find v subst = List.Assoc.find ~equal:Int.equal subst v
+
+  let remove subst v = List.Assoc.remove ~equal:Int.equal subst v
+
+  (* applies a substitution to a type *)
+  let apply subst =
+    let rec helper = function
+      | TVar v as ty ->
+        (match find v subst with
+         | Some ty' -> helper ty'
+         | None -> ty)
+      | TArrow (l, r) -> TArrow (helper l, helper r)
+      | TTuple (f, s, rest) -> TTuple (helper f, helper s, List.map ~f:helper rest)
+      | TList t -> TList (helper t)
+      | TPrim _ as ty -> ty
+    in
+    helper
+  ;;
+
+  (* attempts to unify two types [ty1] and [ty2], returning a substitution *)
+  let rec unify ty1 ty2 =
+    match ty1, ty2 with
+    | TPrim l, TPrim r when String.equal l r -> return empty
+    | TVar v1, TVar v2 when v1 = v2 -> return empty
+    | TVar v, ty | ty, TVar v ->
+      if Type.occurs_in v ty then fail `Occurs_check else singleton v ty
+    | TArrow (l1, r1), TArrow (l2, r2) ->
+      let* subs1 = unify l1 l2 in
+      let* subs2 = unify (apply subs1 r1) (apply subs1 r2) in
+      compose subs1 subs2
+    (*| TTuple (f1, s1, rest1), TTuple (f2, s2, rest2) when List.length rest1 = List.length rest2 ->
+      let* subs1 = unify f1 f2 in
+      let* subs2 = unify (apply subs1 s1) (apply subs1 s2) in
+    
+      let* unified =
+        match List.map2 rest1 rest2 ~f:(fun t1 t2 -> unify (apply subs2 t1) (apply subs2 t2)) with
+        | Unequal_lengths ->
+          fail (`Unification_failed (TTuple (f1, s1, rest1), TTuple (f2, s2, rest2)))
+        | Ok res -> return res
+      in
+      
+      List.fold_left unified ~init:(return (compose subs1 subs2)) ~f:(fun acc s ->
+        let* s = s in
+        let* acc = acc in
+        compose acc s) *)
+    | TList t1, TList t2 -> unify t1 t2
+    | _, _ -> fail (`Unification_failed (ty1, ty2))
+  
+  (* extends a substitution with a new mapping for variable [v] *)
+  and extend subst (v, ty) =
+    match find v subst with
+    | None ->
+      let ty = apply subst ty in
+      let* new_subs = singleton v ty in
+      RList.fold_left subst ~init:(return new_subs) ~f:(fun acc (k, v_ty) ->
+          let v_ty = apply new_subs v_ty in
+          let* mapping = mapping k v_ty in
+          return (mapping :: acc))
+    | Some existing_ty ->
+      let* new_subs = unify ty existing_ty in
+      compose subst new_subs
+    
+  and compose s1 s2 = RList.fold_left s2 ~init:(return s1) ~f:extend
+
+  let compose_all subs_list =
+    RList.fold_left subs_list ~init:(return empty) ~f:compose
+end
+
+module VarSet = struct
+  include VarSet
+
+  let fold_left_m f acc set =
+    fold
+      (fun x acc ->
+        let open R.Syntax in
+        let* acc = acc in
+        f acc x)
+      acc
+      set
+  ;;
+end
+
+
+module Scheme = struct
+  type t = scheme
+
+  let occurs_in v = function
+    | S (xs, t) -> (not (VarSet.mem v xs)) && Type.occurs_in v t
+  ;;
+
+  let free_vars = function
+    | S (bs, t) -> VarSet.diff (Type.type_vars t) bs
+  ;;
+
+  let apply sub (S (names, ty)) =
+    let s2 = VarSet.fold (fun k s -> Subst.remove s k) names sub in
+    S (names, Subst.apply s2 ty)
+  ;;
+  let pp = pp_scheme
+end
+
+module TypeEnv = struct
+  open Base
+
+  type t = (string * scheme) list
+
+  let extend e h = h :: e
+  let empty = []
+
+  (* returns the set of free variables in a type environment *)
+  let free_vars : t -> VarSet.t =
+    List.fold_left ~init:VarSet.empty ~f:(fun acc (_, s) ->
+      VarSet.union acc (Scheme.free_vars s))
+  ;;
+
+  let apply s env = List.Assoc.map env ~f:(Scheme.apply s)
+
+  let pp ppf xs =
+    Stdlib.Format.fprintf ppf "{| ";
+    List.iter xs ~f:(fun (n, s) ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
+    Stdlib.Format.fprintf ppf "|}%!"
+  ;;
+
+  (*retrieves a scheme associated with [name] from the environment [xs]*)
+  let find_exn name xs = List.Assoc.find_exn ~equal:String.equal xs name
+end

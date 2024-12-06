@@ -4,7 +4,15 @@
 
 type type_var = int [@@deriving show { with_path = false }]
 
-module VarSet = Stdlib.Set.Make (Int)
+module VarSet = struct
+  include Stdlib.Set.Make (Int)
+
+  let pp ppf s =
+    Format.fprintf ppf "[ ";
+    iter (Format.fprintf ppf "%d; ") s;
+    Format.fprintf ppf "]"
+  ;;
+end
 
 (* actual types *)
 type ty =
@@ -16,6 +24,8 @@ type ty =
 [@@deriving show { with_path = false }]
 
 type scheme = S of VarSet.t * ty
+[@@deriving show { with_path = false }]
+
 
 (* utility functions *)
 let tprim_int = TPrim "int"
