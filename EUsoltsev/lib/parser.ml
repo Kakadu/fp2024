@@ -65,6 +65,7 @@ let parse_ident =
 
 let parse_pattern_var = parse_ident >>| fun id -> PatVariable id
 let parse_pattern_const = parse_const >>| fun c -> PatConst c
+let parse_pattern_any = token "_" *> return PatAny
 
 let parse_pattern_tuple parse_pattern =
   parse_parens (sep_by1 (token ",") parse_pattern)
@@ -77,7 +78,12 @@ let parse_pattern_tuple parse_pattern =
 let parse_pattern =
   fix (fun pat ->
     let pat =
-      choice [ parse_pattern_var; parse_pattern_const; parse_pattern_tuple pat ]
+      choice
+        [ parse_pattern_any
+        ; parse_pattern_var
+        ; parse_pattern_const
+        ; parse_pattern_tuple pat
+        ]
     in
     pat)
 ;;
@@ -107,6 +113,8 @@ let compare =
     ]
 ;;
 
+let and_op = parse_expr_bin_oper And "&&"
+let or_op = parse_expr_bin_oper Or "||"
 let parse_expr_ident = parse_ident >>| fun x -> ExpIdent x
 let parse_expr_const = parse_const >>| fun c -> ExpConst c
 
@@ -116,6 +124,18 @@ let parse_expr_branch parse_expr =
     (token "if" *> parse_expr)
     (token "then" *> parse_expr)
     (option None (token "else" *> parse_expr >>| Option.some))
+;;
+
+let parse_expr_option expr =
+  choice
+    [ token "None" *> return (ExpOption None)
+    ; (token "Some"
+       *> choice
+            [ parse_parens expr (* Парсинг выражения в скобках *)
+            ; expr (* Парсинг выражения без скобок *)
+            ]
+       >>| fun e -> ExpOption (Some e))
+    ]
 ;;
 
 let parse_expr_unar_oper parse_expr =
@@ -138,10 +158,10 @@ let parse_expr_lambda parse_expr =
 ;;
 
 let parse_expr_let parse_expr =
-  let rec parse_body parse_expr =
-    parse_pattern
-    >>= fun pat ->
-    parse_body parse_expr <|> (token "=" *> parse_expr >>| fun e -> ExpLambda ([ pat ], e))
+  let rec parse_lambda_params () = sep_by1 white_space parse_pattern in
+  let parse_body parse_expr =
+    parse_lambda_params ()
+    >>= fun params -> token "=" *> parse_expr >>| fun body -> ExpLambda (params, body)
   in
   token "let"
   *> lift4
@@ -162,14 +182,18 @@ let parse_expr_tuple expr =
 
 let parse_expr =
   fix (fun expr ->
-    let expr = choice [ parse_expr_ident; parse_expr_const; parse_parens expr ] in
-    let expr = parse_expr_tuple expr <|> expr in
+    let expr =
+      choice
+        [ parse_expr_option expr; parse_expr_ident; parse_expr_const; parse_parens expr ]
+    in
     let expr = parse_expr_function expr <|> expr in
     let expr = parse_left_associative expr (multiply <|> division) in
     let expr = parse_left_associative expr (plus <|> minus) in
     let expr = parse_left_associative expr compare in
+    let expr = parse_left_associative expr (and_op <|> or_op) in
     let expr = parse_expr_unar_oper expr <|> expr in
     let expr = parse_expr_branch expr <|> expr in
+    let expr = parse_expr_tuple expr <|> expr in
     let expr = parse_expr_list expr <|> expr in
     let expr = parse_expr_lambda expr <|> expr in
     let expr = parse_expr_let expr <|> expr in
@@ -177,10 +201,16 @@ let parse_expr =
 ;;
 
 let parse_program =
-  let definitions =
-    many (parse_expr_let parse_expr <* option () (token ";;" >>| ignore))
+  let definitions_or_exprs =
+    many
+      (choice [ parse_expr_let parse_expr; parse_expr ]
+       <* option () (token ";;" >>| ignore))
   in
-  definitions <* white_space
+  definitions_or_exprs <* white_space
 ;;
 
 let parse input = parse_string ~consume:All parse_program input
+
+let parse_string_expr =
+  parse_string ~consume:Consume.All (parse_expr <* skip_while Char.is_whitespace)
+;;
