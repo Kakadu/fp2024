@@ -1,0 +1,12 @@
+(library
+ (name tests)
+ (libraries angstrom ast)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx))
+ (inline_tests))
+
+(cram
+ (applies_to test_ast)
+ (deps ../../../bin/print_ast.exe))
