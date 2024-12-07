@@ -1,7 +1,6 @@
 open Format
 
-(*todo: think about int*)
-type binder = string [@@deriving show { with_path = false }]
+type binder = int [@@deriving show { with_path = false }]
 
 module VarSet = struct
   include Stdlib.Set.Make (Int)
@@ -51,7 +50,7 @@ let rec pprint_type_tuple fmt = function
      | _ -> fprintf fmt "%a * %a" pprint_type h pprint_type_tuple tl)
 
 and pprint_type fmt = function
-  | Typ_var num -> fprintf fmt "'%s" num
+  | Typ_var num -> fprintf fmt "'%d" num
   | Typ_prim str -> fprintf fmt "%s" str
   | Typ_arrow (ty1, ty2) ->
     (match ty1, ty2 with
