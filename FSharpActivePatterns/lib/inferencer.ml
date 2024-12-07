@@ -316,16 +316,42 @@ let infer_expr =
       let* e1typ, e2typ, etyp =
         match op with
         | Logical_and | Logical_or -> return (bool_typ, bool_typ, bool_typ)
-        | Binary_add | Binary_subtract | Binary_multiply | Binary_divide ->
-          return (int_typ, int_typ, int_typ)
+        | Binary_add
+        | Binary_subtract
+        | Binary_multiply
+        | Binary_divide
+        | Binary_and_bitwise
+        | Binary_or_bitwise
+        | Binary_xor_bitwise -> return (int_typ, int_typ, int_typ)
+        | Binary_greater | Binary_greater_or_equal | Binary_less | Binary_less_or_equal ->
+          return (int_typ, int_typ, bool_typ)
+        | Binary_equal | Binary_unequal ->
+          let* fr = make_fresh_var in
+          return (fr, fr, bool_typ)
         | _ -> failwith "WIP"
       in
       let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
       (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
-      Format.printf "Checking types: res_typ2 = %a\n" pp_typ (Substitution.apply subst3 typ2);*)
+        Format.printf "Checking types: res_typ2 = %a\n" pp_typ (Substitution.apply subst3 typ2);*)
       let* subst4 = Substitution.unify (Substitution.apply subst3 typ2) e2typ in
       let* subst_res = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
       return (subst_res, Substitution.apply subst_res etyp)
+    | If_then_else (c, th, Some el) ->
+      let* subst1, typ1 = helper env c in
+      let* subst2, typ2 = helper (TypeEnvironment.apply subst1 env) th in
+      let* subst3, typ3 = helper (TypeEnvironment.apply subst2 env) el in
+      let* subst4 = unify typ1 bool_typ in
+      let* subst5 = unify typ2 typ3 in
+      let* subst_result =
+        Substitution.compose_all [ subst1; subst2; subst3; subst4; subst5 ]
+      in
+      return (subst_result, Substitution.apply subst5 typ2)
+    | If_then_else (c, th, None) ->
+      let* subst1, typ1 = helper env c in
+      let* subst2, typ2 = helper (TypeEnvironment.apply subst1 env) th in
+      let* subst3 = unify typ1 bool_typ in
+      let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
+      return (subst_result, Substitution.apply subst2 typ2)
     | _ -> failwith "WIP"
   in
   helper
