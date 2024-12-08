@@ -21,7 +21,6 @@ type typchik =
   | Typ_arrow of typchik * typchik
   | Typ_tuple of typchik list
   | Typ_list of typchik
-  | Typ_adt of string
 [@@deriving show { with_path = false }]
 
 type scheme = Forall of binder_set * typchik [@@deriving show { with_path = false }]
@@ -34,7 +33,6 @@ let arrow_typ l r = Typ_arrow (l, r)
 let ( @-> ) = arrow_typ
 let list_typ typchik = Typ_list typchik
 let tuple_typ typchik_list = Typ_tuple typchik_list
-let adt_typ name = Typ_adt name
 
 (*printers*)
 (*maybe use pprinter ??*)
@@ -58,7 +56,6 @@ and pprint_type fmt = function
      | _ -> fprintf fmt "%a -> %a" pprint_type ty1 pprint_type ty2)
   | Typ_tuple ty_lst -> fprintf fmt "%a" pprint_type_tuple ty_lst
   | Typ_list ty1 -> fprintf fmt "%a list" pprint_type ty1
-  | Typ_adt str1 -> fprintf fmt "%s" str1
 ;;
 
 (*errors*)
