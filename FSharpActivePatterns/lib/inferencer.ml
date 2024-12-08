@@ -38,6 +38,7 @@ module R : sig
 
   module RList : sig
     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
+    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
   end
 
   val fresh : int t
@@ -88,6 +89,13 @@ end = struct
         let* acc = acc in
         f acc x)
     ;;
+
+    let fold_right xs ~init ~f =
+      Base.List.fold_right xs ~init ~f:(fun x acc ->
+        let open Syntax in
+        let* acc = acc in
+        f x acc)
+    ;;
   end
 
   (* analogically to list. let* acc = acc is to extract value from type t *)
@@ -111,7 +119,7 @@ type fresh = int
 module Type = struct
   type t = typ
 
-  (* check that type of the arg is not inside of type v.
+  (* check that v is not inside of second type.
      Runs during substitution to ensure that there are no cycles*)
   let rec occurs_in v = function
     | Primary _ -> false
@@ -302,59 +310,105 @@ let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
   S (free, t)
 ;;
 
-let infer_expr =
-  let rec helper env = function
-    | Const const ->
-      (match const with
-       | Int_lt _ -> return (Substitution.empty, int_typ)
-       | Bool_lt _ -> return (Substitution.empty, bool_typ)
-       | String_lt _ -> return (Substitution.empty, string_typ)
-       | Unit_lt -> return (Substitution.empty, unit_typ))
-    | Bin_expr (op, e1, e2) ->
-      let* subst1, typ1 = helper env e1 in
-      let* subst2, typ2 = helper (TypeEnvironment.apply subst1 env) e2 in
-      let* e1typ, e2typ, etyp =
-        match op with
-        | Logical_and | Logical_or -> return (bool_typ, bool_typ, bool_typ)
-        | Binary_add
-        | Binary_subtract
-        | Binary_multiply
-        | Binary_divide
-        | Binary_and_bitwise
-        | Binary_or_bitwise
-        | Binary_xor_bitwise -> return (int_typ, int_typ, int_typ)
-        | Binary_greater | Binary_greater_or_equal | Binary_less | Binary_less_or_equal ->
-          return (int_typ, int_typ, bool_typ)
-        | Binary_equal | Binary_unequal ->
-          let* fr = make_fresh_var in
-          return (fr, fr, bool_typ)
-        | _ -> failwith "WIP"
-      in
-      let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
-      (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
-        Format.printf "Checking types: res_typ2 = %a\n" pp_typ (Substitution.apply subst3 typ2);*)
-      let* subst4 = Substitution.unify (Substitution.apply subst3 typ2) e2typ in
-      let* subst_res = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
-      return (subst_res, Substitution.apply subst_res etyp)
-    | If_then_else (c, th, Some el) ->
-      let* subst1, typ1 = helper env c in
-      let* subst2, typ2 = helper (TypeEnvironment.apply subst1 env) th in
-      let* subst3, typ3 = helper (TypeEnvironment.apply subst2 env) el in
-      let* subst4 = unify typ1 bool_typ in
-      let* subst5 = unify typ2 typ3 in
-      let* subst_result =
-        Substitution.compose_all [ subst1; subst2; subst3; subst4; subst5 ]
-      in
-      return (subst_result, Substitution.apply subst5 typ2)
-    | If_then_else (c, th, None) ->
-      let* subst1, typ1 = helper env c in
-      let* subst2, typ2 = helper (TypeEnvironment.apply subst1 env) th in
-      let* subst3 = unify typ1 bool_typ in
-      let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
-      return (subst_result, Substitution.apply subst2 typ2)
-    | _ -> failwith "WIP"
-  in
-  helper
+let infer_lt = function
+  | Int_lt _ -> return (Substitution.empty, int_typ)
+  | Bool_lt _ -> return (Substitution.empty, bool_typ)
+  | String_lt _ -> return (Substitution.empty, string_typ)
+  | Unit_lt -> return (Substitution.empty, unit_typ)
+;;
+
+let rec infer_pattern env = function
+  | Wild ->
+    let* fresh_type = make_fresh_var in
+    return (fresh_type, env)
+  | PConst lt ->
+    let* _, t = infer_lt lt in
+    return (t, env)
+  | PVar (Ident (name, _)) ->
+    (* подумать что делать с типом в Ident*)
+    let* fresh = make_fresh_var in
+    let scheme = S (VarSet.empty, fresh) in
+    let env = TypeEnvironment.extend env name scheme in
+    return (fresh, env)
+  | POption None ->
+    let* fresh_type = make_fresh_var in
+    return (fresh_type, env)
+  | POption (Some p) -> infer_pattern env p
+  | _ -> failwith "WIP"
+;;
+
+let rec infer_expr env = function
+  | Const lt -> infer_lt lt
+  | Variable (Ident (varname, _)) ->
+    (* подумать что делать с типом Ident*)
+    (match TypeEnvironment.find varname env with
+     | Some s ->
+       let* t = instantiate s in
+       return (Substitution.empty, t)
+     | None -> fail (`Undef_var varname))
+  | Bin_expr (op, e1, e2) ->
+    let* subst1, typ1 = infer_expr env e1 in
+    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) e2 in
+    let* e1typ, e2typ, etyp =
+      match op with
+      | Logical_and | Logical_or -> return (bool_typ, bool_typ, bool_typ)
+      | Binary_add
+      | Binary_subtract
+      | Binary_multiply
+      | Binary_divide
+      | Binary_and_bitwise
+      | Binary_or_bitwise
+      | Binary_xor_bitwise -> return (int_typ, int_typ, int_typ)
+      | Binary_greater | Binary_greater_or_equal | Binary_less | Binary_less_or_equal ->
+        return (int_typ, int_typ, bool_typ)
+      | Binary_equal | Binary_unequal ->
+        let* fresh_type = make_fresh_var in
+        return (fresh_type, fresh_type, bool_typ)
+      | _ -> failwith "Pattern inference WIP"
+    in
+    let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
+    (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
+      Format.printf "Checking types: res_typ2 = %a\n" pp_typ (Substitution.apply subst3 typ2);*)
+    let* subst4 = Substitution.unify (Substitution.apply subst3 typ2) e2typ in
+    let* subst_res = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
+    return (subst_res, Substitution.apply subst_res etyp)
+  | If_then_else (c, th, Some el) ->
+    let* subst1, typ1 = infer_expr env c in
+    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) th in
+    let* subst3, typ3 = infer_expr (TypeEnvironment.apply subst2 env) el in
+    let* subst4 = unify typ1 bool_typ in
+    let* subst5 = unify typ2 typ3 in
+    let* subst_result =
+      Substitution.compose_all [ subst1; subst2; subst3; subst4; subst5 ]
+    in
+    return (subst_result, Substitution.apply subst5 typ2)
+  | If_then_else (c, th, None) ->
+    let* subst1, typ1 = infer_expr env c in
+    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) th in
+    let* subst3 = unify typ1 bool_typ in
+    let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
+    return (subst_result, Substitution.apply subst2 typ2)
+  | Apply (f, arg) ->
+    let* subst1, typ1 = infer_expr env f in
+    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
+    let* fresh_type = make_fresh_var in
+    let* subst3 = unify (Substitution.apply subst2 typ1) (Arrow (typ2, fresh_type)) in
+    let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
+    return (subst_result, Substitution.apply subst_result fresh_type)
+  | Lambda (arg, args, e) ->
+    let* arg1_type, env = infer_pattern env arg in
+    let* env, arg_types =
+      RList.fold_right
+        args
+        ~init:(return (env, []))
+        ~f:(fun arg (old_env, typs) ->
+          let* typ, new_env = infer_pattern old_env arg in
+          return (new_env, typ :: typs))
+    in
+    let* subst, e_type = infer_expr env e in
+    return
+      (subst, Substitution.apply subst (arrow_of_types arg1_type (arg_types @ [ e_type ])))
+  | _ -> failwith "Expr inference WIP"
 ;;
 
 let infer_construction env = function

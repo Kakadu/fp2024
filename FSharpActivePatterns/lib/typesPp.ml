@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open TypedTree
-open PrettyPrinter
 open Format
 
 let rec pp_typ fmt = function
