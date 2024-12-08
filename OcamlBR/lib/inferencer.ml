@@ -119,67 +119,50 @@ end
 module Subst : sig
   type t
 
-  val pp : Stdlib.Format.formatter -> t -> unit
   val empty : t
   val singleton : type_var -> ty -> t R.t
-
-  (** Getting value from substitution. May raise [Not_found] *)
-  val find_exn : type_var -> t -> ty
-
-  val find : type_var -> t -> ty option
   val apply : t -> ty -> ty
+  val singleton : type_var -> ty -> t R.t
   val unify : ty -> ty -> t R.t
-
-  (** Composition of substitutions *)
   val compose : t -> t -> t R.t
-
   val compose_all : t list -> t R.t
+  val find : t -> type_var -> ty option
   val remove : t -> type_var -> t
+  val pp : Format.formatter -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t -> unit
 end = struct
   open R
   open R.Syntax
   open Base
 
-  (* an association list for substitutions *)
-  type t = (type_var * ty) list
+  type t = (type_var, ty, Int.comparator_witness) Map.t
 
   let pp ppf subst =
     let open Stdlib.Format in
-    fprintf
-      ppf
-      "[ %a ]"
-      (pp_print_list
-         ~pp_sep:(fun ppf () -> fprintf ppf ", ")
-         (fun ppf (k, v) -> fprintf ppf "%d -> %a" k pp_ty v))
-      subst
+    fprintf ppf "[ ";
+    Base.Map.iteri subst ~f:(fun ~key ~data ->
+      fprintf ppf "%a -> %a" pp_type_var key pp_ty data;
+      fprintf ppf "; ");
+    fprintf ppf "]"
   ;;
 
-  let empty = []
+  let empty = Map.empty (module Int)
 
   (* creates a substitution for variable [v] with type [ty] if no occurence is found *)
-  let mapping v ty =
-    if Type.occurs_in v ty then fail `Occurs_check else return (v, ty)
+  let mapping v ty = if Type.occurs_in v ty then fail `Occurs_check else return (v, ty)
 
-  let singleton v ty =
-    let* mapping = mapping v ty in
-    return [ mapping ]
+  let singleton k v =
+    let* k, v = mapping k v in
+    return (Base.Map.singleton (module Base.Int) k v)
   ;;
 
-  let find_exn v subst =
-    match List.Assoc.find ~equal:Int.equal subst v with
-    | Some ty -> ty
-    | None -> failwith "Variable not found in substitution"
-  ;;
-
-  let find v subst = List.Assoc.find ~equal:Int.equal subst v
-
-  let remove subst v = List.Assoc.remove ~equal:Int.equal subst v
+  let find subst v = Map.find subst v
+  let remove subst v = Map.remove subst v
 
   (* applies a substitution to a type *)
   let apply subst =
     let rec helper = function
       | TVar v as ty ->
-        (match find v subst with
+        (match find subst v with
          | Some ty' -> helper ty'
          | None -> ty)
       | TArrow (l, r) -> TArrow (helper l, helper r)
@@ -201,42 +184,41 @@ end = struct
       let* subs1 = unify l1 l2 in
       let* subs2 = unify (apply subs1 r1) (apply subs1 r2) in
       compose subs1 subs2
-    (*| TTuple (f1, s1, rest1), TTuple (f2, s2, rest2) when List.length rest1 = List.length rest2 ->
-      let* subs1 = unify f1 f2 in
-      let* subs2 = unify (apply subs1 s1) (apply subs1 s2) in
-    
-      let* unified =
-        match List.map2 rest1 rest2 ~f:(fun t1 t2 -> unify (apply subs2 t1) (apply subs2 t2)) with
+    | TTuple (f1, s1, rest1), TTuple (f2, s2, rest2) ->
+      let* rest_unified =
+        match List.map2 rest1 rest2 ~f:(fun t1 t2 -> unify t1 t2) with
         | Unequal_lengths ->
           fail (`Unification_failed (TTuple (f1, s1, rest1), TTuple (f2, s2, rest2)))
         | Ok res -> return res
       in
-      
-      List.fold_left unified ~init:(return (compose subs1 subs2)) ~f:(fun acc s ->
+      let* fst_unified = unify f1 f2 in
+      let* snd_unified = unify (apply fst_unified s1) (apply fst_unified s2) in
+      List.fold_left rest_unified ~init:(compose fst_unified snd_unified) ~f:(fun acc s ->
         let* s = s in
         let* acc = acc in
-        compose acc s) *)
+        compose acc s)
     | TList t1, TList t2 -> unify t1 t2
     | _, _ -> fail (`Unification_failed (ty1, ty2))
-  
+
   (* extends a substitution with a new mapping for variable [v] *)
-  and extend subst (v, ty) =
-    match find v subst with
+  and extend v ty subst =
+    match Map.find subst v with
     | None ->
       let ty = apply subst ty in
       let* new_subs = singleton v ty in
-      RList.fold_left subst ~init:(return new_subs) ~f:(fun acc (k, v_ty) ->
-          let v_ty = apply new_subs v_ty in
-          let* mapping = mapping k v_ty in
-          return (mapping :: acc))
+      let upd ~key ~data acc =
+        let* acc = acc in
+        let ty = apply new_subs data in
+        return (Map.update acc key ~f:(function _ -> ty))
+      in
+      Map.fold subst ~init:(return new_subs) ~f:upd
     | Some existing_ty ->
       let* new_subs = unify ty existing_ty in
       compose subst new_subs
-    
-  and compose s1 s2 = RList.fold_left s2 ~init:(return s1) ~f:extend
 
-  let compose_all subs_list =
-    RList.fold_left subs_list ~init:(return empty) ~f:compose
+  and compose s1 s2 = RMap.fold_left s2 ~init:(return s1) ~f:extend
+
+  let compose_all subs_list = RList.fold_left subs_list ~init:(return empty) ~f:compose
 end
 
 module VarSet = struct
@@ -253,7 +235,6 @@ module VarSet = struct
   ;;
 end
 
-
 module Scheme = struct
   type t = scheme
 
@@ -269,32 +250,166 @@ module Scheme = struct
     let s2 = VarSet.fold (fun k s -> Subst.remove s k) names sub in
     S (names, Subst.apply s2 ty)
   ;;
+
   let pp = pp_scheme
 end
 
 module TypeEnv = struct
   open Base
 
-  type t = (string * scheme) list
+  type t = (string, scheme, String.comparator_witness) Map.t
 
-  let extend e h = h :: e
-  let empty = []
+  let extend e h env = Map.set env ~key:e ~data:h
 
-  (* returns the set of free variables in a type environment *)
+  let empty = Map.empty (module String)
+
   let free_vars : t -> VarSet.t =
-    List.fold_left ~init:VarSet.empty ~f:(fun acc (_, s) ->
-      VarSet.union acc (Scheme.free_vars s))
+    Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
+      VarSet.union acc (Scheme.free_vars s)
+    )
   ;;
 
-  let apply s env = List.Assoc.map env ~f:(Scheme.apply s)
+  let apply s env =
+    Map.map env ~f:(Scheme.apply s)
+  ;;
 
   let pp ppf xs =
     Stdlib.Format.fprintf ppf "{| ";
-    List.iter xs ~f:(fun (n, s) ->
-      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
+    Base.Map.iter xs ~f:(fun (n, s) -> 
+      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s
+    );
     Stdlib.Format.fprintf ppf "|}%!"
   ;;
 
-  (*retrieves a scheme associated with [name] from the environment [xs]*)
-  let find_exn name xs = List.Assoc.find_exn ~equal:String.equal xs name
+  let find_exn name xs = 
+    match Map.find xs name with
+    | None -> R.fail (`Undefined_variable name)
+    | Some scheme -> scheme
+  ;;
+end
+
+module Infer = struct
+  open R
+  open R.Syntax
+  
+
+  let unify = Subst.unify
+  let fresh_var = fresh >>| fun n -> TVar n
+
+  let instantiate : scheme -> ty R.t =
+    fun (S (bs, t)) ->
+    VarSet.fold_left_m
+      (fun typ name ->
+        let* f1 = fresh_var in
+        let* s = Subst.singleton name f1 in
+        return (Subst.apply s typ))
+      bs
+      (return t)
+  ;;  
+
+  let generalize (env : TypeEnv.t) (ty : ty) : scheme =
+    let free = VarSet.diff (Type.type_vars ty) (TypeEnv.free_vars env) in
+    S (free, ty)
+  ;;
+
+  let lookup_env e xs =
+    match Base.Map.find xs e with
+    | None -> fail (`Undefined_variable e)
+    | Some scheme -> 
+        let* ans = instantiate scheme in
+        return (Subst.empty, ans)
+  ;;  
+
+  let pp ppf env =
+    Stdlib.Format.fprintf ppf "{| ";
+    Base.Map.iteri env ~f:(fun ~key:name ~data:s ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " name pp_scheme s);
+    Stdlib.Format.fprintf ppf "|}%!"
+    ;;
+  
+  let fst_arrow = function
+  | TArrow (arg, _) -> arg
+  | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
+  ;;
+  
+  let snd_arrow = function
+  | TArrow (_, ret) -> ret
+  | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
+  ;;
+
+  let infer =
+    let rec helper (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
+      match expr with
+      | Evar (Id (x, _)) -> lookup_env x env
+      | Econst (Int _) -> return (Subst.empty, tprim_int)
+      | Econst (Bool _) -> return (Subst.empty, tprim_bool)
+      | Econst (String _) -> return (Subst.empty, tprim_string)
+      | Econst Unit -> return (Subst.empty, tprim_unit)
+      | Ebin_op (op, e1, e2) ->
+        let* s1, t1 = helper env e1 in
+        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
+        let* op_type =
+          match op with
+          | Add | Sub | Mult | Div -> return (tprim_int @-> (tprim_int @-> tprim_int))
+          | Gt | Lt | Eq | Neq | Gte | Lte -> return (tprim_int @-> (tprim_int @-> tprim_bool))
+          | And | Or -> return (tprim_bool @-> (tprim_bool @-> tprim_bool))
+        in
+        let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
+        let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
+        let* s_final = Subst.compose_all [s4; s3; s2; s1] in
+        return (s_final, Subst.apply s_final (snd_arrow op_type))
+      | Eun_op (op, e) ->
+        let* s, t = helper env e in
+        let* op_type =
+          match op with
+          | Negative | Positive -> return (tprim_int @-> tprim_int)
+          | Not -> return (tprim_bool @-> tprim_bool)
+        in
+        let* s2 = unify t (fst_arrow op_type) in
+        let* s_final = Subst.compose_all [s2; s] in
+        return (s_final, Subst.apply s_final (snd_arrow op_type))
+      | Eif_then_else (c, th, Some el) ->
+        let* s1, t1 = helper env c in
+        let* s2, t2 = helper env th in
+        let* s3, t3 = helper env el in
+        let* s4 = unify t1 tprim_bool in
+        let* s5 = unify t2 t3 in
+        let* final_subst = Subst.compose_all [s5; s4; s3; s2; s1] in
+        return (final_subst, Subst.apply final_subst t2)
+      | Elet (Non_recursive, Evalue_binding (Id (x, _), e1), [], e2) ->
+        let* s1, t1 = helper env e1 in
+        let env2 = TypeEnv.apply s1 env in
+        let t_gen = generalize env2 t1 in
+        let* s2, t2 = helper (TypeEnv.extend x t_gen env2) e2 in
+        let* final_subst = Subst.compose s1 s2 in
+        return (final_subst, t2)
+      | Elet (Recursive, Evalue_binding (Id (x, _), e1), [], e2) ->
+        let* tv = fresh_var in
+        let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
+        let* s1, t1 = helper env2 e1 in
+        let* s2 = unify (Subst.apply s1 tv) t1 in
+        let* s_final = Subst.compose s1 s2 in
+        let env3 = TypeEnv.apply s_final env in
+        let t_gen = generalize env3 (Subst.apply s_final tv) in
+        let* s3, t2 = helper (TypeEnv.extend x t_gen env3) e2 in
+        let* s_final = Subst.compose s_final s3 in
+        return (s_final, t2)
+      | Efun (PVar (Id (x, _)), [], body) ->
+        let* tv = fresh_var in
+        let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
+        let* s_body, t_body = helper env2 body in
+        return (s_body, TArrow (Subst.apply s_body tv, t_body))
+      | Efun_application (e1, e2) ->
+        let* s1, t1 = helper env e1 in
+        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
+        let* tv = fresh_var in
+        let* s3 = unify (Subst.apply s2 t1) (TArrow (t2, tv)) in
+        let* s_final = Subst.compose_all [s3; s2; s1] in
+        return (s_final, Subst.apply s_final tv)
+      | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
+  in
+  helper
+;;
+
+let w expr = Result.map snd (run (infer TypeEnv.empty expr))
 end

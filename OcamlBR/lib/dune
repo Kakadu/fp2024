@@ -9,7 +9,9 @@
   Pr_printer_tests
   Qcheck
   Typedtree
-  Inferencer)
+  Inferencer
+  Inferencer_tests
+  )
  (libraries base angstrom qcheck-core qcheck-core.runner)
  (instrumentation
   (backend bisect_ppx))
