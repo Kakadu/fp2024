@@ -22,8 +22,9 @@ type ty =
   | Ty_var of binder
   | Ty_arrow of ty * ty
   | Ty_list of ty
-  | Ty_tuple of ty list
+  | Ty_tuple of ty * ty * ty list
   | Ty_tree of ty
+  | Ty_ord of binder
 [@@deriving show { with_path = false }]
 
 type scheme = S of binder_set * ty [@@deriving show { with_path = false }]
