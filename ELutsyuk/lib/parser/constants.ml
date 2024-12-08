@@ -9,7 +9,7 @@ open Ast
 let parse_int =
   trim
   @@
-  let* sign = choice [ char '+' *> return 1; char '-' *> return (-1); return 1 ] in
+  let* sign = choice [ token "+" *> return 1; token "-" *> return (-1); return 1 ] in
   let* digit = take_while1 is_digit >>| int_of_string in
   return @@ Int (sign * digit)
 ;;
@@ -33,4 +33,4 @@ let parse_unit =
   return Unit
 ;;
 
-let parse_lit = choice [ parse_int; parse_str; parse_bool; parse_unit ]
+let parse_cons = choice [ parse_int; parse_str; parse_bool; parse_unit ]

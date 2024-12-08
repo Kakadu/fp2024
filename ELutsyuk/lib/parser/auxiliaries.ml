@@ -4,20 +4,14 @@
 
 open Angstrom
 
-let rec chainr1 pexpr op =
-  let* left_operand = pexpr in
-  let* f = op in
-  chainr1 pexpr op >>| f left_operand <|> return left_operand
+let chainr1 e op =
+  let rec go acc = lift2 (fun f x -> f acc x) op (e >>= go) <|> return acc in
+  e >>= go
 ;;
 
-let chainl1 pexpr op =
-  let rec go acc =
-    let* f = op in
-    let* right_operand = pexpr in
-    go (f acc right_operand) <|> return acc
-  in
-  let* init = pexpr in
-  go init
+let chainl1 expr oper =
+  let rec go acc = lift2 (fun f x -> f acc x) oper expr >>= go <|> return acc in
+  expr >>= go
 ;;
 
 let is_letter = function
@@ -46,7 +40,8 @@ let is_keyword = function
   | "else"
   | "while"
   | "match"
-  | "in" -> true
+  | "in"
+  | "_" -> true
   | _ -> false
 ;;
 
@@ -54,13 +49,13 @@ let skip_separators = skip_while is_separator
 let trim t = skip_separators *> t <* skip_separators
 let token t = skip_separators *> string t <* skip_separators
 let round_parens p = token "(" *> p <* token ")"
-let square_brackets p = token "[]" *> p <* token "]"
+let square_brackets p = token "[" *> p <* token "]"
 
 (** Parse first letter then try parse the rest of id *)
 let parse_id =
   let* parse_first = satisfy is_letter <|> satisfy (Char.equal '_') >>| Char.escaped in
   let* parse_rest =
-    take_while1 (fun ch -> is_letter ch || is_digit ch || Char.equal '_' ch)
+    take_while1 (fun ch -> is_letter ch || is_digit ch || Char.equal '_' ch) <|> return ""
   in
   let id = parse_first ^ parse_rest in
   if is_keyword id
