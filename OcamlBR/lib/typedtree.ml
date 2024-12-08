@@ -26,7 +26,6 @@ type ty =
 type scheme = S of VarSet.t * ty
 [@@deriving show { with_path = false }]
 
-
 (* utility functions *)
 let tprim_int = TPrim "int"
 let tprim_string = TPrim "string"
@@ -37,6 +36,19 @@ let tarrow l r = TArrow (l, r)
 let ( @-> ) = tarrow
 let ttuple fst snd rest = TTuple (fst, snd, rest)
 let tlist ty = TList ty
+
+let rec pp_ty ppf =
+  let open Format in
+  function
+  | TVar n -> fprintf ppf "'%d" n
+  | TPrim s -> fprintf ppf "%s" s
+  | TArrow (l, r) ->
+    (match l with
+     | TArrow _ -> fprintf ppf "(%a) -> %a" pp_ty l pp_ty r
+     | _ -> fprintf ppf "%a -> %a" pp_ty l pp_ty r)
+  | TList t -> fprintf ppf "%a list" pp_ty t
+  | _ -> fprintf ppf ""
+;;
 
 (* errors *)
 type error =
