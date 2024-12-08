@@ -21,6 +21,11 @@ let arrow_of_types first_types last_type =
   List.fold_right first_types ~init:last_type ~f:(fun left right -> Arrow (left, right))
 ;;
 
+let arrow_of_types first rest =
+  let open Base in
+  List.fold_right rest ~init:first ~f:(fun left right -> Arrow (left, right))
+;;
+
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 
