@@ -7,17 +7,17 @@ open Ast
 type binder = int
 
 type ty =
-  | TPrim of string (** int, string *)
+  | TPrimitive of string (** int, string, bool, unit *)
   | TVar of binder (** Type variable *)
   | TArrow of ty * ty (** Function type *)
   | TTuple of ty list (** Tuple type *)
   | TList of ty (** List type *)
 
 let arrow l r = TArrow (l, r)
-let int_type = TPrim "int"
-let bool_type = TPrim "bool"
-let string_type = TPrim "string"
-let unit_type = TPrim "unit"
+let int_type = TPrimitive "int"
+let bool_type = TPrimitive "bool"
+let string_type = TPrimitive "string"
+let unit_type = TPrimitive "unit"
 let tuple_type t = TTuple t
 let list_type t = TList t
 
@@ -25,7 +25,7 @@ let rec pp_type ppf =
   let open Format in
   function
   | TVar n -> fprintf ppf "'%d" n
-  | TPrim s -> fprintf ppf "%s" s
+  | TPrimitive s -> fprintf ppf "%s" s
   | TArrow (l, r) ->
     (match l with
      | TArrow _ -> fprintf ppf "(%a) -> %a" pp_type l pp_type r

@@ -1,3 +1,7 @@
+(** Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ast
 open Typedtree
 open Base
@@ -80,7 +84,7 @@ module Type = struct
     | TArrow (l, r) -> occurs_in v l || occurs_in v r
     | TTuple tl -> Base.List.exists tl ~f:(occurs_in v)
     | TList t -> occurs_in v t
-    | TPrim _ -> false
+    | TPrimitive _ -> false
   ;;
 
   let free_vars =
@@ -89,7 +93,7 @@ module Type = struct
       | TArrow (l, r) -> helper (helper acc l) r
       | TTuple tl -> List.fold_left tl ~init:acc ~f:helper
       | TList t -> helper acc t
-      | TPrim _ -> acc
+      | TPrimitive _ -> acc
     in
     helper VarSet.empty
   ;;
@@ -139,7 +143,7 @@ end = struct
 
   let rec unify l r =
     match l, r with
-    | TPrim l, TPrim r when String.equal l r -> return empty
+    | TPrimitive l, TPrimitive r when String.equal l r -> return empty
     | TVar a, TVar b when Int.equal a b -> return empty
     | TVar b, t | t, TVar b -> singleton b t
     | TArrow (l1, r1), TArrow (l2, r2) ->
