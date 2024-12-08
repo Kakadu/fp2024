@@ -3,7 +3,7 @@
 (* SPDX-License-Identifier: MIT *)
 type id = string (* expression identifier *) [@@deriving show { with_path = false }]
 
-type literal =
+type constant =
   | Int of int (** e.g. [ -1 ], [ 2 ], [ 3 ] *)
   | Str of string (** e.g. [ "hello" ], [ "miniML" ] *)
   | Bool of bool (** [ true ], [ false ] *)
@@ -34,7 +34,7 @@ type binary_op =
 [@@deriving show { with_path = false }]
 
 type pattern =
-  | PLit of literal (** [ literal ] *)
+  | PCons of constant (** [ cons ] *)
   | PVar of id (** [ var ] *)
   | PAny (** [ _ ] *)
   | PTuple of pattern * pattern * pattern list (** [ | (p1, p2) -> ... ] *)
@@ -48,7 +48,7 @@ type recursion_state =
 
 type expression =
   | Var of id (** e.g. [ x ], [ variable ] *)
-  | Lit of literal (** e.g. [ 42 ], [ {|meow|} ], [ true ] *)
+  | Cons of constant (** e.g. [ 42 ], [ {|meow|} ], [ true ] *)
   | BinaryOp of binary_op * expression * expression
   (** e.g. [ exp1 >= exp2 ], [ exp1 + exp2 ] *)
   | Let of let_binding * expression (** [ let (rec) pat =  in f 5 ] *)

@@ -16,12 +16,12 @@ let () =
             Fun
               ( PVar "n"
               , Branch
-                  ( BinaryOp (LtEq, Var "n", Lit (Int 1))
-                  , Lit (Int 1)
+                  ( BinaryOp (LtEq, Var "n", Cons (Int 1))
+                  , Cons (Int 1)
                   , BinaryOp
                       ( Mult
                       , Var "n"
-                      , App (Var "fact", BinaryOp (Sub, Var "n", Lit (Int 1))) ) ) )
+                      , App (Var "fact", BinaryOp (Sub, Var "n", Cons (Int 1))) ) ) )
         }
     ]
   in
