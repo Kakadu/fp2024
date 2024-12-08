@@ -1,31 +1,9 @@
 open InferTypes
 
 (*Infer monad*)
-(*
-   module MInfer : sig
-   open Base
-   type 'a t
-
-   val bind : 'a t -> f:('a -> 'b t) -> 'b t
-   val return : 'a -> 'a t
-   val fail : error -> 'a t *)
-
-(* include Monad.Infix with type 'a t := 'a t
-
-   module Syntax : sig
-   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-   end
-
-   module RList : sig
-   val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
-   end
-
-   (** Creation of a fresh name from internal state *)
-   val fresh : int t
-
-   (** Running a transformer: getting the inner result value *)
-   val run : 'a t -> ('a, error) Result.t *)
 module MInfer = struct
+  open Base
+
   type 'a t = int -> int * ('a, error) Result.t
 
   let ( >>= ) : 'a 'b. 'a t -> ('a -> 'b t) -> 'b t =
@@ -36,8 +14,8 @@ module MInfer = struct
     | Ok a -> f a last
   ;;
 
-  let fail e st = st, Base.Result.fail e
-  let return x last = last, Base.Result.return x
+  let fail e st = st, Result.fail e
+  let return x last = last, Result.return x
   let bind x ~f = x >>= f
 
   let ( >>| ) : 'a 'b. 'a t -> ('a -> 'b) -> 'b t =
@@ -119,6 +97,34 @@ module TypeEnv = struct
 end
 
 (*Substitution*)
+module Substitution = struct
+  open MInfer
+  open MInfer.Syntax
+  open Base
+
+  type t = typchik Map.M(Int).t
+
+  let pp ppf subst =
+    let open Stdlib.Format in
+    fprintf
+      ppf
+      "[ %a ]"
+      (pp_print_list
+         ~pp_sep:(fun ppf () -> fprintf ppf ", ")
+         (fun ppf (k, v) -> fprintf ppf "%d -> %a" k pprint_type v))
+      subst
+  ;;
+
+  let empty = Map.empty (module Int)
+  let mapping k v = if Type.occurs_check k v then fail `Occurs_check else return (k, v)
+
+  let singleton k v =
+    let* mapping = mapping k v in
+    return [ mapping ]
+  ;;
+
+  
+end
 
 (*Unification*)
 
