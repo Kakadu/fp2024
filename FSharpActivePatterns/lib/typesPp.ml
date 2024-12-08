@@ -5,8 +5,12 @@
 open TypedTree
 open Format
 
-let rec pp_typ fmt = function
-  | Primary s -> fprintf fmt "%S" s
-  | Type_var var -> fprintf fmt "'_%d" var
-  | Arrow (fst, snd) -> fprintf fmt "(%a -> %a)" pp_typ fst pp_typ snd
+let pp_typ fmt typ =
+  let rec helper fmt = function
+    | Primary s -> fprintf fmt "%S" s
+    | Type_var var -> fprintf fmt "'_%d" var
+    | Arrow (fst, snd) -> fprintf fmt "(%a) -> %a" helper fst helper snd
+  in
+  helper fmt typ;
+  fprintf fmt "\n"
 ;;

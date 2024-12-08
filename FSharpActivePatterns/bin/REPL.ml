@@ -6,6 +6,7 @@ open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
 open FSharpActivePatterns.PrettyPrinter
 open FSharpActivePatterns.Inferencer
+open FSharpActivePatterns.TypesPp
 open Stdlib
 
 type input =
@@ -75,13 +76,13 @@ let run_repl dump_parsetree input_file =
       (match result with
        | Error err ->
          fprintf err_formatter "Type checking failed: %a\n" pp_error err;
-         print_flush ();
-       | Ok (_, _) -> 
+         print_flush ()
+       | Ok (_, t) ->
          (match dump_parsetree with
           | true -> print_construction std_formatter ast
           | false ->
             fprintf std_formatter "- : ";
-            pp_construction std_formatter ast);
+            pp_typ std_formatter t);
          print_flush ());
       run_repl_helper run
   in
