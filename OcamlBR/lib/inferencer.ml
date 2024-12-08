@@ -128,7 +128,11 @@ module Subst : sig
   val compose_all : t list -> t R.t
   val find : t -> type_var -> ty option
   val remove : t -> type_var -> t
-  val pp : Format.formatter -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t -> unit
+
+  val pp
+    :  Format.formatter
+    -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t
+    -> unit
 end = struct
   open R
   open R.Syntax
@@ -260,28 +264,29 @@ module TypeEnv = struct
   type t = (string, scheme, String.comparator_witness) Map.t
 
   let extend e h env = Map.set env ~key:e ~data:h
-
   let empty = Map.empty (module String)
 
   let free_vars : t -> VarSet.t =
     Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
-      VarSet.union acc (Scheme.free_vars s)
-    )
+      VarSet.union acc (Scheme.free_vars s))
   ;;
 
-  let apply s env =
-    Map.map env ~f:(Scheme.apply s)
-  ;;
+  let apply s env = Map.map env ~f:(Scheme.apply s)
 
+  (* let pp ppf xs =
+    Stdlib.Format.fprintf ppf "{| ";
+    Base.Map.iter xs ~f:(fun (n, s) ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
+    Stdlib.Format.fprintf ppf "|}%!"
+  ;; *)
   let pp ppf xs =
     Stdlib.Format.fprintf ppf "{| ";
-    Base.Map.iter xs ~f:(fun (n, s) -> 
-      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s
-    );
+    Base.Map.iteri xs ~f:(fun ~key:n ~data:s ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
     Stdlib.Format.fprintf ppf "|}%!"
   ;;
 
-  let find_exn name xs = 
+  let find_exn name xs =
     match Map.find xs name with
     | None -> R.fail (`Undefined_variable name)
     | Some scheme -> scheme
@@ -291,7 +296,6 @@ end
 module Infer = struct
   open R
   open R.Syntax
-  
 
   let unify = Subst.unify
   let fresh_var = fresh >>| fun n -> TVar n
@@ -305,7 +309,7 @@ module Infer = struct
         return (Subst.apply s typ))
       bs
       (return t)
-  ;;  
+  ;;
 
   let generalize (env : TypeEnv.t) (ty : ty) : scheme =
     let free = VarSet.diff (Type.type_vars ty) (TypeEnv.free_vars env) in
@@ -315,26 +319,26 @@ module Infer = struct
   let lookup_env e xs =
     match Base.Map.find xs e with
     | None -> fail (`Undefined_variable e)
-    | Some scheme -> 
-        let* ans = instantiate scheme in
-        return (Subst.empty, ans)
-  ;;  
+    | Some scheme ->
+      let* ans = instantiate scheme in
+      return (Subst.empty, ans)
+  ;;
 
   let pp ppf env =
     Stdlib.Format.fprintf ppf "{| ";
     Base.Map.iteri env ~f:(fun ~key:name ~data:s ->
       Stdlib.Format.fprintf ppf "%s -> %a; " name pp_scheme s);
     Stdlib.Format.fprintf ppf "|}%!"
-    ;;
-  
-  let fst_arrow = function
-  | TArrow (arg, _) -> arg
-  | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
   ;;
-  
+
+  let fst_arrow = function
+    | TArrow (arg, _) -> arg
+    | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
+  ;;
+
   let snd_arrow = function
-  | TArrow (_, ret) -> ret
-  | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
+    | TArrow (_, ret) -> ret
+    | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
   ;;
 
   let infer =
@@ -350,13 +354,14 @@ module Infer = struct
         let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
         let* op_type =
           match op with
-          | Add | Sub | Mult | Div -> return (tprim_int @-> (tprim_int @-> tprim_int))
-          | Gt | Lt | Eq | Neq | Gte | Lte -> return (tprim_int @-> (tprim_int @-> tprim_bool))
-          | And | Or -> return (tprim_bool @-> (tprim_bool @-> tprim_bool))
+          | Add | Sub | Mult | Div -> return (tprim_int @-> tprim_int @-> tprim_int)
+          | Gt | Lt | Eq | Neq | Gte | Lte ->
+            return (tprim_int @-> tprim_int @-> tprim_bool)
+          | And | Or -> return (tprim_bool @-> tprim_bool @-> tprim_bool)
         in
         let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
         let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
-        let* s_final = Subst.compose_all [s4; s3; s2; s1] in
+        let* s_final = Subst.compose_all [ s4; s3; s2; s1 ] in
         return (s_final, Subst.apply s_final (snd_arrow op_type))
       | Eun_op (op, e) ->
         let* s, t = helper env e in
@@ -366,7 +371,7 @@ module Infer = struct
           | Not -> return (tprim_bool @-> tprim_bool)
         in
         let* s2 = unify t (fst_arrow op_type) in
-        let* s_final = Subst.compose_all [s2; s] in
+        let* s_final = Subst.compose_all [ s2; s ] in
         return (s_final, Subst.apply s_final (snd_arrow op_type))
       | Eif_then_else (c, th, Some el) ->
         let* s1, t1 = helper env c in
@@ -374,7 +379,7 @@ module Infer = struct
         let* s3, t3 = helper env el in
         let* s4 = unify t1 tprim_bool in
         let* s5 = unify t2 t3 in
-        let* final_subst = Subst.compose_all [s5; s4; s3; s2; s1] in
+        let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
         return (final_subst, Subst.apply final_subst t2)
       | Elet (Non_recursive, Evalue_binding (Id (x, _), e1), [], e2) ->
         let* s1, t1 = helper env e1 in
@@ -404,12 +409,72 @@ module Infer = struct
         let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
         let* tv = fresh_var in
         let* s3 = unify (Subst.apply s2 t1) (TArrow (t2, tv)) in
-        let* s_final = Subst.compose_all [s3; s2; s1] in
+        let* s_final = Subst.compose_all [ s3; s2; s1 ] in
         return (s_final, Subst.apply s_final tv)
       | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
-  in
-  helper
-;;
+    in
+    helper
+  ;;
 
-let w expr = Result.map snd (run (infer TypeEnv.empty expr))
+  let w expr = Result.map snd (run (infer TypeEnv.empty expr))
+
+  (* let infer_structure_item env structure_item =
+     match structure_item with
+     | Ast.SEval e -> infer env e
+     | Ast.SValue (r, id, id_list) -> *)
+
+  let rec infer_structure_item env = function
+    | Ast.SEval expr ->
+      let* subst, _ = infer env expr in
+      return (subst, env)
+    | Ast.SValue (Recursive, Evalue_binding (id, expr), other_bindings) ->
+      let id_str = (fun (Ast.Id (name, _)) -> name) id in
+      let* tv = fresh_var in
+      let env = TypeEnv.extend id_str (S (VarSet.empty, tv)) env in
+      let* subst, inferred_ty = infer env expr in
+      let* subst2 = unify (Subst.apply subst tv) inferred_ty in
+      let* composed_subst = Subst.compose subst subst2 in
+      let generalized_ty =
+        generalize
+          (TypeEnv.apply composed_subst env)
+          (Subst.apply composed_subst inferred_ty)
+      in
+      let env = TypeEnv.extend id_str generalized_ty (TypeEnv.apply composed_subst env) in
+      infer_remaining_bindings env composed_subst other_bindings
+    | Ast.SValue (Non_recursive, Evalue_binding (id, expr), other_bindings) ->
+      let id_str = (fun (Ast.Id (name, _)) -> name) id in
+      let* subst, inferred_ty = infer env expr in
+      let generalized_ty =
+        generalize (TypeEnv.apply subst env) (Subst.apply subst inferred_ty)
+      in
+      let env = TypeEnv.extend id_str generalized_ty (TypeEnv.apply subst env) in
+      infer_remaining_bindings env subst other_bindings
+
+  and infer_remaining_bindings env subst = function
+    | [] -> return (subst, env) (* No more bindings to process *)
+    | Evalue_binding (id, expr) :: rest ->
+      let id_str = (fun (Ast.Id (name, _)) -> name) id in
+      let* subst', inferred_ty = infer env expr in
+      let* composed_subst = Subst.compose subst subst' in
+      let generalized_ty =
+        generalize
+          (TypeEnv.apply composed_subst env)
+          (Subst.apply composed_subst inferred_ty)
+      in
+      let env = TypeEnv.extend id_str generalized_ty (TypeEnv.apply composed_subst env) in
+      infer_remaining_bindings env composed_subst rest
+  ;;
+
+  let infer_structure env structure =
+    let rec process_structure env subst = function
+      | [] -> return (subst, env)
+      | item :: rest ->
+        let* subst', env' = infer_structure_item env item in
+        let* composed_subst = Subst.compose subst subst' in
+        process_structure env' composed_subst rest
+    in
+    process_structure env Subst.empty structure
+  ;;
+
+  let infer_program str = Result.map snd (run (infer_structure TypeEnv.empty str))
 end
