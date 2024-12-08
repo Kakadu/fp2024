@@ -8,6 +8,8 @@ open Expressions
 open Auxiliaries
 open Constants
 open Patterns
+open Parse
+open Program
 
 let pp printer parser str =
   match parse_string ~consume:Angstrom.Consume.All parser str with
@@ -318,27 +320,11 @@ let%expect_test "branch_in_branch" =
 let%expect_test "simple_match" =
   pp
     pp_expression
-    (parse_expr_match parse_expr parse_pat)
+    (parse_expr_match parse_pat parse_expr)
     "match x with | _ -> x + 5 | c -> meow";
   [%expect {|
     Syntax error |}]
 ;;
-
-(* let%expect_test "factorial" =
-   pp pp_expression parse_expr "let rec fact n = if n <= 1 then 1 * 5 else fact 1";
-   [%expect
-    {|
-    (Let (
-       { is_rec = Rec; pat = (PVar "fact");
-         expr =
-         (Fun ((PVar "n"),
-            (Branch ((BinaryOp (LtEq, (Var "n"), (Cons (Int 1)))),
-               (BinaryOp (Mult, (Cons (Int 1)), (Cons (Int 5)))),
-               (BinaryOp (Mult, (Cons (Int 4)), (Cons (Int 5))))))
-            ))
-         },
-       (Cons Unit))) |}]
-   ;; *)
 
 let%expect_test "factorial" =
   pp pp_expression parse_expr "let rec fact n = if n <= 1 then 1 else n * fact (n-1)";
@@ -356,4 +342,24 @@ let%expect_test "factorial" =
             ))
          },
        (Cons Unit))) |}]
+;;
+
+let%expect_test "parse_factorial" =
+  pp pp_program parse_program "let rec fact n = if n <= 1 then 1 else n * fact (n-1)";
+  [%expect
+    {|
+    [(Evaluation
+        (Let (
+           { is_rec = Rec; pat = (PVar "fact");
+             expr =
+             (Fun ((PVar "n"),
+                (Branch ((BinaryOp (LtEq, (Var "n"), (Cons (Int 1)))),
+                   (Cons (Int 1)),
+                   (BinaryOp (Mult, (Var "n"),
+                      (App ((Var "fact"), (App ((Var "n"), (Cons (Int -1))))))))
+                   ))
+                ))
+             },
+           (Cons Unit))))
+      ] |}]
 ;;

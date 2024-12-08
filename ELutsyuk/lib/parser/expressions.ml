@@ -79,22 +79,23 @@ let parse_expr_fun parse_pat parse_expr =
   return @@ Fun (pat, expr)
 ;;
 
-let parse_expr_let parse_pat parse_expr =
-  let parse_let_binding =
-    let* is_rec = token "rec" *> return Rec <|> return NonRec in
-    let* let_pat = parse_pat in
-    let* params = many parse_pat in
-    let* body_expr = token "=" *> parse_expr in
-    let expr =
-      match params with
-      | [] -> body_expr
-      | _ -> List.fold_right (fun par acc -> Fun (par, acc)) params body_expr
-    in
-    return (is_rec, let_pat, expr)
+let parse_let_binding parse_expr =
+  let* is_rec = token "rec" *> return Rec <|> return NonRec in
+  let* let_pat = parse_pat in
+  let* params = many parse_pat in
+  let* body_expr = token "=" *> parse_expr in
+  let expr =
+    match params with
+    | [] -> body_expr
+    | _ -> List.fold_right (fun par acc -> Fun (par, acc)) params body_expr
   in
+  return (is_rec, let_pat, expr)
+;;
+
+let parse_expr_let parse_pat parse_expr =
   token "let"
   *>
-  let* is_rec, pat, expr = parse_let_binding in
+  let* is_rec, pat, expr = parse_let_binding parse_expr in
   let* in_expr = token "in" *> parse_expr <|> return @@ Cons Unit in
   return @@ Let ({ is_rec; pat; expr }, in_expr)
 ;;
@@ -111,7 +112,7 @@ let parse_expr_branch parse_expr =
   return @@ Branch (if_cond, then_cond, else_cond)
 ;;
 
-let parse_expr_match parse_expr parse_pat =
+let parse_expr_match parse_pat parse_expr =
   let parse_case =
     token "|"
     *>
@@ -143,7 +144,7 @@ let parse_expr =
   let expr = chainl1 expr parse_rel in
   let expr = chainr1 expr parse_logical in
   let expr = parse_expr_branch expr <|> expr in
-  let expr = parse_expr_match expr <|> expr in
+  let expr = parse_expr_match parse_pat expr <|> expr in
   let expr = parse_expr_tuple expr <|> expr in
   let expr = parse_expr_list expr <|> expr in
   let expr = parse_expr_fun parse_pat expr <|> expr in
