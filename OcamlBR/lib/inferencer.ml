@@ -279,11 +279,17 @@ module TypeEnv = struct
       Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
     Stdlib.Format.fprintf ppf "|}%!"
   ;; *)
-  let pp ppf xs =
+  (* let pp ppf xs =
     Stdlib.Format.fprintf ppf "{| ";
     Base.Map.iteri xs ~f:(fun ~key:n ~data:s ->
       Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
     Stdlib.Format.fprintf ppf "|}%!"
+  ;; *)
+  let pp ppf env =
+    Stdlib.Format.fprintf ppf "{| ";
+    Base.Map.iteri env ~f:(fun ~key:name ~data:scheme ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " name pp_scheme scheme);
+    Stdlib.Format.fprintf ppf "|}"
   ;;
 
   let find_exn name xs =
@@ -352,17 +358,29 @@ module Infer = struct
       | Ebin_op (op, e1, e2) ->
         let* s1, t1 = helper env e1 in
         let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-        let* op_type =
+        (* let* op_type =
           match op with
           | Add | Sub | Mult | Div -> return (tprim_int @-> tprim_int @-> tprim_int)
           | Gt | Lt | Eq | Neq | Gte | Lte ->
             return (tprim_int @-> tprim_int @-> tprim_bool)
           | And | Or -> return (tprim_bool @-> tprim_bool @-> tprim_bool)
+        in *)
+        let* e1t, e2t, et =
+          match op with
+          | Mult | Div | Add | Sub -> return (tprim_int, tprim_int, tprim_int)
+          | Eq | Neq | Lt | Lte | Gt | Gte ->
+            let* fresh = fresh_var in
+            return (fresh, fresh, tprim_bool)
+          | And | Or -> return (tprim_bool, tprim_bool, tprim_bool)
         in
-        let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
-        let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
-        let* s_final = Subst.compose_all [ s4; s3; s2; s1 ] in
-        return (s_final, Subst.apply s_final (snd_arrow op_type))
+        let* sub3 = Subst.unify (Subst.apply s2 t1) e1t in
+        let* sub4 = Subst.unify (Subst.apply sub3 t2) e2t in
+        let* sub = Subst.compose_all [ s1; s2; sub3; sub4 ] in
+        return (sub, Subst.apply sub et)
+        (* let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
+           let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
+           let* s_final = Subst.compose_all [ s4; s3; s2; s1 ] in
+           return (s_final, Subst.apply s_final (snd_arrow op_type)) *)
       | Eun_op (op, e) ->
         let* s, t = helper env e in
         let* op_type =
@@ -451,7 +469,7 @@ module Infer = struct
       infer_remaining_bindings env subst other_bindings
 
   and infer_remaining_bindings env subst = function
-    | [] -> return (subst, env) (* No more bindings to process *)
+    | [] -> return (subst, env)
     | Evalue_binding (id, expr) :: rest ->
       let id_str = (fun (Ast.Id (name, _)) -> name) id in
       let* subst', inferred_ty = infer env expr in
@@ -477,4 +495,16 @@ module Infer = struct
   ;;
 
   let infer_program str = Result.map snd (run (infer_structure TypeEnv.empty str))
+
+  let infer_program_test s =
+    let open Stdlib.Format in
+    match Parser.parse_expr s with
+    | Ok parsed ->
+      (match infer_program parsed with
+       | Ok env ->
+         Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
+           printf "val %s : %a\n" key pp_ty ty)
+       | Error e -> printf "Infer error: %a\n" pp_error e)
+    | Error e -> printf "Parsing error: %s\n" e
+  ;;
 end
