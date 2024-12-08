@@ -871,6 +871,8 @@ let expr = function
   | Allow_t -> fix e >>= ex_tp
 ;;
 
+let parse_expr s = prs_ln (expr Allow_t) s
+
 let%expect_test "expr_const" =
   prs_and_prnt_ln (expr Allow_t) show_expr "123456789012345678901234567890";
   [%expect {|
