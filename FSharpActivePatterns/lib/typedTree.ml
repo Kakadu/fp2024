@@ -10,9 +10,9 @@ type typ =
   | Arrow of typ * typ
 [@@deriving show { with_path = false }]
 
-let arrow_of_types first rest =
+let arrow_of_types first_types last =
   let open Base in
-  List.fold_right rest ~init:first ~f:(fun left right -> Arrow (left, right))
+  List.fold_right first_types ~init:last ~f:(fun left right -> Arrow (left, right))
 ;;
 
 module VarSet = struct

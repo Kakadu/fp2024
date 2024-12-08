@@ -396,18 +396,16 @@ let rec infer_expr env = function
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
     return (subst_result, Substitution.apply subst_result fresh_type)
   | Lambda (arg, args, e) ->
-    let* arg1_type, env = infer_pattern env arg in
     let* env, arg_types =
       RList.fold_right
-        args
+        (arg :: args)
         ~init:(return (env, []))
         ~f:(fun arg (old_env, typs) ->
           let* typ, new_env = infer_pattern old_env arg in
           return (new_env, typ :: typs))
     in
     let* subst, e_type = infer_expr env e in
-    return
-      (subst, Substitution.apply subst (arrow_of_types arg1_type (arg_types @ [ e_type ])))
+    return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
   | _ -> failwith "Expr inference WIP"
 ;;
 
