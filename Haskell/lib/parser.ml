@@ -169,14 +169,20 @@ let func_tp_tail hd ord_tp =
 
 let ord_tp tp =
   let w = word ~point_allowed:Allow_point in
-  choice
-    [ string "()" *> return TUnit
-    ; w "Int" *> return TInt
-    ; w "Bool" *> return TBool
-    ; (sq_brackets tp >>| fun x -> ListParam x)
-    ; (braces tp >>| fun x -> TreeParam x)
-    ; tuple_or_parensed_item tp (fun fs sn tl -> return (TupleParams (fs, sn, tl))) return
-    ]
+  let ord_tp =
+    choice
+      [ string "()" *> return TUnit
+      ; w "Int" *> return TInt
+      ; w "Bool" *> return TBool
+      ; (sq_brackets tp >>| fun x -> ListParam x)
+      ; (braces tp >>| fun x -> TreeParam x)
+      ; tuple_or_parensed_item
+          tp
+          (fun fs sn tl -> return (TupleParams (fs, sn, tl)))
+          return
+      ]
+  in
+  ord_tp <|> (w "Maybe" *> ws *> ord_tp >>| fun t -> MaybeParam t)
 ;;
 
 let tp =
@@ -187,6 +193,11 @@ let tp =
 let%expect_test "tp_list_of_func" =
   prs_and_prnt_ln tp show_tp "[Int -> Int] ";
   [%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}]
+;;
+
+let%expect_test "tp_maybe" =
+  prs_and_prnt_ln tp show_tp "Maybe Int ";
+  [%expect {| (MaybeParam TInt) |}]
 ;;
 
 let%expect_test "tp_tree_of_func" =
