@@ -2,4 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Ast
+
 val pp : ('a -> string) -> 'a Angstrom.t -> string -> unit
+val print_result : ident -> unit
