@@ -26,6 +26,7 @@ module R : sig
 
   module RList : sig
     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
+    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
   end
 
   module RMap : sig
@@ -142,9 +143,9 @@ module Infer : sig
     -> (Subst.t * Ast.core_type) R.t
 
   val infer_pattern
-    :  (string, TypedTree.scheme, 'a) Base.Map.t
+    :  TypeEnv.t
     -> Ast.pattern
-    -> ((string, TypedTree.scheme, 'a) Base.Map.t * Ast.core_type) R.t
+    -> (TypeEnv.t * Ast.core_type) R.t
 
   val infer_expression : TypeEnv.t -> Ast.Expression.t -> (Subst.t * Ast.core_type) R.t
   val infer_srtucture_item : TypeEnv.t -> Ast.structure_item list -> TypeEnv.t R.t
