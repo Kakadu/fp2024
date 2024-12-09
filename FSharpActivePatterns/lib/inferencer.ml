@@ -196,7 +196,11 @@ end = struct
          | None -> typ
          | Some x -> x)
       | Arrow (fst, snd) -> Arrow (helper fst, helper snd)
-      | other -> other
+      | Type_list t -> Type_list (helper t)
+      | Type_tuple (fst, snd, rest) ->
+        Type_tuple (helper fst, helper snd, List.map rest ~f:helper)
+      | Primitive t -> Primitive t
+      | TOption t -> TOption (helper t)
     in
     helper
   ;;
