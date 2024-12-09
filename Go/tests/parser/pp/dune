@@ -1,0 +1,8 @@
+(library
+ (name pprinter)
+ (libraries ast str)
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_expect)))

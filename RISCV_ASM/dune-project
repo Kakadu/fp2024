@@ -6,9 +6,9 @@
 
 (license LGPL-3.0-or-later)
 
-(authors "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com")
+(authors "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com, Yuliana Ementyan ementyan.yuliana@gmail.com")
 
-(maintainers "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com")
+(maintainers "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com, Yuliana Ementyan ementyan.yuliana@gmail.com")
 
 (bug_reports "https://github.com/VyacheslavIurevich/fp2024")
 
@@ -27,6 +27,8 @@
   ppx_expect
   ppx_deriving
   bisect_ppx
+  qcheck-core
+  ppx_deriving_qcheck
   (odoc :with-doc)
   (ocamlformat :build)
   ; base

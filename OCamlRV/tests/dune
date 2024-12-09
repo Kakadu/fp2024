@@ -5,9 +5,18 @@
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
+ (modules parser Pprintast)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(executable
+ (name quickcheck)
+ (public_name quickcheck)
+ (libraries OCamlRV_lib qcheck-core qcheck-core.runner)
+ (modules quickcheck)
  (instrumentation
   (backend bisect_ppx)))
 
 (cram
- (applies_to check_ast)
- (deps ../bin/main.exe))
+ (applies_to quickcheck)
+ (deps ../tests/quickcheck.exe))

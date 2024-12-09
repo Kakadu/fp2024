@@ -632,7 +632,7 @@ state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
     RISC-V_ASM_interpreter is a interpreter of a mini-language similiar to RISC-V ASM.
-    Copyright (C) <2024>  <Vyacheslav Kochergin, Roman Mukovenkov>
+    Copyright (C) <2024>  <Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -58,7 +58,6 @@ jobs:
         #if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
 
       - name: Installing dependencies for ${{ env.latest }}
-        if: false  # HACK!
         run: |
           sudo apt-get update
           opam update

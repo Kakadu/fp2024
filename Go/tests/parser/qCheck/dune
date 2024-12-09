@@ -1,0 +1,7 @@
+(executable
+ (name qCheckRun)
+ (libraries parse pprinter qcheck))
+
+(cram
+ (applies_to qCheck)
+ (deps ./qCheckRun.exe))

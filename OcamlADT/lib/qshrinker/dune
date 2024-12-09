@@ -1,0 +1,9 @@
+(library
+ (name qshrinker)
+ (modules Shrinker)
+ (libraries stdio ocamladt_lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving_qcheck))
+ (instrumentation
+  (backend bisect_ppx))
+ (inline_tests))

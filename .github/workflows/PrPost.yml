@@ -33,7 +33,7 @@ jobs:
       - run: echo "event = ${{ github.event.workflow_run.event }}"
 
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         #uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
@@ -227,7 +227,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download odoc artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: docs
@@ -323,7 +323,7 @@ jobs:
     if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
     steps:
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: coverage
@@ -364,7 +364,7 @@ jobs:
     #  github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: jscpd_report

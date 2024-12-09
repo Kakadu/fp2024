@@ -1,0 +1,10 @@
+(library
+ (name ocaml_lib)
+ (public_name Ocaml.Lib)
+ (modules Inferencer Typedtree Pprint Ast Parser Interpreter Launcher)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show ppx_expect))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))

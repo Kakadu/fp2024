@@ -2,7 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocaml_printf_lib
+open Ocaml_printf_lib.Ast
+open Ocaml_printf_lib.Parser
 open Stdio
 
 type opts =
@@ -16,10 +17,10 @@ let run_single dump_parsetree input_source =
     | Some file_name -> In_channel.read_all file_name |> String.trim
     | None -> In_channel.input_all stdin |> String.trim
   in
-  let ast = Parser.parse text in
+  let ast = parse text in
   match ast with
   | Error error -> print_endline error
-  | Ok ast -> if dump_parsetree then print_endline (Ast.show_structure ast)
+  | Ok ast -> if dump_parsetree then print_endline (show_structure ast)
 ;;
 
 let () =

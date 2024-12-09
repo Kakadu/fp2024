@@ -1,0 +1,8 @@
+(library
+ (name unitTest)
+ (libraries ast parse pprinter)
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_expect)))

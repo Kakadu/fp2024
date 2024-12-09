@@ -1,8 +1,8 @@
 (library
  (name ocaml_printf_lib)
  (public_name OCamlPrintf.Lib)
- (libraries base angstrom)
+ (libraries base angstrom qcheck-core qcheck-core.runner)
  (preprocess
-  (pps ppx_deriving.show))
+  (pps ppx_deriving.show ppx_deriving_qcheck))
  (instrumentation
   (backend bisect_ppx)))
