@@ -122,7 +122,6 @@ end = struct
   ;;
 
   let find_exn k xs = List.Assoc.find_exn xs k ~equal:Int.equal
-  let find k xs = List.Assoc.find xs k ~equal:Int.equal
   let remove xs k = List.Assoc.remove xs k ~equal:Int.equal
 
   let apply s =
