@@ -8,7 +8,6 @@ open Ast
 module R : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -96,14 +95,8 @@ end
 module Subst : sig
   type t
 
-  val pp : Stdlib.Format.formatter -> t -> unit
   val empty : t
   val singleton : fresh -> ty -> t R.t
-
-  (** Getting value from substitution. May raise [Not_found] *)
-  val find_exn : fresh -> t -> ty
-
-  val find : fresh -> t -> ty option
   val apply : t -> ty -> ty
   val unify : ty -> ty -> t R.t
 
@@ -119,17 +112,6 @@ end = struct
 
   (* an association list. In real world replace it by a finite map *)
   type t = (fresh * ty) list
-
-  let pp ppf subst =
-    let open Stdlib.Format in
-    fprintf
-      ppf
-      "[ %a ]"
-      (pp_print_list
-         ~pp_sep:(fun ppf () -> fprintf ppf ", ")
-         (fun ppf (k, v) -> fprintf ppf "%d -> %a" k Pprint.pp_ty v))
-      subst
-  ;;
 
   let empty = []
   let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
@@ -234,10 +216,6 @@ end
 
 module Scheme = struct
   type t = scheme
-
-  let occurs_in v = function
-    | S (xs, t) -> (not (VarSet.mem v xs)) && Type.occurs_in v t
-  ;;
 
   let free_vars = function
     | S (bs, t) -> VarSet.diff (Type.free_vars t) bs
