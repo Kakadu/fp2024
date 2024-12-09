@@ -1,3 +1,4 @@
+
 (** Copyright 2024, Kostya Oreshin and Nikita Shchutskii *)
 
 (** SPDX-License-Identifier: MIT *)
@@ -25,6 +26,7 @@ type ty =
   | Ty_tuple of ty * ty * ty list
   | Ty_tree of ty
   | Ty_ord of binder
+  | Ty_enum of binder
 [@@deriving show { with_path = false }]
 
 type scheme = S of binder_set * ty [@@deriving show { with_path = false }]
