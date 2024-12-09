@@ -10,16 +10,126 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
-  test_program {|function
-  | (_)  when 0 -> 52194407
+  test_program {|fun (a: (int -> float) list) -> a;;|};
+  [%expect {|
+    [(EvalItem
+        (Lambda (
+           [(PConstrain ((PVar "a"),
+               (TypeConstructor ("list",
+                  (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
+                  ))
+               ))
+             ],
+           (Variable "a"))))
+      ] |}];
+  test_program
+    {|
+    let rec f = 
+      match _i with
+       | (a: (int -> float) (list)) -> (gI)
+   ;;|};
+  [%expect {|
+    ParseError(line=4 pos=28): Not found close bracket |}];
+  test_program
+    {|
+    match number with
+    | (a:int) when a > 0 -> a
+    | (b:int->float) -> b 0;;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Match ((Variable "number"),
+             [{ pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
+                filter =
+                (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
+                result = (Variable "a") };
+               { pattern =
+                 (PConstrain ((PVar "b"),
+                    (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
+                    ));
+                 filter = None;
+                 result = (Apply ((Variable "b"), [(Const (IntLiteral 0))])) }
+               ]
+             )))
+        ] |}];
+  test_program
+    {|
+    function
+    | (a:int) when a > 0 -> a
+    | (b:int->float) -> b 0;;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Func
+             [{ pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
+                filter =
+                (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
+                result = (Variable "a") };
+               { pattern =
+                 (PConstrain ((PVar "b"),
+                    (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
+                    ));
+                 filter = None;
+                 result = (Apply ((Variable "b"), [(Const (IntLiteral 0))])) }
+               ]))
+        ] |}];
+  test_program {|
+    function
+    | (a:int) when a > 0 -> a
+    | (_:int->float) -> 0;;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Func
+             [{ pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
+                filter =
+                (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
+                result = (Variable "a") };
+               { pattern =
+                 (PConstrain (PAny,
+                    (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
+                    ));
+                 filter = None; result = (Const (IntLiteral 0)) }
+               ]))
+        ] |}];
+  test_program
+    {|
+    (function
+    | (v : a list * (int -> float) * (int * float * bool) * (_ -> int)) -> a);;|};
+  [%expect
+    {|
+      [(EvalItem
+          (Func
+             [{ pattern =
+                (PConstrain ((PVar "v"),
+                   (TupleType ((TypeConstructor ("list", (TypeIdentifier "a"))),
+                      (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")
+                         )),
+                      [(TupleType ((TypeIdentifier "int"),
+                          (TypeIdentifier "float"), [(TypeIdentifier "bool")]));
+                        (ArrowType (AnyType, (TypeIdentifier "int")))]
+                      ))
+                   ));
+                filter = None; result = (Variable "a") }
+               ]))
+        ] |}];
+  test_program
+    {|function
+  | (a:int -> float) when a = 0 -> 52194407
   | (_) when true -> false;;|};
   [%expect
     {|
       [(EvalItem
-          (Lambda ([(PConstrain ((PVar "x"), (TypeIdentifier "int")))],
-             (Lambda ([(PConstrain ((PVar "y"), (TypeIdentifier "int")))],
-                (Binary ((Variable "x"), Add, (Variable "y")))))
-             )))
+          (Func
+             [{ pattern =
+                (PConstrain ((PVar "a"),
+                   (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
+                filter =
+                (Some (Binary ((Variable "a"), Equals, (Const (IntLiteral 0)))));
+                result = (Const (IntLiteral 52194407)) };
+               { pattern = PAny; filter = (Some (Const (BoolLiteral true)));
+                 result = (Const (BoolLiteral false)) }
+               ]))
         ] |}];
   test_program {|fun x:int -> (fun y:int -> x + y);;|};
   [%expect

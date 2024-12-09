@@ -6,6 +6,6 @@ open Miniml.Qchecker
 
 let () =
   print_endline "Testing manual generator.";
-  (* let _ : int = QChecker.run_manual () in *)
+  let _ : int = QChecker.run_manual () in
   ()
 ;;

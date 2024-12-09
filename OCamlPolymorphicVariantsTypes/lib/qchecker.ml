@@ -70,16 +70,19 @@ module QChecker = struct
         subtypes_gen
         (list_size addected_tuple_size subtypes_gen)
     in
+    let type_identifier = map (fun i -> TypeIdentifier i) (gen_identifier false) in
     sized_size core_type_size
     @@ fix (fun self ->
          function
-         | 0 ->
-           oneof
-             [ map (fun i -> TypeIdentifier i) (gen_identifier false); return AnyType ]
+         | 0 -> oneof [ type_identifier; return AnyType ]
          | depth ->
            let subtype_gen = self (depth - 1) in
            frequency
-             [ 1, map2 (fun t1 t2 -> TypeConstructor (t1, t2)) subtype_gen subtype_gen
+             [ ( 1
+               , map2
+                   (fun it t2 -> TypeConstructor (it, t2))
+                   (gen_identifier false)
+                   subtype_gen )
              ; 1, gen_ttuple subtype_gen
              ; 1, map2 (fun t1 t2 -> ArrowType (t1, t2)) subtype_gen subtype_gen
              ])
@@ -250,7 +253,7 @@ module QChecker = struct
     let open Parser_utility in
     QCheck_runner.run_tests
       [ QCheck.(
-          Test.make ~count:1 arbitrary_lam_manual (fun p ->
+          Test.make arbitrary_lam_manual (fun p ->
             let r = parse program_parser (Format.asprintf "%a" pp_program p) in
             match r with
             | ParseSuccess (r, _) ->

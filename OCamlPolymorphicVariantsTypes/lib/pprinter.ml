@@ -49,7 +49,7 @@ let pp_struct_item_sep ff () = fprintf ff "\n"
 let rec pp_core_type ff = function
   | AnyType -> fprintf ff "_"
   | ArrowType (t1, t2) -> fprintf ff "(%a -> %a)" pp_core_type t1 pp_core_type t2
-  | TypeConstructor (t1, t2) -> fprintf ff "%a %a" pp_core_type t1 pp_core_type t2
+  | TypeConstructor (t1, t2) -> fprintf ff "%a %a" pp_core_type t2 pp_identifier t1
   | TypeIdentifier id -> fprintf ff "%a" pp_identifier id
   | TupleType (t1, t2, tl) ->
     fprintf ff "(%a * %a" pp_core_type t1 pp_core_type t2;
