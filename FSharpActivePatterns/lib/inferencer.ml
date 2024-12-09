@@ -147,17 +147,17 @@ end = struct
   ;;
 
   (* collects all type variables *)
-  let free_vars =
-    let rec helper acc = function
-      | Primitive _ -> acc
-      | Type_var b -> VarSet.add b acc
-      | Arrow (fst, snd) -> helper (helper acc fst) snd
-      | Type_list typ -> helper acc typ
-      | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
-      | TOption t -> helper acc t
-    in
-    helper VarSet.empty
-  ;;
+  (* let free_vars =
+     let rec helper acc = function
+     | Primitive _ -> acc
+     | Type_var b -> VarSet.add b acc
+     | Arrow (fst, snd) -> helper (helper acc fst) snd
+     | Type_list typ -> helper acc typ
+     | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+     | TOption t -> helper acc t
+     in
+     helper VarSet.empty
+     ;; *)
 end
 
 (* module of substitution *)
