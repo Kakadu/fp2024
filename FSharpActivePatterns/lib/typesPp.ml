@@ -15,11 +15,11 @@ let pp_typ fmt typ =
       fprintf fmt "(";
       Format.pp_print_list
         ~pp_sep:(fun fmt () -> fprintf fmt ", ")
-        pp_typ
+        helper
         fmt
         (first :: second :: rest);
       fprintf fmt ")"
-    | TOption t -> fprintf fmt "(%a) option" pp_typ t
+    | TOption t -> fprintf fmt "(%a) option" helper t
   in
   helper fmt typ;
   fprintf fmt "\n"
