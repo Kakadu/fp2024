@@ -516,3 +516,70 @@ let%expect_test "stmt default for with valid init and invalid post" =
   [%expect {|
     : syntax error  |}]
 ;;
+
+let%expect_test "stmt default for with valid init and invalid post" =
+  print_result
+    {|var a = 5
+      var b = "st"
+func test (
+// hey
+) (
+
+/* hello */	) { 
+	return 
+}
+
+func pritln(a int){
+  return a
+}
+
+func id(a int) (int) {
+	return a
+}
+
+var f int
+
+func main() {
+	defer test()
+  var c = a + b
+go println(id(10))
+}
+|};
+  [%expect
+    {|
+    [(Decl_var
+        (Long_decl_mult_init (None, ("a", (Expr_const (Const_int 5))), [])));
+      (Decl_var
+         (Long_decl_mult_init (None, ("b", (Expr_const (Const_string "st"))),
+            [])));
+      (Decl_func
+         ("test", { args = []; returns = None; body = [(Stmt_return [])] }));
+      (Decl_func
+         ("pritln",
+          { args = [("a", Type_int)]; returns = None;
+            body = [(Stmt_return [(Expr_ident "a")])] }));
+      (Decl_func
+         ("id",
+          { args = [("a", Type_int)];
+            returns = (Some (Only_types (Type_int, [])));
+            body = [(Stmt_return [(Expr_ident "a")])] }));
+      (Decl_var (Long_decl_no_init (Type_int, "f", [])));
+      (Decl_func
+         ("main",
+          { args = []; returns = None;
+            body =
+            [(Stmt_defer ((Expr_ident "test"), []));
+              (Stmt_long_var_decl
+                 (Long_decl_mult_init (None,
+                    ("c",
+                     (Expr_bin_oper (Bin_sum, (Expr_ident "a"), (Expr_ident "b")
+                        ))),
+                    [])));
+              (Stmt_go
+                 ((Expr_ident "println"),
+                  [(Expr_call ((Expr_ident "id"), [(Expr_const (Const_int 10))]))
+                    ]))
+              ]
+            }))
+      ]  |}]
+;;

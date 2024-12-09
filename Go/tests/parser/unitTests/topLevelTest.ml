@@ -129,3 +129,30 @@ let%expect_test "file with factorial func" =
         }
     } |}]
 ;;
+
+let%expect_test "tmp" =
+  pp
+    print_file
+    parse_file
+    {|
+    var a, b, c <-chan [5]int = get()
+
+    var x int
+
+    func main(a2 int) bool {
+        var x int
+    }
+
+    func main1(a1 int, c int, b int) bool {} |};
+  [%expect
+    {|
+    var a, b, c <-chan [5]int = get()
+
+    var x int
+
+    func main(a2 int) bool {
+        var x int
+    }
+
+    func main1(a1 int, c int, b int) bool {} |}]
+;;
