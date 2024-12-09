@@ -4,3 +4,10 @@ SPDX-License-Identifier: MIT
   random seed: 67
   ================================================================================
   success (ran 1 tests)
+
+  $ cat << EOF | ../bin/REPL.exe
+  > fac n = if n < 0 then Nothing else Just (save_fac n) where save_fac y | y == 0  = 1 | True = y * save_fac (y - 1)
+  > EOF
+  Result: [ 
+  fac:  Int -> Maybe Int
+   ]

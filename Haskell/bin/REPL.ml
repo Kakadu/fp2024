@@ -31,6 +31,11 @@ let () =
   if opts.dump_parsetree
   then parse_and_print_line text
   else (
-    let _ = parse_line text in
-    ())
+    match parse_line text with
+    | Result.Ok list ->
+      (* Format.printf "Parsed: %a\n%!" Haskell_lib.Pprintast.pp_binding list; *)
+      (match Haskell_lib.Inferencer.w_program list with
+       | Result.Ok env -> Format.printf "Result: %a" Haskell_lib.Inferencer.TypeEnv.pp env
+       | Result.Error err -> Format.printf "Error: %a" Haskell_lib.Pprint.pp_error err)
+    | Result.Error error -> Format.printf "Error: %s\n%!" error)
 ;;
