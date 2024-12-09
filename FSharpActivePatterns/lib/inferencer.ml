@@ -792,6 +792,30 @@ let infer_statement env = function
     return (env, bind_names_with_types)
 ;;
 
+(* and infer_let_bind env fresh_type = function
+   | Let_bind (_, args, e) ->
+   let arg_names =
+   List.map args ~f:(fun arg ->
+   match arg with
+   | Ident (name, _) -> name)
+   in
+   let* env =
+   List.fold
+   ~init:(return env)
+   ~f:(fun acc arg ->
+   let* fresh_type = make_fresh_var in
+   let* acc = acc in
+   return (TypeEnvironment.extend acc arg (S (VarSet.empty, fresh_type))))
+   arg_names
+   in
+   let* subst1, typ1 = infer_expr env e in
+   let* subst2 = unify (Substitution.apply subst1 fresh_type) typ1 in
+   let* subst = Substitution.compose subst1 subst2 in
+   let env = TypeEnvironment.apply subst env in
+   let typ2 = generalize env (Substitution.apply subst fresh_type) in
+   return (subst, typ2)
+   ;; *)
+
 let infer_construction env = function
   | Expr exp ->
     let* _, typ = infer_expr env exp in
