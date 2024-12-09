@@ -73,7 +73,7 @@ module Type = struct
   type t = ty
 
   let rec occurs_in v = function
-    | Ty_var b | Ty_ord b -> b = v
+    | Ty_var b | Ty_ord b | Ty_enum b -> b = v
     | Ty_arrow (l, r) -> occurs_in v l || occurs_in v r
     | Ty_prim _ -> false
     | Ty_list ty | Ty_tree ty | Ty_maybe ty -> occurs_in v ty
@@ -83,7 +83,7 @@ module Type = struct
 
   let free_vars =
     let rec helper acc = function
-      | Ty_var b | Ty_ord b -> VarSet.add b acc
+      | Ty_var b | Ty_ord b | Ty_enum b -> VarSet.add b acc
       | Ty_arrow (l, r) -> helper (helper acc l) r
       | Ty_prim _ -> acc
       | Ty_list ty | Ty_tree ty | Ty_maybe ty -> helper acc ty
@@ -160,6 +160,10 @@ end = struct
         (match helper (Ty_var ty) with
          | Ty_var ty' -> Ty_ord ty'
          | t' -> t')
+      | Ty_enum ty ->
+        (match helper (Ty_var ty) with
+         | Ty_var ty' -> Ty_enum ty'
+         | t' -> t')
       | other -> other
     in
     helper
@@ -171,6 +175,7 @@ end = struct
     | Ty_var a, Ty_var b when Int.equal a b -> return empty
     | Ty_var b, t | t, Ty_var b -> singleton b t
     | Ty_ord _, Ty_arrow _ | Ty_arrow _, Ty_ord _ -> fail (`Unification_failed (l, r))
+    | Ty_enum b, (Ty_prim _ as t) | (Ty_prim _ as t), Ty_enum b -> singleton b t
     | Ty_ord b, t | t, Ty_ord b -> singleton b t
     | Ty_arrow (l1, r1), Ty_arrow (l2, r2) ->
       let* subs1 = unify l1 l2 in
@@ -190,12 +195,19 @@ end = struct
     | _ -> fail (`Unification_failed (l, r))
 
   and extend s (k, v) =
+    let bind v f =
+      match v with
+      | Ty_var k' when k = k' -> return s
+      | _ -> f v
+    in
+    let ( let** ) = bind in
+    let** v = v in
     match List.Assoc.find s ~equal:Int.equal k with
     | None ->
-      let v = apply s v in
+      let** v = apply s v in
       let* s2 = singleton k v in
       RList.fold_left s ~init:(return s2) ~f:(fun acc (k, v) ->
-        let v = apply s2 v in
+        let** v = apply s2 v in
         let* mapping = mapping k v in
         return (mapping :: acc))
     | Some v2 ->
@@ -304,11 +316,7 @@ let built_in_sign op =
       return (t, Ty_list t, Ty_list t)
     | Plus | Minus | Divide | Mod | Multiply | Pow ->
       return (Ty_prim "Int", Ty_prim "Int", Ty_prim "Int")
-    | _ ->
-      fresh_var
-      >>| (function
-       | Ty_var t -> Ty_ord t, Ty_ord t, Ty_prim "Bool"
-       | other -> other, other, Ty_prim "Bool"))
+    | _ -> fresh >>| fun t -> Ty_ord t, Ty_ord t, Ty_prim "Bool")
     op
   >>| fun (t1, t2, t3) -> Ty_arrow (t1, Ty_arrow (t2, t3))
 ;;
@@ -329,15 +337,13 @@ let rec tp_to_ty = function
 let rec bindings bb env =
   let f (subst, env) = function
     | FunDef (Ident name, p, pp, bd, bb), tv0, _ ->
-      let* s1, inner_env = bindings bb env in
+      let* tt, inner_env = helper_pp (p :: pp) env in
+      let* s1, inner_env = bindings bb inner_env in
       let* s2, t1 =
-        match bd with
-        | Guards (ep, eps) ->
-          let* tt, env' = helper_pp (p :: pp) env in
-          let* s, ty = helper_guards (ep :: eps) env' in
-          let trez = ty_arr (List.map (Subst.apply s) tt) ty in
-          return (s, trez)
-        | OrdBody e -> infer (Lambda (p, pp, e), []) inner_env
+        (match bd with
+         | Guards (ep, eps) -> helper_guards (ep :: eps) inner_env
+         | OrdBody e -> infer e inner_env)
+        >>| fun (s, ty) -> s, ty_arr (List.map (Subst.apply s) (List.rev tt)) ty
       in
       let* s = Subst.compose_all [ s2; s1; subst ] in
       let* s3 = unify (Subst.apply s tv0) t1 in
@@ -487,17 +493,17 @@ and helper_pp pp env =
       return (t :: tt, env'))
 
 and infer (e, etps) env =
-  let helper_list ee =
-    let* fresh = fresh_var in
+  let helper_list ee t =
     RList.fold_left
       ee
-      ~init:(return (Subst.empty, fresh))
+      ~init:(return (Subst.empty, t))
       ~f:(fun (s, t) e ->
         let* s2, t2 = infer e env in
         let* s3 = unify t t2 in
         Subst.compose_all [ s3; s2; s ] >>| fun s -> s, Subst.apply s3 t2)
     >>| fun (s, t) -> s, Ty_list t
   in
+  let ty_enum = fresh >>| fun b -> Ty_enum b in
   let helper_e expr env =
     match expr with
     | Const const ->
@@ -513,11 +519,11 @@ and infer (e, etps) env =
       let* fresh = fresh_var in
       return (Subst.empty, Ty_arrow (fresh, Ty_maybe fresh))
     | BinTreeBld _ -> failwith "is not required by the first deadline"
-    | ListBld (OrdList (IncomprehensionlList ee)) -> helper_list ee
-    | ListBld (LazyList (e1, Some e2, Some e3)) -> helper_list [ e1; e2; e3 ]
+    | ListBld (OrdList (IncomprehensionlList ee)) -> fresh_var >>= helper_list ee
+    | ListBld (LazyList (e1, Some e2, Some e3)) -> ty_enum >>= helper_list [ e1; e2; e3 ]
     | ListBld (LazyList (e1, Some e2, None) | LazyList (e1, None, Some e2)) ->
-      helper_list [ e1; e2 ]
-    | ListBld (LazyList (e1, None, None)) -> helper_list [ e1 ]
+      ty_enum >>= helper_list [ e1; e2 ]
+    | ListBld (LazyList (e1, None, None)) -> ty_enum >>= helper_list [ e1 ]
     | FunctionApply (f, a, aa) ->
       (match aa with
        | [] ->
@@ -565,7 +571,7 @@ and infer (e, etps) env =
     | Lambda (p, pp, e) ->
       let* tt, env' = helper_pp (p :: pp) env in
       let* s, ty = infer e env' in
-      let trez = ty_arr (List.map (Subst.apply s) tt) (Subst.apply s ty) in
+      let trez = ty_arr (List.map (Subst.apply s) (List.rev tt)) (Subst.apply s ty) in
       return (s, trez)
     | InnerBindings (b, bb, e) ->
       let* s, env = bindings (b :: bb) env in
@@ -1105,6 +1111,16 @@ let%expect_test "neg type with explicit wrong multiple type" =
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
+let%expect_test "ord polymor" =
+  (match parse_expr "(\\f -> let g = (f True) in (f 3)) (\\x -> x)" with
+   | Result.Ok ast ->
+     (match w ast with
+      | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {| unification failed on Bool and Int |}]
+;;
+
 let%expect_test "if correct with int return type" =
   (match parse_expr "if True then 1 else -1" with
    | Result.Ok ast ->
@@ -1256,7 +1272,7 @@ let%expect_test "lambda occurs check" =
 ;;
 
 let%expect_test "lambda tuple return type" =
-  (match parse_expr "\x -> x `mod` 2 == 0 && x > 5" with
+  (match parse_expr "\\x -> x `mod` 2 == 0 && x > 5" with
    | Result.Ok ast ->
      (match w ast with
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
@@ -1473,7 +1489,9 @@ let%expect_test "case correct with lists" =
 ;;
 
 let%expect_test "case correct with int lists and explicit similar types" =
-  (match parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []" with
+  (match
+     parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []"
+   with
    | Result.Ok ast ->
      (match w ast with
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
@@ -1483,7 +1501,9 @@ let%expect_test "case correct with int lists and explicit similar types" =
 ;;
 
 let%expect_test "case correct with int lists and explicit different types" =
-  (match parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []" with
+  (match
+     parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []"
+   with
    | Result.Ok ast ->
      (match w ast with
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
@@ -1493,7 +1513,9 @@ let%expect_test "case correct with int lists and explicit different types" =
 ;;
 
 let%expect_test "case correct with int lists and explicit different types" =
-  (match parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []" with
+  (match
+     parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []"
+   with
    | Result.Ok ast ->
      (match w ast with
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
@@ -1609,7 +1631,7 @@ let%expect_test "lazy list wrong type" =
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
       | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
    | _ -> prerr_endline "parsing error");
-  [%expect {| unification failed on Int and (Bool, Int) |}]
+  [%expect {| unification failed on Enum t0 and (Bool, Int) |}]
 ;;
 
 let%expect_test "list of list" =
@@ -1683,7 +1705,7 @@ let%expect_test "wrong comprehension list with generator condition" =
 ;;
 
 let%expect_test "several functions" =
-  (match Parser.parse_line "f x = g x; g y = y" with
+  (match parse_line "f x = g x; g y = y" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1697,35 +1719,7 @@ let%expect_test "several functions" =
 ;;
 
 let%expect_test "mutually recursive functions" =
-  (match Parser.parse_line "f x = g x; g y = f y" with
-   | Result.Ok bindings ->
-     (match w_program bindings with
-      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
-      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
-   | _ -> prerr_endline "parsing error");
-  [%expect {|
-  [
-  f:  t4 -> t5
-  g:  t4 -> t5
-   ] |}]
-;;
-
-let%expect_test "mutually recursive functions" =
-  (match Parser.parse_line "f x = g x; g y = f y" with
-   | Result.Ok bindings ->
-     (match w_program bindings with
-      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
-      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
-   | _ -> prerr_endline "parsing error");
-  [%expect {|
-  [
-  f:  t4 -> t5
-  g:  t4 -> t5
-   ] |}]
-;;
-
-let%expect_test "mutually recursive functions" =
-  (match Parser.parse_line "f x = g x; g y = f y" with
+  (match parse_line "f x = g x; g y = f y" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1740,7 +1734,7 @@ let%expect_test "mutually recursive functions" =
 
 let%expect_test "mutually recursive functions with guards" =
   (match
-     Parser.parse_line
+     parse_line
        "isEven n | n == 0 = True | n > 0 = isOdd (n - 1) | True = isOdd (-n); isOdd n | \
         n == 0 = False | n > 0 = isEven (n - 1) | True = isEven (-n)"
    with
@@ -1757,7 +1751,7 @@ let%expect_test "mutually recursive functions with guards" =
 ;;
 
 let%expect_test "guards" =
-  (match Parser.parse_line "f x | x > 0 = x | True = -1" with
+  (match parse_line "f x | x > 0 = x | True = -1" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1770,7 +1764,7 @@ let%expect_test "guards" =
 ;;
 
 let%expect_test "where single statement" =
-  (match Parser.parse_line "f x = x + y where y = 1" with
+  (match parse_line "f x = x + y where y = 1" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1783,7 +1777,7 @@ let%expect_test "where single statement" =
 ;;
 
 let%expect_test "where single statement with explicit incorrect type" =
-  (match Parser.parse_line "f x = x + y where (y :: Bool) = 1" with
+  (match parse_line "f x = x + y where (y :: Bool) = 1" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1793,7 +1787,7 @@ let%expect_test "where single statement with explicit incorrect type" =
 ;;
 
 let%expect_test "where multiple statements" =
-  (match Parser.parse_line "f x = x && y || z where y = False; z = True" with
+  (match parse_line "f x = x && y || z where y = False; z = True" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1806,17 +1800,27 @@ let%expect_test "where multiple statements" =
 ;;
 
 let%expect_test "where single statement incorrect" =
-  (match Parser.parse_line "f x y = x + y where y = True" with
+  (match parse_line "f x = x + y where y = True" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
       | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
    | _ -> prerr_endline "parsing error");
-  [%expect {| unification failed on Int and Bool |}]
+  [%expect {| unification failed on Bool and Int |}]
+;;
+
+let%expect_test "where single statement with param shadowing incorrect" =
+  (match parse_line "f x y = x + y where y = True" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {| unification failed on Bool and Int |}]
 ;;
 
 let%expect_test "where multiple statements incorrect" =
-  (match Parser.parse_line "f x y z = x && y || z where y = False; z = 3" with
+  (match parse_line "f x  = x && y || z where y = False; z = 3" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1826,7 +1830,7 @@ let%expect_test "where multiple statements incorrect" =
 ;;
 
 let%expect_test "where polymorphic argument" =
-  (match Parser.parse_line "f x = y where y = False" with
+  (match parse_line "f x = y where y = False" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1834,12 +1838,12 @@ let%expect_test "where polymorphic argument" =
    | _ -> prerr_endline "parsing error");
   [%expect {|
     [
-    f:  t3 -> Bool
+    f:  t1 -> Bool
      ] |}]
 ;;
 
 let%expect_test "where list argument" =
-  (match Parser.parse_line "f (x:xs) = y : xs where y = 2" with
+  (match parse_line "f (x:xs) = y : xs where y = 2" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1852,7 +1856,7 @@ let%expect_test "where list argument" =
 ;;
 
 let%expect_test "function with tuple argument" =
-  (match Parser.parse_line "f (x, y) = (x + 1, y && True)" with
+  (match parse_line "f (x, y) = (x + 1, y && True)" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
@@ -1865,7 +1869,7 @@ let%expect_test "function with tuple argument" =
 ;;
 
 let%expect_test "several functions with incorrect type" =
-  (match Parser.parse_line "f x = x + 1; g = f y where y = False" with
+  (match parse_line "f x = x + 1; g = f y where y = False" with
    | Result.Ok bindings ->
      (match w_program bindings with
       | Result.Ok env -> Format.printf "%a" TypeEnv.pp env

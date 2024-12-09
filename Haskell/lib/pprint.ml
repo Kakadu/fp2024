@@ -27,6 +27,7 @@ let pp_ty =
         ty_list
     | Ty_tree ty -> fprintf fmt "{%a}" helper ty
     | Ty_ord ty -> fprintf fmt "Ord t%d" ty
+    | Ty_enum ty -> fprintf fmt "Enum t%d" ty
   in
   helper
 ;;
