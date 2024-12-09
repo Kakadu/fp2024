@@ -248,8 +248,6 @@ module Scheme = struct
     let s2 = VarSet.fold (fun k s -> Subst.remove s k) names sub in
     S (names, Subst.apply s2 ty)
   ;;
-
-  (* let pp = Pprint.pp_scheme *)
 end
 
 module SMap = Map.Make (String)
