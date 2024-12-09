@@ -2,10 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Haskell_lib.Parser
-
 let%expect_test "int type" =
-  (match parse_line "a = 42" with
+  (match Haskell_lib.Parser.parse_line "a = 42" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -18,7 +16,7 @@ let%expect_test "int type" =
 ;;
 
 let%expect_test "bool type" =
-  (match parse_line "a = True" with
+  (match Haskell_lib.Parser.parse_line "a = True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -31,7 +29,7 @@ let%expect_test "bool type" =
 ;;
 
 let%expect_test "unit type" =
-  (match parse_line "a = ()" with
+  (match Haskell_lib.Parser.parse_line "a = ()" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -44,7 +42,7 @@ let%expect_test "unit type" =
 ;;
 
 let%expect_test "const with explicit correct single type" =
-  (match parse_line "a = 42 :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = 42 :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -57,7 +55,7 @@ let%expect_test "const with explicit correct single type" =
 ;;
 
 let%expect_test "const with explicit correct multiple type" =
-  (match parse_line "a = (42 :: Int) :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = (42 :: Int) :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -70,7 +68,7 @@ let%expect_test "const with explicit correct multiple type" =
 ;;
 
 let%expect_test "const with explicit wrong single type" =
-  (match parse_line "a = 42 :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = 42 :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -80,7 +78,7 @@ let%expect_test "const with explicit wrong single type" =
 ;;
 
 let%expect_test "const with explicit wrong multiple type" =
-  (match parse_line "a = (42 :: Int) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = (42 :: Int) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -90,7 +88,7 @@ let%expect_test "const with explicit wrong multiple type" =
 ;;
 
 let%expect_test "tuple" =
-  (match parse_line "a = (42, True)" with
+  (match Haskell_lib.Parser.parse_line "a = (42, True)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -103,7 +101,7 @@ let%expect_test "tuple" =
 ;;
 
 let%expect_test "tuple with extra types" =
-  (match parse_line "a = (42, True, ())" with
+  (match Haskell_lib.Parser.parse_line "a = (42, True, ())" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -116,7 +114,7 @@ let%expect_test "tuple with extra types" =
 ;;
 
 let%expect_test "tuple with explicit correct single type" =
-  (match parse_line "a = (42, True, ()) :: (Int, Bool, ())" with
+  (match Haskell_lib.Parser.parse_line "a = (42, True, ()) :: (Int, Bool, ())" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -129,7 +127,10 @@ let%expect_test "tuple with explicit correct single type" =
 ;;
 
 let%expect_test "tuple with explicit correct multiple type" =
-  (match parse_line "a = ((42, True, ()) :: (Int, Bool, ())) :: (Int, Bool, ())" with
+  (match
+     Haskell_lib.Parser.parse_line
+       "a = ((42, True, ()) :: (Int, Bool, ())) :: (Int, Bool, ())"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -142,7 +143,7 @@ let%expect_test "tuple with explicit correct multiple type" =
 ;;
 
 let%expect_test "tuple with explicit wrong single type" =
-  (match parse_line "x = (42, True, ()) :: (Bool, Bool, ())" with
+  (match Haskell_lib.Parser.parse_line "x = (42, True, ()) :: (Bool, Bool, ())" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -152,7 +153,10 @@ let%expect_test "tuple with explicit wrong single type" =
 ;;
 
 let%expect_test "tuple with explicit wrong multiple type" =
-  (match parse_line "x = ((42, True, ()) :: (Int, Bool, ())) :: (Bool, Bool, ())" with
+  (match
+     Haskell_lib.Parser.parse_line
+       "x = ((42, True, ()) :: (Int, Bool, ())) :: (Bool, Bool, ())"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -162,7 +166,7 @@ let%expect_test "tuple with explicit wrong multiple type" =
 ;;
 
 let%expect_test "maybe type just" =
-  (match parse_line "a = \\x -> Just x" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> Just x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -175,7 +179,7 @@ let%expect_test "maybe type just" =
 ;;
 
 let%expect_test "maybe type just int" =
-  (match parse_line "a = \\x -> Just (x + 1)" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> Just (x + 1)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -188,7 +192,7 @@ let%expect_test "maybe type just int" =
 ;;
 
 let%expect_test "maybe type just list" =
-  (match parse_line "a = \\x y -> Just (y : x)" with
+  (match Haskell_lib.Parser.parse_line "a = \\x y -> Just (y : x)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -201,7 +205,7 @@ let%expect_test "maybe type just list" =
 ;;
 
 let%expect_test "maybe type nothing" =
-  (match parse_line "a = Nothing" with
+  (match Haskell_lib.Parser.parse_line "a = Nothing" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -214,7 +218,7 @@ let%expect_test "maybe type nothing" =
 ;;
 
 let%expect_test "correct ariphmetic operation" =
-  (match parse_line "a = 5 + 3" with
+  (match Haskell_lib.Parser.parse_line "a = 5 + 3" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -227,7 +231,7 @@ let%expect_test "correct ariphmetic operation" =
 ;;
 
 let%expect_test "incorrect ariphmetic operation" =
-  (match parse_line "a = 5 + ()" with
+  (match Haskell_lib.Parser.parse_line "a = 5 + ()" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -237,7 +241,7 @@ let%expect_test "incorrect ariphmetic operation" =
 ;;
 
 let%expect_test "ariphmetic operation with explicit correct single type" =
-  (match parse_line "a = (5 + 3) :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = (5 + 3) :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -250,7 +254,7 @@ let%expect_test "ariphmetic operation with explicit correct single type" =
 ;;
 
 let%expect_test "ariphmetic operation with explicit correct multiple type" =
-  (match parse_line "a = ((5 + 3) :: Int) :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = ((5 + 3) :: Int) :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -263,7 +267,7 @@ let%expect_test "ariphmetic operation with explicit correct multiple type" =
 ;;
 
 let%expect_test "ariphmetic operation with explicit wrong single type" =
-  (match parse_line "a = (5 + 3) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = (5 + 3) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -273,7 +277,7 @@ let%expect_test "ariphmetic operation with explicit wrong single type" =
 ;;
 
 let%expect_test "ariphmetic operation with explicit wrong multiple type" =
-  (match parse_line "a = ((5 + 3) :: Int) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = ((5 + 3) :: Int) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -283,7 +287,7 @@ let%expect_test "ariphmetic operation with explicit wrong multiple type" =
 ;;
 
 let%expect_test "correct logical operation" =
-  (match parse_line "a = True && False" with
+  (match Haskell_lib.Parser.parse_line "a = True && False" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -296,7 +300,7 @@ let%expect_test "correct logical operation" =
 ;;
 
 let%expect_test "incorrect logical operation" =
-  (match parse_line "a = True && 1" with
+  (match Haskell_lib.Parser.parse_line "a = True && 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -306,7 +310,7 @@ let%expect_test "incorrect logical operation" =
 ;;
 
 let%expect_test "logical operation with correct explicit single type" =
-  (match parse_line "a = True && False :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = True && False :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -319,7 +323,7 @@ let%expect_test "logical operation with correct explicit single type" =
 ;;
 
 let%expect_test "logical operation with correct explicit multiple type" =
-  (match parse_line "a = (True && False :: Bool) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = (True && False :: Bool) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -332,7 +336,7 @@ let%expect_test "logical operation with correct explicit multiple type" =
 ;;
 
 let%expect_test "logical operation with incorrect explicit single type" =
-  (match parse_line "a = True && False :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = True && False :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -342,7 +346,7 @@ let%expect_test "logical operation with incorrect explicit single type" =
 ;;
 
 let%expect_test "logical operation with incorrect explicit multiple type" =
-  (match parse_line "a = (True && False :: Bool) :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = (True && False :: Bool) :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -352,7 +356,7 @@ let%expect_test "logical operation with incorrect explicit multiple type" =
 ;;
 
 let%expect_test "correct comparison operation with int" =
-  (match parse_line "a = 1 <= 2" with
+  (match Haskell_lib.Parser.parse_line "a = 1 <= 2" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -365,7 +369,7 @@ let%expect_test "correct comparison operation with int" =
 ;;
 
 let%expect_test "correct comparison operation with bool" =
-  (match parse_line "a = False <= True" with
+  (match Haskell_lib.Parser.parse_line "a = False <= True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -378,7 +382,7 @@ let%expect_test "correct comparison operation with bool" =
 ;;
 
 let%expect_test "incorrect comparison operation with () and int" =
-  (match parse_line "a = 1 <= ()" with
+  (match Haskell_lib.Parser.parse_line "a = 1 <= ()" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -388,7 +392,7 @@ let%expect_test "incorrect comparison operation with () and int" =
 ;;
 
 let%expect_test "incorrect comparison operation with bool and int" =
-  (match parse_line "a = 1 <= True" with
+  (match Haskell_lib.Parser.parse_line "a = 1 <= True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -398,7 +402,7 @@ let%expect_test "incorrect comparison operation with bool and int" =
 ;;
 
 let%expect_test "comparison operation with explicit correct single type" =
-  (match parse_line "a = (1 <= 2) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = (1 <= 2) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -411,7 +415,7 @@ let%expect_test "comparison operation with explicit correct single type" =
 ;;
 
 let%expect_test "comparison operation with explicit correct multiple type" =
-  (match parse_line "a = ((1 <= 2) :: Bool) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = ((1 <= 2) :: Bool) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -424,7 +428,7 @@ let%expect_test "comparison operation with explicit correct multiple type" =
 ;;
 
 let%expect_test "comparison operation with explicit wrong single type" =
-  (match parse_line "a = (1 <= 2) :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = (1 <= 2) :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -434,7 +438,7 @@ let%expect_test "comparison operation with explicit wrong single type" =
 ;;
 
 let%expect_test "comparison operation with explicit wrong multiple type" =
-  (match parse_line "a = ((1 <= 2) :: Int) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = ((1 <= 2) :: Int) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -444,7 +448,7 @@ let%expect_test "comparison operation with explicit wrong multiple type" =
 ;;
 
 let%expect_test "cons correct with int" =
-  (match parse_line "a = 1 : []" with
+  (match Haskell_lib.Parser.parse_line "a = 1 : []" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -457,7 +461,7 @@ let%expect_test "cons correct with int" =
 ;;
 
 let%expect_test "cons correct with bool" =
-  (match parse_line "a = True : []" with
+  (match Haskell_lib.Parser.parse_line "a = True : []" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -470,7 +474,7 @@ let%expect_test "cons correct with bool" =
 ;;
 
 let%expect_test "cons incorrect with int" =
-  (match parse_line "a = 1 : 2" with
+  (match Haskell_lib.Parser.parse_line "a = 1 : 2" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -480,7 +484,7 @@ let%expect_test "cons incorrect with int" =
 ;;
 
 let%expect_test "cons incorrect with bool" =
-  (match parse_line "a = True : False" with
+  (match Haskell_lib.Parser.parse_line "a = True : False" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -490,7 +494,7 @@ let%expect_test "cons incorrect with bool" =
 ;;
 
 let%expect_test "cons incorrect with int and bool" =
-  (match parse_line "a = 1 : [True]" with
+  (match Haskell_lib.Parser.parse_line "a = 1 : [True]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -500,7 +504,7 @@ let%expect_test "cons incorrect with int and bool" =
 ;;
 
 let%expect_test "neg type correct" =
-  (match parse_line "a = -42" with
+  (match Haskell_lib.Parser.parse_line "a = -42" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -513,7 +517,7 @@ let%expect_test "neg type correct" =
 ;;
 
 let%expect_test "neg type incorrect" =
-  (match parse_line "a = -True" with
+  (match Haskell_lib.Parser.parse_line "a = -True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -523,7 +527,7 @@ let%expect_test "neg type incorrect" =
 ;;
 
 let%expect_test "neg type with explicit correct single type" =
-  (match parse_line "a = -42 :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = -42 :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -536,7 +540,7 @@ let%expect_test "neg type with explicit correct single type" =
 ;;
 
 let%expect_test "neg type with explicit correct multiple type" =
-  (match parse_line "a = (-42 :: Int) :: Int" with
+  (match Haskell_lib.Parser.parse_line "a = (-42 :: Int) :: Int" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -549,7 +553,7 @@ let%expect_test "neg type with explicit correct multiple type" =
 ;;
 
 let%expect_test "neg type with explicit wrong single type" =
-  (match parse_line "a = -42 :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = -42 :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -559,7 +563,7 @@ let%expect_test "neg type with explicit wrong single type" =
 ;;
 
 let%expect_test "neg type with explicit wrong multiple type" =
-  (match parse_line "a = (-42 :: Int) :: Bool" with
+  (match Haskell_lib.Parser.parse_line "a = (-42 :: Int) :: Bool" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -569,7 +573,9 @@ let%expect_test "neg type with explicit wrong multiple type" =
 ;;
 
 let%expect_test "ord polymor" =
-  (match parse_line "a = (\\f -> let g = (f True) in (f 3)) (\\x -> x)" with
+  (match
+     Haskell_lib.Parser.parse_line "a = (\\f -> let g = (f True) in (f 3)) (\\x -> x)"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -579,7 +585,7 @@ let%expect_test "ord polymor" =
 ;;
 
 let%expect_test "if correct with int return type" =
-  (match parse_line "a = if True then 1 else -1" with
+  (match Haskell_lib.Parser.parse_line "a = if True then 1 else -1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -592,7 +598,7 @@ let%expect_test "if correct with int return type" =
 ;;
 
 let%expect_test "if correct with tuple return type" =
-  (match parse_line "a = if True then (True, 2) else (False, -1)" with
+  (match Haskell_lib.Parser.parse_line "a = if True then (True, 2) else (False, -1)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -605,7 +611,9 @@ let%expect_test "if correct with tuple return type" =
 ;;
 
 let%expect_test "if incorrect with int condition" =
-  (match parse_line "a = if (1 + 2) then (True, 2) else (False, -1)" with
+  (match
+     Haskell_lib.Parser.parse_line "a = if (1 + 2) then (True, 2) else (False, -1)"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -615,7 +623,9 @@ let%expect_test "if incorrect with int condition" =
 ;;
 
 let%expect_test "if incorrect with tuple condition" =
-  (match parse_line "a = if (True, ()) then (True, 2) else (False, -1)" with
+  (match
+     Haskell_lib.Parser.parse_line "a = if (True, ()) then (True, 2) else (False, -1)"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -625,7 +635,7 @@ let%expect_test "if incorrect with tuple condition" =
 ;;
 
 let%expect_test "if incorrect with int and bool return types" =
-  (match parse_line "a = if True then 1 else False" with
+  (match Haskell_lib.Parser.parse_line "a = if True then 1 else False" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -635,7 +645,7 @@ let%expect_test "if incorrect with int and bool return types" =
 ;;
 
 let%expect_test "if incorrect with int and tuple return types" =
-  (match parse_line "a = if True then 1 else (1, False)" with
+  (match Haskell_lib.Parser.parse_line "a = if True then 1 else (1, False)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -645,7 +655,7 @@ let%expect_test "if incorrect with int and tuple return types" =
 ;;
 
 let%expect_test "if incorrect with bool and list return types" =
-  (match parse_line "a = if True then True else [1, 4]" with
+  (match Haskell_lib.Parser.parse_line "a = if True then True else [1, 4]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -655,7 +665,7 @@ let%expect_test "if incorrect with bool and list return types" =
 ;;
 
 let%expect_test "lambda ident" =
-  (match parse_line "a = \\x -> x" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -668,7 +678,7 @@ let%expect_test "lambda ident" =
 ;;
 
 let%expect_test "lambda int return type" =
-  (match parse_line "a = \\x -> 1" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -681,7 +691,7 @@ let%expect_test "lambda int return type" =
 ;;
 
 let%expect_test "lambda narrowing to int type" =
-  (match parse_line "a = \\x -> x + 1" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> x + 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -694,7 +704,7 @@ let%expect_test "lambda narrowing to int type" =
 ;;
 
 let%expect_test "lambda tuple return type" =
-  (match parse_line "a = \\x -> (x, ())" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> (x, ())" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -707,7 +717,7 @@ let%expect_test "lambda tuple return type" =
 ;;
 
 let%expect_test "lambda multiple arguments" =
-  (match parse_line "a = \\x y z -> x + y + z" with
+  (match Haskell_lib.Parser.parse_line "a = \\x y z -> x + y + z" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -720,7 +730,7 @@ let%expect_test "lambda multiple arguments" =
 ;;
 
 let%expect_test "lambda narrowing to list type" =
-  (match parse_line "a = \\x -> 1 : x" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> 1 : x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -733,7 +743,7 @@ let%expect_test "lambda narrowing to list type" =
 ;;
 
 let%expect_test "lambda narrowing to arrow type" =
-  (match parse_line "a = \\f -> \\y -> f y" with
+  (match Haskell_lib.Parser.parse_line "a = \\f -> \\y -> f y" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -746,7 +756,7 @@ let%expect_test "lambda narrowing to arrow type" =
 ;;
 
 let%expect_test "lambda occurs check" =
-  (match parse_line "a = \\x -> x x" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> x x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -756,7 +766,7 @@ let%expect_test "lambda occurs check" =
 ;;
 
 let%expect_test "lambda tuple return type" =
-  (match parse_line "a = \\x -> x `mod` 2 == 0 && x > 5" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> x `mod` 2 == 0 && x > 5" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -769,7 +779,7 @@ let%expect_test "lambda tuple return type" =
 ;;
 
 let%expect_test "lambda correct with explicit single type" =
-  (match parse_line "a = (\\x -> 1) :: (Int -> Int)" with
+  (match Haskell_lib.Parser.parse_line "a = (\\x -> 1) :: (Int -> Int)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -782,7 +792,9 @@ let%expect_test "lambda correct with explicit single type" =
 ;;
 
 let%expect_test "lambda correct with explicit multiple type" =
-  (match parse_line "a = ((\\x -> 1) :: (Bool -> Int)) :: (Bool -> Int)" with
+  (match
+     Haskell_lib.Parser.parse_line "a = ((\\x -> 1) :: (Bool -> Int)) :: (Bool -> Int)"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -795,7 +807,7 @@ let%expect_test "lambda correct with explicit multiple type" =
 ;;
 
 let%expect_test "lambda wrong with explicit single type" =
-  (match parse_line "a = (\\x -> ()) :: (() -> Bool)" with
+  (match Haskell_lib.Parser.parse_line "a = (\\x -> ()) :: (() -> Bool)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -805,7 +817,9 @@ let%expect_test "lambda wrong with explicit single type" =
 ;;
 
 let%expect_test "lambda wrong with explicit multiple type" =
-  (match parse_line "a = ((\\x -> ()) :: (() -> ())) :: (() -> [Int])" with
+  (match
+     Haskell_lib.Parser.parse_line "a = ((\\x -> ()) :: (() -> ())) :: (() -> [Int])"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -815,7 +829,7 @@ let%expect_test "lambda wrong with explicit multiple type" =
 ;;
 
 let%expect_test "let id" =
-  (match parse_line "a = let x = x in x" with
+  (match Haskell_lib.Parser.parse_line "a = let x = x in x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -828,7 +842,7 @@ let%expect_test "let id" =
 ;;
 
 let%expect_test "let narrowing to int" =
-  (match parse_line "a = let x = x; y = 1 in x + y" with
+  (match Haskell_lib.Parser.parse_line "a = let x = x; y = 1 in x + y" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -841,7 +855,7 @@ let%expect_test "let narrowing to int" =
 ;;
 
 let%expect_test "let narrowing to [int]" =
-  (match parse_line "a = let x = x; y = 1 in y : x" with
+  (match Haskell_lib.Parser.parse_line "a = let x = x; y = 1 in y : x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -854,7 +868,7 @@ let%expect_test "let narrowing to [int]" =
 ;;
 
 let%expect_test "let narrowing to bool" =
-  (match parse_line "a = let x = x; y = True in y && x" with
+  (match Haskell_lib.Parser.parse_line "a = let x = x; y = True in y && x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -867,7 +881,7 @@ let%expect_test "let narrowing to bool" =
 ;;
 
 let%expect_test "let function" =
-  (match parse_line "a = let compose f g x = f (g x) in compose" with
+  (match Haskell_lib.Parser.parse_line "a = let compose f g x = f (g x) in compose" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -881,7 +895,7 @@ let%expect_test "let function" =
 
 let%expect_test "let recursive fib" =
   (match
-     parse_line
+     Haskell_lib.Parser.parse_line
        "a = let fib n = if (n == 0) then 0 else if (n==1) then 1 else ((fib (n-1)) + \
         (fib (n-2))) in fib"
    with
@@ -898,7 +912,7 @@ let%expect_test "let recursive fib" =
 
 let%expect_test "let recursive fac" =
   (match
-     parse_line
+     Haskell_lib.Parser.parse_line
        "a = let factorial = \\n -> if n == 0 then 1 else n * factorial (n - 1) in \
         factorial"
    with
@@ -914,7 +928,7 @@ let%expect_test "let recursive fac" =
 ;;
 
 let%expect_test "let with explicit correct single type" =
-  (match parse_line "a = let (x :: Int) = x in x" with
+  (match Haskell_lib.Parser.parse_line "a = let (x :: Int) = x in x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -927,7 +941,7 @@ let%expect_test "let with explicit correct single type" =
 ;;
 
 let%expect_test "let with explicit correct mutliple type" =
-  (match parse_line "a = let ((x :: Int) :: Int) = x in x" with
+  (match Haskell_lib.Parser.parse_line "a = let ((x :: Int) :: Int) = x in x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -940,7 +954,7 @@ let%expect_test "let with explicit correct mutliple type" =
 ;;
 
 let%expect_test "let with explicit wrong single type" =
-  (match parse_line "a = let (x :: Bool) = 1 in x" with
+  (match Haskell_lib.Parser.parse_line "a = let (x :: Bool) = 1 in x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -950,7 +964,7 @@ let%expect_test "let with explicit wrong single type" =
 ;;
 
 let%expect_test "let with explicit wrong mutliple type" =
-  (match parse_line "a = let ((x :: Int) :: Bool) = x in x" with
+  (match Haskell_lib.Parser.parse_line "a = let ((x :: Int) :: Bool) = x in x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -960,7 +974,9 @@ let%expect_test "let with explicit wrong mutliple type" =
 ;;
 
 let%expect_test "let wrong unification" =
-  (match parse_line "a = let x = if x <= True then 1 else 0 in x + 1" with
+  (match
+     Haskell_lib.Parser.parse_line "a = let x = if x <= True then 1 else 0 in x + 1"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -970,7 +986,9 @@ let%expect_test "let wrong unification" =
 ;;
 
 let%expect_test "let wrong unification" =
-  (match parse_line "a = let x = if x <= True then True else False in x" with
+  (match
+     Haskell_lib.Parser.parse_line "a = let x = if x <= True then True else False in x"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -983,7 +1001,9 @@ let%expect_test "let wrong unification" =
 ;;
 
 let%expect_test "let wrong unification" =
-  (match parse_line "a = let x = if x <= True then True else False in x" with
+  (match
+     Haskell_lib.Parser.parse_line "a = let x = if x <= True then True else False in x"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -996,7 +1016,7 @@ let%expect_test "let wrong unification" =
 ;;
 
 let%expect_test "case correct with int type" =
-  (match parse_line "a = \\x -> case x of 1 -> True; 2 -> False" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> case x of 1 -> True; 2 -> False" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1009,7 +1029,7 @@ let%expect_test "case correct with int type" =
 ;;
 
 let%expect_test "case correct with lists" =
-  (match parse_line "a = \\x -> case x of (x:xs) -> x; [] -> []" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> case x of (x:xs) -> x; [] -> []" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1023,7 +1043,8 @@ let%expect_test "case correct with lists" =
 
 let%expect_test "case correct with int lists and explicit similar types" =
   (match
-     parse_line "a = \\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []"
+     Haskell_lib.Parser.parse_line
+       "a = \\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []"
    with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
@@ -1038,7 +1059,8 @@ let%expect_test "case correct with int lists and explicit similar types" =
 
 let%expect_test "case incorrect with int lists and explicit different types" =
   (match
-     parse_line "a = \\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []"
+     Haskell_lib.Parser.parse_line
+       "a = \\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []"
    with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
@@ -1049,7 +1071,7 @@ let%expect_test "case incorrect with int lists and explicit different types" =
 ;;
 
 let%expect_test "function apply incorrect" =
-  (match parse_line "a = (\\x -> x + 1) True" with
+  (match Haskell_lib.Parser.parse_line "a = (\\x -> x + 1) True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1059,7 +1081,7 @@ let%expect_test "function apply incorrect" =
 ;;
 
 let%expect_test "function apply list return type" =
-  (match parse_line "a = (\\x -> x : []) True" with
+  (match Haskell_lib.Parser.parse_line "a = (\\x -> x : []) True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1072,7 +1094,7 @@ let%expect_test "function apply list return type" =
 ;;
 
 let%expect_test "function apply with correct single type" =
-  (match parse_line "a = (\\(x :: Int) -> x <= 2) 1" with
+  (match Haskell_lib.Parser.parse_line "a = (\\(x :: Int) -> x <= 2) 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1085,7 +1107,7 @@ let%expect_test "function apply with correct single type" =
 ;;
 
 let%expect_test "function apply return correct multiple type" =
-  (match parse_line "a = (\\((x :: Int) :: Int) -> x <= 2) 1" with
+  (match Haskell_lib.Parser.parse_line "a = (\\((x :: Int) :: Int) -> x <= 2) 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1098,7 +1120,7 @@ let%expect_test "function apply return correct multiple type" =
 ;;
 
 let%expect_test "function apply return wrong single type" =
-  (match parse_line "a = (\\(x :: Bool) -> x <= 2) 1" with
+  (match Haskell_lib.Parser.parse_line "a = (\\(x :: Bool) -> x <= 2) 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1108,7 +1130,7 @@ let%expect_test "function apply return wrong single type" =
 ;;
 
 let%expect_test "function apply return wrong multiple type" =
-  (match parse_line "a = (\\((x :: Int) :: Bool) -> x <= 2) 1" with
+  (match Haskell_lib.Parser.parse_line "a = (\\((x :: Int) :: Bool) -> x <= 2) 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1118,7 +1140,7 @@ let%expect_test "function apply return wrong multiple type" =
 ;;
 
 let%expect_test "function apply return correct single type" =
-  (match parse_line "a = (\\(x :: Int) -> x : []) 1" with
+  (match Haskell_lib.Parser.parse_line "a = (\\(x :: Int) -> x : []) 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1131,7 +1153,7 @@ let%expect_test "function apply return correct single type" =
 ;;
 
 let%expect_test "list int" =
-  (match parse_line "a = [1, 2]" with
+  (match Haskell_lib.Parser.parse_line "a = [1, 2]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1144,7 +1166,7 @@ let%expect_test "list int" =
 ;;
 
 let%expect_test "lazy list int" =
-  (match parse_line "a = [1..]" with
+  (match Haskell_lib.Parser.parse_line "a = [1..]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1157,7 +1179,7 @@ let%expect_test "lazy list int" =
 ;;
 
 let%expect_test "lazy list wrong type" =
-  (match parse_line "a = [(True, 1)..]" with
+  (match Haskell_lib.Parser.parse_line "a = [(True, 1)..]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1167,7 +1189,7 @@ let%expect_test "lazy list wrong type" =
 ;;
 
 let%expect_test "list of list" =
-  (match parse_line "a = [[True]]" with
+  (match Haskell_lib.Parser.parse_line "a = [[True]]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1180,7 +1202,7 @@ let%expect_test "list of list" =
 ;;
 
 let%expect_test "wrong list of different types" =
-  (match parse_line "a = [True, (), 3]" with
+  (match Haskell_lib.Parser.parse_line "a = [True, (), 3]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1190,7 +1212,7 @@ let%expect_test "wrong list of different types" =
 ;;
 
 let%expect_test "comprehension list with generator" =
-  (match parse_line "a = [x * y | x <- [1..10], y <- [1]]" with
+  (match Haskell_lib.Parser.parse_line "a = [x * y | x <- [1..10], y <- [1]]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1203,7 +1225,7 @@ let%expect_test "comprehension list with generator" =
 ;;
 
 let%expect_test "comprehension list with simple condition" =
-  (match parse_line "a = [1 * 2 | True]" with
+  (match Haskell_lib.Parser.parse_line "a = [1 * 2 | True]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1216,7 +1238,7 @@ let%expect_test "comprehension list with simple condition" =
 ;;
 
 let%expect_test "comprehension list with condition" =
-  (match parse_line "a = \\x -> [ x | x < 10 ]" with
+  (match Haskell_lib.Parser.parse_line "a = \\x -> [ x | x < 10 ]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1229,7 +1251,9 @@ let%expect_test "comprehension list with condition" =
 ;;
 
 let%expect_test "comprehension list with condition and generator" =
-  (match parse_line "a = \\y -> [ x * y | x <- [1..10], y <= 10  ]" with
+  (match
+     Haskell_lib.Parser.parse_line "a = \\y -> [ x * y | x <- [1..10], y <= 10  ]"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1242,7 +1266,9 @@ let%expect_test "comprehension list with condition and generator" =
 ;;
 
 let%expect_test "wrong comprehension list with generator condition" =
-  (match parse_line "a = \\x y -> [ x * y | x < 10, y <- [True, False]]" with
+  (match
+     Haskell_lib.Parser.parse_line "a = \\x y -> [ x * y | x < 10, y <- [True, False]]"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1252,7 +1278,7 @@ let%expect_test "wrong comprehension list with generator condition" =
 ;;
 
 let%expect_test "several functions" =
-  (match parse_line "f x = g x; g y = y" with
+  (match Haskell_lib.Parser.parse_line "f x = g x; g y = y" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1266,7 +1292,7 @@ let%expect_test "several functions" =
 ;;
 
 let%expect_test "mutually recursive functions" =
-  (match parse_line "f x = g x; g y = f y" with
+  (match Haskell_lib.Parser.parse_line "f x = g x; g y = f y" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1281,7 +1307,7 @@ let%expect_test "mutually recursive functions" =
 
 let%expect_test "mutually recursive functions with guards" =
   (match
-     parse_line
+     Haskell_lib.Parser.parse_line
        "isEven n | n == 0 = True | n > 0 = isOdd (n - 1) | True = isOdd (-n); isOdd n | \
         n == 0 = False | n > 0 = isEven (n - 1) | True = isEven (-n)"
    with
@@ -1298,7 +1324,7 @@ let%expect_test "mutually recursive functions with guards" =
 ;;
 
 let%expect_test "guards" =
-  (match parse_line "f x | x > 0 = x | True = -1" with
+  (match Haskell_lib.Parser.parse_line "f x | x > 0 = x | True = -1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1311,7 +1337,7 @@ let%expect_test "guards" =
 ;;
 
 let%expect_test "where single statement" =
-  (match parse_line "f x = x + y where y = 1" with
+  (match Haskell_lib.Parser.parse_line "f x = x + y where y = 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1324,7 +1350,7 @@ let%expect_test "where single statement" =
 ;;
 
 let%expect_test "where single statement with explicit incorrect type" =
-  (match parse_line "f x = x + y where (y :: Bool) = 1" with
+  (match Haskell_lib.Parser.parse_line "f x = x + y where (y :: Bool) = 1" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1334,7 +1360,7 @@ let%expect_test "where single statement with explicit incorrect type" =
 ;;
 
 let%expect_test "where multiple statements" =
-  (match parse_line "f x = x && y || z where y = False; z = True" with
+  (match Haskell_lib.Parser.parse_line "f x = x && y || z where y = False; z = True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1347,7 +1373,7 @@ let%expect_test "where multiple statements" =
 ;;
 
 let%expect_test "where single statement incorrect" =
-  (match parse_line "f x = x + y where y = True" with
+  (match Haskell_lib.Parser.parse_line "f x = x + y where y = True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1357,7 +1383,7 @@ let%expect_test "where single statement incorrect" =
 ;;
 
 let%expect_test "where single statement with param shadowing incorrect" =
-  (match parse_line "f x y = x + y where y = True" with
+  (match Haskell_lib.Parser.parse_line "f x y = x + y where y = True" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1367,7 +1393,7 @@ let%expect_test "where single statement with param shadowing incorrect" =
 ;;
 
 let%expect_test "where multiple statements incorrect" =
-  (match parse_line "f x  = x && y || z where y = False; z = 3" with
+  (match Haskell_lib.Parser.parse_line "f x  = x && y || z where y = False; z = 3" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1377,7 +1403,7 @@ let%expect_test "where multiple statements incorrect" =
 ;;
 
 let%expect_test "where polymorphic argument" =
-  (match parse_line "f x = y where y = False" with
+  (match Haskell_lib.Parser.parse_line "f x = y where y = False" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1390,7 +1416,7 @@ let%expect_test "where polymorphic argument" =
 ;;
 
 let%expect_test "where list argument" =
-  (match parse_line "f (x:xs) = y : xs where y = 2" with
+  (match Haskell_lib.Parser.parse_line "f (x:xs) = y : xs where y = 2" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1403,7 +1429,7 @@ let%expect_test "where list argument" =
 ;;
 
 let%expect_test "function with tuple argument" =
-  (match parse_line "f (x, y) = (x + 1, y && True)" with
+  (match Haskell_lib.Parser.parse_line "f (x, y) = (x + 1, y && True)" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1416,7 +1442,7 @@ let%expect_test "function with tuple argument" =
 ;;
 
 let%expect_test "several functions with incorrect type" =
-  (match parse_line "f x = x + 1; g = f y where y = False" with
+  (match Haskell_lib.Parser.parse_line "f x = x + 1; g = f y where y = False" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1426,7 +1452,7 @@ let%expect_test "several functions with incorrect type" =
 ;;
 
 let%expect_test "correct arrow declaration" =
-  (match parse_line "f :: Int -> Int; f x = x" with
+  (match Haskell_lib.Parser.parse_line "f :: Int -> Int; f x = x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1439,7 +1465,7 @@ let%expect_test "correct arrow declaration" =
 ;;
 
 let%expect_test "incorrect arrow declaration" =
-  (match parse_line "f :: Int; f x = x" with
+  (match Haskell_lib.Parser.parse_line "f :: Int; f x = x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1449,7 +1475,7 @@ let%expect_test "incorrect arrow declaration" =
 ;;
 
 let%expect_test "incorrect arrow declaration with different types" =
-  (match parse_line "f :: Int -> Bool; f x = x" with
+  (match Haskell_lib.Parser.parse_line "f :: Int -> Bool; f x = x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1460,7 +1486,7 @@ let%expect_test "incorrect arrow declaration with different types" =
 ;;
 
 let%expect_test "incorrect list declaration with different types" =
-  (match parse_line "a :: [Int]; a = [False, True]" with
+  (match Haskell_lib.Parser.parse_line "a :: [Int]; a = [False, True]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1471,7 +1497,7 @@ let%expect_test "incorrect list declaration with different types" =
 ;;
 
 let%expect_test "correct declaration with explicit type" =
-  (match parse_line "a :: [Int]; (a :: [Int]) = [1, 2]" with
+  (match Haskell_lib.Parser.parse_line "a :: [Int]; (a :: [Int]) = [1, 2]" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1484,7 +1510,7 @@ let%expect_test "correct declaration with explicit type" =
 ;;
 
 let%expect_test "incorrect declaration with explicit type" =
-  (match parse_line "f :: Bool -> Bool; f (x :: Int) = x" with
+  (match Haskell_lib.Parser.parse_line "f :: Bool -> Bool; f (x :: Int) = x" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1495,7 +1521,7 @@ let%expect_test "incorrect declaration with explicit type" =
 ;;
 
 let%expect_test "correct tuple declaration" =
-  (match parse_line "a :: (Int, Bool, ()); a = (1, True, ())" with
+  (match Haskell_lib.Parser.parse_line "a :: (Int, Bool, ()); a = (1, True, ())" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1508,7 +1534,7 @@ let%expect_test "correct tuple declaration" =
 ;;
 
 let%expect_test "incorrect tuple declaration" =
-  (match parse_line "a :: (Int, Bool, ()); a = (False, True, ())" with
+  (match Haskell_lib.Parser.parse_line "a :: (Int, Bool, ()); a = (False, True, ())" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1519,7 +1545,9 @@ let%expect_test "incorrect tuple declaration" =
 ;;
 
 let%expect_test "failed unification" =
-  (match parse_line "a = let f = (\\id -> (id 1, id True)) (\\x -> x) in f" with
+  (match
+     Haskell_lib.Parser.parse_line "a = let f = (\\id -> (id 1, id True)) (\\x -> x) in f"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1529,7 +1557,10 @@ let%expect_test "failed unification" =
 ;;
 
 let%expect_test "generalization" =
-  (match parse_line "a = let f = \\x -> let const = \\y -> x in const x in f" with
+  (match
+     Haskell_lib.Parser.parse_line
+       "a = let f = \\x -> let const = \\y -> x in const x in f"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1543,7 +1574,7 @@ let%expect_test "generalization" =
 
 let%expect_test "incompatible restrictions" =
   (match
-     parse_line
+     Haskell_lib.Parser.parse_line
        "a = let double f z = f (f z) in (double (\\x -> x+1) 1, double (\\x -> x && x) \
         False)"
    with
@@ -1556,7 +1587,7 @@ let%expect_test "incompatible restrictions" =
 ;;
 
 let%expect_test "y-combinator" =
-  (match parse_line "a = let fix f = f (fix f) in fix" with
+  (match Haskell_lib.Parser.parse_line "a = let fix f = f (fix f) in fix" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1569,7 +1600,7 @@ let%expect_test "y-combinator" =
 ;;
 
 let%expect_test "z-combinator without recursion" =
-  (match parse_line "a = let fix f eta = f (fix f) eta in fix" with
+  (match Haskell_lib.Parser.parse_line "a = let fix f eta = f (fix f) eta in fix" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1582,7 +1613,7 @@ let%expect_test "z-combinator without recursion" =
 ;;
 
 let%expect_test "occurs check" =
-  (match parse_line "a = let f x = f in f" with
+  (match Haskell_lib.Parser.parse_line "a = let f x = f in f" with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1592,7 +1623,9 @@ let%expect_test "occurs check" =
 ;;
 
 let%expect_test "fail unification" =
-  (match parse_line "a = let f = (\\x -> x) in let g = (f True) in f 3" with
+  (match
+     Haskell_lib.Parser.parse_line "a = let f = (\\x -> x) in let g = (f True) in f 3"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
@@ -1602,7 +1635,9 @@ let%expect_test "fail unification" =
 ;;
 
 let%expect_test "fail unification" =
-  (match parse_line "a = (\\f -> let g = (f True) in (f 3)) (\\x -> x)" with
+  (match
+     Haskell_lib.Parser.parse_line "a = (\\f -> let g = (f True) in (f 3)) (\\x -> x)"
+   with
    | Result.Ok bindings ->
      (match Haskell_lib.Inferencer.w_program bindings with
       | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
