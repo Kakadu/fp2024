@@ -569,8 +569,10 @@ let rec infer_expr env = function
    ;; *)
 
 let infer_construction env = function
-  | Expr exp -> infer_expr env exp
+  | Expr exp ->
+    let* _, typ = infer_expr env exp in
+    return typ
   | _ -> fail (`WIP "Statement inference WIP")
 ;;
 
-let infer e = run (infer_construction TypeEnvironment.empty e)
+let infer c = run (infer_construction TypeEnvironment.empty c)

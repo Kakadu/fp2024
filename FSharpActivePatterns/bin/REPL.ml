@@ -76,7 +76,7 @@ let run_repl dump_parsetree input_file =
        | Error err ->
          fprintf err_formatter "Type checking failed: %a\n" pp_error err;
          print_flush ()
-       | Ok (_, t) ->
+       | Ok t ->
          (match dump_parsetree with
           | true -> print_construction std_formatter ast
           | false ->
