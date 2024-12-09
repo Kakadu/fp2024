@@ -1,6 +1,5 @@
 open InferTypes
 
-(*Infer monad*)
 module MInfer = struct
   open Base
 
@@ -42,7 +41,6 @@ module MInfer = struct
   let run m = snd (m 0)
 end
 
-(*Type*)
 type fresh_var = int
 
 module Type = struct
@@ -68,15 +66,12 @@ module Type = struct
   ;;
 end
 
-
-
-(*Substitution*)
 module Substitution = struct
   open MInfer
   open MInfer.Syntax
   open Base
 
-  type t = (binder,typchik,Int.comparator_witness) Map.t
+  type t = (binder, typchik, Int.comparator_witness) Map.t
 
   let pp ppf subst =
     let open Stdlib.Format in
@@ -97,22 +92,17 @@ module Substitution = struct
     return (Base.Map.singleton (module Base.Int) k vm)
   ;;
 
-  let find_exn (map: t) (k: binder) : typchik =
-    Map.find_exn map k
-    
-  let find (map: t) (k: binder) : typchik option =
-    Map.find map k
-  
-  let remove (map: t) (k: binder) : t =
-    Map.remove map k
+  let find_exn (map : t) (k : binder) : typchik = Map.find_exn map k
+  let find (map : t) (k : binder) : typchik option = Map.find map k
+  let remove (map : t) (k : binder) : t = Map.remove map k
 
   let apply sub =
     let rec helper = function
       | Typ_prim _ as typchik -> typchik
       | Typ_var b as typchik ->
-        (match find_exn sub b with 
+        (match find_exn sub b with
          | exception Not_found_s _ -> typchik
-         | _ -> typchik) (*refactor?*)
+         | _ -> typchik)
       | Typ_arrow (l, r) -> Typ_arrow (helper l, helper r)
       | Typ_tuple t -> Typ_tuple (List.map t ~f:(fun el -> helper el))
       | Typ_list l -> Typ_list (helper l)
@@ -121,10 +111,9 @@ module Substitution = struct
   ;;
 
   let fold mp init f =
-    Map.fold mp ~init
-      ~f:(fun ~key:k ~data:vm acc ->
-        let* acc = acc in
-        f k vm acc)
+    Map.fold mp ~init ~f:(fun ~key:k ~data:vm acc ->
+      let* acc = acc in
+      f k vm acc)
   ;;
 
   let rec unify l r =
@@ -139,26 +128,24 @@ module Substitution = struct
       compose subs1 subs2
     | _ -> fail (`Unification_failed (l, r))
 
-    and extend k v s =
-      match Map.find s k with
-      | None ->
-        let v = apply s v in
-        let* s2 = singleton k v in  
-        fold s (return s2) (fun k v acc ->
-          let v = apply s2 v in
-          let* k, v = mapping k v in
-          return (Map.set acc ~key:k ~data:v))
-      | Some v2 ->
-        let* s2 = unify v v2 in
-        compose s s2
+  and extend k v s =
+    match Map.find s k with
+    | None ->
+      let v = apply s v in
+      let* s2 = singleton k v in
+      fold s (return s2) (fun k v acc ->
+        let v = apply s2 v in
+        let* k, v = mapping k v in
+        return (Map.set acc ~key:k ~data:v))
+    | Some v2 ->
+      let* s2 = unify v v2 in
+      compose s s2
 
   and compose s1 s2 = fold s2 (return s1) extend
 
   let compose_all ss = RList.fold_left ss ~init:(return empty) ~f:compose
 end
 
-
-(*Scheme*)
 module Scheme = struct
   type t = scheme
 
@@ -181,17 +168,14 @@ module Scheme = struct
       then Format.fprintf fmt "%a" pprint_type typ
       else Format.fprintf fmt "%a. %a" VarSet.pp st pprint_type typ
   ;;
-
 end
 
-(*Context / Environment*)
 module TypeEnv = struct
   open Base
 
-  type t = scheme Map.M(String).t
-  
+  type t = (string, scheme, String.comparator_witness) Map.t
 
-  let extend key value = Map.add ~key value
+  let extend env name scheme = Map.set env ~key:name ~data:scheme
   let empty = Map.empty (module String)
   let fold f init mp = Map.fold mp ~init ~f:(fun ~key:k ~data:v acc -> f k v acc)
 
@@ -203,12 +187,11 @@ module TypeEnv = struct
   let find name xs = Map.find xs name
 
   let pp_env fmt environment =
-    Map.iteri environment
-      ~f:(fun ~key:key ~data:data -> Format.fprintf fmt "%S: %a\n" key Scheme.pp_scheme data)
+    Map.iteri environment ~f:(fun ~key ~data ->
+      Format.fprintf fmt "%S: %a\n" key Scheme.pp_scheme data)
   ;;
 end
 
-(*Generalization and Instantiation*)
 open MInfer
 open MInfer.Syntax
 
@@ -232,3 +215,73 @@ let generalize : TypeEnv.t -> Type.t -> Scheme.t =
   Forall (free, ty)
 ;;
 
+open Ast.Constant
+open Ast.Expression
+
+let rec infer_exp exp env =
+  match exp with
+  | Exp_ident varname ->
+    (match TypeEnv.find varname env with
+     | None -> fail (`Unbound_variable varname)
+     | Some x ->
+       let* typchik = instantiate x in
+       return (Substitution.empty, typchik))
+  | Exp_constant const ->
+    (match const with
+     | Const_char _ -> return (Substitution.empty, Typ_prim "char")
+     | Const_integer _ -> return (Substitution.empty, int_typ)
+     | Const_string _ -> return (Substitution.empty, string_typ))
+  | Exp_let (Nonrecursive, (binding, tl), exp) ->
+    (match binding.pat with
+     | Pat_var var_name ->
+       let* sub1, typ1 = infer_exp binding.expr env in
+       let applied_type = Substitution.apply sub1 typ1 in
+       let new_scheme = generalize env applied_type in
+       let extended_env = TypeEnv.extend env var_name new_scheme in
+       let* sub2, typ2 = infer_exp exp extended_env in
+       let* new_subst = Substitution.compose sub2 sub1 in
+       return (new_subst, typ2)
+     | _ -> failwith "Unsupported pattern in let binding")
+  | _ -> fail `Wrong_exp
+;;
+
+open Ast.Pattern
+open Ast.Structure
+
+let rec infer_structure_item item env =
+  match item with
+  | Str_eval exp ->
+    let* subst, typ = infer_exp exp env in
+    return (subst, typ)
+  | Str_value (Nonrecursive, (binding, tl)) ->
+    (match binding.pat with
+     | Pat_var var_name ->
+       let* sub1, typ1 = infer_exp binding.expr env in
+       let applied_type = Substitution.apply sub1 typ1 in
+       let new_scheme = generalize env applied_type in
+       let _ = TypeEnv.extend env var_name new_scheme in
+       return (sub1, typ1)
+     | _ -> failwith "Unsupported pattern in let binding")
+  | _ -> fail `Wrong_stritem
+;;
+
+let infer_program program =
+  List.fold_left
+    (fun acc item ->
+      let* subst_acc, env_acc = acc in
+      let* subst, typ = infer_structure_item item env_acc in
+      let* new_subst = Substitution.compose subst_acc subst in
+      let new_env =
+        TypeEnv.extend
+          env_acc
+          (string_of_int (Base.Map.length env_acc))
+          (generalize env_acc typ)
+      in
+      return (new_subst, new_env))
+    (return (Substitution.empty, TypeEnv.empty))
+    program
+;;
+
+let run_infer_program (program : Ast.program) = run (infer_program program)
+
+open Parser

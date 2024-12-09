@@ -1,6 +1,7 @@
 open Format
 
 type binder = int [@@deriving show { with_path = false }]
+
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 
@@ -25,8 +26,9 @@ type typchik =
 type scheme = Forall of binder_set * typchik [@@deriving show { with_path = false }]
 
 let int_typ = Typ_prim "int"
-let bool_typ = Typ_prim "bool"
+let ch_typ = Typ_prim "char"
 let string_typ = Typ_prim "string"
+let bool_typ = Typ_prim "bool"
 let var_typ x = Typ_var x
 let arrow_typ l r = Typ_arrow (l, r)
 let ( @-> ) = arrow_typ
@@ -64,6 +66,8 @@ type error =
   | `Unification_failed of typchik * typchik
   | `Wrong_exp
   | `Wrong_type
+  | `Wrong_Const
+  | `Wrong_stritem
   | `Unbound_adt_type of string
   | `Unbound_variable of string
   | `Pattern_matching_failed
@@ -75,6 +79,8 @@ let pp_inf_err fmt = function
     fprintf fmt "Unification_failed: %a # %a" pprint_type typ1 pprint_type typ2
   | `Wrong_exp -> fprintf fmt "Wrong_exp"
   | `Wrong_type -> fprintf fmt "Wrong_type"
+  | `Wrong_Const -> fprintf fmt "Wrong_const"
+  | `Wrong_stritem -> fprintf fmt "Wrong_stritem"
   | `Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
   | `Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
   | `Pattern_matching_failed -> fprintf fmt "Pattern_matching_failed"
