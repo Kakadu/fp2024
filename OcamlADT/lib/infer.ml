@@ -188,7 +188,7 @@ module TypeEnv = struct
 
   let pp_env fmt environment =
     Map.iteri environment ~f:(fun ~key ~data ->
-      Format.fprintf fmt "%S: %a\n" key Scheme.pp_scheme data)
+      Stdlib.Format.fprintf fmt "%S: %a\n" key Scheme.pp_scheme data)
   ;;
 end
 
@@ -231,7 +231,7 @@ let rec infer_exp exp env =
      | Const_char _ -> return (Substitution.empty, Typ_prim "char")
      | Const_integer _ -> return (Substitution.empty, int_typ)
      | Const_string _ -> return (Substitution.empty, string_typ))
-  | Exp_let (Nonrecursive, (binding, tl), exp) ->
+  | Exp_let (Nonrecursive, (binding, _), exp) ->
     (match binding.pat with
      | Pat_var var_name ->
        let* sub1, typ1 = infer_exp binding.expr env in
@@ -248,12 +248,12 @@ let rec infer_exp exp env =
 open Ast.Pattern
 open Ast.Structure
 
-let rec infer_structure_item item env =
+let infer_structure_item item env =
   match item with
   | Str_eval exp ->
     let* subst, typ = infer_exp exp env in
     return (subst, typ)
-  | Str_value (Nonrecursive, (binding, tl)) ->
+  | Str_value (Nonrecursive, (binding, _)) ->
     (match binding.pat with
      | Pat_var var_name ->
        let* sub1, typ1 = infer_exp binding.expr env in
@@ -283,5 +283,3 @@ let infer_program program =
 ;;
 
 let run_infer_program (program : Ast.program) = run (infer_program program)
-
-open Parser
