@@ -4,7 +4,6 @@
 
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
-open FSharpActivePatterns.PrettyPrinter
 open FSharpActivePatterns.Inferencer
 open FSharpActivePatterns.TypesPp
 open Stdlib

@@ -122,17 +122,24 @@ module Type = struct
   (* check that v is not inside of second type.
      Runs during substitution to ensure that there are no cycles*)
   let rec occurs_in v = function
-    | Primary _ -> false
+    | Primitive _ -> false
     | Type_var b -> b = v
     | Arrow (fst, snd) -> occurs_in v fst || occurs_in v snd
+    | Type_list typ -> occurs_in v typ
+    | Type_tuple (fst, snd, rest) ->
+      occurs_in v fst || occurs_in v snd || List.exists rest ~f:(occurs_in v)
+    | TOption t -> occurs_in v t
   ;;
 
   (* collects all type variables *)
   let free_vars =
     let rec helper acc = function
-      | Primary _ -> acc
+      | Primitive _ -> acc
       | Type_var b -> VarSet.add b acc
       | Arrow (fst, snd) -> helper (helper acc fst) snd
+      | Type_list typ -> helper acc typ
+      | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+      | TOption t -> helper acc t
     in
     helper VarSet.empty
   ;;
@@ -196,14 +203,27 @@ end = struct
      and type into context (map) *)
   let rec unify fst snd =
     match fst, snd with
-    | Primary fst, Primary snd when String.equal fst snd -> return empty
-    | Primary _, Primary _ -> fail (`Unification_failed (fst, snd))
+    | Primitive fst, Primitive snd when String.equal fst snd -> return empty
+    | Primitive _, Primitive _ -> fail (`Unification_failed (fst, snd))
     | Type_var f, Type_var s when Int.equal f s -> return empty
     | Type_var b, t | t, Type_var b -> singleton b t
     | Arrow (f1, s1), Arrow (f2, s2) ->
       let* subst1 = unify f1 f2 in
       let* subst2 = unify s1 s2 in
       compose subst1 subst2
+    | Type_list t1, Type_list t2 -> unify t1 t2
+    | TOption t1, TOption t2 -> unify t1 t2
+    | Type_tuple (t1_1, t1_2, t1_rest), Type_tuple (t2_1, t2_2, t2_rest)
+      when List.length t1_rest = List.length t2_rest ->
+      let type_pairs = List.zip_exn (t1_1 :: t1_2 :: t1_rest) (t2_1 :: t2_2 :: t2_rest) in
+      let* substitutions =
+        List.fold type_pairs ~init:(return []) ~f:(fun acc (t1, t2) ->
+          let* acc = acc in
+          let* subst = unify t1 t2 in
+          return (subst :: acc))
+      in
+      let substitution_result = compose_all substitutions in
+      substitution_result
     | _ -> fail (`Unification_failed (fst, snd))
 
   (* if value associated w this key exists in map, try to unify them, otherwise
@@ -225,7 +245,7 @@ end = struct
   and compose map1 map2 = RMap.fold map2 ~init:(return map1) ~f:extend
 
   (* compose list of maps together *)
-  let compose_all maps = RList.fold_left maps ~init:(return empty) ~f:compose
+  and compose_all maps = RList.fold_left maps ~init:(return empty) ~f:compose
 end
 
 (* module for scheme treatment *)
@@ -346,6 +366,16 @@ let rec infer_expr env = function
        let* t = instantiate s in
        return (Substitution.empty, t)
      | None -> fail (`Undef_var varname))
+  | Unary_expr (op, e) ->
+    let* op_typ =
+      match op with
+      | Unary_minus -> return int_typ
+      | Unary_not -> return bool_typ
+    in
+    let* e_subst, e_typ = infer_expr env e in
+    let* subst = unify op_typ (Substitution.apply e_subst e_typ) in
+    let* subst_result = Substitution.compose_all [ e_subst; subst ] in
+    return (subst_result, e_typ)
   | Bin_expr (op, e1, e2) ->
     let* subst1, typ1 = infer_expr env e1 in
     let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) e2 in
@@ -372,6 +402,51 @@ let rec infer_expr env = function
     let* subst4 = Substitution.unify (Substitution.apply subst3 typ2) e2typ in
     let* subst_res = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
     return (subst_res, Substitution.apply subst_res etyp)
+  | Option None ->
+    let* fresh_typ = make_fresh_var in
+    return (Substitution.empty, TOption fresh_typ)
+  | Option (Some e) ->
+    let* subst, typ = infer_expr env e in
+    return (subst, TOption typ)
+  | Tuple (fst, snd, rest) ->
+    let* subst1, typ1 = infer_expr env fst in
+    let* subst2, typ2 = infer_expr env snd in
+    let* subst_rest, typs_rest =
+      List.fold_right
+        rest
+        ~f:(fun e acc ->
+          let* subst_acc, typs = acc in
+          let* subst, typ = infer_expr env e in
+          let* subst_acc = Substitution.compose subst_acc subst in
+          return (subst_acc, typ :: typs))
+        ~init:(return (Substitution.empty, []))
+    in
+    let* subst_result = Substitution.compose_all [ subst1; subst2; subst_rest ] in
+    let typ1 = Substitution.apply subst_result typ1 in
+    let typ2 = Substitution.apply subst_result typ2 in
+    let typs_rest =
+      List.map typs_rest ~f:(fun typ -> Substitution.apply subst_result typ)
+    in
+    return (subst_result, Type_tuple (typ1, typ2, typs_rest))
+  | List [] ->
+    let* fresh_type = make_fresh_var in
+    return (Substitution.empty, Type_list fresh_type)
+  | List (hd :: tl) ->
+    let* subst1, typ1 = infer_expr env hd in
+    let typ1 = Substitution.apply subst1 typ1 in
+    let* subst_unify, typ_unified =
+      List.fold
+        tl
+        ~f:(fun acc e ->
+          let* subst_acc, typ_acc = acc in
+          let* subst, typ = infer_expr env e in
+          let* subst_unify = unify typ_acc typ in
+          let typ_acc = Substitution.apply subst_unify typ_acc in
+          let* subst_acc = Substitution.compose_all [ subst; subst_acc; subst_unify ] in
+          return (subst_acc, typ_acc))
+        ~init:(return (subst1, typ1))
+    in
+    return (subst_unify, Type_list typ_unified)
   | If_then_else (c, th, Some el) ->
     let* subst1, typ1 = infer_expr env c in
     let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) th in

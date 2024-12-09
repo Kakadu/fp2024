@@ -5,9 +5,12 @@
 type binder = int [@@deriving show { with_path = false }]
 
 type typ =
-  | Primary of string
+  | Primitive of string
   | Type_var of binder
   | Arrow of typ * typ
+  | Type_list of typ
+  | Type_tuple of typ * typ * typ list
+  | TOption of typ
 [@@deriving show { with_path = false }]
 
 let arrow_of_types first_types last =
@@ -30,7 +33,7 @@ type binder_set = VarSet.t [@@deriving show { with_path = false }]
 (* binder_set here -- list of all type vars in context (?) *)
 type scheme = S of binder_set * typ [@@deriving show { with_path = false }]
 
-let int_typ = Primary "int"
-let bool_typ = Primary "bool"
-let string_typ = Primary "string"
-let unit_typ = Primary "unit"
+let int_typ = Primitive "int"
+let bool_typ = Primitive "bool"
+let string_typ = Primitive "string"
+let unit_typ = Primitive "unit"
