@@ -12,6 +12,7 @@ type error =
   [ `Occurs_check
   | `Undef_var of string
   | `Unification_failed of typ * typ
+  | `WIP of string
   ]
 
 let pp_error fmt : error -> _ = function
@@ -19,6 +20,7 @@ let pp_error fmt : error -> _ = function
   | `Undef_var s -> fprintf fmt "Undefined variable '%s'" s
   | `Unification_failed (fst, snd) ->
     fprintf fmt "unification failed on %a and %a" pp_typ fst pp_typ snd
+  | `WIP s -> fprintf fmt "%s" s
 ;;
 
 (* for treating result of type inference *)
@@ -354,7 +356,7 @@ let rec infer_pattern env = function
     let* fresh_type = make_fresh_var in
     return (fresh_type, env)
   | POption (Some p) -> infer_pattern env p
-  | _ -> failwith "WIP"
+  | _ -> fail (`WIP "Pattern inference WIP")
 ;;
 
 let rec infer_expr env = function
@@ -394,7 +396,7 @@ let rec infer_expr env = function
       | Binary_equal | Binary_unequal ->
         let* fresh_type = make_fresh_var in
         return (fresh_type, fresh_type, bool_typ)
-      | _ -> failwith "Pattern inference WIP"
+      | _ -> fail (`WIP "Cons inference WIP")
     in
     let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
     (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
@@ -481,12 +483,52 @@ let rec infer_expr env = function
     in
     let* subst, e_type = infer_expr env e in
     return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
-  | _ -> failwith "Expr inference WIP"
+  (* | LetIn (Rec, let_bind, let_binds, e) ->
+     let bind_names =
+     List.map (let_bind :: let_binds) ~f:(fun let_bind ->
+     match let_bind with
+     | Let_bind (Ident (name, _), _, _) -> name)
+     in
+     let* env =
+     List.fold
+     ~init:(return env)
+     ~f:(fun acc name ->
+     let* fresh_type = make_fresh_var in
+     let* acc = acc in
+     return (TypeEnvironment.extend acc name (S (VarSet.empty, fresh_type))))
+     bind_names
+     in
+     x *)
+  | _ -> fail (`WIP "Expr inference WIP")
 ;;
+
+(* and infer_let_bind env fresh_type = function
+   | Let_bind (_, args, e) ->
+   let arg_names =
+   List.map args ~f:(fun arg ->
+   match arg with
+   | Ident (name, _) -> name)
+   in
+   let* env =
+   List.fold
+   ~init:(return env)
+   ~f:(fun acc arg ->
+   let* fresh_type = make_fresh_var in
+   let* acc = acc in
+   return (TypeEnvironment.extend acc arg (S (VarSet.empty, fresh_type))))
+   arg_names
+   in
+   let* subst1, typ1 = infer_expr env e in
+   let* subst2 = unify (Substitution.apply subst1 fresh_type) typ1 in
+   let* subst = Substitution.compose subst1 subst2 in
+   let env = TypeEnvironment.apply subst env in
+   let typ2 = generalize env (Substitution.apply subst fresh_type) in
+   return (subst, typ2)
+   ;; *)
 
 let infer_construction env = function
   | Expr exp -> infer_expr env exp
-  | _ -> failwith "WIP"
+  | _ -> fail (`WIP "Statement inference WIP")
 ;;
 
 let infer e = run (infer_construction TypeEnvironment.empty e)
