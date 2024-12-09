@@ -44,38 +44,15 @@ module Type : sig
 end
 
 module Subst : sig
-  type t = (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t
+  type t
 
-  val empty : (string, 'a, Base.String.comparator_witness) Base.Map.t
-
-  val singleton
-    :  string
-    -> Ast.core_type
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t R.t
-
-  val find : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b option
-  val remove : ('a, 'b, 'c) Base.Map.t -> 'a -> ('a, 'b, 'c) Base.Map.t
-  val apply : (string, Ast.core_type, 'a) Base.Map.t -> Ast.core_type -> Ast.core_type
-
-  val unify
-    :  Ast.core_type
-    -> Ast.core_type
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t R.t
-
-  val extend
-    :  string
-    -> Ast.core_type
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t R.t
-
-  val compose
-    :  (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t R.t
-
-  val compose_all
-    :  (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t list
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t R.t
+  val empty : t
+  val singleton : string -> Ast.core_type -> t R.t
+  val apply : t -> Ast.core_type -> Ast.core_type
+  val unify : Ast.core_type -> Ast.core_type -> t R.t
+  val compose : t -> t -> t R.t
+  val compose_all : t list -> t R.t
+  val remove : t -> string -> t
 end
 
 module VarSet : sig
@@ -133,12 +110,7 @@ module Scheme : sig
 
   val occurs_in : string -> TypedTree.scheme -> bool
   val free_vars : TypedTree.scheme -> VarSet.t
-
-  val apply
-    :  (string, Ast.core_type, 'a) Base.Map.t
-    -> TypedTree.scheme
-    -> TypedTree.scheme
-
+  val apply : Subst.t -> TypedTree.scheme -> TypedTree.scheme
   val pp : Format.formatter -> TypedTree.scheme -> unit
 end
 
@@ -150,20 +122,16 @@ module TypeEnv : sig
   val free_vars : ('a, TypedTree.scheme, 'b) Base.Map.t -> VarSet.t
 
   val apply
-    :  (string, Ast.core_type, 'a) Base.Map.t
-    -> ('b, TypedTree.scheme, 'c) Base.Map.t
-    -> ('b, TypedTree.scheme, 'c) Base.Map.t
+    :  Subst.t
+    -> ('a, TypedTree.scheme, 'b) Base.Map.t
+    -> ('a, TypedTree.scheme, 'b) Base.Map.t
 
   val pp : Format.formatter -> ('a, string * TypedTree.scheme, 'b) Base.Map.t -> unit
   val find_exn : (string, 'a R.t, 'b) Base.Map.t -> string -> 'a R.t
 end
 
 module Infer : sig
-  val unify
-    :  Ast.core_type
-    -> Ast.core_type
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t R.t
-
+  val unify : Ast.core_type -> Ast.core_type -> Subst.t R.t
   val fresh_var : Ast.core_type R.t
   val instantiate : TypedTree.scheme -> Ast.core_type R.t
   val generalize : TypeEnv.t -> Ast.core_type -> TypedTree.scheme
@@ -171,7 +139,7 @@ module Infer : sig
   val lookup_env
     :  string
     -> (string, TypedTree.scheme, 'a) Base.Map.t
-    -> ((string, 'b, Base.String.comparator_witness) Base.Map.t * Ast.core_type) R.t
+    -> (Subst.t * Ast.core_type) R.t
 
   val infer_pattern
     :  (string, TypedTree.scheme, 'a) Base.Map.t
@@ -183,7 +151,7 @@ module Infer : sig
 
   val infer_value_binding_list
     :  TypeEnv.t
-    -> (string, Ast.core_type, Base.String.comparator_witness) Base.Map.t
+    -> Subst.t
     -> Ast.Expression.t Ast.value_binding list
     -> TypeEnv.t R.t
 end

@@ -102,7 +102,7 @@ module Type = struct
   type t = core_type
 
   let rec occurs_in var = function
-    | Type_unit | Type_any | Type_char | Type_int | Type_string | Type_bool -> false
+    | Type_any | Type_char | Type_int | Type_string | Type_bool -> false
     | Type_name name -> name = var
     | Type_list ty -> occurs_in var ty
     | Type_tuple (first, second, list) ->
@@ -112,7 +112,7 @@ module Type = struct
 
   let free_vars =
     let rec helper acc = function
-      | Type_unit | Type_any | Type_char | Type_int | Type_string | Type_bool -> acc
+      | Type_any | Type_char | Type_int | Type_string | Type_bool -> acc
       | Type_name name -> VarSet.add name acc
       | Type_tuple (first, second, list) ->
         List.fold_left helper acc (first :: second :: list)
@@ -123,7 +123,21 @@ module Type = struct
   ;;
 end
 
-module Subst = struct
+module Subst : sig
+  type t
+
+  val empty : t
+  val singleton : ident -> core_type -> t R.t
+  val apply : t -> core_type -> core_type
+  val unify : core_type -> core_type -> t R.t
+
+  (** Compositon of substitutions *)
+  val compose : t -> t -> t R.t
+
+  val compose_all : t list -> t R.t
+  val remove : t -> ident -> t
+  (* val pp_subst : Format.formatter -> t -> unit *)
+end = struct
   open R
   open R.Syntax
   open Base
@@ -159,7 +173,6 @@ module Subst = struct
 
   let rec unify l r =
     match l, r with
-    | Type_unit, Type_unit
     | Type_any, Type_any
     | Type_int, Type_int
     | Type_char, Type_char
