@@ -148,7 +148,7 @@ let%expect_test _ =
 (*------------------- Factorial and Fibonacci -------------------*)
 
 let%expect_test "fibo test" =
-  parse_to_unit " let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2);;";
+  parse_to_unit "let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2);;";
   [%expect
     {|
      [(SValue (Rec,
