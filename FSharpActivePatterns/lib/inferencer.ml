@@ -356,7 +356,43 @@ let rec infer_pattern env = function
     let* fresh_type = make_fresh_var in
     return (fresh_type, env)
   | POption (Some p) -> infer_pattern env p
-  | _ -> fail (`WIP "Pattern inference WIP")
+  | PList [] ->
+    let* fresh_type = make_fresh_var in
+    return (Type_list fresh_type, env)
+  | PList (hd :: tl) ->
+    let* typ1, env = infer_pattern env hd in
+    let* subst_unify, typ_unified =
+      List.fold
+        tl
+        ~f:(fun acc p ->
+          let* subst_acc, typ_acc = acc in
+          let* typ, _ = infer_pattern env p in
+          let* subst_unify = unify typ_acc typ in
+          let typ_acc = Substitution.apply subst_unify typ_acc in
+          let* subst_acc = Substitution.compose_all [ subst_acc; subst_unify ] in
+          return (subst_acc, typ_acc))
+        ~init:(return (Substitution.empty, typ1))
+    in
+    return (typ_unified, TypeEnvironment.apply subst_unify env)
+  | PCons (hd, tl) ->
+    let* typ1, env = infer_pattern env hd in
+    let* typ2, env = infer_pattern env tl in
+    let* subst = Substitution.unify typ2 (Type_list typ1) in
+    let env = TypeEnvironment.apply subst env in
+    return (Substitution.apply subst typ2, env)
+  | PTuple (fst, snd, rest) ->
+    let* typ1, _ = infer_pattern env fst in
+    let* typ2, _ = infer_pattern env snd in
+    let* typs_rest =
+      List.fold_right
+        rest
+        ~f:(fun p patterns_acc ->
+          let* patterns_acc = patterns_acc in
+          let* typ, _ = infer_pattern env p in
+          return (typ :: patterns_acc))
+        ~init:(return [])
+    in
+    return (Type_tuple (typ1, typ2, typs_rest), env)
 ;;
 
 let rec infer_expr env = function
@@ -396,7 +432,9 @@ let rec infer_expr env = function
       | Binary_equal | Binary_unequal ->
         let* fresh_type = make_fresh_var in
         return (fresh_type, fresh_type, bool_typ)
-      | _ -> fail (`WIP "Cons inference WIP")
+      | Binary_cons ->
+        let* fresh_type = make_fresh_var in
+        return (fresh_type, Type_list fresh_type, Type_list fresh_type)
     in
     let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
     (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
