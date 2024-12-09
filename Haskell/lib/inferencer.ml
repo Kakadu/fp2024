@@ -275,6 +275,10 @@ module TypeEnv = struct
   let find_exn name = SMap.find name
 end
 
+type typeenv = TypeEnv.t
+
+let pp_typeenv = TypeEnv.pp
+
 open R
 open R.Syntax
 

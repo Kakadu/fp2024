@@ -8,6 +8,7 @@ SPDX-License-Identifier: MIT
   $ cat << EOF | ../bin/REPL.exe
   > fac n = if n < 0 then Nothing else Just (save_fac n) where save_fac y | y == 0  = 1 | True = y * save_fac (y - 1)
   > EOF
+  Parsed: fac n = (if n < 0 then Nothing else Just (save_fac n)) where save_fac y | y == 0 = 1 | True = y * save_fac (y - 1)
   Result: [ 
   fac:  Int -> Maybe Int
    ]
