@@ -4,8 +4,12 @@
 
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
+<<<<<<< HEAD
 open FSharpActivePatterns.Inferencer
 open FSharpActivePatterns.TypesPp
+=======
+open FSharpActivePatterns.PrettyPrinter
+>>>>>>> kakadu/master
 open Stdlib
 
 type input =

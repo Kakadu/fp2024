@@ -2,7 +2,11 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+<<<<<<<< HEAD:FSharpActivePatterns/lib/typesPp.mli
 open TypedTree
 open Format
 
 val pp_typ : formatter -> typ -> unit
+========
+val is_keyword : string -> bool
+>>>>>>>> kakadu/master:FSharpActivePatterns/lib/keywordChecker.mli
