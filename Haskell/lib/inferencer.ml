@@ -602,7 +602,31 @@ and infer (e, etps) env =
       let trez = Subst.apply s3 tv in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, trez)
-    | ListBld (OrdList (ComprehensionList _)) -> failwith "not yet implemented"
+    | ListBld (OrdList (ComprehensionList (e, c, cc))) ->
+      let* s1, env' =
+        RList.fold_left
+          (c :: cc)
+          ~init:(return (Subst.empty, env))
+          ~f:(fun (s, env) cmp ->
+            let* s1, env =
+              match cmp with
+              | Condition x ->
+                let* s1, t1 = infer x env in
+                let* s2 = unify t1 (Ty_prim "Bool") in
+                let* final_subst = Subst.compose s2 s1 in
+                return (final_subst, env)
+              | Generator (p, e) ->
+                let* s2, t2 = infer e env in
+                let* t3, env', _ = helper_p p env [] in
+                let* s3 = unify t2 (Ty_list t3) in
+                let* s = Subst.compose s3 s2 in
+                return (s, env')
+            in
+            Subst.compose s1 s >>| fun fs -> fs, env)
+      in
+      let* s2, t2 = infer e (TypeEnv.apply s1 env') in
+      let* final_subst = Subst.compose s2 s1 in
+      return (final_subst, Ty_list t2)
   in
   match etps with
   | [] -> helper_e e env
