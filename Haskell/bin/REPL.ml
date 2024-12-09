@@ -9,6 +9,13 @@ type opts =
   ; mutable read_from_file : string
   }
 
+let rec pp_bindinglist = function
+  | [] -> Format.printf ""
+  | h :: t ->
+    Format.printf "Parsed: %a\n%!" Haskell_lib.Pprintast.pp_binding h;
+    pp_bindinglist t
+;;
+
 let () =
   let opts = { dump_parsetree = false; read_from_file = "" } in
   let _ =
@@ -33,9 +40,9 @@ let () =
   else (
     match parse_line text with
     | Result.Ok list ->
-      (* Format.printf "Parsed: %a\n%!" Haskell_lib.Pprintast.pp_binding list; *)
+      pp_bindinglist list;
       (match Haskell_lib.Inferencer.w_program list with
-       | Result.Ok env -> Format.printf "Result: %a" Haskell_lib.Inferencer.TypeEnv.pp env
+       | Result.Ok env -> Format.printf "Result: %a" Haskell_lib.Inferencer.pp_typeenv env
        | Result.Error err -> Format.printf "Error: %a" Haskell_lib.Pprint.pp_error err)
     | Result.Error error -> Format.printf "Error: %s\n%!" error)
 ;;
