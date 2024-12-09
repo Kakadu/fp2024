@@ -18,7 +18,7 @@ let test_infer s =
   | Error e -> Format.printf "Parsing error: %s\n" e
 ;;
 
-(*---------------- Simple Expressions  -----------------*)
+(*---------------- Simple Expressions -----------------*)
 
 let%expect_test _ =
   test_infer {|
@@ -56,7 +56,7 @@ let%expect_test _ =
   [%expect {| val res : string -> int |}]
 ;;
 
-(*------------------List Test--------------------*)
+(*------------------ List Tests --------------------*)
 let%expect_test _ =
   test_infer {| let list = [];;|};
   [%expect {| val list : '0 list |}]
@@ -85,7 +85,8 @@ let%expect_test _ =
   [%expect {| val double_list : int list -> int list|}]
 ;;
 
-(*-------------------Primitves---------------------*)
+(*-------------------Primitives---------------------*)
+
 let%expect_test _ =
   test_infer {| 
     let f = false;;|};
@@ -102,14 +103,6 @@ let%expect_test _ =
   test_infer {| 
     let stroka = "this is string";;|};
   [%expect {| val stroka : string |}]
-;;
-
-(*ERROR*)
-(*слаувик хз че тут никак*)
-let%expect_test _ =
-  test_infer {| 
-    let l = [1;2];;|};
-  [%expect {| Infer error: Not implemented |}]
 ;;
 
 let%expect_test _ =
@@ -136,9 +129,7 @@ let%expect_test _ =
   [%expect {| val idk : int -> int -> int |}]
 ;;
 
-(*----------------------------------------------*)
-
-(*Тесты ниже нужны скорее убедиться чтобы мы всякие ошибки детектили, тк считаю что в тайпчекере важнее находить not well typed случаи*)
+(* Тесты ниже нужны скорее убедиться чтобы мы всякие ошибки детектили, тк считаю что в тайпчекере важнее находить not well typed случаи *)
 
 let%expect_test _ =
   test_infer {| 
@@ -152,12 +143,10 @@ let%expect_test _ =
   [%expect {| Infer error: Unbound variable 'b' |}]
 ;;
 
-(*ERROR*)
-(* Слаувик тут должно быть что-то по типу что нельзя лист сложить но почему то какой то прикол с парсером у нас*)
 let%expect_test _ =
   test_infer {| 
-    let b = 1::2 in let a  = b + 5|};
-  [%expect {| Parsing error: : end_of_input |}]
+    let b = 1::2 in let a = 5 in b + a;; |};
+  [%expect {| Infer error: Unification failed on int list and int |}]
 ;;
 
 let%expect_test _ =
