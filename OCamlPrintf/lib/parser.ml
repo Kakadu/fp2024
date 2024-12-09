@@ -110,13 +110,12 @@ let parse_constant =
 
 (* =================== Core_type =================== *)
 
-let parse_type_name = parse_ident >>| fun id -> Type_name id
+let parse_type_name = ws *> string "'" *> parse_ident >>| fun id -> Type_name ("'" ^ id)
 
 let parse_base_type =
   ws
   *> choice
-       [ keyword "()" *> return Type_unit
-       ; keyword "_" *> return Type_any
+       [ keyword "_" *> return Type_any
        ; keyword "int" *> return Type_int
        ; keyword "char" *> return Type_char
        ; keyword "string" *> return Type_string

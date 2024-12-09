@@ -22,15 +22,14 @@ val pp_rec_flag : Format.formatter -> rec_flag -> unit
 val show_rec_flag : rec_flag -> string
 
 type constant =
-  | Const_integer of int
-  | Const_char of char
-  | Const_string of ident
+  | Const_integer of int (** Integer constant such as [1] *)
+  | Const_char of char (** Character such as ['a'] *)
+  | Const_string of string (** Constant string such as ["constant"] *)
 
 val pp_constant : Format.formatter -> constant -> unit
 val show_constant : constant -> string
 
 type core_type =
-  | Type_unit (** [()] *)
   | Type_any (** [_] *)
   | Type_char (** [char] *)
   | Type_int (** [int] *)

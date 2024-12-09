@@ -64,7 +64,6 @@ let pp_constant ppf = function
 ;;
 
 let rec pp_core_type ppf = function
-  | Type_unit -> fprintf ppf "()"
   | Type_any -> fprintf ppf "_"
   | Type_int -> fprintf ppf "int"
   | Type_char -> fprintf ppf "char"
