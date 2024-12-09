@@ -1511,9 +1511,7 @@ let%expect_test "case correct with lists" =
 ;;
 
 let%expect_test "case correct with int lists and explicit similar types" =
-  (match
-     parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []"
-   with
+  (match parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []" with
    | Result.Ok ast ->
      (match w ast with
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
@@ -1522,22 +1520,8 @@ let%expect_test "case correct with int lists and explicit similar types" =
   [%expect {| [[Int]] -> [Int] |}]
 ;;
 
-let%expect_test "case correct with int lists and explicit different types" =
-  (match
-     parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []"
-   with
-   | Result.Ok ast ->
-     (match w ast with
-      | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
-      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
-   | _ -> prerr_endline "parsing error");
-  [%expect {| unification failed on Bool and Int |}]
-;;
-
-let%expect_test "case correct with int lists and explicit different types" =
-  (match
-     parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []"
-   with
+let%expect_test "case incorrect with int lists and explicit different types" =
+  (match parse_expr "\\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []" with
    | Result.Ok ast ->
      (match w ast with
       | Result.Ok ty -> Format.printf "%a" Pprint.pp_ty ty
@@ -1898,6 +1882,99 @@ let%expect_test "several functions with incorrect type" =
       | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
    | _ -> prerr_endline "parsing error");
   [%expect {| unification failed on Bool and Int |}]
+;;
+
+let%expect_test "correct arrow declaration" =
+  (match parse_line "f :: Int -> Int; f x = x" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    [
+    f:  Int -> Int
+     ] |}]
+;;
+
+let%expect_test "incorrect arrow declaration" =
+  (match parse_line "f :: Int; f x = x" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {| unification failed on Int and t1 -> t1 |}]
+;;
+
+let%expect_test "incorrect arrow declaration with different types" =
+  (match parse_line "f :: Int -> Bool; f x = x" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    unification failed on Bool and Int |}]
+;;
+
+let%expect_test "incorrect list declaration with different types" =
+  (match parse_line "a :: [Int]; a = [False, True]" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    unification failed on Int and Bool |}]
+;;
+
+let%expect_test "correct declaration with explicit type" =
+  (match parse_line "a :: [Int]; (a :: [Int]) = [1, 2]" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    [
+    a:  [Int]
+     ] |}]
+;;
+
+let%expect_test "incorrect declaration with explicit type" =
+  (match parse_line "f :: Bool -> Bool; f (x :: Int) = x" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    unification failed on Bool and Int |}]
+;;
+
+let%expect_test "correct tuple declaration" =
+  (match parse_line "a :: (Int, Bool, ()); a = (1, True, ())" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    [
+    a:  (Int, Bool, ())
+     ] |}]
+;;
+
+let%expect_test "incorrect tuple declaration" =
+  (match parse_line "a :: (Int, Bool, ()); a = (False, True, ())" with
+   | Result.Ok bindings ->
+     (match w_program bindings with
+      | Result.Ok env -> Format.printf "%a" TypeEnv.pp env
+      | Result.Error err -> Format.printf "%a" Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    unification failed on Int and Bool |}]
 ;;
 
 let%expect_test "failed unification" =
