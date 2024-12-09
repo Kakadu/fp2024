@@ -28,6 +28,7 @@ type ty =
   | TArrow of ty * ty
   | TTuple of ty * ty * ty list
   | TList of ty
+  | TOption of ty
 
 val pp_ty : Format.formatter -> ty -> unit
 val show_ty : ty -> string

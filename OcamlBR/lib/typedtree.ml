@@ -21,6 +21,7 @@ type ty =
   | TArrow of ty * ty
   | TTuple of ty * ty * ty list
   | TList of ty
+  | TOption of ty
 [@@deriving show { with_path = false }]
 
 type scheme = S of VarSet.t * ty
