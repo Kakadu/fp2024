@@ -1,6 +1,6 @@
 (executable
- (name astExample)
- (public_name astExample)
- (libraries ast)
+ (name repl)
+ (public_name repl)
+ (libraries ast parse)
  (instrumentation
   (backend bisect_ppx)))

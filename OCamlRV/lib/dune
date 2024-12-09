@@ -1,8 +1,8 @@
 (library
  (name OCamlRV_lib)
  (public_name OCamlRV.Lib)
- (libraries angstrom)
+ (libraries angstrom qcheck-core)
  (preprocess
-  (pps ppx_expect ppx_deriving.show ppx_deriving.eq ppx_expect))
+  (pps ppx_expect ppx_deriving.show ppx_deriving_qcheck))
  (instrumentation
   (backend bisect_ppx)))

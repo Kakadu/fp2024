@@ -28,8 +28,10 @@
   dune
   base
   angstrom
+  qcheck-core
   (ppx_inline_test :with-test)
   ppx_deriving
+  ppx_deriving_qcheck
   ppx_expect
   bisect_ppx
   (odoc :with-doc)
