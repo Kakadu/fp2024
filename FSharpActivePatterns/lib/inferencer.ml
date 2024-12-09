@@ -28,7 +28,7 @@ module R : sig
   (* signature, smth like interface before realization *)
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
+  (* val bind : 'a t -> f:('a -> 'b t) -> 'b t *)
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -118,7 +118,12 @@ end
 type fresh = int
 
 (* module with all type methods *)
-module Type = struct
+module Type : sig
+  type t = typ
+
+  val occurs_in : fresh -> t -> bool
+  (* val free_vars : t -> binder_set *)
+end = struct
   type t = typ
 
   (* check that v is not inside of second type.
@@ -134,17 +139,17 @@ module Type = struct
   ;;
 
   (* collects all type variables *)
-  let free_vars =
-    let rec helper acc = function
-      | Primitive _ -> acc
-      | Type_var b -> VarSet.add b acc
-      | Arrow (fst, snd) -> helper (helper acc fst) snd
-      | Type_list typ -> helper acc typ
-      | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
-      | TOption t -> helper acc t
-    in
-    helper VarSet.empty
-  ;;
+  (* let free_vars =
+     let rec helper acc = function
+     | Primitive _ -> acc
+     | Type_var b -> VarSet.add b acc
+     | Arrow (fst, snd) -> helper (helper acc fst) snd
+     | Type_list typ -> helper acc typ
+     | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+     | TOption t -> helper acc t
+     in
+     helper VarSet.empty
+     ;; *)
 end
 
 (* module of substitution *)
@@ -153,9 +158,11 @@ module Substitution : sig
   type t
 
   val empty : t
-  val mapping : fresh -> typ -> (fresh * typ) R.t
+
+  (* val mapping : fresh -> typ -> (fresh * typ) R.t *)
   val singleton : fresh -> typ -> t R.t
-  val find : t -> fresh -> typ option
+
+  (* val find : t -> fresh -> typ option *)
   val remove : t -> fresh -> t
   val apply : t -> typ -> typ
   val unify : typ -> typ -> t R.t
@@ -255,18 +262,24 @@ end = struct
 end
 
 (* module for scheme treatment *)
-module Scheme = struct
+module Scheme : sig
+  type t = scheme
+
+  (* val occurs_in : fresh -> t -> bool *)
+  val apply : Substitution.t -> t -> t
+  (* val free_vars : t -> binder_set *)
+end = struct
   type t = scheme
 
   (* occurs check for both type vars set and typ in sheme *)
-  let occurs_in value = function
-    | S (vars, t) -> (not (VarSet.mem value vars)) && Type.occurs_in value t
-  ;;
+  (* let occurs_in value = function
+     | S (vars, t) -> (not (VarSet.mem value vars)) && Type.occurs_in value t
+     ;; *)
 
   (* take all vars that are not bound in typ *)
-  let free_vars = function
-    | S (vars, t) -> VarSet.diff (Type.free_vars t) vars
-  ;;
+  (* let free_vars = function
+     | S (vars, t) -> VarSet.diff (Type.free_vars t) vars
+     ;; *)
 
   (* take substitution and scheme, remove its free vars from substitution,
      form new scheme according to substitution (apply it to typ) *)
@@ -275,19 +288,25 @@ module Scheme = struct
     S (vars, Substitution.apply subst2 t)
   ;;
 
-  let pp = pp_scheme
+  (* let pp = pp_scheme *)
 end
 
-module TypeEnvironment = struct
+module TypeEnvironment : sig
+  val extend : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b -> ('a, 'b, 'c) Base.Map.t
+  val apply : Substitution.t -> ('a, scheme, 'b) Base.Map.t -> ('a, scheme, 'b) Base.Map.t
+  val empty : (string, 'a, Base.String.comparator_witness) Base.Map.t
+  val find : 'a -> ('a, 'b, 'c) Base.Map.t -> 'b option
+end = struct
   open Base
 
   (* environment (context?) -- pairs of names and their types list *)
-  type t = (ident, scheme, String.comparator_witness) Map.t
+  (* type t = (ident, scheme, String.comparator_witness) Map.t *)
 
   (* if pair (key, some old value) exists in map env, then replace old value
      with new, else add pair (key, value) into map *)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-  let remove env key = Map.remove env key
+
+  (* let remove env key = Map.remove env key *)
   let empty = Map.empty (module String)
 
   (* apply given substitution to all elements of environment *)
@@ -295,18 +314,18 @@ module TypeEnvironment = struct
   let find key env = Map.find env key
 
   (* collect all free vars from environment *)
-  let free_vars : t -> VarSet.t =
-    Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
-      VarSet.union acc (Scheme.free_vars s))
-  ;;
+  (* let free_vars : t -> VarSet.t =
+     Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
+     VarSet.union acc (Scheme.free_vars s))
+     ;; *)
 
   (* TODO: custom pp_scheme? not from deriving *)
-  let pp fmt map =
+  (* let pp fmt map =
     Stdlib.Format.fprintf fmt "{| ";
     Map.iteri map ~f:(fun ~key:n ~data:s ->
       Stdlib.Format.fprintf fmt "%s -> %a; " n pp_scheme s);
     Stdlib.Format.fprintf fmt "|}%!"
-  ;;
+  ;; *)
 end
 
 open R
@@ -330,11 +349,11 @@ let instantiate : scheme -> typ R.t =
 
 (* take free vars of type t and environment, put difference between them
    in S constructor so all vars are context independent *)
-let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
-  fun env t ->
-  let free = VarSet.diff (Type.free_vars t) (TypeEnvironment.free_vars env) in
-  S (free, t)
-;;
+(* let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
+   fun env t ->
+   let free = VarSet.diff (Type.free_vars t) (TypeEnvironment.free_vars env) in
+   S (free, t)
+   ;; *)
 
 let infer_lt = function
   | Int_lt _ -> return (Substitution.empty, int_typ)
