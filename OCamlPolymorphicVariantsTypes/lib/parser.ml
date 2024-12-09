@@ -91,18 +91,18 @@ let bracket_sequence subparser state =
 ;;
 
 (* let rec type_parser state : core_type parse_result = (skip_ws *> type_identifier) state *)
-
-let type_identifier state =
-  let ident_parser =
+let type_ident_parser =
     ident
       ~on_keyword:(fun k ->
         perror (Format.sprintf "Not found type identifier, finded keyword '%s'" k))
       ~on_constructor:(fun c ->
         perror (Format.sprintf "Not found type identifier, finded constructor '%s'" c))
       ~on_simple:(fun s -> preturn s)
-  in
+;;
+
+let type_identifier state =
   let helper =
-    ident_parser
+    type_ident_parser
     >>= fun s ->
     match s with
     | "_" -> preturn AnyType
@@ -141,7 +141,7 @@ and type_constructor state =
     | t2 :: tail -> builder (TypeConstructor (t2, t1)) tail
   in
   (skip_ws *> basic_type
-   >>= fun t1 -> many type_identifier >>= fun tl -> preturn (builder t1 tl))
+   >>= fun t1 -> many type_ident_parser >>= fun tl -> preturn (builder t1 tl))
     state
 
 and basic_type state =
@@ -224,10 +224,7 @@ and ptype : bool -> pattern -> pattern parser =
     *> symbol ':'
     *> (core_type_parser need_arrow <|> perror "Not found type of pattern")
   in
-  match p with
-  | PAny -> preturn p
-  | PTuple _ | PUnit | PConstrain _ | PVar _ ->
-    skip_ws *> (helper >>= (fun t -> preturn (PConstrain (p, t))) <|> preturn p)
+  skip_ws *> (helper >>= (fun t -> preturn (PConstrain (p, t))) <|> preturn p)
 ;;
 
 (** Parser of constants expression: [integer] and [boolean]
@@ -306,7 +303,6 @@ and basic_expr applyable state =
    <|> (if applyable then applyable_expr else apply_expr)
    <|> const_expr)
     state
-
 (** Parser of case expressions:
     - [| <pattern> when <expr> -> <expr>]
     - [| <pattern> -> <expr>]
@@ -314,12 +310,22 @@ and basic_expr applyable state =
     If [is_first] is [true] then
     first case of case expression not expected of '|' sympol at start *)
 and case_parser is_first =
-  let result_helper p f =
+  let case_expr p f = 
     skip_ws
-    *> (ssequence "->" <|> perror "Not found special sequence '->' in case")
-    *> skip_ws
     *> (expr <|> perror "Not found expression after special sequence '->' in case")
     >>= fun ex -> preturn { pattern = p; filter = f; result = ex }
+  in
+  let on_not_found_lambda f base_state state = 
+    match f with
+    | Some _ -> perror "Not found special sequence '->' in case" state
+    | None -> 
+      (pattern_parser false 
+      >>= ptype false 
+      >>= fun p -> (skip_ws *> ssequence "->" <|> perror "Not found special sequence '->' in case") *> case_expr p None) base_state
+  in
+  let result_helper p f base_state state =
+    ((skip_ws *> ssequence "->" *> case_expr p f) 
+    <|> on_not_found_lambda f base_state) state
   in
   let filter_helper =
     let filter_expr =
@@ -330,9 +336,9 @@ and case_parser is_first =
     in
     skip_ws *> (keyword "when" *> filter_expr) <|> preturn None
   in
-  let main_helper =
-    skip_ws *> (pattern_parser true <|> perror "Not found pattern of case expression")
-    >>= fun p -> filter_helper >>= fun f -> result_helper p f
+  let main_helper state =
+    (skip_ws *> (pattern_parser true <|> perror "Not found pattern of case expression")
+    >>= fun p -> filter_helper >>= fun f -> result_helper p f state) state
   in
   skip_ws *> (symbol '|' *> main_helper) <|> if is_first then main_helper else pfail
 

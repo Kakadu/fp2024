@@ -1,2 +1,5 @@
 let rec factorial n = if (n > 1) then n * factorial(n-1) else 1;;
 factorial 5;;
+
+let rec factorial (n:int) : int = if (n > 1) then n * factorial(n-1) else 1;;
+print_endline (string_of_int (factorial 5));;

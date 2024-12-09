@@ -43,7 +43,7 @@ type binary_operator =
 type core_type =
   | ArrowType of core_type * core_type (* T1 -> T2, example int -> bool *)
   | TypeConstructor of
-      core_type * core_type (* T1 T2, exmaple int list: int - T1, list - T2 *)
+      identifier * core_type (* IT T1, exmaple int list: int - T2, list - IT *)
   | TupleType of core_type * core_type * core_type list (* T1 * T2 * ... * TN *)
   | TypeIdentifier of identifier (* int *)
   | AnyType (* _ *)
