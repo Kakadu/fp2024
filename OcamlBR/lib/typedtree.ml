@@ -24,8 +24,7 @@ type ty =
   | TOption of ty
 [@@deriving show { with_path = false }]
 
-type scheme = S of VarSet.t * ty
-[@@deriving show { with_path = false }]
+type scheme = S of VarSet.t * ty [@@deriving show { with_path = false }]
 
 (* utility functions *)
 let tprim_int = TPrim "int"

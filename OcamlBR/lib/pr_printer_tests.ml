@@ -316,7 +316,7 @@ let%expect_test _ =
   parse "let g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)];;";
   [%expect
     {|
-  let  g : (int -> bool) list = [(fun x -> (x > 0)); (fun x -> (x < 0))] ;;
+  let  g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)] ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((Id ("g", (Some (Tlist (TFun (TInt, TBool)))))),
          (Elist
@@ -332,10 +332,10 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y" ;
+  parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y";
   [%expect
     {|
-   let  f : string -> (int -> bool) = (fun x -> (fun y -> (x + y))) ;;
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
    [(SValue (Non_recursive,
        (Evalue_binding (
           (Id ("f", (Some (TFun (TString, (TFun (TInt, TBool))))))),

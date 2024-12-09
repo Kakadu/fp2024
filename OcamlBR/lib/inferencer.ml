@@ -6,7 +6,6 @@ open Typedtree
 module R : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -91,8 +90,6 @@ end = struct
 end
 
 module Type = struct
-  type t = ty
-
   (* checks if a type variable v occurs anywhere within a given type; primarily used during type unification *)
   let rec occurs_in v = function
     | TVar b -> b = v
@@ -122,19 +119,17 @@ module Subst : sig
   type t
 
   val empty : t
-  val singleton : type_var -> ty -> t R.t
   val apply : t -> ty -> ty
   val singleton : type_var -> ty -> t R.t
   val unify : ty -> ty -> t R.t
   val compose : t -> t -> t R.t
   val compose_all : t list -> t R.t
-  val find : t -> type_var -> ty option
   val remove : t -> type_var -> t
 
-  val pp
-    :  Format.formatter
-    -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t
-    -> unit
+  (* val pp
+     :  Format.formatter
+     -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t
+     -> unit *)
 end = struct
   open R
   open R.Syntax
@@ -142,14 +137,14 @@ end = struct
 
   type t = (type_var, ty, Int.comparator_witness) Map.t
 
-  let pp ppf subst =
-    let open Stdlib.Format in
-    fprintf ppf "[ ";
+  (* let pp ppf subst =
+     let open Stdlib.Format in
+     fprintf ppf "[ ";
     Base.Map.iteri subst ~f:(fun ~key ~data ->
       fprintf ppf "%a -> %a" pp_type_var key pp_ty data;
       fprintf ppf "; ");
     fprintf ppf "]"
-  ;;
+     ;; *)
 
   let empty = Map.empty (module Int)
 
@@ -175,7 +170,7 @@ end = struct
       | TTuple (f, s, rest) -> TTuple (helper f, helper s, List.map ~f:helper rest)
       | TList t -> TList (helper t)
       | TPrim _ as ty -> ty
-      | TOption t -> TOption (helper t) 
+      | TOption t -> TOption (helper t)
     in
     helper
   ;;
@@ -243,11 +238,9 @@ module VarSet = struct
 end
 
 module Scheme = struct
-  type t = scheme
-
-  let occurs_in v = function
-    | S (xs, t) -> (not (VarSet.mem v xs)) && Type.occurs_in v t
-  ;;
+  (* let occurs_in v = function
+     | S (xs, t) -> (not (VarSet.mem v xs)) && Type.occurs_in v t
+     ;; *)
 
   let free_vars = function
     | S (bs, t) -> VarSet.diff (Type.type_vars t) bs
@@ -258,7 +251,7 @@ module Scheme = struct
     S (names, Subst.apply s2 ty)
   ;;
 
-  let pp = pp_scheme
+  (* let pp = pp_scheme *)
 end
 
 module TypeEnv = struct
@@ -295,11 +288,11 @@ module TypeEnv = struct
     Stdlib.Format.fprintf ppf "|}"
   ;;
 
-  let find_exn name xs =
-    match Map.find xs name with
-    | None -> R.fail (`Undefined_variable name)
-    | Some scheme -> scheme
-  ;;
+  (* let find_exn name xs =
+     match Map.find xs name with
+     | None -> R.fail (`Undefined_variable name)
+     | Some scheme -> scheme
+     ;; *)
 end
 
 module Infer = struct
@@ -333,12 +326,12 @@ module Infer = struct
       return (Subst.empty, ans)
   ;;
 
-  let pp ppf env =
+  (* let pp ppf env =
     Stdlib.Format.fprintf ppf "{| ";
     Base.Map.iteri env ~f:(fun ~key:name ~data:s ->
       Stdlib.Format.fprintf ppf "%s -> %a; " name pp_scheme s);
     Stdlib.Format.fprintf ppf "|}%!"
-  ;;
+  ;; *)
 
   let fst_arrow = function
     | TArrow (arg, _) -> arg
@@ -352,56 +345,56 @@ module Infer = struct
 
   open R
 
-  let string_of_id (Ast.Id (name, _)) = name
+  (* let string_of_id (Ast.Id (name, _)) = name *)
 
-  let infer_const c =
-    match c with
-    | Ast.Int _ -> tprim_int 
-    | Ast.Bool _ -> tprim_bool 
-    | Ast.String _ -> tprim_string 
-    | Ast.Unit -> tprim_unit
-  ;;
+  (* let infer_const c =
+     match c with
+     | Ast.Int _ -> tprim_int
+     | Ast.Bool _ -> tprim_bool
+     | Ast.String _ -> tprim_string
+     | Ast.Unit -> tprim_unit
+     ;; *)
 
-let rec infer_pattern env = function
-  | Ast.PVar id ->
-    let var_name = string_of_id id in
-    let* fresh = fresh_var in
-    let extended_env = TypeEnv.extend var_name (S (VarSet.empty, fresh)) env in
-    return (Subst.empty, fresh, extended_env)
-  | Ast.PAny ->
-    let* fresh = fresh_var in
-    return (Subst.empty, fresh, env)
-  | Ast.PConst c ->
-    let fresh = infer_const c in
-    return (Subst.empty, fresh, env)
-  | Ast.PTuple (p1, p2, pl) ->
-    let* sub1, typ1, env1 = infer_pattern env p1 in
-    let* sub2, typ2, env2 = infer_pattern (TypeEnv.apply sub1 env1) p2 in
-    let f1 (sub_prev, l, env) (pat : Ast.pattern) =
-      let* sub_cur, arg, env = infer_pattern env pat in
-      let* sub = Subst.compose sub_prev sub_cur in
-      return (sub, arg :: l, env)
-    in
-    let* sub, arg, env = RList.fold_left pl ~init:(return (sub2, [], env2)) ~f:f1 in
-    return (sub, TTuple (typ1, typ2, arg), env)
-  | Ast.PList pats ->
-    let* fresh_el_type = fresh_var in
-    let f1 (sub_acc, env_acc) pat =
-      let* sub_cur, el_type, env_cur = infer_pattern env_acc pat in
-      let* unified_sub = Subst.compose sub_acc sub_cur in
-      let* final_sub = Subst.unify (Subst.apply sub_cur fresh_el_type) el_type in
-      let combined_sub = Subst.compose unified_sub final_sub in
-      let* combined_sub = combined_sub in
-      return (combined_sub, TypeEnv.apply final_sub env_cur)
-    in
-    let* final_sub, final_env =
-      RList.fold_left pats ~init:(return (Subst.empty, env)) ~f:f1
-    in
-    return (final_sub, TList (Subst.apply final_sub fresh_el_type), final_env)
-  ;;
+  (* let rec infer_pattern env = function
+     | Ast.PVar id ->
+     let var_name = string_of_id id in
+     let* fresh = fresh_var in
+     let extended_env = TypeEnv.extend var_name (S (VarSet.empty, fresh)) env in
+     return (Subst.empty, fresh, extended_env)
+     | Ast.PAny ->
+     let* fresh = fresh_var in
+     return (Subst.empty, fresh, env)
+     | Ast.PConst c ->
+     let fresh = infer_const c in
+     return (Subst.empty, fresh, env)
+     | Ast.PTuple (p1, p2, pl) ->
+     let* sub1, typ1, env1 = infer_pattern env p1 in
+     let* sub2, typ2, env2 = infer_pattern (TypeEnv.apply sub1 env1) p2 in
+     let f1 (sub_prev, l, env) (pat : Ast.pattern) =
+     let* sub_cur, arg, env = infer_pattern env pat in
+     let* sub = Subst.compose sub_prev sub_cur in
+     return (sub, arg :: l, env)
+     in
+     let* sub, arg, env = RList.fold_left pl ~init:(return (sub2, [], env2)) ~f:f1 in
+     return (sub, TTuple (typ1, typ2, arg), env)
+     | Ast.PList pats ->
+     let* fresh_el_type = fresh_var in
+     let f1 (sub_acc, env_acc) pat =
+     let* sub_cur, el_type, env_cur = infer_pattern env_acc pat in
+     let* unified_sub = Subst.compose sub_acc sub_cur in
+     let* final_sub = Subst.unify (Subst.apply sub_cur fresh_el_type) el_type in
+     let combined_sub = Subst.compose unified_sub final_sub in
+     let* combined_sub = combined_sub in
+     return (combined_sub, TypeEnv.apply final_sub env_cur)
+     in
+     let* final_sub, final_env =
+     RList.fold_left pats ~init:(return (Subst.empty, env)) ~f:f1
+     in
+     return (final_sub, TList (Subst.apply final_sub fresh_el_type), final_env)
+     ;; *)
 
-(*
-  let infer_case env p body =
+  (*
+     let infer_case env p body =
     let* s1, t1, env1 = infer_pattern env p in
     let* s2, t2 = helper (TypeEnv.apply s1 env1) body in
     let* s3 = unify t1 t2 in
@@ -481,13 +474,13 @@ let infer_list_elements env es =
         let* s3, t3 = helper env el in
         let* s4 = unify t1 tprim_bool in
         let* s5 = unify t2 t3 in
-        let* final_subst = Subst.compose_all [s5; s4; s3; s2; s1] in
+        let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
         return (final_subst, Subst.apply final_subst t2)
       | Eif_then_else (c, th, None) ->
         let* s1, t1 = helper env c in
         let* s2, t2 = helper env th in
         let* s3 = unify t1 tprim_bool in
-        let* final_subst = Subst.compose_all [s3; s2; s1] in
+        let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
         return (final_subst, TOption (Subst.apply final_subst t2))
       | Elet (Non_recursive, Evalue_binding (Id (x, _), e1), [], e2) ->
         let* s1, t1 = helper env e1 in
@@ -525,66 +518,65 @@ let infer_list_elements env es =
       (*| Ematch (e, case1, cases) ->
         let* expr_subst, expr_type = helper env e in
         let infer_case env p body =
-          let* pat_subst, pat_type, env1 = infer_pattern env p in
-          let* body_subst, body_type = helper (TypeEnv.apply pat_subst env1) body in
-          let* unified_subst = unify pat_type body_type in
-          let* final_subst = Subst.compose_all [pat_subst; body_subst; unified_subst] in
-          return (final_subst, body_type)
+        let* pat_subst, pat_type, env1 = infer_pattern env p in
+        let* body_subst, body_type = helper (TypeEnv.apply pat_subst env1) body in
+        let* unified_subst = unify pat_type body_type in
+        let* final_subst = Subst.compose_all [pat_subst; body_subst; unified_subst] in
+        return (final_subst, body_type)
         in
         let* first_case_subst, first_case_type =
-          match case1 with
-          | Ecase (p, body) ->
-              let* case_subst, case_type = infer_case env p body in
-              return (case_subst, case_type)
+        match case1 with
+        | Ecase (p, body) ->
+        let* case_subst, case_type = infer_case env p body in
+        return (case_subst, case_type)
         in
         let* final_subst, final_type =
-          RList.fold_left
-            cases
-            ~init:(return (first_case_subst, first_case_type))
-            ~f:(fun (acc_subst, acc_type) case ->
-              match case with
-              | Ecase (p, body) ->
-                  let* case_subst, case_type = infer_case env p body in
-                  let* unified_subst = unify case_type acc_type in
-                  let* combined_subst = Subst.compose_all [unified_subst; case_subst; acc_subst] in
-                  return (combined_subst, Subst.apply unified_subst acc_type))
+        RList.fold_left
+        cases
+        ~init:(return (first_case_subst, first_case_type))
+        ~f:(fun (acc_subst, acc_type) case ->
+        match case with
+        | Ecase (p, body) ->
+        let* case_subst, case_type = infer_case env p body in
+        let* unified_subst = unify case_type acc_type in
+        let* combined_subst = Subst.compose_all [unified_subst; case_subst; acc_subst] in
+        return (combined_subst, Subst.apply unified_subst acc_type))
         in
         return (final_subst, final_type)*)
       | Etuple (e1, e2, es) ->
-          let* s1, t1 = helper env e1 in
-          let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-          let infer_tuple_elements env es =
-            let rec aux env = function
-              | [] -> return ([], [])
-              | e :: es' ->
-                  let* s, t = helper env e in
-                  let* s', ts = aux (TypeEnv.apply s env) es' in
-                  return (s' @ [s], t :: ts)
-            in
-            aux env es
+        let* s1, t1 = helper env e1 in
+        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
+        let infer_tuple_elements env es =
+          let rec aux env = function
+            | [] -> return ([], [])
+            | e :: es' ->
+              let* s, t = helper env e in
+              let* s', ts = aux (TypeEnv.apply s env) es' in
+              return (s' @ [ s ], t :: ts)
           in
-          let* s3, ts = infer_tuple_elements (TypeEnv.apply s2 env) es in
-          let* s_final = Subst.compose_all (s3 @ [s2; s1]) in
-          return (s_final, TTuple (t1, t2, ts))
+          aux env es
+        in
+        let* s3, ts = infer_tuple_elements (TypeEnv.apply s2 env) es in
+        let* s_final = Subst.compose_all (s3 @ [ s2; s1 ]) in
+        return (s_final, TTuple (t1, t2, ts))
       | Elist es ->
-          let infer_list_elements env es =
-            let rec aux env = function
-              | [] -> return ([], [])
-              | e :: es' ->
-                  let* s, t = helper env e in
-                  let* s', ts = aux (TypeEnv.apply s env) es' in
-                  return (s' @ [s], t :: ts)
-            in
-            aux env es
+        let infer_list_elements env es =
+          let rec aux env = function
+            | [] -> return ([], [])
+            | e :: es' ->
+              let* s, t = helper env e in
+              let* s', ts = aux (TypeEnv.apply s env) es' in
+              return (s' @ [ s ], t :: ts)
           in
-          let* s, ts = infer_list_elements env es in
-          let* s_final = Subst.compose_all s in
-          return (s_final, TList (List.hd ts))
+          aux env es
+        in
+        let* s, ts = infer_list_elements env es in
+        let* s_final = Subst.compose_all s in
+        return (s_final, TList (List.hd ts))
       | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
     in
     helper
   ;;
-
 
   let w expr = Result.map snd (run (infer TypeEnv.empty expr))
 

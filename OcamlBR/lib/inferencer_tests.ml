@@ -1,34 +1,37 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
-(* let infer_program_test str =
-   let parsed = Result.get_ok (Parser.parse_expr str) in
-   match infer_program parsed with
-   | Ok env -> Format.printf "%a" Inferencer.TypeEnv.pp env
-   | Error err -> Format.printf "%a" Typedtree.pp_error err
-   ;; *)
-   
+
 let%expect_test _ =
-  let _ = infer_program_test {|let f x g = g x in f|} in
-  [%expect {| 'a -> ('a -> 'b) -> 'b |}]
+  let _ = Inferencer.Infer.infer_program_test {| let f x = x |} in
+  [%expect {| val f : '0 -> '0 |}]
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {| let f x = x + 2 |} in
-  [%expect {|  |}]
+  let _ = Inferencer.Infer.infer_program_test {| let f x = x + 2 |} in
+  [%expect {| val f : int -> int |}]
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {| 1 + 3 |} in
-  [%expect {|  |}]
+  let _ = Inferencer.Infer.infer_program_test {|let x = + 2 and n = "emf" |} in
+  [%expect {|
+    val n : string
+    val x : int |}]
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {| let a = if true then 2 else 1 |} in
-  [%expect {|  |}]
+  let _ =
+    Inferencer.Infer.infer_program_test {|let x = 2 in let a = true in not a && x |}
+  in
+  [%expect {| Infer error: Unification failed on int and bool |}]
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {| fun x y -> x + y |} in
-  [%expect {|  |}]
+  let _ = Inferencer.Infer.infer_program_test {| let a = if true then 2 + 9 else 1 |} in
+  [%expect {| val a : int |}]
+;;
+
+let%expect_test _ =
+  let _ = Inferencer.Infer.infer_program_test {| if a then 2 else 1 |} in
+  [%expect {| Infer error: Undefined variable "a" |}]
 ;;

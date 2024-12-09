@@ -14,11 +14,12 @@ let rec pp_id_type ppf typ =
   | Tlist t -> fprintf ppf "%a list" pp_nested_type t
   | TTuple (t1, t2, rest) ->
     let tuple_content =
-      String.concat ~sep:" * " (List.map ~f:(asprintf "%a" pp_nested_type) (t1 :: t2 :: rest))
+      String.concat
+        ~sep:" * "
+        (List.map ~f:(asprintf "%a" pp_nested_type) (t1 :: t2 :: rest))
     in
     fprintf ppf "(%s)" tuple_content
-  | TFun (t1, t2) ->
-    fprintf ppf "%a -> %a" pp_nested_type t1 pp_nested_type t2
+  | TFun (t1, t2) -> fprintf ppf "%a -> %a" pp_nested_type t1 pp_nested_type t2
 
 and pp_nested_type ppf typ =
   match typ with
@@ -88,9 +89,7 @@ let precedence_bin_op = function
 ;;
 
 let rec pp_expr ppf expr =
-  let rec needs_parens parent_prec child_prec =
-    child_prec < parent_prec || child_prec == -1
-  in
+  let needs_parens parent_prec child_prec = child_prec < parent_prec || child_prec = -1 in
   match expr with
   | Econst c -> pp_const ppf c
   | Evar id -> pp_id ppf id
