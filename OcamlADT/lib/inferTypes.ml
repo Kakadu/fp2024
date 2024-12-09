@@ -1,7 +1,6 @@
 open Format
 
 type binder = int [@@deriving show { with_path = false }]
-
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 
