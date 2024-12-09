@@ -77,11 +77,13 @@ module TestQCheckManual = struct
          | 0 -> oneofl [ Type_any; Type_char; Type_int; Type_string; Type_bool ]
          | n ->
            oneof
-             [ return Type_any
+             [ return Type_unit
+             ; return Type_any
              ; return Type_char
              ; return Type_int
              ; return Type_string
              ; return Type_bool
+             ; map (fun id -> Type_name id) gen_ident
              ; map (fun t -> Type_list t) (self (n / coef))
              ; map3
                  (fun t1 t2 t3 -> Type_tuple (t1, t2, t3))

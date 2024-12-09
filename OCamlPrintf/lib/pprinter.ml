@@ -46,16 +46,16 @@ let compare_priority op1 op2 =
   priority1 <= priority2
 ;;
 
-let let_flag_str = function
-  | Recursive -> "let rec"
-  | Nonrecursive -> "let"
+let pp_rec_flag ppf = function
+  | Recursive -> fprintf ppf "let rec "
+  | Nonrecursive -> fprintf ppf "let "
 ;;
 
 let pp_escape_sequence ppf () = fprintf ppf "\n"
 let pp_space ppf () = fprintf ppf " "
 let pp_comma ppf () = fprintf ppf ", "
 let pp_and ppf () = fprintf ppf " and "
-let pp_ident ppf id = fprintf ppf "%s" id
+let pp_ident ppf = fprintf ppf "%s"
 
 let pp_constant ppf = function
   | Const_integer n -> fprintf ppf "%d" n
@@ -63,22 +63,24 @@ let pp_constant ppf = function
   | Const_string s -> fprintf ppf "%S" s
 ;;
 
-let rec pp_type ppf = function
+let rec pp_core_type ppf = function
+  | Type_unit -> fprintf ppf "()"
   | Type_any -> fprintf ppf "_"
   | Type_int -> fprintf ppf "int"
   | Type_char -> fprintf ppf "char"
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
+  | Type_name id -> pp_ident ppf id
   | Type_list type' ->
     (match type' with
      | type' when is_type_arrow type' || is_type_list type' ->
-       fprintf ppf "(%a) list" pp_type type'
-     | type' -> fprintf ppf "%a list" pp_type type')
+       fprintf ppf "(%a) list" pp_core_type type'
+     | type' -> fprintf ppf "%a list" pp_core_type type')
   | Type_tuple (first_type, second_type, type_list) ->
     let pp_with_condition_on_arrow type' =
       match type' with
-      | type' when is_type_arrow type' -> fprintf ppf "(%a)" pp_type type'
-      | _ -> fprintf ppf "%a" pp_type type'
+      | type' when is_type_arrow type' -> fprintf ppf "(%a)" pp_core_type type'
+      | _ -> fprintf ppf "%a" pp_core_type type'
     in
     fprintf ppf "(";
     pp_with_condition_on_arrow first_type;
@@ -91,8 +93,9 @@ let rec pp_type ppf = function
   | Type_arrow (first_type, second_type) ->
     (match first_type with
      | first_type when is_type_arrow first_type ->
-       fprintf ppf "(%a) -> %a" pp_type first_type pp_type second_type
-     | first_type -> fprintf ppf "%a -> %a" pp_type first_type pp_type second_type)
+       fprintf ppf "(%a) -> %a" pp_core_type first_type pp_core_type second_type
+     | first_type ->
+       fprintf ppf "%a -> %a" pp_core_type first_type pp_core_type second_type)
 ;;
 
 let rec pp_pattern ppf = function
@@ -126,7 +129,7 @@ let rec pp_pattern ppf = function
   | Pat_construct ("Some", Some pat) -> fprintf ppf "Some (%a)" pp_pattern pat
   | Pat_construct (_, _) -> ()
   | Pat_constraint (pat, core_type) ->
-    fprintf ppf "(%a : %a)" pp_pattern pat pp_type core_type
+    fprintf ppf "(%a : %a)" pp_pattern pat pp_core_type core_type
 ;;
 
 let rec pp_expression ppf = function
@@ -134,15 +137,17 @@ let rec pp_expression ppf = function
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, first_value_binding, value_binding_list, exp) ->
     fprintf ppf "(";
-    pp_rec_flag_and_value_binding_list
+    pp_rec_flag ppf rec_flag;
+    fprintf
       ppf
-      rec_flag
+      "%a"
+      (pp_print_list ~pp_sep:pp_and pp_value_binding)
       (first_value_binding :: value_binding_list);
     fprintf ppf " in %a)" pp_expression exp
   | Exp_fun (first_pat, pat_list, exp) ->
     let pp_exp_constraint = function
       | Exp_constraint (exp', core_type) ->
-        fprintf ppf ": %a -> %a)" pp_type core_type pp_expression exp'
+        fprintf ppf ": %a -> %a)" pp_core_type core_type pp_expression exp'
       | exp' -> fprintf ppf "-> %a)" pp_expression exp'
     in
     fprintf
@@ -223,12 +228,7 @@ let rec pp_expression ppf = function
     handle_exp_list (first_exp, exp_list)
   | Exp_match (exp, first_case, case_list) ->
     fprintf ppf "(match %a with" pp_expression exp;
-    fprintf
-      ppf
-      " %a)"
-      (pp_print_list ~pp_sep:pp_space (fun ppf case ->
-         fprintf ppf "| %a -> %a" pp_pattern case.left pp_expression case.right))
-      (first_case :: case_list)
+    fprintf ppf " %a)" (pp_print_list ~pp_sep:pp_space pp_case) (first_case :: case_list)
   | Exp_tuple (first_exp, second_exp, exp_list) ->
     fprintf
       ppf
@@ -270,36 +270,36 @@ let rec pp_expression ppf = function
   | Exp_sequence (exp1, exp2) ->
     fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
   | Exp_constraint (exp, core_type) ->
-    fprintf ppf "(%a : %a)" pp_expression exp pp_type core_type
+    fprintf ppf "(%a : %a)" pp_expression exp pp_core_type core_type
 
-and pp_rec_flag_and_value_binding_list ppf rec_flag value_binding_list =
-  let pp_exp_constraint = function
-    | Exp_constraint (exp', core_type) ->
-      fprintf ppf ": %a = %a" pp_type core_type pp_expression exp'
-    | exp' -> fprintf ppf "= %a" pp_expression exp'
-  in
-  fprintf ppf "%s " (let_flag_str rec_flag);
-  fprintf
-    ppf
-    "%a"
-    (pp_print_list ~pp_sep:pp_and (fun ppf value ->
-       fprintf ppf "%a " pp_pattern value.pat;
-       pp_exp_constraint value.exp))
-    value_binding_list
+and pp_exp_constraint ppf = function
+  | Exp_constraint (exp', core_type) ->
+    fprintf ppf ": %a = %a" pp_core_type core_type pp_expression exp'
+  | exp' -> fprintf ppf "= %a" pp_expression exp'
+
+and pp_value_binding ppf = function
+  | { pat; exp } ->
+    fprintf ppf "%a " pp_pattern pat;
+    pp_exp_constraint ppf exp
+
+and pp_case ppf = function
+  | { left; right } -> fprintf ppf "| %a -> %a" pp_pattern left pp_expression right
 ;;
 
 let pp_structure_item ppf = function
   | Struct_eval exp -> fprintf ppf "%a;;" pp_expression exp
   | Struct_value (rec_flag, first_value_binding, value_binding_list) ->
-    pp_rec_flag_and_value_binding_list
+    pp_rec_flag ppf rec_flag;
+    fprintf
       ppf
-      rec_flag
+      "%a"
+      (pp_print_list ~pp_sep:pp_and pp_value_binding)
       (first_value_binding :: value_binding_list);
     fprintf ppf ";;"
 ;;
 
-let pp_structure ppf str =
-  if Base.List.is_empty str
+let pp_structure ppf ast =
+  if Base.List.is_empty ast
   then fprintf ppf ";;"
-  else fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item) str
+  else fprintf ppf "%a" (pp_print_list ~pp_sep:pp_escape_sequence pp_structure_item) ast
 ;;

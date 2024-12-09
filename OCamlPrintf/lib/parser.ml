@@ -110,10 +110,13 @@ let parse_constant =
 
 (* =================== Core_type =================== *)
 
+let parse_type_name = parse_ident >>| fun id -> Type_name id
+
 let parse_base_type =
   ws
   *> choice
-       [ keyword "_" *> return Type_any
+       [ keyword "()" *> return Type_unit
+       ; keyword "_" *> return Type_any
        ; keyword "int" *> return Type_int
        ; keyword "char" *> return Type_char
        ; keyword "string" *> return Type_string
@@ -122,7 +125,7 @@ let parse_base_type =
 ;;
 
 let parse_list_type parse_type =
-  ws *> (parse_base_type <|> skip_parens parse_type)
+  ws *> (parse_base_type <|> parse_type_name <|> skip_parens parse_type)
   <* ws
   <* keyword "list"
   >>= fun t -> return (Type_list t)
@@ -147,7 +150,11 @@ let parse_core_type =
   *> fix (fun parse_full_type ->
     let parse_type =
       choice
-        [ parse_list_type parse_full_type; parse_base_type; skip_parens parse_full_type ]
+        [ parse_list_type parse_full_type
+        ; parse_base_type
+        ; parse_type_name
+        ; skip_parens parse_full_type
+        ]
     in
     let parse_type = parse_tuple_type parse_type <|> parse_type in
     parse_arrow_type parse_type <|> parse_type)

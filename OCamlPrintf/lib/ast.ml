@@ -70,11 +70,13 @@ type constant =
 [@@deriving show { with_path = false }, qcheck]
 
 type core_type =
+  | Type_unit
   | Type_any
   | Type_char
   | Type_int
   | Type_string
   | Type_bool
+  | Type_name of ident
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])
