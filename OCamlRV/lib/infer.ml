@@ -34,6 +34,14 @@ module Infer = struct
     generalize env ty
   ;;
 
+  let rec annot_to_ty = function
+    | AInt -> int_type
+    | ABool -> bool_type
+    | AString -> string_type
+    | AUnit -> unit_type
+    | AList a -> list_type (annot_to_ty a)
+  ;;
+
   let infer_pattern =
     let rec helper env = function
       | PAny ->
@@ -69,6 +77,11 @@ module Infer = struct
             (p1 :: p2 :: pl)
         in
         return (env, tuple_type (List.rev tl))
+      | PType (pat, an) ->
+        let* env1, t1 = helper env pat in
+        let* sub = Subst.unify t1 (annot_to_ty an) in
+        let env = TypeEnv.apply sub env1 in
+        return (env, Subst.apply sub t1)
       | _ -> fail `Pattern_matching_error
     in
     helper
