@@ -36,6 +36,7 @@ module R : sig
 
   module RList : sig
     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
+    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
   end
 
   module RMap : sig
@@ -82,6 +83,13 @@ end = struct
         let open Syntax in
         let* acc = acc in
         f acc x)
+    ;;
+
+    let fold_right xs ~init ~f =
+      List.fold_right xs ~init ~f:(fun x acc ->
+        let open Syntax in
+        let* acc = acc in
+        f x acc)
     ;;
   end
 
@@ -136,7 +144,6 @@ module Subst : sig
 
   val compose_all : t list -> t R.t
   val remove : t -> ident -> t
-  (* val pp_subst : Format.formatter -> t -> unit *)
 end = struct
   open R
   open R.Syntax
@@ -266,8 +273,7 @@ module TypeEnv = struct
 
   let pp ppf xs =
     Stdlib.Format.fprintf ppf "{| ";
-    Base.Map.iter xs ~f:(fun (n, s) ->
-      Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
+    Map.iter xs ~f:(fun (n, s) -> Stdlib.Format.fprintf ppf "%s -> %a; " n pp_scheme s);
     Stdlib.Format.fprintf ppf "|}%!"
   ;;
 
@@ -287,8 +293,8 @@ module Infer = struct
 
   (** [TODO] Maybe rewrite *)
   let fresh_var =
-    (* 97 - is number 'a' in ASCII-table *)
-    fresh >>| fun n -> Type_name ("'" ^ String.make 1 (Char.chr (97 + n - 1)))
+    (* 98 - is number 'a' in ASCII-table *)
+    fresh >>| fun n -> Type_name ("'" ^ String.make 1 (Char.chr (98 + n - 1)))
   ;;
 
   let instantiate : scheme -> core_type R.t =
@@ -316,15 +322,8 @@ module Infer = struct
     | None -> fail (`No_variable e)
   ;;
 
-  (* let pp_env subst ppf env =
-     let env : TypeEnv.t =
-     List.map (fun (k, Scheme (args, v)) -> k, Scheme (args, Subst.apply subst v)) env
-     in
-     TypeEnv.pp ppf env
-     ;; *)
-
   let infer_pattern =
-    let rec helper env = function
+    let rec helper (env : TypeEnv.t) = function
       | Pat_any ->
         let* fresh = fresh_var in
         return (env, fresh)
@@ -335,8 +334,26 @@ module Infer = struct
       | Pat_constant const ->
         (match const with
          | Const_integer _ -> return (env, Type_int)
-         | Const_char _ -> return (env, Type_char)
-         | Const_string _ -> return (env, Type_string))
+         | Const_string _ -> return (env, Type_string)
+         | Const_char _ -> return (env, Type_char))
+      | Pat_construct (id, None) when id = "true" || id = "false" ->
+        return (env, Type_bool)
+      | Pat_construct ("[]", None) ->
+        let* fresh = fresh_var in
+        return (env, Type_list fresh)
+      | Pat_tuple (fst, snd, rest_list) ->
+        let* env1, t1 = helper env fst in
+        let* env2, t2 = helper env1 snd in
+        let* env_rest, t_list =
+          RList.fold_right
+            ~f:(fun pat acc ->
+              let* env_acc, typ_list = return acc in
+              let* env, typ = helper env_acc pat in
+              return (env, typ :: typ_list))
+            ~init:(return (env2, []))
+            rest_list
+        in
+        return (env_rest, Type_tuple (t1, t2, t_list))
       | _ -> fail `Not_implemented
     in
     helper
@@ -349,15 +366,15 @@ module Infer = struct
       | Exp_constant const ->
         (match const with
          | Const_integer _ -> return (Subst.empty, Type_int)
-         | Const_char _ -> return (Subst.empty, Type_char)
-         | Const_string _ -> return (Subst.empty, Type_string))
+         | Const_string _ -> return (Subst.empty, Type_string)
+         | Const_char _ -> return (Subst.empty, Type_char))
       | Exp_let (Nonrecursive, { pat = Pat_var pat; exp }, [], exp1) ->
         let* s1, t1 = helper env exp in
         let env2 = TypeEnv.apply s1 env in
         let t2 = generalize env2 t1 in
         let* s2, t3 = helper (TypeEnv.extend env2 pat t2) exp1 in
         let* final_subst = Subst.compose s1 s2 in
-        return (Subst.(final_subst), t3)
+        return (final_subst, t3)
       | Exp_fun (pat, [], exp) ->
         let* env, t1 = infer_pattern env pat in
         let* sub, t2 = helper env exp in
@@ -370,6 +387,29 @@ module Infer = struct
         let* composed_sub = Subst.compose_all [ s3; s2; s1 ] in
         let sub = Subst.apply composed_sub fresh in
         return (composed_sub, sub)
+      | Exp_tuple (fst, snd, rest_list) ->
+        let* s1, t1 = helper env fst in
+        let* s2, t2 = helper (TypeEnv.apply s1 env) snd in
+        let* sub_rest, t_list =
+          RList.fold_right
+            ~f:(fun exp acc ->
+              let* sub_acc, typs = return acc in
+              let* sub, typ = helper (TypeEnv.apply sub_acc env) exp in
+              let* sub_acc = Subst.compose sub_acc sub in
+              return (sub_acc, typ :: typs))
+            ~init:(return (Subst.empty, []))
+            rest_list
+        in
+        let* sub_result = Subst.compose_all [ s1; s2; sub_rest ] in
+        let typ1 = Subst.apply sub_result t1 in
+        let typ2 = Subst.apply sub_result t2 in
+        let typ_list_rest = List.map (fun typ -> Subst.apply sub_result typ) t_list in
+        return (sub_result, Type_tuple (typ1, typ2, typ_list_rest))
+      | Exp_construct (id, None) when id = "true" || id = "false" ->
+        return (Subst.empty, Type_bool)
+      | Exp_construct ("[]", None) ->
+        let* fresh = fresh_var in
+        return (Subst.empty, Type_list fresh)
       | Exp_ifthenelse (if_, then_, Some else_) ->
         let* s1, t1 = helper env if_ in
         let* s2, t2 = helper (TypeEnv.apply s1 env) then_ in
@@ -407,15 +447,3 @@ module Infer = struct
 end
 
 let run_inferencer ast = R.run (Infer.infer_srtucture_item TypeEnv.empty ast)
-
-let () =
-  let open Format in
-  match Parser.parse {|  |} with
-  | Ok ast ->
-    (match run_inferencer ast with
-     | Ok env ->
-       Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
-         printf "val %s : %a\n" key pp_core_type ty)
-     | Error e -> printf "Infer error: %a\n" pp_error e)
-  | Error _ -> printf "Parsing error\n"
-;;
