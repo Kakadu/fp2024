@@ -73,11 +73,43 @@ let varname =
      | _ -> return (first_char ^ rest))
 ;;
 
+let patomic_type =
+  choice
+    [ pstoken "int" *> return TInt
+    ; pstoken "string" *> return TString
+    ; pstoken "bool" *> return TBool
+    ]
+;;
+
+let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (Tlist t)
+
+let ptuple_type ptype =
+  let star = pstoken "*" in
+  lift3
+    (fun t1 t2 rest -> TTuple (t1, t2, rest))
+    ptype
+    (star *> ptype)
+    (many (star *> ptype))
+;;
+
+let rec pfun_type ptype =
+  ptype
+  >>= fun left ->
+  pstoken "->" *> pfun_type ptype
+  >>= (fun right -> return (TFun (left, right)))
+  <|> return left
+;;
+
 let ptype =
-  let pbasic_type =
-    choice [ pstoken "int"; pstoken "string"; pstoken "bool" ] >>| fun t -> Some t
+  let some_type =
+    fix (fun typ ->
+      let atom = patomic_type <|> pparens typ in
+      let list = plist_type atom <|> atom in
+      let tuple = ptuple_type list <|> list in
+      let func = pfun_type tuple <|> tuple in
+      func)
   in
-  pstoken ":" *> pbasic_type <|> return None
+  pstoken ":" *> (some_type >>| fun t -> Some t) <|> return None
 ;;
 
 let pident = lift2 (fun t v -> Id (t, v)) varname ptype
