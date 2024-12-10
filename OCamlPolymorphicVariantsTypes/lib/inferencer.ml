@@ -394,7 +394,7 @@ let run_infer p = run (infer_program p)
 
 let code_infer s =
   let open Stdlib.Format in
-  match Parser.program_parser s with
+  match Parser_utility.parse Parser.program_parser s with
   | ParseSuccess (p, parser_state) ->
     (match run_infer p with
      | Ok env ->
