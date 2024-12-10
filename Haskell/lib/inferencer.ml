@@ -85,8 +85,7 @@ module Type = struct
       | Ty_arrow (l, r) -> helper (helper acc l) r
       | Ty_prim _ -> acc
       | Ty_list ty | Ty_tree ty | Ty_maybe ty -> helper acc ty
-      | Ty_tuple (ty1, ty2, ty_list) ->
-        List.fold_left (fun acc ty -> helper acc ty) acc (ty1 :: ty2 :: ty_list)
+      | Ty_tuple (ty1, ty2, ty_list) -> List.fold_left helper acc (ty1 :: ty2 :: ty_list)
     in
     helper VarSet.empty
   ;;
@@ -248,7 +247,7 @@ module TypeEnv = struct
   ;;
 
   let apply s = SMap.map (Scheme.apply s)
-  let find_exn name = SMap.find name
+  let find_exn = SMap.find
 end
 
 type typeenv = TypeEnv.t
