@@ -34,10 +34,10 @@ jobs:
 
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v6
-        #uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: review
+          allow_forks: true
 
       - run: ls
 
@@ -232,6 +232,7 @@ jobs:
           workflow: PR.yml
           name: docs
           path: _docs
+          allow_forks: true
 
       #- run: ls docs
       - run: |
@@ -328,6 +329,7 @@ jobs:
           workflow: PR.yml
           name: coverage
           path: _coverage
+          allow_forks: true
 
       - run: |
           echo "LANG_NAME=$(cat _coverage/projectname.txt)" >> $GITHUB_ENV
