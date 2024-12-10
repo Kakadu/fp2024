@@ -127,3 +127,15 @@ let%expect_test "test_one_element_in_tuple" =
      [(ExpLet (false, (PatVariable "x"), (ExpConst (ConstInt 666)), None))]
 |}]
 ;;
+
+let%expect_test "test_sum_two_args" =
+  parse_test "let sum x y = x + y";
+  [%expect
+    {|
+[(ExpLet (false, (PatVariable "sum"),
+    (ExpLambda ([(PatVariable "x"); (PatVariable "y")],
+       (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y"))))),
+    None))
+  ]
+|}]
+;;
