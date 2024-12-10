@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open OCamlRV_lib.Ast
-open OCamlRV_lib.Pprintast
+open OCamlRV_lib.AstPrinter
 
 let%expect_test "apply test" =
   Format.printf
@@ -25,7 +25,7 @@ let%expect_test "let expression test" =
   Format.printf
     "%a\n"
     pp_structure_item_list
-    [ SValue (NonRec, (PVar "x", ExprLiteral (IntLiteral 5)), []) ];
+    [ SValue (NonRec, (PVar "x", ExprConstant (CInt 5)), []) ];
   [%expect {| let x = 5;; |}]
 ;;
 
@@ -39,8 +39,8 @@ let%expect_test "factorial test" =
           , ExprFun
               ( PVar "n"
               , ExprIf
-                  ( ExprBinOperation (Lte, ExprVariable "n", ExprLiteral (IntLiteral 1))
-                  , ExprLiteral (IntLiteral 1)
+                  ( ExprBinOperation (Lte, ExprVariable "n", ExprConstant (CInt 1))
+                  , ExprConstant (CInt 1)
                   , Some
                       (ExprBinOperation
                          ( Mul
@@ -48,8 +48,8 @@ let%expect_test "factorial test" =
                          , ExprApply
                              ( ExprVariable "fact"
                              , ExprBinOperation
-                                 (Sub, ExprVariable "n", ExprLiteral (IntLiteral 1)) ) ))
-                  ) ) )
+                                 (Sub, ExprVariable "n", ExprConstant (CInt 1)) ) )) ) )
+          )
         , [] )
     ];
   [%expect {| let rec fact n = if (n <= (1)) then 1 else (n * (fact (n - (1))));; |}]
@@ -64,11 +64,11 @@ let%expect_test "complex let test" =
         , ( PVar "a"
           , ExprLet
               ( NonRec
-              , (PVar "b", ExprLiteral (IntLiteral 1))
+              , (PVar "b", ExprConstant (CInt 1))
               , []
               , ExprLet
                   ( NonRec
-                  , (PVar "c", ExprLiteral (IntLiteral 1))
+                  , (PVar "c", ExprConstant (CInt 1))
                   , []
                   , ExprBinOperation (Add, ExprVariable "b", ExprVariable "c") ) ) )
         , [] )
@@ -84,9 +84,9 @@ let%expect_test "tuple test" =
         ( NonRec
         , ( PVar "a"
           , ExprTuple
-              ( ExprLiteral (IntLiteral 1)
-              , ExprLiteral (StringLiteral "2")
-              , [ ExprLiteral (IntLiteral 3) ] ) )
+              ( ExprConstant (CInt 1)
+              , ExprConstant (CString "2")
+              , [ ExprConstant (CInt 3) ] ) )
         , [] )
     ];
   [%expect {| let a = (1, "2", 3);; |}]
@@ -98,10 +98,10 @@ let%expect_test _ =
     pp_structure_item_list
     [ SEval
         (ExprCons
-           ( ExprLiteral (IntLiteral 1)
+           ( ExprConstant (CInt 1)
            , ExprCons
-               ( ExprLiteral (IntLiteral 2)
-               , ExprCons (ExprLiteral (IntLiteral 3), ExprLiteral NilLiteral) ) ))
+               (ExprConstant (CInt 2), ExprCons (ExprConstant (CInt 3), ExprConstant CNil))
+           ))
     ];
   [%expect {| 1::(2::(3::[]));; |}]
 ;;
@@ -113,9 +113,8 @@ let%expect_test "bin op with parentheses" =
     [ SEval
         (ExprBinOperation
            ( Add
-           , ExprLiteral (IntLiteral 1)
-           , ExprBinOperation (Mul, ExprLiteral (IntLiteral 2), ExprLiteral (IntLiteral 2))
-           ))
+           , ExprConstant (CInt 1)
+           , ExprBinOperation (Mul, ExprConstant (CInt 2), ExprConstant (CInt 2)) ))
     ];
   [%expect {| 1 + (2 * 2);; |}]
 ;;
@@ -127,8 +126,8 @@ let%expect_test "bin op with parentheses" =
     [ SEval
         (ExprBinOperation
            ( Mul
-           , ExprBinOperation (Add, ExprLiteral (IntLiteral 1), ExprLiteral (IntLiteral 2))
-           , ExprLiteral (IntLiteral 2) ))
+           , ExprBinOperation (Add, ExprConstant (CInt 1), ExprConstant (CInt 2))
+           , ExprConstant (CInt 2) ))
     ];
   [%expect {| (1 + 2) * 2;; |}]
 ;;
@@ -139,9 +138,8 @@ let%expect_test "let expressions" =
     pp_structure_item_list
     [ SValue
         ( NonRec
-        , (PVar "a", ExprLiteral (IntLiteral 1))
-        , [ PVar "b", ExprLiteral (IntLiteral 2); PVar "c", ExprLiteral (IntLiteral 3) ]
-        )
+        , (PVar "a", ExprConstant (CInt 1))
+        , [ PVar "b", ExprConstant (CInt 2); PVar "c", ExprConstant (CInt 3) ] )
     ];
   [%expect {| let a = 1 and b = 2 and c = 3;; |}]
 ;;
@@ -155,8 +153,8 @@ let%expect_test "complex let epressions" =
         , ( PVar "a"
           , ExprLet
               ( NonRec
-              , (PVar "x", ExprLiteral (IntLiteral 1))
-              , [ PVar "y", ExprLiteral (IntLiteral 2) ]
+              , (PVar "x", ExprConstant (CInt 1))
+              , [ PVar "y", ExprConstant (CInt 2) ]
               , ExprBinOperation (Add, ExprVariable "x", ExprVariable "y") ) )
         , [] )
     ];
@@ -175,7 +173,7 @@ let%expect_test "let some expression" =
   Format.printf
     "%a\n"
     pp_structure_item_list
-    [ SValue (NonRec, (PVar "a", ExprOption (Some (ExprLiteral (IntLiteral 1)))), []) ];
+    [ SValue (NonRec, (PVar "a", ExprOption (Some (ExprConstant (CInt 1)))), []) ];
   [%expect {| let a = Some (1);; |}]
 ;;
 
@@ -186,7 +184,7 @@ let%expect_test "bin op with if then else" =
     [ SEval
         (ExprBinOperation
            ( Add
-           , ExprLiteral (IntLiteral 1)
+           , ExprConstant (CInt 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
   [%expect {| 1 + (if a then b else c);; |}]
@@ -199,7 +197,7 @@ let%expect_test "bin op with if then else" =
     [ SEval
         (ExprBinOperation
            ( Add
-           , ExprLiteral (IntLiteral 1)
+           , ExprConstant (CInt 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
   [%expect {| 1 + (if a then b else c);; |}]
@@ -212,9 +210,9 @@ let%expect_test "pretty print match with multiple branches" =
     [ SEval
         (ExprMatch
            ( ExprVariable "x"
-           , (PLiteral (IntLiteral 0), ExprLiteral (StringLiteral "zero"))
-           , [ PLiteral (IntLiteral 1), ExprLiteral (StringLiteral "one")
-             ; PAny, ExprLiteral (StringLiteral "other")
+           , (PConstant (CInt 0), ExprConstant (CString "zero"))
+           , [ PConstant (CInt 1), ExprConstant (CString "one")
+             ; PAny, ExprConstant (CString "other")
              ] ))
     ];
   [%expect {|
@@ -234,9 +232,9 @@ let%expect_test "let expr with match match with multiple branches" =
         , ( PVar "numder"
           , ExprMatch
               ( ExprVariable "arabic"
-              , (PLiteral (IntLiteral 1), ExprLiteral (StringLiteral "one"))
-              , [ PLiteral (IntLiteral 2), ExprLiteral (StringLiteral "two")
-                ; PLiteral (IntLiteral 3), ExprLiteral (StringLiteral "three")
+              , (PConstant (CInt 1), ExprConstant (CString "one"))
+              , [ PConstant (CInt 2), ExprConstant (CString "two")
+                ; PConstant (CInt 3), ExprConstant (CString "three")
                 ] ) )
         , [] )
     ];
@@ -261,7 +259,7 @@ let%expect_test "" =
   Format.printf
     "%a\n"
     pp_structure_item_list
-    [ SValue (NonRec, (PType (PVar "a", AInt), ExprLiteral (IntLiteral 5)), []) ];
+    [ SValue (NonRec, (PType (PVar "a", AInt), ExprConstant (CInt 5)), []) ];
   [%expect {| let (a : int) = 5;; |}]
 ;;
 
@@ -286,6 +284,6 @@ let%expect_test "" =
   Format.printf
     "%a\n"
     pp_structure_item_list
-    [ SValue (NonRec, (PType (PVar "a", AList AInt), ExprLiteral NilLiteral), []) ];
+    [ SValue (NonRec, (PType (PVar "a", AList AInt), ExprConstant CNil), []) ];
   [%expect {| let (a : int list) = [];; |}]
 ;;

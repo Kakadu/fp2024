@@ -4,7 +4,21 @@
 
 type identifier = string [@@deriving show { with_path = false }]
 
-let gen_identifier = Qcheck_utils.gen_identifier
+let gen_char =
+  let open QCheck.Gen in
+  map Char.chr (int_range (Char.code 'a') (Char.code 'z'))
+;;
+
+let gen_identifier =
+  let open QCheck.Gen in
+  string_size (int_range 1 8) ~gen:gen_char
+;;
+
+let gen_string =
+  let open QCheck.Gen in
+  string_size (int_range 0 32) ~gen:gen_char
+;;
+
 let div = 15
 
 type binary_operator =
@@ -33,14 +47,12 @@ type rec_flag =
   | Rec (** let rec a *)
 [@@deriving show { with_path = false }, qcheck]
 
-type literal =
-  | IntLiteral of (int[@gen QCheck.Gen.int_range (-1000) 1000])
-  | BoolLiteral of (bool[@gen QCheck.Gen.bool])
-  | StringLiteral of
-      (string
-      [@gen QCheck.Gen.(string_size ~gen:Qcheck_utils.gen_string_content (0 -- 32))])
-  | UnitLiteral
-  | NilLiteral
+type constant =
+  | CInt of (int[@gen QCheck.Gen.int_range (-1000) 1000])
+  | CBool of bool
+  | CString of (string[@gen gen_string])
+  | CUnit
+  | CNil
 [@@deriving show { with_path = false }, qcheck]
 
 type type_annotation =
@@ -53,7 +65,7 @@ type type_annotation =
 
 type pattern =
   | PAny (** _ *)
-  | PLiteral of literal (** 123, true, "string" *)
+  | PConstant of constant (** 123, true, "string" *)
   | PVar of identifier (** x *)
   | PCons of pattern * pattern (** p1::p2 *)
   | PTuple of
@@ -68,7 +80,7 @@ type pattern =
 
 type expression =
   | ExprVariable of identifier (** x | y | z*)
-  | ExprLiteral of literal (** 123 | true | "string" *)
+  | ExprConstant of constant (** 123 | true | "string" *)
   | ExprBinOperation of binary_operator * expression * expression (** 1 + 1 | 2 * 2 *)
   | ExprUnOperation of unary_operator * expression (** -x | not true *)
   | ExprIf of expression * expression * expression option
