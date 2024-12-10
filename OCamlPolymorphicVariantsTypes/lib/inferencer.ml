@@ -7,7 +7,6 @@ open Ast
 open Typedtree
 open Base
 open Format
-open Typedtree
 
 type error =
   [ `Occurs_check
@@ -110,7 +109,8 @@ module Type = struct
     | TVar x -> x = v
     | TArrow (l, r) -> occurs_in v l || occurs_in v r
     | TList typ -> occurs_in v typ
-    | TTuple t -> Base.List.exists t ~f:(occurs_in v)
+    | TTuple (t1, t2, tl) ->
+      occurs_in v t1 || occurs_in v t2 || Base.List.exists tl ~f:(occurs_in v)
     | TPrim _ -> false
   ;;
 
@@ -119,7 +119,9 @@ module Type = struct
       | TVar x -> VarSet.add x acc
       | TArrow (l, r) -> helper (helper acc l) r
       | TList t -> helper acc t
-      | TTuple t -> List.fold_left t ~init:acc ~f:helper
+      | TTuple (t1, t2, tl) ->
+        let acc' = helper (helper acc t1) t2 in
+        List.fold_left ~f:(fun acc t -> helper acc t) ~init:acc' tl
       | TPrim _ -> acc
     in
     helper VarSet.empty
@@ -162,7 +164,7 @@ end = struct
          | Some ty' -> helper ty'
          | None -> ty)
       | TArrow (l, r) -> TArrow (helper l, helper r)
-      | TTuple tl -> ty_tuple (List.map ~f:helper tl)
+      | TTuple (t1, t2, tl) -> ty_tuple (helper t1, helper t2, List.map ~f:helper tl)
       | TList l -> ty_list (helper l)
       | TPrim _ as ty -> ty
     in
@@ -178,16 +180,22 @@ end = struct
       let* s1 = unify l1 l2 in
       let* s2 = unify (apply s1 r1) (apply s1 r2) in
       compose s1 s2
-    | TTuple t1, TTuple t2 ->
-      if List.length t1 <> List.length t2
+    | TTuple (t11, t12, t1l), TTuple (t21, t22, t2l) ->
+      if List.length t1l <> List.length t2l
       then fail (`Unification_failed (l, r))
-      else
+      else (
+        let tls = List.zip_exn (t11 :: t12 :: t1l) (t21 :: t22 :: t2l) in
         let* s =
-          RList.fold_left (List.zip_exn t1 t2) ~init:(return empty) ~f:(fun acc (l, r) ->
-            let* u = unify (apply acc l) (apply acc r) in
-            compose acc u)
+          List.fold
+            tls
+            ~f:(fun acc (l, r) ->
+              let* acc = acc in
+              let* u = unify l r in
+              return (u :: acc))
+            ~init:(return [])
         in
-        return s
+        let composed_tl = compose_all s in
+        composed_tl)
     | TList l1, TList l2 -> unify l1 l2
     | _, _ -> fail (`Unification_failed (l, r))
 
@@ -206,7 +214,7 @@ end = struct
 
   and compose s1 s2 = RMap.fold s2 ~init:(return s1) ~f:extend
 
-  let compose_all ss =
+  and compose_all ss =
     List.fold_left ss ~init:(return empty) ~f:(fun acc s ->
       let* acc = acc in
       compose acc s)
@@ -262,53 +270,137 @@ let generalize env ty =
   let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
   S (free, ty)
 ;;
-let rec infer_expr env expr =
-  match expr with
-  | Const (IntLiteral _) ->
-    return (ty_int, Subst.empty)
-  | Const (BoolLiteral _) ->
-    return (ty_bool, Subst.empty)
-    | Const (UnitLiteral _) ->
-      return (ty_unit, Subst.empty)
-  | Variable x ->
-    (match TypeEnv.find x env with
-     | Some scheme ->
-       let* inst = instantiate scheme in
-       return (inst, Subst.empty)
-     | None -> fail (`No_variable x))
-  | Lambda (params, body) ->
-    let* param_types =
-      RList.fold_left params ~init:(return []) ~f:(fun acc param ->
-        let* tv = fresh_var in
-        return ((param, tv) :: acc))
-    in
-    let env_with_params =
-      List.fold_left param_types ~init:env ~f:(fun env (param, t) ->
-        match param with
-        | PVar name -> TypeEnv.extend env name (S (VarSet.empty, t))
-        | _ -> env) (**)
-    in
-    let* (body_type, body_subst) = infer_expr env_with_params body in
-    let param_type_list = List.map ~f:snd param_types in
-    let lambda_type = List.fold_right param_type_list ~init:body_type ~f:(fun t acc ->
-      TArrow (t, acc))
-    in
-    return (lambda_type, body_subst)
-  | _ -> failwith "Not implemented"
 
-  let infer_str_item env = function
+let generalize_rec env ty x =
+  let env = TypeEnv.remove env x in
+  generalize env ty
+;;
+
+let infer_pattern =
+  let rec helper env = function
+    | PAny ->
+      let* fresh = fresh_var in
+      return (env, fresh)
+    | PVar x ->
+      let* fresh = fresh_var in
+      let env = TypeEnv.extend env x (S (VarSet.empty, fresh)) in
+      return (env, fresh)
+    | PTuple (t1, t2, tl) ->
+      let* _, t1' = helper env t1 in
+      let* _, t2' = helper env t2 in
+      let* tl' =
+        List.fold_right
+          ~f:(fun p acc ->
+            let* acc = acc in
+            let* _, t = helper env p in
+            return (t :: acc))
+          ~init:(return [])
+          tl
+      in
+      return (env, TTuple (t1', t2', tl'))
+    | _ -> failwith "TODO"
+  in
+  helper
+;;
+
+let infer_expression =
+  let rec helper env = function
+    | Const c ->
+      (match c with
+       | IntLiteral _ -> return (Subst.empty, ty_int)
+       | BoolLiteral _ -> return (Subst.empty, ty_bool)
+       | UnitLiteral -> return (Subst.empty, ty_unit))
+    | Variable x ->
+      (match TypeEnv.find x env with
+       | Some s ->
+         let* t = instantiate s in
+         return (Subst.empty, t)
+       | None -> fail (`No_variable x))
+    | Unary _ -> failwith "TODO"
+    | Binary (e1, op, e2) ->
+      let* sub1, t1 = helper env e1 in
+      let* sub2, t2 = helper (TypeEnv.apply sub1 env) e2 in
+      let* e1t, e2t, et =
+        match op with
+        | Multiply | Division | Add | Subtract -> return (ty_int, ty_int, ty_int)
+        | Equals | Unequals | Lt | Lte | Gt | Gte ->
+          let* fresh = fresh_var in
+          return (fresh, fresh, ty_bool)
+        | And | Or -> return (ty_bool, ty_bool, ty_bool)
+      in
+      let* sub3 = Subst.unify (Subst.apply sub2 t1) e1t in
+      let* sub4 = Subst.unify (Subst.apply sub3 t2) e2t in
+      let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
+      return (sub, Subst.apply sub et)
+    | If (i, t, e) ->
+      let* sub1, t1 = helper env i in
+      let* sub2, t2 = helper (TypeEnv.apply sub1 env) t in
+      let* sub3, t3 =
+        match e with
+        | Some e ->
+          let* sub3, t3 = helper (TypeEnv.apply sub2 env) e in
+          return (sub3, t3)
+        | None -> return (Subst.empty, ty_unit)
+      in
+      let* sub4 = Subst.unify t1 ty_bool in
+      let* sub5 = Subst.unify t2 t3 in
+      let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
+      return (sub, Subst.apply sub t2)
+    | Match (e, cl) -> failwith "TODO"
+    | Define ((Nonrecursive, bindings), e) -> failwith "TODO"
+    | Define ((Recursive, bindings), e) -> failwith "TODO"
+    | Func _ -> failwith "TODO"
+    | Tuple (t1, t2, tl) ->
+      let* s1, t1 = helper env t1 in
+      let* s2, t2 = helper env t2 in
+      let* s3, t3 =
+        List.fold_right
+          ~f:(fun expr acc ->
+            let* sacc, tacc = acc in
+            let* s, t = helper env expr in
+            let* sacc = Subst.compose sacc s in
+            return (sacc, t :: tacc))
+          ~init:(return (Subst.empty, []))
+          tl
+      in
+      let* composed_sl = Subst.compose_all [ s1; s2; s3 ] in
+      let t1 = Subst.apply composed_sl t1 in
+      let t2 = Subst.apply composed_sl t2 in
+      let t3 = List.map t3 ~f:(fun t -> Subst.apply s3 t) in
+      return (s3, TTuple (t1, t2, t3))
+    | _ -> failwith "TODO"
+  in
+  helper
+;;
+
+let infer_structure_item env = function
+  | EvalItem e ->
+    let* _, _ = infer_expression env e in
+    return env
   | _ -> failwith "TODO"
 ;;
 
-let infer p = 
+let infer_program p =
   List.fold_left
-  ~f:(fun acc item ->
-    let* env = acc in
-    let* env = infer_str_item env item in
-    return env)
-  ~init:(return TypeEnv.empty)
-  p
+    ~f:(fun acc item ->
+      let* env = acc in
+      let* env = infer_structure_item env item in
+      return env)
+    ~init:(return TypeEnv.empty)
+    p
+;;
 
-let infer_run p = run (infer p)
+let run_infer p = run (infer_program p)
 
-
+let code_infer s =
+  let open Stdlib.Format in
+  match Parser_utility.parse Parser.program_parser s with
+  | ParseSuccess (p, parser_state) ->
+    (match run_infer p with
+     | Ok env ->
+       Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
+         printf "val %s : %a\n" key pp_ty ty)
+     | Error e -> printf "Inferencer error: %a\n" pp_error e)
+  | ParseError (e, parser_state) -> printf "Parser error: %s\n" e
+  | ParseFail -> printf "Parser failed" (*TODO*)
+;;
