@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>parser_tests.ml &mdash; Coverage report</title>
-    <meta name="description" content="96.00% coverage in tests/parser_tests.ml">
+    <meta name="description" content="96.43% coverage in tests/parser_tests.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,10 @@
           <span class="dirname">tests/</span>parser_tests.ml
         </a>
       </h1>
-      <h2>96.00%</h2>
+      <h2>96.43%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:10.08%"></span>
+      <span class="unvisited" style="top:9.22%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -152,6 +152,18 @@
 <a id="L127"></a><span > </span>
 <a id="L128"></a><span class="visited"> </span>
 <a id="L129"></a><span > </span>
+<a id="L130"></a><span > </span>
+<a id="L131"></a><span > </span>
+<a id="L132"></a><span class="visited"> </span>
+<a id="L133"></a><span class="visited"> </span>
+<a id="L134"></a><span > </span>
+<a id="L135"></a><span > </span>
+<a id="L136"></a><span > </span>
+<a id="L137"></a><span > </span>
+<a id="L138"></a><span > </span>
+<a id="L139"></a><span > </span>
+<a id="L140"></a><span class="visited"> </span>
+<a id="L141"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -285,6 +297,18 @@
 <a href="#L127">127</a>
 <a href="#L128">128</a>
 <a href="#L129">129</a>
+<a href="#L130">130</a>
+<a href="#L131">131</a>
+<a href="#L132">132</a>
+<a href="#L133">133</a>
+<a href="#L134">134</a>
+<a href="#L135">135</a>
+<a href="#L136">136</a>
+<a href="#L137">137</a>
+<a href="#L138">138</a>
+<a href="#L139">139</a>
+<a href="#L140">140</a>
+<a href="#L141">141</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Danil Usoltsev *)
 
@@ -296,8 +320,8 @@ open Parser
 open Printf
 
 let parse_test input =
-  <span data-count="7">m</span>atch parse input with
-  | <span data-count="7">O</span>k ast -&gt; printf "%s\n" (show_progra<span data-count="7">m</span> ast)
+  <span data-count="8">m</span>atch parse input with
+  | <span data-count="8">O</span>k ast -&gt; printf "%s\n" (show_progra<span data-count="8">m</span> ast)
   | <span data-count="0">E</span>rror fail -&gt; printf "Ошибка: %s\n" fail
 ;;
 
@@ -320,7 +344,7 @@ let%expect_test "factorial" =
          )),
       None))
     ]  
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
 ;;
 
 let%expect_test "fibonacci" =
@@ -346,7 +370,7 @@ let%expect_test "fibonacci" =
          )),
       None))
     ]
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
 ;;
 
 let%expect_test "double_let" =
@@ -366,7 +390,7 @@ let%expect_test "double_let" =
           (ExpConst (ConstInt 8000)))),
        None))
     ]
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
 ;;
 
 let%expect_test "lambda_test" =
@@ -380,7 +404,7 @@ let%expect_test "lambda_test" =
          )),
       None))
     ]
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
 ;;
 
 let%expect_test "test_tuple" =
@@ -392,7 +416,7 @@ let%expect_test "test_tuple" =
          [(ExpConst (ConstBool true))])),
       (Some (ExpIdent "x"))))
     ]
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
 ;;
 
 let%expect_test "test_list" =
@@ -405,7 +429,7 @@ let%expect_test "test_list" =
               (ExpConst (ConstBool true))]),
          None))
        ]
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
 ;;
 
 let%expect_test "test_one_element_in_tuple" =
@@ -413,7 +437,19 @@ let%expect_test "test_one_element_in_tuple" =
   <span data-count="1">[</span>%expect
     {|
      [(ExpLet (false, (PatVariable "x"), (ExpConst (ConstInt 666)), None))]
-|}<span data-count="5">]</span>
+|}<span data-count="7">]</span>
+;;
+
+let%expect_test "test_sum_two_args" =
+  <span data-count="1">p</span>arse_test "let sum x y = x + y";
+  <span data-count="1">[</span>%expect
+    {|
+[(ExpLet (false, (PatVariable "sum"),
+    (ExpLambda ([(PatVariable "x"); (PatVariable "y")],
+       (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y"))))),
+    None))
+  ]
+|}<span data-count="7">]</span>
 ;;
 </code></pre>
       </div>
