@@ -1044,7 +1044,7 @@ let%expect_test "simple addition" =
       , Exp_tuple (Exp_constant (Const_integer 1), Exp_constant (Const_integer 2), []) )
   in
   test_pprint_expression expr;
-  <span data-count="1">[</span>%expect {| 1 + 2 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 1 + 2 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "nested expressions with precedence handling" =
@@ -1060,7 +1060,7 @@ let%expect_test "nested expressions with precedence handling" =
           , [] ) )
   in
   test_pprint_expression expr;
-  <span data-count="1">[</span>%expect {| 3 * 4 + 5 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 3 * 4 + 5 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "parentheses for lower precedence" =
@@ -1076,7 +1076,7 @@ let%expect_test "parentheses for lower precedence" =
           , [] ) )
   in
   test_pprint_expression expr;
-  <span data-count="1">[</span>%expect {| (1 + 2) * 3 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| (1 + 2) * 3 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "simple nested addition expression" =
@@ -1092,7 +1092,7 @@ let%expect_test "simple nested addition expression" =
           , [] ) )
   in
   test_pprint_expression expr;
-  <span data-count="1">[</span>%expect {| 1 + (2 + 3) |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 1 + (2 + 3) |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "subtraction" =
@@ -1102,7 +1102,7 @@ let%expect_test "subtraction" =
       , Exp_tuple (Exp_constant (Const_integer 5), Exp_constant (Const_integer 1), []) )
   in
   test_pprint_expression expr;
-  <span data-count="1">[</span>%expect {| 5 - 1 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 5 - 1 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "division with parentheses" =
@@ -1118,7 +1118,7 @@ let%expect_test "division with parentheses" =
           , [] ) )
   in
   test_pprint_expression expr;
-  <span data-count="1">[</span>%expect {| 8 / (2 + 1) |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 8 / (2 + 1) |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "nested expression with division" =
@@ -1137,7 +1137,7 @@ let%expect_test "nested expression with division" =
           , [] ) )
   in
   pprint_expression std_formatter 0 expr4;
-  <span data-count="1">[</span>%expect {| (10 + 5) / (2 * 3) |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| (10 + 5) / (2 * 3) |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "nested function calls with precedence" =
@@ -1160,7 +1160,7 @@ let%expect_test "nested function calls with precedence" =
           , [] ) )
   in
   pprint_expression std_formatter 0 expr5;
-  <span data-count="1">[</span>%expect {| (8 - (2 + 3)) * 4 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| (8 - (2 + 3)) * 4 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "nested operations with multi-level tuples" =
@@ -1179,7 +1179,7 @@ let%expect_test "nested operations with multi-level tuples" =
           , [] ) )
   in
   pprint_expression std_formatter 0 expr6;
-  <span data-count="1">[</span>%expect {| 18 / 3 + 2 * 4 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 18 / 3 + 2 * 4 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "chained operations requiring multiple parentheses" =
@@ -1207,7 +1207,7 @@ let%expect_test "chained operations requiring multiple parentheses" =
           , [] ) )
   in
   pprint_expression std_formatter 0 expr7;
-  <span data-count="1">[</span>%expect {| 10 - 9 / (2 * 3) + 5 |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 10 - 9 / (2 * 3) + 5 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "complex nested arithmetic expression" =
@@ -1275,7 +1275,7 @@ let%expect_test "complex nested arithmetic expression" =
           , [] ) )
   in
   pprint_expression std_formatter 0 expr8;
-  <span data-count="1">[</span>%expect {| 105 * 64 / 27 - 2 * (5 * (5 - 1)) + 47 / 64 - (56 * (57 * 4) - 5) |}<span data-count="7">]</span>
+  <span data-count="1">[</span>%expect {| 105 * 64 / 27 - 2 * (5 * (5 - 1)) + 47 / 64 - (56 * (57 * 4) - 5) |}<span data-count="9">]</span>
 ;;
 
 (* 105 * 64 / 27 - 2 * (5*(5-1)) + 47 / 64 - (56 * (57 *4) - 5) *)
@@ -1357,7 +1357,7 @@ let%expect_test "deeply nested mixed operations with logical operators" =
   in
   pprint_expression std_formatter 0 expr;
   <span data-count="1">[</span>%expect
-    {| (3 * (9 - 12 / 4) &lt; 7 &amp;&amp; 1 || 1 &amp;&amp; 5 &lt; 6) || 20 - 100 / (4 + 16) &amp;&amp; 10 &lt; 12 |}<span data-count="7">]</span>
+    {| (3 * (9 - 12 / 4) &lt; 7 &amp;&amp; 1 || 1 &amp;&amp; 5 &lt; 6) || 20 - 100 / (4 + 16) &amp;&amp; 10 &lt; 12 |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "let and construct" =
@@ -1375,7 +1375,7 @@ let%expect_test "let and construct" =
   in
   pprint_program std_formatter program;
   <span data-count="1">[</span>%expect {|
-    ((let _ = s and "fgo" = ilm in j_9) (Tep (ha9))) ;; |}<span data-count="7">]</span>
+    ((let _ = s and "fgo" = ilm in j_9) (Tep (ha9))) ;; |}<span data-count="9">]</span>
 ;;
 
 (*(let _ s = "fgo" -&gt; __im in j_9) Tep (ha9);;*)
@@ -1408,7 +1408,7 @@ let%expect_test "if with parenthesis" =
     {|
     ((c6BR_J, "", j_v_), (if "hgdpg"
       then _T
-      else 80), (let 69 = 8 and 5 = 'd' in 4)) ;; |}<span data-count="7">]</span>
+      else 80), (let 69 = 8 and 5 = 'd' in 4)) ;; |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "let binding with integer" =
@@ -1420,7 +1420,7 @@ let%expect_test "let binding with integer" =
   pprint_program std_formatter program;
   <span data-count="1">[</span>%expect {|
     let  x = 42;;
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "if expression" =
@@ -1439,7 +1439,7 @@ let%expect_test "if expression" =
     if x &gt; 10
       then large
       else small ;;
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "tuple and match expression" =
@@ -1458,7 +1458,7 @@ let%expect_test "tuple and match expression" =
   <span data-count="1">[</span>%expect {|
     match (a, b, c) with
       | (x, y, z) -&gt; (f (x, y)) ;;
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "nested constructs" =
@@ -1484,7 +1484,7 @@ let%expect_test "nested constructs" =
   <span data-count="1">[</span>%expect {|
     (map ((function
       | x -&gt; x * 2), list)) ;;
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "construct with optional arguments" =
@@ -1494,7 +1494,7 @@ let%expect_test "construct with optional arguments" =
   pprint_program std_formatter program;
   <span data-count="1">[</span>%expect {|
     (Some ("Hello")) ;;
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test "complex program" =
@@ -1516,7 +1516,7 @@ let%expect_test "complex program" =
     let x = 5 in (if x &gt; 0
       then (Some (x))
       else (None)) ;;
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 </code></pre>
       </div>
