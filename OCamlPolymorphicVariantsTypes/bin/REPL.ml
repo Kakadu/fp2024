@@ -5,8 +5,9 @@
 open Miniml.Ast
 open Miniml.Parser
 open Miniml.Parser_utility
-open Miniml.Printer
+open Miniml.Pprinter
 open Stdio
+open Format
 
 type options =
   { mutable dumpast : bool
@@ -26,7 +27,7 @@ let parse_args =
       , "Input file of miniML's code to interpret it" )
     ]
     (fun opt ->
-      Format.eprintf "Argument '%s' are not supported\n" opt;
+      eprintf "Argument '%s' are not supported\n" opt;
       exit ~-1)
     "REPL of miniML";
   opts
@@ -39,8 +40,8 @@ let () =
     | Some filename -> In_channel.read_all filename |> String.trim
     | None -> In_channel.input_all stdin |> String.trim
   in
-  print_endline
-    (string_of_parse_result
-       (if opts.dumpast then show_program else fun _ -> "")
-       (parse program_parser input))
+  let parse_result = parse program_parser input in
+  if opts.dumpast
+  then printf "%s\n" (string_of_parse_result show_program parse_result)
+  else pp_parse_result std_formatter pp_program parse_result
 ;;
