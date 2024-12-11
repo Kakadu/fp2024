@@ -82,7 +82,16 @@ module TestQCheckManual = struct
              ; return Type_int
              ; return Type_string
              ; return Type_bool
-             ; map (fun id -> Type_name id) (map (fun id -> "'" ^ id) gen_ident)
+             ; map
+                 (fun id -> Type_name id)
+                 (map
+                    (fun id ->
+                      "'"
+                      ^
+                      match String.get id 1 with
+                      | '\'' -> "_" ^ id
+                      | _ -> id)
+                    gen_ident)
              ; map (fun t -> Type_list t) (self (n / coef))
              ; map3
                  (fun t1 t2 t3 -> Type_tuple (t1, t2, t3))

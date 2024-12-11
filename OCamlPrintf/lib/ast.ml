@@ -75,7 +75,17 @@ type core_type =
   | Type_int
   | Type_string
   | Type_bool
-  | Type_name of (ident[@gen map (fun id -> "'" ^ id) gen_ident])
+  | Type_name of
+      (ident
+      [@gen
+        map
+          (fun id ->
+            "'"
+            ^
+            match String.get id 1 with
+            | '\'' -> "_" ^ id
+            | _ -> id)
+          gen_ident])
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])

@@ -110,7 +110,15 @@ let parse_constant =
 
 (* =================== Core_type =================== *)
 
-let parse_type_name = ws *> string "'" *> parse_ident >>| fun id -> Type_name ("'" ^ id)
+let parse_type_name =
+  ws
+  *> string "'"
+  *>
+  let* id = parse_ident in
+  match String.get id 1 with
+  | '\'' -> fail (Printf.sprintf "Impossible type: %S." id)
+  | _ -> return (Type_name ("'" ^ id))
+;;
 
 let parse_base_type =
   ws
