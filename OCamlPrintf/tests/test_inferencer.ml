@@ -37,8 +37,29 @@ let%expect_test "type check several definition variable" =
 ;;
 
 let%expect_test "type check definition function" =
-  run {| let f a = 1 |};
+  run {| let f a b c = if a then b else c |};
   [%expect {|
-    val f : 'a -> int
+    val f : bool -> 'c -> 'c -> 'c
+  |}]
+;;
+
+let%expect_test "type check pattern matching" =
+  run {| let f a b = match a b with 1 -> 'q' | 2 -> 'w' | _ -> 'e' |};
+  [%expect {|
+    val f : ('b -> int) -> 'b -> char
+  |}]
+;;
+
+let%expect_test "type check expression constraint" =
+  run {| let f a b = (b a : int) |};
+  [%expect {|
+    val f : 'a -> ('a -> int) -> int
+  |}]
+;;
+
+let%expect_test "type check pattern constraint" =
+  run {| let f (q : int -> char) (x : int) = q x |};
+  [%expect {|
+    val f : (int -> char) -> int -> char
   |}]
 ;;

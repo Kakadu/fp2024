@@ -354,6 +354,11 @@ module Infer = struct
             rest_list
         in
         return (env_rest, Type_tuple (t1, t2, t_list))
+      | Pat_constraint (pat, c_type) ->
+        let* env, typ = helper env pat in
+        let* unified_sub = unify typ c_type in
+        let env = TypeEnv.apply unified_sub env in
+        return (env, c_type)
       | _ -> fail `Not_implemented
     in
     helper
@@ -375,18 +380,42 @@ module Infer = struct
         let* s2, t3 = helper (TypeEnv.extend env2 pat t2) exp1 in
         let* final_subst = Subst.compose s1 s2 in
         return (final_subst, t3)
-      | Exp_fun (pat, [], exp) ->
+      | Exp_fun (pat, pat_list, exp) ->
         let* env, t1 = infer_pattern env pat in
-        let* sub, t2 = helper env exp in
-        return (sub, Subst.apply sub (Type_arrow (t1, t2)))
+        let* sub, t2 =
+          match pat_list with
+          | [] -> helper env exp
+          | hd :: tl -> helper env (Exp_fun (hd, tl, exp))
+        in
+        return (sub, Type_arrow (Subst.apply sub t1, t2))
       | Exp_apply (e1, e2, []) ->
         let* s1, t1 = helper env e1 in
         let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
         let* fresh = fresh_var in
         let* s3 = unify (Subst.apply s2 t1) (Type_arrow (t2, fresh)) in
         let* composed_sub = Subst.compose_all [ s3; s2; s1 ] in
-        let sub = Subst.apply composed_sub fresh in
-        return (composed_sub, sub)
+        let final_type = Subst.apply composed_sub fresh in
+        return (composed_sub, final_type)
+      | Exp_match (exp, case, case_list) ->
+        let* exp_sub, exp_type = helper env exp in
+        let* fresh = fresh_var in
+        let* cases_sub, case_type =
+          RList.fold_left
+            ~f:(fun acc { left = pat; right = case_exp } ->
+              let* sub_acc, type_acc = return acc in
+              let* env, pat_type = infer_pattern env pat in
+              let* unified_sub1 = unify exp_type pat_type in
+              let* case_exp_sub, case_exp_type = helper env case_exp in
+              let* unified_sub2 = unify case_exp_type type_acc in
+              let* composed_type =
+                Subst.compose_all [ sub_acc; unified_sub1; unified_sub2; case_exp_sub ]
+              in
+              return (composed_type, case_exp_type))
+            ~init:(return (Subst.empty, fresh))
+            (case :: case_list)
+        in
+        let* final_sub = Subst.compose cases_sub exp_sub in
+        return (final_sub, Subst.apply final_sub case_type)
       | Exp_tuple (fst, snd, rest_list) ->
         let* s1, t1 = helper env fst in
         let* s2, t2 = helper (TypeEnv.apply s1 env) snd in
@@ -418,6 +447,17 @@ module Infer = struct
         let* s5 = unify t2 t3 in
         let* final_sub = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
         return (final_sub, Subst.apply s5 t2)
+      | Exp_sequence (exp1, exp2) ->
+        let* sub1, typ1 = helper env exp1 in
+        let* unified_sub = unify typ1 Type_any in
+        let* sub2, typ2 = helper (TypeEnv.apply sub1 env) exp2 in
+        let* final_sub = Subst.compose_all [ unified_sub; sub2; sub1 ] in
+        return (final_sub, typ2)
+      | Exp_constraint (exp, c_type) ->
+        let* sub, typ = helper env exp in
+        let* unified_sub = unify typ c_type in
+        let* final_sub = Subst.compose unified_sub sub in
+        return (final_sub, typ)
       | _ -> fail `Not_implemented
     in
     helper
@@ -428,8 +468,8 @@ module Infer = struct
         function
         | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
           infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
-        | Struct_eval e ->
-          let* _, _ = infer_expression env e in
+        | Struct_eval exp ->
+          let* _, _ = infer_expression env exp in
           return env
         | _ -> fail `Not_implemented)
 
