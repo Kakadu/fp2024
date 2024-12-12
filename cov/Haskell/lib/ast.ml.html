@@ -520,7 +520,7 @@
 <span data-count="6">a</span>nd functype = FuncT of tp * tp * tp_list (** e.g. [Int-&gt; Bool -&gt; (Int,Bool)] *)
 
 <span data-count="0">a</span>nd tp_list =
-  (<span data-count="445">t</span>p lis<span data-count="206">t</span>
+  (<span data-count="457">t</span>p lis<span data-count="212">t</span>
   [@gen <span data-count="66">Q</span>Check.Gen.(list_size (retur<span data-count="66">n</span> (Int.mi<span data-count="66">n</span> 2 (n / 10))) (gen_tp_size<span data-count="66">d</span> (n / 10)))])
 [@@deriving qcheck, show { with_path = false }<span data-count="1539">]</span>
 
@@ -585,7 +585,7 @@ let gen_string =
 ;;
 
 (** variable's / function's name*)
-<span data-count="137">t</span>ype ident = Ident of (strin<span data-count="68">g</span>[@gen gen_string])
+<span data-count="145">t</span>ype ident = Ident of (strin<span data-count="72">g</span>[@gen gen_string])
 [@@deriving qcheck, show { with_path = false }<span data-count="14">]</span>
 (** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
 
@@ -595,13 +595,13 @@ let gen_string =
 [@@deriving qcheck, show { with_path = false }<span data-count="28">]</span>
 
 <span data-count="53225">t</span>ype pattern =
-  <span data-count="108">(</span><span data-count="117">i</span>dent lis<span data-count="54">t</span>[@gen QCheck.Gen.(list_siz<span data-count="17732">e</span> (retur<span data-count="17732">n</span> (Int.mi<span data-count="17732">n</span> 2 (n / 7))) gen_ident)])
+  <span data-count="112">(</span><span data-count="121">i</span>dent lis<span data-count="56">t</span>[@gen QCheck.Gen.(list_siz<span data-count="17732">e</span> (retur<span data-count="17732">n</span> (Int.mi<span data-count="17732">n</span> 2 (n / 7))) gen_ident)])
   * pat
   * tp_list
 [@@deriving qcheck, show { with_path = false }]
 
 <span data-count="0">a</span>nd pattern_list =
-  (<span data-count="44">p</span>attern lis<span data-count="13">t</span>
+  (<span data-count="49">p</span>attern lis<span data-count="14">t</span>
   [@gen <span data-count="12">Q</span>Check.Gen.(list_size (retur<span data-count="12">n</span> (Int.mi<span data-count="12">n</span> 2 (n / 7))) (gen_pattern_size<span data-count="12">d</span> (n / 7)))])
 
 <span data-count="9">a</span>nd listpat =
@@ -612,7 +612,7 @@ let gen_string =
   | PNul (** nul tree i.e. [$] *)
   | PNode of pattern * pattern * pattern (** tree's node e.g [(x; y; z)]*)
 
-<span data-count="100">a</span>nd pat =
+<span data-count="104">a</span>nd pat =
   | PWildcard (** _ *)
   | PConst of pconst
   | PIdentificator of ident (** e.g. [x] *)
@@ -681,7 +681,7 @@ let gen_string =
   | Node of expr * expr * expr
   (** node is data and two 'sons' e.g  [(x^y; $; (2; $; $))] *)
 
-<span data-count="250">a</span>nd expression =
+<span data-count="256">a</span>nd expression =
   | Const of const
   | Identificator of ident (** e.g  [x] *)
   | TupleBld of expr * expr * expr_list (** e.g  [(1+3, f x)] *)
@@ -701,7 +701,7 @@ let gen_string =
   (** e.g. [let x = 1; y = 2 in x + y] *)
 
 (** e.g. [((x + 1) :: Int  ) :: Bool]*)
-<span data-count="28">a</span>nd expr = <span data-count="290">e</span>xpression * tp_list [@@deriving qcheck, show { with_path = false }]
+<span data-count="29">a</span>nd expr = <span data-count="298">e</span>xpression * tp_list [@@deriving qcheck, show { with_path = false }]
 
 <span data-count="0">a</span>nd expr_list =
   (<span data-count="62">e</span>xpr lis<span data-count="16">t</span>
