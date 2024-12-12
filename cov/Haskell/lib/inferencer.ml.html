@@ -1774,19 +1774,19 @@ and prep prep_bb decls env1 env2 = function
     <span data-count="149">l</span>et* t, env2, names = helper_<span data-count="149">p</span> p env2 [] in
     <span data-count="149">p</span>rep ((b, t, names) :: prep_bb) decls env1 env2 tl
 
-and helper_p (al, pat, etps) env names =
+and helper_p (al, pat, type_annots) env names =
   <span data-count="403">(</span>match pat with
    | <span data-count="0">P</span>Wildcard -&gt;
      let* fresh = fresh_var in
-     <span data-count="0">l</span>et* _, t = etps_hnd<span data-count="0">l</span> etps fresh in
+     <span data-count="0">l</span>et* _, t = type_annots_hnd<span data-count="0">l</span> type_annots fresh in
      <span data-count="0">r</span>eturn (t, env, names)
    | <span data-count="0">P</span>Const (NegativePInt _) -&gt;
-     let* _, t = etps_hnd<span data-count="0">l</span> etps (Ty_prim "Int") in
+     let* _, t = type_annots_hnd<span data-count="0">l</span> type_annots (Ty_prim "Int") in
      <span data-count="0">r</span>eturn (t, env, names)
    | <span data-count="2">P</span>Const (OrdinaryPConst c) -&gt;
      let* _, t =
-       etps_hnd<span data-count="2">l</span>
-         etps
+       type_annots_hnd<span data-count="2">l</span>
+         type_annots
          (Ty_prim
             (match c with
              | <span data-count="2">I</span>nt _ -&gt; "Int"
@@ -1796,22 +1796,22 @@ and helper_p (al, pat, etps) env names =
      <span data-count="2">r</span>eturn (t, env, names)
    | <span data-count="394">P</span>Identificator (Ident name) -&gt;
      let* fresh = fresh_var in
-     <span data-count="394">l</span>et* _, t = etps_hnd<span data-count="394">l</span> etps fresh in
+     <span data-count="394">l</span>et* _, t = type_annots_hnd<span data-count="394">l</span> type_annots fresh in
      <span data-count="392">r</span>eturn (t, TypeEnv.exten<span data-count="392">d</span> env (name, S (VarSet.empty, t)), name :: names)
    | <span data-count="0">P</span>Maybe Nothing -&gt;
      let* fresh = fresh_var in
-     <span data-count="0">l</span>et* _, t = etps_hnd<span data-count="0">l</span> etps (Ty_maybe fresh) in
+     <span data-count="0">l</span>et* _, t = type_annots_hnd<span data-count="0">l</span> type_annots (Ty_maybe fresh) in
      <span data-count="0">r</span>eturn (t, env, names)
    | <span data-count="0">P</span>Maybe (Just pt) -&gt;
      let* t, env, names = helper_<span data-count="0">p</span> pt env names in
-     <span data-count="0">l</span>et* s, t = etps_hnd<span data-count="0">l</span> etps (Ty_maybe t) in
+     <span data-count="0">l</span>et* s, t = type_annots_hnd<span data-count="0">l</span> type_annots (Ty_maybe t) in
      <span data-count="0">r</span>eturn (t, TypeEnv.appl<span data-count="0">y</span> s env, names)
    | <span data-count="4">P</span>List (PCons (x, xs)) -&gt;
      let* t1, env1, names1 = helper_<span data-count="4">p</span> x env names in
      <span data-count="4">l</span>et* t2, env2, names2 = helper_<span data-count="4">p</span> xs env1 names1 in
      <span data-count="4">l</span>et* s = unif<span data-count="4">y</span> t2 (Ty_list t1) in
      <span data-count="3">l</span>et t = Subst.apply s t2 in
-     <span data-count="3">l</span>et* s2, t' = etps_hnd<span data-count="3">l</span> etps t in
+     <span data-count="3">l</span>et* s2, t' = type_annots_hnd<span data-count="3">l</span> type_annots t in
      <span data-count="3">l</span>et* fs = Subst.compos<span data-count="3">e</span> s2 s in
      <span data-count="3">r</span>eturn (t', TypeEnv.appl<span data-count="3">y</span> fs env2, names2)
    | <span data-count="1">P</span>Tuple (p1, p2, pp) -&gt;
@@ -1825,7 +1825,7 @@ and helper_p (al, pat, etps) env names =
            <span data-count="0">l</span>et* t, env', names = helper_<span data-count="0">p</span> p env names in
            <span data-count="0">r</span>eturn (t :: tt, env', names))
      in
-     <span data-count="1">l</span>et* s, t = etps_hnd<span data-count="1">l</span> etps (Ty_tuple (t1, t2, tt)) in
+     <span data-count="1">l</span>et* s, t = type_annots_hnd<span data-count="1">l</span> type_annots (Ty_tuple (t1, t2, tt)) in
      <span data-count="1">r</span>eturn (t, TypeEnv.appl<span data-count="1">y</span> s env, names)
    | <span data-count="2">P</span>List (PEnum pp) -&gt;
      let* fresh = fresh_var in
@@ -1838,7 +1838,7 @@ and helper_p (al, pat, etps) env names =
            <span data-count="0">l</span>et* s = unif<span data-count="0">y</span> t t' in
            <span data-count="0">r</span>eturn (TypeEnv.appl<span data-count="0">y</span> s env', Subst.appl<span data-count="0">y</span> s t, names))
      in
-     <span data-count="2">l</span>et* s, t = etps_hnd<span data-count="2">l</span> etps (Ty_list el_t) in
+     <span data-count="2">l</span>et* s, t = type_annots_hnd<span data-count="2">l</span> type_annots (Ty_list el_t) in
      <span data-count="2">r</span>eturn (t, TypeEnv.appl<span data-count="2">y</span> s env, names)
    | <span data-count="0">P</span>Tree _ -&gt; failwith "is not required by the first deadline")
   &gt;&gt;| fun (t, env, names) -&gt;
@@ -1859,7 +1859,7 @@ and helper_pp pp env =
       <span data-count="90">l</span>et* t, env', _ = helper_<span data-count="90">p</span> p env [] in
       <span data-count="88">r</span>eturn (t :: tt, env'))
 
-and infer (e, etps) env =
+and infer (e, type_annots) env =
   <span data-count="691">l</span>et helper_list ee t =
     <span data-count="21">R</span>List.fold_lef<span data-count="21">t</span>
       ee
@@ -1995,19 +1995,19 @@ and infer (e, etps) env =
       <span data-count="4">l</span>et* final_subst = Subst.compos<span data-count="4">e</span> s2 s1 in
       <span data-count="4">r</span>eturn (final_subst, Ty_list t2)
   in
-  match etps with
+  match type_annots with
   | <span data-count="663">[</span>] -&gt; helper_e e env
-  | <span data-count="28">e</span>tps -&gt;
+  | <span data-count="28">t</span>ype_annots -&gt;
     let* fresh = fresh_var in
-    <span data-count="28">l</span>et* _, t0 = etps_hnd<span data-count="28">l</span> etps fresh in
+    <span data-count="28">l</span>et* _, t0 = type_annots_hnd<span data-count="28">l</span> type_annots fresh in
     <span data-count="21">h</span>elper_<span data-count="21">e</span> e env
     &gt;&gt;= fun (s, t) -&gt;
     <span data-count="21">l</span>et* s' = unif<span data-count="21">y</span> t t0 in
     <span data-count="14">S</span>ubst.compos<span data-count="14">e</span> s' s &gt;&gt;| fun fs -&gt; <span data-count="14">f</span>s, Subst.appl<span data-count="14">y</span> s' t
 
-and etps_hndl etps init =
+and type_annots_hndl type_annots init =
   <span data-count="430">R</span>List.fold_left
-    etps
+    type_annots
     ~init:(retur<span data-count="430">n</span> (Subst.empty, init))
     ~f:(fun (s, t) tp -&gt;
       <span data-count="68">u</span>nif<span data-count="68">y</span> t (tp_to_t<span data-count="68">y</span> tp)
