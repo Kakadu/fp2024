@@ -717,31 +717,6 @@ let tuple_or_parensed_item_e e =
     return
 ;;
 
-let prios_list =
-  [ None, [ (Right, oper "||", fun a b -> Binop (a, Or, b), []) ]
-  ; None, [ (Right, oper "&&", fun a b -> Binop (a, And, b), []) ]
-  ; ( None
-    , [ (Non, oper "==", fun a b -> Binop (a, Equality, b), [])
-      ; (Non, oper "/=", fun a b -> Binop (a, Inequality, b), [])
-      ; (Non, oper ">=", fun a b -> Binop (a, EqualityOrGreater, b), [])
-      ; (Non, oper "<=", fun a b -> Binop (a, EqualityOrLess, b), [])
-      ; (Non, oper ">", fun a b -> Binop (a, Greater, b), [])
-      ; (Non, oper "<", fun a b -> Binop (a, Less, b), [])
-      ] )
-  ; None, [ (Right, oper ":", fun a b -> Binop (a, Cons, b), []) ]
-  ; ( Some (oper "-", fun a -> Neg a, [])
-    , [ (Left, oper "+", fun a b -> Binop (a, Plus, b), [])
-      ; (Left, oper "-", fun a b -> Binop (a, Minus, b), [])
-      ] )
-  ; ( None
-    , [ (Left, oper "`div`", fun a b -> Binop (a, Divide, b), [])
-      ; (Left, oper "*", fun a b -> Binop (a, Multiply, b), [])
-      ; (Left, oper "`mod`", fun a b -> Binop (a, Mod, b), [])
-      ] )
-  ; None, [ (Right, oper "^", fun a b -> Binop (a, Pow, b), []) ]
-  ]
-;;
-
 let infix_binop =
   let binop_lambda op =
     return
