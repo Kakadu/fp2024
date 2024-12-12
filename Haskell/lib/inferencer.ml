@@ -397,19 +397,19 @@ and prep prep_bb decls env1 env2 = function
     let* t, env2, names = helper_p p env2 [] in
     prep ((b, t, names) :: prep_bb) decls env1 env2 tl
 
-and helper_p (al, pat, etps) env names =
+and helper_p (al, pat, type_annots) env names =
   (match pat with
    | PWildcard ->
      let* fresh = fresh_var in
-     let* _, t = etps_hndl etps fresh in
+     let* _, t = type_annots_hndl type_annots fresh in
      return (t, env, names)
    | PConst (NegativePInt _) ->
-     let* _, t = etps_hndl etps (Ty_prim "Int") in
+     let* _, t = type_annots_hndl type_annots (Ty_prim "Int") in
      return (t, env, names)
    | PConst (OrdinaryPConst c) ->
      let* _, t =
-       etps_hndl
-         etps
+       type_annots_hndl
+         type_annots
          (Ty_prim
             (match c with
              | Int _ -> "Int"
@@ -419,22 +419,22 @@ and helper_p (al, pat, etps) env names =
      return (t, env, names)
    | PIdentificator (Ident name) ->
      let* fresh = fresh_var in
-     let* _, t = etps_hndl etps fresh in
+     let* _, t = type_annots_hndl type_annots fresh in
      return (t, TypeEnv.extend env (name, S (VarSet.empty, t)), name :: names)
    | PMaybe Nothing ->
      let* fresh = fresh_var in
-     let* _, t = etps_hndl etps (Ty_maybe fresh) in
+     let* _, t = type_annots_hndl type_annots (Ty_maybe fresh) in
      return (t, env, names)
    | PMaybe (Just pt) ->
      let* t, env, names = helper_p pt env names in
-     let* s, t = etps_hndl etps (Ty_maybe t) in
+     let* s, t = type_annots_hndl type_annots (Ty_maybe t) in
      return (t, TypeEnv.apply s env, names)
    | PList (PCons (x, xs)) ->
      let* t1, env1, names1 = helper_p x env names in
      let* t2, env2, names2 = helper_p xs env1 names1 in
      let* s = unify t2 (Ty_list t1) in
      let t = Subst.apply s t2 in
-     let* s2, t' = etps_hndl etps t in
+     let* s2, t' = type_annots_hndl type_annots t in
      let* fs = Subst.compose s2 s in
      return (t', TypeEnv.apply fs env2, names2)
    | PTuple (p1, p2, pp) ->
@@ -448,7 +448,7 @@ and helper_p (al, pat, etps) env names =
            let* t, env', names = helper_p p env names in
            return (t :: tt, env', names))
      in
-     let* s, t = etps_hndl etps (Ty_tuple (t1, t2, tt)) in
+     let* s, t = type_annots_hndl type_annots (Ty_tuple (t1, t2, tt)) in
      return (t, TypeEnv.apply s env, names)
    | PList (PEnum pp) ->
      let* fresh = fresh_var in
@@ -461,7 +461,7 @@ and helper_p (al, pat, etps) env names =
            let* s = unify t t' in
            return (TypeEnv.apply s env', Subst.apply s t, names))
      in
-     let* s, t = etps_hndl etps (Ty_list el_t) in
+     let* s, t = type_annots_hndl type_annots (Ty_list el_t) in
      return (t, TypeEnv.apply s env, names)
    | PTree _ -> failwith "is not required by the first deadline")
   >>| fun (t, env, names) ->
@@ -482,7 +482,7 @@ and helper_pp pp env =
       let* t, env', _ = helper_p p env [] in
       return (t :: tt, env'))
 
-and infer (e, etps) env =
+and infer (e, type_annots) env =
   let helper_list ee t =
     RList.fold_left
       ee
@@ -618,19 +618,19 @@ and infer (e, etps) env =
       let* final_subst = Subst.compose s2 s1 in
       return (final_subst, Ty_list t2)
   in
-  match etps with
+  match type_annots with
   | [] -> helper_e e env
-  | etps ->
+  | type_annots ->
     let* fresh = fresh_var in
-    let* _, t0 = etps_hndl etps fresh in
+    let* _, t0 = type_annots_hndl type_annots fresh in
     helper_e e env
     >>= fun (s, t) ->
     let* s' = unify t t0 in
     Subst.compose s' s >>| fun fs -> fs, Subst.apply s' t
 
-and etps_hndl etps init =
+and type_annots_hndl type_annots init =
   RList.fold_left
-    etps
+    type_annots
     ~init:(return (Subst.empty, init))
     ~f:(fun (s, t) tp ->
       unify t (tp_to_ty tp)

@@ -16,6 +16,7 @@ end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
+(** hierarchy: https://www.haskell.org/onlinereport/haskell2010/haskellch6.html#x13-1270011 *)
 type ty =
   | Ty_prim of string
   | Ty_maybe of ty
@@ -24,8 +25,8 @@ type ty =
   | Ty_list of ty
   | Ty_tuple of ty * ty * ty list
   | Ty_tree of ty
-  | Ty_ord of binder
-  | Ty_enum of binder
+  | Ty_ord of binder (** i.e. [Ord a]; e.g. [(>) :: Ord a -> Ord a -> Bool] *)
+  | Ty_enum of binder (** i.e. [Enum a]; e.g. [ (\x -> [x..]) :: Enum a -> [Enum a]] *)
 [@@deriving show { with_path = false }]
 
 type scheme = S of binder_set * ty [@@deriving show { with_path = false }]
