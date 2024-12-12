@@ -1645,3 +1645,39 @@ let%expect_test "fail unification" =
    | _ -> prerr_endline "parsing error");
   [%expect {| unification failed on Bool and Int |}]
 ;;
+
+let%expect_test "unif with ord, succ" =
+  (match Haskell_lib.Parser.parse_line "f x = x > (1,2); g y = y < Just True " with
+   | Result.Ok bindings ->
+     (match Haskell_lib.Inferencer.w_program bindings with
+      | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
+      | Result.Error err -> Format.printf "%a" Haskell_lib.Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    [
+    f:  (Int, Int) -> Bool
+    g:  Maybe Bool -> Bool
+     ] |}]
+;;
+
+let%expect_test "unif with ord, fail (tuple)" =
+  (match Haskell_lib.Parser.parse_line "f x = x > (1, \\ x -> x) " with
+   | Result.Ok bindings ->
+     (match Haskell_lib.Inferencer.w_program bindings with
+      | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
+      | Result.Error err -> Format.printf "%a" Haskell_lib.Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    unification failed on Ord t6 and t3 -> t3 |}]
+;;
+
+let%expect_test "unif with ord, fail" =
+  (match Haskell_lib.Parser.parse_line "f x = x > [\\ x -> x] " with
+   | Result.Ok bindings ->
+     (match Haskell_lib.Inferencer.w_program bindings with
+      | Result.Ok env -> Format.printf "%a" Haskell_lib.Inferencer.pp_typeenv env
+      | Result.Error err -> Format.printf "%a" Haskell_lib.Pprint.pp_error err)
+   | _ -> prerr_endline "parsing error");
+  [%expect {|
+    unification failed on Ord t6 and t4 -> t4 |}]
+;;

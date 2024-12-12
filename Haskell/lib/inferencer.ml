@@ -155,6 +155,19 @@ end = struct
     | Ty_var b, t | t, Ty_var b -> singleton b t
     | Ty_ord _, Ty_arrow _ | Ty_arrow _, Ty_ord _ -> fail (`Unification_failed (l, r))
     | Ty_enum b, (Ty_prim _ as t) | (Ty_prim _ as t), Ty_enum b -> singleton b t
+    | Ty_ord b, ((Ty_list t | Ty_maybe t | Ty_tree t) as ty)
+    | ((Ty_list t | Ty_maybe t | Ty_tree t) as ty), Ty_ord b ->
+      let* s = fresh >>= fun f -> unify (Ty_ord f) t in
+      let ty2 = apply s ty in
+      singleton b ty2 >>= fun s2 -> compose s2 s
+    | Ty_ord b, (Ty_tuple (t1, t2, tt) as ty) | (Ty_tuple (t1, t2, tt) as ty), Ty_ord b ->
+      let* s =
+        RList.fold_left (t1 :: t2 :: tt) ~init:(return empty) ~f:(fun s t ->
+          let* s2 = fresh >>= fun f -> unify (Ty_ord f) t in
+          compose s2 s)
+      in
+      let ty2 = apply s ty in
+      singleton b ty2 >>= fun s2 -> compose s2 s
     | Ty_ord b, t | t, Ty_ord b -> singleton b t
     | Ty_arrow (l1, r1), Ty_arrow (l2, r2) ->
       let* subs1 = unify l1 l2 in
