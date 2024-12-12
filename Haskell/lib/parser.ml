@@ -824,6 +824,7 @@ let other_expr e fa =
   let e' = e >>= ex_tp in
   choice
     [ const_e
+    ; infix_binop
     ; ident_e
     ; nothing (return (ENothing, []))
     ; just (return (EJust, []))
@@ -847,6 +848,7 @@ let function_application ex e =
       (ws
        *> choice
             [ const_e
+            ; infix_binop
             ; ident_e
             ; just (return (EJust, []))
             ; nothing (return (ENothing, []))
@@ -871,10 +873,17 @@ let expr = function
   | Allow_t -> fix e >>= ex_tp
 ;;
 
-let%expect_test "expr_const" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "123456789012345678901234567890";
-  [%expect {|
-      error: : no more choices |}]
+let%expect_test "infix_binop" =
+  prs_and_prnt_ln (expr Allow_t) show_expr "(*)";
+  [%expect
+    {|
+      ((Lambda (([], (PIdentificator (Ident "x")), []),
+          [([], (PIdentificator (Ident "y")), [])],
+          ((Binop (((Identificator (Ident "x")), []), Multiply,
+              ((Identificator (Ident "y")), []))),
+           [])
+          )),
+       []) |}]
 ;;
 
 let%expect_test "expr_prio" =
