@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open TypedTree
 open Pprinter
 
 type error =
@@ -106,11 +105,33 @@ end = struct
   let run monad = snd (monad 0)
 end
 
+module VarSet = struct
+  include Stdlib.Set.Make (String)
+
+  let fold_left_m f acc set =
+    fold
+      (fun x acc ->
+        let open R.Syntax in
+        let* acc = acc in
+        f acc x)
+      acc
+      set
+  ;;
+
+  let pp ppf s =
+    Format.fprintf ppf "[ ";
+    iter (Format.fprintf ppf "%s; ") s;
+    Format.fprintf ppf "]"
+  ;;
+end
+
+type scheme = Scheme of VarSet.t * Ast.core_type [@@deriving show { with_path = false }]
+
 module Type = struct
   type t = core_type
 
   let rec occurs_in var = function
-    | Type_any | Type_char | Type_int | Type_string | Type_bool -> false
+    | Type_any | Type_unit | Type_char | Type_int | Type_string | Type_bool -> false
     | Type_name name -> name = var
     | Type_list ty -> occurs_in var ty
     | Type_tuple (first, second, list) ->
@@ -120,7 +141,7 @@ module Type = struct
 
   let free_vars =
     let rec helper acc = function
-      | Type_any | Type_char | Type_int | Type_string | Type_bool -> acc
+      | Type_any | Type_unit | Type_char | Type_int | Type_string | Type_bool -> acc
       | Type_name name -> VarSet.add name acc
       | Type_tuple (first, second, list) ->
         List.fold_left helper acc (first :: second :: list)
@@ -223,20 +244,6 @@ end = struct
   and compose sub1 sub2 = RMap.fold sub2 ~init:(return sub1) ~f:extend
 
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
-end
-
-module VarSet = struct
-  include VarSet
-
-  let fold_left_m f acc set =
-    fold
-      (fun x acc ->
-        let open R.Syntax in
-        let* acc = acc in
-        f acc x)
-      acc
-      set
-  ;;
 end
 
 module Scheme = struct
@@ -449,7 +456,7 @@ module Infer = struct
         return (final_sub, Subst.apply s5 t2)
       | Exp_sequence (exp1, exp2) ->
         let* sub1, typ1 = helper env exp1 in
-        let* unified_sub = unify typ1 Type_any in
+        let* unified_sub = unify typ1 Type_unit in
         let* sub2, typ2 = helper (TypeEnv.apply sub1 env) exp2 in
         let* final_sub = Subst.compose_all [ unified_sub; sub2; sub1 ] in
         return (final_sub, typ2)

@@ -37,28 +37,9 @@ module R : sig
   val run : 'a t -> ('a, error) result
 end
 
-module Type : sig
-  type t = Ast.core_type
-
-  val occurs_in : string -> Ast.core_type -> bool
-  val free_vars : Ast.core_type -> TypedTree.VarSet.t
-end
-
-module Subst : sig
-  type t
-
-  val empty : t
-  val singleton : string -> Ast.core_type -> t R.t
-  val apply : t -> Ast.core_type -> Ast.core_type
-  val unify : Ast.core_type -> Ast.core_type -> t R.t
-  val compose : t -> t -> t R.t
-  val compose_all : t list -> t R.t
-  val remove : t -> string -> t
-end
-
 module VarSet : sig
   type elt = string
-  type t = TypedTree.VarSet.t
+  type t = Set.Make(String).t
 
   val empty : t
   val is_empty : t -> bool
@@ -102,51 +83,66 @@ module VarSet : sig
   val to_rev_seq : t -> elt Seq.t
   val add_seq : elt Seq.t -> t -> t
   val of_seq : elt Seq.t -> t
-  val pp : Format.formatter -> t -> unit
   val fold_left_m : ('a -> elt -> 'a R.t) -> t -> 'a R.t -> 'a R.t
+  val pp : Format.formatter -> t -> unit
+end
+
+type scheme = Scheme of VarSet.t * Ast.core_type
+
+val pp_scheme : Format.formatter -> scheme -> unit
+val show_scheme : scheme -> string
+
+module Type : sig
+  type t = Ast.core_type
+
+  val occurs_in : string -> Ast.core_type -> bool
+  val free_vars : Ast.core_type -> VarSet.t
+end
+
+module Subst : sig
+  type t
+
+  val empty : t
+  val singleton : string -> Ast.core_type -> t R.t
+  val apply : t -> Ast.core_type -> Ast.core_type
+  val unify : Ast.core_type -> Ast.core_type -> t R.t
+  val compose : t -> t -> t R.t
+  val compose_all : t list -> t R.t
+  val remove : t -> string -> t
 end
 
 module Scheme : sig
-  type t = TypedTree.scheme
+  type t = scheme
 
-  val occurs_in : string -> TypedTree.scheme -> bool
-  val free_vars : TypedTree.scheme -> VarSet.t
-  val apply : Subst.t -> TypedTree.scheme -> TypedTree.scheme
-  val pp : Format.formatter -> TypedTree.scheme -> unit
+  val occurs_in : string -> scheme -> bool
+  val free_vars : scheme -> VarSet.t
+  val apply : Subst.t -> scheme -> scheme
+  val pp : Format.formatter -> scheme -> unit
 end
 
 module TypeEnv : sig
-  type t = (string, TypedTree.scheme, Base.String.comparator_witness) Base.Map.t
+  type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
   val empty : (string, 'a, Base.String.comparator_witness) Base.Map.t
   val extend : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b -> ('a, 'b, 'c) Base.Map.t
-  val free_vars : ('a, TypedTree.scheme, 'b) Base.Map.t -> VarSet.t
-
-  val apply
-    :  Subst.t
-    -> ('a, TypedTree.scheme, 'b) Base.Map.t
-    -> ('a, TypedTree.scheme, 'b) Base.Map.t
-
-  val pp : Format.formatter -> ('a, string * TypedTree.scheme, 'b) Base.Map.t -> unit
+  val free_vars : ('a, scheme, 'b) Base.Map.t -> VarSet.t
+  val apply : Subst.t -> ('a, scheme, 'b) Base.Map.t -> ('a, scheme, 'b) Base.Map.t
+  val pp : Format.formatter -> ('a, string * scheme, 'b) Base.Map.t -> unit
   val find_exn : (string, 'a R.t, 'b) Base.Map.t -> string -> 'a R.t
 end
 
 module Infer : sig
   val unify : Ast.core_type -> Ast.core_type -> Subst.t R.t
   val fresh_var : Ast.core_type R.t
-  val instantiate : TypedTree.scheme -> Ast.core_type R.t
-  val generalize : TypeEnv.t -> Ast.core_type -> TypedTree.scheme
+  val instantiate : scheme -> Ast.core_type R.t
+  val generalize : TypeEnv.t -> Ast.core_type -> scheme
 
   val lookup_env
     :  string
-    -> (string, TypedTree.scheme, 'a) Base.Map.t
+    -> (string, scheme, 'a) Base.Map.t
     -> (Subst.t * Ast.core_type) R.t
 
-  val infer_pattern
-    :  TypeEnv.t
-    -> Ast.pattern
-    -> (TypeEnv.t * Ast.core_type) R.t
-
+  val infer_pattern : TypeEnv.t -> Ast.pattern -> (TypeEnv.t * Ast.core_type) R.t
   val infer_expression : TypeEnv.t -> Ast.Expression.t -> (Subst.t * Ast.core_type) R.t
   val infer_srtucture_item : TypeEnv.t -> Ast.structure_item list -> TypeEnv.t R.t
 

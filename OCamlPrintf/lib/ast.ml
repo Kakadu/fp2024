@@ -71,6 +71,7 @@ type constant =
 
 type core_type =
   | Type_any
+  | Type_unit
   | Type_char
   | Type_int
   | Type_string
@@ -80,11 +81,12 @@ type core_type =
       [@gen
         map
           (fun id ->
-            "'"
-            ^
-            match String.get id 1 with
-            | '\'' -> "_" ^ id
-            | _ -> id)
+            if String.length id > 1
+            then (
+              match String.get id 1 with
+              | '\'' -> "_" ^ id
+              | _ -> id)
+            else id)
           gen_ident])
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of

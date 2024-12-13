@@ -65,11 +65,21 @@ let pp_constant ppf = function
 
 let rec pp_core_type ppf = function
   | Type_any -> fprintf ppf "_"
+  | Type_unit -> fprintf ppf "unit"
   | Type_int -> fprintf ppf "int"
   | Type_char -> fprintf ppf "char"
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
-  | Type_name id -> pp_ident ppf id
+  (* The id obtained from parser is stored without first char ',
+     while the id from inferencer is stored with ', so that there is no confusion when inferring types. *)
+  | Type_name id ->
+    let pp_type_name = fprintf ppf "'%s" in
+    if String.length id > 1
+    then (
+      match String.get id 0 with
+      | '\'' -> pp_ident ppf id
+      | _ -> pp_type_name id)
+    else pp_type_name id
   | Type_list type' ->
     (match type' with
      | type' when is_type_arrow type' || is_type_list type' ->

@@ -74,10 +74,12 @@ module TestQCheckManual = struct
     sized
     @@ fix (fun self ->
          function
-         | 0 -> oneofl [ Type_any; Type_char; Type_int; Type_string; Type_bool ]
+         | 0 ->
+           oneofl [ Type_any; Type_unit; Type_char; Type_int; Type_string; Type_bool ]
          | n ->
            oneof
              [ return Type_any
+             ; return Type_unit
              ; return Type_char
              ; return Type_int
              ; return Type_string
@@ -86,11 +88,12 @@ module TestQCheckManual = struct
                  (fun id -> Type_name id)
                  (map
                     (fun id ->
-                      "'"
-                      ^
-                      match String.get id 1 with
-                      | '\'' -> "_" ^ id
-                      | _ -> id)
+                      if String.length id > 1
+                      then (
+                        match String.get id 1 with
+                        | '\'' -> "_" ^ id
+                        | _ -> id)
+                      else id)
                     gen_ident)
              ; map (fun t -> Type_list t) (self (n / coef))
              ; map3

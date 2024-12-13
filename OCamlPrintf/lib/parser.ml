@@ -115,15 +115,19 @@ let parse_type_name =
   *> string "'"
   *>
   let* id = parse_ident in
-  match String.get id 1 with
-  | '\'' -> fail (Printf.sprintf "Impossible type: %S." id)
-  | _ -> return (Type_name ("'" ^ id))
+  if String.length id > 1
+  then (
+    match String.get id 1 with
+    | '\'' -> fail (Printf.sprintf "Impossible type: %S." id)
+    | _ -> return (Type_name id))
+  else return (Type_name id)
 ;;
 
 let parse_base_type =
   ws
   *> choice
        [ keyword "_" *> return Type_any
+       ; keyword "unit" *> return Type_unit
        ; keyword "int" *> return Type_int
        ; keyword "char" *> return Type_char
        ; keyword "string" *> return Type_string
