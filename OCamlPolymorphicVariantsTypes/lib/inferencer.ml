@@ -231,6 +231,13 @@ module Scheme = struct
     let s2 = VarSet.fold (fun k s -> Subst.remove s k) xs s in
     S (xs, Subst.apply s2 t)
   ;;
+
+  let pp fmt = function
+    | S (st, typ) ->
+      if VarSet.is_empty st
+      then Format.fprintf fmt "%a" pp_ty typ
+      else Format.fprintf fmt "%a. %a" VarSet.pp st pp_ty typ
+  ;;
 end
 
 module TypeEnv = struct
@@ -247,6 +254,11 @@ module TypeEnv = struct
 
   let apply s env = Map.map env ~f:(Scheme.apply s)
   let find x env = Map.find env x
+
+  let pp_env fmt env =
+    Map.iteri env ~f:(fun ~key ~data ->
+      Stdlib.Format.fprintf fmt "%S : %a\n" key Scheme.pp data)
+  ;;
 end
 
 open R
@@ -316,7 +328,11 @@ let infer_expression =
          let* t = instantiate s in
          return (Subst.empty, t)
        | None -> fail (`No_variable x))
-    | Unary _ -> failwith "TODO"
+    | Unary (op, e) ->
+      let* sub1, t1 = helper env e in
+      let* sub2 = Subst.unify (Subst.apply sub1 t1) ty_int in
+      let* sub = Subst.compose_all [ sub1; sub2 ] in
+      return (sub, Subst.apply sub ty_int)
     | Binary (e1, op, e2) ->
       let* sub1, t1 = helper env e1 in
       let* sub2, t2 = helper (TypeEnv.apply sub1 env) e2 in
@@ -346,9 +362,35 @@ let infer_expression =
       let* sub5 = Subst.unify t2 t3 in
       let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
       return (sub, Subst.apply sub t2)
-    | Match (e, cl) -> failwith "TODO"
-    | Define ((Nonrecursive, bindings), e) -> failwith "TODO"
-    | Define ((Recursive, bindings), e) -> failwith "TODO"
+    | Match (e, cases) ->
+      let* sub1, t1 = helper env e in
+      let env = TypeEnv.apply sub1 env in
+      let* fresh = fresh_var in
+      let* sub, t =
+        List.fold_left
+          cases
+          ~init:(return (sub1, fresh))
+          ~f:(fun acc case ->
+            let* sub1, t = acc in
+            let* env1, pt = infer_pattern env case.pattern in
+            let* sub2 = Subst.unify t1 pt in
+            let env2 = TypeEnv.apply sub2 env1 in
+            let* sub_filter =
+              match case.filter with
+              | Some filter_expr ->
+                let* sub, _ = helper env2 filter_expr in
+                return sub
+              | None -> return Subst.empty
+            in
+            let env2 = TypeEnv.apply sub_filter env2 in
+            let* sub3, t' = helper env2 case.result in
+            let* sub4 = Subst.unify t' t in
+            let* sub = Subst.compose_all [ sub1; sub2; sub_filter; sub3; sub4 ] in
+            return (sub, Subst.apply sub t))
+      in
+      return (sub, t)
+    | Define ((Nonrecursive, bindings), expr) -> failwith "TODO"
+    | Define ((Recursive, bindings), expr) -> failwith "TODO"
     | Func _ -> failwith "TODO"
     | Tuple (t1, t2, tl) ->
       let* s1, t1 = helper env t1 in
@@ -374,6 +416,38 @@ let infer_expression =
 ;;
 
 let infer_structure_item env = function
+  | DefineItem def ->
+    (match def with
+     | Recursive, bs ->
+       (match bs with
+        | [] -> failwith "TODO"
+        | (p, e1) :: b_rest ->
+          (match p with
+           | PVar x1 ->
+             let* fresh = fresh_var in
+             let sc = S (VarSet.empty, fresh) in
+             let env = TypeEnv.extend env x1 sc in
+             let* s1, t1 = infer_expression env e1 in
+             let* s2 = Subst.unify t1 fresh in
+             let* s3 = Subst.compose s1 s2 in
+             let env = TypeEnv.apply s3 env in
+             let t2 = Subst.apply s3 t1 in
+             let sc = generalize_rec env t2 x1 in
+             let env = TypeEnv.extend env x1 sc in
+             return env
+           | _ -> failwith "TODO: other"))
+     | Nonrecursive, bs ->
+       (match bs with
+        | [] -> failwith "TODO"
+        | (p, e1) :: b_rest ->
+          (match p with
+           | PVar x1 ->
+             let* s, t = infer_expression env e1 in
+             let env = TypeEnv.apply s env in
+             let sc = generalize env t in
+             let env = TypeEnv.extend env x1 sc in
+             return env
+           | _ -> failwith "TODO: other")))
   | EvalItem e ->
     let* _, _ = infer_expression env e in
     return env
@@ -391,16 +465,3 @@ let infer_program p =
 ;;
 
 let run_infer p = run (infer_program p)
-
-let code_infer s =
-  let open Stdlib.Format in
-  match Parser_utility.parse Parser.program_parser s with
-  | ParseSuccess (p, parser_state) ->
-    (match run_infer p with
-     | Ok env ->
-       Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
-         printf "val %s : %a\n" key pp_ty ty)
-     | Error e -> printf "Inferencer error: %a\n" pp_error e)
-  | ParseError (e, parser_state) -> printf "Parser error: %s\n" e
-  | ParseFail -> printf "Parser failed" (*TODO*)
-;;
