@@ -2,11 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Parser
 open Ast
 open Typedtree
 open Base
-open Format
 
 type error =
   [ `Occurs_check
@@ -14,11 +12,13 @@ type error =
   | `Unification_failed of ty * ty
   ]
 
-let pp_error ppf : error -> _ = function
-  | `Occurs_check -> Format.fprintf ppf "Occurs check failed"
-  | `No_variable s -> Format.fprintf ppf "Undefined variable '%s'" s
+let pp_error ppf : error -> _ =
+  let open Stdlib.Format in
+  function
+  | `Occurs_check -> fprintf ppf "Occurs check failed"
+  | `No_variable s -> fprintf ppf "Undefined variable '%s'" s
   | `Unification_failed (l, r) ->
-    Format.fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
+    fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
 ;;
 
 module R : sig
@@ -346,9 +346,9 @@ let infer_expression =
       let* sub5 = Subst.unify t2 t3 in
       let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
       return (sub, Subst.apply sub t2)
-    | Match (e, cl) -> failwith "TODO"
-    | Define ((Nonrecursive, bindings), e) -> failwith "TODO"
-    | Define ((Recursive, bindings), e) -> failwith "TODO"
+    | Match _ -> failwith "TODO"
+    | Define ((Nonrecursive, _), _) -> failwith "TODO"
+    | Define ((Recursive, _), _) -> failwith "TODO"
     | Func _ -> failwith "TODO"
     | Tuple (t1, t2, tl) ->
       let* s1, t1 = helper env t1 in
@@ -395,12 +395,12 @@ let run_infer p = run (infer_program p)
 let code_infer s =
   let open Stdlib.Format in
   match Parser_utility.parse Parser.program_parser s with
-  | ParseSuccess (p, parser_state) ->
+  | ParseSuccess (p, _) ->
     (match run_infer p with
      | Ok env ->
        Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
          printf "val %s : %a\n" key pp_ty ty)
      | Error e -> printf "Inferencer error: %a\n" pp_error e)
-  | ParseError (e, parser_state) -> printf "Parser error: %s\n" e
+  | ParseError (e, _) -> printf "Parser error: %s\n" e
   | ParseFail -> printf "Parser failed" (*TODO*)
 ;;
