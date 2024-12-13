@@ -176,7 +176,6 @@ module TestQCheckManual = struct
                  gen_bin_opr
                  (self (n / coef))
                  (self (n / coef))
-               (* TODO: maybe (self 0) => fail *)
              ; map3
                  (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
                  (self (n / coef))
@@ -245,6 +244,7 @@ end
 let failure ast =
   Format.asprintf
     {|
+
 *** PPrinter ***
 %a
 
@@ -253,6 +253,7 @@ let failure ast =
 
 ***  Parser  ***
 %s
+
   |}
     Pprinter.pp_structure
     ast
@@ -272,15 +273,15 @@ let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) name t
           if ast = ast_parsed
           then (
             if show_passed
-            then Format.printf "*** PPrinter ***\n%a\n\n" Pprinter.pp_structure ast;
+            then Format.printf "\n*** PPrinter ***\n%a\n" Pprinter.pp_structure ast;
             true)
           else (
             if show_shrinker
-            then Format.printf "*** Shrinker ***\n%a\n\n" Pprinter.pp_structure ast;
+            then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
             false)
         | Error _ ->
           if show_shrinker
-          then Format.printf "*** Shrinker ***\n%a\n\n" Pprinter.pp_structure ast;
+          then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
           false)
     ]
 ;;

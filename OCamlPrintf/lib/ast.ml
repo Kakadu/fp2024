@@ -183,7 +183,6 @@ module Expression = struct
                    ])
                 (gen_sized (n / coef))
                 (gen_sized (n / coef))
-              (* TODO: maybe (self 0) => fail *)
             ]])
     | Exp_match of
         (t[@gen gen_sized (n / coef)])

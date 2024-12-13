@@ -207,28 +207,38 @@ let rec pp_expression ppf = function
   | Exp_constraint (exp, core_type) ->
     fprintf ppf "(%a : %a)" pp_expression exp pp_core_type core_type
 
-(* TODO: add compare_priority *)
 and pp_exp_apply ppf (exp_fn, exp) =
   match exp_fn with
   | Exp_ident exp_opr when is_operator exp_opr ->
     (match exp with
-     | Exp_apply (opn, Exp_apply (Exp_ident opr, exp)) when is_operator opr ->
-       fprintf ppf "%a %s " pp_expression opn exp_opr;
-       (match get_priority exp_opr with
-        | 1 ->
-          if get_priority exp_opr <= get_priority opr
-          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
-          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
-        | _ -> fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp))
+     | Exp_apply (Exp_apply (Exp_ident opr1, exp1), Exp_apply (Exp_ident opr2, exp2))
+       when is_operator opr1 && is_operator opr2 ->
+       fprintf ppf "%a %s " pp_exp_apply (Exp_ident opr1, exp1) exp_opr;
+       if compare_priority opr1 opr2
+       then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr2, exp2)
+       else fprintf ppf "%a" pp_exp_apply (Exp_ident opr2, exp2)
      | Exp_apply (Exp_apply (Exp_ident opr, exp), opn) when is_operator opr ->
        (match get_priority exp_opr with
-        | 2 ->
-          if get_priority exp_opr <= get_priority opr
+        | 4 | 5 ->
+          if compare_priority exp_opr opr
           then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
           else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
         | _ ->
-          fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp);
-          fprintf ppf " %s %a" exp_opr pp_expression opn)
+          if get_priority exp_opr < get_priority opr
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp));
+       fprintf ppf " %s %a" exp_opr pp_expression opn
+     | Exp_apply (opn, Exp_apply (Exp_ident opr, exp)) when is_operator opr ->
+       fprintf ppf "%a %s " pp_expression opn exp_opr;
+       (match get_priority exp_opr with
+        | 1 | 2 | 3 ->
+          if compare_priority exp_opr opr
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
+        | _ ->
+          if get_priority exp_opr < get_priority opr
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp))
      | Exp_apply (opn1, opn2) ->
        fprintf ppf "%a %s %a" pp_expression opn1 exp_opr pp_expression opn2
      | _ -> pp_expression ppf exp)
