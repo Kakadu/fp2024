@@ -5,11 +5,8 @@ let _2 =
 
 let _3 =  Some (1, "hi")
 
-let _4 =
-    let a, _ = 1, 2, 3 in a
+let _4 = let rec f x = f 5 in f
 
 let int_of_option = function Some x -> x | None -> 0
-
-let _5 = let rec f x = f 5 in f
 
 let _42 = function 42 -> true | _ -> false
