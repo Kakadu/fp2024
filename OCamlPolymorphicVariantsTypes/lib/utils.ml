@@ -11,7 +11,11 @@ let char_list_of_string s = List.of_seq (String.to_seq s)
 (** Converter list of characters value to string *)
 let string_of_char_list char_list = String.of_seq (List.to_seq char_list)
 
+(** Check that list is empty *)
 let is_empty = function
   | [] -> true
   | _ -> false
 ;;
+
+(** Convert list of elements to string *)
+let string_of_list f l = Format.sprintf "[%s]" (String.concat ", " (List.map f l))

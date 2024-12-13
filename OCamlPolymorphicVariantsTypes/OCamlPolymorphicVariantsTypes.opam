@@ -14,6 +14,7 @@ bug-reports:
 depends: [
   "dune" {>= "3.7"}
   "stdio"
+  "qcheck"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"
