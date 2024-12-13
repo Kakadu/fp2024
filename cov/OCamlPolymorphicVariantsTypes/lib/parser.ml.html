@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>parser.ml &mdash; Coverage report</title>
-    <meta name="description" content="95.00% coverage in lib/parser.ml">
+    <meta name="description" content="94.83% coverage in lib/parser.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,9 +15,10 @@
           <span class="dirname">lib/</span>parser.ml
         </a>
       </h1>
-      <h2>95.00%</h2>
+      <h2>94.83%</h2>
     </div>
     <div id="navbar">
+      <span class="some-visited" style="top:3.22%"></span>
       <span class="some-visited" style="top:3.54%"></span>
       <span class="some-visited" style="top:3.86%"></span>
       <span class="unvisited" style="top:6.59%"></span>
@@ -59,7 +60,7 @@
 <a id="L17"></a><span > </span>
 <a id="L18"></a><span > </span>
 <a id="L19"></a><span class="visited"> </span>
-<a id="L20"></a><span class="visited"> </span>
+<a id="L20"></a><span class="some-visited"> </span>
 <a id="L21"></a><span class="visited"> </span>
 <a id="L22"></a><span class="some-visited"> </span>
 <a id="L23"></a><span class="visited"> </span>
@@ -1307,24 +1308,24 @@ type binary_operator_parse_data =
 
 (** Predicate to check string as keyword of Miniml *)
 let is_keyword = function
-  | <span data-count="390">"</span>true" | <span data-count="390">"</span>false" -&gt; true
-  | <span data-count="1">"</span>if" | <span data-count="218">"</span>then" | <span data-count="98">"</span>else" -&gt; true
-  | <span data-count="132">"</span>fun" -&gt; true
-  | <span data-count="0">"</span>let" | <span data-count="0">"</span>rec" | <span data-count="757">"</span>and" | <span data-count="155">"</span>in" -&gt; true
-  | <span data-count="144">"</span>function" -&gt; true
-  | <span data-count="0">"</span>match" | <span data-count="190">"</span>with" | <span data-count="0">"</span>when" -&gt; true
-  | <span data-count="24951">_</span> -&gt; false
+  | <span data-count="468">"</span>true" | <span data-count="464">"</span>false" -&gt; true
+  | <span data-count="0">"</span>if" | <span data-count="224">"</span>then" | <span data-count="120">"</span>else" -&gt; true
+  | <span data-count="145">"</span>fun" -&gt; true
+  | <span data-count="0">"</span>let" | <span data-count="0">"</span>rec" | <span data-count="949">"</span>and" | <span data-count="201">"</span>in" -&gt; true
+  | <span data-count="158">"</span>function" -&gt; true
+  | <span data-count="0">"</span>match" | <span data-count="222">"</span>with" | <span data-count="0">"</span>when" -&gt; true
+  | <span data-count="28544">_</span> -&gt; false
 ;;
 
 let ident_symbol = function
-  | <span data-count="15893">'</span>a' .. 'z' | <span data-count="4099">'</span>A' .. 'Z' | <span data-count="6791">'</span>_' | <span data-count="1902">'</span>\'' | <span data-count="4818">'</span>0' .. '9' -&gt; true
-  | <span data-count="30454">_</span> -&gt; false
+  | <span data-count="18071">'</span>a' .. 'z' | <span data-count="4565">'</span>A' .. 'Z' | <span data-count="7613">'</span>_' | <span data-count="2206">'</span>\'' | <span data-count="5538">'</span>0' .. '9' -&gt; true
+  | <span data-count="35191">_</span> -&gt; false
 ;;
 
 let is_constructor id =
-  <span data-count="7794">m</span>atch id.[0] with
-  | <span data-count="112">'</span>A' .. 'Z' -&gt; true
-  | <span data-count="7682">_</span> -&gt; false
+  <span data-count="8840">m</span>atch id.[0] with
+  | <span data-count="140">'</span>A' .. 'Z' -&gt; true
+  | <span data-count="8700">_</span> -&gt; false
 ;;
 
 (** Parse [Miniml.identifier] value. *)
@@ -1333,27 +1334,27 @@ let ident
   ?(on_constructor = <span data-count="0">p</span>return)
   ?(on_simple = <span data-count="0">p</span>return)
   =
-  <span data-count="5221">l</span>et helper = many (dsatisf<span data-count="5221">y</span> ident_symbol Fun.id) in
-  <span data-count="5221">s</span>kip_ws *<span data-count="5221">&gt;</span> dsatisf<span data-count="5221">y</span> ident_symbol Fun.id
+  <span data-count="6119">l</span>et helper = many (dsatisf<span data-count="6119">y</span> ident_symbol Fun.id) in
+  <span data-count="6119">s</span>kip_ws *<span data-count="6119">&gt;</span> dsatisf<span data-count="6119">y</span> ident_symbol Fun.id
   &gt;&gt;= fun s -&gt;
-  <span data-count="10815">i</span>f is_digi<span data-count="10815">t</span> <span data-count="957">s</span> || s = '\'<span data-count="1">'</span>
-  then <span data-count="958">p</span>fail
+  <span data-count="12296">i</span>f is_digi<span data-count="12296">t</span> <span data-count="1031">s</span> || s = '\'<span data-count="1">'</span>
+  then <span data-count="1032">p</span>fail
   else
-    <span data-count="9857">h</span>elper
-    &gt;&gt;<span data-count="9857">|</span> (fun l -&gt; <span data-count="9857">s</span>tring_of_char_list (s :: l))
+    <span data-count="11264">h</span>elper
+    &gt;&gt;<span data-count="11264">|</span> (fun l -&gt; <span data-count="11264">s</span>tring_of_char_list (s :: l))
     &gt;&gt;= fun id -&gt;
-    <span data-count="9857">i</span>f is_keyword id
-    then <span data-count="2063">o</span>n_keyword id
-    else <span data-count="7794">i</span>f is_constructor id
-    then <span data-count="112">o</span>n_constructor id
-    else <span data-count="7682">o</span>n_simple id
+    <span data-count="11264">i</span>f is_keyword id
+    then <span data-count="2424">o</span>n_keyword id
+    else <span data-count="8840">i</span>f is_constructor id
+    then <span data-count="140">o</span>n_constructor id
+    else <span data-count="8700">o</span>n_simple id
 ;;
 
 (** Parser of keyword *)
 let keyword word =
-  <span data-count="67875">l</span>et helper c = <span data-count="2394">n</span>ot (ident_symbo<span data-count="2394">l</span> c) in
+  <span data-count="79194">l</span>et helper c = <span data-count="2864">n</span>ot (ident_symbo<span data-count="2864">l</span> c) in
   let check_end = asatisfy helper in
-  <span data-count="67875">s</span>kip_ws *<span data-count="67875">&gt;</span> ssequenc<span data-count="67875">e</span> word *<span data-count="67875">&gt;</span> check_end *&gt; pretur<span data-count="67875">n</span> ()
+  <span data-count="79194">s</span>kip_ws *<span data-count="79194">&gt;</span> ssequenc<span data-count="79194">e</span> word *<span data-count="79194">&gt;</span> check_end *&gt; pretur<span data-count="79194">n</span> ()
 ;;
 
 (** Parser of some elements sequence:
@@ -1366,18 +1367,18 @@ let element_sequence
   : 'a 'b. 'a -&gt; 'a parser -&gt; ('a list -&gt; 'b) -&gt; string -&gt; 'a parser -&gt; 'b parser
   =
   fun start element_parser list_converter sep pnotfound -&gt;
-  <span data-count="13486">l</span>et next_element sep =
-    <span data-count="13486">s</span>kip_ws
-    *<span data-count="13486">&gt;</span> (if is_keyword sep then <span data-count="411">k</span>eywor<span data-count="411">d</span> sep else ssequenc<span data-count="13075">e</span> sep <span data-count="13075">&gt;</span>&gt;<span data-count="13075">|</span> fun _ -&gt; <span data-count="3770">(</span>))
-    *&gt; (element_parser &lt;|<span data-count="13486">&gt;</span> pnotfound)
+  <span data-count="15528">l</span>et next_element sep =
+    <span data-count="15528">s</span>kip_ws
+    *<span data-count="15528">&gt;</span> (if is_keyword sep then <span data-count="527">k</span>eywor<span data-count="527">d</span> sep else ssequenc<span data-count="15001">e</span> sep <span data-count="15001">&gt;</span>&gt;<span data-count="15001">|</span> fun _ -&gt; <span data-count="4405">(</span>))
+    *&gt; (element_parser &lt;|<span data-count="15528">&gt;</span> pnotfound)
   in
   skip_ws
-  *&gt; (man<span data-count="13486">y</span> (next_elemen<span data-count="13486">t</span> sep) &gt;&gt;<span data-count="13486">|</span> fun l -&gt; <span data-count="13485">l</span>ist_converter (List.appen<span data-count="13485">d</span> [ start ] l))
+  *&gt; (man<span data-count="15528">y</span> (next_elemen<span data-count="15528">t</span> sep) &gt;&gt;<span data-count="15528">|</span> fun l -&gt; <span data-count="15527">l</span>ist_converter (List.appen<span data-count="15527">d</span> [ start ] l))
 ;;
 
 let bracket_sequence subparser state =
-  <span data-count="17721">(</span>skip_ws *<span data-count="17721">&gt;</span> symbo<span data-count="17721">l</span> '(' *<span data-count="17721">&gt;</span> subparser
-   &lt;<span data-count="17721">*</span> (skip_ws *<span data-count="17721">&gt;</span> symbo<span data-count="17721">l</span> ')' &lt;|<span data-count="17721">&gt;</span> perro<span data-count="17721">r</span> "Not found close bracket"))
+  <span data-count="20425">(</span>skip_ws *<span data-count="20425">&gt;</span> symbo<span data-count="20425">l</span> '(' *<span data-count="20425">&gt;</span> subparser
+   &lt;<span data-count="20425">*</span> (skip_ws *<span data-count="20425">&gt;</span> symbo<span data-count="20425">l</span> ')' &lt;|<span data-count="20425">&gt;</span> perro<span data-count="20425">r</span> "Not found close bracket"))
     state
 ;;
 
@@ -1392,82 +1393,82 @@ let type_ident_parser =
 ;;
 
 let type_identifier state =
-  <span data-count="2829">l</span>et helper =
+  <span data-count="3171">l</span>et helper =
     type_ident_parser
     &gt;&gt;= fun s -&gt;
-    <span data-count="2827">m</span>atch s with
-    | <span data-count="1413">"</span>_" -&gt; preturn AnyType
-    | <span data-count="1414">_</span> -&gt; preturn (TypeIdentifier s)
+    <span data-count="3169">m</span>atch s with
+    | <span data-count="1567">"</span>_" -&gt; preturn AnyType
+    | <span data-count="1602">_</span> -&gt; preturn (TypeIdentifier s)
   in
-  <span data-count="2829">(</span>skip_ws *<span data-count="2829">&gt;</span> helper) state
+  <span data-count="3171">(</span>skip_ws *<span data-count="3171">&gt;</span> helper) state
 ;;
 
 let rec core_type_parser need_arrow state =
-  <span data-count="2898">(</span>skip_ws *<span data-count="2898">&gt;</span> tuple_type
-   &gt;&gt;<span data-count="2898">=</span> fun t1 -&gt; <span data-count="2895">i</span>f need_arrow then <span data-count="2109">a</span>rrow_typ<span data-count="2109">e</span> t1 &lt;|&gt; pretur<span data-count="2109">n</span> t1 else <span data-count="786">p</span>return t1)
+  <span data-count="3098">(</span>skip_ws *<span data-count="3098">&gt;</span> tuple_type
+   &gt;&gt;<span data-count="3098">=</span> fun t1 -&gt; <span data-count="3095">i</span>f need_arrow then <span data-count="2324">a</span>rrow_typ<span data-count="2324">e</span> t1 &lt;|&gt; pretur<span data-count="2324">n</span> t1 else <span data-count="771">p</span>return t1)
     state
 
 and arrow_type t1 state =
-  <span data-count="2109">(</span>skip_ws *<span data-count="2109">&gt;</span> handle_erro<span data-count="2109">r</span> (ssequenc<span data-count="2109">e</span> "-&gt;" *<span data-count="2109">&gt;</span> core_type_parse<span data-count="2109">r</span> false) (fun _ -&gt; <span data-count="2">p</span>fail)
-   &gt;&gt;<span data-count="2109">=</span> fun t2 -&gt; <span data-count="782">p</span>return (ArrowType (t1, t2)))
+  <span data-count="2324">(</span>skip_ws *<span data-count="2324">&gt;</span> handle_erro<span data-count="2324">r</span> (ssequenc<span data-count="2324">e</span> "-&gt;" *<span data-count="2324">&gt;</span> core_type_parse<span data-count="2324">r</span> false) (fun _ -&gt; <span data-count="2">p</span>fail)
+   &gt;&gt;<span data-count="2324">=</span> fun t2 -&gt; <span data-count="767">p</span>return (ArrowType (t1, t2)))
     state
 
 and tuple_type state =
-  <span data-count="2898">l</span>et helper t1 =
-    <span data-count="2895">e</span>lement_sequence
+  <span data-count="3098">l</span>et helper t1 =
+    <span data-count="3095">e</span>lement_sequence
       t1
       type_constructor
       (function
-        | <span data-count="727">t</span>1 :: t2 :: tl -&gt; TupleType (t1, t2, tl)
-        | <span data-count="2168">_</span> -&gt; t1)
+        | <span data-count="860">t</span>1 :: t2 :: tl -&gt; TupleType (t1, t2, tl)
+        | <span data-count="2235">_</span> -&gt; t1)
       "*"
-      (perro<span data-count="2895">r</span> "Not found expression after tuple separator: '*'")
+      (perro<span data-count="3095">r</span> "Not found expression after tuple separator: '*'")
   in
-  (skip_ws *<span data-count="2898">&gt;</span> type_constructor &gt;&gt;<span data-count="2898">=</span> helper) state
+  (skip_ws *<span data-count="3098">&gt;</span> type_constructor &gt;&gt;<span data-count="3098">=</span> helper) state
 
 and type_constructor state =
-  <span data-count="4326">l</span>et builder t1 tl = <span data-count="4323">L</span>ist.fold_left (fun acc t2 -&gt; <span data-count="742">T</span>ypeConstructor (t2, acc)) t1 tl in
-  (skip_ws *<span data-count="4326">&gt;</span> basic_type
-   &gt;&gt;<span data-count="4326">=</span> fun t1 -&gt; <span data-count="4323">m</span>an<span data-count="4323">y</span> type_ident_parser &gt;&gt;= fun tl -&gt; <span data-count="4323">p</span>return (builde<span data-count="4323">r</span> t1 tl))
+  <span data-count="4786">l</span>et builder t1 tl = <span data-count="4783">L</span>ist.fold_left (fun acc t2 -&gt; <span data-count="750">T</span>ypeConstructor (t2, acc)) t1 tl in
+  (skip_ws *<span data-count="4786">&gt;</span> basic_type
+   &gt;&gt;<span data-count="4786">=</span> fun t1 -&gt; <span data-count="4783">m</span>an<span data-count="4783">y</span> type_ident_parser &gt;&gt;= fun tl -&gt; <span data-count="4783">p</span>return (builde<span data-count="4783">r</span> t1 tl))
     state
 
 and basic_type state =
-  <span data-count="4326">(</span>skip_ws *<span data-count="4326">&gt;</span> bracket_type &lt;|<span data-count="4326">&gt;</span> type_identifier &lt;|<span data-count="4326">&gt;</span> perro<span data-count="4326">r</span> "Not found type") state
+  <span data-count="4786">(</span>skip_ws *<span data-count="4786">&gt;</span> bracket_type &lt;|<span data-count="4786">&gt;</span> type_identifier &lt;|<span data-count="4786">&gt;</span> perro<span data-count="4786">r</span> "Not found type") state
 
-and bracket_type state = <span data-count="4326">b</span>racket_sequence (core_type_parse<span data-count="4326">r</span> true) state
+and bracket_type state = <span data-count="4786">b</span>racket_sequence (core_type_parse<span data-count="4786">r</span> true) state
 
 (** Parser of integer literals: [0 .. Int64.max_int].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let integer =
   let rec helper counter =
-    <span data-count="1838">d</span>igit
-    &lt;|<span data-count="1838">&gt;</span> ssequenc<span data-count="1838">e</span> "_" *<span data-count="1838">&gt;</span> pretur<span data-count="1838">n</span> (-1)
-    &gt;&gt;<span data-count="1838">=</span> (fun v -&gt; <span data-count="1360">i</span>f v &lt; 0 then <span data-count="2">h</span>elper counter else <span data-count="1358">h</span>elper (v + (counter * 10)))
-    &lt;|&gt; (pretur<span data-count="1838">n</span> counter &gt;&gt;<span data-count="1838">|</span> fun v -&gt; <span data-count="478">I</span>ntLiteral v)
+    <span data-count="1893">d</span>igit
+    &lt;|<span data-count="1893">&gt;</span> ssequenc<span data-count="1893">e</span> "_" *<span data-count="1893">&gt;</span> pretur<span data-count="1893">n</span> (-1)
+    &gt;&gt;<span data-count="1893">=</span> (fun v -&gt; <span data-count="1378">i</span>f v &lt; 0 then <span data-count="2">h</span>elper counter else <span data-count="1376">h</span>elper (v + (counter * 10)))
+    &lt;|&gt; (pretur<span data-count="1893">n</span> counter &gt;&gt;<span data-count="1893">|</span> fun v -&gt; <span data-count="515">I</span>ntLiteral v)
   in
-  skip_ws *<span data-count="9">&gt;</span> digit &gt;&gt;<span data-count="9">=</span> helper
+  skip_ws *<span data-count="10">&gt;</span> digit &gt;&gt;<span data-count="10">=</span> helper
 ;;
 
 (** Parser of boolean literals: [true], [false].
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
 let boolean =
-  skip_ws *<span data-count="9">&gt;</span> (keywor<span data-count="9">d</span> "true" &gt;&gt;<span data-count="9">|</span> fun _ -&gt; <span data-count="195">B</span>oolLiteral true)
-  &lt;|<span data-count="9">&gt;</span> (keywor<span data-count="9">d</span> "false" &gt;&gt;<span data-count="9">|</span> fun _ -&gt; <span data-count="195">B</span>oolLiteral false)
+  skip_ws *<span data-count="10">&gt;</span> (keywor<span data-count="10">d</span> "true" &gt;&gt;<span data-count="10">|</span> fun _ -&gt; <span data-count="234">B</span>oolLiteral true)
+  &lt;|<span data-count="10">&gt;</span> (keywor<span data-count="10">d</span> "false" &gt;&gt;<span data-count="10">|</span> fun _ -&gt; <span data-count="232">B</span>oolLiteral false)
 ;;
 
 (** Parser of patterns: [&lt;pvar&gt;] | [&lt;ptuple&gt;] *)
 let rec pattern_parser expect_type state =
-  <span data-count="5194">l</span>et helper = function
-    | <span data-count="602">P</span>Constrain _ as p -&gt; preturn p
-    | <span data-count="3048">p</span> -&gt; if expect_type then <span data-count="3044">p</span>type true p else <span data-count="4">p</span>return p
+  <span data-count="6089">l</span>et helper = function
+    | <span data-count="699">P</span>Constrain _ as p -&gt; preturn p
+    | <span data-count="3558">p</span> -&gt; if expect_type then <span data-count="3554">p</span>type true p else <span data-count="4">p</span>return p
   in
-  (skip_ws *<span data-count="5194">&gt;</span> (pvariable &lt;|<span data-count="5194">&gt;</span> ptuple) &gt;&gt;<span data-count="5194">=</span> helper) state
+  (skip_ws *<span data-count="6089">&gt;</span> (pvariable &lt;|<span data-count="6089">&gt;</span> ptuple) &gt;&gt;<span data-count="6089">=</span> helper) state
 
 (** Parser of variable pattern *)
 and pvariable state =
-  <span data-count="5194">l</span>et helper =
+  <span data-count="6089">l</span>et helper =
     ident
       ~on_keyword:(fun id -&gt;
         <span data-count="1">p</span>error
@@ -1477,122 +1478,122 @@ and pvariable state =
       ~on_simple:preturn
   in
   (skip_ws
-   *<span data-count="5194">&gt;</span> (helper
-       &gt;&gt;<span data-count="5194">|</span> fun id -&gt;
-       <span data-count="1649">m</span>atch id with
-       | <span data-count="798">"</span>_" -&gt; PAny
-       | <span data-count="851">_</span> -&gt; PVar id))
+   *<span data-count="6089">&gt;</span> (helper
+       &gt;&gt;<span data-count="6089">|</span> fun id -&gt;
+       <span data-count="1935">m</span>atch id with
+       | <span data-count="874">"</span>_" -&gt; PAny
+       | <span data-count="1061">_</span> -&gt; PVar id))
     state
 
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
-  <span data-count="3544">l</span>et tuple_elements pfirst =
-    <span data-count="1206">s</span>kip_ws
-    *&gt; element_sequenc<span data-count="1206">e</span>
+  <span data-count="4153">l</span>et tuple_elements pfirst =
+    <span data-count="1408">s</span>kip_ws
+    *&gt; element_sequenc<span data-count="1408">e</span>
          pfirst
-         (pattern_parse<span data-count="1206">r</span> true)
+         (pattern_parse<span data-count="1408">r</span> true)
          (function
-           | <span data-count="602">p</span>1 :: p2 :: pl -&gt; PTuple (p1, p2, pl)
-           | <span data-count="604">_</span> -&gt; pfirst)
+           | <span data-count="707">p</span>1 :: p2 :: pl -&gt; PTuple (p1, p2, pl)
+           | <span data-count="701">_</span> -&gt; pfirst)
          ","
-         (perro<span data-count="1206">r</span> "Not found expression after tuple separator: ','")
+         (perro<span data-count="1408">r</span> "Not found expression after tuple separator: ','")
   in
   let brackets_subexpr =
-    skip_ws *<span data-count="3544">&gt;</span> pattern_parse<span data-count="3544">r</span> true
-    &gt;&gt;<span data-count="3544">=</span> (fun pfirst -&gt; <span data-count="1206">t</span>uple_element<span data-count="1206">s</span> pfirst &gt;&gt;= ptyp<span data-count="1206">e</span> true)
-    &lt;|&gt; pretur<span data-count="3544">n</span> PUnit
+    skip_ws *<span data-count="4153">&gt;</span> pattern_parse<span data-count="4153">r</span> true
+    &gt;&gt;<span data-count="4153">=</span> (fun pfirst -&gt; <span data-count="1408">t</span>uple_element<span data-count="1408">s</span> pfirst &gt;&gt;= ptyp<span data-count="1408">e</span> true)
+    &lt;|&gt; pretur<span data-count="4153">n</span> PUnit
   in
-  <span data-count="3544">b</span>racket_sequence brackets_subexpr state
+  <span data-count="4153">b</span>racket_sequence brackets_subexpr state
 
 and ptype : bool -&gt; pattern -&gt; pattern parser =
   fun need_arrow p -&gt;
-  <span data-count="4870">l</span>et helper =
+  <span data-count="5738">l</span>et helper =
     skip_ws
-    *<span data-count="4870">&gt;</span> symbo<span data-count="4870">l</span> ':'
-    *&gt; (core_type_parse<span data-count="4870">r</span> need_arrow &lt;|<span data-count="4870">&gt;</span> perro<span data-count="4870">r</span> "Not found type of pattern")
+    *<span data-count="5738">&gt;</span> symbo<span data-count="5738">l</span> ':'
+    *&gt; (core_type_parse<span data-count="5738">r</span> need_arrow &lt;|<span data-count="5738">&gt;</span> perro<span data-count="5738">r</span> "Not found type of pattern")
   in
-  <span data-count="4870">s</span>kip_ws *&gt; (helper &gt;&gt;<span data-count="4870">=</span> (fun t -&gt; <span data-count="617">p</span>return (PConstrain (p, t))) &lt;|<span data-count="4870">&gt;</span> pretur<span data-count="4870">n</span> p)
+  <span data-count="5738">s</span>kip_ws *&gt; (helper &gt;&gt;<span data-count="5738">=</span> (fun t -&gt; <span data-count="714">p</span>return (PConstrain (p, t))) &lt;|<span data-count="5738">&gt;</span> pretur<span data-count="5738">n</span> p)
 ;;
 
 (** Parser of constants expression: [integer] and [boolean]
 
     [!] This parser returns also [ParseSuccess] or [ParseFail] *)
-let const_expr = skip_ws *<span data-count="9">&gt;</span> (integer &lt;|<span data-count="9">&gt;</span> boolean) &gt;&gt;<span data-count="9">|</span> fun l -&gt; <span data-count="868">C</span>onst l
+let const_expr = skip_ws *<span data-count="10">&gt;</span> (integer &lt;|<span data-count="10">&gt;</span> boolean) &gt;&gt;<span data-count="10">|</span> fun l -&gt; <span data-count="981">C</span>onst l
 
 (** Parser of variable expression *)
 let variable =
   let helper =
     ident
-      ~on_keyword:(fun _ -&gt; <span data-count="893">p</span>fail)
+      ~on_keyword:(fun _ -&gt; <span data-count="1060">p</span>fail)
       ~on_constructor:(fun id -&gt;
         <span data-count="0">p</span>error (Format.sprint<span data-count="0">f</span> "Invalid variable identifier: '%s'." id))
       ~on_simple:preturn
   in
-  skip_ws *<span data-count="9">&gt;</span> helper &gt;&gt;<span data-count="9">|</span> fun s -&gt; <span data-count="1232">V</span>ariable s
+  skip_ws *<span data-count="10">&gt;</span> helper &gt;&gt;<span data-count="10">|</span> fun s -&gt; <span data-count="1423">V</span>ariable s
 ;;
 
 let constructor_name =
   let helper =
-    ident ~on_keyword:(fun _ -&gt; <span data-count="1168">p</span>fail) ~on_constructor:preturn ~on_simple:(fun _ -&gt; <span data-count="1232">p</span>fail)
+    ident ~on_keyword:(fun _ -&gt; <span data-count="1362">p</span>fail) ~on_constructor:preturn ~on_simple:(fun _ -&gt; <span data-count="1423">p</span>fail)
   in
-  skip_ws *<span data-count="9">&gt;</span> helper
+  skip_ws *<span data-count="10">&gt;</span> helper
 ;;
 
 (** Parser of all expression which defines on [Miniml.Ast] module *)
-let rec expr state = <span data-count="5386">(</span>skip_ws *<span data-count="5386">&gt;</span> block_expr) state
+let rec expr state = <span data-count="6306">(</span>skip_ws *<span data-count="6306">&gt;</span> block_expr) state
 
 (** Parser of expression block *)
 and block_expr state =
-  <span data-count="5386">l</span>et helper ex =
-    <span data-count="4319">e</span>lement_sequenc<span data-count="4319">e</span>
+  <span data-count="6306">l</span>et helper ex =
+    <span data-count="5027">e</span>lement_sequenc<span data-count="5027">e</span>
       ex
       tuple_expr
       (function
-        | <span data-count="4187">e</span>x :: [] -&gt; ex
-        | <span data-count="132">_</span> as l -&gt; ExpressionBlock l)
+        | <span data-count="4857">e</span>x :: [] -&gt; ex
+        | <span data-count="170">_</span> as l -&gt; ExpressionBlock l)
       ";"
       pfail
     &gt;&gt;= fun block -&gt;
-    <span data-count="4319">a</span>ssequenc<span data-count="4319">e</span> ";;" *<span data-count="4319">&gt;</span> pretur<span data-count="4319">n</span> block &lt;|<span data-count="4319">&gt;</span> ssequenc<span data-count="4319">e</span> ";" *<span data-count="4319">&gt;</span> pretur<span data-count="4319">n</span> block &lt;|&gt; pretur<span data-count="4319">n</span> block
+    <span data-count="5027">a</span>ssequenc<span data-count="5027">e</span> ";;" *<span data-count="5027">&gt;</span> pretur<span data-count="5027">n</span> block &lt;|<span data-count="5027">&gt;</span> ssequenc<span data-count="5027">e</span> ";" *<span data-count="5027">&gt;</span> pretur<span data-count="5027">n</span> block &lt;|&gt; pretur<span data-count="5027">n</span> block
   in
-  (skip_ws *<span data-count="5386">&gt;</span> (tuple_expr &gt;&gt;<span data-count="5386">=</span> helper)) state
+  (skip_ws *<span data-count="6306">&gt;</span> (tuple_expr &gt;&gt;<span data-count="6306">=</span> helper)) state
 
 (** Parser of tuple expression *)
 and tuple_expr state =
-  <span data-count="6368">l</span>et helper ex =
-    <span data-count="4576">e</span>lement_sequence
+  <span data-count="7494">l</span>et helper ex =
+    <span data-count="5363">e</span>lement_sequence
       ex
       boolean_expr
       (function
-        | <span data-count="141">e</span>x1 :: ex2 :: l -&gt; Tuple (ex1, ex2, l)
-        | <span data-count="4434">_</span> -&gt; ex)
+        | <span data-count="156">e</span>x1 :: ex2 :: l -&gt; Tuple (ex1, ex2, l)
+        | <span data-count="5206">_</span> -&gt; ex)
       ","
-      (perro<span data-count="4576">r</span> "Not found expression after tuple separator: ','")
+      (perro<span data-count="5363">r</span> "Not found expression after tuple separator: ','")
   in
-  (skip_ws *<span data-count="6368">&gt;</span> (boolean_expr &gt;&gt;<span data-count="6368">=</span> helper)) state
+  (skip_ws *<span data-count="7494">&gt;</span> (boolean_expr &gt;&gt;<span data-count="7494">=</span> helper)) state
 
 (** Parser of applyable expressions *)
 and applyable_expr state =
-  <span data-count="9851">(</span>skip_ws *<span data-count="9851">&gt;</span> bracket_expr &lt;|<span data-count="9851">&gt;</span> func_expr &lt;|<span data-count="9851">&gt;</span> lambda_expr &lt;|<span data-count="9851">&gt;</span> variable) state
+  <span data-count="11486">(</span>skip_ws *<span data-count="11486">&gt;</span> bracket_expr &lt;|<span data-count="11486">&gt;</span> func_expr &lt;|<span data-count="11486">&gt;</span> lambda_expr &lt;|<span data-count="11486">&gt;</span> variable) state
 
 (** Parser of basic expressions:
     [&lt;unary&gt;] | [&lt;if-expr&gt;] | [&lt;define_expr&gt;] | [&lt;apply-expr&gt;] | [&lt;const&gt;] *)
 and basic_expr applyable state =
-  <span data-count="10590">(</span>skip_ws *<span data-count="10590">&gt;</span> unary_exp<span data-count="10590">r</span> applyable
-   &lt;|<span data-count="10590">&gt;</span> if_expr
-   &lt;|<span data-count="10590">&gt;</span> define_expr
-   &lt;|<span data-count="10590">&gt;</span> list_expr
-   &lt;|<span data-count="10590">&gt;</span> match_expr
-   &lt;|<span data-count="10590">&gt;</span> constructor
-   &lt;|<span data-count="10590">&gt;</span> (if applyable then <span data-count="3617">a</span>pplyable_expr else <span data-count="6973">a</span>pply_expr)
-   &lt;|<span data-count="10590">&gt;</span> const_expr)
+  <span data-count="12399">(</span>skip_ws *<span data-count="12399">&gt;</span> unary_exp<span data-count="12399">r</span> applyable
+   &lt;|<span data-count="12399">&gt;</span> if_expr
+   &lt;|<span data-count="12399">&gt;</span> define_expr
+   &lt;|<span data-count="12399">&gt;</span> list_expr
+   &lt;|<span data-count="12399">&gt;</span> match_expr
+   &lt;|<span data-count="12399">&gt;</span> constructor
+   &lt;|<span data-count="12399">&gt;</span> (if applyable then <span data-count="4225">a</span>pplyable_expr else <span data-count="8174">a</span>pply_expr)
+   &lt;|<span data-count="12399">&gt;</span> const_expr)
     state
 
 (** Parser of case expressions: *)
 and case_parser is_first =
-  <span data-count="555">l</span>et case_expr p f =
-    <span data-count="431">s</span>kip_ws *<span data-count="431">&gt;</span> (expr &lt;|<span data-count="431">&gt;</span> perro<span data-count="431">r</span> "Not found expression after special sequence '-&gt;' in case")
-    &gt;&gt;= fun ex -&gt; <span data-count="431">p</span>return { pattern = p; filter = f; result = ex }
+  <span data-count="589">l</span>et case_expr p f =
+    <span data-count="452">s</span>kip_ws *<span data-count="452">&gt;</span> (expr &lt;|<span data-count="452">&gt;</span> perro<span data-count="452">r</span> "Not found expression after special sequence '-&gt;' in case")
+    &gt;&gt;= fun ex -&gt; <span data-count="452">p</span>return { pattern = p; filter = f; result = ex }
   in
   let on_not_found_lambda f base_state state =
     <span data-count="0">m</span>atch f with
@@ -1606,126 +1607,126 @@ and case_parser is_first =
         base_state
   in
   let result_helper p f base_state state =
-    <span data-count="431">(</span>skip_ws *<span data-count="431">&gt;</span> ssequenc<span data-count="431">e</span> "-&gt;" *<span data-count="431">&gt;</span> case_exp<span data-count="431">r</span> p f &lt;|<span data-count="431">&gt;</span> on_not_found_lambd<span data-count="431">a</span> f base_state)
+    <span data-count="452">(</span>skip_ws *<span data-count="452">&gt;</span> ssequenc<span data-count="452">e</span> "-&gt;" *<span data-count="452">&gt;</span> case_exp<span data-count="452">r</span> p f &lt;|<span data-count="452">&gt;</span> on_not_found_lambd<span data-count="452">a</span> f base_state)
       state
   in
   let filter_helper =
     let filter_expr =
       skip_ws
       *&gt; (expr
-          &lt;|<span data-count="555">&gt;</span> perro<span data-count="555">r</span> "Not found expression of when clause"
-          &gt;&gt;<span data-count="555">=</span> fun f -&gt; <span data-count="202">p</span>return (Some f))
+          &lt;|<span data-count="589">&gt;</span> perro<span data-count="589">r</span> "Not found expression of when clause"
+          &gt;&gt;<span data-count="589">=</span> fun f -&gt; <span data-count="241">p</span>return (Some f))
     in
-    <span data-count="555">s</span>kip_ws *<span data-count="555">&gt;</span> (keywor<span data-count="555">d</span> "when" *<span data-count="555">&gt;</span> filter_expr) &lt;|<span data-count="555">&gt;</span> pretur<span data-count="555">n</span> None
+    <span data-count="589">s</span>kip_ws *<span data-count="589">&gt;</span> (keywor<span data-count="589">d</span> "when" *<span data-count="589">&gt;</span> filter_expr) &lt;|<span data-count="589">&gt;</span> pretur<span data-count="589">n</span> None
   in
   let main_helper state =
-    <span data-count="432">(</span>skip_ws *<span data-count="432">&gt;</span> (pattern_parse<span data-count="432">r</span> true &lt;|<span data-count="432">&gt;</span> perro<span data-count="432">r</span> "Not found pattern of case expression")
-     &gt;&gt;<span data-count="432">=</span> fun p -&gt; <span data-count="431">f</span>ilter_helper &gt;&gt;= fun f -&gt; <span data-count="431">r</span>esult_helper p f state)
+    <span data-count="453">(</span>skip_ws *<span data-count="453">&gt;</span> (pattern_parse<span data-count="453">r</span> true &lt;|<span data-count="453">&gt;</span> perro<span data-count="453">r</span> "Not found pattern of case expression")
+     &gt;&gt;<span data-count="453">=</span> fun p -&gt; <span data-count="452">f</span>ilter_helper &gt;&gt;= fun f -&gt; <span data-count="452">r</span>esult_helper p f state)
       state
   in
-  skip_ws *<span data-count="555">&gt;</span> (symbo<span data-count="555">l</span> '|' *<span data-count="555">&gt;</span> main_helper) &lt;|&gt; if is_first then <span data-count="278">m</span>ain_helper else <span data-count="277">p</span>fail
+  skip_ws *<span data-count="589">&gt;</span> (symbo<span data-count="589">l</span> '|' *<span data-count="589">&gt;</span> main_helper) &lt;|&gt; if is_first then <span data-count="295">m</span>ain_helper else <span data-count="294">p</span>fail
 
 (** Parser of cases list *)
 and cases_list on_not_found_first state =
-  <span data-count="278">(</span>skip_ws *<span data-count="278">&gt;</span> (case_parse<span data-count="278">r</span> true &lt;|<span data-count="278">&gt;</span> on_not_found_first)
-   &gt;&gt;<span data-count="278">=</span> fun c -&gt; <span data-count="277">m</span>an<span data-count="277">y</span> (case_parse<span data-count="277">r</span> false) &gt;&gt;= fun cl -&gt; <span data-count="277">p</span>return (c :: cl))
+  <span data-count="295">(</span>skip_ws *<span data-count="295">&gt;</span> (case_parse<span data-count="295">r</span> true &lt;|<span data-count="295">&gt;</span> on_not_found_first)
+   &gt;&gt;<span data-count="295">=</span> fun c -&gt; <span data-count="294">m</span>an<span data-count="294">y</span> (case_parse<span data-count="294">r</span> false) &gt;&gt;= fun cl -&gt; <span data-count="294">p</span>return (c :: cl))
     state
 
 (** Parser of function expression:
     - [function &lt;case&gt; ... &lt;case&gt; ]*)
 and func_expr state =
-  <span data-count="7535">(</span>skip_ws
-   *<span data-count="7535">&gt;</span> keywor<span data-count="7535">d</span> "function"
-   *<span data-count="7535">&gt;</span> cases_lis<span data-count="7535">t</span> (perro<span data-count="7535">r</span> "Not found first case of function expression")
-   &gt;&gt;<span data-count="7535">=</span> fun cl -&gt; <span data-count="144">p</span>return (Func cl))
+  <span data-count="8745">(</span>skip_ws
+   *<span data-count="8745">&gt;</span> keywor<span data-count="8745">d</span> "function"
+   *<span data-count="8745">&gt;</span> cases_lis<span data-count="8745">t</span> (perro<span data-count="8745">r</span> "Not found first case of function expression")
+   &gt;&gt;<span data-count="8745">=</span> fun cl -&gt; <span data-count="158">p</span>return (Func cl))
     state
 
 (** Parser of match expression:
     - [match &lt;expr&gt; with &lt;case&gt; ... &lt;case&gt; ]*)
 and match_expr state =
-  <span data-count="10097">(</span>skip_ws
-   *<span data-count="10097">&gt;</span> keywor<span data-count="10097">d</span> "match"
-   *<span data-count="10097">&gt;</span> skip_ws
-   *<span data-count="10097">&gt;</span> (expr &lt;|<span data-count="10097">&gt;</span> perro<span data-count="10097">r</span> "Not found expression after keyword 'match'")
-   &gt;&gt;<span data-count="10097">=</span> fun ex -&gt;
-   <span data-count="134">s</span>kip_ws
-   *<span data-count="134">&gt;</span> (keywor<span data-count="134">d</span> "with" &lt;|<span data-count="134">&gt;</span> perro<span data-count="134">r</span> "Not found keyword 'with' of match expression")
-   *<span data-count="134">&gt;</span> cases_lis<span data-count="134">t</span> (perro<span data-count="134">r</span> "Not found first case of match expression")
-   &gt;&gt;= fun cl -&gt; <span data-count="133">p</span>return (Match (ex, cl)))
+  <span data-count="11763">(</span>skip_ws
+   *<span data-count="11763">&gt;</span> keywor<span data-count="11763">d</span> "match"
+   *<span data-count="11763">&gt;</span> skip_ws
+   *<span data-count="11763">&gt;</span> (expr &lt;|<span data-count="11763">&gt;</span> perro<span data-count="11763">r</span> "Not found expression after keyword 'match'")
+   &gt;&gt;<span data-count="11763">=</span> fun ex -&gt;
+   <span data-count="137">s</span>kip_ws
+   *<span data-count="137">&gt;</span> (keywor<span data-count="137">d</span> "with" &lt;|<span data-count="137">&gt;</span> perro<span data-count="137">r</span> "Not found keyword 'with' of match expression")
+   *<span data-count="137">&gt;</span> cases_lis<span data-count="137">t</span> (perro<span data-count="137">r</span> "Not found first case of match expression")
+   &gt;&gt;= fun cl -&gt; <span data-count="136">p</span>return (Match (ex, cl)))
     state
 
 and constructor state =
-  <span data-count="9963">(</span>skip_ws *<span data-count="9963">&gt;</span> constructor_name
-   &gt;&gt;<span data-count="9963">=</span> fun name -&gt;
-   <span data-count="112">e</span>xpr
-   &gt;&gt;<span data-count="112">=</span> (fun ex -&gt; <span data-count="56">p</span>return (Construct (name, Some ex)))
-   &lt;|&gt; pretur<span data-count="112">n</span> (Construct (name, None)))
+  <span data-count="11626">(</span>skip_ws *<span data-count="11626">&gt;</span> constructor_name
+   &gt;&gt;<span data-count="11626">=</span> fun name -&gt;
+   <span data-count="140">e</span>xpr
+   &gt;&gt;<span data-count="140">=</span> (fun ex -&gt; <span data-count="76">p</span>return (Construct (name, Some ex)))
+   &lt;|&gt; pretur<span data-count="140">n</span> (Construct (name, None)))
     state
 
 (** Parser of unary expression *)
 and unary_expr applyable state =
-  <span data-count="10590">l</span>et helper =
-    symbo<span data-count="10590">l</span> '+'
-    *<span data-count="10590">&gt;</span> (basic_exp<span data-count="10590">r</span> applyable
-        &gt;&gt;<span data-count="10590">|</span> (fun e -&gt; <span data-count="52">U</span>nary (Positive, e))
-        &lt;|<span data-count="10590">&gt;</span> perro<span data-count="10590">r</span> "Not found sub-expression of positive unary")
-    &lt;|&gt; symbo<span data-count="10590">l</span> '-'
-        *<span data-count="10590">&gt;</span> (basic_exp<span data-count="10590">r</span> applyable
-            &gt;&gt;<span data-count="10590">|</span> (fun e -&gt; <span data-count="77">U</span>nary (Negate, e))
-            &lt;|<span data-count="10590">&gt;</span> perro<span data-count="10590">r</span> "Not found sub-expression of negate unary")
+  <span data-count="12399">l</span>et helper =
+    symbo<span data-count="12399">l</span> '+'
+    *<span data-count="12399">&gt;</span> (basic_exp<span data-count="12399">r</span> applyable
+        &gt;&gt;<span data-count="12399">|</span> (fun e -&gt; <span data-count="77">U</span>nary (Positive, e))
+        &lt;|<span data-count="12399">&gt;</span> perro<span data-count="12399">r</span> "Not found sub-expression of positive unary")
+    &lt;|&gt; symbo<span data-count="12399">l</span> '-'
+        *<span data-count="12399">&gt;</span> (basic_exp<span data-count="12399">r</span> applyable
+            &gt;&gt;<span data-count="12399">|</span> (fun e -&gt; <span data-count="83">U</span>nary (Negate, e))
+            &lt;|<span data-count="12399">&gt;</span> perro<span data-count="12399">r</span> "Not found sub-expression of negate unary")
   in
-  <span data-count="10590">(</span>skip_ws *<span data-count="10590">&gt;</span> (helper &lt;|<span data-count="10590">&gt;</span> symbo<span data-count="10590">l</span> '~' *<span data-count="10590">&gt;</span> helper)) state
+  <span data-count="12399">(</span>skip_ws *<span data-count="12399">&gt;</span> (helper &lt;|<span data-count="12399">&gt;</span> symbo<span data-count="12399">l</span> '~' *<span data-count="12399">&gt;</span> helper)) state
 
 (** Parser of brackets expression:
     - unit: [()]
     - else: [(&lt;expr&gt;)] *)
 and bracket_expr state =
-  <span data-count="9851">l</span>et helper = expr &lt;|&gt; pretur<span data-count="9851">n</span> (Const UnitLiteral) in
-  <span data-count="9851">b</span>racket_sequence helper state
+  <span data-count="11486">l</span>et helper = expr &lt;|&gt; pretur<span data-count="11486">n</span> (Const UnitLiteral) in
+  <span data-count="11486">b</span>racket_sequence helper state
 
 (** Parser of list expression *)
 and list_expr state =
-  <span data-count="10220">l</span>et helper ex = <span data-count="79">e</span>lement_sequence ex tuple_expr (fun l -&gt; <span data-count="79">E</span>xpressionsList l) ";" pfail in
-  (skip_ws *<span data-count="10220">&gt;</span> symbo<span data-count="10220">l</span> '[' *<span data-count="10220">&gt;</span> (tuple_expr &gt;&gt;<span data-count="10220">=</span> helper &lt;|<span data-count="10220">&gt;</span> pretur<span data-count="10220">n</span> (ExpressionsList []))
-   &lt;<span data-count="10220">*</span> (skip_ws *<span data-count="10220">&gt;</span> symbo<span data-count="10220">l</span> ']' &lt;|<span data-count="10220">&gt;</span> perro<span data-count="10220">r</span> "Not found close bracket of list expression"))
+  <span data-count="11935">l</span>et helper ex = <span data-count="108">e</span>lement_sequence ex tuple_expr (fun l -&gt; <span data-count="108">E</span>xpressionsList l) ";" pfail in
+  (skip_ws *<span data-count="11935">&gt;</span> symbo<span data-count="11935">l</span> '[' *<span data-count="11935">&gt;</span> (tuple_expr &gt;&gt;<span data-count="11935">=</span> helper &lt;|<span data-count="11935">&gt;</span> pretur<span data-count="11935">n</span> (ExpressionsList []))
+   &lt;<span data-count="11935">*</span> (skip_ws *<span data-count="11935">&gt;</span> symbo<span data-count="11935">l</span> ']' &lt;|<span data-count="11935">&gt;</span> perro<span data-count="11935">r</span> "Not found close bracket of list expression"))
     state
 
 (** Abstract parser of binary operations
     - [subparser]: parser of subexpression
     - [operations]: list of one priorety level binary operations *)
 and binary_expression subparser operations state =
-  <span data-count="26916">l</span>et helper oper =
-    <span data-count="59768">s</span>sequenc<span data-count="59768">e</span> oper.oper_view
+  <span data-count="31520">l</span>et helper oper =
+    <span data-count="69548">s</span>sequenc<span data-count="69548">e</span> oper.oper_view
     &gt;&gt;= fun cl -&gt;
-    <span data-count="396">i</span>f oper.oper_view = "-"
-    then <span data-count="224">r</span>everse (ssequenc<span data-count="224">e</span> "&gt;") (pretur<span data-count="224">n</span> cl) pfail
-    else <span data-count="172">p</span>return cl
+    <span data-count="459">i</span>f oper.oper_view = "-"
+    then <span data-count="271">r</span>everse (ssequenc<span data-count="271">e</span> "&gt;") (pretur<span data-count="271">n</span> cl) pfail
+    else <span data-count="188">p</span>return cl
   in
   let operation left oper =
-    <span data-count="59768">s</span>kip_ws
-    *<span data-count="59768">&gt;</span> helpe<span data-count="59768">r</span> oper
+    <span data-count="69548">s</span>kip_ws
+    *<span data-count="69548">&gt;</span> helpe<span data-count="69548">r</span> oper
     *&gt; (subparser
-        &gt;&gt;<span data-count="59768">|</span> (fun right -&gt; <span data-count="192">B</span>inary (left, oper.oper_ast, right))
-        &lt;|<span data-count="59768">&gt;</span> perro<span data-count="59768">r</span>
-              (Printf.sprint<span data-count="59768">f</span>
+        &gt;&gt;<span data-count="69548">|</span> (fun right -&gt; <span data-count="216">B</span>inary (left, oper.oper_ast, right))
+        &lt;|<span data-count="69548">&gt;</span> perro<span data-count="69548">r</span>
+              (Printf.sprint<span data-count="69548">f</span>
                  "Not found right operand of '%s' binary operator"
                  oper.oper_view))
   in
   let rec next ex =
-    <span data-count="19938">s</span>kip_ws *<span data-count="19938">&gt;</span> (one_o<span data-count="19938">f</span> (List.ma<span data-count="19938">p</span> (operatio<span data-count="19938">n</span> ex) operations) &gt;&gt;<span data-count="19938">=</span> next) &lt;|&gt; pretur<span data-count="19938">n</span> ex
+    <span data-count="23210">s</span>kip_ws *<span data-count="23210">&gt;</span> (one_o<span data-count="23210">f</span> (List.ma<span data-count="23210">p</span> (operatio<span data-count="23210">n</span> ex) operations) &gt;&gt;<span data-count="23210">=</span> next) &lt;|&gt; pretur<span data-count="23210">n</span> ex
   in
-  (skip_ws *<span data-count="26916">&gt;</span> subparser &gt;&gt;<span data-count="26916">=</span> next) state
+  (skip_ws *<span data-count="31520">&gt;</span> subparser &gt;&gt;<span data-count="31520">=</span> next) state
 
 (** Parser of binary expressions such as [&lt;expr&gt; * &lt;expr&gt;] and [&lt;expr&gt; / &lt;expr&gt;] *)
 and multiply_expr state =
-  <span data-count="6812">b</span>inary_expression
-    (basic_exp<span data-count="6812">r</span> false)
+  <span data-count="7973">b</span>inary_expression
+    (basic_exp<span data-count="7973">r</span> false)
     [ { oper_view = "*"; oper_ast = Multiply }; { oper_view = "/"; oper_ast = Division } ]
     state
 
 (** Parser of binary expressions such as [&lt;expr&gt; + &lt;expr&gt;] and [&lt;expr&gt; - &lt;expr&gt;] *)
 and summary_expr state =
-  <span data-count="6766">b</span>inary_expression
+  <span data-count="7914">b</span>inary_expression
     multiply_expr
     [ { oper_view = "+"; oper_ast = Add }; { oper_view = "-"; oper_ast = Subtract } ]
     state
@@ -1738,7 +1739,7 @@ and summary_expr state =
     - [&lt;expr&gt; &gt;= &lt;expr&gt;]
     - [&lt;expr&gt; &lt;= &lt;expr&gt;] *)
 and compare_expr state =
-  <span data-count="6685">b</span>inary_expression
+  <span data-count="7834">b</span>inary_expression
     summary_expr
     [ { oper_view = "="; oper_ast = Equals }
     ; { oper_view = "&lt;&gt;"; oper_ast = Unequals }
@@ -1751,55 +1752,55 @@ and compare_expr state =
 
 (** Parser of binary expressions such as [&lt;expr&gt; &amp;&amp; &lt;expr&gt;] and [&lt;expr&gt; || &lt;expr&gt;] *)
 and boolean_expr state =
-  <span data-count="6653">b</span>inary_expression
+  <span data-count="7799">b</span>inary_expression
     compare_expr
     [ { oper_view = "&amp;&amp;"; oper_ast = And }; { oper_view = "||"; oper_ast = Or } ]
     state
 
 and if_expr state =
-  <span data-count="10460">l</span>et else_block ex then_ex =
-    <span data-count="131">s</span>kip_ws *<span data-count="131">&gt;</span> (expr &gt;&gt;<span data-count="131">|</span> fun else_ex -&gt; <span data-count="67">I</span>f (ex, then_ex, Some else_ex))
-    &lt;|&gt; perro<span data-count="131">r</span> "Expected expression of 'else' branch for if expression"
+  <span data-count="12238">l</span>et else_block ex then_ex =
+    <span data-count="154">s</span>kip_ws *<span data-count="154">&gt;</span> (expr &gt;&gt;<span data-count="154">|</span> fun else_ex -&gt; <span data-count="82">I</span>f (ex, then_ex, Some else_ex))
+    &lt;|&gt; perro<span data-count="154">r</span> "Expected expression of 'else' branch for if expression"
   in
   let then_block ex =
-    <span data-count="132">s</span>kip_ws
-    *<span data-count="132">&gt;</span> (expr
-        &gt;&gt;<span data-count="132">=</span> fun then_ex -&gt;
-        <span data-count="131">s</span>kip_ws *<span data-count="131">&gt;</span> (keywor<span data-count="131">d</span> "else" *<span data-count="131">&gt;</span> else_bloc<span data-count="131">k</span> ex then_ex)
-        &lt;|&gt; pretur<span data-count="131">n</span> (If (ex, then_ex, None)))
-    &lt;|&gt; perro<span data-count="132">r</span> "Expected expression of 'then' branch for if expression"
+    <span data-count="155">s</span>kip_ws
+    *<span data-count="155">&gt;</span> (expr
+        &gt;&gt;<span data-count="155">=</span> fun then_ex -&gt;
+        <span data-count="154">s</span>kip_ws *<span data-count="154">&gt;</span> (keywor<span data-count="154">d</span> "else" *<span data-count="154">&gt;</span> else_bloc<span data-count="154">k</span> ex then_ex)
+        &lt;|&gt; pretur<span data-count="154">n</span> (If (ex, then_ex, None)))
+    &lt;|&gt; perro<span data-count="155">r</span> "Expected expression of 'then' branch for if expression"
   in
   (skip_ws
-   *<span data-count="10460">&gt;</span> keywor<span data-count="10460">d</span> "if"
-   *<span data-count="10460">&gt;</span> (expr
-       &gt;&gt;<span data-count="10460">=</span> (fun ex -&gt;
-             <span data-count="132">s</span>kip_ws
-             *&gt; (keywor<span data-count="132">d</span> "then" *<span data-count="132">&gt;</span> then_bloc<span data-count="132">k</span> ex
-                 &lt;|<span data-count="132">&gt;</span> perro<span data-count="132">r</span> "Not found 'then' branch for if-expression"))
-       &lt;|<span data-count="10460">&gt;</span> perro<span data-count="10460">r</span> "Not found if expression after keyword 'if'"))
+   *<span data-count="12238">&gt;</span> keywor<span data-count="12238">d</span> "if"
+   *<span data-count="12238">&gt;</span> (expr
+       &gt;&gt;<span data-count="12238">=</span> (fun ex -&gt;
+             <span data-count="155">s</span>kip_ws
+             *&gt; (keywor<span data-count="155">d</span> "then" *<span data-count="155">&gt;</span> then_bloc<span data-count="155">k</span> ex
+                 &lt;|<span data-count="155">&gt;</span> perro<span data-count="155">r</span> "Not found 'then' branch for if-expression"))
+       &lt;|<span data-count="12238">&gt;</span> perro<span data-count="12238">r</span> "Not found if expression after keyword 'if'"))
     state
 
 (** Parser of apply expressions such as [&lt;applyable_expr&gt;  &lt;expr list&gt;]*)
 and apply_expr state =
-  <span data-count="6241">l</span>et bin_op_checker =
+  <span data-count="7270">l</span>et bin_op_checker =
     skip_ws
-    *&gt; one_o<span data-count="6241">f</span>
-         (List.ma<span data-count="6241">p</span>
+    *&gt; one_o<span data-count="7270">f</span>
+         (List.ma<span data-count="7270">p</span>
             assequence
             [ "+"; "-"; "/"; "*"; "&amp;&amp;"; "||"; "&lt;="; "&gt;="; "&lt;&gt;"; "&lt;"; "&gt;"; "=" ])
   in
-  <span data-count="6241">l</span>et helper ex =
-    <span data-count="3662">m</span>an<span data-count="3662">y</span> (skip_ws *<span data-count="3662">&gt;</span> basic_exp<span data-count="3662">r</span> true)
-    &gt;&gt;= fun l -&gt; <span data-count="3373">p</span>return (if is_empty l then <span data-count="3197">e</span>x else <span data-count="176">A</span>pply (ex, l))
+  <span data-count="7270">l</span>et helper ex =
+    <span data-count="4250">m</span>an<span data-count="4250">y</span> (skip_ws *<span data-count="4250">&gt;</span> basic_exp<span data-count="4250">r</span> true)
+    &gt;&gt;= fun l -&gt; <span data-count="3913">p</span>return (if is_empty l then <span data-count="3698">e</span>x else <span data-count="215">A</span>pply (ex, l))
   in
-  (skip_ws *<span data-count="6241">&gt;</span> applyable_expr &gt;&gt;<span data-count="6241">=</span> fun ex -&gt; <span data-count="3662">b</span>in_op_checker *<span data-count="3662">&gt;</span> pretur<span data-count="3662">n</span> ex &lt;|&gt; helpe<span data-count="3662">r</span> ex)
+  (skip_ws *<span data-count="7270">&gt;</span> applyable_expr &gt;&gt;<span data-count="7270">=</span> fun ex -&gt; <span data-count="4250">b</span>in_op_checker *<span data-count="4250">&gt;</span> pretur<span data-count="4250">n</span> ex &lt;|&gt; helpe<span data-count="4250">r</span> ex)
     state
 
 (** Parser of lambdas definitions *)
 and lambda_expr state =
-  <span data-count="7391">l</span>et patterns = skip_ws *&gt; lmany<span data-count="7391">1</span> (pattern_parse<span data-count="7391">r</span> true) in
-  <span data-count="7391">l</span>et subexp pl =
-    <span data-count="133">e</span>xpr &gt;&gt;<span data-count="133">|</span> (fun ex -&gt; <span data-count="129">L</span>ambda (pl, ex)) &lt;|&gt; perro<span data-count="133">r</span> "Not found expression of lambda"
+  <span data-count="8587">l</span>et patterns = skip_ws *&gt; lmany<span data-count="8587">1</span> (pattern_parse<span data-count="8587">r</span> true) in
+  <span data-count="8587">l</span>et subexp pl =
+    <span data-count="146">e</span>xpr &gt;&gt;<span data-count="146">|</span> (fun ex -&gt; <span data-count="142">L</span>ambda (pl, ex)) &lt;|&gt; perro<span data-count="146">r</span> "Not found expression of lambda"
   in
   let helper l =
     <span data-count="4">r</span>epea<span data-count="4">t</span> (pattern_parse<span data-count="4">r</span> true) (l - 1)
@@ -1811,106 +1812,106 @@ and lambda_expr state =
     *<span data-count="4">&gt;</span> (ssequenc<span data-count="4">e</span> "-&gt;" &lt;|<span data-count="4">&gt;</span> perro<span data-count="4">r</span> "Not found special sequence '-&gt;' of lambda definition")
     *&gt; pretur<span data-count="4">n</span> (pl @ [ p ])
   in
-  (skip_ws *<span data-count="7391">&gt;</span> keywor<span data-count="7391">d</span> "fun"
-   &gt;&gt;<span data-count="7391">=</span> fun _ s -&gt;
-   <span data-count="131">(</span>patterns
-    &gt;&gt;<span data-count="131">=</span> (fun (l, pl) -&gt;
-          <span data-count="129">s</span>kip_ws *<span data-count="129">&gt;</span> (ssequenc<span data-count="129">e</span> "-&gt;" *<span data-count="129">&gt;</span> subex<span data-count="129">p</span> pl) &lt;|&gt; fun _ -&gt; <span data-count="4">(</span>helpe<span data-count="4">r</span> l &gt;&gt;<span data-count="4">=</span> subexp) s)
-    &lt;|<span data-count="131">&gt;</span> perro<span data-count="131">r</span> "Not found patterns for lambda definition")
+  (skip_ws *<span data-count="8587">&gt;</span> keywor<span data-count="8587">d</span> "fun"
+   &gt;&gt;<span data-count="8587">=</span> fun _ s -&gt;
+   <span data-count="144">(</span>patterns
+    &gt;&gt;<span data-count="144">=</span> (fun (l, pl) -&gt;
+          <span data-count="142">s</span>kip_ws *<span data-count="142">&gt;</span> (ssequenc<span data-count="142">e</span> "-&gt;" *<span data-count="142">&gt;</span> subex<span data-count="142">p</span> pl) &lt;|&gt; fun _ -&gt; <span data-count="4">(</span>helpe<span data-count="4">r</span> l &gt;&gt;<span data-count="4">=</span> subexp) s)
+    &lt;|<span data-count="144">&gt;</span> perro<span data-count="144">r</span> "Not found patterns for lambda definition")
      s)
     state
 
 (** Parser of value-bindings: [&lt;pattern&gt; = &lt;expr&gt;]*)
 and value_binding_parser state =
-  <span data-count="616">l</span>et subpatterns = skip_ws *&gt; man<span data-count="616">y</span> (skip_ws *<span data-count="616">&gt;</span> pattern_parse<span data-count="616">r</span> true) in
-  <span data-count="616">l</span>et helper =
-    pattern_parse<span data-count="616">r</span> true
+  <span data-count="772">l</span>et subpatterns = skip_ws *&gt; man<span data-count="772">y</span> (skip_ws *<span data-count="772">&gt;</span> pattern_parse<span data-count="772">r</span> true) in
+  <span data-count="772">l</span>et helper =
+    pattern_parse<span data-count="772">r</span> true
     &gt;&gt;= fun p -&gt;
-    <span data-count="616">s</span>ubpatterns &gt;&gt;= fun pl -&gt; <span data-count="616">p</span>typ<span data-count="616">e</span> true p &gt;&gt;= fun typedp -&gt; <span data-count="616">p</span>return (typedp, pl)
+    <span data-count="772">s</span>ubpatterns &gt;&gt;= fun pl -&gt; <span data-count="772">p</span>typ<span data-count="772">e</span> true p &gt;&gt;= fun typedp -&gt; <span data-count="772">p</span>return (typedp, pl)
   in
-  <span data-count="616">(</span>skip_ws
-   *<span data-count="616">&gt;</span> (helper
-       &gt;&gt;<span data-count="616">=</span> fun (p, pl) -&gt;
-       <span data-count="616">s</span>kip_ws
-       *<span data-count="616">&gt;</span> ssequenc<span data-count="616">e</span> "="
-       *<span data-count="616">&gt;</span> skip_ws
-       *<span data-count="616">&gt;</span> (expr &gt;&gt;<span data-count="616">|</span> fun ex -&gt; <span data-count="613">i</span>f is_empty pl then <span data-count="601">p</span>, ex else <span data-count="12">p</span>, Lambda (pl, ex))
-       &lt;|<span data-count="616">&gt;</span> perro<span data-count="616">r</span> "Not found expression of let-definition"
-       &lt;|&gt; perro<span data-count="616">r</span> "Not found special sequence '=' of let-definition binding expresssion")
-   &lt;|<span data-count="616">&gt;</span> perro<span data-count="616">r</span> "Not found name-pattern of let-definition")
+  <span data-count="772">(</span>skip_ws
+   *<span data-count="772">&gt;</span> (helper
+       &gt;&gt;<span data-count="772">=</span> fun (p, pl) -&gt;
+       <span data-count="772">s</span>kip_ws
+       *<span data-count="772">&gt;</span> ssequenc<span data-count="772">e</span> "="
+       *<span data-count="772">&gt;</span> skip_ws
+       *<span data-count="772">&gt;</span> (expr &gt;&gt;<span data-count="772">|</span> fun ex -&gt; <span data-count="769">i</span>f is_empty pl then <span data-count="757">p</span>, ex else <span data-count="12">p</span>, Lambda (pl, ex))
+       &lt;|<span data-count="772">&gt;</span> perro<span data-count="772">r</span> "Not found expression of let-definition"
+       &lt;|&gt; perro<span data-count="772">r</span> "Not found special sequence '=' of let-definition binding expresssion")
+   &lt;|<span data-count="772">&gt;</span> perro<span data-count="772">r</span> "Not found name-pattern of let-definition")
     state
 
 and value_bindings_parser state =
-  <span data-count="414">(</span>skip_ws *<span data-count="414">&gt;</span> value_binding_parser
-   &gt;&gt;<span data-count="414">=</span> (fun vb -&gt;
-         <span data-count="411">e</span>lement_sequence
+  <span data-count="530">(</span>skip_ws *<span data-count="530">&gt;</span> value_binding_parser
+   &gt;&gt;<span data-count="530">=</span> (fun vb -&gt;
+         <span data-count="527">e</span>lement_sequence
            vb
            value_binding_parser
            Fun.id
            "and"
-           (perro<span data-count="411">r</span> "Not found value binding"))
-   &lt;|<span data-count="414">&gt;</span> perro<span data-count="414">r</span> "Not found value binging")
+           (perro<span data-count="527">r</span> "Not found value binding"))
+   &lt;|<span data-count="530">&gt;</span> perro<span data-count="530">r</span> "Not found value binging")
     state
 
 (** Parser of let-definitions *)
 and define_expr state =
-  <span data-count="10328">l</span>et inexpr =
+  <span data-count="12083">l</span>et inexpr =
     skip_ws
-    *<span data-count="10328">&gt;</span> (keywor<span data-count="10328">d</span> "in"
-        *<span data-count="10328">&gt;</span> (expr &lt;|<span data-count="10328">&gt;</span> perro<span data-count="10328">r</span> "Not found expression after keyword 'in' of let-xpression"))
-    &lt;|&gt; perro<span data-count="10328">r</span> "Not found keyword for let-expression"
+    *<span data-count="12083">&gt;</span> (keywor<span data-count="12083">d</span> "in"
+        *<span data-count="12083">&gt;</span> (expr &lt;|<span data-count="12083">&gt;</span> perro<span data-count="12083">r</span> "Not found expression after keyword 'in' of let-xpression"))
+    &lt;|&gt; perro<span data-count="12083">r</span> "Not found keyword for let-expression"
   in
-  <span data-count="10328">l</span>et recursive =
-    skip_ws *<span data-count="10328">&gt;</span> keywor<span data-count="10328">d</span> "rec" *<span data-count="10328">&gt;</span> value_bindings_parser
-    &gt;&gt;= fun vbl -&gt; <span data-count="47">i</span>nexpr &gt;&gt;| fun ex -&gt; <span data-count="47">D</span>efine ((Recursive, vbl), ex)
+  <span data-count="12083">l</span>et recursive =
+    skip_ws *<span data-count="12083">&gt;</span> keywor<span data-count="12083">d</span> "rec" *<span data-count="12083">&gt;</span> value_bindings_parser
+    &gt;&gt;= fun vbl -&gt; <span data-count="76">i</span>nexpr &gt;&gt;| fun ex -&gt; <span data-count="76">D</span>efine ((Recursive, vbl), ex)
   in
-  <span data-count="10328">l</span>et nonrecursive =
-    skip_ws *<span data-count="10328">&gt;</span> value_bindings_parser
-    &gt;&gt;= fun vbl -&gt; <span data-count="61">i</span>nexpr &gt;&gt;| fun ex -&gt; <span data-count="61">D</span>efine ((Nonrecursive, vbl), ex)
+  <span data-count="12083">l</span>et nonrecursive =
+    skip_ws *<span data-count="12083">&gt;</span> value_bindings_parser
+    &gt;&gt;= fun vbl -&gt; <span data-count="72">i</span>nexpr &gt;&gt;| fun ex -&gt; <span data-count="72">D</span>efine ((Nonrecursive, vbl), ex)
   in
-  <span data-count="10328">(</span>skip_ws *<span data-count="10328">&gt;</span> keywor<span data-count="10328">d</span> "let" *<span data-count="10328">&gt;</span> (recursive &lt;|<span data-count="10328">&gt;</span> nonrecursive)) state
+  <span data-count="12083">(</span>skip_ws *<span data-count="12083">&gt;</span> keywor<span data-count="12083">d</span> "let" *<span data-count="12083">&gt;</span> (recursive &lt;|<span data-count="12083">&gt;</span> nonrecursive)) state
 ;;
 
 (** Parser of definition item *)
 let define_item =
   let inexpr =
     skip_ws
-    *<span data-count="9">&gt;</span> keywor<span data-count="9">d</span> "in"
-    *&gt; (expr &lt;|<span data-count="9">&gt;</span> perro<span data-count="9">r</span> "Not found expression after keyword 'in' of let-xpression")
+    *<span data-count="10">&gt;</span> keywor<span data-count="10">d</span> "in"
+    *&gt; (expr &lt;|<span data-count="10">&gt;</span> perro<span data-count="10">r</span> "Not found expression after keyword 'in' of let-xpression")
   in
-  <span data-count="9">l</span>et recursive =
-    skip_ws *<span data-count="9">&gt;</span> keywor<span data-count="9">d</span> "rec" *<span data-count="9">&gt;</span> value_bindings_parser
+  <span data-count="10">l</span>et recursive =
+    skip_ws *<span data-count="10">&gt;</span> keywor<span data-count="10">d</span> "rec" *<span data-count="10">&gt;</span> value_bindings_parser
     &gt;&gt;= fun vbl -&gt;
-    <span data-count="155">i</span>nexpr
-    &gt;&gt;<span data-count="155">|</span> (fun ex -&gt; <span data-count="0">E</span>valItem (Define ((Recursive, vbl), ex)))
-    &lt;|&gt; pretur<span data-count="155">n</span> (DefineItem (Recursive, vbl))
+    <span data-count="191">i</span>nexpr
+    &gt;&gt;<span data-count="191">|</span> (fun ex -&gt; <span data-count="0">E</span>valItem (Define ((Recursive, vbl), ex)))
+    &lt;|&gt; pretur<span data-count="191">n</span> (DefineItem (Recursive, vbl))
   in
-  <span data-count="9">l</span>et nonrecursive =
-    skip_ws *<span data-count="9">&gt;</span> value_bindings_parser
+  <span data-count="10">l</span>et nonrecursive =
+    skip_ws *<span data-count="10">&gt;</span> value_bindings_parser
     &gt;&gt;= fun vbl -&gt;
-    <span data-count="148">i</span>nexpr
-    &gt;&gt;<span data-count="148">|</span> (fun ex -&gt; <span data-count="0">E</span>valItem (Define ((Nonrecursive, vbl), ex)))
-    &lt;|&gt; pretur<span data-count="148">n</span> (DefineItem (Nonrecursive, vbl))
+    <span data-count="188">i</span>nexpr
+    &gt;&gt;<span data-count="188">|</span> (fun ex -&gt; <span data-count="0">E</span>valItem (Define ((Nonrecursive, vbl), ex)))
+    &lt;|&gt; pretur<span data-count="188">n</span> (DefineItem (Nonrecursive, vbl))
   in
-  <span data-count="9">s</span>kip_ws *<span data-count="9">&gt;</span> keywor<span data-count="9">d</span> "let" *<span data-count="9">&gt;</span> (recursive &lt;|<span data-count="9">&gt;</span> nonrecursive)
+  <span data-count="10">s</span>kip_ws *<span data-count="10">&gt;</span> keywor<span data-count="10">d</span> "let" *<span data-count="10">&gt;</span> (recursive &lt;|<span data-count="10">&gt;</span> nonrecursive)
 ;;
 
 (** Parser of eval item *)
-let eval_item = skip_ws *<span data-count="9">&gt;</span> expr &gt;&gt;<span data-count="9">|</span> fun ex -&gt; <span data-count="357">E</span>valItem ex
+let eval_item = skip_ws *<span data-count="10">&gt;</span> expr &gt;&gt;<span data-count="10">|</span> fun ex -&gt; <span data-count="386">E</span>valItem ex
 
 (** Parser of all stricture item *)
 let struct_item_parser =
   skip_ws
-  *<span data-count="9">&gt;</span> (define_item
-      &lt;|<span data-count="9">&gt;</span> eval_item
-      &gt;&gt;<span data-count="9">=</span> fun item -&gt;
-      <span data-count="659">s</span>kip_ws
-      *&gt; (ssequenc<span data-count="659">e</span> ";;" *<span data-count="659">&gt;</span> pretur<span data-count="659">n</span> item
-          &lt;|<span data-count="659">&gt;</span> perro<span data-count="659">r</span> "Not found close semicolons ';;' of structure item"))
+  *<span data-count="10">&gt;</span> (define_item
+      &lt;|<span data-count="10">&gt;</span> eval_item
+      &gt;&gt;<span data-count="10">=</span> fun item -&gt;
+      <span data-count="764">s</span>kip_ws
+      *&gt; (ssequenc<span data-count="764">e</span> ";;" *<span data-count="764">&gt;</span> pretur<span data-count="764">n</span> item
+          &lt;|<span data-count="764">&gt;</span> perro<span data-count="764">r</span> "Not found close semicolons ';;' of structure item"))
 ;;
 
 (** Parser of program item *)
-let program_parser = skip_ws *<span data-count="9">&gt;</span> man<span data-count="9">y</span> struct_item_parser
+let program_parser = skip_ws *<span data-count="10">&gt;</span> man<span data-count="10">y</span> struct_item_parser
 </code></pre>
       </div>
     </div>

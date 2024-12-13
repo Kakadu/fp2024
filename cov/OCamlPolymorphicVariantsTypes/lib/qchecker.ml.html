@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>qchecker.ml &mdash; Coverage report</title>
-    <meta name="description" content="91.40% coverage in lib/qchecker.ml">
+    <meta name="description" content="90.05% coverage in lib/qchecker.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,13 +15,14 @@
           <span class="dirname">lib/</span>qchecker.ml
         </a>
       </h1>
-      <h2>91.40%</h2>
+      <h2>90.05%</h2>
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:5.49%"></span>
       <span class="some-visited" style="top:5.86%"></span>
       <span class="some-visited" style="top:6.23%"></span>
       <span class="some-visited" style="top:6.59%"></span>
+      <span class="unvisited" style="top:22.34%"></span>
       <span class="unvisited" style="bottom:4.03%"></span>
       <span class="unvisited" style="bottom:3.66%"></span>
       <span class="unvisited" style="bottom:3.30%"></span>
@@ -94,7 +95,7 @@
 <a id="L58"></a><span > </span>
 <a id="L59"></a><span > </span>
 <a id="L60"></a><span class="visited"> </span>
-<a id="L61"></a><span class="visited"> </span>
+<a id="L61"></a><span class="unvisited"> </span>
 <a id="L62"></a><span class="visited"> </span>
 <a id="L63"></a><span > </span>
 <a id="L64"></a><span > </span>
@@ -599,257 +600,257 @@ module QChecker = struct
 
   let positive_number =
     match Random.float 1. with
-    | <span data-count="6">p</span> when p &lt; 0.25 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> 0 (max_number_value / 16)
-    | <span data-count="6">p</span> when p &lt; 0.5 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> (max_number_value / 16) (max_number_value / 8)
-    | <span data-count="6">p</span> when p &lt; 0.75 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> (max_number_value / 8) (max_number_value / 4)
-    | <span data-count="6">p</span> when p &lt; 0.875 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> (max_number_value / 4) (max_number_value / 2)
-    | <span data-count="6">_</span> -&gt; int_rang<span data-count="6">e</span> (max_number_value / 2) max_number_value
+    | <span data-count="7">p</span> when p &lt; 0.25 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> 0 (max_number_value / 16)
+    | <span data-count="7">p</span> when p &lt; 0.5 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> (max_number_value / 16) (max_number_value / 8)
+    | <span data-count="7">p</span> when p &lt; 0.75 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> (max_number_value / 8) (max_number_value / 4)
+    | <span data-count="7">p</span> when p &lt; 0.875 -&gt; <span data-count="0">i</span>nt_rang<span data-count="0">e</span> (max_number_value / 4) (max_number_value / 2)
+    | <span data-count="7">_</span> -&gt; int_rang<span data-count="7">e</span> (max_number_value / 2) max_number_value
   ;;
 
-  let gen_integer = oneo<span data-count="6">f</span> [ positive_number; retur<span data-count="6">n</span> 0 ]
-  let gen_boolean = oneo<span data-count="6">f</span> [ retur<span data-count="6">n</span> true; retur<span data-count="6">n</span> false ]
-  let identifier_size = int_rang<span data-count="6">e</span> 1 5
-  let addected_tuple_size = int_rang<span data-count="6">e</span> 0 2
-  let elist_size = int_rang<span data-count="6">e</span> 0 2
-  let definition_size = int_rang<span data-count="6">e</span> 1 2
-  let patterns_size = int_rang<span data-count="6">e</span> 1 2
-  let core_type_size = int_rang<span data-count="6">e</span> 1 3
-  let pattern_depth = int_rang<span data-count="6">e</span> 1 1
-  let expr_depth = int_rang<span data-count="6">e</span> 1 2
-  let apply_size = int_rang<span data-count="6">e</span> 1 2
-  let expr_block_size = int_rang<span data-count="6">e</span> 2 2
-  let program_size = int_rang<span data-count="6">e</span> 1 1
+  let gen_integer = oneo<span data-count="7">f</span> [ positive_number; retur<span data-count="7">n</span> 0 ]
+  let gen_boolean = oneo<span data-count="7">f</span> [ retur<span data-count="7">n</span> true; retur<span data-count="7">n</span> false ]
+  let identifier_size = int_rang<span data-count="7">e</span> 1 5
+  let addected_tuple_size = int_rang<span data-count="7">e</span> 0 2
+  let elist_size = int_rang<span data-count="7">e</span> 0 2
+  let definition_size = int_rang<span data-count="7">e</span> 1 2
+  let patterns_size = int_rang<span data-count="7">e</span> 1 2
+  let core_type_size = int_rang<span data-count="7">e</span> 1 3
+  let pattern_depth = int_rang<span data-count="7">e</span> 1 1
+  let expr_depth = int_rang<span data-count="7">e</span> 1 2
+  let apply_size = int_rang<span data-count="7">e</span> 1 2
+  let expr_block_size = int_rang<span data-count="7">e</span> 2 2
+  let program_size = int_rang<span data-count="7">e</span> 1 1
 
   let gen_identifier is_constructor_name =
-    <span data-count="6093">l</span>et helper =
+    <span data-count="6932">l</span>et helper =
       let first_char =
         if is_constructor_name
-        then <span data-count="1476">o</span>neo<span data-count="1476">f</span> [ char_rang<span data-count="1476">e</span> 'A' 'Z' ]
-        else <span data-count="4617">o</span>neo<span data-count="4617">f</span> [ char_rang<span data-count="4617">e</span> 'a' 'z'; retur<span data-count="4617">n</span> '_' ]
+        then <span data-count="1787">o</span>neo<span data-count="1787">f</span> [ char_rang<span data-count="1787">e</span> 'A' 'Z' ]
+        else <span data-count="5145">o</span>neo<span data-count="5145">f</span> [ char_rang<span data-count="5145">e</span> 'a' 'z'; retur<span data-count="5145">n</span> '_' ]
       in
       first_char
-      &gt;&gt;<span data-count="6093">=</span> fun c -&gt;
-      <span data-count="4084">s</span>tring_siz<span data-count="4084">e</span>
+      &gt;&gt;<span data-count="6932">=</span> fun c -&gt;
+      <span data-count="4703">s</span>tring_siz<span data-count="4703">e</span>
         identifier_size
         ~gen:
-          (oneo<span data-count="4084">f</span>
-             [ char_rang<span data-count="4084">e</span> 'a' 'z'
-             ; char_rang<span data-count="4084">e</span> 'A' 'Z'
-             ; char_rang<span data-count="4084">e</span> '0' '9'
+          (oneo<span data-count="4703">f</span>
+             [ char_rang<span data-count="4703">e</span> 'a' 'z'
+             ; char_rang<span data-count="4703">e</span> 'A' 'Z'
+             ; char_rang<span data-count="4703">e</span> '0' '9'
              ; (if is_constructor_name
-                then <span data-count="112">r</span>etur<span data-count="112">n</span> '_'
-                else <span data-count="3972">o</span>neo<span data-count="3972">f</span> [ retur<span data-count="3972">n</span> '\''; retur<span data-count="3972">n</span> '_' ])
+                then <span data-count="140">r</span>etur<span data-count="140">n</span> '_'
+                else <span data-count="4563">o</span>neo<span data-count="4563">f</span> [ retur<span data-count="4563">n</span> '\''; retur<span data-count="4563">n</span> '_' ])
              ])
-      &gt;&gt;= fun res -&gt; <span data-count="4084">r</span>eturn (Format.sprint<span data-count="4084">f</span> "%c%s" c res)
+      &gt;&gt;= fun res -&gt; <span data-count="4703">r</span>eturn (Format.sprint<span data-count="4703">f</span> "%c%s" c res)
     in
     helper
     &gt;&gt;= fun s -&gt;
-    <span data-count="4083">i</span>f Parser.is_keyword s
-    then <span data-count="1">h</span>elper &gt;&gt;= fun addicted -&gt; <span data-count="1">r</span>eturn (Format.sprint<span data-count="1">f</span> "%s%s" s addicted)
-    else <span data-count="4082">r</span>eturn s
+    <span data-count="4703">i</span>f Parser.is_keyword s
+    then <span data-count="0">h</span>elper &gt;&gt;= fun addicted -&gt; <span data-count="0">r</span>eturn (Format.sprint<span data-count="0">f</span> "%s%s" s addicted)
+    else <span data-count="4703">r</span>eturn s
   ;;
 
   let gen_core_type =
     let gen_ttuple subtypes_gen =
-      <span data-count="2230">m</span>ap3
-        (fun p1 p2 pl -&gt; <span data-count="722">T</span>upleType (p1, p2, pl))
+      <span data-count="2356">m</span>ap3
+        (fun p1 p2 pl -&gt; <span data-count="855">T</span>upleType (p1, p2, pl))
         subtypes_gen
         subtypes_gen
-        (list_siz<span data-count="2230">e</span> addected_tuple_size subtypes_gen)
+        (list_siz<span data-count="2356">e</span> addected_tuple_size subtypes_gen)
     in
-    let type_identifier = map (fun i -&gt; <span data-count="1357">T</span>ypeIdentifier i) (gen_identifie<span data-count="6">r</span> false) in
-    <span data-count="6">s</span>ized_size core_type_siz<span data-count="6">e</span>
-    @@ fi<span data-count="6">x</span> (fun self -&gt;
+    let type_identifier = map (fun i -&gt; <span data-count="1545">T</span>ypeIdentifier i) (gen_identifie<span data-count="7">r</span> false) in
+    <span data-count="7">s</span>ized_size core_type_siz<span data-count="7">e</span>
+    @@ fi<span data-count="7">x</span> (fun self -&gt;
          function
-         | <span data-count="2769">0</span> -&gt; oneof [ type_identifier; retur<span data-count="2769">n</span> AnyType ]
-         | <span data-count="2230">d</span>epth -&gt;
+         | <span data-count="3111">0</span> -&gt; oneof [ type_identifier; retur<span data-count="3111">n</span> AnyType ]
+         | <span data-count="2356">d</span>epth -&gt;
            let subtype_gen = self (depth - 1) in
-           <span data-count="2230">f</span>requency
+           <span data-count="2356">f</span>requency
              [ ( 1
-               , map<span data-count="2230">2</span>
-                   (fun it t2 -&gt; <span data-count="740">T</span>ypeConstructor (it, t2))
-                   (gen_identifie<span data-count="2230">r</span> false)
+               , map<span data-count="2356">2</span>
+                   (fun it t2 -&gt; <span data-count="748">T</span>ypeConstructor (it, t2))
+                   (gen_identifie<span data-count="2356">r</span> false)
                    subtype_gen )
-             ; 1, gen_ttupl<span data-count="2230">e</span> subtype_gen
-             ; 1, map<span data-count="2230">2</span> (fun t1 t2 -&gt; <span data-count="768">A</span>rrowType (t1, t2)) subtype_gen subtype_gen
+             ; 1, gen_ttupl<span data-count="2356">e</span> subtype_gen
+             ; 1, map<span data-count="2356">2</span> (fun t1 t2 -&gt; <span data-count="753">A</span>rrowType (t1, t2)) subtype_gen subtype_gen
              ])
   ;;
 
   let gen_pattern =
     let gen_ptuple subpattern_gen =
-      <span data-count="1180">m</span>ap3
-        (fun p1 p2 pl -&gt; <span data-count="599">P</span>Tuple (p1, p2, pl))
+      <span data-count="1382">m</span>ap3
+        (fun p1 p2 pl -&gt; <span data-count="704">P</span>Tuple (p1, p2, pl))
         subpattern_gen
         subpattern_gen
-        (list_siz<span data-count="1180">e</span> addected_tuple_size subpattern_gen)
+        (list_siz<span data-count="1382">e</span> addected_tuple_size subpattern_gen)
     in
-    sized_size pattern_dept<span data-count="6">h</span>
-    @@ fi<span data-count="6">x</span> (fun self -&gt;
+    sized_size pattern_dept<span data-count="7">h</span>
+    @@ fi<span data-count="7">x</span> (fun self -&gt;
          function
-         | <span data-count="2375">0</span> -&gt;
+         | <span data-count="2775">0</span> -&gt;
            oneof
-             [ ma<span data-count="2375">p</span> (fun i -&gt; <span data-count="783">P</span>Var i) (gen_identifie<span data-count="2375">r</span> false); retur<span data-count="2375">n</span> PUnit; retur<span data-count="2375">n</span> PAny ]
-         | <span data-count="1180">d</span>epth -&gt;
+             [ ma<span data-count="2775">p</span> (fun i -&gt; <span data-count="988">P</span>Var i) (gen_identifie<span data-count="2775">r</span> false); retur<span data-count="2775">n</span> PUnit; retur<span data-count="2775">n</span> PAny ]
+         | <span data-count="1382">d</span>epth -&gt;
            let subpattern_gen = self (depth - 1) in
-           <span data-count="1180">f</span>requency
-             [ 1, map<span data-count="1180">2</span> (fun p1 p2 -&gt; <span data-count="581">P</span>Constrain (p1, p2)) subpattern_gen gen_core_type
-             ; 1, gen_ptupl<span data-count="1180">e</span> subpattern_gen
+           <span data-count="1382">f</span>requency
+             [ 1, map<span data-count="1382">2</span> (fun p1 p2 -&gt; <span data-count="678">P</span>Constrain (p1, p2)) subpattern_gen gen_core_type
+             ; 1, gen_ptupl<span data-count="1382">e</span> subpattern_gen
              ])
   ;;
 
-  let gen_recursive_type = oneo<span data-count="6">f</span> [ retur<span data-count="6">n</span> Recursive; retur<span data-count="6">n</span> Nonrecursive ]
-  let gen_value_binding expr_gen = <span data-count="1482">m</span>ap2 (fun p expr -&gt; <span data-count="594">p</span>, expr) gen_pattern expr_gen
+  let gen_recursive_type = oneo<span data-count="7">f</span> [ retur<span data-count="7">n</span> Recursive; retur<span data-count="7">n</span> Nonrecursive ]
+  let gen_value_binding expr_gen = <span data-count="1794">m</span>ap2 (fun p expr -&gt; <span data-count="745">p</span>, expr) gen_pattern expr_gen
 
   let gen_definition expr_gen =
-    <span data-count="1482">m</span>ap2
-      (fun r vbl -&gt; <span data-count="393">r</span>, vbl)
+    <span data-count="1794">m</span>ap2
+      (fun r vbl -&gt; <span data-count="504">r</span>, vbl)
       gen_recursive_type
-      (list_siz<span data-count="1482">e</span> definition_size (gen_value_bindin<span data-count="1482">g</span> expr_gen))
+      (list_siz<span data-count="1794">e</span> definition_size (gen_value_bindin<span data-count="1794">g</span> expr_gen))
   ;;
 
   let gen_literal =
-    oneo<span data-count="6">f</span>
-      [ ma<span data-count="6">p</span> (fun i -&gt; <span data-count="387">I</span>ntLiteral i) gen_integer
-      ; ma<span data-count="6">p</span> (fun b -&gt; <span data-count="386">B</span>oolLiteral b) gen_boolean
-      ; retur<span data-count="6">n</span> UnitLiteral
+    oneo<span data-count="7">f</span>
+      [ ma<span data-count="7">p</span> (fun i -&gt; <span data-count="418">I</span>ntLiteral i) gen_integer
+      ; ma<span data-count="7">p</span> (fun b -&gt; <span data-count="457">B</span>oolLiteral b) gen_boolean
+      ; retur<span data-count="7">n</span> UnitLiteral
       ]
   ;;
 
-  let gen_variable = ma<span data-count="6">p</span> (fun i -&gt; <span data-count="1091">V</span>ariable i) (gen_identifie<span data-count="6">r</span> false)
-  let gen_const = ma<span data-count="6">p</span> (fun c -&gt; <span data-count="1127">C</span>onst c) gen_literal
+  let gen_variable = ma<span data-count="7">p</span> (fun i -&gt; <span data-count="1282">V</span>ariable i) (gen_identifie<span data-count="7">r</span> false)
+  let gen_const = ma<span data-count="7">p</span> (fun c -&gt; <span data-count="1328">C</span>onst c) gen_literal
 
   let gen_expr =
     let gen_define_expr expr_gen =
-      <span data-count="1476">m</span>ap2 (fun def ex -&gt; <span data-count="106">D</span>efine (def, ex)) (gen_definitio<span data-count="1476">n</span> expr_gen) expr_gen
+      <span data-count="1787">m</span>ap2 (fun def ex -&gt; <span data-count="146">D</span>efine (def, ex)) (gen_definitio<span data-count="1787">n</span> expr_gen) expr_gen
     in
     let gen_unary_expr subexpr_gen =
-      <span data-count="1476">m</span>ap2
-        (fun op ex -&gt; <span data-count="116">U</span>nary (op, ex))
-        (oneo<span data-count="1476">f</span> [ retur<span data-count="1476">n</span> Positive; retur<span data-count="1476">n</span> Negate ])
+      <span data-count="1787">m</span>ap2
+        (fun op ex -&gt; <span data-count="147">U</span>nary (op, ex))
+        (oneo<span data-count="1787">f</span> [ retur<span data-count="1787">n</span> Positive; retur<span data-count="1787">n</span> Negate ])
         subexpr_gen
     in
     let gen_binary_expr subexpr_gen =
-      <span data-count="1476">m</span>ap3
-        (fun left op right -&gt; <span data-count="143">B</span>inary (left, op, right))
+      <span data-count="1787">m</span>ap3
+        (fun left op right -&gt; <span data-count="165">B</span>inary (left, op, right))
         subexpr_gen
-        (oneo<span data-count="1476">f</span>
-           [ retur<span data-count="1476">n</span> Add
-           ; retur<span data-count="1476">n</span> Subtract
-           ; retur<span data-count="1476">n</span> Multiply
-           ; retur<span data-count="1476">n</span> Division
-           ; retur<span data-count="1476">n</span> And
-           ; retur<span data-count="1476">n</span> Or
-           ; retur<span data-count="1476">n</span> Equals
-           ; retur<span data-count="1476">n</span> Unequals
-           ; retur<span data-count="1476">n</span> Gt
-           ; retur<span data-count="1476">n</span> Lt
-           ; retur<span data-count="1476">n</span> Gte
-           ; retur<span data-count="1476">n</span> Lte
+        (oneo<span data-count="1787">f</span>
+           [ retur<span data-count="1787">n</span> Add
+           ; retur<span data-count="1787">n</span> Subtract
+           ; retur<span data-count="1787">n</span> Multiply
+           ; retur<span data-count="1787">n</span> Division
+           ; retur<span data-count="1787">n</span> And
+           ; retur<span data-count="1787">n</span> Or
+           ; retur<span data-count="1787">n</span> Equals
+           ; retur<span data-count="1787">n</span> Unequals
+           ; retur<span data-count="1787">n</span> Gt
+           ; retur<span data-count="1787">n</span> Lt
+           ; retur<span data-count="1787">n</span> Gte
+           ; retur<span data-count="1787">n</span> Lte
            ])
         subexpr_gen
     in
     let gen_tuple_expr subexpr_gen =
-      <span data-count="1476">m</span>ap3
-        (fun ex1 ex2 l -&gt; <span data-count="128">T</span>uple (ex1, ex2, l))
+      <span data-count="1787">m</span>ap3
+        (fun ex1 ex2 l -&gt; <span data-count="143">T</span>uple (ex1, ex2, l))
         subexpr_gen
         subexpr_gen
-        (list_siz<span data-count="1476">e</span> addected_tuple_size subexpr_gen)
+        (list_siz<span data-count="1787">e</span> addected_tuple_size subexpr_gen)
     in
     let gen_list_expr subexpr_gen =
-      <span data-count="1476">m</span>ap (fun l -&gt; <span data-count="120">E</span>xpressionsList l) (list_siz<span data-count="1476">e</span> elist_size subexpr_gen)
+      <span data-count="1787">m</span>ap (fun l -&gt; <span data-count="167">E</span>xpressionsList l) (list_siz<span data-count="1787">e</span> elist_size subexpr_gen)
     in
     let gen_if_expr subexpr_gen =
-      <span data-count="1476">l</span>et helper = oneof [ retur<span data-count="1476">n</span> None; ma<span data-count="1476">p</span> (fun ex -&gt; <span data-count="57">S</span>ome ex) subexpr_gen ] in
-      <span data-count="1476">m</span>ap3
-        (fun ex then_ex else_ex -&gt; <span data-count="120">I</span>f (ex, then_ex, else_ex))
+      <span data-count="1787">l</span>et helper = oneof [ retur<span data-count="1787">n</span> None; ma<span data-count="1787">p</span> (fun ex -&gt; <span data-count="70">S</span>ome ex) subexpr_gen ] in
+      <span data-count="1787">m</span>ap3
+        (fun ex then_ex else_ex -&gt; <span data-count="141">I</span>f (ex, then_ex, else_ex))
         subexpr_gen
         subexpr_gen
         helper
     in
     let gen_lambda subexpr_gen =
-      <span data-count="1476">m</span>ap2
-        (fun pl ex -&gt; <span data-count="112">L</span>ambda (pl, ex))
-        (list_siz<span data-count="1476">e</span> patterns_size gen_pattern)
+      <span data-count="1787">m</span>ap2
+        (fun pl ex -&gt; <span data-count="125">L</span>ambda (pl, ex))
+        (list_siz<span data-count="1787">e</span> patterns_size gen_pattern)
         subexpr_gen
     in
     let gen_apply subexpr_gen =
-      <span data-count="1476">m</span>ap2 (fun ex l -&gt; <span data-count="122">A</span>pply (ex, l)) subexpr_gen (list_siz<span data-count="1476">e</span> apply_size subexpr_gen)
+      <span data-count="1787">m</span>ap2 (fun ex l -&gt; <span data-count="161">A</span>pply (ex, l)) subexpr_gen (list_siz<span data-count="1787">e</span> apply_size subexpr_gen)
     in
     let gen_expr_block subexpr_gen =
-      <span data-count="1476">m</span>ap (fun l -&gt; <span data-count="125">E</span>xpressionBlock l) (list_siz<span data-count="1476">e</span> expr_block_size subexpr_gen)
+      <span data-count="1787">m</span>ap (fun l -&gt; <span data-count="163">E</span>xpressionBlock l) (list_siz<span data-count="1787">e</span> expr_block_size subexpr_gen)
     in
     let constructor_expr subexpr_gen =
-      <span data-count="1476">m</span>ap2
-        (fun id opt_expr -&gt; <span data-count="112">C</span>onstruct (id, opt_expr))
-        (gen_identifie<span data-count="1476">r</span> true)
-        (oneo<span data-count="1476">f</span> [ retur<span data-count="1476">n</span> None; ma<span data-count="1476">p</span> (fun ex -&gt; <span data-count="56">S</span>ome ex) subexpr_gen ])
+      <span data-count="1787">m</span>ap2
+        (fun id opt_expr -&gt; <span data-count="140">C</span>onstruct (id, opt_expr))
+        (gen_identifie<span data-count="1787">r</span> true)
+        (oneo<span data-count="1787">f</span> [ retur<span data-count="1787">n</span> None; ma<span data-count="1787">p</span> (fun ex -&gt; <span data-count="76">S</span>ome ex) subexpr_gen ])
     in
     let gen_case subexpr_gen =
-      <span data-count="2952">m</span>ap3
-        (fun p f res -&gt; <span data-count="422">{</span> pattern = p; filter = f; result = res })
+      <span data-count="3574">m</span>ap3
+        (fun p f res -&gt; <span data-count="443">{</span> pattern = p; filter = f; result = res })
         gen_pattern
-        (oneo<span data-count="2952">f</span> [ retur<span data-count="2952">n</span> None; ma<span data-count="2952">p</span> (fun ex -&gt; <span data-count="197">S</span>ome ex) subexpr_gen ])
+        (oneo<span data-count="3574">f</span> [ retur<span data-count="3574">n</span> None; ma<span data-count="3574">p</span> (fun ex -&gt; <span data-count="236">S</span>ome ex) subexpr_gen ])
         subexpr_gen
     in
     let gen_match_with_expr subexpr_gen =
-      <span data-count="1476">m</span>ap2
-        (fun ex cases -&gt; <span data-count="132">M</span>atch (ex, cases))
+      <span data-count="1787">m</span>ap2
+        (fun ex cases -&gt; <span data-count="135">M</span>atch (ex, cases))
         subexpr_gen
-        (list_siz<span data-count="1476">e</span> definition_size (gen_cas<span data-count="1476">e</span> subexpr_gen))
+        (list_siz<span data-count="1787">e</span> definition_size (gen_cas<span data-count="1787">e</span> subexpr_gen))
     in
     let gen_function_expr subexpr_gen =
-      <span data-count="1476">m</span>ap (fun cases -&gt; <span data-count="140">F</span>unc cases) (list_siz<span data-count="1476">e</span> definition_size (gen_cas<span data-count="1476">e</span> subexpr_gen))
+      <span data-count="1787">m</span>ap (fun cases -&gt; <span data-count="154">F</span>unc cases) (list_siz<span data-count="1787">e</span> definition_size (gen_cas<span data-count="1787">e</span> subexpr_gen))
     in
-    sized_size expr_dept<span data-count="6">h</span>
-    @@ fi<span data-count="6">x</span> (fun self -&gt;
+    sized_size expr_dept<span data-count="7">h</span>
+    @@ fi<span data-count="7">x</span> (fun self -&gt;
          function
-         | <span data-count="2218">0</span> -&gt; frequency [ 1, gen_const; 1, gen_variable ]
-         | <span data-count="1476">d</span>epth -&gt;
+         | <span data-count="2610">0</span> -&gt; frequency [ 1, gen_const; 1, gen_variable ]
+         | <span data-count="1787">d</span>epth -&gt;
            let subexpr_gen = self (depth - 1) in
-           <span data-count="1476">f</span>requency
-             [ 1, gen_unary_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_binary_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_tuple_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_list_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_define_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_if_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, constructor_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_lambd<span data-count="1476">a</span> subexpr_gen
-             ; 1, gen_appl<span data-count="1476">y</span> subexpr_gen
-             ; 1, gen_expr_bloc<span data-count="1476">k</span> subexpr_gen
-             ; 1, gen_match_with_exp<span data-count="1476">r</span> subexpr_gen
-             ; 1, gen_function_exp<span data-count="1476">r</span> subexpr_gen
+           <span data-count="1787">f</span>requency
+             [ 1, gen_unary_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_binary_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_tuple_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_list_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_define_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_if_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, constructor_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_lambd<span data-count="1787">a</span> subexpr_gen
+             ; 1, gen_appl<span data-count="1787">y</span> subexpr_gen
+             ; 1, gen_expr_bloc<span data-count="1787">k</span> subexpr_gen
+             ; 1, gen_match_with_exp<span data-count="1787">r</span> subexpr_gen
+             ; 1, gen_function_exp<span data-count="1787">r</span> subexpr_gen
              ])
   ;;
 
   let gen_struct_item =
-    oneo<span data-count="6">f</span>
-      [ ma<span data-count="6">p</span> (fun def -&gt; <span data-count="287">D</span>efineItem def) (gen_definitio<span data-count="6">n</span> gen_expr)
-      ; ma<span data-count="6">p</span> (fun ex -&gt; <span data-count="313">E</span>valItem ex) gen_expr
+    oneo<span data-count="7">f</span>
+      [ ma<span data-count="7">p</span> (fun def -&gt; <span data-count="358">D</span>efineItem def) (gen_definitio<span data-count="7">n</span> gen_expr)
+      ; ma<span data-count="7">p</span> (fun ex -&gt; <span data-count="342">E</span>valItem ex) gen_expr
       ]
   ;;
 
-  let gen_program = list_siz<span data-count="6">e</span> program_size gen_struct_item
+  let gen_program = list_siz<span data-count="7">e</span> program_size gen_struct_item
 
   let arbitrary_lam_manual =
-    QCheck.mak<span data-count="6">e</span> gen_program ~print:(Format.asprint<span data-count="6">f</span> "%a" pp_program)
+    QCheck.mak<span data-count="7">e</span> gen_program ~print:(Format.asprint<span data-count="7">f</span> "%a" pp_program)
   ;;
 
   let run_manual () =
-    <span data-count="6">l</span>et open Parser in
+    <span data-count="7">l</span>et open Parser in
     let open Parser_utility in
     QCheck_runner.run_tests
       [ QCheck.(
-          Test.mak<span data-count="6">e</span> arbitrary_lam_manual (fun p -&gt;
-            <span data-count="600">l</span>et r = parse program_parser (Format.asprint<span data-count="600">f</span> "%a" pp_program p) in
-            <span data-count="600">m</span>atch r with
-            | <span data-count="600">P</span>arseSuccess (r, _) -&gt;
+          Test.mak<span data-count="7">e</span> arbitrary_lam_manual (fun p -&gt;
+            <span data-count="700">l</span>et r = parse program_parser (Format.asprint<span data-count="700">f</span> "%a" pp_program p) in
+            <span data-count="700">m</span>atch r with
+            | <span data-count="700">P</span>arseSuccess (r, _) -&gt;
               let res = p = r in
               if not res
               then <span data-count="0">(</span>
                 Format.printf "IntputTree:\n%s\n" (show_progra<span data-count="0">m</span> p);
                 <span data-count="0">F</span>ormat.print<span data-count="0">f</span> "Result:\n%s\n" (show_progra<span data-count="0">m</span> r));
-              <span data-count="600">r</span>es
+              <span data-count="700">r</span>es
             | <span data-count="0">_</span> -&gt;
               Format.printf "IntputTree:\n%s\n" (show_progra<span data-count="0">m</span> p);
               <span data-count="0">F</span>ormat.printf "Intput:\n%a\n" pp_program p;
