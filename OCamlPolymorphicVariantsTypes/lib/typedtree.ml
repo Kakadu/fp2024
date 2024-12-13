@@ -1,3 +1,7 @@
+(** Copyright 2024-2027, Ilia Suponev, Dmitri Chirkov *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 type binder = int [@@deriving show { with_path = false }]
 
 module VarSet = struct
@@ -32,7 +36,7 @@ let ty_tuple (t1, t2, tl) = TTuple (t1, t2, tl)
 let ty_list t = TList t
 
 let rec pp_ty fmt = function
-  | TPrim s -> Format.fprintf fmt "%S" s
+  | TPrim s -> Format.fprintf fmt "%s" s
   | TVar v -> Format.fprintf fmt "'%d" v
   | TArrow (l, r) -> Format.fprintf fmt "(%a -> %a)" pp_ty l pp_ty r
   | TTuple (t1, t2, tl) ->
