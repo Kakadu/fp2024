@@ -26,7 +26,7 @@ let pp_error ppf : error -> _ =
 module R : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
+  (* val bind : 'a t -> f:('a -> 'b t) -> 'b t *)
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -34,10 +34,6 @@ module R : sig
 
   module Syntax : sig
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  end
-
-  module RList : sig
-    val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
   end
 
   module RMap : sig
@@ -80,15 +76,6 @@ end = struct
     let ( let* ) x f = bind x ~f
   end
 
-  module RList = struct
-    let fold_left xs ~init ~f =
-      Base.List.fold_left xs ~init ~f:(fun acc x ->
-        let open Syntax in
-        let* acc = acc in
-        f acc x)
-    ;;
-  end
-
   module RMap = struct
     let fold xs ~init ~f =
       Map.fold xs ~init ~f:(fun ~key ~data acc ->
@@ -105,7 +92,7 @@ end
 type fresh = int
 
 module Type = struct
-  type t = ty
+  (* type t = ty *)
 
   let rec occurs_in v = function
     | TVar x -> x = v
@@ -135,7 +122,8 @@ module Subst : sig
 
   val empty : t
   val singleton : fresh -> ty -> t R.t
-  val find : t -> fresh -> ty option
+
+  (* val find : t -> fresh -> ty option *)
   val remove : t -> fresh -> t
   val apply : t -> ty -> ty
   val unify : ty -> ty -> t R.t
@@ -224,9 +212,7 @@ end = struct
 end
 
 module Scheme = struct
-  type t = scheme
-
-  let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t
+  (* let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t *)
   let free_vars (S (xs, t)) = VarSet.diff (Type.free_vars t) xs
 
   let apply s (S (xs, t)) =
