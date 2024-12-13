@@ -135,10 +135,7 @@ and tuple_type state =
   (skip_ws *> type_constructor >>= helper) state
 
 and type_constructor state =
-  let rec builder t1 = function
-    | [] -> t1
-    | t2 :: tail -> builder (TypeConstructor (t2, t1)) tail
-  in
+  let builder t1 tl = List.fold_left (fun acc t2 -> TypeConstructor (t2, acc)) t1 tl in
   (skip_ws *> basic_type
    >>= fun t1 -> many type_ident_parser >>= fun tl -> preturn (builder t1 tl))
     state
