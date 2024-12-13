@@ -11,7 +11,8 @@ let test_program = test show_program program_parser
 
 let%expect_test _ =
   test_program {|fun (a: (int -> float) list) -> a;;|};
-  [%expect {|
+  [%expect
+    {|
     [(EvalItem
         (Lambda (
            [(PConstrain ((PVar "a"),
