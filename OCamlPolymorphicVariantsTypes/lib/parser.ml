@@ -38,9 +38,9 @@ let is_constructor id =
 
 (** Parse [Miniml.identifier] value. *)
 let ident
-      ?(on_keyword = fun _ -> pfail)
-      ?(on_constructor = preturn)
-      ?(on_simple = preturn)
+  ?(on_keyword = fun _ -> pfail)
+  ?(on_constructor = preturn)
+  ?(on_simple = preturn)
   =
   let helper = many (dsatisfy ident_symbol Fun.id) in
   skip_ws *> dsatisfy ident_symbol Fun.id
@@ -485,9 +485,9 @@ and if_expr state =
    *> keyword "if"
    *> (expr
        >>= (fun ex ->
-       skip_ws
-       *> (keyword "then" *> then_block ex
-           <|> perror "Not found 'then' branch for if-expression"))
+             skip_ws
+             *> (keyword "then" *> then_block ex
+                 <|> perror "Not found 'then' branch for if-expression"))
        <|> perror "Not found if expression after keyword 'if'"))
     state
 
@@ -527,7 +527,7 @@ and lambda_expr state =
    >>= fun _ s ->
    (patterns
     >>= (fun (l, pl) ->
-    skip_ws *> (ssequence "->" *> subexp pl) <|> fun _ -> (helper l >>= subexp) s)
+          skip_ws *> (ssequence "->" *> subexp pl) <|> fun _ -> (helper l >>= subexp) s)
     <|> perror "Not found patterns for lambda definition")
      s)
     state
@@ -555,12 +555,12 @@ and value_binding_parser state =
 and value_bindings_parser state =
   (skip_ws *> value_binding_parser
    >>= (fun vb ->
-   element_sequence
-     vb
-     value_binding_parser
-     Fun.id
-     "and"
-     (perror "Not found value binding"))
+         element_sequence
+           vb
+           value_binding_parser
+           Fun.id
+           "and"
+           (perror "Not found value binding"))
    <|> perror "Not found value binging")
     state
 

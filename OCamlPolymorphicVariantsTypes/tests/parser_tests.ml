@@ -41,8 +41,7 @@ let%expect_test _ =
       match _i with
        | (a: (int -> float) (list)) -> (gI)
    ;;|};
-  [%expect
-    {|
+  [%expect {|
     ParseError(line=4 pos=28): Not found close bracket |}];
   test_program
     {|
@@ -87,8 +86,7 @@ let%expect_test _ =
                  result = (Apply ((Variable "b"), [(Const (IntLiteral 0))])) }
                ]))
         ] |}];
-  test_program
-    {|
+  test_program {|
     function
     | (a:int) when a > 0 -> a
     | (_:int->float) -> 0;;|};
@@ -243,12 +241,10 @@ let%expect_test _ =
            [(Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)), []))])))
       ] |}];
   test_program {|64_000_000;;|};
-  [%expect
-    {|
+  [%expect {|
     [(EvalItem (Const (IntLiteral 64000000)))] |}];
   test_program {|[];;|};
-  [%expect
-    {|
+  [%expect {|
     [(EvalItem (ExpressionsList []))] |}];
   test_program {|[(fun x -> x * x) 10; not y && x];;|};
   [%expect
@@ -292,8 +288,7 @@ let%expect_test _ =
            )))
       ] |}];
   test_program {|-  ;;|};
-  [%expect
-    {|
+  [%expect {|
     ParseError(line=1 pos=1): Not found sub-expression of negate unary |}];
   test_program {|10 -   |};
   [%expect
@@ -303,8 +298,7 @@ let%expect_test _ =
   [%expect
     {|
     ParseError(line=1 pos=7): Not found close semicolons ';;' of structure item |}];
-  test_program
-    {|
+  test_program {|
   let y = 10;;
   let g x = x + y;;
   |};
@@ -319,21 +313,17 @@ let%expect_test _ =
             ]))
       ] |}];
   test_program {|let y = ;;|};
-  [%expect
-    {|
+  [%expect {|
     ParseError(line=1 pos=6): Not found expression of let-definition |}];
-  test_program
-    {|
+  test_program {|
   let y = ;;
   let f y = fun x -> x / y;;
   (y, f y,);;
   |};
-  [%expect
-    {|
+  [%expect {|
     ParseError(line=2 pos=8): Not found expression of let-definition |}];
   test_program {|~+false;;|};
-  [%expect
-    {|
+  [%expect {|
     [(EvalItem (Unary (Positive, (Const (BoolLiteral false)))))] |}];
   test_program {|(1) x y;;|};
   [%expect
@@ -347,8 +337,7 @@ let%expect_test _ =
         (Apply ((Const (BoolLiteral true)), [(Variable "x"); (Variable "y")])))
       ] |}];
   test_program {|fun '_7 -> '_7;;|};
-  [%expect
-    {|
+  [%expect {|
     ParseError(line=1 pos=3): Not found patterns for lambda definition |}];
   test_program {|if f x then g 10;;|};
   [%expect
@@ -573,8 +562,7 @@ let%expect_test _ =
                  ]))
             ]));
       (EvalItem (Tuple ((Variable "t1"), (Variable "t2"), [])))] |}];
-  test_program
-    {|
+  test_program {|
    let f = fun x -> fun y -> x / (y - 2);;
    f ~-x ~-(f 10 30);;
    |};
