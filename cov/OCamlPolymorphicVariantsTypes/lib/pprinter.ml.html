@@ -376,108 +376,108 @@ open Ast
 open Parser_utility
 open Format
 
-let pp_identifier ff = <span data-count="4206">f</span>printf ff "%s"
+let pp_identifier ff = <span data-count="4397">f</span>printf ff "%s"
 
 let pp_literal ff = function
-  | <span data-count="367">I</span>ntLiteral i -&gt; fprintf ff "%d" i
-  | <span data-count="364">B</span>oolLiteral b -&gt; fprintf ff "%b" b
-  | <span data-count="357">U</span>nitLiteral -&gt; fprintf ff "()"
+  | <span data-count="411">I</span>ntLiteral i -&gt; fprintf ff "%d" i
+  | <span data-count="388">B</span>oolLiteral b -&gt; fprintf ff "%b" b
+  | <span data-count="363">U</span>nitLiteral -&gt; fprintf ff "()"
 ;;
 
 let pp_unary_operator ff = function
-  | <span data-count="72">N</span>egate -&gt; fprintf ff "~-"
-  | <span data-count="66">P</span>ositive -&gt; fprintf ff "~+"
+  | <span data-count="61">N</span>egate -&gt; fprintf ff "~-"
+  | <span data-count="59">P</span>ositive -&gt; fprintf ff "~+"
 ;;
 
 let pp_binary_operator ff = function
-  | <span data-count="15">A</span>dd -&gt; fprintf ff "+"
-  | <span data-count="16">S</span>ubtract -&gt; fprintf ff "-"
-  | <span data-count="11">M</span>ultiply -&gt; fprintf ff "*"
-  | <span data-count="10">D</span>ivision -&gt; fprintf ff "/"
-  | <span data-count="7">E</span>quals -&gt; fprintf ff "="
-  | <span data-count="6">U</span>nequals -&gt; fprintf ff "&lt;&gt;"
-  | <span data-count="14">G</span>t -&gt; fprintf ff "&gt;"
-  | <span data-count="10">L</span>t -&gt; fprintf ff "&lt;"
-  | <span data-count="10">G</span>te -&gt; fprintf ff "&gt;="
-  | <span data-count="8">L</span>te -&gt; fprintf ff "&lt;="
-  | <span data-count="13">A</span>nd -&gt; fprintf ff "&amp;&amp;"
-  | <span data-count="8">O</span>r -&gt; fprintf ff "||"
+  | <span data-count="10">A</span>dd -&gt; fprintf ff "+"
+  | <span data-count="13">S</span>ubtract -&gt; fprintf ff "-"
+  | <span data-count="10">M</span>ultiply -&gt; fprintf ff "*"
+  | <span data-count="9">D</span>ivision -&gt; fprintf ff "/"
+  | <span data-count="15">E</span>quals -&gt; fprintf ff "="
+  | <span data-count="7">U</span>nequals -&gt; fprintf ff "&lt;&gt;"
+  | <span data-count="18">G</span>t -&gt; fprintf ff "&gt;"
+  | <span data-count="15">L</span>t -&gt; fprintf ff "&lt;"
+  | <span data-count="14">G</span>te -&gt; fprintf ff "&gt;="
+  | <span data-count="10">L</span>te -&gt; fprintf ff "&lt;="
+  | <span data-count="14">A</span>nd -&gt; fprintf ff "&amp;&amp;"
+  | <span data-count="13">O</span>r -&gt; fprintf ff "||"
 ;;
 
 let pp_recursive_type ff = function
-  | <span data-count="229">R</span>ecursive -&gt; fprintf ff "rec"
-  | <span data-count="203">N</span>onrecursive -&gt; fprintf ff ""
+  | <span data-count="219">R</span>ecursive -&gt; fprintf ff "rec"
+  | <span data-count="219">N</span>onrecursive -&gt; fprintf ff ""
 ;;
 
-let pp_tuple_sep ff () = <span data-count="274">f</span>printf ff ", "
-let pp_type_tuple ff () = <span data-count="257">f</span>printf ff " * "
-let pp_expr_block_sep ff () = <span data-count="119">f</span>printf ff "; "
-let pp_list_sep ff () = <span data-count="44">f</span>printf ff "; "
-let pp_definition_sep ff () = <span data-count="201">f</span>printf ff " and "
+let pp_tuple_sep ff () = <span data-count="244">f</span>printf ff ", "
+let pp_type_tuple ff () = <span data-count="279">f</span>printf ff " * "
+let pp_expr_block_sep ff () = <span data-count="122">f</span>printf ff "; "
+let pp_list_sep ff () = <span data-count="46">f</span>printf ff "; "
+let pp_definition_sep ff () = <span data-count="223">f</span>printf ff " and "
 let pp_struct_item_sep ff () = <span data-count="3">f</span>printf ff "\n"
 
 let rec pp_core_type ff = function
-  | <span data-count="1417">A</span>nyType -&gt; fprintf ff "_"
-  | <span data-count="792">A</span>rrowType (t1, t2) -&gt; fprintf ff "(%a -&gt; %a)" pp_core_type t1 pp_core_type t2
-  | <span data-count="760">T</span>ypeConstructor (t1, t2) -&gt; fprintf ff "%a %a" pp_core_type t2 pp_identifier t1
-  | <span data-count="1414">T</span>ypeIdentifier id -&gt; fprintf ff "%a" pp_identifier id
-  | <span data-count="683">T</span>upleType (t1, t2, tl) -&gt;
+  | <span data-count="1575">A</span>nyType -&gt; fprintf ff "_"
+  | <span data-count="801">A</span>rrowType (t1, t2) -&gt; fprintf ff "(%a -&gt; %a)" pp_core_type t1 pp_core_type t2
+  | <span data-count="822">T</span>ypeConstructor (t1, t2) -&gt; fprintf ff "%a %a" pp_core_type t2 pp_identifier t1
+  | <span data-count="1527">T</span>ypeIdentifier id -&gt; fprintf ff "%a" pp_identifier id
+  | <span data-count="817">T</span>upleType (t1, t2, tl) -&gt;
     fprintf ff "(%a * %a" pp_core_type t1 pp_core_type t2;
-    <span data-count="683">(</span>match tl with
-     | <span data-count="203">[</span>] -&gt; fprintf ff ")"
-     | <span data-count="480">_</span> -&gt; fprintf ff " * %a)" (pp_print_lis<span data-count="480">t</span> ~pp_sep:pp_type_tuple pp_core_type) tl)
+    <span data-count="817">(</span>match tl with
+     | <span data-count="267">[</span>] -&gt; fprintf ff ")"
+     | <span data-count="550">_</span> -&gt; fprintf ff " * %a)" (pp_print_lis<span data-count="550">t</span> ~pp_sep:pp_type_tuple pp_core_type) tl)
 ;;
 
 let rec pp_pattern ff = function
-  | <span data-count="829">P</span>Var id -&gt; pp_identifier ff id
-  | <span data-count="622">P</span>Tuple (p1, p2, pl) -&gt;
+  | <span data-count="817">P</span>Var id -&gt; pp_identifier ff id
+  | <span data-count="621">P</span>Tuple (p1, p2, pl) -&gt;
     fprintf ff "(%a, %a" pp_pattern p1 pp_pattern p2;
-    <span data-count="622">(</span>match pl with
-     | <span data-count="209">[</span>] -&gt; fprintf ff ")"
-     | <span data-count="413">_</span> -&gt; fprintf ff ", %a)" (pp_print_lis<span data-count="413">t</span> ~pp_sep:pp_tuple_sep pp_pattern) pl)
-  | <span data-count="832">P</span>Unit -&gt; fprintf ff "()"
-  | <span data-count="619">P</span>Constrain (p, t) -&gt; fprintf ff "(%a : %a)" pp_pattern p pp_core_type t
-  | <span data-count="852">P</span>Any -&gt; fprintf ff "_"
+    <span data-count="621">(</span>match pl with
+     | <span data-count="203">[</span>] -&gt; fprintf ff ")"
+     | <span data-count="418">_</span> -&gt; fprintf ff ", %a)" (pp_print_lis<span data-count="418">t</span> ~pp_sep:pp_tuple_sep pp_pattern) pl)
+  | <span data-count="785">P</span>Unit -&gt; fprintf ff "()"
+  | <span data-count="655">P</span>Constrain (p, t) -&gt; fprintf ff "(%a : %a)" pp_pattern p pp_core_type t
+  | <span data-count="913">P</span>Any -&gt; fprintf ff "_"
 ;;
 
 let rec pp_expression ff = function
-  | <span data-count="1088">C</span>onst l -&gt; pp_literal ff l
-  | <span data-count="1089">V</span>ariable id -&gt; pp_identifier ff id
-  | <span data-count="138">U</span>nary (op, ex) -&gt; fprintf ff "(%a%a)" pp_unary_operator op pp_expression ex
-  | <span data-count="128">B</span>inary (left, op, right) -&gt;
+  | <span data-count="1162">C</span>onst l -&gt; pp_literal ff l
+  | <span data-count="1106">V</span>ariable id -&gt; pp_identifier ff id
+  | <span data-count="120">U</span>nary (op, ex) -&gt; fprintf ff "(%a%a)" pp_unary_operator op pp_expression ex
+  | <span data-count="148">B</span>inary (left, op, right) -&gt;
     fprintf ff "(%a %a %a)" pp_expression left pp_binary_operator op pp_expression right
-  | <span data-count="96">T</span>uple (ex1, ex2, l) -&gt;
+  | <span data-count="120">T</span>uple (ex1, ex2, l) -&gt;
     fprintf ff "(%a, %a" pp_expression ex1 pp_expression ex2;
-    <span data-count="96">(</span>match l with
-     | <span data-count="33">[</span>] -&gt; fprintf ff ")"
-     | <span data-count="63">_</span> -&gt; fprintf ff ", %a)" (pp_print_lis<span data-count="63">t</span> ~pp_sep:pp_tuple_sep pp_expression) l)
-  | <span data-count="123">E</span>xpressionsList l -&gt;
-    fprintf ff "[%a]" (pp_print_lis<span data-count="123">t</span> ~pp_sep:pp_list_sep pp_expression) l
-  | <span data-count="55">C</span>onstruct (name, None) -&gt; fprintf ff "(%a)" pp_identifier name
+    <span data-count="120">(</span>match l with
+     | <span data-count="34">[</span>] -&gt; fprintf ff ")"
+     | <span data-count="86">_</span> -&gt; fprintf ff ", %a)" (pp_print_lis<span data-count="86">t</span> ~pp_sep:pp_tuple_sep pp_expression) l)
+  | <span data-count="109">E</span>xpressionsList l -&gt;
+    fprintf ff "[%a]" (pp_print_lis<span data-count="109">t</span> ~pp_sep:pp_list_sep pp_expression) l
+  | <span data-count="66">C</span>onstruct (name, None) -&gt; fprintf ff "(%a)" pp_identifier name
   | <span data-count="59">C</span>onstruct (name, Some ex) -&gt; fprintf ff "(%a %a)" pp_identifier name pp_expression ex
-  | <span data-count="136">M</span>atch (ex, cases) -&gt;
+  | <span data-count="132">M</span>atch (ex, cases) -&gt;
     fprintf
       ff
       "(match %a with %a)"
       pp_expression
       ex
-      (pp_print_lis<span data-count="136">t</span> ~pp_sep:pp_print_space pp_case)
+      (pp_print_lis<span data-count="132">t</span> ~pp_sep:pp_print_space pp_case)
       cases
-  | <span data-count="124">F</span>unc cases -&gt;
-    fprintf ff "(function %a)" (pp_print_lis<span data-count="124">t</span> ~pp_sep:pp_print_space pp_case) cases
-  | <span data-count="119">E</span>xpressionBlock l -&gt;
-    fprintf ff "(%a)" (pp_print_lis<span data-count="119">t</span> ~pp_sep:pp_expr_block_sep pp_expression) l
-  | <span data-count="127">A</span>pply (ex, l) -&gt;
+  | <span data-count="141">F</span>unc cases -&gt;
+    fprintf ff "(function %a)" (pp_print_lis<span data-count="141">t</span> ~pp_sep:pp_print_space pp_case) cases
+  | <span data-count="122">E</span>xpressionBlock l -&gt;
+    fprintf ff "(%a)" (pp_print_lis<span data-count="122">t</span> ~pp_sep:pp_expr_block_sep pp_expression) l
+  | <span data-count="129">A</span>pply (ex, l) -&gt;
     fprintf
       ff
       "((%a) %a)"
       pp_expression
       ex
-      (pp_print_lis<span data-count="127">t</span> ~pp_sep:pp_print_space pp_expression)
+      (pp_print_lis<span data-count="129">t</span> ~pp_sep:pp_print_space pp_expression)
       l
-  | <span data-count="112">I</span>f (ex, then_ex, else_branch) -&gt;
+  | <span data-count="121">I</span>f (ex, then_ex, else_branch) -&gt;
     (match else_branch with
-     | <span data-count="59">S</span>ome else_ex -&gt;
+     | <span data-count="62">S</span>ome else_ex -&gt;
        fprintf
          ff
          "(if %a then %a else %a)"
@@ -487,22 +487,22 @@ let rec pp_expression ff = function
          then_ex
          pp_expression
          else_ex
-     | <span data-count="53">N</span>one -&gt; fprintf ff "(if %a then %a)" pp_expression ex pp_expression then_ex)
-  | <span data-count="136">L</span>ambda (pl, ex) -&gt;
+     | <span data-count="59">N</span>one -&gt; fprintf ff "(if %a then %a)" pp_expression ex pp_expression then_ex)
+  | <span data-count="139">L</span>ambda (pl, ex) -&gt;
     fprintf
       ff
       "(fun %a -&gt; %a)"
-      (pp_print_lis<span data-count="136">t</span> ~pp_sep:pp_print_space pp_pattern)
+      (pp_print_lis<span data-count="139">t</span> ~pp_sep:pp_print_space pp_pattern)
       pl
       pp_expression
       ex
-  | <span data-count="133">D</span>efine (defines, ex) -&gt;
+  | <span data-count="135">D</span>efine (defines, ex) -&gt;
     fprintf ff "(let %a in %a)" pp_definition defines pp_expression ex
 
 and pp_case ff c =
-  <span data-count="401">m</span>atch c.filter with
-  | <span data-count="192">N</span>one -&gt; fprintf ff "| %a -&gt; (%a)" pp_pattern c.pattern pp_expression c.result
-  | <span data-count="209">S</span>ome f -&gt;
+  <span data-count="402">m</span>atch c.filter with
+  | <span data-count="201">N</span>one -&gt; fprintf ff "| %a -&gt; (%a)" pp_pattern c.pattern pp_expression c.result
+  | <span data-count="201">S</span>ome f -&gt;
     fprintf
       ff
       "| %a when %a -&gt; (%a)"
@@ -513,21 +513,21 @@ and pp_case ff c =
       pp_expression
       c.result
 
-and pp_value_binding ff (p, ex) = <span data-count="633">f</span>printf ff "%a = %a" pp_pattern p pp_expression ex
+and pp_value_binding ff (p, ex) = <span data-count="661">f</span>printf ff "%a = %a" pp_pattern p pp_expression ex
 
 and pp_definition ff (r_type, vbl) =
-  <span data-count="432">f</span>printf
+  <span data-count="438">f</span>printf
     ff
     "%a %a"
     pp_recursive_type
     r_type
-    (pp_print_lis<span data-count="432">t</span> ~pp_sep:pp_definition_sep pp_value_binding)
+    (pp_print_lis<span data-count="438">t</span> ~pp_sep:pp_definition_sep pp_value_binding)
     vbl
 ;;
 
 let pp_struct_item ff = function
-  | <span data-count="299">D</span>efineItem defines -&gt; fprintf ff "let %a;;" pp_definition defines
-  | <span data-count="305">E</span>valItem ex -&gt; fprintf ff "%a;;" pp_expression ex
+  | <span data-count="303">D</span>efineItem defines -&gt; fprintf ff "let %a;;" pp_definition defines
+  | <span data-count="301">E</span>valItem ex -&gt; fprintf ff "%a;;" pp_expression ex
 ;;
 
 let pp_program ff p = <span data-count="601">p</span>p_print_list ~pp_sep:pp_struct_item_sep pp_struct_item ff p
