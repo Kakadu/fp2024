@@ -382,7 +382,7 @@ let%expect_test _ =
         (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))
         )))
    ]
- |}<span data-count="7">]</span>
+ |}<span data-count="9">]</span>
 ;;
 
 (*calculetion sequence*)
@@ -396,7 +396,7 @@ let%expect_test _ =
             (Ebin_op (Div, (Econst (Int 52)), (Econst (Int 2))))))
          )))
     ]
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test _ =
@@ -412,7 +412,7 @@ let%expect_test _ =
               (Ebin_op (Mult, (Evar (Id ("x", None))), (Econst (Int 2)))))),
            None)))
       ]
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 (*unallowed function name*)
@@ -420,7 +420,7 @@ let%expect_test _ =
   <span data-count="1">p</span>arse "let rec 5 = ()";
   <span data-count="1">[</span>%expect {| 
   Parsing failed
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 (*unallowable range for the int type*)
@@ -428,7 +428,7 @@ let%expect_test _ =
   <span data-count="1">p</span>arse "39482309482390842309482438208 + 2";
   <span data-count="1">[</span>%expect {| 
   Parsing failed
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test _ =
@@ -448,7 +448,7 @@ let%expect_test _ =
              (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
              (Ebin_op (Sub, (Evar (Id ("a", None))), (Econst (Int 4)))))),
           None)))
-    ] |}<span data-count="7">]</span>
+    ] |}<span data-count="9">]</span>
 ;;
 
 let%expect_test _ =
@@ -464,14 +464,14 @@ let%expect_test _ =
              (Ebin_op (Add, (Evar (Id ("a", None))), (Evar (Id ("x", None)))))
              )),
           None)))
-    ] |}<span data-count="7">]</span>
+    ] |}<span data-count="9">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">p</span>arse "let rec factorial n = match n with 5 0 -&gt; 1 5 1 -&gt; 1 5 _ -&gt; n * factorial(n - 1)";
   <span data-count="1">[</span>%expect {|
   Parsing failed
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test _ =
@@ -488,7 +488,7 @@ let%expect_test _ =
          )),
       []))
     ]
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 
 let%expect_test _ =
@@ -499,7 +499,7 @@ let%expect_test _ =
       (Ebin_op (Mult, (Ebin_op (Add, (Econst (Int 5)), (Econst (Int 6)))),
          (Econst (Int 4)))))
     ]
-  |}<span data-count="7">]</span>
+  |}<span data-count="9">]</span>
 ;;
 </code></pre>
       </div>
