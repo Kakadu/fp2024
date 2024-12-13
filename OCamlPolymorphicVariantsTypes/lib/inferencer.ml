@@ -10,6 +10,7 @@ type error =
   [ `Occurs_check
   | `No_variable of string
   | `Unification_failed of ty * ty
+  | `Not_implemented
   ]
 
 let pp_error ppf : error -> _ =
@@ -19,6 +20,7 @@ let pp_error ppf : error -> _ =
   | `No_variable s -> fprintf ppf "Undefined variable '%s'" s
   | `Unification_failed (l, r) ->
     fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
+  | `Not_implemented -> fprintf ppf "Not implemented"
 ;;
 
 module R : sig
@@ -312,7 +314,8 @@ let infer_pattern =
           tl
       in
       return (env, TTuple (t1', t2', tl'))
-    | _ -> failwith "TODO"
+    | PUnit -> return (env, ty_unit)
+    | PConstrain (_, _) -> fail `Not_implemented
   in
   helper
 ;;
@@ -391,9 +394,32 @@ let infer_expression =
             return (sub, Subst.apply sub t))
       in
       return (sub, t)
-    | Define ((Nonrecursive, bindings), expr) -> failwith "TODO"
-    | Define ((Recursive, bindings), expr) -> failwith "TODO"
-    | Func _ -> failwith "TODO"
+    | Define ((Nonrecursive, (p, e) :: _), expr) ->
+      (match p with
+       | PVar x ->
+         let* s1, t1 = helper env e in
+         let env = TypeEnv.apply s1 env in
+         let s = generalize env t1 in
+         let* s2, t2 = helper (TypeEnv.extend env x s) expr in
+         let* s = Subst.compose s1 s2 in
+         return (s, t2)
+       | _ -> failwith "asda")
+    | Define ((Recursive, (p, e) :: _), expr) ->
+      (match p with
+       | PVar x ->
+         let* fresh = fresh_var in
+         let env1 = TypeEnv.extend env x (S (VarSet.empty, fresh)) in
+         let* s, t = helper env1 e in
+         let* s1 = Subst.unify t fresh in
+         let* s2 = Subst.compose s s1 in
+         let env = TypeEnv.apply s2 env in
+         let t = Subst.apply s2 t in
+         let s = generalize_rec env t x in
+         let env = TypeEnv.extend env x s in
+         let* sub, t = helper env expr in
+         let* sub = Subst.compose s2 sub in
+         return (sub, t)
+       | _ -> fail `Not_implemented)
     | Tuple (t1, t2, tl) ->
       let* s1, t1 = helper env t1 in
       let* s2, t2 = helper env t2 in
@@ -412,7 +438,33 @@ let infer_expression =
       let t2 = Subst.apply composed_sl t2 in
       let t3 = List.map t3 ~f:(fun t -> Subst.apply s3 t) in
       return (s3, TTuple (t1, t2, t3))
-    | _ -> failwith "TODO"
+    | Apply (e1, e2 :: _) ->
+      let* fresh = fresh_var in
+      let* s1, t1 = helper env e1 in
+      let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
+      let* s3 = Subst.unify (ty_arrow t2 fresh) (Subst.apply s2 t1) in
+      let* sub = Subst.compose_all [ s1; s2; s3 ] in
+      let t = Subst.apply sub fresh in
+      return (sub, t)
+    | ExpressionsList l ->
+      (match l with
+       | [] ->
+         let* fresh = fresh_var in
+         return (Subst.empty, ty_list fresh)
+       | h :: tl ->
+         let* sr, tr =
+           Base.List.fold_left tl ~init:(helper env h) ~f:(fun acc e ->
+             let* sacc, tacc = acc in
+             let* s1, t1 = helper env e in
+             let* s2 = Subst.unify tacc t1 in
+             let* final_s = Subst.compose_all [ sacc; s1; s2 ] in
+             let final_t = Subst.apply final_s tacc in
+             return (final_s, final_t))
+         in
+         return (sr, TList tr))
+    | ExpressionBlock _ | Lambda _ | Func _ | Construct _
+    | Define ((_, []), _)
+    | Apply (_, []) -> fail `Not_implemented
   in
   helper
 ;;
@@ -422,8 +474,8 @@ let infer_structure_item env = function
     (match def with
      | Recursive, bs ->
        (match bs with
-        | [] -> failwith "TODO"
-        | (p, e1) :: b_rest ->
+        | [] -> fail `Not_implemented
+        | (p, e1) :: _ ->
           (match p with
            | PVar x1 ->
              let* fresh = fresh_var in
@@ -437,11 +489,11 @@ let infer_structure_item env = function
              let sc = generalize_rec env t2 x1 in
              let env = TypeEnv.extend env x1 sc in
              return env
-           | _ -> failwith "TODO: other"))
+           | _ -> fail `Not_implemented))
      | Nonrecursive, bs ->
        (match bs with
-        | [] -> failwith "TODO"
-        | (p, e1) :: b_rest ->
+        | [] -> fail `Not_implemented
+        | (p, e1) :: _ ->
           (match p with
            | PVar x1 ->
              let* s, t = infer_expression env e1 in
@@ -449,11 +501,10 @@ let infer_structure_item env = function
              let sc = generalize env t in
              let env = TypeEnv.extend env x1 sc in
              return env
-           | _ -> failwith "TODO: other")))
+           | _ -> fail `Not_implemented)))
   | EvalItem e ->
     let* _, _ = infer_expression env e in
     return env
-  | _ -> failwith "TODO"
 ;;
 
 let infer_program p =

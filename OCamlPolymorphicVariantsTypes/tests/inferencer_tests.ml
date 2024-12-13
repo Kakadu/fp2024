@@ -15,3 +15,28 @@ let code_infer s =
   | ParseError (e, parser_state) -> printf "Parser error: %s\n" e
   | ParseFail -> printf "Parser failed" (*TODO*)
 ;;
+
+let%expect_test _ =
+  code_infer {| let x = 5 ;;|};
+  [%expect {| "x" : int |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let x = if (23 < true) then false else true;;|};
+  [%expect {| Inferencer error: unification failed on bool and int |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let x = if (23 < 34) then false else true;;|};
+  [%expect {| "x" : bool |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let x = [];;|};
+  [%expect {| "x" : [ 0; ]. '0 list |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let x = [2; 34];;|};
+  [%expect {| "x" : int list |}]
+;;
