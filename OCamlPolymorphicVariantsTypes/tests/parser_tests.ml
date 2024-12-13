@@ -10,6 +10,18 @@ let test conv p input = print_string (string_of_parse_result conv (parse p input
 let test_program = test show_program program_parser
 
 let%expect_test _ =
+  test_program {|(fun y -> (fun x -> ~-x + y)) 10 ~-90;;|};
+  [%expect
+    {|
+    [(EvalItem
+        (Apply (
+           (Lambda ([(PVar "y")],
+              (Lambda ([(PVar "x")],
+                 (Binary ((Unary (Negate, (Variable "x"))), Add, (Variable "y")))
+                 ))
+              )),
+           [(Const (IntLiteral 10)); (Unary (Negate, (Const (IntLiteral 90))))])))
+      ] |}];
   test_program {|fun (a: (int -> float) list) -> a;;|};
   [%expect
     {|

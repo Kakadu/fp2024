@@ -39,8 +39,8 @@ let is_constructor id =
 (** Parse [Miniml.identifier] value. *)
 let ident
   ?(on_keyword = fun _ -> pfail)
-  ?(on_constructor = fun id -> preturn id)
-  ?(on_simple = fun id -> preturn id)
+  ?(on_constructor = preturn)
+  ?(on_simple = preturn)
   =
   let helper = many (dsatisfy ident_symbol Fun.id) in
   skip_ws *> dsatisfy ident_symbol Fun.id
@@ -97,7 +97,7 @@ let type_ident_parser =
       perror (Format.sprintf "Not found type identifier, finded keyword '%s'" k))
     ~on_constructor:(fun c ->
       perror (Format.sprintf "Not found type identifier, finded constructor '%s'" c))
-    ~on_simple:(fun s -> preturn s)
+    ~on_simple:preturn
 ;;
 
 let type_identifier state =
@@ -135,11 +135,7 @@ and tuple_type state =
   (skip_ws *> type_constructor >>= helper) state
 
 and type_constructor state =
-  let rec builder t1 tl =
-    match tl with
-    | [] -> t1
-    | t2 :: tail -> builder (TypeConstructor (t2, t1)) tail
-  in
+  let builder t1 tl = List.fold_left (fun acc t2 -> TypeConstructor (t2, acc)) t1 tl in
   (skip_ws *> basic_type
    >>= fun t1 -> many type_ident_parser >>= fun tl -> preturn (builder t1 tl))
     state
@@ -187,7 +183,7 @@ and pvariable state =
           (Format.sprintf "Unexpected identifier of pattern: '%s'. It is keyword." id))
       ~on_constructor:(fun id ->
         perror (Format.sprintf "Unexpected constructor on pattern position: '%s'." id))
-      ~on_simple:(fun id -> preturn id)
+      ~on_simple:preturn
   in
   (skip_ws
    *> (helper
@@ -239,17 +235,14 @@ let variable =
       ~on_keyword:(fun _ -> pfail)
       ~on_constructor:(fun id ->
         perror (Format.sprintf "Invalid variable identifier: '%s'." id))
-      ~on_simple:(fun id -> preturn id)
+      ~on_simple:preturn
   in
   skip_ws *> helper >>| fun s -> Variable s
 ;;
 
 let constructor_name =
   let helper =
-    ident
-      ~on_keyword:(fun _ -> pfail)
-      ~on_constructor:(fun id -> preturn id)
-      ~on_simple:(fun _ -> pfail)
+    ident ~on_keyword:(fun _ -> pfail) ~on_constructor:preturn ~on_simple:(fun _ -> pfail)
   in
   skip_ws *> helper
 ;;
@@ -304,12 +297,7 @@ and basic_expr applyable state =
    <|> const_expr)
     state
 
-(** Parser of case expressions:
-    - [| <pattern> when <expr> -> <expr>]
-    - [| <pattern> -> <expr>]
-
-    If [is_first] is [true] then
-    first case of case expression not expected of '|' sympol at start *)
+(** Parser of case expressions: *)
 and case_parser is_first =
   let case_expr p f =
     skip_ws *> (expr <|> perror "Not found expression after special sequence '->' in case")
