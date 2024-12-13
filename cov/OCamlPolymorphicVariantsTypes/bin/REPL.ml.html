@@ -18,13 +18,13 @@
       <h2>52.17%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:23.91%"></span>
-      <span class="unvisited" style="top:26.09%"></span>
-      <span class="unvisited" style="top:28.26%"></span>
-      <span class="unvisited" style="top:32.61%"></span>
-      <span class="unvisited" style="bottom:36.96%"></span>
-      <span class="unvisited" style="bottom:34.78%"></span>
-      <span class="unvisited" style="bottom:13.04%"></span>
+      <span class="unvisited" style="top:25.53%"></span>
+      <span class="unvisited" style="top:27.66%"></span>
+      <span class="unvisited" style="top:29.79%"></span>
+      <span class="unvisited" style="top:34.04%"></span>
+      <span class="unvisited" style="bottom:36.17%"></span>
+      <span class="unvisited" style="bottom:34.04%"></span>
+      <span class="unvisited" style="bottom:12.77%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -39,42 +39,43 @@
 <a id="L8"></a><span > </span>
 <a id="L9"></a><span > </span>
 <a id="L10"></a><span > </span>
-<a id="L11"></a><span class="unvisited"> </span>
+<a id="L11"></a><span > </span>
 <a id="L12"></a><span class="unvisited"> </span>
 <a id="L13"></a><span class="unvisited"> </span>
-<a id="L14"></a><span > </span>
-<a id="L15"></a><span class="unvisited"> </span>
-<a id="L16"></a><span > </span>
+<a id="L14"></a><span class="unvisited"> </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span class="unvisited"> </span>
 <a id="L17"></a><span > </span>
 <a id="L18"></a><span > </span>
 <a id="L19"></a><span > </span>
 <a id="L20"></a><span > </span>
 <a id="L21"></a><span > </span>
-<a id="L22"></a><span class="visited"> </span>
-<a id="L23"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span class="visited"> </span>
 <a id="L24"></a><span > </span>
-<a id="L25"></a><span class="visited"> </span>
-<a id="L26"></a><span > </span>
+<a id="L25"></a><span > </span>
+<a id="L26"></a><span class="visited"> </span>
 <a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
-<a id="L29"></a><span class="unvisited"> </span>
+<a id="L29"></a><span > </span>
 <a id="L30"></a><span class="unvisited"> </span>
-<a id="L31"></a><span > </span>
-<a id="L32"></a><span class="visited"> </span>
-<a id="L33"></a><span > </span>
+<a id="L31"></a><span class="unvisited"> </span>
+<a id="L32"></a><span > </span>
+<a id="L33"></a><span class="visited"> </span>
 <a id="L34"></a><span > </span>
 <a id="L35"></a><span > </span>
 <a id="L36"></a><span > </span>
 <a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
-<a id="L39"></a><span class="visited"> </span>
-<a id="L40"></a><span class="unvisited"> </span>
-<a id="L41"></a><span > </span>
-<a id="L42"></a><span class="visited"> </span>
-<a id="L43"></a><span class="visited"> </span>
+<a id="L39"></a><span > </span>
+<a id="L40"></a><span class="visited"> </span>
+<a id="L41"></a><span class="unvisited"> </span>
+<a id="L42"></a><span > </span>
+<a id="L43"></a><span > </span>
 <a id="L44"></a><span class="visited"> </span>
 <a id="L45"></a><span class="visited"> </span>
-<a id="L46"></a><span > </span>
+<a id="L46"></a><span class="visited"> </span>
+<a id="L47"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -125,6 +126,7 @@
 <a href="#L44">44</a>
 <a href="#L45">45</a>
 <a href="#L46">46</a>
+<a href="#L47">47</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2027, Ilia Suponev *)
 
@@ -133,8 +135,9 @@
 open Miniml.Ast
 open Miniml.Parser
 open Miniml.Parser_utility
-open Miniml.Printer
+open Miniml.Pprinter
 open Stdio
+open Format
 
 <span data-count="0">t</span>ype options =
   { mutable dumpast : boo<span data-count="0">l</span>
@@ -154,7 +157,7 @@ let parse_args =
       , "Input file of miniML's code to interpret it" )
     ]
     (fun opt -&gt;
-      <span data-count="0">F</span>ormat.eprintf "Argument '%s' are not supported\n" opt;
+      <span data-count="0">e</span>printf "Argument '%s' are not supported\n" opt;
       <span data-count="0">e</span>xit ~<span data-count="0">-</span>1)
     "REPL of miniML";
   <span data-count="3">o</span>pts
@@ -167,10 +170,10 @@ let () =
     | <span data-count="3">S</span>ome filename -&gt; In_channel.read_all filename |&gt; <span data-count="3">S</span>tring.tri<span data-count="3">m</span>
     | <span data-count="0">N</span>one -&gt; In_channel.input_all stdin |&gt; <span data-count="0">S</span>tring.tri<span data-count="0">m</span>
   in
-  print_endlin<span data-count="3">e</span>
-    (string_of_parse_resul<span data-count="3">t</span>
-       (if opts.dumpast then <span data-count="1">s</span>how_program else <span data-count="2">f</span>un _ -&gt; <span data-count="1">"</span>")
-       (pars<span data-count="3">e</span> program_parser input))
+  let parse_result = parse program_parser input in
+  <span data-count="3">i</span>f opts.dumpast
+  then <span data-count="1">p</span>rint<span data-count="1">f</span> "%s\n" (string_of_parse_resul<span data-count="1">t</span> show_program parse_result)
+  else <span data-count="2">p</span>p_parse_resul<span data-count="2">t</span> std_formatter pp_program parse_result
 ;;
 </code></pre>
       </div>
