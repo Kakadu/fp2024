@@ -18,13 +18,13 @@
       <h2>82.61%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:6.12%"></span>
-      <span class="unvisited" style="top:16.33%"></span>
-      <span class="unvisited" style="top:22.45%"></span>
-      <span class="unvisited" style="top:28.57%"></span>
-      <span class="unvisited" style="bottom:31.63%"></span>
-      <span class="some-visited" style="bottom:12.24%"></span>
-      <span class="unvisited" style="bottom:10.20%"></span>
+      <span class="some-visited" style="top:6.19%"></span>
+      <span class="unvisited" style="top:16.49%"></span>
+      <span class="unvisited" style="top:22.68%"></span>
+      <span class="unvisited" style="top:28.87%"></span>
+      <span class="unvisited" style="bottom:30.93%"></span>
+      <span class="some-visited" style="bottom:12.37%"></span>
+      <span class="unvisited" style="bottom:10.31%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -111,22 +111,21 @@
 <a id="L80"></a><span class="visited"> </span>
 <a id="L81"></a><span > </span>
 <a id="L82"></a><span > </span>
-<a id="L83"></a><span > </span>
-<a id="L84"></a><span class="visited"> </span>
-<a id="L85"></a><span > </span>
-<a id="L86"></a><span class="some-visited"> </span>
-<a id="L87"></a><span > </span>
-<a id="L88"></a><span class="unvisited"> </span>
+<a id="L83"></a><span class="visited"> </span>
+<a id="L84"></a><span > </span>
+<a id="L85"></a><span class="some-visited"> </span>
+<a id="L86"></a><span > </span>
+<a id="L87"></a><span class="unvisited"> </span>
+<a id="L88"></a><span class="visited"> </span>
 <a id="L89"></a><span class="visited"> </span>
-<a id="L90"></a><span class="visited"> </span>
+<a id="L90"></a><span > </span>
 <a id="L91"></a><span > </span>
-<a id="L92"></a><span > </span>
-<a id="L93"></a><span class="visited"> </span>
+<a id="L92"></a><span class="visited"> </span>
+<a id="L93"></a><span > </span>
 <a id="L94"></a><span > </span>
 <a id="L95"></a><span > </span>
 <a id="L96"></a><span > </span>
-<a id="L97"></a><span > </span>
-<a id="L98"></a><span class="visited"> </span>
+<a id="L97"></a><span class="visited"> </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -228,18 +227,17 @@
 <a href="#L95">95</a>
 <a href="#L96">96</a>
 <a href="#L97">97</a>
-<a href="#L98">98</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2027, Ilia Suponev *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 (** Identifier of variables and other definitions. **)
-<span data-count="0">t</span>ype identifier = <span data-count="212">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype identifier = <span data-count="216">s</span>tring [@@deriving show { with_path = false }]
 
 (** Literals of miniML **)
-<span data-count="154">t</span>ype literal =
-  | IntLiteral of in<span data-count="73">t</span> (* 123  | 0 *)
+<span data-count="158">t</span>ype literal =
+  | IntLiteral of in<span data-count="75">t</span> (* 123  | 0 *)
   | BoolLiteral of boo<span data-count="4">l</span> (* true | false *)
   | UnitLiteral (* () value *)
 [@@deriving show { with_path = false }]
@@ -281,7 +279,7 @@
   | AnyType (* _ *)
 [@@deriving show { with_path = false }]
 
-<span data-count="131">t</span>ype pattern =
+<span data-count="135">t</span>ype pattern =
   | PAny (* _ *)
   | PUnit (* () *)
   | PVar of identifier
@@ -289,7 +287,7 @@
   | PConstrain of pattern * core_type (* &lt;pattern&gt; : &lt;core_type&gt; *)
 [@@deriving show { with_path = false }]
 
-<span data-count="557">a</span>nd expression =
+<span data-count="571">a</span>nd expression =
   | Const of literal (* 123 | true *)
   | Variable of identifier (* x | factorial *)
   | Unary of unary_operator * expression (* ~-123 *)
@@ -299,9 +297,9 @@
   | Construct of identifier * <span data-count="0">e</span>xpression optio<span data-count="0">n</span> (* For example: None or Some &lt;expr&gt; *)
   | Match of expression * <span data-count="10">c</span>ase lis<span data-count="3">t</span> (* match E with &lt;cases&gt; *)
   | If of expression * expression * <span data-count="30">e</span>xpression optio<span data-count="8">n</span> (* if x then false else true *)
-  | Lambda of <span data-count="128">p</span>attern lis<span data-count="26">t</span> * expression (* fun (x, (y,z)) -&gt; x / (y + z) *)
+  | Lambda of <span data-count="138">p</span>attern lis<span data-count="28">t</span> * expression (* fun (x, (y,z)) -&gt; x / (y + z) *)
   | Func of <span data-count="32">c</span>ase lis<span data-count="7">t</span> (* function &lt;cases&gt;*)
-  | Apply of expression * <span data-count="288">e</span>xpression lis<span data-count="94">t</span>
+  | Apply of expression * <span data-count="298">e</span>xpression lis<span data-count="97">t</span>
     (* factorial (n / 2) | (fun (x, (y,z)) -&gt; x / (y + z)) (5, (2, 1)) *)
   | Define of definition * expression (* let &lt;definition&gt; in &lt;expr&gt; *)
   | ExpressionBlock of <span data-count="63">e</span>xpression lis<span data-count="14">t</span> (* (let g x = x / 2 in g y; y); *)
@@ -310,9 +308,8 @@
 <span data-count="90">a</span>nd case =
   { pattern : pattern
   ; filter : <span data-count="19">e</span>xpression option
-  ; result : expression
+  ; result : expression (* [(pattern -&gt; E)] or [(pattern when filter -&gt; result)] *)
   }
-(* [(pattern -&gt; E)] or [(pattern when filter -&gt; result)] *)
 [@@deriving show { with_path = false }<span data-count="27">]</span>
 
 <span data-count="0">a</span>nd value_binding = <span data-count="32">p</span>attern * expression [@@deriving show { with_path = false }]
@@ -322,12 +319,12 @@
   * <span data-count="94">v</span>alue_binding lis<span data-count="31">t</span> (* [rec] P1 = E1 and ... and &lt;identifierN&gt; PN = EN *)
 [@@deriving show { with_path = false }]
 
-<span data-count="104">t</span>ype struct_item =
+<span data-count="106">t</span>ype struct_item =
   | DefineItem of definition (* let f x = x;; *)
   | EvalItem of expression (* (fun x -&gt; print_endline x) "Hello world";; *)
 [@@deriving show { with_path = false }]
 
-<span data-count="42">t</span>ype program = <span data-count="250">s</span>truct_item lis<span data-count="52">t</span> [@@deriving show { with_path = false }]
+<span data-count="43">t</span>ype program = <span data-count="255">s</span>truct_item lis<span data-count="53">t</span> [@@deriving show { with_path = false }]
 </code></pre>
       </div>
     </div>
