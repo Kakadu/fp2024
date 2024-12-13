@@ -2,11 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Parser
 open Ast
 open Typedtree
 open Base
-open Format
 
 type error =
   [ `Occurs_check
@@ -14,11 +12,13 @@ type error =
   | `Unification_failed of ty * ty
   ]
 
-let pp_error ppf : error -> _ = function
-  | `Occurs_check -> Format.fprintf ppf "Occurs check failed"
-  | `No_variable s -> Format.fprintf ppf "Undefined variable '%s'" s
+let pp_error ppf : error -> _ =
+  let open Stdlib.Format in
+  function
+  | `Occurs_check -> fprintf ppf "Occurs check failed"
+  | `No_variable s -> fprintf ppf "Undefined variable '%s'" s
   | `Unification_failed (l, r) ->
-    Format.fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
+    fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
 ;;
 
 module R : sig

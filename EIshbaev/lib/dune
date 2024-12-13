@@ -1,0 +1,18 @@
+(library
+ (name EIshbaev_lib)
+ (public_name EIshbaev.Lib)
+ (modules Ast)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
+
+; (library
+;  (name tests)
+;  (modules tests)
+;  (libraries lambda_lib)
+;  (preprocess
+;   (pps ppx_expect ppx_deriving.show))
+;  (instrumentation
+;   (backend bisect_ppx))
+;  (inline_tests))
