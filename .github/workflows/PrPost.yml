@@ -33,11 +33,11 @@ jobs:
       - run: echo "event = ${{ github.event.workflow_run.event }}"
 
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
-        #uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: review
+          allow_forks: true
 
       - run: ls
 
@@ -227,11 +227,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download odoc artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: docs
           path: _docs
+          allow_forks: true
 
       #- run: ls docs
       - run: |
@@ -323,11 +324,12 @@ jobs:
     if: ${{( github.event.workflow_run.event == 'pull_request') && (github.event.workflow_run.conclusion == 'success') }}
     steps:
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: coverage
           path: _coverage
+          allow_forks: true
 
       - run: |
           echo "LANG_NAME=$(cat _coverage/projectname.txt)" >> $GITHUB_ENV
@@ -364,7 +366,7 @@ jobs:
     #  github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           workflow: PR.yml
           name: jscpd_report
