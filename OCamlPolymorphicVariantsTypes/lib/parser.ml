@@ -38,9 +38,9 @@ let is_constructor id =
 
 (** Parse [Miniml.identifier] value. *)
 let ident
-  ?(on_keyword = fun _ -> pfail)
-  ?(on_constructor = fun id -> preturn id)
-  ?(on_simple = fun id -> preturn id)
+      ?(on_keyword = fun _ -> pfail)
+      ?(on_constructor = fun id -> preturn id)
+      ?(on_simple = fun id -> preturn id)
   =
   let helper = many (dsatisfy ident_symbol Fun.id) in
   skip_ws *> dsatisfy ident_symbol Fun.id
@@ -97,7 +97,7 @@ let type_ident_parser =
       perror (Format.sprintf "Not found type identifier, finded keyword '%s'" k))
     ~on_constructor:(fun c ->
       perror (Format.sprintf "Not found type identifier, finded constructor '%s'" c))
-    ~on_simple:(fun s -> preturn s)
+    ~on_simple:preturn
 ;;
 
 let type_identifier state =
@@ -135,8 +135,7 @@ and tuple_type state =
   (skip_ws *> type_constructor >>= helper) state
 
 and type_constructor state =
-  let rec builder t1 tl =
-    match tl with
+  let rec builder t1 = function
     | [] -> t1
     | t2 :: tail -> builder (TypeConstructor (t2, t1)) tail
   in
@@ -187,7 +186,7 @@ and pvariable state =
           (Format.sprintf "Unexpected identifier of pattern: '%s'. It is keyword." id))
       ~on_constructor:(fun id ->
         perror (Format.sprintf "Unexpected constructor on pattern position: '%s'." id))
-      ~on_simple:(fun id -> preturn id)
+      ~on_simple:preturn
   in
   (skip_ws
    *> (helper
@@ -304,12 +303,7 @@ and basic_expr applyable state =
    <|> const_expr)
     state
 
-(** Parser of case expressions:
-    - [| <pattern> when <expr> -> <expr>]
-    - [| <pattern> -> <expr>]
-
-    If [is_first] is [true] then
-    first case of case expression not expected of '|' sympol at start *)
+(** Parser of case expressions: *)
 and case_parser is_first =
   let case_expr p f =
     skip_ws *> (expr <|> perror "Not found expression after special sequence '->' in case")
@@ -494,9 +488,9 @@ and if_expr state =
    *> keyword "if"
    *> (expr
        >>= (fun ex ->
-             skip_ws
-             *> (keyword "then" *> then_block ex
-                 <|> perror "Not found 'then' branch for if-expression"))
+       skip_ws
+       *> (keyword "then" *> then_block ex
+           <|> perror "Not found 'then' branch for if-expression"))
        <|> perror "Not found if expression after keyword 'if'"))
     state
 
@@ -536,7 +530,7 @@ and lambda_expr state =
    >>= fun _ s ->
    (patterns
     >>= (fun (l, pl) ->
-          skip_ws *> (ssequence "->" *> subexp pl) <|> fun _ -> (helper l >>= subexp) s)
+    skip_ws *> (ssequence "->" *> subexp pl) <|> fun _ -> (helper l >>= subexp) s)
     <|> perror "Not found patterns for lambda definition")
      s)
     state
@@ -564,12 +558,12 @@ and value_binding_parser state =
 and value_bindings_parser state =
   (skip_ws *> value_binding_parser
    >>= (fun vb ->
-         element_sequence
-           vb
-           value_binding_parser
-           Fun.id
-           "and"
-           (perror "Not found value binding"))
+   element_sequence
+     vb
+     value_binding_parser
+     Fun.id
+     "and"
+     (perror "Not found value binding"))
    <|> perror "Not found value binging")
     state
 

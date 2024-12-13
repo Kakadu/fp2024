@@ -6,7 +6,6 @@ SPDX-License-Identifier: CC0-1.0
   ((factorial) 5);;
   let rec (factorial : int) = (fun (n : int) -> (if (n > 1) then (n * ((factorial) (n - 1))) else 1));;
   ((print_endline) ((string_of_int) ((factorial) 5)));;
-
   $ ../bin/REPL.exe -dparsetree -i=factorial.test
   [(DefineItem
       (Recursive,

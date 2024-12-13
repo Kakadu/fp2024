@@ -72,20 +72,19 @@ module QChecker = struct
     in
     let type_identifier = map (fun i -> TypeIdentifier i) (gen_identifier false) in
     sized_size core_type_size
-    @@ fix (fun self ->
-         function
-         | 0 -> oneof [ type_identifier; return AnyType ]
-         | depth ->
-           let subtype_gen = self (depth - 1) in
-           frequency
-             [ ( 1
-               , map2
-                   (fun it t2 -> TypeConstructor (it, t2))
-                   (gen_identifier false)
-                   subtype_gen )
-             ; 1, gen_ttuple subtype_gen
-             ; 1, map2 (fun t1 t2 -> ArrowType (t1, t2)) subtype_gen subtype_gen
-             ])
+    @@ fix (fun self -> function
+      | 0 -> oneof [ type_identifier; return AnyType ]
+      | depth ->
+        let subtype_gen = self (depth - 1) in
+        frequency
+          [ ( 1
+            , map2
+                (fun it t2 -> TypeConstructor (it, t2))
+                (gen_identifier false)
+                subtype_gen )
+          ; 1, gen_ttuple subtype_gen
+          ; 1, map2 (fun t1 t2 -> ArrowType (t1, t2)) subtype_gen subtype_gen
+          ])
   ;;
 
   let gen_pattern =
@@ -97,17 +96,15 @@ module QChecker = struct
         (list_size addected_tuple_size subpattern_gen)
     in
     sized_size pattern_depth
-    @@ fix (fun self ->
-         function
-         | 0 ->
-           oneof
-             [ map (fun i -> PVar i) (gen_identifier false); return PUnit; return PAny ]
-         | depth ->
-           let subpattern_gen = self (depth - 1) in
-           frequency
-             [ 1, map2 (fun p1 p2 -> PConstrain (p1, p2)) subpattern_gen gen_core_type
-             ; 1, gen_ptuple subpattern_gen
-             ])
+    @@ fix (fun self -> function
+      | 0 ->
+        oneof [ map (fun i -> PVar i) (gen_identifier false); return PUnit; return PAny ]
+      | depth ->
+        let subpattern_gen = self (depth - 1) in
+        frequency
+          [ 1, map2 (fun p1 p2 -> PConstrain (p1, p2)) subpattern_gen gen_core_type
+          ; 1, gen_ptuple subpattern_gen
+          ])
   ;;
 
   let gen_recursive_type = oneof [ return Recursive; return Nonrecursive ]
@@ -214,25 +211,24 @@ module QChecker = struct
       map (fun cases -> Func cases) (list_size definition_size (gen_case subexpr_gen))
     in
     sized_size expr_depth
-    @@ fix (fun self ->
-         function
-         | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
-         | depth ->
-           let subexpr_gen = self (depth - 1) in
-           frequency
-             [ 1, gen_unary_expr subexpr_gen
-             ; 1, gen_binary_expr subexpr_gen
-             ; 1, gen_tuple_expr subexpr_gen
-             ; 1, gen_list_expr subexpr_gen
-             ; 1, gen_define_expr subexpr_gen
-             ; 1, gen_if_expr subexpr_gen
-             ; 1, constructor_expr subexpr_gen
-             ; 1, gen_lambda subexpr_gen
-             ; 1, gen_apply subexpr_gen
-             ; 1, gen_expr_block subexpr_gen
-             ; 1, gen_match_with_expr subexpr_gen
-             ; 1, gen_function_expr subexpr_gen
-             ])
+    @@ fix (fun self -> function
+      | 0 -> frequency [ 1, gen_const; 1, gen_variable ]
+      | depth ->
+        let subexpr_gen = self (depth - 1) in
+        frequency
+          [ 1, gen_unary_expr subexpr_gen
+          ; 1, gen_binary_expr subexpr_gen
+          ; 1, gen_tuple_expr subexpr_gen
+          ; 1, gen_list_expr subexpr_gen
+          ; 1, gen_define_expr subexpr_gen
+          ; 1, gen_if_expr subexpr_gen
+          ; 1, constructor_expr subexpr_gen
+          ; 1, gen_lambda subexpr_gen
+          ; 1, gen_apply subexpr_gen
+          ; 1, gen_expr_block subexpr_gen
+          ; 1, gen_match_with_expr subexpr_gen
+          ; 1, gen_function_expr subexpr_gen
+          ])
   ;;
 
   let gen_struct_item =

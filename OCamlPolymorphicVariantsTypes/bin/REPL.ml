@@ -27,8 +27,8 @@ let parse_args =
       , "Input file of miniML's code to interpret it" )
     ]
     (fun opt ->
-      eprintf "Argument '%s' are not supported\n" opt;
-      exit ~-1)
+       eprintf "Argument '%s' are not supported\n" opt;
+       exit ~-1)
     "REPL of miniML";
   opts
 ;;
