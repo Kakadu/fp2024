@@ -263,7 +263,9 @@ let parse_chain_right_associative parse_exp parse_fun_op =
 ;;
 
 let bin_op chain1 parse_exp parse_fun_op =
-  chain1 parse_exp (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, exp1, [ exp2 ]))
+  chain1
+    parse_exp
+    (parse_fun_op >>| fun op exp1 exp2 -> Exp_apply (op, Exp_apply (exp1, exp2)))
 ;;
 
 let parse_left_bin_op = bin_op parse_chain_left_associative
@@ -345,12 +347,9 @@ let parse_exp_fun parse_exp =
 ;;
 
 let parse_exp_apply_fun parse_exp =
-  let* exp = parse_exp in
-  many parse_exp
-  >>| fun exp_list ->
-  if List.is_empty exp_list
-  then exp
-  else Exp_apply (exp, List.hd_exn exp_list, List.tl_exn exp_list)
+  parse_chain_left_associative
+    parse_exp
+    (return (fun exp1 exp2 -> Exp_apply (exp1, exp2)))
 ;;
 
 let parse_exp_apply_op parse_exp =

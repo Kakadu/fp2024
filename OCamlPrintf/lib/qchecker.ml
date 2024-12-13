@@ -23,9 +23,7 @@ module TestQCheckManual = struct
   (** [gen_list] without zero size *)
   let gen_list_nat gen = list_size (int_range 1 3) gen
 
-  let gen_operand gen = list_size (int_range 1 1) gen
-
-  let gen_bin_op =
+  let gen_bin_opr =
     oneofl
       [ Exp_ident "*"
       ; Exp_ident "/"
@@ -172,16 +170,13 @@ module TestQCheckManual = struct
                  gen_pattern
                  (gen_list_nat gen_pattern)
                  (self (n / coef))
+             ; map2 (fun exp_fn exp -> Exp_apply (exp_fn, exp)) (self 0) (self (n / coef))
              ; map3
-                 (fun exp first_exp exp_list -> Exp_apply (exp, first_exp, exp_list))
-                 (self 0)
+                 (fun opr opn1 opn2 -> Exp_apply (opr, Exp_apply (opn1, opn2)))
+                 gen_bin_opr
                  (self (n / coef))
-                 (gen_list_nat (self (n / coef)))
-             ; map3
-                 (fun op exp1 exp2 -> Exp_apply (op, exp1, exp2))
-                 gen_bin_op
                  (self (n / coef))
-                 (gen_operand (self (n / coef)))
+               (* TODO: maybe (self 0) => fail *)
              ; map3
                  (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
                  (self (n / coef))

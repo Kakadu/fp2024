@@ -25,11 +25,6 @@ let op_list =
 let is_operator op = List.exists (fun (str, _) -> str = op) op_list
 let get_priority op = List.assoc op op_list
 
-let is_operator_in_exp = function
-  | Exp_apply (Exp_ident op, _, _) when is_operator op -> true
-  | _ -> false
-;;
-
 let is_type_arrow = function
   | Type_arrow (_, _) -> true
   | _ -> false
@@ -165,76 +160,7 @@ let rec pp_expression ppf = function
       (pp_print_list ~pp_sep:pp_space pp_pattern)
       (first_pat :: pat_list);
     pp_exp_constraint exp
-  | Exp_apply (exp, first_exp, exp_list) ->
-    let expression = asprintf "%a" pp_expression exp in
-    let fprintf_with_parens_condition ppf exp =
-      if is_operator_in_exp exp
-      then fprintf ppf " (%a)" pp_expression exp
-      else fprintf ppf " %a" pp_expression exp
-    in
-    let handle_exp_list = function
-      | exp, [] ->
-        fprintf ppf "(%s" expression;
-        fprintf_with_parens_condition ppf exp;
-        fprintf ppf ")"
-      | first_exp, rest_exp_list ->
-        let needs_parens_by_priority = function
-          | Exp_apply (Exp_ident op, _, _) when is_operator op ->
-            compare_priority expression op
-          | _ -> false
-        in
-        if is_operator expression
-        then
-          List.iter
-            (fun exp ->
-              if needs_parens_by_priority exp
-              then
-                if needs_parens_by_priority first_exp
-                then
-                  fprintf
-                    ppf
-                    "(%a) %s (%a)"
-                    pp_expression
-                    first_exp
-                    expression
-                    pp_expression
-                    exp
-                else
-                  fprintf
-                    ppf
-                    "%a %s (%a)"
-                    pp_expression
-                    first_exp
-                    expression
-                    pp_expression
-                    exp
-              else if needs_parens_by_priority first_exp
-              then
-                fprintf
-                  ppf
-                  "(%a) %s %a"
-                  pp_expression
-                  first_exp
-                  expression
-                  pp_expression
-                  exp
-              else
-                fprintf
-                  ppf
-                  "%a %s %a"
-                  pp_expression
-                  first_exp
-                  expression
-                  pp_expression
-                  exp)
-            rest_exp_list
-        else (
-          fprintf ppf "(%s" expression;
-          fprintf_with_parens_condition ppf first_exp;
-          List.iter (fun arg -> fprintf_with_parens_condition ppf arg) rest_exp_list;
-          fprintf ppf ")")
-    in
-    handle_exp_list (first_exp, exp_list)
+  | Exp_apply (exp_fn, exp) -> pp_exp_apply ppf (exp_fn, exp)
   | Exp_match (exp, first_case, case_list) ->
     fprintf ppf "(match %a with" pp_expression exp;
     fprintf ppf " %a)" (pp_print_list ~pp_sep:pp_space pp_case) (first_case :: case_list)
@@ -280,6 +206,38 @@ let rec pp_expression ppf = function
     fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
   | Exp_constraint (exp, core_type) ->
     fprintf ppf "(%a : %a)" pp_expression exp pp_core_type core_type
+
+(* TODO: add compare_priority *)
+and pp_exp_apply ppf (exp_fn, exp) =
+  match exp_fn with
+  | Exp_ident exp_opr when is_operator exp_opr ->
+    (match exp with
+     | Exp_apply (opn, Exp_apply (Exp_ident opr, exp)) when is_operator opr ->
+       fprintf ppf "%a %s " pp_expression opn exp_opr;
+       (match get_priority exp_opr with
+        | 1 ->
+          if get_priority exp_opr <= get_priority opr
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
+        | _ -> fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp))
+     | Exp_apply (Exp_apply (Exp_ident opr, exp), opn) when is_operator opr ->
+       (match get_priority exp_opr with
+        | 2 ->
+          if get_priority exp_opr <= get_priority opr
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
+        | _ ->
+          fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp);
+          fprintf ppf " %s %a" exp_opr pp_expression opn)
+     | Exp_apply (opn1, opn2) ->
+       fprintf ppf "%a %s %a" pp_expression opn1 exp_opr pp_expression opn2
+     | _ -> pp_expression ppf exp)
+  | _ ->
+    (match exp with
+     | Exp_apply (_, Exp_apply _) ->
+       fprintf ppf "%a (%a)" pp_expression exp_fn pp_expression exp
+     | Exp_apply (_, _) -> fprintf ppf "%a %a " pp_expression exp_fn pp_expression exp
+     | _ -> fprintf ppf "%a %a" pp_expression exp_fn pp_expression exp)
 
 and pp_exp_constraint ppf = function
   | Exp_constraint (exp', core_type) ->

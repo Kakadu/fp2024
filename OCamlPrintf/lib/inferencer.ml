@@ -395,7 +395,7 @@ module Infer = struct
           | hd :: tl -> helper env (Exp_fun (hd, tl, exp))
         in
         return (sub, Type_arrow (Subst.apply sub t1, t2))
-      | Exp_apply (e1, e2, []) ->
+      | Exp_apply (e1, e2) ->
         let* s1, t1 = helper env e1 in
         let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
         let* fresh = fresh_var in

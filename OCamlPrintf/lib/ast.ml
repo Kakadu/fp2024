@@ -8,7 +8,6 @@ let coef = 50 (* For the generator's speed. *)
 let min_range = int_range 0 10 (* For the generator's speed. *)
 let gen_string gen = string_size min_range ~gen
 let gen_list gen = list_size min_range gen
-let gen_operand gen = list_size (int_range 1 1) gen
 
 type 'a list_ = ('a list[@gen gen_list gen_a])
 [@@deriving show { with_path = false }, qcheck]
@@ -159,16 +158,15 @@ module Expression = struct
         * (t[@gen gen_sized (n / coef)])
     | Exp_fun of pattern * pattern list_ * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
-        ((t * t * t list)
+        ((t * t)
         [@gen
           oneof
-            [ map3
-                (fun exp first_exp exp_list -> exp, first_exp, exp_list)
+            [ map2
+                (fun exp first_exp -> exp, first_exp)
                 (gen_sized 0)
                 (gen_sized (n / coef))
-                (gen_list (gen_sized (n / coef)))
             ; map3
-                (fun op exp1 exp2 -> op, exp1, exp2)
+                (fun opr opn1 opn2 -> opr, Exp_apply (opn1, opn2))
                 (oneofl
                    [ Exp_ident "*"
                    ; Exp_ident "/"
@@ -184,7 +182,8 @@ module Expression = struct
                    ; Exp_ident "||"
                    ])
                 (gen_sized (n / coef))
-                (gen_operand (gen_sized (n / coef)))
+                (gen_sized (n / coef))
+              (* TODO: maybe (self 0) => fail *)
             ]])
     | Exp_match of
         (t[@gen gen_sized (n / coef)])

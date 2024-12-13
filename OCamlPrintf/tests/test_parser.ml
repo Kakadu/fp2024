@@ -23,7 +23,7 @@ let%expect_test "parsing value structure and factorial with `match'" =
   |};
   [%expect
     {|
-  let rec factorial = (fun n -> (match n with | 0 -> 1 | 1 -> 1 | _ -> n * (factorial (n - 1))));;
+  let rec factorial = (fun n -> (match n with | 0 -> 1 | 1 -> 1 | _ -> n * factorial (n - 1)));;
   |}]
 ;;
 
@@ -102,7 +102,7 @@ let%expect_test "parsing several structure items" =
   |};
   [%expect {|
   let squared = (fun x -> x * x);;
-  (squared 5);;
+  squared 5;;
   |}]
 ;;
 
