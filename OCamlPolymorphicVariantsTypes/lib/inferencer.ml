@@ -1,4 +1,4 @@
-(** Copyright 2024-2027, Ilia Suponev, Chirkov Dmitri *)
+(** Copyright 2024-2027, Ilia Suponev, Dmitri Chirkov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -403,7 +403,7 @@ let infer_expression =
          let* s2, t2 = helper (TypeEnv.extend env x s) expr in
          let* s = Subst.compose s1 s2 in
          return (s, t2)
-       | _ -> failwith "asda")
+       | _ -> fail `Not_implemented)
     | Define ((Recursive, (p, e) :: _), expr) ->
       (match p with
        | PVar x ->
