@@ -78,9 +78,8 @@ and expression =
 and case =
   { pattern : pattern
   ; filter : expression option
-  ; result : expression
+  ; result : expression (* [(pattern -> E)] or [(pattern when filter -> result)] *)
   }
-(* [(pattern -> E)] or [(pattern when filter -> result)] *)
 [@@deriving show { with_path = false }]
 
 and value_binding = pattern * expression [@@deriving show { with_path = false }]

@@ -210,7 +210,10 @@ let default_schanger : state_changer =
 
     [!] This parser returns also [ParseSuccess] or [ParseFail]*)
 let rec satisfy
-  :  char_predicate -> (char -> 'a) -> state_changer option -> parser_state
+  :  char_predicate
+  -> (char -> 'a)
+  -> state_changer option
+  -> parser_state
   -> 'a parse_result
   =
   fun condition converter schanger state ->
