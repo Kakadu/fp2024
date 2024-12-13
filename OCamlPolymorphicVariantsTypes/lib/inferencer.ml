@@ -232,11 +232,13 @@ module Scheme = struct
     S (xs, Subst.apply s2 t)
   ;;
 
-  let pp fmt = function
+  let pp fmt =
+    let open Stdlib.Format in
+    function
     | S (st, typ) ->
       if VarSet.is_empty st
-      then Format.fprintf fmt "%a" pp_ty typ
-      else Format.fprintf fmt "%a. %a" VarSet.pp st pp_ty typ
+      then fprintf fmt "%a" pp_ty typ
+      else fprintf fmt "%a. %a" VarSet.pp st pp_ty typ
   ;;
 end
 
@@ -328,7 +330,7 @@ let infer_expression =
          let* t = instantiate s in
          return (Subst.empty, t)
        | None -> fail (`No_variable x))
-    | Unary (op, e) ->
+    | Unary (_, e) ->
       let* sub1, t1 = helper env e in
       let* sub2 = Subst.unify (Subst.apply sub1 t1) ty_int in
       let* sub = Subst.compose_all [ sub1; sub2 ] in
