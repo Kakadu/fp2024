@@ -39,8 +39,8 @@ let is_constructor id =
 (** Parse [Miniml.identifier] value. *)
 let ident
       ?(on_keyword = fun _ -> pfail)
-      ?(on_constructor = fun id -> preturn id)
-      ?(on_simple = fun id -> preturn id)
+      ?(on_constructor = preturn)
+      ?(on_simple = preturn)
   =
   let helper = many (dsatisfy ident_symbol Fun.id) in
   skip_ws *> dsatisfy ident_symbol Fun.id
@@ -238,17 +238,14 @@ let variable =
       ~on_keyword:(fun _ -> pfail)
       ~on_constructor:(fun id ->
         perror (Format.sprintf "Invalid variable identifier: '%s'." id))
-      ~on_simple:(fun id -> preturn id)
+      ~on_simple:preturn
   in
   skip_ws *> helper >>| fun s -> Variable s
 ;;
 
 let constructor_name =
   let helper =
-    ident
-      ~on_keyword:(fun _ -> pfail)
-      ~on_constructor:(fun id -> preturn id)
-      ~on_simple:(fun _ -> pfail)
+    ident ~on_keyword:(fun _ -> pfail) ~on_constructor:preturn ~on_simple:(fun _ -> pfail)
   in
   skip_ws *> helper
 ;;

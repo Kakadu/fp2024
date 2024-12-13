@@ -57,7 +57,7 @@ type pattern =
   | PConstrain of pattern * core_type (* <pattern> : <core_type> *)
 [@@deriving show { with_path = false }]
 
-and expression =
+type expression =
   | Const of literal (* 123 | true *)
   | Variable of identifier (* x | factorial *)
   | Unary of unary_operator * expression (* ~-123 *)
@@ -84,9 +84,8 @@ and case =
 
 and value_binding = pattern * expression [@@deriving show { with_path = false }]
 
-and definition =
-  recursive_type
-  * value_binding list (* [rec] P1 = E1 and ... and <identifierN> PN = EN *)
+and definition = recursive_type * value_binding list
+(* [rec] P1 = E1 and ... and <identifierN> PN = EN *)
 [@@deriving show { with_path = false }]
 
 type struct_item =
