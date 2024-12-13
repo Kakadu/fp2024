@@ -18,13 +18,13 @@
       <h2>82.61%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:6.19%"></span>
-      <span class="unvisited" style="top:16.49%"></span>
-      <span class="unvisited" style="top:22.68%"></span>
-      <span class="unvisited" style="top:28.87%"></span>
-      <span class="unvisited" style="bottom:30.93%"></span>
-      <span class="some-visited" style="bottom:12.37%"></span>
-      <span class="unvisited" style="bottom:10.31%"></span>
+      <span class="some-visited" style="top:6.25%"></span>
+      <span class="unvisited" style="top:16.67%"></span>
+      <span class="unvisited" style="top:22.92%"></span>
+      <span class="unvisited" style="top:29.17%"></span>
+      <span class="unvisited" style="bottom:30.21%"></span>
+      <span class="some-visited" style="bottom:11.46%"></span>
+      <span class="some-visited" style="bottom:9.38%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -115,17 +115,16 @@
 <a id="L84"></a><span > </span>
 <a id="L85"></a><span class="some-visited"> </span>
 <a id="L86"></a><span > </span>
-<a id="L87"></a><span class="unvisited"> </span>
-<a id="L88"></a><span class="visited"> </span>
-<a id="L89"></a><span class="visited"> </span>
+<a id="L87"></a><span class="some-visited"> </span>
+<a id="L88"></a><span > </span>
+<a id="L89"></a><span > </span>
 <a id="L90"></a><span > </span>
-<a id="L91"></a><span > </span>
-<a id="L92"></a><span class="visited"> </span>
+<a id="L91"></a><span class="visited"> </span>
+<a id="L92"></a><span > </span>
 <a id="L93"></a><span > </span>
 <a id="L94"></a><span > </span>
 <a id="L95"></a><span > </span>
-<a id="L96"></a><span > </span>
-<a id="L97"></a><span class="visited"> </span>
+<a id="L96"></a><span class="visited"> </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -226,7 +225,6 @@
 <a href="#L94">94</a>
 <a href="#L95">95</a>
 <a href="#L96">96</a>
-<a href="#L97">97</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2027, Ilia Suponev *)
 
@@ -287,7 +285,7 @@
   | PConstrain of pattern * core_type (* &lt;pattern&gt; : &lt;core_type&gt; *)
 [@@deriving show { with_path = false }]
 
-<span data-count="571">a</span>nd expression =
+<span data-count="571">t</span>ype expression =
   | Const of literal (* 123 | true *)
   | Variable of identifier (* x | factorial *)
   | Unary of unary_operator * expression (* ~-123 *)
@@ -314,9 +312,8 @@
 
 <span data-count="0">a</span>nd value_binding = <span data-count="32">p</span>attern * expression [@@deriving show { with_path = false }]
 
-<span data-count="0">a</span>nd definition =
-  <span data-count="30">r</span>ecursive_type
-  * <span data-count="94">v</span>alue_binding lis<span data-count="31">t</span> (* [rec] P1 = E1 and ... and &lt;identifierN&gt; PN = EN *)
+<span data-count="0">a</span>nd definition = <span data-count="30">r</span>ecursive_type * <span data-count="94">v</span>alue_binding lis<span data-count="31">t</span>
+(* [rec] P1 = E1 and ... and &lt;identifierN&gt; PN = EN *)
 [@@deriving show { with_path = false }]
 
 <span data-count="106">t</span>ype struct_item =
