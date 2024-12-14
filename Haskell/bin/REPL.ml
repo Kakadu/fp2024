@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Haskell_lib.Parser
-
 type opts =
   { mutable dump_parsetree : bool
   ; mutable read_from_file : string
@@ -35,14 +33,5 @@ let () =
     | "" -> In_channel.(input_all stdin) |> String.trim
     | _ -> In_channel.with_open_text opts.read_from_file In_channel.input_all
   in
-  if opts.dump_parsetree
-  then parse_and_print_line text
-  else (
-    match parse_line text with
-    | Result.Ok list ->
-      pp_bindinglist list;
-      (match Haskell_lib.Inferencer.w_program list with
-       | Result.Ok env -> Format.printf "Result: %a" Haskell_lib.Inferencer.pp_typeenv env
-       | Result.Error err -> Format.printf "Error: %a" Haskell_lib.Pprint.pp_error err)
-    | Result.Error error -> Format.printf "Error: %s\n%!" error)
+  Haskell_lib.Pai.parse_and_infer text opts.dump_parsetree
 ;;
