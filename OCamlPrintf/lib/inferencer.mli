@@ -3,15 +3,16 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type error =
-  [ `No_variable of string
-  | `Not_implemented
+  [ `Impossible_error
   | `Occurs_check
+  | `Not_implemented
+  | `No_variable of string
   | `Unification_failed of Ast.core_type * Ast.core_type
   ]
 
 val pp_error : Format.formatter -> error -> unit
 
-module R : sig
+module State : sig
   type 'a t
 
   val return : 'a -> 'a t
@@ -83,7 +84,7 @@ module VarSet : sig
   val to_rev_seq : t -> elt Seq.t
   val add_seq : elt Seq.t -> t -> t
   val of_seq : elt Seq.t -> t
-  val fold_left_m : ('a -> elt -> 'a R.t) -> t -> 'a R.t -> 'a R.t
+  val fold_left_m : ('a -> elt -> 'a State.t) -> t -> 'a State.t -> 'a State.t
   val pp : Format.formatter -> t -> unit
 end
 
@@ -103,11 +104,11 @@ module Subst : sig
   type t
 
   val empty : t
-  val singleton : string -> Ast.core_type -> t R.t
+  val singleton : string -> Ast.core_type -> t State.t
   val apply : t -> Ast.core_type -> Ast.core_type
-  val unify : Ast.core_type -> Ast.core_type -> t R.t
-  val compose : t -> t -> t R.t
-  val compose_all : t list -> t R.t
+  val unify : Ast.core_type -> Ast.core_type -> t State.t
+  val compose : t -> t -> t State.t
+  val compose_all : t list -> t State.t
   val remove : t -> string -> t
 end
 
@@ -128,29 +129,34 @@ module TypeEnv : sig
   val free_vars : ('a, scheme, 'b) Base.Map.t -> VarSet.t
   val apply : Subst.t -> ('a, scheme, 'b) Base.Map.t -> ('a, scheme, 'b) Base.Map.t
   val pp : Format.formatter -> ('a, string * scheme, 'b) Base.Map.t -> unit
-  val find_exn : (string, 'a R.t, 'b) Base.Map.t -> string -> 'a R.t
+  val find_exn : (string, 'a State.t, 'b) Base.Map.t -> string -> 'a State.t
 end
 
 module Infer : sig
-  val unify : Ast.core_type -> Ast.core_type -> Subst.t R.t
-  val fresh_var : Ast.core_type R.t
-  val instantiate : scheme -> Ast.core_type R.t
+  val unify : Ast.core_type -> Ast.core_type -> Subst.t State.t
+  val fresh_var : Ast.core_type State.t
+  val instantiate : scheme -> Ast.core_type State.t
   val generalize : TypeEnv.t -> Ast.core_type -> scheme
 
   val lookup_env
     :  string
     -> (string, scheme, 'a) Base.Map.t
-    -> (Subst.t * Ast.core_type) R.t
+    -> (Subst.t * Ast.core_type) State.t
 
-  val infer_pattern : TypeEnv.t -> Ast.pattern -> (TypeEnv.t * Ast.core_type) R.t
-  val infer_expression : TypeEnv.t -> Ast.Expression.t -> (Subst.t * Ast.core_type) R.t
-  val infer_srtucture_item : TypeEnv.t -> Ast.structure_item list -> TypeEnv.t R.t
+  val infer_pattern : TypeEnv.t -> Ast.pattern -> (TypeEnv.t * Ast.core_type) State.t
+
+  val infer_expression
+    :  TypeEnv.t
+    -> Ast.Expression.t
+    -> (Subst.t * Ast.core_type) State.t
+
+  val infer_srtucture_item : TypeEnv.t -> Ast.structure_item list -> TypeEnv.t State.t
 
   val infer_value_binding_list
     :  TypeEnv.t
     -> Subst.t
     -> Ast.Expression.t Ast.value_binding list
-    -> TypeEnv.t R.t
+    -> TypeEnv.t State.t
 end
 
 val run_inferencer : Ast.structure_item list -> (TypeEnv.t, error) result

@@ -202,6 +202,7 @@ let parse_pat_construct_keyword parse_pat =
 let parse_pat_construct parse_pat =
   let parse_elements =
     ws *> string "[" *> sep_by (ws *> string ";") parse_pat
+    <* ws
     <* string "]"
     >>| List.fold_right
           ~init:(Pat_construct ("[]", None))
