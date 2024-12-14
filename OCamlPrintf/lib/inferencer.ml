@@ -344,10 +344,6 @@ module Infer = struct
        | Const_integer _ -> return (env, Type_int)
        | Const_string _ -> return (env, Type_string)
        | Const_char _ -> return (env, Type_char))
-    | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
-    | Pat_construct ("[]", None) ->
-      let* fresh = fresh_var in
-      return (env, Type_list fresh)
     | Pat_tuple (fst, snd, rest_list) ->
       let* env1, t1 = infer_pattern env fst in
       let* env2, t2 = infer_pattern env1 snd in
@@ -361,6 +357,33 @@ module Infer = struct
           rest_list
       in
       return (env_rest, Type_tuple (t1, t2, t_list))
+    | Pat_construct ("[]", None) ->
+      let* fresh = fresh_var in
+      return (env, Type_list fresh)
+    | Pat_construct ("::", Some exp) ->
+      (match exp with
+       | Pat_tuple (head, tail, []) ->
+         let* env, type_of_list = infer_pattern env head in
+         let rec infer_tail env (cur_pat : pattern) type_of_list =
+           match cur_pat with
+           | Pat_construct (_, None) -> return (env, type_of_list)
+           | Pat_construct (_, Some pat_tail) ->
+             (match pat_tail with
+              | Pat_tuple (next_head, next_tail, []) ->
+                let* env, type_of_pat = infer_pattern env next_head in
+                let* unified_sub = unify type_of_list type_of_pat in
+                let type_of_list = Subst.apply unified_sub type_of_list in
+                let* env, type_of_list =
+                  infer_tail (TypeEnv.apply unified_sub env) next_tail type_of_list
+                in
+                return (env, type_of_list)
+              | _ -> fail `Impossible_error)
+           | _ -> fail `Impossible_error
+         in
+         let* env, type_of_list = infer_tail env tail type_of_list in
+         return (env, Type_list type_of_list)
+       | _ -> fail `Impossible_error)
+    | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
     | Pat_constraint (pat, c_type) ->
       let* env, typ = infer_pattern env pat in
       let* unified_sub = unify typ c_type in
@@ -440,11 +463,34 @@ module Infer = struct
       let typ2 = Subst.apply sub_result t2 in
       let typ_list_rest = List.map (fun typ -> Subst.apply sub_result typ) t_list in
       return (sub_result, Type_tuple (typ1, typ2, typ_list_rest))
-    | Exp_construct (id, None) when id = "true" || id = "false" ->
-      return (Subst.empty, Type_bool)
     | Exp_construct ("[]", None) ->
       let* fresh = fresh_var in
       return (Subst.empty, Type_list fresh)
+    | Exp_construct ("::", Some exp) ->
+      (match exp with
+       | Exp_tuple (head, tail, []) ->
+         let* sub, type_of_list = infer_expression env head in
+         let rec infer_tail sub_acc (cur_exp : Expression.t) =
+           match cur_exp with
+           | Exp_construct (_, None) -> return sub_acc
+           | Exp_construct (_, Some exp_tail) ->
+             (match exp_tail with
+              | Exp_tuple (next_head, next_tail, []) ->
+                let* sub_of_exp, type_of_exp = infer_expression env next_head in
+                let* unified_sub = unify type_of_list type_of_exp in
+                let* composed_sub =
+                  Subst.compose_all [ sub_acc; sub_of_exp; unified_sub ]
+                in
+                let* final_sub = infer_tail composed_sub next_tail in
+                return final_sub
+              | _ -> fail `Impossible_error)
+           | _ -> fail `Impossible_error
+         in
+         let* final_sub = infer_tail sub tail in
+         return (final_sub, Type_list type_of_list)
+       | _ -> fail `Impossible_error)
+    | Exp_construct (id, None) when id = "true" || id = "false" ->
+      return (Subst.empty, Type_bool)
     | Exp_ifthenelse (if_, then_, Some else_) ->
       let* s1, t1 = infer_expression env if_ in
       let* s2, t2 = infer_expression (TypeEnv.apply s1 env) then_ in

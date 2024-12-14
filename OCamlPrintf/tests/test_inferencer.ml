@@ -63,3 +63,24 @@ let%expect_test "type check pattern constraint" =
     val f : (int -> char) -> int -> char
   |}]
 ;;
+
+let%expect_test "type check of expression list" =
+  run {| let f a = [a; true] |};
+  [%expect {|
+    val f : bool -> bool list
+  |}]
+;;
+
+let%expect_test "type check invalid expression list" =
+  run {| let f a = [true; a; 2] |};
+  [%expect {|
+    Infer error: unification failed on bool and int
+  |}]
+;;
+
+let%expect_test "type check of pattern list" =
+  run {| let f a = match a with [q; q] -> q | [w; 2] -> w |};
+  [%expect {|
+    val f : int list -> int
+  |}]
+;;
