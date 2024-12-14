@@ -151,12 +151,6 @@ module Infer : sig
     -> (Subst.t * Ast.core_type) State.t
 
   val infer_srtucture_item : TypeEnv.t -> Ast.structure_item list -> TypeEnv.t State.t
-
-  val infer_value_binding_list
-    :  TypeEnv.t
-    -> Subst.t
-    -> Ast.Expression.t Ast.value_binding list
-    -> TypeEnv.t State.t
 end
 
 val run_inferencer : Ast.structure_item list -> (TypeEnv.t, error) result

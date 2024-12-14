@@ -402,13 +402,20 @@ module Infer = struct
        | Const_integer _ -> return (Subst.empty, Type_int)
        | Const_string _ -> return (Subst.empty, Type_string)
        | Const_char _ -> return (Subst.empty, Type_char))
-    | Exp_let (Nonrecursive, { pat = Pat_var pat; exp }, [], exp1) ->
-      let* s1, t1 = infer_expression env exp in
-      let env2 = TypeEnv.apply s1 env in
-      let t2 = generalize env2 t1 in
-      let* s2, t3 = infer_expression (TypeEnv.extend env2 pat t2) exp1 in
-      let* final_subst = Subst.compose s1 s2 in
-      return (final_subst, t3)
+    | Exp_let (Nonrecursive, value_binding, value_binding_list, exp) ->
+      let* env, sub1 =
+        infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
+      in
+      let* sub2, type2 = infer_expression env exp in
+      let* composed_sub = Subst.compose sub2 sub1 in
+      return (composed_sub, type2)
+    | Exp_let (Recursive, value_binding, value_binding_list, exp) ->
+      let* env, sub1 =
+        rec_infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
+      in
+      let* sub2, type2 = infer_expression env exp in
+      let* composed_sub = Subst.compose sub2 sub1 in
+      return (composed_sub, type2)
     | Exp_fun (pat, pat_list, exp) ->
       let* env, t1 = infer_pattern env pat in
       let* sub, t2 =
@@ -518,6 +525,7 @@ module Infer = struct
        | _ -> fail `Impossible_error)
     | Exp_construct (id, None) when id = "true" || id = "false" ->
       return (Subst.empty, Type_bool)
+    | Exp_construct (_, _) -> fail `Impossible_error
     | Exp_ifthenelse (if_, then_, Some else_) ->
       let* s1, t1 = infer_expression env if_ in
       let* s2, t2 = infer_expression (TypeEnv.apply s1 env) then_ in
@@ -544,21 +552,9 @@ module Infer = struct
       let* unified_sub = unify typ c_type in
       let* final_sub = Subst.compose unified_sub sub in
       return (final_sub, typ)
-    | _ -> fail `Not_implemented
-  ;;
-
-  let rec infer_srtucture_item env ast =
-    RList.fold_left ast ~init:(return env) ~f:(fun env ->
-        function
-        | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
-          infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
-        | Struct_eval exp ->
-          let* _, _ = infer_expression env exp in
-          return env
-        | _ -> fail `Not_implemented)
 
   and infer_value_binding_list env sub = function
-    | [] -> return env
+    | [] -> return (env, sub)
     | { pat = Pat_var pat; exp } :: rest ->
       let* new_sub, typ = infer_expression env exp in
       let* composed_sub = Subst.compose sub new_sub in
@@ -567,6 +563,41 @@ module Infer = struct
       let env = TypeEnv.extend env pat generalized_ty in
       infer_value_binding_list env composed_sub rest
     | _ -> fail `Not_implemented
+
+  and rec_infer_value_binding_list env sub = function
+    | [] -> return (env, sub)
+    | { pat = Pat_var pat; exp } :: rest ->
+      let* fresh = fresh_var in
+      let env = TypeEnv.extend env pat (Scheme (VarSet.empty, fresh)) in
+      let* new_sub, typ = infer_expression env exp in
+      let* sub2 = unify (Subst.apply new_sub fresh) typ in
+      let* composed_sub = Subst.compose_all [ new_sub; sub2; sub ] in
+      let env = TypeEnv.apply composed_sub env in
+      let generalized_ty = generalize env (Subst.apply composed_sub typ) in
+      let env = TypeEnv.extend env pat generalized_ty in
+      rec_infer_value_binding_list env composed_sub rest
+    | _ -> fail `Not_implemented
+  ;;
+
+  let infer_srtucture_item env ast =
+    RList.fold_left ast ~init:(return env) ~f:(fun env ->
+        function
+        | Struct_eval exp ->
+          let* _, _ = infer_expression env exp in
+          return env
+        | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
+          let* env, _ =
+            infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
+          in
+          return env
+        | Struct_value (Recursive, value_binding, value_binding_list) ->
+          let* env, _ =
+            rec_infer_value_binding_list
+              env
+              Subst.empty
+              (value_binding :: value_binding_list)
+          in
+          return env)
   ;;
 end
 

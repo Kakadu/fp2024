@@ -43,6 +43,26 @@ let%expect_test "type check definition function" =
   |}]
 ;;
 
+let%expect_test "type check recursive let expression" =
+  run
+    {| 
+    let prime n =
+      let rec check_zero x d =
+        match d with
+        | 1 -> true
+        | _ -> x + d <> 0 && check_zero x (d - 1)
+      in
+      match n with
+      | 0 -> false
+      | 1 -> false
+      | _ -> check_zero n (n - 1)
+    ;;
+    |};
+  [%expect {|
+    val prime : int -> bool
+  |}]
+;;
+
 let%expect_test "type check of operators" =
   run {| let f x y z = if x + 1 = 0 && y = 1 || z >= 'w' then 2 else 26;; |};
   [%expect {|
@@ -89,5 +109,17 @@ let%expect_test "type check pattern constraint" =
   run {| let f (q : int -> char) (x : int) = q x |};
   [%expect {|
     val f : (int -> char) -> int -> char
+  |}]
+;;
+
+let%expect_test "type check recursive struct value" =
+  run
+    {| 
+    let rec factorial n = if n <= 1 then 1 else n * factorial (n - 1) 
+    and strange_factorial k = if k <= 1 then 1 else k + strange_factorial (k - 1)
+    |};
+  [%expect {|
+    val factorial : int -> int
+    val strange_factorial : int -> int
   |}]
 ;;
