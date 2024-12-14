@@ -1,3 +1,25 @@
 (cram
  (applies_to repl)
- (deps ../lib/run_binding.exe ../bin/REPL.exe))
+ (deps
+  ../lib/run_binding.exe
+  ../bin/REPL.exe
+  manytests/do_not_type/001.hs
+  manytests/do_not_type/002if.hs
+  manytests/do_not_type/003occurs.hs
+  manytests/do_not_type/004_let_poly.hs
+  manytests/do_not_type/099.hs
+  manytests/typed/001fac.hs
+  manytests/typed/001fac.hs
+  manytests/typed/002fac.hs
+  manytests/typed/003fib.hs
+  manytests/typed/004manyargs.hs
+  manytests/typed/005fix.hs
+  manytests/typed/006partial.hs
+  manytests/typed/006partial2.hs
+  manytests/typed/006partial3.hs
+  manytests/typed/007order.hs
+  manytests/typed/008ascription.hs
+  manytests/typed/009let_poly.hs
+  manytests/typed/010sukharev.hs
+  manytests/typed/015tuples.hs
+  manytests/typed/016lists.hs))

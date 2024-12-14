@@ -5,10 +5,89 @@ SPDX-License-Identifier: MIT
   ================================================================================
   success (ran 1 tests)
 
-  $ cat << EOF | ../bin/REPL.exe
-  > fac n = if n < 0 then Nothing else Just (save_fac n) where save_fac y | y == 0  = 1 | True = y * save_fac (y - 1)
-  > EOF
-  Parsed: fac n = (if n < 0 then Nothing else Just (save_fac n)) where save_fac y | y == 0 = 1 | True = y * save_fac (y - 1)
-  Result: [ 
+  $ ../bin/REPL.exe < manytests/do_not_type/001.hs
+  Undefined variable 'fac'
+
+  $ ../bin/REPL.exe < manytests/do_not_type/002if.hs
+  unification failed on Int and Bool
+
+  $ ../bin/REPL.exe < manytests/do_not_type/003occurs.hs
+  Occurs check failed
+
+  $ ../bin/REPL.exe < manytests/do_not_type/004_let_poly.hs
+  unification failed on Int and Bool
+
+  $ ../bin/REPL.exe < manytests/do_not_type/099.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/001fac.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/002fac.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/003fib.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/004manyargs.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/005fix.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/006partial.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/006partial2.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/006partial3.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/007order.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/008ascription.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/009let_poly.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/010sukharev.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/015tuples.hs
+  Result: [
+  fac:  Int -> Maybe Int
+   ]
+
+  $ ../bin/REPL.exe < manytests/typed/016lists.hs
+  Result: [
   fac:  Int -> Maybe Int
    ]
