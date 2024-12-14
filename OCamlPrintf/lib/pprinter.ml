@@ -112,7 +112,6 @@ let rec pp_pattern ppf = function
       "(%a)"
       (pp_print_list ~pp_sep:pp_comma pp_pattern)
       (first_pat :: second_pat :: pat_list)
-  | Pat_construct ("::", None) -> fprintf ppf "[]"
   | Pat_construct ("::", Some pat) ->
     (match pat with
      | Pat_tuple (head, tail, []) ->
@@ -170,7 +169,6 @@ let rec pp_expression ppf = function
       "(%a)"
       (pp_print_list ~pp_sep:pp_comma pp_expression)
       (first_exp :: second_exp :: exp_list)
-  | Exp_construct ("::", None) -> fprintf ppf "[]"
   | Exp_construct ("::", Some exp) ->
     (match exp with
      | Exp_tuple (head, tail, []) ->
@@ -211,34 +209,40 @@ and pp_exp_apply ppf (exp_fn, exp) =
   match exp_fn with
   | Exp_ident exp_opr when is_operator exp_opr ->
     (match exp with
-     | Exp_apply (Exp_apply (Exp_ident opr1, exp1), Exp_apply (Exp_ident opr2, exp2))
-       when is_operator opr1 && is_operator opr2 ->
-       fprintf ppf "%a %s " pp_exp_apply (Exp_ident opr1, exp1) exp_opr;
-       if compare_priority opr1 opr2
-       then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr2, exp2)
-       else fprintf ppf "%a" pp_exp_apply (Exp_ident opr2, exp2)
-     | Exp_apply (Exp_apply (Exp_ident opr, exp), opn) when is_operator opr ->
+     | Exp_apply (Exp_apply (Exp_ident opr1, exp1), opn) when is_operator opr1 ->
        (match get_priority exp_opr with
         | 4 | 5 ->
-          if compare_priority exp_opr opr
-          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
-          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
+          if compare_priority exp_opr opr1
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr1, exp1)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr1, exp1)
         | _ ->
-          if get_priority exp_opr < get_priority opr
-          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
-          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp));
-       fprintf ppf " %s %a" exp_opr pp_expression opn
-     | Exp_apply (opn, Exp_apply (Exp_ident opr, exp)) when is_operator opr ->
-       fprintf ppf "%a %s " pp_expression opn exp_opr;
+          if get_priority exp_opr < get_priority opr1
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr1, exp1)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr1, exp1));
+       fprintf ppf " %s " exp_opr;
+       (match opn with
+        | Exp_apply (Exp_ident opr2, exp2) when is_operator opr2 ->
+          if compare_priority opr1 opr2 && get_priority exp_opr < get_priority opr2
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr2, exp2)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr2, exp2)
+        | _ -> fprintf ppf "%a" pp_expression opn)
+     | Exp_apply (opn, Exp_apply (Exp_ident opr2, exp2)) when is_operator opr2 ->
+       (match opn with
+        | Exp_apply (Exp_ident opr1, exp1) when is_operator opr1 ->
+          if compare_priority opr2 opr1 && get_priority exp_opr < get_priority opr1
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr1, exp1)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr1, exp1)
+        | _ -> fprintf ppf "%a" pp_expression opn);
+       fprintf ppf " %s " exp_opr;
        (match get_priority exp_opr with
         | 1 | 2 | 3 ->
-          if compare_priority exp_opr opr
-          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
-          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp)
+          if compare_priority exp_opr opr2
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr2, exp2)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr2, exp2)
         | _ ->
-          if get_priority exp_opr < get_priority opr
-          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr, exp)
-          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr, exp))
+          if get_priority exp_opr < get_priority opr2
+          then fprintf ppf "(%a)" pp_exp_apply (Exp_ident opr2, exp2)
+          else fprintf ppf "%a" pp_exp_apply (Exp_ident opr2, exp2))
      | Exp_apply (opn1, opn2) ->
        fprintf ppf "%a %s %a" pp_expression opn1 exp_opr pp_expression opn2
      | _ -> pp_expression ppf exp)

@@ -152,3 +152,27 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
   let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
   |}]
 ;;
+
+let%expect_test "parsing expression with priority" =
+  run {|
+  1 + 2 + 3;;
+  (1 + 2) - 3;;
+  (1 + 2) * 3;;
+  3 * (1 + 2);;
+  (1 + 2) * (3 + 4);;
+  1 * 2 * (3 + 4);;
+  (1 + 2) * 3 * 4;;
+  1 / 2 - 3 * 4;;
+  ;;
+  |};
+  [%expect {|
+  1 + 2 + 3;;
+  1 + 2 - 3;;
+  (1 + 2) * 3;;
+  3 * (1 + 2);;
+  (1 + 2) * (3 + 4);;
+  1 * 2 * (3 + 4);;
+  (1 + 2) * 3 * 4;;
+  1 / 2 - 3 * 4;;
+  |}]
+;;
