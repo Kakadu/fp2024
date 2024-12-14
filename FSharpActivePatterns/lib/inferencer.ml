@@ -190,8 +190,8 @@ end = struct
   ;;
 
   (* aliases for Map actions *)
-  let find map key = Map.find map key
-  let remove map key = Map.remove map key
+  let find = Map.find
+  let remove = Map.remove
 
   (* search for input in given map, if there is no match, output
      input type, else output found typ value associated w this key.
