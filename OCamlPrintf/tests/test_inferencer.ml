@@ -43,24 +43,17 @@ let%expect_test "type check definition function" =
   |}]
 ;;
 
+let%expect_test "type check of operators" =
+  run {| let f x y z = if x + 1 = 0 && y = 1 || z >= 'w' then 2 else 26;; |};
+  [%expect {|
+    val f : int -> int -> char -> int
+  |}]
+;;
+
 let%expect_test "type check pattern matching" =
   run {| let f a b = match a b with 1 -> 'q' | 2 -> 'w' | _ -> 'e' |};
   [%expect {|
     val f : ('b -> int) -> 'b -> char
-  |}]
-;;
-
-let%expect_test "type check expression constraint" =
-  run {| let f a b = (b a : int) |};
-  [%expect {|
-    val f : 'a -> ('a -> int) -> int
-  |}]
-;;
-
-let%expect_test "type check pattern constraint" =
-  run {| let f (q : int -> char) (x : int) = q x |};
-  [%expect {|
-    val f : (int -> char) -> int -> char
   |}]
 ;;
 
@@ -79,8 +72,22 @@ let%expect_test "type check invalid expression list" =
 ;;
 
 let%expect_test "type check of pattern list" =
-  run {| let f a = match a with [q; q] -> q | [w; 2] -> w |};
+  run {| let f a = match a with | [q; q] -> q | [w; 2] -> w |};
   [%expect {|
     val f : int list -> int
+  |}]
+;;
+
+let%expect_test "type check expression constraint" =
+  run {| let f a b = (b a : int) |};
+  [%expect {|
+    val f : 'a -> ('a -> int) -> int
+  |}]
+;;
+
+let%expect_test "type check pattern constraint" =
+  run {| let f (q : int -> char) (x : int) = q x |};
+  [%expect {|
+    val f : (int -> char) -> int -> char
   |}]
 ;;

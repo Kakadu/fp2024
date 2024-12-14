@@ -384,12 +384,12 @@ module Infer = struct
          return (env, Type_list type_of_list)
        | _ -> fail `Impossible_error)
     | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
+    | Pat_construct (_, _) -> fail `Impossible_error
     | Pat_constraint (pat, c_type) ->
       let* env, typ = infer_pattern env pat in
       let* unified_sub = unify typ c_type in
       let env = TypeEnv.apply unified_sub env in
       return (env, c_type)
-    | _ -> fail `Not_implemented
   ;;
 
   let rec infer_expression (env : TypeEnv.t) (exp : Expression.t)
@@ -418,13 +418,40 @@ module Infer = struct
       in
       return (sub, Type_arrow (Subst.apply sub t1, t2))
     | Exp_apply (e1, e2) ->
-      let* s1, t1 = infer_expression env e1 in
-      let* s2, t2 = infer_expression (TypeEnv.apply s1 env) e2 in
-      let* fresh = fresh_var in
-      let* s3 = unify (Subst.apply s2 t1) (Type_arrow (t2, fresh)) in
-      let* composed_sub = Subst.compose_all [ s3; s2; s1 ] in
-      let final_type = Subst.apply composed_sub fresh in
-      return (composed_sub, final_type)
+      (match e1 with
+       | Exp_ident op when is_operator op ->
+         let* exp1, exp2 =
+           match e2 with
+           | Exp_apply (exp1, exp2) -> return (exp1, exp2)
+           | _ -> fail `Impossible_error
+         in
+         let* sub1, type1 = infer_expression env exp1 in
+         let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
+         let* required_type1, required_type2, required_result_type =
+           match get_priority op with
+           | 1 | 2 -> return (Type_int, Type_int, Type_int)
+           | 3 ->
+             let* fresh = fresh_var in
+             return (fresh, fresh, Type_bool)
+           | _ -> return (Type_bool, Type_bool, Type_bool)
+         in
+         let* unified_sub1 = Subst.unify (Subst.apply sub2 type1) required_type1 in
+         let* unified_sub2 =
+           Subst.unify (Subst.apply unified_sub1 type2) required_type2
+         in
+         let* composed_sub =
+           Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ]
+         in
+         let final_type = Subst.apply composed_sub required_result_type in
+         return (composed_sub, final_type)
+       | _ ->
+         let* sub1, type1 = infer_expression env e1 in
+         let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) e2 in
+         let* fresh = fresh_var in
+         let* sub3 = unify (Subst.apply sub2 type1) (Type_arrow (type2, fresh)) in
+         let* composed_sub = Subst.compose_all [ sub3; sub2; sub1 ] in
+         let final_type = Subst.apply composed_sub fresh in
+         return (composed_sub, final_type))
     | Exp_match (exp, case, case_list) ->
       let* exp_sub, exp_type = infer_expression env exp in
       let* fresh = fresh_var in
@@ -499,6 +526,13 @@ module Infer = struct
       let* s5 = unify t2 t3 in
       let* final_sub = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
       return (final_sub, Subst.apply s5 t2)
+    | Exp_ifthenelse (if_, then_, None) ->
+      let* s1, t1 = infer_expression env if_ in
+      let* s2, t2 = infer_expression (TypeEnv.apply s1 env) then_ in
+      let* s3 = unify t1 Type_bool in
+      let* s4 = unify t2 Type_unit in
+      let* final_sub = Subst.compose_all [ s4; s3; s2; s1 ] in
+      return (final_sub, Subst.apply s4 t2)
     | Exp_sequence (exp1, exp2) ->
       let* sub1, typ1 = infer_expression env exp1 in
       let* unified_sub = unify typ1 Type_unit in

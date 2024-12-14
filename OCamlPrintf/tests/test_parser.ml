@@ -154,7 +154,8 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
 ;;
 
 let%expect_test "parsing expression with priority" =
-  run {|
+  run
+    {|
   1 + 2 + 3;;
   (1 + 2) - 3;;
   (1 + 2) * 3;;
@@ -165,7 +166,8 @@ let%expect_test "parsing expression with priority" =
   1 / 2 - 3 * 4;;
   ;;
   |};
-  [%expect {|
+  [%expect
+    {|
   1 + 2 + 3;;
   1 + 2 - 3;;
   (1 + 2) * 3;;
