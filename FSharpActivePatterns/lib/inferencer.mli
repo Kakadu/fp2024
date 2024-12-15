@@ -6,6 +6,12 @@ open Ast
 open TypedTree
 open Format
 
+module TypeEnvironment : sig
+  type t
+
+  val empty : t
+end
+
 type error =
   [ `Occurs_check
   | `Undef_var of string
@@ -14,4 +20,8 @@ type error =
   ]
 
 val pp_error : formatter -> error -> unit
-val infer : construction -> (typ, error) result
+
+val infer
+  :  construction
+  -> TypeEnvironment.t
+  -> (TypeEnvironment.t * typ list, error) result

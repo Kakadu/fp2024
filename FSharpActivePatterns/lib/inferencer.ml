@@ -297,7 +297,8 @@ module TypeEnvironment : sig
   val extend : t -> string -> scheme -> t
   val apply : Substitution.t -> t -> t
   val empty : t
-  val find : string -> t -> scheme option
+  val find : t -> string -> scheme option
+  val find_exn : t -> string -> scheme
 end = struct
   open Base
 
@@ -313,7 +314,8 @@ end = struct
 
   (* apply given substitution to all elements of environment *)
   let apply subst env = Map.map env ~f:(Scheme.apply subst)
-  let find key env = Map.find env key
+  let find = Map.find
+  let find_exn = Map.find_exn
 
   (* collect all free vars from environment *)
   let free_vars : t -> VarSet.t =
@@ -420,10 +422,12 @@ let rec infer_pattern env = function
     return (Type_tuple (typ1, typ2, typs_rest), env)
 ;;
 
+let extract_names_from_let_binds let_binds =
+  List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
+;;
+
 let extend_env_with_bind_names env let_binds =
-  let bind_names =
-    List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
-  in
+  let bind_names = extract_names_from_let_binds let_binds in
   let fresh_vars = List.init (List.length let_binds) ~f:(fun _ -> make_fresh_var) in
   List.fold2_exn
     ~init:(return env)
@@ -439,7 +443,7 @@ let rec infer_expr env = function
   | Const lt -> infer_lt lt
   | Variable (Ident (varname, _)) ->
     (* подумать что делать с типом Ident*)
-    (match TypeEnvironment.find varname env with
+    (match TypeEnvironment.find env varname with
      | Some s ->
        let* t = instantiate s in
        return (Substitution.empty, t)
@@ -612,7 +616,7 @@ and infer_let_bind env = function
     let* subst1, typ1 = infer_expr env e in
     (* If let_bind is recursive, then bind_varname was already in environment *)
     let* bind_typevar =
-      match TypeEnvironment.find bind_varname env with
+      match TypeEnvironment.find env bind_varname with
       | Some (Scheme (_, bind_typevar)) -> return bind_typevar
       | None -> make_fresh_var
     in
@@ -627,11 +631,36 @@ and infer_let_bind env = function
     return (subst, bind_varname, bind_var_scheme)
 ;;
 
+let infer_statement env = function
+  | Let (Rec, let_bind, let_binds) ->
+    let* env = extend_env_with_bind_names env (let_bind :: let_binds) in
+    let* env, _ = extend_env_with_let_binds env (let_bind :: let_binds) in
+    let bind_names = extract_names_from_let_binds let_binds in
+    let bind_types =
+      List.map bind_names ~f:(fun name ->
+        match TypeEnvironment.find_exn env name with
+        | Scheme (_, typ) -> typ)
+    in
+    return (env, bind_types)
+  | Let (Nonrec, let_bind, let_binds) ->
+    let let_binds = let_bind :: let_binds in
+    let* env, _ = extend_env_with_let_binds env let_binds in
+    let bind_names = extract_names_from_let_binds let_binds in
+    let bind_types =
+      List.map bind_names ~f:(fun name ->
+        match TypeEnvironment.find_exn env name with
+        | Scheme (_, typ) -> typ)
+    in
+    return (env, bind_types)
+;;
+
 let infer_construction env = function
   | Expr exp ->
     let* _, typ = infer_expr env exp in
-    return typ
-  | _ -> fail (`WIP "Statement inference WIP")
+    return (env, [ typ ])
+  | Statement s ->
+    let* env, types = infer_statement env s in
+    return (env, types)
 ;;
 
-let infer c = run (infer_construction TypeEnvironment.empty c)
+let infer c env = run (infer_construction env c)
