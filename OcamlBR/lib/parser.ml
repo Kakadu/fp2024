@@ -22,7 +22,8 @@ let is_keyword = function
   | "None"
   | "and"
   | "match"
-  | "with" -> true
+  | "with" 
+  | "print_int" -> true
   | _ -> false
 ;;
 
