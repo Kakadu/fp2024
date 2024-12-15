@@ -470,9 +470,9 @@ let parse_expression =
         ]
     in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_list_construct parse_exp in
-    let parse_exp = parse_exp_sequence parse_exp in
     let parse_exp = parse_exp_apply parse_exp in
+    let parse_exp = parse_exp_sequence parse_exp in
+    let parse_exp = parse_exp_list_construct parse_exp in
     parse_exp_tuple parse_exp <|> parse_exp)
 ;;
 

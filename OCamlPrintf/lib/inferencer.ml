@@ -540,7 +540,7 @@ module Infer = struct
        | _ -> fail `Impossible_error)
     | Exp_construct (id, None) when id = "true" || id = "false" ->
       return (Subst.empty, Type_bool)
-    | Exp_construct (id, None) when id = "()" -> return (Subst.empty, Type_unit)
+    | Exp_construct ("()", None) -> return (Subst.empty, Type_unit)
     | Exp_construct (_, _) -> fail `Impossible_error
     | Exp_ifthenelse (if_, then_, Some else_) ->
       let* s1, t1 = infer_expression env if_ in
