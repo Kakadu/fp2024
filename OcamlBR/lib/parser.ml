@@ -22,7 +22,7 @@ let is_keyword = function
   | "None"
   | "and"
   | "match"
-  | "with" 
+  | "with"
   | "print_int" -> true
   | _ -> false
 ;;
@@ -269,9 +269,7 @@ let pEmatch pexpr =
     (many (pstoken "|" *> parse_case))
 ;;
 
-let pEprint_int expr =
-  lift (fun e -> Eprint_int e) (pstoken "print_int" *> pparens expr)
-;;
+let pEprint_int expr = lift (fun e -> Eprint_int e) (pstoken "print_int" *> pparens expr)
 
 let pexpr =
   fix (fun expr ->
