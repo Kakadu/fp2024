@@ -792,6 +792,32 @@ let infer_statement env = function
     return (env, bind_names_with_types)
 ;;
 
+and extend_env_with_let_binds env let_binds =
+  List.fold
+    let_binds
+    ~init:(return (env, Substitution.empty))
+    ~f:(fun acc let_bind ->
+      let* env, subst_acc = acc in
+      let* subst, bind_varname, scheme = infer_let_bind env let_bind in
+      let env = TypeEnvironment.extend env bind_varname scheme in
+      let env = TypeEnvironment.apply subst env in
+      let* subst_acc = Substitution.compose subst_acc subst in
+      return (env, subst_acc))
+
+and extend_env_with_bind_names env let_binds =
+  let bind_names =
+    List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
+  in
+  let fresh_vars = List.init (List.length let_binds) ~f:(fun _ -> make_fresh_var) in
+  List.fold2_exn
+    ~init:(return env)
+    ~f:(fun acc bind_name fresh_var ->
+      let* fresh_var = fresh_var in
+      let* acc = acc in
+      return (TypeEnvironment.extend acc bind_name (Scheme (VarSet.empty, fresh_var))))
+    bind_names
+    fresh_vars
+
 and infer_let_bind env = function
   | Let_bind (Ident (bind_varname, _), args, e) ->
     let fresh_vars = List.init (List.length args) ~f:(fun _ -> make_fresh_var) in
