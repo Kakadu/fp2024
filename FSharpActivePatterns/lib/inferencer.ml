@@ -481,8 +481,6 @@ let rec infer_expr env = function
         return (fresh_var, Type_list fresh_var, Type_list fresh_var)
     in
     let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
-    (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
-      Format.printf "Checking types: res_typ2 = %a\n" pp_typ (Substitution.apply subst3 typ2);*)
     let* subst4 = Substitution.unify (Substitution.apply subst3 typ2) e2typ in
     let* subst_res = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
     return (subst_res, Substitution.apply subst_res etyp)
