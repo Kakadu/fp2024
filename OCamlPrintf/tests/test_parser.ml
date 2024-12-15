@@ -54,6 +54,20 @@ let%expect_test "parsing expression list" =
   |}]
 ;;
 
+let%expect_test "parsing pattern and expression list construct" =
+  run
+    {|
+  let list = 1 :: 2 :: [3] in
+  match list with
+  | 1 :: 2 :: [3] -> true
+  | _ -> false
+  |};
+  [%expect
+    {|
+  (let list = [1; 2; 3] in (match list with | [1; 2; 3] -> true | _ -> false));;
+  |}]
+;;
+
 let%expect_test "parsing option and bool types" =
   run {|
   let f a =

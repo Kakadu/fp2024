@@ -116,7 +116,8 @@ let rec pp_pattern ppf = function
     (match pat with
      | Pat_tuple (head, tail, []) ->
        fprintf ppf "[%a" pp_pattern head;
-       let rec pp_tail = function
+       let rec pp_tail pat =
+         match pat with
          | Pat_construct (_, None) -> fprintf ppf "]"
          | Pat_construct (_, Some pat_tail) ->
            (match pat_tail with
@@ -124,7 +125,7 @@ let rec pp_pattern ppf = function
               fprintf ppf "; %a" pp_pattern next_head;
               pp_tail next_tail
             | _ -> ())
-         | _ -> ()
+         | _ -> fprintf ppf "; %a]" pp_pattern pat
        in
        pp_tail tail
      | _ -> ())
@@ -173,17 +174,18 @@ let rec pp_expression ppf = function
     (match exp with
      | Exp_tuple (head, tail, []) ->
        fprintf ppf "[%a" pp_expression head;
-       let rec print_tail = function
+       let rec pp_tail exp =
+         match exp with
          | Exp_construct (_, None) -> fprintf ppf "]"
          | Exp_construct (_, Some exp_tail) ->
            (match exp_tail with
             | Exp_tuple (next_head, next_tail, []) ->
               fprintf ppf "; %a" pp_expression next_head;
-              print_tail next_tail
+              pp_tail next_tail
             | _ -> ())
-         | _ -> ()
+         | _ -> fprintf ppf "; %a]" pp_expression exp
        in
-       print_tail tail
+       pp_tail tail
      | _ -> ())
   | Exp_construct (tag, None) -> fprintf ppf "%s" tag
   | Exp_construct ("Some", Some exp) -> fprintf ppf "Some (%a)" pp_expression exp

@@ -62,6 +62,29 @@ let safe_tl = function
   | _ :: tail -> tail
 ;;
 
+let parse_chain_left_associative parse_exp parse_fun_op =
+  let rec go acc_exp =
+    (let* fun_op = parse_fun_op in
+     let* exp = parse_exp in
+     go (fun_op acc_exp exp))
+    <|> return acc_exp
+  in
+  let* first_exp = parse_exp in
+  go first_exp
+;;
+
+let parse_chain_right_associative parse_exp parse_fun_op =
+  let rec go acc_exp =
+    (let* fun_op = parse_fun_op in
+     let* exp = parse_exp in
+     let* next_exp = go exp in
+     return (fun_op acc_exp next_exp))
+    <|> return acc_exp
+  in
+  let* first_exp = parse_exp in
+  go first_exp
+;;
+
 (* ==================== Ident ==================== *)
 
 let parse_ident =
@@ -191,7 +214,9 @@ let parse_pat_tuple parse_pat =
 
 let parse_pat_construct_keyword parse_pat =
   choice
-    [ (let* id = ws *> choice [ keyword "true"; keyword "false"; keyword "None" ] in
+    [ (let* id =
+         ws *> choice [ keyword "true"; keyword "false"; keyword "None"; keyword "()" ]
+       in
        return (Pat_construct (id, None)))
     ; (let* id = ws *> keyword "Some" in
        let* arg = ws *> parse_pat >>| Option.some in
@@ -209,6 +234,14 @@ let parse_pat_construct parse_pat =
           ~f:(fun pat acc -> Pat_construct ("::", Some (Pat_tuple (pat, acc, []))))
   in
   choice [ parse_elements; parse_pat_construct_keyword parse_pat ]
+;;
+
+let parse_pat_list_construct parse_exp =
+  parse_chain_right_associative
+    parse_exp
+    (ws
+     *> string "::"
+     *> return (fun acc exp2 -> Pat_construct ("::", Some (Pat_tuple (acc, exp2, [])))))
 ;;
 
 let parse_pat_constraint parse_pat =
@@ -233,35 +266,13 @@ let parse_pattern =
         ]
     in
     let parse_pat = parse_pat_construct parse_pat <|> parse_pat in
+    let parse_pat = parse_pat_list_construct parse_pat in
     parse_pat_tuple parse_pat <|> parse_pat)
 ;;
 
 (* ==================== Expression ==================== *)
 
 (* -------------------- Operator -------------------- *)
-
-let parse_chain_left_associative parse_exp parse_fun_op =
-  let rec go acc_exp =
-    (let* fun_op = parse_fun_op in
-     let* exp = parse_exp in
-     go (fun_op acc_exp exp))
-    <|> return acc_exp
-  in
-  let* first_exp = parse_exp in
-  go first_exp
-;;
-
-let parse_chain_right_associative parse_exp parse_fun_op =
-  let rec go acc_exp =
-    (let* fun_op = parse_fun_op in
-     let* exp = parse_exp in
-     let* next_exp = go exp in
-     return (fun_op acc_exp next_exp))
-    <|> return acc_exp
-  in
-  let* first_exp = parse_exp in
-  go first_exp
-;;
 
 let bin_op chain1 parse_exp parse_fun_op =
   chain1
@@ -394,7 +405,9 @@ let parse_exp_tuple parse_exp =
 
 let parse_exp_construct_keyword parse_exp =
   choice
-    [ (let* id = ws *> choice [ keyword "true"; keyword "false"; keyword "None" ] in
+    [ (let* id =
+         ws *> choice [ keyword "true"; keyword "false"; keyword "None"; keyword "()" ]
+       in
        return (Exp_construct (id, None)))
     ; (let* id = ws *> keyword "Some" in
        let* arg = ws *> parse_exp >>| Option.some in
@@ -412,6 +425,14 @@ let parse_exp_construct parse_exp =
           ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple (exp, acc, []))))
   in
   choice [ parse_elements; parse_exp_construct_keyword parse_exp ]
+;;
+
+let parse_exp_list_construct parse_exp =
+  parse_chain_right_associative
+    parse_exp
+    (ws
+     *> string "::"
+     *> return (fun acc exp2 -> Exp_construct ("::", Some (Exp_tuple (acc, exp2, [])))))
 ;;
 
 let parse_exp_ifthenelse parse_exp =
@@ -449,6 +470,7 @@ let parse_expression =
         ]
     in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_list_construct parse_exp in
     let parse_exp = parse_exp_sequence parse_exp in
     let parse_exp = parse_exp_apply parse_exp in
     parse_exp_tuple parse_exp <|> parse_exp)

@@ -204,6 +204,7 @@ end = struct
   let rec unify l r =
     match l, r with
     | Type_any, Type_any
+    | Type_unit, Type_unit
     | Type_int, Type_int
     | Type_char, Type_char
     | Type_string, Type_string
@@ -365,25 +366,33 @@ module Infer = struct
        | Pat_tuple (head, tail, []) ->
          let* env, type_of_list = infer_pattern env head in
          let rec infer_tail env (cur_pat : pattern) type_of_list =
+           let unify_with_needed_type env needed_type pat =
+             let* env, type_of_pat = infer_pattern env pat in
+             let* unified_sub = unify needed_type type_of_pat in
+             return (TypeEnv.apply unified_sub env, Subst.apply unified_sub type_of_list)
+           in
            match cur_pat with
            | Pat_construct (_, None) -> return (env, type_of_list)
            | Pat_construct (_, Some pat_tail) ->
              (match pat_tail with
               | Pat_tuple (next_head, next_tail, []) ->
-                let* env, type_of_pat = infer_pattern env next_head in
-                let* unified_sub = unify type_of_list type_of_pat in
-                let type_of_list = Subst.apply unified_sub type_of_list in
                 let* env, type_of_list =
-                  infer_tail (TypeEnv.apply unified_sub env) next_tail type_of_list
+                  unify_with_needed_type env type_of_list next_head
                 in
+                let* env, type_of_list = infer_tail env next_tail type_of_list in
                 return (env, type_of_list)
               | _ -> fail `Impossible_error)
-           | _ -> fail `Impossible_error
+           | _ ->
+             let* env, type_of_list =
+               unify_with_needed_type env (Type_list type_of_list) cur_pat
+             in
+             return (env, type_of_list)
          in
          let* env, type_of_list = infer_tail env tail type_of_list in
          return (env, Type_list type_of_list)
        | _ -> fail `Impossible_error)
     | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
+    | Pat_construct (id, None) when id = "()" -> return (env, Type_unit)
     | Pat_construct (_, _) -> fail `Impossible_error
     | Pat_constraint (pat, c_type) ->
       let* env, typ = infer_pattern env pat in
@@ -505,26 +514,33 @@ module Infer = struct
        | Exp_tuple (head, tail, []) ->
          let* sub, type_of_list = infer_expression env head in
          let rec infer_tail sub_acc (cur_exp : Expression.t) =
+           let unify_with_needed_type needed_type exp =
+             let* sub_of_exp, type_of_exp = infer_expression env exp in
+             let* unified_sub = unify needed_type type_of_exp in
+             let* composed_sub = Subst.compose_all [ sub_acc; sub_of_exp; unified_sub ] in
+             return composed_sub
+           in
            match cur_exp with
            | Exp_construct (_, None) -> return sub_acc
            | Exp_construct (_, Some exp_tail) ->
              (match exp_tail with
               | Exp_tuple (next_head, next_tail, []) ->
-                let* sub_of_exp, type_of_exp = infer_expression env next_head in
-                let* unified_sub = unify type_of_list type_of_exp in
-                let* composed_sub =
-                  Subst.compose_all [ sub_acc; sub_of_exp; unified_sub ]
-                in
+                let* composed_sub = unify_with_needed_type type_of_list next_head in
                 let* final_sub = infer_tail composed_sub next_tail in
                 return final_sub
               | _ -> fail `Impossible_error)
-           | _ -> fail `Impossible_error
+           | _ ->
+             let* composed_sub =
+               unify_with_needed_type (Type_list type_of_list) cur_exp
+             in
+             return composed_sub
          in
          let* final_sub = infer_tail sub tail in
          return (final_sub, Type_list type_of_list)
        | _ -> fail `Impossible_error)
     | Exp_construct (id, None) when id = "true" || id = "false" ->
       return (Subst.empty, Type_bool)
+    | Exp_construct (id, None) when id = "()" -> return (Subst.empty, Type_unit)
     | Exp_construct (_, _) -> fail `Impossible_error
     | Exp_ifthenelse (if_, then_, Some else_) ->
       let* s1, t1 = infer_expression env if_ in

@@ -91,6 +91,19 @@ let%expect_test "type check invalid expression list" =
   |}]
 ;;
 
+let%expect_test "type check pattern and expression list construct" =
+  run
+    {|
+    let f p =
+      let list = 1 :: 2 :: p in
+      match list with
+      | 1 :: 2 :: [ 3; 4 ] -> true
+      | [ 1; 2 ] -> true
+      | _ -> false
+  |};
+  [%expect {| val f : int list -> bool |}]
+;;
+
 let%expect_test "type check of pattern list" =
   run {| let f a = match a with | [q; q] -> q | [w; 2] -> w |};
   [%expect {|
