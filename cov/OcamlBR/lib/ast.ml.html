@@ -639,8 +639,8 @@ let divisor = 30
       * (<span data-count="21">p</span>attern lis<span data-count="14">t</span>
         [@gen QCheck.Gen.(list_siz<span data-count="23">e</span> (0 -<span data-count="23">-</span> 4) (gen_pattern_size<span data-count="23">d</span> (n / divisor)))])
       * (expr[@gen gen_expr_size<span data-count="23">d</span> (n / divisor)])
-(* anonymous functions, e.g. fun x y -&gt; x + 1 - y, arguments num &gt;= 1 *)
-  | Eprint_int of (expr[@gen gen_expr_size<span data-count="23">d</span> (n / divisor)]) 
+  (* anonymous functions, e.g. fun x y -&gt; x + 1 - y, arguments num &gt;= 1 *)
+  | Eprint_int of (expr[@gen gen_expr_size<span data-count="23">d</span> (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
 <span data-count="6">a</span>nd case =
