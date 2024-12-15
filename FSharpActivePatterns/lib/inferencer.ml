@@ -588,7 +588,13 @@ and extend_env_with_let_binds env let_binds =
 
 and infer_let_bind env = function
   | Let_bind (Ident (bind_varname, _), args, e) ->
-    let fresh_vars = List.init (List.length args) ~f:(fun _ -> make_fresh_var) in
+    let* fresh_vars =
+      (* Hack for get typ list, not typ t list*)
+      List.fold args ~init:(return []) ~f:(fun acc _ ->
+        let* fresh_var = make_fresh_var in
+        let* acc = acc in
+        return (fresh_var :: acc))
+    in
     let arg_names =
       List.map args ~f:(fun arg ->
         match arg with
@@ -599,7 +605,6 @@ and infer_let_bind env = function
         ~init:(return env)
         ~f:(fun acc arg fresh_var ->
           let* acc = acc in
-          let* fresh_var = fresh_var in
           return (TypeEnvironment.extend acc arg (Scheme (VarSet.empty, fresh_var))))
         arg_names
         fresh_vars
@@ -611,13 +616,14 @@ and infer_let_bind env = function
       | Some (Scheme (_, bind_typevar)) -> return bind_typevar
       | None -> make_fresh_var
     in
+    let bind_type = arrow_of_types fresh_vars bind_typevar in
     let env =
-      TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_typevar))
+      TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_type))
     in
     let* subst2 = unify (Substitution.apply subst1 bind_typevar) typ1 in
     let* subst = Substitution.compose subst1 subst2 in
     let env = TypeEnvironment.apply subst env in
-    let bind_var_scheme = generalize env (Substitution.apply subst bind_typevar) in
+    let bind_var_scheme = generalize env (Substitution.apply subst bind_type) in
     return (subst, bind_varname, bind_var_scheme)
 ;;
 
