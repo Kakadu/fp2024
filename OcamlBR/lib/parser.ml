@@ -268,6 +268,10 @@ let pEmatch pexpr =
     (many (pstoken "|" *> parse_case))
 ;;
 
+let pEprint_int expr =
+  lift (fun e -> Eprint_int e) (pstoken "print_int" *> pparens expr)
+;;
+
 let pexpr =
   fix (fun expr ->
     let atom_expr =
@@ -280,6 +284,7 @@ let pexpr =
         ; pEfun expr
         ; pEoption expr
         ; pEmatch expr
+        ; pEprint_int expr
         ]
     in
     let let_expr = plet expr in

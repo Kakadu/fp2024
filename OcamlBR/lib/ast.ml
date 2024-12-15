@@ -167,6 +167,7 @@ type expr =
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
 (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  | Eprint_int of (expr[@gen gen_expr_sized (n / divisor)]) 
 [@@deriving show { with_path = false }, qcheck]
 
 and case =

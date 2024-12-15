@@ -182,6 +182,7 @@ let rec pp_expr ppf expr =
       (fun ppf e ->
         if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
       e2
+  | Eprint_int e -> fprintf ppf "print_int %a" pp_expr e
 
 and precedence = function
   | Ebin_op (op, _, _) -> precedence_bin_op op
