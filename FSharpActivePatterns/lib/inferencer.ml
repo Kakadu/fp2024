@@ -420,6 +420,21 @@ let rec infer_pattern env = function
     return (Type_tuple (typ1, typ2, typs_rest), env)
 ;;
 
+let extend_env_with_bind_names env let_binds =
+  let bind_names =
+    List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
+  in
+  let fresh_vars = List.init (List.length let_binds) ~f:(fun _ -> make_fresh_var) in
+  List.fold2_exn
+    ~init:(return env)
+    ~f:(fun acc bind_name fresh_var ->
+      let* fresh_var = fresh_var in
+      let* acc = acc in
+      return (TypeEnvironment.extend acc bind_name (Scheme (VarSet.empty, fresh_var))))
+    bind_names
+    fresh_vars
+;;
+
 let rec infer_expr env = function
   | Const lt -> infer_lt lt
   | Variable (Ident (varname, _)) ->
@@ -570,20 +585,6 @@ and extend_env_with_let_binds env let_binds =
       let env = TypeEnvironment.apply subst env in
       let* subst_acc = Substitution.compose subst_acc subst in
       return (env, subst_acc))
-
-and extend_env_with_bind_names env let_binds =
-  let bind_names =
-    List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
-  in
-  let fresh_vars = List.init (List.length let_binds) ~f:(fun _ -> make_fresh_var) in
-  List.fold2_exn
-    ~init:(return env)
-    ~f:(fun acc bind_name fresh_var ->
-      let* fresh_var = fresh_var in
-      let* acc = acc in
-      return (TypeEnvironment.extend acc bind_name (Scheme (VarSet.empty, fresh_var))))
-    bind_names
-    fresh_vars
 
 and infer_let_bind env = function
   | Let_bind (Ident (bind_varname, _), args, e) ->
