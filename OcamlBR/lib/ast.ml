@@ -41,7 +41,16 @@ let gen_id_name =
   varname >>= fun name -> if is_keyword name then varname else return name
 ;;
 
-type id = Id of string * string option [@@deriving show { with_path = false }]
+type id_type =
+  | TInt
+  | TString
+  | TBool
+  | Tlist of id_type
+  | TTuple of id_type * id_type * id_type list
+  | TFun of id_type * id_type
+[@@deriving show { with_path = false }]
+
+type id = Id of string * id_type option [@@deriving show { with_path = false }]
 
 let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
 
@@ -157,7 +166,8 @@ type expr =
       * (pattern list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
-(* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  | Eprint_int of (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
 and case =
