@@ -147,17 +147,17 @@ end = struct
   ;;
 
   (* collects all type variables *)
-  (* let free_vars =
-     let rec helper acc = function
-     | Primitive _ -> acc
-     | Type_var b -> VarSet.add b acc
-     | Arrow (fst, snd) -> helper (helper acc fst) snd
-     | Type_list typ -> helper acc typ
-     | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
-     | TOption t -> helper acc t
-     in
-     helper VarSet.empty
-     ;; *)
+  let free_vars =
+    let rec helper acc = function
+      | Primitive _ -> acc
+      | Type_var b -> VarSet.add b acc
+      | Arrow (fst, snd) -> helper (helper acc fst) snd
+      | Type_list typ -> helper acc typ
+      | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+      | TOption t -> helper acc t
+    in
+    helper VarSet.empty
+  ;;
 end
 
 (* module of substitution *)
@@ -792,29 +792,40 @@ let infer_statement env = function
     return (env, bind_names_with_types)
 ;;
 
-(* and infer_let_bind env fresh_type = function
-   | Let_bind (_, args, e) ->
-   let arg_names =
-   List.map args ~f:(fun arg ->
-   match arg with
-   | Ident (name, _) -> name)
-   in
-   let* env =
-   List.fold
-   ~init:(return env)
-   ~f:(fun acc arg ->
-   let* fresh_type = make_fresh_var in
-   let* acc = acc in
-   return (TypeEnvironment.extend acc arg (S (VarSet.empty, fresh_type))))
-   arg_names
-   in
-   let* subst1, typ1 = infer_expr env e in
-   let* subst2 = unify (Substitution.apply subst1 fresh_type) typ1 in
-   let* subst = Substitution.compose subst1 subst2 in
-   let env = TypeEnvironment.apply subst env in
-   let typ2 = generalize env (Substitution.apply subst fresh_type) in
-   return (subst, typ2)
-   ;; *)
+and infer_let_bind env = function
+  | Let_bind (Ident (bind_varname, _), args, e) ->
+    let fresh_vars = List.init (List.length args) ~f:(fun _ -> make_fresh_var) in
+    let arg_names =
+      List.map args ~f:(fun arg ->
+        match arg with
+        | Ident (name, _) -> name)
+    in
+    let* env =
+      List.fold2_exn
+        ~init:(return env)
+        ~f:(fun acc arg fresh_var ->
+          let* acc = acc in
+          let* fresh_var = fresh_var in
+          return (TypeEnvironment.extend acc arg (Scheme (VarSet.empty, fresh_var))))
+        arg_names
+        fresh_vars
+    in
+    let* subst1, typ1 = infer_expr env e in
+    (* If let_bind is recursive, then bind_varname was already in environment *)
+    let* bind_typevar =
+      match TypeEnvironment.find bind_varname env with
+      | Some (Scheme (_, bind_typevar)) -> return bind_typevar
+      | None -> make_fresh_var
+    in
+    let env =
+      TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_typevar))
+    in
+    let* subst2 = unify (Substitution.apply subst1 bind_typevar) typ1 in
+    let* subst = Substitution.compose subst1 subst2 in
+    let env = TypeEnvironment.apply subst env in
+    let bind_var_scheme = generalize env (Substitution.apply subst bind_typevar) in
+    return (subst, bind_varname, bind_var_scheme)
+;;
 
 let infer_construction env = function
   | Expr exp ->
