@@ -13,9 +13,9 @@ type typ =
   | TOption of typ
 [@@deriving show { with_path = false }]
 
-let arrow_of_types first_types last =
+let arrow_of_types first_types last_type =
   let open Base in
-  List.fold_right first_types ~init:last ~f:(fun left right -> Arrow (left, right))
+  List.fold_right first_types ~init:last_type ~f:(fun left right -> Arrow (left, right))
 ;;
 
 module VarSet = struct
@@ -31,7 +31,7 @@ end
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
 (* binder_set here -- list of all type vars in context (?) *)
-type scheme = S of binder_set * typ [@@deriving show { with_path = false }]
+type scheme = Scheme of binder_set * typ [@@deriving show { with_path = false }]
 
 let int_typ = Primitive "int"
 let bool_typ = Primitive "bool"

@@ -9,7 +9,10 @@ let pp_typ fmt typ =
   let rec helper fmt = function
     | Primitive s -> fprintf fmt "%S" s
     | Type_var var -> fprintf fmt "'_%d" var
-    | Arrow (fst, snd) -> fprintf fmt "(%a) -> %a" helper fst helper snd
+    | Arrow (fst, snd) ->
+      (match fst with
+       | Arrow _ -> fprintf fmt "(%a) -> %a" helper fst helper snd
+       | _ -> fprintf fmt "%a -> %a" helper fst helper snd)
     | Type_list typ -> fprintf fmt "%a list" helper typ
     | Type_tuple (first, second, rest) ->
       fprintf fmt "(";

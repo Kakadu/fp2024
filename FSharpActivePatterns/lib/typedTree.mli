@@ -21,7 +21,7 @@ module VarSet : sig
 end
 
 type binder_set = VarSet.t
-type scheme = S of binder_set * typ [@@deriving show { with_path = false }]
+type scheme = Scheme of binder_set * typ [@@deriving show { with_path = false }]
 
 val int_typ : typ
 val bool_typ : typ

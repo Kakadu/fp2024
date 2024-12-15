@@ -122,7 +122,7 @@ module Type : sig
   type t = typ
 
   val occurs_in : fresh -> t -> bool
-  (* val free_vars : t -> binder_set *)
+  val free_vars : t -> binder_set
 end = struct
   type t = typ
 
@@ -139,17 +139,17 @@ end = struct
   ;;
 
   (* collects all type variables *)
-  (* let free_vars =
-     let rec helper acc = function
-     | Primitive _ -> acc
-     | Type_var b -> VarSet.add b acc
-     | Arrow (fst, snd) -> helper (helper acc fst) snd
-     | Type_list typ -> helper acc typ
-     | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
-     | TOption t -> helper acc t
-     in
-     helper VarSet.empty
-     ;; *)
+  let free_vars =
+    let rec helper acc = function
+      | Primitive _ -> acc
+      | Type_var b -> VarSet.add b acc
+      | Arrow (fst, snd) -> helper (helper acc fst) snd
+      | Type_list typ -> helper acc typ
+      | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+      | TOption t -> helper acc t
+    in
+    helper VarSet.empty
+  ;;
 end
 
 (* module of substitution *)
@@ -217,7 +217,6 @@ end = struct
   let rec unify fst snd =
     match fst, snd with
     | Primitive fst, Primitive snd when String.equal fst snd -> return empty
-    | Primitive _, Primitive _ -> fail (`Unification_failed (fst, snd))
     | Type_var f, Type_var s when Int.equal f s -> return empty
     | Type_var b, t | t, Type_var b -> singleton b t
     | Arrow (f1, s1), Arrow (f2, s2) ->
@@ -267,7 +266,7 @@ module Scheme : sig
 
   (* val occurs_in : fresh -> t -> bool *)
   val apply : Substitution.t -> t -> t
-  (* val free_vars : t -> binder_set *)
+  val free_vars : t -> binder_set
 end = struct
   type t = scheme
 
@@ -277,30 +276,33 @@ end = struct
      ;; *)
 
   (* take all vars that are not bound in typ *)
-  (* let free_vars = function
-     | S (vars, t) -> VarSet.diff (Type.free_vars t) vars
-     ;; *)
+  let free_vars = function
+    | Scheme (vars, t) -> VarSet.diff (Type.free_vars t) vars
+  ;;
 
   (* take substitution and scheme, remove its free vars from substitution,
      form new scheme according to substitution (apply it to typ) *)
-  let apply subst (S (vars, t)) =
+  let apply subst (Scheme (vars, t)) =
     let subst2 = VarSet.fold (fun key s -> Substitution.remove s key) vars subst in
-    S (vars, Substitution.apply subst2 t)
+    Scheme (vars, Substitution.apply subst2 t)
   ;;
 
   (* let pp = pp_scheme *)
 end
 
 module TypeEnvironment : sig
-  val extend : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b -> ('a, 'b, 'c) Base.Map.t
-  val apply : Substitution.t -> ('a, scheme, 'b) Base.Map.t -> ('a, scheme, 'b) Base.Map.t
-  val empty : (string, 'a, Base.String.comparator_witness) Base.Map.t
-  val find : 'a -> ('a, 'b, 'c) Base.Map.t -> 'b option
+  type t
+
+  val free_vars : t -> VarSet.t
+  val extend : t -> string -> scheme -> t
+  val apply : Substitution.t -> t -> t
+  val empty : t
+  val find : string -> t -> scheme option
 end = struct
   open Base
 
   (* environment (context?) -- pairs of names and their types list *)
-  (* type t = (ident, scheme, String.comparator_witness) Map.t *)
+  type t = (string, scheme, String.comparator_witness) Map.t
 
   (* if pair (key, some old value) exists in map env, then replace old value
      with new, else add pair (key, value) into map *)
@@ -314,10 +316,10 @@ end = struct
   let find key env = Map.find env key
 
   (* collect all free vars from environment *)
-  (* let free_vars : t -> VarSet.t =
-     Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
-     VarSet.union acc (Scheme.free_vars s))
-     ;; *)
+  let free_vars : t -> VarSet.t =
+    Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
+      VarSet.union acc (Scheme.free_vars s))
+  ;;
 
   (* TODO: custom pp_scheme? not from deriving *)
   (* let pp fmt map =
@@ -336,7 +338,7 @@ let make_fresh_var = fresh >>| fun n -> Type_var n
 
 (* replace all type vars with fresh ones *)
 let instantiate : scheme -> typ R.t =
-  fun (S (vars, t)) ->
+  fun (Scheme (vars, t)) ->
   VarSet.fold
     (fun name ty ->
       let* ty = ty in
@@ -349,11 +351,11 @@ let instantiate : scheme -> typ R.t =
 
 (* take free vars of type t and environment, put difference between them
    in S constructor so all vars are context independent *)
-(* let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
-   fun env t ->
-   let free = VarSet.diff (Type.free_vars t) (TypeEnvironment.free_vars env) in
-   S (free, t)
-   ;; *)
+let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
+  fun env t ->
+  let free = VarSet.diff (Type.free_vars t) (TypeEnvironment.free_vars env) in
+  Scheme (free, t)
+;;
 
 let infer_lt = function
   | Int_lt _ -> return (Substitution.empty, int_typ)
@@ -364,24 +366,24 @@ let infer_lt = function
 
 let rec infer_pattern env = function
   | Wild ->
-    let* fresh_type = make_fresh_var in
-    return (fresh_type, env)
+    let* fresh_var = make_fresh_var in
+    return (fresh_var, env)
   | PConst lt ->
     let* _, t = infer_lt lt in
     return (t, env)
   | PVar (Ident (name, _)) ->
     (* подумать что делать с типом в Ident*)
     let* fresh = make_fresh_var in
-    let scheme = S (VarSet.empty, fresh) in
+    let scheme = Scheme (VarSet.empty, fresh) in
     let env = TypeEnvironment.extend env name scheme in
     return (fresh, env)
   | POption None ->
-    let* fresh_type = make_fresh_var in
-    return (fresh_type, env)
+    let* fresh_var = make_fresh_var in
+    return (fresh_var, env)
   | POption (Some p) -> infer_pattern env p
   | PList [] ->
-    let* fresh_type = make_fresh_var in
-    return (Type_list fresh_type, env)
+    let* fresh_var = make_fresh_var in
+    return (Type_list fresh_var, env)
   | PList (hd :: tl) ->
     let* typ1, env = infer_pattern env hd in
     let* subst_unify, typ_unified =
@@ -453,11 +455,11 @@ let rec infer_expr env = function
       | Binary_greater | Binary_greater_or_equal | Binary_less | Binary_less_or_equal ->
         return (int_typ, int_typ, bool_typ)
       | Binary_equal | Binary_unequal ->
-        let* fresh_type = make_fresh_var in
-        return (fresh_type, fresh_type, bool_typ)
+        let* fresh_var = make_fresh_var in
+        return (fresh_var, fresh_var, bool_typ)
       | Binary_cons ->
-        let* fresh_type = make_fresh_var in
-        return (fresh_type, Type_list fresh_type, Type_list fresh_type)
+        let* fresh_var = make_fresh_var in
+        return (fresh_var, Type_list fresh_var, Type_list fresh_var)
     in
     let* subst3 = Substitution.unify (Substitution.apply subst2 typ1) e1typ in
     (*Format.printf "Checking types: res_typ1 = %a\n" pp_typ (Substitution.apply subst2 typ1);
@@ -492,8 +494,8 @@ let rec infer_expr env = function
     in
     return (subst_result, Type_tuple (typ1, typ2, typs_rest))
   | List [] ->
-    let* fresh_type = make_fresh_var in
-    return (Substitution.empty, Type_list fresh_type)
+    let* fresh_var = make_fresh_var in
+    return (Substitution.empty, Type_list fresh_var)
   | List (hd :: tl) ->
     let* subst1, typ1 = infer_expr env hd in
     let typ1 = Substitution.apply subst1 typ1 in
@@ -529,10 +531,10 @@ let rec infer_expr env = function
   | Apply (f, arg) ->
     let* subst1, typ1 = infer_expr env f in
     let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
-    let* fresh_type = make_fresh_var in
-    let* subst3 = unify (Substitution.apply subst2 typ1) (Arrow (typ2, fresh_type)) in
+    let* fresh_var = make_fresh_var in
+    let* subst3 = unify (Substitution.apply subst2 typ1) (Arrow (typ2, fresh_var)) in
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
-    return (subst_result, Substitution.apply subst_result fresh_type)
+    return (subst_result, Substitution.apply subst_result fresh_var)
   | Lambda (arg, args, e) ->
     let* env, arg_types =
       RList.fold_right
@@ -544,48 +546,91 @@ let rec infer_expr env = function
     in
     let* subst, e_type = infer_expr env e in
     return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
-  (* | LetIn (Rec, let_bind, let_binds, e) ->
-     let bind_names =
-     List.map (let_bind :: let_binds) ~f:(fun let_bind ->
-     match let_bind with
-     | Let_bind (Ident (name, _), _, _) -> name)
-     in
-     let* env =
-     List.fold
-     ~init:(return env)
-     ~f:(fun acc name ->
-     let* fresh_type = make_fresh_var in
-     let* acc = acc in
-     return (TypeEnvironment.extend acc name (S (VarSet.empty, fresh_type))))
-     bind_names
-     in
-     x *)
+  | LetIn (Rec, let_bind, let_binds, e) ->
+    let bind_names =
+      List.map (let_bind :: let_binds) ~f:(function Let_bind (Ident (name, _), _, _) ->
+        name)
+    in
+    let fresh_vars =
+      List.init (List.length (let_bind :: let_binds)) ~f:(fun _ -> make_fresh_var)
+    in
+    let* env =
+      List.fold2_exn
+        ~init:(return env)
+        ~f:(fun acc bind_name fresh_var ->
+          let* fresh_var = fresh_var in
+          let* acc = acc in
+          return (TypeEnvironment.extend acc bind_name (Scheme (VarSet.empty, fresh_var))))
+        bind_names
+        fresh_vars
+    in
+    let* env, subst1 =
+      List.fold
+        (let_bind :: let_binds)
+        ~init:(return (env, Substitution.empty))
+        ~f:(fun acc let_bind ->
+          let* env, subst_acc = acc in
+          let* subst, bind_varname, scheme = infer_let_bind env let_bind in
+          let env = TypeEnvironment.extend env bind_varname scheme in
+          let env = TypeEnvironment.apply subst env in
+          let* subst_acc = Substitution.compose subst_acc subst in
+          return (env, subst_acc))
+    in
+    let* subst2, typ = infer_expr env e in
+    let* subst_final = Substitution.compose subst1 subst2 in
+    return (subst_final, typ)
+  | LetIn (Nonrec, let_bind, let_binds, e) ->
+    let* env, subst1 =
+      List.fold
+        (let_bind :: let_binds)
+        ~init:(return (env, Substitution.empty))
+        ~f:(fun acc let_bind ->
+          let* env, subst_acc = acc in
+          let* subst, bind_varname, scheme = infer_let_bind env let_bind in
+          let env = TypeEnvironment.extend env bind_varname scheme in
+          let env = TypeEnvironment.apply subst env in
+          let* subst_acc = Substitution.compose subst_acc subst in
+          return (env, subst_acc))
+    in
+    let* subst2, typ = infer_expr env e in
+    let* subst_final = Substitution.compose subst1 subst2 in
+    return (subst_final, typ)
   | _ -> fail (`WIP "Expr inference WIP")
-;;
 
-(* and infer_let_bind env fresh_type = function
-   | Let_bind (_, args, e) ->
-   let arg_names =
-   List.map args ~f:(fun arg ->
-   match arg with
-   | Ident (name, _) -> name)
-   in
-   let* env =
-   List.fold
-   ~init:(return env)
-   ~f:(fun acc arg ->
-   let* fresh_type = make_fresh_var in
-   let* acc = acc in
-   return (TypeEnvironment.extend acc arg (S (VarSet.empty, fresh_type))))
-   arg_names
-   in
-   let* subst1, typ1 = infer_expr env e in
-   let* subst2 = unify (Substitution.apply subst1 fresh_type) typ1 in
-   let* subst = Substitution.compose subst1 subst2 in
-   let env = TypeEnvironment.apply subst env in
-   let typ2 = generalize env (Substitution.apply subst fresh_type) in
-   return (subst, typ2)
-   ;; *)
+and infer_let_bind env = function
+  | Let_bind (Ident (bind_varname, _), args, e) ->
+    let fresh_vars = List.init (List.length args) ~f:(fun _ -> make_fresh_var) in
+    let arg_names =
+      List.map args ~f:(fun arg ->
+        match arg with
+        | Ident (name, _) -> name)
+    in
+    let* env =
+      List.fold2_exn
+        ~init:(return env)
+        ~f:(fun acc arg fresh_var ->
+          let* acc = acc in
+          let* fresh_var = fresh_var in
+          return (TypeEnvironment.extend acc arg (Scheme (VarSet.empty, fresh_var))))
+        arg_names
+        fresh_vars
+    in
+    let* subst1, typ1 = infer_expr env e in
+    (* If let_bind is recursive, then bind_varname was already in environment *)
+    let* bind_typevar =
+      match TypeEnvironment.find bind_varname env with
+      | Some (Scheme (_, bind_typevar)) -> return bind_typevar
+      | None -> make_fresh_var
+    in
+    let env =
+      TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_typevar))
+    in
+    let* subst2 = unify (Substitution.apply subst1 bind_typevar) typ1 in
+    let* subst = Substitution.compose subst1 subst2 in
+    let env = TypeEnvironment.apply subst env in
+    let bind_var_scheme = generalize env (Substitution.apply subst bind_typevar) in
+    return (subst, bind_varname, bind_var_scheme)
+;;
 
 let infer_construction env = function
   | Expr exp ->
