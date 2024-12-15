@@ -554,10 +554,12 @@ let check_let_bind_correctness is_rec let_bind =
   | _ -> return let_bind
 ;;
 
+let extract_names_from_let_binds let_binds =
+  List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
+;;
+
 let extend_env_with_bind_names env let_binds =
-  let bind_names =
-    List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
-  in
+  let bind_names = extract_names_from_let_binds let_binds in
   let fresh_vars = List.init (List.length let_binds) ~f:(fun _ -> make_fresh_var) in
   List.fold2_exn
     ~init:(return env)
@@ -845,7 +847,7 @@ and infer_let_bind env = function
     let* subst1, typ1 = infer_expr env e in
     (* If let_bind is recursive, then bind_varname was already in environment *)
     let* bind_typevar =
-      match TypeEnvironment.find bind_varname env with
+      match TypeEnvironment.find env bind_varname with
       | Some (Scheme (_, bind_typevar)) -> return bind_typevar
       | None -> make_fresh_var
     in
@@ -858,6 +860,29 @@ and infer_let_bind env = function
     let env = TypeEnvironment.apply subst env in
     let bind_var_scheme = generalize env (Substitution.apply subst bind_type) in
     return (subst, bind_varname, bind_var_scheme)
+;;
+
+let infer_statement env = function
+  | Let (Rec, let_bind, let_binds) ->
+    let* env = extend_env_with_bind_names env (let_bind :: let_binds) in
+    let* env, _ = extend_env_with_let_binds env (let_bind :: let_binds) in
+    let bind_names = extract_names_from_let_binds let_binds in
+    let bind_types =
+      List.map bind_names ~f:(fun name ->
+        match TypeEnvironment.find_exn env name with
+        | Scheme (_, typ) -> typ)
+    in
+    return (env, bind_types)
+  | Let (Nonrec, let_bind, let_binds) ->
+    let let_binds = let_bind :: let_binds in
+    let* env, _ = extend_env_with_let_binds env let_binds in
+    let bind_names = extract_names_from_let_binds let_binds in
+    let bind_types =
+      List.map bind_names ~f:(fun name ->
+        match TypeEnvironment.find_exn env name with
+        | Scheme (_, typ) -> typ)
+    in
+    return (env, bind_types)
 ;;
 
 let infer_construction env = function
