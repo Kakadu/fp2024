@@ -299,6 +299,7 @@ module TypeEnvironment : sig
   val empty : t
   val find : t -> string -> scheme option
   val find_exn : t -> string -> scheme
+  val find_typ_exn : t -> string -> typ
 end = struct
   open Base
 
@@ -316,6 +317,11 @@ end = struct
   let apply subst env = Map.map env ~f:(Scheme.apply subst)
   let find = Map.find
   let find_exn = Map.find_exn
+
+  let find_typ_exn env key =
+    match find_exn env key with
+    | Scheme (_, typ) -> typ
+  ;;
 
   (* collect all free vars from environment *)
   let free_vars : t -> VarSet.t =
@@ -565,30 +571,30 @@ let rec infer_expr env = function
     return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
   | LetIn (Rec, let_bind, let_binds, e) ->
     let* env = extend_env_with_bind_names env (let_bind :: let_binds) in
-    let* env, subst1 = extend_env_with_let_binds env (let_bind :: let_binds) in
+    let* env, subst1 = extend_env_with_let_binds env Rec (let_bind :: let_binds) in
     let* subst2, typ = infer_expr env e in
     let* subst_final = Substitution.compose subst1 subst2 in
     return (subst_final, typ)
   | LetIn (Nonrec, let_bind, let_binds, e) ->
-    let* env, subst1 = extend_env_with_let_binds env (let_bind :: let_binds) in
+    let* env, subst1 = extend_env_with_let_binds env Nonrec (let_bind :: let_binds) in
     let* subst2, typ = infer_expr env e in
     let* subst_final = Substitution.compose subst1 subst2 in
     return (subst_final, typ)
   | _ -> fail (`WIP "Expr inference WIP")
 
-and extend_env_with_let_binds env let_binds =
+and extend_env_with_let_binds env is_rec let_binds =
   List.fold
     let_binds
     ~init:(return (env, Substitution.empty))
     ~f:(fun acc let_bind ->
       let* env, subst_acc = acc in
-      let* subst, bind_varname, scheme = infer_let_bind env let_bind in
+      let* subst, bind_varname, scheme = infer_let_bind env is_rec let_bind in
       let env = TypeEnvironment.extend env bind_varname scheme in
       let env = TypeEnvironment.apply subst env in
       let* subst_acc = Substitution.compose subst_acc subst in
       return (env, subst_acc))
 
-and infer_let_bind env = function
+and infer_let_bind env is_rec = function
   | Let_bind (Ident (bind_varname, _), args, e) ->
     let* fresh_vars =
       (* Hack for get typ list, not typ t list*)
@@ -612,11 +618,11 @@ and infer_let_bind env = function
         fresh_vars
     in
     let* subst1, typ1 = infer_expr env e in
-    (* If let_bind is recursive, then bind_varname was already in environment *)
+    (* If let_bind is recursive, then bind_varname is already in environment *)
     let* bind_typevar =
-      match TypeEnvironment.find env bind_varname with
-      | Some (Scheme (_, bind_typevar)) -> return bind_typevar
-      | None -> make_fresh_var
+      match is_rec with
+      | Rec -> return (TypeEnvironment.find_typ_exn env bind_varname)
+      | Nonrec -> make_fresh_var
     in
     let bind_type = arrow_of_types fresh_vars bind_typevar in
     let env =
@@ -632,7 +638,7 @@ and infer_let_bind env = function
 let infer_statement env = function
   | Let (Rec, let_bind, let_binds) ->
     let* env = extend_env_with_bind_names env (let_bind :: let_binds) in
-    let* env, _ = extend_env_with_let_binds env (let_bind :: let_binds) in
+    let* env, _ = extend_env_with_let_binds env Rec (let_bind :: let_binds) in
     let bind_names = extract_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
@@ -642,7 +648,7 @@ let infer_statement env = function
     return (env, bind_types)
   | Let (Nonrec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
-    let* env, _ = extend_env_with_let_binds env let_binds in
+    let* env, _ = extend_env_with_let_binds env Nonrec let_binds in
     let bind_names = extract_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
