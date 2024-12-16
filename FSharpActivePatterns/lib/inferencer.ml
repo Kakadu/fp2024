@@ -112,7 +112,7 @@ end = struct
 
   (* takes current state, returns state + 1 *)
   let fresh : int t = fun last -> last + 1, Result.Ok last
-  let run m state = m state
+  let run m = m
 end
 
 type fresh = int
@@ -310,7 +310,7 @@ end = struct
   (* if pair (key, some old value) exists in map env, then replace old value
      with new, else add pair (key, value) into map *)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-  let remove env key = Map.remove env key
+  let remove = Map.remove
   let empty = Map.empty (module String)
 
   (* apply given substitution to all elements of environment *)
