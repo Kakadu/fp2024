@@ -646,8 +646,9 @@ and infer_let_bind env is_rec = function
 
 let infer_statement env = function
   | Let (Rec, let_bind, let_binds) ->
-    let* env = extend_env_with_bind_names env (let_bind :: let_binds) in
-    let* env, _ = extend_env_with_let_binds env Rec (let_bind :: let_binds) in
+    let let_binds = let_bind :: let_binds in
+    let* env = extend_env_with_bind_names env let_binds in
+    let* env, _ = extend_env_with_let_binds env Rec let_binds in
     let bind_names = extract_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
