@@ -242,7 +242,7 @@ let p_let p_expr =
   return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
 ;;
 
-let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Apply (expr1, expr2)))
+let p_apply p_expr = chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 
 let p_option p make_option =
   skip_ws *> string "None" *> peek_sep1 *> return (make_option None)
