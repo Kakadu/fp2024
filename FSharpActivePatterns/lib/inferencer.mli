@@ -24,4 +24,5 @@ val pp_error : formatter -> error -> unit
 val infer
   :  construction
   -> TypeEnvironment.t
-  -> (TypeEnvironment.t * typ list, error) result
+  -> int
+  -> int * (TypeEnvironment.t * typ list, error) result

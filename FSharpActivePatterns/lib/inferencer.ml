@@ -44,7 +44,7 @@ module R : sig
   end
 
   val fresh : int t
-  val run : 'a t -> ('a, error) Result.t
+  val run : 'a t -> int -> int * ('a, error) Result.t
 
   module RMap : sig
     val fold : ('a, 'b, 'c) Map.t -> init:'d t -> f:('a -> 'b -> 'd -> 'd t) -> 'd t
@@ -112,7 +112,7 @@ end = struct
 
   (* takes current state, returns state + 1 *)
   let fresh : int t = fun last -> last + 1, Result.Ok last
-  let run m = snd (m 0)
+  let run m state = m state
 end
 
 type fresh = int
@@ -676,4 +676,4 @@ let infer_construction env = function
     return (env, types)
 ;;
 
-let infer c env = run (infer_construction env c)
+let infer c env state = run (infer_construction env c) state

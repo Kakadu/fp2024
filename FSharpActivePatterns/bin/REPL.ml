@@ -61,23 +61,23 @@ let run_repl dump_parsetree input_file =
     | None -> stdin
     | Some n -> open_in n
   in
-  let rec run_repl_helper run env =
+  let rec run_repl_helper run env state =
     let open Format in
     match run ic with
     | Fail -> fprintf err_formatter "Error occured\n"
     | Empty ->
       fprintf std_formatter "\n";
       print_flush ();
-      run_repl_helper run env
+      run_repl_helper run env state
     | End -> ()
     | Result ast ->
-      let result = infer ast env in
+      let result = infer ast env state in
       (match result with
-       | Error err ->
+       | new_state, Error err ->
          fprintf err_formatter "Type checking failed: %a\n" pp_error err;
          print_flush ();
-         run_repl_helper run env
-       | Ok (env, types) ->
+         run_repl_helper run env new_state
+       | new_state, Ok (env, types) ->
          (match dump_parsetree with
           | true -> print_construction std_formatter ast
           | false ->
@@ -87,9 +87,9 @@ let run_repl dump_parsetree input_file =
                 pp_typ std_formatter t)
               types;
             print_flush ());
-         run_repl_helper run env)
+         run_repl_helper run env new_state)
   in
-  run_repl_helper run_single TypeEnvironment.empty
+  run_repl_helper run_single TypeEnvironment.empty 0
 ;;
 
 type opts =
