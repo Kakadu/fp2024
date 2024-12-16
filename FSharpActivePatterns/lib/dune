@@ -1,7 +1,15 @@
 (library
  (name FSharpActivePatterns)
  (public_name FSharpActivePatterns)
- (modules Ast Parser AstPrinter PrettyPrinter KeywordChecker)
+ (modules
+  Ast
+  Parser
+  AstPrinter
+  PrettyPrinter
+  KeywordChecker
+  Inferencer
+  TypedTree
+  TypesPp)
  (libraries angstrom base)
  (preprocess
   (pps ppx_deriving_qcheck ppx_deriving.show))
