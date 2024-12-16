@@ -835,7 +835,7 @@ and infer_let_bind env is_rec = function
         match arg with
         | Ident (name, _) -> name)
     in
-    let* env =
+    let* env_with_args =
       List.fold2_exn
         ~init:(return env)
         ~f:(fun acc arg fresh_var ->
@@ -844,21 +844,28 @@ and infer_let_bind env is_rec = function
         arg_names
         fresh_vars
     in
-    let* subst1, typ1 = infer_expr env e in
-    (* If let_bind is recursive, then bind_varname is already in environment *)
+    let* subst1, typ1 = infer_expr env_with_args e in
+    let bind_type = arrow_of_types fresh_vars typ1 in
+    (* If let_bind is recursive, then bind_varname was already in environment *)
     let* bind_typevar =
       match is_rec with
       | Rec -> return (TypeEnvironment.find_typ_exn env bind_varname)
       | Nonrec -> make_fresh_var
     in
-    let bind_type = arrow_of_types fresh_vars bind_typevar in
     let env =
-      TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_type))
+      match is_rec with
+      | Rec -> TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_type))
+      | Nonrec -> env
     in
-    let* subst2 = unify (Substitution.apply subst1 bind_typevar) typ1 in
+    let* subst2 = unify (Substitution.apply subst1 bind_typevar) bind_type in
     let* subst = Substitution.compose subst1 subst2 in
     let env = TypeEnvironment.apply subst env in
-    let bind_var_scheme = generalize env (Substitution.apply subst bind_type) in
+    let bind_type = Substitution.apply subst bind_type in
+    let bind_var_scheme =
+      match is_rec with
+      | Rec -> generalize_rec env bind_type bind_varname
+      | Nonrec -> generalize env bind_type
+    in
     return (subst, bind_varname, bind_var_scheme)
 ;;
 
