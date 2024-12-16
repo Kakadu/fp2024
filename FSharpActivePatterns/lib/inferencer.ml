@@ -300,6 +300,7 @@ module TypeEnvironment : sig
   val find : t -> string -> scheme option
   val find_exn : t -> string -> scheme
   val find_typ_exn : t -> string -> typ
+  val remove : t -> string -> t
 end = struct
   open Base
 
@@ -309,8 +310,7 @@ end = struct
   (* if pair (key, some old value) exists in map env, then replace old value
      with new, else add pair (key, value) into map *)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-
-  (* let remove env key = Map.remove env key *)
+  let remove env key = Map.remove env key
   let empty = Map.empty (module String)
 
   (* apply given substitution to all elements of environment *)
@@ -348,21 +348,26 @@ let make_fresh_var = fresh >>| fun n -> Type_var n
 let instantiate : scheme -> typ R.t =
   fun (Scheme (vars, t)) ->
   VarSet.fold
-    (fun name ty ->
-      let* ty = ty in
+    (fun name typ ->
+      let* typ = typ in
       let* fr_var = make_fresh_var in
       let* subst = Substitution.singleton name fr_var in
-      return (Substitution.apply subst ty))
+      return (Substitution.apply subst typ))
     vars
     (return t)
 ;;
 
 (* take free vars of type t and environment, put difference between them
    in S constructor so all vars are context independent *)
-let generalize : TypeEnvironment.t -> Type.t -> Scheme.t =
-  fun env t ->
-  let free = VarSet.diff (Type.free_vars t) (TypeEnvironment.free_vars env) in
-  Scheme (free, t)
+let generalize env typ =
+  let free = VarSet.diff (Type.free_vars typ) (TypeEnvironment.free_vars env) in
+  Scheme (free, typ)
+;;
+
+let generalize_rec env typ rec_name =
+  let env = TypeEnvironment.remove env rec_name in
+  let free = VarSet.diff (Type.free_vars typ) (TypeEnvironment.free_vars env) in
+  Scheme (free, typ)
 ;;
 
 let infer_lt = function
@@ -510,11 +515,6 @@ let rec infer_expr env = function
         ~init:(return (Substitution.empty, []))
     in
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst_rest ] in
-    let typ1 = Substitution.apply subst_result typ1 in
-    let typ2 = Substitution.apply subst_result typ2 in
-    let typs_rest =
-      List.map typs_rest ~f:(fun typ -> Substitution.apply subst_result typ)
-    in
     return (subst_result, Type_tuple (typ1, typ2, typs_rest))
   | List [] ->
     let* fresh_var = make_fresh_var in
@@ -555,9 +555,10 @@ let rec infer_expr env = function
     let* subst1, typ1 = infer_expr env f in
     let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
     let* fresh_var = make_fresh_var in
-    let* subst3 = unify (Substitution.apply subst2 typ1) (Arrow (typ2, fresh_var)) in
+    let typ1 = Substitution.apply subst2 typ1 in
+    let* subst3 = unify typ1 (Arrow (typ2, fresh_var)) in
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
-    return (subst_result, Substitution.apply subst_result fresh_var)
+    return (subst_result, Substitution.apply subst3 fresh_var)
   | Lambda (arg, args, e) ->
     let* env, arg_types =
       RList.fold_right
@@ -570,8 +571,9 @@ let rec infer_expr env = function
     let* subst, e_type = infer_expr env e in
     return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
   | LetIn (Rec, let_bind, let_binds, e) ->
-    let* env = extend_env_with_bind_names env (let_bind :: let_binds) in
-    let* env, subst1 = extend_env_with_let_binds env Rec (let_bind :: let_binds) in
+    let let_binds = let_bind :: let_binds in
+    let* env = extend_env_with_bind_names env let_binds in
+    let* env, subst1 = extend_env_with_let_binds env Rec let_binds in
     let* subst2, typ = infer_expr env e in
     let* subst_final = Substitution.compose subst1 subst2 in
     return (subst_final, typ)
@@ -608,7 +610,7 @@ and infer_let_bind env is_rec = function
         match arg with
         | Ident (name, _) -> name)
     in
-    let* env =
+    let* env_with_args =
       List.fold2_exn
         ~init:(return env)
         ~f:(fun acc arg fresh_var ->
@@ -617,21 +619,28 @@ and infer_let_bind env is_rec = function
         arg_names
         fresh_vars
     in
-    let* subst1, typ1 = infer_expr env e in
-    (* If let_bind is recursive, then bind_varname is already in environment *)
+    let* subst1, typ1 = infer_expr env_with_args e in
+    let bind_type = arrow_of_types fresh_vars typ1 in
+    (* If let_bind is recursive, then bind_varname was already in environment *)
     let* bind_typevar =
       match is_rec with
       | Rec -> return (TypeEnvironment.find_typ_exn env bind_varname)
       | Nonrec -> make_fresh_var
     in
-    let bind_type = arrow_of_types fresh_vars bind_typevar in
     let env =
-      TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_type))
+      match is_rec with
+      | Rec -> TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_type))
+      | Nonrec -> env
     in
-    let* subst2 = unify (Substitution.apply subst1 bind_typevar) typ1 in
+    let* subst2 = unify (Substitution.apply subst1 bind_typevar) bind_type in
     let* subst = Substitution.compose subst1 subst2 in
     let env = TypeEnvironment.apply subst env in
-    let bind_var_scheme = generalize env (Substitution.apply subst bind_type) in
+    let bind_type = Substitution.apply subst bind_type in
+    let bind_var_scheme =
+      match is_rec with
+      | Rec -> generalize_rec env bind_type bind_varname
+      | Nonrec -> generalize env bind_type
+    in
     return (subst, bind_varname, bind_var_scheme)
 ;;
 
