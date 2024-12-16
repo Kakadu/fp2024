@@ -638,7 +638,7 @@ and infer_let_bind env is_rec = function
         fresh_vars
     in
     let* subst1, typ1 = infer_expr env_with_args e in
-    let bind_type = arrow_of_types fresh_vars typ1 in
+    let bind_type = Substitution.apply subst1 (arrow_of_types fresh_vars typ1) in
     (* If let_bind is recursive, then bind_varname was already in environment *)
     let* bind_typevar =
       match is_rec with
