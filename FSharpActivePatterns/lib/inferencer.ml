@@ -623,11 +623,7 @@ and infer_let_bind env is_rec = function
         let* acc = acc in
         return (fresh_var :: acc))
     in
-    let arg_names =
-      List.map args ~f:(fun arg ->
-        match arg with
-        | Ident (name, _) -> name)
-    in
+    let arg_names = List.map args ~f:(function Ident (name, _) -> name) in
     let* env_with_args =
       List.fold2_exn
         ~init:(return env)
