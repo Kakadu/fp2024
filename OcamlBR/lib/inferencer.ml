@@ -423,170 +423,197 @@ module Infer = struct
      | Ast.TFun (t1, t2) -> tarrow (id_type_to_ty t1) (id_type_to_ty t2)
      ;; *)
 
-  let infer =
-    let rec helper (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
-      match expr with
-      | Evar (Id (x, _)) -> lookup_env x env
-      | Econst (Int _) -> return (Subst.empty, tprim_int)
-      | Econst (Bool _) -> return (Subst.empty, tprim_bool)
-      | Econst (String _) -> return (Subst.empty, tprim_string)
-      | Econst Unit -> return (Subst.empty, tprim_unit)
-      | Ebin_op (op, e1, e2) ->
-        let* s1, t1 = helper env e1 in
-        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-        (* let* op_type =
+  let rec infer (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
+    match expr with
+    | Evar (Id (x, _)) -> lookup_env x env
+    | Econst (Int _) -> return (Subst.empty, tprim_int)
+    | Econst (Bool _) -> return (Subst.empty, tprim_bool)
+    | Econst (String _) -> return (Subst.empty, tprim_string)
+    | Econst Unit -> return (Subst.empty, tprim_unit)
+    | Ebin_op (op, e1, e2) ->
+      let* s1, t1 = infer env e1 in
+      let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
+      (* let* op_type =
           match op with
           | Add | Sub | Mult | Div -> return (tprim_int @-> tprim_int @-> tprim_int)
           | Gt | Lt | Eq | Neq | Gte | Lte ->
             return (tprim_int @-> tprim_int @-> tprim_bool)
           | And | Or -> return (tprim_bool @-> tprim_bool @-> tprim_bool)
         in *)
-        let* e1t, e2t, et =
-          match op with
-          | Mult | Div | Add | Sub -> return (tprim_int, tprim_int, tprim_int)
-          | Eq | Neq | Lt | Lte | Gt | Gte ->
-            let* fresh = fresh_var in
-            return (fresh, fresh, tprim_bool)
-          | And | Or -> return (tprim_bool, tprim_bool, tprim_bool)
+      let* e1t, e2t, et =
+        match op with
+        | Mult | Div | Add | Sub -> return (tprim_int, tprim_int, tprim_int)
+        | Eq | Neq | Lt | Lte | Gt | Gte ->
+          let* fresh = fresh_var in
+          return (fresh, fresh, tprim_bool)
+        | And | Or -> return (tprim_bool, tprim_bool, tprim_bool)
+      in
+      let* sub3 = Subst.unify (Subst.apply s2 t1) e1t in
+      let* sub4 = Subst.unify (Subst.apply sub3 t2) e2t in
+      let* sub = Subst.compose_all [ s1; s2; sub3; sub4 ] in
+      return (sub, Subst.apply sub et)
+      (* let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
+         let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
+         let* s_final = Subst.compose_all [ s4; s3; s2; s1 ] in
+         return (s_final, Subst.apply s_final (snd_arrow op_type)) *)
+    | Eun_op (op, e) ->
+      let* s, t = infer env e in
+      let* op_type =
+        match op with
+        | Negative | Positive -> return (tprim_int @-> tprim_int)
+        | Not -> return (tprim_bool @-> tprim_bool)
+      in
+      let* s2 = unify t (fst_arrow op_type) in
+      let* s_final = Subst.compose_all [ s2; s ] in
+      return (s_final, Subst.apply s_final (snd_arrow op_type))
+    | Eif_then_else (c, th, Some el) ->
+      let* s1, t1 = infer env c in
+      let* s2, t2 = infer (TypeEnv.apply s1 env) th in
+      let* s3, t3 = infer (TypeEnv.apply s2 env) el in
+      let* s4 = unify t1 tprim_bool in
+      let* s5 = unify t2 t3 in
+      let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
+      return (final_subst, Subst.apply final_subst t2)
+    | Eif_then_else (c, th, None) ->
+      let* s1, t1 = infer env c in
+      let* s2, t2 = infer (TypeEnv.apply s1 env) th in
+      let* s3 = unify t1 tprim_bool in
+      let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
+      return (final_subst, TOption (Subst.apply final_subst t2))
+    | Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), [], e2) ->
+      (match t_opt with
+       | Some expected_type ->
+         let* s1, t1 = infer env e1 in
+         let expected_type = Subst.apply s1 expected_type in
+         let* sub1 = Subst.unify t1 expected_type in
+         let env2 = TypeEnv.apply sub1 env in
+         let t_gen = generalize env2 t1 in
+         let env3 = TypeEnv.extend x t_gen env in
+         let* s2, t2 = infer (TypeEnv.apply s1 env3) e2 in
+         let* final_subst = Subst.compose s1 s2 in
+         return (final_subst, t2)
+       | None ->
+         let* s1, t1 = infer env e1 in
+         let env2 = TypeEnv.apply s1 env in
+         let t_gen = generalize env2 t1 in
+         let env3 = TypeEnv.extend x t_gen env in
+         let* s2, t2 = infer (TypeEnv.apply s1 env3) e2 in
+         let* final_subst = Subst.compose s1 s2 in
+         return (final_subst, t2))
+    | Elet (Recursive, value_binding, value_bindings, e2) ->
+      let* s', env' = infer_value_bindings env (value_binding :: value_bindings) in
+      let* s3, t2 = infer env' e2 in
+      let* s_final =
+        let rec combined_s acc = function
+          | [] -> return acc
+          | s :: substs ->
+            let* acc = Subst.compose acc s in
+            combined_s acc substs
         in
-        let* sub3 = Subst.unify (Subst.apply s2 t1) e1t in
-        let* sub4 = Subst.unify (Subst.apply sub3 t2) e2t in
-        let* sub = Subst.compose_all [ s1; s2; sub3; sub4 ] in
-        return (sub, Subst.apply sub et)
-        (* let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
-           let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
-           let* s_final = Subst.compose_all [ s4; s3; s2; s1 ] in
-           return (s_final, Subst.apply s_final (snd_arrow op_type)) *)
-      | Eun_op (op, e) ->
-        let* s, t = helper env e in
-        let* op_type =
-          match op with
-          | Negative | Positive -> return (tprim_int @-> tprim_int)
-          | Not -> return (tprim_bool @-> tprim_bool)
+        let* sub = combined_s Subst.empty s' in
+        Subst.compose sub s3
+      in
+      return (s_final, t2)
+    | Efun (PVar (Id (x, _)), [], body) ->
+      let* tv = fresh_var in
+      let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
+      let* s_body, t_body = infer env2 body in
+      return (s_body, TArrow (Subst.apply s_body tv, t_body))
+    | Efun_application (e1, e2) ->
+      let* s1, t1 = infer env e1 in
+      let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
+      let* tv = fresh_var in
+      let* s3 = unify (Subst.apply s2 t1) (TArrow (t2, tv)) in
+      let* s_final = Subst.compose_all [ s3; s2; s1 ] in
+      return (s_final, Subst.apply s_final tv)
+    | Eoption (Some e) ->
+      let* s, t = infer env e in
+      return (s, TOption t)
+    | Ematch (e, c, cl) ->
+      let* sub1, t1 = infer env e in
+      let env = TypeEnv.apply sub1 env in
+      let* fresh = fresh_var in
+      let cases = c :: cl in
+      let* sub, t =
+        List.fold_left
+          (fun acc case ->
+            let* _, t = acc in
+            match case with
+            | Ast.Ecase (pat, exp) ->
+              let* sub_pat, pt, env1 = infer_pattern env pat in
+              let* sub2 = Subst.unify t1 pt in
+              let env2 = TypeEnv.apply sub2 env1 in
+              let* sub3, t' = infer env2 exp in
+              let* sub4 = Subst.unify t' t in
+              let* sub = Subst.compose_all [ sub_pat; sub2; sub3; sub4 ] in
+              return (sub, Subst.apply sub t))
+          (return (sub1, fresh))
+          cases
+      in
+      return (sub, t)
+    | Etuple (e1, e2, es) ->
+      let* s1, t1 = infer env e1 in
+      let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
+      let infer_tuple_elements env es =
+        let rec aux env = function
+          | [] -> return ([], [])
+          | e :: es' ->
+            let* s, t = infer env e in
+            let* s', ts = aux (TypeEnv.apply s env) es' in
+            return (s' @ [ s ], t :: ts)
         in
-        let* s2 = unify t (fst_arrow op_type) in
-        let* s_final = Subst.compose_all [ s2; s ] in
-        return (s_final, Subst.apply s_final (snd_arrow op_type))
-      | Eif_then_else (c, th, Some el) ->
-        let* s1, t1 = helper env c in
-        let* s2, t2 = helper env th in
-        let* s3, t3 = helper env el in
-        let* s4 = unify t1 tprim_bool in
-        let* s5 = unify t2 t3 in
-        let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
-        return (final_subst, Subst.apply final_subst t2)
-      | Eif_then_else (c, th, None) ->
-        let* s1, t1 = helper env c in
-        let* s2, t2 = helper env th in
-        let* s3 = unify t1 tprim_bool in
-        let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
-        return (final_subst, TOption (Subst.apply final_subst t2))
-      | Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), [], e2) ->
-        (match t_opt with
-         | Some expected_type ->
-           let* s1, t1 = helper env e1 in
-           let expected_type = Subst.apply s1 expected_type in
-           let* sub1 = Subst.unify t1 expected_type in
-           let env2 = TypeEnv.apply sub1 env in
-           let t_gen = generalize env2 t1 in
-           let* s2, t2 = helper (TypeEnv.extend x t_gen env2) e2 in
-           let* final_subst = Subst.compose s1 s2 in
-           return (final_subst, t2)
-         | None ->
-           let* s1, t1 = helper env e1 in
-           let env2 = TypeEnv.apply s1 env in
-           let t_gen = generalize env2 t1 in
-           let* s2, t2 = helper (TypeEnv.extend x t_gen env2) e2 in
-           let* final_subst = Subst.compose s1 s2 in
-           return (final_subst, t2))
-      | Elet (Recursive, Evalue_binding (Id (x, _), e1), [], e2) ->
-        let* tv = fresh_var in
-        let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
-        let* s1, t1 = helper env2 e1 in
-        let* s2 = unify (Subst.apply s1 tv) t1 in
-        let* s_final = Subst.compose s1 s2 in
-        let env3 = TypeEnv.apply s_final env in
-        let t_gen = generalize env3 (Subst.apply s_final tv) in
-        let* s3, t2 = helper (TypeEnv.extend x t_gen env3) e2 in
-        let* s_final = Subst.compose s_final s3 in
-        return (s_final, t2)
-      | Efun (PVar (Id (x, _)), [], body) ->
-        let* tv = fresh_var in
-        let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
-        let* s_body, t_body = helper env2 body in
-        return (s_body, TArrow (Subst.apply s_body tv, t_body))
-      | Efun_application (e1, e2) ->
-        let* s1, t1 = helper env e1 in
-        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-        let* tv = fresh_var in
-        let* s3 = unify (Subst.apply s2 t1) (TArrow (t2, tv)) in
-        let* s_final = Subst.compose_all [ s3; s2; s1 ] in
-        return (s_final, Subst.apply s_final tv)
-      | Eoption (Some e) ->
-        let* s, t = helper env e in
-        return (s, TOption t)
-      | Ematch (e, c, cl) ->
-        let* sub1, t1 = helper env e in
-        let env = TypeEnv.apply sub1 env in
-        let* fresh = fresh_var in
-        let cases = c :: cl in
-        let* sub, t =
-          List.fold_left
-            (fun acc case ->
-              let* _, t = acc in
-              match case with
-              | Ast.Ecase (pat, exp) ->
-                let* sub_pat, pt, env1 = infer_pattern env pat in
-                let* sub2 = Subst.unify t1 pt in
-                let env2 = TypeEnv.apply sub2 env1 in
-                let* sub3, t' = helper env2 exp in
-                let* sub4 = Subst.unify t' t in
-                let* sub = Subst.compose_all [ sub_pat; sub2; sub3; sub4 ] in
-                return (sub, Subst.apply sub t))
-            (return (sub1, fresh))
-            cases
+        aux env es
+      in
+      let* s3, ts = infer_tuple_elements (TypeEnv.apply s2 env) es in
+      let* s_final = Subst.compose_all (s3 @ [ s2; s1 ]) in
+      return (s_final, TTuple (t1, t2, ts))
+    | Elist es ->
+      let infer_list_elements env es =
+        let rec aux env = function
+          | [] -> return ([], [])
+          | e :: es' ->
+            let* s, t = infer env e in
+            let* s', ts = aux (TypeEnv.apply s env) es' in
+            return (s' @ [ s ], t :: ts)
         in
-        return (sub, t)
-      | Etuple (e1, e2, es) ->
-        let* s1, t1 = helper env e1 in
-        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-        let infer_tuple_elements env es =
-          let rec aux env = function
-            | [] -> return ([], [])
-            | e :: es' ->
-              let* s, t = helper env e in
-              let* s', ts = aux (TypeEnv.apply s env) es' in
-              return (s' @ [ s ], t :: ts)
-          in
-          aux env es
-        in
-        let* s3, ts = infer_tuple_elements (TypeEnv.apply s2 env) es in
-        let* s_final = Subst.compose_all (s3 @ [ s2; s1 ]) in
-        return (s_final, TTuple (t1, t2, ts))
-      | Elist es ->
-        let infer_list_elements env es =
-          let rec aux env = function
-            | [] -> return ([], [])
-            | e :: es' ->
-              let* s, t = helper env e in
-              let* s', ts = aux (TypeEnv.apply s env) es' in
-              return (s' @ [ s ], t :: ts)
-          in
-          aux env es
-        in
-        let* s, ts = infer_list_elements env es in
-        let* s_final = Subst.compose_all s in
-        return (s_final, TList (List.hd ts))
-      | Eprint_int e ->
-        let* s, t = helper env e in
-        if t = TPrim "int"
-        then return (s, TPrim "unit")
-        else (
-          let expected_type = TPrim "int" in
-          fail (`Unification_failed (expected_type, t)))
-      | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
+        aux env es
+      in
+      let* s, ts = infer_list_elements env es in
+      let* s_final = Subst.compose_all s in
+      return (s_final, TList (List.hd ts))
+    | Eprint_int e ->
+      let* s, t = infer env e in
+      if t = TPrim "int"
+      then return (s, TPrim "unit")
+      else (
+        let expected_type = TPrim "int" in
+        fail (`Unification_failed (expected_type, t)))
+    | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
+
+  and infer_value_bindings env value_bindings =
+    let* tv', env' =
+      RList.fold_left
+        value_bindings
+        ~init:(return ([], env))
+        ~f:(fun (types, env) (Ast.Evalue_binding (Id (x, _), _)) ->
+          let* tv = fresh_var in
+          let new_env = TypeEnv.extend x (S (VarSet.empty, tv)) env in
+          return (tv :: types, new_env))
     in
-    helper
+    let* s', env' =
+      RList.fold_left
+        (List.map2 (fun x y -> x, y) value_bindings (List.rev tv'))
+        ~init:(return ([], env'))
+        ~f:(fun (substs, env) (Ast.Evalue_binding (Id (x, _), e), tv) ->
+          let* s1, t1 = infer env e in
+          let* s2 = unify (Subst.apply s1 tv) t1 in
+          let* s = Subst.compose s1 s2 in
+          let new_env = TypeEnv.apply s env in
+          let t_gen = generalize new_env (Subst.apply s tv) in
+          let new_env = TypeEnv.extend x t_gen new_env in
+          return (s :: substs, new_env))
+    in
+    return (List.rev s', env')
   ;;
 
   let w expr = Result.map snd (run (infer TypeEnv.empty expr))
@@ -595,20 +622,19 @@ module Infer = struct
     | Ast.SEval expr ->
       let* subst, _ = infer env expr in
       return (subst, env)
-    | Ast.SValue (Recursive, Evalue_binding (id, expr), other_bindings) ->
-      let id_str = (fun (Ast.Id (name, _)) -> name) id in
-      let* tv = fresh_var in
-      let env = TypeEnv.extend id_str (S (VarSet.empty, tv)) env in
-      let* subst, inferred_ty = infer env expr in
-      let* subst2 = unify (Subst.apply subst tv) inferred_ty in
-      let* composed_subst = Subst.compose subst subst2 in
-      let generalized_ty =
-        generalize
-          (TypeEnv.apply composed_subst env)
-          (Subst.apply composed_subst inferred_ty)
+    | Ast.SValue (Recursive, value_binding, value_bindings) ->
+      let* s', env' = infer_value_bindings env (value_binding :: value_bindings) in
+      let* s_final =
+        let rec combined_s acc = function
+          | [] -> return acc
+          | s :: substs ->
+            let* acc = Subst.compose acc s in
+            combined_s acc substs
+        in
+        let* sub = combined_s Subst.empty s' in
+        Subst.compose sub Subst.empty
       in
-      let env = TypeEnv.extend id_str generalized_ty (TypeEnv.apply composed_subst env) in
-      infer_remaining_bindings env composed_subst other_bindings
+      return (s_final, env')
     | Ast.SValue (Non_recursive, Evalue_binding (id, expr), other_bindings) ->
       let id_str = (fun (Ast.Id (name, _)) -> name) id in
       let* subst, inferred_ty = infer env expr in
