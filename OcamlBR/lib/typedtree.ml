@@ -43,10 +43,21 @@ let rec pp_ty ppf =
   | TVar n -> fprintf ppf "'%d" n
   | TPrim s -> fprintf ppf "%s" s
   | TArrow (l, r) ->
-    (match l with
-     | TArrow _ -> fprintf ppf "(%a) -> %a" pp_ty l pp_ty r
-     | _ -> fprintf ppf "%a -> %a" pp_ty l pp_ty r)
-  | TList t -> fprintf ppf "%a list" pp_ty t
+    fprintf ppf "%a -> %a"
+      (fun ppf l ->
+        match l with
+        | TArrow _ -> fprintf ppf "(%a)" pp_ty l
+        | _ -> pp_ty ppf l)
+      l
+      (fun ppf r ->
+        match r with
+        | TArrow _ -> fprintf ppf "(%a)" pp_ty r
+        | _ -> pp_ty ppf r)
+      r
+  | TList t ->
+    (match t with
+      | TArrow _ -> fprintf ppf "(%a) list" pp_ty t
+      | _ -> fprintf ppf "%a list" pp_ty t)
   | TTuple (t1, t2, rest) ->
     let tuple_content =
       String.concat

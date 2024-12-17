@@ -6,7 +6,7 @@ open Base
 open Ast
 open Stdlib.Format
 open Typedtree
-
+(*
 let rec pp_ty ppf typ =
   match typ with
   | TPrim s -> fprintf ppf "%s" s
@@ -27,6 +27,7 @@ and pp_nested_type ppf typ =
   | TArrow _ -> fprintf ppf "(%a)" pp_ty typ
   | _ -> pp_ty ppf typ
 ;;
+*)
 
 let pp_id ppf = function
   | Id (name, None) -> fprintf ppf "%s" name
