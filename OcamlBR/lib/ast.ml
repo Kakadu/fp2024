@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Typedtree
+
 let gen_id_name =
   let open QCheck.Gen in
   let varname =
@@ -40,7 +42,7 @@ let gen_id_name =
   (* unallow varname same as keyword *)
   varname >>= fun name -> if is_keyword name then varname else return name
 ;;
-
+(*
 type id_type =
   | TInt
   | TString
@@ -48,9 +50,20 @@ type id_type =
   | Tlist of id_type
   | TTuple of id_type * id_type * id_type list
   | TFun of id_type * id_type
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }] *)
+(*
+type type_var = int [@@deriving show { with_path = false }]
 
-type id = Id of string * id_type option [@@deriving show { with_path = false }]
+type ty =
+  | TPrim of string
+  | TVar of type_var
+  | TArrow of ty * ty
+  | TTuple of ty * ty * ty list
+  | TList of ty
+  | TOption of ty
+[@@deriving show { with_path = false }] *)
+
+type id = Id of string * ty option [@@deriving show { with_path = false }]
 
 let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
 

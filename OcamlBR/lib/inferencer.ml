@@ -392,7 +392,7 @@ module Infer = struct
       in
       return (final_sub, TList (Subst.apply final_sub fresh_el_type), final_env)
   ;;
-
+(*
   let rec id_type_to_ty (t : Ast.id_type) : ty =
     match t with
     | Ast.TInt -> tprim_int
@@ -402,7 +402,7 @@ module Infer = struct
     | Ast.TTuple (t1, t2, ts) ->
       ttuple (id_type_to_ty t1) (id_type_to_ty t2) (List.map id_type_to_ty ts)
     | Ast.TFun (t1, t2) -> tarrow (id_type_to_ty t1) (id_type_to_ty t2)
-  ;;
+  ;; *)
 
   let infer =
     let rec helper (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
@@ -466,7 +466,6 @@ module Infer = struct
         (match t_opt with
          | Some expected_type ->
            let* s1, t1 = helper env e1 in
-           let expected_type = id_type_to_ty expected_type in
            let expected_type = Subst.apply s1 expected_type in
            let* sub1 = Subst.unify t1 expected_type in
            let env2 = TypeEnv.apply sub1 env in

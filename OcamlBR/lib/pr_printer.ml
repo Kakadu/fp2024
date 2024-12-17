@@ -5,31 +5,32 @@
 open Base
 open Ast
 open Stdlib.Format
+open Typedtree
 
-let rec pp_id_type ppf typ =
+let rec pp_ty ppf typ =
   match typ with
-  | TInt -> fprintf ppf "int"
-  | TString -> fprintf ppf "string"
-  | TBool -> fprintf ppf "bool"
-  | Tlist t -> fprintf ppf "%a list" pp_nested_type t
+  | TPrim s -> fprintf ppf "%s" s
+  | TVar _ -> fprintf ppf "int" 
+  | TArrow (t1, t2) -> fprintf ppf "%a -> %a" pp_ty t1 pp_ty t2
   | TTuple (t1, t2, rest) ->
-    let tuple_content =
-      String.concat
-        ~sep:" * "
-        (List.map ~f:(asprintf "%a" pp_nested_type) (t1 :: t2 :: rest))
-    in
-    fprintf ppf "(%s)" tuple_content
-  | TFun (t1, t2) -> fprintf ppf "%a -> %a" pp_nested_type t1 pp_nested_type t2
+      let tuple_content =
+        String.concat
+          ~sep:" * "
+          (List.map ~f:(asprintf "%a" pp_ty) (t1 :: t2 :: rest))
+      in
+      fprintf ppf "(%s)" tuple_content
+  | TList t -> fprintf ppf "%a list" pp_ty t
+  | TOption t -> fprintf ppf "%a option" pp_ty t
 
 and pp_nested_type ppf typ =
   match typ with
-  | TFun _ -> fprintf ppf "(%a)" pp_id_type typ
-  | _ -> pp_id_type ppf typ
+  | TArrow _ -> fprintf ppf "(%a)" pp_ty typ
+  | _ -> pp_ty ppf typ
 ;;
 
 let pp_id ppf = function
   | Id (name, None) -> fprintf ppf "%s" name
-  | Id (name, Some t) -> fprintf ppf "%s : %a" name pp_id_type t
+  | Id (name, Some t) -> fprintf ppf "%s : %a" name pp_ty t
 ;;
 
 let pp_const ppf = function
@@ -191,7 +192,7 @@ and precedence = function
 and pp_value_binding ppf = function
   | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
   | Evalue_binding (Id (name, Some suffix), e) ->
-    fprintf ppf "%s : %a = %a" name pp_id_type suffix pp_expr e
+    fprintf ppf "%s : %a = %a" name pp_ty suffix pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =

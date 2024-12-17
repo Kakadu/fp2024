@@ -5,6 +5,7 @@
 open Angstrom
 open Base
 open Ast
+open Typedtree
 
 (*---------------------Check conditions---------------------*)
 
@@ -76,13 +77,13 @@ let varname =
 
 let patomic_type =
   choice
-    [ pstoken "int" *> return TInt
-    ; pstoken "string" *> return TString
-    ; pstoken "bool" *> return TBool
+    [ pstoken "int" *> return (TPrim "int")
+    ; pstoken "string" *> return (TPrim "string")
+    ; pstoken "bool" *> return (TPrim "bool")
     ]
 ;;
 
-let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (Tlist t)
+let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (TList t)
 
 let ptuple_type ptype =
   let star = pstoken "*" in
@@ -97,7 +98,7 @@ let rec pfun_type ptype =
   ptype
   >>= fun left ->
   pstoken "->" *> pfun_type ptype
-  >>= (fun right -> return (TFun (left, right)))
+  >>= (fun right -> return (TArrow (left, right)))
   <|> return left
 ;;
 

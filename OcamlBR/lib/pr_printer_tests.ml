@@ -262,7 +262,7 @@ let%expect_test _ =
     {|
   let  x : int = 42 ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", (Some TInt))), (Econst (Int 42)))), []))
+      (Evalue_binding ((Id ("x", (Some int))), (Econst (Int 42)))), []))
     ]
   |}]
 ;;
@@ -273,7 +273,7 @@ let%expect_test _ =
     {|
   let  f : int -> string = (fun x -> string_of_int x) ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("f", (Some (TFun (TInt, TString))))),
+      (Evalue_binding ((Id ("f", (Some int -> string))),
          (Efun ((PVar (Id ("x", None))), [],
             (Efun_application ((Evar (Id ("string_of_int", None))),
                (Evar (Id ("x", None)))))
@@ -305,7 +305,7 @@ let%expect_test _ =
     {|
   let  l : int list = [1; 2; 3] ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("l", (Some (Tlist TInt)))),
+      (Evalue_binding ((Id ("l", (Some int list))),
          (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]))),
       []))
     ]
