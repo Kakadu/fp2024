@@ -129,6 +129,15 @@ type expr =
       * expr (** fun x y -> x + y *)
   | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
   (** [sum 1 ] *)
+  | Function of
+      (pattern[@gen gen_pattern_sized (n / 4)])
+      * (expr[@gen gen_expr_sized (n / 4)])
+      * ((pattern * expr) list
+        [@gen
+          QCheck.Gen.(
+            list_size
+              (0 -- 2)
+              (pair (gen_pattern_sized (n / 20)) (gen_expr_sized (n / 20))))])
   | Match of
       (expr[@gen gen_expr_sized (n / 4)])
       * (pattern[@gen gen_pattern_sized (n / 4)])

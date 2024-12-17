@@ -17,6 +17,7 @@ let is_keyword = function
   | "and"
   | "Some"
   | "None"
+  | "function"
   | "_" -> true
   | _ -> false
 ;;
