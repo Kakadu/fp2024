@@ -53,7 +53,7 @@ let rec pp_ty ppf =
         " * "
         (List.map (Format.asprintf "%a" pp_ty) (t1 :: t2 :: rest))
     in
-    fprintf ppf "TTuple(%s)" tuple_content
+    fprintf ppf "(%s)" tuple_content
   | TOption t -> fprintf ppf "%a option" pp_ty t
   | _ -> fprintf ppf ""
 ;;
