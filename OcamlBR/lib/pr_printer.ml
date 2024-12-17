@@ -7,26 +7,26 @@ open Ast
 open Stdlib.Format
 open Typedtree
 (*
-let rec pp_ty ppf typ =
-  match typ with
-  | TPrim s -> fprintf ppf "%s" s
-  | TVar _ -> fprintf ppf "int" 
-  | TArrow (t1, t2) -> fprintf ppf "%a -> %a" pp_ty t1 pp_ty t2
-  | TTuple (t1, t2, rest) ->
-      let tuple_content =
-        String.concat
-          ~sep:" * "
-          (List.map ~f:(asprintf "%a" pp_ty) (t1 :: t2 :: rest))
-      in
-      fprintf ppf "(%s)" tuple_content
-  | TList t -> fprintf ppf "%a list" pp_ty t
-  | TOption t -> fprintf ppf "%a option" pp_ty t
+   let rec pp_ty ppf typ =
+   match typ with
+   | TPrim s -> fprintf ppf "%s" s
+   | TVar _ -> fprintf ppf "int"
+   | TArrow (t1, t2) -> fprintf ppf "%a -> %a" pp_ty t1 pp_ty t2
+   | TTuple (t1, t2, rest) ->
+   let tuple_content =
+   String.concat
+   ~sep:" * "
+   (List.map ~f:(asprintf "%a" pp_ty) (t1 :: t2 :: rest))
+   in
+   fprintf ppf "(%s)" tuple_content
+   | TList t -> fprintf ppf "%a list" pp_ty t
+   | TOption t -> fprintf ppf "%a option" pp_ty t
 
-and pp_nested_type ppf typ =
-  match typ with
-  | TArrow _ -> fprintf ppf "(%a)" pp_ty typ
-  | _ -> pp_ty ppf typ
-;;
+   and pp_nested_type ppf typ =
+   match typ with
+   | TArrow _ -> fprintf ppf "(%a)" pp_ty typ
+   | _ -> pp_ty ppf typ
+   ;;
 *)
 
 let pp_id ppf = function
@@ -187,7 +187,7 @@ let rec pp_expr ppf expr =
       (fun ppf e ->
         if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
       e2
-  | Eprint_int e -> fprintf ppf "print_int %a" pp_expr e
+(* | Eprint_int e -> fprintf ppf "print_int %a" pp_expr e *)
 
 and precedence = function
   | Ebin_op (op, _, _) -> precedence_bin_op op

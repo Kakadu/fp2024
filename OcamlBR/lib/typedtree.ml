@@ -66,7 +66,6 @@ let rec pp_ty ppf =
     in
     fprintf ppf "(%s)" tuple_content
   | TOption t -> fprintf ppf "%a option" pp_ty t
-  | _ -> fprintf ppf ""
 ;;
 
 (* errors *)

@@ -480,7 +480,7 @@ module Infer = struct
       let* s3 = unify t1 tprim_bool in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, TOption (Subst.apply final_subst t2))
-    | Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), [], e2) ->
+    | Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), _, e2) ->
       (match t_opt with
        | Some expected_type ->
          let* s1, t1 = infer env e1 in
@@ -593,13 +593,13 @@ module Infer = struct
       let* s, ts = infer_list_elements env es in
       let* s_final = Subst.compose_all s in
       return (s_final, TList (List.hd ts))
-    | Eprint_int e ->
+    (* | Eprint_int e ->
       let* s, t = infer env e in
       if t = TPrim "int"
       then return (s, TPrim "unit")
       else (
         let expected_type = TPrim "int" in
-        fail (`Unification_failed (expected_type, t)))
+        fail (`Unification_failed (expected_type, t))) *)
     | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
 
   and infer_value_bindings env value_bindings =
@@ -630,10 +630,11 @@ module Infer = struct
 
   let w expr = Result.map snd (run (infer TypeEnv.empty expr))
 
-  let rec infer_structure_item env = function
+  let infer_structure_item env = function
     | Ast.SEval expr ->
       let* subst, _ = infer env expr in
-      return (subst, env)
+      let updated_env = TypeEnv.apply subst env in
+      return (subst, updated_env)
     | Ast.SValue (Recursive, value_binding, value_bindings) ->
       let* s', env' = infer_value_bindings env (value_binding :: value_bindings) in
       let* s_final =
@@ -647,28 +648,13 @@ module Infer = struct
         Subst.compose sub Subst.empty
       in
       return (s_final, env')
-    | Ast.SValue (Non_recursive, Evalue_binding (id, expr), other_bindings) ->
-      let id_str = (fun (Ast.Id (name, _)) -> name) id in
+    | Ast.SValue (Non_recursive, Evalue_binding (id, expr), _) ->
       let* subst, inferred_ty = infer env expr in
-      let generalized_ty =
-        generalize (TypeEnv.apply subst env) (Subst.apply subst inferred_ty)
+      let generalized_ty = generalize (TypeEnv.apply subst env) inferred_ty in
+      let env =
+        TypeEnv.extend (string_of_id id) generalized_ty (TypeEnv.apply subst env)
       in
-      let env = TypeEnv.extend id_str generalized_ty (TypeEnv.apply subst env) in
-      infer_remaining_bindings env subst other_bindings
-
-  and infer_remaining_bindings env subst = function
-    | [] -> return (subst, env)
-    | Evalue_binding (id, expr) :: rest ->
-      let id_str = (fun (Ast.Id (name, _)) -> name) id in
-      let* subst', inferred_ty = infer env expr in
-      let* composed_subst = Subst.compose subst subst' in
-      let generalized_ty =
-        generalize
-          (TypeEnv.apply composed_subst env)
-          (Subst.apply composed_subst inferred_ty)
-      in
-      let env = TypeEnv.extend id_str generalized_ty (TypeEnv.apply composed_subst env) in
-      infer_remaining_bindings env composed_subst rest
+      return (subst, env)
   ;;
 
   let infer_structure env structure =
