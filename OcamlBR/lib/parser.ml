@@ -338,7 +338,7 @@ let pstructure =
 ;;
 
 let structure : structure t =
-  sep_by (pstoken ";;") pstructure <* (pstoken ";;" <|> pwhitespace)
+  sep_by (pstoken ";;" <|> pwhitespace) pstructure <* (pstoken ";;" <|> pwhitespace)
 ;;
 
 let parse_expr str = parse_string ~consume:All structure str
