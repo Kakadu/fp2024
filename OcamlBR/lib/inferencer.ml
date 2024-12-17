@@ -514,11 +514,23 @@ module Infer = struct
         Subst.compose sub s3
       in
       return (s_final, t2)
-    | Efun (PVar (Id (x, _)), [], body) ->
-      let* tv = fresh_var in
-      let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
-      let* s_body, t_body = infer env2 body in
-      return (s_body, TArrow (Subst.apply s_body tv, t_body))
+    | Efun (pattern, pattern_list, body) ->
+      let* env, pat_types =
+        RList.fold_left
+          (pattern :: pattern_list)
+          ~init:(return (env, []))
+          ~f:(fun (env, pat_types) pat ->
+            let* _, typ, new_env = infer_pattern env pat in
+            return (new_env, typ :: pat_types))
+      in
+      let* s_body, t_body = infer env body in
+      let arrow_type =
+        List.fold_right
+          (fun pat_type acc -> TArrow (Subst.apply s_body pat_type, acc))
+          (List.rev pat_types)
+          t_body
+      in
+      return (s_body, arrow_type)
     | Efun_application (e1, e2) ->
       let* s1, t1 = infer env e1 in
       let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
