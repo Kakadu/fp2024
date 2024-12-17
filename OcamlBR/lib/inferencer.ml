@@ -17,6 +17,7 @@ module R : sig
 
   module RList : sig
     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
+    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
   end
 
   module RMap : sig
@@ -70,6 +71,13 @@ end = struct
         let open Syntax in
         let* acc = acc in
         f acc x)
+    ;;
+
+    let fold_right xs ~init ~f =
+      let open Syntax in
+      Base.List.fold_right xs ~init ~f:(fun x acc ->
+        let* acc = acc in
+        f x acc)
     ;;
   end
 
@@ -370,12 +378,12 @@ module Infer = struct
     | Ast.PTuple (p1, p2, pl) ->
       let* sub1, typ1, env1 = infer_pattern env p1 in
       let* sub2, typ2, env2 = infer_pattern (TypeEnv.apply sub1 env1) p2 in
-      let f1 (sub_prev, l, env) (pat : Ast.pattern) =
+      let f1 (pat : Ast.pattern) (sub_prev, l, env) =
         let* sub_cur, arg, env = infer_pattern env pat in
         let* sub = Subst.compose sub_prev sub_cur in
         return (sub, arg :: l, env)
       in
-      let* sub, arg, env = RList.fold_left pl ~init:(return (sub2, [], env2)) ~f:f1 in
+      let* sub, arg, env = RList.fold_right pl ~init:(return (sub2, [], env2)) ~f:f1 in
       return (sub, TTuple (typ1, typ2, arg), env)
     | Ast.PList pats ->
       let* fresh_el_type = fresh_var in
