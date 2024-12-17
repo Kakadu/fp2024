@@ -616,6 +616,12 @@ and extend_env_with_let_binds env is_rec let_binds =
 
 and infer_let_bind env is_rec = function
   | Let_bind (Ident (bind_varname, _), args, e) ->
+    (* to avoid binds like let rec x = x + 1 *)
+    let env =
+      match List.length args with
+      | 0 -> TypeEnvironment.remove env bind_varname
+      | _ -> env
+    in
     let* fresh_vars =
       (* Hack for get typ list, not typ t list*)
       List.fold args ~init:(return []) ~f:(fun acc _ ->
