@@ -43,7 +43,9 @@ let rec pp_ty ppf =
   | TVar n -> fprintf ppf "'%d" n
   | TPrim s -> fprintf ppf "%s" s
   | TArrow (l, r) ->
-    fprintf ppf "%a -> %a"
+    fprintf
+      ppf
+      "%a -> %a"
       (fun ppf l ->
         match l with
         | TArrow _ -> fprintf ppf "(%a)" pp_ty l
@@ -56,13 +58,11 @@ let rec pp_ty ppf =
       r
   | TList t ->
     (match t with
-      | TArrow _ -> fprintf ppf "(%a) list" pp_ty t
-      | _ -> fprintf ppf "%a list" pp_ty t)
+     | TArrow _ -> fprintf ppf "(%a) list" pp_ty t
+     | _ -> fprintf ppf "%a list" pp_ty t)
   | TTuple (t1, t2, rest) ->
     let tuple_content =
-      String.concat
-        " * "
-        (List.map (Format.asprintf "%a" pp_ty) (t1 :: t2 :: rest))
+      String.concat " * " (List.map (Format.asprintf "%a" pp_ty) (t1 :: t2 :: rest))
     in
     fprintf ppf "(%s)" tuple_content
   | TOption t -> fprintf ppf "%a option" pp_ty t

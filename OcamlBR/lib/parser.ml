@@ -88,11 +88,11 @@ let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (TList t)
 let ptuple_type ptype =
   let star = pstoken "*" in
   pparens
-  (lift3
-    (fun t1 t2 rest -> TTuple (t1, t2, rest))
-    ptype
-    (star *> ptype)
-    (many (star *> ptype)))
+    (lift3
+       (fun t1 t2 rest -> TTuple (t1, t2, rest))
+       ptype
+       (star *> ptype)
+       (many (star *> ptype)))
 ;;
 
 let rec pfun_type ptype =
@@ -120,15 +120,28 @@ let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
 let pat_any = pstoken "_" *> return PAny
 
+let rec pat_cons ppattern =
+  let cons =
+    ppattern
+    >>= fun head ->
+    pstoken "::" *> pat_cons ppattern
+    >>= (fun tail -> return (PCons (head, tail)))
+    <|> return head
+  in
+  pparens cons <|> cons
+;;
+
 let pat_tuple pat =
   let commas = pstoken "," in
-  pparens
-    (lift3
-       (fun p1 p2 rest -> PTuple (p1, p2, rest))
-       pat
-       (commas *> pat)
-       (many (commas *> pat))
-     <* pwhitespace)
+  let tuple =
+    lift3
+      (fun p1 p2 rest -> PTuple (p1, p2, rest))
+      pat
+      (commas *> pat)
+      (many (commas *> pat))
+    <* pwhitespace
+  in
+  pparens tuple <|> tuple
 ;;
 
 let pat_list pat =
@@ -136,14 +149,20 @@ let pat_list pat =
   psqparens (sep_by semicols pat >>| fun patterns -> PList patterns)
 ;;
 
+let pat_option pat =
+  lift
+    (fun e -> POption e)
+    (pstoken "Some" *> pat >>| (fun e -> Some e) <|> (pstoken "None" >>| fun _ -> None))
+;;
+
 let ppattern =
   fix (fun pat ->
-    let ppconst = pat_const in
-    let ppvar = pat_var in
-    let ppany = pat_any in
-    let pplist = pat_list pat in
-    let pptuple = pat_tuple pat in
-    choice [ ppconst; ppvar; ppany; pplist; pptuple ])
+    let patom = pat_const <|> pat_var <|> pat_any in
+    let pptuple = pat_tuple (patom <|> pat) <|> patom in
+    let pplist = pat_list (pptuple <|> pat) <|> pptuple in
+    let poption = pat_option pplist <|> pplist in
+    let pcons = pat_cons poption in
+    pcons)
 ;;
 
 (*------------------Binary operators-----------------*)

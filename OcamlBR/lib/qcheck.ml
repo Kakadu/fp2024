@@ -36,6 +36,12 @@ let rec shrink_pattern = function
       <+> map
             (fun p3' -> PTuple (p1, p2, p3'))
             (QCheck.Shrink.list ~shrink:shrink_pattern p3))
+  | PCons (p1, p2) ->
+    Iter.(
+      map (fun p1' -> PCons (p1', p2)) (shrink_pattern p1)
+      <+> map (fun p2' -> PCons (p1, p2')) (shrink_pattern p2))
+  | POption (Some p) -> shrink_pattern p
+  | POption None -> Iter.empty
 ;;
 
 let rec shrink_expr = function

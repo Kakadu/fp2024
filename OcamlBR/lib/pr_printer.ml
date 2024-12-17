@@ -81,6 +81,9 @@ let rec pp_pattern ppf = function
       String.concat ~sep:"; " (List.map ~f:(asprintf "%a" pp_pattern) patterns)
     in
     fprintf ppf "[%s]" patterns_str
+  | PCons (p1, p2) -> fprintf ppf "%a :: %a" pp_pattern p1 pp_pattern p2
+  | POption (Some p) -> fprintf ppf "(Some %a)" pp_pattern p
+  | POption None -> fprintf ppf "None"
 ;;
 
 let precedence_bin_op = function

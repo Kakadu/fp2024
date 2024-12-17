@@ -42,26 +42,27 @@ let gen_id_name =
   (* unallow varname same as keyword *)
   varname >>= fun name -> if is_keyword name then varname else return name
 ;;
-(*
-type id_type =
-  | TInt
-  | TString
-  | TBool
-  | Tlist of id_type
-  | TTuple of id_type * id_type * id_type list
-  | TFun of id_type * id_type
-[@@deriving show { with_path = false }] *)
-(*
-type type_var = int [@@deriving show { with_path = false }]
 
-type ty =
-  | TPrim of string
-  | TVar of type_var
-  | TArrow of ty * ty
-  | TTuple of ty * ty * ty list
-  | TList of ty
-  | TOption of ty
-[@@deriving show { with_path = false }] *)
+(*
+   type id_type =
+   | TInt
+   | TString
+   | TBool
+   | Tlist of id_type
+   | TTuple of id_type * id_type * id_type list
+   | TFun of id_type * id_type
+   [@@deriving show { with_path = false }] *)
+(*
+   type type_var = int [@@deriving show { with_path = false }]
+
+   type ty =
+   | TPrim of string
+   | TVar of type_var
+   | TArrow of ty * ty
+   | TTuple of ty * ty * ty list
+   | TList of ty
+   | TOption of ty
+   [@@deriving show { with_path = false }] *)
 
 type id = Id of string * ty option [@@deriving show { with_path = false }]
 
@@ -129,6 +130,10 @@ type pattern =
   | PList of
       (pattern list
       [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
+  | PCons of
+      (pattern[@gen gen_pattern_sized (n / divisor)])
+      * (pattern[@gen gen_pattern_sized (n / divisor)])
+  | POption of (pattern[@gen gen_pattern_sized (n / divisor)]) option
 [@@deriving show { with_path = false }, qcheck]
 
 type expr =
