@@ -87,11 +87,12 @@ let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (TList t)
 
 let ptuple_type ptype =
   let star = pstoken "*" in
-  lift3
+  pparens
+  (lift3
     (fun t1 t2 rest -> TTuple (t1, t2, rest))
     ptype
     (star *> ptype)
-    (many (star *> ptype))
+    (many (star *> ptype)))
 ;;
 
 let rec pfun_type ptype =

@@ -285,7 +285,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse "let y : int * string * bool = (1, \"hello\", true);;";
+  parse "let y : (int * string * bool) = (1, \"hello\", true);;";
   [%expect
     {|
   let  y : (int * string * bool) = (1, "hello", true) ;;

@@ -47,6 +47,14 @@ let rec pp_ty ppf =
      | TArrow _ -> fprintf ppf "(%a) -> %a" pp_ty l pp_ty r
      | _ -> fprintf ppf "%a -> %a" pp_ty l pp_ty r)
   | TList t -> fprintf ppf "%a list" pp_ty t
+  | TTuple (t1, t2, rest) ->
+    let tuple_content =
+      String.concat
+        " * "
+        (List.map (Format.asprintf "%a" pp_ty) (t1 :: t2 :: rest))
+    in
+    fprintf ppf "TTuple(%s)" tuple_content
+  | TOption t -> fprintf ppf "%a option" pp_ty t
   | _ -> fprintf ppf ""
 ;;
 
