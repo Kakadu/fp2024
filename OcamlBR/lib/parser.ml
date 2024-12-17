@@ -120,17 +120,6 @@ let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
 let pat_any = pstoken "_" *> return PAny
 
-let rec pat_cons ppattern =
-  let cons =
-    ppattern
-    >>= fun head ->
-    pstoken "::" *> pat_cons ppattern
-    >>= (fun tail -> return (PCons (head, tail)))
-    <|> return head
-  in
-  pparens cons <|> cons
-;;
-
 let pat_tuple pat =
   let commas = pstoken "," in
   let tuple =
@@ -149,6 +138,17 @@ let pat_list pat =
   psqparens (sep_by semicols pat >>| fun patterns -> PList patterns)
 ;;
 
+let rec pat_cons ppattern =
+  let cons =
+    ppattern
+    >>= fun head ->
+    pstoken "::" *> pat_cons ppattern
+    >>= (fun tail -> return (PCons (head, tail)))
+    <|> return head
+  in
+  pparens cons <|> cons
+;;
+
 let pat_option pat =
   lift
     (fun e -> POption e)
@@ -157,12 +157,12 @@ let pat_option pat =
 
 let ppattern =
   fix (fun pat ->
-    let patom = pat_const <|> pat_var <|> pat_any in
-    let pptuple = pat_tuple (patom <|> pat) <|> patom in
-    let pplist = pat_list (pptuple <|> pat) <|> pptuple in
-    let poption = pat_option pplist <|> pplist in
-    let pcons = pat_cons poption in
-    pcons)
+    let patom = pat_const <|> pat_var <|> pat_any <|> pparens pat in
+    let pptuple = pat_tuple patom <|> patom in
+    let pplist = pat_list pptuple <|> pptuple in
+    let pcons = pat_cons pplist <|> pplist in
+    let poption = pat_option pcons <|> pcons in
+    poption)
 ;;
 
 (*------------------Binary operators-----------------*)
@@ -303,8 +303,7 @@ let pexpr =
         ; pEtuple expr
         ; pEfun expr
         ; pEoption expr
-        ; pEmatch expr
-        (* ; pEprint_int expr *)
+        ; pEmatch expr (* ; pEprint_int expr *)
         ]
     in
     let let_expr = plet expr in
