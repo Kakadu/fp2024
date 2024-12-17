@@ -164,7 +164,7 @@ end = struct
     let rec helper = function
       | TVar v as ty ->
         (match find subst v with
-         | Some ty' -> helper ty'
+         | Some ty' -> ty'
          | None -> ty)
       | TArrow (l, r) -> TArrow (helper l, helper r)
       | TTuple (f, s, rest) -> TTuple (helper f, helper s, List.map ~f:helper rest)
@@ -180,8 +180,7 @@ end = struct
     match ty1, ty2 with
     | TPrim l, TPrim r when String.equal l r -> return empty
     | TVar v1, TVar v2 when v1 = v2 -> return empty
-    | TVar v, ty | ty, TVar v ->
-      if Type.occurs_in v ty then fail `Occurs_check else singleton v ty
+    | TVar v, ty | ty, TVar v -> singleton v ty
     | TArrow (l1, r1), TArrow (l2, r2) ->
       let* subs1 = unify l1 l2 in
       let* subs2 = unify (apply subs1 r1) (apply subs1 r2) in
@@ -259,15 +258,16 @@ module TypeEnv = struct
 
   type t = (string, scheme, String.comparator_witness) Map.t
 
-  let extend e h env = Map.set env ~key:e ~data:h
   let empty = Map.empty (module String)
 
-  let free_vars : t -> VarSet.t =
-    Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
+  let free_vars env =
+    Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
       VarSet.union acc (Scheme.free_vars s))
   ;;
 
   let apply s env = Map.map env ~f:(Scheme.apply s)
+  let extend key s env = Map.update env key ~f:(fun _ -> s)
+  let find env key = Map.find env key
 
   (* let pp ppf xs =
     Stdlib.Format.fprintf ppf "{| ";
@@ -319,7 +319,7 @@ module Infer = struct
   ;;
 
   let lookup_env e xs =
-    match Base.Map.find xs e with
+    match TypeEnv.find xs e with
     | None -> fail (`Undefined_variable e)
     | Some scheme ->
       let* ans = instantiate scheme in
@@ -391,18 +391,29 @@ module Infer = struct
         RList.fold_left pats ~init:(return (Subst.empty, env)) ~f:f1
       in
       return (final_sub, TList (Subst.apply final_sub fresh_el_type), final_env)
+    | Ast.PCons (p1, p2) ->
+      let* sub1, typ1, env1 = infer_pattern env p1 in
+      let* _, typ2, env2 = infer_pattern (TypeEnv.apply sub1 env1) p2 in
+      let* subst = Subst.unify typ2 (TList typ1) in
+      let env = TypeEnv.apply subst env2 in
+      return (subst, Subst.apply subst typ2, env)
+    | Ast.POption None ->
+      let* fresh = fresh_var in
+      return (Subst.empty, fresh, env)
+    | Ast.POption (Some p) -> infer_pattern env p
   ;;
-(*
-  let rec id_type_to_ty (t : Ast.id_type) : ty =
-    match t with
-    | Ast.TInt -> tprim_int
-    | Ast.TString -> tprim_string
-    | Ast.TBool -> tprim_bool
-    | Ast.Tlist t -> tlist (id_type_to_ty t)
-    | Ast.TTuple (t1, t2, ts) ->
-      ttuple (id_type_to_ty t1) (id_type_to_ty t2) (List.map id_type_to_ty ts)
-    | Ast.TFun (t1, t2) -> tarrow (id_type_to_ty t1) (id_type_to_ty t2)
-  ;; *)
+
+  (*
+     let rec id_type_to_ty (t : Ast.id_type) : ty =
+     match t with
+     | Ast.TInt -> tprim_int
+     | Ast.TString -> tprim_string
+     | Ast.TBool -> tprim_bool
+     | Ast.Tlist t -> tlist (id_type_to_ty t)
+     | Ast.TTuple (t1, t2, ts) ->
+     ttuple (id_type_to_ty t1) (id_type_to_ty t2) (List.map id_type_to_ty ts)
+     | Ast.TFun (t1, t2) -> tarrow (id_type_to_ty t1) (id_type_to_ty t2)
+     ;; *)
 
   let infer =
     let rec helper (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
