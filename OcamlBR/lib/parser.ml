@@ -210,10 +210,10 @@ let un_chain e op =
 let rec pbody pexpr =
   ppattern
   >>= function
-  | PVar id -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, [], e))
-  (* | PConst c ->
-     pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PConst c, [], e))
-     | PAny -> pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PAny, [], e)) *)
+  | PVar id ->
+    many ppattern
+    >>= fun patterns ->
+    pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, patterns, e))
   | _ -> fail "Only variable patterns are supported"
 ;;
 
