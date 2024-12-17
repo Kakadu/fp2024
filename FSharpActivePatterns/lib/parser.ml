@@ -467,16 +467,26 @@ let p_lambda p_expr =
   return (Lambda (pat, pat_list, body))
 ;;
 
+let p_case p_expr =
+  let* pat = skip_ws *> string "|" *> p_pat <* skip_ws <* string "->" in
+  let* expr = p_expr in
+  return (pat, expr)
+;;
+
 let p_match p_expr =
-  lift4
-    (fun value first_pat first_expr cases -> Match (value, first_pat, first_expr, cases))
-    (skip_ws *> string "match" *> skip_ws *> p_expr <* skip_ws <* string "with")
-    (skip_ws *> string "|" *> skip_ws *> p_pat <* skip_ws <* string "->" <* skip_ws)
-    (p_expr <* skip_ws)
-    (many
-       (let* pat = skip_ws *> string "|" *> p_pat <* skip_ws <* string "->" in
-        let* expr = p_expr in
-        return (pat, expr)))
+  let* value = skip_ws *> string "match" *> p_expr <* skip_ws <* string "with" in
+  let* first_pat, first_expr = p_case p_expr in
+  let* cases = many (p_case p_expr) in
+  return (Match (value, first_pat, first_expr, cases))
+;;
+
+let p_function p_expr =
+  skip_ws
+  *> string "function"
+  *>
+  let* first_pat, first_expr = p_case p_expr in
+  let* cases = many (p_case p_expr) in
+  return (Function (first_pat, first_expr, cases))
 ;;
 
 let p_expr =
