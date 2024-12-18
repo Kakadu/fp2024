@@ -482,7 +482,19 @@ and helper_p (al, pat, type_annots) env names =
      in
      let* s, t = type_annots_hndl type_annots (Ty_list el_t) in
      return (t, TypeEnv.apply s env, names)
-   | PTree _ -> failwith "is not required by the first deadline")
+   | PTree PNul ->
+     let* fresh = fresh_var in
+     let* _, t = type_annots_hndl type_annots (Ty_tree fresh) in
+     return (t, env, names)
+   | PTree (PNode (d, l, r)) ->
+     let* t, env', names' = helper_p d env names >>| fun (t, e, n) -> Ty_tree t, e, n in
+     let* tl, env'', names'' = helper_p l env' names' in
+     let* tr, env''', names''' = helper_p r env'' names'' in
+     let* s1 = unify t tl in
+     let* s2 = unify (Subst.apply s1 t) tr in
+     let* s = Subst.compose s2 s1 in
+     let* _, t = type_annots_hndl type_annots (Subst.apply s t) in
+     return (t, TypeEnv.apply s env''', names'''))
   >>| fun (t, env, names) ->
   let env', names =
     List.fold_left
@@ -527,7 +539,17 @@ and infer (e, type_annots) env =
     | EJust ->
       let* fresh = fresh_var in
       return (Subst.empty, Ty_arrow (fresh, Ty_maybe fresh))
-    | BinTreeBld _ -> failwith "is not required by the first deadline"
+    | BinTreeBld Nul ->
+      let* fresh = fresh_var in
+      return (Subst.empty, Ty_tree fresh)
+    | BinTreeBld (Node (d, l, r)) ->
+      let* s1, t = infer d env >>| fun (s, t) -> s, Ty_tree t in
+      let* s2, t2 = infer l env in
+      let* s3, t3 = infer r env in
+      let* s4 = unify t t2 in
+      let* s = Subst.compose_all [ s4; s3; s2; s1 ] in
+      let* s5 = unify (Subst.apply s t) t3 in
+      Subst.compose s5 s >>| fun fs -> fs, Subst.apply s5 t
     | ListBld (OrdList (IncomprehensionlList ee)) -> fresh_var >>= helper_list ee
     | ListBld (LazyList (e1, Some e2, Some e3)) -> ty_enum >>= helper_list [ e1; e2; e3 ]
     | ListBld (LazyList (e1, Some e2, None) | LazyList (e1, None, Some e2)) ->
