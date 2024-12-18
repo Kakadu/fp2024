@@ -416,16 +416,16 @@ let rec infer_pattern env = function
     let env = TypeEnvironment.apply subst env in
     return (env, Substitution.apply subst typ2)
   | PTuple (fst, snd, rest) ->
-    let* _, typ1 = infer_pattern env fst in
-    let* _, typ2 = infer_pattern env snd in
-    let* typs_rest =
+    let* env, typ1 = infer_pattern env fst in
+    let* env, typ2 = infer_pattern env snd in
+    let* env, typs_rest =
       List.fold_right
         rest
-        ~f:(fun p patterns_acc ->
-          let* patterns_acc = patterns_acc in
-          let* _, typ = infer_pattern env p in
-          return (typ :: patterns_acc))
-        ~init:(return [])
+        ~f:(fun p acc ->
+          let* env, types = acc in
+          let* env, typ = infer_pattern env p in
+          return (env, typ :: types))
+        ~init:(return (env, []))
     in
     return (env, Type_tuple (typ1, typ2, typs_rest))
 ;;
