@@ -469,6 +469,7 @@ let parse_expression =
         ; parse_constraint parse_full_exp
         ]
     in
+    let parse_exp = parse_exp_apply parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply parse_exp in
     let parse_exp = parse_exp_sequence parse_exp in

@@ -4,7 +4,8 @@
 
 type error =
   [ `Impossible_error
-  | `Occurs_check
+  | `No_variable_rec
+  | `Occurs_check of string * Ast.core_type
   | `Not_implemented
   | `No_variable of string
   | `Unification_failed of Ast.core_type * Ast.core_type
@@ -129,14 +130,20 @@ module TypeEnv : sig
   val free_vars : ('a, scheme, 'b) Base.Map.t -> VarSet.t
   val apply : Subst.t -> ('a, scheme, 'b) Base.Map.t -> ('a, scheme, 'b) Base.Map.t
   val pp : Format.formatter -> ('a, string * scheme, 'b) Base.Map.t -> unit
-  val find_exn : (string, 'a State.t, 'b) Base.Map.t -> string -> 'a State.t
+  val find : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b option
 end
 
 module Infer : sig
   val unify : Ast.core_type -> Ast.core_type -> Subst.t State.t
   val fresh_var : Ast.core_type State.t
   val instantiate : scheme -> Ast.core_type State.t
-  val generalize : TypeEnv.t -> Ast.core_type -> scheme
+
+  val generalize
+    :  TypeEnv.t
+    -> Ast.core_type
+    -> Ast.rec_flag
+    -> Ast.ident option
+    -> scheme
 
   val lookup_env
     :  string

@@ -104,6 +104,22 @@ let%expect_test "type check pattern and expression list construct" =
   [%expect {| val f : int list -> bool |}]
 ;;
 
+let%expect_test "type check pattern-matching" =
+  run
+    {| 
+    let fmap f xs =
+      match xs with
+      | a :: [] -> [ f a ]
+      | a :: b :: [] -> [ f a; f b ]
+      | a :: b :: c :: [] -> [ f a; f b; f c ]
+      | _ -> []
+;;
+   |};
+  [%expect {|
+    val fmap : ('d -> 'g) -> 'd list -> 'g list
+  |}]
+;;
+
 let%expect_test "type check of pattern list" =
   run {| let f a = match a with | [q; q] -> q | [w; 2] -> w |};
   [%expect {|
@@ -134,5 +150,31 @@ let%expect_test "type check recursive struct value" =
   [%expect {|
     val factorial : int -> int
     val strange_factorial : int -> int
+  |}]
+;;
+
+let%expect_test "type check polymorphism" =
+  run
+    {| 
+    let rec f1 x = x;;
+    let foo1 = f1 1;;
+    let foo2 = f1 'a';;
+    let foo3 = f1 foo1;;
+
+    let f2 x = x;;
+    let foo4 = f2 1;;
+    let foo5 = f2 'a';;
+    let foo6 = f2 foo5;;
+    |};
+  [%expect
+    {|
+    val f1 : 'b -> 'b
+    val f2 : 'i -> 'i
+    val foo1 : int
+    val foo2 : char
+    val foo3 : int
+    val foo4 : int
+    val foo5 : char
+    val foo6 : char
   |}]
 ;;
