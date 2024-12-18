@@ -1514,3 +1514,47 @@ let%expect_test "unif with ord, fail" =
   [%expect {|
     unification failed on Ord t6 and t4 -> t4 |}]
 ;;
+
+let%expect_test "tree param valid" =
+  Haskell_lib.Pai.parse_and_infer
+    [ " f (x; (1; $;$); $) = x " ]
+    false
+    Haskell_lib.Inferencer.typeenv_empty
+    0;
+  [%expect {|
+    [
+    f:  {Int} -> Int
+     ] |}]
+;;
+
+let%expect_test "tree param invalid" =
+  Haskell_lib.Pai.parse_and_infer
+    [ " f (x; (True; $;$); $) = x - x " ]
+    false
+    Haskell_lib.Inferencer.typeenv_empty
+    0;
+  [%expect {|
+    unification failed on Bool and Int |}]
+;;
+
+let%expect_test "tree expr valid" =
+  Haskell_lib.Pai.parse_and_infer
+    [ " f x  = (x; (1; $;$); $) " ]
+    false
+    Haskell_lib.Inferencer.typeenv_empty
+    0;
+  [%expect {|
+    [
+    f:  Int -> {Int}
+     ] |}]
+;;
+
+let%expect_test "tree param invalid" =
+  Haskell_lib.Pai.parse_and_infer
+    [ " f x = ((x; (True; $;$); $), x - x) " ]
+    false
+    Haskell_lib.Inferencer.typeenv_empty
+    0;
+  [%expect {|
+    unification failed on Bool and Int |}]
+;;
