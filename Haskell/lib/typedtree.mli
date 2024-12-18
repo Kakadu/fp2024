@@ -12,6 +12,7 @@ module VarSet : sig
   val fold : (int -> 'a -> 'a) -> t -> 'a -> 'a
   val diff : t -> t -> t
   val union : t -> t -> t
+  val pp : Format.formatter -> t -> unit
 end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]

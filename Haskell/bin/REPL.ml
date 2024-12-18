@@ -37,4 +37,5 @@ let () =
     (String.split_on_char '\n' text)
     opts.dump_parsetree
     Haskell_lib.Inferencer.typeenv_print_int
+    0
 ;;
