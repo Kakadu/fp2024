@@ -554,21 +554,65 @@ let check_let_bind_correctness is_rec let_bind =
   | _ -> return let_bind
 ;;
 
-let extract_names_from_let_binds let_binds =
-  List.map let_binds ~f:(function Let_bind (Ident (name, _), _, _) -> name)
+let infer_typed_pattern env : typed_pattern -> (TypeEnvironment.t * typ) t = function
+  | pat, Some typ ->
+    let* env, inferred_typ = infer_pattern env pat in
+    let* subst = unify typ inferred_typ in
+    return (TypeEnvironment.apply subst env, Substitution.apply subst typ)
+  | pat, None -> infer_pattern env pat
+;;
+
+let infer_typed_patterns env patterns =
+  List.fold_right
+    patterns
+    ~init:(return (env, []))
+    ~f:(fun pat acc ->
+      let* old_env, typs = acc in
+      let* new_env, typ = infer_typed_pattern old_env pat in
+      return (new_env, typ :: typs))
+;;
+
+let extract_names_from_pattern =
+  let rec helper = function
+    | PVar (Ident name) -> [ name ]
+    | PList l -> List.concat (List.map l ~f:helper)
+    | PCons (hd, tl) -> List.concat [ helper hd; helper tl ]
+    | PTuple (fst, snd, rest) ->
+      List.concat [ helper fst; helper snd; List.concat (List.map rest ~f:helper) ]
+    | POption (Some p) -> helper p
+    | _ -> []
+  in
+  function
+  | pat, _ -> helper pat
+;;
+
+let extract_bind_names_from_let_binds let_binds =
+  List.concat
+    (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
+       extract_names_from_pattern pat))
+;;
+
+let extract_bind_patterns_from_let_binds let_binds =
+  List.map let_binds ~f:(function Let_bind (pat, _, _) -> pat)
 ;;
 
 let extend_env_with_bind_names env let_binds =
-  let bind_names = extract_names_from_let_binds let_binds in
-  let fresh_vars = List.init (List.length let_binds) ~f:(fun _ -> make_fresh_var) in
-  List.fold2_exn
-    ~init:(return env)
-    ~f:(fun acc bind_name fresh_var ->
-      let* fresh_var = fresh_var in
-      let* acc = acc in
-      return (TypeEnvironment.extend acc bind_name (Scheme (VarSet.empty, fresh_var))))
-    bind_names
-    fresh_vars
+  (* to prevent binds like let rec x = x + 1*)
+  let let_binds =
+    List.filter let_binds ~f:(function Let_bind (_, args, _) -> List.length args <> 0)
+  in
+  let bind_names = extract_bind_patterns_from_let_binds let_binds in
+  let* env, _ = infer_typed_patterns env bind_names in
+  return env
+;;
+
+let check_let_bind_correctness is_rec let_bind =
+  match let_bind, is_rec with
+  | Let_bind ((PVar _, _), _, _), _ -> return let_bind
+  | Let_bind _, Rec -> fail `Not_allowed_left_hand_side_let_rec
+  | Let_bind (_, args, _), _ when List.length args <> 0 ->
+    fail `Args_after_not_variable_let
+  | _ -> return let_bind
 ;;
 
 let rec infer_expr env = function
@@ -815,60 +859,31 @@ and extend_env_with_let_binds env is_rec let_binds =
     ~init:(return (env, Substitution.empty))
     ~f:(fun acc let_bind ->
       let* env, subst_acc = acc in
-      let* subst, bind_varname, scheme = infer_let_bind env is_rec let_bind in
-      let env = TypeEnvironment.extend env bind_varname scheme in
+      let* subst, names_schemes_list = infer_let_bind env is_rec let_bind in
+      let env = TypeEnvironment.extend_many env names_schemes_list in
       let env = TypeEnvironment.apply subst env in
       let* subst_acc = Substitution.compose subst_acc subst in
       return (env, subst_acc))
 
-and infer_let_bind env is_rec = function
-  | Let_bind (Ident (bind_varname, _), args, e) ->
-    (* to avoid binds like let rec x = x + 1 *)
-    let env =
-      match List.length args with
-      | 0 -> TypeEnvironment.remove env bind_varname
-      | _ -> env
-    in
-    let* fresh_vars =
-      (* Hack for get typ list, not typ t list*)
-      List.fold args ~init:(return []) ~f:(fun acc _ ->
-        let* fresh_var = make_fresh_var in
-        let* acc = acc in
-        return (fresh_var :: acc))
-    in
-    let arg_names = List.map args ~f:(function Ident (name, _) -> name) in
-    let* env_with_args =
-      List.fold2_exn
-        ~init:(return env)
-        ~f:(fun acc arg fresh_var ->
-          let* acc = acc in
-          return (TypeEnvironment.extend acc arg (Scheme (VarSet.empty, fresh_var))))
-        arg_names
-        fresh_vars
-    in
-    let* subst1, typ1 = infer_expr env_with_args e in
-    let bind_type = Substitution.apply subst1 (arrow_of_types fresh_vars typ1) in
-    (* If let_bind is recursive, then bind_varname was already in environment *)
-    let* bind_typevar =
+and infer_let_bind env is_rec let_bind =
+  let* (Let_bind (name, args, e)) = check_let_bind_correctness is_rec let_bind in
+  let* env, args_types = infer_typed_patterns env args in
+  let* subst1, typ1 = infer_expr env e in
+  let bind_type = Substitution.apply subst1 (arrow_of_types args_types typ1) in
+  (* If let_bind is recursive, then bind_varname was already in environment *)
+  let* env, name_type = infer_typed_pattern env name in
+  let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
+  let* subst = Substitution.compose subst1 subst2 in
+  let env = TypeEnvironment.apply subst env in
+  let names = extract_names_from_pattern name in
+  let names_schemes_list =
+    List.map names ~f:(fun name ->
+      let name_type = TypeEnvironment.find_typ_exn env name in
       match is_rec with
-      | Rec -> return (TypeEnvironment.find_typ_exn env bind_varname)
-      | Nonrec -> make_fresh_var
-    in
-    let env =
-      match is_rec with
-      | Rec -> TypeEnvironment.extend env bind_varname (Scheme (VarSet.empty, bind_type))
-      | Nonrec -> env
-    in
-    let* subst2 = unify (Substitution.apply subst1 bind_typevar) bind_type in
-    let* subst = Substitution.compose subst1 subst2 in
-    let env = TypeEnvironment.apply subst env in
-    let bind_type = Substitution.apply subst bind_type in
-    let bind_var_scheme =
-      match is_rec with
-      | Rec -> generalize_rec env bind_type bind_varname
-      | Nonrec -> generalize env bind_type
-    in
-    return (subst, bind_varname, bind_var_scheme)
+      | Rec -> name, generalize_rec env name_type name
+      | Nonrec -> name, generalize env name_type)
+  in
+  return (subst, names_schemes_list)
 ;;
 
 let infer_statement env = function
@@ -876,7 +891,7 @@ let infer_statement env = function
     let let_binds = let_bind :: let_binds in
     let* env = extend_env_with_bind_names env let_binds in
     let* env, _ = extend_env_with_let_binds env Rec let_binds in
-    let bind_names = extract_names_from_let_binds let_binds in
+    let bind_names = extract_bind_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with
@@ -886,7 +901,7 @@ let infer_statement env = function
   | Let (Nonrec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
     let* env, _ = extend_env_with_let_binds env Nonrec let_binds in
-    let bind_names = extract_names_from_let_binds let_binds in
+    let bind_names = extract_bind_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with

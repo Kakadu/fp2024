@@ -103,6 +103,7 @@ and print_expr indent fmt expr =
     fprintf fmt "%s| Tuple:\n" (String.make indent '-');
     List.iter (print_expr (indent + 2) fmt) (e1 :: e2 :: rest)
   | Function ((pat1, expr1), cases) ->
+    let cases = List.map case_to_pair cases in
     fprintf fmt "%s| Function:\n" (String.make indent '-');
     List.iter
       (fun (pat, expr) ->
@@ -112,6 +113,7 @@ and print_expr indent fmt expr =
         print_expr (indent + 4) fmt expr)
       ((pat1, expr1) :: cases)
   | Match (value, (pat1, expr1), cases) ->
+    let cases = List.map case_to_pair cases in
     fprintf fmt "%s| Match:\n" (String.make indent '-');
     fprintf fmt "%s| Value:\n" (String.make (indent + 2) '-');
     print_expr (indent + 4) fmt value;

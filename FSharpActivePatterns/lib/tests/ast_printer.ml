@@ -9,7 +9,7 @@ open Format
 let%expect_test "print Ast factorial" =
   let factorial =
     Lambda
-      ( PConst (Int_lt 4)
+      ( (PConst (Int_lt 4), None)
       , []
       , If_then_else
           ( Bin_expr

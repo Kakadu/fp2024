@@ -456,15 +456,59 @@ let p_pat =
     cons)
 ;;
 
+let p_typed_arg : typed_pattern t =
+  let typed_pattern =
+    let* p = p_pat in
+    let* t = p_type_option in
+    return (p, t)
+  in
+  p_parens typed_pattern <|> (p_pat >>| fun p -> p, None)
+;;
+
+let p_let_bind p_expr =
+  let* name = p_pat <|> (p_parens p_inf_oper >>| fun oper -> PVar oper) in
+  let* args = many p_typed_arg in
+  let* name_typ = p_type_option <* skip_ws <* string "=" in
+  let* body = p_expr in
+  return (Let_bind ((name, name_typ), args, body))
+;;
+
+let p_letin p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
+  let* let_bind1 = p_let_bind p_expr in
+  let* let_binds = many (skip_ws *> string "and" *> peek_sep1 *> p_let_bind p_expr) in
+  let* in_expr = skip_ws *> string "in" *> peek_sep1 *> p_expr in
+  return (LetIn (rec_flag, let_bind1, let_binds, in_expr))
+;;
+
+let p_let p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
+  let* let_bind1 = p_let_bind p_expr in
+  let* let_binds = many (skip_ws *> string "and" *> peek_sep1 *> p_let_bind p_expr) in
+  return (Let (rec_flag, let_bind1, let_binds))
+;;
+
+let p_apply p_expr =
+  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
+;;
+
 let p_lambda p_expr =
   skip_ws
   *> string "fun"
   *> peek_sep1
   *>
-  let* pat = p_pat in
-  let* pat_list = many p_pat <* skip_ws <* string "->" in
+  let* arg1 = p_typed_arg in
+  let* args = many p_typed_arg <* skip_ws <* string "->" in
   let* body = p_expr in
-  return (Lambda (pat, pat_list, body))
+  return (Lambda (arg1, args, body))
 ;;
 
 let p_case p_expr =

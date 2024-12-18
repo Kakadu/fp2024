@@ -77,11 +77,23 @@ and pp_expr fmt expr =
       (e1 :: e2 :: rest);
     fprintf fmt ")"
   | Function ((pat1, expr1), cases) ->
+    let cases =
+      List.map
+        (function
+          | a, b -> a, b)
+        cases
+    in
     fprintf fmt "function ";
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
       ((pat1, expr1) :: cases)
   | Match (value, (pat1, expr1), cases) ->
+    let cases =
+      List.map
+        (function
+          | p, e -> p, e)
+        cases
+    in
     fprintf fmt "match (%a) with \n" pp_expr value;
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
