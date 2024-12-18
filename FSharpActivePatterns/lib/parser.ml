@@ -101,6 +101,31 @@ let p_type =
   <|> return None
 ;;
 
+let p_inf_oper =
+  skip_ws
+  *> take_while1 (function
+    | '+'
+    | '-'
+    | '<'
+    | '>'
+    | '*'
+    | '|'
+    | '!'
+    | '$'
+    | '%'
+    | '&'
+    | '.'
+    | '/'
+    | ':'
+    | '='
+    | '?'
+    | '@'
+    | '^'
+    | '~' -> true
+    | _ -> false)
+  >>= fun str -> return (Ident (str, None))
+;;
+
 let p_ident =
   let find_string =
     skip_ws
@@ -210,7 +235,7 @@ let p_let_bind p_expr =
   *> peek_sep1
   *> lift3
        (fun name args body -> Let_bind (name, args, body))
-       p_ident
+       (p_ident <|> p_parens p_inf_oper)
        (many p_ident)
        (skip_ws *> string "=" *> p_expr)
 ;;
@@ -221,7 +246,7 @@ let p_letin p_expr =
   *> skip_ws_sep1
   *>
   let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
-  let* name = p_ident in
+  let* name = p_ident <|> p_parens p_inf_oper in
   let* args = many p_ident in
   let* body = skip_ws *> string "=" *> p_expr in
   let* let_bind_list = many (p_let_bind p_expr) in
@@ -235,7 +260,7 @@ let p_let p_expr =
   *> skip_ws_sep1
   *>
   let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
-  let* name = p_ident in
+  let* name = p_ident <|> p_parens p_inf_oper in
   let* args = many p_ident in
   let* body = skip_ws *> string "=" *> p_expr in
   let* let_bind_list = many (p_let_bind p_expr) in
@@ -304,6 +329,15 @@ let p_function p_expr =
   return (Function ((pat1, expr1), cases))
 ;;
 
+let p_inf_oper_expr p_expr =
+  skip_ws
+  *> chainl1
+       p_expr
+       (p_inf_oper
+        >>= fun op ->
+        return (fun expr1 expr2 -> Apply (Apply (Variable op, expr1), expr2)))
+;;
+
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
@@ -335,7 +369,8 @@ let p_expr =
     let bit_or = chainl1 bit_and bitwise_or in
     let comp_and = chainl1 bit_or log_and in
     let comp_or = chainl1 comp_and log_or in
-    let p_function = p_function (p_expr <|> comp_or) <|> comp_or in
+    let inf_oper = p_inf_oper_expr comp_or <|> comp_or in
+    let p_function = p_function (p_expr <|> inf_oper) <|> inf_oper in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
     efun)
