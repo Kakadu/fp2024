@@ -265,6 +265,13 @@ end
 
 type typeenv = TypeEnv.t
 
+let typeenv_print_int =
+  TypeEnv.extend
+    TypeEnv.empty
+    ("print_int", S (VarSet.empty, Ty_arrow (Ty_prim "Int", Ty_prim "()")))
+;;
+
+let typeenv_empty = TypeEnv.empty
 let pp_typeenv = TypeEnv.pp
 
 open R
@@ -642,4 +649,4 @@ and ty_arr tt t =
   | hd :: tl -> Ty_arrow (hd, ty_arr tl t)
 ;;
 
-let w_program p = Result.map snd (run (bindings p TypeEnv.empty))
+let w_program p env = Result.map snd (run (bindings p env))
