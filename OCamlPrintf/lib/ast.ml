@@ -75,6 +75,7 @@ type core_type =
   | Type_int
   | Type_string
   | Type_bool
+  | Type_option of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_name of
       (ident
       [@gen

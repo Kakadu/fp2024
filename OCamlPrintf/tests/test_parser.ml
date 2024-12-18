@@ -125,7 +125,7 @@ let%expect_test "parsing sequence and exepression construct" =
   [1; 2; 3]; "qwerty123"
   |};
   [%expect {|
-  ([1; 2; 3]); ("qwerty123");;
+  ([1; 2; 3]; "qwerty123");;
   |}]
 ;;
 

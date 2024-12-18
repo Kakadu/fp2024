@@ -82,6 +82,7 @@ module TestQCheckManual = struct
              ; return Type_int
              ; return Type_string
              ; return Type_bool
+             ; map (fun t -> Type_option t) (self (n / coef))
              ; map
                  (fun id -> Type_name id)
                  (map

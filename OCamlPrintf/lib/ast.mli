@@ -36,7 +36,8 @@ type core_type =
   | Type_int (** [int] *)
   | Type_string (** [string] *)
   | Type_bool (** [bool] *)
-  | Type_name of ident (** [a] *)
+  | Type_option of core_type (** [T option] *)
+  | Type_name of ident (** ['a] *)
   | Type_list of core_type (** [T list] *)
   | Type_tuple of core_type * core_type * core_type list_ (** [T1 * ... * Tn] *)
   | Type_arrow of core_type * core_type (** [T1 -> T2]*)
@@ -97,8 +98,7 @@ module Expression : sig
         - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
     | Exp_fun of pattern * pattern list_ * t
     (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
-    | Exp_apply of (t * t)
-    (** [Exp_apply(E0, E1)] represents [E0 E1] *)
+    | Exp_apply of (t * t) (** [Exp_apply(E0, E1)] represents [E0 E1] *)
     | Exp_match of t * t case * t case list_
     (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
     | Exp_tuple of t * t * t list_ (** ts [(E1, ... , En)] *)

@@ -30,8 +30,8 @@ let is_type_arrow = function
   | _ -> false
 ;;
 
-let is_type_list = function
-  | Type_list _ -> true
+let is_type_list_or_option = function
+  | Type_list _ | Type_option _ -> true
   | _ -> false
 ;;
 
@@ -65,6 +65,11 @@ let rec pp_core_type ppf = function
   | Type_char -> fprintf ppf "char"
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
+  | Type_option type' ->
+    (match type' with
+     | type' when is_type_arrow type' || is_type_list_or_option type' ->
+       fprintf ppf "(%a) option" pp_core_type type'
+     | type' -> fprintf ppf "%a option" pp_core_type type')
   (* The id obtained from parser is stored without first char ',
      while the id from inferencer is stored with ', so that there is no confusion when inferring types. *)
   | Type_name id ->
@@ -77,7 +82,7 @@ let rec pp_core_type ppf = function
     else pp_type_name id
   | Type_list type' ->
     (match type' with
-     | type' when is_type_arrow type' || is_type_list type' ->
+     | type' when is_type_arrow type' || is_type_list_or_option type' ->
        fprintf ppf "(%a) list" pp_core_type type'
      | type' -> fprintf ppf "%a list" pp_core_type type')
   | Type_tuple (first_type, second_type, type_list) ->
@@ -203,7 +208,7 @@ let rec pp_expression ppf = function
       pp_expression
       exp3
   | Exp_sequence (exp1, exp2) ->
-    fprintf ppf "(%a); (%a)" pp_expression exp1 pp_expression exp2
+    fprintf ppf "(%a; %a)" pp_expression exp1 pp_expression exp2
   | Exp_constraint (exp, core_type) ->
     fprintf ppf "(%a : %a)" pp_expression exp pp_core_type core_type
 

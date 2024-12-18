@@ -165,6 +165,19 @@ let parse_list_type parse_type =
   >>= fun t -> return (Type_list t)
 ;;
 
+let parse_option_type parse_type =
+  ws
+  *> choice
+       [ parse_list_type parse_type
+       ; parse_base_type
+       ; parse_type_name
+       ; skip_parens parse_type
+       ]
+  <* ws
+  <* keyword "option"
+  >>= fun t -> return (Type_option t)
+;;
+
 let parse_tuple_type parse_type =
   let* first_type = ws *> parse_type in
   let* second_type = ws *> string "*" *> ws *> parse_type in
@@ -184,7 +197,8 @@ let parse_core_type =
   *> fix (fun parse_full_type ->
     let parse_type =
       choice
-        [ parse_list_type parse_full_type
+        [ parse_option_type parse_full_type
+        ; parse_list_type parse_full_type
         ; parse_base_type
         ; parse_type_name
         ; skip_parens parse_full_type
@@ -424,7 +438,7 @@ let parse_exp_construct parse_exp =
           ~init:(Exp_construct ("[]", None))
           ~f:(fun exp acc -> Exp_construct ("::", Some (Exp_tuple (exp, acc, []))))
   in
-  choice [ parse_elements; parse_exp_construct_keyword parse_exp ]
+  parse_elements
 ;;
 
 let parse_exp_list_construct parse_exp =
@@ -469,6 +483,7 @@ let parse_expression =
         ; parse_constraint parse_full_exp
         ]
     in
+    let parse_exp = parse_exp_construct_keyword parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply parse_exp in

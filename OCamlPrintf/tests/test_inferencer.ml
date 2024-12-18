@@ -127,6 +127,17 @@ let%expect_test "type check of pattern list" =
   |}]
 ;;
 
+let%expect_test "type check Some and None" =
+  run {| 
+  let f a =
+    match a with
+    | Some _ -> Some 'a'
+    | None -> None
+;;
+  |};
+  [%expect {| val f : 'c option -> char option |}]
+;;
+
 let%expect_test "type check expression constraint" =
   run {| let f a b = (b a : int) |};
   [%expect {|
@@ -135,9 +146,9 @@ let%expect_test "type check expression constraint" =
 ;;
 
 let%expect_test "type check pattern constraint" =
-  run {| let f (q : int -> char) (x : int) = q x |};
+  run {| let f (q : int -> 'a option) (x : int) = q x |};
   [%expect {|
-    val f : (int -> char) -> int -> char
+    val f : (int -> 'a option) -> int -> 'a option
   |}]
 ;;
 

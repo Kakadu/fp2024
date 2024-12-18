@@ -142,22 +142,24 @@ module Type = struct
   type t = core_type
 
   let rec occurs_in var = function
-    | Type_any | Type_unit | Type_char | Type_int | Type_string | Type_bool -> false
+    | Type_option ty -> occurs_in var ty
     | Type_name name -> name = var
     | Type_list ty -> occurs_in var ty
     | Type_tuple (first, second, list) ->
       List.exists (occurs_in var) (first :: second :: list)
     | Type_arrow (l, r) -> occurs_in var l || occurs_in var r
+    | _ -> false
   ;;
 
   let free_vars =
     let rec helper acc = function
-      | Type_any | Type_unit | Type_char | Type_int | Type_string | Type_bool -> acc
+      | Type_option ty -> helper acc ty
       | Type_name name -> VarSet.add name acc
       | Type_tuple (first, second, list) ->
         List.fold_left helper acc (first :: second :: list)
       | Type_list ty -> helper acc ty
       | Type_arrow (l, r) -> helper (helper acc l) r
+      | _ -> acc
     in
     helper VarSet.empty
   ;;
@@ -200,6 +202,7 @@ end = struct
         (match find sub name with
          | Some name -> name
          | None -> ty)
+      | Type_option t -> Type_option (helper t)
       | Type_list t -> Type_list (helper t)
       | Type_tuple (first, second, list) ->
         Type_tuple
@@ -220,7 +223,7 @@ end = struct
     | Type_bool, Type_bool -> return empty
     | Type_name l, Type_name r when String.equal l r -> return empty
     | Type_name a, t | t, Type_name a -> singleton a t
-    | Type_list t1, Type_list t2 -> unify t1 t2
+    | Type_list t1, Type_list t2 | Type_option t1, Type_option t2 -> unify t1 t2
     | Type_tuple (fst1, snd1, list1), Type_tuple (fst2, snd2, list2) ->
       (match
          Base.List.fold2
@@ -404,7 +407,13 @@ module Infer = struct
          return (TypeEnv.apply final_sub env, Subst.apply final_sub (Type_list fresh))
        | _ -> fail `Impossible_error)
     | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
-    | Pat_construct (id, None) when id = "()" -> return (env, Type_unit)
+    | Pat_construct ("()", None) -> return (env, Type_unit)
+    | Pat_construct ("None", None) ->
+      let* fresh = fresh_var in
+      return (env, fresh)
+    | Pat_construct ("Some", Some pat) ->
+      let* env, typ = infer_pattern env pat in
+      return (env, Type_option typ)
     | Pat_construct (_, _) -> fail `Impossible_error
     | Pat_constraint (pat, c_type) ->
       let* env, typ = infer_pattern env pat in
@@ -554,6 +563,12 @@ module Infer = struct
     | Exp_construct (id, None) when id = "true" || id = "false" ->
       return (Subst.empty, Type_bool)
     | Exp_construct ("()", None) -> return (Subst.empty, Type_unit)
+    | Exp_construct ("None", None) ->
+      let* fresh = fresh_var in
+      return (Subst.empty, fresh)
+    | Exp_construct ("Some", Some pat) ->
+      let* sub, typ = infer_expression env pat in
+      return (sub, Type_option typ)
     | Exp_construct (_, _) -> fail `Impossible_error
     | Exp_ifthenelse (if_, then_, Some else_) ->
       let* s1, t1 = infer_expression env if_ in
