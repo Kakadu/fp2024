@@ -758,19 +758,19 @@
 open Ast
 open Format
 
-let pp_list sep pp_item = <span data-count="37">p</span>p_print_list ~pp_sep:(fun ppf () -&gt; <span data-count="21">f</span>printf ppf sep) pp_item
+let pp_list sep pp_item = <span data-count="30">p</span>p_print_list ~pp_sep:(fun ppf () -&gt; <span data-count="20">f</span>printf ppf sep) pp_item
 
 let pp_brackets fmt list =
-  <span data-count="119">f</span>printf fmt "%s" (String.mak<span data-count="119">e</span> (ma<span data-count="119">x</span> 0 (List.lengt<span data-count="119">h</span> list - 1)) '(')
+  <span data-count="95">f</span>printf fmt "%s" (String.mak<span data-count="95">e</span> (ma<span data-count="95">x</span> 0 (List.lengt<span data-count="95">h</span> list - 1)) '(')
 ;;
 
 let pp_const fmt const =
-  <span data-count="28">f</span>printf
+  <span data-count="23">f</span>printf
     fmt
     "%s"
     (match const with
-     | <span data-count="23">I</span>nt n -&gt; Int.to_strin<span data-count="23">g</span> n
-     | <span data-count="4">B</span>ool b -&gt; if b then <span data-count="4">"</span>True" else <span data-count="0">"</span>False"
+     | <span data-count="19">I</span>nt n -&gt; Int.to_strin<span data-count="19">g</span> n
+     | <span data-count="3">B</span>ool b -&gt; if b then <span data-count="3">"</span>True" else <span data-count="0">"</span>False"
      | <span data-count="1">U</span>nit -&gt; "()")
 ;;
 
@@ -809,21 +809,21 @@ let pp_binop fmt = function
   | <span data-count="0">A</span>nd -&gt; fprintf fmt "&amp;&amp;"
   | <span data-count="0">O</span>r -&gt; fprintf fmt "||"
   | <span data-count="3">P</span>lus -&gt; fprintf fmt "+"
-  | <span data-count="2">M</span>inus -&gt; fprintf fmt "-"
+  | <span data-count="1">M</span>inus -&gt; fprintf fmt "-"
   | <span data-count="0">D</span>ivide -&gt; fprintf fmt "`div`"
   | <span data-count="0">M</span>od -&gt; fprintf fmt "`mod`"
   | <span data-count="6">C</span>ons -&gt; fprintf fmt ":"
-  | <span data-count="4">M</span>ultiply -&gt; fprintf fmt "*"
-  | <span data-count="2">E</span>quality -&gt; fprintf fmt "=="
+  | <span data-count="3">M</span>ultiply -&gt; fprintf fmt "*"
+  | <span data-count="1">E</span>quality -&gt; fprintf fmt "=="
   | <span data-count="0">P</span>ow -&gt; fprintf fmt "^"
   | <span data-count="0">I</span>nequality -&gt; fprintf fmt "/="
-  | <span data-count="2">L</span>ess -&gt; fprintf fmt "&lt;"
+  | <span data-count="1">L</span>ess -&gt; fprintf fmt "&lt;"
   | <span data-count="2">G</span>reater -&gt; fprintf fmt "&gt;"
   | <span data-count="0">E</span>qualityOrLess -&gt; fprintf fmt "&lt;="
   | <span data-count="0">E</span>qualityOrGreater -&gt; fprintf fmt "&gt;="
 ;;
 
-let pp_ident fmt (Ident ident) = <span data-count="66">f</span>printf fmt "%s" ident
+let pp_ident fmt (Ident ident) = <span data-count="55">f</span>printf fmt "%s" ident
 
 type paransed_cases =
   | Tp_and_some_constrs
@@ -831,9 +831,9 @@ type paransed_cases =
   | No_cases
 
 let rec pp_pattern fmt ((list, pat, tp_list) : pattern) =
-  <span data-count="30">f</span>printf fmt "%a" pp_brackets tp_list;
-  <span data-count="30">(</span>match list with
-   | <span data-count="28">[</span>] -&gt; ()
+  <span data-count="28">f</span>printf fmt "%a" pp_brackets tp_list;
+  <span data-count="28">(</span>match list with
+   | <span data-count="26">[</span>] -&gt; ()
    | <span data-count="2">_</span> -&gt; fprint<span data-count="2">f</span> fmt "%a@" (pp_lis<span data-count="2">t</span> "@" pp_ident) list);
   fprintf
     fmt
@@ -842,21 +842,21 @@ let rec pp_pattern fmt ((list, pat, tp_list) : pattern) =
        (match list with
         | <span data-count="3">[</span>] -&gt; "%a"
         | <span data-count="0">_</span> -&gt; "(%a)")
-     | <span data-count="27">_</span> -&gt; "%a")
+     | <span data-count="25">_</span> -&gt; "%a")
     pp_pat
     pat;
-  <span data-count="30">m</span>atch tp_list with
-  | <span data-count="28">[</span>] -&gt; ()
+  <span data-count="28">m</span>atch tp_list with
+  | <span data-count="26">[</span>] -&gt; ()
   | <span data-count="2">_</span> -&gt; fprintf fmt " :: %a" (pp_lis<span data-count="2">t</span> ") :: " pp_tp) (List.re<span data-count="2">v</span> tp_list)
 
 and pp_pattern_sometimes_parensed cases fmt pattern =
-  <span data-count="14">f</span>printf
+  <span data-count="12">f</span>printf
     fmt
     (match cases, pattern with
      | <span data-count="1">(</span> Tp_and_some_constrs
        , ([], (<span data-count="0">P</span>Maybe (Just _) | <span data-count="1">P</span>List (PCons _) | <span data-count="0">P</span>Const (NegativePInt _)), _) )
      | <span data-count="1">(</span><span data-count="0">T</span>p_and_some_constrs | <span data-count="1">T</span>p_only), (_, _, _ :: _) -&gt; "(%a)"
-     | <span data-count="12">_</span> -&gt; "%a")
+     | <span data-count="10">_</span> -&gt; "%a")
     pp_pattern
     pattern
 
@@ -864,7 +864,7 @@ and pp_pat fmt = function
   | <span data-count="1">P</span>Wildcard -&gt; fprintf fmt "_"
   | <span data-count="2">P</span>Const (OrdinaryPConst const) -&gt; pp_const fmt const
   | <span data-count="3">P</span>Const (NegativePInt n) -&gt; fprintf fmt "-%s" (Int.to_strin<span data-count="3">g</span> n)
-  | <span data-count="28">P</span>Identificator ident -&gt; pp_ident fmt ident
+  | <span data-count="26">P</span>Identificator ident -&gt; pp_ident fmt ident
   | <span data-count="1">P</span>Tuple (first, second, list) -&gt;
     fprintf fmt "(%a)" (pp_lis<span data-count="1">t</span> ", " pp_pattern) (first :: second :: list)
   | <span data-count="1">P</span>Maybe Nothing -&gt; fprintf fmt "Nothing"
@@ -889,14 +889,14 @@ and pp_pat fmt = function
 let get_prior = function
   | <span data-count="0">B</span>inop (_, Or, _) -&gt; 2
   | <span data-count="0">B</span>inop (_, And, _) -&gt; 3
-  | <span data-count="12">B</span>inop
-      (_, (<span data-count="4">E</span>quality | <span data-count="0">I</span>nequality | <span data-count="4">L</span>ess | <span data-count="0">E</span>qualityOrLess | <span data-count="4">G</span>reater | <span data-count="0">E</span>qualityOrGreater), _)
+  | <span data-count="8">B</span>inop
+      (_, (<span data-count="2">E</span>quality | <span data-count="0">I</span>nequality | <span data-count="2">L</span>ess | <span data-count="0">E</span>qualityOrLess | <span data-count="4">G</span>reater | <span data-count="0">E</span>qualityOrGreater), _)
     -&gt; 4
   | <span data-count="15">B</span>inop (_, Cons, _) -&gt; 5
-  | <span data-count="2">N</span>eg _ | <span data-count="12">B</span>inop (_, (<span data-count="8">P</span>lus | <span data-count="4">M</span>inus), _) -&gt; 6
-  | <span data-count="10">B</span>inop (_, (<span data-count="10">M</span>ultiply | <span data-count="0">D</span>ivide | <span data-count="0">M</span>od), _) -&gt; 7
+  | <span data-count="2">N</span>eg _ | <span data-count="10">B</span>inop (_, (<span data-count="8">P</span>lus | <span data-count="2">M</span>inus), _) -&gt; 6
+  | <span data-count="8">B</span>inop (_, (<span data-count="8">M</span>ultiply | <span data-count="0">D</span>ivide | <span data-count="0">M</span>od), _) -&gt; 7
   | <span data-count="0">B</span>inop (_, Pow, _) -&gt; 8
-  | <span data-count="37">_</span> -&gt; 10
+  | <span data-count="29">_</span> -&gt; 10
 ;;
 
 let rec pp_comprehension fmt = function
@@ -937,30 +937,30 @@ and pp_binding fmt = function
     <span data-count="0">(</span>match list with
      | <span data-count="0">[</span>] -&gt; ()
      | <span data-count="0">_</span> -&gt; fprintf fmt " where %a" (pp_lis<span data-count="0">t</span> "; " pp_binding) list)
-  | <span data-count="4">F</span>unDef (name, parameter, parameters_list, bindingbody, binding_list) -&gt;
+  | <span data-count="2">F</span>unDef (name, parameter, parameters_list, bindingbody, binding_list) -&gt;
     fprintf
       fmt
       "%a %a%s"
       pp_ident
       name
-      (pp_lis<span data-count="4">t</span> " " (pp_pattern_sometimes_parense<span data-count="4">d</span> Tp_and_some_constrs))
+      (pp_lis<span data-count="2">t</span> " " (pp_pattern_sometimes_parense<span data-count="2">d</span> Tp_and_some_constrs))
       (parameter :: parameters_list)
       (match bindingbody with
-       | <span data-count="2">O</span>rdBody _ -&gt; " = "
-       | <span data-count="2">_</span> -&gt; "");
-    <span data-count="4">p</span>p_bindingbody fmt bindingbody;
-    <span data-count="4">(</span>match binding_list with
-     | <span data-count="2">[</span>] -&gt; ()
-     | <span data-count="2">_</span> -&gt; fprintf fmt " where %a" (pp_lis<span data-count="2">t</span> "; " pp_binding) binding_list)
+       | <span data-count="1">O</span>rdBody _ -&gt; " = "
+       | <span data-count="1">_</span> -&gt; "");
+    <span data-count="2">p</span>p_bindingbody fmt bindingbody;
+    <span data-count="2">(</span>match binding_list with
+     | <span data-count="1">[</span>] -&gt; ()
+     | <span data-count="1">_</span> -&gt; fprintf fmt " where %a" (pp_lis<span data-count="1">t</span> "; " pp_binding) binding_list)
   | <span data-count="1">D</span>ecl (ident, tp) -&gt; fprintf fmt "%a :: %a" pp_ident ident pp_tp tp
 
 and pp_condition_branch sep fmt (condition, branch) =
-  <span data-count="4">f</span>printf fmt "%a%s%a" pp_expr_parenced_tp condition sep pp_expr branch
+  <span data-count="2">f</span>printf fmt "%a%s%a" pp_expr_parenced_tp condition sep pp_expr branch
 
 and pp_bindingbody fmt = function
-  | <span data-count="2">G</span>uards (cb, list) -&gt;
-    fprintf fmt " | %a" (pp_lis<span data-count="2">t</span> " | " (pp_condition_branc<span data-count="2">h</span> " = ")) (cb :: list)
-  | <span data-count="4">O</span>rdBody expr -&gt; pp_expr fmt expr
+  | <span data-count="1">G</span>uards (cb, list) -&gt;
+    fprintf fmt " | %a" (pp_lis<span data-count="1">t</span> " | " (pp_condition_branc<span data-count="1">h</span> " = ")) (cb :: list)
+  | <span data-count="3">O</span>rdBody expr -&gt; pp_expr fmt expr
 
 and pp_binary_tree_bld fmt = function
   | <span data-count="0">N</span>ul -&gt; fprintf fmt "$"
@@ -975,32 +975,32 @@ and pp_case_branch fmt (case, branch) =
     fprintf fmt "| %a" (pp_lis<span data-count="0">t</span> " | " (pp_condition_branc<span data-count="0">h</span> " -&gt; ")) (cb :: list)
 
 and pp_expression fmt expression =
-  <span data-count="89">m</span>atch expression with
-  | <span data-count="23">C</span>onst const -&gt; pp_const fmt const
-  | <span data-count="27">I</span>dentificator ident -&gt; pp_ident fmt ident
+  <span data-count="67">m</span>atch expression with
+  | <span data-count="18">C</span>onst const -&gt; pp_const fmt const
+  | <span data-count="20">I</span>dentificator ident -&gt; pp_ident fmt ident
   | <span data-count="0">T</span>upleBld (first, second, list) -&gt;
     fprintf fmt "(%a)" (pp_lis<span data-count="0">t</span> ", " pp_expr) (first :: second :: list)
-  | <span data-count="2">E</span>Nothing -&gt; fprintf fmt "Nothing"
-  | <span data-count="2">E</span>Just -&gt; fprintf fmt "Just"
+  | <span data-count="1">E</span>Nothing -&gt; fprintf fmt "Nothing"
+  | <span data-count="1">E</span>Just -&gt; fprintf fmt "Just"
   | <span data-count="0">L</span>istBld listbld -&gt; pp_listbld fmt listbld
-  | <span data-count="21">B</span>inop (((expression1, tp1) as first), binop, ((expresion2, tp2) as second)) -&gt;
+  | <span data-count="17">B</span>inop (((expression1, tp1) as first), binop, ((expresion2, tp2) as second)) -&gt;
     fprintf
       fmt
-      (match tp1, get_prio<span data-count="21">r</span> expression1 &lt;= get_prio<span data-count="21">r</span> expression, expression1 with
+      (match tp1, get_prio<span data-count="17">r</span> expression1 &lt;= get_prio<span data-count="17">r</span> expression, expression1 with
        | <span data-count="2">[</span>], true, _ | <span data-count="0">[</span>], _, (<span data-count="0">I</span>fThenEsle _ | <span data-count="0">L</span>ambda _ | <span data-count="0">C</span>ase _) -&gt; "(%a) %a "
-       | <span data-count="19">_</span> -&gt; "%a %a ")
+       | <span data-count="15">_</span> -&gt; "%a %a ")
       pp_expr_parenced_tp
       first
       pp_binop
       binop;
-    <span data-count="21">f</span>printf
+    <span data-count="17">f</span>printf
       fmt
       (match
-         tp2, Int.compar<span data-count="21">e</span> (get_prio<span data-count="21">r</span> expresion2) (get_prio<span data-count="21">r</span> expression), expresion2
+         tp2, Int.compar<span data-count="17">e</span> (get_prio<span data-count="17">r</span> expresion2) (get_prio<span data-count="17">r</span> expression), expresion2
        with
-       | <span data-count="21">[</span>], k, _ when k &lt; 0 -&gt; <span data-count="0">"</span>(%a)"
+       | <span data-count="17">[</span>], k, _ when k &lt; 0 -&gt; <span data-count="0">"</span>(%a)"
        | <span data-count="0">[</span>], 0, Neg _ -&gt; "(%a)"
-       | <span data-count="21">_</span> -&gt; "%a")
+       | <span data-count="17">_</span> -&gt; "%a")
       pp_expr_parenced_tp
       second
   | <span data-count="2">N</span>eg expr -&gt;
@@ -1011,24 +1011,24 @@ and pp_expression fmt expression =
        | <span data-count="2">_</span> -&gt; "- %a")
       pp_expr_parenced_tp
       expr
-  | <span data-count="2">I</span>fThenEsle (condition, case, else_case) -&gt;
+  | <span data-count="1">I</span>fThenEsle (condition, case, else_case) -&gt;
     fprintf fmt "if %a then %a else %a" pp_expr condition pp_expr case pp_expr else_case
-  | <span data-count="7">F</span>unctionApply (fn, argument, arguments) -&gt;
+  | <span data-count="4">F</span>unctionApply (fn, argument, arguments) -&gt;
     fprintf
       fmt
       (match fn with
        | <span data-count="0">C</span>onst _, _
-       | <span data-count="5">I</span>dentificator _, _
+       | <span data-count="3">I</span>dentificator _, _
        | <span data-count="0">T</span>upleBld _, _
        | <span data-count="0">E</span>Nothing, _
-       | <span data-count="2">E</span>Just, _
+       | <span data-count="1">E</span>Just, _
        | <span data-count="0">L</span>istBld _, _
        | <span data-count="0">B</span>inTreeBld _, _
        | <span data-count="0">_</span>, _ :: _ -&gt; "%a %a"
        | <span data-count="0">_</span> -&gt; "(%a) %a")
       pp_expr_parenced_tp
       fn
-      (pp_lis<span data-count="7">t</span> " " pp_expr_apl_arg)
+      (pp_lis<span data-count="4">t</span> " " pp_expr_apl_arg)
       (argument :: arguments)
   | <span data-count="1">L</span>ambda (argument, arguments, body) -&gt;
     fprintf
@@ -1046,36 +1046,36 @@ and pp_expression fmt expression =
     <span data-count="0">f</span>printf fmt " in %a" pp_expr expr
 
 and pp_expr_parenced_tp fmt ((_, tp) as expr) =
-  <span data-count="64">f</span>printf
+  <span data-count="48">f</span>printf
     fmt
     (match tp with
-     | <span data-count="60">[</span>] -&gt; "%a"
+     | <span data-count="44">[</span>] -&gt; "%a"
      | <span data-count="4">_</span> -&gt; "(%a)")
     pp_expr
     expr
 
 and pp_expr_apl_arg fmt expr =
-  <span data-count="9">f</span>printf
+  <span data-count="6">f</span>printf
     fmt
     (match expr with
-     | <span data-count="4">(</span><span data-count="2">B</span>inop _ | <span data-count="0">N</span>eg _ | <span data-count="2">F</span>unctionApply _), [] -&gt; "(%a)"
-     | <span data-count="5">_</span> -&gt; "%a")
+     | <span data-count="2">(</span><span data-count="1">B</span>inop _ | <span data-count="0">N</span>eg _ | <span data-count="1">F</span>unctionApply _), [] -&gt; "(%a)"
+     | <span data-count="4">_</span> -&gt; "%a")
     pp_expr_parenced_tp
     expr
 
 and pp_expr fmt ((expression, tp_list) : expr) =
-  <span data-count="89">f</span>printf
+  <span data-count="67">f</span>printf
     fmt
     (match expression, tp_list with
-     | <span data-count="4">(</span><span data-count="2">I</span>fThenEsle _ | <span data-count="1">L</span>ambda _ | <span data-count="1">C</span>ase _ | <span data-count="0">I</span>nnerBindings _), [] -&gt; "(%a%a)"
+     | <span data-count="3">(</span><span data-count="1">I</span>fThenEsle _ | <span data-count="1">L</span>ambda _ | <span data-count="1">C</span>ase _ | <span data-count="0">I</span>nnerBindings _), [] -&gt; "(%a%a)"
      | <span data-count="1">(</span><span data-count="0">I</span>fThenEsle _ | <span data-count="0">L</span>ambda _ | <span data-count="1">C</span>ase _ | <span data-count="0">I</span>nnerBindings _), _ -&gt; "(%a(%a))"
-     | <span data-count="84">_</span> -&gt; "%a%a")
+     | <span data-count="63">_</span> -&gt; "%a%a")
     pp_brackets
     tp_list
     pp_expression
     expression;
-  <span data-count="89">m</span>atch tp_list with
-  | <span data-count="80">[</span>] -&gt; ()
+  <span data-count="67">m</span>atch tp_list with
+  | <span data-count="58">[</span>] -&gt; ()
   | <span data-count="9">_</span> -&gt; fprintf fmt " :: %a" (pp_lis<span data-count="9">t</span> ") :: " pp_tp) (List.re<span data-count="9">v</span> tp_list)
 ;;
 

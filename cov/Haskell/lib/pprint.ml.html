@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>pprint.ml &mdash; Coverage report</title>
-    <meta name="description" content="88.24% coverage in lib/pprint.ml">
+    <meta name="description" content="94.12% coverage in lib/pprint.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,11 +15,10 @@
           <span class="dirname">lib/</span>pprint.ml
         </a>
       </h1>
-      <h2>88.24%</h2>
+      <h2>94.12%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="bottom:30.00%"></span>
-      <span class="unvisited" style="bottom:7.50%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -60,7 +59,7 @@
 <a id="L34"></a><span > </span>
 <a id="L35"></a><span class="visited"> </span>
 <a id="L36"></a><span class="visited"> </span>
-<a id="L37"></a><span class="unvisited"> </span>
+<a id="L37"></a><span class="visited"> </span>
 <a id="L38"></a><span class="visited"> </span>
 <a id="L39"></a><span > </span>
 <a id="L40"></a><span > </span>
@@ -118,15 +117,15 @@ open Typedtree
 
 let pp_ty =
   let rec helper fmt = function
-    | <span data-count="6">T</span>y_maybe ty -&gt; fprintf fmt "Maybe %a" helper ty
-    | <span data-count="215">T</span>y_prim s -&gt; pp_print_string fmt s
-    | <span data-count="50">T</span>y_var b -&gt; fprintf fmt "t%d" b
-    | <span data-count="57">T</span>y_arrow (ty1, ty2) -&gt;
+    | <span data-count="8">T</span>y_maybe ty -&gt; fprintf fmt "Maybe %a" helper ty
+    | <span data-count="353">T</span>y_prim s -&gt; pp_print_string fmt s
+    | <span data-count="117">T</span>y_var b -&gt; fprintf fmt "t%d" b
+    | <span data-count="177">T</span>y_arrow (ty1, ty2) -&gt;
       (match ty1 with
-       | <span data-count="6">T</span>y_arrow (_, _) -&gt; fprintf fmt "(%a) -&gt; %a" helper ty1 helper ty2
-       | <span data-count="51">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper ty1 helper ty2)
-    | <span data-count="30">T</span>y_list ty -&gt; fprintf fmt "[%a]" helper ty
-    | <span data-count="13">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
+       | <span data-count="17">T</span>y_arrow (_, _) -&gt; fprintf fmt "(%a) -&gt; %a" helper ty1 helper ty2
+       | <span data-count="160">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper ty1 helper ty2)
+    | <span data-count="44">T</span>y_list ty -&gt; fprintf fmt "[%a]" helper ty
+    | <span data-count="27">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
       fprintf
         fmt
         "(%a, %a%a)"
@@ -134,19 +133,19 @@ let pp_ty =
         ty1
         helper
         ty2
-        (pp_print_lis<span data-count="13">t</span> (fun fmt ty -&gt; <span data-count="4">f</span>printf fmt ", %a" helper ty))
+        (pp_print_lis<span data-count="27">t</span> (fun fmt ty -&gt; <span data-count="4">f</span>printf fmt ", %a" helper ty))
         ty_list
     | <span data-count="0">T</span>y_tree ty -&gt; fprintf fmt "{%a}" helper ty
-    | <span data-count="2">T</span>y_ord ty -&gt; fprintf fmt "Ord t%d" ty
+    | <span data-count="4">T</span>y_ord ty -&gt; fprintf fmt "Ord t%d" ty
     | <span data-count="1">T</span>y_enum ty -&gt; fprintf fmt "Enum t%d" ty
   in
   helper
 ;;
 
-let pp_error ppf : error -&gt; _ = <span data-count="56">f</span>unction
-  | <span data-count="2">`</span>Occurs_check -&gt; Format.fprintf ppf "Occurs check failed"
-  | <span data-count="0">`</span>No_variable s -&gt; Format.fprintf ppf "Undefined variable '%s'" s
-  | <span data-count="54">`</span>Unification_failed (l, r) -&gt;
+let pp_error ppf : error -&gt; _ = <span data-count="60">f</span>unction
+  | <span data-count="3">`</span>Occurs_check -&gt; Format.fprintf ppf "Occurs check failed"
+  | <span data-count="1">`</span>No_variable s -&gt; Format.fprintf ppf "Undefined variable '%s'" s
+  | <span data-count="56">`</span>Unification_failed (l, r) -&gt;
     Format.fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
 ;;
 </code></pre>
