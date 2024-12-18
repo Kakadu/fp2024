@@ -156,3 +156,55 @@ let%expect_test _ =
     ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let (|?) a b = a/b + b*a in (|?) 3 ((|?) 5 6)";
+  [%expect
+    {|
+  [(SEval
+      (Elet (Non_recursive,
+         (Evalue_binding ((Id ("|?", None)),
+            (Efun ((PVar (Id ("a", None))), [(PVar (Id ("b", None)))],
+               (Ebin_op (Add,
+                  (Ebin_op (Div, (Evar (Id ("a", None))),
+                     (Evar (Id ("b", None))))),
+                  (Ebin_op (Mult, (Evar (Id ("b", None))),
+                     (Evar (Id ("a", None)))))
+                  ))
+               ))
+            )),
+         [],
+         (Efun_application (
+            (Efun_application ((Evar (Id ("|?", None))), (Econst (Int 3)))),
+            (Efun_application (
+               (Efun_application ((Evar (Id ("|?", None))), (Econst (Int 5)))),
+               (Econst (Int 6))))
+            ))
+         )))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let x = match n with | [] -> 10 | h::tl -> 20 | h::m::tl -> 30 ;;";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("x", None)),
+         (Ematch ((Evar (Id ("n", None))),
+            (Ecase ((PList []), (Econst (Int 10)))),
+            [(Ecase (
+                (PCons ((PVar (Id ("h", None))), (PVar (Id ("tl", None))))),
+                (Econst (Int 20))));
+              (Ecase (
+                 (PCons ((PVar (Id ("h", None))),
+                    (PCons ((PVar (Id ("m", None))), (PVar (Id ("tl", None)))))
+                    )),
+                 (Econst (Int 30))))
+              ]
+            ))
+         )),
+      []))
+    ]
+  |}]
+;;
