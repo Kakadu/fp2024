@@ -22,8 +22,8 @@ SPDX-License-Identifier: MIT
   print_int:  Int -> ()
   x:  Int
    ]
-  unification failed on Maybe t1 and Ord t4 -> Ord t4 -> Bool
-  unification failed on () and t0 -> t0
+  unification failed on Maybe t5 and Ord t8 -> Ord t8 -> Bool
+  unification failed on () and t10 -> t10
 
   $ ../bin/REPL.exe < manytests/typed/001fac.hs
   [ 
@@ -38,11 +38,11 @@ SPDX-License-Identifier: MIT
 
   $ ../bin/REPL.exe < manytests/typed/002fac.hs
   [ 
-  fac_cps:  Int -> (Int -> t11) -> t11
+  fac_cps: t11.  Int -> (Int -> t11) -> t11
   print_int:  Int -> ()
    ]
   [ 
-  fac_cps:  Int -> (Int -> Int) -> Int
+  fac_cps: t11.  Int -> (Int -> t11) -> t11
   main:  Int
   print_int:  Int -> ()
    ]
@@ -67,33 +67,40 @@ SPDX-License-Identifier: MIT
   $ ../bin/REPL.exe < manytests/typed/004manyargs.hs
   [ 
   print_int:  Int -> ()
-  wrap:  t1 -> t1
+  wrap: t1.  t1 -> t1
    ]
   [ 
   print_int:  Int -> ()
   test3:  Int -> Int -> Int -> Int
-  wrap:  Int -> Int
+  wrap: t1.  t1 -> t1
    ]
   [ 
   print_int:  Int -> ()
   test10:  Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
   test3:  Int -> Int -> Int -> Int
-  wrap:  Int -> Int
+  wrap: t1.  t1 -> t1
+   ]
+  [ 
+  main:  Int
+  print_int:  Int -> ()
+  test10:  Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+  test3:  Int -> Int -> Int -> Int
+  wrap: t1.  t1 -> t1
    ]
 
   $ ../bin/REPL.exe < manytests/typed/005fix.hs
   [ 
-  fix:  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
   print_int:  Int -> ()
    ]
   [ 
   fac:  (Int -> Int) -> Int -> Int
-  fix:  ((Int -> Int) -> Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
   print_int:  Int -> ()
    ]
   [ 
   fac:  (Int -> Int) -> Int -> Int
-  fix:  ((Int -> Int) -> Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
   main:  Int
   print_int:  Int -> ()
    ]
@@ -142,62 +149,220 @@ SPDX-License-Identifier: MIT
   _start:  () -> () -> Int -> () -> Int -> Int -> () -> Int -> Int -> Int
   print_int:  Int -> ()
    ]
+  [ 
+  _start:  () -> () -> Int -> () -> Int -> Int -> () -> Int -> Int -> Int
+  main:  ()
+  print_int:  Int -> ()
+   ]
 
   $ ../bin/REPL.exe < manytests/typed/008ascription.hs
   [ 
-  addi:  (t4 -> Bool -> Int) -> (t4 -> Bool) -> t4 -> Int
+  addi: t4.  (t4 -> Bool -> Int) -> (t4 -> Bool) -> t4 -> Int
   print_int:  Int -> ()
    ]
   [ 
-  addi:  (Int -> Bool -> Int) -> (Int -> Bool) -> Int -> Int
+  addi: t4.  (t4 -> Bool -> Int) -> (t4 -> Bool) -> t4 -> Int
   main:  Int
   print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/009let_poly.hs
+  [ 
+  print_int:  Int -> ()
+  temp:  (Int, Bool)
+   ]
+
 
   $ ../bin/REPL.exe < manytests/typed/010sukharev.hs
   [ 
-  _1:  Int -> Int -> (Int, t5) -> Bool
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
   print_int:  Int -> ()
    ]
   [ 
-  _1:  Int -> Int -> (Int, Int -> Int) -> Bool
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
   _2:  Int
   print_int:  Int -> ()
    ]
-
-  $ ../bin/REPL.exe < manytests/typed/015tuples.hs
   [ 
-  fix:  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
   print_int:  Int -> ()
    ]
   [ 
-  fix:  (((t6, t6) -> t6) -> (t6, t6) -> t6) -> (t6, t6) -> t6
-  map:  (t6 -> t8) -> (t6, t6) -> (t8, t8)
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
+  _4:  Int
   print_int:  Int -> ()
+   ]
+  [ 
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
+  _4:  Int
+  int_of_option: t36.  Maybe t36 -> t36
+  print_int:  Int -> ()
+   ]
+  [ 
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
+  _4:  Int
+  int_of_option: t38.  Maybe t38 -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
+  _4:  Int
+  _5: t44.  Int -> t44
+  int_of_option: t38.  Maybe t38 -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
+  _4:  Int
+  _42:  Int -> Bool
+  _5: t44.  Int -> t44
+  int_of_option: t38.  Maybe t38 -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _2:  Int
+  _3:  Maybe (Int, Bool)
+  _4:  Int
+  _42: t47.  t47 -> Bool
+  _5: t44.  Int -> t44
+  int_of_option: t38.  Maybe t38 -> Int
+  print_int:  Int -> ()
+   ]
+  $ ../bin/REPL.exe < manytests/typed/015tuples.hs
+  [ 
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  print_int:  Int -> ()
+   ]
+  [ 
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  print_int:  Int -> ()
+   ]
+  [ 
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  print_int:  Int -> ()
+   ]
+  [ 
+  feven: t37.  (t37, Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  print_int:  Int -> ()
+   ]
+  [ 
+  feven: t37.  (t37, Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
+  fodd: t49.  (Int -> Int, t49) -> Int -> Int
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  print_int:  Int -> ()
+   ]
+  [ 
+  feven: t37.  (t37, Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
+  fodd: t49.  (Int -> Int, t49) -> Int -> Int
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  print_int:  Int -> ()
+  tie:  (Int -> Int, Int -> Int)
+   ]
+  [ 
+  feven: t37.  (t37, Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
+  fodd: t49.  (Int -> Int, t49) -> Int -> Int
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  meven:  Int -> Int
+  modd:  Int -> Int
+  print_int:  Int -> ()
+  tie:  (Int -> Int, Int -> Int)
+   ]
+  [ 
+  feven: t37.  (t37, Int -> Int) -> Int -> Int
+  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
+  fodd: t49.  (Int -> Int, t49) -> Int -> Int
+  main:  Int
+  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
+  meven:  Int -> Int
+  modd:  Int -> Int
+  print_int:  Int -> ()
+  tie:  (Int -> Int, Int -> Int)
    ]
 
   $ ../bin/REPL.exe < manytests/typed/016lists.hs
   [ 
-  length:  [t3] -> Int
+  length: t3.  [t3] -> Int
   print_int:  Int -> ()
    ]
   [ 
-  length:  [Int] -> Int
-  length_tail:  [t6] -> Int
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
   print_int:  Int -> ()
    ]
   [ 
-  length:  [Int] -> Int
-  length_tail:  [t4] -> Int
-  map:  (t4 -> t5) -> [t4] -> [t5]
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
+  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
   print_int:  Int -> ()
    ]
   [ 
-  append:  [t4] -> [t4] -> [t4]
-  length:  [Int] -> Int
-  length_tail:  [t4] -> Int
-  map:  (t4 -> t4) -> [t4] -> [t4]
+  append: t72.  [t72] -> [t72] -> [t72]
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
+  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
+  print_int:  Int -> ()
+   ]
+  [ 
+  append: t72.  [t72] -> [t72] -> [t72]
+  concat: t94.  [[t94]] -> [t94]
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
+  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
+  print_int:  Int -> ()
+   ]
+  [ 
+  append: t72.  [t72] -> [t72] -> [t72]
+  concat: t94.  [[t94]] -> [t94]
+  iter: t99.  (t99 -> ()) -> [t99] -> ()
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
+  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
+  print_int:  Int -> ()
+   ]
+  [ 
+  append: t72.  [t72] -> [t72] -> [t72]
+  cartesian: t110. t117.  [t110] -> [t117] -> [(t110, t117)]
+  concat: t94.  [[t94]] -> [t94]
+  iter: t99.  (t99 -> ()) -> [t99] -> ()
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
+  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
+  print_int:  Int -> ()
+   ]
+  [ 
+  append: t72.  [t72] -> [t72] -> [t72]
+  cartesian: t110. t117.  [t110] -> [t117] -> [(t110, t117)]
+  concat: t94.  [[t94]] -> [t94]
+  iter: t99.  (t99 -> ()) -> [t99] -> ()
+  length: t3.  [t3] -> Int
+  length_tail: t22.  [t22] -> Int
+  main:  Int
+  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
   print_int:  Int -> ()
    ]
