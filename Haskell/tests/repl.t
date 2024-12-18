@@ -18,76 +18,186 @@ SPDX-License-Identifier: MIT
   unification failed on Int and Bool
 
   $ ../bin/REPL.exe < manytests/do_not_type/099.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  print_int:  Int -> ()
+  x:  Int
    ]
+  unification failed on Maybe t1 and Ord t4 -> Ord t4 -> Bool
+  unification failed on () and t0 -> t0
 
   $ ../bin/REPL.exe < manytests/typed/001fac.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  fac:  Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  fac:  Int -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/002fac.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  fac_cps:  Int -> (Int -> t11) -> t11
+  print_int:  Int -> ()
+   ]
+  [ 
+  fac_cps:  Int -> (Int -> Int) -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/003fib.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  fib_acc:  Int -> Int -> Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  fib:  Int -> Int
+  fib_acc:  Int -> Int -> Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  fib:  Int -> Int
+  fib_acc:  Int -> Int -> Int -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/004manyargs.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  print_int:  Int -> ()
+  wrap:  t1 -> t1
+   ]
+  [ 
+  print_int:  Int -> ()
+  test3:  Int -> Int -> Int -> Int
+  wrap:  Int -> Int
+   ]
+  [ 
+  print_int:  Int -> ()
+  test10:  Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+  test3:  Int -> Int -> Int -> Int
+  wrap:  Int -> Int
    ]
 
   $ ../bin/REPL.exe < manytests/typed/005fix.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  fix:  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  print_int:  Int -> ()
+   ]
+  [ 
+  fac:  (Int -> Int) -> Int -> Int
+  fix:  ((Int -> Int) -> Int -> Int) -> Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  fac:  (Int -> Int) -> Int -> Int
+  fix:  ((Int -> Int) -> Int -> Int) -> Int -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/006partial.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  foo:  Bool -> Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  foo:  Bool -> Int -> Int
+  foo2:  Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  foo:  Bool -> Int -> Int
+  foo2:  Int -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/006partial2.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  foo:  Int -> Int -> Int -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  foo:  Int -> Int -> Int -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/006partial3.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  foo:  Int -> Int -> Int -> ()
+  print_int:  Int -> ()
+   ]
+  [ 
+  foo:  Int -> Int -> Int -> ()
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/007order.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  _start:  () -> () -> Int -> () -> Int -> Int -> () -> Int -> Int -> Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/008ascription.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  addi:  (t4 -> Bool -> Int) -> (t4 -> Bool) -> t4 -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  addi:  (Int -> Bool -> Int) -> (Int -> Bool) -> Int -> Int
+  main:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/009let_poly.hs
-  Result: [
-  fac:  Int -> Maybe Int
-   ]
 
   $ ../bin/REPL.exe < manytests/typed/010sukharev.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  _1:  Int -> Int -> (Int, t5) -> Bool
+  print_int:  Int -> ()
+   ]
+  [ 
+  _1:  Int -> Int -> (Int, Int -> Int) -> Bool
+  _2:  Int
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/015tuples.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  fix:  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
+  print_int:  Int -> ()
+   ]
+  [ 
+  fix:  (((t6, t6) -> t6) -> (t6, t6) -> t6) -> (t6, t6) -> t6
+  map:  (t6 -> t8) -> (t6, t6) -> (t8, t8)
+  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe < manytests/typed/016lists.hs
-  Result: [
-  fac:  Int -> Maybe Int
+  [ 
+  length:  [t3] -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  length:  [Int] -> Int
+  length_tail:  [t6] -> Int
+  print_int:  Int -> ()
+   ]
+  [ 
+  length:  [Int] -> Int
+  length_tail:  [t4] -> Int
+  map:  (t4 -> t5) -> [t4] -> [t5]
+  print_int:  Int -> ()
+   ]
+  [ 
+  append:  [t4] -> [t4] -> [t4]
+  length:  [Int] -> Int
+  length_tail:  [t4] -> Int
+  map:  (t4 -> t4) -> [t4] -> [t4]
+  print_int:  Int -> ()
    ]
