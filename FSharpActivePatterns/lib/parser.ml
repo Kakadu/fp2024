@@ -6,6 +6,7 @@ open Angstrom
 open Ast
 open Base
 open KeywordChecker
+open TypedTree
 
 (* TECHNICAL FUNCTIONS *)
 
@@ -93,14 +94,6 @@ let p_string =
 let p_string_expr = expr_const_factory p_string
 let p_string_pat = pat_const_factory p_string
 
-let p_type =
-  skip_ws
-  *> char ':'
-  *> skip_ws
-  *> (choice [ string "int"; string "bool" ] >>| fun var_type -> Some var_type)
-  <|> return None
-;;
-
 let p_inf_oper =
   skip_ws
   *> take_while1 (function
@@ -123,11 +116,11 @@ let p_inf_oper =
     | '^'
     | '~' -> true
     | _ -> false)
-  >>= fun str -> return (Ident (str, None))
+  >>= fun str -> return (Ident str)
 ;;
 
-let p_ident =
-  let find_string =
+let p_varname =
+  let p_string =
     skip_ws
     *> lift2
          ( ^ )
@@ -138,13 +131,17 @@ let p_ident =
            | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
            | _ -> false))
   in
-  find_string
-  >>= fun str ->
-  if is_keyword str
-  then fail "keywords are not allowed as variable names"
-  else p_type >>| fun type_opt -> Ident (str, type_opt)
+  let* str = p_string in
+  if is_keyword str then fail "keywords are not allowed as variable names" else return str
 ;;
 
+let p_ident =
+  let* varname = p_varname in
+  return (Ident varname)
+;;
+
+let p_type = skip_ws *> char ':' *> skip_ws *> p_varname >>| fun s -> Primitive s
+let p_type_option = p_type >>| (fun t -> Some t) <|> return None
 let p_var_expr = p_ident >>| fun ident -> Variable ident
 let p_var_pat = p_ident >>| fun ident -> PVar ident
 
@@ -229,48 +226,6 @@ let p_if p_expr =
      <|> return None)
 ;;
 
-let p_let_bind p_expr =
-  skip_ws
-  *> string "and"
-  *> peek_sep1
-  *> lift3
-       (fun name args body -> Let_bind (name, args, body))
-       (p_ident <|> p_parens p_inf_oper)
-       (many p_ident)
-       (skip_ws *> string "=" *> p_expr)
-;;
-
-let p_letin p_expr =
-  skip_ws
-  *> string "let"
-  *> skip_ws_sep1
-  *>
-  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
-  let* name = p_ident <|> p_parens p_inf_oper in
-  let* args = many p_ident in
-  let* body = skip_ws *> string "=" *> p_expr in
-  let* let_bind_list = many (p_let_bind p_expr) in
-  let* in_expr = skip_ws *> string "in" *> peek_sep1 *> p_expr in
-  return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
-;;
-
-let p_let p_expr =
-  skip_ws
-  *> string "let"
-  *> skip_ws_sep1
-  *>
-  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
-  let* name = p_ident <|> p_parens p_inf_oper in
-  let* args = many p_ident in
-  let* body = skip_ws *> string "=" *> p_expr in
-  let* let_bind_list = many (p_let_bind p_expr) in
-  return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
-;;
-
-let p_apply p_expr =
-  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
-;;
-
 let p_option p make_option =
   skip_ws *> string "None" *> peek_sep1 *> return (make_option None)
   <|> let+ inner = skip_ws *> string "Some" *> peek_sep1 *> p in
@@ -296,15 +251,59 @@ let p_pat =
     cons)
 ;;
 
+let p_typed_arg : typed_pattern t =
+  let typed_pattern =
+    let* p = p_pat in
+    let* t = p_type_option in
+    return (p, t)
+  in
+  p_parens typed_pattern <|> (p_pat >>| fun p -> p, None)
+;;
+
+let p_let_bind p_expr =
+  let* name = p_pat <|> (p_parens p_inf_oper >>| fun oper -> PVar oper) in
+  let* args = many p_typed_arg in
+  let* name_typ = p_type_option <* skip_ws <* string "=" in
+  let* body = p_expr in
+  return (Let_bind ((name, name_typ), args, body))
+;;
+
+let p_letin p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
+  let* let_bind1 = p_let_bind p_expr in
+  let* let_binds = many (skip_ws *> string "and" *> peek_sep1 *> p_let_bind p_expr) in
+  let* in_expr = skip_ws *> string "in" *> peek_sep1 *> p_expr in
+  return (LetIn (rec_flag, let_bind1, let_binds, in_expr))
+;;
+
+let p_let p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
+  let* let_bind1 = p_let_bind p_expr in
+  let* let_binds = many (skip_ws *> string "and" *> peek_sep1 *> p_let_bind p_expr) in
+  return (Let (rec_flag, let_bind1, let_binds))
+;;
+
+let p_apply p_expr =
+  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
+;;
+
 let p_lambda p_expr =
   skip_ws
   *> string "fun"
   *> peek_sep1
   *>
-  let* pat = p_pat in
-  let* pat_list = many p_pat <* skip_ws <* string "->" in
+  let* arg1 = p_typed_arg in
+  let* args = many p_typed_arg <* skip_ws <* string "->" in
   let* body = p_expr in
-  return (Lambda (pat, pat_list, body))
+  return (Lambda (arg1, args, body))
 ;;
 
 let p_case p_expr =

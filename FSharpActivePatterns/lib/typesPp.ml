@@ -22,7 +22,7 @@ let pp_typ fmt typ =
         fmt
         (first :: second :: rest);
       fprintf fmt ")"
-    | TOption t -> fprintf fmt "(%a) option" helper t
+    | TOption t -> fprintf fmt "%a option" helper t
   in
   helper fmt typ;
   fprintf fmt "\n"

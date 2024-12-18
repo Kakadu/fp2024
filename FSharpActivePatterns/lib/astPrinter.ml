@@ -49,7 +49,7 @@ let rec print_pattern indent fmt = function
     fprintf fmt "%s| PCons:\n" (String.make indent '-');
     print_pattern (indent + 2) fmt l;
     print_pattern (indent + 2) fmt r
-  | PVar (Ident (name, _)) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
+  | PVar (Ident name) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
   | POption p ->
     fprintf fmt "%s| POption: " (String.make indent '-');
     (match p with
@@ -64,19 +64,25 @@ let print_unary_op indent fmt = function
   | Unary_not -> fprintf fmt "%s| Unary negative\n" (String.make indent '-')
 ;;
 
-let tag_of_ident = function
-  | Ident (s, _) -> s
+let case_to_pair = function
+  | p, e -> p, e
+;;
+
+let tpattern_to_pattern = function
+  | p, _ -> p
 ;;
 
 let rec print_let_bind indent fmt = function
   | Let_bind (name, args, body) ->
-    let name = tag_of_ident name in
-    let args = List.map tag_of_ident args in
+    let name = tpattern_to_pattern name in
+    let args = List.map tpattern_to_pattern args in
     fprintf fmt "%s| Let_bind:\n" (String.make indent '-');
     fprintf fmt "%sNAME:\n" (String.make (indent + 4) ' ');
-    fprintf fmt "%s| %s\n" (String.make (indent + 4) '-') name;
+    fprintf fmt "%s| %a\n" (String.make (indent + 4) '-') pp_pattern name;
     fprintf fmt "%sARGS:\n" (String.make (indent + 4) ' ');
-    List.iter (fun arg -> fprintf fmt "%s| %s\n" (String.make (indent + 2) '-') arg) args;
+    List.iter
+      (fun arg -> fprintf fmt "%s| %a\n" (String.make (indent + 2) '-') pp_pattern arg)
+      args;
     fprintf fmt "%sBODY:\n" (String.make (indent + 4) ' ');
     print_expr (indent + 2) fmt body
 
@@ -94,6 +100,7 @@ and print_expr indent fmt expr =
     fprintf fmt "%s| Tuple:\n" (String.make indent '-');
     List.iter (print_expr (indent + 2) fmt) (e1 :: e2 :: rest)
   | Function ((pat1, expr1), cases) ->
+    let cases = List.map case_to_pair cases in
     fprintf fmt "%s| Function:\n" (String.make indent '-');
     List.iter
       (fun (pat, expr) ->
@@ -103,6 +110,7 @@ and print_expr indent fmt expr =
         print_expr (indent + 4) fmt expr)
       ((pat1, expr1) :: cases)
   | Match (value, (pat1, expr1), cases) ->
+    let cases = List.map case_to_pair cases in
     fprintf fmt "%s| Match:\n" (String.make indent '-');
     fprintf fmt "%s| Value:\n" (String.make (indent + 2) '-');
     print_expr (indent + 4) fmt value;
@@ -113,7 +121,7 @@ and print_expr indent fmt expr =
         fprintf fmt "%s| Case expr:\n" (String.make (indent + 2) '-');
         print_expr (indent + 4) fmt expr)
       ((pat1, expr1) :: cases)
-  | Variable (Ident (name, _)) ->
+  | Variable (Ident name) ->
     fprintf fmt "%s| Variable(%s)\n" (String.make indent '-') name
   | Unary_expr (op, expr) ->
     fprintf fmt "%s| Unary expr(\n" (String.make indent '-');
@@ -134,11 +142,12 @@ and print_expr indent fmt expr =
     (match else_body with
      | Some body -> print_expr (indent + 2) fmt body
      | None -> fprintf fmt "%s| No else body\n" (String.make (indent + 2) '-'))
-  | Lambda (pat1, pat_list, body) ->
+  | Lambda ((arg1, _), args, body) ->
+    let pat_list = List.map tpattern_to_pattern args in
     (*let args = List.map tag_of_ident args in*)
     fprintf fmt "%s| Lambda:\n" (String.make indent '-');
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
-    print_pattern (indent + 4) fmt pat1;
+    print_pattern (indent + 4) fmt arg1;
     List.iter (fun pat -> print_pattern (indent + 4) fmt pat) pat_list;
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body

@@ -28,7 +28,11 @@ let rec shrink_let_bind =
   | Let_bind (name, args, e) ->
     shrink_expr e
     >|= (fun a' -> Let_bind (name, args, a'))
-    <+> (QCheck.Shrink.list args >|= fun a' -> Let_bind (name, a', e))
+    <+> (QCheck.Shrink.list (List.map fst args)
+         >|= fun a' ->
+         let a' = List.map (fun p -> p, None) a' in
+         Let_bind (name, a', e))
+    <+> (shrink_pattern (fst name) >|= fun a' -> Let_bind ((a', None), args, e))
 
 and shrink_expr =
   let open QCheck.Iter in
@@ -67,8 +71,10 @@ and shrink_expr =
   | Lambda (pat, pat_list, body) ->
     shrink_expr body
     >|= (fun body' -> Lambda (pat, pat_list, body'))
-    <+> (QCheck.Shrink.list ~shrink:shrink_pattern pat_list
-         >|= fun pat_list' -> Lambda (pat, pat_list', body))
+    <+> (QCheck.Shrink.list ~shrink:shrink_pattern (List.map fst pat_list)
+         >|= fun a' ->
+         let a' = List.map (fun p -> p, None) a' in
+         Lambda (pat, a', body))
   | Function ((pat1, expr1), cases) ->
     of_list (expr1 :: List.map snd cases)
     <+> (shrink_pattern pat1 >|= fun a' -> Function ((a', expr1), cases))
