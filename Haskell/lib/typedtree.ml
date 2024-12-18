@@ -7,9 +7,7 @@ type binder = int [@@deriving show { with_path = false }]
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 
-  let pp ppf s =
-    iter (Format.fprintf ppf "t%d. ") s;
-  ;;
+  let pp ppf s = iter (Format.fprintf ppf "t%d. ") s
 end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
