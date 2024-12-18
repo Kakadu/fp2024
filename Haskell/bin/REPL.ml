@@ -33,5 +33,8 @@ let () =
     | "" -> In_channel.(input_all stdin) |> String.trim
     | _ -> In_channel.with_open_text opts.read_from_file In_channel.input_all
   in
-  Haskell_lib.Pai.parse_and_infer text opts.dump_parsetree
+  Haskell_lib.Pai.parse_and_infer
+    (String.split_on_char '\n' text)
+    opts.dump_parsetree
+    Haskell_lib.Inferencer.typeenv_print_int
 ;;
