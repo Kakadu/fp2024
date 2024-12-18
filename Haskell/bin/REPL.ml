@@ -7,13 +7,6 @@ type opts =
   ; mutable read_from_file : string
   }
 
-let rec pp_bindinglist = function
-  | [] -> Format.printf ""
-  | h :: t ->
-    Format.printf "Parsed: %a\n%!" Haskell_lib.Pprintast.pp_binding h;
-    pp_bindinglist t
-;;
-
 let () =
   let opts = { dump_parsetree = false; read_from_file = "" } in
   let _ =
