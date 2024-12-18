@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open QCheck
-
 type binder = int
 
 type typ =

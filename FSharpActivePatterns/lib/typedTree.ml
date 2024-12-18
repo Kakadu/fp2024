@@ -4,6 +4,8 @@
 
 type binder = int [@@deriving show { with_path = false }, qcheck]
 
+let gen_primitive = QCheck.Gen.oneofl [ "int"; "bool"; "string"; "unit" ]
+
 type typ =
   | Primitive of (string[@gen gen_primitive])
   | Type_var of binder

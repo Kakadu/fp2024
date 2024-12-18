@@ -48,7 +48,6 @@ module R : sig
 
   module RList : sig
     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
-    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
   end
 
   val fresh : int t
@@ -98,13 +97,6 @@ end = struct
         let open Syntax in
         let* acc = acc in
         f acc x)
-    ;;
-
-    let fold_right xs ~init ~f =
-      Base.List.fold_right xs ~init ~f:(fun x acc ->
-        let open Syntax in
-        let* acc = acc in
-        f x acc)
     ;;
   end
 
