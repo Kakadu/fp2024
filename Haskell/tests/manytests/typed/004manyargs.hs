@@ -1,6 +1,6 @@
 wrap f = if 1 == 1 then f else f
 
-test3 a b c = let a = print_int a in let b = print_int b in let c = print_int c in 0
+test3 a b c = let x = print_int a in let y = print_int b in let z = print_int c in 0
 
 test10 a b c d e f g h i j = a + b + c + d + e + f + g + h + i + j
 
