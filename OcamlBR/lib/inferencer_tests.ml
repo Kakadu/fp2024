@@ -94,3 +94,11 @@ let%expect_test _ =
   let _ = infer_program_test {| let (<|>) a b = a/b + b*a |} in
   [%expect {| val <|> : int -> (int -> int) |}]
 ;;
+
+let%expect_test _ =
+  let _ =
+    infer_program_test
+      {|let w [2; v] (y, dx, d) = (-4, 5+v, true&&d) |}
+  in
+  [%expect {| val w : int list -> (('2 * '3 * bool) -> (int * int * bool)) |}]
+;;

@@ -208,3 +208,18 @@ let%expect_test _ =
     ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let w (Some c) (2::v)  = c";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("w", None)),
+         (Efun ((POption (Some (PVar (Id ("c", None))))),
+            [(PCons ((PConst (Int 2)), (PVar (Id ("v", None)))))],
+            (Evar (Id ("c", None)))))
+         )),
+      []))
+    ]
+  |}]
+;;

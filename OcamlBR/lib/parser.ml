@@ -274,18 +274,16 @@ let un_chain e op =
 
 let rec pbody pexpr =
   ppattern
-  >>= function
-  | PVar id ->
-    many ppattern
-    >>= fun patterns ->
-    pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (PVar id, patterns, e))
-  | _ -> fail "Only variable patterns are supported"
+  >>= fun p ->
+  many ppattern
+  >>= fun patterns ->
+  pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (p, patterns, e))
 ;;
 
 let pvalue_binding pexpr =
   lift2
     (fun id e -> Evalue_binding (id, e))
-    (pparens pident <|> pident <|> ppref_op)
+    (pident <|> ppref_op)
     (pstoken "=" *> pexpr <|> pbody pexpr)
 ;;
 
