@@ -62,7 +62,7 @@ end = struct
   end
 
   let fresh : int t = fun lbindings -> lbindings + 1, Result.Ok lbindings
-  let run m st = m st
+  let run m = m
 end
 
 type fresh = int
