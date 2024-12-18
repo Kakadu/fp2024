@@ -3,3 +3,4 @@
 (** SPDX-License-Identifier: MIT *)
 
 val parse_and_infer : string list -> bool -> Inferencer.typeenv -> int -> unit
+val parse_and_infer_line : string -> Inferencer.typeenv -> int -> Inferencer.typeenv * int

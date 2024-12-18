@@ -21,14 +21,27 @@ let () =
           Stdlib.exit 1))
       "Parse and print ast"
   in
-  let text =
+  let is_stdin =
     match opts.read_from_file with
-    | "" -> In_channel.(input_all stdin) |> String.trim
-    | _ -> In_channel.with_open_text opts.read_from_file In_channel.input_all
+    | "" -> true
+    | _ -> false
   in
-  Haskell_lib.Pai.parse_and_infer
-    (String.split_on_char '\n' text)
-    opts.dump_parsetree
-    Haskell_lib.Inferencer.typeenv_print_int
-    0
+  if not is_stdin
+  then
+    Haskell_lib.Pai.parse_and_infer
+      (String.split_on_char
+         '\n'
+         (In_channel.with_open_text opts.read_from_file In_channel.input_all))
+      opts.dump_parsetree
+      Haskell_lib.Inferencer.typeenv_print_int
+      0
+  else (
+    let rec helper (env, st) =
+      let line = input_line stdin in
+      match line with
+      | ":quit" -> ()
+      | "" -> helper (env, st)
+      | _ -> helper (Haskell_lib.Pai.parse_and_infer_line line env st)
+    in
+    helper (Haskell_lib.Inferencer.typeenv_empty, 0))
 ;;
