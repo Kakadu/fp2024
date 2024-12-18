@@ -489,6 +489,15 @@ let p_function p_expr =
   return (Function ((pat1, expr1), cases))
 ;;
 
+let p_inf_oper_expr p_expr =
+  skip_ws
+  *> chainl1
+       p_expr
+       (p_inf_oper
+        >>= fun op ->
+        return (fun expr1 expr2 -> Apply (Apply (Variable op, expr1), expr2)))
+;;
+
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
