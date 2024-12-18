@@ -2,6 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Inferencer.Infer
+
 let%expect_test _ =
   let _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in
   [%expect {| |}]
@@ -16,11 +17,6 @@ let%expect_test _ =
   let _ = infer_program_test {| let f x = x + 2 |} in
   [%expect {| val f : int -> int |}]
 ;;
-
-(* let%expect_test _ =
-  let _ = infer_program_test {|let x = + 2 and n = "emf" |} in
-  [%expect {|  |}]
-;; *)
 
 let%expect_test _ =
   let _ = infer_program_test {|let x = 2 in x=1 |} in
@@ -92,4 +88,9 @@ let%expect_test _ =
 let%expect_test _ =
   let _ = infer_program_test {| let b = fun (a,b,(2::t), d) -> a + d  |} in
   [%expect {| val b : (int * '1 * int list * int) -> int |}]
+;;
+
+let%expect_test _ =
+  let _ = infer_program_test {| let (<|>) a b = a/b + b*a |} in
+  [%expect {| val <|> : int -> (int -> int) |}]
 ;;

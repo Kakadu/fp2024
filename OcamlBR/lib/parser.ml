@@ -196,6 +196,71 @@ let negation = punop Not "not" <* pws1
 let neg_sign = punop Negative "-"
 let pos_sign = punop Positive "+"
 
+(*------------------Prefix operators-----------------*)
+
+let ppref_op =
+  let pref_op =
+    ptoken
+      (let* first_char =
+         take_while1 (function
+           | '|'
+           | '~'
+           | '?'
+           | '<'
+           | '>'
+           | '!'
+           | '&'
+           | '*'
+           | '/'
+           | '='
+           | '+'
+           | '-'
+           | '@'
+           | '^' -> true
+           | _ -> false)
+       in
+       let* rest =
+         take_while (function
+           | '.'
+           | ':'
+           | '|'
+           | '~'
+           | '?'
+           | '<'
+           | '>'
+           | '!'
+           | '&'
+           | '*'
+           | '/'
+           | '='
+           | '+'
+           | '-'
+           | '@'
+           | '^' -> true
+           | _ -> false)
+       in
+       match first_char, rest with
+       | "|", "" -> fail "Prefix operator cannot be called | "
+       | "~", "" -> fail "Prefix operator cannot be called ~ "
+       | "?", "" -> fail "Prefix operator cannot be called ? "
+       | _ -> return (Id (first_char ^ rest, None)))
+  in
+  pparens pref_op
+;;
+
+let pEinf_op pexpr =
+  ppref_op
+  >>= fun inf_op ->
+  lift2
+    (fun left right -> Efun_application (Efun_application (Evar inf_op, left), right))
+    (pws1 *> pexpr)
+    (pwhitespace *> pexpr)
+;;
+
+(* let pEinf_op =
+   pwhitespace *> pinf_op >>= fun inf_op -> return (fun e1 e2 -> Efun_application (Efun_application (Evar inf_op, e1), e2))
+   ;; *)
+
 (*------------------------Expressions----------------------*)
 
 let chain e op =
@@ -220,7 +285,7 @@ let rec pbody pexpr =
 let pvalue_binding pexpr =
   lift2
     (fun id e -> Evalue_binding (id, e))
-    (pparens pident <|> pident)
+    (pparens pident <|> pident <|> ppref_op)
     (pstoken "=" *> pexpr <|> pbody pexpr)
 ;;
 
@@ -308,7 +373,8 @@ let pexpr =
     in
     let let_expr = plet expr in
     let ite_expr = pbranch (expr <|> atom_expr) <|> atom_expr in
-    let app_expr = pEapp (ite_expr <|> atom_expr) <|> ite_expr in
+    let inf_op = pEinf_op (ite_expr <|> atom_expr) <|> ite_expr in
+    let app_expr = pEapp (inf_op <|> atom_expr) <|> inf_op in
     let un_expr =
       choice
         [ un_chain app_expr negation
@@ -316,6 +382,7 @@ let pexpr =
         ; un_chain app_expr pos_sign
         ]
     in
+    (* let inf_op = pEinf_op (un_expr <|> atom_expr) <|> un_expr in *)
     let factor_expr = chain un_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
