@@ -108,7 +108,7 @@
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 
-  let pp ppf s = <span data-count="155">i</span>ter (Format.fprint<span data-count="155">f</span> ppf "t%d. ") s
+  let pp ppf s = <span data-count="157">i</span>ter (Format.fprint<span data-count="157">f</span> ppf "t%d. ") s
 end
 
 <span data-count="0">t</span>ype binder_set = VarSet.t [@@deriving show { with_path = false }]

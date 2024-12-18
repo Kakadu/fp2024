@@ -114,20 +114,20 @@
 (** SPDX-License-Identifier: MIT *)
 
 let rec parse_and_infer text print env st =
-  <span data-count="393">m</span>atch text with
-  | <span data-count="157">[</span>] -&gt;
-    if env != Inferencer.typeenv_empty &amp;&amp; <span data-count="103">e</span>nv != Inferencer.typeenv_print_int
-    then <span data-count="99">F</span>ormat.printf "%a\n%!" Inferencer.pp_typeenv env
+  <span data-count="401">m</span>atch text with
+  | <span data-count="161">[</span>] -&gt;
+    if env != Inferencer.typeenv_empty &amp;&amp; <span data-count="105">e</span>nv != Inferencer.typeenv_print_int
+    then <span data-count="101">F</span>ormat.printf "%a\n%!" Inferencer.pp_typeenv env
   | <span data-count="40">"</span>" :: rest -&gt; parse_and_infer rest print env st
-  | <span data-count="196">l</span>ine :: rest -&gt;
+  | <span data-count="200">l</span>ine :: rest -&gt;
     if print then <span data-count="0">P</span>arser.parse_and_print_lin<span data-count="0">e</span> line;
-    <span data-count="196">(</span>match Parser.parse_line line with
-     | <span data-count="196">R</span>esult.Ok list -&gt;
+    <span data-count="200">(</span>match Parser.parse_line line with
+     | <span data-count="200">R</span>esult.Ok list -&gt;
        (match Inferencer.w list env st with
-        | <span data-count="136">s</span>t, Result.Ok env -&gt; parse_and_infer rest print env st
-        | <span data-count="60">s</span>t, Result.Error err -&gt;
+        | <span data-count="138">s</span>t, Result.Ok env -&gt; parse_and_infer rest print env st
+        | <span data-count="62">s</span>t, Result.Error err -&gt;
           Format.printf "%a\n%!" Pprint.pp_error err;
-          <span data-count="60">p</span>arse_and_infer rest print env st)
+          <span data-count="62">p</span>arse_and_infer rest print env st)
      | <span data-count="0">R</span>esult.Error error -&gt; Format.printf "%s\n%!" error)
 ;;
 
