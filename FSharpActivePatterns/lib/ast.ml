@@ -3,9 +3,9 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open KeywordChecker
+open TypedTree
 
-type ident = Ident of string * string option (** identifier *)
-[@@deriving show { with_path = false }]
+type ident = Ident of string (** identifier *) [@@deriving show { with_path = false }]
 
 let gen_varname =
   let open QCheck.Gen in
@@ -26,8 +26,8 @@ let gen_varname =
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
-let gen_ident = QCheck.Gen.map (fun s -> Ident (s, None)) gen_varname
-let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 3) gen_ident)
+let gen_ident = QCheck.Gen.map (fun s -> Ident s) gen_varname
+(* let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 3) gen_ident) *)
 
 let gen_escape_sequence =
   let open QCheck.Gen in
@@ -101,6 +101,10 @@ type pattern =
     (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
 [@@deriving show { with_path = false }, qcheck]
 
+type typed_pattern = pattern * typ option [@@deriving show { with_path = false }]
+
+let gen_typed_pattern_sized n = QCheck.Gen.(pair (gen_pattern_sized n) (return None))
+
 type is_recursive =
   | Nonrec (** let factorial n = ... *)
   | Rec (** let rec factorial n = ... *)
@@ -127,8 +131,9 @@ and expr =
       * (expr option[@gen QCheck.Gen.option (gen_expr_sized (n / 4))])
   (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
-      (pattern[@gen gen_pattern_sized (n / 2)])
-      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_pattern_sized (n / 20)))])
+      (typed_pattern[@gen gen_typed_pattern_sized (n / 2)])
+      * (typed_pattern list
+        [@gen QCheck.Gen.(list_size (0 -- 2) (gen_typed_pattern_sized (n / 20)))])
       * expr (** fun x y -> x + y *)
   | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
   (** [sum 1 ] *)
@@ -151,8 +156,11 @@ and expr =
 [@@deriving show { with_path = false }, qcheck]
 
 and let_bind =
-  | Let_bind of ident * (ident list[@gen gen_ident_small_list]) * expr
-  (** [and sum n m = n+m] *)
+  | Let_bind of
+      (typed_pattern[@gen gen_typed_pattern_sized (n / 2)])
+      * (typed_pattern list
+        [@gen QCheck.Gen.(list_size (0 -- 3) (gen_typed_pattern_sized (n / 4)))])
+      * expr (** [let sum n m = n + m] *)
 [@@deriving show { with_path = false }, qcheck]
 
 let gen_expr =

@@ -9,28 +9,28 @@ open Format
 let%expect_test "print Ast factorial" =
   let factorial =
     Lambda
-      ( PConst (Int_lt 4)
+      ( (PConst (Int_lt 4), None)
       , []
       , If_then_else
           ( Bin_expr
               ( Logical_or
-              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 0))
-              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 1)) )
+              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
+              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
           , Const (Int_lt 1)
           , Some
               (Bin_expr
                  ( Binary_multiply
-                 , Variable (Ident ("n", None))
+                 , Variable (Ident "n")
                  , Apply
-                     ( Variable (Ident ("factorial", None))
-                     , Bin_expr
-                         (Binary_subtract, Variable (Ident ("n", None)), Const (Int_lt 1))
+                     ( Variable (Ident "factorial")
+                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Let_bind (Ident ("a", None), [], Const (Int_lt 10)), []))
+    [ Statement
+        (Let (Nonrec, Let_bind ((PVar (Ident "a"), None), [], Const (Int_lt 10)), []))
     ; Expr factorial
-    ; Expr (Apply (factorial, Variable (Ident ("a", None))))
+    ; Expr (Apply (factorial, Variable (Ident "a")))
     ]
   in
   List.iter (print_construction std_formatter) program;
@@ -107,8 +107,8 @@ let%expect_test "print Ast factorial" =
 ;;
 
 let%expect_test "print Ast double func" =
-  let ident = Ident ("n", None) in
-  let pat = PConst (Int_lt 4) in
+  let ident = Ident "n" in
+  let pat = PConst (Int_lt 4), None in
   let args = [] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), Variable ident) in
   let double = Lambda (pat, args, binary_expr) in
@@ -199,9 +199,9 @@ let%expect_test "print Ast of LetIn" =
     Expr
       (LetIn
          ( Nonrec
-         , Let_bind (Ident ("x", None), [], Const (Int_lt 5))
+         , Let_bind ((PVar (Ident "x"), None), [], Const (Int_lt 5))
          , []
-         , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
+         , Bin_expr (Binary_add, Variable (Ident "x"), Const (Int_lt 5)) ))
   in
   print_construction std_formatter sum;
   [%expect
@@ -221,13 +221,12 @@ let%expect_test "print Ast of match_expr" =
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
-    ; PList [ Wild; PVar (Ident ("xs", None)) ]
+    ; PList [ Wild; PVar (Ident "xs") ]
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
   let match_expr =
-    Match
-      (Variable (Ident ("x", None)), (PConst (Int_lt 4), Const (Int_lt 4)), pattern_values)
+    Match (Variable (Ident "x"), (PConst (Int_lt 4), Const (Int_lt 4)), pattern_values)
   in
   print_construction std_formatter (Expr match_expr);
   [%expect

@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open QCheck
+
 type binder = int
 
 type typ =
@@ -12,6 +14,8 @@ type typ =
   | Type_tuple of typ * typ * typ list
   | TOption of typ
 
+val gen_typ_sized : int -> typ QCheck.Gen.t
+val pp_typ : Format.formatter -> typ -> unit
 val arrow_of_types : typ list -> typ -> typ
 
 module VarSet : sig

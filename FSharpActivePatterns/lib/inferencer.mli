@@ -16,7 +16,9 @@ type error =
   [ `Occurs_check
   | `Undef_var of string
   | `Unification_failed of typ * typ
-  | `WIP of string
+  | `Not_allowed_right_hand_side_let_rec
+  | `Not_allowed_left_hand_side_let_rec
+  | `Args_after_not_variable_let
   ]
 
 val pp_error : formatter -> error -> unit
