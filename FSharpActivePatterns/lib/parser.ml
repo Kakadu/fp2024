@@ -290,18 +290,18 @@ let p_case p_expr =
 
 let p_match p_expr =
   let* value = skip_ws *> string "match" *> p_expr <* skip_ws <* string "with" in
-  let* first_pat, first_expr = p_case p_expr in
+  let* pat1, expr1 = p_case p_expr in
   let* cases = many (p_case p_expr) in
-  return (Match (value, first_pat, first_expr, cases))
+  return (Match (value, (pat1, expr1), cases))
 ;;
 
 let p_function p_expr =
   skip_ws
   *> string "function"
   *>
-  let* first_pat, first_expr = p_case p_expr in
+  let* pat1, expr1 = p_case p_expr in
   let* cases = many (p_case p_expr) in
-  return (Function (first_pat, first_expr, cases))
+  return (Function ((pat1, expr1), cases))
 ;;
 
 let p_expr =

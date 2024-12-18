@@ -582,7 +582,7 @@ let rec infer_expr env = function
     let* subst2, typ = infer_expr env e in
     let* subst_final = Substitution.compose subst1 subst2 in
     return (subst_final, typ)
-  | Function (p1, e1, rest) ->
+  | Function ((p1, e1), rest) ->
     let* arg_type = make_fresh_var in
     let* return_type = make_fresh_var in
     let* subst, return_type =
@@ -600,7 +600,7 @@ let rec infer_expr env = function
           return (subst, Substitution.apply subst return_type))
     in
     return (subst, Arrow (Substitution.apply subst arg_type, return_type))
-  | Match (e, p1, e1, rest) ->
+  | Match (e, (p1, e1), rest) ->
     let* subst_init, match_type = infer_expr env e in
     let env = TypeEnvironment.apply subst_init env in
     let* return_type = make_fresh_var in

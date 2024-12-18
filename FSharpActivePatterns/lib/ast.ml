@@ -106,7 +106,10 @@ type is_recursive =
   | Rec (** let rec factorial n = ... *)
 [@@deriving show { with_path = false }, qcheck]
 
-type expr =
+type case = (pattern[@gen gen_pattern_sized n]) * (expr[@gen gen_expr_sized n])
+[@@deriving show { with_path = false }, qcheck]
+
+and expr =
   | Const of literal (** [Int], [Bool], [String], [Unit], [Null] *)
   | Tuple of
       (expr[@gen gen_expr_sized (n / 4)])
@@ -130,25 +133,14 @@ type expr =
   | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
   (** [sum 1 ] *)
   | Function of
-      (pattern[@gen gen_pattern_sized (n / 4)])
-      * (expr[@gen gen_expr_sized (n / 4)])
-      * ((pattern * expr) list
-        [@gen
-          QCheck.Gen.(
-            list_size
-              (0 -- 2)
-              (pair (gen_pattern_sized (n / 20)) (gen_expr_sized (n / 20))))])
+      (case[@gen gen_case_sized (n / 4)])
+      * (case list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_case_sized (n / 20)))])
+  (** [function | p1 -> e1 | p2 -> e2 | ... |]*)
   | Match of
       (expr[@gen gen_expr_sized (n / 4)])
-      * (pattern[@gen gen_pattern_sized (n / 4)])
-      * (expr[@gen gen_expr_sized (n / 4)])
-      * ((pattern * expr) list
-        [@gen
-          QCheck.Gen.(
-            list_size
-              (0 -- 2)
-              (pair (gen_pattern_sized (n / 20)) (gen_expr_sized (n / 20))))])
-  (** [match x with | x -> ... | y -> ...] *)
+      * (case[@gen gen_case_sized (n / 4)])
+      * (case list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_case_sized (n / 20)))])
+  (** [match x with | p1 -> e1 | p2 -> e2 | ...] *)
   | LetIn of
       is_recursive
       * let_bind

@@ -69,10 +69,10 @@ and shrink_expr =
     >|= (fun body' -> Lambda (pat, pat_list, body'))
     <+> (QCheck.Shrink.list ~shrink:shrink_pattern pat_list
          >|= fun pat_list' -> Lambda (pat, pat_list', body))
-  | Function (pat1, expr1, cases) ->
+  | Function ((pat1, expr1), cases) ->
     of_list (expr1 :: List.map snd cases)
-    <+> (shrink_pattern pat1 >|= fun a' -> Function (a', expr1, cases))
-    <+> (shrink_expr expr1 >|= fun a' -> Function (pat1, a', cases))
+    <+> (shrink_pattern pat1 >|= fun a' -> Function ((a', expr1), cases))
+    <+> (shrink_expr expr1 >|= fun a' -> Function ((pat1, a'), cases))
     <+> (QCheck.Shrink.list
            ~shrink:(fun (p, e) ->
              (let* p_shr = shrink_pattern p in
@@ -81,12 +81,12 @@ and shrink_expr =
              let* e_shr = shrink_expr e in
              return (p, e_shr))
            cases
-         >|= fun a' -> Function (pat1, expr1, a'))
-  | Match (value, pat1, expr1, cases) ->
+         >|= fun a' -> Function ((pat1, expr1), a'))
+  | Match (value, (pat1, expr1), cases) ->
     of_list (value :: expr1 :: List.map snd cases)
-    <+> (shrink_expr value >|= fun a' -> Match (a', pat1, expr1, cases))
-    <+> (shrink_pattern pat1 >|= fun a' -> Match (value, a', expr1, cases))
-    <+> (shrink_expr expr1 >|= fun a' -> Match (value, pat1, a', cases))
+    <+> (shrink_expr value >|= fun a' -> Match (a', (pat1, expr1), cases))
+    <+> (shrink_pattern pat1 >|= fun a' -> Match (value, (a', expr1), cases))
+    <+> (shrink_expr expr1 >|= fun a' -> Match (value, (pat1, a'), cases))
     <+> (QCheck.Shrink.list
            ~shrink:(fun (p, e) ->
              (let* p_shr = shrink_pattern p in
@@ -95,7 +95,7 @@ and shrink_expr =
              let* e_shr = shrink_expr e in
              return (p, e_shr))
            cases
-         >|= fun a' -> Match (value, pat1, expr1, a'))
+         >|= fun a' -> Match (value, (pat1, expr1), a'))
   | Option (Some e) ->
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
   | Option None -> empty

@@ -70,12 +70,12 @@ and pp_expr fmt expr =
     fprintf fmt "(";
     pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
     fprintf fmt ")"
-  | Function (pat1, expr1, cases) ->
+  | Function ((pat1, expr1), cases) ->
     fprintf fmt "function ";
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
       ((pat1, expr1) :: cases)
-  | Match (value, pat1, expr1, cases) ->
+  | Match (value, (pat1, expr1), cases) ->
     fprintf fmt "match (%a) with \n" pp_expr value;
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
