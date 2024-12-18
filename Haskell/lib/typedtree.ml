@@ -8,9 +8,7 @@ module VarSet = struct
   include Stdlib.Set.Make (Int)
 
   let pp ppf s =
-    Format.fprintf ppf "[ ";
-    iter (Format.fprintf ppf "%d; ") s;
-    Format.fprintf ppf "]"
+    iter (Format.fprintf ppf "t%d. ") s;
   ;;
 end
 
