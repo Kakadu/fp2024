@@ -117,12 +117,12 @@ open Typedtree
 let pp_ty =
   let rec helper fmt = function
     | <span data-count="8">T</span>y_maybe ty -&gt; fprintf fmt "Maybe %a" helper ty
-    | <span data-count="361">T</span>y_prim s -&gt; pp_print_string fmt s
-    | <span data-count="117">T</span>y_var b -&gt; fprintf fmt "t%d" b
-    | <span data-count="179">T</span>y_arrow (ty1, ty2) -&gt;
+    | <span data-count="375">T</span>y_prim s -&gt; pp_print_string fmt s
+    | <span data-count="123">T</span>y_var b -&gt; fprintf fmt "t%d" b
+    | <span data-count="193">T</span>y_arrow (ty1, ty2) -&gt;
       (match ty1 with
-       | <span data-count="17">T</span>y_arrow (_, _) -&gt; fprintf fmt "(%a) -&gt; %a" helper ty1 helper ty2
-       | <span data-count="162">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper ty1 helper ty2)
+       | <span data-count="22">T</span>y_arrow (_, _) -&gt; fprintf fmt "(%a) -&gt; %a" helper ty1 helper ty2
+       | <span data-count="171">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper ty1 helper ty2)
     | <span data-count="44">T</span>y_list ty -&gt; fprintf fmt "[%a]" helper ty
     | <span data-count="27">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
       fprintf
@@ -141,9 +141,9 @@ let pp_ty =
   helper
 ;;
 
-let pp_error ppf : error -&gt; _ = <span data-count="62">f</span>unction
+let pp_error ppf : error -&gt; _ = <span data-count="63">f</span>unction
   | <span data-count="3">`</span>Occurs_check -&gt; Format.fprintf ppf "Occurs check failed"
-  | <span data-count="1">`</span>No_variable s -&gt; Format.fprintf ppf "Undefined variable '%s'" s
+  | <span data-count="2">`</span>No_variable s -&gt; Format.fprintf ppf "Undefined variable '%s'" s
   | <span data-count="58">`</span>Unification_failed (l, r) -&gt;
     Format.fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
 ;;
