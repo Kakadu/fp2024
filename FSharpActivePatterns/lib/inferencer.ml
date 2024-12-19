@@ -672,10 +672,11 @@ let rec infer_expr env = function
           let* subst1, return_type = acc in
           let* env, pat = infer_pattern env ~shadow:true pat in
           let* subst2 = unify match_type pat in
-          let env = TypeEnvironment.apply subst2 env in
+          let* subst12 = Substitution.compose subst1 subst2 in
+          let env = TypeEnvironment.apply subst12 env in
           let* subst3, expr_typ = infer_expr env expr in
           let* subst4 = unify return_type expr_typ in
-          let* subst = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
+          let* subst = Substitution.compose_all [ subst12; subst3; subst4 ] in
           return (subst, Substitution.apply subst return_type))
     in
     return (subst, return_type)
