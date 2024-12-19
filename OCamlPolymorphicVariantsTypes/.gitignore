@@ -4,3 +4,6 @@ _coverage
 /node_modules
 /esy.lock
 /.melange.eobjs
+/.testformatting
+/tests.log
+/TODO.md
