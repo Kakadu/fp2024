@@ -578,7 +578,8 @@ let p_expr =
     let p_function = p_function (p_expr <|> tuple) <|> tuple in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    efun)
+    let tuple = p_tuple_no_parens make_tuple_expr efun <|> efun in
+    tuple)
 ;;
 
 let p_statement = p_let p_expr
