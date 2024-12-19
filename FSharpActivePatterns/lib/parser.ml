@@ -529,16 +529,15 @@ let p_case p_expr =
   return (pat, expr)
 ;;
 
-let p_single_case_match p_expr =
-  let* value = skip_ws *> string "match" *> p_expr <* skip_ws <* string "with" in
-  let* pat = skip_ws *> p_pat <* skip_ws <* string "->" in
+let p_first_case p_expr =
+  let* pat = skip_ws *> ((string "|" *> p_pat) <|> p_pat) <* skip_ws <* string "->" in
   let* expr = p_expr in
-  return (Match(value, (pat, expr), []))
+  return (pat, expr)
 ;;
 
 let p_match p_expr =
   let* value = skip_ws *> string "match" *> p_expr <* skip_ws <* string "with" in
-  let* pat1, expr1 = p_case p_expr in
+  let* pat1, expr1 = p_first_case p_expr in
   let* cases = many (p_case p_expr) in
   return (Match (value, (pat1, expr1), cases))
 ;;
@@ -547,7 +546,7 @@ let p_function p_expr =
   skip_ws
   *> string "function"
   *>
-  let* pat1, expr1 = p_case p_expr in
+  let* pat1, expr1 = p_first_case p_expr in
   let* cases = many (p_case p_expr) in
   return (Function ((pat1, expr1), cases))
 ;;
@@ -598,8 +597,7 @@ let p_expr =
     let tuple = p_tuple make_tuple_expr inf_oper <|> inf_oper in
     let p_function = p_function (p_expr <|> tuple) <|> tuple in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
-    let e_sin_match = p_single_case_match ematch <|> ematch in
-    let efun = p_lambda (p_expr <|> e_sin_match) <|> e_sin_match in
+    let efun = p_lambda (p_expr <|> ematch) <|> ematch in
     efun)
 ;;
 
