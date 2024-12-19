@@ -10,6 +10,7 @@ module TypeEnvironment : sig
   type t
 
   val empty : t
+  val extend : t -> string -> scheme -> t
 end
 
 type error =

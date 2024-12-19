@@ -5,6 +5,7 @@
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
 open FSharpActivePatterns.Inferencer
+open FSharpActivePatterns.TypedTree
 open FSharpActivePatterns.TypesPp
 open Stdlib
 
@@ -89,7 +90,13 @@ let run_repl dump_parsetree input_file =
             print_flush ());
          run_repl_helper run env new_state)
   in
-  run_repl_helper run_single TypeEnvironment.empty 0
+  let env =
+    TypeEnvironment.extend
+      TypeEnvironment.empty
+      "print_int"
+      (Scheme (VarSet.empty, Arrow (int_typ, unit_typ)))
+  in
+  run_repl_helper run_single env 0
 ;;
 
 type opts =
