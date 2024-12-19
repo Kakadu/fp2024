@@ -1,8 +1,8 @@
 let _1 = fun x y (a, _) -> (x + y - a) = 1
 
 let _2 =
-    let x, Some f = 1, Some ( ( + ) 4 )
-    in f x
+    let x, Some f = 1, Some ( "p1onerka was here" )
+    in x
 
 let _3 =  Some (1, "hi")
 
