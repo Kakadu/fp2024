@@ -72,23 +72,23 @@ let run_repl dump_parsetree input_file =
       run_repl_helper run env state
     | End -> ()
     | Result ast ->
-      let result = infer ast env state in
-      (match result with
-       | new_state, Error err ->
-         fprintf err_formatter "Type checking failed: %a\n" pp_error err;
-         print_flush ();
-         run_repl_helper run env new_state
-       | new_state, Ok (env, types) ->
-         (match dump_parsetree with
-          | true -> print_construction std_formatter ast
-          | false ->
+      (match dump_parsetree with
+       | true -> print_construction std_formatter ast
+       | false ->
+         let result = infer ast env state in
+         (match result with
+          | new_state, Error err ->
+            fprintf err_formatter "Type checking failed: %a\n" pp_error err;
+            print_flush ();
+            run_repl_helper run env new_state
+          | new_state, Ok (env, types) ->
             List.iter
               (fun t ->
                 fprintf std_formatter "- : ";
                 pp_typ std_formatter t)
               types;
-            print_flush ());
-         run_repl_helper run env new_state)
+            print_flush ();
+            run_repl_helper run env new_state))
   in
   let env =
     TypeEnvironment.extend
