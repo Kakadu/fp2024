@@ -149,10 +149,11 @@ SPDX-License-Identifier: MIT
   main:  ()
    ]
 
+# fibonacci
   $ ../bin/REPL.exe <<-EOF
   > iter f xs = case xs of [] -> (); h:tl -> let () = f h in iter f tl
   > take n xs = case xs of [] -> []; h:tl -> if n>0 then h : (take (n-1) tl) else []
-  > tail xs = case xs of h:tl -> h
+  > tail xs = case xs of h:tl -> tl
   > zip_with f xs ys = case (xs,ys) of ([],[]) -> []; (h:tl, h2:tl2) -> (f h h2) : zip_with f tl tl2
   > fib = 0:1:(zip_with (+) fib (tail fib))
   > main = let () = iter print_int (take 10 fib) in 0
@@ -164,10 +165,14 @@ SPDX-License-Identifier: MIT
   take: t16.  Int -> [t16] -> [t16]
    ]
   [ 
-  tail: t33.  [t33] -> t33
+  tail: t31.  [t31] -> [t31]
    ]
   [ 
   zip_with: t39. t40. t41.  (t39 -> t40 -> t41) -> [t39] -> [t40] -> [t41]
    ]
-  unification failed on [Int] and Int
-  Undefined variable 'fib'
+  [ 
+  fib:  [Int]
+   ]
+  [ 
+  main:  Int
+   ]
