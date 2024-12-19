@@ -176,3 +176,6 @@ SPDX-License-Identifier: MIT
   [ 
   main:  Int
    ]
+
+
+# TODO(Kakadu): It would be great to call read GHCi somewhere in the tests

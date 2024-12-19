@@ -29,5 +29,6 @@ type scheme = S of binder_set * ty [@@deriving show { with_path = false }]
 type error =
   [ `Occurs_check
   | `No_variable of string
-  | `Unification_failed of ty * ty
+  | (* TODO(Kakadu): Unbound variable *)
+    `Unification_failed of ty * ty
   ]
