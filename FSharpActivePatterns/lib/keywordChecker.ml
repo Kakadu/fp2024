@@ -19,6 +19,7 @@ let is_keyword = function
   | "None"
   | "function"
   | "->"
+  | "|"
   | "_" -> true
   | _ -> false
 ;;
