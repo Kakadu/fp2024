@@ -200,16 +200,21 @@ let p_cons_list_pat p_pat =
   chainr1 p_pat (skip_ws *> string "::" *> return (fun l r -> PCons (l, r)))
 ;;
 
-let p_tuple make p =
+let p_tuple_no_parens make p =
   skip_ws
-  *> string "("
-  *> lift3
-       make
-       p
-       (skip_ws *> string "," *> skip_ws *> p)
-       (many (skip_ws *> string "," *> skip_ws *> p))
-  <* skip_ws
-  <* string ")"
+  *>
+  let tuple =
+    lift3
+      make
+      p
+      (skip_ws *> string "," *> skip_ws *> p)
+      (many (skip_ws *> string "," *> skip_ws *> p))
+  in
+  tuple
+;;
+
+let p_tuple make p =
+  skip_ws *> p_parens (p_tuple_no_parens make p) <|> skip_ws *> p_tuple_no_parens make p
 ;;
 
 let p_tuple_pat p_pat = p_tuple make_tuple_pat p_pat
@@ -351,8 +356,7 @@ let p_expr =
         ; p_semicolon_list_expr p_expr
         ]
     in
-    let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
-    let if_expr = p_if (p_expr <|> tuple) <|> tuple in
+    let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let option = p_option letin_expr make_option_expr <|> letin_expr in
     let apply = p_apply option <|> option in
@@ -372,7 +376,8 @@ let p_expr =
     let p_function = p_function (p_expr <|> inf_oper) <|> inf_oper in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    efun)
+    let tuple = p_tuple_no_parens make_tuple_expr efun <|> efun in
+    tuple)
 ;;
 
 let p_statement = p_let p_expr
