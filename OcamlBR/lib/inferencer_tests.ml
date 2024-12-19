@@ -96,9 +96,13 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let _ =
-    infer_program_test
-      {|let w [2; v] (y, dx, d) = (-4, 5+v, true&&d) |}
-  in
+  let _ = infer_program_test {|let w [2; v] (y, dx, d) = (-4, 5+v, true&&d) |} in
   [%expect {| val w : int list -> (('2 * '3 * bool) -> (int * int * bool)) |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    infer_program_test {|let f = fun ((3, true): int*bool) x -> if x then 4 else 0  |}
+  in
+  [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;

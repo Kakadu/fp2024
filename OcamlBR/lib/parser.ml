@@ -87,12 +87,11 @@ let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (TList t)
 
 let ptuple_type ptype =
   let star = pstoken "*" in
-  pparens
-    (lift3
-       (fun t1 t2 rest -> TTuple (t1, t2, rest))
-       ptype
-       (star *> ptype)
-       (many (star *> ptype)))
+  lift3
+    (fun t1 t2 rest -> TTuple (t1, t2, rest))
+    ptype
+    (star *> ptype)
+    (many (star *> ptype))
 ;;
 
 let rec pfun_type ptype =
@@ -103,12 +102,15 @@ let rec pfun_type ptype =
   <|> return left
 ;;
 
+let poption_type ptype = ptype >>= fun t -> pstoken "option" *> return (TOption t)
+
 let ptype =
   let some_type =
     fix (fun typ ->
       let atom = patomic_type <|> pparens typ in
       let list = plist_type atom <|> atom in
-      let tuple = ptuple_type list <|> list in
+      let option = poption_type list <|> list in
+      let tuple = ptuple_type option <|> option in
       let func = pfun_type tuple <|> tuple in
       func)
   in
@@ -138,11 +140,11 @@ let pat_list pat =
   psqparens (sep_by semicols pat >>| fun patterns -> PList patterns)
 ;;
 
-let rec pat_cons ppattern =
+let rec pat_cons pat =
   let cons =
-    ppattern
+    pat
     >>= fun head ->
-    pstoken "::" *> pat_cons ppattern
+    pstoken "::" *> pat_cons pat
     >>= (fun tail -> return (PCons (head, tail)))
     <|> return head
   in
@@ -163,6 +165,16 @@ let ppattern =
     let pcons = pat_cons pplist <|> pplist in
     let poption = pat_option pcons <|> pcons in
     poption)
+;;
+
+let pfirst_ty_pattern =
+  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype in
+  ty_pat <|> pparens ty_pat <|> (ppattern >>| fun p -> p, None)
+;;
+
+let pty_pattern =
+  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype in
+  pparens ty_pat <|> (ppattern >>| fun p -> p, None)
 ;;
 
 (*------------------Binary operators-----------------*)
@@ -273,9 +285,9 @@ let un_chain e op =
 ;;
 
 let rec pbody pexpr =
-  ppattern
+  pty_pattern
   >>= fun p ->
-  many ppattern
+  many pty_pattern
   >>= fun patterns ->
   pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (p, patterns, e))
 ;;
@@ -283,7 +295,7 @@ let rec pbody pexpr =
 let pvalue_binding pexpr =
   lift2
     (fun id e -> Evalue_binding (id, e))
-    (pident <|> ppref_op)
+    (pparens pident <|> pident <|> ppref_op)
     (pstoken "=" *> pexpr <|> pbody pexpr)
 ;;
 
@@ -298,11 +310,21 @@ let plet pexpr =
 ;;
 
 let pEfun pexpr =
-  lift3
-    (fun arg args body -> Efun (arg, args, body))
-    (pstoken "fun" *> ppattern)
-    (many ppattern)
-    (pstoken "->" *> pexpr)
+  (* if there's inly one argument, ascription without parentheses is possible *)
+  let single_arg =
+    lift2
+      (fun arg body -> Efun (arg, [], body))
+      (pstoken "fun" *> pfirst_ty_pattern)
+      (pstoken "->" *> pexpr)
+  in
+  let mult_args =
+    lift3
+      (fun arg args body -> Efun (arg, args, body))
+      (pstoken "fun" *> pty_pattern)
+      (many pty_pattern)
+      (pstoken "->" *> pexpr)
+  in
+  single_arg <|> mult_args
 ;;
 
 let pElist pexpr =

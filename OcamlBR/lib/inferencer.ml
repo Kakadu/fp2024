@@ -291,7 +291,7 @@ module TypeEnv = struct
   ;; *)
   let pp ppf env =
     Stdlib.Format.fprintf ppf "{| ";
-    Base.Map.iteri env ~f:(fun ~key:name ~data:scheme ->
+    Map.iteri env ~f:(fun ~key:name ~data:scheme ->
       Stdlib.Format.fprintf ppf "%s -> %a; " name pp_scheme scheme);
     Stdlib.Format.fprintf ppf "|}"
   ;;
@@ -411,6 +411,18 @@ module Infer = struct
     | Ast.POption (Some p) -> infer_pattern env p
   ;;
 
+  let infer_ty_pattern env : Ast.ty_pattern -> (Subst.t * ty * TypeEnv.t) t = function
+    | pat, Some typ ->
+      let* s, t, env = infer_pattern env pat in
+      let typ = Subst.apply s typ in
+      let* subst = unify typ t in
+      (* Format.printf "ty pat env: %a\n" TypeEnv.pp env; *)
+      return (subst, Subst.apply subst typ, TypeEnv.apply subst env)
+    | pat, None ->
+      (* Format.printf "ty pat env: %a\n" TypeEnv.pp env; *)
+      infer_pattern env pat
+  ;;
+
   (*
      let rec id_type_to_ty (t : Ast.id_type) : ty =
      match t with
@@ -479,7 +491,7 @@ module Infer = struct
       let* s2, t2 = infer (TypeEnv.apply s1 env) th in
       let* s3 = unify t1 tprim_bool in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
-      return (final_subst, TOption (Subst.apply final_subst t2))
+      return (final_subst, Subst.apply final_subst t2)
     | Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), _, e2) ->
       (match t_opt with
        | Some expected_type ->
@@ -497,6 +509,7 @@ module Infer = struct
          let env2 = TypeEnv.apply s1 env in
          let t_gen = generalize env2 t1 in
          let env3 = TypeEnv.extend x t_gen env in
+         (* Format.printf "env3: %a\n" TypeEnv.pp env3; *)
          let* s2, t2 = infer (TypeEnv.apply s1 env3) e2 in
          let* final_subst = Subst.compose s1 s2 in
          return (final_subst, t2))
@@ -514,13 +527,31 @@ module Infer = struct
         Subst.compose sub s3
       in
       return (s_final, t2)
-    | Efun (pattern, pattern_list, body) ->
+    (* | Efun (pattern, pattern_list, body) ->
+       let* env, pat_types =
+       RList.fold_left
+       (pattern :: pattern_list)
+       ~init:(return (env, []))
+       ~f:(fun (env, pat_types) pat ->
+       let* _, typ, new_env = infer_pattern env pat in
+       return (new_env, typ :: pat_types))
+       in
+       let* s_body, t_body = infer env body in
+       let arrow_type =
+       List.fold_right
+       (fun pat_type acc -> TArrow (Subst.apply s_body pat_type, acc))
+       (List.rev pat_types)
+       t_body
+       in
+       return (s_body, arrow_type) *)
+    | Efun (ty_pattern, ty_pattern_list, body) ->
+      (* Format.printf "efun env: %a\n" TypeEnv.pp env; *)
       let* env, pat_types =
         RList.fold_left
-          (pattern :: pattern_list)
+          (ty_pattern :: ty_pattern_list)
           ~init:(return (env, []))
           ~f:(fun (env, pat_types) pat ->
-            let* _, typ, new_env = infer_pattern env pat in
+            let* _, typ, new_env = infer_ty_pattern env pat in
             return (new_env, typ :: pat_types))
       in
       let* s_body, t_body = infer env body in
@@ -531,6 +562,7 @@ module Infer = struct
           t_body
       in
       return (s_body, arrow_type)
+      (* return (Subst.empty, tprim_int) *)
     | Efun_application (e1, e2) ->
       let* s1, t1 = infer env e1 in
       let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
@@ -594,12 +626,12 @@ module Infer = struct
       let* s_final = Subst.compose_all s in
       return (s_final, TList (List.hd ts))
     (* | Eprint_int e ->
-      let* s, t = infer env e in
-      if t = TPrim "int"
-      then return (s, TPrim "unit")
-      else (
-        let expected_type = TPrim "int" in
-        fail (`Unification_failed (expected_type, t))) *)
+       let* s, t = infer env e in
+       if t = TPrim "int"
+       then return (s, TPrim "unit")
+       else (
+       let expected_type = TPrim "int" in
+       fail (`Unification_failed (expected_type, t))) *)
     | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
 
   and infer_value_bindings env value_bindings =

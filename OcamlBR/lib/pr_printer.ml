@@ -93,6 +93,11 @@ let precedence_bin_op = function
   | Gt | Lt | Eq | Neq | Gte | Lte -> -1
 ;;
 
+let pp_ty_pattern ppf : Ast.ty_pattern -> unit = function
+  | p, Some t -> Format.fprintf ppf "(%a : %a)" pp_pattern p pp_ty t
+  | p, _ -> Format.fprintf ppf "%a" pp_pattern p
+;;
+
 let rec pp_expr ppf expr =
   let needs_parens parent_prec child_prec = child_prec < parent_prec || child_prec = -1 in
   match expr with
@@ -136,13 +141,14 @@ let rec pp_expr ppf expr =
     fprintf
       ppf
       "(fun %a%a -> %a)"
-      pp_pattern
+      pp_ty_pattern
       first_pattern
       (fun ppf patterns ->
-        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_pattern pat))
+        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_ty_pattern pat))
       rest_patterns
       pp_expr
       e
+  (* | Efun (first_pattern, rest_patterns, e) -> fprintf ppf "(fun)" *)
   | Ebin_op (op, e1, e2) ->
     let op_prec = precedence_bin_op op in
     fprintf

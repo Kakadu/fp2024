@@ -44,6 +44,10 @@ let rec shrink_pattern = function
   | POption None -> Iter.empty
 ;;
 
+let shrink_ty_pattern : Ast.ty_pattern Shrink.t = function
+  | p, t -> Iter.(map (fun p' -> p', t) (shrink_pattern p))
+;;
+
 let rec shrink_expr = function
   | Econst (Int _) -> Iter.return (Econst (Int 1))
   | Econst (Bool b) -> Iter.return (Econst (Bool b))
@@ -127,7 +131,9 @@ let rec shrink_expr = function
   | Efun (pattern, patterns, body) ->
     Iter.(
       map (fun body' -> Efun (pattern, patterns, body')) (shrink_expr body)
-      <+> map (fun pattern' -> Efun (pattern', patterns, body)) (shrink_pattern pattern)
+      <+> map
+            (fun pattern' -> Efun (pattern', patterns, body))
+            (shrink_ty_pattern pattern)
       <+> map
             (fun patterns' -> Efun (pattern, patterns', body))
             (QCheck.Shrink.list patterns))

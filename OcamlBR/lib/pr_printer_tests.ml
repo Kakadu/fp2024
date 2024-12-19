@@ -349,3 +349,41 @@ let%expect_test _ =
      ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let f = fun (3, true): int*bool -> 4";
+  [%expect
+    {|
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
+          (Efun ((PVar (Id ("x", None))), [],
+             (Efun ((PVar (Id ("y", None))), [],
+                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
+                   ))
+                ))
+             ))
+          )),
+       []))
+     ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f ((3, true) : int * bool) x ([ 7; 5 ] : int list) = 4";
+  [%expect
+    {|
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
+          (Efun ((PVar (Id ("x", None))), [],
+             (Efun ((PVar (Id ("y", None))), [],
+                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
+                   ))
+                ))
+             ))
+          )),
+       []))
+     ]
+  |}]
+;;

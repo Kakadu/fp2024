@@ -136,6 +136,12 @@ type pattern =
   | POption of (pattern[@gen gen_pattern_sized (n / divisor)]) option
 [@@deriving show { with_path = false }, qcheck]
 
+type ty_pattern = pattern * ty option [@@deriving show { with_path = false }]
+
+let gen_ty_pattern_sized n =
+  QCheck.Gen.(pair (gen_pattern_sized (n / divisor)) (return None))
+;;
+
 type expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
   | Evar of id (* identifiers, e.g. "x", "f"*)
@@ -180,12 +186,12 @@ type expr =
       * (expr[@gen gen_expr_sized (n / divisor)])
     (* E0 E1, e.g. f x *)
   | Efun of
-      (pattern[@gen gen_pattern_sized (n / divisor)])
-      * (pattern list
-        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
+      (ty_pattern[@gen gen_ty_pattern_sized (n / divisor)])
+      * (ty_pattern list
+        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_ty_pattern_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
-  (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
-  (* | Eprint_int of (expr[@gen gen_expr_sized (n / divisor)]) *)
+(* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+(* | Eprint_int of (expr[@gen gen_expr_sized (n / divisor)]) *)
 [@@deriving show { with_path = false }, qcheck]
 
 and case =
