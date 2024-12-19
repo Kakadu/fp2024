@@ -736,15 +736,13 @@ let rec infer_expr env = function
   | LetIn (Rec, let_bind, let_binds, e) ->
     let let_binds = let_bind :: let_binds in
     let* env = extend_env_with_bind_names env let_binds in
-    let* env, subst1 = extend_env_with_let_binds env Rec let_binds in
-    let* subst2, typ = infer_expr env e in
-    let* subst_final = Substitution.compose subst1 subst2 in
-    return (subst_final, typ)
+    let* env = extend_env_with_let_binds env Rec let_binds in
+    let* subst, typ = infer_expr env e in
+    return (subst, typ)
   | LetIn (Nonrec, let_bind, let_binds, e) ->
-    let* env, subst1 = extend_env_with_let_binds env Nonrec (let_bind :: let_binds) in
-    let* subst2, typ = infer_expr env e in
-    let* subst_final = Substitution.compose subst1 subst2 in
-    return (subst_final, typ)
+    let* env = extend_env_with_let_binds env Nonrec (let_bind :: let_binds) in
+    let* subst, typ = infer_expr env e in
+    return (subst, typ)
   | Function ((p1, e1), rest) ->
     let* match_t = make_fresh_var in
     let* return_t = make_fresh_var in
@@ -866,16 +864,11 @@ and infer_typed_expr env = function
   | expr, None -> infer_expr env expr
 
 and extend_env_with_let_binds env is_rec let_binds =
-  List.fold
-    let_binds
-    ~init:(return (env, Substitution.empty))
-    ~f:(fun acc let_bind ->
-      let* env, subst_acc = acc in
-      let* subst, names_schemes_list = infer_let_bind env is_rec let_bind in
-      let env = TypeEnvironment.extend_many env names_schemes_list in
-      let env = TypeEnvironment.apply subst env in
-      let* subst_acc = Substitution.compose subst_acc subst in
-      return (env, subst_acc))
+  List.fold let_binds ~init:(return env) ~f:(fun acc let_bind ->
+    let* env = acc in
+    let* names_schemes_list = infer_let_bind env is_rec let_bind in
+    let env = TypeEnvironment.extend_many env names_schemes_list in
+    return env)
 
 and infer_let_bind env is_rec let_bind =
   let* (Let_bind (name, args, e)) = check_let_bind_correctness is_rec let_bind in
@@ -898,14 +891,14 @@ and infer_let_bind env is_rec let_bind =
   let names_schemes_list =
     List.map names_types ~f:(fun (name, name_type) -> name, generalize env name_type)
   in
-  return (subst, names_schemes_list)
+  return names_schemes_list
 ;;
 
 let infer_statement env = function
   | Let (Rec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
     let* env = extend_env_with_bind_names env let_binds in
-    let* env, _ = extend_env_with_let_binds env Rec let_binds in
+    let* env = extend_env_with_let_binds env Rec let_binds in
     let bind_names = extract_bind_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
@@ -915,7 +908,7 @@ let infer_statement env = function
     return (env, bind_types)
   | Let (Nonrec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
-    let* env, _ = extend_env_with_let_binds env Nonrec let_binds in
+    let* env = extend_env_with_let_binds env Nonrec let_binds in
     let bind_names = extract_bind_names_from_let_binds let_binds in
     let bind_types =
       List.map bind_names ~f:(fun name ->
