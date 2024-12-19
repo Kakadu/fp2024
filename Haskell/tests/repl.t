@@ -144,3 +144,27 @@ SPDX-License-Identifier: MIT
   map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
   print_int:  Int -> ()
    ]
+  $ ../bin/REPL.exe <<-EOF
+  >  fac0 self n = if n<2 then n else n* self (n-1) 
+  >  fix f = f (fix f)
+  >  fac = fix fac0
+  >  main = print_int (fac 3)
+  > EOF
+  [ 
+  fac0:  (Int -> Int) -> Int -> Int
+   ]
+  [ 
+  fac0:  (Int -> Int) -> Int -> Int
+  fix: t11.  (t11 -> t11) -> t11
+   ]
+  [ 
+  fac:  Int -> Int
+  fac0:  (Int -> Int) -> Int -> Int
+  fix: t11.  (t11 -> t11) -> t11
+   ]
+  Undefined variable 'print_int'
+  Fatal error: exception End_of_file
+  Raised at Stdlib.input_line.scan in file "stdlib.ml", line 456, characters 14-31
+  Called from Dune__exe__REPL.helper in file "bin/REPL.ml", line 40, characters 17-33
+  Called from Dune__exe__REPL in file "bin/REPL.ml", line 46, characters 4-52
+  [2]
