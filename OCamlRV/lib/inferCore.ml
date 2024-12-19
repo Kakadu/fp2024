@@ -3,16 +3,43 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Typedtree
+open AstPrinter
 open Base
+
+let arrow l r = AFun (l, r)
+let int_type = AInt
+let bool_type = ABool
+let string_type = AString
+let unit_type = AUnit
+let tuple_type t = ATuple t
+let list_type t = AList t
+
+type error =
+  [ `Occurs_check
+  | `Unbound of identifier
+  | `Unification_failed of type_annot * type_annot
+  | `Pattern_matching_error
+  | `Not_implemented
+  ]
+
+let pp_error ppf : error -> _ =
+  let open Stdlib.Format in
+  function
+  | `Occurs_check -> fprintf ppf "Occurs check failed"
+  | `Unbound s -> fprintf ppf "Unbound variable '%s'" s
+  | `Unification_failed (l, r) ->
+    fprintf ppf "Unification failed on %a and %a" pp_annot l pp_annot r
+  | `Pattern_matching_error -> fprintf ppf "Pattern matching error"
+  | `Not_implemented -> fprintf ppf "Not implemented"
+;;
 
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 end
 
-type scheme = S of VarSet.t * ty
+type scheme = S of VarSet.t * type_annot
 
-module R : sig
+module Result : sig
   type 'a t
 
   val bind : 'a t -> f:('a -> 'b t) -> 'b t
@@ -77,23 +104,23 @@ end
 type fresh = int
 
 module Type = struct
-  type t = ty
+  type t = type_annot
 
   let rec occurs_in v = function
-    | TVar b -> b = v
-    | TArrow (l, r) -> occurs_in v l || occurs_in v r
-    | TTuple tl -> Base.List.exists tl ~f:(occurs_in v)
-    | TList t -> occurs_in v t
-    | TPrimitive _ -> false
+    | AVar b -> b = v
+    | AFun (l, r) -> occurs_in v l || occurs_in v r
+    | ATuple tl -> Base.List.exists tl ~f:(occurs_in v)
+    | AList t -> occurs_in v t
+    | AInt | ABool | AString | AUnit -> false
   ;;
 
   let free_vars =
     let rec helper acc = function
-      | TVar b -> VarSet.add b acc
-      | TArrow (l, r) -> helper (helper acc l) r
-      | TTuple tl -> List.fold_left tl ~init:acc ~f:helper
-      | TList t -> helper acc t
-      | TPrimitive _ -> acc
+      | AVar b -> VarSet.add b acc
+      | AFun (l, r) -> helper (helper acc l) r
+      | ATuple tl -> List.fold_left tl ~init:acc ~f:helper
+      | AList t -> helper acc t
+      | AInt | ABool | AString | AUnit -> acc
     in
     helper VarSet.empty
   ;;
@@ -103,18 +130,18 @@ module Subst : sig
   type t
 
   val empty : t
-  val singleton : fresh -> ty -> t R.t
-  val find : t -> fresh -> ty option
+  val singleton : fresh -> type_annot -> t Result.t
+  val find : t -> fresh -> type_annot option
   val remove : t -> fresh -> t
-  val apply : t -> ty -> ty
-  val unify : ty -> ty -> t R.t
-  val compose : t -> t -> t R.t
-  val compose_all : t list -> t R.t
+  val apply : t -> type_annot -> type_annot
+  val unify : type_annot -> type_annot -> t Result.t
+  val compose : t -> t -> t Result.t
+  val compose_all : t list -> t Result.t
 end = struct
-  open R
-  open R.Syntax
+  open Result
+  open Result.Syntax
 
-  type t = (fresh, ty, Int.comparator_witness) Map.t
+  type t = (fresh, type_annot, Int.comparator_witness) Map.t
 
   let empty = Map.empty (module Int)
   let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
@@ -129,13 +156,13 @@ end = struct
 
   let apply s =
     let rec helper = function
-      | TVar b as ty ->
+      | AVar b as ty ->
         (match find s b with
          | None -> ty
          | Some x -> x)
-      | TArrow (l, r) -> arrow (helper l) (helper r)
-      | TList t -> list_type (helper t)
-      | TTuple ts -> tuple_type (List.map ~f:helper ts)
+      | AFun (l, r) -> arrow (helper l) (helper r)
+      | AList t -> list_type (helper t)
+      | ATuple ts -> tuple_type (List.map ~f:helper ts)
       | other -> other
     in
     helper
@@ -143,15 +170,18 @@ end = struct
 
   let rec unify l r =
     match l, r with
-    | TPrimitive l, TPrimitive r when String.equal l r -> return empty
-    | TVar a, TVar b when Int.equal a b -> return empty
-    | TVar b, t | t, TVar b -> singleton b t
-    | TArrow (l1, r1), TArrow (l2, r2) ->
+    | AInt, AInt -> return empty
+    | ABool, ABool -> return empty
+    | AString, AString -> return empty
+    | AUnit, AUnit -> return empty
+    | AVar a, AVar b when Int.equal a b -> return empty
+    | AVar b, t | t, AVar b -> singleton b t
+    | AFun (l1, r1), AFun (l2, r2) ->
       let* s1 = unify l1 l2 in
       let* s2 = unify (apply s1 r1) (apply s1 r2) in
       compose s1 s2
-    | TList t1, TList t2 -> unify t1 t2
-    | TTuple ts1, TTuple ts2 ->
+    | AList t1, AList t2 -> unify t1 t2
+    | ATuple ts1, ATuple ts2 ->
       (match
          List.fold2
            ts1

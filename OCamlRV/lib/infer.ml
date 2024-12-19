@@ -3,17 +3,16 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Typedtree
 open Base
 open InferCore
-open InferCore.R
-open InferCore.R.Syntax
+open InferCore.Result
+open InferCore.Result.Syntax
 
 module Infer = struct
-  let fresh_var = fresh >>| fun n -> TVar n
+  let fresh_var = fresh >>| fun n -> AVar n
 
-  let instantiate : scheme -> ty R.t =
-    fun (S (xs, ty)) ->
+  let instantiate : scheme -> type_annot Result.t =
+    fun (S (xs, type_annot)) ->
     VarSet.fold
       (fun name typ ->
         let* typ = typ in
@@ -21,7 +20,7 @@ module Infer = struct
         let* s = Subst.singleton name f1 in
         return (Subst.apply s typ))
       xs
-      (return ty)
+      (return type_annot)
   ;;
 
   let generalize env ty =
@@ -32,14 +31,6 @@ module Infer = struct
   let generalize_rec env ty x =
     let env = TypeEnv.remove env x in
     generalize env ty
-  ;;
-
-  let rec annot_to_ty = function
-    | AInt -> int_type
-    | ABool -> bool_type
-    | AString -> string_type
-    | AUnit -> unit_type
-    | AList a -> list_type (annot_to_ty a)
   ;;
 
   let infer_pattern =
@@ -79,7 +70,7 @@ module Infer = struct
         return (env, tuple_type (List.rev tl))
       | PType (pat, an) ->
         let* env1, t1 = helper env pat in
-        let* sub = Subst.unify t1 (annot_to_ty an) in
+        let* sub = Subst.unify t1 an in
         let env = TypeEnv.apply sub env1 in
         return (env, Subst.apply sub t1)
       | _ -> fail `Pattern_matching_error
@@ -103,7 +94,7 @@ module Infer = struct
          | Some s ->
            let* t = instantiate s in
            return (Subst.empty, t)
-         | None -> fail (`No_variable x))
+         | None -> fail (`Unbound x))
       | ExprBinOperation (op, e1, e2) ->
         let* sub1, t1 = helper env e1 in
         let* sub2, t2 = helper (TypeEnv.apply sub1 env) e2 in

@@ -55,12 +55,15 @@ type constant =
   | CNil
 [@@deriving show { with_path = false }, qcheck]
 
-type type_annotation =
-  | AInt (** 1 : int *)
-  | ABool (** b : bool *)
-  | AString (** s : string *)
-  | AUnit (** () : unit*)
-  | AList of type_annotation (** l : int list *)
+type type_annot =
+  | AInt
+  | ABool
+  | AString
+  | AUnit
+  | AVar of int
+  | AFun of type_annot * type_annot
+  | AList of type_annot
+  | ATuple of type_annot list
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
@@ -75,7 +78,7 @@ type pattern =
         [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
   | POption of pattern option
-  | PType of pattern * type_annotation
+  | PType of pattern * type_annot
 [@@deriving show { with_path = false }, qcheck]
 
 type expression =

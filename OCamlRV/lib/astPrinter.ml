@@ -32,7 +32,21 @@ let pp_annot =
     | ABool -> fprintf ppf "bool"
     | AString -> fprintf ppf "string"
     | AUnit -> fprintf ppf "unit"
+    | AVar n -> fprintf ppf "'%d" n
+    | AFun (l, r) ->
+      (match l with
+       | AFun _ -> fprintf ppf "(%a) -> %a" helper l helper r
+       | _ -> fprintf ppf "%a -> %a" helper l helper r)
     | AList t -> fprintf ppf "%a list" helper t
+    | ATuple l ->
+      let rec pp_tuple ppf = function
+        | [] -> ()
+        | [ x ] -> fprintf ppf "%a" helper x
+        | x :: xs ->
+          fprintf ppf "%a * " helper x;
+          pp_tuple ppf xs
+      in
+      fprintf ppf "%a" pp_tuple l
   in
   helper
 ;;

@@ -2,9 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open OCamlRV_lib.Typedtree
 open OCamlRV_lib.Infer
 open OCamlRV_lib.InferCore
+open OCamlRV_lib.AstPrinter
 
 let test_infer s =
   let open OCamlRV_lib.Parser in
@@ -13,7 +13,7 @@ let test_infer s =
     (match run_infer parsed with
      | Ok env ->
        Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
-         Format.printf "val %s : %a\n" key pp_type ty)
+         Format.printf "val %s : %a\n" key pp_annot ty)
      | Error e -> Format.printf "Infer error: %a\n" pp_error e)
   | Error e -> Format.printf "Parsing error: %s\n" e
 ;;
@@ -131,6 +131,12 @@ let%expect_test _ =
   test_infer {| 
     let a = ();;|};
   [%expect {| val a : unit |}]
+;;
+
+let%expect_test _ =
+  test_infer {| 
+    let a = (1, true, "3");;|};
+  [%expect {| val a : int * bool * string |}]
 ;;
 
 let%expect_test _ =
