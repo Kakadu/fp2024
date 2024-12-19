@@ -169,14 +169,20 @@ let func_tp_tail hd ord_tp =
 
 let ord_tp tp =
   let w = word ~point_allowed:Allow_point in
-  choice
-    [ string "()" *> return TUnit
-    ; w "Int" *> return TInt
-    ; w "Bool" *> return TBool
-    ; (sq_brackets tp >>| fun x -> ListParam x)
-    ; (braces tp >>| fun x -> TreeParam x)
-    ; tuple_or_parensed_item tp (fun fs sn tl -> return (TupleParams (fs, sn, tl))) return
-    ]
+  let ord_tp =
+    choice
+      [ string "()" *> return TUnit
+      ; w "Int" *> return TInt
+      ; w "Bool" *> return TBool
+      ; (sq_brackets tp >>| fun x -> ListParam x)
+      ; (braces tp >>| fun x -> TreeParam x)
+      ; tuple_or_parensed_item
+          tp
+          (fun fs sn tl -> return (TupleParams (fs, sn, tl)))
+          return
+      ]
+  in
+  ord_tp <|> (w "Maybe" *> ws *> ord_tp >>| fun t -> MaybeParam t)
 ;;
 
 let tp =
@@ -187,6 +193,11 @@ let tp =
 let%expect_test "tp_list_of_func" =
   prs_and_prnt_ln tp show_tp "[Int -> Int] ";
   [%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}]
+;;
+
+let%expect_test "tp_maybe" =
+  prs_and_prnt_ln tp show_tp "Maybe Int ";
+  [%expect {| (MaybeParam TInt) |}]
 ;;
 
 let%expect_test "tp_tree_of_func" =
@@ -706,10 +717,43 @@ let tuple_or_parensed_item_e e =
     return
 ;;
 
+let infix_binop =
+  let binop_lambda op =
+    return
+      (Lambda
+         ( ([], PIdentificator (Ident "x"), [])
+         , [ [], PIdentificator (Ident "y"), [] ]
+         , ( Binop ((Identificator (Ident "x"), []), op, (Identificator (Ident "y"), []))
+           , [] ) ))
+  in
+  choice
+    [ parens
+        (choice
+           [ oper "||" *> binop_lambda Or
+           ; oper "&&" *> binop_lambda And
+           ; oper "==" *> binop_lambda Equality
+           ; oper "/=" *> binop_lambda Inequality
+           ; oper ">=" *> binop_lambda EqualityOrGreater
+           ; oper "<=" *> binop_lambda EqualityOrLess
+           ; oper ">" *> binop_lambda Greater
+           ; oper "<" *> binop_lambda Less
+           ; oper ":" *> binop_lambda Cons
+           ; oper "-" *> binop_lambda Minus
+           ; oper "+" *> binop_lambda Plus
+           ; oper "*" *> binop_lambda Multiply
+           ; oper "^" *> binop_lambda Multiply
+           ])
+    ; word "div" *> binop_lambda Divide
+    ; word "mod" *> binop_lambda Mod
+    ]
+  >>| fun e -> e, []
+;;
+
 let other_expr e fa =
   let e' = e >>= ex_tp in
   choice
     [ const_e
+    ; infix_binop
     ; ident_e
     ; nothing (return (ENothing, []))
     ; just (return (EJust, []))
@@ -733,6 +777,7 @@ let function_application ex e =
       (ws
        *> choice
             [ const_e
+            ; infix_binop
             ; ident_e
             ; just (return (EJust, []))
             ; nothing (return (ENothing, []))
@@ -757,10 +802,17 @@ let expr = function
   | Allow_t -> fix e >>= ex_tp
 ;;
 
-let%expect_test "expr_const" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "123456789012345678901234567890";
-  [%expect {|
-      error: : no more choices |}]
+let%expect_test "infix_binop" =
+  prs_and_prnt_ln (expr Allow_t) show_expr "(*)";
+  [%expect
+    {|
+      ((Lambda (([], (PIdentificator (Ident "x")), []),
+          [([], (PIdentificator (Ident "y")), [])],
+          ((Binop (((Identificator (Ident "x")), []), Multiply,
+              ((Identificator (Ident "y")), []))),
+           [])
+          )),
+       []) |}]
 ;;
 
 let%expect_test "expr_prio" =
