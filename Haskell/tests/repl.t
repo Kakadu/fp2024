@@ -21,7 +21,6 @@ SPDX-License-Identifier: MIT
   unification failed on Maybe t5 and Ord t8 -> Ord t8 -> Bool
   unification failed on () and t10 -> t10
   [ 
-  print_int:  Int -> ()
   x:  Int
    ]
 
@@ -29,14 +28,12 @@ SPDX-License-Identifier: MIT
   [ 
   fac:  Int -> Int
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/002fac.hs
   [ 
   fac_cps: t11.  Int -> (Int -> t11) -> t11
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/003fib.hs
@@ -44,13 +41,11 @@ SPDX-License-Identifier: MIT
   fib:  Int -> Int
   fib_acc:  Int -> Int -> Int -> Int
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/004manyargs.hs
   [ 
   main:  Int
-  print_int:  Int -> ()
   test10:  Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
   test3:  Int -> Int -> Int -> Int
   wrap: t1.  t1 -> t1
@@ -61,7 +56,6 @@ SPDX-License-Identifier: MIT
   fac:  (Int -> Int) -> Int -> Int
   fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/006partial.hs
@@ -69,40 +63,34 @@ SPDX-License-Identifier: MIT
   foo:  Bool -> Int -> Int
   foo2:  Int -> Int
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/006partial2.hs
   [ 
   foo:  Int -> Int -> Int -> Int
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/006partial3.hs
   [ 
   foo:  Int -> Int -> Int -> ()
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/007order.hs
   [ 
   _start:  () -> () -> Int -> () -> Int -> Int -> () -> Int -> Int -> Int
   main:  ()
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/008ascription.hs
   [ 
   addi: t4.  (t4 -> Bool -> Int) -> (t4 -> Bool) -> t4 -> Int
   main:  Int
-  print_int:  Int -> ()
    ]
 
   $ ../bin/REPL.exe manytests/typed/009let_poly.hs
   [ 
-  print_int:  Int -> ()
   temp:  (Int, Bool)
    ]
 
@@ -116,7 +104,6 @@ SPDX-License-Identifier: MIT
   _42: t47.  t47 -> Bool
   _5: t44.  Int -> t44
   int_of_option: t38.  Maybe t38 -> Int
-  print_int:  Int -> ()
    ]
   $ ../bin/REPL.exe manytests/typed/015tuples.hs
   [ 
@@ -128,7 +115,6 @@ SPDX-License-Identifier: MIT
   map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
   meven:  Int -> Int
   modd:  Int -> Int
-  print_int:  Int -> ()
   tie:  (Int -> Int, Int -> Int)
    ]
 
@@ -142,8 +128,8 @@ SPDX-License-Identifier: MIT
   length_tail: t22.  [t22] -> Int
   main:  Int
   map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
-  print_int:  Int -> ()
    ]
+
   $ ../bin/REPL.exe <<-EOF
   >  fac0 self n = if n<2 then n else n* self (n-1) 
   >  fix f = f (fix f)
@@ -154,20 +140,15 @@ SPDX-License-Identifier: MIT
   fac0:  (Int -> Int) -> Int -> Int
    ]
   [ 
-  fac0:  (Int -> Int) -> Int -> Int
   fix: t11.  (t11 -> t11) -> t11
    ]
   [ 
   fac:  Int -> Int
-  fac0:  (Int -> Int) -> Int -> Int
-  fix: t11.  (t11 -> t11) -> t11
    ]
-  Undefined variable 'print_int'
-  Fatal error: exception End_of_file
-  Raised at Stdlib.input_line.scan in file "stdlib.ml", line 456, characters 14-31
-  Called from Dune__exe__REPL.helper in file "bin/REPL.ml", line 40, characters 17-33
-  Called from Dune__exe__REPL in file "bin/REPL.ml", line 46, characters 4-52
-  [2]
+  [ 
+  main:  ()
+   ]
+
   $ ../bin/REPL.exe <<-EOF
   > iter f xs = case xs of [] -> (); h:tl -> let () = f h in iter f tl
   > take n xs = case xs of [] -> []; h:tl -> if n>0 then h : (take (n-1) tl) else []
@@ -180,24 +161,13 @@ SPDX-License-Identifier: MIT
   iter: t4.  (t4 -> ()) -> [t4] -> ()
    ]
   [ 
-  iter: t4.  (t4 -> ()) -> [t4] -> ()
   take: t16.  Int -> [t16] -> [t16]
    ]
   [ 
-  iter: t4.  (t4 -> ()) -> [t4] -> ()
   tail: t33.  [t33] -> t33
-  take: t16.  Int -> [t16] -> [t16]
    ]
   [ 
-  iter: t4.  (t4 -> ()) -> [t4] -> ()
-  tail: t33.  [t33] -> t33
-  take: t16.  Int -> [t16] -> [t16]
   zip_with: t39. t40. t41.  (t39 -> t40 -> t41) -> [t39] -> [t40] -> [t41]
    ]
   unification failed on [Int] and Int
-  Undefined variable 'print_int'
-  Fatal error: exception End_of_file
-  Raised at Stdlib.input_line.scan in file "stdlib.ml", line 456, characters 14-31
-  Called from Dune__exe__REPL.helper in file "bin/REPL.ml", line 40, characters 17-33
-  Called from Dune__exe__REPL in file "bin/REPL.ml", line 46, characters 4-52
-  [2]
+  Undefined variable 'fib'

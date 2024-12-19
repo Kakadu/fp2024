@@ -257,6 +257,17 @@ module TypeEnv = struct
         env)
   ;;
 
+  let pp_some ppf names =
+    let open Stdlib.Format in
+    fprintf ppf "[ \n%a ]" (fun ppf env ->
+      SMap.iter
+        (fun name (S (bb, t)) ->
+          match List.find names ~f:(String.equal name) with
+          | Some _ -> fprintf ppf "%s: %a %a\n" name VarSet.pp bb Pprint.pp_ty t
+          | None -> ())
+        env)
+  ;;
+
   let free_vars : t -> VarSet.t =
     fun env ->
     SMap.fold (fun _ s acc -> VarSet.union acc (Scheme.free_vars s)) env VarSet.empty
@@ -275,7 +286,7 @@ let typeenv_print_int =
 ;;
 
 let typeenv_empty = TypeEnv.empty
-let pp_typeenv = TypeEnv.pp
+let pp_some_typeenv ppf (n, e) = TypeEnv.pp_some ppf n e
 
 open R
 open R.Syntax
@@ -338,7 +349,7 @@ let rec bindings bb env =
   let f (subst, env) = function
     | FunDef (_, p, pp, bd, bb), tv0 ->
       let* tt, inner_env = helper_pp (p :: pp) env in
-      let* s1, inner_env = bindings bb inner_env in
+      let* s1, inner_env, _ = bindings bb inner_env in
       let* s2, t1 =
         (match bd with
          | Guards (ep, eps) -> helper_guards (ep :: eps) inner_env
@@ -350,7 +361,7 @@ let rec bindings bb env =
       let* s = Subst.compose s3 s in
       Subst.compose s subst >>| fun s -> s, env
     | VarsDef (_, bd, bb), tv0 ->
-      let* s1, inner_env = bindings bb env in
+      let* s1, inner_env, _ = bindings bb env in
       let* s2, t1 =
         match bd with
         | Guards (ep, eps) -> helper_guards (ep :: eps) env
@@ -383,7 +394,7 @@ let rec bindings bb env =
       ~f:(fun env' name ->
         lookup_env name env' >>| fun t -> TypeEnv.extend env' (name, generalize init_env t))
   in
-  return (s, fenv)
+  return (s, fenv, names)
 
 and helper_guards eps env =
   let* fresh = fresh_var in
@@ -605,7 +616,7 @@ and infer (e, type_annots) env =
       let trez = ty_arr (List.map (Subst.apply s) (List.rev tt)) (Subst.apply s ty) in
       return (s, trez)
     | InnerBindings (b, bb, e) ->
-      let* s, env = bindings (b :: bb) env in
+      let* s, env, _ = bindings (b :: bb) env in
       let* s2, t2 = infer e env in
       Subst.compose s2 s >>| fun fs -> fs, t2
     | Case (e, pb, pbs) ->
@@ -685,5 +696,5 @@ and ty_arr tt t =
 
 let w p env st =
   let st, res = run (bindings p env) st in
-  st, Result.map snd res
+  st, Result.map (fun (_, env, names) -> env, names) res
 ;;
