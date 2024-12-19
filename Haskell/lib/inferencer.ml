@@ -248,15 +248,6 @@ module TypeEnv = struct
   let extend : t -> string * scheme -> t = fun e (name, scheme) -> SMap.add name scheme e
   let empty = SMap.empty
 
-  let pp ppf =
-    let open Stdlib.Format in
-    fprintf ppf "[ \n%a ]" (fun ppf env ->
-      SMap.iter
-        (fun name (S (bb, t)) ->
-          fprintf ppf "%s: %a %a\n" name VarSet.pp bb Pprint.pp_ty t)
-        env)
-  ;;
-
   let pp_some ppf names =
     let open Stdlib.Format in
     fprintf ppf "[ \n%a ]" (fun ppf env ->
