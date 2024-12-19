@@ -49,6 +49,16 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
+  test_infer {|let a = if true then ();;|};
+  [%expect {| val a : unit |}]
+;;
+
+let%expect_test _ =
+  test_infer {|let a = if true then 1;;|};
+  [%expect {| Infer error: Unification failed on int and unit |}]
+;;
+
+let%expect_test _ =
   test_infer
     {|
   let res cond = match cond with | "firstMatch" -> 1 | "SecondMatch" -> 2| _ -> 3;;

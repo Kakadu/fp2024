@@ -130,22 +130,19 @@ module Infer = struct
         let* sub = Subst.compose_all [ sub1; sub2 ] in
         return (sub, Subst.apply sub et)
       | ExprIf (i, t, e) ->
-        (match e with
-         | Some e ->
-           let* sub1, t1 = helper env i in
-           let* sub2, t2 = helper (TypeEnv.apply sub1 env) t in
-           let* sub3, t3 = helper (TypeEnv.apply sub2 env) e in
-           let* sub4 = Subst.unify t1 bool_type in
-           let* sub5 = Subst.unify t2 t3 in
-           let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
-           return (sub, Subst.apply sub t2)
-         | None ->
-           let* sub1, t1 = helper env i in
-           let* sub2, t2 = helper (TypeEnv.apply sub1 env) t in
-           let* sub4 = Subst.unify t1 bool_type in
-           let* sub5 = Subst.unify t2 bool_type in
-           let* sub = Subst.compose_all [ sub1; sub2; sub4; sub5 ] in
-           return (sub, Subst.apply sub t2))
+        let* sub1, t1 = helper env i in
+        let* sub2, t2 = helper (TypeEnv.apply sub1 env) t in
+        let* sub3, t3 =
+          match e with
+          | Some e ->
+            let* sub3, t3 = helper (TypeEnv.apply sub2 env) e in
+            return (sub3, t3)
+          | None -> return (Subst.empty, unit_type)
+        in
+        let* sub4 = Subst.unify t1 bool_type in
+        let* sub5 = Subst.unify t2 t3 in
+        let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
+        return (sub, Subst.apply sub t2)
       | ExprMatch (e, c, cl) ->
         let* sub1, t1 = helper env e in
         let env = TypeEnv.apply sub1 env in
