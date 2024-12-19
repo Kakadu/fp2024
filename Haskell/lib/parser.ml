@@ -83,15 +83,6 @@ let%test "word_invalid" =
   = Result.Error ": couldn't parse word 'then'"
 ;;
 
-let is_char_suitable_for_ident c =
-  is_digit c || is_alpha c || Char.equal '_' c || Char.equal '\'' c
-;;
-
-let is_char_suitable_for_oper = function
-  | '&' | '|' | '+' | '-' | ':' | '*' | '=' | '^' | '/' | '\\' | '<' | '>' | '.' -> true
-  | _ -> false
-;;
-
 let ident =
   let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
@@ -298,19 +289,6 @@ let pcons_tail head ptrn_ext =
   >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
 ;;
 
-let just_p ptrn = just (ptrn >>| fun p -> [], PMaybe (Just p), [])
-
-let pcons_tail head ptrn_ext =
-  let rec loop constr = function
-    | [] -> constr ([], PList (PEnum []), [])
-    | hd :: [] -> constr hd
-    | hd :: tl -> loop (fun y -> constr ([], PList (PCons (hd, y)), [])) tl
-  in
-  many1 (oper ":" **> ptrn_ext)
-  >>| List.rev
-  >>| loop (fun (x : pattern) -> [], PList (PCons (head, x)), [])
-;;
-
 let pat ptrn =
   let ptrn_extended ptrn_extended =
     let* p = ptrn <|> pnegation <|> just_p ptrn in
@@ -391,16 +369,6 @@ let%test "pattern_invalid_banned_neg" =
   = Result.Error ": no more choices"
 ;;
 
-let%test "pattern_valid_neg" =
-  parse_string ~consume:Prefix (pattern Allow_p) "-1"
-  = Result.Ok ([], PConst (NegativePInteger (Nonnegative_integer.of_int 1)), [])
-;;
-
-let%test "pattern_invalid_banned_neg" =
-  parse_string ~consume:Prefix (pattern Ban_p Allow_t) "-1"
-  = Result.Error ": no more choices"
-;;
-
 let%test "pattern_valid_double_as" =
   parse_string ~consume:Prefix (pattern Allow_p Allow_t) "a@b@2"
   = Result.Ok ([ Ident "a"; Ident "b" ], PConst (OrdinaryPConst (Int 2)), [])
@@ -474,20 +442,7 @@ let%expect_test "pattern_just_valid" =
 let%expect_test "pattern_just_invalid_ban_unparansed" =
   prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "Just 1";
   [%expect {|
-      error: : satisfy: '(' |}]
-;;
-
-let%expect_test "pattern_just_valid" =
-  prs_and_prnt_ln (pattern Allow_p Allow_t) show_pattern "Just 1";
-  [%expect
-    {|
-      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Integer 1))), []))), []) |}]
-;;
-
-let%expect_test "pattern_just_invalid_ban_unparansed" =
-  prs_and_prnt_ln (pattern Ban_p Allow_t) show_pattern "Just 1";
-  [%expect {|
-      error: : |}]
+      error: : no more choices |}]
 ;;
 
 let%expect_test "pattern_just_invalid_neg" =
@@ -762,62 +717,36 @@ let tuple_or_parensed_item_e e =
     return
 ;;
 
-let lambda e =
-  oper "\\"
-  *> let** pt = pattern Ban_p Ban_t in
-     let* pts = many (ws *> pattern Ban_p Ban_t) in
-     let* ex = string "->" **> e in
-     return (Lambda (pt, pts, ex), [])
-;;
-
-let tree_e e =
-  tree
-    e
-    ((BinTreeBld Nul, []) |> return)
-    (fun ex1 ex2 ex3 -> return (BinTreeBld (Node (ex1, ex2, ex3)), []))
-;;
-
-let case e =
-  word "case"
-  *> let** ex = e in
-     word "of"
-     **>
-     let* br1, brs =
-       sep_by1 (ws *> char ';' *> ws) (both pattern (bindingbody e (string "->")))
-       >>= function
-       | [] -> fail "sep_by1 cant return empty list"
-       | hd :: tl -> return (hd, tl)
-     in
-     return (Case (ex, br1, brs), [])
-;;
-
-let list_e e =
-  list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), []))
-  <|>
-  let condition = return (fun exp -> Condition exp) <*> e in
-  let generator =
-    return (fun (pat, exp) -> Generator (pat, exp))
-    <*> both (pattern Allow_p Allow_t <* ws <* oper "<-" <* ws) e
+let infix_binop =
+  let binop_lambda op =
+    return
+      (Lambda
+         ( ([], PIdentificator (Ident "x"), [])
+         , [ [], PIdentificator (Ident "y"), [] ]
+         , ( Binop ((Identificator (Ident "x"), []), op, (Identificator (Ident "y"), []))
+           , [] ) ))
   in
-  (let** ex1 = e in
-   choice
-     [ (oper "|" **> sep_by1 (ws *> char ',' *> ws) (generator <|> condition)
-        >>= function
-        | [] -> fail ""
-        | hd :: tl -> return (OrdList (ComprehensionList (ex1, hd, tl))))
-     ; (let option_ex f = option None (f >>| fun x -> Some x) in
-        both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
-        >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
-     ]
-   >>| fun l -> ListBld l, [])
-  |> sq_brackets
-;;
-
-let tuple_or_parensed_item_e e =
-  tuple_or_parensed_item
-    e
-    (fun ex1 ex2 exs -> return (TupleBld (ex1, ex2, exs), []))
-    (fun ex -> return ex)
+  choice
+    [ parens
+        (choice
+           [ oper "||" *> binop_lambda Or
+           ; oper "&&" *> binop_lambda And
+           ; oper "==" *> binop_lambda Equality
+           ; oper "/=" *> binop_lambda Inequality
+           ; oper ">=" *> binop_lambda EqualityOrGreater
+           ; oper "<=" *> binop_lambda EqualityOrLess
+           ; oper ">" *> binop_lambda Greater
+           ; oper "<" *> binop_lambda Less
+           ; oper ":" *> binop_lambda Cons
+           ; oper "-" *> binop_lambda Minus
+           ; oper "+" *> binop_lambda Plus
+           ; oper "*" *> binop_lambda Multiply
+           ; oper "^" *> binop_lambda Multiply
+           ])
+    ; word "div" *> binop_lambda Divide
+    ; word "mod" *> binop_lambda Mod
+    ]
+  >>| fun e -> e, []
 ;;
 
 let other_expr e fa =
@@ -909,16 +838,6 @@ let%expect_test "expr_div_mod" =
        []) |}]
 ;;
 
-let%expect_test "expr_div_mod" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "10 `div` 3 `mod` 2";
-  [%expect
-    {|
-      ((Binop (
-          ((Binop (((Const (Int 10)), []), Divide, ((Const (Int 3)), []))), []),
-          Mod, ((Const (Int 2)), []))),
-       []) |}]
-;;
-
 let%expect_test "expr_right_assoc" =
   prs_and_prnt_ln (expr Allow_t) show_expr "2^3^4";
   [%expect
@@ -947,24 +866,6 @@ let%expect_test "expr_with_func_apply" =
               [((Identificator (Ident "g")), []); ((Const (Int 2)), [])])),
            []),
           Plus, ((Const (Int 1)), []))),
-       []) |}]
-;;
-
-let%expect_test "expr_with_func_apply_strange_but_valid1" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "f 9a";
-  [%expect
-    {|
-      ((FunctionApply (((Identificator (Ident "f")), []), ((Const (Int 9)), []),
-          [((Identificator (Ident "a")), [])])),
-       []) |}]
-;;
-
-let%expect_test "expr_with_func_apply_strange_but_valid2" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "f Just(1)";
-  [%expect
-    {|
-      ((FunctionApply (((Identificator (Ident "f")), []), (EJust, []),
-          [((Const (Int 1)), [])])),
        []) |}]
 ;;
 
@@ -1025,37 +926,6 @@ let%expect_test "expr_case_statement" =
           (([], (PConst (OrdinaryPConst (Int 1))), []),
            (OrdBody ((Const (Int 1)), []))),
           [(([], PWildcard, []), (OrdBody ((Const (Int 2)), [])))])),
-       []) |}]
-;;
-
-let%expect_test "expr_case_statement_with_guards" =
-  prs_and_prnt_ln
-    (expr Allow_t)
-    show_expr
-    "case x of y | y > 10 -> 1 | otherwise -> 2;  _ -> 3 ";
-  [%expect
-    {|
-      ((Case (((Identificator (Ident "x")), []),
-          (([], (PIdentificator (Ident "y")), []),
-           (Guards (
-              (((Binop (((Identificator (Ident "y")), []), Greater,
-                   ((Const (Int 10)), []))),
-                []),
-               ((Const (Int 1)), [])),
-              [(((Identificator (Ident "otherwise")), []), ((Const (Int 2)), []))]
-              ))),
-          [(([], PWildcard, []), (OrdBody ((Const (Int 3)), [])))])),
-       []) |}]
-;;
-
-let%expect_test "expr_case_statement" =
-  prs_and_prnt_ln expr show_expr "case x of 1 -> 1; _ -> 2 ";
-  [%expect
-    {|
-      ((Case (((Identificator (Ident "x")), []),
-          (([], (PConst (OrdinaryPConst (Integer 1))), []),
-           (OrdBody ((Const (Integer 1)), []))),
-          [(([], PWildcard, []), (OrdBody ((Const (Integer 2)), [])))])),
        []) |}]
 ;;
 
@@ -1276,19 +1146,6 @@ let%expect_test "fun_binding_simple" =
          (OrdBody
             ((Binop (((Identificator (Ident "x")), []), Plus, ((Const (Int 1)), [])
                 )),
-             [])),
-         [])) |}]
-;;
-
-let%expect_test "fun_binding_simple_strange_but_valid1" =
-  prs_and_prnt_ln binding show_binding "f(x)y = x + y";
-  [%expect
-    {|
-      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []),
-         [([], (PIdentificator (Ident "y")), [])],
-         (OrdBody
-            ((Binop (((Identificator (Ident "x")), []), Plus,
-                ((Identificator (Ident "y")), []))),
              [])),
          [])) |}]
 ;;
