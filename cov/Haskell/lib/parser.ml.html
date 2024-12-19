@@ -2460,17 +2460,17 @@ let parens, sq_brackets, backticks, braces =
 ;;
 
 let is_alpha = function
-  | <span data-count="14018">'</span>a' .. 'z' | <span data-count="350">'</span>A' .. 'Z' -&gt; true
+  | <span data-count="14021">'</span>a' .. 'z' | <span data-count="350">'</span>A' .. 'Z' -&gt; true
   | <span data-count="18916">_</span> -&gt; false
 ;;
 
 let is_digit = function
   | <span data-count="829">'</span>0' .. '9' -&gt; true
-  | <span data-count="22863">_</span> -&gt; false
+  | <span data-count="22866">_</span> -&gt; false
 ;;
 
 let is_char_suitable_for_ident c =
-  <span data-count="17317">i</span>s_digi<span data-count="17317">t</span> <span data-count="85">c</span> || is_alph<span data-count="17232">a</span> <span data-count="9994">c</span> || Char.equa<span data-count="7238">l</span> '_' <span data-count="203">c</span> || Char.equal '\'' c
+  <span data-count="17320">i</span>s_digi<span data-count="17320">t</span> <span data-count="85">c</span> || is_alph<span data-count="17235">a</span> <span data-count="9997">c</span> || Char.equa<span data-count="7238">l</span> '_' <span data-count="203">c</span> || Char.equal '\'' c
 ;;
 
 let prs_ln ?(consume = <span data-count="0">C</span>onsume.Prefix) call str = <span data-count="270">p</span>arse_string ~consume call str

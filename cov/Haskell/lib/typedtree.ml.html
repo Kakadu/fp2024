@@ -18,12 +18,12 @@
       <h2>20.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:15.15%"></span>
-      <span class="unvisited" style="top:39.39%"></span>
-      <span class="unvisited" style="top:45.45%"></span>
-      <span class="unvisited" style="top:48.48%"></span>
-      <span class="unvisited" style="bottom:36.36%"></span>
-      <span class="unvisited" style="bottom:18.18%"></span>
+      <span class="unvisited" style="top:14.71%"></span>
+      <span class="unvisited" style="top:38.24%"></span>
+      <span class="unvisited" style="top:44.12%"></span>
+      <span class="unvisited" style="top:47.06%"></span>
+      <span class="unvisited" style="bottom:38.24%"></span>
+      <span class="unvisited" style="bottom:20.59%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -61,6 +61,7 @@
 <a id="L31"></a><span > </span>
 <a id="L32"></a><span > </span>
 <a id="L33"></a><span > </span>
+<a id="L34"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -98,6 +99,7 @@
 <a href="#L31">31</a>
 <a href="#L32">32</a>
 <a href="#L33">33</a>
+<a href="#L34">34</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Kostya Oreshin and Nikita Shchutskii *)
 
@@ -108,7 +110,7 @@
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 
-  let pp ppf s = <span data-count="150">i</span>ter (Format.fprint<span data-count="150">f</span> ppf "t%d. ") s
+  let pp ppf s = <span data-count="152">i</span>ter (Format.fprint<span data-count="152">f</span> ppf "t%d. ") s
 end
 
 <span data-count="0">t</span>ype binder_set = VarSet.t [@@deriving show { with_path = false }]
@@ -130,7 +132,8 @@ end
 type error =
   [ `Occurs_check
   | `No_variable of string
-  | `Unification_failed of ty * ty
+  | (* TODO(Kakadu): Unbound variable *)
+    `Unification_failed of ty * ty
   ]
 </code></pre>
       </div>

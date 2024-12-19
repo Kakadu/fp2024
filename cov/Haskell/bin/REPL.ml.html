@@ -18,10 +18,10 @@
       <h2>80.95%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:30.61%"></span>
-      <span class="unvisited" style="top:38.78%"></span>
-      <span class="unvisited" style="top:42.86%"></span>
-      <span class="unvisited" style="bottom:8.16%"></span>
+      <span class="unvisited" style="top:30.00%"></span>
+      <span class="unvisited" style="top:38.00%"></span>
+      <span class="unvisited" style="top:42.00%"></span>
+      <span class="unvisited" style="bottom:8.00%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -64,17 +64,18 @@
 <a id="L36"></a><span > </span>
 <a id="L37"></a><span class="visited"> </span>
 <a id="L38"></a><span > </span>
-<a id="L39"></a><span class="visited"> </span>
+<a id="L39"></a><span > </span>
 <a id="L40"></a><span class="visited"> </span>
 <a id="L41"></a><span class="visited"> </span>
-<a id="L42"></a><span > </span>
+<a id="L42"></a><span class="visited"> </span>
 <a id="L43"></a><span > </span>
-<a id="L44"></a><span class="visited"> </span>
-<a id="L45"></a><span class="unvisited"> </span>
-<a id="L46"></a><span class="visited"> </span>
-<a id="L47"></a><span > </span>
-<a id="L48"></a><span class="visited"> </span>
-<a id="L49"></a><span > </span>
+<a id="L44"></a><span > </span>
+<a id="L45"></a><span class="visited"> </span>
+<a id="L46"></a><span class="unvisited"> </span>
+<a id="L47"></a><span class="visited"> </span>
+<a id="L48"></a><span > </span>
+<a id="L49"></a><span class="visited"> </span>
+<a id="L50"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -128,6 +129,7 @@
 <a href="#L47">47</a>
 <a href="#L48">48</a>
 <a href="#L49">49</a>
+<a href="#L50">50</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Kostya Oreshin and Nikita Shchutskii *)
 
@@ -167,6 +169,7 @@ let () =
       Haskell_lib.Inferencer.typeenv_print_int
   else <span data-count="2">(</span>
     let rec helper (env, st) =
+      (* TODO(Kakadu): Why curry? *)
       <span data-count="12">l</span>et line =
         try input_lin<span data-count="10">e</span> stdin with
         | <span data-count="2">E</span>nd_of_file -&gt; ":quit"
