@@ -350,10 +350,9 @@ let p_inf_oper_expr p_expr =
 ;;
 
 let p_constraint_expr p_expr =
-  p_parens
-    (let* expr = p_expr in
-     let* typ = p_type in
-     return (EConstraint (expr, typ)))
+  let* expr = p_expr in
+  let* typ = p_type in
+  return (EConstraint (expr, typ))
 ;;
 
 let p_expr =
@@ -368,6 +367,7 @@ let p_expr =
         ; p_bool_expr
         ; p_parens p_expr
         ; p_semicolon_list_expr p_expr
+        ; p_parens (p_constraint_expr p_expr)
         ]
     in
     let if_expr = p_if (p_expr <|> atom) <|> atom in
@@ -391,8 +391,7 @@ let p_expr =
     let p_function = p_function (p_expr <|> inf_oper) <|> inf_oper in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    let constr = p_constraint_expr (p_expr <|> efun) <|> efun in
-    constr)
+    efun)
 ;;
 
 let p_statement = p_let p_expr
