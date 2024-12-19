@@ -546,21 +546,22 @@ let check_let_bind_correctness is_rec let_bind =
   | _ -> return let_bind
 ;;
 
-let infer_typed_pattern env : typed_pattern -> (TypeEnvironment.t * typ) t = function
+let infer_typed_pattern env ~shadow : typed_pattern -> (TypeEnvironment.t * typ) t
+  = function
   | pat, Some typ ->
-    let* env, inferred_typ = infer_pattern env pat in
+    let* env, inferred_typ = infer_pattern env ~shadow pat in
     let* subst = unify typ inferred_typ in
     return (TypeEnvironment.apply subst env, Substitution.apply subst typ)
-  | pat, None -> infer_pattern env pat
+  | pat, None -> infer_pattern env ~shadow pat
 ;;
 
-let infer_typed_patterns env patterns =
+let infer_typed_patterns env ~shadow patterns =
   List.fold_right
     patterns
     ~init:(return (env, []))
     ~f:(fun pat acc ->
       let* old_env, typs = acc in
-      let* new_env, typ = infer_typed_pattern old_env pat in
+      let* new_env, typ = infer_typed_pattern old_env ~shadow pat in
       return (new_env, typ :: typs))
 ;;
 
@@ -594,7 +595,7 @@ let extend_env_with_bind_names env let_binds =
     List.filter let_binds ~f:(function Let_bind (_, args, _) -> List.length args <> 0)
   in
   let bind_names = extract_bind_patterns_from_let_binds let_binds in
-  let* env, _ = infer_typed_patterns env bind_names in
+  let* env, _ = infer_typed_patterns env ~shadow:true bind_names in
   return env
 ;;
 
@@ -859,11 +860,15 @@ and extend_env_with_let_binds env is_rec let_binds =
 
 and infer_let_bind env is_rec let_bind =
   let* (Let_bind (name, args, e)) = check_let_bind_correctness is_rec let_bind in
-  let* env, args_types = infer_typed_patterns env args in
-  let* subst1, typ1 = infer_expr env e in
-  let bind_type = Substitution.apply subst1 (arrow_of_types args_types typ1) in
+  let* env, args_types = infer_typed_patterns env ~shadow:true args in
+  let* subst1, rvalue_type = infer_expr env e in
+  let bind_type = Substitution.apply subst1 (arrow_of_types args_types rvalue_type) in
   (* If let_bind is recursive, then bind_varname was already in environment *)
-  let* env, name_type = infer_typed_pattern env name in
+  let* env, name_type =
+    match is_rec with
+    | Nonrec -> infer_typed_pattern env ~shadow:true name
+    | Rec -> infer_typed_pattern env ~shadow:false name
+  in
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
