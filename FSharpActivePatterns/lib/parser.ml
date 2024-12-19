@@ -95,32 +95,36 @@ let p_string_expr = expr_const_factory p_string
 let p_string_pat = pat_const_factory p_string
 
 let p_inf_oper =
-  skip_ws
-  *> take_while1 (function
-    | '+'
-    | '-'
-    | '<'
-    | '>'
-    | '*'
-    | '|'
-    | '!'
-    | '$'
-    | '%'
-    | '&'
-    | '.'
-    | '/'
-    | ':'
-    | '='
-    | '?'
-    | '@'
-    | '^'
-    | '~' -> true
-    | _ -> false)
-  >>= fun str -> return (Ident str)
+  let* oper =
+    skip_ws
+    *> take_while1 (function
+      | '+'
+      | '-'
+      | '<'
+      | '>'
+      | '*'
+      | '|'
+      | '!'
+      | '$'
+      | '%'
+      | '&'
+      | '.'
+      | '/'
+      | ':'
+      | '='
+      | '?'
+      | '@'
+      | '^'
+      | '~' -> true
+      | _ -> false)
+  in
+  if is_keyword oper
+  then fail "keywords are not allowed as variable names"
+  else return (Ident oper)
 ;;
 
 let p_varname =
-  let p_string =
+  let* name =
     skip_ws
     *> lift2
          ( ^ )
@@ -131,8 +135,9 @@ let p_varname =
            | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
            | _ -> false))
   in
-  let* str = p_string in
-  if is_keyword str then fail "keywords are not allowed as variable names" else return str
+  if is_keyword name
+  then fail "keywords are not allowed as variable names"
+  else return name
 ;;
 
 let p_ident =
