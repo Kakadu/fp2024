@@ -23,14 +23,14 @@ let%expect_test "print Ast factorial" =
                  , Variable (Ident "n")
                  , Apply
                      ( Variable (Ident "factorial")
-                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
-                     ) )) ) )
+                     , ( Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                       , None ) ) )) ) )
   in
   let program =
     [ Statement
         (Let (Nonrec, Let_bind ((PVar (Ident "a"), None), [], Const (Int_lt 10)), []))
     ; Expr factorial
-    ; Expr (Apply (factorial, Variable (Ident "a")))
+    ; Expr (Apply (factorial, (Variable (Ident "a"), None)))
     ]
   in
   List.iter (print_construction std_formatter) program;

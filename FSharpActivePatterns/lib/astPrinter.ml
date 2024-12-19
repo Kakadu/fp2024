@@ -64,13 +64,8 @@ let print_unary_op indent fmt = function
   | Unary_not -> fprintf fmt "%s| Unary negative\n" (String.make indent '-')
 ;;
 
-let case_to_pair = function
-  | p, e -> p, e
-;;
-
-let tpattern_to_pattern = function
-  | p, _ -> p
-;;
+let tpattern_to_pattern = fst
+let texpr_to_expr = fst
 
 let rec print_let_bind indent fmt = function
   | Let_bind (name, args, body) ->
@@ -100,7 +95,6 @@ and print_expr indent fmt expr =
     fprintf fmt "%s| Tuple:\n" (String.make indent '-');
     List.iter (print_expr (indent + 2) fmt) (e1 :: e2 :: rest)
   | Function ((pat1, expr1), cases) ->
-    let cases = List.map case_to_pair cases in
     fprintf fmt "%s| Function:\n" (String.make indent '-');
     List.iter
       (fun (pat, expr) ->
@@ -110,7 +104,6 @@ and print_expr indent fmt expr =
         print_expr (indent + 4) fmt expr)
       ((pat1, expr1) :: cases)
   | Match (value, (pat1, expr1), cases) ->
-    let cases = List.map case_to_pair cases in
     fprintf fmt "%s| Match:\n" (String.make indent '-');
     fprintf fmt "%s| Value:\n" (String.make (indent + 2) '-');
     print_expr (indent + 4) fmt value;
@@ -152,6 +145,7 @@ and print_expr indent fmt expr =
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body
   | Apply (func, arg) ->
+    let arg = texpr_to_expr arg in
     fprintf fmt "%s| Apply:\n" (String.make indent '-');
     fprintf fmt "%sFUNCTION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) fmt func;

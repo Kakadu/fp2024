@@ -135,8 +135,7 @@ and expr =
       * (typed_pattern list
         [@gen QCheck.Gen.(list_size (0 -- 2) (gen_typed_pattern_sized (n / 20)))])
       * expr (** fun x y -> x + y *)
-  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
-  (** [sum 1 ] *)
+  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * typed_expr (** [sum 1 ] *)
   | Function of
       (case[@gen gen_case_sized (n / 4)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_case_sized (n / 20)))])
@@ -153,6 +152,11 @@ and expr =
         [@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 20)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
+[@@deriving show { with_path = false }, qcheck]
+
+and typed_expr =
+  (expr[@gen gen_expr_sized (n / 4)])
+  * (typ option[@gen QCheck.Gen.(option (gen_typ_sized (n / 4)))])
 [@@deriving show { with_path = false }, qcheck]
 
 and let_bind =

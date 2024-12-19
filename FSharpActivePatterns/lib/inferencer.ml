@@ -523,7 +523,7 @@ let rec infer_expr env = function
     let* e_subst, e_typ = infer_expr env e in
     let* subst = unify op_typ (Substitution.apply e_subst e_typ) in
     let* subst_result = Substitution.compose_all [ e_subst; subst ] in
-    return (subst_result, e_typ)
+    return (subst_result, Substitution.apply subst e_typ)
   | Bin_expr (op, e1, e2) ->
     let* subst1, typ1 = infer_expr env e1 in
     let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) e2 in
@@ -608,7 +608,7 @@ let rec infer_expr env = function
     return (subst_result, Substitution.apply subst2 typ2)
   | Apply (f, arg) ->
     let* subst1, typ1 = infer_expr env f in
-    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
+    let* subst2, typ2 = infer_typed_expr (TypeEnvironment.apply subst1 env) arg in
     let typ1 = Substitution.apply subst2 typ1 in
     let* fresh_var = make_fresh_var in
     let* subst3 = unify typ1 (Arrow (typ2, fresh_var)) in
@@ -667,6 +667,14 @@ let rec infer_expr env = function
           return (subst, Substitution.apply subst return_type))
     in
     return (subst, return_type)
+
+and infer_typed_expr env = function
+  | expr, Some typ ->
+    let* subst1, expr_typ = infer_expr env expr in
+    let* subst2 = unify expr_typ (Substitution.apply subst1 typ) in
+    let* subst_result = Substitution.compose subst1 subst2 in
+    return (subst_result, Substitution.apply subst2 expr_typ)
+  | expr, None -> infer_expr env expr
 
 and extend_env_with_let_binds env is_rec let_binds =
   List.fold

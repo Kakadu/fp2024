@@ -117,10 +117,12 @@ and pp_expr fmt expr =
         | None -> fprintf fmt "%a" pp_pattern pat)
       args;
     fprintf fmt "-> %a " pp_expr body
-  | Apply (Apply (Variable (Ident op), left), right)
+  | Apply (Apply (Variable (Ident op), (left, None)), (right, None))
     when String.for_all (fun c -> String.contains "!$%&*+-./:<=>?@^|~" c) op ->
     fprintf fmt "(%a) %s (%a)" pp_expr left op pp_expr right
-  | Apply (func, arg) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
+  | Apply (func, (arg, Some t)) ->
+    fprintf fmt "(%a) (%a : %a)" pp_expr func pp_expr arg pp_typ t
+  | Apply (func, (arg, None)) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
     pp_print_list
