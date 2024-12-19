@@ -4,7 +4,8 @@
 
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
-open FSharpActivePatterns.PrettyPrinter
+open FSharpActivePatterns.Inferencer
+open FSharpActivePatterns.TypesPp
 open Stdlib
 
 type input =
@@ -60,25 +61,35 @@ let run_repl dump_parsetree input_file =
     | None -> stdin
     | Some n -> open_in n
   in
-  let rec run_repl_helper run =
+  let rec run_repl_helper run env state =
     let open Format in
     match run ic with
     | Fail -> fprintf err_formatter "Error occured\n"
     | Empty ->
       fprintf std_formatter "\n";
       print_flush ();
-      run_repl_helper run
+      run_repl_helper run env state
     | End -> ()
     | Result ast ->
-      (match dump_parsetree with
-       | true -> print_construction std_formatter ast
-       | false ->
-         fprintf std_formatter "- : ";
-         pp_construction std_formatter ast);
-      print_flush ();
-      run_repl_helper run
+      let result = infer ast env state in
+      (match result with
+       | new_state, Error err ->
+         fprintf err_formatter "Type checking failed: %a\n" pp_error err;
+         print_flush ();
+         run_repl_helper run env new_state
+       | new_state, Ok (env, types) ->
+         (match dump_parsetree with
+          | true -> print_construction std_formatter ast
+          | false ->
+            List.iter
+              (fun t ->
+                fprintf std_formatter "- : ";
+                pp_typ std_formatter t)
+              types;
+            print_flush ());
+         run_repl_helper run env new_state)
   in
-  run_repl_helper run_single
+  run_repl_helper run_single TypeEnvironment.empty 0
 ;;
 
 type opts =
