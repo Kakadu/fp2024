@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>pai.ml &mdash; Coverage report</title>
-    <meta name="description" content="77.27% coverage in lib/pai.ml">
+    <meta name="description" content="80.00% coverage in lib/pai.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,13 +15,13 @@
           <span class="dirname">lib/</span>pai.ml
         </a>
       </h1>
-      <h2>77.27%</h2>
+      <h2>80.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:33.33%"></span>
-      <span class="unvisited" style="bottom:44.44%"></span>
-      <span class="unvisited" style="bottom:8.33%"></span>
-      <span class="unvisited" style="bottom:2.78%"></span>
+      <span class="unvisited" style="top:31.71%"></span>
+      <span class="unvisited" style="bottom:46.34%"></span>
+      <span class="unvisited" style="bottom:9.76%"></span>
+      <span class="unvisited" style="bottom:4.88%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -31,37 +31,42 @@
 <a id="L3"></a><span > </span>
 <a id="L4"></a><span > </span>
 <a id="L5"></a><span > </span>
-<a id="L6"></a><span class="visited"> </span>
+<a id="L6"></a><span > </span>
 <a id="L7"></a><span class="visited"> </span>
 <a id="L8"></a><span class="visited"> </span>
 <a id="L9"></a><span class="visited"> </span>
 <a id="L10"></a><span class="visited"> </span>
 <a id="L11"></a><span class="visited"> </span>
-<a id="L12"></a><span class="unvisited"> </span>
-<a id="L13"></a><span class="visited"> </span>
+<a id="L12"></a><span class="visited"> </span>
+<a id="L13"></a><span class="unvisited"> </span>
 <a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span > </span>
-<a id="L16"></a><span class="visited"> </span>
+<a id="L15"></a><span class="visited"> </span>
+<a id="L16"></a><span > </span>
 <a id="L17"></a><span class="visited"> </span>
-<a id="L18"></a><span > </span>
+<a id="L18"></a><span class="visited"> </span>
 <a id="L19"></a><span class="visited"> </span>
-<a id="L20"></a><span class="unvisited"> </span>
-<a id="L21"></a><span > </span>
-<a id="L22"></a><span > </span>
+<a id="L20"></a><span > </span>
+<a id="L21"></a><span class="visited"> </span>
+<a id="L22"></a><span class="unvisited"> </span>
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span class="visited"> </span>
-<a id="L25"></a><span class="visited"> </span>
+<a id="L25"></a><span > </span>
 <a id="L26"></a><span > </span>
-<a id="L27"></a><span class="visited"> </span>
-<a id="L28"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span class="visited"> </span>
 <a id="L29"></a><span class="visited"> </span>
-<a id="L30"></a><span class="visited"> </span>
-<a id="L31"></a><span > </span>
-<a id="L32"></a><span class="visited"> </span>
-<a id="L33"></a><span class="unvisited"> </span>
-<a id="L34"></a><span > </span>
-<a id="L35"></a><span class="unvisited"> </span>
-<a id="L36"></a><span > </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span class="visited"> </span>
+<a id="L32"></a><span > </span>
+<a id="L33"></a><span class="visited"> </span>
+<a id="L34"></a><span class="visited"> </span>
+<a id="L35"></a><span > </span>
+<a id="L36"></a><span class="visited"> </span>
+<a id="L37"></a><span class="unvisited"> </span>
+<a id="L38"></a><span > </span>
+<a id="L39"></a><span class="unvisited"> </span>
+<a id="L40"></a><span > </span>
+<a id="L41"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -102,43 +107,53 @@
 <a href="#L34">34</a>
 <a href="#L35">35</a>
 <a href="#L36">36</a>
+<a href="#L37">37</a>
+<a href="#L38">38</a>
+<a href="#L39">39</a>
+<a href="#L40">40</a>
+<a href="#L41">41</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Kostya Oreshin and Nikita Shchutskii *)
 
 (** SPDX-License-Identifier: MIT *)
 
-let rec parse_and_infer text print env st =
-  <span data-count="401">m</span>atch text with
-  | <span data-count="161">[</span>] -&gt;
-    if env != Inferencer.typeenv_empty &amp;&amp; <span data-count="105">e</span>nv != Inferencer.typeenv_print_int
-    then <span data-count="101">F</span>ormat.printf "%a\n%!" Inferencer.pp_typeenv env
-  | <span data-count="40">"</span>" :: rest -&gt; parse_and_infer rest print env st
-  | <span data-count="200">l</span>ine :: rest -&gt;
-    if print then <span data-count="0">P</span>arser.parse_and_print_lin<span data-count="0">e</span> line;
-    <span data-count="200">(</span>match Parser.parse_line line with
-     | <span data-count="200">R</span>esult.Ok list -&gt;
-       (match Inferencer.w list env st with
-        | <span data-count="138">s</span>t, Result.Ok env -&gt; parse_and_infer rest print env st
-        | <span data-count="62">s</span>t, Result.Error err -&gt;
-          Format.printf "%a\n%!" Pprint.pp_error err;
-          <span data-count="62">p</span>arse_and_infer rest print env st)
-     | <span data-count="0">R</span>esult.Error error -&gt; Format.printf "%s\n%!" error)
+let parse_and_infer =
+  let rec helper st names text print env =
+    <span data-count="401">m</span>atch text with
+    | <span data-count="161">[</span>] -&gt;
+      if env != Inferencer.typeenv_empty &amp;&amp; <span data-count="105">e</span>nv != Inferencer.typeenv_print_int
+      then <span data-count="101">F</span>ormat.printf "%a\n%!" Inferencer.pp_some_typeenv (names, env)
+    | <span data-count="40">"</span>" :: rest -&gt; helper st names rest print env
+    | <span data-count="200">l</span>ine :: rest -&gt;
+      if print then <span data-count="0">P</span>arser.parse_and_print_lin<span data-count="0">e</span> line;
+      <span data-count="200">(</span>match Parser.parse_line line with
+       | <span data-count="200">R</span>esult.Ok list -&gt;
+         (match Inferencer.w list env st with
+          | <span data-count="138">s</span>t, Result.Ok (env, nn) -&gt;
+            helper st (List.fold_lef<span data-count="138">t</span> (fun nn n -&gt; <span data-count="144">n</span> :: nn) names nn) rest print env
+          | <span data-count="62">s</span>t, Result.Error err -&gt;
+            Format.printf "%a\n%!" Pprint.pp_error err;
+            <span data-count="62">h</span>elper st names rest print env)
+       | <span data-count="0">R</span>esult.Error error -&gt; Format.printf "%s\n%!" error)
+  in
+  helpe<span data-count="26">r</span> 0 []
 ;;
 
 let parse_and_infer_line line env st =
-  <span data-count="4">m</span>atch Parser.parse_line line with
-  | <span data-count="4">R</span>esult.Ok list -&gt;
+  <span data-count="10">m</span>atch Parser.parse_line line with
+  | <span data-count="10">R</span>esult.Ok list -&gt;
     (match Inferencer.w list env st with
-     | <span data-count="3">s</span>t, Result.Ok env -&gt;
-       Format.printf "%a\n%!" Inferencer.pp_typeenv env;
-       <span data-count="3">e</span>nv, st
-     | <span data-count="1">s</span>t, Result.Error err -&gt;
+     | <span data-count="8">s</span>t, Result.Ok (env, names) -&gt;
+       Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, env);
+       <span data-count="8">e</span>nv, st
+     | <span data-count="2">s</span>t, Result.Error err -&gt;
        Format.printf "%a\n%!" Pprint.pp_error err;
-       <span data-count="1">e</span>nv, st)
+       <span data-count="2">e</span>nv, st)
   | <span data-count="0">R</span>esult.Error error -&gt;
     Format.printf "%s\n%!" error;
     <span data-count="0">e</span>nv, st
 ;;
+
 </code></pre>
       </div>
     </div>
