@@ -36,6 +36,7 @@ let () =
       Haskell_lib.Inferencer.typeenv_print_int
   else (
     let rec helper (env, st) =
+      (* TODO(Kakadu): Why curry? *)
       let line =
         try input_line stdin with
         | End_of_file -> ":quit"

@@ -184,7 +184,9 @@ end = struct
           compose subs acc)
     | Ty_tree ty1, Ty_tree ty2 -> unify ty1 ty2
     | Ty_maybe ty1, Ty_maybe ty2 -> unify ty1 ty2
-    | _ -> fail (`Unification_failed (l, r))
+    | _ ->
+      (* TODO(Kakadu): You already have case like this above. Why split? *)
+      fail (`Unification_failed (l, r))
 
   and extend s (k, v) =
     let bind v f =
@@ -320,6 +322,8 @@ let built_in_sign op =
       return (Ty_prim "Int", Ty_prim "Int", Ty_prim "Int")
     | _ -> fresh >>| fun t -> Ty_ord t, Ty_ord t, Ty_prim "Bool")
     op
+  (* TODO(Kakadu): overly complicated. Maybe introduce helper function
+     `arrow3` and get rid of >>|? *)
   >>| fun (t1, t2, t3) -> Ty_arrow (t1, Ty_arrow (t2, t3))
 ;;
 
@@ -363,7 +367,9 @@ let rec bindings bb env =
       let* s3 = unify (Subst.apply s_p tv0) t1 in
       let* s = Subst.compose s3 s in
       Subst.compose s subst >>| fun fs -> fs, env
-    | _ -> return (subst, env)
+    | _ ->
+      (* TODO(Kakadu): All new constructors will go here, and type system will not help you *)
+      return (subst, env)
   in
   let* prep_bb, decls, delta_env, env, names = prep [] [] TypeEnv.empty env [] bb in
   let init =
