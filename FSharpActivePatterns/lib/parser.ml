@@ -450,9 +450,9 @@ let p_pat =
   *> fix (fun self ->
     let atom = choice [ p_pat_const; p_parens self ] in
     let semicolon_list = p_semicolon_list_pat (self <|> atom) <|> atom in
-    let tuple = p_tuple make_tuple_pat semicolon_list <|> semicolon_list in
-    let opt = p_option tuple make_option_pat <|> tuple in
-    let cons = p_cons_list_pat opt in
+    let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
+    let tuple = p_tuple make_tuple_pat opt <|> opt in
+    let cons = p_cons_list_pat tuple in
     cons)
 ;;
 
@@ -559,9 +559,9 @@ let p_expr =
     in
     let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
-    let tuple = p_tuple make_tuple_expr letin_expr <|> letin_expr in
-    let option = p_option tuple make_option_expr <|> tuple in
-    let apply = p_apply option <|> option in
+    let option = p_option letin_expr make_option_expr <|> letin_expr in
+    let tuple = p_tuple make_tuple_expr option <|> option in
+    let apply = p_apply tuple <|> tuple in
     let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
     let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
