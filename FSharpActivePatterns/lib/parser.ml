@@ -205,15 +205,14 @@ let p_cons_list_pat p_pat =
   chainr1 p_pat (skip_ws *> string "::" *> return (fun l r -> PCons (l, r)))
 ;;
 
-let p_tuple_no_parens make p =
-  let* fst = p <* skip_ws <* string "," <* skip_ws in
-  let* snd = p in
-  let* rest = many (skip_ws *> string "," *> p) in
-  return (make fst snd rest)
-;;
-
 let p_tuple make p =
-  skip_ws *> p_parens (p_tuple_no_parens make p) <|> skip_ws *> p_tuple_no_parens make p
+  let tuple =
+    let* fst = p <* skip_ws <* string "," in
+    let* snd = p in
+    let* rest = many (skip_ws *> string "," *> p) in
+    return (make fst snd rest)
+  in
+  p_parens tuple <|> tuple
 ;;
 
 let p_tuple_pat p_pat = p_tuple make_tuple_pat p_pat
