@@ -168,3 +168,36 @@ SPDX-License-Identifier: MIT
   Called from Dune__exe__REPL.helper in file "bin/REPL.ml", line 40, characters 17-33
   Called from Dune__exe__REPL in file "bin/REPL.ml", line 46, characters 4-52
   [2]
+  $ ../bin/REPL.exe <<-EOF
+  > iter f xs = case xs of [] -> (); h:tl -> let () = f h in iter f tl
+  > take n xs = case xs of [] -> []; h:tl -> if n>0 then h : (take (n-1) tl) else []
+  > tail xs = case xs of h:tl -> h
+  > zip_with f xs ys = case (xs,ys) of ([],[]) -> []; (h:tl, h2:tl2) -> (f h h2) : zip_with f tl tl2
+  > fib = 0:1:(zip_with (+) fib (tail fib))
+  > main = let () = iter print_int (take 10 fib) in 0
+  > EOF
+  [ 
+  iter: t4.  (t4 -> ()) -> [t4] -> ()
+   ]
+  [ 
+  iter: t4.  (t4 -> ()) -> [t4] -> ()
+  take: t16.  Int -> [t16] -> [t16]
+   ]
+  [ 
+  iter: t4.  (t4 -> ()) -> [t4] -> ()
+  tail: t33.  [t33] -> t33
+  take: t16.  Int -> [t16] -> [t16]
+   ]
+  [ 
+  iter: t4.  (t4 -> ()) -> [t4] -> ()
+  tail: t33.  [t33] -> t33
+  take: t16.  Int -> [t16] -> [t16]
+  zip_with: t39. t40. t41.  (t39 -> t40 -> t41) -> [t39] -> [t40] -> [t41]
+   ]
+  unification failed on [Int] and Int
+  Undefined variable 'print_int'
+  Fatal error: exception End_of_file
+  Raised at Stdlib.input_line.scan in file "stdlib.ml", line 456, characters 14-31
+  Called from Dune__exe__REPL.helper in file "bin/REPL.ml", line 40, characters 17-33
+  Called from Dune__exe__REPL in file "bin/REPL.ml", line 46, characters 4-52
+  [2]
