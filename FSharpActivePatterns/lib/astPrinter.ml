@@ -57,6 +57,7 @@ let rec print_pattern indent fmt = function
      | Some p ->
        fprintf fmt "Some:\n";
        print_pattern (indent + 2) fmt p)
+  | PConstraint (p, _) -> print_pattern indent fmt p
 ;;
 
 let print_unary_op indent fmt = function
@@ -64,13 +65,8 @@ let print_unary_op indent fmt = function
   | Unary_not -> fprintf fmt "%s| Unary negative\n" (String.make indent '-')
 ;;
 
-let tpattern_to_pattern = fst
-let texpr_to_expr = fst
-
 let rec print_let_bind indent fmt = function
   | Let_bind (name, args, body) ->
-    let name = tpattern_to_pattern name in
-    let args = List.map tpattern_to_pattern args in
     fprintf fmt "%s| Let_bind:\n" (String.make indent '-');
     fprintf fmt "%sNAME:\n" (String.make (indent + 4) ' ');
     fprintf fmt "%s| %a\n" (String.make (indent + 4) '-') pp_pattern name;
@@ -135,17 +131,14 @@ and print_expr indent fmt expr =
     (match else_body with
      | Some body -> print_expr (indent + 2) fmt body
      | None -> fprintf fmt "%s| No else body\n" (String.make (indent + 2) '-'))
-  | Lambda ((arg1, _), args, body) ->
-    let pat_list = List.map tpattern_to_pattern args in
-    (*let args = List.map tag_of_ident args in*)
+  | Lambda (arg1, args, body) ->
     fprintf fmt "%s| Lambda:\n" (String.make indent '-');
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
     print_pattern (indent + 4) fmt arg1;
-    List.iter (fun pat -> print_pattern (indent + 4) fmt pat) pat_list;
+    List.iter (fun pat -> print_pattern (indent + 4) fmt pat) (arg1 :: args);
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body
   | Apply (func, arg) ->
-    let arg = texpr_to_expr arg in
     fprintf fmt "%s| Apply:\n" (String.make indent '-');
     fprintf fmt "%sFUNCTION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) fmt func;
@@ -169,6 +162,7 @@ and print_expr indent fmt expr =
      | Some e ->
        fprintf fmt "%s| Option: Some\n" (String.make indent '-');
        print_expr (indent + 2) fmt e)
+  | EConstraint (e, _) -> print_expr indent fmt e
 ;;
 
 let print_statement indent fmt = function

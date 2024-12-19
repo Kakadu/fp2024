@@ -447,28 +447,23 @@ let rec infer_pattern env ~shadow = function
         ~init:(return (env, []))
     in
     return (env, Type_tuple (typ1, typ2, typs_rest))
+  | PConstraint (p, t) ->
+    let* env, inferred_typ = infer_pattern env ~shadow p in
+    let* subst = unify t inferred_typ in
+    return (TypeEnvironment.apply subst env, Substitution.apply subst t)
 ;;
 
-let infer_typed_pattern env ~shadow : typed_pattern -> (TypeEnvironment.t * typ) t
-  = function
-  | pat, Some typ ->
-    let* env, inferred_typ = infer_pattern env ~shadow pat in
-    let* subst = unify typ inferred_typ in
-    return (TypeEnvironment.apply subst env, Substitution.apply subst typ)
-  | pat, None -> infer_pattern env ~shadow pat
-;;
-
-let infer_typed_patterns env ~shadow patterns =
+let infer_patterns env ~shadow patterns =
   List.fold_right
     patterns
     ~init:(return (env, []))
     ~f:(fun pat acc ->
       let* old_env, typs = acc in
-      let* new_env, typ = infer_typed_pattern old_env ~shadow pat in
+      let* new_env, typ = infer_pattern old_env ~shadow pat in
       return (new_env, typ :: typs))
 ;;
 
-let extract_names_from_tpattern =
+let extract_names_from_pattern pat =
   let rec helper = function
     | PVar (Ident name) -> [ name ]
     | PList l -> List.concat (List.map l ~f:helper)
@@ -476,21 +471,23 @@ let extract_names_from_tpattern =
     | PTuple (fst, snd, rest) ->
       List.concat [ helper fst; helper snd; List.concat (List.map rest ~f:helper) ]
     | POption (Some p) -> helper p
-    | _ -> []
+    | PConstraint (p, _) -> helper p
+    | POption None -> []
+    | Wild -> []
+    | PConst _ -> []
   in
-  function
-  | pat, _ -> helper pat
+  helper pat
 ;;
 
-let extract_names_from_tpatterns pats =
+let extract_names_from_patterns pats =
   List.fold pats ~init:[] ~f:(fun acc p ->
-    List.concat [ acc; extract_names_from_tpattern p ])
+    List.concat [ acc; extract_names_from_pattern p ])
 ;;
 
 let extract_bind_names_from_let_binds let_binds =
   List.concat
     (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
-       extract_names_from_tpattern pat))
+       extract_names_from_pattern pat))
 ;;
 
 let extract_bind_patterns_from_let_binds let_binds =
@@ -503,13 +500,13 @@ let extend_env_with_bind_names env let_binds =
     List.filter let_binds ~f:(function Let_bind (_, args, _) -> List.length args <> 0)
   in
   let bind_names = extract_bind_patterns_from_let_binds let_binds in
-  let* env, _ = infer_typed_patterns env ~shadow:true bind_names in
+  let* env, _ = infer_patterns env ~shadow:true bind_names in
   return env
 ;;
 
 let check_let_bind_correctness is_rec let_bind =
   match let_bind, is_rec with
-  | Let_bind ((PVar _, _), _, _), _ -> return let_bind
+  | Let_bind (PVar _, _, _), _ -> return let_bind
   | Let_bind _, Rec -> fail `Not_allowed_left_hand_side_let_rec
   | Let_bind (_, args, _), _ when List.length args <> 0 ->
     fail `Args_after_not_variable_let
@@ -620,14 +617,14 @@ let rec infer_expr env = function
     return (subst_result, Substitution.apply subst2 typ2)
   | Apply (f, arg) ->
     let* subst1, typ1 = infer_expr env f in
-    let* subst2, typ2 = infer_typed_expr (TypeEnvironment.apply subst1 env) arg in
+    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
     let typ1 = Substitution.apply subst2 typ1 in
     let* fresh_var = make_fresh_var in
     let* subst3 = unify typ1 (Arrow (typ2, fresh_var)) in
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
     return (subst_result, Substitution.apply subst3 fresh_var)
   | Lambda (arg, args, e) ->
-    let* env, arg_types = infer_typed_patterns env ~shadow:true (arg :: args) in
+    let* env, arg_types = infer_patterns env ~shadow:true (arg :: args) in
     let* subst, e_type = infer_expr env e in
     return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
   | LetIn (Rec, let_bind, let_binds, e) ->
@@ -678,14 +675,11 @@ let rec infer_expr env = function
           return (subst, Substitution.apply subst return_type))
     in
     return (subst, return_type)
-
-and infer_typed_expr env = function
-  | expr, Some typ ->
-    let* subst1, expr_typ = infer_expr env expr in
-    let* subst2 = unify expr_typ (Substitution.apply subst1 typ) in
+  | EConstraint (e, t) ->
+    let* subst1, e_type = infer_expr env e in
+    let* subst2 = unify e_type (Substitution.apply subst1 t) in
     let* subst_result = Substitution.compose subst1 subst2 in
-    return (subst_result, Substitution.apply subst2 expr_typ)
-  | expr, None -> infer_expr env expr
+    return (subst_result, Substitution.apply subst2 e_type)
 
 and extend_env_with_let_binds env is_rec let_binds =
   List.fold let_binds ~init:(return env) ~f:(fun acc let_bind ->
@@ -696,20 +690,20 @@ and extend_env_with_let_binds env is_rec let_binds =
 
 and infer_let_bind env is_rec let_bind =
   let* (Let_bind (name, args, e)) = check_let_bind_correctness is_rec let_bind in
-  let* env, args_types = infer_typed_patterns env ~shadow:true args in
+  let* env, args_types = infer_patterns env ~shadow:true args in
   let* subst1, rvalue_type = infer_expr env e in
   let bind_type = Substitution.apply subst1 (arrow_of_types args_types rvalue_type) in
   (* If let_bind is recursive, then bind_varname was already in environment *)
   let* env, name_type =
     match is_rec with
-    | Nonrec -> infer_typed_pattern env ~shadow:true name
-    | Rec -> infer_typed_pattern env ~shadow:false name
+    | Nonrec -> infer_pattern env ~shadow:true name
+    | Rec -> infer_pattern env ~shadow:false name
   in
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
-  let names = extract_names_from_tpattern name in
-  let arg_names = extract_names_from_tpatterns args in
+  let names = extract_names_from_pattern name in
+  let arg_names = extract_names_from_patterns args in
   let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
   let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
   let names_schemes_list =

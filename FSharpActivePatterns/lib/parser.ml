@@ -152,7 +152,6 @@ let p_ident =
 ;;
 
 let p_type = skip_ws *> char ':' *> skip_ws *> p_varname >>| fun s -> Primitive s
-let p_type_option = p_type >>| (fun t -> Some t) <|> return None
 let p_var_expr = p_ident >>| fun ident -> Variable ident
 let p_var_pat = p_ident >>| fun ident -> PVar ident
 
@@ -249,6 +248,13 @@ let p_pat_const =
   choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat; p_wild_pat ]
 ;;
 
+let p_constraint_pat p_pat =
+  p_parens
+    (let* pat = p_pat in
+     let* typ = p_type in
+     return (PConstraint (pat, typ)))
+;;
+
 let p_pat =
   skip_ws
   *> fix (fun self ->
@@ -257,24 +263,15 @@ let p_pat =
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
     let tuple = p_tuple_pat opt <|> opt in
     let cons = p_cons_list_pat tuple in
-    cons)
-;;
-
-let p_typed_arg : typed_pattern t =
-  let typed_pattern =
-    let* p = p_pat in
-    let* t = p_type_option in
-    return (p, t)
-  in
-  p_parens typed_pattern <|> (p_pat >>| fun p -> p, None)
+    let constr = p_constraint_pat cons <|> cons in
+    constr)
 ;;
 
 let p_let_bind p_expr =
   let* name = p_pat <|> (p_parens p_inf_oper >>| fun oper -> PVar oper) in
-  let* args = many p_typed_arg in
-  let* name_typ = p_type_option <* skip_ws <* string "=" in
-  let* body = p_expr in
-  return (Let_bind ((name, name_typ), args, body))
+  let* args = many p_pat in
+  let* body = skip_ws *> string "=" *> p_expr in
+  return (Let_bind (name, args, body))
 ;;
 
 let p_letin p_expr =
@@ -301,19 +298,7 @@ let p_let p_expr =
 ;;
 
 let p_apply p_expr =
-  let* func = p_expr <* peek_sep1 in
-  let p_typed_arg =
-    p_parens
-      (let* arg = p_expr in
-       let* typ = p_type in
-       return (arg, Some typ))
-  in
-  let p_not_typed_arg =
-    let* expr = p_expr <* peek_sep1 in
-    return (expr, None)
-  in
-  let* args = many (p_typed_arg <|> p_not_typed_arg) in
-  return (List.fold args ~init:func ~f:(fun acc arg -> Apply (acc, arg)))
+  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 ;;
 
 let p_lambda p_expr =
@@ -321,8 +306,8 @@ let p_lambda p_expr =
   *> string "fun"
   *> peek_sep1
   *>
-  let* arg1 = p_typed_arg in
-  let* args = many p_typed_arg <* skip_ws <* string "->" in
+  let* arg1 = p_pat in
+  let* args = many p_pat <* skip_ws <* string "->" in
   let* body = p_expr in
   return (Lambda (arg1, args, body))
 ;;
@@ -361,8 +346,14 @@ let p_inf_oper_expr p_expr =
        p_expr
        (p_inf_oper
         >>= fun op ->
-        return (fun expr1 expr2 ->
-          Apply (Apply (Variable op, (expr1, None)), (expr2, None))))
+        return (fun expr1 expr2 -> Apply (Apply (Variable op, expr1), expr2)))
+;;
+
+let p_constraint_expr p_expr =
+  p_parens
+    (let* expr = p_expr in
+     let* typ = p_type in
+     return (EConstraint (expr, typ)))
 ;;
 
 let p_expr =
@@ -400,7 +391,8 @@ let p_expr =
     let p_function = p_function (p_expr <|> inf_oper) <|> inf_oper in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    efun)
+    let constr = p_constraint_expr (p_expr <|> efun) <|> efun in
+    constr)
 ;;
 
 let p_statement = p_let p_expr

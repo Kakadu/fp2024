@@ -98,10 +98,9 @@ type pattern =
   | PConst of literal (** | [4] -> *)
   | PVar of ident (** pattern identifier *)
   | POption of pattern option
-    (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
+  (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
+  | PConstraint of pattern * (typ[@gen gen_typ_sized (n / 4)])
 [@@deriving show { with_path = false }, qcheck]
-
-type typed_pattern = pattern * typ option [@@deriving show { with_path = false }]
 
 let gen_typed_pattern_sized n = QCheck.Gen.(pair (gen_pattern_sized n) (return None))
 
@@ -131,11 +130,11 @@ and expr =
       * (expr option[@gen QCheck.Gen.option (gen_expr_sized (n / 4))])
   (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
-      (typed_pattern[@gen gen_typed_pattern_sized (n / 2)])
-      * (typed_pattern list
-        [@gen QCheck.Gen.(list_size (0 -- 2) (gen_typed_pattern_sized (n / 20)))])
+      (pattern[@gen gen_pattern_sized (n / 2)])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_pattern_sized (n / 20)))])
       * expr (** fun x y -> x + y *)
-  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * typed_expr (** [sum 1 ] *)
+  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
+  (** [sum 1 ] *)
   | Function of
       (case[@gen gen_case_sized (n / 4)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_case_sized (n / 20)))])
@@ -152,18 +151,13 @@ and expr =
         [@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 20)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
-[@@deriving show { with_path = false }, qcheck]
-
-and typed_expr =
-  (expr[@gen gen_expr_sized (n / 4)])
-  * (typ option[@gen QCheck.Gen.(option (gen_typ_sized (n / 4)))])
+  | EConstraint of expr * (typ[@gen gen_typ_sized (n / 4)])
 [@@deriving show { with_path = false }, qcheck]
 
 and let_bind =
   | Let_bind of
-      (typed_pattern[@gen gen_typed_pattern_sized (n / 2)])
-      * (typed_pattern list
-        [@gen QCheck.Gen.(list_size (0 -- 3) (gen_typed_pattern_sized (n / 4)))])
+      (pattern[@gen gen_pattern_sized (n / 2)])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 3) (gen_pattern_sized (n / 4)))])
       * expr (** [let sum n m = n + m] *)
 [@@deriving show { with_path = false }, qcheck]
 
