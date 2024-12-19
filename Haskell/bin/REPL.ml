@@ -34,7 +34,6 @@ let () =
          (In_channel.with_open_text opts.read_from_file In_channel.input_all))
       opts.dump_parsetree
       Haskell_lib.Inferencer.typeenv_print_int
-      0
   else (
     let rec helper (env, st) =
       let line =
