@@ -300,7 +300,9 @@ module TypeEnvironment : sig
   val find : t -> string -> scheme option
   val find_exn : t -> string -> scheme
   val find_typ_exn : t -> string -> typ
+  val find_typ : t -> string -> typ option
   val remove : t -> string -> t
+  (* val pp : t -> formatter -> unit *)
 end = struct
   open Base
 
@@ -323,24 +325,28 @@ end = struct
   let find = Map.find
   let find_exn = Map.find_exn
 
+  let find_typ env key =
+    match find env key with
+    | Some (Scheme (_, typ)) -> Some typ
+    | None -> None
+  ;;
+
   let find_typ_exn env key =
     match find_exn env key with
     | Scheme (_, typ) -> typ
   ;;
+
+  (* let pp t fmt =
+     Map.iter_keys t ~f:(fun k ->
+     let v = find_typ_exn t k in
+     fprintf fmt "%s : %a" k pp_typ v)
+     ;; *)
 
   (* collect all free vars from environment *)
   let free_vars : t -> VarSet.t =
     Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
       VarSet.union acc (Scheme.free_vars s))
   ;;
-
-  (* TODO: custom pp_scheme? not from deriving *)
-  (* let pp fmt map =
-    Stdlib.Format.fprintf fmt "{| ";
-    Map.iteri map ~f:(fun ~key:n ~data:s ->
-      Stdlib.Format.fprintf fmt "%s -> %a; " n pp_scheme s);
-    Stdlib.Format.fprintf fmt "|}%!"
-  ;; *)
 end
 
 open R
@@ -382,7 +388,7 @@ let infer_lt = function
   | Unit_lt -> return unit_typ
 ;;
 
-let rec infer_pattern env = function
+let rec infer_pattern env ~shadow = function
   | Wild ->
     let* fresh_var = make_fresh_var in
     return (env, fresh_var)
@@ -392,59 +398,66 @@ let rec infer_pattern env = function
   | PVar (Ident name) ->
     let* fresh = make_fresh_var in
     let scheme = Scheme (VarSet.empty, fresh) in
-    let env = TypeEnvironment.extend env name scheme in
-    return (env, fresh)
+    let env, typ =
+      match shadow with
+      | true -> TypeEnvironment.extend env name scheme, fresh
+      | false ->
+        let typ = TypeEnvironment.find_typ env name in
+        env, Option.value typ ~default:fresh
+    in
+    return (env, typ)
   | POption None ->
     let* fresh_var = make_fresh_var in
     return (env, TOption fresh_var)
   | POption (Some p) ->
-    let* env, typ = infer_pattern env p in
+    let* env, typ = infer_pattern env ~shadow p in
     return (env, TOption typ)
   | PList [] ->
     let* fresh_var = make_fresh_var in
     return (env, Type_list fresh_var)
   | PList (hd :: tl) ->
-    let* env, typ1 = infer_pattern env hd in
-    let* env, typ2 = infer_pattern env (PList tl) in
+    let* env, typ1 = infer_pattern env ~shadow hd in
+    let* env, typ2 = infer_pattern env ~shadow (PList tl) in
     let* subst = Substitution.unify typ2 (Type_list typ1) in
     let env = TypeEnvironment.apply subst env in
     return (env, Substitution.apply subst typ2)
   | PCons (hd, tl) ->
-    let* env, typ1 = infer_pattern env hd in
-    let* env, typ2 = infer_pattern env tl in
+    let* env, typ1 = infer_pattern env ~shadow hd in
+    let* env, typ2 = infer_pattern env ~shadow tl in
     let* subst = Substitution.unify typ2 (Type_list typ1) in
     let env = TypeEnvironment.apply subst env in
     return (env, Substitution.apply subst typ2)
   | PTuple (fst, snd, rest) ->
-    let* env, typ1 = infer_pattern env fst in
-    let* env, typ2 = infer_pattern env snd in
+    let* env, typ1 = infer_pattern env ~shadow fst in
+    let* env, typ2 = infer_pattern env ~shadow snd in
     let* env, typs_rest =
       List.fold_right
         rest
         ~f:(fun p acc ->
           let* env, types = acc in
-          let* env, typ = infer_pattern env p in
+          let* env, typ = infer_pattern env ~shadow p in
           return (env, typ :: types))
         ~init:(return (env, []))
     in
     return (env, Type_tuple (typ1, typ2, typs_rest))
 ;;
 
-let infer_typed_pattern env : typed_pattern -> (TypeEnvironment.t * typ) t = function
+let infer_typed_pattern env ~shadow : typed_pattern -> (TypeEnvironment.t * typ) t
+  = function
   | pat, Some typ ->
-    let* env, inferred_typ = infer_pattern env pat in
+    let* env, inferred_typ = infer_pattern env ~shadow pat in
     let* subst = unify typ inferred_typ in
     return (TypeEnvironment.apply subst env, Substitution.apply subst typ)
-  | pat, None -> infer_pattern env pat
+  | pat, None -> infer_pattern env ~shadow pat
 ;;
 
-let infer_typed_patterns env patterns =
+let infer_typed_patterns env ~shadow patterns =
   List.fold_right
     patterns
     ~init:(return (env, []))
     ~f:(fun pat acc ->
       let* old_env, typs = acc in
-      let* new_env, typ = infer_typed_pattern old_env pat in
+      let* new_env, typ = infer_typed_pattern old_env ~shadow pat in
       return (new_env, typ :: typs))
 ;;
 
@@ -478,7 +491,7 @@ let extend_env_with_bind_names env let_binds =
     List.filter let_binds ~f:(function Let_bind (_, args, _) -> List.length args <> 0)
   in
   let bind_names = extract_bind_patterns_from_let_binds let_binds in
-  let* env, _ = infer_typed_patterns env bind_names in
+  let* env, _ = infer_typed_patterns env ~shadow:true bind_names in
   return env
 ;;
 
@@ -596,13 +609,13 @@ let rec infer_expr env = function
   | Apply (f, arg) ->
     let* subst1, typ1 = infer_expr env f in
     let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
-    let* fresh_var = make_fresh_var in
     let typ1 = Substitution.apply subst2 typ1 in
+    let* fresh_var = make_fresh_var in
     let* subst3 = unify typ1 (Arrow (typ2, fresh_var)) in
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
     return (subst_result, Substitution.apply subst3 fresh_var)
   | Lambda (arg, args, e) ->
-    let* env, arg_types = infer_typed_patterns env (arg :: args) in
+    let* env, arg_types = infer_typed_patterns env ~shadow:true (arg :: args) in
     let* subst, e_type = infer_expr env e in
     return (subst, Substitution.apply subst (arrow_of_types arg_types e_type))
   | LetIn (Rec, let_bind, let_binds, e) ->
@@ -626,7 +639,7 @@ let rec infer_expr env = function
         ~init:(return (Substitution.empty, return_type))
         ~f:(fun acc (pat, expr) ->
           let* subst1, return_type = acc in
-          let* env, pat = infer_pattern env pat in
+          let* env, pat = infer_pattern env ~shadow:true pat in
           let* subst2 = unify arg_type pat in
           let env = TypeEnvironment.apply subst2 env in
           let* subst3, expr_typ = infer_expr env expr in
@@ -645,7 +658,7 @@ let rec infer_expr env = function
         ~init:(return (subst_init, return_type))
         ~f:(fun acc (pat, expr) ->
           let* subst1, return_type = acc in
-          let* env, pat = infer_pattern env pat in
+          let* env, pat = infer_pattern env ~shadow:true pat in
           let* subst2 = unify match_type pat in
           let env = TypeEnvironment.apply subst2 env in
           let* subst3, expr_typ = infer_expr env expr in
@@ -669,11 +682,15 @@ and extend_env_with_let_binds env is_rec let_binds =
 
 and infer_let_bind env is_rec let_bind =
   let* (Let_bind (name, args, e)) = check_let_bind_correctness is_rec let_bind in
-  let* env, args_types = infer_typed_patterns env args in
-  let* subst1, typ1 = infer_expr env e in
-  let bind_type = Substitution.apply subst1 (arrow_of_types args_types typ1) in
+  let* env, args_types = infer_typed_patterns env ~shadow:true args in
+  let* subst1, rvalue_type = infer_expr env e in
+  let bind_type = Substitution.apply subst1 (arrow_of_types args_types rvalue_type) in
   (* If let_bind is recursive, then bind_varname was already in environment *)
-  let* env, name_type = infer_typed_pattern env name in
+  let* env, name_type =
+    match is_rec with
+    | Nonrec -> infer_typed_pattern env ~shadow:true name
+    | Rec -> infer_typed_pattern env ~shadow:false name
+  in
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
