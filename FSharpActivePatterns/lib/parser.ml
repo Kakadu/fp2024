@@ -448,13 +448,12 @@ let p_pat_const =
 let p_pat =
   skip_ws
   *> fix (fun self ->
-    let atom = choice [ p_pat_const; p_parens self ] in
+    let atom = choice [ p_pat_const; p_parens self; p_parens (p_constraint_pat self) ] in
     let semicolon_list = p_semicolon_list_pat (self <|> atom) <|> atom in
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
     let tuple = p_tuple_pat opt <|> opt in
     let cons = p_cons_list_pat tuple in
-    let constr = p_constraint_pat cons <|> cons in
-    constr)
+    cons)
 ;;
 
 let p_let_bind p_expr =
