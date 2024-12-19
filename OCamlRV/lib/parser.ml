@@ -6,6 +6,8 @@ open Angstrom
 open Ast
 open Base
 
+(*--------------------------- Common part ---------------------------*)
+
 let is_id c = Char.is_alphanum c || Char.equal c '_' || Char.equal c '\''
 
 let is_keyword = function
@@ -33,7 +35,7 @@ let chainl1 e op =
   e >>= go
 ;;
 
-(*--------------------------- Literals ---------------------------*)
+(*--------------------------- Constants ---------------------------*)
 
 let integer =
   let* sign = choice [ token "-"; token "+"; token "" ] in
@@ -41,11 +43,11 @@ let integer =
   return (Int.of_string (sign ^ digits))
 ;;
 
-let pinteger = integer >>| fun i -> IntLiteral i
+let pinteger = integer >>| fun i -> CInt i
 
 let pbool =
-  let t = token "true" *> return (BoolLiteral true) in
-  let f = token "false" *> return (BoolLiteral false) in
+  let t = token "true" *> return (CBool true) in
+  let f = token "false" *> return (CBool false) in
   choice [ t; f ]
 ;;
 
@@ -55,14 +57,14 @@ let pstring =
     | '"' -> false
     | _ -> true)
   <* char '"'
-  >>| fun s -> StringLiteral s
+  >>| fun s -> CString s
 ;;
 
-let punit = token "()" *> return UnitLiteral
-let pnil = token "[]" *> return NilLiteral
-let pliteral = choice [ pinteger; pbool; pstring; punit; pnil ]
+let punit = token "()" *> return CUnit
+let pnil = token "[]" *> return CNil
+let pconstant = choice [ pinteger; pbool; pstring; punit; pnil ]
 
-(*--------------------------- Patterns ---------------------------*)
+(*--------------------------- Types ---------------------------*)
 
 let rec annot_list t =
   let* base = t in
@@ -85,8 +87,16 @@ let parse_type_annotation =
   list_type
 ;;
 
+let pattern_with_type ppat =
+  let* pat = ws *> token "(" *> ppat in
+  let* constr = ws *> token ":" *> ws *> parse_type_annotation <* ws <* token ")" in
+  return (PType (pat, constr))
+;;
+
+(*--------------------------- Patterns ---------------------------*)
+
 let ppany = token "_" *> return PAny
-let ppliteral = pliteral >>| fun a -> PLiteral a
+let ppconstant = pconstant >>| fun a -> PConstant a
 
 let variable =
   let* fst =
@@ -129,16 +139,11 @@ let ppcons pe =
 ;;
 
 let pattern =
-  let pattern_with_type ppat =
-    let* pat = ws *> token "(" *> ppat in
-    let* constr = ws *> token ":" *> ws *> parse_type_annotation <* ws <* token ")" in
-    return (PType (pat, constr))
-  in
   fix (fun pat ->
     let term =
       choice
         [ ppany
-        ; ppliteral
+        ; ppconstant
         ; ppvariable
         ; pparens pat
         ; pp_option pat
@@ -153,25 +158,24 @@ let pattern =
 (*--------------------------- Expressions ---------------------------*)
 
 let ebinop op e1 e2 = ExprBinOperation (op, e1, e2)
+let eapply e1 e2 = ExprApply (e1, e2)
+let elet f b bl e = ExprLet (f, b, bl, e)
+let efun p e = ExprFun (p, e)
+let eif e1 e2 e3 = ExprIf (e1, e2, e3)
+let grd = token "|"
 let punary_neg = token "-" *> return UnaryMinus
 let punary_not = token "not" *> return UnaryNeg
 let punary_add = token "+" *> return UnaryPlus
 let punary_op = choice [ punary_neg; punary_not; punary_add ]
 let peunop pe = lift2 (fun op e -> ExprUnOperation (op, e)) punary_op pe
-let eapply e1 e2 = ExprApply (e1, e2)
-let elet f b bl e = ExprLet (f, b, bl, e)
-let efun p e = ExprFun (p, e)
-let eif e1 e2 e3 = ExprIf (e1, e2, e3)
 let pevar = variable >>| fun v -> ExprVariable v
-let peliteral = pliteral >>| fun l -> ExprLiteral l
+let peconstant = pconstant >>| fun l -> ExprConstant l
 
 let ematch e = function
   | [] -> ExprOption None (* unreachable *)
   | [ x ] -> ExprMatch (e, x, [])
   | x :: xs -> ExprMatch (e, x, xs)
 ;;
-
-let grd = token "|"
 
 let pematch pe =
   let pexpr = token "match" *> pe <* token "with" <* option "" grd in
@@ -189,7 +193,7 @@ let petuple pe =
 let pelist pe =
   brackets @@ sep_by1 (token ";") pe
   >>| function
-  | [] -> ExprLiteral NilLiteral
+  | [] -> ExprConstant CNil
   | [ x ] -> ExprList (x, [])
   | x :: xs -> ExprList (x, xs)
 ;;
@@ -264,7 +268,7 @@ let p_option pe = choice [ p_option_none; p_option_some pe ]
 
 let expr =
   fix (fun expr ->
-    let term = choice [ pevar; peliteral; pelist expr; pparens expr ] in
+    let term = choice [ pevar; peconstant; pelist expr; pparens expr ] in
     let apply = chainl1 term (return eapply) in
     let cons = pecons apply in
     let ife = peif expr <|> cons in
@@ -291,8 +295,12 @@ let pstructure =
   choice [ pseval; psvalue ]
 ;;
 
-let structure : structure t = sep_by (token ";;") pstructure
-let parse s = parse_string ~consume:Prefix structure s
+let structure =
+  let psemicolon = token ";;" in
+  many (pstructure <* psemicolon <* ws)
+;;
+
+let parse s = parse_string ~consume:All structure s
 
 let parse_to_string input =
   match parse input with
