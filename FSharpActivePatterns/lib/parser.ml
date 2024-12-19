@@ -334,7 +334,7 @@ let p_case p_expr =
 ;;
 
 let p_first_case p_expr =
-  let* pat = skip_ws *> ((string "|" *> p_pat) <|> p_pat) <* skip_ws <* string "->" in
+  let* pat = skip_ws *> (string "|" *> p_pat <|> p_pat) <* skip_ws <* string "->" in
   let* expr = p_expr in
   return (pat, expr)
 ;;
@@ -382,9 +382,9 @@ let p_expr =
     let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let option = p_option letin_expr make_option_expr <|> letin_expr in
-    let tuple = p_tuple make_tuple_expr option <|> option in
-    let apply = p_apply tuple <|> tuple in
-    let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
+    let apply = p_apply option <|> option in
+    let tuple = p_tuple make_tuple_expr apply <|> apply in
+    let unary = choice [ unary_chain p_not tuple; unary_chain unminus tuple ] in
     let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let cons_op = chainr1 term cons in
