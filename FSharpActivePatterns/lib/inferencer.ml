@@ -167,6 +167,7 @@ module Substitution : sig
   val unify : typ -> typ -> t R.t
   val compose : t -> t -> t R.t
   val compose_all : t list -> t R.t
+  (* val pp : formatter -> t -> unit *)
 end = struct
   open R
   open R.Syntax
@@ -177,6 +178,12 @@ end = struct
 
   (* empty map *)
   let empty = Map.empty (module Int)
+
+  (* let pp fmt s =
+     Map.iter_keys s ~f:(fun k ->
+     let v = Map.find_exn s k in
+     fprintf fmt "%d: %a" k pp_typ v)
+     ;; *)
 
   (* perform mapping of fresh var to typ with occurs check, if correct,
      output new pair *)
@@ -266,12 +273,17 @@ module Scheme : sig
   (* val occurs_in : fresh -> t -> bool *)
   val apply : Substitution.t -> t -> t
   val free_vars : t -> binder_set
+  (* val pp : formatter -> t -> unit *)
 end = struct
   type t = scheme
 
   (* occurs check for both type vars set and typ in sheme *)
   (* let occurs_in value = function
      | S (vars, t) -> (not (VarSet.mem value vars)) && Type.occurs_in value t
+     ;; *)
+
+  (* let pp fmt = function
+     | Scheme (binder_s, t) -> fprintf fmt "%a %a" VarSet.pp binder_s pp_typ t
      ;; *)
 
   (* take all vars that are not bound in typ *)
@@ -301,8 +313,8 @@ module TypeEnvironment : sig
   val find_exn : t -> string -> scheme
   val find_typ_exn : t -> string -> typ
   val find_typ : t -> string -> typ option
-  val remove : t -> string -> t
-  (* val pp : t -> formatter -> unit *)
+  val remove_many : t -> string list -> t
+  (* val pp : formatter -> t -> unit *)
 end = struct
   open Base
 
@@ -318,6 +330,7 @@ end = struct
   ;;
 
   let remove = Map.remove
+  let remove_many t keys = List.fold ~init:t keys ~f:(fun acc k -> remove acc k)
   let empty = Map.empty (module String)
 
   (* apply given substitution to all elements of environment *)
@@ -336,10 +349,10 @@ end = struct
     | Scheme (_, typ) -> typ
   ;;
 
-  (* let pp t fmt =
+  (* let pp fmt t =
      Map.iter_keys t ~f:(fun k ->
-     let v = find_typ_exn t k in
-     fprintf fmt "%s : %a" k pp_typ v)
+     let (Scheme (binder_s, typ)) = find_exn t k in
+     fprintf fmt "%s : %a %a" k VarSet.pp binder_s pp_typ typ)
      ;; *)
 
   (* collect all free vars from environment *)
@@ -371,12 +384,6 @@ let instantiate : scheme -> typ R.t =
 (* take free vars of type t and environment, put difference between them
    in S constructor so all vars are context independent *)
 let generalize env typ =
-  let free = VarSet.diff (Type.free_vars typ) (TypeEnvironment.free_vars env) in
-  Scheme (free, typ)
-;;
-
-let generalize_rec env typ rec_name =
-  let env = TypeEnvironment.remove env rec_name in
   let free = VarSet.diff (Type.free_vars typ) (TypeEnvironment.free_vars env) in
   Scheme (free, typ)
 ;;
@@ -461,7 +468,7 @@ let infer_typed_patterns env ~shadow patterns =
       return (new_env, typ :: typs))
 ;;
 
-let extract_names_from_pattern =
+let extract_names_from_tpattern =
   let rec helper = function
     | PVar (Ident name) -> [ name ]
     | PList l -> List.concat (List.map l ~f:helper)
@@ -475,10 +482,15 @@ let extract_names_from_pattern =
   | pat, _ -> helper pat
 ;;
 
+let extract_names_from_tpatterns pats =
+  List.fold pats ~init:[] ~f:(fun acc p ->
+    List.concat [ acc; extract_names_from_tpattern p ])
+;;
+
 let extract_bind_names_from_let_binds let_binds =
   List.concat
     (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
-       extract_names_from_pattern pat))
+       extract_names_from_tpattern pat))
 ;;
 
 let extract_bind_patterns_from_let_binds let_binds =
@@ -702,13 +714,12 @@ and infer_let_bind env is_rec let_bind =
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
-  let names = extract_names_from_pattern name in
+  let names = extract_names_from_tpattern name in
+  let arg_names = extract_names_from_tpatterns args in
+  let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
+  let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
   let names_schemes_list =
-    List.map names ~f:(fun name ->
-      let name_type = TypeEnvironment.find_typ_exn env name in
-      match is_rec with
-      | Rec -> name, generalize_rec env name_type name
-      | Nonrec -> name, generalize env name_type)
+    List.map names_types ~f:(fun (name, name_type) -> name, generalize env name_type)
   in
   return (subst, names_schemes_list)
 ;;
