@@ -9,7 +9,7 @@ open Format
 let%expect_test "print Ast factorial" =
   let factorial =
     Lambda
-      ( (PConst (Int_lt 4), None)
+      ( PConst (Int_lt 4)
       , []
       , If_then_else
           ( Bin_expr
@@ -23,14 +23,13 @@ let%expect_test "print Ast factorial" =
                  , Variable (Ident "n")
                  , Apply
                      ( Variable (Ident "factorial")
-                     , ( Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
-                       , None ) ) )) ) )
+                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
+                     ) )) ) )
   in
   let program =
-    [ Statement
-        (Let (Nonrec, Let_bind ((PVar (Ident "a"), None), [], Const (Int_lt 10)), []))
+    [ Statement (Let (Nonrec, Let_bind (PVar (Ident "a"), [], Const (Int_lt 10)), []))
     ; Expr factorial
-    ; Expr (Apply (factorial, (Variable (Ident "a"), None)))
+    ; Expr (Apply (factorial, Variable (Ident "a")))
     ]
   in
   List.iter (print_construction std_formatter) program;
@@ -108,7 +107,7 @@ let%expect_test "print Ast factorial" =
 
 let%expect_test "print Ast double func" =
   let ident = Ident "n" in
-  let pat = PConst (Int_lt 4), None in
+  let pat = PConst (Int_lt 4) in
   let args = [] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), Variable ident) in
   let double = Lambda (pat, args, binary_expr) in
@@ -199,7 +198,7 @@ let%expect_test "print Ast of LetIn" =
     Expr
       (LetIn
          ( Nonrec
-         , Let_bind ((PVar (Ident "x"), None), [], Const (Int_lt 5))
+         , Let_bind (PVar (Ident "x"), [], Const (Int_lt 5))
          , []
          , Bin_expr (Binary_add, Variable (Ident "x"), Const (Int_lt 5)) ))
   in

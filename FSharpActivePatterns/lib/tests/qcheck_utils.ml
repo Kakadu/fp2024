@@ -28,11 +28,8 @@ let rec shrink_let_bind =
   | Let_bind (name, args, e) ->
     shrink_expr e
     >|= (fun a' -> Let_bind (name, args, a'))
-    <+> (QCheck.Shrink.list (List.map fst args)
-         >|= fun a' ->
-         let a' = List.map (fun p -> p, None) a' in
-         Let_bind (name, a', e))
-    <+> (shrink_pattern (fst name) >|= fun a' -> Let_bind ((a', None), args, e))
+    <+> (QCheck.Shrink.list args >|= fun a' -> Let_bind (name, a', e))
+    <+> (shrink_pattern name >|= fun a' -> Let_bind (a', args, e))
 
 and shrink_expr =
   let open QCheck.Iter in
@@ -64,18 +61,15 @@ and shrink_expr =
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> LetIn (rec_flag, let_bind, a', inner_e))
     <+> (shrink_expr inner_e >|= fun a' -> LetIn (rec_flag, let_bind, let_bind_list, a'))
-  | Apply (f, (arg, None)) ->
+  | Apply (f, arg) ->
     of_list [ f; arg ]
-    <+> (shrink_expr f >|= fun a' -> Apply (a', (arg, None)))
-    <+> (shrink_expr arg >|= fun a' -> Apply (f, (a', None)))
-  | Apply (f, (arg, Some _)) -> return (Apply (f, (arg, None)))
+    <+> (shrink_expr f >|= fun a' -> Apply (a', arg))
+    <+> (shrink_expr arg >|= fun a' -> Apply (f, a'))
   | Lambda (pat, pat_list, body) ->
     shrink_expr body
     >|= (fun body' -> Lambda (pat, pat_list, body'))
-    <+> (QCheck.Shrink.list ~shrink:shrink_pattern (List.map fst pat_list)
-         >|= fun a' ->
-         let a' = List.map (fun p -> p, None) a' in
-         Lambda (pat, a', body))
+    <+> (QCheck.Shrink.list ~shrink:shrink_pattern pat_list
+         >|= fun a' -> Lambda (pat, a', body))
   | Function ((pat1, expr1), cases) ->
     of_list (expr1 :: List.map snd cases)
     <+> (shrink_pattern pat1 >|= fun a' -> Function ((a', expr1), cases))
@@ -107,6 +101,7 @@ and shrink_expr =
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
   | Option None -> empty
   | Variable _ -> empty
+  | EConstraint (e, _) -> return e
 
 and shrink_pattern =
   let open QCheck.Iter in
@@ -127,6 +122,7 @@ and shrink_pattern =
   | POption None -> empty
   | Wild -> empty
   | PVar _ -> empty
+  | PConstraint (p, _) -> return p
 ;;
 
 let shrink_statement =

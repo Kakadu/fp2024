@@ -56,6 +56,7 @@ let rec pp_pattern fmt = function
     (match p with
      | None -> fprintf fmt "None "
      | Some p -> fprintf fmt "Some (%a) " pp_pattern p)
+  | PConstraint (p, t) -> fprintf fmt "(%a : %a) " pp_pattern p pp_typ t
 
 and pp_expr fmt expr =
   match expr with
@@ -103,26 +104,13 @@ and pp_expr fmt expr =
      | Some body -> fprintf fmt "else %a " pp_expr body
      | None -> ())
   | Lambda (arg1, args, body) ->
-    let args =
-      List.map
-        (function
-          | p, t -> p, t)
-        (arg1 :: args)
-    in
     fprintf fmt "fun ";
-    List.iter
-      (fun (pat, typ) ->
-        match typ with
-        | Some t -> fprintf fmt "(%a:%a) " pp_pattern pat pp_typ t
-        | None -> fprintf fmt "%a" pp_pattern pat)
-      args;
+    List.iter (fun pat -> fprintf fmt "(%a) " pp_pattern pat) (arg1 :: args);
     fprintf fmt "-> %a " pp_expr body
-  | Apply (Apply (Variable (Ident op), (left, None)), (right, None))
+  | Apply (Apply (Variable (Ident op), left), right)
     when String.for_all (fun c -> String.contains "!$%&*+-./:<=>?@^|~" c) op ->
     fprintf fmt "(%a) %s (%a)" pp_expr left op pp_expr right
-  | Apply (func, (arg, Some t)) ->
-    fprintf fmt "(%a) (%a : %a)" pp_expr func pp_expr arg pp_typ t
-  | Apply (func, (arg, None)) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
+  | Apply (func, arg) -> fprintf fmt "(%a) %a" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
     pp_print_list
@@ -136,23 +124,19 @@ and pp_expr fmt expr =
     (match e with
      | None -> fprintf fmt "None "
      | Some e -> fprintf fmt "Some (%a)" pp_expr e)
+  | EConstraint (e, t) -> fprintf fmt "(%a : %a) " pp_expr e pp_typ t
 
 and pp_args fmt args =
   let open Format in
   pp_print_list
     ~pp_sep:pp_print_space
-    (fun fmt -> function
-      | argname, Some typ -> fprintf fmt "(%a:%a)" pp_pattern argname pp_typ typ
-      | argname, None -> fprintf fmt "%a" pp_pattern argname)
+    (fun fmt arg -> fprintf fmt "%a" pp_pattern arg)
     fmt
     args
 
 and pp_let_bind fmt = function
   | Let_bind (name, args, body) ->
-    (match name with
-     | pat, Some typ ->
-       fprintf fmt "%a %a :%a = %a " pp_pattern pat pp_args args pp_typ typ pp_expr body
-     | pat, None -> fprintf fmt "%a %a = %a " pp_pattern pat pp_args args pp_expr body)
+    fprintf fmt "%a %a = %a " pp_pattern name pp_args args pp_expr body
 ;;
 
 let pp_statement fmt = function

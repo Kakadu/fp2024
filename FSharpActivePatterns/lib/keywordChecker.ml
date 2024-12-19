@@ -20,6 +20,8 @@ let is_keyword = function
   | "function"
   | "->"
   | "|"
+  | ":"
+  | "::"
   | "_" -> true
   | _ -> false
 ;;
