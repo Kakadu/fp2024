@@ -31,47 +31,6 @@ let%test "pp tp ListParam" =
 ;;
 
 let%test "pp tp TupleParams" =
-  Format.asprintf "%a" pp_tp (TupleParams (TInt, TBool, [ TBool; TInt ]))
-;;
-
-let pp_const = Haskell_lib.Pprintast.pp_const
-let pp_functype = Haskell_lib.Pprintast.pp_functype
-let pp_binop = Haskell_lib.Pprintast.pp_binop
-let pp_tp = Haskell_lib.Pprintast.pp_tp
-let pp_ident = Haskell_lib.Pprintast.pp_ident
-let pp_pat = Haskell_lib.Pprintast.pp_pat
-let pp_pattern = Haskell_lib.Pprintast.pp_pattern
-let pp_listpat = Haskell_lib.Pprintast.pp_listpat
-let pp_treepat = Haskell_lib.Pprintast.pp_treepat
-let pp_pconst = Haskell_lib.Pprintast.pp_pconst
-let pp_expr = Haskell_lib.Pprintast.pp_expr
-let i_const = Haskell_lib.Pprintast.i_const
-let pp_binding = Haskell_lib.Pprintast.pp_binding
-let%test "pp Int" = asprintf "%a" pp_const (Int 18) = "18"
-let%test "pp const Bool" = asprintf "%a" pp_const (Bool true) = "True"
-let%test "pp const Unit" = asprintf "%a" pp_const Unit = "()"
-
-let%test "pp functype" =
-  Format.asprintf
-    "%a"
-    Haskell_lib.Pprintast.pp_functype
-    (FuncT (TInt, TBool, [ TBool; TUnit ]))
-  = "Int -> Bool -> Bool -> ()"
-;;
-
-let%test "pp tp TUnit" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp TUnit = "()"
-let%test "pp tp TInt" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp TInt = "Int"
-let%test "pp tp TBool" = Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp TBool = "Bool"
-
-let%test "pp tp TreeParam" =
-  Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp (TreeParam TInt) = "{Int}"
-;;
-
-let%test "pp tp ListParam" =
-  Format.asprintf "%a" Haskell_lib.Pprintast.pp_tp (ListParam TBool) = "[Bool]"
-;;
-
-let%test "pp tp TupleParams" =
   Format.asprintf
     "%a"
     Haskell_lib.Pprintast.pp_tp
