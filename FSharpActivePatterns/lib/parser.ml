@@ -25,7 +25,7 @@ let peek_sep1 =
   match c with
   | None -> return None
   | Some c ->
-    if is_ws c || Char.equal c '(' || Char.equal c ')' || Char.equal c ','
+    if is_ws c || Char.equal c '(' || Char.equal c ')' || Char.equal c ',' || Char.equal c ']' || Char.equal c ';'
     then return (Some c)
     else fail "need a delimiter"
 ;;
