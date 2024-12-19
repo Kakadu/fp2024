@@ -37,11 +37,14 @@ let () =
       0
   else (
     let rec helper (env, st) =
-      let line = input_line stdin in
+      let line =
+        try input_line stdin with
+        | End_of_file -> ":quit"
+      in
       match line with
       | ":quit" -> ()
       | "" -> helper (env, st)
       | _ -> helper (Haskell_lib.Pai.parse_and_infer_line line env st)
     in
-    helper (Haskell_lib.Inferencer.typeenv_empty, 0))
+    helper (Haskell_lib.Inferencer.typeenv_print_int, 0))
 ;;
