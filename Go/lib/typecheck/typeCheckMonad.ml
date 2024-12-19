@@ -15,8 +15,16 @@ end
 
 module MapIdent = Map.Make (Ident)
 
-type global_env = type' MapIdent.t
-type local_env = type' MapIdent.t
+(*Is used to check multiple returns. Go has no tuple type,
+  multiple returns put the result bytes in stack
+  https://stackoverflow.com/questions/18622706/what-exactly-is-happening-when-go-returns-multiple-values*)
+type ctype =
+  | Ctype of type'
+  | Ctuple of type' list
+[@@deriving show { with_path = false }, eq]
+
+type global_env = ctype MapIdent.t
+type local_env = ctype MapIdent.t list
 type current_func = ident
 type type_check = global_env * local_env * current_func option
 
@@ -99,19 +107,19 @@ module CheckMonad = struct
 
   let sep_by_comma list print = sep_by ", " list print
 
-  let rec print_type = function
+  let rec print_type_simple = function
     | Type_int -> "int"
     | Type_string -> "string"
     | Type_bool -> "bool"
-    | Type_array (size, type') -> asprintf "[%i]%s" size (print_type type')
+    | Type_array (size, type') -> asprintf "[%i]%s" size (print_type_simple type')
     | Type_func (arg_types, return_types) ->
       let print_returns =
         match return_types with
-        | _ :: _ :: _ -> asprintf " (%s)" (sep_by_comma return_types print_type)
-        | type' :: _ -> " " ^ print_type type'
+        | _ :: _ :: _ -> asprintf " (%s)" (sep_by_comma return_types print_type_simple)
+        | type' :: _ -> " " ^ print_type_simple type'
         | [] -> ""
       in
-      asprintf "func(%s)%s" (sep_by_comma arg_types print_type) print_returns
+      asprintf "func(%s)%s" (sep_by_comma arg_types print_type_simple) print_returns
     | Type_chan (chan_dir, t) ->
       let print_chan_dir =
         match chan_dir with
@@ -121,10 +129,15 @@ module CheckMonad = struct
       in
       let print_type =
         match t with
-        | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type t)
-        | _ -> asprintf "%s" (print_type t)
+        | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type_simple t)
+        | _ -> asprintf "%s" (print_type_simple t)
       in
       asprintf "%s %s" print_chan_dir print_type
+  ;;
+
+  let print_type = function
+    | Ctype x -> print_type_simple x
+    | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map print_type_simple x))
   ;;
 
   let retrieve_paris_first args = List.map (fun (x, _) -> x) args
@@ -148,14 +161,22 @@ module CheckMonad = struct
     | Const_func x -> return (retrieve_anon_func x)
   ;;
 
-  let read_local : 'a MapIdent.t t =
+  let read_local : 'a MapIdent.t list t =
     read
     >>= function
     | _, local, _ -> return local
   ;;
 
+  let seek_local_definition_ident ident =
+    read_local >>= fun local -> MapIdent.find_opt ident (List.hd local) |> return
+  ;;
+
   let read_local_ident ident =
-    read_local >>= fun local -> MapIdent.find_opt ident local |> return
+    read_local
+    >>= fun local ->
+    match List.find_opt (fun x -> MapIdent.mem ident x) local with
+    | None -> return None
+    | Some x -> return (MapIdent.find_opt ident x)
   ;;
 
   let read_global : 'a MapIdent.t t =
@@ -168,14 +189,18 @@ module CheckMonad = struct
     read_global >>= fun global -> MapIdent.find_opt ident global |> return
   ;;
 
+  let rec fix f x = f (fix f) (return x)
+
   let write_local new_local =
     read
     >>= function
     | global, _, fc -> write (global, new_local, fc)
   ;;
 
-  let write_local_ident el_env el_ident =
-    read_local >>= fun local -> write_local (MapIdent.add el_ident el_env local)
+  let write_local_ident el_type el_ident =
+    read_local
+    >>= fun local ->
+    write_local (MapIdent.add el_ident el_type (List.hd local) :: List.tl local)
   ;;
 
   let write_global new_global =
@@ -184,12 +209,12 @@ module CheckMonad = struct
     | _, local, fc -> write (new_global, local, fc)
   ;;
 
-  let write_global_ident el_env el_ident =
-    read_global >>= fun global -> write_global (MapIdent.add el_ident el_env global)
+  let write_global_ident el_type el_ident =
+    read_global >>= fun global -> write_global (MapIdent.add el_ident el_type global)
   ;;
 
   let save_local_ident_r env ident =
-    read_local_ident ident
+    seek_local_definition_ident ident
     >>= function
     | None -> write_local_ident env ident
     | Some _ ->
@@ -200,7 +225,7 @@ module CheckMonad = struct
   ;;
 
   let save_local_ident_l env ident =
-    read_local_ident env
+    seek_local_definition_ident env
     >>= function
     | None -> write_local_ident ident env
     | Some _ ->
@@ -246,11 +271,11 @@ module CheckMonad = struct
   ;;
 
   let seek_ident ident =
-    read_global_ident ident
+    read_local_ident ident
     >>= function
     | Some _ -> return ()
     | None ->
-      read_local_ident ident
+      read_global_ident ident
       >>= (function
        | Some _ -> return ()
        | None ->
@@ -264,6 +289,9 @@ module CheckMonad = struct
     | _, _, Some n -> return n
     | _ -> fail (TypeCheckError Check_failed)
   ;;
+
+  let write_env = read_local >>= fun x -> write_local (MapIdent.empty :: x)
+  let delete_env = read_local >>= fun x -> write_local (List.tl x)
 
   let write_func_name func =
     read
