@@ -7,7 +7,7 @@ type chan_dir =
   | Chan_bidirectional (** Bidirectional channel type such [chan] *)
   | Chan_receive (** Receive-only channel type [<-chan] *)
   | Chan_send (** Send-only channel type [chan<-] *)
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, eq]
 
 (** Data types *)
 type type' =
@@ -21,7 +21,7 @@ type type' =
   | Type_chan of chan_dir * type'
   (** Channel type such as:
       [chan int], [<-chan string], [chan<- bool] *)
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, eq]
 
 type ident = string [@@deriving show { with_path = false }]
 
