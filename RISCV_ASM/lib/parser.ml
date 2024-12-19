@@ -993,7 +993,7 @@ let parse_instruction =
               (char ',' *> parse_float_register)
        ; parse_string_with_spaces "fmsub.s"
          *> lift4
-              (fun r1 r2 r3 r4 -> InstructionExpr (FmaddS (r1, r2, r3, r4)))
+              (fun r1 r2 r3 r4 -> InstructionExpr (FmsubS (r1, r2, r3, r4)))
               parse_float_register
               (char ',' *> parse_float_register)
               (char ',' *> parse_float_register)
