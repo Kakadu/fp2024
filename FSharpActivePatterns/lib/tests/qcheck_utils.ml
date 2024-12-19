@@ -68,11 +68,10 @@ and shrink_expr =
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
          >|= fun a' -> LetIn (rec_flag, let_bind, a', inner_e))
     <+> (shrink_expr inner_e >|= fun a' -> LetIn (rec_flag, let_bind, let_bind_list, a'))
-  | Apply (f, (arg, None)) ->
+  | Apply (f, arg) ->
     of_list [ f; arg ]
-    <+> (shrink_expr f >|= fun a' -> Apply (a', (arg, None)))
-    <+> (shrink_expr arg >|= fun a' -> Apply (f, (a', None)))
-  | Apply (f, (arg, Some _)) -> return (Apply (f, (arg, None)))
+    <+> (shrink_expr f >|= fun a' -> Apply (a', arg))
+    <+> (shrink_expr arg >|= fun a' -> Apply (f, a'))
   | Lambda (pat, pat_list, body) ->
     shrink_expr body
     >|= (fun body' -> Lambda (pat, pat_list, body'))

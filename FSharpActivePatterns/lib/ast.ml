@@ -149,8 +149,6 @@ type pattern =
   | PConstraint of pattern * (typ[@gen gen_typ_primitive])
 [@@deriving show { with_path = false }, qcheck]
 
-type typed_pattern = pattern * typ option [@@deriving show { with_path = false }]
-
 let gen_typed_pattern_sized n = QCheck.Gen.(pair (gen_pattern_sized n) (return None))
 
 type is_recursive =
@@ -179,11 +177,11 @@ and expr =
       * (expr option[@gen QCheck.Gen.option (gen_expr_sized (n / 4))])
   (** [if n % 2 = 0 then "Even" else "Odd"] *)
   | Lambda of
-      (typed_pattern[@gen gen_typed_pattern_sized (n / 2)])
-      * (typed_pattern list
-        [@gen QCheck.Gen.(list_size (0 -- 2) (gen_typed_pattern_sized (n / 20)))])
+      (pattern[@gen gen_pattern_sized (n / 2)])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_pattern_sized (n / 20)))])
       * expr (** fun x y -> x + y *)
-  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * typed_expr (** [sum 1 ] *)
+  | Apply of (expr[@gen gen_expr_sized (n / 4)]) * (expr[@gen gen_expr_sized (n / 4)])
+  (** [sum 1 ] *)
   | Function of
       (case[@gen gen_case_sized (n / 4)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 2) (gen_case_sized (n / 20)))])

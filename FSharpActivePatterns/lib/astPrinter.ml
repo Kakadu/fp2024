@@ -150,7 +150,6 @@ and print_expr indent fmt expr =
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body
   | Apply (func, arg) ->
-    let arg = texpr_to_expr arg in
     fprintf fmt "%s| Apply:\n" (String.make indent '-');
     fprintf fmt "%sFUNCTION\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) fmt func;
