@@ -451,7 +451,7 @@ let p_pat =
     let atom = choice [ p_pat_const; p_parens self ] in
     let semicolon_list = p_semicolon_list_pat (self <|> atom) <|> atom in
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
-    let tuple = p_tuple make_tuple_pat opt <|> opt in
+    let tuple = p_tuple_pat opt <|> opt in
     let cons = p_cons_list_pat tuple in
     cons)
 ;;
