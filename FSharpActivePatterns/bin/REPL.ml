@@ -43,8 +43,8 @@ let input_upto_sep sep ic =
   fill_buffer buffer
 ;;
 
-let run_single ic =
-  match input_upto_sep ";;" ic with
+let run_single input =
+  match input with
   | EOF -> End
   | Input input ->
     let trimmed_input = String.trim input in
@@ -57,30 +57,30 @@ let run_single ic =
 ;;
 
 let run_repl dump_parsetree input_file =
-  let ic =
-    match input_file with
-    | None -> stdin
-    | Some n -> open_in n
-  in
-  let rec run_repl_helper run env state =
+  (* TODO: refactor repl runners *)
+  let run_repl_helper input env state =
     let open Format in
-    match run ic with
-    | Fail -> fprintf err_formatter "Error occured\n"
+    match input with
+    | Fail ->
+      fprintf err_formatter "Error occured\n";
+      None
     | Empty ->
       fprintf std_formatter "\n";
       print_flush ();
-      run_repl_helper run env state
-    | End -> ()
+      Some (env, state)
+    | End -> None
     | Result ast ->
       (match dump_parsetree with
-       | true -> print_construction std_formatter ast
+       | true ->
+         print_construction std_formatter ast;
+         Some (env, state)
        | false ->
          let result = infer ast env state in
          (match result with
           | new_state, Error err ->
             fprintf err_formatter "Type checking failed: %a\n" pp_error err;
             print_flush ();
-            run_repl_helper run env new_state
+            Some (env, new_state)
           | new_state, Ok (env, types) ->
             List.iter
               (fun t ->
@@ -88,7 +88,7 @@ let run_repl dump_parsetree input_file =
                 pp_typ std_formatter t)
               types;
             print_flush ();
-            run_repl_helper run env new_state))
+            Some (env, new_state)))
   in
   let env =
     TypeEnvironment.extend
@@ -96,7 +96,28 @@ let run_repl dump_parsetree input_file =
       "print_int"
       (Scheme (VarSet.empty, Arrow (int_typ, unit_typ)))
   in
-  run_repl_helper run_single env 0
+  let rec run_file inputs env state =
+    match inputs with
+    | [] -> ()
+    | hd :: tl ->
+      (match run_repl_helper hd env state with
+       | Some (env, state) -> run_file tl env state
+       | None -> ())
+  in
+  let rec run_repl env state ic =
+    let input = run_single (input_upto_sep ";;" ic) in
+    match run_repl_helper input env state with
+    | Some (env, state) -> run_repl env state ic
+    | None -> ()
+  in
+  match input_file with
+  | None -> run_repl env 0 stdin
+  | Some n ->
+    let content = In_channel.input_all (open_in n) in
+    let re = Str.regexp "\n\n" in
+    let splitted = Str.split re content in
+    let splitted = List.map (fun s -> run_single (Input s)) splitted in
+    run_file splitted env 0
 ;;
 
 type opts =
