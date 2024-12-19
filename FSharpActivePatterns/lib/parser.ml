@@ -497,7 +497,19 @@ let p_let p_expr =
 ;;
 
 let p_apply p_expr =
-  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
+  let* func = p_expr <* peek_sep1 in
+  let p_typed_arg =
+    p_parens
+      (let* arg = p_expr in
+       let* typ = p_type in
+       return (arg, Some typ))
+  in
+  let p_not_typed_arg =
+    let* expr = p_expr <* peek_sep1 in
+    return (expr, None)
+  in
+  let* args = many (p_typed_arg <|> p_not_typed_arg) in
+  return (List.fold args ~init:func ~f:(fun acc arg -> Apply (acc, arg)))
 ;;
 
 let p_lambda p_expr =
@@ -539,7 +551,8 @@ let p_inf_oper_expr p_expr =
        p_expr
        (p_inf_oper
         >>= fun op ->
-        return (fun expr1 expr2 -> Apply (Apply (Variable op, expr1), expr2)))
+        return (fun expr1 expr2 ->
+          Apply (Apply (Variable op, (expr1, None)), (expr2, None))))
 ;;
 
 let p_expr =
