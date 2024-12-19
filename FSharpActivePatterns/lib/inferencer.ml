@@ -181,6 +181,12 @@ end = struct
   let empty = Map.empty (module Int)
   (* let pp fmt s = Map.iteri s ~f:(fun ~key ~data -> fprintf fmt "%d: %a" key pp_typ data) *)
 
+  (* let pp fmt s =
+     Map.iter_keys s ~f:(fun k ->
+     let v = Map.find_exn s k in
+     fprintf fmt "%d: %a" k pp_typ v)
+     ;; *)
+
   (* perform mapping of fresh var to typ with occurs check, if correct,
      output new pair *)
   let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
@@ -565,7 +571,7 @@ let infer_typed_patterns env ~shadow patterns =
       return (new_env, typ :: typs))
 ;;
 
-let extract_names_from_pattern =
+let extract_names_from_tpattern =
   let rec helper = function
     | PVar (Ident name) -> [ name ]
     | PList l -> List.concat (List.map l ~f:helper)
@@ -579,10 +585,15 @@ let extract_names_from_pattern =
   | pat, _ -> helper pat
 ;;
 
+let extract_names_from_tpatterns pats =
+  List.fold pats ~init:[] ~f:(fun acc p ->
+    List.concat [ acc; extract_names_from_tpattern p ])
+;;
+
 let extract_bind_names_from_let_binds let_binds =
   List.concat
     (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
-       extract_names_from_pattern pat))
+       extract_names_from_tpattern pat))
 ;;
 
 let extract_bind_patterns_from_let_binds let_binds =
@@ -880,13 +891,12 @@ and infer_let_bind env is_rec let_bind =
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
-  let names = extract_names_from_pattern name in
+  let names = extract_names_from_tpattern name in
+  let arg_names = extract_names_from_tpatterns args in
+  let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
+  let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
   let names_schemes_list =
-    List.map names ~f:(fun name ->
-      let name_type = TypeEnvironment.find_typ_exn env name in
-      match is_rec with
-      | Rec -> name, generalize_rec env name_type name
-      | Nonrec -> name, generalize env name_type)
+    List.map names_types ~f:(fun (name, name_type) -> name, generalize env name_type)
   in
   return (subst, names_schemes_list)
 ;;
