@@ -72,6 +72,73 @@ let pp_register = function
   | T6 -> Printf.sprintf "t6"
 ;;
 
+let pp_float_register = function
+  | F0 -> Printf.sprintf "f0"
+  | F1 -> Printf.sprintf "f1"
+  | F2 -> Printf.sprintf "f2"
+  | F3 -> Printf.sprintf "f3"
+  | F4 -> Printf.sprintf "f4"
+  | F5 -> Printf.sprintf "f5"
+  | F6 -> Printf.sprintf "f6"
+  | F7 -> Printf.sprintf "f7"
+  | F8 -> Printf.sprintf "f8"
+  | F9 -> Printf.sprintf "f9"
+  | F10 -> Printf.sprintf "f10"
+  | F11 -> Printf.sprintf "f11"
+  | F12 -> Printf.sprintf "f12"
+  | F13 -> Printf.sprintf "f13"
+  | F14 -> Printf.sprintf "f14"
+  | F15 -> Printf.sprintf "f15"
+  | F16 -> Printf.sprintf "f16"
+  | F17 -> Printf.sprintf "f17"
+  | F18 -> Printf.sprintf "f18"
+  | F19 -> Printf.sprintf "f19"
+  | F20 -> Printf.sprintf "f20"
+  | F21 -> Printf.sprintf "f21"
+  | F22 -> Printf.sprintf "f22"
+  | F23 -> Printf.sprintf "f23"
+  | F24 -> Printf.sprintf "f24"
+  | F25 -> Printf.sprintf "f25"
+  | F26 -> Printf.sprintf "f26"
+  | F27 -> Printf.sprintf "f27"
+  | F28 -> Printf.sprintf "f28"
+  | F29 -> Printf.sprintf "f29"
+  | F30 -> Printf.sprintf "f30"
+  | F31 -> Printf.sprintf "f31"
+  | Ft0 -> Printf.sprintf "ft0"
+  | Ft1 -> Printf.sprintf "ft1"
+  | Ft2 -> Printf.sprintf "ft2"
+  | Ft3 -> Printf.sprintf "ft3"
+  | Ft4 -> Printf.sprintf "ft4"
+  | Ft5 -> Printf.sprintf "ft5"
+  | Ft6 -> Printf.sprintf "ft6"
+  | Ft7 -> Printf.sprintf "ft7"
+  | Fs0 -> Printf.sprintf "fs0"
+  | Fs1 -> Printf.sprintf "fs1"
+  | Fa0 -> Printf.sprintf "fa0"
+  | Fa1 -> Printf.sprintf "fa1"
+  | Fa2 -> Printf.sprintf "fa2"
+  | Fa3 -> Printf.sprintf "fa3"
+  | Fa4 -> Printf.sprintf "fa4"
+  | Fa5 -> Printf.sprintf "fa5"
+  | Fa6 -> Printf.sprintf "fa6"
+  | Fa7 -> Printf.sprintf "fa7"
+  | Fs2 -> Printf.sprintf "fs2"
+  | Fs3 -> Printf.sprintf "fs3"
+  | Fs4 -> Printf.sprintf "fs4"
+  | Fs5 -> Printf.sprintf "fs5"
+  | Fs6 -> Printf.sprintf "fs6"
+  | Fs7 -> Printf.sprintf "fs7"
+  | Fs8 -> Printf.sprintf "fs8"
+  | Fs9 -> Printf.sprintf "fs9"
+  | Fs10 -> Printf.sprintf "fs10"
+  | Fs11 -> Printf.sprintf "fs11"
+  | Ft8 -> Printf.sprintf "ft8"
+  | Ft9 -> Printf.sprintf "ft9"
+  | Ft10 -> Printf.sprintf "ft10"
+  | Ft11 -> Printf.sprintf "ft11"
+;;
+
 type address =
   | Address12 of address12
   | Address20 of address20
@@ -85,6 +152,37 @@ let pp_instruction_3reg_helper ppf mnemonic r1 r2 r3 =
     (pp_register r1)
     (pp_register r2)
     (pp_register r3)
+;;
+
+let pp_instruction_3f_reg_helper ppf mnemonic r1 r2 r3 =
+  Format.fprintf
+    ppf
+    "%s %s, %s, %s"
+    mnemonic
+    (pp_float_register r1)
+    (pp_float_register r2)
+    (pp_float_register r3)
+;;
+
+let pp_instruction_2f_1_reg_helper ppf mnemonic r1 r2 r3 =
+  Format.fprintf
+    ppf
+    "%s %s, %s, %s"
+    mnemonic
+    (pp_register r1)
+    (pp_float_register r2)
+    (pp_float_register r3)
+;;
+
+let pp_instruction_4f_reg_helper ppf mnemonic r1 r2 r3 r4 =
+  Format.fprintf
+    ppf
+    "%s %s, %s, %s, %s"
+    mnemonic
+    (pp_float_register r1)
+    (pp_float_register r2)
+    (pp_float_register r3)
+    (pp_float_register r4)
 ;;
 
 let pp_address = function
@@ -114,6 +212,16 @@ let pp_instruction_2reg_1offset_helper ppf mnemonic r1 r2 addr =
     (pp_register r1)
     (pp_address addr)
     (pp_register r2)
+;;
+
+let pp_instruction_2freg_1offset_helper ppf mnemonic r1 r2 addr =
+  Format.fprintf
+    ppf
+    "%s %s,%s(%s)"
+    mnemonic
+    (pp_float_register r1)
+    (pp_address addr)
+    (pp_float_register r2)
 ;;
 
 let pp_instruction ppf = function
@@ -217,6 +325,90 @@ let pp_instruction ppf = function
   | Li (rd, imm) ->
     Format.fprintf ppf "li %s,%s" (pp_register rd) (pp_address (Address32 imm))
   | Ret -> Format.fprintf ppf "ret"
+  | FmaddS (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fmadd.s" rd rs1 rs2 rs3
+  | FmsubS (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fmsub.s" rd rs1 rs2 rs3
+  | FnmsubS (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fnmsub.s" rd rs1 rs2 rs3
+  | FnmaddS (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fmadd.s" rd rs1 rs2 rs3
+  | FaddS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fadd.s" rd rs1 rs2
+  | FsubS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsub.s" rd rs1 rs2
+  | FmulS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmul.s" rd rs1 rs2
+  | FdivS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fdiv.s" rd rs1 rs2
+  | FsqrtS (rd, rs1) -> 
+    Format.fprintf ppf "fsqrt.s %s,%s" (pp_float_register rd) (pp_float_register rs1)
+  | FsgnjS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsgnj.s" rd rs1 rs2
+  | FsgnjnS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsgnjn.s" rd rs1 rs2
+  | FsgnjxS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsgnjx.s" rd rs1 rs2
+  | FminS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmin.s" rd rs1 rs2
+  | FmaxS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmax.s" rd rs1 rs2
+  | FcvtWS (rd, rs1) ->
+    Format.fprintf ppf "fcvt.w.s %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtWuS (rd, rs1) ->
+    Format.fprintf ppf "fcvt.wu.s %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FmvXW  (rd, rs1) ->
+    Format.fprintf ppf "fmv.x.w %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FeqS (rd, rs1, rs2) -> pp_instruction_2f_1_reg_helper ppf "feq.s" rd rs1 rs2
+  | FltS (rd, rs1, rs2) -> pp_instruction_2f_1_reg_helper ppf "flt.s" rd rs1 rs2
+  | FleS (rd, rs1, rs2) -> pp_instruction_2f_1_reg_helper ppf "fle.s" rd rs1 rs2
+  | FclassS (rd, rs1) ->
+    Format.fprintf ppf "fclass.s %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtSW (rd, rs1) ->
+    Format.fprintf ppf "fcvt.s.w %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FcvtSWu (rd, rs1) ->
+    Format.fprintf ppf "fcvt.s.wu %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FmvWX (rd, rs1) ->
+    Format.fprintf ppf "fmv.v.x %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FmaddD (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fmadd.d" rd rs1 rs2 rs3
+  | FmsubD (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fmsub.d" rd rs1 rs2 rs3
+  | FnmsubD (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fnmsub.d" rd rs1 rs2 rs3
+  | FnmaddD (rd, rs1, rs2, rs3) -> pp_instruction_4f_reg_helper ppf "fmadd.d" rd rs1 rs2 rs3
+  | FaddD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fadd.d" rd rs1 rs2
+  | FsubD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsub.d" rd rs1 rs2
+  | FmulD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmul.d" rd rs1 rs2
+  | FdivD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fdiv.d" rd rs1 rs2
+  | FsqrtD (rd, rs1) -> 
+    Format.fprintf ppf "fsqrt.d %s,%s" (pp_float_register rd) (pp_float_register rs1)
+  | FsgnjD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsgnj.d" rd rs1 rs2
+  | FsgnjnD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsgnjn.d" rd rs1 rs2
+  | FsgnjxD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsgnjx.d" rd rs1 rs2
+  | FminD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmin.d" rd rs1 rs2
+  | FmaxD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmax.d" rd rs1 rs2
+  | FcvtSD (rd, rs1) ->
+    Format.fprintf ppf "fcvt.s.d %s,%s" (pp_float_register rd) (pp_float_register rs1)
+  | FcvtDS (rd, rs1) ->
+    Format.fprintf ppf "fcvt.d.s %s,%s" (pp_float_register rd) (pp_float_register rs1)
+  | FeqD (rd, rs1, rs2) -> pp_instruction_2f_1_reg_helper ppf "feq.d" rd rs1 rs2
+  | FltD (rd, rs1, rs2) -> pp_instruction_2f_1_reg_helper ppf "flt.d" rd rs1 rs2
+  | FleD (rd, rs1, rs2) -> pp_instruction_2f_1_reg_helper ppf "fle.d" rd rs1 rs2
+  | FcvtWD (rd, rs1) ->
+    Format.fprintf ppf "fcvt.w.d %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtWuD (rd, rs1) ->
+    Format.fprintf ppf "fcvt.wu.d %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FclassD (rd, rs1) ->
+    Format.fprintf ppf "fclass.d %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtDW (rd, rs1) ->
+    Format.fprintf ppf "fcvt.b.w %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FcvtDWu (rd, rs1) ->
+    Format.fprintf ppf "fcvt.b.wu %s,%s" (pp_float_register rd) (pp_register rs1)
+  | Flw (rd, rs1, imm) -> pp_instruction_2freg_1offset_helper ppf "flw" rd rs1 (Address12 imm)
+  | Fsw (rd, rs1, imm) -> pp_instruction_2freg_1offset_helper ppf "fsw" rd rs1 (Address12 imm)
+  | Fld (rd, rs1, imm) -> pp_instruction_2freg_1offset_helper ppf "fld" rd rs1 (Address12 imm)
+  | Fsd (rd, rs1, imm) -> pp_instruction_2freg_1offset_helper ppf "fsd" rd rs1 (Address12 imm)
+  | FcvtLS (rd, rs1) ->
+    Format.fprintf ppf "fcvt.l.s %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtLuS (rd, rs1) ->
+    Format.fprintf ppf "fcvt.lu.s %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtSL (rd, rs1) ->
+    Format.fprintf ppf "fcvt.s.l %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FcvtSLu (rd, rs1) ->
+    Format.fprintf ppf "fcvt.s.lu %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FcvtLD (rd, rs1) ->
+    Format.fprintf ppf "fcvt.l.d %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtLuD (rd, rs1) ->
+    Format.fprintf ppf "fcvt.lu.d %s,%s" (pp_register rd) (pp_float_register rs1)
+  | FcvtDL (rd, rs1) ->
+    Format.fprintf ppf "fcvt.d.l %s,%s" (pp_float_register rd) (pp_register rs1)
+  | FcvtDLu (rd, rs1) ->
+    Format.fprintf ppf "fcvt.d.lu %s,%s" (pp_float_register rd) (pp_register rs1)
   | _ -> Format.fprintf ppf "_Unknown instruction_"
 ;;
 
