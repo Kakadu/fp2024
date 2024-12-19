@@ -38,4 +38,3 @@ let parse_and_infer_line line env st =
     Format.printf "%s\n%!" error;
     env, st
 ;;
-
