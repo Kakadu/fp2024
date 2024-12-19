@@ -530,11 +530,11 @@ open Angstrom
 open Common
 
 let chainl1 e op =
-  <span data-count="2124">l</span>et rec go acc = <span data-count="68752">l</span>ift<span data-count="68752">2</span> (fun f x -&gt; <span data-count="3463">f</span> acc x) op e &gt;&gt;<span data-count="68752">=</span> go &lt;|&gt; retur<span data-count="68752">n</span> acc in
+  <span data-count="2133">l</span>et rec go acc = <span data-count="68785">l</span>ift<span data-count="68785">2</span> (fun f x -&gt; <span data-count="3463">f</span> acc x) op e &gt;&gt;<span data-count="68785">=</span> go &lt;|&gt; retur<span data-count="68785">n</span> acc in
   e &gt;&gt;= go
 ;;
 
-let rec chainr1 e op = <span data-count="2089">e</span> &gt;&gt;= fun a -&gt; <span data-count="40260">o</span>p &gt;&gt;<span data-count="40260">=</span> (fun f -&gt; <span data-count="673">c</span>hainr<span data-count="673">1</span> e op &gt;&gt;| <span data-count="673">f</span> a) &lt;|&gt; retur<span data-count="40260">n</span> a
+let rec chainr1 e op = <span data-count="2095">e</span> &gt;&gt;= fun a -&gt; <span data-count="40282">o</span>p &gt;&gt;<span data-count="40282">=</span> (fun f -&gt; <span data-count="673">c</span>hainr<span data-count="673">1</span> e op &gt;&gt;| <span data-count="673">f</span> a) &lt;|&gt; retur<span data-count="40282">n</span> a
 
 let parse_unary_not =
   cha<span data-count="8">r</span> '!' *<span data-count="8">&gt;</span> ws *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> (fun expr -&gt; <span data-count="1359">E</span>xpr_un_oper (Unary_not, expr))
@@ -553,14 +553,14 @@ let parse_chan_receive = strin<span data-count="8">g</span> "&lt;-" *<span data-
 (** [parse_mult_unary_op pexpr] parses expressions with multiple unary operators such as:
     [-+-+a[0]], [&lt;-&lt;-&lt;-c()] *)
 let parse_mult_unary_op pexpr =
-  <span data-count="708">l</span>et rec helper acc =
-    <span data-count="8856">c</span>hoic<span data-count="8856">e</span> [ parse_unary_not; parse_unary_minus; parse_unary_plus; parse_chan_receive ]
-    &gt;&gt;<span data-count="8856">=</span> (fun new_oper -&gt; <span data-count="8148">h</span>elper (fun expr -&gt; <span data-count="8148">a</span>cc @@ new_ope<span data-count="8148">r</span> expr))
-    &lt;|&gt; retur<span data-count="8856">n</span> acc
+  <span data-count="711">l</span>et rec helper acc =
+    <span data-count="8859">c</span>hoic<span data-count="8859">e</span> [ parse_unary_not; parse_unary_minus; parse_unary_plus; parse_chan_receive ]
+    &gt;&gt;<span data-count="8859">=</span> (fun new_oper -&gt; <span data-count="8148">h</span>elper (fun expr -&gt; <span data-count="8148">a</span>cc @@ new_ope<span data-count="8148">r</span> expr))
+    &lt;|&gt; retur<span data-count="8859">n</span> acc
   in
-  let* unary_operators = helpe<span data-count="708">r</span> Fun.id in
-  <span data-count="26241">l</span>et* expr = pexpr in
-  <span data-count="23761">r</span>eturn (unary_operator<span data-count="23761">s</span> expr)
+  let* unary_operators = helpe<span data-count="711">r</span> Fun.id in
+  <span data-count="26259">l</span>et* expr = pexpr in
+  <span data-count="23772">r</span>eturn (unary_operator<span data-count="23772">s</span> expr)
 ;;
 
 let parse_sum = toke<span data-count="8">n</span> "+" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> (fun exp1 exp2 -&gt; <span data-count="325">E</span>xpr_bin_oper (Bin_sum, exp1, exp2))
@@ -624,10 +624,10 @@ let parse_const_string =
          ; cha<span data-count="8">r</span> 'r' *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> '\r'
          ]
   in
-  <span data-count="8">l</span>et string_char = escaped_char &lt;|&gt; satisf<span data-count="8">y</span> (fun c -&gt; <span data-count="16151">c</span> &lt;&gt; '"' &amp;&amp; <span data-count="15115">c</span> &lt;&gt; '\\') in
+  <span data-count="8">l</span>et string_char = escaped_char &lt;|&gt; satisf<span data-count="8">y</span> (fun c -&gt; <span data-count="16165">c</span> &lt;&gt; '"' &amp;&amp; <span data-count="15125">c</span> &lt;&gt; '\\') in
   <span data-count="8">c</span>ha<span data-count="8">r</span> '\"' *<span data-count="8">&gt;</span> man<span data-count="8">y</span> string_char
   &lt;<span data-count="8">*</span> cha<span data-count="8">r</span> '\"'
-  &gt;&gt;<span data-count="8">|</span> fun chars -&gt; <span data-count="1036">C</span>onst_string (String.of_se<span data-count="1036">q</span> (List.to_se<span data-count="1036">q</span> chars))
+  &gt;&gt;<span data-count="8">|</span> fun chars -&gt; <span data-count="1040">C</span>onst_string (String.of_se<span data-count="1040">q</span> (List.to_se<span data-count="1040">q</span> chars))
 ;;
 
 (* let parse_const_string =
@@ -640,10 +640,10 @@ let parse_idents_with_types =
   let* args_lists =
     sep_by_comma<span data-count="8">1</span>
       (let* idents = sep_by_comma<span data-count="8">1</span> parse_ident in
-       <span data-count="3651">l</span>et* t = ws_line *<span data-count="3651">&gt;</span> parse_type in
-       <span data-count="3426">r</span>eturn (Base.List.ma<span data-count="3426">p</span> ~f:(fun id -&gt; <span data-count="3429">i</span>d, t) idents))
+       <span data-count="3658">l</span>et* t = ws_line *<span data-count="3658">&gt;</span> parse_type in
+       <span data-count="3433">r</span>eturn (Base.List.ma<span data-count="3433">p</span> ~f:(fun id -&gt; <span data-count="3436">i</span>d, t) idents))
   in
-  <span data-count="1271">r</span>eturn (List.conca<span data-count="1271">t</span> args_lists)
+  <span data-count="1276">r</span>eturn (List.conca<span data-count="1276">t</span> args_lists)
 ;;
 
 (** [parse_func_args] parses function arguments in function declarations or
@@ -662,7 +662,7 @@ let parse_func_return_values =
        &gt;&gt;<span data-count="8">|</span> function
        | <span data-count="341">h</span>d :: tl -&gt; Some (Only_types (hd, tl))
        | <span data-count="0">[</span>] -&gt; None)
-    ; (parse_type &gt;&gt;<span data-count="8">|</span> fun t -&gt; <span data-count="85">S</span>ome (Only_types (t, [])))
+    ; (parse_type &gt;&gt;<span data-count="8">|</span> fun t -&gt; <span data-count="87">S</span>ome (Only_types (t, [])))
     ; (paren<span data-count="8">s</span> ws &lt;|<span data-count="8">&gt;</span> retur<span data-count="8">n</span> ()) *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> None
     ]
 ;;
@@ -675,24 +675,24 @@ let parse_func_return_values =
         return 
     }] *)
 let parse_func_args_returns_and_body pblock =
-  <span data-count="734">l</span>et* args = parse_func_args &lt;<span data-count="734">*</span> ws_line in
-  <span data-count="1003">l</span>et* returns = parse_func_return_values &lt;<span data-count="1003">*</span> ws_line in
-  <span data-count="1003">l</span>et* body = pblock in
-  <span data-count="1003">r</span>eturn { args; returns; body }
+  <span data-count="741">l</span>et* args = parse_func_args &lt;<span data-count="741">*</span> ws_line in
+  <span data-count="1009">l</span>et* returns = parse_func_return_values &lt;<span data-count="1009">*</span> ws_line in
+  <span data-count="1009">l</span>et* body = pblock in
+  <span data-count="1009">r</span>eturn { args; returns; body }
 ;;
 
 (** [parse_const_func pblock] parses anonymous function suc as:
     [func() {}], [func(a int), (b string) { return "" }] *)
 let parse_const_func pblock =
-  <span data-count="708">s</span>trin<span data-count="708">g</span> "func" *<span data-count="708">&gt;</span> ws *<span data-count="708">&gt;</span> parse_func_args_returns_and_bod<span data-count="708">y</span> pblock
-  &gt;&gt;| fun anon_func -&gt; <span data-count="977">C</span>onst_func anon_func
+  <span data-count="711">s</span>trin<span data-count="711">g</span> "func" *<span data-count="711">&gt;</span> ws *<span data-count="711">&gt;</span> parse_func_args_returns_and_bod<span data-count="711">y</span> pblock
+  &gt;&gt;| fun anon_func -&gt; <span data-count="979">C</span>onst_func anon_func
 ;;
 
 (** [parse_const_array pexpr] parses constant arrays such as
     [[3]string{}], [[3]int{1, 2}] *)
 let parse_const_array pexpr =
-  <span data-count="708">l</span>et* size =
-    square_bracket<span data-count="708">s</span> (parse_int &gt;&gt;<span data-count="708">|</span> Option.some &lt;|<span data-count="708">&gt;</span> strin<span data-count="708">g</span> "..." *<span data-count="708">&gt;</span> retur<span data-count="708">n</span> None)
+  <span data-count="711">l</span>et* size =
+    square_bracket<span data-count="711">s</span> (parse_int &gt;&gt;<span data-count="711">|</span> Option.some &lt;|<span data-count="711">&gt;</span> strin<span data-count="711">g</span> "..." *<span data-count="711">&gt;</span> retur<span data-count="711">n</span> None)
   in
   <span data-count="1015">l</span>et* type' = ws *<span data-count="1015">&gt;</span> parse_type in
   <span data-count="1015">l</span>et* inits = curly_brace<span data-count="1015">s</span> (sep_by_comm<span data-count="1015">a</span> pexpr) in
@@ -705,57 +705,57 @@ let parse_const_array pexpr =
 ;;
 
 let parse_const pexpr pblock =
-  <span data-count="708">c</span>hoic<span data-count="708">e</span>
+  <span data-count="711">c</span>hoic<span data-count="711">e</span>
     [ parse_const_int
     ; parse_const_string
-    ; parse_const_arra<span data-count="708">y</span> pexpr
-    ; parse_const_fun<span data-count="708">c</span> pblock
+    ; parse_const_arra<span data-count="711">y</span> pexpr
+    ; parse_const_fun<span data-count="711">c</span> pblock
     ]
-  &gt;&gt;| fun const -&gt; <span data-count="4188">E</span>xpr_const const
+  &gt;&gt;| fun const -&gt; <span data-count="4194">E</span>xpr_const const
 ;;
 
-let parse_expr_ident = parse_ident &gt;&gt;<span data-count="8">|</span> fun ident -&gt; <span data-count="15879">E</span>xpr_ident ident
+let parse_expr_ident = parse_ident &gt;&gt;<span data-count="8">|</span> fun ident -&gt; <span data-count="15884">E</span>xpr_ident ident
 
 let parse_expr_func_call pexpr func =
-  <span data-count="32018">l</span>et* args = paren<span data-count="32018">s</span> (sep_by_comm<span data-count="32018">a</span> pexpr) in
-  <span data-count="4207">r</span>eturn (Expr_call (func, args))
+  <span data-count="32034">l</span>et* args = paren<span data-count="32034">s</span> (sep_by_comm<span data-count="32034">a</span> pexpr) in
+  <span data-count="4212">r</span>eturn (Expr_call (func, args))
 ;;
 
 let parse_index pexpr array =
-  <span data-count="32520">l</span>et* index = square_bracket<span data-count="32520">s</span> pexpr in
+  <span data-count="32536">l</span>et* index = square_bracket<span data-count="32536">s</span> pexpr in
   <span data-count="4205">r</span>eturn (array, index)
 ;;
 
 (** [parse_expr_index pexpr array] takes [array] and parses array index call for [array]
     such as [a[i]], where array in [Expr_ident "a"] *)
 let parse_expr_index pexpr array =
-  <span data-count="32018">l</span>et* array, index = parse_inde<span data-count="32018">x</span> pexpr array in
+  <span data-count="32034">l</span>et* array, index = parse_inde<span data-count="32034">x</span> pexpr array in
   <span data-count="4050">r</span>eturn (Expr_index (array, index))
 ;;
 
 (** [parse_nested_calls_and_indices pexpr parse_func_or_array] parses nested function
     and array index calls such as [a(2, 3)[0]()()[1][2]] *)
 let parse_nested_calls_and_indices pexpr parse_func_or_array =
-  <span data-count="708">l</span>et rec helper acc =
-    <span data-count="32018">p</span>arse_expr_func_cal<span data-count="32018">l</span> pexpr acc
-    &lt;|<span data-count="32018">&gt;</span> parse_expr_inde<span data-count="32018">x</span> pexpr acc
-    &gt;&gt;<span data-count="32018">=</span> helper
-    &lt;|&gt; retur<span data-count="32018">n</span> acc
+  <span data-count="711">l</span>et rec helper acc =
+    <span data-count="32034">p</span>arse_expr_func_cal<span data-count="32034">l</span> pexpr acc
+    &lt;|<span data-count="32034">&gt;</span> parse_expr_inde<span data-count="32034">x</span> pexpr acc
+    &gt;&gt;<span data-count="32034">=</span> helper
+    &lt;|&gt; retur<span data-count="32034">n</span> acc
   in
   parse_func_or_array &gt;&gt;= helper
 ;;
 
 let parse_expr pblock =
-  <span data-count="1380">f</span>ix (fun pexpr -&gt;
-    <span data-count="708">l</span>et arg = paren<span data-count="708">s</span> pexpr &lt;|<span data-count="708">&gt;</span> parse_cons<span data-count="708">t</span> pexpr pblock &lt;|&gt; parse_expr_ident in
-    <span data-count="708">l</span>et arg = parse_nested_calls_and_indices pexpr arg in
-    <span data-count="708">l</span>et arg = parse_mult_unary_op arg in
-    <span data-count="708">l</span>et arg = chainl1 arg (parse_mult &lt;|<span data-count="708">&gt;</span> parse_modulus &lt;|<span data-count="708">&gt;</span> parse_division) in
-    <span data-count="708">l</span>et arg = chainl1 arg (parse_sum &lt;|<span data-count="708">&gt;</span> parse_subtraction) in
-    <span data-count="708">l</span>et arg =
+  <span data-count="1387">f</span>ix (fun pexpr -&gt;
+    <span data-count="711">l</span>et arg = paren<span data-count="711">s</span> pexpr &lt;|<span data-count="711">&gt;</span> parse_cons<span data-count="711">t</span> pexpr pblock &lt;|&gt; parse_expr_ident in
+    <span data-count="711">l</span>et arg = parse_nested_calls_and_indices pexpr arg in
+    <span data-count="711">l</span>et arg = parse_mult_unary_op arg in
+    <span data-count="711">l</span>et arg = chainl1 arg (parse_mult &lt;|<span data-count="711">&gt;</span> parse_modulus &lt;|<span data-count="711">&gt;</span> parse_division) in
+    <span data-count="711">l</span>et arg = chainl1 arg (parse_sum &lt;|<span data-count="711">&gt;</span> parse_subtraction) in
+    <span data-count="711">l</span>et arg =
       chainl1
         arg
-        (choic<span data-count="708">e</span>
+        (choic<span data-count="711">e</span>
            [ parse_greater_equal
            ; parse_less_equal
            ; parse_greater
@@ -764,8 +764,8 @@ let parse_expr pblock =
            ; parse_not_equal
            ])
     in
-    <span data-count="708">l</span>et arg = chainr1 arg parse_and in
-    <span data-count="708">c</span>hainr1 arg parse_or)
+    <span data-count="711">l</span>et arg = chainr1 arg parse_and in
+    <span data-count="711">c</span>hainr1 arg parse_or)
 ;;
 </code></pre>
       </div>

@@ -928,6 +928,66 @@
 <a id="L904"></a><span > </span>
 <a id="L905"></a><span class="visited"> </span>
 <a id="L906"></a><span > </span>
+<a id="L907"></a><span > </span>
+<a id="L908"></a><span > </span>
+<a id="L909"></a><span class="visited"> </span>
+<a id="L910"></a><span class="visited"> </span>
+<a id="L911"></a><span > </span>
+<a id="L912"></a><span > </span>
+<a id="L913"></a><span > </span>
+<a id="L914"></a><span > </span>
+<a id="L915"></a><span > </span>
+<a id="L916"></a><span > </span>
+<a id="L917"></a><span > </span>
+<a id="L918"></a><span > </span>
+<a id="L919"></a><span > </span>
+<a id="L920"></a><span > </span>
+<a id="L921"></a><span > </span>
+<a id="L922"></a><span > </span>
+<a id="L923"></a><span > </span>
+<a id="L924"></a><span > </span>
+<a id="L925"></a><span > </span>
+<a id="L926"></a><span > </span>
+<a id="L927"></a><span > </span>
+<a id="L928"></a><span > </span>
+<a id="L929"></a><span > </span>
+<a id="L930"></a><span > </span>
+<a id="L931"></a><span > </span>
+<a id="L932"></a><span > </span>
+<a id="L933"></a><span > </span>
+<a id="L934"></a><span > </span>
+<a id="L935"></a><span > </span>
+<a id="L936"></a><span > </span>
+<a id="L937"></a><span > </span>
+<a id="L938"></a><span > </span>
+<a id="L939"></a><span > </span>
+<a id="L940"></a><span > </span>
+<a id="L941"></a><span > </span>
+<a id="L942"></a><span > </span>
+<a id="L943"></a><span > </span>
+<a id="L944"></a><span > </span>
+<a id="L945"></a><span > </span>
+<a id="L946"></a><span > </span>
+<a id="L947"></a><span > </span>
+<a id="L948"></a><span > </span>
+<a id="L949"></a><span > </span>
+<a id="L950"></a><span > </span>
+<a id="L951"></a><span class="visited"> </span>
+<a id="L952"></a><span > </span>
+<a id="L953"></a><span > </span>
+<a id="L954"></a><span > </span>
+<a id="L955"></a><span > </span>
+<a id="L956"></a><span > </span>
+<a id="L957"></a><span > </span>
+<a id="L958"></a><span > </span>
+<a id="L959"></a><span > </span>
+<a id="L960"></a><span > </span>
+<a id="L961"></a><span > </span>
+<a id="L962"></a><span > </span>
+<a id="L963"></a><span > </span>
+<a id="L964"></a><span > </span>
+<a id="L965"></a><span class="visited"> </span>
+<a id="L966"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -1838,6 +1898,66 @@
 <a href="#L904">904</a>
 <a href="#L905">905</a>
 <a href="#L906">906</a>
+<a href="#L907">907</a>
+<a href="#L908">908</a>
+<a href="#L909">909</a>
+<a href="#L910">910</a>
+<a href="#L911">911</a>
+<a href="#L912">912</a>
+<a href="#L913">913</a>
+<a href="#L914">914</a>
+<a href="#L915">915</a>
+<a href="#L916">916</a>
+<a href="#L917">917</a>
+<a href="#L918">918</a>
+<a href="#L919">919</a>
+<a href="#L920">920</a>
+<a href="#L921">921</a>
+<a href="#L922">922</a>
+<a href="#L923">923</a>
+<a href="#L924">924</a>
+<a href="#L925">925</a>
+<a href="#L926">926</a>
+<a href="#L927">927</a>
+<a href="#L928">928</a>
+<a href="#L929">929</a>
+<a href="#L930">930</a>
+<a href="#L931">931</a>
+<a href="#L932">932</a>
+<a href="#L933">933</a>
+<a href="#L934">934</a>
+<a href="#L935">935</a>
+<a href="#L936">936</a>
+<a href="#L937">937</a>
+<a href="#L938">938</a>
+<a href="#L939">939</a>
+<a href="#L940">940</a>
+<a href="#L941">941</a>
+<a href="#L942">942</a>
+<a href="#L943">943</a>
+<a href="#L944">944</a>
+<a href="#L945">945</a>
+<a href="#L946">946</a>
+<a href="#L947">947</a>
+<a href="#L948">948</a>
+<a href="#L949">949</a>
+<a href="#L950">950</a>
+<a href="#L951">951</a>
+<a href="#L952">952</a>
+<a href="#L953">953</a>
+<a href="#L954">954</a>
+<a href="#L955">955</a>
+<a href="#L956">956</a>
+<a href="#L957">957</a>
+<a href="#L958">958</a>
+<a href="#L959">959</a>
+<a href="#L960">960</a>
+<a href="#L961">961</a>
+<a href="#L962">962</a>
+<a href="#L963">963</a>
+<a href="#L964">964</a>
+<a href="#L965">965</a>
+<a href="#L966">966</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
 
@@ -2737,6 +2857,66 @@ let%expect_test "file with factorial func" =
        ]);
   <span data-count="1">[</span>%expect
     {|
+    func fac(n int) int {
+        if n == 1 {
+            return 1
+        } else {
+            return n * fac(n - 1)
+        }
+    } |}<span data-count="15">]</span>
+;;
+
+let%expect_test "file with factorial func" =
+  <span data-count="1">p</span>rint_endline
+    (print_fil<span data-count="1">e</span>
+       [ Decl_func
+           ( "main"
+           , { args = []
+             ; returns = None
+             ; body =
+                 [ Stmt_block
+                     [ Stmt_call (Expr_ident "fac", [ Expr_const (Const_int 6) ]) ]
+                 ]
+             } )
+       ; Decl_func
+           ( "fac"
+           , { args = [ "n", Type_int ]
+             ; returns = Some (Only_types (Type_int, []))
+             ; body =
+                 [ Stmt_if
+                     { init = None
+                     ; cond =
+                         Expr_bin_oper
+                           (Bin_equal, Expr_ident "n", Expr_const (Const_int 1))
+                     ; if_body = [ Stmt_return [ Expr_const (Const_int 1) ] ]
+                     ; else_body =
+                         Some
+                           (Else_block
+                              [ Stmt_return
+                                  [ Expr_bin_oper
+                                      ( Bin_multiply
+                                      , Expr_ident "n"
+                                      , Expr_call
+                                          ( Expr_ident "fac"
+                                          , [ Expr_bin_oper
+                                                ( Bin_subtract
+                                                , Expr_ident "n"
+                                                , Expr_const (Const_int 1) )
+                                            ] ) )
+                                  ]
+                              ])
+                     }
+                 ]
+             } )
+       ]);
+  <span data-count="1">[</span>%expect
+    {|
+    func main() {
+        {
+            fac(6)
+        }
+    }
+
     func fac(n int) int {
         if n == 1 {
             return 1

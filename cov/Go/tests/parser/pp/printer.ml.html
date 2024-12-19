@@ -754,24 +754,24 @@ open Format
 let concat = String.conca<span data-count="8">t</span> ""
 
 let sep_by sep list print =
-  <span data-count="9366">l</span>et rec helper acc = function
-    | <span data-count="13044">f</span>st :: snd :: tl -&gt;
-      let acc = concat [ acc; prin<span data-count="13044">t</span> fst; sep ] in
-      <span data-count="13044">h</span>elper acc (snd :: tl)
-    | <span data-count="7979">f</span>st :: _ -&gt; acc ^ prin<span data-count="7979">t</span> fst
-    | <span data-count="1387">[</span>] -&gt; acc
+  <span data-count="9382">l</span>et rec helper acc = function
+    | <span data-count="13050">f</span>st :: snd :: tl -&gt;
+      let acc = concat [ acc; prin<span data-count="13050">t</span> fst; sep ] in
+      <span data-count="13050">h</span>elper acc (snd :: tl)
+    | <span data-count="7994">f</span>st :: _ -&gt; acc ^ prin<span data-count="7994">t</span> fst
+    | <span data-count="1388">[</span>] -&gt; acc
   in
   helper "" list
 ;;
 
-let sep_by_comma list print = <span data-count="8455">s</span>ep_by ", " list print
-let print_ident ident = <span data-count="659">i</span>dent
+let sep_by_comma list print = <span data-count="8463">s</span>ep_by ", " list print
+let print_ident ident = <span data-count="664">i</span>dent
 
 let rec print_type = function
-  | <span data-count="3442">T</span>ype_int -&gt; "int"
+  | <span data-count="3451">T</span>ype_int -&gt; "int"
   | <span data-count="3530">T</span>ype_string -&gt; "string"
-  | <span data-count="3527">T</span>ype_bool -&gt; "bool"
-  | <span data-count="1802">T</span>ype_array (size, type') -&gt; asprintf "[%i]%s" size (print_typ<span data-count="1802">e</span> type')
+  | <span data-count="3529">T</span>ype_bool -&gt; "bool"
+  | <span data-count="1803">T</span>ype_array (size, type') -&gt; asprintf "[%i]%s" size (print_typ<span data-count="1803">e</span> type')
   | <span data-count="1747">T</span>ype_func (arg_types, return_types) -&gt;
     let print_returns =
       match return_types with
@@ -780,49 +780,49 @@ let rec print_type = function
       | <span data-count="359">[</span>] -&gt; ""
     in
     asprintf "func(%s)%s" (sep_by_comm<span data-count="1747">a</span> arg_types print_type) print_returns
-  | <span data-count="1743">T</span>ype_chan (chan_dir, t) -&gt;
+  | <span data-count="1744">T</span>ype_chan (chan_dir, t) -&gt;
     let print_chan_dir =
       match chan_dir with
       | <span data-count="539">C</span>han_bidirectional -&gt; "chan"
-      | <span data-count="610">C</span>han_receive -&gt; "&lt;-chan"
+      | <span data-count="611">C</span>han_receive -&gt; "&lt;-chan"
       | <span data-count="594">C</span>han_send -&gt; "chan&lt;-"
     in
     let print_type =
       match t with
       | <span data-count="73">T</span>ype_chan (Chan_receive, _) -&gt; asprint<span data-count="73">f</span> "(%s)" (print_typ<span data-count="73">e</span> t)
-      | <span data-count="1670">_</span> -&gt; asprint<span data-count="1670">f</span> "%s" (print_typ<span data-count="1670">e</span> t)
+      | <span data-count="1671">_</span> -&gt; asprint<span data-count="1671">f</span> "%s" (print_typ<span data-count="1671">e</span> t)
     in
     asprintf "%s %s" print_chan_dir print_type
 ;;
 
 let print_idents_with_types list =
-  <span data-count="1360">l</span>et rec helper acc = function
-    | <span data-count="2008">(</span>id, t) :: snd :: tl -&gt;
-      let acc = concat [ acc; id; " "; print_typ<span data-count="2008">e</span> t; ", " ] in
-      <span data-count="2008">h</span>elper acc (snd :: tl)
-    | <span data-count="1191">(</span>id, t) :: _ -&gt; concat [ acc; id; " "; print_typ<span data-count="1191">e</span> t ]
-    | <span data-count="169">[</span>] -&gt; acc
+  <span data-count="1364">l</span>et rec helper acc = function
+    | <span data-count="2010">(</span>id, t) :: snd :: tl -&gt;
+      let acc = concat [ acc; id; " "; print_typ<span data-count="2010">e</span> t; ", " ] in
+      <span data-count="2010">h</span>elper acc (snd :: tl)
+    | <span data-count="1194">(</span>id, t) :: _ -&gt; concat [ acc; id; " "; print_typ<span data-count="1194">e</span> t ]
+    | <span data-count="170">[</span>] -&gt; acc
   in
   helper "" list
 ;;
 
 let print_func_args_returns_and_body pblock anon_func =
-  <span data-count="937">l</span>et { args; returns; body } = anon_func in
+  <span data-count="941">l</span>et { args; returns; body } = anon_func in
   let print_returns =
     match returns with
-    | <span data-count="388">S</span>ome (Only_types (hd, tl)) -&gt;
+    | <span data-count="391">S</span>ome (Only_types (hd, tl)) -&gt;
       (match tl with
        | <span data-count="306">_</span> :: _ -&gt; asprint<span data-count="306">f</span> " (%s)" (sep_by_comm<span data-count="306">a</span> (hd :: tl) print_type)
-       | <span data-count="82">[</span>] -&gt; " " ^ print_typ<span data-count="82">e</span> hd)
+       | <span data-count="85">[</span>] -&gt; " " ^ print_typ<span data-count="85">e</span> hd)
     | <span data-count="423">S</span>ome (Ident_and_types (hd, tl)) -&gt;
       asprint<span data-count="423">f</span> " (%s)" (print_idents_with_type<span data-count="423">s</span> (hd :: tl))
-    | <span data-count="126">N</span>one -&gt; ""
+    | <span data-count="127">N</span>one -&gt; ""
   in
-  asprintf "(%s)%s %s" (print_idents_with_type<span data-count="937">s</span> args) print_returns (pbloc<span data-count="937">k</span> body)
+  asprintf "(%s)%s %s" (print_idents_with_type<span data-count="941">s</span> args) print_returns (pbloc<span data-count="941">k</span> body)
 ;;
 
 let print_const pexpr pblock = function
-  | <span data-count="1128">C</span>onst_int num -&gt; asprintf "%i" num
+  | <span data-count="1132">C</span>onst_int num -&gt; asprintf "%i" num
   | <span data-count="958">C</span>onst_string str -&gt;
     let rec string_builder acc = function
       | <span data-count="14124">c</span>har :: tl -&gt;
@@ -843,11 +843,11 @@ let print_const pexpr pblock = function
 
 let print_bin_op = function
   | <span data-count="312">B</span>in_sum -&gt; "+"
-  | <span data-count="302">B</span>in_multiply -&gt; "*"
-  | <span data-count="290">B</span>in_subtract -&gt; "-"
+  | <span data-count="303">B</span>in_multiply -&gt; "*"
+  | <span data-count="291">B</span>in_subtract -&gt; "-"
   | <span data-count="292">B</span>in_divide -&gt; "/"
   | <span data-count="297">B</span>in_modulus -&gt; "%"
-  | <span data-count="312">B</span>in_equal -&gt; "=="
+  | <span data-count="313">B</span>in_equal -&gt; "=="
   | <span data-count="268">B</span>in_not_equal -&gt; "!="
   | <span data-count="298">B</span>in_greater -&gt; "&gt;"
   | <span data-count="292">B</span>in_greater_equal -&gt; "&gt;="
@@ -864,14 +864,14 @@ let print_un_op = function
 ;;
 
 let precedence = function
-  | <span data-count="3177">E</span>xpr_const _ | <span data-count="12399">E</span>xpr_ident _ -&gt; 8
-  | <span data-count="3017">E</span>xpr_call _ | <span data-count="6758">E</span>xpr_index _ -&gt; 7
+  | <span data-count="3181">E</span>xpr_const _ | <span data-count="12408">E</span>xpr_ident _ -&gt; 8
+  | <span data-count="3019">E</span>xpr_call _ | <span data-count="6758">E</span>xpr_index _ -&gt; 7
   | <span data-count="6856">E</span>xpr_un_oper _ | <span data-count="6818">E</span>xpr_chan_receive _ -&gt; 6
-  | <span data-count="18150">E</span>xpr_bin_oper (op, _, _) -&gt;
+  | <span data-count="18162">E</span>xpr_bin_oper (op, _, _) -&gt;
     (match op with
-     | <span data-count="1409">B</span>in_multiply | <span data-count="1360">B</span>in_divide | <span data-count="1363">B</span>in_modulus -&gt; 5
-     | <span data-count="1463">B</span>in_sum | <span data-count="1336">B</span>in_subtract -&gt; 4
-     | <span data-count="1466">B</span>in_equal
+     | <span data-count="1413">B</span>in_multiply | <span data-count="1360">B</span>in_divide | <span data-count="1363">B</span>in_modulus -&gt; 5
+     | <span data-count="1463">B</span>in_sum | <span data-count="1340">B</span>in_subtract -&gt; 4
+     | <span data-count="1470">B</span>in_equal
      | <span data-count="1249">B</span>in_not_equal
      | <span data-count="1394">B</span>in_greater
      | <span data-count="1374">B</span>in_greater_equal
@@ -891,16 +891,16 @@ let assoc = function
 ;;
 
 let print_func_call pexpr call =
-  <span data-count="3957">l</span>et func, args = call in
+  <span data-count="3960">l</span>et func, args = call in
   let print_func =
-    if 7 &gt; precedenc<span data-count="3957">e</span> func then <span data-count="1207">a</span>sprint<span data-count="1207">f</span> "(%s)" (pexp<span data-count="1207">r</span> func) else <span data-count="2750">p</span>exp<span data-count="2750">r</span> func
+    if 7 &gt; precedenc<span data-count="3960">e</span> func then <span data-count="1207">a</span>sprint<span data-count="1207">f</span> "(%s)" (pexp<span data-count="1207">r</span> func) else <span data-count="2753">p</span>exp<span data-count="2753">r</span> func
   in
-  asprintf "%s(%s)" print_func (sep_by_comm<span data-count="3957">a</span> args pexpr)
+  asprintf "%s(%s)" print_func (sep_by_comm<span data-count="3960">a</span> args pexpr)
 ;;
 
 let rec print_expr pblock = function
-  | <span data-count="3940">E</span>xpr_const const -&gt; print_const (print_exp<span data-count="3940">r</span> pblock) pblock const
-  | <span data-count="14799">E</span>xpr_ident id -&gt; id
+  | <span data-count="3944">E</span>xpr_const const -&gt; print_const (print_exp<span data-count="3944">r</span> pblock) pblock const
+  | <span data-count="14805">E</span>xpr_ident id -&gt; id
   | <span data-count="3757">E</span>xpr_index (array, index) as expr -&gt;
     let print_array =
       if precedenc<span data-count="3757">e</span> expr &gt; precedenc<span data-count="3757">e</span> array
@@ -908,21 +908,21 @@ let rec print_expr pblock = function
       else (<span data-count="2651">p</span>rint_exp<span data-count="5302">r</span> pblock) array
     in
     asprintf "%s[%s]" print_array ((print_exp<span data-count="7514">r</span> pblock) index)
-  | <span data-count="3893">E</span>xpr_bin_oper (operator, left_operand, right_operand) as expr -&gt;
+  | <span data-count="3896">E</span>xpr_bin_oper (operator, left_operand, right_operand) as expr -&gt;
     let print_left =
-      if precedenc<span data-count="3893">e</span> expr &gt; precedenc<span data-count="3893">e</span> left_operand
+      if precedenc<span data-count="3896">e</span> expr &gt; precedenc<span data-count="3896">e</span> left_operand
       then <span data-count="127">a</span>sprint<span data-count="127">f</span> "(%s)" ((print_exp<span data-count="254">r</span> pblock) left_operand)
-      else <span data-count="3766">i</span>f precedenc<span data-count="3766">e</span> expr = precedenc<span data-count="3766">e</span> left_operand &amp;&amp; <span data-count="119">a</span>sso<span data-count="119">c</span> operator = Right
+      else <span data-count="3769">i</span>f precedenc<span data-count="3769">e</span> expr = precedenc<span data-count="3769">e</span> left_operand &amp;&amp; <span data-count="119">a</span>sso<span data-count="119">c</span> operator = Right
       then <span data-count="4">a</span>sprint<span data-count="4">f</span> "(%s)" ((print_exp<span data-count="8">r</span> pblock) left_operand)
-      else (<span data-count="3762">p</span>rint_exp<span data-count="7524">r</span> pblock) left_operand
+      else (<span data-count="3765">p</span>rint_exp<span data-count="7530">r</span> pblock) left_operand
     in
     let print_oper = print_bin_op operator in
-    <span data-count="3893">l</span>et print_right =
-      if precedenc<span data-count="3893">e</span> expr &gt; precedenc<span data-count="3893">e</span> right_operand
+    <span data-count="3896">l</span>et print_right =
+      if precedenc<span data-count="3896">e</span> expr &gt; precedenc<span data-count="3896">e</span> right_operand
       then <span data-count="133">a</span>sprint<span data-count="133">f</span> "(%s)" ((print_exp<span data-count="266">r</span> pblock) right_operand)
-      else <span data-count="3760">i</span>f precedenc<span data-count="3760">e</span> expr = precedenc<span data-count="3760">e</span> right_operand &amp;&amp; <span data-count="133">a</span>sso<span data-count="133">c</span> operator = Left
+      else <span data-count="3763">i</span>f precedenc<span data-count="3763">e</span> expr = precedenc<span data-count="3763">e</span> right_operand &amp;&amp; <span data-count="133">a</span>sso<span data-count="133">c</span> operator = Left
       then <span data-count="118">a</span>sprint<span data-count="118">f</span> "(%s)" ((print_exp<span data-count="236">r</span> pblock) right_operand)
-      else (<span data-count="3642">p</span>rint_exp<span data-count="7284">r</span> pblock) right_operand
+      else (<span data-count="3645">p</span>rint_exp<span data-count="7290">r</span> pblock) right_operand
     in
     asprintf "%s %s %s" print_left print_oper print_right
   | <span data-count="3792">E</span>xpr_un_oper (operator, operand) as expr -&gt;
@@ -939,12 +939,12 @@ let rec print_expr pblock = function
       else (<span data-count="3407">p</span>rint_exp<span data-count="6814">r</span> pblock) operand
     in
     asprintf "&lt;-%s" print_operand
-  | <span data-count="3705">E</span>xpr_call call -&gt; print_func_call (print_exp<span data-count="3705">r</span> pblock) call
+  | <span data-count="3706">E</span>xpr_call call -&gt; print_func_call (print_exp<span data-count="3706">r</span> pblock) call
 ;;
 
 let print_long_decl pblock = function
-  | <span data-count="34">L</span>ong_decl_no_init (type', hd, tl) -&gt;
-    asprintf "var %s %s" (sep_by_comm<span data-count="34">a</span> (hd :: tl) print_ident) (print_typ<span data-count="34">e</span> type')
+  | <span data-count="36">L</span>ong_decl_no_init (type', hd, tl) -&gt;
+    asprintf "var %s %s" (sep_by_comm<span data-count="36">a</span> (hd :: tl) print_ident) (print_typ<span data-count="36">e</span> type')
   | <span data-count="38">L</span>ong_decl_mult_init (type', hd, tl) -&gt;
     let print_type =
       match type' with
@@ -957,17 +957,17 @@ let print_long_decl pblock = function
       (sep_by_comm<span data-count="38">a</span> idents print_ident)
       print_type
       (sep_by_comm<span data-count="38">a</span> inits (print_exp<span data-count="38">r</span> pblock))
-  | <span data-count="38">L</span>ong_decl_one_init (type', fst, snd, tl, init) -&gt;
+  | <span data-count="39">L</span>ong_decl_one_init (type', fst, snd, tl, init) -&gt;
     let print_type =
       match type' with
-      | <span data-count="36">S</span>ome t -&gt; print_typ<span data-count="36">e</span> t
+      | <span data-count="37">S</span>ome t -&gt; print_typ<span data-count="37">e</span> t
       | <span data-count="2">N</span>one -&gt; ""
     in
     asprintf
       "var %s %s = %s"
-      (sep_by_comm<span data-count="38">a</span> (fst :: snd :: tl) print_ident)
+      (sep_by_comm<span data-count="39">a</span> (fst :: snd :: tl) print_ident)
       print_type
-      (print_func_cal<span data-count="38">l</span> (print_exp<span data-count="38">r</span> pblock) init)
+      (print_func_cal<span data-count="39">l</span> (print_exp<span data-count="39">r</span> pblock) init)
 ;;
 
 let print_short_decl pblock = function
@@ -1015,23 +1015,23 @@ let print_if_for_init pblock = function
 ;;
 
 let rec print_if pblock if' =
-  <span data-count="69">l</span>et { init; cond; if_body; else_body } = if' in
+  <span data-count="70">l</span>et { init; cond; if_body; else_body } = if' in
   let print_init =
     match init with
     | <span data-count="54">S</span>ome init -&gt; print_if_for_ini<span data-count="54">t</span> pblock init ^ "; "
-    | <span data-count="15">N</span>one -&gt; ""
+    | <span data-count="16">N</span>one -&gt; ""
   in
   let print_else_body =
     match else_body with
-    | <span data-count="16">S</span>ome (Else_block block) -&gt; "else " ^ pbloc<span data-count="16">k</span> block
+    | <span data-count="17">S</span>ome (Else_block block) -&gt; "else " ^ pbloc<span data-count="17">k</span> block
     | <span data-count="12">S</span>ome (Else_if if') -&gt; "else " ^ print_i<span data-count="12">f</span> pblock if'
     | <span data-count="41">N</span>one -&gt; ""
   in
   asprintf
     "if %s%s %s %s"
     print_init
-    (print_exp<span data-count="69">r</span> pblock cond)
-    (pbloc<span data-count="69">k</span> if_body)
+    (print_exp<span data-count="70">r</span> pblock cond)
+    (pbloc<span data-count="70">k</span> if_body)
     print_else_body
 ;;
 
@@ -1060,48 +1060,48 @@ let print_for pblock = function
 ;;
 
 let print_stmt pblock = function
-  | <span data-count="82">S</span>tmt_long_var_decl decl -&gt; print_long_decl pblock decl
+  | <span data-count="83">S</span>tmt_long_var_decl decl -&gt; print_long_decl pblock decl
   | <span data-count="60">S</span>tmt_short_var_decl decl -&gt; print_short_decl pblock decl
   | <span data-count="65">S</span>tmt_assign assign -&gt; print_assign pblock assign
   | <span data-count="555">S</span>tmt_incr id -&gt; asprintf "%s++" id
   | <span data-count="529">S</span>tmt_decr id -&gt; asprintf "%s--" id
   | <span data-count="264">S</span>tmt_break -&gt; "break"
   | <span data-count="288">S</span>tmt_continue -&gt; "continue"
-  | <span data-count="67">S</span>tmt_return exprs -&gt; "return " ^ sep_by_comm<span data-count="67">a</span> exprs (print_exp<span data-count="67">r</span> pblock)
-  | <span data-count="61">S</span>tmt_block block -&gt; pblock block
-  | <span data-count="58">S</span>tmt_call call -&gt; print_func_call (print_exp<span data-count="58">r</span> pblock) call
+  | <span data-count="69">S</span>tmt_return exprs -&gt; "return " ^ sep_by_comm<span data-count="69">a</span> exprs (print_exp<span data-count="69">r</span> pblock)
+  | <span data-count="62">S</span>tmt_block block -&gt; pblock block
+  | <span data-count="59">S</span>tmt_call call -&gt; print_func_call (print_exp<span data-count="59">r</span> pblock) call
   | <span data-count="23">S</span>tmt_defer call -&gt; "defer " ^ print_func_cal<span data-count="23">l</span> (print_exp<span data-count="23">r</span> pblock) call
   | <span data-count="36">S</span>tmt_go call -&gt; "go " ^ print_func_cal<span data-count="36">l</span> (print_exp<span data-count="36">r</span> pblock) call
   | <span data-count="68">S</span>tmt_chan_send (chan, expr) -&gt; asprintf "%s &lt;- %s" chan (print_exp<span data-count="68">r</span> pblock expr)
   | <span data-count="61">S</span>tmt_chan_receive chan -&gt; asprintf "&lt;-%s" (print_exp<span data-count="61">r</span> pblock chan)
-  | <span data-count="57">S</span>tmt_if if' -&gt; print_if pblock if'
+  | <span data-count="58">S</span>tmt_if if' -&gt; print_if pblock if'
   | <span data-count="56">S</span>tmt_for _ as for' -&gt; print_for pblock for'
 ;;
 
 let rec print_block block =
-  <span data-count="1139">m</span>atch block with
-  | <span data-count="248">[</span>] -&gt; "{}"
-  | <span data-count="891">_</span> :: _ -&gt;
-    Str.global_replac<span data-count="891">e</span>
-      (Str.regex<span data-count="891">p</span> "\n")
+  <span data-count="1146">m</span>atch block with
+  | <span data-count="249">[</span>] -&gt; "{}"
+  | <span data-count="897">_</span> :: _ -&gt;
+    Str.global_replac<span data-count="897">e</span>
+      (Str.regex<span data-count="897">p</span> "\n")
       "\n    "
-      (asprint<span data-count="891">f</span> "{\n%s" (sep_b<span data-count="891">y</span> "\n" block (print_stm<span data-count="891">t</span> print_block)))
+      (asprint<span data-count="897">f</span> "{\n%s" (sep_b<span data-count="897">y</span> "\n" block (print_stm<span data-count="897">t</span> print_block)))
     ^ "\n}"
 ;;
 
 let print_top_decl = function
-  | <span data-count="28">D</span>ecl_var decl -&gt; print_long_decl print_block decl
-  | <span data-count="29">D</span>ecl_func decl -&gt;
+  | <span data-count="30">D</span>ecl_var decl -&gt; print_long_decl print_block decl
+  | <span data-count="33">D</span>ecl_func decl -&gt;
     let ident, args_returns_and_body = decl in
     asprintf
       "func %s%s"
       ident
-      (print_func_args_returns_and_bod<span data-count="29">y</span> print_block args_returns_and_body)
+      (print_func_args_returns_and_bod<span data-count="33">y</span> print_block args_returns_and_body)
 ;;
 
 let print_expr = print_exp<span data-count="8">r</span> print_block
 let print_stmt = print_stm<span data-count="8">t</span> print_block
-let print_file file = <span data-count="20">s</span>ep_b<span data-count="20">y</span> "\n\n" file print_top_decl ^ "\n"
+let print_file file = <span data-count="22">s</span>ep_b<span data-count="22">y</span> "\n\n" file print_top_decl ^ "\n"
 </code></pre>
       </div>
     </div>
