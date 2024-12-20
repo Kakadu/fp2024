@@ -65,7 +65,7 @@ let rec pp_ty ppf =
       String.concat " * " (List.map (Format.asprintf "%a" pp_ty) (t1 :: t2 :: rest))
     in
     fprintf ppf "(%s)" tuple_content
-  | TOption t -> fprintf ppf "%a option" pp_ty t
+  | TOption t -> fprintf ppf "(%a) option" pp_ty t
 ;;
 
 (* errors *)
