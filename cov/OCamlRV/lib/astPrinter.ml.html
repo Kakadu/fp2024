@@ -595,16 +595,16 @@ let pp_unop ppf = function
 
 let pp_annot =
   let rec helper ppf = function
-    | <span data-count="35">A</span>Int -&gt; fprintf ppf "int"
+    | <span data-count="37">A</span>Int -&gt; fprintf ppf "int"
     | <span data-count="5">A</span>Bool -&gt; fprintf ppf "bool"
-    | <span data-count="9">A</span>String -&gt; fprintf ppf "string"
+    | <span data-count="10">A</span>String -&gt; fprintf ppf "string"
     | <span data-count="3">A</span>Unit -&gt; fprintf ppf "unit"
     | <span data-count="1">A</span>Var n -&gt; fprintf ppf "'%d" n
     | <span data-count="11">A</span>Fun (l, r) -&gt;
       (match l with
        | <span data-count="0">A</span>Fun _ -&gt; fprintf ppf "(%a) -&gt; %a" helper l helper r
        | <span data-count="11">_</span> -&gt; fprintf ppf "%a -&gt; %a" helper l helper r)
-    | <span data-count="11">A</span>List t -&gt; fprintf ppf "%a list" helper t
+    | <span data-count="12">A</span>List t -&gt; fprintf ppf "%a list" helper t
     | <span data-count="1">A</span>Tuple l -&gt;
       let rec pp_tuple ppf = function
         | <span data-count="0">[</span>] -&gt; ()

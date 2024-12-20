@@ -556,11 +556,11 @@ type error =
   ]
 
 let pp_error ppf : error -&gt; _ =
-  <span data-count="10">l</span>et open Stdlib.Format in
+  <span data-count="11">l</span>et open Stdlib.Format in
   function
   | <span data-count="0">`</span>Occurs_check -&gt; fprintf ppf "Occurs check failed"
   | <span data-count="1">`</span>Unbound s -&gt; fprintf ppf "Unbound variable '%s'" s
-  | <span data-count="9">`</span>Unification_failed (l, r) -&gt;
+  | <span data-count="10">`</span>Unification_failed (l, r) -&gt;
     fprintf ppf "Unification failed on %a and %a" pp_annot l pp_annot r
   | <span data-count="0">`</span>Not_implemented -&gt; fprintf ppf "Not implemented"
 ;;
@@ -597,15 +597,15 @@ end = struct
 
   let ( &gt;&gt;= ) : 'a 'b. 'a t -&gt; ('a -&gt; 'b t) -&gt; 'b t =
     fun m f st -&gt;
-    <span data-count="1359">l</span>et last, r = m st in
-    <span data-count="1359">m</span>atch r with
-    | <span data-count="38">R</span>esult.Error x -&gt; last, Result.fai<span data-count="38">l</span> x
-    | <span data-count="1321">R</span>esult.Ok a -&gt; f a last
+    <span data-count="1385">l</span>et last, r = m st in
+    <span data-count="1385">m</span>atch r with
+    | <span data-count="43">R</span>esult.Error x -&gt; last, Result.fai<span data-count="43">l</span> x
+    | <span data-count="1342">R</span>esult.Ok a -&gt; f a last
   ;;
 
-  let fail e st = <span data-count="10">s</span>t, Result.fai<span data-count="10">l</span> e
-  let return x last = <span data-count="1290">l</span>ast, Result.retur<span data-count="1290">n</span> x
-  let bind x ~f = <span data-count="1359">x</span> &gt;&gt;= f
+  let fail e st = <span data-count="11">s</span>t, Result.fai<span data-count="11">l</span> e
+  let return x last = <span data-count="1312">l</span>ast, Result.retur<span data-count="1312">n</span> x
+  let bind x ~f = <span data-count="1385">x</span> &gt;&gt;= f
 
   let ( &gt;&gt;| ) : 'a 'b. 'a t -&gt; ('a -&gt; 'b) -&gt; 'b t =
     fun m f st -&gt;
@@ -615,15 +615,15 @@ end = struct
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = <span data-count="1359">b</span>ind x ~f
+    let ( let* ) x f = <span data-count="1385">b</span>ind x ~f
   end
 
   let fresh : int t = fun last -&gt; <span data-count="49">l</span>ast + 1, Result.retur<span data-count="49">n</span> last
-  let run m = <span data-count="28">s</span>nd (<span data-count="28">m</span> 0)
+  let run m = <span data-count="30">s</span>nd (<span data-count="30">m</span> 0)
 
   module RMap = struct
     let fold m ~init ~f =
-      <span data-count="294">M</span>ap.fold m ~init ~f:(fun ~key ~data acc -&gt;
+      <span data-count="300">M</span>ap.fold m ~init ~f:(fun ~key ~data acc -&gt;
         <span data-count="244">l</span>et open Syntax in
         let* acc = acc in
         <span data-count="244">f</span> key data acc)
@@ -645,8 +645,8 @@ module Type = struct
       | <span data-count="1">A</span>Var b -&gt; VarSet.add b acc
       | <span data-count="11">A</span>Fun (l, r) -&gt; helper (helpe<span data-count="11">r</span> acc l) r
       | <span data-count="1">A</span>Tuple tl -&gt; List.fold_left tl ~init:acc ~f:helper
-      | <span data-count="7">A</span>List t -&gt; helper acc t
-      | <span data-count="20">A</span>Int | <span data-count="4">A</span>Bool | <span data-count="4">A</span>String | <span data-count="2">A</span>Unit -&gt; acc
+      | <span data-count="8">A</span>List t -&gt; helper acc t
+      | <span data-count="21">A</span>Int | <span data-count="4">A</span>Bool | <span data-count="4">A</span>String | <span data-count="2">A</span>Unit -&gt; acc
     in
     helpe<span data-count="4">r</span> VarSet.empty
   ;;
@@ -681,8 +681,8 @@ end = struct
   let remove s k = <span data-count="0">M</span>ap.remove s k
 
   let apply s =
-    <span data-count="490">l</span>et rec helper = function
-      | <span data-count="306">A</span>Int -&gt; AInt
+    <span data-count="492">l</span>et rec helper = function
+      | <span data-count="308">A</span>Int -&gt; AInt
       | <span data-count="6">A</span>Bool -&gt; ABool
       | <span data-count="19">A</span>String -&gt; AString
       | <span data-count="1">A</span>Unit -&gt; AUnit
@@ -698,8 +698,8 @@ end = struct
   ;;
 
   let rec unify l r =
-    <span data-count="144">m</span>atch l, r with
-    | <span data-count="40">A</span>Int, AInt -&gt; return empty
+    <span data-count="147">m</span>atch l, r with
+    | <span data-count="42">A</span>Int, AInt -&gt; return empty
     | <span data-count="5">A</span>Bool, ABool -&gt; return empty
     | <span data-count="3">A</span>String, AString -&gt; return empty
     | <span data-count="1">A</span>Unit, AUnit -&gt; return empty
@@ -723,7 +723,7 @@ end = struct
        with
        | <span data-count="0">U</span>nequal_lengths -&gt; fail (`Unification_failed (l, r))
        | <span data-count="0">O</span>k s -&gt; s)
-    | <span data-count="9">_</span> -&gt; fail (`Unification_failed (l, r))
+    | <span data-count="10">_</span> -&gt; fail (`Unification_failed (l, r))
 
   and extend k v s =
     <span data-count="113">m</span>atch find s k with
@@ -738,12 +738,12 @@ end = struct
       let* s2 = unif<span data-count="16">y</span> v v2 in
       <span data-count="16">c</span>ompose s s2
 
-  and compose s1 s2 = <span data-count="197">R</span>Map.fold s2 ~init:(retur<span data-count="197">n</span> s1) ~f:extend
+  and compose s1 s2 = <span data-count="203">R</span>Map.fold s2 ~init:(retur<span data-count="203">n</span> s1) ~f:extend
 
   let compose_all =
     List.fold_left ~init:(retur<span data-count="4">n</span> empty) ~f:(fun acc s -&gt;
-      <span data-count="165">l</span>et* acc = acc in
-      <span data-count="165">c</span>ompose acc s)
+      <span data-count="171">l</span>et* acc = acc in
+      <span data-count="171">c</span>ompose acc s)
   ;;
 end
 
@@ -762,7 +762,7 @@ end
 module TypeEnv = struct
   type t = (identifier, Scheme.t, String.comparator_witness) Map.t
 
-  let extend e k v = <span data-count="44">M</span>ap.update e k ~f:(fun _ -&gt; <span data-count="44">v</span>)
+  let extend e k v = <span data-count="45">M</span>ap.update e k ~f:(fun _ -&gt; <span data-count="45">v</span>)
   let remove e k = <span data-count="5">M</span>ap.remove e k
   let empty = Map.empt<span data-count="4">y</span> (module String)
 
@@ -771,7 +771,7 @@ module TypeEnv = struct
       <span data-count="0">V</span>arSet.union acc (Scheme.free_var<span data-count="0">s</span> s))
   ;;
 
-  let apply s env = <span data-count="79">M</span>ap.map env ~f:(Scheme.appl<span data-count="79">y</span> s)
+  let apply s env = <span data-count="80">M</span>ap.map env ~f:(Scheme.appl<span data-count="80">y</span> s)
   let find x env = <span data-count="37">M</span>ap.find env x
 end
 </code></pre>
