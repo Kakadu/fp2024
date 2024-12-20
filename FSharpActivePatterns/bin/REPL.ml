@@ -8,7 +8,6 @@ open FSharpActivePatterns.Inferencer
 open FSharpActivePatterns.TypedTree
 open FSharpActivePatterns.TypesPp
 open FSharpActivePatterns.Ast
-open FSharpActivePatterns.PrettyPrinter
 open Stdlib
 
 type input =
@@ -60,9 +59,7 @@ let input_with_indents ic =
       in
       (match is_continue with
        | true ->
-        let newline = " " ^ line in
-         Buffer.add_string b newline;
-         Buffer.add_string b "\n";
+         Buffer.add_string b (line ^ "\n");
          fill_buffer b
        | false ->
          seek_in ic start_pos;
@@ -72,10 +69,9 @@ let input_with_indents ic =
   let buffer = Buffer.create 1024 in
   let first_line = take_line () in
   match first_line with
-  | None ->
-    EOF
+  | None -> EOF
   | Some first_line ->
-    Buffer.add_string buffer first_line;
+    Buffer.add_string buffer (first_line ^ "\n");
     fill_buffer buffer
 ;;
 
@@ -87,9 +83,7 @@ let run_single ic =
   in
   match input with
   | EOF -> End
-  | Input input ->
-    let trimmed_input = String.trim input in
-    if trimmed_input = "" then Empty else Result (parse trimmed_input)
+  | Input input -> if String.trim input = "" then Empty else Result (parse input)
 ;;
 
 let run_repl dump_parsetree input_file =

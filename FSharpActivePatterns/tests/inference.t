@@ -84,8 +84,9 @@
   feven : ('_33, int -> int) -> int -> int
   fodd : (int -> int, '_41) -> int -> int
   tie : (int -> int, int -> int)
-  Type checking failed: Undefined variable 'modd'
-  : string
+  meven : int -> int
+  modd : int -> int
+  main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/016lists.ml
   length : '_3 list -> int
   length_tail : '_18 list -> int
