@@ -8,6 +8,7 @@ open FSharpActivePatterns.Inferencer
 open FSharpActivePatterns.TypedTree
 open FSharpActivePatterns.TypesPp
 open FSharpActivePatterns.Ast
+open FSharpActivePatterns.PrettyPrinter
 open Stdlib
 
 type input =
