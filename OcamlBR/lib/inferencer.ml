@@ -772,7 +772,14 @@ let extract_var_name = function
     process_structure env Subst.empty structure
   ;;
 
-  let infer_program str = Result.map snd (run (infer_structure TypeEnv.empty str))
+  let env =
+    TypeEnv.extend
+      "print_int"
+      (S (VarSet.empty, TArrow (tprim_int, tprim_unit)))
+      TypeEnv.empty
+  ;;
+
+  let infer_program str = Result.map snd (run (infer_structure env str))
 
   let infer_program_test s =
     let open Stdlib.Format in
@@ -781,7 +788,7 @@ let extract_var_name = function
       (match infer_program parsed with
        | Ok env ->
          Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
-           printf "val %s : %a\n" key pp_ty ty)
+           if key <> "print_int" then printf "val %s : %a\n" key pp_ty ty)
        | Error e -> printf "Infer error: %a\n" pp_error e)
     | Error e -> printf "Parsing error: %s\n" e
   ;;
