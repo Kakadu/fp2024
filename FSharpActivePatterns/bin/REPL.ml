@@ -8,6 +8,7 @@ open FSharpActivePatterns.Inferencer
 open FSharpActivePatterns.TypedTree
 open FSharpActivePatterns.TypesPp
 open FSharpActivePatterns.Ast
+open FSharpActivePatterns.PrettyPrinter
 open Stdlib
 
 type input =
@@ -55,10 +56,12 @@ let input_with_indents ic =
       let is_continue =
         List.exists (fun pref -> String.starts_with ~prefix:pref line) [ " "; "\t"; "\n" ]
         || is_empty
+        || String.starts_with ~prefix:"and" (String.trim line)
       in
       (match is_continue with
        | true ->
-         Buffer.add_string b line;
+        let newline = " " ^ line in
+         Buffer.add_string b newline;
          Buffer.add_string b "\n";
          fill_buffer b
        | false ->
