@@ -540,7 +540,7 @@ open Ast
 open AstPrinter
 open Base
 
-let arrow l r = <span data-count="128">A</span>Fun (l, r)
+let fun_type l r = <span data-count="128">A</span>Fun (l, r)
 let int_type = AInt
 let bool_type = ABool
 let string_type = AString
@@ -690,7 +690,7 @@ end = struct
         (match find s b with
          | <span data-count="185">N</span>one -&gt; ty
          | <span data-count="84">S</span>ome x -&gt; x)
-      | <span data-count="109">A</span>Fun (l, r) -&gt; arrow (helpe<span data-count="109">r</span> l) (helpe<span data-count="109">r</span> r)
+      | <span data-count="109">A</span>Fun (l, r) -&gt; fun_type (helpe<span data-count="109">r</span> l) (helpe<span data-count="109">r</span> r)
       | <span data-count="73">A</span>List t -&gt; list_type (helpe<span data-count="73">r</span> t)
       | <span data-count="0">A</span>Tuple ts -&gt; tuple_type (List.ma<span data-count="0">p</span> ~f:helper ts)
     in

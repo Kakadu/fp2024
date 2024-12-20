@@ -736,7 +736,7 @@ let rec infer_expression env = function
   | <span data-count="17">E</span>xprFun (p, e) -&gt;
     let* env, t = infer_patter<span data-count="17">n</span> env p in
     <span data-count="17">l</span>et* sub, t1 = infer_expressio<span data-count="17">n</span> env e in
-    <span data-count="11">r</span>eturn (sub, Subst.appl<span data-count="11">y</span> sub (arro<span data-count="11">w</span> t t1))
+    <span data-count="11">r</span>eturn (sub, Subst.appl<span data-count="11">y</span> sub (fun_typ<span data-count="11">e</span> t t1))
   | <span data-count="1">E</span>xprTuple (e1, e2, el) -&gt;
     let* sub, t =
       List.fold_lef<span data-count="1">t</span>
@@ -760,7 +760,7 @@ let rec infer_expression env = function
     let* fresh = fresh_var in
     <span data-count="8">l</span>et* s1, t1 = infer_expressio<span data-count="8">n</span> env e1 in
     <span data-count="8">l</span>et* s2, t2 = infer_expressio<span data-count="8">n</span> (TypeEnv.appl<span data-count="8">y</span> s1 env) e2 in
-    <span data-count="8">l</span>et* s3 = Subst.unif<span data-count="8">y</span> (arro<span data-count="8">w</span> t2 fresh) (Subst.appl<span data-count="8">y</span> s2 t1) in
+    <span data-count="8">l</span>et* s3 = Subst.unif<span data-count="8">y</span> (fun_typ<span data-count="8">e</span> t2 fresh) (Subst.appl<span data-count="8">y</span> s2 t1) in
     <span data-count="8">l</span>et* sub = Subst.compose_al<span data-count="8">l</span> [ s1; s2; s3 ] in
     <span data-count="8">l</span>et t = Subst.apply sub fresh in
     <span data-count="8">r</span>eturn (sub, t)
