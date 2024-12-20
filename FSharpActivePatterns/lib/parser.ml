@@ -400,7 +400,5 @@ let p_construction =
 
 (* MAIN PARSE FUNCTION *)
 let parse (str : string) =
-  match parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str with
-  | Ok ast -> Some ast
-  | Error _ -> None
+  parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str
 ;;

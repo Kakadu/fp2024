@@ -28,4 +28,4 @@ val infer
   :  construction
   -> TypeEnvironment.t
   -> int
-  -> int * (TypeEnvironment.t * typ list, error) result
+  -> int * (TypeEnvironment.t * (string * typ) list, error) result

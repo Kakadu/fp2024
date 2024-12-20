@@ -718,31 +718,31 @@ let infer_statement env = function
     let* env = extend_env_with_bind_names env let_binds in
     let* env = extend_env_with_let_binds env Rec let_binds in
     let bind_names = extract_bind_names_from_let_binds let_binds in
-    let bind_types =
+    let bind_names_with_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with
-        | Scheme (_, typ) -> typ)
+        | Scheme (_, typ) -> name, typ)
     in
-    return (env, bind_types)
+    return (env, bind_names_with_types)
   | Let (Nonrec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
     let* env = extend_env_with_let_binds env Nonrec let_binds in
     let bind_names = extract_bind_names_from_let_binds let_binds in
-    let bind_types =
+    let bind_names_with_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with
-        | Scheme (_, typ) -> typ)
+        | Scheme (_, typ) -> name, typ)
     in
-    return (env, bind_types)
+    return (env, bind_names_with_types)
 ;;
 
 let infer_construction env = function
   | Expr exp ->
     let* _, typ = infer_expr env exp in
-    return (env, [ typ ])
+    return (env, [ "-", typ ])
   | Statement s ->
-    let* env, types = infer_statement env s in
-    return (env, types)
+    let* env, names_and_types = infer_statement env s in
+    return (env, names_and_types)
 ;;
 
 let infer c env state = run (infer_construction env c) state

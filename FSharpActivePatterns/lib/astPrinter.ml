@@ -192,6 +192,6 @@ let print_construction fmt = function
 ;;
 
 let print_p_res fmt = function
-  | Some expr -> print_construction fmt expr
-  | None -> fprintf fmt "Error occured"
+  | Ok ast -> print_construction fmt ast
+  | Error e -> fprintf fmt "%s\n" e
 ;;
