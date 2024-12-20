@@ -18,7 +18,6 @@ type error =
   [ `Occurs_check
   | `Unbound of identifier
   | `Unification_failed of type_annot * type_annot
-  | `Pattern_matching_error
   | `Not_implemented
   ]
 
@@ -29,15 +28,12 @@ let pp_error ppf : error -> _ =
   | `Unbound s -> fprintf ppf "Unbound variable '%s'" s
   | `Unification_failed (l, r) ->
     fprintf ppf "Unification failed on %a and %a" pp_annot l pp_annot r
-  | `Pattern_matching_error -> fprintf ppf "Pattern matching error"
   | `Not_implemented -> fprintf ppf "Not implemented"
 ;;
 
 module VarSet = struct
   include Stdlib.Set.Make (Int)
 end
-
-type scheme = S of VarSet.t * type_annot
 
 module Result : sig
   type 'a t
@@ -101,15 +97,11 @@ end = struct
   end
 end
 
-type fresh = int
-
 module Type = struct
-  type t = type_annot
-
   let rec occurs_in v = function
     | AVar b -> b = v
     | AFun (l, r) -> occurs_in v l || occurs_in v r
-    | ATuple tl -> Base.List.exists tl ~f:(occurs_in v)
+    | ATuple tl -> List.exists tl ~f:(occurs_in v)
     | AList t -> occurs_in v t
     | AInt | ABool | AString | AUnit -> false
   ;;
@@ -156,6 +148,10 @@ end = struct
 
   let apply s =
     let rec helper = function
+      | AInt -> AInt
+      | ABool -> ABool
+      | AString -> AString
+      | AUnit -> AUnit
       | AVar b as ty ->
         (match find s b with
          | None -> ty
@@ -163,7 +159,6 @@ end = struct
       | AFun (l, r) -> arrow (helper l) (helper r)
       | AList t -> list_type (helper t)
       | ATuple ts -> tuple_type (List.map ~f:helper ts)
-      | other -> other
     in
     helper
   ;;
@@ -211,27 +206,27 @@ end = struct
 
   and compose s1 s2 = RMap.fold s2 ~init:(return s1) ~f:extend
 
-  let compose_all ss =
-    List.fold_left ss ~init:(return empty) ~f:(fun acc s ->
+  let compose_all =
+    List.fold_left ~init:(return empty) ~f:(fun acc s ->
       let* acc = acc in
       compose acc s)
   ;;
 end
 
 module Scheme = struct
-  type t = scheme
+  type t = S of VarSet.t * type_annot
 
   let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t
   let free_vars (S (xs, t)) = VarSet.diff (Type.free_vars t) xs
 
-  let apply s (S (xs, t)) =
-    let s2 = VarSet.fold (fun k s -> Subst.remove s k) xs s in
-    S (xs, Subst.apply s2 t)
+  let apply s (S (set, tp)) =
+    let s2 = VarSet.fold (fun k s -> Subst.remove s k) set s in
+    S (set, Subst.apply s2 tp)
   ;;
 end
 
 module TypeEnv = struct
-  type t = (identifier, scheme, String.comparator_witness) Map.t
+  type t = (identifier, Scheme.t, String.comparator_witness) Map.t
 
   let extend e k v = Map.update e k ~f:(fun _ -> v)
   let remove e k = Map.remove e k
