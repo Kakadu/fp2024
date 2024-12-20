@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>typesPp.ml &mdash; Coverage report</title>
+    <meta name="description" content="100.00% coverage in lib/typesPp.ml">
+    <link rel="stylesheet" href="../coverage.css"/>
+    <script src="../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../index.html">
+          <span class="dirname">lib/</span>typesPp.ml
+        </a>
+      </h1>
+      <h2>100.00%</h2>
+    </div>
+    <div id="navbar">
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span > </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span class="visited"> </span>
+<a id="L10"></a><span class="visited"> </span>
+<a id="L11"></a><span class="visited"> </span>
+<a id="L12"></a><span class="visited"> </span>
+<a id="L13"></a><span > </span>
+<a id="L14"></a><span class="visited"> </span>
+<a id="L15"></a><span class="visited"> </span>
+<a id="L16"></a><span class="visited"> </span>
+<a id="L17"></a><span class="visited"> </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span class="visited"> </span>
+<a id="L20"></a><span class="visited"> </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span class="visited"> </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span > </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span class="visited"> </span>
+<a id="L29"></a><span > </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+</pre>
+<pre><code class="ocaml">(** Copyright 2024-2025, Ksenia Kotelnikova &lt;xeniia.ka@gmail.com&gt;, Gleb Nasretdinov &lt;gleb.nasretdinov@proton.me&gt; *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open TypedTree
+open Format
+
+let pp_typ fmt typ =
+  <span data-count="67">l</span>et rec helper fmt = function
+    | <span data-count="115">P</span>rimitive s -&gt; fprintf fmt "%s" s
+    | <span data-count="75">T</span>ype_var var -&gt; fprintf fmt "'_%d" var
+    | <span data-count="107">A</span>rrow (fst, snd) -&gt;
+      (match fst with
+       | <span data-count="11">A</span>rrow _ -&gt; fprintf fmt "(%a) -&gt; %a" helper fst helper snd
+       | <span data-count="96">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper fst helper snd)
+    | <span data-count="14">T</span>ype_list typ -&gt; fprintf fmt "%a list" helper typ
+    | <span data-count="15">T</span>ype_tuple (first, second, rest) -&gt;
+      fprintf fmt "(";
+      <span data-count="15">F</span>ormat.pp_print_list
+        ~pp_sep:(fun fmt () -&gt; <span data-count="16">f</span>printf fmt ", ")
+        helper
+        fmt
+        (first :: second :: rest);
+      <span data-count="15">f</span>printf fmt ")"
+    | <span data-count="4">T</span>Option t -&gt; fprintf fmt "%a option" helper t
+  in
+  helper fmt typ;
+  <span data-count="67">f</span>printf fmt "\n"
+;;
+</code></pre>
+      </div>
+    </div>
+    <script src="../coverage.js"></script>
+  </body>
+</html>
