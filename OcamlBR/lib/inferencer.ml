@@ -408,7 +408,12 @@ module Infer = struct
     | Ast.POption None ->
       let* fresh = fresh_var in
       return (Subst.empty, fresh, env)
-    | Ast.POption (Some p) -> infer_pattern env p
+    | Ast.POption None ->
+      let* fresh = fresh_var in
+      return (Subst.empty, TOption fresh, env)
+    | Ast.POption (Some p) ->
+      let* sub, typ, env = infer_pattern env p in
+      return (sub, TOption typ, env)
   ;;
 
   let infer_ty_pattern env : Ast.ty_pattern -> (Subst.t * ty * TypeEnv.t) t = function
