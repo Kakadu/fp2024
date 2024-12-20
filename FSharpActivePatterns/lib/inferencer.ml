@@ -330,7 +330,7 @@ end = struct
   ;;
 
   let remove = Map.remove
-  let remove_many t keys = List.fold ~init:t keys ~f:(fun acc k -> remove acc k)
+  let remove_many t keys = List.fold ~init:t keys ~f:remove
   let empty = Map.empty (module String)
 
   (* apply given substitution to all elements of environment *)
@@ -406,11 +406,11 @@ let rec infer_pattern env ~shadow = function
     let* fresh = make_fresh_var in
     let scheme = Scheme (VarSet.empty, fresh) in
     let env, typ =
-      match shadow with
-      | true -> TypeEnvironment.extend env name scheme, fresh
-      | false ->
+      if shadow
+      then TypeEnvironment.extend env name scheme, fresh
+      else (
         let typ = TypeEnvironment.find_typ env name in
-        env, Option.value typ ~default:fresh
+        env, Option.value typ ~default:fresh)
     in
     return (env, typ)
   | POption None ->
