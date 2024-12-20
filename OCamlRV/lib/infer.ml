@@ -174,7 +174,7 @@ let rec infer_expression env = function
   | ExprFun (p, e) ->
     let* env, t = infer_pattern env p in
     let* sub, t1 = infer_expression env e in
-    return (sub, Subst.apply sub (arrow t t1))
+    return (sub, Subst.apply sub (fun_type t t1))
   | ExprTuple (e1, e2, el) ->
     let* sub, t =
       List.fold_left
@@ -198,7 +198,7 @@ let rec infer_expression env = function
     let* fresh = fresh_var in
     let* s1, t1 = infer_expression env e1 in
     let* s2, t2 = infer_expression (TypeEnv.apply s1 env) e2 in
-    let* s3 = Subst.unify (arrow t2 fresh) (Subst.apply s2 t1) in
+    let* s3 = Subst.unify (fun_type t2 fresh) (Subst.apply s2 t1) in
     let* sub = Subst.compose_all [ s1; s2; s3 ] in
     let t = Subst.apply sub fresh in
     return (sub, t)

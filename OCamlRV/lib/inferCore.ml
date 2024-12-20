@@ -6,7 +6,7 @@ open Ast
 open AstPrinter
 open Base
 
-let arrow l r = AFun (l, r)
+let fun_type l r = AFun (l, r)
 let int_type = AInt
 let bool_type = ABool
 let string_type = AString
@@ -156,7 +156,7 @@ end = struct
         (match find s b with
          | None -> ty
          | Some x -> x)
-      | AFun (l, r) -> arrow (helper l) (helper r)
+      | AFun (l, r) -> fun_type (helper l) (helper r)
       | AList t -> list_type (helper t)
       | ATuple ts -> tuple_type (List.map ~f:helper ts)
     in
