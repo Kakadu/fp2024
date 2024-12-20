@@ -7,8 +7,10 @@
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/003occurs.ml
   Type checking failed: Occurs check failed
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/004let_poly.ml
-  _2 : int -> int option -> int
   Type checking failed: unification failed on bool
+   and int
+  
+  Type checking failed: unification failed on string
    and int
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/015tuples.ml
@@ -37,7 +39,7 @@
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/004manyargs.ml
   wrap : '_0 -> '_0
-  test3 : '_5 -> '_4 -> '_3 -> int
+  test3 : int -> int -> int -> int
   test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/005fix.ml
@@ -52,10 +54,10 @@
   foo : int -> int -> int -> int
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/006partial3.ml
-  foo : '_0 -> '_2 -> int -> unit
+  foo : int -> int -> int -> unit
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/007order.ml
-  _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> '_0 -> int
+  _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
   main : unit
   $ ../bin/REPL.exe -fromfile manytests/typed/008ascription.ml
   addi : ('_0 -> bool -> int) -> ('_0 -> bool) -> '_0 -> int
@@ -67,19 +69,21 @@
   _2 : int
   _3 : (int, string) option
   _4 : int -> '_14
-  _5 : int
-  _6 : '_28 option -> '_28
+  _6 : '_26 option -> '_26
   int_of_option : int option -> int
   _42 : int -> bool
-  id1 : '_42 -> '_42
-  id2 : '_43 -> '_43
+  id1 : '_40 -> '_40
+  id2 : '_41 -> '_41
+  Type checking failed: unification failed on string
+   and int
+  
   $ ../bin/REPL.exe -fromfile manytests/typed/015tuples.ml
   fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5
-  map : ('_9 -> '_11) -> '_7 -> ('_11, '_11)
-  fixpoly : '_14 -> ('_22 -> '_26, '_22 -> '_26)
-  feven : '_33 -> int -> int
-  fodd : '_40 -> int -> int
-  tie : ('_47 -> '_48, '_47 -> '_48)
+  map : ('_9 -> '_11) -> ('_9, '_9) -> ('_11, '_11)
+  fixpoly : (('_21 -> '_25, '_21 -> '_25) -> '_21 -> '_25, ('_21 -> '_25, '_21 -> '_25) -> '_21 -> '_25) -> ('_21 -> '_25, '_21 -> '_25)
+  feven : ('_33, int -> int) -> int -> int
+  fodd : (int -> int, '_41) -> int -> int
+  tie : (int -> int, int -> int)
   Type checking failed: Undefined variable 'modd'
   : string
   $ ../bin/REPL.exe -fromfile manytests/typed/016lists.ml
@@ -88,6 +92,6 @@
   map : ('_25 -> '_56) -> '_25 list -> '_56 list
   append : '_67 list -> '_67 list -> '_67 list
   concat : '_81 list list -> '_81 list
-  iter : '_85 -> '_87 list -> unit
+  iter : ('_87 -> unit) -> '_87 list -> unit
   cartesian : '_98 list -> '_105 list -> ('_98, '_105) list
   main : int
