@@ -53,6 +53,7 @@ let pp_bin_op ppf = function
   | Lte -> fprintf ppf "<="
   | And -> fprintf ppf "&&"
   | Or -> fprintf ppf "||"
+  | Cons -> fprintf ppf "::"
 ;;
 
 let pp_un_op ppf = function
@@ -89,7 +90,7 @@ let precedence_bin_op = function
   | Mult | Div -> 2
   | Add | Sub -> 1
   | And | Or -> 0
-  | Gt | Lt | Eq | Neq | Gte | Lte -> -1
+  | Gt | Lt | Eq | Neq | Gte | Lte | Cons -> -1
 ;;
 
 let pp_ty_pattern ppf : Ast.ty_pattern -> unit = function

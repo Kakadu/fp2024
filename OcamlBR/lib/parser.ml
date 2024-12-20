@@ -265,6 +265,7 @@ let relation =
 ;;
 
 let logic = choice [ pbinop And "&&"; pbinop Or "||" ]
+let cons = pbinop Cons "::"
 
 (*------------------Unary operators-----------------*)
 
@@ -278,6 +279,14 @@ let pos_sign = punop Positive "+"
 let chain e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
   e >>= go
+;;
+
+let rec chainr1 e op =
+  let* left = e in
+  (let* f = op in
+   let* right = chainr1 e op in
+   return (f left right))
+  <|> return left
 ;;
 
 let un_chain e op =
@@ -431,12 +440,12 @@ let pexpr =
         ; un_chain app_expr pos_sign
         ]
     in
-    (* let inf_op = pEinf_op (un_expr <|> atom_expr) <|> un_expr in *)
     let factor_expr = chain un_expr (mult <|> div) in
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
     let log_expr = chain rel_expr logic in
-    choice [ let_expr; log_expr ])
+    let cons_expr = chainr1 log_expr cons in
+    choice [ let_expr; cons_expr ])
 ;;
 
 let pstructure =

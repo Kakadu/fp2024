@@ -101,6 +101,7 @@ type bin_op =
   | Lte (* less than or equal *)
   | And (* logical AND *)
   | Or (* logical OR *)
+  | Cons (* :: *)
 [@@deriving show { with_path = false }, qcheck]
 
 type un_op =

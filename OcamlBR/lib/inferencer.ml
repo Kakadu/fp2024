@@ -1,6 +1,6 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 (*
-(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+   (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Typedtree
 
 module R : sig
@@ -500,6 +500,9 @@ let extract_var_name = function
           | Gt | Lt | Eq | Neq | Gte | Lte ->
             return (tprim_int @-> tprim_int @-> tprim_bool)
           | And | Or -> return (tprim_bool @-> tprim_bool @-> tprim_bool)
+          | Cons ->
+          let* fresh = fresh_var in
+          return (fresh, TList fresh, TList fresh)
         in *)
       let* e1t, e2t, et =
         match op with
