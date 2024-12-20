@@ -24,7 +24,7 @@ let is_keyword = function
   | "and"
   | "match"
   | "with"
-  | "print_int" -> true
+  | "function" -> true
   | _ -> false
 ;;
 
@@ -182,7 +182,7 @@ let ptype =
   pstoken ":" *> (some_type >>| fun t -> Some t) <|> return None
 ;;
 
-let pident = lift (fun t -> Id (t)) varname <|> ppref_op
+let pident = lift (fun t -> Id t) varname <|> ppref_op
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
 let pat_any = pstoken "_" *> return PAny
@@ -293,27 +293,27 @@ let rec pbody pexpr =
 ;;
 
 (*
-let pvalue_binding pexpr =
-  lift2
-    (fun id e -> Evalue_binding (id, e))
-    (pparens pident <|> pident <|> ppref_op)
-    (pstoken "=" *> pexpr <|> pbody pexpr)
-;;
+   let pvalue_binding pexpr =
+   lift2
+   (fun id e -> Evalue_binding (id, e))
+   (pparens pident <|> pident <|> ppref_op)
+   (pstoken "=" *> pexpr <|> pbody pexpr)
+   ;;
 
-let plet pexpr =
-  pstoken "let"
-  *> lift4
-       (fun r id id_list e2 -> Elet (r, id, id_list, e2))
-       (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
-       (pvalue_binding pexpr)
-       (many (pstoken "and" *> pvalue_binding pexpr))
-       (pstoken "in" *> pexpr)
-;;*)
+   let plet pexpr =
+   pstoken "let"
+   *> lift4
+   (fun r id id_list e2 -> Elet (r, id, id_list, e2))
+   (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
+   (pvalue_binding pexpr)
+   (many (pstoken "and" *> pvalue_binding pexpr))
+   (pstoken "in" *> pexpr)
+   ;;*)
 
 let pvalue_binding pexpr =
   lift2
     (fun ty_pattern expr -> Evalue_binding (ty_pattern, expr))
-    (pfirst_ty_pattern)
+    pfirst_ty_pattern
     (pstoken "=" *> pexpr <|> pbody pexpr)
 ;;
 
@@ -329,17 +329,17 @@ let plet pexpr =
 ;;
 
 let pEfun pexpr =
-  (* if there's inly one argument, ascription without parentheses is possible *)
+  (* if there's only one argument, ascription without parentheses is possible *)
   let single_arg =
     lift2
       (fun arg body -> Efun (arg, [], body))
-      (pstoken "fun" *> pfirst_ty_pattern)
+      (pstoken "fun" *> pws1 *> pfirst_ty_pattern)
       (pstoken "->" *> pexpr)
   in
   let mult_args =
     lift3
       (fun arg args body -> Efun (arg, args, body))
-      (pstoken "fun" *> pty_pattern)
+      (pstoken "fun" *> pws1 *> pty_pattern)
       (many pty_pattern)
       (pstoken "->" *> pexpr)
   in
@@ -387,11 +387,21 @@ let pEmatch pexpr =
       (ppattern <* pstoken "->")
       (pwhitespace *> pexpr)
   in
-  lift3
-    (fun e case case_l -> Ematch (e, case, case_l))
-    (pstoken "match" *> pexpr <* pstoken "with")
-    ((pstoken "|" <|> pwhitespace) *> parse_case)
-    (many (pstoken "|" *> parse_case))
+  let match_cases =
+    lift3
+      (fun e case case_l -> Ematch (Some e, case, case_l))
+      (pstoken "match" *> pexpr <* pstoken "with")
+      ((pstoken "|" <|> pwhitespace) *> parse_case)
+      (many (pstoken "|" *> parse_case))
+  in
+  let function_cases =
+    lift2
+      (fun case case_l -> Ematch (None, case, case_l))
+      (pstoken "function" *> pstoken "|" *> parse_case
+       <|> pstoken "function" *> pwhitespace *> parse_case)
+      (many (pstoken "|" *> parse_case))
+  in
+  function_cases <|> match_cases
 ;;
 
 (* let pEprint_int expr = lift (fun e -> Eprint_int e) (pstoken "print_int" *> pparens expr) *)

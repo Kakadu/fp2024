@@ -143,13 +143,15 @@ let rec shrink_expr = function
       <+> return e2
       <+> map (fun e1' -> Efun_application (e1', e2)) (shrink_expr e1)
       <+> map (fun e2' -> Efun_application (e1, e2')) (shrink_expr e2))
-  | Ematch (e, case, case_l) ->
+  | Ematch (Some e, case, case_l) ->
     Iter.(
       let shrink_cases_length =
-        map (fun cases' -> Ematch (e, case, cases')) (QCheck.Shrink.list case_l)
+        map (fun cases' -> Ematch (Some e, case, cases')) (QCheck.Shrink.list case_l)
       in
-      map (fun e' -> Ematch (e', case, case_l)) (shrink_expr e) <+> shrink_cases_length)
-  (* | Eprint_int e -> Iter.(map (fun e' -> Eprint_int e') (shrink_expr e)) *)
+      map (fun e' -> Ematch (Some e', case, case_l)) (shrink_expr e)
+      <+> shrink_cases_length)
+  | Ematch (None, case, case_l) ->
+    Iter.(map (fun cases' -> Ematch (None, case, cases')) (QCheck.Shrink.list case_l))
   | _ -> Iter.empty
 
 and shrink_value_binding = function

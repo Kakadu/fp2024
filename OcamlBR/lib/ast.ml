@@ -66,7 +66,7 @@ let gen_id_name =
 
 type id = Id of string [@@deriving show { with_path = false }]
 
-let gen_id = QCheck.Gen.map (fun name -> Id (name)) gen_id_name
+let gen_id = QCheck.Gen.map (fun name -> Id name) gen_id_name
 
 type const =
   | Int of (int[@gen QCheck.Gen.int_range 0 1000])
@@ -169,7 +169,7 @@ type expr =
   (** match E with P1 -> E1 ... Pn -> Pn *)
   (* E0 bin_op E1, e.g. 1 + 3 *)
   | Ematch of
-      (expr[@gen gen_expr_sized (n / divisor)])
+      (expr[@gen gen_expr_sized (n / divisor)]) option
       * (case[@gen gen_case_sized (n / divisor)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / divisor)))])
   | Eun_op of un_op * (expr[@gen gen_expr_sized (n / divisor)])
@@ -200,7 +200,10 @@ and case =
       * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-and value_binding = Evalue_binding of (ty_pattern[@gen gen_ty_pattern_sized (n / divisor)]) * (expr[@gen gen_expr_sized (n / divisor)])
+and value_binding =
+  | Evalue_binding of
+      (ty_pattern[@gen gen_ty_pattern_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
 (*[@@deriving show { with_path = false }, qcheck]*)
 
 let gen_expr =

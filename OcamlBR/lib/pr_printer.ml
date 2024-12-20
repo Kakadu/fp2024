@@ -30,7 +30,7 @@ open Typedtree
 *)
 
 let pp_id ppf = function
-  | Id (name) -> fprintf ppf "%s" name
+  | Id name -> fprintf ppf "%s" name
 ;;
 
 let pp_const ppf = function
@@ -105,7 +105,7 @@ let rec pp_expr ppf expr =
   | Eif_then_else (e1, e2, None) -> fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
   | Eif_then_else (e1, e2, Some e3) ->
     fprintf ppf "if %a then %a else %a" pp_expr e1 pp_expr e2 pp_expr e3
-  | Ematch (exp, Ecase (first_pat, first_expr), rest_cases) ->
+  | Ematch (Some exp, Ecase (first_pat, first_expr), rest_cases) ->
     let case_to_string (Ecase (pat, expr)) =
       asprintf "| %a -> %a" pp_pattern pat pp_expr expr
     in
@@ -116,6 +116,17 @@ let rec pp_expr ppf expr =
          :: List.map ~f:case_to_string rest_cases)
     in
     fprintf ppf "match %a with %s" pp_expr exp case_list_str
+  | Ematch (None, Ecase (first_pat, first_expr), rest_cases) ->
+    let case_to_string (Ecase (pat, expr)) =
+      asprintf "| %a -> %a" pp_pattern pat pp_expr expr
+    in
+    let case_list_str =
+      String.concat
+        ~sep:" "
+        (case_to_string (Ecase (first_pat, first_expr))
+         :: List.map ~f:case_to_string rest_cases)
+    in
+    fprintf ppf "function %s" case_list_str
   | Eoption (Some e) -> fprintf ppf "(Some %a)" pp_expr e
   | Eoption None -> fprintf ppf "None"
   | Etuple (e1, e2, es) ->
