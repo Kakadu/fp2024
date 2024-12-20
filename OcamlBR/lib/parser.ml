@@ -37,6 +37,71 @@ let ptoken s = pwhitespace *> s
 let pparens p = pstoken "(" *> p <* pstoken ")"
 let psqparens p = pstoken "[" *> p <* pstoken "]"
 
+(*------------------Prefix operators-----------------*)
+
+let ppref_op =
+  let pref_op =
+    ptoken
+      (let* first_char =
+         take_while1 (function
+           | '|'
+           | '~'
+           | '?'
+           | '<'
+           | '>'
+           | '!'
+           | '&'
+           | '*'
+           | '/'
+           | '='
+           | '+'
+           | '-'
+           | '@'
+           | '^' -> true
+           | _ -> false)
+       in
+       let* rest =
+         take_while (function
+           | '.'
+           | ':'
+           | '|'
+           | '~'
+           | '?'
+           | '<'
+           | '>'
+           | '!'
+           | '&'
+           | '*'
+           | '/'
+           | '='
+           | '+'
+           | '-'
+           | '@'
+           | '^' -> true
+           | _ -> false)
+       in
+       match first_char, rest with
+       | "|", "" -> fail "Prefix operator cannot be called | "
+       | "~", "" -> fail "Prefix operator cannot be called ~ "
+       | "?", "" -> fail "Prefix operator cannot be called ? "
+       | _ -> return (Id (first_char ^ rest)))
+  in
+  pparens pref_op
+;;
+
+let pEinf_op pexpr =
+  ppref_op
+  >>= fun inf_op ->
+  lift2
+    (fun left right -> Efun_application (Efun_application (Evar inf_op, left), right))
+    (pws1 *> pexpr)
+    (pwhitespace *> pexpr)
+;;
+
+(* let pEinf_op =
+   pwhitespace *> pinf_op >>= fun inf_op -> return (fun e1 e2 -> Efun_application (Efun_application (Evar inf_op, e1), e2))
+   ;; *)
+
 (*-------------------------Constants/Variables-------------------------*)
 
 let pint =
@@ -117,7 +182,7 @@ let ptype =
   pstoken ":" *> (some_type >>| fun t -> Some t) <|> return None
 ;;
 
-let pident = lift2 (fun t v -> Id (t, v)) varname ptype
+let pident = lift (fun t -> Id (t)) varname <|> ppref_op
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
 let pat_any = pstoken "_" *> return PAny
@@ -208,71 +273,6 @@ let negation = punop Not "not" <* pws1
 let neg_sign = punop Negative "-"
 let pos_sign = punop Positive "+"
 
-(*------------------Prefix operators-----------------*)
-
-let ppref_op =
-  let pref_op =
-    ptoken
-      (let* first_char =
-         take_while1 (function
-           | '|'
-           | '~'
-           | '?'
-           | '<'
-           | '>'
-           | '!'
-           | '&'
-           | '*'
-           | '/'
-           | '='
-           | '+'
-           | '-'
-           | '@'
-           | '^' -> true
-           | _ -> false)
-       in
-       let* rest =
-         take_while (function
-           | '.'
-           | ':'
-           | '|'
-           | '~'
-           | '?'
-           | '<'
-           | '>'
-           | '!'
-           | '&'
-           | '*'
-           | '/'
-           | '='
-           | '+'
-           | '-'
-           | '@'
-           | '^' -> true
-           | _ -> false)
-       in
-       match first_char, rest with
-       | "|", "" -> fail "Prefix operator cannot be called | "
-       | "~", "" -> fail "Prefix operator cannot be called ~ "
-       | "?", "" -> fail "Prefix operator cannot be called ? "
-       | _ -> return (Id (first_char ^ rest, None)))
-  in
-  pparens pref_op
-;;
-
-let pEinf_op pexpr =
-  ppref_op
-  >>= fun inf_op ->
-  lift2
-    (fun left right -> Efun_application (Efun_application (Evar inf_op, left), right))
-    (pws1 *> pexpr)
-    (pwhitespace *> pexpr)
-;;
-
-(* let pEinf_op =
-   pwhitespace *> pinf_op >>= fun inf_op -> return (fun e1 e2 -> Efun_application (Efun_application (Evar inf_op, e1), e2))
-   ;; *)
-
 (*------------------------Expressions----------------------*)
 
 let chain e op =
@@ -292,6 +292,7 @@ let rec pbody pexpr =
   pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (p, patterns, e))
 ;;
 
+(*
 let pvalue_binding pexpr =
   lift2
     (fun id e -> Evalue_binding (id, e))
@@ -303,6 +304,24 @@ let plet pexpr =
   pstoken "let"
   *> lift4
        (fun r id id_list e2 -> Elet (r, id, id_list, e2))
+       (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
+       (pvalue_binding pexpr)
+       (many (pstoken "and" *> pvalue_binding pexpr))
+       (pstoken "in" *> pexpr)
+;;*)
+
+let pvalue_binding pexpr =
+  lift2
+    (fun ty_pattern expr -> Evalue_binding (ty_pattern, expr))
+    (pfirst_ty_pattern)
+    (pstoken "=" *> pexpr <|> pbody pexpr)
+;;
+
+let plet pexpr =
+  pstoken "let"
+  *> lift4
+       (fun rec_flag value_bindings and_bindings body ->
+         Elet (rec_flag, value_bindings, and_bindings, body))
        (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
        (pvalue_binding pexpr)
        (many (pstoken "and" *> pvalue_binding pexpr))

@@ -30,8 +30,7 @@ open Typedtree
 *)
 
 let pp_id ppf = function
-  | Id (name, None) -> fprintf ppf "%s" name
-  | Id (name, Some t) -> fprintf ppf "%s : %a" name pp_ty t
+  | Id (name) -> fprintf ppf "%s" name
 ;;
 
 let pp_const ppf = function
@@ -200,9 +199,10 @@ and precedence = function
   | _ -> 2
 
 and pp_value_binding ppf = function
-  | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
-  | Evalue_binding (Id (name, Some suffix), e) ->
-    fprintf ppf "%s : %a = %a" name pp_ty suffix pp_expr e
+  | Evalue_binding ((pattern, None), e) ->
+    Format.fprintf ppf "%a = %a" pp_pattern pattern pp_expr e
+  | Evalue_binding ((pattern, Some ty), e) ->
+    Format.fprintf ppf "%a : %a = %a" pp_pattern pattern pp_ty ty pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =

@@ -1,5 +1,5 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
-
+(*
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Typedtree
 
@@ -353,7 +353,7 @@ module Infer = struct
 
   open R
 
-  let string_of_id (Ast.Id (name, _)) = name
+  let string_of_id (Ast.Id (name)) = name
 
   let infer_const c =
     match c with
@@ -423,21 +423,65 @@ module Infer = struct
       infer_pattern env pat
   ;;
 
-  (*
-     let rec id_type_to_ty (t : Ast.id_type) : ty =
-     match t with
-     | Ast.TInt -> tprim_int
-     | Ast.TString -> tprim_string
-     | Ast.TBool -> tprim_bool
-     | Ast.Tlist t -> tlist (id_type_to_ty t)
-     | Ast.TTuple (t1, t2, ts) ->
-     ttuple (id_type_to_ty t1) (id_type_to_ty t2) (List.map id_type_to_ty ts)
-     | Ast.TFun (t1, t2) -> tarrow (id_type_to_ty t1) (id_type_to_ty t2)
-     ;; *)
+
+  let extract_names_from_let_binds let_binds = function
+    | Ast.Evalue_binding ((PVar (Id name), _), _) -> name
+    | _ -> failwith "Unsupported pattern in let binding"
+  ;;
+
+  let extend_env_with_bind_names env let_binds =
+    let bind_names = extract_names_from_let_binds let_binds in
+    let fresh_vars = List.init (List.length let_binds) (fun _ -> fresh_var) in
+    List.fold2_exn
+      ~init:(return env)
+      ~f:(fun acc bind_name fresh_var ->
+        let* fresh_var = fresh_var in
+        let* acc = acc in
+        return (TypeEnv.extend acc bind_name (S (VarSet.empty, fresh_var))))
+      bind_names
+      fresh_vars
+  ;;
+
+  let extend_env_with_let_binds env is_rec let_binds =
+    List.fold
+      let_binds
+      ~init:(return (env, Subst.empty))
+      ~f:(fun acc let_bind ->
+        let* env, subst_acc = acc in
+        let* subst, bind_varname, scheme = infer_let_bind env is_rec let_bind in
+        let env = TypeEnv.extend env bind_varname scheme in
+        let env = TypeEnv.apply subst env in
+        let* subst_acc = Subst.compose subst_acc subst in
+        return (env, subst_acc))
+  ;;
+
+  let infer_let_bind env is_rec = function
+  | Evalue_binding ((pattern, Some typ), expr) ->
+    let* subst1, t1 = infer env expr in
+    let typ = Subst.apply subst1 typ in
+    let* subst2 = Subst.unify t1 typ in
+    let env' = TypeEnv.apply subst2 env in
+    let generalized_scheme = generalize env' t1 in
+    let varname = extract_var_name pattern in
+    return (subst2, varname, generalized_scheme)
+  | Evalue_binding ((pattern, None), expr) ->
+    let* subst, t1 = infer env expr in
+    let env' = TypeEnv.apply subst env in
+    let generalized_scheme = generalize env' t1 in
+    let varname = extract_var_name pattern in
+    return (subst, varname, generalized_scheme)
+  | _ -> failwith "Unsupported let binding"
+;;
+
+let extract_var_name = function
+  | PVar (Id name) -> name
+  | _ -> failwith "Unsupported pattern in let binding"
+;;
+
 
   let rec infer (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
     match expr with
-    | Evar (Id (x, _)) -> lookup_env x env
+    | Evar (Id (x)) -> lookup_env x env
     | Econst (Int _) -> return (Subst.empty, tprim_int)
     | Econst (Bool _) -> return (Subst.empty, tprim_bool)
     | Econst (String _) -> return (Subst.empty, tprim_string)
@@ -492,7 +536,7 @@ module Infer = struct
       let* s3 = unify t1 tprim_bool in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, Subst.apply final_subst t2)
-    | Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), _, e2) ->
+    (*| Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), _, e2) ->
       (match t_opt with
        | Some expected_type ->
          let* s1, t1 = infer env e1 in
@@ -526,7 +570,20 @@ module Infer = struct
         let* sub = combined_s Subst.empty s' in
         Subst.compose sub s3
       in
-      return (s_final, t2)
+      return (s_final, t2)*)
+    | Elet (Recursive, let_bind, let_binds, e) ->
+      let let_binds = let_bind :: let_binds in
+      let* env = extend_env_with_bind_names env let_binds in
+      let* env, subst1 = extend_env_with_let_binds env Recursive let_binds in
+      let* subst2, typ = infer env e in
+      let* subst_final = Subst.compose subst1 subst2 in
+      return (subst_final, typ)
+    | Elet (Non_recursive, let_bind, let_binds, e) ->
+      let let_binds = let_bind :: let_binds in
+      let* env, subst1 = extend_env_with_let_binds env Non_recursive let_binds in
+      let* subst2, typ = infer env e in
+      let* subst_final = Subst.compose subst1 subst2 in
+      return (subst_final, typ)
     (* | Efun (pattern, pattern_list, body) ->
        let* env, pat_types =
        RList.fold_left
@@ -714,3 +771,4 @@ module Infer = struct
     | Error e -> printf "Parsing error: %s\n" e
   ;;
 end
+*)

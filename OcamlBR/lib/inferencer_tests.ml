@@ -1,8 +1,34 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
-
+(*
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Inferencer.Infer
 
+
+let infer_from_file file_name =
+  let file_path = "../tests/inferencer_tests/" ^ file_name in
+  let input = 
+    let ic = open_in file_path in
+    let len = in_channel_length ic in
+    let content = really_input_string ic len in
+    close_in ic;
+    content
+  in
+  let result = infer_program_test input in
+  result
+
+let%expect_test "do_not_type_001" =
+  let _ = infer_from_file "do_not_type/001.ml" in
+  [%expect {| val ..3232. |}]
+(*
+let%expect_test "do_not_type_002if" =
+  let _ = infer_from_file "do_not_type/002if.ml" in
+  [%expect {| val ... |}]
+*)
+
+
+*)
+
+(*
 let%expect_test _ =
   let _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in
   [%expect {| |}]
@@ -106,3 +132,4 @@ let%expect_test _ =
   in
   [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;
+*)

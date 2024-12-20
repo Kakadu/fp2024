@@ -64,9 +64,9 @@ let gen_id_name =
    | TOption of ty
    [@@deriving show { with_path = false }] *)
 
-type id = Id of string * ty option [@@deriving show { with_path = false }]
+type id = Id of string [@@deriving show { with_path = false }]
 
-let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
+let gen_id = QCheck.Gen.map (fun name -> Id (name)) gen_id_name
 
 type const =
   | Int of (int[@gen QCheck.Gen.int_range 0 1000])
@@ -200,8 +200,8 @@ and case =
       * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-and value_binding = Evalue_binding of id * (expr[@gen gen_expr_sized (n / divisor)])
-[@@deriving show { with_path = false }, qcheck]
+and value_binding = Evalue_binding of (ty_pattern[@gen gen_ty_pattern_sized (n / divisor)]) * (expr[@gen gen_expr_sized (n / divisor)])
+(*[@@deriving show { with_path = false }, qcheck]*)
 
 let gen_expr =
   QCheck.Gen.(
