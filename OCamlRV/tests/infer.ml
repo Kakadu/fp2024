@@ -141,6 +141,18 @@ let%expect_test _ =
 
 let%expect_test _ =
   test_infer {| 
+    let a = [1; 2; 3];;|};
+  [%expect {| val a : int list |}]
+;;
+
+let%expect_test _ =
+  test_infer {| 
+    let a = ["1"; 2; 3];;|};
+  [%expect {| Infer error: Unification failed on string and int |}]
+;;
+
+let%expect_test _ =
+  test_infer {| 
     let idk (fs : int) (sn : int) = fs + sn * fs;;|};
   [%expect {| val idk : int -> int -> int |}]
 ;;

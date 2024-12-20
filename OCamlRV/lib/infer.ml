@@ -187,6 +187,22 @@ let rec infer_expression env = function
         (e1 :: e2 :: el)
     in
     return (sub, tuple_type (List.rev_map ~f:(Subst.apply sub) t))
+  | ExprList (l, ls) ->
+    (match l :: ls with
+     | [] ->
+       let* fresh = fresh_var in
+       return (Subst.empty, list_type fresh)
+     | h :: tl ->
+       let* sr, tr =
+         List.fold_left tl ~init:(infer_expression env h) ~f:(fun acc e ->
+           let* sub, t = acc in
+           let* s1, t1 = infer_expression env e in
+           let* s2 = Subst.unify t t1 in
+           let* final_s = Subst.compose_all [ sub; s1; s2 ] in
+           let final_t = Subst.apply final_s t in
+           return (final_s, final_t))
+       in
+       return (sr, AList tr))
   | ExprCons (e1, e2) ->
     let* s1, t1 = infer_expression env e1 in
     let* s2, t2 = infer_expression env e2 in
