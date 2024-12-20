@@ -630,28 +630,38 @@ let extract_var_name = function
     | Eoption (Some e) ->
       let* s, t = infer env e in
       return (s, TOption t)
-    | Ematch (e, c, cl) ->
+    | Ematch (Some e, c, cl) ->
       let* sub1, t1 = infer env e in
       let env = TypeEnv.apply sub1 env in
-      let* fresh = fresh_var in
-      let cases = c :: cl in
-      let* sub, t =
-        List.fold_left
-          (fun acc case ->
-            let* _, t = acc in
-            match case with
-            | Ast.Ecase (pat, exp) ->
-              let* sub_pat, pt, env1 = infer_pattern env pat in
-              let* sub2 = Subst.unify t1 pt in
-              let env2 = TypeEnv.apply sub2 env1 in
-              let* sub3, t' = infer env2 exp in
-              let* sub4 = Subst.unify t' t in
-              let* sub = Subst.compose_all [ sub_pat; sub2; sub3; sub4 ] in
-              return (sub, Subst.apply sub t))
-          (return (sub1, fresh))
-          cases
-      in
-      return (sub, t)
+      Format.printf "match: %a\n" TypeEnv.pp env;
+      let* tv = fresh_var in
+      RList.fold_left
+        (c :: cl)
+        ~init:(return (sub1, tv))
+        ~f:(fun (s, t) (Ast.Ecase (pat, e)) ->
+          let* sub, tp, env = infer_pattern env pat in
+          Format.printf "match2: %a\n" TypeEnv.pp env;
+          let* s2 = unify t1 tp in
+          Format.printf "unify: %a\n" TypeEnv.pp env;
+          let* sub2, t2 = infer (TypeEnv.apply sub env) e in
+          Format.printf "infer: %a\n" TypeEnv.pp env;
+          let* s3 = unify t t2 in
+          let* final_subs = Subst.compose_all [ s3; sub2; s2; s ] in
+          Format.printf "match3: %a\n" TypeEnv.pp env;
+          return (final_subs, Subst.apply final_subs t))
+    | Ematch (None, c, cl) ->
+      let* t1 = fresh_var in
+      let* tv = fresh_var in
+      RList.fold_left
+        (c :: cl)
+        ~init:(return (Subst.empty, tv))
+        ~f:(fun (s, t) (Ast.Ecase (pat, e)) ->
+          let* sub, tp, env = infer_pattern env pat in
+          let* s2 = unify t1 tp in
+          let* sub2, t2 = infer (TypeEnv.apply sub env) e in
+          let* s3 = unify t t2 in
+          let* final_subs = Subst.compose_all [ s3; sub2; s2; s ] in
+          return (final_subs, Subst.apply final_subs t))
     | Etuple (e1, e2, es) ->
       let* s1, t1 = infer env e1 in
       let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
