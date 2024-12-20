@@ -1,6 +1,6 @@
 (library
  (name typecheck)
- (libraries base angstrom ast)
+ (libraries base ast baseMonad ppType)
  (inline_tests)
  (instrumentation
   (backend bisect_ppx))

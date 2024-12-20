@@ -20,34 +20,7 @@ let sep_by sep list print =
 
 let sep_by_comma list print = sep_by ", " list print
 let print_ident ident = ident
-
-let rec print_type = function
-  | Type_int -> "int"
-  | Type_string -> "string"
-  | Type_bool -> "bool"
-  | Type_array (size, type') -> asprintf "[%i]%s" size (print_type type')
-  | Type_func (arg_types, return_types) ->
-    let print_returns =
-      match return_types with
-      | _ :: _ :: _ -> asprintf " (%s)" (sep_by_comma return_types print_type)
-      | type' :: _ -> " " ^ print_type type'
-      | [] -> ""
-    in
-    asprintf "func(%s)%s" (sep_by_comma arg_types print_type) print_returns
-  | Type_chan (chan_dir, t) ->
-    let print_chan_dir =
-      match chan_dir with
-      | Chan_bidirectional -> "chan"
-      | Chan_receive -> "<-chan"
-      | Chan_send -> "chan<-"
-    in
-    let print_type =
-      match t with
-      | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type t)
-      | _ -> asprintf "%s" (print_type t)
-    in
-    asprintf "%s %s" print_chan_dir print_type
-;;
+let print_type = PpType.print_type
 
 let print_idents_with_types list =
   let rec helper acc = function

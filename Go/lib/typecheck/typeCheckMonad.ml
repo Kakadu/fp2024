@@ -3,9 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
-open TypeCheckErrors
-
-type error = TypeCheckError of type_check_error [@@deriving show { with_path = false }]
 
 module Ident = struct
   type t = ident
@@ -28,61 +25,8 @@ type local_env = ctype MapIdent.t list
 type current_func = ident
 type type_check = global_env * local_env * current_func option
 
-module BaseMonad = struct
-  type ('st, 'a) t = 'st -> 'st * ('a, error) Result.t
-
-  let return : 'a -> ('st, 'a) t = fun x st -> st, Result.Ok x
-  let fail : 'a -> ('st, 'b) t = fun e st -> st, Result.Error e
-
-  let ( >>= ) : ('st, 'a) t -> ('a -> ('st, 'b) t) -> ('st, 'b) t =
-    fun x f st ->
-    let st1, x1 = x st in
-    match x1 with
-    | Result.Ok x -> f x st1
-    | Result.Error x -> fail x st1
-  ;;
-
-  let ( *> ) : ('st, 'a) t -> ('st, 'b) t -> ('st, 'b) t = fun x1 x2 -> x1 >>= fun _ -> x2
-
-  let ( >>| ) : ('st, 'a) t -> ('a -> 'b) -> ('st, 'b) t =
-    fun x f st ->
-    let st, x = x st in
-    match x with
-    | Result.Ok x -> return (f x) st
-    | Result.Error er -> fail er st
-  ;;
-
-  let iter : ('a -> ('st, unit) t) -> 'a list -> ('st, unit) t =
-    fun f list ->
-    let f acc el = acc *> f el *> return () in
-    List.fold_left f (return ()) list
-  ;;
-
-  let iter2 : ('a -> 'b -> ('st, unit) t) -> 'a list -> 'b list -> ('st, unit) t =
-    fun f list1 list2 ->
-    let f acc el1 el2 = acc *> f el1 el2 *> return () in
-    List.fold_left2 f (return ()) list1 list2
-  ;;
-
-  let map : ('a -> ('st, 'b) t) -> 'a list -> ('st, 'b list) t =
-    fun f list ->
-    let f acc el = acc >>= fun acc -> f el >>= fun el -> return (el :: acc) in
-    List.fold_left f (return []) list >>| List.rev
-  ;;
-
-  let fold_left : ('a -> 'b -> ('st, 'a) t) -> 'a -> 'b list -> ('st, 'a) t =
-    fun f acc l ->
-    let f' acc a = acc >>= fun acc -> f acc a >>= return in
-    List.fold_left f' (return acc) l
-  ;;
-
-  let read : ('st, 'st) t = fun st -> return st st
-  let write : 'st -> ('st, _) t = fun st_new _ -> st_new, Result.Ok ()
-  let run : ('st, 'a) t -> 'st -> 'st * ('a, error) Result.t = fun f st -> f st
-end
-
 module CheckMonad = struct
-  open TypeCheckErrors
+  open Errors
   open Format
   include BaseMonad
 
@@ -92,52 +36,9 @@ module CheckMonad = struct
     | Loc
     | Glob
 
-  let concat = String.concat ""
-
-  let sep_by sep list print =
-    let rec helper acc = function
-      | fst :: snd :: tl ->
-        let acc = concat [ acc; print fst; sep ] in
-        helper acc (snd :: tl)
-      | fst :: _ -> acc ^ print fst
-      | [] -> acc
-    in
-    helper "" list
-  ;;
-
-  let sep_by_comma list print = sep_by ", " list print
-
-  let rec print_type_simple = function
-    | Type_int -> "int"
-    | Type_string -> "string"
-    | Type_bool -> "bool"
-    | Type_array (size, type') -> asprintf "[%i]%s" size (print_type_simple type')
-    | Type_func (arg_types, return_types) ->
-      let print_returns =
-        match return_types with
-        | _ :: _ :: _ -> asprintf " (%s)" (sep_by_comma return_types print_type_simple)
-        | type' :: _ -> " " ^ print_type_simple type'
-        | [] -> ""
-      in
-      asprintf "func(%s)%s" (sep_by_comma arg_types print_type_simple) print_returns
-    | Type_chan (chan_dir, t) ->
-      let print_chan_dir =
-        match chan_dir with
-        | Chan_bidirectional -> "chan"
-        | Chan_receive -> "<-chan"
-        | Chan_send -> "chan<-"
-      in
-      let print_type =
-        match t with
-        | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type_simple t)
-        | _ -> asprintf "%s" (print_type_simple t)
-      in
-      asprintf "%s %s" print_chan_dir print_type
-  ;;
-
   let print_type = function
-    | Ctype x -> print_type_simple x
-    | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map print_type_simple x))
+    | Ctype x -> PpType.print_type x
+    | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map PpType.print_type x))
   ;;
 
   let retrieve_paris_first args = List.map (fun (x, _) -> x) args
@@ -146,10 +47,8 @@ module CheckMonad = struct
   let retrieve_anon_func x =
     let args = retrieve_paris_second x.args in
     match x.returns with
-    | Some x ->
-      (match x with
-       | Only_types (x, y) -> Type_func (args, x :: y)
-       | Ident_and_types (x, y) -> Type_func (args, retrieve_paris_second (x :: y)))
+    | Some (Only_types (x, y)) -> Type_func (args, x :: y)
+    | Some (Ident_and_types (x, y)) -> Type_func (args, retrieve_paris_second (x :: y))
     | None -> Type_func (args, [])
   ;;
 
@@ -219,7 +118,7 @@ module CheckMonad = struct
     | None -> write_local_ident env ident
     | Some _ ->
       fail
-        (TypeCheckError
+        (Type_check_error
            (Multiple_declaration
               (Printf.sprintf "%s is redeclared in %s" ident (print_type env))))
   ;;
@@ -230,7 +129,7 @@ module CheckMonad = struct
     | None -> write_local_ident ident env
     | Some _ ->
       fail
-        (TypeCheckError
+        (Type_check_error
            (Multiple_declaration
               (Printf.sprintf "%s is redeclared in %s" env (print_type ident))))
   ;;
@@ -241,7 +140,7 @@ module CheckMonad = struct
     | None -> write_global_ident ident t
     | Some _ ->
       fail
-        (TypeCheckError
+        (Type_check_error
            (Multiple_declaration
               (Printf.sprintf "%s is redeclared in %s" t (print_type ident))))
   ;;
@@ -252,12 +151,12 @@ module CheckMonad = struct
     | None -> write_global_ident t ident
     | Some _ ->
       fail
-        (TypeCheckError
+        (Type_check_error
            (Multiple_declaration
               (Printf.sprintf "%s is redeclared in %s" ident (print_type t))))
   ;;
 
-  let read_ident ident =
+  let retrieve_ident ident =
     read_local_ident ident
     >>= function
     | Some x -> return x
@@ -267,7 +166,7 @@ module CheckMonad = struct
        | Some x -> return x
        | None ->
          fail
-           (TypeCheckError (Undefined_ident (Printf.sprintf "%s is not defined" ident))))
+           (Type_check_error (Undefined_ident (Printf.sprintf "%s is not defined" ident))))
   ;;
 
   let seek_ident ident =
@@ -280,14 +179,14 @@ module CheckMonad = struct
        | Some _ -> return ()
        | None ->
          fail
-           (TypeCheckError (Undefined_ident (Printf.sprintf "%s is not defined" ident))))
+           (Type_check_error (Undefined_ident (Printf.sprintf "%s is not defined" ident))))
   ;;
 
   let get_func_name : current_func t =
     read
     >>= function
     | _, _, Some n -> return n
-    | _ -> fail (TypeCheckError Check_failed)
+    | _ -> fail (Type_check_error Check_failed)
   ;;
 
   let write_env = read_local >>= fun x -> write_local (MapIdent.empty :: x)
