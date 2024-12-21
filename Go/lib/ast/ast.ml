@@ -49,13 +49,6 @@ type unary_oper =
   | Unary_minus (** Unary minus: [-]*)
 [@@deriving show { with_path = false }]
 
-type return_values =
-  | Only_types of type' * type' list (** i.e.  [(int, bool, string)], [int]*)
-  | Ident_and_types of (ident * type') * (ident * type') list
-  (** i.e.  [(a int, b string)], [(a , b int, c string)].
-      The second example will be processed at parsing as [(a int, b int, c string)] *)
-[@@deriving show { with_path = false }]
-
 (** Expressions that can be assigned to a variable or put in "if" statement *)
 type expr =
   | Expr_const of const (** Constants such as [5], ["hi"], [func()] *)
@@ -81,7 +74,7 @@ and const =
 
 (** An anonymous functions such as:
     [func() {}],
-    [func(a, b int) (sum int) { sum = a + b; return }]
+    [func(a, b int) (int) { sum = a + b; return sum}]
     [func(s1 string, s2 string) [2]string { return [2]string{s1,s2} }] *)
 and anon_func =
   { args : (ident * type') list
@@ -91,8 +84,7 @@ and anon_func =
       Empty list means that function doesn't take any arguments.
       The second example will be processed at parsing
       as [func(a int, b int, c string) ...] *)
-  ; returns : return_values option
-  (** None if function doesn't return anything. See return_values type *)
+  ; returns : type' list (** Function return types *)
   ; body : block (** function body *)
   }
 [@@deriving show { with_path = false }]

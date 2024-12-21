@@ -121,7 +121,7 @@ let%expect_test "expr const array with init" =
 
 let%expect_test "expr empty anon func" =
   print_endline
-    (print_expr (Expr_const (Const_func { args = []; returns = None; body = [] })));
+    (print_expr (Expr_const (Const_func { args = []; returns = []; body = [] })));
   [%expect {| func() {} |}]
 ;;
 
@@ -131,7 +131,7 @@ let%expect_test "expr anon func with one arg and one return value" =
        (Expr_const
           (Const_func
              { args = [ "a", Type_int ]
-             ; returns = Some (Only_types (Type_int, []))
+             ; returns = [ Type_int ]
              ; body = [ Stmt_return [ Expr_ident "a" ] ]
              })));
   [%expect {|
@@ -146,36 +146,12 @@ let%expect_test "expr anon func with mult args and return values" =
        (Expr_const
           (Const_func
              { args = [ "a", Type_int; "b", Type_string ]
-             ; returns = Some (Only_types (Type_int, [ Type_string ]))
+             ; returns = [ Type_int; Type_string ]
              ; body = [ Stmt_return [ Expr_ident "a"; Expr_ident "b" ] ]
              })));
   [%expect {|
     func(a int, b string) (int, string) {
         return a, b
-    } |}]
-;;
-
-let%expect_test "expr anon func with mult args and named return values" =
-  print_endline
-    (print_expr
-       (Expr_const
-          (Const_func
-             { args = [ "a", Type_int; "b", Type_string ]
-             ; returns =
-                 Some (Ident_and_types (("res1", Type_int), [ "res2", Type_string ]))
-             ; body =
-                 [ Stmt_assign
-                     (Assign_mult_expr
-                        ( (Lvalue_ident "res1", Expr_ident "a")
-                        , [ Lvalue_ident "res2", Expr_ident "b" ] ))
-                 ; Stmt_return []
-                 ]
-             })));
-  [%expect
-    {|
-    func(a int, b string) (res1 int, res2 string) {
-        res1, res2 = a, b
-        return
     } |}]
 ;;
 
@@ -573,7 +549,7 @@ let%expect_test "stmt long decl one var with type with init" =
        (Stmt_long_var_decl
           (Long_decl_mult_init
              ( Some (Type_func ([], []))
-             , ("a", Expr_const (Const_func { args = []; returns = None; body = [] }))
+             , ("a", Expr_const (Const_func { args = []; returns = []; body = [] }))
              , [] ))));
   [%expect {| var a func() = func() {} |}]
 ;;
@@ -839,11 +815,7 @@ let%expect_test "file with simple func decl" =
   print_endline
     (print_file
        [ Decl_func
-           ( "main"
-           , { args = [ "a", Type_int ]
-             ; returns = Some (Only_types (Type_bool, []))
-             ; body = []
-             } )
+           ("main", { args = [ "a", Type_int ]; returns = [ Type_bool ]; body = [] })
        ]);
   [%expect {| func main(a int) bool {} |}]
 ;;
@@ -852,7 +824,7 @@ let%expect_test "file with multiple declarations" =
   print_endline
     (print_file
        [ Decl_var (Long_decl_no_init (Type_int, "x", []))
-       ; Decl_func ("main", { args = []; returns = None; body = [] })
+       ; Decl_func ("main", { args = []; returns = []; body = [] })
        ]);
   [%expect {|
     var x int
@@ -866,7 +838,7 @@ let%expect_test "file with factorial func" =
        [ Decl_func
            ( "fac"
            , { args = [ "n", Type_int ]
-             ; returns = Some (Only_types (Type_int, []))
+             ; returns = [ Type_int ]
              ; body =
                  [ Stmt_if
                      { init = None
@@ -911,7 +883,7 @@ let%expect_test "file with factorial func" =
        [ Decl_func
            ( "main"
            , { args = []
-             ; returns = None
+             ; returns = []
              ; body =
                  [ Stmt_block
                      [ Stmt_call (Expr_ident "fac", [ Expr_const (Const_int 6) ]) ]
@@ -920,7 +892,7 @@ let%expect_test "file with factorial func" =
        ; Decl_func
            ( "fac"
            , { args = [ "n", Type_int ]
-             ; returns = Some (Only_types (Type_int, []))
+             ; returns = [ Type_int ]
              ; body =
                  [ Stmt_if
                      { init = None

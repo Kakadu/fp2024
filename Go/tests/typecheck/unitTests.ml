@@ -50,7 +50,7 @@ let%expect_test "err: main with args" =
 let%expect_test "err: no main" =
   pp {|
   var a int
-  func foo(a, a, b int) {}
+  func foo(b int) {}
   |};
   [%expect {| ERROR WHILE TYPECHECK WITH Incorrect main error: main func not found |}]
 ;;
@@ -93,7 +93,8 @@ let%expect_test "ok: single var decl with type and wrong init " =
 
   func main() {}
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in binoper |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
 
 let%expect_test "ok: func call init with right number of elements" =
@@ -133,7 +134,23 @@ let%expect_test "err: func call one init with mismathced types" =
     
     func main() {}
     |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: multiple return types mismatched |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
+;;
+
+let%expect_test "err: func call one init with mismathced range" =
+  pp
+    {|
+    var a, b = get3()
+
+    func get3() (int, int, int) {
+        return 1, 2, 3
+    }
+    
+    func main() {}
+    |};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: function returns wrong number of elements in multiple var assign |}]
 ;;
 
 let%expect_test "err: var redeclaration" =
@@ -141,10 +158,11 @@ let%expect_test "err: var redeclaration" =
     var a = 0
 
     var a = ""
-    s
+    
     func main() {}
     |};
-  [%expect {| : syntax error |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Multiple declaration error: a is redeclared in string |}]
 ;;
 
 (********** top func decl **********)
@@ -211,6 +229,80 @@ let%expect_test "err: func arg redeclaration" =
     ERROR WHILE TYPECHECK WITH Multiple declaration error: a is redeclared in int |}]
 ;;
 
+let%expect_test "ok: correct var multiple returns short_decl" =
+  pp
+    {|
+    func foo(a int) (int, int){
+        return a, 5
+    }
+
+    func main() {
+    a, b := foo(4)
+    }
+    |};
+  [%expect {|
+    CORRECT |}]
+;;
+
+let%expect_test "err: incorrect var multiple assign" =
+  pp
+    {|
+    func foo(a int) (int, int){
+        return a, 5
+    }
+    func foo2(a int) (int, int, int){
+        return a, 5, 4
+    }
+
+    func main() {
+    a, b := foo(4)
+    a, b = foo2(4)
+    }
+    |};
+  [%expect
+    {|
+    ERROR WHILE TYPECHECK WITH Mismatched types: Multiple return assign failed |}]
+;;
+
+let%expect_test "ok: correct var multiple assign" =
+  pp
+    {|
+    func foo(a int) (int, int){
+        return a, 5
+    }
+    func foo2(a int) (int, int){
+        return a, 5
+    }
+
+    func main() {
+    a, b := foo(4)
+    a, b = foo2(4)
+    }
+    |};
+  [%expect {|
+    CORRECT |}]
+;;
+
+let%expect_test "err: incorrect var multiple assign after multiple decl with wrong types" =
+  pp
+    {|
+    func foo(a int) (int, string){
+        return a, "g"
+    }
+    func foo2(a int) (int, int){
+        return a, 5
+    }
+
+    func main() {
+    a, b := foo(4)
+    a, b = foo2(4)
+    }
+    |};
+  [%expect
+    {|
+    ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
+;;
+
 let%expect_test "err: var and func with the same name" =
   pp {|
     var foo int
@@ -255,7 +347,27 @@ let%expect_test "ok: factorial func" =
 
 (********** stmt **********)
 
-let%expect_test "undefined var inc" =
+let%expect_test "err: incorrect call in stmt" =
+  pp
+    {|
+
+    func main() {
+      println(1, 1, "k", 3)
+    }
+    
+    func swap() (string, string) {
+      return "a", "b"
+    }
+    func println(a string, b string, c string) (string, string, string) {
+      return a, b, c
+    }
+
+|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Number of given args mismached |}]
+;;
+
+let%expect_test "err: undefined var inc" =
   pp
     {|
     var x int
@@ -269,7 +381,7 @@ let%expect_test "undefined var inc" =
   [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a2 is not defined |}]
 ;;
 
-let%expect_test "undefined func call" =
+let%expect_test "err: undefined func call" =
   pp
     {|
     var x int
@@ -282,7 +394,7 @@ let%expect_test "undefined func call" =
   [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: foo2 is not defined |}]
 ;;
 
-let%expect_test "arg not declared" =
+let%expect_test "err: arg not declared" =
   pp {|
     func main() {
         println(a)
@@ -293,7 +405,7 @@ let%expect_test "arg not declared" =
   [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a is not defined |}]
 ;;
 
-let%expect_test "unknown var in if cond" =
+let%expect_test "err: unknown var in if cond" =
   pp
     {|
     func main() {
@@ -313,7 +425,7 @@ let%expect_test "unknown var in if cond" =
   [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a is not defined |}]
 ;;
 
-let%expect_test "mismatched types in binop" =
+let%expect_test "err: mismatched types in binop" =
   pp
     {|
     var a = 5
@@ -340,10 +452,11 @@ let%expect_test "mismatched types in binop" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in binoper |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
 
-let%expect_test "mismatched type in decl # 1" =
+let%expect_test "err: mismatched type in decl # 1" =
   pp
     {|
     var a = 5
@@ -370,10 +483,11 @@ let%expect_test "mismatched type in decl # 1" =
         go println(id(10))
     }
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in binoper |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
 
-let%expect_test "mismatched type in decl # 2" =
+let%expect_test "err: mismatched type in decl # 2" =
   pp
     {|
     var a = "s"
@@ -400,10 +514,11 @@ let%expect_test "mismatched type in decl # 2" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in binoper |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
 
-let%expect_test "mismatched type in func_call" =
+let%expect_test "err: mismatched type in func_call" =
   pp
     {|
     var a = 5
@@ -430,10 +545,11 @@ let%expect_test "mismatched type in func_call" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in binoper |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
 
-let%expect_test "correct #3" =
+let%expect_test "ok: correct example #3" =
   pp
     {|
     var a = 5
@@ -463,7 +579,7 @@ let%expect_test "correct #3" =
   [%expect {| CORRECT |}]
 ;;
 
-let%expect_test "return type of func mismatch" =
+let%expect_test "err: return type of func mismatch" =
   pp
     {|
     var a = 5
@@ -490,10 +606,11 @@ let%expect_test "return type of func mismatch" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in binoper |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
 
-let%expect_test "return with empty func returns" =
+let%expect_test "err: return with empty func returns" =
   pp {|
     func main() {}
 
@@ -504,21 +621,163 @@ let%expect_test "return with empty func returns" =
   [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: func return types mismatch |}]
 ;;
 
-let%expect_test "correct anon_func" =
-  pp
-    {|
-    func s(a string) {}
+let%expect_test "ok: single correct return with no func args" =
+  pp {|
+    func main() {}
 
-    func main() {
-        value := func(a string) {
-            g := func(a string) {
-                s("Test")
-            }
-            s("Test")
-            g("2")
-        }
-        value("4")
+    func foo(a int, b int) {
+        return
     }
 |};
   [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: multiple returns type mismatch" =
+  pp
+    {|
+    func main() {}
+    func foo(a int, b int) (int, string){
+        return 5, 5
+    }
+|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
+;;
+
+let%expect_test "err: incorrect anon_func return in nested func" =
+  pp
+    {|
+    func s(a string) int { return 1 }
+
+    func main() {
+      value := func(a string) {
+        g := func(a string) string {
+          return s("Test")
+        }
+        s("Test")
+        g("2")
+      }
+      value("4")
+    }
+|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
+;;
+
+let%expect_test "err: incorrect anon_func local redeclaration nested func" =
+  pp
+    {|
+    
+func s(a string) string { return "g" }
+
+func main() {
+	value := func(a int) int{
+		g := func(b string) string {
+			return a
+		}
+		s("Test")
+		g("2")
+    return a
+	}
+	value(1)
+}
+|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
+;;
+
+let%expect_test "ok: correct anon_func local redeclaration nested func" =
+  pp
+    {|
+    
+func s(a string) string { return "g" }
+
+func main() {
+	value := func(a int) int{
+		g := func(a string) string {
+			return a
+		}
+		s("Test")
+		g("2")
+    return a
+	}
+	value(1)
+}
+|};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: incorrect multiple returns in single-value context" =
+  pp
+    {|
+
+    func main() {
+      println(swap(), "j")
+    }
+    
+    func swap() (string, string) {
+      return "a", "b"
+    }
+    func println(a string, b string, c string) (string, string, string) {
+      return a, b, c
+    }
+
+|};
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Expected single type |}]
+;;
+
+let%expect_test "ok: correct chans return context" =
+  pp
+    {|
+    func sum(c chan int) {
+      c <- 5
+    }
+
+    func main() {
+      var c chan int
+      go sum(c)
+      x, y := <-c, <-c 
+      x = 5
+    }
+
+|};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: incorrect chans return context" =
+  pp
+    {|
+    func sum(c chan int) {
+      c <- 5
+    }
+
+    func main() {
+      var c chan int
+      go sum(c)
+      x, y := <-c, <-c 
+      x = "g"
+    }
+
+|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
+;;
+
+let%expect_test "err: incorrect chan send type" =
+  pp
+    {|
+    func sum(c chan int) {
+      c <- "5"
+    }
+
+    func main() {
+      var c chan int
+      go sum(c)
+      x, y := <-c, <-c 
+      x = 5
+    }
+
+|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Types mismatched in equation |}]
 ;;
