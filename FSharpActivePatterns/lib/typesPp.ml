@@ -17,7 +17,7 @@ let pp_typ fmt typ =
     | Type_tuple (first, second, rest) ->
       fprintf fmt "(";
       Format.pp_print_list
-        ~pp_sep:(fun fmt () -> fprintf fmt ", ")
+        ~pp_sep:(fun fmt () -> fprintf fmt " * ")
         helper
         fmt
         (first :: second :: rest);
