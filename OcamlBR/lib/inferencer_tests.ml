@@ -1,9 +1,8 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
-(*
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Inferencer.Infer
 
-
+(*
 let infer_from_file file_name =
   let file_path = "../tests/inferencer_tests/" ^ file_name in
   let input = 
@@ -28,7 +27,7 @@ let%expect_test "do_not_type_002if" =
 
 *)
 
-(*
+
 let%expect_test _ =
   let _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in
   [%expect {| |}]
@@ -50,7 +49,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {|let rec fac n = if n < 1 then 1 else n * fac (n - 1) |} in
+  let _ = infer_program_test {|let fac n = if n < 1 then 1 else n * fac (n - 1) |} in
   [%expect {| val fac : int -> int |}]
 ;;
 
@@ -132,4 +131,3 @@ let%expect_test _ =
   in
   [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;
-*)

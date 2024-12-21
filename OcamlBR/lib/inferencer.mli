@@ -1,4 +1,4 @@
-(*(** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
+(** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 module TypeEnv : sig
@@ -12,4 +12,3 @@ module Infer : sig
   val infer_program : Ast.structure -> (TypeEnv.t, Typedtree.error) result
   val infer_program_test : string -> unit
 end
-*)

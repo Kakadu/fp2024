@@ -1,6 +1,6 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
-(*
-   (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Typedtree
 
 module R : sig
@@ -428,62 +428,6 @@ module Infer = struct
       infer_pattern env pat
   ;;
 
-
-  let extract_names_from_let_binds let_binds = function
-    | Ast.Evalue_binding ((PVar (Id name), _), _) -> name
-    | _ -> failwith "Unsupported pattern in let binding"
-  ;;
-
-  let extend_env_with_bind_names env let_binds =
-    let bind_names = extract_names_from_let_binds let_binds in
-    let fresh_vars = List.init (List.length let_binds) (fun _ -> fresh_var) in
-    List.fold2_exn
-      ~init:(return env)
-      ~f:(fun acc bind_name fresh_var ->
-        let* fresh_var = fresh_var in
-        let* acc = acc in
-        return (TypeEnv.extend acc bind_name (S (VarSet.empty, fresh_var))))
-      bind_names
-      fresh_vars
-  ;;
-
-  let extend_env_with_let_binds env is_rec let_binds =
-    List.fold
-      let_binds
-      ~init:(return (env, Subst.empty))
-      ~f:(fun acc let_bind ->
-        let* env, subst_acc = acc in
-        let* subst, bind_varname, scheme = infer_let_bind env is_rec let_bind in
-        let env = TypeEnv.extend env bind_varname scheme in
-        let env = TypeEnv.apply subst env in
-        let* subst_acc = Subst.compose subst_acc subst in
-        return (env, subst_acc))
-  ;;
-
-  let infer_let_bind env is_rec = function
-  | Evalue_binding ((pattern, Some typ), expr) ->
-    let* subst1, t1 = infer env expr in
-    let typ = Subst.apply subst1 typ in
-    let* subst2 = Subst.unify t1 typ in
-    let env' = TypeEnv.apply subst2 env in
-    let generalized_scheme = generalize env' t1 in
-    let varname = extract_var_name pattern in
-    return (subst2, varname, generalized_scheme)
-  | Evalue_binding ((pattern, None), expr) ->
-    let* subst, t1 = infer env expr in
-    let env' = TypeEnv.apply subst env in
-    let generalized_scheme = generalize env' t1 in
-    let varname = extract_var_name pattern in
-    return (subst, varname, generalized_scheme)
-  | _ -> failwith "Unsupported let binding"
-;;
-
-let extract_var_name = function
-  | PVar (Id name) -> name
-  | _ -> failwith "Unsupported pattern in let binding"
-;;
-
-
   let rec infer (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
     match expr with
     | Evar (Id (x)) -> lookup_env x env
@@ -494,16 +438,6 @@ let extract_var_name = function
     | Ebin_op (op, e1, e2) ->
       let* s1, t1 = infer env e1 in
       let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
-      (* let* op_type =
-          match op with
-          | Add | Sub | Mult | Div -> return (tprim_int @-> tprim_int @-> tprim_int)
-          | Gt | Lt | Eq | Neq | Gte | Lte ->
-            return (tprim_int @-> tprim_int @-> tprim_bool)
-          | And | Or -> return (tprim_bool @-> tprim_bool @-> tprim_bool)
-          | Cons ->
-          let* fresh = fresh_var in
-          return (fresh, TList fresh, TList fresh)
-        in *)
       let* e1t, e2t, et =
         match op with
         | Mult | Div | Add | Sub -> return (tprim_int, tprim_int, tprim_int)
@@ -516,10 +450,6 @@ let extract_var_name = function
       let* sub4 = Subst.unify (Subst.apply sub3 t2) e2t in
       let* sub = Subst.compose_all [ s1; s2; sub3; sub4 ] in
       return (sub, Subst.apply sub et)
-      (* let* s3 = unify (Subst.apply s2 t1) (fst_arrow op_type) in
-         let* s4 = unify (Subst.apply s3 t2) (snd_arrow op_type) in
-         let* s_final = Subst.compose_all [ s4; s3; s2; s1 ] in
-         return (s_final, Subst.apply s_final (snd_arrow op_type)) *)
     | Eun_op (op, e) ->
       let* s, t = infer env e in
       let* op_type =
@@ -544,73 +474,48 @@ let extract_var_name = function
       let* s3 = unify t1 tprim_bool in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, Subst.apply final_subst t2)
-    (*| Elet (Non_recursive, Evalue_binding (Id (x, t_opt), e1), _, e2) ->
-      (match t_opt with
-       | Some expected_type ->
-         let* s1, t1 = infer env e1 in
-         let expected_type = Subst.apply s1 expected_type in
-         let* sub1 = Subst.unify t1 expected_type in
-         let env2 = TypeEnv.apply sub1 env in
-         let t_gen = generalize env2 t1 in
-         let env3 = TypeEnv.extend x t_gen env in
-         let* s2, t2 = infer (TypeEnv.apply s1 env3) e2 in
-         let* final_subst = Subst.compose s1 s2 in
-         return (final_subst, t2)
-       | None ->
-         let* s1, t1 = infer env e1 in
-         let env2 = TypeEnv.apply s1 env in
-         let t_gen = generalize env2 t1 in
-         let env3 = TypeEnv.extend x t_gen env in
-         (* Format.printf "env3: %a\n" TypeEnv.pp env3; *)
-         let* s2, t2 = infer (TypeEnv.apply s1 env3) e2 in
-         let* final_subst = Subst.compose s1 s2 in
-         return (final_subst, t2))
-    | Elet (Recursive, value_binding, value_bindings, e2) ->
-      let* s', env' = infer_value_bindings env (value_binding :: value_bindings) in
-      let* s3, t2 = infer env' e2 in
-      let* s_final =
-        let rec combined_s acc = function
-          | [] -> return acc
-          | s :: substs ->
-            let* acc = Subst.compose acc s in
-            combined_s acc substs
-        in
-        let* sub = combined_s Subst.empty s' in
-        Subst.compose sub s3
+    | Elet (Non_recursive, Evalue_binding ((pattern, t_opt), e1), bindings, e2) ->
+      let* s1, t1 = infer env e1 in
+      let* s2, t_pat, env1 = infer_ty_pattern env (pattern, t_opt) in
+      let* subst = Subst.compose s1 s2 in
+      let* unified_subst = unify (Subst.apply subst t_pat) t1 in
+      let extended_env =
+        List.fold_left
+          (fun acc_env vb ->
+            match vb with
+            | Ast.Evalue_binding ((p, opt_ty), expr) ->
+                let* acc_env = acc_env in
+                let* s_bind, t_bind = infer acc_env expr in
+                let* s_pat, t_pat, env_pat = infer_ty_pattern acc_env (p, opt_ty) in
+                let* combined_subst = Subst.compose s_bind s_pat in
+                let* final_subst = unify (Subst.apply combined_subst t_pat) t_bind in
+                return (TypeEnv.apply final_subst env_pat))
+          (return (TypeEnv.apply unified_subst env1))
+          bindings
       in
-      return (s_final, t2)*)
-    | Elet (Recursive, let_bind, let_binds, e) ->
-      let let_binds = let_bind :: let_binds in
-      let* env = extend_env_with_bind_names env let_binds in
-      let* env, subst1 = extend_env_with_let_binds env Recursive let_binds in
-      let* subst2, typ = infer env e in
-      let* subst_final = Subst.compose subst1 subst2 in
-      return (subst_final, typ)
-    | Elet (Non_recursive, let_bind, let_binds, e) ->
-      let let_binds = let_bind :: let_binds in
-      let* env, subst1 = extend_env_with_let_binds env Non_recursive let_binds in
-      let* subst2, typ = infer env e in
-      let* subst_final = Subst.compose subst1 subst2 in
-      return (subst_final, typ)
-    (* | Efun (pattern, pattern_list, body) ->
-       let* env, pat_types =
-       RList.fold_left
-       (pattern :: pattern_list)
-       ~init:(return (env, []))
-       ~f:(fun (env, pat_types) pat ->
-       let* _, typ, new_env = infer_pattern env pat in
-       return (new_env, typ :: pat_types))
-       in
-       let* s_body, t_body = infer env body in
-       let arrow_type =
-       List.fold_right
-       (fun pat_type acc -> TArrow (Subst.apply s_body pat_type, acc))
-       (List.rev pat_types)
-       t_body
-       in
-       return (s_body, arrow_type) *)
+      let* extended_env = extended_env in
+      let* s3, t2 = infer (TypeEnv.apply unified_subst extended_env) e2 in
+      let* full_subst = Subst.compose_all [ s3; unified_subst; subst ] in
+      return (full_subst, t2)
+    | Elet (Recursive, value_binding, value_bindings, e2) ->
+      let* env_ext, s_acc =
+        List.fold_left
+          (fun acc_env (Ast.Evalue_binding (ty_pattern, expr)) ->
+            let* env_acc, _ = acc_env in
+            let* s_expr, t_expr = infer env_acc expr in
+            let* s_pat, t_pat, env_pat = infer_ty_pattern env_acc ty_pattern in
+            let* subst = Subst.compose s_expr s_pat in
+            let* unified_subst = unify t_expr t_pat in
+            let* combined_subst = Subst.compose subst unified_subst in
+            let extended_env = TypeEnv.apply combined_subst env_pat in
+            return (extended_env, combined_subst))
+          (return (env, Subst.empty))
+          (value_binding :: value_bindings)
+      in
+      let* s2, t2 = infer env_ext e2 in
+      let* final_subst = Subst.compose s_acc s2 in
+      return (final_subst, t2)
     | Efun (ty_pattern, ty_pattern_list, body) ->
-      (* Format.printf "efun env: %a\n" TypeEnv.pp env; *)
       let* env, pat_types =
         RList.fold_left
           (ty_pattern :: ty_pattern_list)
@@ -627,7 +532,6 @@ let extract_var_name = function
           t_body
       in
       return (s_body, arrow_type)
-      (* return (Subst.empty, tprim_int) *)
     | Efun_application (e1, e2) ->
       let* s1, t1 = infer env e1 in
       let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
@@ -708,31 +612,6 @@ let extract_var_name = function
        let expected_type = TPrim "int" in
        fail (`Unification_failed (expected_type, t))) *)
     | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
-
-  and infer_value_bindings env value_bindings =
-    let* tv', env' =
-      RList.fold_left
-        value_bindings
-        ~init:(return ([], env))
-        ~f:(fun (types, env) (Ast.Evalue_binding (Id (x, _), _)) ->
-          let* tv = fresh_var in
-          let new_env = TypeEnv.extend x (S (VarSet.empty, tv)) env in
-          return (tv :: types, new_env))
-    in
-    let* s', env' =
-      RList.fold_left
-        (List.map2 (fun x y -> x, y) value_bindings (List.rev tv'))
-        ~init:(return ([], env'))
-        ~f:(fun (substs, env) (Ast.Evalue_binding (Id (x, _), e), tv) ->
-          let* s1, t1 = infer env e in
-          let* s2 = unify (Subst.apply s1 tv) t1 in
-          let* s = Subst.compose s1 s2 in
-          let new_env = TypeEnv.apply s env in
-          let t_gen = generalize new_env (Subst.apply s tv) in
-          let new_env = TypeEnv.extend x t_gen new_env in
-          return (s :: substs, new_env))
-    in
-    return (List.rev s', env')
   ;;
 
   let w expr = Result.map snd (run (infer TypeEnv.empty expr))
@@ -743,25 +622,31 @@ let extract_var_name = function
       let updated_env = TypeEnv.apply subst env in
       return (subst, updated_env)
     | Ast.SValue (Recursive, value_binding, value_bindings) ->
-      let* s', env' = infer_value_bindings env (value_binding :: value_bindings) in
-      let* s_final =
-        let rec combined_s acc = function
-          | [] -> return acc
-          | s :: substs ->
-            let* acc = Subst.compose acc s in
-            combined_s acc substs
-        in
-        let* sub = combined_s Subst.empty s' in
-        Subst.compose sub Subst.empty
+      let* env_ext, s_acc =
+        List.fold_left
+          (fun acc_env (Ast.Evalue_binding (ty_pattern, expr)) ->
+            let* env_acc, _ = acc_env in
+            let* s_expr, t_expr = infer env_acc expr in
+            let* s_pat, t_pat, env_pat = infer_ty_pattern env_acc ty_pattern in
+            let* subst = Subst.compose s_expr s_pat in
+            let* unified_subst = unify t_expr t_pat in
+            let* combined_subst = Subst.compose subst unified_subst in
+            return (TypeEnv.apply combined_subst env_pat, combined_subst))
+          (return (env, Subst.empty))
+          (value_binding :: value_bindings)
       in
-      return (s_final, env')
-    | Ast.SValue (Non_recursive, Evalue_binding (id, expr), _) ->
-      let* subst, inferred_ty = infer env expr in
-      let generalized_ty = generalize (TypeEnv.apply subst env) inferred_ty in
-      let env =
-        TypeEnv.extend (string_of_id id) generalized_ty (TypeEnv.apply subst env)
+      return (s_acc, env_ext)
+    | Ast.SValue (Non_recursive, Evalue_binding ((pattern, t_opt), expr), _) ->
+      let* subst_expr, inferred_ty = infer env expr in
+      let* subst_pat, t_pat, env_pat = infer_ty_pattern env (pattern, t_opt) in
+      let* combined_subst = 
+        let* composed = Subst.compose subst_expr subst_pat in
+        return composed
       in
-      return (subst, env)
+      let* unified_subst = unify (Subst.apply combined_subst t_pat) inferred_ty in
+      let updated_env = TypeEnv.apply unified_subst env_pat in
+      let* final_subst = Subst.compose unified_subst combined_subst in
+      return (final_subst, updated_env)
   ;;
 
   let infer_structure env structure =
@@ -796,4 +681,3 @@ let extract_var_name = function
     | Error e -> printf "Parsing error: %s\n" e
   ;;
 end
-*)
