@@ -297,8 +297,7 @@ end = struct
 
   (* let pp = pp_scheme *)
 
-  let typ s =
-    match s with
+  let typ = function
     | Scheme (_, t) -> t
   ;;
 end
