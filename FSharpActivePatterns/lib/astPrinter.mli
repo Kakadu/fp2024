@@ -6,4 +6,4 @@ open Ast
 open Format
 
 val print_construction : formatter -> construction -> unit
-val print_p_res : formatter -> construction option -> unit
+val print_p_res : formatter -> (construction, tag) result -> unit
