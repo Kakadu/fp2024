@@ -93,18 +93,18 @@ open TypedTree
 open Format
 
 let pp_typ fmt typ =
-  <span data-count="67">l</span>et rec helper fmt = function
-    | <span data-count="115">P</span>rimitive s -&gt; fprintf fmt "%s" s
+  <span data-count="66">l</span>et rec helper fmt = function
+    | <span data-count="112">P</span>rimitive s -&gt; fprintf fmt "%s" s
     | <span data-count="75">T</span>ype_var var -&gt; fprintf fmt "'_%d" var
-    | <span data-count="107">A</span>rrow (fst, snd) -&gt;
+    | <span data-count="105">A</span>rrow (fst, snd) -&gt;
       (match fst with
        | <span data-count="11">A</span>rrow _ -&gt; fprintf fmt "(%a) -&gt; %a" helper fst helper snd
-       | <span data-count="96">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper fst helper snd)
+       | <span data-count="94">_</span> -&gt; fprintf fmt "%a -&gt; %a" helper fst helper snd)
     | <span data-count="14">T</span>ype_list typ -&gt; fprintf fmt "%a list" helper typ
     | <span data-count="15">T</span>ype_tuple (first, second, rest) -&gt;
       fprintf fmt "(";
       <span data-count="15">F</span>ormat.pp_print_list
-        ~pp_sep:(fun fmt () -&gt; <span data-count="16">f</span>printf fmt ", ")
+        ~pp_sep:(fun fmt () -&gt; <span data-count="16">f</span>printf fmt " * ")
         helper
         fmt
         (first :: second :: rest);
@@ -112,7 +112,7 @@ let pp_typ fmt typ =
     | <span data-count="4">T</span>Option t -&gt; fprintf fmt "%a option" helper t
   in
   helper fmt typ;
-  <span data-count="67">f</span>printf fmt "\n"
+  <span data-count="66">f</span>printf fmt "\n"
 ;;
 </code></pre>
       </div>
