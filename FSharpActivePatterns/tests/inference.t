@@ -34,20 +34,19 @@
   fac_cps : int -> (int -> '_7) -> '_7
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/003fib.ml
-  fib_acc : int -> int -> int -> int
   fib : int -> int
+  fib_acc : int -> int -> int -> int
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/004manyargs.ml
-  wrap : '_0 -> '_0
-  test3 : int -> int -> int -> int
-  test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
   main : int
+  test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+  test3 : int -> int -> int -> int
+  wrap : '_0 -> '_0
   $ ../bin/REPL.exe -fromfile manytests/typed/005fix.ml
-  fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5
   fac : (int -> int) -> int -> int
+  fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/006partial.ml
-  foo : bool -> int -> int
   foo : int -> int
   main : int
   $ ../bin/REPL.exe -fromfile manytests/typed/006partial2.ml
@@ -69,30 +68,30 @@
   _2 : int
   _3 : (int, string) option
   _4 : int -> '_14
-  _6 : '_26 option -> '_26
-  int_of_option : int option -> int
   _42 : int -> bool
+  _6 : '_26 option -> '_26
   id1 : '_40 -> '_40
   id2 : '_41 -> '_41
+  int_of_option : int option -> int
   Type checking failed: unification failed on string
    and int
   
   $ ../bin/REPL.exe -fromfile manytests/typed/015tuples.ml
-  fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5
-  map : ('_9 -> '_11) -> ('_9, '_9) -> ('_11, '_11)
-  fixpoly : (('_21 -> '_25, '_21 -> '_25) -> '_21 -> '_25, ('_21 -> '_25, '_21 -> '_25) -> '_21 -> '_25) -> ('_21 -> '_25, '_21 -> '_25)
   feven : ('_33, int -> int) -> int -> int
+  fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5
+  fixpoly : (('_21 -> '_25, '_21 -> '_25) -> '_21 -> '_25, ('_21 -> '_25, '_21 -> '_25) -> '_21 -> '_25) -> ('_21 -> '_25, '_21 -> '_25)
   fodd : (int -> int, '_41) -> int -> int
-  tie : (int -> int, int -> int)
+  main : int
+  map : ('_9 -> '_11) -> ('_9, '_9) -> ('_11, '_11)
   meven : int -> int
   modd : int -> int
-  main : int
+  tie : (int -> int, int -> int)
   $ ../bin/REPL.exe -fromfile manytests/typed/016lists.ml
-  length : '_3 list -> int
-  length_tail : '_18 list -> int
-  map : ('_25 -> '_56) -> '_25 list -> '_56 list
   append : '_67 list -> '_67 list -> '_67 list
+  cartesian : '_98 list -> '_105 list -> ('_98, '_105) list
   concat : '_81 list list -> '_81 list
   iter : ('_87 -> unit) -> '_87 list -> unit
-  cartesian : '_98 list -> '_105 list -> ('_98, '_105) list
+  length : '_3 list -> int
+  length_tail : '_18 list -> int
   main : int
+  map : ('_25 -> '_56) -> '_25 list -> '_56 list

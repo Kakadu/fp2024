@@ -11,6 +11,8 @@ module TypeEnvironment : sig
 
   val empty : t
   val extend : t -> string -> scheme -> t
+  val remove : t -> string -> t
+  val pp_without_freevars : formatter -> t -> unit
 end
 
 type error =

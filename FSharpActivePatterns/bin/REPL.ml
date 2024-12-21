@@ -95,15 +95,19 @@ let run_repl dump_parsetree input_file =
   let rec run_repl_helper run env state =
     let open Format in
     match run ic with
-    | Result (Error e) -> fprintf err_formatter "%s\n" e
+    | Result (Error _) ->
+      fprintf err_formatter "Parsing error\n";
+      run_repl_helper run env state
     | Empty ->
       fprintf std_formatter "\n";
       print_flush ();
       run_repl_helper run env state
-    | End -> ()
+    | End -> env
     | Result (Ok ast) ->
       (match dump_parsetree with
-       | true -> print_construction std_formatter ast
+       | true ->
+         print_construction std_formatter ast;
+         run_repl_helper run env state
        | false ->
          let result = infer ast env state in
          (match result with
@@ -112,11 +116,14 @@ let run_repl dump_parsetree input_file =
             print_flush ();
             run_repl_helper run env new_state
           | new_state, Ok (env, names_and_types) ->
-            List.iter
-              (fun (n, t) -> fprintf std_formatter "%s : %a" n pp_typ t)
-              names_and_types;
-            print_flush ();
-            run_repl_helper run env new_state))
+            (match ic with
+             | None ->
+               List.iter
+                 (fun (n, t) -> fprintf std_formatter "%s : %a" n pp_typ t)
+                 names_and_types;
+               print_flush ();
+               run_repl_helper run env new_state
+             | Some _ -> run_repl_helper run env new_state)))
   in
   let env =
     TypeEnvironment.extend
@@ -124,7 +131,11 @@ let run_repl dump_parsetree input_file =
       "print_int"
       (Scheme (VarSet.empty, Arrow (int_typ, unit_typ)))
   in
-  run_repl_helper run_single env 0
+  let env = run_repl_helper run_single env 0 in
+  let env = TypeEnvironment.remove env "print_int" in
+  match ic with
+  | Some _ -> TypeEnvironment.pp_without_freevars Format.std_formatter env
+  | None -> ()
 ;;
 
 type opts =

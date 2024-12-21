@@ -178,12 +178,7 @@ end = struct
 
   (* empty map *)
   let empty = Map.empty (module Int)
-
-  (* let pp fmt s =
-     Map.iter_keys s ~f:(fun k ->
-     let v = Map.find_exn s k in
-     fprintf fmt "%d: %a" k pp_typ v)
-     ;; *)
+  (* let pp fmt s = Map.iteri s ~f:(fun ~key ~data -> fprintf fmt "%d: %a" key pp_typ data) *)
 
   (* perform mapping of fresh var to typ with occurs check, if correct,
      output new pair *)
@@ -273,7 +268,9 @@ module Scheme : sig
   (* val occurs_in : fresh -> t -> bool *)
   val apply : Substitution.t -> t -> t
   val free_vars : t -> binder_set
+
   (* val pp : formatter -> t -> unit *)
+  val typ : t -> typ
 end = struct
   type t = scheme
 
@@ -299,6 +296,11 @@ end = struct
   ;;
 
   (* let pp = pp_scheme *)
+
+  let typ s =
+    match s with
+    | Scheme (_, t) -> t
+  ;;
 end
 
 module TypeEnvironment : sig
@@ -313,7 +315,10 @@ module TypeEnvironment : sig
   val find_exn : t -> string -> scheme
   val find_typ_exn : t -> string -> typ
   val find_typ : t -> string -> typ option
+  val remove : t -> string -> t
   val remove_many : t -> string list -> t
+  val pp_without_freevars : formatter -> t -> unit
+
   (* val pp : formatter -> t -> unit *)
 end = struct
   open Base
@@ -350,10 +355,12 @@ end = struct
   ;;
 
   (* let pp fmt t =
-     Map.iter_keys t ~f:(fun k ->
-     let (Scheme (binder_s, typ)) = find_exn t k in
-     fprintf fmt "%s : %a %a" k VarSet.pp binder_s pp_typ typ)
+     Map.iteri t ~f:(fun ~key ~data -> fprintf fmt "%s : %a" key Scheme.pp data)
      ;; *)
+
+  let pp_without_freevars fmt t =
+    Map.iteri t ~f:(fun ~key ~data -> fprintf fmt "%s : %a" key pp_typ (Scheme.typ data))
+  ;;
 
   (* collect all free vars from environment *)
   let free_vars : t -> VarSet.t =
