@@ -35,6 +35,7 @@ type pattern =
   | PatVariable of ident (* [x] *)
   | PatConst of const (* [21] or [true] or [false] *)
   | PatTuple of pattern * pattern * pattern list (* (x1; x2 ... xn) *)
+  | PatAny
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -47,10 +48,11 @@ type expr =
   | ExpTuple of expr * expr * expr list (* ExpTuple[x1; x2 .. xn] *)
   | ExpList of expr list (* ExpList[x1; x2 .. xn] *)
   | ExpLambda of pattern list * expr (* ExpLambda([x;y;z], x+y+z)*)
+  | ExpOption of expr option
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
   | ExpLet of is_rec * pattern * expr * expr option
 (* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
-(* let x = 10 <=> ExpLet(false, "x", 10, "x")*)
+(* let x = 10 <=> ExpLet(false, "x", 10, None)*)
 [@@deriving show { with_path = false }]
 
 type program = expr list [@@deriving show { with_path = false }]
