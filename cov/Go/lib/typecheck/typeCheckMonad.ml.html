@@ -376,7 +376,7 @@ module CheckMonad = struct
   ;;
 
   let read_local_ident ident =
-    <span data-count="127">r</span>ead_local
+    <span data-count="129">r</span>ead_local
     &gt;&gt;= fun local -&gt;
     <span data-count="139">m</span>atch List.find_opt (fun x -&gt; <span data-count="140">M</span>apIdent.mem ident x) local with
     | <span data-count="91">N</span>one -&gt; return None
@@ -438,7 +438,7 @@ module CheckMonad = struct
   ;;
 
   let retrieve_ident ident =
-    <span data-count="127">r</span>ead_local_iden<span data-count="127">t</span> ident
+    <span data-count="129">r</span>ead_local_iden<span data-count="129">t</span> ident
     &gt;&gt;= function
     | <span data-count="48">S</span>ome x -&gt; return x
     | <span data-count="91">N</span>one -&gt;
