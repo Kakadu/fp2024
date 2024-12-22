@@ -1063,3 +1063,125 @@ let%expect_test "ere: wrong not integer multiple nested index inside nested inde
 |};
   [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
 ;;
+
+let%expect_test "ok: correct closure" =
+  pp
+    {|
+
+func adder() func(int) int {
+	sum := 0
+	return func(x int) int {
+		sum = sum + x
+		return sum
+	}
+}
+
+func f(a int) { return }
+
+func main() {
+  pos, neg := adder(), adder()
+	for i := 0; i < 10; i++ {
+		a := pos(i)
+		f(a)
+		f(neg(-2 * i))
+	}
+}|};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: mismatched type in closure" =
+  pp
+    {|
+
+func adder() func(int) int {
+	sum := 0
+	return func(x string) int {
+		return x
+	}
+}
+
+func f(a int) { return }
+
+func main() {
+  pos, neg := adder(), adder()
+	for i := 0; i < 10; i++ {
+		a := pos(i)
+		f(a)
+		f(neg(-2 * i))
+	}
+}|};
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+;;
+
+let%expect_test "err: mismatched type in closure func return" =
+  pp
+    {|
+
+func adder() func(int) int {
+	sum := 0
+	return func(x string) int {
+		return sum + 1
+	}
+}
+
+func f(a int) { return }
+
+func main() {
+  pos, neg := adder(), adder()
+	for i := 0; i < 10; i++ {
+		a := pos(i)
+		f(a)
+		f(neg(-2 * i))
+	}
+}|};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation func(int) int and func(string) int |}]
+;;
+
+let%expect_test "err: mismatched type inside return of func in closure" =
+  pp
+    {|
+
+func adder() func(int) int {
+	sum := 0
+	return func(x int) int {
+		return "t"
+	}
+}
+
+func f(a int) { return }
+
+func main() {
+  pos, neg := adder(), adder()
+	for i := 0; i < 10; i++ {
+		a := pos(i)
+		f(a)
+		f(neg(-2 * i))
+	}
+}|};
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+;;
+
+let%expect_test "err: mismatched func returns of created func" =
+  pp
+    {|
+
+func adder() func(int) int {
+	sum := 0
+	return func(x int) int {
+		return sum + x
+	}
+}
+
+func f(a string) { return }
+
+func main() {
+  pos, neg := adder(), adder()
+	for i := 0; i < 10; i++ {
+		a := pos(i)
+		f(4)
+		f(neg(-2 * i))
+	}
+}|};
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+;;
