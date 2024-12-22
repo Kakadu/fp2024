@@ -36,6 +36,8 @@ type funcs_returns = ctype list
 type state = env * funcs_returns
 
 module CheckMonad : sig
+  (** ['a t] is a typecheker that stores current state (idents and their types, external function return type)
+      and the result of typechecking - ['a] (['a] or typecheck error)*)
   type 'a t = (state, 'a) BaseMonad.t
 
   val return : 'a -> 'a t
@@ -54,19 +56,19 @@ module CheckMonad : sig
   (** Deletes current func's return type from the state (called when moving out of func body) *)
   val delete_func : unit t
 
-  (** Saves ident's type to local env in state *)
+  (** Saves ident's type to env's last map in state *)
   val save_ident : ident -> ctype -> unit t
 
-  (** Searches for given ident's type, returns [None] if not found *)
+  (** Searches for given ident's type, fails if it is not found *)
   val retrieve_ident : ident -> ctype t
 
   (** Returns current func return type. Used to check if it matches exprs in return stmt *)
   val get_func_return_type : ctype t
 
-  (** Add new Map to local_env while entering a new block/anon_func/if body/for body*)
+  (** Add new Map to env while entering a new block/anon_func/if body/for body*)
   val add_env : unit t
 
-  (** Remove Map from local_env while leaving block/anon_func/if body/for body*)
+  (** Remove Map from env while leaving block/anon_func/if body/for body*)
   val delete_env : unit t
 
   (** Pretty print ctype *)
