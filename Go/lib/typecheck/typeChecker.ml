@@ -15,7 +15,7 @@ let check_anon_func afunc cstmt =
   write_env
   *> write_func (Ctuple afunc.returns)
   *> save_args
-  *> iter (fun stmt -> cstmt stmt) afunc.body
+  *> iter cstmt afunc.body
   *> delete_func
   *> delete_env
   *> return (get_afunc_type afunc)
@@ -40,9 +40,9 @@ let check_main =
 ;;
 
 let eq_type t1 t2 =
-  match equal_ctype t1 t2 with
-  | true -> return t1
-  | false -> fail (Type_check_error (Mismatched_types "Types mismatched in equation"))
+  if equal_ctype t1 t2
+  then return t1
+  else fail (Type_check_error (Mismatched_types "Types mismatched in equation"))
 ;;
 
 let check_eq t1 t2 =
@@ -149,10 +149,7 @@ let check_long_var_decl cstmt save_ident = function
          (Type_check_error
             (Mismatched_types "function returns only one element in multiple var decl"))
      | Ctuple types when List.length types = List.length (fst :: snd :: tl) ->
-       iter2
-         (fun id t -> save_ident id t)
-         (fst :: snd :: tl)
-         (List.map (fun t -> Ctype t) types)
+       iter2 save_ident (fst :: snd :: tl) (List.map (fun t -> Ctype t) types)
      | Ctuple _ ->
        fail
          (Type_check_error
@@ -172,12 +169,12 @@ let check_short_var_decl cstmt = function
             (Mismatched_types
                "function returns wrong number of elements in multiple var decl"))
      | Ctuple types ->
-       (match List.length (fst :: snd :: tl) = List.length types with
-        | true ->
+       (try
           iter
             (fun (id, tp) -> save_local_ident id (Ctype tp))
             (List.combine (fst :: snd :: tl) types)
-        | false ->
+        with
+        | Invalid_argument _ ->
           fail
             (Type_check_error
                (Mismatched_types
@@ -209,13 +206,14 @@ let check_assign cstmt = function
     >>= (function
      | Ctype _ -> fail (Type_check_error (Cannot_assign "Multiple return assign failed"))
      | Ctuple types ->
-       (match List.length types = List.length (l1 :: l2 :: ls) with
-        | true ->
+       (try
           iter2
             (fun lvalue t -> retrieve_lvalue cstmt lvalue >>= check_eq (Ctype t))
             (l1 :: l2 :: ls)
             types
-        | false -> fail (Type_check_error (Cannot_assign "Multiple return assign failed"))))
+        with
+        | Invalid_argument _ ->
+          fail (Type_check_error (Cannot_assign "Multiple return assign failed"))))
 ;;
 
 let check_chan_send cstmt (id, expr) =
@@ -257,9 +255,8 @@ let rec check_stmt = function
     (get_func_return_type
      >>= (function
             | Ctuple rtv ->
-              (match List.length exprs = List.length rtv with
-               | true -> return (List.combine exprs (List.map (fun t -> Ctype t) rtv))
-               | false ->
+              (try return (List.combine exprs (List.map (fun t -> Ctype t) rtv)) with
+               | Invalid_argument _ ->
                  fail (Type_check_error (Mismatched_types "func return types mismatch")))
             | _ -> fail (Type_check_error Check_failed))
      >>= iter (fun (expr, return_type) ->
