@@ -258,7 +258,7 @@ open Ast
 open Angstrom
 
 let fail = fai<span data-count="10">l</span> ""
-let fail_if cond = <span data-count="42332">i</span>f cond then <span data-count="6025">f</span>ail else <span data-count="36307">r</span>eturn ()
+let fail_if cond = <span data-count="42522">i</span>f cond then <span data-count="6029">f</span>ail else <span data-count="36493">r</span>eturn ()
 let skip_whitespace = skip_many<span data-count="10">1</span> (satisf<span data-count="10">y</span> Char.is_whitespace)
 let skip_line_whitespace = skip_many<span data-count="10">1</span> (cha<span data-count="10">r</span> ' ' &lt;|<span data-count="10">&gt;</span> cha<span data-count="10">r</span> '\t')
 let parse_line_comment = strin<span data-count="10">g</span> "//" *<span data-count="10">&gt;</span> many_til<span data-count="10">l</span> any_char (cha<span data-count="10">r</span> '\n') *<span data-count="10">&gt;</span> retur<span data-count="10">n</span> ()
@@ -266,19 +266,19 @@ let parse_block_comment = strin<span data-count="10">g</span> "/*" *<span data-c
 let parse_comment = parse_line_comment &lt;|<span data-count="10">&gt;</span> parse_block_comment
 let ws = skip_man<span data-count="10">y</span> (parse_comment &lt;|<span data-count="10">&gt;</span> skip_whitespace)
 let ws_line = skip_man<span data-count="10">y</span> (parse_block_comment &lt;|<span data-count="10">&gt;</span> skip_line_whitespace)
-let token s = <span data-count="59834">w</span>s_line *<span data-count="59834">&gt;</span> strin<span data-count="59834">g</span> s &lt;* ws
-let parens p = <span data-count="59772">c</span>ha<span data-count="59772">r</span> '(' *<span data-count="59772">&gt;</span> ws *<span data-count="59772">&gt;</span> p &lt;<span data-count="59772">*</span> ws_line &lt;* cha<span data-count="59772">r</span> ')'
-let square_brackets p = <span data-count="51994">c</span>ha<span data-count="51994">r</span> '[' *<span data-count="51994">&gt;</span> ws *<span data-count="51994">&gt;</span> p &lt;<span data-count="51994">*</span> ws_line &lt;* cha<span data-count="51994">r</span> ']'
-let curly_braces p = <span data-count="1517">c</span>ha<span data-count="1517">r</span> '{' *<span data-count="1517">&gt;</span> ws *<span data-count="1517">&gt;</span> p &lt;<span data-count="1517">*</span> ws_line &lt;* cha<span data-count="1517">r</span> '}'
-let sep_by_comma p = <span data-count="58765">s</span>ep_by (toke<span data-count="58765">n</span> ",") p
-let sep_by_comma1 p = <span data-count="655">s</span>ep_by1 (toke<span data-count="655">n</span> ",") p
+let token s = <span data-count="60111">w</span>s_line *<span data-count="60111">&gt;</span> strin<span data-count="60111">g</span> s &lt;* ws
+let parens p = <span data-count="60119">c</span>ha<span data-count="60119">r</span> '(' *<span data-count="60119">&gt;</span> ws *<span data-count="60119">&gt;</span> p &lt;<span data-count="60119">*</span> ws_line &lt;* cha<span data-count="60119">r</span> ')'
+let square_brackets p = <span data-count="52249">c</span>ha<span data-count="52249">r</span> '[' *<span data-count="52249">&gt;</span> ws *<span data-count="52249">&gt;</span> p &lt;<span data-count="52249">*</span> ws_line &lt;* cha<span data-count="52249">r</span> ']'
+let curly_braces p = <span data-count="1536">c</span>ha<span data-count="1536">r</span> '{' *<span data-count="1536">&gt;</span> ws *<span data-count="1536">&gt;</span> p &lt;<span data-count="1536">*</span> ws_line &lt;* cha<span data-count="1536">r</span> '}'
+let sep_by_comma p = <span data-count="58972">s</span>ep_by (toke<span data-count="58972">n</span> ",") p
+let sep_by_comma1 p = <span data-count="713">s</span>ep_by1 (toke<span data-count="713">n</span> ",") p
 let parse_stmt_sep = ws_line *<span data-count="10">&gt;</span> (cha<span data-count="10">r</span> '\n' &lt;|<span data-count="10">&gt;</span> cha<span data-count="10">r</span> ';') *<span data-count="10">&gt;</span> ws
 
 let parse_int =
   take_while<span data-count="10">1</span> Char.is_digit
   &gt;&gt;<span data-count="10">=</span> fun str -&gt;
-  <span data-count="6095">m</span>atch Stdlib.int_of_string_opt str with
-  | <span data-count="6093">S</span>ome num -&gt; return num
+  <span data-count="6193">m</span>atch Stdlib.int_of_string_opt str with
+  | <span data-count="6191">S</span>ome num -&gt; return num
   | <span data-count="2">N</span>one -&gt; fail
 ;;
 
@@ -292,24 +292,24 @@ let is_keyword = function
   | <span data-count="1">"</span>else"
   | <span data-count="1989">"</span>continue"
   | <span data-count="541">"</span>for"
-  | <span data-count="557">"</span>return"
+  | <span data-count="561">"</span>return"
   | <span data-count="38">"</span>var" -&gt; true
-  | <span data-count="36025">_</span> -&gt; false
+  | <span data-count="36192">_</span> -&gt; false
 ;;
 
 let parse_ident =
   let is_first_char = function
-    | <span data-count="18639">'</span>a' .. 'z' | <span data-count="11738">'</span>A' .. 'Z' | <span data-count="11670">'</span>_' -&gt; true
-    | <span data-count="15561">_</span> -&gt; false
+    | <span data-count="18810">'</span>a' .. 'z' | <span data-count="11738">'</span>A' .. 'Z' | <span data-count="11670">'</span>_' -&gt; true
+    | <span data-count="15747">_</span> -&gt; false
   in
   let is_valid_char = function
-    | <span data-count="168373">'</span>a' .. 'z' | <span data-count="140101">'</span>A' .. 'Z' | <span data-count="140623">'</span>0' .. '9' | <span data-count="139631">'</span>_' -&gt; true
-    | <span data-count="41997">_</span> -&gt; false
+    | <span data-count="168582">'</span>a' .. 'z' | <span data-count="140101">'</span>A' .. 'Z' | <span data-count="140627">'</span>0' .. '9' | <span data-count="139631">'</span>_' -&gt; true
+    | <span data-count="42168">_</span> -&gt; false
   in
   let* first_char = satisf<span data-count="10">y</span> is_first_char &gt;&gt;<span data-count="10">|</span> Char.to_string in
-  <span data-count="42047">l</span>et* rest = take_whil<span data-count="42047">e</span> is_valid_char in
-  <span data-count="42047">l</span>et ident = first_char ^ rest in
-  fail_i<span data-count="42047">f</span> (is_keywor<span data-count="42047">d</span> ident) *&gt; retur<span data-count="42047">n</span> ident
+  <span data-count="42218">l</span>et* rest = take_whil<span data-count="42218">e</span> is_valid_char in
+  <span data-count="42218">l</span>et ident = first_char ^ rest in
+  fail_i<span data-count="42218">f</span> (is_keywor<span data-count="42218">d</span> ident) *&gt; retur<span data-count="42218">n</span> ident
 ;;
 
 (** [parse_simple_type] parses [int], [bool] and [string] types *)
@@ -334,8 +334,8 @@ let parse_func_type ptype =
 
 let parse_array_type ptype =
   <span data-count="6">l</span>et* size = square_bracket<span data-count="6">s</span> parse_int in
-  <span data-count="2917">l</span>et* type' = ws_line *<span data-count="2917">&gt;</span> ptype in
-  <span data-count="2917">r</span>eturn (Type_array (size, type'))
+  <span data-count="2935">l</span>et* type' = ws_line *<span data-count="2935">&gt;</span> ptype in
+  <span data-count="2935">r</span>eturn (Type_array (size, type'))
 ;;
 
 let parse_chan_type ptype =
