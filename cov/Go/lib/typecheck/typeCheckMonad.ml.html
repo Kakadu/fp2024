@@ -331,7 +331,7 @@ end
 module MapIdent = Map.Make (Ident)
 
 <span data-count="0">t</span>ype ctype =
-  <span data-count="143">|</span> Ctype of type'
+  <span data-count="191">|</span> Ctype of type'
   <span data-count="4">|</span> Ctuple of <span data-count="0">t</span>ype' lis<span data-count="1">t</span>
 [@@deriving show { with_path = false }, eq]
 
@@ -348,76 +348,76 @@ module CheckMonad = struct
   type 'a t = (state, 'a) BaseMonad.t
 
   let print_type = function
-    | <span data-count="48">C</span>type x -&gt; PpType.print_type x
+    | <span data-count="56">C</span>type x -&gt; PpType.print_type x
     | <span data-count="2">C</span>tuple x -&gt; asprintf "(%s)" (String.conca<span data-count="2">t</span> ", " (List.ma<span data-count="2">p</span> PpType.print_type x))
   ;;
 
   let read_local =
     read
     &gt;&gt;<span data-count="3">=</span> function
-    | <span data-count="555">_</span>, local, _ -&gt; return local
+    | <span data-count="676">_</span>, local, _ -&gt; return local
   ;;
 
   let seek_local_definition_ident ident =
-    <span data-count="111">r</span>ead_local &gt;&gt;= fun local -&gt; <span data-count="98">M</span>apIdent.find_opt ident (List.h<span data-count="98">d</span> local) |&gt; <span data-count="98">r</span>eturn
+    <span data-count="134">r</span>ead_local &gt;&gt;= fun local -&gt; <span data-count="118">M</span>apIdent.find_opt ident (List.h<span data-count="118">d</span> local) |&gt; <span data-count="118">r</span>eturn
   ;;
 
   let delete_func =
     read
     &gt;&gt;<span data-count="3">=</span> function
-    | <span data-count="77">g</span>, l, fl -&gt; write (g, l, List.t<span data-count="77">l</span> fl)
+    | <span data-count="85">g</span>, l, fl -&gt; write (g, l, List.t<span data-count="85">l</span> fl)
   ;;
 
   let write_func func =
-    <span data-count="139">r</span>ead
+    <span data-count="159">r</span>ead
     &gt;&gt;= function
-    | <span data-count="114">g</span>, l, fl -&gt; write (g, l, func :: fl)
+    | <span data-count="128">g</span>, l, fl -&gt; write (g, l, func :: fl)
   ;;
 
   let read_local_ident ident =
-    <span data-count="158">r</span>ead_local
+    <span data-count="234">r</span>ead_local
     &gt;&gt;= fun local -&gt;
-    <span data-count="165">m</span>atch List.find_opt (fun x -&gt; <span data-count="166">M</span>apIdent.mem ident x) local with
-    | <span data-count="106">N</span>one -&gt; return None
-    | <span data-count="59">S</span>ome x -&gt; return (MapIdent.find_op<span data-count="59">t</span> ident x)
+    <span data-count="221">m</span>atch List.find_opt (fun x -&gt; <span data-count="245">M</span>apIdent.mem ident x) local with
+    | <span data-count="124">N</span>one -&gt; return None
+    | <span data-count="97">S</span>ome x -&gt; return (MapIdent.find_op<span data-count="97">t</span> ident x)
   ;;
 
   let read_global =
     read
     &gt;&gt;<span data-count="3">=</span> function
-    | <span data-count="484">g</span>lobal, _, _ -&gt; return global
+    | <span data-count="533">g</span>lobal, _, _ -&gt; return global
   ;;
 
   let read_global_ident ident =
-    <span data-count="291">r</span>ead_global &gt;&gt;= fun global -&gt; <span data-count="311">M</span>apIdent.find_opt ident global |&gt; <span data-count="311">r</span>eturn
+    <span data-count="324">r</span>ead_global &gt;&gt;= fun global -&gt; <span data-count="345">M</span>apIdent.find_opt ident global |&gt; <span data-count="345">r</span>eturn
   ;;
 
   let write_local new_local =
-    <span data-count="292">r</span>ead
+    <span data-count="337">r</span>ead
     &gt;&gt;= function
-    | <span data-count="292">g</span>lobal, _, fc -&gt; write (global, new_local, fc)
+    | <span data-count="337">g</span>lobal, _, fc -&gt; write (global, new_local, fc)
   ;;
 
   let write_local_ident el_type el_ident =
-    <span data-count="96">r</span>ead_local
+    <span data-count="116">r</span>ead_local
     &gt;&gt;= fun local -&gt;
-    <span data-count="96">w</span>rite_local (MapIdent.ad<span data-count="96">d</span> el_ident el_type (List.h<span data-count="96">d</span> local) :: List.t<span data-count="96">l</span> local)
+    <span data-count="116">w</span>rite_local (MapIdent.ad<span data-count="116">d</span> el_ident el_type (List.h<span data-count="116">d</span> local) :: List.t<span data-count="116">l</span> local)
   ;;
 
   let write_global new_global =
-    <span data-count="173">r</span>ead
+    <span data-count="188">r</span>ead
     &gt;&gt;= function
-    | <span data-count="173">_</span>, local, fc -&gt; write (new_global, local, fc)
+    | <span data-count="188">_</span>, local, fc -&gt; write (new_global, local, fc)
   ;;
 
   let write_global_ident el_type el_ident =
-    <span data-count="173">r</span>ead_global &gt;&gt;= fun global -&gt; <span data-count="173">w</span>rite_global (MapIdent.ad<span data-count="173">d</span> el_ident el_type global)
+    <span data-count="188">r</span>ead_global &gt;&gt;= fun global -&gt; <span data-count="188">w</span>rite_global (MapIdent.ad<span data-count="188">d</span> el_ident el_type global)
   ;;
 
   let save_local_ident env ident =
-    <span data-count="111">s</span>eek_local_definition_iden<span data-count="111">t</span> env
+    <span data-count="134">s</span>eek_local_definition_iden<span data-count="134">t</span> env
     &gt;&gt;= function
-    | <span data-count="96">N</span>one -&gt; write_local_ident ident env
+    | <span data-count="116">N</span>one -&gt; write_local_ident ident env
     | <span data-count="2">S</span>ome _ -&gt;
       fail
         (Type_check_error
@@ -426,9 +426,9 @@ module CheckMonad = struct
   ;;
 
   let save_global_ident ident t =
-    <span data-count="182">r</span>ead_global_iden<span data-count="182">t</span> ident
+    <span data-count="197">r</span>ead_global_iden<span data-count="197">t</span> ident
     &gt;&gt;= function
-    | <span data-count="173">N</span>one -&gt; write_global_ident t ident
+    | <span data-count="188">N</span>one -&gt; write_global_ident t ident
     | <span data-count="4">S</span>ome _ -&gt;
       fail
         (Type_check_error
@@ -437,13 +437,13 @@ module CheckMonad = struct
   ;;
 
   let retrieve_ident ident =
-    <span data-count="158">r</span>ead_local_iden<span data-count="158">t</span> ident
+    <span data-count="234">r</span>ead_local_iden<span data-count="234">t</span> ident
     &gt;&gt;= function
-    | <span data-count="59">S</span>ome x -&gt; return x
-    | <span data-count="106">N</span>one -&gt;
-      read_global_iden<span data-count="106">t</span> ident
+    | <span data-count="97">S</span>ome x -&gt; return x
+    | <span data-count="124">N</span>one -&gt;
+      read_global_iden<span data-count="124">t</span> ident
       &gt;&gt;= (function
-       | <span data-count="102">S</span>ome x -&gt; return x
+       | <span data-count="120">S</span>ome x -&gt; return x
        | <span data-count="4">N</span>one -&gt;
          fail
            (Type_check_error (Undefined_ident (Printf.sprint<span data-count="4">f</span> "%s is not defined" ident))))
@@ -453,11 +453,11 @@ module CheckMonad = struct
     read
     &gt;&gt;<span data-count="3">=</span> function
     | <span data-count="0">_</span>, _, [] -&gt; fail (Type_check_error Check_failed)
-    | <span data-count="41">_</span>, _, fn -&gt; return (List.h<span data-count="41">d</span> fn)
+    | <span data-count="53">_</span>, _, fn -&gt; return (List.h<span data-count="53">d</span> fn)
   ;;
 
-  let write_env = read_local &gt;&gt;<span data-count="3">=</span> fun x -&gt; <span data-count="117">w</span>rite_local (MapIdent.empty :: x)
-  let delete_env = read_local &gt;&gt;<span data-count="3">=</span> fun x -&gt; <span data-count="79">w</span>rite_local (List.t<span data-count="79">l</span> x)
+  let write_env = read_local &gt;&gt;<span data-count="3">=</span> fun x -&gt; <span data-count="133">w</span>rite_local (MapIdent.empty :: x)
+  let delete_env = read_local &gt;&gt;<span data-count="3">=</span> fun x -&gt; <span data-count="88">w</span>rite_local (List.t<span data-count="88">l</span> x)
 end
 </code></pre>
       </div>
