@@ -237,7 +237,7 @@ let%expect_test "ok: correct var multiple returns short_decl" =
     }
 
     func main() {
-    a, b := foo(4)
+        a, b := foo(4)
     }
     |};
   [%expect {|
@@ -255,8 +255,8 @@ let%expect_test "err: incorrect var multiple assign" =
     }
 
     func main() {
-    a, b := foo(4)
-    a, b = foo2(4)
+        a, b := foo(4)
+        a, b = foo2(4)
     }
     |};
   [%expect
@@ -275,8 +275,8 @@ let%expect_test "ok: correct var multiple assign" =
     }
 
     func main() {
-    a, b := foo(4)
-    a, b = foo2(4)
+        a, b := foo(4)
+        a, b = foo2(4)
     }
     |};
   [%expect {|
@@ -294,8 +294,8 @@ let%expect_test "err: incorrect var multiple assign after multiple decl with wro
     }
 
     func main() {
-    a, b := foo(4)
-    a, b = foo2(4)
+        a, b := foo(4)
+        a, b = foo2(4)
     }
     |};
   [%expect
@@ -379,6 +379,34 @@ let%expect_test "err: undefined var inc" =
     }  
     |};
   [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a2 is not defined |}]
+;;
+
+let%expect_test "ok: global var decl before it's use in code" =
+  pp
+    {|
+    var x int
+
+    func foo(a1 int, c int, b int) bool {
+        x++
+    }  
+
+    func main() {}
+    |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "ok: global var decl after it's use in code" =
+  pp
+    {|
+    func foo(a1 int, c int, b int) bool {
+        x++
+    } 
+
+    var x int
+
+    func main() {}
+    |};
+  [%expect {| CORRECT |}]
 ;;
 
 let%expect_test "err: undefined func call" =

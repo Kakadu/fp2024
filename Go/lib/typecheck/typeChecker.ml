@@ -7,7 +7,6 @@ open TypeCheckMonad.CheckMonad
 open Errors
 open Ast
 
-let lpf args = List.map (fun (fst, _) -> fst) args
 let lps args = List.map (fun (_, snd) -> snd) args
 let get_afunc_type afunc = Ctype (Type_func (lps afunc.args, afunc.returns))
 
@@ -117,14 +116,14 @@ let rec retrieve_expr cstmt = function
     >>= (function
      | Ctype (Type_chan (_, y)) -> return (Ctype y)
      | _ -> fail (Type_check_error (Mismatched_types "Chan type mismatch")))
-  | Expr_index (array, index) when retrieve_expr cstmt index = return (Ctype Type_int) ->
-    retrieve_expr cstmt array
-    >>= (function
-     | Ctype (Type_array (_, t)) -> return (Ctype t)
-     | _ ->
-       fail (Type_check_error (Mismatched_types "Non-array type in array index call")))
-  | Expr_index (_, _) ->
-    fail (Type_check_error (Mismatched_types "Array index is not int"))
+  | Expr_index (array, index) ->
+    (retrieve_expr cstmt index >>= check_eq (Ctype Type_int))
+    *> (retrieve_expr cstmt array
+        >>= function
+        | Ctype (Type_array (_, t)) -> return (Ctype t)
+        | _ ->
+          fail (Type_check_error (Mismatched_types "Non-array type in array index call"))
+       )
 ;;
 
 let check_long_var_decl cstmt save_ident = function
@@ -187,18 +186,15 @@ let check_short_var_decl cstmt = function
 
 let rec retrieve_lvalue cstmt = function
   | Lvalue_ident id -> retrieve_ident id
-  | Lvalue_array_index (Lvalue_ident array, index)
-    when retrieve_expr cstmt index = return (Ctype Type_int) ->
-    retrieve_ident array
+  | Lvalue_array_index (Lvalue_ident array, index) ->
+    (retrieve_expr cstmt index >>= check_eq (Ctype Type_int)) *> retrieve_ident array
     >>= (function
      | Ctype (Type_array (_, t)) -> return (Ctype t)
      | _ ->
        fail (Type_check_error (Mismatched_types "Non-array type in array index call")))
-  | Lvalue_array_index (lvalue_array_index, index)
-    when retrieve_expr cstmt index = return (Ctype Type_int) ->
-    retrieve_lvalue cstmt lvalue_array_index
-  | Lvalue_array_index (_, _) ->
-    fail (Type_check_error (Mismatched_types "Array index is not int"))
+  | Lvalue_array_index (lvalue_array_index, index) ->
+    (retrieve_expr cstmt index >>= check_eq (Ctype Type_int))
+    *> retrieve_lvalue cstmt lvalue_array_index
 ;;
 
 let check_assign cstmt = function
@@ -270,9 +266,9 @@ let rec check_stmt = function
        retrieve_expr check_stmt expr >>= check_eq return_type))
     *> return ()
   | Stmt_if if' ->
-    write_env *> check_init check_stmt if'.init *> retrieve_expr check_stmt if'.cond
-    >>= fun t ->
-    check_eq t (Ctype Type_bool)
+    write_env
+    *> check_init check_stmt if'.init
+    *> (retrieve_expr check_stmt if'.cond >>= check_eq (Ctype Type_bool))
     *> iter check_stmt if'.if_body
     *> delete_env
     *>
@@ -291,27 +287,37 @@ let rec check_stmt = function
     *> delete_env
 ;;
 
-let check_top_decl_funcs = function
+let save_top_decl_funcs = function
   | Decl_func (id, args_returns_and_body) ->
     save_global_ident id (get_afunc_type args_returns_and_body)
   | Decl_var _ -> return ()
 ;;
 
-let check_top_decl = function
-  | Decl_func (_, y) -> check_anon_func y check_stmt *> return ()
+let check_and_save_top_decl_vars = function
+  | Decl_func _ -> return ()
   | Decl_var decl -> check_long_var_decl check_stmt save_global_ident decl
+;;
+
+let check_top_decl_funcs = function
+  | Decl_func (_, afunc) -> check_anon_func afunc check_stmt *> return ()
+  | Decl_var _ -> return ()
 ;;
 
 let type_check file =
   run
-    (iter check_top_decl_funcs file *> iter check_top_decl file *> check_main)
+    (iter save_top_decl_funcs file
+     *> iter check_and_save_top_decl_vars file
+     *> iter check_top_decl_funcs file
+     *> check_main)
     (MapIdent.empty, [], [])
+  |> function
+  | _, res -> res
 ;;
 
 let pp ast =
   match type_check ast with
-  | _, Result.Ok _ -> print_endline "CORRECT"
-  | _, Result.Error err ->
+  | Result.Ok _ -> print_endline "CORRECT"
+  | Result.Error err ->
     prerr_string "ERROR WHILE TYPECHECK WITH ";
     (match err with
      | Type_check_error Check_failed -> prerr_endline "Check failed"
