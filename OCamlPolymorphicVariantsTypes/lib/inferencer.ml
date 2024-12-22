@@ -9,7 +9,7 @@ open Base
 type error =
   [ `Occurs_check
   | `No_variable of string
-  | `Unification_failed of ty * ty
+  | `Unification_failed of core_type * core_type
   | `Not_implemented
   ]
 
@@ -105,26 +105,26 @@ end
 type fresh = int
 
 module Type = struct
-  type t = ty
+  type t = core_type
 
   let rec occurs_in v = function
-    | TVar x -> x = v
-    | TArrow (l, r) -> occurs_in v l || occurs_in v r
-    | TList typ -> occurs_in v typ
-    | TTuple (t1, t2, tl) ->
+    | TypeVariable x -> x = v
+    | ArrowType (l, r) -> occurs_in v l || occurs_in v r
+    | TypeConstructor (_, typ) -> occurs_in v typ
+    | TupleType (t1, t2, tl) ->
       occurs_in v t1 || occurs_in v t2 || Base.List.exists tl ~f:(occurs_in v)
-    | TPrim _ -> false
+    | TypeIdentifier _ -> false
   ;;
 
   let free_vars =
     let rec helper acc = function
-      | TVar x -> VarSet.add x acc
-      | TArrow (l, r) -> helper (helper acc l) r
-      | TList t -> helper acc t
-      | TTuple (t1, t2, tl) ->
+      | TypeVariable x -> VarSet.add x acc
+      | ArrowType (l, r) -> helper (helper acc l) r
+      | TypeConstructor (_, t) -> helper acc t
+      | TupleType (t1, t2, tl) ->
         let acc' = helper (helper acc t1) t2 in
         List.fold_left ~f:(fun acc t -> helper acc t) ~init:acc' tl
-      | TPrim _ -> acc
+      | TypeIdentifier _ -> acc
     in
     helper VarSet.empty
   ;;
@@ -134,11 +134,11 @@ module Subst : sig
   type t
 
   val empty : t
-  val singleton : fresh -> ty -> t R.t
-  val find : t -> fresh -> ty option
+  val singleton : fresh -> core_type -> t R.t
+  val find : t -> fresh -> core_type option
   val remove : t -> fresh -> t
-  val apply : t -> ty -> ty
-  val unify : ty -> ty -> t R.t
+  val apply : t -> core_type -> core_type
+  val unify : core_type -> core_type -> t R.t
   val compose : t -> t -> t R.t
   val compose_all : t list -> t R.t
   (* val pp : Format.formatter -> (ty, ty, Base.Int.comparator_witness) Base.Map.t -> unit *)
@@ -146,7 +146,7 @@ end = struct
   open R
   open R.Syntax
 
-  type t = (fresh, ty, Int.comparator_witness) Map.t
+  type t = (fresh, core_type, Int.comparator_witness) Map.t
 
   let empty = Map.empty (module Int)
   let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
@@ -161,28 +161,28 @@ end = struct
 
   let apply s =
     let rec helper = function
-      | TVar v as ty ->
+      | TypeVariable v as ty ->
         (match find s v with
          | Some ty' -> helper ty'
          | None -> ty)
-      | TArrow (l, r) -> TArrow (helper l, helper r)
-      | TTuple (t1, t2, tl) -> ty_tuple (helper t1, helper t2, List.map ~f:helper tl)
-      | TList l -> ty_list (helper l)
-      | TPrim _ as ty -> ty
+      | ArrowType (l, r) -> ty_arrow (helper l, helper r)
+      | TupleType (t1, t2, tl) -> ty_tuple (helper t1, helper t2, List.map ~f:helper tl)
+      | TypeConstructor (n, r) -> ty_constructor (n, helper r)
+      | TypeIdentifier _ as ty -> ty
     in
     helper
   ;;
 
   let rec unify l r =
     match l, r with
-    | TPrim l, TPrim r when String.equal l r -> return empty
-    | TVar l, TVar r when l = r -> return empty
-    | TVar v, t | t, TVar v -> singleton v t
-    | TArrow (l1, r1), TArrow (l2, r2) ->
+    | TypeIdentifier l, TypeIdentifier r when String.equal l r -> return empty
+    | TypeVariable l, TypeVariable r when l = r -> return empty
+    | TypeVariable v, t | t, TypeVariable v -> singleton v t
+    | ArrowType (l1, r1), ArrowType (l2, r2) ->
       let* s1 = unify l1 l2 in
       let* s2 = unify (apply s1 r1) (apply s1 r2) in
       compose s1 s2
-    | TTuple (t11, t12, t1l), TTuple (t21, t22, t2l) ->
+    | TupleType (t11, t12, t1l), TupleType (t21, t22, t2l) ->
       if List.length t1l <> List.length t2l
       then fail (`Unification_failed (l, r))
       else (
@@ -198,7 +198,8 @@ end = struct
         in
         let composed_tl = compose_all s in
         composed_tl)
-    | TList l1, TList l2 -> unify l1 l2
+    | TypeConstructor (n1, l1), TypeConstructor (n2, l2) ->
+      if String.equal n1 n2 then unify l1 l2 else fail (`Unification_failed (l, r))
     | _, _ -> fail (`Unification_failed (l, r))
 
   and extend k v s =
@@ -268,9 +269,9 @@ end
 open R
 open R.Syntax
 
-let fresh_var = fresh >>| fun n -> TVar n
+let fresh_var = fresh >>| fun n -> TypeVariable n
 
-let instantiate : scheme -> ty R.t =
+let instantiate : scheme -> core_type R.t =
   fun (S (bs, t)) ->
   VarSet.fold
     (fun name typ ->
@@ -294,9 +295,9 @@ let generalize_rec env ty x =
 
 let infer_pattern =
   let rec helper env = function
-    | PAny ->
-      let* fresh = fresh_var in
-      return (env, fresh)
+    (* | PAny ->
+       let* fresh = fresh_var in
+       return (env, fresh) *)
     | PVar x ->
       let* fresh = fresh_var in
       let env = TypeEnv.extend env x (S (VarSet.empty, fresh)) in
@@ -313,9 +314,14 @@ let infer_pattern =
           ~init:(return [])
           tl
       in
-      return (env, TTuple (t1', t2', tl'))
+      return (env, ty_tuple (t1', t2', tl'))
     | PUnit -> return (env, ty_unit)
-    | PConstrain (_, _) -> fail `Not_implemented
+    | PConstrain (p, t) ->
+      let* _, t_p = helper env p in
+      let* s = Subst.unify t_p t in
+      let env = TypeEnv.apply s env in
+      let applied_t = Subst.apply s t in
+      return (env, applied_t)
   in
   helper
 ;;
@@ -367,13 +373,13 @@ let infer_expression =
       let* sub5 = Subst.unify t2 t3 in
       let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
       return (sub, Subst.apply sub t2)
-    | Match (e, cases) ->
+    | Match (e, c, c_rest) ->
       let* sub1, t1 = helper env e in
       let env = TypeEnv.apply sub1 env in
       let* fresh = fresh_var in
       let* sub, t =
         List.fold_left
-          cases
+          (c :: c_rest)
           ~init:(return (sub1, fresh))
           ~f:(fun acc case ->
             let* sub1, t = acc in
@@ -437,12 +443,12 @@ let infer_expression =
       let t1 = Subst.apply composed_sl t1 in
       let t2 = Subst.apply composed_sl t2 in
       let t3 = List.map t3 ~f:(fun t -> Subst.apply s3 t) in
-      return (s3, TTuple (t1, t2, t3))
-    | Apply (e1, e2 :: _) ->
+      return (s3, ty_tuple (t1, t2, t3))
+    | Apply (e1, e2, e_rest) ->
       let* fresh = fresh_var in
       let* s1, t1 = helper env e1 in
       let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-      let* s3 = Subst.unify (ty_arrow t2 fresh) (Subst.apply s2 t1) in
+      let* s3 = Subst.unify (ty_arrow (t2, fresh)) (Subst.apply s2 t1) in
       let* sub = Subst.compose_all [ s1; s2; s3 ] in
       let t = Subst.apply sub fresh in
       return (sub, t)
@@ -450,7 +456,7 @@ let infer_expression =
       (match l with
        | [] ->
          let* fresh = fresh_var in
-         return (Subst.empty, ty_list fresh)
+         return (Subst.empty, ty_constructor ("list", fresh))
        | h :: tl ->
          let* sr, tr =
            Base.List.fold_left tl ~init:(helper env h) ~f:(fun acc e ->
@@ -461,10 +467,17 @@ let infer_expression =
              let final_t = Subst.apply final_s tacc in
              return (final_s, final_t))
          in
-         return (sr, TList tr))
-    | ExpressionBlock _ | Lambda _ | Func _ | Construct _
-    | Define ((_, []), _)
-    | Apply (_, []) -> fail `Not_implemented
+         return (sr, ty_constructor ("list", tr)))
+    | Lambda (p, p_rest, e) ->
+      let* env, t1 = infer_pattern env p in
+      let* sub, t2 =
+        match p_rest with
+        | [] -> helper env e
+        | h :: tl -> helper env (Lambda (h, tl, e))
+      in
+      return (sub, ty_arrow (Subst.apply sub t1, t2))
+    | ExpressionBlock _ | Func _ | Construct _ | Define ((_, []), _) ->
+      fail `Not_implemented
   in
   helper
 ;;
