@@ -479,14 +479,14 @@ open Common
 open Expr
 
 let rec combine_lists l1 l2 =
-  <span data-count="604">m</span>atch l1, l2 with
-  | <span data-count="299">[</span>], [] -&gt; []
+  <span data-count="605">m</span>atch l1, l2 with
+  | <span data-count="300">[</span>], [] -&gt; []
   | <span data-count="305">x</span> :: xs, y :: ys -&gt; (x, y) :: combine_list<span data-count="305">s</span> xs ys
   | <span data-count="0">_</span>, _ -&gt; []
 ;;
 
 let parse_lvalues = sep_by_comma<span data-count="10">1</span> parse_ident
-let parse_rvalues pblock = <span data-count="479">s</span>ep_by_comma1 (parse_exp<span data-count="479">r</span> pblock)
+let parse_rvalues pblock = <span data-count="480">s</span>ep_by_comma1 (parse_exp<span data-count="480">r</span> pblock)
 
 let parse_long_var_decl pblock =
   <span data-count="25">l</span>et* () = strin<span data-count="25">g</span> "var" *<span data-count="25">&gt;</span> ws in
@@ -514,11 +514,11 @@ let parse_long_var_decl pblock =
 
 let parse_short_var_decl pblock =
   <span data-count="240">l</span>et* lvalues = parse_lvalues in
-  <span data-count="2501">l</span>et* () = ws_line *<span data-count="2501">&gt;</span> strin<span data-count="2501">g</span> ":=" *<span data-count="2501">&gt;</span> ws in
-  <span data-count="203">l</span>et* rvalues = parse_rvalue<span data-count="203">s</span> pblock in
-  <span data-count="202">m</span>atch lvalues, rvalues, List.lengt<span data-count="202">h</span> lvalues = List.lengt<span data-count="202">h</span> rvalues with
-  | <span data-count="135">l</span>hd :: ltl, rhd :: rtl, true -&gt;
-    return (Short_decl_mult_init ((lhd, rhd), combine_list<span data-count="135">s</span> ltl rtl))
+  <span data-count="2502">l</span>et* () = ws_line *<span data-count="2502">&gt;</span> strin<span data-count="2502">g</span> ":=" *<span data-count="2502">&gt;</span> ws in
+  <span data-count="204">l</span>et* rvalues = parse_rvalue<span data-count="204">s</span> pblock in
+  <span data-count="203">m</span>atch lvalues, rvalues, List.lengt<span data-count="203">h</span> lvalues = List.lengt<span data-count="203">h</span> rvalues with
+  | <span data-count="136">l</span>hd :: ltl, rhd :: rtl, true -&gt;
+    return (Short_decl_mult_init ((lhd, rhd), combine_list<span data-count="136">s</span> ltl rtl))
   | <span data-count="67">l</span>fst :: lsnd :: ltl, rhd :: _, false -&gt;
     let* () = fail_i<span data-count="67">f</span> (List.lengt<span data-count="67">h</span> rvalues &lt;&gt; 1) in
     <span data-count="66">(</span>match rhd with
@@ -660,7 +660,7 @@ let parse_for pblock =
 let parse_stmt pblock =
   <span data-count="15">c</span>hoice
     [ (parse_long_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="112">S</span>tmt_long_var_decl s)
-    ; (parse_short_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="163">S</span>tmt_short_var_decl s)
+    ; (parse_short_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="164">S</span>tmt_short_var_decl s)
     ; (parse_incr &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="915">S</span>tmt_incr s)
     ; (parse_decr &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="942">S</span>tmt_decr s)
     ; (parse_i<span data-count="15">f</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="114">S</span>tmt_if s)
