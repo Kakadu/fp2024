@@ -1103,7 +1103,7 @@ func main() {
 		f(neg(-2 * i))
 	}
 }|};
-  [%expect {| CORRECT |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: bool and int |}]
 ;;
 
 let%expect_test "err: mismatched type in closure" =
@@ -1127,7 +1127,7 @@ func main() {
 		f(neg(-2 * i))
 	}
 }|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched type in closure func return" =
@@ -1152,7 +1152,7 @@ func main() {
 	}
 }|};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation func(int) int and func(string) int |}]
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: func(int) int and func(string) int |}]
 ;;
 
 let%expect_test "err: mismatched type inside return of func in closure" =
@@ -1176,7 +1176,7 @@ func main() {
 		f(neg(-2 * i))
 	}
 }|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched func returns of created func" =
@@ -1200,5 +1200,5 @@ func main() {
 		f(neg(-2 * i))
 	}
 }|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: bool and int |}]
 ;;
