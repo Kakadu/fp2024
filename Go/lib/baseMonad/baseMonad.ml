@@ -45,4 +45,4 @@ let fold_left f acc l =
 
 let read st = return st st
 let write st_new _ = st_new, Result.Ok ()
-let run f st = f st
+let run f = f
