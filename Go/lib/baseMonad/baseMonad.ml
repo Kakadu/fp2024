@@ -14,6 +14,7 @@ let ( >>= ) x f st =
   | Result.Error x -> fail x st1
 ;;
 
+let ( let* ) = ( >>= )
 let ( *> ) x1 x2 = x1 >>= fun _ -> x2
 
 let ( >>| ) x f st =

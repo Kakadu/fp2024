@@ -3,4 +3,3 @@
 (** SPDX-License-Identifier: MIT *)
 
 val type_check : Ast.file -> (unit, Errors.error) result
-val pp : Ast.file -> unit

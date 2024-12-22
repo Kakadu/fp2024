@@ -17,10 +17,9 @@ type ctype =
   | Ctuple of type' list
 [@@deriving show { with_path = false }, eq]
 
-type global_env = ctype MapIdent.t
-type local_env = ctype MapIdent.t list
-type current_funcs = ctype list
-type state = global_env * local_env * current_funcs
+type env = ctype MapIdent.t list
+type funcs_returns = ctype list
+type state = env * funcs_returns
 
 module CheckMonad = struct
   open Errors
@@ -34,83 +33,34 @@ module CheckMonad = struct
     | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map PpType.print_type x))
   ;;
 
-  let read_local =
+  let read_env =
     read
     >>= function
-    | _, local, _ -> return local
+    | env, _ -> return env
   ;;
 
-  let seek_local_definition_ident ident =
-    read_local >>= fun local -> MapIdent.find_opt ident (List.hd local) |> return
+  let write_env new_env =
+    read
+    >>= function
+    | _, funcs -> write (new_env, funcs)
+  ;;
+
+  let save_func func =
+    read
+    >>= function
+    | env, funcs -> write (env, func :: funcs)
   ;;
 
   let delete_func =
     read
     >>= function
-    | g, l, fl -> write (g, l, List.tl fl)
+    | env, funcs -> write (env, List.tl funcs)
   ;;
 
-  let write_func func =
-    read
-    >>= function
-    | g, l, fl -> write (g, l, func :: fl)
-  ;;
-
-  let read_local_ident ident =
-    read_local
-    >>= fun local ->
-    match List.find_opt (fun x -> MapIdent.mem ident x) local with
-    | None -> return None
-    | Some x -> return (MapIdent.find_opt ident x)
-  ;;
-
-  let read_global =
-    read
-    >>= function
-    | global, _, _ -> return global
-  ;;
-
-  let read_global_ident ident =
-    read_global >>= fun global -> MapIdent.find_opt ident global |> return
-  ;;
-
-  let write_local new_local =
-    read
-    >>= function
-    | global, _, fc -> write (global, new_local, fc)
-  ;;
-
-  let write_local_ident el_type el_ident =
-    read_local
-    >>= fun local ->
-    write_local (MapIdent.add el_ident el_type (List.hd local) :: List.tl local)
-  ;;
-
-  let write_global new_global =
-    read
-    >>= function
-    | _, local, fc -> write (new_global, local, fc)
-  ;;
-
-  let write_global_ident el_type el_ident =
-    read_global >>= fun global -> write_global (MapIdent.add el_ident el_type global)
-  ;;
-
-  let save_local_ident env ident =
-    seek_local_definition_ident env
-    >>= function
-    | None -> write_local_ident ident env
-    | Some _ ->
-      fail
-        (Type_check_error
-           (Multiple_declaration
-              (Printf.sprintf "%s is redeclared in %s" env (print_type ident))))
-  ;;
-
-  let save_global_ident ident t =
-    read_global_ident ident
-    >>= function
-    | None -> write_global_ident t ident
+  let save_ident ident t =
+    let* env = read_env in
+    match MapIdent.find_opt ident (List.hd env) with
+    | None -> write_env (MapIdent.add ident t (List.hd env) :: List.tl env)
     | Some _ ->
       fail
         (Type_check_error
@@ -118,26 +68,28 @@ module CheckMonad = struct
               (Printf.sprintf "%s is redeclared in %s" ident (print_type t))))
   ;;
 
+  let read_ident ident =
+    let* env = read_env in
+    match List.find_opt (fun map -> MapIdent.mem ident map) env with
+    | None -> return None
+    | Some map -> return (MapIdent.find_opt ident map)
+  ;;
+
   let retrieve_ident ident =
-    read_local_ident ident
+    read_ident ident
     >>= function
-    | Some x -> return x
+    | Some t -> return t
     | None ->
-      read_global_ident ident
-      >>= (function
-       | Some x -> return x
-       | None ->
-         fail
-           (Type_check_error (Undefined_ident (Printf.sprintf "%s is not defined" ident))))
+      fail (Type_check_error (Undefined_ident (Printf.sprintf "%s is not defined" ident)))
   ;;
 
   let get_func_return_type =
     read
     >>= function
-    | _, _, [] -> fail (Type_check_error Check_failed)
-    | _, _, fn -> return (List.hd fn)
+    | _, [] -> fail (Type_check_error Check_failed)
+    | _, funcs -> return (List.hd funcs)
   ;;
 
-  let write_env = read_local >>= fun x -> write_local (MapIdent.empty :: x)
-  let delete_env = read_local >>= fun x -> write_local (List.tl x)
+  let add_env = read_env >>= fun x -> write_env (MapIdent.empty :: x)
+  let delete_env = read_env >>= fun x -> write_env (List.tl x)
 end

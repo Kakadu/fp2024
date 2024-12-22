@@ -7,6 +7,7 @@ type ('st, 'a) t
 val return : 'a -> ('st, 'a) t
 val fail : Errors.error -> ('st, 'b) t
 val ( >>= ) : ('st, 'a) t -> ('a -> ('st, 'b) t) -> ('st, 'b) t
+val ( let* ) : ('st, 'a) t -> ('a -> ('st, 'b) t) -> ('st, 'b) t
 val ( *> ) : ('st, 'a) t -> ('st, 'b) t -> ('st, 'b) t
 val ( >>| ) : ('st, 'a) t -> ('a -> 'b) -> ('st, 'b) t
 val iter : ('a -> ('st, unit) t) -> 'a list -> ('st, unit) t

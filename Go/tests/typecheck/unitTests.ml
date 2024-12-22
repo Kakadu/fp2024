@@ -7,7 +7,23 @@ open Parse
 
 let pp str =
   match parse parse_file str with
-  | Ok res -> TypeChecker.pp res
+  | Ok ast ->
+    (match TypeChecker.type_check ast with
+     | Result.Ok _ -> print_endline "CORRECT"
+     | Result.Error err ->
+       prerr_string "ERROR WHILE TYPECHECK WITH ";
+       (match err with
+        | Type_check_error Check_failed -> prerr_endline "Check failed"
+        | Type_check_error (Multiple_declaration msg) ->
+          prerr_string ("Multiple declaration error: " ^ msg)
+        | Type_check_error (Incorrect_main msg) ->
+          prerr_endline ("Incorrect main error: " ^ msg)
+        | Type_check_error (Undefined_ident msg) ->
+          prerr_endline ("Undefined ident error: " ^ msg)
+        | Type_check_error (Mismatched_types msg) ->
+          prerr_endline ("Mismatched types: " ^ msg)
+        | Type_check_error (Cannot_assign msg) ->
+          prerr_endline ("Mismatched types: " ^ msg)))
   | Error _ -> print_endline ": syntax error"
 ;;
 
@@ -52,7 +68,7 @@ let%expect_test "err: no main" =
   var a int
   func foo(b int) {}
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Incorrect main error: main func not found |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: main is not defined |}]
 ;;
 
 let%expect_test "ok: main call" =
@@ -93,7 +109,7 @@ let%expect_test "ok: single var decl with type and wrong init " =
 
   func main() {}
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: func call init with right number of elements" =
@@ -134,7 +150,7 @@ let%expect_test "err: func call one init with mismathced types" =
     func main() {}
     |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation (int, int, int) and (bool, bool, bool) |}]
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: (bool, bool, bool) and (int, int, int) |}]
 ;;
 
 let%expect_test "err: func call one init with mismathced range" =
@@ -297,9 +313,8 @@ let%expect_test "err: incorrect var multiple assign after multiple decl with wro
         a, b = foo2(4)
     }
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {|
+    ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: var and func with the same name" =
@@ -479,8 +494,7 @@ let%expect_test "err: mismatched types in binop" =
         go println(id(10))
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched type in decl # 1" =
@@ -510,8 +524,7 @@ let%expect_test "err: mismatched type in decl # 1" =
         go println(id(10))
     }
   |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched type in decl # 2" =
@@ -541,8 +554,7 @@ let%expect_test "err: mismatched type in decl # 2" =
         go println(id(10))
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
 ;;
 
 let%expect_test "err: mismatched type in func_call" =
@@ -572,8 +584,7 @@ let%expect_test "err: mismatched type in func_call" =
         go println(id(10))
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: correct example #3" =
@@ -633,7 +644,7 @@ let%expect_test "err: return type of func mismatch" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: return with empty func returns" =
@@ -666,7 +677,7 @@ let%expect_test "err: multiple returns type mismatch" =
         return 5, 5
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
 ;;
 
 let%expect_test "err: incorrect anon_func return in nested func" =
@@ -685,7 +696,7 @@ let%expect_test "err: incorrect anon_func return in nested func" =
       value("4")
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
 ;;
 
 let%expect_test "err: incorrect anon_func local redeclaration nested func" =
@@ -706,7 +717,7 @@ func main() {
 	value(1)
 }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
 ;;
 
 let%expect_test "ok: correct anon_func local redeclaration nested func" =
@@ -782,7 +793,7 @@ let%expect_test "err: incorrect chans return context" =
     }
 
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: incorrect chan send type" =
@@ -800,7 +811,7 @@ let%expect_test "err: incorrect chan send type" =
     }
 
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation string and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
 ;;
 
 (********** expr **********)
@@ -824,8 +835,7 @@ let%expect_test "err: mismatched types in bin sum" =
         var c = a + b
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: right type in unary minus" =
@@ -845,8 +855,7 @@ let%expect_test "err: wrong type in unary minus" =
         c := -a
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return int and bool |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and bool |}]
 ;;
 
 let%expect_test "ok: right types in const array inits" =
@@ -867,7 +876,7 @@ let%expect_test "err: wrong types in const array inits" =
         c := [2]int{1, func() {}}
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation func() and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: func() and int |}]
 ;;
 
 let%expect_test "ok: too much const array inits" =
@@ -899,7 +908,7 @@ let%expect_test "err: array index call with non int index" =
         c := arr["0"]
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: array index assignment" =
@@ -921,7 +930,7 @@ let%expect_test "err: array index assignment with non-int index" =
         arr[func() {}] = 7
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and func() |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and func() |}]
 ;;
 
 let%expect_test "err: array index assignment with wrong expr" =
@@ -932,7 +941,7 @@ let%expect_test "err: array index assignment with wrong expr" =
         arr[10] = ""
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: multidimensional array index assignment" =
@@ -964,7 +973,7 @@ let%expect_test "err: multidimensional array index assignment with wrong index l
         arr[i] = 10000
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation [7]int and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: [7]int and int |}]
 ;;
 
 let%expect_test "err: multidimensional array index assignment with wrong index more than \
@@ -982,7 +991,7 @@ let%expect_test "err: multidimensional array index assignment with wrong index m
     }
 |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: Number of indexes in assigment is incorrect |}]
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Number of indicies in array element assigment is incorrect |}]
 ;;
 
 let%expect_test "ok: multidimensional array index binoper" =
@@ -1012,8 +1021,7 @@ let%expect_test "err: multidimensional array index returns array" =
         i = arr[1] + 1
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation with return [7]int and int |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: [7]int and int |}]
 ;;
 
 let%expect_test "err: multidimensional array index more than it's dimension " =
@@ -1048,7 +1056,7 @@ let%expect_test "ok: multiple nested index inside nested index" =
   [%expect {| CORRECT |}]
 ;;
 
-let%expect_test "ere: wrong not integer multiple nested index inside nested index" =
+let%expect_test "err: wrong not integer multiple nested index inside nested index" =
   pp
     {|
     var arr = [4][7][1][4][5]int{}
@@ -1061,7 +1069,16 @@ let%expect_test "ere: wrong not integer multiple nested index inside nested inde
         i = arr[1][0][0][t1[2][1]][8] + 1
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types:  in equation int and string |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+;;
+
+let%expect_test "ok: predeclared true and false" =
+  pp {|
+    func main() {
+        a := true && false
+    }
+|};
+  [%expect {| CORRECT |}]
 ;;
 
 let%expect_test "ok: correct closure" =
