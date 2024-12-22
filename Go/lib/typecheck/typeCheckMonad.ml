@@ -20,14 +20,14 @@ type ctype =
 type global_env = ctype MapIdent.t
 type local_env = ctype MapIdent.t list
 type current_funcs = ctype list
-type type_check = global_env * local_env * current_funcs
+type state = global_env * local_env * current_funcs
 
 module CheckMonad = struct
   open Errors
   open Format
   include BaseMonad
 
-  type 'a t = (type_check, 'a) BaseMonad.t
+  type 'a t = (state, 'a) BaseMonad.t
 
   let print_type = function
     | Ctype x -> PpType.print_type x
