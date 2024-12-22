@@ -432,19 +432,6 @@
 <a id="L408"></a><span > </span>
 <a id="L409"></a><span class="visited"> </span>
 <a id="L410"></a><span > </span>
-<a id="L411"></a><span > </span>
-<a id="L412"></a><span > </span>
-<a id="L413"></a><span class="visited"> </span>
-<a id="L414"></a><span > </span>
-<a id="L415"></a><span > </span>
-<a id="L416"></a><span > </span>
-<a id="L417"></a><span class="visited"> </span>
-<a id="L418"></a><span > </span>
-<a id="L419"></a><span > </span>
-<a id="L420"></a><span > </span>
-<a id="L421"></a><span > </span>
-<a id="L422"></a><span class="visited"> </span>
-<a id="L423"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -859,19 +846,6 @@
 <a href="#L408">408</a>
 <a href="#L409">409</a>
 <a href="#L410">410</a>
-<a href="#L411">411</a>
-<a href="#L412">412</a>
-<a href="#L413">413</a>
-<a href="#L414">414</a>
-<a href="#L415">415</a>
-<a href="#L416">416</a>
-<a href="#L417">417</a>
-<a href="#L418">418</a>
-<a href="#L419">419</a>
-<a href="#L420">420</a>
-<a href="#L421">421</a>
-<a href="#L422">422</a>
-<a href="#L423">423</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
 
@@ -1281,19 +1255,6 @@ let%expect_test "anon func with mult args and return values" =
   <span data-count="1">[</span>%expect {|
     func(a int, b string) (int, string) {
         return a, b
-    } |}<span data-count="11">]</span>
-;;
-
-let%expect_test "anon func with mult args and named return values" =
-  <span data-count="1">p</span>p
-    print_expr
-    parse_expr
-    {|func(a int, b string) (res1 int, res2 string) { res1, res2 = a, b; return }|};
-  <span data-count="1">[</span>%expect
-    {|
-    func(a int, b string) (res1 int, res2 string) {
-        res1, res2 = a, b
-        return
     } |}<span data-count="11">]</span>
 ;;
 </code></pre>
