@@ -21,13 +21,6 @@ let check_anon_func afunc cstmt =
   *> return (get_afunc_type afunc)
 ;;
 
-let retrieve_const cstmt = function
-  | Const_array (size, t, _) -> return (Ctype (Type_array (size, t)))
-  | Const_int _ -> return (Ctype Type_int)
-  | Const_string _ -> return (Ctype Type_string)
-  | Const_func anon_func -> check_anon_func anon_func cstmt
-;;
-
 let check_main =
   read_global_ident "main"
   >>= function
@@ -42,13 +35,40 @@ let check_main =
 let eq_type t1 t2 =
   if equal_ctype t1 t2
   then return t1
-  else fail (Type_check_error (Mismatched_types "Types mismatched in equation"))
+  else
+    fail
+      (Type_check_error
+         (Mismatched_types
+            (Printf.sprintf
+               " in equation with return %s and %s"
+               (print_type t1)
+               (print_type t2))))
 ;;
 
 let check_eq t1 t2 =
-  match equal_ctype t1 t2 with
-  | true -> return ()
-  | false -> fail (Type_check_error (Mismatched_types "Types mismatched in equation"))
+  if equal_ctype t1 t2
+  then return ()
+  else
+    fail
+      (Type_check_error
+         (Mismatched_types
+            (Printf.sprintf " in equation %s and %s" (print_type t1) (print_type t2))))
+;;
+
+let retrieve_const cstmt rexpr = function
+  | Const_array (size, type', inits) when List.length inits <= size ->
+    iter
+      (fun init ->
+        rexpr init
+        >>= function
+        | Ctuple _ -> fail (Type_check_error (Mismatched_types "Expected single type"))
+        | t -> check_eq t (Ctype type'))
+      inits
+    *> return (Ctype (Type_array (size, type')))
+  | Const_array _ -> fail (Type_check_error Check_failed)
+  | Const_int _ -> return (Ctype Type_int)
+  | Const_string _ -> return (Ctype Type_string)
+  | Const_func anon_func -> check_anon_func anon_func cstmt
 ;;
 
 let check_func_call rexpr (func, args) =
@@ -73,20 +93,26 @@ let check_func_call rexpr (func, args) =
    | true ->
      ftype
      >>= fun type_list -> iter2 (fun arg typ -> rexpr arg >>= check_eq typ) args type_list
-   | false -> fail (Type_check_error (Mismatched_types "Number of given args mismached"))
+   | false -> fail (Type_check_error (Mismatched_types "Number of given args mismatched"))
   )
   *> return ()
 ;;
 
+let rec nested_array ct ind =
+  match ct, ind with
+  | x, 0 -> return x
+  | Ctype (Type_array (_, y)), ind -> nested_array (Ctype y) (ind - 1)
+  | _, _ ->
+    fail
+      (Type_check_error (Mismatched_types "Number of indexes in assigment is incorrect"))
+;;
+
 let rec retrieve_expr cstmt = function
-  | Expr_const const -> retrieve_const cstmt const
+  | Expr_const const -> retrieve_const cstmt (retrieve_expr cstmt) const
   | Expr_un_oper (op, expr) ->
     (match op with
-     | Unary_minus | Unary_plus ->
-       retrieve_expr cstmt expr
-       >>= fun t -> check_eq t (Ctype Type_int) *> return (Ctype Type_int)
-     | Unary_not -> retrieve_expr cstmt expr)
-    >>= fun t -> check_eq t (Ctype Type_bool) *> return (Ctype Type_bool)
+     | Unary_minus | Unary_plus -> retrieve_expr cstmt expr >>= eq_type (Ctype Type_int)
+     | Unary_not -> retrieve_expr cstmt expr >>= fun t -> eq_type t (Ctype Type_bool))
   | Expr_ident id -> retrieve_ident id
   | Expr_bin_oper (op, left, right) ->
     let compare_arg_typ type1 type2 =
@@ -181,24 +207,24 @@ let check_short_var_decl cstmt = function
                   "function returns wrong number of elements in multiple var decl"))))
 ;;
 
-let rec retrieve_lvalue cstmt = function
+let rec retrieve_lvalue ind cstmt = function
   | Lvalue_ident id -> retrieve_ident id
   | Lvalue_array_index (Lvalue_ident array, index) ->
     (retrieve_expr cstmt index >>= check_eq (Ctype Type_int)) *> retrieve_ident array
     >>= (function
-     | Ctype (Type_array (_, t)) -> return (Ctype t)
+     | Ctype (Type_array (_, t)) -> nested_array (Ctype t) ind
      | _ ->
        fail (Type_check_error (Mismatched_types "Non-array type in array index call")))
   | Lvalue_array_index (lvalue_array_index, index) ->
     (retrieve_expr cstmt index >>= check_eq (Ctype Type_int))
-    *> retrieve_lvalue cstmt lvalue_array_index
+    *> retrieve_lvalue (ind + 1) cstmt lvalue_array_index
 ;;
 
 let check_assign cstmt = function
   | Assign_mult_expr (hd, tl) ->
     iter
       (fun (lvalue, expr) ->
-        retrieve_lvalue cstmt lvalue
+        retrieve_lvalue 0 cstmt lvalue
         >>= fun type1 -> retrieve_expr cstmt expr >>= check_eq type1)
       (hd :: tl)
   | Assign_one_expr (l1, l2, ls, w) ->
@@ -208,7 +234,7 @@ let check_assign cstmt = function
      | Ctuple types ->
        (try
           iter2
-            (fun lvalue t -> retrieve_lvalue cstmt lvalue >>= check_eq (Ctype t))
+            (fun lvalue t -> retrieve_lvalue 0 cstmt lvalue >>= check_eq (Ctype t))
             (l1 :: l2 :: ls)
             types
         with

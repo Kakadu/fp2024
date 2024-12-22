@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Ast
+
 module Ident : sig
   type t = Ast.ident
 
@@ -34,10 +36,10 @@ type local_env = ctype MapIdent.t list
 type current_funcs = ctype list
 
 (** Current typechecker state *)
-type type_check = global_env * local_env * current_funcs
+type state = global_env * local_env * current_funcs
 
 module CheckMonad : sig
-  type 'a t = (type_check, 'a) BaseMonad.t
+  type 'a t = (state, 'a) BaseMonad.t
 
   val return : 'a -> 'a t
   val fail : Errors.error -> 'b t
@@ -46,15 +48,35 @@ module CheckMonad : sig
   val iter : ('a -> unit t) -> 'a list -> unit t
   val iter2 : ('a -> 'b -> unit t) -> 'a list -> 'b list -> unit t
   val map : ('a -> 'b t) -> 'a list -> 'b list t
-  val run : 'a t -> type_check -> type_check * ('a, Errors.error) Result.t
-  val seek_local_definition_ident : MapIdent.key -> ctype option t
-  val delete_func : unit t
+  val run : 'a t -> state -> state * ('a, Errors.error) Result.t
+
+  (** Saves current func's return type to the state (called when moving into func body) *)
   val write_func : ctype -> unit t
-  val read_global_ident : MapIdent.key -> ctype option t
-  val save_local_ident : MapIdent.key -> ctype -> unit t
-  val save_global_ident : MapIdent.key -> ctype -> unit t
-  val retrieve_ident : MapIdent.key -> ctype t
+
+  (** Deletes current func's return type from the state (called when moving out of func body) *)
+  val delete_func : unit t
+
+  (** Searches for given ident's type in global env, returns [None] if not found *)
+  val read_global_ident : ident -> ctype option t
+
+  (** Saves ident's type to local env in state *)
+  val save_local_ident : ident -> ctype -> unit t
+
+  (** Saves ident's type to global env in state *)
+  val save_global_ident : ident -> ctype -> unit t
+
+  (** Searches for given ident's type, returns [None] if not found *)
+  val retrieve_ident : ident -> ctype t
+
+  (** Returns current func return type. Used to check if it matches exprs in return stmt *)
   val get_func_return_type : ctype t
+
+  (** Add new Map to local_env while entering a new block/anon_func/if body/for body*)
   val write_env : unit t
+
+  (** Remove Map from local_env while leaving block/anon_func/if body/for body*)
   val delete_env : unit t
+
+  (** Pretty print ctype *)
+  val print_type : ctype -> string
 end
