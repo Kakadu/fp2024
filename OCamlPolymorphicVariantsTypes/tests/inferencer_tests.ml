@@ -41,3 +41,43 @@ let%expect_test _ =
   code_infer {| let x = [2; 34];;|};
   [%expect {| "x" : int list |}]
 ;;
+
+let%expect_test _ =
+  code_infer {| let x f = f;;|};
+  [%expect {| "x" : [ 0; ]. ('0 -> '0) |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let a b = match b with | int -> 22 | bool -> false;; |};
+  [%expect {| Inferencer error: unification failed on bool and int |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let f a b = a b;; |};
+  [%expect {| "f" : [ 0; 2; ]. (('0 -> '2) -> ('0 -> '2)) |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let a = [(2, 5), (7, 8)];; |};
+  [%expect {| "a" : ((int * int) * (int * int)) list |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let a b = Some(b);; |};
+  [%expect {| "a" : [ 0; ]. ('0 -> '0 Some) |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let a = None;; |};
+  [%expect {| "a" : [ 0; ]. '0 None |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let a = function | int -> true | bool -> false;; |};
+  [%expect {| "a" : [ 0; ]. ('0 -> bool) |}]
+;;
+
+let%expect_test _ =
+  code_infer {| let a b = match b with | int -> true | bool -> false;; |};
+  [%expect {| "a" : [ 2; ]. ('2 -> bool) |}]
+;;
