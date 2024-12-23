@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>inferencer_tests.ml &mdash; Coverage report</title>
-    <meta name="description" content="90.48% coverage in tests/inferencer_tests.ml">
+    <meta name="description" content="95.56% coverage in tests/inferencer_tests.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,11 +15,11 @@
           <span class="dirname">tests/</span>inferencer_tests.ml
         </a>
       </h1>
-      <h2>90.48%</h2>
+      <h2>95.56%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:37.21%"></span>
-      <span class="unvisited" style="top:39.53%"></span>
+      <span class="unvisited" style="top:19.28%"></span>
+      <span class="unvisited" style="top:20.48%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -67,6 +67,46 @@
 <a id="L41"></a><span class="visited"> </span>
 <a id="L42"></a><span class="visited"> </span>
 <a id="L43"></a><span > </span>
+<a id="L44"></a><span > </span>
+<a id="L45"></a><span > </span>
+<a id="L46"></a><span class="visited"> </span>
+<a id="L47"></a><span class="visited"> </span>
+<a id="L48"></a><span > </span>
+<a id="L49"></a><span > </span>
+<a id="L50"></a><span > </span>
+<a id="L51"></a><span class="visited"> </span>
+<a id="L52"></a><span class="visited"> </span>
+<a id="L53"></a><span > </span>
+<a id="L54"></a><span > </span>
+<a id="L55"></a><span > </span>
+<a id="L56"></a><span class="visited"> </span>
+<a id="L57"></a><span class="visited"> </span>
+<a id="L58"></a><span > </span>
+<a id="L59"></a><span > </span>
+<a id="L60"></a><span > </span>
+<a id="L61"></a><span class="visited"> </span>
+<a id="L62"></a><span class="visited"> </span>
+<a id="L63"></a><span > </span>
+<a id="L64"></a><span > </span>
+<a id="L65"></a><span > </span>
+<a id="L66"></a><span class="visited"> </span>
+<a id="L67"></a><span class="visited"> </span>
+<a id="L68"></a><span > </span>
+<a id="L69"></a><span > </span>
+<a id="L70"></a><span > </span>
+<a id="L71"></a><span class="visited"> </span>
+<a id="L72"></a><span class="visited"> </span>
+<a id="L73"></a><span > </span>
+<a id="L74"></a><span > </span>
+<a id="L75"></a><span > </span>
+<a id="L76"></a><span class="visited"> </span>
+<a id="L77"></a><span class="visited"> </span>
+<a id="L78"></a><span > </span>
+<a id="L79"></a><span > </span>
+<a id="L80"></a><span > </span>
+<a id="L81"></a><span class="visited"> </span>
+<a id="L82"></a><span class="visited"> </span>
+<a id="L83"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -114,6 +154,46 @@
 <a href="#L41">41</a>
 <a href="#L42">42</a>
 <a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
+<a href="#L46">46</a>
+<a href="#L47">47</a>
+<a href="#L48">48</a>
+<a href="#L49">49</a>
+<a href="#L50">50</a>
+<a href="#L51">51</a>
+<a href="#L52">52</a>
+<a href="#L53">53</a>
+<a href="#L54">54</a>
+<a href="#L55">55</a>
+<a href="#L56">56</a>
+<a href="#L57">57</a>
+<a href="#L58">58</a>
+<a href="#L59">59</a>
+<a href="#L60">60</a>
+<a href="#L61">61</a>
+<a href="#L62">62</a>
+<a href="#L63">63</a>
+<a href="#L64">64</a>
+<a href="#L65">65</a>
+<a href="#L66">66</a>
+<a href="#L67">67</a>
+<a href="#L68">68</a>
+<a href="#L69">69</a>
+<a href="#L70">70</a>
+<a href="#L71">71</a>
+<a href="#L72">72</a>
+<a href="#L73">73</a>
+<a href="#L74">74</a>
+<a href="#L75">75</a>
+<a href="#L76">76</a>
+<a href="#L77">77</a>
+<a href="#L78">78</a>
+<a href="#L79">79</a>
+<a href="#L80">80</a>
+<a href="#L81">81</a>
+<a href="#L82">82</a>
+<a href="#L83">83</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2027, Ilia Suponev, Chirkov Dmitri *)
 
@@ -124,12 +204,12 @@ open Miniml.Parser_utility
 open Miniml.Parser
 
 let code_infer s =
-  <span data-count="5">l</span>et open Stdlib.Format in
+  <span data-count="13">l</span>et open Stdlib.Format in
   match parse program_parser s with
-  | <span data-count="5">P</span>arseSuccess (p, _) -&gt;
+  | <span data-count="13">P</span>arseSuccess (p, _) -&gt;
     (match run_infer p with
-     | <span data-count="4">O</span>k env -&gt; printf "%a\n" TypeEnv.pp_env env
-     | <span data-count="1">E</span>rror e -&gt; printf "Inferencer error: %a\n" pp_error e)
+     | <span data-count="11">O</span>k env -&gt; printf "%a\n" TypeEnv.pp_env env
+     | <span data-count="2">E</span>rror e -&gt; printf "Inferencer error: %a\n" pp_error e)
   | <span data-count="0">P</span>arseError (e, _) -&gt; printf "Parser error: %s\n" e
   | <span data-count="0">P</span>arseFail -&gt; printf "Parser failed" (*TODO*)
 ;;
@@ -157,6 +237,46 @@ let%expect_test _ =
 let%expect_test _ =
   <span data-count="1">c</span>ode_infer {| let x = [2; 34];;|};
   <span data-count="1">[</span>%expect {| "x" : int list |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let x f = f;;|};
+  <span data-count="1">[</span>%expect {| "x" : [ 0; ]. ('0 -&gt; '0) |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let a b = match b with | int -&gt; 22 | bool -&gt; false;; |};
+  <span data-count="1">[</span>%expect {| Inferencer error: unification failed on bool and int |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let f a b = a b;; |};
+  <span data-count="1">[</span>%expect {| "f" : [ 0; 2; ]. (('0 -&gt; '2) -&gt; ('0 -&gt; '2)) |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let a = [(2, 5), (7, 8)];; |};
+  <span data-count="1">[</span>%expect {| "a" : ((int * int) * (int * int)) list |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let a b = Some(b);; |};
+  <span data-count="1">[</span>%expect {| "a" : [ 0; ]. ('0 -&gt; '0 Some) |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let a = None;; |};
+  <span data-count="1">[</span>%expect {| "a" : [ 0; ]. '0 None |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let a = function | int -&gt; true | bool -&gt; false;; |};
+  <span data-count="1">[</span>%expect {| "a" : [ 0; ]. ('0 -&gt; bool) |}<span data-count="15">]</span>
+;;
+
+let%expect_test _ =
+  <span data-count="1">c</span>ode_infer {| let a b = match b with | int -&gt; true | bool -&gt; false;; |};
+  <span data-count="1">[</span>%expect {| "a" : [ 2; ]. ('2 -&gt; bool) |}<span data-count="15">]</span>
 ;;
 </code></pre>
       </div>
