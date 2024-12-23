@@ -1,0 +1,8 @@
+(library
+ (name typecheck)
+ (libraries base ast baseMonad ppType)
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_expect ppx_deriving.show ppx_deriving.eq)))

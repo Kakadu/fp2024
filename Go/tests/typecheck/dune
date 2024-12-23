@@ -1,6 +1,6 @@
 (library
- (name parserUnitTest)
- (libraries ast parse pprinter)
+ (name typecheckUnitTest)
+ (libraries parse typecheck errors)
  (inline_tests)
  (instrumentation
   (backend bisect_ppx))
