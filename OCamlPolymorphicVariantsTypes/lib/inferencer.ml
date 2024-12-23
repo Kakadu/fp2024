@@ -23,7 +23,7 @@ let pp_error ppf : error -> _ =
   | `Not_implemented -> fprintf ppf "Not implemented"
 ;;
 
-module R : sig
+module Result : sig
   type 'a t
 
   (* val bind : 'a t -> f:('a -> 'b t) -> 'b t *)
@@ -92,8 +92,6 @@ end
 type fresh = int
 
 module Type = struct
-  type t = core_type
-
   let rec occurs_in v = function
     | TypeVariable x -> x = v
     | ArrowType (l, r) -> occurs_in v l || occurs_in v r
@@ -121,17 +119,18 @@ module Subst : sig
   type t
 
   val empty : t
-  val singleton : fresh -> core_type -> t R.t
-  val find : t -> fresh -> core_type option
+  val singleton : fresh -> core_type -> t Result.t
+
+  (* val find : t -> fresh -> core_type option *)
   val remove : t -> fresh -> t
   val apply : t -> core_type -> core_type
-  val unify : core_type -> core_type -> t R.t
-  val compose : t -> t -> t R.t
-  val compose_all : t list -> t R.t
+  val unify : core_type -> core_type -> t Result.t
+  val compose : t -> t -> t Result.t
+  val compose_all : t list -> t Result.t
   (* val pp : Format.formatter -> (ty, ty, Base.Int.comparator_witness) Base.Map.t -> unit *)
 end = struct
-  open R
-  open R.Syntax
+  open Result
+  open Result.Syntax
 
   type t = (fresh, core_type, Int.comparator_witness) Map.t
 
@@ -251,12 +250,12 @@ module TypeEnv = struct
   ;;
 end
 
-open R
-open R.Syntax
+open Result
+open Result.Syntax
 
 let fresh_var = fresh >>| fun n -> TypeVariable n
 
-let instantiate : scheme -> core_type R.t =
+let instantiate : scheme -> core_type Result.t =
   fun (S (bs, t)) ->
   VarSet.fold
     (fun name typ ->
@@ -494,14 +493,14 @@ let infer_expression =
       in
       infer_cases env (c :: c_rest)
     | ExpressionBlock (e1, e2, el) ->
-      let* sub1, t1 = helper env e1 in
+      let* sub1, _ = helper env e1 in
       let* sub2, t2 = helper (TypeEnv.apply sub1 env) e2 in
       let* sub3, t3 =
         List.fold_left
           el
           ~init:(return (sub2, t2))
           ~f:(fun acc e ->
-            let* sub_acc, t_acc = acc in
+            let* sub_acc, _ = acc in
             let* sub, t = helper (TypeEnv.apply sub_acc env) e in
             let* sub_composed = Subst.compose sub_acc sub in
             return (sub_composed, t))
