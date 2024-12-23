@@ -454,14 +454,21 @@ let infer_expression =
          in
          return (sr, ty_constructor ("list", tr)))
     | Lambda (pl, e) ->
-      fail `Not_implemented
-      (* let* env, t1 = infer_pattern env p in
-         let* sub, t2 =
-         match pl with
-         | [] -> helper env e
-         | h :: tl -> helper env (Lambda (h, tl, e))
-         in
-         return (sub, ty_arrow (Subst.apply sub t1, t2)) *)
+      let* env, t1s =
+        List.fold_right
+          pl
+          ~init:(return (env, []))
+          ~f:(fun p acc ->
+            let* old_env, ts = acc in
+            let* new_env, t = infer_pattern old_env p in
+            return (new_env, t :: ts))
+      in
+      let* sub, t2 = helper env e in
+      return
+        ( sub
+        , Subst.apply
+            sub
+            (List.fold_right t1s ~init:t2 ~f:(fun tl tr -> ty_arrow (tl, tr))) )
     | Construct (n, Some e) ->
       let* sub1, t1 = helper env e in
       let ty_constructor = ty_constructor (n, t1) in
