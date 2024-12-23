@@ -444,7 +444,7 @@ let infer_expression =
       let t2 = Subst.apply composed_sl t2 in
       let t3 = List.map t3 ~f:(fun t -> Subst.apply s3 t) in
       return (s3, ty_tuple (t1, t2, t3))
-    | Apply (e1, e2, e_rest) ->
+    | Apply (e1, e2, _) ->
       let* fresh = fresh_var in
       let* s1, t1 = helper env e1 in
       let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
@@ -476,8 +476,45 @@ let infer_expression =
         | h :: tl -> helper env (Lambda (h, tl, e))
       in
       return (sub, ty_arrow (Subst.apply sub t1, t2))
-    | ExpressionBlock _ | Func _ | Construct _ | Define ((_, []), _) ->
-      fail `Not_implemented
+    | Construct (n, Some e) ->
+      let* sub1, t1 = helper env e in
+      let ty_constructor = ty_constructor (n, t1) in
+      return (sub1, ty_constructor)
+    | Construct (n, None) ->
+      let* fresh = fresh_var in
+      let ty_constructor = ty_constructor (n, fresh) in
+      return (Subst.empty, ty_constructor)
+    | Func (c, c_rest) ->
+      let rec infer_cases env cases =
+        match cases with
+        | [] -> fail `Not_implemented
+        | [ case ] ->
+          let* env1, pt = infer_pattern env case.pattern in
+          let* sub1, rt = helper env1 case.result in
+          return (sub1, ty_arrow (pt, rt))
+        | case :: tl ->
+          let* sub1, ty1 = infer_cases env [ case ] in
+          let* sub2, ty2 = infer_cases env tl in
+          let* sub3 = Subst.unify ty1 ty2 in
+          let* sub = Subst.compose_all [ sub1; sub2; sub3 ] in
+          return (sub, ty1)
+      in
+      infer_cases env (c :: c_rest)
+    | ExpressionBlock (e1, e2, el) ->
+      let* sub1, t1 = helper env e1 in
+      let* sub2, t2 = helper (TypeEnv.apply sub1 env) e2 in
+      let* sub3, t3 =
+        List.fold_left
+          el
+          ~init:(return (sub2, t2))
+          ~f:(fun acc e ->
+            let* sub_acc, t_acc = acc in
+            let* sub, t = helper (TypeEnv.apply sub_acc env) e in
+            let* sub_composed = Subst.compose sub_acc sub in
+            return (sub_composed, t))
+      in
+      return (sub3, t3)
+    | Define ((_, []), _) -> fail `Not_implemented
   in
   helper
 ;;
