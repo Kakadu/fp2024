@@ -9,7 +9,7 @@ open Stdlib.Format
 type error =
   [ `Occurs_check
   | `No_variable of string
-  | `Unification_failed of ty * ty
+  | `Unification_failed of core_type * core_type
   | `Not_implemented
   ]
 

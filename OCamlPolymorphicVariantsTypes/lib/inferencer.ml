@@ -26,7 +26,7 @@ let pp_error ppf : error -> _ =
 module R : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
+  (* val bind : 'a t -> f:('a -> 'b t) -> 'b t *)
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -34,10 +34,6 @@ module R : sig
 
   module Syntax : sig
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  end
-
-  module RList : sig
-    val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
   end
 
   module RMap : sig
@@ -78,15 +74,6 @@ end = struct
 
   module Syntax = struct
     let ( let* ) x f = bind x ~f
-  end
-
-  module RList = struct
-    let fold_left xs ~init ~f =
-      Base.List.fold_left xs ~init ~f:(fun acc x ->
-        let open Syntax in
-        let* acc = acc in
-        f acc x)
-    ;;
   end
 
   module RMap = struct
@@ -225,9 +212,7 @@ end = struct
 end
 
 module Scheme = struct
-  type t = scheme
-
-  let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t
+  (* let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t *)
   let free_vars (S (xs, t)) = VarSet.diff (Type.free_vars t) xs
 
   let apply s (S (xs, t)) =
@@ -468,14 +453,15 @@ let infer_expression =
              return (final_s, final_t))
          in
          return (sr, ty_constructor ("list", tr)))
-    | Lambda (p, p_rest, e) ->
-      let* env, t1 = infer_pattern env p in
-      let* sub, t2 =
-        match p_rest with
-        | [] -> helper env e
-        | h :: tl -> helper env (Lambda (h, tl, e))
-      in
-      return (sub, ty_arrow (Subst.apply sub t1, t2))
+    | Lambda (pl, e) ->
+      fail `Not_implemented
+      (* let* env, t1 = infer_pattern env p in
+         let* sub, t2 =
+         match pl with
+         | [] -> helper env e
+         | h :: tl -> helper env (Lambda (h, tl, e))
+         in
+         return (sub, ty_arrow (Subst.apply sub t1, t2)) *)
     | Construct (n, Some e) ->
       let* sub1, t1 = helper env e in
       let ty_constructor = ty_constructor (n, t1) in

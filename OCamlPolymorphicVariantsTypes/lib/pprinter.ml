@@ -47,7 +47,7 @@ let pp_definition_sep ff () = fprintf ff " and "
 let pp_struct_item_sep ff () = fprintf ff "\n"
 
 let rec pp_core_type ff = function
-  | AnyType -> fprintf ff "_"
+  | TypeVariable id -> fprintf ff "'%c" (char_of_int id)
   | ArrowType (t1, t2) -> fprintf ff "(%a -> %a)" pp_core_type t1 pp_core_type t2
   | TypeConstructor (t1, t2) -> fprintf ff "%a %a" pp_core_type t2 pp_identifier t1
   | TypeIdentifier id -> fprintf ff "%a" pp_identifier id
@@ -67,7 +67,6 @@ let rec pp_pattern ff = function
      | _ -> fprintf ff ", %a)" (pp_print_list ~pp_sep:pp_tuple_sep pp_pattern) pl)
   | PUnit -> fprintf ff "()"
   | PConstrain (p, t) -> fprintf ff "(%a : %a)" pp_pattern p pp_core_type t
-  | PAny -> fprintf ff "_"
 ;;
 
 let rec pp_expression ff = function
@@ -85,24 +84,42 @@ let rec pp_expression ff = function
     fprintf ff "[%a]" (pp_print_list ~pp_sep:pp_list_sep pp_expression) l
   | Construct (name, None) -> fprintf ff "(%a)" pp_identifier name
   | Construct (name, Some ex) -> fprintf ff "(%a %a)" pp_identifier name pp_expression ex
-  | Match (ex, cases) ->
+  | Match (ex, fcase, cases) ->
     fprintf
       ff
-      "(match %a with %a)"
+      "(match %a with %a %a)"
       pp_expression
       ex
+      pp_case
+      fcase
       (pp_print_list ~pp_sep:pp_print_space pp_case)
       cases
-  | Func cases ->
-    fprintf ff "(function %a)" (pp_print_list ~pp_sep:pp_print_space pp_case) cases
-  | ExpressionBlock l ->
-    fprintf ff "(%a)" (pp_print_list ~pp_sep:pp_expr_block_sep pp_expression) l
-  | Apply (ex, l) ->
+  | Func (fcase, cases) ->
     fprintf
       ff
-      "((%a) %a)"
+      "(function %a %a)"
+      pp_case
+      fcase
+      (pp_print_list ~pp_sep:pp_print_space pp_case)
+      cases
+  | ExpressionBlock (ex1, ex2, l) ->
+    fprintf
+      ff
+      "(%a; %a; %a)"
+      pp_expression
+      ex1
+      pp_expression
+      ex2
+      (pp_print_list ~pp_sep:pp_expr_block_sep pp_expression)
+      l
+  | Apply (ex, aex, l) ->
+    fprintf
+      ff
+      "((%a) %a %a)"
       pp_expression
       ex
+      pp_expression
+      aex
       (pp_print_list ~pp_sep:pp_print_space pp_expression)
       l
   | If (ex, then_ex, else_branch) ->

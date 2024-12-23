@@ -48,12 +48,10 @@ type core_type =
       identifier * core_type (* IT T1, exmaple int list: int - T2, list - IT *)
   | TupleType of core_type * core_type * core_type list (* T1 * T2 * ... * TN *)
   | TypeIdentifier of identifier (* int *)
-  (*| AnyType (* _ *) *)
   | TypeVariable of binder
 [@@deriving show { with_path = false }]
 
 type pattern =
-  (*| PAny (* _ *) *)
   | PUnit (* () *)
   | PVar of identifier
   | PTuple of pattern * pattern * pattern list (* (<pattern>, ..., <pattern>) *)
@@ -68,9 +66,9 @@ type expression =
   | Tuple of expression * expression * expression list (* (E1, E2, E3 ... EN) *)
   | ExpressionsList of expression list (* [1; 2; (let x = 6 in x)] *)
   | Construct of identifier * expression option (* For example: None or Some <expr> *)
-  | Match of expression * case * case list (* match E with <cases> *)
+  | Match of expression * case * case list (* match E with <case> <cases> *)
   | If of expression * expression * expression option (* if x then false else true *)
-  | Lambda of pattern * pattern list * expression (* fun (x, (y,z)) -> x / (y + z) *)
+  | Lambda of pattern list * expression (* fun (x, (y,z)) -> x / (y + z) *)
   | Func of case * case list (* function <cases>*)
   | Apply of expression * expression * expression list
     (* factorial (n / 2) | (fun (x, (y,z)) -> x / (y + z)) (5, (2, 1)) *)
