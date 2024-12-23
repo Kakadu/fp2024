@@ -20,7 +20,7 @@ let%expect_test _ =
                  (Binary ((Unary (Negate, (Variable "x"))), Add, (Variable "y")))
                  ))
               )),
-           [(Const (IntLiteral 10)); (Unary (Negate, (Const (IntLiteral 90))))])))
+           (Const (IntLiteral 10)), [(Unary (Negate, (Const (IntLiteral 90))))])))
       ] |}];
   test_program {|fun (a: (int -> float) list) -> a;;|};
   [%expect
@@ -52,16 +52,15 @@ let%expect_test _ =
     {|
       [(EvalItem
           (Match ((Variable "number"),
-             [{ pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
-                filter =
-                (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
-                result = (Variable "a") };
-               { pattern =
-                 (PConstrain ((PVar "b"),
-                    (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
-                    ));
-                 filter = None;
-                 result = (Apply ((Variable "b"), [(Const (IntLiteral 0))])) }
+             { pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
+               filter =
+               (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
+               result = (Variable "a") },
+             [{ pattern =
+                (PConstrain ((PVar "b"),
+                   (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
+                filter = None;
+                result = (Apply ((Variable "b"), (Const (IntLiteral 0)), [])) }
                ]
              )))
         ] |}];
@@ -73,18 +72,18 @@ let%expect_test _ =
   [%expect
     {|
       [(EvalItem
-          (Func
-             [{ pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
-                filter =
-                (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
-                result = (Variable "a") };
-               { pattern =
-                 (PConstrain ((PVar "b"),
-                    (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
-                    ));
-                 filter = None;
-                 result = (Apply ((Variable "b"), [(Const (IntLiteral 0))])) }
-               ]))
+          (Func (
+             { pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
+               filter =
+               (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
+               result = (Variable "a") },
+             [{ pattern =
+                (PConstrain ((PVar "b"),
+                   (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
+                filter = None;
+                result = (Apply ((Variable "b"), (Const (IntLiteral 0)), [])) }
+               ]
+             )))
         ] |}];
   test_program {|
     function
@@ -93,17 +92,17 @@ let%expect_test _ =
   [%expect
     {|
       [(EvalItem
-          (Func
-             [{ pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
-                filter =
-                (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
-                result = (Variable "a") };
-               { pattern =
-                 (PConstrain (PAny,
-                    (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))
-                    ));
-                 filter = None; result = (Const (IntLiteral 0)) }
-               ]))
+          (Func (
+             { pattern = (PConstrain ((PVar "a"), (TypeIdentifier "int")));
+               filter =
+               (Some (Binary ((Variable "a"), Gt, (Const (IntLiteral 0)))));
+               result = (Variable "a") },
+             [{ pattern =
+                (PConstrain ((PVar "_"),
+                   (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
+                filter = None; result = (Const (IntLiteral 0)) }
+               ]
+             )))
         ] |}];
   test_program
     {|
@@ -112,19 +111,18 @@ let%expect_test _ =
   [%expect
     {|
       [(EvalItem
-          (Func
-             [{ pattern =
-                (PConstrain ((PVar "v"),
-                   (TupleType ((TypeConstructor ("list", (TypeIdentifier "a"))),
-                      (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")
-                         )),
-                      [(TupleType ((TypeIdentifier "int"),
-                          (TypeIdentifier "float"), [(TypeIdentifier "bool")]));
-                        (ArrowType (AnyType, (TypeIdentifier "int")))]
-                      ))
-                   ));
-                filter = None; result = (Variable "a") }
-               ]))
+          (Func (
+             { pattern =
+               (PConstrain ((PVar "v"),
+                  (TupleType ((TypeConstructor ("list", (TypeIdentifier "a"))),
+                     (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float"))),
+                     [(TupleType ((TypeIdentifier "int"), (TypeIdentifier "float"),
+                         [(TypeIdentifier "bool")]));
+                       (ArrowType ((TypeIdentifier "_"), (TypeIdentifier "int")))]
+                     ))
+                  ));
+               filter = None; result = (Variable "a") },
+             [])))
         ] |}];
   test_program
     {|function
@@ -133,16 +131,17 @@ let%expect_test _ =
   [%expect
     {|
       [(EvalItem
-          (Func
-             [{ pattern =
-                (PConstrain ((PVar "a"),
-                   (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
-                filter =
-                (Some (Binary ((Variable "a"), Equals, (Const (IntLiteral 0)))));
-                result = (Const (IntLiteral 52194407)) };
-               { pattern = PAny; filter = (Some (Const (BoolLiteral true)));
-                 result = (Const (BoolLiteral false)) }
-               ]))
+          (Func (
+             { pattern =
+               (PConstrain ((PVar "a"),
+                  (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
+               filter =
+               (Some (Binary ((Variable "a"), Equals, (Const (IntLiteral 0)))));
+               result = (Const (IntLiteral 52194407)) },
+             [{ pattern = (PVar "_"); filter = (Some (Const (BoolLiteral true)));
+                result = (Const (BoolLiteral false)) }
+               ]
+             )))
         ] |}];
   test_program {|fun x:int -> (fun y:int -> x + y);;|};
   [%expect
@@ -168,7 +167,7 @@ let%expect_test _ =
              [(PConstrain ((PVar "x"),
                  (ArrowType ((TypeIdentifier "int"), (TypeIdentifier "float")))));
                (PConstrain ((PVar "y"), (TypeIdentifier "int")))],
-             (Apply ((Variable "x"), [(Variable "y")])))))
+             (Apply ((Variable "x"), (Variable "y"), [])))))
         ] |}];
   test_program {|fun x:int -> (x);;|};
   [%expect
@@ -219,10 +218,9 @@ let%expect_test _ =
               (Binary ((Binary ((Variable "x"), Add, (Variable "y"))), Add,
                  (Variable "z")))
               )),
-           [(Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)),
-               [(Const (IntLiteral 30))]))
-             ]
-           )))
+           (Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)),
+              [(Const (IntLiteral 30))])),
+           [])))
       ] |}];
   test_program {|(fun ((x:int),(y:int)):int*int -> x + y) (10, 20);;|};
   [%expect
@@ -238,7 +236,8 @@ let%expect_test _ =
                   ))
                 ],
               (Binary ((Variable "x"), Add, (Variable "y"))))),
-           [(Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)), []))])))
+           (Tuple ((Const (IntLiteral 10)), (Const (IntLiteral 20)), [])),
+           [])))
       ] |}];
   test_program {|64_000_000;;|};
   [%expect {|
@@ -254,8 +253,8 @@ let%expect_test _ =
            [(Apply (
                (Lambda ([(PVar "x")],
                   (Binary ((Variable "x"), Multiply, (Variable "x"))))),
-               [(Const (IntLiteral 10))]));
-             (Binary ((Apply ((Variable "not"), [(Variable "y")])), And,
+               (Const (IntLiteral 10)), []));
+             (Binary ((Apply ((Variable "not"), (Variable "y"), [])), And,
                 (Variable "x")))
              ]))
       ] |}];
@@ -264,14 +263,14 @@ let%expect_test _ =
     {|
     [(EvalItem
         (ExpressionsList
-           [(ExpressionBlock
-               [(Apply (
-                   (Lambda ([(PVar "x")],
-                      (Binary ((Variable "x"), Multiply, (Variable "x"))))),
-                   [(Const (IntLiteral 10))]));
-                 (Binary ((Apply ((Variable "not"), [(Variable "y")])), And,
-                    (Variable "x")))
-                 ])
+           [(ExpressionBlock (
+               (Apply (
+                  (Lambda ([(PVar "x")],
+                     (Binary ((Variable "x"), Multiply, (Variable "x"))))),
+                  (Const (IntLiteral 10)), [])),
+               (Binary ((Apply ((Variable "not"), (Variable "y"), [])), And,
+                  (Variable "x"))),
+               []))
              ]))
       ] |}];
   test_program {|10 + (fun in -> x) 10;;|};
@@ -284,7 +283,7 @@ let%expect_test _ =
     [(EvalItem
         (Binary ((Const (IntLiteral 10)), Add,
            (Apply ((Lambda ([(PVar "x")], (Variable "x"))),
-              [(Const (IntLiteral 10))]))
+              (Const (IntLiteral 10)), []))
            )))
       ] |}];
   test_program {|-  ;;|};
@@ -328,13 +327,13 @@ let%expect_test _ =
   test_program {|(1) x y;;|};
   [%expect
     {|
-    [(EvalItem (Apply ((Const (IntLiteral 1)), [(Variable "x"); (Variable "y")])))
+    [(EvalItem (Apply ((Const (IntLiteral 1)), (Variable "x"), [(Variable "y")])))
       ] |}];
   test_program {|(true) x y;;|};
   [%expect
     {|
     [(EvalItem
-        (Apply ((Const (BoolLiteral true)), [(Variable "x"); (Variable "y")])))
+        (Apply ((Const (BoolLiteral true)), (Variable "x"), [(Variable "y")])))
       ] |}];
   test_program {|fun '_7 -> '_7;;|};
   [%expect {|
@@ -343,8 +342,8 @@ let%expect_test _ =
   [%expect
     {|
     [(EvalItem
-        (If ((Apply ((Variable "f"), [(Variable "x")])),
-           (Apply ((Variable "g"), [(Const (IntLiteral 10))])), None)))
+        (If ((Apply ((Variable "f"), (Variable "x"), [])),
+           (Apply ((Variable "g"), (Const (IntLiteral 10)), [])), None)))
       ] |}];
   test_program {|iff x then g 10;;|};
   [%expect
@@ -355,24 +354,24 @@ let%expect_test _ =
   [%expect
     {|
     [(EvalItem
-        (If ((Apply ((Variable "f"), [(Variable "x")])),
-           (Apply ((Variable "g"), [(Const (IntLiteral 10))])),
+        (If ((Apply ((Variable "f"), (Variable "x"), [])),
+           (Apply ((Variable "g"), (Const (IntLiteral 10)), [])),
            (Some (Unary (Negate, (Const (IntLiteral 10))))))))
       ] |}];
   test_program {|if f x then g 10 else~-10;;|};
   [%expect
     {|
     [(EvalItem
-        (If ((Apply ((Variable "f"), [(Variable "x")])),
-           (Apply ((Variable "g"), [(Const (IntLiteral 10))])),
+        (If ((Apply ((Variable "f"), (Variable "x"), [])),
+           (Apply ((Variable "g"), (Const (IntLiteral 10)), [])),
            (Some (Unary (Negate, (Const (IntLiteral 10))))))))
       ] |}];
   test_program {|if f x then g 10 else(~-10);;|};
   [%expect
     {|
     [(EvalItem
-        (If ((Apply ((Variable "f"), [(Variable "x")])),
-           (Apply ((Variable "g"), [(Const (IntLiteral 10))])),
+        (If ((Apply ((Variable "f"), (Variable "x"), [])),
+           (Apply ((Variable "g"), (Const (IntLiteral 10)), [])),
            (Some (Unary (Negate, (Const (IntLiteral 10))))))))
       ] |}];
   test_program {|1+(f x y) - (g x-y);;|};
@@ -381,10 +380,10 @@ let%expect_test _ =
     [(EvalItem
         (Binary (
            (Binary ((Const (IntLiteral 1)), Add,
-              (Apply ((Variable "f"), [(Variable "x"); (Variable "y")])))),
+              (Apply ((Variable "f"), (Variable "x"), [(Variable "y")])))),
            Subtract,
-           (Apply ((Variable "g"),
-              [(Variable "x"); (Unary (Negate, (Variable "y")))]))
+           (Apply ((Variable "g"), (Variable "x"),
+              [(Unary (Negate, (Variable "y")))]))
            )))
       ] |}];
   test_program {|(1,);;|};
@@ -396,33 +395,36 @@ let%expect_test _ =
   [%expect
     {|
     [(EvalItem
-        (ExpressionBlock
-           [(Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), []));
-             (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), []))]))
+        (ExpressionBlock (
+           (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), [])),
+           (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), [])),
+           [])))
       ] |}];
   test_program {|   (   1   ,   (    2    ;   3 )   ,  4    )   ;;|};
   [%expect
     {|
     [(EvalItem
         (Tuple ((Const (IntLiteral 1)),
-           (ExpressionBlock [(Const (IntLiteral 2)); (Const (IntLiteral 3))]),
+           (ExpressionBlock ((Const (IntLiteral 2)), (Const (IntLiteral 3)), [])),
            [(Const (IntLiteral 4))])))
       ] |}];
   test_program {| 1  ,  2  ;  3  ,  4  ;;|};
   [%expect
     {|
     [(EvalItem
-        (ExpressionBlock
-           [(Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), []));
-             (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), []))]))
+        (ExpressionBlock (
+           (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), [])),
+           (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), [])),
+           [])))
       ] |}];
   test_program {|(1,2);3,4;;|};
   [%expect
     {|
     [(EvalItem
-        (ExpressionBlock
-           [(Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), []));
-             (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), []))]))
+        (ExpressionBlock (
+           (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)), [])),
+           (Tuple ((Const (IntLiteral 3)), (Const (IntLiteral 4)), [])),
+           [])))
       ] |}];
   test_program {|(let f x = -x in f) 10;;|};
   [%expect
@@ -434,7 +436,7 @@ let%expect_test _ =
                [((PVar "f"),
                  (Lambda ([(PVar "x")], (Unary (Negate, (Variable "x"))))))]),
               (Variable "f"))),
-           [(Const (IntLiteral 10))])))
+           (Const (IntLiteral 10)), [])))
       ] |}];
   test_program {|(let f x = -x in f 10);;|};
   [%expect
@@ -444,7 +446,7 @@ let%expect_test _ =
            (Nonrecursive,
             [((PVar "f"),
               (Lambda ([(PVar "x")], (Unary (Negate, (Variable "x"))))))]),
-           (Apply ((Variable "f"), [(Const (IntLiteral 10))])))))
+           (Apply ((Variable "f"), (Const (IntLiteral 10)), [])))))
       ] |}];
   test_program
     {|
@@ -460,15 +462,14 @@ let%expect_test _ =
               (If ((Binary ((Variable "n"), Gt, (Const (IntLiteral 1)))),
                  (Binary ((Variable "n"), Multiply,
                     (Apply ((Variable "factorial"),
-                       [(Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))
-                           ))
-                         ]
-                       ))
+                       (Binary ((Variable "n"), Subtract, (Const (IntLiteral 1))
+                          )),
+                       []))
                     )),
                  (Some (Const (IntLiteral 1)))))
               )))
            ]));
-      (EvalItem (Apply ((Variable "factorial"), [(Const (IntLiteral 5))])))] |}];
+      (EvalItem (Apply ((Variable "factorial"), (Const (IntLiteral 5)), [])))] |}];
   test_program
     {|
    let rec f x = 
@@ -486,10 +487,9 @@ let%expect_test _ =
               (If ((Binary ((Variable "x"), Gt, (Const (IntLiteral 0)))),
                  (Binary ((Variable "x"), Add,
                     (Apply ((Variable "g"),
-                       [(Binary ((Variable "x"), Subtract, (Const (IntLiteral 1))
-                           ))
-                         ]
-                       ))
+                       (Binary ((Variable "x"), Subtract, (Const (IntLiteral 1))
+                          )),
+                       []))
                     )),
                  (Some (Const (IntLiteral 0)))))
               )));
@@ -497,9 +497,8 @@ let%expect_test _ =
             (Lambda ([(PVar "x")],
                (Binary (
                   (Apply ((Variable "f"),
-                     [(Binary ((Variable "x"), Division, (Const (IntLiteral 2))))
-                       ]
-                     )),
+                     (Binary ((Variable "x"), Division, (Const (IntLiteral 2)))),
+                     [])),
                   Subtract, (Variable "x")))
                )))
            ]))
@@ -516,21 +515,21 @@ let%expect_test _ =
         (Nonrecursive,
          [((PVar "t1"),
            (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)),
-              [(Const (IntLiteral 3)); (Apply ((Variable "f"), [(Variable "x")]))
-                ]
+              [(Const (IntLiteral 3));
+                (Apply ((Variable "f"), (Variable "x"), []))]
               )))
            ]));
       (DefineItem
          (Nonrecursive,
           [((PVar "t2"),
-            (ExpressionBlock
-               [(Apply ((Variable "print_endline"),
-                   [(Binary ((Variable "f"), Subtract, (Variable "y")))]));
-                 (Binary ((Apply ((Variable "not"), [(Variable "x")])), And,
-                    (Apply ((Variable "g"),
-                       [(Binary ((Variable "x"), Equals, (Variable "y")))]))
-                    ))
-                 ]))
+            (ExpressionBlock (
+               (Apply ((Variable "print_endline"),
+                  (Binary ((Variable "f"), Subtract, (Variable "y"))), [])),
+               (Binary ((Apply ((Variable "not"), (Variable "x"), [])), And,
+                  (Apply ((Variable "g"),
+                     (Binary ((Variable "x"), Equals, (Variable "y"))), []))
+                  )),
+               [])))
             ]));
       (EvalItem (Tuple ((Variable "t1"), (Variable "t2"), [])))] |}];
   test_program
@@ -545,21 +544,21 @@ let%expect_test _ =
         (Nonrecursive,
          [((PVar "t1"),
            (Tuple ((Const (IntLiteral 1)), (Const (IntLiteral 2)),
-              [(Const (IntLiteral 3)); (Apply ((Variable "f"), [(Variable "x")]))
-                ]
+              [(Const (IntLiteral 3));
+                (Apply ((Variable "f"), (Variable "x"), []))]
               )))
            ]));
       (DefineItem
          (Nonrecursive,
           [((PVar "t2"),
-            (ExpressionBlock
-               [(Apply ((Variable "print_endline"),
-                   [(Binary ((Variable "f"), Subtract, (Variable "y")))]));
-                 (Binary ((Apply ((Variable "not"), [(Variable "x")])), And,
-                    (Apply ((Variable "g"),
-                       [(Binary ((Variable "x"), Equals, (Variable "y")))]))
-                    ))
-                 ]))
+            (ExpressionBlock (
+               (Apply ((Variable "print_endline"),
+                  (Binary ((Variable "f"), Subtract, (Variable "y"))), [])),
+               (Binary ((Apply ((Variable "not"), (Variable "x"), [])), And,
+                  (Apply ((Variable "g"),
+                     (Binary ((Variable "x"), Equals, (Variable "y"))), []))
+                  )),
+               [])))
             ]));
       (EvalItem (Tuple ((Variable "t1"), (Variable "t2"), [])))] |}];
   test_program {|
@@ -579,12 +578,11 @@ let%expect_test _ =
               )))
            ]));
       (EvalItem
-         (Apply ((Variable "f"),
-            [(Unary (Negate, (Variable "x")));
-              (Unary (Negate,
-                 (Apply ((Variable "f"),
-                    [(Const (IntLiteral 10)); (Const (IntLiteral 30))]))
-                 ))
+         (Apply ((Variable "f"), (Unary (Negate, (Variable "x"))),
+            [(Unary (Negate,
+                (Apply ((Variable "f"), (Const (IntLiteral 10)),
+                   [(Const (IntLiteral 30))]))
+                ))
               ]
             )))
       ] |}]
