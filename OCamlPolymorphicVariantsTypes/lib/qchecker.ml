@@ -74,7 +74,7 @@ module QChecker = struct
     sized_size core_type_size
     @@ fix (fun self ->
          function
-         | 0 -> oneof [ type_identifier; return AnyType ]
+         | 0 -> type_identifier
          | depth ->
            let subtype_gen = self (depth - 1) in
            frequency
@@ -99,9 +99,7 @@ module QChecker = struct
     sized_size pattern_depth
     @@ fix (fun self ->
          function
-         | 0 ->
-           oneof
-             [ map (fun i -> PVar i) (gen_identifier false); return PUnit; return PAny ]
+         | 0 -> oneof [ map (fun i -> PVar i) (gen_identifier false); return PUnit ]
          | depth ->
            let subpattern_gen = self (depth - 1) in
            frequency
@@ -186,10 +184,18 @@ module QChecker = struct
         subexpr_gen
     in
     let gen_apply subexpr_gen =
-      map2 (fun ex l -> Apply (ex, l)) subexpr_gen (list_size apply_size subexpr_gen)
+      map3
+        (fun ex aex l -> Apply (ex, aex, l))
+        subexpr_gen
+        subexpr_gen
+        (list_size apply_size subexpr_gen)
     in
     let gen_expr_block subexpr_gen =
-      map (fun l -> ExpressionBlock l) (list_size expr_block_size subexpr_gen)
+      map3
+        (fun e1 e2 l -> ExpressionBlock (e1, e2, l))
+        subexpr_gen
+        subexpr_gen
+        (list_size expr_block_size subexpr_gen)
     in
     let constructor_expr subexpr_gen =
       map2
@@ -205,13 +211,17 @@ module QChecker = struct
         subexpr_gen
     in
     let gen_match_with_expr subexpr_gen =
-      map2
-        (fun ex cases -> Match (ex, cases))
+      map3
+        (fun ex c cases -> Match (ex, c, cases))
         subexpr_gen
+        (gen_case subexpr_gen)
         (list_size definition_size (gen_case subexpr_gen))
     in
     let gen_function_expr subexpr_gen =
-      map (fun cases -> Func cases) (list_size definition_size (gen_case subexpr_gen))
+      map2
+        (fun c cases -> Func (c, cases))
+        (gen_case subexpr_gen)
+        (list_size definition_size (gen_case subexpr_gen))
     in
     sized_size expr_depth
     @@ fix (fun self ->

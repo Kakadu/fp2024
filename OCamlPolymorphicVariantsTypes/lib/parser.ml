@@ -90,24 +90,17 @@ let bracket_sequence subparser state =
     state
 ;;
 
-(* let rec type_parser state : core_type parse_result = (skip_ws *> type_identifier) state *)
 let type_ident_parser =
   ident
     ~on_keyword:(fun k ->
-      perror (Format.sprintf "Not found type identifier, finded keyword '%s'" k))
+      perror (Format.sprintf "Not found type identifier, found keyword '%s'" k))
     ~on_constructor:(fun c ->
-      perror (Format.sprintf "Not found type identifier, finded constructor '%s'" c))
+      perror (Format.sprintf "Not found type identifier, found constructor '%s'" c))
     ~on_simple:preturn
 ;;
 
 let type_identifier state =
-  let helper =
-    type_ident_parser
-    >>= fun s ->
-    match s with
-    | "_" -> preturn AnyType
-    | _ -> preturn (TypeIdentifier s)
-  in
+  let helper = type_ident_parser >>| fun s -> TypeIdentifier s in
   (skip_ws *> helper) state
 ;;
 
@@ -185,13 +178,7 @@ and pvariable state =
         perror (Format.sprintf "Unexpected constructor on pattern position: '%s'." id))
       ~on_simple:preturn
   in
-  (skip_ws
-   *> (helper
-       >>| fun id ->
-       match id with
-       | "_" -> PAny
-       | _ -> PVar id))
-    state
+  (skip_ws *> (helper >>| fun id -> PVar id)) state
 
 (** Parser of tuple pattern and unit pattern *)
 and ptuple state =
@@ -257,8 +244,9 @@ and block_expr state =
       ex
       tuple_expr
       (function
+        | [] -> ex (* In parser this case is not possible *)
         | ex :: [] -> ex
-        | _ as l -> ExpressionBlock l)
+        | ex1 :: ex2 :: tl -> ExpressionBlock (ex1, ex2, tl))
       ";"
       pfail
     >>= fun block ->
@@ -346,7 +334,9 @@ and func_expr state =
   (skip_ws
    *> keyword "function"
    *> cases_list (perror "Not found first case of function expression")
-   >>= fun cl -> preturn (Func cl))
+   >>= function
+   | [] -> perror "Not found cases of function expression"
+   | c :: cl -> preturn (Func (c, cl)))
     state
 
 (** Parser of match expression:
@@ -360,7 +350,9 @@ and match_expr state =
    skip_ws
    *> (keyword "with" <|> perror "Not found keyword 'with' of match expression")
    *> cases_list (perror "Not found first case of match expression")
-   >>= fun cl -> preturn (Match (ex, cl)))
+   >>= function
+   | [] -> perror "Not found cases of match expression"
+   | c :: cl -> preturn (Match (ex, c, cl)))
     state
 
 and constructor state =
@@ -499,7 +491,9 @@ and apply_expr state =
   in
   let helper ex =
     many (skip_ws *> basic_expr true)
-    >>= fun l -> preturn (if is_empty l then ex else Apply (ex, l))
+    >>= function
+    | [] -> preturn ex
+    | ex1 :: el -> preturn (Apply (ex, ex1, el))
   in
   (skip_ws *> applyable_expr >>= fun ex -> bin_op_checker *> preturn ex <|> helper ex)
     state
