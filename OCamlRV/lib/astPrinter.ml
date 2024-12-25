@@ -32,7 +32,21 @@ let pp_annot =
     | ABool -> fprintf ppf "bool"
     | AString -> fprintf ppf "string"
     | AUnit -> fprintf ppf "unit"
+    | AVar n -> fprintf ppf "'%d" n
+    | AFun (l, r) ->
+      (match l with
+       | AFun _ -> fprintf ppf "(%a) -> %a" helper l helper r
+       | _ -> fprintf ppf "%a -> %a" helper l helper r)
     | AList t -> fprintf ppf "%a list" helper t
+    | ATuple l ->
+      let rec pp_tuple ppf = function
+        | [] -> ()
+        | [ x ] -> fprintf ppf "%a" helper x
+        | x :: xs ->
+          fprintf ppf "%a * " helper x;
+          pp_tuple ppf xs
+      in
+      fprintf ppf "%a" pp_tuple l
   in
   helper
 ;;
@@ -42,18 +56,18 @@ let pp_rec_flag ppf = function
   | Rec -> fprintf ppf " rec"
 ;;
 
-let pp_literal ppf = function
-  | IntLiteral i -> fprintf ppf "%d" i
-  | BoolLiteral b -> fprintf ppf "%b" b
-  | StringLiteral s -> fprintf ppf "\"%s\"" s
-  | UnitLiteral -> fprintf ppf "()"
-  | NilLiteral -> fprintf ppf "[]"
+let pp_constant ppf = function
+  | CInt i -> fprintf ppf "%d" i
+  | CBool b -> fprintf ppf "%b" b
+  | CString s -> fprintf ppf "%S" s
+  | CUnit -> fprintf ppf "()"
+  | CNil -> fprintf ppf "[]"
 ;;
 
 let pp_pattern =
   let rec helper ppf = function
     | PAny -> fprintf ppf "_"
-    | PLiteral l -> fprintf ppf "%a" pp_literal l
+    | PConstant l -> fprintf ppf "%a" pp_constant l
     | PVar v -> fprintf ppf "%s" v
     | PCons (p1, p2) ->
       (match p1, p2 with
@@ -90,23 +104,23 @@ let pp_pattern =
 let rec pp_expr =
   let rec helper ppf = function
     | ExprVariable v -> fprintf ppf "%s" v
-    | ExprLiteral l -> fprintf ppf "%a" pp_literal l
+    | ExprConstant l -> fprintf ppf "%a" pp_constant l
     | ExprBinOperation (op, e1, e2) ->
       (match e1, e2 with
        | ExprVariable _, ExprVariable _ ->
          fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
-       | ExprLiteral _, ExprLiteral _ ->
+       | ExprConstant _, ExprConstant _ ->
          fprintf ppf "%a %a %a" helper e1 pp_binop op helper e2
-       | ExprVariable _, _ | ExprLiteral _, _ ->
+       | ExprVariable _, _ | ExprConstant _, _ ->
          fprintf ppf "%a %a (%a)" helper e1 pp_binop op helper e2
-       | _, ExprVariable _ | _, ExprLiteral _ ->
+       | _, ExprVariable _ | _, ExprConstant _ ->
          fprintf ppf "(%a) %a %a" helper e1 pp_binop op helper e2
        | _ -> fprintf ppf "((%a) %a (%a))" helper e1 pp_binop op helper e2)
     | ExprUnOperation (op, e) -> fprintf ppf "%a(%a)" pp_unop op helper e
     | ExprIf (c, th, el) ->
       let ppifexpr_helper ppf e =
         match e with
-        | ExprVariable _ | ExprLiteral _ -> fprintf ppf "%a" helper e
+        | ExprVariable _ | ExprConstant _ -> fprintf ppf "%a" helper e
         | _ -> fprintf ppf "(%a)" helper e
       in
       let ppifexpr = function
@@ -128,7 +142,7 @@ let rec pp_expr =
       let ppmatch ppf branches =
         let pattern, branch_expr = branches in
         match branch_expr with
-        | ExprVariable _ | ExprLiteral _ ->
+        | ExprVariable _ | ExprConstant _ ->
           fprintf ppf "| %a -> %a" pp_pattern pattern helper branch_expr
         | _ -> fprintf ppf "| %a -> (%a)" pp_pattern pattern helper branch_expr
       in
@@ -192,10 +206,10 @@ let rec pp_expr =
     | ExprCons (e1, e2) ->
       (match e1, e2 with
        | ExprVariable _, ExprVariable _ -> fprintf ppf "%a::%a" helper e1 helper e2
-       | ExprLiteral _, ExprLiteral _ -> fprintf ppf "%a::%a" helper e1 helper e2
+       | ExprConstant _, ExprConstant _ -> fprintf ppf "%a::%a" helper e1 helper e2
        | ExprVariable _, _ -> fprintf ppf "%a::(%a)" helper e1 helper e2
-       | ExprLiteral _, _ -> fprintf ppf "%a::(%a)" helper e1 helper e2
-       | _, ExprLiteral _ -> fprintf ppf "(%a)::%a" helper e1 helper e2
+       | ExprConstant _, _ -> fprintf ppf "%a::(%a)" helper e1 helper e2
+       | _, ExprConstant _ -> fprintf ppf "(%a)::%a" helper e1 helper e2
        | _, ExprVariable _ -> fprintf ppf "(%a)::%a" helper e1 helper e2
        | _ -> fprintf ppf "(%a)::(%a)" helper e1 helper e2)
     | ExprFun (p, e) -> fprintf ppf "fun %a -> %a" pp_pattern p helper e
@@ -229,5 +243,5 @@ let pp_structure ppf = function
 ;;
 
 let pp_structure_item_list ppf structure_list =
-  List.iter (fun item -> fprintf ppf "%a;;\n" pp_structure item) structure_list
+  List.iter (fun item -> fprintf ppf "%a;;\n\n" pp_structure item) structure_list
 ;;
