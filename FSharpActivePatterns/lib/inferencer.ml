@@ -317,7 +317,6 @@ module TypeEnvironment : sig
   val remove : t -> string -> t
   val remove_many : t -> string list -> t
   val pp_without_freevars : formatter -> t -> unit
-
   (* val pp : formatter -> t -> unit *)
 end = struct
   open Base
@@ -483,6 +482,22 @@ let extract_names_from_pattern pat =
     | PConst _ -> []
   in
   helper pat
+;;
+
+let infer_match_pattern env ~shadow pattern match_type =
+  let* env, pat_typ = infer_pattern env ~shadow pattern in
+  let* subst = unify pat_typ match_type in
+  let env = TypeEnvironment.apply subst env in
+  let pat_names = extract_names_from_pattern pattern in
+  let generalized_schemes =
+    List.map pat_names ~f:(fun name ->
+      let typ = TypeEnvironment.find_typ_exn env name in
+      let env = TypeEnvironment.remove env name in
+      let generalized_typ = generalize env typ in
+      name, generalized_typ)
+  in
+  let env = TypeEnvironment.extend_many env generalized_schemes in
+  return (env, subst)
 ;;
 
 let extract_names_from_patterns pats =
@@ -673,8 +688,7 @@ let rec infer_expr env = function
         ~init:(return (subst_init, return_type))
         ~f:(fun acc (pat, expr) ->
           let* subst1, return_type = acc in
-          let* env, pat = infer_pattern env ~shadow:true pat in
-          let* subst2 = unify match_type pat in
+          let* env, subst2 = infer_match_pattern env ~shadow:true pat match_type in
           let* subst12 = Substitution.compose subst1 subst2 in
           let env = TypeEnvironment.apply subst12 env in
           let* subst3, expr_typ = infer_expr env expr in

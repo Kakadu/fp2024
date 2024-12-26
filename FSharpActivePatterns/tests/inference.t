@@ -69,13 +69,11 @@
   _3 : (int * string) option
   _4 : int -> '_14
   _42 : int -> bool
-  _6 : '_26 option -> '_26
-  id1 : '_40 -> '_40
-  id2 : '_41 -> '_41
+  _5 : int
+  _6 : '_30 option -> '_30
+  id1 : '_44 -> '_44
+  id2 : '_45 -> '_45
   int_of_option : int option -> int
-  Type checking failed: unification failed on string
-   and int
-  
   $ ../bin/REPL.exe -fromfile manytests/typed/015tuples.ml
   feven : ('_33 * int -> int) -> int -> int
   fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5
