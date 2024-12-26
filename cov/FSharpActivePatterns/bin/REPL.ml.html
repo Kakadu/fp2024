@@ -503,11 +503,11 @@ let run_repl dump_parsetree input_file =
        | <span data-count="62">f</span>alse -&gt;
          let result = infer ast env state in
          <span data-count="62">(</span>match result with
-          | <span data-count="12">n</span>ew_state, Error err -&gt;
+          | <span data-count="11">n</span>ew_state, Error err -&gt;
             fprintf err_formatter "Type checking failed: %a\n" pp_error err;
-            <span data-count="12">p</span>rint_flush ();
-            <span data-count="12">r</span>un_repl_helper run env new_state
-          | <span data-count="50">n</span>ew_state, Ok (env, names_and_types) -&gt;
+            <span data-count="11">p</span>rint_flush ();
+            <span data-count="11">r</span>un_repl_helper run env new_state
+          | <span data-count="51">n</span>ew_state, Ok (env, names_and_types) -&gt;
             (match ic with
              | <span data-count="0">N</span>one -&gt;
                List.iter
@@ -515,7 +515,7 @@ let run_repl dump_parsetree input_file =
                  names_and_types;
                <span data-count="0">p</span>rint_flush ();
                <span data-count="0">r</span>un_repl_helper run env new_state
-             | <span data-count="50">S</span>ome _ -&gt; run_repl_helper run env new_state)))
+             | <span data-count="51">S</span>ome _ -&gt; run_repl_helper run env new_state)))
   in
   let env =
     TypeEnvironment.extend

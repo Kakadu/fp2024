@@ -135,7 +135,7 @@ let gen_primitive = QCheck.Gen.oneof<span data-count="21">l</span> [ "int"; "boo
 [@@deriving show { with_path = false }, qcheck<span data-count="402">]</span>
 
 let arrow_of_types first_types last_type =
-  <span data-count="119">l</span>et open Base in
+  <span data-count="120">l</span>et open Base in
   List.fold_right first_types ~init:last_type ~f:(fun left right -&gt; <span data-count="90">A</span>rrow (left, right))
 ;;
 
