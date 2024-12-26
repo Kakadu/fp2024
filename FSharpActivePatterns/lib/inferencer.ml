@@ -578,6 +578,22 @@ let extract_names_from_pattern pat =
   helper pat
 ;;
 
+let infer_match_pattern env ~shadow pattern match_type =
+  let* env, pat_typ = infer_pattern env ~shadow pattern in
+  let* subst = unify pat_typ match_type in
+  let env = TypeEnvironment.apply subst env in
+  let pat_names = extract_names_from_pattern pattern in
+  let generalized_schemes =
+    List.map pat_names ~f:(fun name ->
+      let typ = TypeEnvironment.find_typ_exn env name in
+      let env = TypeEnvironment.remove env name in
+      let generalized_typ = generalize env typ in
+      name, generalized_typ)
+  in
+  let env = TypeEnvironment.extend_many env generalized_schemes in
+  return (env, subst)
+;;
+
 let extract_names_from_patterns pats =
   List.fold pats ~init:[] ~f:(fun acc p ->
     List.concat [ acc; extract_names_from_pattern p ])
