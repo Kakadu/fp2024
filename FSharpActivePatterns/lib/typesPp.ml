@@ -18,16 +18,15 @@ let pp_typ fmt typ =
       Format.pp_print_list
         ~pp_sep:(fun fmt () -> fprintf fmt " * ")
         (fun fmt typ ->
-           match typ with
-           | Arrow _ -> fprintf fmt "(%a)" helper typ
-           | _ -> helper fmt typ)
+          match typ with
+          | Arrow _ -> fprintf fmt "(%a)" helper typ
+          | _ -> helper fmt typ)
         fmt
-        (first :: second :: rest);
-    | TOption t -> 
-      match t with
-      | Type_tuple _ | Arrow _ -> 
-        fprintf fmt "(%a) option" helper t;
-      | t -> fprintf fmt "%a option" helper t 
+        (first :: second :: rest)
+    | TOption t ->
+      (match t with
+       | Type_tuple _ | Arrow _ -> fprintf fmt "(%a) option" helper t
+       | t -> fprintf fmt "%a option" helper t)
   in
   helper fmt typ;
   fprintf fmt "\n"
