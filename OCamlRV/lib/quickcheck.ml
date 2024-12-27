@@ -4,7 +4,7 @@
 
 open OCamlRV_lib.Ast
 open OCamlRV_lib.Parser
-open OCamlRV_lib.Pprintast
+open OCamlRV_lib.AstPrinter
 
 let arbitrary_structure =
   QCheck.make gen_structure ~print:(Format.asprintf "%a" pp_structure_item_list)

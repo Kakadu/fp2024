@@ -1,8 +1,17 @@
 (library
  (name OCamlRV_lib)
  (public_name OCamlRV.Lib)
- (libraries angstrom qcheck-core)
+ (libraries angstrom qcheck-core qcheck-core.runner)
+ (modules ast parser astPrinter infer inferCore)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving_qcheck))
+ (instrumentation
+  (backend bisect_ppx)))
+
+(executable
+ (name quickcheck)
+ (public_name quickcheck)
+ (libraries OCamlRV_lib)
+ (modules quickcheck)
  (instrumentation
   (backend bisect_ppx)))
