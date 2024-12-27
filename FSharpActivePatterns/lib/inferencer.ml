@@ -15,6 +15,7 @@ type error =
   | `Not_allowed_right_hand_side_let_rec
   | `Not_allowed_left_hand_side_let_rec
   | `Args_after_not_variable_let
+  | `Bound_several_times
   ]
 
 let pp_error fmt : error -> _ = function
@@ -28,6 +29,7 @@ let pp_error fmt : error -> _ = function
     fprintf fmt "Only variables are allowed as left-hand side of `let rec'"
   | `Args_after_not_variable_let ->
     fprintf fmt "Arguments in let allowed only after variable"
+  | `Bound_several_times -> fprintf fmt "Variable is bound several times"
 ;;
 
 (* for treating result of type inference *)
@@ -469,27 +471,40 @@ let infer_patterns env ~shadow patterns =
       return (new_env, typ :: typs))
 ;;
 
-let extract_names_from_pattern pat =
-  let rec helper = function
-    | PVar (Ident name) -> [ name ]
-    | PList l -> List.concat (List.map l ~f:helper)
-    | PCons (hd, tl) -> List.concat [ helper hd; helper tl ]
-    | PTuple (fst, snd, rest) ->
-      List.concat [ helper fst; helper snd; List.concat (List.map rest ~f:helper) ]
-    | POption (Some p) -> helper p
-    | PConstraint (p, _) -> helper p
-    | POption None -> []
-    | Wild -> []
-    | PConst _ -> []
-  in
-  helper pat
+module StringSet = struct
+  include Stdlib.Set.Make (String)
+
+  let union_disjoint s1 s2 =
+    let* s1 = s1 in
+    let* s2 = s2 in
+    if is_empty (inter s1 s2) then return (union s1 s2) else fail `Bound_several_times
+  ;;
+
+  let union_disjoint_many sets =
+    List.fold ~init:(return empty) ~f:(fun acc set -> union_disjoint acc set) sets
+  ;;
+end
+
+let rec extract_names_from_pattern =
+  let extr = extract_names_from_pattern in
+  function
+  | PVar (Ident name) -> return (StringSet.singleton name)
+  | PList l -> StringSet.union_disjoint_many (List.map l ~f:extr)
+  | PCons (hd, tl) -> StringSet.union_disjoint (extr hd) (extr tl)
+  | PTuple (fst, snd, rest) ->
+    StringSet.union_disjoint_many (List.map ~f:extr (fst :: snd :: rest))
+  | POption (Some p) -> extr p
+  | PConstraint (p, _) -> extr p
+  | POption None -> return StringSet.empty
+  | Wild -> return StringSet.empty
+  | PConst _ -> return StringSet.empty
 ;;
 
 let infer_match_pattern env ~shadow pattern match_type =
   let* env, pat_typ = infer_pattern env ~shadow pattern in
   let* subst = unify pat_typ match_type in
   let env = TypeEnvironment.apply subst env in
-  let pat_names = extract_names_from_pattern pattern in
+  let* pat_names = extract_names_from_pattern pattern >>| StringSet.elements in
   let generalized_schemes =
     List.map pat_names ~f:(fun name ->
       let typ = TypeEnvironment.find_typ_exn env name in
@@ -502,12 +517,11 @@ let infer_match_pattern env ~shadow pattern match_type =
 ;;
 
 let extract_names_from_patterns pats =
-  List.fold pats ~init:[] ~f:(fun acc p ->
-    List.concat [ acc; extract_names_from_pattern p ])
+  StringSet.union_disjoint_many (List.map ~f:extract_names_from_pattern pats)
 ;;
 
 let extract_bind_names_from_let_binds let_binds =
-  List.concat
+  StringSet.union_disjoint_many
     (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
        extract_names_from_pattern pat))
 ;;
@@ -730,8 +744,8 @@ and infer_let_bind env is_rec let_bind =
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
-  let names = extract_names_from_pattern name in
-  let arg_names = extract_names_from_patterns args in
+  let* names = extract_names_from_pattern name >>| StringSet.elements in
+  let* arg_names = extract_names_from_patterns args >>| StringSet.elements in
   let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
   let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
   let names_schemes_list =
@@ -745,7 +759,9 @@ let infer_statement env = function
     let let_binds = let_bind :: let_binds in
     let* env = extend_env_with_bind_names env let_binds in
     let* env, _ = extend_env_with_let_binds env Rec let_binds in
-    let bind_names = extract_bind_names_from_let_binds let_binds in
+    let* bind_names =
+      extract_bind_names_from_let_binds let_binds >>| StringSet.elements
+    in
     let bind_names_with_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with
@@ -755,7 +771,9 @@ let infer_statement env = function
   | Let (Nonrec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
     let* env, _ = extend_env_with_let_binds env Nonrec let_binds in
-    let bind_names = extract_bind_names_from_let_binds let_binds in
+    let* bind_names =
+      extract_bind_names_from_let_binds let_binds >>| StringSet.elements
+    in
     let bind_names_with_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with

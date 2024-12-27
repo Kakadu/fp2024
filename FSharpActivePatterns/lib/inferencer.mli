@@ -22,6 +22,7 @@ type error =
   | `Not_allowed_right_hand_side_let_rec
   | `Not_allowed_left_hand_side_let_rec
   | `Args_after_not_variable_let
+  | `Bound_several_times
   ]
 
 val pp_error : formatter -> error -> unit
