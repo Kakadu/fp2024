@@ -518,7 +518,7 @@ let extract_bind_patterns_from_let_binds let_binds =
 let extend_env_with_bind_names env let_binds =
   (* to prevent binds like let rec x = x + 1*)
   let let_binds =
-    List.filter let_binds ~f:(function Let_bind (_, args, _) -> List.length args <> 0)
+    List.filter let_binds ~f:(function Let_bind (_, args, _) -> not (List.is_empty args))
   in
   let bind_names = extract_bind_patterns_from_let_binds let_binds in
   let* env, _ = infer_patterns env ~shadow:true bind_names in
