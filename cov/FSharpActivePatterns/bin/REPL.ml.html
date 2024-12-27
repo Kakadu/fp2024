@@ -511,7 +511,7 @@ let run_repl dump_parsetree input_file =
             (match ic with
              | <span data-count="0">N</span>one -&gt;
                List.iter
-                 (fun (n, t) -&gt; <span data-count="0">f</span>printf std_formatter "%s : %a" n pp_typ t)
+                 (fun (n, t) -&gt; <span data-count="0">f</span>printf std_formatter "%s : %a\n" n pp_typ t)
                  names_and_types;
                <span data-count="0">p</span>rint_flush ();
                <span data-count="0">r</span>un_repl_helper run env new_state
