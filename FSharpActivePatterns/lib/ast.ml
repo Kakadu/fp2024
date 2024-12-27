@@ -4,6 +4,7 @@
 
 open KeywordChecker
 open TypedTree
+open TypesPp
 
 type ident = Ident of string (** identifier *) [@@deriving show { with_path = false }]
 

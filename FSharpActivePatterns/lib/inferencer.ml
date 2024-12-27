@@ -21,7 +21,7 @@ let pp_error fmt : error -> _ = function
   | `Occurs_check -> fprintf fmt "Occurs check failed"
   | `Undef_var s -> fprintf fmt "Undefined variable '%s'" s
   | `Unification_failed (fst, snd) ->
-    fprintf fmt "unification failed on %a and %a" pp_typ fst pp_typ snd
+    fprintf fmt "unification failed on %a and %a\n" pp_typ fst pp_typ snd
   | `Not_allowed_right_hand_side_let_rec ->
     fprintf fmt "This kind of expression is not allowed as right-hand side of `let rec'"
   | `Not_allowed_left_hand_side_let_rec ->
@@ -357,7 +357,8 @@ end = struct
      ;; *)
 
   let pp_without_freevars fmt t =
-    Map.iteri t ~f:(fun ~key ~data -> fprintf fmt "%s : %a" key pp_typ (Scheme.typ data))
+    Map.iteri t ~f:(fun ~key ~data ->
+      fprintf fmt "%s : %a\n" key pp_typ (Scheme.typ data))
   ;;
 
   (* collect all free vars from environment *)

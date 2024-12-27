@@ -52,7 +52,7 @@ let rec print_pattern indent fmt = function
     print_pattern (indent + 2) fmt r
   | PVar (Ident name) -> fprintf fmt "%s| PVar(%s)\n" (String.make indent '-') name
   | POption p ->
-    fprintf fmt "%s| POption: " (String.make indent '-');
+    fprintf fmt "%s| POption " (String.make indent '-');
     (match p with
      | None -> fprintf fmt "None\n"
      | Some p ->
@@ -63,7 +63,7 @@ let rec print_pattern indent fmt = function
     fprintf fmt "%sPattern:\n" (String.make (indent + 2) ' ');
     print_pattern (indent + 2) fmt p;
     fprintf fmt "%sType:\n" (String.make (indent + 2) ' ');
-    fprintf fmt "%s| %a" (String.make (indent + 2) '-') pp_typ t
+    fprintf fmt "%s| %a\n" (String.make (indent + 2) '-') pp_typ t
 ;;
 
 let print_unary_op indent fmt = function
@@ -75,11 +75,9 @@ let rec print_let_bind indent fmt = function
   | Let_bind (name, args, body) ->
     fprintf fmt "%s| Let_bind:\n" (String.make indent '-');
     fprintf fmt "%sNAME:\n" (String.make (indent + 4) ' ');
-    fprintf fmt "%s| %a\n" (String.make (indent + 4) '-') pp_pattern name;
+    print_pattern (indent + 4) fmt name;
     fprintf fmt "%sARGS:\n" (String.make (indent + 4) ' ');
-    List.iter
-      (fun arg -> fprintf fmt "%s| %a\n" (String.make (indent + 2) '-') pp_pattern arg)
-      args;
+    List.iter (fun arg -> print_pattern (indent + 2) fmt arg) args;
     fprintf fmt "%sBODY:\n" (String.make (indent + 4) ' ');
     print_expr (indent + 2) fmt body
 
@@ -172,7 +170,7 @@ and print_expr indent fmt expr =
     fprintf fmt "%sExpr:\n" (String.make (indent + 2) ' ');
     print_expr (indent + 2) fmt e;
     fprintf fmt "%sType:\n" (String.make (indent + 2) ' ');
-    fprintf fmt "%s| %a" (String.make (indent + 2) '-') pp_typ t
+    fprintf fmt "%s| %a\n" (String.make (indent + 2) '-') pp_typ t
 ;;
 
 let print_statement indent fmt = function

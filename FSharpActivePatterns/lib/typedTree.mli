@@ -13,7 +13,6 @@ type typ =
   | TOption of typ
 
 val gen_typ : typ QCheck.Gen.t
-val pp_typ : Format.formatter -> typ -> unit
 val arrow_of_types : typ list -> typ -> typ
 
 module VarSet : sig
@@ -23,7 +22,7 @@ module VarSet : sig
 end
 
 type binder_set = VarSet.t
-type scheme = Scheme of binder_set * typ [@@deriving show { with_path = false }]
+type scheme = Scheme of binder_set * typ
 
 val int_typ : typ
 val bool_typ : typ

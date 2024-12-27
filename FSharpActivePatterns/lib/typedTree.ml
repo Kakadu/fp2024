@@ -13,7 +13,6 @@ type typ =
   | Type_list of typ
   | Type_tuple of typ * typ * typ list
   | TOption of typ
-[@@deriving show { with_path = false }, qcheck]
 
 let gen_typ =
   QCheck.Gen.(oneofl [ "string"; "int"; "unit"; "bool" ] >|= fun t -> Primitive t)
@@ -37,7 +36,7 @@ end
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
 (* binder_set here -- list of all type vars in context (?) *)
-type scheme = Scheme of binder_set * typ [@@deriving show { with_path = false }]
+type scheme = Scheme of binder_set * typ
 
 let int_typ = Primitive "int"
 let bool_typ = Primitive "bool"
