@@ -10,8 +10,7 @@
   
   Type checking failed: unification failed on string and int
   
-  Type checking failed: unification failed on string
-   and int
+  Type checking failed: unification failed on string and int
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/015tuples.ml
   Type checking failed: Only variables are allowed as left-hand side of `let rec'
