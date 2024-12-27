@@ -4,8 +4,6 @@
 
 type binder = int [@@deriving show { with_path = false }, qcheck]
 
-let gen_primitive = QCheck.Gen.oneofl [ "int"; "bool"; "string"; "unit" ]
-
 type typ =
   | Primitive of (string[@gen gen_primitive])
   | Type_var of binder
@@ -14,7 +12,7 @@ type typ =
   | Type_tuple of typ * typ * typ list
   | TOption of typ
 
-let gen_typ =
+let gen_typ_primitive =
   QCheck.Gen.(oneofl [ "string"; "int"; "unit"; "bool" ] >|= fun t -> Primitive t)
 ;;
 

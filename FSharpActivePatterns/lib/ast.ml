@@ -100,10 +100,8 @@ type pattern =
   | PVar of ident (** pattern identifier *)
   | POption of pattern option
   (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
-  | PConstraint of pattern * (typ[@gen gen_typ])
+  | PConstraint of pattern * (typ[@gen gen_typ_primitive])
 [@@deriving show { with_path = false }, qcheck]
-
-let gen_typed_pattern_sized n = QCheck.Gen.(pair (gen_pattern_sized n) (return None))
 
 type is_recursive =
   | Nonrec (** let factorial n = ... *)
@@ -152,7 +150,7 @@ and expr =
         [@gen QCheck.Gen.(list_size (0 -- 2) (gen_let_bind_sized (n / 20)))])
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
-  | EConstraint of expr * (typ[@gen gen_typ])
+  | EConstraint of expr * (typ[@gen gen_typ_primitive])
 [@@deriving show { with_path = false }, qcheck]
 
 and let_bind =

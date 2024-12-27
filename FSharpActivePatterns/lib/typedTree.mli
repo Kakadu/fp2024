@@ -12,7 +12,7 @@ type typ =
   | Type_tuple of typ * typ * typ list
   | TOption of typ
 
-val gen_typ : typ QCheck.Gen.t
+val gen_typ_primitive : typ QCheck.Gen.t
 val arrow_of_types : typ list -> typ -> typ
 
 module VarSet : sig
