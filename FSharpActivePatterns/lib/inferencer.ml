@@ -676,47 +676,54 @@ let rec infer_expr env = function
     let* subst_final = Substitution.compose subst1 subst2 in
     return (subst_final, typ)
   | Function ((p1, e1), rest) ->
-    let* arg_type = make_fresh_var in
-    let* return_type = make_fresh_var in
-    let* subst, return_type =
-      List.fold
-        ((p1, e1) :: rest)
-        ~init:(return (Substitution.empty, return_type))
-        ~f:(fun acc (pat, expr) ->
-          let* subst1, return_type = acc in
-          let* env, pat = infer_pattern env ~shadow:true pat in
-          let* subst2 = unify arg_type pat in
-          let env = TypeEnvironment.apply subst2 env in
-          let* subst3, expr_typ = infer_expr env expr in
-          let* subst4 = unify return_type expr_typ in
-          let* subst = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
-          return (subst, Substitution.apply subst return_type))
-    in
-    return (subst, Arrow (Substitution.apply subst arg_type, return_type))
+    let* match_t = make_fresh_var in
+    let* return_t = make_fresh_var in
+    infer_matching_expr
+      env
+      ((p1, e1) :: rest)
+      Substitution.empty
+      match_t
+      return_t
+      ~with_arg:true
   | Match (e, (p1, e1), rest) ->
-    let* subst_init, match_type = infer_expr env e in
+    let* subst_init, match_t = infer_expr env e in
     let env = TypeEnvironment.apply subst_init env in
-    let* return_type = make_fresh_var in
-    let* subst, return_type =
-      List.fold
-        ((p1, e1) :: rest)
-        ~init:(return (subst_init, return_type))
-        ~f:(fun acc (pat, expr) ->
-          let* subst1, return_type = acc in
-          let* env, subst2 = infer_match_pattern env ~shadow:true pat match_type in
-          let* subst12 = Substitution.compose subst1 subst2 in
-          let env = TypeEnvironment.apply subst12 env in
-          let* subst3, expr_typ = infer_expr env expr in
-          let* subst4 = unify return_type expr_typ in
-          let* subst = Substitution.compose_all [ subst12; subst3; subst4 ] in
-          return (subst, Substitution.apply subst return_type))
-    in
-    return (subst, return_type)
+    let* return_t = make_fresh_var in
+    infer_matching_expr env ((p1, e1) :: rest) subst_init match_t return_t ~with_arg:false
   | EConstraint (e, t) ->
     let* subst1, e_type = infer_expr env e in
     let* subst2 = unify e_type (Substitution.apply subst1 t) in
     let* subst_result = Substitution.compose subst1 subst2 in
     return (subst_result, Substitution.apply subst2 e_type)
+
+and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
+  let* subst, return_t =
+    List.fold
+      cases
+      ~init:(return (subst_init, return_t))
+      ~f:(fun acc (pat, expr) ->
+        let* subst1, return_type = acc in
+        let* env, subst2 =
+          match with_arg with
+          | true ->
+            let* env, pat = infer_pattern env ~shadow:true pat in
+            let* subst2 = unify match_t pat in
+            return (env, subst2)
+          | false -> infer_match_pattern env ~shadow:true pat match_t
+        in
+        let* subst12 = Substitution.compose subst1 subst2 in
+        let env = TypeEnvironment.apply subst12 env in
+        let* subst3, expr_typ = infer_expr env expr in
+        let* subst4 = unify return_type expr_typ in
+        let* subst = Substitution.compose_all [ subst12; subst3; subst4 ] in
+        return (subst, Substitution.apply subst return_type))
+  in
+  let final_typ =
+    match with_arg with
+    | true -> Arrow (Substitution.apply subst match_t, return_t)
+    | false -> return_t
+  in
+  return (subst, final_typ)
 
 and extend_env_with_let_binds env is_rec let_binds =
   List.fold
