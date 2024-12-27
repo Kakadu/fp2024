@@ -149,8 +149,6 @@ type pattern =
   | PConstraint of pattern * (typ[@gen gen_typ_primitive])
 [@@deriving show { with_path = false }, qcheck]
 
-let gen_typed_pattern_sized n = QCheck.Gen.(pair (gen_pattern_sized n) (return None))
-
 type is_recursive =
   | Nonrec (** let factorial n = ... *)
   | Rec (** let rec factorial n = ... *)
