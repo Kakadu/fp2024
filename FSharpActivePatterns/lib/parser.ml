@@ -25,9 +25,9 @@ let peek_sep1 =
   match c with
   | None -> return None
   | Some c ->
-    match c with
-  | '(' | ')' | ']' | ';' | ':' | ',' -> return (Some c)
-  | _ -> if is_ws c then return (Some c) else fail "need a delimiter"
+    (match c with
+     | '(' | ')' | ']' | ';' | ':' | ',' -> return (Some c)
+     | _ -> if is_ws c then return (Some c) else fail "need a delimiter")
 ;;
 
 let skip_ws_sep1 = peek_sep1 *> skip_ws
@@ -254,9 +254,9 @@ let p_pat =
     let atom = choice [ p_pat_const; p_parens self; p_parens (p_constraint_pat self) ] in
     let semicolon_list = p_semicolon_list_pat (self <|> atom) <|> atom in
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
-    let tuple = p_tuple_pat opt <|> opt in
-    let cons = p_cons_list_pat tuple in
-    cons)
+    let cons = p_cons_list_pat opt in
+    let tuple = p_tuple_pat cons <|> cons in
+    tuple)
 ;;
 
 let p_let_bind p_expr =
@@ -366,8 +366,7 @@ let p_expr =
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let option = p_option letin_expr make_option_expr <|> letin_expr in
     let apply = p_apply option <|> option in
-    let tuple = p_tuple make_tuple_expr apply <|> apply in
-    let unary = choice [ unary_chain p_not tuple; unary_chain unminus tuple ] in
+    let unary = choice [ unary_chain p_not apply; unary_chain unminus apply ] in
     let factor = chainl1 unary (mul <|> div) in
     let term = chainl1 factor (add <|> sub) in
     let cons_op = chainr1 term cons in
@@ -380,7 +379,8 @@ let p_expr =
     let comp_and = chainl1 bit_or log_and in
     let comp_or = chainl1 comp_and log_or in
     let inf_oper = p_inf_oper_expr comp_or <|> comp_or in
-    let p_function = p_function (p_expr <|> inf_oper) <|> inf_oper in
+    let tuple = p_tuple make_tuple_expr inf_oper <|> inf_oper in
+    let p_function = p_function (p_expr <|> tuple) <|> tuple in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
     efun)
