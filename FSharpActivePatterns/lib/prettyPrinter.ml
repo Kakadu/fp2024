@@ -70,26 +70,18 @@ and pp_expr fmt expr =
     fprintf fmt "]"
   | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
-    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
+    pp_print_list
+      ~pp_sep:(fun fmt () -> fprintf fmt ", ")
+      pp_parens_expr
+      fmt
+      (e1 :: e2 :: rest);
     fprintf fmt ")"
   | Function ((pat1, expr1), cases) ->
-    let cases =
-      List.map
-        (function
-          | a, b -> a, b)
-        cases
-    in
     fprintf fmt "function ";
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
       ((pat1, expr1) :: cases)
   | Match (value, (pat1, expr1), cases) ->
-    let cases =
-      List.map
-        (function
-          | p, e -> p, e)
-        cases
-    in
     fprintf fmt "match (%a) with \n" pp_expr value;
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
@@ -137,7 +129,8 @@ and pp_args fmt args =
 and pp_let_bind fmt = function
   | Let_bind (name, args, body) ->
     fprintf fmt "%a %a = %a " pp_pattern name pp_args args pp_expr body
-;;
+
+and pp_parens_expr fmt expr = fprintf fmt "(%a)" pp_expr expr
 
 let pp_statement fmt = function
   | Let (rec_flag, let_bind, let_bind_list) ->

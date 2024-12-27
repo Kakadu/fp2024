@@ -8,6 +8,7 @@
 
 open Format
 open Ast
+open TypesPp
 
 let print_bin_op indent fmt = function
   | Binary_equal -> fprintf fmt "%s| Binary Equal\n" (String.make indent '-')
@@ -57,7 +58,12 @@ let rec print_pattern indent fmt = function
      | Some p ->
        fprintf fmt "Some:\n";
        print_pattern (indent + 2) fmt p)
-  | PConstraint (p, _) -> print_pattern indent fmt p
+  | PConstraint (p, t) ->
+    fprintf fmt "%s| PConstraint\n" (String.make indent ' ');
+    fprintf fmt "%sPattern:\n" (String.make (indent + 2) ' ');
+    print_pattern (indent + 2) fmt p;
+    fprintf fmt "%sType:\n" (String.make (indent + 2) ' ');
+    fprintf fmt "%s| %a" (String.make (indent + 2) '-') pp_typ t
 ;;
 
 let print_unary_op indent fmt = function
@@ -134,7 +140,6 @@ and print_expr indent fmt expr =
   | Lambda (arg1, args, body) ->
     fprintf fmt "%s| Lambda:\n" (String.make indent '-');
     fprintf fmt "%sARGS\n" (String.make (indent + 2) ' ');
-    print_pattern (indent + 4) fmt arg1;
     List.iter (fun pat -> print_pattern (indent + 4) fmt pat) (arg1 :: args);
     fprintf fmt "%sBODY\n" (String.make (indent + 2) ' ');
     print_expr (indent + 4) fmt body
@@ -147,11 +152,11 @@ and print_expr indent fmt expr =
   | LetIn (rec_flag, let_bind, let_bind_list, inner_e) ->
     fprintf
       fmt
-      "%s | %s LetIn=\n"
+      "%s| %sLetIn=\n"
       (String.make indent '-')
       (match rec_flag with
        | Nonrec -> ""
-       | Rec -> "Rec");
+       | Rec -> "Rec ");
     fprintf fmt "%sLet_binds\n" (String.make (indent + 2) ' ');
     List.iter (print_let_bind (indent + 2) fmt) (let_bind :: let_bind_list);
     fprintf fmt "%sINNER_EXPRESSION\n" (String.make (indent + 2) ' ');
@@ -162,7 +167,12 @@ and print_expr indent fmt expr =
      | Some e ->
        fprintf fmt "%s| Option: Some\n" (String.make indent '-');
        print_expr (indent + 2) fmt e)
-  | EConstraint (e, _) -> print_expr indent fmt e
+  | EConstraint (e, t) ->
+    fprintf fmt "%s| EConstraint\n" (String.make indent ' ');
+    fprintf fmt "%sExpr:\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) fmt e;
+    fprintf fmt "%sType:\n" (String.make (indent + 2) ' ');
+    fprintf fmt "%s| %a" (String.make (indent + 2) '-') pp_typ t
 ;;
 
 let print_statement indent fmt = function
