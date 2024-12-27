@@ -34,7 +34,6 @@ let pp_error fmt : error -> _ = function
 
 (* for treating result of type inference *)
 module R : sig
-  (* signature, smth like interface before realization *)
   type 'a t
 
   (* val bind : 'a t -> f:('a -> 'b t) -> 'b t *)
