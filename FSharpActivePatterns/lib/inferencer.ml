@@ -480,9 +480,7 @@ module StringSet = struct
     if is_empty (inter s1 s2) then return (union s1 s2) else fail `Bound_several_times
   ;;
 
-  let union_disjoint_many sets =
-    List.fold ~init:(return empty) ~f:(fun acc set -> union_disjoint acc set) sets
-  ;;
+  let union_disjoint_many sets = List.fold ~init:(return empty) ~f:union_disjoint sets
 end
 
 let rec extract_names_from_pattern =
@@ -704,12 +702,12 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
       ~f:(fun acc (pat, expr) ->
         let* subst1, return_type = acc in
         let* env, subst2 =
-          match with_arg with
-          | true ->
+          if with_arg
+          then
             let* env, pat = infer_pattern env ~shadow:true pat in
             let* subst2 = unify match_t pat in
             return (env, subst2)
-          | false -> infer_match_pattern env ~shadow:true pat match_t
+          else infer_match_pattern env ~shadow:true pat match_t
         in
         let* subst12 = Substitution.compose subst1 subst2 in
         let env = TypeEnvironment.apply subst12 env in
@@ -719,9 +717,7 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
         return (subst, Substitution.apply subst return_type))
   in
   let final_typ =
-    match with_arg with
-    | true -> Arrow (Substitution.apply subst match_t, return_t)
-    | false -> return_t
+    if with_arg then Arrow (Substitution.apply subst match_t, return_t) else return_t
   in
   return (subst, final_typ)
 
