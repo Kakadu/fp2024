@@ -12,7 +12,7 @@ type typ =
   | Type_tuple of typ * typ * typ list
   | TOption of typ
 
-val gen_typ_sized : int -> typ QCheck.Gen.t
+val gen_typ : typ QCheck.Gen.t
 val pp_typ : Format.formatter -> typ -> unit
 val arrow_of_types : typ list -> typ -> typ
 

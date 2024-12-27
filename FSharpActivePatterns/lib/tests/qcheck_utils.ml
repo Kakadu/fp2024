@@ -22,6 +22,13 @@ let shrink_lt =
   | String_lt x -> QCheck.Shrink.string x >|= fun a' -> String_lt a'
 ;;
 
+let exprs_from_let_binds let_binds =
+  List.map
+    (function
+      | Let_bind (_, _, e) -> e)
+    let_binds
+;;
+
 let rec shrink_let_bind =
   let open QCheck.Iter in
   function
@@ -55,7 +62,7 @@ and shrink_expr =
     <+> (shrink_expr i >|= fun a' -> If_then_else (a', t, None))
     <+> (shrink_expr t >|= fun a' -> If_then_else (i, a', None))
   | LetIn (rec_flag, let_bind, let_bind_list, inner_e) ->
-    return inner_e
+    of_list (inner_e :: exprs_from_let_binds (let_bind :: let_bind_list))
     <+> (shrink_let_bind let_bind
          >|= fun a' -> LetIn (rec_flag, a', let_bind_list, inner_e))
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
@@ -101,7 +108,7 @@ and shrink_expr =
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
   | Option None -> empty
   | Variable _ -> empty
-  | EConstraint (e, _) -> return e
+  | EConstraint (e, t) -> return e <+> shrink_expr e >|= fun a' -> EConstraint (a', t)
 
 and shrink_pattern =
   let open QCheck.Iter in
@@ -143,7 +150,13 @@ let shrink_construction =
   let open QCheck.Iter in
   function
   | Expr e -> shrink_expr e >|= fun a' -> Expr a'
-  | Statement s -> shrink_statement s >|= fun a' -> Statement a'
+  | Statement s ->
+    shrink_statement s
+    >|= (fun a' -> Statement a')
+    <+>
+      (match s with
+      | Let (_, let_bind, let_binds) ->
+        of_list (exprs_from_let_binds (let_bind :: let_binds)) >|= fun a' -> Expr a')
 ;;
 
 let arbitrary_construction =
