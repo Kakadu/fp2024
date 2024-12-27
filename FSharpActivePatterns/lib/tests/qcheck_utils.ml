@@ -162,7 +162,14 @@ let shrink_construction =
 let arbitrary_construction =
   QCheck.make
     gen_construction
-    ~print:(Format.asprintf "%a" print_construction)
+    ~print:
+      (let open Format in
+       asprintf "%a" (fun fmt c ->
+         let pp = pp_construction in
+         fprintf fmt "Generated:\n%a" pp c;
+         match parse (Format.asprintf "%a\n" pp c) with
+         | Ok parsed -> fprintf fmt "Parsed:\n%a" pp parsed
+         | Error e -> fprintf fmt "Parsing error:\n%s\n" e))
     ~shrink:shrink_construction
 ;;
 
