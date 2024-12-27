@@ -1,31 +1,25 @@
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/001.ml
   Type checking failed: Undefined variable 'fac'
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/002if.ml
-  Type checking failed: unification failed on int
-   and bool
+  Type checking failed: unification failed on int and bool
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/003occurs.ml
   Type checking failed: Occurs check failed
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/004let_poly.ml
-  Type checking failed: unification failed on bool
-   and int
+  Type checking failed: unification failed on bool and int
   
-  Type checking failed: unification failed on string
-   and int
+  Type checking failed: unification failed on string and int
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/015tuples.ml
   Type checking failed: Only variables are allowed as left-hand side of `let rec'
-  Type checking failed: unification failed on '_0 * '_1
-   and int * int * int
+  Type checking failed: unification failed on '_0 * '_1 and int * int * int
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/099.ml
   Type checking failed: Only variables are allowed as left-hand side of `let rec'
   Type checking failed: Undefined variable 'x'
-  Type checking failed: unification failed on '_1 option
-   and '_0 -> '_0
+  Type checking failed: unification failed on '_1 option and '_0 -> '_0
   
-  Type checking failed: unification failed on unit
-   and '_2 -> '_2
+  Type checking failed: unification failed on unit and '_2 -> '_2
   
   $ ../bin/REPL.exe -fromfile manytests/typed/001fac.ml
   fac : int -> int
