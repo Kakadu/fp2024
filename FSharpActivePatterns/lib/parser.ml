@@ -25,15 +25,9 @@ let peek_sep1 =
   match c with
   | None -> return None
   | Some c ->
-    if is_ws c
-       || Char.equal c '('
-       || Char.equal c ')'
-       || Char.equal c ','
-       || Char.equal c ']'
-       || Char.equal c ':'
-       || Char.equal c ';'
-    then return (Some c)
-    else fail "need a delimiter"
+    match c with
+  | '(' | ')' | ']' | ';' | ':' | ',' -> return (Some c)
+  | _ -> if is_ws c then return (Some c) else fail "need a delimiter"
 ;;
 
 let skip_ws_sep1 = peek_sep1 *> skip_ws
