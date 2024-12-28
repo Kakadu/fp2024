@@ -2,6 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ast
+open TypedTree
+open Format
 
-val parse : string -> (construction, string) result
+val pp_typ : formatter -> typ -> unit
