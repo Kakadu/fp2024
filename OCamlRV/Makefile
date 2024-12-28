@@ -1,10 +1,7 @@
 .PHONY: all run fmt lint zanuda
 
 all:
-	dune build -j4
-
-run:
-	./_build/default/bin/main.exe
+	dune build -j8
 
 fmt:
 	dune build @fmt --auto-promote

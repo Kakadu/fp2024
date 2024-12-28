@@ -4,9 +4,9 @@
 
 open Ast
 open Base
-open InferCore
-open InferCore.Result
-open InferCore.Result.Syntax
+open InferencerCore
+open InferencerCore.Result
+open InferencerCore.Result.Syntax
 
 let fresh_var = fresh >>| fun n -> AVar n
 

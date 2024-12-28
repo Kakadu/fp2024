@@ -4,6 +4,6 @@
 
 val run_infer
   :  Ast.structure
-  -> ( (string, InferCore.Scheme.t, Base.String.comparator_witness) Base.Map.t
-       , InferCore.error )
+  -> ( (string, InferencerCore.Scheme.t, Base.String.comparator_witness) Base.Map.t
+       , InferencerCore.error )
        result

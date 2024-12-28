@@ -2,8 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open OCamlRV_lib.Infer
-open OCamlRV_lib.InferCore
+open OCamlRV_lib.Inferencer
+open OCamlRV_lib.InferencerCore
 open OCamlRV_lib.AstPrinter
 
 let test_infer s =
