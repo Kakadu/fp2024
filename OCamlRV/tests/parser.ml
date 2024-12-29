@@ -11,34 +11,19 @@ let parse_to_unit input =
   | Error err -> Stdlib.Format.printf "%s\n" err
 ;;
 
-let parse_to_bool input =
-  match parse input with
-  | Ok _ -> true
-  | Error _ -> false
+(* ------------------- binary operations -------------------*)
+
+let%expect_test _ =
+  parse_to_unit "1 + 1;;";
+  [%expect
+    {|
+    [(SEval
+        (ExprBinOperation (Add, (ExprConstant (CInt 1)), (ExprConstant (CInt 1))
+           )))
+      ] |}]
 ;;
 
-(* if-then-else tests *)
-let%test _ = parse_to_bool "if x then y else z;;"
-let%test _ = parse_to_bool "if 5 > 3 then true else false;;"
-let%test _ = parse_to_bool "if a then b else c;;"
-let%test _ = parse_to_bool "if x then 1 + 2 else 3;;"
-let%test _ = parse_to_bool "if true then false else true;;"
-
-(* number tests *)
-let%test _ = parse_to_bool "-5;;"
-let%test _ = parse_to_bool "2134324;;"
-let%test _ = parse_to_bool "-525;;"
-let%test _ = parse_to_bool "true;;"
-let%test _ = parse_to_bool "false;;"
-
-(* binary operator tests *)
-let%test _ = parse_to_bool "5 + 5;;"
-let%test _ = parse_to_bool "5+5;;"
-let%test _ = parse_to_bool "2 - 3;;"
-let%test _ = parse_to_bool " 2 -2 -2;;"
-let%test _ = parse_to_bool "4 * 4;;"
-
-(* -------------------simple let expressions-------------------*)
+(* ------------------- simple let expressions -------------------*)
 
 let%expect_test _ =
   parse_to_unit "let x = 5;;";
@@ -82,7 +67,7 @@ let%expect_test _ =
     [(SEval (ExprCons ((ExprVariable "a"), (ExprVariable "b"))))] |}]
 ;;
 
-(*-------------------if expressions-------------------*)
+(*------------------- if expressions -------------------*)
 
 let%expect_test _ =
   parse_to_unit "if 5 > 3 then true else false;;";
@@ -206,7 +191,6 @@ let%expect_test "fib test" =
        ] |}]
 ;;
 
-(* Factorial test *)
 let%expect_test "factorial test" =
   parse_to_unit "let rec fact n = if n <= 1 then 1 else n * fact (n - 1);;";
   [%expect
@@ -231,7 +215,7 @@ let%expect_test "factorial test" =
 |}]
 ;;
 
-(*------------------- Mathc expression tests -------------------*)
+(*------------------- match expression -------------------*)
 
 let%expect_test "match" =
   parse_to_unit {|match x with
@@ -356,7 +340,7 @@ let%expect_test "unary tests" =
       ] |}]
 ;;
 
-(* type annotation tests *)
+(*------------------- type annotation -------------------*)
 
 let%expect_test "" =
   parse_to_unit "let (a : int) = 5;;";
