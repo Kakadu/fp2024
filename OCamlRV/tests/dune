@@ -9,6 +9,12 @@
  (instrumentation
   (backend bisect_ppx)))
 
+(executable
+ (name interpreter)
+ (public_name interpreter)
+ (libraries OCamlRV_lib)
+ (modules interpreter))
+
 (cram
  (applies_to quickcheck)
  (deps ../lib/quickcheck.exe))
