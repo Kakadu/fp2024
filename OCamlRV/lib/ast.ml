@@ -55,14 +55,14 @@ type constant =
   | CNil
 [@@deriving show { with_path = false }, qcheck]
 
-type fresh = int [@@deriving show { with_path = false }, qcheck]
+type fresh = int [@@deriving show { with_path = false }]
 
 type type_annot =
   | AInt
   | ABool
   | AString
   | AUnit
-  | AVar of fresh
+  | AVar of (fresh[@gen QCheck.Gen.int_range (-1000) 1000])
   | AFun of type_annot * type_annot
   | AList of type_annot
   | ATuple of type_annot list

@@ -8,6 +8,7 @@ open Base
 module type MONAD_FAIL = sig
   include Monad.S2
 
+  val fail : string -> ('a, string) t
   val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 end
 
@@ -39,12 +40,6 @@ module Env (M : MONAD_FAIL) = struct
 
   let empty = Base.Map.empty (module String)
 
-  let find env name =
-    match Base.Map.find env name with
-    | Some x -> x
-    | None -> None
-  ;;
-
   let extend env k v = Base.Map.update env k ~f:(fun _ -> v)
 end
 
@@ -54,44 +49,44 @@ module Eval (M : MONAD_FAIL) = struct
 
   let eval_binop (op, v1, v2) =
     match op, v1, v2 with
-    | Mul, VInt x, VInt y -> vint (x * y)
-    | Div, VInt x, VInt y -> vint (x / y)
-    | Add, VInt x, VInt y -> vint (x + y)
-    | Sub, VInt x, VInt y -> vint (x - y)
-    | _ -> failwith "error"
+    | Mul, VInt x, VInt y -> return (vint (x * y))
+    | Div, VInt x, VInt y -> return (vint (x / y))
+    | Add, VInt x, VInt y -> return (vint (x + y))
+    | Sub, VInt x, VInt y -> return (vint (x - y))
+    | _ -> fail "error while evaluating binary operations (?need to be replaced?)"
   ;;
 
   let eval_expr =
     let rec helper (env : environment) = function
       | ExprConstant c ->
         (match c with
-         | CInt i -> vint i
-         | CBool b -> vbool b
-         | CString s -> vstring s
-         | CUnit -> vunit
-         | CNil -> vnil)
+         | CInt i -> return (vint i)
+         | CBool b -> return (vbool b)
+         | CString s -> return (vstring s)
+         | CUnit -> return vunit
+         | CNil -> return vnil)
       | ExprBinOperation (op, e1, e2) ->
-        let v1 = helper env e1 in
-        let v2 = helper env e2 in
+        let* v1 = helper env e1 in
+        let* v2 = helper env e2 in
         eval_binop (op, v1, v2)
-      | _ -> failwith "error"
+      | _ -> fail "error while evaluating expressions (?need to be replaced?)"
     in
     helper
   ;;
 
-  let eval_str_item (env : environment) = function
+  let eval_structure_item (env : environment) = function
     | SEval e ->
-      let v = eval_expr env e in
+      let* v = eval_expr env e in
       let env2 = extend env "-" v in
-      env2
-    | _ -> failwith "error"
+      return env2
+    | _ -> fail "error while structure item (?need to be replaced?)"
   ;;
 
   let eval_structure (s : structure) =
     List.fold_left
       ~f:(fun env item ->
         let* env = env in
-        let env = eval_str_item env item in
+        let* env = eval_structure_item env item in
         let _ =
           Base.Map.iter
             ~f:(fun value ->
