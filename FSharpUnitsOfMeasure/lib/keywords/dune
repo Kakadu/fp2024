@@ -1,0 +1,6 @@
+(library
+ (name keywords)
+ (public_name FSharpUnitsOfMeasure.Keywords)
+ (libraries base qcheck)
+ (instrumentation
+  (backend bisect_ppx)))
