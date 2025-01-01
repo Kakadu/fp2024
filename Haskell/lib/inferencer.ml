@@ -367,9 +367,6 @@ let rec bindings bb env =
       let* s3 = unify (Subst.apply s_p tv0) t1 in
       let* s = Subst.compose s3 s in
       Subst.compose s subst >>| fun fs -> fs, env
-    | _ ->
-      (* TODO(Kakadu): All new constructors will go here, and type system will not help you *)
-      return (subst, env)
   in
   let* prep_bb, decls, delta_env, env, names = prep [] [] TypeEnv.empty env [] bb in
   let init =
@@ -409,15 +406,15 @@ and prep prep_bb decls env1 env2 names = function
   | [] -> return (prep_bb, decls, env1, env2, names)
   | Decl (Ident name, t) :: tl ->
     prep prep_bb ((name, tp_to_ty t) :: decls) env1 env2 names tl
-  | (FunDef (Ident name, _, _, _, _) as b) :: tl ->
+  | Def (FunDef (Ident name, _, _, _, _) as d) :: tl ->
     let* tv = fresh_var in
     let ext env = TypeEnv.extend env (name, S (VarSet.empty, tv)) in
-    prep ((b, tv) :: prep_bb) decls (ext env1) (ext env2) (name :: names) tl
-  | (VarsDef (p, _, _) as b) :: tl ->
+    prep ((d, tv) :: prep_bb) decls (ext env1) (ext env2) (name :: names) tl
+  | Def (VarsDef (p, _, _) as d) :: tl ->
     let* _, env1, _ = helper_p p env1 [] in
     let* t, env2, new_names = helper_p p env2 [] in
     prep
-      ((b, t) :: prep_bb)
+      ((d, t) :: prep_bb)
       decls
       env1
       env2
