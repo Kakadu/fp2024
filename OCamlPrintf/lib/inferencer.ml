@@ -8,8 +8,8 @@ open Pprinter
 type error =
   [ `Impossible_error
   | `No_variable_rec
+  | `No_arg_rec
   | `Occurs_check of string * core_type
-  | `Not_implemented
   | `No_variable of string
   | `Unification_failed of core_type * core_type
   ]
@@ -18,6 +18,10 @@ let pp_error ppf : error -> _ = function
   | `Impossible_error -> Format.fprintf ppf "Something went wrong"
   | `No_variable_rec ->
     Format.fprintf ppf "Only variables are allowed as left-hand side of `let rec'"
+  | `No_arg_rec ->
+    Format.fprintf
+      ppf
+      "This kind of expression is not allowed as right-hand side of `let rec'"
   | `Occurs_check (s, t) ->
     Format.fprintf
       ppf
@@ -25,7 +29,6 @@ let pp_error ppf : error -> _ = function
       s
       pp_core_type
       t
-  | `Not_implemented -> Format.fprintf ppf "Not_implemented"
   | `No_variable s -> Format.fprintf ppf "Undefined variable '%s'" s
   | `Unification_failed (l, r) ->
     Format.fprintf ppf "unification failed on %a and %a" pp_core_type l pp_core_type r
@@ -286,6 +289,23 @@ module TypeEnv = struct
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
 
+  let rec extend_with_pattern env_acc pat (Scheme (binder_set, ty) as scheme) =
+    match pat, ty with
+    | Pat_var value, _ -> extend env_acc value scheme
+    | Pat_tuple (fst, snd, rest_list), Type_tuple (fst_ty, snd_ty, rest_list_ty) ->
+      let env =
+        List.fold2
+          ~init:env_acc
+          ~f:(fun env pat ty -> extend_with_pattern env pat (Scheme (binder_set, ty)))
+          (fst :: snd :: rest_list)
+          (fst_ty :: snd_ty :: rest_list_ty)
+      in
+      (match env with
+       | Ok env -> env
+       | _ -> env_acc)
+    | _ -> env_acc
+  ;;
+
   let free_vars env =
     Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data acc ->
       VarSet.union acc (Scheme.free_vars data))
@@ -422,6 +442,20 @@ module Infer = struct
       return (env, c_type)
   ;;
 
+  let extend_env_with_bind_names env value_binding_list =
+    RList.fold_right
+      value_binding_list
+      ~init:(return (env, []))
+      ~f:(fun let_bind acc ->
+        match let_bind with
+        | { pat = Pat_var pat; _ } ->
+          let* env, fresh_acc = return acc in
+          let* fresh = fresh_var in
+          let env = TypeEnv.extend env pat (Scheme (VarSet.empty, fresh)) in
+          return (env, fresh :: fresh_acc)
+        | _ -> fail `No_variable_rec)
+  ;;
+
   let rec infer_expression (env : TypeEnv.t) (exp : Expression.t)
     : (Subst.t * core_type) State.t
     =
@@ -440,8 +474,15 @@ module Infer = struct
       let* composed_sub = Subst.compose sub2 sub1 in
       return (composed_sub, type2)
     | Exp_let (Recursive, value_binding, value_binding_list, exp) ->
+      let* env, fresh_acc =
+        extend_env_with_bind_names env (value_binding :: value_binding_list)
+      in
       let* env, sub1 =
-        rec_infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
+        rec_infer_value_binding_list
+          env
+          fresh_acc
+          Subst.empty
+          (value_binding :: value_binding_list)
       in
       let* sub2, type2 = infer_expression env exp in
       let* composed_sub = Subst.compose sub2 sub1 in
@@ -497,6 +538,7 @@ module Infer = struct
             let* sub_acc, type_acc = return acc in
             let* env, pat_type = infer_pattern env pat in
             let* unified_sub1 = unify exp_type pat_type in
+            let env = TypeEnv.apply unified_sub1 env in
             let* case_exp_sub, case_exp_type = infer_expression env case_exp in
             let* unified_sub2 = unify case_exp_type type_acc in
             let* composed_type =
@@ -599,22 +641,24 @@ module Infer = struct
 
   and infer_value_binding_list env sub = function
     | [] -> return (env, sub)
-    | { pat = Pat_var pat; exp } :: rest ->
+    | { pat; exp } :: rest ->
       let* new_sub, typ = infer_expression env exp in
       let* composed_sub = Subst.compose sub new_sub in
       let env = TypeEnv.apply composed_sub env in
       let generalized_ty =
         generalize env (Subst.apply composed_sub typ) Nonrecursive None
       in
-      let env = TypeEnv.extend env pat generalized_ty in
-      infer_value_binding_list env composed_sub rest
-    | _ -> fail `Not_implemented
+      let* env, pat_ty = infer_pattern env pat in
+      let env = TypeEnv.extend_with_pattern env pat generalized_ty in
+      let* unified_sub = unify typ pat_ty in
+      let* final_sub = Subst.compose composed_sub unified_sub in
+      let env = TypeEnv.apply final_sub env in
+      infer_value_binding_list env final_sub rest
 
-  and rec_infer_value_binding_list env sub = function
-    | [] -> return (env, sub)
-    | { pat = Pat_var pat; exp } :: rest ->
-      let* fresh = fresh_var in
-      let env = TypeEnv.extend env pat (Scheme (VarSet.empty, fresh)) in
+  and rec_infer_value_binding_list env fresh_acc sub let_binds =
+    match let_binds, fresh_acc with
+    | [], _ -> return (env, sub)
+    | { pat = Pat_var pat; exp } :: rest, fresh :: fresh_acc ->
       let* new_sub, typ = infer_expression env exp in
       let* sub2 = unify (Subst.apply new_sub fresh) typ in
       let* composed_sub = Subst.compose_all [ new_sub; sub2; sub ] in
@@ -623,7 +667,7 @@ module Infer = struct
         generalize env (Subst.apply composed_sub fresh) Recursive (Some pat)
       in
       let env = TypeEnv.extend env pat generalized_ty in
-      rec_infer_value_binding_list env composed_sub rest
+      rec_infer_value_binding_list env fresh_acc composed_sub rest
     | _ -> fail `No_variable_rec
   ;;
 
@@ -639,9 +683,13 @@ module Infer = struct
           in
           return env
         | Struct_value (Recursive, value_binding, value_binding_list) ->
+          let* env, fresh_acc =
+            extend_env_with_bind_names env (value_binding :: value_binding_list)
+          in
           let* env, _ =
             rec_infer_value_binding_list
               env
+              fresh_acc
               Subst.empty
               (value_binding :: value_binding_list)
           in

@@ -22,6 +22,13 @@ let%expect_test "type check undefined variable" =
   [%expect {| Infer error: Undefined variable 'b' |}]
 ;;
 
+let%expect_test "type check definition tuple" =
+  run {| let (a,b) = (1,2);; |};
+  [%expect {|
+    val a : int
+    val b : int |}]
+;;
+
 let%expect_test "type check definition variable" =
   run {| let a = 5 |};
   [%expect {| val a : int |}]
@@ -34,6 +41,13 @@ let%expect_test "type check several definition variable" =
     val q : int
     val r : string
   |}]
+;;
+
+let%expect_test "type check several recursive definition" =
+  run {| let rec f1 a = a + 1 and f2 b = f1 b;; |};
+  [%expect {|
+    val f1 : int -> int
+    val f2 : int -> int |}]
 ;;
 
 let%expect_test "type check definition function" =
@@ -180,7 +194,7 @@ let%expect_test "type check polymorphism" =
   [%expect
     {|
     val f1 : 'b -> 'b
-    val f2 : 'i -> 'i
+    val f2 : 'l -> 'l
     val foo1 : int
     val foo2 : char
     val foo3 : int

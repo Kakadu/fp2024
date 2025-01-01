@@ -5,8 +5,8 @@
 type error =
   [ `Impossible_error
   | `No_variable_rec
+  | `No_arg_rec
   | `Occurs_check of string * Ast.core_type
-  | `Not_implemented
   | `No_variable of string
   | `Unification_failed of Ast.core_type * Ast.core_type
   ]
