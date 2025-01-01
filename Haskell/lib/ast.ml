@@ -149,11 +149,14 @@ and listbld =
   (** e.g. [[1.. ] or [1..2] or [1, 2 .. 2] or [1, 3..]] *)
   | OrdList of ordinarylistbld
 
-and binding =
+and def =
   | VarsDef of pattern * bindingbody * binding_list
   (** e.g [x = let y = 12 in y * z where z = 5] *)
   | FunDef of ident * pattern * pattern_list * bindingbody * binding_list
   (** e.g [f x y = x + y + z where z = 2 ]*)
+
+and binding =
+  | Def of def
   | Decl of ident * tp (** e.g [f :: Int -> Int]*)
 
 (* had to do such a manual generator because of where shadowing*)
@@ -165,8 +168,8 @@ and binding_list =
         (return (Int.min 2 (n / 7)))
         (map
            (function
-             | VarsDef (p, b, _) -> VarsDef (p, b, [])
-             | FunDef (i, p, pp, b, _) -> FunDef (i, p, pp, b, [])
+             | Def (VarsDef (p, b, _)) -> Def (VarsDef (p, b, []))
+             | Def (FunDef (i, p, pp, b, _)) -> Def (FunDef (i, p, pp, b, []))
              | x -> x)
            (gen_binding_sized (n / 7))))])
 

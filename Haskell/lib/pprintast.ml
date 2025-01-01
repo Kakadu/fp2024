@@ -175,7 +175,7 @@ and pp_listbld fmt = function
   | OrdList ordinarylistbld -> pp_ordinarylistbld fmt ordinarylistbld
 
 and pp_binding fmt = function
-  | VarsDef (pattern, bindingbody, list) ->
+  | Def VarsDef (pattern, bindingbody, list) ->
     pp_pattern fmt pattern;
     (match bindingbody with
      | Guards _ -> ()
@@ -184,7 +184,7 @@ and pp_binding fmt = function
     (match list with
      | [] -> ()
      | _ -> fprintf fmt " where %a" (pp_list "; " pp_binding) list)
-  | FunDef (name, parameter, parameters_list, bindingbody, binding_list) ->
+  | Def FunDef (name, parameter, parameters_list, bindingbody, binding_list) ->
     fprintf
       fmt
       "%a %a%s"
