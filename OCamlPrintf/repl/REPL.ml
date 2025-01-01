@@ -4,6 +4,8 @@
 
 open Ocaml_printf_lib.Ast
 open Ocaml_printf_lib.Parser
+open Ocaml_printf_lib.Inferencer
+open Ocaml_printf_lib.Pprinter
 open Stdio
 
 type opts =
@@ -20,7 +22,15 @@ let run_single dump_parsetree input_source =
   let ast = parse text in
   match ast with
   | Error error -> print_endline error
-  | Ok ast -> if dump_parsetree then print_endline (show_structure ast)
+  | Ok ast ->
+    if dump_parsetree
+    then print_endline (show_structure ast)
+    else (
+      match run_inferencer ast env_with_print_int with
+      | Ok env ->
+        Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
+          if key <> "print_int" then Format.printf "val %s : %a\n" key pp_core_type ty)
+      | Error e -> Format.printf "Infer error: %a\n" pp_error e)
 ;;
 
 let () =

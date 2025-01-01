@@ -697,4 +697,11 @@ module Infer = struct
   ;;
 end
 
-let run_inferencer ast = State.run (Infer.infer_srtucture_item TypeEnv.empty ast)
+let env_with_print_int =
+  TypeEnv.extend
+    TypeEnv.empty
+    "print_int"
+    (Scheme (VarSet.empty, Type_arrow (Type_int, Type_unit)))
+;;
+
+let run_inferencer ast env = State.run (Infer.infer_srtucture_item env ast)

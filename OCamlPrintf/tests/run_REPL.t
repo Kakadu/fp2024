@@ -102,3 +102,6 @@ SPDX-License-Identifier: LGPL-3.0-or-later
         },
       []))
     ]
+
+  $ ../repl/REPL.exe -fromfile factorial.txt
+  val factorial : int -> int

@@ -9,7 +9,7 @@ open Ocaml_printf_lib.Inferencer
 let run str =
   match parse str with
   | Ok ast ->
-    (match run_inferencer ast with
+    (match run_inferencer ast TypeEnv.empty with
      | Ok env ->
        Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
          Format.printf "val %s : %a\n" key pp_core_type ty)

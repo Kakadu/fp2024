@@ -160,4 +160,5 @@ module Infer : sig
   val infer_srtucture_item : TypeEnv.t -> Ast.structure_item list -> TypeEnv.t State.t
 end
 
-val run_inferencer : Ast.structure_item list -> (TypeEnv.t, error) result
+val env_with_print_int : TypeEnv.t
+val run_inferencer : Ast.structure_item list -> TypeEnv.t -> (TypeEnv.t, error) result
