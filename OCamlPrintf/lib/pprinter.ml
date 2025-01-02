@@ -165,7 +165,7 @@ let rec pp_expression ppf = function
       (pp_print_list ~pp_sep:pp_space pp_pattern)
       (first_pat :: pat_list);
     pp_exp_constraint exp
-  | Exp_apply (exp_fn, exp) -> pp_exp_apply ppf (exp_fn, exp)
+  | Exp_apply (exp1, exp2) -> pp_exp_apply ppf (exp1, exp2)
   | Exp_function (first_case, case_list) ->
     fprintf
       ppf
@@ -218,10 +218,10 @@ let rec pp_expression ppf = function
   | Exp_constraint (exp, core_type) ->
     fprintf ppf "(%a : %a)" pp_expression exp pp_core_type core_type
 
-and pp_exp_apply ppf (exp_fn, exp) =
-  match exp_fn with
+and pp_exp_apply ppf (exp1, exp2) =
+  match exp1 with
   | Exp_ident exp_opr when is_operator exp_opr ->
-    (match exp with
+    (match exp2 with
      | Exp_apply (Exp_apply (Exp_ident opr1, exp1), opn) when is_operator opr1 ->
        (match get_priority exp_opr with
         | 4 | 5 ->
@@ -258,13 +258,14 @@ and pp_exp_apply ppf (exp_fn, exp) =
           else fprintf ppf "%a" pp_exp_apply (Exp_ident opr2, exp2))
      | Exp_apply (opn1, opn2) ->
        fprintf ppf "%a %s %a" pp_expression opn1 exp_opr pp_expression opn2
-     | _ -> pp_expression ppf exp)
-  | _ ->
+     | _ -> pp_expression ppf exp2)
+  | exp ->
     (match exp with
-     | Exp_apply (_, Exp_apply _) ->
-       fprintf ppf "%a (%a)" pp_expression exp_fn pp_expression exp
-     | Exp_apply (_, _) -> fprintf ppf "%a %a " pp_expression exp_fn pp_expression exp
-     | _ -> fprintf ppf "%a %a" pp_expression exp_fn pp_expression exp)
+     | Exp_apply _ -> fprintf ppf " "
+     | _ -> fprintf ppf "");
+    (match exp2 with
+     | Exp_apply (_, _) -> fprintf ppf "%a (%a)" pp_expression exp1 pp_expression exp2
+     | _ -> fprintf ppf "%a %a" pp_expression exp1 pp_expression exp2)
 
 and pp_exp_constraint ppf = function
   | Exp_constraint (exp', core_type) ->

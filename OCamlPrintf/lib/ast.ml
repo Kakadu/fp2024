@@ -153,9 +153,41 @@ module Expression = struct
     | Exp_let of
         rec_flag
         * (value_binding_exp
-          [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
+          [@gen
+            oneof
+              [ map2
+                  (fun id exp -> { pat = Pat_var id; exp })
+                  gen_ident
+                  (gen_sized (n / coef))
+              ; map2
+                  (fun pat exp ->
+                    { pat
+                    ; exp =
+                        (match exp with
+                         | Exp_fun (_, _, exp) -> exp
+                         | exp -> exp)
+                    })
+                  gen_pattern
+                  (gen_sized (n / coef))
+              ]])
         * (value_binding_exp
-          [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
+          [@gen
+            oneof
+              [ map2
+                  (fun id exp -> { pat = Pat_var id; exp })
+                  gen_ident
+                  (gen_sized (n / coef))
+              ; map2
+                  (fun pat exp ->
+                    { pat
+                    ; exp =
+                        (match exp with
+                         | Exp_fun (_, _, exp) -> exp
+                         | exp -> exp)
+                    })
+                  gen_pattern
+                  (gen_sized (n / coef))
+              ]])
             list_
         * (t[@gen gen_sized (n / coef)])
     | Exp_fun of pattern * pattern list_ * (t[@gen gen_sized (n / coef)])

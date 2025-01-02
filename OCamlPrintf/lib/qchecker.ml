@@ -109,10 +109,10 @@ module TestQCheckManual = struct
     @@ fix (fun self ->
          function
          | 0 ->
-           frequency
-             [ 1, return Pat_any
-             ; 1, map (fun i -> Pat_var i) gen_ident
-             ; 1, map (fun c -> Pat_constant c) gen_constant
+           oneof
+             [ return Pat_any
+             ; map (fun i -> Pat_var i) gen_ident
+             ; map (fun c -> Pat_constant c) gen_constant
              ]
          | n ->
            oneof
@@ -145,6 +145,18 @@ module TestQCheckManual = struct
              ])
   ;;
 
+  let is_exp_fun = function
+    | Exp_fun (_, _, exp) -> exp
+    | exp -> exp
+  ;;
+
+  let gen_vb_without_flag gen =
+    oneof
+      [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident gen
+      ; map2 (fun pat exp -> { pat; exp = is_exp_fun exp }) gen_pattern gen
+      ]
+  ;;
+
   let gen_expression =
     sized
     @@ fix (fun self ->
@@ -161,10 +173,9 @@ module TestQCheckManual = struct
              ; map3
                  (fun rec_fl first_value_binding value_binding_list exp ->
                    Exp_let (rec_fl, first_value_binding, value_binding_list, exp))
-                 (frequency [ 1, return Nonrecursive; 1, return Recursive ])
-                 (map2 (fun pat exp -> { pat; exp }) gen_pattern (self (Random.int 3)))
-                 (gen_list
-                    (map2 (fun pat exp -> { pat; exp }) gen_pattern (self (Random.int 3))))
+                 (oneof [ return Nonrecursive; return Recursive ])
+                 (gen_vb_without_flag (self (n / coef)))
+                 (gen_list (gen_vb_without_flag (self (n / coef))))
                <*> self (n / coef)
              ; map3
                  (fun first_pat pat_list exp -> Exp_fun (first_pat, pat_list, exp))
@@ -179,27 +190,21 @@ module TestQCheckManual = struct
                  (self (n / coef))
              ; map2
                  (fun first_case case_list -> Exp_function (first_case, case_list))
-                 (map2
-                    (fun left right -> { left; right })
-                    gen_pattern
-                    (self (Random.int 3)))
+                 (map2 (fun left right -> { left; right }) gen_pattern (self (n / coef)))
                  (gen_list
                     (map2
                        (fun left right -> { left; right })
                        gen_pattern
-                       (self (Random.int 3))))
+                       (self (n / coef))))
              ; map3
                  (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
                  (self (n / coef))
-                 (map2
-                    (fun left right -> { left; right })
-                    gen_pattern
-                    (self (Random.int 3)))
+                 (map2 (fun left right -> { left; right }) gen_pattern (self (n / coef)))
                  (gen_list
                     (map2
                        (fun left right -> { left; right })
                        gen_pattern
-                       (self (Random.int 3))))
+                       (self (n / coef))))
              ; map3
                  (fun first second list -> Exp_tuple (first, second, list))
                  (self (n / coef))
@@ -235,18 +240,15 @@ module TestQCheckManual = struct
              ])
   ;;
 
-  let gen_value_binding = map2 (fun pat exp -> { pat; exp }) gen_pattern gen_expression
-
   let gen_structure_item =
-    frequency
-      [ 1, map (fun exp -> Struct_eval exp) gen_expression
-      ; ( 1
-        , map3
-            (fun rec_flag first_value_binding value_binding_list ->
-              Struct_value (rec_flag, first_value_binding, value_binding_list))
-            (frequency [ 1, return Nonrecursive; 1, return Recursive ])
-            gen_value_binding
-            (gen_list_nat gen_value_binding) )
+    oneof
+      [ map (fun exp -> Struct_eval exp) gen_expression
+      ; map3
+          (fun rec_flag first_value_binding value_binding_list ->
+            Struct_value (rec_flag, first_value_binding, value_binding_list))
+          (oneof [ return Nonrecursive; return Recursive ])
+          (gen_vb_without_flag gen_expression)
+          (gen_list_nat (gen_vb_without_flag gen_expression))
       ]
   ;;
 
