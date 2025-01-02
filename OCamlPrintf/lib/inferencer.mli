@@ -6,6 +6,7 @@ type error =
   [ `Impossible_error
   | `No_variable_rec
   | `No_arg_rec
+  | `Bound_several_times
   | `Occurs_check of string * Ast.core_type
   | `No_variable of string
   | `Unification_failed of Ast.core_type * Ast.core_type
@@ -141,7 +142,7 @@ module Infer : sig
   val generalize
     :  TypeEnv.t
     -> Ast.core_type
-    -> Ast.rec_flag
+    -> remove_from_env:bool
     -> Ast.ident option
     -> scheme
 

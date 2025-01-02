@@ -57,6 +57,16 @@ let%expect_test "type check definition function" =
   |}]
 ;;
 
+let%expect_test "type check definition construct" =
+  run {|
+  let (a :: b :: []) = [ 1; 2 ]
+    |};
+  [%expect {|
+    val a : int
+    val b : int
+  |}]
+;;
+
 let%expect_test "type check recursive let expression" =
   run
     {| 
@@ -130,12 +140,12 @@ let%expect_test "type check pattern-matching" =
 ;;
    |};
   [%expect {|
-    val fmap : ('d -> 'g) -> 'd list -> 'g list
+    val fmap : ('d -> 'w) -> 'd list -> 'w list
   |}]
 ;;
 
 let%expect_test "type check of pattern list" =
-  run {| let f a = match a with | [q; q] -> q | [w; 2] -> w |};
+  run {| let f a = match a with | [q; 1] -> q | [w; _] -> w |};
   [%expect {|
     val f : int list -> int
   |}]
@@ -150,6 +160,17 @@ let%expect_test "type check Some and None" =
 ;;
   |};
   [%expect {| val f : 'c option -> char option |}]
+;;
+
+let%expect_test "type check definition function" =
+  run {|
+  let f = function
+    | Some a -> a
+    | None -> false 
+    |};
+  [%expect {|
+    val f : bool option -> bool
+  |}]
 ;;
 
 let%expect_test "type check expression constraint" =
