@@ -399,6 +399,14 @@ let parse_case parse_exp =
   return { left = pat; right = exp }
 ;;
 
+let parse_exp_function parse_exp =
+  ws
+  *> keyword "function"
+  *>
+  let* case_list = ws *> sep_by1 (ws *> string "|" *> ws) (parse_case parse_exp) in
+  return (Exp_function (List.hd_exn case_list, safe_tl case_list))
+;;
+
 let parse_exp_match parse_exp =
   let* exp = ws *> keyword "match" *> ws *> parse_exp <* ws <* keyword "with" in
   let* case_list = ws *> sep_by1 (ws *> string "|" *> ws) (parse_case parse_exp) in
@@ -477,6 +485,7 @@ let parse_expression =
         ; skip_parens parse_full_exp
         ; parse_exp_let parse_full_exp
         ; parse_exp_fun parse_full_exp
+        ; parse_exp_function parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
         ; parse_exp_construct parse_full_exp

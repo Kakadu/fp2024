@@ -177,6 +177,17 @@ module TestQCheckManual = struct
                  gen_bin_opr
                  (self (n / coef))
                  (self (n / coef))
+             ; map2
+                 (fun first_case case_list -> Exp_function (first_case, case_list))
+                 (map2
+                    (fun left right -> { left; right })
+                    gen_pattern
+                    (self (Random.int 3)))
+                 (gen_list
+                    (map2
+                       (fun left right -> { left; right })
+                       gen_pattern
+                       (self (Random.int 3))))
              ; map3
                  (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
                  (self (n / coef))

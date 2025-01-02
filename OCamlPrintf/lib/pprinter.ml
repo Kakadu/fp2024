@@ -166,6 +166,12 @@ let rec pp_expression ppf = function
       (first_pat :: pat_list);
     pp_exp_constraint exp
   | Exp_apply (exp_fn, exp) -> pp_exp_apply ppf (exp_fn, exp)
+  | Exp_function (first_case, case_list) ->
+    fprintf
+      ppf
+      "(function %a)"
+      (pp_print_list ~pp_sep:pp_space pp_case)
+      (first_case :: case_list)
   | Exp_match (exp, first_case, case_list) ->
     fprintf ppf "(match %a with" pp_expression exp;
     fprintf ppf " %a)" (pp_print_list ~pp_sep:pp_space pp_case) (first_case :: case_list)

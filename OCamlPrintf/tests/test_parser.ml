@@ -70,15 +70,13 @@ let%expect_test "parsing pattern and expression list construct" =
 
 let%expect_test "parsing option and bool types" =
   run {|
-  let f a =
-    match a with
+  let f = function
     | Some _ -> true
     | None -> false
   ;;
   |};
-  [%expect
-    {|
-  let f = (fun a -> (match a with | Some (_) -> true | None -> false));;
+  [%expect {|
+  let f = (function | Some (_) -> true | None -> false);;
   |}]
 ;;
 

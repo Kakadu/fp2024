@@ -70,6 +70,11 @@ let rec shrink_expression = function
     shrink_expression exp
     >|= (fun exp_fn' -> Exp_apply (exp_fn', exp))
     <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp_fn, exp'))
+  | Exp_function (first_case, case_list) ->
+    shrink_case first_case
+    >|= (fun first_case' -> Exp_function (first_case', case_list))
+    <+> (list ~shrink:shrink_case case_list
+         >|= fun case_list' -> Exp_function (first_case, case_list'))
   | Exp_match (exp, first_case, case_list) ->
     return exp
     <+> (shrink_expression exp >|= fun exp' -> Exp_match (exp', first_case, case_list))

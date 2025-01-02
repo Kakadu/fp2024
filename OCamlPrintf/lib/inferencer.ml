@@ -529,6 +529,7 @@ module Infer = struct
          let* composed_sub = Subst.compose_all [ sub3; sub2; sub1 ] in
          let final_type = Subst.apply composed_sub fresh in
          return (composed_sub, final_type))
+    | Exp_function (_, _) -> fail `Impossible_error
     | Exp_match (exp, case, case_list) ->
       let* exp_sub, exp_type = infer_expression env exp in
       let* fresh = fresh_var in

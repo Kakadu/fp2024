@@ -25,6 +25,7 @@ let is_keyword = function
   | "if"
   | "in"
   | "let"
+  | "function"
   | "match"
   | "rec"
   | "then"
@@ -185,6 +186,13 @@ module Expression = struct
                 (gen_sized (n / coef))
                 (gen_sized (n / coef))
             ]])
+    | Exp_function of
+        (case_exp
+        [@gen map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
+        * (case_exp
+          [@gen
+            map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
+            list_
     | Exp_match of
         (t[@gen gen_sized (n / coef)])
         * (case_exp

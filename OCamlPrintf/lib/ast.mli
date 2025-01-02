@@ -99,6 +99,7 @@ module Expression : sig
     | Exp_fun of pattern * pattern list_ * t
     (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
     | Exp_apply of (t * t) (** [Exp_apply(E0, E1)] represents [E0 E1] *)
+    | Exp_function of t case * t case list_ (** [function P1 -> E1 | ... | Pn -> En] *)
     | Exp_match of t * t case * t case list_
     (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
     | Exp_tuple of t * t * t list_ (** ts [(E1, ... , En)] *)
