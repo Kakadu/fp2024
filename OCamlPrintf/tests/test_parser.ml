@@ -23,7 +23,7 @@ let%expect_test "parsing value structure and factorial with `match'" =
   |};
   [%expect
     {|
-  let rec factorial = (fun n -> (match n with | 0 -> 1 | 1 -> 1 | _ -> n * factorial (n - 1)));;
+  let rec factorial n = match n with | 0 -> 1 | 1 -> 1 | _ -> n * factorial (n - 1);;
   |}]
 ;;
 
@@ -32,7 +32,7 @@ let%expect_test "parsing expression with `fun'" =
   let sum = fun x -> (fun y -> x + y);;
   |};
   [%expect {|
-  let sum = (fun x -> (fun y -> x + y));;
+  let sum x = fun y -> x + y;;
   |}]
 ;;
 
@@ -41,16 +41,16 @@ let%expect_test "parsing pattern and expression tuples" =
   let a, b = 1, 2
   |};
   [%expect {|
-  let (a, b) = (1, 2);;
+  let a, b = 1, 2;;
   |}]
 ;;
 
 let%expect_test "parsing expression list" =
   run {|
-  let list_ = [1; 2; 3]
+  let list_ = [ 1; 2; 3 ]
   |};
   [%expect {|
-  let list_ = [1; 2; 3];;
+  let list_ = [ 1; 2; 3 ];;
   |}]
 ;;
 
@@ -64,7 +64,7 @@ let%expect_test "parsing pattern and expression list construct" =
   |};
   [%expect
     {|
-  (let list = [1; 2; 3] in (match list with | [1; 2; 3] -> true | _ -> false));;
+  let list = [ 1; 2; 3 ] in (match list with | [ 1; 2; 3 ] -> true | _ -> false);;
   |}]
 ;;
 
@@ -76,7 +76,7 @@ let%expect_test "parsing option and bool types" =
   ;;
   |};
   [%expect {|
-  let f = (function | Some (_) -> true | None -> false);;
+  let f = function | Some (_) -> true | None -> false;;
   |}]
 ;;
 
@@ -84,9 +84,8 @@ let%expect_test "parsing chain right associative" =
   run {|
   let f x y z = if x = 0 && y = 1 || z >= 2 then 2 else 26;;
   |};
-  [%expect
-    {|
-  let f = (fun x y z -> (if x = 0 && y = 1 || z >= 2 then 2 else 26));;
+  [%expect {|
+  let f x y z = if x = 0 && y = 1 || z >= 2 then 2 else 26;;
   |}]
 ;;
 
@@ -113,26 +112,26 @@ let%expect_test "parsing several structure items" =
   let squared x = x * x;; squared 5
   |};
   [%expect {|
-  let squared = (fun x -> x * x);;
+  let squared x = x * x;;
   squared 5;;
   |}]
 ;;
 
 let%expect_test "parsing sequence and exepression construct" =
   run {|
-  [1; 2; 3]; "qwerty123"
+  [ 1; 2; 3 ]; "qwerty123"
   |};
   [%expect {|
-  ([1; 2; 3]; "qwerty123");;
+  [ 1; 2; 3 ]; "qwerty123";;
   |}]
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 1" =
   run {|
-  let f : int list = [1; 2; 3];;
+  let f : int list = [ 1; 2; 3 ];;
   |};
   [%expect {|
-  let f : int list = [1; 2; 3];;
+  let f : int list = [ 1; 2; 3 ];;
   |}]
 ;;
 
@@ -143,7 +142,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 2" =
   |};
   [%expect
     {|
-  let f : (int * char * string list) = (1, 'a', ["first"; "second"; "third"]);;
+  let f : int * char * string list = 1, 'a', [ "first"; "second"; "third" ];;
   |}]
 ;;
 
@@ -152,7 +151,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 3" =
   let f (a : int) (b : int) : int = a + b;;
   |};
   [%expect {|
-  let f = (fun (a : int) (b : int) : int -> a + b);;
+  let f (a : int) (b : int) : int = a + b;;
   |}]
 ;;
 
@@ -161,7 +160,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
   let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
   |};
   [%expect {|
-  let (a : int -> (char -> int) -> int) = 1 + (x : char -> int);;
+  let a : int -> (char -> int) -> int = 1 + (x : char -> int);;
   |}]
 ;;
 

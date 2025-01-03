@@ -92,15 +92,15 @@ module Expression : sig
   and t =
     | Exp_ident of ident (** Identifier such as [x] *)
     | Exp_constant of constant (** ts constant such as [1], ['a'], ["true"] *)
-    | Exp_let of rec_flag * t value_binding * t value_binding list_ * t
+    | Exp_let of rec_flag * value_binding_exp * value_binding_exp list_ * t
     (** [Exp_let(flag, [(P1, E1); ... ; (Pn, En)], E)] represents:
         - [let     P1 = E1 and ... and Pn = En in E] when [flag] is [Nonrecursive],
         - [let rec P1 = E1 and ... and Pn = En in E] when [flag] is [Recursive]. *)
     | Exp_fun of pattern * pattern list_ * t
     (** [Exp_fun([P1; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
     | Exp_apply of (t * t) (** [Exp_apply(E0, E1)] represents [E0 E1] *)
-    | Exp_function of t case * t case list_ (** [function P1 -> E1 | ... | Pn -> En] *)
-    | Exp_match of t * t case * t case list_
+    | Exp_function of case_exp * case_exp list_ (** [function P1 -> E1 | ... | Pn -> En] *)
+    | Exp_match of t * case_exp * case_exp list_
     (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
     | Exp_tuple of t * t * t list_ (** ts [(E1, ... , En)] *)
     | Exp_construct of (ident * t option)
@@ -119,7 +119,7 @@ end
 type structure_item =
   | Struct_eval of Expression.t (** [E] *)
   | Struct_value of
-      rec_flag * Expression.t value_binding * Expression.t value_binding list_
+      rec_flag * Expression.value_binding_exp * Expression.value_binding_exp list_
   (** [Struct_value(flag, [(P1, E1); ... ; (Pn, En))])] represents:
       - [let     P1 = E1 and ... and Pn = En] when [flag] is [Nonrecursive],
       - [let rec P1 = E1 and ... and Pn = En] when [flag] is [Recursive]. *)

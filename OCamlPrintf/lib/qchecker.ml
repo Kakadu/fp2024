@@ -145,15 +145,15 @@ module TestQCheckManual = struct
              ])
   ;;
 
-  let is_exp_fun = function
-    | Exp_fun (_, _, exp) -> exp
+  let rec fix_exp_fun = function
+    | Exp_fun (_, _, exp) -> fix_exp_fun exp
     | exp -> exp
   ;;
 
   let gen_vb_without_flag gen =
     oneof
       [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident gen
-      ; map2 (fun pat exp -> { pat; exp = is_exp_fun exp }) gen_pattern gen
+      ; map2 (fun pat exp -> { pat; exp = fix_exp_fun exp }) gen_pattern gen
       ]
   ;;
 

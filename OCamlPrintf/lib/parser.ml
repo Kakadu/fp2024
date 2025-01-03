@@ -309,33 +309,41 @@ let or_ = parse_operator [ "||" ]
 
 (* -------------------- Value_binding -------------------- *)
 
-let parse_constraint parse_exp =
-  let* exp = ws *> string "(" *> parse_exp in
-  let* type' = ws *> string ":" *> parse_core_type <* ws <* string ")" in
+let parse_constraint parse_exp op =
+  let* type' = ws *> string ":" *> parse_core_type in
+  let* exp = ws *> string op *> parse_exp in
   return (Exp_constraint (exp, type'))
-;;
-
-let parse_exp_constraint parse_exp op =
-  let parse_exp_with_constraint =
-    let* type' = ws *> string ":" *> parse_core_type in
-    let* exp = ws *> string op *> parse_exp in
-    return (Exp_constraint (exp, type'))
-  in
-  let parse_exp_without_constraint = ws *> string op *> parse_exp in
-  ws *> choice [ parse_exp_with_constraint; parse_exp_without_constraint ]
 ;;
 
 let parse_fun_binding parse_exp =
   let* name = ws *> parse_pat_var in
-  let* pat_list = ws *> sep_by1 ws parse_pattern in
-  let* exp = parse_exp_constraint parse_exp "=" in
-  return { pat = name; exp = Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp) }
+  let* pat_list = ws *> many1 parse_pattern in
+  choice
+    [ (let* exp = parse_constraint parse_exp "=" in
+       match exp with
+       | Exp_constraint (exp, type') ->
+         return
+           { pat = Pat_constraint (name, type')
+           ; exp = Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp)
+           }
+       | _ ->
+         return
+           { pat = name; exp = Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp) })
+    ; (let* exp = ws *> string "=" *> parse_exp in
+       return { pat = name; exp = Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp) })
+    ]
 ;;
 
 let parse_simple_binding parse_exp =
   let* pat = parse_pattern in
-  let* exp = parse_exp_constraint parse_exp "=" in
-  return { pat; exp }
+  choice
+    [ (let* exp = parse_constraint parse_exp "=" in
+       match exp with
+       | Exp_constraint (exp, type') -> return { pat = Pat_constraint (pat, type'); exp }
+       | _ -> return { pat; exp })
+    ; (let* exp = ws *> string "=" *> parse_exp in
+       return { pat; exp })
+    ]
 ;;
 
 let parse_value_binding_list parse_exp =
@@ -367,9 +375,17 @@ let parse_exp_fun parse_exp =
   ws
   *> keyword "fun"
   *>
-  let* pat_list = many1 parse_pattern in
-  let* exp = parse_exp_constraint parse_exp "->" in
-  return (Exp_fun (List.hd_exn pat_list, safe_tl pat_list, exp))
+  let* pat = parse_pattern in
+  let* pat_list = ws *> many parse_pattern in
+  choice
+    [ (let* exp = parse_constraint parse_exp "->" in
+       match exp with
+       | Exp_constraint (exp, type') ->
+         return (Exp_fun (Pat_constraint (pat, type'), pat_list, exp))
+       | _ -> return (Exp_fun (pat, pat_list, exp)))
+    ; (let* exp = ws *> string "->" *> parse_exp in
+       return (Exp_fun (pat, pat_list, exp)))
+    ]
 ;;
 
 let parse_exp_apply_fun parse_exp =
@@ -475,6 +491,12 @@ let parse_exp_sequence parse_exp =
     (ws *> string ";" *> return (fun exp1 exp2 -> Exp_sequence (exp1, exp2)))
 ;;
 
+let parse_exp_constraint parse_exp =
+  let* exp = ws *> string "(" *> parse_exp in
+  let* type' = ws *> string ":" *> parse_core_type <* ws <* string ")" in
+  return (Exp_constraint (exp, type'))
+;;
+
 let parse_expression =
   ws
   *> fix (fun parse_full_exp ->
@@ -489,7 +511,7 @@ let parse_expression =
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
         ; parse_exp_construct parse_full_exp
-        ; parse_constraint parse_full_exp
+        ; parse_exp_constraint parse_full_exp
         ]
     in
     let parse_exp = parse_exp_construct_keyword parse_exp <|> parse_exp in
