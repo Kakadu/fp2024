@@ -36,6 +36,7 @@ module R : sig
   include Base.Monad.Infix with type 'a t := 'a t
 
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( <|> ) : 'a t -> 'a t -> 'a t
 end = struct
   open Base
   open Result
@@ -45,13 +46,19 @@ end = struct
   let ( >>| ) x f =
     match x with
     | Ok x -> Ok (f x)
-    | Result.Error e -> Result.Error e
+    | Error e -> Error e
   ;;
 
   let ( >>= ) x f =
     match x with
-    | Result.Error x -> Error x
+    | Error x -> Error x
     | Ok a -> f a
+  ;;
+
+  let ( <|> ) x y =
+    match x with
+    | Ok x -> Ok x
+    | Error _ -> y
   ;;
 
   let fail = Base.Result.fail
@@ -93,31 +100,30 @@ open Env
 let rec match_pattern env =
   let match_pattern_list env pl vl =
     Base.List.fold2_exn
-      ~init:(Some env)
+      ~init:(return env)
       ~f:(fun acc pat value ->
-        match acc with
-        | Some env -> match_pattern env (pat, value)
-        | None -> None)
+        let* acc = acc in
+        match_pattern acc (pat, value))
       pl
       vl
   in
   function
-  | Wild, _ -> Some env
+  | Wild, _ -> return env
   | PList pl, VList vl when List.length pl = List.length vl ->
     match_pattern_list env pl vl
   | PCons (hd, tl), VList (vhd :: vtl) ->
     match_pattern_list env [ hd; tl ] [ vhd; VList vtl ]
   | PTuple (pfst, psnd, prest), VTuple (vfst, vsnd, vrest) ->
     match_pattern_list env (pfst :: psnd :: prest) (vfst :: vsnd :: vrest)
-  | PConst (Int_lt p), VInt v when p = v -> Some env
-  | PConst (Bool_lt p), VBool v when p = v -> Some env
-  | PConst (String_lt p), VString v when p = v -> Some env
-  | PConst Unit_lt, VUnit -> Some env
-  | PVar (Ident name), v -> Some (Env.extend env name v)
+  | PConst (Int_lt p), VInt v when p = v -> return env
+  | PConst (Bool_lt p), VBool v when p = v -> return env
+  | PConst (String_lt p), VString v when p = v -> return env
+  | PConst Unit_lt, VUnit -> return env
+  | PVar (Ident name), v -> return (Env.extend env name v)
   | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
-  | POption None, VOption None -> Some env
+  | POption None, VOption None -> return env
   | PConstraint (p, _), v -> match_pattern env (p, v)
-  | _ -> None
+  | _ -> fail `Match_failure
 ;;
 
 let rec eval_binequal =
@@ -211,11 +217,7 @@ let rec eval_expr env = function
     let* applying_arg_value = eval_expr env applying_arg in
     (match f_value with
      | VFun (name, arg, args, body, env) ->
-       let* env =
-         match match_pattern env (arg, applying_arg_value) with
-         | Some env -> return env
-         | None -> fail `Match_failure
-       in
+       let* env = match_pattern env (arg, applying_arg_value) in
        let env =
          match name with
          | Some name -> Env.extend env name f_value
@@ -252,10 +254,9 @@ and eval_expr_fold env l =
 and eval_match env v = function
   | [] -> fail `Match_failure
   | (pat, expr) :: tl ->
-    let ext_env = match_pattern env (pat, v) in
-    (match ext_env with
-     | Some ext_env -> eval_expr ext_env expr
-     | None -> eval_match env v tl)
+    (let* ext_env = match_pattern env (pat, v) in
+     eval_expr ext_env expr)
+    <|> eval_match env v tl
 
 and extend_env_with_let_bind env rec_flag = function
   | Let_bind (name, args, body) ->
@@ -268,9 +269,8 @@ and extend_env_with_let_bind env rec_flag = function
             | Rec -> VFun (Some n, arg1, args, body, env)
             | Nonrec -> VFun (None, arg1, args, body, env)
           in
-          (match match_pattern env (name, value) with
-           | Some env -> return (Some n, env)
-           | None -> fail `Match_failure)
+          let* env = match_pattern env (name, value) in
+          return (Some n, env)
         | _ -> fail `Args_after_not_variable_let)
      | [] ->
        let n =
@@ -279,9 +279,8 @@ and extend_env_with_let_bind env rec_flag = function
          | _ -> None
        in
        let* value = eval_expr env body in
-       (match match_pattern env (name, value) with
-        | Some env -> return (n, env)
-        | None -> fail `Match_failure))
+       let* env = match_pattern env (name, value) in
+       return (n, env))
 
 and extend_env_with_let_binds env rec_flag let_binds =
   let* names, env =
