@@ -11,7 +11,7 @@ val pp_constant : Format.formatter -> Ast.constant -> unit
 val pp_core_type : Format.formatter -> Ast.core_type -> unit
 val pp_pattern : Format.formatter -> Ast.pattern -> unit
 val pp_expression : Format.formatter -> Ast.Expression.t -> unit
-val pp_value_binding : Format.formatter -> Ast.Expression.t Ast.value_binding -> unit
-val pp_case : Format.formatter -> Ast.Expression.t Ast.case -> unit
+val pp_value_binding : Format.formatter -> Ast.Expression.value_binding_exp -> unit
+val pp_case : Format.formatter -> Ast.Expression.case_exp -> unit
 val pp_structure_item : Format.formatter -> Ast.structure_item -> unit
 val pp_structure : Format.formatter -> Ast.structure -> unit

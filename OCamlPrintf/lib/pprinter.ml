@@ -40,12 +40,6 @@ let is_type_list_or_option = function
   | _ -> false
 ;;
 
-let compare_priority op1 op2 =
-  let priority1 = get_priority op1 in
-  let priority2 = get_priority op2 in
-  priority1 <= priority2
-;;
-
 let pp_rec_flag ppf = function
   | Recursive -> fprintf ppf "let rec "
   | Nonrecursive -> fprintf ppf "let "

@@ -278,25 +278,35 @@ let failure ast =
      | Error error -> error)
 ;;
 
-let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) name type_gen =
-  let gen = QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure in
-  QCheck_base_runner.run_tests
-    ~verbose:true
-    [ QCheck.Test.make ~count ~name gen (fun ast ->
-        match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
-        | Ok ast_parsed ->
-          if ast = ast_parsed
-          then (
-            if show_passed
-            then Format.printf "\n*** PPrinter ***\n%a\n" Pprinter.pp_structure ast;
-            true)
-          else (
-            if show_shrinker
-            then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
-            false)
-        | Error _ ->
-          if show_shrinker
-          then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
-          false)
+let rule_gen ?(show_passed = false) ?(show_shrinker = false) ast =
+  match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
+  | Ok ast_parsed ->
+    if ast = ast_parsed
+    then (
+      if show_passed
+      then Format.printf "\n*** PPrinter ***\n%a\n" Pprinter.pp_structure ast;
+      true)
+    else (
+      if show_shrinker
+      then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
+      false)
+  | Error _ ->
+    if show_shrinker
+    then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
+    false
+;;
+
+let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) =
+  let gen type_gen =
+    QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure
+  in
+  QCheck_base_runner.run_tests_main
+    [ QCheck.Test.make ~count ~name:"the manual generator" (gen gen_structure) (fun ast ->
+        rule_gen ~show_passed ~show_shrinker ast)
+    ; QCheck.Test.make
+        ~count
+        ~name:"the auto generator"
+        (gen Ast.gen_structure)
+        (fun ast -> rule_gen ~show_passed ~show_shrinker ast)
     ]
 ;;
