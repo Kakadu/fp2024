@@ -402,8 +402,18 @@ let parse_exp_apply_op parse_exp =
   parse_right_bin_op parse_cur_exp or_
 ;;
 
-let parse_exp_apply parse_exp =
+let parse_unary_op parse_exp =
+  ws
+  *> (string "-" *> parse_exp
+      >>| (fun exp -> Exp_apply (Exp_ident "~-", exp))
+      <|> parse_exp)
+;;
+
+let parse_exp_apply ~with_un_op parse_exp =
   let parse_cur_exp = parse_exp_apply_fun parse_exp in
+  let parse_cur_exp =
+    if with_un_op then parse_unary_op parse_cur_exp else parse_cur_exp
+  in
   parse_exp_apply_op parse_cur_exp
 ;;
 
@@ -516,9 +526,9 @@ let parse_expression =
     in
     let parse_exp = parse_exp_construct_keyword parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_apply parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_apply ~with_un_op:true parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_apply parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_apply ~with_un_op:false parse_exp <|> parse_exp in
     let parse_exp = parse_exp_sequence parse_exp <|> parse_exp in
     let parse_exp = parse_exp_list_construct parse_exp <|> parse_exp in
     parse_exp_tuple parse_exp <|> parse_exp)

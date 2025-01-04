@@ -184,6 +184,7 @@ module Expression = struct
                 (fun exp first_exp -> exp, first_exp)
                 (gen_sized 0)
                 (gen_sized (n / coef))
+            ; map (fun exp -> Exp_ident "~-", exp) (gen_sized (n / coef))
             ; map3
                 (fun opr opn1 opn2 -> opr, Exp_apply (opn1, opn2))
                 (oneofl

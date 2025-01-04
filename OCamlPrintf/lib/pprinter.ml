@@ -25,6 +25,11 @@ let op_list =
 let is_operator op = List.exists (fun (str, _) -> str = op) op_list
 let get_priority op = List.assoc op op_list
 
+let is_negative_op = function
+  | "~-" -> true
+  | _ -> false
+;;
+
 let is_type_arrow = function
   | Type_arrow (_, _) -> true
   | _ -> false
@@ -313,10 +318,15 @@ and pp_exp_apply n ppf (exp1, exp2) =
          (pp_expression_deep (n + 1))
          opn2
      | _ -> (pp_expression_deep (n + 1)) ppf exp2)
+  | Exp_ident exp_opr when is_negative_op exp_opr ->
+    (match exp2 with
+     | Exp_ident _ | Exp_constant _ -> fprintf ppf "-%a" (pp_expression_deep n) exp2
+     | Exp_apply _ -> fprintf ppf "-(%a)" (pp_expression_deep n) exp2
+     | _ -> fprintf ppf "-%a" (pp_expression_deep (n + 1)) exp2)
   | _ ->
     (match exp1 with
      | Exp_apply _ -> fprintf ppf " "
-     | _ -> fprintf ppf "");
+     | _ -> ());
     (match exp2 with
      | Exp_apply (_, _) ->
        fprintf

@@ -34,7 +34,7 @@ let pp_error ppf : error -> _ = function
       ty
   | `No_variable id -> Format.fprintf ppf "Undefined variable '%s'" id
   | `Unification_failed (l, r) ->
-    Format.fprintf ppf "unification failed on %a and %a" pp_core_type l pp_core_type r
+    Format.fprintf ppf "Unification failed on %a and %a" pp_core_type l pp_core_type r
 ;;
 
 module State : sig
@@ -525,6 +525,11 @@ module Infer = struct
            Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ]
          in
          return (composed_sub, required_result_type)
+       | Exp_ident op when is_negative_op op ->
+         let* sub, ty = infer_expression env e2 in
+         let* unified_sub = Subst.unify ty Type_int in
+         let* composed_sub = Subst.compose sub unified_sub in
+         return (composed_sub, Type_int)
        | _ ->
          let* sub1, type1 = infer_expression env e1 in
          let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) e2 in

@@ -4,6 +4,7 @@
 
 val get_priority : string -> int
 val is_operator : string -> bool
+val is_negative_op : string -> bool
 val pp_rec_flag : Format.formatter -> Ast.rec_flag -> unit
 val pp_ident : Format.formatter -> string -> unit
 val pp_constant : Format.formatter -> Ast.constant -> unit

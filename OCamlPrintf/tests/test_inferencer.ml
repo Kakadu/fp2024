@@ -22,6 +22,11 @@ let%expect_test "type check undefined variable" =
   [%expect {| Infer error: Undefined variable 'b' |}]
 ;;
 
+let%expect_test "type check negative expression" =
+  run {| let f a q = -(if a then q else -q) |};
+  [%expect {| val f : bool -> int -> int |}]
+;;
+
 let%expect_test "type check definition tuple" =
   run {| let (a,b) = (1,2);; |};
   [%expect {|
@@ -111,7 +116,7 @@ let%expect_test "type check of expression list" =
 let%expect_test "type check invalid expression list" =
   run {| let f a = [true; a; 2] |};
   [%expect {|
-    Infer error: unification failed on bool and int
+    Infer error: Unification failed on bool and int
   |}]
 ;;
 

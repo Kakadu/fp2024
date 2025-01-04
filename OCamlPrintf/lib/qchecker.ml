@@ -183,6 +183,7 @@ module TestQCheckManual = struct
                  (gen_list_nat gen_pattern)
                  (self (n / coef))
              ; map2 (fun exp_fn exp -> Exp_apply (exp_fn, exp)) (self 0) (self (n / coef))
+             ; map (fun exp -> Exp_apply (Exp_ident "~-", exp)) (self (n / coef))
              ; map3
                  (fun opr opn1 opn2 -> Exp_apply (opr, Exp_apply (opn1, opn2)))
                  gen_bin_opr

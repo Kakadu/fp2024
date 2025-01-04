@@ -189,3 +189,22 @@ let%expect_test "parsing expression with priority" =
   1 / 2 - 3 * 4;;
   |}]
 ;;
+
+let%expect_test "parsing negative expressions" =
+  run
+    {|
+  -2 + 1;;
+  -(2 + -2);;
+  -(-1 + 1);;
+  let f a = -a;;
+  let f a = -(if a then -1 else 2);;
+  |};
+  [%expect
+    {|
+  -2 + 1;;
+  -(2 + -2);;
+  -(-1 + 1);;
+  let f a = -a;;
+  let f a = -(if a then -1 else 2);;
+  |}]
+;;
