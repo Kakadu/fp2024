@@ -21,7 +21,7 @@ end
 type scheme = Scheme of VarSet.t * Ast.core_type
 
 module TypeEnv : sig
-  type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
+  type t = (Ast.ident, scheme, Base.String.comparator_witness) Base.Map.t
 end
 
 val empty_env : TypeEnv.t

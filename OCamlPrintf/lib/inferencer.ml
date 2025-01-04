@@ -243,14 +243,14 @@ end
 module TypeEnv = struct
   open Base
 
-  type t = (string, scheme, String.comparator_witness) Map.t
+  type t = (ident, scheme, String.comparator_witness) Map.t
 
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
 
   let rec extend_with_pattern env_acc pat (Scheme (bind_set, ty) as scheme) =
     match pat, ty with
-    | Pat_var value, _ -> extend env_acc value scheme
+    | Pat_var id, _ -> extend env_acc id scheme
     | Pat_tuple (fst, snd, rest_list), Type_tuple (fst_ty, snd_ty, rest_list_ty) ->
       let env =
         List.fold2
@@ -316,7 +316,7 @@ module Infer = struct
   let generalize env ty ~(remove_from_env : bool) (id : ident option) =
     let env =
       match remove_from_env, id with
-      | true, Some ident -> Base.Map.remove env ident
+      | true, Some id -> Base.Map.remove env id
       | _ -> env
     in
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
@@ -424,10 +424,17 @@ module Infer = struct
       ~init:(return (env, []))
       ~f:(fun let_bind acc ->
         match let_bind with
-        | { pat = Pat_var pat; _ } ->
+        | { pat = Pat_var id; _ } ->
           let* env, fresh_acc = return acc in
           let* fresh = fresh_var in
-          let env = TypeEnv.extend env pat (Scheme (VarSet.empty, fresh)) in
+          let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
+          return (env, fresh :: fresh_acc)
+        | { pat = Pat_constraint (Pat_var id, pat_ty); _ } ->
+          let* env, fresh_acc = return acc in
+          let* fresh = fresh_var in
+          let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
+          let* sub_pat = unify fresh pat_ty in
+          let env = TypeEnv.apply sub_pat env in
           return (env, fresh :: fresh_acc)
         | _ -> fail `No_variable_rec)
   ;;
@@ -708,18 +715,32 @@ module Infer = struct
       infer_value_binding_list env final_sub rest
 
   and rec_infer_value_binding_list env fresh_acc sub let_binds =
-    match let_binds, fresh_acc with
-    | [], _ -> return (env, sub)
-    | { pat = Pat_var pat; exp } :: rest, fresh :: fresh_acc ->
-      let* new_sub, typ = infer_expression env exp in
+    let rec_infix_vb new_sub fresh typ id fresh_acc rest =
       let* unified_sub = unify (Subst.apply new_sub fresh) typ in
       let* composed_sub = Subst.compose_all [ new_sub; unified_sub; sub ] in
       let env = TypeEnv.apply composed_sub env in
       let generalized_ty =
-        generalize env (Subst.apply composed_sub fresh) ~remove_from_env:true (Some pat)
+        generalize env (Subst.apply composed_sub fresh) ~remove_from_env:true (Some id)
       in
-      let env = TypeEnv.extend env pat generalized_ty in
+      let env = TypeEnv.extend env id generalized_ty in
       rec_infer_value_binding_list env fresh_acc composed_sub rest
+    in
+    match let_binds, fresh_acc with
+    | [], _ -> return (env, sub)
+    | ( { pat = Pat_var id | Pat_constraint (Pat_var id, _)
+        ; exp = (Exp_fun _ | Exp_function _) as exp
+        }
+        :: rest
+      , fresh :: fresh_acc ) ->
+      let* new_sub, typ = infer_expression env exp in
+      rec_infix_vb new_sub fresh typ id fresh_acc rest
+    | ( { pat = Pat_var id | Pat_constraint (Pat_var id, _); exp } :: rest
+      , fresh :: fresh_acc ) ->
+      let* new_sub, typ = infer_expression env exp in
+      let update_fresh = Subst.apply new_sub fresh in
+      if typ = update_fresh
+      then fail `No_variable_rec
+      else rec_infix_vb new_sub fresh typ id fresh_acc rest
     | _ -> fail `No_variable_rec
   ;;
 
