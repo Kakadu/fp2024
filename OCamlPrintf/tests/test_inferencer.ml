@@ -58,7 +58,7 @@ let%expect_test "type check several recursive definition" =
 let%expect_test "type check definition function" =
   run {| let f a b c = if a then b else c |};
   [%expect {|
-    val f : bool -> 'c -> 'c -> 'c
+    val f : bool -> 'a -> 'a -> 'a
   |}]
 ;;
 
@@ -102,7 +102,7 @@ let%expect_test "type check of operators" =
 let%expect_test "type check pattern matching" =
   run {| let f a b = match a b with 1 -> 'q' | 2 -> 'w' | _ -> 'e' |};
   [%expect {|
-    val f : ('b -> int) -> 'b -> char
+    val f : ('a -> int) -> 'a -> char
   |}]
 ;;
 
@@ -145,7 +145,7 @@ let%expect_test "type check pattern-matching" =
 ;;
    |};
   [%expect {|
-    val fmap : ('d -> 'w) -> 'd list -> 'w list
+    val fmap : ('b -> 'a) -> 'b list -> 'a list
   |}]
 ;;
 
@@ -164,7 +164,7 @@ let%expect_test "type check Some and None" =
     | None -> None
 ;;
   |};
-  [%expect {| val f : 'c option -> char option |}]
+  [%expect {| val f : 'a option -> char option |}]
 ;;
 
 let%expect_test "type check definition function" =
@@ -219,8 +219,8 @@ let%expect_test "type check polymorphism" =
     |};
   [%expect
     {|
-    val f1 : 'b -> 'b
-    val f2 : 'l -> 'l
+    val f1 : 'a -> 'a
+    val f2 : 'a -> 'a
     val foo1 : int
     val foo2 : char
     val foo3 : int

@@ -37,30 +37,7 @@ let pp_error ppf : error -> _ = function
     Format.fprintf ppf "Unification failed on %a and %a" pp_core_type l pp_core_type r
 ;;
 
-module State : sig
-  type 'a t
-
-  include Base.Monad.Infix with type 'a t := 'a t
-
-  val return : 'a -> 'a t
-  val fail : error -> 'a t
-
-  module Syntax : sig
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  end
-
-  module RList : sig
-    val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
-    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
-  end
-
-  module RMap : sig
-    val fold : ('a, 'b, 'c) Base.Map.t -> init:'d t -> f:('a -> 'b -> 'd -> 'd t) -> 'd t
-  end
-
-  val fresh : int t
-  val run : 'a t -> ('a, error) Result.t
-end = struct
+module State = struct
   open Base
 
   type 'a t = int -> int * ('a, error) Result.t
@@ -125,7 +102,12 @@ module VarSet = struct
   ;;
 end
 
-type scheme = Scheme of VarSet.t * Ast.core_type [@@deriving show { with_path = false }]
+type scheme = Scheme of VarSet.t * Ast.core_type
+
+let pp_scheme ppf = function
+  | Scheme (varset, type') ->
+    Format.fprintf ppf "{ %a : %a }" VarSet.pp varset pp_core_type type'
+;;
 
 module Type = struct
   type t = core_type
@@ -154,17 +136,7 @@ module Type = struct
   ;;
 end
 
-module Subst : sig
-  type t
-
-  val empty : t
-  val singleton : ident -> core_type -> t State.t
-  val apply : t -> core_type -> core_type
-  val unify : core_type -> core_type -> t State.t
-  val compose : t -> t -> t State.t
-  val compose_all : t list -> t State.t
-  val remove : t -> ident -> t
-end = struct
+module Subst = struct
   open State
   open State.Syntax
   open Base
@@ -172,6 +144,7 @@ end = struct
   type t = (ident, core_type, String.comparator_witness) Map.t
 
   let empty = Map.empty (module String)
+  let singleton1 = Map.singleton (module String)
 
   let singleton key value =
     if Type.occurs_in key value
@@ -243,6 +216,13 @@ end = struct
   and compose sub1 sub2 = RMap.fold sub2 ~init:(return sub1) ~f:extend
 
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
+
+  let pp ppf (xs : t) =
+    Stdlib.Format.fprintf ppf "Subst:\n";
+    Map.iteri xs ~f:(fun ~key:str ~data:ty ->
+      Stdlib.Format.fprintf ppf "%s <-> %a; " str pp_core_type ty);
+    Stdlib.Format.fprintf ppf "\n"
+  ;;
 end
 
 module Scheme = struct
@@ -305,6 +285,13 @@ module TypeEnv = struct
     match Map.find_exn env key with
     | Scheme (_, typ) -> typ
   ;;
+
+  let pp ppf (xs : t) =
+    Stdlib.Format.fprintf ppf "TypeEnv:\n";
+    Map.iteri xs ~f:(fun ~key:str ~data:sch ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " str pp_scheme sch);
+    Stdlib.Format.fprintf ppf "\n"
+  ;;
 end
 
 module Infer = struct
@@ -313,12 +300,7 @@ module Infer = struct
   open Ast
 
   let unify = Subst.unify
-
-  (** [TODO] Maybe rewrite *)
-  let fresh_var =
-    (* 98 - is number 'a' in ASCII-table *)
-    fresh >>| fun n -> Type_name ("'" ^ String.make 1 (Char.chr (98 + n - 1)))
-  ;;
+  let fresh_var = fresh >>| fun n -> Type_name ("'t" ^ Int.to_string n)
 
   let instantiate (Scheme (bind_set, ty)) =
     VarSet.fold
@@ -338,7 +320,19 @@ module Infer = struct
       | _ -> env
     in
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
-    Scheme (free, ty)
+    let new_free, new_type, _ =
+      VarSet.fold
+        (fun str (temp_free, temp_ty, n) ->
+          (* 97 - is number 'a' in ASCII-table *)
+          let new_str = "'" ^ String.make 1 (Char.chr (97 + n)) in
+          let sub = Subst.singleton1 str (Type_name new_str) in
+          let new_free = VarSet.add new_str temp_free in
+          let new_type = Subst.apply sub temp_ty in
+          new_free, new_type, n + 1)
+        free
+        (VarSet.empty, ty, 0)
+    in
+    Scheme (new_free, new_type)
   ;;
 
   let lookup_env id env =
