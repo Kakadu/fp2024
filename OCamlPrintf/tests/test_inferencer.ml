@@ -118,7 +118,7 @@ let%expect_test "type check error in recursive let expression" =
   |};
   [%expect
     {|
-  Infer error: Only variables are allowed as left-hand side of `let rec'
+  Infer error: This kind of expression is not allowed as right-hand side of `let rec'
   |}]
 ;;
 
