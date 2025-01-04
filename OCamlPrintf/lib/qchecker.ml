@@ -301,7 +301,7 @@ let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) =
     QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure
   in
   QCheck_base_runner.run_tests_main
-    [ QCheck.Test.make ~count ~name:"the manual generator" (gen gen_structure) (fun ast ->
+    [ QCheck.Test.make ~count ~name:"the manual generator" (gen TestQCheckManual.gen_structure) (fun ast ->
         rule_gen ~show_passed ~show_shrinker ast)
     ; QCheck.Test.make
         ~count
