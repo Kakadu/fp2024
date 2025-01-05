@@ -348,7 +348,7 @@ let parse_simple_binding parse_exp =
       ]
   in
   match vb with
-  | { pat = Pat_var _; _ } -> return vb
+  | { pat = Pat_var _ | Pat_constraint (Pat_var _, _); _ } -> return vb
   | { pat = _; exp = Exp_function _ | Exp_constraint (Exp_function _, _) } ->
     fail "This expression should not be a function."
   | _ -> return vb

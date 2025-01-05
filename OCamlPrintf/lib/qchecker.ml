@@ -148,12 +148,18 @@ module TestQCheckManual = struct
   let rec fix_exp_fun = function
     | Exp_fun (_, _, exp) -> fix_exp_fun exp
     | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
+    | Exp_constraint (exp, type') -> Exp_constraint (fix_exp_fun exp, type')
     | exp -> exp
   ;;
 
   let gen_vb_without_flag gen =
     oneof
       [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident gen
+      ; map3
+          (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
+          gen_ident
+          gen_core_type
+          gen
       ; map2 (fun pat exp -> { pat; exp = fix_exp_fun exp }) gen_pattern gen
       ]
   ;;
@@ -259,18 +265,7 @@ end
 
 let failure ast =
   Format.asprintf
-    {|
-
-*** PPrinter ***
-%a
-
-***   AST    ***
-%s
-
-***  Parser  ***
-%s
-
-  |}
+    "*** PPrinter ***@.%a@.*** Ast ***@.%s@.*** Parser ***@.%s@."
     Pprinter.pp_structure
     ast
     (show_structure ast)
@@ -285,15 +280,15 @@ let rule_gen ?(show_passed = false) ?(show_shrinker = false) ast =
     if ast = ast_parsed
     then (
       if show_passed
-      then Format.printf "\n*** PPrinter ***\n%a\n" Pprinter.pp_structure ast;
+      then Format.printf "@.*** PPrinter ***@.%a@." Pprinter.pp_structure ast;
       true)
     else (
       if show_shrinker
-      then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
+      then Format.printf "@.*** Shrinker ***@.%a@." Pprinter.pp_structure ast;
       false)
   | Error _ ->
     if show_shrinker
-    then Format.printf "\n*** Shrinker ***\n%a\n" Pprinter.pp_structure ast;
+    then Format.printf "@.*** Shrinker ***@.%a@." Pprinter.pp_structure ast;
     false
 ;;
 

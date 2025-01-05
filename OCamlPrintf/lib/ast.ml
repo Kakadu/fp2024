@@ -149,6 +149,11 @@ module Expression = struct
     [@gen
       oneof
         [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident (gen_sized (n / coef))
+        ; map3
+            (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
+            gen_ident
+            gen_core_type
+            (gen_sized (n / coef))
         ; map2
             (fun pat exp ->
               { pat
@@ -156,6 +161,8 @@ module Expression = struct
                   (let rec fix_exp_fun = function
                      | Exp_fun (_, _, exp) -> fix_exp_fun exp
                      | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
+                     | Exp_constraint (exp, type') ->
+                       Exp_constraint (fix_exp_fun exp, type')
                      | exp -> exp
                    in
                    fix_exp_fun exp)
