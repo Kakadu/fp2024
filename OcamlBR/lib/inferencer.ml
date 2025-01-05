@@ -134,10 +134,12 @@ module Subst : sig
   val compose_all : t list -> t R.t
   val remove : t -> type_var -> t
 
-  (* val pp
-     :  Format.formatter
-     -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t
-     -> unit *)
+  (*val pp
+    :  Format.formatter
+    -> (type_var, ty, Base.Int.comparator_witness) Base.Map.t
+    -> unit *)
+
+  val pp_subst : Format.formatter -> t -> unit
 end = struct
   open R
   open R.Syntax
@@ -145,7 +147,7 @@ end = struct
 
   type t = (type_var, ty, Int.comparator_witness) Map.t
 
-  (* let pp ppf subst =
+   (*let pp ppf subst =
      let open Stdlib.Format in
      fprintf ppf "[ ";
     Base.Map.iteri subst ~f:(fun ~key ~data ->
@@ -153,6 +155,11 @@ end = struct
       fprintf ppf "; ");
     fprintf ppf "]"
      ;; *)
+
+  let pp_subst ppf sub =
+  Base.Map.iteri sub ~f:(fun ~key ~data ->
+    Stdlib.Format.fprintf ppf "[%d = %a] " key pp_ty data)
+  ;;
 
   let empty = Map.empty (module Int)
 
@@ -277,6 +284,12 @@ module TypeEnv = struct
   let extend key s env = Map.update env key ~f:(fun _ -> s)
   let find env key = Map.find env key
 
+  let merge_envs subst acc_env env_pat =
+    let acc_env = apply subst acc_env in
+    let env_pat = apply subst env_pat in
+    Map.fold env_pat ~init:acc_env ~f:(fun ~key ~data acc_env ->
+      extend key data acc_env)
+    ;;
   (* let pp ppf xs =
     Stdlib.Format.fprintf ppf "{| ";
     Base.Map.iter xs ~f:(fun (n, s) ->
@@ -427,7 +440,7 @@ module Infer = struct
       (* Format.printf "ty pat env: %a\n" TypeEnv.pp env; *)
       infer_pattern env pat
   ;;
-
+  
   let rec infer (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
     match expr with
     | Evar (Id (x)) -> lookup_env x env
@@ -477,25 +490,26 @@ module Infer = struct
     | Elet (Non_recursive, Evalue_binding ((pattern, t_opt), e1), bindings, e2) ->
       let* s1, t1 = infer env e1 in
       let* s2, t_pat, env1 = infer_ty_pattern env (pattern, t_opt) in
-      let* subst = Subst.compose s1 s2 in
-      let* unified_subst = unify (Subst.apply subst t_pat) t1 in
-      let extended_env =
+      let* subst1 = Subst.compose s1 s2 in
+      let* unified_subst = unify (Subst.apply subst1 t_pat) t1 in
+      let initial_env = TypeEnv.apply unified_subst env1 in
+      let* extended_env =
         List.fold_left
           (fun acc_env vb ->
+            let* acc_env = acc_env in
             match vb with
             | Ast.Evalue_binding ((p, opt_ty), expr) ->
-                let* acc_env = acc_env in
                 let* s_bind, t_bind = infer acc_env expr in
                 let* s_pat, t_pat, env_pat = infer_ty_pattern acc_env (p, opt_ty) in
                 let* combined_subst = Subst.compose s_bind s_pat in
                 let* final_subst = unify (Subst.apply combined_subst t_pat) t_bind in
-                return (TypeEnv.apply final_subst env_pat))
-          (return (TypeEnv.apply unified_subst env1))
+                let updated_env = TypeEnv.merge_envs final_subst acc_env env_pat in
+                return updated_env)
+          (return initial_env)
           bindings
       in
-      let* extended_env = extended_env in
-      let* s3, t2 = infer (TypeEnv.apply unified_subst extended_env) e2 in
-      let* full_subst = Subst.compose_all [ s3; unified_subst; subst ] in
+      let* s3, t2 = infer extended_env e2 in
+      let* full_subst = Subst.compose_all [ s3; unified_subst; subst1 ] in
       return (full_subst, t2)
     | Elet (Recursive, value_binding, value_bindings, e2) ->
       let* env_ext, s_acc =
@@ -552,14 +566,14 @@ module Infer = struct
         ~init:(return (sub1, tv))
         ~f:(fun (s, t) (Ast.Ecase (pat, e)) ->
           let* sub, tp, env = infer_pattern env pat in
-          Format.printf "match2: %a\n" TypeEnv.pp env;
+          (*Format.printf "match2: %a\n" TypeEnv.pp env;*)
           let* s2 = unify t1 tp in
-          Format.printf "unify: %a\n" TypeEnv.pp env;
+          (*Format.printf "unify: %a\n" TypeEnv.pp env;*)
           let* sub2, t2 = infer (TypeEnv.apply sub env) e in
-          Format.printf "infer: %a\n" TypeEnv.pp env;
+          (*Format.printf "infer: %a\n" TypeEnv.pp env;*)
           let* s3 = unify t t2 in
           let* final_subs = Subst.compose_all [ s3; sub2; s2; s ] in
-          Format.printf "match3: %a\n" TypeEnv.pp env;
+          (*Format.printf "match3: %a\n" TypeEnv.pp env;*)
           return (final_subs, Subst.apply final_subs t))
     | Ematch (None, c, cl) ->
       let* t1 = fresh_var in
@@ -604,13 +618,6 @@ module Infer = struct
       let* s, ts = infer_list_elements env es in
       let* s_final = Subst.compose_all s in
       return (s_final, TList (List.hd ts))
-    (* | Eprint_int e ->
-       let* s, t = infer env e in
-       if t = TPrim "int"
-       then return (s, TPrim "unit")
-       else (
-       let expected_type = TPrim "int" in
-       fail (`Unification_failed (expected_type, t))) *)
     | _ -> fail (`Undefined_variable "Unhandled case in `infer`")
   ;;
 
@@ -621,7 +628,19 @@ module Infer = struct
       let* subst, _ = infer env expr in
       let updated_env = TypeEnv.apply subst env in
       return (subst, updated_env)
+
     | Ast.SValue (Recursive, value_binding, value_bindings) ->
+      let all_bindings = value_binding :: value_bindings in
+      let* env_with_placeholders =
+        List.fold_left
+          (fun acc_env (Ast.Evalue_binding (ty_pattern, expr)) ->
+            let* env_acc = acc_env in
+            let* s_pat, t_pat, env_pat = infer_ty_pattern env_acc ty_pattern in
+            let extended_env = TypeEnv.apply s_pat env_pat in
+            return extended_env)
+          (return env)
+          all_bindings
+      in 
       let* env_ext, s_acc =
         List.fold_left
           (fun acc_env (Ast.Evalue_binding (ty_pattern, expr)) ->
@@ -631,11 +650,13 @@ module Infer = struct
             let* subst = Subst.compose s_expr s_pat in
             let* unified_subst = unify t_expr t_pat in
             let* combined_subst = Subst.compose subst unified_subst in
-            return (TypeEnv.apply combined_subst env_pat, combined_subst))
-          (return (env, Subst.empty))
-          (value_binding :: value_bindings)
+            let extended_env = TypeEnv.apply combined_subst env_pat in
+            return (extended_env, combined_subst))
+          (return (env_with_placeholders, Subst.empty))
+          all_bindings
       in
       return (s_acc, env_ext)
+
     | Ast.SValue (Non_recursive, Evalue_binding ((pattern, t_opt), expr), _) ->
       let* subst_expr, inferred_ty = infer env expr in
       let* subst_pat, t_pat, env_pat = infer_ty_pattern env (pattern, t_opt) in

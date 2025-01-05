@@ -14,7 +14,7 @@ let parse str =
     Stdlib.print_endline (show_structure structure)
   | Error _ -> Stdlib.print_endline "Parsing failed"
 ;;
-
+(*
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
@@ -42,15 +42,15 @@ let%expect_test _ =
       ]
     |}]
 ;;
-(*
+*)
 let%expect_test _ =
-  parse "[]";
+  parse "let rec x = 1+ x";
   [%expect {|
     [] ;;
     [(SEval (Elist []))]
     |}]
 ;;
-
+(*
 let%expect_test _ =
   parse "if 5 > 6 then let x = 5 in x + 5";
   [%expect

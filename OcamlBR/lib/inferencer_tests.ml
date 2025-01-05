@@ -2,7 +2,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 open Inferencer.Infer
 
-(*
+
 let infer_from_file file_name =
   let file_path = "../tests/inferencer_tests/" ^ file_name in
   let input = 
@@ -25,7 +25,8 @@ let%expect_test "do_not_type_002if" =
 *)
 
 
-*)
+
+
 
 
 let%expect_test _ =
@@ -40,16 +41,16 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_program_test {| let f x = x + 2 |} in
-  [%expect {| val f : int -> int |}]
+  [%expect {| val f : int -> int|}]
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {|let x = 2 in x=1 |} in
+  let _ = infer_program_test {|let x = 2 in x = 1 |} in
   [%expect {|  |}]
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {|let fac n = if n < 1 then 1 else n * fac (n - 1) |} in
+  let _ = infer_program_test {|let rec fac n = if n < 1 then 1 else n * fac (n - 1) |} in
   [%expect {| val fac : int -> int |}]
 ;;
 

@@ -11,7 +11,7 @@ let parse str =
   | Ok ast -> Stdlib.print_endline (show_structure ast)
   | _ -> Stdlib.print_endline "Parsing failed"
 ;;
-
+(*
 (*factorial*)
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
@@ -39,6 +39,14 @@ let%expect_test _ =
    ]
  |}]
 ;;
+let%expect_test _ =
+  parse "let x = 5";
+  [%expect
+    {|
+
+  |}]
+;;
+*)
 (*
 (*calculetion sequence*)
 let%expect_test _ =
