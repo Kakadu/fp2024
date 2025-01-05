@@ -233,7 +233,7 @@ let parse_pat_construct_keyword parse_pat =
        in
        return (Pat_construct (id, None)))
     ; (let* id = ws *> keyword "Some" in
-       let* arg = ws *> parse_pat >>| Option.some in
+       let* arg = ws *> skip_parens parse_pat >>| Option.some in
        return (Pat_construct (id, arg)))
     ]
 ;;
@@ -336,14 +336,22 @@ let parse_fun_binding parse_exp =
 
 let parse_simple_binding parse_exp =
   let* pat = parse_pattern in
-  choice
-    [ (let* exp = parse_constraint parse_exp "=" in
-       match exp with
-       | Exp_constraint (exp, type') -> return { pat = Pat_constraint (pat, type'); exp }
-       | _ -> return { pat; exp })
-    ; (let* exp = ws *> string "=" *> parse_exp in
-       return { pat; exp })
-    ]
+  let* vb =
+    choice
+      [ (let* exp = parse_constraint parse_exp "=" in
+         match exp with
+         | Exp_constraint (exp, type') ->
+           return { pat = Pat_constraint (pat, type'); exp }
+         | _ -> return { pat; exp })
+      ; (let* exp = ws *> string "=" *> parse_exp in
+         return { pat; exp })
+      ]
+  in
+  match vb with
+  | { pat = Pat_var _; _ } -> return vb
+  | { pat = _; exp = Exp_function _ | Exp_constraint (Exp_function _, _) } ->
+    fail "This expression should not be a function."
+  | _ -> return vb
 ;;
 
 let parse_value_binding_list parse_exp =
@@ -458,7 +466,7 @@ let parse_exp_construct_keyword parse_exp =
        in
        return (Exp_construct (id, None)))
     ; (let* id = ws *> keyword "Some" in
-       let* arg = ws *> parse_exp >>| Option.some in
+       let* arg = ws *> skip_parens parse_exp >>| Option.some in
        return (Exp_construct (id, arg)))
     ]
 ;;
@@ -520,11 +528,11 @@ let parse_expression =
         ; parse_exp_function parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
+        ; parse_exp_construct_keyword parse_full_exp
         ; parse_exp_construct parse_full_exp
         ; parse_exp_constraint parse_full_exp
         ]
     in
-    let parse_exp = parse_exp_construct_keyword parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply ~with_un_op:true parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in

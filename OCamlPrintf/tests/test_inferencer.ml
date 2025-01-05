@@ -223,7 +223,7 @@ let%expect_test "type check Some and None" =
     {|
   let f a =
     match a with
-    | Some _ -> Some 'a'
+    | Some (_) -> Some ('a')
     | None -> None
   ;;
   |};
@@ -235,7 +235,7 @@ let%expect_test "type check Some and None" =
 let%expect_test "type check definition function" =
   run {|
   let f = function
-    | Some a -> a
+    | Some (a) -> (a)
     | None -> false
   |};
   [%expect {|

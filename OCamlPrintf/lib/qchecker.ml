@@ -147,6 +147,7 @@ module TestQCheckManual = struct
 
   let rec fix_exp_fun = function
     | Exp_fun (_, _, exp) -> fix_exp_fun exp
+    | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
     | exp -> exp
   ;;
 

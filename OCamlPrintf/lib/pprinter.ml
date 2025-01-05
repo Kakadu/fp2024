@@ -314,7 +314,8 @@ and pp_exp_apply n ppf (exp1, exp2) =
      | _ -> (pp_expression_deep (n + 1)) ppf exp2)
   | Exp_ident exp_opr when is_negative_op exp_opr ->
     (match exp2 with
-     | Exp_apply (exp1, exp2) -> fprintf ppf "-(%a)" (pp_exp_apply n) (exp1, exp2)
+     | Exp_ident _ | Exp_constant _ -> fprintf ppf "-%a" (pp_expression_deep n) exp2
+     | Exp_apply _ -> fprintf ppf "-(%a)" (pp_expression_deep n) exp2
      | _ -> fprintf ppf "-%a" (pp_expression_deep (n + 1)) exp2)
   | _ ->
     (match exp1 with
