@@ -43,6 +43,7 @@ type expr =
   (** If then else. Ex: If homka then hype else no_hype *)
   | Pexpr_apply of expr * expr list (** Function: Ex: print a (5 + 5) b true *)
   | Pexpr_fun of pattern * expr (** fun P -> E1 *)
+  | Pexpr_tuple of expr list
 [@@deriving show { with_path = false }]
 
 type structure_item =
