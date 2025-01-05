@@ -14,22 +14,23 @@ let () =
     Pstr_value
       ( Recursive
       , Ppat_var "factorial"
-      , Pexpr_fun
+      , Pexp_fun
           ( Ppat_var "n"
-          , Pexpr_ifThenElse
-              ( Pexpr_apply
-                  ( Pexpr_ident (Id "=")
-                  , [ Pexpr_ident (Id "n"); Pexpr_const (Pconst_int 5) ] )
-              , Pexpr_const (Pconst_int 1)
+          , Pexp_ifthenelse
+              ( Pexp_apply
+                  ( Pexp_ident (Id "=")
+                  , [ Pexp_ident (Id "n"); Pexp_constant (Pconst_int 5) ] )
+              , Pexp_constant (Pconst_int 1)
               , Some
-                  (Pexpr_apply
-                     ( Pexpr_ident (Id "*")
-                     , [ Pexpr_ident (Id "n")
-                       ; Pexpr_apply
-                           ( Pexpr_ident (Id "factorial")
-                           , [ Pexpr_apply
-                                 ( Pexpr_ident (Id "-")
-                                 , [ Pexpr_ident (Id "n"); Pexpr_const (Pconst_int 1) ] )
+                  (Pexp_apply
+                     ( Pexp_ident (Id "*")
+                     , [ Pexp_ident (Id "n")
+                       ; Pexp_apply
+                           ( Pexp_ident (Id "factorial")
+                           , [ Pexp_apply
+                                 ( Pexp_ident (Id "-")
+                                 , [ Pexp_ident (Id "n"); Pexp_constant (Pconst_int 1) ]
+                                 )
                              ] )
                        ] )) ) ) )
   in
