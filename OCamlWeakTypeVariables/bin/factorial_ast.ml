@@ -7,32 +7,37 @@
 [@@@ocaml.text "/*"]
 
 (* let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) *)
+
 open Lib.Ast
 
 let () =
   let fact : structure_item =
     Pstr_value
       ( Recursive
-      , Ppat_var "factorial"
-      , Pexp_fun
-          ( Ppat_var "n"
-          , Pexp_ifthenelse
-              ( Pexp_apply
-                  ( Pexp_ident (Id "=")
-                  , [ Pexp_ident (Id "n"); Pexp_constant (Pconst_int 5) ] )
-              , Pexp_constant (Pconst_int 1)
-              , Some
-                  (Pexp_apply
-                     ( Pexp_ident (Id "*")
-                     , [ Pexp_ident (Id "n")
-                       ; Pexp_apply
-                           ( Pexp_ident (Id "factorial")
-                           , [ Pexp_apply
-                                 ( Pexp_ident (Id "-")
-                                 , [ Pexp_ident (Id "n"); Pexp_constant (Pconst_int 1) ]
-                                 )
-                             ] )
-                       ] )) ) ) )
+      , [ { pvb_pat = Ppat_var "factorial"
+          ; pvb_expr =
+              Pexp_fun
+                ( Ppat_var "n"
+                , Pexp_ifthenelse
+                    ( Pexp_apply
+                        ( Pexp_ident (Id "=")
+                        , [ Pexp_ident (Id "n"); Pexp_constant (Pconst_int 5) ] )
+                    , Pexp_constant (Pconst_int 1)
+                    , Some
+                        (Pexp_apply
+                           ( Pexp_ident (Id "*")
+                           , [ Pexp_ident (Id "n")
+                             ; Pexp_apply
+                                 ( Pexp_ident (Id "factorial")
+                                 , [ Pexp_apply
+                                       ( Pexp_ident (Id "-")
+                                       , [ Pexp_ident (Id "n")
+                                         ; Pexp_constant (Pconst_int 1)
+                                         ] )
+                                   ] )
+                             ] )) ) )
+          }
+        ] )
   in
   print_endline (show_structure_item fact)
 ;;

@@ -28,7 +28,7 @@ type pattern =
 (** recursive flag *)
 type rec_flag =
   | Recursive
-  | NotRecursive
+  | NonRecursive
 [@@deriving show { with_path = false }]
 
 type expression =
@@ -54,5 +54,8 @@ and value_binding =
 
 type structure_item =
   | Pstr_eval of expression
-  | Pstr_value of rec_flag * pattern * expression (** let homka = 5 *)
+  | Pstr_value of rec_flag * value_binding list
+  (** Pstr_value(rec, [(P1, E1 ; ... ; (Pn, En))]) represents:
+      et P1 = E1 and ... and Pn = EN when rec is Nonrecursive,
+      let rec P1 = E1 and ... and Pn = EN  when rec is Recursive.*)
 [@@deriving show { with_path = false }]
