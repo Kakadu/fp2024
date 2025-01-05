@@ -25,28 +25,34 @@ type pattern =
   | Ppat_tuple of pattern list (** Patterns (P1, ..., Pn). Invariant: n >= 2 *)
 [@@deriving show { with_path = false }]
 
-
 (** recursive flag *)
 type rec_flag =
   | Recursive
   | NotRecursive
 [@@deriving show { with_path = false }]
 
-type expr =
-  | Pexpr_ident of id (** variable with name. Ex: "homka" *)
-  | Pexpr_const of constant (** const of literal. Ex: 5, "Homka", true *)
-  (** Pexp_let(flag, P1, E1, E) represents: *)
-  (** let P1 = E1 in E when flag is NotRecursive *)
-  (** let rec P1 = E1 in E when flag is Recursive. *)
-  | Pexpr_let of rec_flag * pattern * expr * expr 
-  | Pexpr_ifThenElse of expr * expr * expr option
-  (** If then else. Ex: If homka then hype else no_hype *)
-  | Pexpr_apply of expr * expr list (** Function: Ex: print a (5 + 5) b true *)
-  | Pexpr_fun of pattern * expr (** fun P -> E1 *)
-  | Pexpr_tuple of expr list
+type expression =
+  | Pexp_ident of id (** Identifiers. Ex: "homka" *)
+  | Pexp_constant of constant (** Expressions constant. Ex: 5, "Homka", true *)
+  | Pexp_let of rec_flag * value_binding list * expression
+  (** Pexp_let(flag, [(P1,E1) ; ... ; (Pn,En)], E) represents:
+      let P1 = E1 and ... and Pn = EN in E when flag is Nonrecursive
+      let rec P1 = E1 and ... and Pn = EN in E when flag is Recursive *)
+  | Pexp_fun of pattern * expression (** fun P -> E *)
+  | Pexp_apply of expression * expression list (** Function: Ex: print a (5 + 5) b true *)
+  | Pexp_tuple of expression list (** Expressions (E1, ..., En). Invariant: n >= 2 *)
+  | Pexp_ifthenelse of expression * expression * expression option
+  (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
+[@@deriving show { with_path = false }]
+
+(* let pat : type_constraint = exp *)
+and value_binding =
+  { pvb_pat : pattern
+  ; pvb_expr : expression
+  }
 [@@deriving show { with_path = false }]
 
 type structure_item =
-  | Pstr_value of rec_flag * pattern * expr (** let homka = 5 *)
-  | Pstr_expr of expr 
+  | Pstr_eval of expression
+  | Pstr_value of rec_flag * pattern * expression (** let homka = 5 *)
 [@@deriving show { with_path = false }]
