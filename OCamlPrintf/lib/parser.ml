@@ -41,6 +41,7 @@ let is_separator = function
   | '{'
   | '}'
   | ' '
+  | '\r'
   | '\t'
   | '\n'
   | '*'
@@ -411,8 +412,20 @@ let parse_exp_apply_op parse_exp =
 ;;
 
 let parse_unary_op parse_exp =
+  let is_not_space = function
+    | '(' | '[' | '_' | '\'' | '\"' -> true
+    | c -> Char.is_alphanum c
+  in
+  let string_un_op str =
+    string str
+    *>
+    let* char_value = peek_char_fail in
+    if is_not_space char_value
+    then return str
+    else fail (Printf.sprintf "There is no space after unary minus.")
+  in
   ws
-  *> (string "-" *> parse_exp
+  *> (string_un_op "-" *> parse_exp
       >>| (fun exp -> Exp_apply (Exp_ident "~-", exp))
       <|> parse_exp)
 ;;

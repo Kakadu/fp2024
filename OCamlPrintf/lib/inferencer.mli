@@ -26,4 +26,9 @@ end
 
 val empty_env : TypeEnv.t
 val env_with_print_int : TypeEnv.t
-val run_inferencer : Ast.structure_item list -> TypeEnv.t -> (TypeEnv.t, error) result
+
+val run_inferencer
+  :  ?debug:bool
+  -> Ast.structure_item list
+  -> TypeEnv.t
+  -> (TypeEnv.t, error) result

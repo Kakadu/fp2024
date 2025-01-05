@@ -110,8 +110,6 @@ let pp_scheme ppf = function
 ;;
 
 module Type = struct
-  type t = core_type
-
   let rec occurs_in var = function
     | Type_option ty -> occurs_in var ty
     | Type_name name -> name = var
@@ -226,12 +224,6 @@ module Subst = struct
 end
 
 module Scheme = struct
-  type t = scheme
-
-  let occurs_in var (Scheme (bind_set, ty)) =
-    (not (VarSet.mem var bind_set)) && Type.occurs_in var ty
-  ;;
-
   let free_vars (Scheme (bind_set, ty)) = VarSet.diff (Type.free_vars ty) bind_set
 
   let apply sub (Scheme (bind_set, ty)) =
@@ -707,7 +699,7 @@ module Infer = struct
       let env = TypeEnv.apply final_sub env in
       infer_value_binding_list env final_sub rest
 
-  and rec_infer_value_binding_list env fresh_acc sub let_binds =
+  and rec_infer_value_binding_list ?(debug = false) env fresh_acc sub let_binds =
     let rec_infix_vb new_sub fresh typ id fresh_acc rest ~required_type =
       let* new_sub =
         match required_type with
@@ -718,12 +710,14 @@ module Infer = struct
       in
       let* unified_sub = unify (Subst.apply new_sub fresh) typ in
       let* composed_sub = Subst.compose_all [ new_sub; unified_sub; sub ] in
+      if debug then Subst.pp Format.std_formatter composed_sub;
       let env = TypeEnv.apply composed_sub env in
       let generalized_ty =
         generalize env (Subst.apply composed_sub fresh) ~remove_from_env:true (Some id)
       in
+      if debug then pp_scheme Format.std_formatter generalized_ty;
       let env = TypeEnv.extend env id generalized_ty in
-      rec_infer_value_binding_list env fresh_acc composed_sub rest
+      rec_infer_value_binding_list ~debug env fresh_acc composed_sub rest
     in
     match let_binds, fresh_acc with
     | [], _ -> return (env, sub)
@@ -753,7 +747,7 @@ module Infer = struct
     | _ -> fail `No_variable_rec
   ;;
 
-  let infer_srtucture_item env ast =
+  let infer_srtucture_item ?(debug = false) env ast =
     RList.fold_left ast ~init:(return env) ~f:(fun env ->
         function
         | Struct_eval exp ->
@@ -775,6 +769,7 @@ module Infer = struct
               Subst.empty
               (value_binding :: value_binding_list)
           in
+          if debug then TypeEnv.pp Format.std_formatter env;
           return env)
   ;;
 end
@@ -788,4 +783,6 @@ let env_with_print_int =
     (Scheme (VarSet.empty, Type_arrow (Type_int, Type_unit)))
 ;;
 
-let run_inferencer ast env = State.run (Infer.infer_srtucture_item env ast)
+let run_inferencer ?(debug = false) ast env =
+  State.run (Infer.infer_srtucture_item ~debug env ast)
+;;

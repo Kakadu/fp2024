@@ -23,7 +23,12 @@ let%expect_test "parsing value structure and factorial with `match'" =
   |};
   [%expect
     {|
-  let rec factorial n = match n with | 0 -> 1 | 1 -> 1 | _ -> n * factorial (n - 1);;
+  let rec factorial n =
+    match n with
+    | 0 -> 1
+    | 1 -> 1
+    | _ -> n * factorial (n - 1)
+  ;;
   |}]
 ;;
 
@@ -64,7 +69,10 @@ let%expect_test "parsing pattern and expression list construct" =
   |};
   [%expect
     {|
-  let list = [ 1; 2; 3 ] in (match list with | [ 1; 2; 3 ] -> true | _ -> false);;
+  let list = [ 1; 2; 3 ] in
+  (match list with
+   | [ 1; 2; 3 ] -> true
+   | _ -> false);;
   |}]
 ;;
 
@@ -75,8 +83,11 @@ let%expect_test "parsing option and bool types" =
     | None -> false
   ;;
   |};
-  [%expect {|
-  let f = function | Some (_) -> true | None -> false;;
+  [%expect
+    {|
+  let f = function
+          | Some (_) -> true
+          | None -> false;;
   |}]
 ;;
 
@@ -206,5 +217,235 @@ let%expect_test "parsing negative expressions" =
   -(-1 + 1);;
   let f a = -a;;
   let f a = -(if a then -1 else 2);;
+  |}]
+;;
+
+let%expect_test "parsing and pretty printing" =
+  run
+    {|
+if true then 1 else 0;;
+
+let a b = if true then 1 else 0;;
+
+match
+  function
+  | _ -> true
+with
+| b -> true
+;;
+
+if match b with
+   | b -> true
+then (
+  match b with
+  | b -> true)
+else (
+  match b with
+  | b -> true)
+;;
+
+let a b =
+  match b with
+  | b ->
+    (match
+       function
+       | _ -> true
+     with
+     | b -> true)
+;;
+
+let a b =
+  if match b with
+     | b -> true
+  then (
+    match b with
+    | b -> true)
+  else (
+    match b with
+    | b -> true)
+;;
+
+let f a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a = 1;;
+
+match b with
+| [ a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a; a ] -> true
+| [ a; a; a; a; a ] -> false
+| a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a -> true
+| a, a, a, a, a, a -> false
+| _ -> false
+;;
+  |};
+  [%expect
+    {|
+if true then 1 else 0;;
+let a b = if true then 1 else 0;;
+match
+  function
+  | _ -> true with
+| b -> true;;
+if match b with
+   | b -> true
+then
+  (match b with
+   | b -> true)
+else
+  (match b with
+   | b -> true);;
+let a b = match b with
+          | b ->
+            (match
+              function
+              | _ -> true with
+             | b -> true);;
+let a b =
+  if match b with
+     | b -> true
+  then
+    (match b with
+     | b -> true)
+  else
+    (match b with
+     | b -> true)
+;;
+let f
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    a
+    = 1
+;;
+match b with
+| [ a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ; a
+  ] -> true
+| [ a; a; a; a; a ] -> false
+| ( a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a
+  , a ) -> true
+| ( a, a, a, a, a, a ) -> false
+| _ -> false;;
   |}]
 ;;

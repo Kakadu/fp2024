@@ -284,7 +284,9 @@ let rule_gen ?(show_passed = false) ?(show_shrinker = false) ast =
       true)
     else (
       if show_shrinker
-      then Format.printf "@.*** Shrinker ***@.%a@." Pprinter.pp_structure ast;
+      then (
+        Format.printf "@.*** Shrinker ***@.%a@." Pprinter.pp_structure ast;
+        Format.printf "@.*** AST ***@.%s@." (show_structure ast));
       false)
   | Error _ ->
     if show_shrinker
