@@ -298,6 +298,10 @@ let parse_simple_binding parse_exp =
   return { pat; exp }
 ;;
 
+let parse_value_binding parse_exp =
+  parse_fun_binding parse_exp <|> parse_simple_binding parse_exp
+;;
+
 let parse_value_binding_list parse_exp =
   ws
   *> sep_by1
@@ -448,6 +452,7 @@ let parse_struct_value =
   keyword "let"
   *>
   let* rec_flag = parse_rec_flag in
+  let* first_value_binding = parse_value_binding parse_expression in
   let* value_binding_list = parse_value_binding_list parse_expression in
   ws
   *> option

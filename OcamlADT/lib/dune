@@ -1,8 +1,9 @@
 (library
  (name ocamladt_lib)
  (public_name OcamlADT.Lib)
- (modules Ast)
+ (modules Ast Parser Pprinter)
+ (libraries angstrom base stdio)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq))
+  (pps ppx_deriving.show ppx_deriving.eq ppx_deriving_qcheck))
  (instrumentation
   (backend bisect_ppx)))

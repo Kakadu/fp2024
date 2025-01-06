@@ -5,10 +5,10 @@ synopsis: "An interpreter for mini-language similiar to RISC-V ASM"
 description:
   "An interpreter for mini-language similiar to RISC-V ASM. Bitmanip and RVV supported (TODO)."
 maintainer: [
-  "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com"
+  "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com, Yuliana Ementyan ementyan.yuliana@gmail.com"
 ]
 authors: [
-  "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com"
+  "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com, Yuliana Ementyan ementyan.yuliana@gmail.com"
 ]
 license: "LGPL-3.0-or-later"
 homepage: "https://github.com/VyacheslavIurevich/fp2024"
@@ -20,6 +20,8 @@ depends: [
   "ppx_expect"
   "ppx_deriving"
   "bisect_ppx"
+  "qcheck-core"
+  "ppx_deriving_qcheck"
   "odoc" {with-doc}
   "ocamlformat" {build}
 ]

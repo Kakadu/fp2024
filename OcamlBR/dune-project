@@ -29,9 +29,11 @@
   dune
   (ppx_inline_test :with-test)
   ppx_deriving
+  ppx_deriving_qcheck
   bisect_ppx
   (odoc :with-doc)
   (ocamlformat :build)
+  qcheck-core
   ; base
   ; After adding dependencies to 'dune' files and the same dependecies here too
   ))

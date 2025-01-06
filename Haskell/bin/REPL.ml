@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Haskell_lib.Parser
-
 type opts =
   { mutable dump_parsetree : bool
   ; mutable read_from_file : string
@@ -23,14 +21,30 @@ let () =
           Stdlib.exit 1))
       "Parse and print ast"
   in
-  let text =
+  let is_stdin =
     match opts.read_from_file with
-    | "" -> In_channel.(input_all stdin) |> String.trim
-    | _ -> In_channel.with_open_text opts.read_from_file In_channel.input_all
+    | "" -> true
+    | _ -> false
   in
-  if opts.dump_parsetree
-  then parse_and_print_line text
+  if not is_stdin
+  then
+    Haskell_lib.Pai.parse_and_infer
+      (String.split_on_char
+         '\n'
+         (In_channel.with_open_text opts.read_from_file In_channel.input_all))
+      opts.dump_parsetree
+      Haskell_lib.Inferencer.typeenv_print_int
   else (
-    let _ = parse_line text in
-    ())
+    let rec helper (env, st) =
+      (* TODO(Kakadu): Why curry? *)
+      let line =
+        try input_line stdin with
+        | End_of_file -> ":quit"
+      in
+      match line with
+      | ":quit" -> ()
+      | "" -> helper (env, st)
+      | _ -> helper (Haskell_lib.Pai.parse_and_infer_line line env st)
+    in
+    helper (Haskell_lib.Inferencer.typeenv_print_int, 0))
 ;;
