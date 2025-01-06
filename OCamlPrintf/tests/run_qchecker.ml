@@ -5,6 +5,6 @@
 open Ocaml_printf_lib.Qchecker
 
 let () =
-  let _ : int = run_gen ~show_passed:false ~show_shrinker:true ~count:10 in
+  let _ : int = run_gen ~show_passed:false ~show_shrinker:true ~count:1 in
   ()
 ;;

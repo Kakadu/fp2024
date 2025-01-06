@@ -239,7 +239,7 @@ let parse_pat_construct_keyword parse_pat =
        in
        return (Pat_construct (id, None)))
     ; (let* id = ws *> keyword "Some" in
-       let* arg = ws *> skip_parens parse_pat >>| Option.some in
+       let* arg = ws *> parse_pat >>| Option.some in
        return (Pat_construct (id, arg)))
     ]
 ;;
@@ -484,7 +484,7 @@ let parse_exp_construct_keyword parse_exp =
        in
        return (Exp_construct (id, None)))
     ; (let* id = ws *> keyword "Some" in
-       let* arg = ws *> skip_parens parse_exp >>| Option.some in
+       let* arg = ws *> parse_exp >>| Option.some in
        return (Exp_construct (id, arg)))
     ]
 ;;
