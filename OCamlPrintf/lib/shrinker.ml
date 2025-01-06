@@ -66,14 +66,15 @@ let rec shrink_expression = function
     <+> (list ~shrink:shrink_pattern pat_list
          >|= fun pat_list' -> Exp_fun (first_pat, pat_list', exp))
     <+> (shrink_expression exp >|= fun exp' -> Exp_fun (first_pat, pat_list, exp'))
-  | Exp_apply (exp, first_exp, exp_list) ->
-    return first_exp
-    <+> of_list exp_list
-    <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp', first_exp, exp_list))
-    <+> (shrink_expression first_exp
-         >|= fun first_exp' -> Exp_apply (exp, first_exp', exp_list))
-    <+> (list ~shrink:shrink_expression exp_list
-         >|= fun exp_list' -> Exp_apply (exp, first_exp, exp_list'))
+  | Exp_apply (exp_fn, exp) ->
+    shrink_expression exp
+    >|= (fun exp_fn' -> Exp_apply (exp_fn', exp))
+    <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp_fn, exp'))
+  | Exp_function (first_case, case_list) ->
+    shrink_case first_case
+    >|= (fun first_case' -> Exp_function (first_case', case_list))
+    <+> (list ~shrink:shrink_case case_list
+         >|= fun case_list' -> Exp_function (first_case, case_list'))
   | Exp_match (exp, first_case, case_list) ->
     return exp
     <+> (shrink_expression exp >|= fun exp' -> Exp_match (exp', first_case, case_list))
@@ -129,9 +130,11 @@ and shrink_case case =
 let shrink_structure_item = function
   | Struct_eval exp -> shrink_expression exp >|= fun exp' -> Struct_eval exp'
   | Struct_value (rec_flag, first_value_binding, value_binding_list) ->
-    shrink_value_binding first_value_binding
-    >|= (fun first_value_binding' ->
-          Struct_value (rec_flag, first_value_binding', value_binding_list))
+    return (Struct_value (rec_flag, first_value_binding, []))
+    <+> of_list (List.map (fun vb -> Struct_value (rec_flag, vb, [])) value_binding_list)
+    <+> (shrink_value_binding first_value_binding
+         >|= fun first_value_binding' ->
+         Struct_value (rec_flag, first_value_binding', value_binding_list))
     <+> (list ~shrink:shrink_value_binding value_binding_list
          >|= fun value_binding_list' ->
          Struct_value (rec_flag, first_value_binding, value_binding_list'))

@@ -23,9 +23,7 @@ module TestQCheckManual = struct
   (** [gen_list] without zero size *)
   let gen_list_nat gen = list_size (int_range 1 3) gen
 
-  let gen_operand gen = list_size (int_range 1 1) gen
-
-  let gen_bin_op =
+  let gen_bin_opr =
     oneofl
       [ Exp_ident "*"
       ; Exp_ident "/"
@@ -74,15 +72,28 @@ module TestQCheckManual = struct
     sized
     @@ fix (fun self ->
          function
-         | 0 -> oneofl [ Type_any; Type_char; Type_int; Type_string; Type_bool ]
+         | 0 ->
+           oneofl [ Type_any; Type_unit; Type_char; Type_int; Type_string; Type_bool ]
          | n ->
            oneof
              [ return Type_any
+             ; return Type_unit
              ; return Type_char
              ; return Type_int
              ; return Type_string
              ; return Type_bool
-             ; map (fun id -> Type_name id) (map (fun id -> "'" ^ id) gen_ident)
+             ; map (fun t -> Type_option t) (self (n / coef))
+             ; map
+                 (fun id -> Type_name id)
+                 (map
+                    (fun id ->
+                      if String.length id > 1
+                      then (
+                        match String.get id 1 with
+                        | '\'' -> "_" ^ id
+                        | _ -> id)
+                      else id)
+                    gen_ident)
              ; map (fun t -> Type_list t) (self (n / coef))
              ; map3
                  (fun t1 t2 t3 -> Type_tuple (t1, t2, t3))
@@ -98,10 +109,10 @@ module TestQCheckManual = struct
     @@ fix (fun self ->
          function
          | 0 ->
-           frequency
-             [ 1, return Pat_any
-             ; 1, map (fun i -> Pat_var i) gen_ident
-             ; 1, map (fun c -> Pat_constant c) gen_constant
+           oneof
+             [ return Pat_any
+             ; map (fun i -> Pat_var i) gen_ident
+             ; map (fun c -> Pat_constant c) gen_constant
              ]
          | n ->
            oneof
@@ -134,6 +145,25 @@ module TestQCheckManual = struct
              ])
   ;;
 
+  let rec fix_exp_fun = function
+    | Exp_fun (_, _, exp) -> fix_exp_fun exp
+    | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
+    | Exp_constraint (exp, type') -> Exp_constraint (fix_exp_fun exp, type')
+    | exp -> exp
+  ;;
+
+  let gen_vb_without_flag gen =
+    oneof
+      [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident gen
+      ; map3
+          (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
+          gen_ident
+          gen_core_type
+          gen
+      ; map2 (fun pat exp -> { pat; exp = fix_exp_fun exp }) gen_pattern gen
+      ]
+  ;;
+
   let gen_expression =
     sized
     @@ fix (fun self ->
@@ -150,38 +180,39 @@ module TestQCheckManual = struct
              ; map3
                  (fun rec_fl first_value_binding value_binding_list exp ->
                    Exp_let (rec_fl, first_value_binding, value_binding_list, exp))
-                 (frequency [ 1, return Nonrecursive; 1, return Recursive ])
-                 (map2 (fun pat exp -> { pat; exp }) gen_pattern (self (Random.int 3)))
-                 (gen_list
-                    (map2 (fun pat exp -> { pat; exp }) gen_pattern (self (Random.int 3))))
+                 (oneof [ return Nonrecursive; return Recursive ])
+                 (gen_vb_without_flag (self (n / coef)))
+                 (gen_list (gen_vb_without_flag (self (n / coef))))
                <*> self (n / coef)
              ; map3
                  (fun first_pat pat_list exp -> Exp_fun (first_pat, pat_list, exp))
                  gen_pattern
                  (gen_list_nat gen_pattern)
                  (self (n / coef))
+             ; map2 (fun exp_fn exp -> Exp_apply (exp_fn, exp)) (self 0) (self (n / coef))
+             ; map (fun exp -> Exp_apply (Exp_ident "~-", exp)) (self (n / coef))
              ; map3
-                 (fun exp first_exp exp_list -> Exp_apply (exp, first_exp, exp_list))
-                 (self 0)
+                 (fun opr opn1 opn2 -> Exp_apply (opr, Exp_apply (opn1, opn2)))
+                 gen_bin_opr
                  (self (n / coef))
-                 (gen_list_nat (self (n / coef)))
-             ; map3
-                 (fun op exp1 exp2 -> Exp_apply (op, exp1, exp2))
-                 gen_bin_op
                  (self (n / coef))
-                 (gen_operand (self (n / coef)))
-             ; map3
-                 (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
-                 (self (n / coef))
-                 (map2
-                    (fun left right -> { left; right })
-                    gen_pattern
-                    (self (Random.int 3)))
+             ; map2
+                 (fun first_case case_list -> Exp_function (first_case, case_list))
+                 (map2 (fun left right -> { left; right }) gen_pattern (self (n / coef)))
                  (gen_list
                     (map2
                        (fun left right -> { left; right })
                        gen_pattern
-                       (self (Random.int 3))))
+                       (self (n / coef))))
+             ; map3
+                 (fun exp first_case case_list -> Exp_match (exp, first_case, case_list))
+                 (self (n / coef))
+                 (map2 (fun left right -> { left; right }) gen_pattern (self (n / coef)))
+                 (gen_list
+                    (map2
+                       (fun left right -> { left; right })
+                       gen_pattern
+                       (self (n / coef))))
              ; map3
                  (fun first second list -> Exp_tuple (first, second, list))
                  (self (n / coef))
@@ -217,18 +248,15 @@ module TestQCheckManual = struct
              ])
   ;;
 
-  let gen_value_binding = map2 (fun pat exp -> { pat; exp }) gen_pattern gen_expression
-
   let gen_structure_item =
-    frequency
-      [ 1, map (fun exp -> Struct_eval exp) gen_expression
-      ; ( 1
-        , map3
-            (fun rec_flag first_value_binding value_binding_list ->
-              Struct_value (rec_flag, first_value_binding, value_binding_list))
-            (frequency [ 1, return Nonrecursive; 1, return Recursive ])
-            gen_value_binding
-            (gen_list_nat gen_value_binding) )
+    oneof
+      [ map (fun exp -> Struct_eval exp) gen_expression
+      ; map3
+          (fun rec_flag first_value_binding value_binding_list ->
+            Struct_value (rec_flag, first_value_binding, value_binding_list))
+          (oneof [ return Nonrecursive; return Recursive ])
+          (gen_vb_without_flag gen_expression)
+          (gen_list_nat (gen_vb_without_flag gen_expression))
       ]
   ;;
 
@@ -237,16 +265,7 @@ end
 
 let failure ast =
   Format.asprintf
-    {|
-*** PPrinter ***
-%a
-
-***   AST    ***
-%s
-
-***  Parser  ***
-%s
-  |}
+    "*** PPrinter ***@.%a@.*** Ast ***@.%s@.*** Parser ***@.%s@."
     Pprinter.pp_structure
     ast
     (show_structure ast)
@@ -255,25 +274,40 @@ let failure ast =
      | Error error -> error)
 ;;
 
-let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) name type_gen =
-  let gen = QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure in
-  QCheck_base_runner.run_tests
-    ~verbose:true
-    [ QCheck.Test.make ~count ~name gen (fun ast ->
-        match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
-        | Ok ast_parsed ->
-          if ast = ast_parsed
-          then (
-            if show_passed
-            then Format.printf "*** PPrinter ***\n%a\n\n" Pprinter.pp_structure ast;
-            true)
-          else (
-            if show_shrinker
-            then Format.printf "*** Shrinker ***\n%a\n\n" Pprinter.pp_structure ast;
-            false)
-        | Error _ ->
-          if show_shrinker
-          then Format.printf "*** Shrinker ***\n%a\n\n" Pprinter.pp_structure ast;
-          false)
+let rule_gen ?(show_passed = false) ?(show_shrinker = false) ast =
+  match Parser.parse (Format.asprintf "%a" Pprinter.pp_structure ast) with
+  | Ok ast_parsed ->
+    if ast = ast_parsed
+    then (
+      if show_passed
+      then Format.printf "@.*** PPrinter ***@.%a@." Pprinter.pp_structure ast;
+      true)
+    else (
+      if show_shrinker
+      then (
+        Format.printf "@.*** Shrinker ***@.%a@." Pprinter.pp_structure ast;
+        Format.printf "@.*** AST ***@.%s@." (show_structure ast));
+      false)
+  | Error _ ->
+    if show_shrinker
+    then Format.printf "@.*** Shrinker ***@.%a@." Pprinter.pp_structure ast;
+    false
+;;
+
+let run_gen ?(show_passed = false) ?(show_shrinker = false) ?(count = 10) =
+  let gen type_gen =
+    QCheck.make type_gen ~print:failure ~shrink:Shrinker.shrink_structure
+  in
+  QCheck_base_runner.run_tests_main
+    [ QCheck.Test.make
+        ~count
+        ~name:"the manual generator"
+        (gen TestQCheckManual.gen_structure)
+        (fun ast -> rule_gen ~show_passed ~show_shrinker ast)
+    ; QCheck.Test.make
+        ~count
+        ~name:"the auto generator"
+        (gen Ast.gen_structure)
+        (fun ast -> rule_gen ~show_passed ~show_shrinker ast)
     ]
 ;;

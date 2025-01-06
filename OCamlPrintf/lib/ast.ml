@@ -4,11 +4,10 @@
 
 open QCheck.Gen
 
-let coef = 50 (* For the generator's speed. *)
+let coef = 10 (* For the generator's speed. *)
 let min_range = int_range 0 10 (* For the generator's speed. *)
 let gen_string gen = string_size min_range ~gen
 let gen_list gen = list_size min_range gen
-let gen_operand gen = list_size (int_range 1 1) gen
 
 type 'a list_ = ('a list[@gen gen_list gen_a])
 [@@deriving show { with_path = false }, qcheck]
@@ -26,6 +25,7 @@ let is_keyword = function
   | "if"
   | "in"
   | "let"
+  | "function"
   | "match"
   | "rec"
   | "then"
@@ -71,11 +71,24 @@ type constant =
 
 type core_type =
   | Type_any
+  | Type_unit
   | Type_char
   | Type_int
   | Type_string
   | Type_bool
-  | Type_name of (ident[@gen map (fun id -> "'" ^ id) gen_ident])
+  | Type_option of (core_type[@gen gen_core_type_sized (n / coef)])
+  | Type_name of
+      (ident
+      [@gen
+        map
+          (fun id ->
+            if String.length id > 1
+            then (
+              match String.get id 1 with
+              | '\'' -> "_" ^ id
+              | _ -> id)
+            else id)
+          gen_ident])
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])
@@ -131,32 +144,57 @@ type 'exp case =
 [@@deriving show { with_path = false }, qcheck]
 
 module Expression = struct
-  type value_binding_exp = t value_binding
-  and case_exp = t case
+  type value_binding_exp =
+    (t value_binding
+    [@gen
+      oneof
+        [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident (gen_sized (n / coef))
+        ; map3
+            (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
+            gen_ident
+            gen_core_type
+            (gen_sized (n / coef))
+        ; map2
+            (fun pat exp ->
+              { pat
+              ; exp =
+                  (let rec fix_exp_fun = function
+                     | Exp_fun (_, _, exp) -> fix_exp_fun exp
+                     | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
+                     | Exp_constraint (exp, type') ->
+                       Exp_constraint (fix_exp_fun exp, type')
+                     | exp -> exp
+                   in
+                   fix_exp_fun exp)
+              })
+            gen_pattern
+            (gen_sized (n / coef))
+        ]])
+
+  and case_exp =
+    (t case
+    [@gen map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
 
   and t =
     | Exp_ident of ident
     | Exp_constant of constant
     | Exp_let of
         rec_flag
-        * (value_binding_exp
-          [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
-        * (value_binding_exp
-          [@gen map2 (fun pat exp -> { pat; exp }) gen_pattern (gen_sized (n / coef))])
-            list_
+        * value_binding_exp
+        * value_binding_exp list_
         * (t[@gen gen_sized (n / coef)])
     | Exp_fun of pattern * pattern list_ * (t[@gen gen_sized (n / coef)])
     | Exp_apply of
-        ((t * t * t list)
+        ((t * t)
         [@gen
           oneof
-            [ map3
-                (fun exp first_exp exp_list -> exp, first_exp, exp_list)
+            [ map2
+                (fun exp first_exp -> exp, first_exp)
                 (gen_sized 0)
                 (gen_sized (n / coef))
-                (gen_list (gen_sized (n / coef)))
+            ; map (fun exp -> Exp_ident "~-", exp) (gen_sized (n / coef))
             ; map3
-                (fun op exp1 exp2 -> op, exp1, exp2)
+                (fun opr opn1 opn2 -> opr, Exp_apply (opn1, opn2))
                 (oneofl
                    [ Exp_ident "*"
                    ; Exp_ident "/"
@@ -172,17 +210,10 @@ module Expression = struct
                    ; Exp_ident "||"
                    ])
                 (gen_sized (n / coef))
-                (gen_operand (gen_sized (n / coef)))
+                (gen_sized (n / coef))
             ]])
-    | Exp_match of
-        (t[@gen gen_sized (n / coef)])
-        * (case_exp
-          [@gen
-            map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
-        * (case_exp
-          [@gen
-            map2 (fun left right -> { left; right }) gen_pattern (gen_sized (n / coef))])
-            list_
+    | Exp_function of case_exp * case_exp list_
+    | Exp_match of (t[@gen gen_sized (n / coef)]) * case_exp * case_exp list_
     | Exp_tuple of
         (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)])
@@ -220,7 +251,7 @@ end
 type structure_item =
   | Struct_eval of Expression.t
   | Struct_value of
-      rec_flag * Expression.t value_binding * Expression.t value_binding list_
+      rec_flag * Expression.value_binding_exp * Expression.value_binding_exp list_
 [@@deriving show { with_path = false }, qcheck]
 
 type structure = structure_item list_ [@@deriving show { with_path = false }, qcheck]
