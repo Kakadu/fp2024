@@ -13,23 +13,23 @@
  (deps
   ../repl/REPL.exe
   factorial.txt
-  manytests_formatted/do_not_type/001.ml
-  manytests_formatted/do_not_type/002if.ml
-  manytests_formatted/do_not_type/003occurs.ml
-  manytests_formatted/do_not_type/004let_poly.ml
-  manytests_formatted/do_not_type/015tuples.ml
-  manytests_formatted/do_not_type/099.ml
-  manytests_formatted/typed/001fac.ml
-  manytests_formatted/typed/002fac.ml
-  manytests_formatted/typed/003fib.ml
-  manytests_formatted/typed/004manyargs.ml
-  manytests_formatted/typed/005fix.ml
-  manytests_formatted/typed/006partial.ml
-  manytests_formatted/typed/006partial2.ml
-  manytests_formatted/typed/006partial3.ml
-  manytests_formatted/typed/007order.ml
-  manytests_formatted/typed/008ascription.ml
-  manytests_formatted/typed/009let_poly.ml
+  manytests/do_not_type/001.ml
+  manytests/do_not_type/002if.ml
+  manytests/do_not_type/003occurs.ml
+  manytests/do_not_type/004let_poly.ml
+  manytests/do_not_type/015tuples.ml
+  manytests/do_not_type/099.ml
+  manytests/typed/001fac.ml
+  manytests/typed/002fac.ml
+  manytests/typed/003fib.ml
+  manytests/typed/004manyargs.ml
+  manytests/typed/005fix.ml
+  manytests/typed/006partial.ml
+  manytests/typed/006partial2.ml
+  manytests/typed/006partial3.ml
+  manytests/typed/007order.ml
+  manytests/typed/008ascription.ml
+  manytests/typed/009let_poly.ml
   manytests_formatted/typed/010sukharev.ml
   manytests_formatted/typed/015tuples.ml
   manytests_formatted/typed/016lists.ml))

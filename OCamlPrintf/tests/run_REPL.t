@@ -106,69 +106,69 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../repl/REPL.exe -fromfile factorial.txt
   val factorial : int -> int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/do_not_type/001.ml
+  $ ../repl/REPL.exe -fromfile manytests/do_not_type/001.ml
   Infer error: Undefined variable 'fac'
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/do_not_type/002if.ml
+  $ ../repl/REPL.exe -fromfile manytests/do_not_type/002if.ml
   Infer error: Unification failed on int and bool
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/do_not_type/003occurs.ml
+  $ ../repl/REPL.exe -fromfile manytests/do_not_type/003occurs.ml
   Infer error: Occurs check failed: the type variable 't1 occurs inside 't1 -> 't3
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/do_not_type/004let_poly.ml
+  $ ../repl/REPL.exe -fromfile manytests/do_not_type/004let_poly.ml
   Infer error: Unification failed on int and bool
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/do_not_type/015tuples.ml
+  $ ../repl/REPL.exe -fromfile manytests/do_not_type/015tuples.ml
   Infer error: Only variables are allowed as left-hand side of `let rec'
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/do_not_type/099.ml
+  $ ../repl/REPL.exe -fromfile manytests/do_not_type/099.ml
   Infer error: Only variables are allowed as left-hand side of `let rec'
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/001fac.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/001fac.ml
   val fac : int -> int
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/002fac.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/002fac.ml
   val fac_cps : int -> (int -> 'a) -> 'a
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/003fib.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/003fib.ml
   val fib : int -> int
   val fib_acc : int -> int -> int -> int
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/004manyargs.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/004manyargs.ml
   val main : int
   val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
   val test3 : int -> int -> int -> int
   val wrap : 'a -> 'a
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/005fix.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/005fix.ml
   val fac : (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/006partial.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/006partial.ml
   val foo : int -> int
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/006partial2.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/006partial2.ml
   val foo : int -> int -> int -> int
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/006partial3.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/006partial3.ml
   val foo : int -> int -> int -> unit
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/007order.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/007order.ml
   val _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
   val main : unit
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/008ascription.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/008ascription.ml
   val addi : ('a -> bool -> int) -> ('a -> bool) -> 'a -> int
   val main : int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/009let_poly.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/009let_poly.ml
   val temp : int * bool
 
   $ ../repl/REPL.exe -fromfile manytests_formatted/typed/010sukharev.ml
