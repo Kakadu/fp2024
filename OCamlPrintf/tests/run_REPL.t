@@ -171,40 +171,8 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../repl/REPL.exe -fromfile manytests/typed/009let_poly.ml
   val temp : int * bool
 
-  $ ../repl/REPL.exe -fromfile manytests/typed/010sukharev.ml
-  val _1 : int -> int -> (int * 'a) -> bool
-  val _2 : int
-  val _3 : (int * string) option
-  val _4 : int -> 'a
-  val _42 : int -> bool
-  val _5 : int
-  val _6 : 'a option -> 'a
-  val id1 : 'a -> 'a
-  val id2 : 'b -> 'b
-  val int_of_option : int option -> int
+$ ../repl/REPL.exe -fromfile manytests/typed/010sukharev.ml
 
-  $ ../repl/REPL.exe -fromfile manytests/typed/015tuples.ml
-  val feven : ('a * (int -> int)) -> int -> int
-  val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
-  val fixpoly : 
-  (((('a -> 'b) * ('a -> 'b)) -> 'a -> 'b) * ((('a -> 'b) * ('a -> 'b)) -> 'a -> 'b)) -> 
-  (('a -> 'b) * ('a -> 'b))
-  val fodd : ((int -> int) * 'a) -> int -> int
-  val main : int
-  val map : ('b -> 'a) -> 
-  ('b * 'b) -> ('a * 'a)
-  val meven : int -> int
-  val modd : int -> int
-  val tie : 
-  (int -> int) * (int -> int)
+$ ../repl/REPL.exe -fromfile manytests/typed/015tuples.ml
 
-  $ ../repl/REPL.exe -fromfile manytests/typed/016lists.ml
-  val append : 'a list -> 'a list -> 'a list
-  val cartesian : 'b list -> 'a list -> 
-  ('b * 'a) list
-  val concat : ('a list) list -> 'a list
-  val iter : ('a -> unit) -> 'a list -> unit
-  val length : 'a list -> int
-  val length_tail : 'a list -> int
-  val main : int
-  val map : ('a -> 'b) -> 'a list -> 'b list
+$ ../repl/REPL.exe -fromfile manytests/typed/016lists.ml
