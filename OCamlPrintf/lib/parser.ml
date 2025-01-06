@@ -52,8 +52,13 @@ let is_separator = function
 let keyword str =
   string str
   *>
-  let* char_value = peek_char_fail in
-  if is_separator char_value
+  let* is_space =
+    peek_char
+    >>| function
+    | Some c -> is_separator c
+    | None -> true
+  in
+  if is_space
   then return str
   else fail (Printf.sprintf "There is no separator after %S." str)
 ;;
