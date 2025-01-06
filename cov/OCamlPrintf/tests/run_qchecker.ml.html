@@ -32,15 +32,6 @@
 <a id="L8"></a><span > </span>
 <a id="L9"></a><span > </span>
 <a id="L10"></a><span > </span>
-<a id="L11"></a><span class="visited"> </span>
-<a id="L12"></a><span > </span>
-<a id="L13"></a><span > </span>
-<a id="L14"></a><span > </span>
-<a id="L15"></a><span > </span>
-<a id="L16"></a><span > </span>
-<a id="L17"></a><span > </span>
-<a id="L18"></a><span class="visited"> </span>
-<a id="L19"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -55,15 +46,6 @@
 <a href="#L8"> 8</a>
 <a href="#L9"> 9</a>
 <a href="#L10">10</a>
-<a href="#L11">11</a>
-<a href="#L12">12</a>
-<a href="#L13">13</a>
-<a href="#L14">14</a>
-<a href="#L15">15</a>
-<a href="#L16">16</a>
-<a href="#L17">17</a>
-<a href="#L18">18</a>
-<a href="#L19">19</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Friend-zva, RodionovMaxim05 *)
 
@@ -72,17 +54,8 @@
 open Ocaml_printf_lib.Qchecker
 
 let () =
-  let _ : int =
-    run_gen ~show_passed:true "the manual generator" TestQCheckManual.gen_structure
-  in
-  <span data-count="51">(</span>)
-;;
-
-let () =
-  let _ : int =
-    run_gen ~show_shrinker:true "the auto generator" Ocaml_printf_lib.Ast.gen_structure
-  in
-  <span data-count="51">(</span>)
+  let _ : int = run_gen ~show_passed:false ~show_shrinker:true ~count:10 in
+  ()
 ;;
 </code></pre>
       </div>
