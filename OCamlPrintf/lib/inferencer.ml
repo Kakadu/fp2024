@@ -683,10 +683,8 @@ module Infer = struct
     in
     return (cases_sub, final_type)
 
-  and infer_value_binding_list env sub = function
-    | [] -> return (env, sub)
-    | { pat; exp } :: rest ->
-      let* new_sub, typ = infer_expression env exp in
+  and infer_value_binding_list env sub let_binds =
+    let infer_vb new_sub env typ pat rest =
       let* composed_sub = Subst.compose sub new_sub in
       let env = TypeEnv.apply composed_sub env in
       let generalized_ty =
@@ -698,9 +696,24 @@ module Infer = struct
       let* final_sub = Subst.compose composed_sub unified_sub in
       let env = TypeEnv.apply final_sub env in
       infer_value_binding_list env final_sub rest
+    in
+    match let_binds with
+    | [] -> return (env, sub)
+    | { pat = Pat_constraint (pat, pat_ty); exp = Exp_fun (e_pat, e_pat_list, exp) }
+      :: rest ->
+      let* new_sub, typ =
+        infer_expression env (Exp_fun (e_pat, e_pat_list, Exp_constraint (exp, pat_ty)))
+      in
+      infer_vb new_sub env typ pat rest
+    | { pat = Pat_constraint (pat, pat_ty); exp = Exp_function _ as exp } :: rest ->
+      let* new_sub, typ = infer_expression env (Exp_constraint (exp, pat_ty)) in
+      infer_vb new_sub env typ pat rest
+    | { pat; exp } :: rest ->
+      let* new_sub, typ = infer_expression env exp in
+      infer_vb new_sub env typ pat rest
 
   and rec_infer_value_binding_list ?(debug = false) env fresh_acc sub let_binds =
-    let rec_infix_vb new_sub fresh typ id fresh_acc rest ~required_type =
+    let rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type =
       let* new_sub =
         match required_type with
         | Some c_type ->
@@ -724,26 +737,30 @@ module Infer = struct
     | ( { pat = Pat_var id; exp = (Exp_fun _ | Exp_function _) as exp } :: rest
       , fresh :: fresh_acc ) ->
       let* new_sub, typ = infer_expression env exp in
-      rec_infix_vb new_sub fresh typ id fresh_acc rest ~required_type:None
-    | ( { pat = Pat_constraint (Pat_var id, pat_ty)
-        ; exp = (Exp_fun _ | Exp_function _) as exp
-        }
+      rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+    | ( { pat = Pat_constraint (Pat_var id, pat_ty); exp = Exp_fun (pat, pat_list, exp) }
         :: rest
       , fresh :: fresh_acc ) ->
-      let* new_sub, typ = infer_expression env exp in
-      rec_infix_vb new_sub fresh typ id fresh_acc rest ~required_type:(Some pat_ty)
+      let* new_sub, typ =
+        infer_expression env (Exp_fun (pat, pat_list, Exp_constraint (exp, pat_ty)))
+      in
+      rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+    | ( { pat = Pat_constraint (Pat_var id, pat_ty); exp = Exp_function _ as exp } :: rest
+      , fresh :: fresh_acc ) ->
+      let* new_sub, typ = infer_expression env (Exp_constraint (exp, pat_ty)) in
+      rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
     | { pat = Pat_var id; exp } :: rest, fresh :: fresh_acc ->
       let* new_sub, typ = infer_expression env exp in
       let update_fresh = Subst.apply new_sub fresh in
       if typ = update_fresh
       then fail `No_arg_rec
-      else rec_infix_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+      else rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
     | { pat = Pat_constraint (Pat_var id, pat_ty); exp } :: rest, fresh :: fresh_acc ->
       let* new_sub, typ = infer_expression env exp in
       let update_fresh = Subst.apply new_sub fresh in
       if typ = update_fresh
       then fail `No_arg_rec
-      else rec_infix_vb new_sub fresh typ id fresh_acc rest ~required_type:(Some pat_ty)
+      else rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:(Some pat_ty)
     | _ -> fail `No_variable_rec
   ;;
 

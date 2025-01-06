@@ -95,7 +95,6 @@ let rec pp_core_type_deep need_parens ppf = function
         fprintf ppf "(%a)" (pp_core_type_deep true) type'
       | _ -> fprintf ppf "%a" (pp_core_type_deep true) type'
     in
-    pp_open_hvbox ppf 0;
     if need_parens then fprintf ppf "(";
     pp_with_condition_on_arrow first_type;
     List.iter
@@ -103,8 +102,7 @@ let rec pp_core_type_deep need_parens ppf = function
         fprintf ppf " * ";
         pp_with_condition_on_arrow type')
       (second_type :: type_list);
-    if need_parens then fprintf ppf ")";
-    pp_close_box ppf ()
+    if need_parens then fprintf ppf ")"
   | Type_arrow (first_type, second_type) ->
     (match first_type with
      | first_type when is_type_arrow first_type ->
@@ -173,9 +171,11 @@ let rec pp_expression_deep need_cut need_parens ppf = function
   | Exp_constant const -> pp_constant ppf const
   | Exp_let (rec_flag, first_value_binding, value_binding_list, exp) ->
     if need_parens then fprintf ppf "(";
+    pp_open_hvbox ppf 0;
     (pp_value_binding_list 0) ppf (rec_flag, first_value_binding :: value_binding_list);
     fprintf ppf " in@ %a" (pp_expression_deep true true) exp;
-    if need_parens then fprintf ppf ")"
+    if need_parens then fprintf ppf ")";
+    pp_close_box ppf ()
   | Exp_fun (first_pat, pat_list, exp) ->
     if need_parens then fprintf ppf "(";
     pp_open_box ppf 2;
@@ -331,7 +331,7 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
      | Exp_apply _ -> fprintf ppf " "
      | _ -> ());
     (match exp2 with
-     | Exp_apply (_, _) ->
+     | Exp_apply _ ->
        fprintf
          ppf
          "%a (%a)"

@@ -551,6 +551,7 @@ let parse_expression =
         ; parse_exp_constraint parse_full_exp
         ]
     in
+    let parse_exp = parse_exp_construct_keyword parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply ~with_un_op:true parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct parse_exp <|> parse_exp in
