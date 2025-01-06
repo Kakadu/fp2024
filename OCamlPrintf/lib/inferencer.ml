@@ -53,7 +53,7 @@ module State = struct
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = x >>= f
+    let ( let* ) = ( >>= )
   end
 
   let ( >>| ) (monad : 'a t) (f : 'a -> 'b) : 'b t =
@@ -161,7 +161,7 @@ module Subst = struct
       | Type_option ty -> Type_option (helper ty)
       | Type_list ty -> Type_list (helper ty)
       | Type_tuple (fst, snd, rest_List) ->
-        Type_tuple (helper fst, helper snd, List.map rest_List ~f:(fun ty -> helper ty))
+        Type_tuple (helper fst, helper snd, List.map rest_List ~f:helper)
       | Type_arrow (l, r) -> Type_arrow (helper l, helper r)
       | ty -> ty
     in
@@ -435,8 +435,10 @@ module Infer = struct
   let rec extract_names_from_pat set_acc = function
     | Pat_var id -> StringSet.add_id set_acc id
     | Pat_tuple (fst, snd, rest_list) ->
-      RList.fold_left (fst :: snd :: rest_list) ~init:(return set_acc) ~f:(fun acc pat ->
-        extract_names_from_pat acc pat)
+      RList.fold_left
+        (fst :: snd :: rest_list)
+        ~init:(return set_acc)
+        ~f:extract_names_from_pat
     | Pat_construct ("::", Some exp) ->
       (match exp with
        | Pat_tuple (head, tail, []) ->
