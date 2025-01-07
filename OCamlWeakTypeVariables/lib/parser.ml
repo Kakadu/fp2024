@@ -13,11 +13,6 @@ let parse_with p str = parse_string ~consume:All p str
 let test_ok p str result = parse_with p str = Result.Ok result
 let test_fail p str error = parse_with p str = Result.error error
 
-let chain1l expr op =
-  let rec go acc = lift2 (fun f x -> f acc x) op expr >>= go <|> return acc in
-  expr >>= go
-;;
-
 let is_whitespace = function
   | ' ' | '\t' | '\n' | '\r' -> true
   | _ -> false
@@ -89,7 +84,7 @@ let p_const =
 let pexpr_const = p_const >>| fun x -> Pexp_constant x
 let ( === ) = test_ok pexpr_const
 
-(** let (!==) = test_fail pexpr_const doen't work. Bug in ocaml *)
+(** let (!==) = test_fail pexpr_const doesn't work. Bug in ocaml *)
 let test_fail_const = test_fail pexpr_const
 
 let%test _ = "1" === Pexp_constant (Pconst_int 1)
@@ -136,6 +131,11 @@ let%test _ =
 ;;
 
 let%test _ = parse_with pexp_ident "1" = Result.Error ": satisfy: '1'"
+
+let chain1l expr op =
+  let rec go acc = lift2 (fun f x -> f acc x) op expr >>= go <|> return acc in
+  expr >>= go
+;;
 
 let p_binop p expr =
   chain1l
@@ -218,14 +218,25 @@ let p_let_in expr =
   Pexp_let (rec_flag, value_bindings, expr)
 ;;
 
+let token_or xs : string t =
+  let token_functions = List.map (fun s -> token s) xs in
+  match token_functions with
+  | h :: t -> List.fold_right ( <|> ) t h
+  | _ -> fail "token_or require two or more tokens"
+;;
+
 let p_expr =
   fix (fun expr ->
-    let expr_const = choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr ] in
+    let expr_const =
+      choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr; p_branch expr ]
+    in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_const <|> expr_const in
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
-    let expr_fun = p_fun expr <|> expr_add_sub in
-    let expr_branch = p_branch expr <|> expr_fun in
-    let expr_apply = p_apply expr_branch <|> expr_branch in
+    let expr_comparsion =
+      p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
+    in
+    let expr_fun = p_fun expr <|> expr_comparsion in
+    let expr_apply = p_apply expr_fun <|> expr_fun in
     let expr_let_in = p_let_in expr <|> expr_apply in
     expr_let_in)
 ;;
@@ -371,6 +382,19 @@ let%expect_test "If then else with inner ifelse" =
     (Pexp_ifthenelse ((Pexp_ident (Id "x")),
        (Pexp_ifthenelse ((Pexp_ident (Id "y")), (Pexp_ident (Id "z")), None)),
        None)) |}]
+;;
+
+let%expect_test "If then else mult" =
+  pp @@ parse "2 * if true then 2 else 1";
+  [%expect
+    {|
+    (Pexp_apply ((Pexp_ident (Id "*")),
+       [(Pexp_constant (Pconst_int 2));
+         (Pexp_ifthenelse ((Pexp_constant (Pconst_boolean true)),
+            (Pexp_constant (Pconst_int 2)), (Some (Pexp_constant (Pconst_int 1)))
+            ))
+         ]
+       )) |}]
 ;;
 
 let%expect_test "fun with if else" =
