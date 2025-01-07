@@ -207,8 +207,14 @@ let p_rec_flag = token "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 
 let p_value_binding expr =
   let* pattern = p_pattern in
+  let* xs = many p_pattern in
   let+ expr = token "=" *> expr in
-  { pvb_pat = pattern; pvb_expr = expr }
+  { pvb_pat = pattern
+  ; pvb_expr =
+      (if List.length xs = 0
+       then expr
+       else List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
+  }
 ;;
 
 let p_let_in expr =
@@ -253,204 +259,264 @@ let%test "fun" = "fun x -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
 (* let%test "fun" = "fun x y z -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x")) *)
 let%test "fun" = "fun x -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
 
+let p_str_value expr =
+  let* rec_flag = token "let" *> p_rec_flag in
+  let+ value_bindings = many1 (p_value_binding expr) in
+  Pstr_value (rec_flag, value_bindings)
+;;
+
+let p_strucuture =
+  let str_value = p_str_value p_expr in
+  let str_eval = p_expr >>| (fun ex -> Pstr_eval ex) <|> str_value in
+  str_eval
+;;
+
 let pp e =
   match e with
-  | Ok e -> print_string (show_expression e)
+  | Ok e -> print_string (show_structure_item e)
   | Error str -> print_string str
 ;;
 
-let parse str = parse_string ~consume:All p_expr str
-let parse_prefix str = parse_string ~consume:Prefix p_expr str
+let parse str = parse_string ~consume:All p_strucuture str
+let parse_prefix str = parse_string ~consume:Prefix p_strucuture str
 
 (* mult tests *)
 let%expect_test "mul_div_1" =
   pp @@ parse "2 * 2";
   [%expect
     {|
-    (Pexp_apply ((Pexp_ident (Id "*")),
-       [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 2))])) |}]
+    (Pstr_eval
+       (Pexp_apply ((Pexp_ident (Id "*")),
+          [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 2))]))) |}]
 ;;
 
 let%expect_test "mul_div_2" =
   pp @@ parse "2 * ((2 * (124 * homka))) * (((2 * 1)))";
   [%expect
     {|
-    (Pexp_apply ((Pexp_ident (Id "*")),
-       [(Pexp_apply ((Pexp_ident (Id "*")),
-           [(Pexp_constant (Pconst_int 2));
-             (Pexp_apply ((Pexp_ident (Id "*")),
-                [(Pexp_constant (Pconst_int 2));
-                  (Pexp_apply ((Pexp_ident (Id "*")),
-                     [(Pexp_constant (Pconst_int 124)); (Pexp_ident (Id "homka"))
-                       ]
-                     ))
-                  ]
-                ))
-             ]
-           ));
-         (Pexp_apply ((Pexp_ident (Id "*")),
-            [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 1))]))
-         ]
-       )) |}]
+    (Pstr_eval
+       (Pexp_apply ((Pexp_ident (Id "*")),
+          [(Pexp_apply ((Pexp_ident (Id "*")),
+              [(Pexp_constant (Pconst_int 2));
+                (Pexp_apply ((Pexp_ident (Id "*")),
+                   [(Pexp_constant (Pconst_int 2));
+                     (Pexp_apply ((Pexp_ident (Id "*")),
+                        [(Pexp_constant (Pconst_int 124));
+                          (Pexp_ident (Id "homka"))]
+                        ))
+                     ]
+                   ))
+                ]
+              ));
+            (Pexp_apply ((Pexp_ident (Id "*")),
+               [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 1))]))
+            ]
+          ))) |}]
 ;;
 
 let%expect_test "mul_div_3" =
   pp @@ parse "2 / 2";
   [%expect
     {|
-    (Pexp_apply ((Pexp_ident (Id "/")),
-       [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 2))])) |}]
+    (Pstr_eval
+       (Pexp_apply ((Pexp_ident (Id "/")),
+          [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 2))]))) |}]
 ;;
 
 let%expect_test "mul_div_4" =
   pp @@ parse "2 * ((2 / (124 / homka))) * (1) * (2 / 2) * (((2 * 1)))";
   [%expect
     {|
-    (Pexp_apply ((Pexp_ident (Id "*")),
-       [(Pexp_apply ((Pexp_ident (Id "*")),
-           [(Pexp_apply ((Pexp_ident (Id "*")),
-               [(Pexp_apply ((Pexp_ident (Id "*")),
+    (Pstr_eval
+       (Pexp_apply ((Pexp_ident (Id "*")),
+          [(Pexp_apply ((Pexp_ident (Id "*")),
+              [(Pexp_apply ((Pexp_ident (Id "*")),
+                  [(Pexp_apply ((Pexp_ident (Id "*")),
+                      [(Pexp_constant (Pconst_int 2));
+                        (Pexp_apply ((Pexp_ident (Id "/")),
+                           [(Pexp_constant (Pconst_int 2));
+                             (Pexp_apply ((Pexp_ident (Id "/")),
+                                [(Pexp_constant (Pconst_int 124));
+                                  (Pexp_ident (Id "homka"))]
+                                ))
+                             ]
+                           ))
+                        ]
+                      ));
+                    (Pexp_constant (Pconst_int 1))]
+                  ));
+                (Pexp_apply ((Pexp_ident (Id "/")),
                    [(Pexp_constant (Pconst_int 2));
-                     (Pexp_apply ((Pexp_ident (Id "/")),
-                        [(Pexp_constant (Pconst_int 2));
-                          (Pexp_apply ((Pexp_ident (Id "/")),
-                             [(Pexp_constant (Pconst_int 124));
-                               (Pexp_ident (Id "homka"))]
-                             ))
-                          ]
-                        ))
-                     ]
-                   ));
-                 (Pexp_constant (Pconst_int 1))]
-               ));
-             (Pexp_apply ((Pexp_ident (Id "/")),
-                [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 2))]
-                ))
-             ]
-           ));
-         (Pexp_apply ((Pexp_ident (Id "*")),
-            [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 1))]))
-         ]
-       )) |}]
+                     (Pexp_constant (Pconst_int 2))]
+                   ))
+                ]
+              ));
+            (Pexp_apply ((Pexp_ident (Id "*")),
+               [(Pexp_constant (Pconst_int 2)); (Pexp_constant (Pconst_int 1))]))
+            ]
+          ))) |}]
 ;;
 
 let%expect_test "fun 1" =
   pp @@ parse "fun x -> 5";
-  [%expect {|
-    (Pexp_fun ((Ppat_var "x"), (Pexp_constant (Pconst_int 5)))) |}]
+  [%expect
+    {|
+    (Pstr_eval (Pexp_fun ((Ppat_var "x"), (Pexp_constant (Pconst_int 5))))) |}]
 ;;
 
 let%expect_test "fun 2" =
   pp @@ parse "fun x -> fun y -> fun z -> 5";
   [%expect
     {|
-    (Pexp_fun ((Ppat_var "x"),
-       (Pexp_fun ((Ppat_var "y"),
-          (Pexp_fun ((Ppat_var "z"), (Pexp_constant (Pconst_int 5))))))
-       )) |}]
+    (Pstr_eval
+       (Pexp_fun ((Ppat_var "x"),
+          (Pexp_fun ((Ppat_var "y"),
+             (Pexp_fun ((Ppat_var "z"), (Pexp_constant (Pconst_int 5))))))
+          ))) |}]
 ;;
 
 let%expect_test "fun 3" =
   pp @@ parse "fun x y z -> 5";
   [%expect
     {|
-    (Pexp_fun ((Ppat_var "x"),
-       (Pexp_fun ((Ppat_var "y"),
-          (Pexp_fun ((Ppat_var "z"), (Pexp_constant (Pconst_int 5))))))
-       )) |}]
+    (Pstr_eval
+       (Pexp_fun ((Ppat_var "x"),
+          (Pexp_fun ((Ppat_var "y"),
+             (Pexp_fun ((Ppat_var "z"), (Pexp_constant (Pconst_int 5))))))
+          ))) |}]
 ;;
 
 let%expect_test "If then else" =
   pp @@ parse "if x then y else z";
   [%expect
     {|
-    (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
-       (Some (Pexp_ident (Id "z"))))) |}]
+    (Pstr_eval
+       (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
+          (Some (Pexp_ident (Id "z")))))) |}]
 ;;
 
 let%expect_test "If then else without else" =
   pp @@ parse "if x then y";
   [%expect
     {|
-    (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")), None)) |}]
+    (Pstr_eval
+       (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")), None))) |}]
 ;;
 
 let%expect_test "If then else with inner ifelse" =
   pp @@ parse "if x then if y then z";
   [%expect
     {|
-    (Pexp_ifthenelse ((Pexp_ident (Id "x")),
-       (Pexp_ifthenelse ((Pexp_ident (Id "y")), (Pexp_ident (Id "z")), None)),
-       None)) |}]
+    (Pstr_eval
+       (Pexp_ifthenelse ((Pexp_ident (Id "x")),
+          (Pexp_ifthenelse ((Pexp_ident (Id "y")), (Pexp_ident (Id "z")), None)),
+          None))) |}]
 ;;
 
 let%expect_test "If then else mult" =
   pp @@ parse "2 * if true then 2 else 1";
   [%expect
     {|
-    (Pexp_apply ((Pexp_ident (Id "*")),
-       [(Pexp_constant (Pconst_int 2));
-         (Pexp_ifthenelse ((Pexp_constant (Pconst_boolean true)),
-            (Pexp_constant (Pconst_int 2)), (Some (Pexp_constant (Pconst_int 1)))
-            ))
-         ]
-       )) |}]
+    (Pstr_eval
+       (Pexp_apply ((Pexp_ident (Id "*")),
+          [(Pexp_constant (Pconst_int 2));
+            (Pexp_ifthenelse ((Pexp_constant (Pconst_boolean true)),
+               (Pexp_constant (Pconst_int 2)),
+               (Some (Pexp_constant (Pconst_int 1)))))
+            ]
+          ))) |}]
 ;;
 
 let%expect_test "fun with if else" =
   pp @@ parse "fun x y -> if x then y";
   [%expect
     {|
-    (Pexp_fun ((Ppat_var "x"),
-       (Pexp_fun ((Ppat_var "y"),
-          (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")), None))
-          ))
-       )) |}]
+    (Pstr_eval
+       (Pexp_fun ((Ppat_var "x"),
+          (Pexp_fun ((Ppat_var "y"),
+             (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")), None
+                ))
+             ))
+          ))) |}]
 ;;
 
 let%expect_test "fun with if else 2" =
   pp @@ parse "fun x -> fun y -> if x then y else x";
   [%expect
     {|
-    (Pexp_fun ((Ppat_var "x"),
-       (Pexp_fun ((Ppat_var "y"),
-          (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
-             (Some (Pexp_ident (Id "x")))))
-          ))
-       )) |}]
+    (Pstr_eval
+       (Pexp_fun ((Ppat_var "x"),
+          (Pexp_fun ((Ppat_var "y"),
+             (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
+                (Some (Pexp_ident (Id "x")))))
+             ))
+          ))) |}]
 ;;
 
 let%expect_test "apply" =
   pp @@ parse "f y z";
   [%expect
     {|
-    (Pexp_apply ((Pexp_ident (Id "f")),
-       [(Pexp_ident (Id "y")); (Pexp_ident (Id "z"))])) |}]
+    (Pstr_eval
+       (Pexp_apply ((Pexp_ident (Id "f")),
+          [(Pexp_ident (Id "y")); (Pexp_ident (Id "z"))]))) |}]
 ;;
 
 let%expect_test "let in" =
   pp @@ parse "let homka = 5 in homka";
   [%expect
     {|
-    (Pexp_let (NonRecursive,
-       [{ pvb_pat = (Ppat_var "homka"); pvb_expr = (Pexp_constant (Pconst_int 5))
-          }
-         ],
-       (Pexp_ident (Id "homka")))) |}]
+    (Pstr_eval
+       (Pexp_let (NonRecursive,
+          [{ pvb_pat = (Ppat_var "homka");
+             pvb_expr = (Pexp_constant (Pconst_int 5)) }
+            ],
+          (Pexp_ident (Id "homka"))))) |}]
 ;;
 
 let%expect_test "let in with fun" =
   pp @@ parse "let homka = fun x -> x + 2 in homka";
   [%expect
     {|
-    (Pexp_let (NonRecursive,
-       [{ pvb_pat = (Ppat_var "homka");
+    (Pstr_eval
+       (Pexp_let (NonRecursive,
+          [{ pvb_pat = (Ppat_var "homka");
+             pvb_expr =
+             (Pexp_fun ((Ppat_var "x"),
+                (Pexp_apply ((Pexp_ident (Id "+")),
+                   [(Pexp_ident (Id "x")); (Pexp_constant (Pconst_int 2))]))
+                ))
+             }
+            ],
+          (Pexp_ident (Id "homka"))))) |}]
+;;
+
+let%expect_test "factorial" =
+  pp @@ parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1)";
+  [%expect
+    {|
+    (Pstr_value (Recursive,
+       [{ pvb_pat = (Ppat_var "factorial");
           pvb_expr =
-          (Pexp_fun ((Ppat_var "x"),
-             (Pexp_apply ((Pexp_ident (Id "+")),
-                [(Pexp_ident (Id "x")); (Pexp_constant (Pconst_int 2))]))
+          (Pexp_fun ((Ppat_var "n"),
+             (Pexp_ifthenelse (
+                (Pexp_apply ((Pexp_ident (Id "=")),
+                   [(Pexp_ident (Id "n")); (Pexp_constant (Pconst_int 0))])),
+                (Pexp_constant (Pconst_int 1)),
+                (Some (Pexp_apply (
+                         (Pexp_apply ((Pexp_ident (Id "*")),
+                            [(Pexp_ident (Id "n")); (Pexp_ident (Id "factorial"))
+                              ]
+                            )),
+                         [(Pexp_apply ((Pexp_ident (Id "-")),
+                             [(Pexp_ident (Id "n"));
+                               (Pexp_constant (Pconst_int 1))]
+                             ))
+                           ]
+                         )))
+                ))
              ))
           }
-         ],
-       (Pexp_ident (Id "homka")))) |}]
+         ]
+       )) |}]
 ;;
