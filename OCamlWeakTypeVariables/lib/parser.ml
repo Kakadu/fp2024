@@ -23,6 +23,25 @@ let is_whitespace = function
   | _ -> false
 ;;
 
+let is_keyword = function
+  | "let"
+  | "rec"
+  | "if"
+  | "then"
+  | "else"
+  | "true"
+  | "false"
+  | "match"
+  | "with"
+  | "in"
+  | "fun"
+  | "type"
+  | "int"
+  | "string"
+  | "bool" -> true
+  | _ -> false
+;;
+
 let ws = take_while is_whitespace
 let wss t = ws *> t <* ws
 let token s = ws *> string s <* ws
@@ -78,30 +97,29 @@ let%test _ = "1_000" === Pexp_constant (Pconst_int 1_000)
 let%test _ = "1___1" === Pexp_constant (Pconst_int 1___1)
 let%test _ = "1_000_000" === Pexp_constant (Pconst_int 1_000_000)
 let%test _ = test_fail_const "_" ": Error while parsing literal"
-let%test _ = "\"HomkaChmo\"" === Pexp_constant (Pconst_string "HomkaChmo")
-let%test _ = "\"HomkaChmo\"" === Pexp_constant (Pconst_string "Homka")
-let%test _ = "\"HomkaChmo\"" === Pexp_constant (Pconst_string "HomkaChmo")
+let%test _ = "\"Homka\"" === Pexp_constant (Pconst_string "Homka")
 let%test _ = "true" === Pexp_constant (Pconst_boolean true)
 
-let p_var =
+let lowercase_ident =
   let* first =
     ws
     *> satisfy (function
       | 'a' .. 'z' | '_' -> true
       | _ -> false)
   in
-  let+ rest =
+  let* rest =
     take_while (function
-      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
+      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
     <* ws
   in
-  Char.escaped first ^ rest
+  let word = Char.escaped first ^ rest in
+  if is_keyword word then fail "Keyword identificators are not allowed." else return word
 ;;
 
 (* TODO: readable error message *)
 let p_id : id t =
-  let+ var = p_var in
+  let+ var = lowercase_ident in
   Id var
 ;;
 
@@ -132,7 +150,7 @@ let p_tuple expr =
 let p_pattern =
   let pat_any = token "_" >>| fun _ -> Ppat_any in
   let pat_const = p_const >>| fun c -> Ppat_constant c in
-  let pat_var = p_var >>| fun var -> Ppat_var var in
+  let pat_var = lowercase_ident >>| fun var -> Ppat_var var in
   let pat_interval =
     p_const >>= fun f -> token ".." *> p_const >>| fun s -> Ppat_interval (f, s)
   in
@@ -179,6 +197,12 @@ let p_branch (expr : expression t) =
   Pexp_ifthenelse (first, second, third)
 ;;
 
+let p_apply expr =
+  let* first = wss expr in
+  let+ second = many1 (wss expr) in
+  Pexp_apply (first, second)
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const = choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr ] in
@@ -186,7 +210,8 @@ let p_expr =
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
     let expr_fun = p_fun expr <|> expr_add_sub in
     let expr_branch = p_branch expr <|> expr_fun in
-    expr_branch)
+    let expr_apply = p_apply expr_branch <|> expr_branch in
+    expr_apply)
 ;;
 
 let p_expr_test s r = parse_string ~consume:All p_expr s = Result.Ok r
@@ -208,6 +233,7 @@ let pp e =
 ;;
 
 let parse str = parse_string ~consume:All p_expr str
+let parse_prefix str = parse_string ~consume:Prefix p_expr str
 
 (* mult tests *)
 let%expect_test "mul_div_1" =
@@ -332,13 +358,12 @@ let%expect_test "If then else with inner ifelse" =
 ;;
 
 let%expect_test "fun with if else" =
-  pp @@ parse "fun x y -> if x then y else x";
+  pp @@ parse "fun x y -> if x then y";
   [%expect
     {|
     (Pexp_fun ((Ppat_var "x"),
        (Pexp_fun ((Ppat_var "y"),
-          (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
-             (Some (Pexp_ident (Id "x")))))
+          (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")), None))
           ))
        )) |}]
 ;;
@@ -353,4 +378,12 @@ let%expect_test "fun with if else 2" =
              (Some (Pexp_ident (Id "x")))))
           ))
        )) |}]
+;;
+
+let%expect_test "apply" =
+  pp @@ parse "f y z";
+  [%expect
+    {|
+    (Pexp_apply ((Pexp_ident (Id "f")),
+       [(Pexp_ident (Id "y")); (Pexp_ident (Id "z"))])) |}]
 ;;
