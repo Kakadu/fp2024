@@ -77,14 +77,14 @@ module Eval (M : MONAD_FAIL) = struct
   open M
   open Env (M)
 
-   let rec check_match env = function
+  let rec check_match env = function
     | PAny, _ -> Some env
     | PConstant (CInt i1), VInt i2 when i1 = i2 -> Some env
     | PConstant (CBool b1), VBool b2 when Bool.equal b1 b2 -> Some env
     | PConstant (CString s1), VString s2 when String.equal s1 s2 -> Some env
     | PConstant CNil, VList [] -> Some env
     | PVar x, v -> Some (extend env x v)
-    | PTuple (p1,p2,pl), VTuple vl ->
+    | PTuple (p1, p2, pl), VTuple vl ->
       let env =
         List.fold2
           pl
@@ -105,7 +105,6 @@ module Eval (M : MONAD_FAIL) = struct
        | None -> None)
     | _ -> None
   ;;
-
 
   let eval_binop (op, v1, v2) =
     match op, v1, v2 with

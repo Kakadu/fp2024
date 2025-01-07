@@ -3,10 +3,12 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open OCamlRV_lib.Parser
+open OCamlRV_lib.Interpreter
 open Stdio
 
 type opts =
   { mutable dump_parsetree : bool
+  ; mutable interpret : bool
   ; mutable read_from_file : bool
   ; mutable filename : string
   }
@@ -23,6 +25,8 @@ let run_single options =
   in
   if options.dump_parsetree
   then Stdlib.Format.printf "%s\n" (parse_to_string text)
+  else if options.interpret
+  then test_interpret text
   else ()
 ;;
 
@@ -30,13 +34,16 @@ let () =
   if Array.length Sys.argv = 1
   then ()
   else (
-    let opts = { dump_parsetree = false; read_from_file = false; filename = "" } in
+    let opts =
+      { dump_parsetree = false; interpret = false; read_from_file = false; filename = "" }
+    in
     let () =
       let open Stdlib.Arg in
       parse
         [ ( "-dparsetree"
           , Unit (fun () -> opts.dump_parsetree <- true)
           , "Dump parse tree, don't eval enything" )
+        ; "-interpret", Unit (fun () -> opts.interpret <- true), "Interpret code."
         ]
         (fun filename ->
           if opts.read_from_file
