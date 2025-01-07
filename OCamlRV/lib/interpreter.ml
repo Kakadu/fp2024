@@ -5,13 +5,6 @@
 open Ast
 open Base
 
-module type MONAD_FAIL = sig
-  include Monad.S2
-
-  val fail : string -> ('a, string) t
-  val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
-end
-
 type environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
 and value =
@@ -19,6 +12,8 @@ and value =
   | VBool of bool
   | VString of string
   | VUnit
+  | VList of value list
+  | VTuple of value list
   | VNil
   | VFun of pattern * rec_flag * expression * environment
 
@@ -29,13 +24,38 @@ let vunit = VUnit
 let vnil = VNil
 let vfun p rf e env = VFun (p, rf, e, env)
 
-let pp_value ppf =
+type error =
+  | Pattern_matching_failed
+  | Wrong_type of value
+  | Unbound_variable
+  | Evaluationg_Need_ToBeReplaced
+
+module type MONAD_FAIL = sig
+  include Monad.S2
+
+  val fail : error -> ('a, error) t
+  val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
+end
+
+let rec pp_value ppf =
   let open Stdlib.Format in
   function
   | VInt x -> fprintf ppf "%d" x
   | VBool b -> fprintf ppf "%b" b
   | VString s -> fprintf ppf "%s" s
   | VUnit -> fprintf ppf "()"
+  | VList vl ->
+    fprintf
+      ppf
+      "[%a]"
+      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
+      vl
+  | VTuple vl ->
+    fprintf
+      ppf
+      "(%a)"
+      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
+      vl
   | VNil -> fprintf ppf "[]"
   | VFun _ -> fprintf ppf "<fun>"
 ;;
@@ -49,13 +69,43 @@ module Env (M : MONAD_FAIL) = struct
   let find env name =
     match Base.Map.find env name with
     | Some x -> return x
-    | None -> fail "Unbound_variable"
+    | None -> fail Unbound_variable
   ;;
 end
 
 module Eval (M : MONAD_FAIL) = struct
   open M
   open Env (M)
+
+   let rec check_match env = function
+    | PAny, _ -> Some env
+    | PConstant (CInt i1), VInt i2 when i1 = i2 -> Some env
+    | PConstant (CBool b1), VBool b2 when Bool.equal b1 b2 -> Some env
+    | PConstant (CString s1), VString s2 when String.equal s1 s2 -> Some env
+    | PConstant CNil, VList [] -> Some env
+    | PVar x, v -> Some (extend env x v)
+    | PTuple (p1,p2,pl), VTuple vl ->
+      let env =
+        List.fold2
+          pl
+          vl
+          ~f:(fun env p v ->
+            match env with
+            | Some e -> check_match e (p, v)
+            | None -> None)
+          ~init:(Some env)
+      in
+      (match env with
+       | Ok env -> env
+       | _ -> None)
+    | PCons (p1, p2), VList (v :: vl) ->
+      let env = check_match env (p2, VList vl) in
+      (match env with
+       | Some env -> check_match env (p1, v)
+       | None -> None)
+    | _ -> None
+  ;;
+
 
   let eval_binop (op, v1, v2) =
     match op, v1, v2 with
@@ -71,7 +121,7 @@ module Eval (M : MONAD_FAIL) = struct
     | Gte, VInt x, VInt y -> return (vbool (x >= y))
     | And, VBool x, VBool y -> return (vbool (x && y))
     | Or, VBool x, VBool y -> return (vbool (x || y))
-    | _ -> fail "error while evaluating binary operations (?need to be replaced?)"
+    | _ -> fail Evaluationg_Need_ToBeReplaced
   ;;
 
   let eval_expr =
@@ -100,7 +150,7 @@ module Eval (M : MONAD_FAIL) = struct
         (match cv with
          | VBool true -> helper env t
          | VBool false -> helper env f
-         | _ -> fail "error in if expression")
+         | _ -> fail (Wrong_type cv))
       | ExprLet (NonRec, (PVar x, e1), [], e) ->
         let* v = helper env e1 in
         let env = extend env x v in
@@ -113,11 +163,11 @@ module Eval (M : MONAD_FAIL) = struct
            let* env' =
              match check_match env (p, v2) with
              | Some env -> return env
-             | None -> fail `Pattern_mathing_failed
+             | None -> fail Pattern_matching_failed
            in
            helper env' e
-         | _ -> fail (`Wrong_type v1))
-      | _ -> fail "error while evaluating expressions (?need to be replaced?)"
+         | _ -> fail (Wrong_type v1))
+      | _ -> fail Evaluationg_Need_ToBeReplaced
     in
     helper
   ;;
@@ -127,7 +177,7 @@ module Eval (M : MONAD_FAIL) = struct
       let* v = eval_expr env e in
       let env2 = extend env "-" v in
       return env2
-    | _ -> fail "error while structure item (?need to be replaced?)"
+    | _ -> fail Evaluationg_Need_ToBeReplaced
   ;;
 
   let eval_structure (s : structure) =
