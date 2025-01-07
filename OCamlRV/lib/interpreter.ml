@@ -50,6 +50,7 @@ module Env (M : MONAD_FAIL) = struct
     match Base.Map.find env name with
     | Some x -> return x
     | None -> fail "Unbound_variable"
+  ;;
 end
 
 module Eval (M : MONAD_FAIL) = struct
@@ -83,39 +84,39 @@ module Eval (M : MONAD_FAIL) = struct
          | CUnit -> return vunit
          | CNil -> return vnil)
       | ExprVariable x ->
-          let* v = find env x in
-          let v =
-            match v with
-            | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
-            | _ -> v
-          in
-          return v
+        let* v = find env x in
+        let v =
+          match v with
+          | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
+          | _ -> v
+        in
+        return v
       | ExprBinOperation (op, e1, e2) ->
         let* v1 = helper env e1 in
         let* v2 = helper env e2 in
         eval_binop (op, v1, v2)
-      | ExprIf (cond, t, Some f) -> 
-          let* cv = helper env cond in 
-          (match cv with
-          | VBool true -> helper env t
-          | VBool false -> helper env f
-          | _ -> fail "error in if expression")
+      | ExprIf (cond, t, Some f) ->
+        let* cv = helper env cond in
+        (match cv with
+         | VBool true -> helper env t
+         | VBool false -> helper env f
+         | _ -> fail "error in if expression")
       | ExprLet (NonRec, (PVar x, e1), [], e) ->
         let* v = helper env e1 in
         let env = extend env x v in
         helper env e
       | ExprApply (e1, e2) ->
-          let* v1 = helper env e1 in
-          let* v2 = helper env e2 in
-          (match v1 with
-           | VFun (p, _, e, env) ->
-             let* env' =
-               match check_match env (p, v2) with
-               | Some env -> return env
-               | None -> fail `Pattern_mathing_failed
-             in
-             helper env' e
-           | _ -> fail (`Wrong_type v1))
+        let* v1 = helper env e1 in
+        let* v2 = helper env e2 in
+        (match v1 with
+         | VFun (p, _, e, env) ->
+           let* env' =
+             match check_match env (p, v2) with
+             | Some env -> return env
+             | None -> fail `Pattern_mathing_failed
+           in
+           helper env' e
+         | _ -> fail (`Wrong_type v1))
       | _ -> fail "error while evaluating expressions (?need to be replaced?)"
     in
     helper
