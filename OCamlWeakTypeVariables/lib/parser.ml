@@ -170,13 +170,21 @@ let p_fun expr =
   List.fold_right (fun f p -> Pexp_fun (f, p)) ps e
 ;;
 
+let p_branch (expr : expression t) =
+  let* first = token "if" *> expr in
+  let* second = token "then" *> expr in
+  let+ third = option None (token "else" *> expr >>| fun e -> Some e) in
+  Pexp_ifthenelse (first, second, third)
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const = choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr ] in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_const <|> expr_const in
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
     let expr_fun = p_fun expr <|> expr_add_sub in
-    expr_fun)
+    let expr_branch = p_branch expr <|> expr_fun in
+    expr_branch)
 ;;
 
 let p_expr_test s r = parse_string ~consume:All p_expr s = Result.Ok r
@@ -296,7 +304,51 @@ let%expect_test "fun 3" =
           (Pexp_fun ((Ppat_var "z"), (Pexp_constant (Pconst_int 5))))))
        )) |}]
 ;;
+
+let%expect_test "If then else" =
+  pp @@ parse "if x then y else z";
+  [%expect
+    {|
+    (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
+       (Some (Pexp_ident (Id "z"))))) |}]
+;;
+
+let%expect_test "If then else without else" =
+  pp @@ parse "if x then y";
+  [%expect
+    {|
+    (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")), None)) |}]
+;;
+
+let%expect_test "If then else with inner ifelse" =
+  pp @@ parse "if x then if y then z";
+  [%expect
+    {|
+    (Pexp_ifthenelse ((Pexp_ident (Id "x")),
+       (Pexp_ifthenelse ((Pexp_ident (Id "y")), (Pexp_ident (Id "z")), None)),
+       None)) |}]
+;;
+
+let%expect_test "fun with if else" =
+  pp @@ parse "fun x y -> if x then y else x";
+  [%expect
+    {|
+    (Pexp_fun ((Ppat_var "x"),
        (Pexp_fun ((Ppat_var "y"),
-          (Pexp_fun ((Ppat_var "x"), (Pexp_constant (Pconst_int 5))))))
+          (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
+             (Some (Pexp_ident (Id "x")))))
+          ))
+       )) |}]
+;;
+
+let%expect_test "fun with if else 2" =
+  pp @@ parse "fun x -> fun y -> if x then y else x";
+  [%expect
+    {|
+    (Pexp_fun ((Ppat_var "x"),
+       (Pexp_fun ((Ppat_var "y"),
+          (Pexp_ifthenelse ((Pexp_ident (Id "x")), (Pexp_ident (Id "y")),
+             (Some (Pexp_ident (Id "x")))))
+          ))
        )) |}]
 ;;
