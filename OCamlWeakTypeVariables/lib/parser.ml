@@ -78,7 +78,9 @@ let%test _ = "1_000" === Pexp_constant (Pconst_int 1_000)
 let%test _ = "1___1" === Pexp_constant (Pconst_int 1___1)
 let%test _ = "1_000_000" === Pexp_constant (Pconst_int 1_000_000)
 let%test _ = test_fail_const "_" ": Error while parsing literal"
-let%test _ = "\"Homka\"" === Pexp_constant (Pconst_string "Homka")
+let%test _ = "\"HomkaChmo\"" === Pexp_constant (Pconst_string "HomkaChmo")
+let%test _ = "\"HomkaChmo\"" === Pexp_constant (Pconst_string "Homka")
+let%test _ = "\"HomkaChmo\"" === Pexp_constant (Pconst_string "HomkaChmo")
 let%test _ = "true" === Pexp_constant (Pconst_boolean true)
 
 let p_var =
