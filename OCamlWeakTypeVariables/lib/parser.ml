@@ -203,6 +203,21 @@ let p_apply expr =
   Pexp_apply (first, second)
 ;;
 
+let p_rec_flag = token "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
+
+let p_value_binding expr =
+  let* pattern = p_pattern in
+  let+ expr = token "=" *> expr in
+  { pvb_pat = pattern; pvb_expr = expr }
+;;
+
+let p_let_in expr =
+  let* rec_flag = token "let" *> p_rec_flag in
+  let* value_bindings = many1 (p_value_binding expr) in
+  let+ expr = token "in" *> expr in
+  Pexp_let (rec_flag, value_bindings, expr)
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const = choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr ] in
@@ -211,7 +226,8 @@ let p_expr =
     let expr_fun = p_fun expr <|> expr_add_sub in
     let expr_branch = p_branch expr <|> expr_fun in
     let expr_apply = p_apply expr_branch <|> expr_branch in
-    expr_apply)
+    let expr_let_in = p_let_in expr <|> expr_apply in
+    expr_let_in)
 ;;
 
 let p_expr_test s r = parse_string ~consume:All p_expr s = Result.Ok r
@@ -386,4 +402,31 @@ let%expect_test "apply" =
     {|
     (Pexp_apply ((Pexp_ident (Id "f")),
        [(Pexp_ident (Id "y")); (Pexp_ident (Id "z"))])) |}]
+;;
+
+let%expect_test "let in" =
+  pp @@ parse "let homka = 5 in homka";
+  [%expect
+    {|
+    (Pexp_let (NonRecursive,
+       [{ pvb_pat = (Ppat_var "homka"); pvb_expr = (Pexp_constant (Pconst_int 5))
+          }
+         ],
+       (Pexp_ident (Id "homka")))) |}]
+;;
+
+let%expect_test "let in with fun" =
+  pp @@ parse "let homka = fun x -> x + 2 in homka";
+  [%expect
+    {|
+    (Pexp_let (NonRecursive,
+       [{ pvb_pat = (Ppat_var "homka");
+          pvb_expr =
+          (Pexp_fun ((Ppat_var "x"),
+             (Pexp_apply ((Pexp_ident (Id "+")),
+                [(Pexp_ident (Id "x")); (Pexp_constant (Pconst_int 2))]))
+             ))
+          }
+         ],
+       (Pexp_ident (Id "homka")))) |}]
 ;;
