@@ -167,7 +167,7 @@ let p_fun expr =
   let* ps = many1 p_pattern in
   let* _ = token "->" in
   let+ e = expr in
-  List.fold_left (fun f p -> Pexp_fun (p, f)) e ps
+  List.fold_right (fun f p -> Pexp_fun (f, p)) ps e
 ;;
 
 let p_expr =
@@ -291,7 +291,11 @@ let%expect_test "fun 3" =
   pp @@ parse "fun x y z -> 5";
   [%expect
     {|
-    (Pexp_fun ((Ppat_var "z"),
+    (Pexp_fun ((Ppat_var "x"),
+       (Pexp_fun ((Ppat_var "y"),
+          (Pexp_fun ((Ppat_var "z"), (Pexp_constant (Pconst_int 5))))))
+       )) |}]
+;;
        (Pexp_fun ((Ppat_var "y"),
           (Pexp_fun ((Ppat_var "x"), (Pexp_constant (Pconst_int 5))))))
        )) |}]
