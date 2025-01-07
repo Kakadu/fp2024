@@ -59,3 +59,5 @@ type structure_item =
       et P1 = E1 and ... and Pn = EN when rec is Nonrecursive,
       let rec P1 = E1 and ... and Pn = EN  when rec is Recursive.*)
 [@@deriving show { with_path = false }]
+
+type program = structure_item list [@@deriving show { with_path = false }]
