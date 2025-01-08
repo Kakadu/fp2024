@@ -82,18 +82,19 @@ let p_const =
 ;;
 
 let pexpr_const = p_const >>| fun x -> Pexp_constant x
-let ( === ) = test_ok pexpr_const
 
-(** let (!==) = test_fail pexpr_const doesn't work. Bug in ocaml *)
-let test_fail_const = test_fail pexpr_const
-
-let%test _ = "1" === Pexp_constant (Pconst_int 1)
-let%test _ = "1_000" === Pexp_constant (Pconst_int 1_000)
-let%test _ = "1___1" === Pexp_constant (Pconst_int 1___1)
-let%test _ = "1_000_000" === Pexp_constant (Pconst_int 1_000_000)
-let%test _ = test_fail_const "_" ": Error while parsing literal"
-let%test _ = "\"Homka\"" === Pexp_constant (Pconst_string "Homka")
-let%test _ = "true" === Pexp_constant (Pconst_boolean true)
+module Const_tests = struct
+  let ( === ) = test_ok pexpr_const
+  let ( <=> ) = test_fail pexpr_const
+  let test_fail_const = test_fail pexpr_const
+  let%test _ = "1" === Pexp_constant (Pconst_int 1)
+  let%test _ = "1_000" === Pexp_constant (Pconst_int 1_000)
+  let%test _ = "1___1" === Pexp_constant (Pconst_int 1___1)
+  let%test _ = "1_000_000" === Pexp_constant (Pconst_int 1_000_000)
+  let%test _ = "_" <=> ": Error while parsing literal"
+  let%test _ = {| "Homka" |} === Pexp_constant (Pconst_string "Homka")
+  let%test _ = "true" === Pexp_constant (Pconst_boolean true)
+end
 
 let lowercase_ident =
   let* first =
@@ -166,21 +167,19 @@ let p_pattern =
 ;;
 
 let p_pattern_test s r = parse_string ~consume:All p_pattern s = Result.Ok r
-let ( === ) = p_pattern_test
-let%test "pattern" = "_" === Ppat_any
-let%test "pattern" = "homka" === Ppat_var "homka"
-let%test "pattern" = "122" === Ppat_constant (Pconst_int 122)
-let%test "pattern" = "_, _" === Ppat_tuple [ Ppat_any; Ppat_any ]
-let%test "pattern" = "_, _, (_)" === Ppat_tuple [ Ppat_any; Ppat_any; Ppat_any ]
 
-let%test "pattern" =
-  "_, _, (_, _)" === Ppat_tuple [ Ppat_any; Ppat_any; Ppat_tuple [ Ppat_any; Ppat_any ] ]
-;;
+module Pattern_tests = struct
+  let ( === ) = p_pattern_test
+  let%test _ = "_" === Ppat_any
+  let%test _ = "homka" === Ppat_var "homka"
+  let%test _ = "122" === Ppat_constant (Pconst_int 122)
+  let%test _ = "_, _" === Ppat_tuple [ Ppat_any; Ppat_any ]
+  let%test _ = "_, _, (_)" === Ppat_tuple [ Ppat_any; Ppat_any; Ppat_any ]
+  let%test _ = "_, (_, _)" === Ppat_tuple [ Ppat_any; Ppat_tuple [ Ppat_any; Ppat_any ] ]
 
-(* FIX THIS, ADD char *)
-let%test "pattern" =
-  "\"a\" .. \"b\"" === Ppat_interval (Pconst_string "a", Pconst_string "b")
-;;
+  (* FIX THIS, ADD char *)
+  let%test _ = "\"a\" .. \"b\"" === Ppat_interval (Pconst_string "a", Pconst_string "b")
+end
 
 let p_fun expr =
   let* _ = token "fun" in
@@ -238,10 +237,10 @@ let p_expr =
     in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_const <|> expr_const in
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
-    let expr_comparsion =
+    let expr_comparison =
       p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
     in
-    let expr_fun = p_fun expr <|> expr_comparsion in
+    let expr_fun = p_fun expr <|> expr_comparison in
     let expr_apply = p_apply expr_fun <|> expr_fun in
     let expr_let_in = p_let_in expr <|> expr_apply in
     expr_let_in)
@@ -249,14 +248,10 @@ let p_expr =
 
 let p_expr_test s r = parse_string ~consume:All p_expr s = Result.Ok r
 let ( === ) = p_expr_test
-
-(* const tests *)
-let%test "const" = p_expr_test "1" @@ Pexp_constant (Pconst_int 1)
-let%test "const" = p_expr_test "(1)" @@ Pexp_constant (Pconst_int 1)
-let%test "const" = p_expr_test "((((homka))))" @@ Pexp_ident (Id "homka")
-let%test "fun" = "fun x -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
-
-(* let%test "fun" = "fun x y z -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x")) *)
+let%test "const" = "1" === Pexp_constant (Pconst_int 1)
+let%test "const" = "(1)" === Pexp_constant (Pconst_int 1)
+let%test "const" = "((((homka))))" === Pexp_ident (Id "homka")
+let%test "fun" = "fun x y z -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
 let%test "fun" = "fun x -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
 
 let p_str_value expr =
@@ -265,7 +260,7 @@ let p_str_value expr =
   Pstr_value (rec_flag, value_bindings)
 ;;
 
-let p_strucuture =
+let p_structure =
   let str_value = p_str_value p_expr in
   let str_eval = p_expr >>| (fun ex -> Pstr_eval ex) <|> str_value in
   str_eval
@@ -277,8 +272,8 @@ let pp e =
   | Error str -> print_string str
 ;;
 
-let parse str = parse_string ~consume:All p_strucuture str
-let parse_prefix str = parse_string ~consume:Prefix p_strucuture str
+let parse str = parse_string ~consume:All p_structure str
+let parse_prefix str = parse_string ~consume:Prefix p_structure str
 
 (* mult tests *)
 let%expect_test "mul_div_1" =
