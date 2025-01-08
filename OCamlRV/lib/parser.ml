@@ -297,7 +297,7 @@ let pstructure =
 
 let structure =
   let psemicolon = token ";;" in
-  many (pstructure <* psemicolon <* ws)
+  many (pstructure <* psemicolon <* ws <|> (pstructure <* ws))
 ;;
 
 let parse s = parse_string ~consume:All structure s

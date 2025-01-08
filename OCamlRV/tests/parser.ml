@@ -14,7 +14,7 @@ let parse_to_unit input =
 (* ------------------- binary operations -------------------*)
 
 let%expect_test _ =
-  parse_to_unit "1 + 1;;";
+  parse_to_unit "1 + 1";
   [%expect
     {|
     [(SEval
@@ -26,17 +26,17 @@ let%expect_test _ =
 (* ------------------- simple let expressions -------------------*)
 
 let%expect_test _ =
-  parse_to_unit "let x = 5;;";
+  parse_to_unit "let x = 5";
   [%expect {| [(SValue (NonRec, ((PVar "x"), (ExprConstant (CInt 5))), []))] |}]
 ;;
 
 let%expect_test _ =
-  parse_to_unit "let feets = 5280;;";
+  parse_to_unit "let feets = 5280";
   [%expect {| [(SValue (NonRec, ((PVar "feets"), (ExprConstant (CInt 5280))), []))] |}]
 ;;
 
 let%expect_test _ =
-  parse_to_unit {| let lie = "i love Ocaml";; |};
+  parse_to_unit {| let lie = "i love Ocaml" |};
   [%expect
     {|
 [(SValue (NonRec, ((PVar "lie"), (ExprConstant (CString "i love Ocaml"))), 
@@ -45,12 +45,12 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_to_unit "let list = [];;";
+  parse_to_unit "let list = []";
   [%expect {| [(SValue (NonRec, ((PVar "list"), (ExprConstant CNil)), []))] |}]
 ;;
 
 let%expect_test _ =
-  parse_to_unit {| let t = (1, "2", 3);; |};
+  parse_to_unit {| let t = (1, "2", 3) |};
   [%expect
     {|
     [(SValue (NonRec,
@@ -62,7 +62,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_to_unit "a::b;;";
+  parse_to_unit "a::b";
   [%expect {|
     [(SEval (ExprCons ((ExprVariable "a"), (ExprVariable "b"))))] |}]
 ;;
@@ -70,7 +70,7 @@ let%expect_test _ =
 (*------------------- if expressions -------------------*)
 
 let%expect_test _ =
-  parse_to_unit "if 5 > 3 then true else false;;";
+  parse_to_unit "if 5 > 3 then true else false";
   [%expect
     {|
          [(SEval
@@ -82,7 +82,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_to_unit "if x then 1 + 2 else 3;;";
+  parse_to_unit "if x then 1 + 2 else 3";
   [%expect
     {|
      [(SEval
@@ -94,7 +94,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_to_unit "if x > y then x * y else square x;;";
+  parse_to_unit "if x > y then x * y else square x";
   [%expect
     {|
      [(SEval
@@ -105,7 +105,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  parse_to_unit "let (a, b) = (1, 2);;";
+  parse_to_unit "let (a, b) = (1, 2)";
   [%expect
     {|
   [(SValue (NonRec,
@@ -120,7 +120,7 @@ let%expect_test _ =
   match a with 
     | None -> ()
     | Some e -> ()
-  ;;
+  
   |};
   [%expect
     {|
@@ -133,7 +133,7 @@ let%expect_test _ =
 (*------------------- Factorial and Fibonacci -------------------*)
 
 let%expect_test "fibo test" =
-  parse_to_unit "let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2);;";
+  parse_to_unit "let rec fibo n = if n <= 1 then n else fibo (n - 1) + fibo (n - 2)";
   [%expect
     {|
      [(SValue (Rec,
@@ -160,8 +160,7 @@ let%expect_test "fibo test" =
 ;;
 
 let%expect_test "fib test" =
-  parse_to_unit
-    "let rec fib_loop m n i = if i = 0 then m else fib_loop n (n + m) (i - 1);;";
+  parse_to_unit "let rec fib_loop m n i = if i = 0 then m else fib_loop n (n + m) (i - 1)";
   [%expect
     {|
      [(SValue (Rec,
@@ -192,7 +191,7 @@ let%expect_test "fib test" =
 ;;
 
 let%expect_test "factorial test" =
-  parse_to_unit "let rec fact n = if n <= 1 then 1 else n * fact (n - 1);;";
+  parse_to_unit "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
   [%expect
     {|
 [(SValue (Rec,
@@ -222,7 +221,7 @@ let%expect_test "match" =
 | 0 -> "zero"
 | 1 -> "one"
 | _ -> "other"
-;;
+
 |};
   [%expect
     {|
@@ -241,7 +240,7 @@ let%expect_test "value equals match" =
     {|let numder = match arabic with 
 | 1 -> "one"
 | 2 -> "two"
-| 3 -> "three";;|};
+| 3 -> "three"|};
   [%expect
     {|
      [(SValue (NonRec,
@@ -256,7 +255,7 @@ let%expect_test "value equals match" =
 ;;
 
 let%expect_test "bin operations with if then else" =
-  parse_to_unit {| 1 + if a then b else c;; |};
+  parse_to_unit {| 1 + if a then b else c |};
   [%expect
     {|
     [(SEval
@@ -269,7 +268,7 @@ let%expect_test "bin operations with if then else" =
 ;;
 
 let%expect_test "cons test" =
-  parse_to_unit "1::2::3::[];;";
+  parse_to_unit "1::2::3::[]";
   [%expect
     {|
     [(SEval
@@ -283,7 +282,7 @@ let%expect_test "cons test" =
 
 let%expect_test "sum list test" =
   parse_to_unit
-    {| let rec sum_list lst = match lst with | [] -> 0 | x::xs -> x + sum_list xs;; |};
+    {| let rec sum_list lst = match lst with | [] -> 0 | x::xs -> x + sum_list xs |};
   [%expect
     {|
     [(SValue (Rec,
@@ -305,7 +304,7 @@ let%expect_test "sum list test" =
 let%expect_test "double list test" =
   parse_to_unit
     "let rec double_list lst = match lst with | [] -> [] | x::xs -> (2 * x)::double_list \
-     xs;;";
+     xs";
   [%expect
     {|
      [(SValue (Rec,
@@ -328,7 +327,7 @@ let%expect_test "double list test" =
 ;;
 
 let%expect_test "unary tests" =
-  parse_to_unit "let b = not (x > 5);;";
+  parse_to_unit "let b = not (x > 5)";
   [%expect
     {|
     [(SValue (NonRec,
@@ -343,7 +342,7 @@ let%expect_test "unary tests" =
 (*------------------- type annotation -------------------*)
 
 let%expect_test "" =
-  parse_to_unit "let (a : int) = 5;;";
+  parse_to_unit "let (a : int) = 5";
   [%expect
     {|
       [(SValue (NonRec, ((PType ((PVar "a"), AInt)), (ExprConstant (CInt 5))), []))
@@ -351,7 +350,7 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  parse_to_unit {| let (a : string) = "hello";; |};
+  parse_to_unit {| let (a : string) = "hello" |};
   [%expect
     {|
       [(SValue (NonRec,
@@ -361,7 +360,7 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  parse_to_unit "let (a : bool) = true;;";
+  parse_to_unit "let (a : bool) = true";
   [%expect
     {|
       [(SValue (NonRec, ((PType ((PVar "a"), ABool)), (ExprConstant (CBool true))),
@@ -370,14 +369,14 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  parse_to_unit "let (a : unit) = ();;";
+  parse_to_unit "let (a : unit) = ()";
   [%expect
     {|
       [(SValue (NonRec, ((PType ((PVar "a"), AUnit)), (ExprConstant CUnit)), []))] |}]
 ;;
 
 let%expect_test "" =
-  parse_to_unit "let (a : int list) = [];;";
+  parse_to_unit "let (a : int list) = []";
   [%expect
     {|
       [(SValue (NonRec, ((PType ((PVar "a"), (AList AInt))), (ExprConstant CNil)),
@@ -386,7 +385,7 @@ let%expect_test "" =
 ;;
 
 let%expect_test "" =
-  parse_to_unit "let f (x : int) (y : int) = x + y;;";
+  parse_to_unit "let f (x : int) (y : int) = x + y";
   [%expect
     {|
       [(SValue (NonRec,

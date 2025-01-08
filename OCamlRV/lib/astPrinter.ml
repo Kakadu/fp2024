@@ -243,5 +243,5 @@ let pp_structure ppf = function
 ;;
 
 let pp_structure_item_list ppf structure_list =
-  List.iter (fun item -> fprintf ppf "%a;;\n\n" pp_structure item) structure_list
+  List.iter (fun item -> fprintf ppf "%a\n\n" pp_structure item) structure_list
 ;;
