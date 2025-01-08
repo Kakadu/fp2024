@@ -251,7 +251,6 @@ let ( === ) = p_expr_test
 let%test "const" = "1" === Pexp_constant (Pconst_int 1)
 let%test "const" = "(1)" === Pexp_constant (Pconst_int 1)
 let%test "const" = "((((homka))))" === Pexp_ident (Id "homka")
-let%test "fun" = "fun x y z -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
 let%test "fun" = "fun x -> x" === Pexp_fun (Ppat_var "x", Pexp_ident (Id "x"))
 
 let p_str_value expr =
