@@ -1,3 +1,9 @@
 let f x = x * x;;
 
-print_int (f 5);;
+let p = print_int;;
+
+p (f 5);;
+print_endline "";;
+
+print_int (f 10);;
+print_endline "";;

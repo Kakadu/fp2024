@@ -24,10 +24,8 @@ let run_single options =
     else Stdlib.String.trim (In_channel.input_all stdin)
   in
   if options.dump_parsetree
-  then Stdlib.Format.printf "%s\n" (parse_to_string text)
-  else if options.interpret
-  then test_interpret text
-  else ()
+  then Stdlib.Format.printf "--- AST ---\n%s\n--- AST ---\n\n" (parse_to_string text);
+  if options.interpret then test_interpret text else ()
 ;;
 
 let () =

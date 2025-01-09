@@ -5,7 +5,9 @@
 open Ast
 open Base
 
-(* type 'a built = 'a -> unit *)
+type builtin =
+  | BInt of (int -> unit)
+  | BString of (string -> unit)
 
 type environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
@@ -18,7 +20,7 @@ and value =
   | VTuple of value list
   | VNil
   | VFun of pattern * rec_flag * expression * environment
-  | VBuiltin of pattern * rec_flag * (int -> unit) * environment
+  | VBuiltin of pattern * rec_flag * builtin * environment
 
 let vint i = VInt i
 let vbool b = VBool b
@@ -32,6 +34,7 @@ type error =
   | Wrong_type of value
   | Unbound_variable
   | Evaluationg_Need_ToBeReplaced
+  | BuiltinEvaluatingError
 
 module type MONAD_FAIL = sig
   include Monad.S2
@@ -141,7 +144,7 @@ module Eval (M : MONAD_FAIL) = struct
         let v =
           match v with
           | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
-          | VBuiltin (p, NonRec, f, env) -> VBuiltin (p, Rec, f, extend env x v)
+          | VBuiltin (p, NonRec, f, env) -> VBuiltin (p, NonRec, f, extend env x v)
           | _ -> v
         in
         return v
@@ -181,27 +184,43 @@ module Eval (M : MONAD_FAIL) = struct
              | None -> fail Pattern_matching_failed
            in
            helper env' e
-         | VBuiltin (p, _, f, env) ->
-           (match v2 with
-            | VInt i -> f i
-            | _ -> ());
-           return VUnit
-         | _ -> fail (Wrong_type v1))
+         | VBuiltin (_, _, b, _) ->
+           let status =
+             match b, v2 with
+             | BInt b, VInt i ->
+               b i;
+               Ok VUnit
+             | BString b, VString s ->
+               b s;
+               Ok VUnit
+             | _, _ -> Error VUnit
+           in
+           (match status with
+            | Ok _ -> return VUnit
+            | Error _ -> fail (Wrong_type v1))
+         | _ -> fail BuiltinEvaluatingError)
       | _ -> fail Evaluationg_Need_ToBeReplaced
     in
     helper
   ;;
 
-  let eval_structure_item (env : environment) = function
+  let eval_structure_item (env : environment) structure_item =
+    let env =
+      extend
+        env
+        "print_int"
+        (VBuiltin (PConstant (CString "print_int"), NonRec, BInt print_int, env))
+    in
+    let env =
+      extend
+        env
+        "print_endline"
+        (VBuiltin (PConstant (CString "print_endline"), NonRec, BString print_endline, env))
+    in
+    match structure_item with
     | SEval e ->
-      let envvv =
-        extend
-          env
-          "print_int"
-          (VBuiltin (PConstant (CString "print_int"), NonRec, print_int, env))
-      in
-      let* v = eval_expr envvv e in
-      let env2 = extend envvv "-" v in
+      let* v = eval_expr env e in
+      let env2 = extend env "-" v in
       return env2
     | SValue (NonRec, (PVar x, e), []) ->
       let* v = eval_expr env e in
@@ -225,12 +244,6 @@ module Eval (M : MONAD_FAIL) = struct
       ~f:(fun env item ->
         let* env = env in
         let* env = eval_structure_item env item in
-        let _ =
-          Base.Map.iter
-            ~f:(fun value ->
-              Format.fprintf Format.std_formatter "- : some_type = %a\n" pp_value value)
-            env
-        in
         return env)
       ~init:(return empty)
       s
@@ -247,7 +260,6 @@ let test_interpret s =
   let open Stdlib.Format in
   match Parser.parse s with
   | Ok parsed ->
-    Stdlib.Format.printf "%s\n\n" (Ast.show_structure parsed);
     let _ = Interpret.eval_structure parsed in
     printf ""
   | Error e -> printf "Parsing error: %s\n" e

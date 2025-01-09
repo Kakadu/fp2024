@@ -51,13 +51,22 @@ let pbool =
   choice [ t; f ]
 ;;
 
-let pstring =
-  token "\""
-  *> take_while (function
+let escaped_char =
+  char '\\'
+  *> choice [ char 'n' *> return '\n'; char '\\' *> return '\\'; char '"' *> return '"' ]
+;;
+
+let regular_char =
+  satisfy (function
     | '"' -> false
+    | '\\' -> false
     | _ -> true)
+;;
+
+let pstring =
+  token "\"" *> many (escaped_char <|> regular_char)
   <* char '"'
-  >>| fun s -> CString s
+  >>| fun s -> CString (String.of_char_list s)
 ;;
 
 let punit = token "()" *> return CUnit
