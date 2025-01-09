@@ -166,9 +166,9 @@ let p_value_binding expr =
   let+ expr = token "=" *> expr in
   { pvb_pat = pattern
   ; pvb_expr =
-      (if List.length xs > 0
-       then List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr
-       else expr)
+      (match xs with
+       | [] -> expr
+       | _ -> List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
   }
 ;;
 
