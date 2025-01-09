@@ -5,6 +5,8 @@
 open Ast
 open Base
 
+(* type 'a built = 'a -> unit *)
+
 type environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
 and value =
@@ -16,6 +18,7 @@ and value =
   | VTuple of value list
   | VNil
   | VFun of pattern * rec_flag * expression * environment
+  | VBuiltin of pattern * rec_flag * (int -> unit) * environment
 
 let vint i = VInt i
 let vbool b = VBool b
@@ -58,6 +61,7 @@ let rec pp_value ppf =
       vl
   | VNil -> fprintf ppf "[]"
   | VFun _ -> fprintf ppf "<fun>"
+  | VBuiltin _ -> fprintf ppf "<builtin>"
 ;;
 
 module Env (M : MONAD_FAIL) = struct
@@ -137,6 +141,7 @@ module Eval (M : MONAD_FAIL) = struct
         let v =
           match v with
           | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
+          | VBuiltin (p, NonRec, f, env) -> VBuiltin (p, Rec, f, extend env x v)
           | _ -> v
         in
         return v
@@ -154,6 +159,17 @@ module Eval (M : MONAD_FAIL) = struct
         let* v = helper env e1 in
         let env = extend env x v in
         helper env e
+      | ExprLet (Rec, (PVar x, e1), [], e) ->
+        let* v = helper env e1 in
+        let env1 = extend env x v in
+        let v =
+          match v with
+          | VFun (p, _, e, _) -> VFun (p, Rec, e, env1)
+          | _ -> v
+        in
+        let env2 = extend env x v in
+        helper env2 e
+      | ExprFun (p, e) -> return (vfun p NonRec e env)
       | ExprApply (e1, e2) ->
         let* v1 = helper env e1 in
         let* v2 = helper env e2 in
@@ -165,6 +181,11 @@ module Eval (M : MONAD_FAIL) = struct
              | None -> fail Pattern_matching_failed
            in
            helper env' e
+         | VBuiltin (p, _, f, env) ->
+           (match v2 with
+            | VInt i -> f i
+            | _ -> ());
+           return VUnit
          | _ -> fail (Wrong_type v1))
       | _ -> fail Evaluationg_Need_ToBeReplaced
     in
@@ -173,9 +194,29 @@ module Eval (M : MONAD_FAIL) = struct
 
   let eval_structure_item (env : environment) = function
     | SEval e ->
-      let* v = eval_expr env e in
-      let env2 = extend env "-" v in
+      let envvv =
+        extend
+          env
+          "print_int"
+          (VBuiltin (PConstant (CString "print_int"), NonRec, print_int, env))
+      in
+      let* v = eval_expr envvv e in
+      let env2 = extend envvv "-" v in
       return env2
+    | SValue (NonRec, (PVar x, e), []) ->
+      let* v = eval_expr env e in
+      let env = extend env x v in
+      return env
+    | SValue (Rec, (PVar x, e), []) ->
+      let* v = eval_expr env e in
+      let env1 = extend env x v in
+      let v =
+        match v with
+        | VFun (p, _, e, _) -> VFun (p, Rec, e, env1)
+        | _ -> v
+      in
+      let env = extend env x v in
+      return env
     | _ -> fail Evaluationg_Need_ToBeReplaced
   ;;
 
