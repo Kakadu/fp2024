@@ -166,9 +166,9 @@ let p_value_binding expr =
   let+ expr = token "=" *> expr in
   { pvb_pat = pattern
   ; pvb_expr =
-      (if List.length xs = 0
-       then expr
-       else List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
+      (if List.length xs > 0
+       then List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr
+       else expr)
   }
 ;;
 
@@ -180,7 +180,7 @@ let p_let_in expr =
 ;;
 
 let token_or xs : string t =
-  let token_functions = List.map (fun s -> token s) xs in
+  let token_functions = List.map token xs in
   match token_functions with
   | h :: t -> List.fold_right ( <|> ) t h
   | _ -> fail "token_or require two or more tokens"
