@@ -86,7 +86,6 @@ let pexpr_const = p_const >>| fun x -> Pexp_constant x
 module Const_tests = struct
   let ( === ) = test_ok pexpr_const
   let ( <=> ) = test_fail pexpr_const
-  let test_fail_const = test_fail pexpr_const
   let%test _ = "1" === Pexp_constant (Pconst_int 1)
   let%test _ = "1_000" === Pexp_constant (Pconst_int 1_000)
   let%test _ = "1___1" === Pexp_constant (Pconst_int 1___1)
@@ -271,12 +270,12 @@ let pp e =
   | Error str -> print_string str
 ;;
 
-let parse str = parse_string ~consume:All p_structure str
+let parse_structure str = parse_string ~consume:All p_structure str
 let parse_prefix str = parse_string ~consume:Prefix p_structure str
 
 (* mult tests *)
 let%expect_test "mul_div_1" =
-  pp @@ parse "2 * 2";
+  pp @@ parse_structure "2 * 2";
   [%expect
     {|
     (Pstr_eval
@@ -285,7 +284,7 @@ let%expect_test "mul_div_1" =
 ;;
 
 let%expect_test "mul_div_2" =
-  pp @@ parse "2 * ((2 * (124 * homka))) * (((2 * 1)))";
+  pp @@ parse_structure "2 * ((2 * (124 * homka))) * (((2 * 1)))";
   [%expect
     {|
     (Pstr_eval
@@ -309,7 +308,7 @@ let%expect_test "mul_div_2" =
 ;;
 
 let%expect_test "mul_div_3" =
-  pp @@ parse "2 / 2";
+  pp @@ parse_structure "2 / 2";
   [%expect
     {|
     (Pstr_eval
@@ -318,7 +317,7 @@ let%expect_test "mul_div_3" =
 ;;
 
 let%expect_test "mul_div_4" =
-  pp @@ parse "2 * ((2 / (124 / homka))) * (1) * (2 / 2) * (((2 * 1)))";
+  pp @@ parse_structure "2 * ((2 / (124 / homka))) * (1) * (2 / 2) * (((2 * 1)))";
   [%expect
     {|
     (Pstr_eval
@@ -352,14 +351,14 @@ let%expect_test "mul_div_4" =
 ;;
 
 let%expect_test "fun 1" =
-  pp @@ parse "fun x -> 5";
+  pp @@ parse_structure "fun x -> 5";
   [%expect
     {|
     (Pstr_eval (Pexp_fun ((Ppat_var "x"), (Pexp_constant (Pconst_int 5))))) |}]
 ;;
 
 let%expect_test "fun 2" =
-  pp @@ parse "fun x -> fun y -> fun z -> 5";
+  pp @@ parse_structure "fun x -> fun y -> fun z -> 5";
   [%expect
     {|
     (Pstr_eval
@@ -370,7 +369,7 @@ let%expect_test "fun 2" =
 ;;
 
 let%expect_test "fun 3" =
-  pp @@ parse "fun x y z -> 5";
+  pp @@ parse_structure "fun x y z -> 5";
   [%expect
     {|
     (Pstr_eval
@@ -381,7 +380,7 @@ let%expect_test "fun 3" =
 ;;
 
 let%expect_test "If then else" =
-  pp @@ parse "if x then y else z";
+  pp @@ parse_structure "if x then y else z";
   [%expect
     {|
     (Pstr_eval
@@ -390,7 +389,7 @@ let%expect_test "If then else" =
 ;;
 
 let%expect_test "If then else without else" =
-  pp @@ parse "if x then y";
+  pp @@ parse_structure "if x then y";
   [%expect
     {|
     (Pstr_eval
@@ -398,7 +397,7 @@ let%expect_test "If then else without else" =
 ;;
 
 let%expect_test "If then else with inner ifelse" =
-  pp @@ parse "if x then if y then z";
+  pp @@ parse_structure "if x then if y then z";
   [%expect
     {|
     (Pstr_eval
@@ -408,7 +407,7 @@ let%expect_test "If then else with inner ifelse" =
 ;;
 
 let%expect_test "If then else mult" =
-  pp @@ parse "2 * if true then 2 else 1";
+  pp @@ parse_structure "2 * if true then 2 else 1";
   [%expect
     {|
     (Pstr_eval
@@ -422,7 +421,7 @@ let%expect_test "If then else mult" =
 ;;
 
 let%expect_test "fun with if else" =
-  pp @@ parse "fun x y -> if x then y";
+  pp @@ parse_structure "fun x y -> if x then y";
   [%expect
     {|
     (Pstr_eval
@@ -435,7 +434,7 @@ let%expect_test "fun with if else" =
 ;;
 
 let%expect_test "fun with if else 2" =
-  pp @@ parse "fun x -> fun y -> if x then y else x";
+  pp @@ parse_structure "fun x -> fun y -> if x then y else x";
   [%expect
     {|
     (Pstr_eval
@@ -448,7 +447,7 @@ let%expect_test "fun with if else 2" =
 ;;
 
 let%expect_test "apply" =
-  pp @@ parse "f y z";
+  pp @@ parse_structure "f y z";
   [%expect
     {|
     (Pstr_eval
@@ -457,7 +456,7 @@ let%expect_test "apply" =
 ;;
 
 let%expect_test "let in" =
-  pp @@ parse "let homka = 5 in homka";
+  pp @@ parse_structure "let homka = 5 in homka";
   [%expect
     {|
     (Pstr_eval
@@ -469,7 +468,7 @@ let%expect_test "let in" =
 ;;
 
 let%expect_test "let in with fun" =
-  pp @@ parse "let homka = fun x -> x + 2 in homka";
+  pp @@ parse_structure "let homka = fun x -> x + 2 in homka";
   [%expect
     {|
     (Pstr_eval
@@ -486,7 +485,7 @@ let%expect_test "let in with fun" =
 ;;
 
 let%expect_test "factorial" =
-  pp @@ parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1)";
+  pp @@ parse_structure "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1)";
   [%expect
     {|
     (Pstr_value (Recursive,
