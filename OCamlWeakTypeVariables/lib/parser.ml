@@ -272,6 +272,7 @@ let pp e =
 
 let parse_structure str = parse_string ~consume:All p_structure str
 let parse_prefix str = parse_string ~consume:Prefix p_structure str
+let parse = parse_structure
 
 (* mult tests *)
 let%expect_test "mul_div_1" =
