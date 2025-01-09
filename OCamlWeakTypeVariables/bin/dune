@@ -4,3 +4,13 @@
  (libraries lib)
  (instrumentation
   (backend bisect_ppx)))
+
+(executable
+ (name REPL)
+ (public_name REPL)
+ (libraries lib)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (deps ./REPL.exe %{bin:REPL}))
