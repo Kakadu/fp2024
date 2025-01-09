@@ -8,9 +8,7 @@
 (executable
  (name REPL)
  (public_name REPL)
- (libraries lib)
- (instrumentation
-  (backend bisect_ppx)))
+ (libraries lib))
 
 (cram
  (deps ./REPL.exe %{bin:REPL}))
