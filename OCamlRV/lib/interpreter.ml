@@ -190,6 +190,9 @@ module Eval (M : MONAD_FAIL) = struct
         let* v = helper env e1 in
         let env = extend env x v in
         helper env e
+      | ExprLet (NonRec, (PConstant CUnit, e1), [], e) ->
+        let _ = helper env e1 in
+        helper env e
       | ExprLet (Rec, (PVar x, e1), [], e) ->
         let* v = helper env e1 in
         let env1 = extend env x v in
@@ -293,6 +296,8 @@ module Eval (M : MONAD_FAIL) = struct
       let* v = eval_expr env e in
       let env = extend env x v in
       return env
+    | SValue (NonRec, (PConstant CUnit, e1), []) ->
+        let _ = eval_expr env e1 in return env
     | SValue (Rec, (PVar x, e), []) ->
       let* v = eval_expr env e in
       let env1 = extend env x v in
