@@ -10,16 +10,14 @@
 
 (maintainers "Dmitri Chirkov")
 
-(bug_reports "https://github.com/kinokotakenoko9/SchemeCWCC")
+(bug_reports "https://github.com/kinokotakenoko9/MiniMl")
 
-(homepage "https://github.com/kinokotakenoko9/SchemeCWCC")
+(homepage "https://github.com/kinokotakenoko9/MiniMl")
 
 (package
- (name SchemeCWCC)
- (synopsis "An interpreter for subset of Scheme with call/cc")
- (description
-  "An interpreter for subset of Scheme language with the support of call/cc")
- ; (documentation "https://kakadu.github.io/fp2024/docs/SchemeCWCC")
+ (name MiniMl)
+ (synopsis "An interpreter for miniml")
+ (description "An interpreter for miniml")
  (version 0.1)
  (depends
   dune
