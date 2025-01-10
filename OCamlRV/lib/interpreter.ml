@@ -97,8 +97,8 @@ module Eval (M : MONAD_FAIL) = struct
     | PConstant CNil, VList [] -> Some env
     | PConstant CNil, VNil -> Some env
     | PVar x, v -> Some (extend env x v)
-    | PTuple (p1, p2, p3), VTuple vl ->
-      let pl = p1 :: p2 :: p3 in
+    | PTuple (p1, p2, rest), VTuple vl ->
+      let pl = p1 :: p2 :: rest in
       let env =
         List.fold2
           pl
@@ -112,6 +112,21 @@ module Eval (M : MONAD_FAIL) = struct
       (match env with
        | Ok env -> env
        | _ -> None)
+    | PList (p1, rest), VList vl ->
+        let pl = p1 :: rest in
+        let env =
+          List.fold2
+            pl
+            vl
+            ~f:(fun env p v ->
+              match env with
+              | Some e -> check_match e (p, v)
+              | None -> None)
+            ~init:(Some env)
+        in
+        (match env with
+         | Ok env -> env
+         | _ -> None)
     | PCons (p1, p2), VList (v :: vl) ->
       let env = check_match env (p2, VList vl) in
       (match env with
@@ -188,21 +203,6 @@ module Eval (M : MONAD_FAIL) = struct
       | ExprFun (p, e) -> return (vfun p NonRec e env)
       | ExprMatch (e, c, cl) ->
         let* v = helper env e in
-        let () =
-          match v with
-          (* DEBUG CODE start *)
-          | VList l ->
-            let rec h ppf = function
-              | [] -> Format.fprintf ppf "\n"
-              | [ x ] -> Format.fprintf ppf "%a" pp_value x
-              | a :: b ->
-                Format.fprintf ppf "%a " pp_value a;
-                h ppf b
-            in
-            h Format.std_formatter l
-          | _ -> print_endline "12345"
-        in
-        (* DEBUG CODE end *)
         let rec match_helper env v = function
           | (p, e) :: tl ->
             let env' = check_match env (p, v) in

@@ -147,6 +147,14 @@ let ppcons pe =
   return (helper (e1 :: rest))
 ;;
 
+let pplist pe =
+  brackets @@ sep_by1 (token ";") pe
+  >>| function
+  | [] -> PConstant CNil
+  | [ x ] -> PList (x, [])
+  | x :: xs -> PList (x, xs)
+;;
+
 let pattern =
   fix (fun pat ->
     let term =
@@ -157,6 +165,7 @@ let pattern =
         ; pparens pat
         ; pp_option pat
         ; pattern_with_type pat
+        ; pplist pat
         ]
     in
     let cons = ppcons term in

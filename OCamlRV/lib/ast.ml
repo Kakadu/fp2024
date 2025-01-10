@@ -79,6 +79,10 @@ type pattern =
       * (pattern list
         [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   (** p_1 ,..., p_n *)
+  | PList of
+      pattern
+      * (pattern list
+        [@gen QCheck.Gen.(list_size small_nat (gen_pattern_sized (n / div)))])
   | POption of pattern option
   | PType of pattern * type_annot
 [@@deriving show { with_path = false }, qcheck]
@@ -99,7 +103,7 @@ type expression =
       rec_flag
       * binding
       * (binding list
-        [@gen QCheck.Gen.(list_size (0 -- 10) (gen_binding_sized (n / div)))])
+        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_binding_sized (n / div)))])
       * expression
   (** [ExprLet(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)
@@ -149,7 +153,7 @@ type structure_item =
   | SValue of
       rec_flag
       * binding
-      * (binding list[@gen QCheck.Gen.(list_size (0 -- 10) gen_binding)])
+      * (binding list[@gen QCheck.Gen.(list_size (0 -- 2) gen_binding)])
   (** [SValue(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)])] *)
 [@@deriving show { with_path = false }, qcheck]
 

@@ -62,3 +62,27 @@ let%expect_test _ =
    |};
   [%expect {| Ok |}]
 ;;
+
+(* Some functions *)
+
+let%expect_test _ =
+  test_interpret
+    {|
+      let rec f n = if n <= 1 then 1 else n * f (n - 1);;
+      print_int (f 5);;
+   |};
+  [%expect {| 120 |}]
+;;
+
+let%expect_test _ =
+  test_interpret
+    {|
+      let rec sum_list lst =
+        match lst with
+        | [] -> 0
+        | head :: tail -> head + sum_list tail
+      ;;
+      print_int (sum_list [1; 2; 3; 4; 5]);;
+   |};
+  [%expect {| 15 |}]
+;;
