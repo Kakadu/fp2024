@@ -102,8 +102,7 @@ type expression =
   | ExprLet of
       rec_flag
       * binding
-      * (binding list
-        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_binding_sized (n / div)))])
+      * (binding list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_binding_sized (n / div)))])
       * expression
   (** [ExprLet(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)], e)] *)
   | ExprApply of expression * expression (** fact n *)

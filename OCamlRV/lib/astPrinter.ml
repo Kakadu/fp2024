@@ -92,20 +92,20 @@ let pp_pattern =
           pp_tuple ppf xs
       in
       fprintf ppf "(%a)" pp_tuple (p1 :: p2 :: rest)
-      | PList (p1, rest) ->
-        let pp_tuple_helper ppf x =
-          match x with
-          | PCons _ | POption _ -> fprintf ppf "(%a)" helper x
-          | _ -> fprintf ppf "%a" helper x
-        in
-        let rec pp_tuple ppf = function
-          | [] -> ()
-          | [ x ] -> fprintf ppf "%a" pp_tuple_helper x
-          | x :: xs ->
-            fprintf ppf "%a; " pp_tuple_helper x;
-            pp_tuple ppf xs
-        in
-        fprintf ppf "[%a]" pp_tuple (p1 :: rest)
+    | PList (p1, rest) ->
+      let pp_tuple_helper ppf x =
+        match x with
+        | PCons _ | POption _ -> fprintf ppf "(%a)" helper x
+        | _ -> fprintf ppf "%a" helper x
+      in
+      let rec pp_tuple ppf = function
+        | [] -> ()
+        | [ x ] -> fprintf ppf "%a" pp_tuple_helper x
+        | x :: xs ->
+          fprintf ppf "%a; " pp_tuple_helper x;
+          pp_tuple ppf xs
+      in
+      fprintf ppf "[%a]" pp_tuple (p1 :: rest)
     | POption x ->
       (match x with
        | Some x -> fprintf ppf "Some (%a)" helper x

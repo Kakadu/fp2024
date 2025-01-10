@@ -238,7 +238,8 @@ let%expect_test "let expr with match match with multiple branches" =
                 ] ) )
         , [] )
     ];
-  [%expect {|
+  [%expect
+    {|
 let numder = match arabic with
 | 1 -> "one"
 | 2 -> "two"

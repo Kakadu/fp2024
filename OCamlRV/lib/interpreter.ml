@@ -113,20 +113,20 @@ module Eval (M : MONAD_FAIL) = struct
        | Ok env -> env
        | _ -> None)
     | PList (p1, rest), VList vl ->
-        let pl = p1 :: rest in
-        let env =
-          List.fold2
-            pl
-            vl
-            ~f:(fun env p v ->
-              match env with
-              | Some e -> check_match e (p, v)
-              | None -> None)
-            ~init:(Some env)
-        in
-        (match env with
-         | Ok env -> env
-         | _ -> None)
+      let pl = p1 :: rest in
+      let env =
+        List.fold2
+          pl
+          vl
+          ~f:(fun env p v ->
+            match env with
+            | Some e -> check_match e (p, v)
+            | None -> None)
+          ~init:(Some env)
+      in
+      (match env with
+       | Ok env -> env
+       | _ -> None)
     | PCons (p1, p2), VList (v :: vl) ->
       let env = check_match env (p2, VList vl) in
       (match env with
@@ -297,7 +297,8 @@ module Eval (M : MONAD_FAIL) = struct
       let env = extend env x v in
       return env
     | SValue (NonRec, (PConstant CUnit, e1), []) ->
-        let _ = eval_expr env e1 in return env
+      let _ = eval_expr env e1 in
+      return env
     | SValue (Rec, (PVar x, e), []) ->
       let* v = eval_expr env e in
       let env1 = extend env x v in
