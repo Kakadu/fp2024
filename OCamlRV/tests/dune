@@ -5,15 +5,9 @@
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
- (modules parser astPrinter inferencer)
+ (modules parser astPrinter inferencer interpreter)
  (instrumentation
   (backend bisect_ppx)))
-
-(executable
- (name interpreter)
- (public_name interpreter)
- (libraries OCamlRV_lib)
- (modules interpreter))
 
 (cram
  (applies_to quickcheck)

@@ -19,10 +19,9 @@ and value =
   | VList of value list
   | VTuple of value list
   | VNil
-   | VNone
-  | VSome of value
+  | VOption of value option
   | VFun of pattern * rec_flag * expression * environment
-  | VBuiltin of pattern * rec_flag * builtin * environment
+  | VBuiltin of builtin * environment
 
 let vint i = VInt i
 let vbool b = VBool b
@@ -67,7 +66,10 @@ let rec pp_value ppf =
   | VNil -> fprintf ppf "[]"
   | VFun _ -> fprintf ppf "<fun>"
   | VBuiltin _ -> fprintf ppf "<builtin>"
-  | VNone | VSome _ -> fprintf ppf "<Option>"
+  | VOption vo ->
+    (match vo with
+     | Some v -> fprintf ppf "Some %a" pp_value v
+     | None -> fprintf ppf "None")
 ;;
 
 module Env (M : MONAD_FAIL) = struct
@@ -93,8 +95,10 @@ module Eval (M : MONAD_FAIL) = struct
     | PConstant (CBool b1), VBool b2 when Bool.equal b1 b2 -> Some env
     | PConstant (CString s1), VString s2 when String.equal s1 s2 -> Some env
     | PConstant CNil, VList [] -> Some env
+    | PConstant CNil, VNil -> Some env
     | PVar x, v -> Some (extend env x v)
-    | PTuple (p1, p2, pl), VTuple vl ->
+    | PTuple (p1, p2, p3), VTuple vl ->
+      let pl = p1 :: p2 :: p3 in
       let env =
         List.fold2
           pl
@@ -112,6 +116,12 @@ module Eval (M : MONAD_FAIL) = struct
       let env = check_match env (p2, VList vl) in
       (match env with
        | Some env -> check_match env (p1, v)
+       | None -> None)
+    | POption None, VOption None -> Some env
+    | POption (Some p), VOption (Some v) ->
+      let env = check_match env (p, v) in
+      (match env with
+       | Some env -> Some env
        | None -> None)
     | _ -> None
   ;;
@@ -147,7 +157,7 @@ module Eval (M : MONAD_FAIL) = struct
         let v =
           match v with
           | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
-          | VBuiltin (p, NonRec, f, env) -> VBuiltin (p, NonRec, f, extend env x v)
+          | VBuiltin (f, env) -> VBuiltin (f, extend env x v)
           | _ -> v
         in
         return v
@@ -176,6 +186,32 @@ module Eval (M : MONAD_FAIL) = struct
         let env2 = extend env x v in
         helper env2 e
       | ExprFun (p, e) -> return (vfun p NonRec e env)
+      | ExprMatch (e, c, cl) ->
+        let* v = helper env e in
+        let () =
+          match v with
+          (* DEBUG CODE start *)
+          | VList l ->
+            let rec h ppf = function
+              | [] -> Format.fprintf ppf "\n"
+              | [ x ] -> Format.fprintf ppf "%a" pp_value x
+              | a :: b ->
+                Format.fprintf ppf "%a " pp_value a;
+                h ppf b
+            in
+            h Format.std_formatter l
+          | _ -> print_endline "12345"
+        in
+        (* DEBUG CODE end *)
+        let rec match_helper env v = function
+          | (p, e) :: tl ->
+            let env' = check_match env (p, v) in
+            (match env' with
+             | Some env -> helper env e
+             | None -> match_helper env v tl)
+          | [] -> fail Pattern_matching_failed
+        in
+        match_helper env v (c :: cl)
       | ExprApply (e1, e2) ->
         let* v1 = helper env e1 in
         let* v2 = helper env e2 in
@@ -187,7 +223,7 @@ module Eval (M : MONAD_FAIL) = struct
              | None -> fail Pattern_matching_failed
            in
            helper env' e
-         | VBuiltin (_, _, b, _) ->
+         | VBuiltin (b, _) ->
            let status =
              match b, v2 with
              | BInt b, VInt i ->
@@ -231,32 +267,23 @@ module Eval (M : MONAD_FAIL) = struct
         let* hv = helper env h in
         let* tlv = helper env tl in
         (match tlv with
-        | VList vl -> return (VList (hv :: vl))
-        | _ -> fail (Wrong_type tlv))
+         | VList vl -> return (VList (hv :: vl))
+         | VNil -> return (VList [ hv ])
+         | t -> fail (Wrong_type t))
       | ExprOption opt_expr ->
-         (match opt_expr with
-          | None -> return VNone
-          | Some e ->
-            let* v = helper env e in
-        return (VSome v))
+        (match opt_expr with
+         | None -> return (VOption None)
+         | Some e ->
+           let* v = helper env e in
+           return (VOption (Some v)))
       | _ -> fail Evaluationg_Need_ToBeReplaced
     in
     helper
   ;;
 
   let eval_structure_item (env : environment) structure_item =
-    let env =
-      extend
-        env
-        "print_int"
-        (VBuiltin (PConstant (CString "print_int"), NonRec, BInt print_int, env))
-    in
-    let env =
-      extend
-        env
-        "print_endline"
-        (VBuiltin (PConstant (CString "print_endline"), NonRec, BString print_endline, env))
-    in
+    let env = extend env "print_int" (VBuiltin (BInt print_int, env)) in
+    let env = extend env "print_endline" (VBuiltin (BString print_endline, env)) in
     match structure_item with
     | SEval e ->
       let* v = eval_expr env e in

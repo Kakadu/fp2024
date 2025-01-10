@@ -1,9 +1,5 @@
-let f x = x * x;;
-
-let p = print_int;;
-
-p (f 5);;
-print_endline "";;
-
-print_int (f 10);;
-print_endline "";;
+let a = [1; 2];;
+match a with
+    | [0; 0] -> print_endline "Error"
+    | [1; 2] ->  print_endline "Ok"
+;;
