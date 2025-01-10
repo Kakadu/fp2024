@@ -236,10 +236,9 @@ module Eval (M : MONAD_FAIL) = struct
       | ExprOption opt_expr ->
          (match opt_expr with
           | None -> return VNone
-      | Some e ->
+          | Some e ->
             let* v = helper env e in
         return (VSome v))
-
       | _ -> fail Evaluationg_Need_ToBeReplaced
     in
     helper
