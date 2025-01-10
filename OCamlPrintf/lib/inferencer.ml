@@ -6,8 +6,7 @@ open Ast
 open Pprinter
 
 type error =
-  [ `Impossible_error
-  | `No_variable_rec
+  [ `No_variable_rec
   | `No_arg_rec
   | `Bound_several_times
   | `Occurs_check of string * core_type
@@ -16,7 +15,6 @@ type error =
   ]
 
 let pp_error ppf : error -> _ = function
-  | `Impossible_error -> Format.fprintf ppf "Something went wrong"
   | `No_variable_rec ->
     Format.fprintf ppf "Only variables are allowed as left-hand side of `let rec'"
   | `No_arg_rec ->
@@ -364,36 +362,30 @@ module Infer = struct
     | Pat_construct ("[]", None) ->
       let* fresh = fresh_var in
       return (env, Type_list fresh)
-    | Pat_construct ("::", Some pat) ->
-      (match pat with
-       | Pat_tuple (head, tail, []) ->
-         let* fresh = fresh_var in
-         let* env, type_of_head = infer_pattern env head in
-         let* unified_sub = unify type_of_head fresh in
-         let env = TypeEnv.apply unified_sub env in
-         let rec infer_tail env sub_acc (cur_pat : pattern) =
-           let helper required_type pat =
-             let* env, type_of_pat = infer_pattern env pat in
-             let* unified_sub = unify required_type type_of_pat in
-             return (TypeEnv.apply unified_sub env, unified_sub)
-           in
-           match cur_pat with
-           | Pat_construct (_, None) -> return (env, sub_acc)
-           | Pat_construct (_, Some pat_tail) ->
-             (match pat_tail with
-              | Pat_tuple (next_head, next_tail, []) ->
-                let* env, sub = helper fresh next_head in
-                let* env, final_sub = infer_tail env (sub :: sub_acc) next_tail in
-                return (env, final_sub)
-              | _ -> fail `Impossible_error)
-           | _ ->
-             let* env, sub = helper (Type_list fresh) cur_pat in
-             return (env, sub :: sub_acc)
-         in
-         let* env, sub_list = infer_tail env [ unified_sub ] tail in
-         let* final_sub = Subst.compose_all sub_list in
-         return (TypeEnv.apply final_sub env, Subst.apply final_sub (Type_list fresh))
-       | _ -> fail `Impossible_error)
+    | Pat_construct ("::", Some (Pat_tuple (head, tail, []))) ->
+      let* fresh = fresh_var in
+      let* env, type_of_head = infer_pattern env head in
+      let* unified_sub = unify type_of_head fresh in
+      let env = TypeEnv.apply unified_sub env in
+      let rec infer_tail env sub_acc (cur_pat : pattern) =
+        let helper required_type pat =
+          let* env, type_of_pat = infer_pattern env pat in
+          let* unified_sub = unify required_type type_of_pat in
+          return (TypeEnv.apply unified_sub env, unified_sub)
+        in
+        match cur_pat with
+        | Pat_construct (_, None) -> return (env, sub_acc)
+        | Pat_construct (_, Some (Pat_tuple (next_head, next_tail, []))) ->
+          let* env, sub = helper fresh next_head in
+          let* env, final_sub = infer_tail env (sub :: sub_acc) next_tail in
+          return (env, final_sub)
+        | _ ->
+          let* env, sub = helper (Type_list fresh) cur_pat in
+          return (env, sub :: sub_acc)
+      in
+      let* env, sub_list = infer_tail env [ unified_sub ] tail in
+      let* final_sub = Subst.compose_all sub_list in
+      return (TypeEnv.apply final_sub env, Subst.apply final_sub (Type_list fresh))
     | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
     | Pat_construct ("()", None) -> return (env, Type_unit)
     | Pat_construct ("None", None) ->
@@ -402,7 +394,10 @@ module Infer = struct
     | Pat_construct ("Some", Some pat) ->
       let* env, typ = infer_pattern env pat in
       return (env, Type_option typ)
-    | Pat_construct (_, _) -> fail `Impossible_error
+    | Pat_construct _ ->
+      (* Impossible situation *)
+      let* fresh = fresh_var in
+      return (env, fresh)
     | Pat_constraint (pat, c_type) ->
       let* env, typ = infer_pattern env pat in
       let* unified_sub = unify typ c_type in
@@ -487,32 +482,23 @@ module Infer = struct
         | hd :: tl -> infer_expression env (Exp_fun (hd, tl, exp))
       in
       return (sub, Type_arrow (Subst.apply sub type1, type2))
+    | Exp_apply (Exp_ident op, Exp_apply (exp1, exp2)) when is_operator op ->
+      let* sub1, type1 = infer_expression env exp1 in
+      let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
+      let* required_type1, required_type2, required_result_type =
+        match get_priority op with
+        | 1 | 2 -> return (Type_int, Type_int, Type_int)
+        | 3 ->
+          let* fresh = fresh_var in
+          return (fresh, fresh, Type_bool)
+        | _ -> return (Type_bool, Type_bool, Type_bool)
+      in
+      let* unified_sub1 = Subst.unify (Subst.apply sub2 type1) required_type1 in
+      let* unified_sub2 = Subst.unify (Subst.apply unified_sub1 type2) required_type2 in
+      let* composed_sub = Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ] in
+      return (composed_sub, required_result_type)
     | Exp_apply (e1, e2) ->
       (match e1 with
-       | Exp_ident op when is_operator op ->
-         let* exp1, exp2 =
-           match e2 with
-           | Exp_apply (exp1, exp2) -> return (exp1, exp2)
-           | _ -> fail `Impossible_error
-         in
-         let* sub1, type1 = infer_expression env exp1 in
-         let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
-         let* required_type1, required_type2, required_result_type =
-           match get_priority op with
-           | 1 | 2 -> return (Type_int, Type_int, Type_int)
-           | 3 ->
-             let* fresh = fresh_var in
-             return (fresh, fresh, Type_bool)
-           | _ -> return (Type_bool, Type_bool, Type_bool)
-         in
-         let* unified_sub1 = Subst.unify (Subst.apply sub2 type1) required_type1 in
-         let* unified_sub2 =
-           Subst.unify (Subst.apply unified_sub1 type2) required_type2
-         in
-         let* composed_sub =
-           Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ]
-         in
-         return (composed_sub, required_result_type)
        | Exp_ident op when is_negative_op op ->
          let* sub, ty = infer_expression env e2 in
          let* unified_sub = Subst.unify ty Type_int in
@@ -569,37 +555,31 @@ module Infer = struct
     | Exp_construct ("[]", None) ->
       let* fresh = fresh_var in
       return (Subst.empty, Type_list fresh)
-    | Exp_construct ("::", Some exp) ->
-      (match exp with
-       | Exp_tuple (head, tail, []) ->
-         let* fresh = fresh_var in
-         let* sub1, type1 = infer_expression env head in
-         let* unified_sub = unify fresh type1 in
-         let* sub1 = Subst.compose sub1 unified_sub in
-         let rec infer_tail sub_acc (cur_exp : Expression.t) =
-           let helper required_type exp =
-             let* sub_of_exp, type_of_exp = infer_expression env exp in
-             let* unified_sub = unify required_type type_of_exp in
-             let* sub = Subst.compose sub_of_exp unified_sub in
-             return sub
-           in
-           match cur_exp with
-           | Exp_construct (_, None) -> return sub_acc
-           | Exp_construct (_, Some exp_tail) ->
-             (match exp_tail with
-              | Exp_tuple (next_head, next_tail, []) ->
-                let* sub = helper fresh next_head in
-                let* final_sub = infer_tail (sub :: sub_acc) next_tail in
-                return final_sub
-              | _ -> fail `Impossible_error)
-           | _ ->
-             let* sub = helper (Type_list fresh) cur_exp in
-             return (sub :: sub_acc)
-         in
-         let* sub_list = infer_tail [ sub1 ] tail in
-         let* final_sub = Subst.compose_all sub_list in
-         return (final_sub, Subst.apply final_sub (Type_list fresh))
-       | _ -> fail `Impossible_error)
+    | Exp_construct ("::", Some (Exp_tuple (head, tail, []))) ->
+      let* fresh = fresh_var in
+      let* sub1, type1 = infer_expression env head in
+      let* unified_sub = unify fresh type1 in
+      let* sub1 = Subst.compose sub1 unified_sub in
+      let rec infer_tail sub_acc (cur_exp : Expression.t) =
+        let helper required_type exp =
+          let* sub_of_exp, type_of_exp = infer_expression env exp in
+          let* unified_sub = unify required_type type_of_exp in
+          let* sub = Subst.compose sub_of_exp unified_sub in
+          return sub
+        in
+        match cur_exp with
+        | Exp_construct (_, None) -> return sub_acc
+        | Exp_construct (_, Some (Exp_tuple (next_head, next_tail, []))) ->
+          let* sub = helper fresh next_head in
+          let* final_sub = infer_tail (sub :: sub_acc) next_tail in
+          return final_sub
+        | _ ->
+          let* sub = helper (Type_list fresh) cur_exp in
+          return (sub :: sub_acc)
+      in
+      let* sub_list = infer_tail [ sub1 ] tail in
+      let* final_sub = Subst.compose_all sub_list in
+      return (final_sub, Subst.apply final_sub (Type_list fresh))
     | Exp_construct (id, None) when id = "true" || id = "false" ->
       return (Subst.empty, Type_bool)
     | Exp_construct ("()", None) -> return (Subst.empty, Type_unit)
@@ -609,7 +589,10 @@ module Infer = struct
     | Exp_construct ("Some", Some pat) ->
       let* sub, typ = infer_expression env pat in
       return (sub, Type_option typ)
-    | Exp_construct (_, _) -> fail `Impossible_error
+    | Exp_construct _ ->
+      (* Impossible situation *)
+      let* fresh = fresh_var in
+      return (Subst.empty, fresh)
     | Exp_ifthenelse (if_, then_, Some else_) ->
       let* sub1, type1 = infer_expression env if_ in
       let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) then_ in

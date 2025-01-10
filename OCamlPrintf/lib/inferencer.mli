@@ -3,8 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type error =
-  [ `Impossible_error
-  | `No_variable_rec
+  [ `No_variable_rec
   | `No_arg_rec
   | `Bound_several_times
   | `Occurs_check of string * Ast.core_type
