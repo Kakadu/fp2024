@@ -19,6 +19,8 @@ and value =
   | VList of value list
   | VTuple of value list
   | VNil
+   | VNone
+  | VSome of value
   | VFun of pattern * rec_flag * expression * environment
   | VBuiltin of pattern * rec_flag * builtin * environment
 
@@ -65,6 +67,7 @@ let rec pp_value ppf =
   | VNil -> fprintf ppf "[]"
   | VFun _ -> fprintf ppf "<fun>"
   | VBuiltin _ -> fprintf ppf "<builtin>"
+  | VNone | VSome _ -> fprintf ppf "<Option>"
 ;;
 
 module Env (M : MONAD_FAIL) = struct
@@ -199,6 +202,44 @@ module Eval (M : MONAD_FAIL) = struct
             | Ok _ -> return VUnit
             | Error _ -> fail (Wrong_type v1))
          | _ -> fail BuiltinEvaluatingError)
+      | ExprTuple (e1, e2, el) ->
+        let* v1 = helper env e1 in
+        let* v2 = helper env e2 in
+        let* vl =
+          List.fold_left
+            ~f:(fun acc e ->
+              let* acc = acc in
+              let* v = helper env e in
+              return (v :: acc))
+            ~init:(return [])
+            el
+        in
+        return (VTuple (v1 :: v2 :: List.rev vl))
+      | ExprList (hd, tl) ->
+        let* vhd = helper env hd in
+        let* vtl =
+          List.fold_left
+            ~f:(fun acc e ->
+              let* acc = acc in
+              let* v = helper env e in
+              return (v :: acc))
+            ~init:(return [])
+            tl
+        in
+        return (VList (vhd :: List.rev vtl))
+      | ExprCons (h, tl) ->
+        let* hv = helper env h in
+        let* tlv = helper env tl in
+        (match tlv with
+        | VList vl -> return (VList (hv :: vl))
+        | _ -> fail (Wrong_type tlv))
+      | ExprOption opt_expr ->
+         (match opt_expr with
+          | None -> return VNone
+      | Some e ->
+            let* v = helper env e in
+        return (VSome v))
+
       | _ -> fail Evaluationg_Need_ToBeReplaced
     in
     helper
