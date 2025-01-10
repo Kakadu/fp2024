@@ -271,45 +271,40 @@ let rec pp_expression_deep need_cut need_parens ppf = function
       core_type
 
 and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
+  let pp condition opr exp =
+    if condition
+    then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr, exp)
+    else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr, exp)
+  in
   match exp1 with
   | Exp_ident exp_opr when is_operator exp_opr ->
     (match exp2 with
      | Exp_apply (Exp_apply (Exp_ident opr1, exp1), opn) when is_operator opr1 ->
        (match get_priority exp_opr with
-        | 4 | 5 ->
-          if get_priority exp_opr <= get_priority opr1
-          then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr1, exp1)
-          else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr1, exp1)
-        | _ ->
-          if get_priority exp_opr < get_priority opr1
-          then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr1, exp1)
-          else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr1, exp1));
+        | 4 | 5 -> pp (get_priority exp_opr <= get_priority opr1) opr1 exp1
+        | _ -> pp (get_priority exp_opr < get_priority opr1) opr1 exp1);
        fprintf ppf " %s@ " exp_opr;
        (match opn with
         | Exp_apply (Exp_ident opr2, exp2) when is_operator opr2 ->
-          if get_priority opr1 <= get_priority opr2
-             && get_priority exp_opr < get_priority opr2
-          then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr2, exp2)
-          else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr2, exp2)
+          pp
+            (get_priority opr1 <= get_priority opr2
+             && get_priority exp_opr < get_priority opr2)
+            opr2
+            exp2
         | _ -> fprintf ppf "%a" (pp_expression_deep false true) opn)
      | Exp_apply (opn, Exp_apply (Exp_ident opr2, exp2)) when is_operator opr2 ->
        (match opn with
         | Exp_apply (Exp_ident opr1, exp1) when is_operator opr1 ->
-          if get_priority opr2 <= get_priority opr1
-             && get_priority exp_opr < get_priority opr1
-          then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr1, exp1)
-          else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr1, exp1)
+          pp
+            (get_priority opr2 <= get_priority opr1
+             && get_priority exp_opr < get_priority opr1)
+            opr1
+            exp1
         | _ -> fprintf ppf "%a" (pp_expression_deep false true) opn);
        fprintf ppf " %s@ " exp_opr;
        (match get_priority exp_opr with
-        | 1 | 2 | 3 ->
-          if get_priority exp_opr <= get_priority opr2
-          then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr2, exp2)
-          else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr2, exp2)
-        | _ ->
-          if get_priority exp_opr < get_priority opr2
-          then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr2, exp2)
-          else fprintf ppf "%a" (pp_exp_apply ~need_parens) (Exp_ident opr2, exp2))
+        | 1 | 2 | 3 -> pp (get_priority exp_opr <= get_priority opr2) opr2 exp2
+        | _ -> pp (get_priority exp_opr < get_priority opr2) opr2 exp2)
      | Exp_apply (opn1, opn2) ->
        fprintf
          ppf
@@ -330,23 +325,10 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
     (match exp1 with
      | Exp_apply _ -> fprintf ppf " "
      | _ -> ());
+    fprintf ppf "%a " (pp_expression_deep false true) exp1;
     (match exp2 with
-     | Exp_apply _ ->
-       fprintf
-         ppf
-         "%a (%a)"
-         (pp_expression_deep false true)
-         exp1
-         (pp_expression_deep false true)
-         exp2
-     | _ ->
-       fprintf
-         ppf
-         "%a %a"
-         (pp_expression_deep false true)
-         exp1
-         (pp_expression_deep false true)
-         exp2)
+     | Exp_apply _ -> fprintf ppf "(%a)" (pp_expression_deep false true) exp2
+     | _ -> fprintf ppf "%a" (pp_expression_deep false true) exp2)
 
 and pp_value_binding ppf =
   pp_open_hvbox ppf 0;
