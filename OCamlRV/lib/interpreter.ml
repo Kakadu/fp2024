@@ -158,6 +158,14 @@ module Eval (M : MONAD_FAIL) = struct
     | _ -> fail Evaluationg_Need_ToBeReplaced
   ;;
 
+  let eval_unop (op, v) =
+    match op, v with
+    | UnaryPlus, VInt x -> return (vint (+x))
+    | UnaryMinus, VInt x -> return (vint (-x))
+    | UnaryNeg, VBool x -> return (vbool (not x))
+    | _ -> fail Evaluationg_Need_ToBeReplaced
+  ;;
+
   let eval_expr =
     let rec helper (env : environment) = function
       | ExprConstant c ->
@@ -180,6 +188,9 @@ module Eval (M : MONAD_FAIL) = struct
         let* v1 = helper env e1 in
         let* v2 = helper env e2 in
         eval_binop (op, v1, v2)
+      | ExprUnOperation (op, e) ->
+        let* v = helper env e in
+        eval_unop (op, v)
       | ExprIf (cond, t, Some f) ->
         let* cv = helper env cond in
         (match cv with

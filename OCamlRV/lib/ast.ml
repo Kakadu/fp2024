@@ -48,7 +48,7 @@ type rec_flag =
 [@@deriving show { with_path = false }, qcheck]
 
 type constant =
-  | CInt of (int[@gen QCheck.Gen.int_range (-1000) 1000])
+  | CInt of (int[@gen QCheck.Gen.int_range 0 1000])
   | CBool of bool
   | CString of (string[@gen gen_string])
   | CUnit
@@ -62,7 +62,7 @@ type type_annot =
   | ABool
   | AString
   | AUnit
-  | AVar of (fresh[@gen QCheck.Gen.int_range (-1000) 1000])
+  | AVar of (fresh[@gen QCheck.Gen.int_range 0 1000])
   | AFun of type_annot * type_annot
   | AList of type_annot
   | ATuple of type_annot list

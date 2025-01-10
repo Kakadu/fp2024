@@ -38,9 +38,8 @@ let chainl1 e op =
 (*--------------------------- Constants ---------------------------*)
 
 let integer =
-  let* sign = choice [ token "-"; token "+"; token "" ] in
-  let* digits = take_while1 Char.is_digit in
-  return (Int.of_string (sign ^ digits))
+  let* digits = ws *> take_while1 Char.is_digit in
+  return (Int.of_string digits)
 ;;
 
 let pinteger = integer >>| fun i -> CInt i
@@ -291,10 +290,10 @@ let expr =
     let cons = pecons apply in
     let ife = peif expr <|> cons in
     let opt = p_option ife <|> ife in
-    let ops1 = chainl1 opt (pmul <|> pdiv) in
+    let unops = opt <|> peunop opt in
+    let ops1 = chainl1 unops (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
-    let unops = ops2 <|> peunop ops2 in
-    let cmp = chainl1 unops pcmp in
+    let cmp = chainl1 ops2 pcmp in
     let tuple = petuple cmp <|> cmp in
     choice [ tuple; pelet expr; pematch expr; pefun expr ])
 ;;
