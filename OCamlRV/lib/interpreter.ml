@@ -37,6 +37,16 @@ type error =
   | Evaluationg_Need_ToBeReplaced
   | BuiltinEvaluatingError
 
+let pp_error ppf =
+  let open Stdlib.Format in
+  function
+  | Pattern_matching_failed -> fprintf ppf "Pattern_matching_failed"
+  | Wrong_type _ -> fprintf ppf "Wrong_type"
+  | Unbound_variable -> fprintf ppf "Unbound_variable"
+  | Evaluationg_Need_ToBeReplaced -> fprintf ppf "Evaluationg_Need_ToBeReplaced"
+  | BuiltinEvaluatingError -> fprintf ppf "BuiltinEvaluatingError"
+;;
+
 module type MONAD_FAIL = sig
   include Monad.S2
 
@@ -344,7 +354,8 @@ let test_interpret s =
   let open Stdlib.Format in
   match Parser.parse s with
   | Ok parsed ->
-    let _ = Interpret.eval_structure parsed in
-    printf ""
+    (match Interpret.eval_structure parsed with
+     | Ok _ -> printf ""
+     | Error e -> fprintf std_formatter "%a\n" pp_error e)
   | Error e -> printf "Parsing error: %s\n" e
 ;;
