@@ -143,13 +143,23 @@ let parse_type_name =
   ws
   *> string "'"
   *>
-  let* id = parse_ident in
-  if String.length id > 1
-  then (
-    match String.get id 1 with
-    | '\'' -> fail (Printf.sprintf "Impossible type: %S." id)
-    | _ -> return (Type_name id))
-  else return (Type_name id)
+  let* first_char =
+    satisfy (function
+      | 'a' .. 'z' -> true
+      | _ -> false)
+    >>| String.of_char
+  in
+  let* second_char =
+    take_while (function
+      | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' -> true
+      | _ -> false)
+  in
+  let* string =
+    take_while (function
+      | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
+      | _ -> false)
+  in
+  return (Type_name (first_char ^ second_char ^ string))
 ;;
 
 let parse_base_type =
@@ -313,6 +323,25 @@ let cmp = parse_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
 let and_ = parse_operator [ "&&" ]
 let or_ = parse_operator [ "||" ]
 
+let parse_unary_op parse_exp =
+  let is_not_space = function
+    | '(' | '[' | '_' | '\'' | '\"' -> true
+    | c -> Char.is_alphanum c
+  in
+  let string_un_op str =
+    string str
+    *>
+    let* char_value = peek_char_fail in
+    if is_not_space char_value
+    then return str
+    else fail (Printf.sprintf "There is no space after unary minus.")
+  in
+  ws
+  *> (string_un_op "-" *> parse_exp
+      >>| (fun exp -> Exp_apply (Exp_ident "~-", exp))
+      <|> parse_exp)
+;;
+
 (* -------------------- Value_binding -------------------- *)
 
 let parse_constraint parse_exp op =
@@ -342,22 +371,14 @@ let parse_fun_binding parse_exp =
 
 let parse_simple_binding parse_exp =
   let* pat = parse_pattern in
-  let* vb =
-    choice
-      [ (let* exp = parse_constraint parse_exp "=" in
-         match exp with
-         | Exp_constraint (exp, type') ->
-           return { pat = Pat_constraint (pat, type'); exp }
-         | _ -> return { pat; exp })
-      ; (let* exp = ws *> string "=" *> parse_exp in
-         return { pat; exp })
-      ]
-  in
-  match vb with
-  | { pat = Pat_var _ | Pat_constraint (Pat_var _, _); _ } -> return vb
-  | { pat = _; exp = Exp_function _ | Exp_constraint (Exp_function _, _) } ->
-    fail "This expression should not be a function."
-  | _ -> return vb
+  choice
+    [ (let* exp = parse_constraint parse_exp "=" in
+       match exp with
+       | Exp_constraint (exp, type') -> return { pat = Pat_constraint (pat, type'); exp }
+       | _ -> return { pat; exp })
+    ; (let* exp = ws *> string "=" *> parse_exp in
+       return { pat; exp })
+    ]
 ;;
 
 let parse_value_binding_list parse_exp =
@@ -414,25 +435,6 @@ let parse_exp_apply_op parse_exp =
   let parse_cur_exp = parse_left_bin_op parse_cur_exp cmp in
   let parse_cur_exp = parse_right_bin_op parse_cur_exp and_ in
   parse_right_bin_op parse_cur_exp or_
-;;
-
-let parse_unary_op parse_exp =
-  let is_not_space = function
-    | '(' | '[' | '_' | '\'' | '\"' -> true
-    | c -> Char.is_alphanum c
-  in
-  let string_un_op str =
-    string str
-    *>
-    let* char_value = peek_char_fail in
-    if is_not_space char_value
-    then return str
-    else fail (Printf.sprintf "There is no space after unary minus.")
-  in
-  ws
-  *> (string_un_op "-" *> parse_exp
-      >>| (fun exp -> Exp_apply (Exp_ident "~-", exp))
-      <|> parse_exp)
 ;;
 
 let parse_exp_apply ~with_un_op parse_exp =

@@ -1,7 +1,3 @@
-(** Copyright 2024-2025, Friend-zva, RodionovMaxim05 *)
-
-(** SPDX-License-Identifier: LGPL-3.0-or-later *)
-
 open QCheck.Gen
 
 let coef = 10 (* For the generator's speed. *)
@@ -69,6 +65,22 @@ type constant =
   | Const_string of (string[@gen gen_string gen_char])
 [@@deriving show { with_path = false }, qcheck]
 
+let gen_type_name =
+  map3
+    (fun first_char second_char string ->
+      Printf.sprintf "%c%c%s" first_char second_char string)
+    (oneof [ char_range 'a' 'z' ])
+    (oneof [ char_range '0' '9'; char_range 'A' 'Z'; char_range 'a' 'z'; return '_' ])
+    (gen_string
+       (oneof
+          [ char_range '0' '9'
+          ; char_range 'A' 'Z'
+          ; char_range 'a' 'z'
+          ; return '_'
+          ; return '\''
+          ]))
+;;
+
 type core_type =
   | Type_any
   | Type_unit
@@ -77,18 +89,7 @@ type core_type =
   | Type_string
   | Type_bool
   | Type_option of (core_type[@gen gen_core_type_sized (n / coef)])
-  | Type_name of
-      (ident
-      [@gen
-        map
-          (fun id ->
-            if String.length id > 1
-            then (
-              match String.get id 1 with
-              | '\'' -> "_" ^ id
-              | _ -> id)
-            else id)
-          gen_ident])
+  | Type_name of (ident[@gen gen_type_name])
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])
@@ -98,6 +99,25 @@ type core_type =
       (core_type[@gen gen_core_type_sized (n / coef)])
       * (core_type[@gen gen_core_type_sized (n / coef)])
 [@@deriving show { with_path = false }, qcheck]
+
+let gen_construct gen n tuple construct =
+  oneof
+    [ (let rec gen_list n =
+         if n = 0
+         then return ("[]", None)
+         else (
+           let element = gen 0 in
+           let tail = gen_list (n / coef) in
+           map2 (fun e t -> "::", Some (tuple (e, construct t, []))) element tail)
+       in
+       gen_list n)
+    ; return ("true", None)
+    ; return ("false", None)
+    ; map (fun i -> "Some", Some i) (gen (n / coef))
+    ; return ("None", None)
+    ; return ("()", None)
+    ]
+;;
 
 type pattern =
   | Pat_any
@@ -110,24 +130,12 @@ type pattern =
   | Pat_construct of
       ((ident * pattern option)
       [@gen
-        oneof
-          [ (let rec gen_list_pat n =
-               if n = 0
-               then return ("[]", None)
-               else (
-                 let element = gen_pattern_sized 0 in
-                 let tail = gen_list_pat (n / coef) in
-                 map2
-                   (fun e t -> "::", Some (Pat_tuple (e, Pat_construct t, [])))
-                   element
-                   tail)
-             in
-             gen_list_pat n)
-          ; return ("true", None)
-          ; return ("false", None)
-          ; map (fun i -> "Some", Some i) (gen_pattern_sized (n / coef))
-          ; return ("None", None)
-          ]])
+        gen_construct
+          gen_pattern_sized
+          n
+          (fun (first_pat, second_pat, pat_list) ->
+            Pat_tuple (first_pat, second_pat, pat_list))
+          (fun (id, pat_option) -> Pat_construct (id, pat_option))])
   | Pat_constraint of (pattern[@gen gen_pattern_sized (n / coef)]) * core_type
 [@@deriving show { with_path = false }, qcheck]
 
@@ -144,32 +152,56 @@ type 'exp case =
 [@@deriving show { with_path = false }, qcheck]
 
 module Expression = struct
+  let gen_value_binding gen n fix_exp_fun =
+    oneof
+      [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident (gen (n / coef))
+      ; map3
+          (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
+          gen_ident
+          gen_core_type
+          (gen (n / coef))
+      ; map2 (fun pat exp -> { pat; exp = fix_exp_fun exp }) gen_pattern (gen (n / coef))
+      ]
+  ;;
+
+  let gen_exp_apply gen n exp_ident exp_apply =
+    oneof
+      [ map2 (fun exp first_exp -> exp, first_exp) (gen 0) (gen (n / coef))
+      ; map (fun exp -> exp_ident "~-", exp) (gen (n / coef))
+      ; map3
+          (fun opr opn1 opn2 -> opr, exp_apply (opn1, opn2))
+          (oneofl
+             [ exp_ident "*"
+             ; exp_ident "/"
+             ; exp_ident "+"
+             ; exp_ident "-"
+             ; exp_ident ">="
+             ; exp_ident "<="
+             ; exp_ident "<>"
+             ; exp_ident "="
+             ; exp_ident ">"
+             ; exp_ident "<"
+             ; exp_ident "&&"
+             ; exp_ident "||"
+             ])
+          (gen (n / coef))
+          (gen (n / coef))
+      ]
+  ;;
+
   type value_binding_exp =
     (t value_binding
     [@gen
-      oneof
-        [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident (gen_sized (n / coef))
-        ; map3
-            (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
-            gen_ident
-            gen_core_type
-            (gen_sized (n / coef))
-        ; map2
-            (fun pat exp ->
-              { pat
-              ; exp =
-                  (let rec fix_exp_fun = function
-                     | Exp_fun (_, _, exp) -> fix_exp_fun exp
-                     | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
-                     | Exp_constraint (exp, type') ->
-                       Exp_constraint (fix_exp_fun exp, type')
-                     | exp -> exp
-                   in
-                   fix_exp_fun exp)
-              })
-            gen_pattern
-            (gen_sized (n / coef))
-        ]])
+      gen_value_binding
+        gen_sized
+        n
+        (let rec fix_exp_fun = function
+           | Exp_fun (_, _, exp) -> fix_exp_fun exp
+           | Exp_function ({ left = _; right = exp }, _) -> fix_exp_fun exp
+           | Exp_constraint (exp, type') -> Exp_constraint (fix_exp_fun exp, type')
+           | exp -> exp
+         in
+         fix_exp_fun)])
 
   and case_exp =
     (t case
@@ -187,31 +219,11 @@ module Expression = struct
     | Exp_apply of
         ((t * t)
         [@gen
-          oneof
-            [ map2
-                (fun exp first_exp -> exp, first_exp)
-                (gen_sized 0)
-                (gen_sized (n / coef))
-            ; map (fun exp -> Exp_ident "~-", exp) (gen_sized (n / coef))
-            ; map3
-                (fun opr opn1 opn2 -> opr, Exp_apply (opn1, opn2))
-                (oneofl
-                   [ Exp_ident "*"
-                   ; Exp_ident "/"
-                   ; Exp_ident "+"
-                   ; Exp_ident "-"
-                   ; Exp_ident ">="
-                   ; Exp_ident "<="
-                   ; Exp_ident "<>"
-                   ; Exp_ident "="
-                   ; Exp_ident ">"
-                   ; Exp_ident "<"
-                   ; Exp_ident "&&"
-                   ; Exp_ident "||"
-                   ])
-                (gen_sized (n / coef))
-                (gen_sized (n / coef))
-            ]])
+          gen_exp_apply
+            gen_sized
+            n
+            (fun id -> Exp_ident id)
+            (fun (opn1, opn2) -> Exp_apply (opn1, opn2))])
     | Exp_function of case_exp * case_exp list_
     | Exp_match of (t[@gen gen_sized (n / coef)]) * case_exp * case_exp list_
     | Exp_tuple of
@@ -221,24 +233,12 @@ module Expression = struct
     | Exp_construct of
         ((ident * t option)
         [@gen
-          oneof
-            [ (let rec gen_list_exp n =
-                 if n = 0
-                 then return ("[]", None)
-                 else (
-                   let element = gen_sized 0 in
-                   let tail = gen_list_exp (n / coef) in
-                   map2
-                     (fun e t -> "::", Some (Exp_tuple (e, Exp_construct t, [])))
-                     element
-                     tail)
-               in
-               gen_list_exp n)
-            ; return ("true", None)
-            ; return ("false", None)
-            ; map (fun i -> "Some", Some i) (gen_sized (n / coef))
-            ; return ("None", None)
-            ]])
+          gen_construct
+            gen_sized
+            n
+            (fun (first_exp, second_exp, exp_list) ->
+              Exp_tuple (first_exp, second_exp, exp_list))
+            (fun (id, exp_option) -> Exp_construct (id, exp_option))])
     | Exp_ifthenelse of
         (t[@gen gen_sized (n / coef)])
         * (t[@gen gen_sized (n / coef)])
