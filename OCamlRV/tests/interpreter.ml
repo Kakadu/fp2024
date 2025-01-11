@@ -63,6 +63,42 @@ let%expect_test _ =
   [%expect {| Ok |}]
 ;;
 
+let%expect_test _ =
+  test_interpret
+    {|
+      let () = print_int 1;;
+   |};
+  [%expect {| 1 |}]
+;;
+
+let%expect_test _ =
+  test_interpret
+    {|
+      let _ = print_int 1;;
+   |};
+  [%expect {| 1 |}]
+;;
+
+let%expect_test _ =
+  test_interpret
+    {|
+      let (a, b, _) = (1, 2, 3);;
+      print_int a;;
+      print_int b;;
+   |};
+  [%expect {| 12 |}]
+;;
+
+let%expect_test _ =
+  test_interpret
+    {|
+      let () = 
+        let (a, b, c) = (1, 2, 3) in 
+        print_int (a + b + c);;
+   |};
+  [%expect {| 6 |}]
+;;
+
 (* Some functions *)
 
 let%expect_test _ =

@@ -185,6 +185,26 @@ module Eval (M : MONAD_FAIL) = struct
     | _ -> fail Evaluationg_Need_ToBeReplaced
   ;;
 
+  let eval_tuple_binding env pl vl =
+    return
+      (match vl with
+       | VTuple tl ->
+         let a =
+           Base.List.fold2
+             pl
+             tl
+             ~f:(fun env p v ->
+               match p with
+               | PVar s -> extend env s v
+               | _ -> env)
+             ~init:env
+         in
+         (match a with
+          | Ok r -> r
+          | Unequal_lengths -> env)
+       | _ -> env)
+  ;;
+
   let eval_expr =
     let rec helper (env : environment) = function
       | ExprConstant c ->
@@ -226,6 +246,11 @@ module Eval (M : MONAD_FAIL) = struct
       | ExprLet (NonRec, (PAny, e1), [], e) ->
         let _ = helper env e1 in
         helper env e
+      | ExprLet (NonRec, (PTuple (p1, p2, pl), e1), [], e) ->
+        let* vl = helper env e1 in
+        let pl = p1 :: p2 :: pl in
+        let* env2 = eval_tuple_binding env pl vl in
+        helper env2 e
       | ExprLet (Rec, (PVar x, e1), [], e) ->
         let* v = helper env e1 in
         let env1 = extend env x v in
@@ -335,6 +360,10 @@ module Eval (M : MONAD_FAIL) = struct
     | SValue (NonRec, (PAny, e1), []) ->
       let _ = eval_expr env e1 in
       return env
+    | SValue (NonRec, (PTuple (p1, p2, pl), e1), []) ->
+      let* vl = eval_expr env e1 in
+      let pl = p1 :: p2 :: pl in
+      eval_tuple_binding env pl vl
     | SValue (Rec, (PVar x, e), []) ->
       let* v = eval_expr env e in
       let env1 = extend env x v in
