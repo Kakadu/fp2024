@@ -37,6 +37,7 @@ type error =
   | Wrong_type of value
   | Unbound_variable
   | Evaluationg_Need_ToBeReplaced
+  | Structure_Need_ToBeReplaced
   | BuiltinEvaluatingError
 
 let pp_error ppf =
@@ -46,6 +47,7 @@ let pp_error ppf =
   | Wrong_type _ -> fprintf ppf "Wrong_type"
   | Unbound_variable -> fprintf ppf "Unbound_variable"
   | Evaluationg_Need_ToBeReplaced -> fprintf ppf "Evaluationg_Need_ToBeReplaced"
+  | Structure_Need_ToBeReplaced -> fprintf ppf "Structure_Need_ToBeReplaced"
   | BuiltinEvaluatingError -> fprintf ppf "BuiltinEvaluatingError"
 ;;
 
@@ -205,141 +207,153 @@ module Eval (M : MONAD_FAIL) = struct
        | _ -> env)
   ;;
 
-  let eval_expr =
-    let rec helper (env : environment) = function
-      | ExprConstant c ->
-        (match c with
-         | CInt i -> return (vint i)
-         | CBool b -> return (vbool b)
-         | CString s -> return (vstring s)
-         | CUnit -> return vunit
-         | CNil -> return vnil)
-      | ExprVariable x ->
-        let* v = find env x in
-        let v =
-          match v with
-          | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
-          | VBuiltin (f, env) -> VBuiltin (f, extend env x v)
-          | _ -> v
-        in
-        return v
-      | ExprBinOperation (op, e1, e2) ->
-        let* v1 = helper env e1 in
-        let* v2 = helper env e2 in
-        eval_binop (op, v1, v2)
-      | ExprUnOperation (op, e) ->
-        let* v = helper env e in
-        eval_unop (op, v)
-      | ExprIf (cond, t, Some f) ->
-        let* cv = helper env cond in
-        (match cv with
-         | VBool true -> helper env t
-         | VBool false -> helper env f
-         | _ -> fail (Wrong_type cv))
-      | ExprLet (NonRec, (PVar x, e1), [], e) ->
-        let* v = helper env e1 in
-        let env = extend env x v in
-        helper env e
-      | ExprLet (NonRec, (PConstant CUnit, e1), [], e) ->
-        let _ = helper env e1 in
-        helper env e
-      | ExprLet (NonRec, (PAny, e1), [], e) ->
-        let _ = helper env e1 in
-        helper env e
-      | ExprLet (NonRec, (PTuple (p1, p2, pl), e1), [], e) ->
-        let* vl = helper env e1 in
-        let pl = p1 :: p2 :: pl in
-        let* env2 = eval_tuple_binding env pl vl in
-        helper env2 e
-      | ExprLet (Rec, (PVar x, e1), [], e) ->
-        let* v = helper env e1 in
-        let env1 = extend env x v in
-        let v =
-          match v with
-          | VFun (p, _, e, _) -> VFun (p, Rec, e, env1)
-          | _ -> v
-        in
-        let env2 = extend env x v in
-        helper env2 e
-      | ExprFun (p, e) -> return (vfun p NonRec e env)
-      | ExprMatch (e, c, cl) ->
-        let* v = helper env e in
-        let rec match_helper env v = function
-          | (p, e) :: tl ->
-            let env' = check_match env (p, v) in
-            (match env' with
-             | Some env -> helper env e
-             | None -> match_helper env v tl)
-          | [] -> fail Pattern_matching_failed
-        in
-        match_helper env v (c :: cl)
-      | ExprApply (e1, e2) ->
-        let* v1 = helper env e1 in
-        let* v2 = helper env e2 in
-        (match v1 with
-         | VFun (p, _, e, env) ->
-           let* env' =
-             match check_match env (p, v2) with
-             | Some env -> return env
-             | None -> fail Pattern_matching_failed
-           in
-           helper env' e
-         | VBuiltin (b, _) ->
-           let status =
-             match b, v2 with
-             | BInt b, VInt i ->
-               b i;
-               Ok VUnit
-             | BString b, VString s ->
-               b s;
-               Ok VUnit
-             | _, _ -> Error VUnit
-           in
-           (match status with
-            | Ok _ -> return VUnit
-            | Error _ -> fail (Wrong_type v1))
-         | _ -> fail BuiltinEvaluatingError)
-      | ExprTuple (e1, e2, el) ->
-        let* v1 = helper env e1 in
-        let* v2 = helper env e2 in
-        let* vl =
-          Base.List.fold_left
-            ~f:(fun acc e ->
-              let* acc = acc in
-              let* v = helper env e in
-              return (v :: acc))
-            ~init:(return [])
-            el
-        in
-        return (VTuple (v1 :: v2 :: List.rev vl))
-      | ExprList (hd, tl) ->
-        let* vhd = helper env hd in
-        let* vtl =
-          Base.List.fold_left
-            ~f:(fun acc e ->
-              let* acc = acc in
-              let* v = helper env e in
-              return (v :: acc))
-            ~init:(return [])
-            tl
-        in
-        return (VList (vhd :: List.rev vtl))
-      | ExprCons (h, tl) ->
-        let* hv = helper env h in
-        let* tlv = helper env tl in
-        (match tlv with
-         | VList vl -> return (VList (hv :: vl))
-         | VNil -> return (VList [ hv ])
-         | t -> fail (Wrong_type t))
-      | ExprOption opt_expr ->
-        (match opt_expr with
-         | None -> return (VOption None)
-         | Some e ->
-           let* v = helper env e in
-           return (VOption (Some v)))
-      | _ -> fail Evaluationg_Need_ToBeReplaced
+  let rec eval_expr (env : environment) = function
+    | ExprConstant c ->
+      (match c with
+       | CInt i -> return (vint i)
+       | CBool b -> return (vbool b)
+       | CString s -> return (vstring s)
+       | CUnit -> return vunit
+       | CNil -> return vnil)
+    | ExprVariable x ->
+      let* v = find env x in
+      let v =
+        match v with
+        | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
+        | VBuiltin (f, env) -> VBuiltin (f, extend env x v)
+        | _ -> v
+      in
+      return v
+    | ExprBinOperation (op, e1, e2) ->
+      let* v1 = eval_expr env e1 in
+      let* v2 = eval_expr env e2 in
+      eval_binop (op, v1, v2)
+    | ExprUnOperation (op, e) ->
+      let* v = eval_expr env e in
+      eval_unop (op, v)
+    | ExprIf (cond, t, Some f) ->
+      let* cv = eval_expr env cond in
+      (match cv with
+       | VBool true -> eval_expr env t
+       | VBool false -> eval_expr env f
+       | _ -> fail (Wrong_type cv))
+    | ExprLet (NonRec, b, bl, e) ->
+      let bindings = b :: bl in
+      let* env2 = eval_non_rec_binding_list env bindings in
+      eval_expr env2 e
+    | ExprLet (Rec, (PVar x, e1), [], e) ->
+      let* v = eval_expr env e1 in
+      let env1 = extend env x v in
+      let v =
+        match v with
+        | VFun (p, _, e, _) -> VFun (p, Rec, e, env1)
+        | _ -> v
+      in
+      let env2 = extend env x v in
+      eval_expr env2 e
+    | ExprFun (p, e) -> return (vfun p NonRec e env)
+    | ExprMatch (e, c, cl) ->
+      let* v = eval_expr env e in
+      let rec match_helper env v = function
+        | (p, e) :: tl ->
+          let env' = check_match env (p, v) in
+          (match env' with
+           | Some env -> eval_expr env e
+           | None -> match_helper env v tl)
+        | [] -> fail Pattern_matching_failed
+      in
+      match_helper env v (c :: cl)
+    | ExprApply (e1, e2) ->
+      let* v1 = eval_expr env e1 in
+      let* v2 = eval_expr env e2 in
+      (match v1 with
+       | VFun (p, _, e, env) ->
+         let* env' =
+           match check_match env (p, v2) with
+           | Some env -> return env
+           | None -> fail Pattern_matching_failed
+         in
+         eval_expr env' e
+       | VBuiltin (b, _) ->
+         let status =
+           match b, v2 with
+           | BInt b, VInt i ->
+             b i;
+             Ok VUnit
+           | BString b, VString s ->
+             b s;
+             Ok VUnit
+           | _, _ -> Error VUnit
+         in
+         (match status with
+          | Ok _ -> return VUnit
+          | Error _ -> fail (Wrong_type v1))
+       | _ -> fail BuiltinEvaluatingError)
+    | ExprTuple (e1, e2, el) ->
+      let* v1 = eval_expr env e1 in
+      let* v2 = eval_expr env e2 in
+      let* vl =
+        Base.List.fold_left
+          ~f:(fun acc e ->
+            let* acc = acc in
+            let* v = eval_expr env e in
+            return (v :: acc))
+          ~init:(return [])
+          el
+      in
+      return (VTuple (v1 :: v2 :: List.rev vl))
+    | ExprList (hd, tl) ->
+      let* vhd = eval_expr env hd in
+      let* vtl =
+        Base.List.fold_left
+          ~f:(fun acc e ->
+            let* acc = acc in
+            let* v = eval_expr env e in
+            return (v :: acc))
+          ~init:(return [])
+          tl
+      in
+      return (VList (vhd :: List.rev vtl))
+    | ExprCons (h, tl) ->
+      let* hv = eval_expr env h in
+      let* tlv = eval_expr env tl in
+      (match tlv with
+       | VList vl -> return (VList (hv :: vl))
+       | VNil -> return (VList [ hv ])
+       | t -> fail (Wrong_type t))
+    | ExprOption opt_expr ->
+      (match opt_expr with
+       | None -> return (VOption None)
+       | Some e ->
+         let* v = eval_expr env e in
+         return (VOption (Some v)))
+    | _ -> fail Evaluationg_Need_ToBeReplaced
+
+  and eval_non_rec_binding_list env bl =
+    let* env2 =
+      Base.List.fold_left
+        ~f:(fun env b ->
+          let* env = env in
+          let p, e = b in
+          match p with
+          | PVar name ->
+            let* v = eval_expr env e in
+            return (extend env name v)
+          | PAny ->
+            let _ = eval_expr env e in
+            return env
+          | PConstant CUnit ->
+            let _ = eval_expr env e in
+            return env
+          | PTuple (p1, p2, pl) ->
+            let* vl = eval_expr env e in
+            let pl = p1 :: p2 :: pl in
+            eval_tuple_binding env pl vl
+          | _ -> return env)
+        ~init:(return env)
+        bl
     in
-    helper
+    return env2
   ;;
 
   let eval_structure_item (env : environment) structure_item =
@@ -347,23 +361,11 @@ module Eval (M : MONAD_FAIL) = struct
     let env = extend env "print_endline" (VBuiltin (BString print_endline, env)) in
     match structure_item with
     | SEval e ->
-      let* v = eval_expr env e in
-      let env2 = extend env "-" v in
-      return env2
-    | SValue (NonRec, (PVar x, e), []) ->
-      let* v = eval_expr env e in
-      let env = extend env x v in
+      let _ = eval_expr env e in
       return env
-    | SValue (NonRec, (PConstant CUnit, e1), []) ->
-      let _ = eval_expr env e1 in
-      return env
-    | SValue (NonRec, (PAny, e1), []) ->
-      let _ = eval_expr env e1 in
-      return env
-    | SValue (NonRec, (PTuple (p1, p2, pl), e1), []) ->
-      let* vl = eval_expr env e1 in
-      let pl = p1 :: p2 :: pl in
-      eval_tuple_binding env pl vl
+    | SValue (NonRec, b, bl) ->
+      let bindings = b :: bl in
+      eval_non_rec_binding_list env bindings
     | SValue (Rec, (PVar x, e), []) ->
       let* v = eval_expr env e in
       let env1 = extend env x v in
@@ -374,7 +376,7 @@ module Eval (M : MONAD_FAIL) = struct
       in
       let env = extend env x v in
       return env
-    | _ -> fail Evaluationg_Need_ToBeReplaced
+    | _ -> fail Structure_Need_ToBeReplaced
   ;;
 
   let eval_structure (s : structure) =
