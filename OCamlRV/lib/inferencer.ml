@@ -66,6 +66,10 @@ let rec infer_pattern env = function
         (p1 :: p2 :: pl)
     in
     return (env, tuple_type (List.rev tl))
+  | PList _ ->
+    (* MUST BE FIXED *)
+    let* fresh = fresh_var in
+    return (env, fresh)
   | POption (Some p) -> infer_pattern env p
   | POption None ->
     let* fresh = fresh_var in

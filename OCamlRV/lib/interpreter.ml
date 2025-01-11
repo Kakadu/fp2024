@@ -4,12 +4,14 @@
 
 open Ast
 open Base
+open Stdlib
 
 type builtin =
   | BInt of (int -> unit)
   | BString of (string -> unit)
 
-type environment = (string, value, Base.String.comparator_witness) Base.Map.t
+type environment =
+  (string, value, Base.Comparator.Make(Base.String).comparator_witness) Base.Map.t
 
 and value =
   | VInt of int
@@ -54,38 +56,45 @@ module type MONAD_FAIL = sig
   val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 end
 
-let rec pp_value ppf =
-  let open Stdlib.Format in
-  function
-  | VInt x -> fprintf ppf "%d" x
-  | VBool b -> fprintf ppf "%b" b
-  | VString s -> fprintf ppf "%s" s
-  | VUnit -> fprintf ppf "()"
-  | VList vl ->
-    fprintf
-      ppf
-      "[%a]"
-      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
-      vl
-  | VTuple vl ->
-    fprintf
-      ppf
-      "(%a)"
-      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
-      vl
-  | VNil -> fprintf ppf "[]"
-  | VFun _ -> fprintf ppf "<fun>"
-  | VBuiltin _ -> fprintf ppf "<builtin>"
-  | VOption vo ->
-    (match vo with
-     | Some v -> fprintf ppf "Some %a" pp_value v
-     | None -> fprintf ppf "None")
-;;
+(* let rec pp_value ppf =
+   let open Stdlib.Format in
+   function
+   | VInt x -> fprintf ppf "%d" x
+   | VBool b -> fprintf ppf "%b" b
+   | VString s -> fprintf ppf "%s" s
+   | VUnit -> fprintf ppf "()"
+   | VList vl ->
+   fprintf
+   ppf
+   "[%a]"
+   (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
+   vl
+   | VTuple vl ->
+   fprintf
+   ppf
+   "(%a)"
+   (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
+   vl
+   | VNil -> fprintf ppf "[]"
+   | VFun _ -> fprintf ppf "<fun>"
+   | VBuiltin _ -> fprintf ppf "<builtin>"
+   | VOption vo ->
+   (match vo with
+   | Some v -> fprintf ppf "Some %a" pp_value v
+   | None -> fprintf ppf "None")
+   ;; *)
 
 module Env (M : MONAD_FAIL) = struct
   open M
 
-  let empty = Base.Map.empty (module String)
+  let empty =
+    Base.Map.empty
+      (module struct
+        include String
+        include Base.Comparator.Make (Base.String)
+      end)
+  ;;
+
   let extend env k v = Base.Map.update env k ~f:(fun _ -> v)
 
   let find env name =
@@ -110,7 +119,7 @@ module Eval (M : MONAD_FAIL) = struct
     | PTuple (p1, p2, rest), VTuple vl ->
       let pl = p1 :: p2 :: rest in
       let env =
-        List.fold2
+        Base.List.fold2
           pl
           vl
           ~f:(fun env p v ->
@@ -125,7 +134,7 @@ module Eval (M : MONAD_FAIL) = struct
     | PList (p1, rest), VList vl ->
       let pl = p1 :: rest in
       let env =
-        List.fold2
+        Base.List.fold2
           pl
           vl
           ~f:(fun env p v ->
@@ -170,7 +179,7 @@ module Eval (M : MONAD_FAIL) = struct
 
   let eval_unop (op, v) =
     match op, v with
-    | UnaryPlus, VInt x -> return (vint (+x))
+    | UnaryPlus, VInt x -> return (vint (Stdlib.( ~+ ) x))
     | UnaryMinus, VInt x -> return (vint (-x))
     | UnaryNeg, VBool x -> return (vbool (not x))
     | _ -> fail Evaluationg_Need_ToBeReplaced
@@ -266,7 +275,7 @@ module Eval (M : MONAD_FAIL) = struct
         let* v1 = helper env e1 in
         let* v2 = helper env e2 in
         let* vl =
-          List.fold_left
+          Base.List.fold_left
             ~f:(fun acc e ->
               let* acc = acc in
               let* v = helper env e in
@@ -278,7 +287,7 @@ module Eval (M : MONAD_FAIL) = struct
       | ExprList (hd, tl) ->
         let* vhd = helper env hd in
         let* vtl =
-          List.fold_left
+          Base.List.fold_left
             ~f:(fun acc e ->
               let* acc = acc in
               let* v = helper env e in
@@ -334,7 +343,7 @@ module Eval (M : MONAD_FAIL) = struct
   ;;
 
   let eval_structure (s : structure) =
-    List.fold_left
+    Base.List.fold_left
       ~f:(fun env item ->
         let* env = env in
         let* env = eval_structure_item env item in
