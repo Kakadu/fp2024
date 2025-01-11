@@ -107,17 +107,15 @@ let ppany = token "_" *> return PAny
 let ppconstant = pconstant >>| fun a -> PConstant a
 
 let variable =
-  let* fst =
-    ws
-    *> satisfy (function
-      | 'a' .. 'z' | '_' -> true
-      | _ -> false)
-  in
-  let* rest = take_while is_id in
-  match String.of_char fst ^ rest with
-  | "_" -> fail "Wildcard can't be used as indetifier"
-  | s when is_keyword s -> fail "Keyword can't be used as identifier"
-  | name -> return name
+  let* fst = ws *> peek_char_fail in
+  match fst with
+  | 'a' .. 'z' | '_' ->
+    let* rest = take_while is_id in
+    (match rest with
+     | "_" -> fail "Wildcard can't be used as indetifier"
+     | s when is_keyword s -> fail "Keyword can't be used as identifier"
+     | name -> return name)
+  | _ -> fail "Invalid literal"
 ;;
 
 let ppvariable = variable >>| fun v -> PVar v
@@ -158,9 +156,9 @@ let pattern =
   fix (fun pat ->
     let term =
       choice
-        [ ppany
+        [ ppvariable
+        ; ppany
         ; ppconstant
-        ; ppvariable
         ; pparens pat
         ; pp_option pat
         ; pattern_with_type pat
