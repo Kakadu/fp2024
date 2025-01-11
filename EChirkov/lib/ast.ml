@@ -1,21 +1,75 @@
-(** Copyright 2024, Dmitri Chirkov*)
+(** Copyright 2024-2025, Dmitri Chirkov*)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type id = string (* identifier *) [@@deriving eq, ord, show { with_path = false }]
+type id = string [@@deriving show { with_path = false }]
 
-and expr =
-  | Expr_int of int (** integer *)
-  | Expr_bool of bool (** booleans *)
-  | Expr_unit (** type with single value *)
-  | Expr_cons of expr * expr (** pair *)
-  | Expr_id of id (** identifiers *)
-  | Expr_define of id * expr (** definitions *)
-  | Expr_if of expr * expr * expr (** condition then else *)
-  | Expr_lambda of id list * expr list
-  (** anonymous functions, made of list of parameters and its body *)
-  | Expr_apply of expr * expr list
-  (** represents application of a function. identifier or lambda is called with the list of arguments *)
-[@@deriving eq, ord, show { with_path = false }]
+type const =
+  | CInt of int
+  | CBool of bool
+  | CUnit (* () *)
+  | CString of string
+[@@deriving show { with_path = false }]
 
-type program = expr list [@@deriving eq, ord, show { with_path = false }]
+type op_un =
+  | Neg (* - *)
+  | Pos (* + *)
+[@@deriving show { with_path = false }]
+
+type rec_flag =
+  | Recursive
+  | Nonrecursive
+[@@deriving show { with_path = false }]
+
+type op_bin =
+  | Add
+  | Sub
+  | Mul
+  | Div
+  | And (* && *)
+  | Or (* || *)
+  | Gt (* > *)
+  | Lt (* < *)
+  | Gte (* >= *)
+  | Lte (* <= *)
+  | Eq (* = *)
+  | NEq (* <> *)
+[@@deriving show { with_path = false }]
+
+type pattern =
+  | PAny (* _ *)
+  | PVar of id
+  | PTuple of pattern * pattern * pattern list
+  | PCons of pattern * pattern (* h :: t *)
+  | PList of pattern list (* [23; 34] *)
+  | PConst of const (* 23 *)
+  | POption of pattern option
+[@@deriving show { with_path = false }]
+
+type expression =
+  | EConst of const
+  | EVar of id
+  | EUnary of op_un * expression
+  | EBinary of op_bin * expression * expression
+  | ETuple of expression * expression * expression list
+  | EList of expression * expression list
+  | EOption of expression option
+  | EMatch of expression * case * case list (* match *)
+  | EIf of expression * expression * expression option (* if x then false else true *)
+  | EFun of pattern * expression (* fun x -> x *)
+  | EFunction of case * case list (* function *)
+  | EApply of expression * expression (* f x *)
+  | ELet of
+      rec_flag * value_binding * value_binding list * expression (* let x = 23 in x *)
+  | ECons of expression * expression
+[@@deriving show { with_path = false }]
+
+and case = pattern * expression [@@deriving show { with_path = false }]
+and value_binding = pattern * expression [@@deriving show { with_path = false }]
+
+type structure_item =
+  | SValue of rec_flag * value_binding * value_binding list (* let f x = x;; *)
+  | SEval of expression (* (fun x -> x * 2) 10;; *)
+[@@deriving show { with_path = false }]
+
+type program = structure_item list [@@deriving show { with_path = false }]
