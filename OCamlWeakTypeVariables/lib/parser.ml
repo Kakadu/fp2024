@@ -39,20 +39,18 @@ let token s = ws *> string s <* ws
 let parens t = token "(" *> t <* token ")"
 
 let p_const_int =
-  let* sign = choice [ token "-"; token "+"; token "" ] in
-  let* first_digit =
-    take 1
-    >>= fun i ->
-    match int_of_string_opt i with
-    | Some x -> return (string_of_int x)
-    | None -> fail "Error while parsing int"
+  let is_digit = function
+    | '0' .. '9' -> true
+    | _ -> false
   in
+  let* sign = choice [ token "-"; token "+"; token "" ] in
+  let* first_digit = satisfy is_digit in
   let+ digits =
     take_while (function
       | '0' .. '9' | '_' -> true
       | _ -> false)
   in
-  Pconst_int (int_of_string (sign ^ first_digit ^ digits))
+  Pconst_int (int_of_string (sign ^ Char.escaped first_digit ^ digits))
 ;;
 
 let p_const_string =
