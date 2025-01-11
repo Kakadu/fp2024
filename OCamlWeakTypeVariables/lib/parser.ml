@@ -36,6 +36,7 @@ let is_keyword = function
 let ws = take_while is_whitespace
 let wss t = ws *> t <* ws
 let token s = ws *> string s <* ws
+let word s = ws *> string s <* take_while1 is_whitespace
 let parens t = token "(" *> t <* token ")"
 
 let p_const_int =
@@ -156,7 +157,7 @@ let p_apply expr =
   Pexp_apply (first, second)
 ;;
 
-let p_rec_flag = token "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
+let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 
 let p_value_binding expr =
   let* pattern = p_pattern in

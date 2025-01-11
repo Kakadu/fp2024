@@ -167,3 +167,11 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                           }
                          ],
                        (Pexp_ident (Id "homka")))))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let reca = 5
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_var "reca");
+                       pvb_expr = (Pexp_constant (Pconst_int 5)) }
+                      ]
+                    ))
