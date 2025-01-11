@@ -6,29 +6,9 @@ open Ast
 open Ast.Expression
 open Format
 
-let bin_op_list =
-  [ "*", 1
-  ; "/", 1
-  ; "+", 2
-  ; "-", 2
-  ; ">=", 3
-  ; "<=", 3
-  ; "<>", 3
-  ; "=", 3
-  ; ">", 3
-  ; "<", 3
-  ; "&&", 4
-  ; "||", 5
-  ]
-;;
-
 let is_operator op = List.exists (fun (str, _) -> str = op) bin_op_list
 let get_priority op = List.assoc op bin_op_list
-
-let is_negative_op = function
-  | "~-" -> true
-  | _ -> false
-;;
+let is_negative_op op = un_op = op
 
 let is_type_arrow = function
   | Type_arrow (_, _) -> true
