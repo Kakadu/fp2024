@@ -1,8 +1,9 @@
 (library
- (name schemecwcc_lib)
- (public_name SchemeCWCC.Lib)
+ (name MiniML)
+ (public_name MiniML.Lib)
  (modules Ast)
+ (libraries base angstrom)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord))
+  (pps ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))
