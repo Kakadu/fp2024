@@ -198,6 +198,10 @@ module Eval (M : MONAD_FAIL) = struct
              ~f:(fun env p v ->
                match p with
                | PVar s -> extend env s v
+               | POption (Some (PVar s)) ->
+                 (match v with
+                  | VOption (Some vo) -> extend env s vo
+                  | _ -> env)
                | _ -> env)
              ~init:env
          in
@@ -349,6 +353,11 @@ module Eval (M : MONAD_FAIL) = struct
             let* vl = eval_expr env e in
             let pl = p1 :: p2 :: pl in
             eval_tuple_binding env pl vl
+          | POption (Some (PVar var)) ->
+            let* v = eval_expr env e in
+            (match v with
+             | VOption (Some vo) -> return (extend env var vo)
+             | _ -> fail Evaluationg_Need_ToBeReplaced)
           | _ -> return env)
         ~init:(return env)
         bl
@@ -401,7 +410,13 @@ let test_interpret s =
   match Parser.parse s with
   | Ok parsed ->
     (match Interpret.eval_structure parsed with
-     | Ok _ -> printf ""
+     | Ok _ ->
+       ()
+       (* Format.printf "\nDEBUG ENV:\n";
+          Base.Map.iteri
+          ~f:(fun ~key ~data ->
+          Format.fprintf Format.std_formatter "%s : some_type = %a\n" key pp_value data)
+          env *)
      | Error e -> fprintf std_formatter "%a\n" pp_error e)
   | Error e -> printf "Parsing error: %s\n" e
 ;;

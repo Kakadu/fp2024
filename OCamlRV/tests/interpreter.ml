@@ -122,6 +122,17 @@ let%expect_test _ =
   [%expect {| 6 |}]
 ;;
 
+let%expect_test _ =
+  test_interpret
+    {|
+      let Some x = Some 1;;
+      let a, Some y = 1, Some 2;;
+      print_int x;;
+      print_int y;;
+   |};
+  [%expect {| 12 |}]
+;;
+
 (* Some functions *)
 
 let%expect_test _ =
