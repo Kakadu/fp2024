@@ -139,6 +139,8 @@ let parse_constant =
 
 (* =================== Core_type =================== *)
 
+(* The id obtained from parser is stored without first char ', while the id from
+   inferencer is stored with ', so that there is no confusion when inferring types. *)
 let parse_type_name =
   ws
   *> string "'"
@@ -154,12 +156,12 @@ let parse_type_name =
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' -> true
       | _ -> false)
   in
-  let* string =
+  let* str =
     take_while (function
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
   in
-  return (Type_name (first_char ^ second_char ^ string))
+  return (Type_name (first_char ^ second_char ^ str))
 ;;
 
 let parse_base_type =
@@ -174,24 +176,14 @@ let parse_base_type =
        ]
 ;;
 
-let parse_list_type parse_type =
-  ws *> (parse_base_type <|> parse_type_name <|> skip_parens parse_type)
-  <* ws
-  <* keyword "list"
-  >>= fun t -> return (Type_list t)
-;;
-
-let parse_option_type parse_type =
+let parse_list_or_option_type parse_type =
   ws
-  *> choice
-       [ parse_list_type parse_type
-       ; parse_base_type
-       ; parse_type_name
-       ; skip_parens parse_type
-       ]
-  <* ws
-  <* keyword "option"
-  >>= fun t -> return (Type_option t)
+  *> let* type' = parse_type in
+     ws *> sep_by1 ws (keyword "option" <|> keyword "list")
+     >>| List.fold ~init:type' ~f:(fun acc id ->
+       match id with
+       | "option" -> Type_option acc
+       | _ -> Type_list acc)
 ;;
 
 let parse_tuple_type parse_type =
@@ -212,14 +204,9 @@ let parse_core_type =
   ws
   *> fix (fun parse_full_type ->
     let parse_type =
-      choice
-        [ parse_option_type parse_full_type
-        ; parse_list_type parse_full_type
-        ; parse_base_type
-        ; parse_type_name
-        ; skip_parens parse_full_type
-        ]
+      choice [ parse_base_type; parse_type_name; skip_parens parse_full_type ]
     in
+    let parse_type = parse_list_or_option_type parse_type <|> parse_type in
     let parse_type = parse_tuple_type parse_type <|> parse_type in
     parse_arrow_type parse_type <|> parse_type)
 ;;

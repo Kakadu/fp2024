@@ -6,7 +6,7 @@ open Ast
 open Ast.Expression
 open Format
 
-let op_list =
+let bin_op_list =
   [ "*", 1
   ; "/", 1
   ; "+", 2
@@ -22,8 +22,8 @@ let op_list =
   ]
 ;;
 
-let is_operator op = List.exists (fun (str, _) -> str = op) op_list
-let get_priority op = List.assoc op op_list
+let is_operator op = List.exists (fun (str, _) -> str = op) bin_op_list
+let get_priority op = List.assoc op bin_op_list
 
 let is_negative_op = function
   | "~-" -> true
@@ -61,18 +61,14 @@ let pp_constant ppf = function
   | Const_string s -> fprintf ppf "%S" s
 ;;
 
-let rec pp_core_type_deep need_parens ppf = function
+let rec pp_core_type_deep n ppf = function
   | Type_any -> fprintf ppf "_"
   | Type_unit -> fprintf ppf "unit"
   | Type_int -> fprintf ppf "int"
   | Type_char -> fprintf ppf "char"
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
-  | Type_option type' ->
-    (match type' with
-     | type' when is_type_arrow type' || is_type_list_or_option type' ->
-       fprintf ppf "(%a) option" (pp_core_type_deep true) type'
-     | type' -> fprintf ppf "%a option" (pp_core_type_deep true) type')
+  | Type_option type' -> fprintf ppf "%a option" (pp_core_type_deep 2) type'
   (* The id obtained from parser is stored without first char ',
      while the id from inferencer is stored with ', so that there is no confusion when inferring types. *)
   | Type_name id ->
@@ -83,47 +79,29 @@ let rec pp_core_type_deep need_parens ppf = function
       | '\'' -> pp_ident ppf id
       | _ -> pp_type_name id)
     else pp_type_name id
-  | Type_list type' ->
-    (match type' with
-     | type' when is_type_arrow type' || is_type_list_or_option type' ->
-       fprintf ppf "(%a) list" (pp_core_type_deep true) type'
-     | type' -> fprintf ppf "%a list" (pp_core_type_deep true) type')
+  | Type_list type' -> fprintf ppf "%a list" (pp_core_type_deep 2) type'
   | Type_tuple (first_type, second_type, type_list) ->
-    let pp_with_condition_on_arrow type' =
-      match type' with
-      | type' when is_type_arrow type' ->
-        fprintf ppf "(%a)" (pp_core_type_deep true) type'
-      | _ -> fprintf ppf "%a" (pp_core_type_deep true) type'
-    in
-    if need_parens then fprintf ppf "(";
-    pp_with_condition_on_arrow first_type;
+    if n = 2 then fprintf ppf "(";
+    fprintf ppf "%a" (pp_core_type_deep 2) first_type;
     List.iter
       (fun type' ->
         fprintf ppf " * ";
-        pp_with_condition_on_arrow type')
+        fprintf ppf "%a" (pp_core_type_deep 2) type')
       (second_type :: type_list);
-    if need_parens then fprintf ppf ")"
+    if n = 2 then fprintf ppf ")"
   | Type_arrow (first_type, second_type) ->
-    (match first_type with
-     | first_type when is_type_arrow first_type ->
-       fprintf
-         ppf
-         "(%a) -> %a"
-         (pp_core_type_deep true)
-         first_type
-         (pp_core_type_deep true)
-         second_type
-     | first_type ->
-       fprintf
-         ppf
-         "%a -> %a"
-         (pp_core_type_deep true)
-         first_type
-         (pp_core_type_deep true)
-         second_type)
+    if n <> 0 then fprintf ppf "(";
+    fprintf
+      ppf
+      "%a -> %a"
+      (pp_core_type_deep 1)
+      first_type
+      (pp_core_type_deep 0)
+      second_type;
+    if n <> 0 then fprintf ppf ")"
 ;;
 
-let pp_core_type = pp_core_type_deep false
+let pp_core_type = pp_core_type_deep 0
 
 let rec pp_pattern_deep need_parens ppf = function
   | Pat_any -> fprintf ppf "_"
@@ -138,23 +116,17 @@ let rec pp_pattern_deep need_parens ppf = function
       (pp_print_list ~pp_sep:pp_comma (pp_pattern_deep true))
       (first_pat :: second_pat :: pat_list);
     if need_parens then fprintf ppf " )"
-  | Pat_construct ("::", Some pat) ->
-    (match pat with
-     | Pat_tuple (head, tail, []) ->
-       fprintf ppf "@[<hv>[ %a" (pp_pattern_deep true) head;
-       let rec pp_tail pat =
-         match pat with
-         | Pat_construct (_, None) -> fprintf ppf "@ ]@]"
-         | Pat_construct (_, Some pat_tail) ->
-           (match pat_tail with
-            | Pat_tuple (next_head, next_tail, []) ->
-              fprintf ppf "@,; %a" (pp_pattern_deep true) next_head;
-              pp_tail next_tail
-            | _ -> ())
-         | _ -> fprintf ppf ";@ %a@ ]@]" (pp_pattern_deep true) pat
-       in
-       pp_tail tail
-     | _ -> ())
+  | Pat_construct ("::", Some (Pat_tuple (head, tail, []))) ->
+    fprintf ppf "@[<hv>[ %a" (pp_pattern_deep true) head;
+    let rec pp_tail = function
+      | Pat_construct (_, None) -> fprintf ppf "@ ]@]"
+      | Pat_construct (_, Some (Pat_tuple (next_head, next_tail, []))) ->
+        fprintf ppf "@,; %a" (pp_pattern_deep true) next_head;
+        pp_tail next_tail
+      | Pat_construct (_, Some _) -> ()
+      | pat -> fprintf ppf ";@ %a@ ]@]" (pp_pattern_deep true) pat
+    in
+    pp_tail tail
   | Pat_construct (tag, None) -> fprintf ppf "%s" tag
   | Pat_construct ("Some", Some pat) -> fprintf ppf "Some (%a)" (pp_pattern_deep true) pat
   | Pat_construct (_, _) -> ()
@@ -218,23 +190,17 @@ let rec pp_expression_deep need_cut need_parens ppf = function
       (pp_print_list ~pp_sep:pp_comma (pp_expression_deep false true))
       (first_exp :: second_exp :: exp_list);
     if need_parens then fprintf ppf " )"
-  | Exp_construct ("::", Some exp) ->
-    (match exp with
-     | Exp_tuple (head, tail, []) ->
-       fprintf ppf "@[<hv>[ %a" (pp_expression_deep false true) head;
-       let rec pp_tail exp =
-         match exp with
-         | Exp_construct (_, None) -> fprintf ppf "@ ]@]"
-         | Exp_construct (_, Some exp_tail) ->
-           (match exp_tail with
-            | Exp_tuple (next_head, next_tail, []) ->
-              fprintf ppf "@,; %a" (pp_expression_deep false true) next_head;
-              pp_tail next_tail
-            | _ -> ())
-         | _ -> fprintf ppf ";@ %a@ ]@]" (pp_expression_deep false true) exp
-       in
-       pp_tail tail
-     | _ -> ())
+  | Exp_construct ("::", Some (Exp_tuple (head, tail, []))) ->
+    fprintf ppf "@[<hv>[ %a" (pp_expression_deep false true) head;
+    let rec pp_tail = function
+      | Exp_construct (_, None) -> fprintf ppf "@ ]@]"
+      | Exp_construct (_, Some (Exp_tuple (next_head, next_tail, []))) ->
+        fprintf ppf "@,; %a" (pp_expression_deep false true) next_head;
+        pp_tail next_tail
+      | Exp_construct (_, Some _) -> ()
+      | exp -> fprintf ppf ";@ %a@ ]@]" (pp_expression_deep false true) exp
+    in
+    pp_tail tail
   | Exp_construct (tag, None) -> fprintf ppf "%s" tag
   | Exp_construct ("Some", Some exp) ->
     fprintf ppf "Some (%a)" (pp_expression_deep false true) exp
@@ -271,6 +237,8 @@ let rec pp_expression_deep need_cut need_parens ppf = function
       core_type
 
 and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
+  let ( < ) opr1 opr2 = get_priority opr1 < get_priority opr2
+  and ( <= ) opr1 opr2 = get_priority opr1 <= get_priority opr2 in
   let pp condition opr exp =
     if condition
     then fprintf ppf "(%a)" (pp_exp_apply ~need_parens) (Exp_ident opr, exp)
@@ -281,30 +249,22 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
     (match exp2 with
      | Exp_apply (Exp_apply (Exp_ident opr1, exp1), opn) when is_operator opr1 ->
        (match get_priority exp_opr with
-        | 4 | 5 -> pp (get_priority exp_opr <= get_priority opr1) opr1 exp1
-        | _ -> pp (get_priority exp_opr < get_priority opr1) opr1 exp1);
+        | 4 | 5 -> pp (exp_opr <= opr1) opr1 exp1
+        | _ -> pp (exp_opr < opr1) opr1 exp1);
        fprintf ppf " %s@ " exp_opr;
        (match opn with
         | Exp_apply (Exp_ident opr2, exp2) when is_operator opr2 ->
-          pp
-            (get_priority opr1 <= get_priority opr2
-             && get_priority exp_opr < get_priority opr2)
-            opr2
-            exp2
+          pp (opr1 <= opr2 && exp_opr < opr2) opr2 exp2
         | _ -> fprintf ppf "%a" (pp_expression_deep false true) opn)
      | Exp_apply (opn, Exp_apply (Exp_ident opr2, exp2)) when is_operator opr2 ->
        (match opn with
         | Exp_apply (Exp_ident opr1, exp1) when is_operator opr1 ->
-          pp
-            (get_priority opr2 <= get_priority opr1
-             && get_priority exp_opr < get_priority opr1)
-            opr1
-            exp1
+          pp (opr2 <= opr1 && exp_opr < opr1) opr1 exp1
         | _ -> fprintf ppf "%a" (pp_expression_deep false true) opn);
        fprintf ppf " %s@ " exp_opr;
        (match get_priority exp_opr with
-        | 1 | 2 | 3 -> pp (get_priority exp_opr <= get_priority opr2) opr2 exp2
-        | _ -> pp (get_priority exp_opr < get_priority opr2) opr2 exp2)
+        | 1 | 2 | 3 -> pp (exp_opr <= opr2) opr2 exp2
+        | _ -> pp (exp_opr < opr2) opr2 exp2)
      | Exp_apply (opn1, opn2) ->
        fprintf
          ppf

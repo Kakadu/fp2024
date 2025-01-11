@@ -172,7 +172,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   val temp : int * bool
 
   $ ../repl/REPL.exe -fromfile manytests_formatted/typed/010sukharev.ml
-  val _1 : int -> int -> (int * 'a) -> bool
+  val _1 : int -> int -> int * 'a -> bool
   val _2 : int
   val _3 : (int * string) option
   val _4 : int -> 'a
@@ -184,12 +184,12 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   val int_of_option : int option -> int
 
   $ ../repl/REPL.exe -fromfile manytests_formatted/typed/015tuples.ml
-  val feven : ('a * (int -> int)) -> int -> int
+  val feven : 'a * (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
-  val fixpoly : (((('a -> 'b) * ('a -> 'b)) -> 'a -> 'b) * ((('a -> 'b) * ('a -> 'b)) -> 'a -> 'b)) -> (('a -> 'b) * ('a -> 'b))
-  val fodd : ((int -> int) * 'a) -> int -> int
+  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
+  val fodd : (int -> int) * 'a -> int -> int
   val main : int
-  val map : ('b -> 'a) -> ('b * 'b) -> ('a * 'a)
+  val map : ('b -> 'a) -> 'b * 'b -> 'a * 'a
   val meven : int -> int
   val modd : int -> int
   val tie : (int -> int) * (int -> int)
@@ -197,7 +197,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../repl/REPL.exe -fromfile manytests_formatted/typed/016lists.ml
   val append : 'a list -> 'a list -> 'a list
   val cartesian : 'b list -> 'a list -> ('b * 'a) list
-  val concat : ('a list) list -> 'a list
+  val concat : 'a list list -> 'a list
   val iter : ('a -> unit) -> 'a list -> unit
   val length : 'a list -> int
   val length_tail : 'a list -> int
