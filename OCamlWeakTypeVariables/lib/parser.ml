@@ -114,7 +114,7 @@ let p_binop p expr =
 ;;
 
 let p_tuple expr =
-  token "[" *> sep_by (token ";") expr <* token "]" >>| fun x -> Pexp_tuple x
+  token "(" *> sep_by (token ",") expr <* token ")" >>| fun x -> Pexp_tuple x
 ;;
 
 let p_pattern =
