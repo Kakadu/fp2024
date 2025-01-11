@@ -175,3 +175,17 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        pvb_expr = (Pexp_constant (Pconst_int 5)) }
                       ]
                     ))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > (5+5, fun homka x -> 5, "looool")
+  Parsed result: (Pstr_eval
+                    (Pexp_tuple
+                       [(Pexp_apply ((Pexp_ident (Id "+")),
+                           [(Pexp_constant (Pconst_int 5));
+                             (Pexp_constant (Pconst_int 5))]
+                           ));
+                         (Pexp_fun ((Ppat_var "homka"),
+                            (Pexp_fun ((Ppat_var "x"),
+                               (Pexp_constant (Pconst_int 5))))
+                            ));
+                         (Pexp_constant (Pconst_string "looool"))]))
