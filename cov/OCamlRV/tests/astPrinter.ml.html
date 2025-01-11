@@ -617,7 +617,7 @@ let%expect_test "apply test" =
     "%a\n"
     pp_structure_item_list
     [ SEval (ExprApply (ExprVariable "f", ExprVariable "x")) ];
-  <span data-count="1">[</span>%expect {| f x;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| f x;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "cons test" =
@@ -625,7 +625,7 @@ let%expect_test "cons test" =
     "%a\n"
     pp_structure_item_list
     [ SEval (ExprCons (ExprVariable "f", ExprVariable "x")) ];
-  <span data-count="1">[</span>%expect {| f::x;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| f::x;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "let expression test" =
@@ -633,7 +633,7 @@ let%expect_test "let expression test" =
     "%a\n"
     pp_structure_item_list
     [ SValue (NonRec, (PVar "x", ExprConstant (CInt 5)), []) ];
-  <span data-count="1">[</span>%expect {| let x = 5;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let x = 5;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "factorial test" =
@@ -659,7 +659,7 @@ let%expect_test "factorial test" =
           )
         , [] )
     ];
-  <span data-count="1">[</span>%expect {| let rec fact n = if (n &lt;= (1)) then 1 else (n * (fact (n - (1))));; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let rec fact n = if (n &lt;= (1)) then 1 else (n * (fact (n - (1))));; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "complex let test" =
@@ -680,7 +680,7 @@ let%expect_test "complex let test" =
                   , ExprBinOperation (Add, ExprVariable "b", ExprVariable "c") ) ) )
         , [] )
     ];
-  <span data-count="1">[</span>%expect {| let a = let b = 1 in let c = 1 in b + c;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let a = let b = 1 in let c = 1 in b + c;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "tuple test" =
@@ -696,7 +696,7 @@ let%expect_test "tuple test" =
               , [ ExprConstant (CInt 3) ] ) )
         , [] )
     ];
-  <span data-count="1">[</span>%expect {| let a = (1, "2", 3);; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let a = (1, "2", 3);; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test _ =
@@ -710,7 +710,7 @@ let%expect_test _ =
                (ExprConstant (CInt 2), ExprCons (ExprConstant (CInt 3), ExprConstant CNil))
            ))
     ];
-  <span data-count="1">[</span>%expect {| 1::(2::(3::[]));; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| 1::(2::(3::[]));; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "bin op with parentheses" =
@@ -723,7 +723,7 @@ let%expect_test "bin op with parentheses" =
            , ExprConstant (CInt 1)
            , ExprBinOperation (Mul, ExprConstant (CInt 2), ExprConstant (CInt 2)) ))
     ];
-  <span data-count="1">[</span>%expect {| 1 + (2 * 2);; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| 1 + (2 * 2);; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "bin op with parentheses" =
@@ -736,7 +736,7 @@ let%expect_test "bin op with parentheses" =
            , ExprBinOperation (Add, ExprConstant (CInt 1), ExprConstant (CInt 2))
            , ExprConstant (CInt 2) ))
     ];
-  <span data-count="1">[</span>%expect {| (1 + 2) * 2;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| (1 + 2) * 2;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "let expressions" =
@@ -748,7 +748,7 @@ let%expect_test "let expressions" =
         , (PVar "a", ExprConstant (CInt 1))
         , [ PVar "b", ExprConstant (CInt 2); PVar "c", ExprConstant (CInt 3) ] )
     ];
-  <span data-count="1">[</span>%expect {| let a = 1 and b = 2 and c = 3;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let a = 1 and b = 2 and c = 3;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "complex let epressions" =
@@ -765,7 +765,7 @@ let%expect_test "complex let epressions" =
               , ExprBinOperation (Add, ExprVariable "x", ExprVariable "y") ) )
         , [] )
     ];
-  <span data-count="1">[</span>%expect {| let a = let x = 1 and y = 2 in x + y;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let a = let x = 1 and y = 2 in x + y;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "let none expression" =
@@ -773,7 +773,7 @@ let%expect_test "let none expression" =
     "%a\n"
     pp_structure_item_list
     [ SValue (NonRec, (PVar "a", ExprOption None), []) ];
-  <span data-count="1">[</span>%expect {| let a = None;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let a = None;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "let some expression" =
@@ -781,7 +781,7 @@ let%expect_test "let some expression" =
     "%a\n"
     pp_structure_item_list
     [ SValue (NonRec, (PVar "a", ExprOption (Some (ExprConstant (CInt 1)))), []) ];
-  <span data-count="1">[</span>%expect {| let a = Some (1);; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let a = Some (1);; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "bin op with if then else" =
@@ -794,7 +794,7 @@ let%expect_test "bin op with if then else" =
            , ExprConstant (CInt 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
-  <span data-count="1">[</span>%expect {| 1 + (if a then b else c);; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| 1 + (if a then b else c);; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "bin op with if then else" =
@@ -807,7 +807,7 @@ let%expect_test "bin op with if then else" =
            , ExprConstant (CInt 1)
            , ExprIf (ExprVariable "a", ExprVariable "b", Some (ExprVariable "c")) ))
     ];
-  <span data-count="1">[</span>%expect {| 1 + (if a then b else c);; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| 1 + (if a then b else c);; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "pretty print match with multiple branches" =
@@ -827,7 +827,7 @@ match x with
 | 0 -&gt; "zero"
 | 1 -&gt; "one"
 | _ -&gt; "other";;
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "let expr with match match with multiple branches" =
@@ -851,7 +851,7 @@ let numder = match arabic with
 | 1 -&gt; "one"
 | 2 -&gt; "two"
 | 3 -&gt; "three";;
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "" =
@@ -859,7 +859,7 @@ let%expect_test "" =
     "%a\n"
     pp_structure_item_list
     [ SEval (ExprUnOperation (UnaryNeg, ExprVariable "a")) ];
-  <span data-count="1">[</span>%expect {| not (a);; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| not (a);; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "" =
@@ -867,7 +867,7 @@ let%expect_test "" =
     "%a\n"
     pp_structure_item_list
     [ SValue (NonRec, (PType (PVar "a", AInt), ExprConstant (CInt 5)), []) ];
-  <span data-count="1">[</span>%expect {| let (a : int) = 5;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let (a : int) = 5;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "" =
@@ -884,7 +884,7 @@ let%expect_test "" =
                   , ExprBinOperation (Add, ExprVariable "x", ExprVariable "y") ) ) )
         , [] )
     ];
-  <span data-count="1">[</span>%expect {| let f (x : int) = fun (y : int) -&gt; x + y;; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let f (x : int) = fun (y : int) -&gt; x + y;; |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "" =
@@ -892,7 +892,7 @@ let%expect_test "" =
     "%a\n"
     pp_structure_item_list
     [ SValue (NonRec, (PType (PVar "a", AList AInt), ExprConstant CNil), []) ];
-  <span data-count="1">[</span>%expect {| let (a : int list) = [];; |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| let (a : int list) = [];; |}<span data-count="11">]</span>
 ;;
 </code></pre>
       </div>
