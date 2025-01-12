@@ -160,6 +160,17 @@ let%expect_test "type check pattern matching" =
   |}]
 ;;
 
+let%expect_test "type check pattern bound the variable multiple times" =
+  run {|
+  let f = function
+  | x, x -> true
+  | _ -> false
+  |};
+  [%expect {|
+  Infer error: Variable 'x' is bound several times in the matching
+  |}]
+;;
+
 let%expect_test "type check of expression list" =
   run {|
   let f a = [a; true]

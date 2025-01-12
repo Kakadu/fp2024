@@ -219,3 +219,20 @@ let%expect_test "parsing negative expressions" =
   let f a = -(if a then -1 else 2);;
   |}]
 ;;
+
+let%expect_test "parsing identifiers with explicitly assigned types 4" =
+  run
+    {|
+  let main = f [ a; b ];;
+  [] + [];;
+  let foo1 = [f a; f b];;
+  let foo2 = f [f a; f b];;
+    |};
+  [%expect
+    {|
+  let main = f [ a; b ];;
+  [] + [];;
+  let foo1 = [ f a; f b ];;
+  let foo2 = f [ f a; f b ];;
+  |}]
+;;

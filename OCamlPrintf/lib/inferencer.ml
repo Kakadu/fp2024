@@ -9,7 +9,7 @@ open Pprinter
 type error =
   [ `No_variable_rec
   | `No_arg_rec
-  | `Bound_several_times
+  | `Bound_several_times of string
   | `Occurs_check of string * core_type
   | `No_variable of string
   | `Unification_failed of core_type * core_type
@@ -22,8 +22,8 @@ let pp_error ppf : error -> _ = function
     Format.fprintf
       ppf
       "This kind of expression is not allowed as right-hand side of `let rec'"
-  | `Bound_several_times ->
-    Format.fprintf ppf "Variable a is bound several times in the matching"
+  | `Bound_several_times id ->
+    Format.fprintf ppf "Variable '%s' is bound several times in the matching" id
   | `Occurs_check (id, ty) ->
     Format.fprintf
       ppf
@@ -418,7 +418,7 @@ module Infer = struct
     include Set.Make (String)
 
     let add_id set value =
-      if mem value set then fail `Bound_several_times else return (add value set)
+      if mem value set then fail (`Bound_several_times value) else return (add value set)
     ;;
   end
 
@@ -440,6 +440,13 @@ module Infer = struct
     | _ -> return set_acc
   ;;
 
+  let check_names_from_let_binds let_binds =
+    RList.fold_left
+      ~init:(return StringSet.empty)
+      ~f:(fun set_acc { pat; _ } -> extract_names_from_pat set_acc pat)
+      let_binds
+  ;;
+
   let rec infer_expression env = function
     | Exp_ident id -> lookup_env id env
     | Exp_constant const ->
@@ -448,6 +455,7 @@ module Infer = struct
        | Const_string _ -> return (Subst.empty, Type_string)
        | Const_char _ -> return (Subst.empty, Type_char))
     | Exp_let (Nonrecursive, value_binding, value_binding_list, exp) ->
+      let* _ = check_names_from_let_binds (value_binding :: value_binding_list) in
       let* env, sub1 =
         infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
       in
@@ -620,12 +628,12 @@ module Infer = struct
           let* env, pat_ty =
             let* env, pat_ty = infer_pattern env pat in
             let* unified_sub1 = unify match_exp_ty pat_ty in
+            let* pat_names =
+              extract_names_from_pat StringSet.empty pat >>| StringSet.elements
+            in
             if with_exp
             then (
               let env = TypeEnv.apply unified_sub1 env in
-              let* pat_names =
-                extract_names_from_pat StringSet.empty pat >>| StringSet.elements
-              in
               let generalized_schemes =
                 Base.List.map pat_names ~f:(fun name ->
                   let ty = TypeEnv.find_type_exn env name in
@@ -672,6 +680,7 @@ module Infer = struct
       let env = TypeEnv.apply final_sub env in
       infer_value_binding_list env final_sub rest
     in
+    let* _ = check_names_from_let_binds let_binds in
     match let_binds with
     | [] -> return (env, sub)
     | { pat = Pat_constraint (pat, pat_ty); exp = Exp_fun (e_pat, e_pat_list, exp) }

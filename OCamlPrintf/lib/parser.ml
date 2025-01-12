@@ -529,7 +529,6 @@ let parse_expression =
         ; parse_exp_function parse_full_exp
         ; parse_exp_match parse_full_exp
         ; parse_exp_ifthenelse parse_full_exp
-        ; parse_exp_construct parse_full_exp
         ; parse_exp_constraint parse_full_exp
         ]
     in
