@@ -23,6 +23,7 @@ and value =
   | VNil
   | VOption of value option
   | VFun of pattern * rec_flag * expression * environment
+  | VMutualFun of pattern * rec_flag * expression * environment
   | VBuiltin of builtin * environment
 
 let vint i = VInt i
@@ -37,7 +38,6 @@ type error =
   | Wrong_type of value
   | Unbound_variable
   | Evaluationg_Need_ToBeReplaced
-  | Structure_Need_ToBeReplaced
   | BuiltinEvaluatingError
 
 let pp_error ppf =
@@ -47,7 +47,6 @@ let pp_error ppf =
   | Wrong_type _ -> fprintf ppf "Wrong_type"
   | Unbound_variable -> fprintf ppf "Unbound_variable"
   | Evaluationg_Need_ToBeReplaced -> fprintf ppf "Evaluationg_Need_ToBeReplaced"
-  | Structure_Need_ToBeReplaced -> fprintf ppf "Structure_Need_ToBeReplaced"
   | BuiltinEvaluatingError -> fprintf ppf "BuiltinEvaluatingError"
 ;;
 
@@ -58,33 +57,34 @@ module type MONAD_FAIL = sig
   val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 end
 
-(* let rec pp_value ppf =
-   let open Stdlib.Format in
-   function
-   | VInt x -> fprintf ppf "%d" x
-   | VBool b -> fprintf ppf "%b" b
-   | VString s -> fprintf ppf "%s" s
-   | VUnit -> fprintf ppf "()"
-   | VList vl ->
-   fprintf
-   ppf
-   "[%a]"
-   (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
-   vl
-   | VTuple vl ->
-   fprintf
-   ppf
-   "(%a)"
-   (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
-   vl
-   | VNil -> fprintf ppf "[]"
-   | VFun _ -> fprintf ppf "<fun>"
-   | VBuiltin _ -> fprintf ppf "<builtin>"
-   | VOption vo ->
-   (match vo with
-   | Some v -> fprintf ppf "Some %a" pp_value v
-   | None -> fprintf ppf "None")
-   ;; *)
+let rec pp_value ppf =
+  let open Stdlib.Format in
+  function
+  | VInt x -> fprintf ppf "%d" x
+  | VBool b -> fprintf ppf "%b" b
+  | VString s -> fprintf ppf "%s" s
+  | VUnit -> fprintf ppf "()"
+  | VList vl ->
+    fprintf
+      ppf
+      "[%a]"
+      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
+      vl
+  | VTuple vl ->
+    fprintf
+      ppf
+      "(%a)"
+      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
+      vl
+  | VNil -> fprintf ppf "[]"
+  | VFun _ -> fprintf ppf "<fun>"
+  | VBuiltin _ -> fprintf ppf "<builtin>"
+  | VMutualFun _ -> fprintf ppf "<VMutualFun>"
+  | VOption vo ->
+    (match vo with
+     | Some v -> fprintf ppf "Some %a" pp_value v
+     | None -> fprintf ppf "None")
+;;
 
 module Env (M : MONAD_FAIL) = struct
   open M
@@ -278,6 +278,13 @@ module Eval (M : MONAD_FAIL) = struct
            | None -> fail Pattern_matching_failed
          in
          eval_expr env' e
+       | VMutualFun (p, _, e, _) ->
+         let* env' =
+           match check_match env (p, v2) with
+           | Some env -> return env
+           | None -> fail Pattern_matching_failed
+         in
+         eval_expr env' e
        | VBuiltin (b, _) ->
          let status =
            match b, v2 with
@@ -385,7 +392,24 @@ module Eval (M : MONAD_FAIL) = struct
       in
       let env = extend env x v in
       return env
-    | _ -> fail Structure_Need_ToBeReplaced
+    | SValue (Rec, b, bl) ->
+      let bindings = b :: bl in
+      let* env2 =
+        Base.List.fold_left
+          ~f:(fun env b ->
+            let* env = env in
+            let p, e = b in
+            match p with
+            | PVar name ->
+              (match e with
+               | ExprFun (p1, e1) ->
+                 return (extend env name (VMutualFun (p1, Rec, e1, env)))
+               | _ -> return env)
+            | _ -> return env)
+          ~init:(return env)
+          bindings
+      in
+      return env2
   ;;
 
   let eval_structure (s : structure) =

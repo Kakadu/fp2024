@@ -133,6 +133,25 @@ let%expect_test _ =
   [%expect {| 12 |}]
 ;;
 
+(* Mutual recursion *)
+
+let%expect_test _ =
+  test_interpret
+    {|
+    let rec even n =
+        match n with
+          | 0 -> 1
+          | x -> odd (x-1)
+    and odd n =
+        match n with
+          | 0 -> 0
+          | x -> even (x-1);;
+    print_int (odd 10);;
+    print_int (even 10);;
+   |};
+  [%expect {| 01 |}]
+;;
+
 (* Some functions *)
 
 let%expect_test _ =
