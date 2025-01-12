@@ -487,16 +487,16 @@ module Infer = struct
     | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
       let* sub1, ty1 = infer_expression env exp1 in
       let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
-      let* required_ty1, required_ty2, required_result_ty =
+      let* required_arg_ty, required_result_ty =
         match get_priority opr with
-        | 1 | 2 -> return (Type_int, Type_int, Type_int)
+        | 1 | 2 -> return (Type_int, Type_int)
         | 3 ->
           let* fresh = fresh_var in
-          return (fresh, fresh, Type_bool)
-        | _ -> return (Type_bool, Type_bool, Type_bool)
+          return (fresh, Type_bool)
+        | _ -> return (Type_bool, Type_bool)
       in
-      let* unified_sub1 = Subst.unify (Subst.apply sub2 ty1) required_ty1 in
-      let* unified_sub2 = Subst.unify (Subst.apply unified_sub1 ty2) required_ty2 in
+      let* unified_sub1 = Subst.unify (Subst.apply sub2 ty1) required_arg_ty in
+      let* unified_sub2 = Subst.unify (Subst.apply unified_sub1 ty2) required_arg_ty in
       let* composed_sub = Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ] in
       return (composed_sub, required_result_ty)
     | Exp_apply (exp1, exp2) ->
