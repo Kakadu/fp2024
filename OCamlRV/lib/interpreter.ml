@@ -35,6 +35,7 @@ let vfun p rf e env = VFun (p, rf, e, env)
 
 type error =
   | Pattern_matching_failed
+  | Apply_failed
   | Wrong_type of value
   | Unbound_variable
   | Evaluationg_Need_ToBeReplaced
@@ -44,6 +45,7 @@ let pp_error ppf =
   let open Stdlib.Format in
   function
   | Pattern_matching_failed -> fprintf ppf "Pattern_matching_failed"
+  | Apply_failed -> fprintf ppf "Apply_failed"
   | Wrong_type _ -> fprintf ppf "Wrong_type"
   | Unbound_variable -> fprintf ppf "Unbound_variable"
   | Evaluationg_Need_ToBeReplaced -> fprintf ppf "Evaluationg_Need_ToBeReplaced"
@@ -86,6 +88,14 @@ let rec pp_value ppf =
      | None -> fprintf ppf "None")
 ;;
 
+let print_env env =
+  Format.printf "\nDEBUG ENV:\n";
+  Base.Map.iteri
+    ~f:(fun ~key ~data ->
+      Format.fprintf Format.std_formatter "%s : some_type = %a\n" key pp_value data)
+    env
+;;
+
 module Env (M : MONAD_FAIL) = struct
   open M
 
@@ -117,6 +127,7 @@ module Eval (M : MONAD_FAIL) = struct
     | PConstant (CString s1), VString s2 when String.equal s1 s2 -> Some env
     | PConstant CNil, VList [] -> Some env
     | PConstant CNil, VNil -> Some env
+    | PConstant CUnit, VUnit -> Some env
     | PVar x, v -> Some (extend env x v)
     | PTuple (p1, p2, rest), VTuple vl ->
       let pl = p1 :: p2 :: rest in
@@ -255,6 +266,10 @@ module Eval (M : MONAD_FAIL) = struct
       in
       let env2 = extend env x v in
       eval_expr env2 e
+    | ExprLet (Rec, b, bl, e) ->
+      let bindings = b :: bl in
+      let* env2 = eval_rec_binding_list env bindings in
+      eval_expr env2 e
     | ExprFun (p, e) -> return (vfun p NonRec e env)
     | ExprMatch (e, c, cl) ->
       let* v = eval_expr env e in
@@ -275,14 +290,14 @@ module Eval (M : MONAD_FAIL) = struct
          let* env' =
            match check_match env (p, v2) with
            | Some env -> return env
-           | None -> fail Pattern_matching_failed
+           | None -> fail Apply_failed
          in
          eval_expr env' e
        | VMutualFun (p, _, e, _) ->
          let* env' =
            match check_match env (p, v2) with
            | Some env -> return env
-           | None -> fail Pattern_matching_failed
+           | None -> fail Apply_failed
          in
          eval_expr env' e
        | VBuiltin (b, _) ->
@@ -370,6 +385,24 @@ module Eval (M : MONAD_FAIL) = struct
         bl
     in
     return env2
+
+  and eval_rec_binding_list env bl =
+    let* env2 =
+      Base.List.fold_left
+        ~f:(fun env b ->
+          let* env = env in
+          let p, e = b in
+          match p with
+          | PVar name ->
+            (match e with
+             | ExprFun (p1, e1) ->
+               return (extend env name (VMutualFun (p1, Rec, e1, env)))
+             | _ -> return env)
+          | _ -> return env)
+        ~init:(return env)
+        bl
+    in
+    return env2
   ;;
 
   let eval_structure_item (env : environment) structure_item =
@@ -394,22 +427,7 @@ module Eval (M : MONAD_FAIL) = struct
       return env
     | SValue (Rec, b, bl) ->
       let bindings = b :: bl in
-      let* env2 =
-        Base.List.fold_left
-          ~f:(fun env b ->
-            let* env = env in
-            let p, e = b in
-            match p with
-            | PVar name ->
-              (match e with
-               | ExprFun (p1, e1) ->
-                 return (extend env name (VMutualFun (p1, Rec, e1, env)))
-               | _ -> return env)
-            | _ -> return env)
-          ~init:(return env)
-          bindings
-      in
-      return env2
+      eval_rec_binding_list env bindings
   ;;
 
   let eval_structure (s : structure) =
@@ -434,13 +452,7 @@ let test_interpret s =
   match Parser.parse s with
   | Ok parsed ->
     (match Interpret.eval_structure parsed with
-     | Ok _ ->
-       ()
-       (* Format.printf "\nDEBUG ENV:\n";
-          Base.Map.iteri
-          ~f:(fun ~key ~data ->
-          Format.fprintf Format.std_formatter "%s : some_type = %a\n" key pp_value data)
-          env *)
+     | Ok _ -> ()
      | Error e -> fprintf std_formatter "%a\n" pp_error e)
   | Error e -> printf "Parsing error: %s\n" e
 ;;

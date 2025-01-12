@@ -152,6 +152,23 @@ let%expect_test _ =
   [%expect {| 01 |}]
 ;;
 
+let%expect_test _ =
+  test_interpret
+    {|
+      let () =
+        let rec even n =
+          match n with
+            | 0 -> 1
+            | x -> odd (x-1)
+        and odd n =
+          match n with
+            | 0 -> 0
+            | x -> even (x-1) in
+        print_int (even 7)
+   |};
+  [%expect {| 0 |}]
+;;
+
 (* Some functions *)
 
 let%expect_test _ =
