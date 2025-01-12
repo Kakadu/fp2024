@@ -6,19 +6,9 @@ open Ast
 open Ast.Expression
 open Format
 
-let is_operator op = List.exists (fun (str, _) -> str = op) bin_op_list
-let get_priority op = List.assoc op bin_op_list
-let is_negative_op op = un_op = op
-
-let is_type_arrow = function
-  | Type_arrow (_, _) -> true
-  | _ -> false
-;;
-
-let is_type_list_or_option = function
-  | Type_list _ | Type_option _ -> true
-  | _ -> false
-;;
+let is_operator opr = List.exists (fun (str, _) -> str = opr) bin_op_list
+let get_priority opr = List.assoc opr bin_op_list
+let is_negative_op opr = un_op = opr
 
 let pp_rec_flag ppf = function
   | Recursive -> fprintf ppf "let rec "
@@ -49,9 +39,9 @@ let rec pp_core_type_deep n ppf = function
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
   | Type_option type' -> fprintf ppf "%a option" (pp_core_type_deep 2) type'
-  (* The id obtained from parser is stored without first char ',
-     while the id from inferencer is stored with ', so that there is no confusion when inferring types. *)
-  | Type_name id ->
+  (* The id obtained from parser is stored without first char ', while the id from
+     inferencer is stored with ', so that there is no confusion when inferring types. *)
+  | Type_var id ->
     let pp_type_name = fprintf ppf "'%s" in
     if String.length id > 1
     then (
@@ -60,24 +50,18 @@ let rec pp_core_type_deep n ppf = function
       | _ -> pp_type_name id)
     else pp_type_name id
   | Type_list type' -> fprintf ppf "%a list" (pp_core_type_deep 2) type'
-  | Type_tuple (first_type, second_type, type_list) ->
+  | Type_tuple (fst_type, snd_type, type_list) ->
     if n = 2 then fprintf ppf "(";
-    fprintf ppf "%a" (pp_core_type_deep 2) first_type;
+    fprintf ppf "%a" (pp_core_type_deep 2) fst_type;
     List.iter
       (fun type' ->
         fprintf ppf " * ";
         fprintf ppf "%a" (pp_core_type_deep 2) type')
-      (second_type :: type_list);
+      (snd_type :: type_list);
     if n = 2 then fprintf ppf ")"
-  | Type_arrow (first_type, second_type) ->
+  | Type_arrow (fst_type, snd_type) ->
     if n <> 0 then fprintf ppf "(";
-    fprintf
-      ppf
-      "%a -> %a"
-      (pp_core_type_deep 1)
-      first_type
-      (pp_core_type_deep 0)
-      second_type;
+    fprintf ppf "%a -> %a" (pp_core_type_deep 1) fst_type (pp_core_type_deep 0) snd_type;
     if n <> 0 then fprintf ppf ")"
 ;;
 
@@ -87,14 +71,14 @@ let rec pp_pattern_deep need_parens ppf = function
   | Pat_any -> fprintf ppf "_"
   | Pat_var id -> pp_ident ppf id
   | Pat_constant const -> pp_constant ppf const
-  | Pat_tuple (first_pat, second_pat, pat_list) ->
+  | Pat_tuple (fst_pat, snd_pat, pat_list) ->
     pp_open_hvbox ppf 0;
     if need_parens then fprintf ppf "( ";
     fprintf
       ppf
       "%a@]"
       (pp_print_list ~pp_sep:pp_comma (pp_pattern_deep true))
-      (first_pat :: second_pat :: pat_list);
+      (fst_pat :: snd_pat :: pat_list);
     if need_parens then fprintf ppf " )"
   | Pat_construct ("::", Some (Pat_tuple (head, tail, []))) ->
     fprintf ppf "@[<hv>[ %a" (pp_pattern_deep true) head;
@@ -121,21 +105,21 @@ let pp_pattern = pp_pattern_deep false
 let rec pp_expression_deep need_cut need_parens ppf = function
   | Exp_ident id -> pp_ident ppf id
   | Exp_constant const -> pp_constant ppf const
-  | Exp_let (rec_flag, first_value_binding, value_binding_list, exp) ->
+  | Exp_let (rec_flag, fst_value_binding, value_binding_list, exp) ->
     if need_parens then fprintf ppf "(";
     pp_open_hvbox ppf 0;
-    (pp_value_binding_list 0) ppf (rec_flag, first_value_binding :: value_binding_list);
+    (pp_value_binding_list 0) ppf (rec_flag, fst_value_binding :: value_binding_list);
     fprintf ppf " in@ %a" (pp_expression_deep true true) exp;
     if need_parens then fprintf ppf ")";
     pp_close_box ppf ()
-  | Exp_fun (first_pat, pat_list, exp) ->
+  | Exp_fun (fst_pat, pat_list, exp) ->
     if need_parens then fprintf ppf "(";
     pp_open_box ppf 2;
     fprintf
       ppf
       "fun@ %a@ "
       (pp_print_list ~pp_sep:pp_print_space (pp_pattern_deep true))
-      (first_pat :: pat_list);
+      (fst_pat :: pat_list);
     fprintf ppf "->@ %a" (pp_expression_deep false true) exp;
     if need_parens then fprintf ppf ")";
     pp_close_box ppf ()
@@ -143,32 +127,32 @@ let rec pp_expression_deep need_cut need_parens ppf = function
     pp_open_box ppf 2;
     (pp_exp_apply ~need_parens) ppf (exp1, exp2);
     pp_close_box ppf ()
-  | Exp_function (first_case, case_list) ->
+  | Exp_function (fst_case, case_list) ->
     if need_cut then pp_force_newline ppf ();
     if need_parens then fprintf ppf "(";
     pp_open_vbox ppf 0;
     fprintf ppf "function@ ";
-    fprintf ppf "%a" (pp_print_list pp_case) (first_case :: case_list);
+    fprintf ppf "%a" (pp_print_list pp_case) (fst_case :: case_list);
     if need_parens then fprintf ppf ")";
     pp_close_box ppf ()
-  | Exp_match (exp, first_case, case_list) ->
+  | Exp_match (exp, fst_case, case_list) ->
     if need_cut then pp_force_newline ppf ();
     if need_parens then fprintf ppf "(";
     pp_open_vbox ppf 0;
     pp_open_hvbox ppf 0;
     if need_parens then pp_open_vbox ppf 1 else pp_open_vbox ppf 2;
     fprintf ppf "match %a@]@ with@]@ " (pp_expression_deep true false) exp;
-    fprintf ppf "%a" (pp_print_list pp_case) (first_case :: case_list);
+    fprintf ppf "%a" (pp_print_list pp_case) (fst_case :: case_list);
     if need_parens then fprintf ppf ")";
     pp_close_box ppf ()
-  | Exp_tuple (first_exp, second_exp, exp_list) ->
+  | Exp_tuple (fst_exp, snd_exp, exp_list) ->
     pp_open_hvbox ppf 0;
     if need_parens then fprintf ppf "( ";
     fprintf
       ppf
       "%a@]"
       (pp_print_list ~pp_sep:pp_comma (pp_expression_deep false true))
-      (first_exp :: second_exp :: exp_list);
+      (fst_exp :: snd_exp :: exp_list);
     if need_parens then fprintf ppf " )"
   | Exp_construct ("::", Some (Exp_tuple (head, tail, []))) ->
     fprintf ppf "@[<hv>[ %a" (pp_expression_deep false true) head;
@@ -325,8 +309,8 @@ let pp_structure_item ppf = function
   | Struct_eval exp ->
     fprintf ppf "@[<hv>%a@];;" pp_expression exp;
     pp_print_flush ppf ()
-  | Struct_value (rec_flag, first_value_binding, value_binding_list) ->
-    (pp_value_binding_list 2) ppf (rec_flag, first_value_binding :: value_binding_list);
+  | Struct_value (rec_flag, fst_value_binding, value_binding_list) ->
+    (pp_value_binding_list 2) ppf (rec_flag, fst_value_binding :: value_binding_list);
     pp_print_if_newline ppf ();
     pp_print_cut ppf ();
     fprintf ppf ";;";

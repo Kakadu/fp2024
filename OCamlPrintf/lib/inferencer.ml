@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
+open Ast.Expression
 open Pprinter
 
 type error =
@@ -93,9 +94,9 @@ end
 module VarSet = struct
   include Set.Make (String)
 
-  let pp ppf s =
+  let pp ppf set =
     Format.fprintf ppf "[ ";
-    iter (Format.fprintf ppf "%s; ") s;
+    iter (Format.fprintf ppf "%s; ") set;
     Format.fprintf ppf "]"
   ;;
 end
@@ -103,17 +104,17 @@ end
 type scheme = Scheme of VarSet.t * Ast.core_type
 
 let pp_scheme ppf = function
-  | Scheme (varset, type') ->
-    Format.fprintf ppf "{ %a : %a }" VarSet.pp varset pp_core_type type'
+  | Scheme (varset, ty) ->
+    Format.fprintf ppf "{ %a : %a }" VarSet.pp varset pp_core_type ty
 ;;
 
 module Type = struct
   let rec occurs_in var = function
     | Type_option ty -> occurs_in var ty
-    | Type_name name -> name = var
+    | Type_var name -> name = var
     | Type_list ty -> occurs_in var ty
-    | Type_tuple (fst, snd, rest_list) ->
-      List.exists (occurs_in var) (fst :: snd :: rest_list)
+    | Type_tuple (fst_ty, snd_ty, ty_list) ->
+      List.exists (occurs_in var) (fst_ty :: snd_ty :: ty_list)
     | Type_arrow (l, r) -> occurs_in var l || occurs_in var r
     | _ -> false
   ;;
@@ -121,9 +122,9 @@ module Type = struct
   let free_vars =
     let rec helper acc = function
       | Type_option ty -> helper acc ty
-      | Type_name name -> VarSet.add name acc
-      | Type_tuple (fst, snd, rest_list) ->
-        List.fold_left helper acc (fst :: snd :: rest_list)
+      | Type_var name -> VarSet.add name acc
+      | Type_tuple (fst_ty, snd_ty, ty_list) ->
+        List.fold_left helper acc (fst_ty :: snd_ty :: ty_list)
       | Type_list ty -> helper acc ty
       | Type_arrow (l, r) -> helper (helper acc l) r
       | _ -> acc
@@ -136,8 +137,6 @@ module Subst = struct
   open State
   open State.Syntax
   open Base
-
-  type t = (ident, core_type, String.comparator_witness) Map.t
 
   let empty = Map.empty (module String)
   let singleton1 = Map.singleton (module String)
@@ -152,14 +151,14 @@ module Subst = struct
 
   let apply sub =
     let rec helper = function
-      | Type_name name as ty ->
+      | Type_var name as ty ->
         (match Map.find sub name with
          | Some name -> name
          | None -> ty)
       | Type_option ty -> Type_option (helper ty)
       | Type_list ty -> Type_list (helper ty)
-      | Type_tuple (fst, snd, rest_List) ->
-        Type_tuple (helper fst, helper snd, List.map rest_List ~f:helper)
+      | Type_tuple (fst_ty, snd_ty, ty_list) ->
+        Type_tuple (helper fst_ty, helper snd_ty, List.map ty_list ~f:helper)
       | Type_arrow (l, r) -> Type_arrow (helper l, helper r)
       | ty -> ty
     in
@@ -174,8 +173,8 @@ module Subst = struct
     | Type_char, Type_char
     | Type_string, Type_string
     | Type_bool, Type_bool -> return empty
-    | Type_name l, Type_name r when String.equal l r -> return empty
-    | Type_name name, ty | ty, Type_name name -> singleton name ty
+    | Type_var l, Type_var r when String.equal l r -> return empty
+    | Type_var name, ty | ty, Type_var name -> singleton name ty
     | Type_list ty1, Type_list ty2 | Type_option ty1, Type_option ty2 -> unify ty1 ty2
     | Type_tuple (fst1, snd1, list1), Type_tuple (fst2, snd2, list2) ->
       (match
@@ -213,9 +212,9 @@ module Subst = struct
 
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
 
-  let pp ppf (xs : t) =
+  let pp ppf sub =
     Stdlib.Format.fprintf ppf "Subst:\n";
-    Map.iteri xs ~f:(fun ~key:str ~data:ty ->
+    Map.iteri sub ~f:(fun ~key:str ~data:ty ->
       Stdlib.Format.fprintf ppf "%s <-> %a; " str pp_core_type ty);
     Stdlib.Format.fprintf ppf "\n"
   ;;
@@ -241,13 +240,13 @@ module TypeEnv = struct
   let rec extend_with_pattern env_acc pat (Scheme (bind_set, ty) as scheme) =
     match pat, ty with
     | Pat_var id, _ -> extend env_acc id scheme
-    | Pat_tuple (fst, snd, rest_list), Type_tuple (fst_ty, snd_ty, rest_list_ty) ->
+    | Pat_tuple (fst_pat, snd_pat, pat_list), Type_tuple (fst_ty, snd_ty, ty_list) ->
       let env =
         List.fold2
           ~init:env_acc
           ~f:(fun env pat ty -> extend_with_pattern env pat (Scheme (bind_set, ty)))
-          (fst :: snd :: rest_list)
-          (fst_ty :: snd_ty :: rest_list_ty)
+          (fst_pat :: snd_pat :: pat_list)
+          (fst_ty :: snd_ty :: ty_list)
       in
       (match env with
        | Ok env -> env
@@ -272,13 +271,13 @@ module TypeEnv = struct
   let find = Map.find
 
   let find_type_exn env key =
-    match Map.find_exn env key with
-    | Scheme (_, typ) -> typ
+    let (Scheme (_, ty)) = Map.find_exn env key in
+    ty
   ;;
 
-  let pp ppf (xs : t) =
+  let pp ppf env =
     Stdlib.Format.fprintf ppf "TypeEnv:\n";
-    Map.iteri xs ~f:(fun ~key:str ~data:sch ->
+    Map.iteri env ~f:(fun ~key:str ~data:sch ->
       Stdlib.Format.fprintf ppf "%s -> %a; " str pp_scheme sch);
     Stdlib.Format.fprintf ppf "\n"
   ;;
@@ -290,15 +289,15 @@ module Infer = struct
   open Ast
 
   let unify = Subst.unify
-  let fresh_var = fresh >>| fun n -> Type_name ("'t" ^ Int.to_string n)
+  let fresh_var = fresh >>| fun n -> Type_var ("'t" ^ Int.to_string n)
 
   let instantiate (Scheme (bind_set, ty)) =
     VarSet.fold
-      (fun name typ ->
-        let* typ = typ in
+      (fun name ty ->
+        let* ty = ty in
         let* fresh = fresh_var in
         let* sub = Subst.singleton name fresh in
-        return (Subst.apply sub typ))
+        return (Subst.apply sub ty))
       bind_set
       (return ty)
   ;;
@@ -310,19 +309,19 @@ module Infer = struct
       | _ -> env
     in
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
-    let new_free, new_type, _ =
+    let new_free, new_ty, _ =
       VarSet.fold
         (fun str (temp_free, temp_ty, n) ->
           (* 97 - is number 'a' in ASCII-table *)
           let new_str = "'" ^ String.make 1 (Char.chr (97 + n)) in
-          let sub = Subst.singleton1 str (Type_name new_str) in
+          let sub = Subst.singleton1 str (Type_var new_str) in
           let new_free = VarSet.add new_str temp_free in
-          let new_type = Subst.apply sub temp_ty in
-          new_free, new_type, n + 1)
+          let new_ty = Subst.apply sub temp_ty in
+          new_free, new_ty, n + 1)
         free
         (VarSet.empty, ty, 0)
     in
-    Scheme (new_free, new_type)
+    Scheme (new_free, new_ty)
   ;;
 
   let lookup_env id env =
@@ -346,19 +345,19 @@ module Infer = struct
        | Const_integer _ -> return (env, Type_int)
        | Const_string _ -> return (env, Type_string)
        | Const_char _ -> return (env, Type_char))
-    | Pat_tuple (fst, snd, rest_list) ->
-      let* env1, type1 = infer_pattern env fst in
-      let* env2, type2 = infer_pattern env1 snd in
-      let* env_rest, type_list =
+    | Pat_tuple (fst_pat, snd_pat, pat_list) ->
+      let* env1, ty1 = infer_pattern env fst_pat in
+      let* env2, ty2 = infer_pattern env1 snd_pat in
+      let* env_rest, ty_list =
         RList.fold_right
           ~f:(fun pat acc ->
-            let* env_acc, typ_list = return acc in
-            let* env, typ = infer_pattern env_acc pat in
-            return (env, typ :: typ_list))
+            let* env_acc, ty_list = return acc in
+            let* env, ty = infer_pattern env_acc pat in
+            return (env, ty :: ty_list))
           ~init:(return (env2, []))
-          rest_list
+          pat_list
       in
-      return (env_rest, Type_tuple (type1, type2, type_list))
+      return (env_rest, Type_tuple (ty1, ty2, ty_list))
     | Pat_construct ("[]", None) ->
       let* fresh = fresh_var in
       return (env, Type_list fresh)
@@ -367,10 +366,10 @@ module Infer = struct
       let* env, type_of_head = infer_pattern env head in
       let* unified_sub = unify type_of_head fresh in
       let env = TypeEnv.apply unified_sub env in
-      let rec infer_tail env sub_acc (cur_pat : pattern) =
-        let helper required_type pat =
+      let rec infer_tail env sub_acc cur_pat =
+        let helper required_ty pat =
           let* env, type_of_pat = infer_pattern env pat in
-          let* unified_sub = unify required_type type_of_pat in
+          let* unified_sub = unify required_ty type_of_pat in
           return (TypeEnv.apply unified_sub env, unified_sub)
         in
         match cur_pat with
@@ -388,21 +387,17 @@ module Infer = struct
       return (TypeEnv.apply final_sub env, Subst.apply final_sub (Type_list fresh))
     | Pat_construct (id, None) when id = "true" || id = "false" -> return (env, Type_bool)
     | Pat_construct ("()", None) -> return (env, Type_unit)
-    | Pat_construct ("None", None) ->
-      let* fresh = fresh_var in
-      return (env, fresh)
     | Pat_construct ("Some", Some pat) ->
-      let* env, typ = infer_pattern env pat in
-      return (env, Type_option typ)
+      let* env, ty = infer_pattern env pat in
+      return (env, Type_option ty)
     | Pat_construct _ ->
-      (* Impossible situation *)
       let* fresh = fresh_var in
       return (env, fresh)
-    | Pat_constraint (pat, c_type) ->
-      let* env, typ = infer_pattern env pat in
-      let* unified_sub = unify typ c_type in
+    | Pat_constraint (pat, c_ty) ->
+      let* env, ty = infer_pattern env pat in
+      let* unified_sub = unify ty c_ty in
       let env = TypeEnv.apply unified_sub env in
-      return (env, c_type)
+      return (env, c_ty)
   ;;
 
   let extend_env_with_bind_names env value_binding_list =
@@ -422,16 +417,16 @@ module Infer = struct
   module StringSet = struct
     include Set.Make (String)
 
-    let add_id set (value : ident) =
+    let add_id set value =
       if mem value set then fail `Bound_several_times else return (add value set)
     ;;
   end
 
   let rec extract_names_from_pat set_acc = function
     | Pat_var id -> StringSet.add_id set_acc id
-    | Pat_tuple (fst, snd, rest_list) ->
+    | Pat_tuple (fst_pat, snd_pat, pat_list) ->
       RList.fold_left
-        (fst :: snd :: rest_list)
+        (fst_pat :: snd_pat :: pat_list)
         ~init:(return set_acc)
         ~f:extract_names_from_pat
     | Pat_construct ("::", Some exp) ->
@@ -445,8 +440,7 @@ module Infer = struct
     | _ -> return set_acc
   ;;
 
-  let rec infer_expression env (exp : Expression.t) =
-    match exp with
+  let rec infer_expression env = function
     | Exp_ident id -> lookup_env id env
     | Exp_constant const ->
       (match const with
@@ -457,9 +451,9 @@ module Infer = struct
       let* env, sub1 =
         infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
       in
-      let* sub2, type2 = infer_expression env exp in
+      let* sub2, ty2 = infer_expression env exp in
       let* composed_sub = Subst.compose sub2 sub1 in
-      return (composed_sub, type2)
+      return (composed_sub, ty2)
     | Exp_let (Recursive, value_binding, value_binding_list, exp) ->
       let* env, fresh_acc =
         extend_env_with_bind_names env (value_binding :: value_binding_list)
@@ -471,47 +465,47 @@ module Infer = struct
           Subst.empty
           (value_binding :: value_binding_list)
       in
-      let* sub2, type2 = infer_expression env exp in
+      let* sub2, ty2 = infer_expression env exp in
       let* composed_sub = Subst.compose sub2 sub1 in
-      return (composed_sub, type2)
+      return (composed_sub, ty2)
     | Exp_fun (pat, pat_list, exp) ->
-      let* env, type1 = infer_pattern env pat in
-      let* sub, type2 =
+      let* env, ty1 = infer_pattern env pat in
+      let* sub, ty2 =
         match pat_list with
         | [] -> infer_expression env exp
         | hd :: tl -> infer_expression env (Exp_fun (hd, tl, exp))
       in
-      return (sub, Type_arrow (Subst.apply sub type1, type2))
-    | Exp_apply (Exp_ident op, Exp_apply (exp1, exp2)) when is_operator op ->
-      let* sub1, type1 = infer_expression env exp1 in
-      let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
-      let* required_type1, required_type2, required_result_type =
-        match get_priority op with
+      return (sub, Type_arrow (Subst.apply sub ty1, ty2))
+    | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
+      let* sub1, ty1 = infer_expression env exp1 in
+      let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
+      let* required_ty1, required_ty2, required_result_ty =
+        match get_priority opr with
         | 1 | 2 -> return (Type_int, Type_int, Type_int)
         | 3 ->
           let* fresh = fresh_var in
           return (fresh, fresh, Type_bool)
         | _ -> return (Type_bool, Type_bool, Type_bool)
       in
-      let* unified_sub1 = Subst.unify (Subst.apply sub2 type1) required_type1 in
-      let* unified_sub2 = Subst.unify (Subst.apply unified_sub1 type2) required_type2 in
+      let* unified_sub1 = Subst.unify (Subst.apply sub2 ty1) required_ty1 in
+      let* unified_sub2 = Subst.unify (Subst.apply unified_sub1 ty2) required_ty2 in
       let* composed_sub = Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ] in
-      return (composed_sub, required_result_type)
-    | Exp_apply (e1, e2) ->
-      (match e1 with
-       | Exp_ident op when is_negative_op op ->
-         let* sub, ty = infer_expression env e2 in
+      return (composed_sub, required_result_ty)
+    | Exp_apply (exp1, exp2) ->
+      (match exp1 with
+       | Exp_ident opr when is_negative_op opr ->
+         let* sub, ty = infer_expression env exp2 in
          let* unified_sub = Subst.unify ty Type_int in
          let* composed_sub = Subst.compose sub unified_sub in
          return (composed_sub, Type_int)
        | _ ->
-         let* sub1, type1 = infer_expression env e1 in
-         let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) e2 in
+         let* sub1, ty1 = infer_expression env exp1 in
+         let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
          let* fresh = fresh_var in
-         let* sub3 = unify (Subst.apply sub2 type1) (Type_arrow (type2, fresh)) in
+         let* sub3 = unify (Subst.apply sub2 ty1) (Type_arrow (ty2, fresh)) in
          let* composed_sub = Subst.compose_all [ sub3; sub2; sub1 ] in
-         let final_type = Subst.apply composed_sub fresh in
-         return (composed_sub, final_type))
+         let final_ty = Subst.apply composed_sub fresh in
+         return (composed_sub, final_ty))
     | Exp_function (case, case_list) ->
       let* fresh_for_matching = fresh_var in
       let* fresh_for_result = fresh_var in
@@ -523,47 +517,47 @@ module Infer = struct
         fresh_for_result
         (case :: case_list)
     | Exp_match (exp, case, case_list) ->
-      let* exp_sub, exp_type = infer_expression env exp in
+      let* exp_sub, exp_ty = infer_expression env exp in
       let env = TypeEnv.apply exp_sub env in
       let* fresh_for_result = fresh_var in
       infer_match_exp
         env
         ~with_exp:true
         exp_sub
-        exp_type
+        exp_ty
         fresh_for_result
         (case :: case_list)
-    | Exp_tuple (fst, snd, rest_list) ->
-      let* sub1, type1 = infer_expression env fst in
-      let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) snd in
+    | Exp_tuple (fst_exp, snd_exp, exp_list) ->
+      let* sub1, ty1 = infer_expression env fst_exp in
+      let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) snd_exp in
       let env = TypeEnv.apply sub2 env in
-      let* sub_rest, type_list =
+      let* sub_rest, ty_list =
         RList.fold_right
           ~f:(fun exp acc ->
-            let* sub_acc, typ_list = return acc in
-            let* sub, typ = infer_expression (TypeEnv.apply sub_acc env) exp in
+            let* sub_acc, ty_list = return acc in
+            let* sub, ty = infer_expression (TypeEnv.apply sub_acc env) exp in
             let* sub_acc = Subst.compose sub_acc sub in
-            return (sub_acc, typ :: typ_list))
+            return (sub_acc, ty :: ty_list))
           ~init:(return (Subst.empty, []))
-          rest_list
+          exp_list
       in
       let* sub_result = Subst.compose_all [ sub1; sub2; sub_rest ] in
-      let typ1 = Subst.apply sub_result type1 in
-      let typ2 = Subst.apply sub_result type2 in
-      let typ_list = List.map (fun typ -> Subst.apply sub_result typ) type_list in
-      return (sub_result, Type_tuple (typ1, typ2, typ_list))
+      let ty1 = Subst.apply sub_result ty1 in
+      let ty2 = Subst.apply sub_result ty2 in
+      let ty_list = List.map (fun ty -> Subst.apply sub_result ty) ty_list in
+      return (sub_result, Type_tuple (ty1, ty2, ty_list))
     | Exp_construct ("[]", None) ->
       let* fresh = fresh_var in
       return (Subst.empty, Type_list fresh)
     | Exp_construct ("::", Some (Exp_tuple (head, tail, []))) ->
       let* fresh = fresh_var in
-      let* sub1, type1 = infer_expression env head in
-      let* unified_sub = unify fresh type1 in
-      let* sub1 = Subst.compose sub1 unified_sub in
-      let rec infer_tail sub_acc (cur_exp : Expression.t) =
-        let helper required_type exp =
+      let* sub, ty = infer_expression env head in
+      let* unified_sub = unify fresh ty in
+      let* sub = Subst.compose sub unified_sub in
+      let rec infer_tail sub_acc cur_exp =
+        let helper required_ty exp =
           let* sub_of_exp, type_of_exp = infer_expression env exp in
-          let* unified_sub = unify required_type type_of_exp in
+          let* unified_sub = unify required_ty type_of_exp in
           let* sub = Subst.compose sub_of_exp unified_sub in
           return sub
         in
@@ -577,59 +571,55 @@ module Infer = struct
           let* sub = helper (Type_list fresh) cur_exp in
           return (sub :: sub_acc)
       in
-      let* sub_list = infer_tail [ sub1 ] tail in
+      let* sub_list = infer_tail [ sub ] tail in
       let* final_sub = Subst.compose_all sub_list in
       return (final_sub, Subst.apply final_sub (Type_list fresh))
     | Exp_construct (id, None) when id = "true" || id = "false" ->
       return (Subst.empty, Type_bool)
     | Exp_construct ("()", None) -> return (Subst.empty, Type_unit)
-    | Exp_construct ("None", None) ->
-      let* fresh = fresh_var in
-      return (Subst.empty, fresh)
     | Exp_construct ("Some", Some pat) ->
-      let* sub, typ = infer_expression env pat in
-      return (sub, Type_option typ)
+      let* sub, ty = infer_expression env pat in
+      return (sub, Type_option ty)
     | Exp_construct _ ->
-      (* Impossible situation *)
       let* fresh = fresh_var in
       return (Subst.empty, fresh)
-    | Exp_ifthenelse (if_, then_, Some else_) ->
-      let* sub1, type1 = infer_expression env if_ in
-      let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) then_ in
-      let* sub3, type3 = infer_expression (TypeEnv.apply sub2 env) else_ in
-      let* sub4 = unify type1 Type_bool in
-      let* sub5 = unify type2 type3 in
+    | Exp_ifthenelse (if_exp, then_exp, Some else_exp) ->
+      let* sub1, ty1 = infer_expression env if_exp in
+      let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) then_exp in
+      let* sub3, ty3 = infer_expression (TypeEnv.apply sub2 env) else_exp in
+      let* sub4 = unify ty1 Type_bool in
+      let* sub5 = unify ty2 ty3 in
       let* final_sub = Subst.compose_all [ sub5; sub4; sub3; sub2; sub1 ] in
-      return (final_sub, Subst.apply final_sub type2)
-    | Exp_ifthenelse (if_, then_, None) ->
-      let* sub1, type1 = infer_expression env if_ in
-      let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) then_ in
-      let* sub3 = unify type1 Type_bool in
-      let* sub4 = unify type2 Type_unit in
+      return (final_sub, Subst.apply final_sub ty2)
+    | Exp_ifthenelse (if_exp, then_exp, None) ->
+      let* sub1, ty1 = infer_expression env if_exp in
+      let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) then_exp in
+      let* sub3 = unify ty1 Type_bool in
+      let* sub4 = unify ty2 Type_unit in
       let* final_sub = Subst.compose_all [ sub4; sub3; sub2; sub1 ] in
-      return (final_sub, Subst.apply final_sub type2)
+      return (final_sub, Subst.apply final_sub ty2)
     | Exp_sequence (exp1, exp2) ->
-      let* sub1, type1 = infer_expression env exp1 in
-      let* unified_sub = unify type1 Type_unit in
-      let* sub2, type2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
+      let* sub1, ty1 = infer_expression env exp1 in
+      let* unified_sub = unify ty1 Type_unit in
+      let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
       let* final_sub = Subst.compose_all [ unified_sub; sub2; sub1 ] in
-      return (final_sub, type2)
-    | Exp_constraint (exp, c_type) ->
-      let* sub, typ = infer_expression env exp in
-      let* unified_sub = unify typ c_type in
+      return (final_sub, ty2)
+    | Exp_constraint (exp, c_ty) ->
+      let* sub, ty = infer_expression env exp in
+      let* unified_sub = unify ty c_ty in
       let* final_sub = Subst.compose unified_sub sub in
-      return (final_sub, typ)
+      return (final_sub, ty)
 
-  and infer_match_exp env ~with_exp match_exp_sub match_exp_type result_type case_list =
-    let* cases_sub, case_type =
+  and infer_match_exp env ~with_exp match_exp_sub match_exp_ty result_ty case_list =
+    let* cases_sub, case_ty =
       RList.fold_left
         case_list
-        ~init:(return (match_exp_sub, result_type))
+        ~init:(return (match_exp_sub, result_ty))
         ~f:(fun acc { left = pat; right = case_exp } ->
-          let* sub_acc, type_acc = return acc in
-          let* env, pat_type =
-            let* env, pat_typ = infer_pattern env pat in
-            let* unified_sub1 = unify match_exp_type pat_typ in
+          let* sub_acc, ty_acc = return acc in
+          let* env, pat_ty =
+            let* env, pat_ty = infer_pattern env pat in
+            let* unified_sub1 = unify match_exp_ty pat_ty in
             if with_exp
             then (
               let env = TypeEnv.apply unified_sub1 env in
@@ -638,11 +628,11 @@ module Infer = struct
               in
               let generalized_schemes =
                 Base.List.map pat_names ~f:(fun name ->
-                  let typ = TypeEnv.find_type_exn env name in
-                  let generalized_typ =
-                    generalize env typ ~remove_from_env:true (Some name)
+                  let ty = TypeEnv.find_type_exn env name in
+                  let generalized_ty =
+                    generalize env ty ~remove_from_env:true (Some name)
                   in
-                  name, generalized_typ)
+                  name, generalized_ty)
               in
               let env =
                 Base.List.fold generalized_schemes ~init:env ~f:(fun env (key, value) ->
@@ -651,33 +641,33 @@ module Infer = struct
               return (env, unified_sub1))
             else return (env, unified_sub1)
           in
-          let* composed_sub1 = Subst.compose sub_acc pat_type in
-          let* case_exp_sub, case_exp_type =
+          let* composed_sub1 = Subst.compose sub_acc pat_ty in
+          let* case_exp_sub, case_exp_ty =
             infer_expression (TypeEnv.apply composed_sub1 env) case_exp
           in
-          let* unified_sub2 = unify type_acc case_exp_type in
-          let* composed_type2 =
+          let* unified_sub2 = unify ty_acc case_exp_ty in
+          let* composed_ty2 =
             Subst.compose_all [ composed_sub1; case_exp_sub; unified_sub2 ]
           in
-          return (composed_type2, Subst.apply composed_type2 type_acc))
+          return (composed_ty2, Subst.apply composed_ty2 ty_acc))
     in
-    let final_type =
+    let final_ty =
       if with_exp
-      then case_type
-      else Type_arrow (Subst.apply cases_sub match_exp_type, case_type)
+      then case_ty
+      else Type_arrow (Subst.apply cases_sub match_exp_ty, case_ty)
     in
-    return (cases_sub, final_type)
+    return (cases_sub, final_ty)
 
   and infer_value_binding_list env sub let_binds =
-    let infer_vb new_sub env typ pat rest =
+    let infer_vb new_sub env ty pat rest =
       let* composed_sub = Subst.compose sub new_sub in
       let env = TypeEnv.apply composed_sub env in
       let generalized_ty =
-        generalize env (Subst.apply composed_sub typ) ~remove_from_env:false None
+        generalize env (Subst.apply composed_sub ty) ~remove_from_env:false None
       in
       let* env, pat_ty = infer_pattern env pat in
       let env = TypeEnv.extend_with_pattern env pat generalized_ty in
-      let* unified_sub = unify typ pat_ty in
+      let* unified_sub = unify ty pat_ty in
       let* final_sub = Subst.compose composed_sub unified_sub in
       let env = TypeEnv.apply final_sub env in
       infer_value_binding_list env final_sub rest
@@ -686,27 +676,27 @@ module Infer = struct
     | [] -> return (env, sub)
     | { pat = Pat_constraint (pat, pat_ty); exp = Exp_fun (e_pat, e_pat_list, exp) }
       :: rest ->
-      let* new_sub, typ =
+      let* new_sub, ty =
         infer_expression env (Exp_fun (e_pat, e_pat_list, Exp_constraint (exp, pat_ty)))
       in
-      infer_vb new_sub env typ pat rest
+      infer_vb new_sub env ty pat rest
     | { pat = Pat_constraint (pat, pat_ty); exp = Exp_function _ as exp } :: rest ->
-      let* new_sub, typ = infer_expression env (Exp_constraint (exp, pat_ty)) in
-      infer_vb new_sub env typ pat rest
+      let* new_sub, ty = infer_expression env (Exp_constraint (exp, pat_ty)) in
+      infer_vb new_sub env ty pat rest
     | { pat; exp } :: rest ->
-      let* new_sub, typ = infer_expression env exp in
-      infer_vb new_sub env typ pat rest
+      let* new_sub, ty = infer_expression env exp in
+      infer_vb new_sub env ty pat rest
 
   and rec_infer_value_binding_list ?(debug = false) env fresh_acc sub let_binds =
-    let rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type =
+    let rec_infer_vb new_sub fresh ty id fresh_acc rest ~required_ty =
       let* new_sub =
-        match required_type with
-        | Some c_type ->
-          let* unified_sub = unify typ c_type in
+        match required_ty with
+        | Some c_ty ->
+          let* unified_sub = unify ty c_ty in
           Subst.compose unified_sub new_sub
         | None -> return new_sub
       in
-      let* unified_sub = unify (Subst.apply new_sub fresh) typ in
+      let* unified_sub = unify (Subst.apply new_sub fresh) ty in
       let* composed_sub = Subst.compose_all [ new_sub; unified_sub; sub ] in
       if debug then Subst.pp Format.std_formatter composed_sub;
       let env = TypeEnv.apply composed_sub env in
@@ -721,31 +711,31 @@ module Infer = struct
     | [], _ -> return (env, sub)
     | ( { pat = Pat_var id; exp = (Exp_fun _ | Exp_function _) as exp } :: rest
       , fresh :: fresh_acc ) ->
-      let* new_sub, typ = infer_expression env exp in
-      rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+      let* new_sub, ty = infer_expression env exp in
+      rec_infer_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
     | ( { pat = Pat_constraint (Pat_var id, pat_ty); exp = Exp_fun (pat, pat_list, exp) }
         :: rest
       , fresh :: fresh_acc ) ->
-      let* new_sub, typ =
+      let* new_sub, ty =
         infer_expression env (Exp_fun (pat, pat_list, Exp_constraint (exp, pat_ty)))
       in
-      rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+      rec_infer_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
     | ( { pat = Pat_constraint (Pat_var id, pat_ty); exp = Exp_function _ as exp } :: rest
       , fresh :: fresh_acc ) ->
-      let* new_sub, typ = infer_expression env (Exp_constraint (exp, pat_ty)) in
-      rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+      let* new_sub, ty = infer_expression env (Exp_constraint (exp, pat_ty)) in
+      rec_infer_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
     | { pat = Pat_var id; exp } :: rest, fresh :: fresh_acc ->
-      let* new_sub, typ = infer_expression env exp in
+      let* new_sub, ty = infer_expression env exp in
       let update_fresh = Subst.apply new_sub fresh in
-      if typ = update_fresh
+      if ty = update_fresh
       then fail `No_arg_rec
-      else rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:None
+      else rec_infer_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
     | { pat = Pat_constraint (Pat_var id, pat_ty); exp } :: rest, fresh :: fresh_acc ->
-      let* new_sub, typ = infer_expression env exp in
+      let* new_sub, ty = infer_expression env exp in
       let update_fresh = Subst.apply new_sub fresh in
-      if typ = update_fresh
+      if ty = update_fresh
       then fail `No_arg_rec
-      else rec_infer_vb new_sub fresh typ id fresh_acc rest ~required_type:(Some pat_ty)
+      else rec_infer_vb new_sub fresh ty id fresh_acc rest ~required_ty:(Some pat_ty)
     | _ -> fail `No_variable_rec
   ;;
 

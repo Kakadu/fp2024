@@ -53,8 +53,8 @@ let is_keyword = function
 let gen_ident =
   let gen_var =
     map2
-      (fun start_ident rest_ident ->
-        match Base.Char.to_string start_ident ^ rest_ident with
+      (fun fst_char rest_str ->
+        match Base.Char.to_string fst_char ^ rest_str with
         | "_" -> "id"
         | id -> id)
       (oneof [ char_range 'a' 'z'; return '_' ])
@@ -85,7 +85,7 @@ type constant =
 
 let gen_type_name =
   map3
-    (fun first_char second_char str -> Printf.sprintf "%c%c%s" first_char second_char str)
+    (fun fst_char snd_char rest_str -> Printf.sprintf "%c%c%s" fst_char snd_char rest_str)
     (oneof [ char_range 'a' 'z' ])
     (oneof [ char_range '0' '9'; char_range 'A' 'Z'; char_range 'a' 'z'; return '_' ])
     (gen_string
@@ -106,7 +106,7 @@ type core_type =
   | Type_string
   | Type_bool
   | Type_option of (core_type[@gen gen_core_type_sized (n / coef)])
-  | Type_name of (ident[@gen gen_type_name])
+  | Type_var of (ident[@gen gen_type_name])
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])
@@ -150,9 +150,8 @@ type pattern =
         gen_construct
           gen_pattern_sized
           n
-          (fun (first_pat, second_pat, pat_list) ->
-            Pat_tuple (first_pat, second_pat, pat_list))
-          (fun (id, pat_option) -> Pat_construct (id, pat_option))])
+          (fun (fst_pat, snd_pat, pat_list) -> Pat_tuple (fst_pat, snd_pat, pat_list))
+          (fun (id, pat_opt) -> Pat_construct (id, pat_opt))])
   | Pat_constraint of (pattern[@gen gen_pattern_sized (n / coef)]) * core_type
 [@@deriving show { with_path = false }, qcheck]
 
@@ -183,11 +182,11 @@ module Expression = struct
 
   let gen_exp_apply gen n exp_ident exp_apply =
     oneof
-      [ map2 (fun exp first_exp -> exp, first_exp) (gen 0) (gen (n / coef))
+      [ map2 (fun exp fst_exp -> exp, fst_exp) (gen 0) (gen (n / coef))
       ; map (fun exp -> exp_ident un_op, exp) (gen (n / coef))
       ; map3
           (fun opr opn1 opn2 -> opr, exp_apply (opn1, opn2))
-          (oneofl (List.map (fun (op, _) -> exp_ident op) bin_op_list))
+          (oneofl (List.map (fun (opr, _) -> exp_ident opr) bin_op_list))
           (gen (n / coef))
           (gen (n / coef))
       ]
@@ -244,13 +243,19 @@ module Expression = struct
           gen_construct
             gen_sized
             n
-            (fun (first_exp, second_exp, exp_list) ->
-              Exp_tuple (first_exp, second_exp, exp_list))
-            (fun (id, exp_option) -> Exp_construct (id, exp_option))])
+            (fun (fst_exp, snd_exp, exp_list) -> Exp_tuple (fst_exp, snd_exp, exp_list))
+            (fun (id, exp_opt) -> Exp_construct (id, exp_opt))])
     | Exp_sequence of (t[@gen gen_sized (n / coef)]) * (t[@gen gen_sized (n / coef)])
     | Exp_constraint of (t[@gen gen_sized (n / coef)]) * core_type
   [@@deriving show { with_path = false }, qcheck]
 end
+
+let pp_value_binding = Expression.pp_value_binding_exp
+let show_value_binding = Expression.show_value_binding_exp
+let pp_case = Expression.pp_case_exp
+let show_case = Expression.show_case_exp
+let pp_expression = Expression.pp
+let show_expression = Expression.show
 
 type structure_item =
   | Struct_eval of Expression.t

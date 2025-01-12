@@ -39,7 +39,7 @@ type core_type =
   | Type_string (** The type [string]. *)
   | Type_bool (** The type [bool]. *)
   | Type_option of core_type (** [Type_option(T)] represents [T option]. *)
-  | Type_name of ident
+  | Type_var of ident (** [Type_var(T)] represents [T](a variable type such as ['a]). *)
   | Type_list of core_type (** [Type_list(T)] represents [T list]. *)
   | Type_tuple of core_type * core_type * core_type list_
   (** [Type_tuple(T1, T2, [T3; ... ; Tn])] represents [T1 * ... * Tn]. *)
@@ -49,9 +49,10 @@ val pp_core_type : Format.formatter -> core_type -> unit
 val show_core_type : core_type -> string
 
 type pattern =
-  | Pat_any (** The pattern [_]. *)
-  | Pat_var of ident (** A variable pattern such as [x]. *)
-  | Pat_constant of constant (** A pattern such as [1], ['a'], ["const"]. *)
+  | Pat_any (** [Pat_any] represents [_]. *)
+  | Pat_var of ident (** [Pat_var(I)] represents [I](a variable pattern such as [x]). *)
+  | Pat_constant of constant
+  (** [Pat_constant(C)] represents [C](a pattern such as [1], ['a'], ["const"]). *)
   | Pat_tuple of pattern * pattern * pattern list_
   (** [Pat_tuple(P1, P2, [P3; ... ; Pn])] represents [(P1, ... , Pn)]. *)
   | Pat_construct of (ident * pattern option)
@@ -78,33 +79,20 @@ type 'exp value_binding =
   ; exp : 'exp
   }
 
-val pp_value_binding
-  :  (Format.formatter -> 'exp -> unit)
-  -> Format.formatter
-  -> 'exp value_binding
-  -> unit
-
-val show_value_binding
-  :  (Format.formatter -> 'exp -> unit)
-  -> 'exp value_binding
-  -> string
-
 (** [{P; E}] represents [P -> E]. *)
 type 'exp case =
   { left : pattern
   ; right : 'exp
   }
 
-val pp_case : (Format.formatter -> 'exp -> unit) -> Format.formatter -> 'exp case -> unit
-val show_case : (Format.formatter -> 'exp -> unit) -> 'exp case -> string
-
 module Expression : sig
   type value_binding_exp = t value_binding
   and case_exp = t case
 
   and t =
-    | Exp_ident of ident (** An identifier such as [x]. *)
-    | Exp_constant of constant (** An expression such as [1], ['a'], ["true"]. *)
+    | Exp_ident of ident (** [Exp_ident(I)] represents [I](an identifier such as [x]). *)
+    | Exp_constant of constant
+    (** [Exp_constant(C)] represents [C](an expression such as [1], ['a'], ["const"]). *)
     | Exp_let of rec_flag * value_binding_exp * value_binding_exp list_ * t
     (** [Exp_let(flag, {P1; E1}, [{P2; E2}; ... ; {Pn; En}], E)] represents
         - [let     P1 = E1 and P2 = E2 and ... and Pn = En in E] when [flag] is [Nonrecursive],
@@ -141,10 +129,14 @@ module Expression : sig
           [Some (Exp_tuple(E1, Exp_construct("::", Some (Exp_tuple(E2, Exp_construct("::", ...), []))), []))]. *)
     | Exp_sequence of t * t (** [Exp_sequence(E1, E2)] represents [E1; E2]. *)
     | Exp_constraint of t * core_type (** [Exp_constraint(E, T)] represents [(E : T)]. *)
-
-  val pp : Format.formatter -> t -> unit
-  val show : t -> ident
 end
+
+val pp_value_binding : Format.formatter -> Expression.value_binding_exp -> unit
+val show_value_binding : Expression.value_binding_exp -> string
+val pp_case : Format.formatter -> Expression.case_exp -> unit
+val show_case : Expression.case_exp -> string
+val pp_expression : Format.formatter -> Expression.t -> unit
+val show_expression : Expression.t -> ident
 
 type structure_item =
   | Struct_eval of Expression.t (** [Struct_eval(E)] represents [E]. *)

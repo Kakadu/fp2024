@@ -21,15 +21,15 @@ let rec shrink_pattern = function
      | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
      | Const_string str ->
        shrink_string str >|= fun str' -> Pat_constant (Const_string str'))
-  | Pat_tuple (first_pat, second_pat, pat_list) ->
-    of_list [ first_pat; second_pat ]
+  | Pat_tuple (fst_pat, snd_pat, pat_list) ->
+    of_list [ fst_pat; snd_pat ]
     <+> of_list pat_list
-    <+> (shrink_pattern first_pat
-         >|= fun first_pat' -> Pat_tuple (first_pat', second_pat, pat_list))
-    <+> (shrink_pattern second_pat
-         >|= fun second_pat' -> Pat_tuple (first_pat, second_pat', pat_list))
+    <+> (shrink_pattern fst_pat >|= fun fst_pat' -> Pat_tuple (fst_pat', snd_pat, pat_list)
+        )
+    <+> (shrink_pattern snd_pat >|= fun snd_pat' -> Pat_tuple (fst_pat, snd_pat', pat_list)
+        )
     <+> (list ~shrink:shrink_pattern pat_list
-         >|= fun pat_list' -> Pat_tuple (first_pat, second_pat, pat_list'))
+         >|= fun pat_list' -> Pat_tuple (fst_pat, snd_pat, pat_list'))
   | Pat_construct (_, None) -> empty
   | Pat_construct (id, Some pat) ->
     return pat <+> (shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat'))
@@ -45,52 +45,48 @@ let rec shrink_expression = function
      | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
      | Const_string str ->
        shrink_string str >|= fun str' -> Exp_constant (Const_string str'))
-  | Exp_let (rec_flag, first_value_binding, value_binding_list, exp) ->
+  | Exp_let (rec_flag, fst_value_binding, value_binding_list, exp) ->
     return exp
     <+> (shrink_expression exp
-         >|= fun exp' -> Exp_let (rec_flag, first_value_binding, value_binding_list, exp')
-        )
-    <+> (shrink_value_binding first_value_binding
-         >|= fun first_value_binding' ->
-         Exp_let (rec_flag, first_value_binding', value_binding_list, exp))
+         >|= fun exp' -> Exp_let (rec_flag, fst_value_binding, value_binding_list, exp'))
+    <+> (shrink_value_binding fst_value_binding
+         >|= fun fst_value_binding' ->
+         Exp_let (rec_flag, fst_value_binding', value_binding_list, exp))
     <+> (list ~shrink:shrink_value_binding value_binding_list
          >|= fun value_binding_list' ->
-         Exp_let (rec_flag, first_value_binding, value_binding_list', exp))
+         Exp_let (rec_flag, fst_value_binding, value_binding_list', exp))
     <+> (shrink_expression exp
-         >|= fun exp' -> Exp_let (rec_flag, first_value_binding, value_binding_list, exp')
-        )
-  | Exp_fun (first_pat, pat_list, exp) ->
+         >|= fun exp' -> Exp_let (rec_flag, fst_value_binding, value_binding_list, exp'))
+  | Exp_fun (fst_pat, pat_list, exp) ->
     return exp
-    <+> (shrink_pattern first_pat >|= fun first_pat' -> Exp_fun (first_pat', pat_list, exp)
-        )
+    <+> (shrink_pattern fst_pat >|= fun fst_pat' -> Exp_fun (fst_pat', pat_list, exp))
     <+> (list ~shrink:shrink_pattern pat_list
-         >|= fun pat_list' -> Exp_fun (first_pat, pat_list', exp))
-    <+> (shrink_expression exp >|= fun exp' -> Exp_fun (first_pat, pat_list, exp'))
+         >|= fun pat_list' -> Exp_fun (fst_pat, pat_list', exp))
+    <+> (shrink_expression exp >|= fun exp' -> Exp_fun (fst_pat, pat_list, exp'))
   | Exp_apply (exp_fn, exp) ->
     shrink_expression exp
     >|= (fun exp_fn' -> Exp_apply (exp_fn', exp))
     <+> (shrink_expression exp >|= fun exp' -> Exp_apply (exp_fn, exp'))
-  | Exp_function (first_case, case_list) ->
-    shrink_case first_case
-    >|= (fun first_case' -> Exp_function (first_case', case_list))
+  | Exp_function (fst_case, case_list) ->
+    shrink_case fst_case
+    >|= (fun fst_case' -> Exp_function (fst_case', case_list))
     <+> (list ~shrink:shrink_case case_list
-         >|= fun case_list' -> Exp_function (first_case, case_list'))
-  | Exp_match (exp, first_case, case_list) ->
+         >|= fun case_list' -> Exp_function (fst_case, case_list'))
+  | Exp_match (exp, fst_case, case_list) ->
     return exp
-    <+> (shrink_expression exp >|= fun exp' -> Exp_match (exp', first_case, case_list))
-    <+> (shrink_case first_case
-         >|= fun first_case' -> Exp_match (exp, first_case', case_list))
+    <+> (shrink_expression exp >|= fun exp' -> Exp_match (exp', fst_case, case_list))
+    <+> (shrink_case fst_case >|= fun fst_case' -> Exp_match (exp, fst_case', case_list))
     <+> (list ~shrink:shrink_case case_list
-         >|= fun case_list' -> Exp_match (exp, first_case, case_list'))
-  | Exp_tuple (first_exp, second_exp, exp_list) ->
-    of_list [ first_exp; second_exp ]
+         >|= fun case_list' -> Exp_match (exp, fst_case, case_list'))
+  | Exp_tuple (fst_exp, snd_exp, exp_list) ->
+    of_list [ fst_exp; snd_exp ]
     <+> of_list exp_list
-    <+> (shrink_expression first_exp
-         >|= fun first_exp' -> Exp_tuple (first_exp', second_exp, exp_list))
-    <+> (shrink_expression second_exp
-         >|= fun second_exp' -> Exp_tuple (first_exp, second_exp', exp_list))
+    <+> (shrink_expression fst_exp
+         >|= fun fst_exp' -> Exp_tuple (fst_exp', snd_exp, exp_list))
+    <+> (shrink_expression snd_exp
+         >|= fun snd_exp' -> Exp_tuple (fst_exp, snd_exp', exp_list))
     <+> (list ~shrink:shrink_expression exp_list
-         >|= fun exp_list' -> Exp_tuple (first_exp, second_exp, exp_list'))
+         >|= fun exp_list' -> Exp_tuple (fst_exp, snd_exp, exp_list'))
   | Exp_construct (_, None) -> empty
   | Exp_construct (id, Some exp) ->
     return exp <+> (shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp'))
@@ -129,15 +125,15 @@ and shrink_case case =
 
 let shrink_structure_item = function
   | Struct_eval exp -> shrink_expression exp >|= fun exp' -> Struct_eval exp'
-  | Struct_value (rec_flag, first_value_binding, value_binding_list) ->
-    return (Struct_value (rec_flag, first_value_binding, []))
+  | Struct_value (rec_flag, fst_value_binding, value_binding_list) ->
+    return (Struct_value (rec_flag, fst_value_binding, []))
     <+> of_list (List.map (fun vb -> Struct_value (rec_flag, vb, [])) value_binding_list)
-    <+> (shrink_value_binding first_value_binding
-         >|= fun first_value_binding' ->
-         Struct_value (rec_flag, first_value_binding', value_binding_list))
+    <+> (shrink_value_binding fst_value_binding
+         >|= fun fst_value_binding' ->
+         Struct_value (rec_flag, fst_value_binding', value_binding_list))
     <+> (list ~shrink:shrink_value_binding value_binding_list
          >|= fun value_binding_list' ->
-         Struct_value (rec_flag, first_value_binding, value_binding_list'))
+         Struct_value (rec_flag, fst_value_binding, value_binding_list'))
 ;;
 
 let shrink_structure = list ~shrink:shrink_structure_item
