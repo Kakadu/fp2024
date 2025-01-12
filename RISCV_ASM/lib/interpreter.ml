@@ -148,6 +148,41 @@ and execute_instruction state instr program =
     let val2 = get_register_value state rs2 in
     let result = val1 - val2 in
     set_register_value state rd result
+  | Xor (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = val1 lxor val2 in
+    set_register_value state rd result
+  | Or (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = val1 lor val2 in
+    set_register_value state rd result
+  | And (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = val1 land val2 in
+    set_register_value state rd result
+  | Sll (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = val1 lsl val2 in
+    set_register_value state rd result
+  | Srl (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int.shift_right_logical val1 val2 in
+    set_register_value state rd result
+  | Sra (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int.shift_right val1 val2 in
+    set_register_value state rd result
+  | Slt (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = if val1 < val2 then 1 else 0 in
+    set_register_value state rd result
   | Jalr (rd, rs1, imm) ->
     let val_rs1 = get_register_value state rs1 in
     let imm_value = get_address12_value program imm in
