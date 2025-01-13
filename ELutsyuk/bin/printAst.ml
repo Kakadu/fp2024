@@ -11,17 +11,16 @@ let () =
   let fact : program =
     [ Binding
         { is_rec = Rec
-        ; pat = PVar "fact"
+        ; pat = PatVar "fact"
         ; expr =
             Fun
-              ( PVar "n"
+              ( PatVar "n"
               , Branch
-                  ( BinaryOp (LtEq, Var "n", Cons (Int 1))
-                  , Cons (Int 1)
-                  , BinaryOp
-                      ( Mult
-                      , Var "n"
-                      , App (Var "fact", BinaryOp (Sub, Var "n", Cons (Int 1))) ) ) )
+                  ( BinOp (Le, Var "n", Const (Int 1))
+                  , Const (Int 1)
+                  , BinOp
+                      (Mul, Var "n", App (Var "fact", BinOp (Sub, Var "n", Const (Int 1))))
+                  ) )
         }
     ]
   in
