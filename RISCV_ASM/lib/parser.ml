@@ -410,9 +410,9 @@ let parse_instruction =
        ; parse_string_with_spaces "beqz"
          *> ws_opt
               (lift2
-                (fun r1 addr12 -> InstructionExpr (Beqz (r1, addr12)))
-                parse_register
-                (char ',' *> parse_address12))
+                 (fun r1 addr12 -> InstructionExpr (Beqz (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "bne"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Bne (r1, r2, addr12)))
@@ -422,9 +422,9 @@ let parse_instruction =
        ; parse_string_with_spaces "bnez"
          *> ws_opt
               (lift2
-                (fun r1 addr12 -> InstructionExpr (Bnez (r1, addr12)))
-                parse_register
-                (char ',' *> parse_address12))
+                 (fun r1 addr12 -> InstructionExpr (Bnez (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "blt"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Blt (r1, r2, addr12)))
@@ -434,21 +434,21 @@ let parse_instruction =
        ; parse_string_with_spaces "bltz"
          *> ws_opt
               (lift2
-                (fun r1 addr12 -> InstructionExpr (Bltz (r1, addr12)))
-                parse_register
-                (char ',' *> parse_address12))
+                 (fun r1 addr12 -> InstructionExpr (Bltz (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "bgt"
          *> lift3
-            (fun r1 r2 addr12 -> InstructionExpr (Bgt (r1, r2, addr12)))
-            parse_register
-            (char ',' *> parse_register)
-            (char ',' *> parse_address12)
+              (fun r1 r2 addr12 -> InstructionExpr (Bgt (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
        ; parse_string_with_spaces "bgtz"
          *> ws_opt
               (lift2
-                (fun r1 addr12 -> InstructionExpr (Bgtz (r1, addr12)))
-                parse_register
-                (char ',' *> parse_address12))
+                 (fun r1 addr12 -> InstructionExpr (Bgtz (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "bge"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Bge (r1, r2, addr12)))

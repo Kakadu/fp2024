@@ -11,6 +11,39 @@ type state =
   ; pc : int64
   }
 
+module type MONADERROR = sig
+  type 'a t
+
+  val return : 'a -> 'a t
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  val fail : string -> 'a t
+
+  module Syntax : sig
+    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  end
+end
+
+module ErrorMonad : MONADERROR with type 'a t = ('a, string) result = struct
+  type 'a t = ('a, string) result
+
+  let return x = Ok x
+
+  let ( >>= ) m f =
+    match m with
+    | Ok x -> f x
+    | Error e -> Error e
+  ;;
+
+  let fail e = Error e
+
+  module Syntax = struct
+    let ( let* ) = ( >>= )
+  end
+end
+
+open ErrorMonad
+open ErrorMonad.Syntax
+
 let handle_alternative_names = function
   | Zero -> X0
   | Ra -> X1
@@ -102,14 +135,19 @@ let set_register_value state reg value =
 ;;
 
 let nth_opt_int64 l n =
-  if n < 0L then
-    failwith "Index cannot be negative"
-  else
+  if n < 0L
+  then fail "Index cannot be negative"
+  else (
     let rec nth_aux l n =
       match l with
-      | [] -> None
-      | a::l -> if n = 0L then Some a else nth_aux l (Int64.sub n 1L)
-    in nth_aux l n
+      | [] -> return None
+      | a :: l ->
+        (match n = 0L with
+         | true -> return (Some a)
+         | false -> nth_aux l (Int64.sub n 1L))
+    in
+    nth_aux l n)
+;;
 
 let set_pc state new_pc = { state with pc = new_pc }
 let increment_pc state = { state with pc = Int64.add state.pc 1L }
@@ -138,31 +176,32 @@ type address_info =
   | Label of int
 
 let get_address12_value program = function
-  | ImmediateAddress12 value -> Immediate (value)
+  | ImmediateAddress12 value -> Immediate value
   | LabelAddress12 label -> Label (resolve_label_excluding_directives program label)
 ;;
 
 let get_address20_value program = function
-  | ImmediateAddress20 value -> Immediate (value)
+  | ImmediateAddress20 value -> Immediate value
   | LabelAddress20 label -> Label (resolve_label_excluding_directives program label)
 ;;
 
 let get_address32_value program = function
-  | ImmediateAddress32 value -> Immediate (value)
+  | ImmediateAddress32 value -> Immediate value
   | LabelAddress32 label -> Label (resolve_label_excluding_directives program label)
 ;;
 
 (* Get index from including directives and labels to excluding *)
 let resolve_address_incl_to_excl program immediate64_value =
   let rec traverse_program index remaining_value = function
-    | [] -> failwith "End of program reached before resolving immediate address from including directives to excluding"
-    | DirectiveExpr _ :: rest | LabelExpr _ :: rest -> 
-        traverse_program index (Int64.sub remaining_value 1L) rest
-    | InstructionExpr _ :: rest -> 
-        if remaining_value = 1L then
-          (Int64.add index 1L)
-        else
-          traverse_program (Int64.add index 1L) (Int64.sub remaining_value 1L) rest
+    | [] ->
+      fail
+        "End of program reached before resolving immediate address from including \
+         directives to excluding"
+    | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
+      traverse_program index (Int64.sub remaining_value 1L) rest
+    | InstructionExpr _ :: _ when remaining_value = 1L -> return (Int64.add index 1L)
+    | InstructionExpr _ :: rest ->
+      traverse_program (Int64.add index 1L) (Int64.sub remaining_value 1L) rest
   in
   traverse_program 0L immediate64_value program
 ;;
@@ -170,59 +209,75 @@ let resolve_address_incl_to_excl program immediate64_value =
 (* Get index from excluding directives and labels to including *)
 let resolve_address_excl_to_incl program immediate64_value =
   let rec traverse_program index remaining_value = function
-    | [] -> failwith "End of program reached before resolving immediate address from excluding directives to including"
-    | DirectiveExpr _ :: rest | LabelExpr _ :: rest -> 
-        traverse_program (Int64.add index 1L) remaining_value rest
-    | InstructionExpr _ :: rest -> 
-        if remaining_value = 1L then
-          (Int64.add index 1L)
-        else
-          traverse_program (Int64.add index 1L) (Int64.sub remaining_value 1L) rest
+    | [] ->
+      fail
+        "End of program reached before resolving immediate address from excluding \
+         directives to including"
+    | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
+      traverse_program (Int64.add index 1L) remaining_value rest
+    | InstructionExpr _ :: _ when remaining_value = 1L -> return (Int64.add index 1L)
+    | InstructionExpr _ :: rest ->
+      traverse_program (Int64.add index 1L) (Int64.sub remaining_value 1L) rest
   in
   traverse_program 0L immediate64_value program
 ;;
 
 let handle_branch_condition state program rs1 rs2 imm_value comparison_fn =
   let val_rs1 = get_register_value state rs1 in
-  let val_rs2 = 
+  let val_rs2 =
     match rs2 with
     | Some rs -> get_register_value state rs
     | None -> 0L
   in
   let address_info = get_address12_value program imm_value in
-  let new_pc =
-  match address_info with
-    | Immediate imm_value ->
-      if comparison_fn val_rs1 val_rs2 then
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int (imm_value lsr 2)) (resolve_address_incl_to_excl program state.pc))
-      else
-        Int64.add state.pc 1L
-    | Label excluding_directives_label_offset ->
-      if comparison_fn val_rs1 val_rs2 then
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int excluding_directives_label_offset) (resolve_address_incl_to_excl program state.pc))
-      else
-        Int64.add state.pc 1L
+  let* new_pc =
+    match address_info with
+    | Immediate imm_value when comparison_fn val_rs1 val_rs2 ->
+      let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+      let* target_pc =
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int (imm_value lsr 2)) current_pc_excl)
+      in
+      return target_pc
+    | Immediate _ -> return (Int64.add state.pc 1L)
+    | Label excluding_directives_label_offset when comparison_fn val_rs1 val_rs2 ->
+      let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+      let* target_pc =
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
+      in
+      return target_pc
+    | Label _ -> return (Int64.add state.pc 1L)
   in
-  set_pc state new_pc
+  return (set_pc state new_pc)
 ;;
 
 let execute_arithmetic_op state rd rs1 rs2 op =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
   let result = op val1 val2 in
-  set_register_value state rd result
+  return (set_register_value state rd result)
+;;
 
 let execute_shift_op state rd rs1 rs2 op =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
   let result = op val1 (Int64.to_int val2) in
-  set_register_value state rd result
+  return (set_register_value state rd result)
+;;
 
 let execute_comparison_op state rd rs1 rs2 compare_fn =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
-  let result = if compare_fn val1 val2 then 1L else 0L in
-  set_register_value state rd result
+  let result =
+    match compare_fn val1 val2 with
+    | true -> 1L
+    | false -> 0L
+  in
+  return (set_register_value state rd result)
+;;
 
 let execute_immediate_op state program rd rs1 imm op =
   let val1 = get_register_value state rs1 in
@@ -234,23 +289,26 @@ let execute_immediate_op state program rd rs1 imm op =
       Int64.shift_left (Int64.of_int excluding_directives_label_offset) 2
   in
   let result = op val1 imm_value in
-  set_register_value state rd result
+  return (set_register_value state rd result)
+;;
 
 let execute_shift_immediate_op state program rd rs1 imm op =
   let val1 = get_register_value state rs1 in
-  let imm_value = match get_address12_value program imm with
+  let imm_value =
+    match get_address12_value program imm with
     | Immediate imm_value -> imm_value
-    | Label excluding_directives_label_offset ->
-      excluding_directives_label_offset lsl 2
+    | Label excluding_directives_label_offset -> excluding_directives_label_offset lsl 2
   in
   let result = op val1 imm_value in
-  set_register_value state rd result
+  return (set_register_value state rd result)
+;;
 
 let rec interpret state program =
-  match nth_opt_int64 program state.pc with
-  | None -> state
+  let* instr_opt = nth_opt_int64 program state.pc in
+  match instr_opt with
+  | None -> return state
   | Some (InstructionExpr instr) ->
-    let new_state = execute_instruction state instr program in
+    let* new_state = execute_instruction state instr program in
     interpret (increment_pc new_state) program
   | Some (LabelExpr _) -> interpret (increment_pc state) program
   | Some (DirectiveExpr _) -> interpret (increment_pc state) program
@@ -265,63 +323,93 @@ and execute_instruction state instr program =
   | Sll (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_left
   | Srl (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right_logical
   | Sra (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right
-  | Slt (rd, rs1, rs2) -> execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 -> Int64.compare arg1 arg2 < 0)
-  | Sltu (rd, rs1, rs2) -> execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 -> Int64.unsigned_compare arg1 arg2 < 0)
+  | Slt (rd, rs1, rs2) ->
+    execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 -> Int64.compare arg1 arg2 < 0)
+  | Sltu (rd, rs1, rs2) ->
+    execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 ->
+      Int64.unsigned_compare arg1 arg2 < 0)
   | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add
   | Xori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logxor
   | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor
   | Andi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logand
-  | Slli (rd, rs1, imm) -> execute_shift_immediate_op state program rd rs1 imm Int64.shift_left
-  | Srli (rd, rs1, imm) -> execute_shift_immediate_op state program rd rs1 imm Int64.shift_right_logical
-  | Srai (rd, rs1, imm) -> execute_shift_immediate_op state program rd rs1 imm Int64.shift_right
-  | Slti (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm (fun arg1 imm_value -> if Int64.compare arg1 imm_value < 0 then 1L else 0L)
-  | Sltiu (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm (fun arg1 imm_value -> if Int64.unsigned_compare arg1 imm_value < 0 then 1L else 0L)
+  | Slli (rd, rs1, imm) ->
+    execute_shift_immediate_op state program rd rs1 imm Int64.shift_left
+  | Srli (rd, rs1, imm) ->
+    execute_shift_immediate_op state program rd rs1 imm Int64.shift_right_logical
+  | Srai (rd, rs1, imm) ->
+    execute_shift_immediate_op state program rd rs1 imm Int64.shift_right
+  | Slti (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
+      match Int64.compare arg1 imm_value with
+      | x when x < 0 -> 1L
+      | _ -> 0L)
+  | Sltiu (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
+      match Int64.unsigned_compare arg1 imm_value with
+      | x when x < 0 -> 1L
+      | _ -> 0L)
   | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
   | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
   | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
-
-
-
-  (* | Mulh (rd, rs1, rs2) -> *)
   | Jalr (rd, rs1, imm) ->
     let val_rs1 = get_register_value state rs1 in
     let address_info = get_address12_value program imm in
-    let new_pc =       
+    let* new_pc =
       match address_info with
       | Immediate imm_value ->
-        resolve_address_excl_to_incl program (Int64.shift_right_logical (Int64.add val_rs1 (Int64.of_int imm_value)) 2)
+        resolve_address_excl_to_incl
+          program
+          (Int64.shift_right_logical (Int64.add val_rs1 (Int64.of_int imm_value)) 2)
       | Label excluding_directives_label_offset ->
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int excluding_directives_label_offset) (Int64.shift_right_logical val_rs1 2))
+        resolve_address_excl_to_incl
+          program
+          (Int64.add
+             (Int64.of_int excluding_directives_label_offset)
+             (Int64.shift_right_logical val_rs1 2))
     in
     let new_state = set_register_value state rd (Int64.add state.pc 1L) in
-    set_pc new_state new_pc
+    return (set_pc new_state new_pc)
   | Jr rs1 ->
     let val_rs1 = get_register_value state rs1 in
-    let new_pc = resolve_address_excl_to_incl program (Int64.shift_right_logical val_rs1 2) in
+    let* new_pc =
+      resolve_address_excl_to_incl program (Int64.shift_right_logical val_rs1 2)
+    in
     let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
-    set_pc new_state new_pc
+    return (set_pc new_state new_pc)
   | J imm_value ->
     let address_info = get_address20_value program imm_value in
-    let new_pc = 
+    let* new_pc =
       match address_info with
       | Immediate imm_value ->
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int (imm_value lsr 2)) (resolve_address_incl_to_excl program state.pc))
+        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int (imm_value lsr 2)) current_pc_excl)
       | Label excluding_directives_label_offset ->
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int excluding_directives_label_offset) (resolve_address_incl_to_excl program state.pc))
+        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
     in
     let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
-    set_pc new_state new_pc
+    return (set_pc new_state new_pc)
   | Jal (rd, imm_value) ->
     let address_info = get_address20_value program imm_value in
-    let new_pc = 
+    let* new_pc =
       match address_info with
       | Immediate imm_value ->
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int (imm_value lsr 2)) (resolve_address_incl_to_excl program state.pc))
+        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int (imm_value lsr 2)) current_pc_excl)
       | Label excluding_directives_label_offset ->
-        resolve_address_excl_to_incl program (Int64.add (Int64.of_int excluding_directives_label_offset) (resolve_address_incl_to_excl program state.pc))
+        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
     in
     let new_state = set_register_value state rd (Int64.add state.pc 1L) in
-    set_pc new_state new_pc
+    return (set_pc new_state new_pc)
   | Bnez (rs1, imm_value) ->
     let comparison_fn arg1 arg2 = arg1 <> arg2 in
     handle_branch_condition state program rs1 None imm_value comparison_fn
@@ -340,7 +428,7 @@ and execute_instruction state instr program =
   | Bne (rs1, rs2, imm_value) ->
     let comparison_fn arg1 arg2 = arg1 <> arg2 in
     handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
-  | _ -> state
+  | _ -> return state
 ;;
 
 let show_state state =
@@ -365,6 +453,7 @@ let _ =
     ; InstructionExpr (J (ImmediateAddress20 8))
     ]
   in
-  let final_state = interpret initial_state program in
-  Printf.printf "Final State: %s\n" (show_state final_state)
+  match interpret initial_state program with
+  | Ok final_state -> Printf.printf "Final State: %s\n" (show_state final_state)
+  | Error e -> Printf.printf "Error: %s\n" e
 ;;
