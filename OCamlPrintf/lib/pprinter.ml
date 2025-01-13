@@ -39,10 +39,8 @@ let rec pp_core_type_deep n ppf = function
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
   | Type_option type' -> fprintf ppf "%a option" (pp_core_type_deep 2) type'
-  (* The id obtained from parser is stored without first char ', while the id from
-     inferencer is stored with ', so that there is no confusion when inferring types. *)
   | Type_var id ->
-    let pp_type_name = fprintf ppf "'%s" in
+    let pp_type_name = fprintf ppf "%s" in
     if String.length id > 1
     then (
       match String.get id 0 with
@@ -246,9 +244,6 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
      | Exp_apply _ -> fprintf ppf "-(%a)" (pp_expression_deep false need_parens) exp2
      | _ -> fprintf ppf "-%a" (pp_expression_deep false true) exp2)
   | _ ->
-    (match exp1 with
-     | Exp_apply _ -> fprintf ppf " "
-     | _ -> ());
     fprintf ppf "%a " (pp_expression_deep false true) exp1;
     (match exp2 with
      | Exp_apply _ -> fprintf ppf "(%a)" (pp_expression_deep false true) exp2

@@ -68,27 +68,27 @@ let safe_tl = function
   | _ :: tail -> tail
 ;;
 
-let parse_chain_left_associative parse_exp parse_fun_op =
-  let rec go acc_exp =
-    (let* fun_op = parse_fun_op in
-     let* exp = parse_exp in
-     go (fun_op acc_exp exp))
-    <|> return acc_exp
+let parse_chain_left_associative parse parse_fun =
+  let rec go acc =
+    (let* f = parse_fun in
+     let* elem = parse in
+     go (f acc elem))
+    <|> return acc
   in
-  let* fst_exp = parse_exp in
-  go fst_exp
+  let* elem = parse in
+  go elem
 ;;
 
-let parse_chain_right_associative parse_exp parse_fun_op =
-  let rec go acc_exp =
-    (let* fun_op = parse_fun_op in
-     let* exp = parse_exp in
-     let* next_exp = go exp in
-     return (fun_op acc_exp next_exp))
-    <|> return acc_exp
+let parse_chain_right_associative parse parse_fun =
+  let rec go acc =
+    (let* f = parse_fun in
+     let* elem = parse in
+     let* next_elem = go elem in
+     return (f acc next_elem))
+    <|> return acc
   in
-  let* fst_exp = parse_exp in
-  go fst_exp
+  let* elem = parse in
+  go elem
 ;;
 
 (* ==================== Ident ==================== *)
@@ -137,8 +137,6 @@ let parse_constant =
 
 (* =================== Core_type =================== *)
 
-(* The id obtained from parser is stored without first char ', while the id from
-   inferencer is stored with ', so that there is no confusion when inferring types. *)
 let parse_type_var =
   ws
   *> string "'"
@@ -166,7 +164,7 @@ let parse_type_var =
   in
   let type_var = fst_char ^ rest_str in
   if is_valid_snd_char && not (is_keyword type_var)
-  then return (Type_var type_var)
+  then return (Type_var ("'" ^ type_var))
   else fail (Printf.sprintf "Impossible type name: %S." type_var)
 ;;
 
@@ -183,13 +181,20 @@ let parse_base_type =
 ;;
 
 let parse_list_or_option_type parse_type =
-  ws
-  *> let* type' = parse_type in
-     ws *> sep_by1 ws (keyword "option" <|> keyword "list")
-     >>| List.fold ~init:type' ~f:(fun acc_type' id ->
-       match id with
-       | "option" -> Type_option acc_type'
-       | _ -> Type_list acc_type')
+  let f acc_ty = function
+    | "list" -> Type_list acc_ty
+    | _ -> Type_option acc_ty
+  in
+  let chain_left_associative =
+    let rec go acc_ty =
+      (let* ty = ws *> (keyword "list" <|> keyword "option") in
+       go (f acc_ty ty))
+      <|> return acc_ty
+    in
+    let* fst_ty = parse_type in
+    go fst_ty
+  in
+  chain_left_associative
 ;;
 
 let parse_tuple_type parse_type =
@@ -397,7 +402,7 @@ let parse_case parse_exp =
 
 (* -------------------- Expression -------------------- *)
 
-let parse_exp_ident = parse_ident >>| fun ident -> Exp_ident ident
+let parse_exp_ident = parse_ident >>| fun id -> Exp_ident id
 let parse_exp_constant = parse_constant >>| fun const -> Exp_constant const
 
 let parse_exp_tuple parse_exp =

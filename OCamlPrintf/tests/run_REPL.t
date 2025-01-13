@@ -113,7 +113,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   Infer error: Unification failed on int and bool
 
   $ ../repl/REPL.exe -fromfile manytests/do_not_type/003occurs.ml
-  Infer error: Occurs check failed: the type variable 't1 occurs inside 't1 -> 't3
+  Infer error: Occurs check failed: the type variable 'ty1 occurs inside 'ty1 -> 'ty3
 
   $ ../repl/REPL.exe -fromfile manytests/do_not_type/004let_poly.ml
   Infer error: Unification failed on int and bool

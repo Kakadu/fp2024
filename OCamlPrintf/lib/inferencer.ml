@@ -289,7 +289,7 @@ module Infer = struct
   open Ast
 
   let unify = Subst.unify
-  let fresh_var = fresh >>| fun n -> Type_var ("'t" ^ Int.to_string n)
+  let fresh_var = fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n)
 
   let instantiate (Scheme (bind_set, ty)) =
     VarSet.fold

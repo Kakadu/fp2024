@@ -85,7 +85,7 @@ type constant =
 
 let gen_type_var =
   map3
-    (fun fst_char snd_char rest_str -> Printf.sprintf "%c%c%s" fst_char snd_char rest_str)
+    (fun fst_char snd_char rest_str -> Printf.sprintf "'%c%c%s" fst_char snd_char rest_str)
     (oneof [ char_range 'a' 'z' ])
     (oneof [ char_range '0' '9'; char_range 'A' 'Z'; char_range 'a' 'z'; return '_' ])
     (gen_string

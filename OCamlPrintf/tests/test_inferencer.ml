@@ -281,9 +281,9 @@ let%expect_test "type check pattern constraint with type var" =
   |};
   [%expect
     {|
-  val f1 : ('b -> 'a) -> 'b -> 'a
+  val f1 : ('a -> 'b) -> 'a -> 'b
   val f2 : ('a -> 'a) -> 'a -> 'a
-  val f3 : ('b -> 'a) -> 'b -> 'a
+  val f3 : ('a -> 'b) -> 'a -> 'b
   |}]
 ;;
 
