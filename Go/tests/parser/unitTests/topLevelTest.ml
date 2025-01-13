@@ -117,7 +117,7 @@ let%expect_test "tmp" =
     print_file
     parse_file
     {|
-    var a, b, c <-chan [5]int = get()
+    var a, b, c chan [5]int = get()
 
     var x int
 
@@ -128,7 +128,7 @@ let%expect_test "tmp" =
     func main1(a1 int, c int, b int) bool {} |};
   [%expect
     {|
-    var a, b, c <-chan [5]int = get()
+    var a, b, c chan [5]int = get()
 
     var x int
 

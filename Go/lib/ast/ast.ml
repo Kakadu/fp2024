@@ -2,13 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(** Channel direction *)
-type chan_dir =
-  | Chan_bidirectional (** Bidirectional channel type such [chan] *)
-  | Chan_receive (** Receive-only channel type [<-chan] *)
-  | Chan_send (** Send-only channel type [chan<-] *)
-[@@deriving show { with_path = false }, eq]
-
 (** Data types *)
 type type' =
   | Type_int (** Integer type: [int] *)
@@ -18,9 +11,7 @@ type type' =
   | Type_func of type' list * type' list
   (** Function types such as [func()], [func(string) (bool, int)].
       Empty lists mean that there is no arguments or return values *)
-  | Type_chan of chan_dir * type'
-  (** Channel type such as:
-      [chan int], [<-chan string], [chan<- bool] *)
+  | Type_chan of type' (** Channel type such as [chan int] *)
 [@@deriving show { with_path = false }, eq]
 
 type ident = string [@@deriving show { with_path = false }]

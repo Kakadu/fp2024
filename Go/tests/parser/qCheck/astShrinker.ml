@@ -30,10 +30,8 @@ let rec shrink_type = function
          >|= fun new_arg_types -> Type_func (new_arg_types, return_types))
     <+> (list ~shrink:shrink_type return_types
          >|= fun new_return_types -> Type_func (arg_types, new_return_types))
-  | Type_chan (chan_dir, type') ->
-    return Type_int
-    <+> (shrink_type type' >|= fun t -> Type_chan (chan_dir, t))
-    <+> return type'
+  | Type_chan type' ->
+    return Type_int <+> (shrink_type type' >|= fun t -> Type_chan t) <+> return type'
 ;;
 
 let shrink_id_and_type id_and_t =

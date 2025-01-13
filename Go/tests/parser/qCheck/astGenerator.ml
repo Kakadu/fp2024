@@ -50,8 +50,7 @@ let gen_func_type gtype =
 
 let gen_chan_type gtype =
   let* type' = gtype in
-  let* chan_dir = oneofl [ Chan_bidirectional; Chan_receive; Chan_send ] in
-  return (Type_chan (chan_dir, type'))
+  return (Type_chan type')
 ;;
 
 let gen_type =

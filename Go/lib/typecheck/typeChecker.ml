@@ -131,7 +131,7 @@ let check_func_call rexpr rarg (func, args) =
            (Type_check_error (Invalid_operation "Make should take at least 1 argument"))
        | [ x ] ->
          (match x with
-          | Ctype (Type_chan (x, y)) -> return [ Ctype (Type_chan (x, y)) ]
+          | Ctype (Type_chan t) -> return [ Ctype (Type_chan t) ]
           | _ ->
             fail
               (Type_check_error
@@ -210,7 +210,7 @@ let rec check_expr cstmt rarg = function
   | Expr_chan_receive chan ->
     check_expr cstmt rarg chan
     >>= (function
-     | Ctype (Type_chan (_, y)) -> return (Ctype y)
+     | Ctype (Type_chan t) -> return (Ctype t)
      | _ -> fail (Type_check_error (Mismatched_types "Chan type mismatch")))
   | Expr_index (array, index) ->
     (check_expr cstmt rarg index >>= check_eq (Ctype Type_int))
@@ -231,7 +231,7 @@ let check_nil arg possible_nil =
   match possible_nil with
   | Cpolymorphic Nil ->
     (match arg with
-     | Ctype (Type_chan (x, y)) -> return (Ctype (Type_chan (x, y)))
+     | Ctype (Type_chan t) -> return (Ctype (Type_chan t))
      | Ctype (Type_func (x, y)) -> return (Ctype (Type_func (x, y)))
      | t ->
        fail
@@ -379,7 +379,7 @@ let check_chan_send cstmt (id, expr) =
   let* expr_type = check_expr cstmt (retrieve_arg cstmt) expr in
   retrieve_ident id
   >>= function
-  | Ctype (Type_chan (_, chan_type)) -> check_eq expr_type (Ctype chan_type)
+  | Ctype (Type_chan t) -> check_eq expr_type (Ctype t)
   | _ -> fail (Type_check_error (Mismatched_types "expected chan type")) *> return ()
 ;;
 
