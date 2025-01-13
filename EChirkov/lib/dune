@@ -1,7 +1,7 @@
 (library
  (name MiniML)
  (public_name MiniML.Lib)
- (modules Ast)
+ (modules Ast Parse)
  (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))
