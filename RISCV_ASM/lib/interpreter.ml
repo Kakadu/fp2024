@@ -420,9 +420,56 @@ and execute_instruction state instr program =
   | Sb (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 1
   | Sh (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 2
   | Sw (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 4
-  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
-  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
-  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
+  | Beq (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 = arg2 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Beqz (rs1, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 = arg2 in
+    handle_branch_condition state program rs1 None imm_value comparison_fn
+  | Bne (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 <> arg2 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Bnez (rs1, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 <> arg2 in
+    handle_branch_condition state program rs1 None imm_value comparison_fn
+  | Blt (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 < arg2 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Bltz (rs1, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 < arg2 in
+    handle_branch_condition state program rs1 None imm_value comparison_fn
+  | Bgt (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 > arg2 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Bgtz (rs1, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 > arg2 in
+    handle_branch_condition state program rs1 None imm_value comparison_fn
+  | Bge (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = arg1 >= arg2 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Bltu (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = Int64.unsigned_compare arg1 arg2 < 0 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Bgeu (rs1, rs2, imm_value) ->
+    let comparison_fn arg1 arg2 = Int64.unsigned_compare arg1 arg2 >= 0 in
+    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+  | Jal (rd, imm_value) ->
+    let address_info = get_address20_value program imm_value in
+    let* new_pc =
+      match address_info with
+      | Immediate imm_value ->
+        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int (imm_value lsr 2)) current_pc_excl)
+      | Label excluding_directives_label_offset ->
+        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
+        resolve_address_excl_to_incl
+          program
+          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
+    in
+    let new_state = set_register_value state rd (Int64.add state.pc 1L) in
+    return (set_pc new_state new_pc)
   | Jalr (rd, rs1, imm) ->
     let val_rs1 = get_register_value state rs1 in
     let address_info = get_address12_value program imm in
@@ -465,41 +512,31 @@ and execute_instruction state instr program =
     in
     let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
     return (set_pc new_state new_pc)
-  | Jal (rd, imm_value) ->
-    let address_info = get_address20_value program imm_value in
-    let* new_pc =
-      match address_info with
-      | Immediate imm_value ->
-        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
-        resolve_address_excl_to_incl
-          program
-          (Int64.add (Int64.of_int (imm_value lsr 2)) current_pc_excl)
-      | Label excluding_directives_label_offset ->
-        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
-        resolve_address_excl_to_incl
-          program
-          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
+  | Lui (rd, imm) ->
+    let imm_value =
+      match imm with
+      | ImmediateAddress20 value -> Int64.shift_left (Int64.of_int value) 12
+      | LabelAddress20 label ->
+        let label_offset = resolve_label_excluding_directives program label in
+        Int64.shift_left (Int64.of_int label_offset) 12
     in
-    let new_state = set_register_value state rd (Int64.add state.pc 1L) in
-    return (set_pc new_state new_pc)
-  | Bnez (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 <> arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
-  | Beqz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 = arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
-  | Bltz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 < arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
-  | Bgt (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 > arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
-  | Bgtz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 > arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
-  | Bne (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 <> arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    return (set_register_value state rd imm_value)
+  | Auipc (rd, imm) ->
+    let imm_value =
+      match imm with
+      | ImmediateAddress20 value -> Int64.shift_left (Int64.of_int value) 12
+      | LabelAddress20 label ->
+        let label_offset = resolve_label_excluding_directives program label in
+        Int64.shift_left (Int64.of_int label_offset) 12
+    in
+    let new_value = Int64.add state.pc imm_value in
+    return (set_register_value state rd new_value)
+  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
+  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
+  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
+  | Lwu (rd, rs1, imm) -> execute_load state program rd rs1 imm 4 false
+  | Ld (rd, rs1, imm) -> execute_load state program rd rs1 imm 8 true
+  | Sd (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 8
   | _ -> return state
 ;;
 
