@@ -309,9 +309,12 @@ let%expect_test "expr func call with multiple complex arguments" =
     (print_expr
        (Expr_call
           ( Expr_ident "three"
-          , [ Expr_ident "abc"
-            ; Expr_bin_oper (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3))
-            ; Expr_call (Expr_ident "fac", [ Expr_const (Const_int 25) ])
+          , [ Arg_expr (Expr_ident "abc")
+            ; Arg_expr
+                (Expr_bin_oper
+                   (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3)))
+            ; Arg_expr
+                (Expr_call (Expr_ident "fac", [ Arg_expr (Expr_const (Const_int 25)) ]))
             ] )));
   [%expect {| three(abc, 2 + 3, fac(25)) |}]
 ;;
@@ -321,7 +324,7 @@ let%expect_test "expr func call with array as a function" =
     (print_expr
        (Expr_call
           ( Expr_index (Expr_ident "funcs", Expr_const (Const_int 1))
-          , [ Expr_ident "a"; Expr_ident "b" ] )));
+          , [ Arg_expr (Expr_ident "a"); Arg_expr (Expr_ident "b") ] )));
   [%expect {| funcs[1](a, b) |}]
 ;;
 
@@ -353,7 +356,9 @@ let%expect_test "expr index with function call as an array" =
   print_endline
     (print_expr
        (Expr_index
-          ( Expr_call (Expr_ident "get_array", [ Expr_ident "a"; Expr_ident "b" ])
+          ( Expr_call
+              ( Expr_ident "get_array"
+              , [ Arg_expr (Expr_ident "a"); Arg_expr (Expr_ident "b") ] )
           , Expr_const (Const_int 1) )));
   [%expect {| get_array(a, b)[1] |}]
 ;;
@@ -493,17 +498,17 @@ let%expect_test "stmt return with multiple exprs" =
 (*** func call, go, defer ***)
 
 let%expect_test "stmt func call" =
-  print_endline (print_stmt (Stmt_call (Expr_ident "a", [ Expr_ident "b" ])));
+  print_endline (print_stmt (Stmt_call (Expr_ident "a", [ Arg_expr (Expr_ident "b") ])));
   [%expect {| a(b) |}]
 ;;
 
 let%expect_test "stmt go" =
-  print_endline (print_stmt (Stmt_go (Expr_ident "a", [ Expr_ident "b" ])));
+  print_endline (print_stmt (Stmt_go (Expr_ident "a", [ Arg_expr (Expr_ident "b") ])));
   [%expect {| go a(b) |}]
 ;;
 
 let%expect_test "stmt defer" =
-  print_endline (print_stmt (Stmt_defer (Expr_ident "a", [ Expr_ident "b" ])));
+  print_endline (print_stmt (Stmt_defer (Expr_ident "a", [ Arg_expr (Expr_ident "b") ])));
   [%expect {| defer a(b) |}]
 ;;
 
@@ -575,9 +580,9 @@ let%expect_test "stmt long decl mult var no type with one init" =
              , "b"
              , [ "c" ]
              , ( Expr_ident "get_three"
-               , [ Expr_const (Const_int 1)
-                 ; Expr_const (Const_int 2)
-                 ; Expr_const (Const_int 3)
+               , [ Arg_expr (Expr_const (Const_int 1))
+                 ; Arg_expr (Expr_const (Const_int 2))
+                 ; Arg_expr (Expr_const (Const_int 3))
                  ] ) ))));
   [%expect {| var a, b, c  = get_three(1, 2, 3) |}]
 ;;
@@ -625,10 +630,13 @@ let%expect_test "stmt short var decl mult var and one init" =
              , "b"
              , [ "c" ]
              , ( Expr_ident "three"
-               , [ Expr_ident "abc"
-                 ; Expr_bin_oper
-                     (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3))
-                 ; Expr_call (Expr_ident "fac", [ Expr_const (Const_int 25) ])
+               , [ Arg_expr (Expr_ident "abc")
+                 ; Arg_expr
+                     (Expr_bin_oper
+                        (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3)))
+                 ; Arg_expr
+                     (Expr_call
+                        (Expr_ident "fac", [ Arg_expr (Expr_const (Const_int 25)) ]))
                  ] ) ))));
   [%expect {| a, b, c := three(abc, 2 + 3, fac(25)) |}]
 ;;
@@ -799,7 +807,7 @@ let%expect_test "stmt block of mult stmts" =
           [ Stmt_short_var_decl
               (Short_decl_mult_init (("a", Expr_const (Const_int 5)), []))
           ; Stmt_incr "a"
-          ; Stmt_call (Expr_ident "println", [ Expr_ident "a" ])
+          ; Stmt_call (Expr_ident "println", [ Arg_expr (Expr_ident "a") ])
           ]));
   [%expect {|
     {
@@ -855,10 +863,11 @@ let%expect_test "file with factorial func" =
                                       , Expr_ident "n"
                                       , Expr_call
                                           ( Expr_ident "fac"
-                                          , [ Expr_bin_oper
-                                                ( Bin_subtract
-                                                , Expr_ident "n"
-                                                , Expr_const (Const_int 1) )
+                                          , [ Arg_expr
+                                                (Expr_bin_oper
+                                                   ( Bin_subtract
+                                                   , Expr_ident "n"
+                                                   , Expr_const (Const_int 1) ))
                                             ] ) )
                                   ]
                               ])
@@ -886,7 +895,9 @@ let%expect_test "file with factorial func" =
              ; returns = []
              ; body =
                  [ Stmt_block
-                     [ Stmt_call (Expr_ident "fac", [ Expr_const (Const_int 6) ]) ]
+                     [ Stmt_call
+                         (Expr_ident "fac", [ Arg_expr (Expr_const (Const_int 6)) ])
+                     ]
                  ]
              } )
        ; Decl_func
@@ -909,10 +920,11 @@ let%expect_test "file with factorial func" =
                                       , Expr_ident "n"
                                       , Expr_call
                                           ( Expr_ident "fac"
-                                          , [ Expr_bin_oper
-                                                ( Bin_subtract
-                                                , Expr_ident "n"
-                                                , Expr_const (Const_int 1) )
+                                          , [ Arg_expr
+                                                (Expr_bin_oper
+                                                   ( Bin_subtract
+                                                   , Expr_ident "n"
+                                                   , Expr_const (Const_int 1) ))
                                             ] ) )
                                   ]
                               ])

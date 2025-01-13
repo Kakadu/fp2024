@@ -3,12 +3,14 @@
 (** SPDX-License-Identifier: MIT *)
 
 type type_check_error =
-  | Check_failed (*Inner error to match errors inside typechecker*)
-  | Incorrect_main of string (*No main/main with returns or args*)
-  | Multiple_declaration of string (*Multiple declaration of ident*)
-  | Undefined_ident of string (*No declaration of ident in current sapce*)
-  | Mismatched_types of string (*Mismatched types in binoper/assign/return...*)
-  | Cannot_assign of string (*Error with assigning a multiple-return value*)
+  | Check_failed
+  | Incorrect_main of string
+  | Multiple_declaration of string
+  | Undefined_ident of string
+  | Mismatched_types of string
+  | Cannot_assign of string
+  | Missing_return of string
+  | Invalid_operation of string
 [@@deriving show { with_path = false }]
 
 type error = Type_check_error of type_check_error

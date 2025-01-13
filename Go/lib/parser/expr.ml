@@ -175,7 +175,10 @@ let parse_const pexpr pblock =
 let parse_expr_ident = parse_ident >>| fun ident -> Expr_ident ident
 
 let parse_expr_func_call pexpr func =
-  let* args = parens (sep_by_comma pexpr) in
+  let parse_arg =
+    pexpr >>| (fun e -> Arg_expr e) <|> (parse_type >>| fun t -> Arg_type t)
+  in
+  let* args = parens (sep_by_comma parse_arg) in
   return (Expr_call (func, args))
 ;;
 

@@ -156,14 +156,16 @@ let gen_expr_un_oper gexpr =
   return (Expr_un_oper (operator, operand))
 ;;
 
-let gen_func_call gexpr =
+let upd_func_call (e, lst) = e, List.map (fun x -> Arg_expr x) lst
+
+let gen_func_call gexpr upd_fcall =
   let* func = gexpr in
   let* args = list4 gexpr in
-  return (func, args)
+  return (upd_fcall (func, args))
 ;;
 
 let gen_expr_func_call gexpr =
-  let* call = gen_func_call gexpr in
+  let* call = gen_func_call gexpr upd_func_call in
   return (Expr_call call)
 ;;
 
@@ -196,7 +198,7 @@ let gen_long_decl gblock =
     ; (let* first_assign = pair gen_ident (gen_expr gblock) in
        let* rest_assigns = list4 (pair gen_ident (gen_expr gblock)) in
        return (Long_decl_mult_init (Option.some type', first_assign, rest_assigns)))
-    ; (let* call = gen_func_call (gen_expr gblock) in
+    ; (let* call = gen_func_call (gen_expr gblock) upd_func_call in
        return
          (Long_decl_one_init (Option.some type', first_id, second_id, rest_ids, call)))
     ]
@@ -215,7 +217,7 @@ let gen_short_decl gblock =
     ; (let* first_id = gen_ident in
        let* second_id = gen_ident in
        let* rest_ids = list4 gen_ident in
-       let* call = gen_func_call (gen_expr gblock) in
+       let* call = gen_func_call (gen_expr gblock) upd_func_call in
        return (Short_decl_one_init (first_id, second_id, rest_ids, call)))
     ]
 ;;
@@ -248,7 +250,7 @@ let gen_assign gblock =
     ; (let* first_lvalue = gen_assign_lvalue gblock in
        let* second_lvalue = gen_assign_lvalue gblock in
        let* rest_lvalues = list4 (gen_assign_lvalue gblock) in
-       let* call = gen_func_call (gen_expr gblock) in
+       let* call = gen_func_call (gen_expr gblock) upd_func_call in
        return (Assign_one_expr (first_lvalue, second_lvalue, rest_lvalues, call)))
     ]
 ;;
@@ -265,12 +267,12 @@ let gen_chan_send gblock =
 ;;
 
 let gen_stmt_call gblock =
-  let* call = gen_func_call (gen_expr gblock) in
+  let* call = gen_func_call (gen_expr gblock) upd_func_call in
   return (Stmt_call call)
 ;;
 
 let gen_stmt_defer_go gblock =
-  let* call = gen_func_call (gen_expr gblock) in
+  let* call = gen_func_call (gen_expr gblock) upd_func_call in
   oneofl [ Stmt_defer call; Stmt_go call ]
 ;;
 
@@ -288,7 +290,9 @@ let gen_if_for_init gstmt =
     ; map (fun assign -> Init_assign assign) (gen_assign (gen_block gstmt))
     ; map (fun id -> Init_incr id) gen_ident
     ; map (fun id -> Init_decr id) gen_ident
-    ; map (fun id -> Init_call id) (gen_func_call (gen_expr (gen_block gstmt)))
+    ; map
+        (fun id -> Init_call id)
+        (gen_func_call (gen_expr (gen_block gstmt)) upd_func_call)
     ; map (fun send -> Init_send send) (gen_chan_send (gen_block gstmt))
     ; map (fun chan -> Init_receive chan) (gen_expr (gen_block gstmt))
     ]

@@ -118,7 +118,11 @@ let print_func_call pexpr call =
   let print_func =
     if 7 > precedence func then asprintf "(%s)" (pexpr func) else pexpr func
   in
-  asprintf "%s(%s)" print_func (sep_by_comma args pexpr)
+  let print_arg = function
+    | Arg_expr e -> pexpr e
+    | Arg_type t -> print_type t
+  in
+  asprintf "%s(%s)" print_func (sep_by_comma args print_arg)
 ;;
 
 let rec print_expr pblock = function

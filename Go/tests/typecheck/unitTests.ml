@@ -22,8 +22,10 @@ let pp str =
           prerr_endline ("Undefined ident error: " ^ msg)
         | Type_check_error (Mismatched_types msg) ->
           prerr_endline ("Mismatched types: " ^ msg)
-        | Type_check_error (Cannot_assign msg) ->
-          prerr_endline ("Mismatched types: " ^ msg)))
+        | Type_check_error (Cannot_assign msg) -> prerr_endline ("Cannot assign: " ^ msg)
+        | Type_check_error (Missing_return msg) -> prerr_endline ("Missing return: " ^ msg)
+        | Type_check_error (Invalid_operation msg) ->
+          prerr_endline ("Missing return: " ^ msg)))
   | Error _ -> print_endline ": syntax error"
 ;;
 
@@ -49,7 +51,7 @@ let%expect_test "err: multiple main" =
 
 let%expect_test "err: main with returns" =
   pp {|
-  func main() bool {}
+  func main() bool { return true}
   |};
   [%expect
     {| ERROR WHILE TYPECHECK WITH Incorrect main error: func main must have no arguments and no return values |}]
@@ -103,7 +105,7 @@ let%expect_test "ok: single var decl with type and right init " =
   [%expect {| CORRECT |}]
 ;;
 
-let%expect_test "ok: single var decl with type and wrong init " =
+let%expect_test "err: single var decl with type and wrong init " =
   pp {|
   var a int = ""
 
@@ -276,7 +278,7 @@ let%expect_test "err: incorrect var multiple assign" =
     |};
   [%expect
     {|
-    ERROR WHILE TYPECHECK WITH Mismatched types: Multiple return assign failed |}]
+    ERROR WHILE TYPECHECK WITH Cannot assign: Multiple return assign failed |}]
 ;;
 
 let%expect_test "ok: correct var multiple assign" =
@@ -335,9 +337,9 @@ let%expect_test "ok: correct declarations #1" =
     {|
     func main() {}
 
-    func foo(a int, b int, c int) bool {}
+    func foo(a int, b int, c int) {}
 
-    func foo1(a int, b int, c int) bool {}   |};
+    func foo1(a int, b int, c int) {}   |};
   [%expect {| CORRECT |}]
 ;;
 
@@ -388,7 +390,7 @@ let%expect_test "err: undefined var inc" =
 
     func main() {}
 
-    func foo(a1 int, c int, b int) bool {
+    func foo(a1 int, c int, b int) {
         a2++
     }  
     |};
@@ -400,8 +402,8 @@ let%expect_test "ok: global var decl before it's use in code" =
     {|
     var x int
 
-    func foo(a1 int, c int, b int) bool {
-        x++
+    func foo(a1 int, c int, b int){
+      x++
     }  
 
     func main() {}
@@ -409,7 +411,30 @@ let%expect_test "ok: global var decl before it's use in code" =
   [%expect {| CORRECT |}]
 ;;
 
+let%expect_test "ok: redefined int example" =
+  pp {|
+    var int string 
+    func main() {}
+
+    |};
+  [%expect {| CORRECT |}]
+;;
+
 let%expect_test "ok: global var decl after it's use in code" =
+  pp
+    {|
+    func foo(a1 int, c int, b int) {
+        x++
+    } 
+
+    var x int
+
+    func main() {}
+    |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "fail: missing return statement" =
   pp
     {|
     func foo(a1 int, c int, b int) bool {
@@ -420,7 +445,46 @@ let%expect_test "ok: global var decl after it's use in code" =
 
     func main() {}
     |};
+  [%expect {| ERROR WHILE TYPECHECK WITH Missing return: Missing return |}]
+;;
+
+let%expect_test "ok: correct returns in different branches of if" =
+  pp
+    {|
+    func foo(a1 int, c int, b int) int {
+        if c == 1 {
+		      return 1
+				} else { 
+          if c == 2 {
+            return 3
+          } else {
+            return 2
+          }
+	      }
+    } 
+    func main() {}
+    |};
   [%expect {| CORRECT |}]
+;;
+
+let%expect_test "fail: missing return in nested branch of if" =
+  pp
+    {|
+    var x int
+    func foo(a1 int, c int, b int) int {
+        if c == 1 {
+		      return 1
+				} else { 
+          if c == 2 {
+            return 3
+          } else {
+            x++
+          }
+	      }
+    } 
+    func main() {}
+    |};
+  [%expect {| ERROR WHILE TYPECHECK WITH Missing return: Missing return |}]
 ;;
 
 let%expect_test "err: undefined func call" =
@@ -1085,48 +1149,48 @@ let%expect_test "ok: correct closure" =
   pp
     {|
 
-func adder() func(int) int {
-	sum := 0
-	return func(x int) int {
-		sum = sum + x
-		return sum
-	}
-}
+    func adder() func(int) int {
+      sum := 0
+      return func(x int) int {
+        sum = sum + x
+        return sum
+      }
+    }
 
-func f(a int) { return }
+    func f(a int) { return }
 
-func main() {
-  pos, neg := adder(), adder()
-	for i := 0; i < 10; i++ {
-		a := pos(i)
-		f(a)
-		f(neg(-2 * i))
-	}
-}|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: bool and int |}]
+    func main() {
+      pos, neg := adder(), adder()
+      for i := 0; i < 10; i++ {
+        a := pos(i)
+        f(a)
+        f(neg(-2 * i))
+      }
+    }|};
+  [%expect {| CORRECT |}]
 ;;
 
 let%expect_test "err: mismatched type in closure" =
   pp
     {|
 
-func adder() func(int) int {
-	sum := 0
-	return func(x string) int {
-		return x
-	}
-}
+      func adder() func(int) int {
+        sum := 0
+        return func(x string) int {
+          return x
+        }
+      }
 
-func f(a int) { return }
+      func f(a int) { return }
 
-func main() {
-  pos, neg := adder(), adder()
-	for i := 0; i < 10; i++ {
-		a := pos(i)
-		f(a)
-		f(neg(-2 * i))
-	}
-}|};
+      func main() {
+        pos, neg := adder(), adder()
+        for i := 0; i < 10; i++ {
+          a := pos(i)
+          f(a)
+          f(neg(-2 * i))
+        }
+      }|};
   [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
@@ -1134,23 +1198,23 @@ let%expect_test "err: mismatched type in closure func return" =
   pp
     {|
 
-func adder() func(int) int {
-	sum := 0
-	return func(x string) int {
-		return sum + 1
-	}
-}
+      func adder() func(int) int {
+        sum := 0
+        return func(x string) int {
+          return sum + 1
+        }
+      }
 
-func f(a int) { return }
+      func f(a int) { return }
 
-func main() {
-  pos, neg := adder(), adder()
-	for i := 0; i < 10; i++ {
-		a := pos(i)
-		f(a)
-		f(neg(-2 * i))
-	}
-}|};
+      func main() {
+        pos, neg := adder(), adder()
+        for i := 0; i < 10; i++ {
+          a := pos(i)
+          f(a)
+          f(neg(-2 * i))
+        }
+      }|};
   [%expect
     {| ERROR WHILE TYPECHECK WITH Mismatched types: func(int) int and func(string) int |}]
 ;;
@@ -1159,23 +1223,23 @@ let%expect_test "err: mismatched type inside return of func in closure" =
   pp
     {|
 
-func adder() func(int) int {
-	sum := 0
-	return func(x int) int {
-		return "t"
-	}
-}
+      func adder() func(int) int {
+        sum := 0
+        return func(x int) int {
+          return "t"
+        }
+      }
 
-func f(a int) { return }
+      func f(a int) { return }
 
-func main() {
-  pos, neg := adder(), adder()
-	for i := 0; i < 10; i++ {
-		a := pos(i)
-		f(a)
-		f(neg(-2 * i))
-	}
-}|};
+      func main() {
+        pos, neg := adder(), adder()
+        for i := 0; i < 10; i++ {
+          a := pos(i)
+          f(a)
+          f(neg(-2 * i))
+        }
+      }|};
   [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
 ;;
 
@@ -1183,22 +1247,118 @@ let%expect_test "err: mismatched func returns of created func" =
   pp
     {|
 
-func adder() func(int) int {
-	sum := 0
-	return func(x int) int {
-		return sum + x
-	}
-}
+      func adder() func(int) int {
+        sum := 0
+        return func(x int) int {
+          return sum + x
+        }
+      }
 
-func f(a string) { return }
+      func f(a string) { return }
 
-func main() {
-  pos, neg := adder(), adder()
-	for i := 0; i < 10; i++ {
-		a := pos(i)
-		f(4)
-		f(neg(-2 * i))
-	}
-}|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: bool and int |}]
+      func main() {
+        pos, neg := adder(), adder()
+        for i := 0; i < 10; i++ {
+          a := pos(i)
+          f(4)
+          f(neg(-2 * i))
+        }
+      }|};
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+;;
+
+let%expect_test "ok: predeclared make, close & print usage" =
+  pp
+    {|
+    func sum(c chan int) {
+      sum := 1
+      c <- sum
+    }
+
+    func main() {
+      c := make(chan int)
+      sum(c)
+      x, y := <-c, <-c
+      close(c)
+      print(x,y)
+    } |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "ok: predeclared panic & recover" =
+  pp {|
+    func main() {
+      defer func() { recover() }()
+      panic("")
+    } |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "ok: predeclared nil, true, false" =
+  pp
+    {|
+    func main() {
+      var a chan int = nil
+      var b func() = nil
+
+      cond := true
+      if cond {
+        cond = false
+      }
+    }
+    |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: untyped nil" =
+  pp {|
+    func main() {
+      a := nil
+    }
+    |};
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Missing return: Cannot assign nil in short var declaration |}]
+;;
+
+let%expect_test "ok: incorrect send after make" =
+  pp
+    {|
+    func sum(c chan string) {
+      sum := 1
+      c <- sum
+    }
+
+    func main() {
+      c := make(chan string)
+      sum(c)
+      x, y := <-c, <-c 
+      print(x,y)
+    } |};
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+;;
+
+let%expect_test "ok: redeclaration of predeclared print" =
+  pp
+    {|
+    func print(a int) int {
+      return a
+    }
+
+    func main() {
+      print(5)
+    } |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: redeclaration of predeclared make" =
+  pp
+    {|
+    func make(a int) int {
+      return a
+    }
+
+    func main() {
+      make(5)
+    } |};
+  [%expect {| CORRECT |}]
 ;;

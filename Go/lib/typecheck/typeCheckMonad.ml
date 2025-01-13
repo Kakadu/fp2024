@@ -12,9 +12,22 @@ end
 
 module MapIdent = Map.Make (Ident)
 
+type polymorphic_call =
+  | Make
+  | Print
+  | Println
+  | Panic
+  | Len
+  | Close
+  | Nil
+  | Recover
+[@@deriving show { with_path = false }, eq]
+
 type ctype =
   | Ctype of type'
   | Ctuple of type' list
+  | CgenT of type'
+  | Cpolymorphic of polymorphic_call
 [@@deriving show { with_path = false }, eq]
 
 type env = ctype MapIdent.t list
@@ -31,6 +44,7 @@ module CheckMonad = struct
   let print_type = function
     | Ctype x -> PpType.print_type x
     | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map PpType.print_type x))
+    | _ -> asprintf "WTF Polymorphic type"
   ;;
 
   let read_env =

@@ -11,9 +11,34 @@ let get_afunc_type afunc =
   Ctype (Type_func (List.map (fun (_, snd) -> snd) afunc.args, afunc.returns))
 ;;
 
+let rec check_return body =
+  List.mem
+    true
+    (List.map
+       (function
+         | Stmt_return _ -> true
+         | Stmt_if if' ->
+           check_return if'.if_body
+           && (fun body ->
+                match body with
+                | Some (Else_block body) -> check_return body
+                | Some (Else_if if') -> check_return [ Stmt_if if' ]
+                | None -> false)
+                if'.else_body
+         | Stmt_for for' -> check_return for'.body
+         | _ -> false)
+       body)
+;;
+
 let check_anon_func afunc cstmt =
   let save_args = iter (fun (id, t) -> save_ident id (Ctype t)) afunc.args in
   add_env
+  *> (match List.compare_length_with afunc.returns 0 = 0 with
+    | false ->
+      (match check_return afunc.body with
+       | true -> return ()
+       | false -> fail (Type_check_error (Missing_return "Missing return")))
+    | true -> return ())
   *> save_func (Ctuple afunc.returns)
   *> save_args
   *> iter cstmt afunc.body
@@ -56,23 +81,66 @@ let retrieve_const cstmt rexpr = function
   | Const_func anon_func -> check_anon_func anon_func cstmt
 ;;
 
-let check_func_call rexpr (func, args) =
-  let* expected_arg_types =
-    rexpr func
-    >>= function
-    | Ctype (Type_func (lst, _)) -> map (fun t -> return (Ctype t)) lst
-    | _ -> fail (Type_check_error (Mismatched_types "Expected func type"))
-  in
+let check_generic_type = function
+  | CgenT _ -> fail (Type_check_error (Mismatched_types "Generic type in wrong place"))
+  | _ -> return ()
+;;
+
+let check_func_call rexpr rarg (func, args) =
   let* actual_arg_types =
     map
       (fun arg ->
-        rexpr arg
+        rarg arg
         >>= function
         | Ctuple _ -> fail (Type_check_error (Mismatched_types "Expected single type"))
         | t -> return t)
       args
   in
-  try iter2 check_eq expected_arg_types actual_arg_types with
+  let* ftype =
+    rexpr func
+    >>= function
+    | Ctype (Type_func (lst, _)) -> map (fun t -> return (Ctype t)) lst
+    | Cpolymorphic Print | Cpolymorphic Println | Cpolymorphic Panic ->
+      iter check_generic_type actual_arg_types *> return actual_arg_types
+    | Cpolymorphic Make ->
+      (match actual_arg_types with
+       | [] ->
+         fail
+           (Type_check_error (Invalid_operation "Make should take at least 1 argument"))
+       | lst ->
+         (match List.hd lst with
+          | CgenT _ -> iter check_generic_type (List.tl lst) *> return actual_arg_types
+          | _ ->
+            fail
+              (Type_check_error
+                 (Invalid_operation "Make should take some type as 1st argument"))))
+    | Cpolymorphic Close ->
+      (match actual_arg_types with
+       | [] ->
+         fail
+           (Type_check_error (Invalid_operation "Make should take at least 1 argument"))
+       | [ x ] ->
+         (match x with
+          | Ctype (Type_chan (x, y)) -> return [ Ctype (Type_chan (x, y)) ]
+          | _ ->
+            fail
+              (Type_check_error
+                 (Invalid_operation "Close should take chan type as 1st argument")))
+       | _ ->
+         fail (Type_check_error (Mismatched_types "Close should take only 1 argument")))
+    | Cpolymorphic Len ->
+      (match actual_arg_types with
+       | [ Ctype Type_string ] -> return [ Ctype Type_string ]
+       | [ Ctype (Type_array (x, y)) ] -> return [ Ctype (Type_array (x, y)) ]
+       | _ ->
+         fail (Type_check_error (Mismatched_types "len takes only string and array args")))
+    | Cpolymorphic Recover ->
+      (match actual_arg_types with
+       | [] -> return []
+       | _ -> fail (Type_check_error (Mismatched_types "recover takes no args")))
+    | _ -> fail (Type_check_error (Mismatched_types "Expected func type"))
+  in
+  try iter2 check_eq ftype actual_arg_types with
   | Invalid_argument _ ->
     fail (Type_check_error (Mismatched_types "Number of given args mismatched"))
 ;;
@@ -87,17 +155,17 @@ let rec nested_array t depth =
          (Mismatched_types "Number of indicies in array element assigment is incorrect"))
 ;;
 
-let rec retrieve_expr cstmt = function
-  | Expr_const const -> retrieve_const cstmt (retrieve_expr cstmt) const
+let rec retrieve_expr cstmt rarg = function
+  | Expr_const const -> retrieve_const cstmt (retrieve_expr cstmt rarg) const
   | Expr_un_oper (Unary_minus, expr) | Expr_un_oper (Unary_plus, expr) ->
-    retrieve_expr cstmt expr >>= eq_type (Ctype Type_int)
+    retrieve_expr cstmt rarg expr >>= eq_type (Ctype Type_int)
   | Expr_un_oper (Unary_not, expr) ->
-    retrieve_expr cstmt expr >>= fun t -> eq_type t (Ctype Type_bool)
+    retrieve_expr cstmt rarg expr >>= fun t -> eq_type t (Ctype Type_bool)
   | Expr_ident id -> retrieve_ident id
   | Expr_bin_oper (op, left, right) ->
     let compare_arg_typ left right =
-      let* ltype = retrieve_expr cstmt left in
-      let* rtype = retrieve_expr cstmt right in
+      let* ltype = retrieve_expr cstmt rarg left in
+      let* rtype = retrieve_expr cstmt rarg right in
       eq_type ltype rtype
     in
     let compare_operation_typ left right t = compare_arg_typ left right >>= eq_type t in
@@ -105,26 +173,35 @@ let rec retrieve_expr cstmt = function
      | Bin_sum | Bin_divide | Bin_modulus | Bin_multiply | Bin_subtract ->
        compare_operation_typ left right (Ctype Type_int)
      | Bin_less | Bin_greater | Bin_greater_equal | Bin_less_equal ->
-       compare_operation_typ left right (Ctype Type_int)
-     | Bin_or | Bin_and -> compare_operation_typ left right (Ctype Type_bool)
+       compare_operation_typ left right (Ctype Type_int) *> return (Ctype Type_bool)
+     | Bin_or | Bin_and ->
+       compare_operation_typ left right (Ctype Type_bool) *> return (Ctype Type_bool)
      | Bin_equal | Bin_not_equal -> compare_arg_typ left right *> return (Ctype Type_bool))
   | Expr_call (func, args) ->
-    check_func_call (retrieve_expr cstmt) (func, args)
-    *> map (retrieve_expr cstmt) args
-    *> (retrieve_expr cstmt) func
+    check_func_call (retrieve_expr cstmt rarg) rarg (func, args)
+    *> map rarg args
+    *> (retrieve_expr cstmt rarg) func
     >>= (function
      | Ctype (Type_func (_, fst :: snd :: tl)) -> return (Ctuple (fst :: snd :: tl))
      | Ctype (Type_func (_, hd :: _)) -> return (Ctype hd)
+     | Cpolymorphic Print | Cpolymorphic Close | Cpolymorphic Println ->
+       fail
+         (Type_check_error (Invalid_operation "print/println/close func makes no return"))
+     | Cpolymorphic Len -> return (Ctype Type_int)
+     | Cpolymorphic Make ->
+       (match List.hd args with
+        | Arg_type t -> return (Ctype t)
+        | _ -> fail (Type_check_error Check_failed))
      | _ ->
        fail (Type_check_error (Mismatched_types "Function without returns in expression")))
   | Expr_chan_receive chan ->
-    retrieve_expr cstmt chan
+    retrieve_expr cstmt rarg chan
     >>= (function
      | Ctype (Type_chan (_, y)) -> return (Ctype y)
      | _ -> fail (Type_check_error (Mismatched_types "Chan type mismatch")))
   | Expr_index (array, index) ->
-    (retrieve_expr cstmt index >>= check_eq (Ctype Type_int))
-    *> (retrieve_expr cstmt array
+    (retrieve_expr cstmt rarg index >>= check_eq (Ctype Type_int))
+    *> (retrieve_expr cstmt rarg array
         >>= function
         | Ctype (Type_array (_, t)) -> return (Ctype t)
         | _ ->
@@ -132,22 +209,53 @@ let rec retrieve_expr cstmt = function
        )
 ;;
 
+let rec retrieve_arg cstmt = function
+  | Arg_expr exp -> retrieve_expr cstmt (retrieve_arg cstmt) exp
+  | Arg_type t -> return (CgenT t)
+;;
+
+let check_nil arg possible_nil =
+  match possible_nil with
+  | Cpolymorphic Nil ->
+    (match arg with
+     | Ctype (Type_chan (x, y)) -> return (Ctype (Type_chan (x, y)))
+     | Ctype (Type_func (x, y)) -> return (Ctype (Type_func (x, y)))
+     | t ->
+       fail
+         (Type_check_error
+            (Mismatched_types
+               (Printf.sprintf "nil type cannot be assigned to %s" (print_type t)))))
+  | _ -> return possible_nil
+;;
+
+let check_nil_fail = function
+  | Cpolymorphic Nil ->
+    fail
+      (Type_check_error (Mismatched_types (Printf.sprintf "nil type cannot be used here")))
+  | x -> return x
+;;
+
 let check_long_var_decl cstmt save_ident = function
   | Long_decl_no_init (t, hd, tl) -> iter (fun id -> save_ident id (Ctype t)) (hd :: tl)
   | Long_decl_mult_init (Some type', hd, tl) ->
     iter
       (fun (id, expr) ->
-        (retrieve_expr cstmt expr >>= check_eq (Ctype type'))
+        (retrieve_expr cstmt (retrieve_arg cstmt) expr
+         >>= (fun t -> check_nil (Ctype type') t)
+         >>= check_eq (Ctype type'))
         *> save_ident id (Ctype type'))
       (hd :: tl)
   | Long_decl_mult_init (None, hd, tl) ->
-    iter (fun (id, expr) -> retrieve_expr cstmt expr >>= save_ident id) (hd :: tl)
+    iter
+      (fun (id, expr) ->
+        retrieve_expr cstmt (retrieve_arg cstmt) expr >>= check_nil_fail >>= save_ident id)
+      (hd :: tl)
   | Long_decl_one_init (Some type', fst, snd, tl, call) ->
-    (retrieve_expr cstmt (Expr_call call)
+    (retrieve_expr cstmt (retrieve_arg cstmt) (Expr_call call)
      >>= check_eq (Ctuple (List.init (List.length (fst :: snd :: tl)) (fun _ -> type'))))
     *> iter (fun id -> save_ident id (Ctype type')) (fst :: snd :: tl)
   | Long_decl_one_init (None, fst, snd, tl, call) ->
-    retrieve_expr cstmt (Expr_call call)
+    retrieve_expr cstmt (retrieve_arg cstmt) (Expr_call call)
     >>= (function
      | Ctype _ ->
        fail
@@ -159,14 +267,30 @@ let check_long_var_decl cstmt save_ident = function
           fail
             (Type_check_error
                (Mismatched_types
-                  "function returns wrong number of elements in multiple var assign"))))
+                  "function returns wrong number of elements in multiple var assign")))
+     | _ -> fail (Type_check_error Check_failed))
 ;;
 
 let check_short_var_decl cstmt = function
   | Short_decl_mult_init (hd, tl) ->
-    iter (fun (id, expr) -> retrieve_expr cstmt expr >>= save_ident id) (hd :: tl)
+    iter
+      (fun (id, expr) ->
+        retrieve_expr cstmt (retrieve_arg cstmt) expr
+        >>= (fun ct ->
+              match ct with
+              | Ctype t -> return (Ctype t)
+              | Cpolymorphic Nil ->
+                fail
+                  (Type_check_error
+                     (Invalid_operation "Cannot assign nil in short var declaration"))
+              | _ ->
+                fail
+                  (Type_check_error
+                     (Mismatched_types "Incorrect assignment in short var decl")))
+        >>= save_ident id)
+      (hd :: tl)
   | Short_decl_one_init (fst, snd, tl, call) ->
-    retrieve_expr cstmt (Expr_call call)
+    retrieve_expr cstmt (retrieve_arg cstmt) (Expr_call call)
     >>= (function
      | Ctype _ ->
        fail
@@ -183,19 +307,25 @@ let check_short_var_decl cstmt = function
           fail
             (Type_check_error
                (Mismatched_types
-                  "function returns wrong number of elements in multiple var decl"))))
+                  "function returns wrong number of elements in multiple var decl")))
+     | Cpolymorphic Nil ->
+       fail
+         (Type_check_error
+            (Invalid_operation "Cannot assign nil in short var declaration"))
+     | _ -> fail (Type_check_error Check_failed))
 ;;
 
 let rec retrieve_lvalue ind cstmt = function
   | Lvalue_ident id -> retrieve_ident id
   | Lvalue_array_index (Lvalue_ident array, index) ->
-    (retrieve_expr cstmt index >>= check_eq (Ctype Type_int)) *> retrieve_ident array
+    (retrieve_expr cstmt (retrieve_arg cstmt) index >>= check_eq (Ctype Type_int))
+    *> retrieve_ident array
     >>= (function
      | Ctype (Type_array (_, t)) -> nested_array (Ctype t) ind
      | _ ->
        fail (Type_check_error (Mismatched_types "Non-array type in array index call")))
   | Lvalue_array_index (lvalue_array_index, index) ->
-    (retrieve_expr cstmt index >>= check_eq (Ctype Type_int))
+    (retrieve_expr cstmt (retrieve_arg cstmt) index >>= check_eq (Ctype Type_int))
     *> retrieve_lvalue (ind + 1) cstmt lvalue_array_index
 ;;
 
@@ -204,11 +334,11 @@ let check_assign cstmt = function
     iter
       (fun (lvalue, expr) ->
         let* expected_type = retrieve_lvalue 0 cstmt lvalue in
-        let* actual_type = retrieve_expr cstmt expr in
+        let* actual_type = retrieve_expr cstmt (retrieve_arg cstmt) expr in
         check_eq expected_type actual_type)
       (hd :: tl)
   | Assign_one_expr (fst, snd, tl, call) ->
-    retrieve_expr cstmt (Expr_call call)
+    retrieve_expr cstmt (retrieve_arg cstmt) (Expr_call call)
     >>= (function
      | Ctype _ -> fail (Type_check_error (Cannot_assign "Multiple return assign failed"))
      | Ctuple types ->
@@ -219,11 +349,12 @@ let check_assign cstmt = function
             types
         with
         | Invalid_argument _ ->
-          fail (Type_check_error (Cannot_assign "Multiple return assign failed"))))
+          fail (Type_check_error (Cannot_assign "Multiple return assign failed")))
+     | _ -> fail (Type_check_error Check_failed))
 ;;
 
 let check_chan_send cstmt (id, expr) =
-  let* expr_type = retrieve_expr cstmt expr in
+  let* expr_type = retrieve_expr cstmt (retrieve_arg cstmt) expr in
   retrieve_ident id
   >>= function
   | Ctype (Type_chan (_, chan_type)) -> check_eq expr_type (Ctype chan_type)
@@ -232,11 +363,12 @@ let check_chan_send cstmt (id, expr) =
 
 let check_init cstmt = function
   | Some (Init_assign assign) -> check_assign cstmt assign
-  | Some (Init_call call) -> check_func_call (retrieve_expr cstmt) call
+  | Some (Init_call call) ->
+    check_func_call (retrieve_expr cstmt (retrieve_arg cstmt)) (retrieve_arg cstmt) call
   | Some (Init_decl decl) -> check_short_var_decl cstmt decl *> return ()
   | Some (Init_decr id) -> retrieve_ident id >>= check_eq (Ctype Type_int)
   | Some (Init_incr id) -> retrieve_ident id >>= check_eq (Ctype Type_int)
-  | Some (Init_receive chan) -> retrieve_expr cstmt chan *> return ()
+  | Some (Init_receive chan) -> retrieve_expr cstmt (retrieve_arg cstmt) chan *> return ()
   | Some (Init_send send) -> check_chan_send cstmt send
   | None -> return ()
 ;;
@@ -247,13 +379,26 @@ let rec check_stmt = function
   | Stmt_incr id -> retrieve_ident id >>= check_eq (Ctype Type_int)
   | Stmt_decr id -> retrieve_ident id >>= check_eq (Ctype Type_int)
   | Stmt_assign assign -> check_assign check_stmt assign
-  | Stmt_call call -> check_func_call (retrieve_expr check_stmt) call
-  | Stmt_defer call -> check_func_call (retrieve_expr check_stmt) call
-  | Stmt_go call -> check_func_call (retrieve_expr check_stmt) call
+  | Stmt_call call ->
+    check_func_call
+      (retrieve_expr check_stmt (retrieve_arg check_stmt))
+      (retrieve_arg check_stmt)
+      call
+  | Stmt_defer call ->
+    check_func_call
+      (retrieve_expr check_stmt (retrieve_arg check_stmt))
+      (retrieve_arg check_stmt)
+      call
+  | Stmt_go call ->
+    check_func_call
+      (retrieve_expr check_stmt (retrieve_arg check_stmt))
+      (retrieve_arg check_stmt)
+      call
   | Stmt_chan_send send -> check_chan_send check_stmt send
   | Stmt_block block -> add_env *> iter check_stmt block *> delete_env
   | Stmt_break -> return ()
-  | Stmt_chan_receive chan -> retrieve_expr check_stmt chan *> return ()
+  | Stmt_chan_receive chan ->
+    retrieve_expr check_stmt (retrieve_arg check_stmt) chan *> return ()
   | Stmt_continue -> return ()
   | Stmt_return exprs ->
     (get_func_return_type
@@ -264,12 +409,13 @@ let rec check_stmt = function
                  fail (Type_check_error (Mismatched_types "func return types mismatch")))
             | _ -> fail (Type_check_error Check_failed))
      >>= iter (fun (expr, return_type) ->
-       retrieve_expr check_stmt expr >>= check_eq return_type))
+       retrieve_expr check_stmt (retrieve_arg check_stmt) expr >>= check_eq return_type))
     *> return ()
   | Stmt_if if' ->
     add_env
     *> check_init check_stmt if'.init
-    *> (retrieve_expr check_stmt if'.cond >>= check_eq (Ctype Type_bool))
+    *> (retrieve_expr check_stmt (retrieve_arg check_stmt) if'.cond
+        >>= check_eq (Ctype Type_bool))
     *> iter check_stmt if'.if_body
     *> delete_env
     *>
@@ -281,7 +427,9 @@ let rec check_stmt = function
     add_env
     *> check_init check_stmt init
     *> (match cond with
-      | Some expr -> retrieve_expr check_stmt expr >>= check_eq (Ctype Type_bool)
+      | Some expr ->
+        retrieve_expr check_stmt (retrieve_arg check_stmt) expr
+        >>= check_eq (Ctype Type_bool)
       | None -> return ())
     *> check_init check_stmt post
     *> iter check_stmt body
@@ -319,6 +467,14 @@ let type_check file =
   run
     (save_ident "true" (Ctype Type_bool)
      *> save_ident "false" (Ctype Type_bool)
+     *> save_ident "make" (Cpolymorphic Make)
+     *> save_ident "print" (Cpolymorphic Print)
+     *> save_ident "panic" (Cpolymorphic Panic)
+     *> save_ident "len" (Cpolymorphic Len)
+     *> save_ident "recover" (Cpolymorphic Recover)
+     *> save_ident "close" (Cpolymorphic Close)
+     *> save_ident "println" (Cpolymorphic Println)
+     *> save_ident "nil" (Cpolymorphic Nil)
      *> add_env
      *> iter save_top_decl_funcs file
      *> iter check_and_save_top_decl_vars file

@@ -89,12 +89,18 @@ and anon_func =
   }
 [@@deriving show { with_path = false }]
 
+(** Function arguments, can be either expression or a type *)
+and func_arg =
+  | Arg_expr of expr
+  | Arg_type of type'
+[@@deriving show { with_path = false }]
+
 (** function calls such as:
     [my_func(arg1, arg2)],
     [c()()()],
     [func() { println("hello") }()].
     Empty list means that function doesn't take any arguments *)
-and func_call = expr * expr list [@@deriving show { with_path = false }]
+and func_call = expr * func_arg list [@@deriving show { with_path = false }]
 
 (** Channel receive such as: [<-c], [<-<-get_chan()] *)
 and chan_receive = expr [@@deriving show { with_path = false }]
