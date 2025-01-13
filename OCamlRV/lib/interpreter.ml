@@ -59,42 +59,42 @@ module type MONAD_FAIL = sig
   val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 end
 
-let rec pp_value ppf =
-  let open Stdlib.Format in
-  function
-  | VInt x -> fprintf ppf "%d" x
-  | VBool b -> fprintf ppf "%b" b
-  | VString s -> fprintf ppf "%s" s
-  | VUnit -> fprintf ppf "()"
-  | VList vl ->
-    fprintf
-      ppf
-      "[%a]"
-      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
-      vl
-  | VTuple vl ->
-    fprintf
-      ppf
-      "(%a)"
-      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
-      vl
-  | VNil -> fprintf ppf "[]"
-  | VFun _ -> fprintf ppf "<fun>"
-  | VBuiltin _ -> fprintf ppf "<builtin>"
-  | VMutualFun _ -> fprintf ppf "<VMutualFun>"
-  | VOption vo ->
-    (match vo with
-     | Some v -> fprintf ppf "Some %a" pp_value v
-     | None -> fprintf ppf "None")
-;;
+(* let rec pp_value ppf =
+   let open Stdlib.Format in
+   function
+   | VInt x -> fprintf ppf "%d" x
+   | VBool b -> fprintf ppf "%b" b
+   | VString s -> fprintf ppf "%s" s
+   | VUnit -> fprintf ppf "()"
+   | VList vl ->
+   fprintf
+   ppf
+   "[%a]"
+   (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
+   vl
+   | VTuple vl ->
+   fprintf
+   ppf
+   "(%a)"
+   (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
+   vl
+   | VNil -> fprintf ppf "[]"
+   | VFun _ -> fprintf ppf "<fun>"
+   | VBuiltin _ -> fprintf ppf "<builtin>"
+   | VMutualFun _ -> fprintf ppf "<VMutualFun>"
+   | VOption vo ->
+   (match vo with
+   | Some v -> fprintf ppf "Some %a" pp_value v
+   | None -> fprintf ppf "None")
+   ;; *)
 
-let print_env env =
-  Format.printf "\nDEBUG ENV:\n";
-  Base.Map.iteri
-    ~f:(fun ~key ~data ->
-      Format.fprintf Format.std_formatter "%s : some_type = %a\n" key pp_value data)
-    env
-;;
+(* let print_env env =
+   Format.printf "\nDEBUG ENV:\n";
+   Base.Map.iteri
+   ~f:(fun ~key ~data ->
+   Format.fprintf Format.std_formatter "%s : some_type = %a\n" key pp_value data)
+   env
+   ;; *)
 
 module Env (M : MONAD_FAIL) = struct
   open M
