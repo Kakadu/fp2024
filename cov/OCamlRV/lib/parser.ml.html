@@ -698,30 +698,30 @@ open Base
 
 (*--------------------------- Common part ---------------------------*)
 
-let is_id c = <span data-count="43436">C</span>har.is_alphanu<span data-count="43436">m</span> <span data-count="33776">c</span> || Char.equa<span data-count="9660">l</span> c '_<span data-count="586">'</span> || Char.equal c '\''
+let is_id c = <span data-count="44548">C</span>har.is_alphanu<span data-count="44548">m</span> <span data-count="34580">c</span> || Char.equa<span data-count="9968">l</span> c '_<span data-count="598">'</span> || Char.equal c '\''
 
 let is_keyword = function
-  | <span data-count="248">"</span>let"
+  | <span data-count="262">"</span>let"
   | <span data-count="0">"</span>rec"
-  | <span data-count="16">"</span>in"
+  | <span data-count="24">"</span>in"
   | <span data-count="64">"</span>fun"
-  | <span data-count="638">"</span>match"
-  | <span data-count="638">"</span>with"
+  | <span data-count="662">"</span>match"
+  | <span data-count="662">"</span>with"
   | <span data-count="0">"</span>if"
   | <span data-count="272">"</span>then"
   | <span data-count="232">"</span>else"
-  | <span data-count="36">"</span>and"
+  | <span data-count="48">"</span>and"
   | <span data-count="8">"</span>not"
   | <span data-count="488">"</span>true"
   | <span data-count="628">"</span>false" -&gt; true
-  | <span data-count="5246">_</span> -&gt; false
+  | <span data-count="5450">_</span> -&gt; false
 ;;
 
 let ws = take_whil<span data-count="6">e</span> Char.is_whitespace
-let token s = <span data-count="15331">w</span>s *&gt; strin<span data-count="15331">g</span> s
+let token s = <span data-count="15717">w</span>s *&gt; strin<span data-count="15717">g</span> s
 
 let chainl1 e op =
-  <span data-count="16">l</span>et rec go acc = <span data-count="32840">l</span>ift<span data-count="32840">2</span> (fun f x -&gt; <span data-count="1208">f</span> acc x) op e &gt;&gt;<span data-count="32840">=</span> go &lt;|&gt; retur<span data-count="32840">n</span> acc in
+  <span data-count="16">l</span>et rec go acc = <span data-count="33668">l</span>ift<span data-count="33668">2</span> (fun f x -&gt; <span data-count="1316">f</span> acc x) op e &gt;&gt;<span data-count="33668">=</span> go &lt;|&gt; retur<span data-count="33668">n</span> acc in
   e &gt;&gt;= go
 ;;
 
@@ -729,10 +729,10 @@ let chainl1 e op =
 
 let integer =
   let* digits = ws *<span data-count="6">&gt;</span> take_while<span data-count="6">1</span> Char.is_digit in
-  <span data-count="1904">r</span>eturn (Int.of_strin<span data-count="1904">g</span> digits)
+  <span data-count="2024">r</span>eturn (Int.of_strin<span data-count="2024">g</span> digits)
 ;;
 
-let pinteger = integer &gt;&gt;<span data-count="6">|</span> fun i -&gt; <span data-count="1904">C</span>Int i
+let pinteger = integer &gt;&gt;<span data-count="6">|</span> fun i -&gt; <span data-count="2024">C</span>Int i
 
 let pbool =
   let t = toke<span data-count="6">n</span> "true" *&gt; retur<span data-count="6">n</span> (CBool true) in
@@ -794,27 +794,27 @@ let pattern_with_type ppat =
 (*--------------------------- Patterns ---------------------------*)
 
 let ppany = toke<span data-count="6">n</span> "_" *<span data-count="6">&gt;</span> retur<span data-count="6">n</span> PAny
-let ppconstant = pconstant &gt;&gt;<span data-count="6">|</span> fun a -&gt; <span data-count="1052">P</span>Constant a
+let ppconstant = pconstant &gt;&gt;<span data-count="6">|</span> fun a -&gt; <span data-count="1084">P</span>Constant a
 
 let variable =
   let* fst = ws *<span data-count="6">&gt;</span> peek_char_fail in
-  <span data-count="21064">m</span>atch fst with
-  | <span data-count="8514">'</span>a' .. 'z' | <span data-count="412">'</span>_' -&gt;
-    let* rest = take_whil<span data-count="8926">e</span> is_id in
-    <span data-count="8926">(</span>match rest with
+  <span data-count="21698">m</span>atch fst with
+  | <span data-count="8800">'</span>a' .. 'z' | <span data-count="412">'</span>_' -&gt;
+    let* rest = take_whil<span data-count="9212">e</span> is_id in
+    <span data-count="9212">(</span>match rest with
      | <span data-count="412">"</span>_" -&gt; fail "Wildcard can't be used as indetifier"
-     | <span data-count="8514">s</span> when is_keywor<span data-count="8514">d</span> s -&gt; <span data-count="3268">f</span>ail "Keyword can't be used as identifier"
-     | <span data-count="5246">n</span>ame -&gt; return name)
-  | <span data-count="12138">_</span> -&gt; fail "Invalid literal"
+     | <span data-count="8800">s</span> when is_keywor<span data-count="8800">d</span> s -&gt; <span data-count="3350">f</span>ail "Keyword can't be used as identifier"
+     | <span data-count="5450">n</span>ame -&gt; return name)
+  | <span data-count="12486">_</span> -&gt; fail "Invalid literal"
 ;;
 
-let ppvariable = variable &gt;&gt;<span data-count="6">|</span> fun v -&gt; <span data-count="1552">P</span>Var v
+let ppvariable = variable &gt;&gt;<span data-count="6">|</span> fun v -&gt; <span data-count="1624">P</span>Var v
 let pparens p = <span data-count="8">t</span>oke<span data-count="8">n</span> "(" *<span data-count="8">&gt;</span> p &lt;* toke<span data-count="8">n</span> ")"
 let brackets p = <span data-count="8">t</span>oke<span data-count="8">n</span> "[" *<span data-count="8">&gt;</span> p &lt;* toke<span data-count="8">n</span> "]"
 
 let pptuple ppattern =
   <span data-count="4">l</span>et* el1 = ws *<span data-count="4">&gt;</span> ppattern in
-  <span data-count="1568">l</span>et* el2 = toke<span data-count="1568">n</span> "," *<span data-count="1568">&gt;</span> ws *<span data-count="1568">&gt;</span> ppattern in
+  <span data-count="1620">l</span>et* el2 = toke<span data-count="1620">n</span> "," *<span data-count="1620">&gt;</span> ws *<span data-count="1620">&gt;</span> ppattern in
   <span data-count="26">l</span>et* rest = man<span data-count="26">y</span> (toke<span data-count="26">n</span> "," *<span data-count="26">&gt;</span> ppattern) in
   <span data-count="26">r</span>eturn (PTuple (el1, el2, rest))
 ;;
@@ -825,13 +825,13 @@ let pp_option pe = <span data-count="4">c</span>hoice [ pp_option_none; pp_optio
 
 let ppcons pe =
   <span data-count="4">l</span>et* e1 = pe in
-  <span data-count="1542">l</span>et* rest = man<span data-count="1542">y</span> (toke<span data-count="1542">n</span> "::" *<span data-count="1542">&gt;</span> pe) in
-  <span data-count="1542">l</span>et rec helper = function
+  <span data-count="1594">l</span>et* rest = man<span data-count="1594">y</span> (toke<span data-count="1594">n</span> "::" *<span data-count="1594">&gt;</span> pe) in
+  <span data-count="1594">l</span>et rec helper = function
     | <span data-count="0">[</span>] -&gt; e1
-    | <span data-count="1542">[</span> x ] -&gt; x
+    | <span data-count="1594">[</span> x ] -&gt; x
     | <span data-count="26">x</span> :: xs -&gt; PCons (x, helpe<span data-count="26">r</span> xs)
   in
-  return (helpe<span data-count="1542">r</span> (e1 :: rest))
+  return (helpe<span data-count="1594">r</span> (e1 :: rest))
 ;;
 
 let pplist pe =
@@ -862,10 +862,10 @@ let pattern =
 
 (*--------------------------- Expressions ---------------------------*)
 
-let ebinop op e1 e2 = <span data-count="844">E</span>xprBinOperation (op, e1, e2)
-let eapply e1 e2 = <span data-count="364">E</span>xprApply (e1, e2)
-let elet f b bl e = <span data-count="8">E</span>xprLet (f, b, bl, e)
-let efun p e = <span data-count="140">E</span>xprFun (p, e)
+let ebinop op e1 e2 = <span data-count="892">E</span>xprBinOperation (op, e1, e2)
+let eapply e1 e2 = <span data-count="424">E</span>xprApply (e1, e2)
+let elet f b bl e = <span data-count="12">E</span>xprLet (f, b, bl, e)
+let efun p e = <span data-count="152">E</span>xprFun (p, e)
 let eif e1 e2 e3 = <span data-count="136">E</span>xprIf (e1, e2, e3)
 let grd = toke<span data-count="6">n</span> "|"
 let punary_neg = toke<span data-count="6">n</span> "-" *<span data-count="6">&gt;</span> retur<span data-count="6">n</span> UnaryMinus
@@ -873,24 +873,24 @@ let punary_not = toke<span data-count="6">n</span> "not" *<span data-count="6">&
 let punary_add = toke<span data-count="6">n</span> "+" *<span data-count="6">&gt;</span> retur<span data-count="6">n</span> UnaryPlus
 let punary_op = choic<span data-count="6">e</span> [ punary_neg; punary_not; punary_add ]
 let peunop pe = <span data-count="4">l</span>ift2 (fun op e -&gt; <span data-count="40">E</span>xprUnOperation (op, e)) punary_op pe
-let pevar = variable &gt;&gt;<span data-count="6">|</span> fun v -&gt; <span data-count="3694">E</span>xprVariable v
-let peconstant = pconstant &gt;&gt;<span data-count="6">|</span> fun l -&gt; <span data-count="3766">E</span>xprConstant l
+let pevar = variable &gt;&gt;<span data-count="6">|</span> fun v -&gt; <span data-count="3826">E</span>xprVariable v
+let peconstant = pconstant &gt;&gt;<span data-count="6">|</span> fun l -&gt; <span data-count="3862">E</span>xprConstant l
 
 let ematch e = function
   | <span data-count="0">[</span>] -&gt; ExprOption None (* unreachable *)
   | <span data-count="256">[</span> x ] -&gt; ExprMatch (e, x, [])
-  | <span data-count="63">x</span> :: xs -&gt; ExprMatch (e, x, xs)
+  | <span data-count="75">x</span> :: xs -&gt; ExprMatch (e, x, xs)
 ;;
 
 let pematch pe =
   <span data-count="4">l</span>et pexpr = toke<span data-count="4">n</span> "match" *<span data-count="4">&gt;</span> pe &lt;<span data-count="4">*</span> toke<span data-count="4">n</span> "with" &lt;* optio<span data-count="4">n</span> "" grd in
-  <span data-count="4">l</span>et pcase = lift2 (fun p e -&gt; <span data-count="700">p</span>, e) (pattern &lt;<span data-count="4">*</span> toke<span data-count="4">n</span> "-&gt;") pe in
+  <span data-count="4">l</span>et pcase = lift2 (fun p e -&gt; <span data-count="724">p</span>, e) (pattern &lt;<span data-count="4">*</span> toke<span data-count="4">n</span> "-&gt;") pe in
   <span data-count="4">l</span>ift2 ematch pexpr (sep_by<span data-count="4">1</span> grd pcase)
 ;;
 
 let petuple pe =
   <span data-count="4">l</span>et* el1 = ws *<span data-count="4">&gt;</span> pe in
-  <span data-count="3513">l</span>et* el2 = toke<span data-count="3513">n</span> "," *<span data-count="3513">&gt;</span> ws *<span data-count="3513">&gt;</span> pe in
+  <span data-count="3591">l</span>et* el2 = toke<span data-count="3591">n</span> "," *<span data-count="3591">&gt;</span> ws *<span data-count="3591">&gt;</span> pe in
   <span data-count="50">l</span>et* rest = man<span data-count="50">y</span> (toke<span data-count="50">n</span> "," *<span data-count="50">&gt;</span> pe) in
   <span data-count="50">r</span>eturn (ExprTuple (el1, el2, rest))
 ;;
@@ -905,13 +905,13 @@ let pelist pe =
 
 let pecons pe =
   <span data-count="4">l</span>et* e1 = pe in
-  <span data-count="8122">l</span>et* rest = man<span data-count="8122">y</span> (toke<span data-count="8122">n</span> "::" *<span data-count="8122">&gt;</span> pe) in
-  <span data-count="8122">l</span>et rec helper = function
+  <span data-count="8326">l</span>et* rest = man<span data-count="8326">y</span> (toke<span data-count="8326">n</span> "::" *<span data-count="8326">&gt;</span> pe) in
+  <span data-count="8326">l</span>et rec helper = function
     | <span data-count="0">[</span>] -&gt; e1
-    | <span data-count="8122">[</span> x ] -&gt; x
+    | <span data-count="8326">[</span> x ] -&gt; x
     | <span data-count="116">x</span> :: xs -&gt; ExprCons (x, helpe<span data-count="116">r</span> xs)
   in
-  return (helpe<span data-count="8122">r</span> (e1 :: rest))
+  return (helpe<span data-count="8326">r</span> (e1 :: rest))
 ;;
 
 let padd = toke<span data-count="6">n</span> "+" *<span data-count="6">&gt;</span> retur<span data-count="6">n</span> (ebino<span data-count="6">p</span> Add)
@@ -934,15 +934,15 @@ let pcmp =
 
 let get_rec_keyword =
   let* r = ws *<span data-count="6">&gt;</span> take_while<span data-count="6">1</span> is_id in
-  <span data-count="208">i</span>f String.compar<span data-count="208">e</span> r "rec" = 0 then <span data-count="46">r</span>eturn true else <span data-count="162">f</span>ail "There in no 'rec' keyword."
+  <span data-count="214">i</span>f String.compar<span data-count="214">e</span> r "rec" = 0 then <span data-count="52">r</span>eturn true else <span data-count="162">f</span>ail "There in no 'rec' keyword."
 ;;
 
 let parse_rec_flag =
   let* is_rec = get_rec_keyword &lt;|<span data-count="6">&gt;</span> retur<span data-count="6">n</span> false in
-  <span data-count="240">i</span>f is_rec then <span data-count="46">r</span>eturn Rec else <span data-count="194">r</span>eturn NonRec
+  <span data-count="250">i</span>f is_rec then <span data-count="52">r</span>eturn Rec else <span data-count="198">r</span>eturn NonRec
 ;;
 
-let efunf ps e = <span data-count="288">L</span>ist.fold_right ps ~f:efun ~init:e
+let efunf ps e = <span data-count="304">L</span>ist.fold_right ps ~f:efun ~init:e
 let pbinding pe = <span data-count="20">b</span>oth pattern (lift<span data-count="20">2</span> efunf (man<span data-count="20">y</span> pattern &lt;<span data-count="20">*</span> toke<span data-count="20">n</span> "=") pe)
 
 let pelet pe =
@@ -989,10 +989,10 @@ let expr =
 (*--------------------------- Structure ---------------------------*)
 
 let pstructure =
-  let pseval = expr &gt;&gt;| fun e -&gt; <span data-count="35">S</span>Eval e in
+  let pseval = expr &gt;&gt;| fun e -&gt; <span data-count="37">S</span>Eval e in
   <span data-count="6">l</span>et psvalue =
     lift3
-      (fun f b bl -&gt; <span data-count="116">S</span>Value (f, b, bl))
+      (fun f b bl -&gt; <span data-count="119">S</span>Value (f, b, bl))
       (toke<span data-count="6">n</span> "let" *<span data-count="6">&gt;</span> parse_rec_flag)
       (pbindin<span data-count="6">g</span> expr)
       (man<span data-count="6">y</span> (toke<span data-count="6">n</span> "and" *<span data-count="6">&gt;</span> pbindin<span data-count="6">g</span> expr))
@@ -1005,7 +1005,7 @@ let structure =
   <span data-count="6">m</span>an<span data-count="6">y</span> (pstructure &lt;<span data-count="6">*</span> psemicolon &lt;<span data-count="6">*</span> ws &lt;|<span data-count="6">&gt;</span> (pstructure &lt;<span data-count="6">*</span> ws))
 ;;
 
-let parse s = <span data-count="73">p</span>arse_string ~consume:All structure s
+let parse s = <span data-count="75">p</span>arse_string ~consume:All structure s
 
 let parse_to_string input =
   <span data-count="0">m</span>atch parse input with
