@@ -40,13 +40,13 @@ let rec pp_core_type_deep n ppf = function
   | Type_bool -> fprintf ppf "bool"
   | Type_option type' -> fprintf ppf "%a option" (pp_core_type_deep 2) type'
   | Type_var id ->
-    let pp_type_name = fprintf ppf "%s" in
+    let pp_type_var = fprintf ppf "%s" in
     if String.length id > 1
     then (
       match String.get id 0 with
       | '\'' -> pp_ident ppf id
-      | _ -> pp_type_name id)
-    else pp_type_name id
+      | _ -> pp_type_var id)
+    else pp_type_var id
   | Type_list type' -> fprintf ppf "%a list" (pp_core_type_deep 2) type'
   | Type_tuple (fst_type, snd_type, type_list) ->
     if n = 2 then fprintf ppf "(";
@@ -67,7 +67,7 @@ let pp_core_type = pp_core_type_deep 0
 
 let rec pp_pattern_deep need_parens ppf = function
   | Pat_any -> fprintf ppf "_"
-  | Pat_var id -> pp_ident ppf id
+  | Pat_var var -> pp_ident ppf var
   | Pat_constant const -> pp_constant ppf const
   | Pat_tuple (fst_pat, snd_pat, pat_list) ->
     pp_open_hvbox ppf 0;
@@ -91,7 +91,7 @@ let rec pp_pattern_deep need_parens ppf = function
     pp_tail tail
   | Pat_construct (tag, None) -> fprintf ppf "%s" tag
   | Pat_construct ("Some", Some pat) -> fprintf ppf "Some (%a)" (pp_pattern_deep true) pat
-  | Pat_construct (_, _) -> ()
+  | Pat_construct _ -> ()
   | Pat_constraint (pat, core_type) ->
     if need_parens then fprintf ppf "(";
     fprintf ppf "@[%a@ :@ %a@]" (pp_pattern_deep true) pat pp_core_type core_type;
@@ -166,7 +166,7 @@ let rec pp_expression_deep need_cut need_parens ppf = function
   | Exp_construct (tag, None) -> fprintf ppf "%s" tag
   | Exp_construct ("Some", Some exp) ->
     fprintf ppf "Some (%a)" (pp_expression_deep false true) exp
-  | Exp_construct (_, _) -> ()
+  | Exp_construct _ -> ()
   | Exp_ifthenelse (exp1, exp2, None) ->
     if need_parens then fprintf ppf "(";
     pp_open_box ppf 0;
@@ -252,7 +252,7 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
 and pp_value_binding ppf =
   pp_open_hvbox ppf 0;
   function
-  | { pat = pat_fun; exp = Exp_fun (pat, pat_list, exp) } ->
+  | { pat = pat_var; exp = Exp_fun (pat, pat_list, exp) } ->
     let pp_pattern_arg () =
       fprintf
         ppf
@@ -260,13 +260,13 @@ and pp_value_binding ppf =
         (pp_print_list ~pp_sep:pp_print_space (pp_pattern_deep true))
         (pat :: pat_list)
     in
-    (match pat_fun with
-     | Pat_constraint (name, type') ->
-       fprintf ppf "%a@ " pp_pattern name;
+    (match pat_var with
+     | Pat_constraint (pat, type') ->
+       fprintf ppf "%a@ " pp_pattern pat;
        pp_pattern_arg ();
        fprintf ppf "@ : %a" pp_core_type type'
      | _ ->
-       fprintf ppf "%a@ " pp_pattern pat_fun;
+       fprintf ppf "%a@ " pp_pattern pat_var;
        pp_pattern_arg ());
     fprintf ppf "@ =@]@ ";
     fprintf ppf "@[<hv>%a@]@]" (pp_expression_deep false false) exp

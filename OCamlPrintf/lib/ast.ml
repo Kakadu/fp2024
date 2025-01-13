@@ -67,7 +67,7 @@ let gen_ident =
             ; return '\''
             ]))
   in
-  gen_var >>= fun name -> if is_keyword name then gen_var else return name
+  gen_var >>= fun var -> if is_keyword var then gen_var else return var
 ;;
 
 type ident = (string[@gen gen_ident]) [@@deriving show { with_path = false }, qcheck]
@@ -85,7 +85,8 @@ type constant =
 
 let gen_type_var =
   map3
-    (fun fst_char snd_char rest_str -> Printf.sprintf "'%c%c%s" fst_char snd_char rest_str)
+    (fun fst_char snd_char rest_str ->
+      Printf.sprintf "'%c%c%s" fst_char snd_char rest_str)
     (oneof [ char_range 'a' 'z' ])
     (oneof [ char_range '0' '9'; char_range 'A' 'Z'; char_range 'a' 'z'; return '_' ])
     (gen_string
@@ -170,7 +171,7 @@ type 'exp case =
 module Expression = struct
   let gen_value_binding gen n fix_exp_fun =
     oneof
-      [ map2 (fun id exp -> { pat = Pat_var id; exp }) gen_ident (gen (n / coef))
+      [ map2 (fun var exp -> { pat = Pat_var var; exp }) gen_ident (gen (n / coef))
       ; map3
           (fun id type' exp -> { pat = Pat_constraint (Pat_var id, type'); exp })
           gen_ident
@@ -182,8 +183,8 @@ module Expression = struct
 
   let gen_exp_apply gen n exp_ident exp_apply =
     oneof
-      [ map2 (fun exp fst_exp -> exp, fst_exp) (gen 0) (gen (n / coef))
-      ; map (fun exp -> exp_ident un_op, exp) (gen (n / coef))
+      [ map2 (fun id arg -> exp_ident id, arg) gen_ident (gen (n / coef))
+      ; map (fun opn -> exp_ident un_op, opn) (gen (n / coef))
       ; map3
           (fun opr opn1 opn2 -> opr, exp_apply (opn1, opn2))
           (oneofl (List.map (fun (opr, _) -> exp_ident opr) bin_op_list))
