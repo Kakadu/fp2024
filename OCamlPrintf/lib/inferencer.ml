@@ -396,8 +396,7 @@ module Infer = struct
     | Pat_constraint (pat, c_ty) ->
       let* env, ty = infer_pattern env pat in
       let* unified_sub = unify ty c_ty in
-      let env = TypeEnv.apply unified_sub env in
-      return (env, c_ty)
+      return (TypeEnv.apply unified_sub env, Subst.apply unified_sub ty)
   ;;
 
   let extend_env_with_bind_names env value_binding_list =
@@ -488,9 +487,9 @@ module Infer = struct
       let* sub1, ty1 = infer_expression env exp1 in
       let* sub2, ty2 = infer_expression (TypeEnv.apply sub1 env) exp2 in
       let* required_arg_ty, required_result_ty =
-        match get_priority opr with
-        | 1 | 2 -> return (Type_int, Type_int)
-        | 3 ->
+        match opr with
+        | "*" | "/" | "+" | "-" -> return (Type_int, Type_int)
+        | ">=" | "<=" | "<>" | "=" | ">" | "<" ->
           let* fresh = fresh_var in
           return (fresh, Type_bool)
         | _ -> return (Type_bool, Type_bool)
@@ -616,7 +615,7 @@ module Infer = struct
       let* sub, ty = infer_expression env exp in
       let* unified_sub = unify ty c_ty in
       let* final_sub = Subst.compose unified_sub sub in
-      return (final_sub, ty)
+      return (final_sub, Subst.apply unified_sub ty)
 
   and infer_match_exp env ~with_exp match_exp_sub match_exp_ty result_ty case_list =
     let* cases_sub, case_ty =
@@ -625,7 +624,7 @@ module Infer = struct
         ~init:(return (match_exp_sub, result_ty))
         ~f:(fun acc { left = pat; right = case_exp } ->
           let* sub_acc, ty_acc = return acc in
-          let* env, pat_ty =
+          let* env, pat_sub =
             let* env, pat_ty = infer_pattern env pat in
             let* unified_sub1 = unify match_exp_ty pat_ty in
             let* pat_names =
@@ -649,15 +648,15 @@ module Infer = struct
               return (env, unified_sub1))
             else return (env, unified_sub1)
           in
-          let* composed_sub1 = Subst.compose sub_acc pat_ty in
+          let* composed_sub1 = Subst.compose sub_acc pat_sub in
           let* case_exp_sub, case_exp_ty =
             infer_expression (TypeEnv.apply composed_sub1 env) case_exp
           in
           let* unified_sub2 = unify ty_acc case_exp_ty in
-          let* composed_ty2 =
+          let* composed_sub2 =
             Subst.compose_all [ composed_sub1; case_exp_sub; unified_sub2 ]
           in
-          return (composed_ty2, Subst.apply composed_ty2 ty_acc))
+          return (composed_sub2, Subst.apply composed_sub2 ty_acc))
     in
     let final_ty =
       if with_exp

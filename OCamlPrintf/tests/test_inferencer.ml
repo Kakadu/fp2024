@@ -272,6 +272,21 @@ let%expect_test "type check pattern constraint" =
   |}]
 ;;
 
+let%expect_test "type check pattern constraint with type var" =
+  run
+    {|
+  let f1 (q : 'a -> 'b) (x : 'a) = q x;;
+  let f2 (q : 'a -> 'b) (x : 'b) = q x;;
+  let f3 (q : 'a -> 'b) (x : 'c) = q x;;
+  |};
+  [%expect
+    {|
+  val f1 : ('b -> 'a) -> 'b -> 'a
+  val f2 : ('a -> 'a) -> 'a -> 'a
+  val f3 : ('b -> 'a) -> 'b -> 'a
+  |}]
+;;
+
 let%expect_test "type check recursive struct value" =
   run
     {|

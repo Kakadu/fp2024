@@ -83,7 +83,7 @@ type constant =
   | Const_string of (string[@gen gen_string gen_char])
 [@@deriving show { with_path = false }, qcheck]
 
-let gen_type_name =
+let gen_type_var =
   map3
     (fun fst_char snd_char rest_str -> Printf.sprintf "%c%c%s" fst_char snd_char rest_str)
     (oneof [ char_range 'a' 'z' ])
@@ -106,7 +106,7 @@ type core_type =
   | Type_string
   | Type_bool
   | Type_option of (core_type[@gen gen_core_type_sized (n / coef)])
-  | Type_var of (ident[@gen gen_type_name])
+  | Type_var of (ident[@gen gen_type_var])
   | Type_list of (core_type[@gen gen_core_type_sized (n / coef)])
   | Type_tuple of
       (core_type[@gen gen_core_type_sized (n / coef)])

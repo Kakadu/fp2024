@@ -139,7 +139,7 @@ let parse_constant =
 
 (* The id obtained from parser is stored without first char ', while the id from
    inferencer is stored with ', so that there is no confusion when inferring types. *)
-let parse_type_name =
+let parse_type_var =
   ws
   *> string "'"
   *>
@@ -149,17 +149,25 @@ let parse_type_name =
       | _ -> false)
     >>| String.of_char
   in
-  let* snd_char =
-    take_while (function
-      | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' -> true
-      | _ -> false)
+  let* is_valid_snd_char =
+    peek_char
+    >>| function
+    | Some snd_char ->
+      (match snd_char with
+       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' -> true
+       | char' when is_separator char' -> true
+       | _ -> false)
+    | _ -> true
   in
   let* rest_str =
     take_while (function
       | 'A' .. 'Z' | 'a' .. 'z' | '0' .. '9' | '_' | '\'' -> true
       | _ -> false)
   in
-  return (Type_var (fst_char ^ snd_char ^ rest_str))
+  let type_var = fst_char ^ rest_str in
+  if is_valid_snd_char && not (is_keyword type_var)
+  then return (Type_var type_var)
+  else fail (Printf.sprintf "Impossible type name: %S." type_var)
 ;;
 
 let parse_base_type =
@@ -202,7 +210,7 @@ let parse_core_type =
   ws
   *> fix (fun parse_full_type ->
     let parse_type =
-      choice [ parse_base_type; parse_type_name; skip_parens parse_full_type ]
+      choice [ parse_base_type; parse_type_var; skip_parens parse_full_type ]
     in
     let parse_type = parse_list_or_option_type parse_type <|> parse_type in
     let parse_type = parse_tuple_type parse_type <|> parse_type in
