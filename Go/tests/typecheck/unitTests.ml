@@ -24,7 +24,8 @@ let pp str =
         | Type_check_error (Cannot_assign msg) -> prerr_endline ("Cannot assign: " ^ msg)
         | Type_check_error (Missing_return msg) -> prerr_endline ("Missing return: " ^ msg)
         | Type_check_error (Invalid_operation msg) ->
-          prerr_endline ("Missing return: " ^ msg)))
+          prerr_endline ("Missing return: " ^ msg)
+        | _ -> ()))
   | Error _ -> print_endline ": syntax error"
 ;;
 

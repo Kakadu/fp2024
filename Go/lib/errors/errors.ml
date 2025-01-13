@@ -12,6 +12,15 @@ type type_check_error =
   | Invalid_operation of string
 [@@deriving show { with_path = false }]
 
-type error = Type_check_error of type_check_error
-(* | Eval_error *)
+type runtime_error =
+  | Stack_overflow
+  | Division_by_zero
+  | Array_index_out_of_bound
+  | Deadlock
+  | Panic of string
+[@@deriving show { with_path = false }]
+
+type error =
+  | Type_check_error of type_check_error
+  | Runtime_error of runtime_error
 [@@deriving show { with_path = false }]
