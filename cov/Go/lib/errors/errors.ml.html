@@ -18,13 +18,15 @@
       <h2>0.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:31.25%"></span>
-      <span class="unvisited" style="top:43.75%"></span>
+      <span class="unvisited" style="top:27.78%"></span>
+      <span class="unvisited" style="top:38.89%"></span>
+      <span class="unvisited" style="top:44.44%"></span>
       <span class="unvisited" style="top:50.00%"></span>
-      <span class="unvisited" style="bottom:43.75%"></span>
-      <span class="unvisited" style="bottom:37.50%"></span>
-      <span class="unvisited" style="bottom:31.25%"></span>
-      <span class="unvisited" style="bottom:12.50%"></span>
+      <span class="unvisited" style="bottom:44.44%"></span>
+      <span class="unvisited" style="bottom:38.89%"></span>
+      <span class="unvisited" style="bottom:33.33%"></span>
+      <span class="unvisited" style="bottom:27.78%"></span>
+      <span class="unvisited" style="bottom:11.11%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -40,11 +42,13 @@
 <a id="L9"></a><span class="unvisited"> </span>
 <a id="L10"></a><span class="unvisited"> </span>
 <a id="L11"></a><span class="unvisited"> </span>
-<a id="L12"></a><span > </span>
-<a id="L13"></a><span > </span>
-<a id="L14"></a><span class="unvisited"> </span>
+<a id="L12"></a><span class="unvisited"> </span>
+<a id="L13"></a><span class="unvisited"> </span>
+<a id="L14"></a><span > </span>
 <a id="L15"></a><span > </span>
-<a id="L16"></a><span > </span>
+<a id="L16"></a><span class="unvisited"> </span>
+<a id="L17"></a><span > </span>
+<a id="L18"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -65,18 +69,22 @@
 <a href="#L14">14</a>
 <a href="#L15">15</a>
 <a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
 <span data-count="0">t</span>ype type_check_error =
-  | Check_failed (*Inner error to match errors inside typechecker*)
-  | Incorrect_main of strin<span data-count="0">g</span> (*No main/main with returns or args*)
-  | Multiple_declaration of strin<span data-count="0">g</span> (*Multiple declaration of ident*)
-  | Undefined_ident of strin<span data-count="0">g</span> (*No declaration of ident in current sapce*)
-  | Mismatched_types of strin<span data-count="0">g</span> (*Mismatched types in binoper/assign/return...*)
-  | Cannot_assign of strin<span data-count="0">g</span> (*Error with assigning a multiple-return value*)
+  | Check_failed
+  | Incorrect_main of strin<span data-count="0">g</span>
+  | Multiple_declaration of strin<span data-count="0">g</span>
+  | Undefined_ident of strin<span data-count="0">g</span>
+  | Mismatched_types of strin<span data-count="0">g</span>
+  | Cannot_assign of strin<span data-count="0">g</span>
+  | Missing_return of strin<span data-count="0">g</span>
+  | Invalid_operation of strin<span data-count="0">g</span>
 [@@deriving show { with_path = false }]
 
 <span data-count="0">t</span>ype error = Type_check_error of type_check_error

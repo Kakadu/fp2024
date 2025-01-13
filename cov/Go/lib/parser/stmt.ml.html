@@ -479,31 +479,31 @@ open Common
 open Expr
 
 let rec combine_lists l1 l2 =
-  <span data-count="601">m</span>atch l1, l2 with
-  | <span data-count="296">[</span>], [] -&gt; []
-  | <span data-count="305">x</span> :: xs, y :: ys -&gt; (x, y) :: combine_list<span data-count="305">s</span> xs ys
+  <span data-count="614">m</span>atch l1, l2 with
+  | <span data-count="307">[</span>], [] -&gt; []
+  | <span data-count="307">x</span> :: xs, y :: ys -&gt; (x, y) :: combine_list<span data-count="307">s</span> xs ys
   | <span data-count="0">_</span>, _ -&gt; []
 ;;
 
 let parse_lvalues = sep_by_comma<span data-count="10">1</span> parse_ident
-let parse_rvalues pblock = <span data-count="476">s</span>ep_by_comma1 (parse_exp<span data-count="476">r</span> pblock)
+let parse_rvalues pblock = <span data-count="491">s</span>ep_by_comma1 (parse_exp<span data-count="491">r</span> pblock)
 
 let parse_long_var_decl pblock =
   <span data-count="25">l</span>et* () = strin<span data-count="25">g</span> "var" *<span data-count="25">&gt;</span> ws in
-  <span data-count="194">l</span>et* lvalues = parse_lvalues &lt;<span data-count="194">*</span> ws_line in
-  <span data-count="192">l</span>et* vars_type = parse_type &gt;&gt;<span data-count="192">|</span> (fun t -&gt; <span data-count="143">S</span>ome t) &lt;|<span data-count="192">&gt;</span> retur<span data-count="192">n</span> None in
-  <span data-count="192">l</span>et* with_init = ws_line *<span data-count="192">&gt;</span> cha<span data-count="192">r</span> '=' *<span data-count="192">&gt;</span> ws *<span data-count="192">&gt;</span> retur<span data-count="192">n</span> true &lt;|<span data-count="192">&gt;</span> retur<span data-count="192">n</span> false in
-  <span data-count="192">i</span>f not with_init
-  then <span data-count="64">(</span>
+  <span data-count="199">l</span>et* lvalues = parse_lvalues &lt;<span data-count="199">*</span> ws_line in
+  <span data-count="197">l</span>et* vars_type = parse_type &gt;&gt;<span data-count="197">|</span> (fun t -&gt; <span data-count="148">S</span>ome t) &lt;|<span data-count="197">&gt;</span> retur<span data-count="197">n</span> None in
+  <span data-count="197">l</span>et* with_init = ws_line *<span data-count="197">&gt;</span> cha<span data-count="197">r</span> '=' *<span data-count="197">&gt;</span> ws *<span data-count="197">&gt;</span> retur<span data-count="197">n</span> true &lt;|<span data-count="197">&gt;</span> retur<span data-count="197">n</span> false in
+  <span data-count="197">i</span>f not with_init
+  then <span data-count="67">(</span>
     match vars_type, lvalues with
-    | <span data-count="63">S</span>ome t, hd :: tl -&gt; return (Long_decl_no_init (t, hd, tl))
+    | <span data-count="66">S</span>ome t, hd :: tl -&gt; return (Long_decl_no_init (t, hd, tl))
     | <span data-count="1">_</span> -&gt; fail)
   else
-    <span data-count="128">l</span>et* rvalues = parse_rvalue<span data-count="128">s</span> pblock in
-    <span data-count="128">l</span>et* () = fail_i<span data-count="128">f</span> (Base.List.is_empt<span data-count="128">y</span> lvalues) in
-    <span data-count="128">m</span>atch lvalues, rvalues, List.lengt<span data-count="128">h</span> lvalues = List.lengt<span data-count="128">h</span> rvalues with
-    | <span data-count="88">l</span>hd :: ltl, rhd :: rtl, true -&gt;
-      return (Long_decl_mult_init (vars_type, (lhd, rhd), combine_list<span data-count="88">s</span> ltl rtl))
+    <span data-count="130">l</span>et* rvalues = parse_rvalue<span data-count="130">s</span> pblock in
+    <span data-count="130">l</span>et* () = fail_i<span data-count="130">f</span> (Base.List.is_empt<span data-count="130">y</span> lvalues) in
+    <span data-count="130">m</span>atch lvalues, rvalues, List.lengt<span data-count="130">h</span> lvalues = List.lengt<span data-count="130">h</span> rvalues with
+    | <span data-count="90">l</span>hd :: ltl, rhd :: rtl, true -&gt;
+      return (Long_decl_mult_init (vars_type, (lhd, rhd), combine_list<span data-count="90">s</span> ltl rtl))
     | <span data-count="40">l</span>fst :: lsnd :: ltl, rhd :: _, false -&gt;
       let* () = fail_i<span data-count="40">f</span> (List.lengt<span data-count="40">h</span> rvalues &lt;&gt; 1) in
       <span data-count="39">(</span>match rhd with
@@ -513,12 +513,12 @@ let parse_long_var_decl pblock =
 ;;
 
 let parse_short_var_decl pblock =
-  <span data-count="240">l</span>et* lvalues = parse_lvalues in
-  <span data-count="2499">l</span>et* () = ws_line *<span data-count="2499">&gt;</span> strin<span data-count="2499">g</span> ":=" *<span data-count="2499">&gt;</span> ws in
-  <span data-count="202">l</span>et* rvalues = parse_rvalue<span data-count="202">s</span> pblock in
-  <span data-count="201">m</span>atch lvalues, rvalues, List.lengt<span data-count="201">h</span> lvalues = List.lengt<span data-count="201">h</span> rvalues with
-  | <span data-count="134">l</span>hd :: ltl, rhd :: rtl, true -&gt;
-    return (Short_decl_mult_init ((lhd, rhd), combine_list<span data-count="134">s</span> ltl rtl))
+  <span data-count="245">l</span>et* lvalues = parse_lvalues in
+  <span data-count="2526">l</span>et* () = ws_line *<span data-count="2526">&gt;</span> strin<span data-count="2526">g</span> ":=" *<span data-count="2526">&gt;</span> ws in
+  <span data-count="210">l</span>et* rvalues = parse_rvalue<span data-count="210">s</span> pblock in
+  <span data-count="209">m</span>atch lvalues, rvalues, List.lengt<span data-count="209">h</span> lvalues = List.lengt<span data-count="209">h</span> rvalues with
+  | <span data-count="142">l</span>hd :: ltl, rhd :: rtl, true -&gt;
+    return (Short_decl_mult_init ((lhd, rhd), combine_list<span data-count="142">s</span> ltl rtl))
   | <span data-count="67">l</span>fst :: lsnd :: ltl, rhd :: _, false -&gt;
     let* () = fail_i<span data-count="67">f</span> (List.lengt<span data-count="67">h</span> rvalues &lt;&gt; 1) in
     <span data-count="66">(</span>match rhd with
@@ -530,24 +530,24 @@ let parse_short_var_decl pblock =
 (** [parse_assign_lvalues pblock] parses {i one} or more assign lvalues
     separated by comma such as: [a], [a, b], [a[][]], [a[], b] *)
 let parse_assign_lvalues pblock =
-  <span data-count="240">l</span>et parse_lvalue =
+  <span data-count="245">l</span>et parse_lvalue =
     let rec helper acc =
-      <span data-count="903">p</span>arse_inde<span data-count="903">x</span> (parse_exp<span data-count="903">r</span> pblock) acc
-      &gt;&gt;<span data-count="903">=</span> (fun (array, index) -&gt; <span data-count="310">h</span>elper (Lvalue_array_index (array, index)))
-      &lt;|&gt; retur<span data-count="903">n</span> acc
+      <span data-count="909">p</span>arse_inde<span data-count="909">x</span> (parse_exp<span data-count="909">r</span> pblock) acc
+      &gt;&gt;<span data-count="909">=</span> (fun (array, index) -&gt; <span data-count="310">h</span>elper (Lvalue_array_index (array, index)))
+      &lt;|&gt; retur<span data-count="909">n</span> acc
     in
-    parse_ident &gt;&gt;<span data-count="240">=</span> fun ident -&gt; <span data-count="593">h</span>elper (Lvalue_ident ident)
+    parse_ident &gt;&gt;<span data-count="245">=</span> fun ident -&gt; <span data-count="599">h</span>elper (Lvalue_ident ident)
   in
   sep_by_comma1 parse_lvalue
 ;;
 
 let parse_assign pblock =
-  <span data-count="240">l</span>et* lvalues = parse_assign_lvalue<span data-count="240">s</span> pblock in
-  <span data-count="290">l</span>et* () = ws_line *<span data-count="290">&gt;</span> cha<span data-count="290">r</span> '=' *<span data-count="290">&gt;</span> ws in
-  <span data-count="146">l</span>et* rvalues = parse_rvalue<span data-count="146">s</span> pblock in
-  <span data-count="142">m</span>atch lvalues, rvalues, List.lengt<span data-count="142">h</span> lvalues = List.lengt<span data-count="142">h</span> rvalues with
-  | <span data-count="74">l</span>hd :: ltl, rhd :: rtl, true -&gt;
-    return (Assign_mult_expr ((lhd, rhd), combine_list<span data-count="74">s</span> ltl rtl))
+  <span data-count="245">l</span>et* lvalues = parse_assign_lvalue<span data-count="245">s</span> pblock in
+  <span data-count="296">l</span>et* () = ws_line *<span data-count="296">&gt;</span> cha<span data-count="296">r</span> '=' *<span data-count="296">&gt;</span> ws in
+  <span data-count="151">l</span>et* rvalues = parse_rvalue<span data-count="151">s</span> pblock in
+  <span data-count="143">m</span>atch lvalues, rvalues, List.lengt<span data-count="143">h</span> lvalues = List.lengt<span data-count="143">h</span> rvalues with
+  | <span data-count="75">l</span>hd :: ltl, rhd :: rtl, true -&gt;
+    return (Assign_mult_expr ((lhd, rhd), combine_list<span data-count="75">s</span> ltl rtl))
   | <span data-count="68">l</span>fst :: lsnd :: ltl, rhd :: _, false -&gt;
     let* () = fail_i<span data-count="68">f</span> (List.lengt<span data-count="68">h</span> rvalues &lt;&gt; 1) in
     <span data-count="67">(</span>match rhd with
@@ -560,14 +560,14 @@ let parse_incr = parse_ident &lt;<span data-count="10">*</span> ws_line &lt;<spa
 let parse_decr = parse_ident &lt;<span data-count="10">*</span> ws_line &lt;<span data-count="10">*</span> strin<span data-count="10">g</span> "--"
 
 let parse_func_call pblock =
-  <span data-count="270">p</span>arse_exp<span data-count="270">r</span> pblock
+  <span data-count="275">p</span>arse_exp<span data-count="275">r</span> pblock
   &gt;&gt;= function
-  | <span data-count="249">E</span>xpr_call call -&gt; return call
-  | <span data-count="203">_</span> -&gt; fail
+  | <span data-count="259">E</span>xpr_call call -&gt; return call
+  | <span data-count="209">_</span> -&gt; fail
 ;;
 
 let parse_defer pblock =
-  <span data-count="15">s</span>trin<span data-count="15">g</span> "defer" *<span data-count="15">&gt;</span> ws *<span data-count="15">&gt;</span> parse_func_cal<span data-count="15">l</span> pblock &gt;&gt;| fun call -&gt; <span data-count="46">S</span>tmt_defer call
+  <span data-count="15">s</span>trin<span data-count="15">g</span> "defer" *<span data-count="15">&gt;</span> ws *<span data-count="15">&gt;</span> parse_func_cal<span data-count="15">l</span> pblock &gt;&gt;| fun call -&gt; <span data-count="47">S</span>tmt_defer call
 ;;
 
 let parse_go pblock =
@@ -575,56 +575,56 @@ let parse_go pblock =
 ;;
 
 let parse_chan_send pblock =
-  <span data-count="240">l</span>et* chan = parse_ident in
-  <span data-count="306">l</span>et* expr = toke<span data-count="306">n</span> "&lt;-" *<span data-count="306">&gt;</span> parse_exp<span data-count="306">r</span> pblock in
-  <span data-count="121">r</span>eturn (chan, expr)
+  <span data-count="245">l</span>et* chan = parse_ident in
+  <span data-count="323">l</span>et* expr = toke<span data-count="323">n</span> "&lt;-" *<span data-count="323">&gt;</span> parse_exp<span data-count="323">r</span> pblock in
+  <span data-count="123">r</span>eturn (chan, expr)
 ;;
 
 let parse_chan_receive pblock =
-  <span data-count="240">l</span>et* chan = strin<span data-count="240">g</span> "&lt;-" *<span data-count="240">&gt;</span> ws *<span data-count="240">&gt;</span> parse_exp<span data-count="240">r</span> pblock in
+  <span data-count="245">l</span>et* chan = strin<span data-count="245">g</span> "&lt;-" *<span data-count="245">&gt;</span> ws *<span data-count="245">&gt;</span> parse_exp<span data-count="245">r</span> pblock in
   <span data-count="115">r</span>eturn chan
 ;;
 
 let parse_return pblock =
   <span data-count="15">s</span>trin<span data-count="15">g</span> "return" *<span data-count="15">&gt;</span> ws_line *<span data-count="15">&gt;</span> sep_by_comm<span data-count="15">a</span> (parse_exp<span data-count="15">r</span> pblock)
-  &gt;&gt;| fun expr_list -&gt; <span data-count="155">S</span>tmt_return expr_list
+  &gt;&gt;| fun expr_list -&gt; <span data-count="163">S</span>tmt_return expr_list
 ;;
 
 let parse_if_for_init pblock =
-  <span data-count="225">c</span>hoice
-    [ (parse_short_var_dec<span data-count="225">l</span> pblock &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="37">I</span>nit_decl s)
-    ; (parse_assig<span data-count="225">n</span> pblock &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="36">I</span>nit_assign s)
-    ; (parse_incr &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="35">I</span>nit_incr s)
-    ; (parse_decr &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="48">I</span>nit_decr s)
-    ; (parse_func_cal<span data-count="225">l</span> pblock &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="46">I</span>nit_call s)
-    ; (parse_chan_sen<span data-count="225">d</span> pblock &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="26">I</span>nit_send s)
-    ; (parse_chan_receiv<span data-count="225">e</span> pblock &gt;&gt;<span data-count="225">|</span> fun s -&gt; <span data-count="38">I</span>nit_receive s)
+  <span data-count="230">c</span>hoice
+    [ (parse_short_var_dec<span data-count="230">l</span> pblock &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="37">I</span>nit_decl s)
+    ; (parse_assig<span data-count="230">n</span> pblock &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="36">I</span>nit_assign s)
+    ; (parse_incr &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="35">I</span>nit_incr s)
+    ; (parse_decr &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="48">I</span>nit_decr s)
+    ; (parse_func_cal<span data-count="230">l</span> pblock &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="46">I</span>nit_call s)
+    ; (parse_chan_sen<span data-count="230">d</span> pblock &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="26">I</span>nit_send s)
+    ; (parse_chan_receiv<span data-count="230">e</span> pblock &gt;&gt;<span data-count="230">|</span> fun s -&gt; <span data-count="38">I</span>nit_receive s)
     ]
 ;;
 
 let parse_if pblock =
   <span data-count="15">f</span>ix (fun parse_if -&gt;
     <span data-count="6">l</span>et* () = strin<span data-count="6">g</span> "if" *<span data-count="6">&gt;</span> ws in
-    <span data-count="134">l</span>et* init =
-      parse_if_for_ini<span data-count="134">t</span> pblock &gt;&gt;<span data-count="134">|</span> Option.some &lt;<span data-count="134">*</span> parse_stmt_sep &lt;|<span data-count="134">&gt;</span> retur<span data-count="134">n</span> None
+    <span data-count="139">l</span>et* init =
+      parse_if_for_ini<span data-count="139">t</span> pblock &gt;&gt;<span data-count="139">|</span> Option.some &lt;<span data-count="139">*</span> parse_stmt_sep &lt;|<span data-count="139">&gt;</span> retur<span data-count="139">n</span> None
     in
-    <span data-count="134">l</span>et* () =
+    <span data-count="139">l</span>et* () =
       match init with
-      | <span data-count="31">N</span>one -&gt; parse_stmt_sep &lt;|<span data-count="31">&gt;</span> retur<span data-count="31">n</span> ()
+      | <span data-count="36">N</span>one -&gt; parse_stmt_sep &lt;|<span data-count="36">&gt;</span> retur<span data-count="36">n</span> ()
       | <span data-count="103">S</span>ome _ -&gt; retur<span data-count="103">n</span> ()
     in
-    <span data-count="134">l</span>et* cond = ws *<span data-count="134">&gt;</span> parse_exp<span data-count="134">r</span> pblock in
-    <span data-count="133">l</span>et* if_body = ws_line *<span data-count="133">&gt;</span> pblock &lt;<span data-count="133">*</span> ws_line in
-    <span data-count="133">l</span>et* else_body =
-      let* else_body_exists = strin<span data-count="133">g</span> "else" *<span data-count="133">&gt;</span> ws *<span data-count="133">&gt;</span> retur<span data-count="133">n</span> true &lt;|<span data-count="133">&gt;</span> retur<span data-count="133">n</span> false in
-      <span data-count="133">i</span>f else_body_exists
+    <span data-count="139">l</span>et* cond = ws *<span data-count="139">&gt;</span> parse_exp<span data-count="139">r</span> pblock in
+    <span data-count="138">l</span>et* if_body = ws_line *<span data-count="138">&gt;</span> pblock &lt;<span data-count="138">*</span> ws_line in
+    <span data-count="138">l</span>et* else_body =
+      let* else_body_exists = strin<span data-count="138">g</span> "else" *<span data-count="138">&gt;</span> ws *<span data-count="138">&gt;</span> retur<span data-count="138">n</span> true &lt;|<span data-count="138">&gt;</span> retur<span data-count="138">n</span> false in
+      <span data-count="138">i</span>f else_body_exists
       then
-        <span data-count="41">p</span>block
-        &gt;&gt;<span data-count="41">|</span> (fun block -&gt; <span data-count="22">S</span>ome (Else_block block))
-        &lt;|&gt; (parse_if &gt;&gt;<span data-count="41">|</span> fun block -&gt; <span data-count="18">S</span>ome (Else_if block))
-      else <span data-count="92">r</span>eturn None
+        <span data-count="45">p</span>block
+        &gt;&gt;<span data-count="45">|</span> (fun block -&gt; <span data-count="26">S</span>ome (Else_block block))
+        &lt;|&gt; (parse_if &gt;&gt;<span data-count="45">|</span> fun block -&gt; <span data-count="18">S</span>ome (Else_if block))
+      else <span data-count="93">r</span>eturn None
     in
-    <span data-count="132">r</span>eturn { init; cond; if_body; else_body })
+    <span data-count="137">r</span>eturn { init; cond; if_body; else_body })
 ;;
 
 let parse_default_for pblock =
@@ -659,18 +659,18 @@ let parse_for pblock =
 
 let parse_stmt pblock =
   <span data-count="15">c</span>hoice
-    [ (parse_long_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="112">S</span>tmt_long_var_decl s)
-    ; (parse_short_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="162">S</span>tmt_short_var_decl s)
-    ; (parse_incr &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="915">S</span>tmt_incr s)
+    [ (parse_long_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="114">S</span>tmt_long_var_decl s)
+    ; (parse_short_var_dec<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="170">S</span>tmt_short_var_decl s)
+    ; (parse_incr &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="917">S</span>tmt_incr s)
     ; (parse_decr &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="942">S</span>tmt_decr s)
-    ; (parse_i<span data-count="15">f</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="114">S</span>tmt_if s)
-    ; (parse_chan_sen<span data-count="15">d</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="95">S</span>tmt_chan_send s)
+    ; (parse_i<span data-count="15">f</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="119">S</span>tmt_if s)
+    ; (parse_chan_sen<span data-count="15">d</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="97">S</span>tmt_chan_send s)
     ; (parse_chan_receiv<span data-count="15">e</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="77">S</span>tmt_chan_receive s)
     ; strin<span data-count="15">g</span> "break" *<span data-count="15">&gt;</span> retur<span data-count="15">n</span> Stmt_break
     ; strin<span data-count="15">g</span> "continue" *<span data-count="15">&gt;</span> retur<span data-count="15">n</span> Stmt_continue
     ; parse_retur<span data-count="15">n</span> pblock
-    ; (parse_func_cal<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="107">S</span>tmt_call s)
-    ; (parse_assig<span data-count="15">n</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="104">S</span>tmt_assign s)
+    ; (parse_func_cal<span data-count="15">l</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="116">S</span>tmt_call s)
+    ; (parse_assig<span data-count="15">n</span> pblock &gt;&gt;<span data-count="15">|</span> fun s -&gt; <span data-count="105">S</span>tmt_assign s)
     ; parse_defe<span data-count="15">r</span> pblock
     ; parse_g<span data-count="15">o</span> pblock
     ; (pblock &gt;&gt;<span data-count="15">|</span> fun block -&gt; <span data-count="83">S</span>tmt_block block)
