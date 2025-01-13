@@ -9,12 +9,12 @@ open Base
 open Angstrom
 open Ast
 
-(** [parse_measure_num] parses number before unit of measure and returns it. *)
-val parse_measure_num : measure_num t
+(** [pm_num] parses number before unit of measure and returns it. *)
+val pm_num : measure_num t
 
-(** [parse_measure] parses identifiers, products, quotients and powers as measures. *)
-val parse_measure : measure t
+(** [pm] parses identifiers, products, quotients and powers as measures. *)
+val pm : measure t
 
-(** [parse_unit_of_measure] parses int or float number, then parses a measure in
+(** [puom] parses int or float number, then parses a measure in
     angular brackets and returns them as a unit of measure. *)
-val parse_unit_of_measure : unit_of_measure t
+val puom : unit_of_measure t

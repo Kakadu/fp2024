@@ -38,7 +38,10 @@ let gen_type_ident =
 ;;
 
 (* Small positive integers (1 < |a| < 100) *)
-let rec gen_posint = small_nat >>= fun n -> if n > 1 then return n else small_nat
+let gen_posint =
+  let rec loop gen = gen >>= fun n -> if n > 1 then return n else loop gen in
+  loop small_nat
+;;
 
 type measure_num =
   | Mnum_int of int (** Integer number in unit of measure *)
