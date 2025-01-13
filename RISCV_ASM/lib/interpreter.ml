@@ -367,6 +367,35 @@ let execute_store state program rs1 rs2 imm size =
   return new_state
 ;;
 
+let handle_syscall state =
+  let syscall_number = get_register_value state A0 in
+  let arg1 = get_register_value state A1 in
+  let arg2 = get_register_value state A2 in
+  let arg3 = get_register_value state A3 in
+  match syscall_number with
+  | 93L ->
+    let exit_code = Int64.to_int arg1 in
+    exit exit_code
+  | 64L ->
+    let fd = Int64.to_int arg1 in
+    let buf = arg2 in
+    let count = Int64.to_int arg3 in
+    if fd = 1
+    then (
+      let rec read_memory addr count acc =
+        if count <= 0
+        then return (String.init (List.length acc) (fun i -> List.nth acc i))
+        else
+          let* byte = load_memory state addr 1 in
+          read_memory (Int64.add addr 1L) (count - 1) (Char.chr (Int64.to_int byte) :: acc)
+      in
+      let* str = read_memory buf count [] in
+      Printf.printf "%s" str;
+      return state)
+    else fail "Unsupported file descriptor for write syscall"
+  | _ -> fail "Unsupported syscall"
+;;
+
 let rec interpret state program =
   let* instr_opt = nth_opt_int64 program state.pc in
   match instr_opt with
@@ -531,6 +560,7 @@ and execute_instruction state instr program =
     in
     let new_value = Int64.add state.pc imm_value in
     return (set_register_value state rd new_value)
+  | Ecall -> handle_syscall state
   | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
   | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
   | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
