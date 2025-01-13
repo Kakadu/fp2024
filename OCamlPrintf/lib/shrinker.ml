@@ -7,20 +7,47 @@ open Ast.Expression
 open QCheck.Iter
 open QCheck.Shrink
 
-let shrink_string = function
+let shrink_type_ident = function
+  | "'a" -> empty
+  | _ -> return "'a"
+;;
+
+let shrink_ident = function
   | "a" -> empty
   | _ -> return "a"
 ;;
 
+let rec shrink_core_type = function
+  | Type_any | Type_unit | Type_bool | Type_char | Type_int | Type_string -> empty
+  | Type_var id -> shrink_type_ident id >|= fun id' -> Type_var id'
+  | Type_list type' ->
+    return type' <+> (shrink_core_type type' >|= fun type'' -> Type_list type'')
+  | Type_option type' ->
+    return type' <+> (shrink_core_type type' >|= fun type'' -> Type_option type'')
+  | Type_tuple (fst_type, snd_type, type_list) ->
+    of_list [ fst_type; snd_type ]
+    <+> of_list type_list
+    <+> (shrink_core_type fst_type
+         >|= fun fst_type' -> Type_tuple (fst_type', snd_type, type_list))
+    <+> (shrink_core_type snd_type
+         >|= fun snd_type' -> Type_tuple (fst_type, snd_type', type_list))
+    <+> (list ~shrink:shrink_core_type type_list
+         >|= fun type_list' -> Type_tuple (fst_type, snd_type, type_list'))
+  | Type_arrow (fst_type, snd_type) ->
+    of_list [ fst_type; snd_type ]
+    <+> (shrink_core_type fst_type >|= fun fst_type' -> Type_arrow (fst_type', snd_type))
+    <+> (shrink_core_type snd_type >|= fun snd_type' -> Type_arrow (fst_type, snd_type'))
+;;
+
 let rec shrink_pattern = function
   | Pat_any -> empty
-  | Pat_var id -> shrink_string id >|= fun id' -> Pat_var id'
+  | Pat_var var -> shrink_ident var >|= fun var' -> Pat_var var'
   | Pat_constant const ->
     (match const with
      | Const_integer i -> int i >|= fun i' -> Pat_constant (Const_integer i')
      | Const_char ch -> char ch >|= fun ch' -> Pat_constant (Const_char ch')
      | Const_string str ->
-       shrink_string str >|= fun str' -> Pat_constant (Const_string str'))
+       shrink_ident str >|= fun str' -> Pat_constant (Const_string str'))
   | Pat_tuple (fst_pat, snd_pat, pat_list) ->
     of_list [ fst_pat; snd_pat ]
     <+> of_list pat_list
@@ -31,20 +58,22 @@ let rec shrink_pattern = function
     <+> (list ~shrink:shrink_pattern pat_list
          >|= fun pat_list' -> Pat_tuple (fst_pat, snd_pat, pat_list'))
   | Pat_construct (_, None) -> empty
-  | Pat_construct (id, Some pat) ->
-    return pat <+> (shrink_pattern pat >|= fun pat' -> Pat_construct (id, Some pat'))
-  | Pat_constraint (pat, core_type) ->
-    return pat <+> (shrink_pattern pat >|= fun pat' -> Pat_constraint (pat', core_type))
+  | Pat_construct (tag, Some pat) ->
+    return pat <+> (shrink_pattern pat >|= fun pat' -> Pat_construct (tag, Some pat'))
+  | Pat_constraint (pat, type') ->
+    return pat
+    <+> (shrink_pattern pat >|= fun pat' -> Pat_constraint (pat', type'))
+    <+> (shrink_core_type type' >|= fun type'' -> Pat_constraint (pat, type''))
 ;;
 
 let rec shrink_expression = function
-  | Exp_ident id -> shrink_string id >|= fun id' -> Exp_ident id'
+  | Exp_ident id -> shrink_ident id >|= fun id' -> Exp_ident id'
   | Exp_constant const ->
     (match const with
      | Const_integer i -> int i >|= fun i' -> Exp_constant (Const_integer i')
      | Const_char ch -> char ch >|= fun ch' -> Exp_constant (Const_char ch')
      | Const_string str ->
-       shrink_string str >|= fun str' -> Exp_constant (Const_string str'))
+       shrink_ident str >|= fun str' -> Exp_constant (Const_string str'))
   | Exp_let (rec_flag, fst_value_binding, value_binding_list, exp) ->
     return exp
     <+> (shrink_expression exp
@@ -88,8 +117,8 @@ let rec shrink_expression = function
     <+> (list ~shrink:shrink_expression exp_list
          >|= fun exp_list' -> Exp_tuple (fst_exp, snd_exp, exp_list'))
   | Exp_construct (_, None) -> empty
-  | Exp_construct (id, Some exp) ->
-    return exp <+> (shrink_expression exp >|= fun exp' -> Exp_construct (id, Some exp'))
+  | Exp_construct (tag, Some exp) ->
+    return exp <+> (shrink_expression exp >|= fun exp' -> Exp_construct (tag, Some exp'))
   | Exp_ifthenelse (if_exp, then_exp, None) ->
     of_list [ if_exp; then_exp ]
     <+> (shrink_expression if_exp
@@ -108,8 +137,10 @@ let rec shrink_expression = function
     of_list [ exp1; exp2 ]
     <+> (shrink_expression exp1 >|= fun exp1' -> Exp_sequence (exp1', exp2))
     <+> (shrink_expression exp2 >|= fun exp2' -> Exp_sequence (exp1, exp2'))
-  | Exp_constraint (exp, core_type) ->
-    return exp <+> (shrink_expression exp >|= fun exp' -> Exp_constraint (exp', core_type))
+  | Exp_constraint (exp, type') ->
+    return exp
+    <+> (shrink_expression exp >|= fun exp' -> Exp_constraint (exp', type'))
+    <+> (shrink_core_type type' >|= fun type'' -> Exp_constraint (exp, type''))
 
 and shrink_value_binding value_binding =
   shrink_pattern value_binding.pat
