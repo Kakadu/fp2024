@@ -2,12 +2,13 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Ast
 module StringMap = Map.Make (String)
 module Int64Map = Map.Make (Int64)
-open Ast
 
 type state =
   { registers : int64 StringMap.t
+  ; memory : int64 Int64Map.t
   ; pc : int64
   }
 
@@ -119,7 +120,7 @@ let init_state () =
       ; X31
       ]
   in
-  { registers; pc = 0L }
+  { registers; memory = Int64Map.empty; pc = 0L }
 ;;
 
 let get_register_value state reg =
@@ -303,6 +304,69 @@ let execute_shift_immediate_op state program rd rs1 imm op =
   return (set_register_value state rd result)
 ;;
 
+let load_memory state address = function
+  | 1 ->
+    Int64Map.find_opt address state.memory
+    |> Option.map (fun value -> Int64.logand value 0xFFL)
+    |> Option.value ~default:0L
+    |> return
+  | 2 ->
+    Int64Map.find_opt address state.memory
+    |> Option.map (fun value -> Int64.logand value 0xFFFFL)
+    |> Option.value ~default:0L
+    |> return
+  | 4 -> Int64Map.find_opt address state.memory |> Option.value ~default:0L |> return
+  | _ -> fail "Unsupported load size"
+;;
+
+let store_memory state address value size =
+  let stored_value =
+    match size with
+    | 1 -> Ok (Int64.logand value 0xFFL)
+    | 2 -> Ok (Int64.logand value 0xFFFFL)
+    | 4 -> Ok value
+    | _ -> fail "Unsupported store size"
+  in
+  match stored_value with
+  | Error e -> Error e
+  | Ok stored_value ->
+    Ok { state with memory = Int64Map.add address stored_value state.memory }
+;;
+
+let execute_load state program rd rs1 imm size signed =
+  let base_address = get_register_value state rs1 in
+  let* offset =
+    match get_address12_value program imm with
+    | Immediate imm_value -> return (Int64.of_int imm_value)
+    | Label _ -> fail "Label addresses not supported for load/store"
+  in
+  let address = Int64.add base_address offset in
+  let* value = load_memory state address size in
+  let result =
+    if signed
+    then (
+      match size with
+      | 1 -> Int64.shift_right (Int64.shift_left value 56) 56
+      | 2 -> Int64.shift_right (Int64.shift_left value 48) 48
+      | _ -> value)
+    else value
+  in
+  return (set_register_value state rd result)
+;;
+
+let execute_store state program rs1 rs2 imm size =
+  let base_address = get_register_value state rs1 in
+  let* offset =
+    match get_address12_value program imm with
+    | Immediate imm_value -> return (Int64.of_int imm_value)
+    | Label _ -> fail "Label addresses not supported for load/store"
+  in
+  let address = Int64.add base_address offset in
+  let value = get_register_value state rs2 in
+  let* new_state = store_memory state address value size in
+  return new_state
+;;
+
 let rec interpret state program =
   let* instr_opt = nth_opt_int64 program state.pc in
   match instr_opt with
@@ -348,6 +412,14 @@ and execute_instruction state instr program =
       match Int64.unsigned_compare arg1 imm_value with
       | x when x < 0 -> 1L
       | _ -> 0L)
+  | Lb (rd, rs1, imm) -> execute_load state program rd rs1 imm 1 true
+  | Lh (rd, rs1, imm) -> execute_load state program rd rs1 imm 2 true
+  | Lw (rd, rs1, imm) -> execute_load state program rd rs1 imm 4 true
+  | Lbu (rd, rs1, imm) -> execute_load state program rd rs1 imm 1 false
+  | Lhu (rd, rs1, imm) -> execute_load state program rd rs1 imm 2 false
+  | Sb (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 1
+  | Sh (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 2
+  | Sw (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 4
   | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
   | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
   | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
