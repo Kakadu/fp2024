@@ -1,3 +1,15 @@
-let rec f n = if n <= 1 then 1 else n * f (n - 1);;
+let rec list_iter l n =
+  if n = 0
+  then ()
+  else (
+    match l with
+    | [] -> ()
+    | [ x ] -> print_int x
+    | x :: xs ->
+      let () = print_int x in
+      list_iter xs (n - 1))
+;;
 
-print_int (f 5);;
+let rec ones = 1 :: 2 :: 3 :: ones;;
+
+list_iter ones 10
