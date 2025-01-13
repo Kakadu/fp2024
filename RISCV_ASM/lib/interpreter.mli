@@ -6,8 +6,8 @@ open Ast
 module StringMap : Map.S with type key = string
 
 type state =
-  { registers : int StringMap.t
-  ; pc : int
+  { registers : int64 StringMap.t
+  ; pc : int64
   }
 
 val interpret : state -> ast -> state
