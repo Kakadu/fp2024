@@ -30,17 +30,24 @@ let is_separator = function
 ;;
 
 let is_keyword = function
-  | "Some"
-  | "None"
-  | "rec"
   | "let"
+  | "rec"
+  | "and"
   | "fun"
   | "if"
   | "then"
   | "else"
-  | "while"
   | "match"
+  | "with"
   | "in"
+  | "true"
+  | "false"
+  | "Some"
+  | "None"
+  | "type"
+  | "val"
+  | "while"
+  | "for"
   | "_" -> true
   | _ -> false
 ;;
