@@ -232,7 +232,7 @@ let check_nil arg possible_nil =
   | Cpolymorphic Nil ->
     (match arg with
      | Ctype (Type_chan t) -> return (Ctype (Type_chan t))
-     | Ctype (Type_func (x, y)) -> return (Ctype (Type_func (x, y)))
+     | Ctype (Type_func (args, returns)) -> return (Ctype (Type_func (args, returns)))
      | t ->
        fail
          (Type_check_error
