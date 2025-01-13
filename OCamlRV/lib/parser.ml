@@ -27,7 +27,14 @@ let is_keyword = function
   | _ -> false
 ;;
 
-let ws = take_while Char.is_whitespace
+let skip_comment =
+  take_while Char.is_whitespace
+  *> string "(*"
+  *> many_till any_char (string "*)")
+  *> return ()
+;;
+
+let ws = many skip_comment *> take_while Char.is_whitespace
 let token s = ws *> string s
 
 let chainl1 e op =
