@@ -163,8 +163,13 @@ let pp_instruction ppf = function
   | Sw (rd, rs1, imm) ->
     pp_instruction_2reg_1offset_helper ppf "sw" rd rs1 (Address12 imm)
   | Beq (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "beq" rd rs1 (Address12 imm)
+  | Beqz (rs1, imm) -> Format.fprintf ppf "beqz %a,%a" pp_register rs1 pp_address (Address12 imm)
   | Bne (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
+  | Bnez (rs1, imm) -> Format.fprintf ppf "bnez %a,%a" pp_register rs1 pp_address (Address12 imm)
   | Blt (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "blt" rd rs1 (Address12 imm)
+  | Bltz (rs1, imm) -> Format.fprintf ppf "bltz %a,%a" pp_register rs1 pp_address (Address12 imm)
+  | Bgt (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bgt" rd rs1 (Address12 imm)
+  | Bgtz (rs1, imm) -> Format.fprintf ppf "bgtz %a,%a" pp_register rs1 pp_address (Address12 imm)
   | Bge (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bge" rd rs1 (Address12 imm)
   | Bltu (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "bltu" rd rs1 (Address12 imm)

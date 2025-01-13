@@ -132,8 +132,14 @@ type instruction =
   (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
   | Beq of register * register * address12
   (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
+  | Beqz of register * address12
+  (** Branch == 0. if (rs1 == 0) PC += imm. PC is a program counter *)
   | Bne of register * register * address12 (** Branch !=. if (rs1 != rs2) PC += imm. *)
+  | Bnez of register * address12 (** Branch != 0. if (rs1 != 0) PC += imm. *)
   | Blt of register * register * address12 (** Branch <. if (rs1 < rs2) PC += imm. *)
+  | Bltz of register * address12 (** Branch < 0. if (rs1 < 0) PC += imm. *)
+  | Bgt of register * register * address12 (** Branch >. if (rs1 > rs2) PC += imm. *)
+  | Bgtz of register * address12 (** Branch > 0. if (rs1 > 0) PC += imm. *)
   | Bge of register * register * address12 (** Branch >=. if (rs1 >= rs2) PC += imm. *)
   | Bltu of register * register * address12
   (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
