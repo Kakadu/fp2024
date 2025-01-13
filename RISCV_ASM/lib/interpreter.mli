@@ -4,9 +4,11 @@
 
 open Ast
 module StringMap : Map.S with type key = string
+module Int64Map : Map.S with type key = Int64.t
 
 type state =
   { registers : int64 StringMap.t
+  ; memory : int64 Int64Map.t
   ; pc : int64
   }
 
