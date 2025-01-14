@@ -11,6 +11,7 @@ type opts =
   ; mutable interpret : bool
   ; mutable read_from_file : bool
   ; mutable filename : string
+  ; mutable debug : bool
   }
 
 let run_single options =
@@ -23,9 +24,8 @@ let run_single options =
         Stdlib.exit 1)
     else Stdlib.String.trim (In_channel.input_all stdin)
   in
-  if options.dump_parsetree
-  then Stdlib.Format.printf "--- AST ---\n%s\n--- AST ---\n\n" (parse_to_string text);
-  if options.interpret then test_interpret text else ()
+  if options.dump_parsetree then Stdlib.Format.printf "%s\n\n" (parse_to_string text);
+  if options.interpret then run_interpreter text ~debug:options.debug else ()
 ;;
 
 let () =
@@ -33,15 +33,19 @@ let () =
   then ()
   else (
     let opts =
-      { dump_parsetree = false; interpret = false; read_from_file = false; filename = "" }
+      { dump_parsetree = false
+      ; interpret = false
+      ; read_from_file = false
+      ; filename = ""
+      ; debug = false
+      }
     in
     let () =
       let open Stdlib.Arg in
       parse
-        [ ( "-dparsetree"
-          , Unit (fun () -> opts.dump_parsetree <- true)
-          , "Dump parse tree, don't eval enything" )
+        [ "-dparsetree", Unit (fun () -> opts.dump_parsetree <- true), "Dump parse tree."
         ; "-interpret", Unit (fun () -> opts.interpret <- true), "Interpret code."
+        ; "-debug", Unit (fun () -> opts.debug <- true), "Debug mode."
         ]
         (fun filename ->
           if opts.read_from_file
@@ -50,7 +54,7 @@ let () =
             Stdlib.exit 1);
           opts.read_from_file <- true;
           opts.filename <- filename)
-        "Read-Eval-Print-Loop for OCamlRV"
+        "Runner for OCamlRV"
     in
     run_single opts)
 ;;

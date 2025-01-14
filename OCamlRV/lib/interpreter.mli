@@ -2,4 +2,5 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val test_interpret : string -> unit
+val run_interpreter : string -> debug:bool -> unit
+val test_interpreter : string -> unit

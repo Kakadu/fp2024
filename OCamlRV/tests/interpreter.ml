@@ -7,7 +7,7 @@ open OCamlRV_lib.Interpreter
 (* Some arithmetic *)
 
 let%expect_test _ =
-  test_interpret {|
+  test_interpreter {|
       let a = ((2 + 2 - 2) * 7) / 2;;
       print_int a;;
    |};
@@ -15,7 +15,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let x = 1;;
       let y = x * 2;;
@@ -28,7 +28,7 @@ let%expect_test _ =
 (* Match, Function, Option, Tuple *)
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let a = Some 123;;
       match a with
@@ -40,7 +40,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let a = function
       | Some x -> print_int x
@@ -52,7 +52,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let a = (1, 2);;
       match a with
@@ -64,7 +64,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let a = [1; 2];;
       match a with
@@ -76,21 +76,21 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret {|
+  test_interpreter {|
       let () = print_int 1;;
    |};
   [%expect {| 1 |}]
 ;;
 
 let%expect_test _ =
-  test_interpret {|
+  test_interpreter {|
       let _ = print_int 1;;
    |};
   [%expect {| 1 |}]
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let (a, b, _) = (1, 2, 3);;
       print_int a;;
@@ -100,7 +100,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let () = 
         let (a, b, c) = (1, 2, 3) in 
@@ -110,7 +110,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let a = 1 and b = 2 and c = 3;;
       print_int a;;
@@ -121,7 +121,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let x =
         let a = 1
@@ -135,7 +135,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let Some x = Some 1;;
       let a, Some y = 1, Some 2;;
@@ -148,7 +148,7 @@ let%expect_test _ =
 (* Mutual recursion *)
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
     let rec even n =
         match n with
@@ -165,7 +165,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let () =
         let rec even n =
@@ -184,7 +184,7 @@ let%expect_test _ =
 (* Some functions *)
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let rec f n = if n <= 1 then 1 else n * f (n - 1);;
       print_int (f 5);;
@@ -193,7 +193,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  test_interpret
+  test_interpreter
     {|
       let rec sum_list lst =
         match lst with

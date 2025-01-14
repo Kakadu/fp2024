@@ -26,9 +26,7 @@ and value =
   | VMutualFun of pattern * rec_flag * expression * environment
   | VFunction of case * case list * environment
   | VCycle of string
-  | VBuiltin of builtin * environment
-
-let rec vvv = VUnit :: VUnit :: vvv
+  | VBuiltin of builtin * string
 
 let rec pp_value ppf =
   let open Stdlib.Format in
@@ -52,7 +50,7 @@ let rec pp_value ppf =
       vl
   | VNil -> fprintf ppf "[]"
   | VFun _ -> fprintf ppf "<fun>"
-  | VBuiltin _ -> fprintf ppf "<builtin>"
+  | VBuiltin (_, name) -> fprintf ppf "<builtin> %s" name
   | VMutualFun _ -> fprintf ppf "<VMutualFun>"
   | VFunction _ -> fprintf ppf "<VFunction>"
   | VCycle s -> fprintf ppf "<cycle> %s" s
@@ -62,30 +60,41 @@ let rec pp_value ppf =
      | None -> fprintf ppf "None")
 ;;
 
-let vint i = VInt i
-let vbool b = VBool b
-let vstring s = VString s
-let vunit = VUnit
-let vnil = VNil
-let vfun p rf e env = VFun (p, rf, e, env)
-
 type error =
-  | Pattern_matching_failed
-  | Apply_failed
-  | Wrong_type of value
-  | Unbound_variable
-  | Evaluationg_Need_ToBeReplaced
-  | BuiltinEvaluatingError
+  | PatternMatchingFailed
+  | ApplyFailed of value * value
+  | WrongType of value
+  | UnboundVariable of string
+  | WrongBinaryOperation of binary_operator * value * value
+  | WrongUnaryOperation of unary_operator * value
 
 let pp_error ppf =
   let open Stdlib.Format in
   function
-  | Pattern_matching_failed -> fprintf ppf "Pattern_matching_failed"
-  | Apply_failed -> fprintf ppf "Apply_failed"
-  | Wrong_type _ -> fprintf ppf "Wrong_type"
-  | Unbound_variable -> fprintf ppf "Unbound_variable"
-  | Evaluationg_Need_ToBeReplaced -> fprintf ppf "Evaluationg_Need_ToBeReplaced"
-  | BuiltinEvaluatingError -> fprintf ppf "BuiltinEvaluatingError"
+  | PatternMatchingFailed -> fprintf ppf "PatternMatchingFailed"
+  | ApplyFailed (v1, v2) -> fprintf ppf "ApplyFailed: %a %a" pp_value v1 pp_value v2
+  | WrongType v -> fprintf ppf "WrongType: %a" pp_value v
+  | UnboundVariable name -> fprintf ppf "UnboundVariable: %s" name
+  | WrongBinaryOperation (op, v1, v2) ->
+    fprintf
+      ppf
+      "WrongBinaryOperation: %a %a %a"
+      pp_value
+      v1
+      pp_binary_operator
+      op
+      pp_value
+      v2
+  | WrongUnaryOperation (op, v) ->
+    fprintf ppf "WrongUnaryOperation: %a %a" pp_unary_operator op pp_value v
+;;
+
+let print_env env =
+  Format.printf "\nDEBUG environment:\n";
+  Base.Map.iteri
+    ~f:(fun ~key ~data ->
+      Format.fprintf Format.std_formatter "%s = %a\n" key pp_value data)
+    env
 ;;
 
 module type MONAD_FAIL = sig
@@ -94,14 +103,6 @@ module type MONAD_FAIL = sig
   val fail : error -> ('a, error) t
   val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 end
-
-let print_env env =
-  Format.printf "\nDEBUG ENV:\n";
-  Base.Map.iteri
-    ~f:(fun ~key ~data ->
-      Format.fprintf Format.std_formatter "%s : some_type = %a\n" key pp_value data)
-    env
-;;
 
 module Env (M : MONAD_FAIL) = struct
   open M
@@ -119,7 +120,7 @@ module Env (M : MONAD_FAIL) = struct
   let find env name =
     match Base.Map.find env name with
     | Some x -> return x
-    | None -> fail Unbound_variable
+    | None -> fail (UnboundVariable name)
   ;;
 end
 
@@ -127,7 +128,7 @@ module Eval (M : MONAD_FAIL) = struct
   open M
   open Env (M)
 
-  let rec check_match env = function
+  let rec check_matching env = function
     | PAny, _ -> Some env
     | PConstant (CInt i1), VInt i2 when i1 = i2 -> Some env
     | PConstant (CBool b1), VBool b2 when Bool.equal b1 b2 -> Some env
@@ -144,7 +145,7 @@ module Eval (M : MONAD_FAIL) = struct
           vl
           ~f:(fun env p v ->
             match env with
-            | Some e -> check_match e (p, v)
+            | Some e -> check_matching e (p, v)
             | None -> None)
           ~init:(Some env)
       in
@@ -159,7 +160,7 @@ module Eval (M : MONAD_FAIL) = struct
           vl
           ~f:(fun env p v ->
             match env with
-            | Some e -> check_match e (p, v)
+            | Some e -> check_matching e (p, v)
             | None -> None)
           ~init:(Some env)
       in
@@ -167,13 +168,13 @@ module Eval (M : MONAD_FAIL) = struct
        | Ok env -> env
        | _ -> None)
     | PCons (p1, p2), VList (v :: vl) ->
-      let env = check_match env (p2, VList vl) in
+      let env = check_matching env (p2, VList vl) in
       (match env with
-       | Some env -> check_match env (p1, v)
+       | Some env -> check_matching env (p1, v)
        | None -> None)
     | POption None, VOption None -> Some env
     | POption (Some p), VOption (Some v) ->
-      let env = check_match env (p, v) in
+      let env = check_matching env (p, v) in
       (match env with
        | Some env -> Some env
        | None -> None)
@@ -182,27 +183,27 @@ module Eval (M : MONAD_FAIL) = struct
 
   let eval_binop (op, v1, v2) =
     match op, v1, v2 with
-    | Add, VInt x, VInt y -> return (vint (x + y))
-    | Sub, VInt x, VInt y -> return (vint (x - y))
-    | Mul, VInt x, VInt y -> return (vint (x * y))
-    | Div, VInt x, VInt y -> return (vint (x / y))
-    | Lt, VInt x, VInt y -> return (vbool (x < y))
-    | Gt, VInt x, VInt y -> return (vbool (x > y))
-    | Eq, VInt x, VInt y -> return (vbool (x = y))
-    | Neq, VInt x, VInt y -> return (vbool (x <> y))
-    | Lte, VInt x, VInt y -> return (vbool (x <= y))
-    | Gte, VInt x, VInt y -> return (vbool (x >= y))
-    | And, VBool x, VBool y -> return (vbool (x && y))
-    | Or, VBool x, VBool y -> return (vbool (x || y))
-    | _ -> fail Evaluationg_Need_ToBeReplaced
+    | Add, VInt x, VInt y -> return (VInt (x + y))
+    | Sub, VInt x, VInt y -> return (VInt (x - y))
+    | Mul, VInt x, VInt y -> return (VInt (x * y))
+    | Div, VInt x, VInt y -> return (VInt (x / y))
+    | Lt, VInt x, VInt y -> return (VBool (x < y))
+    | Gt, VInt x, VInt y -> return (VBool (x > y))
+    | Eq, VInt x, VInt y -> return (VBool (x = y))
+    | Neq, VInt x, VInt y -> return (VBool (x <> y))
+    | Lte, VInt x, VInt y -> return (VBool (x <= y))
+    | Gte, VInt x, VInt y -> return (VBool (x >= y))
+    | And, VBool x, VBool y -> return (VBool (x && y))
+    | Or, VBool x, VBool y -> return (VBool (x || y))
+    | _ -> fail (WrongBinaryOperation (op, v1, v2))
   ;;
 
   let eval_unop (op, v) =
     match op, v with
-    | UnaryPlus, VInt x -> return (vint (Stdlib.( ~+ ) x))
-    | UnaryMinus, VInt x -> return (vint (-x))
-    | UnaryNeg, VBool x -> return (vbool (not x))
-    | _ -> fail Evaluationg_Need_ToBeReplaced
+    | UnaryPlus, VInt x -> return (VInt (Stdlib.( ~+ ) x))
+    | UnaryMinus, VInt x -> return (VInt (-x))
+    | UnaryNeg, VBool x -> return (VBool (not x))
+    | _ -> fail (WrongUnaryOperation (op, v))
   ;;
 
   let eval_tuple_binding env pl vl =
@@ -232,17 +233,16 @@ module Eval (M : MONAD_FAIL) = struct
   let rec eval_expr (env : environment) = function
     | ExprConstant c ->
       (match c with
-       | CInt i -> return (vint i)
-       | CBool b -> return (vbool b)
-       | CString s -> return (vstring s)
-       | CUnit -> return vunit
-       | CNil -> return vnil)
+       | CInt i -> return (VInt i)
+       | CBool b -> return (VBool b)
+       | CString s -> return (VString s)
+       | CUnit -> return VUnit
+       | CNil -> return VNil)
     | ExprVariable x ->
       let* v = find env x in
       let v =
         match v with
         | VFun (p, Rec, e, env) -> VFun (p, Rec, e, extend env x v)
-        | VBuiltin (f, env) -> VBuiltin (f, extend env x v)
         | _ -> v
       in
       return v
@@ -258,7 +258,13 @@ module Eval (M : MONAD_FAIL) = struct
       (match cv with
        | VBool true -> eval_expr env t
        | VBool false -> eval_expr env f
-       | _ -> fail (Wrong_type cv))
+       | _ -> fail (WrongType cv))
+    | ExprIf (cond, t, None) ->
+      let* cv = eval_expr env cond in
+      (match cv with
+       | VBool true -> eval_expr env t
+       | VBool false -> return VUnit
+       | _ -> fail (WrongType cv))
     | ExprLet (NonRec, b, bl, e) ->
       let bindings = b :: bl in
       let* env2 = eval_non_rec_binding_list env bindings in
@@ -277,16 +283,16 @@ module Eval (M : MONAD_FAIL) = struct
       let bindings = b :: bl in
       let* env2 = eval_rec_binding_list env bindings in
       eval_expr env2 e
-    | ExprFun (p, e) -> return (vfun p NonRec e env)
+    | ExprFun (p, e) -> return (VFun (p, NonRec, e, env))
     | ExprMatch (e, c, cl) ->
       let* v = eval_expr env e in
       let rec match_helper env v = function
         | (p, e) :: tl ->
-          let env' = check_match env (p, v) in
+          let env' = check_matching env (p, v) in
           (match env' with
            | Some env -> eval_expr env e
            | None -> match_helper env v tl)
-        | [] -> fail Pattern_matching_failed
+        | [] -> fail PatternMatchingFailed
       in
       match_helper env v (c :: cl)
     | ExprFunction (c, cl) -> return (VFunction (c, cl, env))
@@ -296,27 +302,27 @@ module Eval (M : MONAD_FAIL) = struct
       (match v1 with
        | VFun (p, _, e, env) ->
          let* env' =
-           match check_match env (p, v2) with
+           match check_matching env (p, v2) with
            | Some env -> return env
-           | None -> fail Apply_failed
+           | None -> fail (ApplyFailed (v1, v2))
          in
          eval_expr env' e
-       | VFunction (c, cl, envv) ->
+       | VFunction (c, cl, env) ->
          let cases = c :: cl in
          let rec try_match cases =
            match cases with
-           | [] -> fail Apply_failed
+           | [] -> fail PatternMatchingFailed
            | (pattern, body) :: rest ->
-             (match check_match envv (pattern, v2) with
+             (match check_matching env (pattern, v2) with
               | Some new_env -> eval_expr new_env body
               | None -> try_match rest)
          in
          try_match cases
        | VMutualFun (p, _, e, _) ->
          let* env' =
-           match check_match env (p, v2) with
+           match check_matching env (p, v2) with
            | Some env -> return env
-           | None -> fail Apply_failed
+           | None -> fail (ApplyFailed (v1, v2))
          in
          eval_expr env' e
        | VBuiltin (b, _) ->
@@ -332,8 +338,8 @@ module Eval (M : MONAD_FAIL) = struct
          in
          (match status with
           | Ok _ -> return VUnit
-          | Error _ -> fail (Wrong_type v1))
-       | _ -> fail BuiltinEvaluatingError)
+          | Error _ -> fail (WrongType v1))
+       | _ -> fail (ApplyFailed (v1, v2)))
     | ExprTuple (e1, e2, el) ->
       let* v1 = eval_expr env e1 in
       let* v2 = eval_expr env e2 in
@@ -366,7 +372,7 @@ module Eval (M : MONAD_FAIL) = struct
        | VList vl -> return (VList (hv :: vl))
        | VNil -> return (VList [ hv ])
        | VCycle _ -> return (VList [ hv ])
-       | t -> fail (Wrong_type t))
+       | t -> fail (WrongType t))
     | ExprOption opt_expr ->
       (match opt_expr with
        | None -> return (VOption None)
@@ -374,7 +380,6 @@ module Eval (M : MONAD_FAIL) = struct
          let* v = eval_expr env e in
          return (VOption (Some v)))
     | ExprType (e, _) -> eval_expr env e
-    | _ -> fail Evaluationg_Need_ToBeReplaced
 
   and eval_non_rec_binding_list env bl =
     let* env2 =
@@ -403,7 +408,7 @@ module Eval (M : MONAD_FAIL) = struct
             let* v = eval_expr env e in
             (match v with
              | VOption (Some vo) -> return (extend env var vo)
-             | _ -> fail Evaluationg_Need_ToBeReplaced)
+             | _ -> fail (WrongType v))
           | _ -> return env)
         ~init:(return env)
         bl
@@ -458,8 +463,10 @@ module Eval (M : MONAD_FAIL) = struct
   ;;
 
   let eval_structure_item (env : environment) structure_item =
-    let env = extend env "print_int" (VBuiltin (BInt print_int, env)) in
-    let env = extend env "print_endline" (VBuiltin (BString print_endline, env)) in
+    let env = extend env "print_int" (VBuiltin (BInt print_int, "print_int")) in
+    let env =
+      extend env "print_endline" (VBuiltin (BString print_endline, "print_endline"))
+    in
     match structure_item with
     | SEval e ->
       let _ = eval_expr env e in
@@ -489,13 +496,25 @@ module Interpret = Eval (struct
     let ( let* ) m f = bind m ~f
   end)
 
-let test_interpret s =
+let test_interpreter text =
   let open Stdlib.Format in
-  match Parser.parse s with
+  match Parser.parse text with
   | Ok parsed ->
     (match Interpret.eval_structure parsed with
      | Ok _ -> ()
-     (* | Ok env -> print_env env *)
+     | Error e -> fprintf std_formatter "Interpretation error: %a\n" pp_error e)
+  | Error e -> printf "Parsing error: %s\n" e
+;;
+
+let run_interpreter text ~debug =
+  let open Stdlib.Format in
+  match Parser.parse text with
+  | Ok parsed ->
+    (match Interpret.eval_structure parsed with
+     | Ok env ->
+       (match debug with
+        | true -> print_env env
+        | _ -> ())
      | Error e -> fprintf std_formatter "%a\n" pp_error e)
   | Error e -> printf "Parsing error: %s\n" e
 ;;
