@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 type type_check_error =
-  | Check_failed
   | Incorrect_main of string
   | Multiple_declaration of string
   | Undefined_ident of string

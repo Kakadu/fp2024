@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 type type_check_error =
-  | Check_failed (** Inner error to match errors inside typechecker DEVONLY*)
   | Incorrect_main of string (** No main/main with returns or args *)
   | Multiple_declaration of string (** Multiple declaration of ident *)
   | Undefined_ident of string (** No declaration of ident in current sapce *)

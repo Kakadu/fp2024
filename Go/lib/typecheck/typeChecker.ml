@@ -27,8 +27,7 @@ let check_return body =
            | Stmt_return _ -> true
            | Stmt_if if' ->
              find_retrun_rec if'.if_body
-             && (fun body ->
-                  match body with
+             && (function
                   | Some (Else_block body) -> find_retrun_rec body
                   | Some (Else_if if') -> find_retrun_rec [ Stmt_if if' ]
                   | None -> false)
@@ -85,7 +84,8 @@ let retrieve_const cstmt rexpr = function
         | t -> check_eq t (Ctype type'))
       inits
     *> return (Ctype (Type_array (size, type')))
-  | Const_array _ -> fail (Type_check_error Check_failed)
+  | Const_array _ ->
+    fail (Type_check_error (Mismatched_types "Array's size less thai it's inits count"))
   | Const_int _ -> return (Ctype Type_int)
   | Const_string _ -> return (Ctype Type_string)
   | Const_func anon_func -> check_anon_func anon_func cstmt
@@ -201,7 +201,10 @@ let rec check_expr cstmt rarg = function
      | Cpolymorphic Make ->
        (match List.hd args with
         | Arg_type t -> return (Ctype t)
-        | _ -> fail (Type_check_error Check_failed))
+        | _ ->
+          fail
+            (Type_check_error
+               (Mismatched_types "make should be used like make(T, arg) when T is a type")))
      | _ ->
        fail (Type_check_error (Mismatched_types "Function without returns in expression")))
   | Expr_chan_receive chan ->
@@ -278,7 +281,10 @@ let check_long_var_decl cstmt save_ident = function
             (Type_check_error
                (Mismatched_types
                   "function returns wrong number of elements in multiple var assign")))
-     | _ -> fail (Type_check_error Check_failed))
+     | _ ->
+       fail
+         (Type_check_error
+            (Mismatched_types "simple type or built-in func cannot be used as return")))
 ;;
 
 let check_short_var_decl cstmt = function
@@ -321,7 +327,10 @@ let check_short_var_decl cstmt = function
        fail
          (Type_check_error
             (Invalid_operation "Cannot assign nil in short var declaration"))
-     | _ -> fail (Type_check_error Check_failed))
+     | CgenT _ | Cpolymorphic _ ->
+       fail
+         (Type_check_error
+            (Mismatched_types "simple type or built-in func cannot be used as return")))
 ;;
 
 let rec retrieve_lvalue ind cstmt = function
@@ -360,7 +369,10 @@ let check_assign cstmt = function
         with
         | Invalid_argument _ ->
           fail (Type_check_error (Cannot_assign "Multiple return assign failed")))
-     | _ -> fail (Type_check_error Check_failed))
+     | _ ->
+       fail
+         (Type_check_error
+            (Mismatched_types "simple type or built-in func cannot be used as return")))
 ;;
 
 let check_chan_send cstmt (id, expr) =
@@ -417,7 +429,11 @@ let rec check_stmt = function
               (try return (List.combine exprs (List.map (fun t -> Ctype t) rtv)) with
                | Invalid_argument _ ->
                  fail (Type_check_error (Mismatched_types "func return types mismatch")))
-            | _ -> fail (Type_check_error Check_failed))
+            | _ ->
+              fail
+                (Type_check_error
+                   (Mismatched_types
+                      "simple type or built-in func cannot be used as return")))
      >>= iter (fun (expr, return_type) ->
        check_expr check_stmt (retrieve_arg check_stmt) expr >>= check_eq return_type))
     *> return ()

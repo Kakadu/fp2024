@@ -91,7 +91,10 @@ module CheckMonad = struct
   let get_func_return_type =
     read
     >>= function
-    | _, [] -> fail (Type_check_error Check_failed)
+    | _, [] ->
+      fail
+        (Type_check_error
+           (Mismatched_types "this func has no returns but they was requested"))
     | _, funcs -> return (List.hd funcs)
   ;;
 

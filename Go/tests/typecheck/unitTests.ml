@@ -13,7 +13,6 @@ let pp str =
      | Result.Error err ->
        prerr_string "ERROR WHILE TYPECHECK WITH ";
        (match err with
-        | Type_check_error Check_failed -> prerr_endline "Check failed"
         | Type_check_error (Multiple_declaration msg) ->
           prerr_string ("Multiple declaration error: " ^ msg)
         | Type_check_error (Incorrect_main msg) ->
@@ -948,7 +947,7 @@ let%expect_test "ok: too much const array inits" =
         c := [2]string{"", "a", "123"}
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Check failed |}]
+  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Array's size less thai it's inits count |}]
 ;;
 
 let%expect_test "ok: simple array index call" =
