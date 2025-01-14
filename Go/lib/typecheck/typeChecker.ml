@@ -18,34 +18,37 @@ let print_type = function
   | _ -> asprintf "WTF Polymorphic type"
 ;;
 
-let rec check_return body =
-  List.mem
-    true
-    (List.map
-       (function
-         | Stmt_return _ -> true
-         | Stmt_if if' ->
-           check_return if'.if_body
-           && (fun body ->
-                match body with
-                | Some (Else_block body) -> check_return body
-                | Some (Else_if if') -> check_return [ Stmt_if if' ]
-                | None -> false)
-                if'.else_body
-         | Stmt_for for' -> check_return for'.body
-         | _ -> false)
-       body)
+let check_return body =
+  let rec find_retrun_rec body =
+    List.mem
+      true
+      (List.map
+         (function
+           | Stmt_return _ -> true
+           | Stmt_if if' ->
+             find_retrun_rec if'.if_body
+             && (fun body ->
+                  match body with
+                  | Some (Else_block body) -> find_retrun_rec body
+                  | Some (Else_if if') -> find_retrun_rec [ Stmt_if if' ]
+                  | None -> false)
+                  if'.else_body
+           | Stmt_for for' -> find_retrun_rec for'.body
+           | Stmt_block block -> find_retrun_rec block
+           | _ -> false)
+         body)
+  in
+  if find_retrun_rec body
+  then return ()
+  else fail (Type_check_error (Missing_return "Missing return"))
 ;;
 
 let check_anon_func afunc cstmt =
   let save_args = iter (fun (id, t) -> save_ident id (Ctype t)) afunc.args in
   add_env
-  *> (match List.compare_length_with afunc.returns 0 = 0 with
-    | false ->
-      (match check_return afunc.body with
-       | true -> return ()
-       | false -> fail (Type_check_error (Missing_return "Missing return")))
-    | true -> return ())
+  *> (match afunc.returns with
+    | _ :: _ -> check_return afunc.body
+    | [] -> return ())
   *> save_func (Ctuple afunc.returns)
   *> save_args
   *> iter cstmt afunc.body
