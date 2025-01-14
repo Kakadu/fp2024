@@ -34,7 +34,7 @@ type env = ctype MapIdent.t list
 type funcs_returns = ctype list
 type typecheck_state = env * funcs_returns
 
-module CheckMonad = struct
+module Monad = struct
   open Errors
   include BaseMonad
 

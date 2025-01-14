@@ -47,7 +47,7 @@ type funcs_returns = ctype list
 (** Current typechecker state *)
 type typecheck_state = env * funcs_returns
 
-module CheckMonad : sig
+module Monad : sig
   (** ['a t] is a typecheker that stores current state (idents and their types, external function return type)
       and the result of typechecking - ['a] (['a] or typecheck error)*)
   type 'a t = (typecheck_state, 'a) BaseMonad.t

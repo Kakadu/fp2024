@@ -61,13 +61,13 @@ type goroutine =
 type eval_state =
   { global_env : value MapIdent.t
   (** Stores values for predeclared identifiers and global variables and functions *)
-  ; running : goroutine
+  ; running : goroutine option
   (** Goroutine that is currently running, stored separately for time efficiency *)
   ; sleeping : goroutine list (** All sleeping and ready to run goroutines *)
   }
 
 (** Monad for evaluating the program state *)
-module EvalMonad : sig
+module Monad : sig
   (** ['a t] is an interpreter that stores current state
       and the result of evaluation - ['a] (['a] or runtime error) *)
   type 'a t
@@ -89,8 +89,8 @@ module EvalMonad : sig
   (* Goroutines *)
   val read_sleeping : goroutine list t
   val add_sleeping : goroutine -> unit t
-  val read_running : goroutine t
-  val write_running : goroutine -> unit t
+  val run_goroutine : goroutine -> unit t
+  val stop_running_goroutine : goroutine_state -> unit t
 
   (* Call stack *)
   val add_stack_frame : stack_frame -> unit t

@@ -14,6 +14,8 @@ type type_check_error =
 
 type runtime_error =
   | Not_enought_operands
+  | No_goroutine_running
+  | Two_goroutine_running
   | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound

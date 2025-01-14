@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open TypeCheckMonad
-open TypeCheckMonad.CheckMonad
+open TypeCheckMonad.Monad
 open Errors
 open Format
 open Ast

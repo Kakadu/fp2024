@@ -51,11 +51,11 @@ type goroutine =
 
 type eval_state =
   { global_env : value MapIdent.t
-  ; running : goroutine
+  ; running : goroutine option
   ; sleeping : goroutine list
   }
 
-module EvalMonad = struct
+module Monad = struct
   include BaseMonad
 
   type 'a t = (eval_state, 'a) BaseMonad.t
@@ -104,24 +104,44 @@ module EvalMonad = struct
     | { running } -> return running
   ;;
 
+  let read_running_fail =
+    read
+    >>= function
+    | { running = Some goroutine } -> return goroutine
+    | { running = None } -> fail (Runtime_error No_goroutine_running)
+  ;;
+
   let write_running new_goroutine =
     read
     >>= function
     | { global_env; sleeping } -> write { global_env; sleeping; running = new_goroutine }
   ;;
 
+  let run_goroutine { stack; id } =
+    read_running
+    >>= function
+    | None -> write_running (Some { stack; id; state = Running })
+    | Some _ -> fail (Runtime_error Two_goroutine_running)
+  ;;
+
+  let stop_running_goroutine new_state =
+    read_running_fail
+    >>= function
+    | { stack; id } -> write_running None *> add_sleeping { stack; state = new_state; id }
+  ;;
+
   (* single goroutine's stack *)
 
   let read_stack =
-    read_running
+    read_running_fail
     >>= function
     | { stack } -> return stack
   ;;
 
   let write_stack new_stack =
-    read_running
+    read_running_fail
     >>= function
-    | { state; id } -> write_running { state; id; stack = new_stack }
+    | { state; id } -> write_running (Some { state; id; stack = new_stack })
   ;;
 
   let read_stack_frame =
