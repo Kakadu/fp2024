@@ -348,6 +348,11 @@ let p_constraint_pat p_pat =
   return (PConstraint (pat, typ))
 ;;
 
+let p_act_pat_case p_pat =
+  let* case = p_act_pat_ident in 
+  let* pat = p_pat in
+  return (PActive (case, pat))
+
 let p_pat =
   skip_ws
   *> fix (fun self ->
@@ -356,7 +361,8 @@ let p_pat =
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
     let cons = p_cons_list_pat opt in
     let tuple = p_tuple_pat cons <|> cons in
-    tuple)
+    let active = p_act_pat_case tuple <|> tuple in
+    active)
 ;;
 
 let p_let_bind p_expr =
