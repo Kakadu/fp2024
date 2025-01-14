@@ -32,51 +32,53 @@ let rec eval_expr = function
   | Expr_const (Const_string s) -> return (Value_string s)
   | Expr_const (Const_array (size, _, exprs)) ->
     map eval_expr exprs >>= fun values -> return (Value_array (size, values))
-  | Expr_const (Const_func afunc) -> return (Value_int 1) (*ДОДЕЛАТЬ*)
+  | Expr_const (Const_func afunc) ->
+    return (Value_func (Func_initialized (Default, afunc)))
   | Expr_bin_oper (op, a1, a2) -> eval_binop op a1 a2
   | Expr_un_oper (op, a) -> eval_unop op a
   | Expr_ident id -> read_ident id
   | Expr_index (array, index) -> eval_index array index
-  | Expr_call (ident, fcall) ->
-    eval_expr ident
-    >>= (function
-     | Value_func (Func_initialized (_, afc)) ->
-       add_stack_frame
-         { local_envs =
-             { exec_block = afc.body; var_map = MapIdent.empty; env_type = Default }, []
-         ; deferred_funcs = []
-         }
-       *> iter
-            (fun (farg, (ident, _)) ->
-              retrieve_arg farg >>= fun arg -> save_local_id ident arg)
-            (List.combine fcall afc.args)
-       *> delete_stack_frame
-       *> return (Value_int 1)
-     | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func)
-     | Value_func (Func_builtin ftype) ->
-       (match ftype with
-        | Print ->
-          (map retrieve_arg fcall >>= builtin_print)
-          *> fail (Runtime_error (DevOnly TypeCheckFailed))
-        | Println ->
-          (map retrieve_arg fcall >>= builtin_println)
-          *> fail (Runtime_error (DevOnly TypeCheckFailed))
-        | Make ->
-          map retrieve_arg fcall *> return (Value_chan (Chan_initialized true))
-          (*ДОДЕЛАТЬ*)
-        | Recover -> return (Value_int 1) (*ДОДЕЛАТЬ*)
-        | Len ->
-          map retrieve_arg fcall
-          >>= (function
-           | [ Value_array (len, _) ] -> return (Value_int len)
-           | [ Value_string s ] -> return (Value_int (String.length s))
-           | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
-        | Panic ->
-          map retrieve_arg fcall
-          >>= (fun av -> return (String.concat "" (List.map pp_value av)))
-          >>= fun msg -> fail (Runtime_error (Panic msg)))
-     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+  | Expr_call (func, args) ->
+    eval_func_call (func, args) *> return (Value_int 1) (*ЗАГЛУШКА*)
   | Expr_chan_receive ex -> eval_expr ex (*ДОДЕЛАТЬ*)
+
+and eval_func_call (func, args) =
+  eval_expr func
+  >>= function
+  | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func)
+  | Value_func (Func_initialized (is_closure, afc)) ->
+    (* тут нужна проверка на замыкание *)
+    add_stack_frame
+      { local_envs =
+          { exec_block = afc.body; var_map = MapIdent.empty; env_type = Default }, []
+      ; deferred_funcs = []
+      }
+    *> iter
+         (fun (farg, (ident, _)) ->
+           retrieve_arg farg >>= fun value -> save_local_id ident value)
+         (List.combine args afc.args)
+    *> delete_stack_frame
+    *> return None
+  | Value_func (Func_builtin ftype) ->
+    (match ftype with
+     | Print -> (map retrieve_arg args >>= builtin_print) *> return None
+     | Println -> (map retrieve_arg args >>= builtin_println) *> return None
+     | Make ->
+       map retrieve_arg args *> return (Some (Value_chan (Chan_initialized true)))
+       (*ДОДЕЛАТЬ*)
+     | Recover -> return None (* ДОДЕЛАТЬ, возвращает аргумент паники *)
+     | Len ->
+       map retrieve_arg args
+       >>= (function
+        | [ Value_array (len, _) ] -> return (Some (Value_int len))
+        | [ Value_string s ] -> return (Some (Value_int (String.length s)))
+        | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+     | Panic ->
+       map retrieve_arg args
+       >>= (fun av -> return (String.concat "" (List.map pp_value av)))
+       >>= fun msg -> fail (Runtime_error (Panic msg)))
+    (* Тут неправильно *)
+  | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 
 and retrieve_arg = function
   | Arg_expr e -> eval_expr e
@@ -88,7 +90,8 @@ and eval_index array index =
   match array, index with
   | Value_array (_, values), Value_int index ->
     (try return (List.nth values index) with
-     | _ -> fail (Runtime_error Array_index_out_of_bound))
+     | Invalid_argument _ -> fail (Runtime_error Negative_array_index)
+     | Failure _ -> fail (Runtime_error Array_index_out_of_bound))
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 
 and eval_unop op expr =

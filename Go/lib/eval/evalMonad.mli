@@ -13,7 +13,7 @@ end
 module MapIdent : Map.S with type key = Ident.t
 
 (** Value for [nil] identifier and unitialized functions and channels *)
-type nil
+type nil = Nil
 
 (** Value for unbuffered channels *)
 type chan_value =
@@ -40,21 +40,25 @@ and builtin =
   | Len
   | Panic
 
+and is_closure =
+  | Closure of value MapIdent.t
+  | Default
+
 and func_value =
-  | Func_initialized of value MapIdent.t * anon_func
+  | Func_initialized of is_closure * anon_func
   (** varMap stores variables, to which the function is bounded if it is a clojure *)
   | Func_uninitialized of nil
   | Func_builtin of builtin
 
-type env_type =
-  | Default
+type is_for_env =
   | For
+  | Default
 
 (** Local environment, [{}] block of statements with local variables *)
 type local_env =
   { exec_block : block
   ; var_map : value MapIdent.t
-  ; env_type : env_type
+  ; env_type : is_for_env
   }
 
 type stack_frame =
@@ -117,9 +121,9 @@ module Monad : sig
 
   (* Local environments *)
   val save_local_id : ident -> value -> unit t
-  val add_env : block -> env_type -> unit t
+  val add_env : block -> is_for_env -> unit t
   val delete_env : unit t
-  val read_env_type : env_type t
+  val read_env_type : is_for_env t
 
   (* Deferred functions *)
   val add_deferred : stack_frame -> unit t

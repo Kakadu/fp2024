@@ -12,7 +12,7 @@ end
 
 module MapIdent = Map.Make (Ident)
 
-type nil
+type nil = Nil
 
 type chan_value =
   | Chan_initialized of bool
@@ -35,19 +35,23 @@ and builtin =
   | Len
   | Panic
 
+and is_closure =
+  | Closure of value MapIdent.t
+  | Default
+
 and func_value =
-  | Func_initialized of value MapIdent.t * anon_func
+  | Func_initialized of is_closure * anon_func
   | Func_uninitialized of nil
   | Func_builtin of builtin
 
-type env_type =
-  | Default
+type is_for_env =
   | For
+  | Default
 
 type local_env =
   { exec_block : block
   ; var_map : value MapIdent.t
-  ; env_type : env_type
+  ; env_type : is_for_env
   }
 
 type stack_frame =

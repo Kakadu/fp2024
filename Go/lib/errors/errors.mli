@@ -26,6 +26,7 @@ type runtime_error =
   | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound
+  | Negative_array_index
   | Uninited_func
   | Deadlock
   | Panic of string
