@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
+open Event
 
 module Ident = struct
   type t = ident
@@ -15,7 +16,8 @@ module MapIdent = Map.Make (Ident)
 type nil = Nil
 
 type chan_value =
-  | Chan_initialized of bool
+  | Chan_initialized of type' channel
+  (** Initialized channel, may either be opened or closed *)
   | Chan_uninitialized of nil
 
 type value =
@@ -54,9 +56,14 @@ type local_env =
   ; env_type : is_for_env
   }
 
+and closure_frame =
+  | Simple
+  | Closure of local_env * local_env list
+
 type stack_frame =
   { local_envs : local_env * local_env list
-  ; deferred_funcs : stack_frame list (* мб тут не тот тип, но вроде должно работать *)
+  ; deferred_funcs : stack_frame list
+  ; closure_envs : closure_frame
   }
 
 type goroutine_state =
@@ -202,8 +209,8 @@ module Monad = struct
   let write_local_envs new_local_envs =
     read_stack_frame
     >>= function
-    | { deferred_funcs } ->
-      write_stack_frame { deferred_funcs; local_envs = new_local_envs }
+    | { deferred_funcs; closure_envs } ->
+      write_stack_frame { deferred_funcs; closure_envs; local_envs = new_local_envs }
   ;;
 
   let add_env block env_type =
@@ -240,7 +247,8 @@ module Monad = struct
   let write_deferred new_deferred =
     read_stack_frame
     >>= function
-    | { local_envs } -> write_stack_frame { local_envs; deferred_funcs = new_deferred }
+    | { local_envs; closure_envs } ->
+      write_stack_frame { local_envs; deferred_funcs = new_deferred; closure_envs }
   ;;
 
   let add_deferred new_frame =
@@ -251,6 +259,21 @@ module Monad = struct
   let delete_deferred =
     let* deferred_funcs = read_deferred in
     write_deferred (List.tl deferred_funcs)
+  ;;
+
+  (*closure_envs*)
+
+  let read_closure_env =
+    read_stack_frame
+    >>= function
+    | { closure_envs } -> return closure_envs
+  ;;
+
+  let write_deferred new_closure =
+    read_stack_frame
+    >>= function
+    | { local_envs; deferred_funcs } ->
+      write_stack_frame { local_envs; closure_envs = new_closure; deferred_funcs }
   ;;
 
   (* exec block (processing statements) *)

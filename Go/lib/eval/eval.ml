@@ -58,34 +58,36 @@ and eval_func_call (func, args) =
       }
     *> iter
          (fun (farg, (ident, _)) ->
-           retrieve_arg farg >>= fun value -> save_local_id ident value)
+           retrieve_arg_value farg >>= fun value -> save_local_id ident value)
          (List.combine args afc.args)
     *> delete_stack_frame
     *> return None
   | Value_func (Func_builtin ftype) ->
     (match ftype with
-     | Print -> (map retrieve_arg args >>= builtin_print) *> return None
-     | Println -> (map retrieve_arg args >>= builtin_println) *> return None
-     | Make ->
-       map retrieve_arg args *> return (Some (Value_chan (Chan_initialized true)))
-       (*ДОДЕЛАТЬ*)
+     | Print -> (map retrieve_arg_value args >>= builtin_print) *> return None
+     | Println -> (map retrieve_arg_value args >>= builtin_println) *> return None
+     | Make -> return (Some (Value_chan (Chan_initialized (Event.new_channel ()))))
      | Recover -> return None (* ДОДЕЛАТЬ, возвращает аргумент паники *)
      | Len ->
-       map retrieve_arg args
+       map retrieve_arg_value args
        >>= (function
         | [ Value_array (len, _) ] -> return (Some (Value_int len))
         | [ Value_string s ] -> return (Some (Value_int (String.length s)))
         | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
      | Panic ->
-       map retrieve_arg args
+       map retrieve_arg_value args
        >>= (fun av -> return (String.concat "" (List.map pp_value av)))
        >>= fun msg -> fail (Runtime_error (Panic msg)))
     (* Тут неправильно *)
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 
-and retrieve_arg = function
+and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
   | Arg_type _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+
+and retrieve_arg_generic = function
+  | Arg_expr _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | Arg_type t -> return t
 
 and eval_index array index =
   let* array = eval_expr array in

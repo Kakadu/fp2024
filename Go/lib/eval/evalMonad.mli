@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
+open Event
 
 module Ident : sig
   type t = ident
@@ -17,7 +18,8 @@ type nil = Nil
 
 (** Value for unbuffered channels *)
 type chan_value =
-  | Chan_initialized of bool (** Initialized channel, may either be opened or closed *)
+  | Chan_initialized of type' channel
+  (** Initialized channel, may either be opened or closed *)
   | Chan_uninitialized of nil
 
 (** Values that can be stored in a variables *)
