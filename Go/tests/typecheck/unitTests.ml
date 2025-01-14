@@ -947,7 +947,8 @@ let%expect_test "ok: too much const array inits" =
         c := [2]string{"", "a", "123"}
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Array's size less thai it's inits count |}]
+  [%expect
+    {| ERROR WHILE TYPECHECK WITH Mismatched types: Array's size less thai it's inits count |}]
 ;;
 
 let%expect_test "ok: simple array index call" =
