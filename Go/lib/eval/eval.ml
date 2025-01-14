@@ -15,10 +15,6 @@ let eval =
   | _, res -> res (* mb check final state *)
 ;;
 
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
-
-(** SPDX-License-Identifier: MIT *)
-
 let rec eval_expr = function
   | Expr_const c ->
     (match c with
@@ -69,4 +65,20 @@ and eval_binop op a1 a2 =
   | Bin_greater, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 > a2))
   | Bin_greater_equal, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 >= a2))
   | _ -> fail (Runtime_error (DevOnly Mismatched_types))
+;;
+
+let pp printer eval ast =
+  match eval ast with
+  | Result.Ok res -> print_endline (printer res)
+  | Result.Error _ -> print_endline ": some kind of error"
+;;
+
+let rec pp_value = function
+  | Value_int i -> Format.asprintf "%d" i
+  | Value_bool b -> Format.asprintf "%b" b
+  | Value_nil n -> Format.asprintf "nil"
+  | Value_array (i, lst) -> Format.asprintf "array of size %d" i
+  | Value_chan _ -> Format.asprintf "chan lmao"
+  | Value_func _ -> Format.asprintf "func lmao"
+  | Value_string s -> Format.asprintf "%s" s
 ;;
