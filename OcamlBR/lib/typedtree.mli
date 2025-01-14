@@ -51,9 +51,10 @@ type error =
   [ `Occurs_check
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
+  | `Ill_left_hand_side of string
   ]
 
 val pp_error
   :  Format.formatter
-  -> [< `Occurs_check | `Undefined_variable of string | `Unification_failed of ty * ty ]
+  -> [< `Occurs_check | `Undefined_variable of string | `Unification_failed of ty * ty | `Ill_left_hand_side of string ]
   -> unit

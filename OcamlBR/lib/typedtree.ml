@@ -73,6 +73,7 @@ type error =
   [ `Occurs_check
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
+  | `Ill_left_hand_side of string
   ]
 
 let pp_error ppf = function
@@ -80,4 +81,5 @@ let pp_error ppf = function
   | `Undefined_variable s -> Format.fprintf ppf {|Undefined variable "%s"|} s
   | `Unification_failed (l, r) ->
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
+  | `Ill_left_hand_side s -> Format.fprintf ppf {|Ill left hand side %s|} s
 ;;
