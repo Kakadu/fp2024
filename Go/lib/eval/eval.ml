@@ -39,7 +39,10 @@ let rec eval_expr = function
   | Expr_ident id -> read_ident id
   | Expr_index (array, index) -> eval_index array index
   | Expr_call (func, args) ->
-    eval_func_call (func, args) *> return (Value_int 1) (*ЗАГЛУШКА*)
+    eval_func_call (func, args)
+    >>= (function
+     | Some value -> return value (* тут может быть тапл *)
+     | None -> fail (Runtime_error (DevOnly TypeCheckFailed)))
   | Expr_chan_receive ex -> eval_expr ex (*ДОДЕЛАТЬ*)
 
 and eval_func_call (func, args) =
@@ -122,6 +125,7 @@ and eval_binop op a1 a2 =
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 ;;
 
+let eval_stmt = return None (* Если ретерн - то возвращает значение *)
 let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
 
 let eval =
