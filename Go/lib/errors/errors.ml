@@ -12,15 +12,22 @@ type type_check_error =
   | Invalid_operation of string
 [@@deriving show { with_path = false }]
 
-type runtime_error =
-  | Not_enought_operands
+type devonly_runtime_error =
+  | Not_enough_stack_frames
+  | Not_enough_local_envs
+  | Not_enough_operands
   | No_goroutine_running
   | Two_goroutine_running
+  | Undefined_ident
+[@@deriving show { with_path = false }]
+
+type runtime_error =
   | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound
   | Deadlock
   | Panic of string
+  | DevOnly of devonly_runtime_error
 [@@deriving show { with_path = false }]
 
 type error =

@@ -37,8 +37,19 @@ and func_value =
   (** varMap stores variables, to which the function is bounded if it is a clojure *)
   | Func_uninitialized of nil
 
+type env_type =
+  | Default
+  | For
+
+(** Local environment, [{}] block of statements with local variables *)
+type local_env =
+  { exec_block : block
+  ; var_map : value MapIdent.t
+  ; env_type : env_type
+  }
+
 type stack_frame =
-  { local_envs : value MapIdent.t list
+  { local_envs : local_env * local_env list
   (** Storage for local variables, new [{}] block creates new environment *)
   ; expr_eval : value list (** Stack for expression evaluation *)
   ; deferred_funcs : stack_frame list
@@ -52,7 +63,7 @@ type goroutine_state =
   | Recieving of ident (** State of goroutine that is trying to receive from a chanel *)
 
 type goroutine =
-  { stack : stack_frame list * stack_frame
+  { stack : stack_frame * stack_frame list
   (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
   ; state : goroutine_state
   ; id : int
@@ -98,8 +109,9 @@ module Monad : sig
 
   (* Local environments *)
   val save_local_id : ident -> value -> unit t
-  val add_env : unit t
+  val add_env : block -> env_type -> unit t
   val delete_env : unit t
+  val read_env_type : env_type t
 
   (* Deferred functions *)
   val add_deferred : stack_frame -> unit t
@@ -108,4 +120,8 @@ module Monad : sig
   (* Expr eval stack *)
   val push_value : value -> unit t
   val pop_value : value t
+  val read_ident : ident -> value t
+
+  (* statements execution *)
+  val pop_next_statement : stmt option t
 end
