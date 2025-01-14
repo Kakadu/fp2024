@@ -21,7 +21,7 @@ let%expect_test "print measure ident" =
 
 let%expect_test "print measure product" =
   printf "%a\n" pprint_measure (Measure_prod (Measure_ident "kg", Measure_ident "m"));
-  [%expect {| kg m |}]
+  [%expect {| kg * m |}]
 ;;
 
 let%expect_test "print dimless measure" =
@@ -31,44 +31,44 @@ let%expect_test "print dimless measure" =
 
 let%expect_test "print measure product 1 kg" =
   printf "%a\n" pprint_measure (Measure_prod (Measure_dimless, Measure_ident "kg"));
-  [%expect {| kg |}]
+  [%expect {| 1 * kg |}]
 ;;
 
 let%expect_test "print measure product kg 1" =
   printf "%a\n" pprint_measure (Measure_prod (Measure_ident "kg", Measure_dimless));
-  [%expect {| kg |}]
+  [%expect {| kg * 1 |}]
 ;;
 
 let%expect_test "print measure product 1 1" =
   printf "%a\n" pprint_measure (Measure_prod (Measure_dimless, Measure_dimless));
-  [%expect {| 1 |}]
+  [%expect {| 1 * 1 |}]
 ;;
 
 let%expect_test "print measure product 1 1" =
   printf "%a\n" pprint_measure (Measure_prod (Measure_dimless, Measure_dimless));
-  [%expect {| 1 |}]
+  [%expect {| 1 * 1 |}]
 ;;
 
 (* [kg / m / s] should be [kg / (m s)];
    [kg / (s / m)] should be [kg m / s] ----- division is left-associative *)
 let%expect_test "print measure division" =
   printf "%a\n" pprint_measure (Measure_div (Measure_ident "kg", Measure_ident "m"));
-  [%expect {| kg/m |}]
+  [%expect {| kg / m |}]
 ;;
 
 let%expect_test "print measure division 1 / kg" =
   printf "%a\n" pprint_measure (Measure_div (Measure_dimless, Measure_ident "kg"));
-  [%expect {| /kg |}]
+  [%expect {| 1 / kg |}]
 ;;
 
 let%expect_test "print measure division kg / 1" =
   printf "%a\n" pprint_measure (Measure_div (Measure_ident "kg", Measure_dimless));
-  [%expect {| kg |}]
+  [%expect {| kg / 1 |}]
 ;;
 
 let%expect_test "print measure division 1 / 1" =
   printf "%a\n" pprint_measure (Measure_div (Measure_dimless, Measure_dimless));
-  [%expect {| 1 |}]
+  [%expect {| 1 / 1 |}]
 ;;
 
 let%expect_test "print measure in positive power" =
@@ -502,27 +502,26 @@ let%expect_test "print f (if true then x else y) (with parentheses)" =
 ;;
 
 let%expect_test "print single structure item expression" =
-  printf "%a\n" pprint_program [ Str_item_eval (Expr_const (Const_int 1)) ];
+  print_endline (pprint_program [ Str_item_eval (Expr_const (Const_int 1)) ]);
   [%expect {| 1;; |}]
 ;;
 
 let%expect_test "print two structure item expressions sep by ;;" =
-  printf
-    "%a\n"
-    pprint_program
-    [ Str_item_eval
-        (Expr_let
-           ( Nonrecursive
-           , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1))
-           , []
-           , Expr_ident_or_op "a" ))
-    ; Str_item_eval
-        (Expr_let
-           ( Nonrecursive
-           , Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2))
-           , []
-           , Expr_ident_or_op "b" ))
-    ];
+  print_endline
+    (pprint_program
+       [ Str_item_eval
+           (Expr_let
+              ( Nonrecursive
+              , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1))
+              , []
+              , Expr_ident_or_op "a" ))
+       ; Str_item_eval
+           (Expr_let
+              ( Nonrecursive
+              , Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2))
+              , []
+              , Expr_ident_or_op "b" ))
+       ]);
   [%expect {|
     let a = 1 in a;;
 
@@ -530,24 +529,22 @@ let%expect_test "print two structure item expressions sep by ;;" =
 ;;
 
 let%expect_test "print single structure item definition" =
-  printf
-    "%a\n"
-    pprint_program
-    [ Str_item_def
-        (Nonrecursive, Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1)), [])
-    ];
+  print_endline
+    (pprint_program
+       [ Str_item_def
+           (Nonrecursive, Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1)), [])
+       ]);
   [%expect {| let a = 1;; |}]
 ;;
 
 let%expect_test "print two structure item definitions sep by ;;" =
-  printf
-    "%a\n"
-    pprint_program
-    [ Str_item_def
-        (Nonrecursive, Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1)), [])
-    ; Str_item_def
-        (Nonrecursive, Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2)), [])
-    ];
+  print_endline
+    (pprint_program
+       [ Str_item_def
+           (Nonrecursive, Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1)), [])
+       ; Str_item_def
+           (Nonrecursive, Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2)), [])
+       ]);
   [%expect {|
     let a = 1;;
 

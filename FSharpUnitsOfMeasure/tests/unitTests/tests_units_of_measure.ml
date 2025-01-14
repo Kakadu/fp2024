@@ -226,16 +226,14 @@ let%expect_test "parse 1 as measure" =
   pp pp_measure pm {| 1 |};
   [%expect
     {|
-    (Measure_div ((Measure_ident "kg"),
-       (Measure_div ((Measure_ident "cm"), (Measure_ident "s"))))) |}]
+    Measure_dimless |}]
 ;;
 
 let%expect_test "parse inverse as measure" =
   pp pp_measure pm {| 1 / m |};
   [%expect
     {|
-    (Measure_div ((Measure_ident "kg"),
-       (Measure_div ((Measure_ident "cm"), (Measure_ident "s"))))) |}]
+    (Measure_div (Measure_dimless, (Measure_ident "m"))) |}]
 ;;
 
 let%expect_test "parse something strange" =

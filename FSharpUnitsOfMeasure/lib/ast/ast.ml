@@ -6,17 +6,18 @@ open QCheck.Gen
 open Keywords
 open Base
 
-let gen_id_first_char =
-  frequency [ 1, char_range 'a' 'z'; 1, char_range 'A' 'Z'; 1, return '_' ]
-;;
-
+let gen_id_first_char = frequency [ 5, char_range 'a' 'z'; 1, return '_' ]
 let gen_digit = char_range '0' '9'
-let gen_id_char = frequency [ 1, gen_id_first_char; 1, gen_digit; 1, return '\'' ]
+
+let gen_id_char =
+  frequency [ 5, gen_id_first_char; 5, char_range 'A' 'Z'; 5, gen_digit; 1, return '\'' ]
+;;
 
 let gen_ident =
   let gen_name =
     let* fst = gen_id_first_char >|= fun c -> Char.to_string c in
-    let* rest = string_size ~gen:gen_id_char (0 -- 4) in
+    let range = if String.( = ) fst "_" then 1 -- 4 else 0 -- 4 in
+    let* rest = string_size ~gen:gen_id_char range in
     return (fst ^ rest)
   in
   gen_name
