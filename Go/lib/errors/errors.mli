@@ -13,6 +13,7 @@ type type_check_error =
 [@@deriving show { with_path = false }]
 
 type runtime_error =
+  | Not_enought_operands
   | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound

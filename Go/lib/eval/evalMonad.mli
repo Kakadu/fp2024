@@ -40,6 +40,7 @@ and func_value =
 type stack_frame =
   { local_envs : value MapIdent.t list
   (** Storage for local variables, new [{}] block creates new environment *)
+  ; expr_eval : value list (** Stack for expression evaluation *)
   ; deferred_funcs : stack_frame list
   }
 
@@ -91,7 +92,7 @@ module EvalMonad : sig
   val read_running : goroutine t
   val write_running : goroutine -> unit t
 
-  (* Stack *)
+  (* Call stack *)
   val add_stack_frame : stack_frame -> unit t
   val delete_stack_frame : unit t
 
@@ -103,4 +104,8 @@ module EvalMonad : sig
   (* Deferred functions *)
   val add_deferred : stack_frame -> unit t
   val delete_deferred : unit t
+
+  (* Expr eval stack *)
+  val push_value : value -> unit t
+  val pop_value : value t
 end

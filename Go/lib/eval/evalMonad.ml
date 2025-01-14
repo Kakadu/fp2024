@@ -33,6 +33,7 @@ and func_value =
 
 type stack_frame =
   { local_envs : value MapIdent.t list
+  ; expr_eval : value list
   ; deferred_funcs : stack_frame list (* мб тут не тот тип, но вроде должно работать *)
   }
 
@@ -160,8 +161,8 @@ module EvalMonad = struct
   let write_local_envs new_local_env =
     read_stack_frame
     >>= function
-    | { deferred_funcs } ->
-      write_stack_frame { deferred_funcs; local_envs = new_local_env }
+    | { deferred_funcs; expr_eval } ->
+      write_stack_frame { deferred_funcs; expr_eval; local_envs = new_local_env }
   ;;
 
   let save_local_id ident value =
@@ -190,7 +191,8 @@ module EvalMonad = struct
   let write_deferred new_deferred =
     read_stack_frame
     >>= function
-    | { local_envs } -> write_stack_frame { local_envs; deferred_funcs = new_deferred }
+    | { local_envs; expr_eval } ->
+      write_stack_frame { local_envs; expr_eval; deferred_funcs = new_deferred }
   ;;
 
   let add_deferred new_frame =
@@ -203,5 +205,30 @@ module EvalMonad = struct
     write_deferred (List.tl deferred_funcs)
   ;;
 
-  (* vars *)
+  (* expr_eval *)
+
+  let read_expr_eval =
+    read_stack_frame
+    >>= function
+    | { expr_eval } -> return expr_eval
+  ;;
+
+  let write_expr_eval new_expr_eval =
+    read_stack_frame
+    >>= function
+    | { local_envs; deferred_funcs } ->
+      write_stack_frame { local_envs; deferred_funcs; expr_eval = new_expr_eval }
+  ;;
+
+  let push_value new_value =
+    let* stack = read_expr_eval in
+    write_expr_eval (new_value :: stack)
+  ;;
+
+  let pop_value =
+    read_expr_eval
+    >>= function
+    | hd :: tl -> write_expr_eval tl *> return hd
+    | [] -> fail (Runtime_error Not_enought_operands)
+  ;;
 end
