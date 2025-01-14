@@ -115,6 +115,25 @@ let%expect_test "parse factorial" =
 
 (************************** Programs **************************)
 
+let%expect_test "parse example 1 program" =
+  pp pp_program parse_program {| '_' [];; |};
+  [%expect
+    {|
+    [(Str_item_eval (Expr_apply ((Expr_const (Const_char '_')), (Expr_list []))))
+      ] |}]
+;;
+
+let%expect_test "parse example 2 program" =
+  pp
+    pp_program
+    parse_program
+    {| let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |};
+  [%expect
+    {|
+    [(Str_item_eval (Expr_apply ((Expr_const (Const_char '_')), (Expr_list []))))
+      ] |}]
+;;
+
 let%expect_test "parse simple binding as a program" =
   pp pp_program parse_program {| let x = y |};
   [%expect
@@ -144,7 +163,6 @@ let%expect_test "parse program of bindings separated by newline" =
     let x = y
     let z = w
     |};
-  [%expect
-    {|
+  [%expect {|
     : end_of_input |}]
 ;;

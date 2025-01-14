@@ -29,4 +29,8 @@ let parse_structure_item_def =
 ;;
 
 let parse_structure_item = choice [ parse_structure_item_expr; parse_structure_item_def ]
-let parse_program = sep_by (skip_token ";;") parse_structure_item
+
+let parse_program =
+  sep_by (skip_token ";;") parse_structure_item
+  <* (skip_ws *> string ";;" <* skip_ws <|> string "")
+;;

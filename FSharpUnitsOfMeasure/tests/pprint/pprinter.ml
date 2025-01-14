@@ -14,25 +14,19 @@ let pprint_sep_and ppf () = fprintf ppf " and "
 let pprint_sep_or ppf () = fprintf ppf " | "
 let pprint_sep_by pprint_alpha sep_by = pp_print_list pprint_alpha ~pp_sep:sep_by
 
+(* Not enough brackets *)
 let rec pprint_measure ppf =
-  let pprint_exp ppf = fprintf ppf "%d" in
+  let pr_m ppf m =
+    match m with
+    | Measure_dimless | Measure_ident _ -> fprintf ppf "%a" pprint_measure m
+    | _ -> fprintf ppf "(%a)" pprint_measure m
+  in
+  let pr_exp ppf = fprintf ppf "%d" in
   function
   | Measure_ident mid -> fprintf ppf "%s" mid
-  | Measure_prod (m1, m2) ->
-    (match m1 with
-     | Measure_dimless -> fprintf ppf "%a" pprint_measure m2
-     | _ ->
-       (match m2 with
-        | Measure_dimless -> fprintf ppf "%a" pprint_measure m1
-        | _ -> fprintf ppf "%a %a" pprint_measure m1 pprint_measure m2))
-  | Measure_div (m1, m2) ->
-    (match m2 with
-     | Measure_dimless -> fprintf ppf "%a" pprint_measure m1
-     | _ ->
-       (match m1 with
-        | Measure_dimless -> fprintf ppf "/%a" pprint_measure m2
-        | _ -> fprintf ppf "%a/%a" pprint_measure m1 pprint_measure m2))
-  | Measure_pow (m, exp) -> fprintf ppf "%a ^ %a" pprint_measure m pprint_exp exp
+  | Measure_prod (m1, m2) -> fprintf ppf "%a * %a" pr_m m1 pr_m m2
+  | Measure_div (m1, m2) -> fprintf ppf "%a / %a" pr_m m1 pr_m m2
+  | Measure_pow (m, exp) -> fprintf ppf "%a ^ %a" pr_m m pr_exp exp
   | Measure_dimless -> fprintf ppf "1"
 ;;
 
@@ -128,6 +122,6 @@ let pprint_struct_item ppf = function
   | _ -> fprintf ppf "failed to pprint structure item"
 ;;
 
-let pprint_program ppf =
-  fprintf ppf "%a;;\n" (pprint_sep_by pprint_struct_item pprint_sep_double_colon)
+let pprint_program =
+  asprintf "%a;;\n" (pprint_sep_by pprint_struct_item pprint_sep_double_colon)
 ;;
