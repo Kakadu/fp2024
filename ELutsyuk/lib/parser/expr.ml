@@ -102,45 +102,52 @@ let chainl1 expr oper =
   expr >>= go
 ;;
 
-let pbin_op op_token constructor =
-  token op_token *> (return @@ fun exp1 exp2 -> BinOp (constructor, exp1, exp2))
+let pbin_op l_exp binop =
+  chainl1 l_exp (binop >>| fun op exp1 exp2 -> BinOp (op, exp1, exp2))
 ;;
 
 let prel =
   choice
-    [ pbin_op "=" Eq
-    ; pbin_op "<>" Ne
-    ; pbin_op "<=" Le
-    ; pbin_op ">=" Ge
-    ; pbin_op "<" Lt
-    ; pbin_op ">" Gt
+    [ token "=" *> return Eq
+    ; token "<>" *> return Ne
+    ; token "<=" *> return Le
+    ; token ">=" *> return Ge
+    ; token "<" *> return Lt
+    ; token ">" *> return Gt
     ]
 ;;
 
-let plogical = choice [ pbin_op "&&" And; pbin_op "||" Or ]
-let pmul = pbin_op "*" Mul
-let padd = pbin_op "+" Add
-let psub = pbin_op "-" Sub
-let pdiv = pbin_op "/" Div
+let plogical = choice [ token "&&" *> return And; token "||" *> return Or ]
+let pmul = token "*" *> return Mul
+let padd = token "+" *> return Add
+let psub = token "-" *> return Sub
+let pdiv = token "/" *> return Div
 
 let pexpr_app pexpr =
   let app = return @@ fun exp1 exp2 -> App (exp1, exp2) in
   chainl1 pexpr app
 ;;
 
+let pexpr_unary pexpr =
+  let p_minus = token "-" *> return (fun exp -> BinOp (Sub, Const (Int 0), exp)) in
+  let p_plus = token "+" *> return (fun exp -> exp) in
+  p_minus <|> p_plus <*> pexpr <|> pexpr
+;;
+
 let pexpr =
   fix
   @@ fun expr ->
-  let base_expr = choice [ round_par expr; pexpr_const; pexpr_var; pexpr_list expr ] in
-  let app_expr = pexpr_app base_expr <|> base_expr in
-  let mul_expr = chainl1 app_expr (pmul <|> pdiv) in
-  let add_expr = chainl1 mul_expr (padd <|> psub) in
-  let comprasion_expr = chainl1 add_expr (prel <|> plogical) in
-  let branch_expr = pexpr_branch comprasion_expr <|> comprasion_expr in
-  let match_expr = pexpr_match ppat branch_expr <|> branch_expr in
-  let tup_expr = pexpr_tuple match_expr <|> match_expr in
-  let list_expr = pexpr_list tup_expr <|> tup_expr in
-  let fun_expr = pexpr_fun ppat list_expr <|> list_expr in
-  let let_expr = pexpr_let fun_expr <|> fun_expr in
-  let_expr
+  let atomary = choice [ round_par expr; pexpr_const; pexpr_var; pexpr_list expr ] in
+  let apply = pexpr_app atomary <|> atomary in
+  let unary = pexpr_unary apply <|> apply in
+  let mul = pbin_op unary (pmul <|> pdiv) in
+  let add = pbin_op mul (padd <|> psub) in
+  let compr = pbin_op add (prel <|> plogical) in
+  let branch = pexpr_branch compr <|> compr in
+  let match_exp = pexpr_match ppat branch <|> branch in
+  let tup = pexpr_tuple match_exp <|> match_exp in
+  let list = pexpr_list tup <|> tup in
+  let fun_exp = pexpr_fun ppat list <|> list in
+  let let_exp = pexpr_let fun_exp <|> fun_exp in
+  let_exp
 ;;

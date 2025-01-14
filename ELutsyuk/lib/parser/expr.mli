@@ -17,5 +17,6 @@ val pexpr_fun : pat t -> expr t -> expr t
 val pexpr_match : pat t -> expr t -> expr t
 val pexpr_let : expr t -> expr t
 val plet_binding : expr t -> (rec_state * pat * expr) t
-val pbin_op : id -> binop -> (expr -> expr -> expr) t
+val pexpr_unary : expr t -> expr t
+val pbin_op : expr t -> binop t -> expr t
 val pexpr : expr t

@@ -61,25 +61,7 @@ let pid =
   else return id
 ;;
 
-let pint =
-  trim
-  @@
-  let* sign =
-    choice
-      [ (char '+' *> peek_char_fail
-         >>= function
-         | '0' .. '9' -> return 1
-         | _ -> fail "expected digit after '+'")
-      ; (char '-' *> peek_char_fail
-         >>= function
-         | '0' .. '9' -> return (-1)
-         | _ -> fail "expected digit after '-'")
-      ; return 1
-      ]
-  in
-  let* digit = take_while1 is_digit >>| int_of_string in
-  return @@ Int (sign * digit)
-;;
+let pint = trim @@ take_while1 is_digit >>| fun x -> Int (int_of_string x)
 
 let pstr =
   let p_empty_string = string "{||}" >>| fun _ -> "" in

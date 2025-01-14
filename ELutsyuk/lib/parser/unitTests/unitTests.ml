@@ -30,12 +30,12 @@ let%expect_test "keyword_id" =
 
 let%expect_test "num_with_plus" =
   pp pp_const pint "+2024";
-  [%expect {| (Int 2024) |}]
+  [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "num_with_minus" =
   pp pp_const pint "-2024";
-  [%expect {| (Int -2024) |}]
+  [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "num_without_sign_before" =
@@ -93,7 +93,7 @@ let%expect_test "unit" =
   [%expect {| Unit |}]
 ;;
 
-(* patterns *)
+(* ================================== patterns ================================= *)
 let%expect_test "pat_var" =
   pp pp_pat ppat_var "  meow\n";
   [%expect {| (PatVar "meow") |}]
@@ -146,7 +146,7 @@ let%expect_test "mixed_pat" =
     (PatTup ((PatTup ((PatTup (PatAny, PatAny, [])), PatAny, [])), PatAny, [])) |}]
 ;;
 
-(* expressions *)
+(* ================================ expressions ================================ *)
 let%expect_test "expr_var" =
   pp pp_expr pexpr_var "  meow\n   ";
   [%expect {|
@@ -169,6 +169,16 @@ let%expect_test "expr_cons_unit" =
   pp pp_expr pexpr_const "  ()  ";
   [%expect {|
     (Const Unit) |}]
+;;
+
+let%expect_test "num_with_plus" =
+  pp pp_expr (pexpr_unary pexpr) "+2024";
+  [%expect {| (Const (Int 2024)) |}]
+;;
+
+let%expect_test "num_with_minus" =
+  pp pp_expr (pexpr_unary pexpr) "-2024";
+  [%expect {| (BinOp (Sub, (Const (Int 0)), (Const (Int 2024)))) |}]
 ;;
 
 let%expect_test "simple_list" =

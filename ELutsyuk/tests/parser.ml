@@ -113,3 +113,41 @@ let%expect_test "parse_eval_without_;;" =
   [%expect {|
     : not enough input |}]
 ;;
+
+let%expect_test "parse_sub_without_ws" =
+  parse_program "n-1;;";
+  [%expect {|
+    [(EvalExpr (BinOp (Sub, (Var "n"), (Const (Int 1)))))]|}]
+;;
+
+let%expect_test "parse_two_func" =
+  parse_program
+    "let rec fac n = if n<=1 then 1 else n * fac (n-1);;\n\n\
+     let main =\n\
+    \  let () = print_int (fac 4) in\n\
+    \  0\n\
+     ;;";
+  [%expect
+    {|
+    [(Binding
+        { is_rec = Rec; pat = (PatVar "fac");
+          expr =
+          (Fun ((PatVar "n"),
+             (Branch ((BinOp (Le, (Var "n"), (Const (Int 1)))), (Const (Int 1)),
+                (BinOp (Mul, (Var "n"),
+                   (App ((Var "fac"), (BinOp (Sub, (Var "n"), (Const (Int 1))))))
+                   ))
+                ))
+             ))
+          });
+      (Binding
+         { is_rec = NonRec; pat = (PatVar "main");
+           expr =
+           (Let (
+              { is_rec = NonRec; pat = (PatConst Unit);
+                expr =
+                (App ((Var "print_int"), (App ((Var "fac"), (Const (Int 4)))))) },
+              (Const (Int 0))))
+           })
+      ] |}]
+;;
