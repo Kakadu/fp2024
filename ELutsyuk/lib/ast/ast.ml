@@ -1,6 +1,7 @@
-(* Copyright 2024, Victoria Lutsyuk *)
+(** Copyright 2024, Victoria Lutsyuk *)
 
-(* SPDX-License-Identifier: MIT *)
+(** SPDX-License-Identifier: MIT *)
+
 type id = string (* expression identifier *) [@@deriving show { with_path = false }]
 
 (** Represents constant values. *)

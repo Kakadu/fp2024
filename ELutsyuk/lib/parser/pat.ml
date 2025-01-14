@@ -1,6 +1,6 @@
-(* Copyright 2024, Victoria Lutsyuk *)
+(** Copyright 2024, Victoria Lutsyuk *)
 
-(* SPDX-License-Identifier: MIT *)
+(** SPDX-License-Identifier: MIT *)
 
 open Angstrom
 open Ast
@@ -24,7 +24,7 @@ let ppat_any =
   trim
   @@
   let* _ = token "_" in
-  return @@ PatAny
+  return PatAny
 ;;
 
 let ppat_tuple ppat =
