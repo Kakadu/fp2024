@@ -15,17 +15,20 @@ let pp str =
         | Result.Ok _ -> ()
         | Result.Error err ->
           (match err with
-           | Runtime_error Not_enought_operands -> prerr_endline "Not enough operands"
-           | Runtime_error No_goroutine_running -> prerr_endline "No goroutine running"
-           | Runtime_error Two_goroutine_running -> prerr_endline "Two goroutine running"
+           | Runtime_error (DevOnly Not_enough_operands) ->
+             prerr_endline "Not enough operands"
+           | Runtime_error (DevOnly No_goroutine_running) ->
+             prerr_endline "No goroutine running"
+           | Runtime_error (DevOnly Two_goroutine_running) ->
+             prerr_endline "Two goroutine running"
            | Runtime_error Stack_overflow -> prerr_endline "Stack overflow"
            | Runtime_error Division_by_zero -> prerr_endline "Try to divide by zero"
            | Runtime_error Array_index_out_of_bound ->
              prerr_endline "Array index out of bounds"
            | Runtime_error Deadlock -> prerr_endline "Go routine deadlock"
            | Runtime_error (Panic msg) -> prerr_endline ("Paniced with message:" ^ msg)
-           | Runtime_error Internal_error ->
-             prerr_endline "Internal error occured while evaluating"
+           | Runtime_error (DevOnly TypeCheckFailed) ->
+             prerr_endline "Internal Typecheck error occured while evaluating"
            | _ -> ()))
      | Result.Error err ->
        prerr_string "ERROR WHILE TYPECHECK WITH ";

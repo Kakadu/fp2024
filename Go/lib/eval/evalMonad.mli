@@ -32,10 +32,19 @@ type value =
   | Value_nil of nil
   (** Untyped [<nil>] value that is stored in [nil] predeclared identifier *)
 
+and builtin =
+  | Print
+  | Println
+  | Make
+  | Recover
+  | Len
+  | Panic
+
 and func_value =
   | Func_initialized of value MapIdent.t * anon_func
   (** varMap stores variables, to which the function is bounded if it is a clojure *)
   | Func_uninitialized of nil
+  | Func_builtin of builtin
 
 type env_type =
   | Default

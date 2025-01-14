@@ -19,13 +19,14 @@ type devonly_runtime_error =
   | No_goroutine_running
   | Two_goroutine_running
   | Undefined_ident
-  | Mismatched_types
+  | TypeCheckFailed
 [@@deriving show { with_path = false }]
 
 type runtime_error =
   | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound
+  | Uninited_func
   | Deadlock
   | Panic of string
   | DevOnly of devonly_runtime_error

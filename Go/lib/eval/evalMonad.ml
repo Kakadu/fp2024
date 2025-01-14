@@ -27,9 +27,18 @@ type value =
   | Value_chan of chan_value
   | Value_nil of nil
 
+and builtin =
+  | Print
+  | Println
+  | Make
+  | Recover
+  | Len
+  | Panic
+
 and func_value =
   | Func_initialized of value MapIdent.t * anon_func
   | Func_uninitialized of nil
+  | Func_builtin of builtin
 
 type env_type =
   | Default
