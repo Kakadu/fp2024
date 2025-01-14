@@ -100,17 +100,17 @@ open Expr
 let pprogram =
   let p_binding =
     let* _ = toke<span data-count="4">n</span> "let" in
-    <span data-count="4">l</span>et* is_rec, pat, expr = plet_bindin<span data-count="4">g</span> pexpr in
-    <span data-count="4">r</span>eturn @@ Binding { is_rec; pat; expr }
+    <span data-count="6">l</span>et* is_rec, pat, expr = plet_bindin<span data-count="6">g</span> pexpr in
+    <span data-count="6">r</span>eturn @@ Binding { is_rec; pat; expr }
   in
   let p_eval =
     let* eval = pexpr in
-    <span data-count="9">r</span>eturn @@ EvalExpr eval
+    <span data-count="10">r</span>eturn @@ EvalExpr eval
   in
   sep_b<span data-count="4">y</span> (toke<span data-count="4">n</span> ";;") (p_binding &lt;|<span data-count="4">&gt;</span> p_eval) &lt;<span data-count="4">*</span> toke<span data-count="4">n</span> ";;"
 ;;
 
-let parse str = <span data-count="10">p</span>arse_string ~consume:All pprogram str
+let parse str = <span data-count="12">p</span>arse_string ~consume:All pprogram str
 
 let parse_to_string input =
   <span data-count="0">m</span>atch parse input with

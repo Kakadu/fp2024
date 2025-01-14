@@ -154,20 +154,27 @@
 <a id="L130"></a><span > </span>
 <a id="L131"></a><span > </span>
 <a id="L132"></a><span class="visited"> </span>
-<a id="L133"></a><span > </span>
+<a id="L133"></a><span class="visited"> </span>
 <a id="L134"></a><span class="visited"> </span>
-<a id="L135"></a><span class="visited"> </span>
-<a id="L136"></a><span class="visited"> </span>
-<a id="L137"></a><span class="visited"> </span>
+<a id="L135"></a><span > </span>
+<a id="L136"></a><span > </span>
+<a id="L137"></a><span > </span>
 <a id="L138"></a><span class="visited"> </span>
-<a id="L139"></a><span class="visited"> </span>
+<a id="L139"></a><span > </span>
 <a id="L140"></a><span class="visited"> </span>
 <a id="L141"></a><span class="visited"> </span>
 <a id="L142"></a><span class="visited"> </span>
 <a id="L143"></a><span class="visited"> </span>
 <a id="L144"></a><span class="visited"> </span>
 <a id="L145"></a><span class="visited"> </span>
-<a id="L146"></a><span > </span>
+<a id="L146"></a><span class="visited"> </span>
+<a id="L147"></a><span class="visited"> </span>
+<a id="L148"></a><span class="visited"> </span>
+<a id="L149"></a><span class="visited"> </span>
+<a id="L150"></a><span class="visited"> </span>
+<a id="L151"></a><span class="visited"> </span>
+<a id="L152"></a><span class="visited"> </span>
+<a id="L153"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -318,6 +325,13 @@
 <a href="#L144">144</a>
 <a href="#L145">145</a>
 <a href="#L146">146</a>
+<a href="#L147">147</a>
+<a href="#L148">148</a>
+<a href="#L149">149</a>
+<a href="#L150">150</a>
+<a href="#L151">151</a>
+<a href="#L152">152</a>
+<a href="#L153">153</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Victoria Lutsyuk *)
 
@@ -332,14 +346,14 @@ let pexpr_var =
   tri<span data-count="4">m</span>
   @@
   let* var = pid in
-  <span data-count="34">r</span>eturn @@ Var var
+  <span data-count="41">r</span>eturn @@ Var var
 ;;
 
 let pexpr_const =
   tri<span data-count="4">m</span>
   @@
   let* cons = pconst in
-  <span data-count="73">r</span>eturn @@ Const cons
+  <span data-count="81">r</span>eturn @@ Const cons
 ;;
 
 let pexpr_list parse_expr =
@@ -377,14 +391,14 @@ let pexpr_fun parse_pat parse_expr =
 ;;
 
 let plet_binding parse_expr =
-  <span data-count="11">l</span>et* is_rec = toke<span data-count="11">n</span> "rec" *<span data-count="11">&gt;</span> retur<span data-count="11">n</span> Rec &lt;|<span data-count="11">&gt;</span> retur<span data-count="11">n</span> NonRec in
-  <span data-count="10">l</span>et* let_pat = ppat in
-  <span data-count="10">l</span>et* params = man<span data-count="10">y</span> ppat in
-  <span data-count="10">l</span>et* body_expr = toke<span data-count="10">n</span> "=" *<span data-count="10">&gt;</span> parse_expr in
-  <span data-count="10">l</span>et expr =
+  <span data-count="13">l</span>et* is_rec = toke<span data-count="13">n</span> "rec" *<span data-count="13">&gt;</span> retur<span data-count="13">n</span> Rec &lt;|<span data-count="13">&gt;</span> retur<span data-count="13">n</span> NonRec in
+  <span data-count="13">l</span>et* let_pat = ppat in
+  <span data-count="13">l</span>et* params = man<span data-count="13">y</span> ppat in
+  <span data-count="13">l</span>et* body_expr = toke<span data-count="13">n</span> "=" *<span data-count="13">&gt;</span> parse_expr in
+  <span data-count="13">l</span>et expr =
     match params with
-    | <span data-count="6">[</span>] -&gt; body_expr
-    | <span data-count="4">_</span> -&gt; List.fold_righ<span data-count="4">t</span> (fun par acc -&gt; <span data-count="5">F</span>un (par, acc)) params body_expr
+    | <span data-count="8">[</span>] -&gt; body_expr
+    | <span data-count="5">_</span> -&gt; List.fold_righ<span data-count="5">t</span> (fun par acc -&gt; <span data-count="6">F</span>un (par, acc)) params body_expr
   in
   return (is_rec, let_pat, expr)
 ;;
@@ -393,15 +407,15 @@ let pexpr_let parse_expr =
   <span data-count="7">t</span>oke<span data-count="7">n</span> "let"
   *&gt;
   let* is_rec, pat, expr = plet_bindin<span data-count="7">g</span> parse_expr in
-  <span data-count="6">l</span>et* in_expr = toke<span data-count="6">n</span> "in" *<span data-count="6">&gt;</span> parse_expr &lt;|<span data-count="6">&gt;</span> retur<span data-count="6">n</span> @@ Const Unit in
-  <span data-count="6">r</span>eturn @@ Let ({ is_rec; pat; expr }, in_expr)
+  <span data-count="7">l</span>et* in_expr = toke<span data-count="7">n</span> "in" *<span data-count="7">&gt;</span> parse_expr &lt;|<span data-count="7">&gt;</span> retur<span data-count="7">n</span> @@ Const Unit in
+  <span data-count="7">r</span>eturn @@ Let ({ is_rec; pat; expr }, in_expr)
 ;;
 
 let pexpr_branch pexpr =
   <span data-count="4">l</span>et* if_cond = toke<span data-count="4">n</span> "if" *<span data-count="4">&gt;</span> pexpr in
-  <span data-count="6">l</span>et* then_cond = toke<span data-count="6">n</span> "then" *<span data-count="6">&gt;</span> pexpr in
-  <span data-count="6">l</span>et* else_cond = toke<span data-count="6">n</span> "else" *<span data-count="6">&gt;</span> pexpr &lt;|<span data-count="6">&gt;</span> retur<span data-count="6">n</span> @@ Const Unit in
-  <span data-count="6">r</span>eturn @@ Branch (if_cond, then_cond, else_cond)
+  <span data-count="7">l</span>et* then_cond = toke<span data-count="7">n</span> "then" *<span data-count="7">&gt;</span> pexpr in
+  <span data-count="7">l</span>et* else_cond = toke<span data-count="7">n</span> "else" *<span data-count="7">&gt;</span> pexpr &lt;|<span data-count="7">&gt;</span> retur<span data-count="7">n</span> @@ Const Unit in
+  <span data-count="7">r</span>eturn @@ Branch (if_cond, then_cond, else_cond)
 ;;
 
 let pexpr_match ppat pexpr =
@@ -419,51 +433,58 @@ let pexpr_match ppat pexpr =
 ;;
 
 let chainl1 expr oper =
-  <span data-count="11">l</span>et rec go acc = <span data-count="383">l</span>ift<span data-count="383">2</span> (fun f x -&gt; <span data-count="36">f</span> acc x) oper expr &gt;&gt;<span data-count="383">=</span> go &lt;|&gt; retur<span data-count="383">n</span> acc in
+  <span data-count="11">l</span>et rec go acc = <span data-count="438">l</span>ift<span data-count="438">2</span> (fun f x -&gt; <span data-count="43">f</span> acc x) oper expr &gt;&gt;<span data-count="438">=</span> go &lt;|&gt; retur<span data-count="438">n</span> acc in
   expr &gt;&gt;= go
 ;;
 
-let pbin_op op_token constructor =
-  <span data-count="48">t</span>oke<span data-count="48">n</span> op_token *&gt; (retur<span data-count="48">n</span> @@ fun exp1 exp2 -&gt; <span data-count="25">B</span>inOp (constructor, exp1, exp2))
+let pbin_op l_exp binop =
+  <span data-count="6">c</span>hainl1 l_exp (binop &gt;&gt;<span data-count="6">|</span> fun op exp1 exp2 -&gt; <span data-count="29">B</span>inOp (op, exp1, exp2))
 ;;
 
 let prel =
   choic<span data-count="4">e</span>
-    [ pbin_o<span data-count="4">p</span> "=" Eq
-    ; pbin_o<span data-count="4">p</span> "&lt;&gt;" Ne
-    ; pbin_o<span data-count="4">p</span> "&lt;=" Le
-    ; pbin_o<span data-count="4">p</span> "&gt;=" Ge
-    ; pbin_o<span data-count="4">p</span> "&lt;" Lt
-    ; pbin_o<span data-count="4">p</span> "&gt;" Gt
+    [ toke<span data-count="4">n</span> "=" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Eq
+    ; toke<span data-count="4">n</span> "&lt;&gt;" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Ne
+    ; toke<span data-count="4">n</span> "&lt;=" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Le
+    ; toke<span data-count="4">n</span> "&gt;=" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Ge
+    ; toke<span data-count="4">n</span> "&lt;" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Lt
+    ; toke<span data-count="4">n</span> "&gt;" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Gt
     ]
 ;;
 
-let plogical = choic<span data-count="4">e</span> [ pbin_o<span data-count="4">p</span> "&amp;&amp;" And; pbin_o<span data-count="4">p</span> "||" Or ]
-let pmul = pbin_o<span data-count="4">p</span> "*" Mul
-let padd = pbin_o<span data-count="4">p</span> "+" Add
-let psub = pbin_o<span data-count="4">p</span> "-" Sub
-let pdiv = pbin_o<span data-count="4">p</span> "/" Div
+let plogical = choic<span data-count="4">e</span> [ toke<span data-count="4">n</span> "&amp;&amp;" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> And; toke<span data-count="4">n</span> "||" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Or ]
+let pmul = toke<span data-count="4">n</span> "*" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Mul
+let padd = toke<span data-count="4">n</span> "+" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Add
+let psub = toke<span data-count="4">n</span> "-" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Sub
+let pdiv = toke<span data-count="4">n</span> "/" *<span data-count="4">&gt;</span> retur<span data-count="4">n</span> Div
 
 let pexpr_app pexpr =
-  <span data-count="5">l</span>et app = return @@ fun exp1 exp2 -&gt; <span data-count="11">A</span>pp (exp1, exp2) in
+  <span data-count="5">l</span>et app = return @@ fun exp1 exp2 -&gt; <span data-count="14">A</span>pp (exp1, exp2) in
   <span data-count="5">c</span>hainl1 pexpr app
+;;
+
+let pexpr_unary pexpr =
+  <span data-count="4">l</span>et p_minus = toke<span data-count="4">n</span> "-" *&gt; retur<span data-count="4">n</span> (fun exp -&gt; <span data-count="1">B</span>inOp (Sub, Const (Int 0), exp)) in
+  <span data-count="4">l</span>et p_plus = toke<span data-count="4">n</span> "+" *&gt; retur<span data-count="4">n</span> (fun exp -&gt; <span data-count="1">e</span>xp) in
+  <span data-count="4">p</span>_minus &lt;|<span data-count="4">&gt;</span> p_plus &lt;*<span data-count="4">&gt;</span> pexpr &lt;|&gt; pexpr
 ;;
 
 let pexpr =
   fi<span data-count="4">x</span>
   @@ fun expr -&gt;
-  <span data-count="2">l</span>et base_expr = choice [ round_pa<span data-count="2">r</span> expr; pexpr_const; pexpr_var; pexpr_lis<span data-count="2">t</span> expr ] in
-  <span data-count="2">l</span>et app_expr = pexpr_ap<span data-count="2">p</span> base_expr &lt;|&gt; base_expr in
-  <span data-count="2">l</span>et mul_expr = chainl1 app_expr (pmul &lt;|<span data-count="2">&gt;</span> pdiv) in
-  <span data-count="2">l</span>et add_expr = chainl1 mul_expr (padd &lt;|<span data-count="2">&gt;</span> psub) in
-  <span data-count="2">l</span>et comprasion_expr = chainl1 add_expr (prel &lt;|<span data-count="2">&gt;</span> plogical) in
-  <span data-count="2">l</span>et branch_expr = pexpr_branc<span data-count="2">h</span> comprasion_expr &lt;|&gt; comprasion_expr in
-  <span data-count="2">l</span>et match_expr = pexpr_matc<span data-count="2">h</span> ppat branch_expr &lt;|&gt; branch_expr in
-  <span data-count="2">l</span>et tup_expr = pexpr_tupl<span data-count="2">e</span> match_expr &lt;|&gt; match_expr in
-  <span data-count="2">l</span>et list_expr = pexpr_lis<span data-count="2">t</span> tup_expr &lt;|&gt; tup_expr in
-  <span data-count="2">l</span>et fun_expr = pexpr_fu<span data-count="2">n</span> ppat list_expr &lt;|&gt; list_expr in
-  <span data-count="2">l</span>et let_expr = pexpr_le<span data-count="2">t</span> fun_expr &lt;|&gt; fun_expr in
-  <span data-count="2">l</span>et_expr
+  <span data-count="2">l</span>et atomary = choice [ round_pa<span data-count="2">r</span> expr; pexpr_const; pexpr_var; pexpr_lis<span data-count="2">t</span> expr ] in
+  <span data-count="2">l</span>et apply = pexpr_ap<span data-count="2">p</span> atomary &lt;|&gt; atomary in
+  <span data-count="2">l</span>et unary = pexpr_unar<span data-count="2">y</span> apply &lt;|&gt; apply in
+  <span data-count="2">l</span>et mul = pbin_op unary (pmul &lt;|<span data-count="2">&gt;</span> pdiv) in
+  <span data-count="2">l</span>et add = pbin_op mul (padd &lt;|<span data-count="2">&gt;</span> psub) in
+  <span data-count="2">l</span>et compr = pbin_op add (prel &lt;|<span data-count="2">&gt;</span> plogical) in
+  <span data-count="2">l</span>et branch = pexpr_branc<span data-count="2">h</span> compr &lt;|&gt; compr in
+  <span data-count="2">l</span>et match_exp = pexpr_matc<span data-count="2">h</span> ppat branch &lt;|&gt; branch in
+  <span data-count="2">l</span>et tup = pexpr_tupl<span data-count="2">e</span> match_exp &lt;|&gt; match_exp in
+  <span data-count="2">l</span>et list = pexpr_lis<span data-count="2">t</span> tup &lt;|&gt; tup in
+  <span data-count="2">l</span>et fun_exp = pexpr_fu<span data-count="2">n</span> ppat list &lt;|&gt; list in
+  <span data-count="2">l</span>et let_exp = pexpr_le<span data-count="2">t</span> fun_exp &lt;|&gt; fun_exp in
+  <span data-count="2">l</span>et_exp
 ;;
 </code></pre>
       </div>
