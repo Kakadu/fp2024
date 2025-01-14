@@ -281,10 +281,10 @@ let chain e op =
   e >>= go
 ;;
 
-let rec chainr1 e op =
+let rec chainr e op =
   let* left = e in
   (let* f = op in
-   let* right = chainr1 e op in
+   let* right = chainr e op in
    return (f left right))
   <|> return left
 ;;
@@ -300,24 +300,6 @@ let rec pbody pexpr =
   >>= fun patterns ->
   pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (p, patterns, e))
 ;;
-
-(*
-   let pvalue_binding pexpr =
-   lift2
-   (fun id e -> Evalue_binding (id, e))
-   (pparens pident <|> pident <|> ppref_op)
-   (pstoken "=" *> pexpr <|> pbody pexpr)
-   ;;
-
-   let plet pexpr =
-   pstoken "let"
-   *> lift4
-   (fun r id id_list e2 -> Elet (r, id, id_list, e2))
-   (pstoken "rec" *> (pws1 *> return Recursive) <|> return Non_recursive)
-   (pvalue_binding pexpr)
-   (many (pstoken "and" *> pvalue_binding pexpr))
-   (pstoken "in" *> pexpr)
-   ;;*)
 
 let pvalue_binding pexpr =
   lift2
@@ -362,13 +344,15 @@ let pElist pexpr =
 
 let pEtuple pexpr =
   let commas = pstoken "," in
-  pparens
-    (lift3
-       (fun e1 e2 rest -> Etuple (e1, e2, rest))
-       pexpr
-       (commas *> pexpr)
-       (many (commas *> pexpr))
-     <* pwhitespace)
+  let tuple =
+    lift3
+      (fun e1 e2 rest -> Etuple (e1, e2, rest))
+      (pexpr <* commas)
+      pexpr
+      (many (commas *> pexpr))
+    <* pwhitespace
+  in
+  pparens tuple <|> tuple
 ;;
 
 let pEconst = const >>| fun x -> Econst x
@@ -413,8 +397,6 @@ let pEmatch pexpr =
   function_cases <|> match_cases
 ;;
 
-(* let pEprint_int expr = lift (fun e -> Eprint_int e) (pstoken "print_int" *> pparens expr) *)
-
 let pexpr =
   fix (fun expr ->
     let atom_expr =
@@ -423,10 +405,9 @@ let pexpr =
         ; pEvar
         ; pparens expr
         ; pElist expr
-        ; pEtuple expr
         ; pEfun expr
         ; pEoption expr
-        ; pEmatch expr (* ; pEprint_int expr *)
+        ; pEmatch expr
         ]
     in
     let let_expr = plet expr in
@@ -444,7 +425,8 @@ let pexpr =
     let sum_expr = chain factor_expr (add <|> sub) in
     let rel_expr = chain sum_expr relation in
     let log_expr = chain rel_expr logic in
-    let cons_expr = chainr1 log_expr cons in
+    let tuple_expr = pEtuple log_expr <|> log_expr in
+    let cons_expr = chainr tuple_expr cons in
     choice [ let_expr; cons_expr ])
 ;;
 
