@@ -17,6 +17,31 @@ type value =
 
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 
+let rec pp_value fmt =
+  let open Format in
+  function
+  | VUnit -> fprintf fmt "() "
+  | VInt i -> fprintf fmt "%d " i
+  | VString s -> fprintf fmt "%s " s
+  | VBool b -> fprintf fmt "%a " pp_print_bool b
+  | VTuple (fst, snd, rest) ->
+    fprintf
+      fmt
+      "(%a) "
+      (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt ", "))
+      (fst :: snd :: rest)
+  | VList l ->
+    fprintf
+      fmt
+      "[%a] "
+      (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt "; "))
+      l
+  | VFun (_, _, _, _, _) -> fprintf fmt "<fun> "
+  | VFunction (_, _) -> fprintf fmt "<fun> "
+  | VOption (Some v) -> fprintf fmt "Some %a " pp_value v
+  | VOption None -> fprintf fmt "None "
+;;
+
 type error =
   [ `Division_by_zero
   | `Match_failure
