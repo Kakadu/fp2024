@@ -152,6 +152,7 @@ let rec shrink_expr = function
       <+> shrink_cases_length)
   | Ematch (None, case, case_l) ->
     Iter.(map (fun cases' -> Ematch (None, case, cases')) (QCheck.Shrink.list case_l))
+  | Econstraint (e, _) -> shrink_expr e
   | _ -> Iter.empty
 
 and shrink_value_binding = function

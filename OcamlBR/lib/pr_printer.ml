@@ -204,6 +204,7 @@ let rec pp_expr ppf expr =
       (fun ppf e ->
         if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
       e2
+  | Econstraint (e, t) -> Format.fprintf ppf "(%a : %a)" pp_expr e pp_ty t
 (* | Eprint_int e -> fprintf ppf "print_int %a" pp_expr e *)
 
 and precedence = function
