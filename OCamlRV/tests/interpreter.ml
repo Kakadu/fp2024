@@ -25,7 +25,7 @@ let%expect_test _ =
   [%expect {| 6 |}]
 ;;
 
-(* Match, Option, Tuple *)
+(* Match, Function, Option, Tuple *)
 
 let%expect_test _ =
   test_interpret
@@ -37,6 +37,18 @@ let%expect_test _ =
       ;;
    |};
   [%expect {| 123 |}]
+;;
+
+let%expect_test _ =
+  test_interpret
+    {|
+      let a = function
+      | Some x -> print_int x
+      | None -> print_endline "None"
+      ;;
+      a (None);;
+   |};
+  [%expect {| None |}]
 ;;
 
 let%expect_test _ =

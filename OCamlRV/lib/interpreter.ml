@@ -24,6 +24,7 @@ and value =
   | VOption of value option
   | VFun of pattern * rec_flag * expression * environment
   | VMutualFun of pattern * rec_flag * expression * environment
+  | VFunction of case * case list * environment
   | VCycle of string
   | VBuiltin of builtin * environment
 
@@ -53,6 +54,7 @@ let rec pp_value ppf =
   | VFun _ -> fprintf ppf "<fun>"
   | VBuiltin _ -> fprintf ppf "<builtin>"
   | VMutualFun _ -> fprintf ppf "<VMutualFun>"
+  | VFunction _ -> fprintf ppf "<VFunction>"
   | VCycle s -> fprintf ppf "<cycle> %s" s
   | VOption vo ->
     (match vo with
@@ -287,6 +289,7 @@ module Eval (M : MONAD_FAIL) = struct
         | [] -> fail Pattern_matching_failed
       in
       match_helper env v (c :: cl)
+    | ExprFunction (c, cl) -> return (VFunction (c, cl, env))
     | ExprApply (e1, e2) ->
       let* v1 = eval_expr env e1 in
       let* v2 = eval_expr env e2 in
@@ -298,6 +301,17 @@ module Eval (M : MONAD_FAIL) = struct
            | None -> fail Apply_failed
          in
          eval_expr env' e
+       | VFunction (c, cl, envv) ->
+         let cases = c :: cl in
+         let rec try_match cases =
+           match cases with
+           | [] -> fail Apply_failed
+           | (pattern, body) :: rest ->
+             (match check_match envv (pattern, v2) with
+              | Some new_env -> eval_expr new_env body
+              | None -> try_match rest)
+         in
+         try_match cases
        | VMutualFun (p, _, e, _) ->
          let* env' =
            match check_match env (p, v2) with

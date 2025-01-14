@@ -168,6 +168,23 @@ let rec pp_expr =
           ppmatch_helper ppf xs
       in
       ppmatch_helper ppf (branch :: branches)
+    | ExprFunction (branch, branches) ->
+      fprintf ppf "function\n";
+      let ppmatch ppf branches =
+        let pattern, branch_expr = branches in
+        match branch_expr with
+        | ExprVariable _ | ExprConstant _ ->
+          fprintf ppf "| %a -> %a" pp_pattern pattern helper branch_expr
+        | _ -> fprintf ppf "| %a -> (%a)" pp_pattern pattern helper branch_expr
+      in
+      let rec ppfunction_helper ppf = function
+        | [] -> ()
+        | [ x ] -> fprintf ppf "%a" ppmatch x
+        | x :: xs ->
+          fprintf ppf "%a\n" ppmatch x;
+          ppfunction_helper ppf xs
+      in
+      ppfunction_helper ppf (branch :: branches)
     | ExprLet (rf, b, bl, e) ->
       fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list (b :: bl) helper e
     | ExprApply (e1, e2) ->

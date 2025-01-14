@@ -130,6 +130,22 @@ let%expect_test _ =
       ] |}]
 ;;
 
+let%expect_test _ =
+  parse_to_unit {|
+    let a = function 
+      | None -> ()
+      | Some e -> ()
+  |};
+  [%expect
+    {|
+    [(SValue (NonRec,
+        ((PVar "a"),
+         (ExprFunction (((POption None), (ExprConstant CUnit)),
+            [((POption (Some (PVar "e"))), (ExprConstant CUnit))]))),
+        []))
+      ] |}]
+;;
+
 (*------------------- Factorial and Fibonacci -------------------*)
 
 let%expect_test "fibo test" =

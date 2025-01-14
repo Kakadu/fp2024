@@ -98,6 +98,8 @@ type expression =
       expression
       * case
       * (case list[@gen QCheck.Gen.(list_size small_nat (gen_case_sized (n / div)))])
+  | ExprFunction of
+      case * (case list[@gen QCheck.Gen.(list_size small_nat (gen_case_sized (n / div)))])
   (** match e with p_1 -> e_1 |...| p_n -> e_n *)
   | ExprLet of
       rec_flag

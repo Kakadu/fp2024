@@ -247,6 +247,25 @@ let numder = match arabic with
 |}]
 ;;
 
+let%expect_test "let expr with match match with multiple branches" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue
+        ( NonRec
+        , ( PVar "a"
+          , ExprFunction
+              ( (POption None, ExprConstant CUnit)
+              , [ POption (Some (PVar "e")), ExprConstant CUnit ] ) )
+        , [] )
+    ];
+  [%expect {|
+let a = function
+| None -> ()
+| Some (e) -> ();;
+|}]
+;;
+
 let%expect_test "" =
   Format.printf
     "%a\n"

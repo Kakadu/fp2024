@@ -205,6 +205,18 @@ let pematch pe =
   lift2 ematch pexpr (sep_by1 grd pcase)
 ;;
 
+let efunction = function
+  | [] -> ExprOption None (* unreachable *)
+  | [ x ] -> ExprFunction (x, [])
+  | x :: xs -> ExprFunction (x, xs)
+;;
+
+let pefunction pe =
+  let* _ = token "function" <* option "" grd in
+  let pcase = lift2 (fun p e -> p, e) (pattern <* token "->") pe in
+  lift efunction (sep_by1 grd pcase)
+;;
+
 let petuple pe =
   let* el1 = ws *> pe in
   let* el2 = token "," *> ws *> pe in
@@ -308,7 +320,7 @@ let expr =
     let ops2 = chainl1 ops1 (padd <|> psub) in
     let cmp = chainl1 ops2 pcmp in
     let tuple = petuple cmp <|> cmp in
-    choice [ tuple; pelet expr; pematch expr; pefun expr ])
+    choice [ pefunction expr; tuple; pelet expr; pematch expr; pefun expr ])
 ;;
 
 (*--------------------------- Structure ---------------------------*)
