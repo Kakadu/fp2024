@@ -785,9 +785,9 @@ module Infer = struct
         let* composed = Subst.compose subst_expr subst_pat in
         return composed
       in
-      Format.printf "inferred_ty: %a\n" pp_ty inferred_ty;
+      (* Format.printf "inferred_ty: %a\n" pp_ty inferred_ty;
       Format.printf "subst_expr: %a\n" Subst.pp_subst subst_expr;
-      Format.printf "env_pat: %a\n" TypeEnv.pp env;
+      Format.printf "env_pat: %a\n" TypeEnv.pp env; *)
       let* unified_subst = unify (Subst.apply combined_subst t_pat) inferred_ty in
       let updated_env = TypeEnv.apply unified_subst env_pat in
       let* final_subst = Subst.compose unified_subst combined_subst in
