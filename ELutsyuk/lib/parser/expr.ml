@@ -97,11 +97,6 @@ let pexpr_match ppat pexpr =
   return @@ Match (exp, case1, rest_cases)
 ;;
 
-let chainr1 e op =
-  let rec go acc = lift2 (fun f x -> f acc x) op (e >>= go) <|> return acc in
-  e >>= go
-;;
-
 let chainl1 expr oper =
   let rec go acc = lift2 (fun f x -> f acc x) oper expr >>= go <|> return acc in
   expr >>= go
