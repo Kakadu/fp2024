@@ -19,6 +19,7 @@ type devonly_runtime_error =
   | No_goroutine_running
   | Two_goroutine_running
   | Undefined_ident
+  | Mismatched_types
 [@@deriving show { with_path = false }]
 
 type runtime_error =
