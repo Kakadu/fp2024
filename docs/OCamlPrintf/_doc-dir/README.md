@@ -30,7 +30,7 @@
   - [x] Manual
   - [x] Auto
 - [x] Shrinker
-- [ ] Type Checker
+- [x] Type Checker
 - [ ] Interpreter
 
 ## Build
@@ -43,7 +43,9 @@ dune build # Build the project.
 ## Run
 
 ```shell
-dune test # Run all tests.
+dune runtest # Run all tests.
+dune exec -- repl/REPL.exe -dparsetree -fromfile tests/factorial.txt # Run parser tests and see AST.
+dune exec -- tests/run_qchecker.exe -v # Run qchecker tests with verbose mode.
 ```
 
 ## Authors
