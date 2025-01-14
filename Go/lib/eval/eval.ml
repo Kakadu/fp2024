@@ -7,24 +7,12 @@ open EvalMonad.Monad
 open Ast
 open Errors
 
-let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
-
-let sep_by_comma list print =
-  let rec helper acc = function
-    | fst :: snd :: tl ->
-      let acc = String.concat "" [ acc; print fst; ", " ] in
-      helper acc (snd :: tl)
-    | fst :: _ -> acc ^ print fst
-    | [] -> acc
-  in
-  helper "" list
-;;
-
 let rec pp_value = function
   | Value_int i -> Format.asprintf "%d" i
   | Value_bool b -> Format.asprintf "%b" b
   | Value_nil _ -> Format.asprintf "nil"
-  | Value_array (i, lst) -> Format.asprintf "[%d][%s]" i (sep_by_comma lst pp_value)
+  | Value_array (i, lst) ->
+    Format.asprintf "[%d][%s]" i (PpType.sep_by_comma lst pp_value)
   | Value_chan _ -> Format.asprintf "wtf chan"
   | Value_func _ -> Format.asprintf "wtf func"
   | Value_string s -> Format.asprintf "%s" s
@@ -39,31 +27,23 @@ let pp printer eval ast =
   | Result.Error _ -> print_endline ": some kind of error"
 ;;
 
-let eval =
-  run (return ()) init_state
-  |> function
-  | _, res -> res (* mb check final state *)
-;;
-
 let rec eval_expr = function
-  | Expr_const c ->
-    (match c with
-     | Const_int v -> return (Value_int v)
-     | Const_string v -> return (Value_string v)
-     | Const_array (i, t, v) -> map eval_expr v >>= fun x -> return (Value_array (i, x))
-     | Const_func f -> return (Value_int 1))
+  | Expr_const (Const_int n) -> return (Value_int n)
+  | Expr_const (Const_string s) -> return (Value_string s)
+  | Expr_const (Const_array (size, _, exprs)) ->
+    map eval_expr exprs >>= fun values -> return (Value_array (size, values))
+  | Expr_const (Const_func afunc) -> return (Value_int 1) (*ДОДЕЛАТЬ*)
   | Expr_bin_oper (op, a1, a2) -> eval_binop op a1 a2
   | Expr_un_oper (op, a) -> eval_unop op a
-  | Expr_ident idnt -> read_ident idnt
+  | Expr_ident id -> read_ident id
   | Expr_index (array, index) -> eval_index array index
   | Expr_call (ident, fcall) ->
     eval_expr ident
     >>= (function
-     | Value_func (Func_initialized (cl, afc)) ->
+     | Value_func (Func_initialized (_, afc)) ->
        add_stack_frame
          { local_envs =
              { exec_block = afc.body; var_map = MapIdent.empty; env_type = Default }, []
-         ; expr_eval = []
          ; deferred_funcs = []
          }
        *> iter
@@ -96,7 +76,7 @@ let rec eval_expr = function
           >>= (fun av -> return (String.concat "" (List.map pp_value av)))
           >>= fun msg -> fail (Runtime_error (Panic msg)))
      | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
-  | Expr_chan_receive ex -> eval_expr ex
+  | Expr_chan_receive ex -> eval_expr ex (*ДОДЕЛАТЬ*)
 
 and retrieve_arg = function
   | Arg_expr e -> eval_expr e
@@ -106,15 +86,14 @@ and eval_index array index =
   let* array = eval_expr array in
   let* index = eval_expr index in
   match array, index with
-  | Value_array (size, lst), Value_int index ->
-    if index >= 0 && index < size - 1
-    then return (List.nth lst index)
-    else fail (Runtime_error Array_index_out_of_bound)
+  | Value_array (_, values), Value_int index ->
+    (try return (List.nth values index) with
+     | _ -> fail (Runtime_error Array_index_out_of_bound))
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 
-and eval_unop op a =
-  let* a = eval_expr a in
-  match op, a with
+and eval_unop op expr =
+  let* value = eval_expr expr in
+  match op, value with
   | Unary_minus, Value_int a -> return (Value_int (-a))
   | Unary_plus, Value_int a -> return (Value_int a)
   | Unary_not, Value_bool a -> return (Value_bool (not a))
@@ -138,4 +117,12 @@ and eval_binop op a1 a2 =
   | Bin_greater, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 > a2))
   | Bin_greater_equal, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 >= a2))
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+;;
+
+let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
+
+let eval =
+  run (return ()) init_state
+  |> function
+  | _, res -> res (* mb check final state *)
 ;;

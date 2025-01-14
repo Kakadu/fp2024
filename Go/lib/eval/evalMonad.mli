@@ -60,7 +60,6 @@ type local_env =
 type stack_frame =
   { local_envs : local_env * local_env list
   (** Storage for local variables, new [{}] block creates new environment *)
-  ; expr_eval : value list (** Stack for expression evaluation *)
   ; deferred_funcs : stack_frame list
   }
 
@@ -126,9 +125,7 @@ module Monad : sig
   val add_deferred : stack_frame -> unit t
   val delete_deferred : unit t
 
-  (* Expr eval stack *)
-  val push_value : value -> unit t
-  val pop_value : value t
+  (* Reading ident value *)
   val read_ident : ident -> value t
 
   (* statements execution *)

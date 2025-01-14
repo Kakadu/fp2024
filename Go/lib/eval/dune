@@ -1,6 +1,6 @@
 (library
  (name eval)
- (libraries base ast baseMonad)
+ (libraries base ast baseMonad ppType)
  (inline_tests)
  (instrumentation
   (backend bisect_ppx))

@@ -52,7 +52,6 @@ type local_env =
 
 type stack_frame =
   { local_envs : local_env * local_env list
-  ; expr_eval : value list
   ; deferred_funcs : stack_frame list (* мб тут не тот тип, но вроде должно работать *)
   }
 
@@ -199,8 +198,8 @@ module Monad = struct
   let write_local_envs new_local_envs =
     read_stack_frame
     >>= function
-    | { deferred_funcs; expr_eval } ->
-      write_stack_frame { deferred_funcs; expr_eval; local_envs = new_local_envs }
+    | { deferred_funcs } ->
+      write_stack_frame { deferred_funcs; local_envs = new_local_envs }
   ;;
 
   let add_env block env_type =
@@ -237,8 +236,7 @@ module Monad = struct
   let write_deferred new_deferred =
     read_stack_frame
     >>= function
-    | { local_envs; expr_eval } ->
-      write_stack_frame { local_envs; expr_eval; deferred_funcs = new_deferred }
+    | { local_envs } -> write_stack_frame { local_envs; deferred_funcs = new_deferred }
   ;;
 
   let add_deferred new_frame =
@@ -249,33 +247,6 @@ module Monad = struct
   let delete_deferred =
     let* deferred_funcs = read_deferred in
     write_deferred (List.tl deferred_funcs)
-  ;;
-
-  (* expr_eval *)
-
-  let read_expr_eval =
-    read_stack_frame
-    >>= function
-    | { expr_eval } -> return expr_eval
-  ;;
-
-  let write_expr_eval new_expr_eval =
-    read_stack_frame
-    >>= function
-    | { local_envs; deferred_funcs } ->
-      write_stack_frame { local_envs; deferred_funcs; expr_eval = new_expr_eval }
-  ;;
-
-  let push_value new_value =
-    let* stack = read_expr_eval in
-    write_expr_eval (new_value :: stack)
-  ;;
-
-  let pop_value =
-    read_expr_eval
-    >>= function
-    | hd :: tl -> write_expr_eval tl *> return hd
-    | [] -> fail (Runtime_error (DevOnly Not_enough_operands))
   ;;
 
   (* exec block (processing statements) *)
