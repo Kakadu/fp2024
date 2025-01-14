@@ -554,9 +554,9 @@ module Infer = struct
       let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
       let* s1, t1 = infer env2 e1 in
       (* Format.printf "%s\n" x;
-      Format.printf "t1: %a\n" pp_ty t1;
-      Format.printf "s1: %a\n" Subst.pp_subst s1;
-      Format.printf "env: %a\n" TypeEnv.pp env; *)
+         Format.printf "t1: %a\n" pp_ty t1;
+         Format.printf "s1: %a\n" Subst.pp_subst s1;
+         Format.printf "env: %a\n" TypeEnv.pp env; *)
       let* s2 = unify (Subst.apply s1 tv) t1 in
       let* s_final = Subst.compose s1 s2 in
       (* Format.printf "s_final: %a\n" Subst.pp_subst s_final; *)
@@ -700,6 +700,23 @@ module Infer = struct
       let* subst, _ = infer env expr in
       let updated_env = TypeEnv.apply subst env in
       return (subst, updated_env)
+    | Ast.SValue (Recursive, Evalue_binding ((PVar (Id x), t_opt), expr), _) ->
+      let* tv = fresh_var in
+      let env = TypeEnv.extend x (S (VarSet.empty, tv)) env in
+      let* subst, inferred_ty = infer env expr in
+      let* subst2 = unify (Subst.apply subst tv) inferred_ty in
+      let* composed_subst = Subst.compose subst subst2 in
+      let* env2 =
+        match t_opt with
+        | Some expected_type ->
+          let expected_type = Subst.apply composed_subst expected_type in
+          let* sub1 = Subst.unify inferred_ty expected_type in
+          return (TypeEnv.apply sub1 env)
+        | None -> return (TypeEnv.apply composed_subst env)
+      in
+      let generalized_ty = generalize env2 (Subst.apply composed_subst inferred_ty) in
+      let env = TypeEnv.extend x generalized_ty env2 in
+      return (composed_subst, env)
     | Ast.SValue (Recursive, value_binding, value_bindings) ->
       let all_bindings = value_binding :: value_bindings in
       let* env_with_placeholders =
