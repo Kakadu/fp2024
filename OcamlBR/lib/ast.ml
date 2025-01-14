@@ -191,8 +191,8 @@ type expr =
       * (ty_pattern list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_ty_pattern_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
-(* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
-(* | Eprint_int of (expr[@gen gen_expr_sized (n / divisor)]) *)
+  (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  | Econstraint of (expr[@gen gen_expr_sized (n / divisor)]) * (ty[@gen gen_tprim])
 [@@deriving show { with_path = false }, qcheck]
 
 and case =

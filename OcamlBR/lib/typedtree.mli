@@ -32,6 +32,7 @@ type ty =
 
 val pp_ty : Format.formatter -> ty -> unit
 val show_ty : ty -> string
+val gen_tprim : ty QCheck.Gen.t 
 
 type scheme = S of VarSet.t * ty
 

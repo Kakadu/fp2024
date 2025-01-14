@@ -24,6 +24,12 @@ type ty =
   | TOption of ty
 [@@deriving show { with_path = false }]
 
+let gen_tprim =
+  let open QCheck.Gen in
+  let tprim = oneofl [ "int"; "string"; "bool"; "unit" ] in
+  map (fun t -> TPrim t) tprim
+;;
+
 type scheme = S of VarSet.t * ty [@@deriving show { with_path = false }]
 
 (* utility functions *)
