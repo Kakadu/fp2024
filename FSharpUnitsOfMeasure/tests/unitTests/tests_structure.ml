@@ -130,7 +130,19 @@ let%expect_test "parse example 2 program" =
     {| let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |};
   [%expect
     {|
-    [(Str_item_eval (Expr_apply ((Expr_const (Const_char '_')), (Expr_list []))))
+    [(Str_item_def (Nonrecursive,
+        (Bind ((Pattern_ident_or_op "_Sy"), (Expr_const (Const_string "<X&D(")))),
+        [(Bind ((Pattern_ident_or_op "_QQf"), (Expr_ident_or_op "tOWs")));
+          (Bind (Pattern_wild,
+             (Expr_apply ((Expr_ident_or_op "-"),
+                (Expr_const
+                   (Const_unit_of_measure
+                      (Unit_of_measure ((Mnum_float 3625.090462),
+                         (Measure_ident "b9o'5")))))
+                ))
+             ))
+          ]
+        ))
       ] |}]
 ;;
 

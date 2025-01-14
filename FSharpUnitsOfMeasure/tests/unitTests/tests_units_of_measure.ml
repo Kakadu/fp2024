@@ -296,3 +296,8 @@ let%expect_test "parse constant with measure to the 3 power" =
   pp pp_unit_of_measure puom {|1<m^3>|};
   [%expect {| (Unit_of_measure ((Mnum_int 1), (Measure_pow ((Measure_ident "m"), 3)))) |}]
 ;;
+
+let%expect_test "parse uom with strange name" =
+  pp pp_unit_of_measure puom {|1<b9o'5>|};
+  [%expect {| (Unit_of_measure ((Mnum_int 1), (Measure_ident "b9o'5"))) |}]
+;;
