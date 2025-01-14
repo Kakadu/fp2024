@@ -12,61 +12,196 @@ end
 
 module MapIdent = Map.Make (Ident)
 
-(** Value for [nil] identifier and unitialized functions and channels *)
 type nil
 
-(** Value for unbuffered channels *)
 type chan_value =
-  | Chan_initialized of bool (** Initialized channel, may either be opened or closed *)
+  | Chan_initialized of bool
   | Chan_uninitialized of nil
 
-(** Values that can be stored in a variables *)
 type value =
-  | Value_int of int (** [3], [-100] *)
-  | Value_string of string (** ["my_string"] *)
-  | Value_bool of bool (** [true], [false] *)
+  | Value_int of int
+  | Value_string of string
+  | Value_bool of bool
   | Value_array of int * value list
-  (** Array of values, invariant: number of values matches the size *)
   | Value_func of func_value
   | Value_chan of chan_value
   | Value_nil of nil
-  (** Untyped [<nil>] value that is stored in [nil] predeclared identifier *)
-
-and var_map = value MapIdent.t
 
 and func_value =
-  | Func_initialized of var_map * anon_func
-  (** varMap stores variables, to which the function is bounded if it is a clojure *)
+  | Func_initialized of value MapIdent.t * anon_func
   | Func_uninitialized of nil
 
-(** Stores values for 1) predeclared identifiers, 2) global variables and functions *)
-type global_env =
-  { builtins : var_map
-  ; toplevel : var_map
-  }
-
 type stack_frame =
-  { caller : stack_frame option
-  (** Function, that called current function and where it will return to.
-      [None] for [main()] and function called via [go] *)
-  ; local_envs : var_map list
-  ; deferred_funcs : stack_frame list
+  { local_envs : value MapIdent.t list
+  ; deferred_funcs : stack_frame list (* мб тут не тот тип, но вроде должно работать *)
   }
 
 type goroutine_state =
   | Running
   | Ready
-  (** State of the goroutine that doesn't try to receive from or send to a chanel, but another goroutine is running *)
-  | Sending of ident (** State of goroutine that is trying to send to a chanel *)
-  | Recieving of ident (** State of goroutine that is trying to receive from a chanel *)
+  | Sending of ident
+  | Recieving of ident
 
 type goroutine =
-  { call_stack : stack_frame (** Stack of separate goroutine's local calls *)
+  { stack : stack_frame list * stack_frame
   ; state : goroutine_state
+  ; id : int
   }
 
 type eval_state =
-  { global_env : global_env
-  ; running_goroutine : goroutine
-  ; sleeping_goroutines : goroutine list
+  { global_env : value MapIdent.t
+  ; running : goroutine
+  ; sleeping : goroutine list
   }
+
+module EvalMonad = struct
+  include BaseMonad
+
+  type 'a t = (eval_state, 'a) BaseMonad.t
+
+  (* global env *)
+
+  let read_global =
+    read
+    >>= function
+    | { global_env } -> return global_env
+  ;;
+
+  let write_global new_global =
+    read
+    >>= function
+    | { running; sleeping } -> write { global_env = new_global; running; sleeping }
+  ;;
+
+  let save_global_id ident value =
+    let* global = read_global in
+    write_global (MapIdent.add ident value global)
+  ;;
+
+  (* goroutines *)
+
+  let read_sleeping =
+    read
+    >>= function
+    | { sleeping } -> return sleeping
+  ;;
+
+  let write_sleeping new_goroutines =
+    read
+    >>= function
+    | { global_env; running } -> write { global_env; running; sleeping = new_goroutines }
+  ;;
+
+  let add_sleeping goroutine =
+    let* goroutines = read_sleeping in
+    write_sleeping (goroutine :: goroutines)
+  ;;
+
+  let read_running =
+    read
+    >>= function
+    | { running } -> return running
+  ;;
+
+  let write_running new_goroutine =
+    read
+    >>= function
+    | { global_env; sleeping } -> write { global_env; sleeping; running = new_goroutine }
+  ;;
+
+  (* single goroutine's stack *)
+
+  let read_stack =
+    read_running
+    >>= function
+    | { stack } -> return stack
+  ;;
+
+  let write_stack new_stack =
+    read_running
+    >>= function
+    | { state; id } -> write_running { state; id; stack = new_stack }
+  ;;
+
+  let read_stack_frame =
+    read_stack
+    >>= function
+    | hd :: _, _ -> return hd
+    | [], root -> return root
+  ;;
+
+  let write_stack_frame new_frame =
+    read_stack
+    >>= function
+    | _ :: tl, root -> write_stack (new_frame :: tl, root)
+    | [], _ -> write_stack ([], new_frame)
+  ;;
+
+  let add_stack_frame new_frame =
+    read_stack
+    >>= function
+    | stack, root -> write_stack (new_frame :: stack, root)
+  ;;
+
+  let delete_stack_frame =
+    read_stack
+    >>= function
+    | stack, root -> write_stack (List.tl stack, root)
+  ;;
+
+  (* local env *)
+
+  let read_local_envs =
+    read_stack_frame
+    >>= function
+    | { local_envs } -> return local_envs
+  ;;
+
+  let write_local_envs new_local_env =
+    read_stack_frame
+    >>= function
+    | { deferred_funcs } ->
+      write_stack_frame { deferred_funcs; local_envs = new_local_env }
+  ;;
+
+  let save_local_id ident value =
+    let* envs = read_local_envs in
+    write_local_envs (MapIdent.add ident value (List.hd envs) :: List.tl envs)
+  ;;
+
+  let add_env =
+    let* local_envs = read_local_envs in
+    write_local_envs (MapIdent.empty :: local_envs)
+  ;;
+
+  let delete_env =
+    let* local_envs = read_local_envs in
+    write_local_envs (List.tl local_envs)
+  ;;
+
+  (* deferred funcs *)
+
+  let read_deferred =
+    read_stack_frame
+    >>= function
+    | { deferred_funcs } -> return deferred_funcs
+  ;;
+
+  let write_deferred new_deferred =
+    read_stack_frame
+    >>= function
+    | { local_envs } -> write_stack_frame { local_envs; deferred_funcs = new_deferred }
+  ;;
+
+  let add_deferred new_frame =
+    let* deferred_funcs = read_deferred in
+    write_deferred (new_frame :: deferred_funcs)
+  ;;
+
+  let delete_deferred =
+    let* deferred_funcs = read_deferred in
+    write_deferred (List.tl deferred_funcs)
+  ;;
+
+  (* vars *)
+end
