@@ -105,9 +105,9 @@
 <a href="#L38">38</a>
 <a href="#L39">39</a>
 </pre>
-<pre><code class="ocaml">(* Copyright 2024, Victoria Lutsyuk *)
+<pre><code class="ocaml">(** Copyright 2024, Victoria Lutsyuk *)
 
-(* SPDX-License-Identifier: MIT *)
+(** SPDX-License-Identifier: MIT *)
 
 open Angstrom
 open Ast
@@ -131,7 +131,7 @@ let ppat_any =
   tri<span data-count="4">m</span>
   @@
   let* _ = toke<span data-count="4">n</span> "_" in
-  <span data-count="8">r</span>eturn @@ PatAny
+  <span data-count="8">r</span>eturn PatAny
 ;;
 
 let ppat_tuple ppat =
