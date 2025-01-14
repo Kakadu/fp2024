@@ -699,6 +699,11 @@ module Infer = struct
          let* s, ts = infer_list_elements env es in
          let* s_final = Subst.compose_all s in
          return (s_final, TList (List.hd ts)))
+    | Econstraint (e, t) ->
+    let* s1, t1 = infer env e in
+    let* s2 = unify t1 (Subst.apply s1 t) in
+    let* s_final = Subst.compose s1 s2 in
+    return (s_final, Subst.apply s2 t1)
   ;;
 
   let w expr = Result.map snd (run (infer TypeEnv.empty expr))
@@ -708,7 +713,7 @@ module Infer = struct
       let* subst, _ = infer env expr in
       let updated_env = TypeEnv.apply subst env in
       return (subst, updated_env)
-    | Ast.SValue (Recursive, Evalue_binding ((PVar (Id x), t_opt), expr), _) ->
+    | Ast.SValue (Recursive, Evalue_binding ((PVar (Id x), t_opt), expr), []) ->
       let* expr = validate_let_rec_rhs expr in
       let* tv = fresh_var in
       let env = TypeEnv.extend x (S (VarSet.empty, tv)) env in
