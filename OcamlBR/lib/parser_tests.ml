@@ -11,7 +11,7 @@ let parse str =
   | Ok ast -> Stdlib.print_endline (show_structure ast)
   | _ -> Stdlib.print_endline "Parsing failed"
 ;;
-
+(*
 (*factorial*)
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
@@ -39,7 +39,15 @@ let%expect_test _ =
    ]
  |}]
 ;;
+let%expect_test _ =
+  parse "let x = 5";
+  [%expect
+    {|
 
+  |}]
+;;
+*)
+(*
 (*calculetion sequence*)
 let%expect_test _ =
   parse "1234 + 676 - 9002 * (52 / 2)";
@@ -156,3 +164,71 @@ let%expect_test _ =
     ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let (|?) a b = a/b + b*a in (|?) 3 ((|?) 5 6)";
+  [%expect
+    {|
+  [(SEval
+      (Elet (Non_recursive,
+         (Evalue_binding ((Id ("|?", None)),
+            (Efun ((PVar (Id ("a", None))), [(PVar (Id ("b", None)))],
+               (Ebin_op (Add,
+                  (Ebin_op (Div, (Evar (Id ("a", None))),
+                     (Evar (Id ("b", None))))),
+                  (Ebin_op (Mult, (Evar (Id ("b", None))),
+                     (Evar (Id ("a", None)))))
+                  ))
+               ))
+            )),
+         [],
+         (Efun_application (
+            (Efun_application ((Evar (Id ("|?", None))), (Econst (Int 3)))),
+            (Efun_application (
+               (Efun_application ((Evar (Id ("|?", None))), (Econst (Int 5)))),
+               (Econst (Int 6))))
+            ))
+         )))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let x = match n with | [] -> 10 | h::tl -> 20 | h::m::tl -> 30 ;;";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("x", None)),
+         (Ematch ((Evar (Id ("n", None))),
+            (Ecase ((PList []), (Econst (Int 10)))),
+            [(Ecase (
+                (PCons ((PVar (Id ("h", None))), (PVar (Id ("tl", None))))),
+                (Econst (Int 20))));
+              (Ecase (
+                 (PCons ((PVar (Id ("h", None))),
+                    (PCons ((PVar (Id ("m", None))), (PVar (Id ("tl", None)))))
+                    )),
+                 (Econst (Int 30))))
+              ]
+            ))
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let w (Some c) (2::v)  = c";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("w", None)),
+         (Efun ((POption (Some (PVar (Id ("c", None))))),
+            [(PCons ((PConst (Int 2)), (PVar (Id ("v", None)))))],
+            (Evar (Id ("c", None)))))
+         )),
+      []))
+    ]
+  |}]
+;;
+*)

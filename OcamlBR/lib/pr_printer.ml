@@ -5,6 +5,33 @@
 open Base
 open Ast
 open Stdlib.Format
+open Typedtree
+(*
+   let rec pp_ty ppf typ =
+   match typ with
+   | TPrim s -> fprintf ppf "%s" s
+   | TVar _ -> fprintf ppf "int"
+   | TArrow (t1, t2) -> fprintf ppf "%a -> %a" pp_ty t1 pp_ty t2
+   | TTuple (t1, t2, rest) ->
+   let tuple_content =
+   String.concat
+   ~sep:" * "
+   (List.map ~f:(asprintf "%a" pp_ty) (t1 :: t2 :: rest))
+   in
+   fprintf ppf "(%s)" tuple_content
+   | TList t -> fprintf ppf "%a list" pp_ty t
+   | TOption t -> fprintf ppf "%a option" pp_ty t
+
+   and pp_nested_type ppf typ =
+   match typ with
+   | TArrow _ -> fprintf ppf "(%a)" pp_ty typ
+   | _ -> pp_ty ppf typ
+   ;;
+*)
+
+let pp_id ppf = function
+  | Id name -> fprintf ppf "%s" name
+;;
 
 let pp_const ppf = function
   | Int i -> fprintf ppf "%d" i
@@ -26,6 +53,7 @@ let pp_bin_op ppf = function
   | Lte -> fprintf ppf "<="
   | And -> fprintf ppf "&&"
   | Or -> fprintf ppf "||"
+  | Cons -> fprintf ppf "::"
 ;;
 
 let pp_un_op ppf = function
@@ -40,8 +68,7 @@ let pp_rec_flag ppf = function
 ;;
 
 let rec pp_pattern ppf = function
-  | PVar (Id (name, None)) -> fprintf ppf "%s" name
-  | PVar (Id (name, Some suffix)) -> fprintf ppf "%s%s" name suffix
+  | PVar id -> pp_id ppf id
   | PConst c -> pp_const ppf c
   | PAny -> fprintf ppf "_"
   | PTuple (p1, p2, rest) ->
@@ -54,27 +81,32 @@ let rec pp_pattern ppf = function
       String.concat ~sep:"; " (List.map ~f:(asprintf "%a" pp_pattern) patterns)
     in
     fprintf ppf "[%s]" patterns_str
+  | PCons (p1, p2) -> fprintf ppf "%a :: %a" pp_pattern p1 pp_pattern p2
+  | POption (Some p) -> fprintf ppf "(Some %a)" pp_pattern p
+  | POption None -> fprintf ppf "None"
 ;;
 
 let precedence_bin_op = function
   | Mult | Div -> 2
   | Add | Sub -> 1
   | And | Or -> 0
-  | Gt | Lt | Eq | Neq | Gte | Lte -> -1
+  | Gt | Lt | Eq | Neq | Gte | Lte | Cons -> -1
+;;
+
+let pp_ty_pattern ppf : Ast.ty_pattern -> unit = function
+  | p, Some t -> Format.fprintf ppf "(%a : %a)" pp_pattern p pp_ty t
+  | p, _ -> Format.fprintf ppf "%a" pp_pattern p
 ;;
 
 let rec pp_expr ppf expr =
-  let rec needs_parens parent_prec child_prec =
-    child_prec < parent_prec || child_prec == -1
-  in
+  let needs_parens parent_prec child_prec = child_prec < parent_prec || child_prec = -1 in
   match expr with
   | Econst c -> pp_const ppf c
-  | Evar (Id (name, None)) -> fprintf ppf "%s" name
-  | Evar (Id (name, Some suffix)) -> fprintf ppf "%s.%s" name suffix
+  | Evar id -> pp_id ppf id
   | Eif_then_else (e1, e2, None) -> fprintf ppf "if %a then %a" pp_expr e1 pp_expr e2
   | Eif_then_else (e1, e2, Some e3) ->
     fprintf ppf "if %a then %a else %a" pp_expr e1 pp_expr e2 pp_expr e3
-  | Ematch (exp, Ecase (first_pat, first_expr), rest_cases) ->
+  | Ematch (Some exp, Ecase (first_pat, first_expr), rest_cases) ->
     let case_to_string (Ecase (pat, expr)) =
       asprintf "| %a -> %a" pp_pattern pat pp_expr expr
     in
@@ -85,6 +117,17 @@ let rec pp_expr ppf expr =
          :: List.map ~f:case_to_string rest_cases)
     in
     fprintf ppf "match %a with %s" pp_expr exp case_list_str
+  | Ematch (None, Ecase (first_pat, first_expr), rest_cases) ->
+    let case_to_string (Ecase (pat, expr)) =
+      asprintf "| %a -> %a" pp_pattern pat pp_expr expr
+    in
+    let case_list_str =
+      String.concat
+        ~sep:" "
+        (case_to_string (Ecase (first_pat, first_expr))
+         :: List.map ~f:case_to_string rest_cases)
+    in
+    fprintf ppf "function %s" case_list_str
   | Eoption (Some e) -> fprintf ppf "(Some %a)" pp_expr e
   | Eoption None -> fprintf ppf "None"
   | Etuple (e1, e2, es) ->
@@ -109,13 +152,14 @@ let rec pp_expr ppf expr =
     fprintf
       ppf
       "(fun %a%a -> %a)"
-      pp_pattern
+      pp_ty_pattern
       first_pattern
       (fun ppf patterns ->
-        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_pattern pat))
+        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_ty_pattern pat))
       rest_patterns
       pp_expr
       e
+  (* | Efun (first_pattern, rest_patterns, e) -> fprintf ppf "(fun)" *)
   | Ebin_op (op, e1, e2) ->
     let op_prec = precedence_bin_op op in
     fprintf
@@ -160,15 +204,18 @@ let rec pp_expr ppf expr =
       (fun ppf e ->
         if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
       e2
+  | Econstraint (e, t) -> Format.fprintf ppf "(%a : %a)" pp_expr e pp_ty t
+(* | Eprint_int e -> fprintf ppf "print_int %a" pp_expr e *)
 
 and precedence = function
   | Ebin_op (op, _, _) -> precedence_bin_op op
   | _ -> 2
 
 and pp_value_binding ppf = function
-  | Evalue_binding (Id (name, None), e) -> fprintf ppf "%s = %a" name pp_expr e
-  | Evalue_binding (Id (name, Some suffix), e) ->
-    fprintf ppf "%s%s = %a" name suffix pp_expr e
+  | Evalue_binding ((pattern, None), e) ->
+    Format.fprintf ppf "%a = %a" pp_pattern pattern pp_expr e
+  | Evalue_binding ((pattern, Some ty), e) ->
+    Format.fprintf ppf "%a : %a = %a" pp_pattern pattern pp_ty ty pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =

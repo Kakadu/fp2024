@@ -1,0 +1,1 @@
+manytests/typed/006partial3.ml

@@ -26,6 +26,8 @@ depends: [
   "dune" {>= "3.7"}
   "ppx_inline_test" {with-test}
   "ppx_expect"
+  "angstrom"
+  "qcheck"
   "ppx_deriving"
   "bisect_ppx"
   "odoc" {with-doc}

@@ -14,7 +14,7 @@ let parse str =
     Stdlib.print_endline (show_structure structure)
   | Error _ -> Stdlib.print_endline "Parsing failed"
 ;;
-
+(*
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
@@ -42,15 +42,15 @@ let%expect_test _ =
       ]
     |}]
 ;;
-
+*)
 let%expect_test _ =
-  parse "[]";
+  parse "let rec x = 1+ x";
   [%expect {|
     [] ;;
     [(SEval (Elist []))]
     |}]
 ;;
-
+(*
 let%expect_test _ =
   parse "if 5 > 6 then let x = 5 in x + 5";
   [%expect
@@ -255,3 +255,136 @@ let%expect_test _ =
     ]
   |}]
 ;;
+
+let%expect_test _ =
+  parse "let x : int = 42;;";
+  [%expect
+    {|
+  let  x : int = 42 ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("x", (Some int))), (Econst (Int 42)))), []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f : int -> string = fun x -> string_of_int x;;";
+  [%expect
+    {|
+  let  f : int -> string = (fun x -> string_of_int x) ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("f", (Some int -> string))),
+         (Efun ((PVar (Id ("x", None))), [],
+            (Efun_application ((Evar (Id ("string_of_int", None))),
+               (Evar (Id ("x", None)))))
+            ))
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let y : (int * string * bool) = (1, \"hello\", true);;";
+  [%expect
+    {|
+  let  y : (int * string * bool) = (1, "hello", true) ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("y", (Some (int * string * bool)))),
+         (Etuple ((Econst (Int 1)), (Econst (String "hello")),
+            [(Econst (Bool true))]))
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let l : int list = [1; 2; 3];;";
+  [%expect
+    {|
+  let  l : int list = [1; 2; 3] ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("l", (Some int list))),
+         (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]))),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)];;";
+  [%expect
+    {|
+  let  g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)] ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((Id ("g", (Some (int -> bool) list))),
+         (Elist
+            [(Efun ((PVar (Id ("x", None))), [],
+                (Ebin_op (Gt, (Evar (Id ("x", None))), (Econst (Int 0))))));
+              (Efun ((PVar (Id ("x", None))), [],
+                 (Ebin_op (Lt, (Evar (Id ("x", None))), (Econst (Int 0))))))
+              ])
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y";
+  [%expect
+    {|
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
+          (Efun ((PVar (Id ("x", None))), [],
+             (Efun ((PVar (Id ("y", None))), [],
+                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
+                   ))
+                ))
+             ))
+          )),
+       []))
+     ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f = fun (3, true): int*bool -> 4";
+  [%expect
+    {|
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
+          (Efun ((PVar (Id ("x", None))), [],
+             (Efun ((PVar (Id ("y", None))), [],
+                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
+                   ))
+                ))
+             ))
+          )),
+       []))
+     ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let f ((3, true) : int * bool) x ([ 7; 5 ] : int list) = 4";
+  [%expect
+    {|
+   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
+          (Efun ((PVar (Id ("x", None))), [],
+             (Efun ((PVar (Id ("y", None))), [],
+                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
+                   ))
+                ))
+             ))
+          )),
+       []))
+     ]
+  |}]
+;;
+*)

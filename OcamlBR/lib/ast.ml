@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Typedtree
+
 let gen_id_name =
   let open QCheck.Gen in
   let varname =
@@ -41,9 +43,30 @@ let gen_id_name =
   varname >>= fun name -> if is_keyword name then varname else return name
 ;;
 
-type id = Id of string * string option [@@deriving show { with_path = false }]
+(*
+   type id_type =
+   | TInt
+   | TString
+   | TBool
+   | Tlist of id_type
+   | TTuple of id_type * id_type * id_type list
+   | TFun of id_type * id_type
+   [@@deriving show { with_path = false }] *)
+(*
+   type type_var = int [@@deriving show { with_path = false }]
 
-let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
+   type ty =
+   | TPrim of string
+   | TVar of type_var
+   | TArrow of ty * ty
+   | TTuple of ty * ty * ty list
+   | TList of ty
+   | TOption of ty
+   [@@deriving show { with_path = false }] *)
+
+type id = Id of string [@@deriving show { with_path = false }]
+
+let gen_id = QCheck.Gen.map (fun name -> Id name) gen_id_name
 
 type const =
   | Int of (int[@gen QCheck.Gen.int_range 0 1000])
@@ -78,6 +101,7 @@ type bin_op =
   | Lte (* less than or equal *)
   | And (* logical AND *)
   | Or (* logical OR *)
+  | Cons (* :: *)
 [@@deriving show { with_path = false }, qcheck]
 
 type un_op =
@@ -107,7 +131,17 @@ type pattern =
   | PList of
       (pattern list
       [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
+  | PCons of
+      (pattern[@gen gen_pattern_sized (n / divisor)])
+      * (pattern[@gen gen_pattern_sized (n / divisor)])
+  | POption of (pattern[@gen gen_pattern_sized (n / divisor)]) option
 [@@deriving show { with_path = false }, qcheck]
+
+type ty_pattern = pattern * ty option [@@deriving show { with_path = false }]
+
+let gen_ty_pattern_sized n =
+  QCheck.Gen.(pair (gen_pattern_sized (n / divisor)) (return None))
+;;
 
 type expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
@@ -136,7 +170,7 @@ type expr =
   (** match E with P1 -> E1 ... Pn -> Pn *)
   (* E0 bin_op E1, e.g. 1 + 3 *)
   | Ematch of
-      (expr[@gen gen_expr_sized (n / divisor)])
+      (expr[@gen gen_expr_sized (n / divisor)]) option
       * (case[@gen gen_case_sized (n / divisor)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / divisor)))])
   | Eun_op of un_op * (expr[@gen gen_expr_sized (n / divisor)])
@@ -153,11 +187,12 @@ type expr =
       * (expr[@gen gen_expr_sized (n / divisor)])
     (* E0 E1, e.g. f x *)
   | Efun of
-      (pattern[@gen gen_pattern_sized (n / divisor)])
-      * (pattern list
-        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
+      (ty_pattern[@gen gen_ty_pattern_sized (n / divisor)])
+      * (ty_pattern list
+        [@gen QCheck.Gen.(list_size (0 -- 4) (gen_ty_pattern_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
-(* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  | Econstraint of (expr[@gen gen_expr_sized (n / divisor)]) * (ty[@gen gen_tprim])
 [@@deriving show { with_path = false }, qcheck]
 
 and case =
@@ -166,8 +201,11 @@ and case =
       * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-and value_binding = Evalue_binding of id * (expr[@gen gen_expr_sized (n / divisor)])
-[@@deriving show { with_path = false }, qcheck]
+and value_binding =
+  | Evalue_binding of
+      (ty_pattern[@gen gen_ty_pattern_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
+(*[@@deriving show { with_path = false }, qcheck]*)
 
 let gen_expr =
   QCheck.Gen.(
