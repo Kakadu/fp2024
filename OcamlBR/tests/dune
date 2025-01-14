@@ -1,0 +1,3 @@
+(cram
+ (applies_to qcheck)
+ (deps ../lib/run_qcheck.exe))

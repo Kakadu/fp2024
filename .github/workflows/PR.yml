@@ -58,7 +58,6 @@ jobs:
         #if: ${{ github.event.pull_request.user.login == 'fp2022-helper' }}
 
       - name: Installing dependencies for ${{ env.latest }}
-        if: false  # HACK!
         run: |
           sudo apt-get update
           opam update
@@ -73,6 +72,16 @@ jobs:
           cd ${{ env.latest }}
           python ../.github/lint_filesystem.py ${{ env.latest }}
 
+
+      - name: Compiling ${{ env.latest }} (profile=dev)...
+        run: |
+          cd ${{ env.latest }}
+          opam exec -- dune build
+
+      - name: Running tests in ${{ env.latest }} (profile=dev)...
+        run: |
+          cd ${{ env.latest }}
+          opam exec -- dune runtest
 
       - name: Compiling ${{ env.latest }} (profile=release)...
         run: |

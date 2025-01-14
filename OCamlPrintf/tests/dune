@@ -1,0 +1,13 @@
+(library
+ (name tests)
+ (libraries ocaml_printf_lib)
+ (modules Test_parser Run_qchecker)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (applies_to run_REPL)
+ (deps ../repl/REPL.exe factorial.txt))
