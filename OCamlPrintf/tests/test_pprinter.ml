@@ -2,14 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocaml_printf_lib.Parser
-open Ocaml_printf_lib.Pprinter
-
-let run str =
-  match parse str with
-  | Ok ast -> Format.printf "%a \n" pp_structure ast
-  | Error error -> Format.printf "%s" error
-;;
+open Test_parser
 
 let%expect_test "parsing and pretty printing" =
   run

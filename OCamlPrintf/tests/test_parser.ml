@@ -11,6 +11,15 @@ let run str =
   | Error error -> Format.printf "%s" error
 ;;
 
+let%expect_test "parsing error" =
+  run {|
+  let a = ;;
+  |};
+  [%expect {|
+  : end_of_input
+  |}]
+;;
+
 let%expect_test "parsing factorial with `match'" =
   run
     {|

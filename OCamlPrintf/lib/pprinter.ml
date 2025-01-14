@@ -39,14 +39,7 @@ let rec pp_core_type_deep n ppf = function
   | Type_string -> fprintf ppf "string"
   | Type_bool -> fprintf ppf "bool"
   | Type_option type' -> fprintf ppf "%a option" (pp_core_type_deep 2) type'
-  | Type_var id ->
-    let pp_type_var = fprintf ppf "%s" in
-    if String.length id > 1
-    then (
-      match String.get id 0 with
-      | '\'' -> pp_ident ppf id
-      | _ -> pp_type_var id)
-    else pp_type_var id
+  | Type_var type' -> pp_ident ppf type'
   | Type_list type' -> fprintf ppf "%a list" (pp_core_type_deep 2) type'
   | Type_tuple (fst_type, snd_type, type_list) ->
     if n = 2 then fprintf ppf "(";
