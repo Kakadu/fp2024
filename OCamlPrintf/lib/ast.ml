@@ -51,7 +51,7 @@ let is_keyword = function
 ;;
 
 let gen_ident =
-  let gen_var =
+  let gen_id =
     map2
       (fun fst_char rest_str ->
         match Base.Char.to_string fst_char ^ rest_str with
@@ -67,7 +67,7 @@ let gen_ident =
             ; return '\''
             ]))
   in
-  gen_var >>= fun var -> if is_keyword var then gen_var else return var
+  gen_id >>= fun id -> if is_keyword id then gen_id else return id
 ;;
 
 type ident = (string[@gen gen_ident]) [@@deriving show { with_path = false }, qcheck]
@@ -84,19 +84,23 @@ type constant =
 [@@deriving show { with_path = false }, qcheck]
 
 let gen_type_var =
-  map3
-    (fun fst_char snd_char rest_str ->
-      Printf.sprintf "'%c%c%s" fst_char snd_char rest_str)
-    (oneof [ char_range 'a' 'z' ])
-    (oneof [ char_range '0' '9'; char_range 'A' 'Z'; char_range 'a' 'z'; return '_' ])
-    (gen_string
-       (oneof
-          [ char_range '0' '9'
-          ; char_range 'A' 'Z'
-          ; char_range 'a' 'z'
-          ; return '_'
-          ; return '\''
-          ]))
+  let gen_type_var =
+    map3
+      (fun fst_char snd_char rest_str ->
+        Printf.sprintf "%c%c%s" fst_char snd_char rest_str)
+      (oneof [ char_range 'a' 'z' ])
+      (oneof [ char_range '0' '9'; char_range 'A' 'Z'; char_range 'a' 'z'; return '_' ])
+      (gen_string
+         (oneof
+            [ char_range '0' '9'
+            ; char_range 'A' 'Z'
+            ; char_range 'a' 'z'
+            ; return '_'
+            ; return '\''
+            ]))
+  in
+  gen_type_var
+  >>= fun type_var -> if is_keyword type_var then gen_type_var else return ("'" ^ type_var)
 ;;
 
 type core_type =

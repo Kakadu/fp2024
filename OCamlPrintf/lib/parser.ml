@@ -243,12 +243,10 @@ let parse_tuple parse tuple =
   return (tuple (fst, snd, tail))
 ;;
 
-let parse_construct_list_1 parse construct tuple =
+let parse_construct_list_1 parse construct func =
   token "[" *> sep_by (token ";") parse
   <* token "]"
-  >>| List.fold_right
-        ~init:(construct ("[]", None))
-        ~f:(fun elem acc -> construct ("::", Some (tuple (elem, acc, []))))
+  >>| List.fold_right ~init:(construct ("[]", None)) ~f:func
 ;;
 
 let parse_construct_list_2 parse construct tuple =
@@ -290,7 +288,7 @@ let parse_pat_construct_list_1 parse_pat =
   parse_construct_list_1
     parse_pat
     (fun (tag, pat_opt) -> Pat_construct (tag, pat_opt))
-    (fun (fst_pat, snd_pat, pat_list) -> Pat_tuple (fst_pat, snd_pat, pat_list))
+    (fun pat acc_pat -> Pat_construct ("::", Some (Pat_tuple (pat, acc_pat, []))))
 ;;
 
 let parse_pat_construct_list_2 parse_pat =
@@ -408,6 +406,12 @@ let parse_base_exp =
   choice [ parse_exp_ident; parse_exp_constant; parse_exp_construct_base_keyword ]
 ;;
 
+let parse_exp_sequence parse_exp =
+  parse_chain_left_associative
+    parse_exp
+    (token ";" *> return (fun exp1 exp2 -> Exp_sequence (exp1, exp2)))
+;;
+
 let parse_exp_construct_keyword_some parse_exp =
   parse_construct_keyword_some (parse_base_exp <|> skip_parens parse_exp)
   >>| fun (tag, exp_opt) -> Exp_construct (tag, exp_opt)
@@ -423,10 +427,23 @@ let parse_exp_tuple parse_exp =
 ;;
 
 let parse_exp_construct_list_1 parse_exp =
+  let parse_exp_sequence =
+    skip_parens (parse_exp_sequence parse_exp) >>| fun exp -> true, exp
+  in
+  let parse_exp_list = parse_exp >>| fun exp -> false, exp in
   parse_construct_list_1
-    parse_exp
+    (parse_exp_sequence <|> parse_exp_list)
     (fun (tag, exp_opt) -> Exp_construct (tag, exp_opt))
-    (fun (fst_exp, snd_exp, exp_list) -> Exp_tuple (fst_exp, snd_exp, exp_list))
+    (fun opt_exp acc_exp ->
+      let rec fix_exp_sequence opt_exp acc_exp =
+        match opt_exp with
+        | false, Exp_sequence (exp1, (Exp_sequence _ as exp2)) ->
+          fix_exp_sequence (false, exp1) (fix_exp_sequence (true, exp2) acc_exp)
+        | false, Exp_sequence (exp1, exp2) ->
+          fix_exp_sequence (false, exp1) (fix_exp_sequence (false, exp2) acc_exp)
+        | _, exp -> Exp_construct ("::", Some (Exp_tuple (exp, acc_exp, [])))
+      in
+      fix_exp_sequence opt_exp acc_exp)
 ;;
 
 let parse_exp_construct_list_2 parse_exp =
@@ -529,16 +546,10 @@ let parse_exp_apply_bin_op parse_exp =
   parse_right_bin_op parse_exp or_
 ;;
 
-let parse_exp_apply ~with_un_op parse_exp =
+let parse_exp_apply parse_exp =
   let parse_exp = parse_exp_apply_fun parse_exp in
-  let parse_exp = if with_un_op then parse_exp_apply_un_op parse_exp else parse_exp in
+  let parse_exp = parse_exp_apply_un_op parse_exp in
   parse_exp_apply_bin_op parse_exp
-;;
-
-let parse_exp_sequence parse_exp =
-  parse_chain_left_associative
-    parse_exp
-    (token ";" *> return (fun exp1 exp2 -> Exp_sequence (exp1, exp2)))
 ;;
 
 let parse_expression =
@@ -549,17 +560,15 @@ let parse_expression =
         [ parse_base_exp
         ; parse_exp_construct_keyword_some parse_full_exp
         ; parse_exp_constraint parse_full_exp
+        ; parse_exp_construct_list_1 parse_full_exp
         ; parse_top_exp parse_full_exp
         ; skip_parens parse_full_exp
         ]
     in
-    let parse_exp = parse_exp_construct_list_1 parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_apply ~with_un_op:true parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_construct_list_1 parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_apply ~with_un_op:false parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_sequence parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_apply parse_exp <|> parse_exp in
     let parse_exp = parse_exp_construct_list_2 parse_exp <|> parse_exp in
     let parse_exp = parse_exp_tuple parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_sequence parse_exp <|> parse_exp in
     parse_top_exp parse_full_exp <|> parse_exp)
 ;;
 

@@ -39,7 +39,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   >  match n with
   >  | 0 -> false
   >  | 1 -> false
-  >  | _ -> check_zero n (n - 1) ;;
+  >  | _ -> check_zero n (n - 1);;
   [(Struct_value (Nonrecursive,
       { pat = (Pat_var "prime");
         exp =
@@ -171,7 +171,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../repl/REPL.exe -fromfile manytests/typed/009let_poly.ml
   val temp : int * bool
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/010sukharev.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/010sukharev.ml
   val _1 : int -> int -> int * 'a -> bool
   val _2 : int
   val _3 : (int * string) option
@@ -183,7 +183,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   val id2 : 'b -> 'b
   val int_of_option : int option -> int
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/015tuples.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/015tuples.ml
   val feven : 'a * (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
   val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
@@ -194,7 +194,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   val modd : int -> int
   val tie : (int -> int) * (int -> int)
 
-  $ ../repl/REPL.exe -fromfile manytests_formatted/typed/016lists.ml
+  $ ../repl/REPL.exe -fromfile manytests/typed/016lists.ml
   val append : 'a list -> 'a list -> 'a list
   val cartesian : 'b list -> 'a list -> ('b * 'a) list
   val concat : 'a list list -> 'a list
