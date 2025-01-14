@@ -148,37 +148,44 @@ let patomic_type =
     ]
 ;;
 
-let plist_type ptype = ptype >>= fun t -> pstoken "list" *> return (TList t)
+let plist_type ptype_opt = ptype_opt >>= fun t -> pstoken "list" *> return (TList t)
 
-let ptuple_type ptype =
+let ptuple_type ptype_opt =
   let star = pstoken "*" in
   lift3
     (fun t1 t2 rest -> TTuple (t1, t2, rest))
-    ptype
-    (star *> ptype)
-    (many (star *> ptype))
+    ptype_opt
+    (star *> ptype_opt)
+    (many (star *> ptype_opt))
 ;;
 
-let rec pfun_type ptype =
-  ptype
+let rec pfun_type ptype_opt =
+  ptype_opt
   >>= fun left ->
-  pstoken "->" *> pfun_type ptype
+  pstoken "->" *> pfun_type ptype_opt
   >>= (fun right -> return (TArrow (left, right)))
   <|> return left
 ;;
 
-let poption_type ptype = ptype >>= fun t -> pstoken "option" *> return (TOption t)
+let poption_type ptype_opt = ptype_opt >>= fun t -> pstoken "option" *> return (TOption t)
+
+let ptype_helper =
+  fix (fun typ ->
+    let atom = patomic_type <|> pparens typ in
+    let list = plist_type atom <|> atom in
+    let option = poption_type list <|> list in
+    let tuple = ptuple_type option <|> option in
+    let func = pfun_type tuple <|> tuple in
+    func)
+;;
 
 let ptype =
-  let some_type =
-    fix (fun typ ->
-      let atom = patomic_type <|> pparens typ in
-      let list = plist_type atom <|> atom in
-      let option = poption_type list <|> list in
-      let tuple = ptuple_type option <|> option in
-      let func = pfun_type tuple <|> tuple in
-      func)
-  in
+  let t = ptype_helper in
+  pstoken ":" *> t
+;;
+
+let ptype_opt =
+  let some_type = ptype_helper in
   pstoken ":" *> (some_type >>| fun t -> Some t) <|> return None
 ;;
 
@@ -233,12 +240,12 @@ let ppattern =
 ;;
 
 let pfirst_ty_pattern =
-  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype in
+  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype_opt in
   ty_pat <|> pparens ty_pat <|> (ppattern >>| fun p -> p, None)
 ;;
 
 let pty_pattern =
-  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype in
+  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype_opt in
   pparens ty_pat <|> (ppattern >>| fun p -> p, None)
 ;;
 
@@ -397,6 +404,8 @@ let pEmatch pexpr =
   function_cases <|> match_cases
 ;;
 
+let pEconstraint pexpr = lift2 (fun expr t -> Econstraint (expr, t)) pexpr ptype
+
 let pexpr =
   fix (fun expr ->
     let atom_expr =
@@ -408,6 +417,7 @@ let pexpr =
         ; pEfun expr
         ; pEoption expr
         ; pEmatch expr
+        ; pparens (pEconstraint expr)
         ]
     in
     let let_expr = plet expr in
