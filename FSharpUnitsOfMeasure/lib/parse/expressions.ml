@@ -71,6 +71,12 @@ let parse_expr_app parse_expr =
   app
 ;;
 
+let parse_expr_unary_app parse_expr =
+  let* op = skip_ws *> string "-" <|> string "+" in
+  let* e = parse_expr in
+  return (Expr_apply (Expr_ident_or_op op, e))
+;;
+
 let parse_expr_lambda parse_expr =
   skip_token "fun"
   *>
@@ -184,6 +190,6 @@ let parse_expr =
         ]
     in
     let expr = parse_expr_tuple expr <|> parse_expr_app expr <|> expr in
-    (* let expr = parse_expr_typed expr <|> expr in *)
+    let expr = parse_expr_unary_app expr <|> expr in
     skip_ws *> expr <* skip_ws)
 ;;
