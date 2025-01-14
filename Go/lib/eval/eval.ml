@@ -55,6 +55,7 @@ and eval_func_call (func, args) =
       { local_envs =
           { exec_block = afc.body; var_map = MapIdent.empty; env_type = Default }, []
       ; deferred_funcs = []
+      ; closure_envs = Simple
       }
     *> iter
          (fun (farg, (ident, _)) ->
@@ -127,11 +128,56 @@ and eval_binop op a1 a2 =
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 ;;
 
+let eval_long_var_decl = return ()
 let eval_stmt = return None (* Если ретерн - то возвращает значение *)
 let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
 
-let eval =
-  run (return ()) init_state
+let eval_stmt = function
+  | Stmt_call fcall -> eval_func_call fcall *> return ()
+  | _ -> fail (Runtime_error (Panic "Not supported stmt"))
+;;
+
+let run_eval file =
+  iter
+    (function
+      | Decl_var lvd -> eval_long_var_decl
+      | Decl_func (idnt, afc) ->
+        save_global_id idnt (Value_func (Func_initialized (Default, afc))))
+    file
+  *> save_global_id "print" (Value_func (Func_builtin Print))
+  *> save_global_id "println" (Value_func (Func_builtin Println))
+  *> save_global_id "make" (Value_func (Func_builtin Make))
+  *> save_global_id "len" (Value_func (Func_builtin Len))
+  *> save_global_id "recover" (Value_func (Func_builtin Recover))
+  *> save_global_id "panic" (Value_func (Func_builtin Panic))
+  *> iter
+       (function
+         | Decl_func ("main", afc) ->
+           run_goroutine
+             { stack =
+                 ( { local_envs =
+                       ( { exec_block = afc.body
+                         ; var_map = MapIdent.empty
+                         ; env_type = Default
+                         }
+                       , [] )
+                   ; deferred_funcs = []
+                   ; closure_envs = Simple
+                   }
+                 , [] )
+             ; state = Ready
+             ; id = 1
+             }
+         | _ -> return ())
+       file
+  *> pop_next_statement
+  >>= function
+  | Some st -> eval_stmt st
+  | None -> return ()
+;;
+
+let eval file =
+  run (run_eval file) init_state
   |> function
   | _, res -> res (* mb check final state *)
 ;;

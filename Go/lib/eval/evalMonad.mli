@@ -63,10 +63,15 @@ type local_env =
   ; env_type : is_for_env
   }
 
+and closure_frame =
+  | Simple
+  | Closure of local_env * local_env list
+
 type stack_frame =
   { local_envs : local_env * local_env list
   (** Storage for local variables, new [{}] block creates new environment *)
   ; deferred_funcs : stack_frame list
+  ; closure_envs : closure_frame
   }
 
 type goroutine_state =

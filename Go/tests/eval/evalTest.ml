@@ -11,8 +11,8 @@ let pp str =
   | Ok ast ->
     (match TypeChecker.type_check ast with
      | Result.Ok _ ->
-       (match Eval.eval with
-        | Result.Ok _ -> ()
+       (match Eval.eval ast with
+        | Result.Ok _ -> prerr_endline "Correct evaluating"
         | Result.Error err ->
           (match err with
            | Runtime_error (DevOnly Not_enough_operands) ->
@@ -29,7 +29,8 @@ let pp str =
            | Runtime_error (Panic msg) -> prerr_endline ("Paniced with message:" ^ msg)
            | Runtime_error (DevOnly TypeCheckFailed) ->
              prerr_endline "Internal Typecheck error occured while evaluating"
-           | _ -> ()))
+           | Runtime_error _ -> prerr_endline "Some kind of runtime error"
+           | Type_check_error _ -> prerr_endline "Some kind of typecheck error"))
      | Result.Error err ->
        prerr_string "ERROR WHILE TYPECHECK WITH ";
        (match err with
@@ -48,4 +49,12 @@ let pp str =
           prerr_endline ("Missing return: " ^ msg)
         | _ -> ()))
   | Error _ -> print_endline ": syntax error"
+;;
+
+let%expect_test "ok: single main" =
+  pp {|
+    func main() {print("kill OCaml")}
+    |};
+  [%expect {|
+    CORRECT |}]
 ;;
