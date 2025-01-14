@@ -9,7 +9,8 @@ val pexpr_var : expr t
 val pexpr_const : expr t
 val pexpr_list : expr t -> expr t
 val pexpr_tuple : expr t -> expr t
-val pexpr_let : expr t -> expr t
+
+(* val pexpr_let : expr t -> expr t *)
 val pexpr_app : expr t -> expr t
 val pexpr_branch : expr t -> expr t
 val pexpr_fun : pat t -> expr t -> expr t
