@@ -207,13 +207,18 @@ end = struct
           fail (`Unification_failed (TTuple (f1, s1, rest1), TTuple (f2, s2, rest2)))
         | Ok res -> return res
       in
+      (* Format.printf "f1 %a \n" pp_ty f1;
+      Format.printf "f2 %a \n" pp_ty f2; *)
       let* fst_unified = unify f1 f2 in
+      (* Format.printf "(apply fst_unified s1) %a \n" pp_ty (apply fst_unified s1);
+      Format.printf "(apply fst_unified s2) %a \n" pp_ty (apply fst_unified s2); *)
       let* snd_unified = unify (apply fst_unified s1) (apply fst_unified s2) in
       List.fold_left rest_unified ~init:(compose fst_unified snd_unified) ~f:(fun acc s ->
         let* s = s in
         let* acc = acc in
         compose acc s)
     | TList t1, TList t2 -> unify t1 t2
+    | TOption t1, TOption t2 -> unify t1 t2
     | _, _ -> fail (`Unification_failed (ty1, ty2))
 
   (* extends a substitution with a new mapping for variable [v] *)
@@ -447,7 +452,7 @@ module Infer = struct
   let validate_let_rec_rhs expr =
     match expr with
     | Ast.Efun _ -> return expr
-    | _ -> fail (`Ill_right_hand_side  "of let rec")
+    | _ -> fail (`Ill_right_hand_side "of let rec")
   ;;
 
   let rec infer (env : TypeEnv.t) (expr : Ast.expr) : (Subst.t * ty) R.t =
@@ -519,8 +524,8 @@ module Infer = struct
     | Elet (Non_recursive, Evalue_binding ((pattern, t_opt), e1), bindings, e2) ->
       let* s1, t1 = infer env e1 in
       (* Format.printf "t1: %a\n" pp_ty t1;
-         Format.printf "s1: %a\n" Subst.pp_subst s1;
-         Format.printf "env: %a\n" TypeEnv.pp env; *)
+      Format.printf "s1: %a\n" Subst.pp_subst s1;
+      Format.printf "env: %a\n" TypeEnv.pp env; *)
       let* s2, t_pat, env1 = infer_ty_pattern env (pattern, t_opt) in
       (* Format.printf "t_pat: %a\n" pp_ty t_pat;
          Format.printf "s2: %a\n" Subst.pp_subst s2; *)
@@ -529,10 +534,10 @@ module Infer = struct
          return (final_subst, t2) *)
       (* let env3 = TypeEnv.exten d x t_gen env in *)
       (* Format.printf "s2: %a\n" Subst.pp_subst s2;
-         Format.printf "t_pat: %a\n" pp_ty t_pat;
-         Format.printf "env2: %a\n" TypeEnv.pp env2; *)
+      Format.printf "t_pat: %a\n" pp_ty t_pat; *)
       let* subst1 = Subst.compose s1 s2 in
       (* Format.printf "subst1: %a\n" Subst.pp_subst subst1; *)
+      (* Format.printf "(Subst.apply subst1 t_pat): %a\n" pp_ty (Subst.apply subst1 t_pat); *)
       let* unified_subst = unify (Subst.apply subst1 t_pat) t1 in
       (* Format.printf "unified_subst: %a\n" Subst.pp_subst unified_subst; *)
       let initial_env = TypeEnv.apply unified_subst env1 in
@@ -642,7 +647,7 @@ module Infer = struct
         ~f:(fun (s, t) (Ast.Ecase (pat, e)) ->
           let* sub, tp, env = infer_pattern env pat in
           (* Format.printf "tp: %a\n" pp_ty tp;
-          Format.printf "match2: %a\n" TypeEnv.pp env; *)
+             Format.printf "match2: %a\n" TypeEnv.pp env; *)
           let* s2 = unify t1 tp in
           (* Format.printf "unify: %a\n" TypeEnv.pp env; *)
           let* sub2, t2 = infer (TypeEnv.apply sub env) e in
@@ -700,10 +705,10 @@ module Infer = struct
          let* s_final = Subst.compose_all s in
          return (s_final, TList (List.hd ts)))
     | Econstraint (e, t) ->
-    let* s1, t1 = infer env e in
-    let* s2 = unify t1 (Subst.apply s1 t) in
-    let* s_final = Subst.compose s1 s2 in
-    return (s_final, Subst.apply s2 t1)
+      let* s1, t1 = infer env e in
+      let* s2 = unify t1 (Subst.apply s1 t) in
+      let* s_final = Subst.compose s1 s2 in
+      return (s_final, Subst.apply s2 t1)
   ;;
 
   let w expr = Result.map snd (run (infer TypeEnv.empty expr))
@@ -780,6 +785,9 @@ module Infer = struct
         let* composed = Subst.compose subst_expr subst_pat in
         return composed
       in
+      Format.printf "inferred_ty: %a\n" pp_ty inferred_ty;
+      Format.printf "subst_expr: %a\n" Subst.pp_subst subst_expr;
+      Format.printf "env_pat: %a\n" TypeEnv.pp env;
       let* unified_subst = unify (Subst.apply combined_subst t_pat) inferred_ty in
       let updated_env = TypeEnv.apply unified_subst env_pat in
       let* final_subst = Subst.compose unified_subst combined_subst in
