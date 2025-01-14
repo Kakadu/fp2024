@@ -1,5 +1,5 @@
 (library
- (name interpretUnitTest)
+ (name evalUnitTest)
  (libraries ast parse eval typecheck pprinter errors)
  (inline_tests)
  (instrumentation
