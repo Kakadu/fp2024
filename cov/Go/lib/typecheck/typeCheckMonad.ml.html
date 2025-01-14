@@ -18,19 +18,19 @@
       <h2>75.93%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:15.00%"></span>
-      <span class="unvisited" style="top:16.00%"></span>
-      <span class="unvisited" style="top:17.00%"></span>
-      <span class="unvisited" style="top:18.00%"></span>
-      <span class="unvisited" style="top:19.00%"></span>
-      <span class="unvisited" style="top:20.00%"></span>
-      <span class="unvisited" style="top:21.00%"></span>
-      <span class="unvisited" style="top:22.00%"></span>
-      <span class="unvisited" style="top:23.00%"></span>
-      <span class="unvisited" style="top:26.00%"></span>
-      <span class="some-visited" style="top:28.00%"></span>
-      <span class="unvisited" style="top:30.00%"></span>
-      <span class="unvisited" style="bottom:6.00%"></span>
+      <span class="unvisited" style="top:14.56%"></span>
+      <span class="unvisited" style="top:15.53%"></span>
+      <span class="unvisited" style="top:16.50%"></span>
+      <span class="unvisited" style="top:17.48%"></span>
+      <span class="unvisited" style="top:18.45%"></span>
+      <span class="unvisited" style="top:19.42%"></span>
+      <span class="unvisited" style="top:20.39%"></span>
+      <span class="unvisited" style="top:21.36%"></span>
+      <span class="unvisited" style="top:22.33%"></span>
+      <span class="unvisited" style="top:25.24%"></span>
+      <span class="some-visited" style="top:27.18%"></span>
+      <span class="unvisited" style="top:29.13%"></span>
+      <span class="unvisited" style="bottom:8.74%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -129,12 +129,15 @@
 <a id="L92"></a><span > </span>
 <a id="L93"></a><span class="visited"> </span>
 <a id="L94"></a><span class="unvisited"> </span>
-<a id="L95"></a><span class="visited"> </span>
+<a id="L95"></a><span > </span>
 <a id="L96"></a><span > </span>
 <a id="L97"></a><span > </span>
 <a id="L98"></a><span class="visited"> </span>
-<a id="L99"></a><span class="visited"> </span>
+<a id="L99"></a><span > </span>
 <a id="L100"></a><span > </span>
+<a id="L101"></a><span class="visited"> </span>
+<a id="L102"></a><span class="visited"> </span>
+<a id="L103"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -239,6 +242,9 @@
 <a href="#L98"> 98</a>
 <a href="#L99"> 99</a>
 <a href="#L100">100</a>
+<a href="#L101">101</a>
+<a href="#L102">102</a>
+<a href="#L103">103</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
 
@@ -333,7 +339,10 @@ module CheckMonad = struct
   let get_func_return_type =
     read
     &gt;&gt;<span data-count="3">=</span> function
-    | <span data-count="0">_</span>, [] -&gt; fail (Type_check_error Check_failed)
+    | <span data-count="0">_</span>, [] -&gt;
+      fail
+        (Type_check_error
+           (Mismatched_types "this func has no returns but they was requested"))
     | <span data-count="58">_</span>, funcs -&gt; return (List.h<span data-count="58">d</span> funcs)
   ;;
 
