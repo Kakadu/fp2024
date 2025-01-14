@@ -259,8 +259,15 @@ let parse_rec_flag =
   if is_rec then return Rec else return NonRec
 ;;
 
+let annot_expr pe =
+  lift2 (fun expr annot -> ExprType (expr, annot)) (pe <* token ":") parse_type_annotation
+;;
+
 let efunf ps e = List.fold_right ps ~f:efun ~init:e
-let pbinding pe = both pattern (lift2 efunf (many pattern <* token "=") pe)
+
+let pbinding pe =
+  both pattern (lift2 efunf (many pattern <* token "=") (annot_expr pe <|> pe))
+;;
 
 let pelet pe =
   lift4
@@ -292,7 +299,8 @@ let expr =
   fix (fun expr ->
     let term = choice [ pevar; peconstant; pelist expr; pparens expr ] in
     let apply = chainl1 term (return eapply) in
-    let cons = pecons apply in
+    let apply_with_annot = annot_expr apply <|> apply in
+    let cons = pecons apply_with_annot in
     let ife = peif expr <|> cons in
     let opt = p_option ife <|> ife in
     let unops = opt <|> peunop opt in

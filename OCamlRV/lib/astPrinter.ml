@@ -231,6 +231,7 @@ let rec pp_expr =
       (match x with
        | Some x -> fprintf ppf "Some (%a)" helper x
        | None -> fprintf ppf "None")
+    | ExprType (e, annot) -> fprintf ppf "(%a : %a)" helper e pp_annot annot
   in
   helper
 

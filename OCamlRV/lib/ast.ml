@@ -119,6 +119,7 @@ type expression =
   | ExprCons of expression * expression (** t::tl *)
   | ExprFun of (pattern[@gen gen_pattern_sized (n / div)]) * expression (** fun p -> e *)
   | ExprOption of expression option
+  | ExprType of expression * type_annot
 [@@deriving show { with_path = false }, qcheck]
 
 (** Used in `match` expression *)

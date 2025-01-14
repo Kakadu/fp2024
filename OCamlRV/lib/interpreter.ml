@@ -359,6 +359,7 @@ module Eval (M : MONAD_FAIL) = struct
        | Some e ->
          let* v = eval_expr env e in
          return (VOption (Some v)))
+    | ExprType (e, _) -> eval_expr env e
     | _ -> fail Evaluationg_Need_ToBeReplaced
 
   and eval_non_rec_binding_list env bl =
@@ -369,6 +370,9 @@ module Eval (M : MONAD_FAIL) = struct
           let p, e = b in
           match p with
           | PVar name ->
+            let* v = eval_expr env e in
+            return (extend env name v)
+          | PType (PVar name, _) ->
             let* v = eval_expr env e in
             return (extend env name v)
           | PAny ->

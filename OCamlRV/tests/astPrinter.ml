@@ -287,3 +287,28 @@ let%expect_test "" =
     [ SValue (NonRec, (PType (PVar "a", AList AInt), ExprConstant CNil), []) ];
   [%expect {| let (a : int list) = [];; |}]
 ;;
+
+let%expect_test "" =
+  Format.printf
+    "%a\n"
+    pp_structure_item_list
+    [ SValue
+        ( NonRec
+        , ( PVar "addi"
+          , ExprFun
+              ( PVar "f"
+              , ExprFun
+                  ( PVar "g"
+                  , ExprFun
+                      ( PVar "x"
+                      , ExprType
+                          ( ExprApply
+                              ( ExprApply (ExprVariable "f", ExprVariable "x")
+                              , ExprType
+                                  (ExprApply (ExprVariable "g", ExprVariable "x"), ABool)
+                              )
+                          , AInt ) ) ) ) )
+        , [] )
+    ];
+  [%expect {| let addi f = fun g -> fun x -> ((f x) ((g x : bool)) : int);; |}]
+;;

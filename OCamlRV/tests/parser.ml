@@ -397,3 +397,27 @@ let%expect_test "" =
           []))
         ] |}]
 ;;
+
+let%expect_test "" =
+  parse_to_unit "let addi = fun f g x -> (f x (g x: bool) : int)";
+  [%expect
+    {|
+      [(SValue (NonRec,
+          ((PVar "addi"),
+           (ExprFun ((PVar "f"),
+              (ExprFun ((PVar "g"),
+                 (ExprFun ((PVar "x"),
+                    (ExprType (
+                       (ExprApply (
+                          (ExprApply ((ExprVariable "f"), (ExprVariable "x"))),
+                          (ExprType (
+                             (ExprApply ((ExprVariable "g"), (ExprVariable "x"))),
+                             ABool))
+                          )),
+                       AInt))
+                    ))
+                 ))
+              ))),
+          []))
+        ] |}]
+;;
