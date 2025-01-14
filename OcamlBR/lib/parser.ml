@@ -225,11 +225,11 @@ let pat_option pat =
 let ppattern =
   fix (fun pat ->
     let patom = pat_const <|> pat_var <|> pat_any <|> pparens pat in
-    let pptuple = pat_tuple patom <|> patom in
+    let poption = pat_option patom <|> patom in
+    let pptuple = pat_tuple poption <|> poption in
     let pplist = pat_list pptuple <|> pptuple in
     let pcons = pat_cons pplist <|> pplist in
-    let poption = pat_option pcons <|> pcons in
-    poption)
+    pcons)
 ;;
 
 let pfirst_ty_pattern =
