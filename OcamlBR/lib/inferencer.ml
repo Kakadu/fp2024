@@ -550,15 +550,28 @@ module Infer = struct
       let* full_subst = Subst.compose_all [ s3; unified_subst; subst1 ] in
       return (full_subst, t2)
     | Elet (Recursive, Evalue_binding ((PVar (Id x), t_opt), e1), [], e2) ->
-      Format.printf "t1:\n";
       let* tv = fresh_var in
       let env2 = TypeEnv.extend x (S (VarSet.empty, tv)) env in
       let* s1, t1 = infer env2 e1 in
+      (* Format.printf "%s\n" x;
+      Format.printf "t1: %a\n" pp_ty t1;
+      Format.printf "s1: %a\n" Subst.pp_subst s1;
+      Format.printf "env: %a\n" TypeEnv.pp env; *)
       let* s2 = unify (Subst.apply s1 tv) t1 in
       let* s_final = Subst.compose s1 s2 in
+      (* Format.printf "s_final: %a\n" Subst.pp_subst s_final; *)
       let env3 = TypeEnv.apply s_final env in
-      let t_gen = generalize env3 (Subst.apply s_final tv) in
-      let* s3, t2 = infer (TypeEnv.extend x t_gen env3) e2 in
+      (* Format.printf "env3: %a\n" TypeEnv.pp env3; *)
+      let* env4 =
+        match t_opt with
+        | Some expected_type ->
+          let expected_type = Subst.apply s1 expected_type in
+          let* sub1 = Subst.unify t1 expected_type in
+          return (TypeEnv.apply sub1 env3)
+        | None -> return (TypeEnv.apply s1 env3)
+      in
+      let t_gen = generalize env4 (Subst.apply s_final tv) in
+      let* s3, t2 = infer (TypeEnv.extend x t_gen env4) e2 in
       let* s_final = Subst.compose s_final s3 in
       return (s_final, t2)
     | Elet (Recursive, value_binding, value_bindings, e2) ->
