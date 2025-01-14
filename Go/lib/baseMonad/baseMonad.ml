@@ -24,14 +24,14 @@ let ( >>| ) x f st =
   | Result.Error er -> fail er st
 ;;
 
-let iter f list =
+let iter f =
   let f acc el = acc *> f el *> return () in
-  List.fold_left f (return ()) list
+  List.fold_left f (return ())
 ;;
 
-let iter2 f list1 list2 =
+let iter2 f =
   let f acc el1 el2 = acc *> f el1 el2 *> return () in
-  List.fold_left2 f (return ()) list1 list2
+  List.fold_left2 f (return ())
 ;;
 
 let map f list =
