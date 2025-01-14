@@ -144,14 +144,12 @@ let p_inf_oper =
   else return (Ident oper)
 ;;
 
-let p_varname =
+let p_name p_fst_letter =
   let* name =
     skip_ws
     *> lift2
          ( ^ )
-         (take_while1 (function
-           | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
-           | _ -> false))
+         p_fst_letter
          (take_while (function
            | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
            | _ -> false))
@@ -161,9 +159,28 @@ let p_varname =
   else return name
 ;;
 
+let p_varname =
+  p_name
+    (take_while1 (function
+      | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+      | _ -> false))
+;;
+
+let p_act_pat_name =
+  p_name
+    (take_while1 (function
+      | 'A' .. 'Z' -> true
+      | _ -> false))
+;;
+
 let p_ident =
   let* varname = p_varname in
   return (Ident varname)
+;;
+
+let p_act_pat_ident =
+  let* name = p_act_pat_name in
+  return (Ident name)
 ;;
 
 let p_type = skip_ws *> char ':' *> skip_ws *> p_varname >>| fun s -> Primitive s
@@ -544,6 +561,52 @@ let p_constraint_expr p_expr =
   return (EConstraint (expr, typ))
 ;;
 
+(*let p_act_pat_constructor p_expr =
+  skip_ws *> 
+  let* pat_name = p_act_pat_ident in
+  let* expr = (skip_ws *> choice
+  [ p_var_expr
+  ; p_int_expr
+  ; p_string_expr
+  ; p_unit_expr
+  ; p_bool_expr
+  ; p_semicolon_list_expr p_expr
+  ; p_parens (p_constraint_expr p_expr)
+  ]) <|> skip_ws *> p_parens p_expr in 
+  return (ActPatConstructor (pat_name, expr))
+;;*)
+
+(* act pat constructors shoud not be made from outside of the pattern definition *)
+(*let p_act_pat_expr p_expr =
+  skip_ws *>
+  fix (fun p ->
+    let constr = p_act_pat_constructor p in 
+    let rest = p_expr <|> constr in
+    rest
+    )
+;;*)
+
+let p_act_pat p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* fst_name =
+    skip_ws *> string "(" *> skip_ws *> string "|" *> skip_ws *> p_act_pat_ident
+  in
+  let* names =
+    many (skip_ws *> string "|" *> p_act_pat_ident <* skip_ws)
+    <* skip_ws
+    <* string "|"
+    <* skip_ws
+    <* string ")"
+    <* skip_ws
+  in
+  let* args = many p_pat in
+  let* expr = skip_ws *> string "=" *> skip_ws *> p_expr in
+  return (ActPat (fst_name, names, args, expr))
+;;
+
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
@@ -583,7 +646,7 @@ let p_expr =
     efun)
 ;;
 
-let p_statement = p_let p_expr
+let p_statement = p_act_pat p_expr <|> p_let p_expr
 
 let p_construction =
   p_expr >>= (fun e -> return (Expr e)) <|> (p_statement >>= fun s -> return (Statement s))

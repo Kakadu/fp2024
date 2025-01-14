@@ -57,6 +57,7 @@ let rec pp_pattern fmt = function
      | None -> fprintf fmt "None "
      | Some p -> fprintf fmt "Some (%a) " pp_pattern p)
   | PConstraint (p, t) -> fprintf fmt "(%a : %a) " pp_pattern p pp_typ t
+  | PActive (Ident name, p) -> fprintf fmt "%s %a" name pp_pattern p
 
 and pp_expr fmt expr =
   match expr with
@@ -117,6 +118,9 @@ and pp_expr fmt expr =
      | None -> fprintf fmt "None "
      | Some e -> fprintf fmt "Some (%a)" pp_expr e)
   | EConstraint (e, t) -> fprintf fmt "(%a : %a) " pp_expr e pp_typ t
+  | ActPatConstructor (Ident name, e) ->
+    fprintf fmt " %s " name;
+    fprintf fmt "(%a)" pp_expr e
 
 and pp_args fmt args =
   let open Format in

@@ -147,6 +147,7 @@ type pattern =
   | POption of pattern option
   (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
   | PConstraint of pattern * (typ[@gen gen_typ_primitive])
+  | PActive of ident * pattern (** | Email str -> _ | Phone [(num, country)] -> _ *)
 [@@deriving show { with_path = false }, qcheck]
 
 type is_recursive =
@@ -197,6 +198,7 @@ and expr =
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
   | EConstraint of expr * (typ[@gen gen_typ_primitive])
+  | ActPatConstructor of ident * expr (** return Phone [(num, country)] *)
 [@@deriving show { with_path = false }, qcheck]
 
 and typed_expr =
@@ -246,8 +248,8 @@ type statement =
       * let_bind
       * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 2) gen_let_bind)])
   (** [let name = expr] *)
-(*| ActivePattern of (ident list[@gen gen_ident_small_list]) * expr
-  (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)*)
+  | ActPat of ident * ident list * pattern list * expr
+  (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving show { with_path = false }, qcheck]
 
 type construction =
