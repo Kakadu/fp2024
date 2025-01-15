@@ -50,7 +50,7 @@ let%expect_test "type complex func" =
   [%expect {| func(bool, func()) ([0]string, int) |}]
 ;;
 
-let%expect_test "type bidirectional channel" =
+let%expect_test "type bidirectional chanel" =
   print_endline (print_type (Type_chan Type_int));
   [%expect {| chan int |}]
 ;;

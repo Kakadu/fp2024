@@ -168,7 +168,7 @@ let%expect_test "type func that returns func that returns func..." =
     func() func() func() func() func() func() |}]
 ;;
 
-let%expect_test "type bidirectional channel" =
+let%expect_test "type bidirectional chanel" =
   pp print_type parse_type {|chan int|};
   [%expect {|
     chan int |}]

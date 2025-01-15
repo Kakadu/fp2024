@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
-open Event
 
 module Ident = struct
   type t = ident
@@ -16,8 +15,7 @@ module MapIdent = Map.Make (Ident)
 type nil = Nil
 
 type chan_value =
-  | Chan_initialized of type' channel
-  (** Initialized channel, may either be opened or closed *)
+  | Chan_initialized of int (** Initialized chanel, identified by id *)
   | Chan_uninitialized of nil
 
 type value =
@@ -33,6 +31,7 @@ and builtin =
   | Print
   | Println
   | Make
+  | Close
   | Recover
   | Len
   | Panic
@@ -76,10 +75,13 @@ type goroutine =
   ; id : int
   }
 
+module ChanSet = Set.Make (Int)
+
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
   ; sleeping : (sleeping_state * goroutine) list
+  ; chanels : ChanSet.t * int
   }
 
 module Monad = struct
@@ -98,7 +100,8 @@ module Monad = struct
   let write_global new_global =
     read
     >>= function
-    | { running; sleeping } -> write { global_env = new_global; running; sleeping }
+    | { running; sleeping; chanels } ->
+      write { global_env = new_global; running; sleeping; chanels }
   ;;
 
   let save_global_id ident value =
@@ -117,7 +120,8 @@ module Monad = struct
   let write_sleeping new_goroutines =
     read
     >>= function
-    | { global_env; running } -> write { global_env; running; sleeping = new_goroutines }
+    | { global_env; running; chanels } ->
+      write { global_env; running; chanels; sleeping = new_goroutines }
   ;;
 
   let add_sleeping sleeping_state goroutine =
@@ -141,7 +145,8 @@ module Monad = struct
   let write_running new_goroutine =
     read
     >>= function
-    | { global_env; sleeping } -> write { global_env; sleeping; running = new_goroutine }
+    | { global_env; sleeping; chanels } ->
+      write { global_env; sleeping; chanels; running = new_goroutine }
   ;;
 
   let run_goroutine goroutine =
@@ -155,6 +160,44 @@ module Monad = struct
     read_running_fail
     >>= function
     | goroutine -> write_running None *> add_sleeping sleeping_state goroutine
+  ;;
+
+  (* chanels *)
+
+  let read_chanels =
+    read
+    >>= function
+    | { chanels } -> return chanels
+  ;;
+
+  let write_chanels new_chanels =
+    read
+    >>= function
+    | { global_env; running; sleeping } ->
+      write { global_env; running; sleeping; chanels = new_chanels }
+  ;;
+
+  let find_chanel_fail = function
+    | Chan_uninitialized Nil -> fail (Runtime_error Deadlock)
+    | Chan_initialized id ->
+      let* chanels, _ = read_chanels in
+      (match ChanSet.find_opt id chanels with
+       | None -> fail (Runtime_error Deadlock)
+       | Some _ -> return ())
+  ;;
+
+  let add_chanel =
+    let* chanels, id = read_chanels in
+    write_chanels (ChanSet.add id chanels, id + 1) *> return id
+  ;;
+
+  let close_chanel = function
+    | Chan_uninitialized Nil -> fail (Runtime_error Close_of_nil_chan)
+    | Chan_initialized id ->
+      let* chanels, next_id = read_chanels in
+      (match ChanSet.find_opt id chanels with
+       | None -> fail (Runtime_error Close_of_closed_chan)
+       | Some _ -> write_chanels (ChanSet.remove id chanels, next_id))
   ;;
 
   (* single goroutine's stack *)

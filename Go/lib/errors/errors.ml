@@ -29,6 +29,8 @@ type runtime_error =
   | Negative_array_index
   | Uninited_func
   | Deadlock
+  | Close_of_closed_chan
+  | Close_of_nil_chan
   | Panic of string
   | DevOnly of devonly_runtime_error
 [@@deriving show { with_path = false }]

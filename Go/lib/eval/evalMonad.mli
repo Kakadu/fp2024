@@ -13,13 +13,12 @@ end
 
 module MapIdent : Map.S with type key = Ident.t
 
-(** Value for [nil] identifier and unitialized functions and channels *)
+(** Value for [nil] identifier and unitialized functions and chanels *)
 type nil = Nil
 
-(** Value for unbuffered channels *)
+(** Value for unbuffered chanels *)
 type chan_value =
-  | Chan_initialized of type' channel
-  (** Initialized channel, may either be opened or closed *)
+  | Chan_initialized of int (** Initialized chanel, identified by id *)
   | Chan_uninitialized of nil
 
 (** Values that can be stored in a variables *)
@@ -38,6 +37,7 @@ and builtin =
   | Print
   | Println
   | Make
+  | Close
   | Recover
   | Len
   | Panic
@@ -86,6 +86,8 @@ type goroutine =
   ; id : int
   }
 
+module ChanSet : Set.S with type elt = int
+
 type eval_state =
   { global_env : value MapIdent.t
   (** Stores values for predeclared identifiers and global variables and functions *)
@@ -93,6 +95,7 @@ type eval_state =
   (** Goroutine that is currently running, stored separately for time efficiency *)
   ; sleeping : (sleeping_state * goroutine) list
   (** All sleeping and ready to run goroutines *)
+  ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
   }
 
 (** Monad for evaluating the program state *)
@@ -120,6 +123,16 @@ module Monad : sig
   val add_sleeping : sleeping_state -> goroutine -> unit t
   val run_goroutine : goroutine -> unit t
   val stop_running_goroutine : sleeping_state -> unit t
+
+  (* Chanels *)
+
+  val find_chanel_fail : chan_value -> unit t
+
+  (** Creates new chanel and returns it's id *)
+  val add_chanel : int t
+
+  (** Closes chanel. Fails if it is closed or uninited *)
+  val close_chanel : chan_value -> unit t
 
   (* Call stack *)
   val add_stack_frame : stack_frame -> unit t

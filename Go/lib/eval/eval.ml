@@ -57,6 +57,7 @@ and eval_func_call (func, args) =
   eval_expr func
   >>= function
   | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func)
+  | Value_func (Func_builtin ftype) -> eval_builtin args ftype
   | Value_func (Func_initialized (is_closure, afc)) ->
     (* тут нужна проверка на замыкание *)
     let rec save_args map = function
@@ -77,28 +78,36 @@ and eval_func_call (func, args) =
         | None -> return ())
     *> delete_stack_frame
     *> return None
-  | Value_func (Func_builtin ftype) ->
-    (match ftype with
-     | Print -> (map retrieve_arg_value args >>= builtin_print) *> return None
-     | Println -> (map retrieve_arg_value args >>= builtin_println) *> return None
-     | Make -> return (Some (Value_chan (Chan_initialized (Event.new_channel ()))))
-     | Recover -> return None (* ДОДЕЛАТЬ, возвращает аргумент паники *)
-     | Len ->
-       map retrieve_arg_value args
-       >>= (function
-        | [ Value_array (len, _) ] -> return (Some (Value_int len))
-        | [ Value_string s ] -> return (Some (Value_int (String.length s)))
-        | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
-     | Panic ->
-       map retrieve_arg_value args
-       >>= (fun av -> return (String.concat "" (List.map pp_value av)))
-       >>= fun msg -> fail (Runtime_error (Panic msg)))
-    (* Тут неправильно *)
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 
 and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
   | Arg_type _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+
+and eval_builtin args = function
+  | Print -> (map retrieve_arg_value args >>= builtin_print) *> return None
+  | Println -> (map retrieve_arg_value args >>= builtin_println) *> return None
+  | Make ->
+    let* chan_id = add_chanel in
+    return (Some (Value_chan (Chan_initialized chan_id)))
+  | Close ->
+    map retrieve_arg_value args
+    >>= (function
+     | [ Value_chan chan ] -> close_chanel chan *> return None
+     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+  | Len ->
+    map retrieve_arg_value args
+    >>= (function
+     | [ Value_array (len, _) ] -> return (Some (Value_int len))
+     | [ Value_string s ] -> return (Some (Value_int (String.length s)))
+     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+  | Panic ->
+    map retrieve_arg_value args
+    >>= (fun av -> return (String.concat "" (List.map pp_value av)))
+    >>= fun msg -> fail (Runtime_error (Panic msg))
+    (* Тут неправильно *)
+  | Recover -> return None
+(* ДОДЕЛАТЬ, возвращает аргумент паники *)
 
 and retrieve_arg_generic = function
   | Arg_expr _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
@@ -212,7 +221,13 @@ let run_eval file =
   | None -> return ()
 ;;
 
-let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
+let init_state =
+  { global_env = MapIdent.empty
+  ; running = None
+  ; sleeping = []
+  ; chanels = ChanSet.empty, 1
+  }
+;;
 
 let eval file =
   run (run_eval file) init_state
