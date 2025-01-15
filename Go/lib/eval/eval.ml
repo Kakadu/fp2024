@@ -18,6 +18,7 @@ let rec pp_value = function
   | Value_string s -> Format.asprintf "%s" s
 ;;
 
+let rpf lst = List.map (fun (y, _) -> y) lst
 let builtin_print lst = iter (fun x -> return (Format.printf "%s" (pp_value x))) lst
 let builtin_println lst = builtin_print lst *> return (Format.printf "\n") *> return ()
 
@@ -30,8 +31,7 @@ let pp printer eval ast =
 let exec_stmt eval_stmt =
   let* stmt = pop_next_statement in
   match stmt with
-  | Some st ->
-    builtin_print [ Value_string "executing_stmt " ] *> eval_stmt st *> return (Some ())
+  | Some st -> eval_stmt st *> return (Some ())
   | None -> return None
 ;;
 
@@ -59,16 +59,18 @@ and eval_func_call (func, args) =
   | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func)
   | Value_func (Func_initialized (is_closure, afc)) ->
     (* тут нужна проверка на замыкание *)
+    let rec save_args map = function
+      | [] -> return map
+      | (expr, id) :: tl ->
+        retrieve_arg_value expr >>= fun vl -> save_args (MapIdent.add id vl map) tl
+    in
+    save_args MapIdent.empty (List.combine args (rpf afc.args))
+    >>= fun map ->
     add_stack_frame
-      { local_envs =
-          { exec_block = afc.body; var_map = MapIdent.empty; env_type = Default }, []
+      { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
       ; deferred_funcs = []
       ; closure_envs = Simple
       }
-    *> iter
-         (fun (farg, (ident, _)) ->
-           retrieve_arg_value farg >>= fun value -> save_local_id ident value)
-         (List.combine args afc.args)
     *> (exec_stmt eval_stmt
         >>= function
         | Some _ -> exec_stmt eval_stmt *> return ()

@@ -119,8 +119,24 @@ let%expect_test "ok: local var decl func call" =
   pp
     {|
     var x = "kill "
-    func foo(x string, y string) {
+  
+    func main() {
+      var y = "OCaml"
       print(x, y)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: func args init" =
+  pp
+    {|
+    var x = "kill "
+    func foo(x string, k string) {
+      var z = " OCaml"
+      print(x, k, z)
     }
   
     func main() {
@@ -130,5 +146,5 @@ let%expect_test "ok: local var decl func call" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill OCaml OCaml |}]
 ;;

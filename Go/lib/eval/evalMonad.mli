@@ -91,7 +91,8 @@ type eval_state =
   (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
   (** Goroutine that is currently running, stored separately for time efficiency *)
-  ; sleeping : (sleeping_state * goroutine) list (** All sleeping and ready to run goroutines *)
+  ; sleeping : (sleeping_state * goroutine) list
+  (** All sleeping and ready to run goroutines *)
   }
 
 (** Monad for evaluating the program state *)
