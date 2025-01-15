@@ -25,7 +25,6 @@ and value =
   | VFun of pattern * rec_flag * expression * environment
   | VMutualFun of pattern * rec_flag * expression * environment
   | VFunction of case * case list * environment
-  | VCycle of string
   | VBuiltin of builtin * string
 
 let rec pp_value ppf =
@@ -35,13 +34,12 @@ let rec pp_value ppf =
   | VBool b -> fprintf ppf "%b" b
   | VString s -> fprintf ppf "%s" s
   | VUnit -> fprintf ppf "()"
-  | VList _ -> fprintf ppf "<VList>"
-  (* | VList vl ->
-     fprintf
-     ppf
-     "[%a]"
-     (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
-     vl *)
+  | VList vl ->
+    fprintf
+      ppf
+      "[%a]"
+      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
+      vl
   | VTuple vl ->
     fprintf
       ppf
@@ -53,7 +51,6 @@ let rec pp_value ppf =
   | VBuiltin (_, name) -> fprintf ppf "<builtin> %s" name
   | VMutualFun _ -> fprintf ppf "<VMutualFun>"
   | VFunction _ -> fprintf ppf "<VFunction>"
-  | VCycle s -> fprintf ppf "<cycle> %s" s
   | VOption vo ->
     (match vo with
      | Some v -> fprintf ppf "Some %a" pp_value v
@@ -309,8 +306,7 @@ module Eval (M : MONAD_FAIL) = struct
          eval_expr env' e
        | VFunction (c, cl, env) ->
          let cases = c :: cl in
-         let rec try_match cases =
-           match cases with
+         let rec try_match = function
            | [] -> fail PatternMatchingFailed
            | (pattern, body) :: rest ->
              (match check_matching env (pattern, v2) with
@@ -371,7 +367,6 @@ module Eval (M : MONAD_FAIL) = struct
       (match tlv with
        | VList vl -> return (VList (hv :: vl))
        | VNil -> return (VList [ hv ])
-       | VCycle _ -> return (VList [ hv ])
        | t -> fail (WrongType t))
     | ExprOption opt_expr ->
       (match opt_expr with
@@ -426,34 +421,6 @@ module Eval (M : MONAD_FAIL) = struct
             (match e with
              | ExprFun (p1, e1) ->
                return (extend env name (VMutualFun (p1, Rec, e1, env)))
-             | ExprCons _ ->
-               let env2 = extend env name (VCycle name) in
-               let* v = eval_expr env2 e in
-               let l =
-                 match v with
-                 | VList l -> l
-                 | _ -> exit 1
-               in
-               (* https://stackoverflow.com/questions/26475516/how-do-i-write-a-function-to-create-a-circular-version-of-a-list-in-ocaml *)
-               let cycle l =
-                 if l = []
-                 then invalid_arg "cycle"
-                 else (
-                   let l' = List.map (fun x -> x) l in
-                   (* copy the list *)
-                   let rec aux = function
-                     | [] -> assert false
-                     | [ _ ] as lst ->
-                       (* find the last cons cell *)
-                       (* and set the last pointer to the beginning of the list *)
-                       Obj.set_field (Obj.repr lst) 1 (Obj.repr l')
-                     | _ :: t -> aux t
-                   in
-                   aux l';
-                   l')
-               in
-               let env3 = extend env2 name (VList (cycle l)) in
-               return env3
              | _ -> return env)
           | _ -> return env)
         ~init:(return env)

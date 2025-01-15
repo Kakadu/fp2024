@@ -10,6 +10,4 @@ let rec list_iter l n =
       list_iter xs (n - 1))
 ;;
 
-let rec ones = 1 :: 2 :: 3 :: ones;;
-
-list_iter ones 10
+list_iter [ 1; 2; 3; 4; 5 ] 5
