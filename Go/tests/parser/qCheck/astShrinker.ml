@@ -45,35 +45,23 @@ let shrink_id_and_type id_and_t =
 ;;
 
 let shrink_anon_func shblock anon_func =
-  if anon_func = { args = []; returns = None; body = [] }
+  if anon_func = { args = []; returns = []; body = [] }
   then empty
   else
-    return { args = []; returns = None; body = [] }
+    return { args = []; returns = []; body = [] }
     <+>
     let { args; returns; body } = anon_func in
     (let* new_args = list ~shrink:shrink_id_and_type args in
      return { args = new_args; returns; body })
     <+> (let* new_returns =
            match returns with
-           | Some (Ident_and_types (first, hd :: tl)) ->
-             let* new_ident_and_types =
-               list ~shrink:shrink_id_and_type (first :: hd :: tl)
-             in
-             (match new_ident_and_types with
-              | hd :: tl -> return (Some (Ident_and_types (hd, tl)))
-              | [] -> return None)
-           | Some (Ident_and_types (pair, [])) ->
-             let* new_pair = shrink_id_and_type pair in
-             of_list [ None; Some (Ident_and_types (new_pair, [])) ]
-           | Some (Only_types (first, hd :: tl)) ->
-             let* new_types = list ~shrink:shrink_type (first :: hd :: tl) in
-             (match new_types with
-              | hd :: tl -> return (Some (Only_types (hd, tl)))
-              | [] -> return None)
-           | Some (Only_types (type', [])) ->
+           | [ type' ] ->
              let* new_type = shrink_type type' in
-             of_list [ None; Some (Only_types (new_type, [])) ]
-           | None -> empty
+             of_list [ []; [ new_type ] ]
+           | [] -> empty
+           | types ->
+             let* new_types = list ~shrink:shrink_type types in
+             return new_types
          in
          return { args; returns = new_returns; body })
     <+>
@@ -103,50 +91,59 @@ let shrink_const shexpr shblock = function
         return (Const_func new_anon_func)
 ;;
 
-let shrink_func_call shexpr call =
+let shrink_func_call shexpr sharg call =
   let func, args = call in
   return (Expr_ident "a", [])
   <+> (let* new_func = shexpr func in
        return (new_func, args))
-  <+> let* new_args = list ~shrink:shexpr args in
+  <+> let* new_args = list ~shrink:sharg args in
       return (func, new_args)
 ;;
 
-let rec shrink_expr shblock = function
+let rec shrink_expr shblock sharg = function
   | Expr_ident id -> shrink_ident id >|= fun id -> Expr_ident id
   | Expr_const const ->
     return (Expr_ident "a")
-    <+> (shrink_const (shrink_expr shblock) shblock const >|= fun c -> Expr_const c)
+    <+> (shrink_const (shrink_expr shblock sharg) shblock const >|= fun c -> Expr_const c)
   | Expr_index (array, index) ->
     return (Expr_ident "a")
-    <+> (let* new_array = (shrink_expr shblock) array in
+    <+> (let* new_array = (shrink_expr shblock sharg) array in
          return (Expr_index (new_array, index)))
     <+>
-    let* new_index = (shrink_expr shblock) index in
+    let* new_index = (shrink_expr shblock sharg) index in
     return (Expr_index (array, new_index))
   | Expr_bin_oper (op, left, right) ->
     return (Expr_ident "a")
     <+> return left
     <+> return right
-    <+> (let* new_right = shrink_expr shblock right in
+    <+> (let* new_right = shrink_expr shblock sharg right in
          return (Expr_bin_oper (op, left, new_right)))
     <+>
-    let* new_left = shrink_expr shblock left in
+    let* new_left = shrink_expr shblock sharg left in
     return (Expr_bin_oper (op, new_left, right))
   | Expr_un_oper (op, expr) ->
     return (Expr_ident "a")
     <+> return expr
-    <+> let* new_expr = shrink_expr shblock expr in
+    <+> let* new_expr = shrink_expr shblock sharg expr in
         return (Expr_un_oper (op, new_expr))
   | Expr_chan_receive expr ->
     return (Expr_ident "a")
     <+> return expr
-    <+> let* new_expr = shrink_expr shblock expr in
+    <+> let* new_expr = shrink_expr shblock sharg expr in
         return (Expr_chan_receive new_expr)
   | Expr_call call ->
     return (Expr_ident "a")
-    <+> let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> let* new_call = shrink_func_call (shrink_expr shblock sharg) sharg call in
         return (Expr_call new_call)
+;;
+
+let rec shrink_args shblock = function
+  | Arg_expr x ->
+    let* new_arg = shrink_expr shblock (shrink_args shblock) x in
+    return (Arg_expr new_arg)
+  | Arg_type x ->
+    let* new_arg = shrink_type x in
+    return (Arg_type new_arg)
 ;;
 
 let shrink_id_with_expr shblock id_and_expr =
@@ -154,7 +151,7 @@ let shrink_id_with_expr shblock id_and_expr =
   return ("a", Expr_ident "a")
   <+> (let* new_id = shrink_ident id in
        return (new_id, expr))
-  <+> let* new_expr = shrink_expr shblock expr in
+  <+> let* new_expr = shrink_expr shblock (shrink_args shblock) expr in
       return (id, new_expr)
 ;;
 
@@ -210,7 +207,12 @@ let shrink_long_decl shblock = function
           ]
     <+> (let* new_type = shrink_type_option type' in
          return (Long_decl_one_init (new_type, first, second, hd :: tl, call)))
-    <+> (let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> (let* new_call =
+           shrink_func_call
+             (shrink_expr shblock (shrink_args shblock))
+             (shrink_args shblock)
+             call
+         in
          return (Long_decl_one_init (type', first, second, hd :: tl, new_call)))
     <+>
     let* new_first, new_second, new_rest =
@@ -228,7 +230,12 @@ let shrink_long_decl shblock = function
           ]
     <+> (let* new_type = shrink_type_option type' in
          return (Long_decl_one_init (new_type, first, second, [], call)))
-    <+> let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> let* new_call =
+          shrink_func_call
+            (shrink_expr shblock (shrink_args shblock))
+            (shrink_args shblock)
+            call
+        in
         return (Long_decl_one_init (type', first, second, [], new_call))
 ;;
 
@@ -250,7 +257,12 @@ let shrink_short_decl shblock = function
     return (Short_decl_mult_init (new_pair, []))
   | Short_decl_one_init (first, second, hd :: tl, call) ->
     return (Short_decl_mult_init (("a", Expr_ident "a"), []))
-    <+> (let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> (let* new_call =
+           shrink_func_call
+             (shrink_expr shblock (shrink_args shblock))
+             (shrink_args shblock)
+             call
+         in
          return (Short_decl_one_init (first, second, hd :: tl, new_call)))
     <+> of_list
           [ Short_decl_mult_init ((first, Expr_call call), [])
@@ -270,19 +282,24 @@ let shrink_short_decl shblock = function
           [ Short_decl_mult_init ((first, Expr_call call), [])
           ; Short_decl_mult_init ((second, Expr_call call), [])
           ]
-    <+> let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> let* new_call =
+          shrink_func_call
+            (shrink_expr shblock (shrink_args shblock))
+            (shrink_args shblock)
+            call
+        in
         return (Short_decl_one_init (first, second, [], new_call))
 ;;
 
-let rec shrink_lvalue shblcok = function
+let rec shrink_lvalue shblock = function
   | Lvalue_ident id -> shrink_ident id >|= fun id -> Lvalue_ident id
   | Lvalue_array_index (array, index) ->
     return (Lvalue_ident "a")
     <+> return array
-    <+> (let* new_array = shrink_lvalue shblcok array in
+    <+> (let* new_array = shrink_lvalue shblock array in
          return (Lvalue_array_index (new_array, index)))
     <+>
-    let* new_index = shrink_expr shblcok index in
+    let* new_index = shrink_expr shblock (shrink_args shblock) index in
     return (Lvalue_array_index (array, new_index))
 ;;
 
@@ -292,7 +309,7 @@ let shrink_lvalue_with_expr shblock pair =
   <+> (let* new_lvalue = shrink_lvalue shblock lvalue in
        return (new_lvalue, expr))
   <+>
-  let* new_expr = shrink_expr shblock expr in
+  let* new_expr = shrink_expr shblock (shrink_args shblock) expr in
   return (lvalue, new_expr)
 ;;
 
@@ -317,7 +334,12 @@ let shrink_assign shblock = function
     return (Assign_mult_expr ((Lvalue_ident "a", Expr_ident "a"), []))
     <+> return (Assign_mult_expr ((first, Expr_call call), []))
     <+> return (Assign_mult_expr ((second, Expr_call call), []))
-    <+> (let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> (let* new_call =
+           shrink_func_call
+             (shrink_expr shblock (shrink_args shblock))
+             (shrink_args shblock)
+             call
+         in
          return (Assign_one_expr (first, second, hd :: tl, new_call)))
     <+>
     let* new_first, new_second, new_rest =
@@ -333,7 +355,12 @@ let shrink_assign shblock = function
     return (Assign_mult_expr ((Lvalue_ident "a", Expr_ident "a"), []))
     <+> return (Assign_mult_expr ((first, Expr_call call), []))
     <+> return (Assign_mult_expr ((second, Expr_call call), []))
-    <+> let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> let* new_call =
+          shrink_func_call
+            (shrink_expr shblock (shrink_args shblock))
+            (shrink_args shblock)
+            call
+        in
         return (Assign_one_expr (first, second, [], new_call))
 ;;
 
@@ -343,7 +370,7 @@ let shrink_chan_send shblock send =
   <+> (let* new_chan = shrink_ident chan in
        return (new_chan, expr))
   <+>
-  let* new_expr = shrink_expr shblock expr in
+  let* new_expr = shrink_expr shblock (shrink_args shblock) expr in
   return (chan, new_expr)
 ;;
 
@@ -358,7 +385,12 @@ let shrink_if_for_init shblock = function
         return (Init_assign new_ass)
   | Init_call call ->
     return (Init_incr "a")
-    <+> let* new_call = shrink_func_call (shrink_expr shblock) call in
+    <+> let* new_call =
+          shrink_func_call
+            (shrink_expr shblock (shrink_args shblock))
+            (shrink_args shblock)
+            call
+        in
         return (Init_call new_call)
   | Init_decr id ->
     return (Init_incr "a")
@@ -374,7 +406,7 @@ let shrink_if_for_init shblock = function
         return (Init_send new_send)
   | Init_receive chan ->
     return (Init_incr "a")
-    <+> let* new_chan = shrink_expr shblock chan in
+    <+> let* new_chan = shrink_expr shblock (shrink_args shblock) chan in
         return (Init_receive new_chan)
 ;;
 
@@ -389,7 +421,7 @@ let rec shrink_if shblock if' =
          | None -> empty
        in
        return { init = new_init; cond; if_body; else_body })
-  <+> (let* new_cond = shrink_expr shblock cond in
+  <+> (let* new_cond = shrink_expr shblock (shrink_args shblock) cond in
        return { init; cond = new_cond; if_body; else_body })
   <+> (let* new_if_body = shblock if_body in
        return { init; cond; if_body = new_if_body; else_body })
@@ -421,21 +453,36 @@ let shrink_stmt shblock = function
     return Stmt_break <+> (shrink_assign shblock ass >|= fun ass -> Stmt_assign ass)
   | Stmt_call call ->
     return Stmt_break
-    <+> (shrink_func_call (shrink_expr shblock) call >|= fun call -> Stmt_call call)
+    <+> (shrink_func_call
+           (shrink_expr shblock (shrink_args shblock))
+           (shrink_args shblock)
+           call
+         >|= fun call -> Stmt_call call)
   | Stmt_go call ->
     return Stmt_break
-    <+> (shrink_func_call (shrink_expr shblock) call >|= fun call -> Stmt_go call)
+    <+> (shrink_func_call
+           (shrink_expr shblock (shrink_args shblock))
+           (shrink_args shblock)
+           call
+         >|= fun call -> Stmt_go call)
   | Stmt_defer call ->
     return Stmt_break
-    <+> (shrink_func_call (shrink_expr shblock) call >|= fun call -> Stmt_defer call)
+    <+> (shrink_func_call
+           (shrink_expr shblock (shrink_args shblock))
+           (shrink_args shblock)
+           call
+         >|= fun call -> Stmt_defer call)
   | Stmt_chan_send send ->
     return Stmt_break
     <+> (shrink_chan_send shblock send >|= fun send -> Stmt_chan_send send)
   | Stmt_chan_receive chan ->
-    return Stmt_break <+> (shrink_expr shblock chan >|= fun chan -> Stmt_chan_receive chan)
+    return Stmt_break
+    <+> (shrink_expr shblock (shrink_args shblock) chan
+         >|= fun chan -> Stmt_chan_receive chan)
   | Stmt_return exprs ->
     return Stmt_break
-    <+> (list ~shrink:(shrink_expr shblock) exprs >|= fun exprs -> Stmt_return exprs)
+    <+> (list ~shrink:(shrink_expr shblock (shrink_args shblock)) exprs
+         >|= fun exprs -> Stmt_return exprs)
   | Stmt_if if' -> return Stmt_break <+> (shrink_if shblock if' >|= fun if' -> Stmt_if if')
   | Stmt_for { init; cond; post; body } ->
     return Stmt_break
@@ -451,7 +498,9 @@ let shrink_stmt shblock = function
            return None
            <+>
            match cond with
-           | Some cond -> return None <+> (shrink_expr shblock cond >|= Option.some)
+           | Some cond ->
+             return None
+             <+> (shrink_expr shblock (shrink_args shblock) cond >|= Option.some)
            | None -> empty
          in
          return (Stmt_for { init; cond = new_cond; post; body }))
@@ -474,7 +523,7 @@ let rec shrink_block block = list ~shrink:(shrink_stmt shrink_block) block
 
 let shrink_func_decl decl =
   let ident, args_returns_and_body = decl in
-  return ("a", { args = []; returns = None; body = [] })
+  return ("a", { args = []; returns = []; body = [] })
   <+> (let* new_ident = shrink_ident ident in
        return (new_ident, args_returns_and_body))
   <+> let* new_args_returns_and_body =
