@@ -1,0 +1,8 @@
+(library
+ (name ast)
+ (public_name ELutsyuk.MiniML_Ast)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
