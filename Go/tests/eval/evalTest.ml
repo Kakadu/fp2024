@@ -29,6 +29,9 @@ let pp str =
            | Runtime_error (Panic msg) -> prerr_endline ("Paniced with message:" ^ msg)
            | Runtime_error (DevOnly TypeCheckFailed) ->
              prerr_endline "Internal Typecheck error occured while evaluating"
+           | Runtime_error (DevOnly (Undefined_ident msg)) ->
+             prerr_endline ("Undefined ident " ^ msg)
+           | Runtime_error (DevOnly _) -> prerr_endline "Some kind of devonly error"
            | Runtime_error _ -> prerr_endline "Some kind of runtime error"
            | Type_check_error _ -> prerr_endline "Some kind of typecheck error"))
      | Result.Error err ->
@@ -56,5 +59,76 @@ let%expect_test "ok: single main" =
     func main() {print("kill OCaml")}
     |};
   [%expect {|
-    CORRECT |}]
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: single long_var_init" =
+  pp {|
+    var x = "kill OCaml"
+    func main() {print(x)}
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: multiple long_var_init" =
+  pp {|
+    var x, y = "kill ", "OCaml"
+    func main() {print(x, y)}
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: simple func_call with args" =
+  pp
+    {|
+    var x, y = "kill ", "OCaml"
+    func foo(x string, y string) {
+      print(x, y)
+    }
+  
+    func main() {foo(x, y)}
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: simple value func call" =
+  pp
+    {|
+    var x = "kill "
+    func foo(x string, y string) {
+      print(x, y)
+    }
+  
+    func main() {
+      foo(x, "OCaml")
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: local var decl func call" =
+  pp
+    {|
+    var x = "kill "
+    func foo(x string, y string) {
+      print(x, y)
+    }
+  
+    func main() {
+      var y = "OCaml"
+      foo(x, y)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
 ;;

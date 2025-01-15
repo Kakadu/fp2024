@@ -311,15 +311,15 @@ module Monad = struct
     | Simple ->
       let var_maps = List.map (fun { var_map } -> var_map) (hd :: tl) @ [ global_map ] in
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_maps with
-       | None -> fail (Runtime_error (DevOnly Undefined_ident))
+       | None -> fail (Runtime_error (DevOnly (Undefined_ident (ident ^ "HERE"))))
        | Some map ->
          (match MapIdent.find_opt ident map with
           | Some value -> return value
-          | None -> fail (Runtime_error (DevOnly Undefined_ident))))
+          | None -> fail (Runtime_error (DevOnly (Undefined_ident ident)))))
     | Closure (l_env, lst_envs) ->
       let var_maps = List.map (fun { var_map } -> var_map) (hd :: tl) @ [ global_map ] in
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_maps with
-       | None -> fail (Runtime_error (DevOnly Undefined_ident))
+       | None -> fail (Runtime_error (DevOnly (Undefined_ident ident)))
        | Some map ->
          (match MapIdent.find_opt ident map with
           | Some value -> return value
@@ -331,8 +331,8 @@ module Monad = struct
              | Some map ->
                (match MapIdent.find_opt ident map with
                 | Some value -> return value
-                | None -> fail (Runtime_error (DevOnly Undefined_ident)))
-             | None -> fail (Runtime_error (DevOnly Undefined_ident)))))
+                | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))
+             | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))))
   ;;
 
   let save_ident ident t =
@@ -348,7 +348,7 @@ module Monad = struct
          let var_map = [ global_map ] in
          (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
           | Some _ -> save_global_id ident t
-          | None -> fail (Runtime_error (DevOnly Undefined_ident))))
+          | None -> fail (Runtime_error (DevOnly (Undefined_ident ident)))))
     | Closure (l_env, lst_envs) ->
       let var_map = List.map (fun { var_map } -> var_map) (hd :: tl) in
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
@@ -361,6 +361,6 @@ module Monad = struct
             let var_map = List.map (fun { var_map } -> var_map) (l_env :: lst_envs) in
             (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
              | Some _ -> save_closure_id ident t
-             | None -> fail (Runtime_error (DevOnly Undefined_ident)))))
+             | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))))
   ;;
 end

@@ -18,7 +18,7 @@ type devonly_runtime_error =
   | Not_enough_operands
   | No_goroutine_running
   | Two_goroutine_running
-  | Undefined_ident
+  | Undefined_ident of string
   | TypeCheckFailed
 [@@deriving show { with_path = false }]
 

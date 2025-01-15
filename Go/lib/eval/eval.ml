@@ -27,6 +27,14 @@ let pp printer eval ast =
   | Result.Error _ -> print_endline ": some kind of error"
 ;;
 
+let exec_stmt eval_stmt =
+  let* stmt = pop_next_statement in
+  match stmt with
+  | Some st ->
+    builtin_print [ Value_string "executing_stmt " ] *> eval_stmt st *> return (Some ())
+  | None -> return None
+;;
+
 let rec eval_expr = function
   | Expr_const (Const_int n) -> return (Value_int n)
   | Expr_const (Const_string s) -> return (Value_string s)
@@ -61,6 +69,10 @@ and eval_func_call (func, args) =
          (fun (farg, (ident, _)) ->
            retrieve_arg_value farg >>= fun value -> save_local_id ident value)
          (List.combine args afc.args)
+    *> (exec_stmt eval_stmt
+        >>= function
+        | Some _ -> exec_stmt eval_stmt *> return ()
+        | None -> return ())
     *> delete_stack_frame
     *> return None
   | Value_func (Func_builtin ftype) ->
@@ -126,21 +138,24 @@ and eval_binop op a1 a2 =
   | Bin_greater, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 > a2))
   | Bin_greater_equal, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 >= a2))
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
-;;
 
-let eval_long_var_decl = return ()
-let eval_stmt = return None (* Если ретерн - то возвращает значение *)
-let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
-
-let eval_stmt = function
+and eval_stmt = function
   | Stmt_call fcall -> eval_func_call fcall *> return ()
+  | Stmt_long_var_decl lvd -> eval_long_var_decl save_local_id lvd
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
+
+and eval_long_var_decl f_save = function
+  | Long_decl_mult_init (_, first, list) ->
+    iter (fun (ident, expr) -> eval_expr expr >>= f_save ident) (first :: list)
+  | _ -> fail (Runtime_error (Panic "Not supported"))
 ;;
+
+let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
 
 let run_eval file =
   iter
     (function
-      | Decl_var lvd -> eval_long_var_decl
+      | Decl_var lvd -> eval_long_var_decl save_global_id lvd
       | Decl_func (idnt, afc) ->
         save_global_id idnt (Value_func (Func_initialized (Default, afc))))
     file
@@ -170,9 +185,9 @@ let run_eval file =
              }
          | _ -> return ())
        file
-  *> pop_next_statement
+  *> exec_stmt eval_stmt
   >>= function
-  | Some st -> eval_stmt st
+  | Some _ -> exec_stmt eval_stmt *> return ()
   | None -> return ()
 ;;
 
