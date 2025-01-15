@@ -42,29 +42,40 @@ let rec pp_value fmt =
   | VOption None -> fprintf fmt "None "
 ;;
 
-type error =
-  [ `Division_by_zero
-  | `Match_failure
-  | `Type_mismatch
-  | `Not_implemented
-  | `Unbound_variable of string
-  | `Not_allowed_left_hand_side_let_rec
-  | `Args_after_not_variable_let
-  ]
+module EvalError = struct
+  type error =
+    [ `Division_by_zero
+    | `Match_failure
+    | `Type_mismatch
+    | `Not_implemented
+    | `Unbound_variable of string
+    | `Not_allowed_left_hand_side_let_rec
+    | `Args_after_not_variable_let
+    | `Bound_several_times
+    ]
+
+  let bound_error : error = `Bound_several_times
+end
 
 module R : sig
   type 'a t
+  type error = EvalError.error
 
+  val bound_error : error
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
   include Base.Monad.Infix with type 'a t := 'a t
 
-  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  module Syntax : sig
+    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  end
+
   val ( <|> ) : 'a t -> 'a t -> 'a t
 end = struct
   open Base
   include Result
+  include EvalError
 
   type 'a t = ('a, error) Result.t
 
@@ -74,8 +85,10 @@ end = struct
     | Error _ -> y
   ;;
 
-  let ( let* ) = ( >>= )
-  let ( let+ ) = ( >>| )
+  module Syntax = struct
+    let ( let* ) = ( >>= )
+    let ( let+ ) = ( >>| )
+  end
 end
 
 module Env : sig
@@ -106,7 +119,10 @@ end = struct
 end
 
 open R
+open R.Syntax
 open Env
+module ExtractIdents = ExtractIdents.Make (R)
+open ExtractIdents
 
 let rec match_pattern env =
   let match_pattern_list env pl vl =
