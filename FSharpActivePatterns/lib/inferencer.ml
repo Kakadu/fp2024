@@ -39,16 +39,7 @@ end
 (* for treating result of type inference *)
 module R : sig
   type 'a t
-
-  type error =
-    [ `Occurs_check
-    | `Undef_var of string
-    | `Unification_failed of typ * typ
-    | `Not_allowed_right_hand_side_let_rec
-    | `Not_allowed_left_hand_side_let_rec
-    | `Args_after_not_variable_let
-    | `Bound_several_times
-    ]
+  type error = InferenceError.error
 
   val bound_error : error
   val pp_error : formatter -> error -> unit
