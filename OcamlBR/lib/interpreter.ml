@@ -375,4 +375,37 @@ module Eval (M : MONAD) : sig end = struct
     return final_env
   ;;
 
+  let eval_str_item env str_item =
+    let env = extend env "print_int" (VBuiltin (BInt print_int, env)) in
+    match str_item with
+    | SEval e ->
+      let* _ = eval_expr env e in
+      return env
+    | SValue (Non_recursive, Evalue_binding ((pat, _), e), _) ->
+      if not (validate_pattern_nonrec pat)
+      then fail (`Ill_left_hand_side "Pattern not acceptable for variable name")
+      else
+        let* v = eval_expr env e in
+        (match match_pattern env (pat, v) with
+         | Some env' -> return env'
+         | None -> fail `Pattern_matching_failure)
+    | SValue (Recursive, Evalue_binding ((pat, t), e), []) ->
+      let* final_env = eval_let_rec_expr env (Evalue_binding ((pat, t), e)) in
+      return final_env
+    | SValue (Recursive, value_binding, value_bindings) ->
+      let* final_env = eval_value_bindings env (value_binding :: value_bindings) in
+      return final_env
+  ;;
+
+  let eval_structure (structure : structure) =
+    List.fold_left
+      (fun env str_item ->
+        let* env = env in
+        let* env = eval_str_item env str_item in
+        (* Format.printf "env str_item\n"; *)
+        (* print_env env; *)
+        return env)
+      (return empty)
+      structure
+  ;;
 end
