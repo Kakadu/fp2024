@@ -86,6 +86,16 @@ type goroutine =
   ; id : int
   }
 
+module AsleepGoroutine : sig
+  type t =
+    { state : sleeping_state
+    ; goroutine : goroutine
+    }
+
+  val compare : t -> t -> int
+end
+
+module GoSet : Set.S with type elt = AsleepGoroutine.t
 module ChanSet : Set.S with type elt = int
 
 type eval_state =
@@ -93,8 +103,8 @@ type eval_state =
   (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
   (** Goroutine that is currently running, stored separately for time efficiency *)
-  ; sleeping : (sleeping_state * goroutine) list
-  (** All sleeping and ready to run goroutines *)
+  ; asleep : GoSet.t
+  (** All asleep goroutines (ready to run or trying to interact with a chanel) *)
   ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
   }
 
@@ -119,8 +129,8 @@ module Monad : sig
   val save_global_id : ident -> value -> unit t
 
   (* Goroutines *)
-  val read_sleeping : (sleeping_state * goroutine) list t
-  val add_sleeping : sleeping_state -> goroutine -> unit t
+  val read_asleep : GoSet.t t
+  val add_asleep : sleeping_state -> goroutine -> unit t
   val run_goroutine : goroutine -> unit t
   val stop_running_goroutine : sleeping_state -> unit t
 

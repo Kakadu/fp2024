@@ -186,7 +186,7 @@ let save_global_vars_and_funcs =
 let add_main_goroutine =
   iter (function
     | Decl_func ("main", { body }) ->
-      add_sleeping
+      add_asleep
         Ready
         { stack =
             ( { local_envs =
@@ -202,9 +202,9 @@ let add_main_goroutine =
 
 (* runs all ready goroutines *)
 let run_ready_goroutines =
-  let* sleeping_goroutines = read_sleeping in
-  match List.find_opt (fun (state, _) -> state = Ready) sleeping_goroutines with
-  | Some (_, goroutine) ->
+  let* asleep_goroutines = read_asleep in
+  match GoSet.find_first_opt (fun { state } -> state = Ready) asleep_goroutines with
+  | Some { goroutine } ->
     run_goroutine goroutine
     (* Когда горутина остановится, она либо заснет, либо удалится, и там же должна запуститься другая Ready *)
   | None -> return () (* мб если нет готовых горутин, делать что-то ещё *)
@@ -224,7 +224,7 @@ let run_eval file =
 let init_state =
   { global_env = MapIdent.empty
   ; running = None
-  ; sleeping = []
+  ; asleep = GoSet.empty
   ; chanels = ChanSet.empty, 1
   }
 ;;

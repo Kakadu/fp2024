@@ -75,12 +75,22 @@ type goroutine =
   ; id : int
   }
 
+module AsleepGoroutine = struct
+  type t =
+    { state : sleeping_state
+    ; goroutine : goroutine
+    }
+
+  let compare = compare
+end
+
+module GoSet = Set.Make (AsleepGoroutine)
 module ChanSet = Set.Make (Int)
 
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
-  ; sleeping : (sleeping_state * goroutine) list
+  ; asleep : GoSet.t
   ; chanels : ChanSet.t * int
   }
 
@@ -100,8 +110,8 @@ module Monad = struct
   let write_global new_global =
     read
     >>= function
-    | { running; sleeping; chanels } ->
-      write { global_env = new_global; running; sleeping; chanels }
+    | { running; asleep; chanels } ->
+      write { global_env = new_global; running; asleep; chanels }
   ;;
 
   let save_global_id ident value =
@@ -111,22 +121,22 @@ module Monad = struct
 
   (* goroutines *)
 
-  let read_sleeping =
+  let read_asleep =
     read
     >>= function
-    | { sleeping } -> return sleeping
+    | { asleep } -> return asleep
   ;;
 
-  let write_sleeping new_goroutines =
+  let write_asleep new_goroutines =
     read
     >>= function
     | { global_env; running; chanels } ->
-      write { global_env; running; chanels; sleeping = new_goroutines }
+      write { global_env; running; chanels; asleep = new_goroutines }
   ;;
 
-  let add_sleeping sleeping_state goroutine =
-    let* goroutines = read_sleeping in
-    write_sleeping ((sleeping_state, goroutine) :: goroutines)
+  let add_asleep state goroutine =
+    let* goroutines = read_asleep in
+    write_asleep (GoSet.add { state; goroutine } goroutines)
   ;;
 
   let read_running =
@@ -145,8 +155,8 @@ module Monad = struct
   let write_running new_goroutine =
     read
     >>= function
-    | { global_env; sleeping; chanels } ->
-      write { global_env; sleeping; chanels; running = new_goroutine }
+    | { global_env; asleep; chanels } ->
+      write { global_env; asleep; chanels; running = new_goroutine }
   ;;
 
   let run_goroutine goroutine =
@@ -159,7 +169,7 @@ module Monad = struct
   let stop_running_goroutine sleeping_state =
     read_running_fail
     >>= function
-    | goroutine -> write_running None *> add_sleeping sleeping_state goroutine
+    | goroutine -> write_running None *> add_asleep sleeping_state goroutine
   ;;
 
   (* chanels *)
@@ -173,8 +183,8 @@ module Monad = struct
   let write_chanels new_chanels =
     read
     >>= function
-    | { global_env; running; sleeping } ->
-      write { global_env; running; sleeping; chanels = new_chanels }
+    | { global_env; running; asleep } ->
+      write { global_env; running; asleep; chanels = new_chanels }
   ;;
 
   let find_chanel_fail = function
