@@ -64,21 +64,9 @@ module R : sig
   val ( <|> ) : 'a t -> 'a t -> 'a t
 end = struct
   open Base
-  open Result
+  include Result
 
   type 'a t = ('a, error) Result.t
-
-  let ( >>| ) x f =
-    match x with
-    | Ok x -> Ok (f x)
-    | Error e -> Error e
-  ;;
-
-  let ( >>= ) x f =
-    match x with
-    | Error x -> Error x
-    | Ok a -> f a
-  ;;
 
   let ( <|> ) x y =
     match x with
@@ -86,8 +74,6 @@ end = struct
     | Error _ -> y
   ;;
 
-  let fail = Base.Result.fail
-  let return = Base.Result.return
   let ( let* ) = ( >>= )
   let ( let+ ) = ( >>| )
 end
