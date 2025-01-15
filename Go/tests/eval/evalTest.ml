@@ -37,7 +37,6 @@ let pp str =
      | Result.Error err ->
        prerr_string "ERROR WHILE TYPECHECK WITH ";
        (match err with
-        | Type_check_error Check_failed -> prerr_endline "Check failed"
         | Type_check_error (Multiple_declaration msg) ->
           prerr_string ("Multiple declaration error: " ^ msg)
         | Type_check_error (Incorrect_main msg) ->
