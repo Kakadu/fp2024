@@ -66,22 +66,20 @@ type stack_frame =
   ; closure_envs : closure_frame
   }
 
-type goroutine_state =
-  | Running
+type sleeping_state =
   | Ready
   | Sending of ident
   | Recieving of ident
 
 type goroutine =
   { stack : stack_frame * stack_frame list
-  ; state : goroutine_state
   ; id : int
   }
 
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
-  ; sleeping : goroutine list
+  ; sleeping : (sleeping_state * goroutine) list
   }
 
 module Monad = struct
@@ -122,9 +120,9 @@ module Monad = struct
     | { global_env; running } -> write { global_env; running; sleeping = new_goroutines }
   ;;
 
-  let add_sleeping goroutine =
+  let add_sleeping sleeping_state goroutine =
     let* goroutines = read_sleeping in
-    write_sleeping (goroutine :: goroutines)
+    write_sleeping ((sleeping_state, goroutine) :: goroutines)
   ;;
 
   let read_running =
@@ -146,17 +144,17 @@ module Monad = struct
     | { global_env; sleeping } -> write { global_env; sleeping; running = new_goroutine }
   ;;
 
-  let run_goroutine { stack; id } =
+  let run_goroutine goroutine =
     read_running
     >>= function
-    | None -> write_running (Some { stack; id; state = Running })
+    | None -> write_running (Some goroutine)
     | Some _ -> fail (Runtime_error (DevOnly Two_goroutine_running))
   ;;
 
-  let stop_running_goroutine new_state =
+  let stop_running_goroutine sleeping_state =
     read_running_fail
     >>= function
-    | { stack; id } -> write_running None *> add_sleeping { stack; state = new_state; id }
+    | goroutine -> write_running None *> add_sleeping sleeping_state goroutine
   ;;
 
   (* single goroutine's stack *)
@@ -170,7 +168,7 @@ module Monad = struct
   let write_stack new_stack =
     read_running_fail
     >>= function
-    | { state; id } -> write_running (Some { state; id; stack = new_stack })
+    | { id } -> write_running (Some { id; stack = new_stack })
   ;;
 
   let read_stack_frame =

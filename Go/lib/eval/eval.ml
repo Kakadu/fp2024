@@ -143,53 +143,74 @@ and eval_stmt = function
   | Stmt_call fcall -> eval_func_call fcall *> return ()
   | Stmt_long_var_decl lvd -> eval_long_var_decl save_local_id lvd
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
+(*ДОДЕЛАТЬ*)
 
-and eval_long_var_decl f_save = function
-  | Long_decl_mult_init (_, first, list) ->
-    iter (fun (ident, expr) -> eval_expr expr >>= f_save ident) (first :: list)
+and eval_long_var_decl save_to_env = function
+  | Long_decl_mult_init (_, hd, tl) ->
+    iter (fun (ident, expr) -> eval_expr expr >>= save_to_env ident) (hd :: tl)
   | _ -> fail (Runtime_error (Panic "Not supported"))
 ;;
 
-let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
+(*ДОДЕЛАТЬ*)
 
-let run_eval file =
-  iter
-    (function
-      | Decl_var lvd -> eval_long_var_decl save_global_id lvd
-      | Decl_func (idnt, afc) ->
-        save_global_id idnt (Value_func (Func_initialized (Default, afc))))
-    file
+let save_builtins =
+  save_global_id "true" (Value_bool true)
+  *> save_global_id "false" (Value_bool false)
+  *> save_global_id "nil" (Value_nil Nil)
   *> save_global_id "print" (Value_func (Func_builtin Print))
   *> save_global_id "println" (Value_func (Func_builtin Println))
   *> save_global_id "make" (Value_func (Func_builtin Make))
   *> save_global_id "len" (Value_func (Func_builtin Len))
   *> save_global_id "recover" (Value_func (Func_builtin Recover))
   *> save_global_id "panic" (Value_func (Func_builtin Panic))
-  *> iter
-       (function
-         | Decl_func ("main", afc) ->
-           run_goroutine
-             { stack =
-                 ( { local_envs =
-                       ( { exec_block = afc.body
-                         ; var_map = MapIdent.empty
-                         ; env_type = Default
-                         }
-                       , [] )
-                   ; deferred_funcs = []
-                   ; closure_envs = Simple
-                   }
-                 , [] )
-             ; state = Ready
-             ; id = 1
-             }
-         | _ -> return ())
-       file
+;;
+
+let save_global_vars_and_funcs =
+  iter (function
+    | Decl_var decl -> eval_long_var_decl save_global_id decl
+    | Decl_func (ident, afc) ->
+      save_global_id ident (Value_func (Func_initialized (Default, afc))))
+;;
+
+let add_main_goroutine =
+  iter (function
+    | Decl_func ("main", { body }) ->
+      add_sleeping
+        Ready
+        { stack =
+            ( { local_envs =
+                  { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
+              ; deferred_funcs = []
+              ; closure_envs = Simple
+              }
+            , [] )
+        ; id = 1
+        }
+    | _ -> return ())
+;;
+
+(* runs all ready goroutines *)
+let run_ready_goroutines =
+  let* sleeping_goroutines = read_sleeping in
+  match List.find_opt (fun (state, _) -> state = Ready) sleeping_goroutines with
+  | Some (_, goroutine) ->
+    run_goroutine goroutine
+    (* Когда горутина остановится, она либо заснет, либо удалится, и там же должна запуститься другая Ready *)
+  | None -> return () (* мб если нет готовых горутин, делать что-то ещё *)
+;;
+
+let run_eval file =
+  save_builtins
+  *> save_global_vars_and_funcs file
+  *> add_main_goroutine file
+  *> run_ready_goroutines
   *> exec_stmt eval_stmt
   >>= function
   | Some _ -> exec_stmt eval_stmt *> return ()
   | None -> return ()
 ;;
+
+let init_state = { global_env = MapIdent.empty; running = None; sleeping = [] }
 
 let eval file =
   run (run_eval file) init_state

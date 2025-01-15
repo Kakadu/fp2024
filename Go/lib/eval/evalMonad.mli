@@ -74,8 +74,7 @@ type stack_frame =
   ; closure_envs : closure_frame
   }
 
-type goroutine_state =
-  | Running
+type sleeping_state =
   | Ready
   (** State of the goroutine that doesn't try to receive from or send to a chanel, but another goroutine is running *)
   | Sending of ident (** State of goroutine that is trying to send to a chanel *)
@@ -84,7 +83,6 @@ type goroutine_state =
 type goroutine =
   { stack : stack_frame * stack_frame list
   (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
-  ; state : goroutine_state
   ; id : int
   }
 
@@ -93,7 +91,7 @@ type eval_state =
   (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
   (** Goroutine that is currently running, stored separately for time efficiency *)
-  ; sleeping : goroutine list (** All sleeping and ready to run goroutines *)
+  ; sleeping : (sleeping_state * goroutine) list (** All sleeping and ready to run goroutines *)
   }
 
 (** Monad for evaluating the program state *)
@@ -117,10 +115,10 @@ module Monad : sig
   val save_global_id : ident -> value -> unit t
 
   (* Goroutines *)
-  val read_sleeping : goroutine list t
-  val add_sleeping : goroutine -> unit t
+  val read_sleeping : (sleeping_state * goroutine) list t
+  val add_sleeping : sleeping_state -> goroutine -> unit t
   val run_goroutine : goroutine -> unit t
-  val stop_running_goroutine : goroutine_state -> unit t
+  val stop_running_goroutine : sleeping_state -> unit t
 
   (* Call stack *)
   val add_stack_frame : stack_frame -> unit t
