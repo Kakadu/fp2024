@@ -8,33 +8,50 @@ open TypesPp
 open Format
 open Base
 
-type error =
-  [ `Occurs_check
-  | `Undef_var of string
-  | `Unification_failed of typ * typ
-  | `Not_allowed_right_hand_side_let_rec
-  | `Not_allowed_left_hand_side_let_rec
-  | `Args_after_not_variable_let
-  | `Bound_several_times
-  ]
+module InferenceError = struct
+  type error =
+    [ `Occurs_check
+    | `Undef_var of string
+    | `Unification_failed of typ * typ
+    | `Not_allowed_right_hand_side_let_rec
+    | `Not_allowed_left_hand_side_let_rec
+    | `Args_after_not_variable_let
+    | `Bound_several_times
+    ]
 
-let pp_error fmt : error -> _ = function
-  | `Occurs_check -> fprintf fmt "Occurs check failed"
-  | `Undef_var s -> fprintf fmt "Undefined variable '%s'" s
-  | `Unification_failed (fst, snd) ->
-    fprintf fmt "unification failed on %a and %a\n" pp_typ fst pp_typ snd
-  | `Not_allowed_right_hand_side_let_rec ->
-    fprintf fmt "This kind of expression is not allowed as right-hand side of `let rec'"
-  | `Not_allowed_left_hand_side_let_rec ->
-    fprintf fmt "Only variables are allowed as left-hand side of `let rec'"
-  | `Args_after_not_variable_let ->
-    fprintf fmt "Arguments in let allowed only after variable"
-  | `Bound_several_times -> fprintf fmt "Variable is bound several times"
-;;
+  let bound_error = `Bound_several_times
+
+  let pp_error fmt : error -> _ = function
+    | `Occurs_check -> fprintf fmt "Occurs check failed"
+    | `Undef_var s -> fprintf fmt "Undefined variable '%s'" s
+    | `Unification_failed (fst, snd) ->
+      fprintf fmt "unification failed on %a and %a\n" pp_typ fst pp_typ snd
+    | `Not_allowed_right_hand_side_let_rec ->
+      fprintf fmt "This kind of expression is not allowed as right-hand side of `let rec'"
+    | `Not_allowed_left_hand_side_let_rec ->
+      fprintf fmt "Only variables are allowed as left-hand side of `let rec'"
+    | `Args_after_not_variable_let ->
+      fprintf fmt "Arguments in let allowed only after variable"
+    | `Bound_several_times -> fprintf fmt "Variable is bound several times"
+  ;;
+end
 
 (* for treating result of type inference *)
 module R : sig
   type 'a t
+
+  type error =
+    [ `Occurs_check
+    | `Undef_var of string
+    | `Unification_failed of typ * typ
+    | `Not_allowed_right_hand_side_let_rec
+    | `Not_allowed_left_hand_side_let_rec
+    | `Args_after_not_variable_let
+    | `Bound_several_times
+    ]
+
+  val bound_error : error
+  val pp_error : formatter -> error -> unit
 
   (* val bind : 'a t -> f:('a -> 'b t) -> 'b t *)
   val return : 'a -> 'a t
@@ -57,6 +74,8 @@ module R : sig
     val fold : ('a, 'b, 'c) Map.t -> init:'d t -> f:('a -> 'b -> 'd -> 'd t) -> 'd t
   end
 end = struct
+  include InferenceError
+
   (* takes current state, runs smth, outputs new state and success / error *)
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -375,8 +394,10 @@ end = struct
   ;;
 end
 
-open R
+include R
 open R.Syntax
+module ExtractIdents = ExtractIdents.Make (R)
+open ExtractIdents
 
 let unify = Substitution.unify
 let make_fresh_var = fresh >>| fun n -> Type_var n
@@ -476,38 +497,11 @@ let infer_patterns env ~shadow patterns =
       return (new_env, typ :: typs))
 ;;
 
-module StringSet = struct
-  include Stdlib.Set.Make (String)
-
-  let union_disjoint s1 s2 =
-    let* s1 = s1 in
-    let* s2 = s2 in
-    if is_empty (inter s1 s2) then return (union s1 s2) else fail `Bound_several_times
-  ;;
-
-  let union_disjoint_many sets = List.fold ~init:(return empty) ~f:union_disjoint sets
-end
-
-let rec extract_names_from_pattern =
-  let extr = extract_names_from_pattern in
-  function
-  | PVar (Ident name) -> return (StringSet.singleton name)
-  | PList l -> StringSet.union_disjoint_many (List.map l ~f:extr)
-  | PCons (hd, tl) -> StringSet.union_disjoint (extr hd) (extr tl)
-  | PTuple (fst, snd, rest) ->
-    StringSet.union_disjoint_many (List.map ~f:extr (fst :: snd :: rest))
-  | POption (Some p) -> extr p
-  | PConstraint (p, _) -> extr p
-  | POption None -> return StringSet.empty
-  | Wild -> return StringSet.empty
-  | PConst _ -> return StringSet.empty
-;;
-
 let infer_match_pattern env ~shadow pattern match_type =
   let* env, pat_typ = infer_pattern env ~shadow pattern in
   let* subst = unify pat_typ match_type in
   let env = TypeEnvironment.apply subst env in
-  let* pat_names = extract_names_from_pattern pattern >>| StringSet.elements in
+  let* pat_names = extract_names_from_pattern pattern >>| elements in
   let generalized_schemes =
     List.map pat_names ~f:(fun name ->
       let typ = TypeEnvironment.find_typ_exn env name in
@@ -517,20 +511,6 @@ let infer_match_pattern env ~shadow pattern match_type =
   in
   let env = TypeEnvironment.extend_many env generalized_schemes in
   return (env, subst)
-;;
-
-let extract_names_from_patterns pats =
-  StringSet.union_disjoint_many (List.map ~f:extract_names_from_pattern pats)
-;;
-
-let extract_bind_names_from_let_binds let_binds =
-  StringSet.union_disjoint_many
-    (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
-       extract_names_from_pattern pat))
-;;
-
-let extract_bind_patterns_from_let_binds let_binds =
-  List.map let_binds ~f:(function Let_bind (pat, _, _) -> pat)
 ;;
 
 let extend_env_with_bind_names env let_binds =
@@ -827,8 +807,8 @@ and infer_let_bind env is_rec let_bind =
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
   let env = TypeEnvironment.apply subst env in
-  let* names = extract_names_from_pattern name >>| StringSet.elements in
-  let* arg_names = extract_names_from_patterns args >>| StringSet.elements in
+  let* names = extract_names_from_pattern name >>| elements in
+  let* arg_names = extract_names_from_patterns args >>| elements in
   let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
   let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
   let names_schemes_list =
@@ -842,9 +822,7 @@ let infer_statement env = function
     let let_binds = let_bind :: let_binds in
     let* env = extend_env_with_bind_names env let_binds in
     let* env, _ = extend_env_with_let_binds env Rec let_binds in
-    let* bind_names =
-      extract_bind_names_from_let_binds let_binds >>| StringSet.elements
-    in
+    let* bind_names = extract_bind_names_from_let_binds let_binds >>| elements in
     let bind_names_with_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with
@@ -854,9 +832,7 @@ let infer_statement env = function
   | Let (Nonrec, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
     let* env, _ = extend_env_with_let_binds env Nonrec let_binds in
-    let* bind_names =
-      extract_bind_names_from_let_binds let_binds >>| StringSet.elements
-    in
+    let* bind_names = extract_bind_names_from_let_binds let_binds >>| elements in
     let bind_names_with_types =
       List.map bind_names ~f:(fun name ->
         match TypeEnvironment.find_exn env name with
