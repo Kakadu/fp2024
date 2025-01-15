@@ -8,5 +8,5 @@ dune build .
 
 ### How to run
 ```
-dune exec -- main  bin/example.txt -interpret -dparsetree
+dune exec -- main  bin/example.ml -interpret -dparsetree
 ```
