@@ -54,12 +54,22 @@ let pp str =
 ;;
 
 let%expect_test "ok: single main" =
-  pp {|
-    func main() {print("kill OCaml")}
+  pp
+    {|
+    func main() {
+      print("kill OCaml ")
+      print("kill OCaml ")
+      print("kill OCaml ")
+      print("kill OCaml ")      
+      print("kill OCaml ")
+      print("kill OCaml ")
+      print("kill OCaml ")
+      print("kill OCaml ")
+    }
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml |}]
 ;;
 
 let%expect_test "ok: single long_var_init" =
@@ -146,4 +156,44 @@ let%expect_test "ok: func args init" =
   [%expect {|
     Correct evaluating
     kill OCaml OCaml |}]
+;;
+
+let%expect_test "ok: assignment check" =
+  pp
+    {|
+    var x = "kill "
+    func foo(x string, k string) {
+      var z = " OCaml"
+      print(x, k, z)
+    }
+  
+    func main() {
+      x = "OCaml "
+      var y = "OCaml"
+      foo(x, y)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    OCaml OCaml OCaml |}]
+;;
+
+let%expect_test "ok: simple arithmetic check" =
+  pp
+    {|
+    var x int = 1
+    func foo(k int) {
+      var z = k 
+      print(k + 1 + z)
+    }
+  
+    func main() {
+      x = 100
+      x++       
+      foo(x + 1)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    205 |}]
 ;;

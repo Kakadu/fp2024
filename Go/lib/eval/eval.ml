@@ -150,9 +150,34 @@ and eval_binop op a1 a2 =
   | Bin_greater_equal, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 >= a2))
   | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
 
+and eval_lvalue = function
+  | Lvalue_ident id -> return id
+  | Lvalue_array_index _ ->
+    fail (Runtime_error (Panic "Not supported lvalue array index"))
+
 and eval_stmt = function
   | Stmt_call fcall -> eval_func_call fcall *> return ()
   | Stmt_long_var_decl lvd -> eval_long_var_decl save_local_id lvd
+  | Stmt_decr id ->
+    read_ident id
+    >>= (function
+     | Value_int v -> save_ident id (Value_int (v - 1)) *> return ()
+     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+  | Stmt_incr id ->
+    read_ident id
+    >>= (function
+     | Value_int v -> save_ident id (Value_int (v + 1)) *> return ()
+     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+  | Stmt_assign asgn ->
+    (match asgn with
+     | Assign_mult_expr (fst, lst) ->
+       iter
+         (fun (lvalue, expr) ->
+           eval_expr expr >>= fun vl -> eval_lvalue lvalue >>= fun id -> save_ident id vl)
+         (fst :: lst)
+     | Assign_one_expr (fst, snd, lst, fcall) ->
+       fail (Runtime_error (Panic "Not supported"))
+     | _ -> fail (Runtime_error (Panic "Not supported stmt")))
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 (*ДОДЕЛАТЬ*)
 
@@ -211,14 +236,18 @@ let run_ready_goroutines =
 ;;
 
 let run_eval file =
+  let rec exec eval_stmt =
+    exec_stmt eval_stmt
+    >>= function
+    | Some _ -> exec eval_stmt *> return ()
+    | None -> return ()
+  in
   save_builtins
   *> save_global_vars_and_funcs file
   *> add_main_goroutine file
   *> run_ready_goroutines
-  *> exec_stmt eval_stmt
-  >>= function
-  | Some _ -> exec_stmt eval_stmt *> return ()
-  | None -> return ()
+  *> exec eval_stmt
+  *> return ()
 ;;
 
 let init_state =
