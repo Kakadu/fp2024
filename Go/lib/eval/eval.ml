@@ -154,7 +154,7 @@ and eval_binop op a1 a2 =
   let* a2 = eval_expr a2 in
   match op, a1, a2 with
   | Bin_sum, Value_int a1, Value_int a2 -> return (Value_int (a1 + a2))
-  | Bin_subtract, Value_int a1, Value_int a2 -> return (Value_int (a1 + a2))
+  | Bin_subtract, Value_int a1, Value_int a2 -> return (Value_int (a1 - a2))
   | Bin_multiply, Value_int a1, Value_int a2 -> return (Value_int (a1 * a2))
   | Bin_divide, Value_int _, Value_int 0 -> fail (Runtime_error Division_by_zero)
   | Bin_divide, Value_int a1, Value_int a2 -> return (Value_int (a1 / a2))

@@ -364,12 +364,12 @@ let%expect_test "ok: factorial check" =
         } else {
             return n * fac(n - 1)
         }
-    }
+    } 
     func main() {
-      print(fac(2))
+      print(fac(5))
     }
     |};
   [%expect {|
     Correct evaluating
-    kill OCamlCORRECTkill OCamlCORRECT |}]
+    120 |}]
 ;;
