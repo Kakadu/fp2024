@@ -82,6 +82,7 @@ let parse_char = char '\'' *> any_char <* char '\''
 let parse_string = char '"' *> take_till (Char.equal '"') <* char '"'
 let parse_bool = string "true" <|> string "false" >>| Bool.of_string
 
+(* Parses unsigned ints only. Used for expressions. *)
 let parse_int =
   let* int = take_while1 Char.is_digit >>| Int.of_string in
   let* next_char = peek_char in
@@ -91,7 +92,17 @@ let parse_int =
   | _ -> return int
 ;;
 
-(* Floats can be in following forms:
+(* Parses signed ints. Used for patterns. *)
+let parse_sint =
+  let* sign = option "" (skip_ws *> string "-" <* skip_ws) in
+  let* int = parse_int in
+  match sign with
+  | "-" -> return (-int)
+  | _ -> return int
+;;
+
+(* Parses unsigned floats. Used for expressions.
+   Floats can be in following forms:
    [0-9]+ . [0-9]* [f|F]
    [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
 let parse_float =
@@ -120,6 +131,18 @@ let parse_float =
   let* _ = option "" (string "f" <|> string "F") in
   let float = Float.of_string (int_part ^ dot ^ fract_part ^ e ^ exp_sign ^ exp) in
   return float
+;;
+
+(* Parses signed floats. Used for patterns.
+   Floats can be in following forms:
+   [0-9]+ . [0-9]* [f|F]
+   [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
+let parse_sfloat =
+  let* sign = option "" (skip_ws *> string "-" <* skip_ws) in
+  let* float = parse_float in
+  match sign with
+  | "-" -> return (Float.neg float)
+  | _ -> return float
 ;;
 
 let chainl parse_alpha parse_sep =

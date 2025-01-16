@@ -14,7 +14,7 @@ open Types
 
 let parse_pat_wild = char '_' *> return Pattern_wild
 let parse_pat_ident_or_op = parse_ident_or_op >>| fun i -> Pattern_ident_or_op i
-let parse_pat_const = parse_const >>| fun c -> Pattern_const c
+let parse_pat_const = parse_const_s >>| fun c -> Pattern_const c
 
 let parse_pat_paren parse_pat =
   string "(" *> skip_ws *> parse_pat <* skip_ws <* string ")"
@@ -52,9 +52,10 @@ let parse_pat =
       choice
         [ parse_pat_paren parse_pat
         ; parse_pat_list parse_pat
+        ; parse_pat_const
         ; parse_pat_ident_or_op
         ; parse_pat_wild
-        ; parse_pat_const
+        ;
         ]
     in
     let pat = parse_pat_tuple pat <|> pat in
