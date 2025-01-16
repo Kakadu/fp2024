@@ -12,7 +12,8 @@
   Inferencer
   Inferencer_tests
   Values
-  Interpreter)
+  Interpreter
+  Interpreter_tests)
  (libraries base angstrom qcheck-core qcheck-core.runner)
  (instrumentation
   (backend bisect_ppx))
