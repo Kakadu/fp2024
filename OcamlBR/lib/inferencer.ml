@@ -208,10 +208,10 @@ end = struct
         | Ok res -> return res
       in
       (* Format.printf "f1 %a \n" pp_ty f1;
-      Format.printf "f2 %a \n" pp_ty f2; *)
+         Format.printf "f2 %a \n" pp_ty f2; *)
       let* fst_unified = unify f1 f2 in
       (* Format.printf "(apply fst_unified s1) %a \n" pp_ty (apply fst_unified s1);
-      Format.printf "(apply fst_unified s2) %a \n" pp_ty (apply fst_unified s2); *)
+         Format.printf "(apply fst_unified s2) %a \n" pp_ty (apply fst_unified s2); *)
       let* snd_unified = unify (apply fst_unified s1) (apply fst_unified s2) in
       List.fold_left rest_unified ~init:(compose fst_unified snd_unified) ~f:(fun acc s ->
         let* s = s in
@@ -524,8 +524,8 @@ module Infer = struct
     | Elet (Non_recursive, Evalue_binding ((pattern, t_opt), e1), bindings, e2) ->
       let* s1, t1 = infer env e1 in
       (* Format.printf "t1: %a\n" pp_ty t1;
-      Format.printf "s1: %a\n" Subst.pp_subst s1;
-      Format.printf "env: %a\n" TypeEnv.pp env; *)
+         Format.printf "s1: %a\n" Subst.pp_subst s1;
+         Format.printf "env: %a\n" TypeEnv.pp env; *)
       let* s2, t_pat, env1 = infer_ty_pattern env (pattern, t_opt) in
       (* Format.printf "t_pat: %a\n" pp_ty t_pat;
          Format.printf "s2: %a\n" Subst.pp_subst s2; *)
@@ -534,7 +534,7 @@ module Infer = struct
          return (final_subst, t2) *)
       (* let env3 = TypeEnv.exten d x t_gen env in *)
       (* Format.printf "s2: %a\n" Subst.pp_subst s2;
-      Format.printf "t_pat: %a\n" pp_ty t_pat; *)
+         Format.printf "t_pat: %a\n" pp_ty t_pat; *)
       let* subst1 = Subst.compose s1 s2 in
       (* Format.printf "subst1: %a\n" Subst.pp_subst subst1; *)
       (* Format.printf "(Subst.apply subst1 t_pat): %a\n" pp_ty (Subst.apply subst1 t_pat); *)
@@ -636,10 +636,10 @@ module Infer = struct
     | Eoption None ->
       let* tv = fresh_var in
       return (Subst.empty, TOption tv)
-    | Ematch (Some e, c, cl) ->
+    | Ematch (e, c, cl) ->
       let* sub1, t1 = infer env e in
       (* Format.printf "sub1: %a\n" Subst.pp_subst sub1;
-      Format.printf "t1: %a\n" pp_ty t1; *)
+         Format.printf "t1: %a\n" pp_ty t1; *)
       let env = TypeEnv.apply sub1 env in
       (* Format.printf "match: %a\n" TypeEnv.pp env; *)
       let* tv = fresh_var in
@@ -649,8 +649,8 @@ module Infer = struct
         ~f:(fun (s, t) (Ast.Ecase (pat, e)) ->
           let* sub, tp, env = infer_pattern env pat in
           (* Format.printf "tp: %a\n" pp_ty tp;
-          Format.printf "match2: %a\n" TypeEnv.pp env;
-          Format.printf "t: %a\n" pp_ty t; *)
+             Format.printf "match2: %a\n" TypeEnv.pp env;
+             Format.printf "t: %a\n" pp_ty t; *)
           let* s2 = unify t1 tp in
           (* Format.printf "unify: %a\n" TypeEnv.pp env; *)
           let* sub2, t2 = infer (TypeEnv.apply sub env) e in
@@ -658,36 +658,10 @@ module Infer = struct
           let* s3 = unify t t2 in
           let* final_subs = Subst.compose_all [ s3; sub2; s2; s ] in
           (* Format.printf "final_subs: %a\n" Subst.pp_subst final_subs;
-          Format.printf "t: %a\n" pp_ty t;
-          Format.printf "Subst.apply final_subs t: %a\n" pp_ty (Subst.apply final_subs t);
-          Format.printf "match3: %a\n" TypeEnv.pp env; *)
+             Format.printf "t: %a\n" pp_ty t;
+             Format.printf "Subst.apply final_subs t: %a\n" pp_ty (Subst.apply final_subs t);
+             Format.printf "match3: %a\n" TypeEnv.pp env; *)
           return (final_subs, Subst.apply final_subs t))
-    | Ematch (None, c, cl) -> 
-      (* infer env (Ematch (Some (Evar (Id _)), c, cl)) *)
-      let* t1 = fresh_var in
-      let* tv = fresh_var in
-      let pat = match c with Ast.Ecase (pat, _) -> pat in
-      let* _, _, env = infer_pattern env pat in
-      (* Format.printf "match: %a\n" TypeEnv.pp env; *)
-      RList.fold_left
-        (c :: cl)
-        ~init:(return (Subst.empty, tv))
-        ~f:(fun (s, t) (Ast.Ecase (pat, e)) ->
-          (* Format.printf "\n env: %a\n" TypeEnv.pp env; *)
-          let* sub, tp, env = infer_pattern env pat in
-          (* Format.printf "tp: %a\n" pp_ty tp;
-          Format.printf "match2: %a\n" TypeEnv.pp env; *)
-          let* s2 = unify t1 tp in
-          (* Format.printf "unify: %a\n" TypeEnv.pp env; *)
-          let* sub2, t2 = infer (TypeEnv.apply sub env) e in
-          (* Format.printf "infer: %a\n" TypeEnv.pp env; *)
-          let* s3 = unify t t2 in
-          let* final_subs = Subst.compose_all [ s3; sub2; s2; s ] in
-          (* Format.printf "final_subs: %a\n" Subst.pp_subst final_subs;
-          Format.printf "t: %a\n" pp_ty t;
-          Format.printf "Subst.apply final_subs t: %a\n" pp_ty (Subst.apply final_subs t);
-          Format.printf "match3: %a\n" TypeEnv.pp env; *)
-          return (final_subs, Subst.apply final_subs t)) 
     | Etuple (e1, e2, es) ->
       let* s1, t1 = infer env e1 in
       let* s2, t2 = infer (TypeEnv.apply s1 env) e2 in
@@ -806,8 +780,8 @@ module Infer = struct
         return composed
       in
       (* Format.printf "inferred_ty: %a\n" pp_ty inferred_ty;
-      Format.printf "subst_expr: %a\n" Subst.pp_subst subst_expr;
-      Format.printf "env_pat: %a\n" TypeEnv.pp env; *)
+         Format.printf "subst_expr: %a\n" Subst.pp_subst subst_expr;
+         Format.printf "env_pat: %a\n" TypeEnv.pp env; *)
       let* unified_subst = unify (Subst.apply combined_subst t_pat) inferred_ty in
       let updated_env = TypeEnv.apply unified_subst env_pat in
       let* final_subst = Subst.compose unified_subst combined_subst in

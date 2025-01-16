@@ -389,7 +389,7 @@ let pEmatch pexpr =
   in
   let match_cases =
     lift3
-      (fun e case case_l -> Ematch (Some e, case, case_l))
+      (fun e case case_l -> Ematch (e, case, case_l))
       (pstoken "match" *> pexpr <* pstoken "with")
       ((pstoken "|" <|> pwhitespace) *> parse_case)
       (many (pstoken "|" *> parse_case))
@@ -397,7 +397,7 @@ let pEmatch pexpr =
   let function_cases =
     lift2
       (fun case case_l ->
-        Efun ((PVar (Id "0"), None), [], Ematch (Some (Evar (Id "0")), case, case_l)))
+        Efun ((PVar (Id "0"), None), [], Ematch ((Evar (Id "0")), case, case_l)))
       (pstoken "function" *> pstoken "|" *> parse_case
        <|> pstoken "function" *> pwhitespace *> parse_case)
       (many (pstoken "|" *> parse_case))

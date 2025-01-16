@@ -170,7 +170,7 @@ type expr =
   (** match E with P1 -> E1 ... Pn -> Pn *)
   (* E0 bin_op E1, e.g. 1 + 3 *)
   | Ematch of
-      (expr[@gen gen_expr_sized (n / divisor)]) option
+      (expr[@gen gen_expr_sized (n / divisor)])
       * (case[@gen gen_case_sized (n / divisor)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / divisor)))])
   | Eun_op of un_op * (expr[@gen gen_expr_sized (n / divisor)])

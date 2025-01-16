@@ -239,7 +239,7 @@ end = struct
     | Eun_op (op, e) ->
       let* v = eval_expr env e in
       eval_un_op (op, v)
-    | Ematch (Some e, c, cl) ->
+    | Ematch (e, c, cl) ->
       let* v = eval_expr env e in
       (* print_env env;
          Format.printf "e match: %a\n" Pr_printer.pp_expr e;
@@ -263,15 +263,6 @@ end = struct
       in
       (* Format.printf "e match: %a\n" Pr_printer.pp_expr e; *)
       match_helper env (c :: cl)
-    | Ematch (None, c, cl) ->
-      let unique_var = "__arg" in
-      return
-        (VFun
-           ( Non_recursive
-           , PVar (Id unique_var)
-           , []
-           , Ematch (Some (Evar (Id unique_var)), c, cl)
-           , env ))
     | Efun (tp, tpl, e) ->
       return (VFun (Non_recursive, get_pattern tp, get_patterns tpl, e, env))
     | Efun_application (e1, e2) ->
