@@ -292,6 +292,29 @@ module Monad = struct
     write_local_envs ({ exec_block; env_type; var_map = new_map }, tl)
   ;;
 
+  let update_local_id ident value =
+    let* hd, tl = read_local_envs in
+    let local_envs =
+      List.rev
+        (List.fold_left
+           (fun lst env ->
+             match List.find_opt (fun x -> MapIdent.mem ident x.var_map) lst with
+             | Some _ -> env :: lst
+             | None ->
+               (match MapIdent.mem ident env.var_map with
+                | true ->
+                  { exec_block = env.exec_block
+                  ; var_map = MapIdent.add ident value env.var_map
+                  ; env_type = env.env_type
+                  }
+                  :: lst
+                | false -> env :: lst))
+           []
+           (hd :: tl))
+    in
+    write_local_envs (List.hd local_envs, List.tl local_envs)
+  ;;
+
   (* deferred funcs *)
 
   let read_deferred =
@@ -399,7 +422,7 @@ module Monad = struct
     | Simple ->
       let var_map = List.map (fun { var_map } -> var_map) (hd :: tl) in
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
-       | Some _ -> save_local_id ident t
+       | Some _ -> update_local_id ident t
        | None ->
          let var_map = [ global_map ] in
          (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with

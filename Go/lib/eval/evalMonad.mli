@@ -154,6 +154,7 @@ module Monad : sig
   (* Local environments *)
   val save_local_id : ident -> value -> unit t
   val add_env : block -> is_for_env -> unit t
+  val read_local_envs : (local_env * local_env list) t
   val delete_env : unit t
   val read_env_type : is_for_env t
 

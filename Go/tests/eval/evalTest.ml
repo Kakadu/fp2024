@@ -184,7 +184,7 @@ let%expect_test "ok: simple arithmetic check" =
     {|
     var x int = 1
     func foo(k int) {
-      var z = k 
+      z := 1
       z++
       print(k + 1 + z)
     }
@@ -197,7 +197,7 @@ let%expect_test "ok: simple arithmetic check" =
     |};
   [%expect {|
     Correct evaluating
-    205 |}]
+    105 |}]
 ;;
 
 let%expect_test "ok: short var init" =
@@ -205,6 +205,7 @@ let%expect_test "ok: short var init" =
     {|
     func foo(k int) {
       z := k 
+      z = z + 1
       print(k + 1 + z)
     }
   
@@ -216,7 +217,7 @@ let%expect_test "ok: short var init" =
     |};
   [%expect {|
     Correct evaluating
-    205 |}]
+    206 |}]
 ;;
 
 let%expect_test "ok: simple if" =
@@ -244,7 +245,6 @@ let%expect_test "ok: simple if" =
       if k < 20 {
         print("Error")
       }
-
     }
   
     func main() {
@@ -255,5 +255,32 @@ let%expect_test "ok: simple if" =
     |};
   [%expect {|
     Correct evaluating
-    205 |}]
+    Correct Correct Correct |}]
+;;
+
+let%expect_test "ok: nested if decl" =
+  pp
+    {|
+    func foo(k int) {
+      z := k 
+      if k >= 100 {
+        o := 1
+        z = 1
+        print(o)
+        print(z)
+      }
+      print(z)
+    }
+  
+    func main() {
+      x := 100
+      x++       
+      foo(x + 1)
+      x = 1
+      print(x)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    1111 |}]
 ;;

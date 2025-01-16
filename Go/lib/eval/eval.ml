@@ -70,9 +70,12 @@ and eval_func_call (func, args) =
       | (expr, id) :: tl ->
         retrieve_arg_value expr >>= fun vl -> save_args (MapIdent.add id vl map) tl
     in
-    let* var_map = save_args MapIdent.empty (List.combine args (rpf afc.args)) in
+    let* local_envs = read_local_envs >>= fun (hd, tl) -> return (List.cons hd tl) in
+    save_args MapIdent.empty (List.combine args (rpf afc.args))
+    >>= fun map ->
     add_stack_frame
-      { local_envs = { exec_block = afc.body; var_map; env_type = Default }, []
+      { local_envs =
+          { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
       ; deferred_funcs = []
       ; closure_envs = Simple
       }
@@ -193,12 +196,25 @@ and eval_stmt = function
      | Short_decl_one_init _ -> fail (Runtime_error (Panic "Not supported")))
   | Stmt_if if' ->
     eval_expr if'.cond
-    >>= fun cnd ->
+    >>= (function
+     | Value_bool true -> add_env if'.if_body Default *> exec eval_stmt *> delete_env
+     | Value_bool false ->
+       (match if'.else_body with
+        | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
+        | Some (Else_if if') -> eval_stmt (Stmt_if if')
+        | None -> return ())
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
+  | _ -> fail (Runtime_error (Panic "Not supported stmt"))
+
+(*ДОДЕЛАТЬ*)
+(*let* cnd = eval_expr if'.cond in
+    let* local_envs = read_local_envs >>= fun (hd, tl) -> return (List.cons hd tl) in
     if Value_bool true = cnd
     then
       add_stack_frame
         { local_envs =
-            { exec_block = if'.if_body; var_map = MapIdent.empty; env_type = Default }, []
+            ( { exec_block = if'.if_body; var_map = MapIdent.empty; env_type = Default }
+            , local_envs )
         ; deferred_funcs = []
         ; closure_envs = Simple
         }
@@ -213,18 +229,10 @@ and eval_stmt = function
           ; deferred_funcs = []
           ; closure_envs = Simple
           }
-        *> (exec_stmt eval_stmt
-            >>= function
-            | Some _ -> exec_stmt eval_stmt *> return ()
-            | None -> return ())
+        *> exec eval_stmt
         *> delete_stack_frame
       | Some (Else_if if') -> eval_stmt (Stmt_if if')
-      | None -> return ())
-  | Stmt_chan_send send -> eval_chan_send send
-  | Stmt_chan_receive expr -> eval_chan_receive expr
-  | _ -> fail (Runtime_error (Panic "Not supported stmt"))
-(*ДОДЕЛАТЬ*)
-
+      | None -> return ())*)
 and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->
     iter (fun (ident, expr) -> eval_expr expr >>= save_to_env ident) (hd :: tl)
