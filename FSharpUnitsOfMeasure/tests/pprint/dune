@@ -1,9 +1,0 @@
-(library
- (name pprint)
- (public_name FSharpUnitsOfMeasure.Pprint)
- (inline_tests)
- (libraries base ast parse qcheck)
- (preprocess
-  (pps ppx_expect ppx_inline_test))
- (instrumentation
-  (backend bisect_ppx)))
