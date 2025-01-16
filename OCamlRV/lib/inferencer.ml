@@ -4,6 +4,7 @@
 
 open Ast
 open Base
+open AstPrinter
 open InferencerCore
 open InferencerCore.Result
 open InferencerCore.Result.Syntax
@@ -260,4 +261,15 @@ let infer_structure (structure : structure) =
     structure
 ;;
 
-let run_infer s = run (infer_structure s)
+let run_inferencer (s : string) =
+  let open Parser in
+  match parse s with
+  | Ok parsed ->
+    let res = run (infer_structure parsed) in
+    (match res with
+     | Ok env ->
+       Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
+         Format.printf "val %s : %a\n" key pp_annot ty)
+     | Error e -> Format.printf "Infer error: %a\n" pp_error e)
+  | Error e -> Format.printf "Parsing error: %s\n" e
+;;

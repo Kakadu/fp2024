@@ -1,6 +1,8 @@
 Copyright 2024-2025, Viacheslav Sidorov and Danila Rudnev-Stepanyan
 SPDX-License-Identifier: LGPL-3.0-or-later
 
+Test 'typed':
+
   $ ../bin/main.exe typed/001fac.ml -interpret
   24
 
@@ -42,3 +44,23 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/main.exe typed/016lists.ml -interpret
   1238
+
+Test do_not_type:
+
+  $ ../bin/main.exe do_not_type/001.ml -inference
+  Infer error: Unbound variable 'fac'
+
+  $ ../bin/main.exe do_not_type/002if.ml -inference
+  Infer error: Unification failed on int and bool
+
+  $ ../bin/main.exe do_not_type/003occurs.ml -inference
+  Infer error: Occurs check failed
+
+  $ ../bin/main.exe do_not_type/004let_poly.ml -inference
+  Infer error: Unification failed on bool and int
+
+  $ ../bin/main.exe do_not_type/015tuples.ml -inference
+  Infer error: Not implemented !!!
+
+  $ ../bin/main.exe do_not_type/099.ml -inference
+  Infer error: Not implemented !!!

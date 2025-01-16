@@ -3,20 +3,8 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open OCamlRV_lib.Inferencer
-open OCamlRV_lib.InferencerCore
-open OCamlRV_lib.AstPrinter
 
-let test_infer s =
-  let open OCamlRV_lib.Parser in
-  match parse s with
-  | Ok parsed ->
-    (match run_infer parsed with
-     | Ok env ->
-       Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
-         Format.printf "val %s : %a\n" key pp_annot ty)
-     | Error e -> Format.printf "Infer error: %a\n" pp_error e)
-  | Error e -> Format.printf "Parsing error: %s\n" e
-;;
+let test_infer = run_inferencer
 
 (*---------------- Simple Expressions -----------------*)
 

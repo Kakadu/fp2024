@@ -2,4 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val run_infer : Ast.structure -> (InferencerCore.TypeEnv.t, InferencerCore.error) result
+val run_inferencer : string -> unit
