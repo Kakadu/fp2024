@@ -109,7 +109,7 @@ end = struct
     function
     | VUnit -> fprintf fmt "() "
     | VInt i -> fprintf fmt "%d " i
-    | VString s -> fprintf fmt "%s " s
+    | VString s -> fprintf fmt "%S " s
     | VBool b -> fprintf fmt "%a " pp_print_bool b
     | VTuple (fst, snd, rest) ->
       fprintf
