@@ -19,8 +19,6 @@ let rec pp_value = function
 ;;
 
 let rpf lst = List.map (fun (y, _) -> y) lst
-let builtin_print lst = iter (fun x -> return (Format.printf "%s" (pp_value x))) lst
-let builtin_println lst = builtin_print lst *> return (Format.printf "\n") *> return ()
 
 let pp printer eval ast =
   match eval ast with
@@ -72,10 +70,9 @@ and eval_func_call (func, args) =
       | (expr, id) :: tl ->
         retrieve_arg_value expr >>= fun vl -> save_args (MapIdent.add id vl map) tl
     in
-    save_args MapIdent.empty (List.combine args (rpf afc.args))
-    >>= fun map ->
+    let* var_map = save_args MapIdent.empty (List.combine args (rpf afc.args)) in
     add_stack_frame
-      { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
+      { local_envs = { exec_block = afc.body; var_map; env_type = Default }, []
       ; deferred_funcs = []
       ; closure_envs = Simple
       }
@@ -89,10 +86,17 @@ and retrieve_arg_value = function
   | Arg_type _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_value")))
 
 and eval_builtin args = function
-  | Print -> (map retrieve_arg_value args >>= builtin_print) *> return None
-  | Println -> (map retrieve_arg_value args >>= builtin_println) *> return None
+  | Print ->
+    (map retrieve_arg_value args
+     >>= iter (fun x -> return (Format.printf "%s" (pp_value x))))
+    *> return None
+  | Println ->
+    (map retrieve_arg_value args
+     >>= iter (fun x -> return (Format.printf "%s" (pp_value x))))
+    *> return (Format.printf "\n")
+    *> return None
   | Make ->
-    let* chan_id = add_chanel in
+    let* chan_id = create_chanel in
     return (Some (Value_chan (Chan_initialized chan_id)))
   | Close ->
     map retrieve_arg_value args
@@ -181,8 +185,7 @@ and eval_stmt = function
            >>= fun vl -> eval_lvalue lvalue >>= fun id -> update_ident id vl)
          (fst :: lst)
      | Assign_one_expr (fst, snd, lst, fcall) ->
-       fail (Runtime_error (Panic "Not supported"))
-     | _ -> fail (Runtime_error (Panic "Not supported stmt")))
+       fail (Runtime_error (Panic "Not supported")))
   | Stmt_short_var_decl svd ->
     (match svd with
      | Short_decl_mult_init (sfirst, lst) ->
@@ -217,6 +220,8 @@ and eval_stmt = function
         *> delete_stack_frame
       | Some (Else_if if') -> eval_stmt (Stmt_if if')
       | None -> return ())
+  | Stmt_chan_send send -> eval_chan_send send
+  | Stmt_chan_receive expr -> eval_chan_receive expr
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 (*ДОДЕЛАТЬ*)
 
@@ -224,9 +229,25 @@ and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->
     iter (fun (ident, expr) -> eval_expr expr >>= save_to_env ident) (hd :: tl)
   | _ -> fail (Runtime_error (Panic "Not supported"))
-;;
-
 (*ДОДЕЛАТЬ*)
+
+and eval_chan_send (ident, expr) =
+  let* value = eval_expr expr in
+  read_ident ident
+  >>= function
+  | Value_chan chan ->
+    let* chan_id = find_chanel_fail chan in
+    stop_running_goroutine (Sending { chan_id; value })
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
+
+and eval_chan_receive expr =
+  eval_expr expr
+  >>= function
+  | Value_chan chan ->
+    let* chan_id = find_chanel_fail chan in
+    stop_running_goroutine (Recieving { chan_id })
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
+;;
 
 let save_builtins =
   save_global_id "true" (Value_bool true)
@@ -250,7 +271,7 @@ let save_global_vars_and_funcs =
 let add_main_goroutine =
   iter (function
     | Decl_func ("main", { body }) ->
-      add_asleep
+      add_waiting
         Ready
         { stack =
             ( { local_envs =
@@ -266,7 +287,7 @@ let add_main_goroutine =
 
 (* runs all ready goroutines *)
 let run_ready_goroutines =
-  let* asleep_goroutines = read_asleep in
+  let* asleep_goroutines = read_waiting in
   match GoSet.find_first_opt (fun { state } -> state = Ready) asleep_goroutines with
   | Some { goroutine } ->
     run_goroutine goroutine
@@ -286,7 +307,7 @@ let run_eval file =
 let init_state =
   { global_env = MapIdent.empty
   ; running = None
-  ; asleep = GoSet.empty
+  ; waiting = GoSet.empty
   ; chanels = ChanSet.empty, 1
   }
 ;;

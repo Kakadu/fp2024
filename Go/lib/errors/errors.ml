@@ -28,7 +28,7 @@ type runtime_error =
   | Array_index_out_of_bound
   | Negative_array_index
   | Uninited_func
-  | Deadlock
+  | Deadlock of string
   | Close_of_closed_chan
   | Close_of_nil_chan
   | Panic of string

@@ -65,32 +65,35 @@ type stack_frame =
   ; closure_envs : closure_frame
   }
 
-type sleeping_state =
+type waiting_state =
   | Ready
-  | Sending of ident
-  | Recieving of ident
+  | Sending of
+      { chan_id : int
+      ; value : value
+      }
+  | Recieving of { chan_id : int }
 
 type goroutine =
   { stack : stack_frame * stack_frame list
   ; id : int
   }
 
-module AsleepGoroutine = struct
+module WaitingGoroutine = struct
   type t =
-    { state : sleeping_state
+    { state : waiting_state
     ; goroutine : goroutine
     }
 
   let compare = compare
 end
 
-module GoSet = Set.Make (AsleepGoroutine)
+module GoSet = Set.Make (WaitingGoroutine)
 module ChanSet = Set.Make (Int)
 
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
-  ; asleep : GoSet.t
+  ; waiting : GoSet.t
   ; chanels : ChanSet.t * int
   }
 
@@ -110,8 +113,8 @@ module Monad = struct
   let write_global new_global =
     read
     >>= function
-    | { running; asleep; chanels } ->
-      write { global_env = new_global; running; asleep; chanels }
+    | { running; waiting; chanels } ->
+      write { global_env = new_global; running; waiting; chanels }
   ;;
 
   let save_global_id ident value =
@@ -121,22 +124,22 @@ module Monad = struct
 
   (* goroutines *)
 
-  let read_asleep =
+  let read_waiting =
     read
     >>= function
-    | { asleep } -> return asleep
+    | { waiting } -> return waiting
   ;;
 
-  let write_asleep new_goroutines =
+  let write_waiting new_goroutines =
     read
     >>= function
     | { global_env; running; chanels } ->
-      write { global_env; running; chanels; asleep = new_goroutines }
+      write { global_env; running; chanels; waiting = new_goroutines }
   ;;
 
-  let add_asleep state goroutine =
-    let* goroutines = read_asleep in
-    write_asleep (GoSet.add { state; goroutine } goroutines)
+  let add_waiting state goroutine =
+    let* goroutines = read_waiting in
+    write_waiting (GoSet.add { state; goroutine } goroutines)
   ;;
 
   let read_running =
@@ -155,8 +158,8 @@ module Monad = struct
   let write_running new_goroutine =
     read
     >>= function
-    | { global_env; asleep; chanels } ->
-      write { global_env; asleep; chanels; running = new_goroutine }
+    | { global_env; waiting; chanels } ->
+      write { global_env; waiting; chanels; running = new_goroutine }
   ;;
 
   let run_goroutine goroutine =
@@ -166,10 +169,10 @@ module Monad = struct
     | Some _ -> fail (Runtime_error (DevOnly Two_goroutine_running))
   ;;
 
-  let stop_running_goroutine sleeping_state =
+  let stop_running_goroutine waiting_state =
     read_running_fail
     >>= function
-    | goroutine -> write_running None *> add_asleep sleeping_state goroutine
+    | goroutine -> write_running None *> add_waiting waiting_state goroutine
   ;;
 
   (* chanels *)
@@ -183,20 +186,22 @@ module Monad = struct
   let write_chanels new_chanels =
     read
     >>= function
-    | { global_env; running; asleep } ->
-      write { global_env; running; asleep; chanels = new_chanels }
+    | { global_env; running; waiting } ->
+      write { global_env; running; waiting; chanels = new_chanels }
   ;;
 
   let find_chanel_fail = function
-    | Chan_uninitialized Nil -> fail (Runtime_error Deadlock)
+    | Chan_uninitialized Nil ->
+      fail (Runtime_error (Deadlock "sending to or receiving from uninitialized chanel"))
     | Chan_initialized id ->
       let* chanels, _ = read_chanels in
       (match ChanSet.find_opt id chanels with
-       | None -> fail (Runtime_error Deadlock)
-       | Some _ -> return ())
+       | None ->
+         fail (Runtime_error (Deadlock "sending to or receiving from closed chanel"))
+       | Some id -> return id)
   ;;
 
-  let add_chanel =
+  let create_chanel =
     let* chanels, id = read_chanels in
     write_chanels (ChanSet.add id chanels, id + 1) *> return id
   ;;

@@ -25,7 +25,7 @@ let pp str =
            | Runtime_error Division_by_zero -> prerr_endline "Try to divide by zero"
            | Runtime_error Array_index_out_of_bound ->
              prerr_endline "Array index out of bounds"
-           | Runtime_error Deadlock -> prerr_endline "Go routine deadlock"
+           | Runtime_error (Deadlock msg) -> prerr_endline ("Deadlock: " ^ msg)
            | Runtime_error (Panic msg) -> prerr_endline ("Paniced with message:" ^ msg)
            | Runtime_error (DevOnly (TypeCheckFailed msg)) ->
              prerr_endline ("Internal Typecheck error occured while evaluating" ^ msg)

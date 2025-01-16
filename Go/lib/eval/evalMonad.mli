@@ -74,11 +74,14 @@ type stack_frame =
   ; closure_envs : closure_frame
   }
 
-type sleeping_state =
+type waiting_state =
   | Ready
   (** State of the goroutine that doesn't try to receive from or send to a chanel, but another goroutine is running *)
-  | Sending of ident (** State of goroutine that is trying to send to a chanel *)
-  | Recieving of ident (** State of goroutine that is trying to receive from a chanel *)
+    | Sending of
+      { chan_id : int
+      ; value : value
+      } (** State of goroutine that is trying to send values to a chanel *)
+  | Recieving of { chan_id : int } (** State of goroutine that is trying to receive from a chanel *)
 
 type goroutine =
   { stack : stack_frame * stack_frame list
@@ -86,16 +89,16 @@ type goroutine =
   ; id : int
   }
 
-module AsleepGoroutine : sig
+module WaitingGoroutine : sig
   type t =
-    { state : sleeping_state
+    { state : waiting_state
     ; goroutine : goroutine
     }
 
   val compare : t -> t -> int
 end
 
-module GoSet : Set.S with type elt = AsleepGoroutine.t
+module GoSet : Set.S with type elt = WaitingGoroutine.t
 module ChanSet : Set.S with type elt = int
 
 type eval_state =
@@ -103,8 +106,8 @@ type eval_state =
   (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
   (** Goroutine that is currently running, stored separately for time efficiency *)
-  ; asleep : GoSet.t
-  (** All asleep goroutines (ready to run or trying to interact with a chanel) *)
+  ; waiting : GoSet.t
+  (** All waiting goroutines (ready to run or trying to interact with a chanel) *)
   ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
   }
 
@@ -129,17 +132,17 @@ module Monad : sig
   val save_global_id : ident -> value -> unit t
 
   (* Goroutines *)
-  val read_asleep : GoSet.t t
-  val add_asleep : sleeping_state -> goroutine -> unit t
+  val read_waiting : GoSet.t t
+  val add_waiting : waiting_state -> goroutine -> unit t
   val run_goroutine : goroutine -> unit t
-  val stop_running_goroutine : sleeping_state -> unit t
+  val stop_running_goroutine : waiting_state -> unit t
 
   (* Chanels *)
 
-  val find_chanel_fail : chan_value -> unit t
+  val find_chanel_fail : chan_value -> int t
 
   (** Creates new chanel and returns it's id *)
-  val add_chanel : int t
+  val create_chanel : int t
 
   (** Closes chanel. Fails if it is closed or uninited *)
   val close_chanel : chan_value -> unit t
