@@ -10,12 +10,12 @@ open Angstrom
 open Ast
 open Common
 
-let pm_num_int = parse_int >>| fun i -> Mnum_int i
-let pm_num_float = parse_float >>| fun f -> Mnum_float f
+let pm_num_int = parse_sint >>| fun i -> Mnum_int i
+let pm_num_float = parse_sfloat >>| fun f -> Mnum_float f
 let pm_num = pm_num_int <|> pm_num_float
 let pm_id = parse_ident >>| fun id -> Measure_ident id
 let pm_diml = skip_token "1" *> return Measure_dimless
-let pm_atom pm = choice [ skip_token "(" *> pm <* skip_token ")"; pm_id ]
+let pm_atom pm = choice [ skip_token "(" *> pm <* skip_token ")"; pm_id; pm_diml ]
 
 let pm_pow pm_atom =
   let p_expo =
@@ -51,7 +51,7 @@ let pm_div = skip_token "/" *> return (fun m1 m2 -> Measure_div (m1, m2))
 let pm =
   fix (fun pm ->
     let pm = pm_pow_seq (pm_pow (pm_atom pm)) in
-    let pm = pm_diml <|> pm in
+    (* let pm = pm_diml <|> pm in *)
     let pm = chainl pm (pm_prod <|> pm_div) <|> pm in
     skip_ws *> pm <* skip_ws)
 ;;
