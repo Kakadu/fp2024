@@ -27,9 +27,10 @@ let run_single dump_parsetree input_source =
     then print_endline (show_structure ast)
     else (
       match run_inferencer ast env_with_print_int with
-      | Ok env ->
+      | Ok (env, ty_list) ->
         Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
-          if key <> "print_int" then Format.printf "val %s : %a\n" key pp_core_type ty)
+          if key <> "print_int" then Format.printf "val %s : %a\n" key pp_core_type ty);
+        List.iter (fun ty -> Format.printf "- : %a" pp_core_type ty) ty_list
       | Error e -> Format.printf "Infer error: %a\n" pp_error e)
 ;;
 

@@ -17,7 +17,7 @@ let gen_char =
   oneof [ return '!'; char_range '#' '&'; char_range '(' '['; char_range ']' '~' ]
 ;;
 
-let un_op = "~-"
+let un_op_list = [ "~-", 1 ]
 
 let bin_op_list =
   [ "*", 1
@@ -34,6 +34,10 @@ let bin_op_list =
   ; "||", 5
   ]
 ;;
+
+let is_operator opr = List.exists (fun (str, _) -> str = opr) bin_op_list
+let is_negative_op opr = List.exists (fun (str, _) -> str = opr) un_op_list
+let get_priority opr = List.assoc opr bin_op_list
 
 let is_keyword = function
   | "and"
@@ -192,7 +196,10 @@ module Expression = struct
   let gen_exp_apply gen n exp_ident exp_apply =
     oneof
       [ map2 (fun id arg -> exp_ident id, arg) gen_ident (gen (n / coef))
-      ; map (fun opn -> exp_ident un_op, opn) (gen (n / coef))
+      ; map2
+          (fun opr opn -> opr, opn)
+          (oneofl (List.map (fun (opr, _) -> exp_ident opr) un_op_list))
+          (gen (n / coef))
       ; map3
           (fun opr opn1 opn2 -> opr, exp_apply (opn1, opn2))
           (oneofl (List.map (fun (opr, _) -> exp_ident opr) bin_op_list))

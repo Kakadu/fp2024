@@ -33,7 +33,7 @@ let rec pp_value ppf =
   function
   | Val_integer int -> fprintf ppf "%i" int
   | Val_char char -> fprintf ppf "'%c'" char
-  | Val_string str -> fprintf ppf {|"%s"|} str
+  | Val_string str -> fprintf ppf "%S" str
   | Val_tuple val_list ->
     fprintf
       ppf
@@ -82,6 +82,7 @@ module EvalEnv = struct
 end
 
 module Inter = struct
+  open Ast.Expression
   open Res
   open EvalEnv
 
@@ -134,8 +135,7 @@ module Inter = struct
     | _ -> fail `Type_error
   ;;
 
-  let rec eval_expression env (exp : Expression.t) =
-    match exp with
+  let rec eval_expression env = function
     | Exp_ident id -> find_exn env id
     | Exp_constant const ->
       (match const with
@@ -145,14 +145,14 @@ module Inter = struct
     | Exp_let (Nonrecursive, value_binding, value_binding_list, exp) ->
       let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
-    | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when Pprinter.is_operator opr ->
+    | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
       let* value1 = eval_expression env exp1 in
       let* value2 = eval_expression env exp2 in
       eval_bin_op (opr, value1, value2)
     | Exp_fun (pat, pat_list, e) -> return (Val_fun (None, pat :: pat_list, e, env))
     | Exp_apply (exp1, exp2) ->
       (match exp1 with
-       | Exp_ident opr when Pprinter.is_negative_op opr ->
+       | Exp_ident opr when is_negative_op opr ->
          let* value = eval_expression env exp2 in
          (match value with
           | Val_integer v -> return (Val_integer (-v))
@@ -223,20 +223,22 @@ module Inter = struct
 
   let eval_structure_item env = function
     | Struct_eval exp ->
-      let* _ = eval_expression env exp in
-      return env
+      let* val_exp = eval_expression env exp in
+      return (env, Some val_exp)
     | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
-      eval_value_binding_list env (value_binding :: value_binding_list)
+      let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
+      return (env, None)
     | _ -> fail `Not_implemented
   ;;
 
-  let eval_structure structure =
+  let eval_structure =
     Base.List.fold_left
-      ~f:(fun env item ->
-        let* env = env in
-        let* env = eval_structure_item env item in
-        return env)
-      ~init:(return empty)
-      structure
+      ~f:(fun acc item ->
+        let* env, val_list = acc in
+        let* env, val_opt = eval_structure_item env item in
+        match val_opt with
+        | Some val_exp -> return (env, val_list @ [ val_exp ])
+        | None -> return (env, val_list))
+      ~init:(return (empty, []))
   ;;
 end

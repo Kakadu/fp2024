@@ -3,16 +3,16 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ocaml_printf_lib.Parser
-open Ocaml_printf_lib.Pprinter
 open Ocaml_printf_lib.Interpreter
 
 let run str =
   match parse str with
   | Ok ast ->
     (match Inter.eval_structure ast with
-     | Ok env ->
+     | Ok (env, val_list) ->
        Base.Map.iteri env ~f:(fun ~key ~data ->
-         Format.printf "%s : %a\n" key pp_value data)
+         Format.printf "val %s = %a\n" key pp_value data);
+       List.iter (fun val_exp -> Format.printf "- = %a\n" pp_value val_exp) val_list
      | Error e -> Format.printf "Interpreter error: %a\n" pp_error e)
   | Error _ -> Format.printf "Parsing error\n"
 ;;
@@ -23,8 +23,8 @@ let%expect_test "eval simple let binding" =
   and b = true;;
   |};
   [%expect {|
-  a : -8
-  b : true
+  val a = -8
+  val b = true
   |}]
 ;;
 
@@ -33,12 +33,12 @@ let%expect_test "eval tuple let binding" =
   let a, b = 1, (2, 3)
   |};
   [%expect {|
-  a : 1
-  b : (2, 3)
+  val a = 1
+  val b = (2, 3)
   |}]
 ;;
 
-let%expect_test "eval let in" =
+let%expect_test "eval `let in'" =
   run {|
   let f =
     let x = "abc" in
@@ -47,6 +47,15 @@ let%expect_test "eval let in" =
   ;;
   |};
   [%expect {|
-  f : true
+  val f = true
+  |}]
+;;
+
+let%expect_test "eval 'Struct_eval'" =
+  run {|
+  1;;
+  |};
+  [%expect {|
+  - = 1
   |}]
 ;;

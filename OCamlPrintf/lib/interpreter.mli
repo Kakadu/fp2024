@@ -26,11 +26,7 @@ val pp_value : Format.formatter -> value -> unit
 module Inter : sig
   val eval_structure
     :  Ast.structure_item list
-    -> ( (string, value, Base.String.comparator_witness) Base.Map.t
-         , [> `Division_by_zero
-           | `No_variable of string
-           | `Not_implemented
-           | `Type_error
-           ] )
+    -> ( (string, value, Base.String.comparator_witness) Base.Map.t * value list
+         , error )
          result
 end

@@ -10,9 +10,10 @@ let run str =
   match parse str with
   | Ok ast ->
     (match run_inferencer ast empty_env with
-     | Ok env ->
+     | Ok (env, ty_list) ->
        Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
-         Format.printf "val %s : %a\n" key pp_core_type ty)
+         Format.printf "val %s : %a\n" key pp_core_type ty);
+       List.iter (fun ty -> Format.printf "- : %a\n" pp_core_type ty) ty_list
      | Error e -> Format.printf "Infer error: %a\n" pp_error e)
   | Error _ -> Format.printf "Parsing error\n"
 ;;
@@ -71,6 +72,20 @@ let%expect_test "type check several definition variable" =
   val f : int
   val q : int
   val r : string
+  |}]
+;;
+
+let%expect_test "type check several definition variable and executable them" =
+  run {|
+  let f a = a and a = 1;;
+  f "hello";;
+  a;;
+  |};
+  [%expect {|
+  val a : int
+  val f : 'a -> 'a
+  - : string
+  - : int
   |}]
 ;;
 

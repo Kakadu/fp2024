@@ -3,8 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Ast.Expression
-open Pprinter
 
 type error =
   [ `No_variable_rec
@@ -29,11 +27,17 @@ let pp_error ppf : error -> _ = function
       ppf
       "Occurs check failed: the type variable %s occurs inside %a"
       id
-      pp_core_type
+      Pprinter.pp_core_type
       ty
   | `No_variable id -> Format.fprintf ppf "Undefined variable '%s'" id
   | `Unification_failed (l, r) ->
-    Format.fprintf ppf "Unification failed on %a and %a" pp_core_type l pp_core_type r
+    Format.fprintf
+      ppf
+      "Unification failed on %a and %a"
+      Pprinter.pp_core_type
+      l
+      Pprinter.pp_core_type
+      r
 ;;
 
 module State = struct
@@ -101,11 +105,11 @@ module VarSet = struct
   ;;
 end
 
-type scheme = Scheme of VarSet.t * Ast.core_type
+type scheme = Scheme of VarSet.t * core_type
 
 let pp_scheme ppf = function
   | Scheme (varset, ty) ->
-    Format.fprintf ppf "{ %a : %a }" VarSet.pp varset pp_core_type ty
+    Format.fprintf ppf "{ %a : %a }" VarSet.pp varset Pprinter.pp_core_type ty
 ;;
 
 module Type = struct
@@ -215,7 +219,7 @@ module Subst = struct
   let pp ppf sub =
     Stdlib.Format.fprintf ppf "Subst:\n";
     Map.iteri sub ~f:(fun ~key:str ~data:ty ->
-      Stdlib.Format.fprintf ppf "%s <-> %a; " str pp_core_type ty);
+      Stdlib.Format.fprintf ppf "%s <-> %a; " str Pprinter.pp_core_type ty);
     Stdlib.Format.fprintf ppf "\n"
   ;;
 end
@@ -284,9 +288,9 @@ module TypeEnv = struct
 end
 
 module Infer = struct
+  open Ast.Expression
   open State
   open State.Syntax
-  open Ast
 
   let unify = Subst.unify
   let fresh_var = fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n)
@@ -748,16 +752,19 @@ module Infer = struct
   ;;
 
   let infer_srtucture_item ?(debug = false) env ast =
-    RList.fold_left ast ~init:(return env) ~f:(fun env ->
+    RList.fold_left
+      ast
+      ~init:(return (env, []))
+      ~f:(fun (env, ty_list) ->
         function
         | Struct_eval exp ->
-          let* _, _ = infer_expression env exp in
-          return env
+          let* _, ty = infer_expression env exp in
+          return (env, ty_list @ [ ty ])
         | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
           let* env, _ =
             infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
           in
-          return env
+          return (env, ty_list)
         | Struct_value (Recursive, value_binding, value_binding_list) ->
           let* env, fresh_acc =
             extend_env_with_bind_names env (value_binding :: value_binding_list)
@@ -770,7 +777,7 @@ module Infer = struct
               (value_binding :: value_binding_list)
           in
           if debug then TypeEnv.pp Format.std_formatter env;
-          return env)
+          return (env, ty_list))
   ;;
 end
 
