@@ -386,7 +386,7 @@ module Monad = struct
              | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))))
   ;;
 
-  let save_ident ident t =
+  let update_ident ident t =
     let* hd, tl = read_local_envs in
     let* global_map = read_global in
     let* closure_frame = read_closure_env in

@@ -160,7 +160,7 @@ module Monad : sig
 
   (* Reading ident value *)
   val read_ident : ident -> value t
-  val save_ident : string -> value -> unit t
+  val update_ident : string -> value -> unit t
 
   (* statements execution *)
   val pop_next_statement : stmt option t

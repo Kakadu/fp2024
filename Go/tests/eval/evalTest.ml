@@ -11,7 +11,7 @@ let pp str =
   | Ok ast ->
     (match TypeChecker.type_check ast with
      | Result.Ok _ ->
-       (match Eval.eval ast with
+       (match eval ast with
         | Result.Ok _ -> prerr_endline "Correct evaluating"
         | Result.Error err ->
           (match err with
@@ -27,8 +27,8 @@ let pp str =
              prerr_endline "Array index out of bounds"
            | Runtime_error Deadlock -> prerr_endline "Go routine deadlock"
            | Runtime_error (Panic msg) -> prerr_endline ("Paniced with message:" ^ msg)
-           | Runtime_error (DevOnly TypeCheckFailed) ->
-             prerr_endline "Internal Typecheck error occured while evaluating"
+           | Runtime_error (DevOnly (TypeCheckFailed msg)) ->
+             prerr_endline ("Internal Typecheck error occured while evaluating" ^ msg)
            | Runtime_error (DevOnly (Undefined_ident msg)) ->
              prerr_endline ("Undefined ident " ^ msg)
            | Runtime_error (DevOnly _) -> prerr_endline "Some kind of devonly error"
@@ -67,7 +67,8 @@ let%expect_test "ok: single main" =
       print("kill OCaml ")
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml |}]
 ;;
@@ -184,11 +185,70 @@ let%expect_test "ok: simple arithmetic check" =
     var x int = 1
     func foo(k int) {
       var z = k 
+      z++
       print(k + 1 + z)
     }
   
     func main() {
       x = 100
+      x++       
+      foo(x + 1)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    205 |}]
+;;
+
+let%expect_test "ok: short var init" =
+  pp
+    {|
+    func foo(k int) {
+      z := k 
+      print(k + 1 + z)
+    }
+  
+    func main() {
+      x := 100
+      x++       
+      foo(x + 1)
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    205 |}]
+;;
+
+let%expect_test "ok: simple if" =
+  pp
+    {|
+    func foo(k int) {
+      var z = k 
+      if k < 100 {
+          print("Error")
+        } else{
+        print("Correct")
+      }
+      if k >= 100 {
+          print(" Correct")
+        } else{
+        print(" Error")
+      }
+      if k < 10 {
+          print("Error")
+        } else if k < 20 {
+        print("Error")
+      } else {
+         print(" Correct")
+      }
+      if k < 20 {
+        print("Error")
+      }
+
+    }
+  
+    func main() {
+      x := 100
       x++       
       foo(x + 1)
     }

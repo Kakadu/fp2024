@@ -35,6 +35,13 @@ let exec_stmt eval_stmt =
   | None -> return None
 ;;
 
+let rec exec eval_stmt =
+  exec_stmt eval_stmt
+  >>= function
+  | Some _ -> exec eval_stmt *> return ()
+  | None -> return ()
+;;
+
 let rec eval_expr = function
   | Expr_const (Const_int n) -> return (Value_int n)
   | Expr_const (Const_string s) -> return (Value_string s)
@@ -50,7 +57,7 @@ let rec eval_expr = function
     eval_func_call (func, args)
     >>= (function
      | Some value -> return value (* тут может быть тапл *)
-     | None -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+     | None -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
   | Expr_chan_receive ex -> eval_expr ex (*ДОДЕЛАТЬ*)
 
 and eval_func_call (func, args) =
@@ -72,17 +79,14 @@ and eval_func_call (func, args) =
       ; deferred_funcs = []
       ; closure_envs = Simple
       }
-    *> (exec_stmt eval_stmt
-        >>= function
-        | Some _ -> exec_stmt eval_stmt *> return ()
-        | None -> return ())
+    *> exec eval_stmt
     *> delete_stack_frame
     *> return None
-  | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func_call")))
 
 and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
-  | Arg_type _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | Arg_type _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_value")))
 
 and eval_builtin args = function
   | Print -> (map retrieve_arg_value args >>= builtin_print) *> return None
@@ -94,13 +98,13 @@ and eval_builtin args = function
     map retrieve_arg_value args
     >>= (function
      | [ Value_chan chan ] -> close_chanel chan *> return None
-     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "close"))))
   | Len ->
     map retrieve_arg_value args
     >>= (function
      | [ Value_array (len, _) ] -> return (Some (Value_int len))
      | [ Value_string s ] -> return (Some (Value_int (String.length s)))
-     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "len"))))
   | Panic ->
     map retrieve_arg_value args
     >>= (fun av -> return (String.concat "" (List.map pp_value av)))
@@ -110,7 +114,7 @@ and eval_builtin args = function
 (* ДОДЕЛАТЬ, возвращает аргумент паники *)
 
 and retrieve_arg_generic = function
-  | Arg_expr _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | Arg_expr _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_generic")))
   | Arg_type t -> return t
 
 and eval_index array index =
@@ -121,7 +125,7 @@ and eval_index array index =
     (try return (List.nth values index) with
      | Invalid_argument _ -> fail (Runtime_error Negative_array_index)
      | Failure _ -> fail (Runtime_error Array_index_out_of_bound))
-  | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "index")))
 
 and eval_unop op expr =
   let* value = eval_expr expr in
@@ -129,7 +133,7 @@ and eval_unop op expr =
   | Unary_minus, Value_int a -> return (Value_int (-a))
   | Unary_plus, Value_int a -> return (Value_int a)
   | Unary_not, Value_bool a -> return (Value_bool (not a))
-  | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "unop")))
 
 and eval_binop op a1 a2 =
   let* a1 = eval_expr a1 in
@@ -144,11 +148,11 @@ and eval_binop op a1 a2 =
   | Bin_and, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 && a2))
   | Bin_or, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 || a2))
   | Bin_equal, a1, a2 -> return (Value_bool (a1 = a2))
-  | Bin_less, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 < a2))
-  | Bin_less_equal, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 <= a2))
-  | Bin_greater, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 > a2))
-  | Bin_greater_equal, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 >= a2))
-  | _ -> fail (Runtime_error (DevOnly TypeCheckFailed))
+  | Bin_less, Value_int a1, Value_int a2 -> return (Value_bool (a1 < a2))
+  | Bin_less_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 <= a2))
+  | Bin_greater, Value_int a1, Value_int a2 -> return (Value_bool (a1 > a2))
+  | Bin_greater_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 >= a2))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "binop")))
 
 and eval_lvalue = function
   | Lvalue_ident id -> return id
@@ -161,23 +165,58 @@ and eval_stmt = function
   | Stmt_decr id ->
     read_ident id
     >>= (function
-     | Value_int v -> save_ident id (Value_int (v - 1)) *> return ()
-     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+     | Value_int v -> update_ident id (Value_int (v - 1)) *> return ()
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "stmt"))))
   | Stmt_incr id ->
     read_ident id
     >>= (function
-     | Value_int v -> save_ident id (Value_int (v + 1)) *> return ()
-     | _ -> fail (Runtime_error (DevOnly TypeCheckFailed)))
+     | Value_int v -> update_ident id (Value_int (v + 1)) *> return ()
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "stmt"))))
   | Stmt_assign asgn ->
     (match asgn with
      | Assign_mult_expr (fst, lst) ->
        iter
          (fun (lvalue, expr) ->
-           eval_expr expr >>= fun vl -> eval_lvalue lvalue >>= fun id -> save_ident id vl)
+           eval_expr expr
+           >>= fun vl -> eval_lvalue lvalue >>= fun id -> update_ident id vl)
          (fst :: lst)
      | Assign_one_expr (fst, snd, lst, fcall) ->
        fail (Runtime_error (Panic "Not supported"))
      | _ -> fail (Runtime_error (Panic "Not supported stmt")))
+  | Stmt_short_var_decl svd ->
+    (match svd with
+     | Short_decl_mult_init (sfirst, lst) ->
+       iter (fun (ident, expr) -> eval_expr expr >>= save_local_id ident) (sfirst :: lst)
+     | Short_decl_one_init _ -> fail (Runtime_error (Panic "Not supported")))
+  | Stmt_if if' ->
+    eval_expr if'.cond
+    >>= fun cnd ->
+    if Value_bool true = cnd
+    then
+      add_stack_frame
+        { local_envs =
+            { exec_block = if'.if_body; var_map = MapIdent.empty; env_type = Default }, []
+        ; deferred_funcs = []
+        ; closure_envs = Simple
+        }
+      *> exec eval_stmt
+      *> delete_stack_frame
+    else (
+      match if'.else_body with
+      | Some (Else_block body) ->
+        add_stack_frame
+          { local_envs =
+              { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
+          ; deferred_funcs = []
+          ; closure_envs = Simple
+          }
+        *> (exec_stmt eval_stmt
+            >>= function
+            | Some _ -> exec_stmt eval_stmt *> return ()
+            | None -> return ())
+        *> delete_stack_frame
+      | Some (Else_if if') -> eval_stmt (Stmt_if if')
+      | None -> return ())
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 (*ДОДЕЛАТЬ*)
 
@@ -236,12 +275,6 @@ let run_ready_goroutines =
 ;;
 
 let run_eval file =
-  let rec exec eval_stmt =
-    exec_stmt eval_stmt
-    >>= function
-    | Some _ -> exec eval_stmt *> return ()
-    | None -> return ()
-  in
   save_builtins
   *> save_global_vars_and_funcs file
   *> add_main_goroutine file

@@ -19,7 +19,7 @@ type devonly_runtime_error =
   | No_goroutine_running
   | Two_goroutine_running
   | Undefined_ident of string
-  | TypeCheckFailed
+  | TypeCheckFailed of string
 [@@deriving show { with_path = false }]
 
 type runtime_error =
