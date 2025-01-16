@@ -169,6 +169,15 @@ and eval_lvalue = function
   | Lvalue_array_index _ ->
     fail (Runtime_error (Panic "Not supported lvalue array index"))
 
+and eval_init = function
+  | Init_assign asgn -> eval_stmt (Stmt_assign asgn)
+  | Init_call call -> eval_stmt (Stmt_call call)
+  | Init_decl decl -> eval_stmt (Stmt_short_var_decl decl)
+  | Init_decr decr -> eval_stmt (Stmt_decr decr)
+  | Init_incr incr -> eval_stmt (Stmt_incr incr)
+  | Init_receive recv -> eval_stmt (Stmt_chan_receive recv)
+  | Init_send snd -> eval_stmt (Stmt_chan_send snd)
+
 and eval_stmt = function
   | Stmt_call fcall -> eval_func_call fcall *> return ()
   | Stmt_long_var_decl lvd -> eval_long_var_decl save_local_id lvd
@@ -200,10 +209,22 @@ and eval_stmt = function
   | Stmt_if if' ->
     eval_expr if'.cond
     >>= (function
-     | Value_bool true -> add_env if'.if_body Default *> exec eval_stmt *> delete_env
+     | Value_bool true ->
+       add_env if'.if_body Default
+       *> (match if'.init with
+         | Some init -> eval_init init
+         | None -> return ())
+       *> exec eval_stmt
+       *> delete_env
      | Value_bool false ->
        (match if'.else_body with
-        | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
+        | Some (Else_block body) ->
+          add_env body Default
+          *> (match if'.init with
+            | Some init -> eval_init init
+            | None -> return ())
+          *> exec eval_stmt
+          *> delete_env
         | Some (Else_if if') -> eval_stmt (Stmt_if if')
         | None -> return ())
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
@@ -211,32 +232,7 @@ and eval_stmt = function
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 
 (*ДОДЕЛАТЬ*)
-(*let* cnd = eval_expr if'.cond in
-    let* local_envs = read_local_envs >>= fun (hd, tl) -> return (List.cons hd tl) in
-    if Value_bool true = cnd
-    then
-      add_stack_frame
-        { local_envs =
-            ( { exec_block = if'.if_body; var_map = MapIdent.empty; env_type = Default }
-            , local_envs )
-        ; deferred_funcs = []
-        ; closure_envs = Simple
-        }
-      *> exec eval_stmt
-      *> delete_stack_frame
-    else (
-      match if'.else_body with
-      | Some (Else_block body) ->
-        add_stack_frame
-          { local_envs =
-              { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
-          ; deferred_funcs = []
-          ; closure_envs = Simple
-          }
-        *> exec eval_stmt
-        *> delete_stack_frame
-      | Some (Else_if if') -> eval_stmt (Stmt_if if')
-      | None -> return ())*)
+
 and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->
     iter (fun (ident, expr) -> eval_expr expr >>= save_to_env ident) (hd :: tl)
