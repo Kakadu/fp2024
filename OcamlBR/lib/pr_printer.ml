@@ -94,8 +94,8 @@ let precedence_bin_op = function
 ;;
 
 let pp_ty_pattern ppf : Ast.ty_pattern -> unit = function
-  | p, Some t -> Format.fprintf ppf "(%a : %a)" pp_pattern p pp_ty t
-  | p, _ -> Format.fprintf ppf "%a" pp_pattern p
+  | p, Some t -> fprintf ppf "(%a : %a)" pp_pattern p pp_ty t
+  | p, _ -> fprintf ppf "%a" pp_pattern p
 ;;
 
 let rec pp_expr ppf expr =
@@ -204,7 +204,7 @@ let rec pp_expr ppf expr =
       (fun ppf e ->
         if needs_parens e then fprintf ppf "(%a)" pp_expr e else pp_expr ppf e)
       e2
-  | Econstraint (e, t) -> Format.fprintf ppf "(%a : %a)" pp_expr e pp_ty t
+  | Econstraint (e, t) -> fprintf ppf "(%a : %a)" pp_expr e pp_ty t
 (* | Eprint_int e -> fprintf ppf "print_int %a" pp_expr e *)
 
 and precedence = function
@@ -213,9 +213,9 @@ and precedence = function
 
 and pp_value_binding ppf = function
   | Evalue_binding ((pattern, None), e) ->
-    Format.fprintf ppf "%a = %a" pp_pattern pattern pp_expr e
+    fprintf ppf "%a = %a" pp_pattern pattern pp_expr e
   | Evalue_binding ((pattern, Some ty), e) ->
-    Format.fprintf ppf "%a : %a = %a" pp_pattern pattern pp_ty ty pp_expr e
+    fprintf ppf "%a : %a = %a" pp_pattern pattern pp_ty ty pp_expr e
 ;;
 
 let pp_structure_item ppf (item : structure_item) =
