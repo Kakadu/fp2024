@@ -30,6 +30,7 @@ type value =
   (** Array of values, invariant: number of values matches the size *)
   | Value_func of func_value
   | Value_chan of chan_value
+  | Value_tuple of value list
   | Value_nil of nil
   (** Untyped [<nil>] value that is stored in [nil] predeclared identifier *)
 
@@ -72,6 +73,7 @@ type stack_frame =
   (** Storage for local variables, new [{}] block creates new environment *)
   ; deferred_funcs : stack_frame list
   ; closure_envs : closure_frame
+  ; returns : value option
   }
 
 type waiting_state =
@@ -138,6 +140,10 @@ module Monad : sig
   val run_goroutine : goroutine -> unit t
   val stop_running_goroutine : waiting_state -> unit t
   val read_running_id : int t
+
+  (* Global environment *)
+  val read_returns : value option t
+  val write_returns : value option -> unit t
 
   (* Chanels *)
 

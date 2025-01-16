@@ -16,6 +16,7 @@ let rec pp_value = function
   | Value_chan _ -> Format.asprintf "wtf chan"
   | Value_func _ -> Format.asprintf "wtf func"
   | Value_string s -> Format.asprintf "%s" s
+  | Value_tuple lst -> Format.asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
 ;;
 
 let rpf lst = List.map (fun (y, _) -> y) lst
@@ -36,7 +37,11 @@ let exec_stmt eval_stmt =
 let rec exec eval_stmt =
   exec_stmt eval_stmt
   >>= function
-  | Some _ -> exec eval_stmt *> return ()
+  | Some _ ->
+    read_returns
+    >>= (function
+     | None -> exec eval_stmt *> return ()
+     | Some _ -> return ())
   | None -> return ()
 ;;
 
@@ -54,8 +59,8 @@ let rec eval_expr = function
   | Expr_call (func, args) ->
     eval_func_call (func, args)
     >>= (function
-     | Some value -> return value (* тут может быть тапл *)
-     | None -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
+     | Some lst -> return lst (* тут может быть тапл *)
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
   | Expr_chan_receive ex -> eval_expr ex (*ДОДЕЛАТЬ*)
 
 and eval_func_call (func, args) =
@@ -65,18 +70,17 @@ and eval_func_call (func, args) =
   | Value_func (Func_builtin ftype) -> eval_builtin args ftype
   | Value_func (Func_initialized (is_closure, afc)) ->
     (* тут нужна проверка на замыкание *)
-    let* local_envs = read_local_envs >>= fun (hd, tl) -> return (List.cons hd tl) in
     create_args_map args (rpf afc.args)
     >>= fun map ->
     add_stack_frame
-      { local_envs =
-          { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
+      { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
       ; deferred_funcs = []
       ; closure_envs = Simple
+      ; returns = None
       }
     *> exec eval_stmt
-    *> delete_stack_frame
-    *> return None
+    *> read_returns
+    >>= fun x -> delete_stack_frame *> return x
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func_call")))
 
 and retrieve_arg_value = function
@@ -259,6 +263,10 @@ and eval_stmt = function
       | false -> return ()
     in
     add_env [] For *> eval_init fr.init *> rect rec_for *> return ()
+  | Stmt_return l_exp ->
+    (match l_exp with
+     | [ x ] -> eval_expr x >>= fun ret -> write_returns (Some ret)
+     | _ -> map eval_expr l_exp >>= fun lst -> write_returns (Some (Value_tuple lst)))
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 
 (*ДОДЕЛАТЬ*)
@@ -298,6 +306,7 @@ and eval_go (func, arg_exprs) =
       { local_envs = { exec_block = body; var_map; env_type = Default }, []
       ; deferred_funcs = []
       ; closure_envs = Simple
+      ; returns = None
       }
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
 ;;
@@ -329,6 +338,7 @@ let add_main_goroutine =
             { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
         ; deferred_funcs = []
         ; closure_envs = Simple
+        ; returns = None
         }
     | _ -> return ())
 ;;

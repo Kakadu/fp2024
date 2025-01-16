@@ -25,6 +25,7 @@ type value =
   | Value_array of int * value list
   | Value_func of func_value
   | Value_chan of chan_value
+  | Value_tuple of value list
   | Value_nil of nil
 
 and builtin =
@@ -63,6 +64,7 @@ type stack_frame =
   { local_envs : local_env * local_env list
   ; deferred_funcs : stack_frame list
   ; closure_envs : closure_frame
+  ; returns : value option
   }
 
 type waiting_state =
@@ -278,8 +280,9 @@ module Monad = struct
   let write_local_envs new_local_envs =
     read_stack_frame
     >>= function
-    | { deferred_funcs; closure_envs } ->
-      write_stack_frame { deferred_funcs; closure_envs; local_envs = new_local_envs }
+    | { deferred_funcs; closure_envs; returns } ->
+      write_stack_frame
+        { deferred_funcs; closure_envs; local_envs = new_local_envs; returns }
   ;;
 
   let add_env block env_type =
@@ -339,8 +342,9 @@ module Monad = struct
   let write_deferred new_deferred =
     read_stack_frame
     >>= function
-    | { local_envs; closure_envs } ->
-      write_stack_frame { local_envs; deferred_funcs = new_deferred; closure_envs }
+    | { local_envs; closure_envs; returns } ->
+      write_stack_frame
+        { local_envs; deferred_funcs = new_deferred; closure_envs; returns }
   ;;
 
   let add_deferred new_frame =
@@ -351,6 +355,22 @@ module Monad = struct
   let delete_deferred =
     let* deferred_funcs = read_deferred in
     write_deferred (List.tl deferred_funcs)
+  ;;
+
+  (*returns*)
+
+  let read_returns =
+    read_stack_frame
+    >>= function
+    | { returns } -> return returns
+  ;;
+
+  let write_returns new_returns =
+    read_stack_frame
+    >>= function
+    | { local_envs; deferred_funcs; closure_envs } ->
+      write_stack_frame
+        { local_envs; closure_envs; deferred_funcs; returns = new_returns }
   ;;
 
   (*closure_envs*)
@@ -364,8 +384,9 @@ module Monad = struct
   let write_closure_env new_closure_env =
     read_stack_frame
     >>= function
-    | { local_envs; deferred_funcs } ->
-      write_stack_frame { local_envs; closure_envs = new_closure_env; deferred_funcs }
+    | { local_envs; deferred_funcs; returns } ->
+      write_stack_frame
+        { local_envs; closure_envs = new_closure_env; deferred_funcs; returns }
   ;;
 
   let save_closure_id ident value =

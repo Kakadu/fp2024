@@ -278,11 +278,12 @@ let%expect_test "ok: nested if decl" =
       foo(x + 1)
       x = 1
       print(x)
+      print(x)
     }
     |};
   [%expect {|
     Correct evaluating
-    1111 |}]
+    11111 |}]
 ;;
 
 let%expect_test "ok: nested if decl" =
@@ -307,5 +308,68 @@ let%expect_test "ok: nested if decl" =
     |};
   [%expect {|
     Correct evaluating
-    1111 |}]
+
+    1
+    2
+    3
+    0
+    1
+    2
+    loop |}]
+;;
+
+let%expect_test "ok: noreturn check" =
+  pp
+    {|
+    var x = "kill "
+    func foo(){
+      return 
+      x = "XXXXXXERRROR"
+    }
+    func main() {
+      var y = "OCaml"
+      foo()
+      print(x, y) 
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCaml |}]
+;;
+
+let%expect_test "ok: simple return check" =
+  pp
+    {|
+    var x = "kill "
+    func foo() string {
+      return "CORRECT"
+    }
+    func main() {
+      var y = "OCaml"
+      print(x, y, foo()) 
+      print(x, y, foo()) 
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCamlCORRECTkill OCamlCORRECT |}]
+;;
+
+let%expect_test "ok: factorial check" =
+  pp
+    {|
+    func fac(n int) int {
+        if n == 1 {
+            return 1
+        } else {
+            return n * fac(n - 1)
+        }
+    }
+    func main() {
+      print(fac(2))
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    kill OCamlCORRECTkill OCamlCORRECT |}]
 ;;
