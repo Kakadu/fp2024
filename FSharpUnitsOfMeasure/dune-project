@@ -10,15 +10,15 @@
 
 (authors
  "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
- "Andrew Strelnikov <anbrew200212@gmail.com>")
+ "Alexandr Kudrya <alexandr.kudrya@gmail.com>")
 
 (maintainers
  "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
- "Andrew Strelnikov <anbrew200212@gmail.com>")
+ "Alexandr Kudrya <alexandr.kudrya@gmail.com>")
 
-(bug_reports "https://github.com/DronShock/FSharpUnitsOfMeasure/issues")
+(bug_reports "https://github.com/spisladqo/FSharpUnitsOfMeasure/issues")
 
-(homepage "https://github.com/DronShock/FSharpUnitsOfMeasure")
+(homepage "https://github.com/spisladqo/FSharpUnitsOfMeasure")
 
 (package
  (name FSharpUnitsOfMeasure)

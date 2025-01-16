@@ -5,15 +5,15 @@ synopsis: "An interpreter for F# with support of units of measure"
 description: "An interpreter for F# with support of units of measure"
 maintainer: [
   "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
-  "Andrew Strelnikov <anbrew200212@gmail.com>"
+  "Alexandr Kudrya <alexandr.kudrya@gmail.com>"
 ]
 authors: [
   "Daniel Vlasenco <vlasenko.daniil26@gmail.com>"
-  "Andrew Strelnikov <anbrew200212@gmail.com>"
+  "Alexandr Kudrya <alexandr.kudrya@gmail.com>"
 ]
 license: "MIT"
-homepage: "https://github.com/DronShock/FSharpUnitsOfMeasure"
-bug-reports: "https://github.com/DronShock/FSharpUnitsOfMeasure/issues"
+homepage: "https://github.com/spisladqo/FSharpUnitsOfMeasure"
+bug-reports: "https://github.com/spisladqo/FSharpUnitsOfMeasure/issues"
 depends: [
   "dune" {>= "3.7"}
   "angstrom"

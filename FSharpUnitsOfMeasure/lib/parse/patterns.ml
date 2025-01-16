@@ -1,4 +1,4 @@
-(** Copyright 2024, Vlasenco Daniel and Strelnikov Andrew *)
+(** Copyright 2024, Vlasenco Daniel and Kudrya Alexandr *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -55,7 +55,6 @@ let parse_pat =
         ; parse_pat_const
         ; parse_pat_ident_or_op
         ; parse_pat_wild
-        ;
         ]
     in
     let pat = parse_pat_tuple pat <|> pat in

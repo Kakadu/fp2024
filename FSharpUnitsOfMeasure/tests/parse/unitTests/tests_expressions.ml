@@ -1,4 +1,4 @@
-(** Copyright 2024, Vlasenco Daniel and Strelnikov Andrew *)
+(** Copyright 2024, Vlasenco Daniel and Kudrya Alexandr *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -219,29 +219,25 @@ let%expect_test "parse application (+.) a b" =
 
 let%expect_test "parse negative int" =
   pp pp_expression parse_expr {| -1 |};
-  [%expect
-    {|
+  [%expect {|
     (Expr_const (Const_int -1)) |}]
 ;;
 
 let%expect_test "parse negative float" =
   pp pp_expression parse_expr {| -1.0 |};
-  [%expect
-    {|
+  [%expect {|
     (Expr_const (Const_float -1.)) |}]
 ;;
 
 let%expect_test "parse negative ident" =
   pp pp_expression parse_expr {| -a |};
-  [%expect
-    {|
+  [%expect {|
     (Expr_apply ((Expr_ident_or_op "-"), (Expr_ident_or_op "a"))) |}]
 ;;
 
 let%expect_test "parse unary minuses w/o parentheses should fail" =
   pp pp_expression parse_expr {| ---a |};
-  [%expect
-    {|
+  [%expect {|
     : no more choices |}]
 ;;
 
@@ -254,7 +250,6 @@ let%expect_test "parse unary minuses with parentheses" =
           (Expr_apply ((Expr_ident_or_op "-"), (Expr_ident_or_op "a")))))
        )) |}]
 ;;
-
 
 (************************** Binary operations **************************)
 
@@ -549,7 +544,8 @@ let%expect_test "parse typed expression" =
 
 let%expect_test "parse doubly typed expression" =
   pp pp_expression parse_expr {| ((a : int) : int) |};
-  [%expect {|
+  [%expect
+    {|
     (Expr_typed ((Expr_typed ((Expr_ident_or_op "a"), (Type_ident "int"))),
        (Type_ident "int")))  |}]
 ;;
