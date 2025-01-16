@@ -137,6 +137,8 @@ module Monad = struct
     | { running = None } -> fail (Runtime_error (DevOnly No_goroutine_running))
   ;;
 
+  let read_running_id = read_running_fail >>= fun { id } -> return id
+
   let write_running new_goroutine =
     read
     >>= function
@@ -157,8 +159,12 @@ module Monad = struct
       write { global_env; running; chanels; waiting = new_goroutines }
   ;;
 
-  let add_waiting state { stack } =
+  let add_waiting state goroutine =
     let* goroutines = read_waiting in
+    write_waiting (GoSet.add { state; goroutine } goroutines)
+  ;;
+
+  let create_goroutine stack_frame =
     let* id = read_waiting >>= fun set -> return (GoSet.cardinal set) in
     let* id =
       read_running
@@ -166,7 +172,7 @@ module Monad = struct
       | Some _ -> return (id + 2)
       | None -> return (id + 1)
     in
-    write_waiting (GoSet.add { state; goroutine = { stack; id } } goroutines)
+    add_waiting Ready { stack = stack_frame, []; id }
   ;;
 
   let run_goroutine goroutine =

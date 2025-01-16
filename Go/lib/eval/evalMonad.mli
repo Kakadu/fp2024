@@ -134,12 +134,10 @@ module Monad : sig
 
   (* Goroutines *)
   val read_waiting : GoSet.t t
-
-  (** Provided id for new goroutine is ignored and assigned automatically *)
-  val add_waiting : waiting_state -> goroutine -> unit t
-
+  val create_goroutine : stack_frame -> unit t
   val run_goroutine : goroutine -> unit t
   val stop_running_goroutine : waiting_state -> unit t
+  val read_running_id : int t
 
   (* Chanels *)
 

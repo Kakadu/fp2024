@@ -294,15 +294,10 @@ and eval_go (func, arg_exprs) =
   | Value_func (Func_initialized (is_closure, { args; body })) ->
     (* TODO closure *)
     let* var_map = create_args_map arg_exprs (rpf args) in
-    add_waiting
-      Ready
-      { stack =
-          ( { local_envs = { exec_block = body; var_map; env_type = Default }, []
-            ; deferred_funcs = []
-            ; closure_envs = Simple
-            }
-          , [] )
-      ; id = 0 (* ignored *)
+    create_goroutine
+      { local_envs = { exec_block = body; var_map; env_type = Default }, []
+      ; deferred_funcs = []
+      ; closure_envs = Simple
       }
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
 ;;
@@ -329,16 +324,11 @@ let save_global_vars_and_funcs =
 let add_main_goroutine =
   iter (function
     | Decl_func ("main", { body }) ->
-      add_waiting
-        Ready
-        { stack =
-            ( { local_envs =
-                  { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
-              ; deferred_funcs = []
-              ; closure_envs = Simple
-              }
-            , [] )
-        ; id = 1
+      create_goroutine
+        { local_envs =
+            { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
+        ; deferred_funcs = []
+        ; closure_envs = Simple
         }
     | _ -> return ())
 ;;
