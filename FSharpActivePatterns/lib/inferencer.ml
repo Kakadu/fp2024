@@ -319,21 +319,21 @@ end = struct
   ;;
 end
 
-module TypeEnvironment : sig
+module TypeEnv : sig
   type t
 
   val free_vars : t -> VarSet.t
   val extend : t -> string -> scheme -> t
   val extend_many : t -> (string * scheme) list -> t
   val apply : Substitution.t -> t -> t
-  val empty : t
+  val default : t
   val find : t -> string -> scheme option
   val find_exn : t -> string -> scheme
   val find_typ_exn : t -> string -> typ
   val find_typ : t -> string -> typ option
   val remove : t -> string -> t
   val remove_many : t -> string list -> t
-  val pp_without_freevars : formatter -> t -> unit
+  val iteri : t -> f:(name:string -> typ:typ -> unit) -> unit
   (* val pp : formatter -> t -> unit *)
 end = struct
   open Base
@@ -351,7 +351,13 @@ end = struct
 
   let remove = Map.remove
   let remove_many t keys = List.fold ~init:t keys ~f:remove
-  let empty = Map.empty (module String)
+
+  let default =
+    Map.set
+      (Map.empty (module String))
+      ~key:"print_int"
+      ~data:(Scheme (VarSet.empty, Arrow (int_typ, unit_typ)))
+  ;;
 
   (* apply given substitution to all elements of environment *)
   let apply subst env = Map.map env ~f:(Scheme.apply subst)
@@ -373,9 +379,10 @@ end = struct
      Map.iteri t ~f:(fun ~key ~data -> fprintf fmt "%s : %a" key Scheme.pp data)
      ;; *)
 
-  let pp_without_freevars fmt t =
-    Map.iteri t ~f:(fun ~key ~data ->
-      fprintf fmt "%s : %a\n" key pp_typ (Scheme.typ data))
+  let iteri env ~f =
+    Map.iteri env ~f:(fun ~key ~data ->
+      match data with
+      | Scheme (_, typ) -> f ~name:key ~typ)
   ;;
 
   (* collect all free vars from environment *)
@@ -409,7 +416,7 @@ let instantiate : scheme -> typ R.t =
 (* take free vars of type t and environment, put difference between them
    in S constructor so all vars are context independent *)
 let generalize env typ =
-  let free = VarSet.diff (Type.free_vars typ) (TypeEnvironment.free_vars env) in
+  let free = VarSet.diff (Type.free_vars typ) (TypeEnv.free_vars env) in
   Scheme (free, typ)
 ;;
 
@@ -432,9 +439,9 @@ let rec infer_pattern env ~shadow = function
     let scheme = Scheme (VarSet.empty, fresh) in
     let env, typ =
       if shadow
-      then TypeEnvironment.extend env name scheme, fresh
+      then TypeEnv.extend env name scheme, fresh
       else (
-        let typ = TypeEnvironment.find_typ env name in
+        let typ = TypeEnv.find_typ env name in
         env, Option.value typ ~default:fresh)
     in
     return (env, typ)
@@ -451,13 +458,13 @@ let rec infer_pattern env ~shadow = function
     let* env, typ1 = infer_pattern env ~shadow hd in
     let* env, typ2 = infer_pattern env ~shadow (PList tl) in
     let* subst = Substitution.unify typ2 (Type_list typ1) in
-    let env = TypeEnvironment.apply subst env in
+    let env = TypeEnv.apply subst env in
     return (env, Substitution.apply subst typ2)
   | PCons (hd, tl) ->
     let* env, typ1 = infer_pattern env ~shadow hd in
     let* env, typ2 = infer_pattern env ~shadow tl in
     let* subst = Substitution.unify typ2 (Type_list typ1) in
-    let env = TypeEnvironment.apply subst env in
+    let env = TypeEnv.apply subst env in
     return (env, Substitution.apply subst typ2)
   | PTuple (fst, snd, rest) ->
     let* env, typ1 = infer_pattern env ~shadow fst in
@@ -475,7 +482,7 @@ let rec infer_pattern env ~shadow = function
   | PConstraint (p, t) ->
     let* env, inferred_typ = infer_pattern env ~shadow p in
     let* subst = unify t inferred_typ in
-    return (TypeEnvironment.apply subst env, Substitution.apply subst t)
+    return (TypeEnv.apply subst env, Substitution.apply subst t)
 ;;
 
 let infer_patterns env ~shadow patterns =
@@ -491,16 +498,16 @@ let infer_patterns env ~shadow patterns =
 let infer_match_pattern env ~shadow pattern match_type =
   let* env, pat_typ = infer_pattern env ~shadow pattern in
   let* subst = unify pat_typ match_type in
-  let env = TypeEnvironment.apply subst env in
+  let env = TypeEnv.apply subst env in
   let* pat_names = extract_names_from_pattern pattern >>| elements in
   let generalized_schemes =
     List.map pat_names ~f:(fun name ->
-      let typ = TypeEnvironment.find_typ_exn env name in
-      let env = TypeEnvironment.remove env name in
+      let typ = TypeEnv.find_typ_exn env name in
+      let env = TypeEnv.remove env name in
       let generalized_typ = generalize env typ in
       name, generalized_typ)
   in
-  let env = TypeEnvironment.extend_many env generalized_schemes in
+  let env = TypeEnv.extend_many env generalized_schemes in
   return (env, subst)
 ;;
 
@@ -603,7 +610,7 @@ let rec infer_expr env = function
     let* t = infer_lt lt in
     return (Substitution.empty, t)
   | Variable (Ident varname) ->
-    (match TypeEnvironment.find env varname with
+    (match TypeEnv.find env varname with
      | Some s ->
        let* t = instantiate s in
        return (Substitution.empty, t)
@@ -620,7 +627,7 @@ let rec infer_expr env = function
     return (subst_result, Substitution.apply subst e_typ)
   | Bin_expr (op, e1, e2) ->
     let* subst1, typ1 = infer_expr env e1 in
-    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) e2 in
+    let* subst2, typ2 = infer_expr (TypeEnv.apply subst1 env) e2 in
     let* e1typ, e2typ, etyp =
       match op with
       | Logical_and | Logical_or -> return (bool_typ, bool_typ, bool_typ)
@@ -686,8 +693,8 @@ let rec infer_expr env = function
     return (subst_unify, Type_list typ_unified)
   | If_then_else (c, th, Some el) ->
     let* subst1, typ1 = infer_expr env c in
-    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) th in
-    let* subst3, typ3 = infer_expr (TypeEnvironment.apply subst2 env) el in
+    let* subst2, typ2 = infer_expr (TypeEnv.apply subst1 env) th in
+    let* subst3, typ3 = infer_expr (TypeEnv.apply subst2 env) el in
     let* subst4 = unify typ1 bool_typ in
     let* subst5 = unify typ2 typ3 in
     let* subst_result =
@@ -696,13 +703,13 @@ let rec infer_expr env = function
     return (subst_result, Substitution.apply subst5 typ2)
   | If_then_else (c, th, None) ->
     let* subst1, typ1 = infer_expr env c in
-    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) th in
+    let* subst2, typ2 = infer_expr (TypeEnv.apply subst1 env) th in
     let* subst3 = unify typ1 bool_typ in
     let* subst_result = Substitution.compose_all [ subst1; subst2; subst3 ] in
     return (subst_result, Substitution.apply subst2 typ2)
   | Apply (f, arg) ->
     let* subst1, typ1 = infer_expr env f in
-    let* subst2, typ2 = infer_expr (TypeEnvironment.apply subst1 env) arg in
+    let* subst2, typ2 = infer_expr (TypeEnv.apply subst1 env) arg in
     let typ1 = Substitution.apply subst2 typ1 in
     let* fresh_var = make_fresh_var in
     let* subst3 = unify typ1 (Arrow (typ2, fresh_var)) in
@@ -736,7 +743,7 @@ let rec infer_expr env = function
       ~with_arg:true
   | Match (e, (p1, e1), rest) ->
     let* subst_init, match_t = infer_expr env e in
-    let env = TypeEnvironment.apply subst_init env in
+    let env = TypeEnv.apply subst_init env in
     let* return_t = make_fresh_var in
     infer_matching_expr env ((p1, e1) :: rest) subst_init match_t return_t ~with_arg:false
   | EConstraint (e, t) ->
@@ -761,7 +768,7 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
           else infer_match_pattern env ~shadow:true pat match_t
         in
         let* subst12 = Substitution.compose subst1 subst2 in
-        let env = TypeEnvironment.apply subst12 env in
+        let env = TypeEnv.apply subst12 env in
         let* subst3, expr_typ = infer_expr env expr in
         let* subst4 = unify return_type expr_typ in
         let* subst = Substitution.compose_all [ subst12; subst3; subst4 ] in
@@ -779,8 +786,8 @@ and extend_env_with_let_binds env is_rec let_binds =
     ~f:(fun acc let_bind ->
       let* env, subst_acc = acc in
       let* subst, names_schemes_list = infer_let_bind env is_rec let_bind in
-      let env = TypeEnvironment.extend_many env names_schemes_list in
-      let env = TypeEnvironment.apply subst env in
+      let env = TypeEnv.extend_many env names_schemes_list in
+      let env = TypeEnv.apply subst env in
       let* subst_acc = Substitution.compose subst_acc subst in
       return (env, subst_acc))
 
@@ -797,11 +804,11 @@ and infer_let_bind env is_rec let_bind =
   in
   let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
   let* subst = Substitution.compose subst1 subst2 in
-  let env = TypeEnvironment.apply subst env in
+  let env = TypeEnv.apply subst env in
   let* names = extract_names_from_pattern name >>| elements in
   let* arg_names = extract_names_from_patterns args >>| elements in
-  let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
-  let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
+  let names_types = List.map names ~f:(fun n -> n, TypeEnv.find_typ_exn env n) in
+  let env = TypeEnv.remove_many env (List.concat [ names; arg_names ]) in
   let names_schemes_list =
     List.map names_types ~f:(fun (name, name_type) -> name, generalize env name_type)
   in
@@ -819,9 +826,12 @@ let infer_statement env = function
     let* env, _ = extend_env_with_let_binds env rec_flag let_binds in
     let* bind_names = extract_bind_names_from_let_binds let_binds >>| elements in
     let bind_names_with_types =
-      List.map bind_names ~f:(fun name ->
-        match TypeEnvironment.find_exn env name with
-        | Scheme (_, typ) -> name, typ)
+      List.fold
+        bind_names
+        ~init:(Map.empty (module String))
+        ~f:(fun map name ->
+          match TypeEnv.find_exn env name with
+          | Scheme (_, typ) -> Map.set map ~key:name ~data:typ)
     in
     return (env, bind_names_with_types)
 ;;
@@ -900,7 +910,7 @@ let infer_statement env = function
 let infer_construction env = function
   | Expr exp ->
     let* _, typ = infer_expr env exp in
-    return (env, [ "-", typ ])
+    return (env, Map.singleton (module String) "-" typ)
   | Statement s ->
     let* env, names_and_types = infer_statement env s in
     return (env, names_and_types)

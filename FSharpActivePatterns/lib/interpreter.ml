@@ -4,55 +4,27 @@
 
 open Ast
 
-type value =
-  | VUnit
-  | VInt of int
-  | VString of string
-  | VBool of bool
-  | VTuple of value * value * value list
-  | VList of value list
-  | VFun of string option * pattern * pattern list * expr * env
-  | VFunction of case * case list
-  | VOption of value option
-
-and env = (string, value, Base.String.comparator_witness) Base.Map.t
-
-let rec pp_value fmt =
-  let open Format in
-  function
-  | VUnit -> fprintf fmt "() "
-  | VInt i -> fprintf fmt "%d " i
-  | VString s -> fprintf fmt "%s " s
-  | VBool b -> fprintf fmt "%a " pp_print_bool b
-  | VTuple (fst, snd, rest) ->
-    fprintf
-      fmt
-      "(%a) "
-      (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt ", "))
-      (fst :: snd :: rest)
-  | VList l ->
-    fprintf
-      fmt
-      "[%a] "
-      (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt "; "))
-      l
-  | VFun (_, _, _, _, _) -> fprintf fmt "<fun> "
-  | VFunction (_, _) -> fprintf fmt "<fun> "
-  | VOption (Some v) -> fprintf fmt "Some %a " pp_value v
-  | VOption None -> fprintf fmt "None "
-;;
-
 module EvalError = struct
   type error =
     [ `Division_by_zero
     | `Match_failure
     | `Type_mismatch
-    | `Not_implemented
     | `Unbound_variable of string
-    | `Not_allowed_left_hand_side_let_rec
     | `Args_after_not_variable_let
     | `Bound_several_times
     ]
+
+  let pp_error fmt =
+    let open Format in
+    function
+    | `Division_by_zero -> fprintf fmt "Division by zero\n"
+    | `Match_failure -> fprintf fmt "Match failure\n"
+    | `Type_mismatch ->
+      fprintf fmt "Not possible scenario: type mismatch after type check\n"
+    | `Unbound_variable name -> fprintf fmt "Unbound variable : %s\n" name
+    | `Args_after_not_variable_let -> fprintf fmt "Args are allowed only after variable\n"
+    | `Bound_several_times -> fprintf fmt "Variable is bound several times\n"
+  ;;
 
   let bound_error : error = `Bound_several_times
 end
@@ -61,6 +33,7 @@ module R : sig
   type 'a t
   type error = EvalError.error
 
+  val pp_error : Format.formatter -> error -> unit
   val bound_error : error
   val return : 'a -> 'a t
   val fail : error -> 'a t
@@ -72,6 +45,7 @@ module R : sig
   end
 
   val ( <|> ) : 'a t -> 'a t -> 'a t
+  val run : 'a t -> ('a, error) Result.t
 end = struct
   open Base
   include Result
@@ -89,15 +63,71 @@ end = struct
     let ( let* ) = ( >>= )
     let ( let+ ) = ( >>| )
   end
+
+  let run c = c
 end
 
-module Env : sig
-  val find_err : env -> string -> value R.t
-  val extend : env -> string -> value -> env
-  val update_exn : env -> string -> f:(value -> value) -> env
-  val remove : env -> string -> env
+module ValueEnv : sig
+  type t
+
+  type value =
+    | VUnit
+    | VInt of int
+    | VString of string
+    | VBool of bool
+    | VTuple of value * value * value list
+    | VList of value list
+    | VFun of string option * pattern * pattern list * expr * t
+    | VFunction of case * case list
+    | VOption of value option
+
+  val find_err : t -> string -> value R.t
+  val extend : t -> string -> value -> t
+  val update_exn : t -> string -> f:(value -> value) -> t
+  val remove : t -> string -> t
+  val find_exn : t -> string -> value
+  val pp_value : Format.formatter -> value -> unit
+  val default : t
 end = struct
   open Base
+
+  type value =
+    | VUnit
+    | VInt of int
+    | VString of string
+    | VBool of bool
+    | VTuple of value * value * value list
+    | VList of value list
+    | VFun of string option * pattern * pattern list * expr * t
+    | VFunction of case * case list
+    | VOption of value option
+
+  and t = (string, value, Base.String.comparator_witness) Base.Map.t
+
+  let rec pp_value fmt =
+    let open Format in
+    function
+    | VUnit -> fprintf fmt "() "
+    | VInt i -> fprintf fmt "%d " i
+    | VString s -> fprintf fmt "%s " s
+    | VBool b -> fprintf fmt "%a " pp_print_bool b
+    | VTuple (fst, snd, rest) ->
+      fprintf
+        fmt
+        "(%a) "
+        (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt ", "))
+        (fst :: snd :: rest)
+    | VList l ->
+      fprintf
+        fmt
+        "[%a] "
+        (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt "; "))
+        l
+    | VFun (_, _, _, _, _) -> fprintf fmt "<fun> "
+    | VFunction (_, _) -> fprintf fmt "<fun> "
+    | VOption (Some v) -> fprintf fmt "Some %a " pp_value v
+    | VOption None -> fprintf fmt "None "
+  ;;
 
   let extend mp key data = Map.update mp key ~f:(function _ -> data)
 
@@ -116,11 +146,14 @@ end = struct
       let x = fail (`Unbound_variable name) in
       x
   ;;
+
+  let default = Map.empty (module String)
+  let find_exn = Map.find_exn
 end
 
 open R
 open R.Syntax
-open Env
+open ValueEnv
 module ExtractIdents = ExtractIdents.Make (R)
 open ExtractIdents
 
@@ -146,7 +179,7 @@ let rec match_pattern env =
   | PConst (Bool_lt p), VBool v when p = v -> return env
   | PConst (String_lt p), VString v when p = v -> return env
   | PConst Unit_lt, VUnit -> return env
-  | PVar (Ident name), v -> return (Env.extend env name v)
+  | PVar (Ident name), v -> return (ValueEnv.extend env name v)
   | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
   | POption None, VOption None -> return env
   | PConstraint (p, _), v -> match_pattern env (p, v)
@@ -247,7 +280,7 @@ let rec eval_expr env = function
        let* env = match_pattern env (arg, applying_arg_value) in
        let env =
          match name with
-         | Some name -> Env.extend env name f_value
+         | Some name -> ValueEnv.extend env name f_value
          | None -> env
        in
        (match args with
@@ -327,7 +360,7 @@ and extend_env_with_let_binds env rec_flag let_binds =
       Base.List.fold
         ~init:env
         ~f:(fun env name ->
-          Env.update_exn env name ~f:(function
+          ValueEnv.update_exn env name ~f:(function
             | VFun (n, arg, args, body, _) -> VFun (n, arg, args, body, env)
             | other -> other))
         names
@@ -336,7 +369,60 @@ and extend_env_with_let_binds env rec_flag let_binds =
   return env
 ;;
 
+let eval_statement env =
+  let open Base in
+  function
+  | Let (rec_flag, let_bind, let_binds) ->
+    let let_binds = let_bind :: let_binds in
+    let* env = extend_env_with_let_binds env rec_flag let_binds in
+    let* bind_names = extract_bind_names_from_let_binds let_binds >>| elements in
+    let bind_names_with_values =
+      List.fold
+        bind_names
+        ~init:(Map.empty (module String))
+        ~f:(fun map name ->
+          let value = ValueEnv.find_exn env name in
+          Map.set map ~key:name ~data:value)
+    in
+    return (env, bind_names_with_values)
+;;
+
 let eval_construction env = function
-  | Expr e -> eval_expr env e
-  | Statement _ -> fail `Not_implemented
+  | Expr e ->
+    let* value = eval_expr env e in
+    return (env, Base.Map.singleton (module Base.String) "-" value)
+  | Statement s -> eval_statement env s
+;;
+
+let eval env c = run (eval_construction env c)
+
+type global_error =
+  [ error
+  | Inferencer.error
+  ]
+
+let pp_global_error fmt (e : global_error) =
+  match e with
+  | #error as e -> pp_error fmt e
+  | #Inferencer.error as e -> Inferencer.pp_error fmt e
+;;
+
+let run_interpreter type_env value_env state c =
+  let open Base in
+  let new_state, infer_result = Inferencer.infer c type_env state in
+  match infer_result with
+  | Error (#Inferencer.error as type_err) -> new_state, Result.fail type_err
+  | Ok (new_type_env, names_and_types) ->
+    (match eval value_env c with
+     | Error (#error as eval_err) -> new_state, Result.fail eval_err
+     | Ok (new_value_env, names_and_values) ->
+       let names_with_types_and_values =
+         Map.fold
+           names_and_types
+           ~init:(Map.empty (module String))
+           ~f:(fun ~key ~data map ->
+             let value = Map.find_exn names_and_values key in
+             Map.set map ~key ~data:(data, value))
+       in
+       new_state, Result.return (new_type_env, new_value_env, names_with_types_and_values))
 ;;

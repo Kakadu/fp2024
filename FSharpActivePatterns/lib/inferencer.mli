@@ -6,13 +6,13 @@ open Ast
 open TypedTree
 open Format
 
-module TypeEnvironment : sig
+module TypeEnv : sig
   type t
 
-  val empty : t
+  val default : t
   val extend : t -> string -> scheme -> t
   val remove : t -> string -> t
-  val pp_without_freevars : formatter -> t -> unit
+  val iteri : t -> f:(name:string -> typ:typ -> unit) -> unit
 end
 
 type error =
@@ -29,6 +29,9 @@ val pp_error : formatter -> error -> unit
 
 val infer
   :  construction
-  -> TypeEnvironment.t
+  -> TypeEnv.t
   -> int
-  -> int * (TypeEnvironment.t * (string * typ) list, error) result
+  -> int
+     * ( TypeEnv.t * (string, typ, Base.String.comparator_witness) Base.Map.t
+         , error )
+         result

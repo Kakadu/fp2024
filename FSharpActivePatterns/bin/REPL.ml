@@ -5,9 +5,9 @@
 open FSharpActivePatterns.AstPrinter
 open FSharpActivePatterns.Parser
 open FSharpActivePatterns.Inferencer
-open FSharpActivePatterns.TypedTree
 open FSharpActivePatterns.TypesPp
 open FSharpActivePatterns.Ast
+open FSharpActivePatterns.Interpreter
 open Stdlib
 
 type input =
@@ -92,49 +92,59 @@ let run_repl dump_parsetree input_file =
     | None -> None
     | Some n -> Some (open_in n)
   in
-  let rec run_repl_helper run env state =
+  let rec run_repl_helper run type_env value_env state =
     let open Format in
     match run ic with
     | Result (Error _) ->
       fprintf err_formatter "Parsing error\n";
-      run_repl_helper run env state
+      run_repl_helper run type_env value_env state
     | Empty ->
       fprintf std_formatter "\n";
       print_flush ();
-      run_repl_helper run env state
-    | End -> env
+      run_repl_helper run type_env value_env state
+    | End -> type_env, value_env
     | Result (Ok ast) ->
       (match dump_parsetree with
        | true ->
          print_construction std_formatter ast;
-         run_repl_helper run env state
+         run_repl_helper run type_env value_env state
        | false ->
-         let result = infer ast env state in
+         let result = run_interpreter type_env value_env state ast in
          (match result with
           | new_state, Error err ->
-            fprintf err_formatter "Type checking failed: %a\n" pp_error err;
+            fprintf err_formatter "Error occured: %a\n" pp_global_error err;
             print_flush ();
-            run_repl_helper run env new_state
-          | new_state, Ok (env, names_and_types) ->
+            run_repl_helper run type_env value_env new_state
+          | new_state, Ok (new_type_env, new_value_env, evaled_names) ->
             (match ic with
              | None ->
-               List.iter
-                 (fun (n, t) -> fprintf std_formatter "%s : %a\n" n pp_typ t)
-                 names_and_types;
+               Base.Map.iteri
+                 ~f:(fun ~key ~data ->
+                   let t, v = data in
+                   fprintf
+                     std_formatter
+                     "val %s : %a = %a\n"
+                     key
+                     pp_typ
+                     t
+                     ValueEnv.pp_value
+                     v)
+                 evaled_names;
                print_flush ();
-               run_repl_helper run env new_state
-             | Some _ -> run_repl_helper run env new_state)))
+               run_repl_helper run new_type_env new_value_env new_state
+             | Some _ -> run_repl_helper run new_type_env new_value_env new_state)))
   in
-  let env =
-    TypeEnvironment.extend
-      TypeEnvironment.empty
-      "print_int"
-      (Scheme (VarSet.empty, Arrow (int_typ, unit_typ)))
-  in
-  let env = run_repl_helper run_single env 0 in
-  let env = TypeEnvironment.remove env "print_int" in
+  let type_env = TypeEnv.default in
+  let value_env = ValueEnv.default in
+  let type_env, value_env = run_repl_helper run_single type_env value_env 0 in
+  let type_env = TypeEnv.remove type_env "print_int" in
+  let value_env = ValueEnv.remove value_env "print_int" in
   match ic with
-  | Some _ -> TypeEnvironment.pp_without_freevars Format.std_formatter env
+  | Some _ ->
+    TypeEnv.iteri type_env ~f:(fun ~name ~typ ->
+      let open Format in
+      let value = ValueEnv.find_exn value_env name in
+      fprintf std_formatter "val %s : %a = %a\n" name pp_typ typ ValueEnv.pp_value value)
   | None -> ()
 ;;
 
