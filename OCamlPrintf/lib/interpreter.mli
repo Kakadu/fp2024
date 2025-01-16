@@ -3,10 +3,11 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type error =
-  [ `Division_by_zero
+  [ `Type_error
+  | `Division_by_zero
+  | `Match_failure
   | `No_variable of string
   | `Not_implemented
-  | `Type_error
   ]
 
 val pp_error : Format.formatter -> error -> unit
@@ -15,9 +16,10 @@ type value =
   | Val_integer of int
   | Val_char of char
   | Val_string of string
-  | Val_tuple of value list
-  | Val_construct of string * value option
   | Val_fun of string option * Ast.pattern list * Ast.Expression.t * env
+  | Val_function of Ast.Expression.t Ast.case list * env
+  | Val_tuple of value * value * value list
+  | Val_construct of string * value option
 
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 

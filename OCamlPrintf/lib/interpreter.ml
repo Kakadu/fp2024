@@ -5,15 +5,17 @@
 open Ast
 
 type error =
-  [ `Not_implemented
-  | `Type_error
+  [ `Type_error
   | `Division_by_zero
+  | `Match_failure
   | `No_variable of string
+  | `Not_implemented
   ]
 
 let pp_error ppf : error -> _ = function
   | `Type_error -> Format.fprintf ppf "Type error"
   | `Division_by_zero -> Format.fprintf ppf "Division by zero"
+  | `Match_failure -> Format.fprintf ppf "Matching failure"
   | `No_variable id -> Format.fprintf ppf "Undefined variable '%s'" id
   | `Not_implemented -> Format.fprintf ppf "In progress..."
 ;;
@@ -22,9 +24,10 @@ type value =
   | Val_integer of int
   | Val_char of char
   | Val_string of string
-  | Val_tuple of value list
-  | Val_construct of ident * value option
   | Val_fun of string option * pattern list * Expression.t * env
+  | Val_function of Expression.t case list * env
+  | Val_tuple of value * value * value list
+  | Val_construct of ident * value option
 
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 
@@ -34,16 +37,28 @@ let rec pp_value ppf =
   | Val_integer int -> fprintf ppf "%i" int
   | Val_char char -> fprintf ppf "'%c'" char
   | Val_string str -> fprintf ppf "%S" str
-  | Val_tuple val_list ->
+  | Val_tuple (fst_val, snd_val, val_list) ->
     fprintf
       ppf
       "(%a)"
       (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
-      val_list
+      (fst_val :: snd_val :: val_list)
   | Val_fun _ -> fprintf ppf "<fun>"
+  | Val_function _ -> fprintf ppf "<function>"
+  | Val_construct ("::", Some (Val_tuple (head, tail, []))) ->
+    fprintf ppf "@[<hv>[ %a" pp_value head;
+    let rec pp_tail = function
+      | Val_construct (_, None) -> fprintf ppf "@ ]@]"
+      | Val_construct (_, Some (Val_tuple (next_head, next_tail, []))) ->
+        fprintf ppf "@,; %a" pp_value next_head;
+        pp_tail next_tail
+      | Val_construct (_, Some _) -> ()
+      | value -> fprintf ppf ";@ %a@ ]@]" pp_value value
+    in
+    pp_tail tail
   | Val_construct (tag, None) -> fprintf ppf "%s" tag
   | Val_construct ("Some", Some value) -> fprintf ppf "Some %a" pp_value value
-  | _ -> fprintf ppf "<construct>"
+  | Val_construct _ -> ()
 ;;
 
 module Res = struct
@@ -86,13 +101,16 @@ module Inter = struct
   open Res
   open EvalEnv
 
-  let eval_arith op val1 val2 = return (Val_integer (op val1 val2))
-  let eval_eq op val1 val2 = return (Val_construct (Bool.to_string (op val1 val2), None))
+  let eval_arith opr val1 val2 = return (Val_integer (opr val1 val2))
 
-  let eval_bool op val1 val2 =
+  let eval_eq opr val1 val2 =
+    return (Val_construct (Bool.to_string (opr val1 val2), None))
+  ;;
+
+  let eval_bool opr val1 val2 =
     return
       (Val_construct
-         (Bool.to_string (op (bool_of_string val1) (bool_of_string val2)), None))
+         (Bool.to_string (opr (bool_of_string val1) (bool_of_string val2)), None))
   ;;
 
   let eval_bin_op = function
@@ -114,14 +132,48 @@ module Inter = struct
     | _ -> fail `Type_error
   ;;
 
+  let rec match_pattern env = function
+    | Pat_any, _ -> Some env
+    | Pat_var name, value -> Some (extend env name value)
+    | Pat_constant (Const_integer pat), Val_integer value when pat = value -> Some env
+    | Pat_constant (Const_char pat), Val_char value when pat = value -> Some env
+    | Pat_constant (Const_string pat), Val_string value when pat = value -> Some env
+    | Pat_tuple (fst_pat, snd_pat, pat_list), Val_tuple (fst_val, snd_val, val_list) ->
+      let env =
+        Base.List.fold2
+          ~f:(fun env pat value ->
+            match env with
+            | Some env -> match_pattern env (pat, value)
+            | None -> None)
+          ~init:(Some env)
+          (fst_pat :: snd_pat :: pat_list)
+          (fst_val :: snd_val :: val_list)
+      in
+      (match env with
+       | Ok env -> env
+       | _ -> None)
+    | ( Pat_construct ("::", Some (Pat_tuple (head_pat, tail_pat, [])))
+      , Val_construct ("::", Some (Val_tuple (head_val, tail_val, []))) ) ->
+      let env = match_pattern env (head_pat, head_val) in
+      (match env with
+       | Some env -> match_pattern env (tail_pat, tail_val)
+       | None -> None)
+    | Pat_construct (id_pat, None), Val_construct (id_val, None) when id_pat = id_val ->
+      Some env
+    | Pat_construct ("Some", Some pat), Val_construct ("Some", Some value) ->
+      match_pattern env (pat, value)
+    | Pat_constraint (pat, _), value -> match_pattern env (pat, value)
+    | _ -> None
+  ;;
+
   let rec extract_names_from_pat id_list_acc val_list_acc = function
     | Pat_any, _ -> return (id_list_acc, val_list_acc)
     | Pat_var id, value -> return (id :: id_list_acc, value :: val_list_acc)
-    | Pat_tuple (fst, snd, pat_list), Val_tuple val_list ->
+    | Pat_tuple (fst_pat, snd_pat, pat_list), Val_tuple (fst_val, snd_val, val_list) ->
       (match
          Base.List.fold2
-           (fst :: snd :: pat_list)
-           val_list
+           (fst_pat :: snd_pat :: pat_list)
+           (fst_val :: snd_val :: val_list)
            ~init:(return (id_list_acc, val_list_acc))
            ~f:(fun acc pat value ->
              let* id_list, value_list = acc in
@@ -129,7 +181,17 @@ module Inter = struct
        with
        | Ok acc -> acc
        | _ -> fail `Type_error)
-    (* | Pat_construct ("::", Some exp), value -> *)
+    | Pat_construct ("[]", None), Val_construct ("[]", None) ->
+      return (id_list_acc, val_list_acc)
+    | ( Pat_construct ("::", Some (Pat_tuple (head_pat, tail_pat, [])))
+      , Val_construct ("::", Some (Val_tuple (head_val, tail_val, []))) ) ->
+      let* id_list, value_list =
+        extract_names_from_pat id_list_acc val_list_acc (head_pat, head_val)
+      in
+      let* id_list1, value_list1 =
+        extract_names_from_pat id_list value_list (tail_pat, tail_val)
+      in
+      return (id_list1, value_list1)
     | (Pat_construct ("Some", Some pat) | Pat_constraint (pat, _)), value ->
       extract_names_from_pat id_list_acc val_list_acc (pat, value)
     | _ -> fail `Type_error
@@ -145,11 +207,12 @@ module Inter = struct
     | Exp_let (Nonrecursive, value_binding, value_binding_list, exp) ->
       let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
+    | Exp_let (Recursive, value_binding, value_binding_list, exp) -> fail `Not_implemented
+    | Exp_fun (pat, pat_list, e) -> return (Val_fun (None, pat :: pat_list, e, env))
     | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
       let* value1 = eval_expression env exp1 in
       let* value2 = eval_expression env exp2 in
       eval_bin_op (opr, value1, value2)
-    | Exp_fun (pat, pat_list, e) -> return (Val_fun (None, pat :: pat_list, e, env))
     | Exp_apply (exp1, exp2) ->
       (match exp1 with
        | Exp_ident opr when is_negative_op opr ->
@@ -161,23 +224,40 @@ module Inter = struct
          let* fun_val = eval_expression env exp1 in
          let* arg_val = eval_expression env exp2 in
          fail `Not_implemented)
-    | Exp_tuple (fst, snd, rest_list) ->
-      let* values =
+    | Exp_function (case, case_list) -> return (Val_function (case :: case_list, env))
+    | Exp_match (exp, case, case_list) ->
+      let* match_value = eval_expression env exp in
+      let rec match_helper env value = function
+        | [] -> fail `Match_failure
+        | { left; right } :: tail ->
+          let env_temp = match_pattern env (left, value) in
+          (match env_temp with
+           | Some env -> eval_expression env right
+           | None -> match_helper env value tail)
+      in
+      match_helper env match_value (case :: case_list)
+    | Exp_tuple (fst_exp, snd_exp, exp_list) ->
+      let* fst_val = eval_expression env fst_exp in
+      let* snd_val = eval_expression env snd_exp in
+      let* val_list =
         Base.List.fold_right
           ~f:(fun exp acc ->
             let* acc = acc in
             let* value = eval_expression env exp in
             return (value :: acc))
           ~init:(return [])
-          (fst :: snd :: rest_list)
+          exp_list
       in
-      return (Val_tuple values)
-    | Exp_construct (id, None) when id = "true" || id = "false" ->
-      return (Val_construct (id, None))
-    | Exp_construct ("()", None) -> return (Val_construct ("()", None))
+      return (Val_tuple (fst_val, snd_val, val_list))
+    | Exp_construct ("::", Some (Exp_tuple (head, tail, []))) ->
+      let* val1 = eval_expression env head in
+      let* val2 = eval_expression env tail in
+      return (Val_construct ("::", Some (Val_tuple (val1, val2, []))))
+    | Exp_construct (id, None) -> return (Val_construct (id, None))
     | Exp_construct ("Some", Some pat) ->
       let* value = eval_expression env pat in
       return (Val_construct ("Some", Some value))
+    | Exp_construct _ -> fail `Type_error
     | Exp_ifthenelse (if_exp, then_exp, else_exp) ->
       let* if_value = eval_expression env if_exp in
       (match if_value with
@@ -188,10 +268,14 @@ module Inter = struct
            ~f:(eval_expression env)
            ~default:(return (Val_construct ("()", None)))
        | _ -> fail `Type_error)
-    | _ -> fail `Not_implemented
+    | Exp_sequence (exp1, exp2) ->
+      let* _ = eval_expression env exp1 in
+      let* value = eval_expression env exp2 in
+      return value
+    | Exp_constraint (exp, _) -> eval_expression env exp
 
-  and eval_value_binding_list env let_binds =
-    let* env, names, values =
+  and eval_value_binding_list env value_binding_list =
+    let* env, name_list, value_list =
       Base.List.fold_left
         ~f:(fun acc { pat; exp } ->
           let* env, names, values = acc in
@@ -209,7 +293,7 @@ module Inter = struct
             let* names, value_list = extract_names_from_pat names [] (pat, value) in
             return (env, names, value_list))
         ~init:(return (env, [], []))
-        let_binds
+        value_binding_list
     in
     let rec extend_many env names values =
       match names, values with
@@ -218,7 +302,7 @@ module Inter = struct
         let env = extend env name value in
         extend_many env rest_names rest_values
     in
-    extend_many env names values
+    extend_many env name_list value_list
   ;;
 
   let eval_structure_item env = function

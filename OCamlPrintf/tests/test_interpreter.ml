@@ -28,13 +28,16 @@ let%expect_test "eval simple let binding" =
   |}]
 ;;
 
-let%expect_test "eval tuple let binding" =
+let%expect_test "eval tuple and list let bindings" =
   run {|
-  let a, b = 1, (2, 3)
+  let a, b = 1, (2, 3);;
+  let [ c; d ] = 3 :: 4 :: []
   |};
   [%expect {|
   val a = 1
   val b = (2, 3)
+  val c = 3
+  val d = 4
   |}]
 ;;
 
@@ -57,5 +60,21 @@ let%expect_test "eval 'Struct_eval'" =
   |};
   [%expect {|
   - = 1
+  |}]
+;;
+
+let%expect_test "eval pattern-matching" =
+  run
+    {|
+  let f =
+    match [ 1; 2; 3 ] with
+    | a :: [] -> a
+    | a :: b :: [] -> a + b
+    | a :: b :: c :: [] -> a + b + c
+    | _ -> 0
+  ;;
+  |};
+  [%expect {|
+  val f = 6
   |}]
 ;;
