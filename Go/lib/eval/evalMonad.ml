@@ -69,15 +69,12 @@ type stack_frame =
 
 type waiting_state =
   | Ready
-  | Sending of
-      { chan_id : int
-      ; value : value
-      }
-  | Recieving of { chan_id : int }
+  | Sending of { chan_id : int }
+  | Receiving of { chan_id : int }
 
 type goroutine =
   { stack : stack_frame * stack_frame list
-  ; id : int
+  ; go_id : int
   }
 
 module WaitingGoroutine = struct
@@ -90,7 +87,17 @@ module WaitingGoroutine = struct
 end
 
 module GoSet = Set.Make (WaitingGoroutine)
-module ChanSet = Set.Make (Int)
+
+module Chan = struct
+  type t =
+    { chan_id : int
+    ; value : value option
+    }
+
+  let compare = compare
+end
+
+module ChanSet = Set.Make (Chan)
 
 type eval_state =
   { global_env : value MapIdent.t
@@ -139,7 +146,7 @@ module Monad = struct
     | { running = None } -> fail (Runtime_error (DevOnly No_goroutine_running))
   ;;
 
-  let read_running_id = read_running_fail >>= fun { id } -> return id
+  let read_running_id = read_running_fail >>= fun { go_id } -> return go_id
 
   let write_running new_goroutine =
     read
@@ -166,28 +173,53 @@ module Monad = struct
     write_waiting (GoSet.add { state; goroutine } goroutines)
   ;;
 
+  let delete_waiting { go_id } =
+    let* goroutines = read_waiting in
+    match
+      GoSet.find_first_opt
+        (function
+          | { goroutine = { go_id = id } } -> go_id = id)
+        goroutines
+    with
+    | Some waiting_goroutine -> write_waiting (GoSet.remove waiting_goroutine goroutines)
+    | _ -> return ()
+  ;;
+
+  let ready_waiting { go_id } =
+    let* goroutines = read_waiting in
+    match
+      GoSet.find_first_opt
+        (function
+          | { goroutine = { go_id = id } } -> id = go_id)
+        goroutines
+    with
+    | Some { goroutine } -> delete_waiting goroutine *> add_waiting Ready goroutine
+    | _ -> return ()
+  ;;
+
   let create_goroutine stack_frame =
-    let* id = read_waiting >>= fun set -> return (GoSet.cardinal set) in
-    let* id =
+    let* go_id = read_waiting >>= fun set -> return (GoSet.cardinal set) in
+    let* go_id =
       read_running
       >>= function
-      | Some _ -> return (id + 2)
-      | None -> return (id + 1)
+      | Some _ -> return (go_id + 2)
+      | None -> return (go_id + 1)
     in
-    add_waiting Ready { stack = stack_frame, []; id }
+    add_waiting Ready { stack = stack_frame, []; go_id }
   ;;
 
   let run_goroutine goroutine =
     read_running
     >>= function
-    | None -> write_running (Some goroutine)
+    | None -> delete_waiting goroutine *> write_running (Some goroutine)
     | Some _ -> fail (Runtime_error (DevOnly Two_goroutine_running))
   ;;
 
   let stop_running_goroutine waiting_state =
     read_running_fail
     >>= function
-    | goroutine -> write_running None *> add_waiting waiting_state goroutine
+    | goroutine ->
+      write_running None *> add_waiting waiting_state goroutine *> return goroutine
   ;;
 
   (* chanels *)
@@ -210,24 +242,75 @@ module Monad = struct
       fail (Runtime_error (Deadlock "sending to or receiving from uninitialized chanel"))
     | Chan_initialized id ->
       let* chanels, _ = read_chanels in
-      (match ChanSet.find_opt id chanels with
+      (match
+         ChanSet.find_first_opt
+           (function
+             | { chan_id } -> chan_id = id)
+           chanels
+       with
        | None ->
          fail (Runtime_error (Deadlock "sending to or receiving from closed chanel"))
-       | Some id -> return id)
+       | Some { chan_id } -> return chan_id)
   ;;
 
   let create_chanel =
     let* chanels, id = read_chanels in
-    write_chanels (ChanSet.add id chanels, id + 1) *> return id
+    write_chanels (ChanSet.add { chan_id = id; value = None } chanels, id + 1)
+    *> return id
   ;;
 
   let close_chanel = function
     | Chan_uninitialized Nil -> fail (Runtime_error Close_of_nil_chan)
     | Chan_initialized id ->
       let* chanels, next_id = read_chanels in
-      (match ChanSet.find_opt id chanels with
+      (match
+         ChanSet.find_first_opt
+           (function
+             | { chan_id } -> chan_id = id)
+           chanels
+       with
        | None -> fail (Runtime_error Close_of_closed_chan)
-       | Some _ -> write_chanels (ChanSet.remove id chanels, next_id))
+       | Some chan -> write_chanels (ChanSet.remove chan chanels, next_id))
+  ;;
+
+  let push_chan_value id value =
+    let* chanels, next_id = read_chanels in
+    match
+      ChanSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        chanels
+    with
+    | Some { chan_id; value = None } ->
+      write_chanels
+        ( ChanSet.add
+            { chan_id; value = Some value }
+            (ChanSet.remove { chan_id; value = None } chanels)
+        , next_id )
+      *> return (Some value)
+    | Some { value = Some _ } -> return None
+    | _ -> fail (Runtime_error (Deadlock "trying to push value to a closed chanel"))
+  ;;
+
+  let pop_chan_value id =
+    let* chanels, next_id = read_chanels in
+    match
+      ChanSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        chanels
+    with
+    | Some { chan_id; value = Some v } ->
+      write_chanels
+        ( ChanSet.add
+            { chan_id; value = None }
+            (ChanSet.remove { chan_id; value = Some v } chanels)
+        , next_id )
+      *> return v
+    | _ ->
+      fail
+        (Runtime_error
+           (Deadlock "trying to read value from closed chanel (or there is no value)"))
   ;;
 
   (* single goroutine's stack *)
@@ -241,7 +324,7 @@ module Monad = struct
   let write_stack new_stack =
     read_running_fail
     >>= function
-    | { id } -> write_running (Some { id; stack = new_stack })
+    | { go_id } -> write_running (Some { go_id; stack = new_stack })
   ;;
 
   let read_stack_frame =

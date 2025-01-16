@@ -79,17 +79,15 @@ type stack_frame =
 type waiting_state =
   | Ready
   (** State of the goroutine that doesn't try to receive from or send to a chanel, but another goroutine is running *)
-  | Sending of
-      { chan_id : int
-      ; value : value
-      } (** State of goroutine that is trying to send values to a chanel *)
-  | Recieving of { chan_id : int }
+  | Sending of { chan_id : int }
+  (** State of goroutine that is trying to send value to a chanel *)
+  | Receiving of { chan_id : int }
   (** State of goroutine that is trying to receive from a chanel *)
 
 type goroutine =
   { stack : stack_frame * stack_frame list
   (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
-  ; id : int
+  ; go_id : int
   }
 
 module WaitingGoroutine : sig
@@ -102,7 +100,17 @@ module WaitingGoroutine : sig
 end
 
 module GoSet : Set.S with type elt = WaitingGoroutine.t
-module ChanSet : Set.S with type elt = int
+
+module Chan : sig
+  type t =
+    { chan_id : int
+    ; value : value option
+    }
+
+  val compare : t -> t -> int
+end
+
+module ChanSet : Set.S with type elt = Chan.t
 
 type eval_state =
   { global_env : value MapIdent.t
@@ -138,16 +146,24 @@ module Monad : sig
   val read_waiting : GoSet.t t
   val create_goroutine : stack_frame -> unit t
   val run_goroutine : goroutine -> unit t
-  val stop_running_goroutine : waiting_state -> unit t
+
+  (** Stops currently running goroutine with a given state. Returns the stopped goroutine *)
+  val stop_running_goroutine : waiting_state -> goroutine t
+
   val read_running_id : int t
+  val ready_waiting : goroutine -> unit t
 
   (* Global environment *)
   val read_returns : value option t
   val write_returns : value option -> unit t
 
   (* Chanels *)
-
   val find_chanel_fail : chan_value -> int t
+
+  (** Pushes value [v] to the chanel. Returns [Some v] if psuhed sucessfully, [None] if there is already a value *)
+  val push_chan_value : int -> value -> value option t
+
+  val pop_chan_value : int -> value t
 
   (** Creates new chanel and returns it's id *)
   val create_chanel : int t

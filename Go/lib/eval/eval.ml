@@ -27,6 +27,53 @@ let pp printer eval ast =
   | Result.Error _ -> print_endline ": some kind of error"
 ;;
 
+let run_ready_goroutines =
+  let rec runner waiting_goroutines =
+    match GoSet.find_first_opt (fun { state } -> state = Ready) waiting_goroutines with
+    | Some { goroutine } -> run_goroutine goroutine *> read_waiting >>= runner
+    | None -> return ()
+  in
+  read_waiting >>= runner
+;;
+
+let perform_chan_interaction id =
+  let* waiting_goroutines = read_waiting in
+  let* sending_goroutine =
+    match
+      GoSet.find_first_opt
+        (function
+          | { state = Sending { chan_id } } -> chan_id = id
+          | _ -> false)
+        waiting_goroutines
+    with
+    | Some { goroutine } -> return (Some goroutine)
+    | _ -> return None
+  in
+  let* receiving_goroutine =
+    match
+      GoSet.find_first_opt
+        (function
+          | { state = Receiving { chan_id } } -> chan_id = id
+          | _ -> false)
+        waiting_goroutines
+    with
+    | Some { goroutine } -> return (Some goroutine)
+    | _ -> return None
+  in
+  match sending_goroutine, receiving_goroutine with
+  (* | None, Some { go_id }, _ ->
+    fail
+      (Runtime_error (Deadlock ("goroutine " ^ string_of_int go_id ^ " [chan receive]")))
+  | Some { go_id }, None, _ ->
+    fail (Runtime_error (Deadlock ("goroutine " ^ string_of_int go_id ^ " [chan send]"))) *)
+  | Some sending_goroutine, Some receiving_goroutine ->
+    let* value = pop_chan_value id in
+    ready_waiting sending_goroutine
+    *> ready_waiting receiving_goroutine
+    *> return (Some value)
+  | _ -> return None (* fail (Runtime_error (Deadlock "impossible")) *)
+;;
+
 let exec_stmt eval_stmt =
   let* stmt = pop_next_statement in
   match stmt with
@@ -283,7 +330,13 @@ and eval_chan_send (ident, expr) =
   >>= function
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
-    stop_running_goroutine (Sending { chan_id; value })
+    push_chan_value chan_id value
+    *>
+    let* sending_goroutine = stop_running_goroutine (Sending { chan_id }) in
+    perform_chan_interaction chan_id
+    >>= (function
+     | Some _ -> run_goroutine sending_goroutine
+     | None -> run_ready_goroutines)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
 
 and eval_chan_receive expr =
@@ -291,7 +344,11 @@ and eval_chan_receive expr =
   >>= function
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
-    stop_running_goroutine (Recieving { chan_id })
+    let* receiving_goroutine = stop_running_goroutine (Receiving { chan_id }) in
+    perform_chan_interaction chan_id
+    >>= (function
+     | Some value -> return value *> run_goroutine receiving_goroutine
+     | None -> run_ready_goroutines)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
 
 and eval_go (func, arg_exprs) =
@@ -341,16 +398,6 @@ let add_main_goroutine =
         ; returns = None
         }
     | _ -> return ())
-;;
-
-(* runs all ready goroutines *)
-let run_ready_goroutines =
-  let* asleep_goroutines = read_waiting in
-  match GoSet.find_first_opt (fun { state } -> state = Ready) asleep_goroutines with
-  | Some { goroutine } ->
-    run_goroutine goroutine
-    (* Когда горутина остановится, она либо заснет, либо удалится, и там же должна запуститься другая Ready *)
-  | None -> return () (* мб если нет готовых горутин, делать что-то ещё *)
 ;;
 
 let run_eval file =
