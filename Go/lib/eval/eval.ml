@@ -170,13 +170,16 @@ and eval_lvalue = function
     fail (Runtime_error (Panic "Not supported lvalue array index"))
 
 and eval_init = function
-  | Init_assign asgn -> eval_stmt (Stmt_assign asgn)
-  | Init_call call -> eval_stmt (Stmt_call call)
-  | Init_decl decl -> eval_stmt (Stmt_short_var_decl decl)
-  | Init_decr decr -> eval_stmt (Stmt_decr decr)
-  | Init_incr incr -> eval_stmt (Stmt_incr incr)
-  | Init_receive recv -> eval_stmt (Stmt_chan_receive recv)
-  | Init_send snd -> eval_stmt (Stmt_chan_send snd)
+  | Some init ->
+    (match init with
+     | Init_assign asgn -> eval_stmt (Stmt_assign asgn)
+     | Init_call call -> eval_stmt (Stmt_call call)
+     | Init_decl decl -> eval_stmt (Stmt_short_var_decl decl)
+     | Init_decr decr -> eval_stmt (Stmt_decr decr)
+     | Init_incr incr -> eval_stmt (Stmt_incr incr)
+     | Init_receive recv -> eval_stmt (Stmt_chan_receive recv)
+     | Init_send snd -> eval_stmt (Stmt_chan_send snd))
+  | None -> return ()
 
 and eval_stmt = function
   | Stmt_call fcall -> eval_func_call fcall *> return ()
@@ -210,27 +213,52 @@ and eval_stmt = function
     eval_expr if'.cond
     >>= (function
      | Value_bool true ->
-       add_env if'.if_body Default
-       *> (match if'.init with
-         | Some init -> eval_init init
-         | None -> return ())
-       *> exec eval_stmt
-       *> delete_env
+       add_env if'.if_body Default *> eval_init if'.init *> exec eval_stmt *> delete_env
      | Value_bool false ->
        (match if'.else_body with
         | Some (Else_block body) ->
-          add_env body Default
-          *> (match if'.init with
-            | Some init -> eval_init init
-            | None -> return ())
-          *> exec eval_stmt
-          *> delete_env
+          add_env body Default *> eval_init if'.init *> exec eval_stmt *> delete_env
         | Some (Else_if if') -> eval_stmt (Stmt_if if')
         | None -> return ())
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
   | Stmt_go call -> eval_go call
   | Stmt_block body -> add_env body Default *> exec eval_stmt *> delete_env
-  | Stmt_break -> exec eval_stmt
+  | Stmt_break -> exec eval_stmt *> delete_env
+  | Stmt_continue -> exec eval_stmt
+  | Stmt_for fr ->
+    let rec_for =
+      return fr.cond
+      >>= function
+      | Some ex ->
+        eval_expr ex
+        >>= (function
+         | Value_bool true ->
+           add_env fr.body Default
+           *> exec eval_stmt
+           *> eval_init fr.post
+           *> delete_env
+           *> return true
+         | Value_bool false -> delete_env *> return false
+         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " for"))))
+      | None ->
+        add_env fr.body Default
+        *> exec eval_stmt
+        *> eval_init fr.post
+        *> delete_env
+        *> return true
+    in
+    let rec rect rfor =
+      rfor
+      >>= function
+      | true ->
+        read_local_envs
+        >>= fun (ls, _) ->
+        (match ls.env_type with
+         | For -> rect rfor
+         | Default -> return ())
+      | false -> return ()
+    in
+    add_env [] For *> eval_init fr.init *> rect rec_for *> return ()
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 
 (*ДОДЕЛАТЬ*)

@@ -284,3 +284,28 @@ let%expect_test "ok: nested if decl" =
     Correct evaluating
     1111 |}]
 ;;
+
+let%expect_test "ok: nested if decl" =
+  pp
+    {|
+
+    func main() {
+        i := 1
+        for i <= 3 {
+            println(i)
+            i = i + 1
+        }
+        for j := 0; j < 3; j++ {
+            
+            println(j)
+        }
+        for {
+            println("loop")
+            break
+        }
+      }
+    |};
+  [%expect {|
+    Correct evaluating
+    1111 |}]
+;;
