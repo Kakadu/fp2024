@@ -10,3 +10,5 @@ val pp_env
   :  (string, Typedtree.scheme, Base.String.comparator_witness) Base.Map.t
   -> (string, Values.value, Base.String.comparator_witness) Base.Map.t
   -> unit
+
+val print_key : string -> bool

@@ -806,16 +806,24 @@ module Infer = struct
       TypeEnv.empty
   ;;
 
+  let env =
+    TypeEnv.extend
+      "print_endline"
+      (S (VarSet.empty, TArrow (tprim_string, tprim_unit)))
+      TypeEnv.empty
+  ;;
+
   let infer_program str = Result.map snd (run (infer_structure env str))
 
   let infer_program_test s =
     let open Stdlib.Format in
+    let open Interpreter in
     match Parser.parse_expr s with
     | Ok parsed ->
       (match infer_program parsed with
        | Ok env ->
          Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
-           if key <> "print_int" then printf "val %s : %a\n" key pp_ty ty)
+           if print_key key then printf "val %s : %a\n" key pp_ty ty)
        | Error e -> printf "Infer error: %a\n" pp_error e)
     | Error e -> printf "Parsing error: %s\n" e
   ;;

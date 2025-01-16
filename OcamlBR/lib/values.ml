@@ -4,7 +4,7 @@
 
 open Ast
 
-type builtin = BInt of (int -> unit)
+type builtin = BInt of (int -> unit) | BString of (string -> unit)
 
 type value =
   | VInt of int

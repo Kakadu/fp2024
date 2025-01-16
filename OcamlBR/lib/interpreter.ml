@@ -295,6 +295,9 @@ end = struct
           | BInt b, VInt i ->
             b i;
             return VUnit
+          | BString b, VString s ->
+            b s;
+            return VUnit
           | _ -> fail `Type_error)
        | _ ->
          Format.printf "ty err5\n";
@@ -370,6 +373,7 @@ end = struct
 
   let eval_str_item env str_item =
     let env = extend env "print_int" (VBuiltin (BInt print_int, env)) in
+    let env = extend env "print_endline" (VBuiltin (BString print_endline, env)) in
     match str_item with
     | SEval e ->
       let* _ = eval_expr env e in

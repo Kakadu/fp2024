@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type builtin = BInt of (int -> unit)
+type builtin = BInt of (int -> unit) | BString of (string -> unit)
 
 type value =
   | VInt of int
