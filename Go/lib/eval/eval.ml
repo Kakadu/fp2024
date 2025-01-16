@@ -229,6 +229,8 @@ and eval_stmt = function
         | None -> return ())
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
   | Stmt_go call -> eval_go call
+  | Stmt_block body -> add_env body Default *> exec eval_stmt *> delete_env
+  | Stmt_break -> exec eval_stmt
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 
 (*ДОДЕЛАТЬ*)

@@ -27,6 +27,8 @@ let pp str =
           prerr_endline ("Missing return: " ^ msg)
         | Type_check_error Go_make ->
           prerr_endline "Go discards result of make builtin function"
+        | Type_check_error (Unexpected_operation msg) ->
+          prerr_endline ("Unexpected operation: " ^ msg)
         | _ -> ()))
   | Error _ -> print_endline ": syntax error"
 ;;
@@ -1025,6 +1027,32 @@ let%expect_test "ok: multidimensional array index assignment" =
   [%expect {| CORRECT |}]
 ;;
 
+let%expect_test "ok: correct for break" =
+  pp
+    {|
+
+    func adder() func(int) int {
+      sum := 0
+      return func(x int) int {
+        sum = sum + x
+        return sum
+      }
+    }
+
+    func f(a int) { return }
+
+    func main() {
+      pos, neg := adder(), adder()
+      for i := 0; i < 10; i++ {
+        a := pos(i)
+        f(a)
+        f(neg(-2 * i))
+        break
+      }
+    }|};
+  [%expect {| CORRECT |}]
+;;
+
 let%expect_test "err: multidimensional array index assignment with wrong index less than \
                  needed"
   =
@@ -1389,4 +1417,14 @@ let%expect_test "err: trying to run make builtin func as a goroutine" =
       go make(chan int)
     } |};
   [%expect {| ERROR WHILE TYPECHECK WITH Go discards result of make builtin function |}]
+;;
+
+let%expect_test "ok: break outside for" =
+  pp {|
+    var foo = func() {}
+    func main() {
+      break
+      foo = nil
+    } |};
+  [%expect {| ERROR WHILE TYPECHECK WITH Unexpected operation: break |}]
 ;;

@@ -9,8 +9,9 @@ type type_check_error =
   | Mismatched_types of string
   | Cannot_assign of string
   | Missing_return of string
-  | Invalid_operation of string
   | Go_make
+  | Invalid_operation of string
+  | Unexpected_operation of string
 [@@deriving show { with_path = false }]
 
 type devonly_runtime_error =

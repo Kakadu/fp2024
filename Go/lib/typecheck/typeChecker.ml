@@ -18,6 +18,13 @@ let print_type = function
   | _ -> asprintf "WTF Polymorphic type"
 ;;
 
+let check_return_continue =
+  iter (function
+    | Stmt_break -> fail (Type_check_error (Unexpected_operation "break"))
+    | Stmt_continue -> fail (Type_check_error (Unexpected_operation "break"))
+    | _ -> return ())
+;;
+
 let check_return body =
   let rec find_retrun_rec body =
     List.mem
@@ -50,6 +57,7 @@ let check_anon_func afunc cstmt =
     | [] -> return ())
   *> save_func (Ctuple afunc.returns)
   *> save_args
+  *> check_return_continue afunc.body
   *> iter cstmt afunc.body
   *> delete_func
   *> delete_env
@@ -446,11 +454,12 @@ let rec check_stmt = function
     *> check_init check_stmt if'.init
     *> (check_expr check_stmt (retrieve_arg check_stmt) if'.cond
         >>= check_eq (Ctype Type_bool))
+    *> check_return_continue if'.if_body
     *> iter check_stmt if'.if_body
     *> delete_env
     *>
       (match if'.else_body with
-      | Some (Else_block block) -> iter check_stmt block
+      | Some (Else_block block) -> check_return_continue block *> iter check_stmt block
       | Some (Else_if if') -> check_stmt (Stmt_if if')
       | None -> return ())
   | Stmt_for { init; cond; post; body } ->
