@@ -14,7 +14,7 @@ open Constants
 open Types
 
 let parse_expr_ident_or_op = parse_ident_or_op >>| fun i -> Expr_ident_or_op i
-let parse_expr_const = parse_const >>| fun c -> Expr_const c
+let parse_expr_const = parse_const_u >>| fun c -> Expr_const c
 
 let parse_expr_ite parse_expr =
   let* cond = skip_ws *> string "if" *> skip_ws *> parse_expr in
@@ -71,10 +71,17 @@ let parse_expr_app parse_expr =
   app
 ;;
 
+(* Makes sense only for + and - *)
 let parse_expr_unary_app parse_expr =
   let* op = skip_ws *> string "-" <|> string "+" in
   let* e = parse_expr in
-  return (Expr_apply (Expr_ident_or_op op, e))
+  match op with
+  | "+" -> return e
+  | _ ->
+    (match e with
+     | Expr_const (Const_int i) -> return (Expr_const (Const_int (-i)))
+     | Expr_const (Const_float f) -> return (Expr_const (Const_float (Float.neg f)))
+     | _ -> return (Expr_apply (Expr_ident_or_op op, e)))
 ;;
 
 let parse_expr_lambda parse_expr =

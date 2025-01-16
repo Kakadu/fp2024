@@ -44,11 +44,17 @@ val parse_string : string t
 (** [parse_bool] parses bool and returns it. Cannot parse surrouning whitespaces. *)
 val parse_bool : bool t
 
-(** [parse_int] parses int and returns it. Cannot parse surrouning whitespaces. *)
+(** [parse_int] parses non-negative int and returns it. Should be used for expression parsing. Cannot parse surrouning whitespaces. *)
 val parse_int : int t
 
-(** [parse_float] parses float and returns it. Cannot parse surrouning whitespaces. *)
+(** [parse_sint] parses signed int and returns it. Should be used for pattern parsing. Cannot parse surrouning whitespaces. *)
+val parse_sint : int t
+
+(** [parse_float] parses unsigned float and returns it. Should be used for expression parsing. Cannot parse surrouning whitespaces. *)
 val parse_float : float t
+
+(** [parse_sfloat] parses float and returns it. Should be used for pattern parsing. Cannot parse surrouning whitespaces. *)
+val parse_sfloat : float t
 
 (** [chainl parse_alpha parse_sep] runs [parse_alpha]'s with [parse_sep]'s in betweens,
     applying [parse_sep]'s returned functions left-associatively. *)

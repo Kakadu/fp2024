@@ -93,7 +93,8 @@ type pattern =
   (** Constant patterns: [1], ['a'], ["foo"], [3.14], [5.0<cm>] *)
   | Pattern_wild (** Wildcard patterns [ _ ] *)
   | Pattern_typed of pattern * core_type (** Typed pattern [x : int] *)
-  | Pattern_tuple of pattern * pattern * pattern list
+  | Pattern_tuple of
+      pattern * pattern * (pattern list[@gen small_list (gen_pattern_sized (n / 2))])
   (** [Pattern_tuple(P1, P2, [P3, ..., Pn])] represents:
       - [(P1, P2)] when pattern list is []
       - [(P1, P2, P3, ..., Pn)] when pattern list is Cons (A, B) *)
@@ -210,4 +211,4 @@ let gen_structure_item n =
 
 type program = structure_item list [@@deriving show { with_path = false }]
 
-let gen_program n = list_size (1 -- 5) (gen_structure_item (n / 2))
+let gen_program n = list_size (1 -- 10) (gen_structure_item (n / 2))
