@@ -25,6 +25,8 @@ let pp str =
         | Type_check_error (Missing_return msg) -> prerr_endline ("Missing return: " ^ msg)
         | Type_check_error (Invalid_operation msg) ->
           prerr_endline ("Missing return: " ^ msg)
+        | Type_check_error Go_make ->
+          prerr_endline "Go discards result of make builtin function"
         | _ -> ()))
   | Error _ -> print_endline ": syntax error"
 ;;
@@ -1379,4 +1381,12 @@ let%expect_test "ok: nil assignment to global variable with a function type" =
       foo = nil
     } |};
   [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: trying to run make builtin func as a goroutine" =
+  pp {|
+    func main() {
+      go make(chan int)
+    } |};
+  [%expect {| ERROR WHILE TYPECHECK WITH Go discards result of make builtin function |}]
 ;;

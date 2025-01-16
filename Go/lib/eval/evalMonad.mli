@@ -77,11 +77,12 @@ type stack_frame =
 type waiting_state =
   | Ready
   (** State of the goroutine that doesn't try to receive from or send to a chanel, but another goroutine is running *)
-    | Sending of
+  | Sending of
       { chan_id : int
       ; value : value
       } (** State of goroutine that is trying to send values to a chanel *)
-  | Recieving of { chan_id : int } (** State of goroutine that is trying to receive from a chanel *)
+  | Recieving of { chan_id : int }
+  (** State of goroutine that is trying to receive from a chanel *)
 
 type goroutine =
   { stack : stack_frame * stack_frame list
@@ -133,7 +134,10 @@ module Monad : sig
 
   (* Goroutines *)
   val read_waiting : GoSet.t t
+
+  (** Provided id for new goroutine is ignored and assigned automatically *)
   val add_waiting : waiting_state -> goroutine -> unit t
+
   val run_goroutine : goroutine -> unit t
   val stop_running_goroutine : waiting_state -> unit t
 

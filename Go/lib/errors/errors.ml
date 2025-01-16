@@ -10,6 +10,7 @@ type type_check_error =
   | Cannot_assign of string
   | Missing_return of string
   | Invalid_operation of string
+  | Go_make
 [@@deriving show { with_path = false }]
 
 type devonly_runtime_error =

@@ -65,13 +65,8 @@ and eval_func_call (func, args) =
   | Value_func (Func_builtin ftype) -> eval_builtin args ftype
   | Value_func (Func_initialized (is_closure, afc)) ->
     (* тут нужна проверка на замыкание *)
-    let rec save_args map = function
-      | [] -> return map
-      | (expr, id) :: tl ->
-        retrieve_arg_value expr >>= fun vl -> save_args (MapIdent.add id vl map) tl
-    in
     let* local_envs = read_local_envs >>= fun (hd, tl) -> return (List.cons hd tl) in
-    save_args MapIdent.empty (List.combine args (rpf afc.args))
+    create_args_map args (rpf afc.args)
     >>= fun map ->
     add_stack_frame
       { local_envs =
@@ -87,6 +82,14 @@ and eval_func_call (func, args) =
 and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
   | Arg_type _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_value")))
+
+and create_args_map args idents =
+  let rec save_args map = function
+    | [] -> return map
+    | (expr, id) :: tl ->
+      retrieve_arg_value expr >>= fun vl -> save_args (MapIdent.add id vl map) tl
+  in
+  save_args MapIdent.empty (List.combine args idents)
 
 and eval_builtin args = function
   | Print ->
@@ -204,6 +207,7 @@ and eval_stmt = function
         | Some (Else_if if') -> eval_stmt (Stmt_if if')
         | None -> return ())
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
+  | Stmt_go call -> eval_go call
   | _ -> fail (Runtime_error (Panic "Not supported stmt"))
 
 (*ДОДЕЛАТЬ*)
@@ -255,6 +259,26 @@ and eval_chan_receive expr =
     let* chan_id = find_chanel_fail chan in
     stop_running_goroutine (Recieving { chan_id })
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
+
+and eval_go (func, arg_exprs) =
+  eval_expr func
+  >>= function
+  | Value_func (Func_uninitialized Nil) -> fail (Runtime_error Uninited_func)
+  | Value_func (Func_builtin _) -> return () (* TODO *)
+  | Value_func (Func_initialized (is_closure, { args; body })) ->
+    (* TODO closure *)
+    let* var_map = create_args_map arg_exprs (rpf args) in
+    add_waiting
+      Ready
+      { stack =
+          ( { local_envs = { exec_block = body; var_map; env_type = Default }, []
+            ; deferred_funcs = []
+            ; closure_envs = Simple
+            }
+          , [] )
+      ; id = 0 (* ignored *)
+      }
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
 ;;
 
 let save_builtins =

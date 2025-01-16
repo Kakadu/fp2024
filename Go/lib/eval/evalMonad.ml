@@ -124,24 +124,6 @@ module Monad = struct
 
   (* goroutines *)
 
-  let read_waiting =
-    read
-    >>= function
-    | { waiting } -> return waiting
-  ;;
-
-  let write_waiting new_goroutines =
-    read
-    >>= function
-    | { global_env; running; chanels } ->
-      write { global_env; running; chanels; waiting = new_goroutines }
-  ;;
-
-  let add_waiting state goroutine =
-    let* goroutines = read_waiting in
-    write_waiting (GoSet.add { state; goroutine } goroutines)
-  ;;
-
   let read_running =
     read
     >>= function
@@ -160,6 +142,31 @@ module Monad = struct
     >>= function
     | { global_env; waiting; chanels } ->
       write { global_env; waiting; chanels; running = new_goroutine }
+  ;;
+
+  let read_waiting =
+    read
+    >>= function
+    | { waiting } -> return waiting
+  ;;
+
+  let write_waiting new_goroutines =
+    read
+    >>= function
+    | { global_env; running; chanels } ->
+      write { global_env; running; chanels; waiting = new_goroutines }
+  ;;
+
+  let add_waiting state { stack } =
+    let* goroutines = read_waiting in
+    let* id = read_waiting >>= fun set -> return (GoSet.cardinal set) in
+    let* id =
+      read_running
+      >>= function
+      | Some _ -> return (id + 2)
+      | None -> return (id + 1)
+    in
+    write_waiting (GoSet.add { state; goroutine = { stack; id } } goroutines)
   ;;
 
   let run_goroutine goroutine =

@@ -411,11 +411,15 @@ let rec check_stmt = function
       (check_expr check_stmt (retrieve_arg check_stmt))
       (retrieve_arg check_stmt)
       call
-  | Stmt_go call ->
-    check_func_call
-      (check_expr check_stmt (retrieve_arg check_stmt))
-      (retrieve_arg check_stmt)
-      call
+  | Stmt_go (func, args) ->
+    ((check_expr check_stmt (retrieve_arg check_stmt)) func
+     >>= function
+     | Cpolymorphic Make -> fail (Type_check_error Go_make)
+     | _ -> return ())
+    *> check_func_call
+         (check_expr check_stmt (retrieve_arg check_stmt))
+         (retrieve_arg check_stmt)
+         (func, args)
   | Stmt_chan_send send -> check_chan_send check_stmt send
   | Stmt_block block -> add_env *> iter check_stmt block *> delete_env
   | Stmt_break -> return ()
