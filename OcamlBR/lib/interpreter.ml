@@ -40,7 +40,9 @@ module Env (M : MONAD) = struct
   ;;
 end
 
-module Eval (M : MONAD) : sig end = struct
+module Eval (M : MONAD) : sig
+  val eval_structure : structure -> (environment, error) M.t
+end = struct
   open M
   open Env (M)
 
@@ -155,7 +157,7 @@ module Eval (M : MONAD) : sig end = struct
       List.fold_left2 f1 (return (VBool true)) l1 l2)
   ;;
 
-    let eval_const = function
+  let eval_const = function
     | Int i -> return (VInt i)
     | String s -> return (VString s)
     | Bool b -> return (VBool b)
@@ -164,7 +166,7 @@ module Eval (M : MONAD) : sig end = struct
 
   (* acceptable patterns for names *)
   let rec validate_pattern_nonrec = function
-    | PVar _ | PAny | PConst Unit -> true
+    | PVar _ | PAny | PConst Unit | POption (Some (PVar _)) -> true
     | PTuple (p1, p2, rest) -> List.for_all validate_pattern_nonrec (p1 :: p2 :: rest)
     | _ -> false
   ;;
@@ -183,7 +185,7 @@ module Eval (M : MONAD) : sig end = struct
 
   let get_patterns tpl = List.map get_pattern tpl
 
-    let rec eval_expr env = function
+  let rec eval_expr env = function
     | Econst c -> eval_const c
     | Evar (Id name) -> find env name
     | Eif_then_else (cond, t, Some e) ->
@@ -320,7 +322,7 @@ module Eval (M : MONAD) : sig end = struct
     | Elet (Recursive, value_binding, value_bindings, e2) ->
       let* final_env = eval_value_bindings env (value_binding :: value_bindings) in
       eval_expr final_env e2
-    | _ -> fail `Type_error
+    | Econstraint (e, _) -> eval_expr env e
 
   and eval_let_rec_expr env = function
     | Evalue_binding ((pat, _), e1) ->
@@ -361,7 +363,7 @@ module Eval (M : MONAD) : sig end = struct
                print_env acc_env; *)
             return (VFun (Recursive, get_pattern p, get_patterns pl, e, acc_env))
           | _ ->
-            Format.printf "2 \n";
+            (* Format.printf "2 \n"; *)
             eval_expr acc_env expr
         in
         (* update env so all names in mutual recursion correspond to their real values *)
@@ -409,3 +411,38 @@ module Eval (M : MONAD) : sig end = struct
       structure
   ;;
 end
+
+module Interpreter = Eval (struct
+    include Base.Result
+
+    let ( let* ) m f = bind m ~f
+  end)
+
+let interpret_program structure = Interpreter.eval_structure structure
+
+let print_key = function
+  | "print_int" | "print_endline" -> false
+  | _ -> true
+;;
+
+let pp_env env_t env_v =
+  let open Stdlib.Format in
+  let open Typedtree in
+  printf "\n{\n";
+  Base.Map.iteri
+    ~f:(fun ~key ~data ->
+      match Base.Map.find env_t key with
+      | Some (S (_, ty)) ->
+        if print_key key then printf "val %s : %a = %a\n" key pp_ty ty pp_value data
+      | None -> if print_key key then printf "val %s = %a\n" key pp_value data)
+    env_v;
+  printf "}\n"
+;;
+
+(* let print_env env =
+  let open Stdlib.Format in
+  printf "\n{\n";
+  Base.Map.iteri env ~f:(fun ~key ~data ->
+    if key <> "print_int" then printf "%s = %a\n" key pp_value data);
+  printf "}\n"
+;; *)
