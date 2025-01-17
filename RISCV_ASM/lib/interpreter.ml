@@ -382,7 +382,7 @@ let store_memory state address value size =
       | 1 ->
         let memory_writable = 
           state.memory_writable
-          |> Int64Map.add address true
+          |> Int64Map.add address false
           |> Int64Map.add (Int64.add address 1L) true
           |> Int64Map.add (Int64.add address 2L) true
           |> Int64Map.add (Int64.add address 3L) true
@@ -391,7 +391,7 @@ let store_memory state address value size =
       | 2 ->
         let memory_writable =
           state.memory_writable
-          |> Int64Map.add address true
+          |> Int64Map.add address false
           |> Int64Map.add (Int64.add address 1L) false
           |> Int64Map.add (Int64.add address 2L) true
           |> Int64Map.add (Int64.add address 3L) true
@@ -400,7 +400,7 @@ let store_memory state address value size =
       | 4 ->
         let memory_writable =
           state.memory_writable
-          |> Int64Map.add address true
+          |> Int64Map.add address false
           |> Int64Map.add (Int64.add address 1L) false
           |> Int64Map.add (Int64.add address 2L) false
           |> Int64Map.add (Int64.add address 3L) false
