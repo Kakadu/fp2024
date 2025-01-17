@@ -406,8 +406,7 @@ type instruction =
   (** Less Single precision. rd = (rs1 < rs2) *)
   | FleS of register * float_register * float_register
   (** Less or Equal Single precision. rd = (rs1 <= rs2) *)
-  | FclassS of register * float_register
-  (** Classification of Single precision float *)
+  | FclassS of register * float_register (** Classification of Single precision float *)
   | FcvtSW of float_register * register
   (** Converts 32-bit signed integer to Single precision float *)
   | FcvtSWu of float_register * register
