@@ -326,25 +326,25 @@ and eval_match env v = function
      eval_expr ext_env expr)
     <|> eval_match env v tl
 
-and extend_env_with_let_bind env rec_flag = function
+(* Add name with it's value of let_bind to value environment.
+   If name is variable, then returns new env with Some name, else returns new env with None*)
+and extend_env_with_let_bind env = function
   | Let_bind (name, args, body) ->
-    (match args with
-     | arg1 :: args ->
-       (match name with
-        | PVar (Ident n) ->
-          let value = VFun (arg1, args, body, env) in
-          let* env = match_pattern env (name, value) in
-          return (Some n, env)
-        | _ -> fail `Args_after_not_variable_let)
-     | [] ->
-       let n =
-         match rec_flag, name with
-         | Rec, PVar (Ident n) -> Some n
-         | _ -> None
-       in
+    (match name, args with
+     | PVar (Ident ident), arg1 :: args ->
+       let value = VFun (arg1, args, body, env) in
+       let* env = match_pattern env (name, value) in
+       return (Some ident, env)
+     | _, _ :: _ -> fail `Args_after_not_variable_let
+     | PVar (Ident ident), [] ->
        let* value = eval_expr env body in
        let* env = match_pattern env (name, value) in
-       return (n, env))
+       return (Some ident, env)
+     | _, [] ->
+       (* If name is not variable, then let is not recursive (checked in type check)*)
+       let* value = eval_expr env body in
+       let* env = match_pattern env (name, value) in
+       return (None, env))
 
 and extend_env_with_let_binds env rec_flag let_binds =
   let* names, env =
@@ -352,7 +352,7 @@ and extend_env_with_let_binds env rec_flag let_binds =
       ~init:(return ([], env))
       ~f:(fun acc let_bind ->
         let* names, env = acc in
-        let* name, env = extend_env_with_let_bind env rec_flag let_bind in
+        let* name, env = extend_env_with_let_bind env let_bind in
         match name with
         | Some name -> return (name :: names, env)
         | None -> return (names, env))
