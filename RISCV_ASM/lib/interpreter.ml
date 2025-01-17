@@ -212,10 +212,13 @@ let get_register_value state reg =
 ;;
 
 let set_register_value state reg value =
-  { state with
-    registers =
-      StringMap.add (show_register (handle_alternative_names reg)) value state.registers
-  }
+  if reg = X0
+  then state
+  else
+    { state with
+      registers =
+        StringMap.add (show_register (handle_alternative_names reg)) value state.registers
+    }
 ;;
 
 let nth_opt_int64 l n =
@@ -240,15 +243,18 @@ let increment_pc state = { state with pc = Int64.add state.pc 4L }
 let resolve_address_incl_to_excl program immediate64_value =
   let rec traverse_program index remaining_value = function
     | [] ->
-      fail
-        "End of program reached before resolving immediate address from including \
-         directives to excluding"
-    | InstructionExpr _ :: _ when remaining_value = 4L -> return (Int64.add index 4L)
-    | DirectiveExpr (Word _) :: _ when remaining_value = 4L -> return (Int64.add index 4L)
+      if remaining_value = 0L
+      then return index
+      else
+        fail
+          "End of program reached before resolving immediate address from including \
+           directives to excluding"
+    | InstructionExpr _ :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (Word _) :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (Word _) :: rest | InstructionExpr _ :: rest ->
+      traverse_program (Int64.add index 4L) (Int64.sub remaining_value 4L) rest
     | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
       traverse_program index (Int64.sub remaining_value 4L) rest
-    | InstructionExpr _ :: rest ->
-      traverse_program (Int64.add index 4L) (Int64.sub remaining_value 4L) rest
   in
   traverse_program 0L immediate64_value program
 ;;
@@ -257,27 +263,30 @@ let resolve_address_incl_to_excl program immediate64_value =
 let resolve_address_excl_to_incl program immediate64_value =
   let rec traverse_program index remaining_value = function
     | [] ->
-      fail
-        "End of program reached before resolving immediate address from excluding \
-         directives to including"
-    | InstructionExpr _ :: _ when remaining_value = 4L -> return (Int64.add index 4L)
-    | DirectiveExpr (Word _) :: _ when remaining_value = 4L -> return (Int64.add index 4L)
+      if remaining_value = 0L
+      then return index
+      else
+        fail
+          "End of program reached before resolving immediate address from excluding \
+           directives to including"
+    | InstructionExpr _ :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (Word _) :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (Word _) :: rest | InstructionExpr _ :: rest ->
+      traverse_program (Int64.add index 4L) (Int64.sub remaining_value 4L) rest
     | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
       traverse_program (Int64.add index 4L) remaining_value rest
-    | InstructionExpr _ :: rest ->
-      traverse_program (Int64.add index 4L) (Int64.sub remaining_value 4L) rest
   in
   traverse_program 0L immediate64_value program
 ;;
 
-let handle_branch_condition state program rs1 rs2 imm_value comparison_fn =
+let handle_branch_condition state program rs1 rs2 label_or_imm_value comparison_fn =
   let val_rs1 = get_register_value state rs1 in
   let val_rs2 =
     match rs2 with
     | Some rs -> get_register_value state rs
     | None -> 0L
   in
-  let address_info = get_address12_value program imm_value in
+  let address_info = get_address12_value program label_or_imm_value in
   let* new_pc =
     match address_info with
     | Immediate imm_value when comparison_fn val_rs1 val_rs2 ->
@@ -287,17 +296,14 @@ let handle_branch_condition state program rs1 rs2 imm_value comparison_fn =
           program
           (Int64.add (Int64.of_int imm_value) current_pc_excl)
       in
-      return target_pc
-    | Immediate _ -> return (Int64.add state.pc 4L)
+      return (Int64.sub target_pc 4L)
+    | Immediate _ -> return state.pc
     | Label excluding_directives_label_offset when comparison_fn val_rs1 val_rs2 ->
-      let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
       let* target_pc =
-        resolve_address_excl_to_incl
-          program
-          (Int64.add excluding_directives_label_offset current_pc_excl)
+        resolve_address_excl_to_incl program excluding_directives_label_offset
       in
-      return target_pc
-    | Label _ -> return (Int64.add state.pc 4L)
+      return (Int64.sub target_pc 4L)
+    | Label _ -> return state.pc
   in
   return (set_pc state new_pc)
 ;;
@@ -366,6 +372,7 @@ let load_memory state address = function
     (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
     (match Int64Map.find_opt address state.memory_writable with
      | Some false ->
+       Printf.printf "the address was: %Ld\n" address;
        fail
          "Load failed: Address is not writable, either an instruction address or points \
           to the middle of the data"
@@ -395,6 +402,7 @@ let store_memory state address value size =
   (* Check if the address is writable *)
   match Int64Map.find_opt address state.memory_writable with
   | Some false ->
+    Printf.printf "my favarite address: %Ld\n" address;
     fail
       "Store failed: Address is not writable, either an instruction address or points to \
        the middle of the data"
@@ -405,7 +413,7 @@ let store_memory state address value size =
       | 1 ->
         let memory_writable =
           state.memory_writable
-          |> Int64Map.add address false
+          |> Int64Map.add address true
           |> Int64Map.add (Int64.add address 1L) true
           |> Int64Map.add (Int64.add address 2L) true
           |> Int64Map.add (Int64.add address 3L) true
@@ -414,7 +422,7 @@ let store_memory state address value size =
       | 2 ->
         let memory_writable =
           state.memory_writable
-          |> Int64Map.add address false
+          |> Int64Map.add address true
           |> Int64Map.add (Int64.add address 1L) false
           |> Int64Map.add (Int64.add address 2L) true
           |> Int64Map.add (Int64.add address 3L) true
@@ -423,7 +431,7 @@ let store_memory state address value size =
       | 4 ->
         let memory_writable =
           state.memory_writable
-          |> Int64Map.add address false
+          |> Int64Map.add address true
           |> Int64Map.add (Int64.add address 1L) false
           |> Int64Map.add (Int64.add address 2L) false
           |> Int64Map.add (Int64.add address 3L) false
@@ -439,7 +447,7 @@ let execute_load state program rd rs1 imm size signed =
   let* offset =
     match get_address12_value program imm with
     | Immediate imm_value -> return (Int64.of_int imm_value)
-    | Label _ -> fail "Label offset not supported for load/store"
+    | Label label -> return label
   in
   let address = Int64.add base_address offset in
   let* value = load_memory state address size in
@@ -460,7 +468,7 @@ let execute_store state program rs1 rs2 imm size =
   let* offset =
     match get_address12_value program imm with
     | Immediate imm_value -> return (Int64.of_int imm_value)
-    | Label _ -> fail "Label offset not supported for load/store"
+    | Label label -> return label
   in
   let address = Int64.add base_address offset in
   let value = get_register_value state rs2 in
@@ -614,8 +622,8 @@ and execute_instruction state instr program =
           program
           (Int64.add excluding_directives_label_offset current_pc_excl)
     in
-    let new_state = set_register_value state rd (Int64.add state.pc 1L) in
-    return (set_pc new_state new_pc)
+    let new_state = set_register_value state rd (Int64.add state.pc 4L) in
+    return (set_pc new_state (Int64.sub new_pc 4L))
   | Jalr (rd, rs1, imm) ->
     let val_rs1 = get_register_value state rs1 in
     let address_info = get_address12_value program imm in
@@ -628,30 +636,31 @@ and execute_instruction state instr program =
           program
           (Int64.add excluding_directives_label_offset val_rs1)
     in
-    let new_state = set_register_value state rd (Int64.add state.pc 1L) in
-    return (set_pc new_state new_pc)
+    let new_state = set_register_value state rd (Int64.add state.pc 4L) in
+    return (set_pc new_state (Int64.sub new_pc 4L))
   | Jr rs1 ->
     let val_rs1 = get_register_value state rs1 in
     let* new_pc = resolve_address_excl_to_incl program val_rs1 in
-    let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
-    return (set_pc new_state new_pc)
+    return (set_pc state (Int64.sub new_pc 4L))
   | J imm_value ->
     let address_info = get_address20_value program imm_value in
     let* new_pc =
       match address_info with
       | Immediate imm_value ->
         let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
-        resolve_address_excl_to_incl
-          program
-          (Int64.add (Int64.of_int imm_value) current_pc_excl)
+        let* resolved_pc =
+          resolve_address_excl_to_incl
+            program
+            (Int64.add (Int64.of_int imm_value) current_pc_excl)
+        in
+        return resolved_pc
       | Label excluding_directives_label_offset ->
-        let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
-        resolve_address_excl_to_incl
-          program
-          (Int64.add excluding_directives_label_offset current_pc_excl)
+        let* resolved_pc =
+          resolve_address_excl_to_incl program excluding_directives_label_offset
+        in
+        return resolved_pc
     in
-    let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
-    return (set_pc new_state new_pc)
+    return (set_pc state (Int64.sub new_pc 4L))
   | Lui (rd, imm) ->
     let imm_value =
       match imm with
@@ -699,6 +708,26 @@ and execute_instruction state instr program =
   | _ -> return state
 ;;
 
+let show_memory state =
+  let memory_str =
+    Int64Map.fold
+      (fun address value acc -> acc ^ Printf.sprintf "%Ld: %Ld\n" address value)
+      state.memory
+      "Memory:\n"
+  in
+  memory_str
+;;
+
+let show_memory_writable state =
+  let writable_str =
+    Int64Map.fold
+      (fun address writable acc -> acc ^ Printf.sprintf "%Ld: %b\n" address writable)
+      state.memory_writable
+      "Writable:\n"
+  in
+  writable_str
+;;
+
 let show_state state =
   let registers_str =
     StringMap.fold
@@ -706,18 +735,28 @@ let show_state state =
       state.registers
       ""
   in
+  let memory_str = show_memory state in
+  let memory_writable_str = show_memory_writable state in
   let pc_str = Printf.sprintf "PC: %Ld" state.pc in
-  registers_str ^ pc_str
+  let result = registers_str in
+  let result = result ^ memory_str in
+  let result = result ^ memory_writable_str in
+  let result = result ^ pc_str in
+  result
 ;;
 
 let%expect_test "test_program_execution" =
   let program =
-    [ InstructionExpr (Add (X1, X2, X3))
-    ; LabelExpr "start"
-    ; InstructionExpr (Sub (X4, X5, X6))
-    ; InstructionExpr (Jalr (X1, X2, ImmediateAddress12 4))
-    ; InstructionExpr (Jr X3)
-    ; InstructionExpr (J (ImmediateAddress20 8))
+    [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 3))
+    ; LabelExpr "loop"
+    ; DirectiveExpr (Word 102)
+    ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
+    ; InstructionExpr (Subi (X10, X10, ImmediateAddress12 1))
+    ; InstructionExpr (Lw (X11, X0, LabelAddress12 "loop"))
+    ; InstructionExpr (Addi (X6, X6, ImmediateAddress12 7))
+    ; InstructionExpr (Sw (X0, X6, LabelAddress12 "loop"))
+    ; InstructionExpr (J (LabelAddress20 "loop"))
+    ; LabelExpr "exit"
     ]
   in
   let initial_state = init_state program in
@@ -728,17 +767,9 @@ let%expect_test "test_program_execution" =
     [%expect
       {|
       X0: 0
-      X1: 4
-      X2: 0
-      X3: 0
-      X4: 0
-      X5: 0
-      X6: 0
-      X7: 0
-      X8: 0
-      X9: 0
+      X1: 0
       X10: 0
-      X11: 0
+      X11: 14
       X12: 0
       X13: 0
       X14: 0
@@ -747,6 +778,7 @@ let%expect_test "test_program_execution" =
       X17: 0
       X18: 0
       X19: 0
+      X2: 0
       X20: 0
       X21: 0
       X22: 0
@@ -757,11 +789,51 @@ let%expect_test "test_program_execution" =
       X27: 0
       X28: 0
       X29: 0
+      X3: 0
       X30: 0
       X31: 0
-      PC: 8
+      X4: 0
+      X5: 0
+      X6: 21
+      X7: 0
+      X8: 0
+      X9: 0
+      Memory:
+      4: 21
+      Writable:
+      0: false
+      1: false
+      2: false
+      3: false
+      4: true
+      5: false
+      6: false
+      7: false
+      8: false
+      9: false
+      10: false
+      11: false
+      12: false
+      13: false
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+      20: false
+      21: false
+      22: false
+      23: false
+      24: false
+      25: false
+      26: false
+      27: false
+      28: false
+      29: false
+      30: false
+      31: false
+      PC: 40
     |}]
-  | Error e ->
-    print_string ("Error: " ^ e);
-    [%expect {| Error: <error_message> |}]
+  | Error e -> print_string ("Error: " ^ e)
 ;;
