@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
-open Event
 
 module Ident : sig
   type t = ident
@@ -16,9 +15,9 @@ module MapIdent : Map.S with type key = Ident.t
 (** Value for [nil] identifier and unitialized functions and chanels *)
 type nil = Nil
 
-(** Value for unbuffered chanels *)
+(** Value for chanels *)
 type chan_value =
-  | Chan_initialized of int (** Initialized chanel, identified by id *)
+  | Chan_initialized of int (** Initialized chanel, identified by id (basically a link to a chanel) *)
   | Chan_uninitialized of nil
 
 (** Values that can be stored in a variables *)
@@ -49,7 +48,6 @@ and is_closure =
 
 and func_value =
   | Func_initialized of is_closure * anon_func
-  (** varMap stores variables, to which the function is bounded if it is a clojure *)
   | Func_uninitialized of nil
   | Func_builtin of builtin
 
@@ -149,6 +147,7 @@ module Monad : sig
 
   (** Stops currently running goroutine with a given state. Returns the stopped goroutine *)
   val stop_running_goroutine : waiting_state -> goroutine t
+  val delete_running_goroutine : unit t
 
   val read_running_id : int t
   val ready_waiting : goroutine -> unit t

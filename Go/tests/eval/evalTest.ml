@@ -373,3 +373,36 @@ let%expect_test "ok: factorial check" =
     Correct evaluating
     120 |}]
 ;;
+
+(* goroutines *)
+
+let%expect_test "ok: two goroutine sync with unbuffered chanel" =
+  pp
+    {|
+    func goroutine2(c chan int) {
+      println("go2: try to receive")
+      a := <-c
+      println("go2: receive success. Value:", a)
+    }
+
+    func main() {
+      c := make(chan int)
+
+      v := 0
+
+      go goroutine2(c)
+
+      println("go1: trying to send. Value:", v)
+      c <- v
+      println("go1: send success")
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    go1: trying to send. Value:0
+    go2: try to receive
+    go2: receive success. Value:0
+    go1: send success |}]
+;;

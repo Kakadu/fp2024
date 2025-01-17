@@ -222,6 +222,8 @@ module Monad = struct
       write_running None *> add_waiting waiting_state goroutine *> return goroutine
   ;;
 
+  let delete_running_goroutine = write_running None
+
   (* chanels *)
 
   let read_chanels =

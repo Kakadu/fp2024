@@ -27,10 +27,32 @@ let pp printer eval ast =
   | Result.Error _ -> print_endline ": some kind of error"
 ;;
 
-let run_ready_goroutines =
+let exec_stmt eval_stmt =
+  let* stmt = pop_next_statement in
+  match stmt with
+  | Some st -> eval_stmt st *> return (Some ())
+  | None -> return None
+;;
+
+let rec exec eval_stmt =
+  exec_stmt eval_stmt
+  >>= function
+  | Some _ ->
+    read_returns
+    >>= (function
+     | None -> exec eval_stmt *> return ()
+     | Some _ -> return ())
+  | None -> return ()
+;;
+
+let run_ready_goroutines eval_stmt =
   let rec runner waiting_goroutines =
     match GoSet.find_first_opt (fun { state } -> state = Ready) waiting_goroutines with
-    | Some { goroutine } -> run_goroutine goroutine *> read_waiting >>= runner
+    | Some { goroutine } ->
+      run_goroutine goroutine *> exec eval_stmt *> read_running_id
+      >>= (function
+       | 1 -> return ()
+       | _ -> delete_running_goroutine *> read_waiting >>= runner)
     | None -> return ()
   in
   read_waiting >>= runner
@@ -61,35 +83,12 @@ let perform_chan_interaction id =
     | _ -> return None
   in
   match sending_goroutine, receiving_goroutine with
-  (* | None, Some { go_id }, _ ->
-    fail
-      (Runtime_error (Deadlock ("goroutine " ^ string_of_int go_id ^ " [chan receive]")))
-  | Some { go_id }, None, _ ->
-    fail (Runtime_error (Deadlock ("goroutine " ^ string_of_int go_id ^ " [chan send]"))) *)
   | Some sending_goroutine, Some receiving_goroutine ->
     let* value = pop_chan_value id in
     ready_waiting sending_goroutine
     *> ready_waiting receiving_goroutine
     *> return (Some value)
-  | _ -> return None (* fail (Runtime_error (Deadlock "impossible")) *)
-;;
-
-let exec_stmt eval_stmt =
-  let* stmt = pop_next_statement in
-  match stmt with
-  | Some st -> eval_stmt st *> return (Some ())
-  | None -> return None
-;;
-
-let rec exec eval_stmt =
-  exec_stmt eval_stmt
-  >>= function
-  | Some _ ->
-    read_returns
-    >>= (function
-     | None -> exec eval_stmt *> return ()
-     | Some _ -> return ())
-  | None -> return ()
+  | _ -> return None
 ;;
 
 let rec eval_expr = function
@@ -108,7 +107,7 @@ let rec eval_expr = function
     >>= (function
      | Some lst -> return lst (* тут может быть тапл *)
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
-  | Expr_chan_receive ex -> eval_expr ex (*ДОДЕЛАТЬ*)
+  | Expr_chan_receive receive -> eval_chan_receive receive
 
 and eval_func_call (func, args) =
   eval_expr func
@@ -228,8 +227,8 @@ and eval_init = function
      | Init_decl decl -> eval_stmt (Stmt_short_var_decl decl)
      | Init_decr decr -> eval_stmt (Stmt_decr decr)
      | Init_incr incr -> eval_stmt (Stmt_incr incr)
-     | Init_receive recv -> eval_stmt (Stmt_chan_receive recv)
-     | Init_send snd -> eval_stmt (Stmt_chan_send snd))
+     | Init_receive recv -> eval_chan_receive recv *> return ()
+     | Init_send send -> eval_chan_send send)
   | None -> return ()
 
 and eval_stmt = function
@@ -314,7 +313,9 @@ and eval_stmt = function
     (match l_exp with
      | [ x ] -> eval_expr x >>= fun ret -> write_returns (Some ret)
      | _ -> map eval_expr l_exp >>= fun lst -> write_returns (Some (Value_tuple lst)))
-  | _ -> fail (Runtime_error (Panic "Not supported stmt"))
+  | Stmt_chan_send send -> eval_chan_send send
+  | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()
+  | Stmt_defer _ -> fail (Runtime_error (Panic "Not supported stmt"))
 
 (*ДОДЕЛАТЬ*)
 
@@ -335,8 +336,9 @@ and eval_chan_send (ident, expr) =
     let* sending_goroutine = stop_running_goroutine (Sending { chan_id }) in
     perform_chan_interaction chan_id
     >>= (function
-     | Some _ -> run_goroutine sending_goroutine
-     | None -> run_ready_goroutines)
+     | Some _ ->
+       (* тут надо как-то передать значение получателю *) run_goroutine sending_goroutine
+     | None -> run_ready_goroutines eval_stmt)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
 
 and eval_chan_receive expr =
@@ -347,8 +349,11 @@ and eval_chan_receive expr =
     let* receiving_goroutine = stop_running_goroutine (Receiving { chan_id }) in
     perform_chan_interaction chan_id
     >>= (function
-     | Some value -> return value *> run_goroutine receiving_goroutine
-     | None -> run_ready_goroutines)
+     | Some value -> run_goroutine receiving_goroutine *> return value
+     | None ->
+       run_ready_goroutines eval_stmt *> return (Value_int 1)
+       (* ЗАГЛУШКА *)
+       (* надо как-то получать значение, поэтому после передачи всегда должна запускаться эта горутина *))
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
 
 and eval_go (func, arg_exprs) =
@@ -404,8 +409,7 @@ let run_eval file =
   save_builtins
   *> save_global_vars_and_funcs file
   *> add_main_goroutine file
-  *> run_ready_goroutines
-  *> exec eval_stmt
+  *> run_ready_goroutines eval_stmt
   *> return ()
 ;;
 
