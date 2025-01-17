@@ -342,6 +342,7 @@ module TypeEnv : sig
   val remove : t -> string -> t
   val remove_many : t -> string list -> t
   val iteri : t -> f:(name:string -> typ:typ -> unit) -> unit
+  val find_typ_with_substring_and_choice_exn : t -> string -> typ
   (* val pp : formatter -> t -> unit *)
 end = struct
   open Base
@@ -398,6 +399,20 @@ end = struct
     Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
       VarSet.union acc (Scheme.free_vars s))
   ;;
+
+  let find_typ_with_substring_and_choice_exn t name =
+    Map.fold t ~init:None ~f:(fun ~key ~data acc ->
+      (*printf " KEY IS %s\n" key;
+      printf "is substr %b\n" (String.is_substring key ~substring:name);*)
+      match data with
+      | Scheme (_, _) when (String.is_substring key ~substring:name) && (String.length key > String.length name) -> Some data
+      | _ -> acc
+    )
+    |> function
+    | Some Scheme (_, typ) -> typ
+    | _ -> failwith "NO TYPE"
+
+    
 end
 
 include R
@@ -549,6 +564,7 @@ let rec extract_names_from_pattern =
 
 let infer_match_pattern env ~shadow pattern match_type =
   let* env, pat_typ = infer_pattern env ~shadow pattern in
+  (*fprintf std_formatter "TYPES %a, %a\n" pp_typ match_type pp_typ pat_typ;*)
   let* subst = unify pat_typ match_type in
   let env = TypeEnv.apply subst env in
   let* pat_names = extract_names_from_pattern pattern >>| elements in
@@ -827,6 +843,7 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
           if with_arg
           then
             let* env, pat = infer_pattern env ~shadow:true pat in
+            (* here: need to take arguments from arrow and compare to match type *)
             let* subst2 = unify match_t pat in
             return (env, subst2)
           else infer_match_pattern env ~shadow:true pat match_t
