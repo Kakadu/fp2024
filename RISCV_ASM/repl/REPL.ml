@@ -4,6 +4,7 @@
 
 open Riscv_asm_interpreter_lib.Ast
 open Riscv_asm_interpreter_lib.Parser
+open Riscv_asm_interpreter_lib.Interpreter
 open Angstrom
 open Printf
 open Stdio
@@ -33,6 +34,17 @@ let () =
     | Some path -> In_channel.read_all path |> String.trim
   in
   match parse_string ~consume:All parse_ast input with
-  | Ok ast -> if opts.dump_parse_tree then print_endline (show_ast ast)
-  | Error msg -> failwith (sprintf "Failed to parse file%s" msg)
+  | Ok ast ->
+    if opts.dump_parse_tree then print_endline (show_ast ast);
+    let initial_state =
+      { registers = StringMap.empty
+      ; memory = Int64Map.empty
+      ; memory_writable = Int64Map.empty
+      ; pc = Int64.zero
+      }
+    in
+    (match interpret initial_state ast with
+     | Ok final_state -> print_endline (show_state final_state)
+     | Error msg -> failwith (sprintf "Interpretation error: %s" msg))
+  | Error msg -> failwith (sprintf "Failed to parse file: %s" msg)
 ;;

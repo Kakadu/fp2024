@@ -254,7 +254,6 @@ let pp_directive ppf = function
   | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
   | Word imm -> Format.fprintf ppf ".word %d" imm
   | Space imm -> Format.fprintf ppf ".space %d" imm
-
 ;;
 
 let pp_label ppf label = Format.fprintf ppf "%s:" label
