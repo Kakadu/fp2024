@@ -2,4 +2,5 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val parse_ast : Ast.expr list Angstrom.t
+val gen_my_label : string QCheck.Gen.t
+val gen_my_string : string QCheck.Gen.t

@@ -21,6 +21,7 @@ depends: [
   "ppx_deriving"
   "bisect_ppx"
   "qcheck-core"
+  "ppx_deriving_qcheck"
   "odoc" {with-doc}
   "ocamlformat" {build}
 ]

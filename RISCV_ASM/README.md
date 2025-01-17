@@ -1,8 +1,8 @@
 # RISC-V 64 ASM Mini-Language
 
 ## Functionality and status
-* AST - waiting for review
-* Parser (TODO)
+* AST - complete
+* Parser (with prettyprinter & quickchecker) - waiting for review
 * Interpreter (TODO)
 
 ## Authors
