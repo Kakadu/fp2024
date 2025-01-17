@@ -1,1 +1,1 @@
-manytests/typed/006partial.ml
+../../../../manytests/typed/006partial.ml

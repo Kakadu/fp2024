@@ -1,1 +1,1 @@
-manytests/typed/003fib.ml
+../../../../manytests/typed/003fib.ml

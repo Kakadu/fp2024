@@ -1,1 +1,1 @@
-manytests/typed/015tuples.ml
+../../../../manytests/typed/015tuples.ml

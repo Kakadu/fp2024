@@ -1,1 +1,1 @@
-manytests/typed/008ascription.ml
+../../../../manytests/typed/008ascription.ml

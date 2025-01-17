@@ -1,1 +1,1 @@
-manytests/typed/005fix.ml
+../../../../manytests/typed/005fix.ml

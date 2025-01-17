@@ -1,1 +1,1 @@
-manytests/typed/004manyargs.ml
+../../../../manytests/typed/004manyargs.ml

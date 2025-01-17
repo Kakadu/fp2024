@@ -1,1 +1,1 @@
-manytests/typed/010sukharev.ml
+../../../../manytests/typed/010sukharev.ml
