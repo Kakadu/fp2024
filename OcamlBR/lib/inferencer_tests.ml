@@ -147,7 +147,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_program_test {|let rec x = 1+ x|} in
-  [%expect {| val x : int |}]
+  [%expect {| Infer error: Ill right-hand side of let rec |}]
 ;;
 
 let%expect_test _ =
