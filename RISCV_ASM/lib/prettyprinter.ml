@@ -252,7 +252,9 @@ let pp_directive ppf = function
   | CfiRestore imm -> Format.fprintf ppf ".cfi_restore %d" imm
   | Ident str -> Format.fprintf ppf ".ident %S" str
   | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
-  | Word imm -> Format.fprintf ppf ".word %a" pp_address (Address32 imm)
+  | Word imm -> Format.fprintf ppf ".word %d" imm
+  | Space imm -> Format.fprintf ppf ".space %d" imm
+
 ;;
 
 let pp_label ppf label = Format.fprintf ppf "%s:" label
