@@ -302,11 +302,16 @@ let handle_branch_condition state program rs1 rs2 imm_value comparison_fn =
   return (set_pc state new_pc)
 ;;
 
-let execute_arithmetic_op state rd rs1 rs2 op =
+let execute_arithmetic_op state rd rs1 rs2 op sext =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
   let result = op val1 val2 in
-  return (set_register_value state rd result)
+  let result_final =
+    match sext with
+    | true -> Int64.shift_right (Int64.shift_left (Int64.logand result 0xFFFFFFFFL) 32) 32
+    | false -> result
+  in
+  return (set_register_value state rd result_final)
 ;;
 
 let execute_shift_op state rd rs1 rs2 op =
@@ -327,7 +332,7 @@ let execute_comparison_op state rd rs1 rs2 compare_fn =
   return (set_register_value state rd result)
 ;;
 
-let execute_immediate_op state program rd rs1 imm op =
+let execute_immediate_op state program rd rs1 imm op sext =
   let val1 = get_register_value state rs1 in
   let address_info = get_address12_value program imm in
   let imm_value =
@@ -336,7 +341,12 @@ let execute_immediate_op state program rd rs1 imm op =
     | Label excluding_directives_label_offset -> excluding_directives_label_offset
   in
   let result = op val1 imm_value in
-  return (set_register_value state rd result)
+  let result_final =
+    match sext with
+    | true -> Int64.shift_right (Int64.shift_left (Int64.logand result 0xFFFFFFFFL) 32) 32
+    | false -> result
+  in
+  return (set_register_value state rd result_final)
 ;;
 
 let execute_shift_immediate_op state program rd rs1 imm op =
@@ -499,11 +509,11 @@ let rec interpret state program =
 
 and execute_instruction state instr program =
   match instr with
-  | Add (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add
-  | Sub (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub
-  | Xor (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logxor
-  | Or (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logor
-  | And (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logand
+  | Add (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add false
+  | Sub (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub false
+  | Xor (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logxor false
+  | Or (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logor false
+  | And (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logand false
   | Sll (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_left
   | Srl (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right_logical
   | Sra (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right
@@ -512,10 +522,12 @@ and execute_instruction state instr program =
   | Sltu (rd, rs1, rs2) ->
     execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 ->
       Int64.unsigned_compare arg1 arg2 < 0)
-  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add
-  | Xori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logxor
-  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor
-  | Andi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logand
+  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add false
+  | Xori (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm Int64.logxor false
+  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor false
+  | Andi (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm Int64.logand false
   | Slli (rd, rs1, imm) ->
     execute_shift_immediate_op state program rd rs1 imm Int64.shift_left
   | Srli (rd, rs1, imm) ->
@@ -523,15 +535,29 @@ and execute_instruction state instr program =
   | Srai (rd, rs1, imm) ->
     execute_shift_immediate_op state program rd rs1 imm Int64.shift_right
   | Slti (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
-      match Int64.compare arg1 imm_value with
-      | x when x < 0 -> 1L
-      | _ -> 0L)
+    execute_immediate_op
+      state
+      program
+      rd
+      rs1
+      imm
+      (fun arg1 imm_value ->
+        match Int64.compare arg1 imm_value with
+        | x when x < 0 -> 1L
+        | _ -> 0L)
+      false
   | Sltiu (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
-      match Int64.unsigned_compare arg1 imm_value with
-      | x when x < 0 -> 1L
-      | _ -> 0L)
+    execute_immediate_op
+      state
+      program
+      rd
+      rs1
+      imm
+      (fun arg1 imm_value ->
+        match Int64.unsigned_compare arg1 imm_value with
+        | x when x < 0 -> 1L
+        | _ -> 0L)
+      false
   | Lb (rd, rs1, imm) -> execute_load state program rd rs1 imm 1 true
   | Lh (rd, rs1, imm) -> execute_load state program rd rs1 imm 2 true
   | Lw (rd, rs1, imm) -> execute_load state program rd rs1 imm 4 true
@@ -646,14 +672,23 @@ and execute_instruction state instr program =
     let new_value = Int64.add state.pc imm_value in
     return (set_register_value state rd new_value)
   | Ecall -> handle_syscall state
-  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
-  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
-  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
+  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul false
+  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div false
+  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem false
   | Lwu (rd, rs1, imm) -> execute_load state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 8
   | Mv (rd, rs) ->
-    execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add
+    execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add false
+  | Li (rd, imm) ->
+    let imm_value =
+      match imm with
+      | ImmediateAddress32 value -> Int64.of_int value
+      | LabelAddress32 label -> resolve_label_excluding_directives program label
+    in
+    return (set_register_value state rd imm_value)
+  | Addiw (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add true
+  | Mulw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul true
   | _ -> return state
 ;;
 
@@ -666,20 +701,4 @@ let show_state state =
   in
   let pc_str = Printf.sprintf "PC: %Ld" state.pc in
   registers_str ^ pc_str
-;;
-
-let _ =
-  let program =
-    [ InstructionExpr (Add (X1, X2, X3))
-    ; LabelExpr "start"
-    ; InstructionExpr (Sub (X4, X5, X6))
-    ; InstructionExpr (Jalr (X1, X2, ImmediateAddress12 4))
-    ; InstructionExpr (Jr X3)
-    ; InstructionExpr (J (ImmediateAddress20 8))
-    ]
-  in
-  let initial_state = init_state program in
-  match interpret initial_state program with
-  | Ok final_state -> Printf.printf "Final State: %s\n" (show_state final_state)
-  | Error e -> Printf.printf "Error: %s\n" e
 ;;
