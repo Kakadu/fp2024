@@ -4,7 +4,7 @@ open Inferencer.Infer
 
 
 let infer_from_file file_name =
-  let file_path = "../tests/inferencer_tests/" ^ file_name in
+  let file_path = "../../../../../tests/inferencer_tests/" ^ file_name in
   let input = 
     let ic = open_in file_path in
     let len = in_channel_length ic in
@@ -14,18 +14,109 @@ let infer_from_file file_name =
   in
   let result = infer_program_test input in
   result
+;;
 
-let%expect_test "do_not_type_001" =
-  let _ = infer_from_file "do_not_type/001.ml" in
-  [%expect {| val ..3232. |}]
-(*
-let%expect_test "do_not_type_002if" =
-  let _ = infer_from_file "do_not_type/002if.ml" in
+let%expect_test "typed_001fac" =
+  let _ = infer_from_file "typed/001fac.ml" in
+  [%expect {| 
+  val fac : int -> int
+  val main : int|}]
+;;
+
+let%expect_test "typed_002fac" =
+  let _ = infer_from_file "typed/002fac.ml" in
+  [%expect {| 
+  val fac_cps : int -> ((int -> int) -> int)
+  val main : int|}]
+;;
+
+let%expect_test "typed_003fib" =
+  let _ = infer_from_file "typed/003fib.ml" in
+  [%expect {| 
+  val fib : int -> int
+  val fib_acc : int -> (int -> (int -> int))
+  val main : int |}]
+;;
+
+let%expect_test "typed_004manyargs" =
+  let _ = infer_from_file "typed/004manyargs.ml" in
+  [%expect {| 
+  val main : int
+  val test10 : int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> int)))))))))
+  val test3 : int -> (int -> (int -> int))
+  val wrap : '0 -> '0 |}]
+;;
+
+let%expect_test "typed_005fix" =
+  let _ = infer_from_file "typed/005fix.ml" in
+  [%expect {| 
+  val fac : (int -> int) -> (int -> int)
+  val fix : ((int -> int) -> (int -> int)) -> (int -> int)
+  val main : int |}]
+;;
+
+let%expect_test "typed_006partial" =
+  let _ = infer_from_file "typed/006partial.ml" in
+  [%expect {|
+  val foo : int -> int
+  val main : int |}]
+;;
+
+let%expect_test "typed_006partial2" =
+  let _ = infer_from_file "typed/006partial2.ml" in
+  [%expect {|
+  val foo : int -> (int -> (int -> int))
+  val main : int |}]
+;;
+
+let%expect_test "typed_006partial3" =
+  let _ = infer_from_file "typed/006partial3.ml" in
+  [%expect {| 
+  val foo : int -> (int -> (int -> unit))
+  val main : int |}]
+;;
+
+let%expect_test "typed_007order" =
+  let _ = infer_from_file "typed/007order.ml" in
+  [%expect {| 
+  val _start : unit -> (unit -> (int -> (unit -> (int -> (int -> (unit -> (int -> (int -> int))))))))
+  val main : unit |}]
+;;
+
+let%expect_test "typed_008ascription" =
+  let _ = infer_from_file "typed/008ascription.ml" in
+  [%expect {| 
+  val addi : ('2 -> (bool -> int)) -> (('2 -> bool) -> ('2 -> int))
+  val main : int |}]
+;;
+
+let%expect_test "typed_009let_poly" =
+  let _ = infer_from_file "typed/009let_poly.ml" in
+  [%expect {| val temp : (int * bool) |}]
+;;
+
+let%expect_test "typed_010sukharev" =
+  let _ = infer_from_file "typed/010sukharev.ml" in
   [%expect {| val ... |}]
-*)
+;;
 
+let%expect_test "typed_015tuples" =
+  let _ = infer_from_file "typed/015tuples.ml" in
+  [%expect {| val ... |}]
+;;
 
-
+let%expect_test "typed_016lists" =
+  let _ = infer_from_file "typed/016lists.ml" in
+  [%expect {|
+  val append : (int * int) list -> ((int * int) list -> (int * int) list)
+  val cartesian : int list -> (int list -> (int * int) list)
+  val concat : (int * int) list list -> (int * int) list
+  val iter : (int -> unit) -> (int list -> unit)
+  val length : (int * int) list -> int
+  val length_tail : '16 list -> int
+  val main : int
+  val map : (int -> (int * int)) -> (int list -> (int * int) list) |}]
+;;
 
 
 
