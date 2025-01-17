@@ -810,7 +810,7 @@ module Infer = struct
     TypeEnv.extend
       "print_endline"
       (S (VarSet.empty, TArrow (tprim_string, tprim_unit)))
-      TypeEnv.empty
+      env
   ;;
 
   let infer_program str = Result.map snd (run (infer_structure env str))
