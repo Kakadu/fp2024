@@ -14,7 +14,8 @@ let parse str =
     Stdlib.print_endline (show_structure structure)
   | Error _ -> Stdlib.print_endline "Parsing failed"
 ;;
-(*
+
+
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
@@ -22,35 +23,25 @@ let%expect_test _ =
     let rec factorial = (fun n -> if n = 0 then 1 else n * factorial n - 1) in factorial 5 ;;
     [(SEval
         (Elet (Recursive,
-           (Evalue_binding ((Id ("factorial", None)),
-              (Efun ((PVar (Id ("n", None))), [],
+           (Evalue_binding (((PVar (Id "factorial")), None),
+              (Efun (((PVar (Id "n")), None), [],
                  (Eif_then_else (
-                    (Ebin_op (Eq, (Evar (Id ("n", None))), (Econst (Int 0)))),
+                    (Ebin_op (Eq, (Evar (Id "n")), (Econst (Int 0)))),
                     (Econst (Int 1)),
-                    (Some (Ebin_op (Mult, (Evar (Id ("n", None))),
-                             (Efun_application ((Evar (Id ("factorial", None))),
-                                (Ebin_op (Sub, (Evar (Id ("n", None))),
-                                   (Econst (Int 1))))
+                    (Some (Ebin_op (Mult, (Evar (Id "n")),
+                             (Efun_application ((Evar (Id "factorial")),
+                                (Ebin_op (Sub, (Evar (Id "n")), (Econst (Int 1))
+                                   ))
                                 ))
                              )))
                     ))
                  ))
               )),
-           [],
-           (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))
-           )))
+           [], (Efun_application ((Evar (Id "factorial")), (Econst (Int 5)))))))
       ]
     |}]
 ;;
-*)
-let%expect_test _ =
-  parse "let rec x = 1+ x";
-  [%expect {|
-    [] ;;
-    [(SEval (Elist []))]
-    |}]
-;;
-(*
+
 let%expect_test _ =
   parse "if 5 > 6 then let x = 5 in x + 5";
   [%expect
@@ -59,8 +50,8 @@ let%expect_test _ =
     [(SEval
         (Eif_then_else ((Ebin_op (Gt, (Econst (Int 5)), (Econst (Int 6)))),
            (Elet (Non_recursive,
-              (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
-              (Ebin_op (Add, (Evar (Id ("x", None))), (Econst (Int 5)))))),
+              (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))),
+              [], (Ebin_op (Add, (Evar (Id "x")), (Econst (Int 5)))))),
            None)))
       ]
     |}]
@@ -106,7 +97,7 @@ let%expect_test _ =
     {|
     let  a = (1, 2, 3) ;;
     [(SValue (Non_recursive,
-        (Evalue_binding ((Id ("a", None)),
+        (Evalue_binding (((PVar (Id "a")), None),
            (Etuple ((Econst (Int 1)), (Econst (Int 2)), [(Econst (Int 3))])))),
         []))
       ]
@@ -137,18 +128,11 @@ let%expect_test _ =
            (Ebin_op (Eq, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 1)))),
               (Econst (Int 1235)))),
            (Elet (Non_recursive,
-              (Evalue_binding ((Id ("x", None)), (Econst (Int 4)))), [],
-              (Etuple ((Evar (Id ("x", None))), (Econst (Int 2)), [])))),
+              (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 4)))),
+              [], (Etuple ((Evar (Id "x")), (Econst (Int 2)), [])))),
            None)))
       ]
     |}]
-;;
-
-let%expect_test _ =
-  parse "let rec 5 = ()";
-  [%expect {| 
-  Parsing failed
-  |}]
 ;;
 
 let%expect_test _ =
@@ -166,16 +150,17 @@ let%expect_test _ =
     if 13 > 12 then let  a = 2 in a - 4 ;;
     [(SEval
         (Elet (Non_recursive,
-           (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
+           (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))),
+           [],
            (Elet (Non_recursive,
-              (Evalue_binding ((Id ("y", None)), (Econst (Int 3)))), [],
-              (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))))))
+              (Evalue_binding (((PVar (Id "y")), None), (Econst (Int 3)))),
+              [], (Ebin_op (Add, (Evar (Id "x")), (Evar (Id "y"))))))
            )));
       (SEval
          (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
             (Elet (Non_recursive,
-               (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-               (Ebin_op (Sub, (Evar (Id ("a", None))), (Econst (Int 4)))))),
+               (Evalue_binding (((PVar (Id "a")), None), (Econst (Int 2)))),
+               [], (Ebin_op (Sub, (Evar (Id "a")), (Econst (Int 4)))))),
             None)))
       ]
   |}]
@@ -188,13 +173,12 @@ let%expect_test _ =
     let  x = 5 ;;
     if 13 > 12 then let  a = 2 in a + x ;;
     [(SValue (Non_recursive,
-        (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []));
+        (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))), []));
       (SEval
          (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
             (Elet (Non_recursive,
-               (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-               (Ebin_op (Add, (Evar (Id ("a", None))), (Evar (Id ("x", None)))))
-               )),
+               (Evalue_binding (((PVar (Id "a")), None), (Econst (Int 2)))),
+               [], (Ebin_op (Add, (Evar (Id "a")), (Evar (Id "x")))))),
             None)))
       ]
   |}]
@@ -206,8 +190,8 @@ let%expect_test _ =
     {|
   let  x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)),
-         (Ematch ((Econst (Int 3)),
+      (Evalue_binding (((PVar (Id "x")), None),
+         (Ematch ((Some (Econst (Int 3))),
             (Ecase ((PConst (Int 1)), (Econst (Int 10)))),
             [(Ecase ((PConst (Int 2)), (Econst (Int 20))));
               (Ecase (PAny, (Econst (Int 30))))]
@@ -238,7 +222,7 @@ let%expect_test _ =
     {|
   let  x = 5 ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []))
+      (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))), []))
     ]
   |}]
 ;;
@@ -262,7 +246,8 @@ let%expect_test _ =
     {|
   let  x : int = 42 ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", (Some int))), (Econst (Int 42)))), []))
+      (Evalue_binding (((PVar (Id "x")), (Some int)), (Econst (Int 42)))),
+      []))
     ]
   |}]
 ;;
@@ -273,11 +258,9 @@ let%expect_test _ =
     {|
   let  f : int -> string = (fun x -> string_of_int x) ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("f", (Some int -> string))),
-         (Efun ((PVar (Id ("x", None))), [],
-            (Efun_application ((Evar (Id ("string_of_int", None))),
-               (Evar (Id ("x", None)))))
-            ))
+      (Evalue_binding (((PVar (Id "f")), (Some int -> string)),
+         (Efun (((PVar (Id "x")), None), [],
+            (Efun_application ((Evar (Id "string_of_int")), (Evar (Id "x"))))))
          )),
       []))
     ]
@@ -290,7 +273,7 @@ let%expect_test _ =
     {|
   let  y : (int * string * bool) = (1, "hello", true) ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("y", (Some (int * string * bool)))),
+      (Evalue_binding (((PVar (Id "y")), (Some (int * string * bool))),
          (Etuple ((Econst (Int 1)), (Econst (String "hello")),
             [(Econst (Bool true))]))
          )),
@@ -305,7 +288,7 @@ let%expect_test _ =
     {|
   let  l : int list = [1; 2; 3] ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("l", (Some int list))),
+      (Evalue_binding (((PVar (Id "l")), (Some int list)),
          (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]))),
       []))
     ]
@@ -318,12 +301,12 @@ let%expect_test _ =
     {|
   let  g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)] ;;
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("g", (Some (int -> bool) list))),
+      (Evalue_binding (((PVar (Id "g")), (Some (int -> bool) list)),
          (Elist
-            [(Efun ((PVar (Id ("x", None))), [],
-                (Ebin_op (Gt, (Evar (Id ("x", None))), (Econst (Int 0))))));
-              (Efun ((PVar (Id ("x", None))), [],
-                 (Ebin_op (Lt, (Evar (Id ("x", None))), (Econst (Int 0))))))
+            [(Efun (((PVar (Id "x")), None), [],
+                (Ebin_op (Gt, (Evar (Id "x")), (Econst (Int 0))))));
+              (Efun (((PVar (Id "x")), None), [],
+                 (Ebin_op (Lt, (Evar (Id "x")), (Econst (Int 0))))))
               ])
          )),
       []))
@@ -337,12 +320,10 @@ let%expect_test _ =
     {|
    let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
    [(SValue (Non_recursive,
-       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
-          (Efun ((PVar (Id ("x", None))), [],
-             (Efun ((PVar (Id ("y", None))), [],
-                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
-                   ))
-                ))
+       (Evalue_binding (((PVar (Id "f")), (Some string -> (int -> bool))),
+          (Efun (((PVar (Id "x")), None), [],
+             (Efun (((PVar (Id "y")), None), [],
+                (Ebin_op (Add, (Evar (Id "x")), (Evar (Id "y"))))))
              ))
           )),
        []))
@@ -354,15 +335,13 @@ let%expect_test _ =
   parse "let f = fun (3, true): int*bool -> 4";
   [%expect
     {|
-   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   let  f = (fun ((3, true) : (int * bool)) -> 4) ;;
    [(SValue (Non_recursive,
-       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
-          (Efun ((PVar (Id ("x", None))), [],
-             (Efun ((PVar (Id ("y", None))), [],
-                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
-                   ))
-                ))
-             ))
+       (Evalue_binding (((PVar (Id "f")), None),
+          (Efun (
+             ((PTuple ((PConst (Int 3)), (PConst (Bool true)), [])),
+              (Some (int * bool))),
+             [], (Econst (Int 4))))
           )),
        []))
      ]
@@ -373,18 +352,17 @@ let%expect_test _ =
   parse "let f ((3, true) : int * bool) x ([ 7; 5 ] : int list) = 4";
   [%expect
     {|
-   let  f : string -> (int -> bool) = (fun x -> (fun y -> x + y)) ;;
+   let  f = (fun ((3, true) : (int * bool)) x ([7; 5] : int list) -> 4) ;;
    [(SValue (Non_recursive,
-       (Evalue_binding ((Id ("f", (Some string -> (int -> bool)))),
-          (Efun ((PVar (Id ("x", None))), [],
-             (Efun ((PVar (Id ("y", None))), [],
-                (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))
-                   ))
-                ))
-             ))
+       (Evalue_binding (((PVar (Id "f")), None),
+          (Efun (
+             ((PTuple ((PConst (Int 3)), (PConst (Bool true)), [])),
+              (Some (int * bool))),
+             [((PVar (Id "x")), None);
+               ((PList [(PConst (Int 7)); (PConst (Int 5))]), (Some int list))],
+             (Econst (Int 4))))
           )),
        []))
      ]
   |}]
 ;;
-*)
