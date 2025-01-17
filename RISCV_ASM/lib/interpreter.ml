@@ -709,3 +709,59 @@ let show_state state =
   let pc_str = Printf.sprintf "PC: %Ld" state.pc in
   registers_str ^ pc_str
 ;;
+
+let%expect_test "test_program_execution" =
+  let program =
+    [ InstructionExpr (Add (X1, X2, X3))
+    ; LabelExpr "start"
+    ; InstructionExpr (Sub (X4, X5, X6))
+    ; InstructionExpr (Jalr (X1, X2, ImmediateAddress12 4))
+    ; InstructionExpr (Jr X3)
+    ; InstructionExpr (J (ImmediateAddress20 8))
+    ]
+  in
+  let initial_state = init_state program in
+  match interpret initial_state program with
+  | Ok final_state ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+      X0: 0
+      X1: 4
+      X2: 0
+      X3: 0
+      X4: 0
+      X5: 0
+      X6: 0
+      X7: 0
+      X8: 0
+      X9: 0
+      X10: 0
+      X11: 0
+      X12: 0
+      X13: 0
+      X14: 0
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 0
+      X29: 0
+      X30: 0
+      X31: 0
+      PC: 8
+    |}]
+  | Error e ->
+    print_string ("Error: " ^ e);
+    [%expect {| Error: <error_message> |}]
+;;
