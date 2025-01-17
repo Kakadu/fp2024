@@ -56,6 +56,8 @@ type expr =
   | Var of id (** Variable reference, e.g. [x], [my_var]. *)
   | Const of const (** Constant value, e.g. [42], ["hello"], [true]. *)
   | BinOp of binop * expr * expr (** Binary operation, e.g. [x + y], [a >= b]. *)
+  | Option of expr option
+  (* todo: взаимная рекурсия *)
   | Let of let_binding * expr (** [let] expression, e.g. [let x = 5 in e]. *)
   | App of expr * expr (** Function application, e.g. [e1 e2], [(fun x -> x) 42]. *)
   | Fun of pat * expr (** Function definition, e.g. [fun p -> e]. *)
