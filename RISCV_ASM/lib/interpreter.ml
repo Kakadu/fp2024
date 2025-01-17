@@ -97,7 +97,7 @@ let resolve_label_excluding_directives program label =
     | LabelExpr lbl :: _ when lbl = label -> idx
     | InstructionExpr _ :: tl -> aux (Int64.add idx 4L) tl
     | DirectiveExpr (Word _) :: tl -> aux (Int64.add idx 4L) tl
-    | DirectiveExpr (Space integer) :: tl -> aux (Int64.add idx (Int64.of_int (integer))) tl
+    | DirectiveExpr (Space integer) :: tl -> aux (Int64.add idx (Int64.of_int integer)) tl
     | _ :: tl -> aux idx tl
   in
   aux 0L program
@@ -125,14 +125,15 @@ let get_address32_value program = function
 let init_data program =
   let rec traverse_program program temporary_pc_counter memory memory_writable =
     match program with
-    | [] -> (memory, memory_writable)
+    | [] -> memory, memory_writable
     | InstructionExpr _ :: rest ->
       let memory_writable =
         List.fold_left
           (fun acc offset ->
-            Int64Map.add (Int64.add temporary_pc_counter offset) false acc) (* instructions unwritable *)
+            Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
+            (* instructions unwritable *)
           memory_writable
-          [0L; 1L; 2L; 3L]
+          [ 0L; 1L; 2L; 3L ]
       in
       traverse_program rest (Int64.add temporary_pc_counter 4L) memory memory_writable
     | DirectiveExpr (Word integer) :: rest ->
@@ -143,18 +144,24 @@ let init_data program =
       let memory_writable =
         List.fold_left
           (fun acc offset ->
-            Int64Map.add (Int64.add temporary_pc_counter offset) false acc) (* rest is unwritable *)
+            Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
+            (* rest is unwritable *)
           memory_writable
-          [1L; 2L; 3L]
+          [ 1L; 2L; 3L ]
       in
       traverse_program rest (Int64.add temporary_pc_counter 4L) memory memory_writable
     | DirectiveExpr (Space integer) :: rest ->
-      traverse_program rest (Int64.add temporary_pc_counter (Int64.of_int integer)) memory memory_writable
+      traverse_program
+        rest
+        (Int64.add temporary_pc_counter (Int64.of_int integer))
+        memory
+        memory_writable
     | _ :: rest ->
       (* skip over labels, other directives *)
       traverse_program rest temporary_pc_counter memory memory_writable
   in
   traverse_program program 0L Int64Map.empty Int64Map.empty
+;;
 
 let init_state program =
   let registers =
@@ -237,7 +244,7 @@ let resolve_address_incl_to_excl program immediate64_value =
         "End of program reached before resolving immediate address from including \
          directives to excluding"
     | InstructionExpr _ :: _ when remaining_value = 4L -> return (Int64.add index 4L)
-    | DirectiveExpr (Word _)  :: _ when remaining_value = 4L -> return (Int64.add index 4L)
+    | DirectiveExpr (Word _) :: _ when remaining_value = 4L -> return (Int64.add index 4L)
     | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
       traverse_program index (Int64.sub remaining_value 4L) rest
     | InstructionExpr _ :: rest ->
@@ -254,7 +261,7 @@ let resolve_address_excl_to_incl program immediate64_value =
         "End of program reached before resolving immediate address from excluding \
          directives to including"
     | InstructionExpr _ :: _ when remaining_value = 4L -> return (Int64.add index 4L)
-    | DirectiveExpr (Word _)  :: _ when remaining_value = 4L -> return (Int64.add index 4L)
+    | DirectiveExpr (Word _) :: _ when remaining_value = 4L -> return (Int64.add index 4L)
     | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
       traverse_program (Int64.add index 4L) remaining_value rest
     | InstructionExpr _ :: rest ->
@@ -337,33 +344,38 @@ let execute_shift_immediate_op state program rd rs1 imm op =
   let imm_value =
     match get_address12_value program imm with
     | Immediate imm_value -> imm_value
-    | Label excluding_directives_label_offset -> Int64.to_int excluding_directives_label_offset
+    | Label excluding_directives_label_offset ->
+      Int64.to_int excluding_directives_label_offset
   in
   let result = op val1 imm_value in
   return (set_register_value state rd result)
 ;;
 
 let load_memory state address = function
-  | 1 | 2 | 4 as size -> (
-      (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
-      match Int64Map.find_opt address state.memory_writable with
-      | Some false -> 
-          fail "Load failed: Address is not writable, either an instruction address or points to the middle of the data"
-      | _ ->
-        match Int64Map.find_opt address state.memory with
-        | Some value -> 
-            let* result = match size with
-              | 1 -> return (Int64.logand value 0xFFL)
-              | 2 -> return (Int64.logand value 0xFFFFL)
-              | 4 -> return value
-              | _ -> fail "Unsupported load size"
-            in
-            return result
-        | None -> fail "Load failed: Address not found in memory")
+  | (1 | 2 | 4) as size ->
+    (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
+    (match Int64Map.find_opt address state.memory_writable with
+     | Some false ->
+       fail
+         "Load failed: Address is not writable, either an instruction address or points \
+          to the middle of the data"
+     | _ ->
+       (match Int64Map.find_opt address state.memory with
+        | Some value ->
+          let* result =
+            match size with
+            | 1 -> return (Int64.logand value 0xFFL)
+            | 2 -> return (Int64.logand value 0xFFFFL)
+            | 4 -> return value
+            | _ -> fail "Unsupported load size"
+          in
+          return result
+        | None -> fail "Load failed: Address not found in memory"))
   | _ -> fail "Unsupported load size"
+;;
 
 let store_memory state address value size =
-  let* stored_value = 
+  let* stored_value =
     match size with
     | 1 -> return (Int64.logand value 0xFFL)
     | 2 -> return (Int64.logand value 0xFFFFL)
@@ -372,13 +384,16 @@ let store_memory state address value size =
   in
   (* Check if the address is writable *)
   match Int64Map.find_opt address state.memory_writable with
-  | Some false -> fail "Store failed: Address is not writable, either an instruction address or points to the middle of the data"
+  | Some false ->
+    fail
+      "Store failed: Address is not writable, either an instruction address or points to \
+       the middle of the data"
   | _ ->
     let memory = Int64Map.add address stored_value state.memory in
     let* memory_writable =
       match size with
       | 1 ->
-        let memory_writable = 
+        let memory_writable =
           state.memory_writable
           |> Int64Map.add address false
           |> Int64Map.add (Int64.add address 1L) true
@@ -581,8 +596,7 @@ and execute_instruction state instr program =
     let* new_pc =
       match address_info with
       | Immediate imm_value ->
-        resolve_address_excl_to_incl
-          program (Int64.add val_rs1 (Int64.of_int imm_value))
+        resolve_address_excl_to_incl program (Int64.add val_rs1 (Int64.of_int imm_value))
       | Label excluding_directives_label_offset ->
         resolve_address_excl_to_incl
           program
@@ -592,9 +606,7 @@ and execute_instruction state instr program =
     return (set_pc new_state new_pc)
   | Jr rs1 ->
     let val_rs1 = get_register_value state rs1 in
-    let* new_pc =
-      resolve_address_excl_to_incl program val_rs1
-    in
+    let* new_pc = resolve_address_excl_to_incl program val_rs1 in
     let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
     return (set_pc new_state new_pc)
   | J imm_value ->
@@ -640,6 +652,8 @@ and execute_instruction state instr program =
   | Lwu (rd, rs1, imm) -> execute_load state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 8
+  | Mv (rd, rs) ->
+    execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add
   | _ -> return state
 ;;
 
