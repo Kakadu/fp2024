@@ -236,29 +236,62 @@ let rec infer_expression env = function
   | _ -> fail `Not_implemented
 ;;
 
+let infer_non_rec_binding_list env (bl : binding list) =
+  let* env2 =
+    Base.List.fold_left
+      ~f:(fun env b ->
+        let* env = env in
+        let p, e = b in
+        match p with
+        | PVar x ->
+          let* s, t = infer_expression env e in
+          let env = TypeEnv.apply s env in
+          let sc = generalize env t in
+          let env = TypeEnv.extend env x sc in
+          return env
+        | _ -> fail `Not_implemented)
+      ~init:(return env)
+      bl
+  in
+  return env2
+;;
+
+let infer_rec_binding_list env (bl : binding list) =
+  let* env2 =
+    Base.List.fold_left
+      ~f:(fun env b ->
+        let* env = env in
+        let p, e = b in
+        match p with
+        | PVar x ->
+          let* fresh = fresh_var in
+          let sc = Scheme.S (VarSet.empty, fresh) in
+          let env = TypeEnv.extend env x sc in
+          let* s1, t1 = infer_expression env e in
+          let* s2 = Subst.unify t1 fresh in
+          let* s3 = Subst.compose s1 s2 in
+          let env = TypeEnv.apply s3 env in
+          let t2 = Subst.apply s3 t1 in
+          let sc = generalize_rec env t2 x in
+          let env = TypeEnv.extend env x sc in
+          return env
+        | _ -> fail `Not_implemented)
+      ~init:(return env)
+      bl
+  in
+  return env2
+;;
+
 let infer_structure_item env = function
-  | SValue (Rec, (PVar x1, e1), []) ->
-    let* fresh = fresh_var in
-    let sc = Scheme.S (VarSet.empty, fresh) in
-    let env = TypeEnv.extend env x1 sc in
-    let* s1, t1 = infer_expression env e1 in
-    let* s2 = Subst.unify t1 fresh in
-    let* s3 = Subst.compose s1 s2 in
-    let env = TypeEnv.apply s3 env in
-    let t2 = Subst.apply s3 t1 in
-    let sc = generalize_rec env t2 x1 in
-    let env = TypeEnv.extend env x1 sc in
-    return env
-  | SValue (NonRec, (PVar x1, e1), []) ->
-    let* s, t = infer_expression env e1 in
-    let env = TypeEnv.apply s env in
-    let sc = generalize env t in
-    let env = TypeEnv.extend env x1 sc in
-    return env
+  | SValue (Rec, b, bl) ->
+    let bindings = b :: bl in
+    infer_rec_binding_list env bindings
+  | SValue (NonRec, b, bl) ->
+    let bindings = b :: bl in
+    infer_non_rec_binding_list env bindings
   | SEval e ->
     let* _, _ = infer_expression env e in
     return env
-  | _ -> fail `Not_implemented
 ;;
 
 let infer_structure (structure : structure) =

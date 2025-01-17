@@ -201,3 +201,11 @@ let%expect_test _ =
     let c (a : int) (b : int list) = a + b|};
   [%expect {| Infer error: Unification failed on int list and int |}]
 ;;
+
+let%expect_test _ =
+  test_infer {| let a = 1 and b = 2 |};
+  [%expect {| 
+    val a : int
+    val b : int 
+  |}]
+;;
