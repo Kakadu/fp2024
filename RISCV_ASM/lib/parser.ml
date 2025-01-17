@@ -234,11 +234,9 @@ let parse_directive =
        ; parse_string_with_spaces ".ident"
          *> ws_opt (lift (fun str -> DirectiveExpr (Ident str)) parse_quoted_string)
        ; parse_string_with_spaces ".word"
-         *> ws_opt
-          (lift (fun int -> DirectiveExpr (Word int)) parse_number)
+         *> ws_opt (lift (fun int -> DirectiveExpr (Word int)) parse_number)
        ; parse_string_with_spaces ".space"
-         *> ws_opt
-          (lift (fun int -> DirectiveExpr (Space int)) parse_number)
+         *> ws_opt (lift (fun int -> DirectiveExpr (Space int)) parse_number)
        ])
 ;;
 
