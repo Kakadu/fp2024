@@ -63,6 +63,41 @@ let%expect_test "eval 'Struct_eval'" =
   |}]
 ;;
 
+let%expect_test "eval 'Exp_fun'" =
+  run {|
+  let foo x y = x * y
+  let q = foo 1 6
+  let w = foo 2 (-5)
+  |};
+  [%expect {|
+  val foo = <fun>
+  val q = 6
+  val w = -10
+  |}]
+;;
+
+let%expect_test "eval recursive value binding 1" =
+  run {|
+  let rec x = 21 and y = x + 1;;
+  |};
+  [%expect {|
+  val x = 21
+  val y = 22
+  |}]
+;;
+
+let%expect_test "eval recursive value binding 2" =
+  run
+    {|
+  let rec factorial n = if n <= 1 then 1 else n * factorial (n - 1);;
+  factorial 5
+  |};
+  [%expect {|
+  val factorial = <fun>
+  - = 120
+  |}]
+;;
+
 let%expect_test "eval pattern-matching" =
   run
     {|

@@ -9,7 +9,6 @@ type error =
   | `Division_by_zero
   | `Match_failure
   | `No_variable of string
-  | `Not_implemented
   ]
 
 let pp_error ppf : error -> _ = function
@@ -17,14 +16,13 @@ let pp_error ppf : error -> _ = function
   | `Division_by_zero -> Format.fprintf ppf "Division by zero"
   | `Match_failure -> Format.fprintf ppf "Matching failure"
   | `No_variable id -> Format.fprintf ppf "Undefined variable '%s'" id
-  | `Not_implemented -> Format.fprintf ppf "In progress..."
 ;;
 
 type value =
   | Val_integer of int
   | Val_char of char
   | Val_string of string
-  | Val_fun of string option * pattern list * Expression.t * env
+  | Val_fun of string option * pattern * pattern list * Expression.t * env
   | Val_function of Expression.t case list * env
   | Val_tuple of value * value * value list
   | Val_construct of ident * value option
@@ -88,11 +86,6 @@ module EvalEnv = struct
     match Map.find env key with
     | Some value -> Res.return value
     | None -> Res.fail (`No_variable key)
-  ;;
-
-  let update_exn env key ~f =
-    let value = find_exn env key in
-    extend env key (f value)
   ;;
 end
 
@@ -207,8 +200,10 @@ module Inter = struct
     | Exp_let (Nonrecursive, value_binding, value_binding_list, exp) ->
       let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
-    | Exp_let (Recursive, value_binding, value_binding_list, exp) -> fail `Not_implemented
-    | Exp_fun (pat, pat_list, e) -> return (Val_fun (None, pat :: pat_list, e, env))
+    | Exp_let (Recursive, value_binding, value_binding_list, exp) ->
+      let* env = rec_eval_value_binding_list env (value_binding :: value_binding_list) in
+      eval_expression env exp
+    | Exp_fun (pat, pat_list, exp) -> return (Val_fun (None, pat, pat_list, exp, env))
     | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
       let* value1 = eval_expression env exp1 in
       let* value2 = eval_expression env exp2 in
@@ -223,19 +218,26 @@ module Inter = struct
        | _ ->
          let* fun_val = eval_expression env exp1 in
          let* arg_val = eval_expression env exp2 in
-         fail `Not_implemented)
+         (match fun_val with
+          | Val_fun (name, pat, pat_list, exp, env) ->
+            let* env =
+              match match_pattern env (pat, arg_val) with
+              | Some env ->
+                (match name with
+                 | Some name -> return (extend env name fun_val)
+                 | _ -> return env)
+              | None -> fail `Match_failure
+            in
+            (match pat_list with
+             | [] -> eval_expression env exp
+             | first_pat :: rest_pat_list ->
+               return (Val_fun (name, first_pat, rest_pat_list, exp, env)))
+          | Val_function (case_list, env) -> find_and_eval_case env arg_val case_list
+          | _ -> fail `Type_error))
     | Exp_function (case, case_list) -> return (Val_function (case :: case_list, env))
     | Exp_match (exp, case, case_list) ->
       let* match_value = eval_expression env exp in
-      let rec match_helper env value = function
-        | [] -> fail `Match_failure
-        | { left; right } :: tail ->
-          let env_temp = match_pattern env (left, value) in
-          (match env_temp with
-           | Some env -> eval_expression env right
-           | None -> match_helper env value tail)
-      in
-      match_helper env match_value (case :: case_list)
+      find_and_eval_case env match_value (case :: case_list)
     | Exp_tuple (fst_exp, snd_exp, exp_list) ->
       let* fst_val = eval_expression env fst_exp in
       let* snd_val = eval_expression env snd_exp in
@@ -274,6 +276,14 @@ module Inter = struct
       return value
     | Exp_constraint (exp, _) -> eval_expression env exp
 
+  and find_and_eval_case env value = function
+    | [] -> fail `Match_failure
+    | { left; right } :: tail ->
+      let env_temp = match_pattern env (left, value) in
+      (match env_temp with
+       | Some env -> eval_expression env right
+       | None -> find_and_eval_case env value tail)
+
   and eval_value_binding_list env value_binding_list =
     let* env, name_list, value_list =
       Base.List.fold_left
@@ -282,12 +292,6 @@ module Inter = struct
           let* value = eval_expression env exp in
           match pat with
           | Pat_var name | Pat_constraint (Pat_var name, _) ->
-            let value =
-              match value with
-              | Val_fun (None, pat_list, exp, env) ->
-                Val_fun (Some name, pat_list, exp, env)
-              | other -> other
-            in
             return (env, name :: names, value :: values)
           | _ ->
             let* names, value_list = extract_names_from_pat names [] (pat, value) in
@@ -297,12 +301,32 @@ module Inter = struct
     in
     let rec extend_many env names values =
       match names, values with
-      | [], _ | _, [] -> return env
+      | [], [] -> return env
       | name :: rest_names, value :: rest_values ->
         let env = extend env name value in
         extend_many env rest_names rest_values
+      | _, _ -> fail `Type_error
     in
     extend_many env name_list value_list
+
+  and rec_eval_value_binding_list env value_binding_list =
+    Base.List.fold_left
+      ~f:(fun acc { pat; exp } ->
+        let* env = acc in
+        let* value = eval_expression env exp in
+        match pat with
+        | Pat_var name | Pat_constraint (Pat_var name, _) ->
+          let value =
+            match value with
+            | Val_fun (None, pat, pat_list, exp, env) ->
+              Val_fun (Some name, pat, pat_list, exp, env)
+            | other -> other
+          in
+          let env = extend env name value in
+          return env
+        | _ -> fail `Type_error)
+      ~init:(return env)
+      value_binding_list
   ;;
 
   let eval_structure_item env = function
@@ -312,7 +336,9 @@ module Inter = struct
     | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
       let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
       return (env, None)
-    | _ -> fail `Not_implemented
+    | Struct_value (Recursive, value_binding, value_binding_list) ->
+      let* env = rec_eval_value_binding_list env (value_binding :: value_binding_list) in
+      return (env, None)
   ;;
 
   let eval_structure =
