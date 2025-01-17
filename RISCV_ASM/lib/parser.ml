@@ -202,8 +202,7 @@ let parse_float_register =
        ; string "fs7" *> return Fs7
        ; string "fs8" *> return Fs8
        ; string "fs9" *> return Fs9
-       ]
-    )
+       ])
 ;;
 
 let parse_immediate12 = ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_number)
@@ -879,7 +878,7 @@ let parse_instruction =
               (char ',' *> parse_float_register)
        ; parse_string_with_spaces "fadd.d"
          *> lift3
-              (fun r1 r2 r3  -> InstructionExpr (FaddD (r1, r2, r3)))
+              (fun r1 r2 r3 -> InstructionExpr (FaddD (r1, r2, r3)))
               parse_float_register
               (char ',' *> parse_float_register)
               (char ',' *> parse_float_register)
@@ -891,7 +890,7 @@ let parse_instruction =
               (char ',' *> parse_float_register)
        ; parse_string_with_spaces "fmul.d"
          *> lift3
-              (fun r1 r2 r3  -> InstructionExpr (FmulD (r1, r2, r3)))
+              (fun r1 r2 r3 -> InstructionExpr (FmulD (r1, r2, r3)))
               parse_float_register
               (char ',' *> parse_float_register)
               (char ',' *> parse_float_register)
