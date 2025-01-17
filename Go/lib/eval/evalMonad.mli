@@ -17,7 +17,8 @@ type nil = Nil
 
 (** Value for chanels *)
 type chan_value =
-  | Chan_initialized of int (** Initialized chanel, identified by id (basically a link to a chanel) *)
+  | Chan_initialized of int
+  (** Initialized chanel, identified by id (basically a link to a chanel) *)
   | Chan_uninitialized of nil
 
 (** Values that can be stored in a variables *)
@@ -110,6 +111,11 @@ end
 
 module ChanSet : Set.S with type elt = Chan.t
 
+type chanel_using_state =
+  { receiving_goroutine : goroutine
+  ; value : value
+  }
+
 type eval_state =
   { global_env : value MapIdent.t
   (** Stores values for predeclared identifiers and global variables and functions *)
@@ -118,6 +124,8 @@ type eval_state =
   ; waiting : GoSet.t
   (** All waiting goroutines (ready to run or trying to interact with a chanel) *)
   ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
+  ; is_using_chanel : chanel_using_state option
+  (** The state indicates that value was sent through chanel, but not received yet *)
   }
 
 (** Monad for evaluating the program state *)
@@ -145,10 +153,10 @@ module Monad : sig
   val create_goroutine : stack_frame -> unit t
   val run_goroutine : goroutine -> unit t
 
-  (** Stops currently running goroutine with a given state. Returns the stopped goroutine *)
-  val stop_running_goroutine : waiting_state -> goroutine t
-  val delete_running_goroutine : unit t
+  (** Stops currently running goroutine with a given state *)
+  val stop_running_goroutine : waiting_state -> unit t
 
+  val delete_running_goroutine : unit t
   val read_running_id : int t
   val ready_waiting : goroutine -> unit t
 
@@ -169,6 +177,17 @@ module Monad : sig
 
   (** Closes chanel. Fails if it is closed or uninited *)
   val close_chanel : chan_value -> unit t
+
+  (* Sending state *)
+
+  (** Enters chanel using state, accepts receiving goroutine and sent value. Fails if already in chanel using state *)
+  val start_using_chanel : goroutine -> value -> unit t
+
+  (** Exits chanel using state, returns receiving goroutine and sent value. Fails if not in chanel using state *)
+  val use_chanel : (goroutine * value) t
+
+  (** Returns [true] if in chanel using state, [false] otherwise *)
+  val is_using_chanel : bool t
 
   (* Call stack *)
   val add_stack_frame : stack_frame -> unit t

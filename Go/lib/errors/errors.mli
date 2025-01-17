@@ -12,7 +12,6 @@ type type_check_error =
   | Go_make (** trying to run [make] builtin func as a goroutine ([go make(chan int)]) *)
   | Invalid_operation of string (**Error with doing some invalid operation *)
   | Unexpected_operation of string (**Return/continue not inside for body *)
-[@@deriving show { with_path = false }]
 
 type devonly_runtime_error =
   | Not_enough_stack_frames
@@ -22,7 +21,6 @@ type devonly_runtime_error =
   | Two_goroutine_running
   | Undefined_ident of string
   | TypeCheckFailed of string
-[@@deriving show { with_path = false }]
 
 type runtime_error =
   | Stack_overflow
@@ -35,9 +33,10 @@ type runtime_error =
   | Close_of_nil_chan
   | Panic of string
   | DevOnly of devonly_runtime_error
-[@@deriving show { with_path = false }]
 
 type error =
   | Type_check_error of type_check_error
   | Runtime_error of runtime_error
-[@@deriving show { with_path = false }]
+
+val pp_typecheck_error : type_check_error -> string
+val pp_runtime_error : runtime_error -> string

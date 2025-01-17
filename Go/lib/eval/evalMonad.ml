@@ -99,11 +99,17 @@ end
 
 module ChanSet = Set.Make (Chan)
 
+type chanel_using_state =
+  { receiving_goroutine : goroutine
+  ; value : value
+  }
+
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
   ; waiting : GoSet.t
   ; chanels : ChanSet.t * int
+  ; is_using_chanel : chanel_using_state option
   }
 
 module Monad = struct
@@ -122,8 +128,8 @@ module Monad = struct
   let write_global new_global =
     read
     >>= function
-    | { running; waiting; chanels } ->
-      write { global_env = new_global; running; waiting; chanels }
+    | { running; waiting; chanels; is_using_chanel } ->
+      write { global_env = new_global; running; waiting; chanels; is_using_chanel }
   ;;
 
   let save_global_id ident value =
@@ -151,8 +157,8 @@ module Monad = struct
   let write_running new_goroutine =
     read
     >>= function
-    | { global_env; waiting; chanels } ->
-      write { global_env; waiting; chanels; running = new_goroutine }
+    | { global_env; waiting; chanels; is_using_chanel } ->
+      write { global_env; waiting; chanels; is_using_chanel; running = new_goroutine }
   ;;
 
   let read_waiting =
@@ -164,8 +170,8 @@ module Monad = struct
   let write_waiting new_goroutines =
     read
     >>= function
-    | { global_env; running; chanels } ->
-      write { global_env; running; chanels; waiting = new_goroutines }
+    | { global_env; running; chanels; is_using_chanel } ->
+      write { global_env; running; chanels; is_using_chanel; waiting = new_goroutines }
   ;;
 
   let add_waiting state goroutine =
@@ -218,8 +224,7 @@ module Monad = struct
   let stop_running_goroutine waiting_state =
     read_running_fail
     >>= function
-    | goroutine ->
-      write_running None *> add_waiting waiting_state goroutine *> return goroutine
+    | goroutine -> write_running None *> add_waiting waiting_state goroutine
   ;;
 
   let delete_running_goroutine = write_running None
@@ -235,8 +240,8 @@ module Monad = struct
   let write_chanels new_chanels =
     read
     >>= function
-    | { global_env; running; waiting } ->
-      write { global_env; running; waiting; chanels = new_chanels }
+    | { global_env; running; waiting; is_using_chanel } ->
+      write { global_env; running; waiting; is_using_chanel; chanels = new_chanels }
   ;;
 
   let find_chanel_fail = function
@@ -313,6 +318,48 @@ module Monad = struct
       fail
         (Runtime_error
            (Deadlock "trying to read value from closed chanel (or there is no value)"))
+  ;;
+
+  (* sending state *)
+
+  let start_using_chanel receiving_goroutine value =
+    read
+    >>= function
+    | { running; waiting; chanels; global_env; is_using_chanel } ->
+      (match is_using_chanel with
+       | Some _ ->
+         fail
+           (Runtime_error
+              (Deadlock "trying to enter sending state while in sending state"))
+       | None ->
+         write
+           { running
+           ; waiting
+           ; chanels
+           ; global_env
+           ; is_using_chanel = Some { receiving_goroutine; value }
+           })
+  ;;
+
+  let use_chanel =
+    read
+    >>= function
+    | { running; waiting; chanels; global_env; is_using_chanel } ->
+      (match is_using_chanel with
+       | Some { receiving_goroutine; value } ->
+         write { running; waiting; chanels; global_env; is_using_chanel = None }
+         *> return (receiving_goroutine, value)
+       | None ->
+         fail
+           (Runtime_error
+              (Deadlock "trying to leave sending state while not in sending state")))
+  ;;
+
+  let is_using_chanel =
+    read
+    >>= function
+    | { is_using_chanel = Some _ } -> return true
+    | { is_using_chanel = None } -> return false
   ;;
 
   (* single goroutine's stack *)

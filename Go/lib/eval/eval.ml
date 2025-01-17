@@ -40,7 +40,9 @@ let rec exec eval_stmt =
   | Some _ ->
     read_returns
     >>= (function
-     | None -> exec eval_stmt *> return ()
+     | None ->
+       let* is_using_chanel = is_using_chanel in
+       if is_using_chanel then return () else exec eval_stmt
      | Some _ -> return ())
   | None -> return ()
 ;;
@@ -49,16 +51,30 @@ let run_ready_goroutines eval_stmt =
   let rec runner waiting_goroutines =
     match GoSet.find_first_opt (fun { state } -> state = Ready) waiting_goroutines with
     | Some { goroutine } ->
-      run_goroutine goroutine *> exec eval_stmt *> read_running_id
-      >>= (function
-       | 1 -> return ()
-       | _ -> delete_running_goroutine *> read_waiting >>= runner)
+      run_goroutine goroutine
+      *> exec eval_stmt
+      *>
+      let* is_using_chanel = is_using_chanel in
+      if is_using_chanel
+      then return ()
+      else
+        (* мб тут проверять в каком-то виде останавливаться, если запущенная горутна отправляет что-то в канал *)
+        read_running_id
+        >>= (function
+         | 1 ->
+           (* main goroutine finished working and doesn,t wait for others to finish *)
+           return ()
+         | _ ->
+           (* some secondary goroutine finished working, don't stop untill main finished *)
+           delete_running_goroutine *> read_waiting >>= runner)
     | None -> return ()
   in
   read_waiting >>= runner
 ;;
 
-let perform_chan_interaction id =
+(** [attempt_chan_interaction id] attempts to use chanel with given id. If both sender and receiver are ready,
+    starts using the chanel. Doesn't do anything otherwise *)
+let attempt_chan_interaction id =
   let* waiting_goroutines = read_waiting in
   let* sending_goroutine =
     match
@@ -87,8 +103,8 @@ let perform_chan_interaction id =
     let* value = pop_chan_value id in
     ready_waiting sending_goroutine
     *> ready_waiting receiving_goroutine
-    *> return (Some value)
-  | _ -> return None
+    *> start_using_chanel receiving_goroutine value
+  | _ -> return ()
 ;;
 
 let rec eval_expr = function
@@ -332,13 +348,16 @@ and eval_chan_send (ident, expr) =
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
     push_chan_value chan_id value
+    *> stop_running_goroutine (Sending { chan_id })
+    *> attempt_chan_interaction chan_id
     *>
-    let* sending_goroutine = stop_running_goroutine (Sending { chan_id }) in
-    perform_chan_interaction chan_id
-    >>= (function
-     | Some _ ->
-       (* тут надо как-то передать значение получателю *) run_goroutine sending_goroutine
-     | None -> run_ready_goroutines eval_stmt)
+    let* send_success = is_using_chanel in
+    if send_success
+    then
+      (* the receiver is ready to receive, state will be proccessed and the value will be received *)
+      return ()
+    else (* the receiver isn't ready to receive yet *)
+      run_ready_goroutines eval_stmt
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
 
 and eval_chan_receive expr =
@@ -346,14 +365,18 @@ and eval_chan_receive expr =
   >>= function
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
-    let* receiving_goroutine = stop_running_goroutine (Receiving { chan_id }) in
-    perform_chan_interaction chan_id
-    >>= (function
-     | Some value -> run_goroutine receiving_goroutine *> return value
-     | None ->
-       run_ready_goroutines eval_stmt *> return (Value_int 1)
-       (* ЗАГЛУШКА *)
-       (* надо как-то получать значение, поэтому после передачи всегда должна запускаться эта горутина *))
+    stop_running_goroutine (Receiving { chan_id })
+    *> attempt_chan_interaction chan_id
+    *>
+    let* receive_success = is_using_chanel in
+    (if receive_success
+     then return ()
+     else run_ready_goroutines eval_stmt (* тут мы должны в нужный момент остановиться *))
+    *>
+    let* receiving_goroutine, value = use_chanel in
+    run_goroutine receiving_goroutine *> return value
+    (* ЗАГЛУШКА *)
+    (* надо как-то получать значение, поэтому после передачи всегда должна запускаться эта горутина *)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
 
 and eval_go (func, arg_exprs) =
@@ -418,6 +441,7 @@ let init_state =
   ; running = None
   ; waiting = GoSet.empty
   ; chanels = ChanSet.empty, 1
+  ; is_using_chanel = None
   }
 ;;
 

@@ -7,30 +7,13 @@ open Parse
 
 let pp str =
   match parse parse_file str with
+  | Error _ -> print_endline ": syntax error"
   | Ok ast ->
     (match TypeChecker.type_check ast with
      | Result.Ok _ -> print_endline "CORRECT"
-     | Result.Error err ->
-       prerr_string "ERROR WHILE TYPECHECK WITH ";
-       (match err with
-        | Type_check_error (Multiple_declaration msg) ->
-          prerr_string ("Multiple declaration error: " ^ msg)
-        | Type_check_error (Incorrect_main msg) ->
-          prerr_endline ("Incorrect main error: " ^ msg)
-        | Type_check_error (Undefined_ident msg) ->
-          prerr_endline ("Undefined ident error: " ^ msg)
-        | Type_check_error (Mismatched_types msg) ->
-          prerr_endline ("Mismatched types: " ^ msg)
-        | Type_check_error (Cannot_assign msg) -> prerr_endline ("Cannot assign: " ^ msg)
-        | Type_check_error (Missing_return msg) -> prerr_endline ("Missing return: " ^ msg)
-        | Type_check_error (Invalid_operation msg) ->
-          prerr_endline ("Missing return: " ^ msg)
-        | Type_check_error Go_make ->
-          prerr_endline "Go discards result of make builtin function"
-        | Type_check_error (Unexpected_operation msg) ->
-          prerr_endline ("Unexpected operation: " ^ msg)
-        | _ -> ()))
-  | Error _ -> print_endline ": syntax error"
+     | Result.Error (Runtime_error _) -> ()
+     | Result.Error (Type_check_error err) ->
+       prerr_string ("ERROR WHILE TYPECHECK WITH " ^ Errors.pp_typecheck_error err))
 ;;
 
 (********** main func **********)

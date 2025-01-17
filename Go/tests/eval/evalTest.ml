@@ -8,49 +8,18 @@ open Typecheck
 
 let pp str =
   match parse parse_file str with
+  | Error _ -> print_endline ": syntax error"
   | Ok ast ->
     (match TypeChecker.type_check ast with
+     | Result.Error (Runtime_error _) -> ()
+     | Result.Error (Type_check_error err) ->
+       prerr_endline ("Typecheck error: " ^ Errors.pp_typecheck_error err)
      | Result.Ok _ ->
        (match eval ast with
-        | Result.Ok _ -> prerr_endline "Correct evaluating"
-        | Result.Error err ->
-          (match err with
-           | Runtime_error (DevOnly Not_enough_operands) ->
-             prerr_endline "Not enough operands"
-           | Runtime_error (DevOnly No_goroutine_running) ->
-             prerr_endline "No goroutine running"
-           | Runtime_error (DevOnly Two_goroutine_running) ->
-             prerr_endline "Two goroutine running"
-           | Runtime_error Stack_overflow -> prerr_endline "Stack overflow"
-           | Runtime_error Division_by_zero -> prerr_endline "Try to divide by zero"
-           | Runtime_error Array_index_out_of_bound ->
-             prerr_endline "Array index out of bounds"
-           | Runtime_error (Deadlock msg) -> prerr_endline ("Deadlock: " ^ msg)
-           | Runtime_error (Panic msg) -> prerr_endline ("Paniced with message:" ^ msg)
-           | Runtime_error (DevOnly (TypeCheckFailed msg)) ->
-             prerr_endline ("Internal Typecheck error occured while evaluating" ^ msg)
-           | Runtime_error (DevOnly (Undefined_ident msg)) ->
-             prerr_endline ("Undefined ident " ^ msg)
-           | Runtime_error (DevOnly _) -> prerr_endline "Some kind of devonly error"
-           | Runtime_error _ -> prerr_endline "Some kind of runtime error"
-           | Type_check_error _ -> prerr_endline "Some kind of typecheck error"))
-     | Result.Error err ->
-       prerr_string "ERROR WHILE TYPECHECK WITH ";
-       (match err with
-        | Type_check_error (Multiple_declaration msg) ->
-          prerr_string ("Multiple declaration error: " ^ msg)
-        | Type_check_error (Incorrect_main msg) ->
-          prerr_endline ("Incorrect main error: " ^ msg)
-        | Type_check_error (Undefined_ident msg) ->
-          prerr_endline ("Undefined ident error: " ^ msg)
-        | Type_check_error (Mismatched_types msg) ->
-          prerr_endline ("Mismatched types: " ^ msg)
-        | Type_check_error (Cannot_assign msg) -> prerr_endline ("Cannot assign: " ^ msg)
-        | Type_check_error (Missing_return msg) -> prerr_endline ("Missing return: " ^ msg)
-        | Type_check_error (Invalid_operation msg) ->
-          prerr_endline ("Missing return: " ^ msg)
-        | _ -> ()))
-  | Error _ -> print_endline ": syntax error"
+        | Result.Error (Type_check_error _) -> ()
+        | Result.Error (Runtime_error err) ->
+          prerr_endline ("Runtime error: " ^ Errors.pp_runtime_error err)
+        | Result.Ok _ -> prerr_endline "Correct evaluating"))
 ;;
 
 let%expect_test "ok: single main" =
@@ -380,7 +349,7 @@ let%expect_test "ok: two goroutine sync with unbuffered chanel" =
   pp
     {|
     func goroutine2(c chan int) {
-      println("go2: try to receive")
+      println("go2: trying to receive")
       a := <-c
       println("go2: receive success. Value:", a)
     }
@@ -402,7 +371,49 @@ let%expect_test "ok: two goroutine sync with unbuffered chanel" =
     Correct evaluating
 
     go1: trying to send. Value:0
-    go2: try to receive
+    go2: trying to receive
     go2: receive success. Value:0
     go1: send success |}]
+;;
+
+let%expect_test "ok: receive and send back" =
+  pp
+    {|
+    func goroutine2(c chan int) {
+      println("go2: trying to receive")
+      a := <-c
+      println("go2: receive success. Value:", a)
+
+      println("go2: trying to send. Value:", a)
+      c <- a
+      println("go2: send success")
+    }
+
+    func main() {
+      c := make(chan int)
+
+      v := 0
+
+      go goroutine2(c)
+
+      println("go1: trying to send. Value:", v)
+      c <- v
+      println("go1: send success")
+
+      println("go1: trying to receive")
+      a := <-c
+      println("go1: receive success. Value:", a)
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    go1: trying to send. Value:0
+    go2: trying to receive
+    go2: receive success. Value:0
+    go2: trying to send. Value:0
+    go1: send success
+    go1: trying to receive
+    go1: receive success. Value:0 |}]
 ;;
