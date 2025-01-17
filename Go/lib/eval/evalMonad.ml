@@ -38,7 +38,7 @@ and builtin =
   | Panic
 
 and is_closure =
-  | Closure of value MapIdent.t
+  | Closure
   | Default
 
 and func_value =

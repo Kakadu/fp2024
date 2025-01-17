@@ -343,6 +343,47 @@ let%expect_test "ok: factorial check" =
     120 |}]
 ;;
 
+let%expect_test "ok: funclit check" =
+  pp
+    {|
+      func main() {
+        a := 0  
+        f := func(x int) {
+            a = a + x
+          }
+        f(1)
+        print(a)
+      }
+    |};
+  [%expect {|
+    Correct evaluating
+    120 |}]
+;;
+
+let%expect_test "ok: closure check" =
+  pp
+    {|
+    func adder(x int) func(int) int {
+      sum := 0
+      return func(x int) int {
+        sum = sum + x
+        return sum
+      }
+    }
+
+    func main() {
+      pos, neg := adder(1), adder(1)
+      print("GAINED")
+      for i := 0; i < 10; i++ {
+       println(pos(i), neg(-2 * i))
+      }
+    }
+    |};
+  [%expect {|
+    Correct evaluating
+    120 |}]
+;;
+
 (* goroutines *)
 
 let%expect_test "ok: two goroutine sync with unbuffered chanel" =

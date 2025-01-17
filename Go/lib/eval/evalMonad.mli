@@ -44,7 +44,7 @@ and builtin =
   | Panic
 
 and is_closure =
-  | Closure of value MapIdent.t
+  | Closure
   | Default
 
 and func_value =
@@ -197,6 +197,7 @@ module Monad : sig
   val save_local_id : ident -> value -> unit t
   val add_env : block -> is_for_env -> unit t
   val read_local_envs : (local_env * local_env list) t
+  val write_local_envs : local_env * local_env list -> unit t
   val delete_env : unit t
   val read_env_type : is_for_env t
 

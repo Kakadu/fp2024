@@ -113,7 +113,7 @@ let rec eval_expr = function
   | Expr_const (Const_array (size, _, exprs)) ->
     map eval_expr exprs >>= fun values -> return (Value_array (size, values))
   | Expr_const (Const_func afunc) ->
-    return (Value_func (Func_initialized (Default, afunc)))
+    return (Value_func (Func_initialized (Closure, afunc)))
   | Expr_bin_oper (op, a1, a2) -> eval_binop op a1 a2
   | Expr_un_oper (op, a) -> eval_unop op a
   | Expr_ident id -> read_ident id
@@ -130,7 +130,7 @@ and eval_func_call (func, args) =
   >>= function
   | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func)
   | Value_func (Func_builtin ftype) -> eval_builtin args ftype
-  | Value_func (Func_initialized (is_closure, afc)) ->
+  | Value_func (Func_initialized (Default, afc)) ->
     (* тут нужна проверка на замыкание *)
     create_args_map args (rpf afc.args)
     >>= fun map ->
@@ -143,6 +143,25 @@ and eval_func_call (func, args) =
     *> exec eval_stmt
     *> read_returns
     >>= fun x -> delete_stack_frame *> return x
+  | Value_func (Func_initialized (Closure, afc)) ->
+    let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
+    create_args_map args (rpf afc.args)
+    >>= fun map ->
+    add_stack_frame
+      { local_envs =
+          { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
+      ; deferred_funcs = []
+      ; closure_envs = Simple
+      ; returns = None
+      }
+    *> eval_builtin [ Arg_expr (Expr_ident "x") ] Print
+    *> eval_builtin [ Arg_expr (Expr_const (Const_string "closure binded ")) ] Print
+    *> exec eval_stmt
+    *> read_returns
+    >>= fun x ->
+    read_local_envs
+    >>= fun (_, lenv) ->
+    delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return x
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func_call")))
 
 and retrieve_arg_value = function
@@ -269,12 +288,23 @@ and eval_stmt = function
            >>= fun vl -> eval_lvalue lvalue >>= fun id -> update_ident id vl)
          (fst :: lst)
      | Assign_one_expr (fst, snd, lst, fcall) ->
-       fail (Runtime_error (Panic "Not supported")))
+       eval_func_call fcall
+       >>= (function
+        | Some (Value_tuple tup) ->
+          iter2
+            (fun lv vl -> eval_lvalue lv >>= fun lv_new -> (update_ident lv_new) vl)
+            (fst :: snd :: lst)
+            tup
+        | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
   | Stmt_short_var_decl svd ->
     (match svd with
      | Short_decl_mult_init (sfirst, lst) ->
        iter (fun (ident, expr) -> eval_expr expr >>= save_local_id ident) (sfirst :: lst)
-     | Short_decl_one_init _ -> fail (Runtime_error (Panic "Not supported")))
+     | Short_decl_one_init (idnt1, idnt2, idntlst, fcall) ->
+       eval_func_call fcall
+       >>= (function
+        | Some (Value_tuple tup) -> iter2 save_local_id (idnt1 :: idnt2 :: idntlst) tup
+        | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
   | Stmt_if if' ->
     eval_expr if'.cond
     >>= (function
@@ -338,8 +368,13 @@ and eval_stmt = function
 and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->
     iter (fun (ident, expr) -> eval_expr expr >>= save_to_env ident) (hd :: tl)
-  | _ -> fail (Runtime_error (Panic "Not supported"))
-(*ДОДЕЛАТЬ*)
+  | Long_decl_one_init (_, idnt1, idnt2, idntlst, fcall) ->
+    eval_func_call fcall
+    >>= (function
+     | Some (Value_tuple tup) -> iter2 save_to_env (idnt1 :: idnt2 :: idntlst) tup
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
+  | Long_decl_no_init (_, id, id_list) ->
+    iter (fun ident -> save_to_env ident (Value_nil Nil)) (id :: id_list)
 
 and eval_chan_send (ident, expr) =
   let* value = eval_expr expr in
