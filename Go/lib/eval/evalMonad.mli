@@ -43,12 +43,13 @@ and builtin =
   | Len
   | Panic
 
-and is_closure =
-  | Closure
+and func_type =
+  | Closure of value MapIdent.t
+  | FuncLit
   | Default
 
 and func_value =
-  | Func_initialized of is_closure * anon_func
+  | Func_initialized of func_type * anon_func
   | Func_uninitialized of nil
   | Func_builtin of builtin
 

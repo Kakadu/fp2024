@@ -113,16 +113,31 @@ let rec eval_expr = function
   | Expr_const (Const_array (size, _, exprs)) ->
     map eval_expr exprs >>= fun values -> return (Value_array (size, values))
   | Expr_const (Const_func afunc) ->
-    return (Value_func (Func_initialized (Closure, afunc)))
+    read_local_envs
+    >>= fun (hd, _) -> return (Value_func (Func_initialized (FuncLit, afunc)))
   | Expr_bin_oper (op, a1, a2) -> eval_binop op a1 a2
   | Expr_un_oper (op, a) -> eval_unop op a
   | Expr_ident id -> read_ident id
   | Expr_index (array, index) -> eval_index array index
   | Expr_call (func, args) ->
-    eval_func_call (func, args)
+    eval_expr func
     >>= (function
-     | Some lst -> return lst (* тут может быть тапл *)
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
+     | Value_func (Func_initialized (Closure _, afc)) ->
+       eval_closure (func, args)
+       >>= fun (ret, vmp) ->
+       (match func with
+        | Expr_ident id ->
+          update_ident id (Value_func (Func_initialized (Closure vmp, afc)))
+        | _ -> return ())
+       *>
+         (match ret with
+         | Some lst -> return lst (* тут может быть тапл *)
+         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
+     | _ ->
+       eval_func_call (func, args)
+       >>= (function
+        | Some lst -> return lst (* тут может быть тапл *)
+        | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr")))))
   | Expr_chan_receive receive -> eval_chan_receive receive
 
 and eval_func_call (func, args) =
@@ -143,7 +158,7 @@ and eval_func_call (func, args) =
     *> exec eval_stmt
     *> read_returns
     >>= fun x -> delete_stack_frame *> return x
-  | Value_func (Func_initialized (Closure, afc)) ->
+  | Value_func (Func_initialized (FuncLit, afc)) ->
     let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
     create_args_map args (rpf afc.args)
     >>= fun map ->
@@ -154,15 +169,38 @@ and eval_func_call (func, args) =
       ; closure_envs = Simple
       ; returns = None
       }
-    *> eval_builtin [ Arg_expr (Expr_ident "x") ] Print
-    *> eval_builtin [ Arg_expr (Expr_const (Const_string "closure binded ")) ] Print
     *> exec eval_stmt
     *> read_returns
     >>= fun x ->
     read_local_envs
     >>= fun (_, lenv) ->
     delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return x
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func_call")))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " func_call")))
+
+and eval_closure (func, args) =
+  eval_expr func
+  >>= function
+  | Value_func (Func_initialized (Closure vmap, afc)) ->
+    let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
+    create_args_map args (rpf afc.args)
+    >>= fun map ->
+    add_stack_frame
+      { local_envs =
+          ( { exec_block = afc.body; var_map = map; env_type = Default }
+          , { exec_block = []; var_map = vmap; env_type = Default } :: local_envs )
+      ; deferred_funcs = []
+      ; closure_envs = Simple
+      ; returns = None
+      }
+    *> exec eval_stmt
+    *> read_returns
+    >>= fun x ->
+    read_local_envs
+    >>= fun (_, lenv) ->
+    delete_stack_frame
+    *> write_local_envs (List.hd (List.tl lenv), List.tl (List.tl lenv))
+    *> return (x, (List.hd lenv).var_map)
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " closure_call")))
 
 and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
@@ -267,7 +305,17 @@ and eval_init = function
   | None -> return ()
 
 and eval_stmt = function
-  | Stmt_call fcall -> eval_func_call fcall *> return ()
+  | Stmt_call (func, args) ->
+    eval_expr func
+    >>= (function
+     | Value_func (Func_initialized (Closure _, afc)) ->
+       eval_closure (func, args)
+       >>= fun (_, vmp) ->
+       (match func with
+        | Expr_ident id ->
+          update_ident id (Value_func (Func_initialized (Closure vmp, afc)))
+        | _ -> return ())
+     | _ -> eval_func_call (func, args) *> return ())
   | Stmt_long_var_decl lvd -> eval_long_var_decl save_local_id lvd
   | Stmt_decr id ->
     read_ident id
@@ -357,7 +405,14 @@ and eval_stmt = function
     add_env [] For *> eval_init fr.init *> rect rec_for *> return ()
   | Stmt_return l_exp ->
     (match l_exp with
-     | [ x ] -> eval_expr x >>= fun ret -> write_returns (Some ret)
+     | [ x ] ->
+       (match x with
+        | Expr_const (Const_func afc) ->
+          read_local_envs
+          >>= (fun (hd, _) ->
+                return (Value_func (Func_initialized (Closure hd.var_map, afc))))
+          >>= fun vfun -> write_returns (Some vfun)
+        | _ -> eval_expr x >>= fun ret -> write_returns (Some ret))
      | _ -> map eval_expr l_exp >>= fun lst -> write_returns (Some (Value_tuple lst)))
   | Stmt_chan_send send -> eval_chan_send send
   | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()

@@ -349,17 +349,84 @@ let%expect_test "ok: funclit check" =
       func main() {
         a := 0  
         f := func(x int) {
-            a = a + x
-          }
+          a = a + x
+        }
+        a = a + 1
         f(1)
         print(a)
       }
     |};
   [%expect {|
     Correct evaluating
-    120 |}]
+    2 |}]
 ;;
 
+(*(Decl_func
+        ("adder",
+         { args = [("x", Type_int)];
+           returns =
+           (Some (Only_types ((Type_func ([Type_int], [Type_int])), [])));
+           body =
+           [(Stmt_short_var_decl
+               (Short_decl_mult_init (("sum", (Expr_const (Const_int 0))), [])));
+             (Stmt_return
+                [(Expr_const
+                    (Const_func
+                       { args = [("x", Type_int)];
+                         returns = (Some (Only_types (Type_int, [])));
+                         body =
+                         [(Stmt_assign
+                             (Assign_mult_expr (
+                                ((Lvalue_ident "sum"),
+                                 (Expr_bin_oper (Bin_sum, (Expr_ident "sum"),
+                                    (Expr_ident "x")))),
+                                [])));
+                           (Stmt_return [(Expr_ident "sum")])]
+                         }))
+                  ])
+             ]
+           }));
+      (Decl_func
+         ("main",
+          { args = []; returns = None;
+            body =
+            [(Stmt_short_var_decl
+                (Short_decl_mult_init (
+                   ("pos",
+                    (Expr_call
+                       ((Expr_ident "adder"), [(Expr_const (Const_int 1))]))),
+                   [("neg",
+                     (Expr_call
+                        ((Expr_ident "adder"), [(Expr_const (Const_int 1))])))
+                     ]
+                   )));
+              (Stmt_call
+                 ((Expr_ident "print"), [(Expr_const (Const_string "GAINED"))]));
+              Stmt_for {
+                init =
+                (Some (Init_decl
+                         (Short_decl_mult_init (
+                            ("i", (Expr_const (Const_int 0))), []))));
+                cond =
+                (Some (Expr_bin_oper (Bin_less, (Expr_ident "i"),
+                         (Expr_const (Const_int 10)))));
+                post = (Some (Init_incr "i"));
+                body =
+                [(Stmt_call
+                    ((Expr_ident "println"),
+                     [(Expr_call ((Expr_ident "pos"), [(Expr_ident "i")]));
+                       (Expr_call
+                          ((Expr_ident "neg"),
+                           [(Expr_bin_oper (Bin_multiply,
+                               (Expr_un_oper (Unary_minus,
+                                  (Expr_const (Const_int 2)))),
+                               (Expr_ident "i")))
+                             ]))
+                       ]))
+                  ]}
+              ]
+            }))
+      ]*)
 let%expect_test "ok: closure check" =
   pp
     {|
@@ -373,7 +440,6 @@ let%expect_test "ok: closure check" =
 
     func main() {
       pos, neg := adder(1), adder(1)
-      print("GAINED")
       for i := 0; i < 10; i++ {
        println(pos(i), neg(-2 * i))
       }
@@ -381,7 +447,17 @@ let%expect_test "ok: closure check" =
     |};
   [%expect {|
     Correct evaluating
-    120 |}]
+
+    00
+    1-2
+    3-6
+    6-12
+    10-20
+    15-30
+    21-42
+    28-56
+    36-72
+    45-90 |}]
 ;;
 
 (* goroutines *)
