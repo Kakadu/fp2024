@@ -80,6 +80,7 @@ module ValueEnv : sig
     | VFun of string option * pattern * pattern list * expr * t
     | VFunction of case * case list
     | VOption of value option
+    | Print_int
 
   val find_err : t -> string -> value R.t
   val extend : t -> string -> value -> t
@@ -101,6 +102,7 @@ end = struct
     | VFun of string option * pattern * pattern list * expr * t
     | VFunction of case * case list
     | VOption of value option
+    | Print_int
 
   and t = (string, value, Base.String.comparator_witness) Base.Map.t
 
@@ -123,7 +125,7 @@ end = struct
         "[%a] "
         (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt "; "))
         l
-    | VFun (_, _, _, _, _) -> fprintf fmt "<fun> "
+    | VFun _ | Print_int -> fprintf fmt "<fun> "
     | VFunction (_, _) -> fprintf fmt "<fun> "
     | VOption (Some v) -> fprintf fmt "Some %a " pp_value v
     | VOption None -> fprintf fmt "None "
@@ -147,7 +149,7 @@ end = struct
       x
   ;;
 
-  let default = Map.empty (module String)
+  let default = Map.set (Map.empty (module String)) ~key:"print_int" ~data:Print_int
   let find_exn = Map.find_exn
 end
 
@@ -275,8 +277,8 @@ let rec eval_expr env = function
   | Apply (f, applying_arg) ->
     let* f_value = eval_expr env f in
     let* applying_arg_value = eval_expr env applying_arg in
-    (match f_value with
-     | VFun (name, arg, args, body, env) ->
+    (match f_value, applying_arg_value with
+     | VFun (name, arg, args, body, env), _ ->
        let* env = match_pattern env (arg, applying_arg_value) in
        let env =
          match name with
@@ -286,7 +288,10 @@ let rec eval_expr env = function
        (match args with
         | [] -> eval_expr env body
         | arg1 :: args -> return (VFun (None, arg1, args, body, env)))
-     | VFunction (c, cl) -> eval_match env applying_arg_value (c :: cl)
+     | VFunction (c, cl), _ -> eval_match env applying_arg_value (c :: cl)
+     | Print_int, VInt i ->
+       Format.(fprintf std_formatter "%d\n" i);
+       return VUnit
      | _ -> fail `Type_mismatch)
   | Match (e, c, cl) ->
     let* v = eval_expr env e in
