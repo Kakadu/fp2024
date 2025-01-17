@@ -188,7 +188,7 @@ and print_expr indent fmt expr =
     fprintf fmt "%s| EActPatConstructor\n" (String.make indent ' ');
     fprintf fmt "%s| %s\n" (String.make (indent + 2) ' ') name;
     fprintf fmt "%sExpr:\n" (String.make (indent + 2) ' ');
-    print_expr (indent + 2) fmt e;
+    print_expr (indent + 2) fmt e
 ;;
 
 let print_statement indent fmt = function

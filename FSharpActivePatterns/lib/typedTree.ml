@@ -11,6 +11,8 @@ type typ =
   | Type_list of typ
   | Type_tuple of typ * typ * typ list
   | TOption of typ
+  | TActPat of string * typ
+  | Choice of typ * typ * typ list (** [Choice<(int * int), string>] *)
 
 let gen_typ_primitive =
   QCheck.Gen.(oneofl [ "string"; "int"; "unit"; "bool" ] >|= fun t -> Primitive t)

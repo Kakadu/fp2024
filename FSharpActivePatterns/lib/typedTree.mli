@@ -11,6 +11,8 @@ type typ =
   | Type_list of typ
   | Type_tuple of typ * typ * typ list
   | TOption of typ
+  | TActPat of string * typ
+  | Choice of typ * typ * typ list
 
 val gen_typ_primitive : typ QCheck.Gen.t
 val arrow_of_types : typ list -> typ -> typ

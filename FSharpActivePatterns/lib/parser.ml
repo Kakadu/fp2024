@@ -162,7 +162,7 @@ let p_name p_fst_letter =
 let p_varname =
   p_name
     (take_while1 (function
-      | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
+      | 'a' .. 'z' | '_' -> true
       | _ -> false))
 ;;
 
@@ -349,9 +349,12 @@ let p_constraint_pat p_pat =
 ;;
 
 let p_act_pat_case p_pat =
-  let* case = p_act_pat_ident in 
-  let* pat = p_pat in
+  let* case = p_act_pat_ident in
+  let* pat = (peek_sep1 *> (p_pat <* peek_sep1)) 
+  <|> (p_parens p_pat <* peek_sep1)
+  <|> return (PConst(Unit_lt)) in
   return (PActive (case, pat))
+;;
 
 let p_pat =
   skip_ws
@@ -567,31 +570,6 @@ let p_constraint_expr p_expr =
   return (EConstraint (expr, typ))
 ;;
 
-(*let p_act_pat_constructor p_expr =
-  skip_ws *> 
-  let* pat_name = p_act_pat_ident in
-  let* expr = (skip_ws *> choice
-  [ p_var_expr
-  ; p_int_expr
-  ; p_string_expr
-  ; p_unit_expr
-  ; p_bool_expr
-  ; p_semicolon_list_expr p_expr
-  ; p_parens (p_constraint_expr p_expr)
-  ]) <|> skip_ws *> p_parens p_expr in 
-  return (ActPatConstructor (pat_name, expr))
-;;*)
-
-(* act pat constructors shoud not be made from outside of the pattern definition *)
-(*let p_act_pat_expr p_expr =
-  skip_ws *>
-  fix (fun p ->
-    let constr = p_act_pat_constructor p in 
-    let rest = p_expr <|> constr in
-    rest
-    )
-;;*)
-
 let p_act_pat p_expr =
   skip_ws
   *> string "let"
@@ -601,16 +579,25 @@ let p_act_pat p_expr =
     skip_ws *> string "(" *> skip_ws *> string "|" *> skip_ws *> p_act_pat_ident
   in
   let* names =
-    many (skip_ws *> string "|" *> p_act_pat_ident <* skip_ws)
+    many (skip_ws *> string "|" *> p_act_pat_ident)
     <* skip_ws
     <* string "|"
     <* skip_ws
     <* string ")"
-    <* skip_ws
   in
   let* args = many p_pat in
   let* expr = skip_ws *> string "=" *> skip_ws *> p_expr in
   return (ActPat (fst_name, names, args, expr))
+;;
+
+let p_act_pat_constructor p_expr =
+  skip_ws
+  *>
+  let* name = p_act_pat_ident in
+  let* expr = (peek_sep1 *> (p_expr <* peek_sep1)) 
+  <|> (p_parens p_expr <* peek_sep1)
+  <|> return (Const(Unit_lt)) in
+  return (ActPatConstructor (name, expr))
 ;;
 
 let p_expr =
@@ -649,7 +636,8 @@ let p_expr =
     let p_function = p_function (p_expr <|> tuple) <|> tuple in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    efun)
+    let apat_c = p_act_pat_constructor efun <|> efun in
+    apat_c)
 ;;
 
 let p_statement = p_act_pat p_expr <|> p_let p_expr
