@@ -77,7 +77,7 @@ module ValueEnv : sig
     | VBool of bool
     | VTuple of value * value * value list
     | VList of value list
-    | VFun of string option * pattern * pattern list * expr * t
+    | VFun of pattern * pattern list * expr * t
     | VFunction of case * case list
     | VOption of value option
     | Print_int
@@ -88,9 +88,15 @@ module ValueEnv : sig
   val remove : t -> string -> t
   val find_exn : t -> string -> value
   val pp_value : Format.formatter -> value -> unit
+  val set_many : t -> t -> t
   val default : t
 end = struct
   open Base
+
+  (* overwrite values of map1 with values of map2 *)
+  let set_many map1 map2 =
+    Map.fold ~init:map1 ~f:(fun ~key ~data map1 -> Map.set map1 ~key ~data) map2
+  ;;
 
   type value =
     | VUnit
@@ -99,7 +105,7 @@ end = struct
     | VBool of bool
     | VTuple of value * value * value list
     | VList of value list
-    | VFun of string option * pattern * pattern list * expr * t
+    | VFun of pattern * pattern list * expr * t
     | VFunction of case * case list
     | VOption of value option
     | Print_int
@@ -131,7 +137,7 @@ end = struct
     | VOption None -> fprintf fmt "None "
   ;;
 
-  let extend mp key data = Map.update mp key ~f:(function _ -> data)
+  let extend mp key data = Map.set mp ~key ~data
 
   let update_exn env k ~f =
     let v = Map.find_exn env k in
@@ -273,21 +279,18 @@ let rec eval_expr env = function
         | None -> return VUnit
         | Some e -> eval_expr env e)
      | _ -> fail `Type_mismatch)
-  | Lambda (arg, args, body) -> return (VFun (None, arg, args, body, env))
+  | Lambda (arg, args, body) -> return (VFun (arg, args, body, env))
   | Apply (f, applying_arg) ->
     let* f_value = eval_expr env f in
     let* applying_arg_value = eval_expr env applying_arg in
     (match f_value, applying_arg_value with
-     | VFun (name, arg, args, body, env), _ ->
-       let* env = match_pattern env (arg, applying_arg_value) in
-       let env =
-         match name with
-         | Some name -> ValueEnv.extend env name f_value
-         | None -> env
-       in
+     | VFun (arg, args, body, f_env), _ ->
+       let* f_env = match_pattern f_env (arg, applying_arg_value) in
        (match args with
-        | [] -> eval_expr env body
-        | arg1 :: args -> return (VFun (None, arg1, args, body, env)))
+        | [] ->
+          let env = ValueEnv.set_many env f_env in
+          eval_expr env body
+        | arg1 :: args -> return (VFun (arg1, args, body, f_env)))
      | VFunction (c, cl), _ -> eval_match env applying_arg_value (c :: cl)
      | Print_int, VInt i ->
        Format.(fprintf std_formatter "%d\n" i);
@@ -329,11 +332,7 @@ and extend_env_with_let_bind env rec_flag = function
      | arg1 :: args ->
        (match name with
         | PVar (Ident n) ->
-          let value =
-            match rec_flag with
-            | Rec -> VFun (Some n, arg1, args, body, env)
-            | Nonrec -> VFun (None, arg1, args, body, env)
-          in
+          let value = VFun (arg1, args, body, env) in
           let* env = match_pattern env (name, value) in
           return (Some n, env)
         | _ -> fail `Args_after_not_variable_let)
@@ -366,7 +365,7 @@ and extend_env_with_let_binds env rec_flag let_binds =
         ~init:env
         ~f:(fun env name ->
           ValueEnv.update_exn env name ~f:(function
-            | VFun (n, arg, args, body, _) -> VFun (n, arg, args, body, env)
+            | VFun (arg, args, body, _) -> VFun (arg, args, body, env)
             | other -> other))
         names
     | Nonrec -> env
