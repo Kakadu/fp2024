@@ -102,7 +102,16 @@ let%expect_test "typed_010sukharev" =
 
 let%expect_test "typed_015tuples" =
   let _ = infer_from_file "typed/015tuples.ml" in
-  [%expect {| val ... |}]
+  [%expect {|
+  val feven : ('29 * int -> int) -> (int -> int)
+  val fix : ((((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int)) -> (((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int))) -> (((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int))
+  val fixpoly : ((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int)
+  val fodd : (int -> int * '36) -> (int -> int)
+  val main : int
+  val map : ('9 -> '11) -> (('9 * '9) -> ('10 * '11))
+  val meven : int -> int
+  val modd : int -> int
+  val tie : (int -> int * int -> int) |}]
 ;;
 
 let%expect_test "typed_016lists" =
@@ -117,8 +126,6 @@ let%expect_test "typed_016lists" =
   val main : int
   val map : (int -> (int * int)) -> (int list -> (int * int) list) |}]
 ;;
-
-
 
 let%expect_test _ =
   let _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in

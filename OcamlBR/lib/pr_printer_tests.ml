@@ -191,7 +191,7 @@ let%expect_test _ =
   let  x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;
   [(SValue (Non_recursive,
       (Evalue_binding (((PVar (Id "x")), None),
-         (Ematch ((Some (Econst (Int 3))),
+         (Ematch ((Econst (Int 3)),
             (Ecase ((PConst (Int 1)), (Econst (Int 10)))),
             [(Ecase ((PConst (Int 2)), (Econst (Int 20))));
               (Ecase (PAny, (Econst (Int 30))))]
