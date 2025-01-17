@@ -7,7 +7,7 @@ type chan_dir =
   | Chan_bidirectional (** Bidirectional channel type such [chan] *)
   | Chan_receive (** Receive-only channel type [<-chan] *)
   | Chan_send (** Send-only channel type [chan<-] *)
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, eq]
 
 (** Data types *)
 type type' =
@@ -21,7 +21,7 @@ type type' =
   | Type_chan of chan_dir * type'
   (** Channel type such as:
       [chan int], [<-chan string], [chan<- bool] *)
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, eq]
 
 type ident = string [@@deriving show { with_path = false }]
 
@@ -49,13 +49,6 @@ type unary_oper =
   | Unary_minus (** Unary minus: [-]*)
 [@@deriving show { with_path = false }]
 
-type return_values =
-  | Only_types of type' * type' list (** i.e.  [(int, bool, string)], [int]*)
-  | Ident_and_types of (ident * type') * (ident * type') list
-  (** i.e.  [(a int, b string)], [(a , b int, c string)].
-      The second example will be processed at parsing as [(a int, b int, c string)] *)
-[@@deriving show { with_path = false }]
-
 (** Expressions that can be assigned to a variable or put in "if" statement *)
 type expr =
   | Expr_const of const (** Constants such as [5], ["hi"], [func()] *)
@@ -81,7 +74,7 @@ and const =
 
 (** An anonymous functions such as:
     [func() {}],
-    [func(a, b int) (sum int) { sum = a + b; return }]
+    [func(a, b int) (int) { sum = a + b; return sum}]
     [func(s1 string, s2 string) [2]string { return [2]string{s1,s2} }] *)
 and anon_func =
   { args : (ident * type') list
@@ -91,10 +84,15 @@ and anon_func =
       Empty list means that function doesn't take any arguments.
       The second example will be processed at parsing
       as [func(a int, b int, c string) ...] *)
-  ; returns : return_values option
-  (** None if function doesn't return anything. See return_values type *)
+  ; returns : type' list (** Function return types *)
   ; body : block (** function body *)
   }
+[@@deriving show { with_path = false }]
+
+(** Function arguments, can be either expression or a type *)
+and func_arg =
+  | Arg_expr of expr
+  | Arg_type of type'
 [@@deriving show { with_path = false }]
 
 (** function calls such as:
@@ -102,7 +100,7 @@ and anon_func =
     [c()()()],
     [func() { println("hello") }()].
     Empty list means that function doesn't take any arguments *)
-and func_call = expr * expr list [@@deriving show { with_path = false }]
+and func_call = expr * func_arg list [@@deriving show { with_path = false }]
 
 (** Channel receive such as: [<-c], [<-<-get_chan()] *)
 and chan_receive = expr [@@deriving show { with_path = false }]

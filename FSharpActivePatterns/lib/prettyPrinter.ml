@@ -4,6 +4,7 @@
 
 open Ast
 open Format
+open TypesPp
 
 let pp_bin_op fmt = function
   | Binary_equal -> fprintf fmt "= "
@@ -50,11 +51,12 @@ let rec pp_pattern fmt = function
       (p1 :: p2 :: rest);
     fprintf fmt ")"
   | PConst literal -> fprintf fmt "%a " pp_expr (Const literal)
-  | PVar (Ident (name, _)) -> fprintf fmt "%s " name
+  | PVar (Ident name) -> fprintf fmt "%s " name
   | POption p ->
     (match p with
      | None -> fprintf fmt "None "
      | Some p -> fprintf fmt "Some (%a) " pp_pattern p)
+  | PConstraint (p, t) -> fprintf fmt "(%a : %a) " pp_pattern p pp_typ t
 
 and pp_expr fmt expr =
   match expr with
@@ -68,14 +70,23 @@ and pp_expr fmt expr =
     fprintf fmt "]"
   | Tuple (e1, e2, rest) ->
     fprintf fmt "(";
-    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_expr fmt (e1 :: e2 :: rest);
+    pp_print_list
+      ~pp_sep:(fun fmt () -> fprintf fmt ", ")
+      pp_parens_expr
+      fmt
+      (e1 :: e2 :: rest);
     fprintf fmt ")"
-  | Match (value, pat1, expr1, cases) ->
+  | Function ((pat1, expr1), cases) ->
+    fprintf fmt "function ";
+    List.iter
+      (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
+      ((pat1, expr1) :: cases)
+  | Match (value, (pat1, expr1), cases) ->
     fprintf fmt "match (%a) with \n" pp_expr value;
     List.iter
       (fun (pat, expr) -> fprintf fmt "| %a -> (%a) \n" pp_pattern pat pp_expr expr)
       ((pat1, expr1) :: cases)
-  | Variable (Ident (name, _)) -> fprintf fmt "%s " name
+  | Variable (Ident name) -> fprintf fmt "%s " name
   | Unary_expr (op, expr) -> fprintf fmt "%a (%a)" pp_unary_op op pp_expr expr
   | Bin_expr (op, left, right) ->
     fprintf fmt "(%a) %a (%a)" pp_expr left pp_bin_op op pp_expr right
@@ -84,11 +95,14 @@ and pp_expr fmt expr =
     (match else_body with
      | Some body -> fprintf fmt "else %a " pp_expr body
      | None -> ())
-  | Lambda (pat1, pat_list, body) ->
+  | Lambda (arg1, args, body) ->
     fprintf fmt "fun ";
-    List.iter (fun pat -> fprintf fmt "%a " pp_pattern pat) (pat1 :: pat_list);
+    List.iter (fun pat -> fprintf fmt "(%a) " pp_pattern pat) (arg1 :: args);
     fprintf fmt "-> %a " pp_expr body
-  | Apply (func, arg) -> fprintf fmt "(%a) (%a)" pp_expr func pp_expr arg
+  | Apply (Apply (Variable (Ident op), left), right)
+    when String.for_all (fun c -> String.contains "!$%&*+-./:<=>?@^|~" c) op ->
+    fprintf fmt "(%a) %s (%a)" pp_expr left op pp_expr right
+  | Apply (func, arg) -> fprintf fmt "(%a) %a" pp_expr func pp_expr arg
   | LetIn (rec_flag, let_bind, let_bind_list, in_expr) ->
     fprintf fmt "let %a " pp_rec_flag rec_flag;
     pp_print_list
@@ -102,22 +116,21 @@ and pp_expr fmt expr =
     (match e with
      | None -> fprintf fmt "None "
      | Some e -> fprintf fmt "Some (%a)" pp_expr e)
+  | EConstraint (e, t) -> fprintf fmt "(%a : %a) " pp_expr e pp_typ t
 
 and pp_args fmt args =
   let open Format in
   pp_print_list
     ~pp_sep:pp_print_space
-    (fun fmt name -> fprintf fmt "%s" name)
+    (fun fmt arg -> fprintf fmt "%a" pp_pattern arg)
     fmt
-    (List.map
-       (function
-         | Ident (s, _) -> s)
-       args)
+    args
 
 and pp_let_bind fmt = function
-  | Let_bind (Ident (name, _), args, body) ->
-    fprintf fmt "%s %a = %a " name pp_args args pp_expr body
-;;
+  | Let_bind (name, args, body) ->
+    fprintf fmt "%a %a = %a " pp_pattern name pp_args args pp_expr body
+
+and pp_parens_expr fmt expr = fprintf fmt "(%a)" pp_expr expr
 
 let pp_statement fmt = function
   | Let (rec_flag, let_bind, let_bind_list) ->

@@ -22,6 +22,13 @@ let shrink_lt =
   | String_lt x -> QCheck.Shrink.string x >|= fun a' -> String_lt a'
 ;;
 
+let exprs_from_let_binds let_binds =
+  List.map
+    (function
+      | Let_bind (_, _, e) -> e)
+    let_binds
+;;
+
 let rec shrink_let_bind =
   let open QCheck.Iter in
   function
@@ -29,6 +36,7 @@ let rec shrink_let_bind =
     shrink_expr e
     >|= (fun a' -> Let_bind (name, args, a'))
     <+> (QCheck.Shrink.list args >|= fun a' -> Let_bind (name, a', e))
+    <+> (shrink_pattern name >|= fun a' -> Let_bind (a', args, e))
 
 and shrink_expr =
   let open QCheck.Iter in
@@ -54,7 +62,7 @@ and shrink_expr =
     <+> (shrink_expr i >|= fun a' -> If_then_else (a', t, None))
     <+> (shrink_expr t >|= fun a' -> If_then_else (i, a', None))
   | LetIn (rec_flag, let_bind, let_bind_list, inner_e) ->
-    return inner_e
+    of_list (inner_e :: exprs_from_let_binds (let_bind :: let_bind_list))
     <+> (shrink_let_bind let_bind
          >|= fun a' -> LetIn (rec_flag, a', let_bind_list, inner_e))
     <+> (QCheck.Shrink.list ~shrink:shrink_let_bind let_bind_list
@@ -68,12 +76,11 @@ and shrink_expr =
     shrink_expr body
     >|= (fun body' -> Lambda (pat, pat_list, body'))
     <+> (QCheck.Shrink.list ~shrink:shrink_pattern pat_list
-         >|= fun pat_list' -> Lambda (pat, pat_list', body))
-  | Match (value, pat1, expr1, cases) ->
-    of_list [ value; expr1 ]
-    <+> (shrink_expr value >|= fun a' -> Match (a', pat1, expr1, cases))
-    <+> (shrink_pattern pat1 >|= fun a' -> Match (value, a', expr1, cases))
-    <+> (shrink_expr expr1 >|= fun a' -> Match (value, pat1, a', cases))
+         >|= fun a' -> Lambda (pat, a', body))
+  | Function ((pat1, expr1), cases) ->
+    of_list (expr1 :: List.map snd cases)
+    <+> (shrink_pattern pat1 >|= fun a' -> Function ((a', expr1), cases))
+    <+> (shrink_expr expr1 >|= fun a' -> Function ((pat1, a'), cases))
     <+> (QCheck.Shrink.list
            ~shrink:(fun (p, e) ->
              (let* p_shr = shrink_pattern p in
@@ -82,11 +89,26 @@ and shrink_expr =
              let* e_shr = shrink_expr e in
              return (p, e_shr))
            cases
-         >|= fun a' -> Match (value, pat1, expr1, a'))
+         >|= fun a' -> Function ((pat1, expr1), a'))
+  | Match (value, (pat1, expr1), cases) ->
+    of_list (value :: expr1 :: List.map snd cases)
+    <+> (shrink_expr value >|= fun a' -> Match (a', (pat1, expr1), cases))
+    <+> (shrink_pattern pat1 >|= fun a' -> Match (value, (a', expr1), cases))
+    <+> (shrink_expr expr1 >|= fun a' -> Match (value, (pat1, a'), cases))
+    <+> (QCheck.Shrink.list
+           ~shrink:(fun (p, e) ->
+             (let* p_shr = shrink_pattern p in
+              return (p_shr, e))
+             <+>
+             let* e_shr = shrink_expr e in
+             return (p, e_shr))
+           cases
+         >|= fun a' -> Match (value, (pat1, expr1), a'))
   | Option (Some e) ->
     of_list [ e; Option None ] <+> (shrink_expr e >|= fun a' -> Option (Some a'))
   | Option None -> empty
   | Variable _ -> empty
+  | EConstraint (e, t) -> return e <+> shrink_expr e >|= fun a' -> EConstraint (a', t)
 
 and shrink_pattern =
   let open QCheck.Iter in
@@ -107,6 +129,7 @@ and shrink_pattern =
   | POption None -> empty
   | Wild -> empty
   | PVar _ -> empty
+  | PConstraint (p, _) -> return p
 ;;
 
 let shrink_statement =
@@ -127,13 +150,26 @@ let shrink_construction =
   let open QCheck.Iter in
   function
   | Expr e -> shrink_expr e >|= fun a' -> Expr a'
-  | Statement s -> shrink_statement s >|= fun a' -> Statement a'
+  | Statement s ->
+    shrink_statement s
+    >|= (fun a' -> Statement a')
+    <+>
+      (match s with
+      | Let (_, let_bind, let_binds) ->
+        of_list (exprs_from_let_binds (let_bind :: let_binds)) >|= fun a' -> Expr a')
 ;;
 
 let arbitrary_construction =
   QCheck.make
     gen_construction
-    ~print:(Format.asprintf "%a" print_construction)
+    ~print:
+      (let open Format in
+       asprintf "%a" (fun fmt c ->
+         let pp = print_construction in
+         fprintf fmt "Generated:\n%a" pp c;
+         match parse (Format.asprintf "%a\n" pp c) with
+         | Ok parsed -> fprintf fmt "Parsed:\n%a" pp parsed
+         | Error e -> fprintf fmt "Parsing error:\n%s\n" e))
     ~shrink:shrink_construction
 ;;
 
@@ -141,6 +177,6 @@ let run n =
   QCheck_base_runner.run_tests
     [ QCheck.(
         Test.make arbitrary_construction ~count:n (fun c ->
-          Some c = parse (Format.asprintf "%a\n" pp_construction c)))
+          Ok c = parse (Format.asprintf "%a\n" pp_construction c)))
     ]
 ;;

@@ -1,0 +1,3 @@
+(cram
+ (applies_to repl)
+ (deps ../../bin/repl.exe))

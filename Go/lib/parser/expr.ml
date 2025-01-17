@@ -115,33 +115,12 @@ let parse_const_string =
     separated by comma such as: [a int], [a int, b string], [a, b int, c, d bool] *)
 let parse_idents_with_types =
   let* args_lists =
-    sep_by_comma1
+    sep_by_comma
       (let* idents = sep_by_comma1 parse_ident in
        let* t = ws_line *> parse_type in
        return (Base.List.map ~f:(fun id -> id, t) idents))
   in
   return (List.concat args_lists)
-;;
-
-(** [parse_func_args] parses function arguments in function declarations or
-    anonymous functions such as: [()], [(a int)], [(a, b int, c string)] *)
-let parse_func_args = parens parse_idents_with_types <|> parens ws *> return []
-
-(** [parse_func_return_values] parses function return values such as: [], [()], [int],
-    [(int)], [[(int, string)], [(a int, b string)], [(a, b int, c string)]] *)
-let parse_func_return_values =
-  choice
-    [ (parens parse_idents_with_types
-       >>| function
-       | hd :: tl -> Some (Ident_and_types (hd, tl))
-       | [] -> None)
-    ; (parens (sep_by_comma1 parse_type)
-       >>| function
-       | hd :: tl -> Some (Only_types (hd, tl))
-       | [] -> None)
-    ; (parse_type >>| fun t -> Some (Only_types (t, [])))
-    ; (parens ws <|> return ()) *> return None
-    ]
 ;;
 
 (** [parse_func_args_returns_and_body pblock] returns
@@ -152,9 +131,11 @@ let parse_func_return_values =
         return 
     }] *)
 let parse_func_args_returns_and_body pblock =
-  let* args = parse_func_args <* ws_line in
-  let* returns = parse_func_return_values <* ws_line in
-  let* body = pblock in
+  let* args = parens parse_idents_with_types <* ws_line in
+  let* returns =
+    parens (sep_by_comma parse_type) <|> (parse_type >>| fun t -> [ t ]) <|> return []
+  in
+  let* body = ws_line *> pblock in
   return { args; returns; body }
 ;;
 
@@ -194,7 +175,10 @@ let parse_const pexpr pblock =
 let parse_expr_ident = parse_ident >>| fun ident -> Expr_ident ident
 
 let parse_expr_func_call pexpr func =
-  let* args = parens (sep_by_comma pexpr) in
+  let parse_arg =
+    pexpr >>| (fun e -> Arg_expr e) <|> (parse_type >>| fun t -> Arg_type t)
+  in
+  let* args = parens (sep_by_comma parse_arg) in
   return (Expr_call (func, args))
 ;;
 
