@@ -445,7 +445,8 @@ let%expect_test "ok: closure check" =
       }
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
 
     00
@@ -521,6 +522,30 @@ let%expect_test "ok: receive and send back" =
       a := <-c
       println("go1: receive success. Value:", a)
     }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    go1: trying to send. Value:0
+    go2: trying to receive
+    go2: receive success. Value:0
+    go2: trying to send. Value:0
+    go1: send success
+    go1: trying to receive
+    go1: receive success. Value:0 |}]
+;;
+
+let%expect_test "ok: spimple array test" =
+  pp
+    {|
+      func main() {
+        var a = [2]string{"a", "a"}
+        a[0] = "Kill "
+        a[1] = "Ocaml"
+        println(a[0], a[1])
+    }
+
     |};
   [%expect
     {|

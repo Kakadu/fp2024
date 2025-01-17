@@ -64,7 +64,6 @@ and closure_frame =
 type stack_frame =
   { local_envs : local_env * local_env list
   ; deferred_funcs : stack_frame list
-  ; closure_envs : closure_frame
   ; returns : value option
   }
 
@@ -413,9 +412,8 @@ module Monad = struct
   let write_local_envs new_local_envs =
     read_stack_frame
     >>= function
-    | { deferred_funcs; closure_envs; returns } ->
-      write_stack_frame
-        { deferred_funcs; closure_envs; local_envs = new_local_envs; returns }
+    | { deferred_funcs; returns } ->
+      write_stack_frame { deferred_funcs; local_envs = new_local_envs; returns }
   ;;
 
   let add_env block env_type =
@@ -475,9 +473,8 @@ module Monad = struct
   let write_deferred new_deferred =
     read_stack_frame
     >>= function
-    | { local_envs; closure_envs; returns } ->
-      write_stack_frame
-        { local_envs; deferred_funcs = new_deferred; closure_envs; returns }
+    | { local_envs; returns } ->
+      write_stack_frame { local_envs; deferred_funcs = new_deferred; returns }
   ;;
 
   let add_deferred new_frame =
@@ -501,31 +498,8 @@ module Monad = struct
   let write_returns new_returns =
     read_stack_frame
     >>= function
-    | { local_envs; deferred_funcs; closure_envs } ->
-      write_stack_frame
-        { local_envs; closure_envs; deferred_funcs; returns = new_returns }
-  ;;
-
-  (*closure_envs*)
-
-  let read_closure_env =
-    read_stack_frame
-    >>= function
-    | { closure_envs } -> return closure_envs
-  ;;
-
-  let write_closure_env new_closure_env =
-    read_stack_frame
-    >>= function
-    | { local_envs; deferred_funcs; returns } ->
-      write_stack_frame
-        { local_envs; closure_envs = new_closure_env; deferred_funcs; returns }
-  ;;
-
-  let save_closure_id ident value =
-    let* { exec_block; env_type; var_map }, tl = read_local_envs in
-    let new_map = MapIdent.add ident value var_map in
-    write_closure_env (Closure ({ exec_block; env_type; var_map = new_map }, tl))
+    | { local_envs; deferred_funcs } ->
+      write_stack_frame { local_envs; deferred_funcs; returns = new_returns }
   ;;
 
   (* exec block (processing statements) *)
@@ -552,61 +526,25 @@ module Monad = struct
   let read_ident ident =
     let* hd, tl = read_local_envs in
     let* global_map = read_global in
-    let* closure_frame = read_closure_env in
-    match closure_frame with
-    | Simple ->
-      let var_maps = List.map (fun { var_map } -> var_map) (hd :: tl) @ [ global_map ] in
-      (match List.find_opt (fun map -> MapIdent.mem ident map) var_maps with
-       | None -> fail (Runtime_error (DevOnly (Undefined_ident (ident ^ "HERE"))))
-       | Some map ->
-         (match MapIdent.find_opt ident map with
-          | Some value -> return value
-          | None -> fail (Runtime_error (DevOnly (Undefined_ident ident)))))
-    | Closure (l_env, lst_envs) ->
-      let var_maps = List.map (fun { var_map } -> var_map) (hd :: tl) @ [ global_map ] in
-      (match List.find_opt (fun map -> MapIdent.mem ident map) var_maps with
-       | None -> fail (Runtime_error (DevOnly (Undefined_ident ident)))
-       | Some map ->
-         (match MapIdent.find_opt ident map with
-          | Some value -> return value
-          | None ->
-            let closure_maps =
-              List.map (fun { var_map } -> var_map) (l_env :: lst_envs)
-            in
-            (match List.find_opt (fun map -> MapIdent.mem ident map) closure_maps with
-             | Some map ->
-               (match MapIdent.find_opt ident map with
-                | Some value -> return value
-                | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))
-             | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))))
+    let var_maps = List.map (fun { var_map } -> var_map) (hd :: tl) @ [ global_map ] in
+    match List.find_opt (fun map -> MapIdent.mem ident map) var_maps with
+    | None -> fail (Runtime_error (DevOnly (Undefined_ident (ident ^ "HERE"))))
+    | Some map ->
+      (match MapIdent.find_opt ident map with
+       | Some value -> return value
+       | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))
   ;;
 
   let update_ident ident t =
     let* hd, tl = read_local_envs in
     let* global_map = read_global in
-    let* closure_frame = read_closure_env in
-    match closure_frame with
-    | Simple ->
-      let var_map = List.map (fun { var_map } -> var_map) (hd :: tl) in
+    let var_map = List.map (fun { var_map } -> var_map) (hd :: tl) in
+    match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
+    | Some _ -> update_local_id ident t
+    | None ->
+      let var_map = [ global_map ] in
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
-       | Some _ -> update_local_id ident t
-       | None ->
-         let var_map = [ global_map ] in
-         (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
-          | Some _ -> save_global_id ident t
-          | None -> fail (Runtime_error (DevOnly (Undefined_ident ident)))))
-    | Closure (l_env, lst_envs) ->
-      let var_map = List.map (fun { var_map } -> var_map) (hd :: tl) in
-      (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
-       | Some _ -> save_local_id ident t
-       | None ->
-         let var_map = List.map (fun { var_map } -> var_map) (hd :: tl) in
-         (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
-          | Some _ -> save_closure_id ident t
-          | None ->
-            let var_map = List.map (fun { var_map } -> var_map) (l_env :: lst_envs) in
-            (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
-             | Some _ -> save_closure_id ident t
-             | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))))
+       | Some _ -> save_global_id ident t
+       | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))
   ;;
 end

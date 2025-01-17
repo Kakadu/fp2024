@@ -34,6 +34,15 @@ let exec_stmt eval_stmt =
   | None -> return None
 ;;
 
+let rec replace_list list index elem =
+  match list with
+  | [] -> list
+  | h :: t ->
+    if index = 0
+    then elem :: replace_list t (index - 1) elem
+    else h :: replace_list t (index - 1) elem
+;;
+
 let rec exec eval_stmt =
   exec_stmt eval_stmt
   >>= function
@@ -152,7 +161,6 @@ and eval_func_call (func, args) =
     add_stack_frame
       { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
       ; deferred_funcs = []
-      ; closure_envs = Simple
       ; returns = None
       }
     *> exec eval_stmt
@@ -166,7 +174,6 @@ and eval_func_call (func, args) =
       { local_envs =
           { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
       ; deferred_funcs = []
-      ; closure_envs = Simple
       ; returns = None
       }
     *> exec eval_stmt
@@ -189,7 +196,6 @@ and eval_closure (func, args) =
           ( { exec_block = afc.body; var_map = map; env_type = Default }
           , { exec_block = []; var_map = vmap; env_type = Default } :: local_envs )
       ; deferred_funcs = []
-      ; closure_envs = Simple
       ; returns = None
       }
     *> exec eval_stmt
@@ -287,10 +293,40 @@ and eval_binop op a1 a2 =
   | Bin_greater_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 >= a2))
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "binop")))
 
-and eval_lvalue = function
-  | Lvalue_ident id -> return id
-  | Lvalue_array_index _ ->
-    fail (Runtime_error (Panic "Not supported lvalue array index"))
+and eval_lvalue value = function
+  | Lvalue_ident id -> update_ident id value
+  | lvi ->
+    prepare_lvalue_index [] lvi
+    >>= fun (tr, ind) ->
+    change_lvalue_index tr ind value
+    >>= fun new_lst -> update_ident (retrieve_lvalue_ident_index lvi) new_lst *> return ()
+
+and prepare_lvalue_index lst = function
+  | Lvalue_ident id ->
+    let* current = read_ident id in
+    return (current, lst)
+  | Lvalue_array_index (lv, exp) ->
+    eval_expr exp
+    >>= (function
+     | Value_int i -> prepare_lvalue_index (i :: lst) lv
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " prepare lval"))))
+
+and retrieve_lvalue_ident_index = function
+  | Lvalue_ident id -> id
+  | Lvalue_array_index (lv, _) -> retrieve_lvalue_ident_index lv
+
+and change_lvalue_index target indexes value =
+  match target with
+  | Value_array (i, lst) ->
+    (match indexes with
+     | [ i ] -> return (Value_array (i, replace_list lst i value))
+     | _ ->
+       if List.hd indexes < i
+       then
+         change_lvalue_index (List.nth lst (List.hd indexes)) (List.tl indexes) value
+         >>= fun ls -> return (Value_array (i, replace_list lst (List.hd indexes) ls))
+       else fail (Runtime_error Array_index_out_of_bound))
+  | _ -> return target
 
 and eval_init = function
   | Some init ->
@@ -331,18 +367,13 @@ and eval_stmt = function
     (match asgn with
      | Assign_mult_expr (fst, lst) ->
        iter
-         (fun (lvalue, expr) ->
-           eval_expr expr
-           >>= fun vl -> eval_lvalue lvalue >>= fun id -> update_ident id vl)
+         (fun (lvalue, expr) -> eval_expr expr >>= fun ex -> eval_lvalue ex lvalue)
          (fst :: lst)
      | Assign_one_expr (fst, snd, lst, fcall) ->
        eval_func_call fcall
        >>= (function
         | Some (Value_tuple tup) ->
-          iter2
-            (fun lv vl -> eval_lvalue lv >>= fun lv_new -> (update_ident lv_new) vl)
-            (fst :: snd :: lst)
-            tup
+          iter2 (fun v lv -> eval_lvalue v lv *> return ()) tup (fst :: snd :: lst)
         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
   | Stmt_short_var_decl svd ->
     (match svd with
@@ -480,7 +511,6 @@ and eval_go (func, arg_exprs) =
     create_goroutine
       { local_envs = { exec_block = body; var_map; env_type = Default }, []
       ; deferred_funcs = []
-      ; closure_envs = Simple
       ; returns = None
       }
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
@@ -512,7 +542,6 @@ let add_main_goroutine =
         { local_envs =
             { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
         ; deferred_funcs = []
-        ; closure_envs = Simple
         ; returns = None
         }
     | _ -> return ())

@@ -72,7 +72,6 @@ type stack_frame =
   { local_envs : local_env * local_env list
   (** Storage for local variables, new [{}] block creates new environment *)
   ; deferred_funcs : stack_frame list
-  ; closure_envs : closure_frame
   ; returns : value option
   }
 
