@@ -131,6 +131,8 @@ let pp_instruction ppf = function
     pp_instruction_2reg_1offset_helper ppf "lwu" rd rs1 (Address12 imm)
   | Addi (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "addi" rd rs1 (Address12 imm)
+  | Subi (rd, rs1, imm) ->
+    pp_instruction_2reg_1imm_helper ppf "subi" rd rs1 (Address12 imm)
   | Xori (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "xori" rd rs1 (Address12 imm)
   | Ori (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "ori" rd rs1 (Address12 imm)
