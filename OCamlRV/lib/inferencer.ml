@@ -67,10 +67,20 @@ let rec infer_pattern env = function
         (p1 :: p2 :: pl)
     in
     return (env, tuple_type (List.rev tl))
-  | PList _ ->
-    (* MUST BE FIXED *)
-    let* fresh = fresh_var in
-    return (env, fresh)
+ | PList (p1, rest) ->
+    let* env1, t1 = infer_pattern env p1 in
+    let* env2, t_list =
+      List.fold_left
+        ~f:(fun acc pat ->
+           let* env_acc , _ = acc in
+           let* env_next, t_next = infer_pattern env_acc pat in
+           let* sub = Subst.unify t1 t_next in
+           let env_updated = TypeEnv.apply sub env_next in
+           return (env_updated, Subst.apply sub t1))
+        ~init:(return (env1, list_type t1))
+        rest
+    in
+    return (env2, t_list)
   | POption (Some p) -> infer_pattern env p
   | POption None ->
     let* fresh = fresh_var in
