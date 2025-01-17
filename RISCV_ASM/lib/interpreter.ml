@@ -84,26 +84,28 @@ let handle_alternative_names = function
 
 let resolve_label_including_directives program label =
   let rec aux idx = function
-    | [] -> -1
+    | [] -> -1L
     | LabelExpr lbl :: _ when lbl = label -> idx
-    | _ :: tl -> aux (idx + 4) tl
+    | _ :: tl -> aux (Int64.add idx 4L) tl
   in
-  aux 0 program
+  aux 0L program
 ;;
 
 let resolve_label_excluding_directives program label =
   let rec aux idx = function
-    | [] -> -1
+    | [] -> -1L
     | LabelExpr lbl :: _ when lbl = label -> idx
-    | InstructionExpr _ :: tl -> aux (idx + 4) tl
+    | InstructionExpr _ :: tl -> aux (Int64.add idx 4L) tl
+    | DirectiveExpr (Word _) :: tl -> aux (Int64.add idx 4L) tl
+    | DirectiveExpr (Space integer) :: tl -> aux (Int64.add idx (Int64.of_int (integer))) tl
     | _ :: tl -> aux idx tl
   in
-  aux 0 program
+  aux 0L program
 ;;
 
 type address_info =
   | Immediate of int
-  | Label of int
+  | Label of int64
 
 let get_address12_value program = function
   | ImmediateAddress12 value -> Immediate value
@@ -133,14 +135,8 @@ let init_data program =
           [0L; 1L; 2L; 3L]
       in
       traverse_program rest (Int64.add temporary_pc_counter 4L) memory memory_writable
-    | DirectiveExpr (Word address32) :: rest ->
-      let address_info = get_address32_value program address32 in
-      let data_to_store =
-        match address_info with
-        | Immediate imm_value -> Int64.of_int imm_value
-        | Label excluding_directives_label_offset -> Int64.of_int excluding_directives_label_offset
-    in
-      let memory = Int64Map.add temporary_pc_counter data_to_store memory in
+    | DirectiveExpr (Word integer) :: rest ->
+      let memory = Int64Map.add temporary_pc_counter (Int64.of_int integer) memory in
       let memory_writable =
         Int64Map.add temporary_pc_counter true memory_writable (* first byte writable *)
       in
@@ -152,6 +148,8 @@ let init_data program =
           [1L; 2L; 3L]
       in
       traverse_program rest (Int64.add temporary_pc_counter 4L) memory memory_writable
+    | DirectiveExpr (Space integer) :: rest ->
+      traverse_program rest (Int64.add temporary_pc_counter (Int64.of_int integer)) memory memory_writable
     | _ :: rest ->
       (* skip over labels, other directives *)
       traverse_program rest temporary_pc_counter memory memory_writable
@@ -289,7 +287,7 @@ let handle_branch_condition state program rs1 rs2 imm_value comparison_fn =
       let* target_pc =
         resolve_address_excl_to_incl
           program
-          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
+          (Int64.add excluding_directives_label_offset current_pc_excl)
       in
       return target_pc
     | Label _ -> return (Int64.add state.pc 4L)
@@ -328,7 +326,7 @@ let execute_immediate_op state program rd rs1 imm op =
   let imm_value =
     match address_info with
     | Immediate imm_value -> Int64.of_int imm_value
-    | Label excluding_directives_label_offset -> Int64.of_int excluding_directives_label_offset
+    | Label excluding_directives_label_offset -> excluding_directives_label_offset
   in
   let result = op val1 imm_value in
   return (set_register_value state rd result)
@@ -339,7 +337,7 @@ let execute_shift_immediate_op state program rd rs1 imm op =
   let imm_value =
     match get_address12_value program imm with
     | Immediate imm_value -> imm_value
-    | Label excluding_directives_label_offset -> excluding_directives_label_offset
+    | Label excluding_directives_label_offset -> Int64.to_int excluding_directives_label_offset
   in
   let result = op val1 imm_value in
   return (set_register_value state rd result)
@@ -573,7 +571,7 @@ and execute_instruction state instr program =
         let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
         resolve_address_excl_to_incl
           program
-          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
+          (Int64.add excluding_directives_label_offset current_pc_excl)
     in
     let new_state = set_register_value state rd (Int64.add state.pc 1L) in
     return (set_pc new_state new_pc)
@@ -588,8 +586,7 @@ and execute_instruction state instr program =
       | Label excluding_directives_label_offset ->
         resolve_address_excl_to_incl
           program
-          (Int64.add
-             (Int64.of_int excluding_directives_label_offset) val_rs1)
+          (Int64.add excluding_directives_label_offset val_rs1)
     in
     let new_state = set_register_value state rd (Int64.add state.pc 1L) in
     return (set_pc new_state new_pc)
@@ -613,7 +610,7 @@ and execute_instruction state instr program =
         let* current_pc_excl = resolve_address_incl_to_excl program state.pc in
         resolve_address_excl_to_incl
           program
-          (Int64.add (Int64.of_int excluding_directives_label_offset) current_pc_excl)
+          (Int64.add excluding_directives_label_offset current_pc_excl)
     in
     let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
     return (set_pc new_state new_pc)
@@ -623,7 +620,7 @@ and execute_instruction state instr program =
       | ImmediateAddress20 value -> Int64.shift_left (Int64.of_int value) 12
       | LabelAddress20 label ->
         let label_offset = resolve_label_excluding_directives program label in
-        Int64.shift_left (Int64.of_int label_offset) 12
+        Int64.shift_left label_offset 12
     in
     return (set_register_value state rd imm_value)
   | Auipc (rd, imm) ->
@@ -632,7 +629,7 @@ and execute_instruction state instr program =
       | ImmediateAddress20 value -> Int64.shift_left (Int64.of_int value) 12
       | LabelAddress20 label ->
         let label_offset = resolve_label_excluding_directives program label in
-        Int64.shift_left (Int64.of_int label_offset) 12
+        Int64.shift_left label_offset 12
     in
     let new_value = Int64.add state.pc imm_value in
     return (set_register_value state rd new_value)
