@@ -11,7 +11,7 @@ type options =
 
 let usage_msg =
   "Go subset interpreter\n\n\
-   Usage: go-interpreter.exe <options> <filepath>\n\n\
+   Usage: interpret.exe <options> <filepath>\n\n\
    If filepath isn't specified, REPL will start running and the program will be read \
    from stdin\n\
    In REPL mode type:\n\n\
@@ -35,6 +35,7 @@ let rec read_repl_input inp_chan =
     (match parse (parse_word "help") input with
      | Ok () ->
        print_string usage_msg;
+       print_newline ();
        flush stdout;
        read_repl_input inp_chan
      | Error _ ->
@@ -59,22 +60,24 @@ let run_repl options =
       if options.show_ast
       then (
         print_endline "AST dump:";
-        pp_file Format.std_formatter ast;
+        print_endline (show_file ast);
         print_newline ());
       let typecheck_result =
         match type_check ast with
-        | Result.Ok _ -> "correct"
-        | Result.Error (Runtime_error _) -> "wtf runtime error while typecheck"
-        | Result.Error (Type_check_error err) -> Errors.pp_typecheck_error err
+        | Result.Ok _ -> "result: correct"
+        | Result.Error (Runtime_error _) -> "error: wtf runtime error while typecheck"
+        | Result.Error (Type_check_error err) -> "error: " ^ Errors.pp_typecheck_error err
       in
-      if options.run_typecheck then Printf.printf "Typecheck result: %s" typecheck_result;
+      if options.run_typecheck then print_endline ("Typecheck " ^ typecheck_result);
       (match typecheck_result with
-       | "correct" ->
+       | "result: correct" ->
          (match eval ast with
           | Error (Runtime_error err) -> print_endline (Errors.pp_runtime_error err)
-          | Ok _ | Error (Type_check_error _) -> flush stdout)
-       | _ -> Printf.printf "Typecheck error: %s\n" typecheck_result);
-      print_newline ();
+          | Ok _ | Error (Type_check_error _) -> ())
+       | _ ->
+         if not options.run_typecheck then print_endline ("Typecheck " ^ typecheck_result));
+      flush stdout;
+      Format.pp_print_flush Format.std_formatter ();
       helper read_repl_input
   in
   helper read_repl_input
@@ -84,20 +87,27 @@ let run_file options string =
   match parse parse_file string with
   | Error _ -> print_endline "Syntax error"
   | Ok ast ->
-    if options.show_ast then pp_file Format.std_formatter ast;
+    if options.show_ast
+    then (
+      print_endline "AST dump:";
+      print_endline (show_file ast);
+      print_newline ());
     let typecheck_result =
       match type_check ast with
-      | Result.Ok _ -> "correct"
-      | Result.Error (Runtime_error _) -> "wtf runtime error while typecheck"
-      | Result.Error (Type_check_error err) -> Errors.pp_typecheck_error err
+      | Result.Ok _ -> "result: correct"
+      | Result.Error (Runtime_error _) -> "error: wtf runtime error while typecheck"
+      | Result.Error (Type_check_error err) -> "error: " ^ Errors.pp_typecheck_error err
     in
-    if options.run_typecheck then Printf.printf "Typecheck result: %s\n" typecheck_result;
+    if options.run_typecheck then print_endline ("Typecheck " ^ typecheck_result);
     (match typecheck_result with
-     | "correct" ->
+     | "result: correct" ->
        (match eval ast with
         | Error (Runtime_error err) -> print_endline (Errors.pp_runtime_error err)
         | Ok _ | Error (Type_check_error _) -> ())
-     | _ -> Printf.printf "Typecheck error: %s\n" typecheck_result)
+     | _ ->
+       if not options.run_typecheck then print_endline ("Typecheck " ^ typecheck_result));
+    flush stdout;
+    Format.pp_print_flush Format.std_formatter ()
 ;;
 
 let () =

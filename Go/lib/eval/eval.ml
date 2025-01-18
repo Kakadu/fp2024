@@ -251,10 +251,11 @@ and eval_builtin args func =
 
 and prepare_builtin_eval vlist = function
   | Print ->
-    (return vlist >>= iter (fun x -> return (printf "%s" (pp_value x)))) *> return None
+    (map retrieve_arg_value args >>= iter (fun x -> return (print_string (pp_value x))))
+    *> return None
   | Println ->
-    (return vlist >>= iter (fun x -> return (printf "%s" (pp_value x))))
-    *> return (printf "\n")
+    (map retrieve_arg_value args >>= iter (fun x -> return (print_string (pp_value x))))
+    *> return (print_string "\n")
     *> return None
   | Make ->
     let* chan_id = create_chanel in

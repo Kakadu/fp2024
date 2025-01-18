@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
   $ ../../bin/interpret.exe --help
   Go subset interpreter
   
-  Usage: go-interpreter.exe <options> <filepath>
+  Usage: interpret.exe <options> <filepath>
   
   If filepath isn't specified, REPL will start running and the program will be read from stdin
   In REPL mode type:
@@ -21,6 +21,7 @@ SPDX-License-Identifier: MIT
 
   $ echo 'func main() { println("Hello, world!") }' > example.go
   $ ../../bin/interpret.exe --ast --typecheck example.go
+  AST dump:
   [(Decl_func
       ("main",
        { args = []; returns = [];
@@ -29,7 +30,9 @@ SPDX-License-Identifier: MIT
              ((Expr_ident "println"),
               [(Arg_expr (Expr_const (Const_string "Hello, world!")))]))
            ]
-         }))Typecheck result: correct
-  
+         }))
     ]
+  
+  Typecheck result: correct
+  
   Hello, world!
