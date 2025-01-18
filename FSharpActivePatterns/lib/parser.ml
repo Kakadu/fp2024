@@ -350,9 +350,11 @@ let p_constraint_pat p_pat =
 
 let p_act_pat_case p_pat =
   let* case = p_act_pat_ident in
-  let* pat = (peek_sep1 *> (p_pat <* peek_sep1)) 
-  <|> (p_parens p_pat <* peek_sep1)
-  <|> return (PConst(Unit_lt)) in
+  let* pat =
+    peek_sep1 *> (p_pat <* peek_sep1)
+    <|> (p_parens p_pat <* peek_sep1)
+    <|> return (PConst Unit_lt)
+  in
   return (PActive (case, pat))
 ;;
 
@@ -595,9 +597,11 @@ let p_act_pat_constructor p_expr =
   skip_ws
   *>
   let* name = p_act_pat_ident in
-  let* expr = (peek_sep1 *> (p_expr <* peek_sep1)) 
-  <|> (p_parens p_expr <* peek_sep1)
-  <|> return (Const(Unit_lt)) in
+  let* expr =
+    peek_sep1 *> (p_expr <* peek_sep1)
+    <|> (p_parens p_expr <* peek_sep1)
+    <|> return (Const Unit_lt)
+  in
   return (ActPatConstructor (name, expr))
 ;;
 

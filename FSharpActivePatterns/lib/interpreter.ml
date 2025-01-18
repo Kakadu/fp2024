@@ -163,7 +163,6 @@ end = struct
   ;;
 
   let default = Map.set (Map.empty (module String)) ~key:"print_int" ~data:Print_int
-
   let find = Map.find
   let find_exn = Map.find_exn
 
@@ -183,6 +182,7 @@ let check_act_pat_correctness env name =
   match ValueEnv.find env name with
   | Some _ -> return name
   | None -> fail (`Unbound_variable name)
+;;
 
 let rec match_pattern env =
   let match_pattern_list env pl vl =
@@ -206,7 +206,7 @@ let rec match_pattern env =
   | PConst (Bool_lt p), VBool v when p = v -> return env
   | PConst (String_lt p), VString v when p = v -> return env
   | PConst Unit_lt, VUnit -> return env
-  | PVar (Ident name), v -> 
+  | PVar (Ident name), v ->
     (*let _ = Format.fprintf Format.std_formatter "INSIDE VAR %s \n" name in*)
     return (ValueEnv.extend env name v)
   | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
@@ -331,11 +331,10 @@ let rec eval_expr env = function
     let* value = eval_expr env e in
     return (VOption (Some value))
   | EConstraint (e, _) -> eval_expr env e
-  | ActPatConstructor (Ident(name), e) ->
+  | ActPatConstructor (Ident name, e) ->
     let* value = eval_expr env e in
     let* name = check_act_pat_correctness env name in
-    return (VActPatCase(name, value))
-
+    return (VActPatCase (name, value))
 
 and eval_expr_fold env l =
   Base.List.fold
@@ -416,39 +415,39 @@ let eval_statement env =
           Map.set map ~key:name ~data:value)
     in
     return (env, bind_names_with_values)
-  | ActPat (fst, rest, arg1, args, expr) -> 
+  | ActPat (fst, rest, arg1, args, expr) ->
     (* extract string names of variants from idents *)
-    let name_list = fst :: rest in 
+    let name_list = fst :: rest in
     let ident_name_list = List.map name_list ~f:(fun (Ident s) -> s) in
-
     (* make function var with arguments and expr, match it to names of variants *)
     let value = VFun (arg1, args, expr, env) in
     let pat_name = String.concat ~sep:"" ident_name_list ^ "Choice" in
-    let* env = match_pattern env (PVar(Ident(pat_name)), value) in
-
-    let* env = List.fold_right name_list ~init:(return env) 
-    ~f:(fun fst acc_env ->
-      let* acc = acc_env in
-      let* new_env = match_pattern acc (PVar (fst), value) in
-      return new_env) in
-
-      let env = Base.List.fold ~init:env
-      ~f:(fun env name ->
-        ValueEnv.update_exn env name ~f:(function
-          | VFun (arg, args, body, _) -> VFun (arg, args, body, env)
-          | other -> other))
-      ident_name_list in
-      
-      let dummy_list = [pat_name] in
-      let patterns_names_with_values =
-        List.fold
-          dummy_list
-          ~init:(Map.empty (module String))
-          ~f:(fun map name ->
-            let value = ValueEnv.find_exn env name in
-            Map.set map ~key:name ~data:value)
-      in
-      return (env, patterns_names_with_values)
+    let* env = match_pattern env (PVar (Ident pat_name), value) in
+    let* env =
+      List.fold_right name_list ~init:(return env) ~f:(fun fst acc_env ->
+        let* acc = acc_env in
+        let* new_env = match_pattern acc (PVar fst, value) in
+        return new_env)
+    in
+    let env =
+      Base.List.fold
+        ~init:env
+        ~f:(fun env name ->
+          ValueEnv.update_exn env name ~f:(function
+            | VFun (arg, args, body, _) -> VFun (arg, args, body, env)
+            | other -> other))
+        ident_name_list
+    in
+    let dummy_list = [ pat_name ] in
+    let patterns_names_with_values =
+      List.fold
+        dummy_list
+        ~init:(Map.empty (module String))
+        ~f:(fun map name ->
+          let value = ValueEnv.find_exn env name in
+          Map.set map ~key:name ~data:value)
+    in
+    return (env, patterns_names_with_values)
 ;;
 
 let eval_construction env = function
@@ -480,7 +479,8 @@ let run_interpreter type_env value_env state c =
     let _ =
       Base.Map.to_alist names_and_types
       |> List.iter ~f:(fun (n, t) ->
-             Format.fprintf Format.std_formatter "%s : %a\n" n pp_typ t) in
+        Format.fprintf Format.std_formatter "%s : %a\n" n pp_typ t)
+    in
     (match eval value_env c with
      | Error (#error as eval_err) -> new_state, Result.fail eval_err
      | Ok (new_value_env, names_and_values) ->

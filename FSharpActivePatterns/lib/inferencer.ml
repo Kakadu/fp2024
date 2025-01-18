@@ -451,21 +451,21 @@ let print_substitution (substitution : Substitution.t) =
 let rec find_return_type typ =
   match typ with
   | Arrow (_, snd) -> find_return_type snd
-  | last -> last 
+  | last -> last
 ;;
 
 let rec find_args_type = function
   | Arrow (a, Arrow (b, rest)) -> Arrow (a, find_args_type (Arrow (b, rest)))
   | Arrow (a, _) -> a
-  | t -> t 
+  | t -> t
 ;;
 
 let rec decompose_arrow typ =
   match typ with
   | Arrow (fst, snd) ->
-      let args, final_return_type = decompose_arrow snd in
-      (fst :: args, final_return_type)
-  | _ -> ([], typ)
+    let args, final_return_type = decompose_arrow snd in
+    fst :: args, final_return_type
+  | _ -> [], typ
 ;;
 
 let infer_lt = function
@@ -554,8 +554,8 @@ let infer_patterns env ~shadow patterns =
 
 let infer_match_pattern env ~shadow pattern match_type =
   (*let _ = (match pattern with
-  | PActive (Ident(name), _) -> fprintf std_formatter "NAME IS %s\n" name
-  | _ -> ()) in*)
+    | PActive (Ident(name), _) -> fprintf std_formatter "NAME IS %s\n" name
+    | _ -> ()) in*)
   let* env, pat_typ = infer_pattern env ~shadow pattern in
   (*fprintf std_formatter "TYPES %a, %a\n" pp_typ match_type pp_typ pat_typ;*)
   (*let _ = printf "HERE IN MATCH WITH PAT %a\n" pp_typ pat_typ in *)
@@ -814,24 +814,24 @@ let rec infer_expr env = function
     return (subst_result, Substitution.apply subst2 e_type)
   | ActPatConstructor (Ident name, body) ->
     let* subst1, body_type = infer_expr env body in
-    let Scheme (_, existing_type) = TypeEnv.find_exn env name in
-    let* subst = unify existing_type body_type in 
-    let* subst_final = Substitution.compose subst1 subst in 
-    return (subst_final, TActPat(name, body_type))
+    let (Scheme (_, existing_type)) = TypeEnv.find_exn env name in
+    let* subst = unify existing_type body_type in
+    let* subst_final = Substitution.compose subst1 subst in
+    return (subst_final, TActPat (name, body_type))
 
-    (*(match TypeEnv.find env name with
-     | Some (Scheme (_, existing_type)) ->
-       (* if constructor is already typed, types must be compatible *)
-       let* subst = unify existing_type body_type in
-       let* subst_final = Substitution.compose subst1 subst in
-       (*let env = TypeEnvironment.apply subst_final env in*)
-       return (subst_final, TActPat (name, body_type))
-     | None ->
-       (* if no, add it to context *)
-       (*let scheme = generalize env body_type in
-         let env = TypeEnvironment.extend env name scheme in*)
-        printf "THERE IS NO PAT\n";
-       return (subst1, Substitution.apply subst1 (TActPat (name, body_type))))*)
+(*(match TypeEnv.find env name with
+  | Some (Scheme (_, existing_type)) ->
+  (* if constructor is already typed, types must be compatible *)
+  let* subst = unify existing_type body_type in
+  let* subst_final = Substitution.compose subst1 subst in
+  (*let env = TypeEnvironment.apply subst_final env in*)
+  return (subst_final, TActPat (name, body_type))
+  | None ->
+  (* if no, add it to context *)
+  (*let scheme = generalize env body_type in
+  let env = TypeEnvironment.extend env name scheme in*)
+  printf "THERE IS NO PAT\n";
+  return (subst1, Substitution.apply subst1 (TActPat (name, body_type))))*)
 
 (*| _ -> failwith "WIP"*)
 
@@ -915,12 +915,10 @@ let reconstruct_arrow args return_type =
   List.fold_right args ~init:return_type ~f:(fun arg acc -> Arrow (arg, acc))
 ;;
 
-let update_pat_types_with_expr_type
-    arg_types
-    names_with_types_list =
+let update_pat_types_with_expr_type arg_types names_with_types_list =
   List.map names_with_types_list ~f:(fun (name, return_type) ->
-      let new_type = reconstruct_arrow arg_types return_type in
-      (name, new_type))
+    let new_type = reconstruct_arrow arg_types return_type in
+    name, new_type)
 ;;
 
 let infer_statement env = function
@@ -956,11 +954,9 @@ let infer_statement env = function
     in
     let args = arg :: args in
     let* env, args_types = infer_patterns env ~shadow:true args in
-
     let* subst1, expr_type = infer_expr env body in
     let env = TypeEnv.apply subst1 env in
     let apat_type = Substitution.apply subst1 (arrow_of_types args_types expr_type) in
-
     (* form (name, type) pairs for variants and change types so they content args *)
     let* variant_names =
       List.fold_right rest ~init:(return []) ~f:(fun (Ident str) acc ->
@@ -979,24 +975,20 @@ let infer_statement env = function
     in
     let env =
       List.fold updated_variants_w_types_list ~init:env ~f:(fun env (name, new_typ) ->
-          let scheme = generalize env new_typ in
-          TypeEnv.extend env name scheme)
+        let scheme = generalize env new_typ in
+        TypeEnv.extend env name scheme)
     in
-    
     (* delete args from context *)
     let* arg_names = extract_names_from_patterns args >>| elements in
     let env = TypeEnv.remove_many env arg_names in
-    
     let result_name = String.concat ~sep:"" variant_names ^ "Choice" in
     let new_res_map = Map.empty (module String) in
     let new_res_map = Map.set new_res_map ~key:result_name ~data:apat_type in
-    
     let names_schemes_list =
       List.map updated_variants_w_types_list ~f:(fun (name, name_type) ->
         name, generalize env name_type)
     in
     let env = TypeEnv.extend_many env names_schemes_list in
-
     return (env, new_res_map)
 ;;
 
