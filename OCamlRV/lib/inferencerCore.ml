@@ -19,6 +19,7 @@ type error =
   | `Unbound of identifier
   | `Unification_failed of type_annot * type_annot
   | `LeftHS
+  | `RightHS
   ]
 
 let pp_error ppf : error -> _ =
@@ -29,6 +30,8 @@ let pp_error ppf : error -> _ =
   | `Unification_failed (l, r) ->
     fprintf ppf "Unification failed on %a and %a" pp_annot l pp_annot r
   | `LeftHS -> fprintf ppf "Only variables are allowed as left-hand side of `let rec'"
+  | `RightHS ->
+    fprintf ppf "This kind of expression is not allowed as right-hand side of `let rec'"
 ;;
 
 module VarSet = struct
