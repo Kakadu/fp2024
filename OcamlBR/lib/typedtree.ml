@@ -21,7 +21,7 @@ type ty =
   | TArrow of ty * ty
   | TTuple of ty * ty * ty list
   | TList of ty
-  | TOption of ty
+  | TOption of ty (* | TRecord of string *)
 [@@deriving show { with_path = false }]
 
 let gen_tprim =
@@ -42,6 +42,7 @@ let tarrow l r = TArrow (l, r)
 let ( @-> ) = tarrow
 let ttuple fst snd rest = TTuple (fst, snd, rest)
 let tlist ty = TList ty
+(* let trecord s = TRecord s *)
 
 let rec pp_ty ppf =
   let open Format in
@@ -74,6 +75,8 @@ let rec pp_ty ppf =
   | TOption t -> fprintf ppf "(%a) option" pp_ty t
 ;;
 
+(* | TRecord s -> fprintf ppf "%s" s *)
+
 (* errors *)
 type error =
   [ `Occurs_check
@@ -81,6 +84,9 @@ type error =
   | `Unification_failed of ty * ty
   | `Ill_left_hand_side of string
   | `Ill_right_hand_side of string
+  | `Duplicate_field_labels of string
+  | `Undefined_type of string
+  | `Multiple_definition_of_type of string
   ]
 
 let pp_error ppf = function
@@ -90,4 +96,8 @@ let pp_error ppf = function
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
   | `Ill_left_hand_side s -> Format.fprintf ppf {|Ill left-hand side %s|} s
   | `Ill_right_hand_side s -> Format.fprintf ppf {|Ill right-hand side %s|} s
+  | `Duplicate_field_labels s -> Format.fprintf ppf {|Duplicate field labels: %s|} s
+  | `Undefined_type s -> Format.fprintf ppf {|Undefined type: %s|} s
+  | `Multiple_definition_of_type s ->
+    Format.fprintf ppf {|Multiple definition of type name %s|} s
 ;;

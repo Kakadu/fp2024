@@ -29,10 +29,11 @@ type ty =
   | TTuple of ty * ty * ty list
   | TList of ty
   | TOption of ty
+(* | TRecord of string *)
 
 val pp_ty : Format.formatter -> ty -> unit
 val show_ty : ty -> string
-val gen_tprim : ty QCheck.Gen.t 
+val gen_tprim : ty QCheck.Gen.t
 
 type scheme = S of VarSet.t * ty
 
@@ -54,9 +55,20 @@ type error =
   | `Unification_failed of ty * ty
   | `Ill_left_hand_side of string
   | `Ill_right_hand_side of string
+  | `Duplicate_field_labels of string
+  | `Undefined_type of string
+  | `Multiple_definition_of_type of string
   ]
 
 val pp_error
   :  Format.formatter
-  -> [< `Occurs_check | `Undefined_variable of string | `Unification_failed of ty * ty | `Ill_left_hand_side of string | `Ill_right_hand_side of string]
+  -> [< `Occurs_check
+     | `Undefined_variable of string
+     | `Unification_failed of ty * ty
+     | `Ill_left_hand_side of string
+     | `Ill_right_hand_side of string
+     | `Duplicate_field_labels of string
+     | `Undefined_type of string
+     | `Multiple_definition_of_type of string
+     ]
   -> unit
