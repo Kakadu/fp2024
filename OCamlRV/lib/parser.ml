@@ -83,8 +83,14 @@ let pconstant = choice [ pinteger; pbool; pstring; punit; pnil ]
 
 let rec annot_list t =
   let* base = t in
-  let* _ = ws *> string "list" in
+  let* _ = token "list" in
   annot_list (return (AList base)) <|> return (AList base)
+;;
+
+let rec annot_option t =
+  let* base = t in
+  let* _ = token "option" in
+  return (AOption base)
 ;;
 
 let annot_alone =
@@ -99,7 +105,8 @@ let annot_alone =
 let parse_type_annotation =
   let alone = annot_alone in
   let list_type = annot_list alone <|> alone in
-  list_type
+  let opt_type = annot_option list_type <|> list_type in
+  opt_type
 ;;
 
 let pattern_with_type ppat =

@@ -209,3 +209,18 @@ let%expect_test _ =
     val b : int 
   |}]
 ;;
+
+let%expect_test _ =
+  test_infer {| let () = 123 |};
+  [%expect {| Infer error: Unification failed on unit and int |}]
+;;
+
+let%expect_test _ =
+  test_infer {| let Some x = 123 |};
+  [%expect {| Infer error: Unification failed on '0 option and int |}]
+;;
+
+let%expect_test _ =
+  test_infer {| let rec Some x = 123 |};
+  [%expect {| Infer error: Only variables are allowed as left-hand side of `let rec' |}]
+;;

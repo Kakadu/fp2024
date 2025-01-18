@@ -81,10 +81,12 @@ let rec infer_pattern env = function
         rest
     in
     return (env2, t_list)
-  | POption (Some p) -> infer_pattern env p
+  | POption (Some p) ->
+    let* env1, t1 = infer_pattern env p in
+    return (env1, AOption t1)
   | POption None ->
     let* fresh = fresh_var in
-    return (env, fresh)
+    return (env, AOption fresh)
   | PType (pat, an) ->
     let* env1, t1 = infer_pattern env pat in
     let* sub = Subst.unify t1 an in
@@ -233,6 +235,12 @@ let rec infer_expression env = function
     let* sub = Subst.compose_all [ s1; s2; s3 ] in
     let t = Subst.apply sub fresh in
     return (sub, t)
+  | ExprOption (Some eo) ->
+    let* s, t = infer_expression env eo in
+    return (s, AOption t)
+  | ExprOption None ->
+    let* t = fresh_var in
+    return (Subst.empty, AOption t)
   | _ -> fail `Not_implemented
 ;;
 
@@ -248,6 +256,24 @@ let infer_non_rec_binding_list env (bl : binding list) =
           let env = TypeEnv.apply s env in
           let sc = generalize env t in
           let env = TypeEnv.extend env x sc in
+          return env
+        | PConstant CUnit ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | POption (Some _) ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | POption None ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
           return env
         | _ -> fail `Not_implemented)
       ~init:(return env)
@@ -274,6 +300,12 @@ let infer_rec_binding_list env (bl : binding list) =
           let t2 = Subst.apply s3 t1 in
           let sc = generalize_rec env t2 x in
           let env = TypeEnv.extend env x sc in
+          return env
+        | PConstant CUnit ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
           return env
         | _ -> fail `LeftHS)
       ~init:(return env)

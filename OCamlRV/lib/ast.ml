@@ -66,6 +66,7 @@ type type_annot =
   | AFun of type_annot * type_annot
   | AList of type_annot
   | ATuple of type_annot list
+  | AOption of type_annot
 [@@deriving show { with_path = false }, qcheck]
 
 type pattern =
@@ -160,5 +161,5 @@ type structure_item =
 [@@deriving show { with_path = false }, qcheck]
 
 type structure =
-  (structure_item list[@gen QCheck.Gen.(list_size (1 -- 3) gen_structure_item)])
+  (structure_item list[@gen QCheck.Gen.(list_size (1 -- 2) gen_structure_item)])
 [@@deriving show { with_path = false }, qcheck]

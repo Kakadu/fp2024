@@ -105,6 +105,7 @@ module Type = struct
     | AFun (l, r) -> occurs_in v l || occurs_in v r
     | ATuple tl -> List.exists tl ~f:(occurs_in v)
     | AList t -> occurs_in v t
+    | AOption t -> occurs_in v t
     | AInt | ABool | AString | AUnit -> false
   ;;
 
@@ -114,6 +115,7 @@ module Type = struct
       | AFun (l, r) -> helper (helper acc l) r
       | ATuple tl -> List.fold_left tl ~init:acc ~f:helper
       | AList t -> helper acc t
+      | AOption o -> helper acc o
       | AInt | ABool | AString | AUnit -> acc
     in
     helper VarSet.empty
@@ -161,6 +163,7 @@ end = struct
       | AFun (l, r) -> fun_type (helper l) (helper r)
       | AList t -> list_type (helper t)
       | ATuple ts -> tuple_type (List.map ~f:helper ts)
+      | AOption o -> AOption (helper o)
     in
     helper
   ;;
@@ -191,6 +194,7 @@ end = struct
        with
        | Unequal_lengths -> fail (`Unification_failed (l, r))
        | Ok s -> s)
+    | AOption t1, AOption t2 -> unify t1 t2
     | _ -> fail (`Unification_failed (l, r))
 
   and extend k v s =

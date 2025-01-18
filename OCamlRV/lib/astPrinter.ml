@@ -47,6 +47,7 @@ let pp_annot =
           pp_tuple ppf xs
       in
       fprintf ppf "%a" pp_tuple l
+    | AOption op -> fprintf ppf "%a option" helper op
   in
   helper
 ;;
