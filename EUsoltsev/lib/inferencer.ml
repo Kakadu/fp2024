@@ -556,4 +556,3 @@ let infer_structure (structure : program) =
 ;;
 
 let run_infer s = run (infer_structure s)
-
