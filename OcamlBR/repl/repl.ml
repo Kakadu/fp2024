@@ -37,12 +37,12 @@ let run_single dump_parsetree stop_after interpret inference eval input_source =
   | Error e -> Stdlib.Format.printf "Parsing error: %s\n%!" e
   | Ok ast ->
     if dump_parsetree then print_endline (show_structure ast);
-    match stop_after with
-    | SA_parsing -> ()
-    | SA_never ->
-      if inference then infer_program_test text;
-      if interpret then test_interpret text;
-      eval ast
+    (match stop_after with
+     | SA_parsing -> ()
+     | SA_never ->
+       if inference then infer_program_test text;
+       if interpret then test_interpret text;
+       eval ast)
 ;;
 
 let () =
