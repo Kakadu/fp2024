@@ -19,23 +19,21 @@ let%expect_test _ =
     {|
  [(SEval
      (Elet (Recursive,
-        (Evalue_binding ((Id ("factorial", None)),
-           (Efun ((PVar (Id ("n", None))), [],
+        (Evalue_binding (((PVar (Id "factorial")), None),
+           (Efun (((PVar (Id "n")), None), [],
               (Eif_then_else (
-                 (Ebin_op (Eq, (Evar (Id ("n", None))), (Econst (Int 0)))),
+                 (Ebin_op (Eq, (Evar (Id "n")), (Econst (Int 0)))),
                  (Econst (Int 1)),
-                 (Some (Ebin_op (Mult, (Evar (Id ("n", None))),
-                          (Efun_application ((Evar (Id ("factorial", None))),
-                             (Ebin_op (Sub, (Evar (Id ("n", None))),
-                                (Econst (Int 1))))
+                 (Some (Ebin_op (Mult, (Evar (Id "n")),
+                          (Efun_application ((Evar (Id "factorial")),
+                             (Ebin_op (Sub, (Evar (Id "n")), (Econst (Int 1))
+                                ))
                              ))
                           )))
                  ))
               ))
            )),
-        [],
-        (Efun_application ((Evar (Id ("factorial", None))), (Econst (Int 5))))
-        )))
+        [], (Efun_application ((Evar (Id "factorial")), (Econst (Int 5)))))))
    ]
  |}]
 ;;
@@ -63,18 +61,10 @@ let%expect_test _ =
            (Ebin_op (Eq, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 1)))),
               (Econst (Int 1235)))),
            (Elet (Non_recursive,
-              (Evalue_binding ((Id ("x", None)), (Econst (Int 4)))), [],
-              (Ebin_op (Mult, (Evar (Id ("x", None))), (Econst (Int 2)))))),
+              (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 4)))),
+              [], (Ebin_op (Mult, (Evar (Id "x")), (Econst (Int 2)))))),
            None)))
       ]
-  |}]
-;;
-
-(*unallowed function name*)
-let%expect_test _ =
-  parse "let rec 5 = ()";
-  [%expect {| 
-  Parsing failed
   |}]
 ;;
 
@@ -92,16 +82,17 @@ let%expect_test _ =
     {|
   [(SEval
       (Elet (Non_recursive,
-         (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), [],
+         (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))),
+         [],
          (Elet (Non_recursive,
-            (Evalue_binding ((Id ("y", None)), (Econst (Int 3)))), [],
-            (Ebin_op (Add, (Evar (Id ("x", None))), (Evar (Id ("y", None)))))))
+            (Evalue_binding (((PVar (Id "y")), None), (Econst (Int 3)))),
+            [], (Ebin_op (Add, (Evar (Id "x")), (Evar (Id "y"))))))
          )));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
           (Elet (Non_recursive,
-             (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-             (Ebin_op (Sub, (Evar (Id ("a", None))), (Econst (Int 4)))))),
+             (Evalue_binding (((PVar (Id "a")), None), (Econst (Int 2)))),
+             [], (Ebin_op (Sub, (Evar (Id "a")), (Econst (Int 4)))))),
           None)))
     ] |}]
 ;;
@@ -111,13 +102,12 @@ let%expect_test _ =
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)), (Econst (Int 5)))), []));
+      (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))), []));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
           (Elet (Non_recursive,
-             (Evalue_binding ((Id ("a", None)), (Econst (Int 2)))), [],
-             (Ebin_op (Add, (Evar (Id ("a", None))), (Evar (Id ("x", None)))))
-             )),
+             (Evalue_binding (((PVar (Id "a")), None), (Econst (Int 2)))),
+             [], (Ebin_op (Add, (Evar (Id "a")), (Evar (Id "x")))))),
           None)))
     ] |}]
 ;;
@@ -134,7 +124,7 @@ let%expect_test _ =
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding ((Id ("x", None)),
+      (Evalue_binding (((PVar (Id "x")), None),
          (Ematch ((Econst (Int 3)),
             (Ecase ((PConst (Int 1)), (Econst (Int 10)))),
             [(Ecase ((PConst (Int 2)), (Econst (Int 20))));
@@ -153,6 +143,67 @@ let%expect_test _ =
   [(SEval
       (Ebin_op (Mult, (Ebin_op (Add, (Econst (Int 5)), (Econst (Int 6)))),
          (Econst (Int 4)))))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let (|?) a b = a/b + b*a in (|?) 3 ((|?) 5 6)";
+  [%expect
+    {|
+  [(SEval
+      (Elet (Non_recursive,
+         (Evalue_binding (((PVar (Id "|?")), None),
+            (Efun (((PVar (Id "a")), None), [((PVar (Id "b")), None)],
+               (Ebin_op (Add,
+                  (Ebin_op (Div, (Evar (Id "a")), (Evar (Id "b")))),
+                  (Ebin_op (Mult, (Evar (Id "b")), (Evar (Id "a"))))))
+               ))
+            )),
+         [],
+         (Efun_application (
+            (Efun_application ((Evar (Id "|?")), (Econst (Int 3)))),
+            (Efun_application (
+               (Efun_application ((Evar (Id "|?")), (Econst (Int 5)))),
+               (Econst (Int 6))))
+            ))
+         )))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let x = match n with | [] -> 10 | h::tl -> 20 | h::m::tl -> 30 ;;";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding (((PVar (Id "x")), None),
+         (Ematch ((Evar (Id "n")), (Ecase ((PList []), (Econst (Int 10)))),
+            [(Ecase ((PCons ((PVar (Id "h")), (PVar (Id "tl")))),
+                (Econst (Int 20))));
+              (Ecase (
+                 (PCons ((PVar (Id "h")),
+                    (PCons ((PVar (Id "m")), (PVar (Id "tl")))))),
+                 (Econst (Int 30))))
+              ]
+            ))
+         )),
+      []))
+    ]
+  |}]
+;;
+
+let%expect_test _ =
+  parse "let w (Some c) (2::v)  = c";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding (((PVar (Id "w")), None),
+         (Efun (((POption (Some (PVar (Id "c")))), None),
+            [((PCons ((PConst (Int 2)), (PVar (Id "v")))), None)],
+            (Evar (Id "c"))))
+         )),
+      []))
     ]
   |}]
 ;;
