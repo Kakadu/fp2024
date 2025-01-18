@@ -1,5 +1,5 @@
 (library
- (name unitTest)
+ (name parserUnitTest)
  (libraries ast parse pprinter)
  (inline_tests)
  (instrumentation

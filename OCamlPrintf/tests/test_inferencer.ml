@@ -10,10 +10,12 @@ let run str =
   match parse str with
   | Ok ast ->
     (match run_inferencer ast empty_env with
-     | Ok (env, ty_list) ->
-       Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
-         Format.printf "val %s : %a\n" key pp_core_type ty);
-       List.iter (fun ty -> Format.printf "- : %a\n" pp_core_type ty) ty_list
+     | Ok out_list ->
+       List.iter
+         (function
+           | Some id, type' -> Format.printf "val %s : %a\n" id pp_core_type type'
+           | None, type' -> Format.printf "- : %a\n" pp_core_type type')
+         out_list
      | Error e -> Format.printf "Infer error: %a\n" pp_error e)
   | Error _ -> Format.printf "Parsing error\n"
 ;;
@@ -70,8 +72,8 @@ let%expect_test "type check several definition variable" =
   |};
   [%expect {|
   val f : int
-  val q : int
   val r : string
+  val q : int
   |}]
 ;;
 
@@ -82,8 +84,8 @@ let%expect_test "type check several definition variable and executable them" =
   a;;
   |};
   [%expect {|
-  val a : int
   val f : 'a -> 'a
+  val a : int
   - : string
   - : int
   |}]
@@ -330,10 +332,10 @@ let%expect_test "type check polymorphism" =
   [%expect
     {|
   val f1 : 'a -> 'a
-  val f2 : 'a -> 'a
   val foo1 : int
   val foo2 : char
   val foo3 : int
+  val f2 : 'a -> 'a
   val foo4 : int
   val foo5 : char
   val foo6 : char

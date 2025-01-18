@@ -1,6 +1,6 @@
 (library
  (name pprinter)
- (libraries ast str)
+ (libraries ast str ppType)
  (inline_tests)
  (instrumentation
   (backend bisect_ppx))

@@ -31,7 +31,6 @@ type constant =
 val show_constant : constant -> string
 
 type core_type =
-  | Type_any (** The type [_]. *)
   | Type_unit (** The type [unit]. *)
   | Type_char (** The type [char]. *)
   | Type_int (** The type [int]. *)
@@ -97,7 +96,8 @@ module Expression : sig
     | Exp_fun of pattern * pattern list_ * t
     (** [Exp_fun(P1, [P2; ... ; Pn], E)] represents [fun P1 ... Pn -> E] *)
     | Exp_apply of (t * t)
-    (** [Exp_ident(I, Exp_apply(E1, E2))] represents [E1 I E2],
+    (** [Exp_apply(Exp_ident(I), E)] represents [I E] when [I] from [un_op_list],
+        [Exp_apply(Exp_ident(I), Exp_apply(E1, E2))] represents [E1 I E2] when [I] from [bin_op_list],
         [Exp_apply(Exp_ident(I), E)] represents [I E],
         [Exp_apply(Exp_ident(I), Exp_apply(E1, Exp_apply(E2, ...)))] represents [I E1 E2 ... ]. *)
     | Exp_function of case_exp * case_exp list_

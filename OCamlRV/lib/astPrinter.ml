@@ -47,6 +47,7 @@ let pp_annot =
           pp_tuple ppf xs
       in
       fprintf ppf "%a" pp_tuple l
+    | AOption op -> fprintf ppf "%a option" helper op
   in
   helper
 ;;
@@ -92,6 +93,20 @@ let pp_pattern =
           pp_tuple ppf xs
       in
       fprintf ppf "(%a)" pp_tuple (p1 :: p2 :: rest)
+    | PList (p1, rest) ->
+      let pp_tuple_helper ppf x =
+        match x with
+        | PCons _ | POption _ -> fprintf ppf "(%a)" helper x
+        | _ -> fprintf ppf "%a" helper x
+      in
+      let rec pp_tuple ppf = function
+        | [] -> ()
+        | [ x ] -> fprintf ppf "%a" pp_tuple_helper x
+        | x :: xs ->
+          fprintf ppf "%a; " pp_tuple_helper x;
+          pp_tuple ppf xs
+      in
+      fprintf ppf "[%a]" pp_tuple (p1 :: rest)
     | POption x ->
       (match x with
        | Some x -> fprintf ppf "Some (%a)" helper x
@@ -154,6 +169,23 @@ let rec pp_expr =
           ppmatch_helper ppf xs
       in
       ppmatch_helper ppf (branch :: branches)
+    | ExprFunction (branch, branches) ->
+      fprintf ppf "function\n";
+      let ppmatch ppf branches =
+        let pattern, branch_expr = branches in
+        match branch_expr with
+        | ExprVariable _ | ExprConstant _ ->
+          fprintf ppf "| %a -> %a" pp_pattern pattern helper branch_expr
+        | _ -> fprintf ppf "| %a -> (%a)" pp_pattern pattern helper branch_expr
+      in
+      let rec ppfunction_helper ppf = function
+        | [] -> ()
+        | [ x ] -> fprintf ppf "%a" ppmatch x
+        | x :: xs ->
+          fprintf ppf "%a\n" ppmatch x;
+          ppfunction_helper ppf xs
+      in
+      ppfunction_helper ppf (branch :: branches)
     | ExprLet (rf, b, bl, e) ->
       fprintf ppf "let%a %a in %a" pp_rec_flag rf pp_binding_list (b :: bl) helper e
     | ExprApply (e1, e2) ->
@@ -217,6 +249,7 @@ let rec pp_expr =
       (match x with
        | Some x -> fprintf ppf "Some (%a)" helper x
        | None -> fprintf ppf "None")
+    | ExprType (e, annot) -> fprintf ppf "(%a : %a)" helper e pp_annot annot
   in
   helper
 

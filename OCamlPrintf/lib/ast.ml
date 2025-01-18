@@ -112,7 +112,6 @@ let gen_type_var =
 ;;
 
 type core_type =
-  | Type_any
   | Type_unit
   | Type_char
   | Type_int
@@ -266,11 +265,8 @@ module Expression = struct
   [@@deriving show { with_path = false }, qcheck]
 end
 
-let pp_value_binding = Expression.pp_value_binding_exp
 let show_value_binding = Expression.show_value_binding_exp
-let pp_case = Expression.pp_case_exp
 let show_case = Expression.show_case_exp
-let pp_expression = Expression.pp
 let show_expression = Expression.show
 
 type structure_item =

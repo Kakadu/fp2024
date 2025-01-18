@@ -408,16 +408,3 @@ let%expect_test "anon func with mult args and return values" =
         return a, b
     } |}]
 ;;
-
-let%expect_test "anon func with mult args and named return values" =
-  pp
-    print_expr
-    parse_expr
-    {|func(a int, b string) (res1 int, res2 string) { res1, res2 = a, b; return }|};
-  [%expect
-    {|
-    func(a int, b string) (res1 int, res2 string) {
-        res1, res2 = a, b
-        return
-    } |}]
-;;

@@ -28,7 +28,6 @@ let pp_constant ppf = function
 ;;
 
 let rec pp_core_type_deep n ppf = function
-  | Type_any -> fprintf ppf "_"
   | Type_unit -> fprintf ppf "unit"
   | Type_int -> fprintf ppf "int"
   | Type_char -> fprintf ppf "char"

@@ -42,4 +42,4 @@ val run_inferencer
   :  ?debug:bool
   -> Ast.structure_item list
   -> TypeEnv.t
-  -> (TypeEnv.t * Ast.core_type list, error) result
+  -> ((Ast.ident option * Ast.core_type) list, error) result

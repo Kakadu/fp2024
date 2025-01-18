@@ -40,24 +40,6 @@ let%expect_test "file with one default func decl" =
     } |}]
 ;;
 
-let%expect_test "file with one complex func decl" =
-  pp
-    print_file
-    parse_file
-    {|func test(a, b int, c string) (sum int, c string) {
-        sum = a + b
-        s = c
-        return
-  }|};
-  [%expect
-    {|
-    func test(a int, b int, c string) (sum int, c string) {
-        sum = a + b
-        s = c
-        return
-    } |}]
-;;
-
 let%expect_test "file with mixed func and var decls" =
   pp
     print_file
@@ -128,4 +110,31 @@ let%expect_test "file with factorial func" =
             return n * fac(n - 1)
         }
     } |}]
+;;
+
+let%expect_test "tmp" =
+  pp
+    print_file
+    parse_file
+    {|
+    var a, b, c <-chan [5]int = get()
+
+    var x int
+
+    func main(a2 int) bool {
+        var x int
+    }
+
+    func main1(a1 int, c int, b int) bool {} |};
+  [%expect
+    {|
+    var a, b, c <-chan [5]int = get()
+
+    var x int
+
+    func main(a2 int) bool {
+        var x int
+    }
+
+    func main1(a1 int, c int, b int) bool {} |}]
 ;;

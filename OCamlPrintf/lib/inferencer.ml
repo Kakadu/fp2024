@@ -171,7 +171,6 @@ module Subst = struct
 
   let rec unify l r =
     match l, r with
-    | Type_any, Type_any
     | Type_unit, Type_unit
     | Type_int, Type_int
     | Type_char, Type_char
@@ -316,8 +315,14 @@ module Infer = struct
     let new_free, new_ty, _ =
       VarSet.fold
         (fun str (temp_free, temp_ty, n) ->
-          (* 97 - is number 'a' in ASCII-table *)
-          let new_str = "'" ^ String.make 1 (Char.chr (97 + n)) in
+          let degree = n / 26 in
+          let new_str =
+            (* 97 - is number 'a' in ASCII-table *)
+            Printf.sprintf
+              "'%c%s"
+              (Char.chr (97 + (n mod 26)))
+              (if degree = 0 then "" else Int.to_string degree)
+          in
           let sub = Subst.singleton1 str (Type_var new_str) in
           let new_free = VarSet.add new_str temp_free in
           let new_ty = Subst.apply sub temp_ty in
@@ -417,6 +422,24 @@ module Infer = struct
         | _ -> fail `No_variable_rec)
   ;;
 
+  let rec extract_names_from_pat func acc = function
+    | Pat_var id -> func acc id
+    | Pat_tuple (fst_pat, snd_pat, pat_list) ->
+      RList.fold_left
+        (fst_pat :: snd_pat :: pat_list)
+        ~init:(return acc)
+        ~f:(extract_names_from_pat func)
+    | Pat_construct ("::", Some exp) ->
+      (match exp with
+       | Pat_tuple (head, tail, []) ->
+         let* acc = extract_names_from_pat func acc head in
+         extract_names_from_pat func acc tail
+       | _ -> return acc)
+    | Pat_construct ("Some", Some pat) -> extract_names_from_pat func acc pat
+    | Pat_constraint (pat, _) -> extract_names_from_pat func acc pat
+    | _ -> return acc
+  ;;
+
   module StringSet = struct
     include Set.Make (String)
 
@@ -425,29 +448,9 @@ module Infer = struct
     ;;
   end
 
-  let rec extract_names_from_pat set_acc = function
-    | Pat_var id -> StringSet.add_id set_acc id
-    | Pat_tuple (fst_pat, snd_pat, pat_list) ->
-      RList.fold_left
-        (fst_pat :: snd_pat :: pat_list)
-        ~init:(return set_acc)
-        ~f:extract_names_from_pat
-    | Pat_construct ("::", Some exp) ->
-      (match exp with
-       | Pat_tuple (head, tail, []) ->
-         let* set_acc = extract_names_from_pat set_acc head in
-         extract_names_from_pat set_acc tail
-       | _ -> return set_acc)
-    | Pat_construct ("Some", Some pat) -> extract_names_from_pat set_acc pat
-    | Pat_constraint (pat, _) -> extract_names_from_pat set_acc pat
-    | _ -> return set_acc
-  ;;
-
-  let check_names_from_let_binds let_binds =
-    RList.fold_left
-      ~init:(return StringSet.empty)
-      ~f:(fun set_acc { pat; _ } -> extract_names_from_pat set_acc pat)
-      let_binds
+  let check_names_from_let_binds =
+    RList.fold_left ~init:(return StringSet.empty) ~f:(fun set_acc { pat; _ } ->
+      extract_names_from_pat StringSet.add_id set_acc pat)
   ;;
 
   let rec infer_expression env = function
@@ -632,7 +635,8 @@ module Infer = struct
             let* env, pat_ty = infer_pattern env pat in
             let* unified_sub1 = unify match_exp_ty pat_ty in
             let* pat_names =
-              extract_names_from_pat StringSet.empty pat >>| StringSet.elements
+              extract_names_from_pat StringSet.add_id StringSet.empty pat
+              >>| StringSet.elements
             in
             if with_exp
             then (
@@ -683,7 +687,6 @@ module Infer = struct
       let env = TypeEnv.apply final_sub env in
       infer_value_binding_list env final_sub rest
     in
-    let* _ = check_names_from_let_binds let_binds in
     match let_binds with
     | [] -> return (env, sub)
     | { pat = Pat_constraint (pat, pat_ty); exp = Exp_fun (e_pat, e_pat_list, exp) }
@@ -752,32 +755,51 @@ module Infer = struct
   ;;
 
   let infer_srtucture_item ?(debug = false) env ast =
-    RList.fold_left
-      ast
-      ~init:(return (env, []))
-      ~f:(fun (env, ty_list) ->
-        function
-        | Struct_eval exp ->
-          let* _, ty = infer_expression env exp in
-          return (env, ty_list @ [ ty ])
-        | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
-          let* env, _ =
-            infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
-          in
-          return (env, ty_list)
-        | Struct_value (Recursive, value_binding, value_binding_list) ->
-          let* env, fresh_acc =
-            extend_env_with_bind_names env (value_binding :: value_binding_list)
-          in
-          let* env, _ =
-            rec_infer_value_binding_list
-              env
-              fresh_acc
-              Subst.empty
-              (value_binding :: value_binding_list)
-          in
-          if debug then TypeEnv.pp Format.std_formatter env;
-          return (env, ty_list))
+    let get_names_from_let_binds env =
+      RList.fold_left ~init:(return []) ~f:(fun acc { pat; _ } ->
+        extract_names_from_pat
+          (fun acc id -> return (acc @ [ Some id, TypeEnv.find_type_exn env id ]))
+          acc
+          pat)
+    in
+    let* _, out_list =
+      RList.fold_left
+        ast
+        ~init:(return (env, []))
+        ~f:(fun (env, out_list) ->
+          function
+          | Struct_eval exp ->
+            let* _, ty = infer_expression env exp in
+            return (env, out_list @ [ None, ty ])
+          | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
+            let value_binding_list = value_binding :: value_binding_list in
+            let* _ = check_names_from_let_binds value_binding_list in
+            let* env, _ = infer_value_binding_list env Subst.empty value_binding_list in
+            let* id_list = get_names_from_let_binds env value_binding_list in
+            if debug then TypeEnv.pp Format.std_formatter env;
+            return (env, out_list @ id_list)
+          | Struct_value (Recursive, value_binding, value_binding_list) ->
+            let value_binding_list = value_binding :: value_binding_list in
+            let* env, fresh_acc = extend_env_with_bind_names env value_binding_list in
+            let* env, _ =
+              rec_infer_value_binding_list env fresh_acc Subst.empty value_binding_list
+            in
+            let* id_list = get_names_from_let_binds env value_binding_list in
+            if debug then TypeEnv.pp Format.std_formatter env;
+            return (env, out_list @ id_list))
+    in
+    let remove_duplicates =
+      let fun_equal el1 el2 =
+        match el1, el2 with
+        | (Some id1, _), (Some id2, _) -> String.equal id1 id2
+        | _ -> false
+      in
+      function
+      | x :: xs when not (Base.List.mem xs x ~equal:fun_equal) -> x :: xs
+      | _ :: xs -> xs
+      | [] -> []
+    in
+    return (remove_duplicates out_list)
   ;;
 end
 

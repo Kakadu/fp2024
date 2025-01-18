@@ -169,8 +169,7 @@ let parse_type_var =
 
 let parse_base_type =
   choice
-    [ keyword "_" *> return Type_any
-    ; keyword "unit" *> return Type_unit
+    [ keyword "unit" *> return Type_unit
     ; keyword "int" *> return Type_int
     ; keyword "char" *> return Type_char
     ; keyword "string" *> return Type_string
