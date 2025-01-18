@@ -8,6 +8,18 @@ open Ast
 open Errors
 open Format
 
+let rec pp_value = function
+  | Value_int n -> asprintf "%d" n
+  | Value_bool b -> asprintf "%b" b
+  | Value_nil _ -> "nil"
+  | Value_array (size, values) ->
+    asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
+  | Value_chan _ -> "wtf chan"
+  | Value_func _ -> "wtf func"
+  | Value_string s -> s
+  | Value_tuple lst -> asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
+;;
+
 let rpf lst = List.map (fun (y, _) -> y) lst
 let rps lst = List.map (fun (_, y) -> y) lst
 
@@ -61,7 +73,11 @@ let run_ready_goroutines eval_stmt =
          (* chanel is being used, so we need to return to receiver to receive the value *)
        | None ->
          (* goroutine finished executing *)
-         read_running_fail
+         (read_panics
+          >>= function
+          | Some pnc -> fail (Runtime_error (Panic (pp_value (Value_tuple pnc))))
+          | None -> return ())
+         *> read_running_fail
          >>= (function
           | { go_id = 1 } ->
             (* main goroutine finished working and doesn,t wait for others to finish *)

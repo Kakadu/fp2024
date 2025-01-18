@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
-open Format
 
 module Ident = struct
   type t = ident
@@ -126,18 +125,6 @@ type eval_state =
   ; is_using_chanel : chanel_using_state option
   ; next_go_id : int
   }
-
-let rec pp_value = function
-  | Value_int n -> asprintf "%d" n
-  | Value_bool b -> asprintf "%b" b
-  | Value_nil _ -> "nil"
-  | Value_array (size, values) ->
-    asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
-  | Value_chan _ -> "wtf chan"
-  | Value_func _ -> "wtf func"
-  | Value_string s -> s
-  | Value_tuple lst -> asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
-;;
 
 module Monad = struct
   include BaseMonad
@@ -442,13 +429,7 @@ module Monad = struct
       delete_ready goroutine *> run_goroutine goroutine *> return (Some ())
   ;;
 
-  let delete_running_goroutine =
-    read_running_fail
-    >>= (fun { stack } -> return stack >>= fun (st, _) -> return st.panics)
-    >>= function
-    | None -> write_running None
-    | Some lst -> fail (Runtime_error (Panic (pp_value (Value_tuple lst))))
-  ;;
+  let delete_running_goroutine = write_running None
 
   (* chanels *)
 

@@ -139,9 +139,6 @@ type eval_state =
   ; next_go_id : int (** An id that will be given to the next created goroutine *)
   }
 
-(**Value pretty print*)
-val pp_value : value -> string
-
 (** Monad for evaluating the program state *)
 module Monad : sig
   (** ['a t] is an interpreter that stores current state

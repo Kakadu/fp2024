@@ -625,7 +625,7 @@ func f() {
     Returned normally from f. |}]
 ;;
 
-let%expect_test "ok: check defer with panic" =
+let%expect_test "ok: panic does not impact on goroutine without chanels" =
   pp
     {|
       
@@ -651,8 +651,7 @@ func f() {
         
     }
     |};
-  [%expect
-    {|
+  [%expect {|
     Correct evaluating
 
     Returned normally from f. |}]
@@ -707,7 +706,7 @@ let%expect_test "ok: check defer, panic and recover" =
     Returned normally from f. |}]
 ;;
 
-let%expect_test "err: not recovered panic" =
+let%expect_test "err: not recovered panic without goroutine" =
   pp
     {|
       
@@ -735,7 +734,7 @@ let%expect_test "err: not recovered panic" =
     |};
   [%expect
     {|
-    Correct evaluating
+    Runtime error: Paniced with message:[4]
 
     Calling g.
     Printing in g 0
