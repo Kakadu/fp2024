@@ -27,9 +27,10 @@ let rec pp_typ fmt = function
      | Type_tuple _ | Arrow _ -> fprintf fmt "(%a) option" pp_typ t
      | t -> fprintf fmt "%a option" pp_typ t)
   | TActPat (name, t) -> fprintf fmt "%s (%a)" name pp_typ t
-  | Choice (fst, snd, rest) ->
+  | Choice map ->
+    let open Base in
     fprintf fmt "Choice<";
     (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_typ fmt)
-      (fst :: snd :: rest);
+      (choice_to_list map);
     fprintf fmt ">"
 ;;

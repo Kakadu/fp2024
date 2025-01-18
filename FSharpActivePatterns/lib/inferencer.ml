@@ -17,7 +17,7 @@ module InferenceError = struct
     | `Not_allowed_left_hand_side_let_rec
     | `Args_after_not_variable_let
     | `Bound_several_times
-    | `Not_choice_in_act_pat
+    | `Active_pattern_are_not_determined_by_input
     ]
 
   let bound_error = `Bound_several_times
@@ -34,7 +34,8 @@ module InferenceError = struct
     | `Args_after_not_variable_let ->
       fprintf fmt "Arguments in let allowed only after variable"
     | `Bound_several_times -> fprintf fmt "Variable is bound several times"
-    | `Not_choice_in_act_pat -> fprintf fmt "All variants of active patterns must appear in definition of multi-variant active pattern"
+    | `Active_pattern_are_not_determined_by_input ->
+      fprintf fmt "Some active pattern are not determined by input"
   ;;
 end
 
@@ -145,8 +146,8 @@ end = struct
     | Type_var b -> b = v
     | Arrow (fst, snd) -> occurs_in v fst || occurs_in v snd
     | Type_list typ -> occurs_in v typ
-    | Type_tuple (fst, snd, rest) | Choice (fst, snd, rest) ->
-      occurs_in v fst || occurs_in v snd || List.exists rest ~f:(occurs_in v)
+    | Type_tuple (fst, snd, rest) -> List.exists (fst :: snd :: rest) ~f:(occurs_in v)
+    | Choice map -> List.exists ~f:(occurs_in v) (choice_to_list map)
     | TOption t -> occurs_in v t
     | TActPat (_, typ) -> occurs_in v typ
   ;;
@@ -158,8 +159,8 @@ end = struct
       | Type_var b -> VarSet.add b acc
       | Arrow (fst, snd) -> helper (helper acc fst) snd
       | Type_list typ -> helper acc typ
-      | Type_tuple (fst, snd, rest) | Choice (fst, snd, rest) ->
-        List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+      | Type_tuple (fst, snd, rest) -> List.fold (fst :: snd :: rest) ~init:acc ~f:helper
+      | Choice map -> List.fold (choice_to_list map) ~init:acc ~f:helper
       | TOption t -> helper acc t
       | TActPat (_, t) -> helper acc t
     in
@@ -232,7 +233,7 @@ end = struct
       | Primitive t -> Primitive t
       | TOption t -> TOption (helper t)
       | TActPat (name, t) -> TActPat (name, helper t)
-      | Choice (fst, snd, rest) -> Choice (helper fst, helper snd, List.map rest ~f:helper)
+      | Choice map -> Choice (Map.map map ~f:helper)
     in
     helper
   ;;
@@ -263,12 +264,17 @@ end = struct
       substitution_result
     | TActPat (name1, _), TActPat (name2, _) when name1 != name2 -> return empty
     | TActPat (name1, t1), TActPat (name2, t2) when name1 == name2 -> unify t1 t2
-    | Choice (t1, t2, rest), TActPat (name, t) | TActPat (name, t), Choice (t1, t2, rest)
-      ->
-      List.fold (t1 :: t2 :: rest) ~init:(return empty) ~f:(fun s choice_typ ->
-        let* s = s in
-        let* new_subst = unify choice_typ (TActPat (name, t)) in
-        compose s new_subst)
+    | Choice map, TActPat (name, t) | TActPat (name, t), Choice map ->
+      unify (Choice map) (Choice (Map.singleton (module String) name t))
+    | Choice map1, Choice map2 ->
+      Map.fold map1 ~init:(return empty) ~f:(fun ~key ~data subst ->
+        let* subst = subst in
+        let* new_subst =
+          match Map.find map2 key with
+          | Some t -> unify data t
+          | None -> return empty
+        in
+        compose subst new_subst)
     | _ -> fail (`Unification_failed (fst, snd))
 
   (* if value associated w this key exists in map, try to unify them, otherwise
@@ -450,12 +456,6 @@ let generalize env typ =
   Scheme (free, typ)
 ;;
 
-let rec find_return_type typ =
-  match typ with
-  | Arrow (_, snd) -> find_return_type snd
-  | last -> last
-;;
-
 let rec find_args_type = function
   | Arrow (a, Arrow (b, rest)) -> Arrow (a, find_args_type (Arrow (b, rest)))
   | Arrow (a, _) -> a
@@ -468,6 +468,11 @@ let rec decompose_arrow typ =
     let args, final_return_type = decompose_arrow snd in
     fst :: args, final_return_type
   | _ -> [], typ
+;;
+
+let rec find_return_type typ =
+  let _, return_t = decompose_arrow typ in
+  return_t
 ;;
 
 let infer_lt = function
@@ -763,7 +768,7 @@ let rec infer_expr env = function
     let* subst_result =
       Substitution.compose_all [ subst1; subst2; subst3; subst4; subst5 ]
     in
-    return (subst_result, Substitution.apply subst5 (check_act_pat (typ2, typ3)))
+    return (subst_result, Substitution.apply subst5 (unify_act_pat (typ2, typ3)))
   | If_then_else (c, th, None) ->
     let* subst1, typ1 = infer_expr env c in
     let* subst2, typ2 = infer_expr (TypeEnv.apply subst1 env) th in
@@ -910,11 +915,11 @@ let update_pat_types_with_expr_type arg_types names_with_types_list =
 (*let check_pat_variants_presence expected_variants expr_type =
   match List.length expected_variants with
   | 1 -> return expr_type
-  | _ -> 
-    match expr_type with
-    | Choice 
-    | _ -> fail (`Not_choice_in_act_pat)
-;;*)
+  | _ ->
+  match expr_type with
+  | Choice
+  | _ -> fail (`Not_choice_in_act_pat)
+  ;;*)
 
 let infer_statement env = function
   | Let (rec_flag, let_bind, let_binds) ->
@@ -935,36 +940,37 @@ let infer_statement env = function
           | Scheme (_, typ) -> Map.set map ~key:name ~data:typ)
     in
     return (env, bind_names_with_types)
-  | ActPat (Ident fst, rest, arg, args, body) ->
+  | ActPat (fst, rest, args, body) ->
     (* input all idents and infer args, expr, find type of act pat definition *)
-    let* env, _ = add_ident env fst ~shadow:true in
     let* env, _ =
       List.fold_right
-        rest
+        (fst :: rest)
         ~init:(return (env, []))
         ~f:(fun (Ident name) acc ->
           let* old_env, typs = acc in
           let* new_env, typ = add_ident old_env ~shadow:true name in
           return (new_env, typ :: typs))
     in
-    let args = arg :: args in
     let* env, args_types = infer_patterns env ~shadow:true args in
     let* subst1, expr_type = infer_expr env body in
     let env = TypeEnv.apply subst1 env in
     let apat_type = Substitution.apply subst1 (arrow_of_types args_types expr_type) in
     (* form (name, type) pairs for variants and change types so they content args *)
-    let* variant_names =
-      List.fold_right rest ~init:(return []) ~f:(fun (Ident str) acc ->
-        let* acc1 = acc in
-        return (str :: acc1))
-    in
-    let variant_names = fst :: variant_names in
+    let variant_names = List.map (fst :: rest) ~f:(function Ident str -> str) in
     let variants_with_types_list =
       List.map variant_names ~f:(fun name ->
         match TypeEnv.find_exn env name with
         | Scheme (_, typ) -> name, typ)
     in
-    let arg_types, _ = decompose_arrow apat_type in
+    let arg_types, return_typ = decompose_arrow apat_type in
+    (* check that all variants are determined in output *)
+    let* _ =
+      match return_typ with
+      | Choice map
+        when Map.length map = List.length variant_names
+             && List.exists variant_names ~f:(fun name -> Map.mem map name) -> return ()
+      | _ -> fail `Active_pattern_are_not_determined_by_input
+    in
     let updated_variants_w_types_list =
       update_pat_types_with_expr_type arg_types variants_with_types_list
     in
@@ -976,12 +982,10 @@ let infer_statement env = function
     (* delete args from context *)
     let* arg_names = extract_names_from_patterns args >>| elements in
     let env = TypeEnv.remove_many env arg_names in
-
     (* form result map for printing *)
     let result_name = String.concat ~sep:"" variant_names ^ "Choice" in
     let new_res_map = Map.empty (module String) in
     let new_res_map = Map.set new_res_map ~key:result_name ~data:apat_type in
-
     let names_schemes_list =
       List.map updated_variants_w_types_list ~f:(fun (name, name_type) ->
         name, generalize env name_type)

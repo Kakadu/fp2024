@@ -12,10 +12,16 @@ type typ =
   | Type_tuple of typ * typ * typ list
   | TOption of typ
   | TActPat of string * typ
-  | Choice of typ * typ * typ list
+  | Choice of (string, typ, Base.String.comparator_witness) Base.Map.t
 
 val gen_typ_primitive : typ QCheck.Gen.t
 val arrow_of_types : typ list -> typ -> typ
+val choice_to_list : (string, typ, 'a) Base.Map.t -> typ list
+
+val choice_set_many
+  :  (string, typ, 'a) Base.Map.t
+  -> (string * typ) list
+  -> (string, typ, 'a) Base.Map.t
 
 module VarSet : sig
   include module type of Stdlib.Set.Make (Int)

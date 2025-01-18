@@ -202,14 +202,13 @@ let print_statement indent fmt = function
        | Rec -> "Rec ");
     fprintf fmt "%s Let_binds\n" (String.make (indent + 2) ' ');
     List.iter (print_let_bind (indent + 2) fmt) (let_bind :: let_bind_list)
-  | ActPat (Ident name, name_list, arg, args, expr) ->
+  | ActPat (Ident name, name_list, args, expr) ->
     fprintf fmt "%s| Active Pattern\n" (String.make indent '-');
     fprintf fmt "%s| %s\n" (String.make (indent + 2) ' ') name;
     List.iter
       (fun (Ident name) -> fprintf fmt "%s| %s\n" (String.make (indent + 2) ' ') name)
       name_list;
     fprintf fmt "%s| ARGS\n" (String.make indent '-');
-    print_pattern (indent + 2) fmt arg;
     List.iter (fun pat -> print_pattern (indent + 2) fmt pat) args;
     fprintf fmt "%s| BODY\n" (String.make indent '-');
     print_expr (indent + 2) fmt expr

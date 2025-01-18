@@ -587,10 +587,9 @@ let p_act_pat p_expr =
     <* skip_ws
     <* string ")"
   in
-  let* arg = p_pat in
   let* args = many p_pat in
   let* expr = skip_ws *> string "=" *> skip_ws *> p_expr in
-  return (ActPat (fst_name, names, arg, args, expr))
+  return (ActPat (fst_name, names, args, expr))
 ;;
 
 let p_act_pat_constructor p_expr =

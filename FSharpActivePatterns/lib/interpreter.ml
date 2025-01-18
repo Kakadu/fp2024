@@ -260,25 +260,25 @@ let rec match_pattern env =
   | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
   | POption None, VOption None -> return env
   | PConstraint (p, _), v -> match_pattern env (p, v)
-  | PActive (Ident(name), p), v -> 
+  | PActive (Ident name, p), v ->
     (* find func that contains variant in case *)
     let act_pat_def = ValueEnv.find env name in
     (match act_pat_def with
-    | Some VFun (arg, args, body, f_env) -> 
-      (* match arg of func and match hat, if correct, eval func into value *)
-      let* f_env = match_pattern f_env (arg, v) in
-      let* value_after_pattern_applying = (match args with
-        | [] ->
-          let env = ValueEnv.set_many env f_env in
-          eval_expr env body
-        | arg1 :: args -> return (VFun (arg1, args, body, f_env))) in
-      (* match pattern in case (p) and value *)
-        (match value_after_pattern_applying with
-        | VActPatCase (_, value) -> 
-          match_pattern env (p, value)
+     | Some (VFun (arg, args, body, f_env)) ->
+       (* match arg of func and match hat, if correct, eval func into value *)
+       let* f_env = match_pattern f_env (arg, v) in
+       let* value_after_pattern_applying =
+         match args with
+         | [] ->
+           let env = ValueEnv.set_many env f_env in
+           eval_expr env body
+         | arg1 :: args -> return (VFun (arg1, args, body, f_env))
+       in
+       (* match pattern in case (p) and value *)
+       (match value_after_pattern_applying with
+        | VActPatCase (_, value) -> match_pattern env (p, value)
         | _ -> fail `Type_mismatch)
-    | _ -> fail `Type_mismatch
-    ) 
+     | _ -> fail `Type_mismatch)
   | _ -> fail `Match_failure
 
 and eval_expr env = function
@@ -430,12 +430,16 @@ let eval_statement env =
           Map.set map ~key:name ~data:value)
     in
     return (env, bind_names_with_values)
-  | ActPat (fst, rest, arg1, args, expr) ->
+  | ActPat (fst, rest, args, expr) ->
     (* extract string names of variants from idents *)
     let name_list = fst :: rest in
     let ident_name_list = List.map name_list ~f:(fun (Ident s) -> s) in
     (* make function var with arguments and expr, match it to names of variants *)
-    let value = VFun (arg1, args, expr, env) in
+    let* value =
+      match args with
+      | arg :: args -> return (VFun (arg, args, expr, env))
+      | [] -> eval_expr env expr
+    in
     let pat_name = String.concat ~sep:"" ident_name_list ^ "Choice" in
     let* env = match_pattern env (PVar (Ident pat_name), value) in
     let* env =
