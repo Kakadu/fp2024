@@ -24,7 +24,8 @@ let is_keyword = function
   | "and"
   | "match"
   | "with"
-  | "function" -> true
+  | "function"
+  | "type" -> true
   | _ -> false
 ;;
 
@@ -145,6 +146,7 @@ let patomic_type =
     [ pstoken "int" *> return (TPrim "int")
     ; pstoken "string" *> return (TPrim "string")
     ; pstoken "bool" *> return (TPrim "bool")
+    ; pstoken "unit" *> return (TPrim "unit")
     ]
 ;;
 
@@ -168,9 +170,11 @@ let rec pfun_type ptype_opt =
 ;;
 
 let poption_type ptype_opt = ptype_opt >>= fun t -> pstoken "option" *> return (TOption t)
+(* let precord_type = varname >>= fun t -> return (TRecord t) *)
 
 let ptype_helper =
   fix (fun typ ->
+    (* let atom = patomic_type <|> pparens typ <|> precord_type in *)
     let atom = patomic_type <|> pparens typ in
     let list = plist_type atom <|> atom in
     let option = poption_type list <|> list in
@@ -396,8 +400,7 @@ let pEmatch pexpr =
   in
   let function_cases =
     lift2
-      (fun case case_l ->
-        Efun ((PVar (Id "0"), None), [], Ematch ((Evar (Id "0")), case, case_l)))
+      (fun case case_l -> Efunction (case, case_l))
       (pstoken "function" *> pstoken "|" *> parse_case
        <|> pstoken "function" *> pwhitespace *> parse_case)
       (many (pstoken "|" *> parse_case))
@@ -406,6 +409,39 @@ let pEmatch pexpr =
 ;;
 
 let pEconstraint pexpr = lift2 (fun expr t -> Econstraint (expr, t)) pexpr ptype
+
+(*------------------Records-----------------*)
+
+(* let pbraces p = pstoken "{" *> p <* pstoken "}"
+let plabel_name = lift (fun t -> Label t) varname
+
+let pErecord pexpr =
+  let precord_field =
+    lift2
+      (fun label_name expr -> Erecord_field (label_name, expr))
+      plabel_name
+      (pstoken "=" *> pexpr)
+  in
+  pbraces
+    (lift2
+       (fun record_field record_fields -> Erecord (record_field, record_fields))
+       precord_field
+       (many (pstoken ";" *> precord_field))
+     <* (pstoken ";" <|> pwhitespace))
+;;
+
+let pfield pexpr = pparens (pEconstraint pexpr) <|> pexpr 
+
+ let pEfield_access pexpr =
+  let base_expr = pfield pexpr in
+  let rec parse_fields acc =
+    pstoken "." *> plabel_name
+    >>= fun field_name ->
+    let new_expr = Efield_access (acc, field_name) in
+    parse_fields new_expr <|> return new_expr
+  in
+  base_expr >>= fun base -> parse_fields base
+;; *)
 
 let pexpr =
   fix (fun expr ->
@@ -417,7 +453,7 @@ let pexpr =
         ; pElist expr
         ; pEfun expr
         ; pEoption expr
-        ; pEmatch expr
+        ; pEmatch expr (* ; pErecord expr *)
         ; pparens (pEconstraint expr)
         ]
     in
@@ -437,9 +473,15 @@ let pexpr =
     let rel_expr = chain sum_expr relation in
     let log_expr = chain rel_expr logic in
     let tuple_expr = pEtuple log_expr <|> log_expr in
+    (* let field_expr = pEfield_access tuple_expr <|> tuple_expr in
+       let cons_expr = chainr field_expr cons in *)
     let cons_expr = chainr tuple_expr cons in
     choice [ let_expr; cons_expr ])
 ;;
+
+(* let pfield_decl =
+   lift2 (fun label_name t -> Sfield_decl (label_name, t)) plabel_name ptype
+   ;; *)
 
 let pstructure =
   let pseval = pexpr >>| fun e -> SEval e in
@@ -451,11 +493,19 @@ let pstructure =
          (pvalue_binding pexpr)
          (many (pstoken "and" *> pvalue_binding pexpr))
   in
+  (* let pstype =
+    lift3
+      (fun name field fields -> SType (name, field, fields))
+      (pstoken "type" *> varname)
+      (pstoken "=" *> pstoken "{" *> pfield_decl)
+      (many (pstoken ";" *> pfield_decl) <* (pstoken ";" <|> pwhitespace) <* pstoken "}")
+  in *)
   choice [ pseval; psvalue ]
 ;;
 
 let structure : structure t =
-  sep_by (pstoken ";;" <|> pwhitespace) pstructure <* (pstoken ";;" <|> pwhitespace)
+  let semicolons = many (pstoken ";;") in
+  sep_by semicolons pstructure <* semicolons <* pwhitespace
 ;;
 
 let parse_expr str = parse_string ~consume:All structure str
