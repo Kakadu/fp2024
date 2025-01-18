@@ -1,1 +1,0 @@
-../../../../manytests/typed/006partial.ml

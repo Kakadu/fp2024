@@ -19,7 +19,7 @@ let infer_program_test s =
 ;;
 
 let infer_from_file file_name =
-  let file_path = "../../../../../tests/inferencer_tests/" ^ file_name in
+  let file_path = "../../../../../tests/manytests/" ^ file_name in
   let input =
     let ic = open_in file_path in
     let len = in_channel_length ic in
