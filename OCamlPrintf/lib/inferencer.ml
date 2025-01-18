@@ -452,7 +452,7 @@ module Infer = struct
 
   let check_names_from_let_binds =
     RList.fold_left ~init:(return StringSet.empty) ~f:(fun set_acc { pat; _ } ->
-      extract_names_from_pat (fun set_acc id -> StringSet.add_id set_acc id) set_acc pat)
+      extract_names_from_pat StringSet.add_id set_acc pat)
   ;;
 
   let rec infer_expression env = function
@@ -637,10 +637,7 @@ module Infer = struct
             let* env, pat_ty = infer_pattern env pat in
             let* unified_sub1 = unify match_exp_ty pat_ty in
             let* pat_names =
-              extract_names_from_pat
-                (fun set_acc id -> StringSet.add_id set_acc id)
-                StringSet.empty
-                pat
+              extract_names_from_pat StringSet.add_id StringSet.empty pat
               >>| StringSet.elements
             in
             if with_exp
