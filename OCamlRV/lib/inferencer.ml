@@ -4,9 +4,10 @@
 
 open Ast
 open Base
-open InferCore
-open InferCore.Result
-open InferCore.Result.Syntax
+open AstPrinter
+open InferencerCore
+open InferencerCore.Result
+open InferencerCore.Result.Syntax
 
 let fresh_var = fresh >>| fun n -> AVar n
 
@@ -66,13 +67,29 @@ let rec infer_pattern env = function
         (p1 :: p2 :: pl)
     in
     return (env, tuple_type (List.rev tl))
-  | POption (Some p) -> infer_pattern env p
+  | PList (p1, rest) ->
+    let* env1, t1 = infer_pattern env p1 in
+    let* env2, t_list =
+      List.fold_left
+        ~f:(fun acc pat ->
+          let* env_acc, _ = acc in
+          let* env_next, t_next = infer_pattern env_acc pat in
+          let* sub = Subst.unify t1 t_next in
+          let env_updated = TypeEnv.apply sub env_next in
+          return (env_updated, Subst.apply sub t1))
+        ~init:(return (env1, list_type t1))
+        rest
+    in
+    return (env2, t_list)
+  | POption (Some p) ->
+    let* env1, t1 = infer_pattern env p in
+    return (env1, AOption t1)
   | POption None ->
     let* fresh = fresh_var in
-    return (env, fresh)
-  | PType (pat, an) ->
-    let* env1, t1 = infer_pattern env pat in
-    let* sub = Subst.unify t1 an in
+    return (env, AOption fresh)
+  | PType (p, t) ->
+    let* env1, t1 = infer_pattern env p in
+    let* sub = Subst.unify t1 t in
     let env = TypeEnv.apply sub env1 in
     return (env, Subst.apply sub t1)
 ;;
@@ -151,26 +168,37 @@ let rec infer_expression env = function
         (c :: cl)
     in
     return (sub, t)
-  | ExprLet (NonRec, (PVar x1, e1), [], e) ->
-    let* s1, t1 = infer_expression env e1 in
+  | ExprFunction (c, cl) ->
+    let p, e = c in
+    let* _, t1 = infer_pattern env p in
+    let* s1, _ = infer_expression env e in
     let env = TypeEnv.apply s1 env in
-    let s = generalize env t1 in
-    let* s2, t2 = infer_expression (TypeEnv.extend env x1 s) e in
-    let* s = Subst.compose s1 s2 in
-    return (s, t2)
-  | ExprLet (Rec, (PVar x1, e1), [], e) ->
     let* fresh = fresh_var in
-    let env1 = TypeEnv.extend env x1 (S (VarSet.empty, fresh)) in
-    let* s, t = infer_expression env1 e1 in
-    let* s1 = Subst.unify t fresh in
-    let* s2 = Subst.compose s s1 in
-    let env = TypeEnv.apply s2 env in
-    let t = Subst.apply s2 t in
-    let s = generalize_rec env t x1 in
-    let env = TypeEnv.extend env x1 s in
-    let* sub, t = infer_expression env e in
-    let* sub = Subst.compose s2 sub in
-    return (sub, t)
+    let* sub, t =
+      List.fold_left
+        ~f:(fun acc (pat, exp) ->
+          let* sub1, t = acc in
+          let* env1, pt = infer_pattern env pat in
+          let* sub2 = Subst.unify t1 pt in
+          let env2 = TypeEnv.apply sub2 env1 in
+          let* sub3, t' = infer_expression env2 exp in
+          let* sub4 = Subst.unify t' t in
+          let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
+          return (sub, Subst.apply sub t))
+        ~init:(return (s1, fresh))
+        (c :: cl)
+    in
+    return (sub, Subst.apply sub (fun_type t1 t))
+  | ExprLet (NonRec, b, bl, e) ->
+    let bindings = b :: bl in
+    let* env2 = infer_non_rec_binding_list env bindings in
+    let* s, t = infer_expression env2 e in
+    return (s, t)
+  | ExprLet (Rec, b, bl, e) ->
+    let bindings = b :: bl in
+    let* env2 = infer_rec_binding_list env bindings in
+    let* s, t = infer_expression env2 e in
+    return (s, t)
   | ExprFun (p, e) ->
     let* env, t = infer_pattern env p in
     let* sub, t1 = infer_expression env e in
@@ -218,42 +246,135 @@ let rec infer_expression env = function
     let* sub = Subst.compose_all [ s1; s2; s3 ] in
     let t = Subst.apply sub fresh in
     return (sub, t)
-  | _ -> fail `Not_implemented
+  | ExprOption (Some eo) ->
+    let* s, t = infer_expression env eo in
+    return (s, AOption t)
+  | ExprOption None ->
+    let* t = fresh_var in
+    return (Subst.empty, AOption t)
+  | ExprType (e, t) ->
+    let* s1, t1 = infer_expression env e in
+    let* s2 = Subst.unify t t1 in
+    return (s2, Subst.apply s1 t1)
+
+and infer_non_rec_binding_list env (bl : binding list) =
+  let* env2 =
+    Base.List.fold_left
+      ~f:(fun env b ->
+        let* env = env in
+        let p, e = b in
+        match p with
+        | PVar x ->
+          let* s, t = infer_expression env e in
+          let env = TypeEnv.apply s env in
+          let sc = generalize env t in
+          let env = TypeEnv.extend env x sc in
+          return env
+        | PConstant CUnit ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | POption (Some (PVar x)) ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          let sc = generalize env t2 in
+          let env = TypeEnv.extend env x sc in
+          return env
+        | POption None ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | PAny ->
+          let* _, _ = infer_expression env e in
+          return env
+        | PTuple _ ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | PType (_, t) ->
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | _ -> return env)
+      ~init:(return env)
+      bl
+  in
+  return env2
+
+and infer_rec_binding_list env (bl : binding list) =
+  let* env2 =
+    Base.List.fold_left
+      ~f:(fun env b ->
+        let* env = env in
+        let p, e = b in
+        match p with
+        | PVar x ->
+          let* fresh = fresh_var in
+          let sc = Scheme.S (VarSet.empty, fresh) in
+          let env = TypeEnv.extend env x sc in
+          let* s1, t1 = infer_expression env e in
+          let* s2 = Subst.unify t1 fresh in
+          let* s3 = Subst.compose s1 s2 in
+          let env = TypeEnv.apply s3 env in
+          let t2 = Subst.apply s3 t1 in
+          let sc = generalize_rec env t2 x in
+          let env = TypeEnv.extend env x sc in
+          return env
+        | _ -> fail `LeftHS)
+      ~init:(return env)
+      bl
+  in
+  return env2
 ;;
 
 let infer_structure_item env = function
-  | SValue (Rec, (PVar x1, e1), []) ->
-    let* fresh = fresh_var in
-    let sc = Scheme.S (VarSet.empty, fresh) in
-    let env = TypeEnv.extend env x1 sc in
-    let* s1, t1 = infer_expression env e1 in
-    let* s2 = Subst.unify t1 fresh in
-    let* s3 = Subst.compose s1 s2 in
-    let env = TypeEnv.apply s3 env in
-    let t2 = Subst.apply s3 t1 in
-    let sc = generalize_rec env t2 x1 in
-    let env = TypeEnv.extend env x1 sc in
-    return env
-  | SValue (NonRec, (PVar x1, e1), []) ->
-    let* s, t = infer_expression env e1 in
-    let env = TypeEnv.apply s env in
-    let sc = generalize env t in
-    let env = TypeEnv.extend env x1 sc in
-    return env
+  | SValue (Rec, b, bl) ->
+    let bindings = b :: bl in
+    infer_rec_binding_list env bindings
+  | SValue (NonRec, b, bl) ->
+    let bindings = b :: bl in
+    infer_non_rec_binding_list env bindings
   | SEval e ->
     let* _, _ = infer_expression env e in
     return env
-  | _ -> fail `Not_implemented
 ;;
 
 let infer_structure (structure : structure) =
+  let env =
+    TypeEnv.extend TypeEnv.empty "print_int" (Scheme.S (VarSet.empty, AFun (AInt, AUnit)))
+  in
+  let env =
+    TypeEnv.extend env "print_endline" (Scheme.S (VarSet.empty, AFun (AString, AUnit)))
+  in
   List.fold_left
     ~f:(fun acc item ->
       let* env = acc in
       let* env = infer_structure_item env item in
       return env)
-    ~init:(return TypeEnv.empty)
+    ~init:(return env)
     structure
 ;;
 
-let run_infer s = run (infer_structure s)
+let run_inferencer (s : string) =
+  let open Parser in
+  match parse s with
+  | Ok parsed ->
+    let res = run (infer_structure parsed) in
+    (match res with
+     | Ok env ->
+       Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
+         if String.equal key "print_int" || String.equal key "print_endline"
+         then ()
+         else Stdlib.Format.printf "val %s : %a\n" key pp_annot ty)
+     | Error e -> Stdlib.Format.printf "Infer error: %a\n" pp_error e)
+  | Error e -> Stdlib.Format.printf "Parsing error: %s\n" e
+;;
