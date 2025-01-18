@@ -71,6 +71,42 @@ type register =
   | T6 (** a.k.a. X31s *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
+(** Vector Registers *)
+type vector_register =
+  | V0 (** Vector Register 0 *)
+  | V1 (** Vector Register 1 *)
+  | V2 (** Vector Register 2 *)
+  | V3 (** Vector Register 3 *)
+  | V4 (** Vector Register 4 *)
+  | V5 (** Vector Register 5 *)
+  | V6 (** Vector Register 6 *)
+  | V7 (** Vector Register 7 *)
+  | V8 (** Vector Register 8 *)
+  | V9 (** Vector Register 9 *)
+  | V10 (** Vector Register 10 *)
+  | V11 (** Vector Register 11 *)
+  | V12 (** Vector Register 12 *)
+  | V13 (** Vector Register 13 *)
+  | V14 (** Vector Register 14 *)
+  | V15 (** Vector Register 15 *)
+  | V16 (** Vector Register 16 *)
+  | V17 (** Vector Register 17 *)
+  | V18 (** Vector Register 18 *)
+  | V19 (** Vector Register 19 *)
+  | V20 (** Vector Register 20 *)
+  | V21 (** Vector Register 21 *)
+  | V22 (** Vector Register 22 *)
+  | V23 (** Vector Register 23 *)
+  | V24 (** Vector Register 24 *)
+  | V25 (** Vector Register 25 *)
+  | V26 (** Vector Register 26 *)
+  | V27 (** Vector Register 27 *)
+  | V28 (** Vector Register 28 *)
+  | V29 (** Vector Register 29 *)
+  | V30 (** Vector Register 30 *)
+  | V31 (** Vector Register 31 *)
+[@@deriving eq, show { with_path = false }, qcheck]
+
 (** Label Type *)
 type label = (string[@gen Generators.gen_my_label])
 [@@deriving eq, show { with_path = false }, qcheck]
@@ -218,6 +254,14 @@ type instruction =
   (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
   | Sh3adduw of register * register * register
   (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
+  | Vle32v of vector_register * register * address12
+  (** Load Vector from Memory. vle32.v vd, (rs1) *)
+  | Vse32v of vector_register * register * address12
+  (** Store Vector to Memory. vse32.v vs, (rs1) *)
+  | Vaddvv of vector_register * vector_register * vector_register
+  (** Vector Addition. Vaddvv.vv vd, vs1, vs2 *)
+  | Vaddvx of vector_register * vector_register * register
+  (** Vector Addition with Scalar. vadd.vx vd, vs1, rs2 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)

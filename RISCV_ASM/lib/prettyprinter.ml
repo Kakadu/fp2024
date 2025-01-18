@@ -72,6 +72,41 @@ let pp_register ppf = function
   | T6 -> Format.fprintf ppf "t6"
 ;;
 
+let pp_vector_register ppf = function
+  | V0 -> Format.fprintf ppf "v0"
+  | V1 -> Format.fprintf ppf "v1"
+  | V2 -> Format.fprintf ppf "v2"
+  | V3 -> Format.fprintf ppf "v3"
+  | V4 -> Format.fprintf ppf "v4"
+  | V5 -> Format.fprintf ppf "v5"
+  | V6 -> Format.fprintf ppf "v6"
+  | V7 -> Format.fprintf ppf "v7"
+  | V8 -> Format.fprintf ppf "v8"
+  | V9 -> Format.fprintf ppf "v9"
+  | V10 -> Format.fprintf ppf "v10"
+  | V11 -> Format.fprintf ppf "v11"
+  | V12 -> Format.fprintf ppf "v12"
+  | V13 -> Format.fprintf ppf "v13"
+  | V14 -> Format.fprintf ppf "v14"
+  | V15 -> Format.fprintf ppf "v15"
+  | V16 -> Format.fprintf ppf "v16"
+  | V17 -> Format.fprintf ppf "v17"
+  | V18 -> Format.fprintf ppf "v18"
+  | V19 -> Format.fprintf ppf "v19"
+  | V20 -> Format.fprintf ppf "v20"
+  | V21 -> Format.fprintf ppf "v21"
+  | V22 -> Format.fprintf ppf "v22"
+  | V23 -> Format.fprintf ppf "v23"
+  | V24 -> Format.fprintf ppf "v24"
+  | V25 -> Format.fprintf ppf "v25"
+  | V26 -> Format.fprintf ppf "v26"
+  | V27 -> Format.fprintf ppf "v27"
+  | V28 -> Format.fprintf ppf "v28"
+  | V29 -> Format.fprintf ppf "v29"
+  | V30 -> Format.fprintf ppf "v30"
+  | V31 -> Format.fprintf ppf "v31"
+;;
+
 type address =
   | Address12 of address12
   | Address20 of address20
@@ -220,6 +255,46 @@ let pp_instruction ppf = function
   | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
   | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
   | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
+  | Vle32v (vd, rs1, imm) ->
+    Format.fprintf
+      ppf
+      "vle32.v %a, %a(%a)"
+      pp_vector_register
+      vd
+      pp_register
+      rs1
+      pp_address
+      (Address12 imm)
+  | Vse32v (vs, rs1, imm) ->
+    Format.fprintf
+      ppf
+      "vse32.v %a, %a(%a)"
+      pp_vector_register
+      vs
+      pp_register
+      rs1
+      pp_address
+      (Address12 imm)
+  | Vaddvv (vd, vs1, vs2) ->
+    Format.fprintf
+      ppf
+      "vadd.vv %a, %a, %a"
+      pp_vector_register
+      vd
+      pp_vector_register
+      vs1
+      pp_vector_register
+      vs2
+  | Vaddvx (vd, vs1, rs2) ->
+    Format.fprintf
+      ppf
+      "vadd.vx %a, %a, %a"
+      pp_vector_register
+      vd
+      pp_vector_register
+      vs1
+      pp_register
+      rs2
 ;;
 
 let pp_str_or_int ppf = function
