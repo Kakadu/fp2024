@@ -4,6 +4,8 @@
 
 open Ocaml_printf_lib.Ast
 open Ocaml_printf_lib.Parser
+open Ocaml_printf_lib.Inferencer
+open Ocaml_printf_lib.Pprinter
 open Stdio
 
 type opts =
@@ -20,7 +22,18 @@ let run_single dump_parsetree input_source =
   let ast = parse text in
   match ast with
   | Error error -> print_endline error
-  | Ok ast -> if dump_parsetree then print_endline (show_structure ast)
+  | Ok ast ->
+    if dump_parsetree
+    then print_endline (show_structure ast)
+    else (
+      match run_inferencer ast env_with_print_int with
+      | Ok out_list ->
+        List.iter
+          (function
+            | Some id, type' -> Format.printf "val %s : %a\n" id pp_core_type type'
+            | None, type' -> Format.printf "- : %a\n" pp_core_type type')
+          out_list
+      | Error e -> Format.printf "Infer error: %a\n" pp_error e)
 ;;
 
 let () =

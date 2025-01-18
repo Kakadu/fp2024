@@ -1,7 +1,7 @@
 (library
  (name tests)
  (libraries ocaml_printf_lib)
- (modules Test_parser Run_qchecker)
+ (modules Test_parser Test_pprinter Test_inferencer)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
@@ -10,4 +10,37 @@
 
 (cram
  (applies_to run_REPL)
- (deps ../repl/REPL.exe factorial.txt))
+ (deps
+  ../repl/REPL.exe
+  factorial.txt
+  manytests/do_not_type/001.ml
+  manytests/do_not_type/002if.ml
+  manytests/do_not_type/003occurs.ml
+  manytests/do_not_type/004let_poly.ml
+  manytests/do_not_type/015tuples.ml
+  manytests/do_not_type/099.ml
+  manytests/typed/001fac.ml
+  manytests/typed/002fac.ml
+  manytests/typed/003fib.ml
+  manytests/typed/004manyargs.ml
+  manytests/typed/005fix.ml
+  manytests/typed/006partial.ml
+  manytests/typed/006partial2.ml
+  manytests/typed/006partial3.ml
+  manytests/typed/007order.ml
+  manytests/typed/008ascription.ml
+  manytests/typed/009let_poly.ml
+  manytests/typed/010sukharev.ml
+  manytests/typed/015tuples.ml
+  manytests/typed/016lists.ml))
+
+(executable
+ (name run_qchecker)
+ (modules run_qchecker)
+ (libraries ocaml_printf_lib)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (applies_to run_qchecker)
+ (deps run_qchecker.exe))
