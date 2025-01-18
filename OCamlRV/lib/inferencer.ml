@@ -294,7 +294,8 @@ and infer_non_rec_binding_list env (bl : binding list) =
           let env = TypeEnv.apply sub env in
           return env
         | PAny ->
-          let* _, _ = infer_expression env e in
+          let* s1, _ = infer_expression env e in
+          let env = TypeEnv.apply s1 env in
           return env
         | PTuple _ ->
           let* _, t1 = infer_pattern env p in
@@ -320,6 +321,21 @@ and infer_non_rec_binding_list env (bl : binding list) =
   return env2
 
 and infer_rec_binding_list env (bl : binding list) =
+  let* env0 =
+    Base.List.fold_left
+      ~f:(fun env b ->
+        let* env = env in
+        let p, _ = b in
+        match p with
+        | PVar x ->
+          let* fresh = fresh_var in
+          let sc = Scheme.S (VarSet.empty, fresh) in
+          let env = TypeEnv.extend env x sc in
+          return env
+        | _ -> fail `LeftHS)
+      ~init:(return env)
+      bl
+  in
   let* env2 =
     Base.List.fold_left
       ~f:(fun env b ->
@@ -342,7 +358,7 @@ and infer_rec_binding_list env (bl : binding list) =
              return env
            | _ -> fail `RightHS)
         | _ -> fail `LeftHS)
-      ~init:(return env)
+      ~init:(return env0)
       bl
   in
   return env2
