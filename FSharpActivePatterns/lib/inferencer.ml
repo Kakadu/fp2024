@@ -168,8 +168,7 @@ end
 (* module of substitution *)
 
 module Substitution : sig
-  (* TEMPO, for subst print *)
-  type t = (fresh, typ, Int.comparator_witness) Base.Map.t
+  type t
 
   val empty : t
 
@@ -262,6 +261,12 @@ end = struct
       substitution_result
     | TActPat (name1, _), TActPat (name2, _) when name1 != name2 -> return empty
     | TActPat (name1, t1), TActPat (name2, t2) when name1 == name2 -> unify t1 t2
+    | Choice (t1, t2, rest), TActPat (name, t) | TActPat (name, t), Choice (t1, t2, rest)
+      ->
+      List.fold (t1 :: t2 :: rest) ~init:(return empty) ~f:(fun s choice_typ ->
+        let* s = s in
+        let* new_subst = unify choice_typ (TActPat (name, t)) in
+        compose s new_subst)
     | _ -> fail (`Unification_failed (fst, snd))
 
   (* if value associated w this key exists in map, try to unify them, otherwise
@@ -441,11 +446,6 @@ let instantiate : scheme -> typ R.t =
 let generalize env typ =
   let free = VarSet.diff (Type.free_vars typ) (TypeEnv.free_vars env) in
   Scheme (free, typ)
-;;
-
-let print_substitution (substitution : Substitution.t) =
-  Map.iteri substitution ~f:(fun ~key:fresh ~data:typ ->
-    fprintf std_formatter "name: %d, type: %a\n" fresh pp_typ typ)
 ;;
 
 let rec find_return_type typ =
@@ -818,22 +818,6 @@ let rec infer_expr env = function
     let* subst = unify existing_type body_type in
     let* subst_final = Substitution.compose subst1 subst in
     return (subst_final, TActPat (name, body_type))
-
-(*(match TypeEnv.find env name with
-  | Some (Scheme (_, existing_type)) ->
-  (* if constructor is already typed, types must be compatible *)
-  let* subst = unify existing_type body_type in
-  let* subst_final = Substitution.compose subst1 subst in
-  (*let env = TypeEnvironment.apply subst_final env in*)
-  return (subst_final, TActPat (name, body_type))
-  | None ->
-  (* if no, add it to context *)
-  (*let scheme = generalize env body_type in
-  let env = TypeEnvironment.extend env name scheme in*)
-  printf "THERE IS NO PAT\n";
-  return (subst1, Substitution.apply subst1 (TActPat (name, body_type))))*)
-
-(*| _ -> failwith "WIP"*)
 
 and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
   let* subst, return_t =
