@@ -28,13 +28,8 @@ let rec pp_typ fmt = function
      | t -> fprintf fmt "%a option" pp_typ t)
   | TActPat (name, t) -> fprintf fmt "%s (%a)" name pp_typ t
   | Choice (fst, snd, rest) ->
-    fprintf
-      fmt
-      "Choice<%a, %a, %a>"
-      pp_typ
-      fst
-      pp_typ
-      snd
-      (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_typ)
-      rest
+    fprintf fmt "Choice<";
+    (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_typ fmt)
+      (fst :: snd :: rest);
+    fprintf fmt ">"
 ;;
