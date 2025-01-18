@@ -52,6 +52,7 @@ end = struct
     | POption None -> return empty
     | Wild -> return empty
     | PConst _ -> return empty
+    | PActive (Ident name, _) -> return (singleton name)
   ;;
 
   let extract_names_from_patterns pats =

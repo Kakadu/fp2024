@@ -448,6 +448,26 @@ let print_substitution (substitution : Substitution.t) =
     fprintf std_formatter "name: %d, type: %a\n" fresh pp_typ typ)
 ;;
 
+let rec find_return_type typ =
+  match typ with
+  | Arrow (_, snd) -> find_return_type snd
+  | last -> last 
+;;
+
+let rec find_args_type = function
+  | Arrow (a, Arrow (b, rest)) -> Arrow (a, find_args_type (Arrow (b, rest)))
+  | Arrow (a, _) -> a
+  | t -> t 
+;;
+
+let rec decompose_arrow typ =
+  match typ with
+  | Arrow (fst, snd) ->
+      let args, final_return_type = decompose_arrow snd in
+      (fst :: args, final_return_type)
+  | _ -> ([], typ)
+;;
+
 let infer_lt = function
   | Int_lt _ -> return int_typ
   | Bool_lt _ -> return bool_typ
@@ -513,18 +533,13 @@ let rec infer_pattern env ~shadow = function
     return (TypeEnv.apply subst env, Substitution.apply subst t)
   | PActive (Ident name, p) ->
     let* env, typ = infer_pattern env ~shadow p in
-    (*printf "name is %s\n" name;
-      printf "ENV INSIDE PATTERN\n";*)
-    (*let _ = TypeEnvironment.pp_without_freevars std_formatter env in*)
     let pat_typ =
       match TypeEnv.find_exn env name with
       | Scheme (_, typ) -> typ
     in
-    let* subst = unify typ pat_typ in
-    let choice_type = TypeEnv.find_typ_with_substring_and_choice_exn env name in
-    (*fprintf std_formatter "TYPO CHOICE %a" pp_typ choice_type;*)
-    (*return (TypeEnvironment.apply subst env, Substitution.apply subst typ)*)
-    return (TypeEnv.apply subst env, Substitution.apply subst choice_type)
+    let pat_return_typ = find_return_type pat_typ in
+    let* subst = unify typ pat_return_typ in
+    return (TypeEnv.apply subst env, Substitution.apply subst pat_typ)
 ;;
 
 let infer_patterns env ~shadow patterns =
@@ -538,9 +553,16 @@ let infer_patterns env ~shadow patterns =
 ;;
 
 let infer_match_pattern env ~shadow pattern match_type =
+  (*let _ = (match pattern with
+  | PActive (Ident(name), _) -> fprintf std_formatter "NAME IS %s\n" name
+  | _ -> ()) in*)
   let* env, pat_typ = infer_pattern env ~shadow pattern in
   (*fprintf std_formatter "TYPES %a, %a\n" pp_typ match_type pp_typ pat_typ;*)
-  let* subst = unify pat_typ match_type in
+  (*let _ = printf "HERE IN MATCH WITH PAT %a\n" pp_typ pat_typ in *)
+  let pat_input_typ = find_args_type pat_typ in
+  (*let _ = fprintf std_formatter "ARGS TYPE %a\n" pp_typ pat_input_typ in*)
+  let* subst = unify pat_input_typ match_type in
+  (*let _ = printf "HERE IN MATCH\n" in *)
   let env = TypeEnv.apply subst env in
   let* pat_names = extract_names_from_pattern pattern >>| elements in
   let generalized_schemes =
@@ -824,7 +846,6 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
           if with_arg
           then
             let* env, pat = infer_pattern env ~shadow:true pat in
-            (* here: need to take arguments from arrow and compare to match type *)
             let* subst2 = unify match_t pat in
             return (env, subst2)
           else infer_match_pattern env ~shadow:true pat match_t
@@ -888,14 +909,6 @@ let add_ident env ident ~shadow =
       env, Option.value typ ~default:fresh)
   in
   return (env, typ)
-;;
-
-let rec decompose_arrow typ =
-  match typ with
-  | Arrow (fst, snd) ->
-      let args, final_return_type = decompose_arrow snd in
-      (fst :: args, final_return_type)
-  | _ -> ([], typ)
 ;;
 
 let reconstruct_arrow args return_type =
@@ -974,50 +987,17 @@ let infer_statement env = function
     let* arg_names = extract_names_from_patterns args >>| elements in
     let env = TypeEnv.remove_many env arg_names in
     
-    (* form map of variants, include whole pat definition in it, output *)
-    let variants_with_types_map =
-      List.fold variant_names ~init:(Map.empty (module String)) ~f:(fun map name ->
-        match TypeEnv.find_exn env name with
-        | Scheme (_, typ) -> Map.set map ~key:name ~data:typ)
-    in
     let result_name = String.concat ~sep:"" variant_names ^ "Choice" in
-    let variants_with_types_map = Map.set variants_with_types_map ~key:result_name ~data:apat_type in
+    let new_res_map = Map.empty (module String) in
+    let new_res_map = Map.set new_res_map ~key:result_name ~data:apat_type in
+    
     let names_schemes_list =
       List.map updated_variants_w_types_list ~f:(fun (name, name_type) ->
         name, generalize env name_type)
     in
     let env = TypeEnv.extend_many env names_schemes_list in
 
-    return (env, variants_with_types_map)
-
-    (*let names_types = name_type :: names_types in*)
-    (*printf "env after names and args\n";
-      let _ = TypeEnvironment.pp_without_freevars std_formatter env in*)
-    (*printf "ARGUMENT TYPES";
-      let _ = List.map args_types ~f:(pp_typ std_formatter) in*)
-    (*printf "env after apply expr\n";
-      let _ = TypeEnvironment.pp_without_freevars std_formatter env in*)
-    (*printf "in subst1\n";
-      print_substitution subst1;
-      fprintf std_formatter "expr type %a\n" pp_typ expr_type;*)
-    (*fprintf std_formatter "apat type %a\n" pp_typ apat_type;*)
-    (*let* arg_names = extract_names_from_patterns args >>| StringSet.elements in*)
-    (*let total_names = List.append var_names arg_names in*)
-    (* let names_schemes_list =
-    List.map names_types ~f:(fun (name, name_type) -> name, generalize env name_type) *)
-
-    (*let updated_names_w_types = update_pat_types_with_expr_type expr_type names_with_types_list in
-    let env =
-      List.fold updated_names_w_types ~init:env ~f:(fun env (name, new_typ) ->
-          let _ = fprintf std_formatter "NAME %s TYPE %a\n\n" name pp_typ new_typ in
-          let scheme = generalize env new_typ in
-          TypeEnv.extend env name scheme)
-    in*)
-    (*printf "env AFTER ALL\n";
-      let _ = TypeEnvironment.pp_without_freevars std_formatter env in*)
-
-    (*fprintf std_formatter "FINAL APAT TYPE %a\n" pp_typ apat_type;
-      let _ = List.map total_names_with_types ~f:(fun (name, typ) -> fprintf std_formatter "FINAL %s TYPE %a \n" name pp_typ typ) in*)
+    return (env, new_res_map)
 ;;
 
 and infer_typed_expr env = function

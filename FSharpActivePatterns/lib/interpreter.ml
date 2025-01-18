@@ -212,6 +212,7 @@ let rec match_pattern env =
   | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
   | POption None, VOption None -> return env
   | PConstraint (p, _), v -> match_pattern env (p, v)
+  | PActive (_, p), v -> match_pattern env (p, v)
   | _ -> fail `Match_failure
 ;;
 
@@ -431,27 +432,19 @@ let eval_statement env =
       let* new_env = match_pattern acc (PVar (fst), value) in
       return new_env) in
 
-      (* is it needed? *)
       let env = Base.List.fold ~init:env
       ~f:(fun env name ->
         ValueEnv.update_exn env name ~f:(function
           | VFun (arg, args, body, _) -> VFun (arg, args, body, env)
           | other -> other))
       ident_name_list in
-
-      (*let ident_name_list = pat_name :: ident_name_list in*)
-      let dummy_list = [pat_name] in
-
-      (*let _ = ValueEnv.pp_env Format.std_formatter env in*)
-      (*let _ = List.map dummy_list ~f:(fun s -> Format.fprintf Format.std_formatter "DUMMY IS %s \n" s) in*)
       
+      let dummy_list = [pat_name] in
       let patterns_names_with_values =
         List.fold
           dummy_list
           ~init:(Map.empty (module String))
           ~f:(fun map name ->
-            let _ = Format.fprintf Format.std_formatter "IN THE MAP %s\n" name in
-            let _ = ValueEnv.pp_env Format.std_formatter env in
             let value = ValueEnv.find_exn env name in
             Map.set map ~key:name ~data:value)
       in
