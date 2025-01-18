@@ -435,8 +435,16 @@ and eval_long_var_decl save_to_env = function
     >>= (function
      | Some (Value_tuple tup) -> iter2 save_to_env (idnt1 :: idnt2 :: idntlst) tup
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
-  | Long_decl_no_init (_, id, id_list) ->
-    iter (fun ident -> save_to_env ident (Value_nil Nil)) (id :: id_list)
+  | Long_decl_no_init (typ, id, id_list) ->
+    iter (fun idnt -> save_to_env idnt (eval_type_no_init typ)) (id :: id_list)
+
+and eval_type_no_init = function
+  | Type_int -> Value_int 0
+  | Type_bool -> Value_bool false
+  | Type_string -> Value_string ""
+  | Type_func _ -> Value_func (Func_uninitialized Nil)
+  | Type_chan _ -> Value_chan (Chan_uninitialized Nil)
+  | Type_array (i, tp) -> Value_array (i, List.init i (fun _ -> eval_type_no_init tp))
 
 and eval_chan_send (ident, expr) =
   let* value = eval_expr expr in

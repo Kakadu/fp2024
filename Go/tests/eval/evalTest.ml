@@ -478,6 +478,23 @@ let%expect_test "ok: spimple array test" =
     Kill Ocaml |}]
 ;;
 
+let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
+  pp
+    {|
+      func main() {
+        var a [2][3]string
+        a[0][1] = "Kill "
+        a[1][0] = "Ocaml"
+        println(a[0][1], a[1][0])
+    }
+
+    |};
+  [%expect {|
+    Correct evaluating
+
+    Kill Ocaml |}]
+;;
+
 (* goroutines *)
 
 let%expect_test "ok: two goroutine sync with unbuffered chanel" =
