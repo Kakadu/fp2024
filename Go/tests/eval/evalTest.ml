@@ -581,6 +581,50 @@ let%expect_test "ok: defer check function reassgnment value" =
     121 |}]
 ;;
 
+let%expect_test "ok: defer check function example" =
+  pp
+    {|
+      
+func main() {
+    f()
+    println("Returned normally from f.")
+}
+
+func f() {
+      println("Calling g.")
+      g(0)
+      println("Returned normally from g.")
+    }
+
+    func g(i int) {
+        if i > 3 {
+            println("Panicking!")
+            return 
+        }
+        defer println("Defer in g ", i)
+        println("Printing in g ", i)
+        g(i + 1)
+        
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    Calling g.
+    Printing in g 0
+    Printing in g 1
+    Printing in g 2
+    Printing in g 3
+    Panicking!
+    Defer in g 3
+    Defer in g 2
+    Defer in g 1
+    Defer in g 0
+    Returned normally from g.
+    Returned normally from f. |}]
+;;
+
 (* goroutines *)
 
 let%expect_test "ok: two goroutine sync with unbuffered chanel" =

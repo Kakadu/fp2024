@@ -144,7 +144,8 @@ and eval_func_call (func, args) =
       }
     *> exec eval_stmt
     *> read_returns
-    >>= fun x -> delete_stack_frame *> return x
+    >>= fun x ->
+    (read_deferred >>= iter eval_deferred_func) *> delete_stack_frame *> return x
   | Value_func (Func_initialized (FuncLit, afc)) ->
     let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
     create_args_map args (rpf afc.args)
@@ -160,7 +161,10 @@ and eval_func_call (func, args) =
     >>= fun x ->
     read_local_envs
     >>= fun (_, lenv) ->
-    delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return x
+    (read_deferred >>= iter eval_deferred_func)
+    *> delete_stack_frame
+    *> write_local_envs (List.hd lenv, List.tl lenv)
+    *> return x
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " defer func_call")))
 
 and eval_closure (func, args) =
@@ -182,7 +186,8 @@ and eval_closure (func, args) =
     >>= fun x ->
     read_local_envs
     >>= fun (_, lenv) ->
-    delete_stack_frame
+    (read_deferred >>= iter eval_deferred_func)
+    *> delete_stack_frame
     *> write_local_envs (List.hd (List.tl lenv), List.tl (List.tl lenv))
     *> return (x, (List.hd lenv).var_map)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " closure_call")))
@@ -461,17 +466,9 @@ and eval_stmt = function
           read_local_envs
           >>= (fun (hd, _) ->
                 return (Value_func (Func_initialized (Closure hd.var_map, afc))))
-          >>= fun vfun ->
-          (read_deferred >>= iter eval_deferred_func) *> write_returns (Some vfun)
-        | _ ->
-          eval_expr x
-          >>= fun ret ->
-          (read_deferred >>= iter eval_deferred_func) *> write_returns (Some ret))
-     | _ ->
-       map eval_expr l_exp
-       >>= fun lst ->
-       (read_deferred >>= iter eval_deferred_func)
-       *> write_returns (Some (Value_tuple lst)))
+          >>= fun vfun -> write_returns (Some vfun)
+        | _ -> eval_expr x >>= fun ret -> write_returns (Some ret))
+     | _ -> map eval_expr l_exp >>= fun lst -> write_returns (Some (Value_tuple lst)))
   | Stmt_chan_send send -> eval_chan_send send
   | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()
   | Stmt_defer (ex, args) ->
