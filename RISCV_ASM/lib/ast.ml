@@ -236,7 +236,7 @@ type directive =
       * (string[@gen Generators.gen_my_string])
       * type_dir
       * int option (** .section name *)
-  | String of (string[@gen Generators.gen_my_string]) (** .string "str" *)
+  | StringDir of (string[@gen Generators.gen_my_string]) (** .string "str" *)
   | CfiDefCfaOffset of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
   (** .cfi_def_cfa_offset int*)
   | CfiOffset of

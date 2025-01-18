@@ -247,7 +247,7 @@ let pp_directive ppf = function
       (match none_or_int with
        | Some imm -> Format.sprintf ",%d" imm
        | None -> "")
-  | String str -> Format.fprintf ppf ".string %S" (String.escaped str)
+  | StringDir str -> Format.fprintf ppf ".string %S" (String.escaped str)
   | CfiDefCfaOffset imm -> Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
   | CfiOffset (imm1, imm2) -> Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
   | CfiRememberState -> Format.fprintf ppf ".cfi_remember_state"
