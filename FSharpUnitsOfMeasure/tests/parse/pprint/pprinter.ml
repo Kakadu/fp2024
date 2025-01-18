@@ -30,15 +30,17 @@ let rec pprint_measure ppf =
   | Measure_dimless -> fprintf ppf "1"
 ;;
 
+(* "%f" prints exactly 6 digits after dot
+   "%F" prints as much as needed *)
 let pprint_const ppf = function
   | Const_bool b -> fprintf ppf "%b" b
   | Const_int i -> fprintf ppf "%d" i
   | Const_char c -> fprintf ppf "%C" c
   | Const_string s -> fprintf ppf "%S" s
-  | Const_float f -> fprintf ppf "%f" f
+  | Const_float f -> fprintf ppf "%F" f
   | Const_unit_of_measure (Unit_of_measure (n, m)) ->
     (match n with
-     | Mnum_float f -> fprintf ppf "%f<%a>" f pprint_measure m
+     | Mnum_float f -> fprintf ppf "%F<%a>" f pprint_measure m
      | Mnum_int i -> fprintf ppf "%d<%a>" i pprint_measure m)
 ;;
 

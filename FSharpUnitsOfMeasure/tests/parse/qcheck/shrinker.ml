@@ -6,7 +6,10 @@ open QCheck.Shrink
 open QCheck.Iter
 open Ast
 
-let shid id = string ~shrink:char id >|= fun id' -> id'
+let shid = function
+  | "a" -> empty
+  | _ -> return "a"
+;;
 
 let shlist1 ~shrink (head, tail) =
   match tail with
@@ -39,7 +42,7 @@ let shlist2 ~shrink (first, second, rest) =
 ;;
 
 let rec shmeasure = function
-  | Measure_ident id -> string ~shrink:char id >|= fun id' -> Measure_ident id'
+  | Measure_ident id -> shid id >|= fun id' -> Measure_ident id'
   | Measure_prod (m1, m2) ->
     shmeasure m1
     >|= (fun m1' -> Measure_prod (m1', m2))

@@ -101,7 +101,7 @@ let%expect_test "print string constant" =
 
 let%expect_test "print float constant" =
   printf "%a\n" pprint_const (Const_float 3.142222222);
-  [%expect {| 3.142222 |}]
+  [%expect {| 3.142222222 |}]
 ;;
 
 let%expect_test "print measure constant" =
@@ -109,7 +109,7 @@ let%expect_test "print measure constant" =
     "%a\n"
     pprint_const
     (Const_unit_of_measure (Unit_of_measure (Mnum_float 3.14, Measure_ident "cm")));
-  [%expect {| 3.140000<cm> |}]
+  [%expect {| 3.14<cm> |}]
 ;;
 
 (************************** Types **************************)
