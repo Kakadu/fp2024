@@ -6,10 +6,6 @@ open Ast
 open Ast.Expression
 open Format
 
-let is_operator opr = List.exists (fun (str, _) -> str = opr) bin_op_list
-let get_priority opr = List.assoc opr bin_op_list
-let is_negative_op opr = un_op = opr
-
 let pp_rec_flag ppf = function
   | Recursive -> fprintf ppf "let rec "
   | Nonrecursive -> fprintf ppf "let "

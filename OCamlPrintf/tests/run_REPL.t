@@ -133,19 +133,19 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   val main : int
 
   $ ../repl/REPL.exe -fromfile manytests/typed/003fib.ml
-  val fib : int -> int
   val fib_acc : int -> int -> int -> int
+  val fib : int -> int
   val main : int
 
   $ ../repl/REPL.exe -fromfile manytests/typed/004manyargs.ml
-  val main : int
-  val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
-  val test3 : int -> int -> int -> int
   val wrap : 'a -> 'a
+  val test3 : int -> int -> int -> int
+  val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+  val main : int
 
   $ ../repl/REPL.exe -fromfile manytests/typed/005fix.ml
-  val fac : (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
+  val fac : (int -> int) -> int -> int
   val main : int
 
   $ ../repl/REPL.exe -fromfile manytests/typed/006partial.ml
@@ -176,30 +176,30 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   val _2 : int
   val _3 : (int * string) option
   val _4 : int -> 'a
-  val _42 : int -> bool
   val _5 : int
   val _6 : 'a option -> 'a
+  val int_of_option : int option -> int
+  val _42 : int -> bool
   val id1 : 'a -> 'a
   val id2 : 'b -> 'b
-  val int_of_option : int option -> int
 
   $ ../repl/REPL.exe -fromfile manytests/typed/015tuples.ml
-  val feven : 'a * (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
-  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
-  val fodd : (int -> int) * 'a -> int -> int
-  val main : int
   val map : ('b -> 'a) -> 'b * 'b -> 'a * 'a
+  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
+  val feven : 'a * (int -> int) -> int -> int
+  val fodd : (int -> int) * 'a -> int -> int
+  val tie : (int -> int) * (int -> int)
   val meven : int -> int
   val modd : int -> int
-  val tie : (int -> int) * (int -> int)
+  val main : int
 
   $ ../repl/REPL.exe -fromfile manytests/typed/016lists.ml
-  val append : 'a list -> 'a list -> 'a list
-  val cartesian : 'b list -> 'a list -> ('b * 'a) list
-  val concat : 'a list list -> 'a list
-  val iter : ('a -> unit) -> 'a list -> unit
   val length : 'a list -> int
   val length_tail : 'a list -> int
-  val main : int
   val map : ('a -> 'b) -> 'a list -> 'b list
+  val append : 'a list -> 'a list -> 'a list
+  val concat : 'a list list -> 'a list
+  val iter : ('a -> unit) -> 'a list -> unit
+  val cartesian : 'b list -> 'a list -> ('b * 'a) list
+  val main : int

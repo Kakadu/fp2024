@@ -113,7 +113,7 @@ let parse_ident =
 
 (* ==================== Rec_flag ==================== *)
 
-let parse_rec_flag = option Nonrecursive (keyword "rec" *> return Recursive)
+let parse_rec_flag = ws *> option Nonrecursive (keyword "rec" *> return Recursive)
 
 (* ==================== Constant ==================== *)
 
@@ -376,10 +376,9 @@ let parse_simple_binding parse_exp =
 ;;
 
 let parse_value_binding_list parse_exp =
-  ws
-  *> sep_by1
-       (keyword "and")
-       (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp)
+  sep_by1
+    (keyword "and")
+    (ws *> (parse_fun_binding parse_exp <|> parse_simple_binding parse_exp))
 ;;
 
 (* -------------------- Case -------------------- *)
