@@ -203,6 +203,11 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
+  test_infer {| let (a : int) = true |};
+  [%expect {| Infer error: Unification failed on int and bool |}]
+;;
+
+let%expect_test _ =
   test_infer {| let a = 1 and b = 2 |};
   [%expect {| 
     val a : int
@@ -228,4 +233,23 @@ let%expect_test _ =
 let%expect_test _ =
   test_infer {| let (a, b, c) = (1, 2) |};
   [%expect {| Infer error: Unification failed on '0 * '1 * '2 and int * int |}]
+;;
+
+let%expect_test _ =
+  test_infer {| 
+    let f = function
+    | 1 -> ()
+    | _ -> ()
+ |};
+  [%expect {| val f : int -> unit |}]
+;;
+
+let%expect_test _ =
+  test_infer {| 
+    let f = function
+    | 1 -> ()
+    | "2" -> ()
+    | _ -> ()
+ |};
+  [%expect {| Infer error: Unification failed on int and string |}]
 ;;

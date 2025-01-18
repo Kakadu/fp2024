@@ -87,9 +87,9 @@ let rec infer_pattern env = function
   | POption None ->
     let* fresh = fresh_var in
     return (env, AOption fresh)
-  | PType (pat, an) ->
-    let* env1, t1 = infer_pattern env pat in
-    let* sub = Subst.unify t1 an in
+  | PType (p, t) ->
+    let* env1, t1 = infer_pattern env p in
+    let* sub = Subst.unify t1 t in
     let env = TypeEnv.apply sub env1 in
     return (env, Subst.apply sub t1)
 ;;
@@ -168,26 +168,37 @@ let rec infer_expression env = function
         (c :: cl)
     in
     return (sub, t)
-  | ExprLet (NonRec, (PVar x1, e1), [], e) ->
-    let* s1, t1 = infer_expression env e1 in
+  | ExprFunction (c, cl) ->
+    let p, e = c in
+    let* _, t1 = infer_pattern env p in
+    let* s1, _ = infer_expression env e in
     let env = TypeEnv.apply s1 env in
-    let s = generalize env t1 in
-    let* s2, t2 = infer_expression (TypeEnv.extend env x1 s) e in
-    let* s = Subst.compose s1 s2 in
-    return (s, t2)
-  | ExprLet (Rec, (PVar x1, e1), [], e) ->
     let* fresh = fresh_var in
-    let env1 = TypeEnv.extend env x1 (S (VarSet.empty, fresh)) in
-    let* s, t = infer_expression env1 e1 in
-    let* s1 = Subst.unify t fresh in
-    let* s2 = Subst.compose s s1 in
-    let env = TypeEnv.apply s2 env in
-    let t = Subst.apply s2 t in
-    let s = generalize_rec env t x1 in
-    let env = TypeEnv.extend env x1 s in
-    let* sub, t = infer_expression env e in
-    let* sub = Subst.compose s2 sub in
-    return (sub, t)
+    let* sub, t =
+      List.fold_left
+        ~f:(fun acc (pat, exp) ->
+          let* sub1, t = acc in
+          let* env1, pt = infer_pattern env pat in
+          let* sub2 = Subst.unify t1 pt in
+          let env2 = TypeEnv.apply sub2 env1 in
+          let* sub3, t' = infer_expression env2 exp in
+          let* sub4 = Subst.unify t' t in
+          let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
+          return (sub, Subst.apply sub t))
+        ~init:(return (s1, fresh))
+        (c :: cl)
+    in
+    return (sub, Subst.apply sub (fun_type t1 t))
+  | ExprLet (NonRec, b, bl, e) ->
+    let bindings = b :: bl in
+    let* env2 = infer_non_rec_binding_list env bindings in
+    let* s, t = infer_expression env2 e in
+    return (s, t)
+  | ExprLet (Rec, b, bl, e) ->
+    let bindings = b :: bl in
+    let* env2 = infer_rec_binding_list env bindings in
+    let* s, t = infer_expression env2 e in
+    return (s, t)
   | ExprFun (p, e) ->
     let* env, t = infer_pattern env p in
     let* sub, t1 = infer_expression env e in
@@ -241,10 +252,12 @@ let rec infer_expression env = function
   | ExprOption None ->
     let* t = fresh_var in
     return (Subst.empty, AOption t)
-  | _ -> fail `Not_implemented
-;;
+  | ExprType (e, t) ->
+    let* s1, t1 = infer_expression env e in
+    let* s2 = Subst.unify t t1 in
+    return (s2, Subst.apply s1 t1)
 
-let infer_non_rec_binding_list env (bl : binding list) =
+and infer_non_rec_binding_list env (bl : binding list) =
   let* env2 =
     Base.List.fold_left
       ~f:(fun env b ->
@@ -286,14 +299,18 @@ let infer_non_rec_binding_list env (bl : binding list) =
           let* sub = Subst.unify t1 t2 in
           let env = TypeEnv.apply sub env in
           return env
-        | _ -> fail `Not_implemented)
+        | PType (_, t) ->
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t t2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | _ -> return env)
       ~init:(return env)
       bl
   in
   return env2
-;;
 
-let infer_rec_binding_list env (bl : binding list) =
+and infer_rec_binding_list env (bl : binding list) =
   let* env2 =
     Base.List.fold_left
       ~f:(fun env b ->

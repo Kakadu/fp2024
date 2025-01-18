@@ -11,8 +11,7 @@ val tuple_type : Ast.type_annot list -> Ast.type_annot
 val list_type : Ast.type_annot -> Ast.type_annot
 
 type error =
-  [ `Not_implemented
-  | `Occurs_check
+  [ `Occurs_check
   | `Unbound of string
   | `Unification_failed of Ast.type_annot * Ast.type_annot
   | `LeftHS
