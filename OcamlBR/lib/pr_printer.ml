@@ -77,8 +77,8 @@ let pp_ty_pattern ppf : Ast.ty_pattern -> unit = function
 ;;
 
 (* let pp_label ppf = function
-  | Label name -> fprintf ppf "%s" name
-;; *)
+   | Label name -> fprintf ppf "%s" name
+   ;; *)
 
 let rec pp_expr ppf expr =
   let needs_parens parent_prec child_prec = child_prec < parent_prec || child_prec = -1 in
@@ -211,7 +211,7 @@ and pp_value_binding ppf = function
    | Erecord_field (label, e) -> fprintf ppf "%a = %a" pp_label label pp_expr e
    ;; *)
 
-let rec pp_structure_item ppf (item : structure_item) =
+let pp_structure_item ppf (item : structure_item) =
   match item with
   | SEval e -> fprintf ppf "%a ;;" pp_expr e
   | SValue (rec_flag, vb, vb_l) ->
