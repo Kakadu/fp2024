@@ -8,6 +8,7 @@ module Int64Map : Map.S with type key = Int64.t
 
 type state =
   { registers : int64 StringMap.t
+  ; vector_registers : int64 array StringMap.t (** Векторные регистры *)
   ; memory_int : int64 Int64Map.t
   ; memory_str : string Int64Map.t
   ; memory_writable : bool Int64Map.t
