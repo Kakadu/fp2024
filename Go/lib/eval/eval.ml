@@ -21,6 +21,7 @@ let rec pp_value = function
 ;;
 
 let rpf lst = List.map (fun (y, _) -> y) lst
+let rps lst = List.map (fun (_, y) -> y) lst
 
 let exec_stmt eval_stmt =
   let* stmt = pop_next_statement in
@@ -161,7 +162,7 @@ and eval_func_call (func, args) =
     read_local_envs
     >>= fun (_, lenv) ->
     delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return x
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " func_call")))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " defer func_call")))
 
 and eval_closure (func, args) =
   eval_expr func
@@ -187,6 +188,48 @@ and eval_closure (func, args) =
     *> return (x, (List.hd lenv).var_map)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " closure_call")))
 
+and eval_deferred_func (vfunc, vargs) =
+  match vfunc with
+  | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func) *> return ()
+  | Value_func (Func_builtin ftype) -> prepare_builtin_eval vargs ftype *> return ()
+  | Value_func (Func_initialized (Default, afc)) ->
+    (* тут нужна проверка на замыкание *)
+    let rec save_args map = function
+      | [] -> return map
+      | (vl, id) :: tl -> save_args (MapIdent.add id vl map) tl
+    in
+    save_args MapIdent.empty (List.combine vargs (rpf afc.args))
+    >>= fun map ->
+    add_stack_frame
+      { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
+      ; deferred_funcs = []
+      ; returns = None
+      }
+    *> exec eval_stmt
+    *> read_returns
+    >>= fun x -> delete_stack_frame *> return ()
+  | Value_func (Func_initialized (FuncLit, afc)) ->
+    let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
+    let rec save_args map = function
+      | [] -> return map
+      | (vl, id) :: tl -> save_args (MapIdent.add id vl map) tl
+    in
+    save_args MapIdent.empty (List.combine vargs (rpf afc.args))
+    >>= fun map ->
+    add_stack_frame
+      { local_envs =
+          { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
+      ; deferred_funcs = []
+      ; returns = None
+      }
+    *> exec eval_stmt
+    *> read_returns
+    >>= fun x ->
+    read_local_envs
+    >>= fun (_, lenv) ->
+    delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return ()
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " func_call")))
+
 and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
   | Arg_type _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_value")))
@@ -199,35 +242,40 @@ and create_args_map args idents =
   in
   save_args MapIdent.empty (List.combine args idents)
 
-and eval_builtin args = function
+and eval_builtin args func =
+  match func with
+  | Make -> prepare_builtin_eval [] Make
+  | _ -> map retrieve_arg_value args >>= fun vlst -> prepare_builtin_eval vlst func
+
+(* ДОДЕЛАТЬ, возвращает аргумент паники *)
+
+and prepare_builtin_eval vlist = function
   | Print ->
-    (map retrieve_arg_value args >>= iter (fun x -> return (printf "%s" (pp_value x))))
-    *> return None
+    (return vlist >>= iter (fun x -> return (printf "%s" (pp_value x)))) *> return None
   | Println ->
-    (map retrieve_arg_value args >>= iter (fun x -> return (printf "%s" (pp_value x))))
+    (return vlist >>= iter (fun x -> return (printf "%s" (pp_value x))))
     *> return (printf "\n")
     *> return None
   | Make ->
     let* chan_id = create_chanel in
     return (Some (Value_chan (Chan_initialized chan_id)))
   | Close ->
-    map retrieve_arg_value args
+    return vlist
     >>= (function
      | [ Value_chan chan ] -> close_chanel chan *> return None
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "close"))))
   | Len ->
-    map retrieve_arg_value args
+    return vlist
     >>= (function
      | [ Value_array (len, _) ] -> return (Some (Value_int len))
      | [ Value_string s ] -> return (Some (Value_int (String.length s)))
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "len"))))
   | Panic ->
-    map retrieve_arg_value args
+    return vlist
     >>= (fun av -> return (String.concat "" (List.map pp_value av)))
     >>= fun msg -> fail (Runtime_error (Panic msg))
     (* Тут неправильно *)
   | Recover -> return None
-(* ДОДЕЛАТЬ, возвращает аргумент паники *)
 
 and retrieve_arg_generic = function
   | Arg_expr _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_generic")))
@@ -419,13 +467,23 @@ and eval_stmt = function
           read_local_envs
           >>= (fun (hd, _) ->
                 return (Value_func (Func_initialized (Closure hd.var_map, afc))))
-          >>= fun vfun -> write_returns (Some vfun)
-        | _ -> eval_expr x >>= fun ret -> write_returns (Some ret))
-     | _ -> map eval_expr l_exp >>= fun lst -> write_returns (Some (Value_tuple lst)))
+          >>= fun vfun ->
+          (read_deferred >>= iter eval_deferred_func) *> write_returns (Some vfun)
+        | _ ->
+          eval_expr x
+          >>= fun ret ->
+          (read_deferred >>= iter eval_deferred_func) *> write_returns (Some ret))
+     | _ ->
+       map eval_expr l_exp
+       >>= fun lst ->
+       (read_deferred >>= iter eval_deferred_func)
+       *> write_returns (Some (Value_tuple lst)))
   | Stmt_chan_send send -> eval_chan_send send
   | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()
-  | Stmt_defer _ -> fail (Runtime_error (Panic "Not supported stmt"))
-(*ДОДЕЛАТЬ*)
+  | Stmt_defer (ex, args) ->
+    eval_expr ex
+    >>= fun ex ->
+    map (fun x -> retrieve_arg_value x) args >>= fun vals -> add_deferred (ex, vals)
 
 and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->

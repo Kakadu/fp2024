@@ -64,14 +64,12 @@ type local_env =
   ; env_type : is_for_env
   }
 
-and closure_frame =
-  | Simple
-  | Closure of local_env * local_env list
+and defered_frame = value * value list
 
 type stack_frame =
   { local_envs : local_env * local_env list
   (** Storage for local variables, new [{}] block creates new environment *)
-  ; deferred_funcs : stack_frame list
+  ; deferred_funcs : defered_frame list
   ; returns : value option
   }
 
@@ -279,8 +277,8 @@ module Monad : sig
 
   (** Takes stack frame and adds it to currently running goroutine's
       current stack frame's deferred functions stack *)
-  val add_deferred : stack_frame -> unit t
-
+  val add_deferred : defered_frame -> unit t
+  val read_deferred : defered_frame list t
   (** Deletes last deferred function from currently running goroutine's
       current stack frame's deferred functions stack *)
   val delete_deferred : unit t

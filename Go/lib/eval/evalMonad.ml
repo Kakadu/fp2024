@@ -57,13 +57,11 @@ type local_env =
   ; env_type : is_for_env
   }
 
-and closure_frame =
-  | Simple
-  | Closure of local_env * local_env list
+and defered_frame = value * value list
 
 type stack_frame =
   { local_envs : local_env * local_env list
-  ; deferred_funcs : stack_frame list
+  ; deferred_funcs : defered_frame list
   ; returns : value option
   }
 

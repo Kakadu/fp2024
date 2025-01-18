@@ -461,6 +461,7 @@ let%expect_test "ok: closure check" =
     45-90 |}]
 ;;
 
+(* arrays *)
 let%expect_test "ok: spimple array test" =
   pp
     {|
@@ -482,10 +483,10 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
   pp
     {|
       func main() {
-        var a [2][3]string
-        a[0][1] = "Kill "
-        a[1][0] = "Ocaml"
-        println(a[0][1], a[1][0])
+        var a [2][3][4][5]string
+        a[0][1][2][1] = "Kill "
+        a[1][0][0][3] = "Ocaml"
+        println(a[0][1][2][1], a[1][0][0][3])
     }
 
     |};
@@ -493,6 +494,91 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
     Correct evaluating
 
     Kill Ocaml |}]
+;;
+
+let%expect_test "err: array index out of bounds in expr" =
+  pp
+    {|
+      func main() {
+        var a [2][3][4][5]string
+        a[0][1][2][1] = "Kill "
+        a[1][0][0][3] = "Ocaml"
+        println(a[0][1][10][1], a[1][0][0][3])
+    }
+
+    |};
+  [%expect {|
+    Runtime error: Array index out of bounds |}]
+;;
+
+let%expect_test "err: array index out of bounds in lvalue" =
+  pp
+    {|
+      func main() {
+        var a [2][3][4][5]string
+        a[0][1][2][1] = "Kill "
+        a[1][0][10][3] = "Ocaml"
+        println(a[0][1][2][1], a[1][0][0][3])
+    }
+
+    |};
+  [%expect {|
+    Runtime error: Array index out of bounds |}]
+;;
+
+(* defer *)
+
+let%expect_test "ok: simple defer check change local value & return not chenged local \
+                 value"
+  =
+  pp
+    {|
+      func foo() int{
+          a := 0 
+        defer func (h int){
+        a++
+        print(a)
+        }(a)
+        a = a + 1
+        print(a)
+        return a
+      }
+
+      func main() {
+        print(foo())
+      }
+    |};
+  [%expect {|
+    Correct evaluating
+    121 |}]
+;;
+
+let%expect_test "ok: defer check function reassgnment value" =
+  pp
+    {|
+      func foo() int{
+          a := 0 
+        f := func (){
+        a++
+        print(a)
+        }
+        defer f()
+        f = func (){
+          a = a + 100
+          print(a)
+        }
+        a = a + 1
+        print(a)
+        return a
+      }
+
+      func main() {
+        print(foo())
+      }
+    |};
+  [%expect {|
+    Correct evaluating
+    121 |}]
 ;;
 
 (* goroutines *)
