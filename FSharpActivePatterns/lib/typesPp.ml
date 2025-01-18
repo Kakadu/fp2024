@@ -7,7 +7,7 @@ open Format
 
 let rec pp_typ fmt = function
   | Primitive s -> fprintf fmt "%s" s
-  | Type_var var -> fprintf fmt "'_%d" var
+  | Type_var var -> fprintf fmt "'%d" var
   | Arrow (fst, snd) ->
     (match fst with
      | Arrow _ -> fprintf fmt "(%a) -> %a" pp_typ fst pp_typ snd
