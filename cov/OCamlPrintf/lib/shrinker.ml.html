@@ -521,7 +521,7 @@ let shrink_ident = function
 ;;
 
 let rec shrink_core_type = function
-  | <span data-count="0">T</span>ype_any | <span data-count="0">T</span>ype_unit | <span data-count="0">T</span>ype_bool | <span data-count="0">T</span>ype_char | <span data-count="0">T</span>ype_int | <span data-count="0">T</span>ype_string -&gt; empty
+  | <span data-count="0">T</span>ype_unit | <span data-count="0">T</span>ype_bool | <span data-count="0">T</span>ype_char | <span data-count="0">T</span>ype_int | <span data-count="0">T</span>ype_string -&gt; empty
   | <span data-count="0">T</span>ype_var id -&gt; shrink_type_iden<span data-count="0">t</span> id &gt;|= fun id' -&gt; <span data-count="0">T</span>ype_var id'
   | <span data-count="0">T</span>ype_list type' -&gt;
     retur<span data-count="0">n</span> type' &lt;+&gt; (shrink_core_typ<span data-count="0">e</span> type' &gt;|<span data-count="0">=</span> fun type'' -&gt; <span data-count="0">T</span>ype_list type'')
