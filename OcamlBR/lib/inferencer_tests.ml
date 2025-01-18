@@ -1,11 +1,26 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
-(** SPDX-License-Identifier: LGPL-3.0-or-later *)
-open Inferencer.Infer
 
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open Inferencer.Infer
+open Typedtree
+
+let infer_program_test s =
+  let open Stdlib.Format in
+  let open Interpreter in
+  match Parser.parse_expr s with
+  | Ok parsed ->
+    (match infer_program parsed with
+     | Ok env ->
+       Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
+         if print_key key then printf "val %s : %a\n" key pp_ty ty)
+     | Error e -> printf "Infer error: %a\n" pp_error e)
+  | Error e -> printf "Parsing error: %s\n" e
+;;
 
 let infer_from_file file_name =
   let file_path = "../../../../../tests/inferencer_tests/" ^ file_name in
-  let input = 
+  let input =
     let ic = open_in file_path in
     let len = in_channel_length ic in
     let content = really_input_string ic len in
@@ -32,7 +47,8 @@ let%expect_test "typed_002fac" =
 
 let%expect_test "typed_003fib" =
   let _ = infer_from_file "typed/003fib.ml" in
-  [%expect {| 
+  [%expect
+    {| 
   val fib : int -> int
   val fib_acc : int -> (int -> (int -> int))
   val main : int |}]
@@ -40,7 +56,8 @@ let%expect_test "typed_003fib" =
 
 let%expect_test "typed_004manyargs" =
   let _ = infer_from_file "typed/004manyargs.ml" in
-  [%expect {| 
+  [%expect
+    {| 
   val main : int
   val test10 : int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> int)))))))))
   val test3 : int -> (int -> (int -> int))
@@ -49,7 +66,8 @@ let%expect_test "typed_004manyargs" =
 
 let%expect_test "typed_005fix" =
   let _ = infer_from_file "typed/005fix.ml" in
-  [%expect {| 
+  [%expect
+    {| 
   val fac : (int -> int) -> (int -> int)
   val fix : ((int -> int) -> (int -> int)) -> (int -> int)
   val main : int |}]
@@ -78,14 +96,16 @@ let%expect_test "typed_006partial3" =
 
 let%expect_test "typed_007order" =
   let _ = infer_from_file "typed/007order.ml" in
-  [%expect {| 
+  [%expect
+    {| 
   val _start : unit -> (unit -> (int -> (unit -> (int -> (int -> (unit -> (int -> (int -> int))))))))
   val main : unit |}]
 ;;
 
 let%expect_test "typed_008ascription" =
   let _ = infer_from_file "typed/008ascription.ml" in
-  [%expect {| 
+  [%expect
+    {| 
   val addi : ('2 -> (bool -> int)) -> (('2 -> bool) -> ('2 -> int))
   val main : int |}]
 ;;
@@ -97,12 +117,24 @@ let%expect_test "typed_009let_poly" =
 
 let%expect_test "typed_010sukharev" =
   let _ = infer_from_file "typed/010sukharev.ml" in
-  [%expect {| val ... |}]
+  [%expect
+    {|
+    val _1 : int -> (int -> ((int * '3) -> bool))
+    val _2 : int
+    val _3 : ((int * string)) option
+    val _4 : int -> '10
+    val _42 : int -> bool
+    val _5 : int
+    val _6 : ('23) option -> '23
+    val id1 : '32 -> '32
+    val id2 : '33 -> '33
+    val int_of_option : (int) option -> int |}]
 ;;
 
 let%expect_test "typed_015tuples" =
   let _ = infer_from_file "typed/015tuples.ml" in
-  [%expect {|
+  [%expect
+    {|
   val feven : ('29 * int -> int) -> (int -> int)
   val fix : ((((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int)) -> (((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int))) -> (((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int))
   val fixpoly : ((int -> int * int -> int) -> (int -> int) * (int -> int * int -> int) -> (int -> int)) -> (int -> int * int -> int)
@@ -116,7 +148,8 @@ let%expect_test "typed_015tuples" =
 
 let%expect_test "typed_016lists" =
   let _ = infer_from_file "typed/016lists.ml" in
-  [%expect {|
+  [%expect
+    {|
   val append : (int * int) list -> ((int * int) list -> (int * int) list)
   val cartesian : int list -> (int list -> (int * int) list)
   val concat : (int * int) list list -> (int * int) list
@@ -230,3 +263,57 @@ let%expect_test _ =
   in
   [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;
+
+(* let%expect_test _ =
+  let _ =
+    infer_program_test
+      {|
+  type t = { aa: int; bb: bool }
+  type s = { aa: float; cc: int }
+  |}
+  in
+  [%expect {| val x : int |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    infer_program_test
+      {|
+  type person = {
+    name : string;
+    age : int;
+    email : string;
+  }
+  type w = {
+    name : string;
+    age : int;
+    email : string;
+  }
+  let p : person = { name = ("Alice" : string); age = 30; email = "alice@example.com" }
+  let v = { name = ("Alice" : string); age = 30; email = "alice@example.com" }
+
+type d = { aa: int}
+type t = { aa: int; bb: bool }
+type mraz = {nomerraz: t; nomerdva: d}
+let be = { nomerraz = { aa = 4; bb = true}; nomerdva = {aa = 10} }
+  
+  
+  |}
+  in
+  [%expect {| val x : int |}]
+;; *)
+
+(*
+   type person = {
+    name : string;
+    age : int;
+    email : string;
+  }
+  type d = { aa: int}
+  type t = { aa: int; bb: bool }
+  let m = { aa = 5; bb = true }
+  type me = {t: int; d: person}
+  type mraz = {nomerraz: t; nomerdva: d}
+  type inner = { x: int }
+  type outer = { x: string; inner: inner }
+*)

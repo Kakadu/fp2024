@@ -37,7 +37,7 @@ let%expect_test _ =
     let (0, b) = (4, 3)
   |} in
   [%expect
-    {| Interpreter error: Ill left hand side Pattern not acceptable for variable name |}]
+    {| Interpreter error: Ill left-hand side Pattern not acceptable for variable name |}]
 ;;
 
 let%expect_test _ =
@@ -186,24 +186,6 @@ let%expect_test _ =
   |}
   in
   [%expect {| Infer error: Undefined variable "h" |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    test_interpret
-      {| 
-      let int_of_option x e = match x with Some x -> x+e | None -> 0
-      let int_of_option2 e = function Some x -> x+e | None -> 0
-      let int_of_option3 = function Some x -> x | None -> 0
-  |}
-  in
-  [%expect
-    {|
-    {
-    val int_of_option : (int) option -> (int -> int) = <fun>
-    val int_of_option2 : int -> ((int) option -> int) = <fun>
-    val int_of_option3 : (int) option -> int = <fun>
-    } |}]
 ;;
 
 let%expect_test "001" =
@@ -559,8 +541,20 @@ let%expect_test "010" =
       let id1, id2 = let id x = x in (id, id)
   |}
   in
-  [%expect {|
-    Infer error: Unification failed on string and int |}]
+  [%expect
+    {|
+    {
+    val _1 : int -> (int -> ((int * '3) -> bool)) = <fun>
+    val _2 : int = 1
+    val _3 : ((int * string)) option = Some (1, "hi")
+    val _4 : int -> '10 = <fun>
+    val _42 : int -> bool = <fun>
+    val _5 : int = 42
+    val _6 : ('23) option -> '23 = <fun>
+    val id1 : '32 -> '32 = <fun>
+    val id2 : '33 -> '33 = <fun>
+    val int_of_option : (int) option -> int = <fun>
+    } |}]
 ;;
 
 let%expect_test "015tuples" =

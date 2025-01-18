@@ -12,7 +12,6 @@ let parse str =
   | _ -> Stdlib.print_endline "Parsing failed"
 ;;
 
-
 (*factorial*)
 let%expect_test _ =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
