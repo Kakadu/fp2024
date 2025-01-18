@@ -224,3 +224,8 @@ let%expect_test _ =
   test_infer {| let rec Some x = 123 |};
   [%expect {| Infer error: Only variables are allowed as left-hand side of `let rec' |}]
 ;;
+
+let%expect_test _ =
+  test_infer {| let (a, b, c) = (1, 2) |};
+  [%expect {| Infer error: Unification failed on '0 * '1 * '2 and int * int |}]
+;;

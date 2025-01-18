@@ -263,11 +263,13 @@ let infer_non_rec_binding_list env (bl : binding list) =
           let* sub = Subst.unify t1 t2 in
           let env = TypeEnv.apply sub env in
           return env
-        | POption (Some _) ->
+        | POption (Some (PVar x)) ->
           let* _, t1 = infer_pattern env p in
           let* _, t2 = infer_expression env e in
           let* sub = Subst.unify t1 t2 in
           let env = TypeEnv.apply sub env in
+          let sc = generalize env t2 in
+          let env = TypeEnv.extend env x sc in
           return env
         | POption None ->
           let* _, t1 = infer_pattern env p in
@@ -277,6 +279,12 @@ let infer_non_rec_binding_list env (bl : binding list) =
           return env
         | PAny ->
           let* _, _ = infer_expression env e in
+          return env
+        | PTuple _ ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
           return env
         | _ -> fail `Not_implemented)
       ~init:(return env)
