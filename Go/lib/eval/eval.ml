@@ -102,8 +102,7 @@ let rec eval_expr = function
   | Expr_const (Const_array (size, _, exprs)) ->
     map eval_expr exprs >>= fun values -> return (Value_array (size, values))
   | Expr_const (Const_func afunc) ->
-    read_local_envs
-    >>= fun (hd, _) -> return (Value_func (Func_initialized (FuncLit, afunc)))
+    return (Value_func (Func_initialized (FuncLit, afunc)))
   | Expr_bin_oper (op, a1, a2) -> eval_binop op a1 a2
   | Expr_un_oper (op, a) -> eval_unop op a
   | Expr_ident id -> read_ident id
@@ -207,7 +206,8 @@ and eval_deferred_func (vfunc, vargs) =
       }
     *> exec eval_stmt
     *> read_returns
-    >>= fun x -> delete_stack_frame *> return ()
+    *> delete_stack_frame
+    *> return ()
   | Value_func (Func_initialized (FuncLit, afc)) ->
     let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
     let rec save_args map = function
@@ -224,8 +224,7 @@ and eval_deferred_func (vfunc, vargs) =
       }
     *> exec eval_stmt
     *> read_returns
-    >>= fun x ->
-    read_local_envs
+    *> read_local_envs
     >>= fun (_, lenv) ->
     delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return ()
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " func_call")))
@@ -250,31 +249,25 @@ and eval_builtin args func =
 (* ДОДЕЛАТЬ, возвращает аргумент паники *)
 
 and prepare_builtin_eval vlist = function
-  | Print ->
-    (map retrieve_arg_value args >>= iter (fun x -> return (print_string (pp_value x))))
-    *> return None
+  | Print -> iter (fun x -> return (print_string (pp_value x))) vlist *> return None
   | Println ->
-    (map retrieve_arg_value args >>= iter (fun x -> return (print_string (pp_value x))))
+    iter (fun x -> return (print_string (pp_value x))) vlist
     *> return (print_string "\n")
     *> return None
   | Make ->
     let* chan_id = create_chanel in
     return (Some (Value_chan (Chan_initialized chan_id)))
   | Close ->
-    return vlist
-    >>= (function
+    (match vlist with
      | [ Value_chan chan ] -> close_chanel chan *> return None
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "close"))))
   | Len ->
-    return vlist
-    >>= (function
+    (match vlist with
      | [ Value_array (len, _) ] -> return (Some (Value_int len))
      | [ Value_string s ] -> return (Some (Value_int (String.length s)))
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "len"))))
   | Panic ->
-    return vlist
-    >>= (fun av -> return (String.concat "" (List.map pp_value av)))
-    >>= fun msg -> fail (Runtime_error (Panic msg))
+    fail (Runtime_error (Panic (String.concat "" (List.map pp_value vlist))))
     (* Тут неправильно *)
   | Recover -> return None
 
