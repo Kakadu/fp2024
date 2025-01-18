@@ -19,7 +19,7 @@ let print_prog_with_ast prog =
 
 let arbitrary_program n =
   let gen = gen_program n in
-  QCheck.make gen ~print:print_prog_with_ast
+  QCheck.make gen ~print:print_prog_with_ast ~shrink:Shrinker.shprog
 ;;
 
 let manual_test =
