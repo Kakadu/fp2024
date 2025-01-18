@@ -9,6 +9,7 @@ let pprint_ident ident = asprintf "%s" ident
 let pprint_sep_star = asprintf " * "
 let pprint_sep_colon = asprintf "; "
 let pprint_sep_double_colon = asprintf ";;\n\n"
+let pprint_sep_nl = asprintf "\n\n"
 let pprint_sep_comma = asprintf ", "
 let pprint_sep_and = asprintf " and "
 let pprint_sep_or = asprintf " | "
@@ -139,5 +140,5 @@ let pprint_struct_item = function
 ;;
 
 let pprint_program list =
-  asprintf "%s;;\n" (pprint_sep_by pprint_struct_item pprint_sep_double_colon list)
+  asprintf "%s\n" (pprint_sep_by pprint_struct_item pprint_sep_nl list)
 ;;

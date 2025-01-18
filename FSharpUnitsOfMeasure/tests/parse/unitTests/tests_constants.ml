@@ -3,9 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Base
-open Ast
 open Pp
-open Parse.Common
 open Parse.Constants
 open Pprint.Pprinter
 
