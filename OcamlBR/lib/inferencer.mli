@@ -9,10 +9,10 @@ end
 
 module Infer : sig
   val w : Ast.expr -> (Typedtree.ty, Typedtree.error) result
+
   val infer_program
     :  Ast.structure
     -> ( (string, Typedtree.scheme, Base.String.comparator_witness) Base.Map.t
          , Typedtree.error )
          result
-  val infer_program_test : string -> unit
 end
