@@ -20,34 +20,7 @@ let sep_by sep list print =
 
 let sep_by_comma list print = sep_by ", " list print
 let print_ident ident = ident
-
-let rec print_type = function
-  | Type_int -> "int"
-  | Type_string -> "string"
-  | Type_bool -> "bool"
-  | Type_array (size, type') -> asprintf "[%i]%s" size (print_type type')
-  | Type_func (arg_types, return_types) ->
-    let print_returns =
-      match return_types with
-      | _ :: _ :: _ -> asprintf " (%s)" (sep_by_comma return_types print_type)
-      | type' :: _ -> " " ^ print_type type'
-      | [] -> ""
-    in
-    asprintf "func(%s)%s" (sep_by_comma arg_types print_type) print_returns
-  | Type_chan (chan_dir, t) ->
-    let print_chan_dir =
-      match chan_dir with
-      | Chan_bidirectional -> "chan"
-      | Chan_receive -> "<-chan"
-      | Chan_send -> "chan<-"
-    in
-    let print_type =
-      match t with
-      | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type t)
-      | _ -> asprintf "%s" (print_type t)
-    in
-    asprintf "%s %s" print_chan_dir print_type
-;;
+let print_type = PpType.print_type
 
 let print_idents_with_types list =
   let rec helper acc = function
@@ -64,13 +37,9 @@ let print_func_args_returns_and_body pblock anon_func =
   let { args; returns; body } = anon_func in
   let print_returns =
     match returns with
-    | Some (Only_types (hd, tl)) ->
-      (match tl with
-       | _ :: _ -> asprintf " (%s)" (sep_by_comma (hd :: tl) print_type)
-       | [] -> " " ^ print_type hd)
-    | Some (Ident_and_types (hd, tl)) ->
-      asprintf " (%s)" (print_idents_with_types (hd :: tl))
-    | None -> ""
+    | [] -> ""
+    | [ t ] -> " " ^ print_type t
+    | types -> asprintf " (%s)" (sep_by_comma types print_type)
   in
   asprintf "(%s)%s %s" (print_idents_with_types args) print_returns (pblock body)
 ;;
@@ -149,7 +118,11 @@ let print_func_call pexpr call =
   let print_func =
     if 7 > precedence func then asprintf "(%s)" (pexpr func) else pexpr func
   in
-  asprintf "%s(%s)" print_func (sep_by_comma args pexpr)
+  let print_arg = function
+    | Arg_expr e -> pexpr e
+    | Arg_type t -> print_type t
+  in
+  asprintf "%s(%s)" print_func (sep_by_comma args print_arg)
 ;;
 
 let rec print_expr pblock = function
