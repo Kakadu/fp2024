@@ -15,7 +15,12 @@ let get_afunc_type afunc =
 let print_type = function
   | Ctype x -> PpType.print_type x
   | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map PpType.print_type x))
-  | _ -> asprintf "WTF Polymorphic type"
+  | Cpolymorphic Recover -> asprintf "WTF Polymorphic type recover"
+  | Cpolymorphic Print -> asprintf "WTF Polymorphic type print"
+  | Cpolymorphic Println -> asprintf "WTF Polymorphic type println"
+  | Cpolymorphic Nil -> asprintf "WTF Polymorphic type nil"
+  | CgenT _ -> asprintf "WTF generic type"
+  | Cpolymorphic _ -> asprintf "WTF Polymorphic type "
 ;;
 
 let check_return_continue =
@@ -65,12 +70,16 @@ let check_anon_func afunc cstmt =
 ;;
 
 let eq_type t1 t2 =
-  if equal_ctype t1 t2
-  then return t1
-  else
-    fail
-      (Type_check_error
-         (Mismatched_types (Printf.sprintf "%s and %s" (print_type t1) (print_type t2))))
+  match t1, t2 with
+  | Cpolymorphic Recover, t -> return t
+  | t, Cpolymorphic Recover -> return t
+  | t1, t2 ->
+    if equal_ctype t1 t2
+    then return t1
+    else
+      fail
+        (Type_check_error
+           (Mismatched_types (Printf.sprintf "%s and %s" (print_type t1) (print_type t2))))
 ;;
 
 let check_eq t1 t2 =
@@ -213,6 +222,7 @@ let rec check_expr cstmt rarg = function
           fail
             (Type_check_error
                (Mismatched_types "make should be used like make(T, arg) when T is a type")))
+     | Cpolymorphic Recover -> return (Cpolymorphic Recover)
      | _ ->
        fail (Type_check_error (Mismatched_types "Function without returns in expression")))
   | Expr_chan_receive chan ->
@@ -306,6 +316,7 @@ let check_short_var_decl cstmt = function
                  fail
                    (Type_check_error
                       (Invalid_operation "Cannot assign nil in short var declaration"))
+               | Cpolymorphic Recover -> return (Cpolymorphic Recover)
                | _ ->
                  fail
                    (Type_check_error

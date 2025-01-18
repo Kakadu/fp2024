@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
+open Format
 
 module Ident = struct
   type t = ident
@@ -63,6 +64,7 @@ type stack_frame =
   { local_envs : local_env * local_env list
   ; deferred_funcs : defered_frame list
   ; returns : value option
+  ; panics : value list option
   }
 
 type goroutine =
@@ -124,6 +126,18 @@ type eval_state =
   ; is_using_chanel : chanel_using_state option
   ; next_go_id : int
   }
+
+let rec pp_value = function
+  | Value_int n -> asprintf "%d" n
+  | Value_bool b -> asprintf "%b" b
+  | Value_nil _ -> "nil"
+  | Value_array (size, values) ->
+    asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
+  | Value_chan _ -> "wtf chan"
+  | Value_func _ -> "wtf func"
+  | Value_string s -> s
+  | Value_tuple lst -> asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
+;;
 
 module Monad = struct
   include BaseMonad
@@ -428,7 +442,13 @@ module Monad = struct
       delete_ready goroutine *> run_goroutine goroutine *> return (Some ())
   ;;
 
-  let delete_running_goroutine = write_running None
+  let delete_running_goroutine =
+    read_running_fail
+    >>= (fun { stack } -> return stack >>= fun (st, _) -> return st.panics)
+    >>= function
+    | None -> write_running None
+    | Some lst -> fail (Runtime_error (Panic (pp_value (Value_tuple lst))))
+  ;;
 
   (* chanels *)
 
@@ -656,8 +676,8 @@ module Monad = struct
   let write_local_envs new_local_envs =
     read_stack_frame
     >>= function
-    | { deferred_funcs; returns } ->
-      write_stack_frame { deferred_funcs; local_envs = new_local_envs; returns }
+    | { deferred_funcs; returns; panics } ->
+      write_stack_frame { deferred_funcs; local_envs = new_local_envs; returns; panics }
   ;;
 
   let add_env block env_type =
@@ -717,8 +737,8 @@ module Monad = struct
   let write_deferred new_deferred =
     read_stack_frame
     >>= function
-    | { local_envs; returns } ->
-      write_stack_frame { local_envs; deferred_funcs = new_deferred; returns }
+    | { local_envs; returns; panics } ->
+      write_stack_frame { local_envs; deferred_funcs = new_deferred; returns; panics }
   ;;
 
   let add_deferred new_frame =
@@ -729,6 +749,21 @@ module Monad = struct
   let delete_deferred =
     let* deferred_funcs = read_deferred in
     write_deferred (List.tl deferred_funcs)
+  ;;
+
+  (* panic *)
+
+  let read_panics =
+    read_stack_frame
+    >>= function
+    | { panics } -> return panics
+  ;;
+
+  let write_panics new_panics =
+    read_stack_frame
+    >>= function
+    | { local_envs; returns; deferred_funcs } ->
+      write_stack_frame { local_envs; deferred_funcs; returns; panics = new_panics }
   ;;
 
   (*returns*)
@@ -742,8 +777,8 @@ module Monad = struct
   let write_returns new_returns =
     read_stack_frame
     >>= function
-    | { local_envs; deferred_funcs } ->
-      write_stack_frame { local_envs; deferred_funcs; returns = new_returns }
+    | { local_envs; deferred_funcs; panics } ->
+      write_stack_frame { local_envs; deferred_funcs; returns = new_returns; panics }
   ;;
 
   (* exec block (processing statements) *)

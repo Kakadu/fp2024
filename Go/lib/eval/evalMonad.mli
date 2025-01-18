@@ -71,6 +71,7 @@ type stack_frame =
   (** Storage for local variables, new [{}] block creates new environment *)
   ; deferred_funcs : defered_frame list
   ; returns : value option
+  ; panics : value list option
   }
 
 type goroutine =
@@ -137,6 +138,9 @@ type eval_state =
   (** The state indicates that value was sent through chanel, but not received yet *)
   ; next_go_id : int (** An id that will be given to the next created goroutine *)
   }
+
+(**Value pretty print*)
+val pp_value : value -> string
 
 (** Monad for evaluating the program state *)
 module Monad : sig
@@ -278,10 +282,10 @@ module Monad : sig
   (** Takes stack frame and adds it to currently running goroutine's
       current stack frame's deferred functions stack *)
   val add_deferred : defered_frame -> unit t
+
   val read_deferred : defered_frame list t
-  (** Deletes last deferred function from currently running goroutine's
-      current stack frame's deferred functions stack *)
-  val delete_deferred : unit t
+  val write_panics : value list option -> unit t
+  val read_panics : value list option t
 
   (** Returns next statement from currently running goroutine's
       current stack frame's execution block. [None] if the block is empty *)

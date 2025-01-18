@@ -8,18 +8,6 @@ open Ast
 open Errors
 open Format
 
-let rec pp_value = function
-  | Value_int n -> asprintf "%d" n
-  | Value_bool b -> asprintf "%b" b
-  | Value_nil _ -> "nil"
-  | Value_array (size, values) ->
-    asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
-  | Value_chan _ -> "wtf chan"
-  | Value_func _ -> "wtf func"
-  | Value_string s -> s
-  | Value_tuple lst -> asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
-;;
-
 let rpf lst = List.map (fun (y, _) -> y) lst
 let rps lst = List.map (fun (_, y) -> y) lst
 
@@ -47,10 +35,14 @@ let rec exec eval_stmt =
     >>= (function
      | Some _ -> return ()
      | None ->
-       is_using_chanel
+       read_panics
        >>= (function
         | Some _ -> return ()
-        | None -> exec eval_stmt))
+        | None ->
+          is_using_chanel
+          >>= (function
+           | Some _ -> return ()
+           | None -> exec eval_stmt)))
   | None -> return ()
 ;;
 
@@ -141,11 +133,13 @@ and eval_func_call (func, args) =
       { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
       ; deferred_funcs = []
       ; returns = None
+      ; panics = None
       }
     *> exec eval_stmt
     *> read_returns
     >>= fun x ->
-    (read_deferred >>= iter eval_deferred_func) *> delete_stack_frame *> return x
+    (read_deferred >>= iter eval_deferred_func) *> read_panics
+    >>= fun panics -> delete_stack_frame *> write_panics panics *> return x
   | Value_func (Func_initialized (FuncLit, afc)) ->
     let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
     create_args_map args (rpf afc.args)
@@ -155,14 +149,17 @@ and eval_func_call (func, args) =
           { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
       ; deferred_funcs = []
       ; returns = None
+      ; panics = None
       }
     *> exec eval_stmt
     *> read_returns
     >>= fun x ->
     read_local_envs
     >>= fun (_, lenv) ->
-    (read_deferred >>= iter eval_deferred_func)
-    *> delete_stack_frame
+    (read_deferred >>= iter eval_deferred_func) *> read_panics
+    >>= fun panics ->
+    delete_stack_frame
+    *> write_panics panics
     *> write_local_envs (List.hd lenv, List.tl lenv)
     *> return x
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " defer func_call")))
@@ -180,14 +177,18 @@ and eval_closure (func, args) =
           , { exec_block = []; var_map = vmap; env_type = Default } :: local_envs )
       ; deferred_funcs = []
       ; returns = None
+      ; panics = None
       }
     *> exec eval_stmt
-    *> read_returns
+    *> read_panics
+    >>= fun panics ->
+    write_panics panics *> read_returns
     >>= fun x ->
     read_local_envs
     >>= fun (_, lenv) ->
-    (read_deferred >>= iter eval_deferred_func)
-    *> delete_stack_frame
+    (read_deferred >>= iter eval_deferred_func) *> read_panics
+    >>= fun panics ->
+    delete_stack_frame
     *> write_local_envs (List.hd (List.tl lenv), List.tl (List.tl lenv))
     *> return (x, (List.hd lenv).var_map)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " closure_call")))
@@ -202,23 +203,26 @@ and eval_deferred_func (vfunc, vargs) =
       | [] -> return map
       | (vl, id) :: tl -> save_args (MapIdent.add id vl map) tl
     in
+    let* panics = read_panics in
     save_args MapIdent.empty (List.combine vargs (rpf afc.args))
     >>= fun map ->
     add_stack_frame
       { local_envs = { exec_block = afc.body; var_map = map; env_type = Default }, []
       ; deferred_funcs = []
       ; returns = None
+      ; panics
       }
     *> exec eval_stmt
     *> read_returns
-    *> delete_stack_frame
-    *> return ()
+    *> read_panics
+    >>= fun panics -> delete_stack_frame *> write_panics panics *> return ()
   | Value_func (Func_initialized (FuncLit, afc)) ->
     let* local_envs = read_local_envs >>= fun (fl, lstl) -> return (fl :: lstl) in
     let rec save_args map = function
       | [] -> return map
       | (vl, id) :: tl -> save_args (MapIdent.add id vl map) tl
     in
+    let* panics = read_panics in
     save_args MapIdent.empty (List.combine vargs (rpf afc.args))
     >>= fun map ->
     add_stack_frame
@@ -226,12 +230,18 @@ and eval_deferred_func (vfunc, vargs) =
           { exec_block = afc.body; var_map = map; env_type = Default }, local_envs
       ; deferred_funcs = []
       ; returns = None
+      ; panics
       }
     *> exec eval_stmt
     *> read_returns
     *> read_local_envs
     >>= fun (_, lenv) ->
-    delete_stack_frame *> write_local_envs (List.hd lenv, List.tl lenv) *> return ()
+    read_panics
+    >>= fun panics ->
+    delete_stack_frame
+    *> write_panics panics
+    *> write_local_envs (List.hd lenv, List.tl lenv)
+    *> return ()
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " func_call")))
 
 and retrieve_arg_value = function
@@ -271,10 +281,16 @@ and prepare_builtin_eval vlist = function
      | [ Value_array (len, _) ] -> return (Some (Value_int len))
      | [ Value_string s ] -> return (Some (Value_int (String.length s)))
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "len"))))
-  | Panic ->
-    fail (Runtime_error (Panic (String.concat "" (List.map pp_value vlist))))
-    (* Тут неправильно *)
-  | Recover -> return None
+  | Panic -> write_panics (Some vlist) *> return None
+  | Recover ->
+    read_panics
+    >>= fun pnc ->
+    write_panics None
+    *>
+      (match pnc with
+      | Some [ single_srg ] -> return (Some single_srg)
+      | Some lst -> return (Some (Value_tuple lst))
+      | None -> return (Some (Value_nil Nil)))
 
 and retrieve_arg_generic = function
   | Arg_expr _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_generic")))
@@ -409,14 +425,12 @@ and eval_stmt = function
         | Some (Value_tuple tup) -> iter2 save_local_id (idnt1 :: idnt2 :: idntlst) tup
         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
   | Stmt_if if' ->
-    eval_expr if'.cond
+    eval_init if'.init *> eval_expr if'.cond
     >>= (function
-     | Value_bool true ->
-       add_env if'.if_body Default *> eval_init if'.init *> exec eval_stmt *> delete_env
+     | Value_bool true -> add_env if'.if_body Default *> exec eval_stmt *> delete_env
      | Value_bool false ->
        (match if'.else_body with
-        | Some (Else_block body) ->
-          add_env body Default *> eval_init if'.init *> exec eval_stmt *> delete_env
+        | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
         | Some (Else_if if') -> eval_stmt (Stmt_if if')
         | None -> return ())
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
@@ -581,6 +595,7 @@ and eval_go (func, arg_exprs) =
       { local_envs = { exec_block = body; var_map; env_type = Default }, []
       ; deferred_funcs = []
       ; returns = None
+      ; panics = None
       }
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
 ;;
@@ -612,6 +627,7 @@ let add_main_goroutine =
             { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
         ; deferred_funcs = []
         ; returns = None
+        ; panics = None
         }
     | _ -> return ())
 ;;

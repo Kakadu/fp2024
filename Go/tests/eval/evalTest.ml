@@ -526,7 +526,7 @@ let%expect_test "err: array index out of bounds in lvalue" =
     Runtime error: Array index out of bounds |}]
 ;;
 
-(* defer *)
+(* defer, panic, recover *)
 
 let%expect_test "ok: simple defer check change local value & return not chenged local \
                  value"
@@ -625,6 +625,130 @@ func f() {
     Returned normally from f. |}]
 ;;
 
+let%expect_test "ok: check defer with panic" =
+  pp
+    {|
+      
+func main() {
+    go f()
+    println("Returned normally from f.")
+}
+
+func f() {
+      println("Calling g.")
+      g(0)
+      println("Returned normally from g.")
+    }
+
+    func g(i int) {
+        if i > 3 {
+            println("Panicking!")
+            panic(i)
+        }
+        defer println("Defer in g ", i)
+        println("Printing in g ", i)
+        g(i + 1)
+        
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    Returned normally from f. |}]
+;;
+
+let%expect_test "ok: check defer, panic and recover" =
+  pp
+    {|
+      
+    func main() {
+        f()
+        println("Returned normally from f.")
+    }
+
+    func f() {
+      defer func() {
+          r := recover()
+              println("Recovered in f", r)
+          
+      }()
+      println("Calling g.")
+      g(0)
+      println("Returned normally from g.")
+    }
+
+    func g(i int) {
+        if i > 3 {
+            println("Panicking!")
+            panic(i)
+        }
+        defer println("Defer in g ", i)
+        println("Printing in g ", i)
+        g(i + 1)
+        
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    Calling g.
+    Printing in g 0
+    Printing in g 1
+    Printing in g 2
+    Printing in g 3
+    Panicking!
+    Defer in g 3
+    Defer in g 2
+    Defer in g 1
+    Defer in g 0
+    Recovered in f4
+    Returned normally from f. |}]
+;;
+
+let%expect_test "err: not recovered panic" =
+  pp
+    {|
+      
+    func main() {
+        f()
+        println("Returned normally from f.")
+    }
+
+    func f() {
+      println("Calling g.")
+      g(0)
+      println("Returned normally from g.")
+    }
+
+    func g(i int) {
+        if i > 3 {
+            println("Panicking!")
+            panic(i)
+        }
+        defer println("Defer in g ", i)
+        println("Printing in g ", i)
+        g(i + 1)
+        
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    Calling g.
+    Printing in g 0
+    Printing in g 1
+    Printing in g 2
+    Printing in g 3
+    Panicking!
+    Defer in g 3
+    Defer in g 2
+    Defer in g 1
+    Defer in g 0 |}]
+;;
+
 (* goroutines *)
 
 let%expect_test "ok: two goroutine sync with unbuffered chanel" =
@@ -711,13 +835,29 @@ let%expect_test "err: sender without receiver" =
 ;;
 
 let%expect_test "err: receiver without sender" =
-  pp {|
-    func main() {
-      c := make(chan int)
-      <-c
-    }
+  pp
+    {|
+    func sum(s [6]int, c chan int) {
+        sum := 0
+        for v := 0; v < 6; v++{
+          sum = sum + v
+        }	
+        c <- sum 
+
+      }
+
+      func main() {
+        s := [6]int{7, 2, 8, -9, 4, 0}
+
+        c := make(chan int)
+        go sum(s, c)
+        go sum(s, c)
+        x, y := <-c, <-c
+
+        println(x, y, x+y)
+      }
     |};
-  [%expect {| Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 |}]
+  [%expect {| Runtime error: No goroutine running |}]
 ;;
 
 (* let%expect_test "ok: two goroutines sending to the same chanel before value received" =
