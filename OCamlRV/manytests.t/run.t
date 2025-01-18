@@ -60,7 +60,7 @@ Test do_not_type:
   Infer error: Unification failed on bool and int
 
   $ ../bin/main.exe do_not_type/015tuples.ml -inference
-  Infer error: Not implemented !!!
+  Infer error: Only variables are allowed as left-hand side of `let rec'
 
   $ ../bin/main.exe do_not_type/099.ml -inference
-  Infer error: Not implemented !!!
+  Infer error: Only variables are allowed as left-hand side of `let rec'

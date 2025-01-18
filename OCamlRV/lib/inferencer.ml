@@ -67,16 +67,16 @@ let rec infer_pattern env = function
         (p1 :: p2 :: pl)
     in
     return (env, tuple_type (List.rev tl))
- | PList (p1, rest) ->
+  | PList (p1, rest) ->
     let* env1, t1 = infer_pattern env p1 in
     let* env2, t_list =
       List.fold_left
         ~f:(fun acc pat ->
-           let* env_acc , _ = acc in
-           let* env_next, t_next = infer_pattern env_acc pat in
-           let* sub = Subst.unify t1 t_next in
-           let env_updated = TypeEnv.apply sub env_next in
-           return (env_updated, Subst.apply sub t1))
+          let* env_acc, _ = acc in
+          let* env_next, t_next = infer_pattern env_acc pat in
+          let* sub = Subst.unify t1 t_next in
+          let env_updated = TypeEnv.apply sub env_next in
+          return (env_updated, Subst.apply sub t1))
         ~init:(return (env1, list_type t1))
         rest
     in
@@ -275,7 +275,7 @@ let infer_rec_binding_list env (bl : binding list) =
           let sc = generalize_rec env t2 x in
           let env = TypeEnv.extend env x sc in
           return env
-        | _ -> fail `Not_implemented)
+        | _ -> fail `LeftHS)
       ~init:(return env)
       bl
   in

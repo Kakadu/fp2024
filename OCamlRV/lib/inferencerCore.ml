@@ -18,6 +18,7 @@ type error =
   [ `Occurs_check
   | `Unbound of identifier
   | `Unification_failed of type_annot * type_annot
+  | `LeftHS
   | `Not_implemented
   ]
 
@@ -28,6 +29,7 @@ let pp_error ppf : error -> _ =
   | `Unbound s -> fprintf ppf "Unbound variable '%s'" s
   | `Unification_failed (l, r) ->
     fprintf ppf "Unification failed on %a and %a" pp_annot l pp_annot r
+  | `LeftHS -> fprintf ppf "Only variables are allowed as left-hand side of `let rec'"
   | `Not_implemented -> fprintf ppf "Not implemented"
 ;;
 
