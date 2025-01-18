@@ -135,6 +135,44 @@ let parse_register =
        ])
 ;;
 
+let parse_vector_register =
+  ws_opt
+    (choice
+       [ string "v10" *> return V10
+       ; string "v11" *> return V11
+       ; string "v12" *> return V12
+       ; string "v13" *> return V13
+       ; string "v14" *> return V14
+       ; string "v15" *> return V15
+       ; string "v16" *> return V16
+       ; string "v17" *> return V17
+       ; string "v18" *> return V18
+       ; string "v19" *> return V19
+       ; string "v20" *> return V20
+       ; string "v21" *> return V21
+       ; string "v22" *> return V22
+       ; string "v23" *> return V23
+       ; string "v24" *> return V24
+       ; string "v25" *> return V25
+       ; string "v26" *> return V26
+       ; string "v27" *> return V27
+       ; string "v28" *> return V28
+       ; string "v29" *> return V29
+       ; string "v30" *> return V30
+       ; string "v31" *> return V31
+       ; string "v0" *> return V0
+       ; string "v1" *> return V1
+       ; string "v2" *> return V2
+       ; string "v3" *> return V3
+       ; string "v4" *> return V4
+       ; string "v5" *> return V5
+       ; string "v6" *> return V6
+       ; string "v7" *> return V7
+       ; string "v8" *> return V8
+       ; string "v9" *> return V9
+       ])
+;;
+
 let parse_immediate12 = ws_opt (lift (fun imm -> ImmediateAddress12 imm) parse_number)
 let parse_immediate20 = ws_opt (lift (fun imm -> ImmediateAddress20 imm) parse_number)
 let parse_immediate32 = ws_opt (lift (fun imm -> ImmediateAddress32 imm) parse_number)
@@ -719,6 +757,30 @@ let parse_instruction =
               (fun r1 r2 r3 -> InstructionExpr (Sh3adduw (r1, r2, r3)))
               parse_register
               (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vle32.v"
+         *> lift3
+              (fun vd rs1 addr12 -> InstructionExpr (Vle32v (vd, rs1, addr12)))
+              parse_vector_register
+              (char ',' *> parse_register)
+              (char '(' *> parse_address12 <* char ')')
+       ; parse_string_with_spaces "vse32.v"
+         *> lift3
+              (fun vs rs1 addr12 -> InstructionExpr (Vse32v (vs, rs1, addr12)))
+              parse_vector_register
+              (char ',' *> parse_register)
+              (char '(' *> parse_address12 <* char ')')
+       ; parse_string_with_spaces "vadd.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vaddvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vadd.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vaddvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
               (char ',' *> parse_register)
        ])
 ;;
