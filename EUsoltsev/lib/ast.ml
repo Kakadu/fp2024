@@ -57,7 +57,6 @@ type expr =
   | ExpIdent of ident (* ExpIdent "x" *)
   | ExpConst of const (* ExpConst (ConstInt 666) *)
   | ExpBranch of expr * expr * expr option
-  (* ExpIfThenElse (x > 5, 10, 20(may return null) *)
   | ExpBinOper of bin_oper * expr * expr (* ExpBinOper(Plus, 1, 2) *)
   | ExpUnarOper of unar_oper * expr (* ExpUnarOper(not, x)*)
   | ExpTuple of expr * expr * expr list (* ExpTuple[x1; x2 .. xn] *)

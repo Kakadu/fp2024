@@ -206,15 +206,17 @@ let parse_expr_let parse_expr =
     >>= fun params -> token "=" *> parse_expr >>| fun body -> ExpLambda (params, body)
   in
   let parse_rec_flag =
-  token "rec" *> (peek_char >>= function
-    | Some c when Char.is_whitespace c -> return true
-    | _ -> return false)
-  <|> return false
+    token "rec"
+    *> (peek_char
+        >>= function
+        | Some c when Char.is_whitespace c -> return true
+        | _ -> return false)
+    <|> return false
   in
   token "let"
   *> lift4
        (fun is_rec pat e1 e2 -> ExpLet (is_rec, pat, e1, e2))
-       (parse_rec_flag)
+       parse_rec_flag
        (parse_parens parse_pattern <|> parse_pattern)
        (token "=" *> parse_expr <|> parse_body parse_expr)
        (token "in" *> parse_expr >>| Option.some <|> return None)
@@ -233,14 +235,10 @@ let parse_expr =
     let term =
       choice
         [ parse_expr_ident
-        ; 
-          parse_expr_const
-        ;
-          parse_expr_list expr
-        ;
-          parse_parens expr
-        ;
-          parse_expr_with_type expr
+        ; parse_expr_const
+        ; parse_expr_list expr
+        ; parse_parens expr
+        ; parse_expr_with_type expr
         ]
     in
     let func = parse_expr_function term in
@@ -253,13 +251,7 @@ let parse_expr =
     let boolean = parse_left_associative cmp (and_op <|> or_op) in
     let tuple = parse_expr_tuple boolean <|> boolean in
     let lambda = parse_expr_lambda expr <|> tuple in
-    choice
-      [ parse_expr_let expr
-      ;
-        parse_expr_lambda expr
-      ;
-        lambda 
-      ])
+    choice [ parse_expr_let expr; parse_expr_lambda expr; lambda ])
 ;;
 
 let parse_program =

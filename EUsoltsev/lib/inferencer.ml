@@ -33,16 +33,16 @@ module ResultMonad : sig
 end = struct
   type 'a t = int -> int * ('a, error) Result.t
 
-  let ( >>= ) m f st =
-    let last, r = m st in
+  let ( >>= ) m f state =
+    let last, r = m state in
     match r with
     | Result.Error x -> last, Result.fail x
     | Result.Ok a -> f a last
   ;;
 
-  let fail e st = st, Result.fail e
   let return x last = last, Result.return x
   let bind x ~f = x >>= f
+  let fail e st = st, Result.fail e
 
   let ( >>| ) m f st =
     match m st with
@@ -53,8 +53,6 @@ end = struct
   module Syntax = struct
     let ( let* ) x f = bind x ~f
   end
-
-
 
   module RMap = struct
     let fold map ~init ~f =
