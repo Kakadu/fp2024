@@ -127,12 +127,12 @@ let rec eval_expr = function
         | _ -> return ())
        *>
          (match ret with
-         | Some lst -> return lst (* тут может быть тапл *)
+         | Some lst -> return lst
          | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
      | _ ->
        eval_func_call (func, args)
        >>= (function
-        | Some lst -> return lst (* тут может быть тапл *)
+        | Some lst -> return lst
         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr")))))
   | Expr_chan_receive receive -> eval_chan_receive receive
 
@@ -142,7 +142,6 @@ and eval_func_call (func, args) =
   | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func)
   | Value_func (Func_builtin ftype) -> eval_builtin args ftype
   | Value_func (Func_initialized (Default, afc)) ->
-    (* тут нужна проверка на замыкание *)
     create_args_map args (rpf afc.args)
     >>= fun map ->
     add_stack_frame
@@ -205,6 +204,7 @@ and eval_closure (func, args) =
     (read_deferred >>= iter eval_deferred_func) *> read_panics
     >>= fun panics ->
     delete_stack_frame
+    *> write_panics panics
     *> write_local_envs (List.hd (List.tl lenv), List.tl (List.tl lenv))
     *> return (x, (List.hd lenv).var_map)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " closure_call")))
@@ -214,7 +214,6 @@ and eval_deferred_func (vfunc, vargs) =
   | Value_func (Func_uninitialized _) -> fail (Runtime_error Uninited_func) *> return ()
   | Value_func (Func_builtin ftype) -> prepare_builtin_eval vargs ftype *> return ()
   | Value_func (Func_initialized (Default, afc)) ->
-    (* тут нужна проверка на замыкание *)
     let rec save_args map = function
       | [] -> return map
       | (vl, id) :: tl -> save_args (MapIdent.add id vl map) tl
@@ -276,8 +275,6 @@ and eval_builtin args func =
   match func with
   | Make -> prepare_builtin_eval [] Make
   | _ -> map retrieve_arg_value args >>= fun vlst -> prepare_builtin_eval vlst func
-
-(* ДОДЕЛАТЬ, возвращает аргумент паники *)
 
 and prepare_builtin_eval vlist = function
   | Print -> iter (fun x -> return (print_string (pp_value x))) vlist *> return None
@@ -440,16 +437,7 @@ and eval_stmt = function
        >>= (function
         | Some (Value_tuple tup) -> iter2 save_local_id (idnt1 :: idnt2 :: idntlst) tup
         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
-  | Stmt_if if' ->
-    eval_init if'.init *> eval_expr if'.cond
-    >>= (function
-     | Value_bool true -> add_env if'.if_body Default *> exec eval_stmt *> delete_env
-     | Value_bool false ->
-       (match if'.else_body with
-        | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
-        | Some (Else_if if') -> eval_stmt (Stmt_if if')
-        | None -> return ())
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if"))))
+  | Stmt_if if' -> eval_if if'
   | Stmt_go call -> eval_go call
   | Stmt_block body -> add_env body Default *> exec eval_stmt *> delete_env
   | Stmt_break -> exec eval_stmt *> delete_env
@@ -505,6 +493,17 @@ and eval_stmt = function
     eval_expr ex
     >>= fun ex ->
     map (fun x -> retrieve_arg_value x) args >>= fun vals -> add_deferred (ex, vals)
+
+and eval_if if' =
+  eval_init if'.init *> eval_expr if'.cond
+  >>= function
+  | Value_bool true -> add_env if'.if_body Default *> exec eval_stmt *> delete_env
+  | Value_bool false ->
+    (match if'.else_body with
+     | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
+     | Some (Else_if if') -> eval_stmt (Stmt_if if')
+     | None -> return ())
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if")))
 
 and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->
@@ -628,11 +627,18 @@ let save_builtins =
   *> save_global_id "panic" (Value_func (Func_builtin Panic))
 ;;
 
-let save_global_vars_and_funcs =
+let save_global_funcs =
   iter (function
     | Decl_var decl -> eval_long_var_decl save_global_id decl
     | Decl_func (ident, afc) ->
       save_global_id ident (Value_func (Func_initialized (Default, afc))))
+;;
+
+let save_global_vars =
+  iter (function
+    | Decl_func (ident, afc) ->
+      save_global_id ident (Value_func (Func_initialized (Default, afc)))
+    | Decl_var _ -> return ())
 ;;
 
 let add_main_goroutine =
@@ -663,7 +669,7 @@ let init_state =
 let eval file =
   run
     (save_builtins
-     *> save_global_vars_and_funcs file
+     *> save_global_funcs file
      *> add_main_goroutine file
      *> run_ready_goroutines eval_stmt)
     init_state

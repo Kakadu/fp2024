@@ -42,6 +42,18 @@ let%expect_test "ok: single main" =
     kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml |}]
 ;;
 
+let%expect_test "ok: single main" =
+  pp {|
+
+    var a = len("asd")
+    func main() {
+      print(a)
+    }
+    |};
+  [%expect {|
+    Runtime error: No goroutine running |}]
+;;
+
 let%expect_test "ok: single long_var_init" =
   pp {|
     var x = "kill OCaml"
