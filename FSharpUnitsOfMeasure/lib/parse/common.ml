@@ -15,7 +15,13 @@ let is_whitespace = function
   | _ -> false
 ;;
 
+let is_ws_no_nl = function
+  | ' ' | '\r' -> true
+  | _ -> false
+;;
+
 let skip_ws = skip_while is_whitespace
+let skip_ws_no_nl = skip_while is_ws_no_nl
 let skip_ws1 = satisfy is_whitespace *> skip_ws
 let skip_token str = skip_ws *> string str <* skip_ws >>= fun _ -> return ()
 

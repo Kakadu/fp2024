@@ -7,19 +7,11 @@
   
   AST:
   
-  [(Str_item_def (Nonrecursive,
-      (Bind (
-         (Pattern_const
-            (Const_unit_of_measure
-               (Unit_of_measure ((Mnum_float 1.04931758405),
-                  (Measure_prod (Measure_dimless, (Measure_ident "_5q1"))))))),
-         (Expr_ident_or_op "x1DZ'"))),
-      []))
-    ]
+  []
   
   Pprinted:
   
-  let 1.04931758405<1 * _5q1> = x1DZ';;
+  
   
   
   

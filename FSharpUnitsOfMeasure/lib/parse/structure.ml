@@ -5,12 +5,10 @@
 (** This file contains parsers for part of F# 4.1 grammar, taken from
     https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 292 *)
 
-open Base
 open Angstrom
 open Ast
 open Common
 open Expressions
-open Patterns
 
 let parse_structure_item_expr =
   (skip_token "do" <|> skip_ws)
@@ -31,6 +29,6 @@ let parse_structure_item_def =
 let parse_structure_item = choice [ parse_structure_item_expr; parse_structure_item_def ]
 
 let parse_program =
-  sep_by (skip_token ";;") parse_structure_item
+  sep_by (skip_token ";;" <|> skip_ws_no_nl *> char '\n' *> skip_ws) parse_structure_item
   <* (skip_ws *> string ";;" <* skip_ws <|> string "")
 ;;

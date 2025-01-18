@@ -12,8 +12,11 @@ open Ast
 (** [' '], ['\n'] or ['\r']. *)
 val is_whitespace : char -> bool
 
-(** [skip_ws] skips 0 or more whitespaces. *)
+(** [skip_ws] skips 0 or more whitespaces, newlines included *)
 val skip_ws : unit t
+
+(** [skip_ws] skips 0 or more whitespaces, newlines not included *)
+val skip_ws_no_nl : unit t
 
 (** [skip_ws1] skips 1 or more whitespaces. *)
 val skip_ws1 : unit t
