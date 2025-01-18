@@ -4,7 +4,9 @@
 
 open Ast
 
-type builtin = BInt of (int -> unit) | BString of (string -> unit)
+type builtin =
+  | BInt of (int -> unit)
+  | BString of (string -> unit)
 
 type value =
   | VInt of int
@@ -16,6 +18,8 @@ type value =
   | VFun of rec_flag * pattern * pattern list * expr * environment
   | VOption of value option
   | VBuiltin of builtin * environment
+  | VFunction of case * case list
+(* | VRecord of string * (label * value) * (label * value) list *)
 
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
@@ -49,7 +53,7 @@ let rec pp_value ppf =
             (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
             rest)
       vl
-  | VFun _ -> fprintf ppf "<fun>"
+  | VFun _ | VFunction _ -> fprintf ppf "<fun>"
   | VOption v ->
     (match v with
      | Some v -> fprintf ppf "Some %a" pp_value v
@@ -70,5 +74,5 @@ let pp_error ppf : error -> unit = function
   | `Unbound_variable s -> Format.fprintf ppf {|Unbound variable: %s|} s
   | `Pattern_matching_failure -> Format.fprintf ppf {|Pattern-matching failure|}
   | `Type_error -> Format.fprintf ppf {|Type error|}
-  | `Ill_left_hand_side s -> Format.fprintf ppf {|Ill left hand side %s|} s
+  | `Ill_left_hand_side s -> Format.fprintf ppf {|Ill left-hand side %s|} s
 ;;

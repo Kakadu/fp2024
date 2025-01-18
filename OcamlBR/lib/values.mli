@@ -2,7 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type builtin = BInt of (int -> unit) | BString of (string -> unit)
+type builtin =
+  | BInt of (int -> unit)
+  | BString of (string -> unit)
 
 type value =
   | VInt of int
@@ -14,6 +16,7 @@ type value =
   | VFun of Ast.rec_flag * Ast.pattern * Ast.pattern list * Ast.expr * environment
   | VOption of value option
   | VBuiltin of builtin * environment
+  | VFunction of Ast.case * Ast.case list
 
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
