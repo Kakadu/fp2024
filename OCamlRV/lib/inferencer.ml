@@ -349,12 +349,18 @@ let infer_structure_item env = function
 ;;
 
 let infer_structure (structure : structure) =
+  let env =
+    TypeEnv.extend TypeEnv.empty "print_int" (Scheme.S (VarSet.empty, AFun (AInt, AUnit)))
+  in
+  let env =
+    TypeEnv.extend env "print_endline" (Scheme.S (VarSet.empty, AFun (AString, AUnit)))
+  in
   List.fold_left
     ~f:(fun acc item ->
       let* env = acc in
       let* env = infer_structure_item env item in
       return env)
-    ~init:(return TypeEnv.empty)
+    ~init:(return env)
     structure
 ;;
 
@@ -366,7 +372,9 @@ let run_inferencer (s : string) =
     (match res with
      | Ok env ->
        Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) ->
-         Format.printf "val %s : %a\n" key pp_annot ty)
-     | Error e -> Format.printf "Infer error: %a\n" pp_error e)
-  | Error e -> Format.printf "Parsing error: %s\n" e
+         if String.equal key "print_int" || String.equal key "print_endline"
+         then ()
+         else Stdlib.Format.printf "val %s : %a\n" key pp_annot ty)
+     | Error e -> Stdlib.Format.printf "Infer error: %a\n" pp_error e)
+  | Error e -> Stdlib.Format.printf "Parsing error: %s\n" e
 ;;

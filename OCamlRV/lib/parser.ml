@@ -87,7 +87,7 @@ let rec annot_list t =
   annot_list (return (AList base)) <|> return (AList base)
 ;;
 
-let rec annot_option t =
+let annot_option t =
   let* base = t in
   let* _ = token "option" in
   return (AOption base)
