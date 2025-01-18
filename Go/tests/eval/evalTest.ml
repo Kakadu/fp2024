@@ -10,7 +10,7 @@ let pp str =
   match parse parse_file str with
   | Error _ -> print_endline ": syntax error"
   | Ok ast ->
-    (match TypeChecker.type_check ast with
+    (match type_check ast with
      | Result.Error (Runtime_error _) -> ()
      | Result.Error (Type_check_error err) ->
        prerr_endline ("Typecheck error: " ^ Errors.pp_typecheck_error err)
@@ -538,7 +538,7 @@ let%expect_test "ok: receive and send back" =
 
       println("go2: trying to send. Value:", a)
       c <- a
-      println("go2: send success")
+      println("go2: send success") // this doesn't execute
     }
 
     func main() {

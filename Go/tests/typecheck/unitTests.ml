@@ -2,14 +2,14 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Typecheck
 open Parse
+open Typecheck
 
 let pp str =
   match parse parse_file str with
   | Error _ -> print_endline ": syntax error"
   | Ok ast ->
-    (match TypeChecker.type_check ast with
+    (match type_check ast with
      | Result.Ok _ -> print_endline "CORRECT"
      | Result.Error (Runtime_error _) -> ()
      | Result.Error (Type_check_error err) ->
