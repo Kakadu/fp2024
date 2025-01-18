@@ -160,6 +160,56 @@ let%expect_test "typed_016lists" =
   val map : (int -> (int * int)) -> (int list -> (int * int) list) |}]
 ;;
 
+let%expect_test "do_not_type_001" =
+  let _ = infer_from_file "do_not_type/001.ml" in
+  [%expect {| Infer error: Undefined variable "fac" |}]
+;;
+
+let%expect_test "do_not_type_002if" =
+  let _ = infer_from_file "do_not_type/002if.ml" in
+  [%expect {| Infer error: Unification failed on int and bool  |}]
+;;
+
+let%expect_test "do_not_type_003occurs" =
+  let _ = infer_from_file "do_not_type/003occurs.ml" in
+  [%expect {| Infer error: Occurs check failed |}]
+;;
+
+let%expect_test "do_not_type_004let_poly" =
+  let _ = infer_from_file "do_not_type/004let_poly.ml" in
+  [%expect {| Infer error: Unification failed on int and bool |}]
+;;
+
+let%expect_test "do_not_type_015tuples" =
+  let _ = infer_from_file "do_not_type/015tuples.ml" in
+  [%expect {| Infer error: Ill left-hand side : only variables are allowed  |}]
+;;
+
+let%expect_test "do_not_type_016" =
+  let _ = infer_from_file "do_not_type/016tuples_mismatch.ml" in
+  [%expect {| Infer error: Unification failed on ('0 * '1) and (int * int * int)  |}]
+;;
+
+let%expect_test "do_not_type_097fun_vs_list" =
+  let _ = infer_from_file "do_not_type/097fun_vs_list.ml" in
+  [%expect {| Infer error: Unification failed on '2 list and '0 -> '0  |}]
+;;
+
+let%expect_test "do_not_type_097fun_vs_unit" =
+  let _ = infer_from_file "do_not_type/097fun_vs_unit.ml" in
+  [%expect {| Infer error: Unification failed on unit and '0 -> '0  |}]
+;;
+
+let%expect_test "do_not_type_098" =
+  let _ = infer_from_file "do_not_type/098rec_int.ml" in
+  [%expect {| Infer error: Ill right-hand side of let rec  |}]
+;;
+
+let%expect_test "do_not_type_099" =
+  let _ = infer_from_file "do_not_type/099.ml" in
+  [%expect {| Infer error: Ill left-hand side : only variables are allowed  |}]
+;;
+
 let%expect_test _ =
   let _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in
   [%expect {| |}]
@@ -263,57 +313,3 @@ let%expect_test _ =
   in
   [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;
-
-let%expect_test _ =
-  let _ =
-    infer_program_test
-      {|
-  type t = { aa: int; bb: bool }
-  type s = { aa: float; cc: int }
-  |}
-  in
-  [%expect {| val x : int |}]
-;;
-
-let%expect_test _ =
-  let _ =
-    infer_program_test
-      {|
-  type person = {
-    name : string;
-    age : int;
-    email : string;
-  }
-  type w = {
-    name : string;
-    age : int;
-    email : string;
-  }
-  let p : person = { name = ("Alice" : string); age = 30; email = "alice@example.com" }
-  let v = { name = ("Alice" : string); age = 30; email = "alice@example.com" }
-
-type d = { aa: int}
-type t = { aa: int; bb: bool }
-type mraz = {nomerraz: t; nomerdva: d}
-let be = { nomerraz = { aa = 4; bb = true}; nomerdva = {aa = 10} }
-  
-  
-  |}
-  in
-  [%expect {| val x : int |}]
-;;
-
-
-   type person = {
-    name : string;
-    age : int;
-    email : string;
-  }
-  type d = { aa: int}
-  type t = { aa: int; bb: bool }
-  let m = { aa = 5; bb = true }
-  type me = {t: int; d: person}
-  type mraz = {nomerraz: t; nomerdva: d}
-  type inner = { x: int }
-  type outer = { x: string; inner: inner }
-
