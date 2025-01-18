@@ -31,7 +31,6 @@ type constant =
 val show_constant : constant -> string
 
 type core_type =
-  | Type_any (** The type [_]. *)
   | Type_unit (** The type [unit]. *)
   | Type_char (** The type [char]. *)
   | Type_int (** The type [int]. *)

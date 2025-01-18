@@ -171,8 +171,6 @@ module Subst = struct
 
   let rec unify l r =
     match l, r with
-    | Type_any, _
-    | _, Type_any
     | Type_unit, Type_unit
     | Type_int, Type_int
     | Type_char, Type_char
@@ -797,7 +795,8 @@ module Infer = struct
         | _ -> false
       in
       function
-      | x :: xs -> if Base.List.mem xs x ~equal:fun_equal then xs else x :: xs
+      | x :: xs when not (Base.List.mem xs x ~equal:fun_equal) -> x :: xs
+      | _ :: xs -> xs
       | [] -> []
     in
     return (remove_duplicates out_list)

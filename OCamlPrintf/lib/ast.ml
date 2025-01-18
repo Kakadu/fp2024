@@ -112,7 +112,6 @@ let gen_type_var =
 ;;
 
 type core_type =
-  | Type_any
   | Type_unit
   | Type_char
   | Type_int

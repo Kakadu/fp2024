@@ -18,7 +18,7 @@ let shrink_ident = function
 ;;
 
 let rec shrink_core_type = function
-  | Type_any | Type_unit | Type_bool | Type_char | Type_int | Type_string -> empty
+  | Type_unit | Type_bool | Type_char | Type_int | Type_string -> empty
   | Type_var id -> shrink_type_ident id >|= fun id' -> Type_var id'
   | Type_list type' ->
     return type' <+> (shrink_core_type type' >|= fun type'' -> Type_list type'')
