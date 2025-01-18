@@ -80,20 +80,18 @@ end = struct
       List.fold_left2 f1 (Some env) patterns values)
   ;;
 
-  let print_env env =
+  (* let print_env env =
     let open Stdlib.Format in
     printf "{\n";
     Base.Map.iteri env ~f:(fun ~key ~data -> printf "%s = %a\n" key pp_value data);
     printf "}\n"
-  ;;
+  ;; *)
 
   let eval_un_op = function
     | Negative, VInt i -> return (VInt (-i))
     | Positive, VInt i -> return (VInt i)
     | Not, VBool b -> return (VBool (not b))
-    | _ ->
-      Format.printf "ty err8\n";
-      fail `Type_error
+    | _ -> fail `Type_error
   ;;
 
   let rec eval_bin_op = function
@@ -133,9 +131,7 @@ end = struct
        | Some o1, Some o2 -> eval_bin_op (Neq, o1, o2)
        | None, None -> return (VBool true)
        | _ -> return (VBool false))
-    | _ ->
-      Format.printf "ty err-1\n";
-      fail `Type_error
+    | _ -> fail `Type_error
 
   and eval_eq_list op l1 l2 =
     if List.length l1 <> List.length l2
@@ -150,9 +146,7 @@ end = struct
           (match res with
            | VBool true -> return (VBool true)
            | _ -> return (VBool false))
-        | _ ->
-          Format.printf "ty err1\n";
-          fail `Type_error
+        | _ -> fail `Type_error
       in
       List.fold_left2 f1 (return (VBool true)) l1 l2)
   ;;
@@ -178,8 +172,7 @@ end = struct
   ;;
 
   (* extract pattern from typed pattern *)
-  let get_pattern tp =
-    match tp with
+  let get_pattern = function
     | pat, _ -> pat
   ;;
 
@@ -193,17 +186,13 @@ end = struct
       (match cond_value with
        | VBool true -> eval_expr env t
        | VBool false -> eval_expr env e
-       | _ ->
-         Format.printf "ty err2\n";
-         fail `Type_error)
+       | _ -> fail `Type_error)
     | Eif_then_else (cond, t, None) ->
       let* cond_value = eval_expr env cond in
       (match cond_value with
        | VBool true -> eval_expr env t
        | VBool false -> return VUnit
-       | _ ->
-         Format.printf "ty err3\n";
-         fail `Type_error)
+       | _ -> fail `Type_error)
     | Eoption (Some e) ->
       let* value = eval_expr env e in
       return (VOption (Some value))
@@ -241,47 +230,18 @@ end = struct
       eval_un_op (op, v)
     | Ematch (e, c, cl) ->
       let* v = eval_expr env e in
-      (* print_env env;
-         Format.printf "e match: %a\n" Pr_printer.pp_expr e;
-         Format.printf "v match: %a\n" pp_value v; *)
-      (* print_env (compose env extended_env); *)
-      let rec match_helper env = function
-        | Ecase (pat, expr) :: tl ->
-          (* Format.printf "e case: %a\n" Pr_printer.pp_expr expr; *)
-          let env' = match_pattern env (pat, v) in
-          (match env' with
-           (* new environment for evaluating the body of the case *)
-           | Some env' ->
-             (* print_env env'; *)
-             let env'' = compose env env' in
-             (* print_env env''; *)
-             let* result = eval_expr env'' expr in
-             (* Format.printf "res match: %a\n" pp_value result; *)
-             return result
-           | None -> match_helper env tl)
-        | [] -> fail `Pattern_matching_failure
-      in
-      (* Format.printf "e match: %a\n" Pr_printer.pp_expr e; *)
-      match_helper env (c :: cl)
+      eval_match_expr env v (c :: cl)
+    | Efunction (c, cl) -> return (VFunction (c, cl))
     | Efun (tp, tpl, e) ->
       return (VFun (Non_recursive, get_pattern tp, get_patterns tpl, e, env))
     | Efun_application (e1, e2) ->
       let* v1 = eval_expr env e1 in
-      (* print_env env;
-         Format.printf "val1 %a \n" pp_value v1; *)
       let* v2 = eval_expr env e2 in
-      (* print_env env;
-         Format.printf "val2 %a \n" pp_value v2; *)
       (match v1 with
        | VFun (_, pat, pats, body, func_env) ->
-         (* Format.printf "func env \n";
-            print_env func_env; *)
          (* attempt to match the argument against the pattern *)
          (match match_pattern func_env (pat, v2) with
           | Some extended_env ->
-            (* Format.printf "ext env \n";
-               print_env (compose env extended_env);
-               Format.printf "body expr: %a\n" Pr_printer.pp_expr body; *)
             let env' = compose env extended_env in
             (match pats with
              | [] ->
@@ -290,6 +250,7 @@ end = struct
                  body (* evaluate the function body with the updated environment *)
              | p :: pl -> return (VFun (Non_recursive, p, pl, body, env')))
           | None -> fail `Pattern_matching_failure)
+       | VFunction (case, case_l) -> eval_match_expr env v2 (case :: case_l)
        | VBuiltin (builtin, _) ->
          (match builtin, v2 with
           | BInt b, VInt i ->
@@ -299,9 +260,7 @@ end = struct
             b s;
             return VUnit
           | _ -> fail `Type_error)
-       | _ ->
-         Format.printf "ty err5\n";
-         fail `Type_error)
+       | _ -> fail `Type_error)
     | Elet (Non_recursive, Evalue_binding ((pat, _), e1), _, e2) ->
       if not (validate_pattern_nonrec pat)
       then fail (`Ill_left_hand_side "Pattern not acceptable for variable name")
@@ -318,6 +277,18 @@ end = struct
       eval_expr final_env e2
     | Econstraint (e, _) -> eval_expr env e
 
+  and eval_match_expr env v = function
+    | Ecase (pat, expr) :: tl ->
+      let env' = match_pattern env (pat, v) in
+      (match env' with
+       (* new environment for evaluating the body of the case *)
+       | Some env' ->
+         let env'' = compose env env' in
+         let* result = eval_expr env'' expr in
+         return result
+       | None -> eval_match_expr env v tl)
+    | [] -> fail `Pattern_matching_failure
+
   and eval_let_rec_expr env = function
     | Evalue_binding ((pat, _), e1) ->
       if not (validate_pattern_rec pat)
@@ -332,9 +303,7 @@ end = struct
         let* recursive_value =
           match v with
           | VFun (_, p, pl, e, _) -> return (VFun (Recursive, p, pl, e, rec_env))
-          | _ ->
-            Format.printf "ty err6\n";
-            fail `Type_error
+          | _ -> fail `Type_error
         in
         let* final_env =
           match match_pattern env (pat, recursive_value) with
@@ -352,18 +321,11 @@ end = struct
         let* value =
           match expr with
           | Efun (p, pl, e) ->
-            (* Format.printf "1 \n";
-               Format.printf "acc_env\n";
-               print_env acc_env; *)
             return (VFun (Recursive, get_pattern p, get_patterns pl, e, acc_env))
-          | _ ->
-            (* Format.printf "2 \n"; *)
-            eval_expr acc_env expr
+          | _ -> eval_expr acc_env expr
         in
         (* update env so all names in mutual recursion correspond to their real values *)
         let updated_env = extend acc_env name value in
-        (* Format.printf "updated_env\n";
-           print_env updated_env; *)
         update_env updated_env tl
       | _ -> fail (`Ill_left_hand_side "Pattern not acceptable for variable name")
     in
@@ -399,8 +361,6 @@ end = struct
       (fun env str_item ->
         let* env = env in
         let* env = eval_str_item env str_item in
-        (* Format.printf "env str_item\n"; *)
-        (* print_env env; *)
         return env)
       (return empty)
       structure
@@ -412,8 +372,6 @@ module Interpreter = Eval (struct
 
     let ( let* ) m f = bind m ~f
   end)
-
-let interpret_program structure = Interpreter.eval_structure structure
 
 let print_key = function
   | "print_int" | "print_endline" -> false
