@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -23,9 +23,11 @@ let rec pp_value = function
 let rpf lst = List.map (fun (y, _) -> y) lst
 let rps lst = List.map (fun (_, y) -> y) lst
 
+(** Executes next statement, returns [Some ()] if there was statement to execute,
+    and [None] if the end of current execution block was reached *)
 let exec_stmt eval_stmt =
-  let* stmt = pop_next_statement in
-  match stmt with
+  pop_next_statement
+  >>= function
   | Some st -> eval_stmt st *> return (Some ())
   | None -> return None
 ;;
@@ -39,9 +41,12 @@ let rec replace_list list index elem =
     else h :: replace_list t (index - 1) elem
 ;;
 
+(** Executes current execution block. Stops when its end reached, or when [return]
+    statement was executed, or when some chanel started to be used *)
 let rec exec eval_stmt =
   exec_stmt eval_stmt
   >>= function
+  | None -> return ()
   | Some _ ->
     read_returns
     >>= (function
@@ -55,7 +60,6 @@ let rec exec eval_stmt =
           >>= (function
            | Some _ -> return ()
            | None -> exec eval_stmt)))
-  | None -> return ()
 ;;
 
 (** Runs all ready to run goroutines, after it returns it is guaranteed that all existing goroutines
@@ -80,17 +84,17 @@ let run_ready_goroutines eval_stmt =
          *> read_running_fail
          >>= (function
           | { go_id = 1 } ->
-            (* main goroutine finished working and doesn,t wait for others to finish *)
+            (* main goroutine finished working and doesn't wait for others to finish *)
             return ()
           | _ ->
-            (* some secondary goroutine finished working, don't stop untill main finished *)
+            (* some secondary goroutine finished working, don't stop until main finished *)
             delete_running_goroutine *> runner ()))
   in
   runner ()
 ;;
 
-(** [attempt_chan_interaction id] attempts to use chanel with given id. If both sender and receiver are ready,
-    starts using the chanel. Doesn't do anything otherwise *)
+(** [attempt_chan_interaction id] attempts to use chanel with given id. If both
+    sender and receiver are ready, starts using the chanel. Doesn't do anything otherwise *)
 let attempt_chan_interaction id =
   let* ready_to_send = is_send_queue_not_empty id in
   let* ready_to_receive = is_receive_queue_not_empty id in
@@ -99,8 +103,8 @@ let attempt_chan_interaction id =
     let* sending_goroutine, value = pop_from_send_queue id in
     let* receiving_goroutine = pop_from_receive_queue id in
     add_ready sending_goroutine
-    *> add_ready receiving_goroutine
     *> start_using_chanel sending_goroutine receiving_goroutine value
+    (* receiving goroutine will run after return from a function *)
   | _ -> return ()
 ;;
 
@@ -207,7 +211,7 @@ and eval_closure (func, args) =
     *> write_panics panics
     *> write_local_envs (List.hd (List.tl lenv), List.tl (List.tl lenv))
     *> return (x, (List.hd lenv).var_map)
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " closure_call")))
+  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "closure_call")))
 
 and eval_deferred_func (vfunc, vargs) =
   match vfunc with
@@ -530,43 +534,25 @@ and eval_chan_send (ident, expr) =
   >>= function
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
-    push_chan_value chan_id value
-    >>= (function
-     | Some () ->
-       let* sending_goroutine = read_running_fail in
-       delete_running_goroutine
-       *> push_to_send_queue chan_id sending_goroutine value
-       *> check_ready_goroutine
-       >>= (function
-        | Some _ -> run_ready_goroutines eval_stmt
+    let* sending_goroutine = read_running_fail in
+    delete_running_goroutine
+    *> push_to_send_queue chan_id sending_goroutine value
+    *> attempt_chan_interaction chan_id
+    *> (is_using_chanel
+        >>= function
+        | Some _ -> return ()
         | None ->
-          fail
-            (Runtime_error
-               (Deadlock
-                  (asprintf
-                     "goroutine %d trying to send to chan %d"
-                     sending_goroutine.go_id
-                     chan_id))))
-     | None ->
-       let* sending_goroutine = read_running_fail in
-       delete_running_goroutine
-       *> push_to_send_queue chan_id sending_goroutine value
-       *> attempt_chan_interaction chan_id
-       *> (is_using_chanel
-           >>= function
-           | Some _ -> return ()
+          check_ready_goroutine
+          >>= (function
+           | Some _ -> run_ready_goroutines eval_stmt
            | None ->
-             check_ready_goroutine
-             >>= (function
-              | Some _ -> run_ready_goroutines eval_stmt
-              | None ->
-                fail
-                  (Runtime_error
-                     (Deadlock
-                        (asprintf
-                           "goroutine %d trying to send to chan %d"
-                           sending_goroutine.go_id
-                           chan_id))))))
+             fail
+               (Runtime_error
+                  (Deadlock
+                     (asprintf
+                        "goroutine %d trying to send to chan %d"
+                        sending_goroutine.go_id
+                        chan_id)))))
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
 
 and eval_chan_receive expr =
@@ -602,9 +588,9 @@ and eval_go (func, arg_exprs) =
   eval_expr func
   >>= function
   | Value_func (Func_uninitialized Nil) -> fail (Runtime_error Uninited_func)
-  | Value_func (Func_builtin _) -> return () (* TODO *)
-  | Value_func (Func_initialized (is_closure, { args; body })) ->
-    (* TODO closure *)
+  | Value_func (Func_builtin _) ->
+    eval_func_call (func, arg_exprs) *> return () (* TODO *)
+  | Value_func (Func_initialized (Default, { args; body })) ->
     let* var_map = create_args_map arg_exprs (rpf args) in
     create_goroutine
       { local_envs = { exec_block = body; var_map; env_type = Default }, []
@@ -612,6 +598,9 @@ and eval_go (func, arg_exprs) =
       ; returns = None
       ; panics = None
       }
+  | Value_func (Func_initialized (FuncLit, { args; body })) -> return () (* TODO *)
+  | Value_func (Func_initialized (Closure var_map, { args; body })) ->
+    return () (* TODO *)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
 ;;
 
@@ -627,11 +616,23 @@ let save_builtins =
   *> save_global_id "panic" (Value_func (Func_builtin Panic))
 ;;
 
-let save_global_funcs =
-  iter (function
-    | Decl_var decl -> eval_long_var_decl save_global_id decl
-    | Decl_func (ident, afc) ->
-      save_global_id ident (Value_func (Func_initialized (Default, afc))))
+let save_global_vars_and_funcs file =
+  save_builtins
+  *> create_goroutine (* goroutine for global variables evaluating *)
+       { local_envs =
+           { exec_block = []; var_map = MapIdent.empty; env_type = Default }, []
+       ; deferred_funcs = []
+       ; returns = None
+       ; panics = None
+       }
+  *> run_ready_goroutine
+  *> iter
+       (function
+         | Decl_var decl -> eval_long_var_decl save_global_id decl
+         | Decl_func (ident, afc) ->
+           save_global_id ident (Value_func (Func_initialized (Default, afc))))
+       file
+  *> delete_running_goroutine
 ;;
 
 let save_global_vars =
@@ -662,14 +663,13 @@ let init_state =
   ; receiving = ReceivingSet.empty
   ; chanels = ChanSet.empty, 1
   ; is_using_chanel = None
-  ; next_go_id = 1
+  ; next_go_id = 0
   }
 ;;
 
 let eval file =
   run
-    (save_builtins
-     *> save_global_funcs file
+    (save_global_vars_and_funcs file
      *> add_main_goroutine file
      *> run_ready_goroutines eval_stmt)
     init_state

@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -51,7 +51,8 @@ let%expect_test "ok: single main" =
     }
     |};
   [%expect {|
-    Runtime error: No goroutine running |}]
+    Correct evaluating
+    3 |}]
 ;;
 
 let%expect_test "ok: single long_var_init" =
@@ -278,7 +279,6 @@ let%expect_test "ok: nested if decl" =
             i = i + 1
         }
         for j := 0; j < 3; j++ {
-            
             println(j)
         }
         for {
@@ -616,7 +616,6 @@ func f() {
         defer println("Defer in g ", i)
         println("Printing in g ", i)
         g(i + 1)
-        
     }
     |};
   [%expect
@@ -871,7 +870,7 @@ let%expect_test "err: receiver without sender" =
   [%expect {| Runtime error: No goroutine running |}]
 ;;
 
-(* let%expect_test "ok: two goroutines sending to the same chanel before value received" =
+let%expect_test "ok: two goroutines sending to the same chanel before value received" =
   pp
     {|
     func main2(c chan int) {
@@ -886,7 +885,7 @@ let%expect_test "err: receiver without sender" =
 
     func main() {
       c := make(chan int)
-      
+
       go main2(c)
       go main3(c)
 
@@ -895,10 +894,18 @@ let%expect_test "err: receiver without sender" =
       println("go1: value 1 sent successfully")
     }
     |};
-  [%expect {| |}]
-;; *)
+  [%expect
+    {|
+    Correct evaluating
 
-(* let%expect_test "ok: synchronised printing" =
+    go1: sending value 1
+    go2: sending value 2
+    go3: received value: 1
+    go1: value 1 sent successfully |}]
+;;
+
+(* ОШИБКА *)
+let%expect_test "ok: synchronised printing in for loop" =
   pp
     {|
     var c = make(chan int)
@@ -906,20 +913,29 @@ let%expect_test "err: receiver without sender" =
     var a = 0
 
     func main2() {
-      <-c
-      a++
-      println("second: ", a)
-      c <- 0
+      for a < 5 {
+        <-c
+        a++
+        println("go2: ", a)
+        c <- 0
+      }
     }
 
     func main() {
       go main2()
 
-      c <- 0
-      a++
-      println("first: ", a)
-      <-c
+      for a < 5 {
+        c <- 0
+        a++
+        println("go1: ", a)
+        <-c
+      }
     }
     |};
-  [%expect {| Runtime error: No goroutine running |}]
-;; *)
+  [%expect
+    {|
+    Runtime error: Deadlock: trying to leave sending state while not in sending state
+
+    go2: 1
+    go1: 2 |}]
+;;

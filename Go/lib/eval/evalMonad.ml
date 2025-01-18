@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -10,13 +10,24 @@ module Ident = struct
   let compare = compare
 end
 
-module MapIdent = Map.Make (Ident)
+module MapIdent = struct
+  include Map.Make (Ident)
+end
 
 type nil = Nil
 
 type chan_value =
   | Chan_initialized of int (** Initialized chanel, identified by id *)
   | Chan_uninitialized of nil
+
+type builtin =
+  | Print
+  | Println
+  | Make
+  | Close
+  | Recover
+  | Len
+  | Panic
 
 type value =
   | Value_int of int
@@ -27,15 +38,6 @@ type value =
   | Value_chan of chan_value
   | Value_tuple of value list
   | Value_nil of nil
-
-and builtin =
-  | Print
-  | Println
-  | Make
-  | Close
-  | Recover
-  | Len
-  | Panic
 
 and func_type =
   | Closure of value MapIdent.t
@@ -139,21 +141,7 @@ module Monad = struct
     | { global_env } -> return global_env
   ;;
 
-  let write_global new_global =
-    read
-    >>= function
-    | { running; ready; sending; receiving; chanels; is_using_chanel; next_go_id } ->
-      write
-        { global_env = new_global
-        ; running
-        ; ready
-        ; sending
-        ; receiving
-        ; chanels
-        ; is_using_chanel
-        ; next_go_id
-        }
-  ;;
+  let write_global global_env = read >>= fun state -> write { state with global_env }
 
   let save_global_id ident value =
     let* global = read_global in
@@ -175,21 +163,7 @@ module Monad = struct
     | { running = None } -> fail (Runtime_error (DevOnly No_goroutine_running))
   ;;
 
-  let write_running new_goroutine =
-    read
-    >>= function
-    | { global_env; ready; sending; receiving; chanels; is_using_chanel; next_go_id } ->
-      write
-        { global_env
-        ; ready
-        ; sending
-        ; receiving
-        ; chanels
-        ; is_using_chanel
-        ; next_go_id
-        ; running = new_goroutine
-        }
-  ;;
+  let write_running running = read >>= fun state -> write { state with running }
 
   let read_ready =
     read
@@ -197,21 +171,7 @@ module Monad = struct
     | { ready } -> return ready
   ;;
 
-  let write_ready ready =
-    read
-    >>= function
-    | { global_env; running; chanels; is_using_chanel; sending; receiving; next_go_id } ->
-      write
-        { global_env
-        ; running
-        ; chanels
-        ; is_using_chanel
-        ; sending
-        ; receiving
-        ; next_go_id
-        ; ready
-        }
-  ;;
+  let write_ready ready = read >>= fun state -> write { state with ready }
 
   let add_ready goroutine =
     let* goroutines = read_ready in
@@ -241,21 +201,7 @@ module Monad = struct
     | { sending } -> return sending
   ;;
 
-  let write_sending sending =
-    read
-    >>= function
-    | { global_env; running; chanels; is_using_chanel; ready; receiving; next_go_id } ->
-      write
-        { global_env
-        ; running
-        ; chanels
-        ; is_using_chanel
-        ; ready
-        ; receiving
-        ; next_go_id
-        ; sending
-        }
-  ;;
+  let write_sending sending = read >>= fun state -> write { state with sending }
 
   let push_to_send_queue id goroutine value =
     let* sending = read_sending in
@@ -313,21 +259,7 @@ module Monad = struct
     | { receiving } -> return receiving
   ;;
 
-  let write_receiving receiving =
-    read
-    >>= function
-    | { global_env; running; chanels; is_using_chanel; ready; sending; next_go_id } ->
-      write
-        { global_env
-        ; running
-        ; chanels
-        ; is_using_chanel
-        ; ready
-        ; sending
-        ; next_go_id
-        ; receiving
-        }
-  ;;
+  let write_receiving receiving = read >>= fun state -> write { state with receiving }
 
   let push_to_receive_queue id goroutine =
     let* receiving = read_receiving in
@@ -393,21 +325,7 @@ module Monad = struct
     | { next_go_id } -> return next_go_id
   ;;
 
-  let write_next_go_id next_go_id =
-    read
-    >>= function
-    | { global_env; running; chanels; is_using_chanel; ready; sending; receiving } ->
-      write
-        { global_env
-        ; running
-        ; chanels
-        ; is_using_chanel
-        ; ready
-        ; sending
-        ; next_go_id
-        ; receiving
-        }
-  ;;
+  let write_next_go_id next_go_id = read >>= fun state -> write { state with next_go_id }
 
   let create_goroutine stack_frame =
     let* go_id = read_next_go_id in
@@ -439,21 +357,7 @@ module Monad = struct
     | { chanels } -> return chanels
   ;;
 
-  let write_chanels new_chanels =
-    read
-    >>= function
-    | { global_env; running; ready; sending; receiving; is_using_chanel; next_go_id } ->
-      write
-        { global_env
-        ; running
-        ; ready
-        ; sending
-        ; receiving
-        ; is_using_chanel
-        ; chanels = new_chanels
-        ; next_go_id
-        }
-  ;;
+  let write_chanels chanels = read >>= fun state -> write { state with chanels }
 
   let find_chanel_fail = function
     | Chan_uninitialized Nil ->
@@ -526,9 +430,9 @@ module Monad = struct
     with
     | Some { chan_id; value = Some v } ->
       write_chanels
-        ( ChanSet.add
-            { chan_id; value = None }
-            (ChanSet.remove { chan_id; value = Some v } chanels)
+        ( chanels
+          |> ChanSet.remove { chan_id; value = Some v }
+          |> ChanSet.add { chan_id; value = None }
         , next_id )
       *> return v
     | _ ->
@@ -539,73 +443,36 @@ module Monad = struct
 
   (* sending state *)
 
-  let start_using_chanel sending_goroutine receiving_goroutine value =
+  let read_is_using_chanel =
     read
     >>= function
-    | { running
-      ; ready
-      ; sending
-      ; receiving
-      ; chanels
-      ; global_env
-      ; is_using_chanel
-      ; next_go_id
-      } ->
-      (match is_using_chanel with
-       | Some _ ->
-         fail
-           (Runtime_error
-              (Deadlock "trying to enter sending state while in sending state"))
-       | None ->
-         write
-           { running
-           ; ready
-           ; sending
-           ; receiving
-           ; chanels
-           ; global_env
-           ; next_go_id
-           ; is_using_chanel = Some { receiving_goroutine; sending_goroutine; value }
-           })
+    | { is_using_chanel } -> return is_using_chanel
+  ;;
+
+  let write_is_using_chanel is_using_chanel =
+    read >>= fun state -> write { state with is_using_chanel }
+  ;;
+
+  let start_using_chanel sending_goroutine receiving_goroutine value =
+    read_is_using_chanel
+    >>= function
+    | Some _ -> fail (Runtime_error (Deadlock "trying to use chanel which is still used"))
+    | None ->
+      write_is_using_chanel (Some { receiving_goroutine; sending_goroutine; value })
   ;;
 
   let use_chanel =
-    read
+    read_is_using_chanel
     >>= function
-    | { running
-      ; ready
-      ; sending
-      ; receiving
-      ; chanels
-      ; global_env
-      ; is_using_chanel
-      ; next_go_id
-      } ->
-      (match is_using_chanel with
-       | Some { receiving_goroutine; value } ->
-         write
-           { running
-           ; ready
-           ; sending
-           ; receiving
-           ; chanels
-           ; global_env
-           ; next_go_id
-           ; is_using_chanel = None
-           }
-         *> return (receiving_goroutine, value)
-       | None ->
-         fail
-           (Runtime_error
-              (Deadlock "trying to leave sending state while not in sending state")))
+    | Some { receiving_goroutine; value } ->
+      write_is_using_chanel None *> return (receiving_goroutine, value)
+    | None ->
+      fail
+        (Runtime_error
+           (Deadlock "trying to leave sending state while not in sending state"))
   ;;
 
-  let is_using_chanel =
-    read
-    >>= function
-    | { is_using_chanel = Some chan_using_state } -> return (Some chan_using_state)
-    | { is_using_chanel = None } -> return None
-  ;;
+  let is_using_chanel = read_is_using_chanel
 
   (* single goroutine's stack *)
 
@@ -695,11 +562,7 @@ module Monad = struct
              | None ->
                (match MapIdent.mem ident env.var_map with
                 | true ->
-                  { exec_block = env.exec_block
-                  ; var_map = MapIdent.add ident value env.var_map
-                  ; env_type = env.env_type
-                  }
-                  :: lst
+                  { env with var_map = MapIdent.add ident value env.var_map } :: lst
                 | false -> env :: lst))
            []
            (hd :: tl))
