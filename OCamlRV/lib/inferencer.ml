@@ -275,6 +275,9 @@ let infer_non_rec_binding_list env (bl : binding list) =
           let* sub = Subst.unify t1 t2 in
           let env = TypeEnv.apply sub env in
           return env
+        | PAny ->
+          let* _, _ = infer_expression env e in
+          return env
         | _ -> fail `Not_implemented)
       ~init:(return env)
       bl
@@ -300,12 +303,6 @@ let infer_rec_binding_list env (bl : binding list) =
           let t2 = Subst.apply s3 t1 in
           let sc = generalize_rec env t2 x in
           let env = TypeEnv.extend env x sc in
-          return env
-        | PConstant CUnit ->
-          let* _, t1 = infer_pattern env p in
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t1 t2 in
-          let env = TypeEnv.apply sub env in
           return env
         | _ -> fail `LeftHS)
       ~init:(return env)
