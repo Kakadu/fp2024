@@ -264,7 +264,7 @@ let%expect_test _ =
   [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;
 
-(* let%expect_test _ =
+let%expect_test _ =
   let _ =
     infer_program_test
       {|
@@ -301,9 +301,9 @@ let be = { nomerraz = { aa = 4; bb = true}; nomerdva = {aa = 10} }
   |}
   in
   [%expect {| val x : int |}]
-;; *)
+;;
 
-(*
+
    type person = {
     name : string;
     age : int;
@@ -316,4 +316,4 @@ let be = { nomerraz = { aa = 4; bb = true}; nomerdva = {aa = 10} }
   type mraz = {nomerraz: t; nomerdva: d}
   type inner = { x: int }
   type outer = { x: string; inner: inner }
-*)
+
