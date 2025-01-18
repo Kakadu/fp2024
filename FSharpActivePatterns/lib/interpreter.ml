@@ -184,38 +184,6 @@ let check_act_pat_correctness env name =
   | None -> fail (`Unbound_variable name)
 ;;
 
-let rec match_pattern env =
-  let match_pattern_list env pl vl =
-    Base.List.fold2_exn
-      ~init:(return env)
-      ~f:(fun acc pat value ->
-        let* acc = acc in
-        match_pattern acc (pat, value))
-      pl
-      vl
-  in
-  function
-  | Wild, _ -> return env
-  | PList pl, VList vl when List.length pl = List.length vl ->
-    match_pattern_list env pl vl
-  | PCons (hd, tl), VList (vhd :: vtl) ->
-    match_pattern_list env [ hd; tl ] [ vhd; VList vtl ]
-  | PTuple (pfst, psnd, prest), VTuple (vfst, vsnd, vrest) ->
-    match_pattern_list env (pfst :: psnd :: prest) (vfst :: vsnd :: vrest)
-  | PConst (Int_lt p), VInt v when p = v -> return env
-  | PConst (Bool_lt p), VBool v when p = v -> return env
-  | PConst (String_lt p), VString v when p = v -> return env
-  | PConst Unit_lt, VUnit -> return env
-  | PVar (Ident name), v ->
-    (*let _ = Format.fprintf Format.std_formatter "INSIDE VAR %s \n" name in*)
-    return (ValueEnv.extend env name v)
-  | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
-  | POption None, VOption None -> return env
-  | PConstraint (p, _), v -> match_pattern env (p, v)
-  | PActive (_, p), v -> match_pattern env (p, v)
-  | _ -> fail `Match_failure
-;;
-
 let rec eval_binequal =
   let eval_binequal_list l1 l2 =
     Base.List.fold2_exn
@@ -266,7 +234,54 @@ let eval_binexpr op v1 v2 =
   | _ -> fail `Type_mismatch
 ;;
 
-let rec eval_expr env = function
+let rec match_pattern env =
+  let match_pattern_list env pl vl =
+    Base.List.fold2_exn
+      ~init:(return env)
+      ~f:(fun acc pat value ->
+        let* acc = acc in
+        match_pattern acc (pat, value))
+      pl
+      vl
+  in
+  function
+  | Wild, _ -> return env
+  | PList pl, VList vl when List.length pl = List.length vl ->
+    match_pattern_list env pl vl
+  | PCons (hd, tl), VList (vhd :: vtl) ->
+    match_pattern_list env [ hd; tl ] [ vhd; VList vtl ]
+  | PTuple (pfst, psnd, prest), VTuple (vfst, vsnd, vrest) ->
+    match_pattern_list env (pfst :: psnd :: prest) (vfst :: vsnd :: vrest)
+  | PConst (Int_lt p), VInt v when p = v -> return env
+  | PConst (Bool_lt p), VBool v when p = v -> return env
+  | PConst (String_lt p), VString v when p = v -> return env
+  | PConst Unit_lt, VUnit -> return env
+  | PVar (Ident name), v -> return (ValueEnv.extend env name v)
+  | POption (Some p), VOption (Some v) -> match_pattern env (p, v)
+  | POption None, VOption None -> return env
+  | PConstraint (p, _), v -> match_pattern env (p, v)
+  | PActive (Ident(name), p), v -> 
+    (* find func that contains variant in case *)
+    let act_pat_def = ValueEnv.find env name in
+    (match act_pat_def with
+    | Some VFun (arg, args, body, f_env) -> 
+      (* match arg of func and match hat, if correct, eval func into value *)
+      let* f_env = match_pattern f_env (arg, v) in
+      let* value_after_pattern_applying = (match args with
+        | [] ->
+          let env = ValueEnv.set_many env f_env in
+          eval_expr env body
+        | arg1 :: args -> return (VFun (arg1, args, body, f_env))) in
+      (* match pattern in case (p) and value *)
+        (match value_after_pattern_applying with
+        | VActPatCase (_, value) -> 
+          match_pattern env (p, value)
+        | _ -> fail `Type_mismatch)
+    | _ -> fail `Type_mismatch
+    ) 
+  | _ -> fail `Match_failure
+
+and eval_expr env = function
   | Const c ->
     (match c with
      | Unit_lt -> return VUnit
