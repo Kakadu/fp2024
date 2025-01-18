@@ -185,24 +185,24 @@ type opts =
   }
 
 let run_single options =
-  <span data-count="20">l</span>et text =
+  <span data-count="25">l</span>et text =
     if options.read_from_file
-    then <span data-count="20">(</span>
-      try Stdlib.String.tri<span data-count="20">m</span> (Stdio.In_channel.read_al<span data-count="20">l</span> options.filename) with
+    then <span data-count="25">(</span>
+      try Stdlib.String.tri<span data-count="25">m</span> (Stdio.In_channel.read_al<span data-count="25">l</span> options.filename) with
       | <span data-count="0">S</span>ys_error e -&gt;
         Stdlib.Format.printf "%s\n" e;
         <span data-count="0">S</span>tdlib.exi<span data-count="0">t</span> 1)
     else <span data-count="0">S</span>tdlib.String.tri<span data-count="0">m</span> (In_channel.input_al<span data-count="0">l</span> stdin)
   in
   if options.dump_parsetree then <span data-count="0">S</span>tdlib.Format.print<span data-count="0">f</span> "%s\n\n" (parse_to_strin<span data-count="0">g</span> text);
-  <span data-count="20">i</span>f options.inference then <span data-count="6">r</span>un_inference<span data-count="6">r</span> text;
-  <span data-count="20">i</span>f options.interpret then <span data-count="14">r</span>un_interpreter text ~debug:options.debug else <span data-count="6">(</span>)
+  <span data-count="25">i</span>f options.inference then <span data-count="11">r</span>un_inference<span data-count="11">r</span> text;
+  <span data-count="25">i</span>f options.interpret then <span data-count="14">r</span>un_interpreter text ~debug:options.debug else <span data-count="11">(</span>)
 ;;
 
 let () =
-  if Array.lengt<span data-count="20">h</span> Sys.argv = 1
+  if Array.lengt<span data-count="25">h</span> Sys.argv = 1
   then <span data-count="0">(</span>)
-  else <span data-count="20">(</span>
+  else <span data-count="25">(</span>
     let opts =
       { dump_parsetree = false
       ; interpret = false
@@ -214,22 +214,22 @@ let () =
     in
     let () =
       let open Stdlib.Arg in
-      pars<span data-count="20">e</span>
+      pars<span data-count="25">e</span>
         [ "-dparsetree", Unit (fun () -&gt; <span data-count="0">o</span>pts.dump_parsetree &lt;- true), "Dump parse tree."
         ; "-interpret", Unit (fun () -&gt; <span data-count="14">o</span>pts.interpret &lt;- true), "Interpret code."
-        ; "-inference", Unit (fun () -&gt; <span data-count="6">o</span>pts.inference &lt;- true), "Inference code."
+        ; "-inference", Unit (fun () -&gt; <span data-count="11">o</span>pts.inference &lt;- true), "Inference code."
         ; "-debug", Unit (fun () -&gt; <span data-count="0">o</span>pts.debug &lt;- true), "Debug mode."
         ]
         (fun filename -&gt;
-          <span data-count="20">i</span>f opts.read_from_file
+          <span data-count="25">i</span>f opts.read_from_file
           then <span data-count="0">(</span>
             Stdlib.Format.printf "It can handle only one input file.\n";
             <span data-count="0">S</span>tdlib.exi<span data-count="0">t</span> 1);
-          <span data-count="20">o</span>pts.read_from_file &lt;- true;
+          <span data-count="25">o</span>pts.read_from_file &lt;- true;
           opts.filename &lt;- filename)
         "Runner for OCamlRV"
     in
-    run_singl<span data-count="20">e</span> opts)
+    run_singl<span data-count="25">e</span> opts)
 ;;
 </code></pre>
       </div>

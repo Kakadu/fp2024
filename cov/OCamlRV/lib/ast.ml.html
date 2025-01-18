@@ -380,17 +380,17 @@
 
 let gen_char =
   let open QCheck.Gen in
-  ma<span data-count="26">p</span> Char.chr (int_rang<span data-count="26">e</span> (Char.cod<span data-count="26">e</span> 'a') (Char.cod<span data-count="26">e</span> 'z'))
+  ma<span data-count="31">p</span> Char.chr (int_rang<span data-count="31">e</span> (Char.cod<span data-count="31">e</span> 'a') (Char.cod<span data-count="31">e</span> 'z'))
 ;;
 
 let gen_identifier =
   let open QCheck.Gen in
-  string_siz<span data-count="26">e</span> (int_rang<span data-count="26">e</span> 1 8) ~gen:gen_char
+  string_siz<span data-count="31">e</span> (int_rang<span data-count="31">e</span> 1 8) ~gen:gen_char
 ;;
 
 let gen_string =
   let open QCheck.Gen in
-  string_siz<span data-count="26">e</span> (int_rang<span data-count="26">e</span> 0 32) ~gen:gen_char
+  string_siz<span data-count="31">e</span> (int_rang<span data-count="31">e</span> 0 32) ~gen:gen_char
 ;;
 
 let div = 15
@@ -408,26 +408,26 @@ let div = 15
   | Gte (** &gt;= *)
   | And (** &amp;&amp; *)
   | Or (** || *)
-[@@deriving show { with_path = false }, qcheck<span data-count="364">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="434">]</span>
 
 <span data-count="0">t</span>ype unary_operator =
   | UnaryPlus (** + *)
   | UnaryMinus (** - *)
   | UnaryNeg (** not *)
-[@@deriving show { with_path = false }, qcheck<span data-count="130">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="155">]</span>
 
 <span data-count="0">t</span>ype rec_flag =
   | NonRec (** let a *)
   | Rec (** let rec a *)
-[@@deriving show { with_path = false }, qcheck<span data-count="104">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="124">]</span>
 
 <span data-count="108">t</span>ype constant =
-  | CInt of (in<span data-count="34">t</span>[@gen QCheck.Gen.int_rang<span data-count="26">e</span> 0 1000])
+  | CInt of (in<span data-count="34">t</span>[@gen QCheck.Gen.int_rang<span data-count="31">e</span> 0 1000])
   | CBool of boo<span data-count="3">l</span>
   | CString of (strin<span data-count="9">g</span>[@gen gen_string])
   | CUnit
   | CNil
-[@@deriving show { with_path = false }, qcheck<span data-count="182">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="217">]</span>
 
 <span data-count="0">t</span>ype fresh = <span data-count="0">i</span>nt [@@deriving show { with_path = false }]
 
@@ -441,7 +441,7 @@ let div = 15
   | AList of type_annot
   | ATuple of <span data-count="0">t</span>ype_annot lis<span data-count="0">t</span>
   | AOption of type_annot
-[@@deriving show { with_path = false }, qcheck<span data-count="52">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="62">]</span>
 
 <span data-count="88416">t</span>ype pattern =
   | PAny (** _ *)
@@ -460,7 +460,7 @@ let div = 15
         [@gen QCheck.Gen.(list_siz<span data-count="1">e</span> small_nat (gen_pattern_size<span data-count="1">d</span> (n / div)))])
   | POption of <span data-count="8">p</span>attern option
   | PType of pattern * type_annot
-[@@deriving show { with_path = false }, qcheck<span data-count="132510">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="132520">]</span>
 
 <span data-count="366008">t</span>ype expression =
   | ExprVariable of identifier (** x | y | z*)
@@ -505,7 +505,7 @@ let div = 15
 
 (** Used in `let` expression*)
 <span data-count="0">a</span>nd binding = <span data-count="42">(</span>pattern[@gen gen_pattern_size<span data-count="12613">d</span> (n / div)]) * expression
-[@@deriving show { with_path = false }, qcheck<span data-count="706640">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="706730">]</span>
 
 let gen_expression =
   QCheck.Gen.(
@@ -530,13 +530,13 @@ let gen_binding =
   | SValue of
       rec_flag
       * binding
-      * (<span data-count="63">b</span>inding lis<span data-count="42">t</span>[@gen QCheck.Gen.(list_siz<span data-count="26">e</span> (0 -<span data-count="26">-</span> 2) gen_binding)])
+      * (<span data-count="63">b</span>inding lis<span data-count="42">t</span>[@gen QCheck.Gen.(list_siz<span data-count="31">e</span> (0 -<span data-count="31">-</span> 2) gen_binding)])
   (** [SValue(rec_flag, (p_1, e_1), [(p_2, e_2) ; ... ; (p_n, e_n)])] *)
-[@@deriving show { with_path = false }, qcheck<span data-count="130">]</span>
+[@@deriving show { with_path = false }, qcheck<span data-count="155">]</span>
 
 <span data-count="30">t</span>ype structure =
-  (<span data-count="150">s</span>tructure_item lis<span data-count="30">t</span>[@gen QCheck.Gen.(list_siz<span data-count="26">e</span> (1 -<span data-count="26">-</span> 2) gen_structure_item)])
-[@@deriving show { with_path = false }, qcheck<span data-count="26">]</span>
+  (<span data-count="150">s</span>tructure_item lis<span data-count="30">t</span>[@gen QCheck.Gen.(list_siz<span data-count="31">e</span> (1 -<span data-count="31">-</span> 2) gen_structure_item)])
+[@@deriving show { with_path = false }, qcheck<span data-count="31">]</span>
 </code></pre>
       </div>
     </div>

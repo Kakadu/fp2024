@@ -683,23 +683,23 @@ let pp_unop ppf = function
 
 let pp_annot =
   let rec helper ppf = function
-    | <span data-count="49">A</span>Int -&gt; fprintf ppf "int"
+    | <span data-count="53">A</span>Int -&gt; fprintf ppf "int"
     | <span data-count="9">A</span>Bool -&gt; fprintf ppf "bool"
-    | <span data-count="11">A</span>String -&gt; fprintf ppf "string"
-    | <span data-count="5">A</span>Unit -&gt; fprintf ppf "unit"
-    | <span data-count="5">A</span>Var n -&gt; fprintf ppf "'%d" n
-    | <span data-count="12">A</span>Fun (l, r) -&gt;
+    | <span data-count="12">A</span>String -&gt; fprintf ppf "string"
+    | <span data-count="6">A</span>Unit -&gt; fprintf ppf "unit"
+    | <span data-count="12">A</span>Var n -&gt; fprintf ppf "'%d" n
+    | <span data-count="14">A</span>Fun (l, r) -&gt;
       (match l with
        | <span data-count="0">A</span>Fun _ -&gt; fprintf ppf "(%a) -&gt; %a" helper l helper r
-       | <span data-count="12">_</span> -&gt; fprintf ppf "%a -&gt; %a" helper l helper r)
-    | <span data-count="12">A</span>List t -&gt; fprintf ppf "%a list" helper t
-    | <span data-count="3">A</span>Tuple l -&gt;
+       | <span data-count="14">_</span> -&gt; fprintf ppf "%a -&gt; %a" helper l helper r)
+    | <span data-count="13">A</span>List t -&gt; fprintf ppf "%a list" helper t
+    | <span data-count="5">A</span>Tuple l -&gt;
       let rec pp_tuple ppf = function
         | <span data-count="0">[</span>] -&gt; ()
-        | <span data-count="3">[</span> x ] -&gt; fprintf ppf "%a" helper x
-        | <span data-count="5">x</span> :: xs -&gt;
+        | <span data-count="5">[</span> x ] -&gt; fprintf ppf "%a" helper x
+        | <span data-count="8">x</span> :: xs -&gt;
           fprintf ppf "%a * " helper x;
-          <span data-count="5">p</span>p_tuple ppf xs
+          <span data-count="8">p</span>p_tuple ppf xs
       in
       fprintf ppf "%a" pp_tuple l
     | <span data-count="1">A</span>Option op -&gt; fprintf ppf "%a option" helper op
