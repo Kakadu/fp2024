@@ -23,6 +23,7 @@ type error =
   | `Not_allowed_left_hand_side_let_rec
   | `Args_after_not_variable_let
   | `Bound_several_times
+  | `Not_choice_in_act_pat
   ]
 
 val pp_error : formatter -> error -> unit

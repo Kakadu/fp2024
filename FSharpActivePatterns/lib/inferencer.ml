@@ -17,6 +17,7 @@ module InferenceError = struct
     | `Not_allowed_left_hand_side_let_rec
     | `Args_after_not_variable_let
     | `Bound_several_times
+    | `Not_choice_in_act_pat
     ]
 
   let bound_error = `Bound_several_times
@@ -33,6 +34,7 @@ module InferenceError = struct
     | `Args_after_not_variable_let ->
       fprintf fmt "Arguments in let allowed only after variable"
     | `Bound_several_times -> fprintf fmt "Variable is bound several times"
+    | `Not_choice_in_act_pat -> fprintf fmt "All variants of active patterns must appear in definition of multi-variant active pattern"
   ;;
 end
 
@@ -905,6 +907,15 @@ let update_pat_types_with_expr_type arg_types names_with_types_list =
     name, new_type)
 ;;
 
+(*let check_pat_variants_presence expected_variants expr_type =
+  match List.length expected_variants with
+  | 1 -> return expr_type
+  | _ -> 
+    match expr_type with
+    | Choice 
+    | _ -> fail (`Not_choice_in_act_pat)
+;;*)
+
 let infer_statement env = function
   | Let (rec_flag, let_bind, let_binds) ->
     let let_binds = let_bind :: let_binds in
@@ -965,9 +976,12 @@ let infer_statement env = function
     (* delete args from context *)
     let* arg_names = extract_names_from_patterns args >>| elements in
     let env = TypeEnv.remove_many env arg_names in
+
+    (* form result map for printing *)
     let result_name = String.concat ~sep:"" variant_names ^ "Choice" in
     let new_res_map = Map.empty (module String) in
     let new_res_map = Map.set new_res_map ~key:result_name ~data:apat_type in
+
     let names_schemes_list =
       List.map updated_variants_w_types_list ~f:(fun (name, name_type) ->
         name, generalize env name_type)
