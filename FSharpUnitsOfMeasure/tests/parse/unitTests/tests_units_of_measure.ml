@@ -16,7 +16,8 @@ let%expect_test "parse int as measure number int" =
 
 let%expect_test "parse float as measure number float" =
   pp pp_measure_num pm_num {|1.0f|};
-  [%expect {| (Mnum_float 1.) |}]
+  [%expect {|
+    (Mnum_float 1.) |}]
 ;;
 
 (************************** Measure powers **************************)

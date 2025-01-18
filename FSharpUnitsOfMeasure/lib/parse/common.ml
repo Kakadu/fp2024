@@ -135,8 +135,8 @@ let parse_float =
 
 (* Parses signed floats. Used for patterns.
    Floats can be in following forms:
-   [0-9]+ . [0-9]* [f|F]
-   [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
+   (+|-)? [0-9]+ . [0-9]* [f|F]
+   (+|-)? [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
 let parse_sfloat =
   let* sign = option "" (skip_ws *> string "-" <* skip_ws) in
   let* float = parse_float in

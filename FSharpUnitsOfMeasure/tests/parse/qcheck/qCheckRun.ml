@@ -11,10 +11,9 @@ let parse parser str = Angstrom.parse_string ~consume:Angstrom.Consume.All parse
 
 let print_prog_with_ast prog =
   asprintf
-    "AST:\n\n%s\n\nPprinted:\n\n%s\n\nParsed:\n\n%s\n\n"
+    "AST:\n\n%s\n\nPprinted:\n\n%s\n\n"
     (show_program prog)
     (pprint_program prog)
-    (Result.get_error (parse parse_program (pprint_program prog)))
 ;;
 
 let arbitrary_program n =

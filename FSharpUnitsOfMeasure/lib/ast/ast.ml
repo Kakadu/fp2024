@@ -20,9 +20,10 @@ let gen_ident =
     let* rest = string_size ~gen:gen_id_char range in
     return (fst ^ rest)
   in
-  gen_name
-  >>= fun name ->
-  if is_keyword name || is_builtin_type name then gen_name else return name
+  let rec loop gen =
+    gen >>= fun name -> if not (is_keyword name) then return name else loop gen
+  in
+  loop gen_name
 ;;
 
 let gen_type_ident =
@@ -205,7 +206,7 @@ let gen_structure_item n =
   in
   frequency
     [ (1, gen_expression_sized (n / 2) >|= fun e -> Str_item_eval e)
-    ; 1, gen_str_item_def_sized (n / 2)
+    ; 1, gen_str_item_def_sized (n / 2) (* ; 1, gen_str_item_type_def *)
     ]
 ;;
 

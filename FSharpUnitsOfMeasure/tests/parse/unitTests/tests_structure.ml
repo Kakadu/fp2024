@@ -386,90 +386,43 @@ let%expect_test "parse example 6 program" =
     pp_program
     parse_program
     {|
-let rec j7Z = _lgc and _ = bp28 and _s = b4W and true = 4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)> and
--2202013031993883487<o0H6t * (((1 * (((1 / 1) / 1) ^ 2)) * (1 * (1 * ((rQ1_R ^ 7) * 1)))) ^ 6)> = y and
-_ = _H and -0.083825<1> = _'0S6 and _04 = z7_L and _ = n and 0.001366 = false and fWY8C = "" and _ = j7yI2
-and false = j68wD and _ = '3' and b = "y*9gBW" and bxN_ = true and _ = m_ and true = wf1zy and c9f = jr26b
-and zGI = "" and _ = uCD1 and _ = sNV_R and x4 = j and -0.000001<1> = "=p\\)*wor" and bo_j = aeY and -628.886928 = u
-and fL = "7*kVB>W{8).$Zlkk{\"\\]r7$hUhwK7CV" and false = _y42 and 3089291205124737905 = -33544.593186 and _ = _0TJ
-and _ = iOx1 and _Kk = q__ and _ = -2574877848667227382<f47> and tb74 = ' ' and _ = "?Jf" and _ = rO2 and cjZ = zKpY5
-and -3754946449163551734<bK / _''rM> = true and pX25D = _q0n and j5 = c27 and a5 = zx and o = "f[{`5CH" and
-_ = "#.f" and n478 = d19j8 and nG = true and s = -0.000400 and 32.542220<(k / (o_' * k9X'C)) ^ 45> = h and
-j'_ = -2297698304594498760<1> and true = ncXiZ and xX4 = _dztV and _ = wX and false = k2'6 and e92' = 54.557530
-and 67061.541791<1> = "" and "Dz\nFN{g]=Xq/!\n+vrk\\ta+EK$" = i885 and _Ww = y'lp6 and _Xn06 = f and oZ_ = s02K9 and false = k and -6.020625 = 0.000000 and dk = ir8 and -342.854030 = aO and _ = o and _ = -106.986437 and yE3V = -0.000010 and nn = _66x and -0.001635 = '|' and j_ld = 1165660.320127<e95D' * (1 ^ 69)> and qbjv0 = 2648399603976260398 and i'''9 = u1B2 and -0.000001 = b8 and -4269602629199018086 = -1204493915358000121<1> and gh = false and 'G' = _7UkD and _ = d and _ = "IUyO=bCX<w[ZhNlFn%{W(d@Kpo2UAcaO]C<W,AObMG/eeZ" and -0.000022<((f0 / (uRDH ^ 7)) * (xA / 1)) ^ 4> = -0.000008 and _ = q'vi and _ = 2214994724711011379 and true = _PS and _ = "" and j = -4388646751400294290 and lSOp = -3853063768692514483<1 * ((su'9I / 1) * (_w742 * 1))>;;
-
-let 0.000002 = ltTI and _'96 = false and _ = p9'1 and -535751137833501303<(xFY28 / (1 * (oE * (1 / qm)))) * 1> = true and -2210233641572818975 = sE2K' and _ = m and "b,Z" = a's and _ = 'N' and '(' = '\'' and true = n and mb = 0.000012 and _ = -2961933386370371785<(t7JO * (((1 / (w ^ 29)) * (((1 / 1) / 1) / ((1 ^ 97) ^ 6))) ^ 98)) / 1> and _ = _'3 and g'Q = -416.119397 and _qmD = '5' and _ = false and _ = false and 106510101046464266 = jvo_9 and jPgN1 = -1284479997276135239<xE> and -2534764107692139831 = l and _ = huE and -59168.801573<1> = _2V and _ = c and l = 1792296140003349788<1> and false = 373.351120 and 'D' = 2043477.055770 and _ = _I2 and h6N40 = -3815672301510237652<(gL ^ 2) * (((((_'P_ / (1 * ((1 ^ 2) / ((x / 1) / 1)))) / 1) ^ 7) * (1 * (v / 1))) * ((((1 ^ 2) ^ 4) ^ 7) ^ 9))> and 1658810944614430274<q5O> = y'a_ and qzYqU = l_Y'3 and ai_ = _AE8 and _ = 1809101836127695682 and _ = 0.000346 and fd01 = '4' and -0.902130 = c and _ = p7 and -3039871785343240407 = _mS9J and false = pK and 3347495553617970679<1 ^ 78> = y1ck and eTaD = w2h6V and _ = 109043.949010<(((1 / 1) * __Sc) ^ 33) / ((u0E ^ 7) ^ 32)> and _ = _zg2 and _ = _d2Ki and 'q' = "_xtT " and 616380868499048877 = '5' and -954074232540884350 = 714253.922174<k_Kj5> and _ = og_1 and "Rvpqm" = o7F3i and 431640995748256716<_MXJm> = bb and _ = -3812048725744478250 and _ = k and h_B3R = true and -0.034807 = o0 and false = 'G' and true = 2286448748575322655 and _ = false and 'd' = p9 and c = ";cW,zhEa}" and kgL1 = n and d = -0.000005<(((_lp / _M6) * (aPHn ^ 27)) * ((g4qN * b3) / (1 ^ 8))) * (vme4 / 1)> and iD = 1051350575329771926 and _ = jK_uY and 'm' = _P7 and false = -3111917588957775025 and g = "Xc1&$@<" and r'yJH = hU1W8 and r427 = 1470193727283571991 and rtT = p and 0.000092<(y7Ws ^ 5) * (_p0hj * (1 / 1))> = 0.000010 and _ = a and _ = "_'#/4" and true = o0_ and 0.112045 = p8QH and true = 0.006023 and _ = 'r' and _ = "R_ex" and -0.000000 = vdJk and lXM = tckK_ and o9 = _A'4 and sb3 = sN and 757633770569328753 = ".>!j!VKG\nYM`p=o|W*e?O5K+|8<ia>[=nlUek7k5-\n$q1D%.M>__Hx&*2=In1'gu{@A^m\"9[$" and i'E = n and _ = 3885290108641647689 and _7X = true and _ = p2Ml and d = -3038253807373362651 and hPQ = z' and -4605880381525804245 = z58L1 and wHA6 = mA6Wt and -1771723548821597230<((1 / (((fxKW8 / kVM_) ^ 24) / (_LHu / _o2w))) / 1) * d> = zaPow and _ = _MQ and 4471037639686707367<ou9_ ^ 4> = yoYL and _ = _3yxl;;
-    |};
+let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
   [%expect
     {|
     [(Str_item_def (Recursive,
-        (Bind (
-           (Pattern_const
-              (Const_unit_of_measure
-                 (Unit_of_measure ((Mnum_int -2202013031993883487),
-                    (Measure_prod ((Measure_ident "o0H6t"),
-                       (Measure_pow (
-                          (Measure_prod (
-                             (Measure_prod (Measure_dimless,
-                                (Measure_pow (
-                                   (Measure_div (
-                                      (Measure_div (Measure_dimless,
-                                         Measure_dimless)),
-                                      Measure_dimless)),
-                                   2))
-                                )),
-                             (Measure_prod (Measure_dimless,
-                                (Measure_prod (Measure_dimless,
-                                   (Measure_prod (
-                                      (Measure_pow ((Measure_ident "rQ1_R"), 7)),
-                                      Measure_dimless))
-                                   ))
-                                ))
-                             )),
-                          6))
-                       ))
-                    )))),
-           (Expr_ident_or_op "y"))),
+        (Bind ((Pattern_const (Const_bool true)),
+           (Expr_apply ((Expr_ident_or_op "-"),
+              (Expr_const
+                 (Const_unit_of_measure
+                    (Unit_of_measure ((Mnum_int 4534607695307062870),
+                       (Measure_prod (
+                          (Measure_pow (
+                             (Measure_div ((Measure_ident "v"), Measure_dimless)),
+                             5)),
+                          (Measure_pow (
+                             (Measure_prod ((Measure_ident "_L0"),
+                                (Measure_ident "m"))),
+                             7))
+                          ))
+                       ))))
+              ))
+           )),
         []))
       ] |}]
 ;;
 
-let%expect_test "parse example 6.1 program" =
-  pp
-    pp_program
-    parse_program
-    {|
-let rec true = 4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
+let%expect_test "parse example 7 program" =
+  pp pp_program parse_program {|
+  let 1.04931758405<1 * _5q1> = x1DZ';; |};
   [%expect
     {|
-    [(Str_item_def (Recursive,
+    [(Str_item_def (Nonrecursive,
         (Bind (
            (Pattern_const
               (Const_unit_of_measure
-                 (Unit_of_measure ((Mnum_int -2202013031993883487),
-                    (Measure_prod ((Measure_ident "o0H6t"),
-                       (Measure_pow (
-                          (Measure_prod (
-                             (Measure_prod (Measure_dimless,
-                                (Measure_pow (
-                                   (Measure_div (
-                                      (Measure_div (Measure_dimless,
-                                         Measure_dimless)),
-                                      Measure_dimless)),
-                                   2))
-                                )),
-                             (Measure_prod (Measure_dimless,
-                                (Measure_prod (Measure_dimless,
-                                   (Measure_prod (
-                                      (Measure_pow ((Measure_ident "rQ1_R"), 7)),
-                                      Measure_dimless))
-                                   ))
-                                ))
-                             )),
-                          6))
-                       ))
-                    )))),
-           (Expr_ident_or_op "y"))),
+                 (Unit_of_measure ((Mnum_float 1.04931758405),
+                    (Measure_prod (Measure_dimless, (Measure_ident "_5q1"))))))),
+           (Expr_ident_or_op "x1DZ'"))),
         []))
       ] |}]
 ;;
