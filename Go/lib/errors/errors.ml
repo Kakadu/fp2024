@@ -45,7 +45,7 @@ let pp_typecheck_error = function
   | Mismatched_types msg -> "Mismatched types: " ^ msg
   | Cannot_assign msg -> "Cannot assign: " ^ msg
   | Missing_return msg -> "Missing return: " ^ msg
-  | Invalid_operation msg -> "Missing return: " ^ msg
+  | Invalid_operation msg -> "Invalid operation: " ^ msg
   | Go_make -> "Go discards result of make builtin function"
   | Unexpected_operation msg -> "Unexpected operation: " ^ msg
 ;;

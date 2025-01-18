@@ -67,26 +67,34 @@ type stack_frame =
   ; returns : value option
   }
 
-type waiting_state =
-  | Ready
-  | Sending of { chan_id : int }
-  | Receiving of { chan_id : int }
-
 type goroutine =
   { stack : stack_frame * stack_frame list
   ; go_id : int
   }
 
-module WaitingGoroutine = struct
+module Goroutine = struct
+  type t = goroutine
+
+  let compare = compare
+end
+
+module SendingGoroutines = struct
   type t =
-    { state : waiting_state
-    ; goroutine : goroutine
+    { send_queue : (goroutine * value) list
+    ; chan_id : int
     }
 
   let compare = compare
 end
 
-module GoSet = Set.Make (WaitingGoroutine)
+module ReceivingGoroutines = struct
+  type t =
+    { receive_queue : goroutine list
+    ; chan_id : int
+    }
+
+  let compare = compare
+end
 
 module Chan = struct
   type t =
@@ -97,19 +105,26 @@ module Chan = struct
   let compare = compare
 end
 
+module ReadySet = Set.Make (Goroutine)
+module SendingSet = Set.Make (SendingGoroutines)
+module ReceivingSet = Set.Make (ReceivingGoroutines)
 module ChanSet = Set.Make (Chan)
 
 type chanel_using_state =
-  { receiving_goroutine : goroutine
+  { sending_goroutine : goroutine
+  ; receiving_goroutine : goroutine
   ; value : value
   }
 
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
-  ; waiting : GoSet.t
+  ; ready : ReadySet.t
+  ; sending : SendingSet.t
+  ; receiving : ReceivingSet.t
   ; chanels : ChanSet.t * int
   ; is_using_chanel : chanel_using_state option
+  ; next_go_id : int
   }
 
 module Monad = struct
@@ -128,8 +143,17 @@ module Monad = struct
   let write_global new_global =
     read
     >>= function
-    | { running; waiting; chanels; is_using_chanel } ->
-      write { global_env = new_global; running; waiting; chanels; is_using_chanel }
+    | { running; ready; sending; receiving; chanels; is_using_chanel; next_go_id } ->
+      write
+        { global_env = new_global
+        ; running
+        ; ready
+        ; sending
+        ; receiving
+        ; chanels
+        ; is_using_chanel
+        ; next_go_id
+        }
   ;;
 
   let save_global_id ident value =
@@ -152,79 +176,258 @@ module Monad = struct
     | { running = None } -> fail (Runtime_error (DevOnly No_goroutine_running))
   ;;
 
-  let read_running_id = read_running_fail >>= fun { go_id } -> return go_id
-
   let write_running new_goroutine =
     read
     >>= function
-    | { global_env; waiting; chanels; is_using_chanel } ->
-      write { global_env; waiting; chanels; is_using_chanel; running = new_goroutine }
+    | { global_env; ready; sending; receiving; chanels; is_using_chanel; next_go_id } ->
+      write
+        { global_env
+        ; ready
+        ; sending
+        ; receiving
+        ; chanels
+        ; is_using_chanel
+        ; next_go_id
+        ; running = new_goroutine
+        }
   ;;
 
-  let read_waiting =
+  let read_ready =
     read
     >>= function
-    | { waiting } -> return waiting
+    | { ready } -> return ready
   ;;
 
-  let write_waiting new_goroutines =
+  let write_ready ready =
     read
     >>= function
-    | { global_env; running; chanels; is_using_chanel } ->
-      write { global_env; running; chanels; is_using_chanel; waiting = new_goroutines }
+    | { global_env; running; chanels; is_using_chanel; sending; receiving; next_go_id } ->
+      write
+        { global_env
+        ; running
+        ; chanels
+        ; is_using_chanel
+        ; sending
+        ; receiving
+        ; next_go_id
+        ; ready
+        }
   ;;
 
-  let add_waiting state goroutine =
-    let* goroutines = read_waiting in
-    write_waiting (GoSet.add { state; goroutine } goroutines)
+  let add_ready goroutine =
+    let* goroutines = read_ready in
+    write_ready (ReadySet.add goroutine goroutines)
   ;;
 
-  let delete_waiting { go_id } =
-    let* goroutines = read_waiting in
+  let delete_ready { go_id } =
+    let* goroutines = read_ready in
     match
-      GoSet.find_first_opt
+      ReadySet.find_first_opt
         (function
-          | { goroutine = { go_id = id } } -> go_id = id)
+          | { go_id = id } -> go_id = id)
         goroutines
     with
-    | Some waiting_goroutine -> write_waiting (GoSet.remove waiting_goroutine goroutines)
+    | Some waiting_goroutine -> write_ready (ReadySet.remove waiting_goroutine goroutines)
     | _ -> return ()
   ;;
 
-  let ready_waiting { go_id } =
-    let* goroutines = read_waiting in
+  let check_ready_goroutine =
+    let* goroutines = read_ready in
+    return (if ReadySet.is_empty goroutines then None else Some ())
+  ;;
+
+  let read_sending =
+    read
+    >>= function
+    | { sending } -> return sending
+  ;;
+
+  let write_sending sending =
+    read
+    >>= function
+    | { global_env; running; chanels; is_using_chanel; ready; receiving; next_go_id } ->
+      write
+        { global_env
+        ; running
+        ; chanels
+        ; is_using_chanel
+        ; ready
+        ; receiving
+        ; next_go_id
+        ; sending
+        }
+  ;;
+
+  let push_to_send_queue id goroutine value =
+    let* sending = read_sending in
     match
-      GoSet.find_first_opt
+      SendingSet.find_first_opt
         (function
-          | { goroutine = { go_id = id } } -> id = go_id)
-        goroutines
+          | { chan_id } -> chan_id = id)
+        sending
     with
-    | Some { goroutine } -> delete_waiting goroutine *> add_waiting Ready goroutine
-    | _ -> return ()
+    | None ->
+      fail (Runtime_error (Deadlock "trying to send to closed or uninitialized chanel"))
+    | Some { chan_id; send_queue } ->
+      let sending = SendingSet.remove { chan_id; send_queue } sending in
+      let sending =
+        SendingSet.add { chan_id; send_queue = send_queue @ [ goroutine, value ] } sending
+      in
+      write_sending sending
+  ;;
+
+  let pop_from_send_queue id =
+    let* sending = read_sending in
+    match
+      SendingSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        sending
+    with
+    | None ->
+      fail (Runtime_error (Deadlock "trying to send to closed or uninitialized chanel"))
+    | Some { send_queue = [] } ->
+      fail (Runtime_error (Deadlock "trying to send to closed or uninitialized chanel"))
+    | Some { chan_id; send_queue = hd :: tl } ->
+      let sending = SendingSet.remove { chan_id; send_queue = hd :: tl } sending in
+      let sending = SendingSet.add { chan_id; send_queue = tl } sending in
+      write_sending sending *> return hd
+  ;;
+
+  let is_send_queue_not_empty id =
+    let* sending = read_sending in
+    match
+      SendingSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        sending
+    with
+    | None ->
+      fail (Runtime_error (Deadlock "trying to send to closed or uninitialized chanel"))
+    | Some { send_queue = [] } -> return None
+    | Some { send_queue = _ :: _ } -> return (Some ())
+  ;;
+
+  let read_receiving =
+    read
+    >>= function
+    | { receiving } -> return receiving
+  ;;
+
+  let write_receiving receiving =
+    read
+    >>= function
+    | { global_env; running; chanels; is_using_chanel; ready; sending; next_go_id } ->
+      write
+        { global_env
+        ; running
+        ; chanels
+        ; is_using_chanel
+        ; ready
+        ; sending
+        ; next_go_id
+        ; receiving
+        }
+  ;;
+
+  let push_to_receive_queue id goroutine =
+    let* receiving = read_receiving in
+    match
+      ReceivingSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        receiving
+    with
+    | None ->
+      fail
+        (Runtime_error (Deadlock "trying to receive from closed or uninitialized chanel"))
+    | Some { chan_id; receive_queue } ->
+      let receiving = ReceivingSet.remove { chan_id; receive_queue } receiving in
+      let receiving =
+        ReceivingSet.add
+          { chan_id; receive_queue = receive_queue @ [ goroutine ] }
+          receiving
+      in
+      write_receiving receiving
+  ;;
+
+  let pop_from_receive_queue id =
+    let* receiving = read_receiving in
+    match
+      ReceivingSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        receiving
+    with
+    | None ->
+      fail
+        (Runtime_error (Deadlock "trying to receive from closed or uninitialized chanel"))
+    | Some { receive_queue = [] } ->
+      fail
+        (Runtime_error (Deadlock "trying to receive from closed or uninitialized chanel"))
+    | Some { chan_id; receive_queue = hd :: tl } ->
+      let receiving =
+        ReceivingSet.remove { chan_id; receive_queue = hd :: tl } receiving
+      in
+      let receiving = ReceivingSet.add { chan_id; receive_queue = tl } receiving in
+      write_receiving receiving *> return hd
+  ;;
+
+  let is_receive_queue_not_empty id =
+    let* receiving = read_receiving in
+    match
+      ReceivingSet.find_first_opt
+        (function
+          | { chan_id } -> chan_id = id)
+        receiving
+    with
+    | None ->
+      fail
+        (Runtime_error (Deadlock "trying to receive from closed or uninitialized chanel"))
+    | Some { receive_queue = [] } -> return None
+    | Some { receive_queue = _ :: _ } -> return (Some ())
+  ;;
+
+  let read_next_go_id =
+    read
+    >>= function
+    | { next_go_id } -> return next_go_id
+  ;;
+
+  let write_next_go_id next_go_id =
+    read
+    >>= function
+    | { global_env; running; chanels; is_using_chanel; ready; sending; receiving } ->
+      write
+        { global_env
+        ; running
+        ; chanels
+        ; is_using_chanel
+        ; ready
+        ; sending
+        ; next_go_id
+        ; receiving
+        }
   ;;
 
   let create_goroutine stack_frame =
-    let* go_id = read_waiting >>= fun set -> return (GoSet.cardinal set) in
-    let* go_id =
-      read_running
-      >>= function
-      | Some _ -> return (go_id + 2)
-      | None -> return (go_id + 1)
-    in
-    add_waiting Ready { stack = stack_frame, []; go_id }
+    let* go_id = read_next_go_id in
+    add_ready { stack = stack_frame, []; go_id } *> write_next_go_id (go_id + 1)
   ;;
 
   let run_goroutine goroutine =
     read_running
     >>= function
-    | None -> delete_waiting goroutine *> write_running (Some goroutine)
     | Some _ -> fail (Runtime_error (DevOnly Two_goroutine_running))
+    | None -> write_running (Some goroutine)
   ;;
 
-  let stop_running_goroutine waiting_state =
-    read_running_fail
-    >>= function
-    | goroutine -> write_running None *> add_waiting waiting_state goroutine
+  let run_ready_goroutine =
+    let* ready = read_ready in
+    match ReadySet.choose_opt ready with
+    | None -> return None
+    | Some goroutine ->
+      delete_ready goroutine *> run_goroutine goroutine *> return (Some ())
   ;;
 
   let delete_running_goroutine = write_running None
@@ -240,8 +443,17 @@ module Monad = struct
   let write_chanels new_chanels =
     read
     >>= function
-    | { global_env; running; waiting; is_using_chanel } ->
-      write { global_env; running; waiting; is_using_chanel; chanels = new_chanels }
+    | { global_env; running; ready; sending; receiving; is_using_chanel; next_go_id } ->
+      write
+        { global_env
+        ; running
+        ; ready
+        ; sending
+        ; receiving
+        ; is_using_chanel
+        ; chanels = new_chanels
+        ; next_go_id
+        }
   ;;
 
   let find_chanel_fail = function
@@ -263,6 +475,12 @@ module Monad = struct
   let create_chanel =
     let* chanels, id = read_chanels in
     write_chanels (ChanSet.add { chan_id = id; value = None } chanels, id + 1)
+    *>
+    let* sending = read_sending in
+    write_sending (SendingSet.add { chan_id = id; send_queue = [] } sending)
+    *>
+    let* receiving = read_receiving in
+    write_receiving (ReceivingSet.add { chan_id = id; receive_queue = [] } receiving)
     *> return id
   ;;
 
@@ -294,8 +512,8 @@ module Monad = struct
             { chan_id; value = Some value }
             (ChanSet.remove { chan_id; value = None } chanels)
         , next_id )
-      *> return (Some value)
-    | Some { value = Some _ } -> return None
+      *> return None
+    | Some { value = Some _ } -> return (Some ())
     | _ -> fail (Runtime_error (Deadlock "trying to push value to a closed chanel"))
   ;;
 
@@ -322,10 +540,18 @@ module Monad = struct
 
   (* sending state *)
 
-  let start_using_chanel receiving_goroutine value =
+  let start_using_chanel sending_goroutine receiving_goroutine value =
     read
     >>= function
-    | { running; waiting; chanels; global_env; is_using_chanel } ->
+    | { running
+      ; ready
+      ; sending
+      ; receiving
+      ; chanels
+      ; global_env
+      ; is_using_chanel
+      ; next_go_id
+      } ->
       (match is_using_chanel with
        | Some _ ->
          fail
@@ -334,20 +560,40 @@ module Monad = struct
        | None ->
          write
            { running
-           ; waiting
+           ; ready
+           ; sending
+           ; receiving
            ; chanels
            ; global_env
-           ; is_using_chanel = Some { receiving_goroutine; value }
+           ; next_go_id
+           ; is_using_chanel = Some { receiving_goroutine; sending_goroutine; value }
            })
   ;;
 
   let use_chanel =
     read
     >>= function
-    | { running; waiting; chanels; global_env; is_using_chanel } ->
+    | { running
+      ; ready
+      ; sending
+      ; receiving
+      ; chanels
+      ; global_env
+      ; is_using_chanel
+      ; next_go_id
+      } ->
       (match is_using_chanel with
        | Some { receiving_goroutine; value } ->
-         write { running; waiting; chanels; global_env; is_using_chanel = None }
+         write
+           { running
+           ; ready
+           ; sending
+           ; receiving
+           ; chanels
+           ; global_env
+           ; next_go_id
+           ; is_using_chanel = None
+           }
          *> return (receiving_goroutine, value)
        | None ->
          fail
@@ -358,8 +604,8 @@ module Monad = struct
   let is_using_chanel =
     read
     >>= function
-    | { is_using_chanel = Some _ } -> return true
-    | { is_using_chanel = None } -> return false
+    | { is_using_chanel = Some chan_using_state } -> return (Some chan_using_state)
+    | { is_using_chanel = None } -> return None
   ;;
 
   (* single goroutine's stack *)

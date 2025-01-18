@@ -461,6 +461,23 @@ let%expect_test "ok: closure check" =
     45-90 |}]
 ;;
 
+let%expect_test "ok: spimple array test" =
+  pp
+    {|
+      func main() {
+        var a = [2]string{"a", "a"}
+        a[0] = "Kill "
+        a[1] = "Ocaml"
+        println(a[0], a[1])
+    }
+
+    |};
+  [%expect {|
+    Correct evaluating
+
+    Kill Ocaml |}]
+;;
+
 (* goroutines *)
 
 let%expect_test "ok: two goroutine sync with unbuffered chanel" =
@@ -536,26 +553,75 @@ let%expect_test "ok: receive and send back" =
     go1: receive success. Value:0 |}]
 ;;
 
-let%expect_test "ok: spimple array test" =
+let%expect_test "err: sender without receiver" =
+  pp {|
+    func main() {
+      c := make(chan int)
+      c <- 0
+    }
+    |};
+  [%expect {| Runtime error: Deadlock: goroutine 1 trying to send to chan 1 |}]
+;;
+
+let%expect_test "err: receiver without sender" =
+  pp {|
+    func main() {
+      c := make(chan int)
+      <-c
+    }
+    |};
+  [%expect {| Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 |}]
+;;
+
+(* let%expect_test "ok: two goroutines sending to the same chanel before value received" =
   pp
     {|
-      func main() {
-        var a = [2]string{"a", "a"}
-        a[0] = "Kill "
-        a[1] = "Ocaml"
-        println(a[0], a[1])
+    func main2(c chan int) {
+      println("go2: sending value 2")
+      c <- 2
+      println("go2: value 2 sent successfully")
     }
 
-    |};
-  [%expect
-    {|
-    Correct evaluating
+    func main3(c chan int) {
+      println("go3: received value: ", <-c)
+    }
 
-    go1: trying to send. Value:0
-    go2: trying to receive
-    go2: receive success. Value:0
-    go2: trying to send. Value:0
-    go1: send success
-    go1: trying to receive
-    go1: receive success. Value:0 |}]
-;;
+    func main() {
+      c := make(chan int)
+      
+      go main2(c)
+      go main3(c)
+
+      println("go1: sending value 1")
+      c <- 1
+      println("go1: value 1 sent successfully")
+    }
+    |};
+  [%expect {| |}]
+;; *)
+
+(* let%expect_test "ok: synchronised printing" =
+  pp
+    {|
+    var c = make(chan int)
+
+    var a = 0
+
+    func main2() {
+      <-c
+      a++
+      println("second: ", a)
+      c <- 0
+    }
+
+    func main() {
+      go main2()
+
+      c <- 0
+      a++
+      println("first: ", a)
+      <-c
+    }
+    |};
+  [%expect {| Runtime error: No goroutine running |}]
+;; *)

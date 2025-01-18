@@ -75,30 +75,35 @@ type stack_frame =
   ; returns : value option
   }
 
-type waiting_state =
-  | Ready
-  (** State of the goroutine that doesn't try to receive from or send to a chanel, but another goroutine is running *)
-  | Sending of { chan_id : int }
-  (** State of goroutine that is trying to send value to a chanel *)
-  | Receiving of { chan_id : int }
-  (** State of goroutine that is trying to receive from a chanel *)
-
 type goroutine =
   { stack : stack_frame * stack_frame list
   (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
   ; go_id : int
   }
 
-module WaitingGoroutine : sig
+module Goroutine : sig
+  type t = goroutine
+
+  val compare : t -> t -> int
+end
+
+module SendingGoroutines : sig
   type t =
-    { state : waiting_state
-    ; goroutine : goroutine
+    { send_queue : (goroutine * value) list
+    ; chan_id : int
     }
 
   val compare : t -> t -> int
 end
 
-module GoSet : Set.S with type elt = WaitingGoroutine.t
+module ReceivingGoroutines : sig
+  type t =
+    { receive_queue : goroutine list
+    ; chan_id : int
+    }
+
+  val compare : t -> t -> int
+end
 
 module Chan : sig
   type t =
@@ -109,23 +114,30 @@ module Chan : sig
   val compare : t -> t -> int
 end
 
+module ReadySet : Set.S with type elt = Goroutine.t
+module SendingSet : Set.S with type elt = SendingGoroutines.t
+module ReceivingSet : Set.S with type elt = ReceivingGoroutines.t
 module ChanSet : Set.S with type elt = Chan.t
 
 type chanel_using_state =
-  { receiving_goroutine : goroutine
+  { sending_goroutine : goroutine
+  ; receiving_goroutine : goroutine
   ; value : value
   }
 
+(** The whole executing program state *)
 type eval_state =
   { global_env : value MapIdent.t
   (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
   (** Goroutine that is currently running, stored separately for time efficiency *)
-  ; waiting : GoSet.t
-  (** All waiting goroutines (ready to run or trying to interact with a chanel) *)
+  ; ready : ReadySet.t (** Set of all ready to run goroutines *)
+  ; sending : SendingSet.t (** Set of opened chanels' send queues *)
+  ; receiving : ReceivingSet.t (** Set of opened chanels' receive queues *)
   ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
   ; is_using_chanel : chanel_using_state option
   (** The state indicates that value was sent through chanel, but not received yet *)
+  ; next_go_id : int (** An id that will be given to the next created goroutine *)
   }
 
 (** Monad for evaluating the program state *)
@@ -144,71 +156,136 @@ module Monad : sig
   val map : ('a -> 'b t) -> 'a list -> 'b list t
   val run : 'a t -> eval_state -> eval_state * ('a, Errors.error) Result.t
 
-  (* Global environment *)
-  val read_global : value MapIdent.t t
+  (** Takes ident and value and saves the pair to global varibles map *)
   val save_global_id : ident -> value -> unit t
 
-  (* Goroutines *)
-  val read_waiting : GoSet.t t
+  (** Takes ident and returns value assigned to it.
+      Fails if there is no such ident visible from current stack frame *)
+  val read_ident : ident -> value t
+
+  (** Takes ident and value and assigns the value to the ident.
+      Fails if there is no such ident visible from current stack frame *)
+  val update_ident : ident -> value -> unit t
+
+  (** Returns set of all ready to run goroutines *)
+  val read_ready : ReadySet.t t
+
+  (** Takes a goroutine and adds it to the set of ready goroutines *)
+  val add_ready : goroutine -> unit t
+
+  (** Returns [Some ()] if there are some ready to run goroutines, [None] otherwise *)
+  val check_ready_goroutine : unit option t
+
+  (** [push_to_send_queue id go v] tries to push goroutine [go] that is trying to send value
+      [v] to chanel with id [id] to its send queue. Fails if chanel is unitialized or closed *)
+  val push_to_send_queue : int -> goroutine -> value -> unit t
+
+  (** [pop_from_send_queue id] tries to pop sending goroutine with value it is sending
+      from chanel's with given [id] send queue. Fails if chanel is unitialized or closed *)
+  val pop_from_send_queue : int -> (goroutine * value) t
+
+  (** [is_send_queue_not_empty id] returns [Some ()] if chanel's with given [id] send queue
+      is not empty, or [None] otherwise. Fails if chanel is unitialized or closed *)
+  val is_send_queue_not_empty : int -> unit option t
+
+  (** [push_to_receive_queue id go] tries to push goroutine [go] to
+      chanel's with id [id] receive queue. Fails if chanel is unitialized or closed *)
+  val push_to_receive_queue : int -> goroutine -> unit t
+
+  (** [pop_from_receive_queue id] tries to pop receiving goroutine from chanel's
+      with given [id] receive queue. Fails if chanel is unitialized or closed *)
+  val pop_from_receive_queue : int -> goroutine t
+
+  (** [is_receive_queue_not_empty id] returns [Some ()] if chanel's with given [id] receive queue
+      is not empty, or [None] otherwise. Fails if chanel is unitialized or closed *)
+  val is_receive_queue_not_empty : int -> unit option t
+
+  (** Takes stack frame and creates new goroutine with it.
+      Adds its to waiting goroutines set with [Ready] waiting state *)
   val create_goroutine : stack_frame -> unit t
+
+  (** Takes goroutine and assignes it [running] field.
+      Doesn't execute the goroutine. Fails if another goroutine is already running *)
   val run_goroutine : goroutine -> unit t
 
-  (** Stops currently running goroutine with a given state *)
-  val stop_running_goroutine : waiting_state -> unit t
+  (** Runs random ready to run goroutine. Returns [Some ()] if there were some ready
+      goroutines, [None] otherwise. Fails if another goroutine is already running *)
+  val run_ready_goroutine : unit option t
 
+  (** Deletes currently running goroutine and assigns [running] to [None].
+      Should be called when goroutine finished executing *)
   val delete_running_goroutine : unit t
-  val read_running_id : int t
-  val ready_waiting : goroutine -> unit t
+
+  (** Returns currently running goroutine's, fails if there is no running goroutine *)
+  val read_running_fail : goroutine t
+
+  (** Returns [Some ()] if there is ready to run goroutine, [None otherwise] *)
+  val check_ready_goroutine : unit option t
 
   (* Global environment *)
   val read_returns : value option t
   val write_returns : value option -> unit t
 
-  (* Chanels *)
+  (** Takes chanel value and returns [chan_id] of a chanel it points to.
+      Fails if there is no such chanel or it is uninitialized *)
   val find_chanel_fail : chan_value -> int t
 
-  (** Pushes value [v] to the chanel. Returns [Some v] if psuhed sucessfully, [None] if there is already a value *)
-  val push_chan_value : int -> value -> value option t
+  (** Tries to push value [v] to the chanel. Returns [None] if pushed sucessfully, [Some ()] if there is already a value *)
+  val push_chan_value : int -> value -> unit option t
 
+  (** Takes chanel id and pops value from the chanel with given id.
+      Fails if there is no such chanel or no value in the chanel *)
   val pop_chan_value : int -> value t
 
   (** Creates new chanel and returns it's id *)
   val create_chanel : int t
 
-  (** Closes chanel. Fails if it is closed or uninited *)
+  (** Closes chanel. Fails if it is already closed or uninitialized *)
   val close_chanel : chan_value -> unit t
 
-  (* Sending state *)
-
-  (** Enters chanel using state, accepts receiving goroutine and sent value. Fails if already in chanel using state *)
-  val start_using_chanel : goroutine -> value -> unit t
+  (** Enters chanel using state, accepts sending and receiving goroutines and sent value.
+      Fails if already in chanel using state *)
+  val start_using_chanel : goroutine -> goroutine -> value -> unit t
 
   (** Exits chanel using state, returns receiving goroutine and sent value. Fails if not in chanel using state *)
   val use_chanel : (goroutine * value) t
 
-  (** Returns [true] if in chanel using state, [false] otherwise *)
-  val is_using_chanel : bool t
+  (** Returns state of using a chanel (sender, receiver and value) if in chanel using state, [None] otherwise *)
+  val is_using_chanel : chanel_using_state option t
 
-  (* Call stack *)
+  (** Takes stack frame and pushes it to currently running goroutine's call stack *)
   val add_stack_frame : stack_frame -> unit t
+
+  (** Pops stack frame from currently running goroutine's call stack *)
   val delete_stack_frame : unit t
 
-  (* Local environments *)
+  (** Takes ident and value and saves the pair to local varibles map *)
   val save_local_id : ident -> value -> unit t
+
+  (** Takes block of statements and is_for_env flag, adds new local environment
+      to currently running goroutine's last stack frame *)
   val add_env : block -> is_for_env -> unit t
+
+  (** Returns stack of local environments of currently running goroutine's last stack frame *)
   val read_local_envs : (local_env * local_env list) t
+
   val write_local_envs : local_env * local_env list -> unit t
+
+  (** Deletes last local environment of currently running goroutine's last stack frame *)
   val delete_env : unit t
+
+  (** Return whether current local environment is a for loop or not *)
   val read_env_type : is_for_env t
 
-  (* Deferred functions *)
+  (** Takes stack frame and adds it to currently running goroutine's
+      current stack frame's deferred functions stack *)
   val add_deferred : stack_frame -> unit t
+
+  (** Deletes last deferred function from currently running goroutine's
+      current stack frame's deferred functions stack *)
   val delete_deferred : unit t
 
-  (* Reading ident value *)
-  val read_ident : ident -> value t
-  val update_ident : string -> value -> unit t
-
-  (* statements execution *)
+  (** Returns next statement from currently running goroutine's
+      current stack frame's execution block. [None] if the block is empty *)
   val pop_next_statement : stmt option t
 end

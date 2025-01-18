@@ -6,26 +6,21 @@ open EvalMonad
 open EvalMonad.Monad
 open Ast
 open Errors
+open Format
 
 let rec pp_value = function
-  | Value_int i -> Format.asprintf "%d" i
-  | Value_bool b -> Format.asprintf "%b" b
-  | Value_nil _ -> Format.asprintf "nil"
-  | Value_array (i, lst) ->
-    Format.asprintf "[%d][%s]" i (PpType.sep_by_comma lst pp_value)
-  | Value_chan _ -> Format.asprintf "wtf chan"
-  | Value_func _ -> Format.asprintf "wtf func"
-  | Value_string s -> Format.asprintf "%s" s
-  | Value_tuple lst -> Format.asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
+  | Value_int n -> asprintf "%d" n
+  | Value_bool b -> asprintf "%b" b
+  | Value_nil _ -> "nil"
+  | Value_array (size, values) ->
+    asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
+  | Value_chan _ -> "wtf chan"
+  | Value_func _ -> "wtf func"
+  | Value_string s -> s
+  | Value_tuple lst -> asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
 ;;
 
 let rpf lst = List.map (fun (y, _) -> y) lst
-
-let pp printer eval ast =
-  match eval ast with
-  | Result.Ok res -> print_endline (printer res)
-  | Result.Error _ -> print_endline ": some kind of error"
-;;
 
 let exec_stmt eval_stmt =
   let* stmt = pop_next_statement in
@@ -49,70 +44,54 @@ let rec exec eval_stmt =
   | Some _ ->
     read_returns
     >>= (function
+     | Some _ -> return ()
      | None ->
-       let* is_using_chanel = is_using_chanel in
-       if is_using_chanel then return () else exec eval_stmt
-     | Some _ -> return ())
+       is_using_chanel
+       >>= (function
+        | Some _ -> return ()
+        | None -> exec eval_stmt))
   | None -> return ()
 ;;
 
+(** Runs all ready to run goroutines, after it returns it is guaranteed that all existing goroutines
+    are working with chanels. If main goroutine finishes executing here, the whole program finishes running *)
 let run_ready_goroutines eval_stmt =
-  let rec runner waiting_goroutines =
-    match GoSet.find_first_opt (fun { state } -> state = Ready) waiting_goroutines with
-    | Some { goroutine } ->
-      run_goroutine goroutine
-      *> exec eval_stmt
-      *>
-      let* is_using_chanel = is_using_chanel in
-      if is_using_chanel
-      then return ()
-      else
-        (* мб тут проверять в каком-то виде останавливаться, если запущенная горутна отправляет что-то в канал *)
-        read_running_id
-        >>= (function
-         | 1 ->
-           (* main goroutine finished working and doesn,t wait for others to finish *)
-           return ()
-         | _ ->
-           (* some secondary goroutine finished working, don't stop untill main finished *)
-           delete_running_goroutine *> read_waiting >>= runner)
+  let rec runner () =
+    run_ready_goroutine
+    >>= function
     | None -> return ()
+    | Some () ->
+      exec eval_stmt *> is_using_chanel
+      >>= (function
+       | Some _ ->
+         return ()
+         (* chanel is being used, so we need to return to receiver to receive the value *)
+       | None ->
+         (* goroutine finished executing *)
+         read_running_fail
+         >>= (function
+          | { go_id = 1 } ->
+            (* main goroutine finished working and doesn,t wait for others to finish *)
+            return ()
+          | _ ->
+            (* some secondary goroutine finished working, don't stop untill main finished *)
+            delete_running_goroutine *> runner ()))
   in
-  read_waiting >>= runner
+  runner ()
 ;;
 
 (** [attempt_chan_interaction id] attempts to use chanel with given id. If both sender and receiver are ready,
     starts using the chanel. Doesn't do anything otherwise *)
 let attempt_chan_interaction id =
-  let* waiting_goroutines = read_waiting in
-  let* sending_goroutine =
-    match
-      GoSet.find_first_opt
-        (function
-          | { state = Sending { chan_id } } -> chan_id = id
-          | _ -> false)
-        waiting_goroutines
-    with
-    | Some { goroutine } -> return (Some goroutine)
-    | _ -> return None
-  in
-  let* receiving_goroutine =
-    match
-      GoSet.find_first_opt
-        (function
-          | { state = Receiving { chan_id } } -> chan_id = id
-          | _ -> false)
-        waiting_goroutines
-    with
-    | Some { goroutine } -> return (Some goroutine)
-    | _ -> return None
-  in
-  match sending_goroutine, receiving_goroutine with
-  | Some sending_goroutine, Some receiving_goroutine ->
-    let* value = pop_chan_value id in
-    ready_waiting sending_goroutine
-    *> ready_waiting receiving_goroutine
-    *> start_using_chanel receiving_goroutine value
+  let* ready_to_send = is_send_queue_not_empty id in
+  let* ready_to_receive = is_receive_queue_not_empty id in
+  match ready_to_send, ready_to_receive with
+  | Some (), Some () ->
+    let* sending_goroutine, value = pop_from_send_queue id in
+    let* receiving_goroutine = pop_from_receive_queue id in
+    add_ready sending_goroutine
+    *> add_ready receiving_goroutine
+    *> start_using_chanel sending_goroutine receiving_goroutine value
   | _ -> return ()
 ;;
 
@@ -222,13 +201,11 @@ and create_args_map args idents =
 
 and eval_builtin args = function
   | Print ->
-    (map retrieve_arg_value args
-     >>= iter (fun x -> return (Format.printf "%s" (pp_value x))))
+    (map retrieve_arg_value args >>= iter (fun x -> return (printf "%s" (pp_value x))))
     *> return None
   | Println ->
-    (map retrieve_arg_value args
-     >>= iter (fun x -> return (Format.printf "%s" (pp_value x))))
-    *> return (Format.printf "\n")
+    (map retrieve_arg_value args >>= iter (fun x -> return (printf "%s" (pp_value x))))
+    *> return (printf "\n")
     *> return None
   | Make ->
     let* chan_id = create_chanel in
@@ -448,7 +425,6 @@ and eval_stmt = function
   | Stmt_chan_send send -> eval_chan_send send
   | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()
   | Stmt_defer _ -> fail (Runtime_error (Panic "Not supported stmt"))
-
 (*ДОДЕЛАТЬ*)
 
 and eval_long_var_decl save_to_env = function
@@ -469,16 +445,42 @@ and eval_chan_send (ident, expr) =
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
     push_chan_value chan_id value
-    *> stop_running_goroutine (Sending { chan_id })
-    *> attempt_chan_interaction chan_id
-    *>
-    let* send_success = is_using_chanel in
-    if send_success
-    then
-      (* the receiver is ready to receive, state will be proccessed and the value will be received *)
-      return ()
-    else (* the receiver isn't ready to receive yet *)
-      run_ready_goroutines eval_stmt
+    >>= (function
+     | Some () ->
+       let* sending_goroutine = read_running_fail in
+       delete_running_goroutine
+       *> push_to_send_queue chan_id sending_goroutine value
+       *> check_ready_goroutine
+       >>= (function
+        | Some _ -> run_ready_goroutines eval_stmt
+        | None ->
+          fail
+            (Runtime_error
+               (Deadlock
+                  (asprintf
+                     "goroutine %d trying to send to chan %d"
+                     sending_goroutine.go_id
+                     chan_id))))
+     | None ->
+       let* sending_goroutine = read_running_fail in
+       delete_running_goroutine
+       *> push_to_send_queue chan_id sending_goroutine value
+       *> attempt_chan_interaction chan_id
+       *> (is_using_chanel
+           >>= function
+           | Some _ -> return ()
+           | None ->
+             check_ready_goroutine
+             >>= (function
+              | Some _ -> run_ready_goroutines eval_stmt
+              | None ->
+                fail
+                  (Runtime_error
+                     (Deadlock
+                        (asprintf
+                           "goroutine %d trying to send to chan %d"
+                           sending_goroutine.go_id
+                           chan_id))))))
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
 
 and eval_chan_receive expr =
@@ -486,18 +488,28 @@ and eval_chan_receive expr =
   >>= function
   | Value_chan chan ->
     let* chan_id = find_chanel_fail chan in
-    stop_running_goroutine (Receiving { chan_id })
+    let* receiving_goroutine = read_running_fail in
+    delete_running_goroutine
+    *> push_to_receive_queue chan_id receiving_goroutine
     *> attempt_chan_interaction chan_id
-    *>
-    let* receive_success = is_using_chanel in
-    (if receive_success
-     then return ()
-     else run_ready_goroutines eval_stmt (* тут мы должны в нужный момент остановиться *))
+    *> (is_using_chanel
+        >>= function
+        | Some _ -> return ()
+        | None ->
+          check_ready_goroutine
+          >>= (function
+           | Some _ -> run_ready_goroutines eval_stmt
+           | None ->
+             fail
+               (Runtime_error
+                  (Deadlock
+                     (asprintf
+                        "goroutine %d trying to receive from chan %d"
+                        receiving_goroutine.go_id
+                        chan_id)))))
     *>
     let* receiving_goroutine, value = use_chanel in
     run_goroutine receiving_goroutine *> return value
-    (* ЗАГЛУШКА *)
-    (* надо как-то получать значение, поэтому после передачи всегда должна запускаться эта горутина *)
   | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
 
 and eval_go (func, arg_exprs) =
@@ -547,25 +559,25 @@ let add_main_goroutine =
     | _ -> return ())
 ;;
 
-let run_eval file =
-  save_builtins
-  *> save_global_vars_and_funcs file
-  *> add_main_goroutine file
-  *> run_ready_goroutines eval_stmt
-  *> return ()
-;;
-
 let init_state =
   { global_env = MapIdent.empty
   ; running = None
-  ; waiting = GoSet.empty
+  ; ready = ReadySet.empty
+  ; sending = SendingSet.empty
+  ; receiving = ReceivingSet.empty
   ; chanels = ChanSet.empty, 1
   ; is_using_chanel = None
+  ; next_go_id = 1
   }
 ;;
 
 let eval file =
-  run (run_eval file) init_state
+  run
+    (save_builtins
+     *> save_global_vars_and_funcs file
+     *> add_main_goroutine file
+     *> run_ready_goroutines eval_stmt)
+    init_state
   |> function
-  | _, res -> res (* mb check final state *)
+  | _, res -> res
 ;;
