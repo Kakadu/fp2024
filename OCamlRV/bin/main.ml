@@ -3,12 +3,17 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open OCamlRV_lib.Parser
+open OCamlRV_lib.Interpreter
+open OCamlRV_lib.Inferencer
 open Stdio
 
 type opts =
   { mutable dump_parsetree : bool
+  ; mutable interpret : bool
+  ; mutable inference : bool
   ; mutable read_from_file : bool
   ; mutable filename : string
+  ; mutable debug : bool
   }
 
 let run_single options =
@@ -21,22 +26,31 @@ let run_single options =
         Stdlib.exit 1)
     else Stdlib.String.trim (In_channel.input_all stdin)
   in
-  if options.dump_parsetree
-  then Stdlib.Format.printf "%s\n" (parse_to_string text)
-  else ()
+  if options.dump_parsetree then Stdlib.Format.printf "%s\n\n" (parse_to_string text);
+  if options.inference then run_inferencer text;
+  if options.interpret then run_interpreter text ~debug:options.debug else ()
 ;;
 
 let () =
   if Array.length Sys.argv = 1
   then ()
   else (
-    let opts = { dump_parsetree = false; read_from_file = false; filename = "" } in
+    let opts =
+      { dump_parsetree = false
+      ; interpret = false
+      ; inference = false
+      ; read_from_file = false
+      ; filename = ""
+      ; debug = false
+      }
+    in
     let () =
       let open Stdlib.Arg in
       parse
-        [ ( "-dparsetree"
-          , Unit (fun () -> opts.dump_parsetree <- true)
-          , "Dump parse tree, don't eval enything" )
+        [ "-dparsetree", Unit (fun () -> opts.dump_parsetree <- true), "Dump parse tree."
+        ; "-interpret", Unit (fun () -> opts.interpret <- true), "Interpret code."
+        ; "-inference", Unit (fun () -> opts.inference <- true), "Inference code."
+        ; "-debug", Unit (fun () -> opts.debug <- true), "Debug mode."
         ]
         (fun filename ->
           if opts.read_from_file
@@ -45,7 +59,7 @@ let () =
             Stdlib.exit 1);
           opts.read_from_file <- true;
           opts.filename <- filename)
-        "Read-Eval-Print-Loop for OCamlRV"
+        "Runner for OCamlRV"
     in
     run_single opts)
 ;;

@@ -2,7 +2,7 @@
  (name OCamlRV_lib)
  (public_name OCamlRV.Lib)
  (libraries angstrom qcheck-core qcheck-core.runner)
- (modules ast parser astPrinter infer inferCore)
+ (modules ast parser astPrinter inferencer inferencerCore interpreter)
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving_qcheck))
  (instrumentation
