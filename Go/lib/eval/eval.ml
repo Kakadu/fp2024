@@ -398,17 +398,7 @@ and eval_init = function
   | None -> return ()
 
 and eval_stmt = function
-  | Stmt_call (func, args) ->
-    eval_expr func
-    >>= (function
-     | Value_func (Func_initialized (Closure _, afc)) ->
-       eval_closure (func, args)
-       >>= fun (_, vmp) ->
-       (match func with
-        | Expr_ident id ->
-          update_ident id (Value_func (Func_initialized (Closure vmp, afc)))
-        | _ -> return ())
-     | _ -> eval_func_call (func, args) *> return ())
+  | Stmt_call call -> eval_stmt_call call
   | Stmt_long_var_decl lvd -> eval_long_var_decl save_local_id lvd
   | Stmt_decr id ->
     read_ident id
@@ -420,77 +410,15 @@ and eval_stmt = function
     >>= (function
      | Value_int v -> update_ident id (Value_int (v + 1)) *> return ()
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "stmt"))))
-  | Stmt_assign asgn ->
-    (match asgn with
-     | Assign_mult_expr (fst, lst) ->
-       iter
-         (fun (lvalue, expr) -> eval_expr expr >>= fun ex -> eval_lvalue ex lvalue)
-         (fst :: lst)
-     | Assign_one_expr (fst, snd, lst, fcall) ->
-       eval_func_call fcall
-       >>= (function
-        | Some (Value_tuple tup) ->
-          iter2 (fun v lv -> eval_lvalue v lv *> return ()) tup (fst :: snd :: lst)
-        | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
-  | Stmt_short_var_decl svd ->
-    (match svd with
-     | Short_decl_mult_init (sfirst, lst) ->
-       iter (fun (ident, expr) -> eval_expr expr >>= save_local_id ident) (sfirst :: lst)
-     | Short_decl_one_init (idnt1, idnt2, idntlst, fcall) ->
-       eval_func_call fcall
-       >>= (function
-        | Some (Value_tuple tup) -> iter2 save_local_id (idnt1 :: idnt2 :: idntlst) tup
-        | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl")))))
+  | Stmt_assign asgn -> eval_assign asgn
+  | Stmt_short_var_decl decl -> eval_short_var_decl decl
   | Stmt_if if' -> eval_if if'
   | Stmt_go call -> eval_go call
   | Stmt_block body -> add_env body Default *> exec eval_stmt *> delete_env
   | Stmt_break -> exec eval_stmt *> delete_env
   | Stmt_continue -> exec eval_stmt
-  | Stmt_for fr ->
-    let rec_for =
-      return fr.cond
-      >>= function
-      | Some ex ->
-        eval_expr ex
-        >>= (function
-         | Value_bool true ->
-           add_env fr.body Default
-           *> exec eval_stmt
-           *> eval_init fr.post
-           *> delete_env
-           *> return true
-         | Value_bool false -> delete_env *> return false
-         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " for"))))
-      | None ->
-        add_env fr.body Default
-        *> exec eval_stmt
-        *> eval_init fr.post
-        *> delete_env
-        *> return true
-    in
-    let rec rect rfor =
-      rfor
-      >>= function
-      | true ->
-        read_local_envs
-        >>= fun (ls, _) ->
-        (match ls.env_type with
-         | For -> rect rfor
-         | Default -> return ())
-      | false -> return ()
-    in
-    add_env [] For *> eval_init fr.init *> rect rec_for *> return ()
-  | Stmt_return l_exp ->
-    (match l_exp with
-     | [ x ] ->
-       (match x with
-        | Expr_const (Const_func afc) ->
-          read_local_envs
-          >>= (fun (hd, _) ->
-                return (Value_func (Func_initialized (Closure hd.var_map, afc))))
-          >>= fun vfun -> write_returns (Some vfun)
-        | _ -> eval_expr x >>= fun ret -> write_returns (Some ret))
-     | _ -> map eval_expr l_exp >>= fun lst -> write_returns (Some (Value_tuple lst)))
+  | Stmt_for for' -> eval_for for'
+  | Stmt_return exprs -> eval_return exprs
   | Stmt_chan_send send -> eval_chan_send send
   | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()
   | Stmt_defer (ex, args) ->
@@ -498,12 +426,32 @@ and eval_stmt = function
     >>= fun ex ->
     map (fun x -> retrieve_arg_value x) args >>= fun vals -> add_deferred (ex, vals)
 
-and eval_if if' =
-  eval_init if'.init *> eval_expr if'.cond
+and eval_stmt_call (func, args) =
+  eval_expr func
   >>= function
-  | Value_bool true -> add_env if'.if_body Default *> exec eval_stmt *> delete_env
+  | Value_func (Func_initialized (Closure _, afc)) ->
+    eval_closure (func, args)
+    >>= fun (_, vmp) ->
+    (match func with
+     | Expr_ident id -> update_ident id (Value_func (Func_initialized (Closure vmp, afc)))
+     | _ -> return ())
+  | _ -> eval_func_call (func, args) *> return ()
+
+and eval_short_var_decl = function
+  | Short_decl_mult_init (sfirst, lst) ->
+    iter (fun (ident, expr) -> eval_expr expr >>= save_local_id ident) (sfirst :: lst)
+  | Short_decl_one_init (idnt1, idnt2, idntlst, fcall) ->
+    eval_func_call fcall
+    >>= (function
+     | Some (Value_tuple tup) -> iter2 save_local_id (idnt1 :: idnt2 :: idntlst) tup
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
+
+and eval_if { if_init; if_cond; if_body; else_body } =
+  eval_init if_init *> eval_expr if_cond
+  >>= function
+  | Value_bool true -> add_env if_body Default *> exec eval_stmt *> delete_env
   | Value_bool false ->
-    (match if'.else_body with
+    (match else_body with
      | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
      | Some (Else_if if') -> eval_stmt (Stmt_if if')
      | None -> return ())
@@ -518,15 +466,70 @@ and eval_long_var_decl save_to_env = function
      | Some (Value_tuple tup) -> iter2 save_to_env (idnt1 :: idnt2 :: idntlst) tup
      | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
   | Long_decl_no_init (typ, id, id_list) ->
-    iter (fun idnt -> save_to_env idnt (eval_type_no_init typ)) (id :: id_list)
+    iter (fun idnt -> save_to_env idnt (default_init typ)) (id :: id_list)
 
-and eval_type_no_init = function
+and eval_assign = function
+  | Assign_mult_expr (fst, lst) ->
+    iter
+      (fun (lvalue, expr) -> eval_expr expr >>= fun ex -> eval_lvalue ex lvalue)
+      (fst :: lst)
+  | Assign_one_expr (fst, snd, lst, fcall) ->
+    eval_func_call fcall
+    >>= (function
+     | Some (Value_tuple tup) ->
+       iter2 (fun v lv -> eval_lvalue v lv *> return ()) tup (fst :: snd :: lst)
+     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
+
+and eval_for { for_init; for_cond; for_post; for_body } =
+  let rec_for =
+    match for_cond with
+    | Some ex ->
+      eval_expr ex
+      >>= (function
+       | Value_bool true ->
+         add_env for_body Default
+         *> exec eval_stmt
+         *> eval_init for_post
+         *> delete_env
+         *> return true
+       | Value_bool false -> delete_env *> return false
+       | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " for"))))
+    | None ->
+      add_env for_body Default
+      *> exec eval_stmt
+      *> eval_init for_post
+      *> delete_env
+      *> return true
+  in
+  let rec rect rfor =
+    rfor
+    >>= function
+    | true ->
+      read_local_envs
+      >>= fun (ls, _) ->
+      (match ls.env_type with
+       | For -> rect rfor
+       | Default -> return ())
+    | false -> return ()
+  in
+  add_env [] For *> eval_init for_init *> rect rec_for *> return ()
+
+and eval_return = function
+  | [ Expr_const (Const_func afc) ] ->
+    read_local_envs
+    >>= (fun (hd, _) -> return (Value_func (Func_initialized (Closure hd.var_map, afc))))
+    >>= fun vfun -> write_returns (Some vfun)
+  | [ expr ] -> eval_expr expr >>= fun ret -> write_returns (Some ret)
+  | exprs ->
+    map eval_expr exprs >>= fun values -> write_returns (Some (Value_tuple values))
+
+and default_init = function
   | Type_int -> Value_int 0
   | Type_bool -> Value_bool false
   | Type_string -> Value_string ""
   | Type_func _ -> Value_func (Func_uninitialized Nil)
   | Type_chan _ -> Value_chan (Chan_uninitialized Nil)
-  | Type_array (i, tp) -> Value_array (i, List.init i (fun _ -> eval_type_no_init tp))
+  | Type_array (size, t) -> Value_array (size, List.init size (fun _ -> default_init t))
 
 and eval_chan_send (ident, expr) =
   let* value = eval_expr expr in
@@ -633,13 +636,6 @@ let save_global_vars_and_funcs file =
            save_global_id ident (Value_func (Func_initialized (Default, afc))))
        file
   *> delete_running_goroutine
-;;
-
-let save_global_vars =
-  iter (function
-    | Decl_func (ident, afc) ->
-      save_global_id ident (Value_func (Func_initialized (Default, afc)))
-    | Decl_var _ -> return ())
 ;;
 
 let add_main_goroutine =

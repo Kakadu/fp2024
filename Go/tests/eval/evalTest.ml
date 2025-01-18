@@ -268,7 +268,7 @@ let%expect_test "ok: nested if decl" =
     11111 |}]
 ;;
 
-let%expect_test "ok: nested if decl" =
+let%expect_test "ok: simple for" =
   pp
     {|
 
@@ -281,10 +281,6 @@ let%expect_test "ok: nested if decl" =
         for j := 0; j < 3; j++ {
             println(j)
         }
-        for {
-            println("loop")
-            break
-        }
       }
     |};
   [%expect {|
@@ -295,8 +291,39 @@ let%expect_test "ok: nested if decl" =
     3
     0
     1
-    2
-    loop |}]
+    2 |}]
+;;
+
+let%expect_test "ok: break" =
+  pp
+    {|
+    func main() {
+        a := 0
+        for {
+            a++
+            println(a)
+            if a == 5 {
+                break  
+            }
+        }
+    }
+    |};
+  [%expect {|  |}]
+;;
+
+let%expect_test "ok: continue" =
+  pp
+    {|
+    func main() {
+        for i := 0; i < 5; i++ {
+            if i == 3 {
+                continue
+            }
+            println(i)
+        }
+    }
+    |};
+  [%expect {|  |}]
 ;;
 
 let%expect_test "ok: noreturn check" =

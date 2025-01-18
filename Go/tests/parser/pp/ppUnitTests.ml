@@ -679,7 +679,8 @@ let%expect_test "stmt assign mult lvalues and one rvalue" =
 let%expect_test "stmt simple if no init" =
   print_endline
     (print_stmt
-       (Stmt_if { init = None; cond = Expr_ident "true"; if_body = []; else_body = None }));
+       (Stmt_if
+          { if_init = None; if_cond = Expr_ident "true"; if_body = []; else_body = None }));
   [%expect {| if true {} |}]
 ;;
 
@@ -687,10 +688,10 @@ let%expect_test "stmt if with init" =
   print_endline
     (print_stmt
        (Stmt_if
-          { init =
+          { if_init =
               Some
                 (Init_decl (Short_decl_mult_init (("k", Expr_const (Const_int 0)), [])))
-          ; cond = Expr_bin_oper (Bin_equal, Expr_ident "k", Expr_ident "test")
+          ; if_cond = Expr_bin_oper (Bin_equal, Expr_ident "k", Expr_ident "test")
           ; if_body = []
           ; else_body = None
           }));
@@ -701,8 +702,8 @@ let%expect_test "stmt if with else that is a block" =
   print_endline
     (print_stmt
        (Stmt_if
-          { init = None
-          ; cond = Expr_ident "cond"
+          { if_init = None
+          ; if_cond = Expr_ident "cond"
           ; if_body = []
           ; else_body = Some (Else_block [])
           }));
@@ -713,14 +714,14 @@ let%expect_test "stmt if with else that is another if" =
   print_endline
     (print_stmt
        (Stmt_if
-          { init = None
-          ; cond = Expr_ident "cond"
+          { if_init = None
+          ; if_cond = Expr_ident "cond"
           ; if_body = []
           ; else_body =
               Some
                 (Else_if
-                   { init = None
-                   ; cond = Expr_ident "cond2"
+                   { if_init = None
+                   ; if_cond = Expr_ident "cond2"
                    ; if_body = []
                    ; else_body = None
                    })
@@ -732,7 +733,8 @@ let%expect_test "stmt if with else that is another if" =
 
 let%expect_test "stmt empty for" =
   print_endline
-    (print_stmt (Stmt_for { init = None; cond = None; post = None; body = [] }));
+    (print_stmt
+       (Stmt_for { for_init = None; for_cond = None; for_post = None; for_body = [] }));
   [%expect {| for {} |}]
 ;;
 
@@ -740,11 +742,11 @@ let%expect_test "stmt for with only condition" =
   print_endline
     (print_stmt
        (Stmt_for
-          { init = None
-          ; cond =
+          { for_init = None
+          ; for_cond =
               Some (Expr_bin_oper (Bin_greater, Expr_ident "a", Expr_const (Const_int 0)))
-          ; post = None
-          ; body = []
+          ; for_post = None
+          ; for_body = []
           }));
   [%expect {| for a > 0 {} |}]
 ;;
@@ -753,13 +755,13 @@ let%expect_test "stmt for with init, cond and post" =
   print_endline
     (print_stmt
        (Stmt_for
-          { init =
+          { for_init =
               Some
                 (Init_decl (Short_decl_mult_init (("i", Expr_const (Const_int 0)), [])))
-          ; cond =
+          ; for_cond =
               Some (Expr_bin_oper (Bin_less, Expr_ident "i", Expr_const (Const_int 10)))
-          ; post = Some (Init_incr "i")
-          ; body = []
+          ; for_post = Some (Init_incr "i")
+          ; for_body = []
           }));
   [%expect {| for i := 0; i < 10; i++ {} |}]
 ;;
@@ -833,8 +835,8 @@ let%expect_test "file with factorial func" =
              ; returns = [ Type_int ]
              ; body =
                  [ Stmt_if
-                     { init = None
-                     ; cond =
+                     { if_init = None
+                     ; if_cond =
                          Expr_bin_oper
                            (Bin_equal, Expr_ident "n", Expr_const (Const_int 1))
                      ; if_body = [ Stmt_return [ Expr_const (Const_int 1) ] ]
@@ -890,8 +892,8 @@ let%expect_test "file with factorial func" =
              ; returns = [ Type_int ]
              ; body =
                  [ Stmt_if
-                     { init = None
-                     ; cond =
+                     { if_init = None
+                     ; if_cond =
                          Expr_bin_oper
                            (Bin_equal, Expr_ident "n", Expr_const (Const_int 1))
                      ; if_body = [ Stmt_return [ Expr_const (Const_int 1) ] ]

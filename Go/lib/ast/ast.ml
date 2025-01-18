@@ -160,8 +160,8 @@ and if_for_init =
           do_else()
       }] *)
 and if' =
-  { init : if_for_init option
-  ; cond : expr
+  { if_init : if_for_init option
+  ; if_cond : expr
   ; if_body : block
   ; else_body : else_body option (* block or if statement or None *)
   }
@@ -171,6 +171,15 @@ and if' =
 and else_body =
   | Else_block of block (** Else body of statement block such as [else {}] *)
   | Else_if of if' (** Else body of another if statement such as [else if true {}] *)
+[@@deriving show { with_path = false }]
+
+(** A for statement such as [for i := 0; i < n; i++ { do() }] *)
+and for' =
+  { for_init : if_for_init option
+  ; for_cond : expr option
+  ; for_post : if_for_init option
+  ; for_body : block
+  }
 [@@deriving show { with_path = false }]
 
 (** Statement, a syntactic unit of imperative programming *)
@@ -192,12 +201,7 @@ and stmt =
   | Stmt_defer of func_call (** Defer statement such as [defer clean()] *)
   | Stmt_go of func_call (** Go statement such as [go call()] *)
   | Stmt_if of if' (** If statement, see if' type *)
-  | Stmt_for of
-      { init : if_for_init option
-      ; cond : expr option
-      ; post : if_for_init option
-      ; body : block
-      } (** A for statement such as [for i := 0; i < n; i++ { do() }] *)
+  | Stmt_for of for'
 [@@deriving show { with_path = false }]
 
 (** Block of statements in curly braces *)

@@ -31,25 +31,25 @@ let check_return_continue =
 ;;
 
 let check_return body =
-  let rec find_retrun_rec body =
+  let rec find_return_rec body =
     List.mem
       true
       (List.map
          (function
            | Stmt_return _ -> true
            | Stmt_if if' ->
-             find_retrun_rec if'.if_body
+             find_return_rec if'.if_body
              && (function
-                  | Some (Else_block body) -> find_retrun_rec body
-                  | Some (Else_if if') -> find_retrun_rec [ Stmt_if if' ]
+                  | Some (Else_block body) -> find_return_rec body
+                  | Some (Else_if if') -> find_return_rec [ Stmt_if if' ]
                   | None -> false)
                   if'.else_body
-           | Stmt_for for' -> find_retrun_rec for'.body
-           | Stmt_block block -> find_retrun_rec block
+           | Stmt_for for' -> find_return_rec for'.for_body
+           | Stmt_block block -> find_return_rec block
            | _ -> false)
          body)
   in
-  if find_retrun_rec body
+  if find_return_rec body
   then return ()
   else fail (Type_check_error (Missing_return "Missing return"))
 ;;
@@ -460,29 +460,29 @@ let rec check_stmt = function
      >>= iter (fun (expr, return_type) ->
        check_expr check_stmt (retrieve_arg check_stmt) expr >>= check_eq return_type))
     *> return ()
-  | Stmt_if if' ->
+  | Stmt_if { if_init; if_cond; if_body; else_body } ->
     add_env
-    *> check_init check_stmt if'.init
-    *> (check_expr check_stmt (retrieve_arg check_stmt) if'.cond
+    *> check_init check_stmt if_init
+    *> (check_expr check_stmt (retrieve_arg check_stmt) if_cond
         >>= check_eq (Ctype Type_bool))
-    *> check_return_continue if'.if_body
-    *> iter check_stmt if'.if_body
+    *> check_return_continue if_body
+    *> iter check_stmt if_body
     *> delete_env
     *>
-      (match if'.else_body with
+      (match else_body with
       | Some (Else_block block) -> check_return_continue block *> iter check_stmt block
       | Some (Else_if if') -> check_stmt (Stmt_if if')
       | None -> return ())
-  | Stmt_for { init; cond; post; body } ->
+  | Stmt_for { for_init; for_cond; for_post; for_body } ->
     add_env
-    *> check_init check_stmt init
-    *> (match cond with
+    *> check_init check_stmt for_init
+    *> (match for_cond with
       | Some expr ->
         check_expr check_stmt (retrieve_arg check_stmt) expr
         >>= check_eq (Ctype Type_bool)
       | None -> return ())
-    *> check_init check_stmt post
-    *> iter check_stmt body
+    *> check_init check_stmt for_post
+    *> iter check_stmt for_body
     *> delete_env
 ;;
 
