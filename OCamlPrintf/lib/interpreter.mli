@@ -4,9 +4,13 @@
 
 type error =
   [ `Type_error
+    (** Represents a type error that occurs when a type mismatch is detected in an expression. *)
   | `Division_by_zero
+    (** Represents the error that occurs when attempting to perform a division by zero operation. *)
   | `Match_failure
+    (** Represents a match error occurs when a pattern matching attempt fails. *)
   | `No_variable of string
+    (** Represents an error that occurs when attempting to use a variable that has not been declared or initialized. *)
   ]
 
 val pp_error : Format.formatter -> error -> unit

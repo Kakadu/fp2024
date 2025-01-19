@@ -11,6 +11,11 @@ type opts =
   ; mutable input_file : string option
   }
 
+let pp_global_error ppf = function
+  | #Inferencer.error as e -> Inferencer.pp_error ppf e
+  | #Interpreter.error as e -> Interpreter.pp_error ppf e
+;;
+
 let run_single dump_parsetree inference input_source =
   let run text env_infer env_inter =
     let ast = Parser.parse text in
@@ -26,7 +31,7 @@ let run_single dump_parsetree inference input_source =
       else (
         match Inferencer.run_inferencer env_infer ast with
         | Error e ->
-          print_endline (Format.asprintf "Infer error: %a" Inferencer.pp_error e);
+          print_endline (Format.asprintf "Infer error: %a" pp_global_error e);
           env_infer, env_inter
         | Ok (env_infer, out_list) ->
           if inference
@@ -42,19 +47,19 @@ let run_single dump_parsetree inference input_source =
             env_infer, env_inter)
           else (
             match Interpreter.run_interpreter env_inter ast with
-            | Ok (env_inter, _) -> ();
+            | Ok (env_inter, _) ->
+              ();
               (* List.iter
-                (function
-                  | Some id, val' ->
-                    print_endline
-                      (Format.asprintf "val %s = %a" id Interpreter.pp_value val')
-                  | None, val' ->
-                    print_endline (Format.asprintf "- = %a" Interpreter.pp_value val'))
-                out_list; *)
+                 (function
+                 | Some id, val' ->
+                 print_endline
+                 (Format.asprintf "val %s = %a" id Interpreter.pp_value val')
+                 | None, val' ->
+                 print_endline (Format.asprintf "- = %a" Interpreter.pp_value val'))
+                 out_list; *)
               env_infer, env_inter
             | Error e ->
-              print_endline
-                (Format.asprintf "Interpreter error: %a" Interpreter.pp_error e);
+              print_endline (Format.asprintf "Interpreter error: %a" pp_global_error e);
               env_infer, env_inter))
   in
   let env_infer, env_inter =
