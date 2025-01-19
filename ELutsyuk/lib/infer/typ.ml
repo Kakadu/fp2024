@@ -18,4 +18,6 @@ type typ =
   | TypOption of typ
 [@@deriving show { with_path = false }]
 
-type error = OccursCheckFailed of int * typ
+type error =
+  | OccursCheckFailed of int * typ
+  | UnificationFailed of typ * typ

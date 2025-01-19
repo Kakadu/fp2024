@@ -115,6 +115,7 @@ end
 
 module Substitutions = struct
   open Res
+  open Res.SyntSugar
 
   (* тип монады -- мапа из свободных переменных в типчики *)
   type t = (var_type, typ, Int.comparator_witness) Map.t
@@ -123,24 +124,88 @@ module Substitutions = struct
   let empty : t = Map.empty (module Int)
 
   (* замещение с одной заменой *)
-  let singleton var typ =
+  (* важно, что input -- это кортеж *)
+  let singleton (var, typ) =
     if Type.occurs_var var typ
     then fail (OccursCheckFailed (var, typ))
     else return (Map.singleton (module Int) var typ)
   ;;
 
-  (* let apply subst =
-     let rec helper = function
-     | TypConst x -> TypConst x
-     | TypVar b ->
-     (match Map.find subst b with
-     | Some v -> v
-     | None -> TypVar b)
-     | TypArrow (l, r) ->
-     let l' = helper in
-     let r' = helper in
-     TypArrow (l', r')
-     in
-     helper
-     ;; *)
+  let apply subst =
+    let rec try_apply_to = function
+      | TypConst x -> TypConst x (* потому что нет свободных переменных *)
+      | TypVar var ->
+        (* ищем такой ключ (как содержимое нашего типа) в подстановке *)
+        (match Map.find subst var with
+         | Some typ -> typ
+         | None -> TypVar var)
+      | TypArrow (l, r) -> TypArrow (try_apply_to l, try_apply_to r)
+      | TypTuple (typ1, typ2, typs) ->
+        let applyed_list = List.map typs ~f:try_apply_to in
+        TypTuple (try_apply_to typ1, try_apply_to typ2, applyed_list)
+      | TypList typ -> TypList (try_apply_to typ)
+      | TypOption typ -> TypOption (try_apply_to typ)
+    in
+    try_apply_to
+  ;;
+
+  (* возвращает substitution, если типы не совпадают *)
+  let rec unify l r =
+    match l, r with
+    | TypConst typ1, TypConst typ2 when String.equal typ1 typ2 -> return empty
+    | TypConst _, TypConst _ -> fail (UnificationFailed (l, r))
+    | TypVar l, TypVar r when l = r -> return empty
+    | TypVar var, typ | typ, TypVar var -> singleton (var, typ)
+    | TypArrow (l1, r1), TypArrow (l2, r2) ->
+      let* subst1 = unify l1 l2 in
+      (* как в статье, для общей подстановки S1 применяем к S2, затем наоборот и комбинируем *)
+      let* subst2 = unify (apply subst1 r1) (apply subst1 r2) in
+      compose subst1 subst2
+    | TypTuple (l1, l2, ls), TypTuple (r1, r2, rs) ->
+      if List.length ls <> List.length rs
+      then fail (UnificationFailed (l, r))
+      else
+        Base.List.fold_left
+          (Base.List.zip_exn (l1 :: l2 :: ls) (r1 :: r2 :: rs))
+          ~f:(fun subst (l, r) ->
+            let* new_subst = unify l r in
+            let* curr_subst = subst in
+            compose curr_subst new_subst)
+          ~init:(return empty)
+    | TypList l, TypList r -> unify l r
+    | TypOption l, TypOption r -> unify l r
+    | _ -> fail (UnificationFailed (l, r))
+
+  and extend subst (new_var, new_typ) =
+    match Map.find subst new_var with
+    (* если нашлась такая переменная, то нужно применить новую замену *)
+    | Some typ ->
+      let* new_subst = unify new_typ typ in
+      compose subst new_subst
+    (* чтобы применить compose, нужно обязательно перед этим сделать binding *)
+    (* если не нашлась такая замена, то нужно всё равно применить и ещё и добавить её к мапе существующих *)
+    | None ->
+      let new_typ = apply subst new_typ in
+      let* new_subst = singleton (new_var, new_typ) in
+      Map.fold subst ~init:(return new_subst) ~f:(fun ~key:next_var ~data:next_typ map ->
+        let next_typ = apply new_subst next_typ in
+        (* проверка ниже нужна по той же причине, по которой мы её проводит, когда создаём новую подстановку *)
+        (* выходит, что новую подстановку добавляем только через унификацию *)
+        if Type.occurs_var next_var next_typ
+        then fail (OccursCheckFailed (next_var, next_typ))
+        else
+          let* map = map in
+          return (Map.set map ~key:next_var ~data:next_typ))
+
+  and compose subst1 subst2 =
+    Map.fold subst1 ~init:(return subst2) ~f:(fun ~key:next_var ~data:next_typ map ->
+      let* map = map in
+      extend map (next_var, next_typ))
+  ;;
+
+  let compose_all subst_map =
+    List.fold_left subst_map ~init:(return empty) ~f:(fun acc subst ->
+      let* acc = acc in
+      compose acc subst)
+  ;;
 end
