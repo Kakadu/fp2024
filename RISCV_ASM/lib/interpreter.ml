@@ -858,6 +858,13 @@ and execute_instruction state instr program =
         return resolved_address
     in
     return (set_register_value state rd new_address)
+  | Li (rd, imm) ->
+    let imm_value =
+      match imm with
+      | ImmediateAddress32 value -> Int64.of_int value
+      | LabelAddress32 label -> resolve_label_excluding_directives program label
+    in
+    return (set_register_value state rd imm_value)
   | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
