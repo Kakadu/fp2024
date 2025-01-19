@@ -131,6 +131,8 @@ let pp_instruction ppf = function
     pp_instruction_2reg_1offset_helper ppf "lwu" rd rs1 (Address12 imm)
   | Addi (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "addi" rd rs1 (Address12 imm)
+  | Subi (rd, rs1, imm) ->
+    pp_instruction_2reg_1imm_helper ppf "subi" rd rs1 (Address12 imm)
   | Xori (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "xori" rd rs1 (Address12 imm)
   | Ori (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "ori" rd rs1 (Address12 imm)
@@ -245,7 +247,7 @@ let pp_directive ppf = function
       (match none_or_int with
        | Some imm -> Format.sprintf ",%d" imm
        | None -> "")
-  | String str -> Format.fprintf ppf ".string %S" (String.escaped str)
+  | StringDir str -> Format.fprintf ppf ".string %S" (String.escaped str)
   | CfiDefCfaOffset imm -> Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
   | CfiOffset (imm1, imm2) -> Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
   | CfiRememberState -> Format.fprintf ppf ".cfi_remember_state"

@@ -220,7 +220,7 @@ let parse_directive =
                     ws_opt (char ',') *> ws_opt (lift (fun i -> Some i) parse_number)
                   | _ -> return None))
        ; parse_string_with_spaces ".string"
-         *> ws_opt (lift (fun str -> DirectiveExpr (String str)) parse_quoted_string)
+         *> ws_opt (lift (fun str -> DirectiveExpr (StringDir str)) parse_quoted_string)
        ; parse_string_with_spaces ".cfi_def_cfa_offset"
          *> ws_opt (lift (fun int -> DirectiveExpr (CfiDefCfaOffset int)) parse_number)
        ; parse_string_with_spaces ".cfi_offset"
@@ -306,6 +306,12 @@ let parse_instruction =
        ; parse_string_with_spaces "addi"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Addi (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; parse_string_with_spaces "subi"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Subi (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
