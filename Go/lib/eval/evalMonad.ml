@@ -111,10 +111,15 @@ module SendingSet = Set.Make (SendingGoroutines)
 module ReceivingSet = Set.Make (ReceivingGoroutines)
 module ChanSet = Set.Make (Chan)
 
+type initiation =
+  | Sender
+  | Receiver
+
 type chanel_using_state =
   { sending_goroutine : goroutine
   ; receiving_goroutine : goroutine
   ; value : value
+  ; initiation : initiation
   }
 
 type has_finished =
@@ -470,19 +475,21 @@ module Monad = struct
     read >>= fun state -> write { state with is_using_chanel }
   ;;
 
-  let start_using_chanel sending_goroutine receiving_goroutine value =
+  let start_using_chanel sending_goroutine receiving_goroutine value initiation =
     read_is_using_chanel
     >>= function
     | Some _ -> fail (Runtime_error (Deadlock "trying to use chanel which is still used"))
     | None ->
-      write_is_using_chanel (Some { receiving_goroutine; sending_goroutine; value })
+      write_is_using_chanel
+        (Some { receiving_goroutine; sending_goroutine; value; initiation })
   ;;
 
   let use_chanel =
     read_is_using_chanel
     >>= function
-    | Some { sending_goroutine; receiving_goroutine; value } ->
-      write_is_using_chanel None *> return (receiving_goroutine, sending_goroutine, value)
+    | Some { sending_goroutine; receiving_goroutine; value; initiation } ->
+      write_is_using_chanel None
+      *> return (receiving_goroutine, sending_goroutine, value, initiation)
     | None ->
       fail
         (Runtime_error
@@ -574,13 +581,13 @@ module Monad = struct
       List.rev
         (List.fold_left
            (fun lst env ->
-              match List.find_opt (fun x -> MapIdent.mem ident x.var_map) lst with
-              | Some _ -> env :: lst
-              | None ->
-                (match MapIdent.mem ident env.var_map with
-                 | true ->
-                   { env with var_map = MapIdent.add ident value env.var_map } :: lst
-                 | false -> env :: lst))
+             match List.find_opt (fun x -> MapIdent.mem ident x.var_map) lst with
+             | Some _ -> env :: lst
+             | None ->
+               (match MapIdent.mem ident env.var_map with
+                | true ->
+                  { env with var_map = MapIdent.add ident value env.var_map } :: lst
+                | false -> env :: lst))
            []
            (hd :: tl))
     in

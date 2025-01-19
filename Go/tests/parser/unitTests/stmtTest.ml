@@ -19,52 +19,40 @@ let%expect_test "continue stmt" =
 ;;
 
 let%expect_test "stmt defer with func" =
-  pp
-    print_stmt
-    parse_stmt
-    {|defer 
+  pp print_stmt parse_stmt {|defer 
                       call(abc)|};
-  [%expect
-    {|
+  [%expect {|
     defer call(abc) |}]
 ;;
 
 let%expect_test "stmt defer with expr that is not a func" =
   pp print_stmt parse_stmt {|defer 2 + 2 * 5|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt go with func" =
-  pp
-    print_stmt
-    parse_stmt
-    {|go 
+  pp print_stmt parse_stmt {|go 
                       call(abc)|};
-  [%expect
-    {|
+  [%expect {|
     go call(abc) |}]
 ;;
 
 let%expect_test "stmt go with expr that is not a func" =
   pp print_stmt parse_stmt {|go 2 + 2 * 5|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt chan send" =
   pp print_stmt parse_stmt {|c <- sum + 1|};
-  [%expect
-    {|
+  [%expect {|
     c <- sum + 1 |}]
 ;;
 
 let%expect_test "stmt chan receive" =
   pp print_stmt parse_stmt {|<-c|};
-  [%expect
-    {|
+  [%expect {|
     <-c |}]
 ;;
 
@@ -119,15 +107,13 @@ let%expect_test "return with multiple exprs and ws" =
     {|return 3    ,   
              a  ,  // some comment 
              true /* RARAVARV */    ,  nil|};
-  [%expect
-    {|
+  [%expect {|
     return 3, a, true, nil |}]
 ;;
 
 let%expect_test "return with multiple complex exprs" =
   pp print_stmt parse_stmt {|return -5 * _r + 8, !a && (b || c)|};
-  [%expect
-    {|
+  [%expect {|
     return -5 * _r + 8, !a && (b || c) |}]
 ;;
 
@@ -140,21 +126,16 @@ let%expect_test "stmt func call with one simple arg" =
 
 let%expect_test "stmt func callmultiple args" =
   pp print_stmt parse_stmt {|my_func(5, a, nil)|};
-  [%expect
-    {|
+  [%expect {|
     my_func(5, a, nil) |}]
 ;;
 
 let%expect_test "stmt func call with complex expressions and comments" =
-  pp
-    print_stmt
-    parse_stmt
-    {|fac(   fac(2 + 2), 
+  pp print_stmt parse_stmt {|fac(   fac(2 + 2), 
   34 * 75,
   // aovnervo 
   !a)|};
-  [%expect
-    {|
+  [%expect {|
     fac(fac(2 + 2), 34 * 75, !a) |}]
 ;;
 
@@ -162,29 +143,25 @@ let%expect_test "stmt func call with complex expressions and comments" =
 
 let%expect_test "stmt assign one lvalue, one rvalue" =
   pp print_stmt parse_stmt {|a = 5|};
-  [%expect
-    {|
+  [%expect {|
     a = 5 |}]
 ;;
 
 let%expect_test "stmt assign one lvalue, no rvalue" =
   pp print_stmt parse_stmt {|a =|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt assign no lvalue, one rvalue" =
   pp print_stmt parse_stmt {|= 5|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt assign one lvalue that is an array index, one rvalue" =
   pp print_stmt parse_stmt {|a[i][2 + 3] = 5|};
-  [%expect
-    {|
+  [%expect {|
     a[i][2 + 3] = 5 |}]
 ;;
 
@@ -198,15 +175,13 @@ let%expect_test "stmt assign with mult equal number of lvalues and rvalues and w
   
   5, /* comment////// */true,
    "hello"|};
-  [%expect
-    {|
+  [%expect {|
     a, b, c[get_index()] = 5, true, "hello" |}]
 ;;
 
 let%expect_test "stmt assign mult lvalues and one rvalue that is a func call" =
   pp print_stmt parse_stmt {|a, b[0] ,c = get_three()|};
-  [%expect
-    {|
+  [%expect {|
     a, b[0], c = get_three() |}]
 ;;
 
@@ -224,8 +199,7 @@ let%expect_test "stmt assign mult unequal lvalues and rvalues" =
 
 let%expect_test "stmt long single var decl without init" =
   pp print_stmt parse_stmt {|var a string|};
-  [%expect
-    {|
+  [%expect {|
     var a string |}]
 ;;
 
@@ -241,78 +215,67 @@ let%expect_test "stmt long single var decl with type, without vars and init" =
 
 let%expect_test "stmt long single var decl without init with mult array type" =
   pp print_stmt parse_stmt {|var a [2][3][1]bool|};
-  [%expect
-    {|
+  [%expect {|
     var a [2][3][1]bool |}]
 ;;
 
 let%expect_test "stmt long single var decl no type" =
   pp print_stmt parse_stmt {|var a = 5|};
-  [%expect
-    {|
+  [%expect {|
     var a = 5 |}]
 ;;
 
 let%expect_test "stmt long decl no type and var" =
   pp print_stmt parse_stmt {|var = 5|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt long mult var decl no type" =
   pp print_stmt parse_stmt {|var a, b, c = 5, nil, "hi"|};
-  [%expect
-    {|
+  [%expect {|
     var a, b, c = 5, nil, "hi" |}]
 ;;
 
 let%expect_test "stmt long single var decl with type" =
   pp print_stmt parse_stmt {|var a func() = func() {}|};
-  [%expect
-    {|
+  [%expect {|
     var a func() = func() {} |}]
 ;;
 
 let%expect_test "stmt long mult var decl with type" =
   pp print_stmt parse_stmt {|var a, b int = 2, 3|};
-  [%expect
-    {|
+  [%expect {|
     var a, b int = 2, 3 |}]
 ;;
 
 let%expect_test "stmt long mult var decl with type" =
   pp print_stmt parse_stmt {|var a, b, c [2]int = [2]int{1, 2}, [2]int{}, [2]int{10, 20}|};
-  [%expect
-    {|
+  [%expect {|
     var a, b, c [2]int = [2]int{1, 2}, [2]int{}, [2]int{10, 20} |}]
 ;;
 
 let%expect_test "stmt long mult var decl without type" =
   pp print_stmt parse_stmt {|var a, b, c = 5, nil, "hi"|};
-  [%expect
-    {|
+  [%expect {|
     var a, b, c = 5, nil, "hi" |}]
 ;;
 
 let%expect_test "stmt long var decl mult lvalues and one rvalue that is a func call" =
   pp print_stmt parse_stmt {|var a, b, c = get_three(1, 2, 3)|};
-  [%expect
-    {|
+  [%expect {|
     var a, b, c  = get_three(1, 2, 3) |}]
 ;;
 
 let%expect_test "stmt long var decl mult lvalues and one rvalue that is not a func call" =
   pp print_stmt parse_stmt {|var a, b, c = true|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt long var decl unequal lvalues and rvalues" =
   pp print_stmt parse_stmt {|var a, b, c = 1, 2, 3, 4|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
@@ -320,50 +283,43 @@ let%expect_test "stmt long var decl unequal lvalues and rvalues" =
 
 let%expect_test "stmt short single var decl" =
   pp print_stmt parse_stmt {|a := 7|};
-  [%expect
-    {|
+  [%expect {|
     a := 7 |}]
 ;;
 
 let%expect_test "stmt short decl without init" =
   pp print_stmt parse_stmt {|a :=|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt short decl with init, without var" =
   pp print_stmt parse_stmt {|:= 5|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt short mult var decl" =
   pp print_stmt parse_stmt {|a, b, c := true, 567, "string"|};
-  [%expect
-    {|
+  [%expect {|
     a, b, c := true, 567, "string" |}]
 ;;
 
 let%expect_test "stmt short var decl mult lvalues and one rvalue that is a func call" =
   pp print_stmt parse_stmt {|a, b, c := three(abc, 2 + 3, fac(25))|};
-  [%expect
-    {|
+  [%expect {|
     a, b, c := three(abc, 2 + 3, fac(25)) |}]
 ;;
 
 let%expect_test "stmt short var decl mult lvalues and one rvalue that is not a func call" =
   pp print_stmt parse_stmt {|a, b, c := abcdefg"|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt short var decl unequal lvalues and rvalues" =
   pp print_stmt parse_stmt {|a, b, c := 1, 2, 3, 4|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
@@ -371,15 +327,13 @@ let%expect_test "stmt short var decl unequal lvalues and rvalues" =
 
 let%expect_test "stmt empty block" =
   pp print_stmt parse_stmt {|{}|};
-  [%expect
-    {|
+  [%expect {|
     {} |}]
 ;;
 
 let%expect_test "stmt block of one stmt" =
   pp print_stmt parse_stmt {|{ a := 5 }|};
-  [%expect
-    {|
+  [%expect {|
     {
         a := 5
     } |}]
@@ -387,8 +341,7 @@ let%expect_test "stmt block of one stmt" =
 
 let%expect_test "stmt block of mult stmts, separated by semicolon" =
   pp print_stmt parse_stmt {|{ a := 5; a++; println(a) }|};
-  [%expect
-    {|
+  [%expect {|
     {
         a := 5
         a++
@@ -403,8 +356,7 @@ let%expect_test "stmt block of mult stmts, separated by newlines" =
     {|{ var hi string = "hi"
     // string that says hi
       go get_int(hi)}|};
-  [%expect
-    {|
+  [%expect {|
     {
         var hi string = "hi"
         go get_int(hi)
@@ -415,92 +367,79 @@ let%expect_test "stmt block of mult stmts, separated by newlines" =
 
 let%expect_test "stmt simple if" =
   pp print_stmt parse_stmt {|if true {}|};
-  [%expect
-    {|
+  [%expect {|
     if true {} |}]
 ;;
 
 let%expect_test "stmt if with empty init" =
   pp print_stmt parse_stmt {|if ; call() {}|};
-  [%expect
-    {|
+  [%expect {|
     if call() {} |}]
 ;;
 
 let%expect_test "stmt if with short decl init" =
   pp print_stmt parse_stmt {|if k := 0; k == test {}|};
-  [%expect
-    {|
+  [%expect {|
     if k := 0; k == test {} |}]
 ;;
 
 let%expect_test "stmt if with assign init" =
   pp print_stmt parse_stmt {|if k = 0; k == test {}|};
-  [%expect
-    {|
+  [%expect {|
     if k = 0; k == test {} |}]
 ;;
 
 let%expect_test "stmt if with incr init" =
   pp print_stmt parse_stmt {|if k++; k == test {}|};
-  [%expect
-    {|
+  [%expect {|
     if k++; k == test {} |}]
 ;;
 
 let%expect_test "stmt if with decr init" =
   pp print_stmt parse_stmt {|if k--; k == test {}|};
-  [%expect
-    {|
+  [%expect {|
     if k--; k == test {} |}]
 ;;
 
 let%expect_test "stmt if with call init" =
   pp print_stmt parse_stmt {|if run_test(); true {}|};
-  [%expect
-    {|
+  [%expect {|
     if run_test(); true {} |}]
 ;;
 
 let%expect_test "stmt if with chan send init" =
   pp print_stmt parse_stmt {|if c <- 5; true {}|};
-  [%expect
-    {|
+  [%expect {|
     if c <- 5; true {} |}]
 ;;
 
 let%expect_test "stmt if with chan receive init" =
   pp print_stmt parse_stmt {|if <-c; true {}|};
-  [%expect
-    {|
+  [%expect {|
     if <-c; true {} |}]
 ;;
 
 let%expect_test "stmt if with wrong init" =
   pp print_stmt parse_stmt {|if var a = 5; cond {}|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt if with else that is a block" =
   pp print_stmt parse_stmt {|if cond {} else {}|};
-  [%expect
-    {|
+  [%expect {|
     if cond {} else {} |}]
 ;;
 
 let%expect_test "stmt if with else that is another if" =
   pp print_stmt parse_stmt {|if cond {} else if cond2 {}|};
-  [%expect
-    {|
+  [%expect {|
     if cond {} else if cond2 {} |}]
 ;;
 
 let%expect_test "stmt if with wrong else" =
   pp print_stmt parse_stmt {|if cond {} else do_smth()|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
@@ -508,84 +447,72 @@ let%expect_test "stmt if with wrong else" =
 
 let%expect_test "stmt empty for" =
   pp print_stmt parse_stmt {|for {}|};
-  [%expect
-    {|
+  [%expect {|
     for {} |}]
 ;;
 
 let%expect_test "stmt for with only conition" =
   pp print_stmt parse_stmt {|for a > 0 {}|};
-  [%expect
-    {|
+  [%expect {|
     for a > 0 {} |}]
 ;;
 
 let%expect_test "stmt empty for with semicolons" =
   pp print_stmt parse_stmt {|for ;; {}|};
-  [%expect
-    {|
+  [%expect {|
     for {} |}]
 ;;
 
 let%expect_test "stmt default for with short decl in init and post" =
   pp print_stmt parse_stmt {|for i := 0;; j := i + 1 {}|};
-  [%expect
-    {|
+  [%expect {|
     for i := 0;; j := i + 1 {} |}]
 ;;
 
 let%expect_test "stmt default for with assign in init and post" =
   pp print_stmt parse_stmt {|for i = call();; i = i + 1 {}|};
-  [%expect
-    {|
+  [%expect {|
     for i = call();; i = i + 1 {} |}]
 ;;
 
 let%expect_test "stmt default for with call in init and post" =
   pp print_stmt parse_stmt {|for start();; finish() {}|};
-  [%expect
-    {|
+  [%expect {|
     for start();; finish() {} |}]
 ;;
 
 let%expect_test "stmt default for with incr in init and post" =
   pp print_stmt parse_stmt {|for i++;; i++ {}|};
-  [%expect
-    {|
+  [%expect {|
     for i++;; i++ {} |}]
 ;;
 
 let%expect_test "stmt default for with decr in init and post" =
   pp print_stmt parse_stmt {|for i--;; i-- {}|};
-  [%expect
-    {|
+  [%expect {|
     for i--;; i-- {} |}]
 ;;
 
 let%expect_test "stmt default for with chan send in init and post" =
   pp print_stmt parse_stmt {|for c <- 5;; c <- 5 {}|};
-  [%expect
-    {|
+  [%expect {|
     for c <- 5;; c <- 5 {} |}]
 ;;
 
 let%expect_test "stmt default for with chan receive in init and post" =
   pp print_stmt parse_stmt {|for <-c;; <-c {}|};
-  [%expect
-    {|
+  [%expect {|
     for <-c;; <-c {} |}]
 ;;
 
 let%expect_test "stmt default for with invalid stmt in init and post" =
   pp print_stmt parse_stmt {|for go call(); i > 0; return {}|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
 let%expect_test "stmt default for with valid init and invalid post" =
   pp print_stmt parse_stmt {|for call(); i > 0; break|};
-  [%expect
-    {|
+  [%expect {|
     : syntax error  |}]
 ;;

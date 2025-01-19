@@ -55,17 +55,18 @@ let gen_chan_type gtype =
 
 let gen_type =
   sized_size size4
-  @@ fix (fun self -> function
-    | 0 -> oneofl [ Type_int; Type_string; Type_bool ]
-    | n ->
-      oneof
-        [ return Type_int
-        ; return Type_string
-        ; return Type_bool
-        ; gen_array_type (self (n - 1))
-        ; gen_func_type (self (n - 1))
-        ; gen_chan_type (self (n - 1))
-        ])
+  @@ fix (fun self ->
+       function
+       | 0 -> oneofl [ Type_int; Type_string; Type_bool ]
+       | n ->
+         oneof
+           [ return Type_int
+           ; return Type_string
+           ; return Type_bool
+           ; gen_array_type (self (n - 1))
+           ; gen_func_type (self (n - 1))
+           ; gen_chan_type (self (n - 1))
+           ])
 ;;
 
 (********** const **********)
@@ -169,18 +170,19 @@ let gen_expr_func_call gexpr =
 
 let gen_expr gblock =
   sized_size (int_range 0 10)
-  @@ fix (fun self -> function
-    | 0 -> gen_expr_ident
-    | n ->
-      oneof
-        [ gen_expr_ident
-        ; gen_expr_const (self (n - 1)) gblock
-        ; gen_expr_index (self (n - 1))
-        ; gen_expr_bin_oper (self (n - 1))
-        ; gen_expr_un_oper (self (n - 1))
-        ; map (fun chan -> Expr_chan_receive chan) (self (n - 1))
-        ; gen_expr_func_call (self (n - 1))
-        ])
+  @@ fix (fun self ->
+       function
+       | 0 -> gen_expr_ident
+       | n ->
+         oneof
+           [ gen_expr_ident
+           ; gen_expr_const (self (n - 1)) gblock
+           ; gen_expr_index (self (n - 1))
+           ; gen_expr_bin_oper (self (n - 1))
+           ; gen_expr_un_oper (self (n - 1))
+           ; map (fun chan -> Expr_chan_receive chan) (self (n - 1))
+           ; gen_expr_func_call (self (n - 1))
+           ])
 ;;
 
 (********** stmt **********)
@@ -227,15 +229,16 @@ let gen_assign_lvalue gblock =
     return (Lvalue_ident ident)
   in
   sized_size size4
-  @@ fix (fun self -> function
-    | 0 -> gen_lvalue_ident
-    | n ->
-      oneof
-        [ gen_lvalue_ident
-        ; (let* array = self (n - 1) in
-           let* index = gen_expr gblock in
-           return (Lvalue_array_index (array, index)))
-        ])
+  @@ fix (fun self ->
+       function
+       | 0 -> gen_lvalue_ident
+       | n ->
+         oneof
+           [ gen_lvalue_ident
+           ; (let* array = self (n - 1) in
+              let* index = gen_expr gblock in
+              return (Lvalue_array_index (array, index)))
+           ])
 ;;
 
 let gen_assign gblock =
@@ -326,31 +329,32 @@ let gen_stmt_for gstmt =
 
 let gen_stmt =
   sized_size size4
-  @@ fix (fun self -> function
-    | 0 ->
-      oneof
-        [ map (fun id -> Stmt_incr id) gen_ident
-        ; map (fun id -> Stmt_decr id) gen_ident
-        ; gen_stmt_break_continue
-        ]
-    | n ->
-      let gblock = gen_block (self (n - 1)) in
-      oneof
-        [ map (fun id -> Stmt_incr id) gen_ident
-        ; map (fun id -> Stmt_decr id) gen_ident
-        ; gen_stmt_break_continue
-        ; gen_stmt_long_decl gblock
-        ; map (fun decl -> Stmt_short_var_decl decl) (gen_short_decl gblock)
-        ; map (fun assign -> Stmt_assign assign) (gen_assign gblock)
-        ; gen_stmt_return gblock
-        ; gen_stmt_block (self (n - 1))
-        ; map (fun chan_send -> Stmt_chan_send chan_send) (gen_chan_send gblock)
-        ; map (fun chan -> Stmt_chan_receive chan) (gen_expr gblock)
-        ; gen_stmt_call gblock
-        ; gen_stmt_defer_go gblock
-        ; map (fun if' -> Stmt_if if') (gen_if (self (n - 1)))
-        ; gen_stmt_for (self (n - 1))
-        ])
+  @@ fix (fun self ->
+       function
+       | 0 ->
+         oneof
+           [ map (fun id -> Stmt_incr id) gen_ident
+           ; map (fun id -> Stmt_decr id) gen_ident
+           ; gen_stmt_break_continue
+           ]
+       | n ->
+         let gblock = gen_block (self (n - 1)) in
+         oneof
+           [ map (fun id -> Stmt_incr id) gen_ident
+           ; map (fun id -> Stmt_decr id) gen_ident
+           ; gen_stmt_break_continue
+           ; gen_stmt_long_decl gblock
+           ; map (fun decl -> Stmt_short_var_decl decl) (gen_short_decl gblock)
+           ; map (fun assign -> Stmt_assign assign) (gen_assign gblock)
+           ; gen_stmt_return gblock
+           ; gen_stmt_block (self (n - 1))
+           ; map (fun chan_send -> Stmt_chan_send chan_send) (gen_chan_send gblock)
+           ; map (fun chan -> Stmt_chan_receive chan) (gen_expr gblock)
+           ; gen_stmt_call gblock
+           ; gen_stmt_defer_go gblock
+           ; map (fun if' -> Stmt_if if') (gen_if (self (n - 1)))
+           ; gen_stmt_for (self (n - 1))
+           ])
 ;;
 
 (********** top decl **********)

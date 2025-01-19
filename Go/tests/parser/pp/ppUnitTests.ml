@@ -118,8 +118,7 @@ let%expect_test "expr anon func with one arg and one return value" =
              ; returns = [ Type_int ]
              ; body = [ Stmt_return [ Expr_ident "a" ] ]
              })));
-  [%expect
-    {|
+  [%expect {|
     func(a int) int {
         return a
     } |}]
@@ -134,8 +133,7 @@ let%expect_test "expr anon func with mult args and return values" =
              ; returns = [ Type_int; Type_string ]
              ; body = [ Stmt_return [ Expr_ident "a"; Expr_ident "b" ] ]
              })));
-  [%expect
-    {|
+  [%expect {|
     func(a int, b string) (int, string) {
         return a, b
     } |}]
@@ -782,8 +780,7 @@ let%expect_test "stmt block of one stmt" =
           [ Stmt_short_var_decl
               (Short_decl_mult_init (("a", Expr_const (Const_int 5)), []))
           ]));
-  [%expect
-    {|
+  [%expect {|
     {
         a := 5
     } |}]
@@ -798,8 +795,7 @@ let%expect_test "stmt block of mult stmts" =
           ; Stmt_incr "a"
           ; Stmt_call (Expr_ident "println", [ Arg_expr (Expr_ident "a") ])
           ]));
-  [%expect
-    {|
+  [%expect {|
     {
         a := 5
         a++
@@ -824,8 +820,7 @@ let%expect_test "file with multiple declarations" =
        [ Decl_var (Long_decl_no_init (Type_int, "x", []))
        ; Decl_func ("main", { args = []; returns = []; body = [] })
        ]);
-  [%expect
-    {|
+  [%expect {|
     var x int
 
     func main() {} |}]

@@ -68,7 +68,7 @@ and defered_frame = value * value list
 
 type stack_frame =
   { local_envs : local_env * local_env list
-    (** Storage for local variables, new [{}] block creates new environment *)
+  (** Storage for local variables, new [{}] block creates new environment *)
   ; deferred_funcs : defered_frame list
   ; returns : value option
   ; panics : value list option
@@ -76,7 +76,7 @@ type stack_frame =
 
 type goroutine =
   { stack : stack_frame * stack_frame list
-    (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
+  (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
   ; go_id : int
   }
 
@@ -118,10 +118,15 @@ module SendingSet : Set.S with type elt = SendingGoroutines.t
 module ReceivingSet : Set.S with type elt = ReceivingGoroutines.t
 module ChanSet : Set.S with type elt = Chan.t
 
+type initiation =
+  | Sender
+  | Receiver
+
 type chanel_using_state =
   { sending_goroutine : goroutine
   ; receiving_goroutine : goroutine
   ; value : value
+  ; initiation : initiation
   }
 
 type has_finished =
@@ -131,15 +136,15 @@ type has_finished =
 (** The whole executing program state *)
 type eval_state =
   { global_env : value MapIdent.t
-    (** Stores values for predeclared identifiers and global variables and functions *)
+  (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
-    (** Goroutine that is currently running, stored separately for time efficiency *)
+  (** Goroutine that is currently running, stored separately for time efficiency *)
   ; ready : ReadySet.t (** Set of all ready to run goroutines *)
   ; sending : SendingSet.t (** Set of opened chanels' send queues *)
   ; receiving : ReceivingSet.t (** Set of opened chanels' receive queues *)
   ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
   ; is_using_chanel : chanel_using_state option
-    (** The state indicates that value was sent through chanel, but not received yet *)
+  (** The state indicates that value was sent through chanel, but not received yet *)
   ; next_go_id : int (** An id that will be given to the next created goroutine *)
   ; has_finished : has_finished (** [Running] or [Finished] *)
   }
@@ -249,10 +254,10 @@ module Monad : sig
 
   (** Enters chanel using state, accepts sending and receiving goroutines and sent value.
       Fails if already in chanel using state *)
-  val start_using_chanel : goroutine -> goroutine -> value -> unit t
+  val start_using_chanel : goroutine -> goroutine -> value -> initiation -> unit t
 
   (** Exits chanel using state, returns receiving goroutine and sent value. Fails if not in chanel using state *)
-  val use_chanel : (goroutine * goroutine * value) t
+  val use_chanel : (goroutine * goroutine * value * initiation) t
 
   (** Returns state of using a chanel (sender, receiver and value) if in chanel using state, [None] otherwise *)
   val is_using_chanel : chanel_using_state option t

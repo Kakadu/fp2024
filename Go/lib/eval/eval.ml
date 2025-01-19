@@ -31,10 +31,10 @@ let rpf lst = List.map (fun (y, _) -> y) lst
 (** Executes next statement, returns [Some ()] if there was statement to execute,
     and [None] if the end of current execution block was reached *)
 let exec_stmt eval_stmt =
-    pop_next_statement
-    >>= (function
-     | Some st -> eval_stmt st *> return (Some ())
-     | None -> return None)
+  pop_next_statement
+  >>= function
+  | Some st -> eval_stmt st *> return (Some ())
+  | None -> return None
 ;;
 
 let rec replace_list list index elem =
@@ -55,7 +55,10 @@ let rec exec eval_stmt =
   | Some () ->
     is_using_chanel
     >>= (function
-     | Some _ -> pop_next_statement  *> return ()
+     | Some x ->
+       (match x.initiation with
+        | Receiver -> return ()
+        | Sender -> return ())
      | None ->
        read_returns
        >>= (function
@@ -109,15 +112,14 @@ let run_ready_goroutines eval_stmt =
 
 (** [attempt_chan_interaction id] attempts to use chanel with given id. If both
     sender and receiver are ready, starts using the chanel. Doesn't do anything otherwise *)
-let attempt_chan_interaction id =
+let attempt_chan_interaction id init =
   let* ready_to_send = is_send_queue_not_empty id in
   let* ready_to_receive = is_receive_queue_not_empty id in
   match ready_to_send, ready_to_receive with
   | Some (), Some () ->
     let* sending_goroutine, value = pop_from_send_queue id in
     let* receiving_goroutine = pop_from_receive_queue id in
-
-      start_using_chanel sending_goroutine receiving_goroutine value
+    start_using_chanel sending_goroutine receiving_goroutine value init
     (* receiving goroutine will run after return from a function *)
   | _ -> return ()
 ;;
@@ -562,7 +564,7 @@ and eval_chan_send (ident, expr) =
     let* sending_goroutine = read_running_fail in
     delete_running_goroutine
     *> push_to_send_queue chan_id sending_goroutine value
-    *> attempt_chan_interaction chan_id
+    *> attempt_chan_interaction chan_id Sender
     *> (is_using_chanel
         >>= function
         | Some _ -> return ()
@@ -591,7 +593,7 @@ and eval_chan_receive expr =
     let* receiving_goroutine = read_running_fail in
     delete_running_goroutine
     *> push_to_receive_queue chan_id receiving_goroutine
-    *> attempt_chan_interaction chan_id
+    *> attempt_chan_interaction chan_id Receiver
     *> (is_using_chanel
         >>= function
         | Some _ -> return ()
@@ -609,9 +611,11 @@ and eval_chan_receive expr =
                         receiving_goroutine.go_id
                         chan_id)))))
     *>
-    let* receiving_goroutine, sending_goroutine, value = use_chanel in
-    add_ready sending_goroutine *> 
-    run_goroutine receiving_goroutine  *> return value
+    let* receiving_goroutine, sending_goroutine, value, initiation = use_chanel in
+    (match initiation with
+     | Receiver ->
+       add_ready sending_goroutine *> run_goroutine receiving_goroutine *> return value
+     | Sender -> run_goroutine receiving_goroutine *> return value)
   | _ -> fail (Runtime_error (TypeCheckFailed "chan receive"))
 
 and eval_go (func, arg_exprs) =

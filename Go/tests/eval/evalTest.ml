@@ -23,11 +23,11 @@ let pp str =
 ;;
 
 let%expect_test "ok: empty main" =
-  pp
-    {|
+  pp {|
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     goroutine 0 started running
     goroutine 0 stopped
     goroutine 1 started running
@@ -53,8 +53,7 @@ let%expect_test "ok: simple main with prints" =
 ;;
 
 let%expect_test "ok: single long_var_init" =
-  pp
-    {|
+  pp {|
     var x = "kill OCaml"
     func main() { print(x) }
     |};
@@ -68,8 +67,7 @@ let%expect_test "ok: single long_var_init" =
 ;;
 
 let%expect_test "ok: multiple long_var_init" =
-  pp
-    {|
+  pp {|
     var x, y = "kill ", "OCaml"
     func main() {print(x, y)}
     |};
@@ -83,11 +81,11 @@ let%expect_test "ok: multiple long_var_init" =
 ;;
 
 let%expect_test "err: division by zero" =
-  pp
-    {|
+  pp {|
     func main() { a := 1 / 0 }
     |};
-  [%expect {|
+  [%expect
+    {|
     goroutine 0 started running
     goroutine 0 stopped
     goroutine 1 started running
@@ -95,11 +93,11 @@ let%expect_test "err: division by zero" =
 ;;
 
 let%expect_test "err: by zero modulus" =
-  pp
-    {|
+  pp {|
     func main() { a := 1 % 0 }
     |};
-  [%expect {|
+  [%expect
+    {|
     goroutine 0 started running
     goroutine 0 stopped
     goroutine 1 started running
@@ -107,8 +105,7 @@ let%expect_test "err: by zero modulus" =
 ;;
 
 let%expect_test "ok: func call in global var decl" =
-  pp
-    {|
+  pp {|
     var a = len("asd")
     func main() {
       print(a)
@@ -711,8 +708,8 @@ let%expect_test "err: array index out of bounds in lvalue" =
 
 (* defer, panic, recover *)
 
-let%expect_test
-    "ok: simple defer check change local value & return not chenged local value"
+let%expect_test "ok: simple defer check change local value & return not chenged local \
+                 value"
   =
   pp
     {|
@@ -731,8 +728,7 @@ let%expect_test
         print(foo())
       }
     |};
-  [%expect
-    {|
+  [%expect {|
     : syntax error |}]
 ;;
 
@@ -987,7 +983,7 @@ let%expect_test "ok: two goroutine sync with unbuffered chanel" =
     goroutine 2 stopped
     goroutine 2 stopped
     goroutine 1 started running
-    Runtime error: Dev: no goroutine running
+    Correct evaluating
 
     go1: trying to send. Value:0
     go2: trying to receive
@@ -1037,7 +1033,7 @@ let%expect_test "ok: receive and send back" =
     сендер прогнал всех кто ready
     goroutine 1 started running
     goroutine 1 stopped
-    Runtime error: Dev: no goroutine running
+    Correct evaluating
 
     go1: trying to send. Value:0
     go2: trying to receive
@@ -1049,14 +1045,14 @@ let%expect_test "ok: receive and send back" =
 ;;
 
 let%expect_test "err: sender without receiver" =
-  pp
-    {|
+  pp {|
     func main() {
       c := make(chan int)
       c <- 0
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     goroutine 0 started running
     goroutine 0 stopped
     goroutine 1 started running
@@ -1065,8 +1061,7 @@ let%expect_test "err: sender without receiver" =
 ;;
 
 let%expect_test "err: receiver without sender" =
-  pp
-    {|
+  pp {|
     func main() {
       c := make(chan int)
       <-c
@@ -1099,14 +1094,58 @@ let%expect_test "ok: save goroutine receiving two times" =
       println(<-c, <-c)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     goroutine 0 started running
     goroutine 0 stopped
     goroutine 1 started running
     goroutine 1 stopped
     goroutine 2 started running
     goroutine 2 stopped
-    Runtime error: Dev: no goroutine running |}]
+    goroutine 1 stopped
+    goroutine 3 started running
+    goroutine 3 stopped
+    Correct evaluating
+
+    12 |}]
+;;
+
+let%expect_test "ok: simple goroutine test" =
+  pp
+    {|
+      func sum(s [6]int, c chan int) {
+        sum := 0
+        for v := 0; v < 6; v++{
+          sum = sum + v
+        }	
+        c <- sum
+      }
+
+      func main() {
+        s := [6]int{7, 2, 8, -9, 4, 0}
+
+        c := make(chan int)
+        go sum(s, c)
+
+        println("Waiting for channel receive")
+        x := <-c
+
+        println(x)
+      }
+    
+    |};
+  [%expect
+    {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
+    goroutine 2 started running
+    goroutine 2 stopped
+    Correct evaluating
+
+    Waiting for channel receive
+    15 |}]
 ;;
 
 let%expect_test "ok: two goroutines sending to the same chanel before value received" =
@@ -1119,6 +1158,7 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
     }
 
     func main3(c chan int) {
+      println("go3: received value: ", <-c)
       println("go3: received value: ", <-c)
     }
 
@@ -1146,12 +1186,14 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
     goroutine 3 started running
     goroutine 3 stopped
     goroutine 3 stopped
+    goroutine 3 stopped
     goroutine 1 started running
-    Runtime error: Dev: no goroutine running
+    Correct evaluating
 
     go1: sending value 1
     go2: sending value 2
     go3: received value: 1
+    go3: received value: 2
     go1: value 1 sent successfully |}]
 ;;
 
@@ -1195,13 +1237,13 @@ let%expect_test "ok: synchronised printing in for loop" =
     goroutine 2 stopped
     goroutine 1 started running
     goroutine 1 stopped
-    Runtime error: Dev: no goroutine running
+    goroutine 2 stopped
+    Runtime error: Deadlock: goroutine 2 trying to receive from chan 1 (ran all ready goroutines and couldn't find sender)
 
     go2: 1
     go1: 2 |}]
 ;;
 
-(* ОШИБКА *)
 let%expect_test "ok: send and receive in for init" =
   pp
     {|
@@ -1217,44 +1259,45 @@ let%expect_test "ok: send and receive in for init" =
       <-c
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     goroutine 0 started running
     goroutine 0 stopped
     goroutine 1 started running
     goroutine 1 stopped
     goroutine 2 started running
     goroutine 2 stopped
-    Runtime error: Dev: no goroutine running |}]
+    Correct evaluating |}]
 ;;
 (*
    [eval_chan_receive]
-    запомнили ресивера, остановили запущенную горутину []
-    отправили ресивера в очередь
-    [attempt_chan_interaction]
-        проверяем очереди, готовы ли оба ресивер и сендер
-        нет не готовы, ничего не происходит и мы возвращаемся
-    проверяем, используется ли канал.
-    не используется, значит запускаем ready горутины
-    [run_ready_goroutines]
-        запускается готовая вторая горутина и начинает исполняться
-        [exec]
-            дошли внутри второй горутины до отправки в канал
-            [eval_chan_send]
-                запомнили сендера, отсановили запущенную горутину
-                отправили сендера в очередь
-                [attempt_chan_interaction]
-                    проверяем очереди, готовы ли оба ресивер и сендер
-                    да, готовы. они достаются из очереди, 
-                    сендер помечается как готовый к исполнению
-                    переходим в состояние использования канала
-                проверяем, используется ли канал
-                да, используется, ничего не делаем и просто выходим из функции?
-            отправка в канал исполнилась, проверяем, используется ли канал
-            да используется, значит выходи из экзека
-        проверяем, используется ли канал
-        да, используется, выходим из функции
-    проверяем, используется ли канал
-    да, используется, значит дедлока нет
-    заканчиваем использование канала, из него достаётся значение и 
-    возвращается как результат ресива
+   запомнили ресивера, остановили запущенную горутину []
+   отправили ресивера в очередь
+   [attempt_chan_interaction]
+   проверяем очереди, готовы ли оба ресивер и сендер
+   нет не готовы, ничего не происходит и мы возвращаемся
+   проверяем, используется ли канал.
+   не используется, значит запускаем ready горутины
+   [run_ready_goroutines]
+   запускается готовая вторая горутина и начинает исполняться
+   [exec]
+   дошли внутри второй горутины до отправки в канал
+   [eval_chan_send]
+   запомнили сендера, отсановили запущенную горутину
+   отправили сендера в очередь
+   [attempt_chan_interaction]
+   проверяем очереди, готовы ли оба ресивер и сендер
+   да, готовы. они достаются из очереди,
+   сендер помечается как готовый к исполнению
+   переходим в состояние использования канала
+   проверяем, используется ли канал
+   да, используется, ничего не делаем и просто выходим из функции?
+   отправка в канал исполнилась, проверяем, используется ли канал
+   да используется, значит выходи из экзека
+   проверяем, используется ли канал
+   да, используется, выходим из функции
+   проверяем, используется ли канал
+   да, используется, значит дедлока нет
+   заканчиваем использование канала, из него достаётся значение и
+   возвращается как результат ресива
 *)
