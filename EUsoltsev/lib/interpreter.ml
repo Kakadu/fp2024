@@ -172,9 +172,9 @@ end = struct
 
   let rec create_nested_closures env patterns body =
     match patterns with
-    | [] -> fail PatternMatchingError (* Возвращаем ошибку через монаду *)
+    | [] -> fail PatternMatchingError
     | [ p ] ->
-      return (ValueClosure (p, false, body, env)) (* Возвращаем успешный результат *)
+      return (ValueClosure (p, false, body, env))
     | p :: ps ->
       let* _ = create_nested_closures env ps body in
       return (ValueClosure (p, false, ExpLambda (ps, body), env))
