@@ -99,9 +99,9 @@
   val modd : int -> int = <fun> 
   val tie : (int -> int) * (int -> int) = (<fun> , <fun> ) 
   $ ../bin/REPL.exe -fromfile manytests/typed/016lists.ml
-  3
-  2
   1
+  2
+  3
   8
   val append : '67 list -> '67 list -> '67 list = <fun> 
   val cartesian : '98 list -> '105 list -> '98 * '105 list = <fun> 

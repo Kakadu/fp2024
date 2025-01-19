@@ -347,9 +347,9 @@ and eval_expr env = function
     return (VActPatCase (name, value))
 
 and eval_expr_fold env l =
-  Base.List.fold
+  Base.List.fold_right
     ~init:(return [])
-    ~f:(fun acc e ->
+    ~f:(fun e acc ->
       let* acc = acc in
       let* e_value = eval_expr env e in
       return (e_value :: acc))
