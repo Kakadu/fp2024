@@ -9,7 +9,7 @@
   (backend bisect_ppx)))
 
 (cram
- (applies_to run_REPL eval)
+ (applies_to REPL infer eval)
  (deps
   ../repl/REPL.exe
   factorial.txt
@@ -47,5 +47,5 @@
   (backend bisect_ppx)))
 
 (cram
- (applies_to run_qchecker)
+ (applies_to qchecker)
  (deps run_qchecker.exe))

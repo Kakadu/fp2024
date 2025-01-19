@@ -19,6 +19,15 @@ let run str =
   | Error _ -> Format.printf "Parsing error\n"
 ;;
 
+let%expect_test "parsing error" =
+  run {|
+  let a = ;;
+  |};
+  [%expect {|
+  Parsing error
+  |}]
+;;
+
 let%expect_test "eval simple let binding" =
   run {|
   let a = -(4 + 4)

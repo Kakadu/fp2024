@@ -9,7 +9,7 @@ type error =
     (** Represents the error that occurs when attempting to perform a division by zero operation. *)
   | `Match_failure
     (** Represents a match error occurs when a pattern matching attempt fails. *)
-  | `No_variable of string
+  | `No_variable of Ast.ident
     (** Represents an error that occurs when attempting to use a variable that has not been declared or initialized. *)
   ]
 
@@ -22,10 +22,10 @@ type value =
   | Val_fun of Ast.rec_flag * Ast.pattern * Ast.pattern list * Ast.Expression.t * env
   | Val_function of Ast.Expression.t Ast.case list * env
   | Val_tuple of value * value * value list
-  | Val_construct of string * value option
-  | Val_builtin of string
+  | Val_construct of Ast.ident * value option
+  | Val_builtin of Ast.ident
 
-and env = (string, value, Base.String.comparator_witness) Base.Map.t
+and env = (Ast.ident, value, Base.String.comparator_witness) Base.Map.t
 
 val pp_value : Format.formatter -> value -> unit
 val empty_env : env

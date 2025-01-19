@@ -21,7 +21,7 @@ let run_single dump_parsetree inference input_source =
     let ast = Parser.parse text in
     match ast with
     | Error error ->
-      print_endline error;
+      print_endline (Format.asprintf "Parsing error: %s" error);
       env_infer, env_inter
     | Ok ast ->
       if dump_parsetree
@@ -30,10 +30,10 @@ let run_single dump_parsetree inference input_source =
         env_infer, env_inter)
       else (
         match Inferencer.run_inferencer env_infer ast with
-        | Error e ->
-          print_endline (Format.asprintf "Infer error: %a" pp_global_error e);
+        | Error e_infer ->
+          print_endline (Format.asprintf "Inferencer error: %a" pp_global_error e_infer);
           env_infer, env_inter
-        | Ok (env_infer, out_list) ->
+        | Ok (env_infer, out_infer_list) ->
           if inference
           then (
             List.iter
@@ -43,23 +43,38 @@ let run_single dump_parsetree inference input_source =
                     (Format.asprintf "val %s : %a" id Pprinter.pp_core_type type')
                 | None, type' ->
                   print_endline (Format.asprintf "- : %a" Pprinter.pp_core_type type'))
-              out_list;
+              out_infer_list;
             env_infer, env_inter)
           else (
+            print_endline "*** Printed ***";
             match Interpreter.run_interpreter env_inter ast with
-            | Ok (env_inter, _) ->
-              ();
-              (* List.iter
-                 (function
-                 | Some id, val' ->
-                 print_endline
-                 (Format.asprintf "val %s = %a" id Interpreter.pp_value val')
-                 | None, val' ->
-                 print_endline (Format.asprintf "- = %a" Interpreter.pp_value val'))
-                 out_list; *)
+            | Ok (env_inter, out_inter_list) ->
+              print_endline "\n*** Output  ***";
+              List.iter2
+                (fun (_, val') -> function
+                  | Some id, type' ->
+                    print_endline
+                      (Format.asprintf
+                         "val %s : %a = %a"
+                         id
+                         Pprinter.pp_core_type
+                         type'
+                         Interpreter.pp_value
+                         val')
+                  | None, type' ->
+                    print_endline
+                      (Format.asprintf
+                         "- : %a = %a"
+                         Pprinter.pp_core_type
+                         type'
+                         Interpreter.pp_value
+                         val'))
+                out_inter_list
+                out_infer_list;
               env_infer, env_inter
-            | Error e ->
-              print_endline (Format.asprintf "Interpreter error: %a" pp_global_error e);
+            | Error e_inter ->
+              print_endline
+                (Format.asprintf "Interpreter error: %a" pp_global_error e_inter);
               env_infer, env_inter))
   in
   let env_infer, env_inter =
