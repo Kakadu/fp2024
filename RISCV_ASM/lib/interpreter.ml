@@ -689,6 +689,8 @@ and execute_instruction state instr program =
     return (set_register_value state rd imm_value)
   | Addiw (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add true
   | Mulw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul true
+  | Addw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add true
+  | Subw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub true
   | Ret ->
     let val_rs1 = get_register_value state X1 in
     let* new_pc = resolve_address_excl_to_incl program val_rs1 in
