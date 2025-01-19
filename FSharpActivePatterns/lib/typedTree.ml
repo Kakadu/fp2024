@@ -54,7 +54,6 @@ module VarSet = struct
 end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
-
 type scheme = Scheme of binder_set * typ
 
 let int_typ = Primitive "int"
