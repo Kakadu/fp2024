@@ -1050,9 +1050,6 @@ let%expect_test "ok: send and receive in for init" =
       c <- a
       a++
       println("go2: a = ", a)
-      //c <- 0
-      //a++
-      //println("go2: a = ", a)
     }
 
     func main() {
@@ -1060,8 +1057,6 @@ let%expect_test "ok: send and receive in for init" =
       
       a := <-c
       println("go1: a = ", a)
-      //a = <-c
-      //println("go2: a = ", a)
     }
     |};
   [%expect {| Runtime error: Dev: no goroutine running |}]

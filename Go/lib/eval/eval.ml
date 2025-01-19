@@ -595,30 +595,18 @@ and eval_chan_receive expr =
         >>= function
         | Some _ -> return ()
         | None ->
-          check_ready_goroutine
+          run_ready_goroutines eval_stmt *> is_using_chanel
           >>= (function
+           | Some _ -> return ()
            | None ->
              fail
                (Runtime_error
                   (Deadlock
                      (asprintf
-                        "goroutine %d trying to receive from chan %d (no ready \
-                         goroutines at the moment)"
+                        "goroutine %d trying to receive from chan %d (ran all ready \
+                         goroutines and couldn't find sender)"
                         receiving_goroutine.go_id
-                        chan_id)))
-           | Some _ ->
-             run_ready_goroutines eval_stmt *> is_using_chanel
-             >>= (function
-              | Some _ -> return ()
-              | None ->
-                fail
-                  (Runtime_error
-                     (Deadlock
-                        (asprintf
-                           "goroutine %d trying to receive from chan %d (ran all ready \
-                            goroutines and couldn't find sender)"
-                           receiving_goroutine.go_id
-                           chan_id))))))
+                        chan_id)))))
     *>
     let* receiving_goroutine, value = use_chanel in
     run_goroutine receiving_goroutine *> return value
