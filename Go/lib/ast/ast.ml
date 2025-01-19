@@ -69,7 +69,7 @@ and const =
     [func(s1 string, s2 string) [2]string { return [2]string{s1,s2} }] *)
 and anon_func =
   { args : (ident * type') list
-  (** Function arguments constructions such as:
+    (** Function arguments constructions such as:
       [func(a int, b string) ...],
       [func(a, b int, c string) ...].
       Empty list means that function doesn't take any arguments.

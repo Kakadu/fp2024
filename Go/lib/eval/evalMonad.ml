@@ -160,7 +160,7 @@ module Monad = struct
     read
     >>= function
     | { running = Some goroutine } -> return goroutine
-    | { running = None } -> fail (Runtime_error (DevOnly No_goroutine_running))
+    | { running = None } -> fail (Runtime_error (Dev "no goroutine running"))
   ;;
 
   let write_running running = read >>= fun state -> write { state with running }
@@ -335,7 +335,7 @@ module Monad = struct
   let run_goroutine goroutine =
     read_running
     >>= function
-    | Some _ -> fail (Runtime_error (DevOnly Two_goroutine_running))
+    | Some _ -> fail (Runtime_error (Dev "two goroutine running"))
     | None -> write_running (Some goroutine)
   ;;
 
@@ -510,7 +510,7 @@ module Monad = struct
     read_stack
     >>= function
     | _, hd :: tl -> write_stack (hd, tl)
-    | _, [] -> fail (Runtime_error (DevOnly Not_enough_stack_frames))
+    | _, [] -> fail (Runtime_error (Dev "trying to delete last stack frame"))
   ;;
 
   (* local env *)
@@ -537,7 +537,7 @@ module Monad = struct
     read_local_envs
     >>= function
     | _, hd :: tl -> write_local_envs (hd, tl)
-    | _, [] -> fail (Runtime_error (DevOnly Not_enough_local_envs))
+    | _, [] -> fail (Runtime_error (Dev "trying to delete last local env"))
   ;;
 
   let read_env_type =
@@ -557,13 +557,13 @@ module Monad = struct
       List.rev
         (List.fold_left
            (fun lst env ->
-             match List.find_opt (fun x -> MapIdent.mem ident x.var_map) lst with
-             | Some _ -> env :: lst
-             | None ->
-               (match MapIdent.mem ident env.var_map with
-                | true ->
-                  { env with var_map = MapIdent.add ident value env.var_map } :: lst
-                | false -> env :: lst))
+              match List.find_opt (fun x -> MapIdent.mem ident x.var_map) lst with
+              | Some _ -> env :: lst
+              | None ->
+                (match MapIdent.mem ident env.var_map with
+                 | true ->
+                   { env with var_map = MapIdent.add ident value env.var_map } :: lst
+                 | false -> env :: lst))
            []
            (hd :: tl))
     in
@@ -651,11 +651,11 @@ module Monad = struct
     let* global_map = read_global in
     let var_maps = List.map (fun { var_map } -> var_map) (hd :: tl) @ [ global_map ] in
     match List.find_opt (fun map -> MapIdent.mem ident map) var_maps with
-    | None -> fail (Runtime_error (DevOnly (Undefined_ident (ident ^ "HERE"))))
+    | None -> fail (Runtime_error (TypeCheckFailed ("undefined ident " ^ ident)))
     | Some map ->
       (match MapIdent.find_opt ident map with
        | Some value -> return value
-       | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))
+       | None -> fail (Runtime_error (TypeCheckFailed ("undefined ident " ^ ident))))
   ;;
 
   let update_ident ident t =
@@ -668,6 +668,6 @@ module Monad = struct
       let var_map = [ global_map ] in
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
        | Some _ -> save_global_id ident t
-       | None -> fail (Runtime_error (DevOnly (Undefined_ident ident))))
+       | None -> fail (Runtime_error (TypeCheckFailed ("undefined ident " ^ ident))))
   ;;
 end

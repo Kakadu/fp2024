@@ -21,14 +21,12 @@ type polymorphic_call =
   | Close
   | Nil
   | Recover
-[@@deriving show { with_path = false }, eq]
 
 type ctype =
   | Ctype of type'
   | Ctuple of type' list
   | CgenT of type'
   | Cpolymorphic of polymorphic_call
-[@@deriving show { with_path = false }, eq]
 
 type env = ctype MapIdent.t list
 type funcs_returns = ctype list

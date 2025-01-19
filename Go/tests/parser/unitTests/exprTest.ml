@@ -77,7 +77,8 @@ let%expect_test "unary receive" =
 
 let%expect_test "multiple unary operators" =
   pp print_expr parse_expr {|-+!--!+t|};
-  [%expect {|
+  [%expect
+    {|
     -+!--!+t |}]
 ;;
 
@@ -128,43 +129,50 @@ let%expect_test "greater binop test" =
 
 let%expect_test "greater or equal binop test" =
   pp print_expr parse_expr {|t >= 5|};
-  [%expect {|
+  [%expect
+    {|
       t >= 5 |}]
 ;;
 
 let%expect_test "less or equal binop test" =
   pp print_expr parse_expr {|t <= 5|};
-  [%expect {|
+  [%expect
+    {|
       t <= 5 |}]
 ;;
 
 let%expect_test "and binop test" =
   pp print_expr parse_expr {|t && 5|};
-  [%expect {|
+  [%expect
+    {|
       t && 5 |}]
 ;;
 
 let%expect_test "or binop test" =
   pp print_expr parse_expr {|t || 5|};
-  [%expect {|
+  [%expect
+    {|
       t || 5 |}]
 ;;
 
 let%expect_test "expr with multiple unary minuses with parens" =
   pp print_expr parse_expr {|+(+(+1))|};
-  [%expect {|
+  [%expect
+    {|
     +++1|}]
 ;;
 
 let%expect_test "expr with multiple unary minuses with parens" =
   pp print_expr parse_expr {|-(-(-1))|};
-  [%expect {|
+  [%expect
+    {|
     ---1|}]
 ;;
 
 let%expect_test "unary and binary exprs combined" =
   pp print_expr parse_expr {|-(5 + 2) / +-(2 + 5)|};
-  [%expect {|
+  [%expect
+    {|
     -(5 + 2) / +-(2 + 5)|}]
 ;;
 
@@ -177,13 +185,15 @@ let%expect_test "expr simple array" =
 
 let%expect_test "expr array with init" =
   pp print_expr parse_expr {|[3]int{1, 2}|};
-  [%expect {|
+  [%expect
+    {|
     [3]int{1, 2} |}]
 ;;
 
 let%expect_test "expr array with ..." =
   pp print_expr parse_expr {|[...]int{1, 2, 3, 4}|};
-  [%expect {|
+  [%expect
+    {|
     [4]int{1, 2, 3, 4} |}]
 ;;
 
@@ -196,31 +206,36 @@ let%expect_test "expr const array with very big size" =
 
 let%expect_test "expr ident false" =
   pp print_expr parse_expr {|false|};
-  [%expect {|
+  [%expect
+    {|
     false|}]
 ;;
 
 let%expect_test "expr ident nil" =
   pp print_expr parse_expr {|nil|};
-  [%expect {|
+  [%expect
+    {|
     nil|}]
 ;;
 
 let%expect_test "expr ident" =
   pp print_expr parse_expr {|abcdefg__|};
-  [%expect {|
+  [%expect
+    {|
     abcdefg__|}]
 ;;
 
 let%expect_test "expr ident in parens" =
   pp print_expr parse_expr {|(abc)|};
-  [%expect {|
+  [%expect
+    {|
     abc|}]
 ;;
 
 let%expect_test "expr ident in multiple parens" =
   pp print_expr parse_expr {|(((abc)))|};
-  [%expect {|
+  [%expect
+    {|
     abc|}]
 ;;
 
@@ -228,19 +243,22 @@ let%expect_test "expr ident in multiple parens" =
 
 let%expect_test "simple func call" =
   pp print_expr parse_expr "a()";
-  [%expect {|
+  [%expect
+    {|
     a()|}]
 ;;
 
 let%expect_test "func call with multiple complex arguments" =
   pp print_expr parse_expr "three(abc, 2 + 3, fac(25))";
-  [%expect {|
+  [%expect
+    {|
     three(abc, 2 + 3, fac(25))|}]
 ;;
 
 let%expect_test "nested func call" =
   pp print_expr parse_expr "a()()()";
-  [%expect {|
+  [%expect
+    {|
     a()()()|}]
 ;;
 
@@ -258,25 +276,29 @@ let%expect_test "index with int" =
 
 let%expect_test "index with constant array" =
   pp print_expr parse_expr {|[3]int{1, 2, 3}[0]|};
-  [%expect {|
+  [%expect
+    {|
     [3]int{1, 2, 3}[0] |}]
 ;;
 
 let%expect_test "index with function call in index" =
   pp print_expr parse_expr {|array[get_index(a, b)]|};
-  [%expect {|
+  [%expect
+    {|
     array[get_index(a, b)] |}]
 ;;
 
 let%expect_test "index with function call as an array" =
   pp print_expr parse_expr {|get_array(a, b)[1]|};
-  [%expect {|
+  [%expect
+    {|
     get_array(a, b)[1] |}]
 ;;
 
 let%expect_test "nested indicies" =
   pp print_expr parse_expr {|a[1][2][3]|};
-  [%expect {|
+  [%expect
+    {|
     a[1][2][3] |}]
 ;;
 
@@ -284,13 +306,15 @@ let%expect_test "nested indicies" =
 
 let%expect_test "bin operators precedence test" =
   pp print_expr parse_expr "1 + 2 * 3 >= -1 - <-a / 2 || true && check()";
-  [%expect {|
+  [%expect
+    {|
     1 + 2 * 3 >= -1 - <-a / 2 || true && check()|}]
 ;;
 
 let%expect_test "bin operators with parens precedence test" =
   pp print_expr parse_expr "(1 + 2) * +((3 || 2 - a() / 4) == (true && false))";
-  [%expect {|
+  [%expect
+    {|
     (1 + 2) * +((3 || 2 - a() / 4) == (true && false))|}]
 ;;
 
@@ -316,73 +340,85 @@ let%expect_test "expr left associativity test 2" =
 
 let%expect_test "expr logical operations" =
   pp print_expr parse_expr {|a && (b || c)|};
-  [%expect {|
+  [%expect
+    {|
     a && (b || c)|}]
 ;;
 
 let%expect_test "expr logical operations with binops" =
   pp print_expr parse_expr {|a > b + 1 && (b + 2 <= c)|};
-  [%expect {|
+  [%expect
+    {|
     a > b + 1 && b + 2 <= c|}]
 ;;
 
 let%expect_test "expr with multiple redundant parens" =
   pp print_expr parse_expr {|((((((((4)) + i * ((5) + ((8) + p))))))))|};
-  [%expect {|
+  [%expect
+    {|
     4 + i * (5 + (8 + p))|}]
 ;;
 
 let%expect_test "expr bin mult and sum" =
   pp print_expr parse_expr {|-5 * _r + 8|};
-  [%expect {|
+  [%expect
+    {|
     -5 * _r + 8|}]
 ;;
 
 let%expect_test "expr un and bin opers" =
   pp print_expr parse_expr {|5 - -4|};
-  [%expect {|
+  [%expect
+    {|
     5 - -4|}]
 ;;
 
 let%expect_test "expr_call test" =
   pp print_expr parse_expr "fac(4 + fac(4 + 4))";
-  [%expect {|
+  [%expect
+    {|
     fac(4 + fac(4 + 4))|}]
 ;;
 
 let%expect_test "fac_piece1 test" =
   pp print_expr parse_expr "n * fac(n-1)";
-  [%expect {|
+  [%expect
+    {|
     n * fac(n - 1)|}]
 ;;
 
 let%expect_test "unary_min test" =
   pp print_expr parse_expr "-n + 2 + -1";
-  [%expect {|
+  [%expect
+    {|
     -n + 2 + -1|}]
 ;;
 
 let%expect_test "chanel receive test" =
   pp print_expr parse_expr "<-c";
-  [%expect {|
+  [%expect
+    {|
     <-c|}]
 ;;
 
 let%expect_test "chanel receive with unop test" =
   pp print_expr parse_expr "-<-c";
-  [%expect {|
+  [%expect
+    {|
     -<-c|}]
 ;;
 
 let%expect_test "chanel receive with binop test" =
   pp print_expr parse_expr "-<-c + 1";
-  [%expect {|
+  [%expect
+    {|
     -<-c + 1|}]
 ;;
 
 let%expect_test "chanel neseted receive test" =
   pp print_expr parse_expr "<-<-<-c";
-  [%expect {|
+  [%expect
+    {|
     <-<-<-c|}]
 ;;
 
@@ -395,7 +431,8 @@ let%expect_test "empty anon func" =
 
 let%expect_test "anon func with one arg and one return value" =
   pp print_expr parse_expr {|func(a int) int { return a }|};
-  [%expect {|
+  [%expect
+    {|
     func(a int) int {
         return a
     } |}]
@@ -403,7 +440,8 @@ let%expect_test "anon func with one arg and one return value" =
 
 let%expect_test "anon func with mult args and return values" =
   pp print_expr parse_expr {|func(a int, b string) (int, string) { return a, b }|};
-  [%expect {|
+  [%expect
+    {|
     func(a int, b string) (int, string) {
         return a, b
     } |}]

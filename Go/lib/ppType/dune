@@ -1,3 +1,5 @@
 (library
  (name ppType)
- (libraries ast))
+ (libraries ast)
+ (instrumentation
+  (backend bisect_ppx)))

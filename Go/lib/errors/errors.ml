@@ -13,17 +13,7 @@ type type_check_error =
   | Invalid_operation of string
   | Unexpected_operation of string
 
-type devonly_runtime_error =
-  | Not_enough_stack_frames
-  | Not_enough_local_envs
-  | Not_enough_operands
-  | No_goroutine_running
-  | Two_goroutine_running
-  | Undefined_ident of string
-  | TypeCheckFailed of string
-
 type runtime_error =
-  | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound
   | Negative_array_index
@@ -32,7 +22,8 @@ type runtime_error =
   | Close_of_closed_chan
   | Close_of_nil_chan
   | Panic of string
-  | DevOnly of devonly_runtime_error
+  | TypeCheckFailed of string
+  | Dev of string
 
 type error =
   | Type_check_error of type_check_error
@@ -51,17 +42,14 @@ let pp_typecheck_error = function
 ;;
 
 let pp_runtime_error = function
-  | DevOnly Not_enough_operands -> "Not enough operands"
-  | DevOnly No_goroutine_running -> "No goroutine running"
-  | DevOnly Two_goroutine_running -> "Two goroutine running"
-  | Stack_overflow -> "Stack overflow"
-  | Division_by_zero -> "Try to divide by zero"
-  | Array_index_out_of_bound -> "Array index out of bounds"
+  | Division_by_zero -> "division by zero"
+  | Array_index_out_of_bound -> "array index out of bounds"
+  | Negative_array_index -> "negative array index call"
+  | Uninited_func -> "uninitialized function call"
+  | Close_of_closed_chan -> "close of closed chanel"
+  | Close_of_nil_chan -> "close of uninitialized chanel"
   | Deadlock msg -> "Deadlock: " ^ msg
-  | Panic msg -> "Paniced with message:" ^ msg
-  | DevOnly (TypeCheckFailed msg) ->
-    "Internal Typecheck error occured while evaluating" ^ msg
-  | DevOnly (Undefined_ident msg) -> "Undefined ident " ^ msg
-  | DevOnly _ -> "Some kind of devonly error"
-  | _ -> "Some kind of runtime error"
+  | Panic msg -> "Panic: " ^ msg
+  | TypeCheckFailed msg -> "Type error in runtime: " ^ msg
+  | Dev msg -> "Dev: " ^ msg
 ;;

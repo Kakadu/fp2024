@@ -68,7 +68,7 @@ and defered_frame = value * value list
 
 type stack_frame =
   { local_envs : local_env * local_env list
-  (** Storage for local variables, new [{}] block creates new environment *)
+    (** Storage for local variables, new [{}] block creates new environment *)
   ; deferred_funcs : defered_frame list
   ; returns : value option
   ; panics : value list option
@@ -76,7 +76,7 @@ type stack_frame =
 
 type goroutine =
   { stack : stack_frame * stack_frame list
-  (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
+    (** Stack of separate goroutine's local func calls. Is a tuple because there is always a root func *)
   ; go_id : int
   }
 
@@ -127,15 +127,15 @@ type chanel_using_state =
 (** The whole executing program state *)
 type eval_state =
   { global_env : value MapIdent.t
-  (** Stores values for predeclared identifiers and global variables and functions *)
+    (** Stores values for predeclared identifiers and global variables and functions *)
   ; running : goroutine option
-  (** Goroutine that is currently running, stored separately for time efficiency *)
+    (** Goroutine that is currently running, stored separately for time efficiency *)
   ; ready : ReadySet.t (** Set of all ready to run goroutines *)
   ; sending : SendingSet.t (** Set of opened chanels' send queues *)
   ; receiving : ReceivingSet.t (** Set of opened chanels' receive queues *)
   ; chanels : ChanSet.t * int (** Set of opened chanels and id for next chanel *)
   ; is_using_chanel : chanel_using_state option
-  (** The state indicates that value was sent through chanel, but not received yet *)
+    (** The state indicates that value was sent through chanel, but not received yet *)
   ; next_go_id : int (** An id that will be given to the next created goroutine *)
   }
 

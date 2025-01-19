@@ -11,17 +11,22 @@ open Format
 let rec pp_value = function
   | Value_int n -> asprintf "%d" n
   | Value_bool b -> asprintf "%b" b
-  | Value_nil _ -> "nil"
+  | Value_nil Nil -> "<nil>"
   | Value_array (size, values) ->
     asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
-  | Value_chan _ -> "wtf chan"
-  | Value_func _ -> "wtf func"
+  | Value_chan chan ->
+    (match chan with
+     | Chan_uninitialized Nil -> "<nil>"
+     | Chan_initialized id -> asprintf "<chan %d>" id)
+  | Value_func func ->
+    (match func with
+     | Func_uninitialized Nil -> "<nil>"
+     | _ -> "<func>")
   | Value_string s -> s
-  | Value_tuple lst -> asprintf "[%s]" (PpType.sep_by_comma lst pp_value)
+  | Value_tuple values -> PpType.sep_by_comma values pp_value
 ;;
 
 let rpf lst = List.map (fun (y, _) -> y) lst
-let rps lst = List.map (fun (_, y) -> y) lst
 
 (** Executes next statement, returns [Some ()] if there was statement to execute,
     and [None] if the end of current execution block was reached *)
@@ -132,12 +137,12 @@ let rec eval_expr = function
        *>
          (match ret with
          | Some lst -> return lst
-         | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr"))))
+         | _ -> fail (Runtime_error (TypeCheckFailed "expr")))
      | _ ->
        eval_func_call (func, args)
        >>= (function
         | Some lst -> return lst
-        | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "expr")))))
+        | _ -> fail (Runtime_error (TypeCheckFailed "expr"))))
   | Expr_chan_receive receive -> eval_chan_receive receive
 
 and eval_func_call (func, args) =
@@ -181,7 +186,7 @@ and eval_func_call (func, args) =
     *> write_panics panics
     *> write_local_envs (List.hd lenv, List.tl lenv)
     *> return x
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " defer func_call")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "defer func_call"))
 
 and eval_closure (func, args) =
   eval_expr func
@@ -211,7 +216,7 @@ and eval_closure (func, args) =
     *> write_panics panics
     *> write_local_envs (List.hd (List.tl lenv), List.tl (List.tl lenv))
     *> return (x, (List.hd lenv).var_map)
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "closure_call")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "closure_call"))
 
 and eval_deferred_func (vfunc, vargs) =
   match vfunc with
@@ -261,11 +266,11 @@ and eval_deferred_func (vfunc, vargs) =
     *> write_panics panics
     *> write_local_envs (List.hd lenv, List.tl lenv)
     *> return ()
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " func_call")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "func_call"))
 
 and retrieve_arg_value = function
   | Arg_expr e -> eval_expr e
-  | Arg_type _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_value")))
+  | Arg_type _ -> fail (Runtime_error (TypeCheckFailed "arg_value"))
 
 and create_args_map args idents =
   let rec save_args map = function
@@ -292,12 +297,12 @@ and prepare_builtin_eval vlist = function
   | Close ->
     (match vlist with
      | [ Value_chan chan ] -> close_chanel chan *> return None
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "close"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "close")))
   | Len ->
     (match vlist with
      | [ Value_array (len, _) ] -> return (Some (Value_int len))
      | [ Value_string s ] -> return (Some (Value_int (String.length s)))
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "len"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "len")))
   | Panic -> write_panics (Some vlist) *> return None
   | Recover ->
     read_panics
@@ -310,7 +315,7 @@ and prepare_builtin_eval vlist = function
       | None -> return (Some (Value_nil Nil)))
 
 and retrieve_arg_generic = function
-  | Arg_expr _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "arg_generic")))
+  | Arg_expr _ -> fail (Runtime_error (TypeCheckFailed "arg_generic"))
   | Arg_type t -> return t
 
 and eval_index array index =
@@ -321,7 +326,7 @@ and eval_index array index =
     (try return (List.nth values index) with
      | Invalid_argument _ -> fail (Runtime_error Negative_array_index)
      | Failure _ -> fail (Runtime_error Array_index_out_of_bound))
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "index")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "index"))
 
 and eval_unop op expr =
   let* value = eval_expr expr in
@@ -329,7 +334,7 @@ and eval_unop op expr =
   | Unary_minus, Value_int a -> return (Value_int (-a))
   | Unary_plus, Value_int a -> return (Value_int a)
   | Unary_not, Value_bool a -> return (Value_bool (not a))
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "unop")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "unop"))
 
 and eval_binop op a1 a2 =
   let* a1 = eval_expr a1 in
@@ -339,8 +344,12 @@ and eval_binop op a1 a2 =
   | Bin_subtract, Value_int a1, Value_int a2 -> return (Value_int (a1 - a2))
   | Bin_multiply, Value_int a1, Value_int a2 -> return (Value_int (a1 * a2))
   | Bin_divide, Value_int _, Value_int 0 -> fail (Runtime_error Division_by_zero)
-  | Bin_divide, Value_int a1, Value_int a2 -> return (Value_int (a1 / a2))
-  | Bin_modulus, Value_int a1, Value_int a2 -> return (Value_int (a1 mod a2))
+  | Bin_divide, Value_int a1, Value_int a2 ->
+    (try return (Value_int (a1 / a2)) with
+     | Division_by_zero -> fail (Runtime_error Division_by_zero))
+  | Bin_modulus, Value_int a1, Value_int a2 ->
+    (try return (Value_int (a1 mod a2)) with
+     | Division_by_zero -> fail (Runtime_error Division_by_zero))
   | Bin_and, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 && a2))
   | Bin_or, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 || a2))
   | Bin_equal, a1, a2 -> return (Value_bool (a1 = a2))
@@ -348,7 +357,7 @@ and eval_binop op a1 a2 =
   | Bin_less_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 <= a2))
   | Bin_greater, Value_int a1, Value_int a2 -> return (Value_bool (a1 > a2))
   | Bin_greater_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 >= a2))
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "binop")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "binop"))
 
 and eval_lvalue value = function
   | Lvalue_ident id -> update_ident id value
@@ -366,7 +375,7 @@ and prepare_lvalue_index lst = function
     eval_expr exp
     >>= (function
      | Value_int i -> prepare_lvalue_index (i :: lst) lv
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " prepare lval"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "prepare lvalue")))
 
 and retrieve_lvalue_ident_index = function
   | Lvalue_ident id -> id
@@ -404,12 +413,12 @@ and eval_stmt = function
     read_ident id
     >>= (function
      | Value_int v -> update_ident id (Value_int (v - 1)) *> return ()
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "stmt"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "stmt")))
   | Stmt_incr id ->
     read_ident id
     >>= (function
      | Value_int v -> update_ident id (Value_int (v + 1)) *> return ()
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "stmt"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "stmt")))
   | Stmt_assign asgn -> eval_assign asgn
   | Stmt_short_var_decl decl -> eval_short_var_decl decl
   | Stmt_if if' -> eval_if if'
@@ -444,7 +453,7 @@ and eval_short_var_decl = function
     eval_func_call fcall
     >>= (function
      | Some (Value_tuple tup) -> iter2 save_local_id (idnt1 :: idnt2 :: idntlst) tup
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "short decl")))
 
 and eval_if { if_init; if_cond; if_body; else_body } =
   eval_init if_init *> eval_expr if_cond
@@ -455,7 +464,7 @@ and eval_if { if_init; if_cond; if_body; else_body } =
      | Some (Else_block body) -> add_env body Default *> exec eval_stmt *> delete_env
      | Some (Else_if if') -> eval_stmt (Stmt_if if')
      | None -> return ())
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "if")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "if"))
 
 and eval_long_var_decl save_to_env = function
   | Long_decl_mult_init (_, hd, tl) ->
@@ -464,7 +473,7 @@ and eval_long_var_decl save_to_env = function
     eval_func_call fcall
     >>= (function
      | Some (Value_tuple tup) -> iter2 save_to_env (idnt1 :: idnt2 :: idntlst) tup
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "short decl")))
   | Long_decl_no_init (typ, id, id_list) ->
     iter (fun idnt -> save_to_env idnt (default_init typ)) (id :: id_list)
 
@@ -478,7 +487,7 @@ and eval_assign = function
     >>= (function
      | Some (Value_tuple tup) ->
        iter2 (fun v lv -> eval_lvalue v lv *> return ()) tup (fst :: snd :: lst)
-     | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "short decl"))))
+     | _ -> fail (Runtime_error (TypeCheckFailed "short decl")))
 
 and eval_for { for_init; for_cond; for_post; for_body } =
   let rec_for =
@@ -493,7 +502,7 @@ and eval_for { for_init; for_cond; for_post; for_body } =
          *> delete_env
          *> return true
        | Value_bool false -> delete_env *> return false
-       | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed " for"))))
+       | _ -> fail (Runtime_error (TypeCheckFailed "for")))
     | None ->
       add_env for_body Default
       *> exec eval_stmt
@@ -556,7 +565,7 @@ and eval_chan_send (ident, expr) =
                         "goroutine %d trying to send to chan %d"
                         sending_goroutine.go_id
                         chan_id)))))
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan send")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "chan send"))
 
 and eval_chan_receive expr =
   eval_expr expr
@@ -585,7 +594,7 @@ and eval_chan_receive expr =
     *>
     let* receiving_goroutine, value = use_chanel in
     run_goroutine receiving_goroutine *> return value
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "chan receive")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "chan receive"))
 
 and eval_go (func, arg_exprs) =
   eval_expr func
@@ -604,7 +613,7 @@ and eval_go (func, arg_exprs) =
   | Value_func (Func_initialized (FuncLit, { args; body })) -> return () (* TODO *)
   | Value_func (Func_initialized (Closure var_map, { args; body })) ->
     return () (* TODO *)
-  | _ -> fail (Runtime_error (DevOnly (TypeCheckFailed "func call")))
+  | _ -> fail (Runtime_error (TypeCheckFailed "func call"))
 ;;
 
 let save_builtins =

@@ -5,7 +5,7 @@
 open Ast
 
 module Ident : sig
-  type t = Ast.ident
+  type t = ident
 
   val compare : 'a -> 'a -> int
 end
@@ -28,12 +28,10 @@ type polymorphic_call =
   | Recover
 
 type ctype =
-  | Ctype of Ast.type'
-  | Ctuple of Ast.type' list (** Used to check multiple returns of a function *)
-  | CgenT of Ast.type'
+  | Ctype of type'
+  | Ctuple of type' list (** Used to check multiple returns of a function *)
+  | CgenT of type'
   | Cpolymorphic of polymorphic_call
-
-val equal_ctype : ctype -> ctype -> Ppx_deriving_runtime.bool
 
 (** list of MapIdent is used to map ident and it's type in local space.
     Add MapIdent if you enter in if/for body or func literal and then delete it after checking block of statements

@@ -142,7 +142,8 @@ let%expect_test "type func with one arg and without returns" =
 
 let%expect_test "type func with mult args and without returns" =
   pp print_type parse_type {|func(int, string, bool, [4]int)|};
-  [%expect {|
+  [%expect
+    {|
     func(int, string, bool, [4]int) |}]
 ;;
 
@@ -158,24 +159,28 @@ let%expect_test "type func with multiple returns" =
 
 let%expect_test "type func that gets func and returns func" =
   pp print_type parse_type {|func(func(int) string) func([4][5]int)|};
-  [%expect {|
+  [%expect
+    {|
     func(func(int) string) func([4][5]int) |}]
 ;;
 
 let%expect_test "type func that returns func that returns func..." =
   pp print_type parse_type {|func() func() func() func() func() func()|};
-  [%expect {|
+  [%expect
+    {|
     func() func() func() func() func() func() |}]
 ;;
 
 let%expect_test "type bidirectional chanel" =
   pp print_type parse_type {|chan int|};
-  [%expect {|
+  [%expect
+    {|
     chan int |}]
 ;;
 
 let%expect_test "type with parens" =
   pp print_type parse_type {|[3]([2]((func())))|};
-  [%expect {|
+  [%expect
+    {|
     [3][2]func() |}]
 ;;

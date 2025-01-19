@@ -74,7 +74,7 @@ let eq_type t1 t2 =
   | Cpolymorphic Recover, t -> return t
   | t, Cpolymorphic Recover -> return t
   | t1, t2 ->
-    if equal_ctype t1 t2
+    if t1 = t2
     then return t1
     else
       fail
@@ -83,7 +83,7 @@ let eq_type t1 t2 =
 ;;
 
 let check_eq t1 t2 =
-  if equal_ctype t1 t2
+  if t1 = t2
   then return ()
   else
     fail
@@ -95,10 +95,10 @@ let retrieve_const cstmt rexpr = function
   | Const_array (size, type', inits) when List.length inits <= size ->
     iter
       (fun init ->
-        rexpr init
-        >>= function
-        | Ctuple _ -> fail (Type_check_error (Mismatched_types "Expected single type"))
-        | t -> check_eq t (Ctype type'))
+         rexpr init
+         >>= function
+         | Ctuple _ -> fail (Type_check_error (Mismatched_types "Expected single type"))
+         | t -> check_eq t (Ctype type'))
       inits
     *> return (Ctype (Type_array (size, type')))
   | Const_array _ ->
@@ -117,10 +117,10 @@ let check_func_call rexpr rarg (func, args) =
   let* actual_arg_types =
     map
       (fun arg ->
-        rarg arg
-        >>= function
-        | Ctuple _ -> fail (Type_check_error (Mismatched_types "Expected single type"))
-        | t -> return t)
+         rarg arg
+         >>= function
+         | Ctuple _ -> fail (Type_check_error (Mismatched_types "Expected single type"))
+         | t -> return t)
       args
   in
   let* ftype =
@@ -271,15 +271,15 @@ let check_long_var_decl cstmt save_ident = function
   | Long_decl_mult_init (Some type', hd, tl) ->
     iter
       (fun (id, expr) ->
-        (check_expr cstmt (retrieve_arg cstmt) expr
-         >>= (fun t -> check_nil (Ctype type') t)
-         >>= check_eq (Ctype type'))
-        *> save_ident id (Ctype type'))
+         (check_expr cstmt (retrieve_arg cstmt) expr
+          >>= (fun t -> check_nil (Ctype type') t)
+          >>= check_eq (Ctype type'))
+         *> save_ident id (Ctype type'))
       (hd :: tl)
   | Long_decl_mult_init (None, hd, tl) ->
     iter
       (fun (id, expr) ->
-        check_expr cstmt (retrieve_arg cstmt) expr >>= fail_if_nil >>= save_ident id)
+         check_expr cstmt (retrieve_arg cstmt) expr >>= fail_if_nil >>= save_ident id)
       (hd :: tl)
   | Long_decl_one_init (Some type', fst, snd, tl, call) ->
     (check_expr cstmt (retrieve_arg cstmt) (Expr_call call)
@@ -309,19 +309,19 @@ let check_short_var_decl cstmt = function
   | Short_decl_mult_init (hd, tl) ->
     iter
       (fun (id, expr) ->
-        check_expr cstmt (retrieve_arg cstmt) expr
-        >>= (function
-               | Ctype t -> return (Ctype t)
-               | Cpolymorphic Nil ->
-                 fail
-                   (Type_check_error
-                      (Invalid_operation "Cannot assign nil in short var declaration"))
-               | Cpolymorphic Recover -> return (Cpolymorphic Recover)
-               | _ ->
-                 fail
-                   (Type_check_error
-                      (Mismatched_types "Incorrect assignment in short var decl")))
-        >>= save_ident id)
+         check_expr cstmt (retrieve_arg cstmt) expr
+         >>= (function
+          | Ctype t -> return (Ctype t)
+          | Cpolymorphic Nil ->
+            fail
+              (Type_check_error
+                 (Invalid_operation "Cannot assign nil in short var declaration"))
+          | Cpolymorphic Recover -> return (Cpolymorphic Recover)
+          | _ ->
+            fail
+              (Type_check_error
+                 (Mismatched_types "Incorrect assignment in short var decl")))
+         >>= save_ident id)
       (hd :: tl)
   | Short_decl_one_init (fst, snd, tl, call) ->
     check_expr cstmt (retrieve_arg cstmt) (Expr_call call)
@@ -370,10 +370,10 @@ let check_assign cstmt = function
   | Assign_mult_expr (hd, tl) ->
     iter
       (fun (lvalue, expr) ->
-        let* expected_type = retrieve_lvalue 0 cstmt lvalue in
-        let* actual_type = check_expr cstmt (retrieve_arg cstmt) expr in
-        let* actual_type = check_nil expected_type actual_type in
-        check_eq expected_type actual_type)
+         let* expected_type = retrieve_lvalue 0 cstmt lvalue in
+         let* actual_type = check_expr cstmt (retrieve_arg cstmt) expr in
+         let* actual_type = check_nil expected_type actual_type in
+         check_eq expected_type actual_type)
       (hd :: tl)
   | Assign_one_expr (fst, snd, tl, call) ->
     check_expr cstmt (retrieve_arg cstmt) (Expr_call call)
@@ -448,15 +448,14 @@ let rec check_stmt = function
   | Stmt_return exprs ->
     (get_func_return_type
      >>= (function
-            | Ctuple rtv ->
-              (try return (List.combine exprs (List.map (fun t -> Ctype t) rtv)) with
-               | Invalid_argument _ ->
-                 fail (Type_check_error (Mismatched_types "func return types mismatch")))
-            | _ ->
-              fail
-                (Type_check_error
-                   (Mismatched_types
-                      "simple type or built-in func cannot be used as return")))
+      | Ctuple rtv ->
+        (try return (List.combine exprs (List.map (fun t -> Ctype t) rtv)) with
+         | Invalid_argument _ ->
+           fail (Type_check_error (Mismatched_types "func return types mismatch")))
+      | _ ->
+        fail
+          (Type_check_error
+             (Mismatched_types "simple type or built-in func cannot be used as return")))
      >>= iter (fun (expr, return_type) ->
        check_expr check_stmt (retrieve_arg check_stmt) expr >>= check_eq return_type))
     *> return ()

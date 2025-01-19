@@ -7,7 +7,10 @@ open Pprinter.Printer
 open Pp
 
 let%expect_test "file with one var decl with ws" =
-  pp print_file parse_file {|
+  pp
+    print_file
+    parse_file
+    {|
 
     /* hello */  var a int
 // hey
@@ -18,7 +21,8 @@ let%expect_test "file with one var decl with ws" =
 
 let%expect_test "file with multiple var decls separated by semicolon" =
   pp print_file parse_file {|var a, b int;var c = "hello"|};
-  [%expect {|
+  [%expect
+    {|
     var a, b int
 
     var c = "hello" |}]
@@ -26,15 +30,20 @@ let%expect_test "file with multiple var decls separated by semicolon" =
 
 let%expect_test "file with one simple func decl" =
   pp print_file parse_file {|func _() {}|};
-  [%expect {|
+  [%expect
+    {|
     func _() {} |}]
 ;;
 
 let%expect_test "file with one default func decl" =
-  pp print_file parse_file {|func sum3(a, b, c int) int {
+  pp
+    print_file
+    parse_file
+    {|func sum3(a, b, c int) int {
         return a + b + c
   }|};
-  [%expect {|
+  [%expect
+    {|
     func sum3(a int, b int, c int) int {
         return a + b + c
     } |}]

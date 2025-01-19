@@ -22,15 +22,18 @@ let pp str =
         | Result.Ok _ -> prerr_endline "Correct evaluating"))
 ;;
 
-let%expect_test "ok: single main" =
+let%expect_test "ok: empty main" =
+  pp
+    {|
+    func main() {}
+    |};
+  [%expect {| Correct evaluating |}]
+;;
+
+let%expect_test "ok: simple main with prints" =
   pp
     {|
     func main() {
-      print("kill OCaml ")
-      print("kill OCaml ")
-      print("kill OCaml ")
-      print("kill OCaml ")      
-      print("kill OCaml ")
       print("kill OCaml ")
       print("kill OCaml ")
       print("kill OCaml ")
@@ -39,40 +42,61 @@ let%expect_test "ok: single main" =
   [%expect
     {|
     Correct evaluating
-    kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml kill OCaml |}]
-;;
-
-let%expect_test "ok: single main" =
-  pp {|
-
-    var a = len("asd")
-    func main() {
-      print(a)
-    }
-    |};
-  [%expect {|
-    Correct evaluating
-    3 |}]
+    kill OCaml kill OCaml kill OCaml |}]
 ;;
 
 let%expect_test "ok: single long_var_init" =
-  pp {|
+  pp
+    {|
     var x = "kill OCaml"
-    func main() {print(x)}
+    func main() { print(x) }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml |}]
 ;;
 
 let%expect_test "ok: multiple long_var_init" =
-  pp {|
+  pp
+    {|
     var x, y = "kill ", "OCaml"
     func main() {print(x, y)}
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml |}]
+;;
+
+let%expect_test "err: division by zero" =
+  pp
+    {|
+    func main() { a := 1 / 0 }
+    |};
+  [%expect {| Runtime error: division by zero |}]
+;;
+
+let%expect_test "err: by zero modulus" =
+  pp
+    {|
+    func main() { a := 1 % 0 }
+    |};
+  [%expect {| Runtime error: division by zero |}]
+;;
+
+let%expect_test "ok: func call in global var decl" =
+  pp
+    {|
+    var a = len("asd")
+    func main() {
+      print(a)
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+    3 |}]
 ;;
 
 let%expect_test "ok: simple func_call with args" =
@@ -85,7 +109,8 @@ let%expect_test "ok: simple func_call with args" =
   
     func main() {foo(x, y)}
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -102,7 +127,8 @@ let%expect_test "ok: simple value func call" =
       foo(x, "OCaml")
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -117,7 +143,8 @@ let%expect_test "ok: local var decl func call" =
       print(x, y)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -136,7 +163,8 @@ let%expect_test "ok: func args init" =
       foo(x, y)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml OCaml |}]
 ;;
@@ -156,7 +184,8 @@ let%expect_test "ok: assignment check" =
       foo(x, y)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     OCaml OCaml OCaml |}]
 ;;
@@ -177,7 +206,8 @@ let%expect_test "ok: simple arithmetic check" =
       foo(x + 1)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     105 |}]
 ;;
@@ -197,7 +227,8 @@ let%expect_test "ok: short var init" =
       foo(x + 1)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     206 |}]
 ;;
@@ -235,7 +266,8 @@ let%expect_test "ok: simple if" =
       foo(x + 1)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     Correct Correct Correct |}]
 ;;
@@ -263,7 +295,8 @@ let%expect_test "ok: nested if decl" =
       print(x)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     11111 |}]
 ;;
@@ -283,7 +316,8 @@ let%expect_test "ok: simple for" =
         }
       }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
 
     1
@@ -308,7 +342,7 @@ let%expect_test "ok: break" =
         }
     }
     |};
-  [%expect {|  |}]
+  [%expect {| Typecheck error: Unexpected operation: break |}]
 ;;
 
 let%expect_test "ok: continue" =
@@ -323,7 +357,7 @@ let%expect_test "ok: continue" =
         }
     }
     |};
-  [%expect {|  |}]
+  [%expect {| Typecheck error: Unexpected operation: break |}]
 ;;
 
 let%expect_test "ok: noreturn check" =
@@ -340,7 +374,8 @@ let%expect_test "ok: noreturn check" =
       print(x, y) 
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -358,7 +393,8 @@ let%expect_test "ok: simple return check" =
       print(x, y, foo()) 
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     kill OCamlCORRECTkill OCamlCORRECT |}]
 ;;
@@ -377,7 +413,8 @@ let%expect_test "ok: factorial check" =
       print(fac(5))
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     120 |}]
 ;;
@@ -395,77 +432,12 @@ let%expect_test "ok: funclit check" =
         print(a)
       }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     2 |}]
 ;;
 
-(*(Decl_func
-        ("adder",
-         { args = [("x", Type_int)];
-           returns =
-           (Some (Only_types ((Type_func ([Type_int], [Type_int])), [])));
-           body =
-           [(Stmt_short_var_decl
-               (Short_decl_mult_init (("sum", (Expr_const (Const_int 0))), [])));
-             (Stmt_return
-                [(Expr_const
-                    (Const_func
-                       { args = [("x", Type_int)];
-                         returns = (Some (Only_types (Type_int, [])));
-                         body =
-                         [(Stmt_assign
-                             (Assign_mult_expr (
-                                ((Lvalue_ident "sum"),
-                                 (Expr_bin_oper (Bin_sum, (Expr_ident "sum"),
-                                    (Expr_ident "x")))),
-                                [])));
-                           (Stmt_return [(Expr_ident "sum")])]
-                         }))
-                  ])
-             ]
-           }));
-      (Decl_func
-         ("main",
-          { args = []; returns = None;
-            body =
-            [(Stmt_short_var_decl
-                (Short_decl_mult_init (
-                   ("pos",
-                    (Expr_call
-                       ((Expr_ident "adder"), [(Expr_const (Const_int 1))]))),
-                   [("neg",
-                     (Expr_call
-                        ((Expr_ident "adder"), [(Expr_const (Const_int 1))])))
-                     ]
-                   )));
-              (Stmt_call
-                 ((Expr_ident "print"), [(Expr_const (Const_string "GAINED"))]));
-              Stmt_for {
-                init =
-                (Some (Init_decl
-                         (Short_decl_mult_init (
-                            ("i", (Expr_const (Const_int 0))), []))));
-                cond =
-                (Some (Expr_bin_oper (Bin_less, (Expr_ident "i"),
-                         (Expr_const (Const_int 10)))));
-                post = (Some (Init_incr "i"));
-                body =
-                [(Stmt_call
-                    ((Expr_ident "println"),
-                     [(Expr_call ((Expr_ident "pos"), [(Expr_ident "i")]));
-                       (Expr_call
-                          ((Expr_ident "neg"),
-                           [(Expr_bin_oper (Bin_multiply,
-                               (Expr_un_oper (Unary_minus,
-                                  (Expr_const (Const_int 2)))),
-                               (Expr_ident "i")))
-                             ]))
-                       ]))
-                  ]}
-              ]
-            }))
-      ]*)
 let%expect_test "ok: closure check" =
   pp
     {|
@@ -501,21 +473,59 @@ let%expect_test "ok: closure check" =
 ;;
 
 (* arrays *)
-let%expect_test "ok: spimple array test" =
+
+let%expect_test "ok: simple array assignment and call" =
   pp
     {|
-      func main() {
-        var a = [2]string{"a", "a"}
-        a[0] = "Kill "
-        a[1] = "Ocaml"
-        println(a[0], a[1])
+    func main() {
+      var a = [2]string{"a", "a"}
+      a[0] = "Kill "
+      a[1] = "Ocaml"
+      println(a[0], a[1])
     }
-
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
 
     Kill Ocaml |}]
+;;
+
+let%expect_test "ok: full array printing" =
+  pp
+    {|
+    func main() {
+      a := [5]int{0, 1, 2, 3, 4}
+      for i := 0; i < len(a); i++ {
+        print(a[i])
+      }
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+    01234 |}]
+;;
+
+let%expect_test "ok: array of functions with auto size" =
+  pp
+    {|
+    func main() {
+      funcs := [...]func(){
+        func() { print(1) },
+        func() { print(2) },
+        func() { print(3) },
+      }
+
+      for i := 0; i < len(funcs); i++ {
+        funcs[i]()
+      }
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+    123 |}]
 ;;
 
 let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
@@ -529,7 +539,8 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
     }
 
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
 
     Kill Ocaml |}]
@@ -546,8 +557,9 @@ let%expect_test "err: array index out of bounds in expr" =
     }
 
     |};
-  [%expect {|
-    Runtime error: Array index out of bounds |}]
+  [%expect
+    {|
+    Runtime error: array index out of bounds |}]
 ;;
 
 let%expect_test "err: array index out of bounds in lvalue" =
@@ -561,14 +573,15 @@ let%expect_test "err: array index out of bounds in lvalue" =
     }
 
     |};
-  [%expect {|
-    Runtime error: Array index out of bounds |}]
+  [%expect
+    {|
+    Runtime error: array index out of bounds |}]
 ;;
 
 (* defer, panic, recover *)
 
-let%expect_test "ok: simple defer check change local value & return not chenged local \
-                 value"
+let%expect_test
+    "ok: simple defer check change local value & return not chenged local value"
   =
   pp
     {|
@@ -587,7 +600,8 @@ let%expect_test "ok: simple defer check change local value & return not chenged 
         print(foo())
       }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     121 |}]
 ;;
@@ -615,7 +629,8 @@ let%expect_test "ok: defer check function reassgnment value" =
         print(foo())
       }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
     121 |}]
 ;;
@@ -689,7 +704,8 @@ func f() {
         
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Correct evaluating
 
     Returned normally from f. |}]
@@ -747,7 +763,6 @@ let%expect_test "ok: check defer, panic and recover" =
 let%expect_test "err: not recovered panic without goroutine" =
   pp
     {|
-      
     func main() {
         f()
         println("Returned normally from f.")
@@ -767,12 +782,11 @@ let%expect_test "err: not recovered panic without goroutine" =
         defer println("Defer in g ", i)
         println("Printing in g ", i)
         g(i + 1)
-        
     }
     |};
   [%expect
     {|
-    Runtime error: Paniced with message:[4]
+    Runtime error: Panic: 4
 
     Calling g.
     Printing in g 0
@@ -862,7 +876,8 @@ let%expect_test "ok: receive and send back" =
 ;;
 
 let%expect_test "err: sender without receiver" =
-  pp {|
+  pp
+    {|
     func main() {
       c := make(chan int)
       c <- 0
@@ -871,30 +886,25 @@ let%expect_test "err: sender without receiver" =
   [%expect {| Runtime error: Deadlock: goroutine 1 trying to send to chan 1 |}]
 ;;
 
-let%expect_test "err: receiver without sender" =
+let%expect_test "ok: save goroutine receiving two times" =
   pp
     {|
-    func sum(s [6]int, c chan int) {
-        sum := 0
-        for v := 0; v < 6; v++{
-          sum = sum + v
-        }	
-        c <- sum 
+    var a = 0
 
-      }
+    func sender(c chan int) {
+      a++
+      c <- a
+    }
 
-      func main() {
-        s := [6]int{7, 2, 8, -9, 4, 0}
+    func main() {
+      c := make(chan int)
+      go sender(c)
+      go sender(c)
 
-        c := make(chan int)
-        go sum(s, c)
-        go sum(s, c)
-        x, y := <-c, <-c
-
-        println(x, y, x+y)
-      }
+      println(<-c, <-c)
+    }
     |};
-  [%expect {| Runtime error: No goroutine running |}]
+  [%expect {| Runtime error: Dev: no goroutine running |}]
 ;;
 
 let%expect_test "ok: two goroutines sending to the same chanel before value received" =

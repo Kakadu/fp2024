@@ -19,24 +19,29 @@ let pp str =
 (********** main func **********)
 
 let%expect_test "ok: single main" =
-  pp {|
+  pp
+    {|
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     CORRECT |}]
 ;;
 
 let%expect_test "err: multiple main" =
-  pp {|
+  pp
+    {|
     func main() {}
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Multiple declaration error: main is redeclared |}]
 ;;
 
 let%expect_test "err: main with returns" =
-  pp {|
+  pp
+    {|
   func main() bool { return true}
   |};
   [%expect
@@ -44,7 +49,8 @@ let%expect_test "err: main with returns" =
 ;;
 
 let%expect_test "err: main with args" =
-  pp {|
+  pp
+    {|
   func main(a int) {}
   |};
   [%expect
@@ -52,7 +58,8 @@ let%expect_test "err: main with args" =
 ;;
 
 let%expect_test "err: no main" =
-  pp {|
+  pp
+    {|
   var a int
   func foo(b int) {}
   |};
@@ -60,21 +67,24 @@ let%expect_test "err: no main" =
 ;;
 
 let%expect_test "ok: main call" =
-  pp {|
+  pp
+    {|
     func foo() {
         main()
     }
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     CORRECT |}]
 ;;
 
 (********** top var decl **********)
 
 let%expect_test "ok: single var decl no type with simple init " =
-  pp {|
+  pp
+    {|
   var a = 5
 
   func main() {}
@@ -83,7 +93,8 @@ let%expect_test "ok: single var decl no type with simple init " =
 ;;
 
 let%expect_test "ok: single var decl with type and right init " =
-  pp {|
+  pp
+    {|
   var a int = 5
 
   func main() {}
@@ -92,7 +103,8 @@ let%expect_test "ok: single var decl with type and right init " =
 ;;
 
 let%expect_test "err: single var decl with type and wrong init " =
-  pp {|
+  pp
+    {|
   var a int = ""
 
   func main() {}
@@ -115,7 +127,8 @@ let%expect_test "ok: func call init with right number of elements" =
 ;;
 
 let%expect_test "err: func call one init with mismatched number of elements" =
-  pp {|
+  pp
+    {|
     var a, b, c  = get0()
 
     func get0() {}
@@ -157,7 +170,8 @@ let%expect_test "err: func call one init with mismathced range" =
 ;;
 
 let%expect_test "err: var redeclaration" =
-  pp {|
+  pp
+    {|
     var a = 0
 
     var a = ""
@@ -170,34 +184,40 @@ let%expect_test "err: var redeclaration" =
 (********** top func decl **********)
 
 let%expect_test "ok: simple func" =
-  pp {|
+  pp
+    {|
     func foo() {}
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     CORRECT |}]
 ;;
 
 let%expect_test "ok: id func " =
-  pp {|
+  pp
+    {|
     func id(a int) int {
         return a
     }
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     CORRECT |}]
 ;;
 
 let%expect_test "err: repeated idents in args" =
-  pp {|
+  pp
+    {|
     func foo(a, a int) {}
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Multiple declaration error: a is redeclared |}]
 ;;
 
@@ -212,19 +232,22 @@ let%expect_test "err: func redeclaration" =
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Multiple declaration error: foo is redeclared |}]
 ;;
 
 let%expect_test "err: func arg redeclaration" =
-  pp {|
+  pp
+    {|
     func foo(a int) {
         var a int
     }
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Multiple declaration error: a is redeclared |}]
 ;;
 
@@ -239,7 +262,8 @@ let%expect_test "ok: correct var multiple returns short_decl" =
         a, b := foo(4)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     CORRECT |}]
 ;;
 
@@ -258,7 +282,8 @@ let%expect_test "err: incorrect var multiple assign" =
         a, b = foo2(4)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Cannot assign: Multiple return assign failed |}]
 ;;
 
@@ -277,7 +302,8 @@ let%expect_test "ok: correct var multiple assign" =
         a, b = foo2(4)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     CORRECT |}]
 ;;
 
@@ -296,19 +322,22 @@ let%expect_test "err: incorrect var multiple assign after multiple decl with wro
         a, b = foo2(4)
     }
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: var and func with the same name" =
-  pp {|
+  pp
+    {|
     var foo int
 
     func foo() {}
 
     func main() {}
     |};
-  [%expect {|
+  [%expect
+    {|
     Typecheck error: Multiple declaration error: foo is redeclared |}]
 ;;
 
@@ -391,7 +420,8 @@ let%expect_test "ok: global var decl before it's use in code" =
 ;;
 
 let%expect_test "ok: redefined int example" =
-  pp {|
+  pp
+    {|
     var int string 
     func main() {}
 
@@ -480,7 +510,8 @@ let%expect_test "err: undefined func call" =
 ;;
 
 let%expect_test "err: arg not declared" =
-  pp {|
+  pp
+    {|
     func main() {
         println(a)
     }
@@ -691,7 +722,8 @@ let%expect_test "err: return type of func mismatch" =
 ;;
 
 let%expect_test "err: return with empty func returns" =
-  pp {|
+  pp
+    {|
     func main() {}
 
     func foo(a int, b int) {
@@ -702,7 +734,8 @@ let%expect_test "err: return with empty func returns" =
 ;;
 
 let%expect_test "ok: single correct return with no func args" =
-  pp {|
+  pp
+    {|
     func main() {}
 
     func foo(a int, b int) {
@@ -860,7 +893,8 @@ let%expect_test "err: incorrect chan send type" =
 (********** expr **********)
 
 let%expect_test "ok: right types in bin sum" =
-  pp {|
+  pp
+    {|
     func main() {
         c := 2 + 2
     }
@@ -869,7 +903,8 @@ let%expect_test "ok: right types in bin sum" =
 ;;
 
 let%expect_test "err: mismatched types in bin sum" =
-  pp {|
+  pp
+    {|
     var a = 5
 
     var b = "st"
@@ -882,7 +917,8 @@ let%expect_test "err: mismatched types in bin sum" =
 ;;
 
 let%expect_test "ok: right type in unary minus" =
-  pp {|
+  pp
+    {|
     func main() {
         c := -7
     }
@@ -891,7 +927,8 @@ let%expect_test "ok: right type in unary minus" =
 ;;
 
 let%expect_test "err: wrong type in unary minus" =
-  pp {|
+  pp
+    {|
     var a bool
 
     func main() {
@@ -902,7 +939,8 @@ let%expect_test "err: wrong type in unary minus" =
 ;;
 
 let%expect_test "ok: right types in const array inits" =
-  pp {|
+  pp
+    {|
   
     func main() {
         a := 7
@@ -914,7 +952,8 @@ let%expect_test "ok: right types in const array inits" =
 ;;
 
 let%expect_test "err: wrong types in const array inits" =
-  pp {|
+  pp
+    {|
     func main() {
         c := [2]int{1, func() {}}
     }
@@ -923,7 +962,8 @@ let%expect_test "err: wrong types in const array inits" =
 ;;
 
 let%expect_test "ok: too much const array inits" =
-  pp {|
+  pp
+    {|
     func main() {
         c := [2]string{"", "a", "123"}
     }
@@ -945,7 +985,8 @@ let%expect_test "ok: simple array index call" =
 ;;
 
 let%expect_test "err: array index call with non int index" =
-  pp {|
+  pp
+    {|
     var arr = [4]int{}
 
     func main() {
@@ -956,7 +997,8 @@ let%expect_test "err: array index call with non int index" =
 ;;
 
 let%expect_test "ok: array index assignment" =
-  pp {|
+  pp
+    {|
     var arr = [4]int{}
 
     func main() {
@@ -967,7 +1009,8 @@ let%expect_test "ok: array index assignment" =
 ;;
 
 let%expect_test "err: array index assignment with non-int index" =
-  pp {|
+  pp
+    {|
     var arr = [4]int{}
 
     func main() {
@@ -978,7 +1021,8 @@ let%expect_test "err: array index assignment with non-int index" =
 ;;
 
 let%expect_test "err: array index assignment with wrong expr" =
-  pp {|
+  pp
+    {|
     var arr = [4]int{}
 
     func main() {
@@ -1029,8 +1073,8 @@ let%expect_test "ok: correct for break" =
   [%expect {| CORRECT |}]
 ;;
 
-let%expect_test "err: multidimensional array index assignment with wrong index less than \
-                 needed"
+let%expect_test
+    "err: multidimensional array index assignment with wrong index less than needed"
   =
   pp
     {|
@@ -1046,8 +1090,8 @@ let%expect_test "err: multidimensional array index assignment with wrong index l
   [%expect {| Typecheck error: Mismatched types: [7]int and int |}]
 ;;
 
-let%expect_test "err: multidimensional array index assignment with wrong index more than \
-                 it needed"
+let%expect_test
+    "err: multidimensional array index assignment with wrong index more than it needed"
   =
   pp
     {|
@@ -1142,7 +1186,8 @@ let%expect_test "err: wrong not integer multiple nested index inside nested inde
 ;;
 
 let%expect_test "ok: predeclared true and false" =
-  pp {|
+  pp
+    {|
     func main() {
         a := true && false
     }
@@ -1290,7 +1335,8 @@ let%expect_test "ok: predeclared make, close & print usage" =
 ;;
 
 let%expect_test "ok: predeclared panic & recover" =
-  pp {|
+  pp
+    {|
     func main() {
       defer func() { recover() }()
       panic("")
@@ -1315,7 +1361,8 @@ let%expect_test "ok: predeclared nil, true, false" =
 ;;
 
 let%expect_test "err: untyped nil" =
-  pp {|
+  pp
+    {|
     func main() {
       a := nil
     }
@@ -1368,7 +1415,8 @@ let%expect_test "err: redeclaration of predeclared make" =
 ;;
 
 let%expect_test "err: assignment to toplevel function" =
-  pp {|
+  pp
+    {|
     func foo() {}
     func main() {
       foo = nil
@@ -1377,7 +1425,8 @@ let%expect_test "err: assignment to toplevel function" =
 ;;
 
 let%expect_test "ok: nil assignment to global variable with a function type" =
-  pp {|
+  pp
+    {|
     var foo = func() {}
     func main() {
       foo = nil
@@ -1386,7 +1435,8 @@ let%expect_test "ok: nil assignment to global variable with a function type" =
 ;;
 
 let%expect_test "err: trying to run make builtin func as a goroutine" =
-  pp {|
+  pp
+    {|
     func main() {
       go make(chan int)
     } |};
@@ -1394,7 +1444,8 @@ let%expect_test "err: trying to run make builtin func as a goroutine" =
 ;;
 
 let%expect_test "ok: break outside for" =
-  pp {|
+  pp
+    {|
     var foo = func() {}
     func main() {
       break

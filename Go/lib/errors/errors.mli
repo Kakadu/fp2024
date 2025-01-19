@@ -13,17 +13,7 @@ type type_check_error =
   | Invalid_operation of string (**Error with doing some invalid operation *)
   | Unexpected_operation of string (**Return/continue not inside for body *)
 
-type devonly_runtime_error =
-  | Not_enough_stack_frames
-  | Not_enough_local_envs
-  | Not_enough_operands
-  | No_goroutine_running
-  | Two_goroutine_running
-  | Undefined_ident of string
-  | TypeCheckFailed of string
-
 type runtime_error =
-  | Stack_overflow
   | Division_by_zero
   | Array_index_out_of_bound
   | Negative_array_index
@@ -32,7 +22,8 @@ type runtime_error =
   | Close_of_closed_chan
   | Close_of_nil_chan
   | Panic of string
-  | DevOnly of devonly_runtime_error
+  | TypeCheckFailed of string
+  | Dev of string
 
 type error =
   | Type_check_error of type_check_error
