@@ -197,12 +197,6 @@ end = struct
   let empty = Map.empty (module Int)
   (* let pp fmt s = Map.iteri s ~f:(fun ~key ~data -> fprintf fmt "%d: %a" key pp_typ data) *)
 
-  (* let pp fmt s =
-     Map.iter_keys s ~f:(fun k ->
-     let v = Map.find_exn s k in
-     fprintf fmt "%d: %a" k pp_typ v)
-     ;; *)
-
   (* perform mapping of fresh var to typ with occurs check, if correct,
      output new pair *)
   let mapping k v = if Type.occurs_in k v then fail `Occurs_check else return (k, v)
@@ -561,79 +555,14 @@ let check_let_bind_correctness is_rec let_bind =
   | _ -> return let_bind
 ;;
 
-let infer_patterns env ~shadow patterns =
-  List.fold_right
-    patterns
-    ~init:(return (env, []))
-    ~f:(fun pat acc ->
-      let* old_env, typs = acc in
-      let* new_env, typ = infer_pattern old_env ~shadow pat in
-      return (new_env, typ :: typs))
-;;
-
-let extract_names_from_pattern pat =
-  let rec helper = function
-    | PVar (Ident name) -> [ name ]
-    | PList l -> List.concat (List.map l ~f:helper)
-    | PCons (hd, tl) -> List.concat [ helper hd; helper tl ]
-    | PTuple (fst, snd, rest) ->
-      List.concat [ helper fst; helper snd; List.concat (List.map rest ~f:helper) ]
-    | POption (Some p) -> helper p
-    | PConstraint (p, _) -> helper p
-    | POption None -> []
-    | Wild -> []
-    | PConst _ -> []
-  in
-  helper pat
-;;
-
-let infer_match_pattern env ~shadow pattern match_type =
-  let* env, pat_typ = infer_pattern env ~shadow pattern in
-  let* subst = unify pat_typ match_type in
-  let env = TypeEnvironment.apply subst env in
-  let* pat_names = extract_names_from_pattern pattern >>| StringSet.elements in
-  let generalized_schemes =
-    List.map pat_names ~f:(fun name ->
-      let typ = TypeEnvironment.find_typ_exn env name in
-      let env = TypeEnvironment.remove env name in
-      let generalized_typ = generalize env typ in
-      name, generalized_typ)
-  in
-  let env = TypeEnvironment.extend_many env generalized_schemes in
-  return (env, subst)
-;;
-
-let extract_names_from_patterns pats =
-  StringSet.union_disjoint_many (List.map ~f:extract_names_from_pattern pats)
-;;
-
-let extract_bind_names_from_let_binds let_binds =
-  StringSet.union_disjoint_many
-    (List.map let_binds ~f:(function Let_bind (pat, _, _) ->
-       extract_names_from_pattern pat))
-;;
-
-let extract_bind_patterns_from_let_binds let_binds =
-  List.map let_binds ~f:(function Let_bind (pat, _, _) -> pat)
-;;
-
-let extend_env_with_bind_names env let_binds =
-  (* to prevent binds like let rec x = x + 1*)
-  let let_binds =
-    List.filter let_binds ~f:(function Let_bind (_, args, _) -> not (List.is_empty args))
-  in
-  let bind_names = extract_bind_patterns_from_let_binds let_binds in
-  let* env, _ = infer_patterns env ~shadow:true bind_names in
-  return env
-;;
-
-let check_let_bind_correctness is_rec let_bind =
-  match let_bind, is_rec with
-  | Let_bind (PVar _, _, _), _ -> return let_bind
-  | Let_bind _, Rec -> fail `Not_allowed_left_hand_side_let_rec
-  | Let_bind (_, args, _), _ when List.length args <> 0 ->
-    fail `Args_after_not_variable_let
-  | _ -> return let_bind
+let unify_act_pat = function
+  | TActPat (n1, t1), TActPat (n2, t2) ->
+    Choice (choice_set_many (Map.empty (module String)) [ n1, t1; n2, t2 ])
+  | TActPat (name, t), Choice map | Choice map, TActPat (name, t) ->
+    Choice (Map.set map ~key:name ~data:t)
+  | Choice map1, Choice map2 ->
+    Choice (Map.fold ~init:map1 map2 ~f:(fun ~key ~data map1 -> Map.set map1 ~key ~data))
+  | fst, _ -> fst
 ;;
 
 let rec infer_expr env = function
@@ -947,77 +876,6 @@ let infer_statement env = function
     in
     let env = TypeEnv.extend_many env names_schemes_list in
     return (env, new_res_map)
-;;
-
-and infer_typed_expr env = function
-  | expr, Some typ ->
-    let* subst1, expr_typ = infer_expr env expr in
-    let* subst2 = unify expr_typ (Substitution.apply subst1 typ) in
-    let* subst_result = Substitution.compose subst1 subst2 in
-    return (subst_result, Substitution.apply subst2 e_type)
-
-and extend_env_with_let_binds env is_rec let_binds =
-  List.fold
-    let_binds
-    ~init:(return (env, Substitution.empty))
-    ~f:(fun acc let_bind ->
-      let* env, subst_acc = acc in
-      let* subst, names_schemes_list = infer_let_bind env is_rec let_bind in
-      let env = TypeEnvironment.extend_many env names_schemes_list in
-      let env = TypeEnvironment.apply subst env in
-      let* subst_acc = Substitution.compose subst_acc subst in
-      return (env, subst_acc))
-
-and infer_let_bind env is_rec let_bind =
-  let* (Let_bind (name, args, e)) = check_let_bind_correctness is_rec let_bind in
-  let* env, args_types = infer_patterns env ~shadow:true args in
-  let* subst1, rvalue_type = infer_expr env e in
-  let bind_type = Substitution.apply subst1 (arrow_of_types args_types rvalue_type) in
-  (* If let_bind is recursive, then bind_varname was already in environment *)
-  let* env, name_type =
-    match is_rec with
-    | Nonrec -> infer_pattern env ~shadow:true name
-    | Rec -> infer_pattern env ~shadow:false name
-  in
-  let* subst2 = unify (Substitution.apply subst1 name_type) bind_type in
-  let* subst = Substitution.compose subst1 subst2 in
-  let env = TypeEnvironment.apply subst env in
-  let* names = extract_names_from_pattern name >>| StringSet.elements in
-  let* arg_names = extract_names_from_patterns args >>| StringSet.elements in
-  let names_types = List.map names ~f:(fun n -> n, TypeEnvironment.find_typ_exn env n) in
-  let env = TypeEnvironment.remove_many env (List.concat [ names; arg_names ]) in
-  let names_schemes_list =
-    List.map names_types ~f:(fun (name, name_type) -> name, generalize env name_type)
-  in
-  return (subst, names_schemes_list)
-;;
-
-let infer_statement env = function
-  | Let (Rec, let_bind, let_binds) ->
-    let let_binds = let_bind :: let_binds in
-    let* env = extend_env_with_bind_names env let_binds in
-    let* env, _ = extend_env_with_let_binds env Rec let_binds in
-    let* bind_names =
-      extract_bind_names_from_let_binds let_binds >>| StringSet.elements
-    in
-    let bind_names_with_types =
-      List.map bind_names ~f:(fun name ->
-        match TypeEnvironment.find_exn env name with
-        | Scheme (_, typ) -> name, typ)
-    in
-    return (env, bind_names_with_types)
-  | Let (Nonrec, let_bind, let_binds) ->
-    let let_binds = let_bind :: let_binds in
-    let* env, _ = extend_env_with_let_binds env Nonrec let_binds in
-    let* bind_names =
-      extract_bind_names_from_let_binds let_binds >>| StringSet.elements
-    in
-    let bind_names_with_types =
-      List.map bind_names ~f:(fun name ->
-        match TypeEnvironment.find_exn env name with
-        | Scheme (_, typ) -> name, typ)
-    in
-    return (env, bind_names_with_types)
 ;;
 
 let infer_construction env = function
