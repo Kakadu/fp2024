@@ -15,6 +15,7 @@ type error =
   | `Unbound of string
   | `Unification_failed of Ast.type_annot * Ast.type_annot
   | `LeftHS
+  | `RightHS
   ]
 
 val pp_error : Format.formatter -> error -> unit

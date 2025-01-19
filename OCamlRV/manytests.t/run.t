@@ -59,8 +59,23 @@ Test do_not_type:
   $ ../bin/main.exe do_not_type/004let_poly.ml -inference
   Infer error: Unification failed on bool and int
 
+  $ ../bin/main.exe do_not_type/005.ml -inference
+  Infer error: Unification failed on int and string
+
   $ ../bin/main.exe do_not_type/015tuples.ml -inference
   Infer error: Only variables are allowed as left-hand side of `let rec'
+
+  $ ../bin/main.exe do_not_type/016tuples_mismatch.ml -inference
+  Infer error: Unification failed on '0 * '1 and int * int * int
+
+  $ ../bin/main.exe do_not_type/097fun_vs_list.ml -inference
+  Infer error: Unification failed on '0 list and '1 -> '1
+
+  $ ../bin/main.exe do_not_type/097fun_vs_unit.ml -inference
+  Infer error: Unification failed on unit and '0 -> '0
+
+  $ ../bin/main.exe do_not_type/098rec_int.ml -inference
+  Infer error: This kind of expression is not allowed as right-hand side of `let rec'
 
   $ ../bin/main.exe do_not_type/099.ml -inference
   Infer error: Only variables are allowed as left-hand side of `let rec'
