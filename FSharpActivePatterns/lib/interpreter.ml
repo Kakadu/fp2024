@@ -440,7 +440,7 @@ let eval_statement env =
       | arg :: args -> return (VFun (arg, args, expr, env))
       | [] -> eval_expr env expr
     in
-    let pat_name = String.concat ~sep:"" ident_name_list ^ "Choice" in
+    let pat_name = "|" ^ String.concat ~sep:"|" ident_name_list ^ "|" in
     let* env = match_pattern env (PVar (Ident pat_name), value) in
     let* env =
       List.fold_right name_list ~init:(return env) ~f:(fun fst acc_env ->

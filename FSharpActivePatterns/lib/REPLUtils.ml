@@ -103,29 +103,29 @@ let run_repl dump_parsetree input_file input_string =
        | None -> None
        | Some s -> Some (string_to_in_channel s))
   in
-  let rec run_repl_helper run type_env value_env state =
+  let rec run_repl_helper run type_env value_env state values_acc =
     let open Format in
     match run ic with
     | Result (Error _) ->
       fprintf err_formatter "Parsing error\n";
-      run_repl_helper run type_env value_env state
+      run_repl_helper run type_env value_env state values_acc
     | Empty ->
       fprintf std_formatter "\n";
       print_flush ();
-      run_repl_helper run type_env value_env state
-    | End -> type_env, value_env
+      run_repl_helper run type_env value_env state values_acc
+    | End -> type_env, value_env, values_acc
     | Result (Ok ast) ->
       (match dump_parsetree with
        | true ->
          print_construction std_formatter ast;
-         run_repl_helper run type_env value_env state
+         run_repl_helper run type_env value_env state values_acc
        | false ->
          let result = run_interpreter type_env value_env state ast in
          (match result with
           | new_state, Error err ->
             fprintf err_formatter "Error occured: %a\n" pp_global_error err;
             print_flush ();
-            run_repl_helper run type_env value_env new_state
+            run_repl_helper run type_env value_env new_state values_acc
           | new_state, Ok (new_type_env, new_value_env, evaled_names) ->
             (match ic with
              | None ->
@@ -142,19 +142,29 @@ let run_repl dump_parsetree input_file input_string =
                      v)
                  evaled_names;
                print_flush ();
-               run_repl_helper run new_type_env new_value_env new_state
-             | Some _ -> run_repl_helper run new_type_env new_value_env new_state)))
+               run_repl_helper run new_type_env new_value_env new_state values_acc
+             | Some _ ->
+               let overwrite map1 map2 =
+                 Base.Map.fold
+                   ~init:map1
+                   ~f:(fun ~key ~data map1 -> Base.Map.set map1 ~key ~data)
+                   map2
+               in
+               let values_acc = overwrite values_acc evaled_names in
+               run_repl_helper run new_type_env new_value_env new_state values_acc)))
   in
   let type_env = TypeEnv.default in
   let value_env = ValueEnv.default in
-  let type_env, value_env = run_repl_helper run_single type_env value_env 0 in
-  let type_env = TypeEnv.remove type_env "print_int" in
-  let value_env = ValueEnv.remove value_env "print_int" in
-  match ic with
-  | Some _ ->
-    TypeEnv.iteri type_env ~f:(fun ~name ~typ ->
-      let open Format in
-      let value = ValueEnv.find_exn value_env name in
-      fprintf std_formatter "val %s : %a = %a\n" name pp_typ typ ValueEnv.pp_value value)
-  | None -> ()
+  let _, _, evaled_values =
+    run_repl_helper run_single type_env value_env 0 (Base.Map.empty (module Base.String))
+  in
+  Base.Map.iteri evaled_values ~f:(fun ~key ~data:(typ, value) ->
+    Format.fprintf
+      Format.std_formatter
+      "val %s : %a = %a\n"
+      key
+      pp_typ
+      typ
+      ValueEnv.pp_value
+      value)
 ;;

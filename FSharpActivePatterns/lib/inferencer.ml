@@ -951,7 +951,7 @@ let infer_statement env = function
     let* arg_names = extract_names_from_patterns args >>| elements in
     let env = TypeEnv.remove_many env arg_names in
     (* form result map for printing *)
-    let result_name = String.concat ~sep:"" variant_names ^ "Choice" in
+    let result_name = "|" ^ String.concat ~sep:"|" variant_names ^ "|" in
     let new_res_map = Map.empty (module String) in
     let new_res_map = Map.set new_res_map ~key:result_name ~data:apat_type in
     let names_schemes_list =
