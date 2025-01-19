@@ -159,7 +159,7 @@ end = struct
             let* subst' = unify (apply subst t1) (apply subst t2) in
             let* composed_subst = compose subst subst' in
             unify_tuples composed_subst rest1 rest2
-          | _, _ -> failwith "This should not happen"
+          | _, _ -> fail (UnificationFailed (left, right))
         in
         unify_tuples empty types1 types2)
     | TyList ty1, TyList ty2 -> unify ty1 ty2
@@ -539,8 +539,7 @@ let rec infer_structure_item env = function
 ;;
 
 let infer_structure (structure : program) =
-  let rec process_items env items =
-    match items with
+  let rec process_items env = function
     | [] -> return env
     | ExpLet (is_rec, pattern, expr, None) :: rest ->
       let* env = infer_structure_item env (ExpLet (is_rec, pattern, expr, None)) in

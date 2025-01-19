@@ -170,6 +170,16 @@ end = struct
     | _ -> fail (TypeError v1)
   ;;
 
+  let rec create_nested_closures env patterns body =
+    match patterns with
+    | [] -> fail PatternMatchingError (* Возвращаем ошибку через монаду *)
+    | [ p ] ->
+      return (ValueClosure (p, false, body, env)) (* Возвращаем успешный результат *)
+    | p :: ps ->
+      let* _ = create_nested_closures env ps body in
+      return (ValueClosure (p, false, ExpLambda (ps, body), env))
+  ;;
+
   let rec eval_expr env = function
     | ExpConst c ->
       (match c with
@@ -291,16 +301,7 @@ end = struct
           return (v :: acc))
       in
       return (ValueTuple (v1, v2, vs))
-    | ExpLambda (patterns, body) ->
-      let rec create_nested_closures env patterns body =
-        match patterns with
-        | [] -> failwith "ExpLambda requires at least one pattern"
-        | [ p ] -> ValueClosure (p, false, body, env)
-        | p :: ps ->
-          let _ = create_nested_closures env ps body in
-          ValueClosure (p, false, ExpLambda (ps, body), env)
-      in
-      return (create_nested_closures env patterns body)
+    | ExpLambda (patterns, body) -> create_nested_closures env patterns body
     | ExpTypeAnnotation (expr, _) -> eval_expr env expr
     | ExpFunction (e1, e2) ->
       let* v1 = eval_expr env e1 in
@@ -385,15 +386,15 @@ end = struct
          return env2)
     | ExpLet (is_rec, PatVariable x, e1, Some body) ->
       let* v = eval_expr env e1 in
-      let env =
+      let* env =
         if is_rec
         then (
           match v with
           | ValueClosure (p, _, e, closure_env) ->
             let updated_closure = ValueClosure (p, true, e, extend closure_env x v) in
-            extend env x updated_closure
-          | _ -> failwith "Expected a closure for recursive definition")
-        else extend env x v
+            return (extend env x updated_closure)
+          | _ -> return env)
+        else return (extend env x v)
       in
       let* _ = eval_expr env body in
       return env

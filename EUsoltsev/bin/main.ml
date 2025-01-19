@@ -41,26 +41,40 @@ let read_file filename =
   content
 ;;
 
-let main () =
-  let input = ref "" in
-  let infer_flag = ref false in
-  let interpret_flag = ref false in
-  let file_flag = ref "" in
-  let args =
-    [ "-infer", Arg.Set infer_flag, "Run type inference"
-    ; "-interpret", Arg.Set interpret_flag, "Run interpretation"
-    ; "-file", Arg.Set_string file_flag, "Specify the file to process"
-    ]
+type config =
+  { infer_flag : bool
+  ; interpret_flag : bool
+  ; file : string option
+  ; input : string option
+  }
+
+let parse_arguments () =
+  let rec parse_args args config =
+    match args with
+    | [] -> config
+    | "-infer" :: rest -> parse_args rest { config with infer_flag = true }
+    | "-interpret" :: rest -> parse_args rest { config with interpret_flag = true }
+    | "-file" :: filename :: rest -> parse_args rest { config with file = Some filename }
+    | arg :: rest -> parse_args rest { config with input = Some arg }
   in
-  let anon_fun s = input := s in
-  Arg.parse
-    args
-    anon_fun
-    "Usage: program [-infer | -interpret] [-file <filename>] <input>";
-  let input_content = if !file_flag <> "" then read_file !file_flag else !input in
-  if !infer_flag
+  parse_args
+    (Array.to_list Sys.argv |> List.tl)
+    { infer_flag = false; interpret_flag = false; file = None; input = None }
+;;
+
+let main () =
+  let config = parse_arguments () in
+  let input_content =
+    match config.file with
+    | Some filename -> read_file filename
+    | None ->
+      (match config.input with
+       | Some s -> s
+       | None -> "")
+  in
+  if config.infer_flag
   then run_inference input_content
-  else if !interpret_flag
+  else if config.interpret_flag
   then run_interpreter input_content
   else printf "Please specify either -infer or -interpret flag.\n"
 ;;
