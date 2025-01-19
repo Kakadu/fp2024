@@ -2,7 +2,16 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-val parse_and_infer : string list -> bool -> bool -> Inferencer.typeenv -> unit
+open Interpreter
+
+val parse_and_infer
+  :  string list
+  -> bool
+  -> bool
+  -> Inferencer.typeenv
+  -> enviroment
+  -> int
+  -> unit
 
 val parse_and_infer_line
   :  string
@@ -10,4 +19,6 @@ val parse_and_infer_line
   -> int
   -> bool
   -> bool
-  -> Inferencer.typeenv * int
+  -> enviroment
+  -> int
+  -> Inferencer.typeenv * int * int * int

@@ -7,7 +7,9 @@ let%expect_test "min function with if" =
     [ "min x y = if x < y then x else y" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     min: t5.  Ord t5 -> Ord t5 -> Ord t5
@@ -19,7 +21,9 @@ let%expect_test "int type" =
     [ "a = 42" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -31,7 +35,9 @@ let%expect_test "bool type" =
     [ "a = True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -43,7 +49,9 @@ let%expect_test "unit type" =
     [ "a = ()" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  ()
@@ -55,7 +63,9 @@ let%expect_test "const with explicit correct single type" =
     [ "a = 42 :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -67,7 +77,9 @@ let%expect_test "const with explicit correct multiple type" =
     [ "a = (42 :: Int) :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -79,7 +91,9 @@ let%expect_test "const with explicit wrong single type" =
     [ "a = 42 :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -88,7 +102,9 @@ let%expect_test "const with explicit wrong multiple type" =
     [ "a = (42 :: Int) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -97,7 +113,9 @@ let%expect_test "tuple" =
     [ "a = (42, True)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Int, Bool)
@@ -109,7 +127,9 @@ let%expect_test "tuple with extra types" =
     [ "a = (42, True, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Int, Bool, ())
@@ -121,7 +141,9 @@ let%expect_test "tuple with explicit correct single type" =
     [ "a = (42, True, ()) :: (Int, Bool, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Int, Bool, ())
@@ -133,7 +155,9 @@ let%expect_test "tuple with explicit correct multiple type" =
     [ "a = ((42, True, ()) :: (Int, Bool, ())) :: (Int, Bool, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Int, Bool, ())
@@ -145,7 +169,9 @@ let%expect_test "tuple with explicit wrong single type" =
     [ "x = (42, True, ()) :: (Bool, Bool, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -154,7 +180,9 @@ let%expect_test "tuple with explicit wrong multiple type" =
     [ "x = ((42, True, ()) :: (Int, Bool, ())) :: (Bool, Bool, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -163,7 +191,9 @@ let%expect_test "maybe type just" =
     [ "a = \\x -> Just x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t4.  t4 -> Maybe t4
@@ -175,7 +205,9 @@ let%expect_test "maybe type just int" =
     [ "a = \\x -> Just (x + 1)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Maybe Int
@@ -187,7 +219,9 @@ let%expect_test "maybe type just list" =
     [ "a = \\x y -> Just (y : x)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t7.  [t7] -> t7 -> Maybe [t7]
@@ -199,7 +233,9 @@ let%expect_test "maybe type nothing" =
     [ "a = Nothing" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t4.  Maybe t4
@@ -211,7 +247,9 @@ let%expect_test "correct ariphmetic operation" =
     [ "a = 5 + 3" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -223,7 +261,9 @@ let%expect_test "incorrect ariphmetic operation" =
     [ "a = 5 + ()" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on () and Int |}]
 ;;
 
@@ -232,7 +272,9 @@ let%expect_test "ariphmetic operation with explicit correct single type" =
     [ "a = (5 + 3) :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -244,7 +286,9 @@ let%expect_test "ariphmetic operation with explicit correct multiple type" =
     [ "a = ((5 + 3) :: Int) :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -256,7 +300,9 @@ let%expect_test "ariphmetic operation with explicit wrong single type" =
     [ "a = (5 + 3) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -265,7 +311,9 @@ let%expect_test "ariphmetic operation with explicit wrong multiple type" =
     [ "a = ((5 + 3) :: Int) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -274,7 +322,9 @@ let%expect_test "correct logical operation" =
     [ "a = True && False" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -286,7 +336,9 @@ let%expect_test "incorrect logical operation" =
     [ "a = True && 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -295,7 +347,9 @@ let%expect_test "logical operation with correct explicit single type" =
     [ "a = True && False :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -307,7 +361,9 @@ let%expect_test "logical operation with correct explicit multiple type" =
     [ "a = (True && False :: Bool) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -319,7 +375,9 @@ let%expect_test "logical operation with incorrect explicit single type" =
     [ "a = True && False :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -328,7 +386,9 @@ let%expect_test "logical operation with incorrect explicit multiple type" =
     [ "a = (True && False :: Bool) :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -337,7 +397,9 @@ let%expect_test "correct comparison operation with int" =
     [ "a = 1 <= 2" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -349,7 +411,9 @@ let%expect_test "correct comparison operation with bool" =
     [ "a = False <= True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -361,7 +425,9 @@ let%expect_test "incorrect comparison operation with () and int" =
     [ "a = 1 <= ()" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on () and Int |}]
 ;;
 
@@ -370,7 +436,9 @@ let%expect_test "incorrect comparison operation with bool and int" =
     [ "a = 1 <= True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -379,7 +447,9 @@ let%expect_test "comparison operation with explicit correct single type" =
     [ "a = (1 <= 2) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -391,7 +461,9 @@ let%expect_test "comparison operation with explicit correct multiple type" =
     [ "a = ((1 <= 2) :: Bool) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -403,7 +475,9 @@ let%expect_test "comparison operation with explicit wrong single type" =
     [ "a = (1 <= 2) :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -412,7 +486,9 @@ let%expect_test "comparison operation with explicit wrong multiple type" =
     [ "a = ((1 <= 2) :: Int) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -421,7 +497,9 @@ let%expect_test "cons correct with int" =
     [ "a = 1 : []" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -433,7 +511,9 @@ let%expect_test "cons correct with bool" =
     [ "a = True : []" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Bool]
@@ -445,7 +525,9 @@ let%expect_test "cons incorrect with int" =
     [ "a = 1 : 2" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and [Int] |}]
 ;;
 
@@ -454,7 +536,9 @@ let%expect_test "cons incorrect with bool" =
     [ "a = True : False" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and [Bool] |}]
 ;;
 
@@ -463,7 +547,9 @@ let%expect_test "cons incorrect with int and bool" =
     [ "a = 1 : [True]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -472,7 +558,9 @@ let%expect_test "neg type correct" =
     [ "a = -42" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -484,7 +572,9 @@ let%expect_test "neg type incorrect" =
     [ "a = -True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -493,7 +583,9 @@ let%expect_test "neg type with explicit correct single type" =
     [ "a = -42 :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -505,7 +597,9 @@ let%expect_test "neg type with explicit correct multiple type" =
     [ "a = (-42 :: Int) :: Int" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -517,7 +611,9 @@ let%expect_test "neg type with explicit wrong single type" =
     [ "a = -42 :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -526,7 +622,9 @@ let%expect_test "neg type with explicit wrong multiple type" =
     [ "a = (-42 :: Int) :: Bool" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -535,7 +633,9 @@ let%expect_test "ord polymor" =
     [ "a = (\\f -> let g = (f True) in (f 3)) (\\x -> x)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -544,7 +644,9 @@ let%expect_test "if correct with int return type" =
     [ "a = if True then 1 else -1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -556,7 +658,9 @@ let%expect_test "if correct with tuple return type" =
     [ "a = if True then (True, 2) else (False, -1)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Bool, Int)
@@ -568,7 +672,9 @@ let%expect_test "if incorrect with int condition" =
     [ "a = if (1 + 2) then (True, 2) else (False, -1)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -577,7 +683,9 @@ let%expect_test "if incorrect with tuple condition" =
     [ "a = if (True, ()) then (True, 2) else (False, -1)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on (Bool, ()) and Bool |}]
 ;;
 
@@ -586,7 +694,9 @@ let%expect_test "if incorrect with int and bool return types" =
     [ "a = if True then 1 else False" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -595,7 +705,9 @@ let%expect_test "if incorrect with int and tuple return types" =
     [ "a = if True then 1 else (1, False)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and (Int, Bool) |}]
 ;;
 
@@ -604,7 +716,9 @@ let%expect_test "if incorrect with bool and list return types" =
     [ "a = if True then True else [1, 4]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and [Int] |}]
 ;;
 
@@ -613,7 +727,9 @@ let%expect_test "lambda ident" =
     [ "a = \\x -> x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t4.  t4 -> t4
@@ -625,7 +741,9 @@ let%expect_test "lambda int return type" =
     [ "a = \\x -> 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t4.  t4 -> Int
@@ -637,7 +755,9 @@ let%expect_test "lambda narrowing to int type" =
     [ "a = \\x -> x + 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Int
@@ -649,7 +769,9 @@ let%expect_test "lambda tuple return type" =
     [ "a = \\x -> (x, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t4.  t4 -> (t4, ())
@@ -661,7 +783,9 @@ let%expect_test "lambda multiple arguments" =
     [ "a = \\x y z -> x + y + z" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Int -> Int -> Int
@@ -673,7 +797,9 @@ let%expect_test "lambda narrowing to list type" =
     [ "a = \\x -> 1 : x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int] -> [Int]
@@ -685,7 +811,9 @@ let%expect_test "lambda narrowing to arrow type" =
     [ "a = \\f -> \\y -> f y" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t5. t6.  (t5 -> t6) -> t5 -> t6
@@ -697,7 +825,9 @@ let%expect_test "lambda occurs check" =
     [ "a = \\x -> x x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| Occurs check failed |}]
 ;;
 
@@ -706,7 +836,9 @@ let%expect_test "lambda tuple return type" =
     [ "a = \\x -> x `mod` 2 == 0 && x > 5" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Bool
@@ -718,7 +850,9 @@ let%expect_test "lambda correct with explicit single type" =
     [ "a = (\\x -> 1) :: (Int -> Int)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Int
@@ -730,7 +864,9 @@ let%expect_test "lambda correct with explicit multiple type" =
     [ "a = ((\\x -> 1) :: (Bool -> Int)) :: (Bool -> Int)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool -> Int
@@ -742,7 +878,9 @@ let%expect_test "lambda wrong with explicit single type" =
     [ "a = (\\x -> ()) :: (() -> Bool)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on () and Bool |}]
 ;;
 
@@ -751,7 +889,9 @@ let%expect_test "lambda wrong with explicit multiple type" =
     [ "a = ((\\x -> ()) :: (() -> ())) :: (() -> [Int])" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on [Int] and () |}]
 ;;
 
@@ -760,7 +900,9 @@ let%expect_test "let id" =
     [ "a = let x = x in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t5.  t5
@@ -772,7 +914,9 @@ let%expect_test "let narrowing to int" =
     [ "a = let x = x; y = 1 in x + y" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -784,7 +928,9 @@ let%expect_test "let narrowing to [int]" =
     [ "a = let x = x; y = 1 in y : x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -796,7 +942,9 @@ let%expect_test "let narrowing to bool" =
     [ "a = let x = x; y = True in y && x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -808,7 +956,9 @@ let%expect_test "let function" =
     [ "a = let compose f g x = f (g x) in compose" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect
     {|
     [
@@ -823,7 +973,9 @@ let%expect_test "let recursive fib" =
     ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Int
@@ -837,7 +989,9 @@ let%expect_test "let recursive fac" =
     ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Int
@@ -849,7 +1003,9 @@ let%expect_test "let with explicit correct single type" =
     [ "a = let (x :: Int) = x in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -861,7 +1017,9 @@ let%expect_test "let with explicit correct mutliple type" =
     [ "a = let ((x :: Int) :: Int) = x in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -873,7 +1031,9 @@ let%expect_test "let with explicit wrong single type" =
     [ "a = let (x :: Bool) = 1 in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -882,7 +1042,9 @@ let%expect_test "let with explicit wrong mutliple type" =
     [ "a = let ((x :: Int) :: Bool) = x in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -891,7 +1053,9 @@ let%expect_test "let wrong unification" =
     [ "a = let x = if x <= True then 1 else 0 in x + 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -900,7 +1064,9 @@ let%expect_test "let wrong unification" =
     [ "a = let x = if x <= True then True else False in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -912,7 +1078,9 @@ let%expect_test "let wrong unification" =
     [ "a = let x = if x <= True then True else False in x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -924,7 +1092,9 @@ let%expect_test "case correct with int type" =
     [ "a = \\x -> case x of 1 -> True; 2 -> False" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> Bool
@@ -936,7 +1106,9 @@ let%expect_test "case correct with lists" =
     [ "a = \\x -> case x of (x:xs) -> x; [] -> []" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t9.  [[t9]] -> [t9]
@@ -948,7 +1120,9 @@ let%expect_test "case correct with int lists and explicit similar types" =
     [ "a = \\x -> case x of ((x :: [Int]):(xs :: [[Int]])) -> x; [] -> []" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [[Int]] -> [Int]
@@ -960,7 +1134,9 @@ let%expect_test "case incorrect with int lists and explicit different types" =
     [ "a = \\x -> case x of ((x :: [Int]):(xs :: [[Bool]])) -> x; [] -> []" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -969,7 +1145,9 @@ let%expect_test "function apply incorrect" =
     [ "a = (\\x -> x + 1) True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -978,7 +1156,9 @@ let%expect_test "function apply list return type" =
     [ "a = (\\x -> x : []) True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Bool]
@@ -990,7 +1170,9 @@ let%expect_test "function apply with correct single type" =
     [ "a = (\\(x :: Int) -> x <= 2) 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -1002,7 +1184,9 @@ let%expect_test "function apply return correct multiple type" =
     [ "a = (\\((x :: Int) :: Int) -> x <= 2) 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Bool
@@ -1014,7 +1198,9 @@ let%expect_test "function apply return wrong single type" =
     [ "a = (\\(x :: Bool) -> x <= 2) 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -1023,7 +1209,9 @@ let%expect_test "function apply return wrong multiple type" =
     [ "a = (\\((x :: Int) :: Bool) -> x <= 2) 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1032,7 +1220,9 @@ let%expect_test "function apply return correct single type" =
     [ "a = (\\(x :: Int) -> x : []) 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -1044,7 +1234,9 @@ let%expect_test "list int" =
     [ "a = [1, 2]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -1056,7 +1248,9 @@ let%expect_test "lazy list int" =
     [ "a = [1..]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -1068,7 +1262,9 @@ let%expect_test "lazy list wrong type" =
     [ "a = [(True, 1)..]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Enum t4 and (Bool, Int) |}]
 ;;
 
@@ -1077,7 +1273,9 @@ let%expect_test "list of list" =
     [ "a = [[True]]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [[Bool]]
@@ -1089,7 +1287,9 @@ let%expect_test "wrong list of different types" =
     [ "a = [True, (), 3]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and () |}]
 ;;
 
@@ -1098,7 +1298,9 @@ let%expect_test "comprehension list with generator" =
     [ "a = [x * y | x <- [1..10], y <- [1]]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -1110,7 +1312,9 @@ let%expect_test "comprehension list with simple condition" =
     [ "a = [1 * 2 | True]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -1122,7 +1326,9 @@ let%expect_test "comprehension list with condition" =
     [ "a = \\x -> [ x | x < 10 ]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> [Int]
@@ -1134,7 +1340,9 @@ let%expect_test "comprehension list with condition and generator" =
     [ "a = \\y -> [ x * y | x <- [1..10], y <= 10  ]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int -> [Int]
@@ -1146,7 +1354,9 @@ let%expect_test "wrong comprehension list with generator condition" =
     [ "a = \\x y -> [ x * y | x < 10, y <- [True, False]]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1155,7 +1365,9 @@ let%expect_test "several functions" =
     [ "f x = g x; g y = y" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
 [
 f: t4.  t4 -> t4
@@ -1168,7 +1380,9 @@ let%expect_test "several bindings non_poly" =
     [ "f x = x; g = f True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
 [
 f:  Bool -> Bool
@@ -1181,7 +1395,9 @@ let%expect_test "mutually recursive functions" =
     [ "f x = g x; g y = f y" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
   [
   f: t4. t5.  t4 -> t5
@@ -1196,7 +1412,9 @@ let%expect_test "mutually recursive functions with guards" =
     ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
   [
   isEven:  Int -> Bool
@@ -1209,7 +1427,9 @@ let%expect_test "guards" =
     [ "f x | x > 0 = x | True = -1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  Int -> Int
@@ -1221,7 +1441,9 @@ let%expect_test "where single statement" =
     [ "f x = x + y where y = 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| 
     [
     f:  Int -> Int
@@ -1233,7 +1455,9 @@ let%expect_test "where single statement with explicit incorrect type" =
     [ "f x = x + y where (y :: Bool) = 1" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1242,7 +1466,9 @@ let%expect_test "where multiple statements" =
     [ "f x = x && y || z where y = False; z = True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| 
     [
     f:  Bool -> Bool
@@ -1254,7 +1480,9 @@ let%expect_test "where single statement incorrect" =
     [ "f x = x + y where y = True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1263,7 +1491,9 @@ let%expect_test "where single statement with param shadowing incorrect" =
     [ "f x y = x + y where y = True" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1272,7 +1502,9 @@ let%expect_test "where multiple statements incorrect" =
     [ "f x  = x && y || z where y = False; z = 3" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -1281,7 +1513,9 @@ let%expect_test "where polymorphic argument" =
     [ "f x = y where y = False" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f: t3.  t3 -> Bool
@@ -1293,7 +1527,9 @@ let%expect_test "where list argument" =
     [ "f (x:xs) = y : xs where y = 2" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  [Int] -> [Int]
@@ -1305,7 +1541,9 @@ let%expect_test "function with tuple argument" =
     [ "f (x, y) = (x + 1, y && True)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  (Int, Bool) -> (Int, Bool)
@@ -1317,7 +1555,9 @@ let%expect_test "several functions with incorrect type" =
     [ "f x = x + 1; g = f y where y = False" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1326,7 +1566,9 @@ let%expect_test "correct arrow declaration" =
     [ "f :: Int -> Int; f x = x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  Int -> Int
@@ -1338,7 +1580,9 @@ let%expect_test "incorrect arrow declaration" =
     [ "f :: Int; f x = x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and t3 -> t3 |}]
 ;;
 
@@ -1347,7 +1591,9 @@ let%expect_test "incorrect arrow declaration with different types" =
     [ "f :: Int -> Bool; f x = x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Bool and Int |}]
 ;;
@@ -1357,7 +1603,9 @@ let%expect_test "incorrect list declaration with different types" =
     [ "a :: [Int]; a = [False, True]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Int and Bool |}]
 ;;
@@ -1367,7 +1615,9 @@ let%expect_test "correct declaration with explicit type" =
     [ "a :: [Int]; (a :: [Int]) = [1, 2]" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  [Int]
@@ -1379,7 +1629,9 @@ let%expect_test "incorrect declaration with explicit type" =
     [ "f :: Bool -> Bool; f (x :: Int) = x" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Bool and Int |}]
 ;;
@@ -1389,7 +1641,9 @@ let%expect_test "correct tuple declaration" =
     [ "a :: (Int, Bool, ()); a = (1, True, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Int, Bool, ())
@@ -1401,7 +1655,9 @@ let%expect_test "incorrect tuple declaration" =
     [ "a :: (Int, Bool, ()); a = (False, True, ())" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Int and Bool |}]
 ;;
@@ -1411,7 +1667,9 @@ let%expect_test "failed unification" =
     [ "a = let f = (\\id -> (id 1, id True)) (\\x -> x) in f" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Int and Bool |}]
 ;;
 
@@ -1420,7 +1678,9 @@ let%expect_test "generalization" =
     [ "a = let f = \\x -> let const = \\y -> x in const x in f" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t12.  t12 -> t12
@@ -1434,7 +1694,9 @@ let%expect_test "compatible restrictions" =
     ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  (Int, Bool)
@@ -1446,7 +1708,9 @@ let%expect_test "y-combinator" =
     [ "a = let fix f = f (fix f) in fix" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a: t8.  (t8 -> t8) -> t8
@@ -1458,7 +1722,9 @@ let%expect_test "z-combinator without recursion" =
     [ "a = let fix f eta = f (fix f) eta in fix" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect
     {|
     [
@@ -1471,7 +1737,9 @@ let%expect_test "occurs check" =
     [ "a = let f x = f in f" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| Occurs check failed |}]
 ;;
 
@@ -1480,7 +1748,9 @@ let%expect_test "let poly" =
     [ "a = let f = (\\x -> x) in let g = (f True) in f 3" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     a:  Int
@@ -1492,7 +1762,9 @@ let%expect_test "fail unification" =
     [ "a = (\\f -> let g = (f True) in (f 3)) (\\x -> x)" ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {| unification failed on Bool and Int |}]
 ;;
 
@@ -1501,7 +1773,9 @@ let%expect_test "unif with ord, succ" =
     [ "f x = x > (1,2); g y = y < Just True " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  (Int, Int) -> Bool
@@ -1514,7 +1788,9 @@ let%expect_test "unif with ord, fail (tuple)" =
     [ "f x = x > (1, \\ x -> x) " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Ord t8 and t5 -> t5 |}]
 ;;
@@ -1524,7 +1800,9 @@ let%expect_test "unif with ord, fail" =
     [ "f x = x > [\\ x -> x] " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Ord t8 and t6 -> t6 |}]
 ;;
@@ -1534,7 +1812,9 @@ let%expect_test "tree param valid" =
     [ " f (x; (1; $;$); $) = x " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  {Int} -> Int
@@ -1546,7 +1826,9 @@ let%expect_test "tree param invalid" =
     [ " f (x; (True; $;$); $) = x - x " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Bool and Int |}]
 ;;
@@ -1556,7 +1838,9 @@ let%expect_test "tree expr valid" =
     [ " f x  = (x; (1; $;$); $) " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     [
     f:  Int -> {Int}
@@ -1568,7 +1852,9 @@ let%expect_test "tree param invalid" =
     [ " f x = ((x; (True; $;$); $), x - x) " ]
     false
     true
-    Haskell_lib.Inferencer.typeenv_empty;
+    Haskell_lib.Inferencer.typeenv_empty
+    0
+    0;
   [%expect {|
     unification failed on Bool and Int |}]
 ;;
