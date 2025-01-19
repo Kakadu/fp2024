@@ -15,10 +15,11 @@ type value =
   | Val_integer of int
   | Val_char of char
   | Val_string of string
-  | Val_fun of string option * Ast.pattern * Ast.pattern list * Ast.Expression.t * env
+  | Val_fun of Ast.rec_flag * Ast.pattern * Ast.pattern list * Ast.Expression.t * env
   | Val_function of Ast.Expression.t Ast.case list * env
   | Val_tuple of value * value * value list
   | Val_construct of string * value option
+  | Val_builtin of string
 
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 

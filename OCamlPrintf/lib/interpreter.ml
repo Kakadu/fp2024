@@ -22,10 +22,11 @@ type value =
   | Val_integer of int
   | Val_char of char
   | Val_string of string
-  | Val_fun of string option * pattern * pattern list * Expression.t * env
+  | Val_fun of rec_flag * pattern * pattern list * Expression.t * env
   | Val_function of Expression.t case list * env
   | Val_tuple of value * value * value list
   | Val_construct of ident * value option
+  | Val_builtin of string
 
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 
@@ -57,6 +58,7 @@ let rec pp_value ppf =
   | Val_construct (tag, None) -> fprintf ppf "%s" tag
   | Val_construct ("Some", Some value) -> fprintf ppf "Some %a" pp_value value
   | Val_construct _ -> ()
+  | Val_builtin _ -> fprintf ppf "<builtin>"
 ;;
 
 module Res = struct
@@ -81,6 +83,10 @@ module EvalEnv = struct
 
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
+
+  let compose env1 env2 =
+    Map.fold env2 ~f:(fun ~key ~data env_acc -> extend env_acc key data) ~init:env1
+  ;;
 
   let find_exn env key =
     match Map.find env key with
@@ -203,7 +209,8 @@ module Inter = struct
     | Exp_let (Recursive, value_binding, value_binding_list, exp) ->
       let* env = eval_rec_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
-    | Exp_fun (pat, pat_list, exp) -> return (Val_fun (None, pat, pat_list, exp, env))
+    | Exp_fun (pat, pat_list, exp) ->
+      return (Val_fun (Nonrecursive, pat, pat_list, exp, env))
     | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
       let* value1 = eval_expression env exp1 in
       let* value2 = eval_expression env exp2 in
@@ -215,31 +222,31 @@ module Inter = struct
          (match value with
           | Val_integer value -> return (Val_integer (-value))
           | _ -> fail `Type_error)
-       | Exp_ident "print_int" ->
-         let* arg_val = eval_expression env exp2 in
-         (match arg_val with
-          | Val_integer int ->
-            let _ = print_int int in
-            return (Val_construct ("()", None))
-          | _ -> fail `Type_error)
        | _ ->
          let* fun_val = eval_expression env exp1 in
          let* arg_val = eval_expression env exp2 in
          (match fun_val with
-          | Val_fun (name, pat, pat_list, exp, env) ->
-            let* env =
-              match match_pattern env (pat, arg_val) with
-              | Some env ->
-                (match name with
-                 | Some name -> return (extend env name fun_val)
-                 | _ -> return env)
-              | None -> fail `Match_failure
+          | Val_fun (rec_flag, pat, pat_list, exp, fun_env) ->
+            let* new_env =
+              match rec_flag, match_pattern fun_env (pat, arg_val) with
+              | Recursive, Some extended_env -> return (compose env extended_env)
+              | Nonrecursive, Some extended_env -> return extended_env
+              | _, None -> fail `Match_failure
             in
             (match pat_list with
-             | [] -> eval_expression env exp
+             | [] -> eval_expression new_env exp
              | first_pat :: rest_pat_list ->
-               return (Val_fun (name, first_pat, rest_pat_list, exp, env)))
+               return (Val_fun (Recursive, first_pat, rest_pat_list, exp, new_env)))
           | Val_function (case_list, env) -> find_and_eval_case env arg_val case_list
+          | Val_builtin builtin ->
+            (match builtin, arg_val with
+             | "print_int", Val_integer integer ->
+               print_int integer;
+               return (Val_construct ("()", None))
+             | "print_endline", Val_string str ->
+               print_endline str;
+               return (Val_construct ("()", None))
+             | _ -> fail `Type_error)
           | _ -> fail `Type_error))
     | Exp_function (case, case_list) -> return (Val_function (case :: case_list, env))
     | Exp_match (exp, case, case_list) ->
@@ -315,8 +322,8 @@ module Inter = struct
         | Pat_var name | Pat_constraint (Pat_var name, _) ->
           let value =
             match value with
-            | Val_fun (None, pat, pat_list, exp, env) ->
-              Val_fun (Some name, pat, pat_list, exp, env)
+            | Val_fun (_, pat, pat_list, exp, env) ->
+              Val_fun (Recursive, pat, pat_list, exp, env)
             | other -> other
           in
           let env = extend env name value in
@@ -327,6 +334,8 @@ module Inter = struct
   ;;
 
   let eval_structure_item env out_list =
+    let env = extend env "print_int" (Val_builtin "print_int") in
+    let env = extend env "print_endline" (Val_builtin "print_endline") in
     let rec extract_names_from_pat env acc = function
       | Pat_var id -> acc @ [ Some id, EvalEnv.find_exn1 env id ]
       | Pat_tuple (fst_pat, snd_pat, pat_list) ->
