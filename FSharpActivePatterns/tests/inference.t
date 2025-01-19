@@ -14,15 +14,15 @@
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/015tuples.ml
   Error occured: Only variables are allowed as left-hand side of `let rec'
-  Error occured: unification failed on '_2 * '_3 and int * int * int
+  Error occured: unification failed on '2 * '3 and int * int * int
   
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/099.ml
   Error occured: Only variables are allowed as left-hand side of `let rec'
   Error occured: Unbound variable : x
   
-  Error occured: unification failed on '_4 option and '_3 -> '_3
+  Error occured: unification failed on '4 option and '3 -> '3
   
-  Error occured: unification failed on unit and '_5 -> '_5
+  Error occured: unification failed on unit and '5 -> '5
   
   $ ../bin/REPL.exe -fromfile manytests/typed/001fac.ml
   24
@@ -30,7 +30,7 @@
   val main : int = 0 
   $ ../bin/REPL.exe -fromfile manytests/typed/002fac.ml
   24
-  val fac_cps : int -> (int -> '_7) -> '_7 = <fun> 
+  val fac_cps : int -> (int -> '7) -> '7 = <fun> 
   val main : int = 0 
   $ ../bin/REPL.exe -fromfile manytests/typed/003fib.ml
   3
@@ -46,11 +46,11 @@
   val main : int = 0 
   val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int = <fun> 
   val test3 : int -> int -> int -> int = <fun> 
-  val wrap : '_0 -> '_0 = <fun> 
+  val wrap : '0 -> '0 = <fun> 
   $ ../bin/REPL.exe -fromfile manytests/typed/005fix.ml
   720
   val fac : (int -> int) -> int -> int = <fun> 
-  val fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5 = <fun> 
+  val fix : (('1 -> '5) -> '1 -> '5) -> '1 -> '5 = <fun> 
   val main : int = 0 
   $ ../bin/REPL.exe -fromfile manytests/typed/006partial.ml
   1122
@@ -81,32 +81,32 @@
   val main : unit = () 
   $ ../bin/REPL.exe -fromfile manytests/typed/008ascription.ml
   8
-  val addi : ('_0 -> bool -> int) -> ('_0 -> bool) -> '_0 -> int = <fun> 
+  val addi : ('0 -> bool -> int) -> ('0 -> bool) -> '0 -> int = <fun> 
   val main : int = 0 
   $ ../bin/REPL.exe -fromfile manytests/typed/009let_poly.ml
   val temp : int * bool = (1 , true ) 
   $ ../bin/REPL.exe -fromfile manytests/typed/010sukharev.ml
-  val _1 : int -> int -> int * '_1 -> bool = <fun> 
+  val _1 : int -> int -> int * '1 -> bool = <fun> 
   val _2 : int = 1 
   val _3 : (int * string) option = Some (1 , "hi" )  
-  val _4 : int -> '_14 = <fun> 
+  val _4 : int -> '14 = <fun> 
   val _42 : int -> bool = <fun> 
   val _5 : int = 42 
-  val _6 : '_30 option -> '_30 = <fun> 
-  val id1 : '_44 -> '_44 = <fun> 
-  val id2 : '_45 -> '_45 = <fun> 
+  val _6 : '30 option -> '30 = <fun> 
+  val id1 : '44 -> '44 = <fun> 
+  val id2 : '45 -> '45 = <fun> 
   val int_of_option : int option -> int = <fun> 
   $ ../bin/REPL.exe -fromfile manytests/typed/015tuples.ml
   1
   1
   1
   1
-  val feven : '_33 * (int -> int) -> int -> int = <fun> 
-  val fix : (('_1 -> '_5) -> '_1 -> '_5) -> '_1 -> '_5 = <fun> 
-  val fixpoly : (('_21 -> '_25) * ('_21 -> '_25) -> '_21 -> '_25) * (('_21 -> '_25) * ('_21 -> '_25) -> '_21 -> '_25) -> ('_21 -> '_25) * ('_21 -> '_25) = <fun> 
-  val fodd : (int -> int) * '_41 -> int -> int = <fun> 
+  val feven : '33 * (int -> int) -> int -> int = <fun> 
+  val fix : (('1 -> '5) -> '1 -> '5) -> '1 -> '5 = <fun> 
+  val fixpoly : (('21 -> '25) * ('21 -> '25) -> '21 -> '25) * (('21 -> '25) * ('21 -> '25) -> '21 -> '25) -> ('21 -> '25) * ('21 -> '25) = <fun> 
+  val fodd : (int -> int) * '41 -> int -> int = <fun> 
   val main : int = 0 
-  val map : ('_9 -> '_11) -> '_9 * '_9 -> '_11 * '_11 = <fun> 
+  val map : ('9 -> '11) -> '9 * '9 -> '11 * '11 = <fun> 
   val meven : int -> int = <fun> 
   val modd : int -> int = <fun> 
   val tie : (int -> int) * (int -> int) = (<fun> , <fun> ) 
@@ -115,11 +115,11 @@
   2
   1
   8
-  val append : '_67 list -> '_67 list -> '_67 list = <fun> 
-  val cartesian : '_98 list -> '_105 list -> '_98 * '_105 list = <fun> 
-  val concat : '_81 list list -> '_81 list = <fun> 
-  val iter : ('_87 -> unit) -> '_87 list -> unit = <fun> 
-  val length : '_3 list -> int = <fun> 
-  val length_tail : '_18 list -> int = <fun> 
+  val append : '67 list -> '67 list -> '67 list = <fun> 
+  val cartesian : '98 list -> '105 list -> '98 * '105 list = <fun> 
+  val concat : '81 list list -> '81 list = <fun> 
+  val iter : ('87 -> unit) -> '87 list -> unit = <fun> 
+  val length : '3 list -> int = <fun> 
+  val length_tail : '18 list -> int = <fun> 
   val main : int = 0 
-  val map : ('_25 -> '_56) -> '_25 list -> '_56 list = <fun> 
+  val map : ('25 -> '56) -> '25 list -> '56 list = <fun> 
