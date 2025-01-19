@@ -399,8 +399,9 @@ end = struct
 
   let iteri env ~f =
     Map.iteri env ~f:(fun ~key ~data ->
-      match data with
-      | Scheme (_, typ) -> f ~name:key ~typ)
+      (function
+        | Scheme (_, typ) -> f ~name:key ~typ)
+        data)
   ;;
 
   (* collect all free vars from environment *)
