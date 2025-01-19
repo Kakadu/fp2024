@@ -288,9 +288,9 @@ let pp_instruction ppf = function
     Format.fprintf ppf "li %a,%a" pp_register rd pp_address (Address32 imm)
   | Ret -> Format.fprintf ppf "ret"
   | Vle32v (vd, rs1, imm) ->
-    pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.vv" vd rs1 (Address12 imm)
+    pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.v" vd rs1 (Address12 imm)
   | Vse32v (vs, rs1, imm) ->
-    pp_instruction_1vreg_1reg_1offset_helper ppf "vse32.vv" vs rs1 (Address12 imm)
+    pp_instruction_1vreg_1reg_1offset_helper ppf "vse32.v" vs rs1 (Address12 imm)
   | Vaddvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vadd.vv" vd vs1 vs2
   | Vaddvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vadd.vx" vd vs1 rs2
   | Vsubvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vsub.vv" vd vs1 vs2

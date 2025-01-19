@@ -22,8 +22,8 @@
     (DirectiveExpr
        (Section (".rodata.str1.8", "aMS", (Type "progbits"), (Some 1))));
     (DirectiveExpr (Align 3)); (LabelExpr ".LC0");
-    (DirectiveExpr (String "%d")); (DirectiveExpr (Align 3));
-    (LabelExpr ".LC1"); (DirectiveExpr (String "%d\n"));
+    (DirectiveExpr (StringDir "%d")); (DirectiveExpr (Align 3));
+    (LabelExpr ".LC1"); (DirectiveExpr (StringDir "%d\n"));
     (DirectiveExpr (Section (".text.startup", "ax", (Type "progbits"), None)));
     (DirectiveExpr (Align 1)); (DirectiveExpr (Globl (LabelAddress12 "main")));
     (DirectiveExpr (TypeDir ("main", (Type "function")))); (LabelExpr "main");
