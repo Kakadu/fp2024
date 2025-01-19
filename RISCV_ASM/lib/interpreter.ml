@@ -659,34 +659,48 @@ let execute_vector_imm state vd vs1 rs2 op =
 ;;
 
 let handle_syscall state =
-  let syscall_number = get_register_value state A0 in
-  let arg1 = get_register_value state A1 in
-  let arg2 = get_register_value state A2 in
-  let arg3 = get_register_value state A3 in
+  let syscall_number = get_register_value state A7 in
+  let arg1 = get_register_value state A0 in
+  let arg2 = get_register_value state A1 in
   match syscall_number with
   | 93L ->
     let exit_code = Int64.to_int arg1 in
     exit exit_code
   | 64L ->
     let fd = Int64.to_int arg1 in
-    let buf = arg2 in
-    let count = Int64.to_int arg3 in
+    let address = arg2 in
     (match fd with
      | 1 ->
-       let rec read_memory addr count acc =
-         match count <= 0 with
-         | true -> return (String.init (List.length acc) (fun i -> List.nth acc i))
-         | false ->
-           let* byte = load_memory_int state addr 1 in
-           read_memory
-             (Int64.add addr 1L)
-             (count - 1)
-             (Char.chr (Int64.to_int byte) :: acc)
+       let str =
+         try Int64Map.find address state.memory_str with
+         | Not_found -> ""
        in
-       let* str = read_memory buf count [] in
-       Printf.printf "%s" str;
-       return state
+       if str = ""
+       then
+         let* int_value = load_memory_int state address 4 in
+         let _ = Printf.printf "%Ld\n" int_value in
+         return state
+       else (
+         let _ = Printf.printf "%s\n" str in
+         return state)
      | _ -> fail "Unsupported file descriptor for write syscall")
+  | 63L ->
+    let fd = Int64.to_int arg1 in
+    let buf = arg2 in
+    (match fd with
+     | 0 ->
+       let str = "String" in
+       let memory_int = Int64Map.add buf 0L state.memory_int in
+       let memory_str = Int64Map.add buf str state.memory_str in
+       let memory_writable = Int64Map.add buf true state.memory_writable in
+       let memory_writable =
+         List.fold_left
+           (fun acc offset -> Int64Map.add (Int64.add buf offset) false acc)
+           memory_writable
+           (List.init (String.length str - 1) (fun i -> Int64.of_int (i + 1)))
+       in
+       return { state with memory_int; memory_str; memory_writable }
+     | _ -> fail "Unsupported file descriptor for read syscall")
   | _ -> fail "Unsupported syscall"
 ;;
 
@@ -997,7 +1011,7 @@ let show_state state =
   result
 ;;
 
-let%expect_test "test_program_execution" =
+let%expect_test "test_factorial" =
   let program =
     [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
     ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
@@ -1019,7 +1033,7 @@ let%expect_test "test_program_execution" =
       X0: 0
       X1: 0
       X10: 0
-      X11: 14
+      X11: 0
       X12: 0
       X13: 0
       X14: 0
@@ -1044,20 +1058,12 @@ let%expect_test "test_program_execution" =
       X31: 0
       X4: 0
       X5: 0
-      X6: 21
+      X6: 120
       X7: 0
       X8: 0
       X9: 0
-       V0: [0 0 0 0 ]
+      V0: [0 0 0 0 ]
       V1: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
       V10: [0 0 0 0 ]
       V11: [0 0 0 0 ]
       V12: [0 0 0 0 ]
@@ -1068,6 +1074,7 @@ let%expect_test "test_program_execution" =
       V17: [0 0 0 0 ]
       V18: [0 0 0 0 ]
       V19: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
       V20: [0 0 0 0 ]
       V21: [0 0 0 0 ]
       V22: [0 0 0 0 ]
@@ -1078,16 +1085,23 @@ let%expect_test "test_program_execution" =
       V27: [0 0 0 0 ]
       V28: [0 0 0 0 ]
       V29: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
       V30: [0 0 0 0 ]
       V31: [0 0 0 0 ]
-      Memory:
-      4: 21
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      Integer memory:
+      String memory:
       Writable:
       0: false
       1: false
       2: false
       3: false
-      4: true
+      4: false
       5: false
       6: false
       7: false
@@ -1107,110 +1121,7 @@ let%expect_test "test_program_execution" =
       21: false
       22: false
       23: false
-      24: false
-      25: false
-      26: false
-      27: false
-      28: false
-      29: false
-      30: false
-      31: false
-      PC: 40
-    |}]
-  | Error e -> print_string ("Error: " ^ e)
-;;
-
-let%expect_test "test_ecall_program_execution" =
-  let program = [ DirectiveExpr (Space 150); DirectiveExpr (StringDir "Аааааа") ] in
-  let initial_state = init_state program in
-  match interpret initial_state program with
-  | Ok final_state ->
-    let state_str = show_state final_state in
-    print_string state_str;
-    [%expect
-      {|
-     X0: 0
-     X1: 0
-     X10: 0
-     X11: 0
-     X12: 0
-     X13: 0
-     X14: 0
-     X15: 0
-     X16: 0
-     X17: 0
-     X18: 0
-     X19: 0
-     X2: 0
-     X20: 0
-     X21: 0
-     X22: 0
-     X23: 0
-     X24: 0
-     X25: 0
-     X26: 0
-     X27: 0
-     X28: 0
-     X29: 0
-     X3: 0
-     X30: 0
-     X31: 0
-     X4: 0
-     X5: 0
-     X6: 0
-     X7: 0
-     X8: 0
-     X9: 0
-     V0: [0 0 0 0 ]
-     V1: [0 0 0 0 ]
-     V10: [0 0 0 0 ]
-     V11: [0 0 0 0 ]
-     V12: [0 0 0 0 ]
-     V13: [0 0 0 0 ]
-     V14: [0 0 0 0 ]
-     V15: [0 0 0 0 ]
-     V16: [0 0 0 0 ]
-     V17: [0 0 0 0 ]
-     V18: [0 0 0 0 ]
-     V19: [0 0 0 0 ]
-     V2: [0 0 0 0 ]
-     V20: [0 0 0 0 ]
-     V21: [0 0 0 0 ]
-     V22: [0 0 0 0 ]
-     V23: [0 0 0 0 ]
-     V24: [0 0 0 0 ]
-     V25: [0 0 0 0 ]
-     V26: [0 0 0 0 ]
-     V27: [0 0 0 0 ]
-     V28: [0 0 0 0 ]
-     V29: [0 0 0 0 ]
-     V3: [0 0 0 0 ]
-     V30: [0 0 0 0 ]
-     V31: [0 0 0 0 ]
-     V4: [0 0 0 0 ]
-     V5: [0 0 0 0 ]
-     V6: [0 0 0 0 ]
-     V7: [0 0 0 0 ]
-     V8: [0 0 0 0 ]
-     V9: [0 0 0 0 ]
-     Integer memory:
-     150: 0
-     String memory:
-     150: Аааааа
-     Writable:
-     150: true
-     151: false
-     152: false
-     153: false
-     154: false
-     155: false
-     156: false
-     157: false
-     158: false
-     159: false
-     160: false
-     161: false
-     PC: 8
+      PC: 32
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;

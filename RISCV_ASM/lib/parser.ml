@@ -782,6 +782,114 @@ let parse_instruction =
               parse_vector_register
               (char ',' *> parse_vector_register)
               (char ',' *> parse_register)
+       ; parse_string_with_spaces "vsub.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vsubvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vsub.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vsubvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmul.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vmulvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmul.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vmulvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vdiv.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vdivvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vdiv.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vdivvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vand.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vandvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vand.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vandvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vor.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vorvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vor.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vorvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vxor.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vxorvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vxor.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vxorvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmax.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vmaxvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmax.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vmaxvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmin.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vminvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmin.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vminvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmseq.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vmseqvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmseq.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vmseqvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
        ])
 ;;
 
