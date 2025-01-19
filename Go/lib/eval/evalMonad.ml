@@ -111,7 +111,7 @@ module SendingSet = Set.Make (SendingGoroutines)
 module ReceivingSet = Set.Make (ReceivingGoroutines)
 module ChanSet = Set.Make (Chan)
 
-type initiation =
+type inited_by =
   | Sender
   | Receiver
 
@@ -119,12 +119,8 @@ type chanel_using_state =
   { sending_goroutine : goroutine
   ; receiving_goroutine : goroutine
   ; value : value
-  ; initiation : initiation
+  ; inited_by : inited_by
   }
-
-type has_finished =
-  | Running
-  | Finished
 
 type eval_state =
   { global_env : value MapIdent.t
@@ -135,7 +131,6 @@ type eval_state =
   ; chanels : ChanSet.t * int
   ; is_using_chanel : chanel_using_state option
   ; next_go_id : int
-  ; has_finished : has_finished
   }
 
 module Monad = struct
@@ -354,22 +349,10 @@ module Monad = struct
     match ReadySet.choose_opt ready with
     | None -> return None
     | Some goroutine ->
-      delete_ready goroutine
-      *> run_goroutine goroutine
-      *> return
-           (prerr_endline
-              (Format.asprintf "goroutine %d started running" goroutine.go_id))
-      *> return (Some ())
+      delete_ready goroutine *> run_goroutine goroutine *> return (Some ())
   ;;
 
-  let delete_running_goroutine =
-    read_running
-    >>= function
-    | None -> return (prerr_endline "goroutine None stopped")
-    | Some { go_id } ->
-      return (prerr_endline (Format.asprintf "goroutine %d stopped" go_id))
-      *> write_running None
-  ;;
+  let delete_running_goroutine = write_running None
 
   (* chanels *)
 
@@ -475,21 +458,18 @@ module Monad = struct
     read >>= fun state -> write { state with is_using_chanel }
   ;;
 
-  let start_using_chanel sending_goroutine receiving_goroutine value initiation =
+  let start_using_chanel sender_receiver_and_value =
     read_is_using_chanel
     >>= function
-    | Some _ -> fail (Runtime_error (Deadlock "trying to use chanel which is still used"))
-    | None ->
-      write_is_using_chanel
-        (Some { receiving_goroutine; sending_goroutine; value; initiation })
+    | Some _ -> fail (Runtime_error (Dev "trying to use chanel which is still used"))
+    | None -> write_is_using_chanel (Some sender_receiver_and_value)
   ;;
 
   let use_chanel =
     read_is_using_chanel
     >>= function
-    | Some { sending_goroutine; receiving_goroutine; value; initiation } ->
-      write_is_using_chanel None
-      *> return (receiving_goroutine, sending_goroutine, value, initiation)
+    | Some sender_receiver_and_value ->
+      write_is_using_chanel None *> return sender_receiver_and_value
     | None ->
       fail
         (Runtime_error
@@ -693,20 +673,5 @@ module Monad = struct
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
        | Some _ -> save_global_id ident t
        | None -> fail (Runtime_error (TypeCheckFailed ("undefined ident " ^ ident))))
-  ;;
-
-  (* finishing *)
-
-  let has_finished =
-    read
-    >>= function
-    | { has_finished } -> return has_finished
-  ;;
-
-  let finish =
-    read
-    >>= function
-    | { has_finished = Running } as state -> write { state with has_finished = Finished }
-    | { has_finished = Finished } -> fail (Runtime_error (Dev "no goroutine running"))
   ;;
 end

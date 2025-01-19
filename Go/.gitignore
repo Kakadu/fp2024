@@ -58,6 +58,3 @@ _opam/
 
 # git patch
 *.patch
-
-# go source files
-*.go

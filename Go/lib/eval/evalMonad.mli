@@ -118,7 +118,7 @@ module SendingSet : Set.S with type elt = SendingGoroutines.t
 module ReceivingSet : Set.S with type elt = ReceivingGoroutines.t
 module ChanSet : Set.S with type elt = Chan.t
 
-type initiation =
+type inited_by =
   | Sender
   | Receiver
 
@@ -126,12 +126,8 @@ type chanel_using_state =
   { sending_goroutine : goroutine
   ; receiving_goroutine : goroutine
   ; value : value
-  ; initiation : initiation
+  ; inited_by : inited_by
   }
-
-type has_finished =
-  | Running
-  | Finished
 
 (** The whole executing program state *)
 type eval_state =
@@ -146,7 +142,6 @@ type eval_state =
   ; is_using_chanel : chanel_using_state option
   (** The state indicates that value was sent through chanel, but not received yet *)
   ; next_go_id : int (** An id that will be given to the next created goroutine *)
-  ; has_finished : has_finished (** [Running] or [Finished] *)
   }
 
 (** Monad for evaluating the program state *)
@@ -254,10 +249,10 @@ module Monad : sig
 
   (** Enters chanel using state, accepts sending and receiving goroutines and sent value.
       Fails if already in chanel using state *)
-  val start_using_chanel : goroutine -> goroutine -> value -> initiation -> unit t
+  val start_using_chanel : chanel_using_state -> unit t
 
   (** Exits chanel using state, returns receiving goroutine and sent value. Fails if not in chanel using state *)
-  val use_chanel : (goroutine * goroutine * value * initiation) t
+  val use_chanel : chanel_using_state t
 
   (** Returns state of using a chanel (sender, receiver and value) if in chanel using state, [None] otherwise *)
   val is_using_chanel : chanel_using_state option t
@@ -297,7 +292,4 @@ module Monad : sig
   (** Returns next statement from currently running goroutine's
       current stack frame's execution block. [None] if the block is empty *)
   val pop_next_statement : stmt option t
-
-  val has_finished : has_finished t
-  val finish : unit t
 end

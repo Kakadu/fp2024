@@ -34,8 +34,5 @@ SPDX-License-Identifier: MIT
     ]
   
   Typecheck result: correct
-  goroutine 0 started running
-  goroutine 0 stopped
-  goroutine 1 started running
   
   Hello, world!

@@ -47,7 +47,8 @@ let rec replace_list list index elem =
 ;;
 
 (** Executes current execution block. Stops when its end reached, or when [return]
-    statement was executed, or when some chanel started to be used *)
+    statement was executed, when some chanel started to be used
+    and when current goroutine is panicking *)
 let rec exec eval_stmt =
   exec_stmt eval_stmt
   >>= function
@@ -55,10 +56,7 @@ let rec exec eval_stmt =
   | Some () ->
     is_using_chanel
     >>= (function
-     | Some x ->
-       (match x.initiation with
-        | Receiver -> return ()
-        | Sender -> return ())
+     | Some _ -> return ()
      | None ->
        read_returns
        >>= (function
@@ -84,8 +82,7 @@ let run_ready_goroutines eval_stmt =
   let rec runner () =
     run_ready_goroutine
     >>= function
-    | None ->
-      return () (* мб тут надо как-то проверять, не завершилась ли работа программы *)
+    | None -> return ()
     | Some () ->
       exec eval_stmt *> is_using_chanel
       >>= (function
@@ -112,14 +109,14 @@ let run_ready_goroutines eval_stmt =
 
 (** [attempt_chan_interaction id] attempts to use chanel with given id. If both
     sender and receiver are ready, starts using the chanel. Doesn't do anything otherwise *)
-let attempt_chan_interaction id init =
+let attempt_chan_interaction id inited_by =
   let* ready_to_send = is_send_queue_not_empty id in
   let* ready_to_receive = is_receive_queue_not_empty id in
   match ready_to_send, ready_to_receive with
   | Some (), Some () ->
     let* sending_goroutine, value = pop_from_send_queue id in
     let* receiving_goroutine = pop_from_receive_queue id in
-    start_using_chanel sending_goroutine receiving_goroutine value init
+    start_using_chanel { sending_goroutine; receiving_goroutine; value; inited_by }
     (* receiving goroutine will run after return from a function *)
   | _ -> return ()
 ;;
@@ -579,9 +576,7 @@ and eval_chan_send (ident, expr) =
                         "goroutine %d trying to send to chan %d"
                         sending_goroutine.go_id
                         chan_id)))
-           | Some _ ->
-             run_ready_goroutines eval_stmt
-             *> return (prerr_endline "сендер прогнал всех кто ready")))
+           | Some _ -> run_ready_goroutines eval_stmt))
     (* тут надо как-то удостовериться в том, что программа завершилась *)
   | _ -> fail (Runtime_error (TypeCheckFailed "chan send"))
 
@@ -606,13 +601,12 @@ and eval_chan_receive expr =
                (Runtime_error
                   (Deadlock
                      (asprintf
-                        "goroutine %d trying to receive from chan %d (ran all ready \
-                         goroutines and couldn't find sender)"
+                        "goroutine %d trying to receive from chan %d"
                         receiving_goroutine.go_id
                         chan_id)))))
     *>
-    let* receiving_goroutine, sending_goroutine, value, initiation = use_chanel in
-    (match initiation with
+    let* { receiving_goroutine; sending_goroutine; value; inited_by } = use_chanel in
+    (match inited_by with
      | Receiver ->
        add_ready sending_goroutine *> run_goroutine receiving_goroutine *> return value
      | Sender -> run_goroutine receiving_goroutine *> return value)
@@ -622,8 +616,7 @@ and eval_go (func, arg_exprs) =
   eval_expr func
   >>= function
   | Value_func (Func_uninitialized Nil) -> fail (Runtime_error Uninited_func)
-  | Value_func (Func_builtin _) ->
-    eval_func_call (func, arg_exprs) *> return () (* TODO *)
+  | Value_func (Func_builtin _) -> eval_func_call (func, arg_exprs) *> return ()
   | Value_func (Func_initialized (Default, { args; body }))
   | Value_func (Func_initialized (FuncLit, { args; body })) ->
     let* var_map = create_args_map arg_exprs (rpf args) in
@@ -698,7 +691,6 @@ let init_state =
   ; chanels = ChanSet.empty, 1
   ; is_using_chanel = None
   ; next_go_id = 0
-  ; has_finished = Running
   }
 ;;
 

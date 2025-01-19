@@ -1,5 +1,5 @@
 (library
  (name eval)
- (libraries base ast baseMonad ppType threads)
+ (libraries base ast baseMonad ppType)
  (instrumentation
   (backend bisect_ppx)))
