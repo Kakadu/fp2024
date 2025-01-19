@@ -287,8 +287,8 @@ let pp_instruction ppf = function
   | Vminvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmin.vx" vd vs1 rs2
   | Vmaxvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmax.vv" vd vs1 vs2
   | Vmaxvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmax.vx" vd vs1 rs2
-  | Veqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "veq.vv" vd vs1 vs2
-  | Veqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "veq.vx" vd vs1 rs2
+  | Vmseqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmseq.vv" vd vs1 vs2
+  | Vmseqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmseq.vx" vd vs1 rs2
 ;;
 
 let pp_str_or_int ppf = function
