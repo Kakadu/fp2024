@@ -434,15 +434,15 @@ let input_upto_sep sep ic =
     | <span data-count="0">S</span>ome line -&gt;
       let line = String.trim line in
       <span data-count="0">l</span>et len = String.length line in
-      <span data-count="0">(</span>match String.ends_with ~suffix:sep line with
-       | <span data-count="0">t</span>rue -&gt;
-         Buffer.add_substring b line 0 (len - sep_len);
-         <span data-count="0">B</span>uffer.add_string b "\n";
-         <span data-count="0">I</span>nput (Buffer.content<span data-count="0">s</span> b)
-       | <span data-count="0">f</span>alse -&gt;
-         Buffer.add_string b line;
-         <span data-count="0">B</span>uffer.add_string b "\n";
-         <span data-count="0">f</span>ill_buffer b)
+      <span data-count="0">i</span>f String.ends_with ~suffix:sep line
+      then <span data-count="0">(</span>
+        Buffer.add_substring b line 0 (len - sep_len);
+        <span data-count="0">B</span>uffer.add_string b "\n";
+        <span data-count="0">I</span>nput (Buffer.content<span data-count="0">s</span> b))
+      else <span data-count="0">(</span>
+        Buffer.add_string b line;
+        <span data-count="0">B</span>uffer.add_string b "\n";
+        <span data-count="0">f</span>ill_buffer b)
   in
   let buffer = Buffer.create 1024 in
   <span data-count="0">f</span>ill_buffer buffer
@@ -462,14 +462,14 @@ let input_with_indents ic =
         || is_empt<span data-count="40">y</span>
         || String.starts_wit<span data-count="40">h</span> ~prefix:"and" (String.tri<span data-count="40">m</span> line<span data-count="1">)</span>
       in
-      (match is_continue with
-       | <span data-count="151">t</span>rue -&gt;
-         Buffer.add_string b (line ^ "\n");
-         <span data-count="151">f</span>ill_buffer b
-       | <span data-count="39">f</span>alse -&gt;
-         seek_in ic start_pos;
-         <span data-count="39">B</span>uffer.add_string b "\n";
-         <span data-count="39">I</span>nput (Buffer.content<span data-count="39">s</span> b))
+      if is_continue
+      then <span data-count="151">(</span>
+        Buffer.add_string b (line ^ "\n");
+        <span data-count="151">f</span>ill_buffer b)
+      else <span data-count="39">(</span>
+        seek_in ic start_pos;
+        <span data-count="39">B</span>uffer.add_string b "\n";
+        <span data-count="39">I</span>nput (Buffer.content<span data-count="39">s</span> b))
   in
   let buffer = Buffer.create 1024 in
   <span data-count="83">l</span>et first_line = take_line () in
@@ -520,43 +520,43 @@ let run_repl dump_parsetree input_file input_string =
       <span data-count="0">r</span>un_repl_helper run type_env value_env state values_acc
     | <span data-count="22">E</span>nd -&gt; type_env, value_env, values_acc
     | <span data-count="61">R</span>esult (Ok ast) -&gt;
-      (match dump_parsetree with
-       | <span data-count="0">t</span>rue -&gt;
-         print_construction std_formatter ast;
-         <span data-count="0">r</span>un_repl_helper run type_env value_env state values_acc
-       | <span data-count="61">f</span>alse -&gt;
-         let result = run_interpreter type_env value_env state ast in
-         <span data-count="61">(</span>match result with
-          | <span data-count="6">n</span>ew_state, Error err -&gt;
-            fprintf err_formatter "Error occured: %a\n" pp_global_error err;
-            <span data-count="6">p</span>rint_flush ();
-            <span data-count="6">r</span>un_repl_helper run type_env value_env new_state values_acc
-          | <span data-count="55">n</span>ew_state, Ok (new_type_env, new_value_env, evaled_names) -&gt;
-            (match ic with
-             | <span data-count="0">N</span>one -&gt;
-               Base.Map.iteri
-                 ~f:(fun ~key ~data -&gt;
-                   <span data-count="0">l</span>et t, v = data in
-                   fprintf
-                     std_formatter
-                     "val %s : %a = %a\n"
-                     key
-                     pp_typ
-                     t
-                     ValueEnv.pp_value
-                     v)
-                 evaled_names;
-               <span data-count="0">p</span>rint_flush ();
-               <span data-count="0">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc
-             | <span data-count="55">S</span>ome _ -&gt;
-               let overwrite map1 map2 =
-                 <span data-count="55">B</span>ase.Map.fold
-                   ~init:map1
-                   ~f:(fun ~key ~data map1 -&gt; <span data-count="57">B</span>ase.Map.set map1 ~key ~data)
-                   map2
-               in
-               let values_acc = overwrite values_acc evaled_names in
-               <span data-count="55">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc)))
+      if dump_parsetree
+      then <span data-count="0">(</span>
+        print_construction std_formatter ast;
+        <span data-count="0">r</span>un_repl_helper run type_env value_env state values_acc)
+      else <span data-count="61">(</span>
+        let result = run_interpreter type_env value_env state ast in
+        <span data-count="61">m</span>atch result with
+        | <span data-count="6">n</span>ew_state, Error err -&gt;
+          fprintf err_formatter "Error occured: %a\n" pp_global_error err;
+          <span data-count="6">p</span>rint_flush ();
+          <span data-count="6">r</span>un_repl_helper run type_env value_env new_state values_acc
+        | <span data-count="55">n</span>ew_state, Ok (new_type_env, new_value_env, evaled_names) -&gt;
+          (match ic with
+           | <span data-count="0">N</span>one -&gt;
+             Base.Map.iteri
+               ~f:(fun ~key ~data -&gt;
+                 <span data-count="0">l</span>et t, v = data in
+                 fprintf
+                   std_formatter
+                   "val %s : %a = %a\n"
+                   key
+                   pp_typ
+                   t
+                   ValueEnv.pp_value
+                   v)
+               evaled_names;
+             <span data-count="0">p</span>rint_flush ();
+             <span data-count="0">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc
+           | <span data-count="55">S</span>ome _ -&gt;
+             let overwrite map1 map2 =
+               <span data-count="55">B</span>ase.Map.fold
+                 ~init:map1
+                 ~f:(fun ~key ~data map1 -&gt; <span data-count="57">B</span>ase.Map.set map1 ~key ~data)
+                 map2
+             in
+             let values_acc = overwrite values_acc evaled_names in
+             <span data-count="55">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc))
   in
   let type_env = TypeEnv.default in
   let value_env = ValueEnv.default in
