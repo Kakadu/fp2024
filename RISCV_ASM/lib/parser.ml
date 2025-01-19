@@ -760,16 +760,16 @@ let parse_instruction =
               (char ',' *> parse_register)
        ; parse_string_with_spaces "vle32.v"
          *> lift3
-              (fun vd rs1 addr12 -> InstructionExpr (Vle32v (vd, rs1, addr12)))
+              (fun vd addr12 rs1 -> InstructionExpr (Vle32v (vd, rs1, addr12)))
               parse_vector_register
-              (char ',' *> parse_register)
-              (char '(' *> parse_address12 <* char ')')
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
        ; parse_string_with_spaces "vse32.v"
          *> lift3
-              (fun vs rs1 addr12 -> InstructionExpr (Vse32v (vs, rs1, addr12)))
+              (fun vs addr12 rs1 -> InstructionExpr (Vse32v (vs, rs1, addr12)))
               parse_vector_register
-              (char ',' *> parse_register)
-              (char '(' *> parse_address12 <* char ')')
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
        ; parse_string_with_spaces "vadd.vv"
          *> lift3
               (fun vd vs1 vs2 -> InstructionExpr (Vaddvv (vd, vs1, vs2)))

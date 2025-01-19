@@ -9,6 +9,9 @@ module Int64Map = Map.Make (Int64)
 type state =
   { registers : int64 StringMap.t
   ; vector_registers : int64 array StringMap.t
+  ; max_vector_length : int
+  ; vector_element_length : int
+  ; vector_length : int
   ; memory_int : int64 Int64Map.t
   ; memory_str : string Int64Map.t
   ; memory_writable : bool Int64Map.t
@@ -133,7 +136,6 @@ let init_data program =
     memory_int
     memory_str
     memory_writable
-    vector_counter
     =
     match program with
     | [] -> memory_int, memory_str, memory_writable
@@ -151,7 +153,6 @@ let init_data program =
         memory_int
         memory_str
         memory_writable
-        vector_counter
     | DirectiveExpr (Word integer) :: rest ->
       let memory_int =
         Int64Map.add temporary_pc_counter (Int64.of_int integer) memory_int
@@ -170,7 +171,6 @@ let init_data program =
         memory_int
         memory_str
         memory_writable
-        (vector_counter + 1)
     | DirectiveExpr (Space integer) :: rest ->
       traverse_program
         rest
@@ -178,7 +178,6 @@ let init_data program =
         memory_int
         memory_str
         memory_writable
-        vector_counter
     | DirectiveExpr (StringDir str) :: rest ->
       let memory_int = Int64Map.add temporary_pc_counter 0L memory_int in
       let memory_str = Int64Map.add temporary_pc_counter str memory_str in
@@ -197,7 +196,6 @@ let init_data program =
         memory_int
         memory_str
         memory_writable
-        vector_counter
     | _ :: rest ->
       traverse_program
         rest
@@ -205,9 +203,8 @@ let init_data program =
         memory_int
         memory_str
         memory_writable
-        vector_counter
   in
-  traverse_program program 0L Int64Map.empty Int64Map.empty Int64Map.empty 0
+  traverse_program program 0L Int64Map.empty Int64Map.empty Int64Map.empty
 ;;
 
 let init_registers =
@@ -249,9 +246,9 @@ let init_registers =
     ]
 ;;
 
-let init_vector_registers =
+let init_vector_registers vector_length =
   List.fold_left
-    (fun acc reg -> StringMap.add (show_vector_register reg) (Array.make 4 0L) acc)
+    (fun acc reg -> StringMap.add (show_vector_register reg) (Array.make (vector_length) 0L) acc)
     StringMap.empty
     [ V0
     ; V1
@@ -290,9 +287,12 @@ let init_vector_registers =
 
 let init_state program =
   let registers = init_registers in
-  let vector_registers = init_vector_registers in
+  let max_vector_length = 128 in
+  let vector_element_length = 4 in
+  let vector_length = 4 in
+  let vector_registers = init_vector_registers vector_length in
   let memory_int, memory_str, memory_writable = init_data program in
-  { registers; vector_registers; memory_int; memory_str; memory_writable; pc = 0L }
+  { registers; vector_registers; max_vector_length; vector_element_length; vector_length; memory_int; memory_str; memory_writable; pc = 0L }
 ;;
 
 let get_register_value state reg =
@@ -491,7 +491,6 @@ let load_memory_int state address = function
     (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
     (match Int64Map.find_opt address state.memory_writable with
      | Some false ->
-       Printf.printf "the address was: %Ld\n" address;
        fail
          "Load failed: Address is not writable, either an instruction address or points \
           to the middle of the data"
@@ -520,7 +519,6 @@ let store_memory_int state address value size =
   in
   match Int64Map.find_opt address state.memory_writable with
   | Some false ->
-    Printf.printf "my favarite address: %Ld\n" address;
     fail
       "Store failed: Address is not writable, either an instruction address or points to \
        the middle of the data"
@@ -595,7 +593,7 @@ let execute_store_int state program rs1 rs2 imm size =
   return new_state
 ;;
 
-let execute_Vle32v state program vd rs1 imm =
+let execute_vle32v state program vd rs1 imm =
   let base_address = get_register_value state rs1 in
   let* offset =
     match get_address12_value program imm with
@@ -603,9 +601,17 @@ let execute_Vle32v state program vd rs1 imm =
     | Label label -> return label
   in
   let address = Int64.add base_address offset in
-  let* value = load_memory_int state address 4 in
-  let vector_value = Array.make 4 value in
-  return (set_vector_register_value state vd vector_value)
+  let vector_length = state.vector_length in
+  let rec load_values address i acc =
+    if i < vector_length then
+      let* value = load_memory_int state address 4 in
+      let next_address = Int64.add address (Int64.of_int 4) in
+      load_values next_address (i + 1) (Array.append acc [|value|])
+    else
+      return acc
+  in
+  let* vector_values = load_values address 0 [||] in
+  return (set_vector_register_value state vd vector_values)
 ;;
 
 let execute_vstore state program vs rs1 imm =
@@ -617,21 +623,33 @@ let execute_vstore state program vs rs1 imm =
   in
   let address = Int64.add base_address offset in
   let vector_value = get_vector_register_value state vs in
-  let* new_state = store_memory_int state address vector_value.(0) 4 in
-  return new_state
+  let rec store_elements i addr state =
+    if i >= state.vector_length then
+      return state
+    else
+      let element = vector_value.(i) in
+      let* new_state = store_memory_int state addr element 4 in
+      store_elements (i + 1) (Int64.add addr 4L) new_state
+  in
+  store_elements 0 address state
 ;;
 
 let execute_vector_arithmetic state vd vs1 vs2 op =
   let vec1 = get_vector_register_value state vs1 in
   let vec2 = get_vector_register_value state vs2 in
-  let result = Array.init 4 (fun i -> op vec1.(i) vec2.(i)) in
+  let result = Array.init state.vector_length (fun i -> op vec1.(i) vec2.(i)) in
+  return (set_vector_register_value state vd result)
+;;
+
+let execute_vector_set_imm state vd imm =
+  let result = Array.make state.vector_length imm in
   return (set_vector_register_value state vd result)
 ;;
 
 let execute_vector_imm state vd vs1 rs2 op =
   let vec = get_vector_register_value state vs1 in
   let scalar = get_register_value state rs2 in
-  let result = Array.init 4 (fun i -> op vec.(i) scalar) in
+  let result = Array.init state.vector_length (fun i -> op vec.(i) scalar) in
   return (set_vector_register_value state vd result)
 ;;
 
@@ -873,8 +891,7 @@ and execute_instruction state instr program =
         in
         return resolved_address
       | Label excluding_directives_label_offset ->
-        let* resolved_address =
-          resolve_address_excl_to_incl program excluding_directives_label_offset
+        let resolved_address = excluding_directives_label_offset
         in
         return resolved_address
     in
@@ -894,10 +911,26 @@ and execute_instruction state instr program =
   | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
-  | Vle32v (vd, rs1, imm) -> execute_Vle32v state program vd rs1 imm
+  | Vle32v (vd, rs1, imm) -> execute_vle32v state program vd rs1 imm
   | Vse32v (vs, rs1, imm) -> execute_vstore state program vs rs1 imm
   | Vaddvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.add
   | Vaddvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.add
+  | Vsubvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.sub
+  | Vsubvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.sub
+  | Vmulvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.mul
+  | Vmulvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.mul
+  | Vdivvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.div
+  | Vdivvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.div
+  | Vandvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logand
+  | Vandvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logand
+  | Vorvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logor
+  | Vorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logor
+  | Vxorvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logxor
+  | Vxorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logxor
+  | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.min
+  | Vminvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.min
+  | Veqvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
+  | Veqvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
   | _ -> return state
 ;;
 
@@ -1126,41 +1159,41 @@ let%expect_test "test_ecall_program_execution" =
      X8: 0
      X9: 0
      V0: [0 0 0 0 ]
-      V1: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
-      V10: [0 0 0 0 ]
-      V11: [0 0 0 0 ]
-      V12: [0 0 0 0 ]
-      V13: [0 0 0 0 ]
-      V14: [0 0 0 0 ]
-      V15: [0 0 0 0 ]
-      V16: [0 0 0 0 ]
-      V17: [0 0 0 0 ]
-      V18: [0 0 0 0 ]
-      V19: [0 0 0 0 ]
-      V20: [0 0 0 0 ]
-      V21: [0 0 0 0 ]
-      V22: [0 0 0 0 ]
-      V23: [0 0 0 0 ]
-      V24: [0 0 0 0 ]
-      V25: [0 0 0 0 ]
-      V26: [0 0 0 0 ]
-      V27: [0 0 0 0 ]
-      V28: [0 0 0 0 ]
-      V29: [0 0 0 0 ]
-      V30: [0 0 0 0 ]
-      V31: [0 0 0 0 ]
+     V1: [0 0 0 0 ]
+     V10: [0 0 0 0 ]
+     V11: [0 0 0 0 ]
+     V12: [0 0 0 0 ]
+     V13: [0 0 0 0 ]
+     V14: [0 0 0 0 ]
+     V15: [0 0 0 0 ]
+     V16: [0 0 0 0 ]
+     V17: [0 0 0 0 ]
+     V18: [0 0 0 0 ]
+     V19: [0 0 0 0 ]
+     V2: [0 0 0 0 ]
+     V20: [0 0 0 0 ]
+     V21: [0 0 0 0 ]
+     V22: [0 0 0 0 ]
+     V23: [0 0 0 0 ]
+     V24: [0 0 0 0 ]
+     V25: [0 0 0 0 ]
+     V26: [0 0 0 0 ]
+     V27: [0 0 0 0 ]
+     V28: [0 0 0 0 ]
+     V29: [0 0 0 0 ]
+     V3: [0 0 0 0 ]
+     V30: [0 0 0 0 ]
+     V31: [0 0 0 0 ]
+     V4: [0 0 0 0 ]
+     V5: [0 0 0 0 ]
+     V6: [0 0 0 0 ]
+     V7: [0 0 0 0 ]
+     V8: [0 0 0 0 ]
+     V9: [0 0 0 0 ]
      Integer memory:
      150: 0
      String memory:
-     150: Привет а
+     150: Аааааа
      Writable:
      150: true
      151: false
@@ -1181,7 +1214,8 @@ let%expect_test "test_ecall_program_execution" =
 
 let%expect_test "test_vector_program_execution" =
   let program =
-    [ DirectiveExpr (Word 1)
+    [ LabelExpr "vector_data"
+    ; DirectiveExpr (Word 1)
     ; DirectiveExpr (Word 2)
     ; DirectiveExpr (Word 3)
     ; DirectiveExpr (Word 4)
@@ -1190,7 +1224,9 @@ let%expect_test "test_vector_program_execution" =
     ; DirectiveExpr (Space 16)
     ; LabelExpr "vector_b"
     ; DirectiveExpr (Space 16)
-    ; InstructionExpr (Li (T0, ImmediateAddress32 4))
+    ; LabelExpr "vector_sum"
+    ; DirectiveExpr (Space 16)
+    ; InstructionExpr (Addi (T0, X0, ImmediateAddress12 4))
     ; InstructionExpr (La (T2, LabelAddress32 "vector_data"))
     ; InstructionExpr (Vle32v (V0, T2, ImmediateAddress12 0))
     ; InstructionExpr (Addi (T3, T2, ImmediateAddress12 4))
@@ -1199,9 +1235,11 @@ let%expect_test "test_vector_program_execution" =
     ; InstructionExpr (Vse32v (V0, T4, ImmediateAddress12 0))
     ; InstructionExpr (La (T5, LabelAddress32 "vector_b"))
     ; InstructionExpr (Vse32v (V1, T5, ImmediateAddress12 0))
-    ; InstructionExpr (Li (A7, ImmediateAddress32 93))
-    ; InstructionExpr (Li (A0, ImmediateAddress32 0))
-    ; InstructionExpr Ecall
+    ; InstructionExpr (Vaddvv (V2, V0, V1))
+    ; InstructionExpr (La (T4, LabelAddress32 "vector_sum"))
+    ; InstructionExpr (Vse32v (V2, T4, ImmediateAddress12 0))
+    ; InstructionExpr (Addi (X3, X0, ImmediateAddress12 10))
+    ; InstructionExpr (Vaddvx (V3, V0, X3))
     ]
   in
   let initial_state = init_state program in
@@ -1220,7 +1258,7 @@ let%expect_test "test_vector_program_execution" =
       X14: 0
       X15: 0
       X16: 0
-      X17: 93
+      X17: 0
       X18: 0
       X19: 0
       X2: 0
@@ -1232,10 +1270,10 @@ let%expect_test "test_vector_program_execution" =
       X25: 0
       X26: 0
       X27: 0
-      X28: 0
-      X29: 0
-      X3: 0
-      X30: 0
+      X28: 4
+      X29: 52
+      X3: 10
+      X30: 36
       X31: 0
       X4: 0
       X5: 4
@@ -1245,14 +1283,6 @@ let%expect_test "test_vector_program_execution" =
       X9: 0
       V0: [1 2 3 4 ]
       V1: [2 3 4 5 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
       V10: [0 0 0 0 ]
       V11: [0 0 0 0 ]
       V12: [0 0 0 0 ]
@@ -1263,6 +1293,7 @@ let%expect_test "test_vector_program_execution" =
       V17: [0 0 0 0 ]
       V18: [0 0 0 0 ]
       V19: [0 0 0 0 ]
+      V2: [3 5 7 9 ]
       V20: [0 0 0 0 ]
       V21: [0 0 0 0 ]
       V22: [0 0 0 0 ]
@@ -1273,27 +1304,172 @@ let%expect_test "test_vector_program_execution" =
       V27: [0 0 0 0 ]
       V28: [0 0 0 0 ]
       V29: [0 0 0 0 ]
+      V3: [11 12 13 14 ]
       V30: [0 0 0 0 ]
       V31: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
       Integer memory:
       0: 1
       4: 2
       8: 3
       12: 4
-      16: 2
-      20: 3
-      24: 4
-      28: 5
+      16: 5
+      20: 1
+      24: 2
+      28: 3
+      32: 4
+      36: 2
+      40: 3
+      44: 4
+      48: 5
+      52: 3
+      56: 5
+      60: 7
+      64: 9
+      String memory:
+      20:
+      24:
+      28:
+      32:
+      36:
+      40:
+      44:
+      48:
+      52:
+      56:
+      60:
+      64:
       Writable:
       0: true
+      1: false
+      2: false
+      3: false
       4: true
+      5: false
+      6: false
+      7: false
       8: true
+      9: false
+      10: false
+      11: false
       12: true
+      13: false
+      14: false
+      15: false
       16: true
+      17: false
+      18: false
+      19: false
       20: true
+      21: false
+      22: false
+      23: false
       24: true
+      25: false
+      26: false
+      27: false
       28: true
-      PC: 56
+      29: false
+      30: false
+      31: false
+      32: true
+      33: false
+      34: false
+      35: false
+      36: true
+      37: false
+      38: false
+      39: false
+      40: true
+      41: false
+      42: false
+      43: false
+      44: true
+      45: false
+      46: false
+      47: false
+      48: true
+      49: false
+      50: false
+      51: false
+      52: true
+      53: false
+      54: false
+      55: false
+      56: true
+      57: false
+      58: false
+      59: false
+      60: true
+      61: false
+      62: false
+      63: false
+      64: true
+      65: false
+      66: false
+      67: false
+      68: false
+      69: false
+      70: false
+      71: false
+      72: false
+      73: false
+      74: false
+      75: false
+      76: false
+      77: false
+      78: false
+      79: false
+      80: false
+      81: false
+      82: false
+      83: false
+      84: false
+      85: false
+      86: false
+      87: false
+      88: false
+      89: false
+      90: false
+      91: false
+      92: false
+      93: false
+      94: false
+      95: false
+      96: false
+      97: false
+      98: false
+      99: false
+      100: false
+      101: false
+      102: false
+      103: false
+      104: false
+      105: false
+      106: false
+      107: false
+      108: false
+      109: false
+      110: false
+      111: false
+      112: false
+      113: false
+      114: false
+      115: false
+      116: false
+      117: false
+      118: false
+      119: false
+      120: false
+      121: false
+      122: false
+      123: false
+      PC: 104
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
