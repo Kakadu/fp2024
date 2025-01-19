@@ -2,11 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocaml_printf_lib.Ast
-open Ocaml_printf_lib.Parser
-open Ocaml_printf_lib.Inferencer
-open Ocaml_printf_lib.Interpreter
-open Ocaml_printf_lib.Pprinter
+open Ocaml_printf_lib
 open Stdio
 
 type opts =
@@ -16,37 +12,72 @@ type opts =
   }
 
 let run_single dump_parsetree inference input_source =
-  let text =
-    match input_source with
-    | Some file_name -> In_channel.read_all file_name |> String.trim
-    | None -> In_channel.input_all stdin |> String.trim
+  let run text env_infer env_inter =
+    let ast = Parser.parse text in
+    match ast with
+    | Error error ->
+      print_endline error;
+      env_infer, env_inter
+    | Ok ast ->
+      if dump_parsetree
+      then (
+        print_endline (Ast.show_structure ast);
+        env_infer, env_inter)
+      else (
+        match Inferencer.run_inferencer env_infer ast with
+        | Error e ->
+          print_endline (Format.asprintf "Infer error: %a" Inferencer.pp_error e);
+          env_infer, env_inter
+        | Ok (env_infer, out_list) ->
+          if inference
+          then (
+            List.iter
+              (function
+                | Some id, type' ->
+                  print_endline
+                    (Format.asprintf "val %s : %a" id Pprinter.pp_core_type type')
+                | None, type' ->
+                  print_endline (Format.asprintf "- : %a" Pprinter.pp_core_type type'))
+              out_list;
+            env_infer, env_inter)
+          else (
+            match Interpreter.run_interpreter env_inter ast with
+            | Ok (env_inter, _) -> ();
+              (* List.iter
+                (function
+                  | Some id, val' ->
+                    print_endline
+                      (Format.asprintf "val %s = %a" id Interpreter.pp_value val')
+                  | None, val' ->
+                    print_endline (Format.asprintf "- = %a" Interpreter.pp_value val'))
+                out_list; *)
+              env_infer, env_inter
+            | Error e ->
+              print_endline
+                (Format.asprintf "Interpreter error: %a" Interpreter.pp_error e);
+              env_infer, env_inter))
   in
-  let ast = parse text in
-  match ast with
-  | Error error -> print_endline error
-  | Ok ast ->
-    if dump_parsetree
-    then print_endline (show_structure ast)
-    else (
-      match run_inferencer ast env_with_print_int with
-      | Error e ->
-        Format.printf "Infer error: %a\n" Ocaml_printf_lib.Inferencer.pp_error e
-      | Ok out_list ->
-        if inference
-        then
-          List.iter
-            (function
-              | Some id, type' -> Format.printf "val %s : %a\n" id pp_core_type type'
-              | None, type' -> Format.printf "- : %a\n" pp_core_type type')
-            out_list
-        else (
-          match Inter.eval_structure ast with
-          | Ok _ -> ()
-          | Error e ->
-            Format.printf
-              "Interpreter error: %a\n"
-              Ocaml_printf_lib.Interpreter.pp_error
-              e))
+  let env_infer, env_inter =
+    Inferencer.env_with_print_int, Interpreter.env_with_print_funs
+  in
+  match input_source with
+  | Some file_name ->
+    let text = In_channel.read_all file_name |> String.trim in
+    let _, _ = run text env_infer env_inter in
+    ()
+  | None ->
+    let rec input_lines lines env_infer env_inter =
+      match In_channel.input_line stdin with
+      | Some line ->
+        if line = ";;" || String.ends_with ~suffix:";;" line
+        then (
+          let env_infer, env_inter = run (lines ^ line) env_infer env_inter in
+          input_lines "" env_infer env_inter)
+        else input_lines (lines ^ line) env_infer env_inter
+      | None -> ()
+    in
+    let _ = input_lines "" env_infer env_inter in
+    ()
 ;;
 
 let () =

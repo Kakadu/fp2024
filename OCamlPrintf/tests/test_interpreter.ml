@@ -8,8 +8,8 @@ open Ocaml_printf_lib.Interpreter
 let run str =
   match parse str with
   | Ok ast ->
-    (match Inter.eval_structure ast with
-     | Ok out_list ->
+    (match run_interpreter empty_env ast with
+     | Ok (_, out_list) ->
        List.iter
          (function
            | Some id, val' -> Format.printf "val %s = %a\n" id pp_value val'

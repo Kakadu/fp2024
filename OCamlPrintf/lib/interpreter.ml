@@ -334,8 +334,6 @@ module Inter = struct
   ;;
 
   let eval_structure_item env out_list =
-    let env = extend env "print_int" (Val_builtin "print_int") in
-    let env = extend env "print_endline" (Val_builtin "print_endline") in
     let rec extract_names_from_pat env acc = function
       | Pat_var id -> acc @ [ Some id, EvalEnv.find_exn1 env id ]
       | Pat_tuple (fst_pat, snd_pat, pat_list) ->
@@ -373,14 +371,14 @@ module Inter = struct
       return (env, out_list @ eval_list)
   ;;
 
-  let eval_structure ast =
-    let* _, out_list =
+  let eval_structure env ast =
+    let* env, out_list =
       Base.List.fold_left
         ~f:(fun acc item ->
           let* env, out_list = acc in
           let* env, out_list = eval_structure_item env out_list item in
           return (env, out_list))
-        ~init:(return (empty, []))
+        ~init:(return (env, []))
         ast
     in
     let remove_duplicates =
@@ -394,6 +392,15 @@ module Inter = struct
       | _ :: xs -> xs
       | [] -> []
     in
-    return (remove_duplicates out_list)
+    return (env, remove_duplicates out_list)
   ;;
 end
+
+let empty_env = EvalEnv.empty
+
+let env_with_print_funs =
+  let env = EvalEnv.extend empty_env "print_int" (Val_builtin "print_int") in
+  EvalEnv.extend env "print_endline" (Val_builtin "print_endline")
+;;
+
+let run_interpreter = Inter.eval_structure

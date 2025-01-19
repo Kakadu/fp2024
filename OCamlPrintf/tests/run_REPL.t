@@ -30,16 +30,17 @@ SPDX-License-Identifier: LGPL-3.0-or-later
     ]
 
   $ ../repl/REPL.exe -dparsetree <<EOF
-  > let prime n = 
-  >  let rec check_zero x d = 
-  >    match d with 
-  >    | 1 -> true
-  >    | _ -> x mod d <> 0 && check_zero x (d - 1) 
-  >  in
-  >  match n with
-  >  | 0 -> false
-  >  | 1 -> false
-  >  | _ -> check_zero n (n - 1);;
+  > let prime n =
+  >   let rec check_zero x d =
+  >     match d with
+  >     | 1 -> true
+  >     | _ -> x mod d <> 0 && check_zero x (d - 1)
+  >   in
+  >   match n with
+  >   | 0 -> false
+  >   | 1 -> false
+  >   | _ -> check_zero n (n - 1)
+  > ;;
   [(Struct_value (Nonrecursive,
       { pat = (Pat_var "prime");
         exp =

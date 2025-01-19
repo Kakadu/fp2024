@@ -9,8 +9,8 @@ open Ocaml_printf_lib.Inferencer
 let run str =
   match parse str with
   | Ok ast ->
-    (match run_inferencer ast empty_env with
-     | Ok out_list ->
+    (match run_inferencer empty_env ast with
+     | Ok (_, out_list) ->
        List.iter
          (function
            | Some id, type' -> Format.printf "val %s : %a\n" id pp_core_type type'

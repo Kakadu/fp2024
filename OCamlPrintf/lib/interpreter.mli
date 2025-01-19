@@ -24,9 +24,10 @@ type value =
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 
 val pp_value : Format.formatter -> value -> unit
+val empty_env : env
+val env_with_print_funs : env
 
-module Inter : sig
-  val eval_structure
-    :  Ast.structure_item list
-    -> ((Ast.ident option * value) list, error) result
-end
+val run_interpreter
+  :  env
+  -> Ast.structure
+  -> (env * (Ast.ident option * value) list, error) result

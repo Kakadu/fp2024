@@ -783,7 +783,7 @@ module Infer = struct
   ;;
 
   let infer_srtucture ~debug env ast =
-    let* _, out_list =
+    let* env, out_list =
       RList.fold_left ast ~init:(return (env, [])) ~f:(infer_structure_item ~debug)
     in
     let remove_duplicates =
@@ -797,7 +797,7 @@ module Infer = struct
       | _ :: xs -> xs
       | [] -> []
     in
-    return (remove_duplicates out_list)
+    return (env, remove_duplicates out_list)
   ;;
 end
 
@@ -805,11 +805,11 @@ let empty_env = TypeEnv.empty
 
 let env_with_print_int =
   TypeEnv.extend
-    TypeEnv.empty
+    empty_env
     "print_int"
     (Scheme (VarSet.empty, Type_arrow (Type_int, Type_unit)))
 ;;
 
-let run_inferencer ?(debug = false) ast env =
+let run_inferencer ?(debug = false) env ast =
   State.run (Infer.infer_srtucture ~debug env ast)
 ;;
