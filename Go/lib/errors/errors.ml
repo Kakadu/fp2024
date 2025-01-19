@@ -14,7 +14,7 @@ type type_check_error =
   | Unexpected_operation of string
 
 type runtime_error =
-  | Division_by_zero
+  | Division_by_0
   | Array_index_out_of_bound
   | Negative_array_index
   | Uninited_func
@@ -42,7 +42,7 @@ let pp_typecheck_error = function
 ;;
 
 let pp_runtime_error = function
-  | Division_by_zero -> "division by zero"
+  | Division_by_0 -> "division by zero"
   | Array_index_out_of_bound -> "array index out of bounds"
   | Negative_array_index -> "negative array index call"
   | Uninited_func -> "uninitialized function call"

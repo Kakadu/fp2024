@@ -351,13 +351,12 @@ and eval_binop op a1 a2 =
   | Bin_sum, Value_int a1, Value_int a2 -> return (Value_int (a1 + a2))
   | Bin_subtract, Value_int a1, Value_int a2 -> return (Value_int (a1 - a2))
   | Bin_multiply, Value_int a1, Value_int a2 -> return (Value_int (a1 * a2))
-  | Bin_divide, Value_int _, Value_int 0 -> fail (Runtime_error Division_by_zero)
   | Bin_divide, Value_int a1, Value_int a2 ->
     (try return (Value_int (a1 / a2)) with
-     | Division_by_zero -> fail (Runtime_error Division_by_zero))
+     | Division_by_zero -> fail (Runtime_error Division_by_0))
   | Bin_modulus, Value_int a1, Value_int a2 ->
     (try return (Value_int (a1 mod a2)) with
-     | Division_by_zero -> fail (Runtime_error Division_by_zero))
+     | Division_by_zero -> fail (Runtime_error Division_by_0))
   | Bin_and, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 && a2))
   | Bin_or, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 || a2))
   | Bin_equal, a1, a2 -> return (Value_bool (a1 = a2))

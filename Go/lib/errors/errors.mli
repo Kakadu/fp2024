@@ -14,7 +14,7 @@ type type_check_error =
   | Unexpected_operation of string (**Return/continue not inside for body *)
 
 type runtime_error =
-  | Division_by_zero
+  | Division_by_0
   | Array_index_out_of_bound
   | Negative_array_index
   | Uninited_func

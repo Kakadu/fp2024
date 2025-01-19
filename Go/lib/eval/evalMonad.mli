@@ -177,9 +177,6 @@ module Monad : sig
   (** Takes a goroutine and adds it to the set of ready goroutines *)
   val add_ready : goroutine -> unit t
 
-  (** Returns [Some ()] if there are some ready to run goroutines, [None] otherwise *)
-  val check_ready_goroutine : unit option t
-
   (** [push_to_send_queue id go v] tries to push goroutine [go] that is trying to send value
       [v] to chanel with id [id] to its send queue. Fails if chanel is unitialized or closed *)
   val push_to_send_queue : int -> goroutine -> value -> unit t
