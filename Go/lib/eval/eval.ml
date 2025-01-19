@@ -31,10 +31,14 @@ let rpf lst = List.map (fun (y, _) -> y) lst
 (** Executes next statement, returns [Some ()] if there was statement to execute,
     and [None] if the end of current execution block was reached *)
 let exec_stmt eval_stmt =
-  pop_next_statement
+  has_finished
   >>= function
-  | Some st -> eval_stmt st *> return (Some ())
-  | None -> return None
+  | Finished -> return None
+  | Running ->
+    pop_next_statement
+    >>= (function
+     | Some st -> eval_stmt st *> return (Some ())
+     | None -> return None)
 ;;
 
 let rec replace_list list index elem =
@@ -52,7 +56,7 @@ let rec exec eval_stmt =
   exec_stmt eval_stmt
   >>= function
   | None -> return ()
-  | Some _ ->
+  | Some () ->
     read_returns
     >>= (function
      | Some _ -> return ()
@@ -98,7 +102,7 @@ let run_ready_goroutines eval_stmt =
          >>= (function
           | { go_id = 1 } ->
             (* main goroutine finished working and doesn't wait for others to finish *)
-            return ()
+            finish
           | _ ->
             (* some secondary goroutine finished working, don't stop until main finished *)
             delete_running_goroutine *> runner ()))
@@ -618,7 +622,8 @@ and eval_go (func, arg_exprs) =
   | Value_func (Func_uninitialized Nil) -> fail (Runtime_error Uninited_func)
   | Value_func (Func_builtin _) ->
     eval_func_call (func, arg_exprs) *> return () (* TODO *)
-  | Value_func (Func_initialized (Default, { args; body })) ->
+  | Value_func (Func_initialized (Default, { args; body }))
+  | Value_func (Func_initialized (FuncLit, { args; body })) ->
     let* var_map = create_args_map arg_exprs (rpf args) in
     create_goroutine
       { local_envs = { exec_block = body; var_map; env_type = Default }, []
@@ -626,9 +631,15 @@ and eval_go (func, arg_exprs) =
       ; returns = None
       ; panics = None
       }
-  | Value_func (Func_initialized (FuncLit, { args; body })) -> return () (* TODO *)
-  | Value_func (Func_initialized (Closure var_map, { args; body })) ->
-    return () (* TODO *)
+  | Value_func (Func_initialized (Closure closure_map, { args; body })) ->
+    let* var_map = create_args_map arg_exprs (rpf args) in
+    let var_map = MapIdent.union (fun _key v1 _v2 -> Some v1) var_map closure_map in
+    create_goroutine
+      { local_envs = { exec_block = body; var_map; env_type = Default }, []
+      ; deferred_funcs = []
+      ; returns = None
+      ; panics = None
+      }
   | _ -> fail (Runtime_error (TypeCheckFailed "func call"))
 ;;
 
@@ -685,6 +696,7 @@ let init_state =
   ; chanels = ChanSet.empty, 1
   ; is_using_chanel = None
   ; next_go_id = 0
+  ; has_finished = Running
   }
 ;;
 

@@ -117,6 +117,10 @@ type chanel_using_state =
   ; value : value
   }
 
+type has_finished =
+  | Running
+  | Finished
+
 type eval_state =
   { global_env : value MapIdent.t
   ; running : goroutine option
@@ -126,6 +130,7 @@ type eval_state =
   ; chanels : ChanSet.t * int
   ; is_using_chanel : chanel_using_state option
   ; next_go_id : int
+  ; has_finished : has_finished
   }
 
 module Monad = struct
@@ -669,5 +674,21 @@ module Monad = struct
       (match List.find_opt (fun map -> MapIdent.mem ident map) var_map with
        | Some _ -> save_global_id ident t
        | None -> fail (Runtime_error (TypeCheckFailed ("undefined ident " ^ ident))))
+  ;;
+
+  (* finishing *)
+
+  let has_finished =
+    read
+    >>= function
+    | { has_finished } -> return has_finished
+  ;;
+
+  let finish =
+    read
+    >>= function
+    | { has_finished = Running } as state -> write { state with has_finished = Finished }
+    | { has_finished = Finished } ->
+      fail (Runtime_error (Deadlock "no goroutine running"))
   ;;
 end

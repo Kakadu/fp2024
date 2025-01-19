@@ -124,6 +124,10 @@ type chanel_using_state =
   ; value : value
   }
 
+type has_finished =
+  | Running
+  | Finished
+
 (** The whole executing program state *)
 type eval_state =
   { global_env : value MapIdent.t
@@ -137,6 +141,7 @@ type eval_state =
   ; is_using_chanel : chanel_using_state option
     (** The state indicates that value was sent through chanel, but not received yet *)
   ; next_go_id : int (** An id that will be given to the next created goroutine *)
+  ; has_finished : has_finished (** [Running] or [Finished] *)
   }
 
 (** Monad for evaluating the program state *)
@@ -287,4 +292,7 @@ module Monad : sig
   (** Returns next statement from currently running goroutine's
       current stack frame's execution block. [None] if the block is empty *)
   val pop_next_statement : stmt option t
+
+  val has_finished : has_finished t
+  val finish : unit t
 end
