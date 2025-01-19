@@ -197,12 +197,7 @@ let init_data program =
         memory_str
         memory_writable
     | _ :: rest ->
-      traverse_program
-        rest
-        temporary_pc_counter
-        memory_int
-        memory_str
-        memory_writable
+      traverse_program rest temporary_pc_counter memory_int memory_str memory_writable
   in
   traverse_program program 0L Int64Map.empty Int64Map.empty Int64Map.empty
 ;;
@@ -248,7 +243,8 @@ let init_registers =
 
 let init_vector_registers vector_length =
   List.fold_left
-    (fun acc reg -> StringMap.add (show_vector_register reg) (Array.make (vector_length) 0L) acc)
+    (fun acc reg ->
+      StringMap.add (show_vector_register reg) (Array.make vector_length 0L) acc)
     StringMap.empty
     [ V0
     ; V1
@@ -292,7 +288,16 @@ let init_state program =
   let vector_length = 4 in
   let vector_registers = init_vector_registers vector_length in
   let memory_int, memory_str, memory_writable = init_data program in
-  { registers; vector_registers; max_vector_length; vector_element_length; vector_length; memory_int; memory_str; memory_writable; pc = 0L }
+  { registers
+  ; vector_registers
+  ; max_vector_length
+  ; vector_element_length
+  ; vector_length
+  ; memory_int
+  ; memory_str
+  ; memory_writable
+  ; pc = 0L
+  }
 ;;
 
 let get_register_value state reg =
@@ -603,12 +608,12 @@ let execute_vle32v state program vd rs1 imm =
   let address = Int64.add base_address offset in
   let vector_length = state.vector_length in
   let rec load_values address i acc =
-    if i < vector_length then
+    if i < vector_length
+    then
       let* value = load_memory_int state address 4 in
       let next_address = Int64.add address (Int64.of_int 4) in
-      load_values next_address (i + 1) (Array.append acc [|value|])
-    else
-      return acc
+      load_values next_address (i + 1) (Array.append acc [| value |])
+    else return acc
   in
   let* vector_values = load_values address 0 [||] in
   return (set_vector_register_value state vd vector_values)
@@ -624,12 +629,12 @@ let execute_vstore state program vs rs1 imm =
   let address = Int64.add base_address offset in
   let vector_value = get_vector_register_value state vs in
   let rec store_elements i addr state =
-    if i >= state.vector_length then
-      return state
-    else
+    if i >= state.vector_length
+    then return state
+    else (
       let element = vector_value.(i) in
       let* new_state = store_memory_int state addr element 4 in
-      store_elements (i + 1) (Int64.add addr 4L) new_state
+      store_elements (i + 1) (Int64.add addr 4L) new_state)
   in
   store_elements 0 address state
 ;;
@@ -891,8 +896,7 @@ and execute_instruction state instr program =
         in
         return resolved_address
       | Label excluding_directives_label_offset ->
-        let resolved_address = excluding_directives_label_offset
-        in
+        let resolved_address = excluding_directives_label_offset in
         return resolved_address
     in
     return (set_register_value state rd new_address)
@@ -908,9 +912,6 @@ and execute_instruction state instr program =
   | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
   | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
   | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
-  | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
-  | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
-  | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
   | Vle32v (vd, rs1, imm) -> execute_vle32v state program vd rs1 imm
   | Vse32v (vs, rs1, imm) -> execute_vstore state program vs rs1 imm
   | Vaddvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.add
@@ -929,8 +930,10 @@ and execute_instruction state instr program =
   | Vxorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logxor
   | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.min
   | Vminvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.min
-  | Vmseqvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
-  | Vmseqvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
+  | Vmseqvv (vd, vs1, vs2) ->
+    execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
+  | Vmseqvx (vd, vs1, rs2) ->
+    execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
   | _ -> return state
 ;;
 
