@@ -293,11 +293,12 @@ and eval_builtin args func =
   | _ -> map retrieve_arg_value args >>= fun vlst -> prepare_builtin_eval vlst func
 
 and prepare_builtin_eval vlist = function
-  | Print -> iter (fun x -> return (print_string (pp_value x))) vlist *> return None
+  | Print ->
+    let list = List.map pp_value vlist in
+    return (print_string (String.concat " " list)) *> return None
   | Println ->
-    iter (fun x -> return (print_string (pp_value x))) vlist
-    *> return (print_string "\n")
-    *> return None
+    let list = List.map pp_value vlist in
+    return (print_string (String.concat " " list ^ "\n")) *> return None
   | Make ->
     let* chan_id = create_chanel in
     return (Some (Value_chan (Chan_initialized chan_id)))
@@ -339,6 +340,15 @@ and eval_unop op expr =
   | Unary_not, Value_bool a -> return (Value_bool (not a))
   | _ -> fail (Runtime_error (TypeCheckFailed "unop"))
 
+and eval_equal = function
+  | Value_nil Nil, Value_nil Nil
+  | Value_nil Nil, Value_func (Func_uninitialized Nil)
+  | Value_nil Nil, Value_chan (Chan_uninitialized Nil)
+  | Value_func (Func_uninitialized Nil), Value_nil Nil
+  | Value_chan (Chan_uninitialized Nil), Value_nil Nil -> true
+  | Value_nil Nil, _ | _, Value_nil Nil -> false
+  | v1, v2 -> v1 = v2
+
 and eval_binop op a1 a2 =
   let* a1 = eval_expr a1 in
   let* a2 = eval_expr a2 in
@@ -354,7 +364,8 @@ and eval_binop op a1 a2 =
      | Division_by_zero -> fail (Runtime_error Division_by_0))
   | Bin_and, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 && a2))
   | Bin_or, Value_bool a1, Value_bool a2 -> return (Value_bool (a1 || a2))
-  | Bin_equal, a1, a2 -> return (Value_bool (a1 = a2))
+  | Bin_equal, a1, a2 -> return (Value_bool (eval_equal (a1, a2)))
+  | Bin_not_equal, a1, a2 -> return (Value_bool (not (eval_equal (a1, a2))))
   | Bin_less, Value_int a1, Value_int a2 -> return (Value_bool (a1 < a2))
   | Bin_less_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 <= a2))
   | Bin_greater, Value_int a1, Value_int a2 -> return (Value_bool (a1 > a2))
@@ -638,6 +649,7 @@ let save_builtins =
   *> save_global_id "print" (Value_func (Func_builtin Print))
   *> save_global_id "println" (Value_func (Func_builtin Println))
   *> save_global_id "make" (Value_func (Func_builtin Make))
+  *> save_global_id "close" (Value_func (Func_builtin Close))
   *> save_global_id "len" (Value_func (Func_builtin Len))
   *> save_global_id "recover" (Value_func (Func_builtin Recover))
   *> save_global_id "panic" (Value_func (Func_builtin Panic))

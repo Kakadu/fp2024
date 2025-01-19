@@ -6,3 +6,7 @@
   (backend bisect_ppx))
  (preprocess
   (pps ppx_expect)))
+
+(cram
+ (applies_to examples)
+ (deps ../../bin/interpret.exe ./examples.go))

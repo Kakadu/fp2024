@@ -34,5 +34,4 @@ SPDX-License-Identifier: MIT
     ]
   
   Typecheck result: correct
-  
   Hello, world!

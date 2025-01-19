@@ -61,7 +61,7 @@ let%expect_test "ok: multiple long_var_init" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill  OCaml |}]
 ;;
 
 let%expect_test "err: division by zero" =
@@ -104,7 +104,7 @@ let%expect_test "ok: simple func_call with args" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill  OCaml |}]
 ;;
 
 let%expect_test "ok: simple value func call" =
@@ -121,7 +121,7 @@ let%expect_test "ok: simple value func call" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill  OCaml |}]
 ;;
 
 let%expect_test "ok: local var decl func call" =
@@ -136,15 +136,15 @@ let%expect_test "ok: local var decl func call" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill  OCaml |}]
 ;;
 
 let%expect_test "ok: func args init" =
   pp
     {|
-    var x = "kill "
+    var x = "kill"
     func foo(x string, k string) {
-      var z = " OCaml"
+      var z = "OCaml"
       print(x, k, z)
     }
   
@@ -155,7 +155,7 @@ let%expect_test "ok: func args init" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml OCaml |}]
+    kill  OCaml OCaml |}]
 ;;
 
 let%expect_test "ok: assignment check" =
@@ -163,7 +163,7 @@ let%expect_test "ok: assignment check" =
     {|
     var x = "kill "
     func foo(x string, k string) {
-      var z = " OCaml"
+      var z = "OCaml"
       print(x, k, z)
     }
   
@@ -175,7 +175,7 @@ let%expect_test "ok: assignment check" =
     |};
   [%expect {|
     Correct evaluating
-    OCaml OCaml OCaml |}]
+    OCaml  OCaml OCaml |}]
 ;;
 
 let%expect_test "ok: simple arithmetic check" =
@@ -296,7 +296,6 @@ let%expect_test "ok: if with init" =
     |};
   [%expect {|
     Correct evaluating
-
     норм |}]
 ;;
 
@@ -317,7 +316,6 @@ let%expect_test "ok: simple for" =
     |};
   [%expect {|
     Correct evaluating
-
     1
     2
     3
@@ -344,7 +342,6 @@ let%expect_test "ok: break" =
     |};
   [%expect {|
     Correct evaluating
-
     1
     2
     3
@@ -366,7 +363,6 @@ let%expect_test "ok: continue" =
     |};
   [%expect {|
     Correct evaluating
-
     0
     1
     2
@@ -391,7 +387,7 @@ let%expect_test "ok: function returns on return" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCaml |}]
+    kill  OCaml |}]
 ;;
 
 let%expect_test "ok: simple return check" =
@@ -409,7 +405,7 @@ let%expect_test "ok: simple return check" =
     |};
   [%expect {|
     Correct evaluating
-    kill OCamlCORRECTkill OCamlCORRECT |}]
+    kill  OCaml CORRECTkill  OCaml CORRECT |}]
 ;;
 
 let%expect_test "ok: factorial check" =
@@ -421,7 +417,7 @@ let%expect_test "ok: factorial check" =
         } else {
             return n * fac(n - 1)
         }
-    } 
+    }
     func main() {
       print(fac(5))
     }
@@ -470,17 +466,16 @@ let%expect_test "ok: closure check" =
   [%expect
     {|
     Correct evaluating
-
-    00
-    1-2
-    3-6
-    6-12
-    10-20
-    15-30
-    21-42
-    28-56
-    36-72
-    45-90 |}]
+    0 0
+    1 -2
+    3 -6
+    6 -12
+    10 -20
+    15 -30
+    21 -42
+    28 -56
+    36 -72
+    45 -90 |}]
 ;;
 
 (* arrays *)
@@ -497,8 +492,7 @@ let%expect_test "ok: simple array assignment and call" =
     |};
   [%expect {|
     Correct evaluating
-
-    Kill Ocaml |}]
+    Kill  Ocaml |}]
 ;;
 
 let%expect_test "ok: full array printing" =
@@ -549,8 +543,7 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
     |};
   [%expect {|
     Correct evaluating
-
-    Kill Ocaml |}]
+    Kill  Ocaml |}]
 ;;
 
 let%expect_test "err: array index out of bounds in expr" =
@@ -638,8 +631,7 @@ let%expect_test "ok: defer check function reassignment value" =
     |};
   [%expect {|
     Correct evaluating
-    1
-    2
+    12
     1 |}]
 ;;
 
@@ -671,17 +663,16 @@ func f() {
   [%expect
     {|
     Correct evaluating
-
     Calling g.
-    Printing in g 0
-    Printing in g 1
-    Printing in g 2
-    Printing in g 3
+    Printing in g  0
+    Printing in g  1
+    Printing in g  2
+    Printing in g  3
     Stop!
-    Defer in g 3
-    Defer in g 2
-    Defer in g 1
-    Defer in g 0
+    Defer in g  3
+    Defer in g  2
+    Defer in g  1
+    Defer in g  0
     Returned normally from g.
     Returned normally from f. |}]
 ;;
@@ -715,7 +706,6 @@ let%expect_test "ok: panic does not impact on goroutine without chanels" =
     |};
   [%expect {|
     Correct evaluating
-
     Creating new goroutine
     Finish |}]
 ;;
@@ -754,18 +744,17 @@ let%expect_test "ok: panic with recover" =
   [%expect
     {|
     Correct evaluating
-
     Calling g.
-    Printing in g 0
-    Printing in g 1
-    Printing in g 2
-    Printing in g 3
+    Printing in g  0
+    Printing in g  1
+    Printing in g  2
+    Printing in g  3
     Panicking!
-    Defer in g 3
-    Defer in g 2
-    Defer in g 1
-    Defer in g 0
-    Recovered in f with value: 4
+    Defer in g  3
+    Defer in g  2
+    Defer in g  1
+    Defer in g  0
+    Recovered in f with value:  4
     Returned normally from f. |}]
 ;;
 
@@ -796,17 +785,16 @@ let%expect_test "err: not recovered panic" =
   [%expect
     {|
     Runtime error: Panic: 4
-
     Calling g.
-    Printing in g 0
-    Printing in g 1
-    Printing in g 2
-    Printing in g 3
+    Printing in g  0
+    Printing in g  1
+    Printing in g  2
+    Printing in g  3
     Panicking!
-    Defer in g 3
-    Defer in g 2
-    Defer in g 1
-    Defer in g 0 |}]
+    Defer in g  3
+    Defer in g  2
+    Defer in g  1
+    Defer in g  0 |}]
 ;;
 
 (* goroutines *)
@@ -835,10 +823,9 @@ let%expect_test "ok: two goroutine sync with unbuffered chanel" =
   [%expect
     {|
     Correct evaluating
-
-    go1: trying to send. Value:0
+    go1: trying to send. Value: 0
     go2: trying to receive
-    go2: receive success. Value:0
+    go2: receive success. Value: 0
     go1: send success |}]
 ;;
 
@@ -874,14 +861,13 @@ let%expect_test "ok: receive and send back" =
   [%expect
     {|
     Correct evaluating
-
-    go1: trying to send. Value:0
+    go1: trying to send. Value: 0
     go2: trying to receive
-    go2: receive success. Value:0
-    go2: trying to send. Value:0
+    go2: receive success. Value: 0
+    go2: trying to send. Value: 0
     go1: send success
     go1: trying to receive
-    go1: receive success. Value:0 |}]
+    go1: receive success. Value: 0 |}]
 ;;
 
 let%expect_test "err: sender without receiver" =
@@ -926,8 +912,7 @@ let%expect_test "ok: save goroutine receiving two times" =
     |};
   [%expect {|
     Correct evaluating
-
-    12 |}]
+    1 2 |}]
 ;;
 
 let%expect_test "ok: simple goroutine test" =
@@ -956,7 +941,6 @@ let%expect_test "ok: simple goroutine test" =
     |};
   [%expect {|
     Correct evaluating
-
     Waiting for channel receive
     15 |}]
 ;;
@@ -989,10 +973,9 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
   [%expect
     {|
     Correct evaluating
-
     go1: sending value 1
     go2: sending value 2
-    go3: received value: 1
-    go3: received value: 2
+    go3: received value:  1
+    go3: received value:  2
     go1: value 1 sent successfully |}]
 ;;
