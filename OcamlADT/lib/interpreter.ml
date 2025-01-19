@@ -11,15 +11,21 @@ type error =
   | NotImplemented
   | UnboundVariable of string
   | PatternMismatch
-  | IDK
+  | IDKv1
+  | IDKv2
+  | IDKv3
+  | IDKv4
 
 type value =
   | VInt of int
   | VString of string
   | VChar of char
+  | VBool of bool
   | VTuple of value List2.t
   | VFun of Pattern.t List1.t * Expression.t
   | VFunction of value (* hz *)
+  | VBuiltin_binop of (value -> value -> (value, error) Result.t)
+  | VBuiltin_print of (value -> (value, error) Result.t)
 
 and environment = (string, value, String.comparator_witness) Base.Map.t
 
@@ -55,24 +61,96 @@ module Env (M : Error_monad) = struct
 
   open M
 
-  let init = Base.Map.empty (module Base.String)
+  let builtin_functions =
+    Base.Map.of_alist_exn
+      (module String)
+      [ ( "print_endline"
+        , VBuiltin_print
+            (fun v ->
+              match v with
+              | VString s ->
+                print_endline s;
+                Ok (VString "") (* Аналог unit *)
+              | _ -> Error TypeMismatch) )
+      ]
+  ;;
+
+  let builtin_binops =
+    Base.Map.of_alist_exn
+      (module String)
+      [ ( "+"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VInt (a + b)) (* Use `Ok` instead of `return` *)
+              | _ -> Error TypeMismatch) )
+      ; ( "-"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VInt (a - b))
+              | _ -> Error TypeMismatch) )
+      ; ( "*"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VInt (a * b))
+              | _ -> Error TypeMismatch) )
+      ; ( "/"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt _, VInt 0 -> Error DivisionByZero
+              | VInt a, VInt b -> Ok (VInt (a / b))
+              | _ -> Error TypeMismatch) )
+      ; ( "="
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VBool (a == b))
+              | _ -> Error TypeMismatch) )
+      ]
+  ;;
+
+  let init =
+    let merged_binops_and_functions =
+      Base.Map.merge builtin_binops builtin_functions ~f:(fun ~key:_ ->
+          function
+          | `Left v -> Some v
+          | `Right v -> Some v
+          | `Both (v, _) -> Some v)
+    in
+    Base.Map.merge
+      merged_binops_and_functions
+      (Base.Map.empty (module Base.String))
+      ~f:(fun ~key:_ ->
+        function
+        | `Left v -> Some v
+        | `Right v -> Some v
+        | `Both (v, _) -> Some v)
+  ;;
 
   let lookup env name =
-    match List.Assoc.find ~equal:String.equal env name with
-    | Some _ -> return (Some env) (* Возвращаем Option типа с окружением *)
+    match Map.find env name with
+    | Some s -> return s (* returing the value *)
     | None -> fail (UnboundVariable name)
   ;;
 
   let extend env name value = Base.Map.set env ~key:name ~data:value
 end
 
+(*Interpretator functor, that uses M monad as a base for evaluation *)
 module Interpreter (M : Error_monad) = struct
-  (*Interpretator functor, that uses M monad as a base for evaluation *)
   open M
   module E = Env (M)
 
-  (* mapM applies a monadic function f to each element of a list and combines results in a list *)
+  let lift_result r =
+    match r with
+    | Ok v -> return v
+    | Error e -> fail e
+  ;;
 
+  (* mapM applies a monadic function f to each element of a list and combines results in a list *)
   let mapM f env lst =
     let rec aux acc = function
       | [] -> return (List.rev acc)
@@ -115,14 +193,14 @@ module Interpreter (M : Error_monad) = struct
       let* _ = mapM2 eval_pattern env ps vs in
       return (Some env)
     | Pattern.Pat_constraint (pat, _), v -> eval_pattern pat v env
-    | Pattern.Pat_construct (ctor, Some args), VFun (ctor_pat, body) -> fail IDK
+    | Pattern.Pat_construct (ctor, Some args), VFun (ctor_pat, body) -> fail IDKv1
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
     | _ -> fail PatternMismatch
   ;;
 
   let rec eval_expr (env : environment) = function
-    | Expression.Exp_ident _ -> fail IDK
+    | Expression.Exp_ident name -> E.lookup env name
     | Expression.Exp_constant ex -> eval_const ex
     | Expression.Exp_tuple (e1, e2, el) ->
       let* v1 = eval_expr env e1 in
@@ -130,22 +208,41 @@ module Interpreter (M : Error_monad) = struct
       let* vl = mapM eval_expr env el in
       return (VTuple (v1, v2, vl))
     | Expression.Exp_function (c1, cl) ->
-      fail IDK
+      fail IDKv3
       (*let* v1 = eval_case c1 in
         let* vl = mapM eval_case cl in
         return (VFunction (v1, vl)) *)
     | Expression.Exp_fun (patterns, body) -> return (VFun (patterns, body))
-    | Expression.Exp_apply (func, arg) ->
+    | Expression.Exp_apply (func, args) ->
       let* func_val = eval_expr env func in
-      let* arg_val = eval_expr env arg in
       (match func_val with
+       | VBuiltin_binop binop ->
+         (match args with
+          | Expression.Exp_tuple (arg1, arg2, []) ->
+            let* arg1_val = eval_expr env arg1 in
+            let* arg2_val = eval_expr env arg2 in
+            let* binop_res = lift_result (binop arg1_val arg2_val) in
+            return binop_res
+          | _ -> fail PatternMismatch)
+       | VBuiltin_print print_fn ->
+         (match args with
+          | Expression.Exp_constant c ->
+            let* arg_val = eval_const c in
+            let* _ = lift_result (print_fn arg_val) in
+            return (VString "")
+          | Expression.Exp_ident id ->
+            let* arg_val = E.lookup env id in
+            let* _ = lift_result (print_fn arg_val) in
+            return (VString "")
+          | _ -> fail PatternMismatch)
        | VFun (patterns, body) ->
+         let* arg_val = eval_expr env args in
          (match list1_to_list2 patterns with
           | Some (el1, el2, ell) ->
             let pattern = Pattern.Pat_tuple (el1, el2, ell) in
             let* env' = eval_pattern pattern arg_val env in
             (match env' with
-             | None -> fail IDK
+             | None -> fail IDKv4
              | Some env' -> eval_expr env' body)
           | None -> fail NotImplemented)
        | _ -> fail TypeMismatch)
@@ -185,7 +282,7 @@ module Interpreter (M : Error_monad) = struct
       let* env' = extend_env env bindings_list in
       eval_expr env' body
     | Expression.Exp_construct (ctor, Some arg) ->
-      fail IDK
+      fail IDKv1
       (*let* v = eval_expr env arg in
         return (VFun ([ Pattern.Pat_constant (Constant.Const_string ctor) ], v)) *)
     | Expression.Exp_construct (ctor, None) -> return (VString ctor)
@@ -194,9 +291,10 @@ module Interpreter (M : Error_monad) = struct
 
   let eval_str_item (env : environment) = function
     | Structure.Str_eval str ->
-      let* _ = eval_expr env str in
-      return env
+      (* Evaluate the expression and return its value *)
+      eval_expr env str
     | Structure.Str_value (rec_flag, bindings) ->
+      (* Extend the environment based on bindings and return the value of the last binding *)
       let bindings_list = fst bindings :: snd bindings in
       let extend_env env bindings =
         List.fold bindings ~init:(return env) ~f:(fun acc { Expression.pat; expr } ->
@@ -204,18 +302,18 @@ module Interpreter (M : Error_monad) = struct
           let* value =
             match rec_flag with
             | Nonrecursive -> eval_expr env expr
-            | Recursive -> fail IDK
-            (* For recursive bindings, create a placeholder for recursive definitions *)
-            (*              let placeholder = VFun ((pat, []), expr) in
-                            let temp_env = E.extend env pat placeholder in
-                            eval_expr temp_env expr *)
+            | Recursive -> fail IDKv2 (* Add support for recursive bindings later *)
           in
           let* env' = eval_pattern pat value env in
           match env' with
           | Some new_env -> return new_env
           | None -> fail PatternMismatch)
       in
-      extend_env env bindings_list
+      let* new_env = extend_env env bindings_list in
+      (* Evaluate and return the last expression's value *)
+      (match List.rev bindings_list with
+       | { Expression.expr = last_expr } :: _ -> eval_expr new_env last_expr
+       | _ -> fail PatternMismatch)
   ;;
 
   (*to add adt*)
@@ -224,10 +322,11 @@ module Interpreter (M : Error_monad) = struct
 
   let interpret_program (prog : program) =
     let rec eval_prog env = function
-      | [] -> return ()
+      | [] -> fail PatternMismatch (* Handle empty programs appropriately *)
+      | [ item ] -> eval_str_item env item (* Return the value of the last item *)
       | item :: rest ->
-        let* new_env = eval_str_item env item in
-        eval_prog new_env rest
+        let* _ = eval_str_item env item in
+        eval_prog env rest
     in
     eval_prog E.init prog
   ;;
@@ -245,3 +344,29 @@ end
 module InterpreterWResult = Interpreter (RESULT_MONAD_ERROR)
 
 let run_interpreter = InterpreterWResult.interpret_program
+
+module PPrinter = struct
+  open Format
+
+  let pp_value fmt = function
+    | VInt i -> fprintf fmt "%d" i
+    | VChar c -> fprintf fmt "%c" c
+    | VString s -> fprintf fmt "%s" s
+    | _ -> fprintf fmt "IDK"
+  ;;
+
+  let pp_error fmt = function
+    | IDKv1 -> fprintf fmt "IDK1"
+    | IDKv2 -> fprintf fmt "IDK2"
+    | IDKv3 -> fprintf fmt "IDK3"
+    | IDKv4 -> fprintf fmt "IDK4"
+    | PatternMismatch -> fprintf fmt "Pattern mismatch"
+    | DivisionByZero -> fprintf fmt "Division by zero"
+    | NotImplemented -> fprintf fmt "Not implemented"
+    | UnboundVariable s -> fprintf fmt "Unbound value %s" s
+    | TypeMismatch -> fprintf fmt "TypeMismatch"
+  ;;
+
+  let print_value = printf "%a" pp_value
+  let print_error = printf "%a" pp_error
+end
