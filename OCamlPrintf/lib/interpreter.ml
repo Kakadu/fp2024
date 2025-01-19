@@ -19,6 +19,7 @@ let pp_error ppf : error -> _ = function
 ;;
 
 type value =
+  | Val_unit
   | Val_integer of int
   | Val_char of char
   | Val_string of string
@@ -32,6 +33,7 @@ and env = (string, value, Base.String.comparator_witness) Base.Map.t
 let rec pp_value ppf =
   let open Stdlib.Format in
   function
+  | Val_unit -> fprintf ppf "()"
   | Val_integer int -> fprintf ppf "%i" int
   | Val_char char -> fprintf ppf "'%c'" char
   | Val_string str -> fprintf ppf "%S" str
@@ -86,6 +88,13 @@ module EvalEnv = struct
     match Map.find env key with
     | Some value -> Res.return value
     | None -> Res.fail (`No_variable key)
+  ;;
+
+  let pp ppf env =
+    Stdlib.Format.fprintf ppf "EvalEnv:\n";
+    Map.iteri env ~f:(fun ~key:str ~data:val' ->
+      Stdlib.Format.fprintf ppf "%s -> %a; " str pp_value val');
+    Stdlib.Format.fprintf ppf "\n"
   ;;
 end
 
@@ -201,7 +210,7 @@ module Inter = struct
       let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
     | Exp_let (Recursive, value_binding, value_binding_list, exp) ->
-      let* env = rec_eval_value_binding_list env (value_binding :: value_binding_list) in
+      let* env = eval_rec_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
     | Exp_fun (pat, pat_list, exp) -> return (Val_fun (None, pat, pat_list, exp, env))
     | Exp_apply (Exp_ident opr, Exp_apply (exp1, exp2)) when is_operator opr ->
@@ -214,6 +223,13 @@ module Inter = struct
          let* value = eval_expression env exp2 in
          (match value with
           | Val_integer v -> return (Val_integer (-v))
+          | _ -> fail `Type_error)
+       | Exp_ident "print_int" ->
+         let* arg_val = eval_expression env exp2 in
+         (match arg_val with
+          | Val_integer int ->
+            let _ = print_int int in
+            return Val_unit
           | _ -> fail `Type_error)
        | _ ->
          let* fun_val = eval_expression env exp1 in
@@ -299,17 +315,16 @@ module Inter = struct
         ~init:(return (env, [], []))
         value_binding_list
     in
-    let rec extend_many env names values =
-      match names, values with
+    let rec extend_many env = function
       | [], [] -> return env
       | name :: rest_names, value :: rest_values ->
         let env = extend env name value in
-        extend_many env rest_names rest_values
+        extend_many env (rest_names, rest_values)
       | _, _ -> fail `Type_error
     in
-    extend_many env name_list value_list
+    extend_many env (name_list, value_list)
 
-  and rec_eval_value_binding_list env value_binding_list =
+  and eval_rec_value_binding_list env value_binding_list =
     Base.List.fold_left
       ~f:(fun acc { pat; exp } ->
         let* env = acc in
@@ -337,7 +352,7 @@ module Inter = struct
       let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
       return (env, None)
     | Struct_value (Recursive, value_binding, value_binding_list) ->
-      let* env = rec_eval_value_binding_list env (value_binding :: value_binding_list) in
+      let* env = eval_rec_value_binding_list env (value_binding :: value_binding_list) in
       return (env, None)
   ;;
 
