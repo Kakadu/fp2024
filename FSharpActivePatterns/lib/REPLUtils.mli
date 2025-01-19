@@ -2,4 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val run_repl : bool -> string option -> string option -> unit
+val run_repl : bool -> string option -> unit

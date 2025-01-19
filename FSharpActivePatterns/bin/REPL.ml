@@ -27,5 +27,5 @@ let () =
   in
   let usage_msg = "Read-Eval-Print-Loop for F# with Active Patterns" in
   let () = parse speclist anon_func usage_msg in
-  run_repl opts.dump_parsetree opts.input_file None
+  run_repl opts.dump_parsetree opts.input_file
 ;;

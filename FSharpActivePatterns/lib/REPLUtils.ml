@@ -75,11 +75,15 @@ let input_with_indents ic =
     fill_buffer buffer
 ;;
 
+type in_channel =
+  | File of Stdlib.in_channel
+  | Stdin
+
 let run_single ic =
   let input =
     match ic with
-    | None -> input_upto_sep ";;" stdin
-    | Some ic -> input_with_indents ic
+    | Stdin -> input_upto_sep ";;" Stdlib.stdin
+    | File ic -> input_with_indents ic
   in
   match input with
   | EOF -> End
@@ -94,14 +98,11 @@ let string_to_in_channel str =
   Unix.in_channel_of_descr read_fd
 ;;
 
-let run_repl dump_parsetree input_file input_string =
+let run_repl dump_parsetree input_file =
   let ic =
     match input_file with
-    | Some n -> Some (open_in n)
-    | None ->
-      (match input_string with
-       | None -> None
-       | Some s -> Some (string_to_in_channel s))
+    | Some n -> File (open_in n)
+    | None -> Stdin
   in
   let rec run_repl_helper run type_env value_env state values_acc =
     let open Format in
@@ -128,7 +129,7 @@ let run_repl dump_parsetree input_file input_string =
           run_repl_helper run type_env value_env new_state values_acc
         | new_state, Ok (new_type_env, new_value_env, evaled_names) ->
           (match ic with
-           | None ->
+           | Stdin ->
              Base.Map.iteri
                ~f:(fun ~key ~data ->
                  let t, v = data in
@@ -143,7 +144,7 @@ let run_repl dump_parsetree input_file input_string =
                evaled_names;
              print_flush ();
              run_repl_helper run new_type_env new_value_env new_state values_acc
-           | Some _ ->
+           | File _ ->
              let overwrite map1 map2 =
                Base.Map.fold
                  ~init:map1
