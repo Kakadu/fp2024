@@ -294,10 +294,10 @@ type instruction =
   (** Vector Maximum. Vmax.vv vd, vs1, vs2 *)
   | Vmaxvx of vector_register * vector_register * register
   (** Vector Maximum with Scalar. vmax.vx vd, vs1, rs2 *)
-  | Veqvv of vector_register * vector_register * vector_register
-  (** Vector Equals. Veq.vv vd, vs1, vs2 *)
-  | Veqvx of vector_register * vector_register * register
-  (** Vector Equals with Scalar. veq.vx vd, vs1, rs2 *)
+  | Vmseqvv of vector_register * vector_register * vector_register
+  (** Vector Equals. Vmseq.vv vd, vs1, vs2 *)
+  | Vmseqvx of vector_register * vector_register * register
+  (** Vector Equals with Scalar. vmseq.vx vd, vs1, rs2 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)

@@ -929,8 +929,8 @@ and execute_instruction state instr program =
   | Vxorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logxor
   | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.min
   | Vminvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.min
-  | Veqvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
-  | Veqvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
+  | Vmseqvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
+  | Vmseqvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
   | _ -> return state
 ;;
 
