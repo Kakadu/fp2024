@@ -10,7 +10,7 @@ let%expect_test "min function with if" =
     Haskell_lib.Inferencer.typeenv_empty;
   [%expect {|
     [
-    min:  Int -> Int -> Int
+    min: t5.  Ord t5 -> Ord t5 -> Ord t5
      ] |}]
 ;;
 

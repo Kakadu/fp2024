@@ -94,7 +94,7 @@ SPDX-License-Identifier: MIT
   > new_tree = repmin tree_example
   > new_values = iter new_tree []
   > print_list xs = case xs of [] -> (); h:tl -> seq (print_int h) (print_list tl)
-  > print_list old_values
-  > print_list new_values
+  > main = print_list old_values
+  > main = print_list new_values
   > EOF
 

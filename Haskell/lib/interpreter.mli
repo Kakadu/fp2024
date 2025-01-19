@@ -5,7 +5,7 @@
 open Inferencer
 open Typedtree
 
-type enviroment
+type enviroment = int
 
 val eval
   :  Ast.binding list

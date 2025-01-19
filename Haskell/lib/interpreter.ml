@@ -5,8 +5,6 @@
 open Inferencer
 open Typedtree
 
-type enviroment
+type enviroment = int
 
-let eval (binding : Ast.binding list) (env : enviroment) (n : int) =
-  Result.Ok (env, 0)
-;;
+let eval (binding : Ast.binding list) (env : enviroment) (n : int) = Result.Ok (env, 0)
