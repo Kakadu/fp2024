@@ -3,7 +3,7 @@
  (deps ../lib/tests/run_qcheck.exe))
 
 (cram
- (applies_to inference)
+ (applies_to interpreter)
  (deps
   ../bin/REPL.exe
   manytests/do_not_type/001.ml
