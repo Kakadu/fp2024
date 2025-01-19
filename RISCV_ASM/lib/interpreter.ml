@@ -349,13 +349,19 @@ let handle_branch_condition state program rs1 rs2 label_or_imm_value comparison_
   return (set_pc state new_pc)
 ;;
 
-let execute_arithmetic_op state rd rs1 rs2 op sext =
+let sext x = Int64.shift_right (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
+
+let zext x =
+  Int64.shift_right_logical (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
+;;
+
+let execute_arithmetic_op state rd rs1 rs2 op to_sext =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
   let result = op val1 val2 in
   let result_final =
-    match sext with
-    | true -> Int64.shift_right (Int64.shift_left (Int64.logand result 0xFFFFFFFFL) 32) 32
+    match to_sext with
+    | true -> sext result
     | false -> result
   in
   return (set_register_value state rd result_final)
@@ -379,7 +385,7 @@ let execute_comparison_op state rd rs1 rs2 compare_fn =
   return (set_register_value state rd result)
 ;;
 
-let execute_immediate_op state program rd rs1 imm op sext =
+let execute_immediate_op state program rd rs1 imm op to_sext =
   let val1 = get_register_value state rs1 in
   let address_info = get_address12_value program imm in
   let imm_value =
@@ -389,8 +395,8 @@ let execute_immediate_op state program rd rs1 imm op sext =
   in
   let result = op val1 imm_value in
   let result_final =
-    match sext with
-    | true -> Int64.shift_right (Int64.shift_left (Int64.logand result 0xFFFFFFFFL) 32) 32
+    match to_sext with
+    | true -> sext result
     | false -> result
   in
   return (set_register_value state rd result_final)
@@ -405,6 +411,18 @@ let execute_shift_immediate_op state program rd rs1 imm op =
       Int64.to_int excluding_directives_label_offset
   in
   let result = op val1 imm_value in
+  return (set_register_value state rd result)
+;;
+
+let execute_shnadd state rd rs1 rs2 n to_zext =
+  let val1 = get_register_value state rs1 in
+  let val2 = get_register_value state rs2 in
+  let arg2 =
+    match to_zext with
+    | true -> zext val2
+    | false -> val2
+  in
+  let result = Int64.add val1 (Int64.shift_left arg2 n) in
   return (set_register_value state rd result)
 ;;
 
@@ -770,6 +788,18 @@ and execute_instruction state instr program =
         return resolved_address
     in
     return (set_register_value state rd new_address)
+  | Adduw (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int64.add val1 val2 in
+    let result_final = zext result in
+    return (set_register_value state rd result_final)
+  | Sh1add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 1 false
+  | Sh1adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 1 true
+  | Sh2add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 false
+  | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
+  | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
+  | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
   | _ -> return state
 ;;
 
