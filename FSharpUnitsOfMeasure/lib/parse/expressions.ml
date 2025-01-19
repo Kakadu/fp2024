@@ -29,7 +29,7 @@ let parse_expr_paren parse_expr =
   string "(" *> skip_ws *> parse_expr <* skip_ws <* string ")"
 ;;
 
-let parse_prefix_app = skip_ws *> return (fun e1 e2 -> Expr_apply (e1, e2))
+let parse_prefix_app = skip_ws_no_nl *> return (fun e1 e2 -> Expr_apply (e1, e2))
 
 let parse_infix_app op =
   skip_ws
@@ -71,9 +71,9 @@ let parse_expr_app parse_expr =
   app
 ;;
 
-(* Makes sense only for + and - *)
+(* Makes sense only for + and - for now *)
 let parse_expr_unary_app parse_expr =
-  let* op = skip_ws *> string "-" <|> string "+" in
+  let* op = skip_ws *> string "-" <|> string "+" <* skip_ws in
   let* e = parse_expr in
   match op with
   | "+" -> return e
@@ -138,8 +138,8 @@ let parse_expr_let parse_expr =
 (* Parses tuple without parentheses *)
 let parse_expr_tuple parse_expr =
   let* tuple_fst = skip_ws *> parse_expr <* skip_ws <* char ',' in
-  let* tuple_snd = skip_ws *> parse_expr <* skip_ws in
-  let* tuple_rest = many (skip_token "," *> parse_expr) in
+  let* tuple_snd = skip_ws *> parse_expr in
+  let* tuple_rest = skip_ws *> many (skip_token "," *> parse_expr) in
   return (Expr_tuple (tuple_fst, tuple_snd, tuple_rest))
 ;;
 
@@ -186,17 +186,17 @@ let parse_expr =
       choice
         [ parse_expr_paren (parse_expr_typed parse_expr)
         ; parse_expr_paren parse_expr
+        ; parse_expr_let parse_expr
         ; parse_expr_list parse_expr
         ; parse_expr_ite parse_expr
         ; parse_expr_match parse_expr
         ; parse_expr_function parse_expr
         ; parse_expr_lambda parse_expr
-        ; parse_expr_let parse_expr
         ; parse_expr_ident_or_op
         ; parse_expr_const
         ]
     in
     let expr = parse_expr_tuple expr <|> parse_expr_app expr <|> expr in
     let expr = parse_expr_unary_app expr <|> expr in
-    skip_ws *> expr <* skip_ws)
+    skip_ws *> expr <* skip_ws_no_nl)
 ;;

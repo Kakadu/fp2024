@@ -149,15 +149,13 @@ let%expect_test "parse float with rational part, (e|E) but without exponent shou
 
 let%expect_test "parse ite with else branch" =
   pp pprint_expr parse_expr {| if true then 5 else 7 |};
-  [%expect
-    {|
+  [%expect {|
     if true then 5 else 7 |}]
 ;;
 
 let%expect_test "parse ite without else branch" =
   pp pprint_expr parse_expr {| if true then 5 |};
-  [%expect
-    {|
+  [%expect {|
     if true then 5 |}]
 ;;
 
@@ -168,8 +166,7 @@ let%expect_test "parse ite without then branch should fail" =
 
 let%expect_test "parse ite with nested ite" =
   pp pprint_expr parse_expr {| if if true then true else true then 5 else 7 |};
-  [%expect
-    {|
+  [%expect {|
     if if true then true else true then 5 else 7 |}]
 ;;
 
@@ -183,30 +180,26 @@ let%expect_test "parse application of function to 1 argument" =
 (* Should omit parentheses *)
 let%expect_test "parse application of function to 2 arguments" =
   pp pprint_expr parse_expr {| f a b |};
-  [%expect
-    {|
+  [%expect {|
 (f a) b |}]
 ;;
 
 let%expect_test "parse application of function to 5 arguments" =
   pp pprint_expr parse_expr {| f a b c d e |};
-  [%expect
-    {|
+  [%expect {|
 ((((f a) b) c) d) e |}]
 ;;
 
 (* Should print them either as (+) a b or a+b *)
 let%expect_test "parse application (+)a b" =
   pp pprint_expr parse_expr {| (+)a b |};
-  [%expect
-    {|
+  [%expect {|
     (+ a) b |}]
 ;;
 
 let%expect_test "parse application (+.) a b" =
   pp pprint_expr parse_expr {| (+.) a b |};
-  [%expect
-    {|
+  [%expect {|
     (+. a) b |}]
 ;;
 
@@ -236,8 +229,7 @@ let%expect_test "parse unary minuses w/o parentheses should fail" =
 
 let%expect_test "parse unary minuses with parentheses" =
   pp pprint_expr parse_expr {| -(-(-a)) |};
-  [%expect
-    {|
+  [%expect {|
     - (- (- a)) |}]
 ;;
 
@@ -245,8 +237,7 @@ let%expect_test "parse unary minuses with parentheses" =
 
 let%expect_test "parse a+b" =
   pp pprint_expr parse_expr {| a+b |};
-  [%expect
-    {|
+  [%expect {|
     (+ a) b |}]
 ;;
 
@@ -258,50 +249,43 @@ let%expect_test " parse a + + should fail " =
 
 let%expect_test "parse 1+b" =
   pp pprint_expr parse_expr {| 1+b |};
-  [%expect
-    {|
+  [%expect {|
     (+ 1) b |}]
 ;;
 
 let%expect_test "parse a+b+c" =
   pp pprint_expr parse_expr {| a+b+c |};
-  [%expect
-    {|
+  [%expect {|
     (+ ((+ a) b)) c |}]
 ;;
 
 let%expect_test "parse n-1 " =
   pp pprint_expr parse_expr {| n-1 |};
-  [%expect
-    {|
+  [%expect {|
     (- n) 1 |}]
 ;;
 
 let%expect_test "parse a+b*c" =
   pp pprint_expr parse_expr {| a+b*c |};
-  [%expect
-    {|
+  [%expect {|
       (+ a) ((* b) c) |}]
 ;;
 
 let%expect_test "parse a <= b <= c" =
   pp pprint_expr parse_expr {| a <= b <= c |};
-  [%expect
-    {|
+  [%expect {|
       (<= ((<= a) b)) c |}]
 ;;
 
 let%expect_test "parse a || b || c" =
   pp pprint_expr parse_expr {| a || b || c |};
-  [%expect
-    {|
+  [%expect {|
       (|| a) ((|| b) c) |}]
 ;;
 
 let%expect_test "parse a && b && c" =
   pp pprint_expr parse_expr {| a && b && c |};
-  [%expect
-    {|
+  [%expect {|
       (&& a) ((&& b) c) |}]
 ;;
 
@@ -319,15 +303,13 @@ let%expect_test "parse anon function with 1 argument" =
 
 let%expect_test "parse anon function with 2 arguments" =
   pp pprint_expr parse_expr {| fun x y -> e |};
-  [%expect
-    {|
+  [%expect {|
     fun x -> fun y -> e |}]
 ;;
 
 let%expect_test "parse anon function chain argument" =
   pp pprint_expr parse_expr {| fun x -> fun y -> e |};
-  [%expect
-    {|
+  [%expect {|
       fun x -> fun y -> e |}]
 ;;
 
@@ -335,8 +317,7 @@ let%expect_test "parse anon function chain argument" =
 
 let%expect_test "parse let ... in with single variable" =
   pp pprint_expr parse_expr {| let a = 5 in a |};
-  [%expect
-    {|
+  [%expect {|
     let a = 5 in a |}]
 ;;
 
@@ -348,39 +329,36 @@ let%expect_test "parse let without in expression should fail" =
 
 let%expect_test "parse let rec a = 5 in a expression" =
   pp pprint_expr parse_expr {| let rec a = 5 in a |};
-  [%expect
-    {|
+  [%expect {|
     let rec a = 5 in a |}]
 ;;
 
 let%expect_test "parse let ... in expression with function application" =
   pp pprint_expr parse_expr {| let a = 5 in f a |};
-  [%expect
-    {|
+  [%expect {|
     let a = 5 in f a |}]
 ;;
 
-let%expect_test "parse let a = 5 and b = 4 in e expression" =
-  pp pprint_expr parse_expr {| let a = 5 and b = 4 in e |};
-  [%expect
-    {|
-    let a = 5 and b = 4 in e |}]
+let%expect_test "parse let a = 5 and b = 4 and c = 3 and d = 2 in e expression" =
+  pp pprint_expr parse_expr {| let a = 5 and b = 4 and c = 3 and d = 2 in e |};
+  [%expect {|
+    let a = 5 and b = 4 and c = 3 and d = 2 in e |}]
 ;;
 
-(* !!!!!!!! May be THE reason of qcheck not halting *)
-(* Doesn't halt on 4+ nested let ... in's, for some reason... *)
-
+(* Is very slow on 5+ nested let ... in *)
 let%expect_test "parse nested let .. in expressions" =
-  pp pprint_expr parse_expr {| let a = 1 in let b = 2 in let c = 3 in E |};
-  [%expect
+  pp
+    pprint_expr
+    parse_expr
     {|
-    let a = 1 in let b = 2 in let c = 3 in E |}]
+  let a = 1 in let b = 2 in let c = 3 in let d = 4 in E |};
+  [%expect {|
+    let a = 1 in let b = 2 in let c = 3 in let d = 4 in E |}]
 ;;
 
 let%expect_test "parse let f a b c = x in e" =
   pp pprint_expr parse_expr {| let f a b c = x in e |};
-  [%expect
-    {|
+  [%expect {|
     let f = fun a -> fun b -> fun c -> x in e |}]
 ;;
 
@@ -398,29 +376,25 @@ let%expect_test "parse expression tuple with 1 element should fail" =
 
 let%expect_test "parse expression tuple with 2 elements" =
   pp pprint_expr parse_expr {| 1,2 |};
-  [%expect
-    {|
+  [%expect {|
       (1, 2) |}]
 ;;
 
 let%expect_test "parse expression tuple with 3 elements" =
   pp pprint_expr parse_expr {| 1, 2, myname |};
-  [%expect
-    {|
+  [%expect {|
     (1, 2, myname) |}]
 ;;
 
 let%expect_test "parse expression tuple of tuples" =
   pp pprint_expr parse_expr {| (1, 2), (3, 4) |};
-  [%expect
-    {|
+  [%expect {|
     ((1, 2), (3, 4)) |}]
 ;;
 
 let%expect_test "parse expression tuple of lists" =
   pp pprint_expr parse_expr {| ( [1; 2], [3; 4] ) |};
-  [%expect
-    {|
+  [%expect {|
     ([1; 2], [3; 4])  |}]
 ;;
 
@@ -443,15 +417,13 @@ let%expect_test "parse expression list of 2 elements" =
 
 let%expect_test "parse expression list of list" =
   pp pprint_expr parse_expr {| [ [ 1; 2; 3] ] |};
-  [%expect
-    {|
+  [%expect {|
     [[1; 2; 3]]  |}]
 ;;
 
 let%expect_test "parse expression list of tuples without parentheses" =
   pp pprint_expr parse_expr {| [ 1, 2; 3, 4 ] |};
-  [%expect
-    {|
+  [%expect {|
     [(1, 2); (3, 4)]  |}]
 ;;
 
@@ -465,8 +437,7 @@ let%expect_test "parse typed expression" =
 
 let%expect_test "parse doubly typed expression" =
   pp pprint_expr parse_expr {| ((a : int) : int) |};
-  [%expect
-    {|
+  [%expect {|
     ((a : int) : int)  |}]
 ;;
 
@@ -480,29 +451,25 @@ let%expect_test "parse typed expression without parentheses should fail" =
 
 let%expect_test "parse match with one rule" =
   pp pprint_expr parse_expr {| match x with | P1 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     match x with P1 -> E2  |}]
 ;;
 
 let%expect_test "parse match with two rules" =
   pp pprint_expr parse_expr {| match x with | P1 -> E2 | P2 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     match x with P1 -> E2 | P2 -> E2  |}]
 ;;
 
 let%expect_test "parse match with rules containing OR pattern as the first" =
   pp pprint_expr parse_expr {| match x with | P1 | P2 | P3 -> E1 | P4 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     match x with P1 | P2 | P3 -> E1 | P4 -> E2  |}]
 ;;
 
 let%expect_test "parse match with rules containing OR pattern as the last" =
   pp pprint_expr parse_expr {| match x with | P1 -> E1 | P2 | P3 | P4 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     match x with P1 -> E1 | P2 | P3 | P4 -> E2  |}]
 ;;
 
@@ -516,15 +483,13 @@ let%expect_test "parse match without argument should fail" =
 
 let%expect_test "parse match with one rule" =
   pp pprint_expr parse_expr {| function | P1 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     function P1 -> E2  |}]
 ;;
 
 let%expect_test "parse match with two rules" =
   pp pprint_expr parse_expr {| function | P1 -> E2 | P2 -> E2 |};
-  [%expect
-    {|
+  [%expect {|
     function P1 -> E2 | P2 -> E2  |}]
 ;;
 
@@ -562,8 +527,7 @@ let%expect_test "parse expression inside unbalanced nested parentheses should fa
 
 let%expect_test "parse (a+b)*c with priorities" =
   pp pprint_expr parse_expr {| (a+b)*c |};
-  [%expect
-    {|
+  [%expect {|
     (* ((+ a) b)) c  |}]
 ;;
 
@@ -571,14 +535,12 @@ let%expect_test "parse (a+b)*c with priorities" =
 
 let%expect_test _ =
   pp pprint_expr parse_expr {| if a then (if f b then c) else g d |};
-  [%expect
-    {|
+  [%expect {|
     if a then if f b then c else g d |}]
 ;;
 
 let%expect_test _ =
   pp pprint_expr parse_expr {| 1 + if a then b else c + 2 |};
-  [%expect
-    {|
+  [%expect {|
     (+ 1) (if a then b else (+ c) 2) |}]
 ;;
