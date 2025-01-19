@@ -4,7 +4,6 @@
 
 open Ast
 open Stdlib
-open TypesPp
 
 module EvalError = struct
   type error =
@@ -167,8 +166,7 @@ end = struct
   let find_exn = Map.find_exn
 
   let pp_env fmt t =
-    Map.iteri t ~f:(fun ~key ~data ->
-      Format.fprintf fmt "NAME IS %s : %a VAL\n" key pp_value data)
+    Map.iteri t ~f:(fun ~key ~data -> Format.fprintf fmt "%s : %a\n" key pp_value data)
   ;;
 end
 
@@ -267,16 +265,18 @@ let rec match_pattern env =
      | Some (VFun (arg, args, body, f_env)) ->
        (* match arg of func and match hat, if correct, eval func into value *)
        let* f_env = match_pattern f_env (arg, v) in
-       let* value_after_pattern_applying =
+       let* value_after_applying =
          match args with
          | [] ->
            let env = ValueEnv.set_many env f_env in
            eval_expr env body
          | arg1 :: args -> return (VFun (arg1, args, body, f_env))
        in
+       pp_value Format.std_formatter value_after_applying;
        (* match pattern in case (p) and value *)
-       (match value_after_pattern_applying with
-        | VActPatCase (_, value) -> match_pattern env (p, value)
+       (match value_after_applying with
+        | VActPatCase (name_evaluated, value) when name_evaluated = name ->
+          match_pattern env (p, value)
         | _ -> fail `Type_mismatch)
      | _ -> fail `Type_mismatch)
   | _ -> fail `Match_failure
@@ -495,11 +495,6 @@ let run_interpreter type_env value_env state c =
   match infer_result with
   | Error (#Inferencer.error as type_err) -> new_state, Result.fail type_err
   | Ok (new_type_env, names_and_types) ->
-    let _ =
-      Base.Map.to_alist names_and_types
-      |> List.iter ~f:(fun (n, t) ->
-        Format.fprintf Format.std_formatter "%s : %a\n" n pp_typ t)
-    in
     (match eval value_env c with
      | Error (#error as eval_err) -> new_state, Result.fail eval_err
      | Ok (new_value_env, names_and_values) ->
