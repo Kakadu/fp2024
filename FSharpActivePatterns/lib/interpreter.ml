@@ -62,7 +62,6 @@ end = struct
 
   module Syntax = struct
     let ( let* ) = ( >>= )
-    let ( let+ ) = ( >>| )
   end
 
   let run c = c
@@ -118,7 +117,7 @@ end = struct
   and t = (string, value, Base.String.comparator_witness) Base.Map.t
 
   let rec pp_value fmt =
-    let open Format in
+    let open Stdlib.Format in
     function
     | VUnit -> fprintf fmt "() "
     | VInt i -> fprintf fmt "%d " i
@@ -166,7 +165,8 @@ end = struct
   let find_exn = Map.find_exn
 
   let pp_env fmt t =
-    Map.iteri t ~f:(fun ~key ~data -> Format.fprintf fmt "%s : %a\n" key pp_value data)
+    Map.iteri t ~f:(fun ~key ~data ->
+      Stdlib.Format.fprintf fmt "%s : %a\n" key pp_value data)
   ;;
 end
 

@@ -262,8 +262,10 @@ end = struct
       in
       let substitution_result = compose_all substitutions in
       substitution_result
-    | TActPat (name1, _), TActPat (name2, _) when name1 != name2 -> return empty
-    | TActPat (name1, t1), TActPat (name2, t2) when name1 == name2 -> unify t1 t2
+    | TActPat (name1, _), TActPat (name2, _) when not (phys_equal name1 name2) ->
+      return empty
+    | TActPat (name1, t1), TActPat (name2, t2) when not (phys_equal name1 name2) ->
+      unify t1 t2
     | Choice map, TActPat (name, t) | TActPat (name, t), Choice map ->
       unify (Choice map) (Choice (Map.singleton (module String) name t))
     | Choice map1, Choice map2 ->
@@ -308,7 +310,6 @@ module Scheme : sig
   val free_vars : t -> binder_set
 
   (* val pp : formatter -> t -> unit *)
-  val typ : t -> typ
 end = struct
   type t = scheme
 
@@ -334,10 +335,6 @@ end = struct
   ;;
 
   (* let pp = pp_scheme *)
-
-  let typ = function
-    | Scheme (_, t) -> t
-  ;;
 end
 
 module TypeEnv : sig
@@ -355,7 +352,6 @@ module TypeEnv : sig
   val remove : t -> string -> t
   val remove_many : t -> string list -> t
   val iteri : t -> f:(name:string -> typ:typ -> unit) -> unit
-  val find_typ_with_substring_and_choice_exn : t -> string -> typ
   (* val pp : formatter -> t -> unit *)
 end = struct
   open Base
@@ -411,18 +407,6 @@ end = struct
   let free_vars : t -> VarSet.t =
     Map.fold ~init:VarSet.empty ~f:(fun ~key:_ ~data:s acc ->
       VarSet.union acc (Scheme.free_vars s))
-  ;;
-
-  let find_typ_with_substring_and_choice_exn t name =
-    Map.fold t ~init:None ~f:(fun ~key ~data acc ->
-      match data with
-      | Scheme (_, _)
-        when String.is_substring key ~substring:name
-             && String.length key > String.length name -> Some data
-      | _ -> acc)
-    |> function
-    | Some (Scheme (_, typ)) -> typ
-    | _ -> failwith "NO TYPE"
   ;;
 end
 

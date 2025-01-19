@@ -28,7 +28,6 @@ let rec pp_typ fmt = function
      | t -> fprintf fmt "%a option" pp_typ t)
   | TActPat (name, t) -> fprintf fmt "%s (%a)" name pp_typ t
   | Choice map ->
-    let open Base in
     fprintf fmt "Choice<";
     (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt ", ") pp_typ fmt)
       (choice_to_list map);
