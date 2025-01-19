@@ -90,14 +90,6 @@ let run_single ic =
   | Input input -> if String.trim input = "" then Empty else Result (parse input)
 ;;
 
-let string_to_in_channel str =
-  let read_fd, write_fd = Unix.pipe () in
-  let out_channel = Unix.out_channel_of_descr write_fd in
-  output_string out_channel str;
-  close_out out_channel;
-  Unix.in_channel_of_descr read_fd
-;;
-
 let run_repl dump_parsetree input_file =
   let ic =
     match input_file with
