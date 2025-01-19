@@ -330,7 +330,7 @@ let pp_instruction ppf = function
   | FnmsubS (rd, rs1, rs2, rs3) ->
     pp_instruction_4f_reg_helper ppf "fnmsub.s" rd rs1 rs2 rs3
   | FnmaddS (rd, rs1, rs2, rs3) ->
-    pp_instruction_4f_reg_helper ppf "fmadd.s" rd rs1 rs2 rs3
+    pp_instruction_4f_reg_helper ppf "fnmadd.s" rd rs1 rs2 rs3
   | FaddS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fadd.s" rd rs1 rs2
   | FsubS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsub.s" rd rs1 rs2
   | FmulS (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmul.s" rd rs1 rs2
@@ -358,7 +358,7 @@ let pp_instruction ppf = function
   | FcvtSWu (rd, rs1) ->
     Format.fprintf ppf "fcvt.s.wu %a,%a" pp_float_register rd pp_register rs1
   | FmvWX (rd, rs1) ->
-    Format.fprintf ppf "fmv.v.x %a,%a" pp_float_register rd pp_register rs1
+    Format.fprintf ppf "fmv.w.x %a,%a" pp_float_register rd pp_register rs1
   | FmaddD (rd, rs1, rs2, rs3) ->
     pp_instruction_4f_reg_helper ppf "fmadd.d" rd rs1 rs2 rs3
   | FmsubD (rd, rs1, rs2, rs3) ->
@@ -366,7 +366,7 @@ let pp_instruction ppf = function
   | FnmsubD (rd, rs1, rs2, rs3) ->
     pp_instruction_4f_reg_helper ppf "fnmsub.d" rd rs1 rs2 rs3
   | FnmaddD (rd, rs1, rs2, rs3) ->
-    pp_instruction_4f_reg_helper ppf "fmadd.d" rd rs1 rs2 rs3
+    pp_instruction_4f_reg_helper ppf "fnmadd.d" rd rs1 rs2 rs3
   | FaddD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fadd.d" rd rs1 rs2
   | FsubD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fsub.d" rd rs1 rs2
   | FmulD (rd, rs1, rs2) -> pp_instruction_3f_reg_helper ppf "fmul.d" rd rs1 rs2
@@ -392,9 +392,9 @@ let pp_instruction ppf = function
   | FclassD (rd, rs1) ->
     Format.fprintf ppf "fclass.d %a,%a" pp_register rd pp_float_register rs1
   | FcvtDW (rd, rs1) ->
-    Format.fprintf ppf "fcvt.b.w %a,%a" pp_float_register rd pp_register rs1
+    Format.fprintf ppf "fcvt.d.w %a,%a" pp_float_register rd pp_register rs1
   | FcvtDWu (rd, rs1) ->
-    Format.fprintf ppf "fcvt.b.wu %a,%a" pp_float_register rd pp_register rs1
+    Format.fprintf ppf "fcvt.d.wu %a,%a" pp_float_register rd pp_register rs1
   | Flw (rd, rs1, imm) ->
     pp_instruction_2freg_1offset_helper ppf "flw" rd rs1 (Address12 imm)
   | Fsw (rd, rs1, imm) ->
