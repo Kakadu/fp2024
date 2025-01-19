@@ -259,9 +259,45 @@ type instruction =
   | Vse32v of vector_register * register * address12
   (** Store Vector to Memory. vse32.v vs, (rs1) *)
   | Vaddvv of vector_register * vector_register * vector_register
-  (** Vector Addition. Vaddvv.vv vd, vs1, vs2 *)
+  (** Vector Addition. Vadd.vv vd, vs1, vs2 *)
   | Vaddvx of vector_register * vector_register * register
   (** Vector Addition with Scalar. vadd.vx vd, vs1, rs2 *)
+  | Vsubvv of vector_register * vector_register * vector_register
+  (** Vector Subtraction. Vsub.vv vd, vs1, vs2 *)
+  | Vsubvx of vector_register * vector_register * register
+  (** Vector Subtraction with Scalar. vsub.vx vd, vs1, rs2 *)
+  | Vmulvv of vector_register * vector_register * vector_register
+  (** Vector Multiplication. Vmul.vv vd, vs1, vs2 *)
+  | Vmulvx of vector_register * vector_register * register
+  (** Vector Multiplication with Scalar. vmul.vx vd, vs1, rs2 *)
+  | Vdivvv of vector_register * vector_register * vector_register
+  (** Vector Division. Vdiv.vv vd, vs1, vs2 *)
+  | Vdivvx of vector_register * vector_register * register
+  (** Vector Division with Scalar. vdiv.vx vd, vs1, rs2 *)
+  | Vandvv of vector_register * vector_register * vector_register
+  (** Vector Logical AND. Vand.vv vd, vs1, vs2 *)
+  | Vandvx of vector_register * vector_register * register
+  (** Vector Logical AND with Scalar. vand.vx vd, vs1, rs2 *)
+  | Vorvv of vector_register * vector_register * vector_register
+  (** Vector Logical OR. Vor.vv vd, vs1, vs2 *)
+  | Vorvx of vector_register * vector_register * register
+  (** Vector Logical OR with Scalar. vor.vx vd, vs1, rs2 *)
+  | Vxorvv of vector_register * vector_register * vector_register
+  (** Vector Logical XOR. Vxor.vv vd, vs1, vs2 *)
+  | Vxorvx of vector_register * vector_register * register
+  (** Vector Logical XOR with Scalar. vxor.vx vd, vs1, rs2 *)
+  | Vminvv of vector_register * vector_register * vector_register
+  (** Vector Minimum. Vmin.vv vd, vs1, vs2 *)
+  | Vminvx of vector_register * vector_register * register
+  (** Vector Minimum with Scalar. vmin.vx vd, vs1, rs2 *)
+  | Vmaxvv of vector_register * vector_register * vector_register
+  (** Vector Maximum. Vmax.vv vd, vs1, vs2 *)
+  | Vmaxvx of vector_register * vector_register * register
+  (** Vector Maximum with Scalar. vmax.vx vd, vs1, rs2 *)
+  | Veqvv of vector_register * vector_register * vector_register
+  (** Vector Equals. Veq.vv vd, vs1, vs2 *)
+  | Veqvx of vector_register * vector_register * register
+  (** Vector Equals with Scalar. veq.vx vd, vs1, rs2 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
