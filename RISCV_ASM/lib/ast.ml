@@ -327,8 +327,8 @@ type directive =
   | Size of address12 * (string[@gen Generators.gen_my_string]) (** .size *)
   | Section of
       (string[@gen Generators.gen_my_string])
-      * (string[@gen Generators.gen_my_string])
-      * type_dir
+      * (string[@gen Generators.gen_my_string]) option
+      * type_dir option
       * int option (** .section name *)
   | StringDir of (string[@gen Generators.gen_my_string]) (** .string "str" *)
   | CfiDefCfaOffset of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])

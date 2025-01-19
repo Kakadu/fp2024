@@ -340,16 +340,16 @@ let pp_directive ppf = function
   | CfiEndproc -> Format.fprintf ppf ".cfi_endproc"
   | Size (imm, str) -> Format.fprintf ppf ".size %a,%s" pp_address (Address12 imm) str
   | Section (str1, str2, str_type, none_or_int) ->
-    Format.fprintf
-      ppf
-      ".section %s,%S,@%a%s"
-      str1
-      str2
-      pp_type_dir
-      str_type
-      (match none_or_int with
-       | Some imm -> Format.sprintf ",%d" imm
-       | None -> "")
+    Format.fprintf ppf ".section %S" str1;
+    (match str2 with
+     | Some s -> Format.fprintf ppf ",%S" s
+     | None -> ());
+    (match str_type with
+     | Some t -> Format.fprintf ppf ",@%a" pp_type_dir t
+     | None -> ());
+    (match none_or_int with
+     | Some i -> Format.fprintf ppf ",%d" i
+     | None -> ())
   | StringDir str -> Format.fprintf ppf ".string %S" (String.escaped str)
   | CfiDefCfaOffset imm -> Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
   | CfiOffset (imm1, imm2) -> Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
