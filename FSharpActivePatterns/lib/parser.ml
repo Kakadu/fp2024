@@ -515,7 +515,7 @@ let p_let p_expr =
 ;;
 
 let p_apply p_expr =
-  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
+  chainl1 ((p_parens p_expr) <|> (p_expr <* peek_sep1)) (return (fun expr1 expr2 -> Apply (expr1, expr2))) 
 ;;
 
 let p_lambda p_expr =

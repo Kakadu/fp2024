@@ -22,15 +22,19 @@ let%expect_test "function apply of letIn" =
   print_p_res std_formatter (parse input);
   [%expect
     {|
-    | Function Call:
+    | Apply:
       FUNCTION
     --| Variable(f)
       ARGS
-    -- | LetIn  x =
-        ARGS
-        BODY
-    ----| Const(Bool: false)
-        INNER EXPRESSION
+    --| LetIn=
+        Let_binds
+    ----| Let_bind:
+            NAME:
+    --------| PVar(x)
+            ARGS:
+            BODY:
+    ------| Const(Bool: false)
+        INNER_EXPRESSION
     ----| Binary expr(
     ----| Logical Or
     ------| Const(Bool: true)
@@ -62,12 +66,12 @@ let%expect_test "sum of function applying" =
     {|
     | Binary expr(
     | Binary Add
-    --| Function Call:
+    --| Apply:
         FUNCTION
     ----| Variable(f)
         ARGS
     ----| Const(Int: 4)
-    --| Function Call:
+    --| Apply:
         FUNCTION
     ----| Variable(g)
         ARGS
@@ -79,11 +83,15 @@ let%expect_test "order of logical expressions and function applying" =
   print_p_res std_formatter (parse input);
   [%expect
     {|
-     | LetIn  x =
-      ARGS
-      BODY
-    --| Const(Bool: true)
-      INNER EXPRESSION
+    | LetIn=
+      Let_binds
+    --| Let_bind:
+          NAME:
+    ------| PVar(x)
+          ARGS:
+          BODY:
+    ----| Const(Bool: true)
+      INNER_EXPRESSION
     --| Binary expr(
     --| Logical Or
     ----| Unary expr(
@@ -92,7 +100,7 @@ let%expect_test "order of logical expressions and function applying" =
     ----| Binary expr(
     ----| Logical And
     ------| Const(Bool: true)
-    ------| Function Call:
+    ------| Apply:
             FUNCTION
     --------| Variable(f)
             ARGS
@@ -271,12 +279,12 @@ let%expect_test "parse if with comparison" =
     ------| Const(Int: 2)
     ----| Const(Bool: false)
       THEN BRANCH
-    ----| Binary expr(
-    ----| Binary Add
-    ------| Const(Int: 5)
-    ------| Const(Int: 7)
+    --| Binary expr(
+    --| Binary Add
+    ----| Const(Int: 5)
+    ----| Const(Int: 7)
       ELSE BRANCH
-    ----| Const(Int: 12) |}]
+    --| Const(Int: 12) |}]
 ;;
 
 let%expect_test "sum with if" =
@@ -294,9 +302,9 @@ let%expect_test "sum with if" =
     ------| Const(Int: 3)
     ------| Const(Int: 2)
         THEN BRANCH
-    ------| Const(Int: 2)
+    ----| Const(Int: 2)
         ELSE BRANCH
-    ------| Const(Int: 1) |}]
+    ----| Const(Int: 1) |}]
 ;;
 
 let%expect_test "inner expressions with LetIn and If" =
@@ -308,33 +316,41 @@ let%expect_test "inner expressions with LetIn and If" =
     {|
     | If Then Else(
       CONDITION
-    -- | LetIn  x =
-        ARGS
-        BODY
-    ----| Const(Bool: true)
-        INNER EXPRESSION
-    ---- | LetIn  y =
-          ARGS
-          BODY
-    ------| Const(Bool: false)
-          INNER EXPRESSION
+    --| LetIn=
+        Let_binds
+    ----| Let_bind:
+            NAME:
+    --------| PVar(x)
+            ARGS:
+            BODY:
+    ------| Const(Bool: true)
+        INNER_EXPRESSION
+    ----| LetIn=
+          Let_binds
+    ------| Let_bind:
+              NAME:
+    ----------| PVar(y)
+              ARGS:
+              BODY:
+    --------| Const(Bool: false)
+          INNER_EXPRESSION
     ------| Binary expr(
     ------| Logical Or
     --------| Variable(x)
     --------| Variable(y)
       THEN BRANCH
-    ----| Const(Int: 3)
+    --| Const(Int: 3)
       ELSE BRANCH
-    ----| If Then Else(
-          CONDITION
-    ------| Binary expr(
-    ------| Binary Greater
-    --------| Const(Int: 5)
-    --------| Const(Int: 3)
-          THEN BRANCH
-    --------| Const(Int: 2)
-          ELSE BRANCH
-    --------| Const(Int: 1) |}]
+    --| If Then Else(
+        CONDITION
+    ----| Binary expr(
+    ----| Binary Greater
+    ------| Const(Int: 5)
+    ------| Const(Int: 3)
+        THEN BRANCH
+    ----| Const(Int: 2)
+        ELSE BRANCH
+    ----| Const(Int: 1) |}]
 ;;
 
 let%expect_test "factorial" =
@@ -342,20 +358,24 @@ let%expect_test "factorial" =
   print_p_res std_formatter (parse input);
   [%expect
     {|
-     | LetIn  factorial =
-      ARGS
-    --| Variable(n)
-      BODY
-    --| If Then Else(
-        CONDITION
-    ----| Binary expr(
-    ----| Binary Equal
-    ------| Variable(n)
-    ------| Const(Int: 0)
-        THEN BRANCH
+    | LetIn=
+      Let_binds
+    --| Let_bind:
+          NAME:
+    ------| PVar(factorial)
+          ARGS:
+    ----| PVar(n)
+          BODY:
+    ----| If Then Else(
+          CONDITION
+    ------| Binary expr(
+    ------| Binary Equal
+    --------| Variable(n)
+    --------| Const(Int: 0)
+          THEN BRANCH
     ------| Const(Int: 1)
-        ELSE BRANCH
-    ------| Function Call:
+          ELSE BRANCH
+    ------| Apply:
             FUNCTION
     --------| Variable(factorial)
             ARGS
@@ -363,8 +383,8 @@ let%expect_test "factorial" =
     --------| Binary Subtract
     ----------| Variable(n)
     ----------| Const(Int: 1)
-      INNER EXPRESSION
-    --| Function Call:
+      INNER_EXPRESSION
+    --| Apply:
         FUNCTION
     ----| Variable(factorial)
         ARGS
@@ -374,7 +394,7 @@ let%expect_test "factorial" =
 let%expect_test "fail in ITE with incorrect else expression" =
   let input = "if true then 1 else 2c" in
   print_p_res std_formatter (parse input);
-  [%expect {| Error occured |}]
+  [%expect {| : end_of_input |}]
 ;;
 
 let%expect_test "call if with parentheses" =
@@ -382,15 +402,15 @@ let%expect_test "call if with parentheses" =
   print_p_res std_formatter (parse input);
   [%expect
     {|
-    | Function Call:
+    | Apply:
       FUNCTION
     --| If Then Else(
         CONDITION
     ----| Const(Bool: false)
         THEN BRANCH
-    ------| Variable(a)
+    ----| Variable(a)
         ELSE BRANCH
-    ------| Variable(b)
+    ----| Variable(b)
       ARGS
     --| Variable(c) |}]
 ;;

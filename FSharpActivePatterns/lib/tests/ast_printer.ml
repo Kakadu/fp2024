@@ -35,13 +35,18 @@ let%expect_test "print Ast factorial" =
   List.iter (print_construction std_formatter) program;
   [%expect
     {|
-     | Let  a =
+     | Let:
+       Let_binds
+    --| Let_bind:
+          NAME:
+    ------| PVar(a)
+          ARGS:
+          BODY:
+    ----| Const(Int: 10)
+    | Lambda:
       ARGS
-      BODY
-    --| Const(Int: 10)
-    | Func:
-      ARGS
-    ----| Variable(n)
+    ----| PConst:
+    ------Int: 4
       BODY
     ----| If Then Else(
           CONDITION
@@ -56,24 +61,25 @@ let%expect_test "print Ast factorial" =
     ----------| Variable(n)
     ----------| Const(Int: 1)
           THEN BRANCH
-    --------| Const(Int: 1)
+    ------| Const(Int: 1)
           ELSE BRANCH
-    --------| Binary expr(
-    --------| Binary Multiply
-    ----------| Variable(n)
-    ----------| Function Call:
-                FUNCTION
-    ------------| Variable(factorial)
-                ARGS
-    ------------| Binary expr(
-    ------------| Binary Subtract
-    --------------| Variable(n)
-    --------------| Const(Int: 1)
-    | Function Call:
+    ------| Binary expr(
+    ------| Binary Multiply
+    --------| Variable(n)
+    --------| Apply:
+              FUNCTION
+    ----------| Variable(factorial)
+              ARGS
+    ----------| Binary expr(
+    ----------| Binary Subtract
+    ------------| Variable(n)
+    ------------| Const(Int: 1)
+    | Apply:
       FUNCTION
-    --| Func:
+    --| Lambda:
         ARGS
-    ------| Variable(n)
+    ------| PConst:
+    --------Int: 4
         BODY
     ------| If Then Else(
             CONDITION
@@ -88,19 +94,19 @@ let%expect_test "print Ast factorial" =
     ------------| Variable(n)
     ------------| Const(Int: 1)
             THEN BRANCH
-    ----------| Const(Int: 1)
+    --------| Const(Int: 1)
             ELSE BRANCH
-    ----------| Binary expr(
-    ----------| Binary Multiply
-    ------------| Variable(n)
-    ------------| Function Call:
-                  FUNCTION
-    --------------| Variable(factorial)
-                  ARGS
-    --------------| Binary expr(
-    --------------| Binary Subtract
-    ----------------| Variable(n)
-    ----------------| Const(Int: 1)
+    --------| Binary expr(
+    --------| Binary Multiply
+    ----------| Variable(n)
+    ----------| Apply:
+                FUNCTION
+    ------------| Variable(factorial)
+                ARGS
+    ------------| Binary expr(
+    ------------| Binary Subtract
+    --------------| Variable(n)
+    --------------| Const(Int: 1)
       ARGS
     --| Variable(a) |}]
 ;;
@@ -114,9 +120,10 @@ let%expect_test "print Ast double func" =
   print_construction std_formatter @@ Expr double;
   [%expect
     {|
-    | Func:
+    | Lambda:
       ARGS
-    ----| Variable(n)
+    ----| PConst:
+    ------Int: 4
       BODY
     ----| Binary expr(
     ----| Binary Multiply
@@ -205,11 +212,15 @@ let%expect_test "print Ast of LetIn" =
   print_construction std_formatter sum;
   [%expect
     {|
-     | LetIn  x =
-      ARGS
-      BODY
-    --| Const(Int: 5)
-      INNER EXPRESSION
+    | LetIn=
+      Let_binds
+    --| Let_bind:
+          NAME:
+    ------| PVar(x)
+          ARGS:
+          BODY:
+    ----| Const(Int: 5)
+      INNER_EXPRESSION
     --| Binary expr(
     --| Binary Add
     ----| Variable(x)
@@ -231,30 +242,27 @@ let%expect_test "print Ast of match_expr" =
   [%expect
     {|
     | Match:
-    --| Variable(x)
+    --| Value:
+    ----| Variable(x)
+    --| Pattern:
+    ----| PConst:
+    ------Int: 4
+    --| Case expr:
+    ----| Const(Int: 4)
     --| Pattern:
     ----| PConst:
     ------Int: 5
-    --| Inner expr:
+    --| Case expr:
     ----| Const(Int: 4)
     --| Pattern:
     ----| PConst:
     ------String: " bar foo"
-    --| Inner expr:
+    --| Case expr:
     ----| Const(Int: 4)
     --| Pattern:
-    ----| Variant:
-    ------- Green
-    ------- Blue
-    ------- Red
-    --| Inner expr:
-    ----| Const(Int: 4)
-    --| Pattern:
-    ----| PCons:
-    ------Head:
-    --------| Wild
-    ------Tail:
-    --------| PVar(xs)
-    --| Inner expr:
+    ----| PList:
+    ------| Wild
+    ------| PVar(xs)
+    --| Case expr:
     ----| Const(Int: 4) |}]
 ;;
