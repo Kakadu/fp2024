@@ -26,3 +26,7 @@
   manytests/typed/010sukharev.ml
   manytests/typed/015tuples.ml
   manytests/typed/016lists.ml))
+
+(cram
+ (applies_to activePatterns)
+ (deps ../bin/REPL.exe activepatterns/choices.fs activepatterns/simple.fs))
