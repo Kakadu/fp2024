@@ -272,7 +272,6 @@ let rec match_pattern env =
            eval_expr env body
          | arg1 :: args -> return (VFun (arg1, args, body, f_env))
        in
-       (*pp_value Format.std_formatter value_after_applying;*)
        (* match pattern in case (p) and value *)
        (match value_after_applying with
         | VActPatCase (name_evaluated, value) when name_evaluated = name ->
@@ -431,10 +430,8 @@ let eval_statement env =
     in
     return (env, bind_names_with_values)
   | ActPat (fst, rest, args, expr) ->
-    (* extract string names of variants from idents *)
     let name_list = fst :: rest in
     let ident_name_list = List.map name_list ~f:(fun (Ident s) -> s) in
-    (* make function var with arguments and expr, match it to names of variants *)
     let* value =
       match args with
       | arg :: args -> return (VFun (arg, args, expr, env))
@@ -457,10 +454,10 @@ let eval_statement env =
             | other -> other))
         ident_name_list
     in
-    let dummy_list = [ pat_name ] in
+    let pat_name_in_list = [ pat_name ] in
     let patterns_names_with_values =
       List.fold
-        dummy_list
+        pat_name_in_list
         ~init:(Map.empty (module String))
         ~f:(fun map name ->
           let value = ValueEnv.find_exn env name in

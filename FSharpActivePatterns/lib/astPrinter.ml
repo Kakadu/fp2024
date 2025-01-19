@@ -214,14 +214,6 @@ let print_statement indent fmt = function
     print_expr (indent + 2) fmt expr
 ;;
 
-(* | ActivePattern (patterns, expr) ->
-   fprintf fmt "%s| ActivePattern:\n" (String.make indent '-');
-   List.iter
-   (fun (Ident (param, _)) ->
-   fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') param)
-   patterns;
-   print_expr (indent + 2) fmt expr *)
-
 let print_construction fmt = function
   | Expr e -> print_expr 0 fmt e
   | Statement s -> print_statement 0 fmt s

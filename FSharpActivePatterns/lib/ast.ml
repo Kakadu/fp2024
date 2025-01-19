@@ -262,12 +262,6 @@ type statement =
       * expr (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving show { with_path = false }, qcheck]
 
-(*let gen_statement =
-  QCheck.Gen.(
-  let* n = small_nat in
-  gen_statement_sized n)
-  ;;*)
-
 type construction =
   | Expr of expr (** expression *)
   | Statement of statement (** statement *)

@@ -313,15 +313,6 @@ module Scheme : sig
 end = struct
   type t = scheme
 
-  (* occurs check for both type vars set and typ in sheme *)
-  (* let occurs_in value = function
-     | S (vars, t) -> (not (VarSet.mem value vars)) && Type.occurs_in value t
-     ;; *)
-
-  (* let pp fmt = function
-     | Scheme (binder_s, t) -> fprintf fmt "%a %a" VarSet.pp binder_s pp_typ t
-     ;; *)
-
   (* take all vars that are not bound in typ *)
   let free_vars = function
     | Scheme (vars, t) -> VarSet.diff (Type.free_vars t) vars
@@ -392,10 +383,6 @@ end = struct
     match find_exn env key with
     | Scheme (_, typ) -> typ
   ;;
-
-  (* let pp fmt t =
-     Map.iteri t ~f:(fun ~key ~data -> fprintf fmt "%s : %a" key Scheme.pp data)
-     ;; *)
 
   let iteri env ~f =
     Map.iteri env ~f:(fun ~key ~data ->

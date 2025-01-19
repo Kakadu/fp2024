@@ -55,7 +55,6 @@ end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
-(* binder_set here -- list of all type vars in context (?) *)
 type scheme = Scheme of binder_set * typ
 
 let int_typ = Primitive "int"
