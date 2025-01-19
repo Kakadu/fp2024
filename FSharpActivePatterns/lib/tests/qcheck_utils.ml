@@ -154,7 +154,6 @@ let shrink_statement =
     <+> (QCheck.Shrink.list ~shrink:shrink_pattern args
          >|= fun args' -> ActPat (name, names, args', expr))
     <+> (QCheck.Shrink.list names >|= fun names' -> ActPat (name, names', args, expr))
-
 ;;
 
 let shrink_construction =

@@ -144,23 +144,17 @@ let pp_statement fmt = function
       pp_let_bind
       fmt
       (let_bind :: let_bind_list)
-  | ActPat (Ident(name), names, args, expr) ->
+  | ActPat (Ident name, names, args, expr) ->
     fprintf fmt "let (|%s|" name;
     pp_print_list
-    ~pp_sep:(fun fmt () -> fprintf fmt "|")
-    (fun fmt (Ident name) -> fprintf fmt "%s" name)
-    fmt
-    names;
-    fprintf fmt "|) ";
-    pp_print_list
-      ~pp_sep:(fun fmt () -> fprintf fmt " ")
-      pp_pattern
+      ~pp_sep:(fun fmt () -> fprintf fmt "|")
+      (fun fmt (Ident name) -> fprintf fmt "%s" name)
       fmt
-      args;
+      names;
+    fprintf fmt "|) ";
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_pattern fmt args;
     fprintf fmt " =\n";
-    pp_expr fmt expr;
-
-
+    pp_expr fmt expr
 ;;
 
 let pp_construction fmt = function
