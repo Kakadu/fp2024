@@ -29,15 +29,15 @@ let input_upto_sep sep ic =
     | Some line ->
       let line = String.trim line in
       let len = String.length line in
-      (match String.ends_with ~suffix:sep line with
-       | true ->
-         Buffer.add_substring b line 0 (len - sep_len);
-         Buffer.add_string b "\n";
-         Input (Buffer.contents b)
-       | false ->
-         Buffer.add_string b line;
-         Buffer.add_string b "\n";
-         fill_buffer b)
+      if String.ends_with ~suffix:sep line
+      then (
+        Buffer.add_substring b line 0 (len - sep_len);
+        Buffer.add_string b "\n";
+        Input (Buffer.contents b))
+      else (
+        Buffer.add_string b line;
+        Buffer.add_string b "\n";
+        fill_buffer b)
   in
   let buffer = Buffer.create 1024 in
   fill_buffer buffer
@@ -57,14 +57,14 @@ let input_with_indents ic =
         || is_empty
         || String.starts_with ~prefix:"and" (String.trim line)
       in
-      (match is_continue with
-       | true ->
-         Buffer.add_string b (line ^ "\n");
-         fill_buffer b
-       | false ->
-         seek_in ic start_pos;
-         Buffer.add_string b "\n";
-         Input (Buffer.contents b))
+      if is_continue
+      then (
+        Buffer.add_string b (line ^ "\n");
+        fill_buffer b)
+      else (
+        seek_in ic start_pos;
+        Buffer.add_string b "\n";
+        Input (Buffer.contents b))
   in
   let buffer = Buffer.create 1024 in
   let first_line = take_line () in
@@ -115,43 +115,43 @@ let run_repl dump_parsetree input_file input_string =
       run_repl_helper run type_env value_env state values_acc
     | End -> type_env, value_env, values_acc
     | Result (Ok ast) ->
-      (match dump_parsetree with
-       | true ->
-         print_construction std_formatter ast;
-         run_repl_helper run type_env value_env state values_acc
-       | false ->
-         let result = run_interpreter type_env value_env state ast in
-         (match result with
-          | new_state, Error err ->
-            fprintf err_formatter "Error occured: %a\n" pp_global_error err;
-            print_flush ();
-            run_repl_helper run type_env value_env new_state values_acc
-          | new_state, Ok (new_type_env, new_value_env, evaled_names) ->
-            (match ic with
-             | None ->
-               Base.Map.iteri
-                 ~f:(fun ~key ~data ->
-                   let t, v = data in
-                   fprintf
-                     std_formatter
-                     "val %s : %a = %a\n"
-                     key
-                     pp_typ
-                     t
-                     ValueEnv.pp_value
-                     v)
-                 evaled_names;
-               print_flush ();
-               run_repl_helper run new_type_env new_value_env new_state values_acc
-             | Some _ ->
-               let overwrite map1 map2 =
-                 Base.Map.fold
-                   ~init:map1
-                   ~f:(fun ~key ~data map1 -> Base.Map.set map1 ~key ~data)
-                   map2
-               in
-               let values_acc = overwrite values_acc evaled_names in
-               run_repl_helper run new_type_env new_value_env new_state values_acc)))
+      if dump_parsetree
+      then (
+        print_construction std_formatter ast;
+        run_repl_helper run type_env value_env state values_acc)
+      else (
+        let result = run_interpreter type_env value_env state ast in
+        match result with
+        | new_state, Error err ->
+          fprintf err_formatter "Error occured: %a\n" pp_global_error err;
+          print_flush ();
+          run_repl_helper run type_env value_env new_state values_acc
+        | new_state, Ok (new_type_env, new_value_env, evaled_names) ->
+          (match ic with
+           | None ->
+             Base.Map.iteri
+               ~f:(fun ~key ~data ->
+                 let t, v = data in
+                 fprintf
+                   std_formatter
+                   "val %s : %a = %a\n"
+                   key
+                   pp_typ
+                   t
+                   ValueEnv.pp_value
+                   v)
+               evaled_names;
+             print_flush ();
+             run_repl_helper run new_type_env new_value_env new_state values_acc
+           | Some _ ->
+             let overwrite map1 map2 =
+               Base.Map.fold
+                 ~init:map1
+                 ~f:(fun ~key ~data map1 -> Base.Map.set map1 ~key ~data)
+                 map2
+             in
+             let values_acc = overwrite values_acc evaled_names in
+             run_repl_helper run new_type_env new_value_env new_state values_acc))
   in
   let type_env = TypeEnv.default in
   let value_env = ValueEnv.default in
