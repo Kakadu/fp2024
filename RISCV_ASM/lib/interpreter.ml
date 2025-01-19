@@ -312,7 +312,7 @@ let set_register_value state reg value =
 
 let get_vector_register_value state vreg =
   StringMap.find_opt (show_vector_register vreg) state.vector_registers
-  |> Option.value ~default:(Array.make 4 0L)
+  |> Option.value ~default:(Array.make state.vector_length 0L)
 ;;
 
 let set_vector_register_value state vreg value =
