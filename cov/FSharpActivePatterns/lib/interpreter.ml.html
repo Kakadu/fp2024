@@ -1448,9 +1448,9 @@ and eval_expr env = function
     <span data-count="6">r</span>eturn (VActPatCase (name, value))
 
 and eval_expr_fold env l =
-  <span data-count="30">B</span>ase.List.fold
+  <span data-count="30">B</span>ase.List.fold_right
     ~init:(retur<span data-count="30">n</span> [])
-    ~f:(fun acc e -&gt;
+    ~f:(fun e acc -&gt;
       <span data-count="9">l</span>et* acc = acc in
       <span data-count="9">l</span>et* e_value = eval_exp<span data-count="9">r</span> env e in
       <span data-count="9">r</span>eturn (e_value :: acc))
