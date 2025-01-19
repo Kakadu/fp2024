@@ -481,8 +481,8 @@ module Monad = struct
   let use_chanel =
     read_is_using_chanel
     >>= function
-    | Some { receiving_goroutine; value } ->
-      write_is_using_chanel None *> return (receiving_goroutine, value)
+    | Some { sending_goroutine; receiving_goroutine; value } ->
+      write_is_using_chanel None *> return (receiving_goroutine, sending_goroutine, value)
     | None ->
       fail
         (Runtime_error

@@ -31,10 +31,6 @@ let rpf lst = List.map (fun (y, _) -> y) lst
 (** Executes next statement, returns [Some ()] if there was statement to execute,
     and [None] if the end of current execution block was reached *)
 let exec_stmt eval_stmt =
-  has_finished
-  >>= function
-  | Finished -> return None
-  | Running ->
     pop_next_statement
     >>= (function
      | Some st -> eval_stmt st *> return (Some ())
@@ -57,15 +53,15 @@ let rec exec eval_stmt =
   >>= function
   | None -> return ()
   | Some () ->
-    read_returns
+    is_using_chanel
     >>= (function
-     | Some _ -> return ()
+     | Some _ -> pop_next_statement  *> return ()
      | None ->
-       read_panics
+       read_returns
        >>= (function
         | Some _ -> return ()
         | None ->
-          is_using_chanel
+          read_panics
           >>= (function
            | Some _ -> return ()
            | None -> exec eval_stmt)))
@@ -103,7 +99,7 @@ let run_ready_goroutines eval_stmt =
          >>= (function
           | { go_id = 1 } ->
             (* main goroutine finished working and doesn't wait for others to finish *)
-            finish
+            return ()
           | _ ->
             (* some secondary goroutine finished working, don't stop until main finished *)
             delete_running_goroutine *> runner ()))
@@ -120,8 +116,8 @@ let attempt_chan_interaction id =
   | Some (), Some () ->
     let* sending_goroutine, value = pop_from_send_queue id in
     let* receiving_goroutine = pop_from_receive_queue id in
-    add_ready sending_goroutine
-    *> start_using_chanel sending_goroutine receiving_goroutine value
+
+      start_using_chanel sending_goroutine receiving_goroutine value
     (* receiving goroutine will run after return from a function *)
   | _ -> return ()
 ;;
@@ -613,8 +609,9 @@ and eval_chan_receive expr =
                         receiving_goroutine.go_id
                         chan_id)))))
     *>
-    let* receiving_goroutine, value = use_chanel in
-    run_goroutine receiving_goroutine *> return value
+    let* receiving_goroutine, sending_goroutine, value = use_chanel in
+    add_ready sending_goroutine *> 
+    run_goroutine receiving_goroutine  *> return value
   | _ -> fail (Runtime_error (TypeCheckFailed "chan receive"))
 
 and eval_go (func, arg_exprs) =

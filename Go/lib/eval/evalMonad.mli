@@ -252,7 +252,7 @@ module Monad : sig
   val start_using_chanel : goroutine -> goroutine -> value -> unit t
 
   (** Exits chanel using state, returns receiving goroutine and sent value. Fails if not in chanel using state *)
-  val use_chanel : (goroutine * value) t
+  val use_chanel : (goroutine * goroutine * value) t
 
   (** Returns state of using a chanel (sender, receiver and value) if in chanel using state, [None] otherwise *)
   val is_using_chanel : chanel_using_state option t
