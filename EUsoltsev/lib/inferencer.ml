@@ -120,8 +120,8 @@ end = struct
     return (Map.singleton (module Int) key value)
   ;;
 
-  let find subst key = Map.find subst key
-  let remove subst key = Map.remove subst key
+  let find = Map.find
+  let remove = Map.remove
 
   let apply subst =
     let rec helper = function
@@ -206,7 +206,7 @@ module TypeEnv = struct
   type t = (ident, Scheme.t, String.comparator_witness) Map.t
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-  let remove env key = Map.remove env key
+  let remove = Map.remove
   let empty = Map.empty (module String)
 
   let free_vars : t -> IntSet.t =
