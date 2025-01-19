@@ -1,7 +1,7 @@
 (library
  (name tests)
  (libraries ocaml_printf_lib)
- (modules Test_parser Test_pprinter Test_inferencer)
+ (modules Test_parser Test_pprinter Test_inferencer Test_interpreter)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
@@ -9,7 +9,7 @@
   (backend bisect_ppx)))
 
 (cram
- (applies_to run_REPL)
+ (applies_to REPL infer eval)
  (deps
   ../repl/REPL.exe
   factorial.txt
@@ -17,7 +17,12 @@
   manytests/do_not_type/002if.ml
   manytests/do_not_type/003occurs.ml
   manytests/do_not_type/004let_poly.ml
+  manytests/do_not_type/005.ml
   manytests/do_not_type/015tuples.ml
+  manytests/do_not_type/016tuples_mismatch.ml
+  manytests/do_not_type/097fun_vs_list.ml
+  manytests/do_not_type/097fun_vs_unit.ml
+  manytests/do_not_type/098rec_int.ml
   manytests/do_not_type/099.ml
   manytests/typed/001fac.ml
   manytests/typed/002fac.ml
@@ -42,5 +47,5 @@
   (backend bisect_ppx)))
 
 (cram
- (applies_to run_qchecker)
+ (applies_to qchecker)
  (deps run_qchecker.exe))

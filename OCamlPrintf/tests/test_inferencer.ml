@@ -9,14 +9,14 @@ open Ocaml_printf_lib.Inferencer
 let run str =
   match parse str with
   | Ok ast ->
-    (match run_inferencer ast empty_env with
-     | Ok out_list ->
+    (match run_inferencer empty_env ast with
+     | Ok (_, out_list) ->
        List.iter
          (function
            | Some id, type' -> Format.printf "val %s : %a\n" id pp_core_type type'
            | None, type' -> Format.printf "- : %a\n" pp_core_type type')
          out_list
-     | Error e -> Format.printf "Infer error: %a\n" pp_error e)
+     | Error e -> Format.printf "Inferencer error: %a\n" pp_error e)
   | Error _ -> Format.printf "Parsing error\n"
 ;;
 
@@ -34,7 +34,7 @@ let%expect_test "type check undefined variable" =
   let a = b
   |};
   [%expect {|
-  Infer error: Undefined variable 'b'
+  Inferencer error: Undefined variable 'b'
   |}]
 ;;
 
@@ -135,7 +135,7 @@ let%expect_test "type check error in recursive let expression" =
   |};
   [%expect
     {|
-  Infer error: This kind of expression is not allowed as right-hand side of `let rec'
+  Inferencer error: This kind of expression is not allowed as right-hand side of `let rec'
   |}]
 ;;
 
@@ -183,8 +183,9 @@ let%expect_test "type check pattern bound the variable multiple times" =
   | x, x -> true
   | _ -> false
   |};
-  [%expect {|
-  Infer error: Variable 'x' is bound several times in the matching
+  [%expect
+    {|
+  Inferencer error: Variable 'x' is bound several times in the matching
   |}]
 ;;
 
@@ -202,7 +203,7 @@ let%expect_test "type check invalid expression list" =
   let f a = [true; a; 2]
   |};
   [%expect {|
-  Infer error: Unification failed on bool and int
+  Inferencer error: Unification failed on bool and int
   |}]
 ;;
 

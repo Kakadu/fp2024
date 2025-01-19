@@ -199,7 +199,7 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
     (match exp2 with
      | Exp_apply (Exp_apply (Exp_ident opr1, exp1), opn) when is_operator opr1 ->
        (match get_priority exp_opr with
-        | 4 | 5 -> pp (exp_opr <= opr1) opr1 exp1
+        | 3 | 5 | 6 -> pp (exp_opr <= opr1) opr1 exp1
         | _ -> pp (exp_opr < opr1) opr1 exp1);
        fprintf ppf " %s@ " exp_opr;
        (match opn with
@@ -213,7 +213,7 @@ and pp_exp_apply ?(need_parens = false) ppf (exp1, exp2) =
         | _ -> fprintf ppf "%a" (pp_expression_deep false true) opn);
        fprintf ppf " %s@ " exp_opr;
        (match get_priority exp_opr with
-        | 1 | 2 | 3 -> pp (exp_opr <= opr2) opr2 exp2
+        | 1 | 2 | 4 -> pp (exp_opr <= opr2) opr2 exp2
         | _ -> pp (exp_opr < opr2) opr2 exp2)
      | Exp_apply (opn1, opn2) ->
        fprintf
