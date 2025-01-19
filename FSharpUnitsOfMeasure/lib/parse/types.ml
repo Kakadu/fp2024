@@ -5,7 +5,6 @@
 (** This file contains parsers for part of F# 4.1 grammar, taken from
     https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 292 *)
 
-open Base
 open Angstrom
 open Ast
 open Common
@@ -39,5 +38,5 @@ let parse_type =
     let core_type = parse_type_paren parse_type <|> parse_type_ident_builtin in
     let core_type = parse_type_tuple core_type <|> core_type in
     let core_type = parse_type_func core_type <|> core_type in
-    skip_ws *> core_type <* skip_ws)
+    skip_ws *> core_type <* skip_ws_no_nl)
 ;;

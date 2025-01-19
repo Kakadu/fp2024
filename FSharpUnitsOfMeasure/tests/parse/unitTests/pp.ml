@@ -9,3 +9,9 @@ let pp printer parser str =
   | Ok res -> print_endline (printer res)
   | Error res -> print_endline res
 ;;
+
+let pp2 printer parser str =
+  match Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
+  | Ok res -> printer Format.std_formatter res
+  | Error res -> print_endline res
+;;

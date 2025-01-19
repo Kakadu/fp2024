@@ -53,7 +53,7 @@ let pm =
     let pm = pm_pow_seq (pm_pow (pm_atom pm)) in
     (* let pm = pm_diml <|> pm in *)
     let pm = chainl pm (pm_prod <|> pm_div) <|> pm in
-    skip_ws *> pm <* skip_ws)
+    skip_ws *> pm <* skip_ws_no_nl)
 ;;
 
 let puom =

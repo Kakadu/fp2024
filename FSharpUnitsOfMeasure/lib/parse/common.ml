@@ -85,6 +85,8 @@ let parse_ident_or_op =
 ;;
 
 let parse_char = char '\'' *> any_char <* char '\''
+
+(* Can't parse strings with '\"' combination*)
 let parse_string = char '"' *> take_till (Char.equal '"') <* char '"'
 let parse_bool = string "true" <|> string "false" >>| Bool.of_string
 

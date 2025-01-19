@@ -60,5 +60,5 @@ let parse_pat =
     let pat = parse_pat_tuple pat <|> pat in
     let pat = parse_pat_or pat <|> pat in
     let pat = parse_pat_typed pat <|> pat in
-    skip_ws *> pat <* skip_ws)
+    skip_ws *> pat <* skip_ws_no_nl)
 ;;

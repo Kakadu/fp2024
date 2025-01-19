@@ -474,7 +474,7 @@ let%expect_test "print f (if true then x else y) (with parentheses)" =
 
 let%expect_test "print single structure item expression" =
   printf "%s\n" (pprint_program [ Str_item_eval (Expr_const (Const_int 1)) ]);
-  [%expect {| 1 |}]
+  [%expect {| 1;; |}]
 ;;
 
 let%expect_test "print two structure item expressions" =
@@ -495,9 +495,9 @@ let%expect_test "print two structure item expressions" =
               , Expr_ident_or_op "b" ))
        ]);
   [%expect {|
-    let a = 1 in a
+    let a = 1 in a;;
 
-    let b = 2 in b |}]
+    let b = 2 in b;; |}]
 ;;
 
 let%expect_test "print single structure item definition" =
@@ -507,7 +507,7 @@ let%expect_test "print single structure item definition" =
        [ Str_item_def
            (Nonrecursive, Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1)), [])
        ]);
-  [%expect {| let a = 1 |}]
+  [%expect {| let a = 1;; |}]
 ;;
 
 let%expect_test "print two structure item definitions sep by ;;" =
@@ -520,7 +520,7 @@ let%expect_test "print two structure item definitions sep by ;;" =
            (Nonrecursive, Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2)), [])
        ]);
   [%expect {|
-    let a = 1
+    let a = 1;;
 
-    let b = 2 |}]
+    let b = 2;; |}]
 ;;
