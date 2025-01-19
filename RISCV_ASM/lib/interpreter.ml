@@ -689,7 +689,7 @@ let handle_syscall state =
     let buf = arg2 in
     (match fd with
      | 0 ->
-       let str = "String" in
+       let str = read_line () in
        let memory_int = Int64Map.add buf 0L state.memory_int in
        let memory_str = Int64Map.add buf str state.memory_str in
        let memory_writable = Int64Map.add buf true state.memory_writable in
