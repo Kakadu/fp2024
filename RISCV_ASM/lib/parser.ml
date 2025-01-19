@@ -678,6 +678,48 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
        ; parse_string_with_spaces "ret" *> return (InstructionExpr Ret)
+       ; parse_string_with_spaces "add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh1add"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh1add (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh1add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh1adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh2add"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh2add (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh2add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh2adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh3add"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh3add (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh3add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh3adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
        ])
 ;;
 
