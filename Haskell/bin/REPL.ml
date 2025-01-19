@@ -38,8 +38,10 @@ let () =
       opts.dump_parsetree
       opts.print_types
       Haskell_lib.Inferencer.initial_env
+      0
+      0
   else (
-    let rec helper (env, st) =
+    let rec helper (env, st, enviroment, n) =
       (* TODO(Kakadu): Why curry? *)
       let line =
         try input_line stdin with
@@ -47,7 +49,7 @@ let () =
       in
       match line with
       | ":quit" -> ()
-      | "" -> helper (env, st)
+      | "" -> helper (env, st, enviroment, n)
       | _ ->
         helper
           (Haskell_lib.Pai.parse_and_infer_line
@@ -55,7 +57,9 @@ let () =
              env
              st
              opts.dump_parsetree
-             opts.print_types)
+             opts.print_types
+             enviroment
+             n)
     in
-    helper (Haskell_lib.Inferencer.initial_env, 2))
+    helper (Haskell_lib.Inferencer.initial_env, 2, 0, 0))
 ;;
