@@ -15,7 +15,7 @@ let parse_and_infer =
        | Result.Ok list ->
          (match Inferencer.w list env st with
           | st, Result.Ok (env, nn) ->
-            (match Interpreter.eval list 0 0 with
+            (match Interpreter.eval list enviroment n with
              | Result.Ok (enviroment, n) ->
                helper
                  st
@@ -52,7 +52,7 @@ let parse_and_infer_line line env st dump_parsetree print_types enviroment n =
     (match Inferencer.w list env st with
      | st, Result.Ok (env, names) ->
        if print_types then Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, env);
-       (match Interpreter.eval list 0 0 with
+       (match Interpreter.eval list enviroment n with
         | Result.Ok (enviroment, n) -> env, st, enviroment, n
         | Result.Error (err, enviroment, n) ->
           Format.printf "%a\n%!" Pprint.pp_error err;
