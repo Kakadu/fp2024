@@ -415,8 +415,6 @@ end = struct
 
   let find_typ_with_substring_and_choice_exn t name =
     Map.fold t ~init:None ~f:(fun ~key ~data acc ->
-      (*printf " KEY IS %s\n" key;
-        printf "is substr %b\n" (String.is_substring key ~substring:name);*)
       match data with
       | Scheme (_, _)
         when String.is_substring key ~substring:name
@@ -560,16 +558,9 @@ let infer_patterns env ~shadow patterns =
 ;;
 
 let infer_match_pattern env ~shadow pattern match_type =
-  (*let _ = (match pattern with
-    | PActive (Ident(name), _) -> fprintf std_formatter "NAME IS %s\n" name
-    | _ -> ()) in*)
   let* env, pat_typ = infer_pattern env ~shadow pattern in
-  (*fprintf std_formatter "TYPES %a, %a\n" pp_typ match_type pp_typ pat_typ;*)
-  (*let _ = printf "HERE IN MATCH WITH PAT %a\n" pp_typ pat_typ in *)
   let pat_input_typ = find_args_type pat_typ in
-  (*let _ = fprintf std_formatter "ARGS TYPE %a\n" pp_typ pat_input_typ in*)
   let* subst = unify pat_input_typ match_type in
-  (*let _ = printf "HERE IN MATCH\n" in *)
   let env = TypeEnv.apply subst env in
   let* pat_names = extract_names_from_pattern pattern >>| elements in
   let generalized_schemes =
@@ -832,7 +823,7 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
       cases
       ~init:(return (subst_init, return_t))
       ~f:(fun acc (pat, expr) ->
-        let* subst1, return_type = acc in
+        let* subst1, return_t = acc in
         let* env, subst2 =
           if with_arg
           then
@@ -844,7 +835,8 @@ and infer_matching_expr env cases subst_init match_t return_t ~with_arg =
         let* subst12 = Substitution.compose subst1 subst2 in
         let env = TypeEnv.apply subst12 env in
         let* subst3, expr_typ = infer_expr env expr in
-        let* subst4 = unify return_type expr_typ in
+        let* subst4 = unify return_t expr_typ in
+        let return_type = unify_act_pat (return_t, expr_typ) in
         let* subst = Substitution.compose_all [ subst12; subst3; subst4 ] in
         return (subst, Substitution.apply subst return_type))
   in
@@ -911,15 +903,6 @@ let update_pat_types_with_expr_type arg_types names_with_types_list =
     let new_type = reconstruct_arrow arg_types return_type in
     name, new_type)
 ;;
-
-(*let check_pat_variants_presence expected_variants expr_type =
-  match List.length expected_variants with
-  | 1 -> return expr_type
-  | _ ->
-  match expr_type with
-  | Choice
-  | _ -> fail (`Not_choice_in_act_pat)
-  ;;*)
 
 let infer_statement env = function
   | Let (rec_flag, let_bind, let_binds) ->
