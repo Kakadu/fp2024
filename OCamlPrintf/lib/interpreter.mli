@@ -12,7 +12,6 @@ type error =
 val pp_error : Format.formatter -> error -> unit
 
 type value =
-  | Val_unit
   | Val_integer of int
   | Val_char of char
   | Val_string of string

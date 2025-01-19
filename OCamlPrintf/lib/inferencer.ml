@@ -114,9 +114,8 @@ let pp_scheme ppf = function
 
 module Type = struct
   let rec occurs_in var = function
-    | Type_option ty -> occurs_in var ty
+    | Type_option ty | Type_list ty -> occurs_in var ty
     | Type_var name -> name = var
-    | Type_list ty -> occurs_in var ty
     | Type_tuple (fst_ty, snd_ty, ty_list) ->
       List.exists (occurs_in var) (fst_ty :: snd_ty :: ty_list)
     | Type_arrow (l, r) -> occurs_in var l || occurs_in var r
@@ -125,11 +124,10 @@ module Type = struct
 
   let free_vars =
     let rec helper acc = function
-      | Type_option ty -> helper acc ty
+      | Type_option ty | Type_list ty -> helper acc ty
       | Type_var name -> VarSet.add name acc
       | Type_tuple (fst_ty, snd_ty, ty_list) ->
         List.fold_left helper acc (fst_ty :: snd_ty :: ty_list)
-      | Type_list ty -> helper acc ty
       | Type_arrow (l, r) -> helper (helper acc l) r
       | _ -> acc
     in

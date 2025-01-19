@@ -19,7 +19,6 @@ let pp_error ppf : error -> _ = function
 ;;
 
 type value =
-  | Val_unit
   | Val_integer of int
   | Val_char of char
   | Val_string of string
@@ -33,7 +32,6 @@ and env = (string, value, Base.String.comparator_witness) Base.Map.t
 let rec pp_value ppf =
   let open Stdlib.Format in
   function
-  | Val_unit -> fprintf ppf "()"
   | Val_integer int -> fprintf ppf "%i" int
   | Val_char char -> fprintf ppf "'%c'" char
   | Val_string str -> fprintf ppf "%S" str
@@ -166,34 +164,29 @@ module Inter = struct
     | _ -> None
   ;;
 
-  let rec extract_names_from_pat id_list_acc val_list_acc = function
-    | Pat_any, _ -> return (id_list_acc, val_list_acc)
-    | Pat_var id, value -> return (id :: id_list_acc, value :: val_list_acc)
+  let rec extend_names_from_pat env = function
+    | (Pat_any | Pat_construct ("()", None)), _ -> return env
+    | Pat_var id, value -> return (extend env id value)
     | Pat_tuple (fst_pat, snd_pat, pat_list), Val_tuple (fst_val, snd_val, val_list) ->
       (match
          Base.List.fold2
            (fst_pat :: snd_pat :: pat_list)
            (fst_val :: snd_val :: val_list)
-           ~init:(return (id_list_acc, val_list_acc))
+           ~init:(return env)
            ~f:(fun acc pat value ->
-             let* id_list, value_list = acc in
-             extract_names_from_pat id_list value_list (pat, value))
+             let* env = acc in
+             extend_names_from_pat env (pat, value))
        with
        | Ok acc -> acc
        | _ -> fail `Type_error)
-    | Pat_construct ("[]", None), Val_construct ("[]", None) ->
-      return (id_list_acc, val_list_acc)
+    | Pat_construct ("[]", None), Val_construct ("[]", None) -> return env
     | ( Pat_construct ("::", Some (Pat_tuple (head_pat, tail_pat, [])))
       , Val_construct ("::", Some (Val_tuple (head_val, tail_val, []))) ) ->
-      let* id_list, value_list =
-        extract_names_from_pat id_list_acc val_list_acc (head_pat, head_val)
-      in
-      let* id_list1, value_list1 =
-        extract_names_from_pat id_list value_list (tail_pat, tail_val)
-      in
-      return (id_list1, value_list1)
+      let* env = extend_names_from_pat env (head_pat, head_val) in
+      let* env = extend_names_from_pat env (tail_pat, tail_val) in
+      return env
     | (Pat_construct ("Some", Some pat) | Pat_constraint (pat, _)), value ->
-      extract_names_from_pat id_list_acc val_list_acc (pat, value)
+      extend_names_from_pat env (pat, value)
     | _ -> fail `Type_error
   ;;
 
@@ -220,14 +213,14 @@ module Inter = struct
        | Exp_ident opr when is_negative_op opr ->
          let* value = eval_expression env exp2 in
          (match value with
-          | Val_integer v -> return (Val_integer (-v))
+          | Val_integer value -> return (Val_integer (-value))
           | _ -> fail `Type_error)
        | Exp_ident "print_int" ->
          let* arg_val = eval_expression env exp2 in
          (match arg_val with
           | Val_integer int ->
             let _ = print_int int in
-            return Val_unit
+            return (Val_construct ("()", None))
           | _ -> fail `Type_error)
        | _ ->
          let* fun_val = eval_expression env exp1 in
@@ -299,28 +292,19 @@ module Inter = struct
        | None -> find_and_eval_case env value tail)
 
   and eval_value_binding_list env value_binding_list =
-    let* env, name_list, value_list =
-      Base.List.fold_left
-        ~f:(fun acc { pat; exp } ->
-          let* env, names, values = acc in
-          let* value = eval_expression env exp in
-          match pat with
-          | Pat_var name | Pat_constraint (Pat_var name, _) ->
-            return (env, name :: names, value :: values)
-          | _ ->
-            let* names, value_list = extract_names_from_pat names [] (pat, value) in
-            return (env, names, value_list))
-        ~init:(return (env, [], []))
-        value_binding_list
-    in
-    let rec extend_many env = function
-      | [], [] -> return env
-      | name :: rest_names, value :: rest_values ->
-        let env = extend env name value in
-        extend_many env (rest_names, rest_values)
-      | _, _ -> fail `Type_error
-    in
-    extend_many env (name_list, value_list)
+    Base.List.fold_left
+      ~f:(fun acc { pat; exp } ->
+        let* env = acc in
+        let* value = eval_expression env exp in
+        match pat with
+        | Pat_var name | Pat_constraint (Pat_var name, _) ->
+          let env = extend env name value in
+          return env
+        | _ ->
+          let* env = extend_names_from_pat env (pat, value) in
+          return env)
+      ~init:(return env)
+      value_binding_list
 
   and eval_rec_value_binding_list env value_binding_list =
     Base.List.fold_left
