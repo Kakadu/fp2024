@@ -206,6 +206,43 @@ let parse_string_with_spaces str =
       | _ -> fail "")
 ;;
 
+let parse_section_subargs =
+  lift2
+    (fun section_arg3 i -> section_arg3, i)
+    parse_type
+    (peek_char
+     >>= function
+     | Some ',' -> ws_opt (char ',') *> ws_opt (parse_number >>| fun i -> Some i)
+     | _ -> return None)
+;;
+
+let parse_section_args =
+  lift2
+    (fun section_arg2 section_subargs -> section_arg2, section_subargs)
+    parse_quoted_string
+    (ws_opt
+       (peek_char
+        >>= function
+        | Some ',' ->
+          ws_opt (char ',') *> ws_opt (parse_section_subargs >>| fun t -> Some t)
+        | _ -> return None))
+;;
+
+let parse_section =
+  parse_string_with_spaces ".section"
+  *> ws_opt
+       (lift2
+          (fun section_arg1 section_args ->
+            DirectiveExpr (Section (section_arg1, section_args)))
+          parse_string
+          (ws_opt
+             (peek_char
+              >>= function
+              | Some ',' ->
+                ws_opt (char ',') *> ws_opt (parse_section_args >>| fun s -> Some s)
+              | _ -> return None)))
+;;
+
 let parse_directive =
   ws_opt
     (choice
@@ -243,28 +280,7 @@ let parse_directive =
                  (* FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
                  parse_address12
                  (ws_opt (char ',') *> parse_string))
-       ; parse_string_with_spaces ".section"
-         *> ws_opt
-              (lift4
-                 (fun section_name section_type section_flags section_index ->
-                   DirectiveExpr
-                     (Section (section_name, section_type, section_flags, section_index)))
-                 parse_string
-                 (peek_char
-                  >>= function
-                  | Some ',' ->
-                    ws_opt (char ',') *> ws_opt (parse_quoted_string >>| fun s -> Some s)
-                  | _ -> return None)
-                 (peek_char
-                  >>= function
-                  | Some ',' ->
-                    ws_opt (char ',') *> ws_opt (parse_type >>| fun t -> Some t)
-                  | _ -> return None)
-                 (peek_char
-                  >>= function
-                  | Some ',' ->
-                    ws_opt (char ',') *> ws_opt (parse_number >>| fun i -> Some i)
-                  | _ -> return None))
+       ; parse_section
        ; parse_string_with_spaces ".string"
          *> ws_opt (lift (fun str -> DirectiveExpr (StringDir str)) parse_quoted_string)
        ; parse_string_with_spaces ".cfi_def_cfa_offset"
