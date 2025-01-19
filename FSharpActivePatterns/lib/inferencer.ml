@@ -9,7 +9,7 @@ open Format
 open Base
 
 module InferenceError = struct
-  type error =
+  type t =
     [ `Occurs_check
     | `Undef_var of string
     | `Unification_failed of typ * typ
@@ -22,7 +22,7 @@ module InferenceError = struct
 
   let bound_error = `Bound_several_times
 
-  let pp_error fmt : error -> _ = function
+  let pp_error fmt : t -> _ = function
     | `Occurs_check -> fprintf fmt "Occurs check failed"
     | `Undef_var s -> fprintf fmt "Undefined variable '%s'" s
     | `Unification_failed (fst, snd) ->
@@ -42,7 +42,7 @@ end
 (* for treating result of type inference *)
 module R : sig
   type 'a t
-  type error = InferenceError.error
+  type error = InferenceError.t
 
   val bound_error : error
   val pp_error : formatter -> error -> unit
@@ -69,6 +69,8 @@ module R : sig
   end
 end = struct
   include InferenceError
+
+  type error = InferenceError.t
 
   (* takes current state, runs smth, outputs new state and success / error *)
   type 'a t = int -> int * ('a, error) Result.t
