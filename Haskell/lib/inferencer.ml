@@ -151,7 +151,9 @@ end = struct
   let rec unify l r =
     match l, r with
     | Ty_prim l, Ty_prim r when String.equal l r -> return empty
-    | Ty_var a, Ty_var b when Int.equal a b -> return empty
+    | (Ty_var a, Ty_var b | Ty_ord a, Ty_ord b | Ty_enum a, Ty_enum b) when Int.equal a b
+      -> return empty
+    | Ty_ord a, Ty_ord b | Ty_enum a, Ty_enum b -> singleton a (Ty_var b)
     | Ty_var b, t | t, Ty_var b -> singleton b t
     | Ty_ord _, Ty_arrow _ | Ty_arrow _, Ty_ord _ -> fail (`Unification_failed (l, r))
     | Ty_enum b, (Ty_prim _ as t) | (Ty_prim _ as t), Ty_enum b -> singleton b t
@@ -173,7 +175,8 @@ end = struct
       let* subs1 = unify l1 l2 in
       let* subs2 = unify (apply subs1 r1) (apply subs1 r2) in
       compose subs2 subs1
-    | Ty_list ty1, Ty_list ty2 -> unify ty1 ty2
+    | Ty_list ty1, Ty_list ty2 | Ty_tree ty1, Ty_tree ty2 | Ty_maybe ty1, Ty_maybe ty2 ->
+      unify ty1 ty2
     | Ty_tuple (t1, t2, tt), Ty_tuple (t1', t2', tt')
       when List.length tt = List.length tt' ->
       RList.fold_left
@@ -182,11 +185,7 @@ end = struct
         ~f:(fun acc (t1, t2) ->
           let* subs = unify (apply acc t1) (apply acc t2) in
           compose subs acc)
-    | Ty_tree ty1, Ty_tree ty2 -> unify ty1 ty2
-    | Ty_maybe ty1, Ty_maybe ty2 -> unify ty1 ty2
-    | _ ->
-      (* TODO(Kakadu): You already have case like this above. Why split? *)
-      fail (`Unification_failed (l, r))
+    | _ -> fail (`Unification_failed (l, r))
 
   and extend s (k, v) =
     let bind v f =
@@ -276,6 +275,15 @@ let typeenv_print_int =
   TypeEnv.extend
     TypeEnv.empty
     ("print_int", S (VarSet.empty, Ty_arrow (Ty_prim "Int", Ty_prim "()")))
+;;
+
+let initial_env =
+  TypeEnv.extend
+    typeenv_print_int
+    ( "seq"
+    , S
+        ( VarSet.add 1 (VarSet.add 0 VarSet.empty)
+        , Ty_arrow (Ty_var 0, Ty_arrow (Ty_var 1, Ty_var 1)) ) )
 ;;
 
 let typeenv_empty = TypeEnv.empty
