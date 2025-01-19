@@ -464,12 +464,11 @@ let rec check_stmt = function
     *> check_init check_stmt if_init
     *> (check_expr check_stmt (retrieve_arg check_stmt) if_cond
         >>= check_eq (Ctype Type_bool))
-    *> check_return_continue if_body
     *> iter check_stmt if_body
     *> delete_env
     *>
       (match else_body with
-      | Some (Else_block block) -> check_return_continue block *> iter check_stmt block
+      | Some (Else_block block) ->  iter check_stmt block
       | Some (Else_if if') -> check_stmt (Stmt_if if')
       | None -> return ())
   | Stmt_for { for_init; for_cond; for_post; for_body } ->

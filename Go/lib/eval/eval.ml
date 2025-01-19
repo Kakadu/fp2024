@@ -67,6 +67,11 @@ let rec exec eval_stmt =
            | None -> exec eval_stmt)))
 ;;
 
+let rec skip (hd, tl) =
+    match hd.env_type with 
+    | For -> return (hd::tl) 
+    | Default -> ((skip ((List.hd tl), (List.tl tl)) >>= fun sk -> return ({exec_block = []; var_map = hd.var_map; env_type = hd.env_type}::sk))) 
+
 (** Runs all ready to run goroutines, after it returns it is guaranteed that all existing goroutines
     are working with chanels. If main goroutine finishes executing here, the whole program finishes running *)
 let run_ready_goroutines eval_stmt =
@@ -425,7 +430,7 @@ and eval_stmt = function
   | Stmt_go call -> eval_go call
   | Stmt_block body -> add_env body Default *> exec eval_stmt *> delete_env
   | Stmt_break -> exec eval_stmt *> delete_env
-  | Stmt_continue -> exec eval_stmt
+  | Stmt_continue -> (read_local_envs >>= skip >>= fun lst -> write_local_envs ((List.hd lst), (List.tl lst) )) *> return ()
   | Stmt_for for' -> eval_for for'
   | Stmt_return exprs -> eval_return exprs
   | Stmt_chan_send send -> eval_chan_send send
@@ -520,7 +525,7 @@ and eval_for { for_init; for_cond; for_post; for_body } =
        | For -> rect rfor
        | Default -> return ())
     | false -> return ()
-  in
+  in 
   add_env [] For *> eval_init for_init *> rect rec_for *> return ()
 
 and eval_return = function
