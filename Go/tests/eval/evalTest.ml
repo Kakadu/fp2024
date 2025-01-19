@@ -301,6 +301,22 @@ let%expect_test "ok: nested if decl" =
     11111 |}]
 ;;
 
+let%expect_test "ok: if with init" =
+  pp
+    {|
+    func main() {
+      if a := true; a {
+        println("норм")
+      }
+    }
+    |};
+  [%expect
+    {|
+    Correct evaluating
+
+    норм |}]
+;;
+
 let%expect_test "ok: simple for" =
   pp
     {|
@@ -337,14 +353,22 @@ let%expect_test "ok: break" =
             a++
             println(a)
             if a == 5 {
-              if a == 5{
+              if true {
                 break  
               }
             }
         }
     }
     |};
-  [%expect {| Typecheck error: Unexpected operation: break |}]
+  [%expect
+    {|
+    Correct evaluating
+
+    1
+    2
+    3
+    4
+    5 |}]
 ;;
 
 let%expect_test "ok: continue" =
@@ -359,17 +383,26 @@ let%expect_test "ok: continue" =
         }
     }
     |};
-  [%expect {| Typecheck error: Unexpected operation: break |}]
+  [%expect
+    {|
+    Correct evaluating
+
+    0
+    1
+    2
+    4 |}]
 ;;
 
-let%expect_test "ok: noreturn check" =
+let%expect_test "ok: function returns on return" =
   pp
     {|
     var x = "kill "
+
     func foo(){
       return 
       x = "XXXXXXERRROR"
     }
+
     func main() {
       var y = "OCaml"
       foo()
@@ -588,7 +621,7 @@ let%expect_test
   pp
     {|
       func foo() int{
-          a := 0 
+          a := 0 panic
         defer func (h int){
         a++
         print(a)
@@ -604,37 +637,42 @@ let%expect_test
     |};
   [%expect
     {|
-    Correct evaluating
-    121 |}]
+    : syntax error |}]
 ;;
 
-let%expect_test "ok: defer check function reassgnment value" =
+let%expect_test "ok: defer check function reassignment value" =
   pp
     {|
       func foo() int{
-          a := 0 
+        a := 0 
+        
         f := func (){
-        a++
-        print(a)
+          a++
+          println(a)
         }
+        
         defer f()
+        
         f = func (){
           a = a + 100
-          print(a)
+          println(a)
         }
+        
         a = a + 1
         print(a)
         return a
       }
 
       func main() {
-        print(foo())
+        println(foo())
       }
     |};
   [%expect
     {|
     Correct evaluating
-    121 |}]
+    1
+    2
+    1 |}]
 ;;
 
 let%expect_test "ok: defer check function example" =
@@ -654,7 +692,7 @@ func f() {
 
     func g(i int) {
         if i > 3 {
-            println("Panicking!")
+            println("Stop!")
             return 
         }
         defer println("Defer in g ", i)
@@ -671,7 +709,7 @@ func f() {
     Printing in g 1
     Printing in g 2
     Printing in g 3
-    Panicking!
+    Stop!
     Defer in g 3
     Defer in g 2
     Defer in g 1
@@ -684,36 +722,38 @@ let%expect_test "ok: panic does not impact on goroutine without chanels" =
   pp
     {|
       
-func main() {
-    go f()
-    println("Returned normally from f.")
-}
+    func main() {
+      println("Creating new goroutine")
+      go f()
+      println("Finish")
+    }
 
-func f() {
+    func f() {
       println("Calling g.")
       g(0)
       println("Returned normally from g.")
     }
 
     func g(i int) {
-        if i > 3 {
-            println("Panicking!")
-            panic(i)
-        }
-        defer println("Defer in g ", i)
-        println("Printing in g ", i)
-        g(i + 1)
-        
+      if i > 3 {
+          println("Panicking!")
+          panic(i)
+      }
+
+      defer println("Defer in g ", i)
+      println("Printing in g ", i)
+      g(i + 1)
     }
     |};
   [%expect
     {|
     Correct evaluating
 
-    Returned normally from f. |}]
+    Creating new goroutine
+    Finish |}]
 ;;
 
-let%expect_test "ok: check defer, panic and recover" =
+let%expect_test "ok: panic with recover" =
   pp
     {|
       
@@ -725,7 +765,7 @@ let%expect_test "ok: check defer, panic and recover" =
     func f() {
       defer func() {
           r := recover()
-              println("Recovered in f", r)
+          println("Recovered in f with value: ", r)
           
       }()
       println("Calling g.")
@@ -758,11 +798,11 @@ let%expect_test "ok: check defer, panic and recover" =
     Defer in g 2
     Defer in g 1
     Defer in g 0
-    Recovered in f4
+    Recovered in f with value: 4
     Returned normally from f. |}]
 ;;
 
-let%expect_test "err: not recovered panic without goroutine" =
+let%expect_test "err: not recovered panic" =
   pp
     {|
     func main() {
@@ -778,8 +818,8 @@ let%expect_test "err: not recovered panic without goroutine" =
 
     func g(i int) {
         if i > 3 {
-            println("Panicking!")
-            panic(i)
+          println("Panicking!")
+          panic(i)
         }
         defer println("Defer in g ", i)
         println("Printing in g ", i)
@@ -888,6 +928,17 @@ let%expect_test "err: sender without receiver" =
   [%expect {| Runtime error: Deadlock: goroutine 1 trying to send to chan 1 |}]
 ;;
 
+let%expect_test "err: receiver without sender" =
+  pp
+    {|
+    func main() {
+      c := make(chan int)
+      <-c
+    }
+    |};
+  [%expect {| Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 |}]
+;;
+
 let%expect_test "ok: save goroutine receiving two times" =
   pp
     {|
@@ -977,4 +1028,28 @@ let%expect_test "ok: synchronised printing in for loop" =
 
     go2: 1
     go1: 2 |}]
+;;
+
+(* ОШИБКА *)
+let%expect_test "ok: send and receive in for init" =
+  pp
+    {|
+    var c = make(chan int)
+
+    func goo() {
+      a := 0
+
+      for c <- a; a < 6; a++ {
+        println("go2: a = ", a)
+      }
+    }
+
+    func main() {
+      go goo()
+      for a := <-c; a < 6; a++ {
+        println("go1: a = ", a)
+      }
+    }
+    |};
+  [%expect {| Runtime error: Dev: no goroutine running |}]
 ;;

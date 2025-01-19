@@ -42,7 +42,7 @@ let%expect_test "err: multiple main" =
 let%expect_test "err: main with returns" =
   pp
     {|
-  func main() bool { return true}
+  func main() bool { return true }
   |};
   [%expect
     {| Typecheck error: Incorrect main error: func main must have no arguments and no return values |}]
@@ -1443,7 +1443,7 @@ let%expect_test "err: trying to run make builtin func as a goroutine" =
   [%expect {| Typecheck error: Go discards result of make builtin function |}]
 ;;
 
-let%expect_test "ok: break outside for" =
+let%expect_test "err: break outside for" =
   pp
     {|
     var foo = func() {}
@@ -1452,4 +1452,23 @@ let%expect_test "ok: break outside for" =
       foo = nil
     } |};
   [%expect {| Typecheck error: Unexpected operation: break |}]
+;;
+
+let%expect_test "err: continue outside for" =
+  pp
+    {|
+    func main() { continue } |};
+  [%expect {| Typecheck error: Unexpected operation: continue |}]
+;;
+
+let%expect_test "err: return in unreachable code" =
+  pp
+    {|
+    func foo() {
+      for true {}
+      return
+    }
+
+    func main() { foo() } |};
+  [%expect {| CORRECT |}]
 ;;

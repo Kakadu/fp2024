@@ -21,7 +21,7 @@ SPDX-License-Identifier: MIT
 
   $ echo 'func main() { println("Hello, world!") }' > example.go
   $ ../../bin/interpret.exe --ast --typecheck example.go
-  AST dump:
+  Running...          AST dump:
   [(Decl_func
       ("main",
        { args = []; returns = [];

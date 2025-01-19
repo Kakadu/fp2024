@@ -1,5 +1,6 @@
 (executable
  (name interpret)
+ (modes byte exe)
  (public_name repl)
  (libraries ast parse typecheck eval errors)
  (instrumentation

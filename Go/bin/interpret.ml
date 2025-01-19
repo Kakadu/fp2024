@@ -38,8 +38,7 @@ let rec read_repl_input inp_chan =
   | Some input ->
     (match parse (parse_word "help") input with
      | Ok () ->
-       print_string usage_msg;
-       print_newline ();
+       print_endline usage_msg;
        flush stdout;
        read_repl_input inp_chan
      | Error _ ->
@@ -61,6 +60,9 @@ let run_repl options =
       print_endline "Syntax error";
       helper read_repl_input
     | Some (Ok ast) ->
+      print_string "Running...";
+      flush stdout;
+      print_string "\b \b\b \b\b \b\b \b\b \b\b \b\b \b\b \b\b \b\b \b";
       if options.show_ast
       then (
         print_endline "AST dump:";
@@ -91,6 +93,9 @@ let run_file options string =
   match parse parse_file string with
   | Error _ -> print_endline "Syntax error"
   | Ok ast ->
+    print_string "Running...";
+    flush stdout;
+    print_string "\b \b\b \b\b \b\b \b\b \b\b \b\b \b\b \b\b \b\b \b";
     if options.show_ast
     then (
       print_endline "AST dump:";

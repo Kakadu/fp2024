@@ -13,20 +13,15 @@ let get_afunc_type afunc =
 ;;
 
 let print_type = function
-  | Ctype x -> PpType.print_type x
+  | Ctype t -> PpType.print_type t
   | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map PpType.print_type x))
-  | Cpolymorphic Recover -> asprintf "WTF Polymorphic type recover"
-  | Cpolymorphic Print -> asprintf "WTF Polymorphic type print"
-  | Cpolymorphic Println -> asprintf "WTF Polymorphic type println"
-  | Cpolymorphic Nil -> asprintf "WTF Polymorphic type nil"
-  | CgenT _ -> asprintf "WTF generic type"
-  | Cpolymorphic _ -> asprintf "WTF Polymorphic type "
+  | _ -> "<not printable type>"
 ;;
 
-let check_return_continue =
+let fail_if_break_continue =
   iter (function
     | Stmt_break -> fail (Type_check_error (Unexpected_operation "break"))
-    | Stmt_continue -> fail (Type_check_error (Unexpected_operation "break"))
+    | Stmt_continue -> fail (Type_check_error (Unexpected_operation "continue"))
     | _ -> return ())
 ;;
 
@@ -62,7 +57,7 @@ let check_anon_func afunc cstmt =
     | [] -> return ())
   *> save_func (Ctuple afunc.returns)
   *> save_args
-  *> check_return_continue afunc.body
+  *> fail_if_break_continue afunc.body
   *> iter cstmt afunc.body
   *> delete_func
   *> delete_env
@@ -468,7 +463,7 @@ let rec check_stmt = function
     *> delete_env
     *>
       (match else_body with
-      | Some (Else_block block) ->  iter check_stmt block
+      | Some (Else_block block) -> iter check_stmt block
       | Some (Else_if if') -> check_stmt (Stmt_if if')
       | None -> return ())
   | Stmt_for { for_init; for_cond; for_post; for_body } ->
