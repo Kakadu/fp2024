@@ -248,9 +248,15 @@ type statement =
       * let_bind
       * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 2) gen_let_bind)])
   (** [let name = expr] *)
-  | ActPat of ident * ident list * pattern list * expr
+  | ActPat of ident * ident list * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) gen_pattern)]) * expr
   (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving show { with_path = false }, qcheck]
+
+(*let gen_statement =
+  QCheck.Gen.(
+    let* n = small_nat in
+    gen_statement_sized n)
+;;*)
 
 type construction =
   | Expr of expr (** expression *)
