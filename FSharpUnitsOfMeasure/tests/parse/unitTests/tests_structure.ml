@@ -82,6 +82,43 @@ let%expect_test "parse factorial" =
     let rec factorial = fun n -> if n < 2 then 1 else n * (factorial (n - 1))|}]
 ;;
 
+let%expect_test "parse measure type definition" =
+  pp2 pp_structure_item parse_structure_item {|[<Measure>] type aasdf |};
+  [%expect {|
+    (Str_item_type_def (Measure_type_def ("aasdf", None)))|}]
+;;
+
+let%expect_test "parse measure type definition with binding" =
+  pp2 pp_structure_item parse_structure_item {|[<Measure>] type a = m^3|};
+  [%expect {|
+    (Str_item_type_def
+       (Measure_type_def ("a", (Some (Measure_pow ((Measure_ident "m"), 3))))))|}]
+;;
+
+let%expect_test "parse measure type definition with hard binding" =
+  pp2 pp_structure_item parse_structure_item {|[<Measure>] type a = m^3 * s / cm^-1|};
+  [%expect {|
+    (Str_item_type_def
+       (Measure_type_def ("a",
+          (Some (Measure_div (
+                   (Measure_prod ((Measure_pow ((Measure_ident "m"), 3)),
+                      (Measure_ident "s"))),
+                   (Measure_div (Measure_dimless, (Measure_ident "cm"))))))
+          )))|}]
+;;
+
+let%expect_test "don't parse strange idents as measure type def" =
+  pp2 pp_structure_item parse_structure_item {| [<Measure>] type + = m^3 |};
+  [%expect {|
+    : no more choices|}]
+;;
+
+let%expect_test "don't parse strange measure type defs" =
+  pp2 pp_structure_item parse_structure_item {| [<Mejure>] typchik a |};
+  [%expect {|
+    : no more choices|}]
+;;
+
 (************************** Programs **************************)
 
 let%expect_test "parse simple binding as a program" =

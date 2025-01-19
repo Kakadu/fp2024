@@ -105,9 +105,10 @@ let%expect_test "print float constant" =
 ;;
 
 let%expect_test "print measure constant" =
-  printf "%s\n" (
-    pprint_const
-    (Const_unit_of_measure (Unit_of_measure (Mnum_float 3.14, Measure_ident "cm"))));
+  printf
+    "%s\n"
+    (pprint_const
+       (Const_unit_of_measure (Unit_of_measure (Mnum_float 3.14, Measure_ident "cm"))));
   [%expect {| 3.14<cm> |}]
 ;;
 
@@ -124,23 +125,26 @@ let%expect_test "print type int -> int" =
 ;;
 
 let%expect_test "print type int -> int -> int" =
-  printf "%s\n" (
-    pprint_type
-    (Type_func (Type_ident "int", Type_func (Type_ident "int", Type_ident "int"))));
+  printf
+    "%s\n"
+    (pprint_type
+       (Type_func (Type_ident "int", Type_func (Type_ident "int", Type_ident "int"))));
   [%expect {| int -> int -> int |}]
 ;;
 
 let%expect_test "print type int -> (int -> int) and omit parentheses" =
-  printf "%s\n" (
-    pprint_type
-    (Type_func (Type_ident "int", Type_func (Type_ident "int", Type_ident "int"))));
+  printf
+    "%s\n"
+    (pprint_type
+       (Type_func (Type_ident "int", Type_func (Type_ident "int", Type_ident "int"))));
   [%expect {| int -> int -> int |}]
 ;;
 
 let%expect_test "print type (int -> int) -> int" =
-  printf "%s\n" (
-    pprint_type
-    (Type_func (Type_func (Type_ident "int", Type_ident "int"), Type_ident "int")));
+  printf
+    "%s\n"
+    (pprint_type
+       (Type_func (Type_func (Type_ident "int", Type_ident "int"), Type_ident "int")));
   [%expect {| (int -> int) -> int |}]
 ;;
 
@@ -150,16 +154,17 @@ let%expect_test "print type int * int" =
 ;;
 
 let%expect_test "print type int * int * int" =
-  printf "%s\n" (
-    pprint_type
-    (Type_tuple (Type_ident "int", Type_ident "int", [ Type_ident "int" ])));
+  printf
+    "%s\n"
+    (pprint_type (Type_tuple (Type_ident "int", Type_ident "int", [ Type_ident "int" ])));
   [%expect {| int * int * int |}]
 ;;
 
 let%expect_test "print type int * int -> int" =
-  printf "%s\n" (
-    pprint_type
-    (Type_func (Type_tuple (Type_ident "int", Type_ident "int", []), Type_ident "int")));
+  printf
+    "%s\n"
+    (pprint_type
+       (Type_func (Type_tuple (Type_ident "int", Type_ident "int", []), Type_ident "int")));
   [%expect {| int * int -> int |}]
 ;;
 
@@ -181,9 +186,9 @@ let%expect_test "print wildcard pattern" =
 ;;
 
 let%expect_test "print OR pattern" =
-  printf "%s\n" (
-    pprint_pat
-    (Pattern_or (Pattern_ident_or_op "P1", Pattern_ident_or_op "P2")));
+  printf
+    "%s\n"
+    (pprint_pat (Pattern_or (Pattern_ident_or_op "P1", Pattern_ident_or_op "P2")));
   [%expect {| P1 | P2 |}]
 ;;
 
@@ -193,27 +198,29 @@ let%expect_test "print x : int typed pattern" =
 ;;
 
 let%expect_test "print (x, y) tuple pattern" =
-  printf "%s\n" (
-    pprint_pat
-    (Pattern_tuple (Pattern_ident_or_op "x", Pattern_ident_or_op "y", [])));
+  printf
+    "%s\n"
+    (pprint_pat (Pattern_tuple (Pattern_ident_or_op "x", Pattern_ident_or_op "y", [])));
   [%expect {| (x, y) |}]
 ;;
 
 let%expect_test "print (x, y, z) tuple pattern" =
-  printf "%s\n" (
-    pprint_pat
-    (Pattern_tuple
-       (Pattern_ident_or_op "x", Pattern_ident_or_op "y", [ Pattern_ident_or_op "z" ])));
+  printf
+    "%s\n"
+    (pprint_pat
+       (Pattern_tuple
+          (Pattern_ident_or_op "x", Pattern_ident_or_op "y", [ Pattern_ident_or_op "z" ])));
   [%expect {| (x, y, z) |}]
 ;;
 
 let%expect_test "print (x : int, y: int) tuple of typed idents pattern" =
-  printf "%s\n" (
-    pprint_pat
-    (Pattern_tuple
-       ( Pattern_typed (Pattern_ident_or_op "x", Type_ident "int")
-       , Pattern_typed (Pattern_ident_or_op "y", Type_ident "int")
-       , [] )));
+  printf
+    "%s\n"
+    (pprint_pat
+       (Pattern_tuple
+          ( Pattern_typed (Pattern_ident_or_op "x", Type_ident "int")
+          , Pattern_typed (Pattern_ident_or_op "y", Type_ident "int")
+          , [] )));
   [%expect {| ((x : int), (y : int)) |}]
 ;;
 
@@ -228,9 +235,9 @@ let%expect_test "print [x] list pattern" =
 ;;
 
 let%expect_test "print [x; y] list pattern" =
-  printf "%s\n" (
-    pprint_pat
-    (Pattern_list [ Pattern_ident_or_op "x"; Pattern_ident_or_op "y" ]));
+  printf
+    "%s\n"
+    (pprint_pat (Pattern_list [ Pattern_ident_or_op "x"; Pattern_ident_or_op "y" ]));
   [%expect {| [x; y] |}]
 ;;
 
@@ -247,14 +254,17 @@ let%expect_test "print identificator expression" =
 ;;
 
 let%expect_test "print (x, y) tuple expression" =
-  printf "%s\n" (pprint_expr (Expr_tuple (Expr_ident_or_op "x", Expr_ident_or_op "y", [])));
+  printf
+    "%s\n"
+    (pprint_expr (Expr_tuple (Expr_ident_or_op "x", Expr_ident_or_op "y", [])));
   [%expect {| (x, y) |}]
 ;;
 
 let%expect_test "print (x, y, z) tuple expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_tuple (Expr_ident_or_op "x", Expr_ident_or_op "y", [ Expr_ident_or_op "z" ])));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_tuple (Expr_ident_or_op "x", Expr_ident_or_op "y", [ Expr_ident_or_op "z" ])));
   [%expect {| (x, y, z) |}]
 ;;
 
@@ -279,167 +289,183 @@ let%expect_test "print lambda expression" =
 ;;
 
 let%expect_test "print let a = 5 in a expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_let
-       ( Nonrecursive
-       , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 5))
-       , []
-       , Expr_ident_or_op "a" )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_let
+          ( Nonrecursive
+          , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 5))
+          , []
+          , Expr_ident_or_op "a" )));
   [%expect {| let a = 5 in a |}]
 ;;
 
 let%expect_test "print let rec a = 5 in a expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_let
-       ( Recursive
-       , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 5))
-       , []
-       , Expr_ident_or_op "a" )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_let
+          ( Recursive
+          , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 5))
+          , []
+          , Expr_ident_or_op "a" )));
   [%expect {| let rec a = 5 in a |}]
 ;;
 
 let%expect_test "print let a = 5 and b = 4 in e expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_let
-       ( Nonrecursive
-       , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 5))
-       , [ Bind (Pattern_ident_or_op "b", Expr_const (Const_int 4)) ]
-       , Expr_ident_or_op "e" )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_let
+          ( Nonrecursive
+          , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 5))
+          , [ Bind (Pattern_ident_or_op "b", Expr_const (Const_int 4)) ]
+          , Expr_ident_or_op "e" )));
   [%expect {| let a = 5 and b = 4 in e |}]
 ;;
 
 let%expect_test "print nested let .. in expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_let
-       ( Nonrecursive
-       , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1))
-       , []
-       , Expr_let
-           ( Nonrecursive
-           , Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2))
-           , []
-           , Expr_let
-               ( Nonrecursive
-               , Bind (Pattern_ident_or_op "c", Expr_const (Const_int 3))
-               , []
-               , Expr_ident_or_op "e" ) ) )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_let
+          ( Nonrecursive
+          , Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1))
+          , []
+          , Expr_let
+              ( Nonrecursive
+              , Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2))
+              , []
+              , Expr_let
+                  ( Nonrecursive
+                  , Bind (Pattern_ident_or_op "c", Expr_const (Const_int 3))
+                  , []
+                  , Expr_ident_or_op "e" ) ) )));
   [%expect {| let a = 1 in let b = 2 in let c = 3 in e |}]
 ;;
 
 let%expect_test "print let f a b c = x in e" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_let
-       ( Nonrecursive
-       , Bind
-           ( Pattern_ident_or_op "f"
-           , Expr_lam
-               ( Pattern_ident_or_op "a"
-               , Expr_lam
-                   ( Pattern_ident_or_op "b"
-                   , Expr_lam (Pattern_ident_or_op "c", Expr_ident_or_op "x") ) ) )
-       , []
-       , Expr_ident_or_op "e" )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_let
+          ( Nonrecursive
+          , Bind
+              ( Pattern_ident_or_op "f"
+              , Expr_lam
+                  ( Pattern_ident_or_op "a"
+                  , Expr_lam
+                      ( Pattern_ident_or_op "b"
+                      , Expr_lam (Pattern_ident_or_op "c", Expr_ident_or_op "x") ) ) )
+          , []
+          , Expr_ident_or_op "e" )));
   [%expect {| let f = fun a -> fun b -> fun c -> x in e |}]
 ;;
 
 let%expect_test "print if then expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_ifthenelse (Expr_ident_or_op "cond", Expr_ident_or_op "e", None)));
+  printf
+    "%s\n"
+    (pprint_expr (Expr_ifthenelse (Expr_ident_or_op "cond", Expr_ident_or_op "e", None)));
   [%expect {| if cond then e |}]
 ;;
 
 let%expect_test "print if then else expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_ifthenelse
-       (Expr_ident_or_op "cond", Expr_ident_or_op "e1", Some (Expr_ident_or_op "e2"))));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_ifthenelse
+          (Expr_ident_or_op "cond", Expr_ident_or_op "e1", Some (Expr_ident_or_op "e2"))));
   [%expect {| if cond then e1 else e2 |}]
 ;;
 
 let%expect_test "print match x with P1 -> E1 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_match
-       (Expr_ident_or_op "x", Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1"), [])));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_match
+          ( Expr_ident_or_op "x"
+          , Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
+          , [] )));
   [%expect {| match x with P1 -> E1 |}]
 ;;
 
 let%expect_test "print match x with P1 -> E1 | P2 -> E2 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_match
-       ( Expr_ident_or_op "x"
-       , Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
-       , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_match
+          ( Expr_ident_or_op "x"
+          , Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
+          , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
   [%expect {| match x with P1 -> E1 | P2 -> E2 |}]
 ;;
 
 let%expect_test "print match x with P1 | P2 | P3 -> E1 | P4 -> E2 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_match
-       ( Expr_ident_or_op "x"
-       , Rule
-           ( Pattern_or
-               ( Pattern_or (Pattern_ident_or_op "P1", Pattern_ident_or_op "P2")
-               , Pattern_ident_or_op "P3" )
-           , Expr_ident_or_op "E1" )
-       , [ Rule (Pattern_ident_or_op "P4", Expr_ident_or_op "E2") ] )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_match
+          ( Expr_ident_or_op "x"
+          , Rule
+              ( Pattern_or
+                  ( Pattern_or (Pattern_ident_or_op "P1", Pattern_ident_or_op "P2")
+                  , Pattern_ident_or_op "P3" )
+              , Expr_ident_or_op "E1" )
+          , [ Rule (Pattern_ident_or_op "P4", Expr_ident_or_op "E2") ] )));
   [%expect {| match x with P1 | P2 | P3 -> E1 | P4 -> E2 |}]
 ;;
 
 let%expect_test "print match x with P1 | P2 | P3 -> E1 | P4 -> E2 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_match
-       ( Expr_ident_or_op "x"
-       , Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
-       , [ Rule
-             ( Pattern_or
-                 ( Pattern_or (Pattern_ident_or_op "P2", Pattern_ident_or_op "P3")
-                 , Pattern_ident_or_op "P4" )
-             , Expr_ident_or_op "E2" )
-         ] )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_match
+          ( Expr_ident_or_op "x"
+          , Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
+          , [ Rule
+                ( Pattern_or
+                    ( Pattern_or (Pattern_ident_or_op "P2", Pattern_ident_or_op "P3")
+                    , Pattern_ident_or_op "P4" )
+                , Expr_ident_or_op "E2" )
+            ] )));
   [%expect {| match x with P1 -> E1 | P2 | P3 | P4 -> E2 |}]
 ;;
 
 let%expect_test "print function P1 -> E1 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_function (Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1"), [])));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_function (Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1"), [])));
   [%expect {| function P1 -> E1 |}]
 ;;
 
 let%expect_test "print function P1 -> E1 | P2 -> E2 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_function
-       ( Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
-       , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_function
+          ( Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
+          , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
   [%expect {| function P1 -> E1 | P2 -> E2 |}]
 ;;
 
 let%expect_test "print function P1 | P2 -> E1 | P3 -> E2 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_function
-       ( Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
-       , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_function
+          ( Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
+          , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
   [%expect {| function P1 -> E1 | P2 -> E2 |}]
 ;;
 
 let%expect_test "print function P1 -> E1 | P2 | P3 -> E2 expression" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_function
-       ( Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
-       , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_function
+          ( Rule (Pattern_ident_or_op "P1", Expr_ident_or_op "E1")
+          , [ Rule (Pattern_ident_or_op "P2", Expr_ident_or_op "E2") ] )));
   [%expect {| function P1 -> E1 | P2 -> E2 |}]
 ;;
 
@@ -449,28 +475,32 @@ let%expect_test "print f x expression" =
 ;;
 
 let%expect_test "print (if true then f else g) x (with parentheses)" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_apply
-       ( Expr_ifthenelse
-           ( Expr_const (Const_bool true)
-           , Expr_ident_or_op "f"
-           , Some (Expr_ident_or_op "g") )
-       , Expr_ident_or_op "x" )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_apply
+          ( Expr_ifthenelse
+              ( Expr_const (Const_bool true)
+              , Expr_ident_or_op "f"
+              , Some (Expr_ident_or_op "g") )
+          , Expr_ident_or_op "x" )));
   [%expect {| (if true then f else g) x |}]
 ;;
 
 let%expect_test "print f (if true then x else y) (with parentheses)" =
-  printf "%s\n" (
-    pprint_expr
-    (Expr_apply
-       ( Expr_ident_or_op "f"
-       , Expr_ifthenelse
-           ( Expr_const (Const_bool true)
-           , Expr_ident_or_op "x"
-           , Some (Expr_ident_or_op "y") ) )));
+  printf
+    "%s\n"
+    (pprint_expr
+       (Expr_apply
+          ( Expr_ident_or_op "f"
+          , Expr_ifthenelse
+              ( Expr_const (Const_bool true)
+              , Expr_ident_or_op "x"
+              , Some (Expr_ident_or_op "y") ) )));
   [%expect {| f (if true then x else y) |}]
 ;;
+
+(************************** Program **************************)
 
 let%expect_test "print single structure item expression" =
   printf "%s\n" (pprint_program [ Str_item_eval (Expr_const (Const_int 1)) ]);
@@ -518,6 +548,27 @@ let%expect_test "print two structure item definitions sep by ;;" =
            (Nonrecursive, Bind (Pattern_ident_or_op "a", Expr_const (Const_int 1)), [])
        ; Str_item_def
            (Nonrecursive, Bind (Pattern_ident_or_op "b", Expr_const (Const_int 2)), [])
+       ]);
+  [%expect {|
+    let a = 1;;
+
+    let b = 2;; |}]
+;;
+
+let%expect_test "print measure type definition" =
+  printf "%s\n" (pprint_program [ Str_item_type_def (Measure_type_def ("kg", None)) ]);
+  [%expect {|
+    let a = 1;;
+
+    let b = 2;; |}]
+;;
+
+let%expect_test "print measure type definition with binding" =
+  printf
+    "%s\n"
+    (pprint_program
+       [ Str_item_type_def
+           (Measure_type_def ("l", Some (Measure_pow (Measure_ident "dm", 3))))
        ]);
   [%expect {|
     let a = 1;;

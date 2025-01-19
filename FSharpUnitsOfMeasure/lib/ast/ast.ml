@@ -205,8 +205,9 @@ let gen_structure_item n =
     return (Str_item_def (flag, bind_fst, bind_rest))
   in
   frequency
-    [ (1, gen_expression_sized (n / 2) >|= fun e -> Str_item_eval e)
-    ; 1, gen_str_item_def_sized (n / 2) (* ; 1, gen_str_item_type_def *)
+    [ (10, gen_expression_sized (n / 2) >|= fun e -> Str_item_eval e)
+    ; 10, gen_str_item_def_sized (n / 2)
+    ; (1, gen_type_def >|= fun td -> Str_item_type_def td)
     ]
 ;;
 
