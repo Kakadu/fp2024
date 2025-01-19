@@ -195,6 +195,11 @@ module Monad = struct
     | _ -> return ()
   ;;
 
+  let check_ready_goroutine =
+    let* goroutines = read_ready in
+    return (if ReadySet.is_empty goroutines then None else Some ())
+  ;;
+
   let read_sending =
     read
     >>= function

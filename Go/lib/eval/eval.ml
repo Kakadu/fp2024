@@ -576,7 +576,6 @@ and eval_chan_send (ident, expr) =
                         sending_goroutine.go_id
                         chan_id)))
            | Some _ -> run_ready_goroutines eval_stmt))
-    (* тут надо как-то удостовериться в том, что программа завершилась *)
   | _ -> fail (Runtime_error (TypeCheckFailed "chan send"))
 
 and eval_chan_receive expr =
