@@ -586,7 +586,7 @@ let%expect_test "parsing error" =
   |};
   <span data-count="1">[</span>%expect {|
   : end_of_input
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing factorial with `match'" =
@@ -607,7 +607,7 @@ let%expect_test "parsing factorial with `match'" =
     | 1 -&gt; 1
     | _ -&gt; n * factorial (n - 1)
   ;;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing expression with `fun'" =
@@ -618,7 +618,7 @@ let%expect_test "parsing expression with `fun'" =
   <span data-count="1">[</span>%expect {|
   let sum1 x y = x + y;;
   let sum2 x = fun y -&gt; x + y;;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing pattern and expression tuples" =
@@ -629,7 +629,7 @@ let%expect_test "parsing pattern and expression tuples" =
   <span data-count="1">[</span>%expect {|
   let a, b = 1, 2;;
   let a, b, c = -1, 2 + 3, f d;;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing pattern and expression list" =
@@ -656,7 +656,7 @@ let%expect_test "parsing pattern and expression list" =
   [] + [];;
   [ 1 + 2; -3; f a ] + [ f a; f b ];;
   [ [ [] + []; -3; f a ] ] + [ [ f a; f b ] ];;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing option and bool types" =
@@ -676,7 +676,7 @@ let%expect_test "parsing option and bool types" =
           | None -&gt; false;;
   Some (true);;
   Some (Some (true));;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing expression with `let'" =
@@ -685,7 +685,7 @@ let%expect_test "parsing expression with `let'" =
   |};
   <span data-count="1">[</span>%expect {|
   1 + (let two = 2 in two * 3);;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing several structure items" =
@@ -696,7 +696,7 @@ let%expect_test "parsing several structure items" =
   <span data-count="1">[</span>%expect {|
   let squared x = x * x;;
   squared 5;;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing expression sequence" =
@@ -713,7 +713,7 @@ let%expect_test "parsing expression sequence" =
   [ (a; b) ];;
   [ f a; [ () ]; ((); []) ];;
   let a = [ ((); 1); ((); 2); (((); ()); 3); (((); 4); 5) ];;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 1" =
@@ -722,7 +722,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 1" =
   |};
   <span data-count="1">[</span>%expect {|
   let f : int list = [ 1; 2; 3 ];;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 2" =
@@ -733,7 +733,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 2" =
   <span data-count="1">[</span>%expect
     {|
   let f : int * char * string list = 1, 'a', [ "first"; "second"; "third" ];;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 3" =
@@ -742,7 +742,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 3" =
   |};
   <span data-count="1">[</span>%expect {|
   let f (a : int) (b : int) : int = a + b;;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing identifiers with explicitly assigned types 4" =
@@ -751,7 +751,7 @@ let%expect_test "parsing identifiers with explicitly assigned types 4" =
   |};
   <span data-count="1">[</span>%expect {|
   let a : int -&gt; (char -&gt; int) -&gt; int = 1 + (x : char -&gt; int);;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing chain right associative" =
@@ -764,7 +764,7 @@ let%expect_test "parsing chain right associative" =
     {|
   let f x y z = if x &amp;&amp; (y || z &amp;&amp; (y || x) || y) then true else false;;
   let list [ a; b; c ] = [ a; b; c + 1 ];;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing chain left associative" =
@@ -787,7 +787,7 @@ let%expect_test "parsing chain left associative" =
       : (int option list * unit option -&gt; bool list option list) * string option option
       = a
   ;;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing expression with priority" =
@@ -814,7 +814,7 @@ let%expect_test "parsing expression with priority" =
   (1 + 2) * 3 * 4;;
   1 / 2 - 3 * 4;;
   g * f a (b + c) (d e);;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "parsing negative expressions" =
@@ -835,7 +835,7 @@ let%expect_test "parsing negative expressions" =
   let f a = -a;;
   let f a = -(if a then -1 else 2);;
   g * f (-a) (-b + c) (d (-e));;
-  |}<span data-count="9">]</span>
+  |}<span data-count="11">]</span>
 ;;
 </code></pre>
       </div>
