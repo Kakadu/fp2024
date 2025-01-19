@@ -867,6 +867,7 @@ let%expect_test "ok: two goroutine sync with unbuffered chanel" =
     |};
   [%expect
     {|
+    сендер прогнал всех кто ready
     Correct evaluating
 
     go1: trying to send. Value:0
@@ -906,6 +907,8 @@ let%expect_test "ok: receive and send back" =
     |};
   [%expect
     {|
+    сендер прогнал всех кто ready
+    сендер прогнал всех кто ready
     Correct evaluating
 
     go1: trying to send. Value:0
@@ -936,7 +939,8 @@ let%expect_test "err: receiver without sender" =
       <-c
     }
     |};
-  [%expect {| Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 |}]
+  [%expect
+    {| Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 (no ready goroutines at the moment) |}]
 ;;
 
 let%expect_test "ok: save goroutine receiving two times" =
@@ -986,6 +990,8 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
     |};
   [%expect
     {|
+    сендер прогнал всех кто ready
+    сендер прогнал всех кто ready
     Correct evaluating
 
     go1: sending value 1
@@ -1024,7 +1030,9 @@ let%expect_test "ok: synchronised printing in for loop" =
     |};
   [%expect
     {|
-    Runtime error: Deadlock: trying to leave sending state while not in sending state
+    сендер прогнал всех кто ready
+    сендер прогнал всех кто ready
+    Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 (ran all ready goroutines and couldn't find sender)
 
     go2: 1
     go1: 2 |}]
@@ -1039,16 +1047,21 @@ let%expect_test "ok: send and receive in for init" =
     func goo() {
       a := 0
 
-      for c <- a; a < 6; a++ {
-        println("go2: a = ", a)
-      }
+      c <- a
+      a++
+      println("go2: a = ", a)
+      //c <- 0
+      //a++
+      //println("go2: a = ", a)
     }
 
     func main() {
       go goo()
-      for a := <-c; a < 6; a++ {
-        println("go1: a = ", a)
-      }
+      
+      a := <-c
+      println("go1: a = ", a)
+      //a = <-c
+      //println("go2: a = ", a)
     }
     |};
   [%expect {| Runtime error: Dev: no goroutine running |}]

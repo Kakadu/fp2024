@@ -67,13 +67,12 @@ let rec exec eval_stmt =
            | None -> exec eval_stmt)))
 ;;
 
-let rec skip (hd, tl) =
+let rec skip_local_env (hd, tl) =
   match hd.env_type with
   | For -> return (hd :: tl)
   | Default ->
-    skip (List.hd tl, List.tl tl)
-    >>= fun sk ->
-    return ({ exec_block = []; var_map = hd.var_map; env_type = hd.env_type } :: sk)
+    skip_local_env (List.hd tl, List.tl tl)
+    >>= fun sk -> return ({ hd with exec_block = [] } :: sk)
 ;;
 
 (** Runs all ready to run goroutines, after it returns it is guaranteed that all existing goroutines
@@ -435,7 +434,9 @@ and eval_stmt = function
   | Stmt_block body -> add_env body Default *> exec eval_stmt *> delete_env
   | Stmt_break -> exec eval_stmt *> delete_env
   | Stmt_continue ->
-    (read_local_envs >>= skip >>= fun lst -> write_local_envs (List.hd lst, List.tl lst))
+    (read_local_envs
+     >>= skip_local_env
+     >>= fun lst -> write_local_envs (List.hd lst, List.tl lst))
     *> return ()
   | Stmt_for for' -> eval_for for'
   | Stmt_return exprs -> eval_return exprs
@@ -567,7 +568,6 @@ and eval_chan_send (ident, expr) =
         | None ->
           check_ready_goroutine
           >>= (function
-           | Some _ -> run_ready_goroutines eval_stmt
            | None ->
              fail
                (Runtime_error
@@ -575,7 +575,11 @@ and eval_chan_send (ident, expr) =
                      (asprintf
                         "goroutine %d trying to send to chan %d"
                         sending_goroutine.go_id
-                        chan_id)))))
+                        chan_id)))
+           | Some _ ->
+             run_ready_goroutines eval_stmt
+             *> return (prerr_endline "сендер прогнал всех кто ready")))
+    (* тут надо как-то удостовериться в том, что программа завершилась *)
   | _ -> fail (Runtime_error (TypeCheckFailed "chan send"))
 
 and eval_chan_receive expr =
@@ -593,15 +597,28 @@ and eval_chan_receive expr =
         | None ->
           check_ready_goroutine
           >>= (function
-           | Some _ -> run_ready_goroutines eval_stmt
            | None ->
              fail
                (Runtime_error
                   (Deadlock
                      (asprintf
-                        "goroutine %d trying to receive from chan %d"
+                        "goroutine %d trying to receive from chan %d (no ready \
+                         goroutines at the moment)"
                         receiving_goroutine.go_id
-                        chan_id)))))
+                        chan_id)))
+           | Some _ ->
+             run_ready_goroutines eval_stmt *> is_using_chanel
+             >>= (function
+              | Some _ -> return ()
+              | None ->
+                fail
+                  (Runtime_error
+                     (Deadlock
+                        (asprintf
+                           "goroutine %d trying to receive from chan %d (ran all ready \
+                            goroutines and couldn't find sender)"
+                           receiving_goroutine.go_id
+                           chan_id))))))
     *>
     let* receiving_goroutine, value = use_chanel in
     run_goroutine receiving_goroutine *> return value
