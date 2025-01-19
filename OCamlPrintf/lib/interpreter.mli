@@ -28,7 +28,5 @@ val pp_value : Format.formatter -> value -> unit
 module Inter : sig
   val eval_structure
     :  Ast.structure_item list
-    -> ( (string, value, Base.String.comparator_witness) Base.Map.t * value list
-         , error )
-         result
+    -> ((Ast.ident option * value) list, error) result
 end

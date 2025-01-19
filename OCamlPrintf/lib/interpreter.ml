@@ -90,11 +90,9 @@ module EvalEnv = struct
     | None -> Res.fail (`No_variable key)
   ;;
 
-  let pp ppf env =
-    Stdlib.Format.fprintf ppf "EvalEnv:\n";
-    Map.iteri env ~f:(fun ~key:str ~data:val' ->
-      Stdlib.Format.fprintf ppf "%s -> %a; " str pp_value val');
-    Stdlib.Format.fprintf ppf "\n"
+  let find_exn1 env key =
+    let val' = Map.find_exn env key in
+    val'
   ;;
 end
 
@@ -344,26 +342,65 @@ module Inter = struct
       value_binding_list
   ;;
 
-  let eval_structure_item env = function
+  let eval_structure_item env out_list =
+    let rec extract_names_from_pat env acc = function
+      | Pat_var id -> acc @ [ Some id, EvalEnv.find_exn1 env id ]
+      | Pat_tuple (fst_pat, snd_pat, pat_list) ->
+        Base.List.fold_left
+          (fst_pat :: snd_pat :: pat_list)
+          ~init:acc
+          ~f:(extract_names_from_pat env)
+      | Pat_construct ("::", Some exp) ->
+        (match exp with
+         | Pat_tuple (head, tail, []) ->
+           let acc = extract_names_from_pat env acc head in
+           extract_names_from_pat env acc tail
+         | _ -> acc)
+      | Pat_construct ("Some", Some pat) -> extract_names_from_pat env acc pat
+      | Pat_constraint (pat, _) -> extract_names_from_pat env acc pat
+      | _ -> acc
+    in
+    let get_names_from_let_binds env =
+      Base.List.fold_left ~init:[] ~f:(fun acc { pat; _ } ->
+        extract_names_from_pat env acc pat)
+    in
+    function
     | Struct_eval exp ->
-      let* val_exp = eval_expression env exp in
-      return (env, Some val_exp)
+      let* val' = eval_expression env exp in
+      return (env, out_list @ [ None, val' ])
     | Struct_value (Nonrecursive, value_binding, value_binding_list) ->
-      let* env = eval_value_binding_list env (value_binding :: value_binding_list) in
-      return (env, None)
+      let value_binding_list = value_binding :: value_binding_list in
+      let* env = eval_value_binding_list env value_binding_list in
+      let eval_list = get_names_from_let_binds env value_binding_list in
+      return (env, out_list @ eval_list)
     | Struct_value (Recursive, value_binding, value_binding_list) ->
-      let* env = eval_rec_value_binding_list env (value_binding :: value_binding_list) in
-      return (env, None)
+      let value_binding_list = value_binding :: value_binding_list in
+      let* env = eval_rec_value_binding_list env value_binding_list in
+      let eval_list = get_names_from_let_binds env value_binding_list in
+      return (env, out_list @ eval_list)
   ;;
 
-  let eval_structure =
-    Base.List.fold_left
-      ~f:(fun acc item ->
-        let* env, val_list = acc in
-        let* env, val_opt = eval_structure_item env item in
-        match val_opt with
-        | Some val_exp -> return (env, val_list @ [ val_exp ])
-        | None -> return (env, val_list))
-      ~init:(return (empty, []))
+  let eval_structure ast =
+    let* _, out_list =
+      Base.List.fold_left
+        ~f:(fun acc item ->
+          let* env, out_list = acc in
+          let* env, out_list = eval_structure_item env out_list item in
+          return (env, out_list))
+        ~init:(return (empty, []))
+        ast
+    in
+    let remove_duplicates =
+      let fun_equal el1 el2 =
+        match el1, el2 with
+        | (Some id1, _), (Some id2, _) -> String.equal id1 id2
+        | _ -> false
+      in
+      function
+      | x :: xs when not (Base.List.mem xs x ~equal:fun_equal) -> x :: xs
+      | _ :: xs -> xs
+      | [] -> []
+    in
+    return (remove_duplicates out_list)
   ;;
 end

@@ -9,10 +9,12 @@ let run str =
   match parse str with
   | Ok ast ->
     (match Inter.eval_structure ast with
-     | Ok (env, val_list) ->
-       Base.Map.iteri env ~f:(fun ~key ~data ->
-         Format.printf "val %s = %a\n" key pp_value data);
-       List.iter (fun val_exp -> Format.printf "- = %a\n" pp_value val_exp) val_list
+     | Ok out_list ->
+       List.iter
+         (function
+           | Some id, val' -> Format.printf "val %s = %a\n" id pp_value val'
+           | None, val' -> Format.printf "- = %a\n" pp_value val')
+         out_list
      | Error e -> Format.printf "Interpreter error: %a\n" pp_error e)
   | Error _ -> Format.printf "Parsing error\n"
 ;;
