@@ -28,7 +28,7 @@ and value_error =
 let rec pp_value ppf = function
   | ValueInt x -> fprintf ppf "%d" x
   | ValueBool b -> fprintf ppf "%b" b
-  | ValueString s -> fprintf ppf "\"%s\"" s
+  | ValueString s -> fprintf ppf "%S" s
   | ValueUnit -> fprintf ppf "()"
   | ValueTuple (v1, v2, vl) ->
     fprintf
@@ -172,9 +172,8 @@ end = struct
 
   let rec create_nested_closures env patterns body =
     match patterns with
-    | [] -> fail PatternMatchingError (* Возвращаем ошибку через монаду *)
-    | [ p ] ->
-      return (ValueClosure (p, false, body, env)) (* Возвращаем успешный результат *)
+    | [] -> fail PatternMatchingError
+    | [ p ] -> return (ValueClosure (p, false, body, env))
     | p :: ps ->
       let* _ = create_nested_closures env ps body in
       return (ValueClosure (p, false, ExpLambda (ps, body), env))
