@@ -69,10 +69,10 @@ module Res = struct
   let fail = Result.fail
   let return = Result.return
 
-  let ( >>= ) x f =
-    match x with
-    | Error x -> Error x
-    | Ok a -> f a
+  let ( >>= ) (monad : 'a t) (f : 'a -> 'b t) : 'b t =
+    match monad with
+    | Ok result -> f result
+    | Error x -> fail x
   ;;
 
   let ( let* ) = ( >>= )
@@ -106,6 +106,7 @@ module Inter = struct
   open EvalEnv
 
   let eval_arith opr val1 val2 = return (Val_integer (opr val1 val2))
+  let eval_concat opr val1 val2 = return (Val_string (opr val1 val2))
 
   let eval_eq opr val1 val2 =
     return (Val_construct (Bool.to_string (opr val1 val2), None))
@@ -123,6 +124,7 @@ module Inter = struct
     | "/", _, Val_integer 0 -> fail `Division_by_zero
     | "+", Val_integer val1, Val_integer val2 -> eval_arith ( + ) val1 val2
     | "-", Val_integer val1, Val_integer val2 -> eval_arith ( - ) val1 val2
+    | "^", Val_string val1, Val_string val2 -> eval_concat ( ^ ) val1 val2
     | ">=", val1, val2 -> eval_eq ( >= ) val1 val2
     | "<=", val1, val2 -> eval_eq ( <= ) val1 val2
     | "<>", val1, val2 -> eval_eq ( <> ) val1 val2

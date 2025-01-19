@@ -63,7 +63,7 @@ let run_single dump_parsetree inference input_source =
               env_infer, env_inter))
   in
   let env_infer, env_inter =
-    Inferencer.env_with_print_int, Interpreter.env_with_print_funs
+    Inferencer.env_with_print_funs, Interpreter.env_with_print_funs
   in
   match input_source with
   | Some file_name ->

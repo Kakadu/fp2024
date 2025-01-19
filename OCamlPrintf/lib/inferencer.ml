@@ -494,6 +494,7 @@ module Infer = struct
       let* required_arg_ty, required_result_ty =
         match opr with
         | "*" | "/" | "+" | "-" -> return (Type_int, Type_int)
+        | "^" -> return (Type_string, Type_string)
         | ">=" | "<=" | "<>" | "=" | ">" | "<" ->
           let* fresh = fresh_var in
           return (fresh, Type_bool)
@@ -803,11 +804,16 @@ end
 
 let empty_env = TypeEnv.empty
 
-let env_with_print_int =
-  TypeEnv.extend
-    empty_env
-    "print_int"
-    (Scheme (VarSet.empty, Type_arrow (Type_int, Type_unit)))
+let env_with_print_funs =
+  let print_fun_list =
+    [ "print_int", Scheme (VarSet.empty, Type_arrow (Type_int, Type_unit))
+    ; "print_endline", Scheme (VarSet.empty, Type_arrow (Type_string, Type_unit))
+    ]
+  in
+  List.fold_left
+    (fun env (id, sch) -> TypeEnv.extend env id sch)
+    TypeEnv.empty
+    print_fun_list
 ;;
 
 let run_inferencer ?(debug = false) env ast =

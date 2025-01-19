@@ -330,6 +330,7 @@ let parse_operator op_list =
 
 let mul_div = parse_operator [ "*"; "/" ]
 let add_sub = parse_operator [ "+"; "-" ]
+let concat = parse_operator [ "^" ]
 let cmp = parse_operator [ ">="; "<="; "<>"; "="; ">"; "<" ]
 let and_ = parse_operator [ "&&" ]
 let or_ = parse_operator [ "||" ]
@@ -539,6 +540,7 @@ let parse_exp_apply_un_op parse_exp =
 let parse_exp_apply_bin_op parse_exp =
   let parse_exp = parse_left_bin_op parse_exp mul_div in
   let parse_exp = parse_left_bin_op parse_exp add_sub in
+  let parse_exp = parse_right_bin_op parse_exp concat in
   let parse_exp = parse_left_bin_op parse_exp cmp in
   let parse_exp = parse_right_bin_op parse_exp and_ in
   parse_right_bin_op parse_exp or_

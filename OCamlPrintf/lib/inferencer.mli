@@ -36,7 +36,7 @@ module TypeEnv : sig
 end
 
 val empty_env : TypeEnv.t
-val env_with_print_int : TypeEnv.t
+val env_with_print_funs : TypeEnv.t
 
 val run_inferencer
   :  ?debug:bool
