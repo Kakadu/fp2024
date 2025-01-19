@@ -5,7 +5,6 @@
 open EvalMonad
 open EvalMonad.Monad
 open Ast
-open Errors
 open Format
 
 let rec pp_value = function
@@ -97,7 +96,7 @@ let run_ready_goroutines eval_stmt =
           | None -> return ())
          *> read_running_fail
          >>= (function
-          | { go_id = 1 } ->
+          | { go_id = 1; _ } ->
             (* main goroutine finished working and doesn't wait for others to finish *)
             return ()
           | _ ->
@@ -321,10 +320,6 @@ and prepare_builtin_eval vlist = function
       | Some [ single_srg ] -> return (Some single_srg)
       | Some lst -> return (Some (Value_tuple lst))
       | None -> return (Some (Value_nil Nil)))
-
-and retrieve_arg_generic = function
-  | Arg_expr _ -> fail (Runtime_error (TypeCheckFailed "arg_generic"))
-  | Arg_type t -> return t
 
 and eval_index array index =
   let* array = eval_expr array in
@@ -615,8 +610,8 @@ and eval_go (func, arg_exprs) =
   >>= function
   | Value_func (Func_uninitialized Nil) -> fail (Runtime_error Uninited_func)
   | Value_func (Func_builtin _) -> eval_func_call (func, arg_exprs) *> return ()
-  | Value_func (Func_initialized (Default, { args; body }))
-  | Value_func (Func_initialized (FuncLit, { args; body })) ->
+  | Value_func (Func_initialized (Default, { args; body; _ }))
+  | Value_func (Func_initialized (FuncLit, { args; body; _ })) ->
     let* var_map = create_args_map arg_exprs (rpf args) in
     create_goroutine
       { local_envs = { exec_block = body; var_map; env_type = Default }, []
@@ -624,7 +619,7 @@ and eval_go (func, arg_exprs) =
       ; returns = None
       ; panics = None
       }
-  | Value_func (Func_initialized (Closure closure_map, { args; body })) ->
+  | Value_func (Func_initialized (Closure closure_map, { args; body; _ })) ->
     let* var_map = create_args_map arg_exprs (rpf args) in
     let var_map = MapIdent.union (fun _key v1 _v2 -> Some v1) var_map closure_map in
     create_goroutine
@@ -669,7 +664,7 @@ let save_global_vars_and_funcs file =
 
 let add_main_goroutine =
   iter (function
-    | Decl_func ("main", { body }) ->
+    | Decl_func ("main", { body; _ }) ->
       create_goroutine
         { local_envs =
             { exec_block = body; var_map = MapIdent.empty; env_type = Default }, []
