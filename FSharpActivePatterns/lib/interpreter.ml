@@ -272,7 +272,7 @@ let rec match_pattern env =
            eval_expr env body
          | arg1 :: args -> return (VFun (arg1, args, body, f_env))
        in
-       pp_value Format.std_formatter value_after_applying;
+       (*pp_value Format.std_formatter value_after_applying;*)
        (* match pattern in case (p) and value *)
        (match value_after_applying with
         | VActPatCase (name_evaluated, value) when name_evaluated = name ->
