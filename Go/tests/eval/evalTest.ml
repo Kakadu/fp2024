@@ -27,7 +27,11 @@ let%expect_test "ok: empty main" =
     {|
     func main() {}
     |};
-  [%expect {| Correct evaluating |}]
+  [%expect {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    Correct evaluating |}]
 ;;
 
 let%expect_test "ok: simple main with prints" =
@@ -41,6 +45,9 @@ let%expect_test "ok: simple main with prints" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml kill OCaml kill OCaml |}]
 ;;
@@ -53,6 +60,9 @@ let%expect_test "ok: single long_var_init" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -65,6 +75,9 @@ let%expect_test "ok: multiple long_var_init" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -74,7 +87,11 @@ let%expect_test "err: division by zero" =
     {|
     func main() { a := 1 / 0 }
     |};
-  [%expect {| Runtime error: division by zero |}]
+  [%expect {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    Runtime error: division by zero |}]
 ;;
 
 let%expect_test "err: by zero modulus" =
@@ -82,7 +99,11 @@ let%expect_test "err: by zero modulus" =
     {|
     func main() { a := 1 % 0 }
     |};
-  [%expect {| Runtime error: division by zero |}]
+  [%expect {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    Runtime error: division by zero |}]
 ;;
 
 let%expect_test "ok: func call in global var decl" =
@@ -95,6 +116,9 @@ let%expect_test "ok: func call in global var decl" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     3 |}]
 ;;
@@ -111,6 +135,9 @@ let%expect_test "ok: simple func_call with args" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -129,6 +156,9 @@ let%expect_test "ok: simple value func call" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -145,6 +175,9 @@ let%expect_test "ok: local var decl func call" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -165,6 +198,9 @@ let%expect_test "ok: func args init" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml OCaml |}]
 ;;
@@ -186,6 +222,9 @@ let%expect_test "ok: assignment check" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     OCaml OCaml OCaml |}]
 ;;
@@ -208,6 +247,9 @@ let%expect_test "ok: simple arithmetic check" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     105 |}]
 ;;
@@ -229,6 +271,9 @@ let%expect_test "ok: short var init" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     206 |}]
 ;;
@@ -268,6 +313,9 @@ let%expect_test "ok: simple if" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     Correct Correct Correct |}]
 ;;
@@ -297,6 +345,9 @@ let%expect_test "ok: nested if decl" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     11111 |}]
 ;;
@@ -312,6 +363,9 @@ let%expect_test "ok: if with init" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     норм |}]
@@ -334,6 +388,9 @@ let%expect_test "ok: simple for" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     1
@@ -362,6 +419,9 @@ let%expect_test "ok: break" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     1
@@ -385,6 +445,9 @@ let%expect_test "ok: continue" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     0
@@ -411,6 +474,9 @@ let%expect_test "ok: function returns on return" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCaml |}]
 ;;
@@ -430,6 +496,9 @@ let%expect_test "ok: simple return check" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     kill OCamlCORRECTkill OCamlCORRECT |}]
 ;;
@@ -450,6 +519,9 @@ let%expect_test "ok: factorial check" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     120 |}]
 ;;
@@ -469,6 +541,9 @@ let%expect_test "ok: funclit check" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     2 |}]
 ;;
@@ -493,6 +568,9 @@ let%expect_test "ok: closure check" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     00
@@ -521,6 +599,9 @@ let%expect_test "ok: simple array assignment and call" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     Kill Ocaml |}]
@@ -538,6 +619,9 @@ let%expect_test "ok: full array printing" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     01234 |}]
 ;;
@@ -559,6 +643,9 @@ let%expect_test "ok: array of functions with auto size" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     123 |}]
 ;;
@@ -576,6 +663,9 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     Kill Ocaml |}]
@@ -594,6 +684,9 @@ let%expect_test "err: array index out of bounds in expr" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Runtime error: array index out of bounds |}]
 ;;
 
@@ -610,6 +703,9 @@ let%expect_test "err: array index out of bounds in lvalue" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Runtime error: array index out of bounds |}]
 ;;
 
@@ -669,6 +765,9 @@ let%expect_test "ok: defer check function reassignment value" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
     1
     2
@@ -702,6 +801,9 @@ func f() {
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     Calling g.
@@ -747,6 +849,9 @@ let%expect_test "ok: panic does not impact on goroutine without chanels" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     Creating new goroutine
@@ -786,6 +891,9 @@ let%expect_test "ok: panic with recover" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Correct evaluating
 
     Calling g.
@@ -828,6 +936,9 @@ let%expect_test "err: not recovered panic" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
     Runtime error: Panic: 4
 
     Calling g.
@@ -867,8 +978,16 @@ let%expect_test "ok: two goroutine sync with unbuffered chanel" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
     сендер прогнал всех кто ready
-    Correct evaluating
+    goroutine 2 started running
+    goroutine 2 stopped
+    goroutine 2 stopped
+    goroutine 1 started running
+    Runtime error: Dev: no goroutine running
 
     go1: trying to send. Value:0
     go2: trying to receive
@@ -907,9 +1026,18 @@ let%expect_test "ok: receive and send back" =
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
     сендер прогнал всех кто ready
+    goroutine 2 started running
+    goroutine 2 stopped
+    goroutine 2 stopped
     сендер прогнал всех кто ready
-    Correct evaluating
+    goroutine 1 started running
+    goroutine 1 stopped
+    Runtime error: Dev: no goroutine running
 
     go1: trying to send. Value:0
     go2: trying to receive
@@ -928,7 +1056,12 @@ let%expect_test "err: sender without receiver" =
       c <- 0
     }
     |};
-  [%expect {| Runtime error: Deadlock: goroutine 1 trying to send to chan 1 |}]
+  [%expect {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
+    Runtime error: Deadlock: goroutine 1 trying to send to chan 1 |}]
 ;;
 
 let%expect_test "err: receiver without sender" =
@@ -940,7 +1073,12 @@ let%expect_test "err: receiver without sender" =
     }
     |};
   [%expect
-    {| Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 (no ready goroutines at the moment) |}]
+    {|
+      goroutine 0 started running
+      goroutine 0 stopped
+      goroutine 1 started running
+      goroutine 1 stopped
+      Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 (ran all ready goroutines and couldn't find sender) |}]
 ;;
 
 let%expect_test "ok: save goroutine receiving two times" =
@@ -961,7 +1099,14 @@ let%expect_test "ok: save goroutine receiving two times" =
       println(<-c, <-c)
     }
     |};
-  [%expect {| Runtime error: Dev: no goroutine running |}]
+  [%expect {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
+    goroutine 2 started running
+    goroutine 2 stopped
+    Runtime error: Dev: no goroutine running |}]
 ;;
 
 let%expect_test "ok: two goroutines sending to the same chanel before value received" =
@@ -990,9 +1135,19 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
     сендер прогнал всех кто ready
+    goroutine 2 started running
+    goroutine 2 stopped
     сендер прогнал всех кто ready
-    Correct evaluating
+    goroutine 3 started running
+    goroutine 3 stopped
+    goroutine 3 stopped
+    goroutine 1 started running
+    Runtime error: Dev: no goroutine running
 
     go1: sending value 1
     go2: sending value 2
@@ -1013,7 +1168,7 @@ let%expect_test "ok: synchronised printing in for loop" =
         <-c
         a++
         println("go2: ", a)
-        c <- 0
+        <-c
       }
     }
 
@@ -1024,15 +1179,23 @@ let%expect_test "ok: synchronised printing in for loop" =
         c <- 0
         a++
         println("go1: ", a)
-        <-c
+        c <- 0
       }
     }
     |};
   [%expect
     {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
     сендер прогнал всех кто ready
-    сендер прогнал всех кто ready
-    Runtime error: Deadlock: goroutine 1 trying to receive from chan 1 (ran all ready goroutines and couldn't find sender)
+    goroutine 2 started running
+    goroutine 2 stopped
+    goroutine 2 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
+    Runtime error: Dev: no goroutine running
 
     go2: 1
     go1: 2 |}]
@@ -1045,19 +1208,53 @@ let%expect_test "ok: send and receive in for init" =
     var c = make(chan int)
 
     func goo() {
-      a := 0
-
-      c <- a
-      a++
-      println("go2: a = ", a)
+      c <- 0
     }
 
     func main() {
       go goo()
       
-      a := <-c
-      println("go1: a = ", a)
+      <-c
     }
     |};
-  [%expect {| Runtime error: Dev: no goroutine running |}]
+  [%expect {|
+    goroutine 0 started running
+    goroutine 0 stopped
+    goroutine 1 started running
+    goroutine 1 stopped
+    goroutine 2 started running
+    goroutine 2 stopped
+    Runtime error: Dev: no goroutine running |}]
 ;;
+(*
+   [eval_chan_receive]
+    запомнили ресивера, остановили запущенную горутину []
+    отправили ресивера в очередь
+    [attempt_chan_interaction]
+        проверяем очереди, готовы ли оба ресивер и сендер
+        нет не готовы, ничего не происходит и мы возвращаемся
+    проверяем, используется ли канал.
+    не используется, значит запускаем ready горутины
+    [run_ready_goroutines]
+        запускается готовая вторая горутина и начинает исполняться
+        [exec]
+            дошли внутри второй горутины до отправки в канал
+            [eval_chan_send]
+                запомнили сендера, отсановили запущенную горутину
+                отправили сендера в очередь
+                [attempt_chan_interaction]
+                    проверяем очереди, готовы ли оба ресивер и сендер
+                    да, готовы. они достаются из очереди, 
+                    сендер помечается как готовый к исполнению
+                    переходим в состояние использования канала
+                проверяем, используется ли канал
+                да, используется, ничего не делаем и просто выходим из функции?
+            отправка в канал исполнилась, проверяем, используется ли канал
+            да используется, значит выходи из экзека
+        проверяем, используется ли канал
+        да, используется, выходим из функции
+    проверяем, используется ли канал
+    да, используется, значит дедлока нет
+    заканчиваем использование канала, из него достаётся значение и 
+    возвращается как результат ресива
+*)

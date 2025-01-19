@@ -85,7 +85,8 @@ let run_ready_goroutines eval_stmt =
   let rec runner () =
     run_ready_goroutine
     >>= function
-    | None -> return ()
+    | None ->
+      return () (* мб тут надо как-то проверять, не завершилась ли работа программы *)
     | Some () ->
       exec eval_stmt *> is_using_chanel
       >>= (function

@@ -349,10 +349,22 @@ module Monad = struct
     match ReadySet.choose_opt ready with
     | None -> return None
     | Some goroutine ->
-      delete_ready goroutine *> run_goroutine goroutine *> return (Some ())
+      delete_ready goroutine
+      *> run_goroutine goroutine
+      *> return
+           (prerr_endline
+              (Format.asprintf "goroutine %d started running" goroutine.go_id))
+      *> return (Some ())
   ;;
 
-  let delete_running_goroutine = write_running None
+  let delete_running_goroutine =
+    read_running
+    >>= function
+    | None -> return (prerr_endline "goroutine None stopped")
+    | Some { go_id } ->
+      return (prerr_endline (Format.asprintf "goroutine %d stopped" go_id))
+      *> write_running None
+  ;;
 
   (* chanels *)
 
@@ -688,7 +700,6 @@ module Monad = struct
     read
     >>= function
     | { has_finished = Running } as state -> write { state with has_finished = Finished }
-    | { has_finished = Finished } ->
-      fail (Runtime_error (Deadlock "no goroutine running"))
+    | { has_finished = Finished } -> fail (Runtime_error (Dev "no goroutine running"))
   ;;
 end
