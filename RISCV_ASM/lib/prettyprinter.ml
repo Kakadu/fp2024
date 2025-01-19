@@ -116,6 +116,10 @@ let pp_instruction_3reg_helper ppf mnemonic r1 r2 r3 =
   Format.fprintf ppf "%s %a, %a, %a" mnemonic pp_register r1 pp_register r2 pp_register r3
 ;;
 
+let pp_instruction_3vreg_helper ppf mnemonic v1 v2 v3 =
+  Format.fprintf ppf "%s %a, %a, %a" mnemonic pp_vector_register v1 pp_vector_register v2 pp_vector_register v3
+;;
+
 let pp_address ppf = function
   | Address12 (LabelAddress12 str) -> Format.fprintf ppf "%s" str
   | Address20 (LabelAddress20 str) -> Format.fprintf ppf "%s" str
@@ -129,8 +133,16 @@ let pp_instruction_2reg_1imm_helper ppf mnemonic r1 r2 addr =
   Format.fprintf ppf "%s %a,%a,%a" mnemonic pp_register r1 pp_register r2 pp_address addr
 ;;
 
+let pp_instruction_2vreg_1reg_helper ppf mnemonic v1 v2 r3 =
+  Format.fprintf ppf "%s %a, %a, %a" mnemonic pp_vector_register v1 pp_vector_register v2 pp_register r3
+;;
+
 let pp_instruction_2reg_1offset_helper ppf mnemonic r1 r2 addr =
   Format.fprintf ppf "%s %a,%a(%a)" mnemonic pp_register r1 pp_address addr pp_register r2
+;;
+
+let pp_instruction_1vreg_1reg_1offset_helper ppf mnemonic v1 r2 addr =
+  Format.fprintf ppf "%s %a,%a(%a)" mnemonic pp_vector_register v1 pp_address addr pp_register r2
 ;;
 
 let pp_instruction ppf = function
@@ -255,46 +267,28 @@ let pp_instruction ppf = function
   | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
   | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
   | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
-  | Vle32v (vd, rs1, imm) ->
-    Format.fprintf
-      ppf
-      "vle32.v %a, %a(%a)"
-      pp_vector_register
-      vd
-      pp_register
-      rs1
-      pp_address
-      (Address12 imm)
-  | Vse32v (vs, rs1, imm) ->
-    Format.fprintf
-      ppf
-      "vse32.v %a, %a(%a)"
-      pp_vector_register
-      vs
-      pp_register
-      rs1
-      pp_address
-      (Address12 imm)
-  | Vaddvv (vd, vs1, vs2) ->
-    Format.fprintf
-      ppf
-      "vadd.vv %a, %a, %a"
-      pp_vector_register
-      vd
-      pp_vector_register
-      vs1
-      pp_vector_register
-      vs2
-  | Vaddvx (vd, vs1, rs2) ->
-    Format.fprintf
-      ppf
-      "vadd.vx %a, %a, %a"
-      pp_vector_register
-      vd
-      pp_vector_register
-      vs1
-      pp_register
-      rs2
+  | Vle32v (vd, rs1, imm) -> pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.vv" vd rs1 (Address12 imm)
+  | Vse32v (vs, rs1, imm) -> pp_instruction_1vreg_1reg_1offset_helper ppf "vse32.vv" vs rs1 (Address12 imm)
+  | Vaddvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vadd.vv" vd vs1 vs2
+  | Vaddvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vadd.vx" vd vs1 rs2
+  | Vsubvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vsub.vv" vd vs1 vs2
+  | Vsubvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vsub.vx" vd vs1 rs2
+  | Vmulvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmul.vv" vd vs1 vs2
+  | Vmulvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmul.vx" vd vs1 rs2
+  | Vdivvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vdiv.vv" vd vs1 vs2
+  | Vdivvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vdiv.vx" vd vs1 rs2
+  | Vandvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vand.vv" vd vs1 vs2
+  | Vandvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vand.vx" vd vs1 rs2
+  | Vorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vor.vv" vd vs1 vs2
+  | Vorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vor.vx" vd vs1 rs2
+  | Vxorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vxor.vv" vd vs1 vs2
+  | Vxorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vxor.vx" vd vs1 rs2
+  | Vminvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmin.vv" vd vs1 vs2
+  | Vminvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmin.vx" vd vs1 rs2
+  | Vmaxvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmax.vv" vd vs1 vs2
+  | Vmaxvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmax.vx" vd vs1 rs2
+  | Veqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "veq.vv" vd vs1 vs2
+  | Veqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "veq.vx" vd vs1 rs2
 ;;
 
 let pp_str_or_int ppf = function
