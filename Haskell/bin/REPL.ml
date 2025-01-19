@@ -4,22 +4,25 @@
 
 type opts =
   { mutable dump_parsetree : bool
+  ; mutable print_types : bool
   ; mutable read_from_file : string
   }
 
 let () =
-  let opts = { dump_parsetree = false; read_from_file = "" } in
+  let opts = { dump_parsetree = false; print_types = false; read_from_file = "" } in
   let _ =
     let open Stdlib.Arg in
     parse
-      [ "-dparsetree", Unit (fun () -> opts.dump_parsetree <- true), "Dump parse tree" ]
+      [ "-dparsetree", Unit (fun () -> opts.dump_parsetree <- true), "Dump parse tree"
+      ; "-ptypes", Unit (fun () -> opts.print_types <- true), "Print types"
+      ]
       (fun file ->
         if Sys.file_exists file
         then opts.read_from_file <- file
         else (
           Stdlib.Format.eprintf "File doesn't exist\n";
           Stdlib.exit 1))
-      "Parse and print ast"
+      "Parse and print ast and types"
   in
   let is_stdin =
     match opts.read_from_file with
@@ -33,7 +36,8 @@ let () =
          '\n'
          (In_channel.with_open_text opts.read_from_file In_channel.input_all))
       opts.dump_parsetree
-      Haskell_lib.Inferencer.typeenv_print_int
+      opts.print_types
+      Haskell_lib.Inferencer.initial_env
   else (
     let rec helper (env, st) =
       (* TODO(Kakadu): Why curry? *)
@@ -44,7 +48,14 @@ let () =
       match line with
       | ":quit" -> ()
       | "" -> helper (env, st)
-      | _ -> helper (Haskell_lib.Pai.parse_and_infer_line line env st)
+      | _ ->
+        helper
+          (Haskell_lib.Pai.parse_and_infer_line
+             line
+             env
+             st
+             opts.dump_parsetree
+             opts.print_types)
     in
-    helper (Haskell_lib.Inferencer.typeenv_print_int, 0))
+    helper (Haskell_lib.Inferencer.initial_env, 2))
 ;;

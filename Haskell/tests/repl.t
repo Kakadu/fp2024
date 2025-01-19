@@ -5,130 +5,65 @@ SPDX-License-Identifier: MIT
   ================================================================================
   success (ran 1 tests)
 
-  $ ../bin/REPL.exe manytests/do_not_type/001.hs
+  $ ../bin/REPL.exe manytests/do_not_type/001.hs -ptypes
   Undefined variable 'fac'
 
-  $ ../bin/REPL.exe manytests/do_not_type/002if.hs
+  $ ../bin/REPL.exe manytests/do_not_type/002if.hs -ptypes
   unification failed on Int and Bool
 
-  $ ../bin/REPL.exe manytests/do_not_type/003occurs.hs
+  $ ../bin/REPL.exe manytests/do_not_type/003occurs.hs -ptypes
   Occurs check failed
 
-  $ ../bin/REPL.exe manytests/do_not_type/004_let_poly.hs
+  $ ../bin/REPL.exe manytests/do_not_type/004_let_poly.hs -ptypes
   unification failed on Int and Bool
 
-  $ ../bin/REPL.exe manytests/do_not_type/099.hs
-  unification failed on Maybe t5 and Ord t8 -> Ord t8 -> Bool
-  unification failed on () and t10 -> t10
+  $ ../bin/REPL.exe manytests/do_not_type/099.hs -ptypes
+  unification failed on Maybe t7 and Ord t10 -> Ord t10 -> Bool
+  unification failed on () and t12 -> t12
   [ 
   x:  Int
    ]
 
   $ ../bin/REPL.exe manytests/typed/001fac.hs
-  [ 
-  fac:  Int -> Int
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/002fac.hs
-  [ 
-  fac_cps: t11.  Int -> (Int -> t11) -> t11
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/003fib.hs
-  [ 
-  fib:  Int -> Int
-  fib_acc:  Int -> Int -> Int -> Int
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/004manyargs.hs
-  [ 
-  main:  Int
-  test10:  Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
-  test3:  Int -> Int -> Int -> Int
-  wrap: t1.  t1 -> t1
-   ]
 
   $ ../bin/REPL.exe manytests/typed/005fix.hs
-  [ 
-  fac:  (Int -> Int) -> Int -> Int
-  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/006partial.hs
-  [ 
-  foo:  Bool -> Int -> Int
-  foo2:  Int -> Int
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/006partial2.hs
-  [ 
-  foo:  Int -> Int -> Int -> Int
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/006partial3.hs
-  [ 
-  foo:  Int -> Int -> Int -> ()
-  main:  Int
-   ]
 
   $ ../bin/REPL.exe manytests/typed/007order.hs
-  [ 
-  _start:  () -> () -> Int -> () -> Int -> Int -> () -> Int -> Int -> Int
-  main:  ()
-   ]
 
   $ ../bin/REPL.exe manytests/typed/008ascription.hs
-  [ 
-  addi: t4.  (t4 -> Bool -> Int) -> (t4 -> Bool) -> t4 -> Int
-  main:  Int
-   ]
 
-  $ ../bin/REPL.exe manytests/typed/009let_poly.hs
+  $ ../bin/REPL.exe manytests/typed/009let_poly.hs -ptypes
   [ 
   temp:  (Int, Bool)
    ]
 
 
-  $ ../bin/REPL.exe manytests/typed/010sukharev.hs
+  $ ../bin/REPL.exe manytests/typed/010sukharev.hs -ptypes
   [ 
-  _1: t5.  Int -> Int -> (Int, t5) -> Bool
+  _1: t7.  Int -> Int -> (Int, t7) -> Bool
   _2:  Int
   _3:  Maybe (Int, Bool)
   _4:  Int
-  _42: t47.  t47 -> Bool
-  _5: t44.  Int -> t44
-  int_of_option: t38.  Maybe t38 -> Int
-   ]
-  $ ../bin/REPL.exe manytests/typed/015tuples.hs
-  [ 
-  feven: t37.  (t37, Int -> Int) -> Int -> Int
-  fix: t2. t5.  ((t2 -> t5) -> t2 -> t5) -> t2 -> t5
-  fixpoly: t24. t27.  ((t24 -> t27, t24 -> t27) -> t24 -> t27, (t24 -> t27, t24 -> t27) -> t24 -> t27) -> (t24 -> t27, t24 -> t27)
-  fodd: t49.  (Int -> Int, t49) -> Int -> Int
-  main:  Int
-  map: t12. t14.  (t12 -> t14) -> (t12, t12) -> (t14, t14)
-  meven:  Int -> Int
-  modd:  Int -> Int
-  tie:  (Int -> Int, Int -> Int)
+  _42: t49.  t49 -> Bool
+  _5: t46.  Int -> t46
+  int_of_option: t40.  Maybe t40 -> Int
    ]
 
+  $ ../bin/REPL.exe manytests/typed/015tuples.hs
+
   $ ../bin/REPL.exe manytests/typed/016lists.hs
-  [ 
-  append: t72.  [t72] -> [t72] -> [t72]
-  cartesian: t110. t117.  [t110] -> [t117] -> [(t110, t117)]
-  concat: t94.  [[t94]] -> [t94]
-  iter: t99.  (t99 -> ()) -> [t99] -> ()
-  length: t3.  [t3] -> Int
-  length_tail: t22.  [t22] -> Int
-  main:  Int
-  map: t28. t29.  (t28 -> t29) -> [t28] -> [t29]
-   ]
 
   $ ../bin/REPL.exe <<-EOF
   >  fac0 self n = if n<2 then n else n* self (n-1) 
@@ -136,18 +71,6 @@ SPDX-License-Identifier: MIT
   >  fac = fix fac0
   >  main = print_int (fac 3)
   > EOF
-  [ 
-  fac0:  (Int -> Int) -> Int -> Int
-   ]
-  [ 
-  fix: t11.  (t11 -> t11) -> t11
-   ]
-  [ 
-  fac:  Int -> Int
-   ]
-  [ 
-  main:  ()
-   ]
 
 # fibonacci
   $ ../bin/REPL.exe <<-EOF
@@ -156,26 +79,22 @@ SPDX-License-Identifier: MIT
   > tail xs = case xs of h:tl -> tl
   > zip_with f xs ys = case (xs,ys) of ([],[]) -> []; (h:tl, h2:tl2) -> (f h h2) : zip_with f tl tl2
   > fib = 0:1:(zip_with (+) fib (tail fib))
-  > main = let () = iter print_int (take 10 fib) in 0
+  > main = seq (iter print_int (take 10 fib)) 0
   > EOF
-  [ 
-  iter: t4.  (t4 -> ()) -> [t4] -> ()
-   ]
-  [ 
-  take: t16.  Int -> [t16] -> [t16]
-   ]
-  [ 
-  tail: t31.  [t31] -> [t31]
-   ]
-  [ 
-  zip_with: t39. t40. t41.  (t39 -> t40 -> t41) -> [t39] -> [t40] -> [t41]
-   ]
-  [ 
-  fib:  [Int]
-   ]
-  [ 
-  main:  Int
-   ]
 
 
 # TODO(Kakadu): It would be great to call read GHCi somewhere in the tests
+
+  $ ../bin/REPL.exe <<-EOF
+  > tree_example = (3; (4; (7; $; $); (11; $; $)); (8; (23; $; $); (1; $; $)))
+  > min x y = if x > y then y else x
+  > iter tree z = case tree of $ -> z; (v; l; r) -> let z1 = v:z; z2 = iter l z1; z3 = iter r z2 in z3
+  > repmin t = r where (r, m) = repmin1 t m; repmin1 $ m = ($, 9999999); repmin1 (v; l; r) m = let (lt, lm) = repmin1 l m; (rt, rm) = repmin1 r m in ((m; lt; rt), min v (min lm rm))
+  > old_values = iter tree_example []
+  > new_tree = repmin tree_example
+  > new_values = iter new_tree []
+  > print_list xs = case xs of [] -> (); h:tl -> seq (print_int h) (print_list tl)
+  > print_list old_values
+  > print_list new_values
+  > EOF
+
