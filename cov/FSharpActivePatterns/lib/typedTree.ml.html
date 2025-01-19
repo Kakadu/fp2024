@@ -151,10 +151,10 @@ type typ =
   | Type_list of typ
   | Type_tuple of typ * typ * typ list
   | TOption of typ
-  | TActPat of string * typ
+  | TActPat of string * typ (** [Even(int)] *)
   | Choice of (string, typ, Base.String.comparator_witness) Base.Map.t
   (** [Choice&lt;Even(int * int), Odd(string)&gt;] *)
-(* Map of Name/typ is Choice of &lt;Name(typ)&gt;, Name/typ is equiavalent to TActPat *)
+(* Map of Name/typ is Choice of &lt;Name1(typ1), Name2(typ2), ...&gt;, Name/typ is equiavalent to TActPat *)
 
 let choice_to_list ch =
   <span data-count="2">B</span>ase.List.map (Base.Map.to_alis<span data-count="2">t</span> ch) ~f:(fun (name, typ) -&gt; <span data-count="6">T</span>ActPat (name, typ))
