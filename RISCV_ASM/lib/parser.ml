@@ -211,7 +211,7 @@ let parse_float_register =
        ; string "ft10" *> return Ft10
        ; string "ft11" *> return Ft11
        ; string "ft0" *> return Ft0
-       ; string "ft0" *> return Ft1
+       ; string "ft1" *> return Ft1
        ; string "ft2" *> return Ft2
        ; string "ft3" *> return Ft3
        ; string "ft4" *> return Ft4
@@ -1254,14 +1254,14 @@ let parse_instruction =
               (fun r1 r2 -> InstructionExpr (FclassD (r1, r2)))
               parse_register
               (char ',' *> parse_float_register)
-       ; parse_string_with_spaces "fcvt.d.w"
-         *> lift2
-              (fun r1 r2 -> InstructionExpr (FcvtDW (r1, r2)))
-              parse_float_register
-              (char ',' *> parse_register)
        ; parse_string_with_spaces "fcvt.d.wu"
          *> lift2
               (fun r1 r2 -> InstructionExpr (FcvtDWu (r1, r2)))
+              parse_float_register
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "fcvt.d.w"
+         *> lift2
+              (fun r1 r2 -> InstructionExpr (FcvtDW (r1, r2)))
               parse_float_register
               (char ',' *> parse_register)
        ; parse_string_with_spaces "flw"
