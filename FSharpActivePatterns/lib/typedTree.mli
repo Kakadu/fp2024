@@ -11,8 +11,10 @@ type typ =
   | Type_list of typ
   | Type_tuple of typ * typ * typ list
   | TOption of typ
-  | TActPat of string * typ
+  | TActPat of string * typ (** [Even(int)] *)
   | Choice of (string, typ, Base.String.comparator_witness) Base.Map.t
+  (** [Choice<Even(int * int), Odd(string)>] *)
+(* Map of Name/typ is Choice of <Name1(typ1), Name2(typ2), ...>, Name/typ is equiavalent to TActPat *)
 
 val gen_typ_primitive : typ QCheck.Gen.t
 val arrow_of_types : typ list -> typ -> typ
