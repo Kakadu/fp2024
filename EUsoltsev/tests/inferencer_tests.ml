@@ -4,15 +4,7 @@
 
 open EUsoltsev_lib
 open Inferencer
-open Parser
-open Printf
 open Ast
-
-let parse_test input =
-  match parse input with
-  | Ok ast -> printf "%s\n" (show_program ast)
-  | Error fail -> printf "%s\n" fail
-;;
 
 let pretty_printer_parse_and_infer s =
   match Parser.parse s with
