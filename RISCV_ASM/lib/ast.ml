@@ -204,6 +204,20 @@ type instruction =
   | Li of register * address32
   (** Load Immediate. lui rd, immediate20; addi rd, rd, immediate12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
+  | Adduw of register * register * register
+  (** Add unsigned word. rd = ZEXT(rs1 + rs2)[31:0]*)
+  | Sh1add of register * register * register
+  (** Shift left by 1 and add. rd = rs2 + (rs1 << 1) *)
+  | Sh1adduw of register * register * register
+  (** Shift unsigned word left by 1 and add. rd = rs2 + (ZEXT(rs1) << 1) *)
+  | Sh2add of register * register * register
+  (** Shift left by 2 and add. rd = rs2 + (rs1 << 2) *)
+  | Sh2adduw of register * register * register
+  (** Shift unsigned word left by 2 and add. rd = rs2 + (ZEXT(rs1) << 2) *)
+  | Sh3add of register * register * register
+  (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
+  | Sh3adduw of register * register * register
+  (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
