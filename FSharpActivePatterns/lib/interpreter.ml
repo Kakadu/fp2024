@@ -86,11 +86,9 @@ module ValueEnv : sig
   val find_err : t -> string -> value R.t
   val extend : t -> string -> value -> t
   val update_exn : t -> string -> f:(value -> value) -> t
-  val remove : t -> string -> t
   val find : t -> string -> value option
   val find_exn : t -> string -> value
   val pp_value : Format.formatter -> value -> unit
-  val pp_env : Format.formatter -> t -> unit
   val set_many : t -> t -> t
   val default : t
 end = struct
@@ -149,8 +147,6 @@ end = struct
     extend env k (f v)
   ;;
 
-  let remove = Map.remove
-
   let find_err env name =
     let open R in
     match Map.find env name with
@@ -164,13 +160,13 @@ end = struct
   let find = Map.find
   let find_exn = Map.find_exn
 
-  let pp_env fmt t =
-    Map.iteri t ~f:(fun ~key ~data ->
-      Stdlib.Format.fprintf fmt "%s : %a\n" key pp_value data)
-  ;;
+  (* let pp_env fmt t =
+     Map.iteri t ~f:(fun ~key ~data ->
+     Stdlib.Format.fprintf fmt "%s : %a\n" key pp_value data)
+     ;; *)
 end
 
-open R
+include R
 open R.Syntax
 open ValueEnv
 module ExtractIdents = ExtractIdents.Make (R)
