@@ -203,24 +203,6 @@
 <a id="L179"></a><span class="visited"> </span>
 <a id="L180"></a><span class="visited"> </span>
 <a id="L181"></a><span > </span>
-<a id="L182"></a><span > </span>
-<a id="L183"></a><span > </span>
-<a id="L184"></a><span class="visited"> </span>
-<a id="L185"></a><span class="visited"> </span>
-<a id="L186"></a><span class="visited"> </span>
-<a id="L187"></a><span > </span>
-<a id="L188"></a><span > </span>
-<a id="L189"></a><span > </span>
-<a id="L190"></a><span class="visited"> </span>
-<a id="L191"></a><span class="visited"> </span>
-<a id="L192"></a><span class="visited"> </span>
-<a id="L193"></a><span > </span>
-<a id="L194"></a><span > </span>
-<a id="L195"></a><span > </span>
-<a id="L196"></a><span class="visited"> </span>
-<a id="L197"></a><span class="visited"> </span>
-<a id="L198"></a><span class="visited"> </span>
-<a id="L199"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -406,26 +388,8 @@
 <a href="#L179">179</a>
 <a href="#L180">180</a>
 <a href="#L181">181</a>
-<a href="#L182">182</a>
-<a href="#L183">183</a>
-<a href="#L184">184</a>
-<a href="#L185">185</a>
-<a href="#L186">186</a>
-<a href="#L187">187</a>
-<a href="#L188">188</a>
-<a href="#L189">189</a>
-<a href="#L190">190</a>
-<a href="#L191">191</a>
-<a href="#L192">192</a>
-<a href="#L193">193</a>
-<a href="#L194">194</a>
-<a href="#L195">195</a>
-<a href="#L196">196</a>
-<a href="#L197">197</a>
-<a href="#L198">198</a>
-<a href="#L199">199</a>
 </pre>
-<pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+<pre><code class="ocaml">(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -595,28 +559,10 @@ let%expect_test "type func that returns func that returns func..." =
     func() func() func() func() func() func() |}<span data-count="11">]</span>
 ;;
 
-let%expect_test "type bidirectional channel" =
+let%expect_test "type bidirectional chanel" =
   <span data-count="1">p</span>p print_type parse_type {|chan int|};
   <span data-count="1">[</span>%expect {|
     chan int |}<span data-count="11">]</span>
-;;
-
-let%expect_test "type receive-only channel" =
-  <span data-count="1">p</span>p print_type parse_type {|&lt;- chan func()|};
-  <span data-count="1">[</span>%expect {|
-    &lt;-chan func() |}<span data-count="11">]</span>
-;;
-
-let%expect_test "type send-only channel" =
-  <span data-count="1">p</span>p print_type parse_type {|chan&lt;- [0]string|};
-  <span data-count="1">[</span>%expect {| 
-    chan&lt;- [0]string |}<span data-count="11">]</span>
-;;
-
-let%expect_test "type send-only channel of bidirectional channel" =
-  <span data-count="1">p</span>p print_type parse_type {|chan &lt;- chan int|};
-  <span data-count="1">[</span>%expect {|
-    chan&lt;- chan int |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "type with parens" =

@@ -1063,7 +1063,7 @@
 <a href="#L517">517</a>
 <a href="#L518">518</a>
 </pre>
-<pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+<pre><code class="ocaml">(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -1071,7 +1071,7 @@ open Parse
 open Pprinter.Printer
 open Pp
 
-(********** break, continue, go, defer, channel send and receive **********)
+(********** break, continue, go, defer, chanel send and receive **********)
 
 let%expect_test "break stmt" =
   <span data-count="1">p</span>p print_stmt parse_stmt {|break|};

@@ -847,7 +847,7 @@
 <a href="#L409">409</a>
 <a href="#L410">410</a>
 </pre>
-<pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+<pre><code class="ocaml">(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -1211,25 +1211,25 @@ let%expect_test "unary_min test" =
     -n + 2 + -1|}<span data-count="11">]</span>
 ;;
 
-let%expect_test "channel receive test" =
+let%expect_test "chanel receive test" =
   <span data-count="1">p</span>p print_expr parse_expr "&lt;-c";
   <span data-count="1">[</span>%expect {|
     &lt;-c|}<span data-count="11">]</span>
 ;;
 
-let%expect_test "channel receive with unop test" =
+let%expect_test "chanel receive with unop test" =
   <span data-count="1">p</span>p print_expr parse_expr "-&lt;-c";
   <span data-count="1">[</span>%expect {|
     -&lt;-c|}<span data-count="11">]</span>
 ;;
 
-let%expect_test "channel receive with binop test" =
+let%expect_test "chanel receive with binop test" =
   <span data-count="1">p</span>p print_expr parse_expr "-&lt;-c + 1";
   <span data-count="1">[</span>%expect {|
     -&lt;-c + 1|}<span data-count="11">]</span>
 ;;
 
-let%expect_test "channel neseted receive test" =
+let%expect_test "chanel neseted receive test" =
   <span data-count="1">p</span>p print_expr parse_expr "&lt;-&lt;-&lt;-c";
   <span data-count="1">[</span>%expect {|
     &lt;-&lt;-&lt;-c|}<span data-count="11">]</span>

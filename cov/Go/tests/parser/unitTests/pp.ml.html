@@ -45,13 +45,13 @@
 <a href="#L8">8</a>
 <a href="#L9">9</a>
 </pre>
-<pre><code class="ocaml">(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+<pre><code class="ocaml">(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
 let pp printer parser str =
-  <span data-count="191">m</span>atch Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
-  | <span data-count="156">O</span>k res -&gt; print_endline (printe<span data-count="156">r</span> res)
+  <span data-count="188">m</span>atch Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
+  | <span data-count="153">O</span>k res -&gt; print_endline (printe<span data-count="153">r</span> res)
   | <span data-count="35">E</span>rror _ -&gt; print_endline ": syntax error"
 ;;
 </code></pre>
