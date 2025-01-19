@@ -4,6 +4,7 @@
 
 open Ast
 open Format
+open Parse.Common
 
 let pprint_ident ident = asprintf "%s" ident
 let pprint_sep_star = asprintf " * "
@@ -92,7 +93,18 @@ and pprint_rules list =
   let pprint_rule (Rule (p, e)) = asprintf "%s -> %s" (pprint_pat p) (pprint_expr e) in
   pprint_sep_by pprint_rule pprint_sep_or list
 
-and pprint_expr = function
+and pprint_expr =
+  let pprint_expr_paren e =
+    match e with
+    | Expr_lam _
+    | Expr_let _
+    | Expr_ifthenelse _
+    | Expr_match _
+    | Expr_function _
+    | Expr_apply _ -> asprintf "(%s)" (pprint_expr e)
+    | _ -> asprintf "%s" (pprint_expr e)
+  in
+  function
   | Expr_const e -> asprintf "%s" (pprint_const e)
   | Expr_ident_or_op e -> asprintf "%s" (pprint_ident e)
   | Expr_typed (e, t) -> asprintf "(%s : %s)" (pprint_expr e) (pprint_type t)
@@ -110,18 +122,9 @@ and pprint_expr = function
      | Some e ->
        asprintf "if %s then %s else %s" (pprint_expr i) (pprint_expr t) (pprint_expr e)
      | None -> asprintf "if %s then %s" (pprint_expr i) (pprint_expr t))
-  | Expr_apply (e1, e2) ->
-    let pprint_expr_paren e =
-      match e with
-      | Expr_lam _
-      | Expr_let _
-      | Expr_ifthenelse _
-      | Expr_match _
-      | Expr_function _
-      | Expr_apply _ -> asprintf "(%s)" (pprint_expr e)
-      | _ -> asprintf "%s" (pprint_expr e)
-    in
-    asprintf "%s %s" (pprint_expr_paren e1) (pprint_expr_paren e2)
+  | Expr_apply (Expr_apply (Expr_ident_or_op op, e1), e2) when is_builtin_op op ->
+    asprintf "%s %s %s" (pprint_expr_paren e1) op (pprint_expr_paren e2)
+  | Expr_apply (e1, e2) -> asprintf "%s %s" (pprint_expr_paren e1) (pprint_expr_paren e2)
   | Expr_match (e, r1, rest) ->
     let list = r1 :: rest in
     asprintf "match %s with %s" (pprint_expr e) (pprint_rules list)

@@ -194,13 +194,13 @@ let%expect_test "parse application of function to 5 arguments" =
 let%expect_test "parse application (+)a b" =
   pp pprint_expr parse_expr {| (+)a b |};
   [%expect {|
-    (+ a) b |}]
+    a + b |}]
 ;;
 
 let%expect_test "parse application (+.) a b" =
   pp pprint_expr parse_expr {| (+.) a b |};
   [%expect {|
-    (+. a) b |}]
+    a +. b |}]
 ;;
 
 let%expect_test "parse negative int" =
@@ -238,7 +238,7 @@ let%expect_test "parse unary minuses with parentheses" =
 let%expect_test "parse a+b" =
   pp pprint_expr parse_expr {| a+b |};
   [%expect {|
-    (+ a) b |}]
+    a + b |}]
 ;;
 
 let%expect_test " parse a + + should fail " =
@@ -250,43 +250,43 @@ let%expect_test " parse a + + should fail " =
 let%expect_test "parse 1+b" =
   pp pprint_expr parse_expr {| 1+b |};
   [%expect {|
-    (+ 1) b |}]
+    1 + b |}]
 ;;
 
 let%expect_test "parse a+b+c" =
   pp pprint_expr parse_expr {| a+b+c |};
   [%expect {|
-    (+ ((+ a) b)) c |}]
+    (a + b) + c |}]
 ;;
 
 let%expect_test "parse n-1 " =
   pp pprint_expr parse_expr {| n-1 |};
   [%expect {|
-    (- n) 1 |}]
+    n - 1 |}]
 ;;
 
 let%expect_test "parse a+b*c" =
   pp pprint_expr parse_expr {| a+b*c |};
   [%expect {|
-      (+ a) ((* b) c) |}]
+      a + (b * c) |}]
 ;;
 
 let%expect_test "parse a <= b <= c" =
   pp pprint_expr parse_expr {| a <= b <= c |};
   [%expect {|
-      (<= ((<= a) b)) c |}]
+      (a <= b) <= c |}]
 ;;
 
 let%expect_test "parse a || b || c" =
   pp pprint_expr parse_expr {| a || b || c |};
   [%expect {|
-      (|| a) ((|| b) c) |}]
+      a || (b || c) |}]
 ;;
 
 let%expect_test "parse a && b && c" =
   pp pprint_expr parse_expr {| a && b && c |};
   [%expect {|
-      (&& a) ((&& b) c) |}]
+      a && (b && c) |}]
 ;;
 
 (************************** Lambdas **************************)
@@ -528,7 +528,7 @@ let%expect_test "parse expression inside unbalanced nested parentheses should fa
 let%expect_test "parse (a+b)*c with priorities" =
   pp pprint_expr parse_expr {| (a+b)*c |};
   [%expect {|
-    (* ((+ a) b)) c  |}]
+    (a + b) * c  |}]
 ;;
 
 (************************** Mix **************************)
@@ -542,5 +542,5 @@ let%expect_test _ =
 let%expect_test _ =
   pp pprint_expr parse_expr {| 1 + if a then b else c + 2 |};
   [%expect {|
-    (+ 1) (if a then b else (+ c) 2) |}]
+    1 + (if a then b else c + 2) |}]
 ;;
