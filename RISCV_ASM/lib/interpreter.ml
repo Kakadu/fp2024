@@ -99,7 +99,8 @@ let resolve_label_excluding_directives program label =
     | InstructionExpr _ :: tl -> aux (Int64.add idx 4L) tl
     | DirectiveExpr (Word _) :: tl -> aux (Int64.add idx 4L) tl
     | DirectiveExpr (Space integer) :: tl -> aux (Int64.add idx (Int64.of_int integer)) tl
-    | DirectiveExpr (StringDir str) :: tl -> aux (Int64.add idx (Int64.of_int (String.length str))) tl
+    | DirectiveExpr (StringDir str) :: tl ->
+      aux (Int64.add idx (Int64.of_int (String.length str))) tl
     | _ :: tl -> aux idx tl
   in
   aux 0L program
@@ -125,7 +126,13 @@ let get_address32_value program = function
 ;;
 
 let init_data program =
-  let rec traverse_program program temporary_pc_counter memory_int memory_str memory_writable =
+  let rec traverse_program
+    program
+    temporary_pc_counter
+    memory_int
+    memory_str
+    memory_writable
+    =
     match program with
     | [] -> memory_int, memory_str, memory_writable
     | InstructionExpr _ :: rest ->
@@ -137,9 +144,16 @@ let init_data program =
           memory_writable
           [ 0L; 1L; 2L; 3L ]
       in
-      traverse_program rest (Int64.add temporary_pc_counter 4L) memory_int memory_str memory_writable
+      traverse_program
+        rest
+        (Int64.add temporary_pc_counter 4L)
+        memory_int
+        memory_str
+        memory_writable
     | DirectiveExpr (Word integer) :: rest ->
-      let memory_int = Int64Map.add temporary_pc_counter (Int64.of_int integer) memory_int in
+      let memory_int =
+        Int64Map.add temporary_pc_counter (Int64.of_int integer) memory_int
+      in
       let memory_writable =
         Int64Map.add temporary_pc_counter true memory_writable (* first byte writable *)
       in
@@ -151,7 +165,12 @@ let init_data program =
           memory_writable
           [ 1L; 2L; 3L ]
       in
-      traverse_program rest (Int64.add temporary_pc_counter 4L) memory_int memory_str memory_writable
+      traverse_program
+        rest
+        (Int64.add temporary_pc_counter 4L)
+        memory_int
+        memory_str
+        memory_writable
     | DirectiveExpr (Space integer) :: rest ->
       traverse_program
         rest
@@ -163,9 +182,7 @@ let init_data program =
       let memory_int = Int64Map.add temporary_pc_counter 0L memory_int in
       let memory_str = Int64Map.add temporary_pc_counter str memory_str in
       let str_length = String.length str in
-      let memory_writable =
-        Int64Map.add temporary_pc_counter true memory_writable
-      in
+      let memory_writable = Int64Map.add temporary_pc_counter true memory_writable in
       let memory_writable =
         List.fold_left
           (fun acc offset ->
@@ -235,9 +252,9 @@ let get_register_value state reg =
 ;;
 
 let set_register_value state reg value =
-  if reg = X0
-  then state
-  else
+  match reg with
+  | X0 -> state
+  | _ ->
     { state with
       registers =
         StringMap.add (show_register (handle_alternative_names reg)) value state.registers
@@ -245,18 +262,18 @@ let set_register_value state reg value =
 ;;
 
 let nth_opt_int64 l n =
-  if n < 0L
-  then fail "Index cannot be negative"
-  else (
+  match n with
+  | x when x < 0 -> fail "Index cannot be negative"
+  | _ ->
     let rec nth_aux l n =
       match l with
       | [] -> return None
       | a :: l ->
-        (match n = 0L with
-         | true -> return (Some a)
-         | false -> nth_aux l (Int64.sub n 4L))
+        (match n with
+         | 0L -> return (Some a)
+         | _ -> nth_aux l (Int64.sub n 4L))
     in
-    nth_aux l n)
+    nth_aux l (Int64.of_int n)
 ;;
 
 let set_pc state new_pc = { state with pc = new_pc }
@@ -266,12 +283,12 @@ let increment_pc state = { state with pc = Int64.add state.pc 4L }
 let resolve_address_incl_to_excl program immediate64_value =
   let rec traverse_program index remaining_value = function
     | [] ->
-      if remaining_value = 0L
-      then return index
-      else
-        fail
-          "End of program reached before resolving immediate address from including \
-           directives to excluding"
+      (match remaining_value with
+       | 0L -> return index
+       | _ ->
+         fail
+           "End of program reached before resolving immediate address from including \
+            directives to excluding")
     | InstructionExpr _ :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: rest | InstructionExpr _ :: rest ->
@@ -286,12 +303,12 @@ let resolve_address_incl_to_excl program immediate64_value =
 let resolve_address_excl_to_incl program immediate64_value =
   let rec traverse_program index remaining_value = function
     | [] ->
-      if remaining_value = 0L
-      then return index
-      else
-        fail
-          "End of program reached before resolving immediate address from excluding \
-           directives to including"
+      (match remaining_value with
+       | 0L -> return index
+       | _ ->
+         fail
+           "End of program reached before resolving immediate address from excluding \
+            directives to including")
     | InstructionExpr _ :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Space _) :: _ when remaining_value = 0L -> return index
@@ -464,7 +481,6 @@ let store_memory_int state address value size =
         return memory_writable
       | _ -> fail "Unsupported store size"
     in
-
     return { state with memory_int; memory_str; memory_writable }
 ;;
 
@@ -478,13 +494,13 @@ let execute_load_int state program rd rs1 imm size signed =
   let address = Int64.add base_address offset in
   let* value = load_memory_int state address size in
   let result =
-    if signed
-    then (
-      match size with
-      | 1 -> Int64.shift_right (Int64.shift_left value 56) 56
-      | 2 -> Int64.shift_right (Int64.shift_left value 48) 48
-      | _ -> value)
-    else value
+    match signed with
+    | true ->
+      (match size with
+       | 1 -> Int64.shift_right (Int64.shift_left value 56) 56
+       | 2 -> Int64.shift_right (Int64.shift_left value 48) 48
+       | _ -> value)
+    | false -> value
   in
   return (set_register_value state rd result)
 ;;
@@ -515,24 +531,27 @@ let handle_syscall state =
     let fd = Int64.to_int arg1 in
     let buf = arg2 in
     let count = Int64.to_int arg3 in
-    if fd = 1
-    then (
-      let rec read_memory addr count acc =
-        if count <= 0
-        then return (String.init (List.length acc) (fun i -> List.nth acc i))
-        else
-          let* byte = load_memory_int state addr 1 in
-          read_memory (Int64.add addr 1L) (count - 1) (Char.chr (Int64.to_int byte) :: acc)
-      in
-      let* str = read_memory buf count [] in
-      Printf.printf "%s" str;
-      return state)
-    else fail "Unsupported file descriptor for write syscall"
+    (match fd with
+     | 1 ->
+       let rec read_memory addr count acc =
+         match count <= 0 with
+         | true -> return (String.init (List.length acc) (fun i -> List.nth acc i))
+         | false ->
+           let* byte = load_memory_int state addr 1 in
+           read_memory
+             (Int64.add addr 1L)
+             (count - 1)
+             (Char.chr (Int64.to_int byte) :: acc)
+       in
+       let* str = read_memory buf count [] in
+       Printf.printf "%s" str;
+       return state
+     | _ -> fail "Unsupported file descriptor for write syscall")
   | _ -> fail "Unsupported syscall"
 ;;
 
 let rec interpret state program =
-  let* instr_opt = nth_opt_int64 program state.pc in
+  let* instr_opt = nth_opt_int64 program (Int64.to_int state.pc) in
   match instr_opt with
   | None -> return state
   | Some (InstructionExpr instr) ->
@@ -553,14 +572,16 @@ and execute_instruction state instr program =
   | Sra (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right
   | Slt (rd, rs1, rs2) ->
     execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 -> Int64.compare arg1 arg2 < 0)
-   | Sltu (rd, rs1, rs2) ->
+  | Sltu (rd, rs1, rs2) ->
     execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 ->
       Int64.unsigned_compare arg1 arg2 < 0)
-  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add
-  | Subi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.sub
-  | Xori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logxor
-  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor
-  | Andi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logand
+  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add false
+  | Subi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.sub false
+  | Xori (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm Int64.logxor false
+  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor false
+  | Andi (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm Int64.logand false
   | Slli (rd, rs1, imm) ->
     execute_shift_immediate_op state program rd rs1 imm Int64.shift_left
   | Srli (rd, rs1, imm) ->
@@ -580,10 +601,17 @@ and execute_instruction state instr program =
         | _ -> 0L)
       false
   | Sltiu (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
-      match Int64.unsigned_compare arg1 imm_value with
-      | x when x < 0 -> 1L
-      | _ -> 0L)
+    execute_immediate_op
+      state
+      program
+      rd
+      rs1
+      imm
+      (fun arg1 imm_value ->
+        match Int64.unsigned_compare arg1 imm_value with
+        | x when x < 0 -> 1L
+        | _ -> 0L)
+      false
   | Lb (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 1 true
   | Lh (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 2 true
   | Lw (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 true
@@ -702,9 +730,9 @@ and execute_instruction state instr program =
   | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul false
   | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div false
   | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem false
-  | Lwu (rd, rs1, imm) -> execute_load state program rd rs1 imm 4 false
-  | Ld (rd, rs1, imm) -> execute_load state program rd rs1 imm 8 true
-  | Sd (rs1, rs2, imm) -> execute_store state program rs1 rs2 imm 8
+  | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
+  | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
+  | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
   | Mv (rd, rs) ->
     execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add false
   | Li (rd, imm) ->
@@ -796,8 +824,7 @@ let show_state state =
 
 let%expect_test "test_program_execution" =
   let program =
-    [
-      InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
+    [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
     ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
     ; LabelExpr "loop"
     ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
@@ -887,19 +914,14 @@ let%expect_test "test_program_execution" =
 ;;
 
 let%expect_test "test_ecall_program_execution" =
-  let program =
-    [
-    DirectiveExpr(Space 150)
-    ;DirectiveExpr(StringDir "Аааааа")
-    ]
-  in
+  let program = [ DirectiveExpr (Space 150); DirectiveExpr (StringDir "Аааааа") ] in
   let initial_state = init_state program in
   match interpret initial_state program with
   | Ok final_state ->
     let state_str = show_state final_state in
     print_string state_str;
     [%expect
-     {|
+      {|
      X0: 0
      X1: 0
      X10: 0
