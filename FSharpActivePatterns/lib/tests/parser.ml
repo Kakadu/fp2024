@@ -2,13 +2,11 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open FSharpActivePatterns.Parser
-open FSharpActivePatterns.AstPrinter
-open Format
-
 let%expect_test "binary subtract" =
   let input = {| a - 3|} in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Binary expr(
@@ -19,7 +17,9 @@ let%expect_test "binary subtract" =
 
 let%expect_test "function apply of letIn" =
   let input = {| f let x = false in true || x|} in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Apply:
@@ -43,7 +43,9 @@ let%expect_test "function apply of letIn" =
 
 let%expect_test "arithmetic with unary operations and variables" =
   let input = {| - a - - b + 4|} in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Binary expr(
@@ -61,7 +63,9 @@ let%expect_test "arithmetic with unary operations and variables" =
 
 let%expect_test "sum of function applying" =
   let input = {| f 4 + g 3|} in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Binary expr(
@@ -80,7 +84,9 @@ let%expect_test "sum of function applying" =
 
 let%expect_test "order of logical expressions and function applying" =
   let input = {| let x = true in not x || true && f 12|} in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | LetIn=
@@ -107,9 +113,11 @@ let%expect_test "order of logical expressions and function applying" =
     --------| Const(Int: 12) |}]
 ;;
 
-let%expect_test "parse logical expression" =
+let%expect_test "FSharpActivePatterns.Parser.parse logical expression" =
   let input = {| (3 + 5) >= 8 || true && (5 <> 4) |} in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Binary expr(
@@ -130,9 +138,11 @@ let%expect_test "parse logical expression" =
     ------| Const(Int: 4) |}]
 ;;
 
-let%expect_test "parse integer expression" =
+let%expect_test "FSharpActivePatterns.Parser.parse integer expression" =
   let input = " (3 + 5) - (12 / 7)" in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Binary expr(
@@ -147,10 +157,10 @@ let%expect_test "parse integer expression" =
     ----| Const(Int: 7) |}]
 ;;
 
-let%expect_test "parse_unary_chain" =
+let%expect_test "FSharpActivePatterns.Parser.parse_unary_chain" =
   let input = "not not ( not true && false || 3 > 5)" in
-  let result = parse input in
-  print_p_res std_formatter result;
+  let result = FSharpActivePatterns.Parser.parse input in
+  FSharpActivePatterns.AstPrinter.print_p_res Format.std_formatter result;
   [%expect
     {|
     | Unary expr(
@@ -171,9 +181,11 @@ let%expect_test "parse_unary_chain" =
     --------| Const(Int: 5) |}]
 ;;
 
-let%expect_test "parse if with comparison" =
+let%expect_test "FSharpActivePatterns.Parser.parse if with comparison" =
   let input = "if 3 > 2 && false then 5 + 7 else 12" in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | If Then Else(
@@ -196,7 +208,9 @@ let%expect_test "parse if with comparison" =
 
 let%expect_test "sum with if" =
   let input = "a + if 3 > 2 then 2 else 1" in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Binary expr(
@@ -218,7 +232,9 @@ let%expect_test "inner expressions with LetIn and If" =
   let input =
     "if let x = true in let y = false in x || y then 3 else if 5 > 3 then 2 else 1"
   in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | If Then Else(
@@ -262,7 +278,9 @@ let%expect_test "inner expressions with LetIn and If" =
 
 let%expect_test "factorial" =
   let input = "let factorial n = if n = 0 then 1 else factorial (n - 1) in factorial b" in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | LetIn=
@@ -300,13 +318,17 @@ let%expect_test "factorial" =
 
 let%expect_test "fail in ITE with incorrect else expression" =
   let input = "if true then 1 else 2c" in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect {| : end_of_input |}]
 ;;
 
 let%expect_test "call if with parentheses" =
   let input = "(if(false)then(a) else(b))c" in
-  print_p_res std_formatter (parse input);
+  FSharpActivePatterns.AstPrinter.print_p_res
+    Format.std_formatter
+    (FSharpActivePatterns.Parser.parse input);
   [%expect
     {|
     | Apply:

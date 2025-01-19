@@ -2,11 +2,10 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open FSharpActivePatterns.Ast
-open FSharpActivePatterns.AstPrinter
-open Format
-
 let%expect_test "print Ast factorial" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let factorial =
     Lambda
       ( PConst (Int_lt 4)
@@ -112,6 +111,9 @@ let%expect_test "print Ast factorial" =
 ;;
 
 let%expect_test "print Ast double func" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let ident = Ident "n" in
   let pat = PConst (Int_lt 4) in
   let args = [] in
@@ -132,6 +134,9 @@ let%expect_test "print Ast double func" =
 ;;
 
 let%expect_test "print Ast tuple of binary operators" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let first = Const (Int_lt 3) in
   let second = Const (Int_lt 10) in
   let operators =
@@ -201,6 +206,9 @@ let%expect_test "print Ast tuple of binary operators" =
 ;;
 
 let%expect_test "print Ast of LetIn" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let sum =
     Expr
       (LetIn
@@ -228,6 +236,9 @@ let%expect_test "print Ast of LetIn" =
 ;;
 
 let%expect_test "print Ast of match_expr" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
