@@ -9,6 +9,7 @@ open Angstrom
 open Ast
 open Common
 open Expressions
+open Units_of_measure
 
 let parse_structure_item_expr =
   (skip_token "do" <|> skip_ws)
@@ -26,7 +27,21 @@ let parse_structure_item_def =
   return (Str_item_def (rec_flag, binding_fst, binding_rest))
 ;;
 
-let parse_structure_item = choice [ parse_structure_item_expr; parse_structure_item_def ]
+let pstritem_td =
+  let pstritem_mtd =
+    skip_token "[<Measure>]"
+    *> skip_token "type"
+    *>
+    let* name = parse_ident <* skip_ws in
+    let* rhs = option None (skip_token "=" *> pm >>| fun m -> Some m) in
+    return (Str_item_type_def (Measure_type_def (name, rhs)))
+  in
+  pstritem_mtd
+;;
+
+let parse_structure_item =
+  choice [ parse_structure_item_expr; parse_structure_item_def; pstritem_td ]
+;;
 
 let parse_program =
   sep_by

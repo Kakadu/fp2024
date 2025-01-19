@@ -27,7 +27,7 @@ let pprint_sep_by print sep list =
   helper "" list
 ;;
 
-(* Not enough brackets *)
+(* Not enough brackets, probably *)
 let rec pprint_measure =
   let pr_m m =
     match m with
@@ -139,7 +139,12 @@ let pprint_struct_item = function
     let flag = if flag = Recursive then " rec " else " " in
     let list = b1 :: rest in
     asprintf "let%s%s" flag (pprint_binds list)
-  | _ -> asprintf "failed to pprint structure item"
+  | Str_item_type_def td ->
+    (match td with
+     | Measure_type_def (m1, m2) ->
+       (match m2 with
+        | None -> asprintf "[<Measure>] type %s" m1
+        | Some m2' -> asprintf "[<Measure>] type %s = %s" m1 (pprint_measure m2')))
 ;;
 
 let pprint_program list =
