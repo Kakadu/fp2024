@@ -250,12 +250,20 @@ let parse_directive =
                    DirectiveExpr
                      (Section (section_name, section_type, section_flags, section_index)))
                  parse_string
-                 (ws_opt (char ',') *> ws_opt parse_quoted_string)
-                 (ws_opt (char ',') *> ws_opt parse_type)
                  (peek_char
                   >>= function
                   | Some ',' ->
-                    ws_opt (char ',') *> ws_opt (lift (fun i -> Some i) parse_number)
+                    ws_opt (char ',') *> ws_opt (parse_quoted_string >>| fun s -> Some s)
+                  | _ -> return None)
+                 (peek_char
+                  >>= function
+                  | Some ',' ->
+                    ws_opt (char ',') *> ws_opt (parse_type >>| fun t -> Some t)
+                  | _ -> return None)
+                 (peek_char
+                  >>= function
+                  | Some ',' ->
+                    ws_opt (char ',') *> ws_opt (parse_number >>| fun i -> Some i)
                   | _ -> return None))
        ; parse_string_with_spaces ".string"
          *> ws_opt (lift (fun str -> DirectiveExpr (StringDir str)) parse_quoted_string)
