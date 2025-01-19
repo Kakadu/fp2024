@@ -20,11 +20,13 @@
     (LabelExpr ".LFE23");
     (DirectiveExpr (Size ((LabelAddress12 "factorial"), ".-factorial")));
     (DirectiveExpr
-       (Section (".rodata.str1.8", "aMS", (Type "progbits"), (Some 1))));
+       (Section (".rodata.str1.8", (Some "aMS"), (Some (Type "progbits")),
+          (Some 1))));
     (DirectiveExpr (Align 3)); (LabelExpr ".LC0");
     (DirectiveExpr (StringDir "%d")); (DirectiveExpr (Align 3));
     (LabelExpr ".LC1"); (DirectiveExpr (StringDir "%d\n"));
-    (DirectiveExpr (Section (".text.startup", "ax", (Type "progbits"), None)));
+    (DirectiveExpr
+       (Section (".text.startup", (Some "ax"), (Some (Type "progbits")), None)));
     (DirectiveExpr (Align 1)); (DirectiveExpr (Globl (LabelAddress12 "main")));
     (DirectiveExpr (TypeDir ("main", (Type "function")))); (LabelExpr "main");
     (LabelExpr ".LFB24"); (DirectiveExpr CfiStartproc);
@@ -72,4 +74,6 @@
     (DirectiveExpr CfiEndproc); (LabelExpr ".LFE24");
     (DirectiveExpr (Size ((LabelAddress12 "main"), ".-main")));
     (DirectiveExpr (Ident "GCC: (Ubuntu 13.2.0-23ubuntu4) 13.2.0"));
-    (DirectiveExpr (Section (".note.GNU-stack", "", (Type "progbits"), None)))]
+    (DirectiveExpr
+       (Section (".note.GNU-stack", (Some ""), (Some (Type "progbits")), None)))
+    ]
