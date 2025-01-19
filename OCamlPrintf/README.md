@@ -31,7 +31,12 @@
   - [x] Auto
 - [x] Shrinker
 - [x] Type Checker
-- [ ] Interpreter
+- [x] Interpreter
+- [ ] Support for char, string types and operations with them
+  - [x] Types
+  - [x] Comparison
+  - [x] Concatenation
+- [ ] Support the formatted printing function
 
 ## Build
 
