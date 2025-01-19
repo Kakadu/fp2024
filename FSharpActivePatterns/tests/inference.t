@@ -8,20 +8,10 @@
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/004let_poly.ml
   Error occured: unification failed on bool and int
   
-  Error occured: unification failed on string and int
-  
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/015tuples.ml
   Error occured: Only variables are allowed as left-hand side of `let rec'
-  Error occured: unification failed on '2 * '3 and int * int * int
-  
   $ ../bin/REPL.exe -fromfile manytests/do_not_type/099.ml
   Error occured: Only variables are allowed as left-hand side of `let rec'
-  Error occured: Unbound variable : x
-  
-  Error occured: unification failed on '4 option and '3 -> '3
-  
-  Error occured: unification failed on unit and '5 -> '5
-  
   $ ../bin/REPL.exe -fromfile manytests/typed/001fac.ml
   24
   val fac : int -> int = <fun> 
