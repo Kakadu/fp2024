@@ -139,3 +139,27 @@ let%expect_test "test_sum_two_args" =
   ]
 |}]
 ;;
+
+let%expect_test "test_annotate_type_1" =
+  parse_test "let sum (x : int) (y : int) = x + y;;";
+  [%expect
+    {|
+[(ExpLet (false, (PatVariable "sum"),
+    (ExpLambda (
+       [(PatType ((PatVariable "x"), (TyPrim "int")));
+         (PatType ((PatVariable "y"), (TyPrim "int")))],
+       (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y"))))),
+    None))
+  ]
+|}]
+;;
+
+let%expect_test "test_annotate_type_2" =
+  parse_test "let (a : int list) = [] ";
+  [%expect
+    {|
+[(ExpLet (false, (PatType ((PatVariable "a"), (TyList (TyPrim "int")))),
+    (ExpList []), None))
+  ]
+|}]
+;;
