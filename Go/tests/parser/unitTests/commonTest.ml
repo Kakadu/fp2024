@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -168,28 +168,10 @@ let%expect_test "type func that returns func that returns func..." =
     func() func() func() func() func() func() |}]
 ;;
 
-let%expect_test "type bidirectional channel" =
+let%expect_test "type bidirectional chanel" =
   pp print_type parse_type {|chan int|};
   [%expect {|
     chan int |}]
-;;
-
-let%expect_test "type receive-only channel" =
-  pp print_type parse_type {|<- chan func()|};
-  [%expect {|
-    <-chan func() |}]
-;;
-
-let%expect_test "type send-only channel" =
-  pp print_type parse_type {|chan<- [0]string|};
-  [%expect {| 
-    chan<- [0]string |}]
-;;
-
-let%expect_test "type send-only channel of bidirectional channel" =
-  pp print_type parse_type {|chan <- chan int|};
-  [%expect {|
-    chan<- chan int |}]
 ;;
 
 let%expect_test "type with parens" =

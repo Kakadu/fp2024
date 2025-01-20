@@ -1,13 +1,6 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
-
-(** Channel direction *)
-type chan_dir =
-  | Chan_bidirectional (** Bidirectional channel type such [chan] *)
-  | Chan_receive (** Receive-only channel type [<-chan] *)
-  | Chan_send (** Send-only channel type [chan<-] *)
-[@@deriving show { with_path = false }, eq]
 
 (** Data types *)
 type type' =
@@ -18,9 +11,7 @@ type type' =
   | Type_func of type' list * type' list
   (** Function types such as [func()], [func(string) (bool, int)].
       Empty lists mean that there is no arguments or return values *)
-  | Type_chan of chan_dir * type'
-  (** Channel type such as:
-      [chan int], [<-chan string], [chan<- bool] *)
+  | Type_chan of type' (** chanel type such as [chan int] *)
 [@@deriving show { with_path = false }, eq]
 
 type ident = string [@@deriving show { with_path = false }]
@@ -102,10 +93,10 @@ and func_arg =
     Empty list means that function doesn't take any arguments *)
 and func_call = expr * func_arg list [@@deriving show { with_path = false }]
 
-(** Channel receive such as: [<-c], [<-<-get_chan()] *)
+(** chanel receive such as: [<-c], [<-<-get_chan()] *)
 and chan_receive = expr [@@deriving show { with_path = false }]
 
-(** Channel send such as [c <- true] *)
+(** chanel send such as [c <- true] *)
 and chan_send = ident * expr [@@deriving show { with_path = false }]
 
 (** Lvalue in assignments *)
@@ -169,8 +160,8 @@ and if_for_init =
           do_else()
       }] *)
 and if' =
-  { init : if_for_init option
-  ; cond : expr
+  { if_init : if_for_init option
+  ; if_cond : expr
   ; if_body : block
   ; else_body : else_body option (* block or if statement or None *)
   }
@@ -180,6 +171,15 @@ and if' =
 and else_body =
   | Else_block of block (** Else body of statement block such as [else {}] *)
   | Else_if of if' (** Else body of another if statement such as [else if true {}] *)
+[@@deriving show { with_path = false }]
+
+(** A for statement such as [for i := 0; i < n; i++ { do() }] *)
+and for' =
+  { for_init : if_for_init option
+  ; for_cond : expr option
+  ; for_post : if_for_init option
+  ; for_body : block
+  }
 [@@deriving show { with_path = false }]
 
 (** Statement, a syntactic unit of imperative programming *)
@@ -195,18 +195,13 @@ and stmt =
   (** Return statement such as
       [return], [return some_expr], [return expr1, expr2] *)
   | Stmt_block of block (** See block type *)
-  | Stmt_chan_send of chan_send (** Channel send statement such as [c <- true] *)
+  | Stmt_chan_send of chan_send (** chanel send statement such as [c <- true] *)
   | Stmt_chan_receive of chan_receive (** See chan_receive type *)
   | Stmt_call of func_call (** See func_call type *)
   | Stmt_defer of func_call (** Defer statement such as [defer clean()] *)
   | Stmt_go of func_call (** Go statement such as [go call()] *)
   | Stmt_if of if' (** If statement, see if' type *)
-  | Stmt_for of
-      { init : if_for_init option
-      ; cond : expr option
-      ; post : if_for_init option
-      ; body : block
-      } (** A for statement such as [for i := 0; i < n; i++ { do() }] *)
+  | Stmt_for of for'
 [@@deriving show { with_path = false }]
 
 (** Block of statements in curly braces *)

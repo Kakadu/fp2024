@@ -2,4 +2,4 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-val pp : ('a -> string) -> 'a Angstrom.t -> string -> unit
+val eval : Ast.file -> (unit, Errors.error) result

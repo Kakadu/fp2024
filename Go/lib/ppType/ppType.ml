@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -29,17 +29,5 @@ let rec print_type = function
       | [] -> ""
     in
     asprintf "func(%s)%s" (sep_by_comma arg_types print_type) print_returns
-  | Type_chan (chan_dir, t) ->
-    let print_chan_dir =
-      match chan_dir with
-      | Chan_bidirectional -> "chan"
-      | Chan_receive -> "<-chan"
-      | Chan_send -> "chan<-"
-    in
-    let print_type =
-      match t with
-      | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type t)
-      | _ -> asprintf "%s" (print_type t)
-    in
-    asprintf "%s %s" print_chan_dir print_type
+  | Type_chan t -> asprintf "chan %s" (print_type t)
 ;;
