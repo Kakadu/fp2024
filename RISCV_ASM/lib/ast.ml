@@ -137,6 +137,7 @@ type float_register =
   | Ft9 (** a.k.a F29 *)
   | Ft10 (** a.k.a F30 *)
   | Ft11 (** a.k.a F31 *)
+[@@deriving eq, show { with_path = false }, qcheck]
 
 (** Vector Registers *)
 type vector_register =

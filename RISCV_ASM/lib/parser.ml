@@ -202,6 +202,8 @@ let parse_float_register =
        ; string "fs7" *> return Fs7
        ; string "fs8" *> return Fs8
        ; string "fs9" *> return Fs9
+       ])
+;;
 
 let parse_vector_register =
   ws_opt
@@ -1151,6 +1153,7 @@ let parse_instruction =
          *> lift2
               (fun r1 r2 -> InstructionExpr (FcvtDLu (r1, r2)))
               parse_float_register
+              (char ',' *> parse_register)
        ; parse_string_with_spaces "add.uw"
          *> lift3
               (fun r1 r2 r3 -> InstructionExpr (Adduw (r1, r2, r3)))

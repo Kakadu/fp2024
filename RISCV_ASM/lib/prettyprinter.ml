@@ -137,6 +137,7 @@ let pp_float_register ppf = function
   | Ft9 -> Format.fprintf ppf "ft9"
   | Ft10 -> Format.fprintf ppf "ft10"
   | Ft11 -> Format.fprintf ppf "ft11"
+;;
 
 let pp_vector_register ppf = function
   | V0 -> Format.fprintf ppf "v0"
@@ -199,6 +200,7 @@ let pp_instruction_3f_reg_helper ppf mnemonic r1 r2 r3 =
   Format.fprintf
     ppf
     "%s %a, %a, %a"
+    mnemonic
     pp_float_register
     r1
     pp_float_register
