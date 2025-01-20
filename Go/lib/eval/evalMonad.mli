@@ -15,7 +15,7 @@ module MapIdent : Map.S with type key = Ident.t
 (** Value for [nil] identifier and unitialized functions and chanels *)
 type nil = Nil
 
-and builtin =
+type builtin =
   | Print
   | Println
   | Make
