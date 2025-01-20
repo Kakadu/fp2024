@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>REPL.ml &mdash; Coverage report</title>
-    <meta name="description" content="58.82% coverage in repl/REPL.ml">
+    <meta name="description" content="44.00% coverage in repl/REPL.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,13 +15,17 @@
           <span class="dirname">repl/</span>REPL.ml
         </a>
       </h1>
-      <h2>58.82%</h2>
+      <h2>44.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="bottom:31.58%"></span>
-      <span class="unvisited" style="bottom:28.95%"></span>
-      <span class="unvisited" style="bottom:15.79%"></span>
-      <span class="unvisited" style="bottom:2.63%"></span>
+      <span class="unvisited" style="top:44.07%"></span>
+      <span class="unvisited" style="top:49.15%"></span>
+      <span class="unvisited" style="bottom:49.15%"></span>
+      <span class="unvisited" style="bottom:40.68%"></span>
+      <span class="unvisited" style="bottom:8.47%"></span>
+      <span class="unvisited" style="bottom:5.08%"></span>
+      <span class="unvisited" style="bottom:3.39%"></span>
+      <span class="unvisited" style="bottom:1.69%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -45,25 +49,46 @@
 <a id="L17"></a><span > </span>
 <a id="L18"></a><span > </span>
 <a id="L19"></a><span > </span>
-<a id="L20"></a><span class="visited"> </span>
+<a id="L20"></a><span > </span>
 <a id="L21"></a><span > </span>
 <a id="L22"></a><span class="visited"> </span>
 <a id="L23"></a><span > </span>
-<a id="L24"></a><span > </span>
+<a id="L24"></a><span class="visited"> </span>
 <a id="L25"></a><span > </span>
 <a id="L26"></a><span class="unvisited"> </span>
-<a id="L27"></a><span class="unvisited"> </span>
+<a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
-<a id="L29"></a><span > </span>
-<a id="L30"></a><span class="visited"> </span>
+<a id="L29"></a><span class="unvisited"> </span>
+<a id="L30"></a><span class="unvisited"> </span>
 <a id="L31"></a><span > </span>
-<a id="L32"></a><span class="unvisited"> </span>
+<a id="L32"></a><span > </span>
 <a id="L33"></a><span class="visited"> </span>
 <a id="L34"></a><span > </span>
-<a id="L35"></a><span > </span>
+<a id="L35"></a><span class="unvisited"> </span>
 <a id="L36"></a><span class="visited"> </span>
-<a id="L37"></a><span class="unvisited"> </span>
+<a id="L37"></a><span > </span>
 <a id="L38"></a><span > </span>
+<a id="L39"></a><span class="visited"> </span>
+<a id="L40"></a><span class="visited"> </span>
+<a id="L41"></a><span class="visited"> </span>
+<a id="L42"></a><span > </span>
+<a id="L43"></a><span > </span>
+<a id="L44"></a><span > </span>
+<a id="L45"></a><span > </span>
+<a id="L46"></a><span > </span>
+<a id="L47"></a><span > </span>
+<a id="L48"></a><span > </span>
+<a id="L49"></a><span > </span>
+<a id="L50"></a><span > </span>
+<a id="L51"></a><span > </span>
+<a id="L52"></a><span > </span>
+<a id="L53"></a><span > </span>
+<a id="L54"></a><span class="unvisited"> </span>
+<a id="L55"></a><span > </span>
+<a id="L56"></a><span class="unvisited"> </span>
+<a id="L57"></a><span class="unvisited"> </span>
+<a id="L58"></a><span class="unvisited"> </span>
+<a id="L59"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -106,6 +131,27 @@
 <a href="#L36">36</a>
 <a href="#L37">37</a>
 <a href="#L38">38</a>
+<a href="#L39">39</a>
+<a href="#L40">40</a>
+<a href="#L41">41</a>
+<a href="#L42">42</a>
+<a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
+<a href="#L46">46</a>
+<a href="#L47">47</a>
+<a href="#L48">48</a>
+<a href="#L49">49</a>
+<a href="#L50">50</a>
+<a href="#L51">51</a>
+<a href="#L52">52</a>
+<a href="#L53">53</a>
+<a href="#L54">54</a>
+<a href="#L55">55</a>
+<a href="#L56">56</a>
+<a href="#L57">57</a>
+<a href="#L58">58</a>
+<a href="#L59">59</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
 
@@ -113,6 +159,7 @@
 
 open Riscv_asm_interpreter_lib.Ast
 open Riscv_asm_interpreter_lib.Parser
+open Riscv_asm_interpreter_lib.Interpreter
 open Angstrom
 open Printf
 open Stdio
@@ -120,16 +167,18 @@ open Stdio
 type opts =
   { mutable dump_parse_tree : bool
   ; mutable file_path : string option
+  ; mutable eval : bool
   }
 
 let () =
-  let opts = { dump_parse_tree = false; file_path = None } in
+  let opts = { dump_parse_tree = false; file_path = None; eval = false } in
   let _ =
     Arg.parse
       [ "-dparsetree", Arg.Unit (fun () -&gt; <span data-count="1">o</span>pts.dump_parse_tree &lt;- true), "Dump AST\n"
       ; ( "-filepath"
         , Arg.String (fun file_path -&gt; <span data-count="1">o</span>pts.file_path &lt;- Some file_path)
         , "Input code in file\n" )
+      ; "-eval", Arg.Unit (fun () -&gt; <span data-count="0">o</span>pts.eval &lt;- true), "Run interpreter\n"
       ]
       (fun _ -&gt;
         <span data-count="0">S</span>tdlib.Format.eprintf "Wrong arguments\n";
@@ -142,8 +191,26 @@ let () =
     | <span data-count="1">S</span>ome path -&gt; In_channel.read_all path |&gt; <span data-count="1">S</span>tring.tri<span data-count="1">m</span>
   in
   match parse_string ~consume:All parse_ast input with
-  | <span data-count="1">O</span>k ast -&gt; if opts.dump_parse_tree then <span data-count="1">p</span>rint_endlin<span data-count="1">e</span> (show_as<span data-count="1">t</span> ast)
-  | <span data-count="0">E</span>rror msg -&gt; failwith (sprint<span data-count="0">f</span> "Failed to parse file%s" msg)
+  | <span data-count="1">O</span>k ast -&gt;
+    if opts.dump_parse_tree then <span data-count="1">p</span>rint_endlin<span data-count="1">e</span> (show_as<span data-count="1">t</span> ast);
+    <span data-count="1">l</span>et state =
+      { registers = StringMap.empty
+      ; vector_registers = StringMap.empty
+      ; max_vector_length = 0
+      ; vector_element_length = 0
+      ; vector_length = 0
+      ; memory_int = Int64Map.empty
+      ; memory_str = Int64Map.empty
+      ; memory_writable = Int64Map.empty
+      ; pc = Int64.zero
+      }
+    in
+    if opts.eval
+    then <span data-count="0">(</span>
+      match interpret state ast with
+      | <span data-count="0">O</span>k final_state -&gt; print_endlin<span data-count="0">e</span> (show_stat<span data-count="0">e</span> final_state)
+      | <span data-count="0">E</span>rror msg -&gt; failwith (sprint<span data-count="0">f</span> "Interpretation error: %s" msg))
+  | <span data-count="0">E</span>rror msg -&gt; failwith (sprint<span data-count="0">f</span> "Failed to parse file: %s" msg)
 ;;
 </code></pre>
       </div>

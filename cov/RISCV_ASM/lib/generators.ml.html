@@ -130,46 +130,46 @@
 open QCheck.Gen
 
 let gen_alpha =
-  oneo<span data-count="2">f</span>
-    [ ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'a') (Char.cod<span data-count="2">e</span> 'z'))
-    ; ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'A') (Char.cod<span data-count="2">e</span> 'Z'))
-    ; retur<span data-count="2">n</span> '.'
+  oneo<span data-count="4">f</span>
+    [ ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> 'a') (Char.cod<span data-count="4">e</span> 'z'))
+    ; ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> 'A') (Char.cod<span data-count="4">e</span> 'Z'))
+    ; retur<span data-count="4">n</span> '.'
     ]
 ;;
 
 let gen_alpha_or_digit =
-  oneo<span data-count="2">f</span>
-    [ ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'a') (Char.cod<span data-count="2">e</span> 'z'))
-    ; ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'A') (Char.cod<span data-count="2">e</span> 'Z'))
-    ; ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> '0') (Char.cod<span data-count="2">e</span> '9'))
+  oneo<span data-count="4">f</span>
+    [ ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> 'a') (Char.cod<span data-count="4">e</span> 'z'))
+    ; ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> 'A') (Char.cod<span data-count="4">e</span> 'Z'))
+    ; ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> '0') (Char.cod<span data-count="4">e</span> '9'))
     ]
 ;;
 
 let gen_my_label =
-  let* length = int_rang<span data-count="2">e</span> 2 50 in
-  <span data-count="26368">l</span>et* first_char = gen_alpha in
-  <span data-count="26368">l</span>et* rest_chars = list_repea<span data-count="26368">t</span> (length - 1) gen_alpha_or_digit in
-  <span data-count="26368">l</span>et all_chars = first_char :: rest_chars in
-  return (String.conca<span data-count="26368">t</span> "" (List.ma<span data-count="26368">p</span> (String.mak<span data-count="26368">e</span> 1) all_chars))
+  let* length = int_rang<span data-count="4">e</span> 2 50 in
+  <span data-count="11883">l</span>et* first_char = gen_alpha in
+  <span data-count="11883">l</span>et* rest_chars = list_repea<span data-count="11883">t</span> (length - 1) gen_alpha_or_digit in
+  <span data-count="11883">l</span>et all_chars = first_char :: rest_chars in
+  return (String.conca<span data-count="11883">t</span> "" (List.ma<span data-count="11883">p</span> (String.mak<span data-count="11883">e</span> 1) all_chars))
 ;;
 
 let gen_char_for_string =
-  oneo<span data-count="2">f</span>
-    [ ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'a') (Char.cod<span data-count="2">e</span> 'z'))
-    ; ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> 'A') (Char.cod<span data-count="2">e</span> 'Z'))
-    ; ma<span data-count="2">p</span> Char.chr (int_rang<span data-count="2">e</span> (Char.cod<span data-count="2">e</span> '0') (Char.cod<span data-count="2">e</span> '9'))
-    ; retur<span data-count="2">n</span> '_'
-    ; retur<span data-count="2">n</span> ':'
-    ; retur<span data-count="2">n</span> '('
-    ; retur<span data-count="2">n</span> ')'
-    ; retur<span data-count="2">n</span> '.'
+  oneo<span data-count="4">f</span>
+    [ ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> 'a') (Char.cod<span data-count="4">e</span> 'z'))
+    ; ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> 'A') (Char.cod<span data-count="4">e</span> 'Z'))
+    ; ma<span data-count="4">p</span> Char.chr (int_rang<span data-count="4">e</span> (Char.cod<span data-count="4">e</span> '0') (Char.cod<span data-count="4">e</span> '9'))
+    ; retur<span data-count="4">n</span> '_'
+    ; retur<span data-count="4">n</span> ':'
+    ; retur<span data-count="4">n</span> '('
+    ; retur<span data-count="4">n</span> ')'
+    ; retur<span data-count="4">n</span> '.'
     ]
 ;;
 
 let gen_my_string =
-  let* length = int_rang<span data-count="2">e</span> 1 50 in
-  <span data-count="13026">l</span>et* chars = list_repea<span data-count="13026">t</span> length gen_char_for_string in
-  <span data-count="13026">r</span>eturn (String.conca<span data-count="13026">t</span> "" (List.ma<span data-count="13026">p</span> (String.mak<span data-count="13026">e</span> 1) chars))
+  let* length = int_rang<span data-count="4">e</span> 1 50 in
+  <span data-count="5606">l</span>et* chars = list_repea<span data-count="5606">t</span> length gen_char_for_string in
+  <span data-count="5606">r</span>eturn (String.conca<span data-count="5606">t</span> "" (List.ma<span data-count="5606">p</span> (String.mak<span data-count="5606">e</span> 1) chars))
 ;;
 </code></pre>
       </div>
