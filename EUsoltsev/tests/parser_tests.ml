@@ -163,3 +163,17 @@ let%expect_test "test_annotate_type_2" =
   ]
 |}]
 ;;
+
+let%expect_test "test_annotate_type_2" =
+  parse_test "-1 -2 - (-1) -(3)";
+  [%expect
+    {|
+[(ExpBinOper (Minus,
+    (ExpBinOper (Minus,
+       (ExpBinOper (Minus, (ExpUnarOper (Negative, (ExpConst (ConstInt 1)))),
+          (ExpConst (ConstInt 2)))),
+       (ExpUnarOper (Negative, (ExpConst (ConstInt 1)))))),
+    (ExpConst (ConstInt 3))))
+  ]
+ |}]
+;;

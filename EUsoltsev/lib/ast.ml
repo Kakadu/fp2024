@@ -66,7 +66,6 @@ type expr =
   | ExpTypeAnnotation of expr * ty
   | ExpOption of expr option
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
-  | ExpMatch of expr * (pattern * expr) list
   | ExpLet of is_rec * pattern * expr * expr option
 (* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
 (* let x = 10 <=> ExpLet(false, "x", 10, None)*)

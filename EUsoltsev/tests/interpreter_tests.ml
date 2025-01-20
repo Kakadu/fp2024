@@ -46,8 +46,14 @@ let%expect_test "test_base_operation4" =
   [%expect {|30|}]
 ;;
 
+let%expect_test "test_lambda" =
+  test_interpret
+    "let create_adder = fun x -> fun y -> x + y;; let () = print_int(create_adder 7 8)";
+  [%expect {|15|}]
+;;
+
 let%expect_test "test_print_string" =
-  test_interpret "let joke = print_endline \"I like OCaml\"";
+  test_interpret "let () = print_endline \"I like OCaml\"";
   [%expect {|I like OCaml|}]
 ;;
 
@@ -91,6 +97,18 @@ let%expect_test "test_fix" =
   [%expect {|120|}]
 ;;
 
+let%expect_test "test_nested_recursive_closure" =
+  test_interpret
+    "\n\
+    \    let rec outer x =\n\
+    \      let rec inner y = x + y in\n\
+    \      inner\n\
+    \    ;;\n\
+    \    let inner = outer 10;;\n\
+    \    let () = print_int (inner 5)";
+  [%expect {|15|}]
+;;
+
 let%expect_test "test_annotate_sum" =
   test_interpret "let sum (x : int) (y : int) = x + y ;; let res = print_int(sum 10 20)";
   [%expect {|30|}]
@@ -109,6 +127,18 @@ let%expect_test "test_tuple" =
   [%expect {|
     11
     -3|}]
+;;
+
+let%expect_test "test_nested_tuple" =
+  test_interpret
+    "\n\
+    \    let (a, b) = (1 + 2, 3 * 4);;\n\
+    \    let (c, d) = (a + b, b - a);;\n\
+    \    let () = print_int c;;\n\
+    \    let () = print_int d";
+  [%expect {|
+    15
+    9|}]
 ;;
 
 let%expect_test "test_closure" =
