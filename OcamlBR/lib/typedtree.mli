@@ -1,6 +1,7 @@
 (** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 type type_var = int
 
 val pp_type_var : Format.formatter -> type_var -> unit
@@ -58,6 +59,7 @@ type error =
   | `Duplicate_field_labels of string
   | `Undefined_type of string
   | `Multiple_definition_of_type of string
+  | `Unexpected_function_type of ty
   ]
 
 val pp_error
@@ -70,5 +72,6 @@ val pp_error
      | `Duplicate_field_labels of string
      | `Undefined_type of string
      | `Multiple_definition_of_type of string
+     | `Unexpected_function_type of ty
      ]
   -> unit

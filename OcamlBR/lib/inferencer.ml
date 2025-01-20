@@ -160,8 +160,8 @@ end = struct
     return (Base.Map.singleton (module Base.Int) k v)
   ;;
 
-  let find subst v = Map.find subst v
-  let remove subst v = Map.remove subst v
+  let find = Map.find
+  let remove = Map.remove
 
   (* applies a substitution to a type *)
   let apply subst =
@@ -192,7 +192,7 @@ end = struct
       compose subs1 subs2
     | TTuple (f1, s1, rest1), TTuple (f2, s2, rest2) ->
       let* rest_unified =
-        match List.map2 rest1 rest2 ~f:(fun t1 t2 -> unify t1 t2) with
+        match List.map2 rest1 rest2 ~f:unify with
         | Unequal_lengths ->
           fail (`Unification_failed (TTuple (f1, s1, rest1), TTuple (f2, s2, rest2)))
         | Ok res -> return res
@@ -411,7 +411,7 @@ module TypeEnv = struct
     List.fold list ~init:env ~f:(fun env (key, v) -> extend key v env)
   ;;
 
-  let find env key = Map.find env key
+  let find = Map.find
 
   let merge_envs subst acc_env env_pat =
     let acc_env = apply subst acc_env in
@@ -587,9 +587,15 @@ module Infer = struct
         | Negative | Positive -> return (tprim_int @-> tprim_int)
         | Not -> return (tprim_bool @-> tprim_bool)
       in
-      let* s2 = unify t (fst_arrow op_type) in
+      let* s2 =
+        match op_type with
+        | TArrow (arg, _) -> unify t arg
+        | ty -> fail (`Unexpected_function_type ty)
+      in
       let* s_final = Subst.compose_all [ s2; s ] in
-      return (s_final, Subst.apply s_final (snd_arrow op_type))
+      (match op_type with
+       | TArrow (_, ret) -> return (s_final, Subst.apply s_final ret)
+       | ty -> fail (`Unexpected_function_type ty))
     | Eif_then_else (c, th, Some el) ->
       let* s1, t1 = infer env record_env c in
       let* s2, t2 = infer (TypeEnv.apply s1 env) record_env th in

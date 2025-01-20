@@ -87,11 +87,12 @@ type error =
   | `Duplicate_field_labels of string
   | `Undefined_type of string
   | `Multiple_definition_of_type of string
+  | `Unexpected_function_type of ty
   ]
 
 let pp_error ppf = function
   | `Occurs_check -> Format.fprintf ppf {|Occurs check failed|}
-  | `Undefined_variable s -> Format.fprintf ppf {|Undefined variable "%s"|} s
+  | `Undefined_variable s -> Format.fprintf ppf {|Undefined variable %S|} s
   | `Unification_failed (l, r) ->
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
   | `Ill_left_hand_side s -> Format.fprintf ppf {|Ill left-hand side %s|} s
@@ -100,4 +101,6 @@ let pp_error ppf = function
   | `Undefined_type s -> Format.fprintf ppf {|Undefined type: %s|} s
   | `Multiple_definition_of_type s ->
     Format.fprintf ppf {|Multiple definition of type name %s|} s
+  | `Unexpected_function_type t ->
+    Format.fprintf ppf {|Expected function type, got: %a|} pp_ty t
 ;;
