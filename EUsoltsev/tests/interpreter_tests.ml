@@ -111,7 +111,36 @@ let%expect_test "test_tuple" =
     -3|}]
 ;;
 
+let%expect_test "test_closure" =
+  test_interpret
+    "let x = \n\
+    \      let y = \n\
+    \        let z = \n\
+    \          let w = 1\n\
+    \          in w\n\
+    \        in z\n\
+    \      in y\n\
+    \    \n\
+    \    let () = print_int x";
+  [%expect {|1|}]
+;;
+
 let%expect_test "test_div_error" =
   test_interpret "let div = fun x y -> x / y;; let res = div 10 0";
   [%expect {|Interpreter error: DivisionByZeroError|}]
+;;
+
+let%expect_test "test_div_error" =
+  test_interpret "let div = fun x y -> x / y;; let res = div 10 0";
+  [%expect {|Interpreter error: DivisionByZeroError|}]
+;;
+
+let%expect_test "test_pm_error" =
+  test_interpret "let (a, b) = (1,2,3)";
+  [%expect {|Interpreter error: PatternMatchingError|}]
+;;
+
+let%expect_test "test_pm_error" =
+  test_interpret "let x = x + 1";
+  [%expect {|Interpreter error: UnboundVariable: "x"|}]
 ;;

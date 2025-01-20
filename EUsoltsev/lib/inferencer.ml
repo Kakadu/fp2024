@@ -6,6 +6,24 @@
 
 open Base
 open Ast
+open Format
+
+type error =
+  | OccursCheck of int * ty
+  | NoVariable of string
+  | UnificationFailed of ty * ty
+  | SeveralBounds of string
+  | NotImplement
+
+let pp_error fmt = function
+  | OccursCheck (id, ty) ->
+    fprintf fmt "Occurs check failed. Type variable '%d occurs inside %a." id pp_ty ty
+  | NoVariable name -> fprintf fmt "Unbound variable '%s'." name
+  | UnificationFailed (ty1, ty2) ->
+    fprintf fmt "Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
+  | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
+  | NotImplement -> fprintf fmt "This feature is not implemented yet."
+;;
 
 module IntSet = struct
   include Stdlib.Set.Make (Int)
