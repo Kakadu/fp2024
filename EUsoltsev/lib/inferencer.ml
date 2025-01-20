@@ -67,7 +67,7 @@ end = struct
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = x >>= f
+    let ( let* ) = ( >>= )
   end
 
   module RMap = struct

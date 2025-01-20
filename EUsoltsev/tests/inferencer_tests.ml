@@ -86,6 +86,16 @@ let%expect_test "test_factorial" =
   [%expect {|int -> int|}]
 ;;
 
+let%expect_test "test_nested_list_function" =
+  pretty_printer_parse_and_infer "let f x = [ [x; x]; [x] ]";
+  [%expect {|a -> a list list|}]
+;;
+
+let%expect_test "test_nested_option_function" =
+  pretty_printer_parse_and_infer "let f x = Some x";
+  [%expect {|a -> a option|}]
+;;
+
 let%expect_test "test_fibonacci" =
   pretty_printer_parse_and_infer
     "let rec fibo n = if n < 2 then 1 else fibo(n - 1) + fibo(n - 2)";
@@ -132,5 +142,11 @@ let%expect_test "test_annotate_error" =
 
 let%expect_test "test_unification_types" =
   pretty_printer_parse_and_infer "fun x -> x + true";
+  [%expect {|Infer error. Failed to unify types: bool and int.|}]
+;;
+
+let%expect_test "test_option_type_error" =
+  pretty_printer_parse_and_infer
+    "let f x = Some (x + 1) in let g y = Some (y && true) in f = g";
   [%expect {|Infer error. Failed to unify types: bool and int.|}]
 ;;
