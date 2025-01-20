@@ -87,15 +87,6 @@ let handle_alternative_names = function
   | x -> x
 ;;
 
-let resolve_label_including_directives program label =
-  let rec aux idx = function
-    | [] -> -1L
-    | LabelExpr lbl :: _ when lbl = label -> idx
-    | _ :: tl -> aux (Int64.add idx 4L) tl
-  in
-  aux 0L program
-;;
-
 let resolve_label_excluding_directives program label =
   let rec aux idx = function
     | [] -> -1L
@@ -644,11 +635,6 @@ let execute_vector_arithmetic state vd vs1 vs2 op =
   let vec1 = get_vector_register_value state vs1 in
   let vec2 = get_vector_register_value state vs2 in
   let result = Array.init state.vector_length (fun i -> op vec1.(i) vec2.(i)) in
-  return (set_vector_register_value state vd result)
-;;
-
-let execute_vector_set_imm state vd imm =
-  let result = Array.make state.vector_length imm in
   return (set_vector_register_value state vd result)
 ;;
 
