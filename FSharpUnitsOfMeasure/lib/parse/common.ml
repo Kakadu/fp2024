@@ -86,11 +86,12 @@ let pid_or_op =
 
 let pchar = char '\'' *> any_char <* char '\''
 
-(* Can't parse strings with '\"' combination*)
+(* Can't parse strings with '\' char *)
 let pstring = char '"' *> take_till (Char.equal '"') <* char '"'
+
 let pbool = string "true" <|> string "false" >>| Bool.of_string
 
-(* Parses unsigned ints only. Used for expressions. *)
+(* Parses unsigned ints *)
 let pint =
   let* int = take_while1 Char.is_digit >>| Int.of_string in
   let* next_char = peek_char in
@@ -100,7 +101,7 @@ let pint =
   | _ -> return int
 ;;
 
-(* Parses signed ints. Used for patterns. *)
+(* Parses signed ints *)
 let psint =
   let* sign = option "" (skip_ws *> string "-" <* skip_ws) in
   let* int = pint in
