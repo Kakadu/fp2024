@@ -15,6 +15,7 @@ open Types
 
 let pexpr_id_or_op = pid_or_op >>| fun i -> Expr_ident_or_op i
 let pexpr_const = puconst >>| fun c -> Expr_const c
+let pexpr_sconst = psconst >>| fun c -> Expr_const c
 
 let pexpr_ite pexp =
   let* cond = skip_ws *> string "if" *> skip_ws *> pexp in
@@ -78,6 +79,12 @@ let pexpr_app_un pexpr =
     (match e with
      | Expr_const (Const_int i) -> return (Expr_const (Const_int (-i)))
      | Expr_const (Const_float f) -> return (Expr_const (Const_float (Float.neg f)))
+     | Expr_const (Const_unit_of_measure (Unit_of_measure (Mnum_int i, m))) ->
+       return @@ Expr_const (Const_unit_of_measure (Unit_of_measure (Mnum_int (-i), m)))
+     | Expr_const (Const_unit_of_measure (Unit_of_measure (Mnum_float f, m))) ->
+       return
+       @@ Expr_const
+            (Const_unit_of_measure (Unit_of_measure (Mnum_float (Float.neg f), m)))
      | _ -> return (Expr_apply (Expr_ident_or_op op, e)))
 ;;
 
@@ -189,7 +196,7 @@ let pexpr =
         ; pexpr_const
         ]
     in
-    let pexpr = pexpr_tuple pexpr <|> pexpr_app pexpr <|> pexpr in
-    let pexpr = pexpr_app_un pexpr <|> pexpr in
+    let pexpr = pexpr_tuple pexpr <|> pexpr_app_un pexpr <|> pexpr_app pexpr <|> pexpr in
+    (* let pexpr = pexpr_app_un pexpr <|> pexpr in *)
     skip_ws *> pexpr <* skip_ws_no_nl)
 ;;

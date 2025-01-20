@@ -15,19 +15,23 @@ let print_prog_with_ast prog =
     "AST:\n\n%s\n\nPprinted:\n\n%s\n\nParsed:\n\n%s\n\n"
     (show_program prog)
     (pprint_program prog)
-    (Result.get_error (parse parse_program (pprint_program prog)))
+    (show_program
+       ((fun r ->
+          if Result.is_ok r
+          then Result.get_ok r
+          else (
+            printf "Result is not ok, printing initial prog\n";
+            prog))
+          (parse parse_program (pprint_program prog))))
 ;;
 
-let arbitrary_gen =
-  let gen = gen_program 10 in
-  QCheck.make gen ~print:pprint_program
-;;
+let arbitrary_gen = QCheck.make gen_program ~print:print_prog_with_ast ~shrink:shprog
 
 let run n =
   QCheck_base_runner.run_tests
     [ QCheck.(
         Test.make arbitrary_gen ~count:n (fun pr ->
-          Ok pr <> parse parse_program (pprint_program pr)))
+          Result.ok pr = parse parse_program (pprint_program pr)))
     ]
 ;;
 

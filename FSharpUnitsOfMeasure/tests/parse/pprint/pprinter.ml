@@ -102,6 +102,8 @@ and pprint_expr =
     | Expr_match _
     | Expr_function _
     | Expr_apply _ -> asprintf "(%s)" (pprint_expr e)
+    | Expr_const (Const_int i) when i < 0 -> asprintf "(%d)" i
+    | Expr_const (Const_float f) when f < 0. -> asprintf "(%F)" f
     | _ -> asprintf "%s" (pprint_expr e)
   in
   function

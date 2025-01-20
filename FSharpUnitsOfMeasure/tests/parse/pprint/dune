@@ -1,6 +1,7 @@
 (library
  (name pprint)
  (public_name FSharpUnitsOfMeasure.Pprint)
+ (modules pp pprinter)
  (inline_tests)
  (libraries base ast parse qcheck)
  (preprocess
