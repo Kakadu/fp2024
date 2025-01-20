@@ -72,6 +72,41 @@ let pp_register ppf = function
   | T6 -> Format.fprintf ppf "t6"
 ;;
 
+let pp_vector_register ppf = function
+  | V0 -> Format.fprintf ppf "v0"
+  | V1 -> Format.fprintf ppf "v1"
+  | V2 -> Format.fprintf ppf "v2"
+  | V3 -> Format.fprintf ppf "v3"
+  | V4 -> Format.fprintf ppf "v4"
+  | V5 -> Format.fprintf ppf "v5"
+  | V6 -> Format.fprintf ppf "v6"
+  | V7 -> Format.fprintf ppf "v7"
+  | V8 -> Format.fprintf ppf "v8"
+  | V9 -> Format.fprintf ppf "v9"
+  | V10 -> Format.fprintf ppf "v10"
+  | V11 -> Format.fprintf ppf "v11"
+  | V12 -> Format.fprintf ppf "v12"
+  | V13 -> Format.fprintf ppf "v13"
+  | V14 -> Format.fprintf ppf "v14"
+  | V15 -> Format.fprintf ppf "v15"
+  | V16 -> Format.fprintf ppf "v16"
+  | V17 -> Format.fprintf ppf "v17"
+  | V18 -> Format.fprintf ppf "v18"
+  | V19 -> Format.fprintf ppf "v19"
+  | V20 -> Format.fprintf ppf "v20"
+  | V21 -> Format.fprintf ppf "v21"
+  | V22 -> Format.fprintf ppf "v22"
+  | V23 -> Format.fprintf ppf "v23"
+  | V24 -> Format.fprintf ppf "v24"
+  | V25 -> Format.fprintf ppf "v25"
+  | V26 -> Format.fprintf ppf "v26"
+  | V27 -> Format.fprintf ppf "v27"
+  | V28 -> Format.fprintf ppf "v28"
+  | V29 -> Format.fprintf ppf "v29"
+  | V30 -> Format.fprintf ppf "v30"
+  | V31 -> Format.fprintf ppf "v31"
+;;
+
 type address =
   | Address12 of address12
   | Address20 of address20
@@ -79,6 +114,19 @@ type address =
 
 let pp_instruction_3reg_helper ppf mnemonic r1 r2 r3 =
   Format.fprintf ppf "%s %a, %a, %a" mnemonic pp_register r1 pp_register r2 pp_register r3
+;;
+
+let pp_instruction_3vreg_helper ppf mnemonic v1 v2 v3 =
+  Format.fprintf
+    ppf
+    "%s %a, %a, %a"
+    mnemonic
+    pp_vector_register
+    v1
+    pp_vector_register
+    v2
+    pp_vector_register
+    v3
 ;;
 
 let pp_address ppf = function
@@ -94,8 +142,34 @@ let pp_instruction_2reg_1imm_helper ppf mnemonic r1 r2 addr =
   Format.fprintf ppf "%s %a,%a,%a" mnemonic pp_register r1 pp_register r2 pp_address addr
 ;;
 
+let pp_instruction_2vreg_1reg_helper ppf mnemonic v1 v2 r3 =
+  Format.fprintf
+    ppf
+    "%s %a, %a, %a"
+    mnemonic
+    pp_vector_register
+    v1
+    pp_vector_register
+    v2
+    pp_register
+    r3
+;;
+
 let pp_instruction_2reg_1offset_helper ppf mnemonic r1 r2 addr =
   Format.fprintf ppf "%s %a,%a(%a)" mnemonic pp_register r1 pp_address addr pp_register r2
+;;
+
+let pp_instruction_1vreg_1reg_1offset_helper ppf mnemonic v1 r2 addr =
+  Format.fprintf
+    ppf
+    "%s %a,%a(%a)"
+    mnemonic
+    pp_vector_register
+    v1
+    pp_address
+    addr
+    pp_register
+    r2
 ;;
 
 let pp_instruction ppf = function
@@ -131,6 +205,8 @@ let pp_instruction ppf = function
     pp_instruction_2reg_1offset_helper ppf "lwu" rd rs1 (Address12 imm)
   | Addi (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "addi" rd rs1 (Address12 imm)
+  | Subi (rd, rs1, imm) ->
+    pp_instruction_2reg_1imm_helper ppf "subi" rd rs1 (Address12 imm)
   | Xori (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "xori" rd rs1 (Address12 imm)
   | Ori (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "ori" rd rs1 (Address12 imm)
@@ -163,8 +239,17 @@ let pp_instruction ppf = function
   | Sw (rd, rs1, imm) ->
     pp_instruction_2reg_1offset_helper ppf "sw" rd rs1 (Address12 imm)
   | Beq (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "beq" rd rs1 (Address12 imm)
+  | Beqz (rs1, imm) ->
+    Format.fprintf ppf "beqz %a,%a" pp_register rs1 pp_address (Address12 imm)
   | Bne (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bne" rd rs1 (Address12 imm)
+  | Bnez (rs1, imm) ->
+    Format.fprintf ppf "bnez %a,%a" pp_register rs1 pp_address (Address12 imm)
   | Blt (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "blt" rd rs1 (Address12 imm)
+  | Bltz (rs1, imm) ->
+    Format.fprintf ppf "bltz %a,%a" pp_register rs1 pp_address (Address12 imm)
+  | Bgt (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bgt" rd rs1 (Address12 imm)
+  | Bgtz (rs1, imm) ->
+    Format.fprintf ppf "bgtz %a,%a" pp_register rs1 pp_address (Address12 imm)
   | Bge (rd, rs1, imm) -> pp_instruction_2reg_1imm_helper ppf "bge" rd rs1 (Address12 imm)
   | Bltu (rd, rs1, imm) ->
     pp_instruction_2reg_1imm_helper ppf "bltu" rd rs1 (Address12 imm)
@@ -202,6 +287,37 @@ let pp_instruction ppf = function
   | Li (rd, imm) ->
     Format.fprintf ppf "li %a,%a" pp_register rd pp_address (Address32 imm)
   | Ret -> Format.fprintf ppf "ret"
+  | Adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "add.uw" rd rs1 rs2
+  | Sh1add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add" rd rs1 rs2
+  | Sh1adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add.uw" rd rs1 rs2
+  | Sh2add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add" rd rs1 rs2
+  | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
+  | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
+  | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
+  | Vle32v (vd, rs1, imm) ->
+    pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.v" vd rs1 (Address12 imm)
+  | Vse32v (vs, rs1, imm) ->
+    pp_instruction_1vreg_1reg_1offset_helper ppf "vse32.v" vs rs1 (Address12 imm)
+  | Vaddvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vadd.vv" vd vs1 vs2
+  | Vaddvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vadd.vx" vd vs1 rs2
+  | Vsubvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vsub.vv" vd vs1 vs2
+  | Vsubvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vsub.vx" vd vs1 rs2
+  | Vmulvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmul.vv" vd vs1 vs2
+  | Vmulvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmul.vx" vd vs1 rs2
+  | Vdivvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vdiv.vv" vd vs1 vs2
+  | Vdivvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vdiv.vx" vd vs1 rs2
+  | Vandvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vand.vv" vd vs1 vs2
+  | Vandvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vand.vx" vd vs1 rs2
+  | Vorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vor.vv" vd vs1 vs2
+  | Vorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vor.vx" vd vs1 rs2
+  | Vxorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vxor.vv" vd vs1 vs2
+  | Vxorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vxor.vx" vd vs1 rs2
+  | Vminvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmin.vv" vd vs1 vs2
+  | Vminvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmin.vx" vd vs1 rs2
+  | Vmaxvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmax.vv" vd vs1 vs2
+  | Vmaxvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmax.vx" vd vs1 rs2
+  | Vmseqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmseq.vv" vd vs1 vs2
+  | Vmseqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmseq.vx" vd vs1 rs2
 ;;
 
 let pp_str_or_int ppf = function
@@ -225,24 +341,21 @@ let pp_directive ppf = function
   | CfiStartproc -> Format.fprintf ppf ".cfi_startproc"
   | CfiEndproc -> Format.fprintf ppf ".cfi_endproc"
   | Size (imm, str) -> Format.fprintf ppf ".size %a,%s" pp_address (Address12 imm) str
-  | Section (str1, str2, str_type, none_or_int) ->
-    Format.fprintf
-      ppf
-      ".section %s,%S,@%a%s"
-      str1
-      str2
-      pp_type_dir
-      str_type
-      (match none_or_int with
-       | Some imm -> Format.sprintf ",%d" imm
-       | None -> "")
-  | String str -> Format.fprintf ppf ".string %S" (String.escaped str)
+  | Section (str1, None) -> Format.fprintf ppf ".section %s" str1
+  | Section (str1, Some (str2, None)) -> Format.fprintf ppf ".section %s,%S" str1 str2
+  | Section (str1, Some (str2, Some (typ, None))) ->
+    Format.fprintf ppf ".section %s,%S,@%a" str1 str2 pp_type_dir typ
+  | Section (str1, Some (str2, Some (typ, Some i))) ->
+    Format.fprintf ppf ".section %s,%S,@%a,%d" str1 str2 pp_type_dir typ i
+  | StringDir str -> Format.fprintf ppf ".string %S" (String.escaped str)
   | CfiDefCfaOffset imm -> Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
   | CfiOffset (imm1, imm2) -> Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
   | CfiRememberState -> Format.fprintf ppf ".cfi_remember_state"
   | CfiRestore imm -> Format.fprintf ppf ".cfi_restore %d" imm
   | Ident str -> Format.fprintf ppf ".ident %S" str
   | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
+  | Word imm -> Format.fprintf ppf ".word %d" imm
+  | Space imm -> Format.fprintf ppf ".space %d" imm
 ;;
 
 let pp_label ppf label = Format.fprintf ppf "%s:" label
