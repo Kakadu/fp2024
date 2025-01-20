@@ -8,9 +8,13 @@ module Int64Map = Map.Make (Int64)
 
 type state =
   { registers : int64 StringMap.t
+  ; vector_registers : int64 array StringMap.t
+  ; max_vector_length : int
+  ; vector_element_length : int
+  ; vector_length : int
   ; memory_int : int64 Int64Map.t
   ; memory_str : string Int64Map.t
-  ; memory_writable : bool Int64Map.t (* false - not writable, true - writable *)
+  ; memory_writable : bool Int64Map.t
   ; pc : int64
   }
 
@@ -140,7 +144,6 @@ let init_data program =
         List.fold_left
           (fun acc offset ->
             Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
-            (* instructions unwritable *)
           memory_writable
           [ 0L; 1L; 2L; 3L ]
       in
@@ -154,14 +157,11 @@ let init_data program =
       let memory_int =
         Int64Map.add temporary_pc_counter (Int64.of_int integer) memory_int
       in
-      let memory_writable =
-        Int64Map.add temporary_pc_counter true memory_writable (* first byte writable *)
-      in
+      let memory_writable = Int64Map.add temporary_pc_counter true memory_writable in
       let memory_writable =
         List.fold_left
           (fun acc offset ->
             Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
-            (* rest is unwritable *)
           memory_writable
           [ 1L; 2L; 3L ]
       in
@@ -197,53 +197,107 @@ let init_data program =
         memory_str
         memory_writable
     | _ :: rest ->
-      (* skip over labels, other directives *)
       traverse_program rest temporary_pc_counter memory_int memory_str memory_writable
   in
   traverse_program program 0L Int64Map.empty Int64Map.empty Int64Map.empty
 ;;
 
+let init_registers =
+  List.fold_left
+    (fun acc reg -> StringMap.add (show_register reg) 0L acc)
+    StringMap.empty
+    [ X0
+    ; X1
+    ; X2
+    ; X3
+    ; X4
+    ; X5
+    ; X6
+    ; X7
+    ; X8
+    ; X9
+    ; X10
+    ; X11
+    ; X12
+    ; X13
+    ; X14
+    ; X15
+    ; X16
+    ; X17
+    ; X18
+    ; X19
+    ; X20
+    ; X21
+    ; X22
+    ; X23
+    ; X24
+    ; X25
+    ; X26
+    ; X27
+    ; X28
+    ; X29
+    ; X30
+    ; X31
+    ]
+;;
+
+let init_vector_registers vector_length =
+  List.fold_left
+    (fun acc reg ->
+      StringMap.add (show_vector_register reg) (Array.make vector_length 0L) acc)
+    StringMap.empty
+    [ V0
+    ; V1
+    ; V2
+    ; V3
+    ; V4
+    ; V5
+    ; V6
+    ; V7
+    ; V8
+    ; V9
+    ; V10
+    ; V11
+    ; V12
+    ; V13
+    ; V14
+    ; V15
+    ; V16
+    ; V17
+    ; V18
+    ; V19
+    ; V20
+    ; V21
+    ; V22
+    ; V23
+    ; V24
+    ; V25
+    ; V26
+    ; V27
+    ; V28
+    ; V29
+    ; V30
+    ; V31
+    ]
+;;
+
 let init_state program =
-  let registers =
-    List.fold_left
-      (fun acc reg -> StringMap.add (show_register reg) 0L acc)
-      StringMap.empty
-      [ X0
-      ; X1
-      ; X2
-      ; X3
-      ; X4
-      ; X5
-      ; X6
-      ; X7
-      ; X8
-      ; X9
-      ; X10
-      ; X11
-      ; X12
-      ; X13
-      ; X14
-      ; X15
-      ; X16
-      ; X17
-      ; X18
-      ; X19
-      ; X20
-      ; X21
-      ; X22
-      ; X23
-      ; X24
-      ; X25
-      ; X26
-      ; X27
-      ; X28
-      ; X29
-      ; X30
-      ; X31
-      ]
-  in
+  let registers = init_registers in
+  let max_vector_length = 128 in
+  let vector_element_length = 4 in
+  let vector_length = 4 in
+  let vector_registers = init_vector_registers vector_length in
   let memory_int, memory_str, memory_writable = init_data program in
-  { registers; memory_int; memory_str; memory_writable; pc = 0L }
+  { registers
+  ; vector_registers
+  ; max_vector_length
+  ; vector_element_length
+  ; vector_length
+  ; memory_int
+  ; memory_str
+  ; memory_writable
+  ; pc = 0L
+  }
 ;;
 
 let get_register_value state reg =
@@ -259,6 +313,18 @@ let set_register_value state reg value =
       registers =
         StringMap.add (show_register (handle_alternative_names reg)) value state.registers
     }
+;;
+
+let get_vector_register_value state vreg =
+  StringMap.find_opt (show_vector_register vreg) state.vector_registers
+  |> Option.value ~default:(Array.make state.vector_length 0L)
+;;
+
+let set_vector_register_value state vreg value =
+  { state with
+    vector_registers =
+      StringMap.add (show_vector_register vreg) value state.vector_registers
+  }
 ;;
 
 let nth_opt_int64 l n =
@@ -429,9 +495,11 @@ let execute_shnadd state rd rs1 rs2 n to_zext =
 let load_memory_int state address = function
   | (1 | 2 | 4) as size ->
     (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
+let load_memory_int state address size =
+  match size with
+  | 1 | 2 | 4 ->
     (match Int64Map.find_opt address state.memory_writable with
      | Some false ->
-       Printf.printf "the address was: %Ld\n" address;
        fail
          "Load failed: Address is not writable, either an instruction address or points \
           to the middle of the data"
@@ -458,10 +526,8 @@ let store_memory_int state address value size =
     | 4 -> return value
     | _ -> fail "Unsupported store size"
   in
-  (* Check if the address is writable *)
   match Int64Map.find_opt address state.memory_writable with
   | Some false ->
-    Printf.printf "my favarite address: %Ld\n" address;
     fail
       "Store failed: Address is not writable, either an instruction address or points to \
        the middle of the data"
@@ -536,35 +602,109 @@ let execute_store_int state program rs1 rs2 imm size =
   return new_state
 ;;
 
+let execute_vle32v state program vd rs1 imm =
+  let base_address = get_register_value state rs1 in
+  let* offset =
+    match get_address12_value program imm with
+    | Immediate imm_value -> return (Int64.of_int imm_value)
+    | Label label -> return label
+  in
+  let address = Int64.add base_address offset in
+  let vector_length = state.vector_length in
+  let rec load_values address i acc =
+    if i < vector_length
+    then
+      let* value = load_memory_int state address 4 in
+      let next_address = Int64.add address (Int64.of_int 4) in
+      load_values next_address (i + 1) (Array.append acc [| value |])
+    else return acc
+  in
+  let* vector_values = load_values address 0 [||] in
+  return (set_vector_register_value state vd vector_values)
+;;
+
+let execute_vstore state program vs rs1 imm =
+  let base_address = get_register_value state rs1 in
+  let* offset =
+    match get_address12_value program imm with
+    | Immediate imm_value -> return (Int64.of_int imm_value)
+    | Label label -> return label
+  in
+  let address = Int64.add base_address offset in
+  let vector_value = get_vector_register_value state vs in
+  let rec store_elements i addr state =
+    if i >= state.vector_length
+    then return state
+    else (
+      let element = vector_value.(i) in
+      let* new_state = store_memory_int state addr element 4 in
+      store_elements (i + 1) (Int64.add addr 4L) new_state)
+  in
+  store_elements 0 address state
+;;
+
+let execute_vector_arithmetic state vd vs1 vs2 op =
+  let vec1 = get_vector_register_value state vs1 in
+  let vec2 = get_vector_register_value state vs2 in
+  let result = Array.init state.vector_length (fun i -> op vec1.(i) vec2.(i)) in
+  return (set_vector_register_value state vd result)
+;;
+
+let execute_vector_set_imm state vd imm =
+  let result = Array.make state.vector_length imm in
+  return (set_vector_register_value state vd result)
+;;
+
+let execute_vector_imm state vd vs1 rs2 op =
+  let vec = get_vector_register_value state vs1 in
+  let scalar = get_register_value state rs2 in
+  let result = Array.init state.vector_length (fun i -> op vec.(i) scalar) in
+  return (set_vector_register_value state vd result)
+;;
+
 let handle_syscall state =
-  let syscall_number = get_register_value state A0 in
-  let arg1 = get_register_value state A1 in
-  let arg2 = get_register_value state A2 in
-  let arg3 = get_register_value state A3 in
+  let syscall_number = get_register_value state A7 in
+  let arg1 = get_register_value state A0 in
+  let arg2 = get_register_value state A1 in
   match syscall_number with
   | 93L ->
     let exit_code = Int64.to_int arg1 in
     exit exit_code
   | 64L ->
     let fd = Int64.to_int arg1 in
-    let buf = arg2 in
-    let count = Int64.to_int arg3 in
+    let address = arg2 in
     (match fd with
      | 1 ->
-       let rec read_memory addr count acc =
-         match count <= 0 with
-         | true -> return (String.init (List.length acc) (fun i -> List.nth acc i))
-         | false ->
-           let* byte = load_memory_int state addr 1 in
-           read_memory
-             (Int64.add addr 1L)
-             (count - 1)
-             (Char.chr (Int64.to_int byte) :: acc)
+       let str =
+         try Int64Map.find address state.memory_str with
+         | Not_found -> ""
        in
-       let* str = read_memory buf count [] in
-       Printf.printf "%s" str;
-       return state
+       if str = ""
+       then
+         let* int_value = load_memory_int state address 4 in
+         let _ = Printf.printf "%Ld\n" int_value in
+         return state
+       else (
+         let _ = Printf.printf "%s\n" str in
+         return state)
      | _ -> fail "Unsupported file descriptor for write syscall")
+  | 63L ->
+    let fd = Int64.to_int arg1 in
+    let buf = arg2 in
+    (match fd with
+     | 0 ->
+       let str = read_line () in
+       let memory_int = Int64Map.add buf 0L state.memory_int in
+       let memory_str = Int64Map.add buf str state.memory_str in
+       let memory_writable = Int64Map.add buf true state.memory_writable in
+       let memory_writable =
+         List.fold_left
+           (fun acc offset -> Int64Map.add (Int64.add buf offset) false acc)
+           memory_writable
+           (List.init (String.length str - 1) (fun i -> Int64.of_int (i + 1)))
+       in
+       return { state with memory_int; memory_str; memory_writable }
+     | _ -> fail "Unsupported file descriptor for read syscall")
   | _ -> fail "Unsupported syscall"
 ;;
 
@@ -782,9 +922,7 @@ and execute_instruction state instr program =
         in
         return resolved_address
       | Label excluding_directives_label_offset ->
-        let* resolved_address =
-          resolve_address_excl_to_incl program excluding_directives_label_offset
-        in
+        let resolved_address = excluding_directives_label_offset in
         return resolved_address
     in
     return (set_register_value state rd new_address)
@@ -800,6 +938,38 @@ and execute_instruction state instr program =
   | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
   | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
   | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
+  | Li (rd, imm) ->
+    let imm_value =
+      match imm with
+      | ImmediateAddress32 value -> Int64.of_int value
+      | LabelAddress32 label -> resolve_label_excluding_directives program label
+    in
+    return (set_register_value state rd imm_value)
+  | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
+  | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
+  | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
+  | Vle32v (vd, rs1, imm) -> execute_vle32v state program vd rs1 imm
+  | Vse32v (vs, rs1, imm) -> execute_vstore state program vs rs1 imm
+  | Vaddvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.add
+  | Vaddvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.add
+  | Vsubvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.sub
+  | Vsubvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.sub
+  | Vmulvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.mul
+  | Vmulvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.mul
+  | Vdivvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.div
+  | Vdivvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.div
+  | Vandvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logand
+  | Vandvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logand
+  | Vorvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logor
+  | Vorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logor
+  | Vxorvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logxor
+  | Vxorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logxor
+  | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.min
+  | Vminvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.min
+  | Vmseqvv (vd, vs1, vs2) ->
+    execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
+  | Vmseqvx (vd, vs1, rs2) ->
+    execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
   | _ -> return state
 ;;
 
@@ -840,11 +1010,22 @@ let show_state state =
       state.registers
       ""
   in
+  let vector_registers_str =
+    StringMap.fold
+      (fun vreg values acc ->
+        let values_str =
+          Array.fold_left (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
+        in
+        acc ^ Printf.sprintf "%s: [%s]\n" vreg values_str)
+      state.vector_registers
+      ""
+  in
   let memory_int_string = show_memory_int state in
   let memory_str_string = show_memory_str state in
   let memory_writable_str = show_memory_writable state in
   let pc_str = Printf.sprintf "PC: %Ld" state.pc in
   let result = registers_str in
+  let result = result ^ vector_registers_str in
   let result = result ^ memory_int_string in
   let result = result ^ memory_str_string in
   let result = result ^ memory_writable_str in
@@ -852,7 +1033,7 @@ let show_state state =
   result
 ;;
 
-let%expect_test "test_program_execution" =
+let%expect_test "test_factorial" =
   let program =
     [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
     ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
@@ -874,7 +1055,7 @@ let%expect_test "test_program_execution" =
       X0: 0
       X1: 0
       X10: 0
-      X11: 14
+      X11: 0
       X12: 0
       X13: 0
       X14: 0
@@ -899,18 +1080,50 @@ let%expect_test "test_program_execution" =
       X31: 0
       X4: 0
       X5: 0
-      X6: 21
+      X6: 120
       X7: 0
       X8: 0
       X9: 0
-      Memory:
-      4: 21
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      Integer memory:
+      String memory:
       Writable:
       0: false
       1: false
       2: false
       3: false
-      4: true
+      4: false
       5: false
       6: false
       7: false
@@ -930,21 +1143,23 @@ let%expect_test "test_program_execution" =
       21: false
       22: false
       23: false
-      24: false
-      25: false
-      26: false
-      27: false
-      28: false
-      29: false
-      30: false
-      31: false
-      PC: 40
+      PC: 32
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
 
-let%expect_test "test_ecall_program_execution" =
-  let program = [ DirectiveExpr (Space 150); DirectiveExpr (StringDir "Аааааа") ] in
+let%expect_test "test_factorial" =
+  let program =
+    [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
+    ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
+    ; LabelExpr "loop"
+    ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
+    ; InstructionExpr (Mul (X6, X6, X10))
+    ; InstructionExpr (Subi (X10, X10, ImmediateAddress12 1))
+    ; InstructionExpr (J (LabelAddress20 "loop"))
+    ; LabelExpr "exit"
+    ]
+  in
   let initial_state = init_state program in
   match interpret initial_state program with
   | Ok final_state ->
@@ -952,56 +1167,360 @@ let%expect_test "test_ecall_program_execution" =
     print_string state_str;
     [%expect
       {|
-     X0: 0
-     X1: 0
-     X10: 0
-     X11: 0
-     X12: 0
-     X13: 0
-     X14: 0
-     X15: 0
-     X16: 0
-     X17: 0
-     X18: 0
-     X19: 0
-     X2: 0
-     X20: 0
-     X21: 0
-     X22: 0
-     X23: 0
-     X24: 0
-     X25: 0
-     X26: 0
-     X27: 0
-     X28: 0
-     X29: 0
-     X3: 0
-     X30: 0
-     X31: 0
-     X4: 0
-     X5: 0
-     X6: 0
-     X7: 0
-     X8: 0
-     X9: 0
-     Integer memory:
-     150: 0
-     String memory:
-     150: Привет а
-     Writable:
-     150: true
-     151: false
-     152: false
-     153: false
-     154: false
-     155: false
-     156: false
-     157: false
-     158: false
-     159: false
-     160: false
-     161: false
-     PC: 8
+      X0: 0
+      X1: 0
+      X10: 0
+      X11: 0
+      X12: 0
+      X13: 0
+      X14: 0
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X2: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 0
+      X29: 0
+      X3: 0
+      X30: 0
+      X31: 0
+      X4: 0
+      X5: 0
+      X6: 120
+      X7: 0
+      X8: 0
+      X9: 0
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      Integer memory:
+      String memory:
+      Writable:
+      0: false
+      1: false
+      2: false
+      3: false
+      4: false
+      5: false
+      6: false
+      7: false
+      8: false
+      9: false
+      10: false
+      11: false
+      12: false
+      13: false
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+      20: false
+      21: false
+      22: false
+      23: false
+      PC: 32
+    |}]
+  | Error e -> print_string ("Error: " ^ e)
+;;
+
+let%expect_test "test_vector_program_execution" =
+  let program =
+    [ LabelExpr "vector_data"
+    ; DirectiveExpr (Word 1)
+    ; DirectiveExpr (Word 2)
+    ; DirectiveExpr (Word 3)
+    ; DirectiveExpr (Word 4)
+    ; DirectiveExpr (Word 5)
+    ; LabelExpr "vector_a"
+    ; DirectiveExpr (Space 16)
+    ; LabelExpr "vector_b"
+    ; DirectiveExpr (Space 16)
+    ; LabelExpr "vector_sum"
+    ; DirectiveExpr (Space 16)
+    ; InstructionExpr (Addi (T0, X0, ImmediateAddress12 4))
+    ; InstructionExpr (La (T2, LabelAddress32 "vector_data"))
+    ; InstructionExpr (Vle32v (V0, T2, ImmediateAddress12 0))
+    ; InstructionExpr (Addi (T3, T2, ImmediateAddress12 4))
+    ; InstructionExpr (Vle32v (V1, T3, ImmediateAddress12 0))
+    ; InstructionExpr (La (T4, LabelAddress32 "vector_a"))
+    ; InstructionExpr (Vse32v (V0, T4, ImmediateAddress12 0))
+    ; InstructionExpr (La (T5, LabelAddress32 "vector_b"))
+    ; InstructionExpr (Vse32v (V1, T5, ImmediateAddress12 0))
+    ; InstructionExpr (Vaddvv (V2, V0, V1))
+    ; InstructionExpr (La (T4, LabelAddress32 "vector_sum"))
+    ; InstructionExpr (Vse32v (V2, T4, ImmediateAddress12 0))
+    ; InstructionExpr (Addi (X3, X0, ImmediateAddress12 10))
+    ; InstructionExpr (Vaddvx (V3, V0, X3))
+    ]
+  in
+  let initial_state = init_state program in
+  match interpret initial_state program with
+  | Ok final_state ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+      X0: 0
+      X1: 0
+      X10: 0
+      X11: 0
+      X12: 0
+      X13: 0
+      X14: 0
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X2: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 4
+      X29: 52
+      X3: 10
+      X30: 36
+      X31: 0
+      X4: 0
+      X5: 4
+      X6: 0
+      X7: 0
+      X8: 0
+      X9: 0
+      V0: [1 2 3 4 ]
+      V1: [2 3 4 5 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V2: [3 5 7 9 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V3: [11 12 13 14 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      Integer memory:
+      0: 1
+      4: 2
+      8: 3
+      12: 4
+      16: 5
+      20: 1
+      24: 2
+      28: 3
+      32: 4
+      36: 2
+      40: 3
+      44: 4
+      48: 5
+      52: 3
+      56: 5
+      60: 7
+      64: 9
+      String memory:
+      20:
+      24:
+      28:
+      32:
+      36:
+      40:
+      44:
+      48:
+      52:
+      56:
+      60:
+      64:
+      Writable:
+      0: true
+      1: false
+      2: false
+      3: false
+      4: true
+      5: false
+      6: false
+      7: false
+      8: true
+      9: false
+      10: false
+      11: false
+      12: true
+      13: false
+      14: false
+      15: false
+      16: true
+      17: false
+      18: false
+      19: false
+      20: true
+      21: false
+      22: false
+      23: false
+      24: true
+      25: false
+      26: false
+      27: false
+      28: true
+      29: false
+      30: false
+      31: false
+      32: true
+      33: false
+      34: false
+      35: false
+      36: true
+      37: false
+      38: false
+      39: false
+      40: true
+      41: false
+      42: false
+      43: false
+      44: true
+      45: false
+      46: false
+      47: false
+      48: true
+      49: false
+      50: false
+      51: false
+      52: true
+      53: false
+      54: false
+      55: false
+      56: true
+      57: false
+      58: false
+      59: false
+      60: true
+      61: false
+      62: false
+      63: false
+      64: true
+      65: false
+      66: false
+      67: false
+      68: false
+      69: false
+      70: false
+      71: false
+      72: false
+      73: false
+      74: false
+      75: false
+      76: false
+      77: false
+      78: false
+      79: false
+      80: false
+      81: false
+      82: false
+      83: false
+      84: false
+      85: false
+      86: false
+      87: false
+      88: false
+      89: false
+      90: false
+      91: false
+      92: false
+      93: false
+      94: false
+      95: false
+      96: false
+      97: false
+      98: false
+      99: false
+      100: false
+      101: false
+      102: false
+      103: false
+      104: false
+      105: false
+      106: false
+      107: false
+      108: false
+      109: false
+      110: false
+      111: false
+      112: false
+      113: false
+      114: false
+      115: false
+      116: false
+      117: false
+      118: false
+      119: false
+      120: false
+      121: false
+      122: false
+      123: false
+      PC: 104
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
