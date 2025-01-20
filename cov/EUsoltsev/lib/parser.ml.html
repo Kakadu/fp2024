@@ -576,24 +576,24 @@ open Base
 open Angstrom
 
 let is_keyword = function
-  | <span data-count="34">"</span>let" | <span data-count="0">"</span>match" | <span data-count="56">"</span>in" | <span data-count="0">"</span>if" | <span data-count="30">"</span>then" | <span data-count="30">"</span>else" | <span data-count="6">"</span>fun" | <span data-count="0">"</span>rec" | <span data-count="19">"</span>true" | <span data-count="13">"</span>false" -&gt;
+  | <span data-count="35">"</span>let" | <span data-count="0">"</span>match" | <span data-count="59">"</span>in" | <span data-count="0">"</span>if" | <span data-count="30">"</span>then" | <span data-count="30">"</span>else" | <span data-count="6">"</span>fun" | <span data-count="0">"</span>rec" | <span data-count="19">"</span>true" | <span data-count="13">"</span>false" -&gt;
     true
-  | <span data-count="750">_</span> -&gt; false
+  | <span data-count="771">_</span> -&gt; false
 ;;
 
 let is_lowercase = function
-  | <span data-count="2509">'</span>a' .. 'z' -&gt; true
-  | <span data-count="2047">_</span> -&gt; false
+  | <span data-count="2552">'</span>a' .. 'z' -&gt; true
+  | <span data-count="2091">_</span> -&gt; false
 ;;
 
 let is_uppercase = function
   | <span data-count="0">'</span>A' .. 'Z' -&gt; true
-  | <span data-count="2047">_</span> -&gt; false
+  | <span data-count="2091">_</span> -&gt; false
 ;;
 
 let is_digit = function
   | <span data-count="29">'</span>0' .. '9' -&gt; true
-  | <span data-count="1020">_</span> -&gt; false
+  | <span data-count="1045">_</span> -&gt; false
 ;;
 
 let white_space = take_whil<span data-count="30">e</span> Char.is_whitespace
@@ -604,7 +604,7 @@ let parse_parens p = <span data-count="175">t</span>oke<span data-count="175">n<
 let parse_const_int =
   let sign = choice [ toke<span data-count="30">n</span> "" ] in
   <span data-count="30">l</span>et num = take_while1 Char.is_digit in
-  <span data-count="30">l</span>ift<span data-count="30">2</span> (fun s n -&gt; <span data-count="248">C</span>onstInt (Int.of_strin<span data-count="248">g</span> (s ^ n))) sign num
+  <span data-count="30">l</span>ift<span data-count="30">2</span> (fun s n -&gt; <span data-count="255">C</span>onstInt (Int.of_strin<span data-count="255">g</span> (s ^ n))) sign num
 ;;
 
 let parse_const_bool =
@@ -621,15 +621,15 @@ let parse_unar_oper = choic<span data-count="30">e</span> [ toke<span data-count
 
 let parse_ident =
   let parse_first_char =
-    satisf<span data-count="30">y</span> (fun ch -&gt; <span data-count="1919">i</span>s_lowercas<span data-count="1919">e</span> c<span data-count="921">h</span> || is_uppercas<span data-count="998">e</span> c<span data-count="0">h</span> || Char.equal ch '_')
+    satisf<span data-count="30">y</span> (fun ch -&gt; <span data-count="1963">i</span>s_lowercas<span data-count="1963">e</span> c<span data-count="946">h</span> || is_uppercas<span data-count="1017">e</span> c<span data-count="0">h</span> || Char.equal ch '_')
     &gt;&gt;| Char.escaped
   in
   <span data-count="30">l</span>et parse_other_chars =
     take_while (fun ch -&gt;
-      <span data-count="2637">i</span>s_lowercas<span data-count="2637">e</span> c<span data-count="1588">h</span> || is_uppercas<span data-count="1049">e</span> c<span data-count="0">h</span> || is_digi<span data-count="1049">t</span> c<span data-count="29">h</span> || Char.equal ch '_')
+      <span data-count="2680">i</span>s_lowercas<span data-count="2680">e</span> c<span data-count="1606">h</span> || is_uppercas<span data-count="1074">e</span> c<span data-count="0">h</span> || is_digi<span data-count="1074">t</span> c<span data-count="29">h</span> || Char.equal ch '_')
   in
   <span data-count="30">t</span>oken<span data-count="30">1</span> @@ lift<span data-count="30">2</span> ( ^ ) parse_first_char parse_other_chars
-  &gt;&gt;<span data-count="30">=</span> fun s -&gt; <span data-count="938">i</span>f is_keyword s then <span data-count="188">f</span>ail "It is not identifier" else <span data-count="750">r</span>eturn s
+  &gt;&gt;<span data-count="30">=</span> fun s -&gt; <span data-count="963">i</span>f is_keyword s then <span data-count="192">f</span>ail "It is not identifier" else <span data-count="771">r</span>eturn s
 ;;
 
 let parse_base_type =
@@ -662,7 +662,7 @@ let parse_pattern_with_type parse_pattern =
   <span data-count="13">r</span>eturn (PatType (pat, constr))
 ;;
 
-let parse_pattern_var = parse_ident &gt;&gt;<span data-count="30">|</span> fun id -&gt; <span data-count="317">P</span>atVariable id
+let parse_pattern_var = parse_ident &gt;&gt;<span data-count="30">|</span> fun id -&gt; <span data-count="329">P</span>atVariable id
 let parse_pattern_const = parse_const &gt;&gt;<span data-count="30">|</span> fun c -&gt; <span data-count="0">P</span>atConst c
 let parse_pattern_any = toke<span data-count="30">n</span> "_" *<span data-count="30">&gt;</span> retur<span data-count="30">n</span> PatAny
 
@@ -670,7 +670,7 @@ let parse_pattern_tuple parse_pattern =
   <span data-count="29">p</span>arse_paren<span data-count="29">s</span> (sep_by<span data-count="29">1</span> (toke<span data-count="29">n</span> ",") parse_pattern)
   &gt;&gt;= function
   | <span data-count="0">[</span> single ] -&gt; return single
-  | <span data-count="1">f</span>irst :: second :: rest -&gt; return (PatTuple (first, second, rest))
+  | <span data-count="2">f</span>irst :: second :: rest -&gt; return (PatTuple (first, second, rest))
   | <span data-count="0">[</span>] -&gt; fail "Empty tuple pattern not allowed"
 ;;
 
@@ -692,12 +692,12 @@ let parse_pattern =
 ;;
 
 let parse_left_associative expr oper =
-  <span data-count="145">l</span>et rec go acc = <span data-count="2788">l</span>ift<span data-count="2788">2</span> (fun f x -&gt; <span data-count="454">f</span> acc x) oper expr &gt;&gt;<span data-count="2788">=</span> go &lt;|&gt; retur<span data-count="2788">n</span> acc in
+  <span data-count="145">l</span>et rec go acc = <span data-count="2851">l</span>ift<span data-count="2851">2</span> (fun f x -&gt; <span data-count="459">f</span> acc x) oper expr &gt;&gt;<span data-count="2851">=</span> go &lt;|&gt; retur<span data-count="2851">n</span> acc in
   expr &gt;&gt;= go
 ;;
 
 let parse_expr_bin_oper parse_bin_op tkn =
-  <span data-count="360">t</span>oke<span data-count="360">n</span> tkn *&gt; retur<span data-count="360">n</span> (fun e1 e2 -&gt; <span data-count="177">E</span>xpBinOper (parse_bin_op, e1, e2))
+  <span data-count="360">t</span>oke<span data-count="360">n</span> tkn *&gt; retur<span data-count="360">n</span> (fun e1 e2 -&gt; <span data-count="179">E</span>xpBinOper (parse_bin_op, e1, e2))
 ;;
 
 let multiply = parse_expr_bin_ope<span data-count="30">r</span> Multiply "*"
@@ -718,8 +718,8 @@ let compare =
 
 let and_op = parse_expr_bin_ope<span data-count="30">r</span> And "&amp;&amp;"
 let or_op = parse_expr_bin_ope<span data-count="30">r</span> Or "||"
-let parse_expr_ident = parse_ident &gt;&gt;<span data-count="30">|</span> fun x -&gt; <span data-count="433">E</span>xpIdent x
-let parse_expr_const = parse_const &gt;&gt;<span data-count="30">|</span> fun c -&gt; <span data-count="282">E</span>xpConst c
+let parse_expr_ident = parse_ident &gt;&gt;<span data-count="30">|</span> fun x -&gt; <span data-count="442">E</span>xpIdent x
+let parse_expr_const = parse_const &gt;&gt;<span data-count="30">|</span> fun c -&gt; <span data-count="289">E</span>xpConst c
 
 let parse_expr_branch parse_expr =
   <span data-count="29">l</span>ift3
@@ -751,13 +751,13 @@ let parse_expr_list expr =
 ;;
 
 let parse_expr_function parse_expr =
-  <span data-count="29">p</span>arse_left_associative parse_expr (retur<span data-count="29">n</span> (fun x y -&gt; <span data-count="277">E</span>xpFunction (x, y)))
+  <span data-count="29">p</span>arse_left_associative parse_expr (retur<span data-count="29">n</span> (fun x y -&gt; <span data-count="280">E</span>xpFunction (x, y)))
 ;;
 
 let parse_expr_lambda parse_expr =
   <span data-count="58">t</span>oke<span data-count="58">n</span> "fun" *<span data-count="58">&gt;</span> sep_by<span data-count="58">1</span> white_space parse_pattern
   &lt;<span data-count="58">*</span> toke<span data-count="58">n</span> "-&gt;"
-  &gt;&gt;= fun params -&gt; <span data-count="38">p</span>arse_expr &gt;&gt;| fun body -&gt; <span data-count="38">E</span>xpLambda (params, body)
+  &gt;&gt;= fun params -&gt; <span data-count="39">p</span>arse_expr &gt;&gt;| fun body -&gt; <span data-count="39">E</span>xpLambda (params, body)
 ;;
 
 let parse_expr_with_type parse_expr =
@@ -784,7 +784,7 @@ let parse_expr_let parse_expr =
   in
   <span data-count="59">t</span>oke<span data-count="59">n</span> "let"
   *&gt; lift<span data-count="59">4</span>
-       (fun is_rec pat e1 e2 -&gt; <span data-count="171">E</span>xpLet (is_rec, pat, e1, e2))
+       (fun is_rec pat e1 e2 -&gt; <span data-count="180">E</span>xpLet (is_rec, pat, e1, e2))
        parse_rec_flag
        (parse_paren<span data-count="59">s</span> parse_pattern &lt;|<span data-count="59">&gt;</span> parse_pattern)
        (toke<span data-count="59">n</span> "=" *<span data-count="59">&gt;</span> parse_expr &lt;|<span data-count="59">&gt;</span> parse_bod<span data-count="59">y</span> parse_expr)
@@ -795,7 +795,7 @@ let parse_expr_tuple expr =
   <span data-count="29">p</span>arse_paren<span data-count="29">s</span> (sep_by<span data-count="29">1</span> (toke<span data-count="29">n</span> ",") expr)
   &gt;&gt;= function
   | <span data-count="3">[</span> single ] -&gt; return single
-  | <span data-count="6">f</span>irst :: second :: rest -&gt; return (ExpTuple (first, second, rest))
+  | <span data-count="7">f</span>irst :: second :: rest -&gt; return (ExpTuple (first, second, rest))
   | <span data-count="0">[</span>] -&gt; fail "Empty tuple"
 ;;
 
@@ -832,7 +832,7 @@ let parse_program =
   <span data-count="30">d</span>efinitions_or_exprs &lt;<span data-count="30">*</span> white_space
 ;;
 
-let parse input = <span data-count="72">p</span>arse_string ~consume:All parse_program input
+let parse input = <span data-count="76">p</span>arse_string ~consume:All parse_program input
 </code></pre>
       </div>
     </div>
