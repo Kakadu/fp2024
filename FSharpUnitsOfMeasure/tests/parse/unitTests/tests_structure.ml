@@ -11,23 +11,23 @@ open Pprint.Pprinter
 (************************** Structure items **************************)
 
 let%expect_test "parse structure item which is single expression" =
-  pp pprint_struct_item parse_structure_item {| a |};
+  pp pprint_struct_item pstritem {| a |};
   [%expect {| a |}]
 ;;
 
 let%expect_test "parse structure item which is do expr" =
-  pp pprint_struct_item parse_structure_item {| do a |};
+  pp pprint_struct_item pstritem {| do a |};
   [%expect {| a |}]
 ;;
 
 let%expect_test "parse structure item which is single let binding" =
-  pp pprint_struct_item parse_structure_item {| let x = y |};
+  pp pprint_struct_item pstritem {| let x = y |};
   [%expect {|
     let x = y |}]
 ;;
 
 let%expect_test "parse structure item which is single rec let binding" =
-  pp pprint_struct_item parse_structure_item {| let rec x = x |};
+  pp pprint_struct_item pstritem {| let rec x = x |};
   [%expect {|
     let rec x = x |}]
 ;;
@@ -35,7 +35,7 @@ let%expect_test "parse structure item which is single rec let binding" =
 let%expect_test "parse structure item which is multiple let bindings" =
   pp
     pprint_struct_item
-    parse_structure_item
+    pstritem
     {|let a = b
       and c = d
       and e = f
@@ -48,7 +48,7 @@ let%expect_test "parse structure item which is multiple let bindings" =
 (* let%expect_test "parse structure item which is nested let bindings" =
   pp
     pprint_struct_item
-    parse_structure_item
+    pstritem
     {| let a = f in
          let b = g in
          let c = h in
@@ -73,7 +73,7 @@ let%expect_test "parse structure item which is multiple let bindings" =
 let%expect_test "parse factorial" =
   pp
     pprint_struct_item
-    parse_structure_item
+    pstritem
     {|let rec factorial n =
         if (n < 2) then 1
         else n * factorial (n - 1) |};
@@ -83,13 +83,13 @@ let%expect_test "parse factorial" =
 ;;
 
 let%expect_test "parse measure type definition" =
-  pp2 pp_structure_item parse_structure_item {|[<Measure>] type aasdf |};
+  pp2 pp_structure_item pstritem {|[<Measure>] type aasdf |};
   [%expect {|
     (Str_item_type_def (Measure_type_def ("aasdf", None)))|}]
 ;;
 
 let%expect_test "parse measure type definition with binding" =
-  pp2 pp_structure_item parse_structure_item {|[<Measure>] type a = m^3|};
+  pp2 pp_structure_item pstritem {|[<Measure>] type a = m^3|};
   [%expect
     {|
     (Str_item_type_def
@@ -97,7 +97,7 @@ let%expect_test "parse measure type definition with binding" =
 ;;
 
 let%expect_test "parse measure type definition with hard binding" =
-  pp2 pp_structure_item parse_structure_item {|[<Measure>] type a = m^3 * s / cm^-1|};
+  pp2 pp_structure_item pstritem {|[<Measure>] type a = m^3 * s / cm^-1|};
   [%expect
     {|
     (Str_item_type_def
@@ -110,13 +110,13 @@ let%expect_test "parse measure type definition with hard binding" =
 ;;
 
 let%expect_test "don't parse strange idents as measure type def" =
-  pp2 pp_structure_item parse_structure_item {| [<Measure>] type + = m^3 |};
+  pp2 pp_structure_item pstritem {| [<Measure>] type + = m^3 |};
   [%expect {|
     : no more choices|}]
 ;;
 
 let%expect_test "don't parse strange measure type defs" =
-  pp2 pp_structure_item parse_structure_item {| [<Mejure>] typchik a |};
+  pp2 pp_structure_item pstritem {| [<Mejure>] typchik a |};
   [%expect {|
     : no more choices|}]
 ;;
@@ -124,13 +124,13 @@ let%expect_test "don't parse strange measure type defs" =
 (************************** Programs **************************)
 
 let%expect_test "parse simple binding as a program" =
-  pp pprint_program parse_program {| let x = y |};
+  pp pprint_program pprog {| let x = y |};
   [%expect {|
     let x = y;; |}]
 ;;
 
 let%expect_test "parse program of bindings separated by ;;" =
-  pp pprint_program parse_program {|
+  pp pprint_program pprog {|
      let x = y;; let z = 5000
      |};
   [%expect {|
@@ -141,7 +141,7 @@ let%expect_test "parse program of bindings separated by ;;" =
 
 (* Not done yet *)
 let%expect_test "parse program of bindings separated by newline" =
-  pp pprint_program parse_program {|
+  pp pprint_program pprog {|
     let x = y;;
     let z = w
     |};
@@ -152,7 +152,7 @@ let%expect_test "parse program of bindings separated by newline" =
 ;;
 
 let%expect_test "parse example 1 program" =
-  pp pprint_program parse_program {| '_' [];; |};
+  pp pprint_program pprog {| '_' [];; |};
   [%expect {|
     '_' [];; |}]
 ;;
@@ -160,7 +160,7 @@ let%expect_test "parse example 1 program" =
 let%expect_test "parse example 2 program" =
   pp
     pprint_program
-    parse_program
+    pprog
     {| let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |};
   [%expect {|
     let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |}]
@@ -169,7 +169,7 @@ let%expect_test "parse example 2 program" =
 let%expect_test "parse example 3 program" =
   pp
     pprint_program
-    parse_program
+    pprog
     {| match ('X' : char) with _ -> _j531 | _O -> false | "$TNsq^]am" -> a47 | t5 -> gs | __U4' -> g | zqy'p -> true;;
  |};
   [%expect
@@ -180,7 +180,7 @@ let%expect_test "parse example 3 program" =
 let%expect_test "parse example 4 program" =
   pp
     pprint_program
-    parse_program
+    pprog
     {|
   let rec true = v and _ = q and _ = -4532424078885192588 in _p;;
   
@@ -209,7 +209,7 @@ let%expect_test "parse example 4 program" =
 let%expect_test "parse example 5 program" =
   pp
     pprint_program
-    parse_program
+    pprog
     {|
   let rec -2202013031993883487<o0H6t * (((1 * (((1 / 1) / 1) ^ 2)) * (1 * (1 * ((rQ1_R ^ 7) * 1)))) ^ 6)> = y ;;
     |};
@@ -221,7 +221,7 @@ let%expect_test "parse example 5 program" =
 let%expect_test "parse example 6 program" =
   pp
     pprint_program
-    parse_program
+    pprog
     {|
 let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
   [%expect
@@ -230,7 +230,7 @@ let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
 ;;
 
 let%expect_test "parse example 7 program" =
-  pp pprint_program parse_program {|
+  pp pprint_program pprog {|
   let 1.04931758405<1 * _5q1> = x1DZ';; |};
   [%expect {|
     let 1.04931758405<1 * _5q1> = x1DZ';; |}]
@@ -239,7 +239,7 @@ let%expect_test "parse example 7 program" =
 let%expect_test "parse example 8 program" =
   pp
     pprint_program
-    parse_program
+    pprog
     {|
     (match a with 0. -> -1312004488025042530 | _ -> "", match a with a -> a | a -> a, a);;
  |};
@@ -251,7 +251,7 @@ let%expect_test "parse example 8 program" =
 let%expect_test "parse example 8 program" =
   pp2
     pp_program
-    parse_program
+    pprog
     {|
     (match a with 0. -> -1312004488025042530 | _ -> "", match a with a -> a | a -> a, a);;
  |};
@@ -281,7 +281,7 @@ let%expect_test "parse example 8 program" =
 let%expect_test "parse example 8 program" =
   pp2
     pp_program
-    parse_program
+    pprog
     {|
 match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a));; |};
   [%expect
@@ -310,7 +310,7 @@ match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (
 let%expect_test "parse example 9 program" =
   pp2
     pp_program
-    parse_program
+    pprog
     {|
 let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S then fun eLm -> ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3";; |};
   [%expect
