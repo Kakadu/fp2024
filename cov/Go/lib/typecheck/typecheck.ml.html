@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>typecheck.ml &mdash; Coverage report</title>
-    <meta name="description" content="85.75% coverage in lib/typecheck/typecheck.ml">
+    <meta name="description" content="86.18% coverage in lib/typecheck/typecheck.ml">
     <link rel="stylesheet" href="../../coverage.css"/>
     <script src="../../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/typecheck/</span>typecheck.ml
         </a>
       </h1>
-      <h2>85.75%</h2>
+      <h2>86.18%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:3.40%"></span>
@@ -23,7 +23,6 @@
       <span class="unvisited" style="top:7.55%"></span>
       <span class="unvisited" style="top:7.92%"></span>
       <span class="unvisited" style="top:8.11%"></span>
-      <span class="unvisited" style="top:13.02%"></span>
       <span class="unvisited" style="top:13.21%"></span>
       <span class="unvisited" style="top:17.92%"></span>
       <span class="unvisited" style="top:20.19%"></span>
@@ -39,7 +38,6 @@
       <span class="unvisited" style="top:34.72%"></span>
       <span class="unvisited" style="top:34.91%"></span>
       <span class="some-visited" style="top:37.55%"></span>
-      <span class="some-visited" style="top:37.92%"></span>
       <span class="unvisited" style="top:39.43%"></span>
       <span class="unvisited" style="top:40.75%"></span>
       <span class="unvisited" style="top:42.83%"></span>
@@ -139,7 +137,7 @@
 <a id="L66"></a><span > </span>
 <a id="L67"></a><span > </span>
 <a id="L68"></a><span class="visited"> </span>
-<a id="L69"></a><span class="unvisited"> </span>
+<a id="L69"></a><span class="visited"> </span>
 <a id="L70"></a><span class="unvisited"> </span>
 <a id="L71"></a><span class="visited"> </span>
 <a id="L72"></a><span > </span>
@@ -271,7 +269,7 @@
 <a id="L198"></a><span class="visited"> </span>
 <a id="L199"></a><span class="some-visited"> </span>
 <a id="L200"></a><span class="visited"> </span>
-<a id="L201"></a><span class="some-visited"> </span>
+<a id="L201"></a><span class="visited"> </span>
 <a id="L202"></a><span class="visited"> </span>
 <a id="L203"></a><span class="visited"> </span>
 <a id="L204"></a><span class="visited"> </span>
@@ -1147,7 +1145,7 @@ open Format
 open Ast
 
 let get_afunc_type afunc =
-  <span data-count="517">C</span>type (Type_func (List.ma<span data-count="517">p</span> (fun (_, snd) -&gt; <span data-count="232">s</span>nd) afunc.args, afunc.returns))
+  <span data-count="542">C</span>type (Type_func (List.ma<span data-count="542">p</span> (fun (_, snd) -&gt; <span data-count="240">s</span>nd) afunc.args, afunc.returns))
 ;;
 
 let print_type = function
@@ -1157,58 +1155,58 @@ let print_type = function
 ;;
 
 let fail_if_break_continue =
-  ite<span data-count="6">r</span> (function
+  ite<span data-count="7">r</span> (function
     | <span data-count="1">S</span>tmt_break -&gt; fail (Type_check_error (Unexpected_operation "break"))
     | <span data-count="1">S</span>tmt_continue -&gt; fail (Type_check_error (Unexpected_operation "continue"))
-    | <span data-count="439">_</span> -&gt; return ())
+    | <span data-count="492">_</span> -&gt; return ())
 ;;
 
 let check_return body =
-  <span data-count="65">l</span>et rec find_return_rec body =
-    <span data-count="79">L</span>ist.mem
+  <span data-count="69">l</span>et rec find_return_rec body =
+    <span data-count="85">L</span>ist.mem
       true
-      (List.ma<span data-count="79">p</span>
+      (List.ma<span data-count="85">p</span>
          (function
-           | <span data-count="69">S</span>tmt_return _ -&gt; true
-           | <span data-count="7">S</span>tmt_if if' -&gt;
-             find_return_re<span data-count="7">c</span> if'.if_body
-             &amp;&amp; <span data-count="7">(</span>function
-                  | <span data-count="7">S</span>ome (Else_block body) -&gt; find_return_rec body
+           | <span data-count="74">S</span>tmt_return _ -&gt; true
+           | <span data-count="8">S</span>tmt_if if' -&gt;
+             find_return_re<span data-count="8">c</span> if'.if_body
+             &amp;&amp; <span data-count="8">(</span>function
+                  | <span data-count="8">S</span>ome (Else_block body) -&gt; find_return_rec body
                   | <span data-count="0">S</span>ome (Else_if if') -&gt; find_return_rec [ Stmt_if if' ]
                   | <span data-count="0">N</span>one -&gt; false)
                   if'.else_body
            | <span data-count="0">S</span>tmt_for for' -&gt; find_return_rec for'.for_body
            | <span data-count="0">S</span>tmt_block block -&gt; find_return_rec block
-           | <span data-count="24">_</span> -&gt; false)
+           | <span data-count="26">_</span> -&gt; false)
          body)
   in
   if find_return_rec body
-  then <span data-count="62">r</span>eturn ()
+  then <span data-count="66">r</span>eturn ()
   else <span data-count="3">f</span>ail (Type_check_error (Missing_return "Missing return"))
 ;;
 
 let check_anon_func afunc cstmt =
-  <span data-count="272">l</span>et save_args = iter (fun (id, t) -&gt; <span data-count="123">s</span>ave_ident id (Ctype t)) afunc.args in
-  <span data-count="272">a</span>dd_env
-  *<span data-count="272">&gt;</span> (match afunc.returns with
-    | <span data-count="65">_</span> :: _ -&gt; check_retur<span data-count="65">n</span> afunc.body
-    | <span data-count="207">[</span>] -&gt; retur<span data-count="207">n</span> ())
-  *<span data-count="272">&gt;</span> save_fun<span data-count="272">c</span> (Ctuple afunc.returns)
-  *<span data-count="272">&gt;</span> save_args
-  *<span data-count="272">&gt;</span> fail_if_break_continu<span data-count="272">e</span> afunc.body
-  *<span data-count="272">&gt;</span> ite<span data-count="272">r</span> cstmt afunc.body
-  *<span data-count="272">&gt;</span> delete_func
-  *<span data-count="272">&gt;</span> delete_env
-  *&gt; retur<span data-count="272">n</span> (get_afunc_typ<span data-count="272">e</span> afunc)
+  <span data-count="287">l</span>et save_args = iter (fun (id, t) -&gt; <span data-count="128">s</span>ave_ident id (Ctype t)) afunc.args in
+  <span data-count="287">a</span>dd_env
+  *<span data-count="287">&gt;</span> (match afunc.returns with
+    | <span data-count="69">_</span> :: _ -&gt; check_retur<span data-count="69">n</span> afunc.body
+    | <span data-count="218">[</span>] -&gt; retur<span data-count="218">n</span> ())
+  *<span data-count="287">&gt;</span> save_fun<span data-count="287">c</span> (Ctuple afunc.returns)
+  *<span data-count="287">&gt;</span> save_args
+  *<span data-count="287">&gt;</span> fail_if_break_continu<span data-count="287">e</span> afunc.body
+  *<span data-count="287">&gt;</span> ite<span data-count="287">r</span> cstmt afunc.body
+  *<span data-count="287">&gt;</span> delete_func
+  *<span data-count="287">&gt;</span> delete_env
+  *&gt; retur<span data-count="287">n</span> (get_afunc_typ<span data-count="287">e</span> afunc)
 ;;
 
 let eq_type t1 t2 =
-  <span data-count="147">m</span>atch t1, t2 with
-  | <span data-count="0">C</span>polymorphic Recover, t -&gt; return t
+  <span data-count="167">m</span>atch t1, t2 with
+  | <span data-count="1">C</span>polymorphic Recover, t -&gt; return t
   | <span data-count="0">t</span>, Cpolymorphic Recover -&gt; return t
-  | <span data-count="147">t</span>1, t2 -&gt;
+  | <span data-count="166">t</span>1, t2 -&gt;
     if t1 = t2
-    then <span data-count="140">r</span>eturn t1
+    then <span data-count="159">r</span>eturn t1
     else
       <span data-count="7">f</span>ail
         (Type_check_error
@@ -1216,8 +1214,8 @@ let eq_type t1 t2 =
 ;;
 
 let check_eq t1 t2 =
-  <span data-count="497">i</span>f t1 = t2
-  then <span data-count="475">r</span>eturn ()
+  <span data-count="562">i</span>f t1 = t2
+  then <span data-count="540">r</span>eturn ()
   else
     <span data-count="22">f</span>ail
       (Type_check_error
@@ -1236,78 +1234,78 @@ let retrieve_const cstmt rexpr = function
     *&gt; retur<span data-count="21">n</span> (Ctype (Type_array (size, type')))
   | <span data-count="1">C</span>onst_array _ -&gt;
     fail (Type_check_error (Mismatched_types "Array's size less thai it's inits count"))
-  | <span data-count="282">C</span>onst_int _ -&gt; return (Ctype Type_int)
-  | <span data-count="114">C</span>onst_string _ -&gt; return (Ctype Type_string)
-  | <span data-count="27">C</span>onst_func anon_func -&gt; check_anon_func anon_func cstmt
+  | <span data-count="304">C</span>onst_int _ -&gt; return (Ctype Type_int)
+  | <span data-count="135">C</span>onst_string _ -&gt; return (Ctype Type_string)
+  | <span data-count="32">C</span>onst_func anon_func -&gt; check_anon_func anon_func cstmt
 ;;
 
 let check_generic_type = function
   | <span data-count="0">C</span>genT _ -&gt; fail (Type_check_error (Mismatched_types "Generic type in wrong place"))
-  | <span data-count="139">_</span> -&gt; return ()
+  | <span data-count="171">_</span> -&gt; return ()
 ;;
 
 let check_func_call rexpr rarg (func, args) =
-  <span data-count="246">l</span>et* actual_arg_types =
-    ma<span data-count="246">p</span>
+  <span data-count="293">l</span>et* actual_arg_types =
+    ma<span data-count="293">p</span>
       (fun arg -&gt;
-        <span data-count="224">r</span>ar<span data-count="224">g</span> arg
+        <span data-count="264">r</span>ar<span data-count="264">g</span> arg
         &gt;&gt;= function
         | <span data-count="1">C</span>tuple _ -&gt; fail (Type_check_error (Mismatched_types "Expected single type"))
-        | <span data-count="222">t</span> -&gt; return t)
+        | <span data-count="262">t</span> -&gt; return t)
       args
   in
-  <span data-count="211">l</span>et* ftype =
-    rexp<span data-count="211">r</span> func
-    &gt;&gt;<span data-count="211">=</span> function
-    | <span data-count="94">C</span>type (Type_func (lst, _)) -&gt; map (fun t -&gt; <span data-count="70">r</span>eturn (Ctype t)) lst
-    | <span data-count="37">C</span>polymorphic Print | <span data-count="61">C</span>polymorphic Println | <span data-count="4">C</span>polymorphic Panic -&gt;
-      ite<span data-count="102">r</span> check_generic_type actual_arg_types *&gt; retur<span data-count="102">n</span> actual_arg_types
-    | <span data-count="8">C</span>polymorphic Make -&gt;
+  <span data-count="258">l</span>et* ftype =
+    rexp<span data-count="258">r</span> func
+    &gt;&gt;<span data-count="258">=</span> function
+    | <span data-count="110">C</span>type (Type_func (lst, _)) -&gt; map (fun t -&gt; <span data-count="75">r</span>eturn (Ctype t)) lst
+    | <span data-count="38">C</span>polymorphic Print | <span data-count="86">C</span>polymorphic Println | <span data-count="5">C</span>polymorphic Panic -&gt;
+      ite<span data-count="129">r</span> check_generic_type actual_arg_types *&gt; retur<span data-count="129">n</span> actual_arg_types
+    | <span data-count="9">C</span>polymorphic Make -&gt;
       (match actual_arg_types with
        | <span data-count="0">[</span>] -&gt;
          fail
            (Type_check_error (Invalid_operation "Make should take at least 1 argument"))
-       | <span data-count="8">l</span>st -&gt;
+       | <span data-count="9">l</span>st -&gt;
          (match List.hd lst with
-          | <span data-count="8">C</span>genT _ -&gt; ite<span data-count="8">r</span> check_generic_type (List.t<span data-count="8">l</span> lst) *&gt; retur<span data-count="8">n</span> actual_arg_types
+          | <span data-count="9">C</span>genT _ -&gt; ite<span data-count="9">r</span> check_generic_type (List.t<span data-count="9">l</span> lst) *&gt; retur<span data-count="9">n</span> actual_arg_types
           | <span data-count="0">_</span> -&gt;
             fail
               (Type_check_error
                  (Invalid_operation "Make should take some type as 1st argument"))))
-    | <span data-count="1">C</span>polymorphic Close -&gt;
+    | <span data-count="2">C</span>polymorphic Close -&gt;
       (match actual_arg_types with
        | <span data-count="0">[</span>] -&gt;
          fail
            (Type_check_error (Invalid_operation "Make should take at least 1 argument"))
-       | <span data-count="1">[</span> x ] -&gt;
+       | <span data-count="2">[</span> x ] -&gt;
          (match x with
-          | <span data-count="1">C</span>type (Type_chan t) -&gt; return [ Ctype (Type_chan t) ]
+          | <span data-count="2">C</span>type (Type_chan t) -&gt; return [ Ctype (Type_chan t) ]
           | <span data-count="0">_</span> -&gt;
             fail
               (Type_check_error
                  (Invalid_operation "Close should take chan type as 1st argument")))
        | <span data-count="0">_</span> -&gt;
          fail (Type_check_error (Mismatched_types "Close should take only 1 argument")))
-    | <span data-count="3">C</span>polymorphic Len -&gt;
+    | <span data-count="4">C</span>polymorphic Len -&gt;
       (match actual_arg_types with
        | <span data-count="1">[</span> Ctype Type_string ] -&gt; return [ Ctype Type_string ]
-       | <span data-count="2">[</span> Ctype (Type_array (x, y)) ] -&gt; return [ Ctype (Type_array (x, y)) ]
+       | <span data-count="3">[</span> Ctype (Type_array (x, y)) ] -&gt; return [ Ctype (Type_array (x, y)) ]
        | <span data-count="0">_</span> -&gt;
          fail (Type_check_error (Mismatched_types "len takes only string and array args")))
-    | <span data-count="2">C</span>polymorphic Recover -&gt;
+    | <span data-count="3">C</span>polymorphic Recover -&gt;
       (match actual_arg_types with
-       | <span data-count="2">[</span>] -&gt; return []
+       | <span data-count="3">[</span>] -&gt; return []
        | <span data-count="0">_</span> -&gt; fail (Type_check_error (Mismatched_types "recover takes no args")))
     | <span data-count="0">_</span> -&gt; fail (Type_check_error (Mismatched_types "Expected func type"))
   in
-  <span data-count="210">t</span>ry iter<span data-count="209">2</span> check_eq ftype actual_arg_types with
+  <span data-count="257">t</span>ry iter<span data-count="256">2</span> check_eq ftype actual_arg_types with
   | <span data-count="1">I</span>nvalid_argument _ -&gt;
     fail (Type_check_error (Mismatched_types "Number of given args mismatched"))
 ;;
 
 let rec nested_array t depth =
-  <span data-count="33">m</span>atch t, depth with
-  | <span data-count="12">t</span>, 0 -&gt; return t
+  <span data-count="34">m</span>atch t, depth with
+  | <span data-count="13">t</span>, 0 -&gt; return t
   | <span data-count="20">C</span>type (Type_array (_, t)), depth -&gt; nested_array (Ctype t) (depth - 1)
   | <span data-count="1">_</span>, _ -&gt;
     fail
@@ -1316,70 +1314,70 @@ let rec nested_array t depth =
 ;;
 
 let rec check_expr cstmt rarg = function
-  | <span data-count="445">E</span>xpr_const const -&gt; retrieve_const cstmt (check_exp<span data-count="445">r</span> cstmt rarg) const
+  | <span data-count="493">E</span>xpr_const const -&gt; retrieve_const cstmt (check_exp<span data-count="493">r</span> cstmt rarg) const
   | <span data-count="9">E</span>xpr_un_oper (Unary_minus, expr) | <span data-count="0">E</span>xpr_un_oper (Unary_plus, expr) -&gt;
     check_exp<span data-count="9">r</span> cstmt rarg expr &gt;&gt;= eq_typ<span data-count="9">e</span> (Ctype Type_int)
   | <span data-count="0">E</span>xpr_un_oper (Unary_not, expr) -&gt;
     check_exp<span data-count="0">r</span> cstmt rarg expr &gt;&gt;= fun t -&gt; <span data-count="0">e</span>q_type t (Ctype Type_bool)
-  | <span data-count="560">E</span>xpr_ident id -&gt; retrieve_ident id
-  | <span data-count="84">E</span>xpr_bin_oper (op, left, right) -&gt;
+  | <span data-count="645">E</span>xpr_ident id -&gt; retrieve_ident id
+  | <span data-count="96">E</span>xpr_bin_oper (op, left, right) -&gt;
     let compare_arg_typ left right =
-      <span data-count="84">l</span>et* ltype = check_exp<span data-count="84">r</span> cstmt rarg left in
-      <span data-count="75">l</span>et* rtype = check_exp<span data-count="75">r</span> cstmt rarg right in
-      <span data-count="75">e</span>q_type ltype rtype
+      <span data-count="96">l</span>et* ltype = check_exp<span data-count="96">r</span> cstmt rarg left in
+      <span data-count="87">l</span>et* rtype = check_exp<span data-count="87">r</span> cstmt rarg right in
+      <span data-count="87">e</span>q_type ltype rtype
     in
-    let compare_operation_typ left right t = <span data-count="75">c</span>ompare_arg_ty<span data-count="75">p</span> left right &gt;&gt;= eq_typ<span data-count="75">e</span> t in
+    let compare_operation_typ left right t = <span data-count="83">c</span>ompare_arg_ty<span data-count="83">p</span> left right &gt;&gt;= eq_typ<span data-count="83">e</span> t in
     (match op with
-     | <span data-count="37">B</span>in_sum | <span data-count="1">B</span>in_divide | <span data-count="1">B</span>in_modulus | <span data-count="8">B</span>in_multiply | <span data-count="4">B</span>in_subtract -&gt;
+     | <span data-count="38">B</span>in_sum | <span data-count="1">B</span>in_divide | <span data-count="1">B</span>in_modulus | <span data-count="9">B</span>in_multiply | <span data-count="6">B</span>in_subtract -&gt;
        compare_operation_typ left right (Ctype Type_int)
-     | <span data-count="16">B</span>in_less | <span data-count="4">B</span>in_greater | <span data-count="2">B</span>in_greater_equal | <span data-count="1">B</span>in_less_equal -&gt;
-       compare_operation_ty<span data-count="23">p</span> left right (Ctype Type_int) *&gt; retur<span data-count="23">n</span> (Ctype Type_bool)
+     | <span data-count="19">B</span>in_less | <span data-count="5">B</span>in_greater | <span data-count="2">B</span>in_greater_equal | <span data-count="1">B</span>in_less_equal -&gt;
+       compare_operation_ty<span data-count="27">p</span> left right (Ctype Type_int) *&gt; retur<span data-count="27">n</span> (Ctype Type_bool)
      | <span data-count="0">B</span>in_or | <span data-count="1">B</span>in_and -&gt;
        compare_operation_ty<span data-count="1">p</span> left right (Ctype Type_bool) *&gt; retur<span data-count="1">n</span> (Ctype Type_bool)
-     | <span data-count="9">B</span>in_equal | <span data-count="0">B</span>in_not_equal -&gt; compare_arg_ty<span data-count="9">p</span> left right *&gt; retur<span data-count="9">n</span> (Ctype Type_bool))
-  | <span data-count="59">E</span>xpr_call (func, args) -&gt;
-    check_func_cal<span data-count="59">l</span> (check_exp<span data-count="59">r</span> cstmt rarg) rarg (func, args)
-    *<span data-count="59">&gt;</span> ma<span data-count="59">p</span> rarg args
-    *<span data-count="59">&gt;</span> (check_exp<span data-count="118">r</span> cstmt rarg) func
+     | <span data-count="12">B</span>in_equal | <span data-count="1">B</span>in_not_equal -&gt; compare_arg_ty<span data-count="13">p</span> left right *&gt; retur<span data-count="13">n</span> (Ctype Type_bool))
+  | <span data-count="69">E</span>xpr_call (func, args) -&gt;
+    check_func_cal<span data-count="69">l</span> (check_exp<span data-count="69">r</span> cstmt rarg) rarg (func, args)
+    *<span data-count="69">&gt;</span> ma<span data-count="69">p</span> rarg args
+    *<span data-count="69">&gt;</span> (check_exp<span data-count="138">r</span> cstmt rarg) func
     &gt;&gt;= (function
      | <span data-count="11">C</span>type (Type_func (_, fst :: snd :: tl)) -&gt; return (Ctuple (fst :: snd :: tl))
-     | <span data-count="25">C</span>type (Type_func (_, hd :: _)) -&gt; return (Ctype hd)
+     | <span data-count="32">C</span>type (Type_func (_, hd :: _)) -&gt; return (Ctype hd)
      | <span data-count="0">C</span>polymorphic Print | <span data-count="0">C</span>polymorphic Close | <span data-count="0">C</span>polymorphic Println -&gt;
        fail
          (Type_check_error (Invalid_operation "print/println/close func makes no return"))
-     | <span data-count="3">C</span>polymorphic Len -&gt; return (Ctype Type_int)
-     | <span data-count="8">C</span>polymorphic Make -&gt;
+     | <span data-count="4">C</span>polymorphic Len -&gt; return (Ctype Type_int)
+     | <span data-count="9">C</span>polymorphic Make -&gt;
        (match List.hd args with
-        | <span data-count="8">A</span>rg_type t -&gt; return (Ctype t)
+        | <span data-count="9">A</span>rg_type t -&gt; return (Ctype t)
         | <span data-count="0">_</span> -&gt;
           fail
             (Type_check_error
                (Mismatched_types "make should be used like make(T, arg) when T is a type")))
-     | <span data-count="1">C</span>polymorphic Recover -&gt; return (Cpolymorphic Recover)
+     | <span data-count="2">C</span>polymorphic Recover -&gt; return (Cpolymorphic Recover)
      | <span data-count="1">_</span> -&gt;
        fail (Type_check_error (Mismatched_types "Function without returns in expression")))
-  | <span data-count="18">E</span>xpr_chan_receive chan -&gt;
-    check_exp<span data-count="18">r</span> cstmt rarg chan
+  | <span data-count="19">E</span>xpr_chan_receive chan -&gt;
+    check_exp<span data-count="19">r</span> cstmt rarg chan
     &gt;&gt;= (function
-     | <span data-count="14">C</span>type (Type_chan t) -&gt; return (Ctype t)
+     | <span data-count="15">C</span>type (Type_chan t) -&gt; return (Ctype t)
      | <span data-count="0">_</span> -&gt; fail (Type_check_error (Mismatched_types "Chan type mismatch")))
-  | <span data-count="50">E</span>xpr_index (array, index) -&gt;
-    (check_exp<span data-count="50">r</span> cstmt rarg index &gt;&gt;<span data-count="50">=</span> check_e<span data-count="50">q</span> (Ctype Type_int))
-    *&gt; (check_exp<span data-count="50">r</span> cstmt rarg array
-        &gt;&gt;<span data-count="50">=</span> function
-        | <span data-count="43">C</span>type (Type_array (_, t)) -&gt; return (Ctype t)
+  | <span data-count="51">E</span>xpr_index (array, index) -&gt;
+    (check_exp<span data-count="51">r</span> cstmt rarg index &gt;&gt;<span data-count="51">=</span> check_e<span data-count="51">q</span> (Ctype Type_int))
+    *&gt; (check_exp<span data-count="51">r</span> cstmt rarg array
+        &gt;&gt;<span data-count="51">=</span> function
+        | <span data-count="44">C</span>type (Type_array (_, t)) -&gt; return (Ctype t)
         | <span data-count="1">_</span> -&gt;
           fail (Type_check_error (Mismatched_types "Non-array type in array index call"))
        )
 ;;
 
 let rec retrieve_arg cstmt = function
-  | <span data-count="241">A</span>rg_expr exp -&gt; check_expr cstmt (retrieve_ar<span data-count="241">g</span> cstmt) exp
-  | <span data-count="16">A</span>rg_type t -&gt; return (CgenT t)
+  | <span data-count="285">A</span>rg_expr exp -&gt; check_expr cstmt (retrieve_ar<span data-count="285">g</span> cstmt) exp
+  | <span data-count="18">A</span>rg_type t -&gt; return (CgenT t)
 ;;
 
 let check_nil arg possible_nil =
-  <span data-count="42">m</span>atch possible_nil with
+  <span data-count="46">m</span>atch possible_nil with
   | <span data-count="4">C</span>polymorphic Nil -&gt;
     (match arg with
      | <span data-count="1">C</span>type (Type_chan t) -&gt; return (Ctype (Type_chan t))
@@ -1389,7 +1387,7 @@ let check_nil arg possible_nil =
          (Type_check_error
             (Mismatched_types
                (Printf.sprint<span data-count="0">f</span> "nil type cannot be assigned to %s" (print_typ<span data-count="0">e</span> t)))))
-  | <span data-count="38">_</span> -&gt; return possible_nil
+  | <span data-count="42">_</span> -&gt; return possible_nil
 ;;
 
 let fail_if_nil = function
@@ -1400,14 +1398,14 @@ let fail_if_nil = function
 ;;
 
 let check_long_var_decl cstmt save_ident = function
-  | <span data-count="23">L</span>ong_decl_no_init (t, hd, tl) -&gt; iter (fun id -&gt; <span data-count="23">s</span>ave_ident id (Ctype t)) (hd :: tl)
-  | <span data-count="7">L</span>ong_decl_mult_init (Some type', hd, tl) -&gt;
+  | <span data-count="25">L</span>ong_decl_no_init (t, hd, tl) -&gt; iter (fun id -&gt; <span data-count="25">s</span>ave_ident id (Ctype t)) (hd :: tl)
+  | <span data-count="10">L</span>ong_decl_mult_init (Some type', hd, tl) -&gt;
     iter
       (fun (id, expr) -&gt;
-        <span data-count="7">(</span>check_exp<span data-count="7">r</span> cstmt (retrieve_ar<span data-count="7">g</span> cstmt) expr
-         &gt;&gt;<span data-count="7">=</span> (fun t -&gt; <span data-count="7">c</span>heck_nil (Ctype type') t)
-         &gt;&gt;<span data-count="7">=</span> check_e<span data-count="7">q</span> (Ctype type'))
-        *&gt; save_iden<span data-count="7">t</span> id (Ctype type'))
+        <span data-count="10">(</span>check_exp<span data-count="10">r</span> cstmt (retrieve_ar<span data-count="10">g</span> cstmt) expr
+         &gt;&gt;<span data-count="10">=</span> (fun t -&gt; <span data-count="10">c</span>heck_nil (Ctype type') t)
+         &gt;&gt;<span data-count="10">=</span> check_e<span data-count="10">q</span> (Ctype type'))
+        *&gt; save_iden<span data-count="10">t</span> id (Ctype type'))
       (hd :: tl)
   | <span data-count="59">L</span>ong_decl_mult_init (None, hd, tl) -&gt;
     iter
@@ -1439,22 +1437,22 @@ let check_long_var_decl cstmt save_ident = function
 ;;
 
 let check_short_var_decl cstmt = function
-  | <span data-count="109">S</span>hort_decl_mult_init (hd, tl) -&gt;
+  | <span data-count="117">S</span>hort_decl_mult_init (hd, tl) -&gt;
     iter
       (fun (id, expr) -&gt;
-        <span data-count="121">c</span>heck_exp<span data-count="121">r</span> cstmt (retrieve_ar<span data-count="121">g</span> cstmt) expr
-        &gt;&gt;<span data-count="121">=</span> (function
-               | <span data-count="94">C</span>type t -&gt; return (Ctype t)
+        <span data-count="129">c</span>heck_exp<span data-count="129">r</span> cstmt (retrieve_ar<span data-count="129">g</span> cstmt) expr
+        &gt;&gt;<span data-count="129">=</span> (function
+               | <span data-count="101">C</span>type t -&gt; return (Ctype t)
                | <span data-count="1">C</span>polymorphic Nil -&gt;
                  fail
                    (Type_check_error
                       (Invalid_operation "Cannot assign nil in short var declaration"))
-               | <span data-count="1">C</span>polymorphic Recover -&gt; return (Cpolymorphic Recover)
+               | <span data-count="2">C</span>polymorphic Recover -&gt; return (Cpolymorphic Recover)
                | <span data-count="0">_</span> -&gt;
                  fail
                    (Type_check_error
                       (Mismatched_types "Incorrect assignment in short var decl")))
-        &gt;&gt;= save_iden<span data-count="121">t</span> id)
+        &gt;&gt;= save_iden<span data-count="129">t</span> id)
       (hd :: tl)
   | <span data-count="4">S</span>hort_decl_one_init (fst, snd, tl, call) -&gt;
     check_exp<span data-count="4">r</span> cstmt (retrieve_ar<span data-count="4">g</span> cstmt) (Expr_call call)
@@ -1487,11 +1485,11 @@ let check_short_var_decl cstmt = function
 
 let rec retrieve_lvalue ind cstmt = function
   | <span data-count="34">L</span>value_ident id -&gt; retrieve_ident id
-  | <span data-count="14">L</span>value_array_index (Lvalue_ident array, index) -&gt;
-    (check_exp<span data-count="14">r</span> cstmt (retrieve_ar<span data-count="14">g</span> cstmt) index &gt;&gt;<span data-count="14">=</span> check_e<span data-count="14">q</span> (Ctype Type_int))
-    *<span data-count="14">&gt;</span> retrieve_iden<span data-count="14">t</span> array
+  | <span data-count="15">L</span>value_array_index (Lvalue_ident array, index) -&gt;
+    (check_exp<span data-count="15">r</span> cstmt (retrieve_ar<span data-count="15">g</span> cstmt) index &gt;&gt;<span data-count="15">=</span> check_e<span data-count="15">q</span> (Ctype Type_int))
+    *<span data-count="15">&gt;</span> retrieve_iden<span data-count="15">t</span> array
     &gt;&gt;= (function
-     | <span data-count="13">C</span>type (Type_array (_, t)) -&gt; nested_array (Ctype t) ind
+     | <span data-count="14">C</span>type (Type_array (_, t)) -&gt; nested_array (Ctype t) ind
      | <span data-count="0">_</span> -&gt;
        fail (Type_check_error (Mismatched_types "Non-array type in array index call")))
   | <span data-count="21">L</span>value_array_index (lvalue_array_index, index) -&gt;
@@ -1500,13 +1498,13 @@ let rec retrieve_lvalue ind cstmt = function
 ;;
 
 let check_assign cstmt = function
-  | <span data-count="42">A</span>ssign_mult_expr (hd, tl) -&gt;
+  | <span data-count="43">A</span>ssign_mult_expr (hd, tl) -&gt;
     iter
       (fun (lvalue, expr) -&gt;
-        <span data-count="42">l</span>et* expected_type = retrieve_lvalu<span data-count="42">e</span> 0 cstmt lvalue in
-        <span data-count="38">l</span>et* actual_type = check_exp<span data-count="38">r</span> cstmt (retrieve_ar<span data-count="38">g</span> cstmt) expr in
-        <span data-count="35">l</span>et* actual_type = check_ni<span data-count="35">l</span> expected_type actual_type in
-        <span data-count="35">c</span>heck_eq expected_type actual_type)
+        <span data-count="43">l</span>et* expected_type = retrieve_lvalu<span data-count="43">e</span> 0 cstmt lvalue in
+        <span data-count="39">l</span>et* actual_type = check_exp<span data-count="39">r</span> cstmt (retrieve_ar<span data-count="39">g</span> cstmt) expr in
+        <span data-count="36">l</span>et* actual_type = check_ni<span data-count="36">l</span> expected_type actual_type in
+        <span data-count="36">c</span>heck_eq expected_type actual_type)
       (hd :: tl)
   | <span data-count="3">A</span>ssign_one_expr (fst, snd, tl, call) -&gt;
     check_exp<span data-count="3">r</span> cstmt (retrieve_ar<span data-count="3">g</span> cstmt) (Expr_call call)
@@ -1528,10 +1526,10 @@ let check_assign cstmt = function
 ;;
 
 let check_chan_send cstmt (id, expr) =
-  <span data-count="13">l</span>et* expr_type = check_exp<span data-count="13">r</span> cstmt (retrieve_ar<span data-count="13">g</span> cstmt) expr in
-  <span data-count="13">r</span>etrieve_iden<span data-count="13">t</span> id
+  <span data-count="15">l</span>et* expr_type = check_exp<span data-count="15">r</span> cstmt (retrieve_ar<span data-count="15">g</span> cstmt) expr in
+  <span data-count="15">r</span>etrieve_iden<span data-count="15">t</span> id
   &gt;&gt;= function
-  | <span data-count="13">C</span>type (Type_chan t) -&gt; check_eq expr_type (Ctype t)
+  | <span data-count="15">C</span>type (Type_chan t) -&gt; check_eq expr_type (Ctype t)
   | <span data-count="0">_</span> -&gt; fai<span data-count="0">l</span> (Type_check_error (Mismatched_types "expected chan type")) *&gt; retur<span data-count="0">n</span> ()
 ;;
 
@@ -1539,50 +1537,50 @@ let check_init cstmt = function
   | <span data-count="0">S</span>ome (Init_assign assign) -&gt; check_assign cstmt assign
   | <span data-count="0">S</span>ome (Init_call call) -&gt;
     check_func_call (check_exp<span data-count="0">r</span> cstmt (retrieve_ar<span data-count="0">g</span> cstmt)) (retrieve_ar<span data-count="0">g</span> cstmt) call
-  | <span data-count="13">S</span>ome (Init_decl decl) -&gt; check_short_var_dec<span data-count="13">l</span> cstmt decl *&gt; retur<span data-count="13">n</span> ()
+  | <span data-count="17">S</span>ome (Init_decl decl) -&gt; check_short_var_dec<span data-count="17">l</span> cstmt decl *&gt; retur<span data-count="17">n</span> ()
   | <span data-count="0">S</span>ome (Init_decr id) -&gt; retrieve_iden<span data-count="0">t</span> id &gt;&gt;= check_e<span data-count="0">q</span> (Ctype Type_int)
-  | <span data-count="12">S</span>ome (Init_incr id) -&gt; retrieve_iden<span data-count="12">t</span> id &gt;&gt;= check_e<span data-count="12">q</span> (Ctype Type_int)
+  | <span data-count="15">S</span>ome (Init_incr id) -&gt; retrieve_iden<span data-count="15">t</span> id &gt;&gt;= check_e<span data-count="15">q</span> (Ctype Type_int)
   | <span data-count="0">S</span>ome (Init_receive chan) -&gt; check_exp<span data-count="0">r</span> cstmt (retrieve_ar<span data-count="0">g</span> cstmt) chan *&gt; retur<span data-count="0">n</span> ()
   | <span data-count="0">S</span>ome (Init_send send) -&gt; check_chan_send cstmt send
-  | <span data-count="27">N</span>one -&gt; return ()
+  | <span data-count="31">N</span>one -&gt; return ()
 ;;
 
 let rec check_stmt = function
-  | <span data-count="25">S</span>tmt_long_var_decl long_decl -&gt; check_long_var_decl check_stmt save_ident long_decl
-  | <span data-count="100">S</span>tmt_short_var_decl short_decl -&gt; check_short_var_decl check_stmt short_decl
-  | <span data-count="13">S</span>tmt_incr id -&gt; retrieve_iden<span data-count="13">t</span> id &gt;&gt;= check_e<span data-count="13">q</span> (Ctype Type_int)
+  | <span data-count="30">S</span>tmt_long_var_decl long_decl -&gt; check_long_var_decl check_stmt save_ident long_decl
+  | <span data-count="104">S</span>tmt_short_var_decl short_decl -&gt; check_short_var_decl check_stmt short_decl
+  | <span data-count="14">S</span>tmt_incr id -&gt; retrieve_iden<span data-count="14">t</span> id &gt;&gt;= check_e<span data-count="14">q</span> (Ctype Type_int)
   | <span data-count="0">S</span>tmt_decr id -&gt; retrieve_iden<span data-count="0">t</span> id &gt;&gt;= check_e<span data-count="0">q</span> (Ctype Type_int)
-  | <span data-count="45">S</span>tmt_assign assign -&gt; check_assign check_stmt assign
-  | <span data-count="156">S</span>tmt_call call -&gt;
+  | <span data-count="46">S</span>tmt_assign assign -&gt; check_assign check_stmt assign
+  | <span data-count="190">S</span>tmt_call call -&gt;
     check_func_call
-      (check_exp<span data-count="156">r</span> check_stmt (retrieve_ar<span data-count="156">g</span> check_stmt))
-      (retrieve_ar<span data-count="156">g</span> check_stmt)
+      (check_exp<span data-count="190">r</span> check_stmt (retrieve_ar<span data-count="190">g</span> check_stmt))
+      (retrieve_ar<span data-count="190">g</span> check_stmt)
       call
-  | <span data-count="13">S</span>tmt_defer call -&gt;
+  | <span data-count="15">S</span>tmt_defer call -&gt;
     check_func_call
-      (check_exp<span data-count="13">r</span> check_stmt (retrieve_ar<span data-count="13">g</span> check_stmt))
-      (retrieve_ar<span data-count="13">g</span> check_stmt)
+      (check_exp<span data-count="15">r</span> check_stmt (retrieve_ar<span data-count="15">g</span> check_stmt))
+      (retrieve_ar<span data-count="15">g</span> check_stmt)
       call
-  | <span data-count="18">S</span>tmt_go (func, args) -&gt;
-    ((check_exp<span data-count="36">r</span> check_stmt (retrieve_ar<span data-count="18">g</span> check_stmt)) func
-     &gt;&gt;<span data-count="18">=</span> function
+  | <span data-count="19">S</span>tmt_go (func, args) -&gt;
+    ((check_exp<span data-count="38">r</span> check_stmt (retrieve_ar<span data-count="19">g</span> check_stmt)) func
+     &gt;&gt;<span data-count="19">=</span> function
      | <span data-count="1">C</span>polymorphic Make -&gt; fail (Type_check_error Go_make)
-     | <span data-count="11">_</span> -&gt; return ())
-    *&gt; check_func_cal<span data-count="18">l</span>
-         (check_exp<span data-count="18">r</span> check_stmt (retrieve_ar<span data-count="18">g</span> check_stmt))
-         (retrieve_ar<span data-count="18">g</span> check_stmt)
+     | <span data-count="12">_</span> -&gt; return ())
+    *&gt; check_func_cal<span data-count="19">l</span>
+         (check_exp<span data-count="19">r</span> check_stmt (retrieve_ar<span data-count="19">g</span> check_stmt))
+         (retrieve_ar<span data-count="19">g</span> check_stmt)
          (func, args)
-  | <span data-count="13">S</span>tmt_chan_send send -&gt; check_chan_send check_stmt send
+  | <span data-count="15">S</span>tmt_chan_send send -&gt; check_chan_send check_stmt send
   | <span data-count="1">S</span>tmt_block block -&gt; add_env *<span data-count="1">&gt;</span> ite<span data-count="1">r</span> check_stmt block *&gt; delete_env
-  | <span data-count="3">S</span>tmt_break -&gt; return ()
+  | <span data-count="4">S</span>tmt_break -&gt; return ()
   | <span data-count="1">S</span>tmt_chan_receive chan -&gt;
     check_exp<span data-count="1">r</span> check_stmt (retrieve_ar<span data-count="1">g</span> check_stmt) chan *&gt; retur<span data-count="1">n</span> ()
-  | <span data-count="2">S</span>tmt_continue -&gt; return ()
-  | <span data-count="86">S</span>tmt_return exprs -&gt;
+  | <span data-count="3">S</span>tmt_continue -&gt; return ()
+  | <span data-count="91">S</span>tmt_return exprs -&gt;
     (get_func_return_type
-     &gt;&gt;<span data-count="86">=</span> (function
-            | <span data-count="70">C</span>tuple rtv -&gt;
-              (try retur<span data-count="69">n</span> (List.combin<span data-count="69">e</span> exprs (List.ma<span data-count="70">p</span> (fun t -&gt; <span data-count="67">C</span>type t) rtv)) with
+     &gt;&gt;<span data-count="91">=</span> (function
+            | <span data-count="75">C</span>tuple rtv -&gt;
+              (try retur<span data-count="74">n</span> (List.combin<span data-count="74">e</span> exprs (List.ma<span data-count="75">p</span> (fun t -&gt; <span data-count="72">C</span>type t) rtv)) with
                | <span data-count="1">I</span>nvalid_argument _ -&gt;
                  fail (Type_check_error (Mismatched_types "func return types mismatch")))
             | <span data-count="0">_</span> -&gt;
@@ -1590,54 +1588,54 @@ let rec check_stmt = function
                 (Type_check_error
                    (Mismatched_types
                       "simple type or built-in func cannot be used as return")))
-     &gt;&gt;<span data-count="86">=</span> ite<span data-count="86">r</span> (fun (expr, return_type) -&gt;
-       <span data-count="67">c</span>heck_exp<span data-count="67">r</span> check_stmt (retrieve_ar<span data-count="67">g</span> check_stmt) expr &gt;&gt;= check_e<span data-count="67">q</span> return_type))
-    *&gt; retur<span data-count="86">n</span> ()
-  | <span data-count="22">S</span>tmt_if { if_init; if_cond; if_body; else_body } -&gt;
+     &gt;&gt;<span data-count="91">=</span> ite<span data-count="91">r</span> (fun (expr, return_type) -&gt;
+       <span data-count="72">c</span>heck_exp<span data-count="72">r</span> check_stmt (retrieve_ar<span data-count="72">g</span> check_stmt) expr &gt;&gt;= check_e<span data-count="72">q</span> return_type))
+    *&gt; retur<span data-count="91">n</span> ()
+  | <span data-count="27">S</span>tmt_if { if_init; if_cond; if_body; else_body } -&gt;
     add_env
-    *<span data-count="22">&gt;</span> check_ini<span data-count="22">t</span> check_stmt if_init
-    *<span data-count="22">&gt;</span> (check_exp<span data-count="22">r</span> check_stmt (retrieve_ar<span data-count="22">g</span> check_stmt) if_cond
-        &gt;&gt;<span data-count="22">=</span> check_e<span data-count="22">q</span> (Ctype Type_bool))
-    *<span data-count="22">&gt;</span> ite<span data-count="22">r</span> check_stmt if_body
-    *<span data-count="22">&gt;</span> delete_env
+    *<span data-count="27">&gt;</span> check_ini<span data-count="27">t</span> check_stmt if_init
+    *<span data-count="27">&gt;</span> (check_exp<span data-count="27">r</span> check_stmt (retrieve_ar<span data-count="27">g</span> check_stmt) if_cond
+        &gt;&gt;<span data-count="27">=</span> check_e<span data-count="27">q</span> (Ctype Type_bool))
+    *<span data-count="27">&gt;</span> ite<span data-count="27">r</span> check_stmt if_body
+    *<span data-count="27">&gt;</span> delete_env
     *&gt;
       (match else_body with
-      | <span data-count="10">S</span>ome (Else_block block) -&gt; ite<span data-count="10">r</span> check_stmt block
+      | <span data-count="12">S</span>ome (Else_block block) -&gt; ite<span data-count="12">r</span> check_stmt block
       | <span data-count="1">S</span>ome (Else_if if') -&gt; check_stm<span data-count="1">t</span> (Stmt_if if')
-      | <span data-count="11">N</span>one -&gt; retur<span data-count="11">n</span> ())
-  | <span data-count="15">S</span>tmt_for { for_init; for_cond; for_post; for_body } -&gt;
+      | <span data-count="14">N</span>one -&gt; retur<span data-count="14">n</span> ())
+  | <span data-count="18">S</span>tmt_for { for_init; for_cond; for_post; for_body } -&gt;
     add_env
-    *<span data-count="15">&gt;</span> check_ini<span data-count="15">t</span> check_stmt for_init
-    *<span data-count="15">&gt;</span> (match for_cond with
-      | <span data-count="14">S</span>ome expr -&gt;
-        check_exp<span data-count="14">r</span> check_stmt (retrieve_ar<span data-count="14">g</span> check_stmt) expr
-        &gt;&gt;<span data-count="14">=</span> check_e<span data-count="14">q</span> (Ctype Type_bool)
+    *<span data-count="18">&gt;</span> check_ini<span data-count="18">t</span> check_stmt for_init
+    *<span data-count="18">&gt;</span> (match for_cond with
+      | <span data-count="17">S</span>ome expr -&gt;
+        check_exp<span data-count="17">r</span> check_stmt (retrieve_ar<span data-count="17">g</span> check_stmt) expr
+        &gt;&gt;<span data-count="17">=</span> check_e<span data-count="17">q</span> (Ctype Type_bool)
       | <span data-count="1">N</span>one -&gt; retur<span data-count="1">n</span> ())
-    *<span data-count="15">&gt;</span> check_ini<span data-count="15">t</span> check_stmt for_post
-    *<span data-count="15">&gt;</span> ite<span data-count="15">r</span> check_stmt for_body
+    *<span data-count="18">&gt;</span> check_ini<span data-count="18">t</span> check_stmt for_post
+    *<span data-count="18">&gt;</span> ite<span data-count="18">r</span> check_stmt for_body
     *&gt; delete_env
 ;;
 
 let save_top_decl_funcs = function
-  | <span data-count="245">D</span>ecl_func (id, args_returns_and_body) -&gt;
-    save_ident id (get_afunc_typ<span data-count="245">e</span> args_returns_and_body)
+  | <span data-count="255">D</span>ecl_func (id, args_returns_and_body) -&gt;
+    save_ident id (get_afunc_typ<span data-count="255">e</span> args_returns_and_body)
   | <span data-count="68">D</span>ecl_var _ -&gt; return ()
 ;;
 
 let check_and_save_top_decl_vars = function
-  | <span data-count="245">D</span>ecl_func _ -&gt; return ()
+  | <span data-count="255">D</span>ecl_func _ -&gt; return ()
   | <span data-count="68">D</span>ecl_var decl -&gt; check_long_var_decl check_stmt save_ident decl
 ;;
 
 let check_top_decl_funcs = function
-  | <span data-count="245">D</span>ecl_func (_, afunc) -&gt; check_anon_fun<span data-count="245">c</span> afunc check_stmt *&gt; retur<span data-count="245">n</span> ()
+  | <span data-count="255">D</span>ecl_func (_, afunc) -&gt; check_anon_fun<span data-count="255">c</span> afunc check_stmt *&gt; retur<span data-count="255">n</span> ()
   | <span data-count="68">D</span>ecl_var _ -&gt; return ()
 ;;
 
 let check_main =
-  retrieve_iden<span data-count="6">t</span> "main"
-  &gt;&gt;<span data-count="6">=</span> function
-  | <span data-count="82">C</span>type (Type_func ([], [])) -&gt; return ()
+  retrieve_iden<span data-count="7">t</span> "main"
+  &gt;&gt;<span data-count="7">=</span> function
+  | <span data-count="83">C</span>type (Type_func ([], [])) -&gt; return ()
   | <span data-count="2">C</span>type (Type_func _) -&gt;
     fail
       (Type_check_error
@@ -1646,25 +1644,25 @@ let check_main =
 ;;
 
 let type_check file =
-  <span data-count="137">r</span>un
-    (save_iden<span data-count="137">t</span> "true" (Ctype Type_bool)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "false" (Ctype Type_bool)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "make" (Cpolymorphic Make)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "print" (Cpolymorphic Print)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "panic" (Cpolymorphic Panic)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "len" (Cpolymorphic Len)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "recover" (Cpolymorphic Recover)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "close" (Cpolymorphic Close)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "println" (Cpolymorphic Println)
-     *<span data-count="137">&gt;</span> save_iden<span data-count="137">t</span> "nil" (Cpolymorphic Nil)
-     *<span data-count="137">&gt;</span> add_env
-     *<span data-count="137">&gt;</span> ite<span data-count="137">r</span> save_top_decl_funcs file
-     *<span data-count="137">&gt;</span> ite<span data-count="137">r</span> check_and_save_top_decl_vars file
-     *<span data-count="137">&gt;</span> ite<span data-count="137">r</span> check_top_decl_funcs file
-     *<span data-count="137">&gt;</span> check_main)
+  <span data-count="138">r</span>un
+    (save_iden<span data-count="138">t</span> "true" (Ctype Type_bool)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "false" (Ctype Type_bool)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "make" (Cpolymorphic Make)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "print" (Cpolymorphic Print)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "panic" (Cpolymorphic Panic)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "len" (Cpolymorphic Len)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "recover" (Cpolymorphic Recover)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "close" (Cpolymorphic Close)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "println" (Cpolymorphic Println)
+     *<span data-count="138">&gt;</span> save_iden<span data-count="138">t</span> "nil" (Cpolymorphic Nil)
+     *<span data-count="138">&gt;</span> add_env
+     *<span data-count="138">&gt;</span> ite<span data-count="138">r</span> save_top_decl_funcs file
+     *<span data-count="138">&gt;</span> ite<span data-count="138">r</span> check_and_save_top_decl_vars file
+     *<span data-count="138">&gt;</span> ite<span data-count="138">r</span> check_top_decl_funcs file
+     *<span data-count="138">&gt;</span> check_main)
     ([ MapIdent.empty ], [])
-  |&gt; <span data-count="137">f</span>unction
-  | <span data-count="137">_</span>, res -&gt; res
+  |&gt; <span data-count="138">f</span>unction
+  | <span data-count="138">_</span>, res -&gt; res
 ;;
 </code></pre>
       </div>

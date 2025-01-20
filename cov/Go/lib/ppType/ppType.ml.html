@@ -101,11 +101,11 @@ open Ast
 open Format
 
 let sep_by_comma list print =
-  <span data-count="1949">l</span>et rec helper acc = function
-    | <span data-count="2911">f</span>st :: snd :: tl -&gt;
-      let acc = String.concat "" [ acc; prin<span data-count="2911">t</span> fst; ", " ] in
-      <span data-count="2911">h</span>elper acc (snd :: tl)
-    | <span data-count="1728">f</span>st :: _ -&gt; acc ^ prin<span data-count="1728">t</span> fst
+  <span data-count="1950">l</span>et rec helper acc = function
+    | <span data-count="2915">f</span>st :: snd :: tl -&gt;
+      let acc = String.concat "" [ acc; prin<span data-count="2915">t</span> fst; ", " ] in
+      <span data-count="2915">h</span>elper acc (snd :: tl)
+    | <span data-count="1729">f</span>st :: _ -&gt; acc ^ prin<span data-count="1729">t</span> fst
     | <span data-count="221">[</span>] -&gt; acc
   in
   helper "" list

@@ -133,39 +133,39 @@
 
 type ('st, 'a) t = 'st -&gt; 'st * ('a, Errors.error) Result.t
 
-let return x st = <span data-count="55573">s</span>t, Result.Ok x
+let return x st = <span data-count="65288">s</span>t, Result.Ok x
 let fail e st = <span data-count="687">s</span>t, Result.Error e
 
 let ( &gt;&gt;= ) x f st =
-  <span data-count="60480">l</span>et st1, x1 = x st in
-  <span data-count="60480">m</span>atch x1 with
-  | <span data-count="59858">R</span>esult.Ok x -&gt; f x st1
+  <span data-count="70534">l</span>et st1, x1 = x st in
+  <span data-count="70534">m</span>atch x1 with
+  | <span data-count="69912">R</span>esult.Ok x -&gt; f x st1
   | <span data-count="622">R</span>esult.Error x -&gt; fail x st1
 ;;
 
 let ( let* ) = ( &gt;&gt;= )
-let ( *&gt; ) x1 x2 = <span data-count="14029">x</span>1 &gt;&gt;= fun _ -&gt; <span data-count="13118">x</span>2
+let ( *&gt; ) x1 x2 = <span data-count="14911">x</span>1 &gt;&gt;= fun _ -&gt; <span data-count="14040">x</span>2
 
 let ( &gt;&gt;| ) x f st =
-  <span data-count="500">l</span>et st, x = x st in
-  <span data-count="500">m</span>atch x with
-  | <span data-count="497">R</span>esult.Ok x -&gt; return (<span data-count="497">f</span> x) st
+  <span data-count="618">l</span>et st, x = x st in
+  <span data-count="618">m</span>atch x with
+  | <span data-count="615">R</span>esult.Ok x -&gt; return (<span data-count="615">f</span> x) st
   | <span data-count="3">R</span>esult.Error er -&gt; fail er st
 ;;
 
 let iter f =
-  <span data-count="1814">l</span>et f acc el = <span data-count="2982">a</span>cc *<span data-count="2982">&gt;</span> <span data-count="2982">f</span> el *&gt; retur<span data-count="2982">n</span> () in
-  List.fold_left f (retur<span data-count="1814">n</span> ())
+  <span data-count="1817">l</span>et f acc el = <span data-count="3042">a</span>cc *<span data-count="3042">&gt;</span> <span data-count="3042">f</span> el *&gt; retur<span data-count="3042">n</span> () in
+  List.fold_left f (retur<span data-count="1817">n</span> ())
 ;;
 
 let iter2 f =
-  <span data-count="215">l</span>et f acc el1 el2 = <span data-count="232">a</span>cc *<span data-count="232">&gt;</span> <span data-count="232">f</span> el1 el2 *&gt; retur<span data-count="232">n</span> () in
-  List.fold_left2 f (retur<span data-count="215">n</span> ())
+  <span data-count="262">l</span>et f acc el1 el2 = <span data-count="272">a</span>cc *<span data-count="272">&gt;</span> <span data-count="272">f</span> el1 el2 *&gt; retur<span data-count="272">n</span> () in
+  List.fold_left2 f (retur<span data-count="262">n</span> ())
 ;;
 
 let map f list =
-  <span data-count="543">l</span>et f acc el = <span data-count="570">a</span>cc &gt;&gt;= fun acc -&gt; <span data-count="1074">f</span> el &gt;&gt;= fun el -&gt; <span data-count="534">r</span>eturn (el :: acc) in
-  List.fold_lef<span data-count="543">t</span> f (retur<span data-count="543">n</span> []) list &gt;&gt;| List.rev
+  <span data-count="661">l</span>et f acc el = <span data-count="669">a</span>cc &gt;&gt;= fun acc -&gt; <span data-count="1272">f</span> el &gt;&gt;= fun el -&gt; <span data-count="633">r</span>eturn (el :: acc) in
+  List.fold_lef<span data-count="661">t</span> f (retur<span data-count="661">n</span> []) list &gt;&gt;| List.rev
 ;;
 
 let fold_left f acc l =
@@ -173,9 +173,9 @@ let fold_left f acc l =
   List.fold_left f' (retur<span data-count="0">n</span> acc) l
 ;;
 
-let read st = <span data-count="16482">r</span>eturn st st
-let write st_new _ = <span data-count="4901">s</span>t_new, Result.Ok ()
-let run f = <span data-count="181">f</span>
+let read st = <span data-count="19076">r</span>eturn st st
+let write st_new _ = <span data-count="5360">s</span>t_new, Result.Ok ()
+let run f = <span data-count="183">f</span>
 </code></pre>
       </div>
     </div>

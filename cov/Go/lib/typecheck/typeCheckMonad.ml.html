@@ -272,64 +272,64 @@ module Monad = struct
 
   let read_env =
     read
-    &gt;&gt;<span data-count="6">=</span> function
-    | <span data-count="3223">e</span>nv, _ -&gt; return env
+    &gt;&gt;<span data-count="7">=</span> function
+    | <span data-count="3401">e</span>nv, _ -&gt; return env
   ;;
 
   let write_env new_env =
-    <span data-count="2524">r</span>ead
+    <span data-count="2609">r</span>ead
     &gt;&gt;= function
-    | <span data-count="2524">_</span>, funcs -&gt; write (new_env, funcs)
+    | <span data-count="2609">_</span>, funcs -&gt; write (new_env, funcs)
   ;;
 
   let save_func func =
-    <span data-count="272">r</span>ead
+    <span data-count="287">r</span>ead
     &gt;&gt;= function
-    | <span data-count="235">e</span>nv, funcs -&gt; write (env, func :: funcs)
+    | <span data-count="250">e</span>nv, funcs -&gt; write (env, func :: funcs)
   ;;
 
   let delete_func =
     read
-    &gt;&gt;<span data-count="6">=</span> function
-    | <span data-count="187">e</span>nv, funcs -&gt; write (env, List.t<span data-count="187">l</span> funcs)
+    &gt;&gt;<span data-count="7">=</span> function
+    | <span data-count="202">e</span>nv, funcs -&gt; write (env, List.t<span data-count="202">l</span> funcs)
   ;;
 
   let save_ident ident t =
-    <span data-count="1934">l</span>et* env = read_env in
-    <span data-count="1905">m</span>atch MapIdent.find_opt ident (List.h<span data-count="1905">d</span> env) with
-    | <span data-count="1899">N</span>one -&gt; write_env (MapIdent.ad<span data-count="1899">d</span> ident t (List.h<span data-count="1899">d</span> env) :: List.t<span data-count="1899">l</span> env)
+    <span data-count="1972">l</span>et* env = read_env in
+    <span data-count="1943">m</span>atch MapIdent.find_opt ident (List.h<span data-count="1943">d</span> env) with
+    | <span data-count="1937">N</span>one -&gt; write_env (MapIdent.ad<span data-count="1937">d</span> ident t (List.h<span data-count="1937">d</span> env) :: List.t<span data-count="1937">l</span> env)
     | <span data-count="6">S</span>ome _ -&gt;
       fail
         (Type_check_error (Multiple_declaration (Printf.sprint<span data-count="6">f</span> "%s is redeclared" ident)))
   ;;
 
   let read_ident ident =
-    <span data-count="652">l</span>et* env = read_env in
-    <span data-count="693">m</span>atch List.find_opt (MapIdent.me<span data-count="693">m</span> ident) env with
+    <span data-count="745">l</span>et* env = read_env in
+    <span data-count="786">m</span>atch List.find_opt (MapIdent.me<span data-count="786">m</span> ident) env with
     | <span data-count="5">N</span>one -&gt; return None
-    | <span data-count="688">S</span>ome map -&gt; return (MapIdent.find_op<span data-count="688">t</span> ident map)
+    | <span data-count="781">S</span>ome map -&gt; return (MapIdent.find_op<span data-count="781">t</span> ident map)
   ;;
 
   let retrieve_ident ident =
-    <span data-count="652">r</span>ead_iden<span data-count="652">t</span> ident
+    <span data-count="745">r</span>ead_iden<span data-count="745">t</span> ident
     &gt;&gt;= function
-    | <span data-count="688">S</span>ome t -&gt; return t
+    | <span data-count="781">S</span>ome t -&gt; return t
     | <span data-count="5">N</span>one -&gt;
       fail (Type_check_error (Undefined_ident (Printf.sprint<span data-count="5">f</span> "%s is not defined" ident)))
   ;;
 
   let get_func_return_type =
     read
-    &gt;&gt;<span data-count="6">=</span> function
+    &gt;&gt;<span data-count="7">=</span> function
     | <span data-count="0">_</span>, [] -&gt;
       fail
         (Type_check_error
            (Mismatched_types "this func has no returns but they was requested"))
-    | <span data-count="70">_</span>, funcs -&gt; return (List.h<span data-count="70">d</span> funcs)
+    | <span data-count="75">_</span>, funcs -&gt; return (List.h<span data-count="75">d</span> funcs)
   ;;
 
-  let add_env = read_env &gt;&gt;<span data-count="6">=</span> fun x -&gt; <span data-count="407">w</span>rite_env (MapIdent.empty :: x)
-  let delete_env = read_env &gt;&gt;<span data-count="6">=</span> fun x -&gt; <span data-count="218">w</span>rite_env (List.t<span data-count="218">l</span> x)
+  let add_env = read_env &gt;&gt;<span data-count="7">=</span> fun x -&gt; <span data-count="431">w</span>rite_env (MapIdent.empty :: x)
+  let delete_env = read_env &gt;&gt;<span data-count="7">=</span> fun x -&gt; <span data-count="241">w</span>rite_env (List.t<span data-count="241">l</span> x)
 end
 </code></pre>
       </div>
