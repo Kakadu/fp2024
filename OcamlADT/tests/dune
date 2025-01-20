@@ -1,3 +1,18 @@
+(library
+ (name ocamladt_tests)
+ (public_name OcamlADT.Tests)
+ (libraries
+  stdio
+  ocamladt_lib
+  qcheck-core
+  qcheck-core.runner
+  ppx_deriving_qcheck)
+ (preprocess
+  (pps ppx_expect ppx_deriving_qcheck))
+ (instrumentation
+  (backend bisect_ppx))
+ (inline_tests))
+
 (cram
- (applies_to ast_check)
+ (applies_to fact_ast_check)
  (deps ../bin/main.exe))

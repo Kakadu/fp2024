@@ -1,10 +1,16 @@
 (library
  (name OCamlBR)
  (public_name OcamlBR)
- (modules Ast Parser Parser_tests)
- (libraries base angstrom)
+ (modules Ast Parser Parser_tests Pr_printer Pr_printer_tests Qcheck)
+ (libraries base angstrom qcheck-core qcheck-core.runner)
  (instrumentation
   (backend bisect_ppx))
  (preprocess
-  (pps ppx_deriving.show ppx_inline_test ppx_expect))
+  (pps ppx_deriving.show ppx_inline_test ppx_expect ppx_deriving_qcheck))
  (inline_tests))
+
+(executable
+ (name run_qcheck)
+ (public_name run_qcheck)
+ (modules run_qcheck)
+ (libraries OcamlBR))

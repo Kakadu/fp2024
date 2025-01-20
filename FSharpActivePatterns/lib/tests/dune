@@ -1,9 +1,13 @@
 (library
  (name tests)
- (modules Print_ast Parser)
- (libraries FSharpActivePatterns)
+ (modules Ast_printer Parser Qcheck_utils)
+ (libraries FSharpActivePatterns qcheck-core qcheck-core.runner)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (instrumentation
-  (backend bisect_ppx))
- (inline_tests))
+  (backend bisect_ppx)))
+
+(executable
+ (name run_qcheck)
+ (modules run_qcheck)
+ (libraries tests FSharpActivePatterns qcheck-core.runner))

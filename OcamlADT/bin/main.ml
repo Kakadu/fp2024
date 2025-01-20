@@ -8,34 +8,32 @@ let () =
   let factorial_ast : program =
     [ Str_value
         ( Recursive
-        , [ { pat = Pat_var "fact"
+        , ( { pat = Pat_var "fact"
             ; expr =
                 Exp_fun
-                  ( Pat_var "n"
-                  , []
+                  ( (Pat_var "n", [])
                   , Exp_if
                       ( Exp_apply
                           ( Exp_ident "="
-                          , Exp_tuple (Exp_var "n", Exp_constant (Const_integer 0), []) )
+                          , Exp_tuple (Exp_ident "n", Exp_constant (Const_integer 0), [])
+                          )
                       , Exp_constant (Const_integer 1)
                       , Some
                           (Exp_apply
-                             ( Exp_apply
-                                 ( Exp_ident "*"
-                                 , Exp_tuple
-                                     ( Exp_var "n"
+                             ( Exp_ident "*"
+                             , Exp_tuple
+                                 ( Exp_ident "n"
+                                 , Exp_apply
+                                     ( Exp_ident "fact"
                                      , Exp_apply
-                                         ( Exp_ident "fact"
-                                         , Exp_apply
-                                             ( Exp_ident "-"
-                                             , Exp_tuple
-                                                 ( Exp_var "n"
-                                                 , Exp_constant (Const_integer 1)
-                                                 , [] ) ) )
-                                     , [] ) )
-                             , Exp_constant (Const_integer 1) )) ) )
+                                         ( Exp_ident "-"
+                                         , Exp_tuple
+                                             ( Exp_ident "n"
+                                             , Exp_constant (Const_integer 1)
+                                             , [] ) ) )
+                                 , [] ) )) ) )
             }
-          ] )
+          , [] ) )
     ]
   in
   print_endline (show_program factorial_ast)

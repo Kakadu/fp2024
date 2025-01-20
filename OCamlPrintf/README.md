@@ -21,12 +21,39 @@
 - [x] [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree)
   - [x] Factorial
   - [x] MiniML
-- [ ] Parser
+- [x] Parser
   - [x] Factorial
-  - [ ] MiniML
+  - [x] MiniML
 - [x] [REPL](https://en.wikipedia.org/wiki/Read–eval–print_loop)
-- [ ] Type check / Type inference
-- [ ] Interpreter
+- [x] Pretty Printer
+- [x] [Quick Checker](https://en.wikipedia.org/wiki/QuickCheck)
+  - [x] Manual
+  - [x] Auto
+- [x] Shrinker
+- [x] Type Checker
+- [x] Interpreter
+- [ ] Support for char, string types and operations with them
+  - [x] Types
+  - [x] Comparison
+  - [x] Concatenation
+- [ ] Support the formatted printing function
+
+## Build
+
+```shell
+cd OCamlPrintf/
+dune build # Build the project.
+```
+
+## Run
+
+```shell
+dune runtest # Run all tests.
+dune exec -- repl/REPL.exe -dparsetree -fromfile tests/factorial.txt # Run parser tests and see AST.
+dune exec -- tests/run_qchecker.exe -v # Run qchecker tests with verbose mode.
+dune exec -- repl/REPL.exe -inference # Run inferencer in REPL.
+dune exec repl/REPL.exe # Run interpreter.
+```
 
 ## Authors
 

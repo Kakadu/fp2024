@@ -4,4 +4,4 @@
 
 open Ast
 
-val parse : string -> construction option
+val parse : string -> (construction, string) result

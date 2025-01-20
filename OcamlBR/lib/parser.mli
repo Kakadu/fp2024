@@ -2,4 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-val parse_expr : string -> (Ast.expr list, string) result
+open Ast
+
+val parse_expr : string -> (structure, string) result
