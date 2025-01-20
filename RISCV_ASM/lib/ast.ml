@@ -137,6 +137,41 @@ type float_register =
   | Ft9 (** a.k.a F29 *)
   | Ft10 (** a.k.a F30 *)
   | Ft11 (** a.k.a F31 *)
+
+(** Vector Registers *)
+type vector_register =
+  | V0 (** Vector Register 0 *)
+  | V1 (** Vector Register 1 *)
+  | V2 (** Vector Register 2 *)
+  | V3 (** Vector Register 3 *)
+  | V4 (** Vector Register 4 *)
+  | V5 (** Vector Register 5 *)
+  | V6 (** Vector Register 6 *)
+  | V7 (** Vector Register 7 *)
+  | V8 (** Vector Register 8 *)
+  | V9 (** Vector Register 9 *)
+  | V10 (** Vector Register 10 *)
+  | V11 (** Vector Register 11 *)
+  | V12 (** Vector Register 12 *)
+  | V13 (** Vector Register 13 *)
+  | V14 (** Vector Register 14 *)
+  | V15 (** Vector Register 15 *)
+  | V16 (** Vector Register 16 *)
+  | V17 (** Vector Register 17 *)
+  | V18 (** Vector Register 18 *)
+  | V19 (** Vector Register 19 *)
+  | V20 (** Vector Register 20 *)
+  | V21 (** Vector Register 21 *)
+  | V22 (** Vector Register 22 *)
+  | V23 (** Vector Register 23 *)
+  | V24 (** Vector Register 24 *)
+  | V25 (** Vector Register 25 *)
+  | V26 (** Vector Register 26 *)
+  | V27 (** Vector Register 27 *)
+  | V28 (** Vector Register 28 *)
+  | V29 (** Vector Register 29 *)
+  | V30 (** Vector Register 30 *)
+  | V31 (** Vector Register 31 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Label Type *)
@@ -176,6 +211,8 @@ type instruction =
   | Slt of register * register * register (** Set Less Than. rd = (rs1 < rs2) ? 1 : 0 *)
   | Sltu of register * register * register (** Set Less Than (Unsigned) *)
   | Addi of register * register * address12 (** Addition of Immediate. rd = rs1 + imm *)
+  | Subi of register * register * address12
+  (** Subtraction of Immediate. rd = rs1 - imm *)
   | Xori of register * register * address12 (** XOR with Immediate. rd = rs1 ^ imm *)
   | Ori of register * register * address12 (** OR with Immediate. rd = rs1 | imm *)
   | Andi of register * register * address12 (** AND with Immediate. rd = rs1 & imm *)
@@ -200,8 +237,14 @@ type instruction =
   (** Store Word. M[rs1 + imm][0:31] = rs2[0:31] *)
   | Beq of register * register * address12
   (** Branch ==. if (rs1 == rs2) PC += imm. PC is a program counter *)
+  | Beqz of register * address12
+  (** Branch == 0. if (rs1 == 0) PC += imm. PC is a program counter *)
   | Bne of register * register * address12 (** Branch !=. if (rs1 != rs2) PC += imm. *)
+  | Bnez of register * address12 (** Branch != 0. if (rs1 != 0) PC += imm. *)
   | Blt of register * register * address12 (** Branch <. if (rs1 < rs2) PC += imm. *)
+  | Bltz of register * address12 (** Branch < 0. if (rs1 < 0) PC += imm. *)
+  | Bgt of register * register * address12 (** Branch >. if (rs1 > rs2) PC += imm. *)
+  | Bgtz of register * address12 (** Branch > 0. if (rs1 > 0) PC += imm. *)
   | Bge of register * register * address12 (** Branch >=. if (rs1 >= rs2) PC += imm. *)
   | Bltu of register * register * address12
   (** Branch < (Unsigned). if (rs1 < rs2) PC += imm. *)
@@ -382,6 +425,64 @@ type instruction =
   (** Convert 64-bit integer to double-precision floating-point *)
   | FcvtDLu of float_register * register
   (** Convert 64-bit unsigned integer to double-precision floating-point *)
+  | Adduw of register * register * register
+  (** Add unsigned word. rd = ZEXT(rs1 + rs2)[31:0]*)
+  | Sh1add of register * register * register
+  (** Shift left by 1 and add. rd = rs2 + (rs1 << 1) *)
+  | Sh1adduw of register * register * register
+  (** Shift unsigned word left by 1 and add. rd = rs2 + (ZEXT(rs1) << 1) *)
+  | Sh2add of register * register * register
+  (** Shift left by 2 and add. rd = rs2 + (rs1 << 2) *)
+  | Sh2adduw of register * register * register
+  (** Shift unsigned word left by 2 and add. rd = rs2 + (ZEXT(rs1) << 2) *)
+  | Sh3add of register * register * register
+  (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
+  | Sh3adduw of register * register * register
+  (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
+  | Vle32v of vector_register * register * address12
+  (** Load Vector from Memory. vle32.v vd, (rs1) *)
+  | Vse32v of vector_register * register * address12
+  (** Store Vector to Memory. vse32.v vs, (rs1) *)
+  | Vaddvv of vector_register * vector_register * vector_register
+  (** Vector Addition. Vadd.vv vd, vs1, vs2 *)
+  | Vaddvx of vector_register * vector_register * register
+  (** Vector Addition with Scalar. vadd.vx vd, vs1, rs2 *)
+  | Vsubvv of vector_register * vector_register * vector_register
+  (** Vector Subtraction. Vsub.vv vd, vs1, vs2 *)
+  | Vsubvx of vector_register * vector_register * register
+  (** Vector Subtraction with Scalar. vsub.vx vd, vs1, rs2 *)
+  | Vmulvv of vector_register * vector_register * vector_register
+  (** Vector Multiplication. Vmul.vv vd, vs1, vs2 *)
+  | Vmulvx of vector_register * vector_register * register
+  (** Vector Multiplication with Scalar. vmul.vx vd, vs1, rs2 *)
+  | Vdivvv of vector_register * vector_register * vector_register
+  (** Vector Division. Vdiv.vv vd, vs1, vs2 *)
+  | Vdivvx of vector_register * vector_register * register
+  (** Vector Division with Scalar. vdiv.vx vd, vs1, rs2 *)
+  | Vandvv of vector_register * vector_register * vector_register
+  (** Vector Logical AND. Vand.vv vd, vs1, vs2 *)
+  | Vandvx of vector_register * vector_register * register
+  (** Vector Logical AND with Scalar. vand.vx vd, vs1, rs2 *)
+  | Vorvv of vector_register * vector_register * vector_register
+  (** Vector Logical OR. Vor.vv vd, vs1, vs2 *)
+  | Vorvx of vector_register * vector_register * register
+  (** Vector Logical OR with Scalar. vor.vx vd, vs1, rs2 *)
+  | Vxorvv of vector_register * vector_register * vector_register
+  (** Vector Logical XOR. Vxor.vv vd, vs1, vs2 *)
+  | Vxorvx of vector_register * vector_register * register
+  (** Vector Logical XOR with Scalar. vxor.vx vd, vs1, rs2 *)
+  | Vminvv of vector_register * vector_register * vector_register
+  (** Vector Minimum. Vmin.vv vd, vs1, vs2 *)
+  | Vminvx of vector_register * vector_register * register
+  (** Vector Minimum with Scalar. vmin.vx vd, vs1, rs2 *)
+  | Vmaxvv of vector_register * vector_register * vector_register
+  (** Vector Maximum. Vmax.vv vd, vs1, vs2 *)
+  | Vmaxvx of vector_register * vector_register * register
+  (** Vector Maximum with Scalar. vmax.vx vd, vs1, rs2 *)
+  | Vmseqvv of vector_register * vector_register * vector_register
+  (** Vector Equals. Vmseq.vv vd, vs1, vs2 *)
+  | Vmseqvx of vector_register * vector_register * register
+  (** Vector Equals with Scalar. vmseq.vx vd, vs1, rs2 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
@@ -411,10 +512,9 @@ type directive =
   | Size of address12 * (string[@gen Generators.gen_my_string]) (** .size *)
   | Section of
       (string[@gen Generators.gen_my_string])
-      * (string[@gen Generators.gen_my_string])
-      * type_dir
-      * int option (** .section name *)
-  | String of (string[@gen Generators.gen_my_string]) (** .string "str" *)
+      * ((string[@gen Generators.gen_my_string]) * (type_dir * int option) option) option
+  (** .section name *)
+  | StringDir of (string[@gen Generators.gen_my_string]) (** .string "str" *)
   | CfiDefCfaOffset of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
   (** .cfi_def_cfa_offset int*)
   | CfiOffset of
@@ -425,6 +525,8 @@ type directive =
   (** .cfi_restore int *)
   | Ident of (string[@gen Generators.gen_my_string]) (** .ident string *)
   | CfiRestoreState (** .cfi_restore_state *)
+  | Word of int (** .word stores data in memory*)
+  | Space of int (** .space allocates unitialized space for data in memory *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Expression in AST *)

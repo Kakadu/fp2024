@@ -202,6 +202,42 @@ let parse_float_register =
        ; string "fs7" *> return Fs7
        ; string "fs8" *> return Fs8
        ; string "fs9" *> return Fs9
+
+let parse_vector_register =
+  ws_opt
+    (choice
+       [ string "v10" *> return V10
+       ; string "v11" *> return V11
+       ; string "v12" *> return V12
+       ; string "v13" *> return V13
+       ; string "v14" *> return V14
+       ; string "v15" *> return V15
+       ; string "v16" *> return V16
+       ; string "v17" *> return V17
+       ; string "v18" *> return V18
+       ; string "v19" *> return V19
+       ; string "v20" *> return V20
+       ; string "v21" *> return V21
+       ; string "v22" *> return V22
+       ; string "v23" *> return V23
+       ; string "v24" *> return V24
+       ; string "v25" *> return V25
+       ; string "v26" *> return V26
+       ; string "v27" *> return V27
+       ; string "v28" *> return V28
+       ; string "v29" *> return V29
+       ; string "v30" *> return V30
+       ; string "v31" *> return V31
+       ; string "v0" *> return V0
+       ; string "v1" *> return V1
+       ; string "v2" *> return V2
+       ; string "v3" *> return V3
+       ; string "v4" *> return V4
+       ; string "v5" *> return V5
+       ; string "v6" *> return V6
+       ; string "v7" *> return V7
+       ; string "v8" *> return V8
+       ; string "v9" *> return V9
        ])
 ;;
 
@@ -236,6 +272,43 @@ let parse_string_with_spaces str =
       | Some (' ' | '\n' | '\t') -> return ()
       | None -> return ()
       | _ -> fail "")
+;;
+
+let parse_section_subargs =
+  lift2
+    (fun section_arg3 i -> section_arg3, i)
+    parse_type
+    (peek_char
+     >>= function
+     | Some ',' -> ws_opt (char ',') *> ws_opt (parse_number >>| fun i -> Some i)
+     | _ -> return None)
+;;
+
+let parse_section_args =
+  lift2
+    (fun section_arg2 section_subargs -> section_arg2, section_subargs)
+    parse_quoted_string
+    (ws_opt
+       (peek_char
+        >>= function
+        | Some ',' ->
+          ws_opt (char ',') *> ws_opt (parse_section_subargs >>| fun t -> Some t)
+        | _ -> return None))
+;;
+
+let parse_section =
+  parse_string_with_spaces ".section"
+  *> ws_opt
+       (lift2
+          (fun section_arg1 section_args ->
+            DirectiveExpr (Section (section_arg1, section_args)))
+          parse_string
+          (ws_opt
+             (peek_char
+              >>= function
+              | Some ',' ->
+                ws_opt (char ',') *> ws_opt (parse_section_args >>| fun s -> Some s)
+              | _ -> return None)))
 ;;
 
 let parse_directive =
@@ -275,22 +348,9 @@ let parse_directive =
                  (* FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
                  parse_address12
                  (ws_opt (char ',') *> parse_string))
-       ; parse_string_with_spaces ".section"
-         *> ws_opt
-              (lift4
-                 (fun section_name section_type section_flags section_index ->
-                   DirectiveExpr
-                     (Section (section_name, section_type, section_flags, section_index)))
-                 parse_string
-                 (ws_opt (char ',') *> ws_opt parse_quoted_string)
-                 (ws_opt (char ',') *> ws_opt parse_type)
-                 (peek_char
-                  >>= function
-                  | Some ',' ->
-                    ws_opt (char ',') *> ws_opt (lift (fun i -> Some i) parse_number)
-                  | _ -> return None))
+       ; parse_section
        ; parse_string_with_spaces ".string"
-         *> ws_opt (lift (fun str -> DirectiveExpr (String str)) parse_quoted_string)
+         *> ws_opt (lift (fun str -> DirectiveExpr (StringDir str)) parse_quoted_string)
        ; parse_string_with_spaces ".cfi_def_cfa_offset"
          *> ws_opt (lift (fun int -> DirectiveExpr (CfiDefCfaOffset int)) parse_number)
        ; parse_string_with_spaces ".cfi_offset"
@@ -303,6 +363,10 @@ let parse_directive =
          *> ws_opt (lift (fun int -> DirectiveExpr (CfiRestore int)) parse_number)
        ; parse_string_with_spaces ".ident"
          *> ws_opt (lift (fun str -> DirectiveExpr (Ident str)) parse_quoted_string)
+       ; parse_string_with_spaces ".word"
+         *> ws_opt (lift (fun int -> DirectiveExpr (Word int)) parse_number)
+       ; parse_string_with_spaces ".space"
+         *> ws_opt (lift (fun int -> DirectiveExpr (Space int)) parse_number)
        ])
 ;;
 
@@ -372,6 +436,12 @@ let parse_instruction =
        ; parse_string_with_spaces "addi"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Addi (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; parse_string_with_spaces "subi"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Subi (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
@@ -477,18 +547,48 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
+       ; parse_string_with_spaces "beqz"
+         *> ws_opt
+              (lift2
+                 (fun r1 addr12 -> InstructionExpr (Beqz (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "bne"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Bne (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
+       ; parse_string_with_spaces "bnez"
+         *> ws_opt
+              (lift2
+                 (fun r1 addr12 -> InstructionExpr (Bnez (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "blt"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Blt (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
+       ; parse_string_with_spaces "bltz"
+         *> ws_opt
+              (lift2
+                 (fun r1 addr12 -> InstructionExpr (Bltz (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
+       ; parse_string_with_spaces "bgt"
+         *> lift3
+              (fun r1 r2 addr12 -> InstructionExpr (Bgt (r1, r2, addr12)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_address12)
+       ; parse_string_with_spaces "bgtz"
+         *> ws_opt
+              (lift2
+                 (fun r1 addr12 -> InstructionExpr (Bgtz (r1, addr12)))
+                 parse_register
+                 (char ',' *> parse_address12))
        ; parse_string_with_spaces "bge"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Bge (r1, r2, addr12)))
@@ -1051,6 +1151,179 @@ let parse_instruction =
          *> lift2
               (fun r1 r2 -> InstructionExpr (FcvtDLu (r1, r2)))
               parse_float_register
+       ; parse_string_with_spaces "add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh1add"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh1add (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh1add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh1adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh2add"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh2add (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh2add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh2adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh3add"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh3add (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "sh3add.uw"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Sh3adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vle32.v"
+         *> lift3
+              (fun vd addr12 rs1 -> InstructionExpr (Vle32v (vd, rs1, addr12)))
+              parse_vector_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; parse_string_with_spaces "vse32.v"
+         *> lift3
+              (fun vs addr12 rs1 -> InstructionExpr (Vse32v (vs, rs1, addr12)))
+              parse_vector_register
+              (char ',' *> parse_address12)
+              (char '(' *> parse_register <* char ')')
+       ; parse_string_with_spaces "vadd.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vaddvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vadd.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vaddvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vsub.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vsubvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vsub.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vsubvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmul.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vmulvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmul.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vmulvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vdiv.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vdivvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vdiv.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vdivvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vand.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vandvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vand.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vandvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vor.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vorvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vor.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vorvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vxor.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vxorvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vxor.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vxorvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmax.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vmaxvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmax.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vmaxvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmin.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vminvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmin.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vminvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "vmseq.vv"
+         *> lift3
+              (fun vd vs1 vs2 -> InstructionExpr (Vmseqvv (vd, vs1, vs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
+       ; parse_string_with_spaces "vmseq.vx"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vmseqvx (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
               (char ',' *> parse_register)
        ])
 ;;
