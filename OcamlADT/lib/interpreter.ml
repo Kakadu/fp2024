@@ -4,6 +4,7 @@
 
 open Ast
 open Base
+open Format
 
 type error =
   | DivisionByZero
@@ -43,6 +44,12 @@ let list1_to_list2 lst =
   | _ -> None
 ;;
 
+let make_list1 lst =
+  match lst with
+  | [] -> None
+  | x :: xs -> Some (x, xs)
+;;
+
 module type Error_monad = sig
   (* 'a - successfull value, 'e - error type *)
   type ('a, 'e) t
@@ -70,7 +77,23 @@ module Env (M : Error_monad) = struct
               match v with
               | VString s ->
                 print_endline s;
-                Ok (VString "") (* Аналог unit *)
+                Ok (VString "")
+              | _ -> Error TypeMismatch) )
+      ; ( "print_int"
+        , VBuiltin_print
+            (fun v ->
+              match v with
+              | VInt s ->
+                print_int s;
+                Ok (VInt 0)
+              | _ -> Error TypeMismatch) )
+      ; ( "print_char"
+        , VBuiltin_print
+            (fun v ->
+              match v with
+              | VChar c ->
+                print_char c;
+                Ok (VChar ' ')
               | _ -> Error TypeMismatch) )
       ]
   ;;
@@ -82,7 +105,7 @@ module Env (M : Error_monad) = struct
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
-              | VInt a, VInt b -> Ok (VInt (a + b)) (* Use `Ok` instead of `return` *)
+              | VInt a, VInt b -> Ok (VInt (a + b))
               | _ -> Error TypeMismatch) )
       ; ( "-"
         , VBuiltin_binop
@@ -178,6 +201,14 @@ module Interpreter (M : Error_monad) = struct
     | Constant.Const_string s -> return (VString s)
   ;;
 
+  let print_value v =
+    match v with
+    | VInt i -> printf "VInt: %d\n" i
+    | VString s -> printf "VString: %s\n" s
+    | VChar c -> printf "VChar: %c\n" c
+    | _ -> printf "Unknown value\n"
+  ;;
+
   let rec eval_pattern pattern value env =
     match pattern, value with
     | Pattern.Pat_any, _ -> return (Some env)
@@ -186,7 +217,7 @@ module Interpreter (M : Error_monad) = struct
       return (Some env)
     | Pattern.Pat_constant c, v ->
       let* const_val = eval_const c in
-      if compare_values const_val v then return (Some env) else fail PatternMismatch
+      if compare_values const_val v then return (Some env) else return None
     | Pattern.Pat_tuple (p1, p2, ps), VTuple (v1, v2, vs) ->
       let* _ = eval_pattern p1 v1 env in
       let* _ = eval_pattern p2 v2 env in
@@ -234,17 +265,36 @@ module Interpreter (M : Error_monad) = struct
             let* arg_val = E.lookup env id in
             let* _ = lift_result (print_fn arg_val) in
             return (VString "")
+          | Expression.Exp_apply (func, args) ->
+            let* arg_val = eval_expr env (Expression.Exp_apply (func, args)) in
+            let* _ = lift_result (print_fn arg_val) in
+            return (VString "")
           | _ -> fail PatternMismatch)
        | VFun (patterns, body) ->
          let* arg_val = eval_expr env args in
-         (match list1_to_list2 patterns with
-          | Some (el1, el2, ell) ->
-            let pattern = Pattern.Pat_tuple (el1, el2, ell) in
-            let* env' = eval_pattern pattern arg_val env in
-            (match env' with
-             | None -> fail IDKv4
-             | Some env' -> eval_expr env' body)
-          | None -> fail NotImplemented)
+         let p1, pl = patterns in
+         let rec bind_patterns patterns value =
+           match patterns, value with
+           | [ pattern ], v ->
+             let* env' = eval_pattern pattern v env in
+             return env'
+           | patterns, VTuple (v1, v2, vs) ->
+             (match make_list1 patterns, make_list1 (v1 :: v2 :: vs) with
+              | Some pl, Some vl ->
+                (match list1_to_list2 pl, list1_to_list2 vl with
+                 | Some (p1, p2, ps), Some (v1, v2, vs) ->
+                   let* _ = eval_pattern p1 v1 env in
+                   let* _ = eval_pattern p2 v2 env in
+                   let* _ = mapM2 eval_pattern env ps vs in
+                   return (Some env)
+                 | _ -> fail PatternMismatch)
+              | _ -> fail PatternMismatch)
+           | _ -> fail PatternMismatch
+         in
+         let* env' = bind_patterns (p1 :: pl) arg_val in
+         (match env' with
+          | None -> fail PatternMismatch
+          | Some extended_env -> eval_expr extended_env body)
        | _ -> fail TypeMismatch)
     | Expression.Exp_match (expr, cases) ->
       let c1, cl = cases in
@@ -261,11 +311,11 @@ module Interpreter (M : Error_monad) = struct
     | Expression.Exp_if (cond, then_expr, else_expr_opt) ->
       let* cond_val = eval_expr env cond in
       (match cond_val with
-       | VInt 0 ->
+       | VInt 0 | VBool false ->
          (match else_expr_opt with
           | Some else_expr -> eval_expr env else_expr
           | None -> fail PatternMismatch)
-       | VInt _ -> eval_expr env then_expr
+       | VInt _ | VBool true -> eval_expr env then_expr
        | _ -> fail TypeMismatch)
     | Expression.Exp_let (_, bindings, body) ->
       (* Extend the environment based on the bindings *)
@@ -352,7 +402,8 @@ module PPrinter = struct
     | VInt i -> fprintf fmt "%d" i
     | VChar c -> fprintf fmt "%c" c
     | VString s -> fprintf fmt "%s" s
-    | _ -> fprintf fmt "IDK"
+    | VBool b -> fprintf fmt "%b" b
+    | _ -> fprintf fmt "Intepreter error: Value error"
   ;;
 
   let pp_error fmt = function
@@ -360,11 +411,11 @@ module PPrinter = struct
     | IDKv2 -> fprintf fmt "IDK2"
     | IDKv3 -> fprintf fmt "IDK3"
     | IDKv4 -> fprintf fmt "IDK4"
-    | PatternMismatch -> fprintf fmt "Pattern mismatch"
-    | DivisionByZero -> fprintf fmt "Division by zero"
-    | NotImplemented -> fprintf fmt "Not implemented"
-    | UnboundVariable s -> fprintf fmt "Unbound value %s" s
-    | TypeMismatch -> fprintf fmt "TypeMismatch"
+    | PatternMismatch -> fprintf fmt "Intepreter error: Pattern mismatch"
+    | DivisionByZero -> fprintf fmt "Intepreter error: Division by zero"
+    | NotImplemented -> fprintf fmt "Intepreter error: Not implemented"
+    | UnboundVariable s -> fprintf fmt "Intepreter error: Unbound value %s" s
+    | TypeMismatch -> fprintf fmt "Intepreter error: TypeMismatch"
   ;;
 
   let print_value = printf "%a" pp_value
