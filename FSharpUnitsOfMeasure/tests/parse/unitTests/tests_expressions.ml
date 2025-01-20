@@ -143,8 +143,6 @@ let%expect_test "parse float with rational part, (e|E) but without exponent shou
   [%expect {| : no more choices  |}]
 ;;
 
-(* Need to try to test measures *)
-
 (************************** If then else **************************)
 
 let%expect_test "parse ite with else branch" =
@@ -190,7 +188,6 @@ let%expect_test "parse application of function to 5 arguments" =
 ((((f a) b) c) d) e |}]
 ;;
 
-(* Should print them either as (+) a b or a+b *)
 let%expect_test "parse application (+)a b" =
   pp pprint_expr pexpr {| (+)a b |};
   [%expect {|
@@ -345,7 +342,6 @@ let%expect_test "parse let a = 5 and b = 4 and c = 3 and d = 2 in e expression" 
     let a = 5 and b = 4 and c = 3 and d = 2 in e |}]
 ;;
 
-(* Is very slow on 5+ nested let ... in *)
 let%expect_test "parse nested let .. in expressions" =
   pp pprint_expr pexpr {|
   let a = 1 in let b = 2 in let c = 3 in let d = 4 in E |};
