@@ -22,7 +22,7 @@ let print_prog_with_ast prog =
           else (
             printf "Result is not ok, printing initial prog\n";
             prog))
-          (parse parse_program (pprint_program prog))))
+          (parse pprog (pprint_program prog))))
 ;;
 
 let arbitrary_gen = QCheck.make gen_program ~print:pprint_program ~shrink:shprog
@@ -31,7 +31,7 @@ let run n =
   QCheck_base_runner.run_tests
     [ QCheck.(
         Test.make arbitrary_gen ~count:n (fun pr ->
-          let res = parse parse_program (pprint_program pr) in
+          let res = parse pprog (pprint_program pr) in
           Result.ok pr = res))
     ]
 ;;
