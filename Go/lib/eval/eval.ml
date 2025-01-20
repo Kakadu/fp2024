@@ -11,8 +11,7 @@ let rec pp_value = function
   | Value_int n -> asprintf "%d" n
   | Value_bool b -> asprintf "%b" b
   | Value_nil Nil -> "<nil>"
-  | Value_array (size, values) ->
-    asprintf "[%d][%s]" size (PpType.sep_by_comma values pp_value)
+  | Value_array (_, values) -> asprintf "[%s]" (PpType.sep_by_comma values pp_value)
   | Value_chan chan ->
     (match chan with
      | Chan_uninitialized Nil -> "<nil>"
@@ -372,39 +371,43 @@ and eval_binop op a1 a2 =
   | Bin_greater_equal, Value_int a1, Value_int a2 -> return (Value_bool (a1 >= a2))
   | _ -> fail (Runtime_error (TypeCheckFailed "binop"))
 
-and eval_lvalue value = function
+and update_lvalue value = function
   | Lvalue_ident id -> update_ident id value
-  | lvi ->
-    prepare_lvalue_index [] lvi
-    >>= fun (tr, ind) ->
-    change_lvalue_index tr ind value
-    >>= fun new_lst -> update_ident (retrieve_lvalue_ident_index lvi) new_lst *> return ()
+  | lvalue ->
+    let* lvalue_value, indicies = collect_lvalue_indicies [] lvalue in
+    let* new_lvalue = change_lvalue_index lvalue_value indicies value in
+    update_ident (retrieve_lvalue_ident lvalue) new_lvalue
 
-and prepare_lvalue_index lst = function
+and collect_lvalue_indicies acc = function
   | Lvalue_ident id ->
-    let* current = read_ident id in
-    return (current, lst)
-  | Lvalue_array_index (lv, exp) ->
-    eval_expr exp
+    let* lvalue_value = read_ident id in
+    return (lvalue_value, acc)
+  | Lvalue_array_index (array, index) ->
+    eval_expr index
     >>= (function
-     | Value_int i -> prepare_lvalue_index (i :: lst) lv
+     | Value_int i -> collect_lvalue_indicies (i :: acc) array
      | _ -> fail (Runtime_error (TypeCheckFailed "prepare lvalue")))
 
-and retrieve_lvalue_ident_index = function
+and retrieve_lvalue_ident = function
   | Lvalue_ident id -> id
-  | Lvalue_array_index (lv, _) -> retrieve_lvalue_ident_index lv
+  | Lvalue_array_index (lv, _) -> retrieve_lvalue_ident lv
 
-and change_lvalue_index target indexes value =
+and change_lvalue_index target indicies value =
   match target with
-  | Value_array (i, lst) ->
-    (match indexes with
-     | [ i ] -> return (Value_array (i, replace_list lst i value))
+  | Value_array (size, values) ->
+    (match indicies with
+     | [ i ] -> return (Value_array (i, replace_list values i value))
      | _ ->
-       if List.hd indexes < i
-       then
-         change_lvalue_index (List.nth lst (List.hd indexes)) (List.tl indexes) value
-         >>= fun ls -> return (Value_array (i, replace_list lst (List.hd indexes) ls))
-       else fail (Runtime_error Array_index_out_of_bound))
+       (try
+          change_lvalue_index
+            (List.nth values (List.hd indicies))
+            (List.tl indicies)
+            value
+          >>= fun ls ->
+          return (Value_array (size, replace_list values (List.hd indicies) ls))
+        with
+        | Failure _ -> fail (Runtime_error Array_index_out_of_bound)
+        | Invalid_argument _ -> fail (Runtime_error Negative_array_index)))
   | _ -> return target
 
 and eval_init = function
@@ -447,10 +450,10 @@ and eval_stmt = function
   | Stmt_return exprs -> eval_return exprs
   | Stmt_chan_send send -> eval_chan_send send
   | Stmt_chan_receive recv -> eval_chan_receive recv *> return ()
-  | Stmt_defer (ex, args) ->
-    eval_expr ex
-    >>= fun ex ->
-    map (fun x -> retrieve_arg_value x) args >>= fun vals -> add_deferred (ex, vals)
+  | Stmt_defer (func, args) ->
+    eval_expr func
+    >>= fun func_value ->
+    map retrieve_arg_value args >>= fun arg_values -> add_deferred (func_value, arg_values)
 
 and eval_stmt_call (func, args) =
   eval_expr func
@@ -497,20 +500,20 @@ and eval_long_var_decl save_to_env = function
 and eval_assign = function
   | Assign_mult_expr (fst, lst) ->
     iter
-      (fun (lvalue, expr) -> eval_expr expr >>= fun ex -> eval_lvalue ex lvalue)
+      (fun (lvalue, expr) -> eval_expr expr >>= fun ex -> update_lvalue ex lvalue)
       (fst :: lst)
   | Assign_one_expr (fst, snd, lst, fcall) ->
     eval_func_call fcall
     >>= (function
      | Some (Value_tuple tup) ->
-       iter2 (fun v lv -> eval_lvalue v lv *> return ()) tup (fst :: snd :: lst)
+       iter2 (fun v lv -> update_lvalue v lv *> return ()) tup (fst :: snd :: lst)
      | _ -> fail (Runtime_error (TypeCheckFailed "short decl")))
 
 and eval_for { for_init; for_cond; for_post; for_body } =
-  let rec_for =
+  let one_iter =
     match for_cond with
-    | Some ex ->
-      eval_expr ex
+    | Some cond ->
+      eval_expr cond
       >>= (function
        | Value_bool true ->
          add_env for_body Default
@@ -519,7 +522,7 @@ and eval_for { for_init; for_cond; for_post; for_body } =
          *> delete_env
          *> return true
        | Value_bool false -> delete_env *> return false
-       | _ -> fail (Runtime_error (TypeCheckFailed "for")))
+       | _ -> fail (Runtime_error (TypeCheckFailed "for cond")))
     | None ->
       add_env for_body Default
       *> exec eval_stmt
@@ -527,18 +530,18 @@ and eval_for { for_init; for_cond; for_post; for_body } =
       *> delete_env
       *> return true
   in
-  let rec rect rfor =
+  let rec cycle rfor =
     rfor
     >>= function
     | true ->
       read_local_envs
-      >>= fun (ls, _) ->
-      (match ls.env_type with
-       | For -> rect rfor
+      >>= fun ({ env_type; _ }, _) ->
+      (match env_type with
+       | For -> cycle rfor
        | Default -> return ())
     | false -> return ()
   in
-  add_env [] For *> eval_init for_init *> rect rec_for *> return ()
+  add_env [] For *> eval_init for_init *> cycle one_iter
 
 and eval_return = function
   | [ Expr_const (Const_func afc) ] ->

@@ -155,7 +155,7 @@ let%expect_test "ok: func args init" =
     |};
   [%expect {|
     Correct evaluating
-    kill  OCaml OCaml |}]
+    kill OCaml OCaml |}]
 ;;
 
 let%expect_test "ok: assignment check" =
@@ -485,21 +485,21 @@ let%expect_test "ok: simple array assignment and call" =
     {|
     func main() {
       var a = [2]string{"a", "a"}
-      a[0] = "Kill "
+      a[0] = "Kill"
       a[1] = "Ocaml"
       println(a[0], a[1])
     }
     |};
   [%expect {|
     Correct evaluating
-    Kill  Ocaml |}]
+    Kill Ocaml |}]
 ;;
 
 let%expect_test "ok: full array printing" =
   pp
     {|
     func main() {
-      a := [5]int{0, 1, 2, 3, 4}
+      a := [...]int{0, 1, 2, 3, 4}
       for i := 0; i < len(a); i++ {
         print(a[i])
       }
@@ -535,7 +535,7 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
     {|
       func main() {
         var a [2][3][4][5]string
-        a[0][1][2][1] = "Kill "
+        a[0][1][2][1] = "Kill"
         a[1][0][0][3] = "Ocaml"
         println(a[0][1][2][1], a[1][0][0][3])
     }
@@ -543,7 +543,7 @@ let%expect_test "ok: multidimensional array test & vlong_var_decl no init" =
     |};
   [%expect {|
     Correct evaluating
-    Kill  Ocaml |}]
+    Kill Ocaml |}]
 ;;
 
 let%expect_test "err: array index out of bounds in expr" =
@@ -551,7 +551,7 @@ let%expect_test "err: array index out of bounds in expr" =
     {|
       func main() {
         var a [2][3][4][5]string
-        a[0][1][2][1] = "Kill "
+        a[0][1][2][1] = "Kill"
         a[1][0][0][3] = "Ocaml"
         println(a[0][1][10][1], a[1][0][0][3])
     }
@@ -566,7 +566,7 @@ let%expect_test "err: array index out of bounds in lvalue" =
     {|
       func main() {
         var a [2][3][4][5]string
-        a[0][1][2][1] = "Kill "
+        a[0][1][2][1] = "Kill"
         a[1][0][10][3] = "Ocaml"
         println(a[0][1][2][1], a[1][0][0][3])
     }
@@ -655,8 +655,8 @@ func f() {
             println("Stop!")
             return 
         }
-        defer println("Defer in g ", i)
-        println("Printing in g ", i)
+        defer println("Defer in g", i)
+        println("Printing in g", i)
         g(i + 1)
     }
     |};
@@ -664,15 +664,15 @@ func f() {
     {|
     Correct evaluating
     Calling g.
-    Printing in g  0
-    Printing in g  1
-    Printing in g  2
-    Printing in g  3
+    Printing in g 0
+    Printing in g 1
+    Printing in g 2
+    Printing in g 3
     Stop!
-    Defer in g  3
-    Defer in g  2
-    Defer in g  1
-    Defer in g  0
+    Defer in g 3
+    Defer in g 2
+    Defer in g 1
+    Defer in g 0
     Returned normally from g.
     Returned normally from f. |}]
 ;;
@@ -699,8 +699,8 @@ let%expect_test "ok: panic does not impact on goroutine without chanels" =
           panic(i)
       }
 
-      defer println("Defer in g ", i)
-      println("Printing in g ", i)
+      defer println("Defer in g", i)
+      println("Printing in g", i)
       g(i + 1)
     }
     |};
@@ -722,7 +722,7 @@ let%expect_test "ok: panic with recover" =
     func f() {
       defer func() {
           r := recover()
-          println("Recovered in f with value: ", r)
+          println("Recovered in f with value:", r)
           
       }()
       println("Calling g.")
@@ -735,8 +735,8 @@ let%expect_test "ok: panic with recover" =
             println("Panicking!")
             panic(i)
         }
-        defer println("Defer in g ", i)
-        println("Printing in g ", i)
+        defer println("Defer in g", i)
+        println("Printing in g", i)
         g(i + 1)
         
     }
@@ -745,16 +745,16 @@ let%expect_test "ok: panic with recover" =
     {|
     Correct evaluating
     Calling g.
-    Printing in g  0
-    Printing in g  1
-    Printing in g  2
-    Printing in g  3
+    Printing in g 0
+    Printing in g 1
+    Printing in g 2
+    Printing in g 3
     Panicking!
-    Defer in g  3
-    Defer in g  2
-    Defer in g  1
-    Defer in g  0
-    Recovered in f with value:  4
+    Defer in g 3
+    Defer in g 2
+    Defer in g 1
+    Defer in g 0
+    Recovered in f with value: 4
     Returned normally from f. |}]
 ;;
 
@@ -777,8 +777,8 @@ let%expect_test "err: not recovered panic" =
           println("Panicking!")
           panic(i)
         }
-        defer println("Defer in g ", i)
-        println("Printing in g ", i)
+        defer println("Defer in g", i)
+        println("Printing in g", i)
         g(i + 1)
     }
     |};
@@ -786,15 +786,15 @@ let%expect_test "err: not recovered panic" =
     {|
     Runtime error: Panic: 4
     Calling g.
-    Printing in g  0
-    Printing in g  1
-    Printing in g  2
-    Printing in g  3
+    Printing in g 0
+    Printing in g 1
+    Printing in g 2
+    Printing in g 3
     Panicking!
-    Defer in g  3
-    Defer in g  2
-    Defer in g  1
-    Defer in g  0 |}]
+    Defer in g 3
+    Defer in g 2
+    Defer in g 1
+    Defer in g 0 |}]
 ;;
 
 (* goroutines *)
@@ -955,8 +955,8 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
     }
 
     func main3(c chan int) {
-      println("go3: received value: ", <-c)
-      println("go3: received value: ", <-c)
+      println("go3: received value:", <-c)
+      println("go3: received value:", <-c)
     }
 
     func main() {
@@ -975,7 +975,7 @@ let%expect_test "ok: two goroutines sending to the same chanel before value rece
     Correct evaluating
     go1: sending value 1
     go2: sending value 2
-    go3: received value:  1
-    go3: received value:  2
+    go3: received value: 1
+    go3: received value: 2
     go1: value 1 sent successfully |}]
 ;;

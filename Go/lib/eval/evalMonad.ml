@@ -59,7 +59,7 @@ type local_env =
   ; env_type : is_for_env
   }
 
-and defered_frame = value * value list
+type defered_frame = value * value list
 
 type stack_frame =
   { local_envs : local_env * local_env list
@@ -562,11 +562,9 @@ module Monad = struct
            (fun lst env ->
              match List.find_opt (fun x -> MapIdent.mem ident x.var_map) lst with
              | Some _ -> env :: lst
-             | None ->
-               (match MapIdent.mem ident env.var_map with
-                | true ->
-                  { env with var_map = MapIdent.add ident value env.var_map } :: lst
-                | false -> env :: lst))
+             | None when MapIdent.mem ident env.var_map ->
+               { env with var_map = MapIdent.add ident value env.var_map } :: lst
+             | None -> env :: lst)
            []
            (hd :: tl))
     in

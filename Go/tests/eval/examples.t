@@ -21,9 +21,10 @@ SPDX-License-Identifier: MIT
   x больше 5
   
   Arrays:
-  Массив: [0][0, 0, 0, 0, 0]
+  00000
+  [0, 0, 5, 0, 0]
   
-  5 + 10 is: 15
+  5 + 10 = 15
   factorial of 5: 120
   
   Closure Example:

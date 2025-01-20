@@ -15,6 +15,15 @@ module MapIdent : Map.S with type key = Ident.t
 (** Value for [nil] identifier and unitialized functions and chanels *)
 type nil = Nil
 
+and builtin =
+  | Print
+  | Println
+  | Make
+  | Close
+  | Recover
+  | Len
+  | Panic
+
 (** Value for chanels *)
 type chan_value =
   | Chan_initialized of int
@@ -33,15 +42,6 @@ type value =
   | Value_tuple of value list
   | Value_nil of nil
   (** Untyped [<nil>] value that is stored in [nil] predeclared identifier *)
-
-and builtin =
-  | Print
-  | Println
-  | Make
-  | Close
-  | Recover
-  | Len
-  | Panic
 
 and func_type =
   | Closure of value MapIdent.t
@@ -64,7 +64,7 @@ type local_env =
   ; env_type : is_for_env
   }
 
-and defered_frame = value * value list
+type defered_frame = value * value list
 
 type stack_frame =
   { local_envs : local_env * local_env list

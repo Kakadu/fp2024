@@ -40,10 +40,14 @@ func if_else() {
 func arrays() {
 	println("\nArrays:")
 	var arr [5]int
+
 	for i := 0; i < len(arr); i++ {
-		arr[i] = i * 2
+		print(arr[i])
 	}
-	println("Массив:", arr)
+
+	arr[2] = 5
+	println()
+	println(arr)
 }
 
 func sum2(a, b int) int {
@@ -84,8 +88,7 @@ func goroutinesAndChannels() {
 		ch <- "Hello from goroutine!"
 	}(ch)
 
-	msg := <-ch
-	println(msg)
+	println(<-ch)
 
 	close(ch)
 }
@@ -112,7 +115,7 @@ func main() {
 	if_else()
 	arrays()
 
-	println("\n5 + 10 is:", sum2(5, 10))
+	println("\n5 + 10 =", sum2(5, 10))
 	println("factorial of 5:", factorial(5))
 
 	closureExample()
