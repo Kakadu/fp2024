@@ -78,7 +78,7 @@ module ValueEnv : sig
     | VTuple of value * value * value list
     | VList of value list
     | VFun of pattern * pattern list * expr * t
-    | VFunction of case * case list
+    | VFunction of case * case list * t
     | VOption of value option
     | VActPatCase of string * value
     | Print_int
@@ -89,6 +89,8 @@ module ValueEnv : sig
   val find : t -> string -> value option
   val find_exn : t -> string -> value
   val pp_value : Format.formatter -> value -> unit
+
+  (* val pp_env : Format.formatter -> t -> unit *)
   val set_many : t -> t -> t
   val default : t
 end = struct
@@ -107,7 +109,7 @@ end = struct
     | VTuple of value * value * value list
     | VList of value list
     | VFun of pattern * pattern list * expr * t
-    | VFunction of case * case list
+    | VFunction of case * case list * t
     | VOption of value option
     | VActPatCase of string * value
     | Print_int
@@ -134,7 +136,7 @@ end = struct
         (pp_print_list pp_value ~pp_sep:(fun fmt () -> fprintf fmt "; "))
         l
     | VFun _ | Print_int -> fprintf fmt "<fun> "
-    | VFunction (_, _) -> fprintf fmt "<fun> "
+    | VFunction _ -> fprintf fmt "<fun> "
     | VOption (Some v) -> fprintf fmt "Some %a " pp_value v
     | VOption None -> fprintf fmt "None "
     | VActPatCase (name, v) -> fprintf fmt "%s (%a)" name pp_value v
@@ -321,9 +323,10 @@ and eval_expr env = function
        (match args with
         | [] ->
           let env = ValueEnv.set_many env f_env in
-          eval_expr env body
+          let* v = eval_expr env body in
+          return v
         | arg1 :: args -> return (VFun (arg1, args, body, f_env)))
-     | VFunction (c, cl), _ -> eval_match env applying_arg_value (c :: cl)
+     | VFunction (c, cl, f_env), _ -> eval_match f_env applying_arg_value (c :: cl)
      | Print_int, VInt i ->
        Format.(fprintf std_formatter "%d\n" i);
        return VUnit
@@ -331,7 +334,7 @@ and eval_expr env = function
   | Match (e, c, cl) ->
     let* v = eval_expr env e in
     eval_match env v (c :: cl)
-  | Function (c, cl) -> return (VFunction (c, cl))
+  | Function (c, cl) -> return (VFunction (c, cl, env))
   | LetIn (rec_flag, let_bind, let_binds, e) ->
     let* env = extend_env_with_let_binds env rec_flag (let_bind :: let_binds) in
     let* value = eval_expr env e in
