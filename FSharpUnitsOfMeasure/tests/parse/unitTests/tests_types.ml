@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Base
-open Pp
+open Pprint.Pp
 open Parse.Types
 open Pprint.Pprinter
 

@@ -12,4 +12,4 @@ open Ast
 val pexpr : expression t
 
 (** [pbind] parses one function or value binding and returns it *)
-val pbind : expression t -> expression val_binding t
+val pbind : expression t -> val_binding t

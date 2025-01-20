@@ -4,7 +4,7 @@
 
 open Base
 open Ast
-open Pp
+open Pprint.Pp
 open Parse.Structure
 open Pprint.Pprinter
 
@@ -163,7 +163,7 @@ let%expect_test "parse example 2 program" =
     parse_program
     {| let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |};
   [%expect {|
-    let _Sy = "<X&D(" and _QQf = tOWs and _ = - 3625.090462<b9o'5>;; |}]
+    let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |}]
 ;;
 
 let%expect_test "parse example 3 program" =
@@ -199,7 +199,7 @@ let%expect_test "parse example 4 program" =
 
     let 1483337398865069489 = kr and _ = _6r and _ = viwYZ and -4486306013525438741 = 3265597.52446 and _ = cDCL and l7 = false and "A4%" = -546.405974;;
 
-    let 'A' = 2.3e-05 and lO1xQ = true and false = -3569041840172302343 and _ = -3411816405488708691 and -774524459665610219 = "ID]G<b[" and r8hu = y7O0 and aSS0b = -1580.381791 and false = 3014.442914 and eO_S8 = - 0.103727<((dd_ / (((((bht * (1 * xd)) * (fkQC ^ 99)) / ((g ^ 64) / (1 ^ 5))) * (((1 ^ 37) * 1) / 1)) / a_2N)) ^ 49) ^ 57>;;
+    let 'A' = 2.3e-05 and lO1xQ = true and false = -3569041840172302343 and _ = -3411816405488708691 and -774524459665610219 = "ID]G<b[" and r8hu = y7O0 and aSS0b = -1580.381791 and false = 3014.442914 and eO_S8 = -0.103727<((dd_ / (((((bht * (1 * xd)) * (fkQC ^ 99)) / ((g ^ 64) / (1 ^ 5))) * (((1 ^ 37) * 1) / 1)) / a_2N)) ^ 49) ^ 57>;;
 
     let _ = '(' and j18jw = _Z6Qn and "zy@&qhIfoFgqh=&7R)\\nS@E#\\ned{7" = true and _ = 'Z' and _e'Jt = acp;;
 
@@ -226,7 +226,7 @@ let%expect_test "parse example 6 program" =
 let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
   [%expect
     {|
-    let rec true = - 4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;; |}]
+    let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;; |}]
 ;;
 
 let%expect_test "parse example 7 program" =
@@ -304,5 +304,36 @@ match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (
                ))
              ]
            )))
+      ] |}]
+;;
+
+let%expect_test "parse example 9 program" =
+  pp2
+    pp_program
+    parse_program
+    {|
+let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S then fun eLm -> ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3";; |};
+  [%expect
+    {|
+    [(Str_item_def (Nonrecursive,
+        (Bind ((Pattern_const (Const_bool false)),
+           (Expr_const (Const_int 3092098660336030153)))),
+        [(Bind ((Pattern_ident_or_op "a"),
+            (Expr_ifthenelse (
+               (Expr_ifthenelse (
+                  (Expr_const
+                     (Const_unit_of_measure
+                        (Unit_of_measure ((Mnum_int -885480591476070376),
+                           (Measure_ident "a"))))),
+                  (Expr_ident_or_op "u7A_S"), None)),
+               (Expr_lam ((Pattern_ident_or_op "eLm"),
+                  (Expr_const
+                     (Const_string
+                        ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3"))
+                  )),
+               None))
+            ))
+          ]
+        ))
       ] |}]
 ;;

@@ -558,9 +558,7 @@ let%expect_test "print two structure item definitions sep by ;;" =
 let%expect_test "print measure type definition" =
   printf "%s\n" (pprint_program [ Str_item_type_def (Measure_type_def ("kg", None)) ]);
   [%expect {|
-    let a = 1;;
-
-    let b = 2;; |}]
+    [<Measure>] type kg;; |}]
 ;;
 
 let%expect_test "print measure type definition with binding" =
@@ -571,7 +569,5 @@ let%expect_test "print measure type definition with binding" =
            (Measure_type_def ("l", Some (Measure_pow (Measure_ident "dm", 3))))
        ]);
   [%expect {|
-    let a = 1;;
-
-    let b = 2;; |}]
+    [<Measure>] type l = dm ^ 3;; |}]
 ;;
