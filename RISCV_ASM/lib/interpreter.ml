@@ -492,9 +492,6 @@ let execute_shnadd state rd rs1 rs2 n to_zext =
   return (set_register_value state rd result)
 ;;
 
-let load_memory_int state address = function
-  | (1 | 2 | 4) as size ->
-    (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
 let load_memory_int state address size =
   match size with
   | 1 | 2 | 4 ->
@@ -888,9 +885,6 @@ and execute_instruction state instr program =
   | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul false
   | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div false
   | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem false
-  | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
-  | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
-  | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
   | Mv (rd, rs) ->
     execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add false
   | Li (rd, imm) ->
@@ -938,13 +932,6 @@ and execute_instruction state instr program =
   | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
   | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
   | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
-  | Li (rd, imm) ->
-    let imm_value =
-      match imm with
-      | ImmediateAddress32 value -> Int64.of_int value
-      | LabelAddress32 label -> resolve_label_excluding_directives program label
-    in
-    return (set_register_value state rd imm_value)
   | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
