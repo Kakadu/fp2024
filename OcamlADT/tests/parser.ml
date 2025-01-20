@@ -1088,3 +1088,100 @@ let%expect_test "string print_endline" =
            )))
       ] |}]
 ;;
+
+let%expect_test "match case" =
+  test_program
+    {|let classify n = 
+  match n with
+  | 0 -> "zero"
+  | 1 -> "one"
+  | _ -> "other"
+;;|};
+  [%expect
+    {|
+  [(Str_value (Nonrecursive,
+      ({ pat = (Pat_var "classify");
+         expr =
+         (Exp_fun (((Pat_var "n"), []),
+            (Exp_match ((Exp_ident "n"),
+               ({ first = (Pat_constant (Const_integer 0));
+                  second = (Exp_constant (Const_string "zero")) },
+                [{ first = (Pat_constant (Const_integer 1));
+                   second = (Exp_constant (Const_string "one")) };
+                  { first = Pat_any;
+                    second = (Exp_constant (Const_string "other")) }
+                  ])
+               ))
+            ))
+         },
+       [])
+      ))
+    ] |}]
+;;
+
+let%expect_test "if then case" =
+  test_program
+    {| let x = 10 in
+if x > 5 then print_endline "> 5"
+else print_endline "<= 5";;
+;; |};
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1123, characters 2-103
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
+let%expect_test "if then case" =
+  test_program
+    {| let check_number n =
+  if n = 0 then
+    print_endline "Zero"
+  else if n = 1 then
+    print_endline "One"
+  else
+    print_endline "Other"
+in 
+check_number 5
+;; |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "check_number");
+              expr =
+              (Exp_fun (((Pat_var "n"), []),
+                 (Exp_if (
+                    (Exp_apply ((Exp_ident "="),
+                       (Exp_tuple
+                          ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+                       )),
+                    (Exp_apply ((Exp_ident "print_endline"),
+                       (Exp_constant (Const_string "Zero")))),
+                    (Some (Exp_if (
+                             (Exp_apply ((Exp_ident "="),
+                                (Exp_tuple
+                                   ((Exp_ident "n"),
+                                    (Exp_constant (Const_integer 1)), []))
+                                )),
+                             (Exp_apply ((Exp_ident "print_endline"),
+                                (Exp_constant (Const_string "One")))),
+                             (Some (Exp_apply ((Exp_ident "print_endline"),
+                                      (Exp_constant (Const_string "Other")))))
+                             )))
+                    ))
+                 ))
+              },
+            []),
+           (Exp_apply ((Exp_ident "check_number"),
+              (Exp_constant (Const_integer 5))))
+           )))
+      ] |}]
+;;
