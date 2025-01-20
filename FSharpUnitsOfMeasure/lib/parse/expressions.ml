@@ -35,7 +35,7 @@ let parse_infix_app op =
   *> return (fun e1 e2 -> Expr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
 ;;
 
-(* Need to refactor this with explicit operations priorities *)
+(* Refactor this with explicit operations priorities later *)
 let pexpr_app pexpr =
   let app = chainl pexpr parse_prefix_app <|> pexpr in
   let app =
@@ -184,9 +184,9 @@ let pexpr =
   fix (fun pexpr ->
     let pexpr =
       choice
-        [ pexpr_paren (pexpr_typed pexpr)
+        [ pexpr_letin pexpr
+        ; pexpr_paren (pexpr_typed pexpr)
         ; pexpr_paren pexpr
-        ; pexpr_letin pexpr
         ; pexpr_list pexpr
         ; pexpr_ite pexpr
         ; pexpr_match pexpr

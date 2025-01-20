@@ -44,8 +44,7 @@ let%expect_test "parse structure item which is multiple let bindings" =
     let a = b and c = d and e = f and i = j|}]
 ;;
 
-(* Doesn't halt on 4+ nested let ... in's, the reason is in pexpr_letin *)
-(* let%expect_test "parse structure item which is nested let bindings" =
+let%expect_test "parse structure item which is nested let bindings" =
   pp
     pprint_struct_item
     pstritem
@@ -56,19 +55,8 @@ let%expect_test "parse structure item which is multiple let bindings" =
          E |};
   [%expect
     {|
-    (Str_item_eval
-       (Expr_let (Nonrecursive,
-          (Bind ((Pattern_ident_or_op "a"), (Expr_const (Const_int 1)))),
-          [],
-          (Expr_let (Nonrecursive,
-             (Bind ((Pattern_ident_or_op "b"), (Expr_const (Const_int 2)))),
-             [],
-             (Expr_let (Nonrecursive,
-                (Bind ((Pattern_ident_or_op "c"), (Expr_const (Const_int 3)))),
-                [], (Expr_ident_or_op "e")))
-             ))
-          )))|}]
-;; *)
+    let a = f in let b = g in let c = h in let d = j in E|}]
+;;
 
 let%expect_test "parse factorial" =
   pp
