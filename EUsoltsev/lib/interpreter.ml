@@ -76,7 +76,6 @@ end
 module Env (M : Monad) = struct
   open M
 
-  let empty = Base.Map.empty (module Base.String)
   let extend env key value = Base.Map.update env key ~f:(fun _ -> value)
 
   let find map key =

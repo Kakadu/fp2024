@@ -74,13 +74,6 @@ type expr =
 
 type program = expr list [@@deriving show { with_path = false }]
 
-type error =
-  | OccursCheck of int * ty
-  | NoVariable of string
-  | UnificationFailed of ty * ty
-  | SeveralBounds of string
-  | NotImplement
-
 let rec pp_ty fmt = function
   | TyPrim x -> fprintf fmt "%s" x
   | TyVar x -> fprintf fmt "%s" @@ Char.escaped (Char.chr (x + 97))
@@ -102,14 +95,4 @@ let rec pp_ty fmt = function
     (match ty with
      | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) option" pp_ty ty
      | _ -> fprintf fmt "%a option" pp_ty ty)
-;;
-
-let pp_error fmt = function
-  | OccursCheck (id, ty) ->
-    fprintf fmt "Occurs check failed. Type variable '%d occurs inside %a." id pp_ty ty
-  | NoVariable name -> fprintf fmt "Unbound variable '%s'." name
-  | UnificationFailed (ty1, ty2) ->
-    fprintf fmt "Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
-  | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
-  | NotImplement -> fprintf fmt "This feature is not implemented yet."
 ;;

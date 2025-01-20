@@ -6,6 +6,24 @@
 
 open Base
 open Ast
+open Stdlib.Format
+
+type error =
+  | OccursCheck of int * ty
+  | NoVariable of string
+  | UnificationFailed of ty * ty
+  | SeveralBounds of string
+  | NotImplement
+
+let pp_error fmt = function
+  | OccursCheck (id, ty) ->
+    fprintf fmt "Occurs check failed. Type variable '%d occurs inside %a." id pp_ty ty
+  | NoVariable name -> fprintf fmt "Unbound variable '%s'." name
+  | UnificationFailed (ty1, ty2) ->
+    fprintf fmt "Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
+  | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
+  | NotImplement -> fprintf fmt "This feature is not implemented yet."
+;;
 
 module IntSet = struct
   include Stdlib.Set.Make (Int)
@@ -14,7 +32,6 @@ end
 module ResultMonad : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -41,7 +58,6 @@ end = struct
   ;;
 
   let return x last = last, Result.return x
-  let bind x ~f = x >>= f
   let fail e st = st, Result.fail e
 
   let ( >>| ) m f st =
@@ -51,7 +67,7 @@ end = struct
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = bind x ~f
+    let ( let* ) x f = x >>= f
   end
 
   module RMap = struct
@@ -95,7 +111,6 @@ module Substitution : sig
 
   val empty : t
   val singleton : int -> ty -> t ResultMonad.t
-  val find : t -> int -> ty option
   val remove : t -> int -> t
   val apply : t -> ty -> ty
   val unify : ty -> ty -> t ResultMonad.t
@@ -191,7 +206,6 @@ end
 module Scheme = struct
   type t = S of IntSet.t * ty
 
-  let occurs_in var (S (vars, ty)) = (not (IntSet.mem var vars)) && Type.occurs_in var ty
   let free_vars (S (vars, ty)) = IntSet.diff (Type.free_vars ty) vars
 
   let apply subst (S (vars, ty)) =
@@ -207,7 +221,6 @@ module TypeEnv = struct
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
   let remove = Map.remove
-  let empty = Map.empty (module String)
 
   let free_vars : t -> IntSet.t =
     Map.fold ~init:IntSet.empty ~f:(fun ~key:_ ~data:scheme acc ->
