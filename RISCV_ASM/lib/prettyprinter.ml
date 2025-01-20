@@ -287,6 +287,13 @@ let pp_instruction ppf = function
   | Li (rd, imm) ->
     Format.fprintf ppf "li %a,%a" pp_register rd pp_address (Address32 imm)
   | Ret -> Format.fprintf ppf "ret"
+  | Adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "add.uw" rd rs1 rs2
+  | Sh1add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add" rd rs1 rs2
+  | Sh1adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add.uw" rd rs1 rs2
+  | Sh2add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add" rd rs1 rs2
+  | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
+  | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
+  | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
   | Vle32v (vd, rs1, imm) ->
     pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.v" vd rs1 (Address12 imm)
   | Vse32v (vs, rs1, imm) ->

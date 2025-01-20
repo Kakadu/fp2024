@@ -415,11 +415,22 @@ let handle_branch_condition state program rs1 rs2 label_or_imm_value comparison_
   return (set_pc state new_pc)
 ;;
 
-let execute_arithmetic_op state rd rs1 rs2 op =
+let sext x = Int64.shift_right (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
+
+let zext x =
+  Int64.shift_right_logical (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
+;;
+
+let execute_arithmetic_op state rd rs1 rs2 op to_sext =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
   let result = op val1 val2 in
-  return (set_register_value state rd result)
+  let result_final =
+    match to_sext with
+    | true -> sext result
+    | false -> result
+  in
+  return (set_register_value state rd result_final)
 ;;
 
 let execute_shift_op state rd rs1 rs2 op =
@@ -440,7 +451,7 @@ let execute_comparison_op state rd rs1 rs2 compare_fn =
   return (set_register_value state rd result)
 ;;
 
-let execute_immediate_op state program rd rs1 imm op =
+let execute_immediate_op state program rd rs1 imm op to_sext =
   let val1 = get_register_value state rs1 in
   let address_info = get_address12_value program imm in
   let imm_value =
@@ -449,7 +460,12 @@ let execute_immediate_op state program rd rs1 imm op =
     | Label excluding_directives_label_offset -> excluding_directives_label_offset
   in
   let result = op val1 imm_value in
-  return (set_register_value state rd result)
+  let result_final =
+    match to_sext with
+    | true -> sext result
+    | false -> result
+  in
+  return (set_register_value state rd result_final)
 ;;
 
 let execute_shift_immediate_op state program rd rs1 imm op =
@@ -461,6 +477,18 @@ let execute_shift_immediate_op state program rd rs1 imm op =
       Int64.to_int excluding_directives_label_offset
   in
   let result = op val1 imm_value in
+  return (set_register_value state rd result)
+;;
+
+let execute_shnadd state rd rs1 rs2 n to_zext =
+  let val1 = get_register_value state rs1 in
+  let val2 = get_register_value state rs2 in
+  let arg2 =
+    match to_zext with
+    | true -> zext val2
+    | false -> val2
+  in
+  let result = Int64.add val1 (Int64.shift_left arg2 n) in
   return (set_register_value state rd result)
 ;;
 
@@ -689,11 +717,11 @@ let rec interpret state program =
 
 and execute_instruction state instr program =
   match instr with
-  | Add (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add
-  | Sub (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub
-  | Xor (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logxor
-  | Or (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logor
-  | And (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logand
+  | Add (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add false
+  | Sub (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub false
+  | Xor (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logxor false
+  | Or (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logor false
+  | And (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logand false
   | Sll (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_left
   | Srl (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right_logical
   | Sra (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right
@@ -702,11 +730,13 @@ and execute_instruction state instr program =
   | Sltu (rd, rs1, rs2) ->
     execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 ->
       Int64.unsigned_compare arg1 arg2 < 0)
-  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add
-  | Subi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.sub
-  | Xori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logxor
-  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor
-  | Andi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logand
+  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add false
+  | Subi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.sub false
+  | Xori (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm Int64.logxor false
+  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor false
+  | Andi (rd, rs1, imm) ->
+    execute_immediate_op state program rd rs1 imm Int64.logand false
   | Slli (rd, rs1, imm) ->
     execute_shift_immediate_op state program rd rs1 imm Int64.shift_left
   | Srli (rd, rs1, imm) ->
@@ -714,15 +744,29 @@ and execute_instruction state instr program =
   | Srai (rd, rs1, imm) ->
     execute_shift_immediate_op state program rd rs1 imm Int64.shift_right
   | Slti (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
-      match Int64.compare arg1 imm_value with
-      | x when x < 0 -> 1L
-      | _ -> 0L)
+    execute_immediate_op
+      state
+      program
+      rd
+      rs1
+      imm
+      (fun arg1 imm_value ->
+        match Int64.compare arg1 imm_value with
+        | x when x < 0 -> 1L
+        | _ -> 0L)
+      false
   | Sltiu (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
-      match Int64.unsigned_compare arg1 imm_value with
-      | x when x < 0 -> 1L
-      | _ -> 0L)
+    execute_immediate_op
+      state
+      program
+      rd
+      rs1
+      imm
+      (fun arg1 imm_value ->
+        match Int64.unsigned_compare arg1 imm_value with
+        | x when x < 0 -> 1L
+        | _ -> 0L)
+      false
   | Lb (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 1 true
   | Lh (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 2 true
   | Lw (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 true
@@ -838,9 +882,27 @@ and execute_instruction state instr program =
     let new_value = Int64.add state.pc imm_value in
     return (set_register_value state rd new_value)
   | Ecall -> handle_syscall state
-  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul
-  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div
-  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem
+  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul false
+  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div false
+  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem false
+  | Mv (rd, rs) ->
+    execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add false
+  | Li (rd, imm) ->
+    let imm_value =
+      match imm with
+      | ImmediateAddress32 value -> Int64.of_int value
+      | LabelAddress32 label -> resolve_label_excluding_directives program label
+    in
+    return (set_register_value state rd imm_value)
+  | Addiw (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add true
+  | Mulw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul true
+  | Addw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add true
+  | Subw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub true
+  | Ret ->
+    let val_rs1 = get_register_value state X1 in
+    let* new_pc = resolve_address_excl_to_incl program val_rs1 in
+    let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
+    return (set_pc new_state new_pc)
   | La (rd, imm) ->
     let address_info = get_address32_value program imm in
     let* new_address =
@@ -858,13 +920,18 @@ and execute_instruction state instr program =
         return resolved_address
     in
     return (set_register_value state rd new_address)
-  | Li (rd, imm) ->
-    let imm_value =
-      match imm with
-      | ImmediateAddress32 value -> Int64.of_int value
-      | LabelAddress32 label -> resolve_label_excluding_directives program label
-    in
-    return (set_register_value state rd imm_value)
+  | Adduw (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int64.add val1 val2 in
+    let result_final = zext result in
+    return (set_register_value state rd result_final)
+  | Sh1add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 1 false
+  | Sh1adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 1 true
+  | Sh2add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 false
+  | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
+  | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
+  | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
   | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
@@ -951,6 +1018,121 @@ let show_state state =
   let result = result ^ memory_writable_str in
   let result = result ^ pc_str in
   result
+;;
+
+let%expect_test "test_factorial" =
+  let program =
+    [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
+    ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
+    ; LabelExpr "loop"
+    ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
+    ; InstructionExpr (Mul (X6, X6, X10))
+    ; InstructionExpr (Subi (X10, X10, ImmediateAddress12 1))
+    ; InstructionExpr (J (LabelAddress20 "loop"))
+    ; LabelExpr "exit"
+    ]
+  in
+  let initial_state = init_state program in
+  match interpret initial_state program with
+  | Ok final_state ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+      X0: 0
+      X1: 0
+      X10: 0
+      X11: 0
+      X12: 0
+      X13: 0
+      X14: 0
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X2: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 0
+      X29: 0
+      X3: 0
+      X30: 0
+      X31: 0
+      X4: 0
+      X5: 0
+      X6: 120
+      X7: 0
+      X8: 0
+      X9: 0
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      Integer memory:
+      String memory:
+      Writable:
+      0: false
+      1: false
+      2: false
+      3: false
+      4: false
+      5: false
+      6: false
+      7: false
+      8: false
+      9: false
+      10: false
+      11: false
+      12: false
+      13: false
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+      20: false
+      21: false
+      22: false
+      23: false
+      PC: 32
+    |}]
+  | Error e -> print_string ("Error: " ^ e)
 ;;
 
 let%expect_test "test_factorial" =
