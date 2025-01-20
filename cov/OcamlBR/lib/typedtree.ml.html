@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>typedtree.ml &mdash; Coverage report</title>
-    <meta name="description" content="61.36% coverage in lib/typedtree.ml">
+    <meta name="description" content="60.00% coverage in lib/typedtree.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,23 +15,24 @@
           <span class="dirname">lib/</span>typedtree.ml
         </a>
       </h1>
-      <h2>61.36%</h2>
+      <h2>60.00%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:4.85%"></span>
-      <span class="unvisited" style="top:10.68%"></span>
-      <span class="unvisited" style="top:11.65%"></span>
-      <span class="unvisited" style="top:12.62%"></span>
-      <span class="unvisited" style="top:17.48%"></span>
-      <span class="unvisited" style="top:18.45%"></span>
-      <span class="unvisited" style="top:21.36%"></span>
-      <span class="some-visited" style="top:29.13%"></span>
-      <span class="unvisited" style="top:32.04%"></span>
-      <span class="unvisited" style="top:38.83%"></span>
-      <span class="unvisited" style="top:41.75%"></span>
-      <span class="unvisited" style="bottom:3.88%"></span>
-      <span class="unvisited" style="bottom:2.91%"></span>
-      <span class="unvisited" style="bottom:1.94%"></span>
+      <span class="unvisited" style="top:4.72%"></span>
+      <span class="unvisited" style="top:10.38%"></span>
+      <span class="unvisited" style="top:11.32%"></span>
+      <span class="unvisited" style="top:12.26%"></span>
+      <span class="unvisited" style="top:16.98%"></span>
+      <span class="unvisited" style="top:17.92%"></span>
+      <span class="unvisited" style="top:20.75%"></span>
+      <span class="some-visited" style="top:28.30%"></span>
+      <span class="unvisited" style="top:31.13%"></span>
+      <span class="unvisited" style="top:37.74%"></span>
+      <span class="unvisited" style="top:40.57%"></span>
+      <span class="unvisited" style="bottom:5.66%"></span>
+      <span class="unvisited" style="bottom:4.72%"></span>
+      <span class="unvisited" style="bottom:3.77%"></span>
+      <span class="unvisited" style="bottom:1.89%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -128,17 +129,20 @@
 <a id="L90"></a><span > </span>
 <a id="L91"></a><span > </span>
 <a id="L92"></a><span > </span>
-<a id="L93"></a><span class="visited"> </span>
+<a id="L93"></a><span > </span>
 <a id="L94"></a><span class="visited"> </span>
 <a id="L95"></a><span class="visited"> </span>
-<a id="L96"></a><span > </span>
-<a id="L97"></a><span class="visited"> </span>
+<a id="L96"></a><span class="visited"> </span>
+<a id="L97"></a><span > </span>
 <a id="L98"></a><span class="visited"> </span>
-<a id="L99"></a><span class="unvisited"> </span>
+<a id="L99"></a><span class="visited"> </span>
 <a id="L100"></a><span class="unvisited"> </span>
 <a id="L101"></a><span class="unvisited"> </span>
-<a id="L102"></a><span > </span>
+<a id="L102"></a><span class="unvisited"> </span>
 <a id="L103"></a><span > </span>
+<a id="L104"></a><span class="unvisited"> </span>
+<a id="L105"></a><span > </span>
+<a id="L106"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -246,6 +250,9 @@
 <a href="#L101">101</a>
 <a href="#L102">102</a>
 <a href="#L103">103</a>
+<a href="#L104">104</a>
+<a href="#L105">105</a>
+<a href="#L106">106</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
@@ -336,11 +343,12 @@ type error =
   | `Duplicate_field_labels of string
   | `Undefined_type of string
   | `Multiple_definition_of_type of string
+  | `Unexpected_function_type of ty
   ]
 
 let pp_error ppf = function
   | <span data-count="3">`</span>Occurs_check -&gt; Format.fprintf ppf {|Occurs check failed|}
-  | <span data-count="4">`</span>Undefined_variable s -&gt; Format.fprintf ppf {|Undefined variable "%s"|} s
+  | <span data-count="4">`</span>Undefined_variable s -&gt; Format.fprintf ppf {|Undefined variable %S|} s
   | <span data-count="8">`</span>Unification_failed (l, r) -&gt;
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
   | <span data-count="4">`</span>Ill_left_hand_side s -&gt; Format.fprintf ppf {|Ill left-hand side %s|} s
@@ -349,6 +357,8 @@ let pp_error ppf = function
   | <span data-count="0">`</span>Undefined_type s -&gt; Format.fprintf ppf {|Undefined type: %s|} s
   | <span data-count="0">`</span>Multiple_definition_of_type s -&gt;
     Format.fprintf ppf {|Multiple definition of type name %s|} s
+  | <span data-count="0">`</span>Unexpected_function_type t -&gt;
+    Format.fprintf ppf {|Expected function type, got: %a|} pp_ty t
 ;;
 </code></pre>
       </div>
