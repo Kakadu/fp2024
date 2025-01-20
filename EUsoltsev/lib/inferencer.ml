@@ -6,7 +6,7 @@
 
 open Base
 open Ast
-open Format
+open Stdlib.Format
 
 type error =
   | OccursCheck of int * ty
@@ -32,7 +32,6 @@ end
 module ResultMonad : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -59,7 +58,6 @@ end = struct
   ;;
 
   let return x last = last, Result.return x
-  let bind x ~f = x >>= f
   let fail e st = st, Result.fail e
 
   let ( >>| ) m f st =
@@ -69,7 +67,7 @@ end = struct
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = bind x ~f
+    let ( let* ) x f = x >>= f
   end
 
   module RMap = struct
@@ -113,7 +111,6 @@ module Substitution : sig
 
   val empty : t
   val singleton : int -> ty -> t ResultMonad.t
-  val find : t -> int -> ty option
   val remove : t -> int -> t
   val apply : t -> ty -> ty
   val unify : ty -> ty -> t ResultMonad.t
@@ -209,7 +206,6 @@ end
 module Scheme = struct
   type t = S of IntSet.t * ty
 
-  let occurs_in var (S (vars, ty)) = (not (IntSet.mem var vars)) && Type.occurs_in var ty
   let free_vars (S (vars, ty)) = IntSet.diff (Type.free_vars ty) vars
 
   let apply subst (S (vars, ty)) =
@@ -225,7 +221,6 @@ module TypeEnv = struct
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
   let remove = Map.remove
-  let empty = Map.empty (module String)
 
   let free_vars : t -> IntSet.t =
     Map.fold ~init:IntSet.empty ~f:(fun ~key:_ ~data:scheme acc ->
