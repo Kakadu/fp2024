@@ -123,14 +123,12 @@ let p_inf_oper =
   else return (Ident oper)
 ;;
 
-let p_varname =
+let p_name p_fst_letter =
   let* name =
     skip_ws
     *> lift2
          ( ^ )
-         (take_while1 (function
-           | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
-           | _ -> false))
+         p_fst_letter
          (take_while (function
            | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
            | _ -> false))
@@ -140,9 +138,28 @@ let p_varname =
   else return name
 ;;
 
+let p_varname =
+  p_name
+    (take_while1 (function
+      | 'a' .. 'z' | '_' -> true
+      | _ -> false))
+;;
+
+let p_act_pat_name =
+  p_name
+    (take_while1 (function
+      | 'A' .. 'Z' -> true
+      | _ -> false))
+;;
+
 let p_ident =
   let* varname = p_varname in
   return (Ident varname)
+;;
+
+let p_act_pat_ident =
+  let* name = p_act_pat_name in
+  return (Ident name)
 ;;
 
 let p_type = skip_ws *> char ':' *> skip_ws *> p_varname >>| fun s -> Primitive s
@@ -248,6 +265,16 @@ let p_constraint_pat p_pat =
   return (PConstraint (pat, typ))
 ;;
 
+let p_act_pat_case p_pat =
+  let* case = p_act_pat_ident in
+  let* pat =
+    peek_sep1 *> (p_pat <* peek_sep1)
+    <|> (p_parens p_pat <* peek_sep1)
+    <|> return (PConst Unit_lt)
+  in
+  return (PActive (case, pat))
+;;
+
 let p_pat =
   skip_ws
   *> fix (fun self ->
@@ -256,7 +283,8 @@ let p_pat =
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
     let cons = p_cons_list_pat opt in
     let tuple = p_tuple_pat cons <|> cons in
-    tuple)
+    let active = p_act_pat_case tuple <|> tuple in
+    active)
 ;;
 
 let p_let_bind p_expr =
@@ -290,7 +318,9 @@ let p_let p_expr =
 ;;
 
 let p_apply p_expr =
-  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
+  chainl1
+    (p_parens p_expr <|> (p_expr <* peek_sep1))
+    (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 ;;
 
 let p_lambda p_expr =
@@ -347,6 +377,38 @@ let p_constraint_expr p_expr =
   return (EConstraint (expr, typ))
 ;;
 
+let p_act_pat p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* fst_name =
+    skip_ws *> string "(" *> skip_ws *> string "|" *> skip_ws *> p_act_pat_ident
+  in
+  let* names =
+    many (skip_ws *> string "|" *> p_act_pat_ident)
+    <* skip_ws
+    <* string "|"
+    <* skip_ws
+    <* string ")"
+  in
+  let* args = many p_pat in
+  let* expr = skip_ws *> string "=" *> skip_ws *> p_expr in
+  return (ActPat (fst_name, names, args, expr))
+;;
+
+let p_act_pat_constructor p_expr =
+  skip_ws
+  *>
+  let* name = p_act_pat_ident in
+  let* expr =
+    peek_sep1 *> (p_expr <* peek_sep1)
+    <|> (p_parens p_expr <* peek_sep1)
+    <|> return (Const Unit_lt)
+  in
+  return (ActPatConstructor (name, expr))
+;;
+
 let p_expr =
   skip_ws
   *> fix (fun p_expr ->
@@ -383,10 +445,11 @@ let p_expr =
     let p_function = p_function (p_expr <|> tuple) <|> tuple in
     let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
-    efun)
+    let apat_c = p_act_pat_constructor efun <|> efun in
+    apat_c)
 ;;
 
-let p_statement = p_let p_expr
+let p_statement = p_act_pat p_expr <|> p_let p_expr
 
 let p_construction =
   p_expr >>= (fun e -> return (Expr e)) <|> (p_statement >>= fun s -> return (Statement s))
