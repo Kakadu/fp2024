@@ -416,11 +416,7 @@ let execute_arithmetic_op state rd rs1 rs2 op to_sext =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
   let result = op val1 val2 in
-  let result_final =
-    match to_sext with
-    | true -> sext result
-    | false -> result
-  in
+  let result_final = if to_sext then sext result else result in
   return (set_register_value state rd result_final)
 ;;
 
@@ -434,11 +430,7 @@ let execute_shift_op state rd rs1 rs2 op =
 let execute_comparison_op state rd rs1 rs2 compare_fn =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
-  let result =
-    match compare_fn val1 val2 with
-    | true -> 1L
-    | false -> 0L
-  in
+  let result = if compare_fn val1 val2 then 1L else 0L in
   return (set_register_value state rd result)
 ;;
 
@@ -451,11 +443,7 @@ let execute_immediate_op state program rd rs1 imm op to_sext =
     | Label excluding_directives_label_offset -> excluding_directives_label_offset
   in
   let result = op val1 imm_value in
-  let result_final =
-    match to_sext with
-    | true -> sext result
-    | false -> result
-  in
+  let result_final = if to_sext then sext result else result in
   return (set_register_value state rd result_final)
 ;;
 
@@ -474,11 +462,7 @@ let execute_shift_immediate_op state program rd rs1 imm op =
 let execute_shnadd state rd rs1 rs2 n to_zext =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
-  let arg2 =
-    match to_zext with
-    | true -> zext val2
-    | false -> val2
-  in
+  let arg2 = if to_zext then zext val2 else val2 in
   let result = Int64.add val1 (Int64.shift_left arg2 n) in
   return (set_register_value state rd result)
 ;;
@@ -566,13 +550,13 @@ let execute_load_int state program rd rs1 imm size signed =
   let address = Int64.add base_address offset in
   let* value = load_memory_int state address size in
   let result =
-    match signed with
-    | true ->
-      (match size with
-       | 1 -> Int64.shift_right (Int64.shift_left value 56) 56
-       | 2 -> Int64.shift_right (Int64.shift_left value 48) 48
-       | _ -> value)
-    | false -> value
+    if signed
+    then (
+      match size with
+      | 1 -> Int64.shift_right (Int64.shift_left value 56) 56
+      | 2 -> Int64.shift_right (Int64.shift_left value 48) 48
+      | _ -> value)
+    else value
   in
   return (set_register_value state rd result)
 ;;
@@ -762,32 +746,23 @@ and execute_instruction state instr program =
   | Sh (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 2
   | Sw (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 4
   | Beq (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 = arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition state program rs1 (Some rs2) imm_value ( = )
   | Beqz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 = arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition state program rs1 None imm_value ( = )
   | Bne (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 <> arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition state program rs1 (Some rs2) imm_value ( <> )
   | Bnez (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 <> arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition state program rs1 None imm_value ( <> )
   | Blt (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 < arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition state program rs1 (Some rs2) imm_value ( < )
   | Bltz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 < arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition state program rs1 None imm_value ( < )
   | Bgt (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 > arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition state program rs1 (Some rs2) imm_value ( > )
   | Bgtz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 > arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition state program rs1 None imm_value ( > )
   | Bge (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 >= arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition state program rs1 (Some rs2) imm_value ( >= )
   | Bltu (rs1, rs2, imm_value) ->
     let comparison_fn arg1 arg2 = Int64.unsigned_compare arg1 arg2 < 0 in
     handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
