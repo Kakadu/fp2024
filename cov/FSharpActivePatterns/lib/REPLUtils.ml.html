@@ -428,35 +428,35 @@ let input_upto_sep sep ic =
 ;;
 
 let input_with_indents ic =
-  <span data-count="83">l</span>et take_line () = <span data-count="295">I</span>n_channel.input_line ic in
+  <span data-count="90">l</span>et take_line () = <span data-count="317">I</span>n_channel.input_line ic in
   let rec fill_buffer b =
-    <span data-count="212">l</span>et start_pos = pos_in ic in
-    <span data-count="212">l</span>et line = take_line () in
-    <span data-count="212">m</span>atch line with
-    | <span data-count="22">N</span>one -&gt; Input (Buffer.content<span data-count="22">s</span> b)
-    | <span data-count="190">S</span>ome line -&gt;
-      let is_empty = String.lengt<span data-count="190">h</span> line = 0 in
+    <span data-count="227">l</span>et start_pos = pos_in ic in
+    <span data-count="227">l</span>et line = take_line () in
+    <span data-count="227">m</span>atch line with
+    | <span data-count="24">N</span>one -&gt; Input (Buffer.content<span data-count="24">s</span> b)
+    | <span data-count="203">S</span>ome line -&gt;
+      let is_empty = String.lengt<span data-count="203">h</span> line = 0 in
       let is_continue =
-        List.exist<span data-count="190">s</span> (fun pref -&gt; <span data-count="350">S</span>tring.starts_with ~prefix:pref line) [ " "; "\t"; "\n" <span data-count="110">]</span>
-        || is_empt<span data-count="40">y</span>
-        || String.starts_wit<span data-count="40">h</span> ~prefix:"and" (String.tri<span data-count="40">m</span> line<span data-count="1">)</span>
+        List.exist<span data-count="203">s</span> (fun pref -&gt; <span data-count="375">S</span>tring.starts_with ~prefix:pref line) [ " "; "\t"; "\n" <span data-count="117">]</span>
+        || is_empt<span data-count="43">y</span>
+        || String.starts_wit<span data-count="43">h</span> ~prefix:"and" (String.tri<span data-count="43">m</span> line<span data-count="1">)</span>
       in
       if is_continue
-      then <span data-count="151">(</span>
+      then <span data-count="161">(</span>
         Buffer.add_string b (line ^ "\n");
-        <span data-count="151">f</span>ill_buffer b)
-      else <span data-count="39">(</span>
+        <span data-count="161">f</span>ill_buffer b)
+      else <span data-count="42">(</span>
         seek_in ic start_pos;
-        <span data-count="39">B</span>uffer.add_string b "\n";
-        <span data-count="39">I</span>nput (Buffer.content<span data-count="39">s</span> b))
+        <span data-count="42">B</span>uffer.add_string b "\n";
+        <span data-count="42">I</span>nput (Buffer.content<span data-count="42">s</span> b))
   in
   let buffer = Buffer.create 1024 in
-  <span data-count="83">l</span>et first_line = take_line () in
-  <span data-count="83">m</span>atch first_line with
-  | <span data-count="22">N</span>one -&gt; EOF
-  | <span data-count="61">S</span>ome first_line -&gt;
+  <span data-count="90">l</span>et first_line = take_line () in
+  <span data-count="90">m</span>atch first_line with
+  | <span data-count="24">N</span>one -&gt; EOF
+  | <span data-count="66">S</span>ome first_line -&gt;
     Buffer.add_string buffer (first_line ^ "\n");
-    <span data-count="61">f</span>ill_buffer buffer
+    <span data-count="66">f</span>ill_buffer buffer
 ;;
 
 type in_channel =
@@ -464,24 +464,24 @@ type in_channel =
   | Stdin
 
 let run_single ic =
-  <span data-count="83">l</span>et input =
+  <span data-count="90">l</span>et input =
     match ic with
     | <span data-count="0">S</span>tdin -&gt; input_upto_se<span data-count="0">p</span> ";;" Stdlib.stdin
-    | <span data-count="83">F</span>ile ic -&gt; input_with_indent<span data-count="83">s</span> ic
+    | <span data-count="90">F</span>ile ic -&gt; input_with_indent<span data-count="90">s</span> ic
   in
   match input with
-  | <span data-count="22">E</span>OF -&gt; End
-  | <span data-count="61">I</span>nput input -&gt; if String.tri<span data-count="61">m</span> input = "" then <span data-count="0">E</span>mpty else <span data-count="61">R</span>esult (pars<span data-count="61">e</span> input)
+  | <span data-count="24">E</span>OF -&gt; End
+  | <span data-count="66">I</span>nput input -&gt; if String.tri<span data-count="66">m</span> input = "" then <span data-count="0">E</span>mpty else <span data-count="66">R</span>esult (pars<span data-count="66">e</span> input)
 ;;
 
 let run_repl dump_parsetree input_file =
-  <span data-count="22">l</span>et ic =
+  <span data-count="24">l</span>et ic =
     match input_file with
-    | <span data-count="22">S</span>ome n -&gt; File (open_i<span data-count="22">n</span> n)
+    | <span data-count="24">S</span>ome n -&gt; File (open_i<span data-count="24">n</span> n)
     | <span data-count="0">N</span>one -&gt; Stdin
   in
   let rec run_repl_helper run type_env value_env state values_acc =
-    <span data-count="83">l</span>et open Format in
+    <span data-count="90">l</span>et open Format in
     match run ic with
     | <span data-count="0">R</span>esult (Error _) -&gt;
       fprintf err_formatter "Parsing error\n";
@@ -490,20 +490,20 @@ let run_repl dump_parsetree input_file =
       fprintf std_formatter "\n";
       <span data-count="0">p</span>rint_flush ();
       <span data-count="0">r</span>un_repl_helper run type_env value_env state values_acc
-    | <span data-count="22">E</span>nd -&gt; type_env, value_env, values_acc
-    | <span data-count="61">R</span>esult (Ok ast) -&gt;
+    | <span data-count="24">E</span>nd -&gt; type_env, value_env, values_acc
+    | <span data-count="66">R</span>esult (Ok ast) -&gt;
       if dump_parsetree
       then <span data-count="0">(</span>
         print_construction std_formatter ast;
         <span data-count="0">r</span>un_repl_helper run type_env value_env state values_acc)
-      else <span data-count="61">(</span>
+      else <span data-count="66">(</span>
         let result = run_interpreter type_env value_env state ast in
-        <span data-count="61">m</span>atch result with
+        <span data-count="66">m</span>atch result with
         | <span data-count="6">n</span>ew_state, Error err -&gt;
           fprintf err_formatter "Error occured: %a\n" pp_global_error err;
           <span data-count="6">p</span>rint_flush ();
           <span data-count="6">r</span>un_repl_helper run type_env value_env new_state values_acc
-        | <span data-count="55">n</span>ew_state, Ok (new_type_env, new_value_env, evaled_names) -&gt;
+        | <span data-count="60">n</span>ew_state, Ok (new_type_env, new_value_env, evaled_names) -&gt;
           (match ic with
            | <span data-count="0">S</span>tdin -&gt;
              Base.Map.iteri
@@ -520,23 +520,23 @@ let run_repl dump_parsetree input_file =
                evaled_names;
              <span data-count="0">p</span>rint_flush ();
              <span data-count="0">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc
-           | <span data-count="55">F</span>ile _ -&gt;
+           | <span data-count="60">F</span>ile _ -&gt;
              let overwrite map1 map2 =
-               <span data-count="55">B</span>ase.Map.fold
+               <span data-count="60">B</span>ase.Map.fold
                  ~init:map1
-                 ~f:(fun ~key ~data map1 -&gt; <span data-count="57">B</span>ase.Map.set map1 ~key ~data)
+                 ~f:(fun ~key ~data map1 -&gt; <span data-count="62">B</span>ase.Map.set map1 ~key ~data)
                  map2
              in
              let values_acc = overwrite values_acc evaled_names in
-             <span data-count="55">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc))
+             <span data-count="60">r</span>un_repl_helper run new_type_env new_value_env new_state values_acc))
   in
   let type_env = TypeEnv.default in
   let value_env = ValueEnv.default in
   let _, _, evaled_values =
-    run_repl_helper run_single type_env value_env 0 (Base.Map.empt<span data-count="22">y</span> (module Base.String))
+    run_repl_helper run_single type_env value_env 0 (Base.Map.empt<span data-count="24">y</span> (module Base.String))
   in
-  <span data-count="22">B</span>ase.Map.iteri evaled_values ~f:(fun ~key ~data:(typ, value) -&gt;
-    <span data-count="56">F</span>ormat.fprintf
+  <span data-count="24">B</span>ase.Map.iteri evaled_values ~f:(fun ~key ~data:(typ, value) -&gt;
+    <span data-count="61">F</span>ormat.fprintf
       Format.std_formatter
       "val %s : %a = %a\n"
       key

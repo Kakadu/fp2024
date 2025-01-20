@@ -111,7 +111,7 @@ let () =
       , Unit (fun _ -&gt; <span data-count="0">o</span>pts.dump_parsetree &lt;- true)
       , "Dump parse tree, don't evaluate anything" )
     ; ( "-fromfile"
-      , String (fun filename -&gt; <span data-count="22">o</span>pts.input_file &lt;- Some filename)
+      , String (fun filename -&gt; <span data-count="24">o</span>pts.input_file &lt;- Some filename)
       , "Input file name" )
     ]
   in
@@ -121,7 +121,7 @@ let () =
   in
   let usage_msg = "Read-Eval-Print-Loop for F# with Active Patterns" in
   let () = parse speclist anon_func usage_msg in
-  <span data-count="22">r</span>un_rep<span data-count="22">l</span> opts.dump_parsetree opts.input_file
+  <span data-count="24">r</span>un_rep<span data-count="24">l</span> opts.dump_parsetree opts.input_file
 ;;
 </code></pre>
       </div>

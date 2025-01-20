@@ -209,17 +209,17 @@ end = struct
   open R.Syntax
 
   let union_disjoint s1 s2 =
-    <span data-count="206">l</span>et* s1 = s1 in
-    <span data-count="206">l</span>et* s2 = s2 in
-    <span data-count="206">i</span>f is_empty (inte<span data-count="206">r</span> s1 s2) then <span data-count="206">r</span>eturn (unio<span data-count="206">n</span> s1 s2) else <span data-count="0">f</span>ail bound_error
+    <span data-count="217">l</span>et* s1 = s1 in
+    <span data-count="217">l</span>et* s2 = s2 in
+    <span data-count="217">i</span>f is_empty (inte<span data-count="217">r</span> s1 s2) then <span data-count="217">r</span>eturn (unio<span data-count="217">n</span> s1 s2) else <span data-count="0">f</span>ail bound_error
   ;;
 
-  let union_disjoint_many sets = <span data-count="224">L</span>ist.fold ~init:(retur<span data-count="224">n</span> empty) ~f:union_disjoint sets
+  let union_disjoint_many sets = <span data-count="237">L</span>ist.fold ~init:(retur<span data-count="237">n</span> empty) ~f:union_disjoint sets
 
   let rec extract_names_from_pattern =
     let extr = extract_names_from_pattern in
     function
-    | <span data-count="278">P</span>Var (Ident name) -&gt; return (singleto<span data-count="278">n</span> name)
+    | <span data-count="294">P</span>Var (Ident name) -&gt; return (singleto<span data-count="294">n</span> name)
     | <span data-count="10">P</span>List l -&gt; union_disjoint_many (List.ma<span data-count="10">p</span> l ~f:extr)
     | <span data-count="16">P</span>Cons (hd, tl) -&gt; union_disjoint (ext<span data-count="16">r</span> hd) (ext<span data-count="16">r</span> tl)
     | <span data-count="9">P</span>Tuple (fst, snd, rest) -&gt;
@@ -233,17 +233,17 @@ end = struct
   ;;
 
   let extract_names_from_patterns pats =
-    <span data-count="103">u</span>nion_disjoint_many (List.ma<span data-count="103">p</span> ~f:extract_names_from_pattern pats)
+    <span data-count="108">u</span>nion_disjoint_many (List.ma<span data-count="108">p</span> ~f:extract_names_from_pattern pats)
   ;;
 
   let extract_bind_names_from_let_binds let_binds =
-    <span data-count="102">u</span>nion_disjoint_many
-      (List.ma<span data-count="102">p</span> let_binds ~f:(function <span data-count="104">L</span>et_bind (pat, _, _) -&gt;
+    <span data-count="110">u</span>nion_disjoint_many
+      (List.ma<span data-count="110">p</span> let_binds ~f:(function <span data-count="112">L</span>et_bind (pat, _, _) -&gt;
          extract_names_from_pattern pat))
   ;;
 
   let extract_bind_patterns_from_let_binds let_binds =
-    <span data-count="17">L</span>ist.map let_binds ~f:(function <span data-count="18">L</span>et_bind (pat, _, _) -&gt; pat)
+    <span data-count="18">L</span>ist.map let_binds ~f:(function <span data-count="19">L</span>et_bind (pat, _, _) -&gt; pat)
   ;;
 end
 

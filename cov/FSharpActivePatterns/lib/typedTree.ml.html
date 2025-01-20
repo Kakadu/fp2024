@@ -142,7 +142,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="0">t</span>ype binder = <span data-count="0">i</span>nt [@@deriving show { with_path = false }, qcheck<span data-count="26">]</span>
+<span data-count="0">t</span>ype binder = <span data-count="0">i</span>nt [@@deriving show { with_path = false }, qcheck<span data-count="28">]</span>
 
 type typ =
   | Primitive of (string[@gen gen_primitive])
@@ -166,12 +166,12 @@ let choice_set_many map list =
 ;;
 
 let gen_typ_primitive =
-  QCheck.Gen.(oneof<span data-count="26">l</span> [ "string"; "int"; "unit"; "bool" ] &gt;|<span data-count="26">=</span> fun t -&gt; <span data-count="4">P</span>rimitive t)
+  QCheck.Gen.(oneof<span data-count="28">l</span> [ "string"; "int"; "unit"; "bool" ] &gt;|<span data-count="28">=</span> fun t -&gt; <span data-count="4">P</span>rimitive t)
 ;;
 
 let arrow_of_types first_types last_type =
-  <span data-count="118">l</span>et open Base in
-  List.fold_right first_types ~init:last_type ~f:(fun left right -&gt; <span data-count="90">A</span>rrow (left, right))
+  <span data-count="125">l</span>et open Base in
+  List.fold_right first_types ~init:last_type ~f:(fun left right -&gt; <span data-count="95">A</span>rrow (left, right))
 ;;
 
 module VarSet = struct
