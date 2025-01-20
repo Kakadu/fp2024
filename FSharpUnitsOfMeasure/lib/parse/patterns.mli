@@ -8,14 +8,14 @@
 open Angstrom
 open Ast
 
-(** [parse_pat] accepts pattern and returns it *)
-val parse_pat : pattern t
+(** [ppat] accepts pattern and returns it *)
+val ppat : pattern t
 
-(** [parse_pat_wild] accepts [ _ ] pattern and returns it *)
-val parse_pat_wild : pattern t
+(** [ppat_wild] accepts [ _ ] pattern and returns it *)
+val ppat_wild : pattern t
 
-(** [parse_pat_ident_or_op] accepts identificator or operator pattern and returns it *)
-val parse_pat_ident_or_op : pattern t
+(** [ppat_id_or_op] accepts identificator or operator pattern and returns it *)
+val ppat_id_or_op : pattern t
 
-(** [parse_pat_const] accepts constant pattern and returns it *)
-val parse_pat_const : pattern t
+(** [ppat_const] accepts constant pattern and returns it *)
+val ppat_const : pattern t

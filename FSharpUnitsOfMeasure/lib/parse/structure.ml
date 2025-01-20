@@ -14,7 +14,7 @@ open Units_of_measure
 let parse_structure_item_expr =
   (skip_token "do" <|> skip_ws)
   *>
-  let* expr = parse_expr in
+  let* expr = pexpr in
   return (Str_item_eval expr)
 ;;
 
@@ -22,8 +22,8 @@ let parse_structure_item_def =
   skip_token "let"
   *>
   let* rec_flag = option Nonrecursive (string "rec" *> skip_ws *> return Recursive) in
-  let* binding_fst = parse_single_binding parse_expr in
-  let* binding_rest = many (skip_token "and" *> parse_single_binding parse_expr) in
+  let* binding_fst = pbind pexpr in
+  let* binding_rest = many (skip_token "and" *> pbind pexpr) in
   return (Str_item_def (rec_flag, binding_fst, binding_rest))
 ;;
 
@@ -32,7 +32,7 @@ let pstritem_td =
     skip_token "[<Measure>]"
     *> skip_token "type"
     *>
-    let* name = parse_ident <* skip_ws in
+    let* name = pid <* skip_ws in
     let* rhs = option None (skip_token "=" *> pm >>| fun m -> Some m) in
     return (Str_item_type_def (Measure_type_def (name, rhs)))
   in

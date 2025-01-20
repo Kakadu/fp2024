@@ -10,17 +10,17 @@ open Angstrom
 open Ast
 open Common
 
-let pm_num_int = parse_sint >>| fun i -> Mnum_int i
-let pm_num_float = parse_sfloat >>| fun f -> Mnum_float f
+let pm_num_int = psint >>| fun i -> Mnum_int i
+let pm_num_float = psfloat >>| fun f -> Mnum_float f
 let pm_num = pm_num_int <|> pm_num_float
-let pm_id = parse_ident >>| fun id -> Measure_ident id
+let pm_id = pid >>| fun id -> Measure_ident id
 let pm_diml = skip_token "1" *> return Measure_dimless
 let pm_atom pm = choice [ skip_token "(" *> pm <* skip_token ")"; pm_id; pm_diml ]
 
 let pm_pow pm_atom =
   let p_expo =
     let* sign = skip_token "^" *> option "" (string "-") in
-    let* num = skip_ws *> parse_int in
+    let* num = skip_ws *> pint in
     return (if String.( = ) sign "-" then -num else num)
   in
   let* m = pm_atom in

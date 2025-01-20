@@ -10,5 +10,5 @@ open Ast
 
 (* Can only parse builtin types for now *)
 
-(** [parse_type] parses explicitly stated type and returns it. *)
-val parse_type : core_type t
+(** [ptype] parses explicitly stated type and returns it. *)
+val ptype : core_type t

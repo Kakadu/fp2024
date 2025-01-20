@@ -44,7 +44,7 @@ let%expect_test "parse structure item which is multiple let bindings" =
     let a = b and c = d and e = f and i = j|}]
 ;;
 
-(* Doesn't halt on 4+ nested let ... in's, the reason is in parse_expr_let *)
+(* Doesn't halt on 4+ nested let ... in's, the reason is in pexpr_letin *)
 (* let%expect_test "parse structure item which is nested let bindings" =
   pp
     pprint_struct_item
@@ -90,14 +90,16 @@ let%expect_test "parse measure type definition" =
 
 let%expect_test "parse measure type definition with binding" =
   pp2 pp_structure_item parse_structure_item {|[<Measure>] type a = m^3|};
-  [%expect {|
+  [%expect
+    {|
     (Str_item_type_def
        (Measure_type_def ("a", (Some (Measure_pow ((Measure_ident "m"), 3))))))|}]
 ;;
 
 let%expect_test "parse measure type definition with hard binding" =
   pp2 pp_structure_item parse_structure_item {|[<Measure>] type a = m^3 * s / cm^-1|};
-  [%expect {|
+  [%expect
+    {|
     (Str_item_type_def
        (Measure_type_def ("a",
           (Some (Measure_div (
