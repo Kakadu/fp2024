@@ -465,16 +465,6 @@ module Infer = struct
       return (Subst.empty, ans)
   ;;
 
-  let fst_arrow = function
-    | TArrow (arg, _) -> arg
-    | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
-  ;;
-
-  let snd_arrow = function
-    | TArrow (_, ret) -> ret
-    | ty -> failwith (Format.asprintf "Expected function type, got: %a" pp_ty ty)
-  ;;
-
   let string_of_id (Ast.Id name) = name
 
   let infer_const = function
