@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>interpreter.ml &mdash; Coverage report</title>
-    <meta name="description" content="50.72% coverage in lib/interpreter.ml">
+    <meta name="description" content="51.81% coverage in lib/interpreter.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>interpreter.ml
         </a>
       </h1>
-      <h2>50.72%</h2>
+      <h2>51.81%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:6.81%"></span>
@@ -74,9 +74,6 @@
       <span class="unvisited" style="bottom:43.43%"></span>
       <span class="unvisited" style="bottom:43.19%"></span>
       <span class="unvisited" style="bottom:42.25%"></span>
-      <span class="unvisited" style="bottom:41.31%"></span>
-      <span class="unvisited" style="bottom:40.85%"></span>
-      <span class="unvisited" style="bottom:40.38%"></span>
       <span class="unvisited" style="bottom:40.14%"></span>
       <span class="unvisited" style="bottom:38.97%"></span>
       <span class="unvisited" style="bottom:38.73%"></span>
@@ -393,11 +390,11 @@
 <a id="L247"></a><span class="visited"> </span>
 <a id="L248"></a><span > </span>
 <a id="L249"></a><span > </span>
-<a id="L250"></a><span class="unvisited"> </span>
+<a id="L250"></a><span class="visited"> </span>
 <a id="L251"></a><span > </span>
-<a id="L252"></a><span class="unvisited"> </span>
+<a id="L252"></a><span class="visited"> </span>
 <a id="L253"></a><span > </span>
-<a id="L254"></a><span class="unvisited"> </span>
+<a id="L254"></a><span class="visited"> </span>
 <a id="L255"></a><span class="unvisited"> </span>
 <a id="L256"></a><span class="visited"> </span>
 <a id="L257"></a><span > </span>
@@ -1079,11 +1076,11 @@ end
 module Env (M : Monad) = struct
   open M
 
-  let extend env key value = <span data-count="329">B</span>ase.Map.update env key ~f:(fun _ -&gt; <span data-count="329">v</span>alue)
+  let extend env key value = <span data-count="345">B</span>ase.Map.update env key ~f:(fun _ -&gt; <span data-count="345">v</span>alue)
 
   let find map key =
-    <span data-count="422">m</span>atch Base.Map.find map key with
-    | <span data-count="421">S</span>ome value -&gt; return value
+    <span data-count="440">m</span>atch Base.Map.find map key with
+    | <span data-count="439">S</span>ome value -&gt; return value
     | <span data-count="1">N</span>one -&gt; fail (UnboundVariable key)
   ;;
 end
@@ -1102,10 +1099,10 @@ end = struct
          ~data:
            (ValueBuiltin
               (function
-                | <span data-count="37">V</span>alueInt i -&gt;
+                | <span data-count="41">V</span>alueInt i -&gt;
                   Stdlib.print_int i;
-                  <span data-count="37">S</span>tdlib.print_newline ();
-                  <span data-count="37">R</span>esult.return ValueUnit
+                  <span data-count="41">S</span>tdlib.print_newline ();
+                  <span data-count="41">R</span>esult.return ValueUnit
                 | <span data-count="0">_</span> -&gt; Result.fail (TypeError (ValueInt 0))))
     |&gt; <span data-count="30">s</span>et
          ~key:"print_endline"
@@ -1130,37 +1127,37 @@ end = struct
 
   let rec check_match env = function
     | <span data-count="0">P</span>atAny, _ -&gt; Some env
-    | <span data-count="25">P</span>atUnit, ValueUnit -&gt; Some env
+    | <span data-count="30">P</span>atUnit, ValueUnit -&gt; Some env
     | <span data-count="0">P</span>atConst (ConstInt i1), ValueInt i2 when i1 = i2 -&gt; <span data-count="0">S</span>ome env
     | <span data-count="0">P</span>atConst (ConstBool b1), ValueBool b2 when Bool.equa<span data-count="0">l</span> b1 b2 -&gt; <span data-count="0">S</span>ome env
     | <span data-count="0">P</span>atConst (ConstString s1), ValueString s2 when String.equa<span data-count="0">l</span> s1 s2 -&gt; <span data-count="0">S</span>ome env
-    | <span data-count="202">P</span>atVariable x, v -&gt; Some (exten<span data-count="202">d</span> env x v)
+    | <span data-count="211">P</span>atVariable x, v -&gt; Some (exten<span data-count="211">d</span> env x v)
     | <span data-count="12">P</span>atType (pat, _), v -&gt; check_match env (pat, v)
-    | <span data-count="2">P</span>atTuple (p1, p2, pl), ValueTuple (v1, v2, vl) -&gt;
+    | <span data-count="4">P</span>atTuple (p1, p2, pl), ValueTuple (v1, v2, vl) -&gt;
       (match check_match env (p1, v1) with
        | <span data-count="0">N</span>one -&gt; None
-       | <span data-count="2">S</span>ome env1 -&gt;
+       | <span data-count="4">S</span>ome env1 -&gt;
          (match check_match env1 (p2, v2) with
           | <span data-count="0">N</span>one -&gt; None
-          | <span data-count="2">S</span>ome env2 -&gt;
+          | <span data-count="4">S</span>ome env2 -&gt;
             (match
                List.fold2 pl vl ~init:(Some env2) ~f:(fun acc_env p v -&gt;
                  <span data-count="0">m</span>atch acc_env with
                  | <span data-count="0">S</span>ome env' -&gt; check_match env' (p, v)
                  | <span data-count="0">N</span>one -&gt; None)
              with
-             | <span data-count="1">O</span>k result -&gt; result
+             | <span data-count="3">O</span>k result -&gt; result
              | <span data-count="1">U</span>nequal_lengths -&gt; None)))
     | <span data-count="0">_</span> -&gt; None
   ;;
 
   let eval_binop (bop, v1, v2) =
-    <span data-count="207">m</span>atch bop, v1, v2 with
-    | <span data-count="36">M</span>ultiply, ValueInt x, ValueInt y -&gt; return (ValueInt (x * y))
+    <span data-count="213">m</span>atch bop, v1, v2 with
+    | <span data-count="37">M</span>ultiply, ValueInt x, ValueInt y -&gt; return (ValueInt (x * y))
     | <span data-count="6">D</span>ivision, ValueInt _, ValueInt y when y = 0 -&gt; <span data-count="2">f</span>ail DivisionByZeroError
     | <span data-count="4">D</span>ivision, ValueInt x, ValueInt y -&gt; return (ValueInt (x / y))
-    | <span data-count="35">P</span>lus, ValueInt x, ValueInt y -&gt; return (ValueInt (x + y))
-    | <span data-count="55">M</span>inus, ValueInt x, ValueInt y -&gt; return (ValueInt (x - y))
+    | <span data-count="39">P</span>lus, ValueInt x, ValueInt y -&gt; return (ValueInt (x + y))
+    | <span data-count="56">M</span>inus, ValueInt x, ValueInt y -&gt; return (ValueInt (x - y))
     | <span data-count="16">E</span>qual, ValueInt x, ValueInt y -&gt; return (ValueBool (x = y))
     | <span data-count="0">N</span>otEqual, ValueInt x, ValueInt y -&gt; return (ValueBool (x &lt;&gt; y))
     | <span data-count="34">L</span>owerThan, ValueInt x, ValueInt y -&gt; return (ValueBool (x &lt; y))
@@ -1173,28 +1170,28 @@ end = struct
   ;;
 
   let rec create_nested_closures env patterns body =
-    <span data-count="226">m</span>atch patterns with
+    <span data-count="230">m</span>atch patterns with
     | <span data-count="0">[</span>] -&gt; fail PatternMatchingError
-    | <span data-count="119">[</span> p ] -&gt; return (ValueClosure (p, false, body, env))
+    | <span data-count="123">[</span> p ] -&gt; return (ValueClosure (p, false, body, env))
     | <span data-count="107">p</span> :: ps -&gt;
       let* _ = create_nested_closure<span data-count="107">s</span> env ps body in
       <span data-count="107">r</span>eturn (ValueClosure (p, false, ExpLambda (ps, body), env))
   ;;
 
   let rec eval_expr env = function
-    | <span data-count="243">E</span>xpConst c -&gt;
+    | <span data-count="251">E</span>xpConst c -&gt;
       (match c with
-       | <span data-count="224">C</span>onstInt i -&gt; return (ValueInt i)
+       | <span data-count="232">C</span>onstInt i -&gt; return (ValueInt i)
        | <span data-count="18">C</span>onstBool b -&gt; return (ValueBool b)
        | <span data-count="1">C</span>onstString s -&gt; return (ValueString s)
        | <span data-count="0">C</span>onstUnit -&gt; return ValueUnit)
-    | <span data-count="422">E</span>xpIdent x -&gt;
-      let* v = fin<span data-count="422">d</span> env x in
-      <span data-count="421">l</span>et v =
+    | <span data-count="440">E</span>xpIdent x -&gt;
+      let* v = fin<span data-count="440">d</span> env x in
+      <span data-count="439">l</span>et v =
         match v with
-        | <span data-count="64">V</span>alueClosure (p, true, e, closure_env) -&gt;
-          ValueClosure (p, true, e, exten<span data-count="64">d</span> closure_env x v)
-        | <span data-count="357">_</span> -&gt; v
+        | <span data-count="67">V</span>alueClosure (p, true, e, closure_env) -&gt;
+          ValueClosure (p, true, e, exten<span data-count="67">d</span> closure_env x v)
+        | <span data-count="372">_</span> -&gt; v
       in
       return v
     | <span data-count="2">E</span>xpUnarOper (Negative, e) -&gt;
@@ -1207,10 +1204,10 @@ end = struct
       <span data-count="0">(</span>match v with
        | <span data-count="0">V</span>alueBool b -&gt; return (ValueBool (not b))
        | <span data-count="0">_</span> -&gt; fail (TypeError v))
-    | <span data-count="208">E</span>xpBinOper (op, e1, e2) -&gt;
-      let* v1 = eval_exp<span data-count="208">r</span> env e1 in
-      <span data-count="207">l</span>et* v2 = eval_exp<span data-count="207">r</span> env e2 in
-      <span data-count="207">e</span>val_binop (op, v1, v2)
+    | <span data-count="214">E</span>xpBinOper (op, e1, e2) -&gt;
+      let* v1 = eval_exp<span data-count="214">r</span> env e1 in
+      <span data-count="213">l</span>et* v2 = eval_exp<span data-count="213">r</span> env e2 in
+      <span data-count="213">e</span>val_binop (op, v1, v2)
     | <span data-count="69">E</span>xpBranch (cond, then_expr, else_expr_opt) -&gt;
       let* cond_value = eval_exp<span data-count="69">r</span> env cond in
       <span data-count="69">(</span>match cond_value with
@@ -1243,23 +1240,23 @@ end = struct
          (match e2_opt with
           | <span data-count="0">S</span>ome e2 -&gt; eval_expr env2 e2
           | <span data-count="0">N</span>one -&gt; return ValueUnit))
-    | <span data-count="19">E</span>xpLet (is_rec, PatVariable x, expr1, expr2_opt) -&gt;
-      let* v = eval_exp<span data-count="19">r</span> env expr1 in
-      <span data-count="19">(</span>match check_match env (PatVariable x, v) with
+    | <span data-count="20">E</span>xpLet (is_rec, PatVariable x, expr1, expr2_opt) -&gt;
+      let* v = eval_exp<span data-count="20">r</span> env expr1 in
+      <span data-count="20">(</span>match check_match env (PatVariable x, v) with
        | <span data-count="0">N</span>one -&gt; fail PatternMatchingError
-       | <span data-count="19">S</span>ome env1 -&gt;
+       | <span data-count="20">S</span>ome env1 -&gt;
          let env2 =
            if is_rec
-           then <span data-count="0">(</span>
+           then <span data-count="1">(</span>
              match v with
-             | <span data-count="0">V</span>alueClosure (p, _, e, _) -&gt;
+             | <span data-count="1">V</span>alueClosure (p, _, e, _) -&gt;
                let updated_closure = ValueClosure (p, true, e, env1) in
-               exten<span data-count="0">d</span> env1 x updated_closure
+               exten<span data-count="1">d</span> env1 x updated_closure
              | <span data-count="0">_</span> -&gt; env1)
            else <span data-count="19">e</span>nv1
          in
          (match expr2_opt with
-          | <span data-count="19">S</span>ome expr2 -&gt; eval_expr env2 expr2
+          | <span data-count="20">S</span>ome expr2 -&gt; eval_expr env2 expr2
           | <span data-count="0">N</span>one -&gt; return ValueUnit))
     | <span data-count="0">E</span>xpLet (is_rec, PatType (pat, _), expr1, expr2_opt) -&gt;
       let* v = eval_exp<span data-count="0">r</span> env expr1 in
@@ -1284,65 +1281,65 @@ end = struct
          (match expr2_opt with
           | <span data-count="0">S</span>ome expr2 -&gt; eval_expr env2 expr2
           | <span data-count="0">N</span>one -&gt; return ValueUnit))
-    | <span data-count="21">E</span>xpLet (_, PatUnit, expr1, expr2_opt) -&gt;
-      let* v = eval_exp<span data-count="21">r</span> env expr1 in
-      <span data-count="21">(</span>match check_match env (PatUnit, v) with
+    | <span data-count="26">E</span>xpLet (_, PatUnit, expr1, expr2_opt) -&gt;
+      let* v = eval_exp<span data-count="26">r</span> env expr1 in
+      <span data-count="26">(</span>match check_match env (PatUnit, v) with
        | <span data-count="0">N</span>one -&gt; fail PatternMatchingError
-       | <span data-count="21">S</span>ome env1 -&gt;
+       | <span data-count="26">S</span>ome env1 -&gt;
          (match expr2_opt with
           | <span data-count="17">S</span>ome expr2 -&gt; eval_expr env1 expr2
-          | <span data-count="4">N</span>one -&gt; return ValueUnit))
-    | <span data-count="3">E</span>xpTuple (e1, e2, es) -&gt;
-      let* v1 = eval_exp<span data-count="3">r</span> env e1 in
-      <span data-count="3">l</span>et* v2 = eval_exp<span data-count="3">r</span> env e2 in
-      <span data-count="3">l</span>et* vs =
-        List.fold_righ<span data-count="3">t</span> es ~init:(retur<span data-count="3">n</span> []) ~f:(fun e acc -&gt;
+          | <span data-count="9">N</span>one -&gt; return ValueUnit))
+    | <span data-count="5">E</span>xpTuple (e1, e2, es) -&gt;
+      let* v1 = eval_exp<span data-count="5">r</span> env e1 in
+      <span data-count="5">l</span>et* v2 = eval_exp<span data-count="5">r</span> env e2 in
+      <span data-count="5">l</span>et* vs =
+        List.fold_righ<span data-count="5">t</span> es ~init:(retur<span data-count="5">n</span> []) ~f:(fun e acc -&gt;
           <span data-count="1">l</span>et* acc = acc in
           <span data-count="1">l</span>et* v = eval_exp<span data-count="1">r</span> env e in
           <span data-count="1">r</span>eturn (v :: acc))
       in
-      <span data-count="3">r</span>eturn (ValueTuple (v1, v2, vs))
-    | <span data-count="119">E</span>xpLambda (patterns, body) -&gt; create_nested_closures env patterns body
+      <span data-count="5">r</span>eturn (ValueTuple (v1, v2, vs))
+    | <span data-count="123">E</span>xpLambda (patterns, body) -&gt; create_nested_closures env patterns body
     | <span data-count="2">E</span>xpTypeAnnotation (expr, _) -&gt; eval_expr env expr
-    | <span data-count="223">E</span>xpFunction (e1, e2) -&gt;
-      let* v1 = eval_exp<span data-count="223">r</span> env e1 in
-      <span data-count="223">l</span>et* v2 = eval_exp<span data-count="223">r</span> env e2 in
-      <span data-count="223">(</span>match v1 with
-       | <span data-count="40">V</span>alueBuiltin f -&gt;
+    | <span data-count="231">E</span>xpFunction (e1, e2) -&gt;
+      let* v1 = eval_exp<span data-count="231">r</span> env e1 in
+      <span data-count="231">l</span>et* v2 = eval_exp<span data-count="231">r</span> env e2 in
+      <span data-count="231">(</span>match v1 with
+       | <span data-count="44">V</span>alueBuiltin f -&gt;
          (match f v2 with
-          | <span data-count="40">O</span>k result -&gt; return result
+          | <span data-count="44">O</span>k result -&gt; return result
           | <span data-count="0">E</span>rror e -&gt; fail e)
-       | <span data-count="183">V</span>alueClosure (p, _, e, closure_env) -&gt;
+       | <span data-count="187">V</span>alueClosure (p, _, e, closure_env) -&gt;
          let* env' =
            match check_match closure_env (p, v2) with
-           | <span data-count="183">S</span>ome env -&gt; retur<span data-count="183">n</span> env
+           | <span data-count="187">S</span>ome env -&gt; retur<span data-count="187">n</span> env
            | <span data-count="0">N</span>one -&gt; fai<span data-count="0">l</span> PatternMatchingError
          in
-         <span data-count="183">e</span>val_expr env' e
+         <span data-count="187">e</span>val_expr env' e
        | <span data-count="0">_</span> -&gt; fail (TypeError v1))
     | <span data-count="0">_</span> -&gt; fail NotImplemented
   ;;
 
   let eval_str_item env = function
-    | <span data-count="46">E</span>xpLet (false, PatVariable x, e1, None) -&gt;
-      let* v = eval_exp<span data-count="46">r</span> env e1 in
-      <span data-count="43">l</span>et env = extend env x v in
-      <span data-count="43">r</span>eturn env
-    | <span data-count="10">E</span>xpLet (true, PatVariable x, e1, None) -&gt;
-      let* v = eval_exp<span data-count="10">r</span> env e1 in
-      <span data-count="10">l</span>et env =
+    | <span data-count="47">E</span>xpLet (false, PatVariable x, e1, None) -&gt;
+      let* v = eval_exp<span data-count="47">r</span> env e1 in
+      <span data-count="44">l</span>et env = extend env x v in
+      <span data-count="44">r</span>eturn env
+    | <span data-count="11">E</span>xpLet (true, PatVariable x, e1, None) -&gt;
+      let* v = eval_exp<span data-count="11">r</span> env e1 in
+      <span data-count="11">l</span>et env =
         match v with
-        | <span data-count="10">V</span>alueClosure (p, _, e, closure_env) -&gt;
-          let updated_closure = ValueClosure (p, true, e, exten<span data-count="10">d</span> closure_env x v) in
-          exten<span data-count="10">d</span> env x updated_closure
+        | <span data-count="11">V</span>alueClosure (p, _, e, closure_env) -&gt;
+          let updated_closure = ValueClosure (p, true, e, exten<span data-count="11">d</span> closure_env x v) in
+          exten<span data-count="11">d</span> env x updated_closure
         | <span data-count="0">_</span> -&gt; exten<span data-count="0">d</span> env x v
       in
       return env
-    | <span data-count="2">E</span>xpLet (is_rec, PatTuple (p1, p2, pl), e1, e2_opt) -&gt;
-      let* v = eval_exp<span data-count="2">r</span> env e1 in
-      <span data-count="2">(</span>match check_match env (PatTuple (p1, p2, pl), v) with
+    | <span data-count="4">E</span>xpLet (is_rec, PatTuple (p1, p2, pl), e1, e2_opt) -&gt;
+      let* v = eval_exp<span data-count="4">r</span> env e1 in
+      <span data-count="4">(</span>match check_match env (PatTuple (p1, p2, pl), v) with
        | <span data-count="1">N</span>one -&gt; fail PatternMatchingError
-       | <span data-count="1">S</span>ome env1 -&gt;
+       | <span data-count="3">S</span>ome env1 -&gt;
          let env2 =
            if is_rec
            then <span data-count="0">(</span>
@@ -1356,13 +1353,13 @@ end = struct
                   | <span data-count="0">_</span> -&gt; "_")
                  updated_closure
              | <span data-count="0">_</span> -&gt; env1)
-           else <span data-count="1">e</span>nv1
+           else <span data-count="3">e</span>nv1
          in
          (match e2_opt with
           | <span data-count="0">S</span>ome e2 -&gt;
             let* _ = eval_exp<span data-count="0">r</span> env2 e2 in
             <span data-count="0">r</span>eturn env2
-          | <span data-count="1">N</span>one -&gt; return env2))
+          | <span data-count="3">N</span>one -&gt; return env2))
     | <span data-count="0">E</span>xpLet (is_rec, PatType (pat, _), e1, Some body) -&gt;
       let* v = eval_exp<span data-count="0">r</span> env e1 in
       <span data-count="0">(</span>match check_match env (pat, v) with
@@ -1406,18 +1403,18 @@ end = struct
        | <span data-count="0">S</span>ome env1 -&gt;
          let* _ = eval_exp<span data-count="0">r</span> env1 body in
          <span data-count="0">r</span>eturn env1)
-    | <span data-count="4">e</span>xpr -&gt;
-      let* _ = eval_exp<span data-count="4">r</span> env expr in
-      <span data-count="4">r</span>eturn env
+    | <span data-count="9">e</span>xpr -&gt;
+      let* _ = eval_exp<span data-count="9">r</span> env expr in
+      <span data-count="9">r</span>eturn env
   ;;
 
   let eval_structure (s : program) =
-    <span data-count="30">L</span>ist.fold_left
+    <span data-count="33">L</span>ist.fold_left
       ~f:(fun env item -&gt;
-        <span data-count="62">l</span>et* env = env in
-        <span data-count="62">l</span>et* env = eval_str_ite<span data-count="62">m</span> env item in
-        <span data-count="58">r</span>eturn env)
-      ~init:(retur<span data-count="30">n</span> initial_env)
+        <span data-count="71">l</span>et* env = env in
+        <span data-count="71">l</span>et* env = eval_str_ite<span data-count="71">m</span> env item in
+        <span data-count="67">r</span>eturn env)
+      ~init:(retur<span data-count="33">n</span> initial_env)
       s
   ;;
 end
@@ -1425,7 +1422,7 @@ end
 module Inter = Eval (struct
     include Base.Result
 
-    let ( let* ) m f = <span data-count="1881">b</span>ind m ~f
+    let ( let* ) m f = <span data-count="1970">b</span>ind m ~f
   end)
 </code></pre>
       </div>

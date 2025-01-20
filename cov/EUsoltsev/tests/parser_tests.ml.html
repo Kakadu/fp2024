@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>parser_tests.ml &mdash; Coverage report</title>
-    <meta name="description" content="97.06% coverage in tests/parser_tests.ml">
+    <meta name="description" content="97.30% coverage in tests/parser_tests.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,10 @@
           <span class="dirname">tests/</span>parser_tests.ml
         </a>
       </h1>
-      <h2>97.06%</h2>
+      <h2>97.30%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:7.88%"></span>
+      <span class="unvisited" style="top:7.26%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -188,6 +188,20 @@
 <a id="L163"></a><span > </span>
 <a id="L164"></a><span class="visited"> </span>
 <a id="L165"></a><span > </span>
+<a id="L166"></a><span > </span>
+<a id="L167"></a><span > </span>
+<a id="L168"></a><span class="visited"> </span>
+<a id="L169"></a><span class="visited"> </span>
+<a id="L170"></a><span > </span>
+<a id="L171"></a><span > </span>
+<a id="L172"></a><span > </span>
+<a id="L173"></a><span > </span>
+<a id="L174"></a><span > </span>
+<a id="L175"></a><span > </span>
+<a id="L176"></a><span > </span>
+<a id="L177"></a><span > </span>
+<a id="L178"></a><span class="visited"> </span>
+<a id="L179"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -357,6 +371,20 @@
 <a href="#L163">163</a>
 <a href="#L164">164</a>
 <a href="#L165">165</a>
+<a href="#L166">166</a>
+<a href="#L167">167</a>
+<a href="#L168">168</a>
+<a href="#L169">169</a>
+<a href="#L170">170</a>
+<a href="#L171">171</a>
+<a href="#L172">172</a>
+<a href="#L173">173</a>
+<a href="#L174">174</a>
+<a href="#L175">175</a>
+<a href="#L176">176</a>
+<a href="#L177">177</a>
+<a href="#L178">178</a>
+<a href="#L179">179</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Danil Usoltsev *)
 
@@ -368,8 +396,8 @@ open Parser
 open Printf
 
 let parse_test input =
-  <span data-count="10">m</span>atch parse input with
-  | <span data-count="10">O</span>k ast -&gt; printf "%s\n" (show_progra<span data-count="10">m</span> ast)
+  <span data-count="11">m</span>atch parse input with
+  | <span data-count="11">O</span>k ast -&gt; printf "%s\n" (show_progra<span data-count="11">m</span> ast)
   | <span data-count="0">E</span>rror fail -&gt; printf "Ошибка: %s\n" fail
 ;;
 
@@ -522,6 +550,20 @@ let%expect_test "test_annotate_type_2" =
     (ExpList []), None))
   ]
 |}<span data-count="9">]</span>
+;;
+
+let%expect_test "test_annotate_type_2" =
+  <span data-count="1">p</span>arse_test "-1 -2 - (-1) -(3)";
+  <span data-count="1">[</span>%expect
+    {|
+[(ExpBinOper (Minus,
+    (ExpBinOper (Minus,
+       (ExpBinOper (Minus, (ExpUnarOper (Negative, (ExpConst (ConstInt 1)))),
+          (ExpConst (ConstInt 2)))),
+       (ExpUnarOper (Negative, (ExpConst (ConstInt 1)))))),
+    (ExpConst (ConstInt 3))))
+  ]
+ |}<span data-count="9">]</span>
 ;;
 </code></pre>
       </div>

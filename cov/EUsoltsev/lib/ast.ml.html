@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>ast.ml &mdash; Coverage report</title>
-    <meta name="description" content="65.45% coverage in lib/ast.ml">
+    <meta name="description" content="69.23% coverage in lib/ast.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,21 +15,20 @@
           <span class="dirname">lib/</span>ast.ml
         </a>
       </h1>
-      <h2>65.45%</h2>
+      <h2>69.23%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:7.14%"></span>
-      <span class="some-visited" style="top:8.16%"></span>
-      <span class="unvisited" style="top:10.20%"></span>
-      <span class="unvisited" style="top:25.51%"></span>
-      <span class="unvisited" style="top:33.67%"></span>
-      <span class="unvisited" style="top:37.76%"></span>
-      <span class="unvisited" style="top:44.90%"></span>
-      <span class="unvisited" style="bottom:47.96%"></span>
-      <span class="unvisited" style="bottom:31.63%"></span>
-      <span class="unvisited" style="bottom:29.59%"></span>
-      <span class="unvisited" style="bottom:6.12%"></span>
-      <span class="unvisited" style="bottom:2.04%"></span>
+      <span class="some-visited" style="top:7.22%"></span>
+      <span class="some-visited" style="top:8.25%"></span>
+      <span class="unvisited" style="top:10.31%"></span>
+      <span class="unvisited" style="top:25.77%"></span>
+      <span class="unvisited" style="top:34.02%"></span>
+      <span class="unvisited" style="top:38.14%"></span>
+      <span class="unvisited" style="top:45.36%"></span>
+      <span class="unvisited" style="bottom:47.42%"></span>
+      <span class="unvisited" style="bottom:30.93%"></span>
+      <span class="unvisited" style="bottom:6.19%"></span>
+      <span class="unvisited" style="bottom:2.06%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -102,36 +101,35 @@
 <a id="L66"></a><span > </span>
 <a id="L67"></a><span class="unvisited"> </span>
 <a id="L68"></a><span > </span>
-<a id="L69"></a><span class="unvisited"> </span>
-<a id="L70"></a><span class="visited"> </span>
+<a id="L69"></a><span class="visited"> </span>
+<a id="L70"></a><span > </span>
 <a id="L71"></a><span > </span>
 <a id="L72"></a><span > </span>
 <a id="L73"></a><span > </span>
-<a id="L74"></a><span > </span>
-<a id="L75"></a><span class="visited"> </span>
+<a id="L74"></a><span class="visited"> </span>
+<a id="L75"></a><span > </span>
 <a id="L76"></a><span > </span>
-<a id="L77"></a><span > </span>
+<a id="L77"></a><span class="visited"> </span>
 <a id="L78"></a><span class="visited"> </span>
 <a id="L79"></a><span class="visited"> </span>
-<a id="L80"></a><span class="visited"> </span>
-<a id="L81"></a><span > </span>
+<a id="L80"></a><span > </span>
+<a id="L81"></a><span class="visited"> </span>
 <a id="L82"></a><span class="visited"> </span>
 <a id="L83"></a><span class="visited"> </span>
-<a id="L84"></a><span class="visited"> </span>
+<a id="L84"></a><span > </span>
 <a id="L85"></a><span > </span>
 <a id="L86"></a><span > </span>
-<a id="L87"></a><span > </span>
-<a id="L88"></a><span class="visited"> </span>
-<a id="L89"></a><span > </span>
-<a id="L90"></a><span class="visited"> </span>
-<a id="L91"></a><span > </span>
-<a id="L92"></a><span class="unvisited"> </span>
+<a id="L87"></a><span class="visited"> </span>
+<a id="L88"></a><span > </span>
+<a id="L89"></a><span class="visited"> </span>
+<a id="L90"></a><span > </span>
+<a id="L91"></a><span class="unvisited"> </span>
+<a id="L92"></a><span class="visited"> </span>
 <a id="L93"></a><span class="visited"> </span>
-<a id="L94"></a><span class="visited"> </span>
-<a id="L95"></a><span > </span>
-<a id="L96"></a><span class="unvisited"> </span>
-<a id="L97"></a><span class="visited"> </span>
-<a id="L98"></a><span > </span>
+<a id="L94"></a><span > </span>
+<a id="L95"></a><span class="unvisited"> </span>
+<a id="L96"></a><span class="visited"> </span>
+<a id="L97"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -233,7 +231,6 @@
 <a href="#L95">95</a>
 <a href="#L96">96</a>
 <a href="#L97">97</a>
-<a href="#L98">98</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Danil Usoltsev *)
 
@@ -264,8 +261,8 @@ open Format
   | Not (* [not x]*)
 [@@deriving show { with_path = false }]
 
-<span data-count="40">t</span>ype const =
-  | ConstInt of in<span data-count="18">t</span> (* Integer constant: Example - [21] *)
+<span data-count="48">t</span>ype const =
+  | ConstInt of in<span data-count="22">t</span> (* Integer constant: Example - [21] *)
   | ConstBool of boo<span data-count="2">l</span> (* Boolean constant: Example - [true] or [false] *)
   | ConstString of strin<span data-count="0">g</span> (* String constant: Example - "I like OCaml!" *)
   | ConstUnit
@@ -291,7 +288,7 @@ open Format
   | PatUnit
 [@@deriving show { with_path = false }]
 
-<span data-count="113">t</span>ype expr =
+<span data-count="126">t</span>ype expr =
   | ExpIdent of ident (* ExpIdent "x" *)
   | ExpConst of const (* ExpConst (ConstInt 666) *)
   | ExpBranch of expr * expr * <span data-count="8">e</span>xpr optio<span data-count="2">n</span>
@@ -303,35 +300,34 @@ open Format
   | ExpTypeAnnotation of expr * ty
   | ExpOption of <span data-count="0">e</span>xpr option
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
-  | ExpMatch of expr * <span data-count="0">(</span><span data-count="0">p</span>attern * expr) lis<span data-count="0">t</span>
   | ExpLet of is_rec * pattern * expr * <span data-count="24">e</span>xpr optio<span data-count="11">n</span>
 (* let x = 10 in x + 5 &lt;=&gt; ExpLet(false, "x", 10, x + 5) *)
 (* let x = 10 &lt;=&gt; ExpLet(false, "x", 10, None)*)
 [@@deriving show { with_path = false }]
 
-<span data-count="10">t</span>ype program = <span data-count="54">e</span>xpr lis<span data-count="11">t</span> [@@deriving show { with_path = false }]
+<span data-count="11">t</span>ype program = <span data-count="59">e</span>xpr lis<span data-count="12">t</span> [@@deriving show { with_path = false }]
 
 let rec pp_ty fmt = function
-  | <span data-count="68">T</span>yPrim x -&gt; fprintf fmt "%s" x
-  | <span data-count="64">T</span>yVar x -&gt; fprintf fmt "%s" @@ Char.escape<span data-count="64">d</span> (Char.ch<span data-count="64">r</span> (x + 97))
-  | <span data-count="74">T</span>yArrow (l, r) -&gt;
+  | <span data-count="70">T</span>yPrim x -&gt; fprintf fmt "%s" x
+  | <span data-count="68">T</span>yVar x -&gt; fprintf fmt "%s" @@ Char.escape<span data-count="68">d</span> (Char.ch<span data-count="68">r</span> (x + 97))
+  | <span data-count="76">T</span>yArrow (l, r) -&gt;
     (match l, r with
      | <span data-count="3">T</span>yArrow _, _ -&gt; fprintf fmt "(%a) -&gt; %a" pp_ty l pp_ty r
-     | <span data-count="71">_</span>, _ -&gt; fprintf fmt "%a -&gt; %a" pp_ty l pp_ty r)
+     | <span data-count="73">_</span>, _ -&gt; fprintf fmt "%a -&gt; %a" pp_ty l pp_ty r)
   | <span data-count="2">T</span>yTuple elems -&gt;
     fprintf
       fmt
       "(%a)"
       (pp_print_lis<span data-count="2">t</span> ~pp_sep:(fun fmt () -&gt; <span data-count="3">f</span>printf fmt " * ") pp_ty)
       elems
-  | <span data-count="1">T</span>yList ty -&gt;
+  | <span data-count="3">T</span>yList ty -&gt;
     (match ty with
      | <span data-count="0">T</span>yArrow _ | <span data-count="0">T</span>yTuple _ -&gt; fprintf fmt "(%a) list" pp_ty ty
-     | <span data-count="1">_</span> -&gt; fprintf fmt "%a list" pp_ty ty)
-  | <span data-count="1">T</span>yOption ty -&gt;
+     | <span data-count="3">_</span> -&gt; fprintf fmt "%a list" pp_ty ty)
+  | <span data-count="2">T</span>yOption ty -&gt;
     (match ty with
      | <span data-count="0">T</span>yArrow _ | <span data-count="0">T</span>yTuple _ -&gt; fprintf fmt "(%a) option" pp_ty ty
-     | <span data-count="1">_</span> -&gt; fprintf fmt "%a option" pp_ty ty)
+     | <span data-count="2">_</span> -&gt; fprintf fmt "%a option" pp_ty ty)
 ;;
 </code></pre>
       </div>
