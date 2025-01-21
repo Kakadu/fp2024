@@ -2,13 +2,23 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Inferencer
-open Typedtree
+open Eval
 
-type enviroment = int
-
-val eval
-  :  Ast.binding list
+val interpret
+  :  string list
+  -> bool
+  -> bool
+  -> Inferencer.typeenv
   -> enviroment
   -> int
-  -> (enviroment * int, error * enviroment * int) Result.t
+  -> unit
+
+val interpret_line
+  :  string
+  -> Inferencer.typeenv
+  -> int
+  -> bool
+  -> bool
+  -> enviroment
+  -> int
+  -> Inferencer.typeenv * int * int * int

@@ -31,7 +31,7 @@ let () =
   in
   if not is_stdin
   then
-    Haskell_lib.Pai.parse_and_infer
+    Haskell_lib.Interpreter.interpret
       (String.split_on_char
          '\n'
          (In_channel.with_open_text opts.read_from_file In_channel.input_all))
@@ -52,7 +52,7 @@ let () =
       | "" -> helper (env, st, enviroment, n)
       | _ ->
         helper
-          (Haskell_lib.Pai.parse_and_infer_line
+          (Haskell_lib.Interpreter.interpret_line
              line
              env
              st
