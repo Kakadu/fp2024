@@ -66,7 +66,7 @@ SPDX-License-Identifier: MIT
   $ ../bin/REPL.exe manytests/typed/016lists.hs
 
   $ ../bin/REPL.exe <<-EOF
-  >  fac0 self n = if n<2 then n else n* self (n-1) 
+  >  fac0 self n = if n<2 then n else n * self (n-1) 
   >  fix f = f (fix f)
   >  fac = fix fac0
   >  main = print_int (fac 3)
@@ -82,6 +82,14 @@ SPDX-License-Identifier: MIT
   > main = seq (iter print_int (take 10 fib)) 0
   > EOF
 
+# sieve of Eratosthenes
+  $ ../bin/REPL.exe <<-EOF
+  > filter p (x:xs) | p x = x : (filter p xs) | True = filter p xs
+  > primes = sieve [2..] where sieve (x:xs) = x : sieve (filter (\\n -> n \`mod\` x /= 0) xs)
+  > iter f xs = case xs of [] -> (); h:tl -> let () = f h in iter f tl
+  > take n xs = case xs of [] -> []; h:tl -> if n > 0 then h : (take (n - 1) tl) else []
+  > main = seq (iter print_int (take 10 primes)) 0
+  > EOF
 
 # TODO(Kakadu): It would be great to call read GHCi somewhere in the tests
 
