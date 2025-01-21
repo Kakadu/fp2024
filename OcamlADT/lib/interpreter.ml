@@ -131,6 +131,49 @@ module Env (M : Error_monad) = struct
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a == b))
+              | VBool a, VBool b -> Ok (VBool (a == b))
+              | _ -> Error TypeMismatch) )
+      ; ( ">"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VBool (a > b))
+              | _ -> Error TypeMismatch) )
+      ; ( "<"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VBool (a < b))
+              | _ -> Error TypeMismatch) )
+      ; ( ">="
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VBool (a >= b))
+              | _ -> Error TypeMismatch) )
+      ; ( "<="
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VBool (a <= b))
+              | _ -> Error TypeMismatch) )
+      ; ( "<>"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VInt a, VInt b -> Ok (VBool (a <> b))
+              | _ -> Error TypeMismatch) )
+      ; ( "&&"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VBool a, VBool b -> Ok (VBool (a && b))
+              | _ -> Error TypeMismatch) )
+      ; ( "||"
+        , VBuiltin_binop
+            (fun v1 v2 ->
+              match v1, v2 with
+              | VBool a, VBool b -> Ok (VBool (a || b))
               | _ -> Error TypeMismatch) )
       ]
   ;;
