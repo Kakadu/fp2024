@@ -472,8 +472,11 @@ module Interpreter (M : Error_monad) = struct
         let* new_env, new_olist = eval_str_item env olist item in
         eval_prog new_env new_olist rest
     in
-    let* final_olist = eval_prog E.init [] prog in
-    return final_olist
+    match prog with
+    | [] -> fail EmptyProgram
+    | _ ->
+      let* final_olist = eval_prog E.init [] prog in
+      return final_olist
   ;;
 end
 

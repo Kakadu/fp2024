@@ -36,7 +36,7 @@ let pp_parse_demo str =
 
 let%expect_test "empty program (fail: EmptyProgram)" =
   pp_parse_demo {||};
-  [%expect {| |}]
+  [%expect {| Interpreter error: Empty program |}]
 ;;
 
 let%expect_test "negative int constant" =
@@ -180,8 +180,8 @@ let%expect_test "function assignment with bool operators" =
 
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 34, characters 12-25
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 174, characters 2-84
+  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-25
+  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 173, characters 2-84
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
