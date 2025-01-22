@@ -1185,3 +1185,93 @@ check_number 5
            )))
       ] |}]
 ;;
+
+let%expect_test "if then case" =
+  test_program
+    {| let check_number n =
+  if n <> 0 then
+    print_endline "Zero"
+  else if n = 1 then
+    print_endline "One"
+  else
+    print_endline "Other"
+
+;; |};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "check_number");
+           expr =
+           (Exp_fun (((Pat_var "n"), []),
+              (Exp_if (
+                 (Exp_apply ((Exp_ident "<>"),
+                    (Exp_tuple
+                       ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+                    )),
+                 (Exp_apply ((Exp_ident "print_endline"),
+                    (Exp_constant (Const_string "Zero")))),
+                 (Some (Exp_if (
+                          (Exp_apply ((Exp_ident "="),
+                             (Exp_tuple
+                                ((Exp_ident "n"),
+                                 (Exp_constant (Const_integer 1)), []))
+                             )),
+                          (Exp_apply ((Exp_ident "print_endline"),
+                             (Exp_constant (Const_string "One")))),
+                          (Some (Exp_apply ((Exp_ident "print_endline"),
+                                   (Exp_constant (Const_string "Other")))))
+                          )))
+                 ))
+              ))
+           },
+         [])
+        ))
+      ] |}]
+;;
+
+let%expect_test "rec fun (pow)" =
+  test_program
+    {|
+let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6)
+;; |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Recursive,
+           ({ pat = (Pat_var "pow");
+              expr =
+              (Exp_fun (((Pat_var "x"), [(Pat_var "y")]),
+                 (Exp_if (
+                    (Exp_apply ((Exp_ident "="),
+                       (Exp_tuple
+                          ((Exp_ident "y"), (Exp_constant (Const_integer 0)), []))
+                       )),
+                    (Exp_constant (Const_integer 1)),
+                    (Some (Exp_apply ((Exp_ident "*"),
+                             (Exp_tuple
+                                ((Exp_ident "x"),
+                                 (Exp_apply (
+                                    (Exp_apply ((Exp_ident "pow"),
+                                       (Exp_ident "x"))),
+                                    (Exp_apply ((Exp_ident "-"),
+                                       (Exp_tuple
+                                          ((Exp_ident "y"),
+                                           (Exp_constant (Const_integer 1)),
+                                           []))
+                                       ))
+                                    )),
+                                 []))
+                             )))
+                    ))
+                 ))
+              },
+            []),
+           (Exp_apply ((Exp_ident "print_int"),
+              (Exp_apply (
+                 (Exp_apply ((Exp_ident "pow"), (Exp_constant (Const_integer 5))
+                    )),
+                 (Exp_constant (Const_integer 6))))
+              ))
+           )))
+      ] |}]
+;;

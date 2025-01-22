@@ -30,7 +30,8 @@ let pp_parse_demo str =
 
 let%expect_test "negative int constant" =
   pp_parse_demo {|-1;;|};
-  [%expect {| Intepreter error: Pattern mismatch |}]
+  [%expect {|
+    -1 |}]
 ;;
 
 let%expect_test "zero" =
@@ -43,14 +44,12 @@ let%expect_test "x" =
   [%expect {| Intepreter error: Unbound value x |}]
 ;;
 
-(*should be nothing*)
 let%expect_test "substraction" =
   pp_parse_demo {|5-11;;|};
   [%expect {|
     -6 |}]
 ;;
 
-(*should be nothing*)
 let%expect_test "strange move" =
   pp_parse_demo {|5=5;;|};
   [%expect {|
@@ -63,25 +62,21 @@ let%expect_test "assignment (fail: UnboundValue - x)" =
     Intepreter error: Unbound value x |}]
 ;;
 
-(*should be nothing*)
 let%expect_test "operators with different priorities" =
   pp_parse_demo {|5-5*1;;|};
   [%expect {| 0 |}]
 ;;
 
-(*should be nothing *)
 let%expect_test "just let (int)" =
   pp_parse_demo {|let x = 51;;|};
   [%expect {| 51 |}]
 ;;
 
-(*should be nothing *)
 let%expect_test "just let (string)" =
   pp_parse_demo {|let x = "51";;|};
   [%expect {| 51 |}]
 ;;
 
-(*should be nothing *)
 let%expect_test "just let (char)" =
   pp_parse_demo {|let x = '5';;|};
   [%expect {| 5 |}]
@@ -91,7 +86,7 @@ let%expect_test "int print_endline (fail: TypeMismatch)" =
   pp_parse_demo {|let x = 51 in 
 print_endline x;;|};
   [%expect {|
-    Intepreter error: TypeMismatch |}]
+    Intepreter error: Type mismatch |}]
 ;;
 
 let%expect_test "string print_endline" =
@@ -118,7 +113,7 @@ let%expect_test "print_endline as an arg (fail: TypeMismatch)" =
   pp_parse_demo {|let f = print_endline in 
 f 5;;|};
   [%expect {|
-    Intepreter error: TypeMismatch |}]
+    Intepreter error: Type mismatch |}]
 ;;
 
 let%expect_test "print_int as an arg" =
@@ -161,6 +156,23 @@ let%expect_test "multiple let assignments" =
   [%expect {| 7 |}]
 ;;
 
+(*bad*)
+let%expect_test "function assignment with bool operators" =
+  pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 27, characters 12-25
+  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 161, characters 2-84
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
 let%expect_test "too damn simple function assignment (TC should fail?)" =
   pp_parse_demo {| let id = fun x -> y in print_int (id 7) ;; |};
   [%expect {| Intepreter error: Unbound value y |}]
@@ -200,25 +212,13 @@ print_int (classify "1");; |};
     811 |}]
 ;;
 
-(*idk*)
 let%expect_test "if then case" =
   pp_parse_demo
     {| let x = 10 in
 if x > 5 then print_endline "> 5"
 else print_endline "<= 5";;
-;; |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 27, characters 12-25
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 205, characters 2-104
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+ |};
+  [%expect {| > 5 |}]
 ;;
 
 let%expect_test "if then case (else)" =
@@ -269,10 +269,25 @@ check_number 1
     555555555555 |}]
 ;;
 
+let%expect_test "if then case (else if) v2" =
+  pp_parse_demo
+    {| let check_number n =
+  if n >= 0 then
+    print_endline "Zero"
+  else if n = 1 then
+    print_int 555555555555 - n 
+  else
+    print_endline "Other"
+in 
+check_number 1
+;; |};
+  [%expect {| Zero |}]
+;;
+
 let%expect_test "nested assignments" =
   pp_parse_demo
     {| 
-let x = 
+    let x = 
       let y = 
         let z = 
           let w = 1
@@ -292,6 +307,15 @@ print_int (fact 5)
 ;; |};
   [%expect {|
     120 |}]
+;;
+
+(*i just wanna km*)
+(*upd: dont mind. fixed :\ .*)
+let%expect_test "recursive function (nested apply - multiple args)" =
+  pp_parse_demo
+    {|
+let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6);;|};
+  [%expect {| 15625 |}]
 ;;
 
 (*to fix structure item env i guess*)
