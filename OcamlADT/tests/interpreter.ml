@@ -28,6 +28,12 @@ let pp_parse_demo str =
   pp_interpret_demo ast
 ;;
 
+let%expect_test "empty program" =
+  pp_parse_demo {||};
+  [%expect {|
+    Interpreter error: Empty program |}]
+;;
+
 let%expect_test "negative int constant" =
   pp_parse_demo {|-1;;|};
   [%expect {|
@@ -156,7 +162,7 @@ let%expect_test "multiple let assignments" =
   [%expect {| 7 |}]
 ;;
 
-(*bad*)
+(*bad, idk*)
 let%expect_test "function assignment with bool operators" =
   pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
   [%expect.unreachable]
@@ -169,7 +175,7 @@ let%expect_test "function assignment with bool operators" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 27, characters 12-25
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 161, characters 2-84
+  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 167, characters 2-84
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 

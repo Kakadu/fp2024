@@ -15,6 +15,7 @@ type error =
   | PatternMismatch
   | RecursionError
   | IDK
+  | EmptyProgram
 
 type value =
   | VInt of int
@@ -437,7 +438,7 @@ module Interpreter (M : Error_monad) = struct
 
   let interpret_program (prog : program) =
     let rec eval_prog env = function
-      | [] -> fail PatternMismatch (* Handle empty programs appropriately *)
+      | [] -> fail EmptyProgram (* Handle empty programs appropriately *)
       | [ item ] -> eval_str_item env item (* Return the value of the last item *)
       | item :: rest ->
         let* _ = eval_str_item env item in
@@ -489,6 +490,7 @@ module PPrinter = struct
     | UnboundVariable s -> fprintf fmt "Intepreter error: Unbound value %s" s
     | TypeMismatch -> fprintf fmt "Intepreter error: Type mismatch"
     | RecursionError -> fprintf fmt "Interpreter error: Recursion error"
+    | EmptyProgram -> fprintf fmt "Interpreter error: Empty program"
   ;;
 
   let print_value = printf "%a" pp_value
