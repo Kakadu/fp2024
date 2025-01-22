@@ -30,8 +30,10 @@ let pp_interpret_demo ast =
 ;;
 
 let pp_parse_demo str =
-  let ast = parse_str str in
-  pp_interpret_demo ast
+  let ast = parse str in
+  match ast with
+  | Ok ast -> pp_interpret_demo ast
+  | Error _ -> print_error ParserError
 ;;
 
 let%expect_test "empty program (fail: EmptyProgram)" =
@@ -171,18 +173,7 @@ let%expect_test "multiple let assignments" =
 (*bad, idk*)
 let%expect_test "function assignment with bool operators" =
   pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-25
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 173, characters 2-84
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Interpreter error: Parser Error |}]
 ;;
 
 let%expect_test "too damn simple function assignment (TC should fail?)" =
@@ -356,4 +347,10 @@ let%expect_test "wtf" =
 |};
   [%expect {|
     Intepreter error: Unbound value a |}]
+;;
+
+let%expect_test "substraction" =
+  pp_parse_demo {|let = ;;|};
+  [%expect {|
+    Interpreter error: Parser Error |}]
 ;;

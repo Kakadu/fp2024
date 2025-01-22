@@ -15,6 +15,7 @@ type error =
   | RecursionError
   | IDK
   | EmptyProgram
+  | ParserError
 
 type value =
   | VInt of int
@@ -486,7 +487,6 @@ module Interpreter (M : Error_monad) = struct
     | [] -> fail EmptyProgram
     | _ ->
       let* final_olist = eval_prog E.init [] prog in
-      (* Remove duplicates from final_olist *)
       let deduplicated_olist = remove_duplicates final_olist in
       return deduplicated_olist
   ;;
@@ -535,6 +535,7 @@ module PPrinter = struct
     | TypeMismatch -> fprintf fmt "Intepreter error: Type mismatch"
     | RecursionError -> fprintf fmt "Interpreter error: Recursion error"
     | EmptyProgram -> fprintf fmt "Interpreter error: Empty program"
+    | ParserError -> fprintf fmt "Interpreter error: Parser Error"
   ;;
 
   let print_error = printf "%a" pp_error
