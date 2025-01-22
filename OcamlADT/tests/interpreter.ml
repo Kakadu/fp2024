@@ -341,7 +341,6 @@ let rec fact n = if n = 0 then 1 else n * fact(n-1);;
 let x = fact 6 in print_int x ;; |};
   [%expect {|
     720
-    val fact = <fun>
     val fact = <fun> |}]
 ;;
 

@@ -462,6 +462,16 @@ module Interpreter (M : Error_monad) = struct
 
   (*to add adt*)
 
+  let remove_duplicates out_list =
+    let fun_equal el1 el2 =
+      match el1, el2 with
+      | (Some id1, _), (Some id2, _) -> String.equal id1 id2
+      | _ -> false
+    in
+    List.fold_right out_list ~init:[] ~f:(fun x acc ->
+      if List.exists acc ~f:(fun y -> fun_equal x y) then acc else x :: acc)
+  ;;
+
   let interpret_program (prog : program) =
     let rec eval_prog env olist = function
       | [] -> return olist
@@ -476,7 +486,9 @@ module Interpreter (M : Error_monad) = struct
     | [] -> fail EmptyProgram
     | _ ->
       let* final_olist = eval_prog E.init [] prog in
-      return final_olist
+      (* Remove duplicates from final_olist *)
+      let deduplicated_olist = remove_duplicates final_olist in
+      return deduplicated_olist
   ;;
 end
 
