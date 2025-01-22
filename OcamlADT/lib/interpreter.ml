@@ -5,7 +5,6 @@
 open Ast
 open Base
 open Format
-open Printf
 
 type error =
   | DivisionByZero
@@ -26,6 +25,7 @@ type value =
   | VFun of Pattern.t List1.t * Expression.t * environment * Expression.rec_flag
   | VFunction of Expression.t Expression.case List1.t * environment
   | VConstruct of ident * value option
+  | VUnit
   | VBuiltin_binop of (value -> value -> (value, error) Result.t)
   | VBuiltin_print of (value -> (value, error) Result.t)
 
@@ -78,31 +78,31 @@ module Env (M : Error_monad) = struct
               match v with
               | VString s ->
                 print_endline s;
-                Ok (VString "")
+                Ok VUnit
               | _ -> Error TypeMismatch) )
       ; ( "print_int"
         , VBuiltin_print
             (fun v ->
               match v with
-              | VInt s ->
-                print_int s;
-                Ok (VInt 0)
+              | VInt i ->
+                print_endline (string_of_int i);
+                Ok VUnit
               | _ -> Error TypeMismatch) )
       ; ( "print_char"
         , VBuiltin_print
             (fun v ->
               match v with
               | VChar c ->
-                print_char c;
-                Ok (VChar ' ')
+                print_endline (String.make 1 c);
+                Ok VUnit
               | _ -> Error TypeMismatch) )
       ; ( "print_bool"
         , VBuiltin_print
             (fun v ->
               match v with
               | VBool b ->
-                print_bool b;
-                Ok (VBool true)
+                print_endline (string_of_bool b);
+                Ok VUnit
               | _ -> Error TypeMismatch) )
       ]
   ;;
@@ -246,7 +246,7 @@ module Interpreter (M : Error_monad) = struct
       | x :: xs, y :: ys ->
         let* res = f x y env in
         aux (res :: acc) (xs, ys)
-      | _ -> fail PatternMismatch (* In case lists have different lengths *)
+      | _ -> fail IDK (* In case lists have different lengths *)
     in
     aux [] (lst, lst2)
   ;;
@@ -299,7 +299,7 @@ module Interpreter (M : Error_monad) = struct
             let* binop_res = lift_result (binop arg1_val arg2_val) in
             return binop_res
           | exp ->
-            (*negative operator with 1 operand case *)
+            (* negative operator with 1 operand case *)
             let* arg_val = eval_expr env exp in
             let* binop_res = lift_result (binop (VInt 0) arg_val) in
             return binop_res)
@@ -355,46 +355,10 @@ module Interpreter (M : Error_monad) = struct
        | _ -> fail TypeMismatch)
     | Expression.Exp_let (Nonrecursive, (b1, bl), body) ->
       (* Non-recursive bindings: evaluate and extend one by one *)
-      let rec eval_value_binding_list env value_binding_list =
-        List.fold_left
-          ~init:(return env)
-          ~f:(fun acc_env { Expression.pat; expr } ->
-            let* env = acc_env in
-            let* value = eval_expr env expr in
-            match pat with
-            | Pattern.Pat_var name | Pattern.Pat_constraint (Pattern.Pat_var name, _) ->
-              let env = E.extend env name value in
-              return env
-            | _ ->
-              let* env = eval_pattern pat value env in
-              (match env with
-               | Some extended_env -> return extended_env
-               | None -> fail PatternMismatch))
-          value_binding_list
-      in
       let* env = eval_value_binding_list env (b1 :: bl) in
       eval_expr env body
     | Expression.Exp_let (Recursive, (b1, bl), body) ->
       (* Handle recursive bindings directly *)
-      let rec eval_rec_value_binding_list env value_binding_list =
-        List.fold_left
-          ~init:(return env)
-          ~f:(fun acc_env { Expression.pat; expr } ->
-            let* env = acc_env in
-            let* value = eval_expr env expr in
-            match pat with
-            | Pattern.Pat_var name | Pattern.Pat_constraint (Pattern.Pat_var name, _) ->
-              let value =
-                match value with
-                | VFun (patterns, body, closure_env, Nonrecursive) ->
-                  VFun (patterns, body, closure_env, Recursive)
-                | other -> other
-              in
-              let env = E.extend env name value in
-              return env
-            | _ -> fail PatternMismatch)
-          value_binding_list
-      in
       let* env = eval_rec_value_binding_list env (b1 :: bl) in
       eval_expr env body
     | Expression.Exp_construct (ctor, Some arg) ->
@@ -403,48 +367,119 @@ module Interpreter (M : Error_monad) = struct
         return (VFun ([ Pattern.Pat_constant (Constant.Const_string ctor) ], v)) *)
     | Expression.Exp_construct (ctor, None) -> return (VString ctor)
     | Expression.Exp_constraint (expr, _type_expr) -> eval_expr env expr
+
+  and eval_rec_value_binding_list env value_binding_list =
+    List.fold_left
+      ~init:(return env)
+      ~f:(fun acc_env { Expression.pat; expr } ->
+        let* env = acc_env in
+        let* value = eval_expr env expr in
+        match pat with
+        | Pattern.Pat_var name | Pattern.Pat_constraint (Pattern.Pat_var name, _) ->
+          let value =
+            match value with
+            | VFun (patterns, body, closure_env, Nonrecursive) ->
+              VFun (patterns, body, closure_env, Recursive)
+            | other -> other
+          in
+          let env = E.extend env name value in
+          return env
+        | _ -> fail PatternMismatch)
+      value_binding_list
+
+  and eval_value_binding_list env value_binding_list =
+    List.fold_left
+      ~init:(return env)
+      ~f:(fun acc_env { Expression.pat; expr } ->
+        let* env = acc_env in
+        let* value = eval_expr env expr in
+        match pat with
+        | Pattern.Pat_var name | Pattern.Pat_constraint (Pattern.Pat_var name, _) ->
+          let env = E.extend env name value in
+          return env
+        | _ ->
+          let* env = eval_pattern pat value env in
+          (match env with
+           | Some extended_env -> return extended_env
+           | None -> fail PatternMismatch))
+      value_binding_list
   ;;
 
-  let eval_str_item (env : environment) = function
+  let eval_str_item (env : environment) olist =
+    let rec extract_names_from_pat env acc = function
+      | Pattern.Pat_var id ->
+        (* Lookup the value for the variable in the environment *)
+        let* value = E.lookup env id in
+        return (acc @ [ Some id, value ])
+      | Pattern.Pat_tuple (fst_pat, snd_pat, pat_list) ->
+        List.fold_left
+          (fst_pat :: snd_pat :: pat_list)
+          ~init:(return acc)
+          ~f:(fun acc_monadic pat ->
+            let* acc = acc_monadic in
+            extract_names_from_pat env acc pat)
+        (* Recursively handle tuple patterns *)
+      | Pattern.Pat_construct ("::", Some exp) ->
+        (match exp with
+         | Pattern.Pat_tuple (head, tail, []) ->
+           let* acc = extract_names_from_pat env acc head in
+           extract_names_from_pat env acc tail (* Handle list-like structures *)
+         | _ -> return acc)
+      | Pattern.Pat_construct ("Some", Some pat) ->
+        extract_names_from_pat env acc pat (* Handle option-like structures *)
+      | Pattern.Pat_constraint (pat, _) ->
+        extract_names_from_pat env acc pat (* Handle pattern constraints *)
+      | _ -> return acc (* Return accumulated value for other patterns *)
+    in
+    (* Extract names from value bindings *)
+    let get_names_from_vb env bindings =
+      List.fold_left
+        ~init:(return [])
+        ~f:(fun acc_monadic { Expression.pat; _ } ->
+          let* acc = acc_monadic in
+          extract_names_from_pat env acc pat)
+          (* Extract names from patterns in bindings *)
+        bindings
+    in
+    function
     | Structure.Str_eval str ->
       (* Evaluate the expression and return its value *)
-      eval_expr env str
-    | Structure.Str_value (rec_flag, bindings) ->
-      (* Extend the environment based on bindings and return the value of the last binding *)
+      let* vl = eval_expr env str in
+      return (env, olist @ [ None, vl ])
+      (* No tag for the evaluated expression *)
+    | Structure.Str_value (Nonrecursive, bindings) ->
       let bindings_list = fst bindings :: snd bindings in
-      let extend_env env bindings =
-        List.fold bindings ~init:(return env) ~f:(fun acc { Expression.pat; expr } ->
-          let* env = acc in
-          let* value =
-            match rec_flag with
-            | Nonrecursive -> eval_expr env expr
-            | Recursive -> fail IDK (* Add support for recursive bindings later *)
-          in
-          let* env' = eval_pattern pat value env in
-          match env' with
-          | Some new_env -> return new_env
-          | None -> fail PatternMismatch)
-      in
-      let* new_env = extend_env env bindings_list in
-      (* Evaluate and return the last expression's value *)
-      (match List.rev bindings_list with
-       | { Expression.expr = last_expr } :: _ -> eval_expr new_env last_expr
-       | _ -> fail PatternMismatch)
+      let* env = eval_value_binding_list env bindings_list in
+      let* vl = get_names_from_vb env bindings_list in
+      return (env, olist @ vl)
+      (* Add the evaluated bindings to the accumulator *)
+    | Structure.Str_value (Recursive, bindings) ->
+      let bindings_list = fst bindings :: snd bindings in
+      let* env = eval_rec_value_binding_list env bindings_list in
+      let* vl = get_names_from_vb env bindings_list in
+      return (env, olist @ vl)
   ;;
+
+  (* Add the evaluated recursive bindings to the accumulator *)
 
   (*to add adt*)
 
-  let interpret_expr expr = eval_expr E.init expr
-
   let interpret_program (prog : program) =
-    let rec eval_prog env = function
-      | [] -> fail EmptyProgram (* Handle empty programs appropriately *)
-      | [ item ] -> eval_str_item env item (* Return the value of the last item *)
+    let rec eval_prog env olist = function
+      | [] -> return olist (* If the program is empty, return the accumulated list *)
+      | [ item ] ->
+        (* Evaluate the last item in the program and return the result *)
+        let* _, vl = eval_str_item env olist item in
+        return (olist @ vl)
+        (* Append the evaluated values to the accumulated list *)
       | item :: rest ->
-        let* _ = eval_str_item env item in
-        eval_prog env rest
+        (* Evaluate the current item and continue with the rest *)
+        let* new_env, new_olist = eval_str_item env olist item in
+        eval_prog new_env new_olist rest (* Recursively process the rest of the program *)
     in
-    eval_prog E.init prog
+    (* Start the evaluation with the initial environment and an empty list *)
+    let* final_olist = eval_prog E.init [] prog in
+    return final_olist (* Return the final list of evaluated values *)
   ;;
 end
 
@@ -462,12 +497,12 @@ module InterpreterWResult = Interpreter (RESULT_MONAD_ERROR)
 let run_interpreter = InterpreterWResult.interpret_program
 
 module PPrinter = struct
-  open Format
+  open Stdlib.Format
 
   let rec pp_value fmt = function
-    | VInt i -> fprintf fmt "%d" i
-    | VChar c -> fprintf fmt "%c" c
-    | VString s -> fprintf fmt "%s" s
+    | VInt i -> fprintf fmt "%i" i
+    | VChar c -> fprintf fmt "'%c'" c
+    | VString s -> fprintf fmt "%S" s
     | VBool b -> fprintf fmt "%b" b
     | VTuple (fst_val, snd_val, val_list) ->
       fprintf
@@ -493,6 +528,5 @@ module PPrinter = struct
     | EmptyProgram -> fprintf fmt "Interpreter error: Empty program"
   ;;
 
-  let print_value = printf "%a" pp_value
   let print_error = printf "%a" pp_error
 end
