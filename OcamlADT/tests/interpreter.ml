@@ -20,12 +20,11 @@ open Ocamladt_lib.Parser
 let pp_interpret_demo ast =
   match run_interpreter ast with
   | Ok olist ->
-    (* If the interpretation was successful *)
     List.iter
       (fun (tag, val') ->
         match tag with
         | Some id -> Format.printf "val %s = %a\n" id pp_value val'
-        | None -> Format.printf "_ = %a\n" pp_value val')
+        | None -> if val' <> VString "" then Format.printf "_ = %a\n" pp_value val')
       olist
   | Error e -> print_error e
 ;;
@@ -105,23 +104,20 @@ let%expect_test "string print_endline" =
   pp_parse_demo {|let x = "51" in 
 print_endline x;;|};
   [%expect {|
-    51
-    _ = "" |}]
+    51 |}]
 ;;
 
 let%expect_test "print_endline" =
   pp_parse_demo {|print_endline "51";;|};
   [%expect {|
-    51
-    _ = "" |}]
+    51 |}]
 ;;
 
 let%expect_test "print_endline as an arg" =
   pp_parse_demo {|let f = print_endline in 
 f "Hello";;|};
   [%expect {|
-    Hello
-    _ = "" |}]
+    Hello |}]
 ;;
 
 let%expect_test "print_endline as an arg (fail: TypeMismatch)" =
@@ -135,32 +131,28 @@ let%expect_test "print_int as an arg" =
   pp_parse_demo {|let f = print_int in 
 f 51;;|};
   [%expect {|
-    51
-    _ = "" |}]
+    51 |}]
 ;;
 
 let%expect_test "print_int let assignment" =
   pp_parse_demo {|let reca = 51 in 
 print_int reca;;|};
   [%expect {|
-    51
-    _ = "" |}]
+    51 |}]
 ;;
 
 let%expect_test "print_char as an arg" =
   pp_parse_demo {|let f = print_char in 
 f '5';;|};
   [%expect {|
-    5
-    _ = "" |}]
+    5 |}]
 ;;
 
 let%expect_test "print_char let assignment" =
   pp_parse_demo {|let reca = '5' in 
 print_char reca;;|};
   [%expect {|
-    5
-    _ = "" |}]
+    5 |}]
 ;;
 
 let%expect_test "let assignment none (fail: PatternMismatch)" =
@@ -173,8 +165,7 @@ print_int None;;|};
 let%expect_test "multiple let assignments" =
   pp_parse_demo {| let x = 3 in let y = 4 in print_int (x + y) ;; |};
   [%expect {|
-    7
-    _ = "" |}]
+    7 |}]
 ;;
 
 (*bad, idk*)
@@ -190,7 +181,7 @@ let%expect_test "function assignment with bool operators" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 34, characters 12-25
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 182, characters 2-84
+  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 174, characters 2-84
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -203,8 +194,7 @@ let%expect_test "too damn simple function assignment (TC should fail?)" =
 let%expect_test "not too damn simple function assignment" =
   pp_parse_demo {| let id = fun x -> x * x in print_int (id 7) ;; |};
   [%expect {|
-    49
-    _ = "" |}]
+    49 |}]
 ;;
 
 let%expect_test "match case (_ case)" =
@@ -218,8 +208,7 @@ let classify n =
 in
 print_endline (classify 2);; |};
   [%expect {|
-    other
-    _ = "" |}]
+    other |}]
 ;;
 
 let%expect_test "match case (specific pattern case)" =
@@ -233,8 +222,7 @@ let classify n =
 in
 print_int (classify "1");; |};
   [%expect {|
-    811
-    _ = "" |}]
+    811 |}]
 ;;
 
 let%expect_test "if then case" =
@@ -244,8 +232,7 @@ if x > 5 then print_endline "> 5"
 else print_endline "<= 5";;
  |};
   [%expect {|
-    > 5
-    _ = "" |}]
+    > 5 |}]
 ;;
 
 let%expect_test "if then case (else)" =
@@ -261,8 +248,7 @@ in
 check_number 5
 ;; |};
   [%expect {|
-    Other
-    _ = "" |}]
+    Other |}]
 ;;
 
 let%expect_test "if then case (then)" =
@@ -278,8 +264,7 @@ in
 check_number 0
 ;; |};
   [%expect {|
-    Zero
-    _ = "" |}]
+    Zero |}]
 ;;
 
 let%expect_test "if then case (else if)" =
@@ -295,8 +280,7 @@ in
 check_number 1
 ;; |};
   [%expect {|
-    555555555555
-    _ = "" |}]
+    555555555555 |}]
 ;;
 
 let%expect_test "if then case (else if) v2" =
@@ -312,8 +296,7 @@ in
 check_number 1
 ;; |};
   [%expect {|
-    Zero
-    _ = "" |}]
+    Zero |}]
 ;;
 
 let%expect_test "nested assignments" =
@@ -338,8 +321,7 @@ let rec fact n = if n = 0 then 1 else n * fact(n-1) in
 print_int (fact 5)
 ;; |};
   [%expect {|
-    120
-    _ = "" |}]
+    120 |}]
 ;;
 
 (*i just wanna km*)
@@ -349,8 +331,7 @@ let%expect_test "recursive function (nested apply - multiple args)" =
     {|
 let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6);;|};
   [%expect {|
-    15625
-    _ = "" |}]
+    15625 |}]
 ;;
 
 let%expect_test "factorial (multiple structure items)" =
@@ -361,8 +342,7 @@ let x = fact 6 in print_int x ;; |};
   [%expect {|
     720
     val fact = <fun>
-    val fact = <fun>
-    _ = "" |}]
+    val fact = <fun> |}]
 ;;
 
 (*to fix structure item env i guess*)

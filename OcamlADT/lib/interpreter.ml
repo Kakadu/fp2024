@@ -460,26 +460,20 @@ module Interpreter (M : Error_monad) = struct
       return (env, olist @ vl)
   ;;
 
-  (* Add the evaluated recursive bindings to the accumulator *)
-
   (*to add adt*)
 
   let interpret_program (prog : program) =
     let rec eval_prog env olist = function
-      | [] -> return olist (* If the program is empty, return the accumulated list *)
+      | [] -> return olist
       | [ item ] ->
-        (* Evaluate the last item in the program and return the result *)
         let* _, vl = eval_str_item env olist item in
         return (olist @ vl)
-        (* Append the evaluated values to the accumulated list *)
       | item :: rest ->
-        (* Evaluate the current item and continue with the rest *)
         let* new_env, new_olist = eval_str_item env olist item in
-        eval_prog new_env new_olist rest (* Recursively process the rest of the program *)
+        eval_prog new_env new_olist rest
     in
-    (* Start the evaluation with the initial environment and an empty list *)
     let* final_olist = eval_prog E.init [] prog in
-    return final_olist (* Return the final list of evaluated values *)
+    return final_olist
   ;;
 end
 
