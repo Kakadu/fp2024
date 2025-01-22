@@ -38,7 +38,7 @@ let pp_parse_demo str =
 
 let%expect_test "empty program (fail: EmptyProgram)" =
   pp_parse_demo {||};
-  [%expect {| Interpreter error: Empty program |}]
+  [%expect {| Empty program |}]
 ;;
 
 let%expect_test "negative int constant" =
@@ -173,7 +173,7 @@ let%expect_test "multiple let assignments" =
 (*bad, idk*)
 let%expect_test "function assignment with bool operators" =
   pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
-  [%expect{| Interpreter error: Parser Error |}]
+  [%expect {| Parser Error |}]
 ;;
 
 let%expect_test "too damn simple function assignment (TC should fail?)" =
@@ -319,8 +319,7 @@ print_int (fact 5)
 (*upd: dont mind. fixed :\ .*)
 let%expect_test "recursive function (nested apply - multiple args)" =
   pp_parse_demo
-    {|
-let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6);;|};
+    {| let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6);;|};
   [%expect {|
     15625 |}]
 ;;
@@ -335,22 +334,65 @@ let x = fact 6 in print_int x ;; |};
     val fact = <fun> |}]
 ;;
 
-(*to fix structure item env i guess*)
-let%expect_test "wtf" =
+let%expect_test "not y.dev" =
   pp_parse_demo
     {| let arith x y = (x * y, x / y, x + y, x - y);;
-  let prod x y = 
-    let fst (a, _, _, _) = a in
-    fst (arith x y)
-  ;;
-  let p = prod 3 1;;
-|};
+    let prod x y = 
+        let fst (a, _, _, _) = a in
+        fst (arith x y)
+    ;;
+    let p = prod 3 1;;
+  |};
   [%expect {|
-    Intepreter error: Unbound value a |}]
+    val arith = <fun>
+    val prod = <fun>
+    val p = 3 |}]
 ;;
 
-let%expect_test "substraction" =
+let%expect_test "wrong input (fail: ParserError)" =
   pp_parse_demo {|let = ;;|};
+  [%expect {| Parser Error |}]
+;;
+
+(*to fix in parser*)
+let%expect_test "eval simple let binding" =
+  pp_parse_demo {| let a = -(4 + 4) and b = true;; |};
   [%expect {|
-    Interpreter error: Parser Error |}]
+  Parser Error
+  |}]
+;;
+
+let%expect_test "multiple nested let's" =
+  pp_parse_demo
+    {|
+  let f =
+    let x = "fowl" in
+    let y = "51" in
+    x <> y
+  ;;
+  |};
+  [%expect {| val f = true |}]
+;;
+
+let%expect_test "tuple assignment" =
+  pp_parse_demo {| let test1 = (1, "hello", 314);; |};
+  [%expect {|
+  val test1 = (1, "hello", 314)
+  |}]
+;;
+
+let%expect_test "tuple (no assignment)" =
+  pp_parse_demo {| (1, "hello", 314);; |};
+  [%expect {|
+  _ = (1, "hello", 314)
+  |}]
+;;
+
+let%expect_test "tuple assignment v2" =
+  pp_parse_demo {| let swap (x, y) = (y, x);;
+let test = swap (1, "ocaml");; |};
+  [%expect {|
+  val swap = <fun>
+  val test = ("ocaml", 1)
+  |}]
 ;;

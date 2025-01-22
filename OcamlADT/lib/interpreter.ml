@@ -52,6 +52,12 @@ let make_list1 lst =
   | x :: xs -> Some (x, xs)
 ;;
 
+let to_bool = function
+  | VBool b -> b
+  | VInt n -> n <> 0
+  | _ -> raise (Invalid_argument "TypeMismatch")
+;;
+
 module type Error_monad = sig
   (* 'a - successfull value, 'e - error type *)
   type ('a, 'e) t
@@ -140,8 +146,9 @@ module Env (M : Error_monad) = struct
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
-              | VInt a, VInt b -> Ok (VBool (a == b))
+              | VInt a, VInt b -> Ok (VBool (a = b))
               | VBool a, VBool b -> Ok (VBool (a == b))
+              | VString a, VString b -> Ok (VBool (String.equal a b))
               | _ -> Error TypeMismatch) )
       ; ( ">"
         , VBuiltin_binop
@@ -172,19 +179,18 @@ module Env (M : Error_monad) = struct
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a <> b))
+              | VString a, VString b -> Ok (VBool (not (String.equal a b)))
               | _ -> Error TypeMismatch) )
       ; ( "&&"
         , VBuiltin_binop
             (fun v1 v2 ->
-              match v1, v2 with
-              | VBool a, VBool b -> Ok (VBool (a && b))
-              | _ -> Error TypeMismatch) )
+              try Ok (VBool (to_bool v1 && to_bool v2)) with
+              | Invalid_argument _ -> Error TypeMismatch) )
       ; ( "||"
         , VBuiltin_binop
             (fun v1 v2 ->
-              match v1, v2 with
-              | VBool a, VBool b -> Ok (VBool (a || b))
-              | _ -> Error TypeMismatch) )
+              try Ok (VBool (to_bool v1 || to_bool v2)) with
+              | Invalid_argument _ -> Error TypeMismatch) )
       ]
   ;;
 
@@ -242,14 +248,16 @@ module Interpreter (M : Error_monad) = struct
   ;;
 
   let mapM2 f env lst lst2 =
-    let rec aux acc = function
-      | [], [] -> return (List.rev acc)
+    let rec aux acc env = function
+      | [], [] -> return (Some env)
       | x :: xs, y :: ys ->
-        let* res = f x y env in
-        aux (res :: acc) (xs, ys)
+        let* env_opt = f x y env in
+        (match env_opt with
+         | Some new_env -> aux acc new_env (xs, ys)
+         | None -> return None)
       | _ -> fail IDK (* In case lists have different lengths *)
     in
-    aux [] (lst, lst2)
+    aux [] env (lst, lst2)
   ;;
 
   let eval_const = function
@@ -266,11 +274,20 @@ module Interpreter (M : Error_monad) = struct
       let* const_val = eval_const c in
       if compare_values const_val v then return (Some env) else return None
     | Pattern.Pat_tuple (p1, p2, ps), VTuple (v1, v2, vs) ->
-      let* _ = eval_pattern p1 v1 env in
-      let* _ = eval_pattern p2 v2 env in
-      let* _ = mapM2 eval_pattern env ps vs in
-      return (Some env)
-      (*TODO*)
+      let* env1_opt = eval_pattern p1 v1 env in
+      let* env1 =
+        match env1_opt with
+        | Some env -> return env
+        | None -> fail PatternMismatch
+      in
+      let* env2_opt = eval_pattern p2 v2 env1 in
+      let* env2 =
+        match env2_opt with
+        | Some env -> return env
+        | None -> fail PatternMismatch
+      in
+      let* final_env_opt = mapM2 eval_pattern env2 ps vs in
+      return final_env_opt
     | Pattern.Pat_constraint (pat, _), v -> eval_pattern pat v env
     | Pattern.Pat_construct (ctor, Some args), VFun (ctor_pat, body, env, _) -> fail IDK
     | Pattern.Pat_construct (ctor, None), VString s ->
@@ -534,8 +551,8 @@ module PPrinter = struct
     | UnboundVariable s -> fprintf fmt "Intepreter error: Unbound value %s" s
     | TypeMismatch -> fprintf fmt "Intepreter error: Type mismatch"
     | RecursionError -> fprintf fmt "Interpreter error: Recursion error"
-    | EmptyProgram -> fprintf fmt "Interpreter error: Empty program"
-    | ParserError -> fprintf fmt "Interpreter error: Parser Error"
+    | EmptyProgram -> fprintf fmt "Empty program"
+    | ParserError -> fprintf fmt "Parser Error"
   ;;
 
   let print_error = printf "%a" pp_error
