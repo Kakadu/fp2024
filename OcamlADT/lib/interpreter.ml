@@ -3,17 +3,14 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Base
-open Format
 
 type error =
   | DivisionByZero
   | TypeMismatch
-  | NotImplemented
   | UnboundVariable of string
   | PatternMismatch
   | RecursionError
-  | IDK
+  | NotImplemented
   | EmptyProgram
   | ParserError
 
@@ -30,7 +27,7 @@ type value =
   | VBuiltin_binop of (value -> value -> (value, error) Result.t)
   | VBuiltin_print of (value -> (value, error) Result.t)
 
-and environment = (string, value, String.comparator_witness) Base.Map.t
+and environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
 let compare_values v1 v2 =
   match v1, v2 with
@@ -78,7 +75,7 @@ module Env (M : Error_monad) = struct
 
   let builtin_functions =
     Base.Map.of_alist_exn
-      (module String)
+      (module Base.String)
       [ ( "print_endline"
         , VBuiltin_print
             (fun v ->
@@ -114,27 +111,20 @@ module Env (M : Error_monad) = struct
       ]
   ;;
 
+  let create_binop f =
+    VBuiltin_binop
+      (fun v1 v2 ->
+        match v1, v2 with
+        | VInt a, VInt b -> Ok (VInt (f a b))
+        | _ -> Error TypeMismatch)
+  ;;
+
   let builtin_binops =
     Base.Map.of_alist_exn
-      (module String)
-      [ ( "+"
-        , VBuiltin_binop
-            (fun v1 v2 ->
-              match v1, v2 with
-              | VInt a, VInt b -> Ok (VInt (a + b))
-              | _ -> Error TypeMismatch) )
-      ; ( "-"
-        , VBuiltin_binop
-            (fun v1 v2 ->
-              match v1, v2 with
-              | VInt a, VInt b -> Ok (VInt (a - b))
-              | _ -> Error TypeMismatch) )
-      ; ( "*"
-        , VBuiltin_binop
-            (fun v1 v2 ->
-              match v1, v2 with
-              | VInt a, VInt b -> Ok (VInt (a * b))
-              | _ -> Error TypeMismatch) )
+      (module Base.String)
+      [ "+", create_binop ( + )
+      ; "-", create_binop ( - )
+      ; "*", create_binop ( * )
       ; ( "/"
         , VBuiltin_binop
             (fun v1 v2 ->
@@ -147,39 +137,49 @@ module Env (M : Error_monad) = struct
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a = b))
-              | VBool a, VBool b -> Ok (VBool (a == b))
-              | VString a, VString b -> Ok (VBool (String.equal a b))
+              | VBool a, VBool b -> Ok (VBool (a = b))
+              | VString a, VString b -> Ok (VBool (a = b))
+              | VChar a, VChar b -> Ok (VBool (a = b))
               | _ -> Error TypeMismatch) )
       ; ( ">"
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a > b))
+              | VString a, VString b -> Ok (VBool (a > b))
+              | VChar a, VChar b -> Ok (VBool (a > b))
               | _ -> Error TypeMismatch) )
       ; ( "<"
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a < b))
+              | VString a, VString b -> Ok (VBool (a < b))
+              | VChar a, VChar b -> Ok (VBool (a < b))
               | _ -> Error TypeMismatch) )
       ; ( ">="
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a >= b))
+              | VString a, VString b -> Ok (VBool (a >= b))
+              | VChar a, VChar b -> Ok (VBool (a >= b))
               | _ -> Error TypeMismatch) )
       ; ( "<="
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a <= b))
+              | VString a, VString b -> Ok (VBool (a <= b))
+              | VChar a, VChar b -> Ok (VBool (a <= b))
               | _ -> Error TypeMismatch) )
       ; ( "<>"
         , VBuiltin_binop
             (fun v1 v2 ->
               match v1, v2 with
               | VInt a, VInt b -> Ok (VBool (a <> b))
-              | VString a, VString b -> Ok (VBool (not (String.equal a b)))
+              | VString a, VString b -> Ok (VBool (a <> b))
+              | VChar a, VChar b -> Ok (VBool (a <> b))
               | _ -> Error TypeMismatch) )
       ; ( "&&"
         , VBuiltin_binop
@@ -213,7 +213,7 @@ module Env (M : Error_monad) = struct
   ;;
 
   let lookup env name =
-    match Map.find env name with
+    match Base.Map.find env name with
     | Some s -> return s (* returing the value *)
     | None -> fail (UnboundVariable name)
   ;;
@@ -221,7 +221,7 @@ module Env (M : Error_monad) = struct
   let extend env name value = Base.Map.set env ~key:name ~data:value
 
   let combine env1 env2 =
-    Map.fold env2 ~f:(fun ~key ~data env_acc -> extend env_acc key data) ~init:env1
+    Base.Map.fold env2 ~f:(fun ~key ~data env_acc -> extend env_acc key data) ~init:env1
   ;;
 end
 
@@ -255,7 +255,7 @@ module Interpreter (M : Error_monad) = struct
         (match env_opt with
          | Some new_env -> aux acc new_env (xs, ys)
          | None -> return None)
-      | _ -> fail IDK (* In case lists have different lengths *)
+      | _ -> fail NotImplemented (* In case lists have different lengths *)
     in
     aux [] env (lst, lst2)
   ;;
@@ -289,7 +289,7 @@ module Interpreter (M : Error_monad) = struct
       let* final_env_opt = mapM2 eval_pattern env2 ps vs in
       return final_env_opt
     | Pattern.Pat_constraint (pat, _), v -> eval_pattern pat v env
-    | Pattern.Pat_construct (ctor, Some args), VFun (ctor_pat, body, env, _) -> fail IDK
+    | Pattern.Pat_construct (_, Some _), VFun (_, _, _, _) -> fail NotImplemented
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
     | _ -> fail PatternMismatch
@@ -379,15 +379,15 @@ module Interpreter (M : Error_monad) = struct
       (* Handle recursive bindings directly *)
       let* env = eval_rec_value_binding_list env (b1 :: bl) in
       eval_expr env body
-    | Expression.Exp_construct (ctor, Some arg) ->
-      fail IDK
+    | Expression.Exp_construct (_, Some _) ->
+      fail NotImplemented
       (*let* v = eval_expr env arg in
         return (VFun ([ Pattern.Pat_constant (Constant.Const_string ctor) ], v)) *)
     | Expression.Exp_construct (ctor, None) -> return (VString ctor)
     | Expression.Exp_constraint (expr, _type_expr) -> eval_expr env expr
 
   and eval_rec_value_binding_list env value_binding_list =
-    List.fold_left
+    Base.List.fold_left
       ~init:(return env)
       ~f:(fun acc_env { Expression.pat; expr } ->
         let* env = acc_env in
@@ -406,7 +406,7 @@ module Interpreter (M : Error_monad) = struct
       value_binding_list
 
   and eval_value_binding_list env value_binding_list =
-    List.fold_left
+    Base.List.fold_left
       ~init:(return env)
       ~f:(fun acc_env { Expression.pat; expr } ->
         let* env = acc_env in
@@ -430,7 +430,7 @@ module Interpreter (M : Error_monad) = struct
         let* value = E.lookup env id in
         return (acc @ [ Some id, value ])
       | Pattern.Pat_tuple (fst_pat, snd_pat, pat_list) ->
-        List.fold_left
+        Base.List.fold_left
           (fst_pat :: snd_pat :: pat_list)
           ~init:(return acc)
           ~f:(fun acc_monadic pat ->
@@ -451,7 +451,7 @@ module Interpreter (M : Error_monad) = struct
     in
     (* Extract names from value bindings *)
     let get_names_from_vb env bindings =
-      List.fold_left
+      Base.List.fold_left
         ~init:(return [])
         ~f:(fun acc_monadic { Expression.pat; _ } ->
           let* acc = acc_monadic in
@@ -486,8 +486,8 @@ module Interpreter (M : Error_monad) = struct
       | (Some id1, _), (Some id2, _) -> String.equal id1 id2
       | _ -> false
     in
-    List.fold_right out_list ~init:[] ~f:(fun x acc ->
-      if List.exists acc ~f:(fun y -> fun_equal x y) then acc else x :: acc)
+    Base.List.fold_right out_list ~init:[] ~f:(fun x acc ->
+      if Base.List.exists acc ~f:(fun y -> fun_equal x y) then acc else x :: acc)
   ;;
 
   let interpret_program (prog : program) =
@@ -514,7 +514,18 @@ module RESULT_MONAD_ERROR = struct
      Result is used for more advanced error handling *)
   include Result
 
-  let ( let* ) m f = m >>= fun x -> f x
+  type ('a, 'e) t = ('a, 'e) result
+
+  let return x = Ok x
+  let fail e = Error e
+
+  let ( >>= ) m f =
+    match m with
+    | Ok x -> f x
+    | Error e -> Error e
+  ;;
+
+  let ( let* ) = ( >>= )
 end
 
 (* Interpreter functor extension *)
@@ -544,7 +555,6 @@ module PPrinter = struct
   ;;
 
   let pp_error fmt = function
-    | IDK -> fprintf fmt "IDK"
     | PatternMismatch -> fprintf fmt "Intepreter error: Pattern mismatch"
     | DivisionByZero -> fprintf fmt "Intepreter error: Division by zero"
     | NotImplemented -> fprintf fmt "Intepreter error: Not implemented"
