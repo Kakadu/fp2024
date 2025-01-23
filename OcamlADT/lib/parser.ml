@@ -156,12 +156,22 @@ let ptypetuple ptype =
   return (TypeExpr.Type_tuple (el1, el2, rest))
 ;;
 
+let ptype =
+  pass_ws
+  *> fix (fun ptype ->
+    let ptvar = choice [ pparenth ptype; ptypevar ] in
+    let pttuple = ptypetuple ptvar <|> ptvar in
+    rchain pttuple ptypearrow <|> pttuple)
+;;
+
 let ptypeconstr =
   let* tparams =
     option
       []
       (pparenth (sep_by (token ",") (token "'" *> ptypevar))
-       <|> many (token "'" *> ptypevar))
+       <|>
+       let* ttuple = pparenth (ptypetuple ptypevar) in
+       return [ ttuple ] <|> many (token "'" *> ptypevar))
   in
   let* tname =
     option
@@ -175,21 +185,11 @@ let ptypeconstr =
      | None -> TypeExpr.Type_construct ("", tparams))
 ;;
 
-let ptype =
-  pass_ws
-  *> fix (fun ptype ->
-    let ptvar = choice [ pparenth ptype; ptypevar ] in
-    let pttuple = ptypetuple ptvar <|> ptvar in
-    rchain pttuple ptypearrow <|> pttuple)
-;;
-
 let ptype_adt =
   pass_ws
   *> fix (fun ptype ->
     let ptvar = choice [ pparenth ptype; ptypevar ] in
-    let pttuple =
-      pparenth (ptypetuple ptypeconstr) <|> token "'" *> ptvar <|> ptypeconstr
-    in
+    let pttuple = token "'" *> ptvar <|> ptypeconstr in
     pttuple)
 ;;
 

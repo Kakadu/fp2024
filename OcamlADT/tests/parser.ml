@@ -1034,7 +1034,7 @@ let%expect_test "_" =
       ] |}]
 ;;
 
-let%expect_test "keyword" =
+let%expect_test "not keyword" =
   test_programm {|(Kakadu_52) (fun x -> x);;|};
   [%expect
     {|
@@ -1131,22 +1131,21 @@ let%expect_test "adt with multiple poly v2" =
 
 let%expect_test "adt with poly (con poly variant)" =
   test_programm {|type 'a shape = Circle | Square of (int * int) shape;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1133, characters 2-74
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_adt (["a"], "shape",
+        (("Circle", []),
+         [("Square",
+           [(Type_construct ("shape",
+               [(Type_tuple ((Type_var "int"), (Type_var "int"), []))]))
+             ])
+           ])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "adt with tuple in variant" =
-  test_programm {|type shape = Circle | Square of int * int;;|};
+  test_programm {|type shape = Circle | Square of int * int ;;|};
   [%expect
     {|
     [(Str_adt ([], "shape",
