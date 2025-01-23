@@ -65,6 +65,7 @@ let pexpr_app pexpr =
        <|> parse_infix_app ">")
     <|> app
   in
+  let app = chainr app (parse_infix_app "::") <|> app in
   let app = chainr app (parse_infix_app "||" <|> parse_infix_app "&&") <|> app in
   app
 ;;
@@ -174,6 +175,15 @@ let pexpr_function pexpr =
   | _ -> fail "Failed to parse function expression"
 ;;
 
+let pexpr_opt pexpr =
+  let* opt =
+    skip_token "Some" *> pexpr
+    >>| (fun e -> Some e)
+    <|> (skip_token "None" >>| fun _ -> None)
+  in
+  return (Expr_option opt)
+;;
+
 let pexpr_typed pexpr =
   let* expr = pexpr <* skip_token ":" in
   let* core_type = ptype in
@@ -184,9 +194,10 @@ let pexpr =
   fix (fun pexpr ->
     let pexpr =
       choice
-        [ pexpr_letin pexpr
-        ; pexpr_paren (pexpr_typed pexpr)
+        [ pexpr_paren (pexpr_typed pexpr)
         ; pexpr_paren pexpr
+        ; pexpr_letin pexpr
+        ; pexpr_opt pexpr
         ; pexpr_list pexpr
         ; pexpr_ite pexpr
         ; pexpr_match pexpr
@@ -196,6 +207,7 @@ let pexpr =
         ; pexpr_const
         ]
     in
+    let pexpr = pexpr_paren pexpr <|> pexpr in
     let pexpr = pexpr_tuple pexpr <|> pexpr_app_un pexpr <|> pexpr_app pexpr <|> pexpr in
     (* let pexpr = pexpr_app_un pexpr <|> pexpr in *)
     skip_ws *> pexpr <* skip_ws_no_nl)

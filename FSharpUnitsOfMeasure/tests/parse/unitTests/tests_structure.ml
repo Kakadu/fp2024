@@ -53,8 +53,7 @@ let%expect_test "parse structure item which is nested let bindings" =
          let c = h in
          let d = j in
          E |};
-  [%expect
-    {|
+  [%expect {|
     let a = f in let b = g in let c = h in let d = j in E|}]
 ;;
 
@@ -325,3 +324,31 @@ let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S 
         ))
       ] |}]
 ;;
+
+let%expect_test "parse example 10 program" =
+  pp2
+    pp_program
+    pprog
+    {|
+  let 267742048371772592 = match Some a with 0. -> a | -28986.9328323<1> -> bsV and _ = 0;;
+|};
+  [%expect
+    {|
+    [(Str_item_def (Nonrecursive,
+        (Bind ((Pattern_const (Const_int 267742048371772592)),
+           (Expr_match ((Expr_option (Some (Expr_ident_or_op "a"))),
+              (Rule ((Pattern_const (Const_float 0.)), (Expr_ident_or_op "a"))),
+              [(Rule (
+                  (Pattern_const
+                     (Const_unit_of_measure
+                        (Unit_of_measure ((Mnum_float -28986.9328323),
+                           Measure_dimless)))),
+                  (Expr_ident_or_op "bsV")))
+                ]
+              ))
+           )),
+        [(Bind (Pattern_wild, (Expr_const (Const_int 0))))]))
+      ] |}]
+;;
+
+

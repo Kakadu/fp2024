@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Base
+open Ast
 open Pprint.Pp
 open Parse.Expressions
 open Pprint.Pprinter
@@ -188,6 +189,24 @@ let%expect_test "parse application of function to 5 arguments" =
 ((((f a) b) c) d) e |}]
 ;;
 
+let%expect_test "parse if a then b else c d" =
+  pp2 pp_expression pexpr {| if a then b else c d |};
+  [%expect
+    {|
+(Expr_ifthenelse ((Expr_ident_or_op "a"), (Expr_ident_or_op "b"),
+   (Some (Expr_apply ((Expr_ident_or_op "c"), (Expr_ident_or_op "d")))))) |}]
+;;
+
+let%expect_test "parse (if a then b else c) d" =
+  pp2 pp_expression pexpr {| (if a then b else c) d |};
+  [%expect
+    {|
+(Expr_apply (
+   (Expr_ifthenelse ((Expr_ident_or_op "a"), (Expr_ident_or_op "b"),
+      (Some (Expr_ident_or_op "c")))),
+   (Expr_ident_or_op "d"))) |}]
+;;
+
 let%expect_test "parse application (+)a b" =
   pp pprint_expr pexpr {| (+)a b |};
   [%expect {|
@@ -284,6 +303,25 @@ let%expect_test "parse a && b && c" =
   pp pprint_expr pexpr {| a && b && c |};
   [%expect {|
       a && (b && c) |}]
+;;
+
+let%expect_test "parse a :: b" =
+  pp2 pp_expression pexpr {| a :: b |};
+  [%expect
+    {|
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "::"), (Expr_ident_or_op "a"))),
+         (Expr_ident_or_op "b"))) |}]
+;;
+
+let%expect_test "parse a :: b :: c" =
+  pp2 pp_expression pexpr {| a :: b :: c |};
+  [%expect
+    {|
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "::"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "::"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
 ;;
 
 (************************** Lambdas **************************)
@@ -418,6 +456,38 @@ let%expect_test "parse expression list of tuples without parentheses" =
   pp pprint_expr pexpr {| [ 1, 2; 3, 4 ] |};
   [%expect {|
     [(1, 2); (3, 4)]  |}]
+;;
+
+(************************** Option **************************)
+
+let%expect_test "parse None" =
+  pp2 pp_expression pexpr {| None |};
+  [%expect {|
+    (Expr_option None)  |}]
+;;
+
+let%expect_test "parse Some x" =
+  pp2 pp_expression pexpr {| Some x |};
+  [%expect {|
+    (Expr_option (Some (Expr_ident_or_op "x")))  |}]
+;;
+
+let%expect_test "parse Some should fail" =
+  pp2 pp_expression pexpr {| Some |};
+  [%expect {|
+    : no more choices  |}]
+;;
+
+let%expect_test "parse Some None" =
+  pp2 pp_expression pexpr {| Some None |};
+  [%expect {|
+    (Expr_option (Some (Expr_option None)))  |}]
+;;
+
+let%expect_test "parse Some (Some x)" =
+  pp2 pp_expression pexpr {| Some (Some x) |};
+  [%expect {|
+  (Expr_option (Some (Expr_option (Some (Expr_ident_or_op "x")))))  |}]
 ;;
 
 (************************** Typed **************************)

@@ -103,6 +103,7 @@ type pattern =
   (** List patterns: [P1, ..., Pn] *)
   | Pattern_or of pattern * pattern
   (** OR patterns represent multiple satisfying patterns in pattern matching: [P1 | P2] *)
+  | Pattern_option of pattern option (** [Some p] or [None] *)
 [@@deriving qcheck, show { with_path = false }]
 
 type rec_flag =
@@ -115,7 +116,7 @@ type expression =
   (** Constant expressions: [1], ['a'], ["foo"], [3.14], [true], [5.0<cm>] *)
   | Expr_ident_or_op of (string[@gen gen_ident])
   (** Identificator or operation expressions: [x], [+] *)
-  | Expr_typed of expression * core_type (** Typed expression: [x: int] *)
+  | Expr_typed of expression * core_type (** Typed expression: [(x: int)] *)
   | Expr_tuple of
       expression
       * expression
@@ -123,7 +124,8 @@ type expression =
   (** [Expr_tuple(E1, E2, [E3, ..., En])] represents:
       - [(E1, E2)] when pattern list is []
       - [(E1, E2, E3, ..., En)] when pattern list is Cons (A, B) *)
-  | Expr_list of (expression list[@gen list_size (0 -- 4) (gen_expression_sized (n / 30))])
+  | Expr_list of
+      (expression list[@gen list_size (0 -- 4) (gen_expression_sized (n / 30))])
   (** List expressions: [E1; ...; En] *)
   | Expr_lam of (pattern[@gen gen_pattern_sized (n / 30)]) * expression
   (** Anonimous functions: [Expr_lam(P, E)] represents [fun P -> E] *)
@@ -153,6 +155,7 @@ type expression =
   (** [Expr_function(Rule(P1, E1), [Rule(P2, E2); ...; Rule(Pn, En)])] represents:
       - [function P1 -> E1] if rule list is []
       - [function P1 -> E1 | P2 -> E2 | ... | Pn -> En] if rule list is Cons (A, B) *)
+  | Expr_option of expression option (** [Some e] or [None] *)
 [@@deriving qcheck, show { with_path = false }]
 
 (** [Bind(P, E)] represents [let P = E], [let rec P = E] or [and P = E] *)

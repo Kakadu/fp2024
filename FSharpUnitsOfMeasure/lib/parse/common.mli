@@ -16,7 +16,10 @@ val is_builtin_op : string -> bool
 (** [skip_ws] skips 0 or more whitespaces, newlines included *)
 val skip_ws : unit t
 
-(** [skip_ws] skips 0 or more whitespaces, newlines not included *)
+(** [skip_ws_nl] skips 0 or more whitespaces, fails if ['\n'] wasn't met *)
+val skip_ws_nl : unit t
+
+(** [skip_ws_no_nl] skips 0 or more whitespaces, fails if ['\n'] was met *)
 val skip_ws_no_nl : unit t
 
 (** [skip_ws1] skips 1 or more whitespaces. *)
