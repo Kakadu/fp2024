@@ -255,7 +255,7 @@ module Interpreter (M : Error_monad) = struct
         (match env_opt with
          | Some new_env -> aux acc new_env (xs, ys)
          | None -> return None)
-      | _ -> fail NotImplemented (* In case lists have different lengths *)
+      | _ -> fail PatternMismatch (* In case lists have different lengths *)
     in
     aux [] env (lst, lst2)
   ;;
