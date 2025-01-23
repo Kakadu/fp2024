@@ -82,6 +82,10 @@ let rec pprint_pat = function
     asprintf "(%s)" (pprint_sep_by pprint_pat pprint_sep_comma list)
   | Pattern_list list -> asprintf "[%s]" (pprint_sep_by pprint_pat pprint_sep_colon list)
   | Pattern_or (p1, p2) -> asprintf "%s | %s" (pprint_pat p1) (pprint_pat p2)
+  | Pattern_option opt ->
+    (match opt with
+     | None -> asprintf "None"
+     | Some x -> asprintf "Some %s" (pprint_pat x))
 ;;
 
 (* Prints let f x = y in e as let f = fun x -> y in e *)
@@ -133,6 +137,10 @@ and pprint_expr =
   | Expr_function (r1, rest) ->
     let list = r1 :: rest in
     asprintf "function %s" (pprint_rules list)
+  | Expr_option opt ->
+    (match opt with
+     | None -> asprintf "None"
+     | Some x -> asprintf "Some %s" (pprint_expr x))
 ;;
 
 let pprint_struct_item = function

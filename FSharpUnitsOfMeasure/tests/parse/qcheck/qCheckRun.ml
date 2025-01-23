@@ -25,7 +25,7 @@ let print_prog_with_ast prog =
           (parse pprog (pprint_program prog))))
 ;;
 
-let arbitrary_gen = QCheck.make gen_program ~print:pprint_program ~shrink:shprog
+let arbitrary_gen = QCheck.make gen_program ~print:print_prog_with_ast ~shrink:shprog
 
 let run n =
   QCheck_base_runner.run_tests

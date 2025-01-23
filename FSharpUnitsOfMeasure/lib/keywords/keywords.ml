@@ -21,7 +21,9 @@ let is_keyword = function
   | "then"
   | "true"
   | "type"
-  | "with" -> true
+  | "with"
+  | "Some"
+  | "None" -> true
   | _ -> false
 ;;
 

@@ -22,6 +22,7 @@ let is_ws_no_nl = function
 
 let skip_ws = skip_while is_whitespace
 let skip_ws_no_nl = skip_while is_ws_no_nl
+let skip_ws_nl = skip_ws_no_nl *> char '\n' *> skip_ws
 let skip_ws1 = satisfy is_whitespace *> skip_ws
 let skip_token str = skip_ws *> string str <* skip_ws >>= fun _ -> return ()
 
