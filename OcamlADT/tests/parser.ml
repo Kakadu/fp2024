@@ -6,10 +6,10 @@ open Ocamladt_lib.Parser
 open Ocamladt_lib.Ast
 
 (* open Angstrom *)
-let test_programm str = print_endline (show_program (parse_str str))
+let test_program str = print_endline (show_program (parse_str str))
 
 let%expect_test "negative int constant" =
-  test_programm {|-1;;|};
+  test_program {|-1;;|};
   [%expect
     {|
     [(Str_eval (Exp_apply ((Exp_ident "-"), (Exp_constant (Const_integer 1)))))] |}]
@@ -17,7 +17,7 @@ let%expect_test "negative int constant" =
 
 (*good*)
 let%expect_test "positive int constant" =
-  test_programm {|+1;;|};
+  test_program {|+1;;|};
   [%expect
     {|
     [(Str_eval (Exp_apply ((Exp_ident "+"), (Exp_constant (Const_integer 1)))))] |}]
@@ -25,19 +25,19 @@ let%expect_test "positive int constant" =
 
 (*good*)
 let%expect_test " nt constant" =
-  test_programm {|1;;|};
+  test_program {|1;;|};
   [%expect {| [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 ;;
 
 (*good*)
 let%expect_test "whitespace befor int constant" =
-  test_programm {|     1;;|};
+  test_program {|     1;;|};
   [%expect {| [(Str_eval (Exp_constant (Const_integer 1)))] |}]
 ;;
 
 (*good*)
 let%expect_test "negative zero" =
-  test_programm {|-0;;|};
+  test_program {|-0;;|};
   [%expect
     {|
     [(Str_eval (Exp_apply ((Exp_ident "-"), (Exp_constant (Const_integer 0)))))] |}]
@@ -45,7 +45,7 @@ let%expect_test "negative zero" =
 
 (*good*)
 let%expect_test "positive zero" =
-  test_programm {|+0;;|};
+  test_program {|+0;;|};
   [%expect
     {|
     [(Str_eval (Exp_apply ((Exp_ident "+"), (Exp_constant (Const_integer 0)))))] |}]
@@ -53,19 +53,19 @@ let%expect_test "positive zero" =
 
 (*good*)
 let%expect_test "char" =
-  test_programm {|''';;|};
+  test_program {|''';;|};
   [%expect {| [(Str_eval (Exp_constant (Const_char '\'')))] |}]
 ;;
 
 (*good*)
 let%expect_test "zero" =
-  test_programm {|0;;|};
+  test_program {|0;;|};
   [%expect {| [(Str_eval (Exp_constant (Const_integer 0)))] |}]
 ;;
 
 (*good*)
 let%expect_test "substraction" =
-  test_programm {|5-11;;|};
+  test_program {|5-11;;|};
   [%expect
     {|
     [(Str_eval
@@ -79,7 +79,7 @@ let%expect_test "substraction" =
 
 (*good*)
 let%expect_test "strange move" =
-  test_programm {|5=5;;|};
+  test_program {|5=5;;|};
   [%expect
     {|
     [(Str_eval
@@ -93,7 +93,7 @@ let%expect_test "strange move" =
 
 (*good*)
 let%expect_test "(assignment)" =
-  test_programm {|x = 52;;|};
+  test_program {|x = 52;;|};
   [%expect
     {|
     [(Str_eval
@@ -104,7 +104,7 @@ let%expect_test "(assignment)" =
 
 (*good*)
 let%expect_test "multiplication" =
-  test_programm {|5*5;;|};
+  test_program {|5*5;;|};
   [%expect
     {|
     [(Str_eval
@@ -118,7 +118,7 @@ let%expect_test "multiplication" =
 
 (*good*)
 let%expect_test "operators with different priorities" =
-  test_programm {|5-5*1;;|};
+  test_program {|5-5*1;;|};
   [%expect
     {|
     [(Str_eval
@@ -137,7 +137,7 @@ let%expect_test "operators with different priorities" =
 
 (*good*)
 let%expect_test "operators with different priorities" =
-  test_programm {|5*5-1;;|};
+  test_program {|5*5-1;;|};
   [%expect
     {|
     [(Str_eval
@@ -156,7 +156,7 @@ let%expect_test "operators with different priorities" =
 (*good*)
 
 let%expect_test "parenthesis with operators with different priorities" =
-  test_programm {|5*(5-1);;|};
+  test_program {|5*(5-1);;|};
   [%expect
     {|
     [(Str_eval
@@ -174,12 +174,12 @@ let%expect_test "parenthesis with operators with different priorities" =
 ;;
 
 let%expect_test "parenthesis3" =
-  test_programm {|(5);;|};
+  test_program {|(5);;|};
   [%expect {| [(Str_eval (Exp_constant (Const_integer 5)))] |}]
 ;;
 
 let%expect_test "parenthesis1" =
-  test_programm {|(5*(5-1));;|};
+  test_program {|(5*(5-1));;|};
   [%expect
     {|
     [(Str_eval
@@ -197,7 +197,7 @@ let%expect_test "parenthesis1" =
 ;;
 
 let%expect_test "parenthesis2" =
-  test_programm {|105 * 64 / 27 - 2 * (5*(5-1)) + 47 / 64 - (56 * (57 *4) - 5);;|};
+  test_program {|105 * 64 / 27 - 2 * (5*(5-1)) + 47 / 64 - (56 * (57 *4) - 5);;|};
   [%expect
     {|
     [(Str_eval
@@ -262,7 +262,7 @@ let%expect_test "parenthesis2" =
 ;;
 
 let%expect_test "parenthesis3" =
-  test_programm {|1 + (2 + 3);;|};
+  test_program {|1 + (2 + 3);;|};
   [%expect
     {|
     [(Str_eval
@@ -280,7 +280,7 @@ let%expect_test "parenthesis3" =
 ;;
 
 let%expect_test "logical ops + parenthesis" =
-  test_programm
+  test_program
     {|
     ((3 * (9 - 12 / 4) < 7 && 1) || 1 && 5 < 6) || 20 - 100 / (4 + 16) && 10 < 12 ;; 
 |};
@@ -368,7 +368,7 @@ let%expect_test "logical ops + parenthesis" =
 ;;
 
 let%expect_test "parenthesis4" =
-  test_programm {|((5-1)*5);;|};
+  test_program {|((5-1)*5);;|};
   [%expect
     {|
     [(Str_eval
@@ -385,7 +385,7 @@ let%expect_test "parenthesis4" =
 ;;
 
 let%expect_test "parenthesis5" =
-  test_programm {|(5*5-1);;|};
+  test_program {|(5*5-1);;|};
   [%expect
     {|
     [(Str_eval
@@ -402,7 +402,7 @@ let%expect_test "parenthesis5" =
 ;;
 
 let%expect_test "parenthesis5" =
-  test_programm {|(1-5*5);;|};
+  test_program {|(1-5*5);;|};
   [%expect
     {|
     [(Str_eval
@@ -423,7 +423,7 @@ let%expect_test "parenthesis5" =
 
 (*bad*)
 let%expect_test "parenthesis2" =
-  test_programm {|( 5-1 );;|};
+  test_program {|( 5-1 );;|};
   [%expect
     {|
     [(Str_eval
@@ -437,7 +437,7 @@ let%expect_test "parenthesis2" =
 
 (* good fr *)
 let%expect_test "tuple" =
-  test_programm {|(5,1,2,5);;|};
+  test_program {|(5,1,2,5);;|};
   [%expect
     {|
     [(Str_eval
@@ -449,7 +449,7 @@ let%expect_test "tuple" =
 
 (* good fr *)
 let%expect_test "int + a" =
-  test_programm {|5+'a';;|};
+  test_program {|5+'a';;|};
   [%expect
     {|
     [(Str_eval
@@ -462,7 +462,7 @@ let%expect_test "int + a" =
 ;;
 
 let%expect_test "let assignment" =
-  test_programm {|let x = 5 in 6;;|};
+  test_program {|let x = 5 in 6;;|};
   [%expect
     {|
     [(Str_eval
@@ -473,7 +473,7 @@ let%expect_test "let assignment" =
 ;;
 
 let%expect_test "let assignment" =
-  test_programm {|let reca = 1;;|};
+  test_program {|let reca = 1;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -485,7 +485,7 @@ let%expect_test "let assignment" =
 (* TODO *)
 
 let%expect_test "let assignment" =
-  test_programm {|let Some None = Some 1;;|};
+  test_program {|let Some None = Some 1;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -498,7 +498,7 @@ let%expect_test "let assignment" =
 ;;
 
 let%expect_test "let assignment none" =
-  test_programm {|let Some Some Some Some Some None = 1;;|};
+  test_program {|let Some Some Some Some Some None = 1;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -522,7 +522,7 @@ let%expect_test "let assignment none" =
 ;;
 
 let%expect_test "let assignment none" =
-  test_programm {|let Some Some Some Some Some None = 1;;|};
+  test_program {|let Some Some Some Some Some None = 1;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -546,7 +546,7 @@ let%expect_test "let assignment none" =
 ;;
 
 let%expect_test "let assignment with recursion" =
-  test_programm {|let rec x = 5 in 6;;|};
+  test_program {|let rec x = 5 in 6;;|};
   [%expect
     {|
     [(Str_eval
@@ -558,7 +558,7 @@ let%expect_test "let assignment with recursion" =
 
 (*bad*)
 let%expect_test "let assignment with recursion" =
-  test_programm {|let rec x = 5 in 7;;|};
+  test_program {|let rec x = 5 in 7;;|};
   [%expect
     {|
     [(Str_eval
@@ -569,17 +569,17 @@ let%expect_test "let assignment with recursion" =
 ;;
 
 let%expect_test "apply" =
-  test_programm {|x;;|};
+  test_program {|x;;|};
   [%expect {| [(Str_eval (Exp_ident "x"))] |}]
 ;;
 
 let%expect_test "apply without space" =
-  test_programm {|f(x);;|};
+  test_program {|f(x);;|};
   [%expect {| [(Str_eval (Exp_apply ((Exp_ident "f"), (Exp_ident "x"))))] |}]
 ;;
 
 let%expect_test "apply num to ident" =
-  test_programm {|f (x-1);;|};
+  test_program {|f (x-1);;|};
   [%expect
     {|
     [(Str_eval
@@ -592,18 +592,18 @@ let%expect_test "apply num to ident" =
 ;;
 
 let%expect_test "simple fun" =
-  test_programm {|fun x -> y;;|};
+  test_program {|fun x -> y;;|};
   [%expect {| [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
 ;;
 
 let%expect_test "multi pattern fun" =
-  test_programm {|fun x z -> y;;|};
+  test_program {|fun x z -> y;;|};
   [%expect
     {| [(Str_eval (Exp_fun (((Pat_var "x"), [(Pat_var "z")]), (Exp_ident "y"))))] |}]
 ;;
 
 let%expect_test "multi fun" =
-  test_programm {|fun p -> fun x -> z;;|};
+  test_program {|fun p -> fun x -> z;;|};
   [%expect
     {|
     [(Str_eval
@@ -613,7 +613,7 @@ let%expect_test "multi fun" =
 ;;
 
 let%expect_test "apply and subtraction" =
-  test_programm {|f (x-1);;|};
+  test_program {|f (x-1);;|};
   [%expect
     {|
     [(Str_eval
@@ -626,7 +626,7 @@ let%expect_test "apply and subtraction" =
 ;;
 
 let%expect_test "exprlet and" =
-  test_programm {|let rec x x x x x x x = y and x = 20 in 5;;|};
+  test_program {|let rec x x x x x x x = y and x = 20 in 5;;|};
   [%expect
     {|
     [(Str_eval
@@ -645,7 +645,7 @@ let%expect_test "exprlet and" =
 ;;
 
 let%expect_test "let and tuple" =
-  test_programm {|let (a,b) = (a,b);;|};
+  test_program {|let (a,b) = (a,b);;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -657,7 +657,7 @@ let%expect_test "let and tuple" =
 ;;
 
 let%expect_test "let and" =
-  test_programm {|let rec x x x x x x x = y and x = 20;;|};
+  test_program {|let rec x x x x x x x = y and x = 20;;|};
   [%expect
     {|
     [(Str_value (Recursive,
@@ -675,7 +675,7 @@ let%expect_test "let and" =
 ;;
 
 let%expect_test "multiplication and apply" =
-  test_programm {|x * f x;;|};
+  test_program {|x * f x;;|};
   [%expect
     {|
     [(Str_eval
@@ -688,7 +688,7 @@ let%expect_test "multiplication and apply" =
 ;;
 
 let%expect_test "let and apply" =
-  test_programm {|let f x = x;;|};
+  test_program {|let f x = x;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -700,7 +700,7 @@ let%expect_test "let and apply" =
 ;;
 
 let%expect_test "pattern constraint" =
-  test_programm {|let (x : int * int) = (x: int);;|};
+  test_program {|let (x : int * int) = (x: int);;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -714,7 +714,7 @@ let%expect_test "pattern constraint" =
 ;;
 
 let%expect_test "pattern constraint" =
-  test_programm {|let (x : int*int) = (x: int*int);;|};
+  test_program {|let (x : int*int) = (x: int*int);;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -731,7 +731,7 @@ let%expect_test "pattern constraint" =
 ;;
 
 let%expect_test "pattern constraint" =
-  test_programm {|let (x : int->int) = (x: int->int);;|};
+  test_program {|let (x : int->int) = (x: int->int);;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -748,7 +748,7 @@ let%expect_test "pattern constraint" =
 ;;
 
 let%expect_test "let and apply" =
-  test_programm {|let f x = g a b c;;|};
+  test_program {|let f x = g a b c;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -767,7 +767,7 @@ let%expect_test "let and apply" =
 ;;
 
 let%expect_test "let and apply v2" =
-  test_programm {|let fact x = fact(x-1);;|};
+  test_program {|let fact x = fact(x-1);;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -788,7 +788,7 @@ let%expect_test "let and apply v2" =
 ;;
 
 let%expect_test "if then" =
-  test_programm {|if 5 then 6;;|};
+  test_program {|if 5 then 6;;|};
   [%expect
     {|
     [(Str_eval
@@ -798,7 +798,7 @@ let%expect_test "if then" =
 ;;
 
 let%expect_test "if statement. condition from fact" =
-  test_programm {|if n = 0 then 1 else 7;;|};
+  test_program {|if n = 0 then 1 else 7;;|};
   [%expect
     {|
     [(Str_eval
@@ -812,7 +812,7 @@ let%expect_test "if statement. condition from fact" =
 ;;
 
 let%expect_test "let and if" =
-  test_programm {|let x = if n = 0 then 6 else 7 in 6;;|};
+  test_program {|let x = if n = 0 then 6 else 7 in 6;;|};
   [%expect
     {|
     [(Str_eval
@@ -833,7 +833,7 @@ let%expect_test "let and if" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let rec fact n = if n = 0 then 1 else n * fact(n-1);;|};
+  test_program {|let rec fact n = if n = 0 then 1 else n * fact(n-1);;|};
   [%expect
     {|
     [(Str_value (Recursive,
@@ -868,7 +868,7 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let (x: int->char->string -> x *x* x) = 1;;|};
+  test_program {|let (x: int->char->string -> x *x* x) = 1;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -887,7 +887,7 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let rec a = 1;;|};
+  test_program {|let rec a = 1;;|};
   [%expect
     {|
     [(Str_value (Recursive,
@@ -896,7 +896,7 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let rec a = 1;;|};
+  test_program {|let rec a = 1;;|};
   [%expect
     {|
     [(Str_value (Recursive,
@@ -905,7 +905,7 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let reca = 1 in 5;;|};
+  test_program {|let reca = 1 in 5;;|};
   [%expect
     {|
     [(Str_eval
@@ -917,7 +917,7 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let reca = 1;;|};
+  test_program {|let reca = 1;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -927,7 +927,7 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "_" =
-  test_programm {|let recgP6Tz_9 = zdghovr and _ = n_4p;;|};
+  test_program {|let recgP6Tz_9 = zdghovr and _ = n_4p;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -938,7 +938,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm {|(f : (Int -> int -> int));;|};
+  test_program {|(f : (Int -> int -> int));;|};
   [%expect
     {|
     [(Str_eval
@@ -950,7 +950,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm {|let (f:(x)) = 5;;|};
+  test_program {|let (f:(x)) = 5;;|};
   [%expect
     {|
     [(Str_value (Nonrecursive,
@@ -962,7 +962,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm {|function l -> "" | ;;|};
+  test_program {|function l -> "" | ;;|};
   [%expect
     {|
     [(Str_eval
@@ -973,7 +973,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm {| function
+  test_program {| function
 | "" -> 'a'
 | "" -> "izvkvwcet" ;;|};
   [%expect
@@ -989,7 +989,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm
+  test_program
     {| (_kR__E2RrhRf_Ln_n_KbLPf97J__gCp1G5T3rOo_7_S5__yRY1377LAU3U_9m_u_yl_wYFdTj5_q_S_9k_JC : EE7___Oe_) ;;|};
   [%expect
     {|
@@ -1002,7 +1002,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm
+  test_program
     {|('v' : (SqEcf8boz* L58r6D_P_bX___yy_93GPH__04_r___d9Zc_1U2__c8XmN1n_F_WBqxl68h_8_TCGqp3B_5w_Y_53a6_d_6_H9845__c5__09s* Sh__7ud_43* E_KKm_z3r5__jHMLw_qd1760R_G__nI6_J040__AB_6s0__D__d__e32Te6H_4__Ec_V_E__f_* o0_a_W_* f__LcPREH13__mY_CezffoI5_8_u_zU__ZncOnf_v4_L8_44Y72_3_A5_B758TViP_u_vyFU9_1* QD0* g4wp33A_W* E1V_gi_6y* x_Sv_PZ)) ;; |};
   [%expect
     {|
@@ -1025,7 +1025,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "_" =
-  test_programm {|(p_Ui7_1fX : pT9pj -> O9_dnUo);;|};
+  test_program {|(p_Ui7_1fX : pT9pj -> O9_dnUo);;|};
   [%expect
     {|
     [(Str_eval
@@ -1130,6 +1130,88 @@ let%expect_test "adt with multiple poly v2" =
 
 let%expect_test "adt with poly (con poly variant)" =
   test_programm {|type 'a shape = Circle | Square of (int * int) shape;;|};
+=======
+let%expect_test "print_endline as an arg" =
+  test_program {|let f = print_endline in 
+f "Hello";;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "f"); expr = (Exp_ident "print_endline") }, []),
+           (Exp_apply ((Exp_ident "f"), (Exp_constant (Const_string "Hello")))))))
+      ] |}]
+;;
+
+let%expect_test "just let (char)" =
+  test_program {|let x = '5';;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_char '5')) }, [])))
+      ] |}]
+;;
+
+let%expect_test "string print_endline" =
+  test_program {|let x = "51" in 
+print_endline x;;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_string "51")) },
+            []),
+           (Exp_apply ((Exp_ident "print_endline"), (Exp_ident "x"))))))
+      ] |}]
+;;
+
+let%expect_test "string print_endline" =
+  test_program {|x = "51";;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "="),
+           (Exp_tuple ((Exp_ident "x"), (Exp_constant (Const_string "51")), []))
+           )))
+      ] |}]
+;;
+
+let%expect_test "match case" =
+  test_program
+    {|let classify n = 
+  match n with
+  | 0 -> "zero"
+  | 1 -> "one"
+  | _ -> "other"
+;;|};
+  [%expect
+    {|
+  [(Str_value (Nonrecursive,
+      ({ pat = (Pat_var "classify");
+         expr =
+         (Exp_fun (((Pat_var "n"), []),
+            (Exp_match ((Exp_ident "n"),
+               ({ first = (Pat_constant (Const_integer 0));
+                  second = (Exp_constant (Const_string "zero")) },
+                [{ first = (Pat_constant (Const_integer 1));
+                   second = (Exp_constant (Const_string "one")) };
+                  { first = Pat_any;
+                    second = (Exp_constant (Const_string "other")) }
+                  ])
+               ))
+            ))
+         },
+       [])
+      ))
+    ] |}]
+;;
+
+let%expect_test "if then case" =
+  test_program
+    {| let x = 10 in
+if x > 5 then print_endline "> 5"
+else print_endline "<= 5";;
+;; |};
   [%expect.unreachable]
 [@@expect.uncaught_exn
   {|
@@ -1235,5 +1317,140 @@ let%expect_test "adt list with 2 el in node" =
              (Type_construct ("pair_list", [(Type_var "a"); (Type_var "b")]))])
            ])
         ))
+
+let%expect_test "if then case" =
+  test_program
+    {| let check_number n =
+  if n = 0 then
+    print_endline "Zero"
+  else if n = 1 then
+    print_endline "One"
+  else
+    print_endline "Other"
+in 
+check_number 5
+;; |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "check_number");
+              expr =
+              (Exp_fun (((Pat_var "n"), []),
+                 (Exp_if (
+                    (Exp_apply ((Exp_ident "="),
+                       (Exp_tuple
+                          ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+                       )),
+                    (Exp_apply ((Exp_ident "print_endline"),
+                       (Exp_constant (Const_string "Zero")))),
+                    (Some (Exp_if (
+                             (Exp_apply ((Exp_ident "="),
+                                (Exp_tuple
+                                   ((Exp_ident "n"),
+                                    (Exp_constant (Const_integer 1)), []))
+                                )),
+                             (Exp_apply ((Exp_ident "print_endline"),
+                                (Exp_constant (Const_string "One")))),
+                             (Some (Exp_apply ((Exp_ident "print_endline"),
+                                      (Exp_constant (Const_string "Other")))))
+                             )))
+                    ))
+                 ))
+              },
+            []),
+           (Exp_apply ((Exp_ident "check_number"),
+              (Exp_constant (Const_integer 5))))
+           )))
+      ] |}]
+;;
+
+let%expect_test "if then case" =
+  test_program
+    {| let check_number n =
+  if n <> 0 then
+    print_endline "Zero"
+  else if n = 1 then
+    print_endline "One"
+  else
+    print_endline "Other"
+
+;; |};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "check_number");
+           expr =
+           (Exp_fun (((Pat_var "n"), []),
+              (Exp_if (
+                 (Exp_apply ((Exp_ident "<>"),
+                    (Exp_tuple
+                       ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+                    )),
+                 (Exp_apply ((Exp_ident "print_endline"),
+                    (Exp_constant (Const_string "Zero")))),
+                 (Some (Exp_if (
+                          (Exp_apply ((Exp_ident "="),
+                             (Exp_tuple
+                                ((Exp_ident "n"),
+                                 (Exp_constant (Const_integer 1)), []))
+                             )),
+                          (Exp_apply ((Exp_ident "print_endline"),
+                             (Exp_constant (Const_string "One")))),
+                          (Some (Exp_apply ((Exp_ident "print_endline"),
+                                   (Exp_constant (Const_string "Other")))))
+                          )))
+                 ))
+              ))
+           },
+         [])
+        ))
+      ] |}]
+;;
+
+let%expect_test "rec fun (pow)" =
+  test_program
+    {|
+let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6)
+;; |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Recursive,
+           ({ pat = (Pat_var "pow");
+              expr =
+              (Exp_fun (((Pat_var "x"), [(Pat_var "y")]),
+                 (Exp_if (
+                    (Exp_apply ((Exp_ident "="),
+                       (Exp_tuple
+                          ((Exp_ident "y"), (Exp_constant (Const_integer 0)), []))
+                       )),
+                    (Exp_constant (Const_integer 1)),
+                    (Some (Exp_apply ((Exp_ident "*"),
+                             (Exp_tuple
+                                ((Exp_ident "x"),
+                                 (Exp_apply (
+                                    (Exp_apply ((Exp_ident "pow"),
+                                       (Exp_ident "x"))),
+                                    (Exp_apply ((Exp_ident "-"),
+                                       (Exp_tuple
+                                          ((Exp_ident "y"),
+                                           (Exp_constant (Const_integer 1)),
+                                           []))
+                                       ))
+                                    )),
+                                 []))
+                             )))
+                    ))
+                 ))
+              },
+            []),
+           (Exp_apply ((Exp_ident "print_int"),
+              (Exp_apply (
+                 (Exp_apply ((Exp_ident "pow"), (Exp_constant (Const_integer 5))
+                    )),
+                 (Exp_constant (Const_integer 6))))
+              ))
+           )))
       ] |}]
 ;;

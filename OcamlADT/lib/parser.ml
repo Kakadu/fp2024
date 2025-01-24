@@ -380,11 +380,11 @@ let pmul = parsebinop "*"
 
 let pcompops =
   choice
-    [ parsebinop ">"
-    ; parsebinop "<"
-    ; parsebinop ">="
+    [ parsebinop ">="
     ; parsebinop "<="
     ; parsebinop "<>"
+    ; parsebinop ">"
+    ; parsebinop "<"
     ; parsebinop "="
     ]
 ;;
