@@ -8,20 +8,21 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        pvb_expr =
                        (Pexp_fun ((Ppat_var "n"),
                           (Pexp_ifthenelse (
-                             (Pexp_apply ((Pexp_ident (Id "=")),
-                                [(Pexp_ident (Id "n"));
+                             (Pexp_apply ((Pexp_ident "="),
+                                [(Pexp_ident "n");
                                   (Pexp_constant (Pconst_int 0))]
                                 )),
                              (Pexp_constant (Pconst_int 1)),
-                             (Some (Pexp_apply (
-                                      (Pexp_apply ((Pexp_ident (Id "*")),
-                                         [(Pexp_ident (Id "n"));
-                                           (Pexp_ident (Id "factorial"))]
-                                         )),
-                                      [(Pexp_apply ((Pexp_ident (Id "-")),
-                                          [(Pexp_ident (Id "n"));
-                                            (Pexp_constant (Pconst_int 1))]
-                                          ))
+                             (Some (Pexp_apply ((Pexp_ident "*"),
+                                      [(Pexp_ident "n");
+                                        (Pexp_apply ((Pexp_ident "factorial"),
+                                           [(Pexp_apply ((Pexp_ident "-"),
+                                               [(Pexp_ident "n");
+                                                 (Pexp_constant (Pconst_int 1))
+                                                 ]
+                                               ))
+                                             ]
+                                           ))
                                         ]
                                       )))
                              ))

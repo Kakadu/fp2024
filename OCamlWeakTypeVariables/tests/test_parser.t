@@ -4,7 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../bin/REPL.exe -dparsetree <<EOF
   > 2 * 2
   Parsed result: (Pstr_eval
-                    (Pexp_apply ((Pexp_ident (Id "*")),
+                    (Pexp_apply ((Pexp_ident "*"),
                        [(Pexp_constant (Pconst_int 2));
                          (Pexp_constant (Pconst_int 2))]
                        )))
@@ -12,20 +12,20 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../bin/REPL.exe -dparsetree <<EOF
   > 2 * ((2 * (124 * homka))) * (((2 * 1)))
   Parsed result: (Pstr_eval
-                    (Pexp_apply ((Pexp_ident (Id "*")),
-                       [(Pexp_apply ((Pexp_ident (Id "*")),
+                    (Pexp_apply ((Pexp_ident "*"),
+                       [(Pexp_apply ((Pexp_ident "*"),
                            [(Pexp_constant (Pconst_int 2));
-                             (Pexp_apply ((Pexp_ident (Id "*")),
+                             (Pexp_apply ((Pexp_ident "*"),
                                 [(Pexp_constant (Pconst_int 2));
-                                  (Pexp_apply ((Pexp_ident (Id "*")),
+                                  (Pexp_apply ((Pexp_ident "*"),
                                      [(Pexp_constant (Pconst_int 124));
-                                       (Pexp_ident (Id "homka"))]
+                                       (Pexp_ident "homka")]
                                      ))
                                   ]
                                 ))
                              ]
                            ));
-                         (Pexp_apply ((Pexp_ident (Id "*")),
+                         (Pexp_apply ((Pexp_ident "*"),
                             [(Pexp_constant (Pconst_int 2));
                               (Pexp_constant (Pconst_int 1))]
                             ))
@@ -35,16 +35,16 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../bin/REPL.exe -dparsetree <<EOF
   > 2 * ((2 / (124 / homka))) * (1) * (2 / 2) * (((2 * 1)))
   Parsed result: (Pstr_eval
-                    (Pexp_apply ((Pexp_ident (Id "*")),
-                       [(Pexp_apply ((Pexp_ident (Id "*")),
-                           [(Pexp_apply ((Pexp_ident (Id "*")),
-                               [(Pexp_apply ((Pexp_ident (Id "*")),
+                    (Pexp_apply ((Pexp_ident "*"),
+                       [(Pexp_apply ((Pexp_ident "*"),
+                           [(Pexp_apply ((Pexp_ident "*"),
+                               [(Pexp_apply ((Pexp_ident "*"),
                                    [(Pexp_constant (Pconst_int 2));
-                                     (Pexp_apply ((Pexp_ident (Id "/")),
+                                     (Pexp_apply ((Pexp_ident "/"),
                                         [(Pexp_constant (Pconst_int 2));
-                                          (Pexp_apply ((Pexp_ident (Id "/")),
+                                          (Pexp_apply ((Pexp_ident "/"),
                                              [(Pexp_constant (Pconst_int 124));
-                                               (Pexp_ident (Id "homka"))]
+                                               (Pexp_ident "homka")]
                                              ))
                                           ]
                                         ))
@@ -52,13 +52,13 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                                    ));
                                  (Pexp_constant (Pconst_int 1))]
                                ));
-                             (Pexp_apply ((Pexp_ident (Id "/")),
+                             (Pexp_apply ((Pexp_ident "/"),
                                 [(Pexp_constant (Pconst_int 2));
                                   (Pexp_constant (Pconst_int 2))]
                                 ))
                              ]
                            ));
-                         (Pexp_apply ((Pexp_ident (Id "*")),
+                         (Pexp_apply ((Pexp_ident "*"),
                             [(Pexp_constant (Pconst_int 2));
                               (Pexp_constant (Pconst_int 1))]
                             ))
@@ -93,21 +93,21 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../bin/REPL.exe -dparsetree <<EOF
   > if x then y else z
   Parsed result: (Pstr_eval
-                    (Pexp_ifthenelse ((Pexp_ident (Id "x")),
-                       (Pexp_ident (Id "y")), (Some (Pexp_ident (Id "z"))))))
+                    (Pexp_ifthenelse ((Pexp_ident "x"), (Pexp_ident "y"),
+                       (Some (Pexp_ident "z")))))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > if x then if y then z
   Parsed result: (Pstr_eval
-                    (Pexp_ifthenelse ((Pexp_ident (Id "x")),
-                       (Pexp_ifthenelse ((Pexp_ident (Id "y")),
-                          (Pexp_ident (Id "z")), None)),
+                    (Pexp_ifthenelse ((Pexp_ident "x"),
+                       (Pexp_ifthenelse ((Pexp_ident "y"), (Pexp_ident "z"),
+                          None)),
                        None)))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > 2 * if true then 2 else 1
   Parsed result: (Pstr_eval
-                    (Pexp_apply ((Pexp_ident (Id "*")),
+                    (Pexp_apply ((Pexp_ident "*"),
                        [(Pexp_constant (Pconst_int 2));
                          (Pexp_ifthenelse (
                             (Pexp_constant (Pconst_boolean true)),
@@ -121,8 +121,8 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   Parsed result: (Pstr_eval
                     (Pexp_fun ((Ppat_var "x"),
                        (Pexp_fun ((Ppat_var "y"),
-                          (Pexp_ifthenelse ((Pexp_ident (Id "x")),
-                             (Pexp_ident (Id "y")), None))
+                          (Pexp_ifthenelse ((Pexp_ident "x"), (Pexp_ident "y"),
+                             None))
                           ))
                        )))
 
@@ -131,17 +131,16 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   Parsed result: (Pstr_eval
                     (Pexp_fun ((Ppat_var "x"),
                        (Pexp_fun ((Ppat_var "y"),
-                          (Pexp_ifthenelse ((Pexp_ident (Id "x")),
-                             (Pexp_ident (Id "y")),
-                             (Some (Pexp_ident (Id "x")))))
+                          (Pexp_ifthenelse ((Pexp_ident "x"), (Pexp_ident "y"),
+                             (Some (Pexp_ident "x"))))
                           ))
                        )))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > f y z
   Parsed result: (Pstr_eval
-                    (Pexp_apply ((Pexp_ident (Id "f")),
-                       [(Pexp_ident (Id "y")); (Pexp_ident (Id "z"))])))
+                    (Pexp_apply ((Pexp_ident "f"),
+                       [(Pexp_ident "y"); (Pexp_ident "z")])))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let homka = 5 in homka
@@ -150,7 +149,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        [{ pvb_pat = (Ppat_var "homka");
                           pvb_expr = (Pexp_constant (Pconst_int 5)) }
                          ],
-                       (Pexp_ident (Id "homka")))))
+                       (Pexp_ident "homka"))))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let homka = fun x -> x + 2 in homka
@@ -159,14 +158,14 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        [{ pvb_pat = (Ppat_var "homka");
                           pvb_expr =
                           (Pexp_fun ((Ppat_var "x"),
-                             (Pexp_apply ((Pexp_ident (Id "+")),
-                                [(Pexp_ident (Id "x"));
+                             (Pexp_apply ((Pexp_ident "+"),
+                                [(Pexp_ident "x");
                                   (Pexp_constant (Pconst_int 2))]
                                 ))
                              ))
                           }
                          ],
-                       (Pexp_ident (Id "homka")))))
+                       (Pexp_ident "homka"))))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let reca = 5
@@ -180,7 +179,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   > (5+5, fun homka x -> 5, "looool")
   Parsed result: (Pstr_eval
                     (Pexp_tuple
-                       [(Pexp_apply ((Pexp_ident (Id "+")),
+                       [(Pexp_apply ((Pexp_ident "+"),
                            [(Pexp_constant (Pconst_int 5));
                              (Pexp_constant (Pconst_int 5))]
                            ));

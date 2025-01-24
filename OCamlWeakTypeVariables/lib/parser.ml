@@ -17,6 +17,7 @@ let is_whitespace = function
 let is_keyword = function
   | "let"
   | "rec"
+  | "and"
   | "if"
   | "then"
   | "else"
@@ -44,14 +45,13 @@ let p_const_int =
     | '0' .. '9' -> true
     | _ -> false
   in
-  let* sign = choice [ token "-"; token "+"; token "" ] in
   let* first_digit = satisfy is_digit in
   let+ digits =
     take_while (function
       | '0' .. '9' | '_' -> true
       | _ -> false)
   in
-  Pconst_int (int_of_string (sign ^ Char.escaped first_digit ^ digits))
+  Pconst_int (int_of_string (Char.escaped first_digit ^ digits))
 ;;
 
 let p_const_string =
@@ -98,7 +98,7 @@ let lowercase_ident =
 (* TODO: readable error message *)
 let p_id : id t =
   let+ var = lowercase_ident in
-  Id var
+  var
 ;;
 
 let pexp_ident = p_id >>| fun i -> Pexp_ident i
@@ -109,9 +109,7 @@ let chain1l expr op =
 ;;
 
 let p_binop p expr =
-  chain1l
-    expr
-    (p >>= fun c -> return (fun x y -> Pexp_apply (Pexp_ident (Id c), [ x; y ])))
+  chain1l expr (p >>= fun c -> return (fun x y -> Pexp_apply (Pexp_ident c, [ x; y ])))
 ;;
 
 let p_tuple expr =
@@ -119,21 +117,8 @@ let p_tuple expr =
 ;;
 
 let p_pattern =
-  let pat_any = token "_" >>| fun _ -> Ppat_any in
-  let pat_const = p_const >>| fun c -> Ppat_constant c in
   let pat_var = lowercase_ident >>| fun var -> Ppat_var var in
-  let pat_interval =
-    p_const >>= fun f -> token ".." *> p_const >>| fun s -> Ppat_interval (f, s)
-  in
-  fix (fun pattern : pattern t ->
-    let pat_const =
-      choice [ parens pattern; pat_interval; pat_const; pat_any; pat_var ]
-    in
-    let pat_tuple =
-      lift2 (fun l ls -> Ppat_tuple (l :: ls)) pat_const (many1 (token "," *> pat_const))
-      <|> pat_const
-    in
-    pat_tuple)
+  pat_var
 ;;
 
 let p_fun expr =
@@ -173,9 +158,10 @@ let p_value_binding expr =
 
 let p_let_in expr =
   let* rec_flag = token "let" *> p_rec_flag in
-  let* value_bindings = many1 (p_value_binding expr) in
+  let* vb = p_value_binding expr in
+  let* value_bindings = many (token "and" *> p_value_binding expr) in
   let+ expr = token "in" *> expr in
-  Pexp_let (rec_flag, value_bindings, expr)
+  Pexp_let (rec_flag, vb :: value_bindings, expr)
 ;;
 
 let token_or xs : string t =
@@ -190,21 +176,22 @@ let p_expr =
     let expr_const =
       choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr; p_branch expr ]
     in
-    let expr_mul_div = p_binop (token "*" <|> token "/") expr_const <|> expr_const in
+    let expr_fun = p_fun expr <|> expr_const in
+    let expr_apply = p_apply expr_fun <|> expr_fun in
+    let expr_mul_div = p_binop (token "*" <|> token "/") expr_apply <|> expr_apply in
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
     let expr_comparison =
       p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
     in
-    let expr_fun = p_fun expr <|> expr_comparison in
-    let expr_apply = p_apply expr_fun <|> expr_fun in
-    let expr_let_in = p_let_in expr <|> expr_apply in
+    let expr_let_in = p_let_in expr <|> expr_comparison in
     expr_let_in)
 ;;
 
 let p_str_value expr =
   let* rec_flag = token "let" *> p_rec_flag in
-  let+ value_bindings = many1 (p_value_binding expr) in
-  Pstr_value (rec_flag, value_bindings)
+  let* vb = p_value_binding expr in
+  let+ value_bindings = many (token "and" *> p_value_binding expr) in
+  Pstr_value (rec_flag, vb :: value_bindings)
 ;;
 
 let p_structure =
@@ -213,5 +200,6 @@ let p_structure =
   str_eval
 ;;
 
+let parse_expr str = parse_string ~consume:All p_expr str
 let parse_structure str = parse_string ~consume:All p_structure str
 let parse = parse_structure
