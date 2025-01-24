@@ -1,0 +1,5 @@
+(library
+ (name baseMonad)
+ (libraries errors)
+ (instrumentation
+  (backend bisect_ppx)))

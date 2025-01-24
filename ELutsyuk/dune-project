@@ -1,0 +1,31 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license MIT)
+
+(authors "Victoria Lutsyuk <victorialutsyuk.t@gmail.com>")
+
+(maintainers "Victoria Lutsyuk <victorialutsyuk.t@gmail.com>")
+
+(bug_reports "https://github.com/vicitori/miniML-interpreter")
+
+(homepage "https://github.com/vicitori/miniML-interpreter")
+
+(package
+ (name ELutsyuk)
+ (synopsis "An interpreter for miniML")
+ (description "An interpreter for a subset of the ML language (WIP)")
+ (documentation "https://kakadu.github.io/fp2024/docs/ELutsyuk")
+ (version 0.1)
+ (depends
+  dune
+  (ppx_inline_test :with-test)
+  angstrom
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)))

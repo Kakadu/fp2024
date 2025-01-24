@@ -1,0 +1,15 @@
+(include_subdirs no)
+
+(library
+ (name tests)
+ (public_name ELutsyuk.Tests)
+ (libraries ast parse)
+ (preprocess
+  (pps ppx_expect))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (applies_to testAst)
+ (deps ../bin/printAst.exe))

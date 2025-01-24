@@ -5,7 +5,7 @@
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)
- (modules parser astPrinter infer)
+ (modules parser astPrinter inferencer interpreter)
  (instrumentation
   (backend bisect_ppx)))
 

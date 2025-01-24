@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -50,8 +50,7 @@ let gen_func_type gtype =
 
 let gen_chan_type gtype =
   let* type' = gtype in
-  let* chan_dir = oneofl [ Chan_bidirectional; Chan_receive; Chan_send ] in
-  return (Type_chan (chan_dir, type'))
+  return (Type_chan type')
 ;;
 
 let gen_type =
@@ -89,23 +88,9 @@ let gen_const_array gexpr =
   return (Const_array (size, type', inits))
 ;;
 
-let gen_return_values =
-  let gen_only_types =
-    let* hd = gen_type in
-    let* tl = list4 gen_type in
-    return (Only_types (hd, tl))
-  in
-  let gen_ident_and_types =
-    let* hd = pair gen_ident gen_type in
-    let* tl = list4 (pair gen_ident gen_type) in
-    return (Ident_and_types (hd, tl))
-  in
-  oneof [ gen_only_types; gen_ident_and_types ]
-;;
-
 let gen_anon_func gblock =
   let* args = list4 (pair gen_ident gen_type) in
-  let* returns = option gen_return_values in
+  let* returns = list4 gen_type in
   let* body = gblock in
   return { args; returns; body }
 ;;
@@ -170,14 +155,16 @@ let gen_expr_un_oper gexpr =
   return (Expr_un_oper (operator, operand))
 ;;
 
-let gen_func_call gexpr =
+let upd_func_call (e, lst) = e, List.map (fun x -> Arg_expr x) lst
+
+let gen_func_call gexpr upd_fcall =
   let* func = gexpr in
   let* args = list4 gexpr in
-  return (func, args)
+  return (upd_fcall (func, args))
 ;;
 
 let gen_expr_func_call gexpr =
-  let* call = gen_func_call gexpr in
+  let* call = gen_func_call gexpr upd_func_call in
   return (Expr_call call)
 ;;
 
@@ -210,7 +197,7 @@ let gen_long_decl gblock =
     ; (let* first_assign = pair gen_ident (gen_expr gblock) in
        let* rest_assigns = list4 (pair gen_ident (gen_expr gblock)) in
        return (Long_decl_mult_init (Option.some type', first_assign, rest_assigns)))
-    ; (let* call = gen_func_call (gen_expr gblock) in
+    ; (let* call = gen_func_call (gen_expr gblock) upd_func_call in
        return
          (Long_decl_one_init (Option.some type', first_id, second_id, rest_ids, call)))
     ]
@@ -229,7 +216,7 @@ let gen_short_decl gblock =
     ; (let* first_id = gen_ident in
        let* second_id = gen_ident in
        let* rest_ids = list4 gen_ident in
-       let* call = gen_func_call (gen_expr gblock) in
+       let* call = gen_func_call (gen_expr gblock) upd_func_call in
        return (Short_decl_one_init (first_id, second_id, rest_ids, call)))
     ]
 ;;
@@ -262,7 +249,7 @@ let gen_assign gblock =
     ; (let* first_lvalue = gen_assign_lvalue gblock in
        let* second_lvalue = gen_assign_lvalue gblock in
        let* rest_lvalues = list4 (gen_assign_lvalue gblock) in
-       let* call = gen_func_call (gen_expr gblock) in
+       let* call = gen_func_call (gen_expr gblock) upd_func_call in
        return (Assign_one_expr (first_lvalue, second_lvalue, rest_lvalues, call)))
     ]
 ;;
@@ -279,12 +266,12 @@ let gen_chan_send gblock =
 ;;
 
 let gen_stmt_call gblock =
-  let* call = gen_func_call (gen_expr gblock) in
+  let* call = gen_func_call (gen_expr gblock) upd_func_call in
   return (Stmt_call call)
 ;;
 
 let gen_stmt_defer_go gblock =
-  let* call = gen_func_call (gen_expr gblock) in
+  let* call = gen_func_call (gen_expr gblock) upd_func_call in
   oneofl [ Stmt_defer call; Stmt_go call ]
 ;;
 
@@ -302,7 +289,9 @@ let gen_if_for_init gstmt =
     ; map (fun assign -> Init_assign assign) (gen_assign (gen_block gstmt))
     ; map (fun id -> Init_incr id) gen_ident
     ; map (fun id -> Init_decr id) gen_ident
-    ; map (fun id -> Init_call id) (gen_func_call (gen_expr (gen_block gstmt)))
+    ; map
+        (fun id -> Init_call id)
+        (gen_func_call (gen_expr (gen_block gstmt)) upd_func_call)
     ; map (fun send -> Init_send send) (gen_chan_send (gen_block gstmt))
     ; map (fun chan -> Init_receive chan) (gen_expr (gen_block gstmt))
     ]
@@ -311,8 +300,8 @@ let gen_if_for_init gstmt =
 let gen_if gstmt =
   sized_size size4
   @@ fix (fun self n ->
-    let* init = option (gen_if_for_init gstmt) in
-    let* cond = gen_expr (gen_block gstmt) in
+    let* if_init = option (gen_if_for_init gstmt) in
+    let* if_cond = gen_expr (gen_block gstmt) in
     let* if_body = gen_block gstmt in
     let* else_body =
       match n with
@@ -327,15 +316,15 @@ let gen_if gstmt =
                  ])
           ]
     in
-    return { init; cond; if_body; else_body })
+    return { if_init; if_cond; if_body; else_body })
 ;;
 
 let gen_stmt_for gstmt =
-  let* init = option (gen_if_for_init gstmt) in
-  let* cond = option (gen_expr (gen_block gstmt)) in
-  let* post = option (gen_if_for_init gstmt) in
-  let* body = gen_block gstmt in
-  return (Stmt_for { init; cond; post; body })
+  let* for_init = option (gen_if_for_init gstmt) in
+  let* for_cond = option (gen_expr (gen_block gstmt)) in
+  let* for_post = option (gen_if_for_init gstmt) in
+  let* for_body = gen_block gstmt in
+  return (Stmt_for { for_init; for_cond; for_post; for_body })
 ;;
 
 let gen_stmt =
