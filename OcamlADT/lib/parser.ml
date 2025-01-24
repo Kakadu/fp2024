@@ -150,7 +150,7 @@ let ptypevar =
 ;;
 
 let ptypetuple ptype =
-  let* el1 = pass_ws *> ptype in
+  let* el1 = ptype in
   let* el2 = token "*" *> ptype in
   let* rest = many (token "*" *> ptype) in
   return (TypeExpr.Type_tuple (el1, el2, rest))
@@ -165,33 +165,35 @@ let ptype =
 ;;
 
 let ptypeconstr =
-  let* tparams =
-    option
-      []
-      (pparenth (sep_by (token ",") (token "'" *> ptypevar))
-       <|>
-       let* ttuple = pparenth (ptypetuple ptypevar) in
-       return [ ttuple ] <|> many (token "'" *> ptypevar))
-  in
-  let* tname =
-    option
-      None
-      (let* name = pass_ws *> pident_lc in
-       return (Some name))
-  in
-  return
-    (match tname with
-     | Some name -> TypeExpr.Type_construct (name, tparams)
-     | None -> TypeExpr.Type_construct ("", tparams))
+  fix (fun ptconstr ->
+    let* tparams =
+      option
+        []
+        (pparenth (sep_by (token ",") (token "'" *> ptypevar))
+         <|>
+         let* typevar = token "'" *> ptypevar in
+         return [ typevar ]
+         <|>
+         let* ctuple = pparenth (ptypetuple ptconstr) in
+         return [ ctuple ]
+         <|>
+         let* ttuple = pparenth (ptypetuple ptypevar) in
+         return [ ttuple ])
+    in
+    let* tname =
+      option
+        None
+        (let* name = pass_ws *> pident_lc in
+         return (Some name))
+    in
+    match tname, tparams with
+    | None, [ TypeExpr.Type_var _ ] ->
+      fail "Type constructor cannot have a single type parameter without a name"
+    | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
+    | None, _ -> return (TypeExpr.Type_construct ("", tparams)))
 ;;
 
-let ptype_adt =
-  pass_ws
-  *> fix (fun ptype ->
-    let ptvar = choice [ pparenth ptype; ptypevar ] in
-    let pttuple = token "'" *> ptvar <|> ptypeconstr in
-    pttuple)
-;;
+let ptype_adt = pass_ws *> ptypeconstr <|> token "'" *> ptypevar
 
 (*
    ░▒▓███████▓▒░ ░▒▓██████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓███████▓▒░
