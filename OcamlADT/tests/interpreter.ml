@@ -396,3 +396,89 @@ let test = swap (1, "ocaml");; |};
   val test = ("ocaml", 1)
   |}]
 ;;
+
+let%expect_test "()" =
+  pp_parse_demo
+    {|
+    let a =
+      let b = 
+        let rec f = (let x = 3 in x) + 1 
+        in f
+      in ();;
+    let s = "string";;
+    |};
+  [%expect {|
+    Parser Error |}]
+;;
+
+let%expect_test "multiple funs (+ nested)" =
+  pp_parse_demo
+    {| let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f)) ;;
+ |};
+  [%expect {|
+  val fix = <fun>
+  |}]
+;;
+
+let%expect_test "option type match" =
+  pp_parse_demo
+    {|
+let _2 = function
+  | Some f -> let _ = f "42" in f 42
+  | None -> 1
+;;
+ |};
+  [%expect {|
+  val _2 = <function>
+  |}]
+;;
+
+let%expect_test "tuples" =
+  pp_parse_demo {|
+let rec (a, b) = (a, b) ;;
+ |};
+  [%expect {|
+  Intepreter error: Unbound value a
+  |}]
+;;
+
+let%expect_test "tuples mismatch (fail: PatternMismatch)" =
+  pp_parse_demo {|
+let a, _ = 1, 2, 3 ;;
+ |};
+  [%expect {|
+  Intepreter error: Pattern mismatch
+  |}]
+;;
+
+let%expect_test "tuples" =
+  pp_parse_demo {|
+let [a] = (fun x -> x) ;; 
+ |};
+  [%expect {|
+  Intepreter error: Unbound value a
+  |}]
+;;
+
+let%expect_test "list" =
+  pp_parse_demo {|
+let [a] = [42] ;; 
+ |};
+  [%expect {|
+  Intepreter error: Unbound value a
+  |}]
+;;
+
+let%expect_test "adt" =
+  pp_parse_demo
+    {|
+type point = float * float
+type shape =
+  | Point of point
+  | Circle of point * float 
+  | Rect of point * point 
+;;|};
+  [%expect {|
+  Intepreter error: Unbound value a
+  |}]
+;;
