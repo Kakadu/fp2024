@@ -496,17 +496,88 @@ type shape = Point of point
   |}]
 ;;
 
-let%expect_test "simple adt with printing" =
+let%expect_test "simple adt with pattern matching function + printing" =
   pp_parse_demo
     {|
 type shape = Circle of int
   | Rectangle of int * int
   | Square of int
 ;;
-let x = Circle 5 in 
-print_int area x;;
+let area s = 
+    match s with
+    | Circle c -> 3 
+    | Square c -> 0
+    | _ -> 10
+;;
+let x = Circle 5 in
+let y = area x in
+print_int y
+;;
+
   |};
-  [%expect {| Interpreter error: Circle is not an ADT|}]
+  [%expect {|
+    3
+    val area = <fun>|}]
+;;
+
+let%expect_test "simple adt with pattern matching function + printing v2" =
+  pp_parse_demo
+    {|
+type shape = Circle of int
+  | Rectangle of int * int
+  | Square of int
+;;
+let area s = 
+    match s with
+    | Circle c -> 3 
+    | Square c -> 0
+    | _ -> 10
+;;
+let x = Rectangle (5, 10) in
+let y = area x in
+print_int y
+;;
+
+  |};
+  [%expect {|
+    Intepreter error: Pattern mismatch|}]
+;;
+
+let%expect_test "simple adt (fail: UnboundValue)" =
+  pp_parse_demo
+    {|
+type shape = Circle of int
+  | Rectangle of int * int
+  | Square of int
+;;
+
+let x = Chto 5
+;;
+  |};
+  [%expect {|
+    Intepreter error: Unbound value Chto|}]
+;;
+
+let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
+  pp_parse_demo
+    {|
+type shape = Circle of int
+  | Rectangle of int * int
+  | Square of int
+;;
+let area s = 
+    match s with
+    | Circle c -> 3 
+    | Chto c -> 0
+    | _ -> 10
+;;
+let x = Square 5 in
+let y = area x in
+print_int y
+;;
+  |};
+  [%expect {|
+    Intepreter error: Pattern mismatch|}]
 ;;
 
 let%expect_test "simple adt (fail: NotAnADT)" =
@@ -520,4 +591,13 @@ let x = Circle 5 in
 print_int area x;;
   |};
   [%expect {| Intepreter error: Unbound value Circle|}]
+;;
+
+let%expect_test "poly adt" =
+  pp_parse_demo {|
+type 'a tree = Leaf
+  | Node of 'a * 'a tree * 'a tree
+;;
+  |};
+  [%expect {| Intepreter error: Unbound value a|}]
 ;;
