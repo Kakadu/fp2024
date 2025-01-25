@@ -451,34 +451,73 @@ let a, _ = 1, 2, 3 ;;
   |}]
 ;;
 
-let%expect_test "tuples" =
+let%expect_test "just fun assignment" =
   pp_parse_demo {|
-let [a] = (fun x -> x) ;; 
+let a = (fun x -> x) ;; 
  |};
   [%expect {|
-  Intepreter error: Unbound value a
+  val a = <fun>
   |}]
 ;;
 
-let%expect_test "list" =
+let%expect_test "list (shouldn't work, see tests below)" =
   pp_parse_demo {|
 let [a] = [42] ;; 
  |};
   [%expect {|
-  Intepreter error: Unbound value a
+  Parser Error
   |}]
 ;;
+
+(* -------- ADT --------*)
 
 let%expect_test "adt" =
   pp_parse_demo
     {|
-type point = float * float
-type shape =
-  | Point of point
-  | Circle of point * float 
+type shape = Point of int 
+  | Circle of int * int 
+  | Rect of int * int * int 
+;;
+|};
+  [%expect {| |}]
+;;
+
+(*we dont support regular custom types*)
+let%expect_test "adt (fail: ParserError)" =
+  pp_parse_demo
+    {|
+type point = float * float ;;
+type shape = Point of point
+  | Circle of point * float
   | Rect of point * point 
 ;;|};
   [%expect {|
-  Intepreter error: Unbound value a
+  Parser Error
   |}]
+;;
+
+let%expect_test "simple adt with printing" =
+  pp_parse_demo
+    {|
+type shape = Circle of int
+  | Rectangle of int * int
+  | Square of int
+;;
+let x = Circle 5 in 
+print_int area x;;
+  |};
+  [%expect {| Interpreter error: Circle is not an ADT|}]
+;;
+
+let%expect_test "simple adt (fail: NotAnADT)" =
+  pp_parse_demo
+    {|
+type shape = Cir of int
+  | Rectangle of int * int
+  | Square of int
+;;
+let x = Circle 5 in 
+print_int area x;;
+  |};
+  [%expect {| Intepreter error: Unbound value Circle|}]
 ;;

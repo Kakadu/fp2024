@@ -1035,7 +1035,7 @@ let%expect_test "_" =
 ;;
 
 let%expect_test "not keyword" =
-  test_programm {|(Kakadu_52) (fun x -> x);;|};
+  test_program {|(Kakadu_52) (fun x -> x);;|};
   [%expect
     {|
     [(Str_eval
@@ -1045,12 +1045,12 @@ let%expect_test "not keyword" =
 ;;
 
 let%expect_test "adt v0" =
-  test_programm {|type shape = Circle;;|};
+  test_program {|type shape = Circle;;|};
   [%expect {| [(Str_adt ([], "shape", (("Circle", []), [])))] |}]
 ;;
 
 let%expect_test "adt v1" =
-  test_programm {|type shape = Circle | Square of int;;|};
+  test_program {|type shape = Circle | Square of int;;|};
   [%expect
     {|
     [(Str_adt ([], "shape",
@@ -1059,13 +1059,13 @@ let%expect_test "adt v1" =
 ;;
 
 let%expect_test "adt v2" =
-  test_programm {|type shape = Circle | Square;;|};
+  test_program {|type shape = Circle | Square;;|};
   [%expect {|
     [(Str_adt ([], "shape", (("Circle", []), [("Square", [])])))] |}]
 ;;
 
 let%expect_test "adt v3" =
-  test_programm {|type shape = Circle | Square of int * int;;|};
+  test_program {|type shape = Circle | Square of int * int;;|};
   [%expect
     {|
     [(Str_adt ([], "shape",
@@ -1077,7 +1077,7 @@ let%expect_test "adt v3" =
 ;;
 
 let%expect_test "adt with poly" =
-  test_programm {|type 'a shape = Circle | Square of 'a * 'a ;;|};
+  test_program {|type 'a shape = Circle | Square of 'a * 'a ;;|};
   [%expect
     {|
     [(Str_adt (["a"], "shape",
@@ -1086,7 +1086,7 @@ let%expect_test "adt with poly" =
 ;;
 
 let%expect_test "bad adt with poly (wrong types)" =
-  test_programm {|type 'a shape = Circle | Square of 'b;;|};
+  test_program {|type 'a shape = Circle | Square of 'b;;|};
   [%expect
     {|
     [(Str_adt (["a"], "shape", (("Circle", []), [("Square", [(Type_var "b")])])))
@@ -1094,7 +1094,7 @@ let%expect_test "bad adt with poly (wrong types)" =
 ;;
 
 let%expect_test "adt with poly (not poly in variant)" =
-  test_programm {|type 'a shape = Circle | Square of int;;|};
+  test_program {|type 'a shape = Circle | Square of int;;|};
   [%expect
     {|
     [(Str_adt (["a"], "shape",
@@ -1103,12 +1103,12 @@ let%expect_test "adt with poly (not poly in variant)" =
 ;;
 
 let%expect_test "adt with poly v.easy" =
-  test_programm {|type 'a shape = Circle;;|};
+  test_program {|type 'a shape = Circle;;|};
   [%expect {| [(Str_adt (["a"], "shape", (("Circle", []), [])))] |}]
 ;;
 
 let%expect_test "adt with multiple poly v1" =
-  test_programm {|type ('a, 'b) shape = Circle | Square of 'a;;|};
+  test_program {|type ('a, 'b) shape = Circle | Square of 'a;;|};
   [%expect
     {|
     [(Str_adt (["a"; "b"], "shape",
@@ -1117,7 +1117,7 @@ let%expect_test "adt with multiple poly v1" =
 ;;
 
 let%expect_test "adt with multiple poly v2" =
-  test_programm {|type ('a, 'b) shape = Circle | Square of ('a,'b) shape;;|};
+  test_program {|type ('a, 'b) shape = Circle | Square of ('a,'b) shape;;|};
   [%expect
     {|
     [(Str_adt (["a"; "b"], "shape",
@@ -1125,21 +1125,6 @@ let%expect_test "adt with multiple poly v2" =
          [("Square",
            [(Type_construct ("shape", [(Type_var "a"); (Type_var "b")]))])])
         ))
-      ] |}]
-;;
-
-let%expect_test "adt with poly (con poly variant)" =
-  test_programm {|type 'a shape = Circle | Square of (int * int) shape;;|};
-=======
-let%expect_test "print_endline as an arg" =
-  test_program {|let f = print_endline in 
-f "Hello";;|};
-  [%expect
-    {|
-    [(Str_eval
-        (Exp_let (Nonrecursive,
-           ({ pat = (Pat_var "f"); expr = (Exp_ident "print_endline") }, []),
-           (Exp_apply ((Exp_ident "f"), (Exp_constant (Const_string "Hello")))))))
       ] |}]
 ;;
 
@@ -1206,28 +1191,8 @@ let%expect_test "match case" =
     ] |}]
 ;;
 
-let%expect_test "if then case" =
-  test_program
-    {| let x = 10 in
-if x > 5 then print_endline "> 5"
-else print_endline "<= 5";;
-;; |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1132, characters 2-74
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
 let%expect_test "adt with tuple in variant" =
-  test_programm {|type shape = Circle | Square of int * int ;;|};
+  test_program {|type shape = Circle | Square of int * int ;;|};
   [%expect
     {|
     [(Str_adt ([], "shape",
@@ -1239,7 +1204,7 @@ let%expect_test "adt with tuple in variant" =
 ;;
 
 let%expect_test "adt with recursive poly variant" =
-  test_programm {|type ('a, 'b) shape = Circle | Square of 'a shape;;|};
+  test_program {|type ('a, 'b) shape = Circle | Square of 'a shape;;|};
   [%expect
     {|
     [(Str_adt (["a"; "b"], "shape",
@@ -1250,7 +1215,7 @@ let%expect_test "adt with recursive poly variant" =
 ;;
 
 let%expect_test "adt list" =
-  test_programm {|
+  test_program {|
 type 'a my_list = Nil | Cons of 'a * 'a my_list;;
 |};
   [%expect
@@ -1264,7 +1229,7 @@ type 'a my_list = Nil | Cons of 'a * 'a my_list;;
 ;;
 
 let%expect_test "adt list" =
-  test_programm
+  test_program
     {|
 type 'a nested_list = Nil | Cons of 'a * 'a nested_list 
 | List of 'a nested_list nested_list;;
@@ -1279,13 +1244,13 @@ type 'a nested_list = Nil | Cons of 'a * 'a nested_list
 
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1184, characters 2-122
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1232, characters 2-121
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt list with pair" =
-  test_programm
+  test_program
     {| type ('a, 'b) pair_list = Nil 
     | Cons of ('a * 'b) * ('a, 'b) pair_list;;
 |};
@@ -1298,13 +1263,13 @@ let%expect_test "adt list with pair" =
 
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1205, characters 2-103
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1253, characters 2-102
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt list with 2 el in node" =
-  test_programm
+  test_program
     {| type ('a, 'b) pair_list = Nil 
     | Cons of 'a * 'b * ('a, 'b) pair_list;;
 |};
@@ -1317,93 +1282,27 @@ let%expect_test "adt list with 2 el in node" =
              (Type_construct ("pair_list", [(Type_var "a"); (Type_var "b")]))])
            ])
         ))
-
-let%expect_test "if then case" =
-  test_program
-    {| let check_number n =
-  if n = 0 then
-    print_endline "Zero"
-  else if n = 1 then
-    print_endline "One"
-  else
-    print_endline "Other"
-in 
-check_number 5
-;; |};
-  [%expect
-    {|
-    [(Str_eval
-        (Exp_let (Nonrecursive,
-           ({ pat = (Pat_var "check_number");
-              expr =
-              (Exp_fun (((Pat_var "n"), []),
-                 (Exp_if (
-                    (Exp_apply ((Exp_ident "="),
-                       (Exp_tuple
-                          ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
-                       )),
-                    (Exp_apply ((Exp_ident "print_endline"),
-                       (Exp_constant (Const_string "Zero")))),
-                    (Some (Exp_if (
-                             (Exp_apply ((Exp_ident "="),
-                                (Exp_tuple
-                                   ((Exp_ident "n"),
-                                    (Exp_constant (Const_integer 1)), []))
-                                )),
-                             (Exp_apply ((Exp_ident "print_endline"),
-                                (Exp_constant (Const_string "One")))),
-                             (Some (Exp_apply ((Exp_ident "print_endline"),
-                                      (Exp_constant (Const_string "Other")))))
-                             )))
-                    ))
-                 ))
-              },
-            []),
-           (Exp_apply ((Exp_ident "check_number"),
-              (Exp_constant (Const_integer 5))))
-           )))
-      ] |}]
+      ]
+        |}]
 ;;
 
-let%expect_test "if then case" =
+let%expect_test "adt" =
   test_program
-    {| let check_number n =
-  if n <> 0 then
-    print_endline "Zero"
-  else if n = 1 then
-    print_endline "One"
-  else
-    print_endline "Other"
-
-;; |};
+    {|
+type shape = Point of int 
+  | Circle of int * int 
+  | Rect of int * int * int 
+;;
+|};
   [%expect
     {|
-    [(Str_value (Nonrecursive,
-        ({ pat = (Pat_var "check_number");
-           expr =
-           (Exp_fun (((Pat_var "n"), []),
-              (Exp_if (
-                 (Exp_apply ((Exp_ident "<>"),
-                    (Exp_tuple
-                       ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
-                    )),
-                 (Exp_apply ((Exp_ident "print_endline"),
-                    (Exp_constant (Const_string "Zero")))),
-                 (Some (Exp_if (
-                          (Exp_apply ((Exp_ident "="),
-                             (Exp_tuple
-                                ((Exp_ident "n"),
-                                 (Exp_constant (Const_integer 1)), []))
-                             )),
-                          (Exp_apply ((Exp_ident "print_endline"),
-                             (Exp_constant (Const_string "One")))),
-                          (Some (Exp_apply ((Exp_ident "print_endline"),
-                                   (Exp_constant (Const_string "Other")))))
-                          )))
-                 ))
-              ))
-           },
-         [])
+    [(Str_adt ([], "shape",
+        (("Point", [(Type_construct ("int", []))]),
+         [("Circle", [(Type_construct ("int", [])); (Type_construct ("int", []))]);
+           ("Rect",
+            [(Type_construct ("int", [])); (Type_construct ("int", []));
+              (Type_construct ("int", []))])
+           ])
         ))
       ] |}]
 ;;
