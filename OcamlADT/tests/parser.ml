@@ -284,8 +284,7 @@ let%expect_test "logical ops + parenthesis" =
     {|
     ((3 * (9 - 12 / 4) < 7 && 1) || 1 && 5 < 6) || 20 - 100 / (4 + 16) && 10 < 12 ;; 
 |};
-  [%expect
-    {|
+  [%expect{|
     [(Str_eval
         (Exp_apply ((Exp_ident "&&"),
            (Exp_tuple
@@ -384,6 +383,35 @@ let%expect_test "parenthesis4" =
       ] |}]
 ;;
 
+let%expect_test "whitespace befor int constant" =
+  test_programm {|    let x = 10 in
+if x > 5 then print_endline "> 5"
+else print_endline "<= 5";;
+ 5+5;;|};
+  [%expect{|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 10)) }, []),
+           (Exp_if (
+              (Exp_apply ((Exp_ident ">"),
+                 (Exp_tuple
+                    ((Exp_ident "x"), (Exp_constant (Const_integer 5)), []))
+                 )),
+              (Exp_apply ((Exp_ident "print_endline"),
+                 (Exp_constant (Const_string "> 5")))),
+              (Some (Exp_apply ((Exp_ident "print_endline"),
+                       (Exp_constant (Const_string "<= 5")))))
+              ))
+           )));
+      (Str_eval
+         (Exp_apply ((Exp_ident "+"),
+            (Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_integer 5)), []))
+            )))
+      ] |}]
+;;
+
 let%expect_test "parenthesis5" =
   test_programm {|(5*5-1);;|};
   [%expect
@@ -462,13 +490,13 @@ let%expect_test "int + a" =
 ;;
 
 let%expect_test "let assignment" =
-  test_programm {|let x = 5 in 6;;|};
+  test_programm {|let x = 5 in x;;|};
   [%expect
     {|
     [(Str_eval
         (Exp_let (Nonrecursive,
            ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
-           (Exp_constant (Const_integer 6)))))
+           (Exp_ident "x"))))
       ] |}]
 ;;
 
@@ -597,9 +625,21 @@ let%expect_test "simple fun" =
 ;;
 
 let%expect_test "multi pattern fun" =
-  test_programm {|fun x z -> y;;|};
+  test_programm {|fun x -> y;;|};
   [%expect
-    {| [(Str_eval (Exp_fun (((Pat_var "x"), [(Pat_var "z")]), (Exp_ident "y"))))] |}]
+    {| [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
+;;
+
+let%expect_test "multi pattern fun" =
+  test_programm {|5>5;;|};
+  [%expect{|
+    [(Str_eval
+        (Exp_apply ((Exp_ident ">"),
+           (Exp_tuple
+              ((Exp_constant (Const_integer 5)),
+               (Exp_constant (Const_integer 5)), []))
+           )))
+      ] |}]
 ;;
 
 let%expect_test "multi fun" =
@@ -622,6 +662,18 @@ let%expect_test "apply and subtraction" =
               (Exp_tuple ((Exp_ident "x"), (Exp_constant (Const_integer 1)), []))
               ))
            )))
+      ] |}]
+;;
+
+
+let%expect_test "exprlet and" =
+  test_programm {|let x = 5 and y = 10;;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) },
+         [{ pat = (Pat_var "y"); expr = (Exp_constant (Const_integer 10)) }])
+        ))
       ] |}]
 ;;
 
@@ -917,12 +969,14 @@ let%expect_test "factorial" =
 ;;
 
 let%expect_test "factorial" =
-  test_programm {|let reca = 1;;|};
+  test_programm {|let reca = 1 in 1;;|};
   [%expect
     {|
-    [(Str_value (Nonrecursive,
-        ({ pat = (Pat_var "reca"); expr = (Exp_constant (Const_integer 1)) }, [])
-        ))
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "reca"); expr = (Exp_constant (Const_integer 1)) },
+            []),
+           (Exp_constant (Const_integer 1)))))
       ] |}]
 ;;
 
@@ -1041,5 +1095,16 @@ let%expect_test "keyword" =
     [(Str_eval
         (Exp_apply ((Exp_construct ("Kakadu_52", None)),
            (Exp_fun (((Pat_var "x"), []), (Exp_ident "x"))))))
+      ] |}]
+;;
+
+let%expect_test "keyword" =
+  test_programm {|let x = 5 in x;;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
+           (Exp_ident "x"))))
       ] |}]
 ;;

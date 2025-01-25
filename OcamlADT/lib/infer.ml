@@ -44,7 +44,7 @@ end
 type fresh_var = int
 
 module Type = struct
-  type t = typchik
+  type t = typ
 
   let rec occurs_check tvar = function
     | Typ_prim _ -> false
@@ -71,8 +71,8 @@ module Substitution = struct
   open MInfer.Syntax
   open Base
 
-  type t = (binder, typchik, Int.comparator_witness) Map.t
-
+  type t = (binder, typ, Int.comparator_witness) Map.t
+(* 
   let pp ppf subst =
     let open Stdlib.Format in
     fprintf
@@ -82,7 +82,7 @@ module Substitution = struct
          ~pp_sep:(fun ppf () -> fprintf ppf ", ")
          (fun ppf (k, v) -> fprintf ppf "%d -> %a" k pprint_type v))
       subst
-  ;;
+  ;; *)
 
   let empty = Map.empty (module Int)
   let mapping k v = if Type.occurs_check k v then fail `Occurs_check else return (k, v)
@@ -92,17 +92,17 @@ module Substitution = struct
     return (Base.Map.singleton (module Base.Int) k vm)
   ;;
 
-  let find_exn (map : t) (k : binder) : typchik = Map.find_exn map k
-  let find (map : t) (k : binder) : typchik option = Map.find map k
+  let find_exn (map : t) (k : binder) : typ = Map.find_exn map k
+  let find (map : t) (k : binder) : typ option = Map.find map k
   let remove (map : t) (k : binder) : t = Map.remove map k
 
   let apply sub =
     let rec helper = function
-      | Typ_prim _ as typchik -> typchik
-      | Typ_var b as typchik ->
+      | Typ_prim _ as typ -> typ
+      | Typ_var b as typ ->
         (match find_exn sub b with
-         | exception Not_found_s _ -> typchik
-         | _ -> typchik)
+         | exception Not_found_s _ -> typ
+         | _ -> typ)
       | Typ_arrow (l, r) -> Typ_arrow (helper l, helper r)
       | Typ_tuple t -> Typ_tuple (List.map t ~f:(fun el -> helper el))
       | Typ_list l -> Typ_list (helper l)
@@ -157,9 +157,9 @@ module Scheme = struct
     | Forall (bs, t) -> VarSet.diff (Type.free_vars t) bs
   ;;
 
-  let apply subst (Forall (binder_set, typchik)) =
+  let apply subst (Forall (binder_set, typ)) =
     let s2 = VarSet.fold (fun k s -> Substitution.remove s k) binder_set subst in
-    Forall (binder_set, Substitution.apply s2 typchik)
+    Forall (binder_set, Substitution.apply s2 typ)
   ;;
 
   let pp_scheme fmt = function
@@ -175,7 +175,9 @@ module TypeEnv = struct
 
   type t = (string, scheme, String.comparator_witness) Map.t
 
-  let extend env name scheme = Map.set env ~key:name ~data:scheme
+  let extend env name scheme = 
+    (* let () = print_endline name in *)
+    Map.set env ~key:name ~data:scheme
   let empty = Map.empty (module String)
   let fold f init mp = Map.fold mp ~init ~f:(fun ~key:k ~data:v acc -> f k v acc)
 
@@ -197,7 +199,7 @@ open MInfer.Syntax
 
 let fresh_var = fresh >>| fun n -> Typ_var n
 
-let instantiate : scheme -> typchik MInfer.t =
+let instantiate : scheme -> typ MInfer.t =
   fun (Forall (bs, t)) ->
   VarSet.fold
     (fun name typ ->
@@ -217,69 +219,179 @@ let generalize : TypeEnv.t -> Type.t -> Scheme.t =
 
 open Ast.Constant
 open Ast.Expression
-
+open Ast.Pattern
+open Scheme
+let infer_pat pat env =
+  match pat with 
+  |Pat_any ->
+    let* fresh = fresh_var in
+    return(env,fresh)
+  |Pat_var ident ->
+    let* fresh = fresh_var in
+    let new_env = TypeEnv.extend env ident (Forall (VarSet.empty, fresh)) in
+    (* let _ = Stdlib.Format.printf "DEBUG: env in Pat_var:%a" TypeEnv.pp_env new_env in *)
+    return (new_env, fresh)
+  |Pat_constant const ->
+    (match const with 
+    |Const_char _ -> return(env, ch_typ)
+    |Const_integer _  -> return (env, int_typ)
+    |Const_string _ -> return (env, string_typ)
+    )
+  | _ -> failwith "aboba"
 let rec infer_exp exp env =
   match exp with
-  | Exp_ident varname ->
+   | Exp_ident varname ->
     (match TypeEnv.find varname env with
      | None -> fail (`Unbound_variable varname)
      | Some x ->
-       let* typchik = instantiate x in
-       return (Substitution.empty, typchik))
+       let* typ = instantiate x in
+       return (Substitution.empty, typ))
   | Exp_constant const ->
     (match const with
      | Const_char _ -> return (Substitution.empty, Typ_prim "char")
      | Const_integer _ -> return (Substitution.empty, int_typ)
      | Const_string _ -> return (Substitution.empty, string_typ))
-  | Exp_let (Nonrecursive, (binding, _), exp) ->
-    (match binding.pat with
+  (* | Exp_apply (Exp_ident op, Exp_tuple(exp1,exp2,_)) ->
+    let* sub1,typ1 = infer_exp exp1 env in
+    let* sub2,typ2 = infer_exp exp2 (TypeEnv.apply sub1 env) in
+    let* arg_typ, res_typ =
+    match op with
+    | "*" | "/" | "+" | "-" -> return (int_typ, int_typ)
+    | "<" |">" |"="| "<>" | "<=" | ">=" -> 
+      let* fresh = fresh_var in return (fresh, bool_typ)
+    | "&&" | "||" -> return (bool_typ, bool_typ)
+    | _ -> failwith "aboba"
+    in
+    let* unif_sub1 = Substitution.unify (Substitution.apply sub2 typ1) arg_typ in
+    let* unif_sub2 = Substitution.unify (Substitution.apply unif_sub1 typ2) arg_typ in
+    let* comp_sub = Substitution.compose_all [sub1;sub2;unif_sub1;unif_sub2] in
+    return (comp_sub, res_typ)
+  | Exp_apply (exp1, exp2) -> 
+    match exp1 with
+    | Exp_ident op when op = "+" || op = "-" ->
+      let* sub1, typ1 = infer_exp exp2 env in
+      let* unif_sub = Substitution.unify typ1 int_typ in
+      let* comp_sub = Substitution.compose sub1 unif_sub in
+      return (comp_sub,int_typ )
+    | _ -> 
+      let* sub1, typ1 = infer_exp exp1 env in
+      let* sub2, typ2 = infer_exp exp2 (TypeEnv.apply sub1 env) in
+      let* fresh = fresh_var in
+      let* unif_sub = Substitution.unify (Substitution.apply sub2 typ1) (Typ_arrow (typ2,fresh)) in
+      let* comp_sub =  Substitution.compose_all [sub1;sub2;unif_sub] in
+      let res_typ = Substitution.apply comp_sub fresh in
+      return(comp_sub,res_typ) *)
+  | Exp_fun ((pattern,patterns),expr) -> 
+    let* new_env, typ1 = infer_pat pattern env in
+    let* sub1, typ2 =
+    (* let _ = Stdlib.Format.printf "DEBUG: env in Exp_fun:%a" TypeEnv.pp_env new_env in *)
+    match patterns with 
+    | [] -> infer_exp expr new_env
+    | hd :: tl -> infer_exp (Exp_fun ((hd,tl),expr)) new_env
+    in 
+    return (sub1, Typ_arrow (Substitution.apply sub1 typ1,typ2))
+  (* | Exp_let (Recursive, ({pat;expr}, _), exp) -> (*TODO: VB*)
+    (match pat with
      | Pat_var var_name ->
-       let* sub1, typ1 = infer_exp binding.expr env in
+      let* sub1, typ1 = infer_exp expr env in
+      let new_env = TypeEnv.apply sub1 env in
+      let new_scheme = generalize new_env typ1 in
+      let new_env = TypeEnv.extend env var_name new_scheme in
+      let new_env = TypeEnv.apply sub1 new_env in
+      let* sub2, typ2 = infer_exp exp new_env in
+      let* comp_sub = Substitution.compose sub1 sub2 in
+      return (comp_sub,typ2) *)
+        (*let* new_env, typ = infer_pat pat env in
+       let* sub1, typ1 = infer_exp expr new_env in
        let applied_type = Substitution.apply sub1 typ1 in
-       let new_scheme = generalize env applied_type in
-       let extended_env = TypeEnv.extend env var_name new_scheme in
+       let new_scheme = generalize new_env applied_type in
+       let extended_env = TypeEnv.extend new_env var_name new_scheme in
        let* sub2, typ2 = infer_exp exp extended_env in
        let* new_subst = Substitution.compose sub2 sub1 in
-       return (new_subst, typ2)
-     | _ -> failwith "Unsupported pattern in let binding")
-  | _ -> fail `Wrong_exp
+
+       let _ = Stdlib.Format.printf "DEBUG: env in Exp_let:%a" TypeEnv.pp_env extended_env in
+       
+       return (new_subst, typ2) *)
+
+      (* | _ -> failwith "Unsupported pattern in let binding") *)
+     (*TODO: Recursive + VB*)
+  | Exp_let (Nonrecursive, ({pat;expr}, _), exp) ->
+    (* let _ = Stdlib.Format.printf "DEBUG: env in Exp_let!:%a" TypeEnv.pp_env env in *)
+      (match pat with
+       | Pat_var var_name ->
+        let* fresh_var = fresh_var in
+    let new_env = TypeEnv.extend  env var_name (Forall (VarSet.empty, fresh_var)) in
+    let* subst, ty = infer_exp expr  new_env in
+    let* subst2 = Substitution.unify ty fresh_var in
+    let* subst3 = Substitution.compose subst subst2 in
+    let ty = Substitution.apply subst3 ty in
+    let new_env = TypeEnv.apply subst3 new_env in
+    (* generalizing on old env without let_name declaration *)
+    let gen_scheme = generalize (TypeEnv.apply subst3 env) ty in
+    let new_env = TypeEnv.extend new_env var_name gen_scheme  in
+    let* subb, typp = infer_exp exp new_env in
+    return (subb, typp)
+       | _ -> 
+         failwith "Unsupported pattern in let binding")  
+  | _ ->  failwith "unlucky"
+  
 ;;
+
+
+(* let infer_value_bindings env vb = *)
+
+
 
 open Ast.Pattern
 open Ast.Structure
 
-let infer_structure_item item env =
+
+let infer_value_binding env vb =
+  match vb with
+  | {pat;expr} ->
+    match pat with 
+    | Pat_var var_name ->
+       let* new_env, _ = infer_pat pat env in
+       let* sub1, typ1 = infer_exp expr new_env in
+       let applied_type = Substitution.apply sub1 typ1 in
+       let new_scheme = generalize new_env applied_type in
+       let extended_env = TypeEnv.extend new_env var_name new_scheme in
+       return extended_env
+    | Pat_any -> failwith "aboba"
+    | Pat_constant _ -> failwith "aboba"
+    | Pat_construct(_,_) -> failwith "aboba"
+    | Pat_constraint (_,_)-> failwith "aboba"
+    | Pat_tuple (_,_,_) -> failwith "aboba"
+  
+
+let infer_value_binding_list env vb_list = 
+  let* env = RList.fold_left vb_list ~init:(return (env)) ~f:(infer_value_binding) in
+
+  return env
+
+
+let infer_structure_item env item =
   match item with
   | Str_eval exp ->
-    let* subst, typ = infer_exp exp env in
-    return (subst, typ)
-  | Str_value (Nonrecursive, (binding, _)) ->
-    (match binding.pat with
-     | Pat_var var_name ->
-       let* sub1, typ1 = infer_exp binding.expr env in
-       let applied_type = Substitution.apply sub1 typ1 in
-       let new_scheme = generalize env applied_type in
-       let _ = TypeEnv.extend env var_name new_scheme in
-       return (sub1, typ1)
-     | _ -> failwith "Unsupported pattern in let binding")
-  | _ -> fail `Wrong_stritem
+    (* let _ = Stdlib.Format.printf "DEBUG: env in Str_eval!!!" in *)
+    let* _,typ = infer_exp exp env in (* maybe create empty env there *)
+    (* let _ = Stdlib.Format.printf "DEBUG: env in Str_eval:%a" pprint_type typ in *)
+    return env
+  | Str_value (Nonrecursive, (value_binding,rest)) -> (*TODO: VB*)
+    let* new_env = infer_value_binding_list env (value_binding :: rest) in
+    return new_env
+(* | Str_value (Recursive,(value_binding,value_bindingtl)) -> *)
+  | _ -> failwith "Unsupported pattern in let binding"
 ;;
 
-let infer_program program =
-  List.fold_left
-    (fun acc item ->
-      let* subst_acc, env_acc = acc in
-      let* subst, typ = infer_structure_item item env_acc in
-      let* new_subst = Substitution.compose subst_acc subst in
-      let new_env =
-        TypeEnv.extend
-          env_acc
-          (string_of_int (Base.Map.length env_acc))
-          (generalize env_acc typ)
-      in
-      return (new_subst, new_env))
-    (return (Substitution.empty, TypeEnv.empty))
-    program
-;;
+let infer_program program env =
+  let* env = RList.fold_left program ~init:(return (env)) ~f:(infer_structure_item) in
 
-let run_infer_program (program : Ast.program) = run (infer_program program)
+   return env
+;; 
+
+(*for expr test*)
+let run_infer_expr (program : Ast.Expression.t) env  = run (infer_exp program env)
+
+(*for str item test*)
+let run_infer_program (program : Ast.program) env = run (infer_program program env)

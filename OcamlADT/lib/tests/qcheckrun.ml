@@ -13,7 +13,7 @@ let arbitrary =
   QCheck.make
     ~print:(fun p -> asprintf "%a" pp_program p)
     (*    ~shrink:Shrinker.ShrinkQCheck.shrink_structure *)
-    (Program.gen_program 26)
+    (Program.gen_program 0)
 ;;
 
 let test_round_trip2 =

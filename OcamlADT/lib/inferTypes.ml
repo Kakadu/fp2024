@@ -15,15 +15,15 @@ end
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
 (*maybe change name*)
-type typchik =
+type typ =
   | Typ_prim of string
   | Typ_var of binder
-  | Typ_arrow of typchik * typchik
-  | Typ_tuple of typchik list
-  | Typ_list of typchik
+  | Typ_arrow of typ * typ
+  | Typ_tuple of typ list
+  | Typ_list of typ
 [@@deriving show { with_path = false }]
 
-type scheme = Forall of binder_set * typchik [@@deriving show { with_path = false }]
+type scheme = Forall of binder_set * typ [@@deriving show { with_path = false }]
 
 let int_typ = Typ_prim "int"
 let ch_typ = Typ_prim "char"
@@ -32,8 +32,8 @@ let bool_typ = Typ_prim "bool"
 let var_typ x = Typ_var x
 let arrow_typ l r = Typ_arrow (l, r)
 let ( @-> ) = arrow_typ
-let list_typ typchik = Typ_list typchik
-let tuple_typ typchik_list = Typ_tuple typchik_list
+let list_typ typ = Typ_list typ
+let tuple_typ typ_list = Typ_tuple typ_list
 
 (*printers*)
 (*maybe use pprinter ??*)
@@ -63,7 +63,7 @@ and pprint_type fmt = function
 
 type error =
   [ `Occurs_check
-  | `Unification_failed of typchik * typchik
+  | `Unification_failed of typ * typ
   | `Wrong_exp
   | `Wrong_type
   | `Wrong_Const
