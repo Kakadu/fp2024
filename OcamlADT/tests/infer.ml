@@ -66,7 +66,8 @@ let parse_and_infer_result program  =
 let%expect_test "zero" =
 parse_and_infer_result {|fun x -> x;;|};
   [%expect{|
-    res: |}]
+    res:
+     "_": '0 -> '0 |}]
 ;;
 
 let%expect_test "zero" =
@@ -82,196 +83,140 @@ parse_and_infer_result {|let x = "a" and y = 5 and z = 'c';;|};
 (*BUG*)
 let%expect_test "zero" =
 parse_and_infer_result {|let x = x+x;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_value_binding in file "lib/infer.ml", line 355, characters 25-47
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 84, characters 0-40
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "x": int |}]
 ;;
 
 (*BUG*)
 let%expect_test "zero" =
 parse_and_infer_result {|let f x = x+x;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_exp in file "lib/infer.ml", line 289, characters 12-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 106, characters 0-42
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "f": [ 1; ]. '1 -> int |}]
 ;;
 (*BUG*)
 let%expect_test "zero" =
 parse_and_infer_result {|5+5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 128, characters 0-32
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5/5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 146, characters 0-32
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5-5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 164, characters 0-32
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5*5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 182, characters 0-32
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5>=5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 200, characters 0-33
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": bool |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5<=5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 218, characters 0-33
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": bool |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5>5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 236, characters 0-32
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": bool |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5<5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure unlucky)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_structure_item in file "lib/infer.ml", line 377, characters 17-34
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 41, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 397, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 254, characters 0-32
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{|
+    res:
+     "_": bool |}]
 ;;
 
 
 let%expect_test "zero" =
 parse_and_infer_result {|let x = 5 in x;;|};
   [%expect{|
-    res: |}]
+    res:
+     "_": int |}]
+;;
+
+(*BUG*)
+let%expect_test "zero" =
+parse_and_infer_result {|let x = 1;;
+let y = 2;;
+let z = 3;;
+(x,y,z) = (5,6,7);;|};
+  [%expect{|
+    res:
+     "_": bool
+    "x": int
+    "y": int
+    "z": int |}]
+;;
+
+
+let%expect_test "zero" =
+parse_and_infer_result {|let x = (2,5) and y = ("a","b");;|};
+  [%expect{|
+    res:
+     "x": int * int
+    "y": string * string |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|if 5=5 then 1 else 5;;|};
+  [%expect{|
+    res:
+     "_": int |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|if 5=5 then "aboba";;|};
+  [%expect{|
+    res:
+     "_": string |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|(5,6,7);;|};
+  [%expect{|
+    res:
+     "_": int * int * int |}]
+;;
+let%expect_test "zero" =
+parse_and_infer_result {|function 
+5 -> 'c' 
+| 67 -> 'b' 
+| 68 -> 'h' 
+| 69 -> 's' 
+| 89 -> 'a';;|};
+  [%expect{|
+    res:
+     "_": char |}]
+;;
+let%expect_test "zero" =
+parse_and_infer_result {|match 9 with
+|5 -> 5 
+|6 -> 5
+|7 -> 7
+|7 -> 1
+|7 -> 1
+|7 -> 1
+;;|};
+  [%expect{|
+    res:
+     "_": int |}]
 ;;
