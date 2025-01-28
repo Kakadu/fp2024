@@ -1099,12 +1099,19 @@ let%expect_test "keyword" =
 ;;
 
 let%expect_test "keyword" =
-  test_programm {|let x = 5 in x;;|};
+  test_programm {|let x = 5 and (z,v,c) = (5,6,7);;|};
   [%expect
     {|
-    [(Str_eval
-        (Exp_let (Nonrecursive,
-           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
-           (Exp_ident "x"))))
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) },
+         [{ pat = (Pat_tuple ((Pat_var "z"), (Pat_var "v"), [(Pat_var "c")]));
+            expr =
+            (Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_integer 6)),
+                [(Exp_constant (Const_integer 7))]))
+            }
+           ])
+        ))
       ] |}]
 ;;

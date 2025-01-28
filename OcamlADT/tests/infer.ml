@@ -67,16 +67,7 @@ let%expect_test "zero" =
 parse_and_infer_result {|fun x -> x;;|};
   [%expect{|
     res:
-     "_": '0 -> '0 |}]
-;;
-
-let%expect_test "zero" =
-parse_and_infer_result {|let x = "a" and y = 5 and z = 'c';;|};
-  [%expect{|
-    res:
-     "x": string
-    "y": int
-    "z": char |}]
+     "-": '0 -> '0 |}]
 ;;
 
 
@@ -100,49 +91,49 @@ let%expect_test "zero" =
 parse_and_infer_result {|5+5;;|};
   [%expect{|
     res:
-     "_": int |}]
+     "-": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5/5;;|};
   [%expect{|
     res:
-     "_": int |}]
+     "-": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5-5;;|};
   [%expect{|
     res:
-     "_": int |}]
+     "-": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5*5;;|};
   [%expect{|
     res:
-     "_": int |}]
+     "-": int |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5>=5;;|};
   [%expect{|
     res:
-     "_": bool |}]
+     "-": bool |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5<=5;;|};
   [%expect{|
     res:
-     "_": bool |}]
+     "-": bool |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5>5;;|};
   [%expect{|
     res:
-     "_": bool |}]
+     "-": bool |}]
 ;;
 let%expect_test "zero" =
 parse_and_infer_result {|5<5;;|};
   [%expect{|
     res:
-     "_": bool |}]
+     "-": bool |}]
 ;;
 
 
@@ -150,7 +141,7 @@ let%expect_test "zero" =
 parse_and_infer_result {|let x = 5 in x;;|};
   [%expect{|
     res:
-     "_": int |}]
+     "-": int |}]
 ;;
 
 (*BUG*)
@@ -161,10 +152,79 @@ let z = 3;;
 (x,y,z) = (5,6,7);;|};
   [%expect{|
     res:
-     "_": bool
+     "-": bool
     "x": int
     "y": int
     "z": int |}]
+;;
+
+
+
+let%expect_test "zero" =
+parse_and_infer_result {|if 5=5 then 1 else 5;;|};
+  [%expect{|
+    res:
+     "-": int |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|if 5=5 then "aboba";;|};
+  [%expect{|
+    res:
+     "-": string |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|(5,6,7);;|};
+  [%expect{|
+    res:
+     "-": int * int * int |}]
+;;
+let%expect_test "zero" =
+parse_and_infer_result {|function 
+5 -> 'c' 
+| 67 -> 'b' 
+| 68 -> 'h' 
+| 69 -> 's' 
+| 89 -> 'a';;|};
+  [%expect{|
+    res:
+     "-": char |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|match 9 with
+|5 -> 5 
+|6 -> 5
+|7 -> 7
+|7 -> 1
+|7 -> 1
+|7 -> 1
+| _ -> 3
+;;|};
+  [%expect{|
+    res:
+     "-": int |}]
+;;
+
+
+(*ALL "LET" ITEMS*)
+
+
+let%expect_test "zero" =
+parse_and_infer_result {|let x = "a" and y = 5 and z = 6;; let x = z;;|};
+  [%expect{|
+    res:
+     "x": int
+    "y": int
+    "z": int |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|let _ = (2,5) and y = ("a","b");;|};
+  [%expect{|
+    res:
+     "y": string * string |}]
 ;;
 
 
@@ -177,46 +237,18 @@ parse_and_infer_result {|let x = (2,5) and y = ("a","b");;|};
 ;;
 
 let%expect_test "zero" =
-parse_and_infer_result {|if 5=5 then 1 else 5;;|};
+parse_and_infer_result {|let (x,y) = (2,5) and z = ("a","b");; let f = x;;|};
   [%expect{|
     res:
-     "_": int |}]
+     "f": int
+    "x": int
+    "y": int
+    "z": string * string |}]
 ;;
 
 let%expect_test "zero" =
-parse_and_infer_result {|if 5=5 then "aboba";;|};
+parse_and_infer_result {|let (x,y) = (2,5) and z = 10 in x+y+z;;|};
   [%expect{|
     res:
-     "_": string |}]
-;;
-
-let%expect_test "zero" =
-parse_and_infer_result {|(5,6,7);;|};
-  [%expect{|
-    res:
-     "_": int * int * int |}]
-;;
-let%expect_test "zero" =
-parse_and_infer_result {|function 
-5 -> 'c' 
-| 67 -> 'b' 
-| 68 -> 'h' 
-| 69 -> 's' 
-| 89 -> 'a';;|};
-  [%expect{|
-    res:
-     "_": char |}]
-;;
-let%expect_test "zero" =
-parse_and_infer_result {|match 9 with
-|5 -> 5 
-|6 -> 5
-|7 -> 7
-|7 -> 1
-|7 -> 1
-|7 -> 1
-;;|};
-  [%expect{|
-    res:
-     "_": int |}]
+     "-": int |}]
 ;;
