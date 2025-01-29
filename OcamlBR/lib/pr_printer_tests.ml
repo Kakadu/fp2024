@@ -240,56 +240,49 @@ let%expect_test _ =
 
 let%expect_test _ =
   parse "let x : int = 42;;";
-  [%expect
-    {|
+  [%expect {|
   Parsing failed
   |}]
 ;;
 
 let%expect_test _ =
   parse "let f : int -> string = fun x -> string_of_int x;;";
-  [%expect
-    {|
+  [%expect {|
   Parsing failed
   |}]
 ;;
 
 let%expect_test _ =
   parse "let y : (int * string * bool) = (1, \"hello\", true);;";
-  [%expect
-    {|
+  [%expect {|
   Parsing failed
   |}]
 ;;
 
 let%expect_test _ =
   parse "let l : int list = [1; 2; 3];;";
-  [%expect
-    {|
+  [%expect {|
   Parsing failed
   |}]
 ;;
 
 let%expect_test _ =
   parse "let g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)];;";
-  [%expect
-    {|
+  [%expect {|
   Parsing failed
   |}]
 ;;
 
 let%expect_test _ =
   parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y";
-  [%expect
-    {|
+  [%expect {|
    Parsing failed
   |}]
 ;;
 
 let%expect_test _ =
   parse "let f = fun (3, true): int*bool -> 4";
-  [%expect
-    {|
+  [%expect {|
    Parsing failed
   |}]
 ;;

@@ -873,10 +873,9 @@ module Infer = struct
           all_bindings
       in
       return (s_acc, env_ext, record_env)
-    | Ast.SValue (Non_recursive, Evalue_binding ((PVar (Id x)), expr), _) ->
+    | Ast.SValue (Non_recursive, Evalue_binding (PVar (Id x), expr), _) ->
       let* subst, inferred_ty = infer env record_env expr in
-      let env2 = (TypeEnv.apply subst env)
-      in
+      let env2 = TypeEnv.apply subst env in
       let generalized_ty = generalize env2 inferred_ty in
       let env = TypeEnv.extend x generalized_ty (TypeEnv.apply subst env) in
       return (subst, env, record_env)
