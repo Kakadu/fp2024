@@ -196,14 +196,12 @@ end = struct
       compose subs1 subs2
     | TTuple (f1, s1, rest1), TTuple (f2, s2, rest2) ->
       let* rest_unified =
-        match List.map2 rest1 rest2 ~f:unify with
+        match List.map2 (f1::s1::rest1) (f2::s2::rest2) ~f:unify with
         | Unequal_lengths ->
           fail (`Unification_failed (TTuple (f1, s1, rest1), TTuple (f2, s2, rest2)))
         | Ok res -> return res
       in
-      let* fst_unified = unify f1 f2 in
-      let* snd_unified = unify (apply fst_unified s1) (apply fst_unified s2) in
-      List.fold_left rest_unified ~init:(compose fst_unified snd_unified) ~f:(fun acc s ->
+      List.fold_left rest_unified ~init:(return empty) ~f:(fun acc s ->
         let* s = s in
         let* acc = acc in
         compose acc s)
