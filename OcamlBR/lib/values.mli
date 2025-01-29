@@ -15,7 +15,7 @@ type value =
   | VTuple of value * value * value list
   | VFun of Ast.rec_flag * Ast.pattern * Ast.pattern list * Ast.expr * environment
   | VOption of value option
-  | VBuiltin of builtin * environment
+  | VBuiltin of builtin
   | VFunction of Ast.case * Ast.case list
 
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t

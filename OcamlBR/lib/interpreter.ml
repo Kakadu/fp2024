@@ -251,7 +251,7 @@ end = struct
              | p :: pl -> return (VFun (Non_recursive, p, pl, body, env')))
           | None -> fail `Pattern_matching_failure)
        | VFunction (case, case_l) -> eval_match_expr env v2 (case :: case_l)
-       | VBuiltin (builtin, _) ->
+       | VBuiltin builtin ->
          (match builtin, v2 with
           | BInt b, VInt i ->
             b i;
@@ -334,8 +334,8 @@ end = struct
   ;;
 
   let eval_str_item env str_item =
-    let env = extend env "print_int" (VBuiltin (BInt print_int, env)) in
-    let env = extend env "print_endline" (VBuiltin (BString print_endline, env)) in
+    let env = extend env "print_int" (VBuiltin (BInt print_int)) in
+    let env = extend env "print_endline" (VBuiltin (BString print_endline)) in
     match str_item with
     | SEval e ->
       let* _ = eval_expr env e in
