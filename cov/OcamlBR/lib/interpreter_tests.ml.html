@@ -1555,7 +1555,7 @@ let%expect_test "003" =
     let fix f = (fun x -&gt; f (fun f -&gt; x x f))  (fun x -&gt; f (fun f -&gt; x x f))
   |}
   in
-  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 1 inside type '1 -&gt; '3 |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "004" =

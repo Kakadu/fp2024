@@ -673,7 +673,7 @@ let infer_program_test s =
     (match infer_program parsed with
      | <span data-count="29">O</span>k env -&gt;
        Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) -&gt;
-         <span data-count="122">i</span>f print_key key then <span data-count="64">p</span>rintf "val %s : %a\n" key pp_ty ty)
+         <span data-count="123">i</span>f print_key key then <span data-count="65">p</span>rintf "val %s : %a\n" key pp_ty ty)
      | <span data-count="14">E</span>rror e -&gt; printf "Infer error: %a\n" pp_error e)
   | <span data-count="0">E</span>rror e -&gt; printf "Parsing error: %s\n" e
 ;;
@@ -832,7 +832,7 @@ let%expect_test "do_not_type_002if" =
 
 let%expect_test "do_not_type_003occurs" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/003occurs.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 1 inside type '1 -&gt; '3 |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "do_not_type_004let_poly" =
@@ -924,7 +924,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let rec f x = f |} in
-  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 0 inside type '1 -&gt; '0 |}<span data-count="11">]</span>
 ;;
 
 let%expect_test _ =
@@ -938,8 +938,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  <span data-count="1">l</span>et _ = infer_program_test {| fun x y -&gt; x + y |} in
-  <span data-count="1">[</span>%expect {|  |}<span data-count="11">]</span>
+  <span data-count="1">l</span>et _ = infer_program_test {| let a = fun x y -&gt; x + y |} in
+  <span data-count="1">[</span>%expect {| val a : int -&gt; (int -&gt; int) |}<span data-count="11">]</span>
 ;;
 
 let%expect_test _ =
