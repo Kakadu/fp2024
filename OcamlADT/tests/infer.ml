@@ -75,8 +75,7 @@ parse_and_infer_result {|fun x -> x;;|};
 let%expect_test "zero" =
 parse_and_infer_result {|let x = x+x;;|};
   [%expect{|
-    res:
-     "x": int |}]
+    Unbound_variable: "x" |}]
 ;;
 
 (*BUG*)
@@ -84,7 +83,7 @@ let%expect_test "zero" =
 parse_and_infer_result {|let f x = x+x;;|};
   [%expect{|
     res:
-     "f": [ 1; ]. '1 -> int |}]
+     "f": int -> int |}]
 ;;
 (*BUG*)
 let%expect_test "zero" =
@@ -207,6 +206,13 @@ parse_and_infer_result {|match 9 with
      "-": int |}]
 ;;
 
+let%expect_test "zero" =
+parse_and_infer_result {|fun x -> fun y -> y+x;;|};
+  [%expect{|
+    res:
+     "-": int -> int -> int |}]
+;;
+
 
 (*ALL "LET" ITEMS*)
 
@@ -247,8 +253,35 @@ parse_and_infer_result {|let (x,y) = (2,5) and z = ("a","b");; let f = x;;|};
 ;;
 
 let%expect_test "zero" =
-parse_and_infer_result {|let (x,y) = (2,5) and z = 10 in x+y+z;;|};
+parse_and_infer_result {|let (x,y) = (2,'c') and z = 10;;|};
   [%expect{|
     res:
-     "-": int |}]
+     "x": int
+    "y": char
+    "z": int |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|let x = 5=5;;|};
+  [%expect{|
+    res:
+     "x": bool |}]
+;;
+
+let%expect_test "zero" =
+parse_and_infer_result {|let rec f x = f x;;|};
+  [%expect{|
+    res:
+     "f": '1 -> '2 |}]
+;;
+
+
+
+let%expect_test "zero" =
+parse_and_infer_result {|
+let x = 5;;
+let 5 = x;;|};
+  [%expect{|
+    res:
+     "x": int |}]
 ;;

@@ -1115,3 +1115,15 @@ let%expect_test "keyword" =
         ))
       ] |}]
 ;;
+
+let%expect_test "keyword" =
+  test_programm {|fun x -> x+x;;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_fun (((Pat_var "x"), []),
+           (Exp_apply ((Exp_ident "+"),
+              (Exp_tuple ((Exp_ident "x"), (Exp_ident "x"), []))))
+           )))
+      ] |}]
+;;
