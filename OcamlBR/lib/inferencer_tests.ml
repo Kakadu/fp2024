@@ -172,7 +172,7 @@ let%expect_test "do_not_type_002if" =
 
 let%expect_test "do_not_type_003occurs" =
   let _ = infer_from_file "do_not_type/003occurs.ml" in
-  [%expect {| Infer error: Occurs check failed |}]
+  [%expect {| Infer error: Occurs check failed: type variable 1 inside type '1 -> '3 |}]
 ;;
 
 let%expect_test "do_not_type_004let_poly" =
@@ -264,7 +264,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = infer_program_test {| let rec f x = f |} in
-  [%expect {| Infer error: Occurs check failed |}]
+  [%expect {| Infer error: Occurs check failed: type variable 0 inside type '1 -> '0 |}]
 ;;
 
 let%expect_test _ =
@@ -278,8 +278,8 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let _ = infer_program_test {| fun x y -> x + y |} in
-  [%expect {|  |}]
+  let _ = infer_program_test {| let a = fun x y -> x + y |} in
+  [%expect {| val a : int -> (int -> int) |}]
 ;;
 
 let%expect_test _ =

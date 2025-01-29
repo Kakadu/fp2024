@@ -19,8 +19,8 @@ let%expect_test _ =
     {|
  [(SEval
      (Elet (Recursive,
-        (Evalue_binding (((PVar (Id "factorial")), None),
-           (Efun (((PVar (Id "n")), None), [],
+        (Evalue_binding ((PVar (Id "factorial")),
+           (Efun ((PVar (Id "n")), [],
               (Eif_then_else (
                  (Ebin_op (Eq, (Evar (Id "n")), (Econst (Int 0)))),
                  (Econst (Int 1)),
@@ -61,8 +61,8 @@ let%expect_test _ =
            (Ebin_op (Eq, (Ebin_op (Add, (Econst (Int 1234)), (Econst (Int 1)))),
               (Econst (Int 1235)))),
            (Elet (Non_recursive,
-              (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 4)))),
-              [], (Ebin_op (Mult, (Evar (Id "x")), (Econst (Int 2)))))),
+              (Evalue_binding ((PVar (Id "x")), (Econst (Int 4)))), [],
+              (Ebin_op (Mult, (Evar (Id "x")), (Econst (Int 2)))))),
            None)))
       ]
   |}]
@@ -82,17 +82,16 @@ let%expect_test _ =
     {|
   [(SEval
       (Elet (Non_recursive,
-         (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))),
-         [],
+         (Evalue_binding ((PVar (Id "x")), (Econst (Int 5)))), [],
          (Elet (Non_recursive,
-            (Evalue_binding (((PVar (Id "y")), None), (Econst (Int 3)))),
-            [], (Ebin_op (Add, (Evar (Id "x")), (Evar (Id "y"))))))
+            (Evalue_binding ((PVar (Id "y")), (Econst (Int 3)))), [],
+            (Ebin_op (Add, (Evar (Id "x")), (Evar (Id "y"))))))
          )));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
           (Elet (Non_recursive,
-             (Evalue_binding (((PVar (Id "a")), None), (Econst (Int 2)))),
-             [], (Ebin_op (Sub, (Evar (Id "a")), (Econst (Int 4)))))),
+             (Evalue_binding ((PVar (Id "a")), (Econst (Int 2)))), [],
+             (Ebin_op (Sub, (Evar (Id "a")), (Econst (Int 4)))))),
           None)))
     ] |}]
 ;;
@@ -102,12 +101,12 @@ let%expect_test _ =
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding (((PVar (Id "x")), None), (Econst (Int 5)))), []));
+      (Evalue_binding ((PVar (Id "x")), (Econst (Int 5)))), []));
     (SEval
        (Eif_then_else ((Ebin_op (Gt, (Econst (Int 13)), (Econst (Int 12)))),
           (Elet (Non_recursive,
-             (Evalue_binding (((PVar (Id "a")), None), (Econst (Int 2)))),
-             [], (Ebin_op (Add, (Evar (Id "a")), (Evar (Id "x")))))),
+             (Evalue_binding ((PVar (Id "a")), (Econst (Int 2)))), [],
+             (Ebin_op (Add, (Evar (Id "a")), (Evar (Id "x")))))),
           None)))
     ] |}]
 ;;
@@ -124,7 +123,7 @@ let%expect_test _ =
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding (((PVar (Id "x")), None),
+      (Evalue_binding ((PVar (Id "x")),
          (Ematch ((Econst (Int 3)),
             (Ecase ((PConst (Int 1)), (Econst (Int 10)))),
             [(Ecase ((PConst (Int 2)), (Econst (Int 20))));
@@ -153,8 +152,8 @@ let%expect_test _ =
     {|
   [(SEval
       (Elet (Non_recursive,
-         (Evalue_binding (((PVar (Id "|?")), None),
-            (Efun (((PVar (Id "a")), None), [((PVar (Id "b")), None)],
+         (Evalue_binding ((PVar (Id "|?")),
+            (Efun ((PVar (Id "a")), [(PVar (Id "b"))],
                (Ebin_op (Add,
                   (Ebin_op (Div, (Evar (Id "a")), (Evar (Id "b")))),
                   (Ebin_op (Mult, (Evar (Id "b")), (Evar (Id "a"))))))
@@ -177,7 +176,7 @@ let%expect_test _ =
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding (((PVar (Id "x")), None),
+      (Evalue_binding ((PVar (Id "x")),
          (Ematch ((Evar (Id "n")), (Ecase ((PList []), (Econst (Int 10)))),
             [(Ecase ((PCons ((PVar (Id "h")), (PVar (Id "tl")))),
                 (Econst (Int 20))));
@@ -198,10 +197,9 @@ let%expect_test _ =
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding (((PVar (Id "w")), None),
-         (Efun (((POption (Some (PVar (Id "c")))), None),
-            [((PCons ((PConst (Int 2)), (PVar (Id "v")))), None)],
-            (Evar (Id "c"))))
+      (Evalue_binding ((PVar (Id "w")),
+         (Efun ((POption (Some (PVar (Id "c")))),
+            [(PCons ((PConst (Int 2)), (PVar (Id "v"))))], (Evar (Id "c"))))
          )),
       []))
     ]

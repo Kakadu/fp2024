@@ -209,7 +209,7 @@ let%expect_test "003" =
     let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f))
   |}
   in
-  [%expect {| Infer error: Occurs check failed |}]
+  [%expect {| Infer error: Occurs check failed: type variable 1 inside type '1 -> '3 |}]
 ;;
 
 let%expect_test "004" =
