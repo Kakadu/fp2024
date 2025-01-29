@@ -188,11 +188,6 @@ let ptype =
   pstoken ":" *> t
 ;;
 
-let ptype_opt =
-  let some_type = ptype_helper in
-  pstoken ":" *> (some_type >>| fun t -> Some t) <|> return None
-;;
-
 let pident = lift (fun t -> Id t) varname <|> ppref_op
 let pat_var = pident >>| fun x -> PVar x
 let pat_const = const >>| fun x -> PConst x
@@ -233,24 +228,21 @@ let pat_option pat =
     (pstoken "Some" *> pat >>| (fun e -> Some e) <|> (pstoken "None" >>| fun _ -> None))
 ;;
 
+let pat_ty pat =
+  let ty_pat = lift2 (fun pat ty -> PConstraint (pat, ty)) pat ptype in
+  ty_pat <|> pparens ty_pat
+;;
+
 let ppattern =
   fix (fun pat ->
-    let patom = pat_const <|> pat_var <|> pat_any <|> pparens pat in
+    let patom =
+      pat_const <|> pat_var <|> pat_any <|> pparens pat <|> pparens (pat_ty pat)
+    in
     let poption = pat_option patom <|> patom in
     let pptuple = pat_tuple poption <|> poption in
     let pplist = pat_list pptuple <|> pptuple in
     let pcons = pat_cons pplist <|> pplist in
     pcons)
-;;
-
-let pfirst_ty_pattern =
-  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype_opt in
-  ty_pat <|> pparens ty_pat <|> (ppattern >>| fun p -> p, None)
-;;
-
-let pty_pattern =
-  let ty_pat = lift2 (fun pat ty -> pat, ty) ppattern ptype_opt in
-  pparens ty_pat <|> (ppattern >>| fun p -> p, None)
 ;;
 
 (*------------------Binary operators-----------------*)
@@ -305,9 +297,9 @@ let un_chain e op =
 ;;
 
 let rec pbody pexpr =
-  pty_pattern
+  ppattern
   >>= fun p ->
-  many pty_pattern
+  many ppattern
   >>= fun patterns ->
   pbody pexpr <|> (pstoken "=" *> pexpr >>| fun e -> Efun (p, patterns, e))
 ;;
@@ -315,7 +307,7 @@ let rec pbody pexpr =
 let pvalue_binding pexpr =
   lift2
     (fun ty_pattern expr -> Evalue_binding (ty_pattern, expr))
-    pfirst_ty_pattern
+    ppattern
     (pstoken "=" *> pexpr <|> pbody pexpr)
 ;;
 
@@ -335,14 +327,14 @@ let pEfun pexpr =
   let single_arg =
     lift2
       (fun arg body -> Efun (arg, [], body))
-      (pstoken "fun" *> pws1 *> pfirst_ty_pattern)
+      (pstoken "fun" *> pws1 *> ppattern)
       (pstoken "->" *> pexpr)
   in
   let mult_args =
     lift3
       (fun arg args body -> Efun (arg, args, body))
-      (pstoken "fun" *> pws1 *> pty_pattern)
-      (many pty_pattern)
+      (pstoken "fun" *> pws1 *> ppattern)
+      (many ppattern)
       (pstoken "->" *> pexpr)
   in
   single_arg <|> mult_args

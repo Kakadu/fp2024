@@ -62,6 +62,7 @@ let rec pp_pattern ppf = function
   | PCons (p1, p2) -> fprintf ppf "%a :: %a" pp_pattern p1 pp_pattern p2
   | POption (Some p) -> fprintf ppf "(Some %a)" pp_pattern p
   | POption None -> fprintf ppf "None"
+  | PConstraint (p, t) -> fprintf ppf "(%a : %a)" pp_pattern p pp_ty t
 ;;
 
 let precedence_bin_op = function
@@ -69,11 +70,6 @@ let precedence_bin_op = function
   | Add | Sub -> 1
   | And | Or -> 0
   | Gt | Lt | Eq | Neq | Gte | Lte | Cons -> -1
-;;
-
-let pp_ty_pattern ppf : Ast.ty_pattern -> unit = function
-  | p, Some t -> fprintf ppf "(%a : %a)" pp_pattern p pp_ty t
-  | p, _ -> fprintf ppf "%a" pp_pattern p
 ;;
 
 (* let pp_label ppf = function
@@ -134,10 +130,10 @@ let rec pp_expr ppf expr =
     fprintf
       ppf
       "(fun %a%a -> %a)"
-      pp_ty_pattern
+      pp_pattern
       first_pattern
       (fun ppf patterns ->
-        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_ty_pattern pat))
+        List.iter patterns ~f:(fun pat -> fprintf ppf " %a" pp_pattern pat))
       rest_patterns
       pp_expr
       e
@@ -201,10 +197,7 @@ and precedence = function
   | _ -> 2
 
 and pp_value_binding ppf = function
-  | Evalue_binding ((pattern, None), e) ->
-    fprintf ppf "%a = %a" pp_pattern pattern pp_expr e
-  | Evalue_binding ((pattern, Some ty), e) ->
-    fprintf ppf "%a : %a = %a" pp_pattern pattern pp_ty ty pp_expr e
+  | Evalue_binding (pattern, e) -> fprintf ppf "%a = %a" pp_pattern pattern pp_expr e
 ;;
 
 (* and pp_record_field ppf = function

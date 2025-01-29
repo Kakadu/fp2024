@@ -42,10 +42,7 @@ let rec shrink_pattern = function
       <+> map (fun p2' -> PCons (p1, p2')) (shrink_pattern p2))
   | POption (Some p) -> shrink_pattern p
   | POption None -> Iter.empty
-;;
-
-let shrink_ty_pattern : Ast.ty_pattern Shrink.t = function
-  | p, t -> Iter.(map (fun p' -> p', t) (shrink_pattern p))
+  | PConstraint (p, t) -> Iter.(map (fun p' -> PConstraint (p', t)) (shrink_pattern p))
 ;;
 
 let rec shrink_expr = function
@@ -131,9 +128,7 @@ let rec shrink_expr = function
   | Efun (pattern, patterns, body) ->
     Iter.(
       map (fun body' -> Efun (pattern, patterns, body')) (shrink_expr body)
-      <+> map
-            (fun pattern' -> Efun (pattern', patterns, body))
-            (shrink_ty_pattern pattern)
+      <+> map (fun pattern' -> Efun (pattern', patterns, body)) (shrink_pattern pattern)
       <+> map
             (fun patterns' -> Efun (pattern, patterns', body))
             (QCheck.Shrink.list patterns))
