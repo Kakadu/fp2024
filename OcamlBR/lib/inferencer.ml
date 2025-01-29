@@ -153,7 +153,7 @@ end = struct
   let empty = Map.empty (module Int)
 
   (* creates a substitution for variable [v] with type [ty] if no occurence is found *)
-  let mapping v ty = if Type.occurs_in v ty then fail `Occurs_check else return (v, ty)
+  let mapping v ty = if Type.occurs_in v ty then fail (`Occurs_check ("type variable " ^ string_of_int v ^ " inside type" , ty)) else return (v, ty)
 
   let singleton k v =
     let* k, v = mapping k v in

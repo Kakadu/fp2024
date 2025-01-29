@@ -79,7 +79,7 @@ let rec pp_ty ppf =
 
 (* errors *)
 type error =
-  [ `Occurs_check
+  [ `Occurs_check of string * ty
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
   | `Ill_left_hand_side of string
@@ -91,7 +91,7 @@ type error =
   ]
 
 let pp_error ppf = function
-  | `Occurs_check -> Format.fprintf ppf {|Occurs check failed|}
+  | `Occurs_check (s, t) -> Format.fprintf ppf {|Occurs check failed: %s %a|} s pp_ty t
   | `Undefined_variable s -> Format.fprintf ppf {|Undefined variable %S|} s
   | `Unification_failed (l, r) ->
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r

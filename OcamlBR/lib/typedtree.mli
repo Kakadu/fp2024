@@ -51,7 +51,7 @@ val ttuple : ty -> ty -> ty list -> ty
 val tlist : ty -> ty
 
 type error =
-  [ `Occurs_check
+  [ `Occurs_check of string * ty
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
   | `Ill_left_hand_side of string
@@ -64,7 +64,7 @@ type error =
 
 val pp_error
   :  Format.formatter
-  -> [< `Occurs_check
+  -> [< `Occurs_check of string * ty
      | `Undefined_variable of string
      | `Unification_failed of ty * ty
      | `Ill_left_hand_side of string
