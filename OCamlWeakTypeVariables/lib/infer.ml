@@ -450,28 +450,26 @@ let infer_expr =
 ;;
 
 let infer_structure =
-  let helper : TypeEnv.t -> structure_item -> TypeEnv.t t =
-    fun env -> function
+  let helper env = function
     | Pstr_eval expr ->
       let* _, _ = infer_expr env expr in
-      return env
+      return (env, [])
     | Pstr_value (NonRecursive, vbs) ->
-      let rec helper_let env pattern expr vbs =
-        let* t0, _ = infer_expr env expr in
-        let env1 =
-          match pattern with
-          | Ppat_var name -> TypeEnv.extend env name (Scheme (TVarSet.empty, t0))
-        in
-        match vbs with
-        | h :: t -> helper_let env1 h.pvb_pat h.pvb_expr t
-        | _ -> return env1
+      let* env, names =
+        RList.fold_left
+          vbs
+          ~init:(return (env, []))
+          ~f:(fun (env, names) vb ->
+            let* t0, _ = infer_expr env vb.pvb_expr in
+            let env1, names =
+              match vb.pvb_pat with
+              | Ppat_var name ->
+                TypeEnv.extend env name (Scheme (TVarSet.empty, t0)), name :: names
+            in
+            return (env1, names))
       in
-      let result =
-        match vbs with
-        | h :: t -> helper_let env h.pvb_pat h.pvb_expr t
-        | [] -> failwith "Parser error"
-      in
-      result
+      return (env, List.rev names)
+    | _ -> failwith "not implemented"
   in
   helper
 ;;
