@@ -1,5 +1,7 @@
 open Types
 
+let min = true
+
 let pp_base_type_my fmt = function
   | BInt -> Format.fprintf fmt "int"
   | BBool -> Format.fprintf fmt "bool"
@@ -35,7 +37,7 @@ let minimize_variable t =
 ;;
 
 let pp_typ_my fmt t =
-  let t = minimize_variable t in
+  let t = if min then minimize_variable t else t in
   let rec helper fmt = function
     | TBase b -> pp_base_type_my fmt b
     | TVar v -> Format.fprintf fmt "'%c" (Char.chr (Char.code 'a' + v))
