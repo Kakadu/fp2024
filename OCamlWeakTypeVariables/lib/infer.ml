@@ -259,6 +259,7 @@ module TypeEnv : sig
   val find_exn : t -> string -> scheme
   val apply : t -> Subst.t -> t
   val operators : (id list * typ) list
+  val pp : Format.formatter -> t -> unit
 end = struct
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
@@ -281,6 +282,11 @@ end = struct
     ; [ "print_int" ], TBase BInt @-> TBase BUnit
     ; [ "<="; "<"; ">"; ">="; "="; "<>" ], TVar 0 @-> TVar 0 @-> TBase BBool
     ]
+  ;;
+
+  let pp fmt env =
+    Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, t)) ->
+      Format.fprintf fmt "val %s : %a\n" key Infer_print.pp_typ_my t)
   ;;
 end
 
