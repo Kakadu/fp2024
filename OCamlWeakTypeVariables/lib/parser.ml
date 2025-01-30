@@ -163,14 +163,22 @@ let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 
 let p_value_binding expr =
   let* pattern = p_pattern in
-  let* xs = many p_pattern in
-  let+ expr = token "=" *> expr in
-  { pvb_pat = pattern
-  ; pvb_expr =
-      (match xs with
-       | [] -> expr
-       | _ -> List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
-  }
+  let rec helper = function
+    | Ppat_any | Ppat_var _ -> true
+    | Ppat_tuple pts -> List.fold_left (fun acc pat -> acc && helper pat) true pts
+    | Ppat_constant _ | Ppat_interval _ -> false
+  in
+  match helper pattern with
+  | false -> fail "Pattern name must be wildcard, variable or tuple of them"
+  | true ->
+    let* xs = many p_pattern in
+    let+ expr = token "=" *> expr in
+    { pvb_pat = pattern
+    ; pvb_expr =
+        (match xs with
+         | [] -> expr
+         | _ -> List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
+    }
 ;;
 
 let p_let_in expr =
