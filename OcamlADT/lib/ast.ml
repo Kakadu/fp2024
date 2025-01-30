@@ -98,6 +98,11 @@ end
 
 module TypeExpr = struct
   type t =
+    | Type_unit
+    | Type_int
+    | Type_char
+    | Type_bool
+    | Type_string
     | Type_arrow of t * t (** [Type_arrow(T1, T2)] represents:
                               [T1 -> T2] *)
     | Type_var of (ident[@gen gen_ident])
@@ -229,5 +234,5 @@ end
 type program = Structure.structure_item list [@@deriving eq, show { with_path = false }]
 
 module Program = struct
-  let gen_program n = list_size (int_bound 1) (Structure.gen_structure_item (n / 2))
+  let gen_program n = list_size (int_bound 3) (Structure.gen_structure_item (n / 2))
 end

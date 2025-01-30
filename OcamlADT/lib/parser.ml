@@ -144,9 +144,20 @@ let rchain p op =
 
 let ptypearrow = pass_ws *> token "->" >>| fun _ lhs rhs -> TypeExpr.Type_arrow (lhs, rhs)
 
+
 let ptypevar =
   let* id = pass_ws *> (pident_lc <|> pident_cap) in
   return (TypeExpr.Type_var id)
+;;
+let pbasetype =
+  choice
+    [ token "unit" *> return TypeExpr.Type_unit
+    ; token "int" *> return TypeExpr.Type_int
+    ; token "char" *> return TypeExpr.Type_char
+    ; token "string" *> return TypeExpr.Type_string
+    ; token "bool" *> return TypeExpr.Type_bool
+    ; ptypevar
+    ]
 ;;
 
 let ptypetuple ptype =
@@ -159,7 +170,7 @@ let ptypetuple ptype =
 let ptype =
   pass_ws
   *> fix (fun ptype ->
-    let ptvar = choice [ pparenth ptype; ptypevar ] in
+    let ptvar = choice [ pparenth ptype; pbasetype ] in
     (* pass_ws *> pparenth ptype in *)
     (* let ptvar = ptypevar in *)
     let pttuple = ptypetuple ptvar <|> ptvar in

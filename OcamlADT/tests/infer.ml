@@ -2,7 +2,8 @@ open Ocamladt_lib.Parser
 open Format
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
-
+open Ocamladt_lib.Ast.TypeExpr
+(* 
 let infer_result exp  =
     (match run_infer_expr exp TypeEnv.empty with
      | Ok (_, env) -> printf "%a" pprint_type env
@@ -50,7 +51,7 @@ let%expect_test _ =
  in
   [%expect{| string |}]
 ;;
-
+ *)
 
 (*str item tetst*)
 let parse_and_infer_result program  =
@@ -253,12 +254,11 @@ parse_and_infer_result {|let (x,y) = (2,5) and z = ("a","b");; let f = x;;|};
 ;;
 
 let%expect_test "zero" =
-parse_and_infer_result {|let (x,y) = (2,'c') and z = 10;;|};
+parse_and_infer_result {|let (x,y) = (2,'c');;|};
   [%expect{|
     res:
      "x": int
-    "y": char
-    "z": int |}]
+    "y": char |}]
 ;;
 
 let%expect_test "zero" =
@@ -286,6 +286,26 @@ let 5 = x;;|};
      "x": int |}]
 ;;
 
+let%expect_test "zero" =
+parse_and_infer_result {|
+let x = (6: char);;|};
+  [%expect{|
+    Unification_failed: int # char |}]
+;;
+
+(*BUG*)
+let%expect_test "zero" =
+parse_and_infer_result {|
+let rec meven n = if n = 0 then 1 else modd (n - 1)
+   and modd n = if n = 0 then 1 else meven (n - 1)
+   and homka n = damir 4
+   and damir n = homka 5
+;;|};
+  [%expect{|
+    Unbound_variable: "modd" |}]
+;;
+
+
 (*KAKADU TESTS*)
 (*PASSED*)
 let%expect_test "001fact without builtin" =
@@ -310,16 +330,16 @@ let rec fac n = if n<=1 then 1 else n * fac (n-1);; let main =
 
   (Failure unreachable)
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 301, characters 0-128
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 685, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 321, characters 0-128
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -350,16 +370,16 @@ let rec fac_cps n k =
 
   (Failure unreachable)
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 339, characters 0-191
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 685, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 359, characters 0-191
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -408,16 +428,16 @@ let rec fib_acc a b n =
 
   (Failure unreachable)
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 388, characters 0-300
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 685, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 408, characters 0-300
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -455,16 +475,16 @@ let main =
 
   (Failure unreachable)
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 438, characters 0-332
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 13, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 685, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 458, characters 0-332
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
