@@ -28,7 +28,7 @@ let pass_ws = skip_while is_whitespace
 let pass_ws1 = skip is_whitespace *> pass_ws
 
 let token s = pass_ws *> string s
-let pparenth stmt = token "(" *> stmt <* token ")"
+let pparenth stmt  = token "(" *> stmt <* token ")"
 
 let ptowhitespace = function
   | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
@@ -213,7 +213,9 @@ let ppattern =
       fix (fun poprnd ->
         pass_ws
         *> choice
-             [ ppatvar
+             [ 
+              token "()" >>| (fun name -> Pattern.Pat_construct (name,None))
+             ; ppatvar
              ; ppatconst
              ; ppatconstruct poprnd
              ; pparenth ppattern
