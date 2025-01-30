@@ -10,10 +10,5 @@
  (public_name REPL)
  (libraries lib))
 
-(executable
- (name infer_homka)
- (public_name infer_homka)
- (libraries lib))
-
 (cram
  (deps ./REPL.exe %{bin:REPL}))
