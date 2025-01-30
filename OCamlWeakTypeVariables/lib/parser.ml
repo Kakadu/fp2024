@@ -170,9 +170,10 @@ let p_value_binding expr =
     | Ppat_tuple pts -> List.fold_left (fun acc pat -> acc && helper pat) true pts
     | Ppat_constant _ | Ppat_interval _ -> false
   in
-  match helper pattern with
-  | false -> fail "Pattern name must be wildcard, variable or tuple of them"
-  | true ->
+  (* Zanuda thinks it's better *)
+  if not (helper pattern)
+  then fail "Pattern name must be wildcard, variable or tuple of them"
+  else
     let* xs = many p_pattern in
     let+ expr = token "=" *> expr in
     { pvb_pat = pattern
