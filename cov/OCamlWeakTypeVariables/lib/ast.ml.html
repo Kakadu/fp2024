@@ -163,16 +163,16 @@
 [@@@ocaml.text "/*"]
 
 (** constants *)
-<span data-count="92">t</span>ype constant =
-  | Pconst_int of in<span data-count="38">t</span> (** constant of int. Ex: 5 *)
-  | Pconst_string of strin<span data-count="6">g</span> (** constant of string. Ex: "homka" *)
+<span data-count="82">t</span>ype constant =
+  | Pconst_int of in<span data-count="37">t</span> (** constant of int. Ex: 5 *)
+  | Pconst_string of strin<span data-count="2">g</span> (** constant of string. Ex: "homka" *)
   | Pconst_boolean of boo<span data-count="2">l</span> (** constant of boolean. Ex: true *)
 [@@deriving show { with_path = false }]
 
 (** identificator *)
-<span data-count="0">t</span>ype id = <span data-count="58">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype id = <span data-count="56">s</span>tring [@@deriving show { with_path = false }]
 
-<span data-count="59">t</span>ype pattern =
+<span data-count="54">t</span>ype pattern =
   | Ppat_any (** The pattern _. *)
   | Ppat_var of strin<span data-count="24">g</span> (** A variable pattern such as x *)
   | Ppat_constant of constant (** Patterns such as 1, 'a', "true", 1.0 *)
@@ -186,7 +186,7 @@
   | NonRecursive
 [@@deriving show { with_path = false }]
 
-<span data-count="254">t</span>ype expression =
+<span data-count="248">t</span>ype expression =
   | Pexp_ident of id (** Identifiers. Ex: "homka" *)
   | Pexp_constant of constant (** Expressions constant. Ex: 5, "Homka", true *)
   | Pexp_let of rec_flag * <span data-count="12">v</span>alue_binding lis<span data-count="4">t</span> * expression
@@ -201,15 +201,15 @@
 [@@deriving show { with_path = false }]
 
 (* let pat : type_constraint = exp *)
-<span data-count="91">a</span>nd value_binding =
+<span data-count="70">a</span>nd value_binding =
   { pvb_pat : pattern
   ; pvb_expr : expression
   }
-[@@deriving show { with_path = false }<span data-count="26">]</span>
+[@@deriving show { with_path = false }<span data-count="20">]</span>
 
-<span data-count="56">t</span>ype structure_item =
+<span data-count="53">t</span>ype structure_item =
   | Pstr_eval of expression
-  | Pstr_value of rec_flag * <span data-count="66">v</span>alue_binding lis<span data-count="22">t</span>
+  | Pstr_value of rec_flag * <span data-count="48">v</span>alue_binding lis<span data-count="16">t</span>
   (** Pstr_value(rec, [(P1, E1 ; ... ; (Pn, En))]) represents:
       et P1 = E1 and ... and Pn = EN when rec is Nonrecursive,
       let rec P1 = E1 and ... and Pn = EN  when rec is Recursive.*)
