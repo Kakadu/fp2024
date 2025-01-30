@@ -457,16 +457,17 @@ let infer_expr =
       (* Combine all information about variables *)
       let* sub = Subst.compose_all subs in
       (* Apply all gotten types to out new names *)
-      let* env' =
-        RList.fold_left
-          (List.combine ts patterns)
-          ~init:(return env)
-          ~f:(fun env (ty, pat) ->
-            let* _, env, _ = infer_pattern ~ty:(Subst.apply sub ty) env pat in
-            return env)
-      in
-      let* t, sub = helper env' e1 in
-      return (t, sub)
+      let env'' = TypeEnv.apply env' sub in
+      let* t, sub = helper env'' e1 in
+      (match debug with
+       | false -> return (t, sub)
+       | true ->
+         Format.printf "Env: \n%a\n" TypeEnv.pp env';
+         List.iter (fun sub -> Format.printf "Sub: %a" Subst.pp sub) subs;
+         List.iter (fun t -> Format.printf "Type: %a\n" Infer_print.pp_typ_my t) ts;
+         Format.printf "Sub:\n%a\n" Subst.pp sub;
+         Format.printf "Env: \n%a\n" TypeEnv.pp env'';
+         return (t, sub))
     | Pexp_tuple e ->
       (match e with
        | [] | [ _ ] -> failwith "Tuple parser error"
