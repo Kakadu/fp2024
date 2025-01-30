@@ -445,6 +445,17 @@ let infer_expr =
       in
       let* t, sub = helper env'' e1 in
       return (t, sub)
+    | Pexp_tuple e ->
+      (match e with
+       | [] | [ _ ] -> failwith "Tuple parser error"
+       | e0 :: e1 :: exps ->
+         let* t0, sub0 = helper env e0 in
+         let* t1, sub1 = helper env e1 in
+         let* res = RList.map exps ~f:(fun e -> helper env e) in
+         let t = TTuple (t0, t1, List.map (fun x -> fst x) res) in
+         let sub = List.map (fun x -> snd x) res in
+         let* sub = Subst.compose_all (sub0 :: sub1 :: sub) in
+         return (t, sub))
   in
   helper
 ;;
