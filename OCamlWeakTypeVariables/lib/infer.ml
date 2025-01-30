@@ -327,17 +327,21 @@ let infer_id env id =
   | _ -> lookup_env env id
 ;;
 
-let infer_pattern : TypeEnv.t -> pattern -> (typ * TypeEnv.t * string list) R.t =
+let infer_pattern env ?ty =
   let names = [] in
-  fun env -> function
-    | Ppat_var v ->
-      let* fv = fresh_var in
-      let schema = Scheme (TVarSet.empty, fv) in
-      let env = TypeEnv.extend env v schema in
-      return (fv, env, v :: names)
+  function
+  | Ppat_var v ->
+    let* fv = fresh_var in
+    let schema =
+      match ty with
+      | Some t -> generalize env t
+      | None -> Scheme (TVarSet.empty, fv)
+    in
+    let env = TypeEnv.extend env v schema in
+    return (fv, env, v :: names)
 ;;
 
-[@@@warning "-8"]
+(* [@@@warning "-8"] *)
 
 (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Algorithm_W *)
 let infer_expr =
@@ -398,18 +402,13 @@ let infer_expr =
         (* So we have env with gen type tk and x0: t0 *)
         (* And that is without knowing name of variable *)
         (* It took 2.5 hours for invented this *)
-        let* _, env0, names = infer_pattern env pattern in
         let* t0, sub0 = helper env expr in
-        let env1 = TypeEnv.apply env0 sub0 in
-        let tk = generalize env1 t0 in
-        let env1 =
-          List.fold_left (fun env name -> TypeEnv.extend env name tk) env1 names
-        in
+        let* _, env0, _ = infer_pattern ~ty:t0 env pattern in
         (* let x0 = e0 in e1 if vbs is empty OR let x0 = e0 and x1 = e1 and ... xn = en in E otherwise *)
         let* t1, sub1 =
           match vbs with
-          | h :: t -> helper_let env1 h.pvb_pat h.pvb_expr t
-          | _ -> helper env1 e1
+          | h :: t -> helper_let env0 h.pvb_pat h.pvb_expr t
+          | _ -> helper env0 e1
         in
         let* sub = Subst.compose sub0 sub1 in
         return (t1, sub)
@@ -484,7 +483,7 @@ let infer_structure =
           ~init:(return (env, []))
           ~f:(fun (env, names) vb ->
             let* t0, _ = infer_expr env vb.pvb_expr in
-            let* _, env1, new_names = infer_pattern env vb.pvb_pat in
+            let* _, env1, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
             match List.exists (fun name -> List.mem name new_names) names with
             | true -> fail (PatternNameTwice vb.pvb_pat)
             | false -> return (env1, List.append (List.rev new_names) names))
