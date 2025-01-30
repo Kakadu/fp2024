@@ -149,6 +149,7 @@ module Subst : sig
   val unify : typ -> typ -> t R.t
   val compose : t -> t -> t R.t
   val compose_all : t list -> t R.t
+  val pp : Format.formatter -> t -> unit
 end = struct
   open R
   open R.Syntax
@@ -158,7 +159,7 @@ end = struct
   let empty = Base.Map.empty (module Base.Int)
 
   let mapping k v =
-    if debug then Format.printf "Mapping %d to %s\n" k @@ show_typ v;
+    (* if debug then Format.printf "Mapping %d to %s\n" k @@ show_typ v; *)
     if Type.occurs_in k v then fail OccursCheckFailed else return (k, v)
   ;;
 
@@ -229,6 +230,11 @@ end = struct
   and compose sub1 sub2 = RMap.fold_left sub2 ~init:(return sub1) ~f:extend
 
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
+
+  let pp fmt sub =
+    Base.Map.iteri sub ~f:(fun ~key ~data ->
+      Format.fprintf fmt "val %d : %a\n" key Infer_print.pp_typ_my data)
+  ;;
 end
 
 module Scheme = struct

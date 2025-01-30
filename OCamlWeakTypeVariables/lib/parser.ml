@@ -132,8 +132,12 @@ let p_fun expr =
 let p_branch (expr : expression t) =
   let* first = token "if" *> expr in
   let* second = token "then" *> expr in
-  let+ third = option None (token "else" *> expr >>| fun e -> Some e) in
-  Pexp_ifthenelse (first, second, third)
+  let* else_token = option None (token "else" >>| fun _ -> Some 1) in
+  match else_token with
+  | None -> return (Pexp_ifthenelse (first, second, None))
+  | Some _ ->
+    let+ third = expr >>| fun e -> Some e in
+    Pexp_ifthenelse (first, second, third)
 ;;
 
 let p_apply expr =
