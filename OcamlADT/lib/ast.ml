@@ -103,6 +103,7 @@ module TypeExpr = struct
     | Type_char
     | Type_bool
     | Type_string
+    | Type_option of t [@gen TypeExpr.gen_sized (n / 2)]
     | Type_arrow of t * t (** [Type_arrow(T1, T2)] represents:
                               [T1 -> T2] *)
     | Type_var of (ident[@gen gen_ident])
@@ -229,10 +230,8 @@ module Structure = struct
   ;;
 end
 
-
-
 type program = Structure.structure_item list [@@deriving eq, show { with_path = false }]
 
 module Program = struct
-  let gen_program n = list_size (int_bound 3) (Structure.gen_structure_item (n / 2))
+  let gen_program n = list_size (int_bound 8) (Structure.gen_structure_item (n / 2))
 end

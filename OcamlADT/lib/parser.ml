@@ -28,7 +28,7 @@ let pass_ws = skip_while is_whitespace
 let pass_ws1 = skip is_whitespace *> pass_ws
 
 let token s = pass_ws *> string s
-let pparenth stmt  = token "(" *> stmt <* token ")"
+let pparenth stmt = token "(" *> stmt <* token ")"
 
 let ptowhitespace = function
   | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true
@@ -144,11 +144,11 @@ let rchain p op =
 
 let ptypearrow = pass_ws *> token "->" >>| fun _ lhs rhs -> TypeExpr.Type_arrow (lhs, rhs)
 
-
 let ptypevar =
   let* id = pass_ws *> (pident_lc <|> pident_cap) in
   return (TypeExpr.Type_var id)
 ;;
+
 let pbasetype =
   choice
     [ token "unit" *> return TypeExpr.Type_unit
@@ -158,6 +158,19 @@ let pbasetype =
     ; token "bool" *> return TypeExpr.Type_bool
     ; ptypevar
     ]
+;;
+
+let poptiontype ptype =
+  let lchain =
+    let rec helper acc_ty =
+      (let* _ = token "option" in
+       helper ((fun x -> TypeExpr.Type_option x) acc_ty))
+      <|> return acc_ty
+    in
+    let* fst_ty = ptype in
+    helper fst_ty
+  in
+  lchain
 ;;
 
 let ptypetuple ptype =
@@ -173,7 +186,8 @@ let ptype =
     let ptvar = choice [ pparenth ptype; pbasetype ] in
     (* pass_ws *> pparenth ptype in *)
     (* let ptvar = ptypevar in *)
-    let pttuple = ptypetuple ptvar <|> ptvar in
+    let poptiontype = poptiontype ptvar <|> ptvar in
+    let pttuple = ptypetuple poptiontype <|> poptiontype in
     rchain pttuple ptypearrow <|> pttuple)
 ;;
 
@@ -186,6 +200,14 @@ let ptype =
    ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
    ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
 *)
+
+let pspecials = choice [ token "()"; token "true"; token "false"; token "None" ]
+
+let psome parse =
+  let* id = token "Some" in
+  let* arg = parse >>| Option.some in
+  return (id, arg)
+;;
 
 let ppatconst =
   let* const = pconst in
@@ -224,8 +246,7 @@ let ppattern =
       fix (fun poprnd ->
         pass_ws
         *> choice
-             [ 
-              token "()" >>| (fun name -> Pattern.Pat_construct (name,None))
+             [ (pspecials >>| fun name -> Pattern.Pat_construct (name, None))
              ; ppatvar
              ; ppatconst
              ; ppatconstruct poprnd

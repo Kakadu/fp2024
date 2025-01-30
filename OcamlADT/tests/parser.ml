@@ -284,7 +284,8 @@ let%expect_test "logical ops + parenthesis" =
     {|
     ((3 * (9 - 12 / 4) < 7 && 1) || 1 && 5 < 6) || 20 - 100 / (4 + 16) && 10 < 12 ;; 
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_eval
         (Exp_apply ((Exp_ident "&&"),
            (Exp_tuple
@@ -384,11 +385,13 @@ let%expect_test "parenthesis4" =
 ;;
 
 let%expect_test "whitespace befor int constant" =
-  test_programm {|    let x = 10 in
+  test_programm
+    {|    let x = 10 in
 if x > 5 then print_endline "> 5"
 else print_endline "<= 5";;
  5+5;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_eval
         (Exp_let (Nonrecursive,
            ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 10)) }, []),
@@ -626,13 +629,13 @@ let%expect_test "simple fun" =
 
 let%expect_test "multi pattern fun" =
   test_programm {|fun x -> y;;|};
-  [%expect
-    {| [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
+  [%expect {| [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
 ;;
 
 let%expect_test "multi pattern fun" =
   test_programm {|5>5;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_eval
         (Exp_apply ((Exp_ident ">"),
            (Exp_tuple
@@ -664,7 +667,6 @@ let%expect_test "apply and subtraction" =
            )))
       ] |}]
 ;;
-
 
 let%expect_test "exprlet and" =
   test_programm {|let x = 5 and y = 10;;|};
@@ -1123,12 +1125,12 @@ let%expect_test "keyword" =
       ] |}]
 ;;
 
-
 let%expect_test "keyword" =
   test_programm {|let main = 
    let () = print_int (fib 4) in
   0;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat = (Pat_var "main");
            expr =
@@ -1150,7 +1152,8 @@ let%expect_test "keyword" =
 
 let%expect_test "keyword" =
   test_programm {|let (x:char) = 20;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat = (Pat_constraint ((Pat_var "x"), Type_char));
            expr = (Exp_constant (Const_integer 20)) },
@@ -1160,16 +1163,26 @@ let%expect_test "keyword" =
 ;;
 
 let%expect_test "keyword" =
-  test_programm {|let ((x,y):(char,int)) = (20:int);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1163, characters 2-55
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  test_programm {|let (x:(char*char)) = 20;;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_tuple (Type_char, Type_char, []))));
+           expr = (Exp_constant (Const_integer 20)) },
+         [])
+        ))
+      ] |}]
+;;
+let%expect_test "keyword" =
+  test_programm {|let (x:int option option option) = 20;;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_option (Type_option (Type_option Type_int)))));
+           expr = (Exp_constant (Const_integer 20)) },
+         [])
+        ))
+      ] |}]
 ;;
