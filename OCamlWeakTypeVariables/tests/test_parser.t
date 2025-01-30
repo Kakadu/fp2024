@@ -185,6 +185,33 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                            ));
                          (Pexp_fun ((Ppat_var "homka"),
                             (Pexp_fun ((Ppat_var "x"),
-                               (Pexp_constant (Pconst_int 5))))
-                            ));
-                         (Pexp_constant (Pconst_string "looool"))]))
+                               (Pexp_tuple
+                                  [(Pexp_constant (Pconst_int 5));
+                                    (Pexp_constant (Pconst_string "looool"))])
+                               ))
+                            ))
+                         ]))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > (let x = 5 in 4, x)
+  Parsed result: (Pstr_eval
+                    (Pexp_let (NonRecursive,
+                       [{ pvb_pat = (Ppat_var "x");
+                          pvb_expr = (Pexp_constant (Pconst_int 5)) }
+                         ],
+                       (Pexp_tuple
+                          [(Pexp_constant (Pconst_int 4)); (Pexp_ident "x")])
+                       )))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let x = (1, 2, 3)
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_var "x");
+                       pvb_expr =
+                       (Pexp_tuple
+                          [(Pexp_constant (Pconst_int 1));
+                            (Pexp_constant (Pconst_int 2));
+                            (Pexp_constant (Pconst_int 3))])
+                       }
+                      ]
+                    ))

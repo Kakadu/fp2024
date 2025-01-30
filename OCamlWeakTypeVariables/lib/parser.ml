@@ -113,7 +113,9 @@ let p_binop p expr =
 ;;
 
 let p_tuple expr =
-  token "(" *> sep_by (token ",") expr <* token ")" >>| fun x -> Pexp_tuple x
+  let* first = expr <* token "," in
+  let+ es = sep_by (token ",") expr in
+  Pexp_tuple (first :: es)
 ;;
 
 let p_pattern =
@@ -198,9 +200,7 @@ let token_or xs : string t =
 
 let p_expr =
   fix (fun expr ->
-    let expr_const =
-      choice [ parens expr; pexpr_const; pexp_ident; p_tuple expr; p_branch expr ]
-    in
+    let expr_const = choice [ parens expr; pexpr_const; pexp_ident; p_branch expr ] in
     let expr_fun = p_fun expr <|> expr_const in
     let expr_apply = p_apply expr_fun <|> expr_fun in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_apply <|> expr_apply in
@@ -209,7 +209,8 @@ let p_expr =
       p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
     in
     let expr_let_in = p_let_in expr <|> expr_comparison in
-    expr_let_in)
+    let expr_tuple = p_tuple expr_let_in <|> expr_let_in in
+    expr_tuple)
 ;;
 
 let p_str_value expr =
