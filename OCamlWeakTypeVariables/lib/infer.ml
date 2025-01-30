@@ -421,42 +421,27 @@ let infer_expr =
       result
       (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Typing_rule *)
     | Pexp_let (Recursive, vbs, e1) ->
-      let pts = List.map (fun vb -> vb.pvb_pat) vbs in
-      (* Array of fresh variables *)
-      let* fvs = RList.map pts ~f:(fun _ -> fresh_var >>= return) in
-      let _ = if debug then List.iter (fun x -> Format.printf "Typ: %a\n" pp_typ x) fvs in
-      (* Env with fresh variables *)
-      let env' =
-        List.fold_left2
-          (fun env pt fv ->
-            match pt with
-            | Ppat_var name -> TypeEnv.extend env name (Scheme (TVarSet.empty, fv)))
-          env
-          pts
-          fvs
+      let exprs, patterns = List.split @@ List.map (fun x -> x.pvb_expr, x.pvb_pat) vbs in
+      (* New type variables to all names in patterns *)
+      let* env' =
+        RList.fold_left patterns ~init:(return env) ~f:(fun env pat ->
+          let* _, env, _ = infer_pattern env pat in
+          return env)
       in
-      let exprs = List.map (fun vb -> vb.pvb_expr) vbs in
-      let* ts_subs = RList.map exprs ~f:(fun expr -> helper env' expr) in
-      let* fvs =
-        RList.map2
-          ~f:(fun fv (t, _) ->
-            let* sub = Subst.unify fv t in
-            return (Subst.apply sub fv))
-          fvs
-          ts_subs
+      (* We get types of e0, e1, ... en and additional type info about type of variables outside of ei expression for all i *)
+      let* ts, subs = List.split <$> RList.map exprs ~f:(fun expr -> helper env' expr) in
+      (* Combine all information about variables *)
+      let* sub = Subst.compose_all subs in
+      (* Apply all gotten types to out new names *)
+      let* env' =
+        RList.fold_left
+          (List.combine ts patterns)
+          ~init:(return env)
+          ~f:(fun env (ty, pat) ->
+            let* _, env, _ = infer_pattern ~ty:(Subst.apply sub ty) env pat in
+            return env)
       in
-      let env'' =
-        List.fold_left2
-          (fun env pat fv ->
-            match pat with
-            | Ppat_var name ->
-              let scheme = generalize env fv in
-              TypeEnv.extend env name scheme)
-          env
-          pts
-          fvs
-      in
-      let* t, sub = helper env'' e1 in
+      let* t, sub = helper env' e1 in
       return (t, sub)
     | Pexp_tuple e ->
       (match e with
