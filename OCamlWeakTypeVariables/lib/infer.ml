@@ -359,7 +359,7 @@ let infer_pattern env ?ty =
 let infer_expr =
   let rec helper : TypeEnv.t -> expression -> (typ * Subst.t) t =
     fun env expr ->
-    if debug then Format.printf "Infer expression: \n\t%s\n" (show_expression expr);
+    (* if debug then Format.printf "Infer expression: \n\t%s\n" (show_expression expr); *)
     match expr with
     | Pexp_constant c -> infer_const c
     | Pexp_ident id -> infer_id env id
