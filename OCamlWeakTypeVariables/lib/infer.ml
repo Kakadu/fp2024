@@ -12,6 +12,8 @@ module R : sig
 
   include Base.Monad.Infix with type 'a t := 'a t
 
+  val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
+
   module Syntax : sig
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
   end
@@ -53,6 +55,7 @@ end = struct
     | s, Result.Ok v -> s, Base.Result.return @@ f v
   ;;
 
+  let ( <$> ) : ('a -> 'b) -> 'a t -> 'b t = fun f m -> m >>| f
   let return v last = last, Base.Result.return v
   let fail e state = state, Base.Result.fail e
   let bind x ~f = x >>= f
@@ -451,11 +454,9 @@ let infer_expr =
        | e0 :: e1 :: exps ->
          let* t0, sub0 = helper env e0 in
          let* t1, sub1 = helper env e1 in
-         let* res = RList.map exps ~f:(fun e -> helper env e) in
-         let t = TTuple (t0, t1, List.map (fun x -> fst x) res) in
-         let sub = List.map (fun x -> snd x) res in
-         let* sub = Subst.compose_all (sub0 :: sub1 :: sub) in
-         return (t, sub))
+         let* ts, subs = List.split <$> RList.map exps ~f:(fun e -> helper env e) in
+         let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
+         return (TTuple (t0, t1, ts), sub))
   in
   helper
 ;;
