@@ -21,6 +21,7 @@ type typ =
   | Typ_arrow of typ * typ
   | Typ_tuple of typ list
   | Typ_list of typ
+  | Typ_unit
 [@@deriving show { with_path = false }]
 
 type scheme = Forall of binder_set * typ [@@deriving show { with_path = false }]

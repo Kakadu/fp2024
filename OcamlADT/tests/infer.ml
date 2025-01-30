@@ -285,3 +285,186 @@ let 5 = x;;|};
     res:
      "x": int |}]
 ;;
+
+(*KAKADU TESTS*)
+(*PASSED*)
+let%expect_test "001fact without builtin" =
+parse_and_infer_result {|
+let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
+  [%expect{|
+    res:
+     "fac": int -> int |}]
+;;
+
+(*FAILED*)
+let%expect_test "001fact with builtin" =
+parse_and_infer_result {|
+let rec fac n = if n<=1 then 1 else n * fac (n-1);; let main =
+  let () = print_int (fac 4) in
+  0;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure unreachable)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 301, characters 0-128
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
+(*PASSED*)
+let%expect_test "002fact without builtin" =
+parse_and_infer_result {|
+let rec fac_cps n k =
+  if n=1 then k 1 else
+  fac_cps (n-1) (fun p -> k (p*n));;|};
+  [%expect{|
+    res:
+     "fac_cps": int -> (int -> '7) -> '7 |}]
+;;
+
+(*FAILED*)
+let%expect_test "002fact builtin" =
+parse_and_infer_result {|
+let rec fac_cps n k =
+  if n=1 then k 1 else
+  fac_cps (n-1) (fun p -> k (p*n));; let main =
+  let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
+  0;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure unreachable)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 339, characters 0-191
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
+
+(*PASSED*)
+let%expect_test "003fib without builtin" =
+parse_and_infer_result {|
+let rec fib_acc a b n =
+  if n=1 then b
+  else
+    let n1 = n-1 in
+    let ab = a+b in
+    fib_acc b ab n1;;
+    let rec fib n =
+  if n<2
+  then n
+  else fib (n - 1) + fib (n - 2);;|};
+  [%expect{|
+    res:
+     "fib": int -> int
+    "fib_acc": int -> int -> int -> int |}]
+;;
+
+(*FAILED*)
+let%expect_test "003fib builtin" =
+parse_and_infer_result {|
+let rec fib_acc a b n =
+  if n=1 then b
+  else
+    let n1 = n-1 in
+    let ab = a+b in
+    fib_acc b ab n1;;
+    let rec fib n =
+  if n<2
+  then n
+  else fib (n - 1) + fib (n - 2);;
+  let main =
+  let () = print_int (fib_acc 0 1 4) in
+  let () = print_int (fib 4) in
+  0;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure unreachable)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 388, characters 0-300
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
+(*PASSED*)
+let%expect_test "004" =
+parse_and_infer_result {|
+let wrap f = if 1 = 1 then f else f;;
+
+let test10 a b c d e f g h i j = a + b + c + d + e + f + g + h + i + j;;|};
+  [%expect{|
+    res:
+     "test10": int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+    "wrap": [ 0; ]. '0 -> '0 |}]
+;;
+
+(*FAILED*)
+let%expect_test "004" =
+parse_and_infer_result {|
+let wrap f = if 1 = 1 then f else f;;
+
+let test10 a b c d e f g h i j = a + b + c + d + e + f + g + h + i + j;;
+let main =
+  let rez =
+      (wrap test10 1 10 100 1000 10000 100000 1000000 10000000 100000000
+         1000000000)
+  in
+  let () = print_int rez in
+  let temp2 = wrap test3 1 10 100 in
+  0;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure unreachable)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 10, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 46, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program in file "lib/infer.ml", line 594, characters 52-83
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 59, characters 11-46
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 438, characters 0-332
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;

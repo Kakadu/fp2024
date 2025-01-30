@@ -394,31 +394,11 @@ let rec infer_exp exp env =
       let* subb, typp = infer_exp exp new_env in
       let* comp_sub = Substitution.compose sub subb in
       return (comp_sub, typp)
-(* | Exp_let (Recursive, ({pat;expr}, _), exp) -> (*TODO: VB*)
-          (match pat with
-           | Pat_var var_name ->
-            let* sub1, typ1 = infer_exp expr env in
-            let new_env = TypeEnv.apply sub1 env in
-            let new_scheme = generalize new_env typ1 in
-            let new_env = TypeEnv.extend env var_name new_scheme in
-            let new_env = TypeEnv.apply sub1 new_env in
-            let* sub2, typ2 = infer_exp exp new_env in
-            let* comp_sub = Substitution.compose sub1 sub2 in
-            return (comp_sub,typ2) *)
-              (*let* new_env, typ = infer_pat pat env in
-             let* sub1, typ1 = infer_exp expr new_env in
-             let applied_type = Substitution.apply sub1 typ1 in
-             let new_scheme = generalize new_env applied_type in
-             let extended_env = TypeEnv.extend new_env var_name new_scheme in
-             let* sub2, typ2 = infer_exp exp extended_env in
-             let* new_subst = Substitution.compose sub2 sub1 in
-      
-             let _ = Stdlib.Format.printf "DEBUG: env in Exp_let:%a" TypeEnv.pp_env extended_env in
-             
-             return (new_subst, typ2) *)
-      
-            (* | _ -> failwith "Unsupported pattern in let binding") *)
-           (*TODO: Recursive + VB*)
+  | Exp_let (Recursive, (value_binding,rest), exp) -> 
+    let* new_env,sub = infer_rec_value_binding_list (value_binding::rest) env Substitution.empty in
+    let* subb, typp = infer_exp exp new_env in
+    let* comp_sub = Substitution.compose sub subb in
+    return (comp_sub, typp)
   | _ ->  failwith "unlucky"
 
   and infer_value_binding_list vb_list env sub =
@@ -593,6 +573,20 @@ let infer_program program env =
    return env
 ;; 
 
+
+let empty_env = TypeEnv.empty
+
+let env_with_print_funs =
+  let print_fun_list =
+    [ "print_int", Forall (VarSet.empty, Typ_arrow (int_typ, Typ_unit))
+    ; "print_endline", Forall (VarSet.empty, Typ_arrow (string_typ, Typ_unit))
+    ]
+  in
+  List.fold_left
+    (fun env (id, sch) -> TypeEnv.extend env id sch)
+    TypeEnv.empty
+    print_fun_list
+;;
 (*for expr test*)
 let run_infer_expr (program : Ast.Expression.t) env  = run (infer_exp program env)
 
