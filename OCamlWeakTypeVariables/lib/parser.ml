@@ -117,8 +117,21 @@ let p_tuple expr =
 ;;
 
 let p_pattern =
+  let pat_any = token "_" >>| fun _ -> Ppat_any in
+  let pat_const = p_const >>| fun c -> Ppat_constant c in
   let pat_var = lowercase_ident >>| fun var -> Ppat_var var in
-  pat_var
+  let pat_interval =
+    p_const >>= fun f -> token ".." *> p_const >>| fun s -> Ppat_interval (f, s)
+  in
+  fix (fun pattern : pattern t ->
+    let pat_const =
+      choice [ parens pattern; pat_interval; pat_const; pat_any; pat_var ]
+    in
+    let pat_tuple =
+      lift2 (fun l ls -> Ppat_tuple (l :: ls)) pat_const (many1 (token "," *> pat_const))
+      <|> pat_const
+    in
+    pat_tuple)
 ;;
 
 let p_fun expr =

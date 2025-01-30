@@ -4,10 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let _ = homka
   Parsed result: (Pstr_value (NonRecursive,
-                    [{ pvb_pat = (Ppat_var "_");
-                       pvb_expr = (Pexp_ident "homka") }
-                      ]
-                    ))
+                    [{ pvb_pat = Ppat_any; pvb_expr = (Pexp_ident "homka") }]))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let homka = homka
@@ -19,25 +16,51 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let 122 = homka
-  Error: : satisfy: '1'
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_constant (Pconst_int 122));
+                       pvb_expr = (Pexp_ident "homka") }
+                      ]
+                    ))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let "homka" = "homka"
-  Error: : satisfy: '"'
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_constant (Pconst_string "homka"));
+                       pvb_expr = (Pexp_constant (Pconst_string "homka")) }
+                      ]
+                    ))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let _, _ = homka
-  Error: : string
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_tuple [Ppat_any; Ppat_any]);
+                       pvb_expr = (Pexp_ident "homka") }
+                      ]
+                    ))
 
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let x, y = homka
-  Error: : string
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_tuple [(Ppat_var "x"); (Ppat_var "y")]);
+                       pvb_expr = (Pexp_ident "homka") }
+                      ]
+                    ))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let (_, _, _) = homka
-  Error: : satisfy: '('
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_tuple [Ppat_any; Ppat_any; Ppat_any]);
+                       pvb_expr = (Pexp_ident "homka") }
+                      ]
+                    ))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let "a" .. "z" = homka
-  Error: : satisfy: '"'
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat =
+                       (Ppat_interval ((Pconst_string "a"), (Pconst_string "z")
+                          ));
+                       pvb_expr = (Pexp_ident "homka") }
+                      ]
+                    ))
