@@ -26,6 +26,7 @@ type error =
   | OccursCheckFailed
   | UnificationFailed of typ * typ
   | Unbound of id
+  | PatternNameTwice of pattern
 [@@deriving show { with_path = false }]
 
 type scheme = Scheme of TVarSet.t * typ
