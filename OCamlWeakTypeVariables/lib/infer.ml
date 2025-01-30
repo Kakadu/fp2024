@@ -499,7 +499,28 @@ let infer_structure =
             | false -> return (env1, List.append (List.rev new_names) names))
       in
       return (env, List.rev names)
-    | _ -> failwith "not implemented"
+    | Pstr_value (Recursive, vbs) ->
+      let exprs, patterns = List.split @@ List.map (fun x -> x.pvb_expr, x.pvb_pat) vbs in
+      (* New type variables to all names in patterns *)
+      let* env', names =
+        RList.fold_left
+          patterns
+          ~init:(return (env, []))
+          ~f:(fun (env, names) pat ->
+            let* _, env, new_names = infer_pattern env pat in
+            match List.exists (fun name -> List.mem name new_names) names with
+            | true -> fail (PatternNameTwice pat)
+            | false -> return (env, List.append (List.rev new_names) names))
+      in
+      (* We get types of e0, e1, ... en and additional type info about type of variables outside of ei expression for all i *)
+      let* ts, subs =
+        List.split <$> RList.map exprs ~f:(fun expr -> infer_expr env' expr)
+      in
+      (* Combine all information about variables *)
+      let* sub = Subst.compose_all subs in
+      (* Apply all gotten types to out new names *)
+      let env' = TypeEnv.apply env' sub in
+      return (env', names)
   in
   helper
 ;;
