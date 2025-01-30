@@ -243,7 +243,17 @@ module Scheme = struct
   ;;
 end
 
-module TypeEnv = struct
+module TypeEnv : sig
+  type t
+
+  val empty : t
+  val free_vars : t -> TVarSet.t
+  val extend : t -> string -> scheme -> t
+  val find : t -> string -> scheme option
+  val find_exn : t -> string -> scheme
+  val apply : t -> Subst.t -> t
+  val operators : (id list * typ) list
+end = struct
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
   let empty : t = Base.Map.empty (module Base.String)
@@ -258,6 +268,7 @@ module TypeEnv = struct
   let apply env sub = Base.Map.map env ~f:(Scheme.apply sub)
   let extend env key schema = Base.Map.update env key ~f:(fun _ -> schema)
   let find env key = Base.Map.find env key
+  let find_exn env key = Base.Map.find_exn env key
 
   let operators =
     [ [ "+"; "-"; "*"; "/" ], TBase BInt @-> TBase BInt @-> TBase BInt
@@ -316,13 +327,14 @@ let infer_id env id =
   | _ -> lookup_env env id
 ;;
 
-let infer_pattern : TypeEnv.t -> pattern -> (typ * TypeEnv.t) R.t =
+let infer_pattern : TypeEnv.t -> pattern -> (typ * TypeEnv.t * string list) R.t =
+  let names = [] in
   fun env -> function
-  | Ppat_var v ->
-    let* fv = fresh_var in
-    let schema = Scheme (TVarSet.empty, fv) in
-    let env = TypeEnv.extend env v schema in
-    return (fv, env)
+    | Ppat_var v ->
+      let* fv = fresh_var in
+      let schema = Scheme (TVarSet.empty, fv) in
+      let env = TypeEnv.extend env v schema in
+      return (fv, env, v :: names)
 ;;
 
 [@@@warning "-8"]
@@ -336,7 +348,7 @@ let infer_expr =
     | Pexp_constant c -> infer_const c
     | Pexp_ident id -> infer_id env id
     | Pexp_fun (pattern, expr) ->
-      let* t, env' = infer_pattern env pattern in
+      let* t, env', _ = infer_pattern env pattern in
       let* t', sub = helper env' expr in
       return (Subst.apply sub (t @-> t'), sub)
       (* Recursive apply type inference by Homka122 😼😼😼 *)
@@ -386,13 +398,12 @@ let infer_expr =
         (* So we have env with gen type tk and x0: t0 *)
         (* And that is without knowing name of variable *)
         (* It took 2.5 hours for invented this *)
-        let* _, env0 = infer_pattern env pattern in
+        let* _, env0, names = infer_pattern env pattern in
         let* t0, sub0 = helper env expr in
         let env1 = TypeEnv.apply env0 sub0 in
         let tk = generalize env1 t0 in
         let env1 =
-          match pattern with
-          | Ppat_var name -> TypeEnv.extend env1 name tk
+          List.fold_left (fun env name -> TypeEnv.extend env name tk) env1 names
         in
         (* let x0 = e0 in e1 if vbs is empty OR let x0 = e0 and x1 = e1 and ... xn = en in E otherwise *)
         let* t1, sub1 =
@@ -473,12 +484,10 @@ let infer_structure =
           ~init:(return (env, []))
           ~f:(fun (env, names) vb ->
             let* t0, _ = infer_expr env vb.pvb_expr in
-            let env1, names =
-              match vb.pvb_pat with
-              | Ppat_var name ->
-                TypeEnv.extend env name (Scheme (TVarSet.empty, t0)), name :: names
-            in
-            return (env1, names))
+            let* _, env1, new_names = infer_pattern env vb.pvb_pat in
+            match List.exists (fun name -> List.mem name new_names) names with
+            | true -> fail (PatternNameTwice vb.pvb_pat)
+            | false -> return (env1, List.append (List.rev new_names) names))
       in
       return (env, List.rev names)
     | _ -> failwith "not implemented"

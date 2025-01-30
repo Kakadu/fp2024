@@ -36,7 +36,7 @@ let () = Format.printf "> %s;;\n\n" str
 let () =
   List.iter
     (fun name ->
-      let (Scheme (_, tt)) = Base.Map.find_exn env name in
+      let (Scheme (_, tt)) = TypeEnv.find_exn env name in
       Format.printf "val %s : %a\n" name pp_typ_my tt)
     names
 ;;
