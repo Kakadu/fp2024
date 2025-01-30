@@ -405,6 +405,18 @@ let infer_expr =
     (* i want to die after three hours of attempting implemented this 😿😿😿 *)
     (* Recursive multiple let definitions type inference by Homka122 😼😼😼 (it took 4 hours) *)
     | Pexp_let (NonRecursive, vb, e1) ->
+      let* env, sub0 =
+        RList.fold_left
+          ~f:(fun (env, sub) vb ->
+            let* t0, sub0 = helper env vb.pvb_expr in
+            let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
+            let* sub_c = Subst.compose sub0 sub in
+            return (env0, sub_c))
+          ~init:(return (env, Subst.empty))
+          vb
+      in
+      let* t, sub1 = helper env e1 in
+      let* sub = Subst.compose sub0 sub1 in
       let rec helper_let env pattern expr vbs =
         (* Upd: it's wrong *)
         (* let x0 = e0 in e1. x0: k0, e0: t0, x0 \in env0 *)
