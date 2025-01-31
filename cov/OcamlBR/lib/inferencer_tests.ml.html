@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>inferencer_tests.ml &mdash; Coverage report</title>
-    <meta name="description" content="99.30% coverage in lib/inferencer_tests.ml">
+    <meta name="description" content="99.26% coverage in lib/inferencer_tests.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,10 @@
           <span class="dirname">lib/</span>inferencer_tests.ml
         </a>
       </h1>
-      <h2>99.30%</h2>
+      <h2>99.26%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:5.71%"></span>
+      <span class="unvisited" style="top:5.90%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -257,11 +257,11 @@
 <a id="L232"></a><span > </span>
 <a id="L233"></a><span > </span>
 <a id="L234"></a><span class="visited"> </span>
-<a id="L235"></a><span class="visited"> </span>
+<a id="L235"></a><span > </span>
 <a id="L236"></a><span > </span>
 <a id="L237"></a><span > </span>
-<a id="L238"></a><span > </span>
-<a id="L239"></a><span class="visited"> </span>
+<a id="L238"></a><span class="visited"> </span>
+<a id="L239"></a><span > </span>
 <a id="L240"></a><span class="visited"> </span>
 <a id="L241"></a><span > </span>
 <a id="L242"></a><span > </span>
@@ -269,16 +269,16 @@
 <a id="L244"></a><span class="visited"> </span>
 <a id="L245"></a><span > </span>
 <a id="L246"></a><span > </span>
-<a id="L247"></a><span > </span>
-<a id="L248"></a><span class="visited"> </span>
+<a id="L247"></a><span class="visited"> </span>
+<a id="L248"></a><span > </span>
 <a id="L249"></a><span > </span>
-<a id="L250"></a><span class="visited"> </span>
-<a id="L251"></a><span > </span>
-<a id="L252"></a><span > </span>
+<a id="L250"></a><span > </span>
+<a id="L251"></a><span class="visited"> </span>
+<a id="L252"></a><span class="visited"> </span>
 <a id="L253"></a><span > </span>
-<a id="L254"></a><span class="visited"> </span>
+<a id="L254"></a><span > </span>
 <a id="L255"></a><span > </span>
-<a id="L256"></a><span > </span>
+<a id="L256"></a><span class="visited"> </span>
 <a id="L257"></a><span class="visited"> </span>
 <a id="L258"></a><span > </span>
 <a id="L259"></a><span > </span>
@@ -324,20 +324,10 @@
 <a id="L299"></a><span > </span>
 <a id="L300"></a><span > </span>
 <a id="L301"></a><span class="visited"> </span>
-<a id="L302"></a><span class="visited"> </span>
+<a id="L302"></a><span > </span>
 <a id="L303"></a><span > </span>
-<a id="L304"></a><span > </span>
+<a id="L304"></a><span class="visited"> </span>
 <a id="L305"></a><span > </span>
-<a id="L306"></a><span class="visited"> </span>
-<a id="L307"></a><span class="visited"> </span>
-<a id="L308"></a><span > </span>
-<a id="L309"></a><span > </span>
-<a id="L310"></a><span > </span>
-<a id="L311"></a><span class="visited"> </span>
-<a id="L312"></a><span > </span>
-<a id="L313"></a><span > </span>
-<a id="L314"></a><span class="visited"> </span>
-<a id="L315"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -647,16 +637,6 @@
 <a href="#L303">303</a>
 <a href="#L304">304</a>
 <a href="#L305">305</a>
-<a href="#L306">306</a>
-<a href="#L307">307</a>
-<a href="#L308">308</a>
-<a href="#L309">309</a>
-<a href="#L310">310</a>
-<a href="#L311">311</a>
-<a href="#L312">312</a>
-<a href="#L313">313</a>
-<a href="#L314">314</a>
-<a href="#L315">315</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Sofya Kozyreva, Maksim Shipilov *)
 
@@ -666,15 +646,15 @@ open Inferencer.Infer
 open Typedtree
 
 let infer_program_test s =
-  <span data-count="43">l</span>et open Stdlib.Format in
+  <span data-count="41">l</span>et open Stdlib.Format in
   let open Interpreter in
   match Parser.parse_expr s with
-  | <span data-count="43">O</span>k parsed -&gt;
+  | <span data-count="41">O</span>k parsed -&gt;
     (match infer_program parsed with
-     | <span data-count="29">O</span>k env -&gt;
+     | <span data-count="28">O</span>k env -&gt;
        Base.Map.iteri env ~f:(fun ~key ~data:(S (_, ty)) -&gt;
-         <span data-count="123">i</span>f print_key key then <span data-count="65">p</span>rintf "val %s : %a\n" key pp_ty ty)
-     | <span data-count="14">E</span>rror e -&gt; printf "Infer error: %a\n" pp_error e)
+         <span data-count="121">i</span>f print_key key then <span data-count="65">p</span>rintf "val %s : %a\n" key pp_ty ty)
+     | <span data-count="13">E</span>rror e -&gt; printf "Infer error: %a\n" pp_error e)
   | <span data-count="0">E</span>rror e -&gt; printf "Parsing error: %s\n" e
 ;;
 
@@ -870,37 +850,27 @@ let%expect_test "do_not_type_099" =
   <span data-count="1">[</span>%expect {| Infer error: Ill left-hand side : only variables are allowed  |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
-  <span data-count="1">l</span>et _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in
-  <span data-count="1">[</span>%expect {| |}<span data-count="59">]</span>
-;;
-
-let%expect_test _ =
+let%expect_test "infer id function" =
   <span data-count="1">l</span>et _ = infer_program_test {| let f x = x |} in
   <span data-count="1">[</span>%expect {| val f : '0 -&gt; '0 |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer simple function with int args" =
   <span data-count="1">l</span>et _ = infer_program_test {| let f x = x + 2 |} in
   <span data-count="1">[</span>%expect {| val f : int -&gt; int|}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer seval (no value)" =
   <span data-count="1">l</span>et _ = infer_program_test {|let x = 2 in x = 1 |} in
   <span data-count="1">[</span>%expect {|  |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer factorial function" =
   <span data-count="1">l</span>et _ = infer_program_test {|let rec fac n = if n &lt; 1 then 1 else n * fac (n - 1) |} in
   <span data-count="1">[</span>%expect {| val fac : int -&gt; int |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
-  <span data-count="1">l</span>et _ = infer_program_test {|let rec x = 1+ x|} in
-  <span data-count="1">[</span>%expect {| Infer error: Ill right-hand side of let rec |}<span data-count="59">]</span>
-;;
-
-let%expect_test _ =
+let%expect_test "infer mutual recursion" =
   <span data-count="1">l</span>et _ =
     infer_program_test
       {|let rec is_even n = if n = 0 then true else is_odd (n - 1) and is_odd n = if n = 0 then false else is_even (n - 1)|}
@@ -910,64 +880,64 @@ let%expect_test _ =
     val is_odd : int -&gt; bool |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with polymorphism" =
   <span data-count="1">l</span>et _ =
     infer_program_test {|let square x = x*x in let id x = x in (id square) (id  2) |}
   in
   <span data-count="1">[</span>%expect {| |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function that can't be unified" =
   <span data-count="1">l</span>et _ = infer_program_test {|let x = 2 in let a = true in not a &amp;&amp; x |} in
   <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with occures check" =
   <span data-count="1">l</span>et _ = infer_program_test {| let rec f x = f |} in
   <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 0 inside type '1 -&gt; '0 |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer svalue with if-then-else" =
   <span data-count="1">l</span>et _ = infer_program_test {| let a = if true then 2 + 9 else 1 |} in
   <span data-count="1">[</span>%expect {| val a : int |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer undefined variable" =
   <span data-count="1">l</span>et _ = infer_program_test {| if a then 2 else 1 |} in
   <span data-count="1">[</span>%expect {| Infer error: Undefined variable "a" |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with 2 args" =
   <span data-count="1">l</span>et _ = infer_program_test {| let a = fun x y -&gt; x + y |} in
   <span data-count="1">[</span>%expect {| val a : int -&gt; (int -&gt; int) |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with many args" =
   <span data-count="1">l</span>et _ = infer_program_test {| let f x y z w = if y&amp;&amp;z then x else  w + 1 |} in
   <span data-count="1">[</span>%expect {| val f : int -&gt; (bool -&gt; (bool -&gt; (int -&gt; int))) |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with non-trivial arg" =
   <span data-count="1">l</span>et _ = infer_program_test {| let a = fun x::y::z::w -&gt; if z &gt; 0 then y else x |} in
   <span data-count="1">[</span>%expect {| val a : int list -&gt; int |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with another non-trivial arg" =
   <span data-count="1">l</span>et _ = infer_program_test {| let b = fun (a,b,(2::t), d) -&gt; a + d  |} in
   <span data-count="1">[</span>%expect {| val b : (int * '1 * int list * int) -&gt; int |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer prefix operator" =
   <span data-count="1">l</span>et _ = infer_program_test {| let (&lt;|&gt;) a b = a/b + b*a |} in
   <span data-count="1">[</span>%expect {| val &lt;|&gt; : int -&gt; (int -&gt; int) |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with list and tuple args" =
   <span data-count="1">l</span>et _ = infer_program_test {|let w [2; v] (y, dx, d) = (-4, 5+v, true&amp;&amp;d) |} in
   <span data-count="1">[</span>%expect {| val w : int list -&gt; (('2 * '3 * bool) -&gt; (int * int * bool)) |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "infer function with ascription" =
   <span data-count="1">l</span>et _ =
     infer_program_test {|let f = fun ((3, true): int*bool) x -&gt; if x then 4 else 0  |}
   in

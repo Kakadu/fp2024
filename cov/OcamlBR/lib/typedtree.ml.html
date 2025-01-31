@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>typedtree.ml &mdash; Coverage report</title>
-    <meta name="description" content="57.78% coverage in lib/typedtree.ml">
+    <meta name="description" content="60.00% coverage in lib/typedtree.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>typedtree.ml
         </a>
       </h1>
-      <h2>57.78%</h2>
+      <h2>60.00%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:4.72%"></span>
@@ -29,7 +29,6 @@
       <span class="unvisited" style="top:31.13%"></span>
       <span class="unvisited" style="top:37.74%"></span>
       <span class="unvisited" style="top:40.57%"></span>
-      <span class="unvisited" style="bottom:35.85%"></span>
       <span class="unvisited" style="bottom:5.66%"></span>
       <span class="unvisited" style="bottom:4.72%"></span>
       <span class="unvisited" style="bottom:3.77%"></span>
@@ -105,7 +104,7 @@
 <a id="L65"></a><span > </span>
 <a id="L66"></a><span class="visited"> </span>
 <a id="L67"></a><span > </span>
-<a id="L68"></a><span class="unvisited"> </span>
+<a id="L68"></a><span class="visited"> </span>
 <a id="L69"></a><span class="visited"> </span>
 <a id="L70"></a><span class="visited"> </span>
 <a id="L71"></a><span > </span>
@@ -302,33 +301,33 @@ let tlist ty = <span data-count="11">T</span>List ty
 (* let trecord s = TRecord s *)
 
 let rec pp_ty ppf =
-  <span data-count="1375">l</span>et open Format in
+  <span data-count="1419">l</span>et open Format in
   function
   | <span data-count="93">T</span>Var n -&gt; fprintf ppf "'%d" n
-  | <span data-count="678">T</span>Prim s -&gt; fprintf ppf "%s" s
-  | <span data-count="432">T</span>Arrow (l, r) -&gt;
+  | <span data-count="706">T</span>Prim s -&gt; fprintf ppf "%s" s
+  | <span data-count="440">T</span>Arrow (l, r) -&gt;
     fprintf
       ppf
       "%a -&gt; %a"
       (fun ppf l -&gt;
-        <span data-count="432">m</span>atch l with
+        <span data-count="440">m</span>atch l with
         | <span data-count="33">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty l
-        | <span data-count="399">_</span> -&gt; pp_ty ppf l)
+        | <span data-count="407">_</span> -&gt; pp_ty ppf l)
       l
       (fun ppf r -&gt;
-        <span data-count="432">m</span>atch r with
-        | <span data-count="161">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty r
-        | <span data-count="271">_</span> -&gt; pp_ty ppf r)
+        <span data-count="440">m</span>atch r with
+        | <span data-count="163">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty r
+        | <span data-count="277">_</span> -&gt; pp_ty ppf r)
       r
-  | <span data-count="53">T</span>List t -&gt;
+  | <span data-count="57">T</span>List t -&gt;
     (match t with
-     | <span data-count="0">T</span>Arrow _ -&gt; fprintf ppf "(%a) list" pp_ty t
-     | <span data-count="53">_</span> -&gt; fprintf ppf "%a list" pp_ty t)
-  | <span data-count="110">T</span>Tuple (t1, t2, rest) -&gt;
+     | <span data-count="2">T</span>Arrow _ -&gt; fprintf ppf "(%a) list" pp_ty t
+     | <span data-count="55">_</span> -&gt; fprintf ppf "%a list" pp_ty t)
+  | <span data-count="114">T</span>Tuple (t1, t2, rest) -&gt;
     let tuple_content =
-      String.concat " * " (List.ma<span data-count="110">p</span> (Format.asprint<span data-count="110">f</span> "%a" pp_ty) (t1 :: t2 :: rest))
+      String.concat " * " (List.ma<span data-count="114">p</span> (Format.asprint<span data-count="114">f</span> "%a" pp_ty) (t1 :: t2 :: rest))
     in
-    <span data-count="110">f</span>printf ppf "(%s)" tuple_content
+    <span data-count="114">f</span>printf ppf "(%s)" tuple_content
   | <span data-count="9">T</span>Option t -&gt; fprintf ppf "(%a) option" pp_ty t
 ;;
 
@@ -339,8 +338,8 @@ type error =
   [ `Occurs_check of string * ty
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
-  | `Ill_left_hand_side of string
-  | `Ill_right_hand_side of string
+  | `Ill_left_hand_side of string (* e.g. let 0 = 1, let rec (a, b) = &lt;..&gt; *)
+  | `Ill_right_hand_side of string (* e.g. let rec x = x + 1 *)
   | `Duplicate_field_labels of string
   | `Undefined_type of string
   | `Multiple_definition_of_type of string
@@ -353,7 +352,7 @@ let pp_error ppf = function
   | <span data-count="13">`</span>Unification_failed (l, r) -&gt;
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
   | <span data-count="6">`</span>Ill_left_hand_side s -&gt; Format.fprintf ppf {|Ill left-hand side %s|} s
-  | <span data-count="3">`</span>Ill_right_hand_side s -&gt; Format.fprintf ppf {|Ill right-hand side %s|} s
+  | <span data-count="2">`</span>Ill_right_hand_side s -&gt; Format.fprintf ppf {|Ill right-hand side %s|} s
   | <span data-count="0">`</span>Duplicate_field_labels s -&gt; Format.fprintf ppf {|Duplicate field labels: %s|} s
   | <span data-count="0">`</span>Undefined_type s -&gt; Format.fprintf ppf {|Undefined type: %s|} s
   | <span data-count="0">`</span>Multiple_definition_of_type s -&gt;

@@ -1363,7 +1363,7 @@ let test_interpret s =
   | <span data-count="0">E</span>rror e -&gt; printf "Parsing error: %s\n" e
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret pattern-matching" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
@@ -1378,7 +1378,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpet non-exhaustive pattern-matching" =
   <span data-count="1">l</span>et _ = test_interpret {| 
     let (0, b) = (4, 3)
   |} in
@@ -1386,7 +1386,7 @@ let%expect_test _ =
     {| Interpreter error: Ill left-hand side Pattern not acceptable for variable name |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret tuple pattern" =
   <span data-count="1">l</span>et _ = test_interpret {| 
     let (a, b) = (4, 3)
   |} in
@@ -1397,7 +1397,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret simple pattern-matching" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
@@ -1418,7 +1418,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret non-exhaustive match" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
@@ -1433,7 +1433,7 @@ let%expect_test _ =
   <span data-count="1">[</span>%expect {| Interpreter error: Pattern-matching failure |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret correct match" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
@@ -1452,7 +1452,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret values using cons" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
@@ -1470,7 +1470,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret mutual recursion" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
@@ -1490,7 +1490,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret simple function with fun" =
   <span data-count="1">l</span>et _ = test_interpret {| 
       let f = fun x -&gt; x + 3
       let a = f 3
@@ -1502,7 +1502,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret simple function" =
   <span data-count="1">l</span>et _ = test_interpret {| 
       let f x y = x + y
       let a = f 3 4
@@ -1514,7 +1514,7 @@ let%expect_test _ =
     } |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret division by zero" =
   <span data-count="1">l</span>et _ = test_interpret {| 
       let a = 0
       let b = 30 / a
@@ -1522,7 +1522,7 @@ let%expect_test _ =
   <span data-count="1">[</span>%expect {| Interpreter error: Division by zero |}<span data-count="59">]</span>
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret multiple strucuture items" =
   <span data-count="1">l</span>et _ =
     test_interpret
       {| 
