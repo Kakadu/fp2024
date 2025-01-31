@@ -249,6 +249,7 @@ let ppattern =
              [ (pspecials >>| fun name -> Pattern.Pat_construct (name, None))
              ; ppatvar
              ; ppatconst
+             ; (psome ppattern >>| fun (name,opt) -> Pattern.Pat_construct (name,opt))
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern
@@ -417,11 +418,13 @@ let pexpr =
     let poprnd =
       pass_ws
       *> choice
-           [ pparenth pexpr
+           [ (pspecials >>| fun name -> Expression.Exp_construct (name, None))
+            ;pparenth pexpr
            ; pidentexpr
            ; pepxrconstraint pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
+           ; (psome pexpr >>| fun (name,opt) -> Expression.Exp_construct (name,opt))
            ; pfunction pexpr
            ; pfunexpr pexpr
            ; pletexpr pexpr
@@ -480,8 +483,8 @@ let pstrlet =
 let pstr_item = pseval <|> pstrlet (* fix |^*)
 
 let pstructure =
-  let psemicolon = token ";;" in
-  many (pstr_item <* psemicolon <* pass_ws)
+  let psemicolon = many (token ";;") in
+  sep_by psemicolon pstr_item <* psemicolon <* pass_ws
 ;;
 
 let parse str = parse_string ~consume:All pstructure str

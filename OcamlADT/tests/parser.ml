@@ -1186,3 +1186,8 @@ let%expect_test "keyword" =
         ))
       ] |}]
 ;;
+
+let%expect_test "keyword" =
+  test_programm {||};
+  [%expect{| [] |}]
+;;
