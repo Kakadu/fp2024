@@ -1,3 +1,7 @@
 (cram
  (applies_to test_ast)
  (deps ../bin/factorial_ast.exe))
+
+(cram
+ (applies_to *)
+ (deps ../bin/REPL.exe))

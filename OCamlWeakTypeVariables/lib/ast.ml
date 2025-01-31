@@ -11,11 +11,10 @@ type constant =
   | Pconst_int of int (** constant of int. Ex: 5 *)
   | Pconst_string of string (** constant of string. Ex: "homka" *)
   | Pconst_boolean of bool (** constant of boolean. Ex: true *)
-  | Pconst_float of float (** constant of float. Ex: 1.22 *)
 [@@deriving show { with_path = false }]
 
 (** identificator *)
-type id = Id of string [@@deriving show { with_path = false }]
+type id = string [@@deriving show { with_path = false }]
 
 type pattern =
   | Ppat_any (** The pattern _. *)
@@ -59,3 +58,5 @@ type structure_item =
       et P1 = E1 and ... and Pn = EN when rec is Nonrecursive,
       let rec P1 = E1 and ... and Pn = EN  when rec is Recursive.*)
 [@@deriving show { with_path = false }]
+
+type program = structure_item list [@@deriving show { with_path = false }]
