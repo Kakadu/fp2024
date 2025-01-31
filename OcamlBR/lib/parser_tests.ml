@@ -37,7 +37,6 @@ let%expect_test "parse factorial" =
  |}]
 ;;
 
-
 let%expect_test "parse calculation sequence" =
   parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect

@@ -240,7 +240,8 @@ let%expect_test "print list pattern" =
 
 let%expect_test "print value with ascription" =
   parse "let x : int = 42;;";
-  [%expect {|
+  [%expect
+    {|
   let  (x : int) = 42 ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((PConstraint ((PVar (Id "x")), int)), (Econst (Int 42))
@@ -252,7 +253,8 @@ let%expect_test "print value with ascription" =
 
 let%expect_test "print function with ascription" =
   parse "let f : int -> string = fun x -> string_of_int x;;";
-  [%expect {|
+  [%expect
+    {|
   let  (f : int -> string) = (fun x -> string_of_int x) ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((PConstraint ((PVar (Id "f")), int -> string)),
@@ -266,7 +268,8 @@ let%expect_test "print function with ascription" =
 
 let%expect_test "print tuple with ascription" =
   parse "let y : (int * string * bool) = (1, \"hello\", true);;";
-  [%expect {|
+  [%expect
+    {|
   let  (y : (int * string * bool)) = (1, "hello", true) ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((PConstraint ((PVar (Id "y")), (int * string * bool))),
@@ -280,7 +283,8 @@ let%expect_test "print tuple with ascription" =
 
 let%expect_test "print list with ascription" =
   parse "let l : int list = [1; 2; 3];;";
-  [%expect {|
+  [%expect
+    {|
   let  (l : int list) = [1; 2; 3] ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((PConstraint ((PVar (Id "l")), int list)),
@@ -292,7 +296,8 @@ let%expect_test "print list with ascription" =
 
 let%expect_test "print value with complex ascription" =
   parse "let g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)];;";
-  [%expect {|
+  [%expect
+    {|
   let  (g : (int -> bool) list) = [(fun x -> x > 0); (fun x -> x < 0)] ;;
   [(SValue (Non_recursive,
       (Evalue_binding ((PConstraint ((PVar (Id "g")), (int -> bool) list)),
@@ -310,7 +315,8 @@ let%expect_test "print value with complex ascription" =
 
 let%expect_test "print function with ascription, multiple arguments" =
   parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y";
-  [%expect {|
+  [%expect
+    {|
    let  (f : string -> (int -> bool)) = (fun x -> (fun y -> x + y)) ;;
    [(SValue (Non_recursive,
        (Evalue_binding (
@@ -327,7 +333,8 @@ let%expect_test "print function with ascription, multiple arguments" =
 
 let%expect_test "print function with ascription using fun" =
   parse "let f = fun (3, true): int*bool -> 4";
-  [%expect {|
+  [%expect
+    {|
    let  f = (fun ((3, true) : (int * bool)) -> 4) ;;
    [(SValue (Non_recursive,
        (Evalue_binding ((PVar (Id "f")),
