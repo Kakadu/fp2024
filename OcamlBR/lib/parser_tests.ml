@@ -12,8 +12,7 @@ let parse str =
   | _ -> Stdlib.print_endline "Parsing failed"
 ;;
 
-(*factorial*)
-let%expect_test _ =
+let%expect_test "parse factorial" =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {|
@@ -38,8 +37,8 @@ let%expect_test _ =
  |}]
 ;;
 
-(*calculetion sequence*)
-let%expect_test _ =
+
+let%expect_test "parse calculation sequence" =
   parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect
     {|
@@ -52,7 +51,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse complex if-then-else" =
   parse "if 1234 + 1 = 1235 then let x = 4 in x * 2";
   [%expect
     {|
@@ -68,15 +67,14 @@ let%expect_test _ =
   |}]
 ;;
 
-(*unallowable range for the int type*)
-let%expect_test _ =
+let%expect_test "parse unallowable range for the int type" =
   parse "39482309482390842309482438208 + 2";
   [%expect {| 
   Parsing failed
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse nested let-in" =
   parse "let x = 5 in let y = 3 in x + y;; if 13 > 12 then let a = 2 in a - 4";
   [%expect
     {|
@@ -96,7 +94,7 @@ let%expect_test _ =
     ] |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse multiple structure items" =
   parse "let x = 5 ;; if 13 > 12 then let a = 2 in a + x";
   [%expect
     {|
@@ -111,14 +109,14 @@ let%expect_test _ =
     ] |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse incorrect pattern-matching" =
   parse "let rec factorial n = match n with 5 0 -> 1 5 1 -> 1 5 _ -> n * factorial(n - 1)";
   [%expect {|
   Parsing failed
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse correct pattern-matching" =
   parse "let x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;";
   [%expect
     {|
@@ -135,7 +133,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse parenthesised expression" =
   parse "(5 + 6) * 4";
   [%expect
     {|
@@ -146,7 +144,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse prefix operators" =
   parse "let (|?) a b = a/b + b*a in (|?) 3 ((|?) 5 6)";
   [%expect
     {|
@@ -171,7 +169,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse multiple patterns" =
   parse "let x = match n with | [] -> 10 | h::tl -> 20 | h::m::tl -> 30 ;;";
   [%expect
     {|
@@ -192,7 +190,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "parse pattern with arguments" =
   parse "let w (Some c) (2::v)  = c";
   [%expect
     {|

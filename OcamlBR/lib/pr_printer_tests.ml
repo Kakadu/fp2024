@@ -15,7 +15,7 @@ let parse str =
   | Error _ -> Stdlib.print_endline "Parsing failed"
 ;;
 
-let%expect_test _ =
+let%expect_test "print factorial" =
   parse "let rec factorial n = if n = 0 then 1 else n * factorial (n - 1) in factorial 5";
   [%expect
     {|
@@ -41,7 +41,7 @@ let%expect_test _ =
     |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print if-then-else" =
   parse "if 5 > 6 then let x = 5 in x + 5";
   [%expect
     {|
@@ -56,14 +56,14 @@ let%expect_test _ =
     |}]
 ;;
 
-let%expect_test _ =
-  parse "let x = 5 in let y = 6 in (x < y) and (x == y)";
+let%expect_test "print nested let-ins" =
+  parse "let x = 5 in let y = 6 in (x < y) and (x = y)";
   [%expect {|
     Parsing failed
     |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print nested lists" =
   parse "[1; [2; 3]; 4]";
   [%expect
     {|
@@ -76,7 +76,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print list with arithemtic expressions" =
   parse "[1 + 2; 3 * 4; 5 - 6]";
   [%expect
     {|
@@ -90,7 +90,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print tuple value" =
   parse "let a = (1, 2, 3)";
   [%expect
     {|
@@ -103,7 +103,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print arithemtic calculations" =
   parse "1234 + 676 - 9002 * (52 / 2)";
   [%expect
     {|
@@ -117,7 +117,7 @@ let%expect_test _ =
     |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print complex if-then-else" =
   parse "if 1234 + 1 = 1235 then let x = 4 in (x, 2)";
   [%expect
     {|
@@ -134,14 +134,14 @@ let%expect_test _ =
     |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print unallowed int" =
   parse "39482309482390842309482438208 + 2";
   [%expect {| 
   Parsing failed
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print nested let-ins" =
   parse "let x = 5 in let y = 3 in x + y;; if 13 > 12 then let a = 2 in a - 4";
   [%expect
     {|
@@ -164,7 +164,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print multiple structure items" =
   parse "let x = 5 ;; if 13 > 12 then let a = 2 in a + x";
   [%expect
     {|
@@ -182,7 +182,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print correct pattern-matching" =
   parse "let x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;";
   [%expect
     {|
@@ -200,7 +200,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print parenthesised expression" =
   parse "((5 + 6) * (4 - 7)) - 1232";
   [%expect
     {|
@@ -214,7 +214,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print simple svalue" =
   parse "let x = 5";
   [%expect
     {|
@@ -225,7 +225,7 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print list pattern" =
   parse "[1; 2; 3] = 1";
   [%expect
     {|
@@ -238,56 +238,111 @@ let%expect_test _ =
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print value with ascription" =
   parse "let x : int = 42;;";
   [%expect {|
-  Parsing failed
+  let  (x : int) = 42 ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((PConstraint ((PVar (Id "x")), int)), (Econst (Int 42))
+         )),
+      []))
+    ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print function with ascription" =
   parse "let f : int -> string = fun x -> string_of_int x;;";
   [%expect {|
-  Parsing failed
+  let  (f : int -> string) = (fun x -> string_of_int x) ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((PConstraint ((PVar (Id "f")), int -> string)),
+         (Efun ((PVar (Id "x")), [],
+            (Efun_application ((Evar (Id "string_of_int")), (Evar (Id "x"))))))
+         )),
+      []))
+    ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print tuple with ascription" =
   parse "let y : (int * string * bool) = (1, \"hello\", true);;";
   [%expect {|
-  Parsing failed
+  let  (y : (int * string * bool)) = (1, "hello", true) ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((PConstraint ((PVar (Id "y")), (int * string * bool))),
+         (Etuple ((Econst (Int 1)), (Econst (String "hello")),
+            [(Econst (Bool true))]))
+         )),
+      []))
+    ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print list with ascription" =
   parse "let l : int list = [1; 2; 3];;";
   [%expect {|
-  Parsing failed
+  let  (l : int list) = [1; 2; 3] ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((PConstraint ((PVar (Id "l")), int list)),
+         (Elist [(Econst (Int 1)); (Econst (Int 2)); (Econst (Int 3))]))),
+      []))
+    ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print value with complex ascription" =
   parse "let g : (int -> bool) list = [(fun x -> x > 0); (fun x -> x < 0)];;";
   [%expect {|
-  Parsing failed
+  let  (g : (int -> bool) list) = [(fun x -> x > 0); (fun x -> x < 0)] ;;
+  [(SValue (Non_recursive,
+      (Evalue_binding ((PConstraint ((PVar (Id "g")), (int -> bool) list)),
+         (Elist
+            [(Efun ((PVar (Id "x")), [],
+                (Ebin_op (Gt, (Evar (Id "x")), (Econst (Int 0))))));
+              (Efun ((PVar (Id "x")), [],
+                 (Ebin_op (Lt, (Evar (Id "x")), (Econst (Int 0))))))
+              ])
+         )),
+      []))
+    ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print function with ascription, multiple arguments" =
   parse "let f : string -> (int -> bool) = fun x -> fun y -> x + y";
   [%expect {|
-   Parsing failed
+   let  (f : string -> (int -> bool)) = (fun x -> (fun y -> x + y)) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding (
+          (PConstraint ((PVar (Id "f")), string -> (int -> bool))),
+          (Efun ((PVar (Id "x")), [],
+             (Efun ((PVar (Id "y")), [],
+                (Ebin_op (Add, (Evar (Id "x")), (Evar (Id "y"))))))
+             ))
+          )),
+       []))
+     ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print function with ascription using fun" =
   parse "let f = fun (3, true): int*bool -> 4";
   [%expect {|
-   Parsing failed
+   let  f = (fun ((3, true) : (int * bool)) -> 4) ;;
+   [(SValue (Non_recursive,
+       (Evalue_binding ((PVar (Id "f")),
+          (Efun (
+             (PConstraint (
+                (PTuple ((PConst (Int 3)), (PConst (Bool true)), [])),
+                (int * bool))),
+             [], (Econst (Int 4))))
+          )),
+       []))
+     ]
   |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "print function with ascription for arguments" =
   parse "let f ((3, true) : int * bool) x ([ 7; 5 ] : int list) = 4";
   [%expect
     {|

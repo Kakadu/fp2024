@@ -17,7 +17,7 @@ let test_interpret s =
   | Error e -> printf "Parsing error: %s\n" e
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret pattern-matching" =
   let _ =
     test_interpret
       {| 
@@ -32,7 +32,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpet non-exhaustive pattern-matching" =
   let _ = test_interpret {| 
     let (0, b) = (4, 3)
   |} in
@@ -40,7 +40,7 @@ let%expect_test _ =
     {| Interpreter error: Ill left-hand side Pattern not acceptable for variable name |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret tuple pattern" =
   let _ = test_interpret {| 
     let (a, b) = (4, 3)
   |} in
@@ -51,7 +51,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret simple pattern-matching" =
   let _ =
     test_interpret
       {| 
@@ -72,7 +72,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret non-exhaustive match" =
   let _ =
     test_interpret
       {| 
@@ -87,7 +87,7 @@ let%expect_test _ =
   [%expect {| Interpreter error: Pattern-matching failure |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret correct match" =
   let _ =
     test_interpret
       {| 
@@ -106,7 +106,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret values using cons" =
   let _ =
     test_interpret
       {| 
@@ -124,7 +124,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret mutual recursion" =
   let _ =
     test_interpret
       {| 
@@ -144,7 +144,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret simple function with fun" =
   let _ = test_interpret {| 
       let f = fun x -> x + 3
       let a = f 3
@@ -156,7 +156,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret simple function" =
   let _ = test_interpret {| 
       let f x y = x + y
       let a = f 3 4
@@ -168,7 +168,7 @@ let%expect_test _ =
     } |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret division by zero" =
   let _ = test_interpret {| 
       let a = 0
       let b = 30 / a
@@ -176,7 +176,7 @@ let%expect_test _ =
   [%expect {| Interpreter error: Division by zero |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "interpret multiple strucuture items" =
   let _ =
     test_interpret
       {| 
