@@ -1,5 +1,6 @@
 open Format
 open Ast.TypeExpr
+
 type binder = int [@@deriving show { with_path = false }]
 
 module VarSet = struct
@@ -16,13 +17,13 @@ type binder_set = VarSet.t [@@deriving show { with_path = false }]
 
 (*maybe change name*)
 (* type typ =
-  | Typ_prim of string
-  | Typ_var of binder
-  | Typ_arrow of typ * typ
-  | Typ_tuple of typ list
-  | Typ_list of typ
-  | Typ_unit
-[@@deriving show { with_path = false }] *)
+   | Typ_prim of string
+   | Typ_var of binder
+   | Typ_arrow of typ * typ
+   | Typ_tuple of typ list
+   | Typ_list of typ
+   | Typ_unit
+   [@@deriving show { with_path = false }] *)
 
 type scheme = Forall of binder_set * t [@@deriving show { with_path = false }]
 
@@ -52,18 +53,15 @@ let rec pprint_type_tuple fmt = function
 and pprint_type fmt = function
   | Type_var num -> fprintf fmt "'%s" num
   (* | Type_prim str -> fprintf fmt "%s" str *)
-  | Type_unit -> fprintf fmt "%s" "unit"
-  | Type_int -> fprintf fmt "%s" "int"
-  | Type_char  -> fprintf fmt "%s" "char"
-  | Type_bool -> fprintf fmt "%s" "bool"
-  | Type_string  -> fprintf fmt "%s" "string"
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
      | Type_arrow (_, _), _ -> fprintf fmt "(%a) -> %a" pprint_type ty1 pprint_type ty2
      | _ -> fprintf fmt "%a -> %a" pprint_type ty1 pprint_type ty2)
-  | Type_tuple (t1,t2,ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1::t2::ty_lst)
-  (* | Type_list ty1 -> fprintf fmt "%a list" pprint_type ty1 *)
+  | Type_tuple (t1, t2, ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1 :: t2 :: ty_lst)
+  | Type_constr (name,ty_list) -> fprintf fmt "%s %a" name pprint_type_tuple  ty_list
 ;;
+
+(* | Type_list ty1 -> fprintf fmt "%a list" pprint_type ty1 *)
 
 (*errors*)
 
@@ -80,7 +78,7 @@ type error =
   ]
 
 let pp_inf_err fmt = function
-  | `Occurs_check (string,t)-> fprintf fmt "Occurs_check"
+  | `Occurs_check (string, t) -> fprintf fmt "Occurs_check"
   | `Unification_failed (typ1, typ2) ->
     fprintf fmt "Unification_failed: %a # %a" pprint_type typ1 pprint_type typ2
   | `Wrong_exp -> fprintf fmt "Wrong_exp"

@@ -98,16 +98,15 @@ end
 
 module TypeExpr = struct
   type t =
-    | Type_unit
-    | Type_int
-    | Type_char
-    | Type_bool
-    | Type_string
-    | Type_option of t [@gen TypeExpr.gen_sized (n / 2)]
     | Type_arrow of t * t (** [Type_arrow(T1, T2)] represents:
                               [T1 -> T2] *)
     | Type_var of (ident[@gen gen_ident])
     | Type_tuple of t List2.t (** [Type_tuple([T1, T2, ... Tn])] *)
+    | Type_constr of ident * t list
+    (** [Type_constr(ident, l)] represents:
+        - [tconstr]               when [l=[]],
+        - [T tconstr]             when [l=[T]],
+        - [(T1, ..., Tn) tconstr] when [l=[T1 ; ... ; Tn]]. *)
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 

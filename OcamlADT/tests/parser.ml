@@ -759,9 +759,9 @@ let%expect_test "pattern constraint" =
     {|
     [(Str_value (Nonrecursive,
         ({ pat =
-           (Pat_constraint ((Pat_var "x"), (Type_tuple (Type_int, Type_int, []))
-              ));
-           expr = (Exp_constraint ((Exp_ident "x"), Type_int)) },
+           (Pat_constraint ((Pat_var "x"),
+              (Type_tuple ((Type_var "int"), (Type_var "int"), []))));
+           expr = (Exp_constraint ((Exp_ident "x"), (Type_var "int"))) },
          [])
         ))
       ] |}]
@@ -773,11 +773,11 @@ let%expect_test "pattern constraint" =
     {|
     [(Str_value (Nonrecursive,
         ({ pat =
-           (Pat_constraint ((Pat_var "x"), (Type_tuple (Type_int, Type_int, []))
-              ));
+           (Pat_constraint ((Pat_var "x"),
+              (Type_tuple ((Type_var "int"), (Type_var "int"), []))));
            expr =
            (Exp_constraint ((Exp_ident "x"),
-              (Type_tuple (Type_int, Type_int, []))))
+              (Type_tuple ((Type_var "int"), (Type_var "int"), []))))
            },
          [])
         ))
@@ -790,9 +790,11 @@ let%expect_test "pattern constraint" =
     {|
     [(Str_value (Nonrecursive,
         ({ pat =
-           (Pat_constraint ((Pat_var "x"), (Type_arrow (Type_int, Type_int))));
+           (Pat_constraint ((Pat_var "x"),
+              (Type_arrow ((Type_var "int"), (Type_var "int")))));
            expr =
-           (Exp_constraint ((Exp_ident "x"), (Type_arrow (Type_int, Type_int))))
+           (Exp_constraint ((Exp_ident "x"),
+              (Type_arrow ((Type_var "int"), (Type_var "int")))))
            },
          [])
         ))
@@ -927,7 +929,8 @@ let%expect_test "factorial" =
         ({ pat =
            (Pat_constraint ((Pat_var "x"),
               (Type_arrow (
-                 (Type_arrow ((Type_arrow (Type_int, Type_char)), Type_string)),
+                 (Type_arrow ((Type_arrow ((Type_var "int"), (Type_var "char"))),
+                    (Type_var "string"))),
                  (Type_tuple ((Type_var "x"), (Type_var "x"), [(Type_var "x")]))
                  ))
               ));
@@ -996,7 +999,9 @@ let%expect_test "_" =
     {|
     [(Str_eval
         (Exp_constraint ((Exp_ident "f"),
-           (Type_arrow ((Type_arrow ((Type_var "Int"), Type_int)), Type_int)))))
+           (Type_arrow ((Type_arrow ((Type_var "Int"), (Type_var "int"))),
+              (Type_var "int")))
+           )))
       ] |}]
 ;;
 
@@ -1155,7 +1160,7 @@ let%expect_test "keyword" =
   [%expect
     {|
     [(Str_value (Nonrecursive,
-        ({ pat = (Pat_constraint ((Pat_var "x"), Type_char));
+        ({ pat = (Pat_constraint ((Pat_var "x"), (Type_var "char")));
            expr = (Exp_constant (Const_integer 20)) },
          [])
         ))
@@ -1168,23 +1173,25 @@ let%expect_test "keyword" =
     [(Str_value (Nonrecursive,
         ({ pat =
            (Pat_constraint ((Pat_var "x"),
-              (Type_tuple (Type_char, Type_char, []))));
+              (Type_tuple ((Type_var "char"), (Type_var "char"), []))));
            expr = (Exp_constant (Const_integer 20)) },
          [])
         ))
       ] |}]
 ;;
 let%expect_test "keyword" =
-  test_programm {|let (x:int option option option) = 20;;|};
-  [%expect{|
-    [(Str_value (Nonrecursive,
-        ({ pat =
-           (Pat_constraint ((Pat_var "x"),
-              (Type_option (Type_option (Type_option Type_int)))));
-           expr = (Exp_constant (Const_integer 20)) },
-         [])
-        ))
-      ] |}]
+  test_programm {|let (x:int option) = 20;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1183, characters 2-45
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "keyword" =

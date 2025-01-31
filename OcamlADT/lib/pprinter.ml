@@ -41,12 +41,6 @@ let pprint_constant fmt =
 let rec pprint_type fmt =
   let open TypeExpr in
   function
-  | Type_unit -> fprintf fmt "%s" "unit"
-  | Type_int -> fprintf fmt "%s" "int"
-  | Type_char -> fprintf fmt "%s" "char"
-  | Type_bool -> fprintf fmt "%s" "bool"
-  | Type_string -> fprintf fmt "%s" "string"
-  | Type_option typ -> fprintf fmt "%a option" pprint_type typ
   | Type_arrow (tye1, tye2) -> fprintf fmt "(%a -> %a)" pprint_type tye1 pprint_type tye2
   | Type_var id -> fprintf fmt "%s" id
   | Type_tuple (tye1, tye2, tyel) ->

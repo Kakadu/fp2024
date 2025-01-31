@@ -149,30 +149,6 @@ let ptypevar =
   return (TypeExpr.Type_var id)
 ;;
 
-let pbasetype =
-  choice
-    [ token "unit" *> return TypeExpr.Type_unit
-    ; token "int" *> return TypeExpr.Type_int
-    ; token "char" *> return TypeExpr.Type_char
-    ; token "string" *> return TypeExpr.Type_string
-    ; token "bool" *> return TypeExpr.Type_bool
-    ; ptypevar
-    ]
-;;
-
-let poptiontype ptype =
-  let lchain =
-    let rec helper acc_ty =
-      (let* _ = token "option" in
-       helper ((fun x -> TypeExpr.Type_option x) acc_ty))
-      <|> return acc_ty
-    in
-    let* fst_ty = ptype in
-    helper fst_ty
-  in
-  lchain
-;;
-
 let ptypetuple ptype =
   let* el1 = pass_ws *> ptype in
   let* el2 = token "*" *> pass_ws *> ptype in
@@ -183,11 +159,10 @@ let ptypetuple ptype =
 let ptype =
   pass_ws
   *> fix (fun ptype ->
-    let ptvar = choice [ pparenth ptype; pbasetype ] in
+    let ptvar = choice [ pparenth ptype; ptypevar ] in
     (* pass_ws *> pparenth ptype in *)
     (* let ptvar = ptypevar in *)
-    let poptiontype = poptiontype ptvar <|> ptvar in
-    let pttuple = ptypetuple poptiontype <|> poptiontype in
+    let pttuple = ptypetuple ptvar <|> ptvar in
     rchain pttuple ptypearrow <|> pttuple)
 ;;
 
