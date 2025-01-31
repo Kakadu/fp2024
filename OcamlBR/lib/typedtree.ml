@@ -82,8 +82,8 @@ type error =
   [ `Occurs_check of string * ty
   | `Undefined_variable of string
   | `Unification_failed of ty * ty
-  | `Ill_left_hand_side of string
-  | `Ill_right_hand_side of string
+  | `Ill_left_hand_side of string (* e.g. let 0 = 1, let rec (a, b) = <..> *)
+  | `Ill_right_hand_side of string (* e.g. let rec x = x + 1 *)
   | `Duplicate_field_labels of string
   | `Undefined_type of string
   | `Multiple_definition_of_type of string
