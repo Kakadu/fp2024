@@ -405,44 +405,24 @@ let infer_expr =
     (* i want to die after three hours of attempting implemented this 😿😿😿 *)
     (* Recursive multiple let definitions type inference by Homka122 😼😼😼 (it took 4 hours) *)
     | Pexp_let (NonRecursive, vb, e1) ->
+      (* Example: let homka = fun x y -> let z = x y in z + 2 *)
       let* env, sub0 =
         RList.fold_left
           ~f:(fun (env, sub) vb ->
+            (* Env: {x: 'a, y: 'b} *)
+            (* vb: {pat: z, expr: x y} *)
+            (* So t0 will be 'c and sub0 will be '{a: 'b -> 'c} *)
             let* t0, sub0 = helper env vb.pvb_expr in
+            (* With type (x y): 'c we append new variable z with type 'c *)
             let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
-            let* sub_c = Subst.compose sub0 sub in
+            let* sub_c = Subst.compose sub sub0 in
             return (env0, sub_c))
           ~init:(return (env, Subst.empty))
           vb
       in
-      let* t, sub1 = helper env e1 in
+      let* t, sub1 = helper (TypeEnv.apply env sub0) e1 in
       let* sub = Subst.compose sub0 sub1 in
-      let rec helper_let env pattern expr vbs =
-        (* Upd: it's wrong *)
-        (* let x0 = e0 in e1. x0: k0, e0: t0, x0 \in env0 *)
-        (* Let S0(env0) = env1. x0: k0 \in env0  *)
-        (* Let tk = gen(env1, t0) *)
-        (* (unify tk k0)env1 = env2. Where is x: tk \in env2 *)
-        (* So we have env with gen type tk and x0: t0 *)
-        (* And that is without knowing name of variable *)
-        (* It took 2.5 hours for invented this *)
-        let* t0, sub0 = helper env expr in
-        let* _, env0, _ = infer_pattern ~ty:t0 env pattern in
-        (* let x0 = e0 in e1 if vbs is empty OR let x0 = e0 and x1 = e1 and ... xn = en in E otherwise *)
-        let* t1, sub1 =
-          match vbs with
-          | h :: t -> helper_let env0 h.pvb_pat h.pvb_expr t
-          | _ -> helper env0 e1
-        in
-        let* sub = Subst.compose sub0 sub1 in
-        return (t1, sub)
-      in
-      let result =
-        match vb with
-        | h :: t -> helper_let env h.pvb_pat h.pvb_expr t
-        | [] -> failwith "Parser error"
-      in
-      result
+      return (t, sub)
       (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Typing_rule *)
     | Pexp_let (Recursive, vbs, e1) ->
       let exprs, patterns = List.split @@ List.map (fun x -> x.pvb_expr, x.pvb_pat) vbs in
