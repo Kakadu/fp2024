@@ -12,7 +12,22 @@ let run_single opts =
   | Error e -> Format.printf "Error: %s\n%!" e
   | Result.Ok ast ->
     (match opts.dump_inference with
-     | true -> Format.printf "val"
+     | true ->
+       (match ast with
+        | Pstr_eval expr ->
+          (match Infer.run_expr_inferencer expr with
+           | Ok t ->
+             (* Format.printf "> %s;;\n\n" text; *)
+             Format.printf "- : %a\n" Infer_print.pp_typ_my t
+           | Error e -> Format.printf "%a" Types.pp_error e)
+        | _ ->
+          let env, names = Infer.run_structure_inferencer ast in
+          (* Format.printf "> %s;;\n\n" text; *)
+          List.iter
+            (fun name ->
+              let (Scheme (_, tt)) = Infer.TypeEnv.find_exn env name in
+              Format.printf "val %s : %a\n" name Infer_print.pp_typ_my tt)
+            names)
      | false ->
        (match opts.dump_parsetree with
         | true -> Format.printf "Parsed result: @[%a@]\n%!" Lib.Ast.pp_structure_item ast
@@ -28,6 +43,9 @@ let () =
       [ ( "-dparsetree"
         , Unit (fun () -> opts.dump_parsetree <- true)
         , "Dump parse tree, don't eval anything" )
+      ; ( "-dinference"
+        , Unit (fun () -> opts.dump_inference <- true)
+        , "Infer structure, don't eval anything" )
       ]
       (fun _ ->
         Stdlib.Format.eprintf "Anonymous arguments are not supported\n";
