@@ -1,7 +1,6 @@
 open Ast
 open Types
-
-let debug = true
+open Config
 
 module R : sig
   type 'a t

@@ -1,4 +1,5 @@
 open Types
+open Config
 
 let min = true
 
@@ -37,10 +38,13 @@ let minimize_variable t =
 ;;
 
 let pp_typ_my fmt t =
-  let t = if min then minimize_variable t else t in
+  let t = if Config.vars_min then minimize_variable t else t in
   let rec helper fmt = function
     | TBase b -> pp_base_type_my fmt b
-    | TVar v -> Format.fprintf fmt "'%c" (Char.chr (Char.code 'a' + v))
+    | TVar v ->
+      if Config.vars_char
+      then Format.fprintf fmt "'%c" (Char.chr (Char.code 'a' + v))
+      else Format.fprintf fmt "'%s" (string_of_int v)
     | TArrow ((TArrow (_, _) as l), r) ->
       Format.fprintf fmt "(%a) -> %a" helper l helper r
     | TArrow (l, r) -> Format.fprintf fmt "%a -> %a" helper l helper r
