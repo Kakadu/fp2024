@@ -1,6 +1,9 @@
 open Lib
 
-type opts = { mutable dump_parsetree : bool }
+type opts =
+  { mutable dump_parsetree : bool
+  ; mutable dump_inference : bool
+  }
 
 let run_single opts =
   let text = In_channel.(input_all stdin) |> String.trim in
@@ -8,13 +11,17 @@ let run_single opts =
   match ast with
   | Error e -> Format.printf "Error: %s\n%!" e
   | Result.Ok ast ->
-    (match opts.dump_parsetree with
-     | true -> Format.printf "Parsed result: @[%a@]\n%!" Lib.Ast.pp_structure_item ast
-     | false -> Format.printf "Not implemented. Only -dparsertree support")
+    (match opts.dump_inference with
+     | true -> Format.printf "val"
+     | false ->
+       (match opts.dump_parsetree with
+        | true -> Format.printf "Parsed result: @[%a@]\n%!" Lib.Ast.pp_structure_item ast
+        | false ->
+          Format.printf "Not implemented. Only -dparsertree and -dinference support"))
 ;;
 
 let () =
-  let opts = { dump_parsetree = false } in
+  let opts = { dump_parsetree = false; dump_inference = false } in
   let () =
     let open Stdlib.Arg in
     parse
