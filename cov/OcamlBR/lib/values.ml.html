@@ -215,19 +215,19 @@ type value =
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
 let rec pp_value ppf =
-  <span data-count="95">l</span>et open Stdlib.Format in
+  <span data-count="154">l</span>et open Stdlib.Format in
   function
-  | <span data-count="30">V</span>Int x -&gt; fprintf ppf "%d" x
-  | <span data-count="6">V</span>Bool b -&gt; fprintf ppf "%b" b
-  | <span data-count="4">V</span>String s -&gt; fprintf ppf "%S" s
-  | <span data-count="1">V</span>Unit -&gt; fprintf ppf "()"
+  | <span data-count="45">V</span>Int x -&gt; fprintf ppf "%d" x
+  | <span data-count="7">V</span>Bool b -&gt; fprintf ppf "%b" b
+  | <span data-count="5">V</span>String s -&gt; fprintf ppf "%S" s
+  | <span data-count="2">V</span>Unit -&gt; fprintf ppf "()"
   | <span data-count="5">V</span>List vl -&gt;
     fprintf
       ppf
       "[%a]"
       (pp_print_lis<span data-count="5">t</span> ~pp_sep:(fun ppf () -&gt; <span data-count="7">f</span>printf ppf "; ") pp_value)
       vl
-  | <span data-count="6">V</span>Tuple (v1, v2, vl) -&gt;
+  | <span data-count="9">V</span>Tuple (v1, v2, vl) -&gt;
     fprintf
       ppf
       "(%a, %a%a)"
@@ -236,7 +236,7 @@ let rec pp_value ppf =
       pp_value
       v2
       (fun ppf -&gt; function
-        | <span data-count="6">[</span>] -&gt; ()
+        | <span data-count="9">[</span>] -&gt; ()
         | <span data-count="0">r</span>est -&gt;
           fprintf
             ppf
@@ -244,10 +244,10 @@ let rec pp_value ppf =
             (pp_print_lis<span data-count="0">t</span> ~pp_sep:(fun ppf () -&gt; <span data-count="0">f</span>printf ppf ", ") pp_value)
             rest)
       vl
-  | <span data-count="40">V</span>Fun _ | <span data-count="2">V</span>Function _ -&gt; fprintf ppf "&lt;fun&gt;"
-  | <span data-count="1">V</span>Option v -&gt;
+  | <span data-count="75">V</span>Fun _ | <span data-count="4">V</span>Function _ -&gt; fprintf ppf "&lt;fun&gt;"
+  | <span data-count="2">V</span>Option v -&gt;
     (match v with
-     | <span data-count="1">S</span>ome v -&gt; fprintf ppf "Some %a" pp_value v
+     | <span data-count="2">S</span>ome v -&gt; fprintf ppf "Some %a" pp_value v
      | <span data-count="0">N</span>one -&gt; fprintf ppf "None")
   | <span data-count="0">V</span>Builtin _ -&gt; fprintf ppf "&lt;builtin&gt;"
 ;;

@@ -284,7 +284,7 @@ end
 let gen_tprim =
   let open QCheck.Gen in
   let tprim = oneofl [ "int"; "string"; "bool"; "unit" ] in
-  <span data-count="6">m</span>a<span data-count="6">p</span> (fun t -&gt; <span data-count="0">T</span>Prim t) tprim
+  <span data-count="30">m</span>a<span data-count="30">p</span> (fun t -&gt; <span data-count="0">T</span>Prim t) tprim
 ;;
 
 <span data-count="0">t</span>ype scheme = S of VarSet.t * ty [@@deriving show { with_path = false }]
@@ -295,41 +295,41 @@ let tprim_string = TPrim "string"
 let tprim_bool = TPrim "bool"
 let tprim_unit = TPrim "unit"
 let tvar x = <span data-count="0">T</span>Var x
-let tarrow l r = <span data-count="7">T</span>Arrow (l, r)
+let tarrow l r = <span data-count="9">T</span>Arrow (l, r)
 let ( @-&gt; ) = tarrow
 let ttuple fst snd rest = <span data-count="0">T</span>Tuple (fst, snd, rest)
-let tlist ty = <span data-count="8">T</span>List ty
+let tlist ty = <span data-count="11">T</span>List ty
 (* let trecord s = TRecord s *)
 
 let rec pp_ty ppf =
-  <span data-count="949">l</span>et open Format in
+  <span data-count="1375">l</span>et open Format in
   function
-  | <span data-count="62">T</span>Var n -&gt; fprintf ppf "'%d" n
-  | <span data-count="472">T</span>Prim s -&gt; fprintf ppf "%s" s
-  | <span data-count="296">T</span>Arrow (l, r) -&gt;
+  | <span data-count="93">T</span>Var n -&gt; fprintf ppf "'%d" n
+  | <span data-count="678">T</span>Prim s -&gt; fprintf ppf "%s" s
+  | <span data-count="432">T</span>Arrow (l, r) -&gt;
     fprintf
       ppf
       "%a -&gt; %a"
       (fun ppf l -&gt;
-        <span data-count="296">m</span>atch l with
-        | <span data-count="22">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty l
-        | <span data-count="274">_</span> -&gt; pp_ty ppf l)
+        <span data-count="432">m</span>atch l with
+        | <span data-count="33">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty l
+        | <span data-count="399">_</span> -&gt; pp_ty ppf l)
       l
       (fun ppf r -&gt;
-        <span data-count="296">m</span>atch r with
-        | <span data-count="110">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty r
-        | <span data-count="186">_</span> -&gt; pp_ty ppf r)
+        <span data-count="432">m</span>atch r with
+        | <span data-count="161">T</span>Arrow _ -&gt; fprintf ppf "(%a)" pp_ty r
+        | <span data-count="271">_</span> -&gt; pp_ty ppf r)
       r
-  | <span data-count="38">T</span>List t -&gt;
+  | <span data-count="53">T</span>List t -&gt;
     (match t with
      | <span data-count="0">T</span>Arrow _ -&gt; fprintf ppf "(%a) list" pp_ty t
-     | <span data-count="38">_</span> -&gt; fprintf ppf "%a list" pp_ty t)
-  | <span data-count="75">T</span>Tuple (t1, t2, rest) -&gt;
+     | <span data-count="53">_</span> -&gt; fprintf ppf "%a list" pp_ty t)
+  | <span data-count="110">T</span>Tuple (t1, t2, rest) -&gt;
     let tuple_content =
-      String.concat " * " (List.ma<span data-count="75">p</span> (Format.asprint<span data-count="75">f</span> "%a" pp_ty) (t1 :: t2 :: rest))
+      String.concat " * " (List.ma<span data-count="110">p</span> (Format.asprint<span data-count="110">f</span> "%a" pp_ty) (t1 :: t2 :: rest))
     in
-    <span data-count="75">f</span>printf ppf "(%s)" tuple_content
-  | <span data-count="6">T</span>Option t -&gt; fprintf ppf "(%a) option" pp_ty t
+    <span data-count="110">f</span>printf ppf "(%s)" tuple_content
+  | <span data-count="9">T</span>Option t -&gt; fprintf ppf "(%a) option" pp_ty t
 ;;
 
 (* | TRecord s -&gt; fprintf ppf "%s" s *)
@@ -348,12 +348,12 @@ type error =
   ]
 
 let pp_error ppf = function
-  | <span data-count="3">`</span>Occurs_check (s, t) -&gt; Format.fprintf ppf {|Occurs check failed: %s %a|} s pp_ty t
-  | <span data-count="4">`</span>Undefined_variable s -&gt; Format.fprintf ppf {|Undefined variable %S|} s
-  | <span data-count="8">`</span>Unification_failed (l, r) -&gt;
+  | <span data-count="4">`</span>Occurs_check (s, t) -&gt; Format.fprintf ppf {|Occurs check failed: %s %a|} s pp_ty t
+  | <span data-count="5">`</span>Undefined_variable s -&gt; Format.fprintf ppf {|Undefined variable %S|} s
+  | <span data-count="13">`</span>Unification_failed (l, r) -&gt;
     Format.fprintf ppf {|Unification failed on %a and %a|} pp_ty l pp_ty r
-  | <span data-count="4">`</span>Ill_left_hand_side s -&gt; Format.fprintf ppf {|Ill left-hand side %s|} s
-  | <span data-count="2">`</span>Ill_right_hand_side s -&gt; Format.fprintf ppf {|Ill right-hand side %s|} s
+  | <span data-count="6">`</span>Ill_left_hand_side s -&gt; Format.fprintf ppf {|Ill left-hand side %s|} s
+  | <span data-count="3">`</span>Ill_right_hand_side s -&gt; Format.fprintf ppf {|Ill right-hand side %s|} s
   | <span data-count="0">`</span>Duplicate_field_labels s -&gt; Format.fprintf ppf {|Duplicate field labels: %s|} s
   | <span data-count="0">`</span>Undefined_type s -&gt; Format.fprintf ppf {|Undefined type: %s|} s
   | <span data-count="0">`</span>Multiple_definition_of_type s -&gt;

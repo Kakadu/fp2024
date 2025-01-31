@@ -695,14 +695,14 @@ let%expect_test "typed_001fac" =
   <span data-count="1">l</span>et _ = infer_from_file "typed/001fac.ml" in
   <span data-count="1">[</span>%expect {| 
   val fac : int -&gt; int
-  val main : int|}<span data-count="11">]</span>
+  val main : int|}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_002fac" =
   <span data-count="1">l</span>et _ = infer_from_file "typed/002fac.ml" in
   <span data-count="1">[</span>%expect {| 
   val fac_cps : int -&gt; ((int -&gt; int) -&gt; int)
-  val main : int|}<span data-count="11">]</span>
+  val main : int|}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_003fib" =
@@ -711,7 +711,7 @@ let%expect_test "typed_003fib" =
     {| 
   val fib : int -&gt; int
   val fib_acc : int -&gt; (int -&gt; (int -&gt; int))
-  val main : int |}<span data-count="11">]</span>
+  val main : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_004manyargs" =
@@ -721,7 +721,7 @@ let%expect_test "typed_004manyargs" =
   val main : int
   val test10 : int -&gt; (int -&gt; (int -&gt; (int -&gt; (int -&gt; (int -&gt; (int -&gt; (int -&gt; (int -&gt; (int -&gt; int)))))))))
   val test3 : int -&gt; (int -&gt; (int -&gt; int))
-  val wrap : '0 -&gt; '0 |}<span data-count="11">]</span>
+  val wrap : '0 -&gt; '0 |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_005fix" =
@@ -730,28 +730,28 @@ let%expect_test "typed_005fix" =
     {| 
   val fac : (int -&gt; int) -&gt; (int -&gt; int)
   val fix : ((int -&gt; int) -&gt; (int -&gt; int)) -&gt; (int -&gt; int)
-  val main : int |}<span data-count="11">]</span>
+  val main : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_006partial" =
   <span data-count="1">l</span>et _ = infer_from_file "typed/006partial.ml" in
   <span data-count="1">[</span>%expect {|
   val foo : int -&gt; int
-  val main : int |}<span data-count="11">]</span>
+  val main : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_006partial2" =
   <span data-count="1">l</span>et _ = infer_from_file "typed/006partial2.ml" in
   <span data-count="1">[</span>%expect {|
   val foo : int -&gt; (int -&gt; (int -&gt; int))
-  val main : int |}<span data-count="11">]</span>
+  val main : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_006partial3" =
   <span data-count="1">l</span>et _ = infer_from_file "typed/006partial3.ml" in
   <span data-count="1">[</span>%expect {| 
   val foo : int -&gt; (int -&gt; (int -&gt; unit))
-  val main : int |}<span data-count="11">]</span>
+  val main : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_007order" =
@@ -759,7 +759,7 @@ let%expect_test "typed_007order" =
   <span data-count="1">[</span>%expect
     {| 
   val _start : unit -&gt; (unit -&gt; (int -&gt; (unit -&gt; (int -&gt; (int -&gt; (unit -&gt; (int -&gt; (int -&gt; int))))))))
-  val main : unit |}<span data-count="11">]</span>
+  val main : unit |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_008ascription" =
@@ -767,12 +767,12 @@ let%expect_test "typed_008ascription" =
   <span data-count="1">[</span>%expect
     {| 
   val addi : ('2 -&gt; (bool -&gt; int)) -&gt; (('2 -&gt; bool) -&gt; ('2 -&gt; int))
-  val main : int |}<span data-count="11">]</span>
+  val main : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_009let_poly" =
   <span data-count="1">l</span>et _ = infer_from_file "typed/009let_poly.ml" in
-  <span data-count="1">[</span>%expect {| val temp : (int * bool) |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val temp : (int * bool) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_010sukharev" =
@@ -788,7 +788,7 @@ let%expect_test "typed_010sukharev" =
     val _6 : ('23) option -&gt; '23
     val id1 : '32 -&gt; '32
     val id2 : '33 -&gt; '33
-    val int_of_option : (int) option -&gt; int |}<span data-count="11">]</span>
+    val int_of_option : (int) option -&gt; int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_015tuples" =
@@ -803,7 +803,7 @@ let%expect_test "typed_015tuples" =
   val map : ('9 -&gt; '11) -&gt; (('9 * '9) -&gt; ('10 * '11))
   val meven : int -&gt; int
   val modd : int -&gt; int
-  val tie : (int -&gt; int * int -&gt; int) |}<span data-count="11">]</span>
+  val tie : (int -&gt; int * int -&gt; int) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "typed_016lists" =
@@ -817,87 +817,87 @@ let%expect_test "typed_016lists" =
   val length : (int * int) list -&gt; int
   val length_tail : '16 list -&gt; int
   val main : int
-  val map : (int -&gt; (int * int)) -&gt; (int list -&gt; (int * int) list) |}<span data-count="11">]</span>
+  val map : (int -&gt; (int * int)) -&gt; (int list -&gt; (int * int) list) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_001" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/001.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Undefined variable "fac" |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Undefined variable "fac" |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_002if" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/002if.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_003occurs" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/003occurs.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 1 inside type '1 -&gt; '3 |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 1 inside type '1 -&gt; '3 |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_004let_poly" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/004let_poly.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_015tuples" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/015tuples.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Ill left-hand side : only variables are allowed  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Ill left-hand side : only variables are allowed  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_016" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/016tuples_mismatch.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Unification failed on ('0 * '1) and (int * int * int)  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Unification failed on ('0 * '1) and (int * int * int)  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_097fun_vs_list" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/097fun_vs_list.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Unification failed on '2 list and '0 -&gt; '0  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Unification failed on '2 list and '0 -&gt; '0  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_097fun_vs_unit" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/097fun_vs_unit.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Unification failed on unit and '0 -&gt; '0  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Unification failed on unit and '0 -&gt; '0  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_098" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/098rec_int.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Ill right-hand side of let rec  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Ill right-hand side of let rec  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test "do_not_type_099" =
   <span data-count="1">l</span>et _ = infer_from_file "do_not_type/099.ml" in
-  <span data-count="1">[</span>%expect {| Infer error: Ill left-hand side : only variables are allowed  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Ill left-hand side : only variables are allowed  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {|let n x = x in let f g = g 3 in f n  |} in
-  <span data-count="1">[</span>%expect {| |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let f x = x |} in
-  <span data-count="1">[</span>%expect {| val f : '0 -&gt; '0 |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val f : '0 -&gt; '0 |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let f x = x + 2 |} in
-  <span data-count="1">[</span>%expect {| val f : int -&gt; int|}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val f : int -&gt; int|}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {|let x = 2 in x = 1 |} in
-  <span data-count="1">[</span>%expect {|  |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {|  |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {|let rec fac n = if n &lt; 1 then 1 else n * fac (n - 1) |} in
-  <span data-count="1">[</span>%expect {| val fac : int -&gt; int |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val fac : int -&gt; int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {|let rec x = 1+ x|} in
-  <span data-count="1">[</span>%expect {| Infer error: Ill right-hand side of let rec |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Ill right-hand side of let rec |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
@@ -907,71 +907,71 @@ let%expect_test _ =
   in
   <span data-count="1">[</span>%expect {|
     val is_even : int -&gt; bool
-    val is_odd : int -&gt; bool |}<span data-count="11">]</span>
+    val is_odd : int -&gt; bool |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ =
     infer_program_test {|let square x = x*x in let id x = x in (id square) (id  2) |}
   in
-  <span data-count="1">[</span>%expect {| |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {|let x = 2 in let a = true in not a &amp;&amp; x |} in
-  <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Unification failed on int and bool |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let rec f x = f |} in
-  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 0 inside type '1 -&gt; '0 |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Occurs check failed: type variable 0 inside type '1 -&gt; '0 |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let a = if true then 2 + 9 else 1 |} in
-  <span data-count="1">[</span>%expect {| val a : int |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val a : int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| if a then 2 else 1 |} in
-  <span data-count="1">[</span>%expect {| Infer error: Undefined variable "a" |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| Infer error: Undefined variable "a" |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let a = fun x y -&gt; x + y |} in
-  <span data-count="1">[</span>%expect {| val a : int -&gt; (int -&gt; int) |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val a : int -&gt; (int -&gt; int) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let f x y z w = if y&amp;&amp;z then x else  w + 1 |} in
-  <span data-count="1">[</span>%expect {| val f : int -&gt; (bool -&gt; (bool -&gt; (int -&gt; int))) |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val f : int -&gt; (bool -&gt; (bool -&gt; (int -&gt; int))) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let a = fun x::y::z::w -&gt; if z &gt; 0 then y else x |} in
-  <span data-count="1">[</span>%expect {| val a : int list -&gt; int |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val a : int list -&gt; int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let b = fun (a,b,(2::t), d) -&gt; a + d  |} in
-  <span data-count="1">[</span>%expect {| val b : (int * '1 * int list * int) -&gt; int |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val b : (int * '1 * int list * int) -&gt; int |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {| let (&lt;|&gt;) a b = a/b + b*a |} in
-  <span data-count="1">[</span>%expect {| val &lt;|&gt; : int -&gt; (int -&gt; int) |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val &lt;|&gt; : int -&gt; (int -&gt; int) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ = infer_program_test {|let w [2; v] (y, dx, d) = (-4, 5+v, true&amp;&amp;d) |} in
-  <span data-count="1">[</span>%expect {| val w : int list -&gt; (('2 * '3 * bool) -&gt; (int * int * bool)) |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val w : int list -&gt; (('2 * '3 * bool) -&gt; (int * int * bool)) |}<span data-count="59">]</span>
 ;;
 
 let%expect_test _ =
   <span data-count="1">l</span>et _ =
     infer_program_test {|let f = fun ((3, true): int*bool) x -&gt; if x then 4 else 0  |}
   in
-  <span data-count="1">[</span>%expect {| val f : (int * bool) -&gt; (bool -&gt; int) |}<span data-count="11">]</span>
+  <span data-count="1">[</span>%expect {| val f : (int * bool) -&gt; (bool -&gt; int) |}<span data-count="59">]</span>
 ;;
 </code></pre>
       </div>

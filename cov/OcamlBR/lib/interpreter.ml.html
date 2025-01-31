@@ -892,21 +892,21 @@ module Env (M : MONAD) = struct
   open M
 
   (* creates an empty environment *)
-  let empty = Base.Map.empt<span data-count="5">y</span> (module Base.String)
+  let empty = Base.Map.empt<span data-count="29">y</span> (module Base.String)
 
   (* looks up a variable in the environment *)
   let find env name =
-    <span data-count="640">m</span>atch Base.Map.find env name with
-    | <span data-count="640">S</span>ome x -&gt; return x
+    <span data-count="1238">m</span>atch Base.Map.find env name with
+    | <span data-count="1238">S</span>ome x -&gt; return x
     | <span data-count="0">N</span>one -&gt; fail (`Unbound_variable name)
   ;;
 
   (* adds or updates a binding in the environment *)
-  let extend env key value = <span data-count="4138">B</span>ase.Map.update env key ~f:(fun _ -&gt; <span data-count="4138">v</span>alue)
+  let extend env key value = <span data-count="8022">B</span>ase.Map.update env key ~f:(fun _ -&gt; <span data-count="8022">v</span>alue)
 
   (* composes two envs: if they have overlapping values, the latter is chosen *)
   let compose env1 env2 =
-    <span data-count="341">B</span>ase.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env -&gt; <span data-count="3473">e</span>xtend acc_env key data)
+    <span data-count="657">B</span>ase.Map.fold env2 ~init:env1 ~f:(fun ~key ~data acc_env -&gt; <span data-count="6780">e</span>xtend acc_env key data)
   ;;
 end
 
@@ -917,35 +917,35 @@ end = struct
   open Env (M)
 
   let rec match_pattern env = function
-    | <span data-count="2">P</span>Any, _ -&gt; Some env
+    | <span data-count="3">P</span>Any, _ -&gt; Some env
     | <span data-count="1">P</span>Const (Int i1), VInt i2 when i1 = i2 -&gt; <span data-count="0">S</span>ome env
     | <span data-count="1">P</span>Const (Bool b1), VBool b2 when Bool.equa<span data-count="1">l</span> b1 b2 -&gt; <span data-count="1">S</span>ome env
     | <span data-count="0">P</span>Const (String s1), VString s2 when String.equa<span data-count="0">l</span> s1 s2 -&gt; <span data-count="0">S</span>ome env
-    | <span data-count="30">P</span>Const Unit, VUnit -&gt; Some env
-    | <span data-count="517">P</span>Var (Id name), v -&gt; Some (exten<span data-count="517">d</span> env name v)
-    | <span data-count="38">P</span>List patterns, VList values -&gt; match_list_pattern env patterns values
-    | <span data-count="23">P</span>Tuple (p1, p2, p_rest), VTuple (v1, v2, v_rest) -&gt;
+    | <span data-count="60">P</span>Const Unit, VUnit -&gt; Some env
+    | <span data-count="990">P</span>Var (Id name), v -&gt; Some (exten<span data-count="990">d</span> env name v)
+    | <span data-count="74">P</span>List patterns, VList values -&gt; match_list_pattern env patterns values
+    | <span data-count="45">P</span>Tuple (p1, p2, p_rest), VTuple (v1, v2, v_rest) -&gt;
       match_list_pattern env (p1 :: p2 :: p_rest) (v1 :: v2 :: v_rest)
-    | <span data-count="43">P</span>Cons (p1, p2), VList (v1 :: v2) -&gt;
+    | <span data-count="84">P</span>Cons (p1, p2), VList (v1 :: v2) -&gt;
       (match match_pattern env (p1, v1) with
-       | <span data-count="43">S</span>ome env' -&gt; match_pattern env' (p2, VList v2)
+       | <span data-count="84">S</span>ome env' -&gt; match_pattern env' (p2, VList v2)
        | <span data-count="0">N</span>one -&gt; None)
-    | <span data-count="2">P</span>Option p, VOption v -&gt;
+    | <span data-count="4">P</span>Option p, VOption v -&gt;
       (match p, v with
-       | <span data-count="2">S</span>ome p, Some v -&gt; match_pattern env (p, v)
+       | <span data-count="4">S</span>ome p, Some v -&gt; match_pattern env (p, v)
        | <span data-count="0">N</span>one, None -&gt; Some env
        | <span data-count="0">_</span> -&gt; None)
     | <span data-count="2">_</span> -&gt; None
 
   and match_list_pattern env patterns values =
     (* to avoid Invalid argument exception *)
-    <span data-count="61">i</span>f List.lengt<span data-count="61">h</span> patterns &lt;&gt; List.lengt<span data-count="61">h</span> values
-    then <span data-count="31">N</span>one
-    else <span data-count="30">(</span>
+    <span data-count="119">i</span>f List.lengt<span data-count="119">h</span> patterns &lt;&gt; List.lengt<span data-count="119">h</span> values
+    then <span data-count="60">N</span>one
+    else <span data-count="59">(</span>
       let f1 acc p v =
-        <span data-count="46">m</span>atch acc with
+        <span data-count="90">m</span>atch acc with
         | <span data-count="0">N</span>one -&gt; None
-        | <span data-count="46">S</span>ome env' -&gt; match_pattern env' (p, v)
+        | <span data-count="90">S</span>ome env' -&gt; match_pattern env' (p, v)
       in
       List.fold_left2 f1 (Some env) patterns values)
   ;;
@@ -958,26 +958,26 @@ end = struct
   ;; *)
 
   let eval_un_op = function
-    | <span data-count="2">N</span>egative, VInt i -&gt; return (VInt (<span data-count="2">-</span>i))
+    | <span data-count="4">N</span>egative, VInt i -&gt; return (VInt (<span data-count="4">-</span>i))
     | <span data-count="0">P</span>ositive, VInt i -&gt; return (VInt i)
     | <span data-count="1">N</span>ot, VBool b -&gt; return (VBool (not b))
     | <span data-count="0">_</span> -&gt; fail `Type_error
   ;;
 
   let rec eval_bin_op = function
-    | <span data-count="40">A</span>dd, VInt i1, VInt i2 -&gt; return (VInt (i1 + i2))
-    | <span data-count="16">M</span>ult, VInt i1, VInt i2 -&gt; return (VInt (i1 * i2))
-    | <span data-count="36">S</span>ub, VInt i1, VInt i2 -&gt; return (VInt (i1 - i2))
-    | <span data-count="3">D</span>iv, VInt _, VInt i2 when i2 = 0 -&gt; <span data-count="1">f</span>ail `Division_by_zero
-    | <span data-count="2">D</span>iv, VInt i1, VInt i2 -&gt; return (VInt (i1 / i2))
-    | <span data-count="23">C</span>ons, v, VList vl -&gt; return (VList (v :: vl))
+    | <span data-count="69">A</span>dd, VInt i1, VInt i2 -&gt; return (VInt (i1 + i2))
+    | <span data-count="32">M</span>ult, VInt i1, VInt i2 -&gt; return (VInt (i1 * i2))
+    | <span data-count="68">S</span>ub, VInt i1, VInt i2 -&gt; return (VInt (i1 - i2))
+    | <span data-count="5">D</span>iv, VInt _, VInt i2 when i2 = 0 -&gt; <span data-count="1">f</span>ail `Division_by_zero
+    | <span data-count="4">D</span>iv, VInt i1, VInt i2 -&gt; return (VInt (i1 / i2))
+    | <span data-count="39">C</span>ons, v, VList vl -&gt; return (VList (v :: vl))
     | <span data-count="0">G</span>t, VInt i1, VInt i2 -&gt; return (VBool (i1 &gt; i2))
-    | <span data-count="9">L</span>t, VInt i1, VInt i2 -&gt; return (VBool (i1 &lt; i2))
+    | <span data-count="18">L</span>t, VInt i1, VInt i2 -&gt; return (VBool (i1 &lt; i2))
     | <span data-count="0">G</span>te, VInt i1, VInt i2 -&gt; return (VBool (i1 &gt;= i2))
-    | <span data-count="10">L</span>te, VInt i1, VInt i2 -&gt; return (VBool (i1 &lt;= i2))
+    | <span data-count="20">L</span>te, VInt i1, VInt i2 -&gt; return (VBool (i1 &lt;= i2))
     | <span data-count="0">A</span>nd, VBool b1, VBool b2 -&gt; return (VBool (b1 &amp;&amp; <span data-count="0">b</span>2))
     | <span data-count="0">O</span>r, VBool b1, VBool b2 -&gt; return (VBool (b<span data-count="0">1</span> || b<span data-count="0">2</span>))
-    | <span data-count="31">E</span>q, VInt i1, VInt i2 -&gt; return (VBool (i1 = i2))
+    | <span data-count="56">E</span>q, VInt i1, VInt i2 -&gt; return (VBool (i1 = i2))
     | <span data-count="0">N</span>eq, VInt i1, VInt i2 -&gt; return (VBool (i1 &lt;&gt; i2))
     | <span data-count="0">E</span>q, VString s1, VString s2 -&gt; return (VBool (s1 = s2))
     | <span data-count="0">N</span>eq, VString s1, VString s2 -&gt; return (VBool (s1 &lt;&gt; s2))
@@ -1022,27 +1022,27 @@ end = struct
   ;;
 
   let eval_const = function
-    | <span data-count="210">I</span>nt i -&gt; return (VInt i)
-    | <span data-count="7">S</span>tring s -&gt; return (VString s)
-    | <span data-count="9">B</span>ool b -&gt; return (VBool b)
-    | <span data-count="1">U</span>nit -&gt; return VUnit
+    | <span data-count="377">I</span>nt i -&gt; return (VInt i)
+    | <span data-count="10">S</span>tring s -&gt; return (VString s)
+    | <span data-count="14">B</span>ool b -&gt; return (VBool b)
+    | <span data-count="2">U</span>nit -&gt; return VUnit
   ;;
 
   (* acceptable patterns for names *)
   let rec validate_pattern_nonrec = function
-    | <span data-count="118">P</span>Var _ | <span data-count="1">P</span>Any | <span data-count="26">P</span>Const Unit | <span data-count="1">P</span>Option (Some (PVar _)) -&gt; true
-    | <span data-count="24">P</span>Tuple (p1, p2, rest) -&gt; List.for_all validate_pattern_nonrec (p1 :: p2 :: rest)
+    | <span data-count="216">P</span>Var _ | <span data-count="2">P</span>Any | <span data-count="52">P</span>Const Unit | <span data-count="2">P</span>Option (Some (PVar _)) -&gt; true
+    | <span data-count="46">P</span>Tuple (p1, p2, rest) -&gt; List.for_all validate_pattern_nonrec (p1 :: p2 :: rest)
     | <span data-count="1">_</span> -&gt; false
   ;;
 
   let rec eval_expr env = function
-    | <span data-count="227">E</span>const c -&gt; eval_const c
-    | <span data-count="640">E</span>var (Id name) -&gt; find env name
-    | <span data-count="54">E</span>if_then_else (cond, t, Some e) -&gt;
-      let* cond_value = eval_exp<span data-count="54">r</span> env cond in
-      <span data-count="54">(</span>match cond_value with
-       | <span data-count="19">V</span>Bool true -&gt; eval_expr env t
-       | <span data-count="35">V</span>Bool false -&gt; eval_expr env e
+    | <span data-count="403">E</span>const c -&gt; eval_const c
+    | <span data-count="1238">E</span>var (Id name) -&gt; find env name
+    | <span data-count="102">E</span>if_then_else (cond, t, Some e) -&gt;
+      let* cond_value = eval_exp<span data-count="102">r</span> env cond in
+      <span data-count="102">(</span>match cond_value with
+       | <span data-count="36">V</span>Bool true -&gt; eval_expr env t
+       | <span data-count="66">V</span>Bool false -&gt; eval_expr env e
        | <span data-count="0">_</span> -&gt; fail `Type_error)
     | <span data-count="0">E</span>if_then_else (cond, t, None) -&gt;
       let* cond_value = eval_exp<span data-count="0">r</span> env cond in
@@ -1050,171 +1050,171 @@ end = struct
        | <span data-count="0">V</span>Bool true -&gt; eval_expr env t
        | <span data-count="0">V</span>Bool false -&gt; return VUnit
        | <span data-count="0">_</span> -&gt; fail `Type_error)
-    | <span data-count="3">E</span>option (Some e) -&gt;
-      let* value = eval_exp<span data-count="3">r</span> env e in
-      <span data-count="3">r</span>eturn (VOption (Some value))
+    | <span data-count="6">E</span>option (Some e) -&gt;
+      let* value = eval_exp<span data-count="6">r</span> env e in
+      <span data-count="6">r</span>eturn (VOption (Some value))
     | <span data-count="0">E</span>option None -&gt; return (VOption None)
-    | <span data-count="27">E</span>tuple (e1, e2, e_rest) -&gt;
-      let* v1 = eval_exp<span data-count="27">r</span> env e1 in
-      <span data-count="27">l</span>et* v2 = eval_exp<span data-count="27">r</span> env e2 in
-      <span data-count="27">l</span>et* v_rest =
-        List.fold_lef<span data-count="27">t</span>
+    | <span data-count="50">E</span>tuple (e1, e2, e_rest) -&gt;
+      let* v1 = eval_exp<span data-count="50">r</span> env e1 in
+      <span data-count="50">l</span>et* v2 = eval_exp<span data-count="50">r</span> env e2 in
+      <span data-count="50">l</span>et* v_rest =
+        List.fold_lef<span data-count="50">t</span>
           (fun acc e -&gt;
             <span data-count="0">l</span>et* acc = acc in
             <span data-count="0">l</span>et* v = eval_exp<span data-count="0">r</span> env e in
             <span data-count="0">r</span>eturn (v :: acc))
-          (retur<span data-count="27">n</span> [])
+          (retur<span data-count="50">n</span> [])
           e_rest
       in
-      <span data-count="27">r</span>eturn (VTuple (v1, v2, List.re<span data-count="27">v</span> v_rest))
-    | <span data-count="13">E</span>list el -&gt;
+      <span data-count="50">r</span>eturn (VTuple (v1, v2, List.re<span data-count="50">v</span> v_rest))
+    | <span data-count="19">E</span>list el -&gt;
       let* vl =
-        List.fold_lef<span data-count="13">t</span>
+        List.fold_lef<span data-count="19">t</span>
           (fun acc e -&gt;
-            <span data-count="16">l</span>et* acc = acc in
-            <span data-count="16">l</span>et* v = eval_exp<span data-count="16">r</span> env e in
-            <span data-count="16">r</span>eturn (v :: acc))
-          (retur<span data-count="13">n</span> [])
+            <span data-count="25">l</span>et* acc = acc in
+            <span data-count="25">l</span>et* v = eval_exp<span data-count="25">r</span> env e in
+            <span data-count="25">r</span>eturn (v :: acc))
+          (retur<span data-count="19">n</span> [])
           el
       in
-      <span data-count="13">r</span>eturn (VList (List.re<span data-count="13">v</span> vl))
-    | <span data-count="168">E</span>bin_op (op, e1, e2) -&gt;
-      let* v1 = eval_exp<span data-count="168">r</span> env e1 in
-      <span data-count="168">l</span>et* v2 = eval_exp<span data-count="168">r</span> env e2 in
-      <span data-count="168">e</span>val_bin_op (op, v1, v2)
-    | <span data-count="3">E</span>un_op (op, e) -&gt;
-      let* v = eval_exp<span data-count="3">r</span> env e in
-      <span data-count="3">e</span>val_un_op (op, v)
-    | <span data-count="35">E</span>match (e, c, cl) -&gt;
-      let* v = eval_exp<span data-count="35">r</span> env e in
-      <span data-count="35">e</span>val_match_expr env v (c :: cl)
-    | <span data-count="2">E</span>function (c, cl) -&gt; return (VFunction (c, cl))
-    | <span data-count="63">E</span>fun (tp, tpl, e) -&gt; return (VFun (Non_recursive, tp, tpl, e, env))
-    | <span data-count="341">E</span>fun_application (e1, e2) -&gt;
-      let* v1 = eval_exp<span data-count="341">r</span> env e1 in
-      <span data-count="341">l</span>et* v2 = eval_exp<span data-count="341">r</span> env e2 in
-      <span data-count="341">(</span>match v1 with
-       | <span data-count="307">V</span>Fun (_, pat, pats, body, func_env) -&gt;
+      <span data-count="19">r</span>eturn (VList (List.re<span data-count="19">v</span> vl))
+    | <span data-count="307">E</span>bin_op (op, e1, e2) -&gt;
+      let* v1 = eval_exp<span data-count="307">r</span> env e1 in
+      <span data-count="307">l</span>et* v2 = eval_exp<span data-count="307">r</span> env e2 in
+      <span data-count="307">e</span>val_bin_op (op, v1, v2)
+    | <span data-count="5">E</span>un_op (op, e) -&gt;
+      let* v = eval_exp<span data-count="5">r</span> env e in
+      <span data-count="5">e</span>val_un_op (op, v)
+    | <span data-count="66">E</span>match (e, c, cl) -&gt;
+      let* v = eval_exp<span data-count="66">r</span> env e in
+      <span data-count="66">e</span>val_match_expr env v (c :: cl)
+    | <span data-count="4">E</span>function (c, cl) -&gt; return (VFunction (c, cl))
+    | <span data-count="121">E</span>fun (tp, tpl, e) -&gt; return (VFun (Non_recursive, tp, tpl, e, env))
+    | <span data-count="659">E</span>fun_application (e1, e2) -&gt;
+      let* v1 = eval_exp<span data-count="659">r</span> env e1 in
+      <span data-count="659">l</span>et* v2 = eval_exp<span data-count="659">r</span> env e2 in
+      <span data-count="659">(</span>match v1 with
+       | <span data-count="592">V</span>Fun (_, pat, pats, body, func_env) -&gt;
          (* attempt to match the argument against the pattern *)
          (match match_pattern func_env (pat, v2) with
-          | <span data-count="307">S</span>ome extended_env -&gt;
+          | <span data-count="592">S</span>ome extended_env -&gt;
             let env' = compose env extended_env in
-            <span data-count="307">(</span>match pats with
-             | <span data-count="166">[</span>] -&gt;
+            <span data-count="592">(</span>match pats with
+             | <span data-count="320">[</span>] -&gt;
                eval_expr
                  env'
                  body (* evaluate the function body with the updated environment *)
-             | <span data-count="141">p</span> :: pl -&gt; return (VFun (Non_recursive, p, pl, body, env')))
+             | <span data-count="272">p</span> :: pl -&gt; return (VFun (Non_recursive, p, pl, body, env')))
           | <span data-count="0">N</span>one -&gt; fail `Pattern_matching_failure)
        | <span data-count="0">V</span>Function (case, case_l) -&gt; eval_match_expr env v2 (case :: case_l)
-       | <span data-count="34">V</span>Builtin builtin -&gt;
+       | <span data-count="67">V</span>Builtin builtin -&gt;
          (match builtin, v2 with
-          | <span data-count="34">B</span>Int b, VInt i -&gt;
+          | <span data-count="67">B</span>Int b, VInt i -&gt;
             b i;
-            <span data-count="34">r</span>eturn VUnit
+            <span data-count="67">r</span>eturn VUnit
           | <span data-count="0">B</span>String b, VString s -&gt;
             b s;
             <span data-count="0">r</span>eturn VUnit
           | <span data-count="0">_</span> -&gt; fail `Type_error)
        | <span data-count="0">_</span> -&gt; fail `Type_error)
-    | <span data-count="67">E</span>let (Non_recursive, Evalue_binding (pat, e1), _, e2) -&gt;
-      if not (validate_pattern_nonre<span data-count="67">c</span> pat)
+    | <span data-count="132">E</span>let (Non_recursive, Evalue_binding (pat, e1), _, e2) -&gt;
+      if not (validate_pattern_nonre<span data-count="132">c</span> pat)
       then <span data-count="0">f</span>ail (`Ill_left_hand_side "Pattern not acceptable for variable name")
       else
-        <span data-count="67">l</span>et* v = eval_exp<span data-count="67">r</span> env e1 in
-        <span data-count="67">(</span>match match_pattern env (pat, v) with
-         | <span data-count="67">S</span>ome env' -&gt; eval_expr env' e2
+        <span data-count="132">l</span>et* v = eval_exp<span data-count="132">r</span> env e1 in
+        <span data-count="132">(</span>match match_pattern env (pat, v) with
+         | <span data-count="132">S</span>ome env' -&gt; eval_expr env' e2
          | <span data-count="0">N</span>one -&gt; fail `Pattern_matching_failure)
-    | <span data-count="3">E</span>let (Recursive, Evalue_binding (pat, e1), [], e2) -&gt;
-      let* final_env = eval_let_rec_exp<span data-count="3">r</span> env (Evalue_binding (pat, e1)) in
-      <span data-count="3">e</span>val_expr final_env e2
+    | <span data-count="6">E</span>let (Recursive, Evalue_binding (pat, e1), [], e2) -&gt;
+      let* final_env = eval_let_rec_exp<span data-count="6">r</span> env (Evalue_binding (pat, e1)) in
+      <span data-count="6">e</span>val_expr final_env e2
     | <span data-count="0">E</span>let (Recursive, value_binding, value_bindings, e2) -&gt;
       let* final_env = eval_value_binding<span data-count="0">s</span> env (value_binding :: value_bindings) in
       <span data-count="0">e</span>val_expr final_env e2
-    | <span data-count="2">E</span>constraint (e, _) -&gt; eval_expr env e
+    | <span data-count="4">E</span>constraint (e, _) -&gt; eval_expr env e
 
   and eval_match_expr env v = function
-    | <span data-count="67">E</span>case (pat, expr) :: tl -&gt;
+    | <span data-count="127">E</span>case (pat, expr) :: tl -&gt;
       let env' = match_pattern env (pat, v) in
-      <span data-count="67">(</span>match env' with
+      <span data-count="127">(</span>match env' with
        (* new environment for evaluating the body of the case *)
-       | <span data-count="34">S</span>ome env' -&gt;
+       | <span data-count="65">S</span>ome env' -&gt;
          let env'' = compose env env' in
-         <span data-count="34">l</span>et* result = eval_exp<span data-count="34">r</span> env'' expr in
-         <span data-count="34">r</span>eturn result
-       | <span data-count="33">N</span>one -&gt; eval_match_expr env v tl)
+         <span data-count="65">l</span>et* result = eval_exp<span data-count="65">r</span> env'' expr in
+         <span data-count="65">r</span>eturn result
+       | <span data-count="62">N</span>one -&gt; eval_match_expr env v tl)
     | <span data-count="1">[</span>] -&gt; fail `Pattern_matching_failure
 
   and eval_let_rec_expr env = function
-    | <span data-count="14">E</span>value_binding (pat, e1) -&gt;
-      let* v = eval_exp<span data-count="14">r</span> env e1 in
-      <span data-count="14">l</span>et* rec_env =
+    | <span data-count="28">E</span>value_binding (pat, e1) -&gt;
+      let* v = eval_exp<span data-count="28">r</span> env e1 in
+      <span data-count="28">l</span>et* rec_env =
         match match_pattern env (pat, v) with
-        | <span data-count="14">S</span>ome new_env -&gt; retur<span data-count="14">n</span> new_env
+        | <span data-count="28">S</span>ome new_env -&gt; retur<span data-count="28">n</span> new_env
         | <span data-count="0">N</span>one -&gt; fai<span data-count="0">l</span> `Pattern_matching_failure
       in
-      <span data-count="14">l</span>et* recursive_value =
+      <span data-count="28">l</span>et* recursive_value =
         match v with
-        | <span data-count="14">V</span>Fun (_, p, pl, e, _) -&gt; retur<span data-count="14">n</span> (VFun (Recursive, p, pl, e, rec_env))
+        | <span data-count="28">V</span>Fun (_, p, pl, e, _) -&gt; retur<span data-count="28">n</span> (VFun (Recursive, p, pl, e, rec_env))
         | <span data-count="0">_</span> -&gt; fai<span data-count="0">l</span> `Type_error
       in
-      <span data-count="14">l</span>et* final_env =
+      <span data-count="28">l</span>et* final_env =
         match match_pattern env (pat, recursive_value) with
-        | <span data-count="14">S</span>ome updated_env -&gt; retur<span data-count="14">n</span> updated_env
+        | <span data-count="28">S</span>ome updated_env -&gt; retur<span data-count="28">n</span> updated_env
         | <span data-count="0">N</span>one -&gt; fai<span data-count="0">l</span> `Pattern_matching_failure
       in
-      <span data-count="14">r</span>eturn final_env
+      <span data-count="28">r</span>eturn final_env
 
   and eval_value_bindings env value_bindings =
-    <span data-count="2">l</span>et bindings = List.map (fun (Evalue_binding (p, e)) -&gt; <span data-count="4">p</span>, e) value_bindings in
+    <span data-count="3">l</span>et bindings = List.map (fun (Evalue_binding (p, e)) -&gt; <span data-count="6">p</span>, e) value_bindings in
     (* extend env with all names in mutual recursion *)
-    <span data-count="2">l</span>et rec update_env acc_env = function
-      | <span data-count="2">[</span>] -&gt; return acc_env
-      | <span data-count="4">(</span>PVar (Id name), expr) :: tl -&gt;
+    <span data-count="3">l</span>et rec update_env acc_env = function
+      | <span data-count="3">[</span>] -&gt; return acc_env
+      | <span data-count="6">(</span>PVar (Id name), expr) :: tl -&gt;
         let* value =
           match expr with
-          | <span data-count="4">E</span>fun (p, pl, e) -&gt; retur<span data-count="4">n</span> (VFun (Recursive, p, pl, e, acc_env))
+          | <span data-count="6">E</span>fun (p, pl, e) -&gt; retur<span data-count="6">n</span> (VFun (Recursive, p, pl, e, acc_env))
           | <span data-count="0">_</span> -&gt; eval_exp<span data-count="0">r</span> acc_env expr
         in
         (* update env so all names in mutual recursion correspond to their real values *)
-        <span data-count="4">l</span>et updated_env = extend acc_env name value in
-        <span data-count="4">u</span>pdate_env updated_env tl
+        <span data-count="6">l</span>et updated_env = extend acc_env name value in
+        <span data-count="6">u</span>pdate_env updated_env tl
       | <span data-count="0">_</span> -&gt; fail (`Ill_left_hand_side "Pattern not acceptable for variable name")
     in
-    let* final_env = update_en<span data-count="2">v</span> env bindings in
-    <span data-count="2">r</span>eturn final_env
+    let* final_env = update_en<span data-count="3">v</span> env bindings in
+    <span data-count="3">r</span>eturn final_env
   ;;
 
   let eval_str_item env str_item =
-    <span data-count="72">l</span>et env = extend env "print_int" (VBuiltin (BInt print_int)) in
-    <span data-count="72">l</span>et env = extend env "print_endline" (VBuiltin (BString print_endline)) in
-    <span data-count="72">m</span>atch str_item with
+    <span data-count="123">l</span>et env = extend env "print_int" (VBuiltin (BInt print_int)) in
+    <span data-count="123">l</span>et env = extend env "print_endline" (VBuiltin (BString print_endline)) in
+    <span data-count="123">m</span>atch str_item with
     | <span data-count="2">S</span>Eval e -&gt;
       let* _ = eval_exp<span data-count="2">r</span> env e in
       <span data-count="1">r</span>eturn env
-    | <span data-count="57">S</span>Value (Non_recursive, Evalue_binding (pat, e), _) -&gt;
-      if not (validate_pattern_nonre<span data-count="57">c</span> pat)
+    | <span data-count="96">S</span>Value (Non_recursive, Evalue_binding (pat, e), _) -&gt;
+      if not (validate_pattern_nonre<span data-count="96">c</span> pat)
       then <span data-count="1">f</span>ail (`Ill_left_hand_side "Pattern not acceptable for variable name")
       else
-        <span data-count="56">l</span>et* v = eval_exp<span data-count="56">r</span> env e in
-        <span data-count="55">(</span>match match_pattern env (pat, v) with
-         | <span data-count="55">S</span>ome env' -&gt; return env'
+        <span data-count="95">l</span>et* v = eval_exp<span data-count="95">r</span> env e in
+        <span data-count="94">(</span>match match_pattern env (pat, v) with
+         | <span data-count="94">S</span>ome env' -&gt; return env'
          | <span data-count="0">N</span>one -&gt; fail `Pattern_matching_failure)
-    | <span data-count="11">S</span>Value (Recursive, Evalue_binding (pat, e), []) -&gt;
-      let* final_env = eval_let_rec_exp<span data-count="11">r</span> env (Evalue_binding (pat, e)) in
-      <span data-count="11">r</span>eturn final_env
-    | <span data-count="2">S</span>Value (Recursive, value_binding, value_bindings) -&gt;
-      let* final_env = eval_value_binding<span data-count="2">s</span> env (value_binding :: value_bindings) in
-      <span data-count="2">r</span>eturn final_env
+    | <span data-count="22">S</span>Value (Recursive, Evalue_binding (pat, e), []) -&gt;
+      let* final_env = eval_let_rec_exp<span data-count="22">r</span> env (Evalue_binding (pat, e)) in
+      <span data-count="22">r</span>eturn final_env
+    | <span data-count="3">S</span>Value (Recursive, value_binding, value_bindings) -&gt;
+      let* final_env = eval_value_binding<span data-count="3">s</span> env (value_binding :: value_bindings) in
+      <span data-count="3">r</span>eturn final_env
   ;;
 
   let eval_structure (structure : structure) =
-    <span data-count="25">L</span>ist.fold_left
+    <span data-count="39">L</span>ist.fold_left
       (fun env str_item -&gt;
-        <span data-count="72">l</span>et* env = env in
-        <span data-count="72">l</span>et* env = eval_str_ite<span data-count="72">m</span> env str_item in
-        <span data-count="69">r</span>eturn env)
-      (retur<span data-count="25">n</span> empty)
+        <span data-count="123">l</span>et* env = env in
+        <span data-count="123">l</span>et* env = eval_str_ite<span data-count="123">m</span> env str_item in
+        <span data-count="120">r</span>eturn env)
+      (retur<span data-count="39">n</span> empty)
       structure
   ;;
 end
@@ -1222,26 +1222,26 @@ end
 module Interpreter = Eval (struct
     include Base.Result
 
-    let ( let* ) m f = <span data-count="1620">b</span>ind m ~f
+    let ( let* ) m f = <span data-count="3022">b</span>ind m ~f
   end)
 
 let print_key = function
-  | <span data-count="51">"</span>print_int" | <span data-count="51">"</span>print_endline" -&gt; false
-  | <span data-count="135">_</span> -&gt; true
+  | <span data-count="65">"</span>print_int" | <span data-count="65">"</span>print_endline" -&gt; false
+  | <span data-count="187">_</span> -&gt; true
 ;;
 
 let pp_env env_t env_v =
-  <span data-count="22">l</span>et open Stdlib.Format in
+  <span data-count="36">l</span>et open Stdlib.Format in
   let open Typedtree in
   printf "\n{\n";
-  <span data-count="22">B</span>ase.Map.iteri
+  <span data-count="36">B</span>ase.Map.iteri
     ~f:(fun ~key ~data -&gt;
-      <span data-count="114">m</span>atch Base.Map.find env_t key with
-      | <span data-count="114">S</span>ome (S (_, ty)) -&gt;
-        if print_key key then <span data-count="70">p</span>rintf "val %s : %a = %a\n" key pp_ty ty pp_value data
+      <span data-count="194">m</span>atch Base.Map.find env_t key with
+      | <span data-count="194">S</span>ome (S (_, ty)) -&gt;
+        if print_key key then <span data-count="122">p</span>rintf "val %s : %a = %a\n" key pp_ty ty pp_value data
       | <span data-count="0">N</span>one -&gt; if print_key key then <span data-count="0">p</span>rintf "val %s = %a\n" key pp_value data)
     env_v;
-  <span data-count="22">p</span>rintf "}\n"
+  <span data-count="36">p</span>rintf "}\n"
 ;;
 
 (* let print_env env =
