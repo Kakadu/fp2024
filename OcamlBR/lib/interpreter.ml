@@ -134,21 +134,20 @@ end = struct
     | _ -> fail `Type_error
 
   and eval_eq_list op l1 l2 =
-    if List.length l1 <> List.length l2
-    then return (VBool false)
-    else (
-      let f1 acc el1 el2 =
-        let* acc = acc in
-        match acc with
-        | VBool false -> return (VBool false)
-        | VBool true ->
-          let* res = eval_bin_op (op, el1, el2) in
-          (match res with
-           | VBool true -> return (VBool true)
-           | _ -> return (VBool false))
-        | _ -> fail `Type_error
-      in
-      List.fold_left2 f1 (return (VBool true)) l1 l2)
+    let f1 acc el1 el2 =
+      let* acc = acc in
+      match acc with
+      | VBool false -> return (VBool false)
+      | VBool true ->
+        let* res = eval_bin_op (op, el1, el2) in
+        (match res with
+         | VBool true -> return (VBool true)
+         | _ -> return (VBool false))
+      | _ -> fail `Type_error
+    in
+    match Base.List.fold2 l1 l2 ~f:f1 ~init:(return (VBool true)) with
+    | Unequal_lengths -> return (VBool false)
+    | Ok rez -> rez
   ;;
 
   let eval_const = function
