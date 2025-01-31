@@ -242,7 +242,8 @@ let ppattern =
     let pptuple = pat_tuple poption <|> poption in
     let pplist = pat_list pptuple <|> pptuple in
     let pcons = pat_cons pplist <|> pplist in
-    pcons)
+    let pty = pat_ty pcons <|> pcons in
+    pty)
 ;;
 
 (*------------------Binary operators-----------------*)
