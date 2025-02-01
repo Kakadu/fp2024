@@ -211,24 +211,19 @@ end = struct
        | _ -> fail (UnificationFailed (l, r)))
     | _ -> fail (UnificationFailed (l, r))
 
-  and extend k v sub =
-    match find sub k with
-    | None ->
-      let v = apply sub v in
-      let* new_sub = singleton k v in
-      let f1 ~key ~data acc =
-        let* acc = acc in
-        let new_data = apply new_sub data in
-        return (Base.Map.update acc key ~f:(fun _ -> new_data))
-      in
-      Base.Map.fold sub ~init:(return new_sub) ~f:f1
-    | Some vl ->
-      let* new_sub = unify v vl in
-      compose sub new_sub
+  and compose sub1 sub2 =
+    (* RMap.fold_left sub2 ~init:(return sub1) ~f:extend *)
+    let sub2 = Base.Map.map sub2 ~f:(fun s -> apply sub1 s) in
+    let sub =
+      Base.Map.fold sub1 ~init:sub2 ~f:(fun ~key ~data sub ->
+        if not (Base.Map.mem sub key) then Base.Map.add_exn sub ~key ~data else sub)
+    in
+    return sub
+  ;;
 
-  and compose sub1 sub2 = RMap.fold_left sub2 ~init:(return sub1) ~f:extend
-
-  let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
+  let compose_all sub_list =
+    RList.fold_left (List.rev sub_list) ~init:(return empty) ~f:compose
+  ;;
 
   let pp fmt sub =
     Base.Map.iteri sub ~f:(fun ~key ~data ->
