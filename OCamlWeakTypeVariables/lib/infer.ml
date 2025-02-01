@@ -175,7 +175,7 @@ end = struct
       | TVar n ->
         (match find sub n with
          | None -> TVar n
-         | Some v -> v)
+         | Some v -> helper v)
       | TArrow (left, right) -> TArrow (helper left, helper right)
       | TList typ -> TList (helper typ)
       | TTuple (a, b, t_list) ->
