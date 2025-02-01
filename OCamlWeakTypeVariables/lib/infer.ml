@@ -226,8 +226,19 @@ end = struct
   ;;
 
   let pp fmt sub =
-    Base.Map.iteri sub ~f:(fun ~key ~data ->
-      Format.fprintf fmt "val %d : %a\n" key Infer_print.pp_typ_my data)
+    if Base.Map.is_empty sub
+    then Format.fprintf fmt "empty"
+    else (
+      Format.fprintf fmt "{";
+      Base.Map.iteri sub ~f:(fun ~key ~data ->
+        Format.fprintf
+          fmt
+          "%a : %a; "
+          Infer_print.pp_typ_my
+          (TVar key)
+          Infer_print.pp_typ_my
+          data);
+      Format.fprintf fmt "}")
   ;;
 end
 
