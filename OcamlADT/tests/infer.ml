@@ -57,7 +57,7 @@ let%expect_test _ =
 let parse_and_infer_result program =
   match parse_str program with
   | str ->
-    (match run_infer_program str TypeEnv.empty with
+    (match run_infer_program str env_with_print_funs with
      | Ok env -> printf "\nres:\n%a" TypeEnv.pp_env env
      (* | Ok (_,[]) -> failwith "abibi" *)
      | Error err -> printf "%a" pp_inf_err err)
@@ -66,10 +66,11 @@ let parse_and_infer_result program =
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> x;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": '0 -> '0 |}]
+    "-": '0 -> '0
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -84,72 +85,82 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "f": [ int; ]. 'int -> 'int |}]
+    "f": int  -> int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 (*BUG*)
 let%expect_test "zero" =
   parse_and_infer_result {|5+5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5/5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5-5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5*5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>=5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'bool |}]
+    "-": bool
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<=5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'bool |}]
+    "-": bool
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'bool |}]
+    "-": bool
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'bool |}]
+    "-": bool
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -157,7 +168,9 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "-": '1 |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 (*BUG*)
@@ -169,34 +182,39 @@ let z = 3;;
   [%expect
     {|
     res:
-    "-": 'bool
-    "x": [ int; ]. 'int
-    "y": [ int; ]. 'int
-    "z": [ int; ]. 'int |}]
+    "-": bool
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": int
+    "y": int
+    "z": int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then 1 else 5;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then "aboba";;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'string |}]
+    "-": string
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|(5,6,7);;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int * 'int * 'int |}]
+    "-": int  * int  * int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -207,10 +225,11 @@ let%expect_test "zero" =
 | 68 -> 'h' 
 | 69 -> 's' 
 | 89 -> 'a';;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'char |}]
+    "-": char
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -225,24 +244,31 @@ let%expect_test "zero" =
 | _ -> 3
 ;;|};
   [%expect {|
-    Occurs_check |}]
+    res:
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> fun y -> y+x;;|};
-  [%expect
-    {|
+  [%expect {|
     res:
-    "-": 'int -> 'int -> 'int |}]
+    "-": int  -> int  -> int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 (*ALL "LET" ITEMS*)
 
 let%expect_test "zero" =
   parse_and_infer_result {|let y = 5;;|};
-  [%expect{|
+  [%expect
+    {|
     res:
-    "y": [ int; ]. 'int |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "y": int |}]
 ;;
 
 let%expect_test "zero" =
@@ -250,7 +276,9 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "y": [ string; ]. 'string * 'string |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "y": string  * string |}]
 ;;
 
 let%expect_test "zero" =
@@ -258,8 +286,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "x": [ int; ]. 'int * 'int
-    "y": [ string; ]. 'string * 'string |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": int  * int
+    "y": string  * string |}]
 ;;
 
 let%expect_test "zero" =
@@ -267,10 +297,12 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "f": [ 3; ]. '3
-    "x": [ int; ]. 'int
-    "y": [ int; ]. 'int
-    "z": [ string; ]. 'string * 'string |}]
+    "f": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": int
+    "y": int
+    "z": string  * string |}]
 ;;
 
 let%expect_test "zero" =
@@ -278,8 +310,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "x": [ char; int; ]. 'int
-    "y": [ char; int; ]. 'char |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": int
+    "y": char |}]
 ;;
 
 let%expect_test "zero" =
@@ -287,36 +321,24 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "x": [ bool; ]. 'bool |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": bool |}]
 ;;
 
 let%expect_test "zero" =
-  parse_and_infer_result {|let x = 6 and y = 6 and z = 6;;|};
+  parse_and_infer_result {|let x = 6 and y = 6 in x + y;;|};
   [%expect
     {|
     res:
-    "x": [ int; ]. 'int
-    "y": [ 0; ]. '0
-    "z": [ 1; ]. '1 |}]
+    "-": int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let rec f x = f x;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 304, characters 2-48
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "f" |}]
 ;;
 
 let%expect_test "zero" =
@@ -326,7 +348,9 @@ let 5 = x;;|};
   [%expect
     {|
     res:
-    "x": [ int; ]. 'int |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": int |}]
 ;;
 
 let%expect_test "zero" =
@@ -335,15 +359,19 @@ let x = (6: char);;|};
   [%expect
     {|
     res:
-    "x": [ char; ]. 'char |}]
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "x": int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|
 () = print_int 5;;|};
-  [%expect
-    {|
-    Unbound_variable: "print_int" |}]
+  [%expect {|
+    res:
+    "-": bool
+    "print_endline": string  -> unit
+    "print_int": int  -> unit |}]
 ;;
 
 (*BUG*)
@@ -355,21 +383,7 @@ let rec meven n = if n = 0 then 1 else modd (n - 1)
    and homka n = damir 4
    and damir n = homka 5
 ;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 351, characters 2-189
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "modd" |}]
 ;;
 
 (*KAKADU TESTS*)
@@ -377,21 +391,7 @@ let rec meven n = if n = 0 then 1 else modd (n - 1)
 let%expect_test "001fact without builtin" =
   parse_and_infer_result {|
 let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 378, characters 2-81
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "fac" |}]
 ;;
 
 (*FAILED*)
@@ -401,22 +401,7 @@ let%expect_test "001fact with builtin" =
 let rec fac n = if n<=1 then 1 else n * fac (n-1);; let main =
   let () = print_int (fac 4) in
   0;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 399, characters 2-134
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "fac" |}]
 ;;
 
 (*PASSED*)
@@ -426,21 +411,7 @@ let%expect_test "002fact without builtin" =
 let rec fac_cps n k =
   if n=1 then k 1 else
   fac_cps (n-1) (fun p -> k (p*n));;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 424, characters 2-115
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "fac_cps" |}]
 ;;
 
 (*FAILED*)
@@ -452,22 +423,7 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));; let main =
   let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
   0;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 448, characters 2-197
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "fac_cps" |}]
 ;;
 
 (*PASSED*)
@@ -484,22 +440,7 @@ let rec fib_acc a b n =
   if n<2
   then n
   else fib (n - 1) + fib (n - 2);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 475, characters 2-215
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "fib_acc" |}]
 ;;
 
 (*FAILED*)
@@ -520,23 +461,7 @@ let rec fib_acc a b n =
   let () = print_int (fib_acc 0 1 4) in
   let () = print_int (fib 4) in
   0;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Unsupported pattern in let binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 49, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 589, characters 68-107
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-46
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 507, characters 2-306
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Unbound_variable: "fib_acc" |}]
 ;;
 
 (*PASSED*)
@@ -549,7 +474,9 @@ let test10 a b c d e f g h i j = a + b + c + d + e + f + g + h + i + j;;|};
   [%expect
     {|
     res:
-    "test10": [ int; ]. 'int -> 'int -> 'int -> 'int -> 'int -> 'int -> 'int -> 'int -> 'int -> 'int -> 'int
+    "print_endline": string  -> unit
+    "print_int": int  -> unit
+    "test10": int  -> int  -> int  -> int  -> int  -> int  -> int  -> int  -> int  -> int  -> int
     "wrap": [ 0; ]. '0 -> '0 |}]
 ;;
 
@@ -568,6 +495,36 @@ let main =
   let () = print_int rez in
   let temp2 = wrap test3 1 10 100 in
   0;;|};
-  [%expect {|
-    Unbound_variable: "print_int" |}]
+  [%expect
+    {|
+    Unbound_variable: "test3" |}]
 ;;
+
+(*FAILED*)
+let%expect_test "005" =
+  parse_and_infer_result
+    {|
+let rec fix f x = f (fix f) x;;
+
+let fac self n = if n<=1 then 1 else n * self (n-1);;|};
+  [%expect
+    {|
+    Unbound_variable: "fix" |}]
+;;
+
+(*FAILED*)
+let%expect_test "005" =
+  parse_and_infer_result
+    {|
+let rec fix f x = f (fix f) x;;
+
+let fac self n = if n<=1 then 1 else n * self (n-1);;
+
+let main =
+  let () = print_int (fix fac 6) in
+  0;;|};
+  [%expect
+    {|
+    Unbound_variable: "fix" |}]
+;;
+

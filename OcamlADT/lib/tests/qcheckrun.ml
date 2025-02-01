@@ -25,7 +25,7 @@ let test_round_trip2 =
        let program_ast = show_program program in
        if String.equal program_ast "[]"
        then (
-         printf "Generated empty AST. Skipping...\n";
+         (* printf "Generated empty AST. Skipping...\n"; *)
          true)
        else (
          let printed_program = asprintf "%a" pprint_program program in
@@ -33,7 +33,7 @@ let test_round_trip2 =
          | Ok parsed_program ->
            let result = List.equal Poly.equal parsed_program program in
            if result
-           then printf "Success!\n"
+           then ()
            else
              printf
                "Mismatch! Original: %s\nPprinted: %s\nParsed: %s\n"
