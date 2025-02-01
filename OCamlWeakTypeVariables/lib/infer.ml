@@ -186,7 +186,7 @@ end = struct
   ;;
 
   let rec unify l r =
-    if debug then Format.printf "Unify: %s AND %s\n" (show_typ l) (show_typ r);
+    (* if debug then Format.printf "Unify: %s AND %s\n" (show_typ l) (show_typ r); *)
     match l, r with
     | TBase l, TBase r when l = r -> return empty
     | TVar a, TVar b when a = b -> return empty
