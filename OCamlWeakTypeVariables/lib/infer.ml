@@ -374,15 +374,31 @@ let infer_expr =
       return (Subst.apply sub (t @-> t'), sub)
       (* Recursive apply type inference by Homka122 😼😼😼 *)
     | Pexp_apply (e0, es) ->
+      if debug
+      then (
+        Format.printf "Env: %a\n" TypeEnv.pp env;
+        Format.printf "e0: %a\n" pp_expression e0);
       let rec helper_apply init es =
         match es with
         | [] -> return init
         | e1 :: tl ->
+          if debug
+          then (
+            Format.printf "APPLY\n";
+            Format.printf "e1: %a\n" pp_expression e1);
           let* t' = fresh_var in
           let t0, sub0 = init in
           let* t1, sub1 = helper (TypeEnv.apply env sub0) e1 in
           let* sub2 = Subst.unify (Subst.apply sub1 t0) (t1 @-> t') in
           let* sub3 = Subst.compose_all [ sub0; sub1; sub2 ] in
+          Infer_print.(
+            if debug
+            then (
+              Format.printf "t0: %a sub0: %a\n" pp_typ_my t0 Subst.pp sub0;
+              Format.printf "t1: %a sub1: %a\n" pp_typ_my t1 Subst.pp sub1;
+              Format.printf "sub2: %a\n" Subst.pp sub2;
+              Format.printf "sub3: %a\n" Subst.pp sub3;
+              Format.printf "\n"));
           helper_apply (Subst.apply sub2 t', sub3) tl
       in
       let* init = helper env e0 in
