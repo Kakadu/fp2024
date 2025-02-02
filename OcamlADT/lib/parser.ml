@@ -145,7 +145,7 @@ let rchain p op =
 let ptypearrow = pass_ws *> token "->" >>| fun _ lhs rhs -> TypeExpr.Type_arrow (lhs, rhs)
 
 let ptypevar =
-  let* id = pass_ws *> (pident_lc <|> pident_cap) in
+  let* id = token "'" *> (pident_lc <|> pident_cap) in
   return (TypeExpr.Type_var id)
 ;;
 
@@ -169,9 +169,9 @@ let ptypeconstr =
     let* tparams =
       option
         []
-        (pparenth (sep_by (token ",") (token "'" *> ptypevar))
+        (pparenth (sep_by (token ",") ptypevar)
          <|>
-         let* typevar = token "'" *> ptypevar in
+         let* typevar = ptypevar in
          return [ typevar ]
          <|>
          let* ctuple = pparenth (ptypetuple ptconstr) in
@@ -187,13 +187,25 @@ let ptypeconstr =
          return (Some name))
     in
     match tname, tparams with
-    | None, [ TypeExpr.Type_var _ ] ->
+    | Some "", [] | None, [] | None, [ TypeExpr.Type_var _ ] ->
       fail "Type constructor cannot have a single type parameter without a name"
     | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
     | None, _ -> return (TypeExpr.Type_construct ("", tparams)))
 ;;
 
-let ptype_adt = pass_ws *> ptypeconstr <|> token "'" *> ptypevar
+let ptypeconstr_app =
+  let* base = ptypeconstr in
+  let* extra_args = sep_by (token " ") ptypeconstr in
+  match extra_args with
+  | [] -> return base
+  | _ ->
+    (match base with
+     | TypeExpr.Type_construct (name, args) ->
+       return (TypeExpr.Type_construct (name, args @ extra_args))
+     | _ -> failwith "hahahah")
+;;
+
+let ptype_adt = pass_ws *> ptypeconstr_app <|> ptypevar
 
 (*
    ░▒▓███████▓▒░ ░▒▓██████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓███████▓▒░
