@@ -135,13 +135,12 @@ type comprehension =
 [@@deriving qcheck, show { with_path = false }]
 
 (* and comprehension_list =
-  (comprehension list
-  [@gen
+   (comprehension list
+   [@gen
     QCheck.Gen.(list_size (return (Int.min 2 (n / 7))) (gen_comprehension_sized (n / 7)))]) *)
-
 and ordinarylistbld =
-  (* | ComprehensionList of expr * comprehension * comprehension_list *)
-  (** e.g [[x * y | x <- [1, 2, 20], y <- [2, 3], y `mod` 2 == 0]] *)
+  (* | ComprehensionList of expr * comprehension * comprehension_list
+     (** e.g [[x * y | x <- [1, 2, 20], y <- [2, 3], y `mod` 2 == 0]] *) *)
   | IncomprehensionlList of expr_list (**e.g. [[1,2]] *)
 
 and listbld =

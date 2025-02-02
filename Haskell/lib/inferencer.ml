@@ -15,6 +15,7 @@ module R : sig
 
   module Syntax : sig
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   end
 
   module RList : sig
@@ -50,6 +51,7 @@ end = struct
 
   module Syntax = struct
     let ( let* ) x f = bind x ~f
+    let ( let+ ) = ( >>| )
   end
 
   module RList = struct
@@ -320,19 +322,19 @@ let lookup_env e xs =
     return ans
 ;;
 
-let built_in_sign op =
-  (function
-    | And | Or -> return (Ty_prim "Bool", Ty_prim "Bool", Ty_prim "Bool")
-    | Cons ->
-      let* t = fresh_var in
-      return (t, Ty_list t, Ty_list t)
-    | Plus | Minus | Divide | Mod | Multiply | Pow ->
-      return (Ty_prim "Int", Ty_prim "Int", Ty_prim "Int")
-    | _ -> fresh >>| fun t -> Ty_ord t, Ty_ord t, Ty_prim "Bool")
-    op
-  (* TODO(Kakadu): overly complicated. Maybe introduce helper function
-     `arrow3` and get rid of >>|? *)
-  >>| fun (t1, t2, t3) -> Ty_arrow (t1, Ty_arrow (t2, t3))
+let arrow3 t1 t2 t3 = Ty_arrow (t1, Ty_arrow (t2, t3))
+
+let built_in_sign =
+  let pr_bool, pr_int = Ty_prim "Bool", Ty_prim "Int" in
+  function
+  | And | Or -> return @@ arrow3 pr_bool pr_bool pr_bool
+  | Cons ->
+    let+ t = fresh_var in
+    arrow3 t (Ty_list t) (Ty_list t)
+  | Plus | Minus | Divide | Mod | Multiply | Pow -> return @@ arrow3 pr_int pr_int pr_int
+  | _ ->
+    let+ t = fresh in
+    arrow3 (Ty_ord t) (Ty_ord t) (Ty_prim "Bool")
 ;;
 
 let rec tp_to_ty = function
@@ -647,30 +649,30 @@ and infer (e, type_annots) env =
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, trez)
     (* | ListBld (OrdList (ComprehensionList (e, c, cc))) ->
-      let* s1, env' =
-        RList.fold_left
-          (c :: cc)
-          ~init:(return (Subst.empty, env))
-          ~f:(fun (s, env) cmp ->
-            let* s1, env =
-              match cmp with
-              | Condition x ->
-                let* s1, t1 = infer x env in
-                let* s2 = unify t1 (Ty_prim "Bool") in
-                let* final_subst = Subst.compose s2 s1 in
-                return (final_subst, env)
-              | Generator (p, e) ->
-                let* s2, t2 = infer e env in
-                let* t3, env', _ = helper_p p env [] in
-                let* s3 = unify t2 (Ty_list t3) in
-                let* s = Subst.compose s3 s2 in
-                return (s, env')
-            in
-            Subst.compose s1 s >>| fun fs -> fs, env)
-      in
-      let* s2, t2 = infer e (TypeEnv.apply s1 env') in
-      let* final_subst = Subst.compose s2 s1 in
-      return (final_subst, Ty_list t2) *)
+       let* s1, env' =
+       RList.fold_left
+       (c :: cc)
+       ~init:(return (Subst.empty, env))
+       ~f:(fun (s, env) cmp ->
+       let* s1, env =
+       match cmp with
+       | Condition x ->
+       let* s1, t1 = infer x env in
+       let* s2 = unify t1 (Ty_prim "Bool") in
+       let* final_subst = Subst.compose s2 s1 in
+       return (final_subst, env)
+       | Generator (p, e) ->
+       let* s2, t2 = infer e env in
+       let* t3, env', _ = helper_p p env [] in
+       let* s3 = unify t2 (Ty_list t3) in
+       let* s = Subst.compose s3 s2 in
+       return (s, env')
+       in
+       Subst.compose s1 s >>| fun fs -> fs, env)
+       in
+       let* s2, t2 = infer e (TypeEnv.apply s1 env') in
+       let* final_subst = Subst.compose s2 s1 in
+       return (final_subst, Ty_list t2) *)
   in
   match type_annots with
   | [] -> helper_e e env

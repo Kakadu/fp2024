@@ -119,24 +119,24 @@ let rec shrink_expression =
          >|= fun c' -> InnerBindings (x, c', y))
     <+> (shrink_expr y >|= fun a' -> InnerBindings (x, list, a'))
 
-and shrink_comprehension =
-  let open QCheck.Iter in
-  function
-  | Condition x -> shrink_expr x >|= fun a' -> Condition a'
-  | Generator (x, y) ->
-    shrink_pattern x
-    >|= (fun a' -> Generator (a', y))
-    <+> (shrink_expr y >|= fun b' -> Generator (x, b'))
+(* and shrink_comprehension =
+   let open QCheck.Iter in
+   function
+   | Condition x -> shrink_expr x >|= fun a' -> Condition a'
+   | Generator (x, y) ->
+   shrink_pattern x
+   >|= (fun a' -> Generator (a', y))
+   <+> (shrink_expr y >|= fun b' -> Generator (x, b')) *)
 
 and shrink_ordinarylistbld =
   let open QCheck.Iter in
   function
   (* | ComprehensionList (x, y, rest) ->
-    shrink_expr x
-    >|= (fun a' -> ComprehensionList (a', y, rest))
-    <+> (shrink_comprehension y >|= fun b' -> ComprehensionList (x, b', rest))
-    <+> (QCheck.Shrink.list ~shrink:shrink_comprehension rest
-         >|= fun c' -> ComprehensionList (x, y, c')) *)
+     shrink_expr x
+     >|= (fun a' -> ComprehensionList (a', y, rest))
+     <+> (shrink_comprehension y >|= fun b' -> ComprehensionList (x, b', rest))
+     <+> (QCheck.Shrink.list ~shrink:shrink_comprehension rest
+     >|= fun c' -> ComprehensionList (x, y, c')) *)
   | IncomprehensionlList list ->
     QCheck.Shrink.list ~shrink:shrink_expr list >|= fun a' -> IncomprehensionlList a'
 
@@ -197,7 +197,8 @@ and shrink_binding =
          >|= fun c' -> Def (FunDef (x, y, c', z, binding_list)))
     <+> (QCheck.Shrink.list ~shrink:shrink_binding binding_list
          >|= fun d' -> Def (FunDef (x, y, pattern_list, z, d')))
-    <+> (shrink_bindingbody z >|= fun e' -> Def (FunDef (x, y, pattern_list, e', binding_list)))
+    <+> (shrink_bindingbody z
+         >|= fun e' -> Def (FunDef (x, y, pattern_list, e', binding_list)))
   | Decl (x, y) -> shrink_tp y >|= fun b' -> Decl (x, b')
 
 and shrink_bindingbody =

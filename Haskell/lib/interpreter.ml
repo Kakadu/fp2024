@@ -2,65 +2,60 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-let interpret =
-  let rec helper st names text dump_parsetree print_types env enviroment n =
+let interpret dump_parsetree print_types =
+  let rec helper st names text inf_env eval_env fresh =
     match text with
     | [] ->
-      if env != Inferencer.typeenv_empty && env != Inferencer.initial_env && print_types
-      then Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, env)
-    | "" :: rest -> helper st names rest dump_parsetree print_types env enviroment n
+      if inf_env != Inferencer.typeenv_empty
+         && inf_env != Inferencer.initial_env
+         && print_types
+      then Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, inf_env)
+    | "" :: rest -> helper st names rest inf_env eval_env fresh
     | line :: rest ->
       if dump_parsetree then Parser.parse_and_print_line line;
       (match Parser.parse_line line with
-       | Result.Ok list ->
-         (match Inferencer.w list env st with
-          | st, Result.Ok (env, nn) ->
-            (match Eval.eval enviroment n list with
-             | Result.Ok (enviroment, n) ->
-               helper
-                 st
-                 (List.fold_left (fun nn n -> n :: nn) names nn)
-                 rest
-                 dump_parsetree
-                 print_types
-                 env
-                 enviroment
-                 n
-             | Result.Error (err, (enviroment, n)) ->
-               Format.printf "%a\n%!" Pprint.pp_eval_err err;
-               helper
-                 st
-                 (List.fold_left (fun nn n -> n :: nn) names nn)
-                 rest
-                 dump_parsetree
-                 print_types
-                 env
-                 enviroment
-                 n)
+       | Result.Ok bnds ->
+         (match Inferencer.w bnds inf_env st with
+          | st, Result.Ok (inf_env', nn) ->
+            let eval_env', fresh' =
+              match Eval.eval eval_env fresh bnds with
+              | Result.Ok (eval_env', fresh') -> eval_env', fresh'
+              | Result.Error (err, (eval_env', fresh')) ->
+                Format.printf "%a\n%!" Pprint.pp_eval_err err;
+                eval_env', fresh'
+            in
+            helper
+              st
+              (List.fold_left (fun nn n -> n :: nn) names nn)
+              rest
+              inf_env'
+              eval_env'
+              fresh'
           | st, Result.Error err ->
             Format.printf "%a\n%!" Pprint.pp_error err;
-            helper st names rest dump_parsetree print_types env enviroment n)
+            helper st names rest inf_env eval_env fresh)
        | Result.Error error -> Format.printf "%s\n%!" error)
   in
   helper 2 []
 ;;
 
-let interpret_line line env st dump_parsetree print_types enviroment n =
+let interpret_line line inf_env st dump_parsetree print_types eval_env fresh =
   match Parser.parse_line line with
-  | Result.Ok list ->
+  | Result.Ok bnds ->
     if dump_parsetree then Parser.parse_and_print_line line;
-    (match Inferencer.w list env st with
-     | st, Result.Ok (env, names) ->
-       if print_types then Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, env);
-       (match Eval.eval enviroment n list with
-        | Result.Ok (enviroment, n) -> env, st, enviroment, n
-        | Result.Error (err, (enviroment, n)) ->
+    (match Inferencer.w bnds inf_env st with
+     | st, Result.Ok (inf_env', names) ->
+       if print_types
+       then Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, inf_env');
+       (match Eval.eval eval_env fresh bnds with
+        | Result.Ok (eval_env', fresh') -> inf_env', st, eval_env', fresh'
+        | Result.Error (err, (eval_env', fresh')) ->
           Format.printf "%a\n%!" Pprint.pp_eval_err err;
-          env, st, enviroment, n)
+          inf_env', st, eval_env', fresh')
      | st, Result.Error err ->
        Format.printf "%a\n%!" Pprint.pp_error err;
-       env, st, enviroment, n)
+       inf_env, st, eval_env, fresh)
   | Result.Error error ->
     Format.printf "%s\n%!" error;
-    env, st, enviroment, n
+    inf_env, st, eval_env, fresh
 ;;
