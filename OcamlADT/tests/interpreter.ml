@@ -170,6 +170,12 @@ let%expect_test "multiple let assignments" =
     7 |}]
 ;;
 
+let%expect_test "multiple let bool assignments" =
+  pp_parse_demo {| let x = 5 = 5 in let y = 4 = 5 in print_bool (x && y) ;; |};
+  [%expect {|
+    false |}]
+;;
+
 (*bad, idk*)
 let%expect_test "function assignment with bool operators" =
   pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
@@ -433,6 +439,7 @@ let _2 = function
   |}]
 ;;
 
+(*good*)
 let%expect_test "tuples" =
   pp_parse_demo {|
 let rec (a, b) = (a, b) ;;
@@ -500,7 +507,7 @@ let%expect_test "simple adt with pattern matching function + printing" =
   pp_parse_demo
     {|
 type shape = Circle of int
-  | Rectangle of int * int
+  | Rectangle of int 
   | Square of int
 ;;
 let area s = 
@@ -517,6 +524,29 @@ print_int y
   |};
   [%expect {|
     3
+    val area = <fun>|}]
+;;
+
+let%expect_test "simple adt with pattern matching function (else case) + printing" =
+  pp_parse_demo
+    {|
+type shape = Circle of int
+  | Rectangle of int 
+  | Square of int
+;;
+let area s = 
+    match s with
+    | Square c -> 0
+    | Circle c -> 3 
+    | _ -> 10
+;;
+let x = Rectangle 5 in
+let y = area x in
+print_int y
+;;
+  |};
+  [%expect {|
+    10
     val area = <fun>|}]
 ;;
 
@@ -537,10 +567,33 @@ let x = Rectangle (5, 10) in
 let y = area x in
 print_int y
 ;;
-
   |};
   [%expect {|
-    Intepreter error: Pattern mismatch|}]
+    10
+    val area = <fun>|}]
+;;
+
+let%expect_test "simple adt with pattern matching function + printing v3" =
+  pp_parse_demo
+    {|
+type shape = Circle of int
+  | Rectangle of int * int
+  | Square of int
+;;
+let area s = 
+    match s with
+    | Circle c -> 3 
+    | Square c -> 0
+    | Rectangle (c1, c2) -> c1 * c2
+;;
+let x = Rectangle (5, 10) in
+let y = area x in
+print_int y
+;;
+  |};
+  [%expect {|
+    50
+    val area = <fun>|}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue)" =
@@ -577,27 +630,83 @@ print_int y
 ;;
   |};
   [%expect {|
-    Intepreter error: Pattern mismatch|}]
+    10
+    val area = <fun>|}]
 ;;
 
-let%expect_test "simple adt (fail: NotAnADT)" =
+let%expect_test "simple adt (fail: UnboundValue Cir)" =
   pp_parse_demo
     {|
-type shape = Cir of int
+type shape = Circle of int
   | Rectangle of int * int
   | Square of int
 ;;
-let x = Circle 5 in 
+let x = Cir 5 in 
 print_int area x;;
   |};
-  [%expect {| Intepreter error: Unbound value Circle|}]
+  [%expect {| Intepreter error: Unbound value Cir|}]
 ;;
 
-let%expect_test "poly adt" =
+(* needs a initialization check*)
+let%expect_test "poly adt tree" =
   pp_parse_demo {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
   |};
-  [%expect {| Intepreter error: Unbound value a|}]
+  [%expect {| |}]
+;;
+
+(*bad*)
+let%expect_test "poly adt tree" =
+  pp_parse_demo
+    {|
+type 'a tree = Leaf
+  | Node of 'a * 'a tree * 'a tree
+;;
+let rec insert x = function
+  | Leaf -> Node (x, Leaf, Leaf)
+  | _ -> Node (x, Leaf, Leaf);;
+let tree = 
+ insert 6 (insert 8 Leaf)
+;;
+  |};
+  [%expect {| Intepreter error: Type mismatch |}]
+;;
+
+(*idk, haven;t thought*)
+let%expect_test "poly adt with pattern matching + printing" =
+  pp_parse_demo
+    {|
+type 'a tree = Leaf
+  | Node of 'a * 'a tree * 'a tree
+;;
+
+let rec tree_size t =
+  match t with
+  | Leaf -> 0
+  | Node (_, left, right) -> 1 + tree_size left + tree_size right
+;;
+
+let my_tree = Node (42, Node (1, Leaf, Leaf), Node (2, Leaf, Leaf)) in
+let size = tree_size my_tree in
+print_int size
+;;
+
+  |};
+  [%expect {|
+    Intepreter error: Pattern mismatch|}]
+;;
+
+(*implemented by rodik, added () construct support, should be good after merge*)
+let%expect_test "poly adt" =
+  pp_parse_demo {|
+let () = print_int 5;;
+  |};
+  [%expect {| Parser Error |}]
+;;
+
+let%expect_test "empty program (no ;;) (fail: EmptyProgram)" =
+  pp_parse_demo {||};
+  [%expect {| Empty program |}]
 ;;
