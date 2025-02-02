@@ -102,6 +102,11 @@ module TypeExpr = struct
                               [T1 -> T2] *)
     | Type_var of (ident[@gen gen_ident])
     | Type_tuple of t List2.t (** [Type_tuple([T1, T2, ... Tn])] *)
+    | Type_constr of ident * t list
+    (** [Type_constr(ident, l)] represents:
+        - [tconstr]               when [l=[]],
+        - [T tconstr]             when [l=[T]],
+        - [(T1, ..., Tn) tconstr] when [l=[T1 ; ... ; Tn]]. *)
   [@@deriving eq, show { with_path = false }, qcheck]
 end
 
@@ -227,5 +232,5 @@ end
 type program = Structure.structure_item list [@@deriving eq, show { with_path = false }]
 
 module Program = struct
-  let gen_program n = list_size (int_bound 5) (Structure.gen_structure_item (n / 2))
+  let gen_program n = list_size (int_bound 0) (Structure.gen_structure_item (n / 2))
 end
