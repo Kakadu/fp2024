@@ -15,7 +15,7 @@ let interpret =
        | Result.Ok list ->
          (match Inferencer.w list env st with
           | st, Result.Ok (env, nn) ->
-            (match Eval.eval list enviroment n with
+            (match Eval.eval enviroment n list with
              | Result.Ok (enviroment, n) ->
                helper
                  st
@@ -26,8 +26,8 @@ let interpret =
                  env
                  enviroment
                  n
-             | Result.Error (err, enviroment, n) ->
-               Format.printf "%a\n%!" Pprint.pp_error err;
+             | Result.Error (err, (enviroment, n)) ->
+               Format.printf "%a\n%!" Pprint.pp_eval_err err;
                helper
                  st
                  (List.fold_left (fun nn n -> n :: nn) names nn)
@@ -52,10 +52,10 @@ let interpret_line line env st dump_parsetree print_types enviroment n =
     (match Inferencer.w list env st with
      | st, Result.Ok (env, names) ->
        if print_types then Format.printf "%a\n%!" Inferencer.pp_some_typeenv (names, env);
-       (match Eval.eval list enviroment n with
+       (match Eval.eval enviroment n list with
         | Result.Ok (enviroment, n) -> env, st, enviroment, n
-        | Result.Error (err, enviroment, n) ->
-          Format.printf "%a\n%!" Pprint.pp_error err;
+        | Result.Error (err, (enviroment, n)) ->
+          Format.printf "%a\n%!" Pprint.pp_eval_err err;
           env, st, enviroment, n)
      | st, Result.Error err ->
        Format.printf "%a\n%!" Pprint.pp_error err;

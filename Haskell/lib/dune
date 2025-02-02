@@ -1,7 +1,7 @@
 (library
  (name haskell_lib)
  (public_name Haskell.Lib)
- (libraries angstrom qcheck-core.runner)
+ (libraries angstrom qcheck-core.runner zarith)
  (inline_tests)
  (modules
   Parser

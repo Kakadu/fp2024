@@ -697,50 +697,50 @@ let%expect_test "wrong list of different types" =
 ;;
 
 (* let%expect_test "comprehension list with generator" =
-  Haskell_lib.Pai.parse_and_infer "a = [x * y | x <- [1..10], y <- [1]]";
-  [%expect {|
+   Haskell_lib.Pai.parse_and_infer "a = [x * y | x <- [1..10], y <- [1]]";
+   [%expect {|
     [
     a:  [Int]
      ] |}]
-;;
+   ;;
 
-let%expect_test "comprehension list with simple condition" =
-  Haskell_lib.Pai.parse_and_infer "a = [1 * 2 | True]";
-  [%expect {|
+   let%expect_test "comprehension list with simple condition" =
+   Haskell_lib.Pai.parse_and_infer "a = [1 * 2 | True]";
+   [%expect {|
     [
     a:  [Int]
      ] |}]
-;;
+   ;;
 
-let%expect_test "comprehension list with condition" =
-  Haskell_lib.Pai.parse_and_infer "a = \\x -> [ x | x < 10 ]";
-  [%expect {|
+   let%expect_test "comprehension list with condition" =
+   Haskell_lib.Pai.parse_and_infer "a = \\x -> [ x | x < 10 ]";
+   [%expect {|
     [
     a:  Int -> [Int]
      ] |}]
-;;
+   ;;
 
-let%expect_test "comprehension list with condition and generator" =
-  Haskell_lib.Pai.parse_and_infer "a = \\y -> [ x * y | x <- [1..10], y <= 10  ]";
-  [%expect {|
+   let%expect_test "comprehension list with condition and generator" =
+   Haskell_lib.Pai.parse_and_infer "a = \\y -> [ x * y | x <- [1..10], y <= 10  ]";
+   [%expect {|
     [
     a:  Int -> [Int]
      ] |}]
-;;
+   ;;
 
-let%expect_test "wrong comprehension list with generator condition" =
-  Haskell_lib.Pai.parse_and_infer "a = \\x y -> [ x * y | x < 10, y <- [True, False]]";
-  [%expect {| unification failed on Bool and Int |}]
-;;
+   let%expect_test "wrong comprehension list with generator condition" =
+   Haskell_lib.Pai.parse_and_infer "a = \\x y -> [ x * y | x < 10, y <- [True, False]]";
+   [%expect {| unification failed on Bool and Int |}]
+   ;;
 
-let%expect_test "several functions" =
-  Haskell_lib.Pai.parse_and_infer "f x = g x; g y = y";
-  [%expect {|
+   let%expect_test "several functions" =
+   Haskell_lib.Pai.parse_and_infer "f x = g x; g y = y";
+   [%expect {|
 [
 f: t4.  t4 -> t4
 g: t4.  t4 -> t4
  ] |}]
-;; *)
+   ;; *)
 
 let%expect_test "several bindings non_poly" =
   Haskell_lib.Pai.parse_and_infer "f x = x; g = f True";
