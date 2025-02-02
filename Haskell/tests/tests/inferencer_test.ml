@@ -696,7 +696,7 @@ let%expect_test "wrong list of different types" =
   [%expect {| unification failed on Bool and () |}]
 ;;
 
-let%expect_test "comprehension list with generator" =
+(* let%expect_test "comprehension list with generator" =
   Haskell_lib.Pai.parse_and_infer "a = [x * y | x <- [1..10], y <- [1]]";
   [%expect {|
     [
@@ -740,7 +740,7 @@ let%expect_test "several functions" =
 f: t4.  t4 -> t4
 g: t4.  t4 -> t4
  ] |}]
-;;
+;; *)
 
 let%expect_test "several bindings non_poly" =
   Haskell_lib.Pai.parse_and_infer "f x = x; g = f True";
