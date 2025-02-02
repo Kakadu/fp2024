@@ -646,7 +646,7 @@ and infer (e, type_annots) env =
       let trez = Subst.apply s3 tv in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, trez)
-    | ListBld (OrdList (ComprehensionList (e, c, cc))) ->
+    (* | ListBld (OrdList (ComprehensionList (e, c, cc))) ->
       let* s1, env' =
         RList.fold_left
           (c :: cc)
@@ -670,7 +670,7 @@ and infer (e, type_annots) env =
       in
       let* s2, t2 = infer e (TypeEnv.apply s1 env') in
       let* final_subst = Subst.compose s2 s1 in
-      return (final_subst, Ty_list t2)
+      return (final_subst, Ty_list t2) *)
   in
   match type_annots with
   | [] -> helper_e e env

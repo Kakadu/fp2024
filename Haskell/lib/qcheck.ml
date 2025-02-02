@@ -131,12 +131,12 @@ and shrink_comprehension =
 and shrink_ordinarylistbld =
   let open QCheck.Iter in
   function
-  | ComprehensionList (x, y, rest) ->
+  (* | ComprehensionList (x, y, rest) ->
     shrink_expr x
     >|= (fun a' -> ComprehensionList (a', y, rest))
     <+> (shrink_comprehension y >|= fun b' -> ComprehensionList (x, b', rest))
     <+> (QCheck.Shrink.list ~shrink:shrink_comprehension rest
-         >|= fun c' -> ComprehensionList (x, y, c'))
+         >|= fun c' -> ComprehensionList (x, y, c')) *)
   | IncomprehensionlList list ->
     QCheck.Shrink.list ~shrink:shrink_expr list >|= fun a' -> IncomprehensionlList a'
 

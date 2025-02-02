@@ -151,14 +151,14 @@ let rec pp_comprehension fmt = function
   | Generator (pattern, expr) -> fprintf fmt "%a <- %a" pp_pattern pattern pp_expr expr
 
 and pp_ordinarylistbld fmt = function
-  | ComprehensionList (expr, comprehension, list) ->
-    fprintf
-      fmt
-      "[%a | %a]"
-      pp_expr
-      expr
-      (pp_list ", " pp_comprehension)
-      (comprehension :: list)
+  (* | ComprehensionList (expr, comprehension, list) ->
+     fprintf
+     fmt
+     "[%a | %a]"
+     pp_expr
+     expr
+     (pp_list ", " pp_comprehension)
+     (comprehension :: list) *)
   | IncomprehensionlList list -> fprintf fmt "[%a]" (pp_list ", " pp_expr) list
 
 and pp_listbld fmt = function
