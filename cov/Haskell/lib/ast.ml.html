@@ -499,10 +499,10 @@
 (** SPDX-License-Identifier: MIT *)
 
 <span data-count="126">t</span>ype const =
-  | Int of (in<span data-count="63">t</span>[@gen QCheck.Gen.(0 -<span data-count="51">-</span> Int.max_int)]) (** e.g. [18] *)
+  | Int of (in<span data-count="63">t</span>[@gen QCheck.Gen.(0 -<span data-count="63">-</span> Int.max_int)]) (** e.g. [18] *)
   | Bool of boo<span data-count="0">l</span> (** e.g. [True] *)
   | Unit (** () *)
-[@@deriving qcheck, show { with_path = false }<span data-count="255">]</span>
+[@@deriving qcheck, show { with_path = false }<span data-count="315">]</span>
 
 <span data-count="8">t</span>ype 'a maybe =
   | Nothing (** Nothing *)
@@ -526,7 +526,7 @@
 <span data-count="0">a</span>nd tp_list =
   (<span data-count="433">t</span>p lis<span data-count="200">t</span>
   [@gen <span data-count="66">Q</span>Check.Gen.(list_size (retur<span data-count="66">n</span> (Int.mi<span data-count="66">n</span> 2 (n / 10))) (gen_tp_size<span data-count="66">d</span> (n / 10)))])
-[@@deriving qcheck, show { with_path = false }<span data-count="2067">]</span>
+[@@deriving qcheck, show { with_path = false }<span data-count="2211">]</span>
 
 <span data-count="0">t</span>ype binop =
   | And (** [&amp;&amp;]*)
@@ -544,25 +544,25 @@
   | Greater (** [&gt;] *)
   | EqualityOrLess (** [&lt;=] *)
   | EqualityOrGreater (** [&gt;=] *)
-[@@deriving qcheck, show { with_path = false }<span data-count="867">]</span>
+[@@deriving qcheck, show { with_path = false }<span data-count="1071">]</span>
 
 let gen_first_symbol =
   QCheck.Gen.(
-    ma<span data-count="51">p</span>
+    ma<span data-count="63">p</span>
       Char.chr
-      (oneo<span data-count="51">f</span> [ int_rang<span data-count="51">e</span> (Char.cod<span data-count="51">e</span> 'a') (Char.cod<span data-count="51">e</span> 'z'); retur<span data-count="51">n</span> (Char.cod<span data-count="51">e</span> '_') ]))
+      (oneo<span data-count="63">f</span> [ int_rang<span data-count="63">e</span> (Char.cod<span data-count="63">e</span> 'a') (Char.cod<span data-count="63">e</span> 'z'); retur<span data-count="63">n</span> (Char.cod<span data-count="63">e</span> '_') ]))
 ;;
 
 let gen_char =
   QCheck.Gen.(
-    ma<span data-count="51">p</span>
+    ma<span data-count="63">p</span>
       Char.chr
-      (oneo<span data-count="51">f</span>
-         [ int_rang<span data-count="51">e</span> (Char.cod<span data-count="51">e</span> 'a') (Char.cod<span data-count="51">e</span> 'z')
-         ; int_rang<span data-count="51">e</span> (Char.cod<span data-count="51">e</span> 'A') (Char.cod<span data-count="51">e</span> 'Z')
-         ; int_rang<span data-count="51">e</span> (Char.cod<span data-count="51">e</span> '0') (Char.cod<span data-count="51">e</span> '9')
-         ; retur<span data-count="51">n</span> (Char.cod<span data-count="51">e</span> '_')
-         ; retur<span data-count="51">n</span> (Char.cod<span data-count="51">e</span> '\'')
+      (oneo<span data-count="63">f</span>
+         [ int_rang<span data-count="63">e</span> (Char.cod<span data-count="63">e</span> 'a') (Char.cod<span data-count="63">e</span> 'z')
+         ; int_rang<span data-count="63">e</span> (Char.cod<span data-count="63">e</span> 'A') (Char.cod<span data-count="63">e</span> 'Z')
+         ; int_rang<span data-count="63">e</span> (Char.cod<span data-count="63">e</span> '0') (Char.cod<span data-count="63">e</span> '9')
+         ; retur<span data-count="63">n</span> (Char.cod<span data-count="63">e</span> '_')
+         ; retur<span data-count="63">n</span> (Char.cod<span data-count="63">e</span> '\'')
          ]))
 ;;
 
@@ -573,10 +573,10 @@ let is_keyword_or_underscore = function
 
 let varname =
   QCheck.Gen.(
-    map<span data-count="51">2</span>
+    map<span data-count="63">2</span>
       (fun x y -&gt; <span data-count="2">P</span>rintf.sprintf "%c%s" x y)
       gen_first_symbol
-      (string_siz<span data-count="51">e</span> ~gen:gen_char (1 -<span data-count="51">-</span> 7)))
+      (string_siz<span data-count="63">e</span> ~gen:gen_char (1 -<span data-count="63">-</span> 7)))
 ;;
 
 let correct_varname x = <span data-count="0">Q</span>Check.Gen.map (fun y -&gt; <span data-count="0">P</span>rintf.sprintf "%s%c" x y) gen_char
@@ -584,19 +584,19 @@ let correct_varname x = <span data-count="0">Q</span>Check.Gen.map (fun y -&gt; 
 let gen_string =
   let open QCheck.Gen in
   let x = varname in
-  ma<span data-count="51">p</span> is_keyword_or_underscore x
-  &gt;&gt;<span data-count="51">=</span> fun y -&gt; <span data-count="1">i</span>f y then <span data-count="0">m</span>a<span data-count="0">p</span> correct_varname x &gt;&gt;= fun y -&gt; <span data-count="0">y</span> else <span data-count="1">x</span>
+  ma<span data-count="63">p</span> is_keyword_or_underscore x
+  &gt;&gt;<span data-count="63">=</span> fun y -&gt; <span data-count="1">i</span>f y then <span data-count="0">m</span>a<span data-count="0">p</span> correct_varname x &gt;&gt;= fun y -&gt; <span data-count="0">y</span> else <span data-count="1">x</span>
 ;;
 
 (** variable's / function's name*)
 <span data-count="137">t</span>ype ident = Ident of (strin<span data-count="68">g</span>[@gen gen_string])
-[@@deriving qcheck, show { with_path = false }<span data-count="102">]</span>
+[@@deriving qcheck, show { with_path = false }<span data-count="126">]</span>
 (** e.g. [(a@my_list@lst@(_:xs) :: [Int]) :: [Bool]] *)
 
 <span data-count="16">t</span>ype pconst =
   | OrdinaryPConst of const (** e.g [True]*)
-  | NegativePInt of (in<span data-count="1">t</span>[@gen QCheck.Gen.(0 -<span data-count="51">-</span> Int.max_int)]) (** e.g [-12]*)
-[@@deriving qcheck, show { with_path = false }<span data-count="204">]</span>
+  | NegativePInt of (in<span data-count="1">t</span>[@gen QCheck.Gen.(0 -<span data-count="63">-</span> Int.max_int)]) (** e.g [-12]*)
+[@@deriving qcheck, show { with_path = false }<span data-count="252">]</span>
 
 <span data-count="8171">t</span>ype pattern =
   <span data-count="110">(</span><span data-count="119">i</span>dent lis<span data-count="55">t</span>[@gen QCheck.Gen.(list_siz<span data-count="2714">e</span> (retur<span data-count="2714">n</span> (Int.mi<span data-count="2714">n</span> 2 (n / 7))) gen_ident)])
@@ -623,7 +623,7 @@ let gen_string =
   | PList of listpat
   | PTuple of pattern * pattern * pattern_list (** e.g. [(x, y, z)]*)
   | PMaybe of pattern maybe (** e.g. [Just x] *)
-  | PTree of treepa<span data-count="14188">t</span>
+  | PTree of treepa<span data-count="14308">t</span>
 
 <span data-count="307130">t</span>ype comprehension =
   | Condition of expr (** e.g. [x &lt; 2] *)
@@ -719,7 +719,7 @@ let gen_string =
     <span data-count="7662">Q</span>Check.Gen.(
       list_size
         (retur<span data-count="7662">n</span> (Int.mi<span data-count="7662">n</span> 2 (n / 7)))
-        (pai<span data-count="7662">r</span> (gen_expr_size<span data-count="7662">d</span> (n / 7)) (gen_expr_size<span data-count="7662">d</span> (n / 7))))]<span data-count="784808">)</span>
+        (pai<span data-count="7662">r</span> (gen_expr_size<span data-count="7662">d</span> (n / 7)) (gen_expr_size<span data-count="7662">d</span> (n / 7))))]<span data-count="785432">)</span>
 </code></pre>
       </div>
     </div>

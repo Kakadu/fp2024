@@ -170,13 +170,13 @@ let pp_error ppf : error -&gt; _ = <span data-count="61">f</span>unction
 ;;
 
 let pp_eval_err ppf err =
-  <span data-count="6">F</span>ormat.fprintf ppf
+  <span data-count="13">F</span>ormat.fprintf ppf
   @@
   match err with
   | <span data-count="0">`</span>Typing_err -&gt; "Runtime typing error"
-  | <span data-count="4">`</span>Not_exh -&gt; "Not exhaustive paterns"
-  | <span data-count="1">`</span>Div_by_zero -&gt; "Division by zero"
-  | <span data-count="1">`</span>Negative_exponent -&gt; "Negative exponent"
+  | <span data-count="9">`</span>Not_exh -&gt; "Not exhaustive paterns"
+  | <span data-count="2">`</span>Div_by_zero -&gt; "Division by zero"
+  | <span data-count="2">`</span>Negative_exponent -&gt; "Negative exponent"
 ;;
 </code></pre>
       </div>

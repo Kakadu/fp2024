@@ -201,18 +201,18 @@ let interpret dump_parsetree print_types =
 ;;
 
 let interpret_line line inf_env st dump_parsetree print_types eval_env fresh =
-  <span data-count="78">m</span>atch Parser.parse_line line with
-  | <span data-count="78">R</span>esult.Ok bnds -&gt;
+  <span data-count="114">m</span>atch Parser.parse_line line with
+  | <span data-count="114">R</span>esult.Ok bnds -&gt;
     if dump_parsetree then <span data-count="0">P</span>arser.parse_and_print_lin<span data-count="0">e</span> line;
-    <span data-count="78">(</span>match Inferencer.w bnds inf_env st with
-     | <span data-count="78">s</span>t, Result.Ok (inf_env', names) -&gt;
+    <span data-count="114">(</span>match Inferencer.w bnds inf_env st with
+     | <span data-count="114">s</span>t, Result.Ok (inf_env', names) -&gt;
        if print_types
        then <span data-count="0">F</span>ormat.print<span data-count="0">f</span> "%a\n%!" Inferencer.pp_some_typeenv (names, inf_env');
-       <span data-count="78">(</span>match Eval.eval eval_env fresh bnds with
-        | <span data-count="72">R</span>esult.Ok (eval_env', fresh') -&gt; inf_env', st, eval_env', fresh'
-        | <span data-count="6">R</span>esult.Error (err, (eval_env', fresh')) -&gt;
+       <span data-count="114">(</span>match Eval.eval eval_env fresh bnds with
+        | <span data-count="101">R</span>esult.Ok (eval_env', fresh') -&gt; inf_env', st, eval_env', fresh'
+        | <span data-count="13">R</span>esult.Error (err, (eval_env', fresh')) -&gt;
           Format.printf "%a\n%!" Pprint.pp_eval_err err;
-          <span data-count="6">i</span>nf_env', st, eval_env', fresh')
+          <span data-count="13">i</span>nf_env', st, eval_env', fresh')
      | <span data-count="0">s</span>t, Result.Error err -&gt;
        Format.printf "%a\n%!" Pprint.pp_error err;
        <span data-count="0">i</span>nf_env, st, eval_env, fresh)
