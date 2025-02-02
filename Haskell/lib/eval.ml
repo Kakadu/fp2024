@@ -410,7 +410,7 @@ and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
         cont ~after_complex:true src env fresh e
       | Binop (e1, op, e2) when op <> Cons ->
         eval_arlog env fresh e1 e2 op --| from_crit_full src >>= v_call
-      | Neg e -> eval_expr_full env fresh e --| from_crit_full src >>= v_call
+      | Neg e -> eval_neg env fresh e --| from_crit_full src >>= v_call
       | e -> typing_err env fresh src ac e
     in
     let rec helper_keys_tr helper to_pe_ex src k ((_, pk) as keys) env fresh =
@@ -823,12 +823,6 @@ and patpat_match ?(k = None) to_pe_ex ((dfs, pe_exprs, kk) as env) fresh pat1 pa
   | PETree Nul, PETree Nul, Some k -> suc_with_k k (VTree Nul)
   | PEMaybe Nothing, PEMaybe Nothing, Some k -> suc_with_k k (VMaybe Nothing)
   | PEConst c, PEConst c', None when c = c' -> suc_default
-  | PEConst (OrdinaryPConst (Int i)), PEConst (NegativePInt i'), None
-  | PEConst (NegativePInt i'), PEConst (OrdinaryPConst (Int i)), None
-    when i = -i' -> suc_default
-  | PEConst (OrdinaryPConst (Int i)), PEConst (NegativePInt i'), Some k
-  | PEConst (NegativePInt i'), PEConst (OrdinaryPConst (Int i)), Some k
-    when i = -i' -> suc_with_k k (VConst (Int i))
   | PEConst (OrdinaryPConst c), PEConst (OrdinaryPConst c'), Some k when c = c' ->
     suc_with_k k (VConst c)
   | PEConst (NegativePInt i), PEConst (NegativePInt i'), Some k when i = i' ->
@@ -934,7 +928,7 @@ and ptrnptrn_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh p1 p2 =
           | None -> pe_exprs
           | Some k1 -> add k1 (Link k) pe_exprs
         in
-        (match patpat_match to_pe_ex (dfs, pe_exprs, kk) fresh pat1 pat2 with
+        (match patpat_match ~k:k1 to_pe_ex (dfs, pe_exprs, kk) fresh pat1 pat2 with
          | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
            Ok ((to_pe_ex, (dfs, add k (ThTree pat2') pe_exprs, fresh)), Lnk k)
          | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
@@ -1110,11 +1104,7 @@ and eval_expr_full ((dfs, pe_exprs, kk) as env) fresh =
   | Case (e, br, brs), _ ->
     let* env, fresh, e = eval_step_case e env fresh (br :: brs) in
     eval_expr_full env fresh e
-  | Neg e, _ ->
-    let* dpf, v = eval_expr_full env fresh e in
-    (match v with
-     | VConst (Int x) -> Ok (dpf, VConst (Int (-x)))
-     | _ -> Error (`Typing_err, dpf))
+  | Neg e, _ -> eval_neg env fresh e
   | Binop (e1, op, e2), _ -> eval_arlog env fresh e1 e2 op
   | Lambda (p, pp, e), _ ->
     Ok ((dfs, pe_exprs, fresh), VClosures (kk, [ p, pp, OrdBody e, [] ]))
@@ -1656,9 +1646,7 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       >>| (fun (dpf, v) -> dpf, V v)
       |> complex_hnd
     | (ThLeaf (kk, Neg e), _), _ ->
-      eval_expr_full (dfs, pe_exprs, kk) fresh e
-      >>| (fun (dpf, v) -> dpf, V v)
-      |> complex_hnd
+      eval_neg (dfs, pe_exprs, kk) fresh e >>| (fun (dpf, v) -> dpf, V v) |> complex_hnd
     | ( _
       , ( _
         , ThLeaf
@@ -1734,6 +1722,12 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
      | `Eq, dpf -> fls dpf
      | _, dpf -> tru dpf)
   | Cons -> Error ((`Typing_err : crit_err), (dfs, pe_exprs, fresh))
+
+and eval_neg env fresh e =
+  let* dpf, v = eval_expr_full env fresh e in
+  match v with
+  | VConst (Int x) -> Ok (dpf, VConst (Int (-x)))
+  | _ -> Error (`Typing_err, dpf)
 
 and elazylist_hndl fst snd lst ((_, _, kk) as env) fresh =
   let typing_err dpf = Error ((`Typing_err : crit_err), dpf) in

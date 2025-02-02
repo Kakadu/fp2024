@@ -1,6 +1,6 @@
 Copyright 2024, Kostya Oreshin and Nikita Shchutskii
 SPDX-License-Identifier: MIT
-  $ ../lib/run_binding.exe -seed 67 -gen 1 -stop
+  $ ../lib/run_binding.exe -seed 67 -gen 3 -stop
   random seed: 67
   ================================================================================
   success (ran 1 tests)
@@ -347,3 +347,162 @@ SPDX-License-Identifier: MIT
   > EOF
   Not exhaustive paterns
 
+# imho tests written below are less interesting
+
+# eval_full trees, tuples, etc
+  $ ../bin/REPL.exe  <<-EOF
+  > tr@(x; $; _) = (5; $; $)
+  > tup@(True, Just y, q, z:[], _) = (True, Just 9, 2, ():[], 0 \`mod\` 0 )
+  > main = seq tr tup
+  > EOF
+  Division by zero
+
+# eval_full trees, tuples, etc (expr)
+  $ ../bin/REPL.exe  <<-EOF
+  > main = seq ((0, 0, 0 )) (seq ((Nothing;$;$)) (Just (9 ^ (-1))) )
+  > EOF
+  Negative exponent
+
+# not_exh Nul
+
+  $ ../bin/REPL.exe  <<-EOF
+  > x = (0; $; $)
+  > z@$ = x
+  > main = z
+  > EOF
+  Not exhaustive paterns
+
+# pm Nothing
+  $ ../bin/REPL.exe  <<-EOF
+  > f _ = Nothing
+  > z = f 0
+  > main = print_int (case z of Nothing -> 0 )
+  > EOF
+  0
+
+# pm consts, node
+  $ ../bin/REPL.exe  <<-EOF
+  > ((x,y); $; $) = (((), True); $ ; $)
+  > i = 1 - 2
+  > ((), True, z@(-1), -1) = (x, y, i, -1)
+  > main = print_int z
+  > EOF
+  -1
+
+# not_exh bool
+  $ ../bin/REPL.exe  <<-EOF
+  > z@False = True
+  > main = z
+  > EOF
+  Not exhaustive paterns
+
+# not_exh NegativePInt
+  $ ../bin/REPL.exe  <<-EOF
+  > z@(-1) = 0
+  > main = z
+  > EOF
+  Not exhaustive paterns
+
+# pm lists
+  $ ../bin/REPL.exe  <<-EOF
+  > a@[_,_] = [0, 1]
+  > [b,_] = [1,2]
+  > d@[c, _] = a
+  > e:f:xs = 1:[2,3]
+  > main = print_int (b + c + e + f)
+  > EOF
+  4
+
+# not exh cons
+  $ ../bin/REPL.exe  <<-EOF
+  > x:y = []
+  > main = x
+  > EOF
+  Not exhaustive paterns
+
+# not exh just
+  $ ../bin/REPL.exe  <<-EOF
+  > y = (\\ _ -> Nothing) 0
+  > Just x = y
+  > main = x
+  > EOF
+  Not exhaustive paterns
+
+# pm with values
+  $ ../bin/REPL.exe  <<-EOF
+  > a = Just 5
+  > c = (Nothing; $;$)
+  > d = [() .. ]
+  > (  Just y, (Nothing;$;_), _:_) = let x = ( a, c, d ) in seq x x
+  > main = print_int y
+  > EOF
+  5
+
+# pm (patpat_match)
+  $ ../bin/REPL.exe  <<-EOF
+  > a@($, $,  Nothing, Nothing, 1, 1, -1) = ($, $,  Nothing, Nothing, 1, 1,  -1)
+  > ($, b@$,  Nothing, c@Nothing, 1, d@1, e@(-1)) = a
+  > main = print_int (d + e)
+  > EOF
+  0
+
+# class ord err
+  $ ../bin/REPL.exe  <<-EOF
+  > x = 5 > (if 0 \`div\` 0  == 0 then 1 else 1 )
+  > main = print_int (if x then 0 else 1)
+  > EOF
+  Division by zero
+
+  $ ../bin/REPL.exe  <<-EOF
+  > x = Nothing > (if 0 \`div\` 0  == 0 then Nothing else Nothing )
+  > main = print_int (if x then 0 else 1)
+  > EOF
+  Division by zero
+
+  $ ../bin/REPL.exe  <<-EOF
+  > x = $ > (if 0 \`div\` 0  == 0 then $ else $ )
+  > main = print_int (if x then 0 else 1)
+  > EOF
+  Division by zero
+
+  $ ../bin/REPL.exe  <<-EOF
+  > x = [] > (if 0 \`div\` 0  == 0 then [] else [] )
+  > main = print_int (if x then 0 else 1)
+  > EOF
+  Division by zero
+
+  $ ../bin/REPL.exe  <<-EOF
+  > x = ((\\ _ -> [] ) 0 ) > (if 0 \`div\` 0  == 0 then [] else [] )
+  > main = print_int (if x then 0 else 1)
+  > EOF
+  Division by zero
+
+  $ ../bin/REPL.exe  <<-EOF
+  > x = [1..] > 1 : (if 0 \`div\` 0  == 0 then [] else [] )
+  > main = print_int (if x then 0 else 1)
+  > EOF
+  Division by zero
+
+# class ord 
+  $ ../bin/REPL.exe  <<-EOF
+  > not True = False; not False = True
+  > a = let x@[-5, _] = [-5, 0] in x /= [0,0] &&  not (x /= x)  &&  seq x (x == x)
+  > b = let x@(Nothing, _) = (Nothing, 0) in x <= (Just x, 0) || seq x (x > (Just x, 0)) && (Just x, 0) > (Nothing, 0) 
+  > c = let x@($, _) = ($, 0) in x /= ( (x;$;$), 0) || seq x (x >= ((x;$;$), 0))  && ((x;$;$), 0) > ($, 0)
+  > d = let x@([], _) = ([], 0) in x == ( [1,2], 0) || seq x (x < ([1,2], 0)) || ([1,2], 0) < ([], 0)
+  > e = let x@([], _) = ([], 0) in x == ( 1:[], 0) || seq x (x < (1:[], 0)) || (1:[], 0) == ([], 0)
+  > f = let y:ys = [1..] in let x@([], _) = ([], 0) in x == ( ys , 0) || seq x (x < (ys, 0)) && ([],0) < (ys, 0)
+  > main = case a && b && c && d  && e && f of True -> print_int 0 
+  > EOF
+  0
+
+  $ ../bin/REPL.exe  <<-EOF
+  > a = let x = Just 3 in let y@(Nothing, _) = (Nothing, 0) in  x /= Just 2 && x > Nothing || (x,0) > y || seq y (y /= (x,0))
+  > b = let x = (2;$;$) in let y@($, _) = ($, 0) in  x /= (1;$;$) && x > $ || (x,0) > y || seq y (y /= (x,0))
+  > c = let x = [2] in let y@([], _) = ([], 0) in  x /= [1] && x > [] || (x,0) > y || seq y (y /= (x,0))
+  > d = let x = [2..] in let y@([], _) = ([], 0) in  x /= [1] && x > [] || (x,0) > y || seq y (y /= (x,0))
+  > e = let x = 1:[] in let y@([], _) = ([], 0) in  x /= [1] && x > [] || (x,0) > y || seq y (y /= (x,0))
+  > main = case a && b && c && d && e of True -> print_int 0 
+  > EOF
+  0
+ 
