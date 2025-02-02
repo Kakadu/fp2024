@@ -37,6 +37,17 @@ module MInfer = struct
         f acc x)
     ;;
 
+    let fold_left2 xs xl ~init ~f =
+      Base.List.fold2
+        ~f:(fun acc x l ->
+          let open Syntax in
+          let* acc = acc in
+          f acc x l)
+        ~init
+        xs
+        xl
+    ;;
+
     let fold_right xs ~init ~f =
       Base.List.fold_right xs ~init ~f:(fun x acc ->
         let open Syntax in
@@ -108,9 +119,8 @@ module Substitution = struct
          | None -> typ
          | Some b -> b)
       | Type_arrow (l, r) -> Type_arrow (helper l, helper r)
-      | Type_tuple (t1, t2, t) ->
-        Type_tuple (helper t1, helper t2, List.map t ~f:(fun el -> helper el))
-      | Type_constr (id, ty) -> Type_constr (id, List.map ty ~f:(fun el -> helper el))
+      | Type_tuple (t1, t2, t) -> Type_tuple (helper t1, helper t2, List.map t ~f:helper)
+      | Type_constr (id, ty) -> Type_constr (id, List.map ty ~f:helper)
       (*maybe rework*)
     in
     helper
@@ -150,8 +160,7 @@ module Substitution = struct
         | _ -> fail (`Unification_failed (l, r))
       in
       compose_all [ subs1; subs2; subs3 ]
-    | Type_constr (id1, ty1), Type_constr (id2, ty2) ->
-      let _ = String.equal id1 id2 in
+    | Type_constr (id1, ty1), Type_constr (id2, ty2) when String.equal id1 id2 ->
       let* subs =
         match ty1, ty2 with
         | [], [] -> return empty
@@ -181,7 +190,7 @@ module Substitution = struct
       let* s2 = unify v v2 in
       compose s s2
 
-  and compose s1 s2 = fold s2 (return s1) extend
+  and compose s1 s2 = fold s1 (return s2) extend (*bug?*)
   and compose_all ss = RList.fold_left ss ~init:(return empty) ~f:compose
 end
 
@@ -327,6 +336,20 @@ let rec extend_helper env pat (Forall (binder_set, typ) as scheme) =
   | _ -> env
 ;;
 
+let add_names_rec env vb_list =
+  RList.fold_right
+    ~f:(fun vb acc ->
+      match vb with
+      | { pat = Pat_var name; _ } | { pat = Pat_constraint (Pat_var name, _); _ } ->
+        let* env_acc, fresh_acc = return acc in
+        let* fresh = fresh_var in
+        let env_acc = TypeEnv.extend env_acc name (Forall (VarSet.empty, fresh)) in
+        return (env_acc, fresh :: fresh_acc)
+      | _ -> failwith "abobi")
+    vb_list
+    ~init:(return (env, []))
+;;
+
 let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
   let* comp_sub = Substitution.compose sub sub_acc in
   if debug
@@ -348,6 +371,16 @@ let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
   let* res_sub = Substitution.compose comp_sub uni_sub in
   let res_env = TypeEnv.apply res_sub new_env in
   return (res_env, res_sub)
+;;
+
+let infer_rec_rest_vb ~debug sub_acc env_acc fresh typ name new_sub =
+  (*constraint there*)
+  let* uni_sub = Substitution.unify (Substitution.apply new_sub fresh) typ in
+  let* comp_sub = Substitution.compose_all [ sub_acc; new_sub; uni_sub ] in
+  let env_acc = TypeEnv.apply comp_sub env_acc in
+  let new_scheme = generalize env_acc (Substitution.apply comp_sub fresh) in
+  let env_acc = TypeEnv.extend env_acc name new_scheme in
+  return (env_acc, comp_sub)
 ;;
 
 let rec infer_exp ~debug exp env =
@@ -485,8 +518,14 @@ let rec infer_exp ~debug exp env =
     let* comp_sub = Substitution.compose sub subb in
     return (comp_sub, typp)
   | Exp_let (Recursive, (value_binding, rest), exp) ->
+    let* new_env, fresh_vars = add_names_rec env (value_binding :: rest) in
     let* new_env, sub =
-      infer_rec_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
+      infer_rec_value_binding_list
+        ~debug
+        (value_binding :: rest)
+        new_env
+        Substitution.empty
+        fresh_vars
     in
     let* subb, typp = infer_exp ~debug exp new_env in
     let* comp_sub = Substitution.compose sub subb in
@@ -536,6 +575,21 @@ and infer_value_binding_list ~debug vb_list env sub =
       ~f:(fun acc vb ->
         let* env_acc, sub_acc = return acc in
         match vb with
+        | {pat = Pat_constraint (pat, pat_typ) ; expr = Exp_fun ((fpat,fpatrest),exp)} ->
+          let* sub, typ = infer_exp ~debug (Exp_fun ((fpat,fpatrest),Exp_constraint(exp,pat_typ))) env_acc in
+          if debug
+          then
+            Stdlib.Format.printf "DEBUG: sub of expr in vb:%a\n" Substitution.pp_sub sub;
+          if debug
+          then Stdlib.Format.printf "DEBUG: type of expr in vb:%a\n" pprint_type typ;
+          let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
+          if debug
+          then
+            Stdlib.Format.printf
+              "DEBUG: env after rest_vb in vb :{{%a}}\n\n"
+              TypeEnv.pp_env
+              res_env;
+          return (res_env, res_sub)
         | { pat; expr } ->
           let* sub, typ = infer_exp ~debug expr env_acc in
           if debug
@@ -550,33 +604,36 @@ and infer_value_binding_list ~debug vb_list env sub =
               "DEBUG: env after rest_vb in vb :{{%a}}\n\n"
               TypeEnv.pp_env
               res_env;
-          return (res_env, res_sub))
+          return (res_env, res_sub)
+          )
+
   in
   return (res_env, res_sub)
 
-and infer_rec_value_binding_list ~debug vb_list env sub =
+and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
   let* res_env, res_sub =
-    RList.fold_left
-      vb_list
-      ~init:(return (env, sub))
-      ~f:(fun acc vb ->
-        let* env_acc, sub_acc = return acc in
-        match vb with
-        | { pat; expr } ->
-          let* sub, typ = infer_exp ~debug expr env_acc in
-          if debug
-          then
-            Stdlib.Format.printf "DEBUG: sub of expr in vb:%a\n" Substitution.pp_sub sub;
-          if debug
-          then Stdlib.Format.printf "DEBUG: type of expr in vb:%a\n" pprint_type typ;
-          let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
-          if debug
-          then
-            Stdlib.Format.printf
-              "DEBUG: env after rest_vb in vb :{{%a}}\n\n"
-              TypeEnv.pp_env
-              res_env;
-          return (res_env, res_sub))
+    match
+      RList.fold_left2
+        vb_list
+        fresh_vars
+        ~init:(return (env, sub))
+        ~f:(fun acc vb fv ->
+          let* env_acc, sub_acc = return acc in
+          match vb, fv with
+          | { pat = Pat_var name; expr }, fresh ->
+            let* subexpr, typexpr = infer_exp ~debug expr env_acc in
+            let new_fresh = Substitution.apply sub_acc fresh in
+            if typexpr = new_fresh
+            then failwith "abobiks"
+            else
+              let* res_env, res_sub =
+                infer_rec_rest_vb ~debug sub_acc env_acc fresh typexpr name subexpr
+              in
+              return (res_env, res_sub)
+          | _ -> failwith "rest")
+    with
+    | Ok result -> result
+    | Unequal_lengths -> failwith "Lists have unequal lengths"
   in
   return (res_env, res_sub)
 ;;
@@ -601,10 +658,16 @@ let infer_structure_item ~debug env item =
     (* if debug then TypeEnv.pp_env Format.std_formatter env; *)
     return env
   | Str_value (Recursive, (value_binding, rest)) ->
-    let* env, sub =
-      infer_rec_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
+    let* new_env, fresh_vars = add_names_rec env (value_binding :: rest) in
+    let* new_env, sub =
+      infer_rec_value_binding_list
+        ~debug
+        (value_binding :: rest)
+        new_env
+        Substitution.empty
+        fresh_vars
     in
-    return env
+    return new_env
   (*| Str_adt*)
   | _ -> failwith "Unsupported pattern in let binding"
 ;;
@@ -627,6 +690,13 @@ let env_with_print_funs =
       , Forall
           (VarSet.empty, Type_arrow (Type_constr ("string", []), Type_constr ("unit", [])))
       )
+    ; ( "print_char"
+    , Forall
+        (VarSet.empty, Type_arrow (Type_constr ("char", []), Type_constr ("unit", []))) )
+  ; ( "print_bool"
+    , Forall
+        (VarSet.empty, Type_arrow (Type_constr ("bool", []), Type_constr ("unit", [])))
+    )
     ]
   in
   List.fold_left

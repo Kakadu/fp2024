@@ -66,11 +66,14 @@ let parse_and_infer_result program =
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> x;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
-    "-": '0 -> '0
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "-": 'a-> 'a
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -85,82 +88,108 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "f": int  -> int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "f": int -> int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*BUG*)
 let%expect_test "zero" =
   parse_and_infer_result {|5+5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5/5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5-5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5*5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>=5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": bool
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<=5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": bool
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": bool
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": bool
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -169,8 +198,10 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*BUG*)
@@ -183,8 +214,10 @@ let z = 3;;
     {|
     res:
     "-": bool
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": int
     "y": int
     "z": int |}]
@@ -192,29 +225,38 @@ let z = 3;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then 1 else 5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then "aboba";;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": string
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|(5,6,7);;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int  * int  * int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -225,11 +267,14 @@ let%expect_test "zero" =
 | 68 -> 'h' 
 | 69 -> 's' 
 | 89 -> 'a';;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": char
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -243,20 +288,26 @@ let%expect_test "zero" =
 |7 -> 1
 | _ -> 3
 ;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> fun y -> y+x;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
-    "-": int  -> int  -> int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "-": int -> int -> int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*ALL "LET" ITEMS*)
@@ -266,8 +317,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "y": int |}]
 ;;
 
@@ -276,8 +329,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "y": string  * string |}]
 ;;
 
@@ -286,8 +341,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": int  * int
     "y": string  * string |}]
 ;;
@@ -298,8 +355,10 @@ let%expect_test "zero" =
     {|
     res:
     "f": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": int
     "y": int
     "z": string  * string |}]
@@ -310,8 +369,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": int
     "y": char |}]
 ;;
@@ -321,8 +382,10 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": bool |}]
 ;;
 
@@ -332,13 +395,34 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let rec f x = f x;;|};
-  [%expect{| Unbound_variable: "f" |}]
+  [%expect
+    {|
+    res:
+    "f": 'b-> 'c
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+
+let%expect_test "zero" =
+  parse_and_infer_result {|let f = fun x -> x;;|};
+  [%expect
+    {|
+    res:
+    "f": [ 0; ]. 'a-> 'a
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "zero" =
@@ -348,8 +432,10 @@ let 5 = x;;|};
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": int |}]
 ;;
 
@@ -359,19 +445,37 @@ let x = (6: char);;|};
   [%expect
     {|
     res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
     "x": int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|
 () = print_int 5;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "-": bool
-    "print_endline": string  -> unit
-    "print_int": int  -> unit |}]
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+
+(*bug*)
+let%expect_test "zero" =
+  parse_and_infer_result {|
+let () = print_int 5;;|};
+  [%expect
+    {|
+    res:
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*BUG*)
@@ -383,25 +487,59 @@ let rec meven n = if n = 0 then 1 else modd (n - 1)
    and homka n = damir 4
    and damir n = homka 5
 ;;|};
-  [%expect{| Unbound_variable: "modd" |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure abobiks)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 713, characters 2-40
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 483, characters 2-189
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
-(*KAKADU TESTS*)
+(*KAKADU TYPE BEAT*)
 (*PASSED*)
 let%expect_test "001fact without builtin" =
   parse_and_infer_result {|
 let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
-  [%expect{| Unbound_variable: "fac" |}]
+  [%expect
+    {|
+    res:
+    "fac": int -> int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
-(*FAILED*)
+(*passed*)
 let%expect_test "001fact with builtin" =
   parse_and_infer_result
     {|
-let rec fac n = if n<=1 then 1 else n * fac (n-1);; let main =
+let rec fac n = if n<=1 then 1 else n * fac (n-1);;
+ let main =
   let () = print_int (fac 4) in
   0;;|};
-  [%expect{| Unbound_variable: "fac" |}]
+  [%expect
+    {|
+    res:
+    "fac": int -> int
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*PASSED*)
@@ -411,10 +549,17 @@ let%expect_test "002fact without builtin" =
 let rec fac_cps n k =
   if n=1 then k 1 else
   fac_cps (n-1) (fun p -> k (p*n));;|};
-  [%expect{| Unbound_variable: "fac_cps" |}]
+  [%expect
+    {|
+    res:
+    "fac_cps": int -> (int -> 'i) -> 'i
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
-(*FAILED*)
+(*passed*)
 let%expect_test "002fact builtin" =
   parse_and_infer_result
     {|
@@ -423,7 +568,15 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));; let main =
   let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
   0;;|};
-  [%expect{| Unbound_variable: "fac_cps" |}]
+  [%expect
+    {|
+    res:
+    "fac_cps": int -> (int -> int ) -> int
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*PASSED*)
@@ -440,10 +593,18 @@ let rec fib_acc a b n =
   if n<2
   then n
   else fib (n - 1) + fib (n - 2);;|};
-  [%expect{| Unbound_variable: "fib_acc" |}]
+  [%expect
+    {|
+    res:
+    "fib": int -> int
+    "fib_acc": int -> int -> int -> int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
-(*FAILED*)
+(*passed*)
 let%expect_test "003fib builtin" =
   parse_and_infer_result
     {|
@@ -461,7 +622,16 @@ let rec fib_acc a b n =
   let () = print_int (fib_acc 0 1 4) in
   let () = print_int (fib 4) in
   0;;|};
-  [%expect{| Unbound_variable: "fib_acc" |}]
+  [%expect
+    {|
+    res:
+    "fib": int -> int
+    "fib_acc": int -> int -> int -> int
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*PASSED*)
@@ -470,23 +640,14 @@ let%expect_test "004" =
     {|
 let wrap f = if 1 = 1 then f else f;;
 
-let test10 a b c d e f g h i j = a + b + c + d + e + f + g + h + i + j;;|};
-  [%expect
-    {|
-    res:
-    "print_endline": string  -> unit
-    "print_int": int  -> unit
-    "test10": int  -> int  -> int  -> int  -> int  -> int  -> int  -> int  -> int  -> int  -> int
-    "wrap": [ 0; ]. '0 -> '0 |}]
-;;
-
-(*FAILED*)
-let%expect_test "004" =
-  parse_and_infer_result
-    {|
-let wrap f = if 1 = 1 then f else f;;
+let test3 a b c =
+  let a = print_int a in
+  let b = print_int b in
+  let c = print_int c in
+  0;;
 
 let test10 a b c d e f g h i j = a + b + c + d + e + f + g + h + i + j;;
+
 let main =
   let rez =
       (wrap test10 1 10 100 1000 10000 100000 1000000 10000000 100000000
@@ -497,10 +658,18 @@ let main =
   0;;|};
   [%expect
     {|
-    Unbound_variable: "test3" |}]
+    res:
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
+    "test10": int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+    "test3": int -> int -> int -> int
+    "wrap": [ 0; ]. 'a-> 'a |}]
 ;;
 
-(*FAILED*)
+(*PASSED*)
 let%expect_test "005" =
   parse_and_infer_result
     {|
@@ -509,10 +678,16 @@ let rec fix f x = f (fix f) x;;
 let fac self n = if n<=1 then 1 else n * self (n-1);;|};
   [%expect
     {|
-    Unbound_variable: "fix" |}]
+    res:
+    "fac": (int -> int ) -> int -> int
+    "fix": (('c-> 'f) -> 'c-> 'f) -> 'c-> 'f
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
-(*FAILED*)
+(*PASSED*)
 let%expect_test "005" =
   parse_and_infer_result
     {|
@@ -525,6 +700,114 @@ let main =
   0;;|};
   [%expect
     {|
-    Unbound_variable: "fix" |}]
+    res:
+    "fac": (int -> int ) -> int -> int
+    "fix": ((int -> int ) -> int -> int ) -> int -> int
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
+(*PASSED?*)
+let%expect_test "006" =
+  parse_and_infer_result
+    {|let foo b = if b then (fun foo -> foo+2) else (fun foo -> foo*10);;
+    let foo x = foo true (foo false (foo true (foo false x)));;
+    let main =
+  let () = print_int (foo 11) in
+  0;;|};
+  [%expect
+    {|
+    res:
+    "foo": int -> int
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+
+(*PASSED*)
+let%expect_test "006.2" =
+  parse_and_infer_result
+    {|let foo a b c =
+  let () = print_int a in
+  let () = print_int b in
+  let () = print_int c in
+  a + b * c;;
+
+let main =
+  let foo = foo 1 in
+  let foo = foo 2 in
+  let foo = foo 3 in
+  let () = print_int foo in
+  0;;|};
+  [%expect
+    {|
+    res:
+    "foo": int -> int -> int -> int
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+
+(*PASSED*)
+let%expect_test "006.3" =
+  parse_and_infer_result
+    {|let foo a =
+  let () = print_int a in fun b ->
+  let () = print_int b in fun c ->
+  print_int c;;
+
+let main =
+  let () = foo 4 8 9 in
+  0;;|};
+  [%expect
+    {|
+    res:
+    "foo": int -> int -> int -> unit
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+
+(*PASSED*)
+let%expect_test "007" =
+  parse_and_infer_result
+    {|let _start () () a () b _c () d __ =
+  let () = print_int (a+b) in
+  let () = print_int __ in
+  a*b / _c + d;;
+
+let main =
+  print_int (_start (print_int 1) (print_int 2) 3 (print_int 4) 100 1000 (print_int (-1)) 10000 (-555555));;|};
+  [%expect
+    {|
+    res:
+    "_start": unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
+    "main": unit
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+
+(*FAILED*)
+let%expect_test "008" =
+  parse_and_infer_result {|
+let addi = fun f g x -> (f x (g x: bool) : int);;|};
+  [%expect
+    {|
+    res:
+    "addi": [ 2; bool; int; ]. ('c-> '“-> 'š) -> ('c-> '“) -> 'c-> 'š
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;

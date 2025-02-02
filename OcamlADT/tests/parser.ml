@@ -1198,3 +1198,39 @@ let%expect_test "keyword" =
   test_programm {||};
   [%expect{| [] |}]
 ;;
+
+let%expect_test "keyword" =
+  test_programm {|let () =  print_int 5;;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_construct ("()", None));
+           expr =
+           (Exp_apply ((Exp_ident "print_int"), (Exp_constant (Const_integer 5))
+              ))
+           },
+         [])
+        ))
+      ] |}]
+;;
+
+
+let%expect_test "keyword" =
+  test_programm {|let addi = fun f g x -> (f x (g x: bool) : int);;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "addi");
+           expr =
+           (Exp_fun (((Pat_var "f"), [(Pat_var "g"); (Pat_var "x")]),
+              (Exp_constraint (
+                 (Exp_apply ((Exp_apply ((Exp_ident "f"), (Exp_ident "x"))),
+                    (Exp_constraint (
+                       (Exp_apply ((Exp_ident "g"), (Exp_ident "x"))),
+                       (Type_var "bool")))
+                    )),
+                 (Type_var "int")))
+              ))
+           },
+         [])
+        ))
+      ] |}]
+;;
