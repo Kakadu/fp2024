@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Haskell_lib
+
 type opts =
   { mutable dump_parsetree : bool
   ; mutable print_types : bool
@@ -31,39 +33,36 @@ let () =
   in
   if not is_stdin
   then
-    Haskell_lib.Interpreter.interpret
+    Interpreter.interpret
+      opts.dump_parsetree
+      opts.print_types
       (String.split_on_char
          '\n'
          (In_channel.with_open_text opts.read_from_file In_channel.input_all))
-      opts.dump_parsetree
-      opts.print_types
-      Haskell_lib.Inferencer.initial_env
-      Haskell_lib.Eval.init_env
-      Haskell_lib.Eval.init_fresh
+      Inferencer.initial_env
+      Eval.init_env
+      Eval.init_fresh
   else (
-    let rec helper (env, st, enviroment, n) =
-      (* TODO(Kakadu): Why curry? *)
+    let rec helper inf_env st eval_env fresh =
       let line =
         try input_line stdin with
         | End_of_file -> ":quit"
       in
       match line with
       | ":quit" -> ()
-      | "" -> helper (env, st, enviroment, n)
+      | "" -> helper inf_env st eval_env fresh
       | _ ->
-        helper
-          (Haskell_lib.Interpreter.interpret_line
-             line
-             env
-             st
-             opts.dump_parsetree
-             opts.print_types
-             enviroment
-             n)
+        let inf_env, st, eval_env, fresh =
+          Interpreter.interpret_line
+            line
+            inf_env
+            st
+            opts.dump_parsetree
+            opts.print_types
+            eval_env
+            fresh
+        in
+        helper inf_env st eval_env fresh
     in
-    helper
-      ( Haskell_lib.Inferencer.initial_env
-      , 2
-      , Haskell_lib.Eval.init_env
-      , Haskell_lib.Eval.init_fresh ))
+    helper Inferencer.initial_env 2 Eval.init_env Eval.init_fresh)
 ;;

@@ -3,9 +3,9 @@
 (** SPDX-License-Identifier: MIT *)
 
 val interpret
-  :  string list
+  :  bool
   -> bool
-  -> bool
+  -> string list
   -> Inferencer.typeenv
   -> Eval.env
   -> Eval.fresh
