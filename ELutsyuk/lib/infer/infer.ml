@@ -6,6 +6,7 @@
 
 open Base
 open Typ
+open Ast
 
 type var_type = int
 
@@ -21,7 +22,7 @@ module Res = struct
 
   (* блин оч странно, зачем нужна анонимная функци, если можно просто прописать
      [let fail err state = state, Result.Error err] *)
-  let update_state state = state + 1, Result.Ok state
+  let fresh_num old_var = old_var + 1, Result.Ok old_var
 
   (* функция для связывания двух вычислительных операторов *)
   let ( >>= ) : ('a, 'error) t -> ('a -> ('b, 'error) t) -> ('b, 'error) t =
@@ -207,5 +208,64 @@ module Substitutions = struct
     List.fold_left subst_map ~init:(return empty) ~f:(fun acc subst ->
       let* acc = acc in
       compose acc subst)
+  ;;
+end
+
+module Scheme = struct
+  (* то есть получается.. тип схемы -- это S(мн-во, его_тип) *)
+  type t = S of VarSet.t * typ
+
+  (* возвращаем список свободных переменных, то есть уже определённых *)
+  let free_vars (S (var_list, ty)) = VarSet.diff (Type.free_vars ty) var_list
+
+  let apply (S (s, ty)) subst =
+    let subst2 = VarSet.fold s ~init:subst ~f:(fun acc k -> Base.Map.remove acc k) in
+    S (s, Substitutions.apply subst2 ty)
+  ;;
+
+  let equal (S (s1, ty1)) (S (s2, ty2)) = VarSet.equal s1 s2 && Type.equal ty1 ty2
+end
+
+module TypeEnv = struct
+  include Base.Map
+
+  type t = (id, Scheme.t, Base.String.comparator_witness) Base.Map.t
+
+  let empty = Base.Map.empty (module Base.String)
+
+  (* собирает все свободные переменные среды *)
+  let free_vars env =
+    Base.Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data:sch acc ->
+      VarSet.union acc (Scheme.free_vars sch))
+  ;;
+
+  let apply env subst = Base.Map.map env ~f:(fun sch -> Scheme.apply sch subst)
+  let extend env (id, sch) = Base.Map.set env ~key:id ~data:sch
+  let equal = Base.Map.equal Scheme.equal
+
+  (* Returns list of variable id's which occur only in one of two enviroments *)
+  let vars_diff : t -> t -> id list =
+    fun env1 env2 ->
+    Base.Map.fold2 env1 env2 ~init:[] ~f:(fun ~key:id ~data:v acc ->
+      match v with
+      | `Left _ | `Right _ -> id :: acc
+      | `Both _ -> acc)
+  ;;
+
+  (* Returns list of variables with different type schemes in two enviroments *)
+  let schemes_diff env1 env2 =
+    Base.Map.fold2 env1 env2 ~init:[] ~f:(fun ~key:id ~data:v acc ->
+      match v with
+      | `Both (l, r) when not (Scheme.equal l r) -> (id, l, r) :: acc
+      | _ -> acc)
+  ;;
+
+  (* Returns list of variables with different types in two enviroments *)
+  let types_diff env1 env2 =
+    Base.List.fold_left
+      (schemes_diff env1 env2)
+      ~init:[]
+      ~f:(fun acc (id, S (_, ty1), S (_, ty2)) ->
+        if Type.equal ty1 ty2 then acc else (id, ty1, ty2) :: acc)
   ;;
 end

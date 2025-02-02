@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Format
+open Ast
 
 type binder = int [@@deriving show { with_path = false }]
 
@@ -21,3 +22,4 @@ type typ =
 type error =
   | OccursCheckFailed of int * typ
   | UnificationFailed of typ * typ
+  | UndeclaredVariable of id
