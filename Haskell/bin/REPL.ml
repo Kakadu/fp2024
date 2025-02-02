@@ -38,8 +38,8 @@ let () =
       opts.dump_parsetree
       opts.print_types
       Haskell_lib.Inferencer.initial_env
-      0
-      0
+      Haskell_lib.Eval.init_env
+      Haskell_lib.Eval.init_fresh
   else (
     let rec helper (env, st, enviroment, n) =
       (* TODO(Kakadu): Why curry? *)
@@ -61,5 +61,9 @@ let () =
              enviroment
              n)
     in
-    helper (Haskell_lib.Inferencer.initial_env, 2, 0, 0))
+    helper
+      ( Haskell_lib.Inferencer.initial_env
+      , 2
+      , Haskell_lib.Eval.init_env
+      , Haskell_lib.Eval.init_fresh ))
 ;;

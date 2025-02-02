@@ -2,15 +2,13 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Eval
-
 val interpret
   :  string list
   -> bool
   -> bool
   -> Inferencer.typeenv
-  -> enviroment
-  -> int
+  -> Eval.env
+  -> Eval.fresh
   -> unit
 
 val interpret_line
@@ -19,6 +17,6 @@ val interpret_line
   -> int
   -> bool
   -> bool
-  -> enviroment
-  -> int
-  -> Inferencer.typeenv * int * int * int
+  -> Eval.env
+  -> Eval.fresh
+  -> Inferencer.typeenv * int * Eval.env * Eval.fresh
