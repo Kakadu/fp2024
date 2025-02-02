@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>inferencer.ml &mdash; Coverage report</title>
-    <meta name="description" content="96.90% coverage in lib/inferencer.ml">
+    <meta name="description" content="97.21% coverage in lib/inferencer.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>inferencer.ml
         </a>
       </h1>
-      <h2>96.90%</h2>
+      <h2>97.21%</h2>
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:10.80%"></span>
@@ -27,7 +27,6 @@
       <span class="some-visited" style="top:22.44%"></span>
       <span class="some-visited" style="top:22.73%"></span>
       <span class="some-visited" style="top:22.87%"></span>
-      <span class="some-visited" style="top:23.01%"></span>
       <span class="unvisited" style="top:48.86%"></span>
       <span class="unvisited" style="top:49.01%"></span>
       <span class="unvisited" style="top:49.57%"></span>
@@ -198,7 +197,7 @@
 <a id="L159"></a><span class="visited"> </span>
 <a id="L160"></a><span class="some-visited"> </span>
 <a id="L161"></a><span class="some-visited"> </span>
-<a id="L162"></a><span class="some-visited"> </span>
+<a id="L162"></a><span class="visited"> </span>
 <a id="L163"></a><span class="visited"> </span>
 <a id="L164"></a><span class="visited"> </span>
 <a id="L165"></a><span class="visited"> </span>
@@ -1484,39 +1483,39 @@ end = struct
 
   let ( &gt;&gt;= ) : 'a 'b. 'a t -&gt; ('a -&gt; 'b t) -&gt; 'b t =
     fun m f st -&gt;
-    <span data-count="127231">l</span>et lbindings, r = m st in
-    <span data-count="127231">m</span>atch r with
+    <span data-count="235179">l</span>et lbindings, r = m st in
+    <span data-count="235179">m</span>atch r with
     | <span data-count="285">R</span>esult.Error x -&gt; lbindings, Error x
-    | <span data-count="126946">O</span>k a -&gt; f a lbindings
+    | <span data-count="234894">O</span>k a -&gt; f a lbindings
   ;;
 
   let fail e st = <span data-count="61">s</span>t, Base.Result.fai<span data-count="61">l</span> e
-  let return x lbindings = <span data-count="125004">l</span>bindings, Base.Result.retur<span data-count="125004">n</span> x
-  let bind x ~f = <span data-count="127056">x</span> &gt;&gt;= f
+  let return x lbindings = <span data-count="232440">l</span>bindings, Base.Result.retur<span data-count="232440">n</span> x
+  let bind x ~f = <span data-count="234777">x</span> &gt;&gt;= f
 
   let ( &gt;&gt;| ) : 'a 'b. 'a t -&gt; ('a -&gt; 'b) -&gt; 'b t =
     fun x f st -&gt;
-    <span data-count="6012">m</span>atch x st with
-    | <span data-count="5997">s</span>t, Ok x -&gt; st, Ok (<span data-count="5997">f</span> x)
+    <span data-count="6943">m</span>atch x st with
+    | <span data-count="6928">s</span>t, Ok x -&gt; st, Ok (<span data-count="6928">f</span> x)
     | <span data-count="15">s</span>t, Result.Error e -&gt; st, Result.Error e
   ;;
 
   module Syntax = struct
-    let ( let* ) x f = <span data-count="127056">b</span>ind x ~f
+    let ( let* ) x f = <span data-count="234777">b</span>ind x ~f
     let ( let+ ) = ( &gt;&gt;| )
   end
 
   module RList = struct
     let fold_left xs ~init ~f =
-      <span data-count="20617">B</span>ase.List.fold_left xs ~init ~f:(fun acc x -&gt;
-        <span data-count="51688">l</span>et open Syntax in
+      <span data-count="26850">B</span>ase.List.fold_left xs ~init ~f:(fun acc x -&gt;
+        <span data-count="102180">l</span>et open Syntax in
         let* acc = acc in
-        <span data-count="51685">f</span> acc x)
+        <span data-count="102177">f</span> acc x)
     ;;
   end
 
-  let fresh : int t = fun lbindings -&gt; <span data-count="2190">l</span>bindings + 1, Result.Ok lbindings
-  let run m = <span data-count="309">m</span>
+  let fresh : int t = fun lbindings -&gt; <span data-count="2728">l</span>bindings + 1, Result.Ok lbindings
+  let run m = <span data-count="335">m</span>
 end
 
 type fresh = int
@@ -1525,23 +1524,23 @@ module Type = struct
   type t = ty
 
   let rec occurs_in v = function
-    | <span data-count="21147">T</span>y_var b | <span data-count="2448">T</span>y_ord b | <span data-count="0">T</span>y_enum b -&gt; b = v
-    | <span data-count="24433">T</span>y_arrow (l, r) -&gt; occurs_i<span data-count="24433">n</span> v <span data-count="2">l</span> || occurs_in v r
-    | <span data-count="52904">T</span>y_prim _ -&gt; false
-    | <span data-count="8250">T</span>y_list ty | <span data-count="1796">T</span>y_tree ty | <span data-count="1881">T</span>y_maybe ty -&gt; occurs_in v ty
-    | <span data-count="3318">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
-      List.exists (fun ty -&gt; <span data-count="7048">o</span>ccurs_in v ty) (ty1 :: ty2 :: ty_list)
+    | <span data-count="24218">T</span>y_var b | <span data-count="10825">T</span>y_ord b | <span data-count="0">T</span>y_enum b -&gt; b = v
+    | <span data-count="26039">T</span>y_arrow (l, r) -&gt; occurs_i<span data-count="26039">n</span> v <span data-count="2">l</span> || occurs_in v r
+    | <span data-count="104036">T</span>y_prim _ -&gt; false
+    | <span data-count="15307">T</span>y_list ty | <span data-count="7559">T</span>y_tree ty | <span data-count="8248">T</span>y_maybe ty -&gt; occurs_in v ty
+    | <span data-count="14292">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
+      List.exists (fun ty -&gt; <span data-count="28996">o</span>ccurs_in v ty) (ty1 :: ty2 :: ty_list)
   ;;
 
   let free_vars =
     let rec helper acc = function
-      | <span data-count="2509">T</span>y_var b | <span data-count="63">T</span>y_ord b | <span data-count="0">T</span>y_enum b -&gt; VarSet.add b acc
-      | <span data-count="1979">T</span>y_arrow (l, r) -&gt; helper (helpe<span data-count="1979">r</span> acc l) r
-      | <span data-count="1717">T</span>y_prim _ -&gt; acc
-      | <span data-count="217">T</span>y_list ty | <span data-count="92">T</span>y_tree ty | <span data-count="75">T</span>y_maybe ty -&gt; helper acc ty
-      | <span data-count="187">T</span>y_tuple (ty1, ty2, ty_list) -&gt; List.fold_left helper acc (ty1 :: ty2 :: ty_list)
+      | <span data-count="2728">T</span>y_var b | <span data-count="63">T</span>y_ord b | <span data-count="0">T</span>y_enum b -&gt; VarSet.add b acc
+      | <span data-count="2131">T</span>y_arrow (l, r) -&gt; helper (helpe<span data-count="2131">r</span> acc l) r
+      | <span data-count="1979">T</span>y_prim _ -&gt; acc
+      | <span data-count="241">T</span>y_list ty | <span data-count="98">T</span>y_tree ty | <span data-count="81">T</span>y_maybe ty -&gt; helper acc ty
+      | <span data-count="207">T</span>y_tuple (ty1, ty2, ty_list) -&gt; List.fold_left helper acc (ty1 :: ty2 :: ty_list)
     in
-    helpe<span data-count="62">r</span> VarSet.empty
+    helpe<span data-count="70">r</span> VarSet.empty
   ;;
 end
 
@@ -1567,114 +1566,114 @@ end = struct
   type t = (fresh * ty) list
 
   let empty = []
-  let mapping k v = <span data-count="48338">i</span>f Type.occurs_in k v then <span data-count="3">f</span>ail `Occurs_check else <span data-count="48335">r</span>eturn (k, v)
+  let mapping k v = <span data-count="98338">i</span>f Type.occurs_in k v then <span data-count="3">f</span>ail `Occurs_check else <span data-count="98335">r</span>eturn (k, v)
 
   let singleton k v =
-    <span data-count="11423">l</span>et* mapping = mappin<span data-count="11423">g</span> k v in
-    <span data-count="11420">r</span>eturn [ mapping ]
+    <span data-count="15975">l</span>et* mapping = mappin<span data-count="15975">g</span> k v in
+    <span data-count="15972">r</span>eturn [ mapping ]
   ;;
 
-  let find_exn k xs = <span data-count="36861">L</span>ist.Assoc.find_exn xs k ~equal:Int.equal
-  let remove xs k = <span data-count="3981">L</span>ist.Assoc.remove xs k ~equal:Int.equal
+  let find_exn k xs = <span data-count="49680">L</span>ist.Assoc.find_exn xs k ~equal:Int.equal
+  let remove xs k = <span data-count="4297">L</span>ist.Assoc.remove xs k ~equal:Int.equal
 
   let apply s =
-    <span data-count="58050">l</span>et rec helper = function
-      | <span data-count="36861">T</span>y_var b as ty -&gt;
+    <span data-count="109457">l</span>et rec helper = function
+      | <span data-count="49680">T</span>y_var b as ty -&gt;
         (match find_exn b s with
-         | <span data-count="34383">e</span>xception Not_found_s _ -&gt; ty
-         | <span data-count="2478">x</span> -&gt; x)
-      | <span data-count="32759">T</span>y_arrow (l, r) -&gt; Ty_arrow (helpe<span data-count="32759">r</span> l, helpe<span data-count="32759">r</span> r)
-      | <span data-count="9577">T</span>y_list ty -&gt; Ty_list (helpe<span data-count="9577">r</span> ty)
-      | <span data-count="3886">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
-        Ty_tuple (helpe<span data-count="3886">r</span> ty1, helpe<span data-count="3886">r</span> ty2, List.ma<span data-count="3886">p</span> ty_list ~f:helper)
-      | <span data-count="2173">T</span>y_tree ty -&gt; Ty_tree (helpe<span data-count="2173">r</span> ty)
-      | <span data-count="2051">T</span>y_maybe ty -&gt; Ty_maybe (helpe<span data-count="2051">r</span> ty)
-      | <span data-count="2735">T</span>y_ord ty -&gt;
+         | <span data-count="46715">e</span>xception Not_found_s _ -&gt; ty
+         | <span data-count="2965">x</span> -&gt; x)
+      | <span data-count="35145">T</span>y_arrow (l, r) -&gt; Ty_arrow (helpe<span data-count="35145">r</span> l, helpe<span data-count="35145">r</span> r)
+      | <span data-count="16792">T</span>y_list ty -&gt; Ty_list (helpe<span data-count="16792">r</span> ty)
+      | <span data-count="14955">T</span>y_tuple (ty1, ty2, ty_list) -&gt;
+        Ty_tuple (helpe<span data-count="14955">r</span> ty1, helpe<span data-count="14955">r</span> ty2, List.ma<span data-count="14955">p</span> ty_list ~f:helper)
+      | <span data-count="7988">T</span>y_tree ty -&gt; Ty_tree (helpe<span data-count="7988">r</span> ty)
+      | <span data-count="8464">T</span>y_maybe ty -&gt; Ty_maybe (helpe<span data-count="8464">r</span> ty)
+      | <span data-count="11115">T</span>y_ord ty -&gt;
         (match helper (Ty_var ty) with
-         | <span data-count="2679">T</span>y_var ty' -&gt; Ty_ord ty'
-         | <span data-count="56">t</span>' -&gt; t')
+         | <span data-count="10961">T</span>y_var ty' -&gt; Ty_ord ty'
+         | <span data-count="154">t</span>' -&gt; t')
       | <span data-count="0">T</span>y_enum ty -&gt;
         (match helper (Ty_var ty) with
          | <span data-count="0">T</span>y_var ty' -&gt; Ty_enum ty'
          | <span data-count="0">t</span>' -&gt; t')
-      | <span data-count="58394">o</span>ther -&gt; other
+      | <span data-count="110437">o</span>ther -&gt; other
     in
     helper
   ;;
 
   let rec unify l r =
-    <span data-count="4004">m</span>atch l, r with
-    | <span data-count="701">T</span>y_prim l, Ty_prim r when String.equa<span data-count="701">l</span> l r -&gt; <span data-count="656">r</span>eturn empty
-    | (<span data-count="332">T</span>y_var a, Ty_var b | <span data-count="61">T</span>y_ord a, Ty_ord b | <span data-count="0">T</span>y_enum a, Ty_enum b) when Int.equa<span data-count="393">l</span> a b
+    <span data-count="4969">m</span>atch l, r with
+    | <span data-count="865">T</span>y_prim l, Ty_prim r when String.equa<span data-count="865">l</span> l r -&gt; <span data-count="820">r</span>eturn empty
+    | (<span data-count="347">T</span>y_var a, Ty_var b | <span data-count="61">T</span>y_ord a, Ty_ord b | <span data-count="0">T</span>y_enum a, Ty_enum b) when Int.equa<span data-count="408">l</span> a b
       -&gt; <span data-count="229">r</span>eturn empty
     | <span data-count="1">T</span>y_ord a, Ty_ord b | <span data-count="0">T</span>y_enum a, Ty_enum b -&gt; singleton a (Ty_var b)
-    | <span data-count="1190">T</span>y_var b, t | <span data-count="494">t</span>, Ty_var b -&gt; singleton b t
+    | <span data-count="1409">T</span>y_var b, t | <span data-count="578">t</span>, Ty_var b -&gt; singleton b t
     | <span data-count="2">T</span>y_ord _, Ty_arrow _ | <span data-count="0">T</span>y_arrow _, Ty_ord _ -&gt; fail (`Unification_failed (l, r))
-    | <span data-count="10">T</span>y_enum b, (Ty_prim _ as t) | <span data-count="0">(</span>Ty_prim _ as t), Ty_enum b -&gt; singleton b t
-    | <span data-count="1">T</span>y_ord b, ((<span data-count="0">T</span>y_list t | <span data-count="1">T</span>y_maybe t | <span data-count="0">T</span>y_tree t) as ty)
-    | <span data-count="6">(</span>(<span data-count="2">T</span>y_list t | <span data-count="2">T</span>y_maybe t | <span data-count="2">T</span>y_tree t) as ty), Ty_ord b -&gt;
-      let* s = fresh &gt;&gt;<span data-count="7">=</span> fun f -&gt; <span data-count="7">u</span>nify (Ty_ord f) t in
-      <span data-count="6">l</span>et ty2 = apply s ty in
-      <span data-count="6">s</span>ingleto<span data-count="6">n</span> b ty2 &gt;&gt;= fun s2 -&gt; <span data-count="6">c</span>ompose s2 s
-    | <span data-count="2">T</span>y_ord b, (Ty_tuple (t1, t2, tt) as ty) | <span data-count="3">(</span>Ty_tuple (t1, t2, tt) as ty), Ty_ord b -&gt;
+    | <span data-count="13">T</span>y_enum b, (Ty_prim _ as t) | <span data-count="0">(</span>Ty_prim _ as t), Ty_enum b -&gt; singleton b t
+    | <span data-count="32">T</span>y_ord b, ((<span data-count="15">T</span>y_list t | <span data-count="9">T</span>y_maybe t | <span data-count="8">T</span>y_tree t) as ty)
+    | <span data-count="24">(</span>(<span data-count="14">T</span>y_list t | <span data-count="5">T</span>y_maybe t | <span data-count="5">T</span>y_tree t) as ty), Ty_ord b -&gt;
+      let* s = fresh &gt;&gt;<span data-count="56">=</span> fun f -&gt; <span data-count="56">u</span>nify (Ty_ord f) t in
+      <span data-count="55">l</span>et ty2 = apply s ty in
+      <span data-count="55">s</span>ingleto<span data-count="55">n</span> b ty2 &gt;&gt;= fun s2 -&gt; <span data-count="55">c</span>ompose s2 s
+    | <span data-count="4">T</span>y_ord b, (Ty_tuple (t1, t2, tt) as ty) | <span data-count="32">(</span>Ty_tuple (t1, t2, tt) as ty), Ty_ord b -&gt;
       let* s =
-        RList.fold_lef<span data-count="5">t</span> (t1 :: t2 :: tt) ~init:(retur<span data-count="5">n</span> empty) ~f:(fun s t -&gt;
-          <span data-count="10">l</span>et* s2 = fresh &gt;&gt;<span data-count="10">=</span> fun f -&gt; <span data-count="10">u</span>nify (Ty_ord f) t in
-          <span data-count="9">c</span>ompose s2 s)
+        RList.fold_lef<span data-count="36">t</span> (t1 :: t2 :: tt) ~init:(retur<span data-count="36">n</span> empty) ~f:(fun s t -&gt;
+          <span data-count="72">l</span>et* s2 = fresh &gt;&gt;<span data-count="72">=</span> fun f -&gt; <span data-count="72">u</span>nify (Ty_ord f) t in
+          <span data-count="71">c</span>ompose s2 s)
       in
-      <span data-count="4">l</span>et ty2 = apply s ty in
-      <span data-count="4">s</span>ingleto<span data-count="4">n</span> b ty2 &gt;&gt;= fun s2 -&gt; <span data-count="4">c</span>ompose s2 s
-    | <span data-count="11">T</span>y_ord b, t | <span data-count="47">t</span>, Ty_ord b -&gt; singleton b t
-    | <span data-count="957">T</span>y_arrow (l1, r1), Ty_arrow (l2, r2) -&gt;
-      let* subs1 = unif<span data-count="957">y</span> l1 l2 in
-      <span data-count="936">l</span>et* subs2 = unif<span data-count="936">y</span> (appl<span data-count="936">y</span> subs1 r1) (appl<span data-count="936">y</span> subs1 r2) in
-      <span data-count="920">c</span>ompose subs2 subs1
-    | <span data-count="143">T</span>y_list ty1, Ty_list ty2 | <span data-count="105">T</span>y_tree ty1, Ty_tree ty2 | <span data-count="23">T</span>y_maybe ty1, Ty_maybe ty2 -&gt;
+      <span data-count="35">l</span>et ty2 = apply s ty in
+      <span data-count="35">s</span>ingleto<span data-count="35">n</span> b ty2 &gt;&gt;= fun s2 -&gt; <span data-count="35">c</span>ompose s2 s
+    | <span data-count="63">T</span>y_ord b, t | <span data-count="66">t</span>, Ty_ord b -&gt; singleton b t
+    | <span data-count="1191">T</span>y_arrow (l1, r1), Ty_arrow (l2, r2) -&gt;
+      let* subs1 = unif<span data-count="1191">y</span> l1 l2 in
+      <span data-count="1170">l</span>et* subs2 = unif<span data-count="1170">y</span> (appl<span data-count="1170">y</span> subs1 r1) (appl<span data-count="1170">y</span> subs1 r2) in
+      <span data-count="1154">c</span>ompose subs2 subs1
+    | <span data-count="186">T</span>y_list ty1, Ty_list ty2 | <span data-count="126">T</span>y_tree ty1, Ty_tree ty2 | <span data-count="34">T</span>y_maybe ty1, Ty_maybe ty2 -&gt;
       unify ty1 ty2
-    | <span data-count="69">T</span>y_tuple (t1, t2, tt), Ty_tuple (t1', t2', tt')
-      when List.lengt<span data-count="69">h</span> tt = List.lengt<span data-count="69">h</span> tt' -&gt;
-      <span data-count="69">R</span>List.fold_left
-        (List.zip_ex<span data-count="69">n</span> (t1 :: t2 :: tt) (t1' :: t2' :: tt'))
-        ~init:(retur<span data-count="69">n</span> empty)
+    | <span data-count="104">T</span>y_tuple (t1, t2, tt), Ty_tuple (t1', t2', tt')
+      when List.lengt<span data-count="104">h</span> tt = List.lengt<span data-count="104">h</span> tt' -&gt;
+      <span data-count="104">R</span>List.fold_left
+        (List.zip_ex<span data-count="104">n</span> (t1 :: t2 :: tt) (t1' :: t2' :: tt'))
+        ~init:(retur<span data-count="104">n</span> empty)
         ~f:(fun acc (t1, t2) -&gt;
-          <span data-count="160">l</span>et* subs = unif<span data-count="160">y</span> (appl<span data-count="160">y</span> acc t1) (appl<span data-count="160">y</span> acc t2) in
-          <span data-count="157">c</span>ompose subs acc)
+          <span data-count="230">l</span>et* subs = unif<span data-count="230">y</span> (appl<span data-count="230">y</span> acc t1) (appl<span data-count="230">y</span> acc t2) in
+          <span data-count="227">c</span>ompose subs acc)
     | <span data-count="55">_</span> -&gt; fail (`Unification_failed (l, r))
 
   and extend s (k, v) =
-    <span data-count="9695">l</span>et bind v f =
-      <span data-count="56095">m</span>atch v with
-      | <span data-count="4217">T</span>y_var k' when k = k' -&gt; <span data-count="4">r</span>eturn s
-      | <span data-count="56091">_</span> -&gt; f v
+    <span data-count="13733">l</span>et bind v f =
+      <span data-count="109618">m</span>atch v with
+      | <span data-count="5531">T</span>y_var k' when k = k' -&gt; <span data-count="4">r</span>eturn s
+      | <span data-count="109614">_</span> -&gt; f v
     in
     let ( let** ) = bind in
     let** v = v in
-    <span data-count="9695">m</span>atch List.Assoc.find s ~equal:Int.equal k with
-    | <span data-count="9485">N</span>one -&gt;
-      let** v = appl<span data-count="9485">y</span> s v in
-      <span data-count="9481">l</span>et* s2 = singleto<span data-count="9481">n</span> k v in
-      <span data-count="9481">R</span>List.fold_left s ~init:(retur<span data-count="9481">n</span> s2) ~f:(fun acc (k, v) -&gt;
-        <span data-count="36915">l</span>et** v = appl<span data-count="36915">y</span> s2 v in
-        <span data-count="36915">l</span>et* mapping = mappin<span data-count="36915">g</span> k v in
-        <span data-count="36915">r</span>eturn (mapping :: acc))
-    | <span data-count="210">S</span>ome v2 -&gt;
-      let* s2 = unif<span data-count="210">y</span> v v2 in
-      <span data-count="207">c</span>ompose s2 s
+    <span data-count="13733">m</span>atch List.Assoc.find s ~equal:Int.equal k with
+    | <span data-count="13522">N</span>one -&gt;
+      let** v = appl<span data-count="13522">y</span> s v in
+      <span data-count="13518">l</span>et* s2 = singleto<span data-count="13518">n</span> k v in
+      <span data-count="13518">R</span>List.fold_left s ~init:(retur<span data-count="13518">n</span> s2) ~f:(fun acc (k, v) -&gt;
+        <span data-count="82363">l</span>et** v = appl<span data-count="82363">y</span> s2 v in
+        <span data-count="82363">l</span>et* mapping = mappin<span data-count="82363">g</span> k v in
+        <span data-count="82363">r</span>eturn (mapping :: acc))
+    | <span data-count="211">S</span>ome v2 -&gt;
+      let* s2 = unif<span data-count="211">y</span> v v2 in
+      <span data-count="208">c</span>ompose s2 s
 
-  and compose s2 s1 = <span data-count="6051">R</span>List.fold_left s2 ~init:(retur<span data-count="6051">n</span> s1) ~f:extend
+  and compose s2 s1 = <span data-count="7410">R</span>List.fold_left s2 ~init:(retur<span data-count="7410">n</span> s1) ~f:extend
 
-  let compose_all ss = <span data-count="1182">R</span>List.fold_left ss ~init:(retur<span data-count="1182">n</span> empty) ~f:compose
+  let compose_all ss = <span data-count="1438">R</span>List.fold_left ss ~init:(retur<span data-count="1438">n</span> empty) ~f:compose
 end
 
 module VarSet = struct
   include VarSet
 
   let fold_left_m f acc set =
-    <span data-count="1104">f</span>old
+    <span data-count="1251">f</span>old
       (fun x acc -&gt;
-        <span data-count="179">l</span>et open R.Syntax in
+        <span data-count="237">l</span>et open R.Syntax in
         let* acc = acc in
-        <span data-count="179">f</span> acc x)
+        <span data-count="237">f</span> acc x)
       acc
       set
   ;;
@@ -1684,12 +1683,12 @@ module Scheme = struct
   type t = scheme
 
   let free_vars = function
-    | <span data-count="1710">S</span> (bs, t) -&gt; VarSet.diff (Type.free_var<span data-count="1710">s</span> t) bs
+    | <span data-count="1974">S</span> (bs, t) -&gt; VarSet.diff (Type.free_var<span data-count="1974">s</span> t) bs
   ;;
 
   let apply sub (S (names, ty)) =
-    <span data-count="7198">l</span>et s2 = VarSet.fold (fun k s -&gt; <span data-count="3981">S</span>ubst.remove s k) names sub in
-    <span data-count="7198">S</span> (names, Subst.appl<span data-count="7198">y</span> s2 ty)
+    <span data-count="8099">l</span>et s2 = VarSet.fold (fun k s -&gt; <span data-count="4297">S</span>ubst.remove s k) names sub in
+    <span data-count="8099">S</span> (names, Subst.appl<span data-count="8099">y</span> s2 ty)
   ;;
 end
 
@@ -1700,7 +1699,7 @@ module TypeEnv = struct
 
   type t = scheme SMap.t
 
-  let extend : t -&gt; string * scheme -&gt; t = fun e (name, scheme) -&gt; <span data-count="1581">S</span>Map.add name scheme e
+  let extend : t -&gt; string * scheme -&gt; t = fun e (name, scheme) -&gt; <span data-count="1732">S</span>Map.add name scheme e
   let empty = SMap.empty
 
   let pp_some ppf names =
@@ -1716,27 +1715,27 @@ module TypeEnv = struct
 
   let free_vars : t -&gt; VarSet.t =
     fun env -&gt;
-    <span data-count="351">S</span>Map.fold (fun _ s acc -&gt; <span data-count="1710">V</span>arSet.union acc (Scheme.free_var<span data-count="1710">s</span> s)) env VarSet.empty
+    <span data-count="396">S</span>Map.fold (fun _ s acc -&gt; <span data-count="1974">V</span>arSet.union acc (Scheme.free_var<span data-count="1974">s</span> s)) env VarSet.empty
   ;;
 
-  let apply s = <span data-count="1350">S</span>Map.map (Scheme.appl<span data-count="1350">y</span> s)
+  let apply s = <span data-count="1516">S</span>Map.map (Scheme.appl<span data-count="1516">y</span> s)
   let find_exn = SMap.find
 end
 
 type typeenv = TypeEnv.t
 
 let typeenv_print_int =
-  TypeEnv.exten<span data-count="62">d</span>
+  TypeEnv.exten<span data-count="70">d</span>
     TypeEnv.empty
     ("print_int", S (VarSet.empty, Ty_arrow (Ty_prim "Int", Ty_prim "()")))
 ;;
 
 let initial_env =
-  TypeEnv.exten<span data-count="62">d</span>
+  TypeEnv.exten<span data-count="70">d</span>
     typeenv_print_int
     ( "seq"
     , S
-        ( VarSet.ad<span data-count="62">d</span> 1 (VarSet.ad<span data-count="62">d</span> 0 VarSet.empty)
+        ( VarSet.ad<span data-count="70">d</span> 1 (VarSet.ad<span data-count="70">d</span> 0 VarSet.empty)
         , Ty_arrow (Ty_var 0, Ty_arrow (Ty_var 1, Ty_var 1)) ) )
 ;;
 
@@ -1747,46 +1746,46 @@ open R
 open R.Syntax
 
 let unify = Subst.unify
-let fresh_var = fresh &gt;&gt;<span data-count="62">|</span> fun n -&gt; <span data-count="2105">T</span>y_var n
+let fresh_var = fresh &gt;&gt;<span data-count="70">|</span> fun n -&gt; <span data-count="2479">T</span>y_var n
 
 let instantiate : scheme -&gt; ty R.t =
   fun (S (bs, t)) -&gt;
-  <span data-count="1104">V</span>arSet.fold_left_m
+  <span data-count="1251">V</span>arSet.fold_left_m
     (fun typ name -&gt;
-      <span data-count="179">l</span>et* f1 = fresh_var in
-      <span data-count="179">l</span>et* s = Subst.singleto<span data-count="179">n</span> name f1 in
-      <span data-count="179">r</span>eturn (Subst.appl<span data-count="179">y</span> s typ))
+      <span data-count="237">l</span>et* f1 = fresh_var in
+      <span data-count="237">l</span>et* s = Subst.singleto<span data-count="237">n</span> name f1 in
+      <span data-count="237">r</span>eturn (Subst.appl<span data-count="237">y</span> s typ))
     bs
-    (retur<span data-count="1104">n</span> t)
+    (retur<span data-count="1251">n</span> t)
 ;;
 
 let generalize : TypeEnv.t -&gt; Type.t -&gt; Scheme.t =
   fun env ty -&gt;
-  <span data-count="351">l</span>et free = VarSet.diff (Type.free_var<span data-count="351">s</span> ty) (TypeEnv.free_var<span data-count="351">s</span> env) in
-  <span data-count="351">S</span> (free, ty)
+  <span data-count="396">l</span>et free = VarSet.diff (Type.free_var<span data-count="396">s</span> ty) (TypeEnv.free_var<span data-count="396">s</span> env) in
+  <span data-count="396">S</span> (free, ty)
 ;;
 
 let lookup_env e xs =
-  <span data-count="1105">m</span>atch TypeEnv.find_exn e xs with
+  <span data-count="1252">m</span>atch TypeEnv.find_exn e xs with
   | <span data-count="1">e</span>xception Not_found -&gt; fail (`No_variable e)
-  | <span data-count="1104">s</span>cheme -&gt;
-    let* ans = instantiat<span data-count="1104">e</span> scheme in
-    <span data-count="1104">r</span>eturn ans
+  | <span data-count="1251">s</span>cheme -&gt;
+    let* ans = instantiat<span data-count="1251">e</span> scheme in
+    <span data-count="1251">r</span>eturn ans
 ;;
 
-let arrow3 t1 t2 t3 = <span data-count="205">T</span>y_arrow (t1, Ty_arrow (t2, t3))
+let arrow3 t1 t2 t3 = <span data-count="302">T</span>y_arrow (t1, Ty_arrow (t2, t3))
 
 let built_in_sign =
   let pr_bool, pr_int = Ty_prim "Bool", Ty_prim "Int" in
   function
-  | <span data-count="14">A</span>nd | <span data-count="2">O</span>r -&gt; return @@ arrow<span data-count="16">3</span> pr_bool pr_bool pr_bool
-  | <span data-count="29">C</span>ons -&gt;
+  | <span data-count="33">A</span>nd | <span data-count="19">O</span>r -&gt; return @@ arrow<span data-count="52">3</span> pr_bool pr_bool pr_bool
+  | <span data-count="34">C</span>ons -&gt;
     let+ t = fresh_var in
-    <span data-count="29">a</span>rrow3 t (Ty_list t) (Ty_list t)
-  | <span data-count="54">P</span>lus | <span data-count="25">M</span>inus | <span data-count="3">D</span>ivide | <span data-count="5">M</span>od | <span data-count="12">M</span>ultiply | <span data-count="4">P</span>ow -&gt; return @@ arrow<span data-count="103">3</span> pr_int pr_int pr_int
-  | <span data-count="57">_</span> -&gt;
+    <span data-count="34">a</span>rrow3 t (Ty_list t) (Ty_list t)
+  | <span data-count="54">P</span>lus | <span data-count="25">M</span>inus | <span data-count="9">D</span>ivide | <span data-count="5">M</span>od | <span data-count="12">M</span>ultiply | <span data-count="4">P</span>ow -&gt; return @@ arrow<span data-count="109">3</span> pr_int pr_int pr_int
+  | <span data-count="107">_</span> -&gt;
     let+ t = fresh in
-    <span data-count="57">a</span>rrow3 (Ty_ord t) (Ty_ord t) (Ty_prim "Bool")
+    <span data-count="107">a</span>rrow3 (Ty_ord t) (Ty_ord t) (Ty_prim "Bool")
 ;;
 
 let rec tp_to_ty = function
@@ -1803,54 +1802,54 @@ let rec tp_to_ty = function
 ;;
 
 let rec bindings bb env =
-  <span data-count="747">l</span>et f (subst, env) = function
-    | <span data-count="106">F</span>unDef (_, p, pp, bd, bb), tv0 -&gt;
-      let* tt, inner_env = helper_p<span data-count="106">p</span> (p :: pp) env in
-      <span data-count="106">l</span>et* s1, inner_env, _ = binding<span data-count="106">s</span> bb inner_env in
-      <span data-count="105">l</span>et* s2, t1 =
+  <span data-count="834">l</span>et f (subst, env) = function
+    | <span data-count="108">F</span>unDef (_, p, pp, bd, bb), tv0 -&gt;
+      let* tt, inner_env = helper_p<span data-count="108">p</span> (p :: pp) env in
+      <span data-count="108">l</span>et* s1, inner_env, _ = binding<span data-count="108">s</span> bb inner_env in
+      <span data-count="107">l</span>et* s2, t1 =
         (match bd with
          | <span data-count="6">G</span>uards (ep, eps) -&gt; helper_guard<span data-count="6">s</span> (ep :: eps) inner_env
-         | <span data-count="99">O</span>rdBody e -&gt; infe<span data-count="99">r</span> e inner_env)
-        &gt;&gt;<span data-count="105">|</span> fun (s, ty) -&gt; <span data-count="96">s</span>, ty_ar<span data-count="96">r</span> (List.ma<span data-count="96">p</span> (Subst.appl<span data-count="96">y</span> s) (List.re<span data-count="96">v</span> tt)) ty
+         | <span data-count="101">O</span>rdBody e -&gt; infe<span data-count="101">r</span> e inner_env)
+        &gt;&gt;<span data-count="107">|</span> fun (s, ty) -&gt; <span data-count="98">s</span>, ty_ar<span data-count="98">r</span> (List.ma<span data-count="98">p</span> (Subst.appl<span data-count="98">y</span> s) (List.re<span data-count="98">v</span> tt)) ty
       in
-      <span data-count="96">l</span>et* s = Subst.compose_al<span data-count="96">l</span> [ s2; s1; subst ] in
-      <span data-count="96">l</span>et* s3 = unif<span data-count="96">y</span> (Subst.appl<span data-count="96">y</span> s tv0) t1 in
-      <span data-count="91">l</span>et* s = Subst.compos<span data-count="91">e</span> s3 s in
-      <span data-count="91">S</span>ubst.compos<span data-count="91">e</span> s subst &gt;&gt;| fun s -&gt; <span data-count="91">s</span>, env
-    | <span data-count="285">V</span>arsDef (_, bd, bb), tv0 -&gt;
-      let* s1, inner_env, _ = binding<span data-count="285">s</span> bb env in
-      <span data-count="285">l</span>et* s2, t1 =
+      <span data-count="98">l</span>et* s = Subst.compose_al<span data-count="98">l</span> [ s2; s1; subst ] in
+      <span data-count="98">l</span>et* s3 = unif<span data-count="98">y</span> (Subst.appl<span data-count="98">y</span> s tv0) t1 in
+      <span data-count="93">l</span>et* s = Subst.compos<span data-count="93">e</span> s3 s in
+      <span data-count="93">S</span>ubst.compos<span data-count="93">e</span> s subst &gt;&gt;| fun s -&gt; <span data-count="93">s</span>, env
+    | <span data-count="327">V</span>arsDef (_, bd, bb), tv0 -&gt;
+      let* s1, inner_env, _ = binding<span data-count="327">s</span> bb env in
+      <span data-count="327">l</span>et* s2, t1 =
         match bd with
         | <span data-count="0">G</span>uards (ep, eps) -&gt; helper_guard<span data-count="0">s</span> (ep :: eps) env
-        | <span data-count="285">O</span>rdBody e -&gt; infe<span data-count="285">r</span> e inner_env
+        | <span data-count="327">O</span>rdBody e -&gt; infe<span data-count="327">r</span> e inner_env
       in
-      <span data-count="241">l</span>et* s = Subst.compose_al<span data-count="241">l</span> [ s2; s1; subst ] in
-      <span data-count="241">l</span>et* s_p = Subst.compos<span data-count="241">e</span> s subst in
-      <span data-count="241">l</span>et* s3 = unif<span data-count="241">y</span> (Subst.appl<span data-count="241">y</span> s_p tv0) t1 in
-      <span data-count="234">l</span>et* s = Subst.compos<span data-count="234">e</span> s3 s in
-      <span data-count="234">S</span>ubst.compos<span data-count="234">e</span> s subst &gt;&gt;| fun fs -&gt; <span data-count="234">f</span>s, env
+      <span data-count="283">l</span>et* s = Subst.compose_al<span data-count="283">l</span> [ s2; s1; subst ] in
+      <span data-count="283">l</span>et* s_p = Subst.compos<span data-count="283">e</span> s subst in
+      <span data-count="283">l</span>et* s3 = unif<span data-count="283">y</span> (Subst.appl<span data-count="283">y</span> s_p tv0) t1 in
+      <span data-count="276">l</span>et* s = Subst.compos<span data-count="276">e</span> s3 s in
+      <span data-count="276">S</span>ubst.compos<span data-count="276">e</span> s subst &gt;&gt;| fun fs -&gt; <span data-count="276">f</span>s, env
   in
-  let* prep_bb, decls, delta_env, env, names = pre<span data-count="747">p</span> [] [] TypeEnv.empty env [] bb in
-  <span data-count="746">l</span>et init =
+  let* prep_bb, decls, delta_env, env, names = pre<span data-count="834">p</span> [] [] TypeEnv.empty env [] bb in
+  <span data-count="833">l</span>et init =
     RList.fold_left
       decls
-      ~init:(retur<span data-count="746">n</span> (Subst.empty, env))
+      ~init:(retur<span data-count="833">n</span> (Subst.empty, env))
       ~f:(fun (s, env) (name, t1) -&gt;
         <span data-count="16">l</span>et* _ = lookup_en<span data-count="16">v</span> name delta_env in
         <span data-count="16">l</span>et* t2 = lookup_en<span data-count="16">v</span> name env in
         <span data-count="16">l</span>et* s1 = unif<span data-count="16">y</span> t1 t2 in
         <span data-count="16">S</span>ubst.compos<span data-count="16">e</span> s1 s &gt;&gt;| fun fs -&gt; <span data-count="16">f</span>s, TypeEnv.appl<span data-count="16">y</span> s1 env)
   in
-  <span data-count="746">l</span>et* init_env = init &gt;&gt;<span data-count="746">|</span> snd in
-  <span data-count="746">l</span>et* s, env = RList.fold_lef<span data-count="746">t</span> prep_bb ~init ~f in
-  <span data-count="680">l</span>et* fenv =
-    RList.fold_lef<span data-count="680">t</span>
+  <span data-count="833">l</span>et* init_env = init &gt;&gt;<span data-count="833">|</span> snd in
+  <span data-count="833">l</span>et* s, env = RList.fold_lef<span data-count="833">t</span> prep_bb ~init ~f in
+  <span data-count="767">l</span>et* fenv =
+    RList.fold_lef<span data-count="767">t</span>
       names
-      ~init:(retur<span data-count="680">n</span> (TypeEnv.appl<span data-count="680">y</span> s env))
+      ~init:(retur<span data-count="767">n</span> (TypeEnv.appl<span data-count="767">y</span> s env))
       ~f:(fun env' name -&gt;
-        <span data-count="351">l</span>ookup_en<span data-count="351">v</span> name env' &gt;&gt;| fun t -&gt; <span data-count="351">T</span>ypeEnv.extend env' (name, generaliz<span data-count="351">e</span> init_env t))
+        <span data-count="396">l</span>ookup_en<span data-count="396">v</span> name env' &gt;&gt;| fun t -&gt; <span data-count="396">T</span>ypeEnv.extend env' (name, generaliz<span data-count="396">e</span> init_env t))
   in
-  <span data-count="680">r</span>eturn (s, fenv, names)
+  <span data-count="767">r</span>eturn (s, fenv, names)
 
 and helper_guards eps env =
   <span data-count="7">l</span>et* fresh = fresh_var in
@@ -1865,94 +1864,94 @@ and helper_guards eps env =
       <span data-count="16">S</span>ubst.compose_al<span data-count="16">l</span> [ s5; s4; s3; s2; s ] &gt;&gt;| fun fs -&gt; <span data-count="16">f</span>s, Subst.appl<span data-count="16">y</span> s5 t)
 
 and prep prep_bb decls env1 env2 names = function
-  | <span data-count="746">[</span>] -&gt; return (prep_bb, decls, env1, env2, names)
+  | <span data-count="833">[</span>] -&gt; return (prep_bb, decls, env1, env2, names)
   | <span data-count="8">D</span>ecl (Ident name, t) :: tl -&gt;
     prep prep_bb ((name, tp_to_t<span data-count="8">y</span> t) :: decls) env1 env2 names tl
-  | <span data-count="106">D</span>ef (FunDef (Ident name, _, _, _, _) as d) :: tl -&gt;
+  | <span data-count="108">D</span>ef (FunDef (Ident name, _, _, _, _) as d) :: tl -&gt;
     let* tv = fresh_var in
-    <span data-count="106">l</span>et ext env = <span data-count="212">T</span>ypeEnv.extend env (name, S (VarSet.empty, tv)) in
-    prep ((d, tv) :: prep_bb) decls (ex<span data-count="106">t</span> env1) (ex<span data-count="106">t</span> env2) (name :: names) tl
-  | <span data-count="286">D</span>ef (VarsDef (p, _, _) as d) :: tl -&gt;
-    let* _, env1, _ = helper_<span data-count="286">p</span> p env1 [] in
-    <span data-count="285">l</span>et* t, env2, new_names = helper_<span data-count="285">p</span> p env2 [] in
-    <span data-count="285">p</span>rep
+    <span data-count="108">l</span>et ext env = <span data-count="216">T</span>ypeEnv.extend env (name, S (VarSet.empty, tv)) in
+    prep ((d, tv) :: prep_bb) decls (ex<span data-count="108">t</span> env1) (ex<span data-count="108">t</span> env2) (name :: names) tl
+  | <span data-count="328">D</span>ef (VarsDef (p, _, _) as d) :: tl -&gt;
+    let* _, env1, _ = helper_<span data-count="328">p</span> p env1 [] in
+    <span data-count="327">l</span>et* t, env2, new_names = helper_<span data-count="327">p</span> p env2 [] in
+    <span data-count="327">p</span>rep
       ((d, t) :: prep_bb)
       decls
       env1
       env2
-      (List.fold_lef<span data-count="285">t</span> (fun nn n -&gt; <span data-count="311">n</span> :: nn) names new_names)
+      (List.fold_lef<span data-count="327">t</span> (fun nn n -&gt; <span data-count="354">n</span> :: nn) names new_names)
       tl
 
 and helper_p (al, pat, type_annots) env names =
-  <span data-count="1201">(</span>match pat with
-   | <span data-count="42">P</span>Wildcard -&gt;
+  <span data-count="1338">(</span>match pat with
+   | <span data-count="65">P</span>Wildcard -&gt;
      let* fresh = fresh_var in
-     <span data-count="42">l</span>et* _, t = type_annots_hnd<span data-count="42">l</span> type_annots fresh in
-     <span data-count="42">r</span>eturn (t, env, names)
-   | <span data-count="10">P</span>Const (NegativePInt _) -&gt;
-     let* _, t = type_annots_hnd<span data-count="10">l</span> type_annots (Ty_prim "Int") in
-     <span data-count="10">r</span>eturn (t, env, names)
-   | <span data-count="56">P</span>Const (OrdinaryPConst c) -&gt;
+     <span data-count="65">l</span>et* _, t = type_annots_hnd<span data-count="65">l</span> type_annots fresh in
+     <span data-count="65">r</span>eturn (t, env, names)
+   | <span data-count="12">P</span>Const (NegativePInt _) -&gt;
+     let* _, t = type_annots_hnd<span data-count="12">l</span> type_annots (Ty_prim "Int") in
+     <span data-count="12">r</span>eturn (t, env, names)
+   | <span data-count="60">P</span>Const (OrdinaryPConst c) -&gt;
      let* _, t =
-       type_annots_hnd<span data-count="56">l</span>
+       type_annots_hnd<span data-count="60">l</span>
          type_annots
          (Ty_prim
             (match c with
              | <span data-count="25">I</span>nt _ -&gt; "Int"
-             | <span data-count="23">B</span>ool _ -&gt; "Bool"
+             | <span data-count="27">B</span>ool _ -&gt; "Bool"
              | <span data-count="8">U</span>nit -&gt; "()"))
      in
-     <span data-count="56">r</span>eturn (t, env, names)
-   | <span data-count="866">P</span>Identificator (Ident name) -&gt;
+     <span data-count="60">r</span>eturn (t, env, names)
+   | <span data-count="930">P</span>Identificator (Ident name) -&gt;
      let* fresh = fresh_var in
-     <span data-count="866">l</span>et* _, t = type_annots_hnd<span data-count="866">l</span> type_annots fresh in
-     <span data-count="864">r</span>eturn (t, TypeEnv.exten<span data-count="864">d</span> env (name, S (VarSet.empty, t)), name :: names)
-   | <span data-count="18">P</span>Maybe Nothing -&gt;
+     <span data-count="930">l</span>et* _, t = type_annots_hnd<span data-count="930">l</span> type_annots fresh in
+     <span data-count="928">r</span>eturn (t, TypeEnv.exten<span data-count="928">d</span> env (name, S (VarSet.empty, t)), name :: names)
+   | <span data-count="22">P</span>Maybe Nothing -&gt;
      let* fresh = fresh_var in
-     <span data-count="18">l</span>et* _, t = type_annots_hnd<span data-count="18">l</span> type_annots (Ty_maybe fresh) in
-     <span data-count="18">r</span>eturn (t, env, names)
+     <span data-count="22">l</span>et* _, t = type_annots_hnd<span data-count="22">l</span> type_annots (Ty_maybe fresh) in
+     <span data-count="22">r</span>eturn (t, env, names)
    | <span data-count="15">P</span>Maybe (Just pt) -&gt;
      let* t, env, names = helper_<span data-count="15">p</span> pt env names in
      <span data-count="15">l</span>et* s, t = type_annots_hnd<span data-count="15">l</span> type_annots (Ty_maybe t) in
      <span data-count="15">r</span>eturn (t, TypeEnv.appl<span data-count="15">y</span> s env, names)
-   | <span data-count="63">P</span>List (PCons (x, xs)) -&gt;
-     let* t1, env1, names1 = helper_<span data-count="63">p</span> x env names in
-     <span data-count="63">l</span>et* t2, env2, names2 = helper_<span data-count="63">p</span> xs env1 names1 in
-     <span data-count="63">l</span>et* s = unif<span data-count="63">y</span> t2 (Ty_list t1) in
-     <span data-count="62">l</span>et t = Subst.apply s t2 in
-     <span data-count="62">l</span>et* s2, t' = type_annots_hnd<span data-count="62">l</span> type_annots t in
-     <span data-count="62">l</span>et* fs = Subst.compos<span data-count="62">e</span> s2 s in
-     <span data-count="62">r</span>eturn (t', TypeEnv.appl<span data-count="62">y</span> fs env2, names2)
-   | <span data-count="59">P</span>Tuple (p1, p2, pp) -&gt;
-     let* t1, env1, names1 = helper_<span data-count="59">p</span> p1 env names in
-     <span data-count="59">l</span>et* t2, env2, names2 = helper_<span data-count="59">p</span> p2 env1 names1 in
-     <span data-count="59">l</span>et* tt, env, names =
-       RList.fold_lef<span data-count="59">t</span>
+   | <span data-count="65">P</span>List (PCons (x, xs)) -&gt;
+     let* t1, env1, names1 = helper_<span data-count="65">p</span> x env names in
+     <span data-count="65">l</span>et* t2, env2, names2 = helper_<span data-count="65">p</span> xs env1 names1 in
+     <span data-count="65">l</span>et* s = unif<span data-count="65">y</span> t2 (Ty_list t1) in
+     <span data-count="64">l</span>et t = Subst.apply s t2 in
+     <span data-count="64">l</span>et* s2, t' = type_annots_hnd<span data-count="64">l</span> type_annots t in
+     <span data-count="64">l</span>et* fs = Subst.compos<span data-count="64">e</span> s2 s in
+     <span data-count="64">r</span>eturn (t', TypeEnv.appl<span data-count="64">y</span> fs env2, names2)
+   | <span data-count="79">P</span>Tuple (p1, p2, pp) -&gt;
+     let* t1, env1, names1 = helper_<span data-count="79">p</span> p1 env names in
+     <span data-count="79">l</span>et* t2, env2, names2 = helper_<span data-count="79">p</span> p2 env1 names1 in
+     <span data-count="79">l</span>et* tt, env, names =
+       RList.fold_lef<span data-count="79">t</span>
          pp
-         ~init:(retur<span data-count="59">n</span> ([], env2, names2))
+         ~init:(retur<span data-count="79">n</span> ([], env2, names2))
          ~f:(fun (tt, env, names) p -&gt;
            <span data-count="36">l</span>et* t, env', names = helper_<span data-count="36">p</span> p env names in
            <span data-count="36">r</span>eturn (t :: tt, env', names))
      in
-     <span data-count="59">l</span>et* s, t = type_annots_hnd<span data-count="59">l</span> type_annots (Ty_tuple (t1, t2, tt)) in
-     <span data-count="59">r</span>eturn (t, TypeEnv.appl<span data-count="59">y</span> s env, names)
-   | <span data-count="34">P</span>List (PEnum pp) -&gt;
+     <span data-count="79">l</span>et* s, t = type_annots_hnd<span data-count="79">l</span> type_annots (Ty_tuple (t1, t2, tt)) in
+     <span data-count="79">r</span>eturn (t, TypeEnv.appl<span data-count="79">y</span> s env, names)
+   | <span data-count="48">P</span>List (PEnum pp) -&gt;
      let* fresh = fresh_var in
-     <span data-count="34">l</span>et* env, el_t, names =
-       RList.fold_lef<span data-count="34">t</span>
+     <span data-count="48">l</span>et* env, el_t, names =
+       RList.fold_lef<span data-count="48">t</span>
          pp
-         ~init:(retur<span data-count="34">n</span> (env, fresh, names))
+         ~init:(retur<span data-count="48">n</span> (env, fresh, names))
          ~f:(fun (env, t, names) p -&gt;
-           <span data-count="20">l</span>et* t', env', names = helper_<span data-count="20">p</span> p env names in
-           <span data-count="20">l</span>et* s = unif<span data-count="20">y</span> t t' in
-           <span data-count="20">r</span>eturn (TypeEnv.appl<span data-count="20">y</span> s env', Subst.appl<span data-count="20">y</span> s t, names))
+           <span data-count="24">l</span>et* t', env', names = helper_<span data-count="24">p</span> p env names in
+           <span data-count="24">l</span>et* s = unif<span data-count="24">y</span> t t' in
+           <span data-count="24">r</span>eturn (TypeEnv.appl<span data-count="24">y</span> s env', Subst.appl<span data-count="24">y</span> s t, names))
      in
-     <span data-count="34">l</span>et* s, t = type_annots_hnd<span data-count="34">l</span> type_annots (Ty_list el_t) in
-     <span data-count="34">r</span>eturn (t, TypeEnv.appl<span data-count="34">y</span> s env, names)
-   | <span data-count="26">P</span>Tree PNul -&gt;
+     <span data-count="48">l</span>et* s, t = type_annots_hnd<span data-count="48">l</span> type_annots (Ty_list el_t) in
+     <span data-count="48">r</span>eturn (t, TypeEnv.appl<span data-count="48">y</span> s env, names)
+   | <span data-count="30">P</span>Tree PNul -&gt;
      let* fresh = fresh_var in
-     <span data-count="26">l</span>et* _, t = type_annots_hnd<span data-count="26">l</span> type_annots (Ty_tree fresh) in
-     <span data-count="26">r</span>eturn (t, env, names)
+     <span data-count="30">l</span>et* _, t = type_annots_hnd<span data-count="30">l</span> type_annots (Ty_tree fresh) in
+     <span data-count="30">r</span>eturn (t, env, names)
    | <span data-count="12">P</span>Tree (PNode (d, l, r)) -&gt;
      let* t, env', names' = helper_<span data-count="12">p</span> d env names &gt;&gt;<span data-count="12">|</span> fun (t, e, n) -&gt; <span data-count="12">T</span>y_tree t, e, n in
      <span data-count="12">l</span>et* tl, env'', names'' = helper_<span data-count="12">p</span> l env' names' in
@@ -1963,143 +1962,143 @@ and helper_p (al, pat, type_annots) env names =
      <span data-count="12">l</span>et* _, t = type_annots_hnd<span data-count="12">l</span> type_annots (Subst.appl<span data-count="12">y</span> s t) in
      <span data-count="12">r</span>eturn (t, TypeEnv.appl<span data-count="12">y</span> s env''', names'''))
   &gt;&gt;| fun (t, env, names) -&gt;
-  <span data-count="1198">l</span>et env', names =
+  <span data-count="1335">l</span>et env', names =
     List.fold_left
       (fun (env, names) (Ident name) -&gt;
-        <span data-count="30">T</span>ypeEnv.exten<span data-count="30">d</span> env (name, S (VarSet.empty, t)), name :: names)
+        <span data-count="52">T</span>ypeEnv.exten<span data-count="52">d</span> env (name, S (VarSet.empty, t)), name :: names)
       (env, names)
       al
   in
-  <span data-count="1198">t</span>, env', names
+  <span data-count="1335">t</span>, env', names
 
 and helper_pp pp env =
-  <span data-count="205">R</span>List.fold_left
+  <span data-count="210">R</span>List.fold_left
     pp
-    ~init:(retur<span data-count="205">n</span> ([], env))
+    ~init:(retur<span data-count="210">n</span> ([], env))
     ~f:(fun (tt, env) p -&gt;
-      <span data-count="278">l</span>et* t, env', _ = helper_<span data-count="278">p</span> p env [] in
-      <span data-count="276">r</span>eturn (t :: tt, env'))
+      <span data-count="283">l</span>et* t, env', _ = helper_<span data-count="283">p</span> p env [] in
+      <span data-count="281">r</span>eturn (t :: tt, env'))
 
 and infer (e, type_annots) env =
-  <span data-count="2393">l</span>et helper_list ee t =
-    <span data-count="47">R</span>List.fold_lef<span data-count="47">t</span>
+  <span data-count="2889">l</span>et helper_list ee t =
+    <span data-count="83">R</span>List.fold_lef<span data-count="83">t</span>
       ee
-      ~init:(retur<span data-count="47">n</span> (Subst.empty, t))
+      ~init:(retur<span data-count="83">n</span> (Subst.empty, t))
       ~f:(fun (s, t) e -&gt;
-        <span data-count="57">l</span>et* s2, t2 = infe<span data-count="57">r</span> e env in
-        <span data-count="57">l</span>et* s3 = unif<span data-count="57">y</span> t t2 in
-        <span data-count="55">S</span>ubst.compose_al<span data-count="55">l</span> [ s3; s2; s ] &gt;&gt;| fun s -&gt; <span data-count="55">s</span>, Subst.appl<span data-count="55">y</span> s3 t2)
-    &gt;&gt;| fun (s, t) -&gt; <span data-count="45">s</span>, Ty_list t
+        <span data-count="74">l</span>et* s2, t2 = infe<span data-count="74">r</span> e env in
+        <span data-count="74">l</span>et* s3 = unif<span data-count="74">y</span> t t2 in
+        <span data-count="72">S</span>ubst.compose_al<span data-count="72">l</span> [ s3; s2; s ] &gt;&gt;| fun s -&gt; <span data-count="72">s</span>, Subst.appl<span data-count="72">y</span> s3 t2)
+    &gt;&gt;| fun (s, t) -&gt; <span data-count="81">s</span>, Ty_list t
   in
-  let ty_enum = fresh &gt;&gt;| fun b -&gt; <span data-count="11">T</span>y_enum b in
-  <span data-count="2393">l</span>et helper_e expr env =
-    <span data-count="2386">m</span>atch expr with
-    | <span data-count="487">C</span>onst const -&gt;
+  let ty_enum = fresh &gt;&gt;| fun b -&gt; <span data-count="14">T</span>y_enum b in
+  <span data-count="2889">l</span>et helper_e expr env =
+    <span data-count="2882">m</span>atch expr with
+    | <span data-count="591">C</span>onst const -&gt;
       (match const with
-       | <span data-count="369">I</span>nt _ -&gt; return (Subst.empty, Ty_prim "Int")
-       | <span data-count="98">B</span>ool _ -&gt; return (Subst.empty, Ty_prim "Bool")
+       | <span data-count="471">I</span>nt _ -&gt; return (Subst.empty, Ty_prim "Int")
+       | <span data-count="100">B</span>ool _ -&gt; return (Subst.empty, Ty_prim "Bool")
        | <span data-count="20">U</span>nit -&gt; return (Subst.empty, Ty_prim "()"))
-    | <span data-count="722">I</span>dentificator (Ident i) -&gt; lookup_en<span data-count="722">v</span> i env &gt;&gt;| fun t -&gt; <span data-count="721">S</span>ubst.empty, t
-    | <span data-count="8">E</span>Nothing -&gt;
+    | <span data-count="824">I</span>dentificator (Ident i) -&gt; lookup_en<span data-count="824">v</span> i env &gt;&gt;| fun t -&gt; <span data-count="823">S</span>ubst.empty, t
+    | <span data-count="15">E</span>Nothing -&gt;
       let* fresh = fresh_var in
-      <span data-count="8">r</span>eturn (Subst.empty, Ty_maybe fresh)
-    | <span data-count="17">E</span>Just -&gt;
+      <span data-count="15">r</span>eturn (Subst.empty, Ty_maybe fresh)
+    | <span data-count="22">E</span>Just -&gt;
       let* fresh = fresh_var in
-      <span data-count="17">r</span>eturn (Subst.empty, Ty_arrow (fresh, Ty_maybe fresh))
-    | <span data-count="33">B</span>inTreeBld Nul -&gt;
+      <span data-count="22">r</span>eturn (Subst.empty, Ty_arrow (fresh, Ty_maybe fresh))
+    | <span data-count="50">B</span>inTreeBld Nul -&gt;
       let* fresh = fresh_var in
-      <span data-count="33">r</span>eturn (Subst.empty, Ty_tree fresh)
-    | <span data-count="20">B</span>inTreeBld (Node (d, l, r)) -&gt;
-      let* s1, t = infe<span data-count="20">r</span> d env &gt;&gt;<span data-count="20">|</span> fun (s, t) -&gt; <span data-count="20">s</span>, Ty_tree t in
-      <span data-count="20">l</span>et* s2, t2 = infe<span data-count="20">r</span> l env in
-      <span data-count="20">l</span>et* s3, t3 = infe<span data-count="20">r</span> r env in
-      <span data-count="20">l</span>et* s4 = unif<span data-count="20">y</span> t t2 in
-      <span data-count="20">l</span>et* s = Subst.compose_al<span data-count="20">l</span> [ s4; s3; s2; s1 ] in
-      <span data-count="20">l</span>et* s5 = unif<span data-count="20">y</span> (Subst.appl<span data-count="20">y</span> s t) t3 in
-      <span data-count="20">S</span>ubst.compos<span data-count="20">e</span> s5 s &gt;&gt;| fun fs -&gt; <span data-count="20">f</span>s, Subst.appl<span data-count="20">y</span> s5 t
-    | <span data-count="36">L</span>istBld (OrdList (IncomprehensionlList ee)) -&gt; fresh_var &gt;&gt;= helper_lis<span data-count="36">t</span> ee
+      <span data-count="50">r</span>eturn (Subst.empty, Ty_tree fresh)
+    | <span data-count="25">B</span>inTreeBld (Node (d, l, r)) -&gt;
+      let* s1, t = infe<span data-count="25">r</span> d env &gt;&gt;<span data-count="25">|</span> fun (s, t) -&gt; <span data-count="25">s</span>, Ty_tree t in
+      <span data-count="25">l</span>et* s2, t2 = infe<span data-count="25">r</span> l env in
+      <span data-count="25">l</span>et* s3, t3 = infe<span data-count="25">r</span> r env in
+      <span data-count="25">l</span>et* s4 = unif<span data-count="25">y</span> t t2 in
+      <span data-count="25">l</span>et* s = Subst.compose_al<span data-count="25">l</span> [ s4; s3; s2; s1 ] in
+      <span data-count="25">l</span>et* s5 = unif<span data-count="25">y</span> (Subst.appl<span data-count="25">y</span> s t) t3 in
+      <span data-count="25">S</span>ubst.compos<span data-count="25">e</span> s5 s &gt;&gt;| fun fs -&gt; <span data-count="25">f</span>s, Subst.appl<span data-count="25">y</span> s5 t
+    | <span data-count="69">L</span>istBld (OrdList (IncomprehensionlList ee)) -&gt; fresh_var &gt;&gt;= helper_lis<span data-count="69">t</span> ee
     | <span data-count="3">L</span>istBld (LazyList (e1, Some e2, Some e3)) -&gt; ty_enum &gt;&gt;= helper_lis<span data-count="3">t</span> [ e1; e2; e3 ]
     | ListBld (<span data-count="1">L</span>azyList (e1, Some e2, None) | <span data-count="2">L</span>azyList (e1, None, Some e2)) -&gt;
       ty_enum &gt;&gt;= helper_lis<span data-count="3">t</span> [ e1; e2 ]
-    | <span data-count="5">L</span>istBld (LazyList (e1, None, None)) -&gt; ty_enum &gt;&gt;= helper_lis<span data-count="5">t</span> [ e1 ]
-    | <span data-count="575">F</span>unctionApply (f, a, aa) -&gt;
+    | <span data-count="8">L</span>istBld (LazyList (e1, None, None)) -&gt; ty_enum &gt;&gt;= helper_lis<span data-count="8">t</span> [ e1 ]
+    | <span data-count="623">F</span>unctionApply (f, a, aa) -&gt;
       (match aa with
-       | <span data-count="443">[</span>] -&gt;
-         let* s1, t1 = infe<span data-count="443">r</span> f env in
-         <span data-count="434">l</span>et* s2, t2 = infe<span data-count="434">r</span> a (TypeEnv.appl<span data-count="434">y</span> s1 env) in
-         <span data-count="433">l</span>et* tv = fresh_var in
-         <span data-count="433">l</span>et* s3 = unif<span data-count="433">y</span> (Subst.appl<span data-count="433">y</span> s2 t1) (Ty_arrow (t2, tv)) in
-         <span data-count="428">l</span>et trez = Subst.apply s3 tv in
-         <span data-count="428">l</span>et* final_subst = Subst.compose_al<span data-count="428">l</span> [ s3; s2; s1 ] in
-         <span data-count="428">r</span>eturn (final_subst, trez)
-       | <span data-count="132">h</span>d :: tl -&gt;
+       | <span data-count="480">[</span>] -&gt;
+         let* s1, t1 = infe<span data-count="480">r</span> f env in
+         <span data-count="471">l</span>et* s2, t2 = infe<span data-count="471">r</span> a (TypeEnv.appl<span data-count="471">y</span> s1 env) in
+         <span data-count="470">l</span>et* tv = fresh_var in
+         <span data-count="470">l</span>et* s3 = unif<span data-count="470">y</span> (Subst.appl<span data-count="470">y</span> s2 t1) (Ty_arrow (t2, tv)) in
+         <span data-count="465">l</span>et trez = Subst.apply s3 tv in
+         <span data-count="465">l</span>et* final_subst = Subst.compose_al<span data-count="465">l</span> [ s3; s2; s1 ] in
+         <span data-count="465">r</span>eturn (final_subst, trez)
+       | <span data-count="143">h</span>d :: tl -&gt;
          infer (FunctionApply ((FunctionApply (f, a, []), []), hd, tl), []) env)
-    | <span data-count="32">I</span>fThenEsle (c, th, el) -&gt;
-      let* s1, t1 = infe<span data-count="32">r</span> c env in
-      <span data-count="32">l</span>et* s2, t2 = infe<span data-count="32">r</span> th env in
-      <span data-count="32">l</span>et* s3, t3 = infe<span data-count="32">r</span> el env in
-      <span data-count="31">l</span>et* s4 = unif<span data-count="31">y</span> t1 (Ty_prim "Bool") in
-      <span data-count="29">l</span>et* s5 = unif<span data-count="29">y</span> t2 t3 in
-      <span data-count="25">l</span>et* final_subst = Subst.compose_al<span data-count="25">l</span> [ s5; s4; s3; s2; s1 ] in
-      <span data-count="25">r</span>eturn (final_subst, Subst.appl<span data-count="25">y</span> s5 t2)
-    | <span data-count="19">N</span>eg e -&gt;
-      let* s, t = infe<span data-count="19">r</span> e env in
-      <span data-count="19">l</span>et* s1 = unif<span data-count="19">y</span> t (Ty_prim "Int") in
-      <span data-count="18">l</span>et* s2 = Subst.compos<span data-count="18">e</span> s1 s in
-      <span data-count="18">r</span>eturn (s2, Subst.appl<span data-count="18">y</span> s1 t)
-    | <span data-count="56">T</span>upleBld (e1, e2, ee) -&gt;
-      let* s1, t1 = infe<span data-count="56">r</span> e1 env in
-      <span data-count="56">l</span>et* s2, t2 = infe<span data-count="56">r</span> e2 env in
-      <span data-count="56">l</span>et* ss, tt =
-        RList.fold_lef<span data-count="56">t</span>
+    | <span data-count="44">I</span>fThenEsle (c, th, el) -&gt;
+      let* s1, t1 = infe<span data-count="44">r</span> c env in
+      <span data-count="44">l</span>et* s2, t2 = infe<span data-count="44">r</span> th env in
+      <span data-count="44">l</span>et* s3, t3 = infe<span data-count="44">r</span> el env in
+      <span data-count="43">l</span>et* s4 = unif<span data-count="43">y</span> t1 (Ty_prim "Bool") in
+      <span data-count="41">l</span>et* s5 = unif<span data-count="41">y</span> t2 t3 in
+      <span data-count="37">l</span>et* final_subst = Subst.compose_al<span data-count="37">l</span> [ s5; s4; s3; s2; s1 ] in
+      <span data-count="37">r</span>eturn (final_subst, Subst.appl<span data-count="37">y</span> s5 t2)
+    | <span data-count="20">N</span>eg e -&gt;
+      let* s, t = infe<span data-count="20">r</span> e env in
+      <span data-count="20">l</span>et* s1 = unif<span data-count="20">y</span> t (Ty_prim "Int") in
+      <span data-count="19">l</span>et* s2 = Subst.compos<span data-count="19">e</span> s1 s in
+      <span data-count="19">r</span>eturn (s2, Subst.appl<span data-count="19">y</span> s1 t)
+    | <span data-count="96">T</span>upleBld (e1, e2, ee) -&gt;
+      let* s1, t1 = infe<span data-count="96">r</span> e1 env in
+      <span data-count="96">l</span>et* s2, t2 = infe<span data-count="96">r</span> e2 env in
+      <span data-count="96">l</span>et* ss, tt =
+        RList.fold_lef<span data-count="96">t</span>
           ee
-          ~init:(retur<span data-count="56">n</span> ([], []))
+          ~init:(retur<span data-count="96">n</span> ([], []))
           ~f:(fun (ss, tt) e -&gt; <span data-count="20">i</span>nfe<span data-count="20">r</span> e env &gt;&gt;| fun (s, t) -&gt; <span data-count="20">s</span> :: ss, t :: tt)
       in
-      <span data-count="56">l</span>et* final_subst = Subst.compose_al<span data-count="56">l</span> (s1 :: s2 :: ss) in
-      <span data-count="53">r</span>eturn (final_subst, Ty_tuple (t1, t2, tt))
-    | <span data-count="205">B</span>inop (e1, op, e2) -&gt;
-      let* sign = built_in_sig<span data-count="205">n</span> op in
-      <span data-count="205">l</span>et* s1, t1 = infe<span data-count="205">r</span> e1 env in
-      <span data-count="205">l</span>et* s2, t2 = infe<span data-count="205">r</span> e2 env in
-      <span data-count="204">l</span>et* tv = fresh_var in
-      <span data-count="204">l</span>et* s3 = unif<span data-count="204">y</span> (Ty_arrow (t1, Ty_arrow (t2, tv))) sign in
-      <span data-count="190">l</span>et* final_subst = Subst.compose_al<span data-count="190">l</span> [ s1; s2; s3 ] in
-      <span data-count="190">r</span>eturn (final_subst, Subst.appl<span data-count="190">y</span> s3 tv)
-    | <span data-count="99">L</span>ambda (p, pp, e) -&gt;
-      let* tt, env' = helper_p<span data-count="99">p</span> (p :: pp) env in
-      <span data-count="97">l</span>et* s, ty = infe<span data-count="97">r</span> e env' in
-      <span data-count="88">l</span>et trez = ty_arr (List.ma<span data-count="88">p</span> (Subst.appl<span data-count="88">y</span> s) (List.re<span data-count="88">v</span> tt)) (Subst.appl<span data-count="88">y</span> s ty) in
-      <span data-count="88">r</span>eturn (s, trez)
-    | <span data-count="47">I</span>nnerBindings (b, bb, e) -&gt;
-      let* s, env, _ = binding<span data-count="47">s</span> (b :: bb) env in
-      <span data-count="42">l</span>et* s2, t2 = infe<span data-count="42">r</span> e env in
-      <span data-count="40">S</span>ubst.compos<span data-count="40">e</span> s2 s &gt;&gt;| fun fs -&gt; <span data-count="40">f</span>s, t2
-    | <span data-count="19">C</span>ase (e, pb, pbs) -&gt;
+      <span data-count="96">l</span>et* final_subst = Subst.compose_al<span data-count="96">l</span> (s1 :: s2 :: ss) in
+      <span data-count="93">r</span>eturn (final_subst, Ty_tuple (t1, t2, tt))
+    | <span data-count="302">B</span>inop (e1, op, e2) -&gt;
+      let* sign = built_in_sig<span data-count="302">n</span> op in
+      <span data-count="302">l</span>et* s1, t1 = infe<span data-count="302">r</span> e1 env in
+      <span data-count="302">l</span>et* s2, t2 = infe<span data-count="302">r</span> e2 env in
+      <span data-count="301">l</span>et* tv = fresh_var in
+      <span data-count="301">l</span>et* s3 = unif<span data-count="301">y</span> (Ty_arrow (t1, Ty_arrow (t2, tv))) sign in
+      <span data-count="287">l</span>et* final_subst = Subst.compose_al<span data-count="287">l</span> [ s1; s2; s3 ] in
+      <span data-count="287">r</span>eturn (final_subst, Subst.appl<span data-count="287">y</span> s3 tv)
+    | <span data-count="102">L</span>ambda (p, pp, e) -&gt;
+      let* tt, env' = helper_p<span data-count="102">p</span> (p :: pp) env in
+      <span data-count="100">l</span>et* s, ty = infe<span data-count="100">r</span> e env' in
+      <span data-count="91">l</span>et trez = ty_arr (List.ma<span data-count="91">p</span> (Subst.appl<span data-count="91">y</span> s) (List.re<span data-count="91">v</span> tt)) (Subst.appl<span data-count="91">y</span> s ty) in
+      <span data-count="91">r</span>eturn (s, trez)
+    | <span data-count="64">I</span>nnerBindings (b, bb, e) -&gt;
+      let* s, env, _ = binding<span data-count="64">s</span> (b :: bb) env in
+      <span data-count="59">l</span>et* s2, t2 = infe<span data-count="59">r</span> e env in
+      <span data-count="57">S</span>ubst.compos<span data-count="57">e</span> s2 s &gt;&gt;| fun fs -&gt; <span data-count="57">f</span>s, t2
+    | <span data-count="21">C</span>ase (e, pb, pbs) -&gt;
       let* fresh = fresh_var in
-      <span data-count="19">l</span>et* s1, t1 =
-        RList.fold_lef<span data-count="19">t</span>
+      <span data-count="21">l</span>et* s1, t1 =
+        RList.fold_lef<span data-count="21">t</span>
           (pb :: pbs)
-          ~init:(retur<span data-count="19">n</span> (Subst.empty, fresh))
+          ~init:(retur<span data-count="21">n</span> (Subst.empty, fresh))
           ~f:(fun (s, t) (p, b) -&gt;
-            <span data-count="38">l</span>et* s1, t1 =
+            <span data-count="40">l</span>et* s1, t1 =
               match b with
-              | <span data-count="37">O</span>rdBody e -&gt; infe<span data-count="37">r</span> (Lambda (p, [], e), []) env
+              | <span data-count="39">O</span>rdBody e -&gt; infe<span data-count="39">r</span> (Lambda (p, [], e), []) env
               | <span data-count="1">G</span>uards (ep, eps) -&gt;
                 let* t, env', _ = helper_<span data-count="1">p</span> p env [] in
                 <span data-count="1">l</span>et* s, ty = helper_guard<span data-count="1">s</span> (ep :: eps) env' in
                 <span data-count="1">l</span>et trez = Ty_arrow (Subst.appl<span data-count="1">y</span> s t, ty) in
                 return (s, trez)
             in
-            <span data-count="37">l</span>et* s2 = unif<span data-count="37">y</span> t1 t in
-            <span data-count="37">S</span>ubst.compose_al<span data-count="37">l</span> [ s2; s1; s ] &gt;&gt;| fun fs -&gt; <span data-count="37">f</span>s, Subst.appl<span data-count="37">y</span> s2 t)
+            <span data-count="39">l</span>et* s2 = unif<span data-count="39">y</span> t1 t in
+            <span data-count="39">S</span>ubst.compose_al<span data-count="39">l</span> [ s2; s1; s ] &gt;&gt;| fun fs -&gt; <span data-count="39">f</span>s, Subst.appl<span data-count="39">y</span> s2 t)
       in
-      <span data-count="18">l</span>et* s2, t2 = infe<span data-count="18">r</span> e (TypeEnv.appl<span data-count="18">y</span> s1 env) in
-      <span data-count="18">l</span>et* tv = fresh_var in
-      <span data-count="18">l</span>et* s3 = unif<span data-count="18">y</span> (Subst.appl<span data-count="18">y</span> s2 t1) (Ty_arrow (t2, tv)) in
-      <span data-count="18">l</span>et trez = Subst.apply s3 tv in
-      <span data-count="18">l</span>et* final_subst = Subst.compose_al<span data-count="18">l</span> [ s3; s2; s1 ] in
-      <span data-count="18">r</span>eturn (final_subst, trez)
+      <span data-count="20">l</span>et* s2, t2 = infe<span data-count="20">r</span> e (TypeEnv.appl<span data-count="20">y</span> s1 env) in
+      <span data-count="20">l</span>et* tv = fresh_var in
+      <span data-count="20">l</span>et* s3 = unif<span data-count="20">y</span> (Subst.appl<span data-count="20">y</span> s2 t1) (Ty_arrow (t2, tv)) in
+      <span data-count="20">l</span>et trez = Subst.apply s3 tv in
+      <span data-count="20">l</span>et* final_subst = Subst.compose_al<span data-count="20">l</span> [ s3; s2; s1 ] in
+      <span data-count="20">r</span>eturn (final_subst, trez)
     (* | ListBld (OrdList (ComprehensionList (e, c, cc))) -&gt;
        let* s1, env' =
        RList.fold_left
@@ -2127,7 +2126,7 @@ and infer (e, type_annots) env =
        return (final_subst, Ty_list t2) *)
   in
   match type_annots with
-  | <span data-count="2363">[</span>] -&gt; helper_e e env
+  | <span data-count="2859">[</span>] -&gt; helper_e e env
   | <span data-count="30">t</span>ype_annots -&gt;
     let* fresh = fresh_var in
     <span data-count="30">l</span>et* _, t0 = type_annots_hnd<span data-count="30">l</span> type_annots fresh in
@@ -2137,22 +2136,22 @@ and infer (e, type_annots) env =
     <span data-count="16">S</span>ubst.compos<span data-count="16">e</span> s' s &gt;&gt;| fun fs -&gt; <span data-count="16">f</span>s, Subst.appl<span data-count="16">y</span> s' t
 
 and type_annots_hndl type_annots init =
-  <span data-count="1230">R</span>List.fold_left
+  <span data-count="1367">R</span>List.fold_left
     type_annots
-    ~init:(retur<span data-count="1230">n</span> (Subst.empty, init))
+    ~init:(retur<span data-count="1367">n</span> (Subst.empty, init))
     ~f:(fun (s, t) tp -&gt;
       <span data-count="70">u</span>nif<span data-count="70">y</span> t (tp_to_t<span data-count="70">y</span> tp)
       &gt;&gt;= fun s' -&gt; <span data-count="61">S</span>ubst.compos<span data-count="61">e</span> s' s &gt;&gt;| fun fs -&gt; <span data-count="61">f</span>s, Subst.appl<span data-count="61">y</span> s' t)
 
 and ty_arr tt t =
-  <span data-count="440">m</span>atch tt with
-  | <span data-count="184">[</span>] -&gt; t
-  | <span data-count="256">h</span>d :: tl -&gt; Ty_arrow (hd, ty_ar<span data-count="256">r</span> tl t)
+  <span data-count="450">m</span>atch tt with
+  | <span data-count="189">[</span>] -&gt; t
+  | <span data-count="261">h</span>d :: tl -&gt; Ty_arrow (hd, ty_ar<span data-count="261">r</span> tl t)
 ;;
 
 let w p env st =
-  <span data-count="309">l</span>et st, res = run (binding<span data-count="309">s</span> p env) st in
-  <span data-count="309">s</span>t, Result.ma<span data-count="309">p</span> (fun (_, env, names) -&gt; <span data-count="248">e</span>nv, names) res
+  <span data-count="335">l</span>et st, res = run (binding<span data-count="335">s</span> p env) st in
+  <span data-count="335">s</span>t, Result.ma<span data-count="335">p</span> (fun (_, env, names) -&gt; <span data-count="274">e</span>nv, names) res
 ;;
 </code></pre>
       </div>

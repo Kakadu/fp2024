@@ -853,8 +853,8 @@ let run n =
            ~print:(asprint<span data-count="1">f</span> "%a" Pprintast.pp_binding)
            ~shrink:shrink_binding)
         (fun t -&gt;
-          <span data-count="1">m</span>atch parse_line (asprint<span data-count="1">f</span> "%a" Pprintast.pp_binding t) with
-          | <span data-count="1">R</span>esult.Ok [ ast ] -&gt; ast = t
+          <span data-count="3">m</span>atch parse_line (asprint<span data-count="3">f</span> "%a" Pprintast.pp_binding t) with
+          | <span data-count="3">R</span>esult.Ok [ ast ] -&gt; ast = t
           | <span data-count="0">_</span> -&gt; false)
     ]
 ;;
