@@ -156,14 +156,6 @@ let ptypetuple ptype =
   return (TypeExpr.Type_tuple (el1, el2, rest))
 ;;
 
-let ptype =
-  pass_ws
-  *> fix (fun ptype ->
-    let ptvar = choice [ pparenth ptype; ptypevar ] in
-    let pttuple = ptypetuple ptvar <|> ptvar in
-    rchain pttuple ptypearrow <|> pttuple)
-;;
-
 let ptypeconstr =
   fix (fun ptconstr ->
     let* tparams =
@@ -191,6 +183,14 @@ let ptypeconstr =
       fail "Type constructor cannot have a single type parameter without a name"
     | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
     | None, _ -> return (TypeExpr.Type_construct ("", tparams)))
+;;
+
+let ptype =
+  pass_ws
+  *> fix (fun ptype ->
+    let ptvar = choice [ pparenth ptype; ptypeconstr ] in
+    let pttuple = ptypetuple ptvar <|> ptvar in
+    rchain pttuple ptypearrow <|> pttuple)
 ;;
 
 let ptypeconstr_app =

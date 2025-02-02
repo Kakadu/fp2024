@@ -691,53 +691,63 @@ let%expect_test "let and apply" =
       ] |}]
 ;;
 
-(*bad, int should be constr*)
 let%expect_test "pattern constraint" =
   test_program {|let (x : int * int) = (x: int);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 696, characters 2-51
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_tuple
+                 ((Type_construct ("int", [])), (Type_construct ("int", [])), []))
+              ));
+           expr =
+           (Exp_constraint ((Exp_ident "x"), (Type_construct ("int", [])))) },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "pattern constraint" =
   test_program {|let (x : int*int) = (x: int*int);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 711, characters 2-53
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_tuple
+                 ((Type_construct ("int", [])), (Type_construct ("int", [])), []))
+              ));
+           expr =
+           (Exp_constraint ((Exp_ident "x"),
+              (Type_tuple
+                 ((Type_construct ("int", [])), (Type_construct ("int", [])), []))
+              ))
+           },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "pattern constraint" =
   test_program {|let (x : int->int) = (x: int->int);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 726, characters 2-55
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_arrow ((Type_construct ("int", [])),
+                 (Type_construct ("int", []))))
+              ));
+           expr =
+           (Exp_constraint ((Exp_ident "x"),
+              (Type_arrow ((Type_construct ("int", [])),
+                 (Type_construct ("int", []))))
+              ))
+           },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "let and apply" =
@@ -862,18 +872,25 @@ let%expect_test "factorial" =
 
 let%expect_test "factorial" =
   test_program {|let (x: int->char->string -> x *x* x) = 1;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 861, characters 2-62
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_arrow (
+                 (Type_arrow (
+                    (Type_arrow ((Type_construct ("int", [])),
+                       (Type_construct ("char", [])))),
+                    (Type_construct ("string", [])))),
+                 (Type_tuple
+                    ((Type_construct ("x", [])), (Type_construct ("x", [])),
+                     [(Type_construct ("x", []))]))
+                 ))
+              ));
+           expr = (Exp_constant (Const_integer 1)) },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "factorial" =
@@ -927,6 +944,7 @@ let%expect_test "_" =
       ] |}]
 ;;
 
+(*good*)
 let%expect_test "_" =
   test_program {|(f : (Int -> int -> int));;|};
   [%expect.unreachable]
@@ -939,24 +957,20 @@ let%expect_test "_" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 927, characters 2-46
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 949, characters 2-46
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "_" =
   test_program {|let (f:(x)) = 5;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 942, characters 2-36
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_constraint ((Pat_var "f"), (Type_construct ("x", []))));
+           expr = (Exp_constant (Const_integer 5)) },
+         [])
+        ))
+      ] |}]
 ;;
 
 let%expect_test "_" =
@@ -986,23 +1000,7 @@ let%expect_test "_" =
       ] |}]
 ;;
 
-let%expect_test "_" =
-  test_program
-    {| (_kR__E2RrhRf_Ln_n_KbLPf97J__gCp1G5T3rOo_7_S5__yRY1377LAU3U_9m_u_yl_wYFdTj5_q_S_9k_JC : EE7___Oe_) ;;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 984, characters 2-125
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
+(*good*)
 let%expect_test "_" =
   test_program
     {|('v' : (SqEcf8boz* L58r6D_P_bX___yy_93GPH__04_r___d9Zc_1U2__c8XmN1n_F_WBqxl68h_8_TCGqp3B_5w_Y_53a6_d_6_H9845__c5__09s* Sh__7ud_43* E_KKm_z3r5__jHMLw_qd1760R_G__nI6_J040__AB_6s0__D__d__e32Te6H_4__Ec_V_E__f_* o0_a_W_* f__LcPREH13__mY_CezffoI5_8_u_zU__ZncOnf_v4_L8_44Y72_3_A5_B758TViP_u_vyFU9_1* QD0* g4wp33A_W* E1V_gi_6y* x_Sv_PZ)) ;; |};
@@ -1016,23 +1014,7 @@ let%expect_test "_" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1000, characters 2-356
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
-;;
-
-let%expect_test "_" =
-  test_program {|(p_Ui7_1fX : pT9pj -> O9_dnUo);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1016, characters 2-51
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1005, characters 2-356
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1289,6 +1271,7 @@ type 'a tree = Leaf
       ]|}]
 ;;
 
+(*bad*)
 let%expect_test "adt list with pair" =
   test_program
     {| type ('a, 'b) pair_list = Nil 
@@ -1304,7 +1287,7 @@ let%expect_test "adt list with pair" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1284, characters 2-102
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1276, characters 2-102
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
