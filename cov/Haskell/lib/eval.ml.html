@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>eval.ml &mdash; Coverage report</title>
-    <meta name="description" content="72.28% coverage in lib/eval.ml">
+    <meta name="description" content="72.33% coverage in lib/eval.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>eval.ml
         </a>
       </h1>
-      <h2>72.28%</h2>
+      <h2>72.33%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:0.76%"></span>
@@ -166,13 +166,12 @@
       <span class="unvisited" style="bottom:32.42%"></span>
       <span class="unvisited" style="bottom:31.82%"></span>
       <span class="unvisited" style="bottom:31.44%"></span>
-      <span class="unvisited" style="bottom:30.57%"></span>
       <span class="unvisited" style="bottom:30.51%"></span>
       <span class="unvisited" style="bottom:30.46%"></span>
-      <span class="some-visited" style="bottom:30.29%"></span>
-      <span class="unvisited" style="bottom:29.80%"></span>
+      <span class="unvisited" style="bottom:30.40%"></span>
+      <span class="some-visited" style="bottom:30.24%"></span>
       <span class="unvisited" style="bottom:29.75%"></span>
-      <span class="unvisited" style="bottom:29.15%"></span>
+      <span class="unvisited" style="bottom:29.69%"></span>
       <span class="unvisited" style="bottom:29.09%"></span>
       <span class="unvisited" style="bottom:29.04%"></span>
       <span class="unvisited" style="bottom:28.98%"></span>
@@ -1581,43 +1580,43 @@
 <a id="L1259"></a><span class="visited"> </span>
 <a id="L1260"></a><span class="visited"> </span>
 <a id="L1261"></a><span class="visited"> </span>
-<a id="L1262"></a><span > </span>
+<a id="L1262"></a><span class="visited"> </span>
 <a id="L1263"></a><span > </span>
-<a id="L1264"></a><span class="visited"> </span>
+<a id="L1264"></a><span > </span>
 <a id="L1265"></a><span class="visited"> </span>
 <a id="L1266"></a><span class="visited"> </span>
-<a id="L1267"></a><span > </span>
-<a id="L1268"></a><span class="visited"> </span>
+<a id="L1267"></a><span class="visited"> </span>
+<a id="L1268"></a><span > </span>
 <a id="L1269"></a><span class="visited"> </span>
-<a id="L1270"></a><span > </span>
-<a id="L1271"></a><span class="visited"> </span>
-<a id="L1272"></a><span class="unvisited"> </span>
+<a id="L1270"></a><span class="visited"> </span>
+<a id="L1271"></a><span > </span>
+<a id="L1272"></a><span class="visited"> </span>
 <a id="L1273"></a><span class="unvisited"> </span>
 <a id="L1274"></a><span class="unvisited"> </span>
-<a id="L1275"></a><span > </span>
+<a id="L1275"></a><span class="unvisited"> </span>
 <a id="L1276"></a><span > </span>
-<a id="L1277"></a><span class="some-visited"> </span>
-<a id="L1278"></a><span class="visited"> </span>
-<a id="L1279"></a><span > </span>
-<a id="L1280"></a><span class="visited"> </span>
-<a id="L1281"></a><span > </span>
-<a id="L1282"></a><span class="visited"> </span>
+<a id="L1277"></a><span > </span>
+<a id="L1278"></a><span class="some-visited"> </span>
+<a id="L1279"></a><span class="visited"> </span>
+<a id="L1280"></a><span > </span>
+<a id="L1281"></a><span class="visited"> </span>
+<a id="L1282"></a><span > </span>
 <a id="L1283"></a><span class="visited"> </span>
 <a id="L1284"></a><span class="visited"> </span>
 <a id="L1285"></a><span class="visited"> </span>
-<a id="L1286"></a><span class="unvisited"> </span>
+<a id="L1286"></a><span class="visited"> </span>
 <a id="L1287"></a><span class="unvisited"> </span>
-<a id="L1288"></a><span class="visited"> </span>
-<a id="L1289"></a><span > </span>
-<a id="L1290"></a><span class="visited"> </span>
+<a id="L1288"></a><span class="unvisited"> </span>
+<a id="L1289"></a><span class="visited"> </span>
+<a id="L1290"></a><span > </span>
 <a id="L1291"></a><span class="visited"> </span>
 <a id="L1292"></a><span class="visited"> </span>
 <a id="L1293"></a><span class="visited"> </span>
-<a id="L1294"></a><span > </span>
-<a id="L1295"></a><span class="visited"> </span>
+<a id="L1294"></a><span class="visited"> </span>
+<a id="L1295"></a><span > </span>
 <a id="L1296"></a><span class="visited"> </span>
 <a id="L1297"></a><span class="visited"> </span>
-<a id="L1298"></a><span class="unvisited"> </span>
+<a id="L1298"></a><span class="visited"> </span>
 <a id="L1299"></a><span class="unvisited"> </span>
 <a id="L1300"></a><span class="unvisited"> </span>
 <a id="L1301"></a><span class="unvisited"> </span>
@@ -5249,7 +5248,8 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
   let rec ord ((dfs, pe_exprs, fresh) as dpf) src1 src2 ~ac1 ~ac2 pe1 pe2 =
     <span data-count="1040">l</span>et cmpr_to_constr = function
       | <span data-count="54">0</span> -&gt; `Eq
-      | <span data-count="134">c</span>mpr -&gt; if cmpr &lt; 0 then <span data-count="103">`</span>L else <span data-count="31">`</span>G
+      | <span data-count="134">c</span>mpr when cmpr &lt; 0 -&gt; <span data-count="103">`</span>L
+      | <span data-count="31">_</span> -&gt; `G
     in
     let neg = function
       | <span data-count="109">`</span>L, dpf -&gt; `G, dpf
@@ -5286,10 +5286,9 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
            | <span data-count="10">`</span>Eq, dpf -&gt; helper dpf (tl1, tl2)
            | <span data-count="35">r</span>es -&gt; return res)
         | <span data-count="3">[</span>], [] -&gt; return (`Eq, dpf)
-        | <span data-count="0">[</span>], _ :: _ -&gt;
-          if strict_len then <span data-count="0">f</span>ail ((`Typing_err : crit_err), dpf) else <span data-count="0">r</span>eturn (`L, dpf)
-        | <span data-count="0">_</span> :: _, [] -&gt;
-          if strict_len then <span data-count="0">f</span>ail ((`Typing_err : crit_err), dpf) else <span data-count="0">r</span>eturn (`G, dpf)
+        | (<span data-count="0">[</span>], _ :: _ | <span data-count="0">_</span> :: _, []) when strict_len -&gt; <span data-count="0">f</span>ail ((`Typing_err : crit_err), dpf)
+        | <span data-count="0">[</span>], _ :: _ -&gt; return (`L, dpf)
+        | <span data-count="0">_</span> :: _, [] -&gt; return (`G, dpf)
       in
       helper
     in
