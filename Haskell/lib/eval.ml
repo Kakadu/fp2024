@@ -5,15 +5,10 @@
 open Ast
 open Base.Result
 
-type name = string
 type key = int
 type fresh = int
 
-let ( --| ) x f =
-  match x with
-  | Ok ok -> Ok ok
-  | Error e -> Error (f e)
-;;
+let ( --| ) x f = map_error x ~f
 
 let ( --= ) x f =
   match x with
@@ -25,7 +20,10 @@ let ( let+ ) = ( >>| )
 let ( let- ) = ( --| )
 let ( let* ) = ( >>= )
 
+(** name Map*)
 module NMap = Map.Make (String)
+
+(** key Map *)
 module KMap = Map.Make (Int)
 
 type dfs_key = key
@@ -1260,7 +1258,8 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
   let rec ord ((dfs, pe_exprs, fresh) as dpf) src1 src2 ~ac1 ~ac2 pe1 pe2 =
     let cmpr_to_constr = function
       | 0 -> `Eq
-      | cmpr -> if cmpr < 0 then `L else `G
+      | cmpr when cmpr < 0 -> `L
+      | _ -> `G
     in
     let neg = function
       | `L, dpf -> `G, dpf
@@ -1297,10 +1296,9 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
            | `Eq, dpf -> helper dpf (tl1, tl2)
            | res -> return res)
         | [], [] -> return (`Eq, dpf)
-        | [], _ :: _ ->
-          if strict_len then fail ((`Typing_err : crit_err), dpf) else return (`L, dpf)
-        | _ :: _, [] ->
-          if strict_len then fail ((`Typing_err : crit_err), dpf) else return (`G, dpf)
+        | ([], _ :: _ | _ :: _, []) when strict_len -> fail ((`Typing_err : crit_err), dpf)
+        | [], _ :: _ -> return (`L, dpf)
+        | _ :: _, [] -> return (`G, dpf)
       in
       helper
     in

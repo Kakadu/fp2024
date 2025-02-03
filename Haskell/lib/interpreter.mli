@@ -3,8 +3,8 @@
 (** SPDX-License-Identifier: MIT *)
 
 val interpret
-  :  bool
-  -> bool
+  :  dump_parsetree:bool
+  -> print_types:bool
   -> string list
   -> Inferencer.typeenv
   -> Eval.env
@@ -15,8 +15,8 @@ val interpret_line
   :  string
   -> Inferencer.typeenv
   -> int
-  -> bool
-  -> bool
+  -> dump_parsetree:bool
+  -> print_types:bool
   -> Eval.env
   -> Eval.fresh
   -> Inferencer.typeenv * int * Eval.env * Eval.fresh
