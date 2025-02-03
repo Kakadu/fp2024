@@ -70,6 +70,7 @@ type crit_err =
   | `Negative_exponent
   ]
 
+(** definitions *)
 type df =
   | Df of keys NMap.t * df_ext
   | Err of crit_err
@@ -79,6 +80,7 @@ type lazy_list =
   | BoolLL of bool (** infinite list of true / infinite list of false*)
   | UnitLL (** infinite list of () *)
 
+(** partially evaled expressions*)
 type pe_expr =
   | V of value
   | ThTree of intern_p
