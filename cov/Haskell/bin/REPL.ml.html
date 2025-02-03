@@ -183,7 +183,7 @@ let () =
   let opts = { dump_parsetree = false; print_types = false; read_from_file = "" } in
   let _ =
     let open Stdlib.Arg in
-    pars<span data-count="65">e</span>
+    pars<span data-count="66">e</span>
       [ "-dparsetree", Unit (fun () -&gt; <span data-count="0">o</span>pts.dump_parsetree &lt;- true), "Dump parse tree"
       ; "-ptypes", Unit (fun () -&gt; <span data-count="7">o</span>pts.print_types &lt;- true), "Print types"
       ]
@@ -197,43 +197,43 @@ let () =
   in
   let is_stdin =
     match opts.read_from_file with
-    | <span data-count="46">"</span>" -&gt; true
+    | <span data-count="47">"</span>" -&gt; true
     | <span data-count="19">_</span> -&gt; false
   in
   if not is_stdin
   then
     <span data-count="19">I</span>nterpreter.interpre<span data-count="19">t</span>
-      opts.dump_parsetree
-      opts.print_types
+      ~dump_parsetree:opts.dump_parsetree
+      ~print_types:opts.print_types
       (String.split_on_cha<span data-count="19">r</span>
          '\n'
          (In_channel.with_open_tex<span data-count="19">t</span> opts.read_from_file In_channel.input_all))
       Inferencer.initial_env
       Eval.init_env
       Eval.init_fresh
-  else <span data-count="46">(</span>
+  else <span data-count="47">(</span>
     let rec helper inf_env st eval_env fresh =
-      <span data-count="186">l</span>et line =
-        try input_lin<span data-count="140">e</span> stdin with
-        | <span data-count="46">E</span>nd_of_file -&gt; ":quit"
+      <span data-count="191">l</span>et line =
+        try input_lin<span data-count="144">e</span> stdin with
+        | <span data-count="47">E</span>nd_of_file -&gt; ":quit"
       in
       match line with
-      | <span data-count="46">"</span>:quit" -&gt; ()
+      | <span data-count="47">"</span>:quit" -&gt; ()
       | <span data-count="0">"</span>" -&gt; helper inf_env st eval_env fresh
-      | <span data-count="140">_</span> -&gt;
+      | <span data-count="144">_</span> -&gt;
         let inf_env, st, eval_env, fresh =
           Interpreter.interpret_line
             line
             inf_env
             st
-            opts.dump_parsetree
-            opts.print_types
+            ~dump_parsetree:opts.dump_parsetree
+            ~print_types:opts.print_types
             eval_env
             fresh
         in
-        <span data-count="140">h</span>elper inf_env st eval_env fresh
+        <span data-count="144">h</span>elper inf_env st eval_env fresh
     in
-    helpe<span data-count="46">r</span> Inferencer.initial_env 2 Eval.init_env Eval.init_fresh)
+    helpe<span data-count="47">r</span> Inferencer.initial_env 2 Eval.init_env Eval.init_fresh)
 ;;
 </code></pre>
       </div>

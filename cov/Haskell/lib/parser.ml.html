@@ -2450,42 +2450,42 @@ open Angstrom
 open Ast
 
 let ws1 =
-  many<span data-count="71">1</span>
-  @@ satisf<span data-count="71">y</span>
+  many<span data-count="72">1</span>
+  @@ satisf<span data-count="72">y</span>
   @@ function
-  | <span data-count="18423">'</span> ' | <span data-count="0">'</span>\t' -&gt; true
-  | <span data-count="83519">_</span> -&gt; false
+  | <span data-count="18621">'</span> ' | <span data-count="0">'</span>\t' -&gt; true
+  | <span data-count="85370">_</span> -&gt; false
 ;;
 
-let ws = optio<span data-count="71">n</span> [] ws1
-let ( &gt;&gt;&gt;= ) p f = <span data-count="6908">w</span>s *<span data-count="6908">&gt;</span> p &gt;&gt;= f
+let ws = optio<span data-count="72">n</span> [] ws1
+let ( &gt;&gt;&gt;= ) p f = <span data-count="7046">w</span>s *<span data-count="7046">&gt;</span> p &gt;&gt;= f
 let ( let** ) = ( &gt;&gt;&gt;= )
-let ( &lt;**&gt; ) f p = <span data-count="112793">f</span> &lt;*&gt; ws *<span data-count="112793">&gt;</span> p
-let ( **&gt; ) p f = <span data-count="173143">w</span>s *<span data-count="173143">&gt;</span> p *&gt; (ws *<span data-count="173143">&gt;</span> f)
+let ( &lt;**&gt; ) f p = <span data-count="114006">f</span> &lt;*&gt; ws *<span data-count="114006">&gt;</span> p
+let ( **&gt; ) p f = <span data-count="175022">w</span>s *<span data-count="175022">&gt;</span> p *&gt; (ws *<span data-count="175022">&gt;</span> f)
 
 let parens, sq_brackets, backticks, braces =
-  let bounded (ch1, ch2) p = <span data-count="34455">c</span>ha<span data-count="34455">r</span> ch1 *<span data-count="34455">&gt;</span> ws *<span data-count="34455">&gt;</span> p &lt;* (ws &lt;<span data-count="34455">*</span> cha<span data-count="34455">r</span> ch2) in
-  ( (fun p -&gt; <span data-count="13766">b</span>ounded ('(', ')') p)
-  , (fun p -&gt; <span data-count="12870">b</span>ounded ('[', ']') p)
-  , (fun p -&gt; <span data-count="7488">b</span>ounded ('`', '`') p)
+  let bounded (ch1, ch2) p = <span data-count="35090">c</span>ha<span data-count="35090">r</span> ch1 *<span data-count="35090">&gt;</span> ws *<span data-count="35090">&gt;</span> p &lt;* (ws &lt;<span data-count="35090">*</span> cha<span data-count="35090">r</span> ch2) in
+  ( (fun p -&gt; <span data-count="14035">b</span>ounded ('(', ')') p)
+  , (fun p -&gt; <span data-count="13129">b</span>ounded ('[', ']') p)
+  , (fun p -&gt; <span data-count="7595">b</span>ounded ('`', '`') p)
   , fun p -&gt; <span data-count="331">b</span>ounded ('{', '}') p )
 ;;
 
 let is_alpha = function
-  | <span data-count="26501">'</span>a' .. 'z' | <span data-count="648">'</span>A' .. 'Z' -&gt; true
-  | <span data-count="37442">_</span> -&gt; false
+  | <span data-count="27318">'</span>a' .. 'z' | <span data-count="655">'</span>A' .. 'Z' -&gt; true
+  | <span data-count="38272">_</span> -&gt; false
 ;;
 
 let is_digit = function
-  | <span data-count="1820">'</span>0' .. '9' -&gt; true
-  | <span data-count="43060">_</span> -&gt; false
+  | <span data-count="1887">'</span>0' .. '9' -&gt; true
+  | <span data-count="44267">_</span> -&gt; false
 ;;
 
 let is_char_suitable_for_ident c =
-  <span data-count="32330">i</span>s_digi<span data-count="32330">t</span> <span data-count="122">c</span> || is_alph<span data-count="32208">a</span> <span data-count="20047">c</span> || Char.equa<span data-count="12161">l</span> '_' <span data-count="694">c</span> || Char.equal '\'' c
+  <span data-count="33296">i</span>s_digi<span data-count="33296">t</span> <span data-count="122">c</span> || is_alph<span data-count="33174">a</span> <span data-count="20767">c</span> || Char.equa<span data-count="12407">l</span> '_' <span data-count="779">c</span> || Char.equal '\'' c
 ;;
 
-let prs_ln ?(consume = <span data-count="0">C</span>onsume.Prefix) call str = <span data-count="395">p</span>arse_string ~consume call str
+let prs_ln ?(consume = <span data-count="0">C</span>onsume.Prefix) call str = <span data-count="399">p</span>arse_string ~consume call str
 
 let prs_and_prnt_ln ?(consume = <span data-count="57">C</span>onsume.Prefix) call sh str =
   <span data-count="57">m</span>atch prs_ln ~consume call str with
@@ -2497,25 +2497,25 @@ type point_handling =
   | Allow_point
   | Ban_point
 
-let word ?(point_allowed = <span data-count="1371">B</span>an_point) req_word =
-  <span data-count="15155">l</span>et open String in
+let word ?(point_allowed = <span data-count="1386">B</span>an_point) req_word =
+  <span data-count="15430">l</span>et open String in
   if equal req_word empty
   then <span data-count="0">r</span>eturn empty
   else
-    <span data-count="15155">l</span>et* fst_smb = satisf<span data-count="15155">y</span> is_alpha in
-    <span data-count="7102">l</span>et* w =
+    <span data-count="15430">l</span>et* fst_smb = satisf<span data-count="15430">y</span> is_alpha in
+    <span data-count="7206">l</span>et* w =
       let suitable_but_not_a_point = take_while is_char_suitable_for_ident in
-      <span data-count="7102">m</span>atch point_allowed with
-      | <span data-count="5295">B</span>an_point -&gt; suitable_but_not_a_point
-      | <span data-count="1807">A</span>llow_point -&gt;
-        sep_b<span data-count="1807">y</span> (cha<span data-count="1807">r</span> '.') suitable_but_not_a_point
-        &gt;&gt;<span data-count="1807">|</span>
+      <span data-count="7206">m</span>atch point_allowed with
+      | <span data-count="5392">B</span>an_point -&gt; suitable_but_not_a_point
+      | <span data-count="1814">A</span>llow_point -&gt;
+        sep_b<span data-count="1814">y</span> (cha<span data-count="1814">r</span> '.') suitable_but_not_a_point
+        &gt;&gt;<span data-count="1814">|</span>
         let open String in
-        conca<span data-count="1807">t</span> empty
+        conca<span data-count="1814">t</span> empty
     in
-    <span data-count="7102">i</span>f equal (Printf.sprint<span data-count="7102">f</span> "%c%s" fst_smb w) req_word
-    then <span data-count="733">r</span>eturn req_word
-    else <span data-count="6369">P</span>rintf.sprintf "couldn't parse word '%s'" req_word |&gt; <span data-count="6369">f</span>ail
+    <span data-count="7206">i</span>f equal (Printf.sprint<span data-count="7206">f</span> "%c%s" fst_smb w) req_word
+    then <span data-count="736">r</span>eturn req_word
+    else <span data-count="6470">P</span>rintf.sprintf "couldn't parse word '%s'" req_word |&gt; <span data-count="6470">f</span>ail
 ;;
 
 let%test "word_valid" =
@@ -2530,19 +2530,19 @@ let%test "word_invalid" =
 let ident =
   let keywords = [ "case"; "of"; "if"; "then"; "else"; "let"; "in"; "where" ] in
   (let* x =
-     satisf<span data-count="71">y</span> (function
-       | <span data-count="4454">'</span>a' .. 'z' -&gt; true
-       | <span data-count="7500">_</span> -&gt; false)
+     satisf<span data-count="72">y</span> (function
+       | <span data-count="4514">'</span>a' .. 'z' -&gt; true
+       | <span data-count="7655">_</span> -&gt; false)
    in
-   <span data-count="4454">l</span>et* y = take_whil<span data-count="4454">e</span> is_char_suitable_for_ident in
-   <span data-count="4454">r</span>eturn (Printf.sprint<span data-count="4454">f</span> "%c%s" x y))
-  &lt;|<span data-count="71">&gt;</span> (let* x = satisf<span data-count="71">y</span> (Char.equa<span data-count="71">l</span> '_') in
+   <span data-count="4514">l</span>et* y = take_whil<span data-count="4514">e</span> is_char_suitable_for_ident in
+   <span data-count="4514">r</span>eturn (Printf.sprint<span data-count="4514">f</span> "%c%s" x y))
+  &lt;|<span data-count="72">&gt;</span> (let* x = satisf<span data-count="72">y</span> (Char.equa<span data-count="72">l</span> '_') in
        <span data-count="157">l</span>et* y = take_while<span data-count="157">1</span> is_char_suitable_for_ident in
        <span data-count="62">r</span>eturn (Printf.sprint<span data-count="62">f</span> "%c%s" x y))
-  &gt;&gt;<span data-count="71">=</span> fun identifier -&gt;
-  <span data-count="4516">m</span>atch List.find_opt (String.equa<span data-count="4516">l</span> identifier) keywords with
-  | <span data-count="3855">N</span>one -&gt; return (Ident identifier)
-  | <span data-count="661">S</span>ome k -&gt; fail (Printf.sprint<span data-count="661">f</span> "keyword '%s' cannot be an identifier" k)
+  &gt;&gt;<span data-count="72">=</span> fun identifier -&gt;
+  <span data-count="4576">m</span>atch List.find_opt (String.equa<span data-count="4576">l</span> identifier) keywords with
+  | <span data-count="3913">N</span>one -&gt; return (Ident identifier)
+  | <span data-count="663">S</span>ome k -&gt; fail (Printf.sprint<span data-count="663">f</span> "keyword '%s' cannot be an identifier" k)
 ;;
 
 let%test "ident_valid_starts_with_underline" =
@@ -2563,45 +2563,45 @@ let%test "ident_invalid_keyword" =
 ;;
 
 let tuple_or_parensed_item item tuple_cons item_cons =
-  <span data-count="7013">p</span>aren<span data-count="7013">s</span> (sep_by<span data-count="7013">1</span> (ws *<span data-count="7013">&gt;</span> cha<span data-count="7013">r</span> ',' *<span data-count="7013">&gt;</span> ws) item)
+  <span data-count="7147">p</span>aren<span data-count="7147">s</span> (sep_by<span data-count="7147">1</span> (ws *<span data-count="7147">&gt;</span> cha<span data-count="7147">r</span> ',' *<span data-count="7147">&gt;</span> ws) item)
   &gt;&gt;= function
-  | <span data-count="518">h</span>d :: [] -&gt; item_cons hd
+  | <span data-count="539">h</span>d :: [] -&gt; item_cons hd
   | <span data-count="193">f</span>s :: sn :: tl -&gt; tuple_cons fs sn tl
   | <span data-count="0">[</span>] -&gt; fail "sep_by1 result can't be empty"
 ;;
 
 let is_char_suitable_for_oper = function
-  | <span data-count="1176">'</span>&amp;' | <span data-count="809">'</span>|' | <span data-count="637">'</span>+' | <span data-count="974">'</span>-' | <span data-count="3151">'</span>:' | <span data-count="114">'</span>*' | <span data-count="2751">'</span>=' | <span data-count="14">'</span>^' | <span data-count="207">'</span>/' | <span data-count="898">'</span>\\' | <span data-count="594">'</span>&lt;' | <span data-count="739">'</span>&gt;' | <span data-count="1320">'</span>.' -&gt; true
-  | <span data-count="48907">_</span> -&gt; false
+  | <span data-count="1232">'</span>&amp;' | <span data-count="809">'</span>|' | <span data-count="637">'</span>+' | <span data-count="974">'</span>-' | <span data-count="3158">'</span>:' | <span data-count="114">'</span>*' | <span data-count="2765">'</span>=' | <span data-count="14">'</span>^' | <span data-count="207">'</span>/' | <span data-count="898">'</span>\\' | <span data-count="607">'</span>&lt;' | <span data-count="751">'</span>&gt;' | <span data-count="1320">'</span>.' -&gt; true
+  | <span data-count="50143">_</span> -&gt; false
 ;;
 
 let oper expected =
-  <span data-count="7488">l</span>et* parsed =
-    backtick<span data-count="7488">s</span> ident
-    &gt;&gt;<span data-count="7488">|</span> (fun (Ident s) -&gt;
+  <span data-count="7595">l</span>et* parsed =
+    backtick<span data-count="7595">s</span> ident
+    &gt;&gt;<span data-count="7595">|</span> (fun (Ident s) -&gt;
           <span data-count="97">l</span>et open String in
           concat empty [ "`"; s; "`" ])
-    &lt;|<span data-count="7488">&gt;</span> take_whil<span data-count="7488">e</span> is_char_suitable_for_oper
+    &lt;|<span data-count="7595">&gt;</span> take_whil<span data-count="7595">e</span> is_char_suitable_for_oper
   in
-  <span data-count="56774">i</span>f String.equal expected parsed then <span data-count="1607">r</span>eturn expected else <span data-count="55167">f</span>ail ""
+  <span data-count="58078">i</span>f String.equal expected parsed then <span data-count="1618">r</span>eturn expected else <span data-count="56460">f</span>ail ""
 ;;
 
 let%expect_test "oper_valid" =
   <span data-count="1">p</span>rs_and_prnt_ln (ope<span data-count="1">r</span> "+-+") Fun.id "+-+awq";
   <span data-count="1">[</span>%expect {|
-      +-+|}<span data-count="143">]</span>
+      +-+|}<span data-count="145">]</span>
 ;;
 
 let%expect_test "oper_invalid" =
   <span data-count="1">p</span>rs_and_prnt_ln (ope<span data-count="1">r</span> "+-+") Fun.id "+-+&gt;";
   <span data-count="1">[</span>%expect {|
-      error: :|}<span data-count="143">]</span>
+      error: :|}<span data-count="145">]</span>
 ;;
 
 let%expect_test "oper_with_backticks" =
   <span data-count="1">p</span>rs_and_prnt_ln (ope<span data-count="1">r</span> "`a`") Fun.id "`a`";
   <span data-count="1">[</span>%expect {|
-      `a`|}<span data-count="143">]</span>
+      `a`|}<span data-count="145">]</span>
 ;;
 
 let func_tp_tail hd ord_tp =
@@ -2631,52 +2631,52 @@ let ord_tp tp =
 
 let tp =
   let t t = <span data-count="4">o</span>rd_t<span data-count="4">p</span> t &gt;&gt;= fun res -&gt; <span data-count="327">o</span>ption res (func_tp_tai<span data-count="327">l</span> res (ord_t<span data-count="327">p</span> t)) in
-  fi<span data-count="71">x</span> t
+  fi<span data-count="72">x</span> t
 ;;
 
 let%expect_test "tp_list_of_func" =
   <span data-count="1">p</span>rs_and_prnt_ln tp show_tp "[Int -&gt; Int] ";
-  <span data-count="1">[</span>%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}<span data-count="143">]</span>
+  <span data-count="1">[</span>%expect {| (ListParam (FunctionType (FuncT (TInt, TInt, [])))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "tp_maybe" =
   <span data-count="1">p</span>rs_and_prnt_ln tp show_tp "Maybe Int ";
-  <span data-count="1">[</span>%expect {| (MaybeParam TInt) |}<span data-count="143">]</span>
+  <span data-count="1">[</span>%expect {| (MaybeParam TInt) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "tp_tree_of_func" =
   <span data-count="1">p</span>rs_and_prnt_ln tp show_tp "{Bool -&gt; ()} ";
-  <span data-count="1">[</span>%expect {| (TreeParam (FunctionType (FuncT (TBool, TUnit, [])))) |}<span data-count="143">]</span>
+  <span data-count="1">[</span>%expect {| (TreeParam (FunctionType (FuncT (TBool, TUnit, [])))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "tp_lnested_func" =
   <span data-count="1">p</span>rs_and_prnt_ln tp show_tp "Int -&gt; ((Int -&gt; Int)) -&gt; Int";
   <span data-count="1">[</span>%expect
     {|
-      (FunctionType (FuncT (TInt, (FunctionType (FuncT (TInt, TInt, []))), [TInt]))) |}<span data-count="143">]</span>
+      (FunctionType (FuncT (TInt, (FunctionType (FuncT (TInt, TInt, []))), [TInt]))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "tp_tuple" =
   <span data-count="1">p</span>rs_and_prnt_ln tp show_tp "(Int, Bool, Int -&gt; Bool)";
   <span data-count="1">[</span>%expect
     {|
-      (TupleParams (TInt, TBool, [(FunctionType (FuncT (TInt, TBool, [])))])) |}<span data-count="143">]</span>
+      (TupleParams (TInt, TBool, [(FunctionType (FuncT (TInt, TBool, [])))])) |}<span data-count="145">]</span>
 ;;
 
 let int =
-  let* y = take_while<span data-count="71">1</span> is_digit in
-  <span data-count="1181">m</span>atch int_of_string_opt y with
+  let* y = take_while<span data-count="72">1</span> is_digit in
+  <span data-count="1224">m</span>atch int_of_string_opt y with
   | <span data-count="0">N</span>one -&gt; fail ""
-  | <span data-count="1181">S</span>ome x -&gt; return x
+  | <span data-count="1224">S</span>ome x -&gt; return x
 ;;
 
 let const =
-  choic<span data-count="71">e</span>
+  choic<span data-count="72">e</span>
     [ (let+ x = int in
-       <span data-count="1154">I</span>nt x)
-    ; strin<span data-count="71">g</span> "()" *<span data-count="71">&gt;</span> retur<span data-count="71">n</span> Unit
-    ; strin<span data-count="71">g</span> "True" *<span data-count="71">&gt;</span> retur<span data-count="71">n</span> (Bool true)
-    ; strin<span data-count="71">g</span> "False" *<span data-count="71">&gt;</span> retur<span data-count="71">n</span> (Bool false)
+       <span data-count="1197">I</span>nt x)
+    ; strin<span data-count="72">g</span> "()" *<span data-count="72">&gt;</span> retur<span data-count="72">n</span> Unit
+    ; strin<span data-count="72">g</span> "True" *<span data-count="72">&gt;</span> retur<span data-count="72">n</span> (Bool true)
+    ; strin<span data-count="72">g</span> "False" *<span data-count="72">&gt;</span> retur<span data-count="72">n</span> (Bool false)
     ]
 ;;
 
@@ -2706,65 +2706,65 @@ let%test "const_invalid" =
   <span data-count="1">p</span>arse_strin<span data-count="1">g</span> ~consume:Prefix const "beb" = Result.Error ": no more choices"
 ;;
 
-let nothing f = <span data-count="6682">w</span>or<span data-count="6682">d</span> ~point_allowed:Allow_point "Nothing" *&gt; f
-let just f = <span data-count="6109">w</span>or<span data-count="6109">d</span> ~point_allowed:Allow_point "Just" *<span data-count="6109">&gt;</span> ws *&gt; f
-let list_enum item f = <span data-count="6682">s</span>q_bracket<span data-count="6682">s</span> (sep_b<span data-count="6682">y</span> (ws *<span data-count="6682">&gt;</span> cha<span data-count="6682">r</span> ',' *<span data-count="6682">&gt;</span> ws) item) &gt;&gt;= f
+let nothing f = <span data-count="6816">w</span>or<span data-count="6816">d</span> ~point_allowed:Allow_point "Nothing" *&gt; f
+let just f = <span data-count="6235">w</span>or<span data-count="6235">d</span> ~point_allowed:Allow_point "Just" *<span data-count="6235">&gt;</span> ws *&gt; f
+let list_enum item f = <span data-count="6816">s</span>q_bracket<span data-count="6816">s</span> (sep_b<span data-count="6816">y</span> (ws *<span data-count="6816">&gt;</span> cha<span data-count="6816">r</span> ',' *<span data-count="6816">&gt;</span> ws) item) &gt;&gt;= f
 
 let tree item nul_cons node_cons =
-  <span data-count="6682">c</span>ha<span data-count="6682">r</span> '$' *<span data-count="6682">&gt;</span> nul_cons
-  &lt;|&gt; (paren<span data-count="6682">s</span> (sep_b<span data-count="6682">y</span> (ws *<span data-count="6682">&gt;</span> cha<span data-count="6682">r</span> ';' *<span data-count="6682">&gt;</span> ws) item)
-       &gt;&gt;<span data-count="6682">=</span> function
+  <span data-count="6816">c</span>ha<span data-count="6816">r</span> '$' *<span data-count="6816">&gt;</span> nul_cons
+  &lt;|&gt; (paren<span data-count="6816">s</span> (sep_b<span data-count="6816">y</span> (ws *<span data-count="6816">&gt;</span> cha<span data-count="6816">r</span> ';' *<span data-count="6816">&gt;</span> ws) item)
+       &gt;&gt;<span data-count="6816">=</span> function
        | <span data-count="47">[</span> it1; it2; it3 ] -&gt; node_cons it1 it2 it3
-       | <span data-count="507">_</span> -&gt; fail "cannot parse tree")
+       | <span data-count="528">_</span> -&gt; fail "cannot parse tree")
 ;;
 
-let pt_tp ((a, p, tps) as pt) = <span data-count="733">o</span>ption pt (ope<span data-count="733">r</span> "::" **<span data-count="733">&gt;</span> tp &gt;&gt;<span data-count="733">|</span> fun tp -&gt; <span data-count="98">a</span>, p, tp :: tps)
-let pnegation = ope<span data-count="71">r</span> "-" *<span data-count="71">&gt;</span> ws *<span data-count="71">&gt;</span> int &gt;&gt;<span data-count="71">|</span> fun a -&gt; <span data-count="27">[</span>], PConst (NegativePInt a), []
-let just_p ptrn = <span data-count="252">j</span>ust (ptrn &gt;&gt;<span data-count="252">|</span> fun p -&gt; <span data-count="14">[</span>], PMaybe (Just p), [])
+let pt_tp ((a, p, tps) as pt) = <span data-count="737">o</span>ption pt (ope<span data-count="737">r</span> "::" **<span data-count="737">&gt;</span> tp &gt;&gt;<span data-count="737">|</span> fun tp -&gt; <span data-count="98">a</span>, p, tp :: tps)
+let pnegation = ope<span data-count="72">r</span> "-" *<span data-count="72">&gt;</span> ws *<span data-count="72">&gt;</span> int &gt;&gt;<span data-count="72">|</span> fun a -&gt; <span data-count="27">[</span>], PConst (NegativePInt a), []
+let just_p ptrn = <span data-count="253">j</span>ust (ptrn &gt;&gt;<span data-count="253">|</span> fun p -&gt; <span data-count="14">[</span>], PMaybe (Just p), [])
 
 let pcons_tail head ptrn_ext =
-  <span data-count="844">l</span>et rec loop constr = function
+  <span data-count="848">l</span>et rec loop constr = function
     | <span data-count="0">[</span>] -&gt; constr ([], PList (PEnum []), [])
     | <span data-count="61">h</span>d :: [] -&gt; constr hd
     | <span data-count="0">h</span>d :: tl -&gt; loop (fun y -&gt; <span data-count="0">c</span>onstr ([], PList (PCons (hd, y)), [])) tl
   in
-  many<span data-count="844">1</span> (ope<span data-count="844">r</span> ":" **<span data-count="844">&gt;</span> ptrn_ext)
-  &gt;&gt;<span data-count="844">|</span> List.rev
-  &gt;&gt;| loo<span data-count="844">p</span> (fun (x : pattern) -&gt; <span data-count="61">[</span>], PList (PCons (head, x)), [])
+  many<span data-count="848">1</span> (ope<span data-count="848">r</span> ":" **<span data-count="848">&gt;</span> ptrn_ext)
+  &gt;&gt;<span data-count="848">|</span> List.rev
+  &gt;&gt;| loo<span data-count="848">p</span> (fun (x : pattern) -&gt; <span data-count="61">[</span>], PList (PCons (head, x)), [])
 ;;
 
 let pat ptrn =
-  <span data-count="825">l</span>et ptrn_extended ptrn_extended =
+  <span data-count="834">l</span>et ptrn_extended ptrn_extended =
     <span data-count="77">l</span>et* p = ptrn &lt;|<span data-count="77">&gt;</span> pnegation &lt;|<span data-count="77">&gt;</span> just_<span data-count="77">p</span> ptrn in
     <span data-count="182">o</span>ption p (pcons_tai<span data-count="182">l</span> p ptrn_extended)
   in
   choice
     [ (let* pt = const in
-       <span data-count="65">r</span>eturn (PConst (OrdinaryPConst pt)))
+       <span data-count="67">r</span>eturn (PConst (OrdinaryPConst pt)))
     ; (let* pt = ident in
-       <span data-count="822">r</span>eturn (PIdentificator pt))
-    ; cha<span data-count="825">r</span> '_' *<span data-count="825">&gt;</span> retur<span data-count="825">n</span> PWildcard
-    ; nothin<span data-count="825">g</span> (retur<span data-count="825">n</span> (PMaybe Nothing))
-    ; tre<span data-count="825">e</span>
-        (ws *<span data-count="825">&gt;</span> fi<span data-count="825">x</span> ptrn_extended &gt;&gt;<span data-count="825">=</span> pt_tp)
-        (retur<span data-count="825">n</span> (PTree PNul))
+       <span data-count="826">r</span>eturn (PIdentificator pt))
+    ; cha<span data-count="834">r</span> '_' *<span data-count="834">&gt;</span> retur<span data-count="834">n</span> PWildcard
+    ; nothin<span data-count="834">g</span> (retur<span data-count="834">n</span> (PMaybe Nothing))
+    ; tre<span data-count="834">e</span>
+        (ws *<span data-count="834">&gt;</span> fi<span data-count="834">x</span> ptrn_extended &gt;&gt;<span data-count="834">=</span> pt_tp)
+        (retur<span data-count="834">n</span> (PTree PNul))
         (fun d t1 t2 -&gt; <span data-count="10">r</span>eturn (PTree (PNode (d, t1, t2))))
-    ; list_enu<span data-count="825">m</span> (fi<span data-count="825">x</span> ptrn_extended &gt;&gt;<span data-count="825">=</span> pt_tp) (fun pts -&gt; <span data-count="45">r</span>eturn (PList (PEnum pts)))
+    ; list_enu<span data-count="834">m</span> (fi<span data-count="834">x</span> ptrn_extended &gt;&gt;<span data-count="834">=</span> pt_tp) (fun pts -&gt; <span data-count="45">r</span>eturn (PList (PEnum pts)))
     ]
 ;;
 
 let ptrn ptrn =
-  <span data-count="825">l</span>et ptrn_extended ptrn_extended =
+  <span data-count="834">l</span>et ptrn_extended ptrn_extended =
     <span data-count="49">l</span>et* p = ptrn &lt;|<span data-count="49">&gt;</span> pnegation &lt;|<span data-count="49">&gt;</span> just_<span data-count="49">p</span> ptrn in
     <span data-count="213">o</span>ption p (pcons_tai<span data-count="213">l</span> p ptrn_extended)
   in
   choice
     [ (let* ident = ident in
-       <span data-count="877">c</span>ha<span data-count="877">r</span> '@' *&gt; (ptrn &gt;&gt;<span data-count="877">=</span> fun (idents, pat, tp) -&gt; <span data-count="55">r</span>eturn (ident :: idents, pat, tp)))
-    ; (let* pat = pa<span data-count="825">t</span> ptrn in
-       <span data-count="1031">r</span>eturn ([], pat, []))
-    ; tuple_or_parensed_ite<span data-count="825">m</span>
-        (fi<span data-count="825">x</span> ptrn_extended &gt;&gt;<span data-count="825">=</span> pt_tp)
+       <span data-count="881">c</span>ha<span data-count="881">r</span> '@' *&gt; (ptrn &gt;&gt;<span data-count="881">=</span> fun (idents, pat, tp) -&gt; <span data-count="55">r</span>eturn (ident :: idents, pat, tp)))
+    ; (let* pat = pa<span data-count="834">t</span> ptrn in
+       <span data-count="1037">r</span>eturn ([], pat, []))
+    ; tuple_or_parensed_ite<span data-count="834">m</span>
+        (fi<span data-count="834">x</span> ptrn_extended &gt;&gt;<span data-count="834">=</span> pt_tp)
         (fun p1 p2 pp -&gt; <span data-count="50">r</span>eturn ([], PTuple (p1, p2, pp), []))
         return
     ]
@@ -2779,18 +2779,18 @@ type unparnsed_tp_handling =
   | Allow_t
 
 let pattern unp_ps_h unp_tp_h =
-  <span data-count="997">l</span>et p = fix ptrn in
-  <span data-count="997">m</span>atch unp_ps_h with
-  | <span data-count="868">B</span>an_p -&gt; p
-  | <span data-count="129">A</span>llow_p -&gt;
+  <span data-count="1008">l</span>et p = fix ptrn in
+  <span data-count="1008">m</span>atch unp_ps_h with
+  | <span data-count="878">B</span>an_p -&gt; p
+  | <span data-count="130">A</span>llow_p -&gt;
     let ptr' ptr' =
-      <span data-count="126">p</span> &lt;|<span data-count="126">&gt;</span> pnegation &lt;|<span data-count="126">&gt;</span> just_<span data-count="126">p</span> p &gt;&gt;= fun hd -&gt; <span data-count="449">o</span>ption hd (pcons_tai<span data-count="449">l</span> hd ptr')
+      <span data-count="127">p</span> &lt;|<span data-count="127">&gt;</span> pnegation &lt;|<span data-count="127">&gt;</span> just_<span data-count="127">p</span> p &gt;&gt;= fun hd -&gt; <span data-count="453">o</span>ption hd (pcons_tai<span data-count="453">l</span> hd ptr')
     in
-    fi<span data-count="129">x</span> ptr'
+    fi<span data-count="130">x</span> ptr'
     &gt;&gt;=
       (match unp_tp_h with
       | <span data-count="27">B</span>an_t -&gt; return
-      | <span data-count="102">A</span>llow_t -&gt; pt_tp)
+      | <span data-count="103">A</span>llow_t -&gt; pt_tp)
 ;;
 
 let%test "pattern_valid_as" =
@@ -2835,7 +2835,7 @@ let%expect_test "pattern_valid_tuple" =
                ([], (PIdentificator (Ident "y")), []), [])),
             [])]
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_valid_tuple_labeled" =
@@ -2850,13 +2850,13 @@ let%expect_test "pattern_valid_tuple_labeled" =
                ([], (PIdentificator (Ident "y")), []), [])),
             [])]
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_invalid_tuple_labeled" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Allow_t) show_pattern "(x, e@y,(x,y)@(x,y))";
   <span data-count="1">[</span>%expect {|
-      error: : satisfy: '(' |}<span data-count="143">]</span>
+      error: : satisfy: '(' |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_valid_tree" =
@@ -2867,37 +2867,37 @@ let%expect_test "pattern_valid_tree" =
        (PTree
           (PNode (([], (PConst (OrdinaryPConst (Int 2))), []),
              ([], (PTree PNul), []), ([], (PTree PNul), [])))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_invalid_tree" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Allow_t) show_pattern "(2; $)";
   <span data-count="1">[</span>%expect {|
-      error: : satisfy: '(' |}<span data-count="143">]</span>
+      error: : satisfy: '(' |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_just_valid" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Allow_t) show_pattern "Just 1";
   <span data-count="1">[</span>%expect
     {|
-      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Int 1))), []))), []) |}<span data-count="143">]</span>
+      ([], (PMaybe (Just ([], (PConst (OrdinaryPConst (Int 1))), []))), []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_just_invalid_ban_unparansed" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Ban_p Allow_t) show_pattern "Just 1";
   <span data-count="1">[</span>%expect {|
-      error: : no more choices |}<span data-count="143">]</span>
+      error: : no more choices |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_just_invalid_neg" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Allow_t) show_pattern "Just -1";
   <span data-count="1">[</span>%expect {|
-      error: : no more choices |}<span data-count="143">]</span>
+      error: : no more choices |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_nil_valid" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Allow_t) show_pattern "[]";
-  <span data-count="1">[</span>%expect {| ([], (PList (PEnum [])), []) |}<span data-count="143">]</span>
+  <span data-count="1">[</span>%expect {| ([], (PList (PEnum [])), []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_enum_valid" =
@@ -2912,13 +2912,13 @@ let%expect_test "pattern_enum_valid" =
              ([], (PConst (OrdinaryPConst (Int 1))), []);
              ([], (PConst (OrdinaryPConst (Int 1))), [])])),
      [])
-       |}<span data-count="143">]</span>
+       |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_listcons_invalid_ban_unparansed" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Ban_p Allow_t) show_pattern "x:xs";
   <span data-count="1">[</span>%expect {|
-      ([], (PIdentificator (Ident "x")), []) |}<span data-count="143">]</span>
+      ([], (PIdentificator (Ident "x")), []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_listcons_valid" =
@@ -2939,21 +2939,21 @@ let%expect_test "pattern_listcons_valid" =
                     ([], (PIdentificator (Ident "w")), [])))),
               [])
              ))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_simple_valid_tp" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Allow_t) show_pattern "x :: Int";
   <span data-count="1">[</span>%expect {|
     ([], (PIdentificator (Ident "x")), [TInt])
-       |}<span data-count="143">]</span>
+       |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_simple_invalid_tp_ban" =
   <span data-count="1">p</span>rs_and_prnt_ln (patter<span data-count="1">n</span> Allow_p Ban_t) show_pattern "x :: Int";
   <span data-count="1">[</span>%expect {|
     ([], (PIdentificator (Ident "x")), [])
-       |}<span data-count="143">]</span>
+       |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "pattern_listcons_valid_with_tp" =
@@ -2970,20 +2970,20 @@ let%expect_test "pattern_listcons_valid_with_tp" =
             [])
            ))),
      [(ListParam TInt)])
-       |}<span data-count="143">]</span>
+       |}<span data-count="145">]</span>
 ;;
 
-let ex_tp ((e, tps) as ex) = <span data-count="3013">o</span>ption ex (ope<span data-count="3013">r</span> "::" **<span data-count="3013">&gt;</span> tp &gt;&gt;<span data-count="3013">|</span> fun tp -&gt; <span data-count="75">e</span>, tp :: tps)
+let ex_tp ((e, tps) as ex) = <span data-count="3078">o</span>ption ex (ope<span data-count="3078">r</span> "::" **<span data-count="3078">&gt;</span> tp &gt;&gt;<span data-count="3078">|</span> fun tp -&gt; <span data-count="75">e</span>, tp :: tps)
 
 let defbody e sep =
-  <span data-count="111">(</span>sep
-   **<span data-count="111">&gt;</span> let* ex = e &gt;&gt;<span data-count="111">=</span> ex_tp in
-       <span data-count="490">r</span>eturn (OrdBody ex))
+  <span data-count="112">(</span>sep
+   **<span data-count="112">&gt;</span> let* ex = e &gt;&gt;<span data-count="112">=</span> ex_tp in
+       <span data-count="496">r</span>eturn (OrdBody ex))
   &lt;|&gt;
   let* ee_pairs =
-    many<span data-count="111">1</span>
-      (ope<span data-count="111">r</span> "|"
-       **<span data-count="111">&gt;</span> let* ex1 = e in
+    many<span data-count="112">1</span>
+      (ope<span data-count="112">r</span> "|"
+       **<span data-count="112">&gt;</span> let* ex1 = e in
            <span data-count="22">s</span>ep
            **&gt; let* ex2 = e &gt;&gt;<span data-count="22">=</span> ex_tp in
                <span data-count="22">r</span>eturn (ex1, ex2))
@@ -2994,19 +2994,19 @@ let defbody e sep =
 ;;
 
 let bnd e bnd =
-  <span data-count="85">(</span>let** ident = ident in
-   <span data-count="424">l</span>et** pt = patter<span data-count="424">n</span> Ban_p Ban_t in
-   <span data-count="113">l</span>et* pts = man<span data-count="113">y</span> (ws *<span data-count="113">&gt;</span> patter<span data-count="113">n</span> Ban_p Ban_t) in
-   <span data-count="113">r</span>eturn (fun bb where_binds -&gt; <span data-count="113">D</span>ef (FunDef (ident, pt, pts, bb, where_binds))))
-  &lt;|<span data-count="85">&gt;</span> (let** pt = patter<span data-count="85">n</span> Allow_p Allow_t in
-       <span data-count="348">r</span>eturn (fun bb where_binds -&gt; <span data-count="338">D</span>ef (VarsDef (pt, bb, where_binds))))
-  &lt;**<span data-count="85">&gt;</span> defbod<span data-count="85">y</span> e (ope<span data-count="85">r</span> "=")
-  &lt;**<span data-count="85">&gt;</span> option [<span data-count="85">]</span> @@ (wor<span data-count="85">d</span> "where" **<span data-count="85">&gt;</span> sep_b<span data-count="85">y</span> (ws *<span data-count="85">&gt;</span> cha<span data-count="85">r</span> ';' *<span data-count="85">&gt;</span> ws) bnd)
+  <span data-count="86">(</span>let** ident = ident in
+   <span data-count="430">l</span>et** pt = patter<span data-count="430">n</span> Ban_p Ban_t in
+   <span data-count="115">l</span>et* pts = man<span data-count="115">y</span> (ws *<span data-count="115">&gt;</span> patter<span data-count="115">n</span> Ban_p Ban_t) in
+   <span data-count="115">r</span>eturn (fun bb where_binds -&gt; <span data-count="115">D</span>ef (FunDef (ident, pt, pts, bb, where_binds))))
+  &lt;|<span data-count="86">&gt;</span> (let** pt = patter<span data-count="86">n</span> Allow_p Allow_t in
+       <span data-count="352">r</span>eturn (fun bb where_binds -&gt; <span data-count="342">D</span>ef (VarsDef (pt, bb, where_binds))))
+  &lt;**<span data-count="86">&gt;</span> defbod<span data-count="86">y</span> e (ope<span data-count="86">r</span> "=")
+  &lt;**<span data-count="86">&gt;</span> option [<span data-count="86">]</span> @@ (wor<span data-count="86">d</span> "where" **<span data-count="86">&gt;</span> sep_b<span data-count="86">y</span> (ws *<span data-count="86">&gt;</span> cha<span data-count="86">r</span> ';' *<span data-count="86">&gt;</span> ws) bnd)
   &lt;|&gt; let** ident = ident in
       <span data-count="10">o</span>pe<span data-count="10">r</span> "::" **<span data-count="10">&gt;</span> tp &gt;&gt;| fun t -&gt; <span data-count="10">D</span>ecl (ident, t)
 ;;
 
-let binding e = <span data-count="443">f</span>ix (bn<span data-count="443">d</span> e)
+let binding e = <span data-count="448">f</span>ix (bn<span data-count="448">d</span> e)
 
 type assoc =
   | Left
@@ -3014,110 +3014,110 @@ type assoc =
   | Non
 
 let prios_list =
-  [ None, [ (Right, ope<span data-count="71">r</span> "||", fun a b -&gt; <span data-count="19">B</span>inop (a, Or, b), []) ]
-  ; None, [ (Right, ope<span data-count="71">r</span> "&amp;&amp;", fun a b -&gt; <span data-count="42">B</span>inop (a, And, b), []) ]
+  [ None, [ (Right, ope<span data-count="72">r</span> "||", fun a b -&gt; <span data-count="19">B</span>inop (a, Or, b), []) ]
+  ; None, [ (Right, ope<span data-count="72">r</span> "&amp;&amp;", fun a b -&gt; <span data-count="44">B</span>inop (a, And, b), []) ]
   ; ( None
-    , [ (Non, ope<span data-count="71">r</span> "==", fun a b -&gt; <span data-count="45">B</span>inop (a, Equality, b), [])
-      ; (Non, ope<span data-count="71">r</span> "/=", fun a b -&gt; <span data-count="23">B</span>inop (a, Inequality, b), [])
-      ; (Non, ope<span data-count="71">r</span> "&gt;=", fun a b -&gt; <span data-count="4">B</span>inop (a, EqualityOrGreater, b), [])
-      ; (Non, ope<span data-count="71">r</span> "&lt;=", fun a b -&gt; <span data-count="32">B</span>inop (a, EqualityOrLess, b), [])
-      ; (Non, ope<span data-count="71">r</span> "&gt;", fun a b -&gt; <span data-count="37">B</span>inop (a, Greater, b), [])
-      ; (Non, ope<span data-count="71">r</span> "&lt;", fun a b -&gt; <span data-count="18">B</span>inop (a, Less, b), [])
+    , [ (Non, ope<span data-count="72">r</span> "==", fun a b -&gt; <span data-count="45">B</span>inop (a, Equality, b), [])
+      ; (Non, ope<span data-count="72">r</span> "/=", fun a b -&gt; <span data-count="23">B</span>inop (a, Inequality, b), [])
+      ; (Non, ope<span data-count="72">r</span> "&gt;=", fun a b -&gt; <span data-count="4">B</span>inop (a, EqualityOrGreater, b), [])
+      ; (Non, ope<span data-count="72">r</span> "&lt;=", fun a b -&gt; <span data-count="32">B</span>inop (a, EqualityOrLess, b), [])
+      ; (Non, ope<span data-count="72">r</span> "&gt;", fun a b -&gt; <span data-count="38">B</span>inop (a, Greater, b), [])
+      ; (Non, ope<span data-count="72">r</span> "&lt;", fun a b -&gt; <span data-count="19">B</span>inop (a, Less, b), [])
       ] )
-  ; None, [ (Right, ope<span data-count="71">r</span> ":", fun a b -&gt; <span data-count="42">B</span>inop (a, Cons, b), []) ]
-  ; ( Some (ope<span data-count="71">r</span> "-", fun a -&gt; <span data-count="57">N</span>eg a, [])
-    , [ (Left, ope<span data-count="71">r</span> "+", fun a b -&gt; <span data-count="110">B</span>inop (a, Plus, b), [])
-      ; (Left, ope<span data-count="71">r</span> "-", fun a b -&gt; <span data-count="61">B</span>inop (a, Minus, b), [])
+  ; None, [ (Right, ope<span data-count="72">r</span> ":", fun a b -&gt; <span data-count="43">B</span>inop (a, Cons, b), []) ]
+  ; ( Some (ope<span data-count="72">r</span> "-", fun a -&gt; <span data-count="57">N</span>eg a, [])
+    , [ (Left, ope<span data-count="72">r</span> "+", fun a b -&gt; <span data-count="110">B</span>inop (a, Plus, b), [])
+      ; (Left, ope<span data-count="72">r</span> "-", fun a b -&gt; <span data-count="61">B</span>inop (a, Minus, b), [])
       ] )
   ; ( None
-    , [ (Left, ope<span data-count="71">r</span> "`div`", fun a b -&gt; <span data-count="26">B</span>inop (a, Divide, b), [])
-      ; (Left, ope<span data-count="71">r</span> "*", fun a b -&gt; <span data-count="34">B</span>inop (a, Multiply, b), [])
-      ; (Left, ope<span data-count="71">r</span> "`mod`", fun a b -&gt; <span data-count="11">B</span>inop (a, Mod, b), [])
+    , [ (Left, ope<span data-count="72">r</span> "`div`", fun a b -&gt; <span data-count="26">B</span>inop (a, Divide, b), [])
+      ; (Left, ope<span data-count="72">r</span> "*", fun a b -&gt; <span data-count="34">B</span>inop (a, Multiply, b), [])
+      ; (Left, ope<span data-count="72">r</span> "`mod`", fun a b -&gt; <span data-count="11">B</span>inop (a, Mod, b), [])
       ] )
-  ; None, [ (Right, ope<span data-count="71">r</span> "^", fun a b -&gt; <span data-count="14">B</span>inop (a, Pow, b), []) ]
+  ; None, [ (Right, ope<span data-count="72">r</span> "^", fun a b -&gt; <span data-count="14">B</span>inop (a, Pow, b), []) ]
   ]
 ;;
 
 let non_assoc_ops_seq_check l =
-  <span data-count="19473">L</span>ist.fold_left
+  <span data-count="19907">L</span>ist.fold_left
     (fun (prev_assoc, error_flag) (ass, _, _) -&gt;
-      <span data-count="520">a</span>ss, error_fla<span data-count="0">g</span> || (prev_assoc = Non &amp;&amp; <span data-count="1">a</span>ss = Non<span data-count="1">)</span>)
+      <span data-count="525">a</span>ss, error_fla<span data-count="0">g</span> || (prev_assoc = Non &amp;&amp; <span data-count="1">a</span>ss = Non<span data-count="1">)</span>)
     (Left, false)
     l
-  |&gt; <span data-count="19473">s</span>nd
-  |&gt; <span data-count="19473">f</span>un error_flag -&gt;
-  <span data-count="19473">i</span>f error_flag
+  |&gt; <span data-count="19907">s</span>nd
+  |&gt; <span data-count="19907">f</span>un error_flag -&gt;
+  <span data-count="19907">i</span>f error_flag
   then <span data-count="1">f</span>ail "cannot mix two non-associative operators in the same infix expression"
-  else <span data-count="19472">r</span>eturn l
+  else <span data-count="19906">r</span>eturn l
 ;;
 
 let op expr prios_list =
-  <span data-count="93">l</span>et rec loop acc = function
-    | <span data-count="19472">[</span>] -&gt; acc
-    | <span data-count="117">(</span>Right, op, r) :: tl -&gt; op acc (loo<span data-count="117">p</span> r tl)
-    | <span data-count="401">(</span>(<span data-count="242">L</span>eft | <span data-count="159">N</span>on), op, r) :: tl -&gt; loop (o<span data-count="401">p</span> acc r) tl
+  <span data-count="94">l</span>et rec loop acc = function
+    | <span data-count="19906">[</span>] -&gt; acc
+    | <span data-count="120">(</span>Right, op, r) :: tl -&gt; op acc (loo<span data-count="120">p</span> r tl)
+    | <span data-count="403">(</span>(<span data-count="242">L</span>eft | <span data-count="161">N</span>on), op, r) :: tl -&gt; loop (o<span data-count="403">p</span> acc r) tl
   in
   let rec helper = function
-    | <span data-count="166656">[</span>] -&gt; ws *&gt; expr
-    | <span data-count="112623">h</span>d :: tl -&gt;
-      retur<span data-count="112623">n</span> loop
-      &lt;**<span data-count="112623">&gt;</span> helpe<span data-count="112623">r</span> tl
-      &lt;*<span data-count="112623">&gt;</span> (choice
-             (List.ma<span data-count="112623">p</span>
-                (fun (ass, op, f) -&gt; <span data-count="161355">o</span>p **<span data-count="161355">&gt;</span> helpe<span data-count="161355">r</span> tl &gt;&gt;= fun r -&gt; <span data-count="520">r</span>eturn (ass, f, r))
-                (sn<span data-count="112623">d</span> hd))
-           |&gt; <span data-count="112623">m</span>an<span data-count="112623">y</span>
-           &gt;&gt;<span data-count="112623">=</span> non_assoc_ops_seq_check)
+    | <span data-count="168448">[</span>] -&gt; ws *&gt; expr
+    | <span data-count="113834">h</span>d :: tl -&gt;
+      retur<span data-count="113834">n</span> loop
+      &lt;**<span data-count="113834">&gt;</span> helpe<span data-count="113834">r</span> tl
+      &lt;*<span data-count="113834">&gt;</span> (choice
+             (List.ma<span data-count="113834">p</span>
+                (fun (ass, op, f) -&gt; <span data-count="163090">o</span>p **<span data-count="163090">&gt;</span> helpe<span data-count="163090">r</span> tl &gt;&gt;= fun r -&gt; <span data-count="525">r</span>eturn (ass, f, r))
+                (sn<span data-count="113834">d</span> hd))
+           |&gt; <span data-count="113834">m</span>an<span data-count="113834">y</span>
+           &gt;&gt;<span data-count="113834">=</span> non_assoc_ops_seq_check)
       &lt;|&gt;
         (match fst hd with
-        | <span data-count="5208">S</span>ome (op, f) -&gt; ws *<span data-count="5208">&gt;</span> (op **<span data-count="5208">&gt;</span> helpe<span data-count="5208">r</span> tl) &gt;&gt;<span data-count="5208">=</span> fun a -&gt; <span data-count="57">r</span>eturn (<span data-count="57">f</span> a)
-        | <span data-count="107415">_</span> -&gt; fai<span data-count="107415">l</span> "")
+        | <span data-count="5264">S</span>ome (op, f) -&gt; ws *<span data-count="5264">&gt;</span> (op **<span data-count="5264">&gt;</span> helpe<span data-count="5264">r</span> tl) &gt;&gt;<span data-count="5264">=</span> fun a -&gt; <span data-count="57">r</span>eturn (<span data-count="57">f</span> a)
+        | <span data-count="108570">_</span> -&gt; fai<span data-count="108570">l</span> "")
   in
   helper prios_list
 ;;
 
 let const_e =
   let+ c = const in
-  <span data-count="1288">C</span>onst c, []
+  <span data-count="1331">C</span>onst c, []
 ;;
 
 let ident_e =
   let+ i = ident in
-  <span data-count="1623">I</span>dentificator i, []
+  <span data-count="1667">I</span>dentificator i, []
 ;;
 
 let if_then_else e =
-  <span data-count="186">l</span>et+ cond = wor<span data-count="186">d</span> "if" **<span data-count="186">&gt;</span> e
-  and+ th_br = wor<span data-count="186">d</span> "then" **<span data-count="186">&gt;</span> e
-  and+ el_br = wor<span data-count="186">d</span> "else" **<span data-count="186">&gt;</span> e in
+  <span data-count="188">l</span>et+ cond = wor<span data-count="188">d</span> "if" **<span data-count="188">&gt;</span> e
+  and+ th_br = wor<span data-count="188">d</span> "then" **<span data-count="188">&gt;</span> e
+  and+ el_br = wor<span data-count="188">d</span> "else" **<span data-count="188">&gt;</span> e in
   <span data-count="64">I</span>fThenEsle (cond, th_br, el_br), []
 ;;
 
 let inner_bindings e =
-  <span data-count="186">w</span>or<span data-count="186">d</span> "let"
-  **&gt; let+ bnd = bindin<span data-count="186">g</span> e
-      and+ bnds = man<span data-count="186">y</span> @@ (cha<span data-count="186">r</span> ';' **<span data-count="186">&gt;</span> bindin<span data-count="186">g</span> e)
-      and+ ex = wor<span data-count="186">d</span> "in" **<span data-count="186">&gt;</span> e &gt;&gt;<span data-count="186">=</span> ex_tp in
+  <span data-count="188">w</span>or<span data-count="188">d</span> "let"
+  **&gt; let+ bnd = bindin<span data-count="188">g</span> e
+      and+ bnds = man<span data-count="188">y</span> @@ (cha<span data-count="188">r</span> ';' **<span data-count="188">&gt;</span> bindin<span data-count="188">g</span> e)
+      and+ ex = wor<span data-count="188">d</span> "in" **<span data-count="188">&gt;</span> e &gt;&gt;<span data-count="188">=</span> ex_tp in
       <span data-count="70">I</span>nnerBindings (bnd, bnds, ex), []
 ;;
 
 let lambda e =
-  <span data-count="186">o</span>pe<span data-count="186">r</span> "\\"
-  *&gt; let** pt = patter<span data-count="186">n</span> Ban_p Ban_t in
+  <span data-count="188">o</span>pe<span data-count="188">r</span> "\\"
+  *&gt; let** pt = patter<span data-count="188">n</span> Ban_p Ban_t in
      <span data-count="142">l</span>et* pts = man<span data-count="142">y</span> (ws *<span data-count="142">&gt;</span> patter<span data-count="142">n</span> Ban_p Ban_t) in
      <span data-count="142">l</span>et* ex = strin<span data-count="142">g</span> "-&gt;" **<span data-count="142">&gt;</span> e in
      <span data-count="142">r</span>eturn (Lambda (pt, pts, ex), [])
 ;;
 
 let tree_e e =
-  <span data-count="5857">t</span>ree
+  <span data-count="5982">t</span>ree
     e
-    ((BinTreeBld Nul, []) |&gt; retur<span data-count="5857">n</span>)
+    ((BinTreeBld Nul, []) |&gt; retur<span data-count="5982">n</span>)
     (fun ex1 ex2 ex3 -&gt; <span data-count="37">r</span>eturn (BinTreeBld (Node (ex1, ex2, ex3)), []))
 ;;
 
 let case e =
-  <span data-count="186">w</span>or<span data-count="186">d</span> "case"
+  <span data-count="188">w</span>or<span data-count="188">d</span> "case"
   *&gt; let** ex = e in
      <span data-count="26">w</span>or<span data-count="26">d</span> "of"
      **&gt;
@@ -3133,7 +3133,7 @@ let case e =
 ;;
 
 let list_e e =
-  <span data-count="5857">l</span>ist_enu<span data-count="5857">m</span> e (fun l -&gt; <span data-count="132">r</span>eturn (ListBld (OrdList (IncomprehensionlList l)), []))
+  <span data-count="5982">l</span>ist_enu<span data-count="5982">m</span> e (fun l -&gt; <span data-count="137">r</span>eturn (ListBld (OrdList (IncomprehensionlList l)), []))
   &lt;|&gt; (* let condition = return (fun exp -&gt; Condition exp) &lt;*&gt; e in
          let generator =
          return (fun (pat, exp) -&gt; Generator (pat, exp))
@@ -3151,11 +3151,11 @@ let list_e e =
          &gt;&gt;<span data-count="20">|</span> fun (ex2, ex3) -&gt; <span data-count="20">L</span>azyList (ex1, ex2, ex3))
       ]
     &gt;&gt;| fun l -&gt; <span data-count="20">L</span>istBld l, [])
-   |&gt; sq_bracket<span data-count="5857">s</span>)
+   |&gt; sq_bracket<span data-count="5982">s</span>)
 ;;
 
 let tuple_or_parensed_item_e e =
-  <span data-count="5857">t</span>uple_or_parensed_item
+  <span data-count="5982">t</span>uple_or_parensed_item
     e
     (fun ex1 ex2 exs -&gt; <span data-count="120">r</span>eturn (TupleBld (ex1, ex2, exs), []))
     return
@@ -3163,87 +3163,87 @@ let tuple_or_parensed_item_e e =
 
 let infix_binop =
   let binop_lambda op =
-    <span data-count="1065">r</span>eturn
+    <span data-count="1080">r</span>eturn
       (Lambda
          ( ([], PIdentificator (Ident "x"), [])
          , [ [], PIdentificator (Ident "y"), [] ]
          , ( Binop ((Identificator (Ident "x"), []), op, (Identificator (Ident "y"), []))
            , [] ) ))
   in
-  choic<span data-count="71">e</span>
-    [ paren<span data-count="71">s</span>
-        (choic<span data-count="71">e</span>
-           [ ope<span data-count="71">r</span> "||" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Or
-           ; ope<span data-count="71">r</span> "&amp;&amp;" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> And
-           ; ope<span data-count="71">r</span> "==" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Equality
-           ; ope<span data-count="71">r</span> "/=" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Inequality
-           ; ope<span data-count="71">r</span> "&gt;=" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> EqualityOrGreater
-           ; ope<span data-count="71">r</span> "&lt;=" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> EqualityOrLess
-           ; ope<span data-count="71">r</span> "&gt;" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Greater
-           ; ope<span data-count="71">r</span> "&lt;" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Less
-           ; ope<span data-count="71">r</span> ":" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Cons
-           ; ope<span data-count="71">r</span> "-" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Minus
-           ; ope<span data-count="71">r</span> "+" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Plus
-           ; ope<span data-count="71">r</span> "*" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Multiply
-           ; ope<span data-count="71">r</span> "^" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Multiply
+  choic<span data-count="72">e</span>
+    [ paren<span data-count="72">s</span>
+        (choic<span data-count="72">e</span>
+           [ ope<span data-count="72">r</span> "||" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Or
+           ; ope<span data-count="72">r</span> "&amp;&amp;" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> And
+           ; ope<span data-count="72">r</span> "==" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Equality
+           ; ope<span data-count="72">r</span> "/=" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Inequality
+           ; ope<span data-count="72">r</span> "&gt;=" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> EqualityOrGreater
+           ; ope<span data-count="72">r</span> "&lt;=" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> EqualityOrLess
+           ; ope<span data-count="72">r</span> "&gt;" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Greater
+           ; ope<span data-count="72">r</span> "&lt;" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Less
+           ; ope<span data-count="72">r</span> ":" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Cons
+           ; ope<span data-count="72">r</span> "-" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Minus
+           ; ope<span data-count="72">r</span> "+" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Plus
+           ; ope<span data-count="72">r</span> "*" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Multiply
+           ; ope<span data-count="72">r</span> "^" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Multiply
            ])
-    ; wor<span data-count="71">d</span> "div" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Divide
-    ; wor<span data-count="71">d</span> "mod" *<span data-count="71">&gt;</span> binop_lambd<span data-count="71">a</span> Mod
+    ; wor<span data-count="72">d</span> "div" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Divide
+    ; wor<span data-count="72">d</span> "mod" *<span data-count="72">&gt;</span> binop_lambd<span data-count="72">a</span> Mod
     ]
-  &gt;&gt;<span data-count="71">|</span> fun e -&gt; <span data-count="8">e</span>, []
+  &gt;&gt;<span data-count="72">|</span> fun e -&gt; <span data-count="8">e</span>, []
 ;;
 
 let other_expr e fa =
-  <span data-count="186">l</span>et e' = e &gt;&gt;= ex_tp in
-  <span data-count="186">c</span>hoic<span data-count="186">e</span>
+  <span data-count="188">l</span>et e' = e &gt;&gt;= ex_tp in
+  <span data-count="188">c</span>hoic<span data-count="188">e</span>
     [ const_e
     ; infix_binop
     ; ident_e
-    ; nothin<span data-count="186">g</span> (retur<span data-count="186">n</span> (ENothing, []))
-    ; jus<span data-count="186">t</span> (retur<span data-count="186">n</span> (EJust, []))
-    ; if_then_els<span data-count="186">e</span> e'
-    ; cas<span data-count="186">e</span> e'
-    ; inner_binding<span data-count="186">s</span> e
-    ; lambd<span data-count="186">a</span> e'
-    ; tree_<span data-count="186">e</span> e'
-    ; list_<span data-count="186">e</span> e'
-    ; tuple_or_parensed_item_<span data-count="186">e</span> e'
+    ; nothin<span data-count="188">g</span> (retur<span data-count="188">n</span> (ENothing, []))
+    ; jus<span data-count="188">t</span> (retur<span data-count="188">n</span> (EJust, []))
+    ; if_then_els<span data-count="188">e</span> e'
+    ; cas<span data-count="188">e</span> e'
+    ; inner_binding<span data-count="188">s</span> e
+    ; lambd<span data-count="188">a</span> e'
+    ; tree_<span data-count="188">e</span> e'
+    ; list_<span data-count="188">e</span> e'
+    ; tuple_or_parensed_item_<span data-count="188">e</span> e'
     ]
-  &gt;&gt;= fun ex -&gt; <span data-count="3096">f</span><span data-count="3096">a</span> ex e &lt;|&gt; retur<span data-count="3096">n</span> ex
+  &gt;&gt;= fun ex -&gt; <span data-count="3160">f</span><span data-count="3160">a</span> ex e &lt;|&gt; retur<span data-count="3160">n</span> ex
 ;;
 
-let oper e fa = <span data-count="93">o</span>p (other_exp<span data-count="93">r</span> e fa) prios_list
+let oper e fa = <span data-count="94">o</span>p (other_exp<span data-count="94">r</span> e fa) prios_list
 
 let function_application ex e =
-  <span data-count="5671">l</span>et e' = e &gt;&gt;= ex_tp in
-  <span data-count="5671">l</span>et* r =
-    many<span data-count="5671">1</span>
+  <span data-count="5794">l</span>et e' = e &gt;&gt;= ex_tp in
+  <span data-count="5794">l</span>et* r =
+    many<span data-count="5794">1</span>
       (ws
-       *<span data-count="5671">&gt;</span> choic<span data-count="5671">e</span>
+       *<span data-count="5794">&gt;</span> choic<span data-count="5794">e</span>
             [ const_e
             ; infix_binop
             ; ident_e
-            ; jus<span data-count="5671">t</span> (retur<span data-count="5671">n</span> (EJust, []))
-            ; nothin<span data-count="5671">g</span> (retur<span data-count="5671">n</span> (ENothing, []))
-            ; tree_<span data-count="5671">e</span> e'
-            ; list_<span data-count="5671">e</span> e'
-            ; tuple_or_parensed_item_<span data-count="5671">e</span> e'
+            ; jus<span data-count="5794">t</span> (retur<span data-count="5794">n</span> (EJust, []))
+            ; nothin<span data-count="5794">g</span> (retur<span data-count="5794">n</span> (ENothing, []))
+            ; tree_<span data-count="5794">e</span> e'
+            ; list_<span data-count="5794">e</span> e'
+            ; tuple_or_parensed_item_<span data-count="5794">e</span> e'
             ])
   in
-  <span data-count="720">m</span>atch r with
+  <span data-count="759">m</span>atch r with
   | <span data-count="0">[</span>] -&gt; fail "many1 result can't be empty"
-  | <span data-count="720">h</span>d :: tl -&gt; (FunctionApply (ex, hd, tl), []) |&gt; return
+  | <span data-count="759">h</span>d :: tl -&gt; (FunctionApply (ex, hd, tl), []) |&gt; return
 ;;
 
 let e e =
-  <span data-count="93">o</span>pe<span data-count="93">r</span> e function_application
-  &lt;|<span data-count="93">&gt;</span> other_exp<span data-count="93">r</span> e function_application
-  &gt;&gt;= fun ex -&gt; <span data-count="2575">f</span>unction_applicatio<span data-count="2575">n</span> ex e &lt;|&gt; retur<span data-count="2575">n</span> ex
+  <span data-count="94">o</span>pe<span data-count="94">r</span> e function_application
+  &lt;|<span data-count="94">&gt;</span> other_exp<span data-count="94">r</span> e function_application
+  &gt;&gt;= fun ex -&gt; <span data-count="2634">f</span>unction_applicatio<span data-count="2634">n</span> ex e &lt;|&gt; retur<span data-count="2634">n</span> ex
 ;;
 
 let expr = function
   | <span data-count="0">B</span>an_t -&gt; fix e
-  | <span data-count="96">A</span>llow_t -&gt; fi<span data-count="96">x</span> e &gt;&gt;= ex_tp
+  | <span data-count="97">A</span>llow_t -&gt; fi<span data-count="97">x</span> e &gt;&gt;= ex_tp
 ;;
 
 let%expect_test "infix_binop" =
@@ -3256,7 +3256,7 @@ let%expect_test "infix_binop" =
               ((Identificator (Ident "y")), []))),
            [])
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_prio" =
@@ -3269,7 +3269,7 @@ let%expect_test "expr_prio" =
               Multiply, ((Const (Int 2)), []))),
            []),
           Greater, ((Const (Int 1)), []))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_div_mod" =
@@ -3279,7 +3279,7 @@ let%expect_test "expr_div_mod" =
       ((Binop (
           ((Binop (((Const (Int 10)), []), Divide, ((Const (Int 3)), []))), []),
           Mod, ((Const (Int 2)), []))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_right_assoc" =
@@ -3288,7 +3288,7 @@ let%expect_test "expr_right_assoc" =
     {|
       ((Binop (((Const (Int 2)), []), Pow,
           ((Binop (((Const (Int 3)), []), Pow, ((Const (Int 4)), []))), []))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_Just" =
@@ -3297,7 +3297,7 @@ let%expect_test "expr_with_Just" =
     {|
       ((Binop (((FunctionApply ((EJust, []), ((Const (Int 2)), []), [])), []),
           Plus, ((Const (Int 1)), []))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_func_apply" =
@@ -3310,7 +3310,7 @@ let%expect_test "expr_with_func_apply" =
               [((Identificator (Ident "g")), []); ((Const (Int 2)), [])])),
            []),
           Plus, ((Const (Int 1)), []))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid1" =
@@ -3319,7 +3319,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid1" =
     {|
       ((FunctionApply (((Identificator (Ident "f")), []), ((Const (Int 9)), []),
           [((Identificator (Ident "a")), [])])),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_func_apply_strange_but_valid2" =
@@ -3328,7 +3328,7 @@ let%expect_test "expr_with_func_apply_strange_but_valid2" =
     {|
       ((FunctionApply (((Identificator (Ident "f")), []), (EJust, []),
           [((Const (Int 1)), [])])),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_non-assoc_op_simple" =
@@ -3337,13 +3337,13 @@ let%expect_test "expr_with_non-assoc_op_simple" =
     {|
       ((Binop (((Identificator (Ident "x")), []), Equality,
           ((Identificator (Ident "y")), []))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_invalid" =
   <span data-count="1">p</span>rs_and_prnt_ln (exp<span data-count="1">r</span> Allow_t) show_expr "x == y + 1 &gt;= z";
   <span data-count="1">[</span>%expect {|
-      ((Identificator (Ident "x")), []) |}<span data-count="143">]</span>
+      ((Identificator (Ident "x")), []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_with_non-assoc_ops_valid" =
@@ -3359,7 +3359,7 @@ let%expect_test "expr_with_non-assoc_ops_valid" =
               ((Identificator (Ident "z'")), []))),
            [])
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_case_statement" =
@@ -3370,7 +3370,7 @@ let%expect_test "expr_case_statement" =
           (([], (PConst (OrdinaryPConst (Int 1))), []),
            (OrdBody ((Const (Int 1)), []))),
           [(([], PWildcard, []), (OrdBody ((Const (Int 2)), [])))])),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_case_statement_with_guards" =
@@ -3390,7 +3390,7 @@ let%expect_test "expr_case_statement_with_guards" =
               [(((Identificator (Ident "otherwise")), []), ((Const (Int 2)), []))]
               ))),
           [(([], PWildcard, []), (OrdBody ((Const (Int 3)), [])))])),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_tuple" =
@@ -3404,7 +3404,7 @@ let%expect_test "expr_tuple" =
              [])
             ]
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_lambda" =
@@ -3415,7 +3415,7 @@ let%expect_test "expr_lambda" =
           ((Binop (((Identificator (Ident "x")), []), Plus, ((Const (Int 1)), []))),
            [])
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_tree" =
@@ -3428,20 +3428,20 @@ let%expect_test "expr_tree" =
                  ((BinTreeBld Nul), [])))),
            [])
           )),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_plus_neg" =
   <span data-count="1">p</span>rs_and_prnt_ln (exp<span data-count="1">r</span> Allow_t) show_expr "1 + -1";
   <span data-count="1">[</span>%expect {|
-      ((Const (Int 1)), []) |}<span data-count="143">]</span>
+      ((Const (Int 1)), []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_and_neg" =
   <span data-count="1">p</span>rs_and_prnt_ln (exp<span data-count="1">r</span> Allow_t) show_expr "1 &amp;&amp; -1";
   <span data-count="1">[</span>%expect
     {|
-      ((Binop (((Const (Int 1)), []), And, ((Neg ((Const (Int 1)), [])), []))), []) |}<span data-count="143">]</span>
+      ((Binop (((Const (Int 1)), []), And, ((Neg ((Const (Int 1)), [])), []))), []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_tuple_neg" =
@@ -3449,13 +3449,13 @@ let%expect_test "expr_tuple_neg" =
   <span data-count="1">[</span>%expect
     {|
       ((TupleBld (((Neg ((Const (Int 1)), [])), []), ((Const (Int 1)), []), [])),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_lambda_invalid_neg" =
   <span data-count="1">p</span>rs_and_prnt_ln (exp<span data-count="1">r</span> Allow_t) show_expr " \\ -1 -&gt; 1";
   <span data-count="1">[</span>%expect {|
-      error: : no more choices |}<span data-count="143">]</span>
+      error: : no more choices |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_case_neg" =
@@ -3465,7 +3465,7 @@ let%expect_test "expr_case_neg" =
       ((Case (((Neg ((Const (Int 1)), [])), []),
           (([], (PConst (NegativePInt 1)), []), (OrdBody ((Const (Int 1)), []))),
           [])),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_list_incomprehensional" =
@@ -3480,7 +3480,7 @@ let%expect_test "expr_list_incomprehensional" =
                       ((Const (Int 2)), []), [])),
                    []);
                   ((Const Unit), [])]))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 (* let%expect_test "expr_list_comprehensional_cond" =
@@ -3533,14 +3533,14 @@ let%expect_test "expr_list_lazy_valid" =
        [])
       ((ListBld
           (LazyList (((Const (Int 1)), []), (Some ((Const (Int 3)), [])), None))),
-       []) |}<span data-count="143">]</span>
+       []) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_binop_invlid_tp" =
   <span data-count="1">p</span>rs_and_prnt_ln (exp<span data-count="1">r</span> Allow_t) show_expr "1 + 2 :: Int + 3";
   <span data-count="1">[</span>%expect
     {|
-      ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 2)), []))), [TInt]) |}<span data-count="143">]</span>
+      ((Binop (((Const (Int 1)), []), Plus, ((Const (Int 2)), []))), [TInt]) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "expr_valid_tp" =
@@ -3555,10 +3555,10 @@ let%expect_test "expr_valid_tp" =
               ((Const (Int 2)), [TInt]))),
            [TBool]),
           ((Const (Int 0)), [TInt]), ((Const (Int 1)), [TInt]))),
-       [TUnit]) |}<span data-count="143">]</span>
+       [TUnit]) |}<span data-count="145">]</span>
 ;;
 
-let binding = bindin<span data-count="71">g</span> (exp<span data-count="71">r</span> Allow_t)
+let binding = bindin<span data-count="72">g</span> (exp<span data-count="72">r</span> Allow_t)
 
 let%expect_test "var_binding_simple" =
   <span data-count="1">p</span>rs_and_prnt_ln binding show_binding "x = 1";
@@ -3566,7 +3566,7 @@ let%expect_test "var_binding_simple" =
     {|
       (Def
          (VarsDef (([], (PIdentificator (Ident "x")), []),
-            (OrdBody ((Const (Int 1)), [])), []))) |}<span data-count="143">]</span>
+            (OrdBody ((Const (Int 1)), [])), []))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "var_binding_with_where" =
@@ -3583,7 +3583,7 @@ let%expect_test "var_binding_with_where" =
                  (VarsDef (([], (PIdentificator (Ident "k")), []),
                     (OrdBody ((Const (Int 2)), [])), [])))
               ]
-            ))) |}<span data-count="143">]</span>
+            ))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "fun_binding_simple" =
@@ -3596,7 +3596,7 @@ let%expect_test "fun_binding_simple" =
                ((Binop (((Identificator (Ident "x")), []), Plus,
                    ((Const (Int 1)), []))),
                 [])),
-            []))) |}<span data-count="143">]</span>
+            []))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "fun_binding_simple_strange_but_valid1" =
@@ -3610,7 +3610,7 @@ let%expect_test "fun_binding_simple_strange_but_valid1" =
                ((Binop (((Identificator (Ident "x")), []), Plus,
                    ((Identificator (Ident "y")), []))),
                 [])),
-            []))) |}<span data-count="143">]</span>
+            []))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "fun_binding_guards" =
@@ -3626,7 +3626,7 @@ let%expect_test "fun_binding_guards" =
                 ((Const (Int 0)), [])),
                [(((Identificator (Ident "otherwise")), []), ((Const (Int 1)), []))]
                )),
-            []))) |}<span data-count="143">]</span>
+            []))) |}<span data-count="145">]</span>
 ;;
 
 let%expect_test "decl" =
@@ -3634,15 +3634,15 @@ let%expect_test "decl" =
   <span data-count="1">[</span>%expect
     {|
       (Decl ((Ident "f"), (FunctionType (FuncT (TInt, TInt, [TInt])))))
-      |}<span data-count="143">]</span>
+      |}<span data-count="145">]</span>
 ;;
 
-let bindings_list = sep_by<span data-count="71">1</span> (ws *<span data-count="71">&gt;</span> cha<span data-count="71">r</span> ';' *<span data-count="71">&gt;</span> ws) binding
+let bindings_list = sep_by<span data-count="72">1</span> (ws *<span data-count="72">&gt;</span> cha<span data-count="72">r</span> ';' *<span data-count="72">&gt;</span> ws) binding
 
 <span data-count="0">t</span>ype bl = <span data-count="0">b</span>inding lis<span data-count="0">t</span> [@@deriving show { with_path = false }]
 
-let parse_and_print_line = prs_and_prnt_l<span data-count="71">n</span> ~consume:Consume.All bindings_list show_bl
-let parse_line str = <span data-count="338">p</span>rs_ln ~consume:Consume.All bindings_list str
+let parse_and_print_line = prs_and_prnt_l<span data-count="72">n</span> ~consume:Consume.All bindings_list show_bl
+let parse_line str = <span data-count="342">p</span>rs_ln ~consume:Consume.All bindings_list str
 </code></pre>
       </div>
     </div>

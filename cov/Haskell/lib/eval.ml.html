@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>eval.ml &mdash; Coverage report</title>
-    <meta name="description" content="71.84% coverage in lib/eval.ml">
+    <meta name="description" content="72.28% coverage in lib/eval.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,12 +15,12 @@
           <span class="dirname">lib/</span>eval.ml
         </a>
       </h1>
-      <h2>71.84%</h2>
+      <h2>72.28%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:1.04%"></span>
-      <span class="unvisited" style="top:1.09%"></span>
-      <span class="unvisited" style="top:1.15%"></span>
+      <span class="unvisited" style="top:0.76%"></span>
+      <span class="unvisited" style="top:0.82%"></span>
+      <span class="unvisited" style="top:0.87%"></span>
       <span class="some-visited" style="top:8.35%"></span>
       <span class="unvisited" style="top:8.95%"></span>
       <span class="unvisited" style="top:9.28%"></span>
@@ -226,13 +226,9 @@
       <span class="unvisited" style="bottom:18.89%"></span>
       <span class="unvisited" style="bottom:18.83%"></span>
       <span class="unvisited" style="bottom:18.78%"></span>
-      <span class="unvisited" style="bottom:18.34%"></span>
-      <span class="unvisited" style="bottom:18.23%"></span>
       <span class="unvisited" style="bottom:18.18%"></span>
       <span class="unvisited" style="bottom:18.12%"></span>
       <span class="unvisited" style="bottom:18.01%"></span>
-      <span class="unvisited" style="bottom:17.85%"></span>
-      <span class="unvisited" style="bottom:17.69%"></span>
       <span class="unvisited" style="bottom:17.63%"></span>
       <span class="unvisited" style="bottom:17.30%"></span>
       <span class="unvisited" style="bottom:17.19%"></span>
@@ -293,7 +289,6 @@
       <span class="unvisited" style="bottom:10.04%"></span>
       <span class="unvisited" style="bottom:9.99%"></span>
       <span class="unvisited" style="bottom:9.66%"></span>
-      <span class="unvisited" style="bottom:9.61%"></span>
       <span class="unvisited" style="bottom:9.55%"></span>
       <span class="unvisited" style="bottom:9.50%"></span>
       <span class="unvisited" style="bottom:9.44%"></span>
@@ -335,17 +330,17 @@
 <a id="L8"></a><span > </span>
 <a id="L9"></a><span > </span>
 <a id="L10"></a><span > </span>
-<a id="L11"></a><span > </span>
+<a id="L11"></a><span class="visited"> </span>
 <a id="L12"></a><span > </span>
-<a id="L13"></a><span class="visited"> </span>
-<a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span class="visited"> </span>
-<a id="L16"></a><span > </span>
+<a id="L13"></a><span > </span>
+<a id="L14"></a><span class="unvisited"> </span>
+<a id="L15"></a><span class="unvisited"> </span>
+<a id="L16"></a><span class="unvisited"> </span>
 <a id="L17"></a><span > </span>
 <a id="L18"></a><span > </span>
-<a id="L19"></a><span class="unvisited"> </span>
-<a id="L20"></a><span class="unvisited"> </span>
-<a id="L21"></a><span class="unvisited"> </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span > </span>
+<a id="L21"></a><span > </span>
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span > </span>
@@ -1820,19 +1815,19 @@
 <a id="L1493"></a><span class="visited"> </span>
 <a id="L1494"></a><span > </span>
 <a id="L1495"></a><span class="visited"> </span>
-<a id="L1496"></a><span class="unvisited"> </span>
+<a id="L1496"></a><span class="visited"> </span>
 <a id="L1497"></a><span > </span>
-<a id="L1498"></a><span class="unvisited"> </span>
+<a id="L1498"></a><span class="visited"> </span>
 <a id="L1499"></a><span class="unvisited"> </span>
 <a id="L1500"></a><span class="unvisited"> </span>
 <a id="L1501"></a><span > </span>
 <a id="L1502"></a><span class="unvisited"> </span>
 <a id="L1503"></a><span class="visited"> </span>
 <a id="L1504"></a><span > </span>
-<a id="L1505"></a><span class="unvisited"> </span>
+<a id="L1505"></a><span class="visited"> </span>
 <a id="L1506"></a><span > </span>
 <a id="L1507"></a><span > </span>
-<a id="L1508"></a><span class="unvisited"> </span>
+<a id="L1508"></a><span class="visited"> </span>
 <a id="L1509"></a><span class="unvisited"> </span>
 <a id="L1510"></a><span > </span>
 <a id="L1511"></a><span > </span>
@@ -1980,7 +1975,7 @@
 <a id="L1653"></a><span > </span>
 <a id="L1654"></a><span class="visited"> </span>
 <a id="L1655"></a><span class="unvisited"> </span>
-<a id="L1656"></a><span class="unvisited"> </span>
+<a id="L1656"></a><span class="visited"> </span>
 <a id="L1657"></a><span class="unvisited"> </span>
 <a id="L1658"></a><span class="unvisited"> </span>
 <a id="L1659"></a><span class="unvisited"> </span>
@@ -4001,15 +3996,10 @@
 open Ast
 open Base.Result
 
-type name = string
 type key = int
 type fresh = int
 
-let ( --| ) x f =
-  <span data-count="1301">m</span>atch x with
-  | <span data-count="1293">O</span>k ok -&gt; Ok ok
-  | <span data-count="8">E</span>rror e -&gt; Error (<span data-count="8">f</span> e)
-;;
+let ( --| ) x f = <span data-count="1306">m</span>ap_error x ~f
 
 let ( --= ) x f =
   <span data-count="0">m</span>atch x with
@@ -4021,7 +4011,10 @@ let ( let+ ) = ( &gt;&gt;| )
 let ( let- ) = ( --| )
 let ( let* ) = ( &gt;&gt;= )
 
+(** name Map*)
 module NMap = Map.Make (String)
+
+(** key Map *)
 module KMap = Map.Make (Int)
 
 type dfs_key = key
@@ -4066,6 +4059,7 @@ type crit_err =
   | `Negative_exponent
   ]
 
+(** definitions *)
 type df =
   | Df of keys NMap.t * df_ext
   | Err of crit_err
@@ -4075,6 +4069,7 @@ type lazy_list =
   | BoolLL of bool (** infinite list of true / infinite list of false*)
   | UnitLL (** infinite list of () *)
 
+(** partially evaled expressions*)
 type pe_expr =
   | V of value
   | ThTree of intern_p
@@ -4084,9 +4079,9 @@ type pe_expr =
   | LazyLst of lazy_list (** invariant: non empty*)
 
 module Triple = struct
-  let fst (x, _, _) = <span data-count="1330">x</span>
-  let snd (_, x, _) = <span data-count="1513">x</span>
-  let thrd (_, _, x) = <span data-count="1721">x</span>
+  let fst (x, _, _) = <span data-count="1340">x</span>
+  let snd (_, x, _) = <span data-count="1527">x</span>
+  let thrd (_, _, x) = <span data-count="1732">x</span>
 end
 
 type level =
@@ -4099,38 +4094,38 @@ open Triple
 open KMap
 
 let ext_pe_exprs_opt pe_expr pe_exprs = function
-  | <span data-count="669">N</span>one -&gt; pe_exprs
-  | <span data-count="115">S</span>ome k -&gt; add k pe_expr pe_exprs
+  | <span data-count="674">N</span>one -&gt; pe_exprs
+  | <span data-count="116">S</span>ome k -&gt; add k pe_expr pe_exprs
 ;;
 
 let init_env, init_fresh =
   let arg fresh =
-    <span data-count="210">l</span>et name = Int.to_string fresh in
-    <span data-count="210">n</span>ame, ([], PIdentificator (Ident name), []), (Identificator (Ident name), [])
+    <span data-count="213">l</span>et name = Int.to_string fresh in
+    <span data-count="213">n</span>ame, ([], PIdentificator (Ident name), []), (Identificator (Ident name), [])
   in
   let dfs, pe_exprs, kk, fresh = empty, empty, NMap.empty, 0 in
   let prnt, fresh =
     let name, p, e = arg fresh in
-    <span data-count="70">l</span>et kk' = NMap.add name (None, fresh) kk in
-    <span data-count="70">l</span>et bd =
+    <span data-count="71">l</span>et kk' = NMap.add name (None, fresh) kk in
+    <span data-count="71">l</span>et bd =
       OrdBody (FunctionApply ((Identificator (Ident "print_int"), []), e, []), [])
     in
     V (VClosures (kk', [ p, [], bd, [] ])), fresh + 1
   in
   let sq, fresh =
-    let (name1, p1, e1), (name2, p2, e2) = ar<span data-count="70">g</span> fresh, ar<span data-count="70">g</span> (fresh + 1) in
-    let kk' = NMap.add name2 (None, fresh + 1) (NMap.ad<span data-count="70">d</span> name1 (None, fresh) kk) in
-    <span data-count="70">l</span>et bd =
+    let (name1, p1, e1), (name2, p2, e2) = ar<span data-count="71">g</span> fresh, ar<span data-count="71">g</span> (fresh + 1) in
+    let kk' = NMap.add name2 (None, fresh + 1) (NMap.ad<span data-count="71">d</span> name1 (None, fresh) kk) in
+    <span data-count="71">l</span>et bd =
       OrdBody (FunctionApply ((Identificator (Ident "print_int"), []), e1, [ e2 ]), [])
     in
     V (VClosures (kk', [ p1, [ p2 ], bd, [] ])), fresh + 2
   in
-  let kk = NMap.add "print_int" (None, fresh + 1) (NMap.ad<span data-count="70">d</span> "seq" (None, fresh) kk) in
-  <span data-count="70">l</span>et pe_exprs = add fresh sq (ad<span data-count="70">d</span> (fresh + 1) prnt pe_exprs) in
-  <span data-count="70">(</span>dfs, pe_exprs, kk), fresh + 2
+  let kk = NMap.add "print_int" (None, fresh + 1) (NMap.ad<span data-count="71">d</span> "seq" (None, fresh) kk) in
+  <span data-count="71">l</span>et pe_exprs = add fresh sq (ad<span data-count="71">d</span> (fresh + 1) prnt pe_exprs) in
+  <span data-count="71">(</span>dfs, pe_exprs, kk), fresh + 2
 ;;
 
-let fm_add_many = List.fold_lef<span data-count="70">t</span> (fun m (k, el) -&gt; <span data-count="694">a</span>dd k el m)
+let fm_add_many = List.fold_lef<span data-count="71">t</span> (fun m (k, el) -&gt; <span data-count="698">a</span>dd k el m)
 
 let new_th kk fresh pe_exprs (e, _) =
   <span data-count="344">(</span>ad<span data-count="344">d</span> fresh (ThLeaf (kk, e)) pe_exprs, fresh + 1), Lnk fresh
@@ -4158,7 +4153,7 @@ let econs_to_pat pe_exprs fresh kk e1 e2 =
 
 let conv_res = function
   | <span data-count="0">f</span>st, `V v -&gt; fst, V v
-  | <span data-count="14">f</span>st, `Th (kk, (e, _)) -&gt; fst, ThLeaf (kk, e)
+  | <span data-count="17">f</span>st, `Th (kk, (e, _)) -&gt; fst, ThLeaf (kk, e)
   | <span data-count="40">f</span>st, `LazyLst ll -&gt; fst, LazyLst ll
 ;;
 
@@ -4170,33 +4165,33 @@ let from_crit_err = function
 ;;
 
 let pm_key ((dfs, pe_exprs, kk) as env) fresh helper ok_lnk ok k ff =
-  <span data-count="1024">l</span>et pattern_match_v, pattern_match, patpat_match, ptrnll_match = ff in
+  <span data-count="1026">l</span>et pattern_match_v, pattern_match, patpat_match, ptrnll_match = ff in
   let pm_res_hndl = function
     | <span data-count="207">O</span>k (to_pe_ex, (dfs, pe_exprs, fresh)) -&gt;
       let pe_exprs = fm_add_many pe_exprs to_pe_ex in
       <span data-count="207">o</span>k (dfs, pe_exprs, thr<span data-count="207">d</span> env) fresh
-    | <span data-count="103">E</span>rror (`Not_match, (dfs, pe_exprs, fresh)) -&gt; helper (dfs, pe_exprs, thr<span data-count="103">d</span> env) fresh
+    | <span data-count="104">E</span>rror (`Not_match, (dfs, pe_exprs, fresh)) -&gt; helper (dfs, pe_exprs, thr<span data-count="104">d</span> env) fresh
     | <span data-count="0">E</span>rror
         ( ((<span data-count="0">`</span>Not_exh | <span data-count="0">`</span>Typing_err | <span data-count="0">`</span>Div_by_zero | <span data-count="0">`</span>Negative_exponent) as er)
         , (dfs, pe_exprs, fresh) ) -&gt; Error (er, (dfs, pe_exprs, fresh))
   in
   function
   | <span data-count="681">L</span>nk k' -&gt; ok_lnk env fresh k k'
-  | <span data-count="343">P</span> (k0, pat) as p -&gt;
+  | <span data-count="345">P</span> (k0, pat) as p -&gt;
     let rec helper_key k =
-      <span data-count="521">m</span>atch KMap.find k pe_exprs with
+      <span data-count="523">m</span>atch KMap.find k pe_exprs with
       | <span data-count="0">E</span>r er -&gt; Error (er, (dfs, pe_exprs, fresh))
       | <span data-count="178">L</span>ink k -&gt; helper_key k
-      | <span data-count="11">V</span> v -&gt;
+      | <span data-count="12">V</span> v -&gt;
         (match pattern_match_v p v [] with
-         | <span data-count="11">O</span>k to_pe_ex -&gt;
+         | <span data-count="12">O</span>k to_pe_ex -&gt;
            let pe_exprs = fm_add_many pe_exprs to_pe_ex in
-           <span data-count="11">o</span>k (dfs, pe_exprs, kk) fresh
+           <span data-count="12">o</span>k (dfs, pe_exprs, kk) fresh
          | <span data-count="0">E</span>rror `Not_match -&gt; helper env fresh
          | Error ((<span data-count="0">`</span>Not_exh | <span data-count="0">`</span>Typing_err | <span data-count="0">`</span>Div_by_zero | <span data-count="0">`</span>Negative_exponent) as er) -&gt;
            Error (er, (dfs, pe_exprs, fresh)))
-      | <span data-count="310">T</span>hLeaf (kk, e) -&gt;
-        pattern_match [] (dfs, pe_exprs, kk) fresh (Some k) p e |&gt; <span data-count="310">p</span>m_res_hndl
+      | <span data-count="311">T</span>hLeaf (kk, e) -&gt;
+        pattern_match [] (dfs, pe_exprs, kk) fresh (Some k) p e |&gt; <span data-count="311">p</span>m_res_hndl
       | <span data-count="22">T</span>hTree pat' -&gt;
         let to_pe_ex =
           match k0 with
@@ -4219,48 +4214,48 @@ let pm_key ((dfs, pe_exprs, kk) as env) fresh helper ok_lnk ok k ff =
 ;;
 
 let rec eval_bnds level env fresh bnds =
-  <span data-count="926">l</span>et to_dfs, (kk, main, fresh) =
+  <span data-count="935">l</span>et to_dfs, (kk, main, fresh) =
     let prep_eval_bnd ((to_dfs, (kk0, main, fresh)) as init) = function
       | <span data-count="0">D</span>ecl _ -&gt; init
-      | <span data-count="68">D</span>ef (FunDef ((Ident i as id), p, pp, bd, bb)) -&gt;
+      | <span data-count="70">D</span>ef (FunDef ((Ident i as id), p, pp, bd, bb)) -&gt;
         (match
            List.fold_left_map
              (fun fl -&gt; function
-               | <span data-count="11">d</span>k, FunDs ((i, pek), defs) when id = i -&gt;
-                 <span data-count="10">t</span>rue, (dk, FunDs ((i, pek), (p, pp, bd, bb) :: defs))
+               | <span data-count="12">d</span>k, FunDs ((i, pek), defs) when id = i -&gt;
+                 <span data-count="11">t</span>rue, (dk, FunDs ((i, pek), (p, pp, bd, bb) :: defs))
                | <span data-count="3">e</span>l -&gt; fl, el)
              false
              to_dfs
          with
-         | <span data-count="10">t</span>rue, to_dfs' -&gt; to_dfs', Stdlib.sn<span data-count="10">d</span> init
-         | <span data-count="58">_</span> -&gt;
+         | <span data-count="11">t</span>rue, to_dfs' -&gt; to_dfs', Stdlib.sn<span data-count="11">d</span> init
+         | <span data-count="59">_</span> -&gt;
            ( (fresh, FunDs ((id, fresh + 1), [ p, pp, bd, bb ])) :: to_dfs
-           , (NMap.ad<span data-count="58">d</span> i (Some fresh, fresh + 1) kk0, main, fresh + 2) ))
-      | <span data-count="205">D</span>ef (VarsDef (p, bd, bb)) -&gt;
+           , (NMap.ad<span data-count="59">d</span> i (Some fresh, fresh + 1) kk0, main, fresh + 2) ))
+      | <span data-count="209">D</span>ef (VarsDef (p, bd, bb)) -&gt;
         let dfs_key, fresh = fresh, fresh + 1 in
         let ((kk, _, _) as stf), pe =
           prep_p ~dfs_key:(Some dfs_key) (kk0, main, fresh) p
         in
-        <span data-count="205">(</span>if kk == kk0 then <span data-count="1">t</span>o_dfs else <span data-count="204">(</span>dfs_key, VarsD (pe, bd, bb)) :: to_dfs), stf
+        <span data-count="209">(</span>if kk == kk0 then <span data-count="1">t</span>o_dfs else <span data-count="208">(</span>dfs_key, VarsD (pe, bd, bb)) :: to_dfs), stf
     in
-    List.fold_lef<span data-count="926">t</span> prep_eval_bnd ([], (thr<span data-count="926">d</span> env, None, fresh)) bnds
+    List.fold_lef<span data-count="935">t</span> prep_eval_bnd ([], (thr<span data-count="935">d</span> env, None, fresh)) bnds
   in
   let dfs =
-    List.fold_left (fun dfs (k, d) -&gt; <span data-count="262">K</span>Map.add k (Df (kk, d)) dfs) (fs<span data-count="926">t</span> env) to_dfs
+    List.fold_left (fun dfs (k, d) -&gt; <span data-count="267">K</span>Map.add k (Df (kk, d)) dfs) (fs<span data-count="935">t</span> env) to_dfs
   in
-  <span data-count="926">m</span>atch level, main with
-  | <span data-count="58">T</span>opLevel, Some keys -&gt;
-    (match eval_var_full keys (dfs, sn<span data-count="58">d</span> env, fresh) with
-     | <span data-count="39">O</span>k ((dfs, pe_exprs, fresh), _) -&gt; Ok ((dfs, pe_exprs, kk), fresh)
+  <span data-count="935">m</span>atch level, main with
+  | <span data-count="59">T</span>opLevel, Some keys -&gt;
+    (match eval_var_full keys (dfs, sn<span data-count="59">d</span> env, fresh) with
+     | <span data-count="40">O</span>k ((dfs, pe_exprs, fresh), _) -&gt; Ok ((dfs, pe_exprs, kk), fresh)
      | <span data-count="19">E</span>rror (e, (dfs, pe_exprs, fresh)) -&gt; Error (e, ((dfs, pe_exprs, kk), fresh)))
-  | <span data-count="868">_</span> -&gt; Ok ((dfs, sn<span data-count="868">d</span> env, kk), fresh)
+  | <span data-count="876">_</span> -&gt; Ok ((dfs, sn<span data-count="876">d</span> env, kk), fresh)
 
-and prep_p ?(dfs_key = <span data-count="1024">N</span>one) (kk, main, fresh) (alias, p, _) =
-  <span data-count="1990">l</span>et prep_p = prep_p ~dfs_key in
+and prep_p ?(dfs_key = <span data-count="1026">N</span>one) (kk, main, fresh) (alias, p, _) =
+  <span data-count="1996">l</span>et prep_p = prep_p ~dfs_key in
   let helper_list = List.fold_left_map prep_p in
-  <span data-count="1990">l</span>et com_key =
+  <span data-count="1996">l</span>et com_key =
     match alias with
-    | <span data-count="1964">[</span>] -&gt; None
+    | <span data-count="1970">[</span>] -&gt; None
     | <span data-count="26">_</span> -&gt; Some fresh
   in
   let kk, main =
@@ -4271,15 +4266,15 @@ and prep_p ?(dfs_key = <span data-count="1024">N</span>one) (kk, main, fresh) (a
       (kk, main)
       alias
   in
-  <span data-count="1990">l</span>et stf = kk, main, fresh + 1 in
+  <span data-count="1996">l</span>et stf = kk, main, fresh + 1 in
   match p with
   | <span data-count="31">P</span>Wildcard -&gt; stf, Lnk fresh
-  | <span data-count="1417">P</span>Identificator (Ident i) -&gt;
-    ( ( NMap.ad<span data-count="1417">d</span> i (dfs_key, fresh) kk
-      , (if String.equal i "main" then <span data-count="58">S</span>ome (dfs_key, fresh) else <span data-count="1359">m</span>ain)
+  | <span data-count="1421">P</span>Identificator (Ident i) -&gt;
+    ( ( NMap.ad<span data-count="1421">d</span> i (dfs_key, fresh) kk
+      , (if String.equal i "main" then <span data-count="59">S</span>ome (dfs_key, fresh) else <span data-count="1362">m</span>ain)
       , fresh + 1 )
     , Lnk fresh )
-  | <span data-count="38">P</span>Const c -&gt; stf, P (com_key, PEConst c)
+  | <span data-count="40">P</span>Const c -&gt; stf, P (com_key, PEConst c)
   | <span data-count="11">P</span>Maybe Nothing -&gt; stf, P (com_key, PEMaybe Nothing)
   | <span data-count="35">P</span>Tree PNul -&gt; stf, P (com_key, PETree Nul)
   | <span data-count="6">P</span>Maybe (Just p) -&gt;
@@ -4305,20 +4300,20 @@ and prep_p ?(dfs_key = <span data-count="1024">N</span>one) (kk, main, fresh) (a
 
 and find_expr ((dfs, pe_exprs, fresh) as dpf) = function
   | <span data-count="2465">N</span>one, pe_exprs_key -&gt; Ok (dpf, fin<span data-count="2465">d</span> pe_exprs_key pe_exprs)
-  | <span data-count="576">S</span>ome dfs_key, pe_exprs_key -&gt;
+  | <span data-count="581">S</span>ome dfs_key, pe_exprs_key -&gt;
     (try Ok (dpf, fin<span data-count="333">d</span> pe_exprs_key pe_exprs) with
-     | <span data-count="243">N</span>ot_found -&gt;
+     | <span data-count="248">N</span>ot_found -&gt;
        (match find dfs_key dfs with
         | <span data-count="0">E</span>rr e -&gt; Error (e, dpf)
-        | <span data-count="52">D</span>f (kk, FunDs ((_, pe_exprs_key), defs)) -&gt;
+        | <span data-count="53">D</span>f (kk, FunDs ((_, pe_exprs_key), defs)) -&gt;
           let v = VClosures (kk, defs) in
-          Ok ((dfs, ad<span data-count="52">d</span> pe_exprs_key (V v) pe_exprs, fresh), V v)
-        | <span data-count="191">D</span>f (kk, VarsD (p, bd, bb)) -&gt;
+          Ok ((dfs, ad<span data-count="53">d</span> pe_exprs_key (V v) pe_exprs, fresh), V v)
+        | <span data-count="195">D</span>f (kk, VarsD (p, bd, bb)) -&gt;
           let pm (e, _) env fresh =
-            <span data-count="191">m</span>atch pattern_match [] env fresh None p e with
-            | <span data-count="183">O</span>k (to_pe_ex, (dfs, pe_exprs, fresh)) -&gt;
+            <span data-count="195">m</span>atch pattern_match [] env fresh None p e with
+            | <span data-count="187">O</span>k (to_pe_ex, (dfs, pe_exprs, fresh)) -&gt;
               let pe_exprs = fm_add_many pe_exprs to_pe_ex in
-              <span data-count="183">O</span>k (dfs, pe_exprs, fresh)
+              <span data-count="187">O</span>k (dfs, pe_exprs, fresh)
             | <span data-count="8">E</span>rror (`Not_match, (dfs, pe_exprs, fresh)) -&gt;
               let dfs = add dfs_key (Err `Not_exh) dfs in
               <span data-count="8">E</span>rror (`Not_exh, (dfs, pe_exprs, fresh))
@@ -4331,33 +4326,33 @@ and find_expr ((dfs, pe_exprs, fresh) as dpf) = function
           let- e, (dfs, pe_exprs_key, fresh) =
             match eval_bnds Inner (dfs, pe_exprs, kk) fresh bb with
             | <span data-count="0">E</span>rror (e, ((dfs, pe_exprs, _), fresh)) -&gt; Error (e, (dfs, pe_exprs, fresh))
-            | <span data-count="191">O</span>k (((_, _, kk) as env), fresh) -&gt;
+            | <span data-count="195">O</span>k (((_, _, kk) as env), fresh) -&gt;
               let+ dpf =
                 match bd with
-                | <span data-count="191">O</span>rdBody e -&gt; p<span data-count="191">m</span> e env fresh
+                | <span data-count="195">O</span>rdBody e -&gt; p<span data-count="195">m</span> e env fresh
                 | <span data-count="0">G</span>uards (cb, cbs) -&gt;
                   let* (dfs, pe_exprs, fresh), e =
                     eval_step_guard<span data-count="0">s</span> env fresh (cb :: cbs)
                   in
                   <span data-count="0">p</span>m e (dfs, pe_exprs, kk) fresh
               in
-              <span data-count="183">d</span>pf, fin<span data-count="183">d</span> pe_exprs_key (sn<span data-count="183">d</span> dpf)
+              <span data-count="187">d</span>pf, fin<span data-count="187">d</span> pe_exprs_key (sn<span data-count="187">d</span> dpf)
           in
           <span data-count="8">e</span>, (ad<span data-count="8">d</span> dfs_key (Err e) dfs, pe_exprs_key, fresh)))
 
 and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
-  <span data-count="623">m</span>atch ptrn with
-  | <span data-count="183">L</span>nk k -&gt; Ok ((k, ThLeaf (kk, e)) :: to_pe_ex, (dfs, pe_exprs, fresh))
-  | <span data-count="440">P</span> (k, pat) -&gt;
+  <span data-count="628">m</span>atch ptrn with
+  | <span data-count="187">L</span>nk k -&gt; Ok ((k, ThLeaf (kk, e)) :: to_pe_ex, (dfs, pe_exprs, fresh))
+  | <span data-count="441">P</span> (k, pat) -&gt;
     let pmv_call_tr k to_pe_ex v dpf =
       <span data-count="11">m</span>atch pattern_match_v (P (k, pat)) v to_pe_ex with
       | <span data-count="3">O</span>k to_pe_ex -&gt; Ok (to_pe_ex, dpf)
       | <span data-count="8">E</span>rror e -&gt; Error (e, dpf)
     in
     let pmv_call_lf v dpf =
-      <span data-count="13">m</span>atch pattern_match_v (P (None, pat)) v [] with
+      <span data-count="14">m</span>atch pattern_match_v (P (None, pat)) v [] with
       | <span data-count="11">O</span>k _ -&gt; Ok dpf
-      | <span data-count="2">E</span>rror e -&gt; Error (e, dpf)
+      | <span data-count="3">E</span>rror e -&gt; Error (e, dpf)
     in
     let ppm_call to_pe_ex k pk env fresh pat2 =
       <span data-count="211">l</span>et to_pe_ex =
@@ -4380,9 +4375,9 @@ and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
       from_crit_er<span data-count="0">r</span> e, dpf
     in
     let other_exprs typing_err src cont ((_, _, kk) as env) fresh v_call ac =
-      <span data-count="288">l</span>et v_call ((dfs, pe_exprs, fresh), v) =
-        <span data-count="13">l</span>et pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
-        <span data-count="13">v</span>_call v (dfs, pe_exprs, fresh)
+      <span data-count="289">l</span>et v_call ((dfs, pe_exprs, fresh), v) =
+        <span data-count="14">l</span>et pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
+        <span data-count="14">v</span>_call v (dfs, pe_exprs, fresh)
       in
       function
       | <span data-count="22">I</span>fThenEsle (c, th, el) -&gt;
@@ -4404,8 +4399,8 @@ and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
       | <span data-count="16">I</span>nnerBindings (b, bb, (e, _)) -&gt;
         let* env, fresh = eval_step_inner_b<span data-count="16">b</span> (b :: bb) env fresh --<span data-count="16">|</span> from_crit_ful<span data-count="16">l</span> src in
         <span data-count="16">c</span>ont ~after_complex:true src env fresh e
-      | <span data-count="6">B</span>inop (e1, op, e2) when op &lt;&gt; Cons -&gt;
-        <span data-count="6">e</span>val_arlo<span data-count="6">g</span> env fresh e1 e2 op --<span data-count="6">|</span> from_crit_ful<span data-count="6">l</span> src &gt;&gt;= v_call
+      | <span data-count="7">B</span>inop (e1, op, e2) when op &lt;&gt; Cons -&gt;
+        <span data-count="7">e</span>val_arlo<span data-count="7">g</span> env fresh e1 e2 op --<span data-count="7">|</span> from_crit_ful<span data-count="7">l</span> src &gt;&gt;= v_call
       | <span data-count="3">N</span>eg e -&gt; eval_ne<span data-count="3">g</span> env fresh e --<span data-count="3">|</span> from_crit_ful<span data-count="3">l</span> src &gt;&gt;= v_call
       | <span data-count="0">e</span> -&gt; typing_err env fresh src ac e
     in
@@ -4540,7 +4535,7 @@ and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
          | <span data-count="4">e</span> -&gt; other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
        in
        helpe<span data-count="5">r</span> ~after_complex:false src env fresh e &gt;&gt;| k_hndl_l<span data-count="5">f</span> (VConst Unit)
-     | <span data-count="7">P</span>EConst (OrdinaryPConst (Bool _ as c)) -&gt;
+     | <span data-count="8">P</span>EConst (OrdinaryPConst (Bool _ as c)) -&gt;
        let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
          | <span data-count="3">C</span>onst c' when c = c' -&gt; <span data-count="2">o</span>k_lf (VConst c) (dfs, pe_exprs, fresh) src
          | <span data-count="1">C</span>onst (Bool b') -&gt;
@@ -4548,9 +4543,9 @@ and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
          | <span data-count="1">I</span>dentificator (Ident n) -&gt;
            let keys = NMap.find n kk in
            <span data-count="1">h</span>elper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | <span data-count="4">e</span> -&gt; other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+         | <span data-count="5">e</span> -&gt; other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
        in
-       helpe<span data-count="7">r</span> ~after_complex:false src env fresh e &gt;&gt;| k_hndl_l<span data-count="7">f</span> (VConst c)
+       helpe<span data-count="8">r</span> ~after_complex:false src env fresh e &gt;&gt;| k_hndl_l<span data-count="8">f</span> (VConst c)
      | <span data-count="7">P</span>EConst (OrdinaryPConst (Int _ as c)) -&gt;
        let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
          | <span data-count="6">C</span>onst c' when c = c' -&gt; <span data-count="3">o</span>k_lf (VConst c) (dfs, pe_exprs, fresh) src
@@ -4748,21 +4743,21 @@ and pattern_match_list ~strict_len to_pe_ex (dfs, pe_exprs, kk) fresh pp ee =
   helper pp ee (to_pe_ex, (dfs, pe_exprs, fresh))
 
 and pattern_match_v ptrn v to_pe_ex =
-  <span data-count="53">l</span>et pattern_match_v_list =
+  <span data-count="55">l</span>et pattern_match_v_list =
     List.fold_left2 (fun acc p v -&gt; <span data-count="9">a</span>cc &gt;&gt;= pattern_match_<span data-count="9">v</span> p v) (Ok to_pe_ex)
   in
-  <span data-count="53">m</span>atch ptrn with
+  <span data-count="55">m</span>atch ptrn with
   | <span data-count="10">L</span>nk k -&gt; Ok ((k, V v) :: to_pe_ex)
-  | <span data-count="43">P</span> (k, pat) -&gt;
+  | <span data-count="45">P</span> (k, pat) -&gt;
     let to_pe_ex =
       match k with
-      | <span data-count="43">N</span>one -&gt; to_pe_ex
+      | <span data-count="45">N</span>one -&gt; to_pe_ex
       | <span data-count="0">S</span>ome k -&gt; (k, V v) :: to_pe_ex
     in
     (match pat, v with
      | <span data-count="9">P</span>ETree Nul, VTree Nul | <span data-count="1">P</span>EMaybe Nothing, VMaybe Nothing -&gt; Ok to_pe_ex
      | <span data-count="1">P</span>EMaybe (Just p), VMaybe (Just v) -&gt; pattern_match_v p v to_pe_ex
-     | <span data-count="14">P</span>EConst (OrdinaryPConst c), VConst c' when c = c' -&gt; <span data-count="12">O</span>k to_pe_ex
+     | <span data-count="16">P</span>EConst (OrdinaryPConst c), VConst c' when c = c' -&gt; <span data-count="13">O</span>k to_pe_ex
      | <span data-count="4">P</span>EConst (NegativePInt i), VConst (Int i') when i = <span data-count="4">-</span>i' -&gt; <span data-count="4">O</span>k to_pe_ex
      | <span data-count="1">P</span>ETuple (p1, p2, pp), VTuple (v1, v2, vv) -&gt;
        (try pattern_match_v_lis<span data-count="1">t</span> (p1 :: p2 :: pp) (v1 :: v2 :: vv) with
@@ -4771,7 +4766,7 @@ and pattern_match_v ptrn v to_pe_ex =
        pattern_match_v_list [ p1; p2; p3 ] [ v1; v2; v3 ]
      | <span data-count="8">P</span>ETree _, VTree _ | <span data-count="0">P</span>EMaybe _, VMaybe _ -&gt; Error `Not_match
      | <span data-count="1">P</span>EConst (<span data-count="1">O</span>rdinaryPConst (Int _) | <span data-count="0">N</span>egativePInt _), VConst (Int _)
-     | <span data-count="1">P</span>EConst (OrdinaryPConst (Bool _)), VConst (Bool _) -&gt; Error `Not_match
+     | <span data-count="2">P</span>EConst (OrdinaryPConst (Bool _)), VConst (Bool _) -&gt; Error `Not_match
      | <span data-count="3">P</span>EEnum pp, VList vv -&gt;
        (try pattern_match_v_lis<span data-count="3">t</span> pp vv with
         | <span data-count="0">I</span>nvalid_argument _ -&gt; Error `Typing_err)
@@ -4979,18 +4974,18 @@ and ptrnll_match (dfs, pe_exprs, kk) fresh =
   helper (dfs, pe_exprs, fresh)
 
 and eval_var_full ((_, pe_exprs_key) as keys) dpf =
-  <span data-count="2087">l</span>et* ((dfs, pe_exprs, fresh) as dpf), pe_expr = find_exp<span data-count="2087">r</span> dpf keys in
-  <span data-count="2079">l</span>et result_hndl = function
-    | <span data-count="1310">O</span>k ((dfs, pe_exprs, fresh), v) -&gt;
-      Ok ((dfs, ad<span data-count="1310">d</span> pe_exprs_key (V v) pe_exprs, fresh), v)
+  <span data-count="2092">l</span>et* ((dfs, pe_exprs, fresh) as dpf), pe_expr = find_exp<span data-count="2092">r</span> dpf keys in
+  <span data-count="2084">l</span>et result_hndl = function
+    | <span data-count="1314">O</span>k ((dfs, pe_exprs, fresh), v) -&gt;
+      Ok ((dfs, ad<span data-count="1314">d</span> pe_exprs_key (V v) pe_exprs, fresh), v)
     | <span data-count="27">E</span>rror (e, (dfs, pe_exprs, fresh)) -&gt;
       Error (e, (dfs, ad<span data-count="27">d</span> pe_exprs_key (Er e) pe_exprs, fresh))
   in
   match pe_expr with
   | <span data-count="0">E</span>r e -&gt; Error (e, dpf)
-  | <span data-count="742">V</span> v -&gt; Ok (dpf, v)
+  | <span data-count="743">V</span> v -&gt; Ok (dpf, v)
   | <span data-count="654">L</span>ink pk -&gt; eval_var_full (None, pk) dpf |&gt; <span data-count="654">r</span>esult_hndl
-  | <span data-count="670">T</span>hLeaf (kk, e) -&gt; eval_expr_full (dfs, pe_exprs, kk) fresh (e, []) |&gt; <span data-count="670">r</span>esult_hndl
+  | <span data-count="674">T</span>hLeaf (kk, e) -&gt; eval_expr_full (dfs, pe_exprs, kk) fresh (e, []) |&gt; <span data-count="674">r</span>esult_hndl
   | <span data-count="0">L</span>azyLst ll -&gt; eval_lazylst dpf ll |&gt; <span data-count="0">r</span>eturn |&gt; <span data-count="0">r</span>esult_hndl
   | <span data-count="13">T</span>hTree ip -&gt;
     let rec helper_ip ip dpf =
@@ -5060,14 +5055,14 @@ and eval_expr_full_list (dfs, pe_exprs, kk) fresh ee =
   <span data-count="2">d</span>pf, List.re<span data-count="2">v</span> vv
 
 and eval_expr_full ((dfs, pe_exprs, kk) as env) fresh =
-  <span data-count="2752">l</span>et dpf0 = dfs, pe_exprs, fresh in
+  <span data-count="2767">l</span>et dpf0 = dfs, pe_exprs, fresh in
   function
-  | <span data-count="318">C</span>onst c, _ -&gt; Ok (dpf0, VConst c)
+  | <span data-count="322">C</span>onst c, _ -&gt; Ok (dpf0, VConst c)
   | <span data-count="2">E</span>Nothing, _ -&gt; Ok (dpf0, VMaybe Nothing)
   | <span data-count="5">B</span>inTreeBld Nul, _ -&gt; Ok (dpf0, VTree Nul)
-  | <span data-count="1358">I</span>dentificator (Ident n), _ -&gt;
+  | <span data-count="1362">I</span>dentificator (Ident n), _ -&gt;
     let keys = NMap.find n kk in
-    <span data-count="1358">e</span>val_var_full keys dpf0
+    <span data-count="1362">e</span>val_var_full keys dpf0
   | <span data-count="2">T</span>upleBld (e1, e2, ee), _ -&gt;
     let* (dfs, pe_exprs, fresh), v1 = eval_expr_ful<span data-count="2">l</span> env fresh e1 in
     <span data-count="2">l</span>et* (dfs, pe_exprs, fresh), v2 = eval_expr_ful<span data-count="2">l</span> (dfs, pe_exprs, kk) fresh e2 in
@@ -5101,7 +5096,7 @@ and eval_expr_full ((dfs, pe_exprs, kk) as env) fresh =
     let* env, fresh, e = eval_step_cas<span data-count="39">e</span> e env fresh (br :: brs) in
     <span data-count="39">e</span>val_expr_full env fresh e
   | <span data-count="4">N</span>eg e, _ -&gt; eval_neg env fresh e
-  | <span data-count="380">B</span>inop (e1, op, e2), _ -&gt; eval_arlog env fresh e1 e2 op
+  | <span data-count="382">B</span>inop (e1, op, e2), _ -&gt; eval_arlog env fresh e1 e2 op
   | <span data-count="36">L</span>ambda (p, pp, e), _ -&gt;
     Ok ((dfs, pe_exprs, fresh), VClosures (kk, [ p, pp, OrdBody e, [] ]))
   | <span data-count="0">E</span>Just, _ -&gt;
@@ -5116,11 +5111,11 @@ and eval_expr_full ((dfs, pe_exprs, kk) as env) fresh =
     let+ dpf, v = eval_expr_ful<span data-count="2">l</span> (dfs, pe_exprs, kk) fresh a in
     <span data-count="1">d</span>pf, VMaybe (Just v)
   | <span data-count="0">F</span>unctionApply ((EJust, _), _, _ :: _), _ -&gt; Error (`Typing_err, dpf0)
-  | <span data-count="505">F</span>unctionApply (f, a, aa), _ -&gt;
-    eval_step_funap<span data-count="505">p</span> env fresh (f, a :: aa)
+  | <span data-count="510">F</span>unctionApply (f, a, aa), _ -&gt;
+    eval_step_funap<span data-count="510">p</span> env fresh (f, a :: aa)
     &gt;&gt;= (function
-     | <span data-count="374">(</span>dfs, pe_exprs, fresh), `Th (kk, e) -&gt; eval_expr_full (dfs, pe_exprs, kk) fresh e
-     | <span data-count="118">d</span>pf, `V v -&gt; Ok (dpf, v))
+     | <span data-count="375">(</span>dfs, pe_exprs, fresh), `Th (kk, e) -&gt; eval_expr_full (dfs, pe_exprs, kk) fresh e
+     | <span data-count="122">d</span>pf, `V v -&gt; Ok (dpf, v))
 
 and eval_step_ite cond th el env fresh =
   <span data-count="98">l</span>et* dpf, v = eval_expr_ful<span data-count="98">l</span> env fresh cond in
@@ -5171,59 +5166,59 @@ and eval_step_case (e, _) (dfs, pe_exprs, kk) fresh brs =
   helper brs k (dfs, pe_exprs, kk) fresh
 
 and eval_step_funapp ((dfs, pe_exprs, kk0) as env0) fresh = function
-  | <span data-count="98">(</span>Identificator (Ident "seq"), _), [ a1; a2 ] -&gt;
-    let+ dpf, _ = eval_expr_ful<span data-count="98">l</span> env0 fresh a1 in
-    <span data-count="98">d</span>pf, `Th (kk0, a2)
+  | <span data-count="101">(</span>Identificator (Ident "seq"), _), [ a1; a2 ] -&gt;
+    let+ dpf, _ = eval_expr_ful<span data-count="101">l</span> env0 fresh a1 in
+    <span data-count="101">d</span>pf, `Th (kk0, a2)
   | <span data-count="0">(</span>Identificator (Ident "seq"), _), a1 :: a2 :: a3 :: aa -&gt;
     let+ dpf, _ = eval_expr_ful<span data-count="0">l</span> env0 fresh a1 in
     <span data-count="0">d</span>pf, `Th (kk0, (FunctionApply (a2, a3, aa), []))
-  | <span data-count="109">(</span>Identificator (Ident "print_int"), _), a :: [] -&gt;
-    let* dpf, v = eval_expr_ful<span data-count="109">l</span> env0 fresh a in
-    <span data-count="97">(</span>match v with
-     | <span data-count="97">V</span>Const (Int x) -&gt;
+  | <span data-count="113">(</span>Identificator (Ident "print_int"), _), a :: [] -&gt;
+    let* dpf, v = eval_expr_ful<span data-count="113">l</span> env0 fresh a in
+    <span data-count="101">(</span>match v with
+     | <span data-count="101">V</span>Const (Int x) -&gt;
        Printf.printf "%d\n" x;
-       <span data-count="97">O</span>k (dpf, `V (VConst Unit))
+       <span data-count="101">O</span>k (dpf, `V (VConst Unit))
      | <span data-count="0">_</span> -&gt; Error (`Typing_err, dpf))
-  | <span data-count="504">f</span>, aa -&gt;
+  | <span data-count="505">f</span>, aa -&gt;
     let (fresh, pe_exprs), aa' =
       List.fold_left_map
         (fun (fresh, pe_exprs) (a, _) -&gt;
-          <span data-count="810">(</span>fresh + 1, ad<span data-count="810">d</span> fresh (ThLeaf (kk0, a)) pe_exprs), fresh)
+          <span data-count="811">(</span>fresh + 1, ad<span data-count="811">d</span> fresh (ThLeaf (kk0, a)) pe_exprs), fresh)
         (fresh, pe_exprs)
         aa
     in
-    <span data-count="504">l</span>et rec es_ord_funcapp f aa' env fresh =
-      <span data-count="511">l</span>et* ((dfs, pe_exprs, fresh) as dpf), v = eval_expr_ful<span data-count="511">l</span> env fresh f in
-      <span data-count="511">m</span>atch v with
-      | <span data-count="511">V</span>Closures (kk, dd) -&gt;
+    <span data-count="505">l</span>et rec es_ord_funcapp f aa' env fresh =
+      <span data-count="512">l</span>et* ((dfs, pe_exprs, fresh) as dpf), v = eval_expr_ful<span data-count="512">l</span> env fresh f in
+      <span data-count="512">m</span>atch v with
+      | <span data-count="512">V</span>Closures (kk, dd) -&gt;
         let rec helper dd ((dfs, pe_exprs, _) as env) fresh =
-          <span data-count="539">m</span>atch dd with
+          <span data-count="541">m</span>atch dd with
           | <span data-count="0">[</span>] -&gt; Error (`Not_exh, (dfs, pe_exprs, fresh))
-          | <span data-count="539">(</span>p, pp, bd, bb) :: dd -&gt;
+          | <span data-count="541">(</span>p, pp, bd, bb) :: dd -&gt;
             let rec helper_def ((dfs, pe_exprs, kk) as env) fresh = function
-              | <span data-count="486">[</span>], aa' -&gt;
+              | <span data-count="487">[</span>], aa' -&gt;
                 (match eval_bnds Inner env fresh bb with
                  | <span data-count="0">E</span>rror (e, ((dfs, pe_exprs, _), fresh)) -&gt;
                    Error (e, (dfs, pe_exprs, fresh))
-                 | <span data-count="486">O</span>k (env, fresh) -&gt;
+                 | <span data-count="487">O</span>k (env, fresh) -&gt;
                    let* ((dfs, pe_exprs, fresh) as dpf), e =
                      match bd with
-                     | <span data-count="404">O</span>rdBody e -&gt; Ok ((fs<span data-count="404">t</span> env, sn<span data-count="404">d</span> env, fresh), e)
+                     | <span data-count="405">O</span>rdBody e -&gt; Ok ((fs<span data-count="405">t</span> env, sn<span data-count="405">d</span> env, fresh), e)
                      | <span data-count="82">G</span>uards (cb, cbs) -&gt; eval_step_guard<span data-count="82">s</span> env fresh (cb :: cbs)
                    in
-                   <span data-count="485">(</span>match aa' with
-                    | <span data-count="478">[</span>] -&gt; Ok (dpf, `Th (thr<span data-count="478">d</span> env, e))
+                   <span data-count="486">(</span>match aa' with
+                    | <span data-count="479">[</span>] -&gt; Ok (dpf, `Th (thr<span data-count="479">d</span> env, e))
                     | <span data-count="7">a</span>a' -&gt; es_ord_funcapp e aa' (dfs, pe_exprs, thr<span data-count="7">d</span> env) fresh))
               | <span data-count="25">p</span> :: pp, [] -&gt;
                 Ok ((dfs, pe_exprs, fresh), `V (VClosures (kk, [ p, pp, bd, bb ])))
-              | <span data-count="855">p</span> :: pp, a' :: aa' -&gt;
+              | <span data-count="857">p</span> :: pp, a' :: aa' -&gt;
                 let (kk, _, fresh), p' = prep_p (kk, None, fresh) p in
-                <span data-count="855">l</span>et ok_lnk (dfs, pe_exprs, kk) fresh k k' =
+                <span data-count="857">l</span>et ok_lnk (dfs, pe_exprs, kk) fresh k k' =
                   <span data-count="680">h</span>elper_def (dfs, ad<span data-count="680">d</span> k' (Link k) pe_exprs, kk) fresh (pp, aa')
                 in
-                let ok env fresh = <span data-count="147">h</span>elper_def env fresh (pp, aa') in
+                let ok env fresh = <span data-count="148">h</span>elper_def env fresh (pp, aa') in
                 let helper = helper dd in
-                <span data-count="855">l</span>et ff =
+                <span data-count="857">l</span>et ff =
                   pattern_match_v, pattern_match, patpat_match ~k:None, ptrnll_match
                 in
                 pm_key (dfs, pe_exprs, kk) fresh helper ok_lnk ok a' ff p'
@@ -5236,7 +5231,7 @@ and eval_step_funapp ((dfs, pe_exprs, kk0) as env0) fresh = function
     es_ord_funcapp f aa' (dfs, pe_exprs, kk0) fresh
 
 and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
-  <span data-count="530">l</span>et arithm res snd_arg_check =
+  <span data-count="533">l</span>et arithm res snd_arg_check =
     <span data-count="270">l</span>et* (dfs, pe_exprs, fresh), v1 = eval_expr_ful<span data-count="270">l</span> env fresh e1 in
     <span data-count="270">l</span>et* dpf, v2 = eval_expr_ful<span data-count="270">l</span> (dfs, pe_exprs, kk) fresh e2 in
     <span data-count="270">m</span>atch v1, v2 with
@@ -5245,26 +5240,26 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
     | <span data-count="0">_</span> -&gt; Error (`Typing_err, dpf)
   in
   let log res =
-    <span data-count="39">l</span>et* (dfs, pe_exprs, fresh), v1 = eval_expr_ful<span data-count="39">l</span> env fresh e1 in
-    <span data-count="39">l</span>et* dpf, v2 = eval_expr_ful<span data-count="39">l</span> (dfs, pe_exprs, kk) fresh e2 in
-    <span data-count="39">m</span>atch v1, v2 with
-    | <span data-count="39">V</span>Const (Bool x), VConst (Bool y) -&gt; Ok (dpf, VConst (Bool (re<span data-count="39">s</span> x y)))
+    <span data-count="40">l</span>et* (dfs, pe_exprs, fresh), v1 = eval_expr_ful<span data-count="40">l</span> env fresh e1 in
+    <span data-count="40">l</span>et* dpf, v2 = eval_expr_ful<span data-count="40">l</span> (dfs, pe_exprs, kk) fresh e2 in
+    <span data-count="40">m</span>atch v1, v2 with
+    | <span data-count="40">V</span>Const (Bool x), VConst (Bool y) -&gt; Ok (dpf, VConst (Bool (re<span data-count="40">s</span> x y)))
     | <span data-count="0">_</span> -&gt; Error (`Typing_err, dpf)
   in
   let rec ord ((dfs, pe_exprs, fresh) as dpf) src1 src2 ~ac1 ~ac2 pe1 pe2 =
-    <span data-count="1029">l</span>et cmpr_to_constr = function
-      | <span data-count="53">0</span> -&gt; `Eq
-      | <span data-count="133">c</span>mpr -&gt; if cmpr &lt; 0 then <span data-count="102">`</span>L else <span data-count="31">`</span>G
+    <span data-count="1040">l</span>et cmpr_to_constr = function
+      | <span data-count="54">0</span> -&gt; `Eq
+      | <span data-count="134">c</span>mpr -&gt; if cmpr &lt; 0 then <span data-count="103">`</span>L else <span data-count="31">`</span>G
     in
     let neg = function
-      | <span data-count="108">`</span>L, dpf -&gt; `G, dpf
-      | <span data-count="40">`</span>G, dpf -&gt; `L, dpf
-      | <span data-count="44">o</span>th -&gt; oth
+      | <span data-count="109">`</span>L, dpf -&gt; `G, dpf
+      | <span data-count="41">`</span>G, dpf -&gt; `L, dpf
+      | <span data-count="45">o</span>th -&gt; oth
     in
-    let rev () = <span data-count="198">o</span>r<span data-count="198">d</span> dpf src2 src1 ~ac1:ac2 ~ac2:ac1 pe2 pe1 &gt;&gt;| neg in
-    let src_hnd pe_e src pe_exprs = <span data-count="437">e</span>xt_pe_exprs_opt pe_e pe_exprs src in
+    let rev () = <span data-count="201">o</span>r<span data-count="201">d</span> dpf src2 src1 ~ac1:ac2 ~ac2:ac1 pe2 pe1 &gt;&gt;| neg in
+    let src_hnd pe_e src pe_exprs = <span data-count="442">e</span>xt_pe_exprs_opt pe_e pe_exprs src in
     let ord_const dpf = function
-      | <span data-count="186">I</span>nt x, Int y -&gt; Ok (Int.compare x y |&gt; <span data-count="186">c</span>mpr_to_const<span data-count="186">r</span>, dpf)
+      | <span data-count="188">I</span>nt x, Int y -&gt; Ok (Int.compare x y |&gt; <span data-count="188">c</span>mpr_to_const<span data-count="188">r</span>, dpf)
       | <span data-count="0">B</span>ool x, Bool y -&gt; Ok (Bool.compare x y |&gt; <span data-count="0">c</span>mpr_to_const<span data-count="0">r</span>, dpf)
       | <span data-count="0">U</span>nit, Unit -&gt; Ok (`Eq, dpf)
       | <span data-count="0">_</span> -&gt; Error ((`Typing_err : crit_err), dpf)
@@ -5273,23 +5268,23 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       | <span data-count="7">L</span>nk k | <span data-count="0">P</span> (Some k, _) -&gt; ord dpf (Some k) None ~ac1:false ~ac2 (fin<span data-count="7">d</span> k pe_exprs)
       | <span data-count="13">P</span> (None, pat) -&gt; ord dpf None None ~ac1 ~ac2 (ThTree pat)
     in
-    let econst_before c = <span data-count="204">s</span>rc_hnd (V (VConst c)) in
+    let econst_before c = <span data-count="208">s</span>rc_hnd (V (VConst c)) in
     let enothing_before = src_hnd (V (VMaybe Nothing)) in
-    <span data-count="1029">l</span>et enul_before = src_hnd (V (VTree Nul)) in
-    <span data-count="1029">l</span>et eempty_before = src_hnd (V (VList [])) in
-    <span data-count="1029">l</span>et ac_hnd src ~ac pe_ex =
-      <span data-count="18">m</span>atch src, ac with
+    <span data-count="1040">l</span>et enul_before = src_hnd (V (VTree Nul)) in
+    <span data-count="1040">l</span>et eempty_before = src_hnd (V (VList [])) in
+    <span data-count="1040">l</span>et ac_hnd src ~ac pe_ex =
+      <span data-count="19">m</span>atch src, ac with
       | <span data-count="0">S</span>ome k, true -&gt;
         fun (fst, (dfs, pe_exprs, fresh)) -&gt; <span data-count="0">f</span>st, (dfs, ad<span data-count="0">d</span> k pe_ex pe_exprs, fresh)
-      | <span data-count="18">_</span> -&gt; Fun.id
+      | <span data-count="19">_</span> -&gt; Fun.id
     in
-    let ord_list ?(strict_len = <span data-count="32">t</span>rue) inner_call =
-      <span data-count="36">l</span>et rec helper dpf = function
-        | <span data-count="42">h</span>d1 :: tl1, hd2 :: tl2 -&gt;
-          inner_cal<span data-count="42">l</span> dpf hd1 hd2
+    let ord_list ?(strict_len = <span data-count="33">t</span>rue) inner_call =
+      <span data-count="38">l</span>et rec helper dpf = function
+        | <span data-count="45">h</span>d1 :: tl1, hd2 :: tl2 -&gt;
+          inner_cal<span data-count="45">l</span> dpf hd1 hd2
           &gt;&gt;= (function
-           | <span data-count="9">`</span>Eq, dpf -&gt; helper dpf (tl1, tl2)
-           | <span data-count="33">r</span>es -&gt; return res)
+           | <span data-count="10">`</span>Eq, dpf -&gt; helper dpf (tl1, tl2)
+           | <span data-count="35">r</span>es -&gt; return res)
         | <span data-count="3">[</span>], [] -&gt; return (`Eq, dpf)
         | <span data-count="0">[</span>], _ :: _ -&gt;
           if strict_len then <span data-count="0">f</span>ail ((`Typing_err : crit_err), dpf) else <span data-count="0">r</span>eturn (`L, dpf)
@@ -5299,7 +5294,7 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       helper
     in
     let inner_call_ee kk1 kk2 dpf (e1, _) (e2, _) =
-      <span data-count="10">o</span>rd dpf None None ~ac1 ~ac2 (ThLeaf (kk1, e1)) (ThLeaf (kk2, e2))
+      <span data-count="13">o</span>rd dpf None None ~ac1 ~ac2 (ThLeaf (kk1, e1)) (ThLeaf (kk2, e2))
     in
     let inner_call_ev kk dpf (e, _) v =
       <span data-count="10">o</span>rd dpf None None ~ac1 ~ac2 (ThLeaf (kk, e)) (V v)
@@ -5337,13 +5332,13 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       <span data-count="0">l</span>l_none_hnd_r (inner_call_<span data-count="0">v</span> hd) (fun dpf -&gt; <span data-count="0">o</span>rd dpf None None ~ac1 ~ac2 tl)
     in
     let err_hnd = function
-      | <span data-count="371">O</span>k ok -&gt; ok
+      | <span data-count="374">O</span>k ok -&gt; ok
       | <span data-count="12">E</span>rror (e, (dfs, pe_exprs, fresh)) -&gt;
         (dfs, src_hn<span data-count="12">d</span> (Er e) src1 pe_exprs, fresh), Er e
     in
     let complex_hnd res =
-      <span data-count="177">l</span>et dpf, pe1' = err_hnd res in
-      <span data-count="177">o</span>rd dpf src1 src2 ~ac1:true ~ac2 pe1' pe2
+      <span data-count="180">l</span>et dpf, pe1' = err_hnd res in
+      <span data-count="180">o</span>rd dpf src1 src2 ~ac1:true ~ac2 pe1' pe2
     in
     match (pe1, src1), (src2, pe2) with
     | <span data-count="166">(</span>Link k, _), _ -&gt; ord dpf (Some k) src2 ~ac1:false ~ac2 (fin<span data-count="166">d</span> k pe_exprs) pe2
@@ -5361,9 +5356,9 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
     | <span data-count="3">(</span> (ThTree (PEConst (NegativePInt x)), _)
       , (_, (<span data-count="1">T</span>hLeaf (_, Const _) | <span data-count="2">T</span>hTree (PEConst _) | <span data-count="0">V</span> (VConst _))) ) -&gt;
       ord dpf src1 src2 ~ac1 ~ac2 (ThTree (PEConst (OrdinaryPConst (Int (<span data-count="3">-</span>x))))) pe2
-    | <span data-count="25">(</span>ThLeaf (_, Const c1), _), (_, ThLeaf (_, Const c2)) -&gt;
+    | <span data-count="27">(</span>ThLeaf (_, Const c1), _), (_, ThLeaf (_, Const c2)) -&gt;
       ord_const
-        (dfs, econst_before c1 src<span data-count="25">1</span> @@ econst_befor<span data-count="25">e</span> c2 src2 pe_exprs, fresh)
+        (dfs, econst_before c1 src<span data-count="27">1</span> @@ econst_befor<span data-count="27">e</span> c2 src2 pe_exprs, fresh)
         (c1, c2)
     | <span data-count="147">(</span> (ThLeaf (_, Const c1), _)
       , (_, (<span data-count="145">V</span> (VConst c2) | <span data-count="2">T</span>hTree (PEConst (OrdinaryPConst c2)))) ) -&gt;
@@ -5380,10 +5375,10 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
         , _ )
       , (_, (<span data-count="3">T</span>hTree (PEEnum []) | <span data-count="3">V</span> (VList []))) ) -&gt;
       (`G, dpf) |&gt; ac_hnd src1 ~ac:ac1 pe1 |&gt; <span data-count="10">r</span>eturn
-    | <span data-count="2">(</span>ThLeaf (_, FunctionApply ((EJust, _), _, [])), _), (_, ThLeaf (_, ENothing)) -&gt;
-      (`G, (dfs, enothing_befor<span data-count="2">e</span> src2 pe_exprs, fresh))
+    | <span data-count="3">(</span>ThLeaf (_, FunctionApply ((EJust, _), _, [])), _), (_, ThLeaf (_, ENothing)) -&gt;
+      (`G, (dfs, enothing_befor<span data-count="3">e</span> src2 pe_exprs, fresh))
       |&gt; ac_hnd src1 ~ac:ac1 pe1
-      |&gt; <span data-count="2">r</span>eturn
+      |&gt; <span data-count="3">r</span>eturn
     | <span data-count="2">(</span>ThLeaf (_, BinTreeBld (Node _)), _), (_, ThLeaf (_, BinTreeBld Nul)) -&gt;
       (`G, (dfs, enul_befor<span data-count="2">e</span> src2 pe_exprs, fresh)) |&gt; ac_hnd src1 ~ac:ac1 pe1 |&gt; <span data-count="2">r</span>eturn
     | <span data-count="3">(</span> ( ( <span data-count="2">T</span>hLeaf
@@ -5489,19 +5484,19 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
     | <span data-count="1">(</span> (ThLeaf (kk1, BinTreeBld (Node (e11, e12, e13))), None)
       , (None, ThLeaf (kk2, BinTreeBld (Node (e21, e22, e23)))) ) -&gt;
       ord_list (inner_call_e<span data-count="1">e</span> kk1 kk2) dpf ([ e11; e12; e13 ], [ e21; e22; e23 ])
-    | <span data-count="0">(</span> (ThLeaf (kk1, ListBld (OrdList (IncomprehensionlList (_ :: _ as ee1)))), None)
+    | <span data-count="1">(</span> (ThLeaf (kk1, ListBld (OrdList (IncomprehensionlList (_ :: _ as ee1)))), None)
       , (None, ThLeaf (kk2, ListBld (OrdList (IncomprehensionlList (_ :: _ as ee2))))) )
-      -&gt; ord_list ~strict_len:false (inner_call_e<span data-count="0">e</span> kk1 kk2) dpf (ee1, ee2)
+      -&gt; ord_list ~strict_len:false (inner_call_e<span data-count="1">e</span> kk1 kk2) dpf (ee1, ee2)
     | <span data-count="0">(</span>LazyLst ll1, None), (None, LazyLst ll2) -&gt; ord_ll_ll ll1 ll2
     | <span data-count="0">(</span> (ThLeaf (kk1, Binop (e11, Cons, e12)), None)
       , (None, ThLeaf (kk2, Binop (e21, Cons, e22))) ) -&gt;
       ord_list (inner_call_e<span data-count="0">e</span> kk1 kk2) dpf ([ e11; e12 ], [ e21; e22 ])
     | <span data-count="5">(</span>ThLeaf (kk, Binop ((e1, _), Cons, (e2, _))), None), (None, LazyLst ll) -&gt;
       ord_e_ll kk e1 e2 ll
-    | <span data-count="0">(</span> (ThLeaf (kk1, Binop (e11, Cons, e12)), None)
+    | <span data-count="1">(</span> (ThLeaf (kk1, Binop (e11, Cons, e12)), None)
       , (None, ThLeaf (kk2, ListBld (OrdList (IncomprehensionlList (e21 :: ee2))))) ) -&gt;
       let e22 = ListBld (OrdList (IncomprehensionlList ee2)), [] in
-      ord_list (inner_call_e<span data-count="0">e</span> kk1 kk2) dpf ([ e11; e12 ], [ e21; e22 ])
+      ord_list (inner_call_e<span data-count="1">e</span> kk1 kk2) dpf ([ e11; e12 ], [ e21; e22 ])
     | <span data-count="0">(</span> (ThLeaf (kk, ListBld (OrdList (IncomprehensionlList ((e, _) :: ee)))), None)
       , (None, LazyLst ll) ) -&gt;
       ord_e_ll kk e (ListBld (OrdList (IncomprehensionlList ee))) ll
@@ -5603,13 +5598,13 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       , (_, (<span data-count="2">T</span>hLeaf (_, BinTreeBld _) | <span data-count="0">V</span> (VTree _) | <span data-count="0">T</span>hTree (PETree _))) )
     | <span data-count="10">(</span> ((<span data-count="0">T</span>hLeaf (_, TupleBld _) | <span data-count="10">V</span> (VTuple _) | <span data-count="0">T</span>hTree (PETuple _)), _)
       , (_, (<span data-count="10">T</span>hLeaf (_, TupleBld _) | <span data-count="0">T</span>hTree (PETuple _))) )
-    | <span data-count="4">(</span> ( ( <span data-count="0">T</span>hLeaf (_, (<span data-count="0">L</span>istBld _ | <span data-count="0">B</span>inop (_, Cons, _)))
+    | <span data-count="5">(</span> ( ( <span data-count="1">T</span>hLeaf (_, (<span data-count="1">L</span>istBld _ | <span data-count="0">B</span>inop (_, Cons, _)))
           | <span data-count="2">L</span>azyLst _
           | <span data-count="0">V</span> (VList _)
           | ThTree (<span data-count="0">P</span>ECons _ | <span data-count="2">P</span>EEnum _) )
         , _ )
       , ( _
-        , ( <span data-count="4">T</span>hLeaf (_, (<span data-count="1">L</span>istBld _ | <span data-count="3">B</span>inop (_, Cons, _)))
+        , ( <span data-count="5">T</span>hLeaf (_, (<span data-count="1">L</span>istBld _ | <span data-count="4">B</span>inop (_, Cons, _)))
           | <span data-count="0">L</span>azyLst _
           | <span data-count="0">V</span> (VList _)
           | ThTree (<span data-count="0">P</span>ECons _ | <span data-count="0">P</span>EEnum _) ) ) ) -&gt; rev ()
@@ -5631,8 +5626,8 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       &gt;&gt;| (fun ((dfs, pe_exprs, kk), fresh, (e, _)) -&gt;
             <span data-count="0">(</span>dfs, pe_exprs, fresh), ThLeaf (kk, e))
       |&gt; <span data-count="0">c</span>omplex_hnd
-    | <span data-count="14">(</span>ThLeaf (kk, FunctionApply (f, a, aa)), _), _ -&gt;
-      eval_step_funap<span data-count="14">p</span> (dfs, pe_exprs, kk) fresh (f, a :: aa) &gt;&gt;| conv_res |&gt; <span data-count="14">c</span>omplex_hnd
+    | <span data-count="17">(</span>ThLeaf (kk, FunctionApply (f, a, aa)), _), _ -&gt;
+      eval_step_funap<span data-count="17">p</span> (dfs, pe_exprs, kk) fresh (f, a :: aa) &gt;&gt;| conv_res |&gt; <span data-count="17">c</span>omplex_hnd
     | <span data-count="0">(</span>ThLeaf (kk, InnerBindings (b, bb, (e, _))), _), _ -&gt;
       eval_step_inner_b<span data-count="0">b</span> (b :: bb) (dfs, pe_exprs, kk) fresh
       &gt;&gt;| (fun ((dfs, pe_exprs, kk), fresh) -&gt; <span data-count="0">(</span>dfs, pe_exprs, fresh), ThLeaf (kk, e))
@@ -5643,13 +5638,13 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       |&gt; <span data-count="144">c</span>omplex_hnd
     | <span data-count="0">(</span>ThLeaf (kk, Neg e), _), _ -&gt;
       eval_ne<span data-count="0">g</span> (dfs, pe_exprs, kk) fresh e &gt;&gt;| (fun (dpf, v) -&gt; <span data-count="0">d</span>pf, V v) |&gt; <span data-count="0">c</span>omplex_hnd
-    | <span data-count="37">(</span> _
+    | <span data-count="39">(</span> _
       , ( _
         , ThLeaf
             ( _
             , ( <span data-count="5">I</span>fThenEsle _
               | <span data-count="0">C</span>ase _
-              | <span data-count="0">F</span>unctionApply _
+              | <span data-count="2">F</span>unctionApply _
               | <span data-count="0">I</span>nnerBindings _
               | <span data-count="0">B</span>inop _
               | <span data-count="0">N</span>eg _
@@ -5658,17 +5653,17 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       or<span data-count="0">d</span> dpf src1 src2 ~ac1 ~ac2 (Er `Typing_err) pe1
       --= fun (_, dpf) -&gt; <span data-count="0">o</span>rd dpf src2 src1 ~ac2 ~ac1 (Er `Typing_err) pe2
   in
-  let tru dpf = <span data-count="134">d</span>pf, VConst (Bool true) in
+  let tru dpf = <span data-count="136">d</span>pf, VConst (Bool true) in
   let fls dpf = <span data-count="75">d</span>pf, VConst (Bool false) in
   let ord () =
-    <span data-count="221">o</span>rd
+    <span data-count="223">o</span>rd
       (dfs, pe_exprs, fresh)
       None
       None
       ~ac1:false
       ~ac2:false
-      (ThLeaf (kk, Stdlib.fs<span data-count="221">t</span> e1))
-      (ThLeaf (kk, Stdlib.fs<span data-count="221">t</span> e2))
+      (ThLeaf (kk, Stdlib.fs<span data-count="223">t</span> e1))
+      (ThLeaf (kk, Stdlib.fs<span data-count="223">t</span> e2))
   in
   function
   | <span data-count="50">P</span>lus -&gt; arithm ( + ) return
@@ -5685,17 +5680,17 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
   | <span data-count="4">P</span>ow -&gt;
     arithm Base.Int.pow (fun (y, dpf) -&gt;
       <span data-count="4">i</span>f y &lt; 0 then <span data-count="2">E</span>rror (`Negative_exponent, dpf) else <span data-count="2">O</span>k ())
-  | <span data-count="22">A</span>nd -&gt; log ( &amp;&amp; )
+  | <span data-count="23">A</span>nd -&gt; log ( &amp;&amp; )
   | <span data-count="17">O</span>r -&gt; log ( || )
-  | <span data-count="22">L</span>ess -&gt;
-    or<span data-count="22">d</span> ()
+  | <span data-count="23">L</span>ess -&gt;
+    or<span data-count="23">d</span> ()
     &gt;&gt;| (function
-     | <span data-count="13">`</span>L, dpf -&gt; tru dpf
+     | <span data-count="14">`</span>L, dpf -&gt; tru dpf
      | <span data-count="9">_</span>, dpf -&gt; fls dpf)
-  | <span data-count="57">G</span>reater -&gt;
-    or<span data-count="57">d</span> ()
+  | <span data-count="58">G</span>reater -&gt;
+    or<span data-count="58">d</span> ()
     &gt;&gt;| (function
-     | <span data-count="36">`</span>G, dpf -&gt; tru dpf
+     | <span data-count="37">`</span>G, dpf -&gt; tru dpf
      | <span data-count="15">_</span>, dpf -&gt; fls dpf)
   | <span data-count="12">E</span>qualityOrLess -&gt;
     or<span data-count="12">d</span> ()
@@ -5825,7 +5820,7 @@ and lazylst_to_pat pe_exprs fresh ll =
   PECons (p21, p22), pe_exprs, fresh
 ;;
 
-let eval = eval_bnd<span data-count="70">s</span> TopLevel
+let eval = eval_bnd<span data-count="71">s</span> TopLevel
 </code></pre>
       </div>
     </div>
