@@ -321,6 +321,18 @@ SPDX-License-Identifier: MIT
   > EOF
   1
 
+# class ord eval only necessary
+  $ ../bin/REPL.exe  <<-EOF
+  > bool_to_int True = 1; bool_to_int False = 0
+  > a = Just (seq (print_int 10) 1) > Nothing
+  > b = [(seq (print_int 11) 1), (seq (print_int 12) 1), (seq (print_int 13) 1) ]  < 1:((seq (print_int 14) [2,3]))
+  > main = print_int (x) where x = bool_to_int (a && b)
+  > EOF
+  11
+  14
+  12
+  1
+
 
 # eval_once list
   $ ../bin/REPL.exe  <<-EOF
