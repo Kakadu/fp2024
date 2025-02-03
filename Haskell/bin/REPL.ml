@@ -34,8 +34,8 @@ let () =
   if not is_stdin
   then
     Interpreter.interpret
-      opts.dump_parsetree
-      opts.print_types
+      ~dump_parsetree:opts.dump_parsetree
+      ~print_types:opts.print_types
       (String.split_on_char
          '\n'
          (In_channel.with_open_text opts.read_from_file In_channel.input_all))
@@ -57,8 +57,8 @@ let () =
             line
             inf_env
             st
-            opts.dump_parsetree
-            opts.print_types
+            ~dump_parsetree:opts.dump_parsetree
+            ~print_types:opts.print_types
             eval_env
             fresh
         in

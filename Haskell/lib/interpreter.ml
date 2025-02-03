@@ -2,7 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-let interpret dump_parsetree print_types =
+let interpret ~dump_parsetree ~print_types =
+  let init_st = 2 in
   let rec helper st names text inf_env eval_env fresh =
     match text with
     | [] ->
@@ -36,10 +37,10 @@ let interpret dump_parsetree print_types =
             helper st names rest inf_env eval_env fresh)
        | Result.Error error -> Format.printf "%s\n%!" error)
   in
-  helper 2 []
+  helper init_st []
 ;;
 
-let interpret_line line inf_env st dump_parsetree print_types eval_env fresh =
+let interpret_line line inf_env st ~dump_parsetree ~print_types eval_env fresh =
   match Parser.parse_line line with
   | Result.Ok bnds ->
     if dump_parsetree then Parser.parse_and_print_line line;
