@@ -35,5 +35,6 @@
   bisect_ppx
   (odoc :with-doc)
   (ocamlformat :build)
-  ; base
+  zarith
+  base
   ))
