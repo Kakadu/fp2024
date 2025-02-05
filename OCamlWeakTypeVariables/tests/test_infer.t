@@ -24,7 +24,7 @@
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec x = y + 3 and y = true
   val y : int
-  val x : 'a
+  val x : bool
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let homka = fun x y -> let z = x y in z + 2

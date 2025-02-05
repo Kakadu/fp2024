@@ -214,9 +214,14 @@ end = struct
   and compose sub1 sub2 =
     (* RMap.fold_left sub2 ~init:(return sub1) ~f:extend *)
     let sub2 = Base.Map.map sub2 ~f:(fun s -> apply sub1 s) in
-    let sub =
-      Base.Map.fold sub1 ~init:sub2 ~f:(fun ~key ~data sub ->
-        if not (Base.Map.mem sub key) then Base.Map.add_exn sub ~key ~data else sub)
+    let* sub =
+      Base.Map.fold sub1 ~init:(return sub2) ~f:(fun ~key ~data sub ->
+        let* sub = sub in
+        match Base.Map.find sub key with
+        | None -> return @@ Base.Map.add_exn sub ~key ~data
+        | Some v ->
+          let* s = unify v data in
+          compose s sub)
     in
     return sub
   ;;
@@ -411,12 +416,12 @@ let infer_expr =
       let result =
         match e2 with
         | None ->
-          let* sub = Subst.compose_all [ sub0; sub1; sub_bool ] in
+          let* sub = Subst.compose_all [ sub_bool; sub1; sub0 ] in
           return (Subst.apply sub t1, sub)
         | Some e2 ->
           let* t2, sub2 = helper env e2 in
           let* sub_eq = Subst.unify t1 t2 in
-          let* sub = Subst.compose_all [ sub0; sub1; sub2; sub_eq; sub_bool ] in
+          let* sub = Subst.compose_all [ sub_bool; sub_eq; sub2; sub1; sub0 ] in
           return (Subst.apply sub t2, sub)
       in
       result
@@ -513,15 +518,15 @@ let infer_structure =
     | Pstr_value (Recursive, vbs) ->
       let exprs, patterns = List.split @@ List.map (fun x -> x.pvb_expr, x.pvb_pat) vbs in
       (* New type variables to all names in patterns *)
-      let* env', names =
+      let* env', fvs, names =
         RList.fold_left
           patterns
-          ~init:(return (env, []))
-          ~f:(fun (env, names) pat ->
-            let* _, env, new_names = infer_pattern env pat in
+          ~init:(return (env, [], []))
+          ~f:(fun (env, fvs, names) pat ->
+            let* fv, env, new_names = infer_pattern env pat in
             match List.exists (fun name -> List.mem name new_names) names with
             | true -> fail (PatternNameTwice pat)
-            | false -> return (env, List.append (List.rev new_names) names))
+            | false -> return (env, fv :: fvs, List.append (List.rev new_names) names))
       in
       (* We get types of e0, e1, ... en and additional type info about type of variables outside of ei expression for all i *)
       let* ts, subs =
@@ -530,8 +535,15 @@ let infer_structure =
       (* Combine all information about variables *)
       let* sub = Subst.compose_all subs in
       (* Apply all gotten types to out new names *)
-      let env' = TypeEnv.apply env' sub in
-      return (env', names)
+      let* env'' =
+        RList.fold_left
+          (List.combine ts fvs)
+          ~init:(return @@ TypeEnv.apply env' sub)
+          ~f:(fun env (ty, fv) ->
+            let* sub = Subst.unify ty (Subst.apply sub fv) in
+            return (TypeEnv.apply env sub))
+      in
+      return (env'', names)
   in
   helper
 ;;
@@ -556,3 +568,6 @@ let run_structure_inferencer structure =
   | Result.Ok typ -> typ
   | Result.Error e -> failwith (show_error e)
 ;;
+
+let rec fix f = f (fix f) in
+fix
