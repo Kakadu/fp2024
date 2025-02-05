@@ -448,27 +448,37 @@ let infer_expr =
     | Pexp_let (Recursive, vbs, e1) ->
       let exprs, patterns = List.split @@ List.map (fun x -> x.pvb_expr, x.pvb_pat) vbs in
       (* New type variables to all names in patterns *)
-      let* env' =
-        RList.fold_left patterns ~init:(return env) ~f:(fun env pat ->
-          let* _, env, _ = infer_pattern env pat in
-          return env)
+      let* env', fvs =
+        RList.fold_left
+          patterns
+          ~init:(return (env, []))
+          ~f:(fun (env, fvs) pat ->
+            let* fv, env, _ = infer_pattern env pat in
+            return (env, fv :: fvs))
       in
       (* We get types of e0, e1, ... en and additional type info about type of variables outside of ei expression for all i *)
       let* ts, subs = List.split <$> RList.map exprs ~f:(fun expr -> helper env' expr) in
       (* Combine all information about variables *)
       let* sub = Subst.compose_all subs in
       (* Apply all gotten types to out new names *)
-      let env'' = TypeEnv.apply env' sub in
-      let* t, sub = helper env'' e1 in
+      let* env'' =
+        RList.fold_left
+          (List.combine ts fvs)
+          ~init:(return @@ TypeEnv.apply env' sub)
+          ~f:(fun env (ty, fv) ->
+            let* sub = Subst.unify ty (Subst.apply sub fv) in
+            return (TypeEnv.apply env sub))
+      in
+      let* t, sub' = helper env'' e1 in
       (match debug with
        | false -> return (t, sub)
        | true ->
          Format.printf "Env: \n%a\n" TypeEnv.pp env';
-         List.iter (fun sub -> Format.printf "Sub: %a" Subst.pp sub) subs;
+         List.iter (fun sub -> Format.printf "Sub: %a\n" Subst.pp sub) subs;
          List.iter (fun t -> Format.printf "Type: %a\n" Infer_print.pp_typ_my t) ts;
-         Format.printf "Sub:\n%a\n" Subst.pp sub;
-         Format.printf "Env: \n%a\n" TypeEnv.pp env'';
-         return (t, sub))
+         Format.printf "Sub: %a\n" Subst.pp sub;
+         Format.printf "Env: %a\n" TypeEnv.pp env'';
+         return (t, sub'))
     | Pexp_tuple e ->
       (match e with
        | [] | [ _ ] -> failwith "Tuple parser error"
