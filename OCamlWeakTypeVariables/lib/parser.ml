@@ -132,7 +132,8 @@ let p_pattern =
       lift2 (fun l ls -> Ppat_tuple (l :: ls)) pat_const (many1 (token "," *> pat_const))
       <|> pat_const
     in
-    pat_tuple)
+    let pat_unit = word "()" >>| (fun _ -> Ppat_unit) <|> pat_tuple in
+    pat_unit)
 ;;
 
 let p_fun expr =
@@ -165,7 +166,7 @@ let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 let p_value_binding expr =
   let* pattern = p_pattern in
   let rec helper = function
-    | Ppat_any | Ppat_var _ -> true
+    | Ppat_any | Ppat_unit | Ppat_var _ -> true
     | Ppat_tuple pts -> List.fold_left (fun acc pat -> acc && helper pat) true pts
     | Ppat_constant _ | Ppat_interval _ -> false
   in
