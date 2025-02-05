@@ -563,6 +563,15 @@ let infer_structure =
   helper
 ;;
 
+let infer_program env program =
+  RList.fold_left
+    program
+    ~init:(return (env, []))
+    ~f:(fun (env, names) structure ->
+      let* new_env, new_names = infer_structure env structure in
+      return (new_env, List.rev new_names @ List.rev names))
+;;
+
 let defaultEnv =
   List.fold_left
     (fun env (names, typ) ->
@@ -578,28 +587,10 @@ let run_expr_inferencer expr =
   Result.map fst (run (infer_expr defaultEnv expr) (List.length TypeEnv.operators))
 ;;
 
-let run_structure_inferencer ?env structure =
-  match
-    run
-      (infer_structure
-         (match env with
-          | Some e -> e
-          | None -> defaultEnv)
-         structure)
-      (List.length TypeEnv.operators)
-  with
-  | Result.Ok typ -> typ
-  | Result.Error e -> failwith (show_error e)
+let run_structure_inferencer ?(env = defaultEnv) structure =
+  run (infer_structure env structure) (List.length TypeEnv.operators)
 ;;
 
-let run_program_inferencer program =
-  let env, names =
-    List.fold_left
-      (fun (env, names) structure ->
-        let new_env, new_names = run_structure_inferencer ~env structure in
-        new_env, List.rev new_names @ List.rev names)
-      (defaultEnv, [])
-      program
-  in
-  env, List.rev names
+let run_program_inferencer ?(env = defaultEnv) program =
+  run (infer_program env program) (List.length TypeEnv.operators)
 ;;
