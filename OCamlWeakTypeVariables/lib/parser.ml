@@ -230,3 +230,4 @@ let p_structure =
 let parse_expr str = parse_string ~consume:All p_expr str
 let parse_structure str = parse_string ~consume:All p_structure str
 let parse = parse_structure
+let parse_program str = parse_string ~consume:All (many p_structure <* end_of_input) str

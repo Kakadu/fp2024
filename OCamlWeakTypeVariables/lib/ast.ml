@@ -22,6 +22,7 @@ type pattern =
   | Ppat_constant of constant (** Patterns such as 1, 'a', "true", 1.0 *)
   | Ppat_interval of constant * constant (** Patterns such as 'a'..'z'. *)
   | Ppat_tuple of pattern list (** Patterns (P1, ..., Pn). Invariant: n >= 2 *)
+  | Ppat_unit (** let () = ... in ... *)
 [@@deriving show { with_path = false }]
 
 (** recursive flag *)

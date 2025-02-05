@@ -10,3 +10,4 @@ open Ast
 
 val parse_expr : string -> (expression, string) result
 val parse : string -> (structure_item, string) result
+val parse_program : string -> (program, string) result
