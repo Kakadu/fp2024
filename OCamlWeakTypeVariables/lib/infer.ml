@@ -392,7 +392,20 @@ let infer_expr =
       let* t, env', _ = infer_pattern env pattern in
       let* t', sub = helper env' expr in
       return (Subst.apply sub (t @-> t'), sub)
-      (* Recursive apply type inference by Homka122 😼😼😼 *)
+    | Pexp_constraint (expr, ty) ->
+      let* typ =
+        match ty with
+        | Ptyp_constr "int" -> return (TBase BInt)
+        | Ptyp_constr "bool" -> return (TBase BBool)
+        | Ptyp_constr "unit" -> return (TBase BUnit)
+        | Ptyp_constr "string" -> return (TBase BString)
+        | Ptyp_constr x -> fail (UnknownType x)
+      in
+      let* t, sub = helper env expr in
+      let* sub0 = Subst.unify t typ in
+      let* sub = Subst.compose sub0 sub in
+      return (t, sub)
+    (* Recursive apply type inference by Homka122 😼😼😼 *)
     | Pexp_apply (e0, es) ->
       if debug
       then (

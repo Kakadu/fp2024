@@ -27,10 +27,7 @@ let is_keyword = function
   | "with"
   | "in"
   | "fun"
-  | "type"
-  | "int"
-  | "string"
-  | "bool" -> true
+  | "type" -> true
   | _ -> false
 ;;
 
@@ -211,9 +208,18 @@ let p_unary =
   else "Failed when parse unary" |> fail
 ;;
 
+let pexpr_constraint expr =
+  let* expr = token "(" *> expr in
+  let+ ty = token ":" *> lowercase_ident <* token ")" in
+  Pexp_constraint (expr, Ptyp_constr ty)
+;;
+
 let p_expr =
   fix (fun expr ->
-    let expr_const = choice [ parens expr; pexpr_const; pexp_ident; p_branch expr ] in
+    let expr_const =
+      choice
+        [ parens expr; pexpr_const; pexpr_constraint expr; pexp_ident; p_branch expr ]
+    in
     let expr_fun = p_fun expr <|> expr_const in
     let expr_apply = p_apply expr_fun <|> expr_fun in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_apply <|> expr_apply in
