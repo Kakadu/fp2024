@@ -298,6 +298,12 @@ end = struct
     Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, t)) ->
       Format.fprintf fmt "val %s : %a\n" key Infer_print.pp_typ_my t)
   ;;
+
+  (* Print types of specific variables *)
+  let pp_names names fmt env =
+    let map = Base.Map.filter_keys env ~f:(fun key -> List.mem key names) in
+    pp fmt map
+  ;;
 end
 
 open R
