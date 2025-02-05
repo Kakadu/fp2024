@@ -45,13 +45,14 @@ let p_const_int =
     | '0' .. '9' -> true
     | _ -> false
   in
+  let* sign = choice [ token "-"; token "+"; token "" ] in
   let* first_digit = satisfy is_digit in
   let+ digits =
     take_while (function
       | '0' .. '9' | '_' -> true
       | _ -> false)
   in
-  Pconst_int (int_of_string (Char.escaped first_digit ^ digits))
+  Pconst_int (int_of_string (sign ^ Char.escaped first_digit ^ digits))
 ;;
 
 let p_const_string =
@@ -157,8 +158,12 @@ let p_branch (expr : expression t) =
 
 let p_apply expr =
   let* first = wss expr in
-  let+ second = many1 (wss expr) in
-  Pexp_apply (first, second)
+  let* single = wss (peek_string 1) in
+  match single with
+  | "+" | "-" -> fail ""
+  | _ ->
+    let+ second = many1 (wss expr) in
+    Pexp_apply (first, second)
 ;;
 
 let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
@@ -197,6 +202,13 @@ let token_or xs : string t =
   match token_functions with
   | h :: t -> List.fold_right ( <|> ) t h
   | _ -> fail "token_or require two or more tokens"
+;;
+
+let p_unary =
+  let* first = take 1 in
+  if first = "-" || first = "+"
+  then Pexp_ident first |> return
+  else "Failed when parse unary" |> fail
 ;;
 
 let p_expr =

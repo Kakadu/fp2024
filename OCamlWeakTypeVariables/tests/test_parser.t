@@ -215,3 +215,23 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        }
                       ]
                     ))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > -5
+  Parsed result: (Pstr_eval (Pexp_constant (Pconst_int -5)))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > 5-5
+  Parsed result: (Pstr_eval
+                    (Pexp_apply ((Pexp_ident "-"),
+                       [(Pexp_constant (Pconst_int 5));
+                         (Pexp_constant (Pconst_int 5))]
+                       )))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > 5-(-5)
+  Parsed result: (Pstr_eval
+                    (Pexp_apply ((Pexp_ident "-"),
+                       [(Pexp_constant (Pconst_int 5));
+                         (Pexp_constant (Pconst_int -5))]
+                       )))

@@ -43,7 +43,9 @@
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/007order.ml
-  Error: : end_of_input
+  val _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
+  val main : unit
+  
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/008ascription.ml
   Error: : end_of_input
