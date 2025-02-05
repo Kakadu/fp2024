@@ -6,5 +6,6 @@ SPDX-License-Identifier: LGPL-3.0-or-later
     -dparsetree Dump parse tree, don't eval anything
     -dinference Infer structure, don't eval anything
     -dparseprogram Dump parse program, don't eval anything
+    -dinferprogram Infer program, don't eval anything
     -help  Display this list of options
     --help  Display this list of options

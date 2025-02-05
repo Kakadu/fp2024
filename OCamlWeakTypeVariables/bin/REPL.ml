@@ -4,49 +4,62 @@ type opts =
   { mutable dump_parsetree : bool
   ; mutable dump_inference : bool
   ; mutable dump_parseprogram : bool
+  ; mutable dump_inferprogram : bool
   }
 
 let run_single opts =
   let text = In_channel.(input_all stdin) |> String.trim in
+  if opts.dump_inferprogram
+  then (
+    let ast = Parser.parse_program text in
+    match ast with
+    | Error e -> Format.printf "Error: %s\n" e
+    | Result.Ok program ->
+      let env, names = Infer.run_program_inferencer program in
+      Format.printf "%a" (Infer.TypeEnv.pp_names names) env);
   if opts.dump_parseprogram
   then (
     let ast = Parser.parse_program text in
     match ast with
     | Error e -> Format.printf "Error: %s\n" e
-    | Result.Ok program -> Format.printf "Parsed program: %a\n" Ast.pp_program program)
-  else (
+    | Result.Ok program -> Format.printf "Parsed program: %a\n" Ast.pp_program program);
+  if opts.dump_parsetree
+  then (
     let ast = Parser.parse text in
     match ast with
     | Error e -> Format.printf "Error: %s\n%!" e
     | Result.Ok ast ->
-      (match opts.dump_inference with
-       | true ->
-         (match ast with
-          | Pstr_eval expr ->
-            (match Infer.run_expr_inferencer expr with
-             | Ok t ->
-               (* Format.printf "> %s;;\n\n" text; *)
-               Format.printf "- : %a\n" Infer_print.pp_typ_my t
-             | Error e -> Format.printf "%a" Types.pp_error e)
-          | _ ->
-            let env, names = Infer.run_structure_inferencer ast in
+      Format.printf "Parsed result: @[%a@]\n%!" Lib.Ast.pp_structure_item ast);
+  if opts.dump_inference
+  then (
+    let ast = Parser.parse text in
+    match ast with
+    | Error e -> Format.printf "Error: %s\n%!" e
+    | Result.Ok ast ->
+      (match ast with
+       | Pstr_eval expr ->
+         (match Infer.run_expr_inferencer expr with
+          | Ok t ->
             (* Format.printf "> %s;;\n\n" text; *)
-            List.iter
-              (fun name ->
-                let (Scheme (_, tt)) = Infer.TypeEnv.find_exn env name in
-                Format.printf "val %s : %a\n" name Infer_print.pp_typ_my tt)
-              names)
-       | false ->
-         (match opts.dump_parsetree with
-          | true ->
-            Format.printf "Parsed result: @[%a@]\n%!" Lib.Ast.pp_structure_item ast
-          | false ->
-            Format.printf "Not implemented. Only -dparsertree and -dinference support")))
+            Format.printf "- : %a\n" Infer_print.pp_typ_my t
+          | Error e -> Format.printf "%a" Types.pp_error e)
+       | _ ->
+         let env, names = Infer.run_structure_inferencer ast in
+         (* Format.printf "> %s;;\n\n" text; *)
+         List.iter
+           (fun name ->
+             let (Scheme (_, tt)) = Infer.TypeEnv.find_exn env name in
+             Format.printf "val %s : %a\n" name Infer_print.pp_typ_my tt)
+           names))
 ;;
 
 let () =
   let opts =
-    { dump_parsetree = false; dump_inference = false; dump_parseprogram = false }
+    { dump_parsetree = false
+    ; dump_inference = false
+    ; dump_parseprogram = false
+    ; dump_inferprogram = false
+    }
   in
   let () =
     let open Stdlib.Arg in
@@ -60,6 +73,9 @@ let () =
       ; ( "-dparseprogram"
         , Unit (fun () -> opts.dump_parseprogram <- true)
         , "Dump parse program, don't eval anything" )
+      ; ( "-dinferprogram"
+        , Unit (fun () -> opts.dump_inferprogram <- true)
+        , "Infer program, don't eval anything" )
       ]
       (fun _ ->
         Stdlib.Format.eprintf "Anonymous arguments are not supported\n";

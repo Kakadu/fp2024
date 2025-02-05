@@ -270,6 +270,7 @@ module TypeEnv : sig
   val apply : t -> Subst.t -> t
   val operators : (id list * typ) list
   val pp : Format.formatter -> t -> unit
+  val pp_names : id list -> Format.formatter -> t -> unit
 end = struct
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
@@ -367,6 +368,14 @@ let infer_pattern env ?ty =
     in
     let env = TypeEnv.extend env v schema in
     return (fv, env, v :: names)
+  | Ppat_unit ->
+    let t_unit = TBase BUnit in
+    let _ =
+      match ty with
+      | Some t -> Subst.unify t_unit t
+      | None -> return Subst.empty
+    in
+    return (t_unit, env, [])
 ;;
 
 (* [@@@warning "-8"] *)
@@ -569,11 +578,28 @@ let run_expr_inferencer expr =
   Result.map fst (run (infer_expr defaultEnv expr) (List.length TypeEnv.operators))
 ;;
 
-let run_structure_inferencer structure =
-  match run (infer_structure defaultEnv structure) (List.length TypeEnv.operators) with
+let run_structure_inferencer ?env structure =
+  match
+    run
+      (infer_structure
+         (match env with
+          | Some e -> e
+          | None -> defaultEnv)
+         structure)
+      (List.length TypeEnv.operators)
+  with
   | Result.Ok typ -> typ
   | Result.Error e -> failwith (show_error e)
 ;;
 
-let rec fix f = f (fix f) in
-fix
+let run_program_inferencer program =
+  let env, names =
+    List.fold_left
+      (fun (env, names) structure ->
+        let new_env, new_names = run_structure_inferencer ~env structure in
+        new_env, List.rev new_names @ List.rev names)
+      (defaultEnv, [])
+      program
+  in
+  env, List.rev names
+;;
