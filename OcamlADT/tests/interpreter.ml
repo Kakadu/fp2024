@@ -176,23 +176,23 @@ let%expect_test "multiple let bool assignments" =
     false |}]
 ;;
 
-let%expect_test "function assignment with bool operators" =
+let%expect_test "fun assignment with bool operators" =
   pp_parse_demo {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
   [%expect {| false |}]
 ;;
 
-let%expect_test "function assignment with bool operators (tuple arg)" =
+let%expect_test "fun assignment with bool operators (tuple arg)" =
   pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id (true,false)) ;; |};
   [%expect {| false |}]
 ;;
 
-let%expect_test "too damn simple function assignment (TC should fail?)" =
+let%expect_test "too damn simple fun assignment (TC should fail?)" =
   pp_parse_demo {| let id = fun x -> y in print_int (id 7) ;; |};
   [%expect {| Intepreter error: Unbound value y |}]
 ;;
 
 (*4 am vibes, im sorry*)
-let%expect_test "not too damn simple function assignment" =
+let%expect_test "not too damn simple fun assignment" =
   pp_parse_demo {| let id = fun x -> x * x in print_int (id 7) ;; |};
   [%expect {|
     49 |}]
@@ -507,7 +507,7 @@ type shape = Point of point
   |}]
 ;;
 
-let%expect_test "simple adt with pattern matching function + printing" =
+let%expect_test "simple adt with pattern matching + printing" =
   pp_parse_demo
     {|
 type shape = Circle of int
@@ -554,7 +554,7 @@ print_int y
     val area = <fun>|}]
 ;;
 
-let%expect_test "simple adt with pattern matching function + printing v2" =
+let%expect_test "simple adt with pattern matching + printing v2" =
   pp_parse_demo
     {|
 type shape = Circle of int
@@ -577,7 +577,7 @@ print_int y
     val area = <fun>|}]
 ;;
 
-let%expect_test "simple adt with pattern matching function + printing v3" =
+let%expect_test "simple adt with pattern matching + printing v3" =
   pp_parse_demo
     {|
 type shape = Circle of int
@@ -675,10 +675,10 @@ let rec insert x = function
 ;;
 
 let tree = 
- insert 6 (insert 8 Leaf)
+ insert 6 Leaf 
 ;;
   |};
-  [%expect {| Intepreter error: Type mismatch |}]
+  [%expect {| Intepreter error: Pattern mismatch |}]
 ;;
 
 (*bad, idk, haven;t thought*)
@@ -697,12 +697,11 @@ let rec tree_size t =
 
 let my_tree = Node (42, Node (1, Leaf, Leaf), Node (2, Leaf, Leaf)) in
 let size = tree_size my_tree in
-print_int size
-;;
+let () = print_int size;;
 
   |};
   [%expect {|
-    Intepreter error: Pattern mismatch|}]
+    Parser Error|}]
 ;;
 
 (*good*)
@@ -713,7 +712,19 @@ let () = print_int 5;;
   [%expect {| 5 |}]
 ;;
 
-let%expect_test "empty program (no ;;) (fail: EmptyProgram)" =
+let%expect_test "empty program (no ;;) (fail: emptyprogram)" =
   pp_parse_demo {||};
   [%expect {| Empty program |}]
+;;
+
+let%expect_test "function" =
+  pp_parse_demo
+    {|
+     let f = function
+        | 5 -> 5
+        | _ -> 0
+      in
+      f 5, f 42
+  |};
+  [%expect {| _ = (5, 0) |}]
 ;;

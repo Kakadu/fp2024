@@ -516,19 +516,14 @@ module Interpreter (M : Error_monad) = struct
          (match pl with
           | [] -> eval_expr new_env body
           | pf :: p_rest -> return (VFun ((pf, p_rest), body, new_env, Recursive)))
+       | VFunction ((c1, cl), env) ->
+         let* arg_val = eval_expr env args in
+         eval_cases env arg_val (c1 :: cl)
        | _ -> fail TypeMismatch)
     | Expression.Exp_match (expr, cases) ->
       let c1, cl = cases in
       let* v = eval_expr env expr in
-      let rec eval_cases = function
-        | [] -> fail PatternMismatch
-        | { Expression.first = pattern; second = body } :: rest ->
-          let* env' = eval_pattern pattern v env in
-          (match env' with
-           | Some env' -> eval_expr env' body
-           | _ -> eval_cases rest)
-      in
-      eval_cases (c1 :: cl)
+      eval_cases env v (c1 :: cl)
     | Expression.Exp_if (cond, then_expr, else_expr_opt) ->
       let* cond_val = eval_expr env cond in
       (match cond_val with
@@ -574,6 +569,14 @@ module Interpreter (M : Error_monad) = struct
        | VBool _ -> E.lookup env ctor_name
        | _ -> fail (NotAnADTVariant ctor_name))
     | Expression.Exp_constraint (expr, _type_expr) -> eval_expr env expr
+
+  and eval_cases env value = function
+    | [] -> fail PatternMismatch
+    | { Expression.first = pattern; second = body } :: rest ->
+      let* env' = eval_pattern pattern value env in
+      (match env' with
+       | Some extended_env -> eval_expr extended_env body
+       | None -> eval_cases env value rest)
 
   and eval_rec_value_binding_list env value_binding_list =
     Base.List.fold_left

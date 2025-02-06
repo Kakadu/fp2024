@@ -1726,3 +1726,37 @@ let%expect_test "function assignment with bool operators" =
            )))
       ] |}]
 ;;
+
+let%expect_test "function" =
+  test_program
+    {|
+     let f = function
+        | Some x -> x
+        | None -> 0
+      in
+      f None, f (Some 42)
+  |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "f");
+              expr =
+              (Exp_function
+                 ({ first = (Pat_construct ("Some", (Some (Pat_var "x"))));
+                    second = (Exp_ident "x") },
+                  [{ first = (Pat_construct ("None", None));
+                     second = (Exp_constant (Const_integer 0)) }
+                    ]))
+              },
+            []),
+           (Exp_tuple
+              ((Exp_apply ((Exp_ident "f"), (Exp_construct ("None", None)))),
+               (Exp_apply ((Exp_ident "f"),
+                  (Exp_construct ("Some",
+                     (Some (Exp_constant (Const_integer 42)))))
+                  )),
+               []))
+           )))
+      ] |}]
+;;
