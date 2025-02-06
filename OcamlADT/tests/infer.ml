@@ -444,12 +444,7 @@ let%expect_test "zero" =
 let x = (6: char);;|};
   [%expect
     {|
-    res:
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int |}]
+    Unification_failed: int  # char |}]
 ;;
 
 let%expect_test "zero" =
@@ -502,9 +497,9 @@ let rec meven n = if n = 0 then 1 else modd (n - 1)
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 713, characters 2-40
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 720, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 483, characters 2-189
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 478, characters 2-189
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -805,7 +800,7 @@ let addi = fun f g x -> (f x (g x: bool) : int);;|};
   [%expect
     {|
     res:
-    "addi": [ 2; bool; int; ]. ('c-> '“-> 'š) -> ('c-> '“) -> 'c-> 'š
+    "addi": [ 2; ]. ('c-> bool -> int ) -> ('c-> bool ) -> 'c-> int
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit

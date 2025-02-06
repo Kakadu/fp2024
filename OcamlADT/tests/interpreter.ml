@@ -668,9 +668,12 @@ let%expect_test "poly adt tree" =
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
+
 let rec insert x = function
   | Leaf -> Node (x, Leaf, Leaf)
-  | _ -> Node (x, Leaf, Leaf);;
+  | _ -> Node (x, Leaf, Leaf)
+;;
+
 let tree = 
  insert 6 (insert 8 Leaf)
 ;;
