@@ -217,6 +217,14 @@ let ptype_adt = pass_ws *> ptypeconstr_app <|> ptypevar
    ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
 *)
 
+let pspecials = choice [ token "()"; token "true"; token "false"; token "None" ]
+
+let psome parse =
+  let* id = token "Some" in
+  let* arg = parse >>| Option.some in
+  return (id, arg)
+;;
+
 let ppatconst =
   let* const = pconst in
   return (Pattern.Pat_constant const)
@@ -254,8 +262,10 @@ let ppattern =
       fix (fun poprnd ->
         pass_ws
         *> choice
-             [ ppatvar
+             [ (pspecials >>| fun name -> Pattern.Pat_construct (name, None))
+             ; ppatvar
              ; ppatconst
+             ; (psome ppattern >>| fun (name,opt) -> Pattern.Pat_construct (name,opt))
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern
@@ -395,8 +405,8 @@ let pcompops =
     [ parsebinop ">="
     ; parsebinop "<="
     ; parsebinop "<>"
-    ; parsebinop ">"
     ; parsebinop "<"
+    ; parsebinop ">"
     ; parsebinop "="
     ]
 ;;
@@ -422,11 +432,13 @@ let pexpr =
     let poprnd =
       pass_ws
       *> choice
-           [ pparenth pexpr
+           [ (pspecials >>| fun name -> Expression.Exp_construct (name, None))
+            ;pparenth pexpr
            ; pidentexpr
            ; pexprconstraint pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
+           ; (psome pexpr >>| fun (name,opt) -> Expression.Exp_construct (name,opt))
            ; pfunction pexpr
            ; pfunexpr pexpr
            ; pletexpr pexpr
@@ -503,8 +515,8 @@ let pstradt =
 let pstr_item = pseval <|> pstrlet <|> pstradt
 
 let pstructure =
-  let psemicolon = token ";;" in
-  many (pstr_item <* psemicolon <* pass_ws)
+  let psemicolon = many (token ";;") in
+  sep_by psemicolon pstr_item <* psemicolon <* pass_ws
 ;;
 
 let parse str = parse_string ~consume:All pstructure str

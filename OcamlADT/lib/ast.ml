@@ -242,5 +242,5 @@ end
 type program = Structure.structure_item list [@@deriving eq, show { with_path = false }]
 
 module Program = struct
-  let gen_program n = list_size (int_bound 1) (Structure.gen_structure_item (n / 2))
+  let gen_program n = list_size (int_bound 0) (Structure.gen_structure_item (n / 2))
 end

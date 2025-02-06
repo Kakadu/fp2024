@@ -384,6 +384,37 @@ let%expect_test "parenthesis4" =
       ] |}]
 ;;
 
+let%expect_test "whitespace befor int constant" =
+  test_program
+    {|    let x = 10 in
+if x > 5 then print_endline "> 5"
+else print_endline "<= 5";;
+ 5+5;;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 10)) }, []),
+           (Exp_if (
+              (Exp_apply ((Exp_ident ">"),
+                 (Exp_tuple
+                    ((Exp_ident "x"), (Exp_constant (Const_integer 5)), []))
+                 )),
+              (Exp_apply ((Exp_ident "print_endline"),
+                 (Exp_constant (Const_string "> 5")))),
+              (Some (Exp_apply ((Exp_ident "print_endline"),
+                       (Exp_constant (Const_string "<= 5")))))
+              ))
+           )));
+      (Str_eval
+         (Exp_apply ((Exp_ident "+"),
+            (Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_integer 5)), []))
+            )))
+      ] |}]
+;;
+
 let%expect_test "parenthesis5" =
   test_program {|(5*5-1);;|};
   [%expect
@@ -468,7 +499,7 @@ let%expect_test "let assignment" =
     [(Str_eval
         (Exp_let (Nonrecursive,
            ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
-           (Exp_constant (Const_integer 6)))))
+           (Exp_ident "x"))))
       ] |}]
 ;;
 
@@ -589,9 +620,21 @@ let%expect_test "simple fun" =
 ;;
 
 let%expect_test "multi pattern fun" =
-  test_program {|fun x z -> y;;|};
+  test_program {|fun x -> y;;|};
+  [%expect {| [(Str_eval (Exp_fun (((Pat_var "x"), []), (Exp_ident "y"))))] |}]
+;;
+
+let%expect_test "multi pattern fun" =
+  test_program {|5>5;;|};
   [%expect
-    {| [(Str_eval (Exp_fun (((Pat_var "x"), [(Pat_var "z")]), (Exp_ident "y"))))] |}]
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident ">"),
+           (Exp_tuple
+              ((Exp_constant (Const_integer 5)),
+               (Exp_constant (Const_integer 5)), []))
+           )))
+      ] |}]
 ;;
 
 let%expect_test "multi fun" =
@@ -614,6 +657,17 @@ let%expect_test "apply and subtraction" =
               (Exp_tuple ((Exp_ident "x"), (Exp_constant (Const_integer 1)), []))
               ))
            )))
+      ] |}]
+;;
+
+let%expect_test "exprlet and" =
+  test_program {|let x = 5 and y = 10;;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) },
+         [{ pat = (Pat_var "y"); expr = (Exp_constant (Const_integer 10)) }])
+        ))
       ] |}]
 ;;
 
@@ -927,9 +981,11 @@ let%expect_test "factorial" =
   test_program {|let reca = 1;;|};
   [%expect
     {|
-    [(Str_value (Nonrecursive,
-        ({ pat = (Pat_var "reca"); expr = (Exp_constant (Const_integer 1)) }, [])
-        ))
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "reca"); expr = (Exp_constant (Const_integer 1)) },
+            []),
+           (Exp_constant (Const_integer 1)))))
       ] |}]
 ;;
 
@@ -1438,6 +1494,140 @@ let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6)
            )))
       ] |}]
 ;;
+
+let%expect_test "keyword" =
+  test_program {|let x = 5 and (z,v,c) = (5,6,7);;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) },
+         [{ pat = (Pat_tuple ((Pat_var "z"), (Pat_var "v"), [(Pat_var "c")]));
+            expr =
+            (Exp_tuple
+               ((Exp_constant (Const_integer 5)),
+                (Exp_constant (Const_integer 6)),
+                [(Exp_constant (Const_integer 7))]))
+            }
+           ])
+        ))
+      ] |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {|fun x -> x+x;;|};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_fun (((Pat_var "x"), []),
+           (Exp_apply ((Exp_ident "+"),
+              (Exp_tuple ((Exp_ident "x"), (Exp_ident "x"), []))))
+           )))
+      ] |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {|let main = 
+   let () = print_int (fib 4) in
+  0;;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "main");
+           expr =
+           (Exp_let (Nonrecursive,
+              ({ pat = (Pat_construct ("()", None));
+                 expr =
+                 (Exp_apply ((Exp_ident "print_int"),
+                    (Exp_apply ((Exp_ident "fib"),
+                       (Exp_constant (Const_integer 4))))
+                    ))
+                 },
+               []),
+              (Exp_constant (Const_integer 0))))
+           },
+         [])
+        ))
+      ] |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {|let (x:char) = 20;;|};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_constraint ((Pat_var "x"), (Type_var "char")));
+           expr = (Exp_constant (Const_integer 20)) },
+         [])
+        ))
+      ] |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {|let (x:(char*char)) = 20;;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat =
+           (Pat_constraint ((Pat_var "x"),
+              (Type_tuple ((Type_var "char"), (Type_var "char"), []))));
+           expr = (Exp_constant (Const_integer 20)) },
+         [])
+        ))
+      ] |}]
+;;
+let%expect_test "keyword" =
+  test_program {|let (x:int option) = 20;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1183, characters 2-45
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {||};
+  [%expect{| [] |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {|let () =  print_int 5;;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_construct ("()", None));
+           expr =
+           (Exp_apply ((Exp_ident "print_int"), (Exp_constant (Const_integer 5))
+              ))
+           },
+         [])
+        ))
+      ] |}]
+;;
+
+
+let%expect_test "keyword" =
+  test_program {|let addi = fun f g x -> (f x (g x: bool) : int);;|};
+  [%expect{|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "addi");
+           expr =
+           (Exp_fun (((Pat_var "f"), [(Pat_var "g"); (Pat_var "x")]),
+              (Exp_constraint (
+                 (Exp_apply ((Exp_apply ((Exp_ident "f"), (Exp_ident "x"))),
+                    (Exp_constraint (
+                       (Exp_apply ((Exp_ident "g"), (Exp_ident "x"))),
+                       (Type_var "bool")))
+                    )),
+                 (Type_var "int")))
+              ))
+           },
+         [])
+        ))
+      ] |}]
 
 let%expect_test "simple adt with pattern matching function + printing v3" =
   test_program
