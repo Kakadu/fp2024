@@ -499,7 +499,7 @@ let%expect_test "let assignment" =
     [(Str_eval
         (Exp_let (Nonrecursive,
            ({ pat = (Pat_var "x"); expr = (Exp_constant (Const_integer 5)) }, []),
-           (Exp_ident "x"))))
+           (Exp_constant (Const_integer 6)))))
       ] |}]
 ;;
 
@@ -981,11 +981,9 @@ let%expect_test "factorial" =
   test_program {|let reca = 1;;|};
   [%expect
     {|
-    [(Str_eval
-        (Exp_let (Nonrecursive,
-           ({ pat = (Pat_var "reca"); expr = (Exp_constant (Const_integer 1)) },
-            []),
-           (Exp_constant (Const_integer 1)))))
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "reca"); expr = (Exp_constant (Const_integer 1)) }, [])
+        ))
       ] |}]
 ;;
 
@@ -1013,7 +1011,7 @@ let%expect_test "_" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 949, characters 2-46
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1003, characters 2-46
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1070,7 +1068,7 @@ let%expect_test "_" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1005, characters 2-356
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1059, characters 2-356
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1343,7 +1341,7 @@ let%expect_test "adt list with pair" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1276, characters 2-102
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1330, characters 2-102
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1555,7 +1553,7 @@ let%expect_test "keyword" =
   [%expect
     {|
     [(Str_value (Nonrecursive,
-        ({ pat = (Pat_constraint ((Pat_var "x"), (Type_var "char")));
+        ({ pat = (Pat_constraint ((Pat_var "x"), (Type_construct ("char", []))));
            expr = (Exp_constant (Const_integer 20)) },
          [])
         ))
@@ -1564,39 +1562,46 @@ let%expect_test "keyword" =
 
 let%expect_test "keyword" =
   test_program {|let (x:(char*char)) = 20;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat =
            (Pat_constraint ((Pat_var "x"),
-              (Type_tuple ((Type_var "char"), (Type_var "char"), []))));
+              (Type_tuple
+                 ((Type_construct ("char", [])), (Type_construct ("char", [])),
+                  []))
+              ));
            expr = (Exp_constant (Const_integer 20)) },
          [])
         ))
       ] |}]
 ;;
+
 let%expect_test "keyword" =
   test_program {|let (x:int option) = 20;;|};
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
 
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_programm in file "tests/parser.ml", line 9, characters 52-67
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1183, characters 2-45
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1581, characters 2-44
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "keyword" =
   test_program {||};
-  [%expect{| [] |}]
+  [%expect {| [] |}]
 ;;
 
 let%expect_test "keyword" =
   test_program {|let () =  print_int 5;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat = (Pat_construct ("()", None));
            expr =
@@ -1608,10 +1613,10 @@ let%expect_test "keyword" =
       ] |}]
 ;;
 
-
 let%expect_test "keyword" =
   test_program {|let addi = fun f g x -> (f x (g x: bool) : int);;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat = (Pat_var "addi");
            expr =
@@ -1620,14 +1625,15 @@ let%expect_test "keyword" =
                  (Exp_apply ((Exp_apply ((Exp_ident "f"), (Exp_ident "x"))),
                     (Exp_constraint (
                        (Exp_apply ((Exp_ident "g"), (Exp_ident "x"))),
-                       (Type_var "bool")))
+                       (Type_construct ("bool", []))))
                     )),
-                 (Type_var "int")))
+                 (Type_construct ("int", []))))
               ))
            },
          [])
         ))
       ] |}]
+;;
 
 let%expect_test "simple adt with pattern matching function + printing v3" =
   test_program
@@ -1696,4 +1702,27 @@ print_int y
                (Exp_apply ((Exp_ident "print_int"), (Exp_ident "y")))))
             )))
       ]|}]
+;;
+
+let%expect_test "function assignment with bool operators" =
+  test_program {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_let (Nonrecursive,
+           ({ pat = (Pat_var "id");
+              expr =
+              (Exp_fun (((Pat_tuple ((Pat_var "x"), (Pat_var "y"), [])), []),
+                 (Exp_apply ((Exp_ident "&&"),
+                    (Exp_tuple ((Exp_ident "x"), (Exp_ident "y"), []))))
+                 ))
+              },
+            []),
+           (Exp_apply ((Exp_ident "print_bool"),
+              (Exp_apply (
+                 (Exp_apply ((Exp_ident "id"), (Exp_construct ("true", None)))),
+                 (Exp_construct ("false", None))))
+              ))
+           )))
+      ] |}]
 ;;

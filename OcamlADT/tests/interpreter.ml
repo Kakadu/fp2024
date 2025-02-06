@@ -176,10 +176,14 @@ let%expect_test "multiple let bool assignments" =
     false |}]
 ;;
 
-(*bad, idk*)
 let%expect_test "function assignment with bool operators" =
-  pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
-  [%expect {| Parser Error |}]
+  pp_parse_demo {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
+  [%expect {| false |}]
+;;
+
+let%expect_test "function assignment with bool operators (tuple arg)" =
+  pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id (true,false)) ;; |};
+  [%expect {| false |}]
 ;;
 
 let%expect_test "too damn simple function assignment (TC should fail?)" =
@@ -360,11 +364,11 @@ let%expect_test "wrong input (fail: ParserError)" =
   [%expect {| Parser Error |}]
 ;;
 
-(*to fix in parser*)
 let%expect_test "eval simple let binding" =
   pp_parse_demo {| let a = -(4 + 4) and b = true;; |};
   [%expect {|
-  Parser Error
+  val a = -8
+  val b = true
   |}]
 ;;
 
@@ -414,7 +418,7 @@ let%expect_test "()" =
     let s = "string";;
     |};
   [%expect {|
-    Parser Error |}]
+    Intepreter error: Unbound value () |}]
 ;;
 
 let%expect_test "multiple funs (+ nested)" =
@@ -647,7 +651,7 @@ print_int area x;;
   [%expect {| Intepreter error: Unbound value Cir|}]
 ;;
 
-(* needs a initialization check*)
+(* good, needs a initialization check + infer print(see next test)*)
 let%expect_test "poly adt tree" =
   pp_parse_demo {|
 type 'a tree = Leaf
@@ -674,7 +678,7 @@ let tree =
   [%expect {| Intepreter error: Type mismatch |}]
 ;;
 
-(*idk, haven;t thought*)
+(*bad, idk, haven;t thought*)
 let%expect_test "poly adt with pattern matching + printing" =
   pp_parse_demo
     {|
@@ -698,12 +702,12 @@ print_int size
     Intepreter error: Pattern mismatch|}]
 ;;
 
-(*implemented by rodik, added () construct support, should be good after merge*)
+(*good*)
 let%expect_test "poly adt" =
   pp_parse_demo {|
 let () = print_int 5;;
   |};
-  [%expect {| Parser Error |}]
+  [%expect {| 5 |}]
 ;;
 
 let%expect_test "empty program (no ;;) (fail: EmptyProgram)" =

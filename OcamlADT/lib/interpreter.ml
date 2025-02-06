@@ -90,6 +90,12 @@ module Env (M : Error_monad) = struct
       ]
   ;;
 
+  let builtin_bools =
+    Base.Map.of_alist_exn
+      (module Base.String)
+      [ "true", VBool true; "false", VBool false ]
+  ;;
+
   let builtin_functions =
     Base.Map.of_alist_exn
       (module Base.String)
@@ -212,29 +218,18 @@ module Env (M : Error_monad) = struct
   ;;
 
   let init =
-    let merged_binops_and_functions =
-      Base.Map.merge builtin_binops builtin_functions ~f:(fun ~key:_ ->
-          function
-          | `Left v -> Some v
-          | `Right v -> Some v
-          | `Both (v, _) -> Some v)
+    let all_bindings =
+      List.concat
+        [ Base.Map.to_alist builtin_binops
+        ; Base.Map.to_alist builtin_functions
+        ; Base.Map.to_alist builtin_types
+        ; Base.Map.to_alist builtin_bools
+        ]
     in
-    let merged_with_types =
-      Base.Map.merge merged_binops_and_functions builtin_types ~f:(fun ~key:_ ->
-          function
-          | `Left v -> Some v
-          | `Right v -> Some v
-          | `Both (v, _) -> Some v)
-    in
-    Base.Map.merge
-      merged_with_types
-      (Base.Map.empty (module Base.String))
-      ~f:(fun ~key:_ ->
-        function
-        | `Left v -> Some v
-        | `Right v -> Some v
-        | `Both (v, _) -> Some v)
+    Base.Map.of_alist_reduce (module Base.String) all_bindings ~f:(fun v _ -> v)
   ;;
+
+  (* If duplicates exist, prefer the first occurrence *)
 
   let lookup env name =
     match Base.Map.find env name with
@@ -576,6 +571,7 @@ module Interpreter (M : Error_monad) = struct
                   else fail (InvalidConstructorArguments ctor_name))
              | None -> fail (UndefinedConstructor ctor_name))
           | _ -> fail (NotAnADT adt_name))
+       | VBool _ -> E.lookup env ctor_name
        | _ -> fail (NotAnADTVariant ctor_name))
     | Expression.Exp_constraint (expr, _type_expr) -> eval_expr env expr
 
