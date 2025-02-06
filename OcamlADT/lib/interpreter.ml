@@ -403,55 +403,80 @@ module Interpreter (M : Error_monad) = struct
         | _ -> eval_pattern pat args env)
       else
         return None
-        (*ya hz chto eto. 02.02.24 *)
-        (*   | Pattern.Pat_tuple (p1, p2, ps), VAdt (_, args, type_name, constructors) ->
-             let candidates =
-             let first_ctor, rest_ctors = constructors in
-             first_ctor :: rest_ctors
-             in
-             let matching_candidates =
-             List.filter
-             (fun (_, param_types) -> List.length param_types = List.length (p1 :: p2 :: ps))
-             candidates
-             in
-             if matching_candidates = []
-             then fail PatternMismatch
-             else (
-             let rec evaluate_candidates candidates =
-             match candidates with
-             | [] -> fail PatternMismatch
-             | (ctor_name, param_types) :: rest_candidates ->
-             let resolved_values =
-             match
-             mapM
-             (fun param_type ->
-             match param_type with
-             | TypeExpr.Type_var tvar ->
-             (match E.lookup env tvar with
-             | VType (type_expr, Some adt_name) when adt_name = type_name ->
-             Ok (VType (type_expr, Some adt_name))
-             | Ok _ -> Error PatternMismatch
-             | Error _ -> Error PatternMismatch)
-             | _ -> Error NotImplemented)
-             param_types
-             with
-             | Ok values -> values
-             | Error _ -> fail PatternMismatch
-             in
-             (* Если удалось разрешить все типы, сравниваем с паттернами *)
-             let patterns = p1 :: p2 :: ps in
-             (match mapM2 eval_pattern env patterns resolved_values with
-             | Ok env_opt -> return env_opt
-             | Error _ -> evaluate_candidates rest_candidates)
-             in
-             evaluate_candidates matching_candidates) *)
+        (*????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????*)
+    | Pattern.Pat_tuple (p1, p2, ps), VAdt (_, _, type_name, constructors) ->
+      let candidates =
+        let first_ctor, rest_ctors = constructors in
+        first_ctor :: rest_ctors
+      in
+      (* Filter constructors by matching the parameter count *)
+      let matching_candidates =
+        List.filter
+          (fun (_, param_types) -> List.length param_types = List.length (p1 :: p2 :: ps))
+          candidates
+      in
+      if matching_candidates = []
+      then fail PatternMismatch
+      else (
+        (* Try to evaluate each candidate *)
+        let rec evaluate_candidates candidates =
+          match candidates with
+          | [] -> fail PatternMismatch (* No valid candidates left *)
+          | (ctor_name, param_types) :: rest_candidates ->
+            (* Resolve parameter types monadically using mapM *)
+            let* resolved_values =
+              mapM
+                (fun env param_type ->
+                  match param_type with
+                  | TypeExpr.Type_var tvar ->
+                    let* value = E.lookup env tvar in
+                    (match value with
+                     | VType (type_expr, Some adt_name) when adt_name = type_name ->
+                       return (VType (type_expr, Some adt_name))
+                     | _ -> fail PatternMismatch)
+                  | _ -> fail NotImplemented)
+                env
+                param_types
+            in
+            (* Match patterns with resolved values *)
+            let patterns = p1 :: p2 :: ps in
+            (match mapM2 eval_pattern env patterns resolved_values with
+             | env_opt -> return env_opt
+             | _ -> evaluate_candidates rest_candidates)
+        in
+        let* e = evaluate_candidates matching_candidates in
+        e)
     | Pattern.Pat_construct ("()", None), _ -> return (Some env)
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
+    | Pattern.Pat_construct (ctor, None), VAdt (_, _, tname, _) ->
+      if String.equal ctor tname then return (Some env) else fail PatternMismatch
     | Pattern.Pat_construct (cname, Some p), v ->
       (match v with
-       | VAdt (_, _, tname, _) ->
-         if String.equal cname tname then eval_pattern p v env else return None
+       | VAdt (args, _, tname, _) ->
+         if String.equal cname tname
+         then (
+           match args with
+           | VTuple (v1, v2, vs) ->
+             (match p with
+              | Pattern.Pat_tuple (p1, p2, ps) ->
+                let* env1_opt = eval_pattern p1 v1 env in
+                let* env1 =
+                  match env1_opt with
+                  | Some env -> return env
+                  | None -> fail PatternMismatch
+                in
+                let* env2_opt = eval_pattern p2 v2 env1 in
+                let* env2 =
+                  match env2_opt with
+                  | Some env -> return env
+                  | None -> fail PatternMismatch
+                in
+                let* final_env_opt = mapM2 eval_pattern env2 ps vs in
+                return final_env_opt
+              | _ -> fail PatternMismatch)
+           | _ -> eval_pattern p args env)
+         else return None
        | VString s ->
          if String.equal cname s then eval_pattern p v env else fail PatternMismatch
        | VConstruct _ -> fail NotImplemented

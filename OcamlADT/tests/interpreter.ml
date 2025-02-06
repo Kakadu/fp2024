@@ -651,7 +651,7 @@ print_int area x;;
   [%expect {| Intepreter error: Unbound value Cir|}]
 ;;
 
-(* good, needs a initialization check + infer print(see next test)*)
+(* good, needs a initialization check + infer print(see next tests)*)
 let%expect_test "poly adt tree" =
   pp_parse_demo {|
 type 'a tree = Leaf
@@ -661,7 +661,6 @@ type 'a tree = Leaf
   [%expect {| |}]
 ;;
 
-(*bad*)
 let%expect_test "poly adt tree" =
   pp_parse_demo
     {|
@@ -675,10 +674,12 @@ let rec insert x = function
 ;;
 
 let tree = 
- insert 6 Leaf 
+ insert 6 Leaf
 ;;
   |};
-  [%expect {| Intepreter error: Pattern mismatch |}]
+  [%expect {|
+    val insert = <fun>
+    val tree = <ADT>: Node |}]
 ;;
 
 (*bad, idk, haven;t thought*)
@@ -727,4 +728,25 @@ let%expect_test "function" =
       f 5, f 42
   |};
   [%expect {| _ = (5, 0) |}]
+;;
+
+let%expect_test "pattern matching function with print_int" =
+  pp_parse_demo {| let f = function 0 -> 42 | _ -> 99 in 
+print_int (f 0)|};
+  [%expect {| 42 |}]
+;;
+
+let%expect_test "nested function as apply with print_int" =
+  pp_parse_demo {| print_int ((function x -> function y -> x + y) 3 4);; |};
+  [%expect {| 7 |}]
+;;
+
+let%expect_test "tuple pattern function with print_string (fail: TypeMismatch)" =
+  pp_parse_demo {|  print_endline ((function (x, y) -> x + y) ("Hello", " World")) |};
+  [%expect {| Intepreter error: Type mismatch |}]
+;;
+
+let%expect_test "function inside let binding with print_int" =
+  pp_parse_demo {| let f = function x -> x * 2 in print_int (f 10) |};
+  [%expect {| 20 |}]
 ;;
