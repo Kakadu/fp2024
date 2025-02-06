@@ -28,6 +28,7 @@ type error =
   | Unbound of id
   | PatternNameTwice of pattern
   | UnknownType of id
+  | SomeError of string
 [@@deriving show { with_path = false }]
 
 type scheme = Scheme of TVarSet.t * typ

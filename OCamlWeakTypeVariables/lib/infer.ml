@@ -384,6 +384,23 @@ let rec infer_pattern env ?ty =
       | None -> return Subst.empty
     in
     return (t_unit, env, [])
+  | Ppat_tuple pats ->
+    (match pats with
+     | [] | [ _ ] ->
+       fail (SomeError "Pattern tuple must contain greather or equal two elements")
+     | first :: second :: xs ->
+       let* fv1, env1, names1 = infer_pattern env first in
+       let* fv2, env2, names2 = infer_pattern env1 second in
+       let* fvs, env, names =
+         RList.fold_left
+           ~init:(return ([], env2, []))
+           ~f:(fun (fvs, env, names) pat ->
+             let* fv, env, new_names = infer_pattern env pat in
+             return (fv :: fvs, env, names @ new_names))
+           xs
+       in
+       return (TTuple (fv1, fv2, List.rev fvs), env, names))
+  | _ -> failwith "not implemented"
 ;;
 
 (* [@@@warning "-8"] *)
@@ -467,7 +484,7 @@ let infer_expr =
     (* So I think i can just generate substitution with unify tN and kN *)
     (* i want to die after three hours of attempting implemented this 😿😿😿 *)
     (* Recursive multiple let definitions type inference by Homka122 😼😼😼 (it took 4 hours) *)
-    | Pexp_let (NonRecursive, vb, e1) ->
+    | Pexp_let (NonRecursive, vb, e1) as let_expr ->
       (* Example: let homka = fun x y -> let z = x y in z + 2 *)
       let* env, sub0 =
         RList.fold_left
@@ -477,14 +494,29 @@ let infer_expr =
             (* So t0 will be 'c and sub0 will be '{a: 'b -> 'c} *)
             let* t0, sub0 = helper env vb.pvb_expr in
             (* With type (x y): 'c we append new variable z with type 'c *)
-            let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
-            let* sub_c = Subst.compose sub sub0 in
-            return (env0, sub_c))
+            match vb.pvb_pat with
+            | Ppat_tuple _ ->
+              let* t, env, _ = infer_pattern env vb.pvb_pat in
+              let* sub_un = Subst.unify t t0 in
+              let* sub = Subst.compose sub_un sub0 in
+              return (env, sub)
+            | _ ->
+              let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
+              let* sub_c = Subst.compose sub sub0 in
+              return (env0, sub_c))
           ~init:(return (env, Subst.empty))
           vb
       in
       let* t, sub1 = helper (TypeEnv.apply env sub0) e1 in
       let* sub = Subst.compose sub0 sub1 in
+      if debug
+      then (
+        Format.printf "Non rec let %a" pp_expression let_expr;
+        TypeEnv.print env;
+        Format.printf "sub0: %a\n" Subst.pp sub0;
+        Format.printf "t: %a\n" Infer_print.pp_typ_my t;
+        Format.printf "sub1: %a\n" Subst.pp sub1;
+        Format.printf "sub: %a\n" Subst.pp sub);
       return (t, sub)
       (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Typing_rule *)
     | Pexp_let (Recursive, vbs, e1) ->
@@ -495,8 +527,13 @@ let infer_expr =
           patterns
           ~init:(return (env, []))
           ~f:(fun (env, fvs) pat ->
-            let* fv, env, _ = infer_pattern env pat in
-            return (env, fv :: fvs))
+            match pat with
+            | Ppat_var _ ->
+              let* fv, env, _ = infer_pattern env pat in
+              return (env, fv :: fvs)
+            | _ ->
+              SomeError "Only variables are allowed as left-hand side of `let rec`"
+              |> fail)
       in
       (* We get types of e0, e1, ... en and additional type info about type of variables outside of ei expression for all i *)
       let* ts, subs = List.split <$> RList.map exprs ~f:(fun expr -> helper env' expr) in
@@ -505,13 +542,25 @@ let infer_expr =
       (* Apply all gotten types to out new names *)
       let* env'' =
         RList.fold_left
-          (List.combine ts fvs)
-          ~init:(return @@ TypeEnv.apply env' sub)
-          ~f:(fun env (ty, fv) ->
-            let* sub = Subst.unify ty (Subst.apply sub fv) in
-            return (TypeEnv.apply env sub))
+          (List.combine (List.combine ts fvs) patterns)
+          ~init:(return @@ env)
+          ~f:(fun env ((ty, fv), pat) ->
+            match pat with
+            | Ppat_var v ->
+              let* sub_un = Subst.unify ty (Subst.apply sub fv) in
+              let env =
+                TypeEnv.extend
+                  (TypeEnv.apply env sub)
+                  v
+                  (generalize env (Subst.apply sub_un ty))
+              in
+              return env
+            | _ ->
+              SomeError "Only variables are allowed as left-hand side of `let rec`"
+              |> fail)
       in
       let* t, sub' = helper env'' e1 in
+      let* sub' = Subst.compose sub' sub in
       (match debug with
        | false -> return (t, sub)
        | true ->
@@ -574,11 +623,22 @@ let infer_structure =
       (* Apply all gotten types to out new names *)
       let* env'' =
         RList.fold_left
-          (List.combine ts fvs)
-          ~init:(return @@ TypeEnv.apply env' sub)
-          ~f:(fun env (ty, fv) ->
-            let* sub = Subst.unify ty (Subst.apply sub fv) in
-            return (TypeEnv.apply env sub))
+          (List.combine (List.combine ts fvs) patterns)
+          ~init:(return @@ env)
+          ~f:(fun env ((ty, fv), pat) ->
+            match pat with
+            | Ppat_var v ->
+              let* sub_un = Subst.unify ty (Subst.apply sub fv) in
+              let env =
+                TypeEnv.extend
+                  (TypeEnv.apply env sub)
+                  v
+                  (generalize env (Subst.apply sub_un ty))
+              in
+              return env
+            | _ ->
+              SomeError "Only variables are allowed as left-hand side of `let rec`"
+              |> fail)
       in
       return (env'', names)
   in

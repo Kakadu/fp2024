@@ -53,31 +53,22 @@
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/009let_poly.ml
-  val temp : (int * bool)
+  val temp : int * bool
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/010sukharev.ml
   Error: : end_of_input
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/015tuples.ml
-  Fatal error: exception "Match_failure lib/infer.ml:361:2"
-  Raised at Lib__Infer.infer_pattern.(fun) in file "lib/infer.ml", line 361, characters 2-446
-  Called from Lib__Infer.infer_expr.helper.(fun) in file "lib/infer.ml", line 471, characters 30-65
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.(>>=) in file "lib/infer.ml", line 45, characters 10-13
-  Called from Lib__Infer.R.run in file "lib/infer.ml" (inlined), line 113, characters 23-31
-  Called from Lib__Infer.run_program_inferencer in file "lib/infer.ml", line 608, characters 2-65
-  Called from Dune__exe__REPL.run_single in file "bin/REPL.ml", line 18, characters 13-49
-  [2]
+  val feven : 'a * (int -> int) -> int -> int
+  val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
+  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
+  val fodd : (int -> int) * 'a -> int -> int
+  val main : int
+  val map : ('a -> 'b) -> 'a * 'a -> 'b * 'b
+  val meven : int -> int
+  val modd : int -> int
+  val tie : (int -> int) * (int -> int)
+  
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/016lists.ml
   Error: : end_of_input

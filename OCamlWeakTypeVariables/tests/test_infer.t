@@ -27,8 +27,8 @@
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec x = y + 3 and y = true
-  val x : bool
-  val y : int
+  val x : int
+  val y : bool
   
 
   $ ../bin/REPL.exe -dinference <<EOF
