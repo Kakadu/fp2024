@@ -18,6 +18,7 @@ type tp =
   | TUnit (** () *)
   | TInt (** Int *)
   | TBool (** Bool *)
+  | MaybeParam of tp (** e.g. [Maybe Int]*)
   | TreeParam of tp (** e.g. [{Int}] *)
   | ListParam of tp (** e.g. [[Int]] *)
   | TupleParams of tp * tp * tp_list (** e.g. [(Int, Bool)] *)
@@ -28,7 +29,7 @@ and functype = FuncT of tp * tp * tp_list (** e.g. [Int-> Bool -> (Int,Bool)] *)
 
 and tp_list =
   (tp list
-  [@gen QCheck.Gen.(list_size (return (Int.min 2 (n / 7))) (gen_tp_sized (n / 7)))])
+  [@gen QCheck.Gen.(list_size (return (Int.min 2 (n / 10))) (gen_tp_sized (n / 10)))])
 [@@deriving qcheck, show { with_path = false }]
 
 type binop =

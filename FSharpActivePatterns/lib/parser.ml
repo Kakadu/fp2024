@@ -6,6 +6,7 @@ open Angstrom
 open Ast
 open Base
 open KeywordChecker
+open TypedTree
 
 (* TECHNICAL FUNCTIONS *)
 
@@ -24,9 +25,9 @@ let peek_sep1 =
   match c with
   | None -> return None
   | Some c ->
-    if is_ws c || Char.equal c '(' || Char.equal c ')' || Char.equal c ','
-    then return (Some c)
-    else fail "need a delimiter"
+    (match c with
+     | '(' | ')' | ']' | ';' | ':' | ',' -> return (Some c)
+     | _ -> if is_ws c then return (Some c) else fail "need a delimiter")
 ;;
 
 let skip_ws_sep1 = peek_sep1 *> skip_ws
@@ -93,16 +94,37 @@ let p_string =
 let p_string_expr = expr_const_factory p_string
 let p_string_pat = pat_const_factory p_string
 
-let p_type =
-  skip_ws
-  *> char ':'
-  *> skip_ws
-  *> (choice [ string "int"; string "bool" ] >>| fun var_type -> Some var_type)
-  <|> return None
+let p_inf_oper =
+  let* oper =
+    skip_ws
+    *> take_while1 (function
+      | '+'
+      | '-'
+      | '<'
+      | '>'
+      | '*'
+      | '|'
+      | '!'
+      | '$'
+      | '%'
+      | '&'
+      | '.'
+      | '/'
+      | ':'
+      | '='
+      | '?'
+      | '@'
+      | '^'
+      | '~' -> true
+      | _ -> false)
+  in
+  if is_keyword oper
+  then fail "keywords are not allowed as variable names"
+  else return (Ident oper)
 ;;
 
-let p_ident =
-  let find_string =
+let p_varname =
+  let* name =
     skip_ws
     *> lift2
          ( ^ )
@@ -113,13 +135,17 @@ let p_ident =
            | 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true
            | _ -> false))
   in
-  find_string
-  >>= fun str ->
-  if is_keyword str
+  if is_keyword name
   then fail "keywords are not allowed as variable names"
-  else p_type >>| fun type_opt -> Ident (str, type_opt)
+  else return name
 ;;
 
+let p_ident =
+  let* varname = p_varname in
+  return (Ident varname)
+;;
+
+let p_type = skip_ws *> char ':' *> skip_ws *> p_varname >>| fun s -> Primitive s
 let p_var_expr = p_ident >>| fun ident -> Variable ident
 let p_var_pat = p_ident >>| fun ident -> PVar ident
 
@@ -179,15 +205,13 @@ let p_cons_list_pat p_pat =
 ;;
 
 let p_tuple make p =
-  skip_ws
-  *> string "("
-  *> lift3
-       make
-       p
-       (skip_ws *> string "," *> skip_ws *> p)
-       (many (skip_ws *> string "," *> skip_ws *> p))
-  <* skip_ws
-  <* string ")"
+  let tuple =
+    let* fst = p <* skip_ws <* string "," in
+    let* snd = p in
+    let* rest = many (skip_ws *> string "," *> p) in
+    return (make fst snd rest)
+  in
+  p_parens tuple <|> tuple
 ;;
 
 let p_tuple_pat p_pat = p_tuple make_tuple_pat p_pat
@@ -204,46 +228,6 @@ let p_if p_expr =
      <|> return None)
 ;;
 
-let p_let_bind p_expr =
-  skip_ws
-  *> string "and"
-  *> peek_sep1
-  *> lift3
-       (fun name args body -> Let_bind (name, args, body))
-       p_ident
-       (many p_ident)
-       (skip_ws *> string "=" *> p_expr)
-;;
-
-let p_letin p_expr =
-  skip_ws
-  *> string "let"
-  *> skip_ws_sep1
-  *>
-  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
-  let* name = p_ident in
-  let* args = many p_ident in
-  let* body = skip_ws *> string "=" *> p_expr in
-  let* let_bind_list = many (p_let_bind p_expr) in
-  let* in_expr = skip_ws *> string "in" *> peek_sep1 *> p_expr in
-  return (LetIn (rec_flag, Let_bind (name, args, body), let_bind_list, in_expr))
-;;
-
-let p_let p_expr =
-  skip_ws
-  *> string "let"
-  *> skip_ws_sep1
-  *>
-  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
-  let* name = p_ident in
-  let* args = many p_ident in
-  let* body = skip_ws *> string "=" *> p_expr in
-  let* let_bind_list = many (p_let_bind p_expr) in
-  return (Let (rec_flag, Let_bind (name, args, body), let_bind_list))
-;;
-
-let p_apply p_expr = chainl1 p_expr (return (fun expr1 expr2 -> Apply (expr1, expr2)))
-
 let p_option p make_option =
   skip_ws *> string "None" *> peek_sep1 *> return (make_option None)
   <|> let+ inner = skip_ws *> string "Some" *> peek_sep1 *> p in
@@ -258,15 +242,55 @@ let p_pat_const =
   choice [ p_int_pat; p_bool_pat; p_unit_pat; p_string_pat; p_var_pat; p_wild_pat ]
 ;;
 
+let p_constraint_pat p_pat =
+  let* pat = p_pat in
+  let* typ = p_type in
+  return (PConstraint (pat, typ))
+;;
+
 let p_pat =
   skip_ws
   *> fix (fun self ->
-    let atom = choice [ p_pat_const; p_parens self ] in
-    let tuple = p_tuple_pat (self <|> atom) <|> atom in
-    let semicolon_list = p_semicolon_list_pat (self <|> tuple) <|> tuple in
+    let atom = choice [ p_pat_const; p_parens self; p_parens (p_constraint_pat self) ] in
+    let semicolon_list = p_semicolon_list_pat (self <|> atom) <|> atom in
     let opt = p_option semicolon_list make_option_pat <|> semicolon_list in
     let cons = p_cons_list_pat opt in
-    cons)
+    let tuple = p_tuple_pat cons <|> cons in
+    tuple)
+;;
+
+let p_let_bind p_expr =
+  let* name = p_pat <|> (p_parens p_inf_oper >>| fun oper -> PVar oper) in
+  let* args = many p_pat in
+  let* body = skip_ws *> string "=" *> p_expr in
+  return (Let_bind (name, args, body))
+;;
+
+let p_letin p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
+  let* let_bind1 = p_let_bind p_expr in
+  let* let_binds = many (skip_ws *> string "and" *> peek_sep1 *> p_let_bind p_expr) in
+  let* in_expr = skip_ws *> string "in" *> peek_sep1 *> p_expr in
+  return (LetIn (rec_flag, let_bind1, let_binds, in_expr))
+;;
+
+let p_let p_expr =
+  skip_ws
+  *> string "let"
+  *> skip_ws_sep1
+  *>
+  let* rec_flag = string "rec" *> peek_sep1 *> return Rec <|> return Nonrec in
+  let* let_bind1 = p_let_bind p_expr in
+  let* let_binds = many (skip_ws *> string "and" *> peek_sep1 *> p_let_bind p_expr) in
+  return (Let (rec_flag, let_bind1, let_binds))
+;;
+
+let p_apply p_expr =
+  chainl1 (p_expr <* peek_sep1) (return (fun expr1 expr2 -> Apply (expr1, expr2)))
 ;;
 
 let p_lambda p_expr =
@@ -274,22 +298,53 @@ let p_lambda p_expr =
   *> string "fun"
   *> peek_sep1
   *>
-  let* pat = p_pat in
-  let* pat_list = many p_pat <* skip_ws <* string "->" in
+  let* arg1 = p_pat in
+  let* args = many p_pat <* skip_ws <* string "->" in
   let* body = p_expr in
-  return (Lambda (pat, pat_list, body))
+  return (Lambda (arg1, args, body))
+;;
+
+let p_case p_expr =
+  let* pat = skip_ws *> string "|" *> p_pat <* skip_ws <* string "->" in
+  let* expr = p_expr in
+  return (pat, expr)
+;;
+
+let p_first_case p_expr =
+  let* pat = skip_ws *> (string "|" *> p_pat <|> p_pat) <* skip_ws <* string "->" in
+  let* expr = p_expr in
+  return (pat, expr)
 ;;
 
 let p_match p_expr =
-  lift4
-    (fun value first_pat first_expr cases -> Match (value, first_pat, first_expr, cases))
-    (skip_ws *> string "match" *> skip_ws *> p_expr <* skip_ws <* string "with")
-    (skip_ws *> string "|" *> skip_ws *> p_pat <* skip_ws <* string "->" <* skip_ws)
-    (p_expr <* skip_ws)
-    (many
-       (let* pat = skip_ws *> string "|" *> p_pat <* skip_ws <* string "->" in
-        let* expr = p_expr in
-        return (pat, expr)))
+  let* value = skip_ws *> string "match" *> p_expr <* skip_ws <* string "with" in
+  let* pat1, expr1 = p_first_case p_expr in
+  let* cases = many (p_case p_expr) in
+  return (Match (value, (pat1, expr1), cases))
+;;
+
+let p_function p_expr =
+  skip_ws
+  *> string "function"
+  *>
+  let* pat1, expr1 = p_first_case p_expr in
+  let* cases = many (p_case p_expr) in
+  return (Function ((pat1, expr1), cases))
+;;
+
+let p_inf_oper_expr p_expr =
+  skip_ws
+  *> chainl1
+       p_expr
+       (p_inf_oper
+        >>= fun op ->
+        return (fun expr1 expr2 -> Apply (Apply (Variable op, expr1), expr2)))
+;;
+
+let p_constraint_expr p_expr =
+  let* expr = p_expr in
+  let* typ = p_type in
+  return (EConstraint (expr, typ))
 ;;
 
 let p_expr =
@@ -304,10 +359,10 @@ let p_expr =
         ; p_bool_expr
         ; p_parens p_expr
         ; p_semicolon_list_expr p_expr
+        ; p_parens (p_constraint_expr p_expr)
         ]
     in
-    let tuple = p_tuple make_tuple_expr (p_expr <|> atom) <|> atom in
-    let if_expr = p_if (p_expr <|> tuple) <|> tuple in
+    let if_expr = p_if (p_expr <|> atom) <|> atom in
     let letin_expr = p_letin (p_expr <|> if_expr) <|> if_expr in
     let option = p_option letin_expr make_option_expr <|> letin_expr in
     let apply = p_apply option <|> option in
@@ -323,7 +378,10 @@ let p_expr =
     let bit_or = chainl1 bit_and bitwise_or in
     let comp_and = chainl1 bit_or log_and in
     let comp_or = chainl1 comp_and log_or in
-    let ematch = p_match (p_expr <|> comp_or) <|> comp_or in
+    let inf_oper = p_inf_oper_expr comp_or <|> comp_or in
+    let tuple = p_tuple make_tuple_expr inf_oper <|> inf_oper in
+    let p_function = p_function (p_expr <|> tuple) <|> tuple in
+    let ematch = p_match (p_expr <|> p_function) <|> p_function in
     let efun = p_lambda (p_expr <|> ematch) <|> ematch in
     efun)
 ;;
@@ -336,7 +394,5 @@ let p_construction =
 
 (* MAIN PARSE FUNCTION *)
 let parse (str : string) =
-  match parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str with
-  | Ok ast -> Some ast
-  | Error _ -> None
+  parse_string ~consume:All (skip_ws *> p_construction <* skip_ws) str
 ;;
