@@ -51,8 +51,13 @@ let pp_typ_my fmt t =
     | TTuple (f, s, xs) ->
       Format.fprintf
         fmt
-        "(%a)"
-        (Format.pp_print_list ~pp_sep:(fun _ _ -> Format.printf " * ") helper)
+        "%a"
+        (Format.pp_print_list
+           ~pp_sep:(fun _ _ -> Format.printf " * ")
+           (fun fmt ty ->
+             match ty with
+             | TBase _ | TVar _ -> Format.fprintf fmt "%a" helper ty
+             | _ -> Format.fprintf fmt "(%a)" helper ty))
         (f :: s :: xs)
     | TList l -> Format.fprintf fmt "%a list" helper l
   in
@@ -71,7 +76,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   Format.printf "%a" pp_typ_my (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5 ])));
-  [%expect {| 'a -> ('b * 'a * 'c) |}]
+  [%expect {| 'a -> 'b * 'a * 'c |}]
 ;;
 
 let%expect_test _ =
@@ -79,5 +84,5 @@ let%expect_test _ =
     "%a"
     pp_typ_my
     (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5; TList (TVar 2) ])));
-  [%expect {| 'a -> ('b * 'a * 'c * 'a list) |}]
+  [%expect {| 'a -> 'b * 'a * 'c * ('a list) |}]
 ;;
