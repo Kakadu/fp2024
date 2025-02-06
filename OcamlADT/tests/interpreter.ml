@@ -179,6 +179,7 @@ let%expect_test "multiple let bool assignments" =
 let%expect_test "fun assignment with bool operators" =
   pp_parse_demo {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
   [%expect {| false |}]
+
 ;;
 
 let%expect_test "fun assignment with bool operators (tuple arg)" =
