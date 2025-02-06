@@ -271,6 +271,7 @@ module TypeEnv : sig
   val operators : (id list * typ) list
   val pp : Format.formatter -> t -> unit
   val pp_names : id list -> Format.formatter -> t -> unit
+  val print : ?name:string -> t -> unit
 end = struct
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
@@ -299,9 +300,10 @@ end = struct
     Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (s, t)) ->
       if not Config.show_scheme_vars
       then Format.fprintf fmt "val %s : %a\n" key Infer_print.pp_typ_my t
-      else Format.fprintf fmt "val %s: " key;
-      TVarSet.iter (fun t -> Format.fprintf fmt "%a " Infer_print.pp_typ_my (TVar t)) s;
-      Format.fprintf fmt ". %a\n" Infer_print.pp_typ_my t)
+      else (
+        Format.fprintf fmt "val %s: " key;
+        TVarSet.iter (fun t -> Format.fprintf fmt "%a " Infer_print.pp_typ_my (TVar t)) s;
+        Format.fprintf fmt ". %a\n" Infer_print.pp_typ_my t))
   ;;
 
   (* Print types of specific variables *)
@@ -309,6 +311,8 @@ end = struct
     let map = Base.Map.filter_keys env ~f:(fun key -> List.mem key names) in
     pp fmt map
   ;;
+
+  let print ?(name = "Env") env = Format.printf "%s: %a" name pp env
 end
 
 open R
@@ -360,7 +364,7 @@ let infer_id env id =
   | _ -> lookup_env env id
 ;;
 
-let infer_pattern env ?ty =
+let rec infer_pattern env ?ty =
   let names = [] in
   function
   | Ppat_var v ->
@@ -396,6 +400,7 @@ let infer_expr =
       let* t, env', _ = infer_pattern env pattern in
       let* t', sub = helper env' expr in
       return (Subst.apply sub (t @-> t'), sub)
+      (* Constraint type inference by Homka122 😼😼😼 *)
     | Pexp_constraint (expr, ty) ->
       let* typ =
         match ty with
