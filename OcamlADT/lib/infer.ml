@@ -485,12 +485,6 @@ let rec infer_exp ~debug exp env =
     let* res_env, res_sub, res_typexp, res_typepat =
       infer_cases ~debug new_env (case2 :: rest) typ2 typ1 sub1
     in
-    (* let* env2, typ3 = infer_pat case2.first new_env in
-       let* sub2, typ4 = infer_exp case2.second env2 in
-       let* uni_sub1 = Substitution.unify typ1 typ3 in
-       let* uni_sub2 = Substitution.unify typ2 typ4 in
-       let* comp_sub = Substitution.compose_all [sub1;sub2;uni_sub1;uni_sub2] in
-       let new_env = TypeEnv.apply comp_sub env2 in *)
     return (res_sub, res_typexp)
   | Exp_match (expr, (case1, case2 :: rest)) ->
     let* subexpr, typexpr = infer_exp ~debug expr env in
@@ -502,15 +496,8 @@ let rec infer_exp ~debug exp env =
     let* res_env, res_sub, res_typexp, res_typepat =
       infer_cases ~debug new_env (case2 :: rest) typ2 typ1 sub1
     in
-    (* let* env2, typ3 = infer_pat case2.first new_env in
-       let* sub2, typ4 = infer_exp case2.second env2 in
-       let* uni_sub1 = Substitution.unify typ1 typ3 in
-       let* uni_sub2 = Substitution.unify typ2 typ4 in
-       let* comp_sub = Substitution.compose_all [subexpr;sub1;uni_subexpr;sub2;uni_sub1;uni_sub2] in
-       let new_env = TypeEnv.apply comp_sub env2 in *)
     return (res_sub, res_typexp)
   | Exp_let (Nonrecursive, (value_binding, rest), exp) ->
-    (* let _ = Stdlib.Format.printf "DEBUG: env in Exp_let!:%a" TypeEnv.pp_env env in *)
     let* new_env, sub =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
     in
@@ -597,6 +584,10 @@ and infer_value_binding_list ~debug vb_list env sub =
               TypeEnv.pp_env
               res_env;
           return (res_env, res_sub)
+        (* | { pat = Pat_constraint (pat,pat_typ); expr = Exp_function _ as exp }->
+          let* sub,typ = infer_exp ~debug (Exp_constraint(exp,pat_typ)) env_acc in
+          let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
+          return (res_env, res_sub) *)
         | { pat; expr } ->
           let* sub, typ = infer_exp ~debug expr env_acc in
           if debug
@@ -625,6 +616,14 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
         ~f:(fun acc vb fv ->
           let* env_acc, sub_acc = return acc in
           match vb, fv with
+          | ( ( { pat = Pat_var name; expr = Exp_fun _ as exp }
+              | { pat = Pat_var name; expr = Exp_function _ as exp } )
+            , fresh ) ->
+            let* subexpr, typexpr = infer_exp ~debug exp env_acc in
+            let* res_env, res_sub =
+              infer_rec_rest_vb ~debug sub_acc env_acc fresh typexpr name subexpr
+            in
+            return (res_env, res_sub)
           | { pat = Pat_var name; expr }, fresh ->
             let* subexpr, typexpr = infer_exp ~debug expr env_acc in
             let new_fresh = Substitution.apply sub_acc fresh in
