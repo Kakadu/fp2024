@@ -2,8 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(** This file contains a subset of keywords of F# 4.1, taken from
-    https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 25 *)
+(* A subset of keywords of F# 4.1 is taken from https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 25 *)
 
 let is_keyword = function
   | "and"
@@ -28,5 +27,27 @@ let is_keyword = function
 
 let is_builtin_type = function
   | "int" | "bool" | "float" | "char" | "string" -> true
+  | _ -> false
+;;
+
+(** [is_builtin_op op] returns true if [s] is a builtin operation of F#. *)
+let is_builtin_op = function
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "<="
+  | "<"
+  | ">="
+  | ">"
+  | "="
+  | "<>"
+  | "||"
+  | "&&"
+  | "+."
+  | "-."
+  | "*."
+  | "/."
+  | "::" -> true
   | _ -> false
 ;;
