@@ -183,7 +183,7 @@ end = struct
       | TOption typ -> TOption (helper typ)
       | TTuple (a, b, t_list) ->
         TTuple (helper a, helper b, Base.List.map t_list ~f:helper)
-      | _ -> failwith "IMPLEMENT ME PLEASE"
+      | TBase t -> TBase t
     in
     helper
   ;;
@@ -422,7 +422,7 @@ let rec infer_pattern env ?ty =
        return (TOption ty, env, names))
   | Ppat_construct ("None", None) ->
     let* fv = fresh_var in
-    return (fv, env, [])
+    return (TOption fv, env, [])
   | Ppat_construct ("Some", None) -> fail (SomeError "Some constructor require argument")
   | Ppat_construct ("None", Some _) ->
     fail (SomeError "None constructor don't accept arguments")
