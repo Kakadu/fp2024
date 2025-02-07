@@ -399,7 +399,7 @@ let rec infer_pattern env ?ty =
              return (fv :: fvs, env, names @ new_names))
            xs
        in
-       return (TTuple (fv1, fv2, List.rev fvs), env, names))
+       return (TTuple (fv1, fv2, List.rev fvs), env, names1 @ names2 @ names))
   | _ -> failwith "not implemented"
 ;;
 
