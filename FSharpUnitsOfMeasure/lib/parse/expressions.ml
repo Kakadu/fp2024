@@ -34,7 +34,6 @@ let parse_infix_app op =
   *> return (fun e1 e2 -> Expr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
 ;;
 
-(* Refactor this with explicit operations priorities later *)
 let pexpr_app pexpr =
   let app = chainl pexpr parse_prefix_app <|> pexpr in
   let app =
@@ -61,7 +60,8 @@ let pexpr_app pexpr =
       (parse_infix_app "<="
        <|> parse_infix_app "<"
        <|> parse_infix_app ">="
-       <|> parse_infix_app ">")
+       <|> parse_infix_app ">"
+       <|> parse_infix_app "<>")
     <|> app
   in
   let app = chainr app (parse_infix_app "::") <|> app in

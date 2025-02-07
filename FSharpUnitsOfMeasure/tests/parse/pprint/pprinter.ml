@@ -4,7 +4,7 @@
 
 open Ast
 open Format
-open Parse.Common
+open Checks
 
 let pprint_ident ident = asprintf "%s" ident
 let pprint_sep_star = asprintf " * "

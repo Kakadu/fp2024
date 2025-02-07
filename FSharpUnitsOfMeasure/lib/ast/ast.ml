@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open QCheck.Gen
-open Keywords
+open Checks
 open Base
 
 let gen_id_first_char = frequency [ 5, char_range 'a' 'z'; 1, return '_' ]

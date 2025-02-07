@@ -8,7 +8,7 @@
 open Angstrom
 open Ast
 open Common
-open Keywords
+open Checks
 
 let ptype_builtin =
   let* id = pid in

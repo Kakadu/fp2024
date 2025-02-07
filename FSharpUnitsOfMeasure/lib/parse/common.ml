@@ -7,7 +7,7 @@
 
 open Base
 open Angstrom
-open Keywords
+open Checks
 
 (* F# compiler forbids tabs by default *)
 let is_whitespace = function
@@ -28,24 +28,6 @@ let skip_token str = skip_ws *> string str <* skip_ws >>= fun _ -> return ()
 
 let is_op_char = function
   | '+' | '-' | '*' | '/' | '<' | '>' | '=' | '|' | '.' -> true
-  | _ -> false
-;;
-
-let is_builtin_op = function
-  | "+"
-  | "-"
-  | "*"
-  | "/"
-  | "<="
-  | "<"
-  | ">="
-  | ">"
-  | "||"
-  | "&&"
-  | "+."
-  | "-."
-  | "*."
-  | "/." -> true
   | _ -> false
 ;;
 
