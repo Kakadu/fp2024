@@ -1,6 +1,7 @@
 open Ast
 open Types
 open Config
+open Infer_print
 
 module R : sig
   type 'a t
@@ -250,6 +251,8 @@ end = struct
       Format.fprintf fmt "}")
   ;;
 end
+
+let sub_print ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub
 
 module Scheme = struct
   let free_vars = function

@@ -73,6 +73,8 @@ let pp_typ_my fmt t =
   helper fmt t
 ;;
 
+let print_typ ?(name = "typ") t = Format.printf "%s: %a\n" name pp_typ_my t
+
 let%expect_test _ =
   Format.printf "%a" pp_typ_my (TVar 4);
   [%expect {| 'a |}]
