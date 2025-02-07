@@ -498,7 +498,7 @@ let rec meven n = if n = 0 then 1 else modd (n - 1)
   Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
   Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 720, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 478, characters 2-189
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 477, characters 2-189
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 

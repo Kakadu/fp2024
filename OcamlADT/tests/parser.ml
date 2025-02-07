@@ -1760,3 +1760,71 @@ let%expect_test "function" =
            )))
       ] |}]
 ;;
+
+let%expect_test "keyword" =
+  test_program {|
+let _6 = fun arg -> match arg with Some x -> let y = x in y;;
+  |};
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "_6");
+           expr =
+           (Exp_fun (((Pat_var "arg"), []),
+              (Exp_match ((Exp_ident "arg"),
+                 ({ first = (Pat_construct ("Some", (Some (Pat_var "x"))));
+                    second =
+                    (Exp_let (Nonrecursive,
+                       ({ pat = (Pat_var "y"); expr = (Exp_ident "x") }, []),
+                       (Exp_ident "y")))
+                    },
+                  [])
+                 ))
+              ))
+           },
+         [])
+        ))
+      ] |}]
+;;
+
+let%expect_test "parenthesis with operators with different priorities" =
+  test_program
+    {|
+  let rec fix f x = f (fix f) x
+let map f p = let (a,b) = p in (f a, f b)
+let fixpoly l =
+  fix (fun self l -> map (fun li x -> li (self l) x) l) l
+let feven p n =
+  let (e, o) = p in
+  if n = 0 then 1 else o (n - 1)
+let fodd p n =
+  let (e, o) = p in
+  if n = 0 then 0 else e (n - 1)
+let tie = fixpoly (feven, fodd)
+
+let rec meven n = if n = 0 then 1 else modd (n - 1)
+and modd n = if n = 0 then 1 else meven (n - 1)
+let main =
+  let () = print_int (modd 1) in
+  let () = print_int (meven 2) in
+  let (even,odd) = tie in
+  let () = print_int (odd 3) in
+  let () = print_int (even 4) in
+  0
+
+  |};
+  [%expect
+    {|
+    [(Str_eval
+        (Exp_apply ((Exp_ident "*"),
+           (Exp_tuple
+              ((Exp_constant (Const_integer 5)),
+               (Exp_apply ((Exp_ident "-"),
+                  (Exp_tuple
+                     ((Exp_constant (Const_integer 5)),
+                      (Exp_constant (Const_integer 1)), []))
+                  )),
+               []))
+           )))
+      ] |}]
+;;

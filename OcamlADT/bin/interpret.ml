@@ -69,7 +69,7 @@ let rec read_repl_input inp_chan =
         read_repl_input inp_chan
       | Ok ast ->
         if ast = []
-        then read_repl_input inp_chan (* empty input is handled by interpreter/parser *)
+        then read_repl_input inp_chan (* Empty input is handled by interpreter/parser *)
         else Some ast)
 ;;
 

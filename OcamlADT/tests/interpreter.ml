@@ -835,6 +835,18 @@ let%expect_test "function inside let binding with print_int" =
   [%expect {| 20 |}]
 ;;
 
+let%expect_test "some" =
+  pp_parse_demo
+    {|
+ let f = function
+        | Some x -> x
+        | None -> 0
+      in
+      f None, f (Some 42)
+  |};
+  [%expect {| _ = (None, 42) |}]
+;;
+
 (*aka manytests*)
 
 let%expect_test "001fac" =
@@ -846,7 +858,10 @@ let main =
   let () = print_int (fac 4) in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    24
+    val fac = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "002fac" =
@@ -860,7 +875,10 @@ let main =
   let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    24
+    val fac_cps = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "003fac" =
@@ -883,7 +901,12 @@ let main =
   let () = print_int (fib 4) in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    3
+    3
+    val fib_acc = <fun>
+    val fib = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "004manyargs" =
@@ -909,7 +932,16 @@ let main =
   let temp2 = wrap test3 1 10 100 in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect
+    {|
+    1111111111
+    1
+    10
+    100
+    val wrap = <fun>
+    val test3 = <fun>
+    val test10 = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "005fix" =
@@ -923,7 +955,11 @@ let main =
   let () = print_int (fix fac 6) in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    720
+    val fix = <fun>
+    val fac = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "006partial" =
@@ -942,7 +978,13 @@ let main =
   let () = print_int foo in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    1
+    2
+    3
+    7
+    val foo = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "006partial2" =
@@ -955,7 +997,10 @@ let main =
   let () = print_int (foo 11) in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    1122
+    val foo = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "006partial3" =
@@ -971,7 +1016,12 @@ let main =
   let () = foo 4 8 9 in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    4
+    8
+    9
+    val foo = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "007order" =
@@ -986,7 +1036,17 @@ let _start () () a () b _c () d __ =
 let main =
   print_int (_start (print_int 1) (print_int 2) 3 (print_int 4) 100 1000 (print_int (-1)) 10000 (-555555))
 |};
-  [%expect {| 20 |}]
+  [%expect
+    {|
+    1
+    2
+    4
+    -1
+    103
+    -555555
+    10000
+    val _start = <fun>
+    val main = "" |}]
 ;;
 
 let%expect_test "008ascription" =
@@ -998,7 +1058,10 @@ let main =
   let () = print_int (addi (fun x b -> if b then x+1 else x*2) (fun _start -> _start/2 = 0) 4) in
   0
 |};
-  [%expect {| 20 |}]
+  [%expect {|
+    8
+    val addi = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "009let_poly" =
@@ -1007,11 +1070,10 @@ let temp =
   let f = fun x -> x in
   (f 1, f true)
 |};
-  [%expect {| 20 |}]
+  [%expect {| val temp = (1, true) |}]
 ;;
-
-(*bad, visnet
-let%expect_test "010sukharev" =
+(*
+   let%expect_test "010sukharev" =
   pp_parse_demo
     {|
   let _1 = fun x y (a, _) -> (x + y - a) = 1
@@ -1030,19 +1092,45 @@ let _5 =
       | Some f -> let _ = f "42" in f 42
       | None -> 0
 
+let int_of_option = function Some x -> x | None -> 0
+|};
+  [%expect
+    {|
+    val _1 = <fun>
+    val _2 = 1
+    val _3 = Some(1, "hi")
+    val _4 = <fun>
+    val _5 = 42
+    val int_of_option = <function> |}]
+;;
+
+let%expect_test "011sukharev" =
+  pp_parse_demo {|
+let id1, id2 = let id x = x in (id, id)
+
+|};
+  [%expect {|
+    val id1 = <fun>
+    val id2 = <fun>
+   |}]
+;;
+
+let%expect_test "012sukharev" =
+  pp_parse_demo {|
 let _6 = fun arg -> match arg with Some x -> let y = x in y
 
-let int_of_option = function Some x -> x | None -> 0
+|};
+  [%expect {| val _6 = <fun> |}]
+;;
+
+let%expect_test "013sukharev" =
+  pp_parse_demo {|
 
 let _42 = function 42 -> true | _ -> false
-
-let id1, id2 = let id x = x in (id, id)
 |};
-  [%expect {| 20 |}]
+  [%expect {| val _42 = <function> |}]
 ;;
-*)
 
-(*same
 let%expect_test "015tuples" =
   pp_parse_demo
     {|
@@ -1070,5 +1158,4 @@ let main =
   0
 |};
   [%expect {| 20 |}]
-;;
-*)
+;;*)
