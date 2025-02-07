@@ -180,9 +180,10 @@ end = struct
          | Some v -> helper v)
       | TArrow (left, right) -> TArrow (helper left, helper right)
       | TList typ -> TList (helper typ)
+      | TOption typ -> TOption (helper typ)
       | TTuple (a, b, t_list) ->
         TTuple (helper a, helper b, Base.List.map t_list ~f:helper)
-      | other -> other
+      | _ -> failwith "IMPLEMENT ME PLEASE"
     in
     helper
   ;;
