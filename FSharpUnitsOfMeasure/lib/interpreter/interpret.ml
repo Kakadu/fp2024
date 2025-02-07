@@ -4,6 +4,7 @@
 
 open Ast
 open Misc
+open Checks
 
 module type ERROR_MONAD = sig
   include Base.Monad.S2
@@ -80,8 +81,37 @@ end = struct
       List.fold_left2 f (Some env) pl vl)
   ;;
 
-  let rec eval_expr env =
-    function
+  let eval_binop f v1 v2 =
+    match f, v1, v2 with
+    | "+", VInt i1, VInt i2 -> return (VInt (i1 + i2))
+    | "-", VInt i1, VInt i2 -> return (VInt (i1 - i2))
+    | "*", VInt i1, VInt i2 -> return (VInt (i1 * i2))
+    | "/", VInt i1, VInt i2 when i2 <> 0 -> return (VInt (i1 / i2))
+    | "/", VInt _, VInt _ -> fail Division_by_zero
+    | "+.", VFloat f1, VFloat f2 -> return (VFloat (f1 +. f2))
+    | "-.", VFloat f1, VFloat f2 -> return (VFloat (f1 -. f2))
+    | "*.", VFloat f1, VFloat f2 -> return (VFloat (f1 *. f2))
+    | "/.", VFloat f1, VFloat f2 when f2 <> 0.0 -> return (VFloat (f1 /. f2))
+    | "/.", VFloat _, VFloat _ -> fail Division_by_zero
+    | "<=", VInt i1, VInt i2 -> return (VBool (i1 <= i2))
+    | "<", VInt i1, VInt i2 -> return (VBool (i1 < i2))
+    | ">=", VInt i1, VInt i2 -> return (VBool (i1 >= i2))
+    | ">", VInt i1, VInt i2 -> return (VBool (i1 > i2))
+    | "=", VInt i1, VInt i2 -> return (VBool (i1 = i2))
+    | "<>", VInt i1, VInt i2 -> return (VBool (i1 <> i2))
+    | "<=", VFloat f1, VFloat f2 -> return (VBool (f1 <= f2))
+    | "<", VFloat f1, VFloat f2 -> return (VBool (f1 < f2))
+    | ">=", VFloat f1, VFloat f2 -> return (VBool (f1 >= f2))
+    | ">", VFloat f1, VFloat f2 -> return (VBool (f1 > f2))
+    | "=", VFloat f1, VFloat f2 -> return (VBool (f1 = f2))
+    | "<>", VFloat f1, VFloat f2 -> return (VBool (f1 <> f2))
+    | "||", VBool b1, VBool b2 -> return (VBool (b1 || b2))
+    | "&&", VBool b1, VBool b2 -> return (VBool (b1 && b2))
+    | "::", v, VList vl -> return (VList (v :: vl))
+    | _ -> fail Unsupported_operation
+  ;;
+
+  let rec eval_expr env = function
     | Expr_const c -> eval_const c
     | Expr_ident_or_op name -> find env name
     | Expr_typed (e, _) -> eval_expr env e
@@ -129,16 +159,19 @@ end = struct
     | Expr_match (e, rhd, rtl) ->
       let* v = eval_expr env e in
       eval_rules env v (rhd :: rtl)
-    | Expr_function (rhd, rtl) ->
-      return (VFunction (rhd, rtl))
+    | Expr_function (rhd, rtl) -> return (VFunction (rhd, rtl))
+    | Expr_apply (Expr_apply (Expr_ident_or_op f, e1), e2) when is_builtin_op f ->
+      let* v1 = eval_expr env e1 in
+      let* v2 = eval_expr env e2 in
+      eval_binop f v1 v2
     | _ -> fail Division_by_zero
 
-    and eval_rules env v = function
+  and eval_rules env v = function
     | Rule (p, e) :: tl ->
       let env' = eval_pat env (p, v) in
       (match env' with
-      | None -> eval_rules env v tl
-      | Some env'' -> eval_expr env'' e)
+       | None -> eval_rules env v tl
+       | Some env'' -> eval_expr env'' e)
     | [] -> fail Match_failure
   ;;
 end

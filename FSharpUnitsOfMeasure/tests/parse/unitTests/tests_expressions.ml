@@ -189,7 +189,15 @@ let%expect_test "parse application of function to 2 arguments" =
 let%expect_test "parse application of function to 5 arguments" =
   run {| f a b c d e |};
   [%expect {|
-((((f a) b) c) d) e |}]
+(Expr_apply (
+   (Expr_apply (
+      (Expr_apply (
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))),
+            (Expr_ident_or_op "b"))),
+         (Expr_ident_or_op "c"))),
+      (Expr_ident_or_op "d"))),
+   (Expr_ident_or_op "e"))) |}]
 ;;
 
 let%expect_test "parse if a then b else c d" =
@@ -249,7 +257,10 @@ let%expect_test "parse unary minuses w/o parentheses should fail" =
 let%expect_test "parse unary minuses with parentheses" =
   run {| -(-(-a)) |};
   [%expect {|
-    - (- (- a)) |}]
+    (Expr_apply ((Expr_ident_or_op "-"),
+       (Expr_apply ((Expr_ident_or_op "-"),
+          (Expr_apply ((Expr_ident_or_op "-"), (Expr_ident_or_op "a")))))
+       )) |}]
 ;;
 
 (************************** Binary operations **************************)
@@ -257,7 +268,13 @@ let%expect_test "parse unary minuses with parentheses" =
 let%expect_test "parse a+b" =
   run {| a+b |};
   [%expect {|
-    a + b |}]
+    (Expr_apply (
+       (Expr_apply ((Expr_ident_or_op "+"),
+          (Expr_apply (
+             (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+             (Expr_ident_or_op "b")))
+          )),
+       (Expr_ident_or_op "c"))) |}]
 ;;
 
 let%expect_test " parse a + + should fail " =
@@ -287,7 +304,11 @@ let%expect_test "parse n-1 " =
 let%expect_test "parse a+b*c" =
   run {| a+b*c |};
   [%expect {|
-      a + (b * c) |}]
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "*"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
 ;;
 
 let%expect_test "parse a <= b <= c" =
@@ -299,13 +320,21 @@ let%expect_test "parse a <= b <= c" =
 let%expect_test "parse a || b || c" =
   run {| a || b || c |};
   [%expect {|
-      a || (b || c) |}]
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "||"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "||"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
 ;;
 
 let%expect_test "parse a && b && c" =
   run {| a && b && c |};
   [%expect {|
-      a && (b && c) |}]
+      (Expr_apply ((Expr_apply ((Expr_ident_or_op "&&"), (Expr_ident_or_op "a"))),
+         (Expr_apply (
+            (Expr_apply ((Expr_ident_or_op "&&"), (Expr_ident_or_op "b"))),
+            (Expr_ident_or_op "c")))
+         )) |}]
 ;;
 
 let%expect_test "parse a :: b" =
