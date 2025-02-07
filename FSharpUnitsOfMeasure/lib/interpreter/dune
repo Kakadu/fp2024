@@ -1,0 +1,9 @@
+(library
+ (name eval)
+ (inline_tests)
+ (public_name FSharpUnitsOfMeasure.Eval)
+ (libraries base ast checks)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+ (instrumentation
+  (backend bisect_ppx)))
