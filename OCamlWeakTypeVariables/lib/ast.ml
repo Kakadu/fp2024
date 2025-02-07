@@ -47,6 +47,7 @@ type expression =
   | Pexp_ifthenelse of expression * expression * expression option
   | Pexp_constraint of expression * core_type (** (E : T) *)
   | Pexp_construct of id * expression option
+  | Pexp_match of expression * case list (** match E0 with P1 -> E1 | ... | Pn -> En *)
   (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
 [@@deriving show { with_path = false }]
 
@@ -54,6 +55,12 @@ type expression =
 and value_binding =
   { pvb_pat : pattern
   ; pvb_expr : expression
+  }
+[@@deriving show { with_path = false }]
+
+and case =
+  { pc_lhs : pattern
+  ; pc_rhs : expression
   }
 [@@deriving show { with_path = false }]
 

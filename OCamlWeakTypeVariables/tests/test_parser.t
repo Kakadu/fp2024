@@ -275,3 +275,36 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        }
                       ]
                     ))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > match homka with homka -> homka
+  Parsed result: (Pstr_eval
+                    (Pexp_match ((Pexp_ident "homka"),
+                       [{ pc_lhs = (Ppat_var "homka");
+                          pc_rhs = (Pexp_ident "homka") }
+                         ]
+                       )))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let homka = match 5 + 5 with 2 -> "lol" | 122 -> "Homka" | 42 -> "suvorovrain"
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_var "homka");
+                       pvb_expr =
+                       (Pexp_match (
+                          (Pexp_apply ((Pexp_ident "+"),
+                             [(Pexp_constant (Pconst_int 5));
+                               (Pexp_constant (Pconst_int 5))]
+                             )),
+                          [{ pc_lhs = (Ppat_constant (Pconst_int 2));
+                             pc_rhs = (Pexp_constant (Pconst_string "lol")) };
+                            { pc_lhs = (Ppat_constant (Pconst_int 122));
+                              pc_rhs = (Pexp_constant (Pconst_string "Homka"))
+                              };
+                            { pc_lhs = (Ppat_constant (Pconst_int 42));
+                              pc_rhs =
+                              (Pexp_constant (Pconst_string "suvorovrain")) }
+                            ]
+                          ))
+                       }
+                      ]
+                    ))

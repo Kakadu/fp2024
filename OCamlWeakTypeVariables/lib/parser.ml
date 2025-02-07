@@ -246,6 +246,24 @@ let p_construct expr =
   Pexp_construct (name, body)
 ;;
 
+let p_pattern_matching expr =
+  let case =
+    let* p = p_pattern in
+    let* e = token "->" *> expr in
+    return { pc_lhs = p; pc_rhs = e }
+  in
+  let* first = (token "|" <|> ws) *> case in
+  (* Format.printf "%a\n" pp_case first; *)
+  let+ cases = many (token "|" *> case) in
+  first :: cases
+;;
+
+let p_match expr =
+  let* e = word "match" *> expr in
+  let+ cases = word "with" *> p_pattern_matching expr in
+  Pexp_match (e, cases)
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const =
@@ -261,7 +279,8 @@ let p_expr =
       p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
     in
     let expr_let_in = p_let_in expr <|> expr_comparison in
-    let expr_tuple = p_tuple expr_let_in <|> expr_let_in in
+    let expr_match = p_match expr <|> expr_let_in in
+    let expr_tuple = p_tuple expr_match <|> expr_match in
     expr_tuple)
 ;;
 
