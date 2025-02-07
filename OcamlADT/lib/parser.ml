@@ -6,7 +6,6 @@ open Ast
 open Angstrom
 open Base
 open Char
-open Stdlib.Format
 
 (*
    |░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░
@@ -265,7 +264,7 @@ let ppattern =
              [ (pspecials >>| fun name -> Pattern.Pat_construct (name, None))
              ; ppatvar
              ; ppatconst
-             ; (psome ppattern >>| fun (name,opt) -> Pattern.Pat_construct (name,opt))
+             ; (psome ppattern >>| fun (name, opt) -> Pattern.Pat_construct (name, opt))
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern
@@ -433,12 +432,12 @@ let pexpr =
       pass_ws
       *> choice
            [ (pspecials >>| fun name -> Expression.Exp_construct (name, None))
-            ;pparenth pexpr
+           ; pparenth pexpr
            ; pidentexpr
            ; pexprconstraint pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
-           ; (psome pexpr >>| fun (name,opt) -> Expression.Exp_construct (name,opt))
+           ; (psome pexpr >>| fun (name, opt) -> Expression.Exp_construct (name, opt))
            ; pfunction pexpr
            ; pfunexpr pexpr
            ; pletexpr pexpr

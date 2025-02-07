@@ -158,6 +158,7 @@ module ShrinkQCheck = struct
         ~shrink_tail:shrink_value_binding
         bindings
       >|= fun (head', tail') -> Structure.Str_value (rec_flag, (head', tail'))
+    | Structure.Str_adt (r, b, a) -> return (Structure.Str_adt (r, b, a))
   ;;
 
   let shrink_structure = list ~shrink:shrink_structure_item

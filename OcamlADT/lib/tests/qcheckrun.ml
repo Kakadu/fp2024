@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Base
-open Stdio
 open Ocamladt_lib.Parser
 open Ocamladt_lib.Ast
 open Ocamladt_lib.Pprinter
@@ -25,7 +24,7 @@ let test_round_trip2 =
        let program_ast = show_program program in
        if String.equal program_ast "[]"
        then (
-         (* printf "Generated empty AST. Skipping...\n"; *)
+         printf "Generated empty AST. Skipping... \n";
          true)
        else (
          let printed_program = asprintf "%a" pprint_program program in

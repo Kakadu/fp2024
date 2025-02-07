@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Angstrom
 
 val parse : string -> (Structure.structure_item list, string) result
 val parse_str : string -> Structure.structure_item list

@@ -442,8 +442,7 @@ let 5 = x;;|};
 let%expect_test "zero" =
   parse_and_infer_result {|
 let x = (6: char);;|};
-  [%expect
-    {|
+  [%expect {|
     Unification_failed: int  # char |}]
 ;;
 
