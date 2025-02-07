@@ -15,6 +15,7 @@ type typ =
   | TArrow of typ * typ
   | TTuple of typ * typ * typ list
   | TList of typ
+  | TOption of typ
 [@@deriving show { with_path = false }]
 
 let ( @-> ) a b = TArrow (a, b)

@@ -120,6 +120,7 @@ module Type = struct
     | TVar b -> b = v
     | TArrow (left, right) -> occurs_in v left || occurs_in v right
     | TList typ -> occurs_in v typ
+    | TOption typ -> occurs_in v typ
     | TTuple (a, b, typ_list) ->
       List.fold_left (fun acc item -> acc || occurs_in v item) false (a :: b :: typ_list)
     | TBase _ -> false
@@ -130,6 +131,7 @@ module Type = struct
       | TVar n -> TVarSet.add n acc
       | TArrow (left, right) -> helper (helper acc left) right
       | TList typ -> helper acc typ
+      | TOption typ -> helper acc typ
       | TTuple (a, b, typ_list) -> List.fold_left helper acc (a :: b :: typ_list)
       | TBase _ -> acc
     in
@@ -196,6 +198,7 @@ end = struct
       let* sub2 = unify (apply sub1 right1) (apply sub1 right2) in
       compose sub1 sub2
     | TList typ1, TList typ2 -> unify typ1 typ2
+    | TOption typ1, TOption typ2 -> unify typ1 typ2
     | TTuple (a, b, t_list1), TTuple (c, d, t_list2) ->
       (match
          Base.List.fold2
@@ -400,6 +403,29 @@ let rec infer_pattern env ?ty =
            xs
        in
        return (TTuple (fv1, fv2, List.rev fvs), env, names1 @ names2 @ names))
+  | Ppat_construct (name, pat) ->
+    let _ =
+      if name <> "Some" && name <> "None"
+      then fail (SomeError "Only Some and None constructors implemented")
+      else return (TVar 122)
+    in
+    let _ =
+      match pat with
+      | None when name = "Some" -> fail (SomeError "Some constructore require argument")
+      | Some _ when name = "None" ->
+        fail (SomeError "None constructor don't accept arguments")
+      | _ -> return (TVar 122)
+    in
+    (match pat with
+     | None ->
+       let* fv = fresh_var in
+       return (fv, env, [])
+     | Some p ->
+       let* fv, env, names = infer_pattern env p in
+       return (TOption fv, env, names))
+  | Ppat_any ->
+    let* fv = fresh_var in
+    return (fv, env, names)
   | _ -> failwith "not implemented"
 ;;
 
@@ -495,7 +521,7 @@ let infer_expr =
             let* t0, sub0 = helper env vb.pvb_expr in
             (* With type (x y): 'c we append new variable z with type 'c *)
             match vb.pvb_pat with
-            | Ppat_tuple _ ->
+            | Ppat_tuple _ | Ppat_construct _ ->
               let* t, env, _ = infer_pattern env vb.pvb_pat in
               let* sub_un = Subst.unify t t0 in
               let* sub = Subst.compose sub_un sub0 in
@@ -579,6 +605,26 @@ let infer_expr =
          let* ts, subs = List.split <$> RList.map exps ~f:(fun e -> helper env e) in
          let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
          return (TTuple (t0, t1, ts), sub))
+    | Pexp_construct (name, expr) ->
+      let _ =
+        if name <> "Some" && name <> "None"
+        then fail (SomeError "Only Some and None constructors implemented")
+        else return (TVar 122)
+      in
+      let _ =
+        match expr with
+        | None when name = "Some" -> fail (SomeError "Some constructore require argument")
+        | Some _ when name = "None" ->
+          fail (SomeError "None constructor don't accept arguments")
+        | _ -> return (TVar 122)
+      in
+      (match expr with
+       | None ->
+         let* fv = fresh_var in
+         return (TOption fv, Subst.empty)
+       | Some e ->
+         let* t, sub = helper env e in
+         return (TOption t, sub))
   in
   helper
 ;;
@@ -595,7 +641,16 @@ let infer_structure =
           ~init:(return (env, []))
           ~f:(fun (env, names) vb ->
             let* t0, _ = infer_expr env vb.pvb_expr in
-            let* _, env1, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
+            let* env1, new_names =
+              match vb.pvb_pat with
+              | Ppat_tuple _ | Ppat_construct _ ->
+                let* t, env, new_names = infer_pattern env vb.pvb_pat in
+                let* sub_un = Subst.unify t t0 in
+                return (TypeEnv.apply env sub_un, new_names)
+              | _ ->
+                let* _, env0, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
+                return (env0, new_names)
+            in
             match List.exists (fun name -> List.mem name new_names) names with
             | true -> fail (PatternNameTwice vb.pvb_pat)
             | false -> return (env1, List.append (List.rev new_names) names))

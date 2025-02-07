@@ -23,6 +23,7 @@ let minimize_variable t =
         min, map
       | TTuple (f, s, xs) -> List.fold_left helper (min, map) (f :: s :: xs)
       | TList l -> helper (min, map) l
+      | TOption o -> helper (min, map) o
       | TBase _ -> min, map
     in
     helper (0, Base.Map.empty (module Base.Int)) t |> snd
@@ -32,6 +33,7 @@ let minimize_variable t =
     | TArrow (l, r) -> TArrow (helper l, helper r)
     | TTuple (f, s, xs) -> TTuple (helper f, helper s, List.map helper xs)
     | TList l -> TList (helper l)
+    | TOption o -> TOption (helper o)
     | TBase b -> TBase b
   in
   helper t
@@ -59,7 +61,14 @@ let pp_typ_my fmt t =
              | TBase _ | TVar _ -> Format.fprintf fmt "%a" helper ty
              | _ -> Format.fprintf fmt "(%a)" helper ty))
         (f :: s :: xs)
-    | TList l -> Format.fprintf fmt "%a list" helper l
+    | TList l ->
+      (match l with
+       | TBase _ | TVar _ -> Format.fprintf fmt "%a list" helper l
+       | _ -> Format.fprintf fmt "(%a) list" helper l)
+    | TOption o ->
+      (match o with
+       | TBase _ | TVar _ -> Format.fprintf fmt "%a option" helper o
+       | _ -> Format.fprintf fmt "(%a) option" helper o)
   in
   helper fmt t
 ;;
@@ -85,4 +94,9 @@ let%expect_test _ =
     pp_typ_my
     (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5; TList (TVar 2) ])));
   [%expect {| 'a -> 'b * 'a * 'c * ('a list) |}]
+;;
+
+let%expect_test _ =
+  Format.printf "%a" pp_typ_my (TOption (TVar 2));
+  [%expect {| 'a option |}]
 ;;
