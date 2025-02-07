@@ -255,6 +255,29 @@ let ppatconstraint ppattern =
   return (Pattern.Pat_constraint (pat, pattype))
 ;;
 
+let plist_empty = token "[]" >>| fun _ -> Pattern.Pat_construct ("[]", None)
+
+let plist_nonempty (ppattern : Pattern.t Angstrom.t) =
+  let* elements = token "[" *> sep_by (token ",") ppattern <* token "]" in
+  match elements with
+  | [] -> failwith "Non-empty list expected, but empty found"
+  | [ x ] -> return (Pattern.Pat_construct ("[]", Some x))
+  | hd :: hd2 :: tl ->
+    let tuple = Pattern.Pat_tuple (hd, hd2, tl) in
+    return (Pattern.Pat_construct ("[]", Some tuple))
+;;
+
+let pcons_operator (ppattern : Pattern.t Angstrom.t) =
+  let* hd = ppattern in
+  let* _ = token "::" in
+  let* tl = ppattern in
+  return (Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (hd, tl, []))))
+;;
+
+let plist (ppattern : Pattern.t Angstrom.t) =
+  plist_empty <|> plist_nonempty ppattern <|> pcons_operator ppattern
+;;
+
 let ppattern =
   fix (fun ppattern ->
     let poprnd =
@@ -265,6 +288,7 @@ let ppattern =
              ; ppatvar
              ; ppatconst
              ; (psome ppattern >>| fun (name, opt) -> Pattern.Pat_construct (name, opt))
+             ; plist ppattern
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern

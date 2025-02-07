@@ -1072,6 +1072,7 @@ let temp =
 |};
   [%expect {| val temp = (1, true) |}]
 ;;
+
 (*
    let%expect_test "010sukharev" =
   pp_parse_demo
@@ -1153,9 +1154,41 @@ let main =
   let () = print_int (modd 1) in
   let () = print_int (meven 2) in
   let (even,odd) = tie in
-  let () = print_int (odd 3) in
-  let () = print_int (even 4) in
   0
 |};
   [%expect {| 20 |}]
 ;;*)
+
+let%expect_test "fix_factorial" =
+  pp_parse_demo
+    {|
+let rec fix f x = f (fix f) x in
+let factorial f n =
+  if n = 0 then 1 else n * f (n - 1)
+in
+let factorial_fn = fix factorial in
+factorial_fn 5
+|};
+  [%expect {| _ = 120 |}]
+;;
+
+let%expect_test "map_increment" =
+  pp_parse_demo
+    {|
+let map f p = let (a,b) = p in (f a, f b) in
+let pair = (1, 2) in
+map (fun x -> x + 1) pair
+|};
+  [%expect {| _ = (2, 3) |}]
+;;
+
+let%expect_test "meven_modd" =
+  pp_parse_demo
+    {|
+let rec meven n = if n = 0 then 1 else modd (n - 1)
+and modd n = if n = 0 then 1 else meven (n - 1)
+in
+(meven 2, modd 1)
+|};
+  [%expect {| _ = (1, 1) |}]
+;;

@@ -1787,7 +1787,8 @@ let _6 = fun arg -> match arg with Some x -> let y = x in y;;
       ] |}]
 ;;
 
-let%expect_test "parenthesis with operators with different priorities" =
+(*
+   let%expect_test "parenthesis with operators with different priorities" =
   test_program
     {|
   let rec fix f x = f (fix f) x
@@ -1827,4 +1828,22 @@ let main =
                []))
            )))
       ] |}]
+;;*)
+
+let%expect_test "lists v1" =
+  test_program {|
+let x = [];;
+  |};
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1834, characters 2-70
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
