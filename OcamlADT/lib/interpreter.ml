@@ -382,6 +382,9 @@ module Interpreter (M : Error_monad) = struct
            | _ -> fail PatternMismatch)
         | _ -> eval_pattern pat args env)
       else return None
+    | Pattern.Pat_construct ("Some", Some p), VConstruct ("Some", Some v) ->
+      eval_pattern p v env
+    | Pattern.Pat_construct ("None", None), VConstruct ("None", None) -> return (Some env)
     | Pattern.Pat_construct ("()", None), _ -> return (Some env)
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
@@ -415,7 +418,7 @@ module Interpreter (M : Error_monad) = struct
          else return None
        | VString s ->
          if String.equal cname s then eval_pattern p v env else fail PatternMismatch
-       | VConstruct _ -> fail NotImplemented
+       | VConstruct (_, None) -> eval_pattern p v env
        | VInt _ -> eval_pattern p v env
        | _ -> fail PatternMismatch)
     | Pattern.Pat_constraint (pat, _), v ->
@@ -502,6 +505,10 @@ module Interpreter (M : Error_monad) = struct
       (* Handle recursive bindings directly *)
       let* env = eval_rec_value_binding_list env (b1 :: bl) in
       eval_expr env body
+    | Expression.Exp_construct ("Some", Some e) ->
+      let* v = eval_expr env e in
+      return (VConstruct ("Some", Some v))
+    | Expression.Exp_construct ("None", None) -> return (VConstruct ("None", None))
     | Expression.Exp_construct (ctor_name, args) ->
       let* type_def = E.lookup env ctor_name in
       (match type_def with
@@ -729,6 +736,10 @@ module PPrinter = struct
     | VFunction _ -> fprintf fmt "<function>"
     | VBuiltin_print _ -> fprintf fmt "<builtin>"
     | VAdt (_, _, name, _) -> fprintf fmt "<ADT>: %s" name
+    | VConstruct (ct, Some v) ->
+      fprintf fmt "%s" ct;
+      pp_value fmt v
+    | VConstruct (ct, None) -> fprintf fmt "%s" ct
     | _ -> fprintf fmt "Intepreter error: Value error"
   ;;
 
