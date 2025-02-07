@@ -661,7 +661,7 @@ type 'a tree = Leaf
   [%expect {| |}]
 ;;
 
-let%expect_test "poly adt tree" =
+let%expect_test "poly adt tree (dumb insert)" =
   pp_parse_demo
     {|
 type 'a tree = Leaf
@@ -673,22 +673,40 @@ let rec insert x = function
   | _ -> Node (x, Leaf, Leaf)
 ;;
 
-let tree = 
+let tree1 = 
  insert 6 Leaf
 ;;
-  |};
-  [%expect {|
-    val insert = <fun>
-    val tree = <ADT>: Node |}]
+
+let rec tree_size t =
+  match t with
+  | Leaf -> 0
+  | Node (a, left, right) -> 1 + tree_size left + tree_size right
 ;;
 
-(*bad, idk, haven;t thought*)
-let%expect_test "poly adt with pattern matching + printing" =
+let () = print_int (tree_size tree1)
+
+  |};
+  [%expect
+    {|
+    1
+    val insert = <fun>
+    val tree1 = <ADT>: Node
+    val tree_size = <fun> |}]
+;;
+
+let%expect_test "empty poly adt tree (dumb insert)" =
   pp_parse_demo
     {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
+
+let rec insert x = function
+  | Leaf -> Node (x, Leaf, Leaf)
+  | _ -> Node (x, Leaf, Leaf)
+;;
+
+let tree2 = Leaf;;
 
 let rec tree_size t =
   match t with
@@ -696,13 +714,79 @@ let rec tree_size t =
   | Node (_, left, right) -> 1 + tree_size left + tree_size right
 ;;
 
-let my_tree = Node (42, Node (1, Leaf, Leaf), Node (2, Leaf, Leaf)) in
-let size = tree_size my_tree in
-let () = print_int size;;
+let () = print_int (tree_size tree2)
+
+  |};
+  [%expect
+    {|
+    0
+    val insert = <fun>
+    val tree2 = <ADT>: Leaf
+    val tree_size = <fun> |}]
+;;
+
+let%expect_test "poly adt tree v2" =
+  pp_parse_demo
+    {|
+type 'a tree = Leaf
+  | Node of 'a * 'a tree * 'a tree
+;;
+
+let rec insert x = function
+  | Leaf -> Node (x, Leaf, Leaf)  
+  | Node (value, left, right) ->
+      if x < value then
+        Node (value, insert x left, right)
+    else
+        Node (value, left, insert x right)
+;;
+
+let tree =
+  insert 5 (insert 8 (insert 3 (insert 6 Leaf)));;
+
+let rec tree_size t =
+  match t with
+  | Leaf -> 0
+  | Node (a, left, right) -> 1 + tree_size left + tree_size right
+;;
+
+let () = print_int (tree_size tree)
+
+  |};
+  [%expect
+    {|
+    4
+    val insert = <fun>
+    val tree = <ADT>: Node
+    val tree_size = <fun> |}]
+;;
+
+let%expect_test "poly adt tree v2 (constructs)" =
+  pp_parse_demo
+    {|
+type 'a tree = Leaf
+  | Node of 'a * 'a tree * 'a tree
+;;
+
+let tree =
+  Node (6,
+    Node (3, Leaf, Node (5, Leaf, Leaf)),
+    Node (8, Leaf, Leaf)
+  );;
+
+let rec tree_size t =
+  match t with
+  | Leaf -> 0
+  | Node (_, left, right) -> 1 + tree_size left + tree_size right
+;;
+
+let () = print_int (tree_size tree)
 
   |};
   [%expect {|
-    Parser Error|}]
+    4
+    val tree = <ADT>: Node
+    val tree_size = <fun> |}]
 ;;
 
 (*good*)

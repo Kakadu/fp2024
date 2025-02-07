@@ -230,7 +230,6 @@ module Env (M : Error_monad) = struct
   ;;
 
   (* If duplicates exist, prefer the first occurrence *)
-
   let lookup env name =
     match Base.Map.find env name with
     | Some s -> return s
@@ -242,25 +241,6 @@ module Env (M : Error_monad) = struct
   let combine env1 env2 =
     Base.Map.fold env2 ~f:(fun ~key ~data env_acc -> extend env_acc key data) ~init:env1
   ;;
-
-  (* Начинаем искать в окружении *)
-
-  (* ADT-specified
-
-     let type_definitions = Base.Map.empty (module Base.String)
-
-     let add_type env type_name constructors =
-     match Base.Map.find env type_definitions type_name with
-     | Some _ -> fail (TypeAlreadyDefined type_name)
-     | None -> return (Base.Map.set env ~key:type_name ~data:constructors)
-     ;;
-
-     let lookup_type env type_name =
-     match Base.Map.find env type_definitions type_name with
-     | Some constructors -> return constructors
-     | None -> fail (UnboundType type_name)
-     ;;
-  *)
 end
 
 (*Interpretator functor, that uses M monad as a base for evaluation *)
@@ -330,7 +310,7 @@ module Interpreter (M : Error_monad) = struct
     | TypeExpr.Type_construct (type_name, args) ->
       let* as_val = E.lookup env type_name in
       (match as_val with
-       | VType (TypeExpr.Type_construct (tn, tparams), _) ->
+       | VType (TypeExpr.Type_construct (_, tparams), _) ->
          if List.length args <> List.length tparams
          then
            failwith
@@ -401,56 +381,12 @@ module Interpreter (M : Error_monad) = struct
              return final_env_opt
            | _ -> fail PatternMismatch)
         | _ -> eval_pattern pat args env)
-      else
-        return None
-        (*????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????*)
-    | Pattern.Pat_tuple (p1, p2, ps), VAdt (_, _, type_name, constructors) ->
-      let candidates =
-        let first_ctor, rest_ctors = constructors in
-        first_ctor :: rest_ctors
-      in
-      (* Filter constructors by matching the parameter count *)
-      let matching_candidates =
-        List.filter
-          (fun (_, param_types) -> List.length param_types = List.length (p1 :: p2 :: ps))
-          candidates
-      in
-      if matching_candidates = []
-      then fail PatternMismatch
-      else (
-        (* Try to evaluate each candidate *)
-        let rec evaluate_candidates candidates =
-          match candidates with
-          | [] -> fail PatternMismatch (* No valid candidates left *)
-          | (ctor_name, param_types) :: rest_candidates ->
-            (* Resolve parameter types monadically using mapM *)
-            let* resolved_values =
-              mapM
-                (fun env param_type ->
-                  match param_type with
-                  | TypeExpr.Type_var tvar ->
-                    let* value = E.lookup env tvar in
-                    (match value with
-                     | VType (type_expr, Some adt_name) when adt_name = type_name ->
-                       return (VType (type_expr, Some adt_name))
-                     | _ -> fail PatternMismatch)
-                  | _ -> fail NotImplemented)
-                env
-                param_types
-            in
-            (* Match patterns with resolved values *)
-            let patterns = p1 :: p2 :: ps in
-            (match mapM2 eval_pattern env patterns resolved_values with
-             | env_opt -> return env_opt
-             | _ -> evaluate_candidates rest_candidates)
-        in
-        let* e = evaluate_candidates matching_candidates in
-        e)
+      else return None
     | Pattern.Pat_construct ("()", None), _ -> return (Some env)
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
     | Pattern.Pat_construct (ctor, None), VAdt (_, _, tname, _) ->
-      if String.equal ctor tname then return (Some env) else fail PatternMismatch
+      if String.equal ctor tname then return (Some env) else return None
     | Pattern.Pat_construct (cname, Some p), v ->
       (match v with
        | VAdt (args, _, tname, _) ->
@@ -509,7 +445,7 @@ module Interpreter (M : Error_monad) = struct
             let* binop_res = lift_result (binop arg1_val arg2_val) in
             return binop_res
           | exp ->
-            (* negative operator with 1 operand case *)
+            (* Negative operator with 1 operand case *)
             let* arg_val = eval_expr env exp in
             let* binop_res = lift_result (binop (VInt 0) arg_val) in
             return binop_res)
@@ -715,8 +651,6 @@ module Interpreter (M : Error_monad) = struct
                 resolved_param_types
                 adt_type
             in
-            (*  | VAdt of (value * ident list * ident * (ident * TypeExpr.t list) List1.t) *)
-            (* let acc_env = E.extend acc_env ctor_name (VAdt ((Vtype ctor_type), targs, ctor_name, param_types)) *)
             return (E.extend acc_env ctor_name (VType (ctor_type, Some type_name))))
           new_env
           (c1 :: cl)
