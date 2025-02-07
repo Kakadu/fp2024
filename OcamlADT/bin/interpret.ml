@@ -8,6 +8,7 @@ open Ocamladt_lib.Interpreter
 open Ocamladt_lib.Interpreter.PPrinter
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
+open Angstrom
 
 (* ------------------------------- *)
 (*       Command-line Options      *)
@@ -20,11 +21,16 @@ type options =
   }
 
 let usage_msg =
-  "Ocaml+ADT interpreter\n\n\
-   Usage: interpret.exe <options> <filepath>\n\n\
+  "\n\
+   Ocaml+ADT interpreter\n\n\
+   Usage (file mode): dune exec ./bin/interpret.exe <options> <filepath>\n\
+   Usage (repl mode): dune exec ./bin/interpret.exe <options>\n\n\
    Options:\n\
    --ast        Dump abstract syntax tree of a program\n\
-   --typecheck  Typecheck the program and print result"
+   --typecheck  Typecheck the program and print result\n\n\
+   REPL commands:\n\
+   help         Display usage message\n\
+   quit         Quit the REPL mode\n"
 ;;
 
 (* ------------------------------- *)
@@ -33,7 +39,6 @@ let usage_msg =
 
 (* A helper that parses a fixed word (like "help" or "quit") with surrounding whitespace. *)
 let parse_word word =
-  let open Angstrom in
   let ws = skip_while Base.Char.is_whitespace in
   ws *> string word *> ws
 ;;
@@ -46,39 +51,75 @@ let parse_file filename =
   parse_str content
 ;;
 
-(* File mode: read an entire file and process it *)
+let rec read_repl_input inp_chan =
+  match In_channel.input_line inp_chan with
+  | None -> None
+  | Some input ->
+    if input = "help"
+    then (
+      print_endline usage_msg;
+      flush stdout;
+      read_repl_input inp_chan)
+    else if input = "quit"
+    then None
+    else (
+      match parse input with
+      | Error _ ->
+        print_endline "Syntax error";
+        read_repl_input inp_chan
+      | Ok ast ->
+        if ast = []
+        then read_repl_input inp_chan (* empty input is handled by interpreter/parser *)
+        else Some ast)
+;;
+
+(* Read an entire input and process it *)
+let process_input options ast =
+  print_endline "Running... ";
+  flush stdout;
+  if options.show_ast
+  then (
+    print_endline "\nAST dump:";
+    print_endline (show_program ast);
+    print_newline ());
+  let typecheck_result =
+    match run_infer_program ast env_with_print_funs with
+    | Ok _ -> "passed"
+    | Error err -> "error - " ^ Format.asprintf "%a" pp_inf_err err
+  in
+  if options.run_typecheck then print_endline ("Typecheck: " ^ typecheck_result);
+  (match typecheck_result with
+   | "passed" ->
+     (match run_interpreter ast with
+      | Ok olist ->
+        List.iter
+          (fun (tag, v) ->
+            match tag with
+            | Some id -> Format.printf "val %s = %a\n" id PPrinter.pp_value v
+            | None -> if v <> VString "" then Format.printf "_ = %a\n" PPrinter.pp_value v)
+          olist
+      | Error e -> pp_error Format.std_formatter e)
+   | _ -> if options.run_typecheck then print_endline ("Typecheck: " ^ typecheck_result));
+  flush stdout;
+  Format.pp_print_flush Format.std_formatter ()
+;;
+
+let run_repl options =
+  let inp_chan = stdin in
+  let rec helper () =
+    match read_repl_input inp_chan with
+    | None -> () (* Exit the loop if no input is provided (i.e., "quit" command) *)
+    | Some ast ->
+      process_input options ast;
+      helper ()
+  in
+  helper ()
+;;
+
 let run_file options string =
   match parse string with
-  | Error _ -> print_endline "Syntax error"
-  | Ok ast ->
-    print_endline "Running... ";
-    flush stdout;
-    if options.show_ast
-    then (
-      print_endline "\nAST dump:";
-      print_endline (show_program ast);
-      print_newline ());
-    let typecheck_result =
-      match run_infer_program ast env_with_print_funs with
-      | Ok _ -> "passed"
-      | Error err -> "error - " ^ Format.asprintf "%a" pp_inf_err err
-    in
-    if options.run_typecheck then print_endline ("Typecheck: " ^ typecheck_result);
-    (match typecheck_result with
-     | "passed" ->
-       (match run_interpreter ast with
-        | Ok olist ->
-          List.iter
-            (fun (tag, v) ->
-              match tag with
-              | Some id -> Format.printf "val %s = %a\n" id PPrinter.pp_value v
-              | None ->
-                if v <> VString "" then Format.printf "_ = %a\n" PPrinter.pp_value v)
-            olist
-        | Error e -> pp_error Format.std_formatter e)
-     | _ -> if options.run_typecheck then print_endline ("Typecheck: " ^ typecheck_result));
-    flush stdout;
-    Format.pp_print_flush Format.std_formatter ()
+  | Error _ -> print_endline "Syntax Error"
+  | Ok ast -> process_input options ast
 ;;
 
 (* ------------------------------- *)
@@ -106,5 +147,5 @@ let () =
   Arg.parse arg_list read_file usage_msg;
   match options.file_string with
   | Some s -> run_file options s
-  | None -> failwith "NotImplemented" (*todo run repl*)
+  | None -> run_repl options
 ;;
