@@ -45,10 +45,11 @@ type expression =
   | Pexp_apply of expression * expression list (** Function: Ex: print a (5 + 5) b true *)
   | Pexp_tuple of expression list (** Expressions (E1, ..., En). Invariant: n >= 2 *)
   | Pexp_ifthenelse of expression * expression * expression option
+  (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
   | Pexp_constraint of expression * core_type (** (E : T) *)
   | Pexp_construct of id * expression option
   | Pexp_match of expression * case list (** match E0 with P1 -> E1 | ... | Pn -> En *)
-  (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
+  | Pexp_function of case list (** function P1 -> E1 | ... | Pn -> En *)
 [@@deriving show { with_path = false }]
 
 (* let pat : type_constraint = exp *)

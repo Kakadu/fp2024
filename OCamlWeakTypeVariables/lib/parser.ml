@@ -264,6 +264,11 @@ let p_match expr =
   Pexp_match (e, cases)
 ;;
 
+let p_function expr =
+  let+ cases = word "function" *> p_pattern_matching expr in
+  Pexp_function cases
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const =
@@ -279,7 +284,8 @@ let p_expr =
       p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
     in
     let expr_let_in = p_let_in expr <|> expr_comparison in
-    let expr_match = p_match expr <|> expr_let_in in
+    let expr_function = p_function expr <|> expr_let_in in
+    let expr_match = p_match expr <|> expr_function in
     let expr_tuple = p_tuple expr_match <|> expr_match in
     expr_tuple)
 ;;

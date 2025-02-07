@@ -308,3 +308,6 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        }
                       ]
                     ))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let homka = function 1 -> "damir" | 2 -> "homka" | 3 -> "kirilos"
