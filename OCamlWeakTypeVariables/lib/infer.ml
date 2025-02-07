@@ -403,26 +403,24 @@ let rec infer_pattern env ?ty =
            xs
        in
        return (TTuple (fv1, fv2, List.rev fvs), env, names1 @ names2 @ names))
-  | Ppat_construct (name, pat) ->
-    let _ =
-      if name <> "Some" && name <> "None"
-      then fail (SomeError "Only Some and None constructors implemented")
-      else return (TVar 122)
-    in
-    let _ =
-      match pat with
-      | None when name = "Some" -> fail (SomeError "Some constructore require argument")
-      | Some _ when name = "None" ->
-        fail (SomeError "None constructor don't accept arguments")
-      | _ -> return (TVar 122)
-    in
-    (match pat with
+  | Ppat_construct ("Some", Some pat) ->
+    (match ty with
+     | Some (TOption ty) ->
+       let* ty, env, names = infer_pattern ~ty env pat in
+       return (TOption ty, env, names)
+     | Some ty ->
+       let* ty, env, names = infer_pattern ~ty env pat in
+       return (ty, env, names)
      | None ->
-       let* fv = fresh_var in
-       return (fv, env, [])
-     | Some p ->
-       let* fv, env, names = infer_pattern env p in
-       return (TOption fv, env, names))
+       let* ty, env, names = infer_pattern env pat in
+       return (TOption ty, env, names))
+  | Ppat_construct ("None", None) ->
+    let* fv = fresh_var in
+    return (fv, env, [])
+  | Ppat_construct ("Some", None) -> fail (SomeError "Some constructor require argument")
+  | Ppat_construct ("None", Some _) ->
+    fail (SomeError "None constructor don't accept arguments")
+  | Ppat_construct _ -> fail (SomeError "Only Some and None constructors implemented")
   | Ppat_any ->
     let* fv = fresh_var in
     return (fv, env, names)
@@ -521,11 +519,16 @@ let infer_expr =
             let* t0, sub0 = helper env vb.pvb_expr in
             (* With type (x y): 'c we append new variable z with type 'c *)
             match vb.pvb_pat with
-            | Ppat_tuple _ | Ppat_construct _ ->
+            | Ppat_tuple _ ->
               let* t, env, _ = infer_pattern env vb.pvb_pat in
               let* sub_un = Subst.unify t t0 in
               let* sub = Subst.compose sub_un sub0 in
               return (env, sub)
+            | Ppat_construct _ ->
+              let* _, env, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
+              (* let* sub_un = Subst.unify t t0 in *)
+              (* let* sub = Subst.compose sub_un sub0 in *)
+              return (env, sub0)
             | _ ->
               let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
               let* sub_c = Subst.compose sub sub0 in
@@ -605,26 +608,29 @@ let infer_expr =
          let* ts, subs = List.split <$> RList.map exps ~f:(fun e -> helper env e) in
          let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
          return (TTuple (t0, t1, ts), sub))
-    | Pexp_construct (name, expr) ->
-      let _ =
-        if name <> "Some" && name <> "None"
-        then fail (SomeError "Only Some and None constructors implemented")
-        else return (TVar 122)
-      in
-      let _ =
-        match expr with
-        | None when name = "Some" -> fail (SomeError "Some constructore require argument")
-        | Some _ when name = "None" ->
-          fail (SomeError "None constructor don't accept arguments")
-        | _ -> return (TVar 122)
-      in
-      (match expr with
-       | None ->
-         let* fv = fresh_var in
-         return (TOption fv, Subst.empty)
-       | Some e ->
-         let* t, sub = helper env e in
-         return (TOption t, sub))
+    | Pexp_construct ("Some", Some e) ->
+      let* ty, sub = helper env e in
+      return (TOption ty, sub)
+    | Pexp_construct ("None", None) ->
+      let* fv = fresh_var in
+      return (TOption fv, Subst.empty)
+    | Pexp_construct ("Some", None) ->
+      fail (SomeError "Some constructor require argument")
+    | Pexp_construct ("None", Some _) ->
+      fail (SomeError "None constructor don't accept arguments")
+    | Pexp_construct _ -> fail (SomeError "Only Some and None constructors implemented")
+    | Pexp_match (e, cases) ->
+      let* t0, sub0 = helper env e in
+      let* fv = fresh_var in
+      RList.fold_left
+        cases
+        ~init:(return (fv, sub0))
+        ~f:(fun (ty, sub) case ->
+          let* _, env_pat, _ = infer_pattern ~ty:t0 env case.pc_lhs in
+          let* ty_expr, sub_expr = helper env_pat case.pc_rhs in
+          let* sub_un_exprs = Subst.unify ty_expr ty in
+          let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub ] in
+          return (Subst.apply sub ty, sub))
   in
   helper
 ;;
@@ -643,10 +649,15 @@ let infer_structure =
             let* t0, _ = infer_expr env vb.pvb_expr in
             let* env1, new_names =
               match vb.pvb_pat with
-              | Ppat_tuple _ | Ppat_construct _ ->
+              | Ppat_tuple _ ->
                 let* t, env, new_names = infer_pattern env vb.pvb_pat in
                 let* sub_un = Subst.unify t t0 in
                 return (TypeEnv.apply env sub_un, new_names)
+              | Ppat_construct _ ->
+                let* _, env, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
+                (* let* sub_un = Subst.unify t t0 in *)
+                (* let* sub = Subst.compose sub_un sub0 in *)
+                return (env, new_names)
               | _ ->
                 let* _, env0, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
                 return (env0, new_names)

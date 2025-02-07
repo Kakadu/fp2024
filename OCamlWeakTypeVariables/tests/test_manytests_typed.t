@@ -56,14 +56,14 @@
   val temp : int * bool
   
 
-  $ cat manytests/typed/010sukharev.ml | head -9 | ../bin/REPL.exe -dinferprogram
+  $ cat manytests/typed/010sukharev.ml | head -17 | ../bin/REPL.exe -dinferprogram
   val _1 : int -> int -> int * 'a -> bool
   val _2 : int
   val _3 : (int * string) option
   val _4 : int -> 'a
+  val _5 : int
+  val _6 : 'a -> 'a
   
-  $ ../bin/REPL.exe -dinferprogram < manytests/typed/010sukharev.ml
-  Error: : end_of_input
 
   $ cat manytests/typed/010sukharev.ml | tail -1 | ../bin/REPL.exe -dinferprogram
   val id1 : 'a -> 'a
