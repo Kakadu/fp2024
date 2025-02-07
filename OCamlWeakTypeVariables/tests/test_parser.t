@@ -311,3 +311,19 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let homka = function 1 -> "damir" | 2 -> "homka" | 3 -> "kirilos"
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_var "homka");
+                       pvb_expr =
+                       (Pexp_function
+                          [{ pc_lhs = (Ppat_constant (Pconst_int 1));
+                             pc_rhs = (Pexp_constant (Pconst_string "damir")) };
+                            { pc_lhs = (Ppat_constant (Pconst_int 2));
+                              pc_rhs = (Pexp_constant (Pconst_string "homka"))
+                              };
+                            { pc_lhs = (Ppat_constant (Pconst_int 3));
+                              pc_rhs =
+                              (Pexp_constant (Pconst_string "kirilos")) }
+                            ])
+                       }
+                      ]
+                    ))
