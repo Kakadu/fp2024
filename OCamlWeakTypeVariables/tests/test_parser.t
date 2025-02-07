@@ -235,3 +235,43 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        [(Pexp_constant (Pconst_int 5));
                          (Pexp_constant (Pconst_int -5))]
                        )))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let Some x = Some 5
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat =
+                       (Ppat_construct ("Some", (Some (Ppat_var "x"))));
+                       pvb_expr =
+                       (Pexp_construct ("Some",
+                          (Some (Pexp_constant (Pconst_int 5)))))
+                       }
+                      ]
+                    ))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let Homka, homka = Some 5
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat =
+                       (Ppat_tuple
+                          [(Ppat_construct ("Homka", None)); (Ppat_var "homka")
+                            ]);
+                       pvb_expr =
+                       (Pexp_construct ("Some",
+                          (Some (Pexp_constant (Pconst_int 5)))))
+                       }
+                      ]
+                    ))
+
+  $ ../bin/REPL.exe -dparsetree <<EOF
+  > let homka, Homka = Some 5
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat =
+                       (Ppat_tuple
+                          [(Ppat_var "homka"); (Ppat_construct ("Homka", None))
+                            ]);
+                       pvb_expr =
+                       (Pexp_construct ("Some",
+                          (Some (Pexp_constant (Pconst_int 5)))))
+                       }
+                      ]
+                    ))

@@ -23,6 +23,7 @@ type pattern =
   | Ppat_interval of constant * constant (** Patterns such as 'a'..'z'. *)
   | Ppat_tuple of pattern list (** Patterns (P1, ..., Pn). Invariant: n >= 2 *)
   | Ppat_unit (** let () = ... in ... *)
+  | Ppat_construct of id * pattern option
 [@@deriving show { with_path = false }]
 
 (** recursive flag *)
@@ -31,9 +32,7 @@ type rec_flag =
   | NonRecursive
 [@@deriving show { with_path = false }]
 
-type core_type =
-| Ptyp_constr of string
-[@@deriving show {with_path = false}]
+type core_type = Ptyp_constr of string [@@deriving show { with_path = false }]
 
 type expression =
   | Pexp_ident of id (** Identifiers. Ex: "homka" *)
@@ -47,6 +46,7 @@ type expression =
   | Pexp_tuple of expression list (** Expressions (E1, ..., En). Invariant: n >= 2 *)
   | Pexp_ifthenelse of expression * expression * expression option
   | Pexp_constraint of expression * core_type (** (E : T) *)
+  | Pexp_construct of id * expression option
   (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
 [@@deriving show { with_path = false }]
 

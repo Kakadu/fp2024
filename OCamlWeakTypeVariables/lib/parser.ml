@@ -76,6 +76,23 @@ let p_const =
 
 let pexpr_const = p_const >>| fun x -> Pexp_constant x
 
+let capitalized_ident =
+  let* first =
+    ws
+    *> satisfy (function
+      | 'A' .. 'Z' -> true
+      | _ -> false)
+  in
+  let* rest =
+    take_while (function
+      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '\'' -> true
+      | _ -> false)
+    <* ws
+  in
+  let word = Char.escaped first ^ rest in
+  return word
+;;
+
 let lowercase_ident =
   let* first =
     ws
@@ -126,9 +143,18 @@ let p_pattern =
   in
   fix (fun pattern : pattern t ->
     let pat_const = choice [ parens pattern; pat_interval; pat_const; pat_var ] in
-    let pat_tuple =
-      lift2 (fun l ls -> Ppat_tuple (l :: ls)) pat_const (many1 (token "," *> pat_const))
+    let pat_construct =
+      (let* name = capitalized_ident in
+       let+ body = option None (pattern >>| fun p -> Some p) in
+       Ppat_construct (name, body))
       <|> pat_const
+    in
+    let pat_tuple =
+      lift2
+        (fun l ls -> Ppat_tuple (l :: ls))
+        pat_construct
+        (many1 (token "," *> pat_construct))
+      <|> pat_construct
     in
     let pat_unit = word "()" >>| (fun _ -> Ppat_unit) <|> pat_tuple in
     pat_unit)
@@ -168,7 +194,7 @@ let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 let p_value_binding expr =
   let* pattern = p_pattern in
   let rec helper = function
-    | Ppat_any | Ppat_unit | Ppat_var _ -> true
+    | Ppat_any | Ppat_unit | Ppat_var _ | Ppat_construct _ -> true
     | Ppat_tuple pts -> List.fold_left (fun acc pat -> acc && helper pat) true pts
     | Ppat_constant _ | Ppat_interval _ -> false
   in
@@ -214,13 +240,20 @@ let pexpr_constraint expr =
   Pexp_constraint (expr, Ptyp_constr ty)
 ;;
 
+let p_construct expr =
+  let* name = capitalized_ident in
+  let+ body = option None (expr >>| fun x -> Some x) in
+  Pexp_construct (name, body)
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const =
       choice
         [ parens expr; pexpr_const; pexpr_constraint expr; pexp_ident; p_branch expr ]
     in
-    let expr_fun = p_fun expr <|> expr_const in
+    let expr_construct = p_construct expr <|> expr_const in
+    let expr_fun = p_fun expr <|> expr_construct in
     let expr_apply = p_apply expr_fun <|> expr_fun in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_apply <|> expr_apply in
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
