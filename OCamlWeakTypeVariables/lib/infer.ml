@@ -380,6 +380,11 @@ let rec infer_pattern env ?ty =
     in
     let env = TypeEnv.extend env v schema in
     return (fv, env, v :: names)
+  | Ppat_constant c ->
+    (match c with
+     | Pconst_int _ -> return (TBase BInt, env, [])
+     | Pconst_boolean _ -> return (TBase BBool, env, [])
+     | Pconst_string _ -> return (TBase BString, env, []))
   | Ppat_unit ->
     let t_unit = TBase BUnit in
     let _ =
