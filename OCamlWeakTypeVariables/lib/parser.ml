@@ -118,13 +118,35 @@ let p_id : id t =
 
 let pexp_ident = p_id >>| fun i -> Pexp_ident i
 
-let chain1l expr op =
-  let rec go acc = lift2 (fun f x -> f acc x) op expr >>= go <|> return acc in
-  expr >>= go
+let chain_left parse parse_fun =
+  let rec go acc =
+    (let* f = parse_fun in
+     let* first = parse in
+     go (f acc first))
+    <|> return acc
+  in
+  parse >>= go
 ;;
 
+let chain_right parse parse_fun =
+  let rec go acc =
+    (let* f = parse_fun in
+     let* first = parse in
+     let* second = go first in
+     return (f first second))
+    <|> return acc
+  in
+  parse >>= go
+;;
+
+let pexp_ident_constr id = Pexp_ident id
+let pexp_apply_constr expr exprs = Pexp_apply (expr, exprs)
+
 let p_binop p expr =
-  chain1l expr (p >>= fun c -> return (fun x y -> Pexp_apply (Pexp_ident c, [ x; y ])))
+  chain_left
+    expr
+    (let+ ident = p >>| pexp_ident_constr in
+     fun x y -> pexp_apply_constr ident [ x; y ])
 ;;
 
 let p_tuple expr =
