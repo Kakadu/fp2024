@@ -305,20 +305,24 @@ end = struct
     ]
   ;;
 
-  let pp fmt env =
-    Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (s, t)) ->
-      if not Config.show_scheme_vars
-      then Format.fprintf fmt "val %s : %a\n" key Infer_print.pp_typ_my t
-      else (
-        Format.fprintf fmt "val %s: " key;
-        TVarSet.iter (fun t -> Format.fprintf fmt "%a " Infer_print.pp_typ_my (TVar t)) s;
-        Format.fprintf fmt ". %a\n" Infer_print.pp_typ_my t))
+  let pp_key_value fmt key (Scheme (s, t)) =
+    if not Config.show_scheme_vars
+    then Format.fprintf fmt "val %s : %a\n" key Infer_print.pp_typ_my t
+    else (
+      Format.fprintf fmt "val %s: " key;
+      TVarSet.iter (fun t -> Format.fprintf fmt "%a " Infer_print.pp_typ_my (TVar t)) s;
+      Format.fprintf fmt ". %a\n" Infer_print.pp_typ_my t)
   ;;
+
+  let pp fmt env = Base.Map.iteri env ~f:(fun ~key ~data -> pp_key_value fmt key data)
 
   (* Print types of specific variables *)
   let pp_names names fmt env =
-    let map = Base.Map.filter_keys env ~f:(fun key -> List.mem key names) in
-    pp fmt map
+    List.iter
+      (fun key ->
+        let value = find_exn env key in
+        pp_key_value fmt key value)
+      names
   ;;
 
   let print ?(name = "Env") env = Format.printf "%s: %a" name pp env
@@ -783,7 +787,7 @@ let infer_program env program =
     ~init:(return (env, []))
     ~f:(fun (env, names) structure ->
       let* new_env, new_names = infer_structure env structure in
-      return (new_env, List.rev new_names @ List.rev names))
+      return (new_env, names @ new_names))
 ;;
 
 let defaultEnv =

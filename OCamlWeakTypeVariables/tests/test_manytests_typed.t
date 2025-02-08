@@ -9,21 +9,21 @@
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/003fib.ml
-  val fib : int -> int
   val fib_acc : int -> int -> int -> int
+  val fib : int -> int
   val main : int
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/004manyargs.ml
-  val main : int
-  val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
-  val test3 : int -> int -> int -> int
   val wrap : 'a -> 'a
+  val test3 : int -> int -> int -> int
+  val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+  val main : int
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/005fix.ml
-  val fac : (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
+  val fac : (int -> int) -> int -> int
   val main : int
   
 
@@ -38,6 +38,7 @@
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/006partial.ml
+  val foo : int -> int
   val foo : int -> int
   val main : int
   
@@ -60,32 +61,32 @@
   val _2 : int
   val _3 : (int * string) option
   val _4 : int -> 'a
-  val _42 : int -> bool
   val _5 : int
   val _6 : 'a option -> 'a
+  val int_of_option : int option -> int
+  val _42 : int -> bool
   val id1 : 'a -> 'a
   val id2 : 'a -> 'a
-  val int_of_option : int option -> int
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/015tuples.ml
-  val feven : 'a * (int -> int) -> int -> int
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
-  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
-  val fodd : (int -> int) * 'a -> int -> int
-  val main : int
   val map : ('a -> 'b) -> 'a * 'a -> 'b * 'b
-  val meven : int -> int
-  val modd : int -> int
+  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
+  val feven : 'a * (int -> int) -> int -> int
+  val fodd : (int -> int) * 'a -> int -> int
   val tie : (int -> int) * (int -> int)
+  val modd : int -> int
+  val meven : int -> int
+  val main : int
   
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/016lists.ml
-  val append : 'a list -> 'b list -> 'b list
-  val cartesian : 'a list -> 'b list -> 'c list
-  val concat : ('a list) list -> 'b list
-  val iter : ('a -> 'b) -> 'a list -> unit
   val length : 'a list -> int
   val length_tail : 'a list -> int
-  val main : int
   val map : ('a -> 'b) -> 'c list -> 'b list
+  val append : 'a list -> 'b list -> 'b list
+  val concat : ('a list) list -> 'b list
+  val iter : ('a -> 'b) -> 'a list -> unit
+  val cartesian : 'a list -> 'b list -> 'c list
+  val main : int
   
