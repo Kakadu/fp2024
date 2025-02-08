@@ -274,6 +274,7 @@ module TypeEnv : sig
   val extend : t -> string -> scheme -> t
   val find : t -> string -> scheme option
   val find_exn : t -> string -> scheme
+  val remove : t -> string -> t
   val apply : t -> Subst.t -> t
   val operators : (id list * typ) list
   val pp : Format.formatter -> t -> unit
@@ -295,6 +296,7 @@ end = struct
   let extend env key schema = Base.Map.update env key ~f:(fun _ -> schema)
   let find env key = Base.Map.find env key
   let find_exn env key = Base.Map.find_exn env key
+  let remove env key = Base.Map.remove env key
 
   let operators =
     [ [ "+"; "-"; "*"; "/" ], TBase BInt @-> TBase BInt @-> TBase BInt
@@ -419,7 +421,7 @@ let rec infer_pattern env ?ty =
        return (TOption ty, env, names)
      | Some ty ->
        let* ty, env, names = infer_pattern ~ty env pat in
-       return (ty, env, names)
+       return (TOption ty, env, names)
      | None ->
        let* ty, env, names = infer_pattern env pat in
        return (TOption ty, env, names))
@@ -630,16 +632,51 @@ let infer_expr =
     | Pexp_construct _ -> fail (SomeError "Only Some and None constructors implemented")
     | Pexp_match (e, cases) ->
       let* t0, sub0 = helper env e in
+      let env = TypeEnv.apply env sub0 in
       let* fv = fresh_var in
       RList.fold_left
         cases
         ~init:(return (fv, sub0))
         ~f:(fun (ty, sub) case ->
-          let* _, env_pat, _ = infer_pattern ~ty:t0 env case.pc_lhs in
-          let* ty_expr, sub_expr = helper env_pat case.pc_rhs in
+          let* t_pat, env_pat, names = infer_pattern env case.pc_lhs in
+          let* sub_un_pat = Subst.unify t_pat t0 in
+          let* sub1 = Subst.compose sub_un_pat sub in
+          let env_pat =
+            List.fold_left
+              (fun env name ->
+                let (Scheme (_, t)) = TypeEnv.find_exn env name in
+                let env = TypeEnv.remove env name in
+                TypeEnv.extend env name (generalize env t))
+              (TypeEnv.apply env_pat sub_un_pat)
+              names
+          in
+          let* ty_expr, sub_expr = helper (TypeEnv.apply env_pat sub1) case.pc_rhs in
+          (* TypeEnv.print env_pat; *)
+          (* print_typ ~name:"ty_expr" ty_expr; *)
+          (* print_typ ~name:"t_pat" t_pat; *)
+          (* sub_print ~name:"sub_expr" sub_expr; *)
           let* sub_un_exprs = Subst.unify ty_expr ty in
-          let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub ] in
+          (* sub_print ~name:"sub_un_expr" sub_un_exprs; *)
+          let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
+          (* sub_print ~name:"sub" sub; *)
           return (Subst.apply sub ty, sub))
+    | Pexp_function cases ->
+      let* fv_match = fresh_var in
+      let* fv_result = fresh_var in
+      let* ty, sub =
+        RList.fold_left
+          cases
+          ~init:(return (fv_result, Subst.empty))
+          ~f:(fun (ty, sub) case ->
+            let* t_pat, env_pat, _ = infer_pattern env case.pc_lhs in
+            let* sub_un_pat = Subst.unify t_pat fv_match in
+            let* sub1 = Subst.compose sub_un_pat sub in
+            let* ty_expr, sub_expr = helper (TypeEnv.apply env_pat sub1) case.pc_rhs in
+            let* sub_un_exprs = Subst.unify ty ty_expr in
+            let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
+            return (Subst.apply sub ty, sub))
+      in
+      return (Subst.apply sub (Subst.apply sub fv_match) @-> ty, sub)
   in
   helper
 ;;

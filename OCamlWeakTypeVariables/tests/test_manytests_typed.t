@@ -55,19 +55,17 @@
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/009let_poly.ml
   val temp : int * bool
   
-
-  $ cat manytests/typed/010sukharev.ml | head -17 | ../bin/REPL.exe -dinferprogram
+  $ cat manytests/typed/010sukharev.ml | ../bin/REPL.exe -dinferprogram
   val _1 : int -> int -> int * 'a -> bool
   val _2 : int
   val _3 : (int * string) option
   val _4 : int -> 'a
+  val _42 : int -> bool
   val _5 : int
-  val _6 : 'a -> 'a
-  
-
-  $ cat manytests/typed/010sukharev.ml | tail -1 | ../bin/REPL.exe -dinferprogram
+  val _6 : 'a option -> 'a
   val id1 : 'a -> 'a
   val id2 : 'a -> 'a
+  val int_of_option : int option -> int
   
 
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/015tuples.ml

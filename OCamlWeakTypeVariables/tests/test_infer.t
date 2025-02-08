@@ -50,4 +50,16 @@ TODO: order of printed names
   > let homka x = let y = x + 2 and z = x in z
   val homka : int -> int
   
+  $ ../bin/REPL.exe -dinference <<EOF
+  > let id x = x in
+  > let homka = Some id in
+  > match homka with
+  > | Some f -> f 42, f "42"
+  - : int * string
 
+  $ ../bin/REPL.exe -dinference <<EOF
+  > fun id ->
+  > let homka = Some id in
+  > match homka with
+  > | Some f -> f 42, f "42"
+  (UnificationFailed ((TBase BInt), (TBase BString)))
