@@ -133,7 +133,7 @@ let chain_right parse parse_fun =
     (let* f = parse_fun in
      let* first = parse in
      let* second = go first in
-     return (f first second))
+     return (f acc second))
     <|> return acc
   in
   parse >>= go
