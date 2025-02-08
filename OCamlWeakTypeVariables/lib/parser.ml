@@ -149,6 +149,18 @@ let p_binop p expr =
      fun x y -> pexp_apply_constr ident [ x; y ])
 ;;
 
+let p_cons expr =
+  (* let+ list = sep_by (token "::") expr in
+     List.fold_right
+     (fun acc e -> Pexp_construct ("::", Some (Pexp_tuple [ e; acc ])))
+     list
+     (Pexp_construct ("[]", None))
+     ;; *)
+  chain_right
+    expr
+    (token "::" *> return (fun x y -> Pexp_construct ("::", Some (Pexp_tuple [ x; y ]))))
+;;
+
 let p_tuple expr =
   let* first = expr <* token "," in
   let+ es = sep_by (token ",") expr in
@@ -171,12 +183,20 @@ let p_pattern =
        Ppat_construct (name, body))
       <|> pat_const
     in
+    let pat_list =
+      token "[]" *> (return @@ Ppat_construct ("[]", None)) <|> pat_construct
+    in
+    let pat_cons =
+      chain_right
+        pat_list
+        (token "::"
+         >>= fun c -> return @@ fun x y -> Ppat_construct (c, Some (Ppat_tuple [ x; y ]))
+        )
+      <|> pat_list
+    in
     let pat_tuple =
-      lift2
-        (fun l ls -> Ppat_tuple (l :: ls))
-        pat_construct
-        (many1 (token "," *> pat_construct))
-      <|> pat_construct
+      lift2 (fun l ls -> Ppat_tuple (l :: ls)) pat_cons (many1 (token "," *> pat_cons))
+      <|> pat_cons
     in
     let pat_unit = word "()" >>| (fun _ -> Ppat_unit) <|> pat_tuple in
     pat_unit)
@@ -262,10 +282,13 @@ let pexpr_constraint expr =
   Pexp_constraint (expr, Ptyp_constr ty)
 ;;
 
+let p_construct_unit = token "()" *> return (Pexp_construct ("()", None))
+
 let p_construct expr =
-  let* name = capitalized_ident in
-  let+ body = option None (expr >>| fun x -> Some x) in
-  Pexp_construct (name, body)
+  (let* name = capitalized_ident in
+   let+ body = option None (expr >>| fun x -> Some x) in
+   Pexp_construct (name, body))
+  <|> p_construct_unit
 ;;
 
 let p_pattern_matching expr =
@@ -291,6 +314,15 @@ let p_function expr =
   Pexp_function cases
 ;;
 
+let p_list expr =
+  let* list = token "[" *> sep_by (token ";") expr <* token "]" in
+  return
+    (List.fold_right
+       (fun x y -> Pexp_construct ("::", Some (Pexp_tuple [ x; y ])))
+       list
+       (Pexp_construct ("[]", None)))
+;;
+
 let p_expr =
   fix (fun expr ->
     let expr_const =
@@ -299,13 +331,15 @@ let p_expr =
     in
     let expr_construct = p_construct expr <|> expr_const in
     let expr_fun = p_fun expr <|> expr_construct in
-    let expr_apply = p_apply expr_fun <|> expr_fun in
+    let expr_list = p_list expr <|> expr_fun in
+    let expr_apply = p_apply expr_list <|> expr_list in
     let expr_mul_div = p_binop (token "*" <|> token "/") expr_apply <|> expr_apply in
     let expr_add_sub = p_binop (token "+" <|> token "-") expr_mul_div <|> expr_mul_div in
     let expr_comparison =
       p_binop (token_or [ "<"; "<="; ">"; ">="; "="; "<>" ]) expr_add_sub <|> expr_add_sub
     in
-    let expr_let_in = p_let_in expr <|> expr_comparison in
+    let expr_cons = p_cons expr_comparison <|> expr_comparison in
+    let expr_let_in = p_let_in expr <|> expr_cons in
     let expr_function = p_function expr <|> expr_let_in in
     let expr_match = p_match expr <|> expr_function in
     let expr_tuple = p_tuple expr_match <|> expr_match in
