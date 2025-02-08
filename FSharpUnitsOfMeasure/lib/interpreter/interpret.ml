@@ -24,7 +24,7 @@ module Env (M : ERROR_MONAD) = struct
     | None -> fail (Unbound_identificator id)
   ;;
 
-  let update env key value = Base.Map.update env key ~f:(fun _ -> value)
+  let extend env key value = Base.Map.update env key ~f:(fun _ -> value)
 end
 
 module Eval (M : ERROR_MONAD) : sig
@@ -42,7 +42,8 @@ end = struct
     | _ -> fail Type_mismatch
   ;;
 
-  let rec eval_pat env = function
+  let rec eval_pat env p v =
+    match p, v with
     | Pattern_wild, _ -> Some env
     | Pattern_const c, v ->
       (match c, v with
@@ -52,16 +53,16 @@ end = struct
        | Const_char c1, VChar c2 when Char.equal c1 c2 -> Some env
        | Const_string s1, VString s2 when String.equal s1 s2 -> Some env
        | _ -> None)
-    | Pattern_ident_or_op id, v -> Some (update env id v)
-    | Pattern_typed (p, _), v -> eval_pat env (p, v)
+    | Pattern_ident_or_op id, v -> Some (extend env id v)
+    | Pattern_typed (p, _), v -> eval_pat env p v
     | Pattern_option p, VOption v ->
       (match p, v with
-       | Some p', Some v' -> eval_pat env (p', v')
+       | Some p', Some v' -> eval_pat env p' v'
        | None, None -> Some env
        | _ -> None)
     | Pattern_or (p1, p2), v ->
-      let p1' = eval_pat env (p1, v) in
-      if Option.is_none p1' then eval_pat env (p2, v) else None
+      let p1' = eval_pat env p1 v in
+      if Option.is_none p1' then eval_pat env p2 v else None
     | Pattern_list pl, VList vl -> eval_pat_list env pl vl
     | Pattern_tuple (p1, p2, prest), VTuple (v1, v2, vrest) ->
       let pl = p1 :: p2 :: prest in
@@ -76,7 +77,7 @@ end = struct
       let f acc p v =
         match acc with
         | None -> None
-        | Some env' -> eval_pat env' (p, v)
+        | Some env' -> eval_pat env' p v
       in
       List.fold_left2 f (Some env) pl vl)
   ;;
@@ -111,34 +112,29 @@ end = struct
     | _ -> fail Unsupported_operation
   ;;
 
-  let rec eval_expr env = function
+  let rec eval_expr env =
+    let eval_list env lst =
+      List.fold_left
+        (fun acc e ->
+          let* acc = acc in
+          let* v = eval_expr env e in
+          return (v :: acc))
+        (return [])
+        lst
+      >>| fun l -> List.rev l
+    in
+    function
     | Expr_const c -> eval_const c
     | Expr_ident_or_op name -> find env name
     | Expr_typed (e, _) -> eval_expr env e
+    | Expr_list el ->
+      let* vl = eval_list env el in
+      return (VList vl)
     | Expr_tuple (e1, e2, erest) ->
       let* v1 = eval_expr env e1 in
       let* v2 = eval_expr env e2 in
-      let* v_rest =
-        List.fold_left
-          (fun acc e ->
-            let* acc = acc in
-            let* v = eval_expr env e in
-            return (v :: acc))
-          (return [])
-          erest
-      in
-      return (VTuple (v1, v2, List.rev v_rest))
-    | Expr_list el ->
-      let* vl =
-        List.fold_left
-          (fun acc e ->
-            let* acc = acc in
-            let* v = eval_expr env e in
-            return (v :: acc))
-          (return [])
-          el
-      in
-      return (VList (List.rev vl))
+      let* vrest = eval_list env erest in
+      return (VTuple (v1, v2, vrest))
     | Expr_lam (p, e) -> return (VFun (Nonrecursive, p, e, env))
     | Expr_ifthenelse (c, t, Some e) ->
       let* cval = eval_expr env c in
@@ -164,11 +160,21 @@ end = struct
       let* v1 = eval_expr env e1 in
       let* v2 = eval_expr env e2 in
       eval_binop f v1 v2
-    | _ -> fail Division_by_zero
+    | Expr_apply (func, arg) ->
+      let* v1 = eval_expr env func in
+      let* v2 = eval_expr env arg in
+      (match v1 with
+       | VFunction (rhd, rtl) -> eval_rules env v2 (rhd :: rtl)
+       (* | VFun ... *)
+       | _ -> fail Type_mismatch)
+    | Expr_let (Nonrecursive, bhd, btl, ebody) ->
+      fail Not_implemented
+    | Expr_let (Recursive, bhd, btl, ebody) ->
+      fail Not_implemented
 
   and eval_rules env v = function
     | Rule (p, e) :: tl ->
-      let env' = eval_pat env (p, v) in
+      let env' = eval_pat env p v in
       (match env' with
        | None -> eval_rules env v tl
        | Some env'' -> eval_expr env'' e)

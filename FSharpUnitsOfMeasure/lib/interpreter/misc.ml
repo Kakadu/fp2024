@@ -11,6 +11,7 @@ type error =
   | Invalid_syntax
   | Unsupported_operation
   | Match_failure
+  | Not_implemented
 [@@deriving show { with_path = false }]
 
 type value =
