@@ -179,6 +179,13 @@ let%expect_test "parse application of function to 1 argument" =
   [%expect {| f a |}]
 ;;
 
+let%expect_test "parse application of id lambda" =
+  pp2 pp_expression pexpr {| (fun x -> x) y |};
+  [%expect {|
+    (Expr_apply ((Expr_lam ((Pattern_ident_or_op "x"), (Expr_ident_or_op "x"))),
+       (Expr_ident_or_op "y"))) |}]
+;;
+
 (* Should omit parentheses *)
 let%expect_test "parse application of function to 2 arguments" =
   run {| f a b |};
