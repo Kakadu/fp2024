@@ -80,4 +80,12 @@
   val tie : (int -> int) * (int -> int)
   
   $ ../bin/REPL.exe -dinferprogram < manytests/typed/016lists.ml
-  Error: : end_of_input
+  val append : 'a list -> 'b list -> 'b list
+  val cartesian : 'a list -> 'b list -> 'c list
+  val concat : ('a list) list -> 'b list
+  val iter : ('a -> 'b) -> 'a list -> unit
+  val length : 'a list -> int
+  val length_tail : 'a list -> int
+  val main : int
+  val map : ('a -> 'b) -> 'c list -> 'b list
+  

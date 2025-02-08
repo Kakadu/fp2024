@@ -24,7 +24,7 @@ module TVarSet = Stdlib.Set.Make (Int)
 module VarSet = Stdlib.Set.Make (String)
 
 type error =
-  | OccursCheckFailed
+  | OccursCheckFailed of type_var * typ
   | UnificationFailed of typ * typ
   | Unbound of id
   | PatternNameTwice of pattern

@@ -162,7 +162,7 @@ end = struct
 
   let mapping k v =
     (* if debug then Format.printf "Mapping %d to %s\n" k @@ show_typ v; *)
-    if Type.occurs_in k v then fail OccursCheckFailed else return (k, v)
+    if Type.occurs_in k v then fail (OccursCheckFailed (k, v)) else return (k, v)
   ;;
 
   let singleton k v =
@@ -431,7 +431,16 @@ let rec infer_pattern env ?ty =
   | Ppat_construct ("Some", None) -> fail (SomeError "Some constructor require argument")
   | Ppat_construct ("None", Some _) ->
     fail (SomeError "None constructor don't accept arguments")
-  | Ppat_construct _ -> fail (SomeError "Only Some and None constructors implemented")
+  | Ppat_construct ("[]", None) ->
+    let* fv = fresh_var in
+    return (TList fv, env, [])
+  | Ppat_construct ("::", Some (Ppat_tuple [ hd; tl ])) ->
+    let* t0, env, names0 = infer_pattern env hd in
+    let* t1, env, names1 = infer_pattern env tl in
+    let* _ = Subst.unify t0 t1 in
+    return (TList t0, env, names0 @ names1)
+  | Ppat_construct _ ->
+    fail (SomeError "Only Some, None, [] and :: constructors implemented")
   | Ppat_any ->
     let* fv = fresh_var in
     return (fv, env, names)
@@ -629,6 +638,17 @@ let infer_expr =
       fail (SomeError "Some constructor require argument")
     | Pexp_construct ("None", Some _) ->
       fail (SomeError "None constructor don't accept arguments")
+    | Pexp_construct ("[]", None) ->
+      let* fv = fresh_var in
+      return (fv, Subst.empty)
+    | Pexp_construct ("::", Some (Pexp_tuple [ hd; tl ])) ->
+      let* t0, sub0 = helper env hd in
+      let env = TypeEnv.apply env sub0 in
+      let* t1, sub1 = helper env tl in
+      let* sub_un = Subst.unify (TList t0) t1 in
+      let* sub = Subst.compose sub_un sub1 in
+      return (TList (Subst.apply sub t0), sub)
+    | Pexp_construct ("()", None) -> return (TBase BUnit, Subst.empty)
     | Pexp_construct _ -> fail (SomeError "Only Some and None constructors implemented")
     | Pexp_match (e, cases) ->
       let* t0, sub0 = helper env e in
