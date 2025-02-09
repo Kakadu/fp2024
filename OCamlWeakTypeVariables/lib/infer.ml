@@ -550,6 +550,11 @@ let infer_expr =
               let* sub_un = Subst.unify t t0 in
               let* sub = Subst.compose sub_un sub0 in
               return (env, sub)
+            | Ppat_construct ("::", _) ->
+              let* t_pat, env, _ = infer_pattern env vb.pvb_pat in
+              let* sub_un = Subst.unify t_pat t0 in
+              let* sub_c = Subst.compose_all [ sub_un; sub0; sub ] in
+              return (env, sub_c)
             | Ppat_construct _ ->
               let* _, env, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
               (* let* sub_un = Subst.unify t t0 in *)
@@ -729,6 +734,10 @@ let infer_structure =
                 let* t, env, new_names = infer_pattern env vb.pvb_pat in
                 let* sub_un = Subst.unify t t0 in
                 return (TypeEnv.apply env sub_un, new_names)
+              | Ppat_construct ("::", _) ->
+                let* t_pat, env, new_names = infer_pattern env vb.pvb_pat in
+                let* _ = Subst.unify t_pat t0 in
+                return (env, new_names)
               | Ppat_construct _ ->
                 let* _, env, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
                 (* let* sub_un = Subst.unify t t0 in *)

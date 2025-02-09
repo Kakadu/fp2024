@@ -21,7 +21,7 @@
             (TTuple ((TBase BInt), (TBase BInt), [(TBase BInt)]))))
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/097fun_vs_list.ml
-  Error: : end_of_input
+  Error: (UnificationFailed ((TList (TVar 4)), (TArrow ((TVar 3), (TVar 3)))))
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/097fun_vs_unit.ml
   Error: (UnificationFailed ((TBase BUnit), (TArrow ((TVar 3), (TVar 3)))))
