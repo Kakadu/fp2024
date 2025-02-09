@@ -256,14 +256,11 @@ end
 let print_sub ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub
 
 module Scheme = struct
-  let free_vars = function
-    | Scheme (bind_vars, ty) -> TVarSet.diff (Type.type_vars ty) bind_vars
-  ;;
+  let free_vars (Scheme (bind_vars, ty)) = TVarSet.diff (Type.type_vars ty) bind_vars
 
-  let apply sub = function
-    | Scheme (bind_vars, ty) ->
-      let sub2 = TVarSet.fold (fun sub key -> Subst.remove key sub) bind_vars sub in
-      Scheme (bind_vars, Subst.apply sub2 ty)
+  let apply sub (Scheme (bind_vars, ty)) =
+    let sub2 = TVarSet.fold (fun sub key -> Subst.remove key sub) bind_vars sub in
+    Scheme (bind_vars, Subst.apply sub2 ty)
   ;;
 end
 
