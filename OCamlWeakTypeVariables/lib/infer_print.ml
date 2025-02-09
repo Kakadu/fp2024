@@ -73,6 +73,13 @@ let pp_typ_my fmt t =
   helper fmt t
 ;;
 
+let pp_error_my fmt e =
+  match e with
+  | UnificationFailed (f, s) ->
+    Format.fprintf fmt "Error when unify (%a) and (%a)" pp_typ_my f pp_typ_my s
+  | _ as e -> Format.printf "%a" pp_error e
+;;
+
 let print_typ ?(name = "typ") t = Format.printf "%s: %a\n" name pp_typ_my t
 
 let%expect_test _ =

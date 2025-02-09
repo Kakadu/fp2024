@@ -17,7 +17,7 @@ let run_single opts =
     | Result.Ok program ->
       (match Infer.run_program_inferencer program with
        | Ok (env, names) -> Format.printf "%a\n" (Infer.TypeEnv.pp_names names) env
-       | Error e -> Format.printf "Error: %a\n" Types.pp_error e));
+       | Error e -> Format.printf "Error: %a\n" Infer_print.pp_error_my e));
   if opts.dump_parseprogram
   then (
     let ast = Parser.parse_program text in
@@ -43,11 +43,11 @@ let run_single opts =
           | Ok t ->
             (* Format.printf "> %s;;\n\n" text; *)
             Format.printf "- : %a\n" Infer_print.pp_typ_my t
-          | Error e -> Format.printf "%a\n" Types.pp_error e)
+          | Error e -> Format.printf "%a\n" Infer_print.pp_error_my e)
        | _ ->
          (match Infer.run_structure_inferencer ast with
           | Ok (env, names) -> Format.printf "%a\n" (Infer.TypeEnv.pp_names names) env
-          | Error e -> Format.printf "Error: %a\n" Types.pp_error e)))
+          | Error e -> Format.printf "Error: %a\n" Infer_print.pp_error_my e)))
 ;;
 
 let () =
