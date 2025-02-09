@@ -6,6 +6,13 @@ all:
 repl:
 	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dparsetree
 
+infer:
+	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dinferprogram
+
+infers:
+	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dinference
+
+
 tests: test
 test:
 	dune runtest

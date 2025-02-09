@@ -27,8 +27,8 @@
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec x = y + 3 and y = true
-  val x : int
   val y : bool
+  val x : int
   
 
   $ ../bin/REPL.exe -dinference <<EOF
@@ -41,9 +41,9 @@ TODO: order of printed names
   > let foo b = if b then fun foo -> foo + 2 else fun foo -> foo * 10
   > and homka = 122
   > and fac self n = if true then 1 else n * self (n - 1)
-  val fac : (int -> int) -> int -> int
   val foo : bool -> int -> int
   val homka : int
+  val fac : (int -> int) -> int -> int
   
 
   $ ../bin/REPL.exe -dinference <<EOF

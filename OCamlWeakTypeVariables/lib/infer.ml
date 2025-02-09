@@ -173,11 +173,13 @@ end = struct
   let find (sub : t) k = Base.Map.find sub k
   let remove (sub : t) k : t = Base.Map.remove sub k
 
-  let apply sub =
-    let rec helper = function
+  let apply sub t =
+    let rec helper t =
+      match t with
       | TVar n ->
         (match find sub n with
          | None -> TVar n
+         | Some (TVar v) when v = n -> TVar n
          | Some v -> helper v)
       | TArrow (left, right) -> TArrow (helper left, helper right)
       | TList typ -> TList (helper typ)
@@ -186,7 +188,7 @@ end = struct
         TTuple (helper a, helper b, Base.List.map t_list ~f:helper)
       | TBase t -> TBase t
     in
-    helper
+    helper t
   ;;
 
   let rec unify l r =
@@ -441,8 +443,8 @@ let rec infer_pattern env ?ty =
   | Ppat_construct ("::", Some (Ppat_tuple [ hd; tl ])) ->
     let* t0, env, names0 = infer_pattern env hd in
     let* t1, env, names1 = infer_pattern env tl in
-    let* _ = Subst.unify t0 t1 in
-    return (TList t0, env, names0 @ names1)
+    let* sub = Subst.unify t1 (TList t0) in
+    return (Subst.apply sub (TList t0), TypeEnv.apply env sub, names0 @ names1)
   | Ppat_construct _ ->
     fail (SomeError "Only Some, None, [] and :: constructors implemented")
   | Ppat_any ->
@@ -644,14 +646,13 @@ let infer_expr =
       fail (SomeError "None constructor don't accept arguments")
     | Pexp_construct ("[]", None) ->
       let* fv = fresh_var in
-      return (fv, Subst.empty)
+      return (TList fv, Subst.empty)
     | Pexp_construct ("::", Some (Pexp_tuple [ hd; tl ])) ->
       let* t0, sub0 = helper env hd in
-      let env = TypeEnv.apply env sub0 in
-      let* t1, sub1 = helper env tl in
-      let* sub_un = Subst.unify (TList t0) t1 in
-      let* sub = Subst.compose sub_un sub1 in
-      return (TList (Subst.apply sub t0), sub)
+      let* t1, sub1 = helper (TypeEnv.apply env sub0) tl in
+      let* sub_un2 = Subst.unify t1 (TList t0) in
+      let* sub = Subst.compose_all [ sub_un2; sub1; sub0 ] in
+      return (Subst.apply sub t1, sub)
     | Pexp_construct ("()", None) -> return (TBase BUnit, Subst.empty)
     | Pexp_construct _ -> fail (SomeError "Only Some and None constructors implemented")
     | Pexp_match (e, cases) ->
