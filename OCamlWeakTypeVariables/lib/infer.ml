@@ -539,32 +539,16 @@ let infer_expr =
             (* vb: {pat: z, expr: x y} *)
             (* So t0 will be 'c and sub0 will be '{a: 'b -> 'c} *)
             let* t0, sub0 = helper env vb.pvb_expr in
+            let* sub = Subst.compose sub0 sub in
+            let env = TypeEnv.apply env sub in
             (* With type (x y): 'c we append new variable z with type 'c *)
             match vb.pvb_pat with
-            | Ppat_tuple _ ->
+            | Ppat_var v -> (TypeEnv.extend env v (generalize env t0), sub) |> return
+            | _ ->
               let* t, env, _ = infer_pattern env vb.pvb_pat in
               let* sub_un = Subst.unify t t0 in
-              let* sub = Subst.compose sub_un sub0 in
-              return (env, sub)
-            | Ppat_construct ("::", _) ->
-              let* t_pat, env, _ = infer_pattern env vb.pvb_pat in
-              let* sub_un = Subst.unify t_pat t0 in
-              let* sub_c = Subst.compose_all [ sub_un; sub0; sub ] in
-              return (env, sub_c)
-            | Ppat_construct _ ->
-              let* _, env, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
-              (* let* sub_un = Subst.unify t t0 in *)
-              (* let* sub = Subst.compose sub_un sub0 in *)
-              return (env, sub0)
-            | Ppat_unit ->
-              let* t_unit, env, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
-              let* sub_un = Subst.unify t_unit t0 in
-              let* sub_c = Subst.compose_all [ sub_un; sub0; sub ] in
-              return (env, sub_c)
-            | _ ->
-              let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
-              let* sub_c = Subst.compose sub sub0 in
-              return (env0, sub_c))
+              let* sub = Subst.compose_all [ sub_un; sub ] in
+              return (TypeEnv.apply env sub, sub))
           ~init:(return (env, Subst.empty))
           vb
       in
@@ -726,25 +710,11 @@ let infer_structure =
             let* t0, _ = infer_expr env vb.pvb_expr in
             let* env1, new_names =
               match vb.pvb_pat with
-              | Ppat_tuple _ ->
+              | Ppat_var v -> (TypeEnv.extend env v (generalize env t0), [ v ]) |> return
+              | _ ->
                 let* t, env, new_names = infer_pattern env vb.pvb_pat in
                 let* sub_un = Subst.unify t t0 in
                 return (TypeEnv.apply env sub_un, new_names)
-              | Ppat_construct ("::", _) ->
-                let* t_pat, env, new_names = infer_pattern env vb.pvb_pat in
-                let* _ = Subst.unify t_pat t0 in
-                return (env, new_names)
-              | Ppat_construct _ ->
-                let* _, env, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
-                (* let* sub_un = Subst.unify t t0 in *)
-                (* let* sub = Subst.compose sub_un sub0 in *)
-                return (env, new_names)
-              | Ppat_unit ->
-                let* _, env, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
-                return (env, new_names)
-              | _ ->
-                let* _, env0, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
-                return (env0, new_names)
             in
             match List.exists (fun name -> List.mem name new_names) names with
             | true -> fail (PatternNameTwice vb.pvb_pat)

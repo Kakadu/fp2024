@@ -33,7 +33,7 @@
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let homka = fun x y -> let z = x y in z + 2
-  val homka : ('a -> 'b) -> 'a -> int
+  val homka : ('a -> int) -> 'a -> int
   
 
 TODO: order of printed names
