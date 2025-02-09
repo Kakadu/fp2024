@@ -418,33 +418,17 @@ let rec infer_pattern env ?ty =
            xs
        in
        return (TTuple (fv1, fv2, List.rev fvs), env, names1 @ names2 @ names))
-  | Ppat_construct ("Some", Some pat) ->
+  | Ppat_construct (name, None) ->
+    let* ty, _ = lookup_env env name in
+    return (ty, env, [])
+  | Ppat_construct (name, Some pat) ->
+    let* ty, _ = lookup_env env name in
+    let* ty_pat, env, names = infer_pattern env pat in
     (match ty with
-     | Some (TOption ty) ->
-       let* ty, env, names = infer_pattern ~ty env pat in
-       return (TOption ty, env, names)
-     | Some ty ->
-       let* ty, env, names = infer_pattern ~ty env pat in
-       return (TOption ty, env, names)
-     | None ->
-       let* ty, env, names = infer_pattern env pat in
-       return (TOption ty, env, names))
-  | Ppat_construct ("None", None) ->
-    let* fv = fresh_var in
-    return (TOption fv, env, [])
-  | Ppat_construct ("Some", None) -> fail (SomeError "Some constructor require argument")
-  | Ppat_construct ("None", Some _) ->
-    fail (SomeError "None constructor don't accept arguments")
-  | Ppat_construct ("[]", None) ->
-    let* fv = fresh_var in
-    return (TList fv, env, [])
-  | Ppat_construct ("::", Some (Ppat_tuple [ hd; tl ])) ->
-    let* t0, env, names0 = infer_pattern env hd in
-    let* t1, env, names1 = infer_pattern env tl in
-    let* sub = Subst.unify t1 (TList t0) in
-    return (Subst.apply sub (TList t0), TypeEnv.apply env sub, names0 @ names1)
-  | Ppat_construct _ ->
-    fail (SomeError "Only Some, None, [] and :: constructors implemented")
+     | TArrow (f, s) ->
+       let* sub_un = Subst.unify f ty_pat in
+       return (Subst.apply sub_un s, TypeEnv.apply env sub_un, names)
+     | _ -> fail (SomeError "Constructor don't accept arguments"))
   | Ppat_any ->
     let* fv = fresh_var in
     return (fv, env, names)
