@@ -1,3 +1,6 @@
+(** Copyright 2024-2025, Ruslan Nafikov *)
+
+(** SPDX_License-Identifier: LGPL-3.0 -or-later *)
 
 type id = string [@@deriving show { with_path = false }]
 
