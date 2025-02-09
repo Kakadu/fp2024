@@ -398,10 +398,10 @@ let rec infer_pattern env ?ty =
      | Pconst_string _ -> return (TBase BString, env, []))
   | Ppat_unit ->
     let t_unit = TBase BUnit in
-    let _ =
+    let* env =
       match ty with
-      | Some t -> Subst.unify t_unit t
-      | None -> return Subst.empty
+      | Some t -> Subst.unify t_unit t >>| TypeEnv.apply env
+      | None -> return env
     in
     return (t_unit, env, [])
   | Ppat_tuple pats ->
@@ -555,6 +555,11 @@ let infer_expr =
               (* let* sub_un = Subst.unify t t0 in *)
               (* let* sub = Subst.compose sub_un sub0 in *)
               return (env, sub0)
+            | Ppat_unit ->
+              let* t_unit, env, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
+              let* sub_un = Subst.unify t_unit t0 in
+              let* sub_c = Subst.compose_all [ sub_un; sub0; sub ] in
+              return (env, sub_c)
             | _ ->
               let* _, env0, _ = infer_pattern ~ty:t0 env vb.pvb_pat in
               let* sub_c = Subst.compose sub sub0 in
@@ -728,6 +733,9 @@ let infer_structure =
                 let* _, env, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
                 (* let* sub_un = Subst.unify t t0 in *)
                 (* let* sub = Subst.compose sub_un sub0 in *)
+                return (env, new_names)
+              | Ppat_unit ->
+                let* _, env, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in
                 return (env, new_names)
               | _ ->
                 let* _, env0, new_names = infer_pattern ~ty:t0 env vb.pvb_pat in

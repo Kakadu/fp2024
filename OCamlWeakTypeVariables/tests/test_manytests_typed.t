@@ -86,7 +86,7 @@
   val map : ('a -> 'b) -> 'a list -> 'b list
   val append : 'a list -> 'a list -> 'a list
   val concat : ('a list) list -> 'a list
-  val iter : ('a -> 'b) -> 'a list -> unit
+  val iter : ('a -> unit) -> 'a list -> unit
   val cartesian : 'a list -> 'b list -> ('a * 'b) list
   val main : int
   
