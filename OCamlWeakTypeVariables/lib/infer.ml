@@ -252,7 +252,7 @@ end = struct
   ;;
 end
 
-let sub_print ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub
+let print_sub ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub
 
 module Scheme = struct
   let free_vars = function
