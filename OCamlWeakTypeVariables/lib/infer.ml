@@ -1,7 +1,6 @@
 open Ast
 open Types
 open Config
-open Infer_print
 
 module R : sig
   type 'a t
