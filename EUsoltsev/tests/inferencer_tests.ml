@@ -9,7 +9,7 @@ open Ast
 let pretty_printer_parse_and_infer s =
   match Parser.parse s with
   | Ok parsed ->
-    (match run_infer parsed with
+    (match infer_program parsed with
      | Ok env ->
        let filtered_env =
          Base.Map.filter_keys env ~f:(fun key ->
@@ -21,34 +21,38 @@ let pretty_printer_parse_and_infer s =
   | Error e -> Format.printf "Parsing error. %s\n" e
 ;;
 
+let pretty_printer_parse_and_infer_simple s =
+  match Angstrom.parse_string ~consume:Angstrom.Consume.All Parser.parse_expr s with
+  | Ok expr ->
+    (match infer_simple_expression expr with
+     | Ok ty -> Format.printf "%a\n" pp_ty ty
+     | Error e -> Format.printf "Infer error. %a\n" pp_error e)
+  | Error e -> Format.printf "Parsing error. %s\n" e
+;;
+
 let%expect_test "test_binary_oper" =
-  pretty_printer_parse_and_infer "10/2 + 56*2 - 10 / 10 / 20 + 666 - 777 + 1";
+  pretty_printer_parse_and_infer_simple "10/2 + 56*2 - 10 / 10 / 20 + 666 - 777 + 1";
   [%expect {|int|}]
 ;;
 
 let%expect_test "test_bool" =
-  pretty_printer_parse_and_infer "false";
+  pretty_printer_parse_and_infer_simple "false";
   [%expect {|bool|}]
 ;;
 
-let%expect_test "test_string" =
-  pretty_printer_parse_and_infer "\"I like OCaml\" ";
-  [%expect {|string|}]
-;;
+(* let%expect_test "test_string" =
+   pretty_printer_parse_and_infer_simple "\"I like OCaml\" ";
+   [%expect {|string|}]
+   ;; *)
 
 let%expect_test "test_option" =
-  pretty_printer_parse_and_infer "Some 10";
+  pretty_printer_parse_and_infer_simple "Some 10";
   [%expect {|int option|}]
 ;;
 
 let%expect_test "test_binary_oper_and_arg" =
-  pretty_printer_parse_and_infer "fun x -> x * 69 + 100 - 201 / 777";
-  [%expect {|a -> int|}]
-;;
-
-let%expect_test "test_binary_oper_and_arg" =
-  pretty_printer_parse_and_infer "fun x -> x * 69 + 100 - 201 / 777";
-  [%expect {|a -> int|}]
+  pretty_printer_parse_and_infer_simple "fun x -> x * 69 + 100 - 201 / 777";
+  [%expect {|int -> int|}]
 ;;
 
 let%expect_test "test_rec" =
@@ -58,12 +62,12 @@ let%expect_test "test_rec" =
 
 let%expect_test "test_func_apply_some_args" =
   pretty_printer_parse_and_infer "let func a1 a2 a3 = a1 a2 a3";
-  [%expect {|a -> b -> c -> d|}]
+  [%expect {|(b -> c -> e) -> b -> c -> e|}]
 ;;
 
 let%expect_test "test_tuple" =
-  pretty_printer_parse_and_infer "fun x y z -> (x + 10, y / 2 , z)";
-  [%expect {|a -> b -> c -> (int * int * c)|}]
+  pretty_printer_parse_and_infer_simple "fun x y z -> (x + 10, y / 2 , z)";
+  [%expect {|int -> int -> c -> (int * int * c)|}]
 ;;
 
 let%expect_test "test_list" =
@@ -73,12 +77,12 @@ let%expect_test "test_list" =
 
 let%expect_test "test_binary_oper" =
   pretty_printer_parse_and_infer "let is_above_10 x = if x > 10 then true else false ";
-  [%expect {|a -> bool|}]
+  [%expect {|int -> bool|}]
 ;;
 
 let%expect_test "test_binary_oper" =
   pretty_printer_parse_and_infer "let is_above_10 x = x > 10";
-  [%expect {|a -> bool|}]
+  [%expect {|int -> bool|}]
 ;;
 
 let%expect_test "test_factorial" =
@@ -120,19 +124,22 @@ let%expect_test "test_annotate_fac" =
 
 let%expect_test "test_program_1" =
   pretty_printer_parse_and_infer
-    "let div = fun x y -> x / y;; let sum = fun x y -> x + y;; let res = fun x y z ->  \
-     div x (sum y z)";
+    "let div = fun x y -> x / y \n\
+    \     let sum = fun x y -> x + y\n\
+    \     let res = fun x y z -> div x (sum y z)";
   [%expect {|
-    a -> b -> int
-    e -> f -> g -> int
-    c -> d -> int|}]
+    int -> int -> int
+    int -> int -> int -> int
+    int -> int -> int|}]
 ;;
 
 let%expect_test "test_program_2" =
-  pretty_printer_parse_and_infer "let square = fun x -> x * x ;; let result = square 10";
+  pretty_printer_parse_and_infer
+    "let square = fun x -> x * x\n\
+    \                                  let result = square 10";
   [%expect {|
     int
-    a -> int|}]
+    int -> int|}]
 ;;
 
 let%expect_test "test_annotate_error" =

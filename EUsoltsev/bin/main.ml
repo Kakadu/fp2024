@@ -12,7 +12,7 @@ open Ast
 let run_inference input =
   match parse input with
   | Ok parsed ->
-    (match run_infer parsed with
+    (match infer_program parsed with
      | Ok env ->
        let filtered_env =
          Base.Map.filter_keys env ~f:(fun key ->
@@ -28,7 +28,7 @@ let run_interpreter s =
   let open Stdlib.Format in
   match Parser.parse s with
   | Ok parsed ->
-    (match Inter.eval_structure parsed with
+    (match Interpreter.eval_structure parsed with
      | Ok _ -> ()
      | Error e -> printf "Interpreter error: %a\n" pp_value_error e)
   | Error e -> printf "Parsing error: %s\n" e

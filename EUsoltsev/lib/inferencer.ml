@@ -4,9 +4,8 @@
 
 (* Template: https://gitlab.com/Kakadu/fp2020course-materials/-/tree/master/code/miniml?ref_type=heads*)
 
-open Base
 open Ast
-open Stdlib.Format
+open Format
 
 type error =
   | OccursCheck of int * ty
@@ -14,6 +13,9 @@ type error =
   | UnificationFailed of ty * ty
   | SeveralBounds of string
   | NotImplement
+  | LeftHandSide of string
+  | RightHandSide of string
+  | UnexpectedFunction of ty
 
 let pp_error fmt = function
   | OccursCheck (id, ty) ->
@@ -23,6 +25,9 @@ let pp_error fmt = function
     fprintf fmt "Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
   | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
   | NotImplement -> fprintf fmt "This feature is not implemented yet."
+  | LeftHandSide msg -> fprintf fmt "Left-hand side error: %s." msg
+  | RightHandSide msg -> fprintf fmt "Right-hand side error: %s." msg
+  | UnexpectedFunction ty1 -> fprintf fmt "UnexpectedFunction error: %a" pp_ty ty1
 ;;
 
 module IntSet = struct
@@ -35,7 +40,7 @@ module ResultMonad : sig
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
-  include Monad.Infix with type 'a t := 'a t
+  include Base.Monad.Infix with type 'a t := 'a t
 
   module Syntax : sig
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
@@ -45,7 +50,7 @@ module ResultMonad : sig
   val run : 'a t -> ('a, error) Result.t
 
   module RMap : sig
-    val fold : ('a, 'b, 'c) Map.t -> init:'d t -> f:('a -> 'b -> 'd -> 'd t) -> 'd t
+    val fold : ('a, 'b, 'c) Base.Map.t -> init:'d t -> f:('a -> 'b -> 'd -> 'd t) -> 'd t
   end
 end = struct
   type 'a t = int -> int * ('a, error) Result.t
@@ -53,17 +58,17 @@ end = struct
   let ( >>= ) m f state =
     let last, r = m state in
     match r with
-    | Result.Error x -> last, Result.fail x
+    | Result.Error x -> last, Base.Result.fail x
     | Result.Ok a -> f a last
   ;;
 
-  let return x last = last, Result.return x
-  let fail e st = st, Result.fail e
+  let return x last = last, Base.Result.return x
+  let fail e st = st, Base.Result.fail e
 
   let ( >>| ) m f st =
     match m st with
-    | st, Ok x -> st, Result.return (f x)
-    | st, Result.Error e -> st, Result.fail e
+    | st, Ok x -> st, Base.Result.return (f x)
+    | st, Result.Error e -> st, Base.Result.fail e
   ;;
 
   module Syntax = struct
@@ -72,14 +77,14 @@ end = struct
 
   module RMap = struct
     let fold map ~init ~f =
-      Map.fold map ~init ~f:(fun ~key ~data acc ->
+      Base.Map.fold map ~init ~f:(fun ~key ~data acc ->
         let open Syntax in
         let* acc = acc in
         f key data acc)
     ;;
   end
 
-  let fresh : int t = fun last -> last + 1, Result.return last
+  let fresh : int t = fun last -> last + 1, Base.Result.return last
   let run monad = snd (monad 0)
 end
 
@@ -87,7 +92,7 @@ module Type = struct
   let rec occurs_in var = function
     | TyVar b -> b = var
     | TyArrow (left, right) -> occurs_in var left || occurs_in var right
-    | TyTuple types -> List.exists types ~f:(occurs_in var)
+    | TyTuple types -> Base.List.exists types ~f:(occurs_in var)
     | TyList ty -> occurs_in var ty
     | TyOption ty -> occurs_in var ty
     | TyPrim _ -> false
@@ -97,7 +102,7 @@ module Type = struct
     let rec helper acc = function
       | TyVar b -> IntSet.add b acc
       | TyArrow (left, right) -> helper (helper acc left) right
-      | TyTuple types -> List.fold_left types ~init:acc ~f:helper
+      | TyTuple types -> Base.List.fold_left types ~init:acc ~f:helper
       | TyList ty -> helper acc ty
       | TyOption ty -> helper acc ty
       | TyPrim _ -> acc
@@ -119,6 +124,7 @@ module Substitution : sig
 end = struct
   open ResultMonad
   open ResultMonad.Syntax
+  open Base
 
   type t = (int, ty, Int.comparator_witness) Map.t
 
@@ -132,7 +138,7 @@ end = struct
 
   let singleton key value =
     let* key, value = mapping key value in
-    return (Map.singleton (module Int) key value)
+    return (Base.Map.singleton (module Int) key value)
   ;;
 
   let find = Map.find
@@ -189,7 +195,7 @@ end = struct
       RMap.fold subst ~init:(return subst2) ~f:(fun key value acc ->
         let value = apply subst2 value in
         let* key, value = mapping key value in
-        return (Map.update acc key ~f:(fun _ -> value)))
+        return (Base.Map.update acc key ~f:(fun _ -> value)))
     | Some value2 ->
       let* subst2 = unify value value2 in
       compose subst subst2
@@ -203,9 +209,9 @@ end = struct
   ;;
 end
 
-module Scheme = struct
-  type t = S of IntSet.t * ty
+type scheme = S of IntSet.t * ty
 
+module Scheme = struct
   let free_vars (S (vars, ty)) = IntSet.diff (Type.free_vars ty) vars
 
   let apply subst (S (vars, ty)) =
@@ -217,7 +223,9 @@ module Scheme = struct
 end
 
 module TypeEnv = struct
-  type t = (ident, Scheme.t, String.comparator_witness) Map.t
+  open Base
+
+  type t = (ident, scheme, String.comparator_witness) Map.t
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
   let remove = Map.remove
@@ -228,20 +236,20 @@ module TypeEnv = struct
   ;;
 
   let apply subst env = Map.map env ~f:(Scheme.apply subst)
-  let find key env = Map.find env key
+  let find = Map.find
 
   let initial_env =
     let open Base.Map in
     empty (module String)
     |> set
          ~key:"print_int"
-         ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "int", TyPrim "unit")))
+         ~data:(S (IntSet.empty, TyArrow (TyPrim "int", TyPrim "unit")))
     |> set
          ~key:"print_endline"
-         ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "string", TyPrim "unit")))
+         ~data:(S (IntSet.empty, TyArrow (TyPrim "string", TyPrim "unit")))
     |> set
          ~key:"print_bool"
-         ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "bool", TyPrim "unit")))
+         ~data:(S (IntSet.empty, TyArrow (TyPrim "bool", TyPrim "unit")))
   ;;
 end
 
@@ -250,7 +258,7 @@ open ResultMonad.Syntax
 
 let fresh_var = fresh >>| fun n -> TyVar n
 
-let instantiate : Scheme.t -> ty ResultMonad.t =
+let instantiate : scheme -> ty ResultMonad.t =
   fun (S (vars, ty)) ->
   IntSet.fold
     (fun var typ ->
@@ -264,12 +272,7 @@ let instantiate : Scheme.t -> ty ResultMonad.t =
 
 let generalize env ty =
   let free = IntSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
-  Scheme.S (free, ty)
-;;
-
-let generalize_rec env ty var =
-  let env = TypeEnv.remove env var in
-  generalize env ty
+  S (free, ty)
 ;;
 
 let infer_const = function
@@ -282,29 +285,74 @@ let infer_const = function
 let rec infer_pattern env = function
   | PatAny ->
     let* fresh = fresh_var in
-    return (env, fresh)
-  | PatConst const -> return (env, infer_const const)
+    return (Substitution.empty, fresh, env)
+  | PatConst const -> return (Substitution.empty, infer_const const, env)
+  | PatUnit -> return (Substitution.empty, TyPrim "unit", env)
   | PatVariable var ->
     let* fresh = fresh_var in
-    let env = TypeEnv.extend env var (Scheme.S (IntSet.empty, fresh)) in
-    return (env, fresh)
-  | PatTuple (pat1, pat2, pats) ->
-    let* env, types =
-      List.fold_left
-        ~f:(fun acc pat ->
-          let* env1, types = acc in
-          let* env2, ty = infer_pattern env1 pat in
-          return (env2, ty :: types))
-        ~init:(return (env, []))
-        (pat1 :: pat2 :: pats)
+    let env = TypeEnv.extend env var (S (IntSet.empty, fresh)) in
+    return (Substitution.empty, fresh, env)
+  | PatTuple (first_pat, second_pat, rest_pats) ->
+    let* sub_first, type_first, env_first = infer_pattern env first_pat in
+    let updated_env_second = TypeEnv.apply sub_first env_first in
+    let* sub_second, type_second, env_second =
+      infer_pattern updated_env_second second_pat
     in
-    return (env, TyTuple (List.rev types))
-  | PatType (pat, annot) ->
-    let* env1, ty1 = infer_pattern env pat in
-    let* subst = Substitution.unify ty1 annot in
-    let env = TypeEnv.apply subst env1 in
-    return (env, Substitution.apply subst ty1)
-  | PatUnit -> return (env, TyPrim "unit")
+    let process_remaining_patterns acc pat =
+      let open ResultMonad.Syntax in
+      let* current_sub, types, current_env = acc in
+      let* sub_new, type_new, env_new = infer_pattern current_env pat in
+      let* combined_sub = Substitution.compose current_sub sub_new in
+      return (combined_sub, type_new :: types, env_new)
+    in
+    let initial_state = return (sub_second, [ type_second; type_first ], env_second) in
+    let* final_sub, collected_types, final_env =
+      Base.List.fold_left rest_pats ~init:initial_state ~f:process_remaining_patterns
+    in
+    let tuple_type = TyTuple (List.rev collected_types) in
+    return (final_sub, tuple_type, final_env)
+  | PatList pats ->
+    let* fresh_el_type = fresh_var in
+    let* final_sub, final_env =
+      Base.List.fold_left
+        pats
+        ~init:(return (Substitution.empty, env))
+        ~f:(fun acc pat ->
+          let open ResultMonad.Syntax in
+          let* sub_acc, env_acc = acc in
+          let* sub_cur, el_type, env_cur = infer_pattern env_acc pat in
+          let* unified_sub = Substitution.compose sub_acc sub_cur in
+          let* final_sub =
+            Substitution.unify (Substitution.apply sub_cur fresh_el_type) el_type
+          in
+          let* combined_sub = Substitution.compose unified_sub final_sub in
+          return (combined_sub, TypeEnv.apply final_sub env_cur))
+    in
+    return (final_sub, TyList (Substitution.apply final_sub fresh_el_type), final_env)
+  | PatCons (p1, p2) ->
+    let* sub1, typ1, env1 = infer_pattern env p1 in
+    let* _, typ2, env2 = infer_pattern (TypeEnv.apply sub1 env1) p2 in
+    let* subst = Substitution.unify typ2 (TyList typ1) in
+    let env = TypeEnv.apply subst env2 in
+    return (subst, Substitution.apply subst typ2, env)
+  | PatOption opt ->
+    let* sub, typ, env =
+      match opt with
+      | None ->
+        let* fresh = fresh_var in
+        return (Substitution.empty, fresh, env)
+      | Some p -> infer_pattern env p
+    in
+    return (sub, TyOption typ, env)
+;;
+
+let infer_ty_pattern env = function
+  | pat, Some typ ->
+    let* s, t, env = infer_pattern env pat in
+    let typ = Substitution.apply s typ in
+    let* subst = Substitution.unify typ t in
+    return (subst, Substitution.apply subst typ, TypeEnv.apply subst env)
+  | pat, None -> infer_pattern env pat
 ;;
 
 let infer_binop_type = function
@@ -312,259 +360,414 @@ let infer_binop_type = function
     fresh_var >>| fun fresh_ty -> fresh_ty, fresh_ty, TyPrim "bool"
   | Plus | Minus | Multiply | Division -> return (TyPrim "int", TyPrim "int", TyPrim "int")
   | And | Or -> return (TyPrim "bool", TyPrim "bool", TyPrim "bool")
-;;
-
-let infer_expr =
-  let rec helper env = function
-    | ExpConst const -> return (Substitution.empty, infer_const const)
-    | ExpIdent var ->
-      (match TypeEnv.find var env with
-       | Some scheme ->
-         let* ty = instantiate scheme in
-         return (Substitution.empty, ty)
-       | None -> fail (NoVariable var))
-    | ExpUnarOper (Negative, expr) ->
-      let* subst, ty = helper env expr in
-      let* subst' = Substitution.unify ty (TyPrim "int") in
-      let* total_subst = Substitution.compose subst subst' in
-      return (total_subst, TyPrim "int")
-    | ExpUnarOper (Not, expr) ->
-      let* subst, ty = helper env expr in
-      let* subst' = Substitution.unify ty (TyPrim "bool") in
-      let* total_subst = Substitution.compose subst subst' in
-      return (total_subst, TyPrim "bool")
-    | ExpBinOper (op, expr1, expr2) ->
-      let* subst1, ty1 = helper env expr1 in
-      let* subst2, ty2 = helper (TypeEnv.apply subst1 env) expr2 in
-      let* ty1_op, ty2_op, ty_res = infer_binop_type op in
-      let* subst3 = Substitution.unify (Substitution.apply subst2 ty1) ty1_op in
-      let* subst4 = Substitution.unify (Substitution.apply subst3 ty2) ty2_op in
-      let* total_subst = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
-      return (total_subst, Substitution.apply total_subst ty_res)
-    | ExpBranch (cond, then_expr, else_expr) ->
-      let* subst1, ty1 = helper env cond in
-      let* subst2, ty2 = helper (TypeEnv.apply subst1 env) then_expr in
-      let* subst3, ty3 =
-        match else_expr with
-        | Some expr -> helper (TypeEnv.apply subst2 env) expr
-        | None -> return (Substitution.empty, TyPrim "unit")
-      in
-      let* subst4 = Substitution.unify ty1 (TyPrim "bool") in
-      let* subst5 = Substitution.unify ty2 ty3 in
-      let* total_subst =
-        Substitution.compose_all [ subst1; subst2; subst3; subst4; subst5 ]
-      in
-      return (total_subst, Substitution.apply total_subst ty2)
-    | ExpTuple (expr1, expr2, exprs) ->
-      let* subst, types =
-        List.fold_left
-          ~f:(fun acc expr ->
-            let* subst, types = acc in
-            let* subst1, ty = helper env expr in
-            let* subst2 = Substitution.compose subst subst1 in
-            return (subst2, ty :: types))
-          ~init:(return (Substitution.empty, []))
-          (expr1 :: expr2 :: exprs)
-      in
-      return (subst, TyTuple (List.rev_map ~f:(Substitution.apply subst) types))
-    | ExpList exprs ->
-      (match exprs with
-       | [] ->
-         let* fresh = fresh_var in
-         return (Substitution.empty, TyList fresh)
-       | hd :: tl ->
-         let* subst1, ty_hd = helper env hd in
-         let* subst, ty =
-           List.fold_left
-             ~f:(fun acc expr ->
-               let* subst_acc, ty_acc = acc in
-               let* subst_cur, ty_cur = helper env expr in
-               let* subst_unify = Substitution.unify ty_acc ty_cur in
-               let* subst_combined =
-                 Substitution.compose_all [ subst_acc; subst_cur; subst_unify ]
-               in
-               return (subst_combined, Substitution.apply subst_combined ty_acc))
-             ~init:(return (subst1, ty_hd))
-             tl
-         in
-         return (subst, TyList ty))
-    | ExpOption opt_expr ->
-      (match opt_expr with
-       | Some expr ->
-         let* subst, ty = helper env expr in
-         return (subst, TyOption ty)
-       | None ->
-         let* fresh_ty = fresh_var in
-         return (Substitution.empty, TyOption fresh_ty))
-    | ExpFunction (param, body) ->
-      let* fresh = fresh_var in
-      let* subst1, ty1 = helper env param in
-      let* subst2, ty2 = helper (TypeEnv.apply subst1 env) body in
-      let* subst3 =
-        Substitution.unify (TyArrow (ty2, fresh)) (Substitution.apply subst2 ty1)
-      in
-      let* total_subst = Substitution.compose_all [ subst1; subst2; subst3 ] in
-      let ty = Substitution.apply total_subst fresh in
-      return (total_subst, ty)
-    | ExpTypeAnnotation (expr, ty_annot) ->
-      let* subst, ty = helper env expr in
-      let* subst' = Substitution.unify ty ty_annot in
-      let* total_subst = Substitution.compose subst subst' in
-      return (total_subst, Substitution.apply total_subst ty_annot)
-    | ExpLet (_, PatTuple (pat1, pat2, pats), expr1, expr2_opt) ->
-      let* env1, ty1 = infer_pattern env (PatTuple (pat1, pat2, pats)) in
-      let* subst1, ty1_expr = helper env expr1 in
-      let* subst2 = Substitution.unify ty1 (Substitution.apply subst1 ty1_expr) in
-      let* total_subst = Substitution.compose subst1 subst2 in
-      let env = TypeEnv.apply total_subst env1 in
-      (match expr2_opt with
-       | None -> return (total_subst, Substitution.apply total_subst ty1_expr)
-       | Some expr2 ->
-         let* subst3, ty2 = helper env expr2 in
-         let* final_subst = Substitution.compose total_subst subst3 in
-         return (final_subst, Substitution.apply final_subst ty2))
-    | ExpLet (false, PatVariable var, expr1, expr2_opt) ->
-      let* subst1, ty1 = helper env expr1 in
-      let env = TypeEnv.apply subst1 env in
-      let scheme = generalize env ty1 in
-      let env = TypeEnv.extend env var scheme in
-      (match expr2_opt with
-       | None -> return (subst1, ty1)
-       | Some expr2 ->
-         let* subst2, ty2 = helper env expr2 in
-         let* total_subst = Substitution.compose subst1 subst2 in
-         return (total_subst, ty2))
-    | ExpLet (true, PatVariable var, expr1, expr2_opt) ->
-      let* fresh = fresh_var in
-      let env1 = TypeEnv.extend env var (Scheme.S (IntSet.empty, fresh)) in
-      let* subst, ty = helper env1 expr1 in
-      let* subst1 = Substitution.unify ty fresh in
-      let* subst2 = Substitution.compose subst subst1 in
-      let env = TypeEnv.apply subst2 env in
-      let ty = Substitution.apply subst2 ty in
-      let scheme = generalize_rec env ty var in
-      let env = TypeEnv.extend env var scheme in
-      (match expr2_opt with
-       | None -> return (subst2, ty)
-       | Some expr2 ->
-         let* subst3, ty2 = helper env expr2 in
-         let* total_subst = Substitution.compose subst2 subst3 in
-         return (total_subst, ty2))
-    | ExpLet (_, PatType (pat, annot), expr1, expr2_opt) ->
-      let* env1, ty1 = infer_pattern env pat in
-      let* subst = Substitution.unify ty1 annot in
-      let env = TypeEnv.apply subst env1 in
-      let* subst1, ty1 = helper env expr1 in
-      let env = TypeEnv.apply subst1 env in
-      let scheme = generalize env ty1 in
-      let env =
-        TypeEnv.extend
-          env
-          (match pat with
-           | PatVariable var -> var
-           | _ -> "_")
-          scheme
-      in
-      (match expr2_opt with
-       | None -> return (subst1, ty1)
-       | Some expr2 ->
-         let* subst2, ty2 = helper env expr2 in
-         let* total_subst = Substitution.compose subst1 subst2 in
-         return (total_subst, ty2))
-    | ExpLet (_, PatUnit, expr1, expr2_opt) ->
-      let* subst1, ty1 = helper env expr1 in
-      let env = TypeEnv.apply subst1 env in
-      (match expr2_opt with
-       | None -> return (subst1, ty1)
-       | Some expr2 ->
-         let* subst2, ty2 = helper env expr2 in
-         let* total_subst = Substitution.compose subst1 subst2 in
-         return (total_subst, ty2))
-    | ExpLambda (patterns, body) ->
-      let init_env = return (env, Substitution.empty, []) in
-      let* env', subst_patterns, param_types =
-        List.fold_left
-          ~f:(fun acc pattern ->
-            let* env_acc, subst_acc, types_acc = acc in
-            let* env_updated, param_type = infer_pattern env_acc pattern in
-            return (env_updated, subst_acc, param_type :: types_acc))
-          ~init:init_env
-          patterns
-      in
-      let param_types = List.rev param_types in
-      let* subst_body, body_type = helper env' body in
-      let* total_subst = Substitution.compose_all [ subst_patterns; subst_body ] in
-      let function_type =
-        List.fold_right param_types ~init:body_type ~f:(fun l r -> TyArrow (l, r))
-      in
-      return (total_subst, function_type)
-    | _ -> fail NotImplement
-  in
-  helper
-;;
-
-let rec infer_structure_item env = function
-  | ExpLet (true, PatVariable var, expr1, None) ->
+  | Cons ->
     let* fresh = fresh_var in
-    let scheme = Scheme.S (IntSet.empty, fresh) in
-    let env = TypeEnv.extend env var scheme in
-    let* subst1, ty1 = infer_expr env expr1 in
-    let* subst2 = Substitution.unify ty1 fresh in
-    let* subst3 = Substitution.compose subst1 subst2 in
-    let env = TypeEnv.apply subst3 env in
-    let ty2 = Substitution.apply subst3 ty1 in
-    let scheme = generalize_rec env ty2 var in
-    let env = TypeEnv.extend env var scheme in
-    return env
-  | ExpLet (false, PatVariable var, expr1, None) ->
-    let* subst, ty = infer_expr env expr1 in
-    let env = TypeEnv.apply subst env in
-    let scheme = generalize env ty in
-    let env = TypeEnv.extend env var scheme in
-    return env
-  | ExpLet (_, PatType (pat, annot), expr1, expr2_opt) ->
-    let* env1, ty1 = infer_pattern env pat in
-    let* subst = Substitution.unify ty1 annot in
-    let env = TypeEnv.apply subst env1 in
-    let* subst1, ty1 = infer_expr env expr1 in
-    let env = TypeEnv.apply subst1 env in
-    let scheme = generalize env ty1 in
-    let env =
-      TypeEnv.extend
-        env
-        (match pat with
-         | PatVariable var -> var
-         | _ -> "_")
-        scheme
+    return (fresh, TyList fresh, TyList fresh)
+;;
+
+let rec infer_expr env = function
+  | ExpConst const -> return (Substitution.empty, infer_const const)
+  | ExpIdent var ->
+    (match TypeEnv.find env var with
+     | Some scheme ->
+       let* ty = instantiate scheme in
+       return (Substitution.empty, ty)
+     | None -> fail (NoVariable var))
+  | ExpUnarOper (operation, expr) ->
+    let* subst, ty = infer_expr env expr in
+    let* operation_type =
+      match operation with
+      | Negative | Positive -> return (TyArrow (TyPrim "int", TyPrim "int"))
+      | Not -> return (TyArrow (TyPrim "bool", TyPrim "bool"))
     in
-    (match expr2_opt with
-     | None -> return env
-     | Some expr2 ->
-       let* subst2, _ = infer_expr env expr2 in
-       let* total_subst = Substitution.compose subst1 subst2 in
-       return (TypeEnv.apply total_subst env))
-  | ExpLet (is_rec, PatVariable var, expr1, Some body) ->
-    let* env = infer_structure_item env (ExpLet (is_rec, PatVariable var, expr1, None)) in
-    infer_expr env body >>= fun _ -> return env
-  | expr ->
-    let* _, ty = infer_expr env expr in
-    return (TypeEnv.extend env "_" (Scheme.S (IntSet.empty, ty)))
+    let* subst2 =
+      match operation_type with
+      | TyArrow (arg, _) -> Substitution.unify ty arg
+      | ty -> fail (UnexpectedFunction ty)
+    in
+    let* subst2 = Substitution.compose_all [ subst2; subst ] in
+    (match operation_type with
+     | TyArrow (_, x) -> return (subst2, Substitution.apply subst2 x)
+     | ty -> fail (UnexpectedFunction ty))
+  | ExpBinOper (op, expr1, expr2) ->
+    let* subst1, ty = infer_expr env expr1 in
+    let* subst2, ty' = infer_expr (TypeEnv.apply subst1 env) expr2 in
+    let* ty1_op, ty2_op, ty_res = infer_binop_type op in
+    let* subst3 = Substitution.unify (Substitution.apply subst2 ty) ty1_op in
+    let* subst4 = Substitution.unify (Substitution.apply subst3 ty') ty2_op in
+    let* subst = Substitution.compose_all [ subst1; subst2; subst3; subst4 ] in
+    return (subst, Substitution.apply subst ty_res)
+  | ExpBranch (cond, then_expr, else_expr) ->
+    let* subst1, ty1 = infer_expr env cond in
+    let* subst2, ty2 = infer_expr (TypeEnv.apply subst1 env) then_expr in
+    let* ty3 =
+      match else_expr with
+      | Some el ->
+        let* _, ty3 = infer_expr (TypeEnv.apply subst2 env) el in
+        return ty3
+      | None -> return (TyPrim "unit")
+    in
+    let* subst4 = Substitution.unify ty1 (TyPrim "bool") in
+    let* subst5 = Substitution.unify ty2 ty3 in
+    let* total_subst =
+      match else_expr with
+      | Some el ->
+        let* subst3, _ = infer_expr (TypeEnv.apply subst2 env) el in
+        Substitution.compose_all [ subst5; subst4; subst3; subst2; subst1 ]
+      | None -> Substitution.compose_all [ subst5; subst4; subst2; subst1 ]
+    in
+    return (total_subst, Substitution.apply total_subst ty2)
+  | ExpTuple (expr1, expr2, exprs) ->
+    let* subst1, ty1 = infer_expr env expr1 in
+    let* subst2, ty2 = infer_expr (TypeEnv.apply subst1 env) expr2 in
+    let infer_tuple_elements env es =
+      let rec aux env = function
+        | [] -> return ([], [])
+        | e :: es' ->
+          let* s, t = infer_expr env e in
+          let* s', ts = aux (TypeEnv.apply s env) es' in
+          return (s' @ [ s ], t :: ts)
+      in
+      aux env es
+    in
+    let* subst3, tys = infer_tuple_elements (TypeEnv.apply subst2 env) exprs in
+    let* subst = Substitution.compose_all (subst3 @ [ subst2; subst1 ]) in
+    return (subst, TyTuple (ty1 :: ty2 :: tys))
+  | ExpList exprs ->
+    (match exprs with
+     | [] ->
+       let* fresh = fresh_var in
+       return (Substitution.empty, TyList fresh)
+     | _ :: _ ->
+       let infer_list_elements env es =
+         let rec aux env = function
+           | [] -> return ([], [])
+           | e :: es' ->
+             let* s, t = infer_expr env e in
+             let* s', ts = aux (TypeEnv.apply s env) es' in
+             return (s' @ [ s ], t :: ts)
+         in
+         aux env es
+       in
+       let* subst, tys = infer_list_elements env exprs in
+       let* total_subst = Substitution.compose_all subst in
+       return (total_subst, TyList (List.hd tys)))
+  | ExpLet (false, ExpValueBind ((PatVariable x, ty_opt), expr1), _, expr2) ->
+    let* subst1, ty1 = infer_expr env expr1 in
+    let* env2 =
+      match ty_opt with
+      | Some expected_type ->
+        let expected_type = Substitution.apply subst1 expected_type in
+        let* subst1 = Substitution.unify ty1 expected_type in
+        return (TypeEnv.apply subst1 env)
+      | None -> return (TypeEnv.apply subst1 env)
+    in
+    let ty_gen = generalize env2 ty1 in
+    let env3 = TypeEnv.extend env x ty_gen in
+    let* subst2, ty2 = infer_expr (TypeEnv.apply subst1 env3) expr2 in
+    let* total_subst = Substitution.compose subst1 subst2 in
+    return (total_subst, ty2)
+  | ExpLet (false, ExpValueBind ((pattern, ty_opt), expr1), bindings, expr2) ->
+    let* subst1, ty1 = infer_expr env expr1 in
+    let* subst2, ty_pat, env1 = infer_ty_pattern env (pattern, ty_opt) in
+    let* subst = Substitution.compose subst1 subst2 in
+    let* unified_subst = Substitution.unify (Substitution.apply subst ty_pat) ty1 in
+    let initial_env = TypeEnv.apply unified_subst env1 in
+    let* extended_env =
+      List.fold_left
+        (fun acc_env vb ->
+          let* acc_env = acc_env in
+          match vb with
+          | ExpValueBind ((p, opt_ty), expr) ->
+            let* subst_bind, ty_bind = infer_expr acc_env expr in
+            let* subst_pattern, _, env_pattern = infer_ty_pattern acc_env (p, opt_ty) in
+            let* combined_subst = Substitution.compose subst_bind subst_pattern in
+            let* final_subst =
+              Substitution.unify (Substitution.apply combined_subst ty_pat) ty_bind
+            in
+            let updated_env =
+              Base.Map.fold
+                ~init:(TypeEnv.apply final_subst acc_env)
+                ~f:(fun ~key ~data acc_env -> TypeEnv.extend acc_env key data)
+                (TypeEnv.apply final_subst env_pattern)
+            in
+            return updated_env)
+        (return initial_env)
+        bindings
+    in
+    let* subst3, ty2 = infer_expr extended_env expr2 in
+    let* total_subst = Substitution.compose_all [ subst3; unified_subst; subst ] in
+    return (total_subst, ty2)
+  | ExpLet (true, ExpValueBind ((PatVariable x, ty_opt), expr1), [], expr2) ->
+    let* expr1 =
+      match expr1 with
+      | ExpLambda _ -> return expr1
+      | _ -> fail (RightHandSide "Right-hand side of let rec must be a lambda expression")
+    in
+    let* tv = fresh_var in
+    let env2 = TypeEnv.extend env x (S (IntSet.empty, tv)) in
+    let* subst1, ty1 = infer_expr env2 expr1 in
+    let* subst2 = Substitution.unify (Substitution.apply subst1 tv) ty1 in
+    let* subst_total = Substitution.compose subst1 subst2 in
+    let env3 = TypeEnv.apply subst_total env in
+    let* env4 =
+      match ty_opt with
+      | Some expected_type ->
+        let expected_type = Substitution.apply subst1 expected_type in
+        let* sub1 = Substitution.unify ty1 expected_type in
+        return (TypeEnv.apply sub1 env3)
+      | None -> return (TypeEnv.apply subst1 env3)
+    in
+    let ty_gen = generalize env4 (Substitution.apply subst_total tv) in
+    let* subst3, ty2 = infer_expr (TypeEnv.extend env4 x ty_gen) expr2 in
+    let* subst_total = Substitution.compose subst_total subst3 in
+    return (subst_total, ty2)
+  | ExpLet (true, value_binding, value_bindings, expr2) ->
+    let* env_ext, subst_acc =
+      List.fold_left
+        (fun acc_env (ExpValueBind (ty_pattern, expr)) ->
+          let* expr =
+            match expr with
+            | ExpLambda _ -> return expr
+            | _ ->
+              fail
+                (RightHandSide "Right-hand side of let rec must be a lambda expression")
+          in
+          let* ty_pattern =
+            match ty_pattern with
+            | PatVariable _, _ -> return ty_pattern
+            | _ ->
+              fail
+                (LeftHandSide
+                   "Only variables are allowed on the left-hand side of let rec")
+          in
+          let* env_acc, _ = acc_env in
+          let* subst_expr, ty_expr = infer_expr env_acc expr in
+          let* subst_pattern, ty_pat, env_pat = infer_ty_pattern env_acc ty_pattern in
+          let* subst = Substitution.compose subst_expr subst_pattern in
+          let* unified_subst = Substitution.unify ty_expr ty_pat in
+          let* combined_subst = Substitution.compose subst unified_subst in
+          let extended_env = TypeEnv.apply combined_subst env_pat in
+          return (extended_env, combined_subst))
+        (return (env, Substitution.empty))
+        (value_binding :: value_bindings)
+    in
+    let* subst2, ty2 = infer_expr env_ext expr2 in
+    let* total_subst = Substitution.compose subst_acc subst2 in
+    return (total_subst, ty2)
+  | ExpLambda (patterns, body) ->
+    let* env, pat_types =
+      Base.List.fold_left
+        patterns
+        ~init:(return (env, []))
+        ~f:(fun acc pat ->
+          let* env, pat_types = acc in
+          let* _, typ, env = infer_ty_pattern env pat in
+          return (env, typ :: pat_types))
+    in
+    let* subst_body, ty_body = infer_expr env body in
+    let arrow_type =
+      List.fold_right
+        (fun pat_type acc -> TyArrow (Substitution.apply subst_body pat_type, acc))
+        (List.rev pat_types)
+        ty_body
+    in
+    return (subst_body, arrow_type)
+  | ExpApply (param, body) ->
+    let* subst1, ty1 = infer_expr env param in
+    let* subst2, ty2 = infer_expr (TypeEnv.apply subst1 env) body in
+    let* tv = fresh_var in
+    let* subst3 =
+      Substitution.unify (Substitution.apply subst2 ty1) (TyArrow (ty2, tv))
+    in
+    let* total_subst = Substitution.compose_all [ subst3; subst2; subst1 ] in
+    return (total_subst, Substitution.apply total_subst tv)
+  | ExpOption opt_expr ->
+    (match opt_expr with
+     | Some expr ->
+       let* subst, ty = infer_expr env expr in
+       return (subst, TyOption ty)
+     | None ->
+       let* tv = fresh_var in
+       return (Substitution.empty, TyOption tv))
+  | ExpMatch (expr, cond, cl) ->
+    let* subst1, ty1 = infer_expr env expr in
+    let env = TypeEnv.apply subst1 env in
+    let* tv = fresh_var in
+    let* subst, total_ty =
+      Base.List.fold
+        (cond :: cl)
+        ~init:(return (subst1, tv))
+        ~f:(fun acc (ExpCase (pat, expr)) ->
+          let* subst1, ty = acc in
+          let* env, subst2 =
+            let* _, pattern_ty, env = infer_pattern env pat in
+            let* subst = Substitution.unify pattern_ty ty1 in
+            let env = TypeEnv.apply subst env in
+            let name =
+              match pat with
+              | PatVariable x | PatOption (Some (PatVariable x)) -> Some x
+              | _ -> None
+            in
+            let env =
+              match name with
+              | Some name ->
+                let found_ty =
+                  match Base.Map.find_exn env name with
+                  | S (_, t) -> t
+                in
+                let env = TypeEnv.remove env name in
+                let ty_gen = generalize env found_ty in
+                TypeEnv.extend env name ty_gen
+              | None -> env
+            in
+            return (env, subst)
+          in
+          let* subst3 = Substitution.compose subst1 subst2 in
+          let* subst4, ty4 = infer_expr (TypeEnv.apply subst3 env) expr in
+          let* subst5 = Substitution.unify ty ty4 in
+          let* subst = Substitution.compose_all [ subst3; subst4; subst5 ] in
+          return (subst, Substitution.apply subst ty))
+    in
+    let* total_subst = Substitution.compose_all [ subst; subst1 ] in
+    return (total_subst, total_ty)
+  | ExpFunction (param, body) ->
+    let* ty1 = fresh_var in
+    let* fresh = fresh_var in
+    let cases = param :: body in
+    let* subst, total_ty =
+      Base.List.fold
+        cases
+        ~init:(return (Substitution.empty, fresh))
+        ~f:(fun acc (ExpCase (pat, expr)) ->
+          let* subst_accum, ty_accum = acc in
+          let* subst_pattern, pattern_ty, env_pattern = infer_pattern env pat in
+          let* subst = Substitution.unify pattern_ty ty1 in
+          let env_case = TypeEnv.apply subst env_pattern in
+          let* subst_expr, ty_expr = infer_expr (TypeEnv.apply subst env_case) expr in
+          let* subst_unify = Substitution.unify ty_accum ty_expr in
+          let* subst_combined =
+            Substitution.compose_all
+              [ subst_accum; subst_pattern; subst; subst_expr; subst_unify ]
+          in
+          return (subst_combined, Substitution.apply subst_combined ty_expr))
+    in
+    return (subst, TyArrow (Substitution.apply subst ty1, total_ty))
+  | ExpConstrant (expr, t) ->
+    let* subst1, ty1 = infer_expr env expr in
+    let* subst2 = Substitution.unify ty1 (Substitution.apply subst1 t) in
+    let* total_subst = Substitution.compose subst1 subst2 in
+    return (total_subst, Substitution.apply subst2 ty1)
 ;;
 
-let infer_structure (structure : program) =
-  let rec process_items env = function
-    | [] -> return env
-    | ExpLet (is_rec, pattern, expr, None) :: rest ->
-      let* env = infer_structure_item env (ExpLet (is_rec, pattern, expr, None)) in
-      process_items env rest
-    | ExpLet (is_rec, pattern, expr, Some body) :: rest ->
-      let* env = infer_structure_item env (ExpLet (is_rec, pattern, expr, Some body)) in
-      process_items env rest
-    | expr :: rest ->
-      let* env = infer_structure_item env expr in
-      process_items env rest
+let infer_structure_item env = function
+  | SEval expr ->
+    let* subst, _ = infer_expr env expr in
+    let updated_env = TypeEnv.apply subst env in
+    return (subst, updated_env)
+  | SValue (true, ExpValueBind ((PatVariable x, t_opt), expr), []) ->
+    let* expr =
+      match expr with
+      | ExpLambda _ -> return expr
+      | _ -> fail (RightHandSide "Right-hand side of let rec must be a lambda expression")
+    in
+    let* tv = fresh_var in
+    let env = TypeEnv.extend env x (S (IntSet.empty, tv)) in
+    let* subst, ty = infer_expr env expr in
+    let* subst2 = Substitution.unify (Substitution.apply subst tv) ty in
+    let* composed_subst = Substitution.compose subst subst2 in
+    let* env2 =
+      match t_opt with
+      | Some expected_type ->
+        let expected_type = Substitution.apply composed_subst expected_type in
+        let* subst1 = Substitution.unify ty expected_type in
+        return (TypeEnv.apply subst1 env)
+      | None -> return (TypeEnv.apply composed_subst env)
+    in
+    let generalized_ty = generalize env2 (Substitution.apply composed_subst ty) in
+    let env = TypeEnv.extend env2 x generalized_ty in
+    return (composed_subst, env)
+  | SValue (true, value_binding, value_bindings) ->
+    let all_bindings = value_binding :: value_bindings in
+    let* env_with_placeholders =
+      List.fold_left
+        (fun acc_env (ExpValueBind (ty_pattern, _)) ->
+          let* ty_pattern =
+            match ty_pattern with
+            | PatVariable _, _ -> return ty_pattern
+            | _ ->
+              fail
+                (LeftHandSide
+                   "Only variables are allowed on the left-hand side of let rec")
+          in
+          let* env_acc = acc_env in
+          let* subst_pat, _, env_pat = infer_ty_pattern env_acc ty_pattern in
+          let extended_env = TypeEnv.apply subst_pat env_pat in
+          return extended_env)
+        (return env)
+        all_bindings
+    in
+    let* env_ext, subst_acc =
+      List.fold_left
+        (fun acc_env (ExpValueBind (ty_pattern, expr)) ->
+          let* expr =
+            match expr with
+            | ExpLambda _ -> return expr
+            | _ ->
+              fail
+                (RightHandSide "Right-hand side of let rec must be a lambda expression")
+          in
+          let* env_acc, _ = acc_env in
+          let* subst_expr, ty_expr = infer_expr env_acc expr in
+          let* subst_pat, ty_pat, env_pat = infer_ty_pattern env_acc ty_pattern in
+          let* subst = Substitution.compose subst_expr subst_pat in
+          let* unified_subst = Substitution.unify ty_expr ty_pat in
+          let* combined_subst = Substitution.compose subst unified_subst in
+          let extended_env = TypeEnv.apply combined_subst env_pat in
+          return (extended_env, combined_subst))
+        (return (env_with_placeholders, Substitution.empty))
+        all_bindings
+    in
+    return (subst_acc, env_ext)
+  | SValue (false, ExpValueBind ((PatVariable x, t_opt), expr), _) ->
+    let* subst, ty = infer_expr env expr in
+    let* env2 =
+      match t_opt with
+      | Some expected_type ->
+        let expected_type = Substitution.apply subst expected_type in
+        let* subst1 = Substitution.unify ty expected_type in
+        return (TypeEnv.apply subst1 env)
+      | None -> return (TypeEnv.apply subst env)
+    in
+    let generalized_ty = generalize env2 ty in
+    let env = TypeEnv.extend (TypeEnv.apply subst env) x generalized_ty in
+    return (subst, env)
+  | SValue (false, ExpValueBind ((pattern, t_opt), expr), _) ->
+    let* subst_expr, ty = infer_expr env expr in
+    let* subst_pat, ty_pat, env_pat = infer_ty_pattern env (pattern, t_opt) in
+    let* combined_subst = Substitution.compose subst_expr subst_pat in
+    let* unified_subst =
+      Substitution.unify (Substitution.apply combined_subst ty_pat) ty
+    in
+    let updated_env = TypeEnv.apply unified_subst env_pat in
+    let* final_subst = Substitution.compose unified_subst combined_subst in
+    return (final_subst, updated_env)
+;;
+
+let infer_structure env structure =
+  let rec process_structure env subst = function
+    | [] -> return (subst, env)
+    | item :: rest ->
+      let* subst1, env1 = infer_structure_item env item in
+      let* composed_subst = Substitution.compose subst subst1 in
+      process_structure env1 composed_subst rest
   in
-  process_items TypeEnv.initial_env structure
+  process_structure env Substitution.empty structure
 ;;
 
-let run_infer s = run (infer_structure s)
+let infer_simple_expression expr =
+  let env = TypeEnv.initial_env in
+  Result.map snd (run (infer_expr env expr))
+;;
+
+let infer_program str = Result.map snd (run (infer_structure TypeEnv.initial_env str))
