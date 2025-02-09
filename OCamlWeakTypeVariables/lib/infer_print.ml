@@ -76,7 +76,9 @@ let pp_typ_my fmt t =
 let pp_error_my fmt e =
   match e with
   | UnificationFailed (f, s) ->
-    Format.fprintf fmt "Error when unify (%a) and (%a)" pp_typ_my f pp_typ_my s
+    Format.fprintf fmt "Can't unify (%a) and (%a)" pp_typ_my f pp_typ_my s
+  | Unbound id -> Format.fprintf fmt "Unbound value %s" id
+  | PatternNameTwice id -> Format.fprintf fmt "Variable %s is bound several time" id
   | _ as e -> Format.printf "%a" pp_error e
 ;;
 

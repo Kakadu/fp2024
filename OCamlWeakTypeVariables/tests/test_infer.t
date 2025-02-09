@@ -62,4 +62,4 @@ TODO: order of printed names
   > let homka = Some id in
   > match homka with
   > | Some f -> f 42, f "42"
-  (UnificationFailed ((TBase BInt), (TBase BString)))
+  Can't unify (int) and (string)

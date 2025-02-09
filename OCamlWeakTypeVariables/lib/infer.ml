@@ -705,9 +705,12 @@ let infer_structure =
                 let* sub_un = Subst.unify t t0 in
                 return (TypeEnv.apply env sub_un, new_names)
             in
-            match List.exists (fun name -> List.mem name new_names) names with
-            | true -> fail (PatternNameTwice vb.pvb_pat)
-            | false -> return (env1, List.append (List.rev new_names) names))
+            let repeated_name =
+              List.find_opt (fun name -> List.mem name new_names) names
+            in
+            match repeated_name with
+            | Some name -> fail (PatternNameTwice name)
+            | None -> return (env1, List.append (List.rev new_names) names))
       in
       return (env, List.rev names)
     | Pstr_value (Recursive, vbs) ->
@@ -719,9 +722,12 @@ let infer_structure =
           ~init:(return (env, [], []))
           ~f:(fun (env, fvs, names) pat ->
             let* fv, env, new_names = infer_pattern env pat in
-            match List.exists (fun name -> List.mem name new_names) names with
-            | true -> fail (PatternNameTwice pat)
-            | false -> return (env, fv :: fvs, List.append (List.rev new_names) names))
+            let repeated_name =
+              List.find_opt (fun name -> List.mem name new_names) names
+            in
+            match repeated_name with
+            | Some name -> fail (PatternNameTwice name)
+            | None -> return (env, fv :: fvs, List.append (List.rev new_names) names))
       in
       (* We get types of e0, e1, ... en and additional type info about type of variables outside of ei expression for all i *)
       let* ts, subs =

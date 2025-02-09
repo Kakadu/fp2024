@@ -27,7 +27,7 @@ type error =
   | OccursCheckFailed of type_var * typ
   | UnificationFailed of typ * typ
   | Unbound of id
-  | PatternNameTwice of pattern
+  | PatternNameTwice of id
   | UnknownType of id
   | SomeError of string
 [@@deriving show { with_path = false }]
