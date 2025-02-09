@@ -369,9 +369,6 @@ let infer_const c =
 
 let infer_id env id =
   match id with
-  | "_" ->
-    let* fv = fresh_var in
-    return (fv, Subst.empty)
   | _ -> lookup_env env id
 ;;
 
@@ -458,7 +455,7 @@ let infer_expr =
     (* if debug then Format.printf "Infer expression: \n\t%s\n" (show_expression expr); *)
     match expr with
     | Pexp_constant c -> infer_const c
-    | Pexp_ident id -> infer_id env id
+    | Pexp_ident id -> lookup_env env id
     | Pexp_fun (pattern, expr) ->
       let* t, env', _ = infer_pattern env pattern in
       let* t', sub = helper env' expr in

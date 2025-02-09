@@ -19,7 +19,7 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > _
-  Parsed result: (Pstr_eval (Pexp_ident "_"))
+  Error: : not enough input
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > "Homka"

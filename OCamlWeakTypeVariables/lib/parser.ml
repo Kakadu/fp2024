@@ -112,8 +112,8 @@ let lowercase_ident =
 
 (* TODO: readable error message *)
 let p_id : id t =
-  let+ var = lowercase_ident in
-  var
+  let* var = lowercase_ident in
+  if var = "_" then fail {| Wildcard "_" not expected |} else return var
 ;;
 
 let pexp_ident = p_id >>| fun i -> Pexp_ident i
