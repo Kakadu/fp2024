@@ -1,12 +1,11 @@
 (** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+(** SPDX_License-Identifier: LGPL-3.0 -or-later *)
 
 open Ast
 open Base
 
 (** main program *)
-
 
 type error_inter =
   | DivisionByZero (** Interpret Errors*)
@@ -18,7 +17,6 @@ type error_inter =
   | StringOfLengthZero of string
   | EmptyProgram
   | NotImplemented
-
 
 let pp_error_inter fmt = function
   | DivisionByZero -> Format.fprintf fmt "Exception: Division_by_zero."
@@ -253,9 +251,3 @@ module InterpretResult = Interpret (struct
 
     let ( let* ) monad f = bind monad ~f
   end)
-
-
-
-
-
-
