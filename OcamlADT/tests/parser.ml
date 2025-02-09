@@ -1704,6 +1704,7 @@ print_int y
       ]|}]
 ;;
 
+
 let%expect_test "function assignment with bool operators" =
   test_program {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
   [%expect
@@ -1847,3 +1848,4 @@ let x = [];;
   Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1834, characters 2-70
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
+

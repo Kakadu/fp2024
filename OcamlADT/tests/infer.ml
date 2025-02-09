@@ -193,15 +193,33 @@ let%expect_test "zero" =
 ;;
 
 let%expect_test "zero" =
-  parse_and_infer_result {|let x = 5 in x;;|};
-  [%expect
-    {|
-    res:
-    "-":  int
-    "print_bool":  bool->  unit
-    "print_char":  char->  unit
-    "print_endline":  string->  unit
-    "print_int":  int->  unit |}]
+  parse_and_infer_result
+    {|let id x = x in
+let homka = Some id in
+match homka with
+| Some f -> f 42, f "42";;|};
+  [%expect {|
+    Unification_failed:  int #  string |}]
+;;
+
+let%expect_test "zero" =
+  parse_and_infer_result
+    {|let id x = x in
+let homkaOBOLTUS = id in
+match homkaOBOLTUS with
+|  f -> f 42, f "42";;|};
+  [%expect {|
+    Unification_failed:  int #  string |}]
+;;
+
+let%expect_test "zero" =
+  parse_and_infer_result
+    {|fun id ->
+  let homkaOBOLTIMUSPRIME = id in
+  match homkaOBOLTIMUSPRIME with
+  |  f -> f 42, f "42";;|};
+  [%expect {|
+    Unification_failed:  int #  string |}]
 ;;
 
 (*BUG*)
@@ -270,7 +288,7 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "-":  char
+    "-":  int->  char
     "print_bool":  bool->  unit
     "print_char":  char->  unit
     "print_endline":  string->  unit
@@ -461,15 +479,19 @@ let%expect_test "zero" =
 
 (*bug*)
 let%expect_test "zero" =
-  parse_and_infer_result {|
-let () = print_int 5;;|};
+  parse_and_infer_result
+    {|
+let square x = x * x;;
+let id = fun x -> x in (id square) (id 123);;|};
   [%expect
     {|
     res:
+    "-":  int
     "print_bool":  bool->  unit
     "print_char":  char->  unit
     "print_endline":  string->  unit
-    "print_int":  int->  unit |}]
+    "print_int":  int->  unit
+    "square":  int->  int |}]
 ;;
 
 (*BUG*)
@@ -525,18 +547,29 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "f":  int->  bool
+    "f":  int->  int->  bool
     "print_bool":  bool->  unit
     "print_char":  char->  unit
     "print_endline":  string->  unit
     "print_int":  int->  unit |}]
 ;;
 
-(*BUG*)
+let%expect_test "zero" =
+  parse_and_infer_result {| let f = f "a" in f 5;;|};
+  [%expect {|
+    Unbound_variable: "f" |}]
+;;
+
 let%expect_test "zero" =
   parse_and_infer_result {| let (f: int -> bool) = function 5 -> true | 6 -> false;;|};
-  [%expect {|
-    Unification_failed:  bool #  int->  bool |}]
+  [%expect
+    {|
+    res:
+    "f":  int->  bool
+    "print_bool":  bool->  unit
+    "print_char":  char->  unit
+    "print_endline":  string->  unit
+    "print_int":  int->  unit |}]
 ;;
 
 (*KAKADU TYPE BEAT*)
@@ -875,40 +908,20 @@ let _2 =
     let _3 =  Some (1, "hi");;
     let _4 = let rec f x = f 5 in f;;
  let id1, id2 = let id x = x in (id, id);;
-    |};
-  [%expect
-    {|
-    res:
-    "_1": [ 3; ].  int->  int->  int * 'd->  bool
-    "_2":  int
-    "_3":  int *  string option
-    "_4": [ 12; ].  int-> 'b
-    "id1": [ 16; 17; ]. 'b-> 'b
-    "id2": [ 16; 17; ]. 'b-> 'b
-    "print_bool":  bool->  unit
-    "print_char":  char->  unit
-    "print_endline":  string->  unit
-    "print_int":  int->  unit |}]
-;;
-
-let _42 = function
+ let a_42 = function
   | 42 -> true
   | _ -> false
 ;;
-
 let int_of_option = function
   | Some x -> x
   | None -> 0
 ;;
-
-let _6 arg =
+let k_6 arg =
   match arg with
-  | Some x ->
-    let y = x in
-    y
+  | Some x -> let y = x in y
 ;;
 
-let _5 =
+let aaa_5 =
   let id x = x in
   match Some id with
   | Some f ->
@@ -916,9 +929,13 @@ let _5 =
     f 42
   | None -> 0
 ;;
+    |};
+  [%expect {|
+    Unification_failed:  string #  int |}]
+;;
 
-(*FAILED _5*)
-let%expect_test "010" =
+(*FAILED *)
+let%expect_test "015" =
   parse_and_infer_result
     {|
 let rec fix f x = f (fix f) x;;
@@ -943,7 +960,8 @@ let main =
   let () = print_int (even 4) in
   0;;|};
   [%expect.unreachable]
-[@@expect.uncaught_exn {|
+[@@expect.uncaught_exn
+  {|
   (* CR expect_test_collector: This test expectation appears to contain a backtrace.
      This is strongly discouraged as backtraces are fragile.
      Please change this test to not include a backtrace. *)
@@ -958,8 +976,140 @@ let main =
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 719, characters 2-40
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 739, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 922, characters 2-638
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 939, characters 2-638
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+
+(*KAKADU DO NOT TYPE BEAT*)
+
+
+(*PASSED*)
+let%expect_test "001" =
+  parse_and_infer_result
+    {|
+let recfac n = if n<=1 then 1 else n * fac (n-1);;|};
+  [%expect{| Unbound_variable: "fac" |}]
+;;
+
+(*PASSED*)
+let%expect_test "002" =
+  parse_and_infer_result
+    {|
+let main = if true then 1 else false;;|};
+  [%expect{| Unification_failed:  int #  bool |}]
+;;
+
+
+(*PASSED*)
+let%expect_test "003  " =
+  parse_and_infer_result
+    {|
+let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f));;|};
+  [%expect{| Occurs_check |}]
+;;
+
+(*PASSED*)
+let%expect_test "004  " =
+  parse_and_infer_result
+    {|
+let _1 =
+  (fun f -> (f 1, f true)) (fun x -> x);;|};
+  [%expect{| Unification_failed:  int #  bool |}]
+;;
+
+(*PASSED*)
+let%expect_test "005  " =
+  parse_and_infer_result
+    {|
+let _2 = function
+  | Some f -> let _ = f "42" in f 42
+  | None -> 1;;|};
+  [%expect{| Unification_failed:  string #  int |}]
+;;
+
+(*PASSED*)
+let%expect_test "015" =
+  parse_and_infer_result
+    {|let rec (a,b) = (a,b);;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure abobi)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 739, characters 2-40
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1034, characters 2-56
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+(*PASSED*)
+let%expect_test "016" =
+  parse_and_infer_result
+    {|let a, _ = 1, 2, 3;;|};
+  [%expect{| Unification_failed:  int *  int *  int # 'a * 'b |}]
+;;
+(*FAILED*)
+let%expect_test "091.1" =
+  parse_and_infer_result
+    {|let [a] = (fun x -> x);;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 58, characters 8-25
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1060, characters 2-57
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+(*PASSED*)
+let%expect_test "097.2" =
+  parse_and_infer_result
+    {|let () = (fun x -> x);;|};
+  [%expect{| Unification_failed: 'a-> 'a #  unit |}]
+;;
+(*PASSED*)
+let%expect_test "098" =
+  parse_and_infer_result
+    {|let rec x = x + 1;;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure "wrong rec")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 739, characters 2-40
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1082, characters 2-52
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;
+let%expect_test "098" =
+  parse_and_infer_result
+    {|let rec x::[] = [1];;|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 58, characters 8-25
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1102, characters 2-54
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
