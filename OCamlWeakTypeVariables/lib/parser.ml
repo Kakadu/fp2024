@@ -184,7 +184,13 @@ let p_pattern =
       <|> pat_const
     in
     let pat_list =
-      token "[]" *> (return @@ Ppat_construct ("[]", None)) <|> pat_construct
+      (let* list = token "[" *> sep_by (token ";") pat_construct <* token "]" in
+       return
+         (List.fold_right
+            (fun x y -> Ppat_construct ("::", Some (Ppat_tuple [ x; y ])))
+            list
+            (Ppat_construct ("[]", None))))
+      <|> pat_construct
     in
     let pat_cons =
       chain_right
