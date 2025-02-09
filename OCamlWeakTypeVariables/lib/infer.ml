@@ -300,6 +300,11 @@ end = struct
     [ [ "+"; "-"; "*"; "/" ], TBase BInt @-> TBase BInt @-> TBase BInt
     ; [ "print_int" ], TBase BInt @-> TBase BUnit
     ; [ "<="; "<"; ">"; ">="; "="; "<>" ], TVar 0 @-> TVar 0 @-> TBase BBool
+    ; [ "Some" ], TVar 0 @-> TOption (TVar 0)
+    ; [ "None" ], TOption (TVar 0)
+    ; [ "()" ], TBase BUnit
+    ; [ "[]" ], TList (TVar 0)
+    ; [ "::" ], TTuple (TVar 0, TList (TVar 0), []) @-> TList (TVar 0)
     ]
   ;;
 
@@ -621,27 +626,14 @@ let infer_expr =
          let* ts, subs = List.split <$> RList.map exps ~f:(fun e -> helper env e) in
          let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
          return (TTuple (t0, t1, ts), sub))
-    | Pexp_construct ("Some", Some e) ->
-      let* ty, sub = helper env e in
-      return (TOption ty, sub)
-    | Pexp_construct ("None", None) ->
-      let* fv = fresh_var in
-      return (TOption fv, Subst.empty)
-    | Pexp_construct ("Some", None) ->
-      fail (SomeError "Some constructor require argument")
-    | Pexp_construct ("None", Some _) ->
-      fail (SomeError "None constructor don't accept arguments")
-    | Pexp_construct ("[]", None) ->
-      let* fv = fresh_var in
-      return (TList fv, Subst.empty)
-    | Pexp_construct ("::", Some (Pexp_tuple [ hd; tl ])) ->
-      let* t0, sub0 = helper env hd in
-      let* t1, sub1 = helper (TypeEnv.apply env sub0) tl in
-      let* sub_un2 = Subst.unify t1 (TList t0) in
-      let* sub = Subst.compose_all [ sub_un2; sub1; sub0 ] in
-      return (Subst.apply sub t1, sub)
-    | Pexp_construct ("()", None) -> return (TBase BUnit, Subst.empty)
-    | Pexp_construct _ -> fail (SomeError "Only Some and None constructors implemented")
+    | Pexp_construct (name, expr) ->
+      let list =
+        match expr with
+        | None -> []
+        | Some x -> [ x ]
+      in
+      let* ty, sub = helper env (Pexp_apply (Pexp_ident name, list)) in
+      return (ty, sub)
     | Pexp_match (e, cases) ->
       let* t0, sub0 = helper env e in
       let env = TypeEnv.apply env sub0 in
