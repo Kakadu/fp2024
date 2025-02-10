@@ -280,7 +280,7 @@ module TypeEnv : sig
   val find : t -> string -> scheme option
   val find_exn : t -> string -> scheme
   val remove : t -> string -> t
-  val apply : t -> Subst.t -> t
+  val apply : Subst.t -> t -> t
   val operators : (id list * typ) list
   val pp : Format.formatter -> t -> unit
   val pp_names : id list -> Format.formatter -> t -> unit
@@ -297,7 +297,7 @@ end = struct
       env
   ;;
 
-  let apply env sub = Base.Map.map env ~f:(Scheme.apply sub)
+  let apply sub env = Base.Map.map env ~f:(Scheme.apply sub)
   let extend env key schema = Base.Map.update env key ~f:(fun _ -> schema)
   let find = Base.Map.find
   let find_exn = Base.Map.find_exn
@@ -496,7 +496,7 @@ let rec infer_pattern env ?ty =
      | TArrow (f, s) ->
        let* ty_pat, env, names = infer_pattern env pat in
        let* sub_un = Subst.unify f ty_pat in
-       return (Subst.apply sub_un s, TypeEnv.apply env sub_un, names)
+       return (Subst.apply sub_un s, TypeEnv.apply sub_un env, names)
      | _ -> fail (SomeError "Constructor don't accept arguments"))
   | Ppat_any ->
     let* fv = fresh_var in
@@ -516,7 +516,7 @@ let infer_non_rec_value_bindings infer_expr env vbs =
         (* So t0 will be 'c and sub0 will be '{a: 'b -> 'c} *)
         let* t0, sub0 = infer_expr env vb.pvb_expr in
         let* sub = Subst.compose sub0 sub in
-        let env = TypeEnv.apply env sub in
+        let env = TypeEnv.apply sub env in
         (* With type (x y): 'c we append new variable z with type 'c *)
         let* env, sub, new_names =
           match vb.pvb_pat with
@@ -525,7 +525,7 @@ let infer_non_rec_value_bindings infer_expr env vbs =
             let* t, env, new_names = infer_pattern env vb.pvb_pat in
             let* sub_un = Subst.unify t t0 in
             let* sub = Subst.compose_all [ sub_un; sub ] in
-            return (TypeEnv.apply env sub, sub, new_names)
+            return (TypeEnv.apply sub env, sub, new_names)
         in
         let repeated_name = List.find_opt (fun name -> List.mem name new_names) names in
         match repeated_name with
@@ -567,7 +567,7 @@ let infer_rec_value_bindings infer_expr env vbs =
           let* sub_un = Subst.unify ty (Subst.apply sub fv) in
           let env =
             TypeEnv.extend
-              (TypeEnv.apply env sub)
+              (TypeEnv.apply sub env)
               v
               (generalize env (Subst.apply sub_un ty))
           in
@@ -614,7 +614,7 @@ let infer_expr =
           DebugLog.Expr.apply_helper_1 e1;
           let* t' = fresh_var in
           let t0, sub0 = init in
-          let* t1, sub1 = helper (TypeEnv.apply env sub0) e1 in
+          let* t1, sub1 = helper (TypeEnv.apply sub0 env) e1 in
           let* sub2 = Subst.unify (Subst.apply sub1 t0) (t1 @-> t') in
           let* sub3 = Subst.compose_all [ sub0; sub1; sub2 ] in
           DebugLog.Expr.apply_helper_2 t0 sub0 t1 sub1 sub2 sub3;
@@ -644,7 +644,7 @@ let infer_expr =
     (* Recursive multiple let definitions type inference by Homka122 😼😼😼 (it took 4 hours) *)
     | Pexp_let (NonRecursive, vb, e1) as let_expr ->
       let* env, sub0, _ = infer_non_rec_value_bindings helper env vb in
-      let* t, sub1 = helper (TypeEnv.apply env sub0) e1 in
+      let* t, sub1 = helper (TypeEnv.apply sub0 env) e1 in
       let* sub = Subst.compose sub1 sub0 in
       DebugLog.Expr.non_rec_let let_expr t sub1 sub;
       return (t, sub)
@@ -672,7 +672,7 @@ let infer_expr =
       return (ty, sub)
     | Pexp_match (e, cases) ->
       let* t0, sub0 = helper env e in
-      let env = TypeEnv.apply env sub0 in
+      let env = TypeEnv.apply sub0 env in
       let* fv = fresh_var in
       RList.fold_left
         cases
@@ -687,10 +687,10 @@ let infer_expr =
                 let (Scheme (_, t)) = TypeEnv.find_exn env name in
                 let env = TypeEnv.remove env name in
                 TypeEnv.extend env name (generalize env t))
-              (TypeEnv.apply env_pat sub_un_pat)
+              (TypeEnv.apply sub_un_pat env_pat)
               names
           in
-          let* ty_expr, sub_expr = helper (TypeEnv.apply env_pat sub1) case.pc_rhs in
+          let* ty_expr, sub_expr = helper (TypeEnv.apply sub1 env_pat) case.pc_rhs in
           let* sub_un_exprs = Subst.unify ty_expr ty in
           let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
           DebugLog.Expr.match_expr env_pat ty_expr t_pat sub_expr sub_un_exprs sub;
@@ -706,7 +706,7 @@ let infer_expr =
             let* t_pat, env_pat, _ = infer_pattern env case.pc_lhs in
             let* sub_un_pat = Subst.unify t_pat fv_match in
             let* sub1 = Subst.compose sub_un_pat sub in
-            let* ty_expr, sub_expr = helper (TypeEnv.apply env_pat sub1) case.pc_rhs in
+            let* ty_expr, sub_expr = helper (TypeEnv.apply sub1 env_pat) case.pc_rhs in
             let* sub_un_exprs = Subst.unify ty ty_expr in
             let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
             return (Subst.apply sub ty, sub))
