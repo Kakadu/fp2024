@@ -275,13 +275,6 @@ let token_or xs : string t =
   | _ -> fail "token_or require two or more tokens"
 ;;
 
-let p_unary =
-  let* first = take 1 in
-  if first = "-" || first = "+"
-  then Pexp_ident first |> return
-  else "Failed when parse unary" |> fail
-;;
-
 let pexpr_constraint expr =
   let* expr = token "(" *> expr in
   let+ ty = token ":" *> lowercase_ident <* token ")" in

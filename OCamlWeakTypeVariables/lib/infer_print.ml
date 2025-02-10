@@ -1,5 +1,4 @@
 open Types
-open Config
 
 let min = true
 
