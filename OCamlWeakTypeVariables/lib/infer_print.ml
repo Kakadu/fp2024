@@ -18,10 +18,8 @@ let pp_base_type_my fmt = function
 let minimize_variable t =
   let map =
     let rec helper (min, map) = function
-      | TVar v ->
-        if Base.Map.mem map v
-        then min, map
-        else min + 1, Base.Map.add_exn map ~key:v ~data:min
+      | TVar v when Base.Map.mem map v -> min, map
+      | TVar v -> min + 1, Base.Map.add_exn map ~key:v ~data:min
       | TArrow (l, r) ->
         let min, map = helper (min, map) l in
         let min, map = helper (min, map) r in
@@ -48,10 +46,9 @@ let pp_typ_my fmt t =
   let t = if Config.vars_min then minimize_variable t else t in
   let rec helper fmt = function
     | TBase b -> pp_base_type_my fmt b
-    | TVar v ->
-      if Config.vars_char
-      then Format.fprintf fmt "'%c" (Char.chr (Char.code 'a' + v))
-      else Format.fprintf fmt "'%s" (string_of_int v)
+    | TVar v when Config.vars_char ->
+      Format.fprintf fmt "'%c" (Char.chr (Char.code 'a' + v))
+    | TVar v -> Format.fprintf fmt "'%s" (string_of_int v)
     | TArrow ((TArrow (_, _) as l), r) ->
       Format.fprintf fmt "(%a) -> %a" helper l helper r
     | TArrow (l, r) -> Format.fprintf fmt "%a -> %a" helper l helper r
