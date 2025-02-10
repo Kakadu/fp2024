@@ -593,15 +593,15 @@ let infer_expr =
       in
       let* t, sub' = helper env'' e1 in
       let* sub' = Subst.compose sub' sub in
-      (match debug with
-       | false -> return (t, sub)
-       | true ->
-         Format.printf "Env: \n%a\n" TypeEnv.pp env';
-         List.iter (fun sub -> Format.printf "Sub: %a\n" Subst.pp sub) subs;
-         List.iter (fun t -> Format.printf "Type: %a\n" Infer_print.pp_typ_my t) ts;
-         Format.printf "Sub: %a\n" Subst.pp sub;
-         Format.printf "Env: %a\n" TypeEnv.pp env'';
-         return (t, sub'))
+      if not debug
+      then return (t, sub)
+      else (
+        Format.printf "Env: \n%a\n" TypeEnv.pp env';
+        List.iter (fun sub -> Format.printf "Sub: %a\n" Subst.pp sub) subs;
+        List.iter (fun t -> Format.printf "Type: %a\n" Infer_print.pp_typ_my t) ts;
+        Format.printf "Sub: %a\n" Subst.pp sub;
+        Format.printf "Env: %a\n" TypeEnv.pp env'';
+        return (t, sub'))
     | Pexp_tuple e ->
       (match e with
        | [] | [ _ ] ->
