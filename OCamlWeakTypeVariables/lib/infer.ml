@@ -144,7 +144,6 @@ module Subst : sig
 
   val empty : t
   val singleton : int -> typ -> t R.t
-  val find : t -> int -> typ option
   val remove : t -> int -> t
   val apply : t -> typ -> typ
   val unify : typ -> typ -> t R.t
@@ -253,7 +252,7 @@ end = struct
   ;;
 end
 
-let print_sub ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub
+(* let print_sub ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub *)
 
 module Scheme = struct
   let free_vars (Scheme (bind_vars, ty)) = TVarSet.diff (Type.type_vars ty) bind_vars
@@ -370,11 +369,6 @@ let infer_const c =
     | Pconst_string _ -> TBase BString
   in
   return (ty, Subst.empty)
-;;
-
-let infer_id env id =
-  match id with
-  | _ -> lookup_env env id
 ;;
 
 let rec infer_pattern env ?ty =
