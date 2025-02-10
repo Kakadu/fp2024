@@ -260,7 +260,7 @@ end = struct
   ;;
 end
 
-(* let print_sub ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub *)
+let print_sub ?(name = "Sub") sub = Format.printf "%s: %a\n" name Subst.pp sub
 
 module Scheme = struct
   let free_vars (Scheme (bind_vars, ty)) = TVarSet.diff (Type.type_vars ty) bind_vars
@@ -388,6 +388,26 @@ module DebugLog = struct
           Format.printf "sub2: %a" Subst.pp sub2;
           Format.printf "sub3: %a" Subst.pp sub3;
           print_newline ()))
+      |> log
+    ;;
+
+    let non_rec_let let_expr t sub1 sub =
+      (fun () ->
+        Format.printf "Non rec let %a" pp_expression let_expr;
+        Format.printf "t: %a\n" Infer_print.pp_typ_my t;
+        Format.printf "sub1: %a\n" Subst.pp sub1;
+        Format.printf "sub: %a\n" Subst.pp sub)
+      |> log
+    ;;
+
+    let match_expr env_pat ty_expr t_pat sub_expr sub_un_exprs sub =
+      (fun () ->
+        TypeEnv.print env_pat;
+        Infer_print.print_typ ~name:"ty_expr" ty_expr;
+        Infer_print.print_typ ~name:"t_pat" t_pat;
+        print_sub ~name:"sub_expr" sub_expr;
+        print_sub ~name:"sub_un_expr" sub_un_exprs;
+        print_sub ~name:"sub" sub)
       |> log
     ;;
   end
@@ -637,12 +657,7 @@ let infer_expr =
       let* env, sub0, _ = infer_non_rec_value_bindings helper env vb in
       let* t, sub1 = helper (TypeEnv.apply env sub0) e1 in
       let* sub = Subst.compose sub1 sub0 in
-      if debug
-      then (
-        Format.printf "Non rec let %a" pp_expression let_expr;
-        Format.printf "t: %a\n" Infer_print.pp_typ_my t;
-        Format.printf "sub1: %a\n" Subst.pp sub1;
-        Format.printf "sub: %a\n" Subst.pp sub);
+      DebugLog.Expr.non_rec_let let_expr t sub1 sub;
       return (t, sub)
       (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Typing_rule *)
     | Pexp_let (Recursive, vbs, e1) ->
@@ -689,14 +704,9 @@ let infer_expr =
               names
           in
           let* ty_expr, sub_expr = helper (TypeEnv.apply env_pat sub1) case.pc_rhs in
-          (* TypeEnv.print env_pat; *)
-          (* print_typ ~name:"ty_expr" ty_expr; *)
-          (* print_typ ~name:"t_pat" t_pat; *)
-          (* sub_print ~name:"sub_expr" sub_expr; *)
           let* sub_un_exprs = Subst.unify ty_expr ty in
-          (* sub_print ~name:"sub_un_expr" sub_un_exprs; *)
           let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
-          (* sub_print ~name:"sub" sub; *)
+          DebugLog.Expr.match_expr env_pat ty_expr t_pat sub_expr sub_un_exprs sub;
           return (Subst.apply sub ty, sub))
     | Pexp_function cases ->
       let* fv_match = fresh_var in
