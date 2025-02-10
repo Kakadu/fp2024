@@ -626,22 +626,20 @@ let infer_expr =
       let* init = helper env e0 in
       helper_apply init es
     (* Recursive ifthenelse type inference with option else by Homka122 😼😼😼 *)
-    | Pexp_ifthenelse (e0, e1, e2) ->
+    | Pexp_ifthenelse (e0, e1, None) ->
       let* t0, sub0 = helper env e0 in
       let* t1, sub1 = helper env e1 in
       let* sub_bool = Subst.unify t0 (TBase BBool) in
-      let result =
-        match e2 with
-        | None ->
-          let* sub = Subst.compose_all [ sub_bool; sub1; sub0 ] in
-          return (Subst.apply sub t1, sub)
-        | Some e2 ->
-          let* t2, sub2 = helper env e2 in
-          let* sub_eq = Subst.unify t1 t2 in
-          let* sub = Subst.compose_all [ sub_bool; sub_eq; sub2; sub1; sub0 ] in
-          return (Subst.apply sub t2, sub)
-      in
-      result
+      let* sub = Subst.compose_all [ sub_bool; sub1; sub0 ] in
+      return (Subst.apply sub t1, sub)
+    | Pexp_ifthenelse (e0, e1, Some e2) ->
+      let* t0, sub0 = helper env e0 in
+      let* t1, sub1 = helper env e1 in
+      let* t2, sub2 = helper env e2 in
+      let* sub_bool = Subst.unify t0 (TBase BBool) in
+      let* sub_eq = Subst.unify t1 t2 in
+      let* sub = Subst.compose_all [ sub_bool; sub_eq; sub2; sub1; sub0 ] in
+      return (Subst.apply sub t2, sub)
     (* let x0 = e0 and x1 = e1 and ... xn = en in e_f *)
     (* each xN = eN generate type tN of xN, type kN of eN, substitution S0 and envN with xN: tN *)
     (* So I think i can just generate substitution with unify tN and kN *)
@@ -660,16 +658,14 @@ let infer_expr =
       let* t, sub' = helper env'' e1 in
       let* sub' = Subst.compose sub' sub in
       return (t, sub')
-    | Pexp_tuple e ->
-      (match e with
-       | [] | [ _ ] ->
-         fail (SomeError "Tuple expression must contain two or more expressions")
-       | e0 :: e1 :: exps ->
-         let* t0, sub0 = helper env e0 in
-         let* t1, sub1 = helper env e1 in
-         let* ts, subs = List.split <$> RList.map exps ~f:(fun e -> helper env e) in
-         let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
-         return (TTuple (t0, t1, ts), sub))
+    | Pexp_tuple [] | Pexp_tuple [ _ ] ->
+      fail (SomeError "Tuple expression must contain two or more expressions")
+    | Pexp_tuple (e0 :: e1 :: exps) ->
+      let* t0, sub0 = helper env e0 in
+      let* t1, sub1 = helper env e1 in
+      let* ts, subs = List.split <$> RList.map exps ~f:(fun e -> helper env e) in
+      let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
+      return (TTuple (t0, t1, ts), sub)
     | Pexp_construct (name, expr) ->
       let list =
         match expr with
