@@ -471,8 +471,7 @@ let infer_expr =
       then (
         Format.printf "Env: %a\n" TypeEnv.pp env;
         Format.printf "e0: %a\n" pp_expression e0);
-      let rec helper_apply init es =
-        match es with
+      let rec helper_apply init = function
         | [] -> return init
         | e1 :: tl ->
           if debug
@@ -576,7 +575,7 @@ let infer_expr =
       let* env'' =
         RList.fold_left
           (List.combine (List.combine ts fvs) patterns)
-          ~init:(return @@ env)
+          ~init:(return env)
           ~f:(fun env ((ty, fv), pat) ->
             match pat with
             | Ppat_var v ->
@@ -725,7 +724,7 @@ let infer_structure =
       let* env'' =
         RList.fold_left
           (List.combine (List.combine ts fvs) patterns)
-          ~init:(return @@ env)
+          ~init:(return env)
           ~f:(fun env ((ty, fv), pat) ->
             match pat with
             | Ppat_var v ->
