@@ -371,32 +371,32 @@ module DebugLog = struct
   module Expr = struct
     let apply env e0 =
       (fun () ->
-        Format.printf "Env: %a" TypeEnv.pp env;
-        Format.printf "e0: %a" pp_expression e0)
+        Format.printf "Env: %a\n" TypeEnv.pp env;
+        Format.printf "e0: %a\n" pp_expression e0)
       |> log
     ;;
 
     let apply_helper_1 e =
       (fun () ->
-        Format.printf "APPLY";
-        Format.printf "e1: %a" pp_expression e)
+        Format.printf "APPLY\n";
+        Format.printf "e1: %a\n" pp_expression e)
       |> log
     ;;
 
     let apply_helper_2 t0 sub0 t1 sub1 sub2 sub3 =
       (fun () ->
         Infer_print.(
-          Format.printf "t0: %a sub0: %a" pp_typ_my t0 Subst.pp sub0;
-          Format.printf "t1: %a sub1: %a" pp_typ_my t1 Subst.pp sub1;
-          Format.printf "sub2: %a" Subst.pp sub2;
-          Format.printf "sub3: %a" Subst.pp sub3;
+          Format.printf "t0: %a sub0: %a\n" pp_typ_my t0 Subst.pp sub0;
+          Format.printf "t1: %a sub1: %a\n" pp_typ_my t1 Subst.pp sub1;
+          Format.printf "sub2: %a\n" Subst.pp sub2;
+          Format.printf "sub3: %a\n" Subst.pp sub3;
           print_newline ()))
       |> log
     ;;
 
     let non_rec_let let_expr t sub1 sub =
       (fun () ->
-        Format.printf "Non rec let %a" pp_expression let_expr;
+        Format.printf "Non rec let %a\n" pp_expression let_expr;
         Format.printf "t: %a\n" Infer_print.pp_typ_my t;
         Format.printf "sub1: %a\n" Subst.pp sub1;
         Format.printf "sub: %a\n" Subst.pp sub)
