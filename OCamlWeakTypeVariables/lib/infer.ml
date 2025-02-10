@@ -107,7 +107,7 @@ end = struct
       let open Syntax in
       let rec helper acc = function
         | [], [] -> return (List.rev acc)
-        | [], _ :: _ | _ :: _, [] -> failwith "two lists must be have equal size"
+        | [], _ :: _ | _ :: _, [] -> fail (SomeError "two lists must be have equal size")
         | hx :: tx, hy :: ty ->
           let* res = f hx hy in
           helper (res :: acc) (tx, ty)
@@ -434,7 +434,7 @@ let rec infer_pattern env ?ty =
   | Ppat_any ->
     let* fv = fresh_var in
     return (fv, env, names)
-  | _ -> failwith "not implemented"
+  | Ppat_interval _ -> fail (SomeError "Pattern interval not implemented")
 ;;
 
 (* [@@@warning "-8"] *)
@@ -604,7 +604,8 @@ let infer_expr =
          return (t, sub'))
     | Pexp_tuple e ->
       (match e with
-       | [] | [ _ ] -> failwith "Tuple parser error"
+       | [] | [ _ ] ->
+         fail (SomeError "Tuple expression must contain two or more expressions")
        | e0 :: e1 :: exps ->
          let* t0, sub0 = helper env e0 in
          let* t1, sub1 = helper env e1 in
