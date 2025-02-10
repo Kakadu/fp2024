@@ -646,7 +646,6 @@ let infer_expr =
     (* i want to die after three hours of attempting implemented this 😿😿😿 *)
     (* Recursive multiple let definitions type inference by Homka122 😼😼😼 (it took 4 hours) *)
     | Pexp_let (NonRecursive, vb, e1) as let_expr ->
-      (* Example: let homka = fun x y -> let z = x y in z + 2 *)
       let* env, sub0, _ = infer_non_rec_value_bindings helper env vb in
       let* t, sub1 = helper (TypeEnv.apply env sub0) e1 in
       let* sub = Subst.compose sub1 sub0 in
@@ -654,10 +653,10 @@ let infer_expr =
       return (t, sub)
       (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Typing_rule *)
     | Pexp_let (Recursive, vbs, e1) ->
-      let* env'', sub, _ = infer_rec_value_bindings helper env vbs in
-      let* t, sub' = helper env'' e1 in
-      let* sub' = Subst.compose sub' sub in
-      return (t, sub')
+      let* env, sub0, _ = infer_rec_value_bindings helper env vbs in
+      let* t, sub1 = helper env e1 in
+      let* sub = Subst.compose sub0 sub1 in
+      return (t, sub)
     | Pexp_tuple [] | Pexp_tuple [ _ ] ->
       fail (SomeError "Tuple expression must contain two or more expressions")
     | Pexp_tuple (e0 :: e1 :: exps) ->
