@@ -243,7 +243,7 @@ let parse_expr_tuple expr =
 
 let parse_let_and_binding parse_expr =
   let parse_single_binding =
-    let parse_pattern_and_expr =
+    let _ =
       lift2
         (fun pat expr -> pat, expr)
         (parse_parens parse_pattern <|> parse_pattern)
