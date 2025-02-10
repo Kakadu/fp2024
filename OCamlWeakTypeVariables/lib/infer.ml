@@ -338,6 +338,9 @@ end = struct
   let print ?(name = "Env") env = Format.printf "%s: %a" name pp env
 end
 
+let ( >- ) sub env = TypeEnv.apply sub env
+let ( |- ) sub typ = Subst.apply sub typ
+
 module DebugLog = struct
   let log (f : unit -> unit) =
     if debug
@@ -425,7 +428,7 @@ let instantiate : scheme -> typ R.t =
       let* acc = acc in
       let* fv = fresh_var in
       let* sub = Subst.singleton var_name fv in
-      return (Subst.apply sub acc))
+      return (sub |- acc))
     bind_var
     (return ty)
 ;;
@@ -496,7 +499,7 @@ let rec infer_pattern env ?ty =
      | TArrow (f, s) ->
        let* ty_pat, env, names = infer_pattern env pat in
        let* sub_un = Subst.unify f ty_pat in
-       return (Subst.apply sub_un s, TypeEnv.apply sub_un env, names)
+       return (sub_un |- s, sub_un >- env, names)
      | _ -> fail (SomeError "Constructor don't accept arguments"))
   | Ppat_any ->
     let* fv = fresh_var in
@@ -564,12 +567,9 @@ let infer_rec_value_bindings infer_expr env vbs =
       ~f:(fun env ((ty, fv), pat) ->
         match pat with
         | Ppat_var v ->
-          let* sub_un = Subst.unify ty (Subst.apply sub fv) in
+          let* sub_un = Subst.unify ty (sub |- fv) in
           let env =
-            TypeEnv.extend
-              (TypeEnv.apply sub env)
-              v
-              (generalize env (Subst.apply sub_un ty))
+            TypeEnv.extend (TypeEnv.apply sub env) v (generalize env (sub_un |- ty))
           in
           return env
         | _ ->
@@ -590,7 +590,7 @@ let infer_expr =
     | Pexp_fun (pattern, expr) ->
       let* t, env', _ = infer_pattern env pattern in
       let* t', sub = helper env' expr in
-      return (Subst.apply sub (t @-> t'), sub)
+      return (sub |- t @-> t', sub)
       (* Constraint type inference by Homka122 😼😼😼 *)
     | Pexp_constraint (expr, ty) ->
       let* typ =
@@ -614,11 +614,11 @@ let infer_expr =
           DebugLog.Expr.apply_helper_1 e1;
           let* t' = fresh_var in
           let t0, sub0 = init in
-          let* t1, sub1 = helper (TypeEnv.apply sub0 env) e1 in
-          let* sub2 = Subst.unify (Subst.apply sub1 t0) (t1 @-> t') in
+          let* t1, sub1 = helper (sub0 >- env) e1 in
+          let* sub2 = Subst.unify (sub1 |- t0) (t1 @-> t') in
           let* sub3 = Subst.compose_all [ sub0; sub1; sub2 ] in
           DebugLog.Expr.apply_helper_2 t0 sub0 t1 sub1 sub2 sub3;
-          helper_apply (Subst.apply sub2 t', sub3) tl
+          helper_apply (sub2 |- t', sub3) tl
       in
       let* init = helper env e0 in
       helper_apply init es
@@ -628,7 +628,7 @@ let infer_expr =
       let* t1, sub1 = helper env e1 in
       let* sub_bool = Subst.unify t0 (TBase BBool) in
       let* sub = Subst.compose_all [ sub_bool; sub1; sub0 ] in
-      return (Subst.apply sub t1, sub)
+      return (sub |- t1, sub)
     | Pexp_ifthenelse (e0, e1, Some e2) ->
       let* t0, sub0 = helper env e0 in
       let* t1, sub1 = helper env e1 in
@@ -636,7 +636,7 @@ let infer_expr =
       let* sub_bool = Subst.unify t0 (TBase BBool) in
       let* sub_eq = Subst.unify t1 t2 in
       let* sub = Subst.compose_all [ sub_bool; sub_eq; sub2; sub1; sub0 ] in
-      return (Subst.apply sub t2, sub)
+      return (sub |- t2, sub)
     (* let x0 = e0 and x1 = e1 and ... xn = en in e_f *)
     (* each xN = eN generate type tN of xN, type kN of eN, substitution S0 and envN with xN: tN *)
     (* So I think i can just generate substitution with unify tN and kN *)
@@ -644,7 +644,7 @@ let infer_expr =
     (* Recursive multiple let definitions type inference by Homka122 😼😼😼 (it took 4 hours) *)
     | Pexp_let (NonRecursive, vb, e1) as let_expr ->
       let* env, sub0, _ = infer_non_rec_value_bindings helper env vb in
-      let* t, sub1 = helper (TypeEnv.apply sub0 env) e1 in
+      let* t, sub1 = helper (sub0 >- env) e1 in
       let* sub = Subst.compose sub1 sub0 in
       DebugLog.Expr.non_rec_let let_expr t sub1 sub;
       return (t, sub)
@@ -672,7 +672,7 @@ let infer_expr =
       return (ty, sub)
     | Pexp_match (e, cases) ->
       let* t0, sub0 = helper env e in
-      let env = TypeEnv.apply sub0 env in
+      let env = sub0 >- env in
       let* fv = fresh_var in
       RList.fold_left
         cases
@@ -687,14 +687,14 @@ let infer_expr =
                 let (Scheme (_, t)) = TypeEnv.find_exn env name in
                 let env = TypeEnv.remove env name in
                 TypeEnv.extend env name (generalize env t))
-              (TypeEnv.apply sub_un_pat env_pat)
+              (sub_un_pat >- env_pat)
               names
           in
-          let* ty_expr, sub_expr = helper (TypeEnv.apply sub1 env_pat) case.pc_rhs in
+          let* ty_expr, sub_expr = helper (sub1 >- env_pat) case.pc_rhs in
           let* sub_un_exprs = Subst.unify ty_expr ty in
           let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
           DebugLog.Expr.match_expr env_pat ty_expr t_pat sub_expr sub_un_exprs sub;
-          return (Subst.apply sub ty, sub))
+          return (sub |- ty, sub))
     | Pexp_function cases ->
       let* fv_match = fresh_var in
       let* fv_result = fresh_var in
@@ -706,12 +706,12 @@ let infer_expr =
             let* t_pat, env_pat, _ = infer_pattern env case.pc_lhs in
             let* sub_un_pat = Subst.unify t_pat fv_match in
             let* sub1 = Subst.compose sub_un_pat sub in
-            let* ty_expr, sub_expr = helper (TypeEnv.apply sub1 env_pat) case.pc_rhs in
+            let* ty_expr, sub_expr = helper (sub1 >- env_pat) case.pc_rhs in
             let* sub_un_exprs = Subst.unify ty ty_expr in
             let* sub = Subst.compose_all [ sub_un_exprs; sub_expr; sub1 ] in
-            return (Subst.apply sub ty, sub))
+            return (sub |- ty, sub))
       in
-      return (Subst.apply sub (Subst.apply sub fv_match) @-> ty, sub)
+      return (sub |- (sub |- fv_match) @-> ty, sub)
   in
   helper
 ;;
