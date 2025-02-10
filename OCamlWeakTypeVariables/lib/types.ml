@@ -33,5 +33,3 @@ type error =
 [@@deriving show { with_path = false }]
 
 type scheme = Scheme of TVarSet.t * typ
-
-let tscheme x y = Scheme (x, y)
