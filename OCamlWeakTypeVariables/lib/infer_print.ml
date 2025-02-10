@@ -1,7 +1,5 @@
 open Types
 
-let min = true
-
 let pp_base_type_my fmt = function
   | BInt -> Format.fprintf fmt "int"
   | BBool -> Format.fprintf fmt "bool"
