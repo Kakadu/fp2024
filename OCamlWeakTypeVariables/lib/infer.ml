@@ -338,8 +338,8 @@ end = struct
   let print ?(name = "Env") env = Format.printf "%s: %a" name pp env
 end
 
-let ( >- ) sub env = TypeEnv.apply sub env
-let ( |- ) sub typ = Subst.apply sub typ
+let ( >- ) = TypeEnv.apply
+let ( |- ) = Subst.apply
 
 module DebugLog = struct
   let log (f : unit -> unit) =
