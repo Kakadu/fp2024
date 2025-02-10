@@ -403,6 +403,40 @@ end = struct
        | Some env1 ->
          let* _ = eval_expr env1 body in
          return env1)
+      | ExpLetAnd (is_rec, bindings, expr_opt) ->
+    let* initial_env =
+      if is_rec then
+        List.fold_left bindings ~init:(return env) ~f:(fun acc (pat, _) ->
+          let* current_env = acc in
+          match pat with
+          | PatVariable var ->
+            let placeholder = ValueClosure (PatAny, true, ExpConst ConstUnit, current_env) in
+            return (extend current_env var placeholder)
+          | _ -> fail PatternMatchingError)
+      else
+        return env
+    in
+    let* evaluated_env =
+      List.fold_left bindings ~init:(return initial_env) ~f:(fun acc_env (pat, expr) ->
+        let* current_env = acc_env in
+        let* value = eval_expr current_env expr in
+        match pat with
+        | PatVariable var ->
+          if is_rec then
+            match value with
+            | ValueClosure (p, _, e, _) ->
+              let new_closure = ValueClosure (p, is_rec, e, current_env) in
+              return (extend current_env var new_closure)
+            | _ -> return (extend current_env var value)
+          else
+            return (extend current_env var value)
+        | _ -> fail PatternMatchingError)
+    in
+    (match expr_opt with
+     | Some expr ->
+       let* _ = eval_expr evaluated_env expr in
+       return evaluated_env
+     | None -> return evaluated_env)
     | expr ->
       let* _ = eval_expr env expr in
       return env

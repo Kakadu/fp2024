@@ -177,3 +177,34 @@ let%expect_test "test_annotate_type_2" =
   ]
  |}]
 ;;
+
+let%expect_test "test_and" =
+  parse_test "let x = 1 and y = 2 in x + y";
+  [%expect
+    {|
+[(ExpLetAnd (false,
+    [((PatVariable "x"), (ExpConst (ConstInt 1)));
+      ((PatVariable "y"), (ExpConst (ConstInt 2)))],
+    (Some (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y"))))))
+  ]
+ |}]
+;;
+
+let%expect_test "test_and2" =
+  parse_test "let fac n = fac(n-1) * n and y = 1";
+  [%expect
+    {|
+  [(ExpLetAnd (false,
+      [((PatVariable "fac"),
+        (ExpLambda ([(PatVariable "n")],
+           (ExpBinOper (Multiply,
+              (ExpFunction ((ExpIdent "fac"),
+                 (ExpBinOper (Minus, (ExpIdent "n"), (ExpConst (ConstInt 1))))
+                 )),
+              (ExpIdent "n")))
+           )));
+        ((PatVariable "y"), (ExpConst (ConstInt 1)))],
+      None))
+    ]
+ |}]
+;;

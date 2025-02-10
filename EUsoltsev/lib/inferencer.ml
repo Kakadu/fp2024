@@ -498,6 +498,36 @@ let infer_expr =
         List.fold_right param_types ~init:body_type ~f:(fun l r -> TyArrow (l, r))
       in
       return (total_subst, function_type)
+    | ExpLetAnd (_, bindings, expr_opt) ->
+      let* env, subst, schemes =
+        List.fold_left
+          ~f:(fun acc (pat, expr) ->
+            let* env_acc, subst_acc, schemes_acc = acc in
+            let* env1, ty1 = infer_pattern env_acc pat in
+            let* subst1, ty1_expr = helper env1 expr in
+            let* subst2 = Substitution.unify ty1 (Substitution.apply subst1 ty1_expr) in
+            let* total_subst = Substitution.compose_all [ subst_acc; subst1; subst2 ] in
+            let env = TypeEnv.apply total_subst env1 in
+            let scheme = generalize env (Substitution.apply total_subst ty1_expr) in
+            return (env, total_subst, (pat, scheme) :: schemes_acc))
+          ~init:(return (env, Substitution.empty, []))
+          bindings
+      in
+      let env =
+        List.fold_left
+          ~f:(fun env_acc (pat, scheme) ->
+            match pat with
+            | PatVariable var -> TypeEnv.extend env_acc var scheme
+            | _ -> env_acc)
+          ~init:env
+          schemes
+      in
+      (match expr_opt with
+       | None -> return (subst, TyPrim "unit")
+       | Some expr ->
+         let* subst2, ty2 = helper env expr in
+         let* total_subst = Substitution.compose subst subst2 in
+         return (total_subst, ty2))
     | _ -> fail NotImplement
   in
   helper
@@ -543,9 +573,65 @@ let rec infer_structure_item env = function
        let* subst2, _ = infer_expr env expr2 in
        let* total_subst = Substitution.compose subst1 subst2 in
        return (TypeEnv.apply total_subst env))
+  | ExpLet (_, PatTuple (pat1, pat2, pats), expr1, expr2_opt) ->
+    let* env_pat, ty_pat = infer_pattern env (PatTuple (pat1, pat2, pats)) in
+    let* subst_expr, ty_expr = infer_expr env_pat expr1 in
+    let* subst_unify =
+      Substitution.unify ty_pat (Substitution.apply subst_expr ty_expr)
+    in
+    let* total_subst = Substitution.compose_all [ subst_expr; subst_unify ] in
+    let env_updated = TypeEnv.apply total_subst env_pat in
+    (match expr2_opt with
+     | Some expr2 ->
+       let* subst_expr2, _ = infer_expr env_updated expr2 in
+       let* final_subst = Substitution.compose total_subst subst_expr2 in
+       return (TypeEnv.apply final_subst env_updated)
+     | None -> return env_updated)
   | ExpLet (is_rec, PatVariable var, expr1, Some body) ->
     let* env = infer_structure_item env (ExpLet (is_rec, PatVariable var, expr1, None)) in
     infer_expr env body >>= fun _ -> return env
+  | ExpLetAnd (_, bindings, expr_opt) ->
+    let* env_with_placeholders =
+      List.fold_left
+        ~f:(fun acc (pat, _) ->
+          let* env_acc = acc in
+          match pat with
+          | PatVariable var ->
+            let* fresh_ty = fresh_var in
+            return (TypeEnv.extend env_acc var (Scheme.S (IntSet.empty, fresh_ty)))
+          | _ -> fail (NoVariable "Non-variable pattern in recursive binding"))
+        ~init:(return env)
+        bindings
+    in
+    let* env_with_inferred_types, subst, schemes =
+      List.fold_left
+        ~f:(fun acc (pat, expr) ->
+          let* env_acc, subst_acc, schemes_acc = acc in
+          let* env1, ty1 = infer_pattern env_acc pat in
+          let* subst1, ty1_expr = infer_expr env1 expr in
+          let* subst2 = Substitution.unify ty1 (Substitution.apply subst1 ty1_expr) in
+          let* total_subst = Substitution.compose_all [ subst_acc; subst1; subst2 ] in
+          let env = TypeEnv.apply total_subst env1 in
+          let scheme = generalize env (Substitution.apply total_subst ty1_expr) in
+          return (env, total_subst, (pat, scheme) :: schemes_acc))
+        ~init:(return (env_with_placeholders, Substitution.empty, []))
+        bindings
+    in
+    let env_updated =
+      List.fold_left
+        ~f:(fun env_acc (pat, scheme) ->
+          match pat with
+          | PatVariable var -> TypeEnv.extend env_acc var scheme
+          | _ -> env_acc)
+        ~init:env_with_inferred_types
+        schemes
+    in
+    (match expr_opt with
+     | None -> return env_updated
+     | Some expr ->
+       let* subst2, _ = infer_expr env_updated expr in
+       let* total_subst = Substitution.compose subst subst2 in
+       return (TypeEnv.apply total_subst env_updated))
   | expr ->
     let* _, ty = infer_expr env expr in
     return (TypeEnv.extend env "_" (Scheme.S (IntSet.empty, ty)))
@@ -559,6 +645,9 @@ let infer_structure (structure : program) =
       process_items env rest
     | ExpLet (is_rec, pattern, expr, Some body) :: rest ->
       let* env = infer_structure_item env (ExpLet (is_rec, pattern, expr, Some body)) in
+      process_items env rest
+    | ExpLetAnd (is_rec, bindings, expr_opt) :: rest ->
+      let* env = infer_structure_item env (ExpLetAnd (is_rec, bindings, expr_opt)) in
       process_items env rest
     | expr :: rest ->
       let* env = infer_structure_item env expr in

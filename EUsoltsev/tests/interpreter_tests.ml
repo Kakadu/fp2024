@@ -129,6 +129,17 @@ let%expect_test "test_tuple" =
     -3|}]
 ;;
 
+let%expect_test "test_tuple" =
+  test_interpret
+    "let rec test5 n =\n\
+    \  if n <= 0 then (0, 0)\n\
+    \  else\n\
+    \    let (sum, count) = test5 (n - 1) in\n\
+    \    (sum + n, count + 1)\n\
+    \  ;; let (a, b) = test5 5;; let () = print_int a";
+  [%expect {|15|}]
+;;
+
 let%expect_test "test_nested_tuple" =
   test_interpret
     "\n\
@@ -153,6 +164,13 @@ let%expect_test "test_closure" =
     \    \n\
     \    let () = print_int x";
   [%expect {|1|}]
+;;
+
+let%expect_test "test_and" =
+  test_interpret
+    "let rec fac n = if n < 2 then 1 else fac(n-1) * n and fibo n = if n < 2 then 1 else \
+     fibo(n-1) + fibo(n-2);; print_int (fac 5 + fibo 5)";
+  [%expect {|128|}]
 ;;
 
 let%expect_test "test_div_error" =

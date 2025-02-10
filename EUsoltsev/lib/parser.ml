@@ -7,8 +7,18 @@ open Base
 open Angstrom
 
 let is_keyword = function
-  | "let" | "match" | "in" | "if" | "then" | "else" | "fun" | "rec" | "true" | "false" ->
-    true
+  | "let"
+  | "match"
+  | "in"
+  | "if"
+  | "then"
+  | "else"
+  | "fun"
+  | "rec"
+  | "true"
+  | "false"
+  | "Some"
+  | "and" -> true
   | _ -> false
 ;;
 
@@ -199,8 +209,9 @@ let parse_expr_with_type parse_expr =
   return (ExpTypeAnnotation (expr, constr))
 ;;
 
+let parse_lambda_params () = sep_by1 white_space parse_pattern
+
 let parse_expr_let parse_expr =
-  let parse_lambda_params () = sep_by1 white_space parse_pattern in
   let parse_body parse_expr =
     parse_lambda_params ()
     >>= fun params -> token "=" *> parse_expr >>| fun body -> ExpLambda (params, body)
@@ -230,6 +241,44 @@ let parse_expr_tuple expr =
   | [] -> fail "Empty tuple"
 ;;
 
+let parse_let_and_binding parse_expr =
+  let parse_single_binding =
+    let parse_pattern_and_expr =
+      lift2
+        (fun pat expr -> pat, expr)
+        (parse_parens parse_pattern <|> parse_pattern)
+        (token "=" *> parse_expr)
+    in
+    parse_pattern
+    >>= fun pat ->
+    token "=" *> parse_expr
+    >>| (fun expr -> pat, expr)
+    <|> (parse_lambda_params ()
+         >>= fun params ->
+         token "=" *> parse_expr >>| fun body -> pat, ExpLambda (params, body))
+  in
+  parse_single_binding
+  >>= fun first ->
+  many1 (token "and" *> parse_single_binding) >>| fun rest -> first :: rest
+;;
+
+let parse_expr_let_and parse_expr =
+  let parse_rec_flag =
+    token "rec"
+    *> (peek_char
+        >>= function
+        | Some c when Char.is_whitespace c -> return true
+        | _ -> return false)
+    <|> return false
+  in
+  token "let"
+  *> lift3
+       (fun is_rec bindings body -> ExpLetAnd (is_rec, bindings, body))
+       parse_rec_flag
+       (parse_let_and_binding parse_expr)
+       (token "in" *> parse_expr >>| Option.some <|> return None)
+;;
+
 let parse_expr =
   fix (fun expr ->
     let term =
@@ -251,13 +300,14 @@ let parse_expr =
     let boolean = parse_left_associative cmp (and_op <|> or_op) in
     let tuple = parse_expr_tuple boolean <|> boolean in
     let lambda = parse_expr_lambda expr <|> tuple in
-    choice [ parse_expr_let expr; parse_expr_lambda expr; lambda ])
+    choice
+      [ parse_expr_let_and expr; parse_expr_let expr; parse_expr_lambda expr; lambda ])
 ;;
 
 let parse_program =
   let definitions_or_exprs =
     many
-      (choice [ parse_expr_let parse_expr; parse_expr ]
+      (choice [ parse_expr_let_and parse_expr; parse_expr_let parse_expr; parse_expr ]
        <* option () (token ";;" >>| ignore))
   in
   definitions_or_exprs <* white_space
