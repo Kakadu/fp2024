@@ -299,9 +299,9 @@ end = struct
 
   let apply env sub = Base.Map.map env ~f:(Scheme.apply sub)
   let extend env key schema = Base.Map.update env key ~f:(fun _ -> schema)
-  let find env key = Base.Map.find env key
-  let find_exn env key = Base.Map.find_exn env key
-  let remove env key = Base.Map.remove env key
+  let find = Base.Map.find
+  let find_exn = Base.Map.find_exn
+  let remove = Base.Map.remove
 
   let operators =
     [ [ "+"; "-"; "*"; "/" ], TBase BInt @-> TBase BInt @-> TBase BInt
