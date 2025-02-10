@@ -472,30 +472,29 @@ let rec infer_pattern env ?ty =
   | Ppat_unit ->
     let t_unit = TBase BUnit in
     return (t_unit, env, [])
-  | Ppat_tuple pats ->
-    (match pats with
-     | [] | [ _ ] ->
-       fail (SomeError "Pattern tuple must contain greather or equal two elements")
-     | first :: second :: xs ->
-       let* fv1, env1, names1 = infer_pattern env first in
-       let* fv2, env2, names2 = infer_pattern env1 second in
-       let* fvs, env, names =
-         RList.fold_left
-           ~init:(return ([], env2, []))
-           ~f:(fun (fvs, env, names) pat ->
-             let* fv, env, new_names = infer_pattern env pat in
-             return (fv :: fvs, env, names @ new_names))
-           xs
-       in
-       return (TTuple (fv1, fv2, List.rev fvs), env, names1 @ names2 @ names))
+  | Ppat_tuple [] | Ppat_tuple [ _ ] ->
+    fail (SomeError "Pattern tuple must contain greather or equal two elements")
+  | Ppat_tuple (first :: second :: pats) ->
+    let* fv1, env1, names1 = infer_pattern env first in
+    let* fv2, env2, names2 = infer_pattern env1 second in
+    let infer_pats_acc acc pat =
+      let fvs, env, names = acc in
+      let* fv, env, new_names = infer_pattern env pat in
+      return (fv :: fvs, env, names @ new_names)
+    in
+    let* fvs, env, names =
+      RList.fold_left ~init:(return ([], env2, [])) ~f:infer_pats_acc pats
+    in
+    (* not effective list concat but this is for mother of readability *)
+    return (TTuple (fv1, fv2, List.rev fvs), env, names1 @ names2 @ names)
   | Ppat_construct (name, None) ->
     let* ty, _ = lookup_env env name in
     return (ty, env, [])
   | Ppat_construct (name, Some pat) ->
     let* ty, _ = lookup_env env name in
-    let* ty_pat, env, names = infer_pattern env pat in
     (match ty with
      | TArrow (f, s) ->
+       let* ty_pat, env, names = infer_pattern env pat in
        let* sub_un = Subst.unify f ty_pat in
        return (Subst.apply sub_un s, TypeEnv.apply env sub_un, names)
      | _ -> fail (SomeError "Constructor don't accept arguments"))
