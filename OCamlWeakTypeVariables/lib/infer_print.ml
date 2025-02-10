@@ -89,22 +89,22 @@ let pp_error_my fmt e =
 
 let print_typ ?(name = "typ") t = Format.printf "%s: %a\n" name pp_typ_my t
 
-let%expect_test _ =
+let%expect_test "just type" =
   Format.printf "%a" pp_typ_my (TVar 4);
   [%expect {| 'a |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "just arrow type" =
   Format.printf "%a" pp_typ_my (TArrow (TVar 4, TArrow (TVar 3, TVar 4)));
   [%expect {| 'a -> 'b -> 'a |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "super arrow type" =
   Format.printf "%a" pp_typ_my (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5 ])));
   [%expect {| 'a -> 'b * 'a * 'c |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "ultra hard arrow type" =
   Format.printf
     "%a"
     pp_typ_my
@@ -112,7 +112,7 @@ let%expect_test _ =
   [%expect {| 'a -> 'b * 'a * 'c * ('a list) |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "option ." =
   Format.printf "%a" pp_typ_my (TOption (TVar 2));
   [%expect {| 'a option |}]
 ;;
