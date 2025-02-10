@@ -473,11 +473,6 @@ let rec infer_pattern env ?ty =
      | Pconst_string _ -> return (TBase BString, env, []))
   | Ppat_unit ->
     let t_unit = TBase BUnit in
-    let* env =
-      match ty with
-      | Some t -> Subst.unify t_unit t >>| TypeEnv.apply env
-      | None -> return env
-    in
     return (t_unit, env, [])
   | Ppat_tuple pats ->
     (match pats with
