@@ -346,6 +346,25 @@ module DebugLog = struct
       print_newline ())
   ;;
 
+  module Aux = struct
+    let non_rec_vb env sub =
+      (fun () ->
+        TypeEnv.print env;
+        Format.printf "sub: %a\n" Subst.pp sub)
+      |> log
+    ;;
+
+    let rec_vb env' subs ts sub env'' =
+      (fun () ->
+        Format.printf "Env: \n%a\n" TypeEnv.pp env';
+        List.iter (fun sub -> Format.printf "Sub: %a\n" Subst.pp sub) subs;
+        List.iter (fun t -> Format.printf "Type: %a\n" Infer_print.pp_typ_my t) ts;
+        Format.printf "Sub: %a\n" Subst.pp sub;
+        Format.printf "Env: %a\n" TypeEnv.pp env'')
+      |> log
+    ;;
+  end
+
   module Expr = struct
     let apply env e0 =
       (fun () ->
@@ -503,12 +522,8 @@ let infer_non_rec_value_bindings infer_expr env vbs =
       ~init:(return (env, Subst.empty, []))
       vbs
   in
-  if not debug
-  then return (env, sub, names)
-  else (
-    TypeEnv.print env;
-    Format.printf "sub: %a\n" Subst.pp sub;
-    return (env, sub, names))
+  DebugLog.Aux.non_rec_vb env sub;
+  return (env, sub, names)
 ;;
 
 let infer_rec_value_bindings infer_expr env vbs =
@@ -548,15 +563,8 @@ let infer_rec_value_bindings infer_expr env vbs =
         | _ ->
           SomeError "Only variables are allowed as left-hand side of `let rec`" |> fail)
   in
-  if not debug
-  then return (env'', sub, names)
-  else (
-    Format.printf "Env: \n%a\n" TypeEnv.pp env';
-    List.iter (fun sub -> Format.printf "Sub: %a\n" Subst.pp sub) subs;
-    List.iter (fun t -> Format.printf "Type: %a\n" Infer_print.pp_typ_my t) ts;
-    Format.printf "Sub: %a\n" Subst.pp sub;
-    Format.printf "Env: %a\n" TypeEnv.pp env'';
-    return (env'', sub, names))
+  DebugLog.Aux.rec_vb env' subs ts sub env'';
+  return (env'', sub, names)
 ;;
 
 (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Algorithm_W *)
