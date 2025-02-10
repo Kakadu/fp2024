@@ -1,3 +1,11 @@
+[@@@ocaml.text "/*"]
+
+(** Copyright 2024-2025, Damir Yunusov and Ilhom Kombaev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
+
 (** Enable debug output to stdout.
     If true, prints debug messages to stdout. *)
 val debug : bool
