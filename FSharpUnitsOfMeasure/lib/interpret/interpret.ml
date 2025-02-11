@@ -228,7 +228,17 @@ end = struct
     return final_env
   ;;
 
-  let eval_str_item env = function
+  let eval_str_item env =
+    let print_bool b = print_endline (Bool.to_string b) in
+    let env = extend env "print_int" (VBuiltin_fun (Print_int print_int, env)) in
+    let env = extend env "print_string" (VBuiltin_fun (Print_string print_string, env)) in
+    let env = extend env "print_float" (VBuiltin_fun (Print_float print_float, env)) in
+    let env = extend env "print_char" (VBuiltin_fun (Print_char print_char, env)) in
+    let env = extend env "print_bool" (VBuiltin_fun (Print_bool print_bool, env)) in
+    let env =
+      extend env "print_endline" (VBuiltin_fun (Print_endline print_endline, env))
+    in
+    function
     | Str_item_eval e ->
       let _ = eval_expr env e in
       return env

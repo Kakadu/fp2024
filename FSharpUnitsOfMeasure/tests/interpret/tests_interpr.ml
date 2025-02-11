@@ -7,6 +7,7 @@ open Angstrom
 open Stdlib.Format
 open Interp.Interpret
 open Interp.Misc
+open Checks
 
 (* Will change <type> with inferenced type when inferencer is ready *)
 let pp_env env =
@@ -14,7 +15,12 @@ let pp_env env =
   Base.Map.iteri
     ~f:(fun ~key ~data ->
       match Base.Map.find env key with
-      | Some _ -> printf "val %s : %s = %a\n" key "<type>" pp_value data
+      | Some _ ->
+        if not (is_builtin_fun key)
+        then
+          if is_builtin_op key
+          then printf "val ( %s ) : %s = %a\n" key "<type>" pp_value data
+          else printf "val %s : %s = %a\n" key "<type>" pp_value data
       | None -> ())
     env;
   printf "\n"
@@ -32,6 +38,73 @@ let test_interpret s =
 
 let%expect_test _ =
   let _ = test_interpret {|
+    1
+  |} in
+  [%expect {| |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = 1 in
+    a
+  |} in
+  [%expect {| |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = 1
+  |} in
+  [%expect {|
+    val a : <type> = 1 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = 1 + 1
+  |} in
+  [%expect {|
+    val a : <type> = 2 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = -1
+  |} in
+  [%expect {|
+    val a : <type> = -1 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = -(-(-1))
+  |} in
+  [%expect {|
+    val a : <type> = -1 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let (+) a b = a + b
+  |} in
+  [%expect {|
+    val ( + ) : <type> = <fun> |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+  let a = [2; 1];;
+  let b = 3;;
+  let c = b :: a;;
+  |} in
+  [%expect {|
+    val a : <type> = [2; 1]
+    val b : <type> = 3
+    val c : <type> = [3; 2; 1] |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
     let (a, b) = (4, 3)
   |} in
   [%expect {|
@@ -43,8 +116,7 @@ let%expect_test _ =
   let _ = test_interpret {|
     let (0, b) = (4, 3)
   |} in
-  [%expect
-    {| Interpreter error: Match failure |}]
+  [%expect {| Interpreter error: Match failure |}]
 ;;
 
 let%expect_test _ =

@@ -13,6 +13,24 @@ type error =
   | Match_failure
   | Not_implemented
 
+type builtin_fun =
+  | Print_int of (int -> unit)
+  | Print_float of (float -> unit)
+  | Print_string of (string -> unit)
+  | Print_char of (char -> unit)
+  | Print_bool of (bool -> unit)
+  | Print_endline of (string -> unit)
+
+let is_builtin_fun = function
+  | "print_int"
+  | "print_bool"
+  | "print_float"
+  | "print_string"
+  | "print_char"
+  | "print_endline" -> true
+  | _ -> false
+;;
+
 type value =
   | VInt of int
   | VFloat of float
@@ -24,6 +42,7 @@ type value =
   | VTuple of value * value * value list
   | VOption of value option
   | VFunction of rule * rule list
+  | VBuiltin_fun of builtin_fun * environment
   | VUnit
 
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
@@ -48,7 +67,7 @@ let rec pp_value ppf =
   | VBool b -> fprintf ppf "%b" b
   | VChar c -> fprintf ppf "%C" c
   | VString s -> fprintf ppf "%S" s
-  | VFun _ | VFunction _ -> fprintf ppf "<fun>"
+  | VFun _ | VFunction _ | VBuiltin_fun _ -> fprintf ppf "<fun>"
   | VList vl ->
     fprintf
       ppf
