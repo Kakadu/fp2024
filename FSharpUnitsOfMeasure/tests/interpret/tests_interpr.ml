@@ -211,6 +211,73 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = test_interpret {|
+    1
+  |} in
+  [%expect {| |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = 1 in
+    a
+  |} in
+  [%expect {| |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = 1
+  |} in
+  [%expect {|
+    val a : <type> = 1 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = 1 + 1
+  |} in
+  [%expect {|
+    val a : <type> = 2 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = -1
+  |} in
+  [%expect {|
+    val a : <type> = -1 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let a = -(-(-1))
+  |} in
+  [%expect {|
+    val a : <type> = -1 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let (+) a b = a + b
+  |} in
+  [%expect {|
+    val ( + ) : <type> = <fun> |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+  let a = [2; 1];;
+  let b = 3;;
+  let c = b :: a;;
+  |} in
+  [%expect {|
+    val a : <type> = [2; 1]
+    val b : <type> = 3
+    val c : <type> = [3; 2; 1] |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
     let (a, b) = (4, 3)
   |} in
   [%expect {|
