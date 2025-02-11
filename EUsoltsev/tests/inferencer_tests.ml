@@ -160,38 +160,6 @@ let%expect_test "test_and" =
   [%expect {|int option option|}]
 ;;
 
-let%expect_test "test_tuple" =
-  pretty_printer_parse_and_infer
-    "let rec fix f x = f (fix f) x\n\
-     let map f p = let (a,b) = p in (f a, f b)\n\
-     let fixpoly l =\n\
-    \  fix (fun self l -> map (fun li x -> li (self l) x) l) l\n\
-     let feven p n =\n\
-    \  let (e, o) = p in\n\
-    \  if n = 0 then 1 else o (n - 1)\n\
-     let fodd p n =\n\
-    \  let (e, o) = p in\n\
-    \  if n = 0 then 0 else e (n - 1)\n\
-     let tie = fixpoly (feven, fodd)\n\n\
-     let rec meven n = if n = 0 then 1 else modd (n - 1)\n\
-     and modd n = if n = 0 then 1 else meven (n - 1)\n\
-     let main =\n\
-    \  let () = print_int (modd 1) in\n\
-    \  let () = print_int (meven 2) in 0";
-  [%expect
-    {|
-          (\140 -> \141 -> int * \142 -> \143 -> int)
-          ~ -> \127 -> int
-          ((c -> d) -> c -> d) -> c -> d
-          m -> (x * x)
-          \132 -> \133 -> int
-          int
-          g -> h -> (k * k)
-          int -> int
-          int -> int
-          \138 -> (\139 * \139) |}]
-;;
-
 let%expect_test "test_annotate_error" =
   pretty_printer_parse_and_infer "let sum (x : int) (y : string) = x + y";
   [%expect {|Infer error. Failed to unify types: string and int.|}]

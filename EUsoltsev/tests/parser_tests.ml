@@ -208,3 +208,14 @@ let%expect_test "test_and2" =
     ]
  |}]
 ;;
+
+let%expect_test "test_func_apply_tuple" =
+  parse_test "let tie = fixpoly (feven, fodd)";
+  [%expect
+    {|
+        [(ExpLet (false, (PatVariable "tie"),
+            (ExpFunction ((ExpIdent "fixpoly"),
+               (ExpTuple ((ExpIdent "feven"), (ExpIdent "fodd"), [])))),
+            None))
+          ] |}]
+;;

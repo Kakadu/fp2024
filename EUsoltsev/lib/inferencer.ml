@@ -269,7 +269,8 @@ let generalize env ty =
 
 let generalize_rec env ty var =
   let env = TypeEnv.remove env var in
-  generalize env ty
+  let free = IntSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
+  Scheme.S (free, ty)
 ;;
 
 let infer_const = function

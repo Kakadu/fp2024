@@ -191,10 +191,6 @@ let parse_expr_list expr =
   token "[" *> parse_elements <* token "]" >>| fun elements -> ExpList elements
 ;;
 
-let parse_expr_function parse_expr =
-  parse_left_associative parse_expr (return (fun x y -> ExpFunction (x, y)))
-;;
-
 let parse_expr_lambda parse_expr =
   token "fun" *> sep_by1 white_space parse_pattern
   <* token "->"
@@ -239,6 +235,16 @@ let parse_expr_tuple expr =
   | [ single ] -> return single
   | first :: second :: rest -> return (ExpTuple (first, second, rest))
   | [] -> fail "Empty tuple"
+;;
+
+let parse_expr_function parse_expr =
+  let parse_application left right = lift2 (fun f x -> ExpFunction (f, x)) left right in
+  let rec go acc =
+    parse_application (return acc) (parse_expr_tuple parse_expr <|> parse_expr)
+    >>= go
+    <|> return acc
+  in
+  parse_expr >>= go
 ;;
 
 let parse_let_and_binding parse_expr =
@@ -300,8 +306,7 @@ let parse_expr =
     let boolean = parse_left_associative cmp (and_op <|> or_op) in
     let tuple = parse_expr_tuple boolean <|> boolean in
     let lambda = parse_expr_lambda expr <|> tuple in
-    choice
-      [ parse_expr_let_and expr; parse_expr_let expr; parse_expr_lambda expr; lambda ])
+    choice [ parse_expr_let expr; parse_expr_lambda expr; lambda ])
 ;;
 
 let parse_program =

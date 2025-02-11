@@ -25,4 +25,5 @@
   manytests/typed/006partial3.ml
   manytests/typed/007order.ml
   manytests/typed/008ascription.ml
-  manytests/typed/009let_poly.ml))
+  manytests/typed/009let_poly.ml
+  manytests/typed/015tuples.ml))
