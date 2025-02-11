@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>interpreter_tests.ml &mdash; Coverage report</title>
-    <meta name="description" content="98.59% coverage in tests/interpreter_tests.ml">
+    <meta name="description" content="98.70% coverage in tests/interpreter_tests.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,10 +15,10 @@
           <span class="dirname">tests/</span>interpreter_tests.ml
         </a>
       </h1>
-      <h2>98.59%</h2>
+      <h2>98.70%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:8.52%"></span>
+      <span class="unvisited" style="top:7.73%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -161,44 +161,62 @@
 <a id="L136"></a><span > </span>
 <a id="L137"></a><span > </span>
 <a id="L138"></a><span > </span>
-<a id="L139"></a><span class="visited"> </span>
-<a id="L140"></a><span > </span>
-<a id="L141"></a><span class="visited"> </span>
+<a id="L139"></a><span > </span>
+<a id="L140"></a><span class="visited"> </span>
+<a id="L141"></a><span > </span>
 <a id="L142"></a><span > </span>
 <a id="L143"></a><span > </span>
-<a id="L144"></a><span > </span>
-<a id="L145"></a><span class="visited"> </span>
+<a id="L144"></a><span class="visited"> </span>
+<a id="L145"></a><span > </span>
 <a id="L146"></a><span > </span>
 <a id="L147"></a><span > </span>
 <a id="L148"></a><span > </span>
 <a id="L149"></a><span > </span>
-<a id="L150"></a><span > </span>
+<a id="L150"></a><span class="visited"> </span>
 <a id="L151"></a><span > </span>
-<a id="L152"></a><span > </span>
+<a id="L152"></a><span class="visited"> </span>
 <a id="L153"></a><span > </span>
 <a id="L154"></a><span > </span>
-<a id="L155"></a><span class="visited"> </span>
-<a id="L156"></a><span > </span>
+<a id="L155"></a><span > </span>
+<a id="L156"></a><span class="visited"> </span>
 <a id="L157"></a><span > </span>
 <a id="L158"></a><span > </span>
-<a id="L159"></a><span class="visited"> </span>
-<a id="L160"></a><span class="visited"> </span>
+<a id="L159"></a><span > </span>
+<a id="L160"></a><span > </span>
 <a id="L161"></a><span > </span>
 <a id="L162"></a><span > </span>
 <a id="L163"></a><span > </span>
-<a id="L164"></a><span class="visited"> </span>
-<a id="L165"></a><span class="visited"> </span>
-<a id="L166"></a><span > </span>
+<a id="L164"></a><span > </span>
+<a id="L165"></a><span > </span>
+<a id="L166"></a><span class="visited"> </span>
 <a id="L167"></a><span > </span>
 <a id="L168"></a><span > </span>
-<a id="L169"></a><span class="visited"> </span>
+<a id="L169"></a><span > </span>
 <a id="L170"></a><span class="visited"> </span>
 <a id="L171"></a><span > </span>
 <a id="L172"></a><span > </span>
-<a id="L173"></a><span > </span>
-<a id="L174"></a><span class="visited"> </span>
-<a id="L175"></a><span class="visited"> </span>
+<a id="L173"></a><span class="visited"> </span>
+<a id="L174"></a><span > </span>
+<a id="L175"></a><span > </span>
 <a id="L176"></a><span > </span>
+<a id="L177"></a><span class="visited"> </span>
+<a id="L178"></a><span class="visited"> </span>
+<a id="L179"></a><span > </span>
+<a id="L180"></a><span > </span>
+<a id="L181"></a><span > </span>
+<a id="L182"></a><span class="visited"> </span>
+<a id="L183"></a><span class="visited"> </span>
+<a id="L184"></a><span > </span>
+<a id="L185"></a><span > </span>
+<a id="L186"></a><span > </span>
+<a id="L187"></a><span class="visited"> </span>
+<a id="L188"></a><span class="visited"> </span>
+<a id="L189"></a><span > </span>
+<a id="L190"></a><span > </span>
+<a id="L191"></a><span > </span>
+<a id="L192"></a><span class="visited"> </span>
+<a id="L193"></a><span class="visited"> </span>
+<a id="L194"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -379,6 +397,24 @@
 <a href="#L174">174</a>
 <a href="#L175">175</a>
 <a href="#L176">176</a>
+<a href="#L177">177</a>
+<a href="#L178">178</a>
+<a href="#L179">179</a>
+<a href="#L180">180</a>
+<a href="#L181">181</a>
+<a href="#L182">182</a>
+<a href="#L183">183</a>
+<a href="#L184">184</a>
+<a href="#L185">185</a>
+<a href="#L186">186</a>
+<a href="#L187">187</a>
+<a href="#L188">188</a>
+<a href="#L189">189</a>
+<a href="#L190">190</a>
+<a href="#L191">191</a>
+<a href="#L192">192</a>
+<a href="#L193">193</a>
+<a href="#L194">194</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Danil Usoltsev *)
 
@@ -388,11 +424,11 @@ open EUsoltsev_lib
 open Interpreter
 
 let test_interpret s =
-  <span data-count="22">l</span>et open Stdlib.Format in
+  <span data-count="24">l</span>et open Stdlib.Format in
   match Parser.parse s with
-  | <span data-count="22">O</span>k parsed -&gt;
+  | <span data-count="24">O</span>k parsed -&gt;
     (match Inter.eval_structure parsed with
-     | <span data-count="18">O</span>k _ -&gt; ()
+     | <span data-count="20">O</span>k _ -&gt; ()
      | <span data-count="4">E</span>rror e -&gt; printf "Interpreter error: %a\n" pp_value_error e)
   | <span data-count="0">E</span>rror e -&gt; printf "Parsing error: %s\n" e
 ;;
@@ -511,6 +547,17 @@ let%expect_test "test_tuple" =
     -3|}<span data-count="9">]</span>
 ;;
 
+let%expect_test "test_tuple" =
+  <span data-count="1">t</span>est_interpret
+    "let rec test5 n =\n\
+    \  if n &lt;= 0 then (0, 0)\n\
+    \  else\n\
+    \    let (sum, count) = test5 (n - 1) in\n\
+    \    (sum + n, count + 1)\n\
+    \  ;; let (a, b) = test5 5;; let () = print_int a";
+  <span data-count="1">[</span>%expect {|15|}<span data-count="9">]</span>
+;;
+
 let%expect_test "test_nested_tuple" =
   <span data-count="1">t</span>est_interpret
     "\n\
@@ -535,6 +582,13 @@ let%expect_test "test_closure" =
     \    \n\
     \    let () = print_int x";
   <span data-count="1">[</span>%expect {|1|}<span data-count="9">]</span>
+;;
+
+let%expect_test "test_and" =
+  <span data-count="1">t</span>est_interpret
+    "let rec fac n = if n &lt; 2 then 1 else fac(n-1) * n and fibo n = if n &lt; 2 then 1 else \
+     fibo(n-1) + fibo(n-2);; print_int (fac 5 + fibo 5)";
+  <span data-count="1">[</span>%expect {|128|}<span data-count="9">]</span>
 ;;
 
 let%expect_test "test_div_error" =

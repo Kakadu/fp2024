@@ -211,16 +211,16 @@ open Printf
 open Ast
 
 let run_inference input =
-  <span data-count="15">m</span>atch parse input with
-  | <span data-count="15">O</span>k parsed -&gt;
+  <span data-count="16">m</span>atch parse input with
+  | <span data-count="16">O</span>k parsed -&gt;
     (match run_infer parsed with
-     | <span data-count="11">O</span>k env -&gt;
+     | <span data-count="12">O</span>k env -&gt;
        let filtered_env =
          Base.Map.filter_keys env ~f:(fun key -&gt;
-           <span data-count="58">n</span>ot (List.me<span data-count="58">m</span> key [ "print_int"; "print_endline"; "print_bool" ]))
+           <span data-count="70">n</span>ot (List.me<span data-count="70">m</span> key [ "print_int"; "print_endline"; "print_bool" ]))
        in
-       <span data-count="11">B</span>ase.Map.iteri filtered_env ~f:(fun ~key:_ ~data:(S (_, ty)) -&gt;
-         <span data-count="25">F</span>ormat.printf "%a\n" pp_ty ty)
+       <span data-count="12">B</span>ase.Map.iteri filtered_env ~f:(fun ~key:_ ~data:(S (_, ty)) -&gt;
+         <span data-count="34">F</span>ormat.printf "%a\n" pp_ty ty)
      | <span data-count="4">E</span>rror e -&gt; Format.printf "Infer error. %a\n" pp_error e)
   | <span data-count="0">E</span>rror e -&gt; Format.printf "Parsing error. %s\n" e
 ;;
@@ -236,10 +236,10 @@ let run_interpreter s =
 ;;
 
 let read_file filename =
-  <span data-count="26">l</span>et channel = open_in filename in
-  <span data-count="26">l</span>et content = really_input_string channel (in_channel_lengt<span data-count="26">h</span> channel) in
-  <span data-count="26">c</span>lose_in channel;
-  <span data-count="26">c</span>ontent
+  <span data-count="27">l</span>et channel = open_in filename in
+  <span data-count="27">l</span>et content = really_input_string channel (in_channel_lengt<span data-count="27">h</span> channel) in
+  <span data-count="27">c</span>lose_in channel;
+  <span data-count="27">c</span>ontent
 ;;
 
 type config =
@@ -250,37 +250,37 @@ type config =
   }
 
 let parse_arguments () =
-  <span data-count="26">l</span>et rec parse_args args config =
-    <span data-count="78">m</span>atch args with
-    | <span data-count="26">[</span>] -&gt; config
-    | <span data-count="15">"</span>-infer" :: rest -&gt; parse_args rest { config with infer_flag = true }
+  <span data-count="27">l</span>et rec parse_args args config =
+    <span data-count="81">m</span>atch args with
+    | <span data-count="27">[</span>] -&gt; config
+    | <span data-count="16">"</span>-infer" :: rest -&gt; parse_args rest { config with infer_flag = true }
     | <span data-count="11">"</span>-interpret" :: rest -&gt; parse_args rest { config with interpret_flag = true }
-    | <span data-count="26">"</span>-file" :: filename :: rest -&gt; parse_args rest { config with file = Some filename }
+    | <span data-count="27">"</span>-file" :: filename :: rest -&gt; parse_args rest { config with file = Some filename }
     | <span data-count="0">a</span>rg :: rest -&gt; parse_args rest { config with input = Some arg }
   in
   parse_args
-    (Array.to_list Sys.argv |&gt; <span data-count="26">L</span>ist.t<span data-count="26">l</span>)
+    (Array.to_list Sys.argv |&gt; <span data-count="27">L</span>ist.t<span data-count="27">l</span>)
     { infer_flag = false; interpret_flag = false; file = None; input = None }
 ;;
 
 let main () =
-  <span data-count="26">l</span>et config = parse_arguments () in
-  <span data-count="26">l</span>et input_content =
+  <span data-count="27">l</span>et config = parse_arguments () in
+  <span data-count="27">l</span>et input_content =
     match config.file with
-    | <span data-count="26">S</span>ome filename -&gt; read_fil<span data-count="26">e</span> filename
+    | <span data-count="27">S</span>ome filename -&gt; read_fil<span data-count="27">e</span> filename
     | <span data-count="0">N</span>one -&gt;
       (match config.input with
        | <span data-count="0">S</span>ome s -&gt; s
        | <span data-count="0">N</span>one -&gt; "")
   in
   if config.infer_flag
-  then <span data-count="15">r</span>un_inference input_content
+  then <span data-count="16">r</span>un_inference input_content
   else <span data-count="11">i</span>f config.interpret_flag
   then <span data-count="11">r</span>un_interpreter input_content
   else <span data-count="0">p</span>rintf "Please specify either -infer or -interpret flag.\n"
 ;;
 
-let () = mai<span data-count="26">n</span> ()
+let () = mai<span data-count="27">n</span> ()
 </code></pre>
       </div>
     </div>
