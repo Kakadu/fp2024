@@ -61,7 +61,8 @@ let pexpr_app pexpr =
        <|> parse_infix_app "<"
        <|> parse_infix_app ">="
        <|> parse_infix_app ">"
-       <|> parse_infix_app "<>")
+       <|> parse_infix_app "<>"
+       <|> parse_infix_app "=")
     <|> app
   in
   let app = chainr app (parse_infix_app "::") <|> app in
