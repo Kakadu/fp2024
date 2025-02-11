@@ -1,0 +1,86 @@
+(** Copyright 2024, Vlasenco Daniel and Kudrya Alexandr *)
+
+(** SPDX-License-Identifier: MIT *)
+
+open Parse.Structure
+open Angstrom
+open Stdlib.Format
+open Interp.Interpret
+open Interp.Misc
+
+(* Will change <type> with inferenced type when inferencer is ready *)
+let pp_env env =
+  printf "\n";
+  Base.Map.iteri
+    ~f:(fun ~key ~data ->
+      match Base.Map.find env key with
+      | Some _ -> printf "val %s : %s = %a\n" key "<type>" pp_value data
+      | None -> ())
+    env;
+  printf "\n"
+;;
+
+let test_interpret s =
+  let open Format in
+  match Angstrom.parse_string ~consume:Angstrom.Consume.All pprog s with
+  | Ok parsed ->
+    (match eval parsed with
+     | Ok env -> pp_env env
+     | Error e -> printf "Interpreter error: %a\n" pp_error e)
+  | Error e -> printf "Parse error: %s\n" e
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let (a, b) = (4, 3)
+  |} in
+  [%expect {|
+    val a : <type> = 4
+    val b : <type> = 3 |}]
+;;
+
+let%expect_test _ =
+  let _ = test_interpret {|
+    let (0, b) = (4, 3)
+  |} in
+  [%expect
+    {| Interpreter error: Match failure |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    test_interpret
+      {|
+      let f = true;;
+      let g =
+        match f with
+        | true -> false
+        | false -> true;;
+      let n = g;;
+  |}
+  in
+  [%expect
+    {|
+    val f : <type> = true
+    val g : <type> = false
+    val n : <type> = false |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    test_interpret
+      {|
+      let rec is_even n =
+        if n = 0 then true else is_odd (n - 1)
+      and is_odd n =
+        if n = 0 then false else is_even (n - 1);;
+
+      let a  = is_even 4
+  |}
+  in
+  [%expect
+    {|
+    val a : <type> = true
+    val is_even : <type> = <fun>
+    val is_odd : <type> = <fun> |}]
+;;
