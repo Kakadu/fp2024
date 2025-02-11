@@ -158,5 +158,5 @@ let pprint_struct_item = function
 ;;
 
 let pprint_program list =
-  asprintf "%s;;\n" (pprint_sep_by pprint_struct_item pprint_sep_double_colon list)
+  asprintf "%s\n" (pprint_sep_by pprint_struct_item pprint_sep_nl list)
 ;;

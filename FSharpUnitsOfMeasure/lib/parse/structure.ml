@@ -42,6 +42,6 @@ let pstritem_type =
 let pstritem = choice [ pstritem_exp; pstritem_def; pstritem_type ]
 
 let pprog =
-  sep_by (skip_token ";;" (* <|> skip_ws_nl *)) pstritem
-  <* (skip_ws *> string ";;" <|> string "" <* skip_ws)
+  let semicolons = many (skip_token ";;") in
+  sep_by semicolons pstritem <* semicolons <* skip_ws
 ;;

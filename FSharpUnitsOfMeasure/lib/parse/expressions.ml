@@ -209,6 +209,6 @@ let pexpr =
     in
     let pexpr = pexpr_paren pexpr <|> pexpr in
     let pexpr = pexpr_tuple pexpr <|> pexpr_app_un pexpr <|> pexpr_app pexpr <|> pexpr in
-    (* let pexpr = pexpr_app_un pexpr <|> pexpr in *)
+    let pexpr = pexpr_app_un pexpr <|> pexpr in
     skip_ws *> pexpr <* skip_ws_no_nl)
 ;;
