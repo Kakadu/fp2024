@@ -51,14 +51,14 @@ let rec pprint_type_tuple fmt = function
      | _ -> fprintf fmt "%a * %a" pprint_type h pprint_type_tuple tl)
 
 and pprint_type fmt = function
-  | Type_var num -> fprintf fmt "'%c" (Stdlib.Char.chr (Stdlib.Char.code num.[0] + 49))
+  | Type_var num -> fprintf fmt "'%s" num (*(*(Stdlib.Char.chr)*)(Stdlib.Char.code num.[0]) (**)*)
   (* | Type_prim str -> fprintf fmt "%s" str *)
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
      | Type_arrow (_, _), _ -> fprintf fmt "(%a) -> %a" pprint_type ty1 pprint_type ty2
-     | _ -> fprintf fmt "%a-> %a" pprint_type ty1 pprint_type ty2)
+     | _ -> fprintf fmt "%a -> %a" pprint_type ty1 pprint_type ty2)
   | Type_tuple (t1, t2, ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1 :: t2 :: ty_lst)
-  | Type_construct (name, ty_list) -> fprintf fmt "%s %a" name pprint_type_tuple ty_list
+  | Type_construct (name,ty_list) -> fprintf fmt "%a%s"  pprint_type_tuple (ty_list) name
 ;;
 
 (* | Type_list ty1 -> fprintf fmt "%a list" pprint_type ty1 *)

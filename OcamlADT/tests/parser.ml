@@ -1849,3 +1849,135 @@ let x = [];;
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
+      let%expect_test "keyword" =
+      test_program {|let rec fix f x = f (fix f) x;;
+let map f p = let (a,b) = p in (f a, f b);;
+let fixpoly l =
+  fix (fun self l -> map (fun li x -> li (self l) x) l) l;;
+let feven p n =
+  let (e, o) = p in
+  if n = 0 then 1 else o (n - 1);;
+let fodd p n =
+  let (e, o) = p in
+  if n = 0 then 0 else e (n - 1);;
+  let tie = fixpoly (feven, fodd);; |};
+      [%expect{|
+        [(Str_value (Recursive,
+            ({ pat = (Pat_var "fix");
+               expr =
+               (Exp_fun (((Pat_var "f"), [(Pat_var "x")]),
+                  (Exp_apply (
+                     (Exp_apply ((Exp_ident "f"),
+                        (Exp_apply ((Exp_ident "fix"), (Exp_ident "f"))))),
+                     (Exp_ident "x")))
+                  ))
+               },
+             [])
+            ));
+          (Str_value (Nonrecursive,
+             ({ pat = (Pat_var "map");
+                expr =
+                (Exp_fun (((Pat_var "f"), [(Pat_var "p")]),
+                   (Exp_let (Nonrecursive,
+                      ({ pat = (Pat_tuple ((Pat_var "a"), (Pat_var "b"), []));
+                         expr = (Exp_ident "p") },
+                       []),
+                      (Exp_tuple
+                         ((Exp_apply ((Exp_ident "f"), (Exp_ident "a"))),
+                          (Exp_apply ((Exp_ident "f"), (Exp_ident "b"))), []))
+                      ))
+                   ))
+                },
+              [])
+             ));
+          (Str_value (Nonrecursive,
+             ({ pat = (Pat_var "fixpoly");
+                expr =
+                (Exp_fun (((Pat_var "l"), []),
+                   (Exp_apply (
+                      (Exp_apply ((Exp_ident "fix"),
+                         (Exp_fun (((Pat_var "self"), [(Pat_var "l")]),
+                            (Exp_apply (
+                               (Exp_apply ((Exp_ident "map"),
+                                  (Exp_fun (((Pat_var "li"), [(Pat_var "x")]),
+                                     (Exp_apply (
+                                        (Exp_apply ((Exp_ident "li"),
+                                           (Exp_apply ((Exp_ident "self"),
+                                              (Exp_ident "l")))
+                                           )),
+                                        (Exp_ident "x")))
+                                     ))
+                                  )),
+                               (Exp_ident "l")))
+                            ))
+                         )),
+                      (Exp_ident "l")))
+                   ))
+                },
+              [])
+             ));
+          (Str_value (Nonrecursive,
+             ({ pat = (Pat_var "feven");
+                expr =
+                (Exp_fun (((Pat_var "p"), [(Pat_var "n")]),
+                   (Exp_let (Nonrecursive,
+                      ({ pat = (Pat_tuple ((Pat_var "e"), (Pat_var "o"), []));
+                         expr = (Exp_ident "p") },
+                       []),
+                      (Exp_if (
+                         (Exp_apply ((Exp_ident "="),
+                            (Exp_tuple
+                               ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+                            )),
+                         (Exp_constant (Const_integer 1)),
+                         (Some (Exp_apply ((Exp_ident "o"),
+                                  (Exp_apply ((Exp_ident "-"),
+                                     (Exp_tuple
+                                        ((Exp_ident "n"),
+                                         (Exp_constant (Const_integer 1)), []))
+                                     ))
+                                  )))
+                         ))
+                      ))
+                   ))
+                },
+              [])
+             ));
+          (Str_value (Nonrecursive,
+             ({ pat = (Pat_var "fodd");
+                expr =
+                (Exp_fun (((Pat_var "p"), [(Pat_var "n")]),
+                   (Exp_let (Nonrecursive,
+                      ({ pat = (Pat_tuple ((Pat_var "e"), (Pat_var "o"), []));
+                         expr = (Exp_ident "p") },
+                       []),
+                      (Exp_if (
+                         (Exp_apply ((Exp_ident "="),
+                            (Exp_tuple
+                               ((Exp_ident "n"), (Exp_constant (Const_integer 0)), []))
+                            )),
+                         (Exp_constant (Const_integer 0)),
+                         (Some (Exp_apply ((Exp_ident "e"),
+                                  (Exp_apply ((Exp_ident "-"),
+                                     (Exp_tuple
+                                        ((Exp_ident "n"),
+                                         (Exp_constant (Const_integer 1)), []))
+                                     ))
+                                  )))
+                         ))
+                      ))
+                   ))
+                },
+              [])
+             ));
+          (Str_value (Nonrecursive,
+             ({ pat = (Pat_var "tie");
+                expr =
+                (Exp_apply ((Exp_ident "fixpoly"),
+                   (Exp_tuple ((Exp_ident "feven"), (Exp_ident "fodd"), []))))
+                },
+              [])
+             ))
+          ] |}]
+    
+    
