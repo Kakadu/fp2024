@@ -19,7 +19,7 @@ val skip_ws : unit t
 (** [skip_ws_nl] skips 0 or more whitespaces, fails if ['\n'] wasn't met *)
 val skip_ws_nl : unit t
 
-(** [skip_ws_no_nl] skips 0 or more whitespaces, fails if ['\n'] was met *)
+(** [skip_ws_no_nl] skips 0 or more whitespaces, stops when ['\n'] is met *)
 val skip_ws_no_nl : unit t
 
 (** [skip_ws1] skips 1 or more whitespaces. *)
