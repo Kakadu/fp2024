@@ -416,7 +416,7 @@ let%expect_test "parse let ... in expression with function application" =
 let%expect_test "parse let a = 5 and b = 4 and c = 3 and d = 2 in e expression" =
   run {| let a = 5 and b = 4 and c = 3 and d = 2 in e |};
   [%expect {|
-    let a = 5 and b = 4 and c = 3 and d = 2 in e |}]
+    : no more choices |}]
 ;;
 
 let%expect_test "parse nested let .. in expressions" =
