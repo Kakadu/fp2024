@@ -130,7 +130,11 @@ let pexpr_letin pexpr =
   *>
   let* rec_flag = option Nonrecursive (skip_token "rec" *> return Recursive) in
   let* binding_fst = pbind pexpr in
-  let* binding_rest = many (skip_token "and" *> pbind pexpr) in
+  let* binding_rest =
+    match rec_flag with
+    | Recursive -> many (skip_token "and" *> pbind pexpr)
+    | Nonrecursive -> return []
+  in
   skip_token "in"
   *>
   let* last_expr = pexpr in
