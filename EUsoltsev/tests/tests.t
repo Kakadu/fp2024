@@ -96,6 +96,17 @@
   $ ../bin/main.exe -infer -file manytests/typed/009let_poly.ml
   (int * bool)
 
+  $ ../bin/main.exe -infer -file manytests/typed/015tuples.ml
+  ~ -> \127 -> int
+  ((c -> d) -> c -> d) -> c -> d
+  m -> (x * x)
+  \132 -> \133 -> int
+  int
+  g -> h -> (k * k)
+  int -> int
+  int -> int
+  (\140 * \140)
+
   $ ../bin/main.exe -infer -file manytests/do_not_type/001.ml
   Infer error. Unbound variable 'fac'.
 

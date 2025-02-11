@@ -67,6 +67,7 @@ type expr =
   | ExpOption of expr option
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
   | ExpLet of is_rec * pattern * expr * expr option
+  | ExpLetAnd of is_rec * (pattern * expr) list * expr option
 (* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
 (* let x = 10 <=> ExpLet(false, "x", 10, None)*)
 [@@deriving show { with_path = false }]
