@@ -68,16 +68,14 @@ end = struct
     | _ -> None
 
   and match_list_pattern env patterns values =
-    (* to avoid Invalid argument exception *)
-    if List.length patterns <> List.length values
-    then None
-    else (
-      let f1 acc p v =
-        match acc with
-        | None -> None
-        | Some env' -> match_pattern env' (p, v)
-      in
-      List.fold_left2 f1 (Some env) patterns values)
+    let f1 acc p v =
+      match acc with
+      | None -> None
+      | Some env' -> match_pattern env' (p, v)
+    in
+    match Base.List.fold2 patterns values ~f:f1 ~init:(Some env) with
+    | Unequal_lengths -> None
+    | Ok rez -> rez
   ;;
 
   (* let print_env env =
