@@ -410,10 +410,10 @@ let%expect_test "print expr with unary and binary operations" =
 ;;
 
 let%expect_test "print expr with multiple patterns" =
-  parse "let a = Some 4 in let b = (c, [], not true) in c :: [a]";
+  parse "let a = Some 4 in let b = (c, [], not true) in let d = None in c :: [a]";
   [%expect
     {|
-  let  a = (Some 4) in let  b = (c, [], not (true)) in c :: [a] ;;
+  let  a = (Some 4) in let  b = (c, [], not (true)) in let  d = None in c :: [a] ;;
   [(SEval
       (Elet (Non_recursive,
          (Evalue_binding ((PVar (Id "a")), (Eoption (Some (Econst (Int 4)))))),
@@ -423,7 +423,11 @@ let%expect_test "print expr with multiple patterns" =
                (Etuple ((Evar (Id "c")), (Elist []),
                   [(Eun_op (Not, (Econst (Bool true))))]))
                )),
-            [], (Ebin_op (Cons, (Evar (Id "c")), (Elist [(Evar (Id "a"))])))))
+            [],
+            (Elet (Non_recursive,
+               (Evalue_binding ((PVar (Id "d")), (Eoption None))), [],
+               (Ebin_op (Cons, (Evar (Id "c")), (Elist [(Evar (Id "a"))])))))
+            ))
          )))
     ]
   |}]

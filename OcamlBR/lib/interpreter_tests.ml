@@ -195,7 +195,7 @@ let%expect_test "from andrei" =
   [%expect {| Infer error: Undefined variable "y" |}]
 ;;
 
-let%expect_test "infer expr with unary and binary operations" =
+let%expect_test "interpret expr with unary and binary operations" =
   let _ =
     test_interpret
       {| 
@@ -209,14 +209,56 @@ let%expect_test "infer expr with unary and binary operations" =
     } |}]
 ;;
 
-let%expect_test "infer expr with multiple patterns" =
-  let _ = test_interpret {| 
-    let a = Some 4 
-    let b = (a, [], not true) |} in
+let%expect_test "interpret expr with lists' comparison" =
+  let _ =
+    test_interpret
+      {| 
+    let a = Some 4
+    let b = (a, [], None)
+    let c = [1; 2; 3]
+    let d = if (c = [3; 2; 1]) then a else Some 5
+    let e = if (c = [1; 2; 3]) then a else Some 6
+     |}
+  in
   [%expect
     {|
     {
     val a : (int) option = Some 4
-    val b : ((int) option * '0 list * bool) = (Some 4, [], false)
+    val b : ((int) option * '0 list * ('1) option) = (Some 4, [], None)
+    val c : int list = [1; 2; 3]
+    val d : (int) option = Some 5
+    val e : (int) option = Some 4
+    } |}]
+;;
+
+let%expect_test "interpret expr with None match" =
+  let _ =
+    test_interpret
+      {| 
+    let a = Some 4 
+    let _ = match a with
+    | Some e -> print_int e
+    | None -> print_endline "None" 
+     |}
+  in
+  [%expect {|
+    4
+    {
+    val a : (int) option = Some 4
+    } |}]
+;;
+
+let%expect_test "interpret expr with None match" =
+  let _ =
+    test_interpret
+      {| 
+    let x = function | [] -> 10 | h::m::tl -> 30 | _ -> 20
+    let y = x [1; 2; 3]
+     |}
+  in
+  [%expect {|
+    {
+    val x : '2 list -> int = <fun>
+    val y : int = 30
     } |}]
 ;;

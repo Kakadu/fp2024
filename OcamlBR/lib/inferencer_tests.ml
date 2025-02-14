@@ -124,10 +124,13 @@ let%expect_test "infer expr with unary and binary operations" =
 ;;
 
 let%expect_test "infer expr with multiple patterns" =
-  let _ = infer_program_test {| 
-    let a = Some 4 
-    let b = (a, [], not true) |} in
+  let _ =
+    infer_program_test
+      {| 
+    let a : string = "fef"
+    let b : (string * int list * bool) = ("a", [4], not true) |}
+  in
   [%expect {|
-    val a : (int) option
-    val b : ((int) option * '0 list * bool) |}]
+    val a : string
+    val b : (string * int list * bool) |}]
 ;;
