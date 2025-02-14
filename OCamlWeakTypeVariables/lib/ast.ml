@@ -31,8 +31,6 @@ type rec_flag =
   | NonRecursive
 [@@deriving show { with_path = false }]
 
-type core_type = Ptyp_constr of string [@@deriving show { with_path = false }]
-
 type expression =
   | Pexp_ident of id (** Identifiers. Ex: "homka" *)
   | Pexp_constant of constant (** Expressions constant. Ex: 5, "Homka", true *)
@@ -45,7 +43,7 @@ type expression =
   | Pexp_tuple of expression list (** Expressions (E1, ..., En). Invariant: n >= 2 *)
   | Pexp_ifthenelse of expression * expression * expression option
   (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
-  | Pexp_constraint of expression * core_type (** (E : T) *)
+  | Pexp_constraint of expression * Types.typ (** (E : T) *)
   | Pexp_construct of id * expression option
   | Pexp_match of expression * case list (** match E0 with P1 -> E1 | ... | Pn -> En *)
   | Pexp_function of case list (** function P1 -> E1 | ... | Pn -> En *)

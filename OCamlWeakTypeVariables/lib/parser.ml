@@ -275,10 +275,50 @@ let token_or xs : string t =
   | _ -> fail "token_or require two or more tokens"
 ;;
 
+module TypeParser : sig
+  val p_typ : Types.typ t
+end = struct
+  open Types
+
+  let p_typ_base =
+    choice
+      [ (token "int" >>| fun _ -> TBase BInt)
+      ; (token "string" >>| fun _ -> TBase BString)
+      ; (token "unit" >>| fun _ -> TBase BUnit)
+      ; (token "bool" >>| fun _ -> TBase BBool)
+      ]
+  ;;
+
+  let p_typ_tuple typ =
+    let* f = typ in
+    let* s = token "*" *> typ in
+    let+ rest = many (token "*" *> typ) in
+    TTuple (f, s, rest)
+  ;;
+
+  let p_typ_list typ = typ <* token "list" >>| fun t -> TList t
+  let p_typ_option typ = typ <* token "option" >>| fun t -> TOption t
+
+  let rec p_typ_arrow typ =
+    let* f = typ in
+    let+ s = token "->" *> (p_typ_arrow typ <|> typ) in
+    TArrow (f, s)
+  ;;
+
+  let p_typ =
+    fix (fun typ_all ->
+      let typ = p_typ_base <|> parens typ_all in
+      let typ = p_typ_list typ <|> p_typ_option typ <|> typ in
+      let typ = p_typ_tuple typ <|> typ in
+      let typ = p_typ_arrow typ <|> typ in
+      typ)
+  ;;
+end
+
 let pexpr_constraint expr =
   let* expr = token "(" *> expr in
-  let+ ty = token ":" *> lowercase_ident <* token ")" in
-  Pexp_constraint (expr, Ptyp_constr ty)
+  let+ ty = token ":" *> TypeParser.p_typ <* token ")" in
+  Pexp_constraint (expr, ty)
 ;;
 
 let p_construct_unit = token "()" *> return (Pexp_construct ("()", None))
