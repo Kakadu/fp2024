@@ -6,8 +6,6 @@
 
 [@@@ocaml.text "/*"]
 
-open Ast
-
 type type_var = int [@@deriving show { with_path = false }]
 
 type base_type =
@@ -34,9 +32,9 @@ module VarSet = Stdlib.Set.Make (String)
 type error =
   | OccursCheckFailed of type_var * typ
   | UnificationFailed of typ * typ
-  | Unbound of id
-  | PatternNameTwice of id
-  | UnknownType of id
+  | Unbound of string
+  | PatternNameTwice of string
+  | UnknownType of string
   | SomeError of string
 [@@deriving show { with_path = false }]
 
