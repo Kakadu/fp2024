@@ -242,9 +242,6 @@ end = struct
       (match match_pattern env (pat, v) with
        | Some env' -> eval_expr env' e2
        | None -> fail `Pattern_matching_failure)
-    | Elet (Recursive, Evalue_binding (pat, e1), [], e2) ->
-      let* final_env = eval_let_rec_expr env (Evalue_binding (pat, e1)) in
-      eval_expr final_env e2
     | Elet (Recursive, value_binding, value_bindings, e2) ->
       let* final_env = eval_value_bindings env (value_binding :: value_bindings) in
       eval_expr final_env e2
@@ -261,26 +258,6 @@ end = struct
          return result
        | None -> eval_match_expr env v tl)
     | [] -> fail `Pattern_matching_failure
-
-  and eval_let_rec_expr env = function
-    | Evalue_binding (pat, e1) ->
-      let* v = eval_expr env e1 in
-      let* rec_env =
-        match match_pattern env (pat, v) with
-        | Some new_env -> return new_env
-        | None -> fail `Pattern_matching_failure
-      in
-      let* recursive_value =
-        match v with
-        | VFun (_, p, pl, e, _) -> return (VFun (Recursive, p, pl, e, rec_env))
-        | _ -> fail `Type_error
-      in
-      let* final_env =
-        match match_pattern env (pat, recursive_value) with
-        | Some updated_env -> return updated_env
-        | None -> fail `Pattern_matching_failure
-      in
-      return final_env
 
   and eval_value_bindings env value_bindings =
     let bindings = List.map (fun (Evalue_binding (p, e)) -> p, e) value_bindings in
@@ -314,9 +291,6 @@ end = struct
       (match match_pattern env (pat, v) with
        | Some env' -> return env'
        | None -> fail `Pattern_matching_failure)
-    | SValue (Recursive, Evalue_binding (pat, e), []) ->
-      let* final_env = eval_let_rec_expr env (Evalue_binding (pat, e)) in
-      return final_env
     | SValue (Recursive, value_binding, value_bindings) ->
       let* final_env = eval_value_bindings env (value_binding :: value_bindings) in
       return final_env
