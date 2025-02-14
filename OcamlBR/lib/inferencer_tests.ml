@@ -111,3 +111,23 @@ let%expect_test "infer function with ascription" =
   in
   [%expect {| val f : (int * bool) -> (bool -> int) |}]
 ;;
+
+let%expect_test "infer expr with unary and binary operations" =
+  let _ =
+    infer_program_test
+      {| 
+    let rez = 
+      let x = not true in 
+      let y = 13 in if x || (10 >= y) && (5 <= y) && (y <> 6) || (y < 9) && (y > -1000) then +5 :: [] else [10] |}
+  in
+  [%expect {| val rez : int list |}]
+;;
+
+let%expect_test "infer expr with multiple patterns" =
+  let _ = infer_program_test {| 
+    let a = Some 4 
+    let b = (a, [], not true) |} in
+  [%expect {|
+    val a : (int) option
+    val b : ((int) option * '0 list * bool) |}]
+;;

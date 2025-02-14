@@ -116,14 +116,14 @@ let%expect_test "parse incorrect pattern-matching" =
 ;;
 
 let%expect_test "parse correct pattern-matching" =
-  parse "let x = match 3 with | 1 -> 10 | 2 -> 20 | _ -> 30 ;;";
+  parse "let x = match 3 with | 1 -> -10 | 2 -> +20 | _ -> 30 ;;";
   [%expect
     {|
   [(SValue (Non_recursive,
       (Evalue_binding ((PVar (Id "x")),
          (Ematch ((Econst (Int 3)),
-            (Ecase ((PConst (Int 1)), (Econst (Int 10)))),
-            [(Ecase ((PConst (Int 2)), (Econst (Int 20))));
+            (Ecase ((PConst (Int 1)), (Eun_op (Negative, (Econst (Int 10)))))),
+            [(Ecase ((PConst (Int 2)), (Eun_op (Positive, (Econst (Int 20))))));
               (Ecase (PAny, (Econst (Int 30))))]
             ))
          )),
@@ -168,13 +168,13 @@ let%expect_test "parse prefix operators" =
   |}]
 ;;
 
-let%expect_test "parse multiple patterns" =
-  parse "let x = match n with | [] -> 10 | h::tl -> 20 | h::m::tl -> 30 ;;";
+let%expect_test "parse match with function keyword" =
+  parse "let x = function | [] -> 10 | h::tl -> 20 | h::m::tl -> 30 ;;";
   [%expect
     {|
   [(SValue (Non_recursive,
       (Evalue_binding ((PVar (Id "x")),
-         (Ematch ((Evar (Id "n")), (Ecase ((PList []), (Econst (Int 10)))),
+         (Efunction ((Ecase ((PList []), (Econst (Int 10)))),
             [(Ecase ((PCons ((PVar (Id "h")), (PVar (Id "tl")))),
                 (Econst (Int 20))));
               (Ecase (
@@ -190,15 +190,95 @@ let%expect_test "parse multiple patterns" =
 ;;
 
 let%expect_test "parse pattern with arguments" =
-  parse "let w (Some c) (2::v)  = c";
+  parse "let (w : int) (Some c) (2::v) (a, b, d)  = c";
   [%expect
     {|
   [(SValue (Non_recursive,
-      (Evalue_binding ((PVar (Id "w")),
+      (Evalue_binding ((PConstraint ((PVar (Id "w")), int)),
          (Efun ((POption (Some (PVar (Id "c")))),
-            [(PCons ((PConst (Int 2)), (PVar (Id "v"))))], (Evar (Id "c"))))
+            [(PCons ((PConst (Int 2)), (PVar (Id "v"))));
+              (PTuple ((PVar (Id "a")), (PVar (Id "b")), [(PVar (Id "d"))]))],
+            (Evar (Id "c"))))
          )),
       []))
     ]
   |}]
+;;
+
+let%expect_test "parse expr with unary and binary operations" =
+  parse
+    "let x = not true in let y = 13 in if x || (10 >= y) && (5 <= y) && (y <> 6) || (y < \
+     9) && (y > -1000) then +5 :: [] else [10] ;;";
+  [%expect
+    {|
+  [(SEval
+      (Elet (Non_recursive,
+         (Evalue_binding ((PVar (Id "x")), (Eun_op (Not, (Econst (Bool true))))
+            )),
+         [],
+         (Elet (Non_recursive,
+            (Evalue_binding ((PVar (Id "y")), (Econst (Int 13)))), [],
+            (Eif_then_else (
+               (Ebin_op (And,
+                  (Ebin_op (Or,
+                     (Ebin_op (And,
+                        (Ebin_op (And,
+                           (Ebin_op (Or, (Evar (Id "x")),
+                              (Ebin_op (Gte, (Econst (Int 10)), (Evar (Id "y"))
+                                 ))
+                              )),
+                           (Ebin_op (Lte, (Econst (Int 5)), (Evar (Id "y")))))),
+                        (Ebin_op (Neq, (Evar (Id "y")), (Econst (Int 6)))))),
+                     (Ebin_op (Lt, (Evar (Id "y")), (Econst (Int 9)))))),
+                  (Ebin_op (Gt, (Evar (Id "y")),
+                     (Eun_op (Negative, (Econst (Int 1000))))))
+                  )),
+               (Ebin_op (Cons, (Eun_op (Positive, (Econst (Int 5)))),
+                  (Elist []))),
+               (Some (Elist [(Econst (Int 10))]))))
+            ))
+         )))
+    ]
+  |}]
+;;
+
+let%expect_test "parse multiple patterns" =
+  parse "let a = Some 4 in let b = (c, [], not true) in c :: [a]";
+  [%expect
+    {|
+  [(SEval
+      (Elet (Non_recursive,
+         (Evalue_binding ((PVar (Id "a")), (Eoption (Some (Econst (Int 4)))))),
+         [],
+         (Elet (Non_recursive,
+            (Evalue_binding ((PVar (Id "b")),
+               (Etuple ((Evar (Id "c")), (Elist []),
+                  [(Eun_op (Not, (Econst (Bool true))))]))
+               )),
+            [], (Ebin_op (Cons, (Evar (Id "c")), (Elist [(Evar (Id "a"))])))))
+         )))
+    ]
+  |}]
+;;
+
+let%expect_test "parse expr with constraint" =
+  parse "let addi = fun f g x -> (f x (g x: bool) : int) ";
+  [%expect
+    {|
+  [(SValue (Non_recursive,
+      (Evalue_binding ((PVar (Id "addi")),
+         (Efun ((PVar (Id "f")), [(PVar (Id "g")); (PVar (Id "x"))],
+            (Econstraint (
+               (Efun_application (
+                  (Efun_application ((Evar (Id "f")), (Evar (Id "x")))),
+                  (Econstraint (
+                     (Efun_application ((Evar (Id "g")), (Evar (Id "x")))),
+                     bool))
+                  )),
+               int))
+            ))
+         )),
+      []))
+    ]
+     |}]
 ;;

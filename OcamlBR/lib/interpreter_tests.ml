@@ -194,3 +194,29 @@ let%expect_test "from andrei" =
   |} in
   [%expect {| Infer error: Undefined variable "y" |}]
 ;;
+
+let%expect_test "infer expr with unary and binary operations" =
+  let _ =
+    test_interpret
+      {| 
+    let rez = 
+      let x = not true in 
+      let y = 13 in if x || (10 >= y) && (5 <= y) && (y <> 6) || (y < 9) && (y > -1000) then +5 :: [] else [10] |}
+  in
+  [%expect {|
+    {
+    val rez : int list = [10]
+    } |}]
+;;
+
+let%expect_test "infer expr with multiple patterns" =
+  let _ = test_interpret {| 
+    let a = Some 4 
+    let b = (a, [], not true) |} in
+  [%expect
+    {|
+    {
+    val a : (int) option = Some 4
+    val b : ((int) option * '0 list * bool) = (Some 4, [], false)
+    } |}]
+;;
