@@ -242,9 +242,9 @@ let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 let p_value_binding expr =
   let* pattern = p_pattern in
   let rec helper = function
-    | Ppat_any | Ppat_var _ | Ppat_construct _ -> true
+    | Ppat_any | Ppat_var _ | Ppat_construct _ | Ppat_constant _ -> true
     | Ppat_tuple pts -> List.fold_left (fun acc pat -> acc && helper pat) true pts
-    | Ppat_constant _ | Ppat_interval _ -> false
+    | Ppat_interval _ -> false
   in
   (* Zanuda thinks it's better *)
   if not (helper pattern)

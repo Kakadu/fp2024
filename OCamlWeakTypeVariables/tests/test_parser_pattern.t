@@ -16,11 +16,19 @@ SPDX-License-Identifier: LGPL-3.0-or-later
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let 122 = homka
-  Error: : Pattern name must be wildcard, variable or tuple of them
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_constant (Pconst_int 122));
+                       pvb_expr = (Pexp_ident "homka") }
+                      ]
+                    ))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let "homka" = "homka"
-  Error: : Pattern name must be wildcard, variable or tuple of them
+  Parsed result: (Pstr_value (NonRecursive,
+                    [{ pvb_pat = (Ppat_constant (Pconst_string "homka"));
+                       pvb_expr = (Pexp_constant (Pconst_string "homka")) }
+                      ]
+                    ))
 
   $ ../bin/REPL.exe -dparsetree <<EOF
   > let _, _ = homka
