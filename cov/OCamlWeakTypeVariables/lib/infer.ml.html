@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>infer.ml &mdash; Coverage report</title>
-    <meta name="description" content="82.83% coverage in lib/infer.ml">
+    <meta name="description" content="82.80% coverage in lib/infer.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>infer.ml
         </a>
       </h1>
-      <h2>82.83%</h2>
+      <h2>82.80%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:7.74%"></span>
@@ -702,7 +702,7 @@
 <a id="L603"></a><span > </span>
 <a id="L604"></a><span class="some-visited"> </span>
 <a id="L605"></a><span > </span>
-<a id="L606"></a><span class="visited"> </span>
+<a id="L606"></a><span > </span>
 <a id="L607"></a><span class="visited"> </span>
 <a id="L608"></a><span > </span>
 <a id="L609"></a><span class="visited"> </span>
@@ -2283,7 +2283,7 @@ let infer_rec_value_bindings infer_expr env vbs =
     in
     has_no_free_occurenc<span data-count="0">e</span> || is_variable_fun_functio<span data-count="20">n</span>
   in
-  let result_expr_check = List.for_all (fun e -&gt; <span data-count="22">v</span>alidate_expr e) exprs in
+  let result_expr_check = List.for_all validate_expr exprs in
   <span data-count="19">i</span>f not result_expr_check
   then
     <span data-count="2">f</span>ail
