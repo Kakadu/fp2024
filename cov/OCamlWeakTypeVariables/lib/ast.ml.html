@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>ast.ml &mdash; Coverage report</title>
-    <meta name="description" content="82.50% coverage in lib/ast.ml">
+    <meta name="description" content="86.84% coverage in lib/ast.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,12 +15,11 @@
           <span class="dirname">lib/</span>ast.ml
         </a>
       </h1>
-      <h2>82.50%</h2>
+      <h2>86.84%</h2>
     </div>
     <div id="navbar">
-      <span class="some-visited" style="top:22.37%"></span>
-      <span class="unvisited" style="top:39.47%"></span>
-      <span class="unvisited" style="top:46.05%"></span>
+      <span class="some-visited" style="top:23.29%"></span>
+      <span class="unvisited" style="top:39.73%"></span>
       <span class="unvisited" style="bottom:0.00%"></span>
     </div>
     <div id="report">
@@ -50,58 +49,55 @@
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span class="visited"> </span>
-<a id="L25"></a><span > </span>
-<a id="L26"></a><span class="visited"> </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span > </span>
 <a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
-<a id="L29"></a><span > </span>
-<a id="L30"></a><span class="unvisited"> </span>
+<a id="L29"></a><span class="unvisited"> </span>
+<a id="L30"></a><span > </span>
 <a id="L31"></a><span > </span>
 <a id="L32"></a><span > </span>
 <a id="L33"></a><span > </span>
-<a id="L34"></a><span > </span>
-<a id="L35"></a><span class="unvisited"> </span>
+<a id="L34"></a><span class="visited"> </span>
+<a id="L35"></a><span > </span>
 <a id="L36"></a><span > </span>
 <a id="L37"></a><span class="visited"> </span>
 <a id="L38"></a><span > </span>
 <a id="L39"></a><span > </span>
-<a id="L40"></a><span class="visited"> </span>
+<a id="L40"></a><span > </span>
 <a id="L41"></a><span > </span>
-<a id="L42"></a><span > </span>
-<a id="L43"></a><span > </span>
-<a id="L44"></a><span > </span>
-<a id="L45"></a><span class="visited"> </span>
-<a id="L46"></a><span class="visited"> </span>
+<a id="L42"></a><span class="visited"> </span>
+<a id="L43"></a><span class="visited"> </span>
+<a id="L44"></a><span class="visited"> </span>
+<a id="L45"></a><span > </span>
+<a id="L46"></a><span > </span>
 <a id="L47"></a><span class="visited"> </span>
-<a id="L48"></a><span > </span>
-<a id="L49"></a><span > </span>
-<a id="L50"></a><span class="visited"> </span>
-<a id="L51"></a><span class="visited"> </span>
-<a id="L52"></a><span class="visited"> </span>
-<a id="L53"></a><span > </span>
+<a id="L48"></a><span class="visited"> </span>
+<a id="L49"></a><span class="visited"> </span>
+<a id="L50"></a><span > </span>
+<a id="L51"></a><span > </span>
+<a id="L52"></a><span > </span>
+<a id="L53"></a><span class="visited"> </span>
 <a id="L54"></a><span > </span>
 <a id="L55"></a><span > </span>
-<a id="L56"></a><span class="visited"> </span>
-<a id="L57"></a><span > </span>
+<a id="L56"></a><span > </span>
+<a id="L57"></a><span class="visited"> </span>
 <a id="L58"></a><span > </span>
-<a id="L59"></a><span > </span>
-<a id="L60"></a><span class="visited"> </span>
+<a id="L59"></a><span class="visited"> </span>
+<a id="L60"></a><span > </span>
 <a id="L61"></a><span > </span>
-<a id="L62"></a><span class="visited"> </span>
-<a id="L63"></a><span > </span>
+<a id="L62"></a><span > </span>
+<a id="L63"></a><span class="visited"> </span>
 <a id="L64"></a><span > </span>
-<a id="L65"></a><span > </span>
-<a id="L66"></a><span class="visited"> </span>
-<a id="L67"></a><span > </span>
-<a id="L68"></a><span class="visited"> </span>
+<a id="L65"></a><span class="visited"> </span>
+<a id="L66"></a><span > </span>
+<a id="L67"></a><span class="visited"> </span>
+<a id="L68"></a><span > </span>
 <a id="L69"></a><span > </span>
-<a id="L70"></a><span class="visited"> </span>
+<a id="L70"></a><span > </span>
 <a id="L71"></a><span > </span>
 <a id="L72"></a><span > </span>
-<a id="L73"></a><span > </span>
-<a id="L74"></a><span > </span>
-<a id="L75"></a><span > </span>
-<a id="L76"></a><span class="unvisited"> </span>
+<a id="L73"></a><span class="unvisited"> </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -179,9 +175,6 @@
 <a href="#L71">71</a>
 <a href="#L72">72</a>
 <a href="#L73">73</a>
-<a href="#L74">74</a>
-<a href="#L75">75</a>
-<a href="#L76">76</a>
 </pre>
 <pre><code class="ocaml">[@@@ocaml.text "/*"]
 
@@ -193,21 +186,20 @@
 
 (** constants *)
 <span data-count="136">t</span>ype constant =
-  | Pconst_int of in<span data-count="58">t</span> (** constant of int. Ex: 5 *)
-  | Pconst_string of strin<span data-count="8">g</span> (** constant of string. Ex: "homka" *)
+  | Pconst_int of in<span data-count="56">t</span> (** constant of int. Ex: 5 *)
+  | Pconst_string of strin<span data-count="10">g</span> (** constant of string. Ex: "homka" *)
   | Pconst_boolean of boo<span data-count="2">l</span> (** constant of boolean. Ex: true *)
 [@@deriving show { with_path = false }]
 
 (** identificator *)
-<span data-count="0">t</span>ype id = <span data-count="67">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype id = <span data-count="61">s</span>tring [@@deriving show { with_path = false }]
 
 <span data-count="89">t</span>ype pattern =
   | Ppat_any (** The pattern _. *)
-  | Ppat_var of strin<span data-count="32">g</span> (** A variable pattern such as x *)
+  | Ppat_var of strin<span data-count="30">g</span> (** A variable pattern such as x *)
   | Ppat_constant of constant (** Patterns such as 1, 'a', "true", 1.0 *)
   | Ppat_interval of constant * constant (** Patterns such as 'a'..'z'. *)
   | Ppat_tuple of <span data-count="49">p</span>attern lis<span data-count="11">t</span> (** Patterns (P1, ..., Pn). Invariant: n &gt;= 2 *)
-  | Ppat_unit (** let () = ... in ... *)
   | Ppat_construct of id * <span data-count="8">p</span>attern optio<span data-count="3">n</span>
 [@@deriving show { with_path = false }]
 
@@ -217,9 +209,7 @@
   | NonRecursive
 [@@deriving show { with_path = false }]
 
-<span data-count="0">t</span>ype core_type = Ptyp_constr of strin<span data-count="0">g</span> [@@deriving show { with_path = false }]
-
-<span data-count="317">t</span>ype expression =
+<span data-count="295">t</span>ype expression =
   | Pexp_ident of id (** Identifiers. Ex: "homka" *)
   | Pexp_constant of constant (** Expressions constant. Ex: 5, "Homka", true *)
   | Pexp_let of rec_flag * <span data-count="18">v</span>alue_binding lis<span data-count="6">t</span> * expression
@@ -227,22 +217,22 @@
       let P1 = E1 and ... and Pn = EN in E when flag is Nonrecursive
       let rec P1 = E1 and ... and Pn = EN in E when flag is Recursive *)
   | Pexp_fun of pattern * expression (** fun P -&gt; E *)
-  | Pexp_apply of expression * <span data-count="282">e</span>xpression lis<span data-count="85">t</span> (** Function: Ex: print a (5 + 5) b true *)
+  | Pexp_apply of expression * <span data-count="246">e</span>xpression lis<span data-count="74">t</span> (** Function: Ex: print a (5 + 5) b true *)
   | Pexp_tuple of <span data-count="40">e</span>xpression lis<span data-count="9">t</span> (** Expressions (E1, ..., En). Invariant: n &gt;= 2 *)
-  | Pexp_ifthenelse of expression * expression * <span data-count="26">e</span>xpression optio<span data-count="8">n</span>
+  | Pexp_ifthenelse of expression * expression * <span data-count="22">e</span>xpression optio<span data-count="7">n</span>
   (** if E1 then E2 else E3. Ex: If homka then hype else no_hype *)
-  | Pexp_constraint of expression * core_type (** (E : T) *)
+  | Pexp_constraint of expression * Types.typ (** (E : T) *)
   | Pexp_construct of id * <span data-count="12">e</span>xpression optio<span data-count="3">n</span>
   | Pexp_match of expression * <span data-count="20">c</span>ase lis<span data-count="6">t</span> (** match E0 with P1 -&gt; E1 | ... | Pn -&gt; En *)
   | Pexp_function of <span data-count="13">c</span>ase lis<span data-count="3">t</span> (** function P1 -&gt; E1 | ... | Pn -&gt; En *)
 [@@deriving show { with_path = false }]
 
 (* let pat : type_constraint = exp *)
-<span data-count="119">a</span>nd value_binding =
+<span data-count="126">a</span>nd value_binding =
   { pvb_pat : pattern
   ; pvb_expr : expression
   }
-[@@deriving show { with_path = false }<span data-count="34">]</span>
+[@@deriving show { with_path = false }<span data-count="36">]</span>
 
 <span data-count="49">a</span>nd case =
   { pc_lhs : pattern
@@ -252,7 +242,7 @@
 
 <span data-count="67">t</span>ype structure_item =
   | Pstr_eval of expression
-  | Pstr_value of rec_flag * <span data-count="84">v</span>alue_binding lis<span data-count="28">t</span>
+  | Pstr_value of rec_flag * <span data-count="90">v</span>alue_binding lis<span data-count="30">t</span>
   (** Pstr_value(rec, [(P1, E1 ; ... ; (Pn, En))]) represents:
       et P1 = E1 and ... and Pn = EN when rec is Nonrecursive,
       let rec P1 = E1 and ... and Pn = EN  when rec is Recursive.*)

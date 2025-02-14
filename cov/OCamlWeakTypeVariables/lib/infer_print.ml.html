@@ -272,14 +272,14 @@
 open Types
 
 let pp_base_type_my fmt = function
-  | <span data-count="123">B</span>Int -&gt; Format.fprintf fmt "int"
-  | <span data-count="9">B</span>Bool -&gt; Format.fprintf fmt "bool"
+  | <span data-count="121">B</span>Int -&gt; Format.fprintf fmt "int"
+  | <span data-count="8">B</span>Bool -&gt; Format.fprintf fmt "bool"
   | <span data-count="9">B</span>Unit -&gt; Format.fprintf fmt "unit"
   | <span data-count="4">B</span>String -&gt; Format.fprintf fmt "string"
 ;;
 
 let minimize_variable t =
-  <span data-count="87">l</span>et map =
+  <span data-count="84">l</span>et map =
     let rec helper (min, map) = function
       | <span data-count="101">T</span>Var v when Base.Map.me<span data-count="101">m</span> map v -&gt; <span data-count="51">m</span>in, map
       | <span data-count="50">T</span>Var v -&gt; min + 1, Base.Map.add_ex<span data-count="50">n</span> map ~key:v ~data:min
@@ -290,9 +290,9 @@ let minimize_variable t =
       | <span data-count="18">T</span>Tuple (f, s, xs) -&gt; List.fold_left helper (min, map) (f :: s :: xs)
       | <span data-count="16">T</span>List l -&gt; helper (min, map) l
       | <span data-count="4">T</span>Option o -&gt; helper (min, map) o
-      | <span data-count="145">T</span>Base _ -&gt; min, map
+      | <span data-count="142">T</span>Base _ -&gt; min, map
     in
-    helper (0, Base.Map.empt<span data-count="87">y</span> (module Base.Int)) t |&gt; <span data-count="87">s</span>n<span data-count="87">d</span>
+    helper (0, Base.Map.empt<span data-count="84">y</span> (module Base.Int)) t |&gt; <span data-count="84">s</span>n<span data-count="84">d</span>
   in
   let rec helper = function
     | <span data-count="101">T</span>Var v -&gt; TVar (Base.Map.find_ex<span data-count="101">n</span> map v)
@@ -300,15 +300,15 @@ let minimize_variable t =
     | <span data-count="18">T</span>Tuple (f, s, xs) -&gt; TTuple (helpe<span data-count="18">r</span> f, helpe<span data-count="18">r</span> s, List.ma<span data-count="18">p</span> helper xs)
     | <span data-count="16">T</span>List l -&gt; TList (helpe<span data-count="16">r</span> l)
     | <span data-count="4">T</span>Option o -&gt; TOption (helpe<span data-count="4">r</span> o)
-    | <span data-count="145">T</span>Base b -&gt; TBase b
+    | <span data-count="142">T</span>Base b -&gt; TBase b
   in
   helper t
 ;;
 
 let pp_typ_my fmt t =
-  <span data-count="87">l</span>et t = if Config.vars_min then <span data-count="87">m</span>inimize_variabl<span data-count="87">e</span> t else <span data-count="0">t</span> in
+  <span data-count="84">l</span>et t = if Config.vars_min then <span data-count="84">m</span>inimize_variabl<span data-count="84">e</span> t else <span data-count="0">t</span> in
   let rec helper fmt = function
-    | <span data-count="145">T</span>Base b -&gt; pp_base_type_my fmt b
+    | <span data-count="142">T</span>Base b -&gt; pp_base_type_my fmt b
     | <span data-count="101">T</span>Var v when Config.vars_char -&gt;
       <span data-count="101">F</span>ormat.fprintf fmt "'%c" (Char.ch<span data-count="101">r</span> (Char.cod<span data-count="101">e</span> 'a' + v))
     | <span data-count="0">T</span>Var v -&gt; Format.fprintf fmt "'%s" (string_of_in<span data-count="0">t</span> v)
@@ -339,12 +339,12 @@ let pp_typ_my fmt t =
 ;;
 
 let pp_error_my fmt e =
-  <span data-count="12">m</span>atch e with
+  <span data-count="14">m</span>atch e with
   | <span data-count="7">U</span>nificationFailed (f, s) -&gt;
     Format.fprintf fmt "Can't unify (%a) and (%a)" pp_typ_my f pp_typ_my s
   | <span data-count="1">U</span>nbound id -&gt; Format.fprintf fmt "Unbound value %s" id
   | <span data-count="1">P</span>atternNameTwice id -&gt; Format.fprintf fmt "Variable %s is bound several time" id
-  | <span data-count="3">_</span> as e -&gt; Format.printf "%a" pp_error e
+  | <span data-count="5">_</span> as e -&gt; Format.printf "%a" pp_error e
 ;;
 
 let print_typ ?(name = <span data-count="0">"</span>typ") t = <span data-count="0">F</span>ormat.printf "%s: %a\n" name pp_typ_my t
