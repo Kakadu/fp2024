@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -50,25 +50,9 @@ let%expect_test "type complex func" =
   [%expect {| func(bool, func()) ([0]string, int) |}]
 ;;
 
-let%expect_test "type bidirectional channel" =
-  print_endline (print_type (Type_chan (Chan_bidirectional, Type_int)));
+let%expect_test "type bidirectional chanel" =
+  print_endline (print_type (Type_chan Type_int));
   [%expect {| chan int |}]
-;;
-
-let%expect_test "type bidirectional channel of receive-only channel" =
-  print_endline
-    (print_type (Type_chan (Chan_bidirectional, Type_chan (Chan_receive, Type_int))));
-  [%expect {| chan (<-chan int) |}]
-;;
-
-let%expect_test "type receive-only channel" =
-  print_endline (print_type (Type_chan (Chan_receive, Type_string)));
-  [%expect {| <-chan string |}]
-;;
-
-let%expect_test "type send-only channel" =
-  print_endline (print_type (Type_chan (Chan_send, Type_string)));
-  [%expect {| chan<- string |}]
 ;;
 
 (********** expr **********)
@@ -121,7 +105,7 @@ let%expect_test "expr const array with init" =
 
 let%expect_test "expr empty anon func" =
   print_endline
-    (print_expr (Expr_const (Const_func { args = []; returns = None; body = [] })));
+    (print_expr (Expr_const (Const_func { args = []; returns = []; body = [] })));
   [%expect {| func() {} |}]
 ;;
 
@@ -131,7 +115,7 @@ let%expect_test "expr anon func with one arg and one return value" =
        (Expr_const
           (Const_func
              { args = [ "a", Type_int ]
-             ; returns = Some (Only_types (Type_int, []))
+             ; returns = [ Type_int ]
              ; body = [ Stmt_return [ Expr_ident "a" ] ]
              })));
   [%expect {|
@@ -146,36 +130,12 @@ let%expect_test "expr anon func with mult args and return values" =
        (Expr_const
           (Const_func
              { args = [ "a", Type_int; "b", Type_string ]
-             ; returns = Some (Only_types (Type_int, [ Type_string ]))
+             ; returns = [ Type_int; Type_string ]
              ; body = [ Stmt_return [ Expr_ident "a"; Expr_ident "b" ] ]
              })));
   [%expect {|
     func(a int, b string) (int, string) {
         return a, b
-    } |}]
-;;
-
-let%expect_test "expr anon func with mult args and named return values" =
-  print_endline
-    (print_expr
-       (Expr_const
-          (Const_func
-             { args = [ "a", Type_int; "b", Type_string ]
-             ; returns =
-                 Some (Ident_and_types (("res1", Type_int), [ "res2", Type_string ]))
-             ; body =
-                 [ Stmt_assign
-                     (Assign_mult_expr
-                        ( (Lvalue_ident "res1", Expr_ident "a")
-                        , [ Lvalue_ident "res2", Expr_ident "b" ] ))
-                 ; Stmt_return []
-                 ]
-             })));
-  [%expect
-    {|
-    func(a int, b string) (res1 int, res2 string) {
-        res1, res2 = a, b
-        return
     } |}]
 ;;
 
@@ -333,9 +293,12 @@ let%expect_test "expr func call with multiple complex arguments" =
     (print_expr
        (Expr_call
           ( Expr_ident "three"
-          , [ Expr_ident "abc"
-            ; Expr_bin_oper (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3))
-            ; Expr_call (Expr_ident "fac", [ Expr_const (Const_int 25) ])
+          , [ Arg_expr (Expr_ident "abc")
+            ; Arg_expr
+                (Expr_bin_oper
+                   (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3)))
+            ; Arg_expr
+                (Expr_call (Expr_ident "fac", [ Arg_expr (Expr_const (Const_int 25)) ]))
             ] )));
   [%expect {| three(abc, 2 + 3, fac(25)) |}]
 ;;
@@ -345,7 +308,7 @@ let%expect_test "expr func call with array as a function" =
     (print_expr
        (Expr_call
           ( Expr_index (Expr_ident "funcs", Expr_const (Const_int 1))
-          , [ Expr_ident "a"; Expr_ident "b" ] )));
+          , [ Arg_expr (Expr_ident "a"); Arg_expr (Expr_ident "b") ] )));
   [%expect {| funcs[1](a, b) |}]
 ;;
 
@@ -377,7 +340,9 @@ let%expect_test "expr index with function call as an array" =
   print_endline
     (print_expr
        (Expr_index
-          ( Expr_call (Expr_ident "get_array", [ Expr_ident "a"; Expr_ident "b" ])
+          ( Expr_call
+              ( Expr_ident "get_array"
+              , [ Arg_expr (Expr_ident "a"); Arg_expr (Expr_ident "b") ] )
           , Expr_const (Const_int 1) )));
   [%expect {| get_array(a, b)[1] |}]
 ;;
@@ -517,17 +482,17 @@ let%expect_test "stmt return with multiple exprs" =
 (*** func call, go, defer ***)
 
 let%expect_test "stmt func call" =
-  print_endline (print_stmt (Stmt_call (Expr_ident "a", [ Expr_ident "b" ])));
+  print_endline (print_stmt (Stmt_call (Expr_ident "a", [ Arg_expr (Expr_ident "b") ])));
   [%expect {| a(b) |}]
 ;;
 
 let%expect_test "stmt go" =
-  print_endline (print_stmt (Stmt_go (Expr_ident "a", [ Expr_ident "b" ])));
+  print_endline (print_stmt (Stmt_go (Expr_ident "a", [ Arg_expr (Expr_ident "b") ])));
   [%expect {| go a(b) |}]
 ;;
 
 let%expect_test "stmt defer" =
-  print_endline (print_stmt (Stmt_defer (Expr_ident "a", [ Expr_ident "b" ])));
+  print_endline (print_stmt (Stmt_defer (Expr_ident "a", [ Arg_expr (Expr_ident "b") ])));
   [%expect {| defer a(b) |}]
 ;;
 
@@ -573,7 +538,7 @@ let%expect_test "stmt long decl one var with type with init" =
        (Stmt_long_var_decl
           (Long_decl_mult_init
              ( Some (Type_func ([], []))
-             , ("a", Expr_const (Const_func { args = []; returns = None; body = [] }))
+             , ("a", Expr_const (Const_func { args = []; returns = []; body = [] }))
              , [] ))));
   [%expect {| var a func() = func() {} |}]
 ;;
@@ -599,9 +564,9 @@ let%expect_test "stmt long decl mult var no type with one init" =
              , "b"
              , [ "c" ]
              , ( Expr_ident "get_three"
-               , [ Expr_const (Const_int 1)
-                 ; Expr_const (Const_int 2)
-                 ; Expr_const (Const_int 3)
+               , [ Arg_expr (Expr_const (Const_int 1))
+                 ; Arg_expr (Expr_const (Const_int 2))
+                 ; Arg_expr (Expr_const (Const_int 3))
                  ] ) ))));
   [%expect {| var a, b, c  = get_three(1, 2, 3) |}]
 ;;
@@ -611,12 +576,12 @@ let%expect_test "stmt long decl mult var with type with one init" =
     (print_stmt
        (Stmt_long_var_decl
           (Long_decl_one_init
-             ( Some (Type_chan (Chan_receive, Type_array (5, Type_int)))
+             ( Some (Type_chan (Type_array (5, Type_int)))
              , "a"
              , "b"
              , [ "c" ]
              , (Expr_ident "get", []) ))));
-  [%expect {| var a, b, c <-chan [5]int = get() |}]
+  [%expect {| var a, b, c chan [5]int = get() |}]
 ;;
 
 (*** short decl ***)
@@ -649,10 +614,13 @@ let%expect_test "stmt short var decl mult var and one init" =
              , "b"
              , [ "c" ]
              , ( Expr_ident "three"
-               , [ Expr_ident "abc"
-                 ; Expr_bin_oper
-                     (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3))
-                 ; Expr_call (Expr_ident "fac", [ Expr_const (Const_int 25) ])
+               , [ Arg_expr (Expr_ident "abc")
+                 ; Arg_expr
+                     (Expr_bin_oper
+                        (Bin_sum, Expr_const (Const_int 2), Expr_const (Const_int 3)))
+                 ; Arg_expr
+                     (Expr_call
+                        (Expr_ident "fac", [ Arg_expr (Expr_const (Const_int 25)) ]))
                  ] ) ))));
   [%expect {| a, b, c := three(abc, 2 + 3, fac(25)) |}]
 ;;
@@ -711,7 +679,8 @@ let%expect_test "stmt assign mult lvalues and one rvalue" =
 let%expect_test "stmt simple if no init" =
   print_endline
     (print_stmt
-       (Stmt_if { init = None; cond = Expr_ident "true"; if_body = []; else_body = None }));
+       (Stmt_if
+          { if_init = None; if_cond = Expr_ident "true"; if_body = []; else_body = None }));
   [%expect {| if true {} |}]
 ;;
 
@@ -719,10 +688,10 @@ let%expect_test "stmt if with init" =
   print_endline
     (print_stmt
        (Stmt_if
-          { init =
+          { if_init =
               Some
                 (Init_decl (Short_decl_mult_init (("k", Expr_const (Const_int 0)), [])))
-          ; cond = Expr_bin_oper (Bin_equal, Expr_ident "k", Expr_ident "test")
+          ; if_cond = Expr_bin_oper (Bin_equal, Expr_ident "k", Expr_ident "test")
           ; if_body = []
           ; else_body = None
           }));
@@ -733,8 +702,8 @@ let%expect_test "stmt if with else that is a block" =
   print_endline
     (print_stmt
        (Stmt_if
-          { init = None
-          ; cond = Expr_ident "cond"
+          { if_init = None
+          ; if_cond = Expr_ident "cond"
           ; if_body = []
           ; else_body = Some (Else_block [])
           }));
@@ -745,14 +714,14 @@ let%expect_test "stmt if with else that is another if" =
   print_endline
     (print_stmt
        (Stmt_if
-          { init = None
-          ; cond = Expr_ident "cond"
+          { if_init = None
+          ; if_cond = Expr_ident "cond"
           ; if_body = []
           ; else_body =
               Some
                 (Else_if
-                   { init = None
-                   ; cond = Expr_ident "cond2"
+                   { if_init = None
+                   ; if_cond = Expr_ident "cond2"
                    ; if_body = []
                    ; else_body = None
                    })
@@ -764,7 +733,8 @@ let%expect_test "stmt if with else that is another if" =
 
 let%expect_test "stmt empty for" =
   print_endline
-    (print_stmt (Stmt_for { init = None; cond = None; post = None; body = [] }));
+    (print_stmt
+       (Stmt_for { for_init = None; for_cond = None; for_post = None; for_body = [] }));
   [%expect {| for {} |}]
 ;;
 
@@ -772,11 +742,11 @@ let%expect_test "stmt for with only condition" =
   print_endline
     (print_stmt
        (Stmt_for
-          { init = None
-          ; cond =
+          { for_init = None
+          ; for_cond =
               Some (Expr_bin_oper (Bin_greater, Expr_ident "a", Expr_const (Const_int 0)))
-          ; post = None
-          ; body = []
+          ; for_post = None
+          ; for_body = []
           }));
   [%expect {| for a > 0 {} |}]
 ;;
@@ -785,13 +755,13 @@ let%expect_test "stmt for with init, cond and post" =
   print_endline
     (print_stmt
        (Stmt_for
-          { init =
+          { for_init =
               Some
                 (Init_decl (Short_decl_mult_init (("i", Expr_const (Const_int 0)), [])))
-          ; cond =
+          ; for_cond =
               Some (Expr_bin_oper (Bin_less, Expr_ident "i", Expr_const (Const_int 10)))
-          ; post = Some (Init_incr "i")
-          ; body = []
+          ; for_post = Some (Init_incr "i")
+          ; for_body = []
           }));
   [%expect {| for i := 0; i < 10; i++ {} |}]
 ;;
@@ -823,7 +793,7 @@ let%expect_test "stmt block of mult stmts" =
           [ Stmt_short_var_decl
               (Short_decl_mult_init (("a", Expr_const (Const_int 5)), []))
           ; Stmt_incr "a"
-          ; Stmt_call (Expr_ident "println", [ Expr_ident "a" ])
+          ; Stmt_call (Expr_ident "println", [ Arg_expr (Expr_ident "a") ])
           ]));
   [%expect {|
     {
@@ -839,11 +809,7 @@ let%expect_test "file with simple func decl" =
   print_endline
     (print_file
        [ Decl_func
-           ( "main"
-           , { args = [ "a", Type_int ]
-             ; returns = Some (Only_types (Type_bool, []))
-             ; body = []
-             } )
+           ("main", { args = [ "a", Type_int ]; returns = [ Type_bool ]; body = [] })
        ]);
   [%expect {| func main(a int) bool {} |}]
 ;;
@@ -852,7 +818,7 @@ let%expect_test "file with multiple declarations" =
   print_endline
     (print_file
        [ Decl_var (Long_decl_no_init (Type_int, "x", []))
-       ; Decl_func ("main", { args = []; returns = None; body = [] })
+       ; Decl_func ("main", { args = []; returns = []; body = [] })
        ]);
   [%expect {|
     var x int
@@ -866,11 +832,11 @@ let%expect_test "file with factorial func" =
        [ Decl_func
            ( "fac"
            , { args = [ "n", Type_int ]
-             ; returns = Some (Only_types (Type_int, []))
+             ; returns = [ Type_int ]
              ; body =
                  [ Stmt_if
-                     { init = None
-                     ; cond =
+                     { if_init = None
+                     ; if_cond =
                          Expr_bin_oper
                            (Bin_equal, Expr_ident "n", Expr_const (Const_int 1))
                      ; if_body = [ Stmt_return [ Expr_const (Const_int 1) ] ]
@@ -883,10 +849,11 @@ let%expect_test "file with factorial func" =
                                       , Expr_ident "n"
                                       , Expr_call
                                           ( Expr_ident "fac"
-                                          , [ Expr_bin_oper
-                                                ( Bin_subtract
-                                                , Expr_ident "n"
-                                                , Expr_const (Const_int 1) )
+                                          , [ Arg_expr
+                                                (Expr_bin_oper
+                                                   ( Bin_subtract
+                                                   , Expr_ident "n"
+                                                   , Expr_const (Const_int 1) ))
                                             ] ) )
                                   ]
                               ])
@@ -896,6 +863,69 @@ let%expect_test "file with factorial func" =
        ]);
   [%expect
     {|
+    func fac(n int) int {
+        if n == 1 {
+            return 1
+        } else {
+            return n * fac(n - 1)
+        }
+    } |}]
+;;
+
+let%expect_test "file with factorial func" =
+  print_endline
+    (print_file
+       [ Decl_func
+           ( "main"
+           , { args = []
+             ; returns = []
+             ; body =
+                 [ Stmt_block
+                     [ Stmt_call
+                         (Expr_ident "fac", [ Arg_expr (Expr_const (Const_int 6)) ])
+                     ]
+                 ]
+             } )
+       ; Decl_func
+           ( "fac"
+           , { args = [ "n", Type_int ]
+             ; returns = [ Type_int ]
+             ; body =
+                 [ Stmt_if
+                     { if_init = None
+                     ; if_cond =
+                         Expr_bin_oper
+                           (Bin_equal, Expr_ident "n", Expr_const (Const_int 1))
+                     ; if_body = [ Stmt_return [ Expr_const (Const_int 1) ] ]
+                     ; else_body =
+                         Some
+                           (Else_block
+                              [ Stmt_return
+                                  [ Expr_bin_oper
+                                      ( Bin_multiply
+                                      , Expr_ident "n"
+                                      , Expr_call
+                                          ( Expr_ident "fac"
+                                          , [ Arg_expr
+                                                (Expr_bin_oper
+                                                   ( Bin_subtract
+                                                   , Expr_ident "n"
+                                                   , Expr_const (Const_int 1) ))
+                                            ] ) )
+                                  ]
+                              ])
+                     }
+                 ]
+             } )
+       ]);
+  [%expect
+    {|
+    func main() {
+        {
+            fac(6)
+        }
+    }
+
     func fac(n int) int {
         if n == 1 {
             return 1

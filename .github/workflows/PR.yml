@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0                # fix me later
 
       - name: Pin linter to the latest version
-        if: false  # HACK!
+        #if: false  # HACK!
         run: |
           opam pin add https://github.com/Kakadu/zanuda.git --no-action
           opam reinstall zanuda --yes

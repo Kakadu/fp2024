@@ -1,7 +1,9 @@
-let rec even n = 
-    if n = 0 then true 
-    else odd (n - 1)
-and odd n : int = 
-    if n = 0 then false 
-    else even (n - 1)
-;;
+let (|Even|Odd|) v =
+  if v+2 = 0 then Even (v+10)
+  else Odd (v)
+
+let res = match 1 with
+  | Even val -> val
+  | Odd val -> val
+  in print_int res
+

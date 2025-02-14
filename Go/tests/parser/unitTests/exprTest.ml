@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -362,25 +362,25 @@ let%expect_test "unary_min test" =
     -n + 2 + -1|}]
 ;;
 
-let%expect_test "channel receive test" =
+let%expect_test "chanel receive test" =
   pp print_expr parse_expr "<-c";
   [%expect {|
     <-c|}]
 ;;
 
-let%expect_test "channel receive with unop test" =
+let%expect_test "chanel receive with unop test" =
   pp print_expr parse_expr "-<-c";
   [%expect {|
     -<-c|}]
 ;;
 
-let%expect_test "channel receive with binop test" =
+let%expect_test "chanel receive with binop test" =
   pp print_expr parse_expr "-<-c + 1";
   [%expect {|
     -<-c + 1|}]
 ;;
 
-let%expect_test "channel neseted receive test" =
+let%expect_test "chanel neseted receive test" =
   pp print_expr parse_expr "<-<-<-c";
   [%expect {|
     <-<-<-c|}]
@@ -406,18 +406,5 @@ let%expect_test "anon func with mult args and return values" =
   [%expect {|
     func(a int, b string) (int, string) {
         return a, b
-    } |}]
-;;
-
-let%expect_test "anon func with mult args and named return values" =
-  pp
-    print_expr
-    parse_expr
-    {|func(a int, b string) (res1 int, res2 string) { res1, res2 = a, b; return }|};
-  [%expect
-    {|
-    func(a int, b string) (res1 int, res2 string) {
-        res1, res2 = a, b
-        return
     } |}]
 ;;

@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -134,15 +134,15 @@ let parse_if_for_init pblock =
 let parse_if pblock =
   fix (fun parse_if ->
     let* () = string "if" *> ws in
-    let* init =
+    let* if_init =
       parse_if_for_init pblock >>| Option.some <* parse_stmt_sep <|> return None
     in
     let* () =
-      match init with
+      match if_init with
       | None -> parse_stmt_sep <|> return ()
       | Some _ -> return ()
     in
-    let* cond = ws *> parse_expr pblock in
+    let* if_cond = ws *> parse_expr pblock in
     let* if_body = ws_line *> pblock <* ws_line in
     let* else_body =
       let* else_body_exists = string "else" *> ws *> return true <|> return false in
@@ -153,33 +153,33 @@ let parse_if pblock =
         <|> (parse_if >>| fun block -> Some (Else_if block))
       else return None
     in
-    return { init; cond; if_body; else_body })
+    return { if_init; if_cond; if_body; else_body })
 ;;
 
 let parse_default_for pblock =
-  let* init = parse_if_for_init pblock >>| Option.some <|> return None in
+  let* for_init = parse_if_for_init pblock >>| Option.some <|> return None in
   let* () = parse_stmt_sep in
-  let* cond = parse_expr pblock >>| Option.some <|> return None in
+  let* for_cond = parse_expr pblock >>| Option.some <|> return None in
   let* () = parse_stmt_sep in
-  let* post =
+  let* for_post =
     let* next_char = peek_char_fail in
     match next_char with
     | '{' -> return None
     | _ -> parse_if_for_init pblock >>| Option.some
   in
-  let* body = ws_line *> pblock in
-  return (Stmt_for { init; cond; post; body })
+  let* for_body = ws_line *> pblock in
+  return (Stmt_for { for_init; for_cond; for_post; for_body })
 ;;
 
 let parse_for_only_cond pblock =
   let* next_char = peek_char_fail in
-  let* cond =
+  let* for_cond =
     match next_char with
     | '{' -> return None
     | _ -> parse_expr pblock >>| Option.some
   in
-  let* body = ws_line *> pblock in
-  return (Stmt_for { init = None; cond; post = None; body })
+  let* for_body = ws_line *> pblock in
+  return (Stmt_for { for_init = None; for_cond; for_post = None; for_body })
 ;;
 
 let parse_for pblock =

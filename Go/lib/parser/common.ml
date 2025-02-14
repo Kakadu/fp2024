@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -88,15 +88,8 @@ let parse_array_type ptype =
 ;;
 
 let parse_chan_type ptype =
-  let* chan_direction =
-    choice
-      [ string "<-" *> ws *> string "chan" *> return Chan_receive
-      ; string "chan" *> ws *> string "<-" *> return Chan_send
-      ; string "chan" *> return Chan_bidirectional
-      ]
-  in
-  let* chan_type = ws *> ptype in
-  return (Type_chan (chan_direction, chan_type))
+  let* chan_type = string "chan" *> ws *> ptype in
+  return (Type_chan chan_type)
 ;;
 
 let parse_type =

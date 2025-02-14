@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -20,34 +20,7 @@ let sep_by sep list print =
 
 let sep_by_comma list print = sep_by ", " list print
 let print_ident ident = ident
-
-let rec print_type = function
-  | Type_int -> "int"
-  | Type_string -> "string"
-  | Type_bool -> "bool"
-  | Type_array (size, type') -> asprintf "[%i]%s" size (print_type type')
-  | Type_func (arg_types, return_types) ->
-    let print_returns =
-      match return_types with
-      | _ :: _ :: _ -> asprintf " (%s)" (sep_by_comma return_types print_type)
-      | type' :: _ -> " " ^ print_type type'
-      | [] -> ""
-    in
-    asprintf "func(%s)%s" (sep_by_comma arg_types print_type) print_returns
-  | Type_chan (chan_dir, t) ->
-    let print_chan_dir =
-      match chan_dir with
-      | Chan_bidirectional -> "chan"
-      | Chan_receive -> "<-chan"
-      | Chan_send -> "chan<-"
-    in
-    let print_type =
-      match t with
-      | Type_chan (Chan_receive, _) -> asprintf "(%s)" (print_type t)
-      | _ -> asprintf "%s" (print_type t)
-    in
-    asprintf "%s %s" print_chan_dir print_type
-;;
+let print_type = PpType.print_type
 
 let print_idents_with_types list =
   let rec helper acc = function
@@ -64,13 +37,9 @@ let print_func_args_returns_and_body pblock anon_func =
   let { args; returns; body } = anon_func in
   let print_returns =
     match returns with
-    | Some (Only_types (hd, tl)) ->
-      (match tl with
-       | _ :: _ -> asprintf " (%s)" (sep_by_comma (hd :: tl) print_type)
-       | [] -> " " ^ print_type hd)
-    | Some (Ident_and_types (hd, tl)) ->
-      asprintf " (%s)" (print_idents_with_types (hd :: tl))
-    | None -> ""
+    | [] -> ""
+    | [ t ] -> " " ^ print_type t
+    | types -> asprintf " (%s)" (sep_by_comma types print_type)
   in
   asprintf "(%s)%s %s" (print_idents_with_types args) print_returns (pblock body)
 ;;
@@ -149,7 +118,11 @@ let print_func_call pexpr call =
   let print_func =
     if 7 > precedence func then asprintf "(%s)" (pexpr func) else pexpr func
   in
-  asprintf "%s(%s)" print_func (sep_by_comma args pexpr)
+  let print_arg = function
+    | Arg_expr e -> pexpr e
+    | Arg_type t -> print_type t
+  in
+  asprintf "%s(%s)" print_func (sep_by_comma args print_arg)
 ;;
 
 let rec print_expr pblock = function
@@ -268,10 +241,9 @@ let print_if_for_init pblock = function
   | Init_receive chan -> asprintf "<-%s" (print_expr pblock chan)
 ;;
 
-let rec print_if pblock if' =
-  let { init; cond; if_body; else_body } = if' in
+let rec print_if pblock { if_init; if_cond; if_body; else_body } =
   let print_init =
-    match init with
+    match if_init with
     | Some init -> print_if_for_init pblock init ^ "; "
     | None -> ""
   in
@@ -284,33 +256,31 @@ let rec print_if pblock if' =
   asprintf
     "if %s%s %s %s"
     print_init
-    (print_expr pblock cond)
+    (print_expr pblock if_cond)
     (pblock if_body)
     print_else_body
 ;;
 
-let print_for pblock = function
-  | Stmt_for { init; cond; post; body } ->
-    let print_init =
-      match init with
-      | Some init -> print_if_for_init pblock init
-      | None -> ""
-    in
-    let print_cond =
-      match cond with
-      | Some cond -> " " ^ print_expr pblock cond
-      | None -> ""
-    in
-    let print_post =
-      match post with
-      | Some post -> " " ^ print_if_for_init pblock post
-      | None -> ""
-    in
-    (match init, cond, post with
-     | None, None, None -> asprintf "for %s" (pblock body)
-     | None, Some _, None -> asprintf "for%s %s" print_cond (pblock body)
-     | _ -> asprintf "for %s;%s;%s %s" print_init print_cond print_post (pblock body))
-  | _ -> ""
+let print_for pblock { for_init; for_cond; for_post; for_body } =
+  let print_init =
+    match for_init with
+    | Some init -> print_if_for_init pblock init
+    | None -> ""
+  in
+  let print_cond =
+    match for_cond with
+    | Some cond -> " " ^ print_expr pblock cond
+    | None -> ""
+  in
+  let print_post =
+    match for_post with
+    | Some post -> " " ^ print_if_for_init pblock post
+    | None -> ""
+  in
+  match for_init, for_cond, for_post with
+  | None, None, None -> asprintf "for %s" (pblock for_body)
+  | None, Some _, None -> asprintf "for%s %s" print_cond (pblock for_body)
+  | _ -> asprintf "for %s;%s;%s %s" print_init print_cond print_post (pblock for_body)
 ;;
 
 let print_stmt pblock = function
@@ -329,7 +299,7 @@ let print_stmt pblock = function
   | Stmt_chan_send (chan, expr) -> asprintf "%s <- %s" chan (print_expr pblock expr)
   | Stmt_chan_receive chan -> asprintf "<-%s" (print_expr pblock chan)
   | Stmt_if if' -> print_if pblock if'
-  | Stmt_for _ as for' -> print_for pblock for'
+  | Stmt_for for' -> print_for pblock for'
 ;;
 
 let rec print_block block =

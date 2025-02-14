@@ -2,11 +2,10 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open FSharpActivePatterns.Ast
-open FSharpActivePatterns.AstPrinter
-open Format
-
 let%expect_test "print Ast factorial" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let factorial =
     Lambda
       ( PConst (Int_lt 4)
@@ -14,35 +13,39 @@ let%expect_test "print Ast factorial" =
       , If_then_else
           ( Bin_expr
               ( Logical_or
-              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 0))
-              , Bin_expr (Binary_equal, Variable (Ident ("n", None)), Const (Int_lt 1)) )
+              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 0))
+              , Bin_expr (Binary_equal, Variable (Ident "n"), Const (Int_lt 1)) )
           , Const (Int_lt 1)
           , Some
               (Bin_expr
                  ( Binary_multiply
-                 , Variable (Ident ("n", None))
+                 , Variable (Ident "n")
                  , Apply
-                     ( Variable (Ident ("factorial", None))
-                     , Bin_expr
-                         (Binary_subtract, Variable (Ident ("n", None)), Const (Int_lt 1))
+                     ( Variable (Ident "factorial")
+                     , Bin_expr (Binary_subtract, Variable (Ident "n"), Const (Int_lt 1))
                      ) )) ) )
   in
   let program =
-    [ Statement (Let (Nonrec, Let_bind (Ident ("a", None), [], Const (Int_lt 10)), []))
+    [ Statement (Let (Nonrec, Let_bind (PVar (Ident "a"), [], Const (Int_lt 10)), []))
     ; Expr factorial
-    ; Expr (Apply (factorial, Variable (Ident ("a", None))))
+    ; Expr (Apply (factorial, Variable (Ident "a")))
     ]
   in
   List.iter (print_construction std_formatter) program;
   [%expect
     {|
-     | Let  a =
+     | Let:
+       Let_binds
+    --| Let_bind:
+          NAME:
+    ------| PVar(a)
+          ARGS:
+          BODY:
+    ----| Const(Int: 10)
+    | Lambda:
       ARGS
-      BODY
-    --| Const(Int: 10)
-    | Func:
-      ARGS
-    ----| Variable(n)
+    ----| PConst:
+    ------Int: 4
       BODY
     ----| If Then Else(
           CONDITION
@@ -57,24 +60,25 @@ let%expect_test "print Ast factorial" =
     ----------| Variable(n)
     ----------| Const(Int: 1)
           THEN BRANCH
-    --------| Const(Int: 1)
+    ------| Const(Int: 1)
           ELSE BRANCH
-    --------| Binary expr(
-    --------| Binary Multiply
-    ----------| Variable(n)
-    ----------| Function Call:
-                FUNCTION
-    ------------| Variable(factorial)
-                ARGS
-    ------------| Binary expr(
-    ------------| Binary Subtract
-    --------------| Variable(n)
-    --------------| Const(Int: 1)
-    | Function Call:
+    ------| Binary expr(
+    ------| Binary Multiply
+    --------| Variable(n)
+    --------| Apply:
+              FUNCTION
+    ----------| Variable(factorial)
+              ARGS
+    ----------| Binary expr(
+    ----------| Binary Subtract
+    ------------| Variable(n)
+    ------------| Const(Int: 1)
+    | Apply:
       FUNCTION
-    --| Func:
+    --| Lambda:
         ARGS
-    ------| Variable(n)
+    ------| PConst:
+    --------Int: 4
         BODY
     ------| If Then Else(
             CONDITION
@@ -89,25 +93,28 @@ let%expect_test "print Ast factorial" =
     ------------| Variable(n)
     ------------| Const(Int: 1)
             THEN BRANCH
-    ----------| Const(Int: 1)
+    --------| Const(Int: 1)
             ELSE BRANCH
-    ----------| Binary expr(
-    ----------| Binary Multiply
-    ------------| Variable(n)
-    ------------| Function Call:
-                  FUNCTION
-    --------------| Variable(factorial)
-                  ARGS
-    --------------| Binary expr(
-    --------------| Binary Subtract
-    ----------------| Variable(n)
-    ----------------| Const(Int: 1)
+    --------| Binary expr(
+    --------| Binary Multiply
+    ----------| Variable(n)
+    ----------| Apply:
+                FUNCTION
+    ------------| Variable(factorial)
+                ARGS
+    ------------| Binary expr(
+    ------------| Binary Subtract
+    --------------| Variable(n)
+    --------------| Const(Int: 1)
       ARGS
     --| Variable(a) |}]
 ;;
 
 let%expect_test "print Ast double func" =
-  let ident = Ident ("n", None) in
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
+  let ident = Ident "n" in
   let pat = PConst (Int_lt 4) in
   let args = [] in
   let binary_expr = Bin_expr (Binary_multiply, Const (Int_lt 2), Variable ident) in
@@ -115,9 +122,10 @@ let%expect_test "print Ast double func" =
   print_construction std_formatter @@ Expr double;
   [%expect
     {|
-    | Func:
+    | Lambda:
       ARGS
-    ----| Variable(n)
+    ----| PConst:
+    ------Int: 4
       BODY
     ----| Binary expr(
     ----| Binary Multiply
@@ -126,6 +134,9 @@ let%expect_test "print Ast double func" =
 ;;
 
 let%expect_test "print Ast tuple of binary operators" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let first = Const (Int_lt 3) in
   let second = Const (Int_lt 10) in
   let operators =
@@ -195,22 +206,29 @@ let%expect_test "print Ast tuple of binary operators" =
 ;;
 
 let%expect_test "print Ast of LetIn" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let sum =
     Expr
       (LetIn
          ( Nonrec
-         , Let_bind (Ident ("x", None), [], Const (Int_lt 5))
+         , Let_bind (PVar (Ident "x"), [], Const (Int_lt 5))
          , []
-         , Bin_expr (Binary_add, Variable (Ident ("x", None)), Const (Int_lt 5)) ))
+         , Bin_expr (Binary_add, Variable (Ident "x"), Const (Int_lt 5)) ))
   in
   print_construction std_formatter sum;
   [%expect
     {|
-     | LetIn  x =
-      ARGS
-      BODY
-    --| Const(Int: 5)
-      INNER EXPRESSION
+    | LetIn=
+      Let_binds
+    --| Let_bind:
+          NAME:
+    ------| PVar(x)
+          ARGS:
+          BODY:
+    ----| Const(Int: 5)
+      INNER_EXPRESSION
     --| Binary expr(
     --| Binary Add
     ----| Variable(x)
@@ -218,45 +236,44 @@ let%expect_test "print Ast of LetIn" =
 ;;
 
 let%expect_test "print Ast of match_expr" =
+  let open FSharpActivePatterns.Ast in
+  let open FSharpActivePatterns.AstPrinter in
+  let open Format in
   let patterns =
     [ PConst (Int_lt 5)
     ; PConst (String_lt " bar foo")
-    ; PList [ Wild; PVar (Ident ("xs", None)) ]
+    ; PList [ Wild; PVar (Ident "xs") ]
     ]
   in
   let pattern_values = List.map (fun p -> p, Const (Int_lt 4)) patterns in
   let match_expr =
-    Match
-      (Variable (Ident ("x", None)), PConst (Int_lt 4), Const (Int_lt 4), pattern_values)
+    Match (Variable (Ident "x"), (PConst (Int_lt 4), Const (Int_lt 4)), pattern_values)
   in
   print_construction std_formatter (Expr match_expr);
   [%expect
     {|
     | Match:
-    --| Variable(x)
+    --| Value:
+    ----| Variable(x)
+    --| Pattern:
+    ----| PConst:
+    ------Int: 4
+    --| Case expr:
+    ----| Const(Int: 4)
     --| Pattern:
     ----| PConst:
     ------Int: 5
-    --| Inner expr:
+    --| Case expr:
     ----| Const(Int: 4)
     --| Pattern:
     ----| PConst:
     ------String: " bar foo"
-    --| Inner expr:
+    --| Case expr:
     ----| Const(Int: 4)
     --| Pattern:
-    ----| Variant:
-    ------- Green
-    ------- Blue
-    ------- Red
-    --| Inner expr:
-    ----| Const(Int: 4)
-    --| Pattern:
-    ----| PCons:
-    ------Head:
-    --------| Wild
-    ------Tail:
-    --------| PVar(xs)
-    --| Inner expr:
+    ----| PList:
+    ------| Wild
+    ------| PVar(xs)
+    --| Case expr:
     ----| Const(Int: 4) |}]
 ;;

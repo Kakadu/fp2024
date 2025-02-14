@@ -37,6 +37,14 @@ and pp_tp fmt = function
   | TUnit -> fprintf fmt "()"
   | TInt -> fprintf fmt "Int"
   | TBool -> fprintf fmt "Bool"
+  | MaybeParam tp ->
+    fprintf
+      fmt
+      (match tp with
+       | MaybeParam _ | FunctionType _ -> "Maybe (%a)"
+       | _ -> "Maybe %a")
+      pp_tp
+      tp
   | TreeParam tp -> fprintf fmt "{%a}" pp_tp tp
   | ListParam tp -> fprintf fmt "[%a]" pp_tp tp
   | TupleParams (first, second, list) ->
