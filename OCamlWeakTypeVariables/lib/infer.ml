@@ -603,7 +603,7 @@ let infer_rec_value_bindings infer_expr env vbs =
     in
     has_no_free_occurence || is_variable_fun_function
   in
-  let result_expr_check = List.for_all (fun e -> validate_expr e) exprs in
+  let result_expr_check = List.for_all validate_expr exprs in
   if not result_expr_check
   then
     fail
