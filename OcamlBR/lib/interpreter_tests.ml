@@ -36,8 +36,7 @@ let%expect_test "interpet non-exhaustive pattern-matching" =
   let _ = test_interpret {| 
     let (0, b) = (4, 3)
   |} in
-  [%expect
-    {| Interpreter error: Ill left-hand side Pattern not acceptable for variable name |}]
+  [%expect {| Interpreter error: Pattern-matching failure |}]
 ;;
 
 let%expect_test "interpret tuple pattern" =

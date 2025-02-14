@@ -155,13 +155,6 @@ end = struct
     | Unit -> return VUnit
   ;;
 
-  (* acceptable patterns for names *)
-  let rec validate_pattern_nonrec = function
-    | PVar _ | PAny | PConst Unit | POption (Some (PVar _)) -> true
-    | PTuple (p1, p2, rest) -> List.for_all validate_pattern_nonrec (p1 :: p2 :: rest)
-    | _ -> false
-  ;;
-
   let rec eval_expr env = function
     | Econst c -> eval_const c
     | Evar (Id name) -> find env name
@@ -245,13 +238,10 @@ end = struct
           | _ -> fail `Type_error)
        | _ -> fail `Type_error)
     | Elet (Non_recursive, Evalue_binding (pat, e1), _, e2) ->
-      if not (validate_pattern_nonrec pat)
-      then fail (`Ill_left_hand_side "Pattern not acceptable for variable name")
-      else
-        let* v = eval_expr env e1 in
-        (match match_pattern env (pat, v) with
-         | Some env' -> eval_expr env' e2
-         | None -> fail `Pattern_matching_failure)
+      let* v = eval_expr env e1 in
+      (match match_pattern env (pat, v) with
+       | Some env' -> eval_expr env' e2
+       | None -> fail `Pattern_matching_failure)
     | Elet (Recursive, Evalue_binding (pat, e1), [], e2) ->
       let* final_env = eval_let_rec_expr env (Evalue_binding (pat, e1)) in
       eval_expr final_env e2
@@ -320,13 +310,10 @@ end = struct
       let* _ = eval_expr env e in
       return env
     | SValue (Non_recursive, Evalue_binding (pat, e), _) ->
-      if not (validate_pattern_nonrec pat)
-      then fail (`Ill_left_hand_side "Pattern not acceptable for variable name")
-      else
-        let* v = eval_expr env e in
-        (match match_pattern env (pat, v) with
-         | Some env' -> return env'
-         | None -> fail `Pattern_matching_failure)
+      let* v = eval_expr env e in
+      (match match_pattern env (pat, v) with
+       | Some env' -> return env'
+       | None -> fail `Pattern_matching_failure)
     | SValue (Recursive, Evalue_binding (pat, e), []) ->
       let* final_env = eval_let_rec_expr env (Evalue_binding (pat, e)) in
       return final_env
