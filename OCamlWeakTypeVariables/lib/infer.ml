@@ -527,7 +527,7 @@ let infer_non_rec_value_bindings infer_expr env vbs =
             let* sub = Subst.compose_all [ sub_un; sub ] in
             return (TypeEnv.apply sub env, sub, new_names)
         in
-        let repeated_name = List.find_opt (fun name -> List.mem name new_names) names in
+        let repeated_name = List.find_opt (fun name -> List.mem name names) new_names in
         match repeated_name with
         | Some name -> fail (PatternNameTwice name)
         | None -> return (env, sub, List.append (List.rev new_names) names))
