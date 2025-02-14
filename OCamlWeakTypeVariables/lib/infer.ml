@@ -504,8 +504,6 @@ let rec infer_pattern env ?ty =
   | Ppat_interval _ -> fail (SomeError "Pattern interval not implemented")
 ;;
 
-(* [@@@warning "-8"] *)
-
 let infer_non_rec_value_bindings infer_expr env vbs =
   (* Example: let homka = fun x y -> let z = x y in z + 2 *)
   let* env, sub, names =
