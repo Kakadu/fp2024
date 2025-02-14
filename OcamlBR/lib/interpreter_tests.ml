@@ -186,3 +186,11 @@ let%expect_test "interpret multiple strucuture items" =
   in
   [%expect {| Infer error: Undefined variable "h" |}]
 ;;
+
+(* в OCaml также пишет 'Unbound variable y' *)
+let%expect_test "from andrei" =
+  let _ = test_interpret {| 
+      let f () = y in let y = 42 in f ()
+  |} in
+  [%expect {| Infer error: Undefined variable "y" |}]
+;;
