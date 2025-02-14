@@ -27,9 +27,8 @@
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec x = y + 3 and y = true
-  val y : bool
-  val x : int
-  
+  Error: (SomeError
+            "This kind of expression is not allowed as right-hand side of 'let rec'")
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let homka = fun x y -> let z = x y in z + 2

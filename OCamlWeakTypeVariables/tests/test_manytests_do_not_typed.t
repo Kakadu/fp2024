@@ -26,8 +26,8 @@
   Error: Can't unify (unit) and ('a -> 'a)
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/098rec_int.ml
-  val x : int
-  
+  Error: (SomeError
+            "This kind of expression is not allowed as right-hand side of 'let rec'")
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/099.ml
   Error: (SomeError "Only variables are allowed as left-hand side of `let rec`")

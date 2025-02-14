@@ -538,6 +538,25 @@ let infer_non_rec_value_bindings infer_expr env vbs =
   return (env, sub, names)
 ;;
 
+let rec get_expr_names = function
+  | Pexp_ident i -> [ i ]
+  | Pexp_constant _ -> []
+  | Pexp_apply (e0, es) ->
+    List.fold_left (fun acc e -> get_expr_names e @ acc) [] (e0 :: es)
+  | Pexp_constraint (e, _) -> get_expr_names e
+  | Pexp_construct (e, None) -> [ e ]
+  | Pexp_construct (e, Some c) -> e :: get_expr_names c
+  | Pexp_fun (_, e) -> get_expr_names e
+  | Pexp_function cs ->
+    List.fold_left (fun acc case -> get_expr_names case.pc_rhs @ acc) [] cs
+  | Pexp_ifthenelse (e0, e1, None) -> get_expr_names e0 @ get_expr_names e1
+  | Pexp_ifthenelse (e0, e1, Some e2) ->
+    get_expr_names e0 @ get_expr_names e1 @ get_expr_names e2
+  | Pexp_let (_, _, e) -> get_expr_names e
+  | Pexp_match (e, cs) -> get_expr_names e @ get_expr_names (Pexp_function cs)
+  | Pexp_tuple es -> List.fold_left (fun acc e -> get_expr_names e @ acc) [] es
+;;
+
 let infer_rec_value_bindings infer_expr env vbs =
   let exprs, patterns = List.split @@ List.map (fun x -> x.pvb_expr, x.pvb_pat) vbs in
   (* New type variables to all names in patterns *)
@@ -573,7 +592,25 @@ let infer_rec_value_bindings infer_expr env vbs =
           SomeError "Only variables are allowed as left-hand side of `let rec`" |> fail)
   in
   DebugLog.Aux.rec_vb env' subs ts sub env'';
-  return (env'', sub, names)
+  let validate_expr expr =
+    (* List.iter (Format.printf "%s ") (get_expr_names expr); *)
+    (* List.iter (Format.printf "%s ") names; *)
+    let has_no_free_occurence =
+      List.for_all (fun name -> not (List.mem name names)) (get_expr_names expr)
+    in
+    let is_variable_fun_function =
+      match expr with
+      | Pexp_ident _ | Pexp_fun _ | Pexp_function _ -> true
+      | _ -> false
+    in
+    has_no_free_occurence || is_variable_fun_function
+  in
+  let result_expr_check = List.for_all (fun e -> validate_expr e) exprs in
+  if not result_expr_check
+  then
+    fail
+      (SomeError "This kind of expression is not allowed as right-hand side of 'let rec'")
+  else return (env'', sub, names)
 ;;
 
 (* https://en.wikipedia.org/wiki/Hindley%E2%80%93Milner_type_system#Algorithm_W *)
