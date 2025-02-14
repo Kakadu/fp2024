@@ -36,7 +36,6 @@
   val homka : ('a -> int) -> 'a -> int
   
 
-TODO: order of printed names
   $ ../bin/REPL.exe -dinference <<EOF
   > let foo b = if b then fun foo -> foo + 2 else fun foo -> foo * 10
   > and homka = 122
