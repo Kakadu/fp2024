@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>values.ml &mdash; Coverage report</title>
-    <meta name="description" content="72.00% coverage in lib/values.ml">
+    <meta name="description" content="68.00% coverage in lib/values.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>values.ml
         </a>
       </h1>
-      <h2>72.00%</h2>
+      <h2>68.00%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="bottom:37.18%"></span>
@@ -24,6 +24,7 @@
       <span class="unvisited" style="bottom:21.79%"></span>
       <span class="unvisited" style="bottom:5.13%"></span>
       <span class="unvisited" style="bottom:2.56%"></span>
+      <span class="unvisited" style="bottom:1.28%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -104,7 +105,7 @@
 <a id="L74"></a><span class="unvisited"> </span>
 <a id="L75"></a><span class="visited"> </span>
 <a id="L76"></a><span class="unvisited"> </span>
-<a id="L77"></a><span class="visited"> </span>
+<a id="L77"></a><span class="unvisited"> </span>
 <a id="L78"></a><span > </span>
 </pre>
       </div>
@@ -215,19 +216,19 @@ type value =
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
 let rec pp_value ppf =
-  <span data-count="154">l</span>et open Stdlib.Format in
+  <span data-count="94">l</span>et open Stdlib.Format in
   function
-  | <span data-count="45">V</span>Int x -&gt; fprintf ppf "%d" x
-  | <span data-count="7">V</span>Bool b -&gt; fprintf ppf "%b" b
-  | <span data-count="5">V</span>String s -&gt; fprintf ppf "%S" s
-  | <span data-count="2">V</span>Unit -&gt; fprintf ppf "()"
+  | <span data-count="29">V</span>Int x -&gt; fprintf ppf "%d" x
+  | <span data-count="6">V</span>Bool b -&gt; fprintf ppf "%b" b
+  | <span data-count="4">V</span>String s -&gt; fprintf ppf "%S" s
+  | <span data-count="1">V</span>Unit -&gt; fprintf ppf "()"
   | <span data-count="5">V</span>List vl -&gt;
     fprintf
       ppf
       "[%a]"
       (pp_print_lis<span data-count="5">t</span> ~pp_sep:(fun ppf () -&gt; <span data-count="7">f</span>printf ppf "; ") pp_value)
       vl
-  | <span data-count="9">V</span>Tuple (v1, v2, vl) -&gt;
+  | <span data-count="6">V</span>Tuple (v1, v2, vl) -&gt;
     fprintf
       ppf
       "(%a, %a%a)"
@@ -236,7 +237,7 @@ let rec pp_value ppf =
       pp_value
       v2
       (fun ppf -&gt; function
-        | <span data-count="9">[</span>] -&gt; ()
+        | <span data-count="6">[</span>] -&gt; ()
         | <span data-count="0">r</span>est -&gt;
           fprintf
             ppf
@@ -244,10 +245,10 @@ let rec pp_value ppf =
             (pp_print_lis<span data-count="0">t</span> ~pp_sep:(fun ppf () -&gt; <span data-count="0">f</span>printf ppf ", ") pp_value)
             rest)
       vl
-  | <span data-count="75">V</span>Fun _ | <span data-count="4">V</span>Function _ -&gt; fprintf ppf "&lt;fun&gt;"
-  | <span data-count="2">V</span>Option v -&gt;
+  | <span data-count="40">V</span>Fun _ | <span data-count="2">V</span>Function _ -&gt; fprintf ppf "&lt;fun&gt;"
+  | <span data-count="1">V</span>Option v -&gt;
     (match v with
-     | <span data-count="2">S</span>ome v -&gt; fprintf ppf "Some %a" pp_value v
+     | <span data-count="1">S</span>ome v -&gt; fprintf ppf "Some %a" pp_value v
      | <span data-count="0">N</span>one -&gt; fprintf ppf "None")
   | <span data-count="0">V</span>Builtin _ -&gt; fprintf ppf "&lt;builtin&gt;"
 ;;
@@ -263,9 +264,9 @@ type error =
 let pp_error ppf : error -&gt; unit = <span data-count="3">f</span>unction
   | <span data-count="1">`</span>Division_by_zero -&gt; Format.fprintf ppf {|Division by zero|}
   | <span data-count="0">`</span>Unbound_variable s -&gt; Format.fprintf ppf {|Unbound variable: %s|} s
-  | <span data-count="1">`</span>Pattern_matching_failure -&gt; Format.fprintf ppf {|Pattern-matching failure|}
+  | <span data-count="2">`</span>Pattern_matching_failure -&gt; Format.fprintf ppf {|Pattern-matching failure|}
   | <span data-count="0">`</span>Type_error -&gt; Format.fprintf ppf {|Type error|}
-  | <span data-count="1">`</span>Ill_left_hand_side s -&gt; Format.fprintf ppf {|Ill left-hand side %s|} s
+  | <span data-count="0">`</span>Ill_left_hand_side s -&gt; Format.fprintf ppf {|Ill left-hand side %s|} s
 ;;
 </code></pre>
       </div>
