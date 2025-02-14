@@ -1578,7 +1578,7 @@ let%expect_test "keyword" =
 ;;
 
 let%expect_test "keyword" =
-  test_program {|let (x:int option) = 20;;|};
+  test_program {|let (x: int option) = 20;;|};
   [%expect.unreachable]
 [@@expect.uncaught_exn
   {|
@@ -1589,7 +1589,9 @@ let%expect_test "keyword" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+
   Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1581, characters 2-44
+
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1638,7 +1640,7 @@ let%expect_test "keyword" =
 let%expect_test "simple adt with pattern matching function + printing v3" =
   test_program
     {|
-type shape = Circle of int
+type 'a shape = Circle of int
   | Rectangle of int * int
   | Square of int
 ;;
@@ -1655,7 +1657,7 @@ print_int y
   |};
   [%expect
     {|
-    [(Str_adt ([], "shape",
+    [(Str_adt (["a"], "shape",
         (("Circle", [(Type_construct ("int", []))]),
          [("Rectangle",
            [(Type_construct ("int", [])); (Type_construct ("int", []))]);

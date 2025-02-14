@@ -1040,7 +1040,7 @@ let%expect_test "015" =
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 817, characters 2-40
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 821, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
   Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1030, characters 2-52
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
@@ -1092,7 +1092,7 @@ let%expect_test "098" =
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 817, characters 2-40
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 821, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
   Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1082, characters 2-48
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]

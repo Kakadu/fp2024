@@ -75,7 +75,7 @@ module Type = struct
   ;;
 
   let free_vars =
-    let rec helper acc = function 
+    let rec helper acc = function
       | Type_var binder -> VarSet.add binder acc
       | Type_arrow (l, r) -> helper (helper acc l) r
       | Type_tuple (t1, t2, t) ->
@@ -119,7 +119,7 @@ module Substitution = struct
     let rec helper = function
       | Type_var b as typ ->
         (match Map.find sub b with
-        | Some b -> b
+         | Some b -> b
          | None -> typ)
       | Type_arrow (l, r) -> Type_arrow (helper l, helper r)
       | Type_tuple (t1, t2, t) -> Type_tuple (helper t1, helper t2, List.map t ~f:helper)
@@ -132,7 +132,7 @@ module Substitution = struct
   let fold mp init f =
     Map.fold mp ~init ~f:(fun ~key:k ~data:vm acc ->
       let* acc = acc in
-      f k vm acc)   
+      f k vm acc)
   ;;
 
   let rec unify l r =
@@ -145,34 +145,31 @@ module Substitution = struct
       let* subs2 = unify (apply subs1 r1) (apply subs1 r2) in
       compose subs1 subs2
     | Type_tuple (l11, l12, l1), Type_tuple (l21, l22, l2) ->
-      (match Base.List.fold2
-           (l11:: l12 :: l1)
+      (match
+         Base.List.fold2
+           (l11 :: l12 :: l1)
            (l21 :: l22 :: l2)
            ~init:(return empty)
            ~f:(fun acc t1 t2 ->
              let* sub1 = acc in
              let* sub2 = unify (apply sub1 t1) (apply sub1 t2) in
              compose sub1 sub2)
-           with
-           | Ok sub -> sub
-           | _ -> fail (`Unification_failed (l, r)))
+       with
+       | Ok sub -> sub
+       | _ -> fail (`Unification_failed (l, r)))
     | Type_construct (id1, ty1), Type_construct (id2, ty2) when String.equal id1 id2 ->
       let* subs =
-        (match Base.List.fold2
-           (ty1)
-           (ty2)
-           ~init:(return empty)
-           ~f:(fun acc t1 t2 ->
-             let* sub1 = acc in
-             let* sub2 = unify (apply sub1 t1) (apply sub1 t2) in
-             compose sub1 sub2)
-           with
-           | Ok sub -> sub
-           | _ -> fail (`Unification_failed (l, r)))
+        match
+          Base.List.fold2 ty1 ty2 ~init:(return empty) ~f:(fun acc t1 t2 ->
+            let* sub1 = acc in
+            let* sub2 = unify (apply sub1 t1) (apply sub1 t2) in
+            compose sub1 sub2)
+        with
+        | Ok sub -> sub
+        | _ -> fail (`Unification_failed (l, r))
       in
       return subs
     | _ -> fail (`Unification_failed (l, r))
-    
 
   and extend k v s =
     (*maybe rework*)
@@ -188,7 +185,7 @@ module Substitution = struct
       let* s2 = unify v v2 in
       compose s s2
 
-  and compose s1 s2 = fold s2 (return s1) extend 
+  and compose s1 s2 = fold s2 (return s1) extend
   and compose_all ss = RList.fold_left ss ~init:(return empty) ~f:compose
 end
 
@@ -351,9 +348,9 @@ let add_names_rec env vb_list =
 ;;
 
 let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
-  let* comp_sub = Substitution.compose sub_acc sub  in
+  let* comp_sub = Substitution.compose sub_acc sub in
   (* if debug
-  then Stdlib.Format.printf "DEBUG: comp_sub in vb_rest:%a\n" Substitution.pp_sub comp_sub; *)
+     then Stdlib.Format.printf "DEBUG: comp_sub in vb_rest:%a\n" Substitution.pp_sub comp_sub; *)
   let new_env = TypeEnv.apply comp_sub env_acc in
   (* if debug
   then Stdlib.Format.printf "DEBUG: first env in vb_rest:{%a}\n" TypeEnv.pp_env new_env;
@@ -376,7 +373,7 @@ let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
 let infer_rec_rest_vb ~debug sub_acc env_acc fresh typ name new_sub =
   (*constraint there*)
   let* uni_sub = Substitution.unify (Substitution.apply new_sub fresh) typ in
-  let* comp_sub = Substitution.compose_all [new_sub;uni_sub;sub_acc] in
+  let* comp_sub = Substitution.compose_all [ new_sub; uni_sub; sub_acc ] in
   let env_acc = TypeEnv.apply comp_sub env_acc in
   let env_rm = TypeEnv.remove env_acc name in
   let new_scheme = generalize env_rm (Substitution.apply comp_sub fresh) in
@@ -427,22 +424,18 @@ let rec infer_exp ~debug exp env =
        let* comp_sub = Substitution.compose_all [ sub1; sub2; unif_sub1; unif_sub2 ] in
        return (comp_sub, res_typ)
      | _ ->
-      if debug
-        then
-          Stdlib.Format.printf "DEBUG: IN APPLY\n";
-       let* sub1, typ1 = infer_exp ~debug  (Exp_ident op) env in
-       if debug
-        then
-          Stdlib.Format.printf "DEBUG: IN APPLY AFTER 1 exp\n";
-       let* sub2, typ2 = infer_exp ~debug (Exp_tuple(exp1,exp2,[])) (TypeEnv.apply sub1 env) in
-       if debug
-        then
-          Stdlib.Format.printf "DEBUG: IN APPLY AFTER 2 exp\n";
+       if debug then Stdlib.Format.printf "DEBUG: IN APPLY\n";
+       let* sub1, typ1 = infer_exp ~debug (Exp_ident op) env in
+       if debug then Stdlib.Format.printf "DEBUG: IN APPLY AFTER 1 exp\n";
+       let* sub2, typ2 =
+         infer_exp ~debug (Exp_tuple (exp1, exp2, [])) (TypeEnv.apply sub1 env)
+       in
+       if debug then Stdlib.Format.printf "DEBUG: IN APPLY AFTER 2 exp\n";
        let* fresh = fresh_var in
        let* unif_sub =
          Substitution.unify (Substitution.apply sub2 typ1) (Type_arrow (typ2, fresh))
        in
-       let* comp_sub = Substitution.compose_all [   unif_sub ;sub2;sub1 ] in
+       let* comp_sub = Substitution.compose_all [ unif_sub; sub2; sub1 ] in
        let res_typ = Substitution.apply comp_sub fresh in
        return (comp_sub, res_typ))
   | Exp_apply (exp1, exp2) ->
@@ -457,12 +450,10 @@ let rec infer_exp ~debug exp env =
        let* sub2, typ2 = infer_exp ~debug exp2 (TypeEnv.apply sub1 env) in
        let* fresh = fresh_var in
        let* unif_sub =
-        if debug
-          then
-            Stdlib.Format.printf "DEBUG: &&&&&&&%a\n" pprint_type fresh;
+         if debug then Stdlib.Format.printf "DEBUG: &&&&&&&%a\n" pprint_type fresh;
          Substitution.unify (Substitution.apply sub2 typ1) (Type_arrow (typ2, fresh))
        in
-       let* comp_sub = Substitution.compose_all [unif_sub; sub2; sub1 ] in
+       let* comp_sub = Substitution.compose_all [ unif_sub; sub2; sub1 ] in
        let res_typ = Substitution.apply comp_sub fresh in
        return (comp_sub, res_typ))
   | Exp_fun ((pattern, patterns), expr) ->
@@ -475,7 +466,7 @@ let rec infer_exp ~debug exp env =
     return (sub1, Type_arrow (Substitution.apply sub1 typ1, typ2))
   | Exp_tuple (exp1, exp2, rest) ->
     let* sub1, typ1 = infer_exp ~debug exp1 env in
-    let new_env = TypeEnv.apply sub1 env in     
+    let new_env = TypeEnv.apply sub1 env in
     let* sub2, typ2 = infer_exp ~debug exp2 new_env in
     let new_env = TypeEnv.apply sub2 new_env in
     let* sub3, typ3 =
@@ -568,13 +559,9 @@ let rec infer_exp ~debug exp env =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
     in
     (* let new_env = TypeEnv.apply sub new_env in *)
-    if debug
-      then
-        Stdlib.Format.printf "DEBUG: Before EXPR\n";
+    if debug then Stdlib.Format.printf "DEBUG: Before EXPR\n";
     let* subb, typp = infer_exp ~debug exp new_env in
-    if debug
-      then
-        Stdlib.Format.printf "DEBUG: AFTER EXPR%a\n" pprint_type typp;
+    if debug then Stdlib.Format.printf "DEBUG: AFTER EXPR%a\n" pprint_type typp;
     let* comp_sub = Substitution.compose sub subb in
     return (comp_sub, typp)
   | Exp_let (Recursive, (value_binding, rest), exp) ->
@@ -661,13 +648,14 @@ and infer_value_binding_list ~debug vb_list env sub =
           let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
           return (res_env, res_sub)
         | { pat; expr } ->
-          if debug
-            then
-              Stdlib.Format.printf "DEBUG: VB BEFORE INFER EXP\n";
+          if debug then Stdlib.Format.printf "DEBUG: VB BEFORE INFER EXP\n";
           let* sub, typ = infer_exp ~debug expr env_acc in
           if debug
           then
-            Stdlib.Format.printf "DEBUG:!!!!!!! sub of expr in vb:%a\n" Substitution.pp_sub sub;
+            Stdlib.Format.printf
+              "DEBUG:!!!!!!! sub of expr in vb:%a\n"
+              Substitution.pp_sub
+              sub;
           if debug
           then Stdlib.Format.printf "DEBUG: type of expr in vb:%a\n" pprint_type typ;
           let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
@@ -741,6 +729,17 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
 open Ast.Pattern
 open Ast.Structure
 
+let get_names_adt env poly_list =
+  RList.fold_right
+    ~f:(fun poly acc ->
+      let* env_acc, fresh_acc = return acc in
+      let* fresh = fresh_var in
+      let env_acc = TypeEnv.extend env_acc poly (Forall (VarSet.empty, fresh)) in
+      return (env_acc, fresh :: fresh_acc))
+    poly_list
+    ~init:(return (env, []))
+;;
+
 let infer_structure_item ~debug env item =
   match item with
   | Str_eval exp ->
@@ -751,9 +750,7 @@ let infer_structure_item ~debug env item =
     let* env, sub =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
     in
-    if debug
-      then
-        Stdlib.Format.printf "DEBUG: AFTER LKet\n";
+    if debug then Stdlib.Format.printf "DEBUG: AFTER LKet\n";
     (* if debug then TypeEnv.pp_env Format.std_formatter env; *)
     return env
   | Str_value (Recursive, (value_binding, rest)) ->
@@ -765,12 +762,19 @@ let infer_structure_item ~debug env item =
         new_env
         Substitution.empty
         fresh_vars
-  in 
-  if debug
-    then
-      Stdlib.Format.printf "DEBUG: AFTER LKeREC\n";
+    in
+    if debug then Stdlib.Format.printf "DEBUG: AFTER LKeREC\n";
     return new_env
-  (*| Str_adt*)
+  | Str_adt (poly, name, (variant, rest)) ->
+    let* env, poly_types = get_names_adt env poly in
+    let adt_type = Type_construct (name, poly_types) in
+    let env = TypeEnv.extend env name (Forall (VarSet.empty, adt_type)) in
+    let* env =
+      RList.fold_left (variant :: rest) ~init:(return env) ~f:(fun acc variant ->
+        let* env_acc = return acc in
+        return env_acc)
+    in
+    return env
   | _ -> failwith "Unsupported pattern in let binding"
 ;;
 
@@ -816,3 +820,4 @@ let env_with_print_funs =
 let run_infer_program ?(debug = false) (program : Ast.program) env =
   run (infer_program ~debug program env)
 ;;
+  
