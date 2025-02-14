@@ -1,0 +1,9 @@
+(library
+ (name EMigunova_lib)
+ (public_name EMigunova.Lib)
+ (modules Ast Parse)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))

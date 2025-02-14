@@ -1,0 +1,10 @@
+(executable
+ (name print_ast)
+ (libraries EMigunova_lib angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (deps ./REPL.exe %{bin:REPL}))
