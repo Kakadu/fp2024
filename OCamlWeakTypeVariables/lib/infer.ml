@@ -472,9 +472,6 @@ let rec infer_pattern env ?ty =
   | Ppat_constant c ->
     let* ty, _ = infer_const c in
     return (ty, env, [])
-  | Ppat_unit ->
-    let t_unit = TBase BUnit in
-    return (t_unit, env, [])
   | Ppat_tuple [] | Ppat_tuple [ _ ] ->
     fail (SomeError "Pattern tuple must contain greather or equal two elements")
   | Ppat_tuple (first :: second :: pats) ->
