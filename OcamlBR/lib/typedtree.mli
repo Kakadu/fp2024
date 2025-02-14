@@ -44,10 +44,8 @@ val tprim_int : ty
 val tprim_string : ty
 val tprim_bool : ty
 val tprim_unit : ty
-val tvar : type_var -> ty
 val tarrow : ty -> ty -> ty
 val ( @-> ) : ty -> ty -> ty
-val ttuple : ty -> ty -> ty list -> ty
 val tlist : ty -> ty
 
 type error =

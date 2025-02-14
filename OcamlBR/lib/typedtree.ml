@@ -37,10 +37,8 @@ let tprim_int = TPrim "int"
 let tprim_string = TPrim "string"
 let tprim_bool = TPrim "bool"
 let tprim_unit = TPrim "unit"
-let tvar x = TVar x
 let tarrow l r = TArrow (l, r)
 let ( @-> ) = tarrow
-let ttuple fst snd rest = TTuple (fst, snd, rest)
 let tlist ty = TList ty
 (* let trecord s = TRecord s *)
 
