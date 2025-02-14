@@ -210,12 +210,6 @@ let gen_value_binding =
     gen_value_binding_sized n)
 ;;
 
-let gen_case =
-  QCheck.Gen.(
-    let* n = small_nat in
-    gen_case_sized n)
-;;
-
 (* let gen_record_field =
    QCheck.Gen.(
    let* n = small_nat in
