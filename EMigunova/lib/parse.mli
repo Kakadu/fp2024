@@ -22,4 +22,4 @@ val parse_expr_const : expression t
 val parse_expr_tuple : expression t -> expression t
 val parse_expr_list : expression t -> expression t
 val parse_expr_base_elements : expression t
-val parse_bin_op_expression : expression t
+val parse_expression : expression t

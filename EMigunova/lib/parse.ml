@@ -10,6 +10,7 @@
 
 open Angstrom
 open Ast
+open Printf
 
 let is_char = function
   (* to recognize char, char -> bool *)
@@ -212,91 +213,66 @@ let parse_bin_op_T3 =
 let parse_bin_op_T4 = choice [ token "+" *> return Plus; token "-" *> return Sub ]
 let parse_bin_op_T5 = choice [ token "*" *> return Mul; token "/" *> return Div ]
 
-(* ---------start of binary operators parsing--------- *)
+(* ---------start of binary operators parser--------- *)
 
-let parse_T5 =
-  let* t5 = parse_expr_base_elements <|> round_par @@ parse_bin_op_expression in
-  return @@ t5
-
-and parse_T4 =
+let parse_expression =
   fix
-  @@ fun parse_T4 ->
-  let variant_1 =
-    let* t5 = parse_T5 in
-    let* mul_div_op = parse_bin_op_T5 in
-    let* t4 = parse_T4 in
-    return @@ Expr_binary_op (mul_div_op, t5, t4)
+  @@ fun parse_expression_or ->
+  let parse_expression_base =
+    parse_expr_base_elements
+    <?> "case 5"
+    <|> round_par @@ parse_expression_or
+    >>= fun result -> return result
   in
-  let variant_2 =
-    let* t5 = parse_T5 in
-    return @@ t5
+  let parse_expression_mul_div =
+    fix
+    @@ fun parse_expression_mul_div ->
+    parse_expression_base
+    <?> "case 4"
+    >>= fun left ->
+    parse_bin_op_T5
+    >>= (fun op ->
+    parse_expression_mul_div >>= fun right -> return (Expr_binary_op (op, left, right)))
+    <|> return left
   in
-  let* result = variant_1 <|> variant_2 in
-  return @@ result
-
-and parse_T3 =
-  fix
-  @@ fun parse_T3 ->
-  let variant_1 =
-    let* t4 = parse_T4 in
-    let* plus_sub_op = parse_bin_op_T4 in
-    let* t3 = parse_T3 in
-    return @@ Expr_binary_op (plus_sub_op, t4, t3)
+  let parse_expression_add_sub =
+    fix
+    @@ fun parse_expression_add_sub ->
+    parse_expression_mul_div
+    <?> "case 3"
+    >>= fun left ->
+    parse_bin_op_T4
+    >>= (fun op ->
+    parse_expression_add_sub >>= fun right -> return (Expr_binary_op (op, left, right)))
+    <|> return left
   in
-  let variant_2 =
-    let* t4 = parse_T4 in
-    return @@ t4
+  let parse_expression_compare =
+    fix
+    @@ fun parse_expression_compare ->
+    parse_expression_add_sub
+    <?> "case 2"
+    >>= fun left ->
+    parse_bin_op_T3
+    >>= (fun op ->
+    parse_expression_compare >>= fun right -> return (Expr_binary_op (op, left, right)))
+    <|> return left
   in
-  let* result = variant_1 <|> variant_2 in
-  return @@ result
-
-and parse_T2 =
-  fix
-  @@ fun parse_T2 ->
-  let variant_1 =
-    let* t3 = parse_T3 in
-    let* compare_op = parse_bin_op_T3 in
-    let* t2 = parse_T2 in
-    return @@ Expr_binary_op (compare_op, t3, t2)
+  let parse_expression_and =
+    fix
+    @@ fun parse_expression_and ->
+    parse_expression_compare
+    <?> "case 1"
+    >>= fun left ->
+    parse_bin_op_T2 *> parse_expression_and
+    >>= (fun right -> return (Expr_binary_op (And, left, right)))
+    <|> return left
   in
-  let variant_2 =
-    let* t3 = parse_T3 in
-    return @@ t3
-  in
-  let* result = variant_1 <|> variant_2 in
-  return @@ result
-
-and parse_T1 =
-  fix
-  @@ fun parse_T1 ->
-  let variant_1 =
-    let* t2 = parse_T2 in
-    let* and_op = parse_bin_op_T2 in
-    let* t1 = parse_T1 in
-    return @@ Expr_binary_op (and_op, t2, t1)
-  in
-  let variant_2 =
-    let* t2 = parse_T2 in
-    return @@ t2
-  in
-  let* result = variant_1 <|> variant_2 in
-  return @@ result
-
-and parse_bin_op_expression =
-  fix
-  @@ fun parse_bin_op_expression ->
-  let variant_1 =
-    let* t1 = parse_T1 in
-    let* or_op = parse_bin_op_T1 in
-    let* bin_op_expression = parse_bin_op_expression in
-    return @@ Expr_binary_op (or_op, t1, bin_op_expression)
-  in
-  let variant_2 =
-    let* t1 = parse_T1 in
-    return @@ t1
-  in
-  let* result = variant_1 <|> variant_2 in
-  return @@ result
+  parse_expression_and
+  <?> "case 0"
+  >>= fun left ->
+  parse_bin_op_T1 *> parse_expression_or
+  >>= (fun right -> return (Expr_binary_op (Or, left, right)))
+  <|> return left
 ;;
 
-(* ---------end of binary operators parsing--------- *)
+(* ---------end of binary operators parser--------- *)
