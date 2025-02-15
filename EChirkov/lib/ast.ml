@@ -36,14 +36,27 @@ type op_bin =
   | NEq (* <> *)
 [@@deriving show { with_path = false }]
 
+type binder = int [@@deriving show { with_path = false }]
+
+type core_type =
+  | TPrim of string
+  | TVar of binder
+  | TArrow of core_type * core_type
+  | TTuple of core_type * core_type * core_type list
+  | TList of core_type
+  | TOption of core_type
+[@@deriving show { with_path = false }]
+
 type pattern =
   | PAny (* _ *)
   | PVar of id
+  | PUnit (* () *)
   | PTuple of pattern * pattern * pattern list
-  | PCons of pattern * pattern (* h :: t *)
-  | PList of pattern list (* [23; 34] *)
+  (* | PCons of pattern * pattern (* h :: t *) *)
+  (* | PList of pattern list (* [23; 34] *) *)
   | PConst of const (* 23 *)
   | POption of pattern option
+  | PType of pattern * core_type
 [@@deriving show { with_path = false }]
 
 type expression =
@@ -54,14 +67,14 @@ type expression =
   | ETuple of expression * expression * expression list
   | EList of expression * expression list
   | EOption of expression option
-  | EMatch of expression * case * case list (* match *)
+  (* | EMatch of expression * case * case list (* match *) *)
   | EIf of expression * expression * expression option (* if x then false else true *)
-  | EFun of pattern * expression (* fun x -> x *)
-  | EFunction of case * case list (* function *)
+  (* | EFun of pattern * expression (* fun x -> x *) *)
+  (* | EFunction of case * case list (* function *) *)
   | EApply of expression * expression (* f x *)
-  | ELet of
-      rec_flag * value_binding * value_binding list * expression (* let x = 23 in x *)
-  | ECons of expression * expression
+  | ELet of rec_flag * value_binding * value_binding list * expression
+(* let x = 23 in x *)
+(* | ECons of expression * expression *)
 [@@deriving show { with_path = false }]
 
 and case = pattern * expression [@@deriving show { with_path = false }]
