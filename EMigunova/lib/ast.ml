@@ -41,23 +41,21 @@ type expression =
   | Expr_tuple of expression list
   | Expr_binary_op of binary_op * expression * expression
   | Expr_if_then_else of expression * expression * expression
-  | Expr_match_with of pattern * (pattern * expression) list
-  | Expr_construct_in of construction_in
+  | Expr_match_with of expression * (pattern * expression) list
+  | Expr_construct_in of let_binding * expression
   | Expr_anonym_fun of pattern * expression
+  | Expr_function_fun of (pattern * expression) list
   | Expr_application of ident * expression list
 
 and rec_flag =
   | Recursive
   | Non_recursive
 
-and let_binding = Let_binding of rec_flag * let_arguments * expression
+and let_declaration =
+  | Let_pattern of rec_flag * pattern
+  | Let_fun of rec_flag * ident * pattern list
 
-and let_arguments =
-  | Let_pattern of pattern
-  | Let_fun of ident * pattern list
-
-and construction_in = In of let_binding * expression
-[@@deriving show { with_path = false }]
+and let_binding = Let_binding of let_declaration * expression
 
 type structure = Structure_items of let_binding list
 [@@deriving show { with_path = false }]
