@@ -30,3 +30,5 @@ val parse_in_construction : expression t -> expression t
 val parse_application : expression t -> expression t
 val parse_anonymouse_fun : expression t -> expression t
 val parse_function_fun : expression t -> expression t
+val parse_expression : expression t
+val parse_programme_sructure : let_binding list t

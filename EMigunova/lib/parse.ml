@@ -113,6 +113,11 @@ let parse_any_pattern =
   return @@ Pattern_any
 ;;
 
+let parse_empty_list_pattern =
+  let* _ = token "[" *> token "]" in
+  return @@ Pattren_empty_list
+;;
+
 let parse_var_pattern =
   let* var = trim @@ parse_id in
   return @@ Pattern_var var
@@ -131,6 +136,20 @@ let parse_tuple_pattern parse_pattern =
   return @@ Pattern_tuple (first_pattern :: other_patterns)
 ;;
 
+let parse_list_pattern parse_pattern =
+  let parse_sugar_case =
+    let* first = parse_pattern in
+    let* rest = many @@ (token ";" *> parse_pattern) in
+    square_par @@ return @@ Pattern_list (first :: rest)
+  in
+  let parse_construct_case =
+    let* first = parse_pattern in
+    let* rest = many1 @@ (token "::" *> parse_pattern) in
+    return @@ Pattern_list (first :: rest)
+  in
+  parse_construct_case <|> parse_sugar_case
+;;
+
 let parse_pattern =
   fix
   @@ fun parse_pattern ->
@@ -138,6 +157,7 @@ let parse_pattern =
     [ parse_any_pattern
     ; parse_const_pattern
     ; parse_var_pattern
+    ; parse_empty_list_pattern
     ; parse_tuple_pattern parse_pattern
     ]
 ;;
@@ -194,84 +214,6 @@ let parse_expr_base_elements =
     ; parse_expr_list parse_expr
     ; parse_expr_tuple parse_expr
     ]
-;;
-
-(* operator prioritisation based on grammar *)
-let parse_bin_op_T1 = token "||" *> return Or
-let parse_bin_op_T2 = token "&&" *> return And
-
-let parse_bin_op_T3 =
-  choice
-    [ token "=" *> return Equal
-    ; token "<=" *> return LessEqual
-    ; token ">=" *> return GreaterEqual
-    ; token ">" *> return Greater
-    ; token "<" *> return Less
-    ; (token "!=" <|> token "<>") *> return NotEqual
-    ]
-;;
-
-let parse_bin_op_T4 = choice [ token "+" *> return Plus; token "-" *> return Sub ]
-let parse_bin_op_T5 = choice [ token "*" *> return Mul; token "/" *> return Div ]
-
-(* ---------binary operators parser--------- *)
-
-let parse_bin_op_expression parse_expression =
-  let parse_expression_base =
-    parse_expr_base_elements
-    <?> "case 5"
-    <|> round_par @@ parse_expression
-    >>= fun result -> return result
-  in
-  let parse_expression_mul_div =
-    fix
-    @@ fun parse_expression_mul_div ->
-    parse_expression_base
-    <?> "case 4"
-    >>= fun left ->
-    parse_bin_op_T5
-    >>= (fun op ->
-    parse_expression_mul_div >>= fun right -> return (Expr_binary_op (op, left, right)))
-    <|> return left
-  in
-  let parse_expression_add_sub =
-    fix
-    @@ fun parse_expression_add_sub ->
-    parse_expression_mul_div
-    <?> "case 3"
-    >>= fun left ->
-    parse_bin_op_T4
-    >>= (fun op ->
-    parse_expression_add_sub >>= fun right -> return (Expr_binary_op (op, left, right)))
-    <|> return left
-  in
-  let parse_expression_compare =
-    fix
-    @@ fun parse_expression_compare ->
-    parse_expression_add_sub
-    <?> "case 2"
-    >>= fun left ->
-    parse_bin_op_T3
-    >>= (fun op ->
-    parse_expression_compare >>= fun right -> return (Expr_binary_op (op, left, right)))
-    <|> return left
-  in
-  let parse_expression_and =
-    fix
-    @@ fun parse_expression_and ->
-    parse_expression_compare
-    <?> "case 1"
-    >>= fun left ->
-    parse_bin_op_T2 *> parse_expression_and
-    >>= (fun right -> return (Expr_binary_op (And, left, right)))
-    <|> return left
-  in
-  parse_expression_and
-  <?> "case 0"
-  >>= fun left ->
-  parse_bin_op_T1 *> parse_expression
-  >>= (fun right -> return (Expr_binary_op (Or, left, right)))
-  <|> return left
 ;;
 
 (* ----if then else parser------ *)
@@ -343,16 +285,6 @@ let parse_in_construction parse_expression =
   return @@ Expr_construct_in (parse_let_biding, parse_expression)
 ;;
 
-(* ---application parser---*)
-
-let parse_application parse_expression =
-  let* fun_ident = parse_id in
-  let* fun_arguments =
-    many (round_par @@ parse_expression <|> parse_expr_base_elements)
-  in
-  return @@ Expr_application (fun_ident, fun_arguments)
-;;
-
 (* ---anonymous function with keyword "fun"--- *)
 
 let parse_anonymouse_fun parse_expression =
@@ -364,7 +296,7 @@ let parse_anonymouse_fun parse_expression =
 (* ---anonymous function with keyword "function"--- *)
 
 let parse_function_fun parse_expression =
-  let* parse_keywords = token "function" *> token "->" in
+  let* parse_keywords = token "function" in
   let* pattern_first = (token "|" <|> return "") *> parse_pattern in
   let* return_expression_first = token "->" *> parse_expression in
   let parser_one_matching =
@@ -376,8 +308,129 @@ let parse_function_fun parse_expression =
   return @@ Expr_function_fun ((pattern_first, return_expression_first) :: rest)
 ;;
 
+(* ---application parser---*)
+
+let parser_fun_apply parse_expression =
+  let* apply_function =
+    round_par @@ parse_anonymouse_fun parse_expression
+    <|> round_par @@ parse_function_fun parse_expression
+  in
+  let* fun_arguments =
+    many1 (round_par @@ parse_expression <|> parse_expr_base_elements)
+  in
+  return @@ Expr_application (Apply_function (apply_function, fun_arguments))
+;;
+
+let parser_ident_apply parse_expression =
+  let* apply_ident = parse_id in
+  let* fun_arguments =
+    many1 (round_par @@ parse_expression <|> parse_expr_base_elements)
+  in
+  return @@ Expr_application (Apply_ident (apply_ident, fun_arguments))
+;;
+
+let parse_application parse_expression =
+  parser_fun_apply @@ parse_expression <|> parser_ident_apply @@ parse_expression
+;;
+
+(* operator prioritisation based on grammar *)
+let parse_bin_op_T1 = token "||" *> return Or
+let parse_bin_op_T2 = token "&&" *> return And
+
+let parse_bin_op_T3 =
+  choice
+    [ token "=" *> return Equal
+    ; token "<=" *> return LessEqual
+    ; token ">=" *> return GreaterEqual
+    ; token ">" *> return Greater
+    ; token "<" *> return Less
+    ; (token "!=" <|> token "<>") *> return NotEqual
+    ]
+;;
+
+let parse_bin_op_T4 = choice [ token "+" *> return Plus; token "-" *> return Sub ]
+let parse_bin_op_T5 = choice [ token "*" *> return Mul; token "/" *> return Div ]
+
+(* ---------binary operators parser--------- *)
+
+let parse_bin_op_expression parse_expression =
+  let parse_expression_base =
+    parser_ident_apply parse_expression
+    <|> parse_expr_base_elements
+    <?> "case 5"
+    <|> parser_fun_apply @@ parse_expression
+    <|> round_par @@ parse_expression
+    >>= fun result -> return result
+  in
+  let parse_expression_mul_div =
+    fix
+    @@ fun parse_expression_mul_div ->
+    parse_expression_base
+    <?> "case 4"
+    >>= fun left ->
+    parse_bin_op_T5
+    >>= (fun op ->
+    parse_expression_mul_div >>= fun right -> return (Expr_binary_op (op, left, right)))
+    <|> return left
+  in
+  let parse_expression_add_sub =
+    fix
+    @@ fun parse_expression_add_sub ->
+    parse_expression_mul_div
+    <?> "case 3"
+    >>= fun left ->
+    parse_bin_op_T4
+    >>= (fun op ->
+    parse_expression_add_sub >>= fun right -> return (Expr_binary_op (op, left, right)))
+    <|> return left
+  in
+  let parse_expression_compare =
+    fix
+    @@ fun parse_expression_compare ->
+    parse_expression_add_sub
+    <?> "case 2"
+    >>= fun left ->
+    parse_bin_op_T3
+    >>= (fun op ->
+    parse_expression_compare >>= fun right -> return (Expr_binary_op (op, left, right)))
+    <|> return left
+  in
+  let parse_expression_and =
+    fix
+    @@ fun parse_expression_and ->
+    parse_expression_compare
+    <?> "case 1"
+    >>= fun left ->
+    parse_bin_op_T2 *> parse_expression_and
+    >>= (fun right -> return (Expr_binary_op (And, left, right)))
+    <|> return left
+  in
+  parse_expression_and
+  <?> "case 0"
+  >>= fun left ->
+  parse_bin_op_T1 *> parse_expression
+  >>= (fun right -> return (Expr_binary_op (Or, left, right)))
+  <|> return left
+;;
+
 (* ---expression parser--- *)
 (*---write rec function with fix---*)
 
+let parse_expression =
+  fix
+  @@ fun parse_expression ->
+  choice
+    [ parse_bin_op_expression parse_expression
+    ; parse_if_when_else parse_expression
+    ; parse_match_with parse_expression
+    ; parse_application parse_expression
+    ; parse_function_fun parse_expression
+    ; parse_anonymouse_fun parse_expression
+    ; parse_in_construction parse_expression
+    ]
+;;
+
 (* ---parser of MiniML--- *)
 (*---parse list of bidings---*)
+
+let parse_programme_sructure = many (parse_let_biding parse_expression)

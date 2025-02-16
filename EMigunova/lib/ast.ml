@@ -13,10 +13,12 @@ type constant =
 [@@deriving show { with_path = false }]
 
 type pattern =
-  | Pattern_any (** The pattern [_]. *)
+  | Pattern_any (** The pattern [ _ ]. *)
+  | Pattren_empty_list (** The pattern [ [] ]. *)
   | Pattern_const of constant
   | Pattern_var of string (** A variable pattern such as [x] *)
   | Pattern_tuple of pattern list (** Represnts n-tuples (x1, x2, ... ,xn) *)
+  | Pattern_list of pattern list
 [@@deriving show { with_path = false }]
 
 type binary_op =
@@ -45,7 +47,11 @@ type expression =
   | Expr_construct_in of let_binding * expression
   | Expr_anonym_fun of pattern * expression
   | Expr_function_fun of (pattern * expression) list
-  | Expr_application of ident * expression list
+  | Expr_application of application
+
+and application =
+  | Apply_ident of ident * expression list
+  | Apply_function of expression * expression list
 
 and rec_flag =
   | Recursive
