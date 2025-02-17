@@ -354,63 +354,73 @@ let parse_bin_op_T5 = choice [ token "*" *> return Mul; token "/" *> return Div 
 (* ---------binary operators parser--------- *)
 
 let parse_bin_op_expression parse_expression =
-  let parse_expression_base =
+  let parse_expr_base =
     parser_ident_apply parse_expression
     <|> parse_expr_base_elements
-    <?> "case 5"
     <|> parser_fun_apply @@ parse_expression
     <|> round_par @@ parse_expression
-    >>= fun result -> return result
+    >>= fun result -> return result <?> "base"
   in
-  let parse_expression_mul_div =
-    fix
-    @@ fun parse_expression_mul_div ->
-    parse_expression_base
-    <?> "case 4"
-    >>= fun left ->
-    parse_bin_op_T5
-    >>= (fun op ->
-    parse_expression_mul_div >>= fun right -> return (Expr_binary_op (op, left, right)))
-    <|> return left
+  let parse_expr_mul_div =
+    let* first_operand = parse_expr_base in
+    let rec parse_mul_div_chain =
+      fun left_expression ->
+      (let* operator = parse_bin_op_T5 in
+       let* right_expression = parse_expr_base in
+       parse_mul_div_chain @@ Expr_binary_op (operator, left_expression, right_expression))
+      <|> return @@ left_expression
+      <?> "mul div"
+    in
+    parse_mul_div_chain first_operand
   in
-  let parse_expression_add_sub =
-    fix
-    @@ fun parse_expression_add_sub ->
-    parse_expression_mul_div
-    <?> "case 3"
-    >>= fun left ->
-    parse_bin_op_T4
-    >>= (fun op ->
-    parse_expression_add_sub >>= fun right -> return (Expr_binary_op (op, left, right)))
-    <|> return left
+  let parse_expr_add_sub =
+    let* first_operand = parse_expr_mul_div in
+    let rec parse_add_sub_chain =
+      fun left_expression ->
+      (let* operator = parse_bin_op_T4 in
+       let* right_expression = parse_expr_mul_div in
+       parse_add_sub_chain @@ Expr_binary_op (operator, left_expression, right_expression))
+      <|> return @@ left_expression
+      <?> "add sub"
+    in
+    parse_add_sub_chain first_operand
   in
-  let parse_expression_compare =
-    fix
-    @@ fun parse_expression_compare ->
-    parse_expression_add_sub
-    <?> "case 2"
-    >>= fun left ->
-    parse_bin_op_T3
-    >>= (fun op ->
-    parse_expression_compare >>= fun right -> return (Expr_binary_op (op, left, right)))
-    <|> return left
+  let parse_expr_compare =
+    let* first_operand = parse_expr_add_sub in
+    let rec parse_compare_chain =
+      fun left_expression ->
+      (let* operator = parse_bin_op_T3 in
+       let* right_expression = parse_expr_add_sub in
+       parse_compare_chain @@ Expr_binary_op (operator, left_expression, right_expression))
+      <|> return @@ left_expression
+    in
+    parse_compare_chain first_operand
   in
-  let parse_expression_and =
-    fix
-    @@ fun parse_expression_and ->
-    parse_expression_compare
-    <?> "case 1"
-    >>= fun left ->
-    parse_bin_op_T2 *> parse_expression_and
-    >>= (fun right -> return (Expr_binary_op (And, left, right)))
-    <|> return left
+  let parse_expr_and =
+    let* first_operand = parse_expr_compare in
+    let rec parse_and_chain =
+      fun left_expression ->
+      (let* operator = parse_bin_op_T2 in
+       let* right_expression = parse_expr_compare in
+       parse_and_chain @@ Expr_binary_op (operator, left_expression, right_expression))
+      <|> return @@ left_expression
+      <?> "and"
+    in
+    parse_and_chain first_operand
   in
-  parse_expression_and
-  <?> "case 0"
-  >>= fun left ->
-  parse_bin_op_T1 *> parse_expression
-  >>= (fun right -> return (Expr_binary_op (Or, left, right)))
-  <|> return left
+  let parse_expr_or =
+    let* first_operand = parse_expr_and in
+    let rec parse_or_chain =
+      fun left_expression ->
+      (let* operator = parse_bin_op_T1 in
+       let* right_expression = parse_expr_and in
+       parse_or_chain @@ Expr_binary_op (operator, left_expression, right_expression))
+      <|> return @@ left_expression
+      <?> "or"
+    in
+    parse_or_chain first_operand
+  in
+  parse_expr_or
 ;;
 
 (* ---expression parser--- *)
