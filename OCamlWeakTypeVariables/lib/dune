@@ -1,6 +1,16 @@
 (library
  (name lib)
+ (libraries angstrom config)
+ (modules ast parser types infer infer_print)
+ (inline_tests)
  (preprocess
-  (pps ppx_deriving.show))
+  (pps ppx_deriving.show ppx_inline_test ppx_expect))
+ (instrumentation
+  (backend bisect_ppx)))
+
+(library
+ (name config)
+ (libraries angstrom)
+ (modules config)
  (instrumentation
   (backend bisect_ppx)))
