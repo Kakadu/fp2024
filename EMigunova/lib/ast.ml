@@ -17,6 +17,7 @@ type pattern =
   | Pattren_empty_list (** The pattern [ [] ]. *)
   | Pattern_const of constant
   | Pattern_var of string (** A variable pattern such as [x] *)
+  | Pattern_option of pattern option
   | Pattern_tuple of pattern list (** Represnts n-tuples (x1, x2, ... ,xn) *)
   | Pattern_list of pattern list
 [@@deriving show { with_path = false }]

@@ -61,7 +61,8 @@ let trim t = skip_sep *> t <* skip_sep
 let token t = skip_sep *> string t <* skip_sep
 let round_par p = token "(" *> p <* token ")"
 let square_par p = token "[" *> p <* token "]"
-let optional_round_par p = round_par p <|> trim p
+let round_par_many t = fix @@ fun p -> round_par @@ p <|> t
+let round_par_many1 t = round_par_many @@ round_par @@ t
 
 (* Parse first letter then try parse the rest of id *)
 let parse_id =
@@ -129,37 +130,77 @@ let parse_const_pattern =
 ;;
 
 let parse_tuple_pattern parse_pattern =
-  round_par
-  @@
-  let* first_pattern = parse_pattern in
-  let* other_patterns = many (token "," *> parse_pattern) in
-  return @@ Pattern_tuple (first_pattern :: other_patterns)
+  fix
+  @@ fun parse_tuple_pattern ->
+  let* first = parse_pattern <|> round_par_many1 @@ parse_tuple_pattern in
+  let* rest =
+    many1 @@ (token "," *> (parse_pattern <|> round_par_many1 @@ parse_tuple_pattern))
+  in
+  return @@ Pattern_tuple (first :: rest)
+;;
+
+let parse_list_sugar_case_pattern parse_pattern =
+  let* first = parse_pattern in
+  let* rest = many @@ (token ";" *> parse_pattern) in
+  square_par @@ return @@ Pattern_list (first :: rest)
+;;
+
+let parse_list_construct_case_pattern parse_pattern =
+  fix
+  @@ fun parse_list_construct_case_pattern ->
+  let* first = parse_pattern <|> round_par_many1 @@ parse_list_construct_case_pattern in
+  let* rest =
+    many1
+    @@ (token "::"
+        *> (parse_pattern <|> round_par_many1 @@ parse_list_construct_case_pattern))
+  in
+  return @@ Pattern_list (first :: rest)
 ;;
 
 let parse_list_pattern parse_pattern =
-  let parse_sugar_case =
-    let* first = parse_pattern in
-    let* rest = many @@ (token ";" *> parse_pattern) in
-    square_par @@ return @@ Pattern_list (first :: rest)
+  parse_list_sugar_case_pattern parse_pattern
+  <|> parse_list_construct_case_pattern parse_pattern
+;;
+
+let parse_option_pattern parse_pattern_help parse_pattern =
+  let some_pattern_argument_parser =
+    choice
+      [ parse_pattern_help
+      ; (*by this choice we considered the case : Some hd::tl where after parsing we must to get Pattern_option Some hd, no Pattern_option Some (hd::tl) *)
+        round_par @@ parse_pattern
+      ]
   in
-  let parse_construct_case =
-    let* first = parse_pattern in
-    let* rest = many1 @@ (token "::" *> parse_pattern) in
-    return @@ Pattern_list (first :: rest)
+  let parser_some =
+    let* pattern_some = token "Some" *> some_pattern_argument_parser in
+    return @@ Pattern_option (Some pattern_some)
   in
-  parse_construct_case <|> parse_sugar_case
+  let parser_none =
+    let* _ = token "None" in
+    return @@ Pattern_option None
+  in
+  parser_some <|> parser_none
+;;
+
+let parse_pattern_help parse_pattern =
+  fix @@
+  fun parse_pattern_help ->
+  choice
+    [ parse_any_pattern
+    ; parse_empty_list_pattern
+    ; parse_const_pattern
+    ; parse_var_pattern
+    ; parse_list_sugar_case_pattern parse_pattern (*recursion problem*)
+    ; parse_option_pattern parse_pattern_help parse_pattern 
+    ]
 ;;
 
 let parse_pattern =
   fix
   @@ fun parse_pattern ->
-  choice
-    [ parse_any_pattern
-    ; parse_const_pattern
-    ; parse_var_pattern
-    ; parse_empty_list_pattern
-    ; parse_tuple_pattern parse_pattern
-    ]
+  round_par_many
+  @@ (parse_list_construct_case_pattern (parse_pattern_help parse_pattern)
+      <|> parse_tuple_pattern (parse_pattern_help parse_pattern)
+      <|> parse_pattern_help parse_pattern)
 ;;
 
 (* parse expression cases :
