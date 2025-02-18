@@ -12,14 +12,23 @@ type constant =
   | Const_unit
 [@@deriving show { with_path = false }]
 
+type ttype =
+  | Type_int
+  | Type_bool
+  | Type_char
+  | Type_string
+  | Type_unit
+  | Type_list of ttype
+  | Type_tuple of ttype list
+
 type pattern =
   | Pattern_any (** The pattern [ _ ]. *)
-  | Pattren_empty_list (** The pattern [ [] ]. *)
   | Pattern_const of constant
   | Pattern_var of string (** A variable pattern such as [x] *)
   | Pattern_option of pattern option
   | Pattern_tuple of pattern list (** Represnts n-tuples (x1, x2, ... ,xn) *)
-  | Pattern_list of pattern list
+  | Pattern_list_sugar_case of pattern list
+  | Pattern_list_constructor_case of pattern list
 [@@deriving show { with_path = false }]
 
 type binary_op =
@@ -49,6 +58,7 @@ type expression =
   | Expr_anonym_fun of pattern * expression
   | Expr_function_fun of (pattern * expression) list
   | Expr_application of application
+  | Typed_expression of ttype * expression
 
 and application =
   | Apply_ident of ident * expression list

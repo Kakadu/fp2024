@@ -48,10 +48,7 @@ let is_keyword = function
   | "None"
   | "type"
   | "val"
-  | "while"
-  | "for"
   | "function"
-  | "->"
   | "_" -> true
   | _ -> false
 ;;
@@ -114,11 +111,6 @@ let parse_any_pattern =
   return @@ Pattern_any
 ;;
 
-let parse_empty_list_pattern =
-  let* _ = token "[" *> token "]" in
-  return @@ Pattren_empty_list
-;;
-
 let parse_var_pattern =
   let* var = trim @@ parse_id in
   return @@ Pattern_var var
@@ -129,49 +121,43 @@ let parse_const_pattern =
   return @@ Pattern_const const
 ;;
 
-let parse_tuple_pattern parse_pattern =
-  fix
-  @@ fun parse_tuple_pattern ->
-  let* first = parse_pattern <|> round_par_many1 @@ parse_tuple_pattern in
-  let* rest =
-    many1 @@ (token "," *> (parse_pattern <|> round_par_many1 @@ parse_tuple_pattern))
-  in
-  return @@ Pattern_tuple (first :: rest)
+let parse_base_pattern =
+  choice [ parse_any_pattern; parse_var_pattern; parse_const_pattern ]
 ;;
 
 let parse_list_sugar_case_pattern parse_pattern =
-  let* first = parse_pattern in
-  let* rest = many @@ (token ";" *> parse_pattern) in
-  square_par @@ return @@ Pattern_list (first :: rest)
+  let empty_list_parser =
+    let* _ = token "[" *> token "]" in
+    return @@ Pattern_list_sugar_case []
+  in
+  let list_parser =
+    let* _ = token "[" in
+    let* first = parse_pattern in
+    let* rest = many1 (token ";" *> parse_pattern) in
+    let* _ = token "]" in
+    return @@ Pattern_list_sugar_case (first :: rest)
+  in
+  empty_list_parser <|> list_parser
 ;;
 
+(*всё что угодно, то есть parse_pattern*)
 let parse_list_construct_case_pattern parse_pattern =
-  fix
-  @@ fun parse_list_construct_case_pattern ->
-  let* first = parse_pattern <|> round_par_many1 @@ parse_list_construct_case_pattern in
-  let* rest =
-    many1
-    @@ (token "::"
-        *> (parse_pattern <|> round_par_many1 @@ parse_list_construct_case_pattern))
-  in
-  return @@ Pattern_list (first :: rest)
+  let* first = parse_pattern in
+  let* rest = many1 @@ (token "::" *> parse_pattern) in
+  return @@ Pattern_list_constructor_case (first :: rest)
 ;;
 
-let parse_list_pattern parse_pattern =
-  parse_list_sugar_case_pattern parse_pattern
-  <|> parse_list_construct_case_pattern parse_pattern
+(*round_par_many + base_patterns, sugar_case_list, option, round_par_many1 + construct/tuple*)
+let parse_tuple_pattern parse_pattern =
+  let* first = parse_pattern in
+  let* rest = many1 @@ (token "," *> parse_pattern) in
+  return @@ Pattern_tuple (first :: rest)
 ;;
 
-let parse_option_pattern parse_pattern_help parse_pattern =
-  let some_pattern_argument_parser =
-    choice
-      [ parse_pattern_help
-      ; (*by this choice we considered the case : Some hd::tl where after parsing we must to get Pattern_option Some hd, no Pattern_option Some (hd::tl) *)
-        round_par @@ parse_pattern
-      ]
-  in
+(*round_par_many + всё, кроме самого тапла, round_par_many1 + tuple*)
+let parse_option_pattern parser_for_argument_of_some =
   let parser_some =
-    let* pattern_some = token "Some" *> some_pattern_argument_parser in
+    let* pattern_some = token "Some" *> parser_for_argument_of_some in
     return @@ Pattern_option (Some pattern_some)
   in
   let parser_none =
@@ -181,27 +167,52 @@ let parse_option_pattern parse_pattern_help parse_pattern =
   parser_some <|> parser_none
 ;;
 
-let parse_pattern_help parse_pattern =
-  fix @@
-  fun parse_pattern_help ->
-  choice
-    [ parse_any_pattern
-    ; parse_empty_list_pattern
-    ; parse_const_pattern
-    ; parse_var_pattern
-    ; parse_list_sugar_case_pattern parse_pattern (*recursion problem*)
-    ; parse_option_pattern parse_pattern_help parse_pattern 
-    ]
-;;
-
 let parse_pattern =
   fix
   @@ fun parse_pattern ->
   round_par_many
-  @@ (parse_list_construct_case_pattern (parse_pattern_help parse_pattern)
-      <|> parse_tuple_pattern (parse_pattern_help parse_pattern)
-      <|> parse_pattern_help parse_pattern)
+  @@
+  let parse_option_argument =
+    fix
+    @@ fun parse_option_argument ->
+    round_par_many
+    @@ choice
+         [ parse_base_pattern
+         ; parse_option_pattern parse_option_argument
+         ; parse_list_sugar_case_pattern parse_pattern
+         ]
+    <|> round_par_many1 @@ parse_pattern
+  in
+  let parse_list_construct_element =
+    round_par_many
+    @@ choice
+         [ parse_base_pattern
+         ; parse_option_pattern parse_option_argument
+         ; parse_list_sugar_case_pattern parse_pattern
+         ]
+    <|> round_par_many1 @@ parse_pattern
+  in
+  let parse_tuple_element =
+    round_par_many
+    @@ choice
+         [ parse_list_construct_case_pattern parse_list_construct_element
+         ; parse_base_pattern
+         ; parse_option_pattern parse_option_argument
+         ; parse_list_sugar_case_pattern parse_pattern
+         ]
+    <|> round_par_many1 @@ parse_pattern
+  in
+  round_par_many
+  @@ choice
+       [ parse_tuple_pattern parse_tuple_element
+       ; parse_list_construct_case_pattern parse_list_construct_element
+       ; parse_base_pattern
+       ; parse_option_pattern parse_option_argument
+       ; parse_list_sugar_case_pattern parse_pattern
+       ]
 ;;
+
+(*round_par_many + base_elements, sugar_case, option; round_par_many1 + tuple/construct *)
 
 (* parse expression cases :
 
@@ -247,7 +258,8 @@ let parse_expr_list parse_expr =
 
 (* parsing of constants, vars, lists and tuples of constants and vars *)
 let parse_expr_base_elements =
-  fix
+  round_par_many
+  @@ fix
   @@ fun parse_expr ->
   choice
     [ parse_expr_const
@@ -467,7 +479,7 @@ let parse_bin_op_expression parse_expression =
 (* ---expression parser--- *)
 (*---write rec function with fix---*)
 
-let parse_expression =
+let parse_expression_without_type_annotation =
   fix
   @@ fun parse_expression ->
   choice
@@ -479,6 +491,61 @@ let parse_expression =
     ; parse_anonymouse_fun parse_expression
     ; parse_in_construction parse_expression
     ]
+;;
+
+(*let's add ability to specify type annotations*)
+
+let parse_type =
+  fix
+  @@ fun parse_type ->
+  let base_type_parser =
+    round_par_many
+    @@ choice
+         [ token "int" *> return Type_int
+         ; token "char" *> return Type_char
+         ; token "bool" *> return Type_bool
+         ; token "string" *> return Type_string
+         ; token "unit" *> return Type_unit
+         ]
+  in
+  let tuple_type_parser parser_tuple_element_type =
+    round_par_many
+    @@
+    let* first = parser_tuple_element_type in
+    let* rest = many1 @@ (token "*" *> parser_tuple_element_type) in
+    return @@ Type_tuple (first :: rest)
+  in
+  let parser_tuple_element_type =
+    round_par_many @@ base_type_parser <|> round_par_many1 @@ parse_type
+  in
+  let list_type_parser =
+    fix
+    @@ fun list_type_parser ->
+    let* element_type =
+      choice
+      @@ [ tuple_type_parser parser_tuple_element_type
+         ; base_type_parser
+         ; round_par_many1 list_type_parser
+         ]
+    in
+    let rec list_type_parser element_type =
+      (let* _ = token "list" in
+       list_type_parser @@ Type_list element_type)
+      <|> return @@ element_type
+    in
+    list_type_parser element_type
+  in
+  choice
+    [ list_type_parser; tuple_type_parser parser_tuple_element_type; base_type_parser ]
+;;
+
+let parse_expression =
+  round_par_many @@ parse_expression_without_type_annotation
+  <|> round_par_many1
+      @@
+      let* expression = parse_expression_without_type_annotation in
+      let* ttype = token ":" *> parse_type in
+      return @@ Typed_expression (ttype, expression)
 ;;
 
 (* ---parser of MiniML--- *)
