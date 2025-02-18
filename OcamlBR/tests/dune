@@ -1,3 +1,11 @@
 (cram
  (applies_to qcheck)
  (deps ../lib/run_qcheck.exe))
+
+(cram
+ (applies_to run)
+ (deps ../repl/repl.exe))
+
+(cram
+ (applies_to infer)
+ (deps ../repl/repl.exe))
