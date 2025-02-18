@@ -501,7 +501,6 @@ let rec infer_pattern env ?ty =
   | Ppat_any ->
     let* fv = fresh_var in
     return (fv, env, names)
-  | Ppat_interval _ -> fail (SomeError "Pattern interval not implemented")
 ;;
 
 let infer_non_rec_value_bindings infer_expr env vbs =

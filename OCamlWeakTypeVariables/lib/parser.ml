@@ -172,11 +172,8 @@ let p_pattern =
   let pat_var =
     lowercase_ident >>| fun var -> if var = "_" then Ppat_any else Ppat_var var
   in
-  let pat_interval =
-    p_const >>= fun f -> token ".." *> p_const >>| fun s -> Ppat_interval (f, s)
-  in
   fix (fun pattern : pattern t ->
-    let pat_const = choice [ parens pattern; pat_interval; pat_const; pat_var ] in
+    let pat_const = choice [ parens pattern; pat_const; pat_var ] in
     let pat_construct =
       (let* name = capitalized_ident in
        let+ body = option None (pattern >>| fun p -> Some p) in
@@ -241,23 +238,14 @@ let p_rec_flag = word "rec" >>| (fun _ -> Recursive) <|> return NonRecursive
 
 let p_value_binding expr =
   let* pattern = p_pattern in
-  let rec helper = function
-    | Ppat_any | Ppat_var _ | Ppat_construct _ | Ppat_constant _ -> true
-    | Ppat_tuple pts -> List.fold_left (fun acc pat -> acc && helper pat) true pts
-    | Ppat_interval _ -> false
-  in
-  (* Zanuda thinks it's better *)
-  if not (helper pattern)
-  then fail "Pattern name must be wildcard, variable or tuple of them"
-  else
-    let* xs = many p_pattern in
-    let+ expr = token "=" *> expr in
-    { pvb_pat = pattern
-    ; pvb_expr =
-        (match xs with
-         | [] -> expr
-         | _ -> List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
-    }
+  let* xs = many p_pattern in
+  let+ expr = token "=" *> expr in
+  { pvb_pat = pattern
+  ; pvb_expr =
+      (match xs with
+       | [] -> expr
+       | _ -> List.fold_right (fun f p -> Pexp_fun (f, p)) xs expr)
+  }
 ;;
 
 let p_let_in expr =

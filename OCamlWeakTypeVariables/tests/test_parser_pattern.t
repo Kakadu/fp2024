@@ -54,7 +54,3 @@ SPDX-License-Identifier: LGPL-3.0-or-later
                        pvb_expr = (Pexp_ident "homka") }
                       ]
                     ))
-
-  $ ../bin/REPL.exe -dparsetree <<EOF
-  > let "a" .. "z" = homka
-  Error: : Pattern name must be wildcard, variable or tuple of them
