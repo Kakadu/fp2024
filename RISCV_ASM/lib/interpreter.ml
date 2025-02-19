@@ -436,7 +436,8 @@ let execute_arithmetic_op state rd rs1 rs2 op to_sext =
 let execute_shift_op state rd rs1 rs2 op =
   let val1 = get_register_value state rs1 in
   let val2 = get_register_value state rs2 in
-  let result = op val1 (Int64.to_int val2) in
+  let val2_lower_5bits = Int64.logand val2 0x1FL in
+  let result = op val1 (Int64.to_int val2_lower_5bits) in
   return (set_register_value state rd result)
 ;;
 
@@ -926,19 +927,22 @@ and execute_instruction state instr program =
   | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
   | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
   | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
-  | Andn (rd, rs1, rs2) -> let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
-  let result = Int64.logand val1 (Int64.lognot val2) in
-  return (set_register_value state rd result)
-  | Orn (rd, rs1, rs2) -> let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
-  let result = Int64.logor val1 (Int64.lognot val2) in
-  return (set_register_value state rd result)
-  | Xnor (rd, rs1, rs2) -> let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
-  let result = Int64.logxor val1 val2 in
-  let result_final = Int64.lognot result in
-  return (set_register_value state rd result_final)
+  | Andn (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int64.logand val1 (Int64.lognot val2) in
+    return (set_register_value state rd result)
+  | Orn (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int64.logor val1 (Int64.lognot val2) in
+    return (set_register_value state rd result)
+  | Xnor (rd, rs1, rs2) ->
+    let val1 = get_register_value state rs1 in
+    let val2 = get_register_value state rs2 in
+    let result = Int64.logxor val1 val2 in
+    let result_final = Int64.lognot result in
+    return (set_register_value state rd result_final)
   | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
   | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
   | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
