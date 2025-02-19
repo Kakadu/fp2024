@@ -259,8 +259,11 @@ let rec cartesian xs ys =
   | h :: tl -> append (map (fun a -> h, a) ys) (cartesian tl ys)
 ;;
 
+l
 let main =
   let () = iter print_int [ 1; 2; 3 ] in
   let () = print_int (length (cartesian [ 1; 2 ] [ 1; 2; 3; 4 ])) in
   0
 ;;
+
+(*let test = parse_string ~consume:Prefix Parse.parse "" *)
