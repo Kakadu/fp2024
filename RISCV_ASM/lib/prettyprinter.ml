@@ -511,6 +511,9 @@ let pp_instruction ppf = function
   | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
   | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
   | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
+  | Andn (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "andn" rd rs1 rs2
+  | Orn (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "orn" rd rs1 rs2
+  | Xnor (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "xnor" rd rs1 rs2
   | Vle32v (vd, rs1, imm) ->
     pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.v" vd rs1 (Address12 imm)
   | Vse32v (vs, rs1, imm) ->
