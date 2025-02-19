@@ -15,6 +15,7 @@ module R : sig
 
   module Syntax : sig
     val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   end
 
   module RList : sig
@@ -50,6 +51,7 @@ end = struct
 
   module Syntax = struct
     let ( let* ) x f = bind x ~f
+    let ( let+ ) = ( >>| )
   end
 
   module RList = struct
@@ -151,7 +153,9 @@ end = struct
   let rec unify l r =
     match l, r with
     | Ty_prim l, Ty_prim r when String.equal l r -> return empty
-    | Ty_var a, Ty_var b when Int.equal a b -> return empty
+    | (Ty_var a, Ty_var b | Ty_ord a, Ty_ord b | Ty_enum a, Ty_enum b) when Int.equal a b
+      -> return empty
+    | Ty_ord a, Ty_ord b | Ty_enum a, Ty_enum b -> singleton a (Ty_var b)
     | Ty_var b, t | t, Ty_var b -> singleton b t
     | Ty_ord _, Ty_arrow _ | Ty_arrow _, Ty_ord _ -> fail (`Unification_failed (l, r))
     | Ty_enum b, (Ty_prim _ as t) | (Ty_prim _ as t), Ty_enum b -> singleton b t
@@ -173,7 +177,8 @@ end = struct
       let* subs1 = unify l1 l2 in
       let* subs2 = unify (apply subs1 r1) (apply subs1 r2) in
       compose subs2 subs1
-    | Ty_list ty1, Ty_list ty2 -> unify ty1 ty2
+    | Ty_list ty1, Ty_list ty2 | Ty_tree ty1, Ty_tree ty2 | Ty_maybe ty1, Ty_maybe ty2 ->
+      unify ty1 ty2
     | Ty_tuple (t1, t2, tt), Ty_tuple (t1', t2', tt')
       when List.length tt = List.length tt' ->
       RList.fold_left
@@ -182,11 +187,7 @@ end = struct
         ~f:(fun acc (t1, t2) ->
           let* subs = unify (apply acc t1) (apply acc t2) in
           compose subs acc)
-    | Ty_tree ty1, Ty_tree ty2 -> unify ty1 ty2
-    | Ty_maybe ty1, Ty_maybe ty2 -> unify ty1 ty2
-    | _ ->
-      (* TODO(Kakadu): You already have case like this above. Why split? *)
-      fail (`Unification_failed (l, r))
+    | _ -> fail (`Unification_failed (l, r))
 
   and extend s (k, v) =
     let bind v f =
@@ -278,6 +279,15 @@ let typeenv_print_int =
     ("print_int", S (VarSet.empty, Ty_arrow (Ty_prim "Int", Ty_prim "()")))
 ;;
 
+let initial_env =
+  TypeEnv.extend
+    typeenv_print_int
+    ( "seq"
+    , S
+        ( VarSet.add 1 (VarSet.add 0 VarSet.empty)
+        , Ty_arrow (Ty_var 0, Ty_arrow (Ty_var 1, Ty_var 1)) ) )
+;;
+
 let typeenv_empty = TypeEnv.empty
 let pp_some_typeenv ppf (n, e) = TypeEnv.pp_some ppf n e
 
@@ -312,19 +322,19 @@ let lookup_env e xs =
     return ans
 ;;
 
-let built_in_sign op =
-  (function
-    | And | Or -> return (Ty_prim "Bool", Ty_prim "Bool", Ty_prim "Bool")
-    | Cons ->
-      let* t = fresh_var in
-      return (t, Ty_list t, Ty_list t)
-    | Plus | Minus | Divide | Mod | Multiply | Pow ->
-      return (Ty_prim "Int", Ty_prim "Int", Ty_prim "Int")
-    | _ -> fresh >>| fun t -> Ty_ord t, Ty_ord t, Ty_prim "Bool")
-    op
-  (* TODO(Kakadu): overly complicated. Maybe introduce helper function
-     `arrow3` and get rid of >>|? *)
-  >>| fun (t1, t2, t3) -> Ty_arrow (t1, Ty_arrow (t2, t3))
+let arrow3 t1 t2 t3 = Ty_arrow (t1, Ty_arrow (t2, t3))
+
+let built_in_sign =
+  let pr_bool, pr_int = Ty_prim "Bool", Ty_prim "Int" in
+  function
+  | And | Or -> return @@ arrow3 pr_bool pr_bool pr_bool
+  | Cons ->
+    let+ t = fresh_var in
+    arrow3 t (Ty_list t) (Ty_list t)
+  | Plus | Minus | Divide | Mod | Multiply | Pow -> return @@ arrow3 pr_int pr_int pr_int
+  | _ ->
+    let+ t = fresh in
+    arrow3 (Ty_ord t) (Ty_ord t) (Ty_prim "Bool")
 ;;
 
 let rec tp_to_ty = function
@@ -367,9 +377,6 @@ let rec bindings bb env =
       let* s3 = unify (Subst.apply s_p tv0) t1 in
       let* s = Subst.compose s3 s in
       Subst.compose s subst >>| fun fs -> fs, env
-    | _ ->
-      (* TODO(Kakadu): All new constructors will go here, and type system will not help you *)
-      return (subst, env)
   in
   let* prep_bb, decls, delta_env, env, names = prep [] [] TypeEnv.empty env [] bb in
   let init =
@@ -409,15 +416,15 @@ and prep prep_bb decls env1 env2 names = function
   | [] -> return (prep_bb, decls, env1, env2, names)
   | Decl (Ident name, t) :: tl ->
     prep prep_bb ((name, tp_to_ty t) :: decls) env1 env2 names tl
-  | (FunDef (Ident name, _, _, _, _) as b) :: tl ->
+  | Def (FunDef (Ident name, _, _, _, _) as d) :: tl ->
     let* tv = fresh_var in
     let ext env = TypeEnv.extend env (name, S (VarSet.empty, tv)) in
-    prep ((b, tv) :: prep_bb) decls (ext env1) (ext env2) (name :: names) tl
-  | (VarsDef (p, _, _) as b) :: tl ->
+    prep ((d, tv) :: prep_bb) decls (ext env1) (ext env2) (name :: names) tl
+  | Def (VarsDef (p, _, _) as d) :: tl ->
     let* _, env1, _ = helper_p p env1 [] in
     let* t, env2, new_names = helper_p p env2 [] in
     prep
-      ((b, t) :: prep_bb)
+      ((d, t) :: prep_bb)
       decls
       env1
       env2
@@ -641,31 +648,31 @@ and infer (e, type_annots) env =
       let trez = Subst.apply s3 tv in
       let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
       return (final_subst, trez)
-    | ListBld (OrdList (ComprehensionList (e, c, cc))) ->
-      let* s1, env' =
-        RList.fold_left
-          (c :: cc)
-          ~init:(return (Subst.empty, env))
-          ~f:(fun (s, env) cmp ->
-            let* s1, env =
-              match cmp with
-              | Condition x ->
-                let* s1, t1 = infer x env in
-                let* s2 = unify t1 (Ty_prim "Bool") in
-                let* final_subst = Subst.compose s2 s1 in
-                return (final_subst, env)
-              | Generator (p, e) ->
-                let* s2, t2 = infer e env in
-                let* t3, env', _ = helper_p p env [] in
-                let* s3 = unify t2 (Ty_list t3) in
-                let* s = Subst.compose s3 s2 in
-                return (s, env')
-            in
-            Subst.compose s1 s >>| fun fs -> fs, env)
-      in
-      let* s2, t2 = infer e (TypeEnv.apply s1 env') in
-      let* final_subst = Subst.compose s2 s1 in
-      return (final_subst, Ty_list t2)
+    (* | ListBld (OrdList (ComprehensionList (e, c, cc))) ->
+       let* s1, env' =
+       RList.fold_left
+       (c :: cc)
+       ~init:(return (Subst.empty, env))
+       ~f:(fun (s, env) cmp ->
+       let* s1, env =
+       match cmp with
+       | Condition x ->
+       let* s1, t1 = infer x env in
+       let* s2 = unify t1 (Ty_prim "Bool") in
+       let* final_subst = Subst.compose s2 s1 in
+       return (final_subst, env)
+       | Generator (p, e) ->
+       let* s2, t2 = infer e env in
+       let* t3, env', _ = helper_p p env [] in
+       let* s3 = unify t2 (Ty_list t3) in
+       let* s = Subst.compose s3 s2 in
+       return (s, env')
+       in
+       Subst.compose s1 s >>| fun fs -> fs, env)
+       in
+       let* s2, t2 = infer e (TypeEnv.apply s1 env') in
+       let* final_subst = Subst.compose s2 s1 in
+       return (final_subst, Ty_list t2) *)
   in
   match type_annots with
   | [] -> helper_e e env

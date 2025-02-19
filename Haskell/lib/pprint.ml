@@ -38,3 +38,13 @@ let pp_error ppf : error -> _ = function
   | `Unification_failed (l, r) ->
     Format.fprintf ppf "unification failed on %a and %a" pp_ty l pp_ty r
 ;;
+
+let pp_eval_err ppf err =
+  Format.fprintf ppf
+  @@
+  match err with
+  | `Typing_err -> "Runtime typing error"
+  | `Not_exh -> "Not exhaustive paterns"
+  | `Div_by_zero -> "Division by zero"
+  | `Negative_exponent -> "Negative exponent"
+;;
