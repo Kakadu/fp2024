@@ -1,0 +1,8 @@
+(library
+ (name typecheck_test)
+ (inline_tests)
+ (libraries ast typecheck parse)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+ (instrumentation
+  (backend bisect_ppx)))
