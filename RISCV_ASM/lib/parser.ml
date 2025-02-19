@@ -1196,6 +1196,24 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_register)
+       ; parse_string_with_spaces "andn"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Andn (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "orn"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Orn (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "xnor"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Xnor (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
        ; parse_string_with_spaces "vle32.v"
          *> lift3
               (fun vd addr12 rs1 -> InstructionExpr (Vle32v (vd, rs1, addr12)))

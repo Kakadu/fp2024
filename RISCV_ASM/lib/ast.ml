@@ -440,6 +440,10 @@ type instruction =
   (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
   | Sh3adduw of register * register * register
   (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
+  | Andn of register * register * register
+  (** AND with inverted operand. rd = rs1 & ~rs2 *)
+  | Orn of register * register * register (** OR with inverted operand. rd = rs1 | ~rs2 *)
+  | Xnor of register * register * register (** Exclusive NOR. ~(rs1 ^ rs2) *)
   | Vle32v of vector_register * register * address12
   (** Load Vector from Memory. vle32.v vd, (rs1) *)
   | Vse32v of vector_register * register * address12
