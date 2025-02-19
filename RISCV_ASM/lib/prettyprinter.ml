@@ -417,37 +417,6 @@ let pp_instruction ppf = function
   | Li (rd, imm) ->
     Format.fprintf ppf "li %a,%a" pp_register rd pp_address (Address32 imm)
   | Ret -> Format.fprintf ppf "ret"
-  | Adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "add.uw" rd rs1 rs2
-  | Sh1add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add" rd rs1 rs2
-  | Sh1adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add.uw" rd rs1 rs2
-  | Sh2add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add" rd rs1 rs2
-  | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
-  | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
-  | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
-  | Vle32v (vd, rs1, imm) ->
-    pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.vv" vd rs1 (Address12 imm)
-  | Vse32v (vs, rs1, imm) ->
-    pp_instruction_1vreg_1reg_1offset_helper ppf "vse32.vv" vs rs1 (Address12 imm)
-  | Vaddvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vadd.vv" vd vs1 vs2
-  | Vaddvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vadd.vx" vd vs1 rs2
-  | Vsubvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vsub.vv" vd vs1 vs2
-  | Vsubvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vsub.vx" vd vs1 rs2
-  | Vmulvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmul.vv" vd vs1 vs2
-  | Vmulvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmul.vx" vd vs1 rs2
-  | Vdivvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vdiv.vv" vd vs1 vs2
-  | Vdivvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vdiv.vx" vd vs1 rs2
-  | Vandvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vand.vv" vd vs1 vs2
-  | Vandvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vand.vx" vd vs1 rs2
-  | Vorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vor.vv" vd vs1 vs2
-  | Vorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vor.vx" vd vs1 rs2
-  | Vxorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vxor.vv" vd vs1 vs2
-  | Vxorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vxor.vx" vd vs1 rs2
-  | Vminvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmin.vv" vd vs1 vs2
-  | Vminvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmin.vx" vd vs1 rs2
-  | Vmaxvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmax.vv" vd vs1 vs2
-  | Vmaxvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmax.vx" vd vs1 rs2
-  | Vmseqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmseq.vv" vd vs1 vs2
-  | Vmseqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmseq.vx" vd vs1 rs2
   | FmaddS (rd, rs1, rs2, rs3) ->
     pp_instruction_4f_reg_helper ppf "fmadd.s" rd rs1 rs2 rs3
   | FmsubS (rd, rs1, rs2, rs3) ->
@@ -544,6 +513,40 @@ let pp_instruction ppf = function
     Format.fprintf ppf "fcvt.d.l %a,%a" pp_float_register rd pp_register rs1
   | FcvtDLu (rd, rs1) ->
     Format.fprintf ppf "fcvt.d.lu %a,%a" pp_float_register rd pp_register rs1
+  | Adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "add.uw" rd rs1 rs2
+  | Sh1add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add" rd rs1 rs2
+  | Sh1adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh1add.uw" rd rs1 rs2
+  | Sh2add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add" rd rs1 rs2
+  | Sh2adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh2add.uw" rd rs1 rs2
+  | Sh3add (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add" rd rs1 rs2
+  | Sh3adduw (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "sh3add.uw" rd rs1 rs2
+  | Andn (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "andn" rd rs1 rs2
+  | Orn (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "orn" rd rs1 rs2
+  | Xnor (rd, rs1, rs2) -> pp_instruction_3reg_helper ppf "xnor" rd rs1 rs2
+  | Vle32v (vd, rs1, imm) ->
+    pp_instruction_1vreg_1reg_1offset_helper ppf "vle32.v" vd rs1 (Address12 imm)
+  | Vse32v (vs, rs1, imm) ->
+    pp_instruction_1vreg_1reg_1offset_helper ppf "vse32.v" vs rs1 (Address12 imm)
+  | Vaddvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vadd.vv" vd vs1 vs2
+  | Vaddvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vadd.vx" vd vs1 rs2
+  | Vsubvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vsub.vv" vd vs1 vs2
+  | Vsubvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vsub.vx" vd vs1 rs2
+  | Vmulvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmul.vv" vd vs1 vs2
+  | Vmulvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmul.vx" vd vs1 rs2
+  | Vdivvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vdiv.vv" vd vs1 vs2
+  | Vdivvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vdiv.vx" vd vs1 rs2
+  | Vandvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vand.vv" vd vs1 vs2
+  | Vandvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vand.vx" vd vs1 rs2
+  | Vorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vor.vv" vd vs1 vs2
+  | Vorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vor.vx" vd vs1 rs2
+  | Vxorvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vxor.vv" vd vs1 vs2
+  | Vxorvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vxor.vx" vd vs1 rs2
+  | Vminvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmin.vv" vd vs1 vs2
+  | Vminvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmin.vx" vd vs1 rs2
+  | Vmaxvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmax.vv" vd vs1 vs2
+  | Vmaxvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmax.vx" vd vs1 rs2
+  | Vmseqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmseq.vv" vd vs1 vs2
+  | Vmseqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmseq.vx" vd vs1 rs2
 ;;
 
 let pp_str_or_int ppf = function

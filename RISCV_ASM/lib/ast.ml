@@ -308,64 +308,7 @@ type instruction =
   | Li of register * address32
   (** Load Immediate. lui rd, immediate20; addi rd, rd, immediate12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
-  | Adduw of register * register * register
-  (** Add unsigned word. rd = ZEXT(rs1 + rs2)[31:0]*)
-  | Sh1add of register * register * register
-  (** Shift left by 1 and add. rd = rs2 + (rs1 << 1) *)
-  | Sh1adduw of register * register * register
-  (** Shift unsigned word left by 1 and add. rd = rs2 + (ZEXT(rs1) << 1) *)
-  | Sh2add of register * register * register
-  (** Shift left by 2 and add. rd = rs2 + (rs1 << 2) *)
-  | Sh2adduw of register * register * register
-  (** Shift unsigned word left by 2 and add. rd = rs2 + (ZEXT(rs1) << 2) *)
-  | Sh3add of register * register * register
-  (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
-  | Sh3adduw of register * register * register
-  (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
-  | Vle32v of vector_register * register * address12
-  (** Load Vector from Memory. vle32.v vd, (rs1) *)
-  | Vse32v of vector_register * register * address12
   (** Store Vector to Memory. vse32.v vs, (rs1) *)
-  | Vaddvv of vector_register * vector_register * vector_register
-  (** Vector Addition. Vadd.vv vd, vs1, vs2 *)
-  | Vaddvx of vector_register * vector_register * register
-  (** Vector Addition with Scalar. vadd.vx vd, vs1, rs2 *)
-  | Vsubvv of vector_register * vector_register * vector_register
-  (** Vector Subtraction. Vsub.vv vd, vs1, vs2 *)
-  | Vsubvx of vector_register * vector_register * register
-  (** Vector Subtraction with Scalar. vsub.vx vd, vs1, rs2 *)
-  | Vmulvv of vector_register * vector_register * vector_register
-  (** Vector Multiplication. Vmul.vv vd, vs1, vs2 *)
-  | Vmulvx of vector_register * vector_register * register
-  (** Vector Multiplication with Scalar. vmul.vx vd, vs1, rs2 *)
-  | Vdivvv of vector_register * vector_register * vector_register
-  (** Vector Division. Vdiv.vv vd, vs1, vs2 *)
-  | Vdivvx of vector_register * vector_register * register
-  (** Vector Division with Scalar. vdiv.vx vd, vs1, rs2 *)
-  | Vandvv of vector_register * vector_register * vector_register
-  (** Vector Logical AND. Vand.vv vd, vs1, vs2 *)
-  | Vandvx of vector_register * vector_register * register
-  (** Vector Logical AND with Scalar. vand.vx vd, vs1, rs2 *)
-  | Vorvv of vector_register * vector_register * vector_register
-  (** Vector Logical OR. Vor.vv vd, vs1, vs2 *)
-  | Vorvx of vector_register * vector_register * register
-  (** Vector Logical OR with Scalar. vor.vx vd, vs1, rs2 *)
-  | Vxorvv of vector_register * vector_register * vector_register
-  (** Vector Logical XOR. Vxor.vv vd, vs1, vs2 *)
-  | Vxorvx of vector_register * vector_register * register
-  (** Vector Logical XOR with Scalar. vxor.vx vd, vs1, rs2 *)
-  | Vminvv of vector_register * vector_register * vector_register
-  (** Vector Minimum. Vmin.vv vd, vs1, vs2 *)
-  | Vminvx of vector_register * vector_register * register
-  (** Vector Minimum with Scalar. vmin.vx vd, vs1, rs2 *)
-  | Vmaxvv of vector_register * vector_register * vector_register
-  (** Vector Maximum. Vmax.vv vd, vs1, vs2 *)
-  | Vmaxvx of vector_register * vector_register * register
-  (** Vector Maximum with Scalar. vmax.vx vd, vs1, rs2 *)
-  | Vmseqvv of vector_register * vector_register * vector_register
-  (** Vector Equals. Vmseq.vv vd, vs1, vs2 *)
-  | Vmseqvx of vector_register * vector_register * register
-  (** Vector Equals with Scalar. vmseq.vx vd, vs1, rs2 *)
   | FmaddS of float_register * float_register * float_register * float_register
   (** Fused Mul-Add Single precision. rd = rs1 * rs2 + rs3 *)
   | FmsubS of float_register * float_register * float_register * float_register
@@ -484,6 +427,68 @@ type instruction =
   (** Convert 64-bit integer to double-precision floating-point *)
   | FcvtDLu of float_register * register
   (** Convert 64-bit unsigned integer to double-precision floating-point *)
+  | Adduw of register * register * register
+  (** Add unsigned word. rd = ZEXT(rs1 + rs2)[31:0]*)
+  | Sh1add of register * register * register
+  (** Shift left by 1 and add. rd = rs2 + (rs1 << 1) *)
+  | Sh1adduw of register * register * register
+  (** Shift unsigned word left by 1 and add. rd = rs2 + (ZEXT(rs1) << 1) *)
+  | Sh2add of register * register * register
+  (** Shift left by 2 and add. rd = rs2 + (rs1 << 2) *)
+  | Sh2adduw of register * register * register
+  (** Shift unsigned word left by 2 and add. rd = rs2 + (ZEXT(rs1) << 2) *)
+  | Sh3add of register * register * register
+  (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
+  | Sh3adduw of register * register * register
+  (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
+  | Andn of register * register * register
+  (** AND with inverted operand. rd = rs1 & ~rs2 *)
+  | Orn of register * register * register (** OR with inverted operand. rd = rs1 | ~rs2 *)
+  | Xnor of register * register * register (** Exclusive NOR. ~(rs1 ^ rs2) *)
+  | Vle32v of vector_register * register * address12
+  (** Load Vector from Memory. vle32.v vd, (rs1) *)
+  | Vse32v of vector_register * register * address12
+  (** Store Vector to Memory. vse32.v vs, (rs1) *)
+  | Vaddvv of vector_register * vector_register * vector_register
+  (** Vector Addition. Vadd.vv vd, vs1, vs2 *)
+  | Vaddvx of vector_register * vector_register * register
+  (** Vector Addition with Scalar. vadd.vx vd, vs1, rs2 *)
+  | Vsubvv of vector_register * vector_register * vector_register
+  (** Vector Subtraction. Vsub.vv vd, vs1, vs2 *)
+  | Vsubvx of vector_register * vector_register * register
+  (** Vector Subtraction with Scalar. vsub.vx vd, vs1, rs2 *)
+  | Vmulvv of vector_register * vector_register * vector_register
+  (** Vector Multiplication. Vmul.vv vd, vs1, vs2 *)
+  | Vmulvx of vector_register * vector_register * register
+  (** Vector Multiplication with Scalar. vmul.vx vd, vs1, rs2 *)
+  | Vdivvv of vector_register * vector_register * vector_register
+  (** Vector Division. Vdiv.vv vd, vs1, vs2 *)
+  | Vdivvx of vector_register * vector_register * register
+  (** Vector Division with Scalar. vdiv.vx vd, vs1, rs2 *)
+  | Vandvv of vector_register * vector_register * vector_register
+  (** Vector Logical AND. Vand.vv vd, vs1, vs2 *)
+  | Vandvx of vector_register * vector_register * register
+  (** Vector Logical AND with Scalar. vand.vx vd, vs1, rs2 *)
+  | Vorvv of vector_register * vector_register * vector_register
+  (** Vector Logical OR. Vor.vv vd, vs1, vs2 *)
+  | Vorvx of vector_register * vector_register * register
+  (** Vector Logical OR with Scalar. vor.vx vd, vs1, rs2 *)
+  | Vxorvv of vector_register * vector_register * vector_register
+  (** Vector Logical XOR. Vxor.vv vd, vs1, vs2 *)
+  | Vxorvx of vector_register * vector_register * register
+  (** Vector Logical XOR with Scalar. vxor.vx vd, vs1, rs2 *)
+  | Vminvv of vector_register * vector_register * vector_register
+  (** Vector Minimum. Vmin.vv vd, vs1, vs2 *)
+  | Vminvx of vector_register * vector_register * register
+  (** Vector Minimum with Scalar. vmin.vx vd, vs1, rs2 *)
+  | Vmaxvv of vector_register * vector_register * vector_register
+  (** Vector Maximum. Vmax.vv vd, vs1, vs2 *)
+  | Vmaxvx of vector_register * vector_register * register
+  (** Vector Maximum with Scalar. vmax.vx vd, vs1, rs2 *)
+  | Vmseqvv of vector_register * vector_register * vector_register
+  (** Vector Equals. Vmseq.vv vd, vs1, vs2 *)
+  | Vmseqvx of vector_register * vector_register * register
+  (** Vector Equals with Scalar. vmseq.vx vd, vs1, rs2 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
