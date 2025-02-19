@@ -15,10 +15,12 @@ let is_ws = function
 
 let ws = take_while is_ws
 
-let is_digit = function '0' .. '9' -> true | _ -> false
+let is_digit = function
+  | '0' .. '9' -> true
+  | _ -> false
 ;;
 
-let token str = ws *> string str <* ws
+let token str = ws *> string str
 
 let newline =
   skip_while (function
@@ -31,42 +33,33 @@ let newlines = skip_many1 newline
 
 (* more complex stuff *)
 
-let p_sign =
-  peek_char
-  >>= function
-    | Some ('-' | '+') as s -> advance 1 >>| fun () -> Option.get s |> String.make 1
-    | Some c when is_digit c -> return "+"  (* Default to '+' if no explicit sign *)
-    | _ -> fail "Sign or digit expected"
-
-let p_int =
-  let* sign = p_sign in
-  let* digits = take_while1 is_digit in
-  return (EConst (CInt (int_of_string (sign ^ digits))))
-
 (* exprs *)
+let p_pattern = return PAny
+let p_expression = return (EConst (CInt 23))
+let p_structure_eval = p_expression
 
-let p_expr s = s
-let p_structure_eval s = s
+let p_rec_flag =
+  choice [ take_while1 is_ws *> token "rec" *> return Recursive; return Nonrecursive ]
+;;
 
-let p_rec_flag = 
+let p_binding = lift2 (fun p e -> p, e) p_pattern p_expression
 
 (* struct, top level stuff *)
 
-let p_structure_value s =
-  let* _ = token "let" in
-  let* rec_flag = p_rec_flag in 
-  let* name = p_ident in 
-  s
+let p_structure_value =
+  lift3
+    (fun rf b bl -> return (SValue (rf, b, bl)))
+    (token "let" *> p_rec_flag)
+    p_binding
+    (many (token "and" *> p_binding))
 ;;
 
-let p_structure_item s =
-  let structure_item_value = p_structure_value s in
-  let structure_item_eval = p_structure_eval s in
-  structure_item_value <|> (structure_item_eval >>= fun e -> return (SEval e))
+let p_structure_item =
+  p_structure_value <|> (p_structure_eval >>| fun e -> return (SEval e))
 ;;
 
-let p_structure = sep_by newlines p_structure_item;;
+let p_structure = sep_by newlines p_structure_item
 
 (* actuall parser function *)
 
-let parse str = parse_string ~consume:All p_structure str;;
+let parse = parse_string ~consume:All p_structure
