@@ -36,8 +36,11 @@ type 'a bintree =
   | Nul
 
 type pattern_ext =
-  | P of pe_exprs_key option * pat_ext
   | Lnk of pe_exprs_key
+  (** key for the due entry in the expresions (see pe_expr) storage. Ident and wildcard patterns are converted into Lnk.
+      Additional names (e.g. a@b@c or a@_) get the same key. *)
+  | P of pe_exprs_key option * pat_ext
+  (** pat and optional key. Patterns that neither idents nor wildcards converted into P. Key exists if there are additional names. *)
 
 and pat_ext =
   | PEConst of pconst
@@ -49,18 +52,24 @@ and pat_ext =
 
 type df_ext =
   | VarsD of pattern_ext * bindingbody * binding list
+  (** definition of vars but the pattern was converted into pattern ext. *)
   | FunDs of ident_ext * (pattern * pattern list * bindingbody * binding list) list
+  (** definition of a function: ident (with a due key) and some variants  e.g. f in [f 1 = 0; f _ = 1] has two variants*)
 
+(** completely evaled exression (see pe_exprs) *)
 type value =
   | VConst of const
   | VMaybe of value maybe
   | VList of value list
   | VTuple of value * value * value list
   | VClosures of keys NMap.t * (pattern * pattern list * bindingbody * binding list) list
+  (** Type for former function bodieS and lambdas. Consist of bodies and a name-keys map (see env) that
+      should be used in eval of bodies.*)
   | VTree of value bintree
 
 type intern_p = pat_ext
 
+(** errors that should cause stooping of vb eval*)
 type crit_err =
   [ `Typing_err
   | `Not_exh
@@ -68,9 +77,10 @@ type crit_err =
   | `Negative_exponent
   ]
 
-(** definitions *)
 type df =
   | Df of keys NMap.t * df_ext
+  (** The thunk for definition. i.e. Definition and a name-keys map (see env) that
+      should be used in its eval. *)
   | Err of crit_err
 
 type lazy_list =
@@ -78,12 +88,22 @@ type lazy_list =
   | BoolLL of bool (** infinite list of true / infinite list of false*)
   | UnitLL (** infinite list of () *)
 
-(** partially evaled expressions*)
+(** representation of an expression in some evaluation stage*)
 type pe_expr =
   | V of value
+  (** completely evaled expr.
+      e.g. one associated with x after [seq (x + y) e] *)
   | ThTree of intern_p
+  (** the divided expression, some parts of which could be evaled separately.
+      e.g. one assocaited with k after [ main = let k@(None, _,x ) = ((1, f 1, 2) in x] would be
+      PETuple such that the first element is P of (None, PEConst 1), the second is Lnk k1 (k1 is associated with ThLeaf (..., f 1))
+      , the third element is Lnk k2 (k2 is associated with value 2 *)
   | ThLeaf of keys NMap.t * expression
+  (** The thunk-leaf, i, e the expression that not evalled full and not divided, and a name-keys map (see env) that
+      should be used in eval of expression*)
   | Link of pe_exprs_key
+  (** redirection to another expression.
+      e.g. one associated with k after [main = let x = (15, 32) in let k@(z,_) = x in z)] *)
   | Er of crit_err
   | LazyLst of lazy_list (** invariant: non empty*)
 
@@ -96,6 +116,29 @@ end
 type level =
   | TopLevel
   | Inner
+
+(** the enviroment consists of three maps:
+    kk (keys NMap.t) — maps name of var and keys for other two maps. Scope specific.
+    dfs (df KMap.t) — maps special key with a thunk for definition or with due error if one was faced before in pattern match attempt.
+    pe_exprs (pe_expr) — maps special key with a pe_expr (see pe_expr)
+
+    e.g. consider the program:
+    [ main =
+   (1) let k@(x,y) = (1,2) in
+   (2)  y 
+   + 
+   (3) x 
+  ]
+    after (1) kk consists:
+    k -> (Some df_key1, pe_exprs_key1)
+    x -> (Some df_key1, pe_exprs_key2)
+    y -> (Some df_key1, pe_exprs_key3)
+    and dfs consists the df associated with df_key1
+    but pe_exprs has no entry for pe_exprs_key1/2/3
+
+    in (2) y must be found. We get keys from kk and try to use pe_exprs_key but fail, so then we
+    use dfs_key to find definition thunk. After successful pattern match
+    pe_exprs for x and y are added and we can use it in (2),(3) and any futher*)
 
 type env = df KMap.t * pe_expr KMap.t * keys NMap.t
 
@@ -173,6 +216,26 @@ let from_crit_err = function
   | `Typing_err -> `Typing_err
 ;;
 
+let rec lazylst_to_cons = function
+  | BoolLL b as bb -> VConst (Bool b), `LazyLst bb
+  | UnitLL as uu -> VConst Unit, `LazyLst uu
+  | IntLL (start, step, fin) ->
+    let open Z in
+    let start' = of_int start + step in
+    let pe =
+      if step >= zero <> (of_int fin - start' >= zero)
+      then `V (VList [])
+      else `LazyLst (IntLL (Z.to_int start', step, fin))
+    in
+    VConst (Int start), pe
+
+and lazylst_to_pat pe_exprs fresh ll =
+  let v21, pe22 = lazylst_to_cons ll |> conv_res in
+  let p21, pe_exprs, fresh = Lnk fresh, add fresh (V v21) pe_exprs, fresh + 1 in
+  let p22, pe_exprs, fresh = Lnk fresh, add fresh pe22 pe_exprs, fresh + 1 in
+  PECons (p21, p22), pe_exprs, fresh
+;;
+
 let pm_key ((dfs, pe_exprs, kk) as env) fresh helper ok_lnk ok k ff =
   let pattern_match_v, pattern_match, patpat_match, ptrnll_match = ff in
   let pm_res_hndl = function
@@ -222,44 +285,7 @@ let pm_key ((dfs, pe_exprs, kk) as env) fresh helper ok_lnk ok k ff =
     helper_key k
 ;;
 
-let rec eval_bnds level env fresh bnds =
-  let to_dfs, (kk, main, fresh) =
-    let prep_eval_bnd ((to_dfs, (kk0, main, fresh)) as init) = function
-      | Decl _ -> init
-      | Def (FunDef ((Ident i as id), p, pp, bd, bb)) ->
-        (match
-           List.fold_left_map
-             (fun fl -> function
-               | dk, FunDs ((i, pek), defs) when id = i ->
-                 true, (dk, FunDs ((i, pek), (p, pp, bd, bb) :: defs))
-               | el -> fl, el)
-             false
-             to_dfs
-         with
-         | true, to_dfs' -> to_dfs', Stdlib.snd init
-         | _ ->
-           ( (fresh, FunDs ((id, fresh + 1), [ p, pp, bd, bb ])) :: to_dfs
-           , (NMap.add i (Some fresh, fresh + 1) kk0, main, fresh + 2) ))
-      | Def (VarsDef (p, bd, bb)) ->
-        let dfs_key, fresh = fresh, fresh + 1 in
-        let ((kk, _, _) as stf), pe =
-          prep_p ~dfs_key:(Some dfs_key) (kk0, main, fresh) p
-        in
-        (if kk == kk0 then to_dfs else (dfs_key, VarsD (pe, bd, bb)) :: to_dfs), stf
-    in
-    List.fold_left prep_eval_bnd ([], (thrd env, None, fresh)) bnds
-  in
-  let dfs =
-    List.fold_left (fun dfs (k, d) -> KMap.add k (Df (kk, d)) dfs) (fst env) to_dfs
-  in
-  match level, main with
-  | TopLevel, Some keys ->
-    (match eval_var_full keys (dfs, snd env, fresh) with
-     | Ok ((dfs, pe_exprs, fresh), _) -> Ok ((dfs, pe_exprs, kk), fresh)
-     | Error (e, (dfs, pe_exprs, fresh)) -> Error (e, ((dfs, pe_exprs, kk), fresh)))
-  | _ -> Ok ((dfs, snd env, kk), fresh)
-
-and prep_p ?(dfs_key = None) (kk, main, fresh) (alias, p, _) =
+let rec prep_p ?(dfs_key = None) (kk, main, fresh) (alias, p, _) =
   let prep_p = prep_p ~dfs_key in
   let helper_list = List.fold_left_map prep_p in
   let com_key =
@@ -306,6 +332,77 @@ and prep_p ?(dfs_key = None) (kk, main, fresh) (alias, p, _) =
     let stf, pe2 = prep_p stf p2 in
     let stf, pe3 = prep_p stf p3 in
     stf, P (com_key, PETree (Node (pe1, pe2, pe3)))
+;;
+
+let rec pattern_match_v ptrn v to_pe_ex =
+  let pattern_match_v_list =
+    List.fold_left2 (fun acc p v -> acc >>= pattern_match_v p v) (Ok to_pe_ex)
+  in
+  match ptrn with
+  | Lnk k -> Ok ((k, V v) :: to_pe_ex)
+  | P (k, pat) ->
+    let to_pe_ex =
+      match k with
+      | None -> to_pe_ex
+      | Some k -> (k, V v) :: to_pe_ex
+    in
+    (match pat, v with
+     | PETree Nul, VTree Nul | PEMaybe Nothing, VMaybe Nothing -> Ok to_pe_ex
+     | PEMaybe (Just p), VMaybe (Just v) -> pattern_match_v p v to_pe_ex
+     | PEConst (OrdinaryPConst c), VConst c' when c = c' -> Ok to_pe_ex
+     | PEConst (NegativePInt i), VConst (Int i') when i = -i' -> Ok to_pe_ex
+     | PETuple (p1, p2, pp), VTuple (v1, v2, vv) ->
+       (try pattern_match_v_list (p1 :: p2 :: pp) (v1 :: v2 :: vv) with
+        | Invalid_argument _ -> Error `Typing_err)
+     | PETree (Node (p1, p2, p3)), VTree (Node (v1, v2, v3)) ->
+       pattern_match_v_list [ p1; p2; p3 ] [ v1; v2; v3 ]
+     | PETree _, VTree _ | PEMaybe _, VMaybe _ -> Error `Not_match
+     | PEConst (OrdinaryPConst (Int _) | NegativePInt _), VConst (Int _)
+     | PEConst (OrdinaryPConst (Bool _)), VConst (Bool _) -> Error `Not_match
+     | PEEnum pp, VList vv ->
+       (try pattern_match_v_list pp vv with
+        | Invalid_argument _ -> Error `Typing_err)
+     | PECons _, VList [] -> Error `Not_match
+     | PECons (p1, p2), VList (v :: vv) -> pattern_match_v_list [ p1; p2 ] [ v; VList vv ]
+     | _ -> Error `Typing_err)
+;;
+
+let rec eval_bnds level env fresh bnds =
+  let to_dfs, (kk, main, fresh) =
+    let prep_eval_bnd ((to_dfs, (kk0, main, fresh)) as init) = function
+      | Decl _ -> init
+      | Def (FunDef ((Ident i as id), p, pp, bd, bb)) ->
+        (match
+           List.fold_left_map
+             (fun fl -> function
+               | dk, FunDs ((i, pek), defs) when id = i ->
+                 true, (dk, FunDs ((i, pek), (p, pp, bd, bb) :: defs))
+               | el -> fl, el)
+             false
+             to_dfs
+         with
+         | true, to_dfs' -> to_dfs', Stdlib.snd init
+         | _ ->
+           ( (fresh, FunDs ((id, fresh + 1), [ p, pp, bd, bb ])) :: to_dfs
+           , (NMap.add i (Some fresh, fresh + 1) kk0, main, fresh + 2) ))
+      | Def (VarsDef (p, bd, bb)) ->
+        let dfs_key, fresh = fresh, fresh + 1 in
+        let ((kk, _, _) as stf), pe =
+          prep_p ~dfs_key:(Some dfs_key) (kk0, main, fresh) p
+        in
+        (if kk == kk0 then to_dfs else (dfs_key, VarsD (pe, bd, bb)) :: to_dfs), stf
+    in
+    List.fold_left prep_eval_bnd ([], (thrd env, None, fresh)) bnds
+  in
+  let dfs =
+    List.fold_left (fun dfs (k, d) -> KMap.add k (Df (kk, d)) dfs) (fst env) to_dfs
+  in
+  match level, main with
+  | TopLevel, Some keys ->
+    (match eval_var_full keys (dfs, snd env, fresh) with
+     | Ok ((dfs, pe_exprs, fresh), _) -> Ok ((dfs, pe_exprs, kk), fresh)
+     | Error (e, (dfs, pe_exprs, fresh)) -> Error (e, ((dfs, pe_exprs, kk), fresh)))
+  | _ -> Ok ((dfs, snd env, kk), fresh)
 
 and find_expr ((dfs, pe_exprs, fresh) as dpf) = function
   | None, pe_exprs_key -> Ok (dpf, find pe_exprs_key pe_exprs)
@@ -348,639 +445,6 @@ and find_expr ((dfs, pe_exprs, fresh) as dpf) = function
               dpf, find pe_exprs_key (snd dpf)
           in
           e, (add dfs_key (Err e) dfs, pe_exprs_key, fresh)))
-
-and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
-  match ptrn with
-  | Lnk k -> Ok ((k, ThLeaf (kk, e)) :: to_pe_ex, (dfs, pe_exprs, fresh))
-  | P (k, pat) ->
-    let pmv_call_tr k to_pe_ex v dpf =
-      match pattern_match_v (P (k, pat)) v to_pe_ex with
-      | Ok to_pe_ex -> Ok (to_pe_ex, dpf)
-      | Error e -> Error (e, dpf)
-    in
-    let pmv_call_lf v dpf =
-      match pattern_match_v (P (None, pat)) v [] with
-      | Ok _ -> Ok dpf
-      | Error e -> Error (e, dpf)
-    in
-    let ppm_call to_pe_ex k pk env fresh pat2 =
-      let to_pe_ex =
-        match k with
-        | None -> to_pe_ex
-        | Some k -> (k, Link pk) :: to_pe_ex
-      in
-      match patpat_match to_pe_ex env fresh pat pat2 with
-      | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
-        Ok (to_pe_ex, (dfs, add pk (ThTree pat2') pe_exprs, fresh))
-      | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
-        Error (e, (dfs, add pk (ThTree pat2') pe_exprs, fresh))
-    in
-    let from_crit_full src ((e : crit_err), ((dfs, pe_exprs, fresh) as dpf)) =
-      let dpf =
-        match src with
-        | None -> dpf
-        | Some k -> dfs, add k (Er e) pe_exprs, fresh
-      in
-      from_crit_err e, dpf
-    in
-    let other_exprs typing_err src cont ((_, _, kk) as env) fresh v_call ac =
-      let v_call ((dfs, pe_exprs, fresh), v) =
-        let pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
-        v_call v (dfs, pe_exprs, fresh)
-      in
-      function
-      | IfThenEsle (c, th, el) ->
-        let* (dfs, pe_exprs, fresh), (e, _) =
-          eval_step_ite c th el env fresh --| from_crit_full src
-        in
-        cont ~after_complex:true src (dfs, pe_exprs, kk) fresh e
-      | Case (e, br, brs) ->
-        let* env, fresh, (e, _) =
-          eval_step_case e env fresh (br :: brs) --| from_crit_full src
-        in
-        cont ~after_complex:true src env fresh e
-      | FunctionApply (f, a, aa) ->
-        eval_step_funapp env fresh (f, a :: aa) --| from_crit_full src
-        >>= (function
-         | (dfs, pe_exprs, fresh), `Th (kk, (e, _)) ->
-           cont ~after_complex:true src (dfs, pe_exprs, kk) fresh e
-         | dpf, `V v -> v_call (dpf, v))
-      | InnerBindings (b, bb, (e, _)) ->
-        let* env, fresh = eval_step_inner_bb (b :: bb) env fresh --| from_crit_full src in
-        cont ~after_complex:true src env fresh e
-      | Binop (e1, op, e2) when op <> Cons ->
-        eval_arlog env fresh e1 e2 op --| from_crit_full src >>= v_call
-      | Neg e -> eval_neg env fresh e --| from_crit_full src >>= v_call
-      | e -> typing_err env fresh src ac e
-    in
-    let rec helper_keys_tr helper to_pe_ex src k ((_, pk) as keys) env fresh =
-      let dfs, pe_exprs, kk = env in
-      let helper_keys_tr = helper_keys_tr helper to_pe_ex src k in
-      let* ((dfs, pe_exprs, fresh) as dpf), e =
-        find_expr (dfs, pe_exprs, fresh) keys --| from_crit_full src
-      in
-      match e with
-      | Link k -> helper_keys_tr (None, k) (dfs, pe_exprs, kk) fresh
-      | _ ->
-        let ((dfs, pe_exprs, fresh) as dpf) =
-          match src with
-          | Some k -> dfs, add k (Link pk) pe_exprs, fresh
-          | None -> dpf
-        in
-        (match e with
-         | Er er -> Error (from_crit_err er, dpf)
-         | V v -> pmv_call_tr k to_pe_ex v dpf
-         | ThLeaf (kk, e) ->
-           let to_pe_ex =
-             match k with
-             | None -> to_pe_ex
-             | Some k -> (k, Link pk) :: to_pe_ex
-           in
-           helper to_pe_ex None (Some pk) (dfs, pe_exprs, kk) fresh e
-         | ThTree pat2 -> ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat2
-         | LazyLst ll -> ptrnll_match env fresh to_pe_ex (Some pk) ll (P (k, pat))
-         | Link k -> helper_keys_tr (None, k) (dfs, pe_exprs, kk) fresh (*недостижимо *))
-    in
-    let rec helper_keys_lf helper src k ((_, pk) as keys) (dfs, pe_exprs, kk) fresh =
-      let helper_keys_lf = helper_keys_lf helper src k in
-      let* ((dfs, pe_exprs, fresh) as dpf), e =
-        find_expr (dfs, pe_exprs, fresh) keys --| from_crit_full src
-      in
-      match e with
-      | Link k -> helper_keys_lf (None, k) (dfs, pe_exprs, kk) fresh
-      | _ ->
-        let ((dfs, pe_exprs, fresh) as dpf) =
-          match src with
-          | None -> dpf
-          | Some k -> dfs, add k (Link (Stdlib.snd keys)) pe_exprs, fresh
-        in
-        (match e with
-         | Er e -> Error (from_crit_err e, dpf)
-         | V v -> pmv_call_lf v dpf
-         | ThLeaf (kk, e) -> helper (Some pk) (dfs, pe_exprs, kk) fresh e
-         | ThTree pat2 ->
-           (match patpat_match ~k:(Some pk) [] (dfs, pe_exprs, kk) fresh pat pat2 with
-            | Ok ((_, dpf), _) -> Ok dpf
-            | Error (e, (dpf, _)) -> Error (e, dpf))
-         | LazyLst _ -> Error (`Typing_err, dpf)
-         | Link k -> helper_keys_lf (None, k) (dfs, pe_exprs, kk) fresh (*недостижимо *))
-    in
-    let k_hndl_lf v dpf =
-      match k with
-      | None -> to_pe_ex, dpf
-      | Some k -> (k, V v) :: to_pe_ex, dpf
-    in
-    let k_hndl_tr to_pe_ex = function
-      | Some k -> (k, ThTree pat) :: to_pe_ex
-      | None -> to_pe_ex
-    in
-    let ok_lf v (dfs, pe_exprs, fresh) src =
-      let pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
-      Ok (dfs, pe_exprs, fresh)
-    in
-    let not_match_th e (dfs, pe_exprs, kk) fresh src after_complex =
-      let pe_exprs =
-        match src, after_complex with
-        | None, _ | _, false -> pe_exprs
-        | Some k, true -> add k (ThLeaf (kk, e)) pe_exprs
-      in
-      Error (`Not_match, (dfs, pe_exprs, fresh))
-    in
-    let not_match_v v (dfs, pe_exprs, fresh) src after_complex =
-      let pe_exprs =
-        match src, after_complex with
-        | None, _ | _, false -> pe_exprs
-        | Some k, true -> add k (V v) pe_exprs
-      in
-      Error (`Not_match, (dfs, pe_exprs, fresh))
-    in
-    let typing_err (dfs, pe_exprs, kk) fresh src after_complex e =
-      let pe_exprs =
-        match src, after_complex with
-        | None, _ | _, false -> pe_exprs
-        | Some k, true -> add k (ThLeaf (kk, e)) pe_exprs
-      in
-      Error (`Typing_err, (dfs, pe_exprs, fresh))
-    in
-    let elazylist_hndl e1 e2 e3 ((_, _, kk) as env) k src =
-      elazylist_hndl e1 e2 e3 env fresh --| from_crit_full src
-      >>= function
-      | (dfs, pe_exprs, fresh), `LazyLst ll ->
-        ptrnll_match (dfs, pe_exprs, kk) fresh to_pe_ex src ll (P (k, pat))
-      | (dfs, pe_exprs, fresh), `V v ->
-        let pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
-        pmv_call_tr k to_pe_ex v (dfs, pe_exprs, fresh)
-    in
-    (match pat with
-     | PETree Nul ->
-       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
-         | BinTreeBld Nul -> ok_lf (VTree Nul) (dfs, pe_exprs, fresh) src
-         | BinTreeBld _ as e -> not_match_th e (dfs, pe_exprs, kk) fresh src after_complex
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
-       in
-       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VTree Nul)
-     | PEMaybe Nothing ->
-       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
-         | ENothing -> ok_lf (VMaybe Nothing) (dfs, pe_exprs, fresh) src
-         | FunctionApply ((EJust, _), _, []) as e ->
-           not_match_th e (dfs, pe_exprs, kk) fresh src after_complex
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
-       in
-       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VMaybe Nothing)
-     | PEConst (OrdinaryPConst Unit) ->
-       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh =
-         let _ = after_complex in
-         function
-         | Const Unit -> ok_lf (VConst Unit) (dfs, pe_exprs, fresh) src
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
-       in
-       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst Unit)
-     | PEConst (OrdinaryPConst (Bool _ as c)) ->
-       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
-         | Const c' when c = c' -> ok_lf (VConst c) (dfs, pe_exprs, fresh) src
-         | Const (Bool b') ->
-           not_match_v (VConst (Bool b')) (dfs, pe_exprs, fresh) src after_complex
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
-       in
-       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst c)
-     | PEConst (OrdinaryPConst (Int _ as c)) ->
-       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
-         | Const c' when c = c' -> ok_lf (VConst c) (dfs, pe_exprs, fresh) src
-         | Const (Int x) ->
-           not_match_v (VConst (Int x)) (dfs, pe_exprs, fresh) src after_complex
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
-       in
-       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst c)
-     | PEConst (NegativePInt i) ->
-       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
-         | Const (Int x) when x = -i -> ok_lf (VConst (Int x)) (dfs, pe_exprs, fresh) src
-         | Const (Int x) ->
-           not_match_v (VConst (Int x)) (dfs, pe_exprs, fresh) src after_complex
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
-         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
-       in
-       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst (Int (-i)))
-     | PETree (Node (p1, p2, p3)) ->
-       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
-         = function
-         | BinTreeBld Nul ->
-           not_match_v (VTree Nul) (dfs, pe_exprs, fresh) src after_complex
-         | BinTreeBld (Node (e1, e2, e3)) ->
-           (match src with
-            | None ->
-              pattern_match_list
-                ~strict_len:true
-                (k_hndl_tr to_pe_ex k)
-                env
-                fresh
-                [ p1; p2; p3 ]
-                [ e1; e2; e3 ]
-            | Some pk ->
-              let pat', pe_exprs, fresh = enode_to_pat pe_exprs fresh kk e1 e2 e3 in
-              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat')
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
-         | e ->
-           let cont = helper to_pe_ex k in
-           let pmv_call = pmv_call_tr k to_pe_ex in
-           other_exprs typing_err src cont env fresh pmv_call after_complex e
-       in
-       helper ~after_complex:false to_pe_ex k src env fresh e
-     | PEEnum pp ->
-       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
-         = function
-         | ListBld (LazyList (e1, e2, e3)) -> elazylist_hndl e1 e2 e3 env k src
-         | ListBld (OrdList (IncomprehensionlList ee)) ->
-           (match src with
-            | None ->
-              let to_pe_ex = k_hndl_tr to_pe_ex k in
-              pattern_match_list ~strict_len:false to_pe_ex env fresh pp ee
-            | Some pk ->
-              let (pe_exprs, fresh), pp' =
-                List.fold_left_map (fun (pe, f) -> new_th kk f pe) (pe_exprs, fresh) ee
-              in
-              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh (PEEnum pp'))
-         | Binop (((e1, _) as ex1), Cons, ((e2, _) as ex2)) as e ->
-           (match pp with
-            | [] -> not_match_th e (dfs, pe_exprs, kk) fresh src after_complex
-            | p :: pp ->
-              (match src with
-               | None ->
-                 let* to_pe_ex, (dfs, pe_exprs, fresh) =
-                   pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p e1
-                 in
-                 let p2 = P (None, PEEnum pp) in
-                 let to_pe_ex =
-                   match k with
-                   | None -> to_pe_ex
-                   | Some k -> (k, ThTree (PECons (p, p2))) :: to_pe_ex
-                 in
-                 pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p2 e2
-               | Some pk ->
-                 let pat', pe_exprs, fresh = econs_to_pat pe_exprs fresh kk ex1 ex2 in
-                 ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat'))
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
-         | e ->
-           let cont = helper to_pe_ex k in
-           let pmv_call = pmv_call_tr k to_pe_ex in
-           other_exprs typing_err src cont env fresh pmv_call after_complex e
-       in
-       helper ~after_complex:false to_pe_ex k src env fresh e
-     | PECons (p1, p2) ->
-       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
-         = function
-         | ListBld (LazyList (e1, e2, e3)) -> elazylist_hndl e1 e2 e3 env k src
-         | Binop (ex1, Cons, ex2) ->
-           (match src with
-            | None ->
-              pattern_match_list
-                ~strict_len:true
-                (k_hndl_tr to_pe_ex k)
-                env
-                fresh
-                [ p1; p2 ]
-                [ ex1; ex2 ]
-            | Some pk ->
-              let pat', pe_exprs, fresh = econs_to_pat pe_exprs fresh kk ex1 ex2 in
-              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat')
-         | ListBld (OrdList (IncomprehensionlList [])) ->
-           not_match_v (VList []) (dfs, pe_exprs, fresh) src after_complex
-         | ListBld (OrdList (IncomprehensionlList (e :: ee))) ->
-           (match src with
-            | None ->
-              pattern_match_list
-                ~strict_len:true
-                (k_hndl_tr to_pe_ex k)
-                env
-                fresh
-                [ p1; p2 ]
-                [ e; ListBld (OrdList (IncomprehensionlList ee)), [] ]
-            | Some pk ->
-              let (pe_exprs, fresh), pp' =
-                List.fold_left_map
-                  (fun (pe, f) -> new_th kk f pe)
-                  (pe_exprs, fresh)
-                  (e :: ee)
-              in
-              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh (PEEnum pp'))
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
-         | e ->
-           let cont = helper to_pe_ex k in
-           let pmv_call = pmv_call_tr k to_pe_ex in
-           other_exprs typing_err src cont env fresh pmv_call after_complex e
-       in
-       helper ~after_complex:false to_pe_ex k src env fresh e
-     | PEMaybe (Just p) ->
-       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
-         = function
-         | ENothing ->
-           not_match_v (VMaybe Nothing) (dfs, pe_exprs, fresh) src after_complex
-         | FunctionApply ((EJust, _), ((e, _) as ex), []) ->
-           (match src with
-            | None ->
-              let to_pe_ex = k_hndl_tr to_pe_ex k in
-              pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p e
-            | Some pk ->
-              let (pe_exprs, fresh), p1' = new_th kk fresh pe_exprs ex in
-              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh (PEMaybe (Just p1')))
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
-         | e ->
-           let cont = helper to_pe_ex k in
-           let pmv_call = pmv_call_tr k to_pe_ex in
-           other_exprs typing_err src cont env fresh pmv_call after_complex e
-       in
-       helper ~after_complex:false to_pe_ex k src env fresh e
-     | PETuple (p1, p2, pp) ->
-       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh =
-         let _ = after_complex in
-         function
-         | TupleBld (e1, e2, ee) ->
-           (match src with
-            | None ->
-              pattern_match_list
-                ~strict_len:true
-                (k_hndl_tr to_pe_ex k)
-                env
-                fresh
-                (p1 :: p2 :: pp)
-                (e1 :: e2 :: ee)
-            | Some pk ->
-              let pat', pe_exprs, fresh = etuple_to_pat pe_exprs fresh kk e1 e2 ee in
-              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat')
-         | Identificator (Ident n) ->
-           let keys = NMap.find n kk in
-           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
-         | e ->
-           let cont = helper to_pe_ex k in
-           let pmv_call = pmv_call_tr k to_pe_ex in
-           other_exprs typing_err src cont env fresh pmv_call after_complex e
-       in
-       helper ~after_complex:false to_pe_ex k src env fresh e)
-
-and pattern_match_list ~strict_len to_pe_ex (dfs, pe_exprs, kk) fresh pp ee =
-  let rec helper pp ee (to_pe_ex, ((dfs, pe_exprs, fresh) as dpf)) =
-    match pp, ee with
-    | [], [] -> Ok (to_pe_ex, dpf)
-    | p :: pp, (e, _) :: ee ->
-      pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p e >>= helper pp ee
-    | _ -> Error ((if strict_len then `Typing_err else `Not_match), dpf)
-  in
-  helper pp ee (to_pe_ex, (dfs, pe_exprs, fresh))
-
-and pattern_match_v ptrn v to_pe_ex =
-  let pattern_match_v_list =
-    List.fold_left2 (fun acc p v -> acc >>= pattern_match_v p v) (Ok to_pe_ex)
-  in
-  match ptrn with
-  | Lnk k -> Ok ((k, V v) :: to_pe_ex)
-  | P (k, pat) ->
-    let to_pe_ex =
-      match k with
-      | None -> to_pe_ex
-      | Some k -> (k, V v) :: to_pe_ex
-    in
-    (match pat, v with
-     | PETree Nul, VTree Nul | PEMaybe Nothing, VMaybe Nothing -> Ok to_pe_ex
-     | PEMaybe (Just p), VMaybe (Just v) -> pattern_match_v p v to_pe_ex
-     | PEConst (OrdinaryPConst c), VConst c' when c = c' -> Ok to_pe_ex
-     | PEConst (NegativePInt i), VConst (Int i') when i = -i' -> Ok to_pe_ex
-     | PETuple (p1, p2, pp), VTuple (v1, v2, vv) ->
-       (try pattern_match_v_list (p1 :: p2 :: pp) (v1 :: v2 :: vv) with
-        | Invalid_argument _ -> Error `Typing_err)
-     | PETree (Node (p1, p2, p3)), VTree (Node (v1, v2, v3)) ->
-       pattern_match_v_list [ p1; p2; p3 ] [ v1; v2; v3 ]
-     | PETree _, VTree _ | PEMaybe _, VMaybe _ -> Error `Not_match
-     | PEConst (OrdinaryPConst (Int _) | NegativePInt _), VConst (Int _)
-     | PEConst (OrdinaryPConst (Bool _)), VConst (Bool _) -> Error `Not_match
-     | PEEnum pp, VList vv ->
-       (try pattern_match_v_list pp vv with
-        | Invalid_argument _ -> Error `Typing_err)
-     | PECons _, VList [] -> Error `Not_match
-     | PECons (p1, p2), VList (v :: vv) -> pattern_match_v_list [ p1; p2 ] [ v; VList vv ]
-     | _ -> Error `Typing_err)
-
-and patpat_match ?(k = None) to_pe_ex ((dfs, pe_exprs, kk) as env) fresh pat1 pat2 =
-  let suc_default = Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2) in
-  let suc_with_k k v = Ok ((to_pe_ex, (dfs, add k (V v) pe_exprs, fresh)), pat2) in
-  let not_match_default = Error (`Not_match, ((dfs, pe_exprs, fresh), pat2)) in
-  let not_match_with_k k v =
-    Error (`Not_match, ((dfs, add k (V v) pe_exprs, fresh), pat2))
-  in
-  let typing_error =
-    Error (`Typing_err, ((dfs, ext_pe_exprs_opt (ThTree pat2) pe_exprs k, fresh), pat2))
-  in
-  let ptrnptrn_match' to_pe_ex env fresh p1 p2 err_p ok =
-    match ptrnptrn_match to_pe_ex env fresh p1 p2 with
-    | Error (e, (dpf, p2')) -> Error (e, (dpf, err_p p2'))
-    | Ok (td, p2') -> ok td p2'
-  in
-  let helper_conscons env fresh p11 p12 p21 p22 =
-    let ok1 (to_pe_ex, (d, p, f)) p21' =
-      let err_p p22' = PECons (p21', p22') in
-      ptrnptrn_match' to_pe_ex (d, p, kk) f p12 p22 err_p
-      @@ fun td p22' -> Ok (td, PECons (p21', p22'))
-    in
-    ptrnptrn_match' to_pe_ex env fresh p11 p21 (fun p21' -> PECons (p21', p22)) ok1
-  in
-  match pat1, pat2, k with
-  | PETree (Node (p11, p12, p13)), PETree (Node (p21, p22, p23)), _ ->
-    let node p1 p2 p3 = PETree (Node (p1, p2, p3)) in
-    let ok2 p21' (to_pe_ex, (d, p, f)) p22' =
-      let err_p = node p21' p22' in
-      ptrnptrn_match' to_pe_ex (d, p, kk) f p13 p23 err_p
-      @@ fun td p23' -> Ok (td, node p21' p22' p23')
-    in
-    let ok1 (to_pe_ex, (d, p, f)) p21' =
-      let err_p p22' = node p21' p22' p23 in
-      ptrnptrn_match' to_pe_ex (d, p, kk) f p12 p22 err_p (ok2 p21')
-    in
-    ptrnptrn_match' to_pe_ex env fresh p11 p21 (fun p21' -> node p21' p22 p23) ok1
-  | PETree Nul, PETree Nul, None | PEMaybe Nothing, PEMaybe Nothing, None -> suc_default
-  | PETree Nul, PETree Nul, Some k -> suc_with_k k (VTree Nul)
-  | PEMaybe Nothing, PEMaybe Nothing, Some k -> suc_with_k k (VMaybe Nothing)
-  | PEConst c, PEConst c', None when c = c' -> suc_default
-  | PEConst (OrdinaryPConst c), PEConst (OrdinaryPConst c'), Some k when c = c' ->
-    suc_with_k k (VConst c)
-  | PEConst (NegativePInt i), PEConst (NegativePInt i'), Some k when i = i' ->
-    suc_with_k k (VConst (Int (-i)))
-  | PEMaybe (Just p1), PEMaybe (Just p2), _ ->
-    let ok td p2' = Ok (td, PEMaybe (Just p2')) in
-    let env = dfs, pe_exprs, kk in
-    ptrnptrn_match' to_pe_ex env fresh p1 p2 (fun p2' -> PEMaybe (Just p2')) ok
-  | PEMaybe _, PEMaybe _, _
-  | PETree _, PETree _, _
-  | PEConst (OrdinaryPConst (Bool _)), PEConst (OrdinaryPConst (Bool _)), None
-  | ( PEConst (OrdinaryPConst (Int _) | NegativePInt _)
-    , PEConst (OrdinaryPConst (Int _) | NegativePInt _)
-    , None )
-  | PECons _, PEEnum [], _
-  | PEEnum [], PECons _, _ -> not_match_default
-  | PEConst (OrdinaryPConst (Bool _)), PEConst (OrdinaryPConst (Bool _ as c)), Some k
-  | PEConst (OrdinaryPConst (Int _)), PEConst (OrdinaryPConst (Int _ as c)), Some k ->
-    not_match_with_k k (VConst c)
-  | PEConst (OrdinaryPConst (Int _)), PEConst (NegativePInt i), Some k ->
-    not_match_with_k k (VConst (Int (-i)))
-  | PEConst (NegativePInt _), PEConst (OrdinaryPConst (Int i)), Some k ->
-    not_match_with_k k (VConst (Int i))
-  | PETuple (p11, p12, pp1), PETuple (p21, p22, pp2), _ ->
-    let ok2 p21' td p22' =
-      match ptrnptrn_match_list ~strict_len:true kk (td, []) pp1 pp2 with
-      | Ok (td, pp2') -> Ok (td, PETuple (p21', p22', pp2'))
-      | Error (e, (dpf, pp2')) -> Error (e, (dpf, PETuple (p21', p22', pp2')))
-    in
-    let ok1 (to_pe_ex, (d, p, f)) p21' =
-      let err_p p22' = PETuple (p21', p22', pp2) in
-      ptrnptrn_match' to_pe_ex (d, p, kk) f p12 p22 err_p (ok2 p21')
-    in
-    ptrnptrn_match' to_pe_ex env fresh p11 p21 (fun p21' -> PETuple (p21', p22, pp2)) ok1
-  | PEEnum pp1, PEEnum pp2, _ ->
-    let init = (to_pe_ex, (dfs, pe_exprs, fresh)), [] in
-    (match ptrnptrn_match_list ~strict_len:false kk init pp1 pp2 with
-     | Ok (td, pp2') -> Ok (td, PEEnum pp2')
-     | Error (e, (dpf, pp2')) -> Error (e, (dpf, PEEnum pp2')))
-  | PECons (p11, p12), PECons (p21, p22), _ -> helper_conscons env fresh p11 p12 p21 p22
-  | PECons (p11, p12), PEEnum (p21 :: pp), _ ->
-    let pe_exprs, fresh = add fresh (ThTree (PEEnum pp)) pe_exprs, fresh + 1 in
-    helper_conscons (dfs, pe_exprs, kk) fresh p11 p12 p21 (Lnk (fresh - 1))
-  | PEEnum (p11 :: pp), PECons (p21, p22), _ ->
-    (helper_conscons (dfs, pe_exprs, kk) fresh p11 @@ P (None, PEEnum pp)) p21 p22
-  | _ -> typing_error
-
-and ptrnptrn_match_list ~strict_len kk init pp1 pp2 =
-  let rec helper = function
-    | Ok (td, pp'), [], [] -> Ok (td, List.rev pp')
-    | Ok ((_, dpf), pp'), _ :: _, [] ->
-      Error ((if strict_len then `Typing_err else `Not_match), (dpf, List.rev pp'))
-    | Error (_, (dpf, pp')), _ :: _, [] when strict_len ->
-      Error (`Typing_err, (dpf, List.rev pp'))
-    | Error (e, (dpf, pp')), _, [] -> Error (e, (dpf, List.rev pp'))
-    | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pp'), p1 :: pp1, p2 :: pp2 ->
-      (match ptrnptrn_match to_pe_ex (dfs, pe_exprs, kk) fresh p1 p2 with
-       | Ok (td, p2') -> helper (Ok (td, p2' :: pp'), pp1, pp2)
-       | Error (e, (dpf, p2')) -> helper (Error (e, (dpf, p2' :: pp')), pp1, pp2))
-    | Ok ((_, dpf), pp'), [], _ :: _ when strict_len ->
-      helper (Error (`Typing_err, (dpf, pp')), pp1, pp2)
-    | Ok ((_, dpf), pp'), [], _ :: _ -> helper (Error (`Not_match, (dpf, pp')), pp1, pp2)
-    | Error (_, (dpf, pp')), [], p2 :: pp2 when strict_len ->
-      helper (Error (`Typing_err, (dpf, p2 :: pp')), pp1, pp2)
-    | Error (e, (dpf, pp')), [], p2 :: pp2 ->
-      helper (Error (e, (dpf, p2 :: pp')), pp1, pp2)
-    | Error (e, (dpf, pp')), _ :: pp1, p2 :: pp2 ->
-      helper (Error (e, (dpf, p2 :: pp')), pp1, pp2)
-  in
-  helper (Ok init, pp1, pp2)
-
-and ptrnptrn_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh p1 p2 =
-  match p1, p2 with
-  | Lnk k1, (Lnk k2 | P (Some k2, _)) ->
-    Ok (((k1, Link k2) :: to_pe_ex, (dfs, pe_exprs, fresh)), p2)
-  | Lnk k1, P (None, pat2) ->
-    let dpf = dfs, add fresh (ThTree pat2) pe_exprs, fresh + 1 in
-    Ok (((k1, Link fresh) :: to_pe_ex, dpf), Lnk fresh)
-  | P (None, pat1), P (None, pat2) ->
-    (match patpat_match to_pe_ex env fresh pat1 pat2 with
-     | Ok (td, pat2') -> Ok (td, P (None, pat2'))
-     | Error (e, (dpf, pat2')) -> Error (e, (dpf, P (None, pat2'))))
-  | (P (k1, pat1) as p), (Lnk k2 | P (Some k2, _)) ->
-    let rec helper_key k =
-      let e = find k pe_exprs in
-      let dpf = dfs, pe_exprs, fresh in
-      let pm_res_hndl = function
-        | Ok (to_pe_ex, dpf) -> Ok ((to_pe_ex, dpf), Lnk k)
-        | Error (e, dpf) -> Error (e, (dpf, Lnk k))
-      in
-      match e with
-      | Er e -> Error (from_crit_err e, (dpf, Lnk k))
-      | V v ->
-        (match pattern_match_v p1 v to_pe_ex with
-         | Ok to_pe_ex -> Ok ((to_pe_ex, dpf), Lnk k)
-         | Error e -> Error (e, (dpf, Lnk k)))
-      | ThLeaf (kk, e) ->
-        pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh (Some k) p1 e |> pm_res_hndl
-      | Link k' -> helper_key k'
-      | ThTree pat2 ->
-        let pe_exprs =
-          match k1 with
-          | None -> pe_exprs
-          | Some k1 -> add k1 (Link k) pe_exprs
-        in
-        (match patpat_match ~k:k1 to_pe_ex (dfs, pe_exprs, kk) fresh pat1 pat2 with
-         | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
-           Ok ((to_pe_ex, (dfs, add k (ThTree pat2') pe_exprs, fresh)), Lnk k)
-         | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
-           Error (e, ((dfs, add k (ThTree pat2') pe_exprs, fresh), Lnk k)))
-      | LazyLst ll -> ptrnll_match env fresh [] (Some k) ll p |> pm_res_hndl
-    in
-    helper_key k2
-  | P (Some _, _), P (None, pat2) ->
-    let p2' = P (Some fresh, pat2) in
-    let dfs, pe_exprs, fresh = dfs, add fresh (ThTree pat2) pe_exprs, fresh + 1 in
-    ptrnptrn_match to_pe_ex (dfs, pe_exprs, kk) fresh p1 p2'
-
-and ptrnll_match (dfs, pe_exprs, kk) fresh =
-  let rec helper dpf to_pe_ex src ll =
-    let peconsll_match ((dfs, pe_exprs, fresh) as dpf) to_pe_ex k p11 p12 = function
-      | None ->
-        let to_pe_ex =
-          match k with
-          | None -> to_pe_ex
-          | Some k -> (k, ThTree (PECons (p11, p12))) :: to_pe_ex
-        in
-        let v21, pe22 = lazylst_to_cons ll in
-        let* to_pe_ex = pattern_match_v p11 v21 to_pe_ex --| fun e -> e, dpf in
-        (match pe22 with
-         | `V v ->
-           (match pattern_match_v p12 v to_pe_ex with
-            | Ok to_pe_ex -> Ok (to_pe_ex, dpf)
-            | Error e -> Error (e, dpf))
-         | `LazyLst ll -> helper dpf to_pe_ex None ll p12)
-      | Some pk ->
-        let pat2, pe_exprs, fresh = lazylst_to_pat pe_exprs fresh ll in
-        let to_pe_ex =
-          match k with
-          | None -> to_pe_ex
-          | Some k -> (k, Link pk) :: to_pe_ex
-        in
-        (match
-           patpat_match to_pe_ex (dfs, pe_exprs, kk) fresh (PECons (p11, p12)) pat2
-         with
-         | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
-           Ok (to_pe_ex, (dfs, add pk (ThTree pat2') pe_exprs, fresh))
-         | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
-           Error (e, (dfs, add pk (ThTree pat2') pe_exprs, fresh)))
-    in
-    function
-    | Lnk k -> Ok ((k, LazyLst ll) :: to_pe_ex, dpf)
-    | P (k, PECons (p1, p2)) -> peconsll_match dpf to_pe_ex k p1 p2 src
-    | P (_, PEEnum []) -> Error (`Not_match, dpf)
-    | P (k, PEEnum (p :: pp)) -> peconsll_match dpf to_pe_ex k p (P (None, PEEnum pp)) src
-    | _ -> Error (`Typing_err, dpf)
-  in
-  helper (dfs, pe_exprs, fresh)
 
 and eval_var_full ((_, pe_exprs_key) as keys) dpf =
   let* ((dfs, pe_exprs, fresh) as dpf), pe_expr = find_expr dpf keys in
@@ -1126,6 +590,86 @@ and eval_expr_full ((dfs, pe_exprs, kk) as env) fresh =
      | (dfs, pe_exprs, fresh), `Th (kk, e) -> eval_expr_full (dfs, pe_exprs, kk) fresh e
      | dpf, `V v -> Ok (dpf, v))
 
+and elazylist_hndl fst snd lst ((_, _, kk) as env) fresh =
+  let typing_err dpf = Error ((`Typing_err : crit_err), dpf) in
+  let e_to_val v_hndl ((dfs, pe_exprs, fresh) as dpf) = function
+    | None -> Ok (dpf, None)
+    | Some e -> eval_expr_full (dfs, pe_exprs, kk) fresh e >>= v_hndl
+  in
+  let int_ll dpf start =
+    let e_to_val =
+      e_to_val
+      @@ function
+      | dpf, VConst (Int i) -> Ok (dpf, Some i)
+      | dpf, _ -> typing_err dpf
+    in
+    let* dpf, snd_opt = e_to_val dpf snd in
+    let+ dpf, fin_opt = e_to_val dpf lst in
+    let open Z in
+    ( dpf
+    , match snd_opt with
+      | Some snd ->
+        let step = of_int snd - of_int start in
+        let incr = step >= zero in
+        (match fin_opt with
+         | Some fin ->
+           if of_int fin - of_int start >= zero <> incr
+           then `V (VList [])
+           else `LazyLst (IntLL (start, step, fin))
+         | None ->
+           let fin = if incr then Int.max_int else Int.min_int in
+           `LazyLst (IntLL (start, step, fin)))
+      | None ->
+        let incr, fin =
+          match fin_opt with
+          | None -> true, Int.max_int
+          | Some fin -> of_int fin - of_int start >= zero, fin
+        in
+        let step = if incr then Z.one else -Z.one in
+        `LazyLst (IntLL (start, step, fin)) )
+  in
+  let bool_ll dpf start =
+    let t, f = VConst (Bool true), VConst (Bool false) in
+    let e_to_val =
+      e_to_val
+      @@ function
+      | dpf, VConst (Bool b) -> Ok (dpf, Some b)
+      | dpf, _ -> typing_err dpf
+    in
+    let* dpf, snd_opt = e_to_val dpf snd in
+    let+ dpf, fin_opt = e_to_val dpf lst in
+    ( dpf
+    , match start, snd_opt, fin_opt with
+      | true, None, (None | Some true) | true, Some false, Some true -> `V (VList [ t ])
+      | false, (None | Some true), Some false -> `V (VList [ f ])
+      | false, (None | Some true), (None | Some true) -> `V (VList [ f; t ])
+      | true, Some false, (None | Some false) | true, None, Some false ->
+        `V (VList [ t; f ])
+      | true, Some true, (None | Some true) -> `LazyLst (BoolLL true)
+      | false, Some false, _ -> `LazyLst (BoolLL false)
+      | true, Some true, Some false -> `V (VList []) )
+  in
+  let unit_ll dpf =
+    let e_to_val =
+      e_to_val
+      @@ function
+      | dpf, VConst Unit -> Ok (dpf, Some Unit)
+      | dpf, _ -> typing_err dpf
+    in
+    let* dpf, snd_opt = e_to_val dpf snd in
+    let+ dpf, _ = e_to_val dpf lst in
+    ( dpf
+    , match snd_opt with
+      | None -> `V (VList [ VConst Unit ])
+      | Some _ -> `LazyLst UnitLL )
+  in
+  eval_expr_full env fresh fst
+  >>= function
+  | dpf, VConst (Int i) -> int_ll dpf i
+  | dpf, VConst (Bool b) -> bool_ll dpf b
+  | dpf, VConst Unit -> unit_ll dpf
+  | dpf, _ -> typing_err dpf
+
 and eval_step_ite cond th el env fresh =
   let* dpf, v = eval_expr_full env fresh cond in
   match v with
@@ -1238,6 +782,12 @@ and eval_step_funapp ((dfs, pe_exprs, kk0) as env0) fresh = function
       | _ -> Error (`Typing_err, dpf)
     in
     es_ord_funcapp f aa' (dfs, pe_exprs, kk0) fresh
+
+and eval_neg env fresh e =
+  let* dpf, v = eval_expr_full env fresh e in
+  match v with
+  | VConst (Int x) -> Ok (dpf, VConst (Int (-x)))
+  | _ -> Error (`Typing_err, dpf)
 
 and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
   let arithm res snd_arg_check =
@@ -1723,110 +1273,606 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
      | _, dpf -> tru dpf)
   | Cons -> Error ((`Typing_err : crit_err), (dfs, pe_exprs, fresh))
 
-and eval_neg env fresh e =
-  let* dpf, v = eval_expr_full env fresh e in
-  match v with
-  | VConst (Int x) -> Ok (dpf, VConst (Int (-x)))
-  | _ -> Error (`Typing_err, dpf)
-
-and elazylist_hndl fst snd lst ((_, _, kk) as env) fresh =
-  let typing_err dpf = Error ((`Typing_err : crit_err), dpf) in
-  let e_to_val v_hndl ((dfs, pe_exprs, fresh) as dpf) = function
-    | None -> Ok (dpf, None)
-    | Some e -> eval_expr_full (dfs, pe_exprs, kk) fresh e >>= v_hndl
-  in
-  let int_ll dpf start =
-    let e_to_val =
-      e_to_val
-      @@ function
-      | dpf, VConst (Int i) -> Ok (dpf, Some i)
-      | dpf, _ -> typing_err dpf
+and pattern_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh src ptrn e =
+  match ptrn with
+  | Lnk k -> Ok ((k, ThLeaf (kk, e)) :: to_pe_ex, (dfs, pe_exprs, fresh))
+  | P (k, pat) ->
+    let pmv_call_tr k to_pe_ex v dpf =
+      match pattern_match_v (P (k, pat)) v to_pe_ex with
+      | Ok to_pe_ex -> Ok (to_pe_ex, dpf)
+      | Error e -> Error (e, dpf)
     in
-    let* dpf, snd_opt = e_to_val dpf snd in
-    let+ dpf, fin_opt = e_to_val dpf lst in
-    let open Z in
-    ( dpf
-    , match snd_opt with
-      | Some snd ->
-        let step = of_int snd - of_int start in
-        let incr = step >= zero in
-        (match fin_opt with
-         | Some fin ->
-           if of_int fin - of_int start >= zero <> incr
-           then `V (VList [])
-           else `LazyLst (IntLL (start, step, fin))
-         | None ->
-           let fin = if incr then Int.max_int else Int.min_int in
-           `LazyLst (IntLL (start, step, fin)))
-      | None ->
-        let incr, fin =
-          match fin_opt with
-          | None -> true, Int.max_int
-          | Some fin -> of_int fin - of_int start >= zero, fin
+    let pmv_call_lf v dpf =
+      match pattern_match_v (P (None, pat)) v [] with
+      | Ok _ -> Ok dpf
+      | Error e -> Error (e, dpf)
+    in
+    let ppm_call to_pe_ex k pk env fresh pat2 =
+      let to_pe_ex =
+        match k with
+        | None -> to_pe_ex
+        | Some k -> (k, Link pk) :: to_pe_ex
+      in
+      match patpat_match to_pe_ex env fresh pat pat2 with
+      | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
+        Ok (to_pe_ex, (dfs, add pk (ThTree pat2') pe_exprs, fresh))
+      | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
+        Error (e, (dfs, add pk (ThTree pat2') pe_exprs, fresh))
+    in
+    let from_crit_full src ((e : crit_err), ((dfs, pe_exprs, fresh) as dpf)) =
+      let dpf =
+        match src with
+        | None -> dpf
+        | Some k -> dfs, add k (Er e) pe_exprs, fresh
+      in
+      from_crit_err e, dpf
+    in
+    let other_exprs typing_err src cont ((_, _, kk) as env) fresh v_call ac =
+      let v_call ((dfs, pe_exprs, fresh), v) =
+        let pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
+        v_call v (dfs, pe_exprs, fresh)
+      in
+      function
+      | IfThenEsle (c, th, el) ->
+        let* (dfs, pe_exprs, fresh), (e, _) =
+          eval_step_ite c th el env fresh --| from_crit_full src
         in
-        let step = if incr then Z.one else -Z.one in
-        `LazyLst (IntLL (start, step, fin)) )
-  in
-  let bool_ll dpf start =
-    let t, f = VConst (Bool true), VConst (Bool false) in
-    let e_to_val =
-      e_to_val
-      @@ function
-      | dpf, VConst (Bool b) -> Ok (dpf, Some b)
-      | dpf, _ -> typing_err dpf
+        cont ~after_complex:true src (dfs, pe_exprs, kk) fresh e
+      | Case (e, br, brs) ->
+        let* env, fresh, (e, _) =
+          eval_step_case e env fresh (br :: brs) --| from_crit_full src
+        in
+        cont ~after_complex:true src env fresh e
+      | FunctionApply (f, a, aa) ->
+        eval_step_funapp env fresh (f, a :: aa) --| from_crit_full src
+        >>= (function
+         | (dfs, pe_exprs, fresh), `Th (kk, (e, _)) ->
+           cont ~after_complex:true src (dfs, pe_exprs, kk) fresh e
+         | dpf, `V v -> v_call (dpf, v))
+      | InnerBindings (b, bb, (e, _)) ->
+        let* env, fresh = eval_step_inner_bb (b :: bb) env fresh --| from_crit_full src in
+        cont ~after_complex:true src env fresh e
+      | Binop (e1, op, e2) when op <> Cons ->
+        eval_arlog env fresh e1 e2 op --| from_crit_full src >>= v_call
+      | Neg e -> eval_neg env fresh e --| from_crit_full src >>= v_call
+      | e -> typing_err env fresh src ac e
     in
-    let* dpf, snd_opt = e_to_val dpf snd in
-    let+ dpf, fin_opt = e_to_val dpf lst in
-    ( dpf
-    , match start, snd_opt, fin_opt with
-      | true, None, (None | Some true) | true, Some false, Some true -> `V (VList [ t ])
-      | false, (None | Some true), Some false -> `V (VList [ f ])
-      | false, (None | Some true), (None | Some true) -> `V (VList [ f; t ])
-      | true, Some false, (None | Some false) | true, None, Some false ->
-        `V (VList [ t; f ])
-      | true, Some true, (None | Some true) -> `LazyLst (BoolLL true)
-      | false, Some false, _ -> `LazyLst (BoolLL false)
-      | true, Some true, Some false -> `V (VList []) )
-  in
-  let unit_ll dpf =
-    let e_to_val =
-      e_to_val
-      @@ function
-      | dpf, VConst Unit -> Ok (dpf, Some Unit)
-      | dpf, _ -> typing_err dpf
+    let rec helper_keys_tr helper to_pe_ex src k ((_, pk) as keys) env fresh =
+      let dfs, pe_exprs, kk = env in
+      let helper_keys_tr = helper_keys_tr helper to_pe_ex src k in
+      let* ((dfs, pe_exprs, fresh) as dpf), e =
+        find_expr (dfs, pe_exprs, fresh) keys --| from_crit_full src
+      in
+      match e with
+      | Link k -> helper_keys_tr (None, k) (dfs, pe_exprs, kk) fresh
+      | _ ->
+        let ((dfs, pe_exprs, fresh) as dpf) =
+          match src with
+          | Some k -> dfs, add k (Link pk) pe_exprs, fresh
+          | None -> dpf
+        in
+        (match e with
+         | Er er -> Error (from_crit_err er, dpf)
+         | V v -> pmv_call_tr k to_pe_ex v dpf
+         | ThLeaf (kk, e) ->
+           let to_pe_ex =
+             match k with
+             | None -> to_pe_ex
+             | Some k -> (k, Link pk) :: to_pe_ex
+           in
+           helper to_pe_ex None (Some pk) (dfs, pe_exprs, kk) fresh e
+         | ThTree pat2 -> ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat2
+         | LazyLst ll -> ptrnll_match env fresh to_pe_ex (Some pk) ll (P (k, pat))
+         | Link k -> helper_keys_tr (None, k) (dfs, pe_exprs, kk) fresh (*недостижимо *))
     in
-    let* dpf, snd_opt = e_to_val dpf snd in
-    let+ dpf, _ = e_to_val dpf lst in
-    ( dpf
-    , match snd_opt with
-      | None -> `V (VList [ VConst Unit ])
-      | Some _ -> `LazyLst UnitLL )
-  in
-  eval_expr_full env fresh fst
-  >>= function
-  | dpf, VConst (Int i) -> int_ll dpf i
-  | dpf, VConst (Bool b) -> bool_ll dpf b
-  | dpf, VConst Unit -> unit_ll dpf
-  | dpf, _ -> typing_err dpf
+    let rec helper_keys_lf helper src k ((_, pk) as keys) (dfs, pe_exprs, kk) fresh =
+      let helper_keys_lf = helper_keys_lf helper src k in
+      let* ((dfs, pe_exprs, fresh) as dpf), e =
+        find_expr (dfs, pe_exprs, fresh) keys --| from_crit_full src
+      in
+      match e with
+      | Link k -> helper_keys_lf (None, k) (dfs, pe_exprs, kk) fresh
+      | _ ->
+        let ((dfs, pe_exprs, fresh) as dpf) =
+          match src with
+          | None -> dpf
+          | Some k -> dfs, add k (Link (Stdlib.snd keys)) pe_exprs, fresh
+        in
+        (match e with
+         | Er e -> Error (from_crit_err e, dpf)
+         | V v -> pmv_call_lf v dpf
+         | ThLeaf (kk, e) -> helper (Some pk) (dfs, pe_exprs, kk) fresh e
+         | ThTree pat2 ->
+           (match patpat_match ~k:(Some pk) [] (dfs, pe_exprs, kk) fresh pat pat2 with
+            | Ok ((_, dpf), _) -> Ok dpf
+            | Error (e, (dpf, _)) -> Error (e, dpf))
+         | LazyLst _ -> Error (`Typing_err, dpf)
+         | Link k -> helper_keys_lf (None, k) (dfs, pe_exprs, kk) fresh (*недостижимо *))
+    in
+    let k_hndl_lf v dpf =
+      match k with
+      | None -> to_pe_ex, dpf
+      | Some k -> (k, V v) :: to_pe_ex, dpf
+    in
+    let k_hndl_tr to_pe_ex = function
+      | Some k -> (k, ThTree pat) :: to_pe_ex
+      | None -> to_pe_ex
+    in
+    let ok_lf v (dfs, pe_exprs, fresh) src =
+      let pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
+      Ok (dfs, pe_exprs, fresh)
+    in
+    let not_match_th e (dfs, pe_exprs, kk) fresh src after_complex =
+      let pe_exprs =
+        match src, after_complex with
+        | None, _ | _, false -> pe_exprs
+        | Some k, true -> add k (ThLeaf (kk, e)) pe_exprs
+      in
+      Error (`Not_match, (dfs, pe_exprs, fresh))
+    in
+    let not_match_v v (dfs, pe_exprs, fresh) src after_complex =
+      let pe_exprs =
+        match src, after_complex with
+        | None, _ | _, false -> pe_exprs
+        | Some k, true -> add k (V v) pe_exprs
+      in
+      Error (`Not_match, (dfs, pe_exprs, fresh))
+    in
+    let typing_err (dfs, pe_exprs, kk) fresh src after_complex e =
+      let pe_exprs =
+        match src, after_complex with
+        | None, _ | _, false -> pe_exprs
+        | Some k, true -> add k (ThLeaf (kk, e)) pe_exprs
+      in
+      Error (`Typing_err, (dfs, pe_exprs, fresh))
+    in
+    let elazylist_hndl e1 e2 e3 ((_, _, kk) as env) k src =
+      elazylist_hndl e1 e2 e3 env fresh --| from_crit_full src
+      >>= function
+      | (dfs, pe_exprs, fresh), `LazyLst ll ->
+        ptrnll_match (dfs, pe_exprs, kk) fresh to_pe_ex src ll (P (k, pat))
+      | (dfs, pe_exprs, fresh), `V v ->
+        let pe_exprs = ext_pe_exprs_opt (V v) pe_exprs src in
+        pmv_call_tr k to_pe_ex v (dfs, pe_exprs, fresh)
+    in
+    (match pat with
+     | PETree Nul ->
+       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
+         | BinTreeBld Nul -> ok_lf (VTree Nul) (dfs, pe_exprs, fresh) src
+         | BinTreeBld _ as e -> not_match_th e (dfs, pe_exprs, kk) fresh src after_complex
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
+         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+       in
+       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VTree Nul)
+     | PEMaybe Nothing ->
+       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
+         | ENothing -> ok_lf (VMaybe Nothing) (dfs, pe_exprs, fresh) src
+         | FunctionApply ((EJust, _), _, []) as e ->
+           not_match_th e (dfs, pe_exprs, kk) fresh src after_complex
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
+         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+       in
+       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VMaybe Nothing)
+     | PEConst (OrdinaryPConst Unit) ->
+       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh =
+         let _ = after_complex in
+         function
+         | Const Unit -> ok_lf (VConst Unit) (dfs, pe_exprs, fresh) src
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
+         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+       in
+       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst Unit)
+     | PEConst (OrdinaryPConst (Bool _ as c)) ->
+       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
+         | Const c' when c = c' -> ok_lf (VConst c) (dfs, pe_exprs, fresh) src
+         | Const (Bool b') ->
+           not_match_v (VConst (Bool b')) (dfs, pe_exprs, fresh) src after_complex
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
+         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+       in
+       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst c)
+     | PEConst (OrdinaryPConst (Int _ as c)) ->
+       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
+         | Const c' when c = c' -> ok_lf (VConst c) (dfs, pe_exprs, fresh) src
+         | Const (Int x) ->
+           not_match_v (VConst (Int x)) (dfs, pe_exprs, fresh) src after_complex
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
+         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+       in
+       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst c)
+     | PEConst (NegativePInt i) ->
+       let rec helper ~after_complex src ((dfs, pe_exprs, kk) as env) fresh = function
+         | Const (Int x) when x = -i -> ok_lf (VConst (Int x)) (dfs, pe_exprs, fresh) src
+         | Const (Int x) ->
+           not_match_v (VConst (Int x)) (dfs, pe_exprs, fresh) src after_complex
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_lf (helper ~after_complex:false) src k keys env fresh
+         | e -> other_exprs typing_err src helper env fresh pmv_call_lf after_complex e
+       in
+       helper ~after_complex:false src env fresh e >>| k_hndl_lf (VConst (Int (-i)))
+     | PETree (Node (p1, p2, p3)) ->
+       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
+         = function
+         | BinTreeBld Nul ->
+           not_match_v (VTree Nul) (dfs, pe_exprs, fresh) src after_complex
+         | BinTreeBld (Node (e1, e2, e3)) ->
+           (match src with
+            | None ->
+              pattern_match_list
+                ~strict_len:true
+                (k_hndl_tr to_pe_ex k)
+                env
+                fresh
+                [ p1; p2; p3 ]
+                [ e1; e2; e3 ]
+            | Some pk ->
+              let pat', pe_exprs, fresh = enode_to_pat pe_exprs fresh kk e1 e2 e3 in
+              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat')
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
+         | e ->
+           let cont = helper to_pe_ex k in
+           let pmv_call = pmv_call_tr k to_pe_ex in
+           other_exprs typing_err src cont env fresh pmv_call after_complex e
+       in
+       helper ~after_complex:false to_pe_ex k src env fresh e
+     | PEEnum pp ->
+       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
+         = function
+         | ListBld (LazyList (e1, e2, e3)) -> elazylist_hndl e1 e2 e3 env k src
+         | ListBld (OrdList (IncomprehensionlList ee)) ->
+           (match src with
+            | None ->
+              let to_pe_ex = k_hndl_tr to_pe_ex k in
+              pattern_match_list ~strict_len:false to_pe_ex env fresh pp ee
+            | Some pk ->
+              let (pe_exprs, fresh), pp' =
+                List.fold_left_map (fun (pe, f) -> new_th kk f pe) (pe_exprs, fresh) ee
+              in
+              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh (PEEnum pp'))
+         | Binop (((e1, _) as ex1), Cons, ((e2, _) as ex2)) as e ->
+           (match pp with
+            | [] -> not_match_th e (dfs, pe_exprs, kk) fresh src after_complex
+            | p :: pp ->
+              (match src with
+               | None ->
+                 let* to_pe_ex, (dfs, pe_exprs, fresh) =
+                   pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p e1
+                 in
+                 let p2 = P (None, PEEnum pp) in
+                 let to_pe_ex =
+                   match k with
+                   | None -> to_pe_ex
+                   | Some k -> (k, ThTree (PECons (p, p2))) :: to_pe_ex
+                 in
+                 pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p2 e2
+               | Some pk ->
+                 let pat', pe_exprs, fresh = econs_to_pat pe_exprs fresh kk ex1 ex2 in
+                 ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat'))
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
+         | e ->
+           let cont = helper to_pe_ex k in
+           let pmv_call = pmv_call_tr k to_pe_ex in
+           other_exprs typing_err src cont env fresh pmv_call after_complex e
+       in
+       helper ~after_complex:false to_pe_ex k src env fresh e
+     | PECons (p1, p2) ->
+       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
+         = function
+         | ListBld (LazyList (e1, e2, e3)) -> elazylist_hndl e1 e2 e3 env k src
+         | Binop (ex1, Cons, ex2) ->
+           (match src with
+            | None ->
+              pattern_match_list
+                ~strict_len:true
+                (k_hndl_tr to_pe_ex k)
+                env
+                fresh
+                [ p1; p2 ]
+                [ ex1; ex2 ]
+            | Some pk ->
+              let pat', pe_exprs, fresh = econs_to_pat pe_exprs fresh kk ex1 ex2 in
+              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat')
+         | ListBld (OrdList (IncomprehensionlList [])) ->
+           not_match_v (VList []) (dfs, pe_exprs, fresh) src after_complex
+         | ListBld (OrdList (IncomprehensionlList (e :: ee))) ->
+           (match src with
+            | None ->
+              pattern_match_list
+                ~strict_len:true
+                (k_hndl_tr to_pe_ex k)
+                env
+                fresh
+                [ p1; p2 ]
+                [ e; ListBld (OrdList (IncomprehensionlList ee)), [] ]
+            | Some pk ->
+              let (pe_exprs, fresh), pp' =
+                List.fold_left_map
+                  (fun (pe, f) -> new_th kk f pe)
+                  (pe_exprs, fresh)
+                  (e :: ee)
+              in
+              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh (PEEnum pp'))
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
+         | e ->
+           let cont = helper to_pe_ex k in
+           let pmv_call = pmv_call_tr k to_pe_ex in
+           other_exprs typing_err src cont env fresh pmv_call after_complex e
+       in
+       helper ~after_complex:false to_pe_ex k src env fresh e
+     | PEMaybe (Just p) ->
+       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh
+         = function
+         | ENothing ->
+           not_match_v (VMaybe Nothing) (dfs, pe_exprs, fresh) src after_complex
+         | FunctionApply ((EJust, _), ((e, _) as ex), []) ->
+           (match src with
+            | None ->
+              let to_pe_ex = k_hndl_tr to_pe_ex k in
+              pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p e
+            | Some pk ->
+              let (pe_exprs, fresh), p1' = new_th kk fresh pe_exprs ex in
+              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh (PEMaybe (Just p1')))
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
+         | e ->
+           let cont = helper to_pe_ex k in
+           let pmv_call = pmv_call_tr k to_pe_ex in
+           other_exprs typing_err src cont env fresh pmv_call after_complex e
+       in
+       helper ~after_complex:false to_pe_ex k src env fresh e
+     | PETuple (p1, p2, pp) ->
+       let rec helper to_pe_ex k ~after_complex src ((dfs, pe_exprs, kk) as env) fresh =
+         let _ = after_complex in
+         function
+         | TupleBld (e1, e2, ee) ->
+           (match src with
+            | None ->
+              pattern_match_list
+                ~strict_len:true
+                (k_hndl_tr to_pe_ex k)
+                env
+                fresh
+                (p1 :: p2 :: pp)
+                (e1 :: e2 :: ee)
+            | Some pk ->
+              let pat', pe_exprs, fresh = etuple_to_pat pe_exprs fresh kk e1 e2 ee in
+              ppm_call to_pe_ex k pk (dfs, pe_exprs, kk) fresh pat')
+         | Identificator (Ident n) ->
+           let keys = NMap.find n kk in
+           helper_keys_tr (helper ~after_complex:false) to_pe_ex src k keys env fresh
+         | e ->
+           let cont = helper to_pe_ex k in
+           let pmv_call = pmv_call_tr k to_pe_ex in
+           other_exprs typing_err src cont env fresh pmv_call after_complex e
+       in
+       helper ~after_complex:false to_pe_ex k src env fresh e)
 
-and lazylst_to_cons = function
-  | BoolLL b as bb -> VConst (Bool b), `LazyLst bb
-  | UnitLL as uu -> VConst Unit, `LazyLst uu
-  | IntLL (start, step, fin) ->
-    let open Z in
-    let start' = of_int start + step in
-    let pe =
-      if step >= zero <> (of_int fin - start' >= zero)
-      then `V (VList [])
-      else `LazyLst (IntLL (Z.to_int start', step, fin))
-    in
-    VConst (Int start), pe
+and pattern_match_list ~strict_len to_pe_ex (dfs, pe_exprs, kk) fresh pp ee =
+  let rec helper pp ee (to_pe_ex, ((dfs, pe_exprs, fresh) as dpf)) =
+    match pp, ee with
+    | [], [] -> Ok (to_pe_ex, dpf)
+    | p :: pp, (e, _) :: ee ->
+      pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh None p e >>= helper pp ee
+    | _ -> Error ((if strict_len then `Typing_err else `Not_match), dpf)
+  in
+  helper pp ee (to_pe_ex, (dfs, pe_exprs, fresh))
 
-and lazylst_to_pat pe_exprs fresh ll =
-  let v21, pe22 = lazylst_to_cons ll |> conv_res in
-  let p21, pe_exprs, fresh = Lnk fresh, add fresh (V v21) pe_exprs, fresh + 1 in
-  let p22, pe_exprs, fresh = Lnk fresh, add fresh pe22 pe_exprs, fresh + 1 in
-  PECons (p21, p22), pe_exprs, fresh
+and patpat_match ?(k = None) to_pe_ex ((dfs, pe_exprs, kk) as env) fresh pat1 pat2 =
+  let suc_default = Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2) in
+  let suc_with_k k v = Ok ((to_pe_ex, (dfs, add k (V v) pe_exprs, fresh)), pat2) in
+  let not_match_default = Error (`Not_match, ((dfs, pe_exprs, fresh), pat2)) in
+  let not_match_with_k k v =
+    Error (`Not_match, ((dfs, add k (V v) pe_exprs, fresh), pat2))
+  in
+  let typing_error =
+    Error (`Typing_err, ((dfs, ext_pe_exprs_opt (ThTree pat2) pe_exprs k, fresh), pat2))
+  in
+  let ptrnptrn_match' to_pe_ex env fresh p1 p2 err_p ok =
+    match ptrnptrn_match to_pe_ex env fresh p1 p2 with
+    | Error (e, (dpf, p2')) -> Error (e, (dpf, err_p p2'))
+    | Ok (td, p2') -> ok td p2'
+  in
+  let helper_conscons env fresh p11 p12 p21 p22 =
+    let ok1 (to_pe_ex, (d, p, f)) p21' =
+      let err_p p22' = PECons (p21', p22') in
+      ptrnptrn_match' to_pe_ex (d, p, kk) f p12 p22 err_p
+      @@ fun td p22' -> Ok (td, PECons (p21', p22'))
+    in
+    ptrnptrn_match' to_pe_ex env fresh p11 p21 (fun p21' -> PECons (p21', p22)) ok1
+  in
+  match pat1, pat2, k with
+  | PETree (Node (p11, p12, p13)), PETree (Node (p21, p22, p23)), _ ->
+    let node p1 p2 p3 = PETree (Node (p1, p2, p3)) in
+    let ok2 p21' (to_pe_ex, (d, p, f)) p22' =
+      let err_p = node p21' p22' in
+      ptrnptrn_match' to_pe_ex (d, p, kk) f p13 p23 err_p
+      @@ fun td p23' -> Ok (td, node p21' p22' p23')
+    in
+    let ok1 (to_pe_ex, (d, p, f)) p21' =
+      let err_p p22' = node p21' p22' p23 in
+      ptrnptrn_match' to_pe_ex (d, p, kk) f p12 p22 err_p (ok2 p21')
+    in
+    ptrnptrn_match' to_pe_ex env fresh p11 p21 (fun p21' -> node p21' p22 p23) ok1
+  | PETree Nul, PETree Nul, None | PEMaybe Nothing, PEMaybe Nothing, None -> suc_default
+  | PETree Nul, PETree Nul, Some k -> suc_with_k k (VTree Nul)
+  | PEMaybe Nothing, PEMaybe Nothing, Some k -> suc_with_k k (VMaybe Nothing)
+  | PEConst c, PEConst c', None when c = c' -> suc_default
+  | PEConst (OrdinaryPConst c), PEConst (OrdinaryPConst c'), Some k when c = c' ->
+    suc_with_k k (VConst c)
+  | PEConst (NegativePInt i), PEConst (NegativePInt i'), Some k when i = i' ->
+    suc_with_k k (VConst (Int (-i)))
+  | PEMaybe (Just p1), PEMaybe (Just p2), _ ->
+    let ok td p2' = Ok (td, PEMaybe (Just p2')) in
+    let env = dfs, pe_exprs, kk in
+    ptrnptrn_match' to_pe_ex env fresh p1 p2 (fun p2' -> PEMaybe (Just p2')) ok
+  | PEMaybe _, PEMaybe _, _
+  | PETree _, PETree _, _
+  | PEConst (OrdinaryPConst (Bool _)), PEConst (OrdinaryPConst (Bool _)), None
+  | ( PEConst (OrdinaryPConst (Int _) | NegativePInt _)
+    , PEConst (OrdinaryPConst (Int _) | NegativePInt _)
+    , None )
+  | PECons _, PEEnum [], _
+  | PEEnum [], PECons _, _ -> not_match_default
+  | PEConst (OrdinaryPConst (Bool _)), PEConst (OrdinaryPConst (Bool _ as c)), Some k
+  | PEConst (OrdinaryPConst (Int _)), PEConst (OrdinaryPConst (Int _ as c)), Some k ->
+    not_match_with_k k (VConst c)
+  | PEConst (OrdinaryPConst (Int _)), PEConst (NegativePInt i), Some k ->
+    not_match_with_k k (VConst (Int (-i)))
+  | PEConst (NegativePInt _), PEConst (OrdinaryPConst (Int i)), Some k ->
+    not_match_with_k k (VConst (Int i))
+  | PETuple (p11, p12, pp1), PETuple (p21, p22, pp2), _ ->
+    let ok2 p21' td p22' =
+      match ptrnptrn_match_list ~strict_len:true kk (td, []) pp1 pp2 with
+      | Ok (td, pp2') -> Ok (td, PETuple (p21', p22', pp2'))
+      | Error (e, (dpf, pp2')) -> Error (e, (dpf, PETuple (p21', p22', pp2')))
+    in
+    let ok1 (to_pe_ex, (d, p, f)) p21' =
+      let err_p p22' = PETuple (p21', p22', pp2) in
+      ptrnptrn_match' to_pe_ex (d, p, kk) f p12 p22 err_p (ok2 p21')
+    in
+    ptrnptrn_match' to_pe_ex env fresh p11 p21 (fun p21' -> PETuple (p21', p22, pp2)) ok1
+  | PEEnum pp1, PEEnum pp2, _ ->
+    let init = (to_pe_ex, (dfs, pe_exprs, fresh)), [] in
+    (match ptrnptrn_match_list ~strict_len:false kk init pp1 pp2 with
+     | Ok (td, pp2') -> Ok (td, PEEnum pp2')
+     | Error (e, (dpf, pp2')) -> Error (e, (dpf, PEEnum pp2')))
+  | PECons (p11, p12), PECons (p21, p22), _ -> helper_conscons env fresh p11 p12 p21 p22
+  | PECons (p11, p12), PEEnum (p21 :: pp), _ ->
+    let pe_exprs, fresh = add fresh (ThTree (PEEnum pp)) pe_exprs, fresh + 1 in
+    helper_conscons (dfs, pe_exprs, kk) fresh p11 p12 p21 (Lnk (fresh - 1))
+  | PEEnum (p11 :: pp), PECons (p21, p22), _ ->
+    (helper_conscons (dfs, pe_exprs, kk) fresh p11 @@ P (None, PEEnum pp)) p21 p22
+  | _ -> typing_error
+
+and ptrnptrn_match_list ~strict_len kk init pp1 pp2 =
+  let rec helper = function
+    | Ok (td, pp'), [], [] -> Ok (td, List.rev pp')
+    | Ok ((_, dpf), pp'), _ :: _, [] ->
+      Error ((if strict_len then `Typing_err else `Not_match), (dpf, List.rev pp'))
+    | Error (_, (dpf, pp')), _ :: _, [] when strict_len ->
+      Error (`Typing_err, (dpf, List.rev pp'))
+    | Error (e, (dpf, pp')), _, [] -> Error (e, (dpf, List.rev pp'))
+    | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pp'), p1 :: pp1, p2 :: pp2 ->
+      (match ptrnptrn_match to_pe_ex (dfs, pe_exprs, kk) fresh p1 p2 with
+       | Ok (td, p2') -> helper (Ok (td, p2' :: pp'), pp1, pp2)
+       | Error (e, (dpf, p2')) -> helper (Error (e, (dpf, p2' :: pp')), pp1, pp2))
+    | Ok ((_, dpf), pp'), [], _ :: _ when strict_len ->
+      helper (Error (`Typing_err, (dpf, pp')), pp1, pp2)
+    | Ok ((_, dpf), pp'), [], _ :: _ -> helper (Error (`Not_match, (dpf, pp')), pp1, pp2)
+    | Error (_, (dpf, pp')), [], p2 :: pp2 when strict_len ->
+      helper (Error (`Typing_err, (dpf, p2 :: pp')), pp1, pp2)
+    | Error (e, (dpf, pp')), [], p2 :: pp2 ->
+      helper (Error (e, (dpf, p2 :: pp')), pp1, pp2)
+    | Error (e, (dpf, pp')), _ :: pp1, p2 :: pp2 ->
+      helper (Error (e, (dpf, p2 :: pp')), pp1, pp2)
+  in
+  helper (Ok init, pp1, pp2)
+
+and ptrnptrn_match to_pe_ex ((dfs, pe_exprs, kk) as env) fresh p1 p2 =
+  match p1, p2 with
+  | Lnk k1, (Lnk k2 | P (Some k2, _)) ->
+    Ok (((k1, Link k2) :: to_pe_ex, (dfs, pe_exprs, fresh)), p2)
+  | Lnk k1, P (None, pat2) ->
+    let dpf = dfs, add fresh (ThTree pat2) pe_exprs, fresh + 1 in
+    Ok (((k1, Link fresh) :: to_pe_ex, dpf), Lnk fresh)
+  | P (None, pat1), P (None, pat2) ->
+    (match patpat_match to_pe_ex env fresh pat1 pat2 with
+     | Ok (td, pat2') -> Ok (td, P (None, pat2'))
+     | Error (e, (dpf, pat2')) -> Error (e, (dpf, P (None, pat2'))))
+  | (P (k1, pat1) as p), (Lnk k2 | P (Some k2, _)) ->
+    let rec helper_key k =
+      let e = find k pe_exprs in
+      let dpf = dfs, pe_exprs, fresh in
+      let pm_res_hndl = function
+        | Ok (to_pe_ex, dpf) -> Ok ((to_pe_ex, dpf), Lnk k)
+        | Error (e, dpf) -> Error (e, (dpf, Lnk k))
+      in
+      match e with
+      | Er e -> Error (from_crit_err e, (dpf, Lnk k))
+      | V v ->
+        (match pattern_match_v p1 v to_pe_ex with
+         | Ok to_pe_ex -> Ok ((to_pe_ex, dpf), Lnk k)
+         | Error e -> Error (e, (dpf, Lnk k)))
+      | ThLeaf (kk, e) ->
+        pattern_match to_pe_ex (dfs, pe_exprs, kk) fresh (Some k) p1 e |> pm_res_hndl
+      | Link k' -> helper_key k'
+      | ThTree pat2 ->
+        let pe_exprs =
+          match k1 with
+          | None -> pe_exprs
+          | Some k1 -> add k1 (Link k) pe_exprs
+        in
+        (match patpat_match ~k:k1 to_pe_ex (dfs, pe_exprs, kk) fresh pat1 pat2 with
+         | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
+           Ok ((to_pe_ex, (dfs, add k (ThTree pat2') pe_exprs, fresh)), Lnk k)
+         | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
+           Error (e, ((dfs, add k (ThTree pat2') pe_exprs, fresh), Lnk k)))
+      | LazyLst ll -> ptrnll_match env fresh [] (Some k) ll p |> pm_res_hndl
+    in
+    helper_key k2
+  | P (Some _, _), P (None, pat2) ->
+    let p2' = P (Some fresh, pat2) in
+    let dfs, pe_exprs, fresh = dfs, add fresh (ThTree pat2) pe_exprs, fresh + 1 in
+    ptrnptrn_match to_pe_ex (dfs, pe_exprs, kk) fresh p1 p2'
+
+and ptrnll_match (dfs, pe_exprs, kk) fresh =
+  let rec helper dpf to_pe_ex src ll =
+    let peconsll_match ((dfs, pe_exprs, fresh) as dpf) to_pe_ex k p11 p12 = function
+      | None ->
+        let to_pe_ex =
+          match k with
+          | None -> to_pe_ex
+          | Some k -> (k, ThTree (PECons (p11, p12))) :: to_pe_ex
+        in
+        let v21, pe22 = lazylst_to_cons ll in
+        let* to_pe_ex = pattern_match_v p11 v21 to_pe_ex --| fun e -> e, dpf in
+        (match pe22 with
+         | `V v ->
+           (match pattern_match_v p12 v to_pe_ex with
+            | Ok to_pe_ex -> Ok (to_pe_ex, dpf)
+            | Error e -> Error (e, dpf))
+         | `LazyLst ll -> helper dpf to_pe_ex None ll p12)
+      | Some pk ->
+        let pat2, pe_exprs, fresh = lazylst_to_pat pe_exprs fresh ll in
+        let to_pe_ex =
+          match k with
+          | None -> to_pe_ex
+          | Some k -> (k, Link pk) :: to_pe_ex
+        in
+        (match
+           patpat_match to_pe_ex (dfs, pe_exprs, kk) fresh (PECons (p11, p12)) pat2
+         with
+         | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat2') ->
+           Ok (to_pe_ex, (dfs, add pk (ThTree pat2') pe_exprs, fresh))
+         | Error (e, ((dfs, pe_exprs, fresh), pat2')) ->
+           Error (e, (dfs, add pk (ThTree pat2') pe_exprs, fresh)))
+    in
+    function
+    | Lnk k -> Ok ((k, LazyLst ll) :: to_pe_ex, dpf)
+    | P (k, PECons (p1, p2)) -> peconsll_match dpf to_pe_ex k p1 p2 src
+    | P (_, PEEnum []) -> Error (`Not_match, dpf)
+    | P (k, PEEnum (p :: pp)) -> peconsll_match dpf to_pe_ex k p (P (None, PEEnum pp)) src
+    | _ -> Error (`Typing_err, dpf)
+  in
+  helper (dfs, pe_exprs, fresh)
 ;;
 
 let eval = eval_bnds TopLevel
