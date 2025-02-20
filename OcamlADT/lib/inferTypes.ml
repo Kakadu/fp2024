@@ -58,7 +58,9 @@ and pprint_type fmt = function
      | Type_arrow (_, _), _ -> fprintf fmt "(%a) -> %a" pprint_type ty1 pprint_type ty2
      | _ -> fprintf fmt "%a -> %a" pprint_type ty1 pprint_type ty2)
   | Type_tuple (t1, t2, ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1 :: t2 :: ty_lst)
-  | Type_construct (name,ty_list) -> fprintf fmt "%a%s"  pprint_type_tuple (ty_list) name
+  | Type_construct (name,[]) -> fprintf fmt "%s" name
+  | Type_construct (name,ty_list) -> fprintf fmt "%a %s"  pprint_type_tuple (ty_list) name
+  
 ;;
 
 (* | Type_list ty1 -> fprintf fmt "%a list" pprint_type ty1 *)

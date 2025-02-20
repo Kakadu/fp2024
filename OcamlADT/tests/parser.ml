@@ -1589,9 +1589,7 @@ let%expect_test "keyword" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1581, characters 2-44
-
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1581, characters 2-45
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1703,6 +1701,25 @@ print_int y
                 []),
                (Exp_apply ((Exp_ident "print_int"), (Exp_ident "y")))))
             )))
+      ]|}]
+;;
+
+let%expect_test "simple adt with pattern matching function + printing v3" =
+  test_program
+    {|
+type ('a,'b) shape = Circle of int
+  | Rectangle of int * int
+  | Square of 'a * 'b
+;;
+  |};
+  [%expect
+    {|
+    [(Str_adt (["a"; "b"], "shape",
+        (("Circle", [(Type_construct ("int", []))]),
+         [("Rectangle",
+           [(Type_construct ("int", [])); (Type_construct ("int", []))]);
+           ("Square", [(Type_var "a"); (Type_var "b")])])
+        ))
       ]|}]
 ;;
 
@@ -1847,7 +1864,7 @@ let x = [];;
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1834, characters 2-70
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1854, characters 2-35
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1981,5 +1998,5 @@ let fodd p n =
               [])
              ))
           ] |}]
-    
+     
     

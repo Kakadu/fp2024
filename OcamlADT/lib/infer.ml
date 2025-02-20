@@ -297,22 +297,47 @@ let rec infer_pat ~debug pat env =
         rest
     in
     return (env3, Type_tuple (typ1, typ2, typ3))
-  | Pat_constraint (pat, typ) ->
-    let* pat_env, pat_typ = infer_pat ~debug pat env in
-    let* uni_sub = Substitution.unify pat_typ typ in
-    let new_env = TypeEnv.apply uni_sub pat_env in
-    return (new_env, Substitution.apply uni_sub pat_typ)
-    (*remove?*)
   | Pat_construct ("()", None) -> return (env, Type_construct ("unit", []))
   | Pat_construct ("Some", Some pat) ->
     let* env, typ = infer_pat ~debug pat env in
     return (env, Type_construct ("option", [ typ ]))
   | Pat_construct (id, None) when id = "false" || id = "true" ->
     return (env, Type_construct ("bool", []))
-  | Pat_construct _ ->
-    let* fresh = fresh_var in
-    return (env, fresh)
+  | Pat_construct (name, None) ->
+    let* sub, typ =
+      match TypeEnv.find name env with
+      | Some el ->
+        let* typ = instantiate el in
+        return (Substitution.empty, typ)
+      | None -> failwith "noname"
+    in
+    return (env, typ)
+  | Pat_construct (name, Some pat) ->
+    let* sub, typ =
+      match TypeEnv.find name env with
+      | Some el ->
+        let* typ = instantiate el in
+        return (Substitution.empty, typ)
+      | None -> failwith "noname"
+    in
+    let* env, typ =
+      match typ with
+      | Type_arrow (arg, adt) ->
+        let* patenv, typepat = infer_pat ~debug pat env in
+        let* uni_sub = Substitution.unify arg typepat in
+        let new_env = TypeEnv.apply uni_sub patenv in
+        return (new_env, Substitution.apply uni_sub adt)
+      | _ -> failwith "shit"
+    in
+    return (env, typ)
+  | Pat_constraint (pat, typ) ->
+    let* pat_env, pat_typ = infer_pat ~debug pat env in
+    let* uni_sub = Substitution.unify pat_typ typ in
+    let new_env = TypeEnv.apply uni_sub pat_env in
+    return (new_env, Substitution.apply uni_sub pat_typ)
 ;;
+
+(*remove?*)
 
 (*remove?^^^*)
 
@@ -464,6 +489,18 @@ let rec infer_exp ~debug exp env =
       | [] -> infer_exp ~debug expr new_env
     in
     return (sub1, Type_arrow (Substitution.apply sub1 typ1, typ2))
+  | Exp_construct ("()", None) -> return (Substitution.empty, Type_construct ("unit", []))
+  | Exp_construct ("Some", Some expr) ->
+    let* sub, typ = infer_exp ~debug expr env in
+    return (sub, Type_construct ("option", [ typ ]))
+  | Exp_construct (id, None) when id = "false" || id = "true" ->
+    return (Substitution.empty, Type_construct ("bool", []))
+  | Exp_construct (name, None) ->
+      let* ty, sub = infer_exp ~debug (Exp_ident name) env in
+      return (ty, sub)
+  | Exp_construct (name, Some expr) ->
+      let* ty, sub = infer_exp ~debug  (Exp_apply (Exp_ident name, expr)) env in
+      return (ty, sub)
   | Exp_tuple (exp1, exp2, rest) ->
     let* sub1, typ1 = infer_exp ~debug exp1 env in
     let new_env = TypeEnv.apply sub1 env in
@@ -583,16 +620,6 @@ let rec infer_exp ~debug exp env =
     let* comp_sub = Substitution.compose sub uni_sub in
     return (comp_sub, typ1)
     (*remove?*)
-  | Exp_construct ("()", None) -> return (Substitution.empty, Type_construct ("unit", []))
-  | Exp_construct ("Some", Some expr) ->
-    let* sub, typ = infer_exp ~debug expr env in
-    return (sub, Type_construct ("option", [ typ ]))
-  | Exp_construct (id, None) when id = "false" || id = "true" ->
-    return (Substitution.empty, Type_construct ("bool", []))
-  | Exp_construct _ ->
-    let* fresh = fresh_var in
-    return (Substitution.empty, fresh)
-    (*remove?^^^*)
   | _ -> failwith "unlucky"
 
 and infer_cases ~debug env cases tyexp typat subst =
@@ -728,7 +755,15 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
 
 open Ast.Pattern
 open Ast.Structure
-
+let check_poly_types typ typ_list =
+  match typ with
+  | Type_var x -> 
+    (match Base.List.find ~f:(fun y -> String.equal x y) typ_list with
+      | Some _ -> typ
+      | None -> failwith "wrong poly types"
+    )
+  | _ -> typ
+  ;;
 let get_names_adt env poly_list =
   RList.fold_right
     ~f:(fun poly acc ->
@@ -740,19 +775,19 @@ let get_names_adt env poly_list =
     ~init:(return (env, []))
 ;;
 
-let infer_structure_item ~debug env item =
+let infer_structure_item ~debug env item marity =
   match item with
   | Str_eval exp ->
     let* _, typ = infer_exp ~debug exp env in
     let new_env = TypeEnv.extend env "-" (Forall (VarSet.empty, typ)) in
-    return new_env
+    return (new_env, marity)
   | Str_value (Nonrecursive, (value_binding, rest)) ->
     let* env, sub =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
     in
     if debug then Stdlib.Format.printf "DEBUG: AFTER LKet\n";
     (* if debug then TypeEnv.pp_env Format.std_formatter env; *)
-    return env
+    return (env, marity)
   | Str_value (Recursive, (value_binding, rest)) ->
     let* new_env, fresh_vars = add_names_rec env (value_binding :: rest) in
     let* new_env, sub =
@@ -764,24 +799,70 @@ let infer_structure_item ~debug env item =
         fresh_vars
     in
     if debug then Stdlib.Format.printf "DEBUG: AFTER LKeREC\n";
-    return new_env
+    return (new_env, marity)
   | Str_adt (poly, name, (variant, rest)) ->
+    if debug then Format.printf "DEBUG: In ADT\n";
     let* env, poly_types = get_names_adt env poly in
     let adt_type = Type_construct (name, poly_types) in
-    let env = TypeEnv.extend env name (Forall (VarSet.empty, adt_type)) in
-    let* env =
-      RList.fold_left (variant :: rest) ~init:(return env) ~f:(fun acc variant ->
-        let* env_acc = return acc in
-        return env_acc)
+    let type_arity = List.length poly in
+    let arity_map = Base.Map.set marity ~key:name ~data:type_arity in
+    (* if debug then (
+       Format.printf "Marity map:\n";
+       Base.Map.iteri arity_map ~f:(fun ~key ~data ->
+       Format.printf "Key: %s, Value: %d\n" key data
+       )
+       ); *)
+    (* let env = TypeEnv.extend env name (Forall (VarSet.empty, adt_type)) in *)
+    let* constrs =
+      RList.fold_left
+        (variant :: rest)
+        ~init:(return env)
+        ~f:(fun acc (constr_name, constr_types) ->
+          let* env_acc = return acc in
+          let* fresh = fresh_var in
+          let new_env =
+            match constr_types with
+            | [] -> TypeEnv.extend env_acc constr_name (Forall (VarSet.empty, adt_type))
+            | hd :: [] ->
+              let _ = check_poly_types hd poly in
+              TypeEnv.extend
+                env_acc
+                constr_name
+                (Forall (VarSet.empty, Type_arrow (hd, adt_type)))
+            | [ hd; tl ] ->
+              let _ = Base.List.map [hd;tl] ~f:(fun typ -> check_poly_types typ poly) in
+              TypeEnv.extend
+                env_acc
+                constr_name
+                (Forall (VarSet.empty, Type_arrow (Type_tuple (hd, tl, []), adt_type)))
+            | hd :: tl1 :: tl2 ->
+              let _ = Base.List.map (hd::tl1::tl2) ~f:(fun typ -> check_poly_types typ poly) in
+              TypeEnv.extend
+                env_acc
+                constr_name
+                (Forall (VarSet.empty, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type)))
+          in
+          (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
+          return new_env)
     in
-    return env
-  | _ -> failwith "Unsupported pattern in let binding"
+    return (constrs, arity_map)
 ;;
 
 let infer_program ~debug program env =
-  let* env =
-    RList.fold_left program ~init:(return env) ~f:(infer_structure_item ~debug)
+  let marity = Base.Map.empty (module Base.String) in
+  let* env, arr =
+    RList.fold_left
+      program
+      ~init:(return (env, marity))
+      ~f:(fun acc item ->
+        let* env_acc, arr_acc = return acc in
+        infer_structure_item ~debug env_acc item arr_acc)
   in
+  if debug
+  then (
+    Format.printf "Marity map:\n";
+    Base.Map.iteri arr ~f:(fun ~key ~data ->
+      Format.printf "Key: %s, Value: %d\n" key data));
   return env
 ;;
 
@@ -820,4 +901,3 @@ let env_with_print_funs =
 let run_infer_program ?(debug = false) (program : Ast.program) env =
   run (infer_program ~debug program env)
 ;;
-  
