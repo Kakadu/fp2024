@@ -52,7 +52,7 @@ let trim t = skip_sep *> t <* skip_sep
 let token t = skip_sep *> string t <* skip_sep
 let round_par p = token "(" *> p <* token ")"
 let square_par p = token "[" *> p <* token "]"
-let round_par_many t = fix @@ fun p -> round_par @@ p <|> trim @@ t
+let round_par_many t = fix @@ fun p -> trim @@ t <|> round_par @@ p
 let round_par_many1 t = round_par_many @@ round_par @@ t
 
 (* Parse first letter then try parse the rest of id *)
@@ -399,7 +399,6 @@ let parse_let_biding parse_expression =
   let* rec_flag = parse_rec_flag in
   let* let_declaration = parse_let_declaration in
   let* let_definition = parse_expression in
-  let* let_double_semicolon = token ";;" <|> return "" in
   return @@ Let_binding (rec_flag, let_declaration, let_definition)
 ;;
 
@@ -444,7 +443,7 @@ let parse_anonymouse_fun parse_expression =
     <|> round_par_many1 @@ parse_pattern
   in
   let* list_of_arguments = token "fun" *> (many1 @@ parse_argument) in
-  let* parse_expression = token "->" *> parse_expression in
+  let* parse_expression = token "->" *> (round_par_many @@ parse_expression) in
   return @@ Expr_anonym_fun (list_of_arguments, parse_expression)
 ;;
 
@@ -578,10 +577,8 @@ let parse_bin_op_expression parse_expression =
 
 (* ---expression parser--- *)
 
-let parse_expression_without_tuple_list =
+let parse_expression_without_tuple_list parse_expression =
   (*also this implemention doesn't consider tuple and list_constructor_case constructions, then we will add it*)
-  fix
-  @@ fun parse_expression ->
   type_annotation
   @@ choice
        [ parse_bin_op_expression parse_expression
@@ -597,7 +594,7 @@ let parse_expression_without_tuple_list =
 
 let parse_expr_list_construct parse_expression =
   let parse_element =
-    round_par_many @@ parse_expression_without_tuple_list
+    round_par_many @@ parse_expression_without_tuple_list parse_expression
     <|> round_par_many1 @@ parse_expression
   in
   let* first = parse_element in
@@ -610,7 +607,7 @@ let parse_expr_tuple parse_expression =
     round_par_many
     @@ choice
          [ parse_expr_list_construct parse_expression
-         ; parse_expression_without_tuple_list
+         ; parse_expression_without_tuple_list parse_expression
          ]
     <|> round_par_many1 @@ parse_expression
   in
@@ -620,13 +617,12 @@ let parse_expr_tuple parse_expression =
 ;;
 
 let parse_expression =
-  round_par_many
-  @@ fix
+  fix
   @@ fun parse_expression ->
   choice
     [ parse_expr_tuple parse_expression
     ; parse_expr_list_construct parse_expression
-    ; parse_expression_without_tuple_list
+    ; parse_expression_without_tuple_list parse_expression
     ]
 ;;
 
