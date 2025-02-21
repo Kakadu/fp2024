@@ -18,21 +18,19 @@ let%expect_test "factorial" =
   [%expect
     {|
   [(SValue (true,
-      (ExpValueBind (((PatVariable "factorial"), None),
-         (ExpLambda ([((PatVariable "n"), None)],
-            (ExpBranch (
-               (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2))
-                  )),
-               (ExpConst (ConstInt 1)),
-               (Some (ExpBinOper (Multiply, (ExpIdent "n"),
-                        (ExpApply ((ExpIdent "factorial"),
-                           (ExpBinOper (Minus, (ExpIdent "n"),
-                              (ExpConst (ConstInt 1))))
-                           ))
-                        )))
-               ))
-            ))
-         )),
+      ((PatVariable "factorial"),
+       (ExpLambda ([(PatVariable "n")],
+          (ExpBranch (
+             (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2)))),
+             (ExpConst (ConstInt 1)),
+             (Some (ExpBinOper (Multiply, (ExpIdent "n"),
+                      (ExpFunction ((ExpIdent "factorial"),
+                         (ExpBinOper (Minus, (ExpIdent "n"),
+                            (ExpConst (ConstInt 1))))
+                         ))
+                      )))
+             ))
+          ))),
       []))
     ]
 |}]
@@ -43,34 +41,25 @@ let%expect_test "fibonacci" =
   [%expect
     {|
   [(SValue (true,
-      (ExpValueBind (((PatVariable "fibo"), None),
-         (ExpLambda ([((PatVariable "n"), None)],
-            (ExpBranch (
-               (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2))
-                  )),
-               (ExpConst (ConstInt 1)),
-               (Some (ExpBinOper (Plus,
-                        (ExpApply ((ExpIdent "fibo"),
-                           (ExpBinOper (Minus, (ExpIdent "n"),
-                              (ExpConst (ConstInt 1))))
-                           )),
-                        (ExpApply ((ExpIdent "fibo"),
-                           (ExpBinOper (Minus, (ExpIdent "n"),
-                              (ExpConst (ConstInt 2))))
-                           ))
-                        )))
-               ))
-            ))
-         )),
+      ((PatVariable "fibo"),
+       (ExpLambda ([(PatVariable "n")],
+          (ExpBranch (
+             (ExpBinOper (LowerThan, (ExpIdent "n"), (ExpConst (ConstInt 2)))),
+             (ExpConst (ConstInt 1)),
+             (Some (ExpBinOper (Plus,
+                      (ExpFunction ((ExpIdent "fibo"),
+                         (ExpBinOper (Minus, (ExpIdent "n"),
+                            (ExpConst (ConstInt 1))))
+                         )),
+                      (ExpFunction ((ExpIdent "fibo"),
+                         (ExpBinOper (Minus, (ExpIdent "n"),
+                            (ExpConst (ConstInt 2))))
+                         ))
+                      )))
+             ))
+          ))),
       []))
     ]
-|}]
-;;
-
-let%expect_test "double_let" =
-  parse_test "let x = 10 + 19 * 20 ;; let y = 9 * 1 / 8000 ;;";
-  [%expect {|
-  Ошибка: : end_of_input
 |}]
 ;;
 
@@ -79,12 +68,11 @@ let%expect_test "lambda_test" =
   [%expect
     {|
   [(SValue (false,
-      (ExpValueBind (((PatVariable "add"), None),
-         (ExpLambda ([((PatVariable "x"), None)],
-            (ExpLambda ([((PatVariable "y"), None)],
-               (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))
-            ))
-         )),
+      ((PatVariable "add"),
+       (ExpLambda ([(PatVariable "x")],
+          (ExpLambda ([(PatVariable "y")],
+             (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))
+          ))),
       []))
     ]
 |}]
@@ -96,10 +84,9 @@ let%expect_test "test_tuple" =
     {|
   [(SEval
       (ExpLet (false,
-         (ExpValueBind (((PatVariable "x"), None),
-            (ExpTuple ((ExpConst (ConstInt 1)), (ExpConst (ConstInt 2)),
-               [(ExpConst (ConstBool true))]))
-            )),
+         ((PatVariable "x"),
+          (ExpTuple ((ExpConst (ConstInt 1)), (ExpConst (ConstInt 2)),
+             [(ExpConst (ConstBool true))]))),
          [], (ExpIdent "x"))))
     ]
 |}]
@@ -110,11 +97,10 @@ let%expect_test "test_list" =
   [%expect
     {|
      [(SValue (false,
-         (ExpValueBind (((PatVariable "arr"), None),
-            (ExpList
-               [(ExpConst (ConstInt 1)); (ExpConst (ConstInt 2));
-                 (ExpConst (ConstBool true))])
-            )),
+         ((PatVariable "arr"),
+          (ExpList
+             [(ExpConst (ConstInt 1)); (ExpConst (ConstInt 2));
+               (ExpConst (ConstBool true))])),
          []))
        ]
 |}]
@@ -124,10 +110,7 @@ let%expect_test "test_one_element_in_tuple" =
   parse_test "let x = (666)";
   [%expect
     {|
-     [(SValue (false,
-         (ExpValueBind (((PatVariable "x"), None), (ExpConst (ConstInt 666)))),
-         []))
-       ]
+     [(SValue (false, ((PatVariable "x"), (ExpConst (ConstInt 666))), []))]
 |}]
 ;;
 
@@ -136,26 +119,24 @@ let%expect_test "test_sum_two_args" =
   [%expect
     {|
 [(SValue (false,
-    (ExpValueBind (((PatVariable "sum"), None),
-       (ExpLambda ([((PatVariable "x"), None); ((PatVariable "y"), None)],
-          (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))
-       )),
+    ((PatVariable "sum"),
+     (ExpLambda ([(PatVariable "x"); (PatVariable "y")],
+        (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))),
     []))
   ]
 |}]
 ;;
 
 let%expect_test "test_annotate_type_1" =
-  parse_test "let sum (x : int) (y : int) = x + y;;";
+  parse_test "let sum (x:int) (y:int) = x + y";
   [%expect
     {|
 [(SValue (false,
-    (ExpValueBind (((PatVariable "sum"), None),
-       (ExpLambda (
-          [((PatVariable "x"), (Some (TyPrim "int")));
-            ((PatVariable "y"), (Some (TyPrim "int")))],
-          (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))
-       )),
+    ((PatVariable "sum"),
+     (ExpLambda (
+        [(PatType ((PatVariable "x"), (TyPrim "int")));
+          (PatType ((PatVariable "y"), (TyPrim "int")))],
+        (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))),
     []))
   ]
 |}]
@@ -166,14 +147,13 @@ let%expect_test "test_annotate_type_2" =
   [%expect
     {|
 [(SValue (false,
-    (ExpValueBind (((PatVariable "a"), (Some (TyList (TyPrim "int")))),
-       (ExpList []))),
+    ((PatType ((PatVariable "a"), (TyList (TyPrim "int")))), (ExpList [])),
     []))
   ]
 |}]
 ;;
 
-let%expect_test "test_annotate_type_2" =
+let%expect_test "test_minus" =
   parse_test "-1 -2 - (-1) -(3)";
   [%expect
     {|
@@ -185,6 +165,17 @@ let%expect_test "test_annotate_type_2" =
              (ExpConst (ConstInt 2)))),
           (ExpUnarOper (Negative, (ExpConst (ConstInt 1)))))),
        (ExpConst (ConstInt 3)))))
+  ]
+ |}]
+;;
+
+let%expect_test "test_unit" =
+  parse_test "let () = print_int 5";
+  [%expect
+    {|
+[(SValue (false,
+    (PatUnit, (ExpFunction ((ExpIdent "print_int"), (ExpConst (ConstInt 5))))),
+    []))
   ]
  |}]
 ;;

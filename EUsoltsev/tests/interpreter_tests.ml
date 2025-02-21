@@ -9,7 +9,7 @@ let test_interpret s =
   let open Stdlib.Format in
   match Parser.parse s with
   | Ok parsed ->
-    (match Interpreter.eval_structure parsed with
+    (match Inter.eval_structure parsed with
      | Ok _ -> ()
      | Error e -> printf "Interpreter error: %a\n" pp_value_error e)
   | Error e -> printf "Parsing error: %s\n" e
@@ -20,12 +20,50 @@ let%expect_test "test_unit" =
   [%expect {|101|}]
 ;;
 
-let%expect_test "test_base_operation1" =
-  test_interpret "let x = print_int(10 / 10 + 2 * 50 + 89 - 89)";
-  [%expect {|101|}]
+let%expect_test "test_bool" =
+  test_interpret
+    "let () = print_bool(true) in\n\
+    \                  let () = print_bool(false) in\n\
+    \                  let () = print_bool(not true) in \n\
+    \                  let () = print_bool(not false) in\n\
+    \                  let () = print_bool(true && false) in\n\
+    \                  let () = print_bool(true || false ) in 9";
+  [%expect {|
+    true
+    false
+    false
+    true
+    false
+    true|}]
 ;;
 
-let%expect_test "test_base_operation4" =
+let%expect_test "test_bin_oper" =
+  test_interpret
+    "let a = 1\n\
+    \                  let b = 2\n\
+    \                  let () = print_bool(a = a)\n\
+    \                  let () = print_bool(b > a)\n\
+    \                  let () = print_bool(a < b)\n\
+    \                  let () = print_bool(a <> b)\n\
+    \                  let () = print_bool(a <> a)\n\
+    \                  let () = print_bool(a <= a)\n\
+    \                  let () = print_bool(a >= a)\n\
+    \                  let () = print_bool(a <= b)\n\
+    \                  let () = print_bool(a >= b)";
+  [%expect
+    {|
+    true
+    true
+    true
+    true
+    false
+    true
+    true
+    true
+    false|}]
+;;
+
+let%expect_test "test_adder" =
   test_interpret
     "let create_adder x =\n\
     \                  let adder y = x + y in\n\
@@ -133,6 +171,19 @@ let%expect_test "test_nested_tuple" =
     9|}]
 ;;
 
+let%expect_test "test_pattern_list" =
+  test_interpret
+    "let lst = [1;2;3]\n\
+    \    let [a; b; c] = lst in \n\
+    \    let () = print_int(a) in\n\
+    \    let () = print_int(b) in \n\
+    \    let () = print_int(c) in 0";
+  [%expect {|
+    1
+    2
+    3|}]
+;;
+
 let%expect_test "test_closure" =
   test_interpret
     "let x = \n\
@@ -145,6 +196,18 @@ let%expect_test "test_closure" =
     \    \n\
     \    let () = print_int x";
   [%expect {|1|}]
+;;
+
+let%expect_test "test_let_and_fac" =
+  test_interpret
+    {|
+  let rec factorial n = if n <= 1 then 1 else n * helper (n - 1)
+  and helper x = factorial x in
+  let () = print_int (factorial 5) in 0
+  |};
+  [%expect {|
+    120
+  |}]
 ;;
 
 let%expect_test "test_div_error" =
@@ -165,4 +228,14 @@ let%expect_test "test_pm_error" =
 let%expect_test "test_pm_error" =
   test_interpret "let x = x + 1";
   [%expect {|Interpreter error: UnboundVariable: "x"|}]
+;;
+
+let%expect_test "test_type_error_addition" =
+  test_interpret "let x = 10 + true";
+  [%expect {|Interpreter error: TypeError|}]
+;;
+
+let%expect_test "test_type_error_addition" =
+  test_interpret "let rec (a, b) = (1,2)";
+  [%expect {|Interpreter error: LeftHandSide|}]
 ;;

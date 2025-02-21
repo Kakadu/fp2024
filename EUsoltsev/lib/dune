@@ -4,6 +4,6 @@
  (modules Inferencer Ast Parser Interpreter)
  (libraries base angstrom)
  (preprocess
-  (pps bisect_ppx ppx_deriving.show))
+  (pps ppx_deriving.show))
  (instrumentation
   (backend bisect_ppx)))

@@ -2,7 +2,7 @@
   (name tests)
   (libraries EUsoltsev_lib)
   (preprocess
-    (pps bisect_ppx ppx_expect ppx_deriving.show))
+    (pps ppx_expect ppx_deriving.show))
   (inline_tests)
   (instrumentation
     (backend bisect_ppx)))
