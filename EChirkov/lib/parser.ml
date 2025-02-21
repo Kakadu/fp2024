@@ -6,7 +6,7 @@ open Ast
 open Angstrom
 open Base
 
-(* basic stuff *)
+(* basic *)
 
 let is_ws = function
   | '\x20' | '\x0a' | '\x0d' | '\x09' -> true
@@ -31,10 +31,12 @@ let newline =
 
 let newlines = skip_many1 newline
 
-(* more complex stuff *)
+(* patterns *)
+
+let p_pattern = return PAny
 
 (* exprs *)
-let p_pattern = return PAny
+
 let p_expression = return (EConst (CInt 23))
 let p_structure_eval = p_expression
 
@@ -44,7 +46,7 @@ let p_rec_flag =
 
 let p_binding = lift2 (fun p e -> p, e) p_pattern p_expression
 
-(* struct, top level stuff *)
+(* struct, top level *)
 
 let p_structure_value =
   lift3
