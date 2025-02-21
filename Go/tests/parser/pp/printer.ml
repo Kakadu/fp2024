@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -241,10 +241,9 @@ let print_if_for_init pblock = function
   | Init_receive chan -> asprintf "<-%s" (print_expr pblock chan)
 ;;
 
-let rec print_if pblock if' =
-  let { init; cond; if_body; else_body } = if' in
+let rec print_if pblock { if_init; if_cond; if_body; else_body } =
   let print_init =
-    match init with
+    match if_init with
     | Some init -> print_if_for_init pblock init ^ "; "
     | None -> ""
   in
@@ -257,33 +256,31 @@ let rec print_if pblock if' =
   asprintf
     "if %s%s %s %s"
     print_init
-    (print_expr pblock cond)
+    (print_expr pblock if_cond)
     (pblock if_body)
     print_else_body
 ;;
 
-let print_for pblock = function
-  | Stmt_for { init; cond; post; body } ->
-    let print_init =
-      match init with
-      | Some init -> print_if_for_init pblock init
-      | None -> ""
-    in
-    let print_cond =
-      match cond with
-      | Some cond -> " " ^ print_expr pblock cond
-      | None -> ""
-    in
-    let print_post =
-      match post with
-      | Some post -> " " ^ print_if_for_init pblock post
-      | None -> ""
-    in
-    (match init, cond, post with
-     | None, None, None -> asprintf "for %s" (pblock body)
-     | None, Some _, None -> asprintf "for%s %s" print_cond (pblock body)
-     | _ -> asprintf "for %s;%s;%s %s" print_init print_cond print_post (pblock body))
-  | _ -> ""
+let print_for pblock { for_init; for_cond; for_post; for_body } =
+  let print_init =
+    match for_init with
+    | Some init -> print_if_for_init pblock init
+    | None -> ""
+  in
+  let print_cond =
+    match for_cond with
+    | Some cond -> " " ^ print_expr pblock cond
+    | None -> ""
+  in
+  let print_post =
+    match for_post with
+    | Some post -> " " ^ print_if_for_init pblock post
+    | None -> ""
+  in
+  match for_init, for_cond, for_post with
+  | None, None, None -> asprintf "for %s" (pblock for_body)
+  | None, Some _, None -> asprintf "for%s %s" print_cond (pblock for_body)
+  | _ -> asprintf "for %s;%s;%s %s" print_init print_cond print_post (pblock for_body)
 ;;
 
 let print_stmt pblock = function
@@ -302,7 +299,7 @@ let print_stmt pblock = function
   | Stmt_chan_send (chan, expr) -> asprintf "%s <- %s" chan (print_expr pblock expr)
   | Stmt_chan_receive chan -> asprintf "<-%s" (print_expr pblock chan)
   | Stmt_if if' -> print_if pblock if'
-  | Stmt_for _ as for' -> print_for pblock for'
+  | Stmt_for for' -> print_for pblock for'
 ;;
 
 let rec print_block block =

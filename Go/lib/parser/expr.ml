@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -153,7 +153,9 @@ let parse_const_array pexpr =
     square_brackets (parse_int >>| Option.some <|> string "..." *> return None)
   in
   let* type' = ws *> parse_type in
-  let* inits = curly_braces (sep_by_comma pexpr) in
+  let* inits =
+    curly_braces (sep_by_comma pexpr <* (ws_line <* char ',' <* ws <|> return ()))
+  in
   let size =
     match size with
     | Some size -> size

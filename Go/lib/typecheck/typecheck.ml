@@ -1,9 +1,9 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
 open TypeCheckMonad
-open TypeCheckMonad.CheckMonad
+open TypeCheckMonad.Monad
 open Errors
 open Format
 open Ast
@@ -13,31 +13,38 @@ let get_afunc_type afunc =
 ;;
 
 let print_type = function
-  | Ctype x -> PpType.print_type x
+  | Ctype t -> PpType.print_type t
   | Ctuple x -> asprintf "(%s)" (String.concat ", " (List.map PpType.print_type x))
-  | _ -> asprintf "WTF Polymorphic type"
+  | _ -> "<not printable type>"
+;;
+
+let fail_if_break_continue =
+  iter (function
+    | Stmt_break -> fail (Type_check_error (Unexpected_operation "break"))
+    | Stmt_continue -> fail (Type_check_error (Unexpected_operation "continue"))
+    | _ -> return ())
 ;;
 
 let check_return body =
-  let rec find_retrun_rec body =
+  let rec find_return_rec body =
     List.mem
       true
       (List.map
          (function
            | Stmt_return _ -> true
            | Stmt_if if' ->
-             find_retrun_rec if'.if_body
+             find_return_rec if'.if_body
              && (function
-                  | Some (Else_block body) -> find_retrun_rec body
-                  | Some (Else_if if') -> find_retrun_rec [ Stmt_if if' ]
+                  | Some (Else_block body) -> find_return_rec body
+                  | Some (Else_if if') -> find_return_rec [ Stmt_if if' ]
                   | None -> false)
                   if'.else_body
-           | Stmt_for for' -> find_retrun_rec for'.body
-           | Stmt_block block -> find_retrun_rec block
+           | Stmt_for for' -> find_return_rec for'.for_body
+           | Stmt_block block -> find_return_rec block
            | _ -> false)
          body)
   in
-  if find_retrun_rec body
+  if find_return_rec body
   then return ()
   else fail (Type_check_error (Missing_return "Missing return"))
 ;;
@@ -50,6 +57,7 @@ let check_anon_func afunc cstmt =
     | [] -> return ())
   *> save_func (Ctuple afunc.returns)
   *> save_args
+  *> fail_if_break_continue afunc.body
   *> iter cstmt afunc.body
   *> delete_func
   *> delete_env
@@ -57,16 +65,20 @@ let check_anon_func afunc cstmt =
 ;;
 
 let eq_type t1 t2 =
-  if equal_ctype t1 t2
-  then return t1
-  else
-    fail
-      (Type_check_error
-         (Mismatched_types (Printf.sprintf "%s and %s" (print_type t1) (print_type t2))))
+  match t1, t2 with
+  | Cpolymorphic Recover, t -> return t
+  | t, Cpolymorphic Recover -> return t
+  | t1, t2 ->
+    if t1 = t2
+    then return t1
+    else
+      fail
+        (Type_check_error
+           (Mismatched_types (Printf.sprintf "%s and %s" (print_type t1) (print_type t2))))
 ;;
 
 let check_eq t1 t2 =
-  if equal_ctype t1 t2
+  if t1 = t2
   then return ()
   else
     fail
@@ -131,7 +143,7 @@ let check_func_call rexpr rarg (func, args) =
            (Type_check_error (Invalid_operation "Make should take at least 1 argument"))
        | [ x ] ->
          (match x with
-          | Ctype (Type_chan (x, y)) -> return [ Ctype (Type_chan (x, y)) ]
+          | Ctype (Type_chan t) -> return [ Ctype (Type_chan t) ]
           | _ ->
             fail
               (Type_check_error
@@ -205,12 +217,13 @@ let rec check_expr cstmt rarg = function
           fail
             (Type_check_error
                (Mismatched_types "make should be used like make(T, arg) when T is a type")))
+     | Cpolymorphic Recover -> return (Cpolymorphic Recover)
      | _ ->
        fail (Type_check_error (Mismatched_types "Function without returns in expression")))
   | Expr_chan_receive chan ->
     check_expr cstmt rarg chan
     >>= (function
-     | Ctype (Type_chan (_, y)) -> return (Ctype y)
+     | Ctype (Type_chan t) -> return (Ctype t)
      | _ -> fail (Type_check_error (Mismatched_types "Chan type mismatch")))
   | Expr_index (array, index) ->
     (check_expr cstmt rarg index >>= check_eq (Ctype Type_int))
@@ -231,8 +244,8 @@ let check_nil arg possible_nil =
   match possible_nil with
   | Cpolymorphic Nil ->
     (match arg with
-     | Ctype (Type_chan (x, y)) -> return (Ctype (Type_chan (x, y)))
-     | Ctype (Type_func (x, y)) -> return (Ctype (Type_func (x, y)))
+     | Ctype (Type_chan t) -> return (Ctype (Type_chan t))
+     | Ctype (Type_func (args, returns)) -> return (Ctype (Type_func (args, returns)))
      | t ->
        fail
          (Type_check_error
@@ -298,6 +311,7 @@ let check_short_var_decl cstmt = function
                  fail
                    (Type_check_error
                       (Invalid_operation "Cannot assign nil in short var declaration"))
+               | Cpolymorphic Recover -> return (Cpolymorphic Recover)
                | _ ->
                  fail
                    (Type_check_error
@@ -379,7 +393,7 @@ let check_chan_send cstmt (id, expr) =
   let* expr_type = check_expr cstmt (retrieve_arg cstmt) expr in
   retrieve_ident id
   >>= function
-  | Ctype (Type_chan (_, chan_type)) -> check_eq expr_type (Ctype chan_type)
+  | Ctype (Type_chan t) -> check_eq expr_type (Ctype t)
   | _ -> fail (Type_check_error (Mismatched_types "expected chan type")) *> return ()
 ;;
 
@@ -411,11 +425,15 @@ let rec check_stmt = function
       (check_expr check_stmt (retrieve_arg check_stmt))
       (retrieve_arg check_stmt)
       call
-  | Stmt_go call ->
-    check_func_call
-      (check_expr check_stmt (retrieve_arg check_stmt))
-      (retrieve_arg check_stmt)
-      call
+  | Stmt_go (func, args) ->
+    ((check_expr check_stmt (retrieve_arg check_stmt)) func
+     >>= function
+     | Cpolymorphic Make -> fail (Type_check_error Go_make)
+     | _ -> return ())
+    *> check_func_call
+         (check_expr check_stmt (retrieve_arg check_stmt))
+         (retrieve_arg check_stmt)
+         (func, args)
   | Stmt_chan_send send -> check_chan_send check_stmt send
   | Stmt_block block -> add_env *> iter check_stmt block *> delete_env
   | Stmt_break -> return ()
@@ -437,28 +455,28 @@ let rec check_stmt = function
      >>= iter (fun (expr, return_type) ->
        check_expr check_stmt (retrieve_arg check_stmt) expr >>= check_eq return_type))
     *> return ()
-  | Stmt_if if' ->
+  | Stmt_if { if_init; if_cond; if_body; else_body } ->
     add_env
-    *> check_init check_stmt if'.init
-    *> (check_expr check_stmt (retrieve_arg check_stmt) if'.cond
+    *> check_init check_stmt if_init
+    *> (check_expr check_stmt (retrieve_arg check_stmt) if_cond
         >>= check_eq (Ctype Type_bool))
-    *> iter check_stmt if'.if_body
+    *> iter check_stmt if_body
     *> delete_env
     *>
-      (match if'.else_body with
+      (match else_body with
       | Some (Else_block block) -> iter check_stmt block
       | Some (Else_if if') -> check_stmt (Stmt_if if')
       | None -> return ())
-  | Stmt_for { init; cond; post; body } ->
+  | Stmt_for { for_init; for_cond; for_post; for_body } ->
     add_env
-    *> check_init check_stmt init
-    *> (match cond with
+    *> check_init check_stmt for_init
+    *> (match for_cond with
       | Some expr ->
         check_expr check_stmt (retrieve_arg check_stmt) expr
         >>= check_eq (Ctype Type_bool)
       | None -> return ())
-    *> check_init check_stmt post
-    *> iter check_stmt body
+    *> check_init check_stmt for_post
+    *> iter check_stmt for_body
     *> delete_env
 ;;
 

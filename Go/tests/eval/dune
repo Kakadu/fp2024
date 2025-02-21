@@ -1,0 +1,12 @@
+(library
+ (name evalUnitTest)
+ (libraries ast parse eval typecheck pprinter errors)
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx))
+ (preprocess
+  (pps ppx_expect)))
+
+(cram
+ (applies_to examples)
+ (deps ../../bin/interpret.exe ./examples.go))

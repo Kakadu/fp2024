@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -6,7 +6,7 @@ open Parse
 open Pprinter.Printer
 open Pp
 
-(********** break, continue, go, defer, channel send and receive **********)
+(********** break, continue, go, defer, chanel send and receive **********)
 
 let%expect_test "break stmt" =
   pp print_stmt parse_stmt {|break|};

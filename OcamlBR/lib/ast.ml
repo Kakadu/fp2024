@@ -2,6 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+open Typedtree
+
 let gen_id_name =
   let open QCheck.Gen in
   let varname =
@@ -41,9 +43,9 @@ let gen_id_name =
   varname >>= fun name -> if is_keyword name then varname else return name
 ;;
 
-type id = Id of string * string option [@@deriving show { with_path = false }]
+type id = Id of string [@@deriving show { with_path = false }]
 
-let gen_id = QCheck.Gen.map (fun name -> Id (name, None)) gen_id_name
+let gen_id = QCheck.Gen.map (fun name -> Id name) gen_id_name
 
 type const =
   | Int of (int[@gen QCheck.Gen.int_range 0 1000])
@@ -78,6 +80,7 @@ type bin_op =
   | Lte (* less than or equal *)
   | And (* logical AND *)
   | Or (* logical OR *)
+  | Cons (* :: *)
 [@@deriving show { with_path = false }, qcheck]
 
 type un_op =
@@ -107,7 +110,16 @@ type pattern =
   | PList of
       (pattern list
       [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
+  | PCons of
+      (pattern[@gen gen_pattern_sized (n / divisor)])
+      * (pattern[@gen gen_pattern_sized (n / divisor)])
+  | POption of (pattern[@gen gen_pattern_sized (n / divisor)]) option
+  | PConstraint of (pattern[@gen gen_pattern_sized (n / divisor)]) * (ty[@gen gen_tprim])
 [@@deriving show { with_path = false }, qcheck]
+
+(* type label = Label of string [@@deriving show { with_path = false }]
+
+   let gen_label = QCheck.Gen.map (fun name -> Label name) gen_id_name *)
 
 type expr =
   | Econst of const (* constants, e.g. 10, "meow", true *)
@@ -139,6 +151,9 @@ type expr =
       (expr[@gen gen_expr_sized (n / divisor)])
       * (case[@gen gen_case_sized (n / divisor)])
       * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / divisor)))])
+  | Efunction of
+      (case[@gen gen_case_sized (n / divisor)])
+      * (case list[@gen QCheck.Gen.(list_size (0 -- 4) (gen_case_sized (n / divisor)))])
   | Eun_op of un_op * (expr[@gen gen_expr_sized (n / divisor)])
     (* E0 un_op E1, e.g. Negative 2, Not true *)
   | Elet of
@@ -157,7 +172,15 @@ type expr =
       * (pattern list
         [@gen QCheck.Gen.(list_size (0 -- 4) (gen_pattern_sized (n / divisor)))])
       * (expr[@gen gen_expr_sized (n / divisor)])
-(* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  (* anonymous functions, e.g. fun x y -> x + 1 - y, arguments num >= 1 *)
+  | Econstraint of (expr[@gen gen_expr_sized (n / divisor)]) * (ty[@gen gen_tprim])
+(* | Efield_access of (expr[@gen gen_expr_sized (n / divisor)]) * label *)
+(* m.aa *)
+(* | Erecord of
+   (record_field[@gen gen_record_field_sized (n / divisor)])
+   * (record_field list
+   [@gen QCheck.Gen.(list_size (0 -- 4) (gen_record_field_sized (n / divisor)))]) *)
+(* let m = { aa = 5; bb = true } *)
 [@@deriving show { with_path = false }, qcheck]
 
 and case =
@@ -166,8 +189,14 @@ and case =
       * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
 
-and value_binding = Evalue_binding of id * (expr[@gen gen_expr_sized (n / divisor)])
+and value_binding =
+  | Evalue_binding of
+      (pattern[@gen gen_pattern_sized (n / divisor)])
+      * (expr[@gen gen_expr_sized (n / divisor)])
 [@@deriving show { with_path = false }, qcheck]
+
+(* and record_field = Erecord_field of label * (expr[@gen gen_expr_sized (n / divisor)])
+   [@@deriving show { with_path = false }, qcheck] *)
 
 let gen_expr =
   QCheck.Gen.(
@@ -181,11 +210,11 @@ let gen_value_binding =
     gen_value_binding_sized n)
 ;;
 
-let gen_case =
-  QCheck.Gen.(
-    let* n = small_nat in
-    gen_case_sized n)
-;;
+(* let gen_record_field =
+   QCheck.Gen.(
+   let* n = small_nat in
+   gen_record_field_sized n)
+   ;; *)
 
 type structure_item =
   | SEval of expr
@@ -193,8 +222,16 @@ type structure_item =
       rec_flag
       * (value_binding[@gen gen_value_binding])
       * (value_binding list[@gen QCheck.Gen.(list_size (0 -- 4) gen_value_binding)])
-    (* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En e.g. let x = 5 *)
+(* let (rec) P1 = E1 and P2 = E2 and ... and Pn = En e.g. let x = 5 *)
+(* | SType of
+   (string[@gen gen_id_name])
+   * (field_decl[@gen gen_field_decl])
+   * (field_decl list[@gen QCheck.Gen.(list_size (0 -- 4) gen_field_decl)]) *)
+(* type t = { aa : int ; bb : bool } *)
 [@@deriving show { with_path = false }, qcheck]
+
+(* and field_decl = Sfield_decl of label * (ty[@gen gen_tprim])
+   [@@deriving show { with_path = false }, qcheck] *)
 
 type structure =
   (structure_item list[@gen QCheck.Gen.(list_size (1 -- 2) gen_structure_item)])

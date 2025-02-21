@@ -5,3 +5,6 @@
  (release
   (flags
    (:standard -alert @deprecated -warn-error +A -w +A-4-40-42-44-70))))
+
+(cram
+ (deps ./repl/repl.exe))

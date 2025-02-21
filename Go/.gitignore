@@ -55,3 +55,6 @@ _opam/
 # notes
 *.notes
 *.txt
+
+# git patch
+*.patch

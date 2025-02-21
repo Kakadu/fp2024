@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -50,8 +50,7 @@ let gen_func_type gtype =
 
 let gen_chan_type gtype =
   let* type' = gtype in
-  let* chan_dir = oneofl [ Chan_bidirectional; Chan_receive; Chan_send ] in
-  return (Type_chan (chan_dir, type'))
+  return (Type_chan type')
 ;;
 
 let gen_type =
@@ -301,8 +300,8 @@ let gen_if_for_init gstmt =
 let gen_if gstmt =
   sized_size size4
   @@ fix (fun self n ->
-    let* init = option (gen_if_for_init gstmt) in
-    let* cond = gen_expr (gen_block gstmt) in
+    let* if_init = option (gen_if_for_init gstmt) in
+    let* if_cond = gen_expr (gen_block gstmt) in
     let* if_body = gen_block gstmt in
     let* else_body =
       match n with
@@ -317,15 +316,15 @@ let gen_if gstmt =
                  ])
           ]
     in
-    return { init; cond; if_body; else_body })
+    return { if_init; if_cond; if_body; else_body })
 ;;
 
 let gen_stmt_for gstmt =
-  let* init = option (gen_if_for_init gstmt) in
-  let* cond = option (gen_expr (gen_block gstmt)) in
-  let* post = option (gen_if_for_init gstmt) in
-  let* body = gen_block gstmt in
-  return (Stmt_for { init; cond; post; body })
+  let* for_init = option (gen_if_for_init gstmt) in
+  let* for_cond = option (gen_expr (gen_block gstmt)) in
+  let* for_post = option (gen_if_for_init gstmt) in
+  let* for_body = gen_block gstmt in
+  return (Stmt_for { for_init; for_cond; for_post; for_body })
 ;;
 
 let gen_stmt =

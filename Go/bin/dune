@@ -1,6 +1,6 @@
 (executable
- (name repl)
+ (name interpret)
  (public_name repl)
- (libraries ast parse)
+ (libraries ast parse typecheck eval errors)
  (instrumentation
   (backend bisect_ppx)))
