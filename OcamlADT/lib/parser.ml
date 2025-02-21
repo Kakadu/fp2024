@@ -143,6 +143,11 @@ let rchain p op =
 
 let ptypearrow = pass_ws *> token "->" >>| fun _ lhs rhs -> TypeExpr.Type_arrow (lhs, rhs)
 
+let pmultiargsapp pty =
+  let* args = pparenth @@ sep_by1 (pass_ws *> char ',') pty in
+  let* id = pass_ws *> pident_lc in
+  return (TypeExpr.Type_construct (id, args))
+
 let ptypevar =
   let* id = token "'" *> (pident_lc <|> pident_cap) in
   return (TypeExpr.Type_var id)
@@ -156,22 +161,23 @@ let ptypetuple ptype =
 ;;
 
 let ptypeconstr =
-  fix (fun ptconstr ->
+  pass_ws *> fix (fun ptconstr ->
     let* tparams =
-      option
+      pass_ws *> option
         []
-        (pparenth (sep_by (token ",") ptypevar)
+        (
+          (pparenth (sep_by (token ",") ptypevar))
          <|>
-         let* typevar = ptypevar in
-         return [ typevar ]
+         (let* typevar = ptypevar in
+         return [ typevar ])
          <|>
-         let* ctuple = pparenth (ptypetuple ptconstr) in
-         return [ ctuple ]
+         (let* ctuple = pparenth (ptypetuple ptconstr)  in
+         return [ ctuple ])
          <|>
-         let* ttuple = pparenth (ptypetuple ptypevar) in
-         return [ ttuple ])
-    in
-    let* tname =
+         (let* ttuple = pparenth (ptypetuple ptypevar) in
+         return [ ttuple ]))
+        in
+        let* tname =
       option
         None
         (let* name = pass_ws *> pident_lc in
@@ -183,14 +189,21 @@ let ptypeconstr =
     | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
     | None, _ -> return (TypeExpr.Type_construct ("", tparams)))
 ;;
-
-let ptype =
-  pass_ws
-  *> fix (fun ptype ->
-    let ptvar = choice [ pparenth ptype; ptypeconstr ] in
-    let pttuple = ptypetuple ptvar <|> ptvar in
-    rchain pttuple ptypearrow <|> pttuple)
-;;
+(* let ptypeconstr_typ =
+  let* first = pass_ws *> ptypeconstr in
+  let* rest = many (token " " *> pass_ws *> ptypeconstr) in
+  let* res = List.fold_left
+    ~init:(return first)
+    ~f:(fun acc constr ->
+      let* arg = acc in
+      match constr with
+      | TypeExpr.Type_construct (name, args) ->
+          return (TypeExpr.Type_construct (name, arg :: args))
+      | _ -> failwith "Expected a type constructor")
+    rest
+  in
+  return res
+;; *)
 
 let ptypeconstr_app =
   let* base = ptypeconstr in
@@ -204,7 +217,28 @@ let ptypeconstr_app =
      | _ -> failwith "hahahah")
 ;;
 
-let ptype_adt = pass_ws *> ptypeconstr_app <|> ptypevar
+
+
+let ptype =
+  pass_ws
+  *> fix (fun ptype ->
+    let ptvar = pass_ws
+    *> choice [ (pident_lc >>| fun id -> TypeExpr.Type_construct (id, [])); 
+    ptypevar;
+    pmultiargsapp ptype;
+    pparenth ptype;
+    ptypeconstr ] in
+    let pttuple = ptypetuple ptvar <|> ptvar in
+    let ptarr = rchain pttuple ptypearrow <|> pttuple
+  in 
+  let* arg = ptarr in
+  let rec pcons acc =
+    option acc (pass_ws1 *> pident_lc >>= fun id -> pcons (TypeExpr.Type_construct (id, [acc])))
+  in
+  pcons arg )
+;;
+
+let ptype_adt = pass_ws *> ptypeconstr_app  <|> ptypevar
 
 (*
    ░▒▓███████▓▒░ ░▒▓██████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓███████▓▒░
@@ -288,7 +322,7 @@ let ppattern =
              ; ppatvar
              ; ppatconst
              ; (psome ppattern >>| fun (name, opt) -> Pattern.Pat_construct (name, opt))
-             ; plist ppattern
+             (* ; plist ppattern *)
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern

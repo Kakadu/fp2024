@@ -491,7 +491,7 @@ type shape = Point of int
   | Rect of int * int * int 
 ;;
 |};
-  [%expect {| |}]
+  [%expect{||}]
 ;;
 
 (*we dont support regular custom types*)
@@ -527,9 +527,9 @@ print_int y
 ;;
 
   |};
-  [%expect {|
+  [%expect{|
     3
-    val area = <fun>|}]
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt with pattern matching function (else case) + printing" =
@@ -550,9 +550,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {|
+  [%expect{|
     10
-    val area = <fun>|}]
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt with pattern matching + printing v2" =
@@ -573,9 +573,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {|
+  [%expect{|
     10
-    val area = <fun>|}]
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt with pattern matching + printing v3" =
@@ -596,9 +596,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {|
+  [%expect{|
     50
-    val area = <fun>|}]
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue)" =
@@ -612,8 +612,7 @@ type shape = Circle of int
 let x = Chto 5
 ;;
   |};
-  [%expect {|
-    Intepreter error: Unbound value Chto|}]
+  [%expect{| Intepreter error: Unbound value Chto |}]
 ;;
 
 let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
@@ -634,9 +633,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {|
+  [%expect{|
     10
-    val area = <fun>|}]
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue Cir)" =
@@ -649,7 +648,7 @@ type shape = Circle of int
 let x = Cir 5 in 
 print_int area x;;
   |};
-  [%expect {| Intepreter error: Unbound value Cir|}]
+  [%expect{| Intepreter error: Unbound value Cir |}]
 ;;
 
 (* good, needs a initialization check + infer print(see next tests)*)
@@ -659,7 +658,7 @@ type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
   |};
-  [%expect {| |}]
+  [%expect{||}]
 ;;
 
 let%expect_test "poly adt tree (dumb insert)" =
@@ -687,8 +686,7 @@ let rec tree_size t =
 let () = print_int (tree_size tree1)
 
   |};
-  [%expect
-    {|
+  [%expect{|
     1
     val insert = <fun>
     val tree1 = <ADT>: Node
@@ -718,8 +716,7 @@ let rec tree_size t =
 let () = print_int (tree_size tree2)
 
   |};
-  [%expect
-    {|
+  [%expect{|
     0
     val insert = <fun>
     val tree2 = <ADT>: Leaf
@@ -754,8 +751,7 @@ let rec tree_size t =
 let () = print_int (tree_size tree)
 
   |};
-  [%expect
-    {|
+  [%expect{|
     4
     val insert = <fun>
     val tree = <ADT>: Node
@@ -784,7 +780,7 @@ let rec tree_size t =
 let () = print_int (tree_size tree)
 
   |};
-  [%expect {|
+  [%expect{|
     4
     val tree = <ADT>: Node
     val tree_size = <fun> |}]

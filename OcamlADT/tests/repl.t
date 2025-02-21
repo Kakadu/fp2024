@@ -12,9 +12,6 @@
 
   $ ../bin/interpret.exe  manytests/typed/002fac.ml
   Running... 
-  24
-  val fac_cps = <fun>
-  val main = 0
 
   $ ../bin/interpret.exe  manytests/typed/003fib.ml
   Running... 
@@ -88,13 +85,13 @@
   val temp = (1, true)
 
   $ ../bin/interpret.exe manytests/typed/010sukharev.ml
-  ../repl/REPL.exe: No such file or directory
-  [127]
+  File manytests/typed/010sukharev.ml not found
+  [255]
 
   $ ../bin/interpret.exe  manytests/typed/015tuples.ml
-  ../repl/REPL.exe: No such file or directory
-  [127]
+  File manytests/typed/015tuples.ml not found
+  [255]
 
   $ ../bin/interpret.exe manytests/typed/016lists.ml
-  ../repl/REPL.exe: No such file or directory
-  [127]
+  File manytests/typed/016lists.ml not found
+  [255]

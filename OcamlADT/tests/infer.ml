@@ -1169,8 +1169,7 @@ let%expect_test "ADT of few" =
 let x = 10;;
 let Circle (5,5) = Circle 5;;
 |};
-  [%expect {|
-    Unification_failed: int # int * int |}]
+  [%expect {| Unification_failed: int # int * int |}]
 ;;
 
 let%expect_test "ADT with poly" =
@@ -1229,7 +1228,8 @@ let%expect_test "ADT with poly3" =
   | Square of int * 'a * 'a
 ;;
 |};
-  [%expect{|
+  [%expect
+    {|
     res:
     "Circle": int -> '0 shape
     "Rectangle": char * int -> '0 shape
@@ -1239,4 +1239,40 @@ let%expect_test "ADT with poly3" =
     "print_char": char -> unit
     "print_endline": string -> unit
     "print_int": int -> unit |}]
+;;
+
+let%expect_test "ADT with poly constraint" =
+  parse_and_infer_result
+    {|
+  type 'a shape = Circle of int
+  | Rectangle of char * int
+  | Square of int * 'a * 'a
+;;
+let (x: shape) = Circle 5;;
+|};
+  [%expect {|
+    Unification_failed: '0 shape # shape |}]
+;;
+
+let%expect_test "ADT with constraint" =
+  parse_and_infer_result
+    {|
+  type 'a shape = Circle of int
+  | Rectangle of char * int
+  | Square of int * 'a * 'a
+;;
+let (x: (int->int) shape) = Circle 5;;
+|};
+  [%expect
+    {|
+    res:
+    "Circle": int -> (int -> int) shape
+    "Rectangle": char * int -> (int -> int) shape
+    "Square": int * 'a * 'a -> (int -> int) shape
+    "a": int -> int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit
+    "x": (int -> int) shape |}]
 ;;
