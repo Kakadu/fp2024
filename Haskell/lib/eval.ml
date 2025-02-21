@@ -35,6 +35,11 @@ type 'a bintree =
   | Node of 'a * 'a * 'a
   | Nul
 
+type ord =
+  | G
+  | L
+  | Eq
+
 type pattern_ext =
   | Lnk of pe_exprs_key
   (** key for the due entry in the expresions (see pe_expr) storage. Ident and wildcard patterns are converted into Lnk.
@@ -799,13 +804,13 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
   in
   let rec ord ((dfs, pe_exprs, fresh) as dpf) src1 src2 ~ac1 ~ac2 pe1 pe2 =
     let cmpr_to_constr = function
-      | 0 -> `Eq
-      | cmpr when cmpr < 0 -> `L
-      | _ -> `G
+      | 0 -> Eq
+      | cmpr when cmpr < 0 -> L
+      | _ -> G
     in
     let neg = function
-      | `L, dpf -> `G, dpf
-      | `G, dpf -> `L, dpf
+      | L, dpf -> G, dpf
+      | G, dpf -> L, dpf
       | oth -> oth
     in
     let rev () = ord dpf src2 src1 ~ac1:ac2 ~ac2:ac1 pe2 pe1 >>| neg in
@@ -813,7 +818,7 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
     let ord_const dpf = function
       | Int x, Int y -> Ok (Int.compare x y |> cmpr_to_constr, dpf)
       | Bool x, Bool y -> Ok (Bool.compare x y |> cmpr_to_constr, dpf)
-      | Unit, Unit -> Ok (`Eq, dpf)
+      | Unit, Unit -> Ok (Eq, dpf)
       | _ -> Error ((`Typing_err : crit_err), dpf)
     in
     let pattern_hnd_l ((_, pe_exprs, _) as dpf) = function
@@ -835,12 +840,12 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
         | hd1 :: tl1, hd2 :: tl2 ->
           inner_call dpf hd1 hd2
           >>= (function
-           | `Eq, dpf -> helper dpf (tl1, tl2)
+           | Eq, dpf -> helper dpf (tl1, tl2)
            | res -> return res)
-        | [], [] -> return (`Eq, dpf)
+        | [], [] -> return (Eq, dpf)
         | ([], _ :: _ | _ :: _, []) when strict_len -> fail ((`Typing_err : crit_err), dpf)
-        | [], _ :: _ -> return (`L, dpf)
-        | _ :: _, [] -> return (`G, dpf)
+        | [], _ :: _ -> return (L, dpf)
+        | _ :: _, [] -> return (G, dpf)
       in
       helper
     in
@@ -866,7 +871,7 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       let hd, tl = lazylst_to_cons ll |> conv_res in
       inner_call1 dpf (V hd)
       >>= function
-      | `Eq, dpf -> inner_call2 dpf tl
+      | Eq, dpf -> inner_call2 dpf tl
       | res -> return res
     in
     let ord_e_ll kk e1 e2 =
@@ -925,19 +930,19 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
           | LazyLst _ )
         , _ )
       , (_, (ThTree (PEEnum []) | V (VList []))) ) ->
-      (`G, dpf) |> ac_hnd src1 ~ac:ac1 pe1 |> return
+      (G, dpf) |> ac_hnd src1 ~ac:ac1 pe1 |> return
     | (ThLeaf (_, FunctionApply ((EJust, _), _, [])), _), (_, ThLeaf (_, ENothing)) ->
-      (`G, (dfs, enothing_before src2 pe_exprs, fresh))
+      (G, (dfs, enothing_before src2 pe_exprs, fresh))
       |> ac_hnd src1 ~ac:ac1 pe1
       |> return
     | (ThLeaf (_, BinTreeBld (Node _)), _), (_, ThLeaf (_, BinTreeBld Nul)) ->
-      (`G, (dfs, enul_before src2 pe_exprs, fresh)) |> ac_hnd src1 ~ac:ac1 pe1 |> return
+      (G, (dfs, enul_before src2 pe_exprs, fresh)) |> ac_hnd src1 ~ac:ac1 pe1 |> return
     | ( ( ( ThLeaf
               (_, (ListBld (OrdList (IncomprehensionlList (_ :: _))) | Binop (_, Cons, _)))
           | LazyLst _ )
         , _ )
       , (_, ThLeaf (_, ListBld (OrdList (IncomprehensionlList [])))) ) ->
-      (`G, (dfs, eempty_before src2 pe_exprs, fresh)) |> ac_hnd src1 ~ac:ac1 pe1 |> return
+      (G, (dfs, eempty_before src2 pe_exprs, fresh)) |> ac_hnd src1 ~ac:ac1 pe1 |> return
     | ( (ThLeaf (_, FunctionApply ((EJust, _), e, [])), Some k)
       , ( _
         , ( ThLeaf (_, FunctionApply ((EJust, _), _, []))
@@ -997,38 +1002,38 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
       let dpf = dfs, add k pe1' pe_exprs, fresh in
       ord dpf None src2 ~ac1 ~ac2 pe1' pe2
     | ((ThTree (PEMaybe (Just _)) | V (VMaybe (Just _))), _), (_, ThLeaf (_, ENothing)) ->
-      return (`G, (dfs, enothing_before src2 pe_exprs, fresh))
+      return (G, (dfs, enothing_before src2 pe_exprs, fresh))
     | ((V (VTree (Node _)) | ThTree (PETree (Node _))), _), (_, ThLeaf (_, BinTreeBld Nul))
-      -> return (`G, (dfs, enul_before src2 pe_exprs, fresh))
+      -> return (G, (dfs, enul_before src2 pe_exprs, fresh))
     | ( ((ThTree (PECons _ | PEEnum (_ :: _)) | V (VList (_ :: _))), _)
       , (_, ThLeaf (_, ListBld (OrdList (IncomprehensionlList [])))) ) ->
-      return (`G, (dfs, eempty_before src2 pe_exprs, fresh))
+      return (G, (dfs, eempty_before src2 pe_exprs, fresh))
     | (ThLeaf (_, ENothing), _), (_, ThLeaf (_, ENothing)) ->
-      return (`Eq, (dfs, enothing_before src2 @@ enothing_before src1 pe_exprs, fresh))
+      return (Eq, (dfs, enothing_before src2 @@ enothing_before src1 pe_exprs, fresh))
     | (ThLeaf (_, BinTreeBld Nul), _), (_, ThLeaf (_, BinTreeBld Nul)) ->
-      return (`Eq, (dfs, enul_before src2 @@ enul_before src1 pe_exprs, fresh))
+      return (Eq, (dfs, enul_before src2 @@ enul_before src1 pe_exprs, fresh))
     | ( (ThLeaf (_, ListBld (OrdList (IncomprehensionlList []))), _)
       , (_, ThLeaf (_, ListBld (OrdList (IncomprehensionlList [])))) ) ->
-      return (`Eq, (dfs, eempty_before src2 @@ eempty_before src1 pe_exprs, fresh))
+      return (Eq, (dfs, eempty_before src2 @@ eempty_before src1 pe_exprs, fresh))
     | ( ((ThTree (PEMaybe (Just _)) | V (VMaybe (Just _))), _)
       , (_, (ThTree (PEMaybe Nothing) | V (VMaybe Nothing))) )
     | ( ((V (VTree (Node _)) | ThTree (PETree (Node _))), _)
       , (_, (V (VTree Nul) | ThTree (PETree Nul))) )
     | ( ((ThTree (PECons _ | PEEnum (_ :: _)) | V (VList (_ :: _))), _)
-      , (_, (ThTree (PEEnum []) | V (VList []))) ) -> return (`G, dpf)
+      , (_, (ThTree (PEEnum []) | V (VList []))) ) -> return (G, dpf)
     | ((ThTree (PEMaybe Nothing) | V (VMaybe Nothing)), _), (_, ThLeaf (_, ENothing)) ->
-      return (`Eq, (dfs, enothing_before src2 pe_exprs, fresh))
+      return (Eq, (dfs, enothing_before src2 pe_exprs, fresh))
     | ((V (VTree Nul) | ThTree (PETree Nul)), _), (_, ThLeaf (_, BinTreeBld Nul)) ->
-      return (`Eq, (dfs, enul_before src2 pe_exprs, fresh))
+      return (Eq, (dfs, enul_before src2 pe_exprs, fresh))
     | ( ((ThTree (PEEnum []) | V (VList [])), _)
       , (_, ThLeaf (_, ListBld (OrdList (IncomprehensionlList [])))) ) ->
-      return (`Eq, (dfs, eempty_before src2 pe_exprs, fresh))
+      return (Eq, (dfs, eempty_before src2 pe_exprs, fresh))
     | ( ((ThTree (PEMaybe Nothing) | V (VMaybe Nothing)), _)
       , (_, (ThTree (PEMaybe Nothing) | V (VMaybe Nothing))) )
     | ( ((V (VTree Nul) | ThTree (PETree Nul)), _)
       , (_, (V (VTree Nul) | ThTree (PETree Nul))) )
     | ((ThTree (PEEnum []) | V (VList [])), _), (_, (ThTree (PEEnum []) | V (VList [])))
-      -> return (`Eq, dpf)
+      -> return (Eq, dpf)
     | ( (ThLeaf (kk1, FunctionApply ((EJust, _), e1, [])), None)
       , (None, ThLeaf (kk2, FunctionApply ((EJust, _), e2, []))) ) ->
       inner_call_ee kk1 kk2 dpf e1 e2
@@ -1236,32 +1241,32 @@ and eval_arlog ((dfs, pe_exprs, kk) as env) fresh e1 e2 =
   | Less ->
     ord ()
     >>| (function
-     | `L, dpf -> tru dpf
+     | L, dpf -> tru dpf
      | _, dpf -> fls dpf)
   | Greater ->
     ord ()
     >>| (function
-     | `G, dpf -> tru dpf
+     | G, dpf -> tru dpf
      | _, dpf -> fls dpf)
   | EqualityOrLess ->
     ord ()
     >>| (function
-     | `G, dpf -> fls dpf
+     | G, dpf -> fls dpf
      | _, dpf -> tru dpf)
   | EqualityOrGreater ->
     ord ()
     >>| (function
-     | `L, dpf -> fls dpf
+     | L, dpf -> fls dpf
      | _, dpf -> tru dpf)
   | Equality ->
     ord ()
     >>| (function
-     | `Eq, dpf -> tru dpf
+     | Eq, dpf -> tru dpf
      | _, dpf -> fls dpf)
   | Inequality ->
     ord ()
     >>| (function
-     | `Eq, dpf -> fls dpf
+     | Eq, dpf -> fls dpf
      | _, dpf -> tru dpf)
   | Cons -> Error ((`Typing_err : crit_err), (dfs, pe_exprs, fresh))
 
