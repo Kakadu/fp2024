@@ -138,7 +138,7 @@ type level =
 
     in (2) y must be found. We get keys from kk and try to use pe_exprs_key but fail, so then we
     use dfs_key to find definition thunk. After successful pattern match
-    pe_exprs for x and y are added and we can use it in (2),(3) and any futher*)
+    pe_exprs for k, x and y are added and we can use it in (2),(3) and any futher*)
 
 type env = df KMap.t * pe_expr KMap.t * keys NMap.t
 
@@ -210,10 +210,7 @@ let conv_res = function
 ;;
 
 let from_crit_err = function
-  | (`Not_exh : crit_err) -> `Not_exh
-  | `Div_by_zero -> `Div_by_zero
-  | `Negative_exponent -> `Negative_exponent
-  | `Typing_err -> `Typing_err
+  | #crit_err as e -> e
 ;;
 
 let rec lazylst_to_cons = function
@@ -243,9 +240,8 @@ let pm_key ((dfs, pe_exprs, kk) as env) fresh helper ok_lnk ok k ff =
       let pe_exprs = fm_add_many pe_exprs to_pe_ex in
       ok (dfs, pe_exprs, thrd env) fresh
     | Error (`Not_match, (dfs, pe_exprs, fresh)) -> helper (dfs, pe_exprs, thrd env) fresh
-    | Error
-        ( ((`Not_exh | `Typing_err | `Div_by_zero | `Negative_exponent) as er)
-        , (dfs, pe_exprs, fresh) ) -> Error (er, (dfs, pe_exprs, fresh))
+    | Error ((#crit_err as er), (dfs, pe_exprs, fresh)) ->
+      Error (er, (dfs, pe_exprs, fresh))
   in
   function
   | Lnk k' -> ok_lnk env fresh k k'
@@ -273,9 +269,7 @@ let pm_key ((dfs, pe_exprs, kk) as env) fresh helper ok_lnk ok k ff =
         (match patpat_match to_pe_ex env fresh pat pat' with
          | Error (`Not_match, ((dfs, pe_exprs, fresh), pat'')) ->
            helper (dfs, add k (ThTree pat'') pe_exprs, kk) fresh
-         | Error
-             ( ((`Not_exh | `Typing_err | `Div_by_zero | `Negative_exponent) as er)
-             , ((dfs, pe_exprs, fresh), pat'') ) ->
+         | Error ((#crit_err as er), ((dfs, pe_exprs, fresh), pat'')) ->
            Error (er, (dfs, add k (ThTree pat'') pe_exprs, fresh))
          | Ok ((to_pe_ex, (dfs, pe_exprs, fresh)), pat'') ->
            let pe_exprs = fm_add_many pe_exprs ((k, ThTree pat'') :: to_pe_ex) in
@@ -423,9 +417,7 @@ and find_expr ((dfs, pe_exprs, fresh) as dpf) = function
             | Error (`Not_match, (dfs, pe_exprs, fresh)) ->
               let dfs = add dfs_key (Err `Not_exh) dfs in
               Error (`Not_exh, (dfs, pe_exprs, fresh))
-            | Error
-                ( ((`Not_exh | `Typing_err | `Div_by_zero | `Negative_exponent) as er)
-                , (dfs, pe_exprs, fresh) ) ->
+            | Error ((#crit_err as er), (dfs, pe_exprs, fresh)) ->
               let dfs = add dfs_key (Err er) dfs in
               Error (er, (dfs, pe_exprs, fresh))
           in
