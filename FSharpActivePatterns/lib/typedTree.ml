@@ -11,6 +11,19 @@ type typ =
   | Type_list of typ
   | Type_tuple of typ * typ * typ list
   | TOption of typ
+  | TActPat of string * typ (** [Even(int)] *)
+  | Choice of (string, typ, Base.String.comparator_witness) Base.Map.t
+  (** [Choice<Even(int * int), Odd(string)>] *)
+(* Map of Name/typ is Choice of <Name1(typ1), Name2(typ2), ...>, Name/typ is equiavalent to TActPat *)
+
+let choice_to_list ch =
+  Base.List.map (Base.Map.to_alist ch) ~f:(fun (name, typ) -> TActPat (name, typ))
+;;
+
+let choice_set_many map list =
+  Base.List.fold ~init:map list ~f:(fun map (name, typ) ->
+    Base.Map.set map ~key:name ~data:typ)
+;;
 
 let gen_typ_primitive =
   QCheck.Gen.(oneofl [ "string"; "int"; "unit"; "bool" ] >|= fun t -> Primitive t)
@@ -32,8 +45,6 @@ module VarSet = struct
 end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
-
-(* binder_set here -- list of all type vars in context (?) *)
 type scheme = Scheme of binder_set * typ
 
 let int_typ = Primitive "int"

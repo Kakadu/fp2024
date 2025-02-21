@@ -1,11 +1,11 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
 open Ast
 
 module Ident : sig
-  type t = Ast.ident
+  type t = ident
 
   val compare : 'a -> 'a -> int
 end
@@ -28,12 +28,10 @@ type polymorphic_call =
   | Recover
 
 type ctype =
-  | Ctype of Ast.type'
-  | Ctuple of Ast.type' list (** Used to check multiple returns of a function *)
-  | CgenT of Ast.type'
+  | Ctype of type'
+  | Ctuple of type' list (** Used to check multiple returns of a function *)
+  | CgenT of type'
   | Cpolymorphic of polymorphic_call
-
-val equal_ctype : ctype -> ctype -> Ppx_deriving_runtime.bool
 
 (** list of MapIdent is used to map ident and it's type in local space.
     Add MapIdent if you enter in if/for body or func literal and then delete it after checking block of statements
@@ -47,7 +45,7 @@ type funcs_returns = ctype list
 (** Current typechecker state *)
 type typecheck_state = env * funcs_returns
 
-module CheckMonad : sig
+module Monad : sig
   (** ['a t] is a typecheker that stores current state (idents and their types, external function return type)
       and the result of typechecking - ['a] (['a] or typecheck error)*)
   type 'a t = (typecheck_state, 'a) BaseMonad.t

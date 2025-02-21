@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -21,20 +21,18 @@ type polymorphic_call =
   | Close
   | Nil
   | Recover
-[@@deriving show { with_path = false }, eq]
 
 type ctype =
   | Ctype of type'
   | Ctuple of type' list
   | CgenT of type'
   | Cpolymorphic of polymorphic_call
-[@@deriving show { with_path = false }, eq]
 
 type env = ctype MapIdent.t list
 type funcs_returns = ctype list
 type typecheck_state = env * funcs_returns
 
-module CheckMonad = struct
+module Monad = struct
   open Errors
   include BaseMonad
 

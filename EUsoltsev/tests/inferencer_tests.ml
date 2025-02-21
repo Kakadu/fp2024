@@ -149,6 +149,31 @@ let%expect_test "test_program_2" =
     val square: int -> int|}]
 ;;
 
+let%expect_test "test_and" =
+  pretty_printer_parse_and_infer "let rec fac n = fac(n-1) * n and y = 1";
+  [%expect {|
+        int -> int
+        int|}]
+;;
+
+let%expect_test "test_and" =
+  pretty_printer_parse_and_infer
+    "let rec is_even n =\n\
+    \  if n = 0 then true\n\
+    \  else is_odd (n - 1)\n\
+     and is_odd n =\n\
+    \  if n = 0 then false\n\
+    \  else is_even (n - 1)";
+  [%expect {|
+        int -> bool
+        int -> bool|}]
+;;
+
+let%expect_test "test_and" =
+  pretty_printer_parse_and_infer "let var = Some(Some 10)";
+  [%expect {|int option option|}]
+;;
+
 let%expect_test "test_annotate_error" =
   pretty_printer_parse_and_infer "let sum (x : int) (y : string) = x + y";
   [%expect {|Infer error. Failed to unify types: string and int.|}]

@@ -1,31 +1,19 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
-open Typecheck
 open Parse
+open Typecheck
 
 let pp str =
   match parse parse_file str with
-  | Ok ast ->
-    (match TypeChecker.type_check ast with
-     | Result.Ok _ -> print_endline "CORRECT"
-     | Result.Error err ->
-       prerr_string "ERROR WHILE TYPECHECK WITH ";
-       (match err with
-        | Type_check_error (Multiple_declaration msg) ->
-          prerr_string ("Multiple declaration error: " ^ msg)
-        | Type_check_error (Incorrect_main msg) ->
-          prerr_endline ("Incorrect main error: " ^ msg)
-        | Type_check_error (Undefined_ident msg) ->
-          prerr_endline ("Undefined ident error: " ^ msg)
-        | Type_check_error (Mismatched_types msg) ->
-          prerr_endline ("Mismatched types: " ^ msg)
-        | Type_check_error (Cannot_assign msg) -> prerr_endline ("Cannot assign: " ^ msg)
-        | Type_check_error (Missing_return msg) -> prerr_endline ("Missing return: " ^ msg)
-        | Type_check_error (Invalid_operation msg) ->
-          prerr_endline ("Missing return: " ^ msg)))
   | Error _ -> print_endline ": syntax error"
+  | Ok ast ->
+    (match type_check ast with
+     | Result.Ok _ -> print_endline "CORRECT"
+     | Result.Error (Runtime_error _) -> ()
+     | Result.Error (Type_check_error err) ->
+       prerr_string ("Typecheck error: " ^ Errors.pp_typecheck_error err))
 ;;
 
 (********** main func **********)
@@ -43,17 +31,16 @@ let%expect_test "err: multiple main" =
     func main() {}
     func main() {}
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Multiple declaration error: main is redeclared |}]
+  [%expect {|
+    Typecheck error: Multiple declaration error: main is redeclared |}]
 ;;
 
 let%expect_test "err: main with returns" =
   pp {|
-  func main() bool { return true}
+  func main() bool { return true }
   |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Incorrect main error: func main must have no arguments and no return values |}]
+    {| Typecheck error: Incorrect main error: func main must have no arguments and no return values |}]
 ;;
 
 let%expect_test "err: main with args" =
@@ -61,7 +48,7 @@ let%expect_test "err: main with args" =
   func main(a int) {}
   |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Incorrect main error: func main must have no arguments and no return values |}]
+    {| Typecheck error: Incorrect main error: func main must have no arguments and no return values |}]
 ;;
 
 let%expect_test "err: no main" =
@@ -69,7 +56,7 @@ let%expect_test "err: no main" =
   var a int
   func foo(b int) {}
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: main is not defined |}]
+  [%expect {| Typecheck error: Undefined ident error: main is not defined |}]
 ;;
 
 let%expect_test "ok: main call" =
@@ -110,7 +97,7 @@ let%expect_test "err: single var decl with type and wrong init " =
 
   func main() {}
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: func call init with right number of elements" =
@@ -136,7 +123,7 @@ let%expect_test "err: func call one init with mismatched number of elements" =
     func main() {}
     |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: Function without returns in expression |}]
+    {| Typecheck error: Mismatched types: Function without returns in expression |}]
 ;;
 
 let%expect_test "err: func call one init with mismathced types" =
@@ -151,7 +138,7 @@ let%expect_test "err: func call one init with mismathced types" =
     func main() {}
     |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: (bool, bool, bool) and (int, int, int) |}]
+    {| Typecheck error: Mismatched types: (bool, bool, bool) and (int, int, int) |}]
 ;;
 
 let%expect_test "err: func call one init with mismathced range" =
@@ -166,7 +153,7 @@ let%expect_test "err: func call one init with mismathced range" =
     func main() {}
     |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: function returns wrong number of elements in multiple var assign |}]
+    {| Typecheck error: Mismatched types: function returns wrong number of elements in multiple var assign |}]
 ;;
 
 let%expect_test "err: var redeclaration" =
@@ -177,7 +164,7 @@ let%expect_test "err: var redeclaration" =
     
     func main() {}
     |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Multiple declaration error: a is redeclared |}]
+  [%expect {| Typecheck error: Multiple declaration error: a is redeclared |}]
 ;;
 
 (********** top func decl **********)
@@ -210,9 +197,8 @@ let%expect_test "err: repeated idents in args" =
 
     func main() {}
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Multiple declaration error: a is redeclared |}]
+  [%expect {|
+    Typecheck error: Multiple declaration error: a is redeclared |}]
 ;;
 
 let%expect_test "err: func redeclaration" =
@@ -226,9 +212,8 @@ let%expect_test "err: func redeclaration" =
 
     func main() {}
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Multiple declaration error: foo is redeclared |}]
+  [%expect {|
+    Typecheck error: Multiple declaration error: foo is redeclared |}]
 ;;
 
 let%expect_test "err: func arg redeclaration" =
@@ -239,9 +224,8 @@ let%expect_test "err: func arg redeclaration" =
 
     func main() {}
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Multiple declaration error: a is redeclared |}]
+  [%expect {|
+    Typecheck error: Multiple declaration error: a is redeclared |}]
 ;;
 
 let%expect_test "ok: correct var multiple returns short_decl" =
@@ -274,9 +258,8 @@ let%expect_test "err: incorrect var multiple assign" =
         a, b = foo2(4)
     }
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Cannot assign: Multiple return assign failed |}]
+  [%expect {|
+    Typecheck error: Cannot assign: Multiple return assign failed |}]
 ;;
 
 let%expect_test "ok: correct var multiple assign" =
@@ -314,7 +297,7 @@ let%expect_test "err: incorrect var multiple assign after multiple decl with wro
     }
     |};
   [%expect {|
-    ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+    Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: var and func with the same name" =
@@ -325,9 +308,8 @@ let%expect_test "err: var and func with the same name" =
 
     func main() {}
     |};
-  [%expect
-    {|
-    ERROR WHILE TYPECHECK WITH Multiple declaration error: foo is redeclared |}]
+  [%expect {|
+    Typecheck error: Multiple declaration error: foo is redeclared |}]
 ;;
 
 let%expect_test "ok: correct declarations #1" =
@@ -377,8 +359,7 @@ let%expect_test "err: incorrect call in stmt" =
     }
 
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: Number of given args mismatched |}]
+  [%expect {| Typecheck error: Mismatched types: Number of given args mismatched |}]
 ;;
 
 let%expect_test "err: undefined var inc" =
@@ -392,7 +373,7 @@ let%expect_test "err: undefined var inc" =
         a2++
     }  
     |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a2 is not defined |}]
+  [%expect {| Typecheck error: Undefined ident error: a2 is not defined |}]
 ;;
 
 let%expect_test "ok: global var decl before it's use in code" =
@@ -443,7 +424,7 @@ let%expect_test "fail: missing return statement" =
 
     func main() {}
     |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Missing return: Missing return |}]
+  [%expect {| Typecheck error: Missing return: Missing return |}]
 ;;
 
 let%expect_test "ok: correct returns in different branches of if" =
@@ -482,7 +463,7 @@ let%expect_test "fail: missing return in nested branch of if" =
     } 
     func main() {}
     |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Missing return: Missing return |}]
+  [%expect {| Typecheck error: Missing return: Missing return |}]
 ;;
 
 let%expect_test "err: undefined func call" =
@@ -495,7 +476,7 @@ let%expect_test "err: undefined func call" =
     }
 
     func foo(a1 int, c int, b int) bool {}  |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: foo2 is not defined |}]
+  [%expect {| Typecheck error: Undefined ident error: foo2 is not defined |}]
 ;;
 
 let%expect_test "err: arg not declared" =
@@ -506,7 +487,7 @@ let%expect_test "err: arg not declared" =
 
     func println(a int) {}
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a is not defined |}]
+  [%expect {| Typecheck error: Undefined ident error: a is not defined |}]
 ;;
 
 let%expect_test "err: unknown var in if cond" =
@@ -526,7 +507,7 @@ let%expect_test "err: unknown var in if cond" =
         }
     }
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Undefined ident error: a is not defined |}]
+  [%expect {| Typecheck error: Undefined ident error: a is not defined |}]
 ;;
 
 let%expect_test "err: mismatched types in binop" =
@@ -556,7 +537,7 @@ let%expect_test "err: mismatched types in binop" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched type in decl # 1" =
@@ -586,7 +567,7 @@ let%expect_test "err: mismatched type in decl # 1" =
         go println(id(10))
     }
   |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched type in decl # 2" =
@@ -616,7 +597,7 @@ let%expect_test "err: mismatched type in decl # 2" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+  [%expect {| Typecheck error: Mismatched types: string and int |}]
 ;;
 
 let%expect_test "err: mismatched type in func_call" =
@@ -646,7 +627,7 @@ let%expect_test "err: mismatched type in func_call" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: correct example #3" =
@@ -706,7 +687,7 @@ let%expect_test "err: return type of func mismatch" =
         go println(id(10))
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: return with empty func returns" =
@@ -717,7 +698,7 @@ let%expect_test "err: return with empty func returns" =
         return 5
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: func return types mismatch |}]
+  [%expect {| Typecheck error: Mismatched types: func return types mismatch |}]
 ;;
 
 let%expect_test "ok: single correct return with no func args" =
@@ -739,7 +720,7 @@ let%expect_test "err: multiple returns type mismatch" =
         return 5, 5
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+  [%expect {| Typecheck error: Mismatched types: string and int |}]
 ;;
 
 let%expect_test "err: incorrect anon_func return in nested func" =
@@ -758,7 +739,7 @@ let%expect_test "err: incorrect anon_func return in nested func" =
       value("4")
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+  [%expect {| Typecheck error: Mismatched types: string and int |}]
 ;;
 
 let%expect_test "err: incorrect anon_func local redeclaration nested func" =
@@ -779,7 +760,7 @@ func main() {
 	value(1)
 }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+  [%expect {| Typecheck error: Mismatched types: string and int |}]
 ;;
 
 let%expect_test "ok: correct anon_func local redeclaration nested func" =
@@ -819,7 +800,7 @@ let%expect_test "err: incorrect multiple returns in single-value context" =
     }
 
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: Expected single type |}]
+  [%expect {| Typecheck error: Mismatched types: Expected single type |}]
 ;;
 
 let%expect_test "ok: correct chans return context" =
@@ -855,7 +836,7 @@ let%expect_test "err: incorrect chans return context" =
     }
 
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: incorrect chan send type" =
@@ -873,7 +854,7 @@ let%expect_test "err: incorrect chan send type" =
     }
 
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+  [%expect {| Typecheck error: Mismatched types: string and int |}]
 ;;
 
 (********** expr **********)
@@ -897,7 +878,7 @@ let%expect_test "err: mismatched types in bin sum" =
         var c = a + b
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: right type in unary minus" =
@@ -917,7 +898,7 @@ let%expect_test "err: wrong type in unary minus" =
         c := -a
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and bool |}]
+  [%expect {| Typecheck error: Mismatched types: int and bool |}]
 ;;
 
 let%expect_test "ok: right types in const array inits" =
@@ -938,7 +919,7 @@ let%expect_test "err: wrong types in const array inits" =
         c := [2]int{1, func() {}}
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: func() and int |}]
+  [%expect {| Typecheck error: Mismatched types: func() and int |}]
 ;;
 
 let%expect_test "ok: too much const array inits" =
@@ -948,7 +929,7 @@ let%expect_test "ok: too much const array inits" =
     }
 |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: Array's size less thai it's inits count |}]
+    {| Typecheck error: Mismatched types: Array's size less thai it's inits count |}]
 ;;
 
 let%expect_test "ok: simple array index call" =
@@ -971,7 +952,7 @@ let%expect_test "err: array index call with non int index" =
         c := arr["0"]
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: array index assignment" =
@@ -993,7 +974,7 @@ let%expect_test "err: array index assignment with non-int index" =
         arr[func() {}] = 7
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and func() |}]
+  [%expect {| Typecheck error: Mismatched types: int and func() |}]
 ;;
 
 let%expect_test "err: array index assignment with wrong expr" =
@@ -1004,7 +985,7 @@ let%expect_test "err: array index assignment with wrong expr" =
         arr[10] = ""
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: multidimensional array index assignment" =
@@ -1022,6 +1003,32 @@ let%expect_test "ok: multidimensional array index assignment" =
   [%expect {| CORRECT |}]
 ;;
 
+let%expect_test "ok: correct for break" =
+  pp
+    {|
+
+    func adder() func(int) int {
+      sum := 0
+      return func(x int) int {
+        sum = sum + x
+        return sum
+      }
+    }
+
+    func f(a int) { return }
+
+    func main() {
+      pos, neg := adder(), adder()
+      for i := 0; i < 10; i++ {
+        a := pos(i)
+        f(a)
+        f(neg(-2 * i))
+        break
+      }
+    }|};
+  [%expect {| CORRECT |}]
+;;
+
 let%expect_test "err: multidimensional array index assignment with wrong index less than \
                  needed"
   =
@@ -1036,7 +1043,7 @@ let%expect_test "err: multidimensional array index assignment with wrong index l
         arr[i] = 10000
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: [7]int and int |}]
+  [%expect {| Typecheck error: Mismatched types: [7]int and int |}]
 ;;
 
 let%expect_test "err: multidimensional array index assignment with wrong index more than \
@@ -1054,7 +1061,7 @@ let%expect_test "err: multidimensional array index assignment with wrong index m
     }
 |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: Number of indicies in array element assigment is incorrect |}]
+    {| Typecheck error: Mismatched types: Number of indicies in array element assigment is incorrect |}]
 ;;
 
 let%expect_test "ok: multidimensional array index binoper" =
@@ -1084,7 +1091,7 @@ let%expect_test "err: multidimensional array index returns array" =
         i = arr[1] + 1
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: [7]int and int |}]
+  [%expect {| Typecheck error: Mismatched types: [7]int and int |}]
 ;;
 
 let%expect_test "err: multidimensional array index more than it's dimension " =
@@ -1099,8 +1106,7 @@ let%expect_test "err: multidimensional array index more than it's dimension " =
         i = arr[1][0][0] + 1
     }
 |};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: Non-array type in array index call |}]
+  [%expect {| Typecheck error: Mismatched types: Non-array type in array index call |}]
 ;;
 
 let%expect_test "ok: multiple nested index inside nested index" =
@@ -1132,7 +1138,7 @@ let%expect_test "err: wrong not integer multiple nested index inside nested inde
         i = arr[1][0][0][t1[2][1]][8] + 1
     }
 |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: predeclared true and false" =
@@ -1190,7 +1196,7 @@ let%expect_test "err: mismatched type in closure" =
           f(neg(-2 * i))
         }
       }|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched type in closure func return" =
@@ -1214,8 +1220,7 @@ let%expect_test "err: mismatched type in closure func return" =
           f(neg(-2 * i))
         }
       }|};
-  [%expect
-    {| ERROR WHILE TYPECHECK WITH Mismatched types: func(int) int and func(string) int |}]
+  [%expect {| Typecheck error: Mismatched types: func(int) int and func(string) int |}]
 ;;
 
 let%expect_test "err: mismatched type inside return of func in closure" =
@@ -1239,7 +1244,7 @@ let%expect_test "err: mismatched type inside return of func in closure" =
           f(neg(-2 * i))
         }
       }|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "err: mismatched func returns of created func" =
@@ -1263,7 +1268,7 @@ let%expect_test "err: mismatched func returns of created func" =
           f(neg(-2 * i))
         }
       }|};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: string and int |}]
+  [%expect {| Typecheck error: Mismatched types: string and int |}]
 ;;
 
 let%expect_test "ok: predeclared make, close & print usage" =
@@ -1316,7 +1321,7 @@ let%expect_test "err: untyped nil" =
     }
     |};
   [%expect
-    {| ERROR WHILE TYPECHECK WITH Missing return: Cannot assign nil in short var declaration |}]
+    {| Typecheck error: Invalid operation: Cannot assign nil in short var declaration |}]
 ;;
 
 let%expect_test "ok: incorrect send after make" =
@@ -1333,7 +1338,7 @@ let%expect_test "ok: incorrect send after make" =
       x, y := <-c, <-c 
       print(x,y)
     } |};
-  [%expect {| ERROR WHILE TYPECHECK WITH Mismatched types: int and string |}]
+  [%expect {| Typecheck error: Mismatched types: int and string |}]
 ;;
 
 let%expect_test "ok: redeclaration of predeclared print" =
@@ -1377,5 +1382,41 @@ let%expect_test "ok: nil assignment to global variable with a function type" =
     func main() {
       foo = nil
     } |};
+  [%expect {| CORRECT |}]
+;;
+
+let%expect_test "err: trying to run make builtin func as a goroutine" =
+  pp {|
+    func main() {
+      go make(chan int)
+    } |};
+  [%expect {| Typecheck error: Go discards result of make builtin function |}]
+;;
+
+let%expect_test "err: break outside for" =
+  pp {|
+    var foo = func() {}
+    func main() {
+      break
+      foo = nil
+    } |};
+  [%expect {| Typecheck error: Unexpected operation: break |}]
+;;
+
+let%expect_test "err: continue outside for" =
+  pp {|
+    func main() { continue } |};
+  [%expect {| Typecheck error: Unexpected operation: continue |}]
+;;
+
+let%expect_test "err: return in unreachable code" =
+  pp
+    {|
+    func foo() {
+      for true {}
+      return
+    }
+
+    func main() { foo() } |};
   [%expect {| CORRECT |}]
 ;;

@@ -75,7 +75,6 @@ and bind = pattern * expr [@@deriving show { with_path = false }]
 type structure =
   | SEval of expr
   | SValue of is_rec * bind * bind list
-[@@deriving show { with_path = false }]
 
 type program = structure list [@@deriving show { with_path = false }]
 

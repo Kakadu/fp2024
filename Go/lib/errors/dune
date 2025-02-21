@@ -1,6 +1,4 @@
 (library
  (name errors)
  (instrumentation
-  (backend bisect_ppx))
- (preprocess
-  (pps ppx_expect ppx_deriving.show)))
+  (backend bisect_ppx)))

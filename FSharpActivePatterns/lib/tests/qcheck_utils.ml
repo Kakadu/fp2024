@@ -109,6 +109,8 @@ and shrink_expr =
   | Option None -> empty
   | Variable _ -> empty
   | EConstraint (e, t) -> return e <+> shrink_expr e >|= fun a' -> EConstraint (a', t)
+  | ActPatConstructor (ident, expr) ->
+    shrink_expr expr >|= fun expr' -> ActPatConstructor (ident, expr')
 
 and shrink_pattern =
   let open QCheck.Iter in
@@ -130,6 +132,8 @@ and shrink_pattern =
   | Wild -> empty
   | PVar _ -> empty
   | PConstraint (p, _) -> return p
+  | PActive (ident, pattern) ->
+    shrink_pattern pattern >|= fun pattern' -> PActive (ident, pattern')
 ;;
 
 let shrink_statement =
@@ -144,6 +148,12 @@ let shrink_statement =
       (match let_bind_list with
       | [] -> empty
       | hd :: _ -> return (Let (rec_flag, hd, [])))
+  | ActPat (name, names, args, expr) ->
+    shrink_expr expr
+    >|= (fun expr' -> ActPat (name, names, args, expr'))
+    <+> (QCheck.Shrink.list ~shrink:shrink_pattern args
+         >|= fun args' -> ActPat (name, names, args', expr))
+    <+> (QCheck.Shrink.list names >|= fun names' -> ActPat (name, names', args, expr))
 ;;
 
 let shrink_construction =
@@ -156,7 +166,8 @@ let shrink_construction =
     <+>
       (match s with
       | Let (_, let_bind, let_binds) ->
-        of_list (exprs_from_let_binds (let_bind :: let_binds)) >|= fun a' -> Expr a')
+        of_list (exprs_from_let_binds (let_bind :: let_binds)) >|= fun a' -> Expr a'
+      | ActPat (_, _, _, expr) -> shrink_expr expr >|= fun e' -> Expr e')
 ;;
 
 let arbitrary_construction =
