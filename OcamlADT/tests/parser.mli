@@ -4,4 +4,4 @@
 
 open Ocamladt_lib.Ast
 
-val test_programm : ident -> unit
+val test_program : ident -> unit
