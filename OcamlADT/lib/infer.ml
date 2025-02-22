@@ -47,6 +47,16 @@ module MInfer = struct
         xs
         xl
     ;;
+    let map xs ~f =
+      let open Syntax in
+      let rec helper acc = function
+        | x :: t ->
+          let* res = f x in
+          helper (res :: acc) t
+        | [] -> return (List.rev acc)
+      in
+      helper [] xs
+    ;;
 
     let fold_right xs ~init ~f =
       Base.List.fold_right xs ~init ~f:(fun x acc ->
@@ -70,7 +80,7 @@ module Type = struct
     | Type_arrow (l, r) -> occurs_check tvar l || occurs_check tvar r
     | Type_tuple (t1, t2, t) ->
       List.fold_left (fun acc h -> acc || occurs_check tvar h) false (t1 :: t2 :: t)
-    | Type_construct (id, ty) ->
+    | Type_construct (_, ty) ->
       List.fold_left (fun acc h -> acc || occurs_check tvar h) false ty (*maybe rework*)
   ;;
 
@@ -80,7 +90,7 @@ module Type = struct
       | Type_arrow (l, r) -> helper (helper acc l) r
       | Type_tuple (t1, t2, t) ->
         List.fold_left (fun acc h -> helper acc h) acc (t1 :: t2 :: t)
-      | Type_construct (id, ty) ->
+      | Type_construct (_, ty) ->
         List.fold_left (fun acc h -> helper acc h) acc ty (*maybe rework*)
     in
     helper VarSet.empty
@@ -298,27 +308,29 @@ let rec infer_pat ~debug pat env =
     in
     return (env3, Type_tuple (typ1, typ2, typ3))
   | Pat_construct ("()", None) -> return (env, Type_construct ("unit", []))
-  | Pat_construct ("Some", Some pat) ->
-    let* env, typ = infer_pat ~debug pat env in
-    return (env, Type_construct ("option", [ typ ]))
+  (* | Pat_construct ("Some", Some pat) ->
+     let* env, typ = infer_pat ~debug pat env in
+     return (env, Type_construct ("option", [ typ ]))
+     | Pat_construct ("None", None) ->
+     return (env, Type_construct ("option", [ ])) *)
   | Pat_construct (id, None) when id = "false" || id = "true" ->
     return (env, Type_construct ("bool", []))
   | Pat_construct (name, None) ->
-    let* sub, typ =
+    let* _, typ =
       match TypeEnv.find name env with
       | Some el ->
         let* typ = instantiate el in
         return (Substitution.empty, typ)
-      | None -> failwith "noname"
+      | None -> fail (`Unbound_variable name)
     in
     return (env, typ)
   | Pat_construct (name, Some pat) ->
-    let* sub, typ =
+    let* _, typ =
       match TypeEnv.find name env with
       | Some el ->
         let* typ = instantiate el in
         return (Substitution.empty, typ)
-      | None -> failwith "noname"
+      | None -> fail (`Unbound_variable name)
     in
     let* env, typ =
       match typ with
@@ -327,7 +339,7 @@ let rec infer_pat ~debug pat env =
         let* uni_sub = Substitution.unify arg typepat in
         let new_env = TypeEnv.apply uni_sub patenv in
         return (new_env, Substitution.apply uni_sub adt)
-      | _ -> failwith "shit"
+      | _ -> failwith "Unreachable"
     in
     return (env, typ)
   | Pat_constraint (pat, typ) ->
@@ -367,7 +379,7 @@ let add_names_rec env vb_list =
         let* fresh = fresh_var in
         let env_acc = TypeEnv.extend env_acc name (Forall (VarSet.empty, fresh)) in
         return (env_acc, fresh :: fresh_acc)
-      | _ -> failwith "abobi")
+      | _ -> fail `Not_supported)
     vb_list
     ~init:(return (env, []))
 ;;
@@ -395,7 +407,7 @@ let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
   return (res_env, res_sub)
 ;;
 
-let infer_rec_rest_vb ~debug sub_acc env_acc fresh typ name new_sub =
+let infer_rec_rest_vb sub_acc env_acc fresh typ name new_sub =
   (*constraint there*)
   let* uni_sub = Substitution.unify (Substitution.apply new_sub fresh) typ in
   let* comp_sub = Substitution.compose_all [ new_sub; uni_sub; sub_acc ] in
@@ -442,7 +454,7 @@ let rec infer_exp ~debug exp env =
            let* fresh = fresh_var in
            return (fresh, Type_construct ("bool", []))
          | "&&" | "||" -> return (Type_construct ("bool", []), Type_construct ("bool", []))
-         | _ -> failwith "aboba"
+         | _ -> fail `Not_supported
        in
        let* unif_sub1 = Substitution.unify (Substitution.apply sub2 typ1) arg_typ in
        let* unif_sub2 = Substitution.unify (Substitution.apply unif_sub1 typ2) arg_typ in
@@ -490,17 +502,19 @@ let rec infer_exp ~debug exp env =
     in
     return (sub1, Type_arrow (Substitution.apply sub1 typ1, typ2))
   | Exp_construct ("()", None) -> return (Substitution.empty, Type_construct ("unit", []))
-  | Exp_construct ("Some", Some expr) ->
-    let* sub, typ = infer_exp ~debug expr env in
-    return (sub, Type_construct ("option", [ typ ]))
+  (* | Exp_construct ("Some", Some expr) ->
+     let* sub, typ = infer_exp ~debug expr env in
+     return (sub, Type_construct ("option", [ typ ])) *)
   | Exp_construct (id, None) when id = "false" || id = "true" ->
     return (Substitution.empty, Type_construct ("bool", []))
-  | Exp_construct (name, None) ->
-      let* ty, sub = infer_exp ~debug (Exp_ident name) env in
-      return (ty, sub)
   | Exp_construct (name, Some expr) ->
-      let* ty, sub = infer_exp ~debug  (Exp_apply (Exp_ident name, expr)) env in
-      return (ty, sub)
+    let* ty, sub = infer_exp ~debug (Exp_apply (Exp_ident name, expr)) env in
+    return (ty, sub)
+  | Exp_construct (name, None) ->
+    let* ty, sub =
+      infer_exp ~debug (Exp_ident name) (*(Exp_apply (Exp_ident name, )) *) env
+    in
+    return (ty, sub)
   | Exp_tuple (exp1, exp2, rest) ->
     let* sub1, typ1 = infer_exp ~debug exp1 env in
     let new_env = TypeEnv.apply sub1 env in
@@ -525,20 +539,17 @@ let rec infer_exp ~debug exp env =
   | Exp_if (ifexp, thenexp, Some elseexp) ->
     let* sub1, typ1 = infer_exp ~debug ifexp env in
     let* uni_sub1 = Substitution.unify typ1 (Type_construct ("bool", [])) in
-    let new_env = TypeEnv.apply uni_sub1 env in
-    let* sub2, typ2 = infer_exp ~debug thenexp new_env in
-    let new_env = TypeEnv.apply sub2 new_env in
-    let* sub3, typ3 = infer_exp ~debug elseexp new_env in
+    let* sub2, typ2 = infer_exp ~debug thenexp env in
+    let* sub3, typ3 = infer_exp ~debug elseexp env in
     let* uni_sub2 = Substitution.unify typ2 typ3 in
-    let new_env = TypeEnv.apply uni_sub2 new_env in
     let* comp_sub = Substitution.compose_all [ sub1; uni_sub1; sub2; sub3; uni_sub2 ] in
     return (comp_sub, typ3)
   | Exp_if (ifexp, thenexp, None) ->
     let* sub1, typ1 = infer_exp ~debug ifexp env in
     let* uni_sub1 = Substitution.unify typ1 (Type_construct ("bool", [])) in
-    let new_env = TypeEnv.apply uni_sub1 env in
-    let* sub2, typ2 = infer_exp ~debug thenexp new_env in
-    let new_env = TypeEnv.apply sub2 new_env in
+    (* let new_env = TypeEnv.apply uni_sub1 env in *)
+    let* sub2, typ2 = infer_exp ~debug thenexp env in
+    (* let new_env = TypeEnv.apply sub2 new_env in *)
     let* comp_sub = Substitution.compose_all [ sub1; uni_sub1; sub2 ] in
     return (comp_sub, typ2)
   | Exp_match (expr, (case, rest)) ->
@@ -590,7 +601,7 @@ let rec infer_exp ~debug exp env =
           let* comp_sub = Substitution.compose_all [ uni_sub2; subexpr; sub1 ] in
           return (comp_sub, Substitution.apply comp_sub typ))
     in
-    return (res_sub, res_typ)
+    return (res_sub, Type_arrow(Substitution.apply res_sub fresh1,res_typ))
   | Exp_let (Nonrecursive, (value_binding, rest), exp) ->
     let* new_env, sub =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
@@ -619,10 +630,8 @@ let rec infer_exp ~debug exp env =
     let* uni_sub = Substitution.unify typ1 typ in
     let* comp_sub = Substitution.compose sub uni_sub in
     return (comp_sub, typ1)
-    (*remove?*)
-  | _ -> failwith "unlucky"
 
-and infer_cases ~debug env cases tyexp typat subst =
+(* and infer_cases ~debug env cases tyexp typat subst =
   let* env, sub, typexp, typpat =
     RList.fold_right
       ~f:(fun case acc ->
@@ -639,7 +648,7 @@ and infer_cases ~debug env cases tyexp typat subst =
       ~init:(return (env, subst, tyexp, typat))
       cases
   in
-  return (env, sub, typexp, typpat)
+  return (env, sub, typexp, typpat) *)
 
 and infer_value_binding_list ~debug vb_list env sub =
   let* res_env, res_sub =
@@ -711,7 +720,7 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
             , fresh ) ->
             let* subexpr, typexpr = infer_exp ~debug exp env_acc in
             let* res_env, res_sub =
-              infer_rec_rest_vb ~debug sub_acc env_acc fresh typexpr name subexpr
+              infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
             in
             return (res_env, res_sub)
           | ( { pat = Pat_constraint (Pat_var name, pat_typ)
@@ -725,7 +734,7 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
                 env
             in
             let* res_env, res_sub =
-              infer_rec_rest_vb ~debug sub_acc env_acc fresh typexpr name subexpr
+              infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
             in
             return (res_env, res_sub)
           | { pat = Pat_var name; expr }, fresh ->
@@ -737,7 +746,7 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
                then failwith "abobiks"
                else
                  let* res_env, res_sub =
-                   infer_rec_rest_vb ~debug sub_acc env_acc fresh typexpr name subexpr
+                   infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
                  in
                  return (res_env, res_sub)
              | _ -> failwith "wrong rec")
@@ -749,21 +758,38 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
   return (res_env, res_sub)
 ;;
 
-(* let get_pattern_names = *)
-
-(* let infer_rec_value_binding_list *)
-
 open Ast.Pattern
 open Ast.Structure
-let check_poly_types typ typ_list =
-  match typ with
-  | Type_var x -> 
-    (match Base.List.find ~f:(fun y -> String.equal x y) typ_list with
-      | Some _ -> typ
-      | None -> failwith "wrong poly types"
-    )
-  | _ -> typ
-  ;;
+
+let rec check_poly_types ~debug typ_list marity =
+  function
+  | Type_var var when Base.List.mem typ_list var ~equal:String.equal ->
+    return ()
+| Type_var name  ->
+    fail (`Unbound_variable name)
+| Type_construct (name, args) ->
+    (* if debug then (
+      Format.printf "Marity map2:\n";
+      Base.Map.iteri marity ~f:(fun ~key ~data ->
+      Format.printf "Key: %s, Value: %d\n" key data
+      )
+      ); *)
+    let* arity = Base.Map.find marity name |> Base.Option.value_map ~f:return ~default:(fail (`Undeclared_type name )) in
+    if arity = Base.List.length args then check_many ~debug typ_list marity args
+    else fail (`Arity_mismatch)
+  | _ -> fail `Not_supported
+
+
+    and check_many ~debug typ_list marity args =
+    let rec iter args =
+      match args with
+      | [] -> return ()
+      | arg :: rest ->
+          let* () = check_poly_types ~debug typ_list marity arg in
+          iter rest
+    in
+    iter args
+
 let get_names_adt env poly_list =
   RList.fold_right
     ~f:(fun poly acc ->
@@ -774,6 +800,10 @@ let get_names_adt env poly_list =
     poly_list
     ~init:(return (env, []))
 ;;
+let (!) fresh =
+  match fresh with
+  | Type_var id -> id
+  | _ -> failwith "Unreachable"
 
 let infer_structure_item ~debug env item marity =
   match item with
@@ -782,7 +812,7 @@ let infer_structure_item ~debug env item marity =
     let new_env = TypeEnv.extend env "-" (Forall (VarSet.empty, typ)) in
     return (new_env, marity)
   | Str_value (Nonrecursive, (value_binding, rest)) ->
-    let* env, sub =
+    let* env, _ =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
     in
     if debug then Stdlib.Format.printf "DEBUG: AFTER LKet\n";
@@ -790,7 +820,7 @@ let infer_structure_item ~debug env item marity =
     return (env, marity)
   | Str_value (Recursive, (value_binding, rest)) ->
     let* new_env, fresh_vars = add_names_rec env (value_binding :: rest) in
-    let* new_env, sub =
+    let* new_env, _ =
       infer_rec_value_binding_list
         ~debug
         (value_binding :: rest)
@@ -806,12 +836,12 @@ let infer_structure_item ~debug env item marity =
     let adt_type = Type_construct (name, poly_types) in
     let type_arity = List.length poly in
     let arity_map = Base.Map.set marity ~key:name ~data:type_arity in
-    (* if debug then (
-       Format.printf "Marity map:\n";
+    if debug then (
+       Format.printf "Marity map start:\n";
        Base.Map.iteri arity_map ~f:(fun ~key ~data ->
        Format.printf "Key: %s, Value: %d\n" key data
        )
-       ); *)
+       );
     (* let env = TypeEnv.extend env name (Forall (VarSet.empty, adt_type)) in *)
     let* constrs =
       RList.fold_left
@@ -820,27 +850,31 @@ let infer_structure_item ~debug env item marity =
         ~f:(fun acc (constr_name, constr_types) ->
           let* env_acc = return acc in
           let* fresh = fresh_var in
-          let new_env =
+          let* new_env =
             match constr_types with
-            | [] -> TypeEnv.extend env_acc constr_name (Forall (VarSet.empty, adt_type))
+            | [] -> return (TypeEnv.extend env_acc constr_name (Forall (VarSet.singleton !fresh, adt_type)))
             | hd :: [] ->
-              let _ = check_poly_types hd poly in
-              TypeEnv.extend
+              let* () = check_poly_types ~debug poly arity_map hd in
+              return (TypeEnv.extend
                 env_acc
                 constr_name
-                (Forall (VarSet.empty, Type_arrow (hd, adt_type)))
+                (Forall (VarSet.singleton !fresh, Type_arrow (hd, adt_type))))
             | [ hd; tl ] ->
-              let _ = Base.List.map [hd;tl] ~f:(fun typ -> check_poly_types typ poly) in
-              TypeEnv.extend
+              let* _ =
+                RList.map [ hd; tl ] ~f:(check_poly_types ~debug poly arity_map )
+              in
+              return (TypeEnv.extend
                 env_acc
                 constr_name
-                (Forall (VarSet.empty, Type_arrow (Type_tuple (hd, tl, []), adt_type)))
+                (Forall (VarSet.singleton !fresh, Type_arrow (Type_tuple (hd, tl, []), adt_type))))
             | hd :: tl1 :: tl2 ->
-              let _ = Base.List.map (hd::tl1::tl2) ~f:(fun typ -> check_poly_types typ poly) in
-              TypeEnv.extend
+              let* _ =
+                RList.map (hd :: tl1 :: tl2) ~f:( check_poly_types ~debug poly arity_map)
+              in
+              return (TypeEnv.extend
                 env_acc
                 constr_name
-                (Forall (VarSet.empty, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type)))
+                (Forall (VarSet.singleton !fresh, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type))))
           in
           (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
           return new_env)
@@ -850,6 +884,10 @@ let infer_structure_item ~debug env item marity =
 
 let infer_program ~debug program env =
   let marity = Base.Map.empty (module Base.String) in
+  let marity = Base.Map.add_exn marity ~key:"int" ~data:0 in
+  let marity = Base.Map.add_exn marity ~key:"char" ~data:0 in
+  let marity = Base.Map.add_exn marity ~key:"string" ~data:0 in
+  let marity = Base.Map.add_exn marity ~key:"bool" ~data:0 in
   let* env, arr =
     RList.fold_left
       program
@@ -860,7 +898,7 @@ let infer_program ~debug program env =
   in
   if debug
   then (
-    Format.printf "Marity map:\n";
+    Format.printf "Marity map res:\n";
     Base.Map.iteri arr ~f:(fun ~key ~data ->
       Format.printf "Key: %s, Value: %d\n" key data));
   return env
@@ -886,6 +924,11 @@ let env_with_print_funs =
       , Forall
           ( VarSet.empty
           , Type_arrow (Type_construct ("bool", []), Type_construct ("unit", [])) ) )
+    ; ( "Some"
+      , Forall
+          ( VarSet.singleton "a"
+          , Type_arrow (Type_var "a", Type_construct ("option", [ Type_var "a" ])) ) )
+    ; ("None", Forall (VarSet.singleton "a", Type_construct ("option", [ Type_var "a" ])))
     ]
   in
   List.fold_left

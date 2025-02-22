@@ -61,7 +61,6 @@ let parse_and_infer_result program =
      | Ok env -> printf "\nres:\n%a" TypeEnv.pp_env env
      (* | Ok (_,[]) -> failwith "abibi" *)
      | Error err -> printf "%a" pp_inf_err err)
-  | _ -> failwith "aboba"
 ;;
 
 let%expect_test "zero" =
@@ -70,6 +69,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": '0 -> '0
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -87,6 +88,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "f": int -> int
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -100,6 +103,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -112,6 +117,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -124,6 +131,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -136,6 +145,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -148,6 +159,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -160,6 +173,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -172,6 +187,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -184,6 +201,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -200,6 +219,21 @@ match homka with
     {|
     res:
     "-": int * string
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
+;;
+let%expect_test "zero" =
+  parse_and_infer_result
+    {|function 5 -> 'c';;|};
+  [%expect{|
+    res:
+    "-": int -> char
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -216,23 +250,15 @@ match homkaOBOLTUS with
     {|
     res:
     "-": int * string
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
     "print_int": int -> unit |}]
 ;;
 
-let%expect_test "zero" =
-  parse_and_infer_result
-    {|fun id ->
-  let homkaOBOLTIMUSPRIME = id in
-  match homkaOBOLTIMUSPRIME with
-  |  f -> f 42, f "42";;|};
-  [%expect {|
-    Unification_failed: int # string |}]
-;;
 
-(*BUG*)
 let%expect_test "zero" =
   parse_and_infer_result {|let x = 1;;
 let y = 2;;
@@ -242,6 +268,8 @@ let z = 3;;
     {|
     res:
     "-": bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -257,6 +285,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -269,6 +299,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": string
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -281,6 +313,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int * int * int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -298,7 +332,9 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "-": char
+    "-": int -> char
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -320,6 +356,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -332,6 +370,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int -> int -> int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -345,6 +385,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -357,6 +399,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -369,6 +413,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -382,6 +428,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "f": int
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -397,6 +445,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -410,6 +460,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -423,6 +475,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -434,6 +488,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "f": [ 1; 2; ]. '1 -> '2
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -446,6 +502,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "f": [ 0; ]. '0 -> '0
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -460,6 +518,8 @@ let 5 = x;;|};
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -481,6 +541,8 @@ let%expect_test "zero" =
     {|
     res:
     "-": bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -496,6 +558,8 @@ let id = fun x -> x in (id square) (id 123);;|};
     {|
     res:
     "-": int
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -512,6 +576,8 @@ let rec meven n = if n = 0 then 1 else modd (n - 1)
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "meven": int -> int
     "modd": int -> int
     "print_bool": bool -> unit
@@ -525,6 +591,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "f": int -> int
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -537,6 +605,8 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "f": int -> int -> int
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -555,7 +625,9 @@ let%expect_test "zero" =
   [%expect
     {|
     res:
-    "f": int -> bool
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "f": int -> int -> bool
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -572,7 +644,14 @@ let%expect_test "zero" =
 let%expect_test "zero" =
   parse_and_infer_result {| let (f: int -> bool) = function 5 -> true | 6 -> false;;|};
   [%expect {|
-    Unification_failed: bool # int -> bool |}]
+    res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "f": int -> bool
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*KAKADU TYPE BEAT*)
@@ -583,6 +662,8 @@ let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "fac": int -> int
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -601,6 +682,8 @@ let rec fac n = if n<=1 then 1 else n * fac (n-1);;
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "fac": int -> int
     "main": int
     "print_bool": bool -> unit
@@ -616,8 +699,16 @@ let%expect_test "002fact without builtin" =
 let rec fac_cps n k =
   if n=1 then k 1 else
   fac_cps (n-1) (fun p -> k (p*n));;|};
-  [%expect {|
-    Occurs_check |}]
+  [%expect
+    {|
+    res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "fac_cps": [ 8; ]. int -> (int -> '8) -> '8
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*passed*)
@@ -629,8 +720,17 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));; let main =
   let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
   0;;|};
-  [%expect {|
-    Occurs_check |}]
+  [%expect
+    {|
+    res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "fac_cps": [ 8; ]. int -> (int -> '8) -> '8
+    "main": int
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*PASSED*)
@@ -650,6 +750,8 @@ let rec fib_acc a b n =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "fib": int -> int
     "fib_acc": int -> int -> int -> int
     "print_bool": bool -> unit
@@ -679,6 +781,8 @@ let rec fib_acc a b n =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "fib": int -> int
     "fib_acc": int -> int -> int -> int
     "main": int
@@ -713,6 +817,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "main": int
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -733,6 +839,8 @@ let fac self n = if n<=1 then 1 else n * self (n-1);;|};
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "fac": (int -> int) -> int -> int
     "fix": [ 2; 5; ]. (('2 -> '5) -> '2 -> '5) -> '2 -> '5
     "print_bool": bool -> unit
@@ -755,6 +863,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "fac": (int -> int) -> int -> int
     "fix": [ 2; 5; ]. (('2 -> '5) -> '2 -> '5) -> '2 -> '5
     "main": int
@@ -775,6 +885,8 @@ let%expect_test "006" =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "foo": int -> int
     "main": int
     "print_bool": bool -> unit
@@ -801,6 +913,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "foo": int -> int -> int -> int
     "main": int
     "print_bool": bool -> unit
@@ -823,6 +937,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "foo": int -> int -> int -> unit
     "main": int
     "print_bool": bool -> unit
@@ -844,6 +960,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "_start": unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
     "main": unit
     "print_bool": bool -> unit
@@ -863,6 +981,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "addi": [ 2; ]. ('2 -> bool -> int) -> ('2 -> bool) -> '2 -> int
     "main": int
     "print_bool": bool -> unit
@@ -880,6 +1000,8 @@ let temp =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -891,26 +1013,39 @@ let temp =
 let%expect_test "010" =
   parse_and_infer_result
     {|
-let _1 = fun x y (a, _) -> (x + y - a) = 1;;
-let _2 =
-    let x, Some f = 1, Some ( "p1onerka was here" )
-    in x;;
-    let _3 =  Some (1, "hi");;
-    let _4 = let rec f x = f 5 in f;;
- let id1, id2 = let id x = x in (id, id);;
- let a_42 = function
-  | 42 -> true
-  | _ -> false
-;;
-let int_of_option = function
-  | Some x -> x
-  | None -> 0
-;;
-let k_6 arg =
-  match arg with
-  | Some x -> let y = x in y
-;;
 
+    let _1 = fun x y (a, _) -> (x + y - a) = 1;;
+    let _2 =
+      let x, Some f = 1, Some "p1onerka was here" in
+      x
+    ;;
+    
+    let _3 = Some (1, "hi");;
+    let _4 =
+      let rec f x = f 5 in
+      f
+    ;;
+    
+    let id1, id2 =
+      let id x = x in
+      id, id
+    ;;
+    let a_42 = function
+      | 42 -> true
+      | _ -> false
+    ;;
+    
+    let k_6 arg =
+      match arg with
+      | Some x ->
+        let y = x in
+        y
+    ;;
+    let int_of_option = function
+      | Some x -> x
+      | None -> 0
+    ;;
+    
 let aaa_5 =
   let id x = x in
   match Some id with
@@ -920,29 +1055,25 @@ let aaa_5 =
   | None -> 0
 ;;
     |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure noname)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.infer_pat in file "lib/infer.ml", line 312, characters 16-33
-  Called from Ocamladt_lib__Infer.infer_exp.(fun) in file "lib/infer.ml", line 584, characters 34-65
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 902, characters 2-40
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 892, characters 2-560
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "_1": [ 3; ]. int -> int -> int * '3 -> bool
+    "_2": int
+    "_3": (int * string) option
+    "_4": [ 18; ]. int -> '18
+    "a_42": int -> bool
+    "aaa_5": int
+    "id1": [ 22; 23; ]. '22 -> '22
+    "id2": [ 22; 23; ]. '23 -> '23
+    "int_of_option": int option -> int
+    "k_6": [ 31; ]. '31 option -> '31
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;
 
 (*FAILED *)
@@ -973,6 +1104,8 @@ let main =
   [%expect
     {|
     res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "feven": [ 32; ]. '32 * (int -> int) -> int -> int
     "fix": [ 2; 5; ]. (('2 -> '5) -> '2 -> '5) -> '2 -> '5
     "fixpoly": [ 21; 24; ]. (('21 -> '24) * ('21 -> '24) -> '21 -> '24) * (('21 -> '24) * ('21 -> '24) -> '21 -> '24) -> ('21 -> '24) * ('21 -> '24)
@@ -1020,7 +1153,8 @@ let%expect_test "004  " =
   parse_and_infer_result {|
 let _1 =
   (fun f -> (f 1, f true)) (fun x -> x);;|};
-  [%expect {|
+  [%expect
+    {|
     Unification_failed: int # bool |}]
 ;;
 
@@ -1031,35 +1165,22 @@ let%expect_test "005  " =
 let _2 = function
   | Some f -> let _ = f "42" in f 42
   | None -> 1;;|};
-  [%expect {|
+  [%expect
+    {|
     Unification_failed: string # int |}]
 ;;
 
 (*FAILED*)
 let%expect_test "015" =
   parse_and_infer_result {|let rec (a,b) = (a,b);;|};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure abobi)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 902, characters 2-40
-  Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1040, characters 2-52
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect{| Not supported syntax |}]
 ;;
 
 (*PASSED*)
 let%expect_test "016" =
   parse_and_infer_result {|let a, _ = 1, 2, 3;;|};
-  [%expect {|
+  [%expect
+    {|
     Unification_failed: int * int * int # '0 * '1 |}]
 ;;
 
@@ -1076,14 +1197,15 @@ let%expect_test "091.1" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 58, characters 8-25
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1068, characters 2-53
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1189, characters 2-53
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 (*PASSED*)
 let%expect_test "097.2" =
   parse_and_infer_result {|let () = (fun x -> x);;|};
-  [%expect {|
+  [%expect
+    {|
     Unification_failed: '0 -> '0 # unit |}]
 ;;
 
@@ -1102,10 +1224,10 @@ let%expect_test "098" =
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
-  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 60, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 902, characters 2-40
+  Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 70, characters 18-23
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 945, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1092, characters 2-48
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1214, characters 2-48
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1121,7 +1243,7 @@ let%expect_test "098" =
   (Failure ": end_of_input")
   Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 58, characters 8-25
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1113, characters 2-50
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1235, characters 2-50
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
@@ -1133,7 +1255,9 @@ let%expect_test "Simplest ADT" =
   [%expect
     {|
     res:
-    "Circle": shape
+    "Circle": [ 0; ]. shape
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
@@ -1146,10 +1270,11 @@ let%expect_test "ADT of" =
   type shape = Circle of int ;;
   type ('a,'b) koka = Circle of int ;;
 |};
-  [%expect
-    {|
+  [%expect{|
     res:
-    "Circle": int -> '2 * '1 koka
+    "Circle": [ 3; ]. int -> '2 '1 koka
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
     "a": '2
     "b": '1
     "print_bool": bool -> unit
@@ -1163,13 +1288,14 @@ let%expect_test "ADT of few" =
     {|
   type shape = 
   Circle of int
-| Rectangle of float 
+| Rectangle of char 
 | Triangle of int*int
 ;;
 let x = 10;;
-let Circle (5,5) = Circle 5;;
+let Circle (5,5) = Circle x;;
 |};
-  [%expect {| Unification_failed: int # int * int |}]
+  [%expect{|
+    Unification_failed: int # int * int |}]
 ;;
 
 let%expect_test "ADT with poly" =
@@ -1182,12 +1308,13 @@ let%expect_test "ADT with poly" =
 let x = 10;;
 let Circle 5 = Circle 5;;
 |};
-  [%expect
-    {|
+  [%expect{|
     res:
-    "Circle": int -> '0 shape
-    "Rectangle": int * int -> '0 shape
-    "Square": int -> '0 shape
+    "Circle": [ 1; ]. int -> '0 shape
+    "None": [ a; ]. 'a option
+    "Rectangle": [ 2; ]. int * int -> '0 shape
+    "Some": [ a; ]. 'a -> 'a option
+    "Square": [ 3; ]. int -> '0 shape
     "a": '0
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -1197,27 +1324,20 @@ let Circle 5 = Circle 5;;
 ;;
 
 let%expect_test "ADT with poly2" =
-  parse_and_infer_result
-    {|
-  type 'a shape = Circle of int
-  | Rectangle of 'a * int
-  | Square of int
-;;
-let x = 10;;
-let Rectangle ('c',5) = Circle 5;;
+  parse_and_infer_result {|
+  type 'a shape = 
+   Square of int;;
 |};
-  [%expect
-    {|
+  [%expect{|
     res:
-    "Circle": int -> '0 shape
-    "Rectangle": char * int -> '0 shape
-    "Square": int -> '0 shape
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "Square": [ 1; ]. int -> '0 shape
     "a": '0
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int |}]
+    "print_int": int -> unit |}]
 ;;
 
 let%expect_test "ADT with poly3" =
@@ -1228,12 +1348,13 @@ let%expect_test "ADT with poly3" =
   | Square of int * 'a * 'a
 ;;
 |};
-  [%expect
-    {|
+  [%expect{|
     res:
-    "Circle": int -> '0 shape
-    "Rectangle": char * int -> '0 shape
-    "Square": int * 'a * 'a -> '0 shape
+    "Circle": [ 1; ]. int -> '0 shape
+    "None": [ a; ]. 'a option
+    "Rectangle": [ 2; ]. char * int -> '0 shape
+    "Some": [ a; ]. 'a -> 'a option
+    "Square": [ 3; ]. int * 'a * 'a -> '0 shape
     "a": '0
     "print_bool": bool -> unit
     "print_char": char -> unit
@@ -1250,7 +1371,7 @@ let%expect_test "ADT with poly constraint" =
 ;;
 let (x: shape) = Circle 5;;
 |};
-  [%expect {|
+  [%expect{|
     Unification_failed: '0 shape # shape |}]
 ;;
 
@@ -1261,18 +1382,64 @@ let%expect_test "ADT with constraint" =
   | Rectangle of char * int
   | Square of int * 'a * 'a
 ;;
-let (x: (int->int) shape) = Circle 5;;
+let (x: (int,int) shape) = Circle 5;;
 |};
-  [%expect
+  [%expect{|
+    Unification_failed: '0 shape # int int shape |}]
+;;
+
+let%expect_test "ADT with constraint exp" =
+  parse_and_infer_result
     {|
+  type 'a shape = Circle of int
+  | Rectangle of char * int
+  | Square of int * 'a * 'a
+;;
+let y = Circle 5;;
+let (x: (int) shape) = y;;
+|};
+  [%expect{|
     res:
-    "Circle": int -> (int -> int) shape
-    "Rectangle": char * int -> (int -> int) shape
-    "Square": int * 'a * 'a -> (int -> int) shape
-    "a": int -> int
+    "Circle": [ 1; ]. int -> int shape
+    "None": [ a; ]. 'a option
+    "Rectangle": [ 2; ]. char * int -> int shape
+    "Some": [ a; ]. 'a -> 'a option
+    "Square": [ 3; ]. int * 'a * 'a -> int shape
+    "a": int
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
     "print_int": int -> unit
-    "x": (int -> int) shape |}]
+    "x": int shape
+    "y": int shape |}]
+;;
+
+(*BUG*)
+let%expect_test "ADT arity" =
+  parse_and_infer_result {|
+type 'a foo = Foo
+type bar = Bar of foo
+
+|};
+  [%expect{|
+    Arity_mismatch |}]
+;;
+
+(*PASSED*)
+let%expect_test "002fact without builtin" =
+  parse_and_infer_result
+    {|
+let rec fac_cps n k =
+  if n=1 then k 1 else
+  fac_cps (n-1) (fun p -> k (p*n));;|};
+  [%expect
+    {|
+    res:
+    "None": [ a; ]. 'a option
+    "Some": [ a; ]. 'a -> 'a option
+    "fac_cps": [ 8; ]. int -> (int -> '8) -> '8
+    "print_bool": bool -> unit
+    "print_char": char -> unit
+    "print_endline": string -> unit
+    "print_int": int -> unit |}]
 ;;

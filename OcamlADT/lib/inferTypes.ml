@@ -51,17 +51,29 @@ let rec pprint_type_tuple fmt = function
      | _ -> fprintf fmt "%a * %a" pprint_type h pprint_type_tuple tl)
 
 and pprint_type fmt = function
-  | Type_var num -> fprintf fmt "'%s" num (*(*(Stdlib.Char.chr)*)(Stdlib.Char.code num.[0]) (**)*)
-  (* | Type_prim str -> fprintf fmt "%s" str *)
+  | Type_var num -> fprintf fmt "'%s" num
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
      | Type_arrow (_, _), _ -> fprintf fmt "(%a) -> %a" pprint_type ty1 pprint_type ty2
      | _ -> fprintf fmt "%a -> %a" pprint_type ty1 pprint_type ty2)
   | Type_tuple (t1, t2, ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1 :: t2 :: ty_lst)
-  | Type_construct (name,[]) -> fprintf fmt "%s" name
-  | Type_construct (name,ty_list) -> fprintf fmt "%a %s"  pprint_type_tuple (ty_list) name
-  
-;;
+  | Type_construct (name, []) -> fprintf fmt "%s" name
+  | Type_construct (name, ty_list) ->
+    fprintf fmt "%a %s" (pprint_type_list_with_parens) ty_list name
+
+and pprint_type_list_with_parens fmt ty_list =
+  let rec print_types fmt = function
+    | [] -> ()
+    | [ty] -> pprint_type_with_parens_if_tuple fmt ty
+    | ty :: rest ->
+      fprintf fmt "%a %a" pprint_type_with_parens_if_tuple ty print_types rest
+  in
+  print_types fmt ty_list
+
+and pprint_type_with_parens_if_tuple fmt ty =
+  match ty with
+  | Type_tuple _ -> fprintf fmt "(%a)" pprint_type ty
+  | _ -> pprint_type fmt ty
 
 (* | Type_list ty1 -> fprintf fmt "%a list" pprint_type ty1 *)
 
@@ -77,6 +89,9 @@ type error =
   | `Unbound_adt_type of string
   | `Unbound_variable of string
   | `Pattern_matching_failed
+  | `Arity_mismatch
+  | `Undeclared_type of string
+  | `Not_supported
   ]
 
 let pp_inf_err fmt = function
@@ -90,4 +105,7 @@ let pp_inf_err fmt = function
   | `Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
   | `Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
   | `Pattern_matching_failed -> fprintf fmt "Pattern_matching_failed"
+  | `Arity_mismatch -> fprintf fmt "Arity_mismatch"
+  | `Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
+  | `Not_supported -> fprintf fmt "Not supported syntax"
 ;;
