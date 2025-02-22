@@ -477,7 +477,7 @@ let%expect_test "list (shouldn't work, see tests below)" =
 let [a] = [42] ;; 
  |};
   [%expect {|
-  Parser Error
+  Intepreter error: Unbound value ::
   |}]
 ;;
 

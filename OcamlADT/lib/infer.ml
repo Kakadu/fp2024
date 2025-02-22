@@ -929,6 +929,8 @@ let env_with_print_funs =
           ( VarSet.singleton "a"
           , Type_arrow (Type_var "a", Type_construct ("option", [ Type_var "a" ])) ) )
     ; ("None", Forall (VarSet.singleton "a", Type_construct ("option", [ Type_var "a" ])))
+    ; ("::", Forall (VarSet.singleton "a", Type_arrow(Type_tuple(Type_var "a",Type_construct("list",[ Type_var "a" ]),[]),Type_construct("list",[ Type_var "a" ]))))
+    ; ("[]", Forall (VarSet.singleton "a", Type_construct("list",[Type_var "a"])))
     ]
   in
   List.fold_left

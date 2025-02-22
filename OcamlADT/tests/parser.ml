@@ -1001,7 +1001,8 @@ let%expect_test "_" =
 (*good*)
 let%expect_test "_" =
   test_program {|(f : (int -> int -> int));;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_eval
         (Exp_constraint ((Exp_ident "f"),
            (Type_arrow (
@@ -1055,7 +1056,8 @@ let%expect_test "_" =
 let%expect_test "_" =
   test_program
     {|('v' : (sqEcf8boz* s58r6D_P_bX___yy_93GPH__04_r___d9Zc_1U2__c8XmN1n_F_WBqxl68h_8_TCGqp3B_5w_Y_53a6_d_6_H9845__c5__09s* sh__7ud_43* s_KKm_z3r5__jHMLw_qd1760R_G__nI6_J040__AB_6s0__D__d__e32Te6H_4__Ec_V_E__f_* o0_a_W_* f__LcPREH13__mY_CezffoI5_8_u_zU__ZncOnf_v4_L8_44Y72_3_A5_B758TViP_u_vyFU9_1* qD0* g4wp33A_W* e1V_gi_6y* x_Sv_PZ)) ;; |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_eval
         (Exp_constraint ((Exp_constant (Const_char 'v')),
            (Type_tuple
@@ -1096,7 +1098,8 @@ let%expect_test "adt v0" =
 
 let%expect_test "adt v1" =
   test_program {|type shape = Circle | Square of int;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt ([], "shape",
         (("Circle", []), [("Square", [(Type_construct ("int", []))])])))
       ] |}]
@@ -1110,7 +1113,8 @@ let%expect_test "adt v2" =
 
 let%expect_test "adt v3" =
   test_program {|type shape = Circle | Square of int * int;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt ([], "shape",
         (("Circle", []),
          [("Square", [(Type_construct ("int", [])); (Type_construct ("int", []))])
@@ -1121,7 +1125,8 @@ let%expect_test "adt v3" =
 
 let%expect_test "adt with poly" =
   test_program {|type 'a shape = Circle | Square of 'a * 'a ;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "shape",
         (("Circle", []), [("Square", [(Type_var "a"); (Type_var "a")])])))
       ] |}]
@@ -1129,14 +1134,16 @@ let%expect_test "adt with poly" =
 
 let%expect_test "bad adt with poly (wrong types)" =
   test_program {|type 'a shape = Circle | Square of 'b;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "shape", (("Circle", []), [("Square", [(Type_var "b")])])))
       ] |}]
 ;;
 
 let%expect_test "adt with poly (not poly in variant)" =
   test_program {|type 'a shape = Circle | Square of int;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "shape",
         (("Circle", []), [("Square", [(Type_construct ("int", []))])])))
       ] |}]
@@ -1149,7 +1156,8 @@ let%expect_test "adt with poly v.easy" =
 
 let%expect_test "adt with multiple poly v1" =
   test_program {|type ('a, 'b) shape = Circle | Square of 'a;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"; "b"], "shape",
         (("Circle", []), [("Square", [(Type_var "a")])])))
       ] |}]
@@ -1157,7 +1165,8 @@ let%expect_test "adt with multiple poly v1" =
 
 let%expect_test "adt with multiple poly v2" =
   test_program {|type ('a, 'b) shape = Circle | Square of ('a,'b) shape;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"; "b"], "shape",
         (("Circle", []),
          [("Square",
@@ -1231,7 +1240,8 @@ let%expect_test "match case" =
 
 let%expect_test "adt with tuple in variant" =
   test_program {|type shape = Circle | Square of int * int ;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt ([], "shape",
         (("Circle", []),
          [("Square", [(Type_construct ("int", [])); (Type_construct ("int", []))])
@@ -1242,7 +1252,8 @@ let%expect_test "adt with tuple in variant" =
 
 let%expect_test "adt with recursive poly variant" =
   test_program {|type ('a, 'b) shape = Circle | Square of 'a shape;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"; "b"], "shape",
         (("Circle", []),
          [("Square", [(Type_construct ("shape", [(Type_var "a")]))])])
@@ -1254,7 +1265,8 @@ let%expect_test "adt list" =
   test_program {|
 type 'a my_list = Nil | Cons of 'a * 'a my_list;;
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "my_list",
         (("Nil", []),
          [("Cons",
@@ -1271,7 +1283,8 @@ type 'a nested_list = Nil
 | List of 'a nested_list;;
 
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "nested_list",
         (("Nil", []),
          [("Cons",
@@ -1288,7 +1301,8 @@ type 'a nested_list = Nil
 | Cons of 'a * 'a nested_list 
 | List of 'a nested_list nested_list;;
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "nested_list",
         (("Nil", []),
          [("Cons",
@@ -1308,7 +1322,8 @@ type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
   |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "tree",
         (("Leaf", []),
          [("Node",
@@ -1325,7 +1340,8 @@ let%expect_test "adt list with pair" =
     {| type ('a, 'b) pair_list = Nil 
     | Cons of ('a * 'b) * ('a, 'b) pair_list;;
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"; "b"], "pair_list",
         (("Nil", []),
          [("Cons",
@@ -1342,7 +1358,8 @@ let%expect_test "adt list with 2 el in node" =
     {| type ('a, 'b) pair_list = Nil 
     | Cons of 'a * 'b * ('a, 'b) pair_list;;
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"; "b"], "pair_list",
         (("Nil", []),
          [("Cons",
@@ -1361,7 +1378,8 @@ type shape = Point of int
   | Rect of int * int * int 
 ;;
 |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt ([], "shape",
         (("Point", [(Type_construct ("int", []))]),
          [("Circle", [(Type_construct ("int", [])); (Type_construct ("int", []))]);
@@ -1377,7 +1395,7 @@ let%expect_test "simple adt with pattern matching function (else case) + printin
   test_program
     {|
 type shape = Circle of int
-  | Rectangle of int * int 
+  | Rectangle of (int*int) * int  
   | Square of int
 ;;
 let area s = 
@@ -1392,11 +1410,18 @@ print_int y
 ;;
 
   |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt ([], "shape",
         (("Circle", [(Type_construct ("int", []))]),
          [("Rectangle",
-           [(Type_construct ("int", [])); (Type_construct ("int", []))]);
+           [(Type_construct ("",
+               [(Type_tuple
+                   ((Type_construct ("int", [])), (Type_construct ("int", [])),
+                    []))
+                 ]
+               ));
+             (Type_construct ("int", []))]);
            ("Square", [(Type_construct ("int", []))])])
         ));
       (Str_value (Nonrecursive,
@@ -1567,7 +1592,8 @@ let%expect_test "keyword" =
 
 let%expect_test "keyword" =
   test_program {|let (x: int option) = 20;;|};
-  [%expect{|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat =
            (Pat_constraint ((Pat_var "x"),
@@ -1638,7 +1664,8 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"], "shape",
         (("Circle", [(Type_construct ("int", []))]),
          [("Rectangle",
@@ -1696,7 +1723,8 @@ type ('a,'b) shape = Circle of int
   | Square of 'a * 'b
 ;;
   |};
-  [%expect{|
+  [%expect
+    {|
     [(Str_adt (["a"; "b"], "shape",
         (("Circle", [(Type_construct ("int", []))]),
          [("Rectangle",
@@ -1705,7 +1733,6 @@ type ('a,'b) shape = Circle of int
         ))
       ] |}]
 ;;
-
 
 let%expect_test "function assignment with bool operators" =
   test_program {| let id = fun (x, y) -> x && y in print_bool (id true false) ;; |};
@@ -1837,22 +1864,16 @@ let%expect_test "lists v1" =
   test_program {|
 let x = [];;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure ": end_of_input")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
-  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1837, characters 2-35
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect
+    {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "x"); expr = (Exp_construct ("[]", None)) }, [])))
+      ] |}]
 ;;
 
-      let%expect_test "keyword" =
-      test_program {|let rec fix f x = f (fix f) x;;
+let%expect_test "keyword" =
+  test_program
+    {|let rec fix f x = f (fix f) x;;
 let map f p = let (a,b) = p in (f a, f b);;
 let fixpoly l =
   fix (fun self l -> map (fun li x -> li (self l) x) l) l;;
@@ -1863,7 +1884,8 @@ let fodd p n =
   let (e, o) = p in
   if n = 0 then 0 else e (n - 1);;
   let tie = fixpoly (feven, fodd);; |};
-      [%expect{|
+  [%expect
+    {|
         [(Str_value (Recursive,
             ({ pat = (Pat_var "fix");
                expr =
@@ -1981,5 +2003,584 @@ let fodd p n =
               [])
              ))
           ] |}]
-     
-    
+;;
+
+let%expect_test "keyword" =
+  test_program {|type 'a foo = Foo;;
+type bar = Bar of foo;; |};
+  [%expect
+    {|
+        [(Str_adt (["a"], "foo", (("Foo", []), [])));
+          (Str_adt ([], "bar", (("Bar", [(Type_construct ("foo", []))]), [])))] |}]
+;;
+
+let%expect_test "keyword" =
+  test_program {|let (x: (int*char) option) = Some 5;; |};
+  [%expect
+    {|
+        [(Str_value (Nonrecursive,
+            ({ pat =
+               (Pat_constraint ((Pat_var "x"),
+                  (Type_construct ("option",
+                     [(Type_tuple
+                         ((Type_construct ("int", [])),
+                          (Type_construct ("char", [])), []))
+                       ]
+                     ))
+                  ));
+               expr =
+               (Exp_construct ("Some", (Some (Exp_constant (Const_integer 5))))) },
+             [])
+            ))
+          ] |}]
+;;
+
+(*lists*)
+let%expect_test "list1" =
+  test_program
+    {|let rec length xs =
+   match xs with
+   | [] -> 0
+   | h::tl -> 1 + length tl;; |};
+  [%expect
+    {|
+        [(Str_value (Recursive,
+            ({ pat = (Pat_var "length");
+               expr =
+               (Exp_fun (((Pat_var "xs"), []),
+                  (Exp_match ((Exp_ident "xs"),
+                     ({ first = (Pat_construct ("[]", None));
+                        second = (Exp_constant (Const_integer 0)) },
+                      [{ first =
+                         (Pat_construct ("::",
+                            (Some (Pat_tuple ((Pat_var "h"), (Pat_var "tl"), [])))));
+                         second =
+                         (Exp_apply ((Exp_ident "+"),
+                            (Exp_tuple
+                               ((Exp_constant (Const_integer 1)),
+                                (Exp_apply ((Exp_ident "length"), (Exp_ident "tl"))),
+                                []))
+                            ))
+                         }
+                        ])
+                     ))
+                  ))
+               },
+             [])
+            ))
+          ] |}]
+;;
+
+let%expect_test "list2" =
+  test_program
+    {|let length_tail =
+  let rec helper acc xs =
+  match xs with
+  | [] -> acc
+  | h::tl -> helper (acc + 1) tl
+  in
+  helper 0
+;; |};
+  [%expect
+    {|
+        [(Str_value (Nonrecursive,
+            ({ pat = (Pat_var "length_tail");
+               expr =
+               (Exp_let (Recursive,
+                  ({ pat = (Pat_var "helper");
+                     expr =
+                     (Exp_fun (((Pat_var "acc"), [(Pat_var "xs")]),
+                        (Exp_match ((Exp_ident "xs"),
+                           ({ first = (Pat_construct ("[]", None));
+                              second = (Exp_ident "acc") },
+                            [{ first =
+                               (Pat_construct ("::",
+                                  (Some (Pat_tuple
+                                           ((Pat_var "h"), (Pat_var "tl"), [])))
+                                  ));
+                               second =
+                               (Exp_apply (
+                                  (Exp_apply ((Exp_ident "helper"),
+                                     (Exp_apply ((Exp_ident "+"),
+                                        (Exp_tuple
+                                           ((Exp_ident "acc"),
+                                            (Exp_constant (Const_integer 1)),
+                                            []))
+                                        ))
+                                     )),
+                                  (Exp_ident "tl")))
+                               }
+                              ])
+                           ))
+                        ))
+                     },
+                   []),
+                  (Exp_apply ((Exp_ident "helper"), (Exp_constant (Const_integer 0))
+                     ))
+                  ))
+               },
+             [])
+            ))
+          ] |}]
+;;
+
+let%expect_test "list3" =
+  test_program
+    {|let rec map f xs =
+  match xs with
+  | [] -> []
+  | a::[] -> [f a]
+  | a::b::[] -> [f a; f b]
+  | a::b::c::[] -> [f a; f b; f c]
+  | a::b::c::d::tl -> f a :: f b :: f c :: f d :: map f tl
+|};
+  [%expect
+    {|
+      [(Str_value (Recursive,
+          ({ pat = (Pat_var "map");
+             expr =
+             (Exp_fun (((Pat_var "f"), [(Pat_var "xs")]),
+                (Exp_match ((Exp_ident "xs"),
+                   ({ first = (Pat_construct ("[]", None));
+                      second = (Exp_construct ("[]", None)) },
+                    [{ first =
+                       (Pat_construct ("::",
+                          (Some (Pat_tuple
+                                   ((Pat_var "a"), (Pat_construct ("[]", None)), [])))
+                          ));
+                       second =
+                       (Exp_construct ("::",
+                          (Some (Exp_tuple
+                                   ((Exp_apply ((Exp_ident "f"), (Exp_ident "a"))),
+                                    (Exp_construct ("[]", None)), [])))
+                          ))
+                       };
+                      { first =
+                        (Pat_construct ("::",
+                           (Some (Pat_tuple
+                                    ((Pat_construct ("::",
+                                        (Some (Pat_tuple
+                                                 ((Pat_var "a"), (Pat_var "b"), [])))
+                                        )),
+                                     (Pat_construct ("[]", None)), [])))
+                           ));
+                        second =
+                        (Exp_construct ("::",
+                           (Some (Exp_tuple
+                                    ((Exp_apply ((Exp_ident "f"), (Exp_ident "a"))),
+                                     (Exp_construct ("::",
+                                        (Some (Exp_tuple
+                                                 ((Exp_apply ((Exp_ident "f"),
+                                                     (Exp_ident "b"))),
+                                                  (Exp_construct ("[]", None)),
+                                                  [])))
+                                        )),
+                                     [])))
+                           ))
+                        };
+                      { first =
+                        (Pat_construct ("::",
+                           (Some (Pat_tuple
+                                    ((Pat_construct ("::",
+                                        (Some (Pat_tuple
+                                                 ((Pat_construct ("::",
+                                                     (Some (Pat_tuple
+                                                              ((Pat_var "a"),
+                                                               (Pat_var "b"),
+                                                               [])))
+                                                     )),
+                                                  (Pat_var "c"), [])))
+                                        )),
+                                     (Pat_construct ("[]", None)), [])))
+                           ));
+                        second =
+                        (Exp_construct ("::",
+                           (Some (Exp_tuple
+                                    ((Exp_apply ((Exp_ident "f"), (Exp_ident "a"))),
+                                     (Exp_construct ("::",
+                                        (Some (Exp_tuple
+                                                 ((Exp_apply ((Exp_ident "f"),
+                                                     (Exp_ident "b"))),
+                                                  (Exp_construct ("::",
+                                                     (Some (Exp_tuple
+                                                              ((Exp_apply (
+                                                                  (Exp_ident "f"),
+                                                                  (Exp_ident "c"))),
+                                                               (Exp_construct (
+                                                                  "[]", None)),
+                                                               [])))
+                                                     )),
+                                                  [])))
+                                        )),
+                                     [])))
+                           ))
+                        };
+                      { first =
+                        (Pat_construct ("::",
+                           (Some (Pat_tuple
+                                    ((Pat_construct ("::",
+                                        (Some (Pat_tuple
+                                                 ((Pat_construct ("::",
+                                                     (Some (Pat_tuple
+                                                              ((Pat_construct (
+                                                                  "::",
+                                                                  (Some (Pat_tuple
+                                                                          ((
+                                                                          Pat_var
+                                                                          "a"),
+                                                                          (Pat_var
+                                                                          "b"),
+                                                                          [])))
+                                                                  )),
+                                                               (Pat_var "c"),
+                                                               [])))
+                                                     )),
+                                                  (Pat_var "d"), [])))
+                                        )),
+                                     (Pat_var "tl"), [])))
+                           ));
+                        second =
+                        (Exp_construct ("::",
+                           (Some (Exp_tuple
+                                    ((Exp_construct ("::",
+                                        (Some (Exp_tuple
+                                                 ((Exp_construct ("::",
+                                                     (Some (Exp_tuple
+                                                              ((Exp_construct (
+                                                                  "::",
+                                                                  (Some (Exp_tuple
+                                                                          ((
+                                                                          Exp_apply (
+                                                                          (Exp_ident
+                                                                          "f"),
+                                                                          (Exp_ident
+                                                                          "a"))),
+                                                                          (Exp_apply (
+                                                                          (Exp_ident
+                                                                          "f"),
+                                                                          (Exp_ident
+                                                                          "b"))),
+                                                                          [])))
+                                                                  )),
+                                                               (Exp_apply (
+                                                                  (Exp_ident "f"),
+                                                                  (Exp_ident "c"))),
+                                                               [])))
+                                                     )),
+                                                  (Exp_apply ((Exp_ident "f"),
+                                                     (Exp_ident "d"))),
+                                                  [])))
+                                        )),
+                                     (Exp_apply (
+                                        (Exp_apply ((Exp_ident "map"),
+                                           (Exp_ident "f"))),
+                                        (Exp_ident "tl"))),
+                                     [])))
+                           ))
+                        }
+                      ])
+                   ))
+                ))
+             },
+           [])
+          ))
+        ] |}]
+;;
+
+let%expect_test "list4" =
+  test_program
+    {|let rec append xs ys = match xs with [] -> ys | x::xs -> x::(append xs ys);;
+|};
+  [%expect
+    {|
+      [(Str_value (Recursive,
+          ({ pat = (Pat_var "append");
+             expr =
+             (Exp_fun (((Pat_var "xs"), [(Pat_var "ys")]),
+                (Exp_match ((Exp_ident "xs"),
+                   ({ first = (Pat_construct ("[]", None));
+                      second = (Exp_ident "ys") },
+                    [{ first =
+                       (Pat_construct ("::",
+                          (Some (Pat_tuple ((Pat_var "x"), (Pat_var "xs"), [])))));
+                       second =
+                       (Exp_construct ("::",
+                          (Some (Exp_tuple
+                                   ((Exp_ident "x"),
+                                    (Exp_apply (
+                                       (Exp_apply ((Exp_ident "append"),
+                                          (Exp_ident "xs"))),
+                                       (Exp_ident "ys"))),
+                                    [])))
+                          ))
+                       }
+                      ])
+                   ))
+                ))
+             },
+           [])
+          ))
+        ] |}]
+;;
+
+
+let%expect_test "list5" =
+  test_program
+    {|let concat =
+  let rec helper xs =
+    match xs with
+    | [] -> []
+    | h::tl -> append h (helper tl)
+  in helper
+;;
+|};
+  [%expect
+    {|
+      [(Str_value (Nonrecursive,
+          ({ pat = (Pat_var "concat");
+             expr =
+             (Exp_let (Recursive,
+                ({ pat = (Pat_var "helper");
+                   expr =
+                   (Exp_fun (((Pat_var "xs"), []),
+                      (Exp_match ((Exp_ident "xs"),
+                         ({ first = (Pat_construct ("[]", None));
+                            second = (Exp_construct ("[]", None)) },
+                          [{ first =
+                             (Pat_construct ("::",
+                                (Some (Pat_tuple
+                                         ((Pat_var "h"), (Pat_var "tl"), [])))
+                                ));
+                             second =
+                             (Exp_apply (
+                                (Exp_apply ((Exp_ident "append"), (Exp_ident "h"))),
+                                (Exp_apply ((Exp_ident "helper"), (Exp_ident "tl")
+                                   ))
+                                ))
+                             }
+                            ])
+                         ))
+                      ))
+                   },
+                 []),
+                (Exp_ident "helper")))
+             },
+           [])
+          ))
+        ] |}]
+;;
+
+let%expect_test "list6" =
+  test_program
+    {|(1 :: 2) :: []
+;;
+|};
+  [%expect
+    {|
+      [(Str_eval
+          (Exp_construct ("::",
+             (Some (Exp_tuple
+                      ((Exp_construct ("::",
+                          (Some (Exp_tuple
+                                   ((Exp_constant (Const_integer 1)),
+                                    (Exp_constant (Const_integer 2)), [])))
+                          )),
+                       (Exp_construct ("[]", None)), [])))
+             )))
+        ] |}]
+;;
+let%expect_test "list7" =
+  test_program
+    {|let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter f tl;;
+|};
+  [%expect
+    {|
+      [(Str_value (Recursive,
+          ({ pat = (Pat_var "iter");
+             expr =
+             (Exp_fun (((Pat_var "f"), [(Pat_var "xs")]),
+                (Exp_match ((Exp_ident "xs"),
+                   ({ first = (Pat_construct ("[]", None));
+                      second = (Exp_construct ("()", None)) },
+                    [{ first =
+                       (Pat_construct ("::",
+                          (Some (Pat_tuple ((Pat_var "h"), (Pat_var "tl"), [])))));
+                       second =
+                       (Exp_let (Nonrecursive,
+                          ({ pat = (Pat_construct ("()", None));
+                             expr = (Exp_apply ((Exp_ident "f"), (Exp_ident "h")))
+                             },
+                           []),
+                          (Exp_apply (
+                             (Exp_apply ((Exp_ident "iter"), (Exp_ident "f"))),
+                             (Exp_ident "tl")))
+                          ))
+                       }
+                      ])
+                   ))
+                ))
+             },
+           [])
+          ))
+        ] |}]
+;;
+let%expect_test "list8" =
+  test_program
+    {|let rec cartesian xs ys =
+  match xs with
+  | [] -> []
+  | h::tl -> append (map (fun a -> (h,a)) ys) (cartesian tl ys);;
+|};
+  [%expect
+    {|
+      [(Str_value (Recursive,
+          ({ pat = (Pat_var "cartesian");
+             expr =
+             (Exp_fun (((Pat_var "xs"), [(Pat_var "ys")]),
+                (Exp_match ((Exp_ident "xs"),
+                   ({ first = (Pat_construct ("[]", None));
+                      second = (Exp_construct ("[]", None)) },
+                    [{ first =
+                       (Pat_construct ("::",
+                          (Some (Pat_tuple ((Pat_var "h"), (Pat_var "tl"), [])))));
+                       second =
+                       (Exp_apply (
+                          (Exp_apply ((Exp_ident "append"),
+                             (Exp_apply (
+                                (Exp_apply ((Exp_ident "map"),
+                                   (Exp_fun (((Pat_var "a"), []),
+                                      (Exp_tuple
+                                         ((Exp_ident "h"), (Exp_ident "a"), []))
+                                      ))
+                                   )),
+                                (Exp_ident "ys")))
+                             )),
+                          (Exp_apply (
+                             (Exp_apply ((Exp_ident "cartesian"), (Exp_ident "tl")
+                                )),
+                             (Exp_ident "ys")))
+                          ))
+                       }
+                      ])
+                   ))
+                ))
+             },
+           [])
+          ))
+        ] |}]
+;;
+let%expect_test "list9" =
+  test_program
+    {|let main =
+  let () = iter print_int [1;2;3] in
+  let () = print_int (length (cartesian [1;2] [1;2;3;4])) in
+  0
+;;
+|};
+  [%expect
+    {|
+      [(Str_value (Nonrecursive,
+          ({ pat = (Pat_var "main");
+             expr =
+             (Exp_let (Nonrecursive,
+                ({ pat = (Pat_construct ("()", None));
+                   expr =
+                   (Exp_apply (
+                      (Exp_apply ((Exp_ident "iter"), (Exp_ident "print_int"))),
+                      (Exp_construct ("::",
+                         (Some (Exp_tuple
+                                  ((Exp_constant (Const_integer 1)),
+                                   (Exp_construct ("::",
+                                      (Some (Exp_tuple
+                                               ((Exp_constant (Const_integer 2)),
+                                                (Exp_construct ("::",
+                                                   (Some (Exp_tuple
+                                                            ((Exp_constant
+                                                                (Const_integer 3)),
+                                                             (Exp_construct ("[]",
+                                                                None)),
+                                                             [])))
+                                                   )),
+                                                [])))
+                                      )),
+                                   [])))
+                         ))
+                      ))
+                   },
+                 []),
+                (Exp_let (Nonrecursive,
+                   ({ pat = (Pat_construct ("()", None));
+                      expr =
+                      (Exp_apply ((Exp_ident "print_int"),
+                         (Exp_apply ((Exp_ident "length"),
+                            (Exp_apply (
+                               (Exp_apply ((Exp_ident "cartesian"),
+                                  (Exp_construct ("::",
+                                     (Some (Exp_tuple
+                                              ((Exp_constant (Const_integer 1)),
+                                               (Exp_construct ("::",
+                                                  (Some (Exp_tuple
+                                                           ((Exp_constant
+                                                               (Const_integer 2)),
+                                                            (Exp_construct ("[]",
+                                                               None)),
+                                                            [])))
+                                                  )),
+                                               [])))
+                                     ))
+                                  )),
+                               (Exp_construct ("::",
+                                  (Some (Exp_tuple
+                                           ((Exp_constant (Const_integer 1)),
+                                            (Exp_construct ("::",
+                                               (Some (Exp_tuple
+                                                        ((Exp_constant
+                                                            (Const_integer 2)),
+                                                         (Exp_construct ("::",
+                                                            (Some (Exp_tuple
+                                                                     ((Exp_constant
+                                                                         (Const_integer
+                                                                          3)),
+                                                                      (Exp_construct (
+                                                                         "::",
+                                                                         (Some (
+                                                                         Exp_tuple
+                                                                          ((
+                                                                          Exp_constant
+                                                                          (Const_integer
+                                                                          4)),
+                                                                          (Exp_construct (
+                                                                          "[]",
+                                                                          None)),
+                                                                          [])))
+                                                                         )),
+                                                                      [])))
+                                                            )),
+                                                         [])))
+                                               )),
+                                            [])))
+                                  ))
+                               ))
+                            ))
+                         ))
+                      },
+                    []),
+                   (Exp_constant (Const_integer 0))))
+                ))
+             },
+           [])
+          ))
+        ] |}]
+;;
+
+let%expect_test "list9" =
+  test_program
+    {|type 'a list = 
+    Cons of 'a * 'a list 
+    | Nil;;|};
+  [%expect {|
+    [(Str_adt (["a"], "list",
+        (("Cons", [(Type_var "a"); (Type_construct ("list", [(Type_var "a")]))]),
+         [("Nil", [])])
+        ))
+      ] |}]

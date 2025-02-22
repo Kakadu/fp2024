@@ -12,6 +12,9 @@
 
   $ ../bin/interpret.exe  manytests/typed/002fac.ml
   Running... 
+  24
+  val fac_cps = <fun>
+  val main = 0
 
   $ ../bin/interpret.exe  manytests/typed/003fib.ml
   Running... 

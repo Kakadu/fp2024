@@ -123,6 +123,18 @@ let rchain p op =
   loop x
 ;;
 
+let plistdots parse construct func =
+  token "[" *> sep_by (token ";") parse
+  <* token "]"
+  >>| List.fold_right ~init:(construct ("[]", None)) ~f:func
+;;
+
+let plistbrackets parse construct tuple =
+  rchain
+    parse
+    (token "::" *> return (fun acc elem -> construct ("::", Some (tuple (acc, elem, [])))))
+;;
+
 (*
    |░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓████████▓▒░
    |   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
@@ -250,6 +262,19 @@ let ptype_adt = pass_ws *> ptypeconstr_app  <|> ptypevar
    ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
 *)
 
+
+let ppatlitsdots ppat =
+plistdots
+ppat
+    (fun (tag, pat_opt) -> Ast.Pattern.Pat_construct (tag, pat_opt))
+    (fun pat acc_pat -> Ast.Pattern.Pat_construct ("::", Some (Pat_tuple (pat, acc_pat, []))))
+;;
+
+let ppatlistbrackets ppat =
+  plistbrackets
+    ppat
+    (fun (tag, pat_opt) -> Ast.Pattern.Pat_construct (tag, pat_opt))
+    (fun (fst_pat, snd_pat, pat_list) -> Ast.Pattern.Pat_tuple (fst_pat, snd_pat, pat_list))
 let pspecials = choice [ token "()"; token "true"; token "false"; token "None" ]
 
 let psome parse =
@@ -289,9 +314,9 @@ let ppatconstraint ppattern =
   return (Pattern.Pat_constraint (pat, pattype))
 ;;
 
-let plist_empty = token "[]" >>| fun _ -> Pattern.Pat_construct ("[]", None)
+(* let plist_empty = token "[]" >>| fun _ -> Pattern.Pat_construct ("[]", None) *)
 
-let plist_nonempty (ppattern : Pattern.t Angstrom.t) =
+(* let plist_nonempty (ppattern : Pattern.t Angstrom.t) =
   let* elements = token "[" *> sep_by (token ",") ppattern <* token "]" in
   match elements with
   | [] -> failwith "Non-empty list expected, but empty found"
@@ -310,7 +335,7 @@ let pcons_operator (ppattern : Pattern.t Angstrom.t) =
 
 let plist (ppattern : Pattern.t Angstrom.t) =
   plist_empty <|> plist_nonempty ppattern <|> pcons_operator ppattern
-;;
+;; *)
 
 let ppattern =
   fix (fun ppattern ->
@@ -328,7 +353,9 @@ let ppattern =
              ; ppatconstraint ppattern
              ])
     in
-    ptuplepat poprnd <|> poprnd)
+  let parse_pat = ppatlitsdots poprnd <|> poprnd in
+  let parse_pat = ppatlistbrackets parse_pat <|> parse_pat in
+    ptuplepat parse_pat <|> parse_pat)
 ;;
 
 (*
@@ -341,6 +368,20 @@ let ppattern =
    ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░
 *)
 
+
+
+let pexplistdots pexp =
+  plistdots
+    pexp
+    (fun (tag, pat_opt) -> Ast.Expression.Exp_construct (tag, pat_opt))
+    (fun pat acc_pat -> Ast.Expression.Exp_construct ("::", Some (Exp_tuple (pat, acc_pat, []))))
+;;
+let pexplistbrackets pexp =
+  plistbrackets
+    pexp
+    (fun (tag, exp_opt) -> Ast.Expression.Exp_construct (tag, exp_opt))
+    (fun (fst_exp, snd_exp, exp_list) -> Ast.Expression.Exp_tuple (fst_exp, snd_exp, exp_list))
+;;
 let pexprconst =
   let* const = pconst in
   return (Expression.Exp_constant const)
@@ -493,6 +534,7 @@ let pexpr =
            ; pparenth pexpr
            ; pidentexpr
            ; pexprconstraint pexpr
+           ; pexplistdots pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
            ; (psome pexpr >>| fun (name, opt) -> Expression.Exp_construct (name, opt))
@@ -511,12 +553,13 @@ let pexpr =
       return (Expression.Exp_apply (constr, arg))
     in
     let papply = lchain (pconstructor_apply <|> poprnd) papplyexpr in
+    let plist = pexplistbrackets papply <|> papply in
     let prefop =
       parseprefop
-        papply
+      plist
         (choice [ token "+"; token "-" ]
          >>| fun id expr -> Expression.Exp_apply (Exp_ident id, expr))
-      <|> papply
+      <|> plist
     in
     let pmuldiv = lchain prefop (pmul <|> pdiv) in
     let paddsub = lchain pmuldiv (padd <|> psub) in
