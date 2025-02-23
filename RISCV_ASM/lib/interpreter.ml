@@ -702,7 +702,6 @@ and execute_instruction state instr program =
     execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 ->
       Int64.unsigned_compare arg1 arg2 < 0)
   | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add false
-  | Subi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.sub false
   | Xori (rd, rs1, imm) ->
     execute_immediate_op state program rd rs1 imm Int64.logxor false
   | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor false
@@ -1005,122 +1004,7 @@ let%expect_test "test_factorial" =
     ; LabelExpr "loop"
     ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
     ; InstructionExpr (Mul (X6, X6, X10))
-    ; InstructionExpr (Subi (X10, X10, ImmediateAddress12 1))
-    ; InstructionExpr (J (LabelAddress20 "loop"))
-    ; LabelExpr "exit"
-    ]
-  in
-  let initial_state = init_state program in
-  match interpret initial_state program with
-  | Ok final_state ->
-    let state_str = show_state final_state in
-    print_string state_str;
-    [%expect
-      {|
-      X0: 0
-      X1: 0
-      X10: 0
-      X11: 0
-      X12: 0
-      X13: 0
-      X14: 0
-      X15: 0
-      X16: 0
-      X17: 0
-      X18: 0
-      X19: 0
-      X2: 0
-      X20: 0
-      X21: 0
-      X22: 0
-      X23: 0
-      X24: 0
-      X25: 0
-      X26: 0
-      X27: 0
-      X28: 0
-      X29: 0
-      X3: 0
-      X30: 0
-      X31: 0
-      X4: 0
-      X5: 0
-      X6: 120
-      X7: 0
-      X8: 0
-      X9: 0
-      V0: [0 0 0 0 ]
-      V1: [0 0 0 0 ]
-      V10: [0 0 0 0 ]
-      V11: [0 0 0 0 ]
-      V12: [0 0 0 0 ]
-      V13: [0 0 0 0 ]
-      V14: [0 0 0 0 ]
-      V15: [0 0 0 0 ]
-      V16: [0 0 0 0 ]
-      V17: [0 0 0 0 ]
-      V18: [0 0 0 0 ]
-      V19: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V20: [0 0 0 0 ]
-      V21: [0 0 0 0 ]
-      V22: [0 0 0 0 ]
-      V23: [0 0 0 0 ]
-      V24: [0 0 0 0 ]
-      V25: [0 0 0 0 ]
-      V26: [0 0 0 0 ]
-      V27: [0 0 0 0 ]
-      V28: [0 0 0 0 ]
-      V29: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V30: [0 0 0 0 ]
-      V31: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
-      Integer memory:
-      String memory:
-      Writable:
-      0: false
-      1: false
-      2: false
-      3: false
-      4: false
-      5: false
-      6: false
-      7: false
-      8: false
-      9: false
-      10: false
-      11: false
-      12: false
-      13: false
-      14: false
-      15: false
-      16: false
-      17: false
-      18: false
-      19: false
-      20: false
-      21: false
-      22: false
-      23: false
-      PC: 32
-    |}]
-  | Error e -> print_string ("Error: " ^ e)
-;;
-
-let%expect_test "test_factorial" =
-  let program =
-    [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
-    ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
-    ; LabelExpr "loop"
-    ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
-    ; InstructionExpr (Mul (X6, X6, X10))
-    ; InstructionExpr (Subi (X10, X10, ImmediateAddress12 1))
+    ; InstructionExpr (Addi (X10, X10, ImmediateAddress12 (-1)))
     ; InstructionExpr (J (LabelAddress20 "loop"))
     ; LabelExpr "exit"
     ]

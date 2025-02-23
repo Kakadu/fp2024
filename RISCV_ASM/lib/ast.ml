@@ -212,8 +212,6 @@ type instruction =
   | Slt of register * register * register (** Set Less Than. rd = (rs1 < rs2) ? 1 : 0 *)
   | Sltu of register * register * register (** Set Less Than (Unsigned) *)
   | Addi of register * register * address12 (** Addition of Immediate. rd = rs1 + imm *)
-  | Subi of register * register * address12
-  (** Subtraction of Immediate. rd = rs1 - imm *)
   | Xori of register * register * address12 (** XOR with Immediate. rd = rs1 ^ imm *)
   | Ori of register * register * address12 (** OR with Immediate. rd = rs1 | imm *)
   | Andi of register * register * address12 (** AND with Immediate. rd = rs1 & imm *)
