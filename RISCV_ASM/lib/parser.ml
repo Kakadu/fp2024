@@ -441,12 +441,6 @@ let parse_instruction =
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
-       ; parse_string_with_spaces "subi"
-         *> lift3
-              (fun r1 r2 addr12 -> InstructionExpr (Subi (r1, r2, addr12)))
-              parse_register
-              (char ',' *> parse_register)
-              (char ',' *> parse_address12)
        ; parse_string_with_spaces "xori"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Xori (r1, r2, addr12)))
