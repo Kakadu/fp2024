@@ -469,11 +469,11 @@ let execute_shift_immediate_op state program rd rs1 imm op =
   let val1 = get_register_value state rs1 in
   let imm_value =
     match get_address12_value program imm with
-    | Immediate imm_value -> imm_value
-    | Label excluding_directives_label_offset ->
-      Int64.to_int excluding_directives_label_offset
+    | Immediate imm_value -> Int64.of_int imm_value
+    | Label excluding_directives_label_offset -> excluding_directives_label_offset
   in
-  let result = op val1 imm_value in
+  let imm_lower_6bits = Int64.to_int (Int64.logand imm_value 0x3FL) in
+  let result = op val1 imm_lower_6bits in
   return (set_register_value state rd result)
 ;;
 let execute_shnadd state rd rs1 rs2 n to_zext =
