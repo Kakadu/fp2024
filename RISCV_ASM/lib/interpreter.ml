@@ -877,9 +877,6 @@ and execute_instruction state instr program =
   | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul false
   | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div false
   | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem false
-  | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
-  | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
-  | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
   | Mv (rd, rs) ->
     execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add false
   | Li (rd, imm) ->
@@ -1036,7 +1033,7 @@ let%expect_test "test_factorial" =
     ; LabelExpr "loop"
     ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
     ; InstructionExpr (Mul (X6, X6, X10))
-    ; InstructionExpr (Subi (X10, X10, ImmediateAddress12 1))
+    ; InstructionExpr (Addi (X10, X10, ImmediateAddress12 (-1)))
     ; InstructionExpr (J (LabelAddress20 "loop"))
     ; LabelExpr "exit"
     ]
