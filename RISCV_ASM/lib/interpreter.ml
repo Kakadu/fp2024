@@ -460,12 +460,8 @@ let execute_immediate_op state program rd rs1 imm op to_sext =
     | Immediate imm_value -> Int64.of_int imm_value
     | Label excluding_directives_label_offset -> excluding_directives_label_offset
   in
-  let result = op val1 imm_value in
-  let result_final =
-    match to_sext with
-    | true -> sext result
-    | false -> result
-  in
+  let result = op val1 (sext imm_value) in
+  let result_final = if to_sext then sext result else result in
   return (set_register_value state rd result_final)
 ;;
 
