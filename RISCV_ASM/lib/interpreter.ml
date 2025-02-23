@@ -563,22 +563,14 @@ let store_memory_int state address value size =
 
 let execute_load_int state program rd rs1 imm size signed =
   let base_address = get_register_value state rs1 in
-  let* offset =
+  let offset =
     match get_address12_value program imm with
-    | Immediate imm_value -> return (Int64.of_int imm_value)
-    | Label label -> return label
+    | Immediate imm_value -> Int64.of_int imm_value
+    | Label label -> label
   in
-  let address = Int64.add base_address offset in
+  let address = Int64.add base_address (sext offset) in
   let* value = load_memory_int state address size in
-  let result =
-    match signed with
-    | true ->
-      (match size with
-       | 1 -> Int64.shift_right (Int64.shift_left value 56) 56
-       | 2 -> Int64.shift_right (Int64.shift_left value 48) 48
-       | _ -> value)
-    | false -> value
-  in
+  let result = if signed then sext value else zext value in
   return (set_register_value state rd result)
 ;;
 
