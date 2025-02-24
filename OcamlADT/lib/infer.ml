@@ -115,10 +115,16 @@ module Substitution = struct
   let mapping k v = if Type.occurs_check k v then fail `Occurs_check else return (k, v)
   (*i need this?*)
 
-  let singleton k vm =
-    if Type.occurs_check k vm
-    then fail (`Occurs_check (k, vm))
-    else return (Base.Map.singleton (module Base.String) k vm)
+  let singleton k v =
+    (* let _ = Stdlib.Format.printf "in singleton %s:%a\n" k pprint_type v in *)
+    match k, v with
+    | a, Type_var b when String.equal a b ->
+        return (Base.Map.empty (module Base.String))
+    | _ ->
+        if Type.occurs_check k v then
+          fail (`Occurs_check (k, v))
+        else
+          return (Base.Map.singleton (module Base.String) k v)
   ;;
 
   (* let find_exn (map : t) (k : binder) : Ast.TypeExpr.t = Map.find_exn map k

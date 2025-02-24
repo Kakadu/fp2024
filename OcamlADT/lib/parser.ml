@@ -8,13 +8,13 @@ open Base
 open Char
 
 (*
-   |░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▒ ░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░
+   |    _       _   _  __  __               _                    _       ____     __   __
+   |U  /"\  uU |"|u| | \ \/"/      ___     |"|        ___    U  /"\  uU |  _'\ u  \ \ / /
+   | \/ _ \/  \| |\| | /\  /\     |_"_|  U | | u     |_"_|    \/ _ \/  \| |_) |/   \ V /
+   | / ___ \   | |_| |U /  \ u     | |    \| |/__     | |     / ___ \   |  _ <    U_|"|_u
+   |/_/   \_\ <<\___/  /_/\_\    U/| |\u   |_____|  U/| |\u  /_/   \_\  |_| \_\     |_|
+   | \\    >>(__) )( ,-,>> \\_.-,_|___|_,-.//  \\.-,_|___|_,-.\\    >>  //   \\_.-,//|(_
+   |(__)  (__)   (__) \_)  (__)\_)-' '-(_/(_")("_)\_)-' '-(_/(__)  (__)(__)  (__)\_) (__)
 *)
 
 let is_whitespace = function
@@ -62,21 +62,21 @@ let pident_lc =
 ;;
 
 (*
-   |░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓███████▓▒░ ░▒▓███████▓▒░▒▓████████▓▒░▒▓██████▓▒░░▒▓███████▓▒░▒▓████████▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░         ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░   ░▒▓█▓▒░  ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░  ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░  ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░
-   |░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░   ░▒▓█▓▒░  ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░
+   |   ____   U  ___ u  _   _    ____     _____      _      _   _     _____
+   |U /"___|   \/"_ \/ | \ |"|  / __"| u |_ " _| U  /"\  u | \ |"|   |_ " _|
+   |\| | u     | | | |<|  \| |><\___ \/    | |    \/ _ \/ <|  \| |>    | |
+   | | |/__.-,_| |_| |U| |\  |u u___) |   /| |\   / ___ \ U| |\  |u   /| |\
+   |  \____|\_)-\___/  |_| \_|  |____/>> u |_|U  /_/   \_\ |_| \_|   u |_|U
+   | _// \\      \\    ||   \\,-.)(  (__)_// \\_  \\    >> ||   \\,-._// \\_
+   |(__)(__)    (__)   (_")  (_/(__)    (__) (__)(__)  (__)(_")  (_/(__) (__)
 
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░░▒▓███████▓▒░▒▓███████▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓███████▓▒░░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░     ░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░     ░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░
+   |U _____ u __  __    ____      ____    U _____ u ____    ____                U  ___ u  _   _
+   |\| ___'|/ \ \/"/  U|  _"\ uU |  _"\ u \| ___"|// __"| u/ __"| u      ___     \/"_ \/ | \ |"|
+   | |  _|"   /\  /\  \| |_) |/ \| |_) |/  |  _|" <\___ \/<\___ \/      |_"_|    | | | |<|  \| |>
+   | | |___  U /  \ u  |  __/    |  _ <    | |___  u___) | u___) |       | | .-,_| |_| |U| |\  |u
+   | |_____|  /_/\_\   |_|       |_| \_\   |_____| |____/>>|____/>>    U/| |\u\_)-\___/  |_| \_|
+   | <<   >>,-,>> \\_  ||>>_     //   \\_  <<   >>  )(  (__))(  (__).-,_|___|_,-.  \\    ||   \\,-.
+   |(__) (__)\_)  (__)(__)__)   (__)  (__)(__) (__)(__)    (__)      \_)-' '-(_/  (__)   (_")  (_/
 *)
 let pconstint =
   let* number = Int.of_string <$> take_while1 is_digit in
@@ -136,21 +136,21 @@ let plistbrackets parse construct tuple =
 ;;
 
 (*
-   |░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓████████▓▒░
-   |   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   |   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   |   ░▒▓█▓▒░    ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓██████▓▒░
-   |   ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░
-   |   ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░
-   |   ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓████████▓▒░
+   |  _____   __   __  ____   U _____ u
+   | |_ " _|  \ \ / /U|  _"\ u\| ___'|/
+   |   | |     \ V / \| |_) |/ |  _|"
+   |  /| |\   U_|"|_u |  __/   | |___
+   | u |_|U     |_|   |_|      |_____|
+   | _// \\_.-,//|(_  ||>>_    <<   >>
+   |(__) (__)\_) (__)(__)__)  (__) (__)
 
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░░▒▓███████▓▒░▒▓███████▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓███████▓▒░░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░     ░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░     ░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░
+   |U _____ u __  __    ____      ____    U _____ u ____    ____                U  ___ u  _   _
+   |\| ___'|/ \ \/"/  U|  _"\ uU |  _"\ u \| ___"|// __"| u/ __"| u      ___     \/"_ \/ | \ |"|
+   | |  _|"   /\  /\  \| |_) |/ \| |_) |/  |  _|" <\___ \/<\___ \/      |_"_|    | | | |<|  \| |>
+   | | |___  U /  \ u  |  __/    |  _ <    | |___  u___) | u___) |       | | .-,_| |_| |U| |\  |u
+   | |_____|  /_/\_\   |_|       |_| \_\   |_____| |____/>>|____/>>    U/| |\u\_)-\___/  |_| \_|
+   | <<   >>,-,>> \\_  ||>>_     //   \\_  <<   >>  )(  (__))(  (__).-,_|___|_,-.  \\    ||   \\,-.
+   |(__) (__)\_)  (__)(__)__)   (__)  (__)(__) (__)(__)    (__)      \_)-' '-(_/  (__)   (_")  (_/
 *)
 
 let ptypearrow = pass_ws *> token "->" >>| fun _ lhs rhs -> TypeExpr.Type_arrow (lhs, rhs)
@@ -159,6 +159,7 @@ let pmultiargsapp pty =
   let* args = pparenth @@ sep_by1 (pass_ws *> char ',') pty in
   let* id = pass_ws *> pident_lc in
   return (TypeExpr.Type_construct (id, args))
+;;
 
 let ptypevar =
   let* id = token "'" *> (pident_lc <|> pident_cap) in
@@ -173,23 +174,22 @@ let ptypetuple ptype =
 ;;
 
 let ptypeconstr =
-  pass_ws *> fix (fun ptconstr ->
+  pass_ws
+  *> fix (fun ptconstr ->
     let* tparams =
-      pass_ws *> option
-        []
-        (
-          (pparenth (sep_by (token ",") ptypevar))
-         <|>
-         (let* typevar = ptypevar in
-         return [ typevar ])
-         <|>
-         (let* ctuple = pparenth (ptypetuple ptconstr)  in
-         return [ ctuple ])
-         <|>
-         (let* ttuple = pparenth (ptypetuple ptypevar) in
-         return [ ttuple ]))
-        in
-        let* tname =
+      pass_ws
+      *> option
+           []
+           (pparenth (sep_by (token ",") ptypevar)
+            <|> (let* typevar = ptypevar in
+                 return [ typevar ])
+            <|> (let* ctuple = pparenth (ptypetuple ptconstr) in
+                 return [ ctuple ])
+            <|>
+            let* ttuple = pparenth (ptypetuple ptypevar) in
+            return [ ttuple ])
+    in
+    let* tname =
       option
         None
         (let* name = pass_ws *> pident_lc in
@@ -201,21 +201,6 @@ let ptypeconstr =
     | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
     | None, _ -> return (TypeExpr.Type_construct ("", tparams)))
 ;;
-(* let ptypeconstr_typ =
-  let* first = pass_ws *> ptypeconstr in
-  let* rest = many (token " " *> pass_ws *> ptypeconstr) in
-  let* res = List.fold_left
-    ~init:(return first)
-    ~f:(fun acc constr ->
-      let* arg = acc in
-      match constr with
-      | TypeExpr.Type_construct (name, args) ->
-          return (TypeExpr.Type_construct (name, arg :: args))
-      | _ -> failwith "Expected a type constructor")
-    rest
-  in
-  return res
-;; *)
 
 let ptypeconstr_app =
   let* base = ptypeconstr in
@@ -229,52 +214,66 @@ let ptypeconstr_app =
      | _ -> failwith "hahahah")
 ;;
 
-
-
 let ptype =
   pass_ws
   *> fix (fun ptype ->
-    let ptvar = pass_ws
-    *> choice [ (pident_lc >>| fun id -> TypeExpr.Type_construct (id, [])); 
-    ptypevar;
-    pmultiargsapp ptype;
-    pparenth ptype;
-    ptypeconstr ] in
+    let ptvar =
+      pass_ws
+      *> choice
+           [ (pident_lc >>| fun id -> TypeExpr.Type_construct (id, []))
+           ; ptypevar
+           ; pmultiargsapp ptype
+           ; pparenth ptype
+           ; ptypeconstr
+           ]
+    in
     let pttuple = ptypetuple ptvar <|> ptvar in
-    let ptarr = rchain pttuple ptypearrow <|> pttuple
-  in 
-  let* arg = ptarr in
-  let rec pcons acc =
-    option acc (pass_ws1 *> pident_lc >>= fun id -> pcons (TypeExpr.Type_construct (id, [acc])))
-  in
-  pcons arg )
+    let ptarr = rchain pttuple ptypearrow <|> pttuple in
+    let* arg = ptarr in
+    let rec pcons acc =
+      option
+        acc
+        (pass_ws1 *> pident_lc >>= fun id -> pcons (TypeExpr.Type_construct (id, [ acc ])))
+    in
+    pcons arg)
 ;;
 
-let ptype_adt = pass_ws *> ptypeconstr_app  <|> ptypevar
+let ptype_adt = pass_ws *> ptypeconstr_app <|> ptypevar
 
 (*
-   ░▒▓███████▓▒░ ░▒▓██████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓███████▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓███████▓▒░░▒▓████████▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓██████▓▒░ ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░      ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
+   |  ____       _       _____    _____  U _____ u   ____     _   _
+   |U|  _"\ uU  /"\  u  |_ " _|  |_ " _| \| ___"|/U |  _"\ u | \ |'|
+   |\| |_) |/ \/ _ \/     | |      | |    |  _|"   \| |_) |/<|  \| |>
+   | |  __/   / ___ \    /| |\    /| |\   | |___    |  _ <  U| |\  |u
+   | |_|     /_/   \_\  u |_|U   u |_|U   |_____|   |_| \_\  |_| \_|
+   | ||>>_    \\    >>  _// \\_  _// \\_  <<   >>   //   \\_ ||   \\,-.
+   |(__)__)  (__)  (__)(__) (__)(__) (__)(__) (__) (__)  (__)(_")  (_/
 *)
 
-
-let ppatlitsdots ppat =
-plistdots
-ppat
-    (fun (tag, pat_opt) -> Ast.Pattern.Pat_construct (tag, pat_opt))
-    (fun pat acc_pat -> Ast.Pattern.Pat_construct ("::", Some (Pat_tuple (pat, acc_pat, []))))
+let ppatlist ppat =
+  let* list = token "[" *> sep_by (token ";") ppat <* token "]" in
+  return
+    (Stdlib.List.fold_right
+       (fun x y ->
+         Ast.Pattern.Pat_construct ("::", Some (Ast.Pattern.Pat_tuple (x, y, []))))
+       list
+       (Ast.Pattern.Pat_construct ("[]", None)))
 ;;
 
-let ppatlistbrackets ppat =
-  plistbrackets
-    ppat
-    (fun (tag, pat_opt) -> Ast.Pattern.Pat_construct (tag, pat_opt))
-    (fun (fst_pat, snd_pat, pat_list) -> Ast.Pattern.Pat_tuple (fst_pat, snd_pat, pat_list))
+let ppatcons ppat =
+  let rec consparser () =
+    let* pat = ppat in
+    token "::"
+    >>= (fun c ->
+          consparser ()
+          >>= fun rest ->
+          return
+            (Ast.Pattern.Pat_construct (c, Some (Ast.Pattern.Pat_tuple (pat, rest, [])))))
+    <|> return pat
+  in
+  consparser ()
+;;
+
 let pspecials = choice [ token "()"; token "true"; token "false"; token "None" ]
 
 let psome parse =
@@ -314,29 +313,6 @@ let ppatconstraint ppattern =
   return (Pattern.Pat_constraint (pat, pattype))
 ;;
 
-(* let plist_empty = token "[]" >>| fun _ -> Pattern.Pat_construct ("[]", None) *)
-
-(* let plist_nonempty (ppattern : Pattern.t Angstrom.t) =
-  let* elements = token "[" *> sep_by (token ",") ppattern <* token "]" in
-  match elements with
-  | [] -> failwith "Non-empty list expected, but empty found"
-  | [ x ] -> return (Pattern.Pat_construct ("[]", Some x))
-  | hd :: hd2 :: tl ->
-    let tuple = Pattern.Pat_tuple (hd, hd2, tl) in
-    return (Pattern.Pat_construct ("[]", Some tuple))
-;;
-
-let pcons_operator (ppattern : Pattern.t Angstrom.t) =
-  let* hd = ppattern in
-  let* _ = token "::" in
-  let* tl = ppattern in
-  return (Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (hd, tl, []))))
-;;
-
-let plist (ppattern : Pattern.t Angstrom.t) =
-  plist_empty <|> plist_nonempty ppattern <|> pcons_operator ppattern
-;; *)
-
 let ppattern =
   fix (fun ppattern ->
     let poprnd =
@@ -347,41 +323,51 @@ let ppattern =
              ; ppatvar
              ; ppatconst
              ; (psome ppattern >>| fun (name, opt) -> Pattern.Pat_construct (name, opt))
-             (* ; plist ppattern *)
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern
              ])
     in
-  let parse_pat = ppatlitsdots poprnd <|> poprnd in
-  let parse_pat = ppatlistbrackets parse_pat <|> parse_pat in
-    ptuplepat parse_pat <|> parse_pat)
+    let plist = ppatlist poprnd <|> poprnd in
+    let pcons = ppatcons plist <|> plist in
+    ptuplepat pcons <|> pcons)
 ;;
 
 (*
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓████████▓▒░░▒▓███████▓▒░▒▓███████▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░     ░▒▓█▓▒░      ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓███████▓▒░░▒▓██████▓▒░  ░▒▓██████▓▒░░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░     ░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░             ░▒▓█▓▒░     ░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓███████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░
+   |U _____ u __  __    ____      ____    U _____ u ____    ____                U  ___ u  _   _
+   |\| ___'|/ \ \/"/  U|  _"\ uU |  _"\ u \| ___"|// __"| u/ __"| u      ___     \/"_ \/ | \ |"|
+   | |  _|"   /\  /\  \| |_) |/ \| |_) |/  |  _|" <\___ \/<\___ \/      |_"_|    | | | |<|  \| |>
+   | | |___  U /  \ u  |  __/    |  _ <    | |___  u___) | u___) |       | | .-,_| |_| |U| |\  |u
+   | |_____|  /_/\_\   |_|       |_| \_\   |_____| |____/>>|____/>>    U/| |\u\_)-\___/  |_| \_|
+   | <<   >>,-,>> \\_  ||>>_     //   \\_  <<   >>  )(  (__))(  (__).-,_|___|_,-.  \\    ||   \\,-.
+   |(__) (__)\_)  (__)(__)__)   (__)  (__)(__) (__)(__)    (__)      \_)-' '-(_/  (__)   (_")  (_/
 *)
 
-
-
-let pexplistdots pexp =
-  plistdots
-    pexp
-    (fun (tag, pat_opt) -> Ast.Expression.Exp_construct (tag, pat_opt))
-    (fun pat acc_pat -> Ast.Expression.Exp_construct ("::", Some (Exp_tuple (pat, acc_pat, []))))
+let pexpcons expr =
+  let rec consparser () =
+    let* exp = expr in
+    token "::"
+    >>= (fun _ ->
+          consparser ()
+          >>= fun rest ->
+          return
+            (Ast.Expression.Exp_construct
+               ("::", Some (Ast.Expression.Exp_tuple (exp, rest, [])))))
+    <|> return exp
+  in
+  consparser ()
 ;;
-let pexplistbrackets pexp =
-  plistbrackets
-    pexp
-    (fun (tag, exp_opt) -> Ast.Expression.Exp_construct (tag, exp_opt))
-    (fun (fst_exp, snd_exp, exp_list) -> Ast.Expression.Exp_tuple (fst_exp, snd_exp, exp_list))
+
+let pexplist expr =
+  let* list = token "[" *> sep_by (token ";") expr <* token "]" in
+  return
+    (Base.List.fold_right
+       list
+       ~f:(fun x y ->
+         Ast.Expression.Exp_construct ("::", Some (Ast.Expression.Exp_tuple (x, y, []))))
+       ~init:(Ast.Expression.Exp_construct ("[]", None)))
 ;;
+
 let pexprconst =
   let* const = pconst in
   return (Expression.Exp_constant const)
@@ -534,12 +520,12 @@ let pexpr =
            ; pparenth pexpr
            ; pidentexpr
            ; pexprconstraint pexpr
-           ; pexplistdots pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
            ; (psome pexpr >>| fun (name, opt) -> Expression.Exp_construct (name, opt))
            ; pfunction pexpr
            ; pfunexpr pexpr
+           ; pexplist pexpr
            ; pletexpr pexpr
            ; pifexpr pexpr
            ; pmatch pexpr
@@ -553,37 +539,37 @@ let pexpr =
       return (Expression.Exp_apply (constr, arg))
     in
     let papply = lchain (pconstructor_apply <|> poprnd) papplyexpr in
-    let plist = pexplistbrackets papply <|> papply in
     let prefop =
       parseprefop
-      plist
+        papply
         (choice [ token "+"; token "-" ]
          >>| fun id expr -> Expression.Exp_apply (Exp_ident id, expr))
-      <|> plist
+      <|> papply
     in
     let pmuldiv = lchain prefop (pmul <|> pdiv) in
     let paddsub = lchain pmuldiv (padd <|> psub) in
     let pcompare = lchain paddsub pcompops in
-    let plogop = rchain pcompare plogops in
+    let pexpcons = pexpcons pcompare <|> pcompare in
+    let plogop = rchain pexpcons plogops in
     ptupleexpr plogop <|> plogop)
 ;;
 
 (*
-   |░▒▓███████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓████████▓▒░
-   ░▒▓█▓▒░         ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   ░▒▓█▓▒░         ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   |░▒▓██████▓▒░   ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓██████▓▒░
-   |      ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   |      ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   ░▒▓███████▓▒░   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ░▒▓█▓▒░    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░
+   |  ____     _____    ____      _   _    ____   _____    _   _    ____    U _____ u
+   | / __"| u |_ " _|U |  _"\ uU |"|u| |U /"___| |_ " _|U |"|u| |U |  _"\ u \| ___'|/
+   |<\___ \/    | |   \| |_) |/ \| |\| |\| | u     | |   \| |\| | \| |_) |/  |  _|"
+   | u___) |   /| |\   |  _ <    | |_| | | |/__   /| |\   | |_| |  |  _ <    | |___
+   | |____/>> u |_|U   |_| \_\  <<\___/   \____| u |_|U  <<\___/   |_| \_\   |_____|
+   |  )(  (__)_// \\_  //   \\_(__) )(   _// \\  _// \\_(__) )(    //   \\_  <<   >>
+   | (__)    (__) (__)(__)  (__)   (__) (__)(__)(__) (__)   (__)  (__)  (__)(__) (__)
 
-   ░▒▓█▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓██████████████▓▒░ ░▒▓███████▓▒░
-   ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░
-   ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓██████▓▒░ ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░
-   ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░
-   ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░      ░▒▓█▓▒░
-   ░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░
+   |              _____  U _____ u  __  __    ____
+   |     ___     |_ " _| \| ___"|/U|' \/ '|u / __"| u
+   |    |_"_|      | |    |  _|"  \| |\/| |/<\___ \/
+   |     | |      /| |\   | |___   | |  | |  u___) |
+   |   U/| |\u   u |_|U   |_____|  |_|  |_|  |____/>>
+   |.-,_|___|_,-._// \\_  <<   >> <<,-,,-.    )(  (__)
+   | \_)-' '-(_/(__) (__)(__) (__) (./  \.)  (__)
 *)
 
 let pseval = lift (fun expr -> Structure.Str_eval expr) pexpr

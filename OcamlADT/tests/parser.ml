@@ -2158,11 +2158,14 @@ let%expect_test "list3" =
                       { first =
                         (Pat_construct ("::",
                            (Some (Pat_tuple
-                                    ((Pat_construct ("::",
+                                    ((Pat_var "a"),
+                                     (Pat_construct ("::",
                                         (Some (Pat_tuple
-                                                 ((Pat_var "a"), (Pat_var "b"), [])))
+                                                 ((Pat_var "b"),
+                                                  (Pat_construct ("[]", None)),
+                                                  [])))
                                         )),
-                                     (Pat_construct ("[]", None)), [])))
+                                     [])))
                            ));
                         second =
                         (Exp_construct ("::",
@@ -2181,17 +2184,20 @@ let%expect_test "list3" =
                       { first =
                         (Pat_construct ("::",
                            (Some (Pat_tuple
-                                    ((Pat_construct ("::",
+                                    ((Pat_var "a"),
+                                     (Pat_construct ("::",
                                         (Some (Pat_tuple
-                                                 ((Pat_construct ("::",
+                                                 ((Pat_var "b"),
+                                                  (Pat_construct ("::",
                                                      (Some (Pat_tuple
-                                                              ((Pat_var "a"),
-                                                               (Pat_var "b"),
+                                                              ((Pat_var "c"),
+                                                               (Pat_construct (
+                                                                  "[]", None)),
                                                                [])))
                                                      )),
-                                                  (Pat_var "c"), [])))
+                                                  [])))
                                         )),
-                                     (Pat_construct ("[]", None)), [])))
+                                     [])))
                            ));
                         second =
                         (Exp_construct ("::",
@@ -2218,35 +2224,43 @@ let%expect_test "list3" =
                       { first =
                         (Pat_construct ("::",
                            (Some (Pat_tuple
-                                    ((Pat_construct ("::",
+                                    ((Pat_var "a"),
+                                     (Pat_construct ("::",
                                         (Some (Pat_tuple
-                                                 ((Pat_construct ("::",
+                                                 ((Pat_var "b"),
+                                                  (Pat_construct ("::",
                                                      (Some (Pat_tuple
-                                                              ((Pat_construct (
+                                                              ((Pat_var "c"),
+                                                               (Pat_construct (
                                                                   "::",
                                                                   (Some (Pat_tuple
                                                                           ((
                                                                           Pat_var
-                                                                          "a"),
+                                                                          "d"),
                                                                           (Pat_var
-                                                                          "b"),
+                                                                          "tl"),
                                                                           [])))
                                                                   )),
-                                                               (Pat_var "c"),
                                                                [])))
                                                      )),
-                                                  (Pat_var "d"), [])))
+                                                  [])))
                                         )),
-                                     (Pat_var "tl"), [])))
+                                     [])))
                            ));
                         second =
                         (Exp_construct ("::",
                            (Some (Exp_tuple
-                                    ((Exp_construct ("::",
+                                    ((Exp_apply ((Exp_ident "f"), (Exp_ident "a"))),
+                                     (Exp_construct ("::",
                                         (Some (Exp_tuple
-                                                 ((Exp_construct ("::",
+                                                 ((Exp_apply ((Exp_ident "f"),
+                                                     (Exp_ident "b"))),
+                                                  (Exp_construct ("::",
                                                      (Some (Exp_tuple
-                                                              ((Exp_construct (
+                                                              ((Exp_apply (
+                                                                  (Exp_ident "f"),
+                                                                  (Exp_ident "c"))),
+                                                               (Exp_construct (
                                                                   "::",
                                                                   (Some (Exp_tuple
                                                                           ((
@@ -2254,27 +2268,21 @@ let%expect_test "list3" =
                                                                           (Exp_ident
                                                                           "f"),
                                                                           (Exp_ident
-                                                                          "a"))),
+                                                                          "d"))),
+                                                                          (Exp_apply (
                                                                           (Exp_apply (
                                                                           (Exp_ident
-                                                                          "f"),
+                                                                          "map"),
                                                                           (Exp_ident
-                                                                          "b"))),
+                                                                          "f"))),
+                                                                          (Exp_ident
+                                                                          "tl"))),
                                                                           [])))
                                                                   )),
-                                                               (Exp_apply (
-                                                                  (Exp_ident "f"),
-                                                                  (Exp_ident "c"))),
                                                                [])))
                                                      )),
-                                                  (Exp_apply ((Exp_ident "f"),
-                                                     (Exp_ident "d"))),
                                                   [])))
                                         )),
-                                     (Exp_apply (
-                                        (Exp_apply ((Exp_ident "map"),
-                                           (Exp_ident "f"))),
-                                        (Exp_ident "tl"))),
                                      [])))
                            ))
                         }
@@ -2323,7 +2331,6 @@ let%expect_test "list4" =
         ] |}]
 ;;
 
-
 let%expect_test "list5" =
   test_program
     {|let concat =
@@ -2371,8 +2378,7 @@ let%expect_test "list5" =
 ;;
 
 let%expect_test "list6" =
-  test_program
-    {|(1 :: 2) :: []
+  test_program {|(1 :: 2) :: []
 ;;
 |};
   [%expect
@@ -2389,6 +2395,7 @@ let%expect_test "list6" =
              )))
         ] |}]
 ;;
+
 let%expect_test "list7" =
   test_program
     {|let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter f tl;;
@@ -2424,6 +2431,7 @@ let%expect_test "list7" =
           ))
         ] |}]
 ;;
+
 let%expect_test "list8" =
   test_program
     {|let rec cartesian xs ys =
@@ -2469,6 +2477,7 @@ let%expect_test "list8" =
           ))
         ] |}]
 ;;
+
 let%expect_test "list9" =
   test_program
     {|let main =
@@ -2574,13 +2583,53 @@ let%expect_test "list9" =
 ;;
 
 let%expect_test "list9" =
-  test_program
-    {|type 'a list = 
+  test_program {|type 'a list = 
     Cons of 'a * 'a list 
     | Nil;;|};
-  [%expect {|
+  [%expect
+    {|
     [(Str_adt (["a"], "list",
         (("Cons", [(Type_var "a"); (Type_construct ("list", [(Type_var "a")]))]),
          [("Nil", [])])
         ))
       ] |}]
+;;
+
+let%expect_test "list9" =
+  test_program {| 
+
+let _1 = fun x y (a, _) -> (x + y - a) = 1
+
+let _2 =
+    let x, Some f = 1, Some ( "p1onerka was here" )
+    in x
+
+let _3 =  Some (1, "hi")
+
+let _4 = let rec f x = f 5 in f
+
+let _5 =
+    let id x = x in
+    match Some id with
+      | Some f -> let _ = f "42" in f 42
+      | None -> 0
+
+let _6 = fun arg -> match arg with Some x -> let y = x in y
+
+let int_of_option = function Some x -> x | None -> 0
+
+let _42 = function 42 -> true | _ -> false
+
+let id1, id2 = let id x = x in (id, id)|};
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 2599, characters 2-506
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+;;

@@ -248,10 +248,11 @@ match homka with
     "print_endline": string -> unit
     "print_int": int -> unit |}]
 ;;
+
 let%expect_test "zero" =
-  parse_and_infer_result
-    {|function 5 -> 'c';;|};
-  [%expect{|
+  parse_and_infer_result {|function 5 -> 'c';;|};
+  [%expect
+    {|
     res:
     "-": int -> char
     "::": [ a; ]. 'a * 'a list -> 'a list
@@ -283,7 +284,6 @@ match homkaOBOLTUS with
     "print_endline": string -> unit
     "print_int": int -> unit |}]
 ;;
-
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = 1;;
@@ -715,7 +715,8 @@ let%expect_test "zero" =
 (*BUG*)
 let%expect_test "zero" =
   parse_and_infer_result {| let (f: int -> bool) = function 5 -> true | 6 -> false;;|};
-  [%expect {|
+  [%expect
+    {|
     res:
     "::": [ a; ]. 'a * 'a list -> 'a list
     "None": [ a; ]. 'a option
@@ -1235,9 +1236,9 @@ let%expect_test "016" =
 let rec length xs =
   match xs with
   | [] -> 0
-  | h::tl -> 1 + length tl;;
-
-  let length_tail =
+  | h::tl -> 1 + length tl
+;;
+let length_tail =
   let rec helper acc xs =
   match xs with
   | [] -> acc
@@ -1245,7 +1246,16 @@ let rec length xs =
   in
   helper 0
 ;;
-let rec append xs ys = match xs with [] -> ys | x::xs -> x::(append xs ys);;
+let rec map f xs =
+  match xs with
+  | [] -> []
+  | a::[] -> [f a]
+  | a::b::[] -> [f a; f b]
+  | a::b::c::[] -> [f a; f b; f c]
+  | a::b::c::d::tl -> f a :: f b :: f c :: f d :: map f tl
+  ;;
+let rec append xs ys = match xs with [] -> ys | x::xs -> x::(append xs ys)
+  ;;
 let concat =
   let rec helper xs =
     match xs with
@@ -1253,12 +1263,18 @@ let concat =
     | h::tl -> append h (helper tl)
   in helper
 ;;
-let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter f tl;;
-
-let rec map f xs =
+let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter f tl
+;;
+let rec cartesian xs ys =
   match xs with
   | [] -> []
-  | a::b -> [f a; f a]
+  | h::tl -> append (map (fun a -> (h,a)) ys) (cartesian tl ys)
+  ;;
+let main =
+  let () = iter print_int [1;2;3] in
+  let () = print_int (length (cartesian [1;2] [1;2;3;4])) in
+  0
+;;
 |};
   [%expect
     {|
@@ -1267,29 +1283,32 @@ let rec map f xs =
     "None": [ a; ]. 'a option
     "Some": [ a; ]. 'a -> 'a option
     "[]": [ a; ]. 'a list
-    "append": [ 25; ]. '25 list -> '25 list -> '25 list
-    "concat": [ 45; ]. '45 list list -> '45 list
-    "iter": [ 51; ]. ('51 -> unit) -> '51 list -> unit
+    "append": [ 90; ]. '90 list -> '90 list -> '90 list
+    "cartesian": [ 127; 135; ]. '127 list -> '135 list -> ('127 * '135) list
+    "concat": [ 110; ]. '110 list list -> '110 list
+    "iter": [ 116; ]. ('116 -> unit) -> '116 list -> unit
     "length": [ 3; ]. '3 list -> int
     "length_tail": [ 18; ]. '18 list -> int
-    "map": [ 62; 63; ]. ('62 -> '63) -> '62 list -> '63 list
+    "main": int
+    "map": [ 25; 26; ]. ('25 -> '26) -> '25 list -> '26 list
     "print_bool": bool -> unit
     "print_char": char -> unit
     "print_endline": string -> unit
     "print_int": int -> unit |}]
 ;;
+
 (* let rec map f xs =
-  match xs with
-  | [] -> []
-  | a::[] -> [f a]
-  | a::b::[] -> [f a; f b]
-  | a::b::c::[] -> [f a; f b; f c]
-  | a::b::c::d::tl -> f a :: f b :: f c :: f d :: map f tl;;
-  let rec cartesian xs ys =
-    match xs with
-    | [] -> []
-    | h::tl -> append (map (fun a -> (h,a)) ys) (cartesian tl ys)
-    ;; *)
+   match xs with
+   | [] -> []
+   | a::[] -> [f a]
+   | a::b::[] -> [f a; f b]
+   | a::b::c::[] -> [f a; f b; f c]
+   | a::b::c::d::tl -> f a :: f b :: f c :: f d :: map f tl;;
+   let rec cartesian xs ys =
+   match xs with
+   | [] -> []
+   | h::tl -> append (map (fun a -> (h,a)) ys) (cartesian tl ys)
+   ;; *)
 (*KAKADU DO NOT TYPE BEAT*)
 
 (*PASSED*)
@@ -1322,8 +1341,7 @@ let%expect_test "004  " =
   parse_and_infer_result {|
 let _1 =
   (fun f -> (f 1, f true)) (fun x -> x);;|};
-  [%expect
-    {|
+  [%expect {|
     Unification_failed: int # bool |}]
 ;;
 
@@ -1334,36 +1352,34 @@ let%expect_test "005  " =
 let _2 = function
   | Some f -> let _ = f "42" in f 42
   | None -> 1;;|};
-  [%expect
-    {|
+  [%expect {|
     Unification_failed: string # int |}]
 ;;
 
 (*FAILED*)
 let%expect_test "015" =
   parse_and_infer_result {|let rec (a,b) = (a,b);;|};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 (*PASSED*)
 let%expect_test "016" =
   parse_and_infer_result {|let a, _ = 1, 2, 3;;|};
-  [%expect
-    {|
+  [%expect {|
     Unification_failed: int * int * int # '0 * '1 |}]
 ;;
 
 (*FAILED*)
 let%expect_test "091.1" =
   parse_and_infer_result {|let [a] = (fun x -> x);;|};
-  [%expect{| Unification_failed: '0 -> '0 # '3 list |}]
+  [%expect {|
+    Unification_failed: '0 -> '0 # '3 list |}]
 ;;
 
 (*PASSED*)
 let%expect_test "097.2" =
   parse_and_infer_result {|let () = (fun x -> x);;|};
-  [%expect
-    {|
+  [%expect {|
     Unification_failed: '0 -> '0 # unit |}]
 ;;
 
@@ -1383,15 +1399,15 @@ let%expect_test "098" =
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.(>>=) in file "lib/infer.ml", line 11, characters 18-22
   Called from Ocamladt_lib__Infer.MInfer.run in file "lib/infer.ml" (inlined), line 70, characters 18-23
-  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 947, characters 2-40
+  Called from Ocamladt_lib__Infer.run_infer_program.(fun) in file "lib/infer.ml", line 953, characters 2-40
   Called from Ocamladt_tests__Infer.parse_and_infer_result in file "tests/infer.ml", line 60, characters 11-52
-  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1372, characters 2-48
+  Called from Ocamladt_tests__Infer.(fun) in file "tests/infer.ml", line 1388, characters 2-48
   Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "098" =
   parse_and_infer_result {|let rec x::[] = [1];;|};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 (*ADT*)
@@ -1419,7 +1435,8 @@ let%expect_test "ADT of" =
   type shape = Circle of int ;;
   type ('a,'b) koka = Circle of int ;;
 |};
-  [%expect{|
+  [%expect
+    {|
     res:
     "::": [ a; ]. 'a * 'a list -> 'a list
     "Circle": [ 3; ]. int -> '2 '1 koka
@@ -1445,7 +1462,7 @@ let%expect_test "ADT of few" =
 let x = 10;;
 let Circle (5,5) = Circle x;;
 |};
-  [%expect{|
+  [%expect {|
     Unification_failed: int # int * int |}]
 ;;
 
@@ -1459,7 +1476,8 @@ let%expect_test "ADT with poly" =
 let x = 10;;
 let Circle 5 = Circle 5;;
 |};
-  [%expect{|
+  [%expect
+    {|
     res:
     "::": [ a; ]. 'a * 'a list -> 'a list
     "Circle": [ 1; ]. int -> '0 shape
@@ -1481,7 +1499,8 @@ let%expect_test "ADT with poly2" =
   type 'a shape = 
    Square of int;;
 |};
-  [%expect{|
+  [%expect
+    {|
     res:
     "::": [ a; ]. 'a * 'a list -> 'a list
     "None": [ a; ]. 'a option
@@ -1503,7 +1522,8 @@ let%expect_test "ADT with poly3" =
   | Square of int * 'a * 'a
 ;;
 |};
-  [%expect{|
+  [%expect
+    {|
     res:
     "::": [ a; ]. 'a * 'a list -> 'a list
     "Circle": [ 1; ]. int -> '0 shape
@@ -1528,7 +1548,7 @@ let%expect_test "ADT with poly constraint" =
 ;;
 let (x: shape) = Circle 5;;
 |};
-  [%expect{|
+  [%expect {|
     Unification_failed: '0 shape # shape |}]
 ;;
 
@@ -1541,7 +1561,7 @@ let%expect_test "ADT with constraint" =
 ;;
 let (x: (int,int) shape) = Circle 5;;
 |};
-  [%expect{|
+  [%expect {|
     Unification_failed: '0 shape # int int shape |}]
 ;;
 
@@ -1555,7 +1575,8 @@ let%expect_test "ADT with constraint exp" =
 let y = Circle 5;;
 let (x: (int) shape) = y;;
 |};
-  [%expect{|
+  [%expect
+    {|
     res:
     "::": [ a; ]. 'a * 'a list -> 'a list
     "Circle": [ 1; ]. int -> int shape
@@ -1580,7 +1601,7 @@ type 'a foo = Foo
 type bar = Bar of foo
 
 |};
-  [%expect{|
+  [%expect {|
     Arity_mismatch |}]
 ;;
 
