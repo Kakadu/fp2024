@@ -28,7 +28,7 @@
   manytests/typed/007order.ml
   manytests/typed/008ascription.ml
   manytests/typed/009let_poly.ml
-  ; manytests/typed/010sukharev.ml
-  ; manytests/typed/015tuples.ml
-  ; manytests/typed/016lists.ml
+  manytests/typed/010sukharev.ml
+  manytests/typed/015tuples.ml
+  manytests/typed/016lists.ml
   ))

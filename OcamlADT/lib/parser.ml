@@ -382,26 +382,25 @@ let pidentexpr =
 ;;
 
 let pcase pexpr =
-  let* first = ppattern in
-  let* second = token "->" *> pexpr in
+  pass_ws *> option () (token "|" *> return ()) *>
+  let* first = pass_ws *> ppattern in
+  let* second = token "->" *> pass_ws *> pexpr in
   return { Expression.first; second }
 ;;
 
-let ppatternmatching pexpr =
-  let* casefs = option "" (token "|") *> pcase pexpr in
-  let* casetl = option "" (token "|") *> (sep_by (token "|") @@ pcase pexpr) in
-  return (casefs, casetl)
-;;
-
 let pfunction pexpr =
-  let* cases = token "function" *> ppatternmatching pexpr in
-  return (Expression.Exp_function cases)
+  token "function"
+  *>
+  let* first_case = pcase pexpr in 
+  let* case_list = sep_by (token "|") (pcase pexpr) in
+  return (Ast.Expression.Exp_function (first_case, case_list))
 ;;
 
 let pmatch pexpr =
-  let* expr = token "match" *> pexpr in
-  let* cases = token "with" *> ppatternmatching pexpr in
-  return (Expression.Exp_match (expr, cases))
+  let* exp = token "match" *> pexpr <* token "with" in
+  let* casefs = pcase pexpr in
+  let* case_list = sep_by (token "|") (pcase pexpr) in
+  return (Ast.Expression.Exp_match (exp, (casefs, case_list)))
 ;;
 
 let pletbinding pexpr =
@@ -551,8 +550,10 @@ let pexpr =
     let pcompare = lchain paddsub pcompops in
     let pexpcons = pexpcons pcompare <|> pcompare in
     let plogop = rchain pexpcons plogops in
-    ptupleexpr plogop <|> plogop)
-;;
+    let ptuple = ptupleexpr plogop <|> plogop in
+    choice [  pfunction pexpr; pfunexpr pexpr; pletexpr pexpr;  pifexpr pexpr; pmatch pexpr;] <|> ptuple)
+
+  ;;
 
 (*
    |  ____     _____    ____      _   _    ____   _____    _   _    ____    U _____ u

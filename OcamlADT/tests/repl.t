@@ -88,13 +88,34 @@
   val temp = (1, true)
 
   $ ../bin/interpret.exe manytests/typed/010sukharev.ml
-  File manytests/typed/010sukharev.ml not found
-  [255]
+  Running... 
+  val _1 = <fun>
+  val _2 = 1
+  val _3 = Some(1, "hi")
+  val _4 = <fun>
+  val _5 = 42
+  val _6 = <fun>
+  val int_of_option = <function>
+  val _42 = <function>
+  val id1 = <fun>
+  val id2 = <fun>
 
   $ ../bin/interpret.exe  manytests/typed/015tuples.ml
-  File manytests/typed/015tuples.ml not found
-  [255]
+  Running... 
+  1
+  1
+  1
+  1
+  val fix = <fun>
+  val map = <fun>
+  val fixpoly = <fun>
+  val feven = <fun>
+  val fodd = <fun>
+  val tie = (<fun>, <fun>)
+  val meven = <fun>
+  val modd = <fun>
+  val main = 0
 
   $ ../bin/interpret.exe manytests/typed/016lists.ml
-  File manytests/typed/016lists.ml not found
-  [255]
+  Running... 
+  Intepreter error: Unbound value ::
