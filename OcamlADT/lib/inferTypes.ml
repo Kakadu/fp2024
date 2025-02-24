@@ -92,6 +92,7 @@ type error =
   | `Arity_mismatch
   | `Undeclared_type of string
   | `Not_supported
+  | `Wrong_rec
   ]
 
 let pp_inf_err fmt = function
@@ -108,4 +109,5 @@ let pp_inf_err fmt = function
   | `Arity_mismatch -> fprintf fmt "Arity_mismatch"
   | `Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
   | `Not_supported -> fprintf fmt "Not supported syntax"
+  | `Wrong_rec -> fprintf fmt "Wrong rec"
 ;;

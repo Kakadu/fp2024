@@ -102,8 +102,6 @@ module Substitution = struct
   open MInfer.Syntax
   open Base
 
-  (* type t = (binder, Ast.TypeExpr.t, Int.comparator_witness) Map.t *)
-
   let pp_sub ppf (sub : (string, Type.t, Base.String.comparator_witness) Base.Map.t) =
     Stdlib.Format.fprintf ppf "\nSubst:\n";
     Map.iteri sub ~f:(fun ~key:str ~data:ty ->
@@ -126,9 +124,6 @@ module Substitution = struct
         else
           return (Base.Map.singleton (module Base.String) k v)
   ;;
-
-  (* let find_exn (map : t) (k : binder) : Ast.TypeExpr.t = Map.find_exn map k
-     let find (map : t) (k : binder) : Ast.TypeExpr.t option = Map.find map k *)
   let remove = Map.remove
 
   let apply sub =
@@ -235,7 +230,6 @@ module TypeEnv = struct
   type t = (string, scheme, String.comparator_witness) Map.t
 
   let extend env name scheme =
-    (* let () = print_endline name in *)
     Map.set env ~key:name ~data:scheme
   ;;
 
@@ -293,7 +287,6 @@ let rec infer_pat ~debug pat env =
   | Pat_var ident ->
     let* fresh = fresh_var in
     let new_env = TypeEnv.extend env ident (Forall (VarSet.empty, fresh)) in
-    (* let _ = Stdlib.Format.printf "DEBUG: env in Pat_var:%a" TypeEnv.pp_env new_env in *)
     return (new_env, fresh)
   | Pat_constant const ->
     (match const with
@@ -314,11 +307,6 @@ let rec infer_pat ~debug pat env =
     in
     return (env3, Type_tuple (typ1, typ2, typ3))
   | Pat_construct ("()", None) -> return (env, Type_construct ("unit", []))
-  (* | Pat_construct ("Some", Some pat) ->
-     let* env, typ = infer_pat ~debug pat env in
-     return (env, Type_construct ("option", [ typ ]))
-     | Pat_construct ("None", None) ->
-     return (env, Type_construct ("option", [ ])) *)
   | Pat_construct (id, None) when id = "false" || id = "true" ->
     return (env, Type_construct ("bool", []))
   | Pat_construct (name, None) ->
@@ -355,10 +343,6 @@ let rec infer_pat ~debug pat env =
     return (new_env, Substitution.apply uni_sub pat_typ)
 ;;
 
-(*remove?*)
-
-(*remove?^^^*)
-
 let rec extend_helper env pat (Forall (binder_set, typ) as scheme) =
   match pat, typ with
   | Pat_var name, _ -> TypeEnv.extend env name scheme
@@ -392,18 +376,7 @@ let add_names_rec env vb_list =
 
 let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
   let* comp_sub = Substitution.compose sub_acc sub in
-  (* if debug
-     then Stdlib.Format.printf "DEBUG: comp_sub in vb_rest:%a\n" Substitution.pp_sub comp_sub; *)
   let new_env = TypeEnv.apply comp_sub env_acc in
-  (* if debug
-  then Stdlib.Format.printf "DEBUG: first env in vb_rest:{%a}\n" TypeEnv.pp_env new_env;
-  let typ = Substitution.apply comp_sub typ in
-  if debug
-  then
-    Stdlib.Format.printf
-      "DEBUG: type of expr in vb_rest after comp_sub apply:%a\n"
-      pprint_type 
-      typ; *)
   let new_scheme = generalize new_env (Substitution.apply comp_sub typ) in
   let* pat_env, pat_typ = infer_pat ~debug pat new_env in
   let new_env = extend_helper pat_env pat new_scheme in
@@ -637,25 +610,6 @@ let rec infer_exp ~debug exp env =
     let* comp_sub = Substitution.compose sub uni_sub in
     return (comp_sub, typ1)
 
-(* and infer_cases ~debug env cases tyexp typat subst =
-  let* env, sub, typexp, typpat =
-    RList.fold_right
-      ~f:(fun case acc ->
-        let* env_acc, sub_acc, tyexp, typat = return acc in
-        let* new_env, typepat = infer_pat ~debug case.first env_acc in
-        let* new_sub, typeexp = infer_exp ~debug case.second new_env in
-        let* uni_sub_exp = Substitution.unify tyexp typeexp in
-        let* uni_sub_pat = Substitution.unify typat typepat in
-        let* comp_sub =
-          Substitution.compose_all [ sub_acc; new_sub; uni_sub_exp; uni_sub_pat ]
-        in
-        let new_env = TypeEnv.apply comp_sub new_env in
-        return (new_env, comp_sub, typeexp, typepat))
-      ~init:(return (env, subst, tyexp, typat))
-      cases
-  in
-  return (env, sub, typexp, typpat) *)
-
 and infer_value_binding_list ~debug vb_list env sub =
   let* res_env, res_sub =
     RList.fold_left
@@ -749,14 +703,14 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
              | Type_arrow (_, _) ->
                let new_fresh = Substitution.apply sub_acc fresh in
                if typexpr = new_fresh
-               then failwith "abobiks"
+               then fail `Wrong_rec
                else
                  let* res_env, res_sub =
                    infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
                  in
                  return (res_env, res_sub)
-             | _ -> failwith "wrong rec")
-          | _ -> failwith "rest")
+             | _ -> fail `Wrong_rec)
+          | _ -> fail `Wrong_rec)
     with
     | Ok result -> result
     | Unequal_lengths -> failwith "Lists have unequal lengths"
