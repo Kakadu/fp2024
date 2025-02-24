@@ -6,6 +6,20 @@ open Ast
 open Angstrom
 open Base
 
+(* errors *)
+
+type error =
+  | UnexpectedToken of string
+  | Expected of string
+  | ReservedKeyword of string
+  | WildcardUsed
+
+let pp_error = function 
+  | UnexpectedToken tok -> "Unexpected token: " ^ tok
+  | Expected msg -> "Expected: " ^ msg
+  | ReservedKeyword name -> "Reserved keyword cannot be used: " ^ name
+  | WildcardUsed -> "Wildcard '_' cannot be used as a variable name."
+
 (* basic *)
 
 let is_ws = function
@@ -20,9 +34,25 @@ let is_digit = function
   | _ -> false
 ;;
 
-let p_sign = option '+' (char '-' <|> char '+') 
+let is_keyword = function
+  | "let"
+  | "in"
+  | "if"
+  | "then"
+  | "else"
+  | "fun"
+  | "rec"
+  | "true"
+  | "false"
+  | "and" -> true
+  | _ -> false
+;;
+
+let is_id c = Char.is_alphanum c || Char.equal c '_' || Char.equal c '\''
 
 let token str = ws *> string str
+
+let p_sign = option "+" (token "-" <|> token "+") 
 
 let parens s = token "(" *> s <* token ")"
 
@@ -37,16 +67,26 @@ let newlines = skip_many1 newline
 
 let p_digits = take_while1 is_digit 
 
+let chainl1 e op =
+  let rec go acc =
+    (lift2 (fun f x -> f acc x) op e >>= go) <|> return acc in
+  e >>= fun init -> go init <|> fail (Expected "operator" |> pp_error)
+
+  let p_rec_flag =
+    choice [ take_while1 is_ws *> token "rec" *> return Recursive; return Nonrecursive ]
+  ;;
+  
 (* patterns *)
 
-let p_pattern = return PAny
+let p_pattern = fix @@ fun p -> return PAny
+
 
 (* exprs *)
 
-let p_string = token "\"" *> take_till (Char.equal '"') <* "\"" >>| fun s -> CString s
+let p_string = token "\"" *> take_till (Char.equal '\"') <* token "\"" >>| fun s -> CString s
 
 let p_integer = 
-  lift2 (fun s n -> CInt (Int.of_string s ^ n))
+  lift2 (fun s n -> CInt (Int.of_string (s ^ n)))
   p_sign
   p_digits
 
@@ -57,25 +97,36 @@ choice [ t; f ]
 
 let p_unit = token "()" *> return CUnit 
 
-let p_unop = choice [ token "-" *> return Neg; token "+" *> return Pos ]
+let p_const = choice ~failure_msg:(Expected "a constant (integer, string, boolean, unit)" |> pp_error) 
+  [ p_integer; p_string; p_boolean; p_unit ]
 
+let p_variable =
+    let* _ = ws in
+    let* first_char = peek_char_fail in
+    match first_char with
+    | 'a' .. 'z' | '_' ->
+      let* name = take_while is_id in
+      (match name with 
+      | "_" -> fail (WildcardUsed |> pp_error)
+      | name when is_keyword name -> fail (ReservedKeyword name |> pp_error)
+      | name -> return name 
+      )
+    | _ -> fail (UnexpectedToken "Expected an identifier" |> pp_error)
+  
 let p_expression = fix @@ fun e ->
-  let p_e = parens e <|> p_e in (* ( expr ) *)
-  let p_e = p_string <|> p_e in (* "asd" *)
-  let p_e = p_integer <|> p_e in (* 234 *)
-  let p_e = p_boolean <|> p_e in (* true *) 
-  let p_e = p_unit <|> p_e in (* () *)
-  let p_e = 
+  let term = choice [
+    (p_variable >>| fun v -> EVar v); (* idents *)
+    (p_const >>| fun e -> EConst e); (* literals *)
+    parens e; (* parens *)
+    ] in 
+  let p_e_apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2)))
+in p_e_apply
 
-let p_structure_eval = p_expression
-
-let p_rec_flag =
-  choice [ take_while1 is_ws *> token "rec" *> return Recursive; return Nonrecursive ]
-;;
+(* top level *)
 
 let p_binding = lift2 (fun p e -> p, e) p_pattern p_expression
 
-(* struct, top level *)
+let p_structure_eval = p_expression >>| fun e -> return (SEval e)
 
 let p_structure_value =
   lift3
@@ -86,11 +137,11 @@ let p_structure_value =
 ;;
 
 let p_structure_item =
-  p_structure_value <|> (p_structure_eval >>| fun e -> return (SEval e))
+  p_structure_value (* <|> p_structure_eval *)
 ;;
 
-let p_program = sep_by newlines p_structure_item
+let p_program = many ( p_structure_item <* newlines <* ws <|> (p_structure_item <* ws))
 
 (* actuall parser function *)
 
-let parse = parse_string ~consume:All p_program
+let parse s = parse_string ~consume:All p_program s
