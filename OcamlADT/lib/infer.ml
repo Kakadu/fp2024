@@ -70,8 +70,6 @@ module MInfer = struct
   let run m = snd (m 0)
 end
 
-type fresh_var = int
-
 module Type = struct
   type t = Ast.TypeExpr.t
 
@@ -110,8 +108,6 @@ module Substitution = struct
   ;;
 
   let empty = Map.empty (module Base.String)
-  let mapping k v = if Type.occurs_check k v then fail `Occurs_check else return (k, v)
-  (*i need this?*)
 
   let singleton k v =
     (* let _ = Stdlib.Format.printf "in singleton %s:%a\n" k pprint_type v in *)
@@ -277,7 +273,6 @@ let generalize : TypeEnv.t -> Type.t -> Scheme.t =
 open Ast.Constant
 open Ast.Expression
 open Ast.Pattern
-open Scheme
 
 let rec infer_pat ~debug pat env =
   match pat with
@@ -718,7 +713,6 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
   return (res_env, res_sub)
 ;;
 
-open Ast.Pattern
 open Ast.Structure
 
 let rec check_poly_types ~debug typ_list marity =

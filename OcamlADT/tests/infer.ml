@@ -2,7 +2,6 @@ open Ocamladt_lib.Parser
 open Format
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
-open Ocamladt_lib.Ast.TypeExpr
 
 let parse_and_infer_result program =
   match parse_str program with
@@ -1208,7 +1207,7 @@ let%expect_test "003  " =
   parse_and_infer_result
     {|
 let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f));;|};
-  [%expect{| Occurs_check |}]
+  [%expect{| Occurs_check: 1 and '1 -> '3 |}]
 ;;
 
 (*PASSED*)

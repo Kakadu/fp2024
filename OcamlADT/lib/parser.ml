@@ -123,18 +123,6 @@ let rchain p op =
   loop x
 ;;
 
-let plistdots parse construct func =
-  token "[" *> sep_by (token ";") parse
-  <* token "]"
-  >>| List.fold_right ~init:(construct ("[]", None)) ~f:func
-;;
-
-let plistbrackets parse construct tuple =
-  rchain
-    parse
-    (token "::" *> return (fun acc elem -> construct ("::", Some (tuple (acc, elem, [])))))
-;;
-
 (*
    |  _____   __   __  ____   U _____ u
    | |_ " _|  \ \ / /U|  _"\ u\| ___'|/
