@@ -1,10 +1,11 @@
 open Format
 open Ast.TypeExpr
 
+open Stdlib
 type binder = int [@@deriving show { with_path = false }]
 
 module VarSet = struct
-  include Stdlib.Set.Make (String)
+  include Set.Make (String)
 
   let pp ppf s =
     Format.fprintf ppf "[ ";
@@ -16,40 +17,50 @@ end
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
 type scheme = Forall of binder_set * t [@@deriving show { with_path = false }]
 
-let rec pprint_type_tuple fmt = function
+open Base
+let rec pprint_type_tuple ?(m = Map.empty (module String)) fmt = function
   | [] -> ()
   | [ h ] ->
     (match h with
-     | Type_arrow (_, _) -> fprintf fmt "(%a)" pprint_type h
-     | _ -> fprintf fmt "%a" pprint_type h)
+     | Type_arrow (_, _) -> fprintf fmt "(%a)" (pprint_type ~m) h
+     | _ -> fprintf fmt "%a" (pprint_type ~m) h)
   | h :: tl ->
     (match h with
-     | Type_arrow (_, _) -> fprintf fmt "(%a) * %a" pprint_type h pprint_type_tuple tl
-     | _ -> fprintf fmt "%a * %a" pprint_type h pprint_type_tuple tl)
+     | Type_arrow (_, _) ->
+       fprintf fmt "(%a) * %a" (pprint_type ~m) h (pprint_type_tuple ~m) tl
+     | _ -> fprintf fmt "%a * %a" (pprint_type ~m) h (pprint_type_tuple ~m) tl)
 
-and pprint_type fmt = function
-  | Type_var num -> fprintf fmt "'%s" num
+and pprint_type ?(m = Map.empty (module String)) fmt = function
+  | Type_var num -> 
+    (* let _ =  Base.Map.iteri m ~f:(fun ~key ~data ->
+      Format.fprintf fmt "Key: %s, Value: %s\n" key data) in *)
+    (match Map.find m num with
+    | Some k ->  fprintf fmt "'%s" k
+    | None -> fprintf fmt "'%s" num )
+   
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
-     | Type_arrow (_, _), _ -> fprintf fmt "(%a) -> %a" pprint_type ty1 pprint_type ty2
-     | _ -> fprintf fmt "%a -> %a" pprint_type ty1 pprint_type ty2)
-  | Type_tuple (t1, t2, ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1 :: t2 :: ty_lst)
+     | Type_arrow (_, _), _ ->
+       fprintf fmt "(%a) -> %a" (pprint_type ~m) ty1 (pprint_type ~m) ty2
+     | _ -> fprintf fmt "%a -> %a" (pprint_type ~m) ty1 (pprint_type ~m) ty2)
+  | Type_tuple (t1, t2, ty_lst) ->
+    fprintf fmt "%a" (pprint_type_tuple ~m) (t1 :: t2 :: ty_lst)
   | Type_construct (name, []) -> fprintf fmt "%s" name
   | Type_construct (name, ty_list) ->
-    fprintf fmt "%a %s" pprint_type_list_with_parens ty_list name
+    fprintf fmt "%a %s" (pprint_type_list_with_parens ~m) ty_list name
 
-and pprint_type_list_with_parens fmt ty_list =
+and pprint_type_list_with_parens ?(m = Map.empty (module String)) fmt ty_list =
   let rec print_types fmt = function
     | [] -> ()
     | [ ty ] -> pprint_type_with_parens_if_tuple fmt ty
     | ty :: rest ->
-      fprintf fmt "%a %a" pprint_type_with_parens_if_tuple ty print_types rest
+      fprintf fmt "%a %a" (pprint_type_with_parens_if_tuple ~m) ty print_types rest
   in
   print_types fmt ty_list
 
-and pprint_type_with_parens_if_tuple fmt ty =
+and pprint_type_with_parens_if_tuple ?(m = Map.empty (module String)) fmt ty =
   match ty with
-  | Type_tuple _ -> fprintf fmt "(%a)" pprint_type ty
+  | Type_tuple _ -> fprintf fmt "(%a)" (pprint_type ~m) ty
   | _ -> pprint_type fmt ty
 ;;
 
@@ -71,11 +82,11 @@ type error =
   | `Wrong_rec
   ]
 
-let pp_inf_err fmt = function
+let pp_inf_err ?(m = Map.empty (module String))  fmt = function
   | `Occurs_check (string, t) ->
-    fprintf fmt "Occurs_check: %s and %a\n" string pprint_type t
+    fprintf fmt "Occurs_check: %s and %a\n" string (pprint_type ~m) t
   | `Unification_failed (typ1, typ2) ->
-    fprintf fmt "Unification_failed: %a # %a" pprint_type typ1 pprint_type typ2
+    fprintf fmt "Unification_failed: %a # %a" (pprint_type ~m) typ1 (pprint_type ~m) typ2
   | `Wrong_exp -> fprintf fmt "Wrong_exp"
   | `Wrong_type -> fprintf fmt "Wrong_type"
   | `Wrong_Const -> fprintf fmt "Wrong_const"

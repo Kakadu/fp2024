@@ -3,28 +3,62 @@ open Format
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
 
+let minimizer args =
+  let counter = 0 in
+  let coef = 0 in
+  let args = VarSet.elements args in
+  let dargs =
+    Base.List.sort (Base.List.map args ~f:int_of_string) ~compare:Stdlib.Int.compare
+  in
+  let m = Base.Map.empty (module Base.String) in
+  Base.List.fold_left dargs ~init:(m, coef, counter) ~f:(fun (m, coef, counter) el ->
+    let str =
+      let rec build coef counter str =
+        if coef = 0
+        then str ^ Stdlib.Char.escaped (Stdlib.Char.chr (counter + 97))
+        else
+          build
+            (coef - 1)
+            counter
+            (str ^ Stdlib.Char.escaped (Stdlib.Char.chr (counter + 97)))
+      in
+      build coef counter ""
+    in
+    let counter = counter + 1 in
+    let coef = coef + (counter / 26) in
+    let counter = counter mod 26 in
+    let el = Stdlib.string_of_int el in
+    Base.Map.set m ~key:el ~data:str, coef, counter)
+;;
+
+let pprint_result env utils =
+  Base.Map.iteri env ~f:(fun ~key ~data ->
+    match Base.Map.find utils key with
+    | Some _ -> printf ""
+    | None ->
+      (match data with
+       | Forall (args, typ) ->
+         let m, _, _ = minimizer args in
+         (match key with
+          | "-" -> printf "%s : %a\n" key (pprint_type ~m) typ
+          | _ -> printf "%s : %a\n" key (pprint_type ~m) typ)))
+;;
+
 let parse_and_infer_result program =
   match parse_str program with
   | str ->
-    (match run_infer_program str env_with_print_funs with
-     | Ok env -> printf "\nres:\n%a" TypeEnv.pp_env env
-     | Error err -> printf "%a" pp_inf_err err)
+    (match run_infer_program str env_with_things with
+     | Ok env -> pprint_result env env_with_things
+     | Error err -> printf "%a" (pp_inf_err ~m:(Base.Map.empty (module Base.String))) err)
 ;;
 
 let%expect_test "zero" =
-  parse_and_infer_result {|fun x -> x;;|};
-  [%expect
-    {|
-    res:
-    "-": '0 -> '0
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  parse_and_infer_result {|fun x -> x;; 
+  let x = 2+2;;
+  fun y -> y;;|};
+  [%expect {|
+    - : '2 -> '2
+    x : int |}]
 ;;
 
 let%expect_test "zero" =
@@ -34,146 +68,55 @@ let%expect_test "zero" =
 
 let%expect_test "zero" =
   parse_and_infer_result {|let f x = x+x;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {| f : int -> int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5+5;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5/5;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5-5;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5*5;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>=5;;|};
-  [%expect
-    {|
-    res:
-    "-": bool
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<=5;;|};
-  [%expect
-    {|
-    res:
-    "-": bool
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>5;;|};
-  [%expect
-    {|
-    res:
-    "-": bool
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<5;;|};
-  [%expect
-    {|
-    res:
-    "-": bool
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : bool |}]
 ;;
 
 let%expect_test "zero" =
@@ -182,34 +125,14 @@ let%expect_test "zero" =
 let homka = Some id in
 match homka with
 | Some f -> f 42, f "42";;|};
-  [%expect
-    {|
-    res:
-    "-": int * string
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|function 5 -> 'c';;|};
-  [%expect
-    {|
-    res:
-    "-": int -> char
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int -> char |}]
 ;;
 
 let%expect_test "zero" =
@@ -218,18 +141,8 @@ let%expect_test "zero" =
 let homkaOBOLTUS = id in
 match homkaOBOLTUS with
 |  f -> f 42, f "42";;|};
-  [%expect
-    {|
-    res:
-    "-": int * string
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int * string |}]
 ;;
 
 let%expect_test "zero" =
@@ -237,69 +150,29 @@ let%expect_test "zero" =
 let y = 2;;
 let z = 3;;
 (x,y,z) = (5,6,7);;|};
-  [%expect
-    {|
-    res:
-    "-": bool
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int
-    "y": int
-    "z": int |}]
+  [%expect {|
+    - : bool
+    x : int
+    y : int
+    z : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then 1 else 5;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then "aboba";;|};
-  [%expect
-    {|
-    res:
-    "-": string
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|(5,6,7);;|};
-  [%expect
-    {|
-    res:
-    "-": int * int * int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int * int * int |}]
 ;;
 
 let%expect_test "zero" =
@@ -310,18 +183,8 @@ let%expect_test "zero" =
 | 68 -> 'h' 
 | 69 -> 's' 
 | 89 -> 'a';;|};
-  [%expect
-    {|
-    res:
-    "-": int -> char
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int -> char |}]
 ;;
 
 let%expect_test "zero" =
@@ -335,203 +198,80 @@ let%expect_test "zero" =
 |7 -> 1
 | _ -> 3
 ;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> fun y -> y+x;;|};
-  [%expect
-    {|
-    res:
-    "-": int -> int -> int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int -> int -> int |}]
 ;;
 
 (*ALL "LET" ITEMS*)
 
 let%expect_test "zero" =
   parse_and_infer_result {|let y = 5;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "y": int |}]
+  [%expect {| y : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let _ = (2,5) and y = ("a","b");;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "y": string * string |}]
+  [%expect {| y : string * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = (2,5) and y = ("a","b");;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int * int
-    "y": string * string |}]
+  [%expect {|
+    x : int * int
+    y : string * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let (x,y) = (2,5) and z = ("a","b");; let f = x;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int
-    "y": int
-    "z": string * string |}]
+  [%expect {|
+    f : int
+    x : int
+    y : int
+    z : string * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let (x,y) = (2,'c');;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int
-    "y": char |}]
+  [%expect {|
+    x : int
+    y : char |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = 5=5;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": bool |}]
+  [%expect {| x : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = 6 and y = 6 in x + y;;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let rec f x = f x;;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": [ 1; 2; ]. '1 -> '2
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    f : 'a -> 'b |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let f = fun x -> x;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": [ 0; ]. '0 -> '0
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    f : 'a -> 'a |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|
 let x = 5;;
 let 5 = x;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int |}]
+  [%expect {| x : int |}]
 ;;
 
 let%expect_test "zero" =
@@ -543,18 +283,8 @@ let x = (6: char);;|};
 let%expect_test "zero" =
   parse_and_infer_result {|
 () = print_int 5;;|};
-  [%expect
-    {|
-    res:
-    "-": bool
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    - : bool |}]
 ;;
 
 let%expect_test "zero" =
@@ -562,19 +292,9 @@ let%expect_test "zero" =
     {|
 let square x = x * x;;
 let id = fun x -> x in (id square) (id 123);;|};
-  [%expect
-    {|
-    res:
-    "-": int
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "square": int -> int |}]
+  [%expect {|
+    - : int
+    square : int -> int |}]
 ;;
 
 let%expect_test "zero" =
@@ -583,51 +303,19 @@ let%expect_test "zero" =
 let rec meven n = if n = 0 then 1 else modd (n - 1)
    and modd n = if n = 0 then 1 else meven (n - 1)
 ;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "meven": int -> int
-    "modd": int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    meven : int -> int
+    modd : int -> int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {| let f (x: int) = x + x;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {| f : int -> int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {| let f (x: int)(y: int) = x + y;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": int -> int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {| f : int -> int -> int |}]
 ;;
 
 let%expect_test "zero" =
@@ -637,18 +325,7 @@ let%expect_test "zero" =
 
 let%expect_test "zero" =
   parse_and_infer_result {| let f (x: int) = function 5 -> true | 6 -> false;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": int -> int -> bool
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {| f : int -> int -> bool |}]
 ;;
 
 let%expect_test "zero" =
@@ -659,18 +336,7 @@ let%expect_test "zero" =
 (*BUG*)
 let%expect_test "zero" =
   parse_and_infer_result {| let (f: int -> bool) = function 5 -> true | 6 -> false;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "f": int -> bool
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {| f : int -> bool |}]
 ;;
 
 (*KAKADU TYPE BEAT*)
@@ -678,18 +344,7 @@ let%expect_test "zero" =
 let%expect_test "001fact without builtin" =
   parse_and_infer_result {|
 let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac": int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {| fac : int -> int |}]
 ;;
 
 (*passed*)
@@ -700,19 +355,9 @@ let rec fac n = if n<=1 then 1 else n * fac (n-1);;
  let main =
   let () = print_int (fac 4) in
   0;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac": int -> int
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    fac : int -> int
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -724,16 +369,7 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac_cps": [ 8; ]. int -> (int -> '8) -> '8
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    fac_cps : int -> (int -> 'a) -> 'a |}]
 ;;
 
 (*passed*)
@@ -747,17 +383,8 @@ let rec fac_cps n k =
   0;;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac_cps": [ 8; ]. int -> (int -> '8) -> '8
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    fac_cps : int -> (int -> 'a) -> 'a
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -774,19 +401,9 @@ let rec fib_acc a b n =
   if n<2
   then n
   else fib (n - 1) + fib (n - 2);;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fib": int -> int
-    "fib_acc": int -> int -> int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    fib : int -> int
+    fib_acc : int -> int -> int -> int |}]
 ;;
 
 (*passed*)
@@ -809,18 +426,9 @@ let rec fib_acc a b n =
   0;;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fib": int -> int
-    "fib_acc": int -> int -> int -> int
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    fib : int -> int
+    fib_acc : int -> int -> int -> int
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -847,19 +455,10 @@ let main =
   0;;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "test10": int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
-    "test3": int -> int -> int -> int
-    "wrap": [ 0; ]. '0 -> '0 |}]
+    main : int
+    test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+    test3 : int -> int -> int -> int
+    wrap : 'a -> 'a |}]
 ;;
 
 (*PASSED*)
@@ -871,17 +470,8 @@ let rec fix f x = f (fix f) x;;
 let fac self n = if n<=1 then 1 else n * self (n-1);;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac": (int -> int) -> int -> int
-    "fix": [ 2; 5; ]. (('2 -> '5) -> '2 -> '5) -> '2 -> '5
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    fac : (int -> int) -> int -> int
+    fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b |}]
 ;;
 
 (*PASSED*)
@@ -897,18 +487,9 @@ let main =
   0;;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac": (int -> int) -> int -> int
-    "fix": [ 2; 5; ]. (('2 -> '5) -> '2 -> '5) -> '2 -> '5
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    fac : (int -> int) -> int -> int
+    fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
+    main : int |}]
 ;;
 
 (*PASSED?*)
@@ -919,19 +500,9 @@ let%expect_test "006" =
     let main =
   let () = print_int (foo 11) in
   0;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "foo": int -> int
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    foo : int -> int
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -949,19 +520,9 @@ let main =
   let foo = foo 3 in
   let () = print_int foo in
   0;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "foo": int -> int -> int -> int
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    foo : int -> int -> int -> int
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -975,19 +536,9 @@ let%expect_test "006.3" =
 let main =
   let () = foo 4 8 9 in
   0;;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "foo": int -> int -> int -> unit
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    foo : int -> int -> int -> unit
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -1002,17 +553,8 @@ let main =
   print_int (_start (print_int 1) (print_int 2) 3 (print_int 4) 100 1000 (print_int (-1)) 10000 (-555555));;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "_start": unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
-    "main": unit
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
+    main : unit |}]
 ;;
 
 (*PASSED*)
@@ -1025,17 +567,8 @@ let main =
   0;;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "addi": [ 2; ]. ('2 -> bool -> int) -> ('2 -> bool) -> '2 -> int
-    "main": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    addi : ('a -> bool -> int) -> ('a -> bool) -> 'a -> int
+    main : int |}]
 ;;
 
 (*PASSED*)
@@ -1044,18 +577,7 @@ let%expect_test "009" =
 let temp =
   let f = fun x -> x in
   (f 1, f true);;|};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "temp": int * bool |}]
+  [%expect {| temp : int * bool |}]
 ;;
 
 (*FAILED _5*)
@@ -1106,25 +628,16 @@ let aaa_5 =
     |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "_1": [ 3; ]. int -> int -> int * '3 -> bool
-    "_2": int
-    "_3": (int * string) option
-    "_4": [ 18; ]. int -> '18
-    "a_42": int -> bool
-    "aaa_5": int
-    "id1": [ 22; 23; ]. '22 -> '22
-    "id2": [ 22; 23; ]. '23 -> '23
-    "int_of_option": int option -> int
-    "k_6": [ 31; ]. '31 option -> '31
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    _1 : int -> int -> int * 'a -> bool
+    _2 : int
+    _3 : (int * string) option
+    _4 : int -> 'a
+    a_42 : int -> bool
+    aaa_5 : int
+    id1 : 'a -> 'a
+    id2 : 'b -> 'b
+    int_of_option : int option -> int
+    k_6 : '31 option -> 'a |}]
 ;;
 
 (* *)
@@ -1154,24 +667,15 @@ let main =
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "feven": [ 32; ]. '32 * (int -> int) -> int -> int
-    "fix": [ 2; 5; ]. (('2 -> '5) -> '2 -> '5) -> '2 -> '5
-    "fixpoly": [ 21; 24; ]. (('21 -> '24) * ('21 -> '24) -> '21 -> '24) * (('21 -> '24) * ('21 -> '24) -> '21 -> '24) -> ('21 -> '24) * ('21 -> '24)
-    "fodd": [ 40; ]. (int -> int) * '40 -> int -> int
-    "main": int
-    "map": [ 11; 9; ]. ('9 -> '11) -> '9 * '9 -> '11 * '11
-    "meven": int -> int
-    "modd": int -> int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "tie": (int -> int) * (int -> int) |}]
+    feven : 'a * (int -> int) -> int -> int
+    fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
+    fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
+    fodd : (int -> int) * 'a -> int -> int
+    main : int
+    map : ('a -> 'b) -> 'a * 'a -> 'b * 'b
+    meven : int -> int
+    modd : int -> int
+    tie : (int -> int) * (int -> int) |}]
 ;;
 
 let%expect_test "016" =
@@ -1222,23 +726,14 @@ let main =
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "append": [ 90; ]. '90 list -> '90 list -> '90 list
-    "cartesian": [ 127; 135; ]. '127 list -> '135 list -> ('127 * '135) list
-    "concat": [ 110; ]. '110 list list -> '110 list
-    "iter": [ 116; ]. ('116 -> unit) -> '116 list -> unit
-    "length": [ 3; ]. '3 list -> int
-    "length_tail": [ 18; ]. '18 list -> int
-    "main": int
-    "map": [ 25; 26; ]. ('25 -> '26) -> '25 list -> '26 list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    append : '90 list -> '90 list -> '90 list
+    cartesian : '127 list -> '135 list -> ('127 * '135) list
+    concat : '110 list list -> '110 list
+    iter : ('a -> unit) -> '116 list -> unit
+    length : '3 list -> int
+    length_tail : '18 list -> int
+    main : int
+    map : ('a -> 'b) -> '25 list -> '26 list |}]
 ;;
 
 (*KAKADU DO NOT TYPE BEAT*)
@@ -1323,18 +818,8 @@ let%expect_test "Simplest ADT" =
   parse_and_infer_result {|
   type shape = Circle ;;
 |};
-  [%expect
-    {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "Circle": [ 0; ]. shape
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+  [%expect {|
+    Circle : shape |}]
 ;;
 
 let%expect_test "ADT of" =
@@ -1345,18 +830,9 @@ let%expect_test "ADT of" =
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "Circle": [ 3; ]. int -> '2 '1 koka
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "a": '2
-    "b": '1
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    Circle : int -> '2 '1 koka
+    a : '2
+    b : '1 |}]
 ;;
 
 let%expect_test "ADT of few" =
@@ -1385,20 +861,11 @@ let Circle 5 = Circle 5;;
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "Circle": [ 1; ]. int -> '0 shape
-    "None": [ a; ]. 'a option
-    "Rectangle": [ 2; ]. int * int -> '0 shape
-    "Some": [ a; ]. 'a -> 'a option
-    "Square": [ 3; ]. int -> '0 shape
-    "[]": [ a; ]. 'a list
-    "a": '0
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int |}]
+    Circle : int -> '0 shape
+    Rectangle : int * int -> '0 shape
+    Square : int -> '0 shape
+    a : '0
+    x : int |}]
 ;;
 
 let%expect_test "ADT with poly2" =
@@ -1408,17 +875,8 @@ let%expect_test "ADT with poly2" =
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "Square": [ 1; ]. int -> '0 shape
-    "[]": [ a; ]. 'a list
-    "a": '0
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    Square : int -> '0 shape
+    a : '0 |}]
 ;;
 
 let%expect_test "ADT with poly3" =
@@ -1431,19 +889,10 @@ let%expect_test "ADT with poly3" =
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "Circle": [ 1; ]. int -> '0 shape
-    "None": [ a; ]. 'a option
-    "Rectangle": [ 2; ]. char * int -> '0 shape
-    "Some": [ a; ]. 'a -> 'a option
-    "Square": [ 3; ]. int * 'a * 'a -> '0 shape
-    "[]": [ a; ]. 'a list
-    "a": '0
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    Circle : int -> '0 shape
+    Rectangle : char * int -> '0 shape
+    Square : int * 'a * 'a -> '0 shape
+    a : '0 |}]
 ;;
 
 let%expect_test "ADT with poly constraint" =
@@ -1482,21 +931,12 @@ let (x: (int) shape) = y;;
 |};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "Circle": [ 1; ]. int -> int shape
-    "None": [ a; ]. 'a option
-    "Rectangle": [ 2; ]. char * int -> int shape
-    "Some": [ a; ]. 'a -> 'a option
-    "Square": [ 3; ]. int * 'a * 'a -> int shape
-    "[]": [ a; ]. 'a list
-    "a": int
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit
-    "x": int shape
-    "y": int shape |}]
+    Circle : int -> int shape
+    Rectangle : char * int -> int shape
+    Square : int * 'a * 'a -> int shape
+    a : int
+    x : int shape
+    y : int shape |}]
 ;;
 
 (*BUG*)
@@ -1519,14 +959,14 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));;|};
   [%expect
     {|
-    res:
-    "::": [ a; ]. 'a * 'a list -> 'a list
-    "None": [ a; ]. 'a option
-    "Some": [ a; ]. 'a -> 'a option
-    "[]": [ a; ]. 'a list
-    "fac_cps": [ 8; ]. int -> (int -> '8) -> '8
-    "print_bool": bool -> unit
-    "print_char": char -> unit
-    "print_endline": string -> unit
-    "print_int": int -> unit |}]
+    fac_cps : int -> (int -> 'a) -> 'a |}]
+;;
+
+let%expect_test "002fact without builtin" =
+  parse_and_infer_result
+    {|
+let f q w e r t y u i o p a s d g h j k l z x c v b n m qq ww ee rr tt yy uu ii oo pp aa ss dd ff gg hh jj kk ll zz xx cc vv = 5;;|};
+  [%expect
+    {|
+    f : 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> 'k -> 'l -> 'm -> 'n -> 'o -> 'p -> 'q -> 'r -> 's -> 't -> 'u -> 'v -> 'w -> 'x -> 'y -> 'z -> 'aa -> 'bb -> 'cc -> 'dd -> 'ee -> 'ff -> 'gg -> 'hh -> 'ii -> 'jj -> 'kk -> 'll -> 'mm -> 'nn -> 'oo -> 'pp -> 'qq -> 'rr -> 'ss -> 'tt -> 'uu -> 'vv -> int |}]
 ;;
