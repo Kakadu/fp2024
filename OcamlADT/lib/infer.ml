@@ -858,8 +858,8 @@ let infer_program ~debug program env =
 
 let empty_env = TypeEnv.empty
 
-let env_with_print_funs =
-  let print_fun_list =
+let env_with_things =
+  let things_list =
     [ ( "print_int"
       , Forall
           ( VarSet.empty
@@ -893,12 +893,9 @@ let env_with_print_funs =
   List.fold_left
     (fun env (id, sch) -> TypeEnv.extend env id sch)
     TypeEnv.empty
-    print_fun_list
+    things_list
 ;;
 
-(*for expr test*)
-
-(*for str item test*)
 let run_infer_program ?(debug = false) (program : Ast.program) env =
   run (infer_program ~debug program env)
 ;;
