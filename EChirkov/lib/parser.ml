@@ -65,7 +65,7 @@ let p_rec_flag =
   choice [ take_while1 is_ws *> token "rec" *> return Recursive; return Nonrecursive ]
 ;;
 
-(* patterns *)
+(* ========== patterns ========== *)
 
 let p_pattern = fix @@ fun p -> return PAny
 
@@ -106,9 +106,7 @@ let p_variable =
 
 (* ========== exprs ========== *)
 
-let p_list e =
-  token "[" *> sep_by (token ";") e <* token "]" >>| fun e e_rest -> EList (e, e_rest)
-;;
+let p_list e = token "[" *> sep_by (token ";") e <* token "]" >>| fun es -> EList es
 
 let p_expression =
   fix
@@ -129,26 +127,18 @@ let p_expression =
 
 (* ========== top level ========== *)
 
-let p_binding = lift2 (fun p e -> p, e) p_pattern p_expression
+let p_binding = lift2 (fun p e -> p, e) p_pattern (token "=" *> p_expression)
 
-(* let p_structure_eval = p_expression >>| fun e -> return (SEval e) *)
-(*
-   let p_structure_value =
-   lift3
-   (fun rf b bl -> return (SValue (rf, b, bl)))
-   (token "let" *> p_rec_flag)
-   p_binding
-   (many (token "and" *> p_binding))
-   ;;
+let p_structure_item =
+  lift3
+    (fun rf b bl -> SValue (rf, b, bl))
+    (token "let" *> p_rec_flag)
+    p_binding
+    (many (token "and" *> p_binding))
+;;
 
-   let p_structure_item =
-   p_structure_value (* <|> p_structure_eval *)
-   ;; *)
-
-let p_program = many (p_expression <* newlines <* ws <|> (p_expression <* ws))
+let p_program = many p_structure_item <* end_of_input
 
 (* actuall parser function *)
 
 let parse s = parse_string ~consume:All p_program s
-let test_parse (s : string) (r : program) : bool = parse s = Result.Ok r
-let%test "integer" = test_parse "7" [ EConst (CInt 7) ]
