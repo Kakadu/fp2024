@@ -34,6 +34,7 @@ and pprint_type ?(m = Map.empty (module String)) fmt = function
   | Type_var num -> 
     (* let _ =  Base.Map.iteri m ~f:(fun ~key ~data ->
       Format.fprintf fmt "Key: %s, Value: %s\n" key data) in *)
+      (* let _ = printf  "Key %s\n" num  in *)
     (match Map.find m num with
     | Some k ->  fprintf fmt "'%s" k
     | None -> fprintf fmt "'%s" num )
@@ -52,7 +53,7 @@ and pprint_type ?(m = Map.empty (module String)) fmt = function
 and pprint_type_list_with_parens ?(m = Map.empty (module String)) fmt ty_list =
   let rec print_types fmt = function
     | [] -> ()
-    | [ ty ] -> pprint_type_with_parens_if_tuple fmt ty
+    | [ ty ] -> (pprint_type_with_parens_if_tuple ~m) fmt ty
     | ty :: rest ->
       fprintf fmt "%a %a" (pprint_type_with_parens_if_tuple ~m) ty print_types rest
   in
@@ -61,7 +62,7 @@ and pprint_type_list_with_parens ?(m = Map.empty (module String)) fmt ty_list =
 and pprint_type_with_parens_if_tuple ?(m = Map.empty (module String)) fmt ty =
   match ty with
   | Type_tuple _ -> fprintf fmt "(%a)" (pprint_type ~m) ty
-  | _ -> pprint_type fmt ty
+  | _ -> (pprint_type ~m) fmt ty
 ;;
 
 (*errors*)

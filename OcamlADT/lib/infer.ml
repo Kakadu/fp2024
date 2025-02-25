@@ -736,7 +736,7 @@ let get_names_adt env poly_list =
     ~f:(fun poly acc ->
       let* env_acc, fresh_acc = return acc in
       let* fresh = fresh_var in
-      let env_acc = TypeEnv.extend env_acc poly (Forall (VarSet.empty, fresh)) in
+      (* let env_acc = TypeEnv.extend env_acc poly (Forall (VarSet.empty, fresh)) in *)
       return (env_acc, fresh :: fresh_acc))
     poly_list
     ~init:(return (env, []))
@@ -776,6 +776,7 @@ let infer_structure_item ~debug env item marity =
   | Str_adt (poly, name, (variant, rest)) ->
     if debug then Format.printf "DEBUG: In ADT\n";
     let* env, poly_types = get_names_adt env poly in
+    let varset = Base.List.fold_left poly_types ~init:(VarSet.empty) ~f:(fun acc (Type_var x) -> VarSet.add x acc)  in
     let adt_type = Type_construct (name, poly_types) in
     let type_arity = List.length poly in
     let arity_map = Base.Map.set marity ~key:name ~data:type_arity in
@@ -799,14 +800,14 @@ let infer_structure_item ~debug env item marity =
                 (TypeEnv.extend
                    env_acc
                    constr_name
-                   (Forall (VarSet.singleton !fresh, adt_type)))
+                   (Forall ( VarSet.singleton !fresh, adt_type)))
             | hd :: [] ->
               let* () = check_poly_types ~debug poly arity_map hd in
               return
                 (TypeEnv.extend
                    env_acc
                    constr_name
-                   (Forall (VarSet.singleton !fresh, Type_arrow (hd, adt_type))))
+                   (Forall (varset, Type_arrow (hd, adt_type))))
             | [ hd; tl ] ->
               let* _ = RList.map [ hd; tl ] ~f:(check_poly_types ~debug poly arity_map) in
               return
@@ -814,7 +815,7 @@ let infer_structure_item ~debug env item marity =
                    env_acc
                    constr_name
                    (Forall
-                      ( VarSet.singleton !fresh
+                      ( varset
                       , Type_arrow (Type_tuple (hd, tl, []), adt_type) )))
             | hd :: tl1 :: tl2 ->
               let* _ =
@@ -825,7 +826,7 @@ let infer_structure_item ~debug env item marity =
                    env_acc
                    constr_name
                    (Forall
-                      ( VarSet.singleton !fresh
+                      ( varset 
                       , Type_arrow (Type_tuple (hd, tl1, tl2), adt_type) )))
           in
           (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
