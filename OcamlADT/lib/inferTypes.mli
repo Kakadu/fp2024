@@ -9,7 +9,6 @@ module VarSet : sig
 end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
-
 type scheme = Forall of binder_set * t [@@deriving show { with_path = false }]
 
 val pprint_type_tuple : Format.formatter -> t list -> unit

@@ -14,8 +14,8 @@ module VarSet = struct
 end
 
 type binder_set = VarSet.t [@@deriving show { with_path = false }]
-
 type scheme = Forall of binder_set * t [@@deriving show { with_path = false }]
+
 let rec pprint_type_tuple fmt = function
   | [] -> ()
   | [ h ] ->
@@ -36,12 +36,12 @@ and pprint_type fmt = function
   | Type_tuple (t1, t2, ty_lst) -> fprintf fmt "%a" pprint_type_tuple (t1 :: t2 :: ty_lst)
   | Type_construct (name, []) -> fprintf fmt "%s" name
   | Type_construct (name, ty_list) ->
-    fprintf fmt "%a %s" (pprint_type_list_with_parens) ty_list name
+    fprintf fmt "%a %s" pprint_type_list_with_parens ty_list name
 
 and pprint_type_list_with_parens fmt ty_list =
   let rec print_types fmt = function
     | [] -> ()
-    | [ty] -> pprint_type_with_parens_if_tuple fmt ty
+    | [ ty ] -> pprint_type_with_parens_if_tuple fmt ty
     | ty :: rest ->
       fprintf fmt "%a %a" pprint_type_with_parens_if_tuple ty print_types rest
   in
@@ -51,6 +51,7 @@ and pprint_type_with_parens_if_tuple fmt ty =
   match ty with
   | Type_tuple _ -> fprintf fmt "(%a)" pprint_type ty
   | _ -> pprint_type fmt ty
+;;
 
 (*errors*)
 
@@ -71,7 +72,8 @@ type error =
   ]
 
 let pp_inf_err fmt = function
-  | `Occurs_check (string, t) -> fprintf fmt "Occurs_check: %s and %a\n" string pprint_type t 
+  | `Occurs_check (string, t) ->
+    fprintf fmt "Occurs_check: %s and %a\n" string pprint_type t
   | `Unification_failed (typ1, typ2) ->
     fprintf fmt "Unification_failed: %a # %a" pprint_type typ1 pprint_type typ2
   | `Wrong_exp -> fprintf fmt "Wrong_exp"

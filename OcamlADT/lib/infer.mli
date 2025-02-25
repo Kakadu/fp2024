@@ -1,11 +1,11 @@
 open InferTypes
 
 module Type : sig
-    type t = Ast.TypeExpr.t
-  
-    val occurs_check : string -> t -> bool
-    val free_vars : t -> VarSet.t
-  end
+  type t = Ast.TypeExpr.t
+
+  val occurs_check : string -> t -> bool
+  val free_vars : t -> VarSet.t
+end
 
 module Scheme : sig
   type t = scheme
@@ -33,4 +33,8 @@ end
 val empty_env : TypeEnv.t
 val env_with_print_funs : TypeEnv.t
 
-val run_infer_program : ?debug:bool -> Ast.program -> TypeEnv.t -> (TypeEnv.t, InferTypes.error) Result.t
+val run_infer_program
+  :  ?debug:bool
+  -> Ast.program
+  -> TypeEnv.t
+  -> (TypeEnv.t, InferTypes.error) Result.t

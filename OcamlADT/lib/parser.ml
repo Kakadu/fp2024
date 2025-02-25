@@ -370,7 +370,9 @@ let pidentexpr =
 ;;
 
 let pcase pexpr =
-  pass_ws *> option () (token "|" *> return ()) *>
+  pass_ws
+  *> option () (token "|" *> return ())
+  *>
   let* first = pass_ws *> ppattern in
   let* second = token "->" *> pass_ws *> pexpr in
   return { Expression.first; second }
@@ -379,7 +381,7 @@ let pcase pexpr =
 let pfunction pexpr =
   token "function"
   *>
-  let* first_case = pcase pexpr in 
+  let* first_case = pcase pexpr in
   let* case_list = sep_by (token "|") (pcase pexpr) in
   return (Ast.Expression.Exp_function (first_case, case_list))
 ;;
@@ -539,9 +541,10 @@ let pexpr =
     let pexpcons = pexpcons pcompare <|> pcompare in
     let plogop = rchain pexpcons plogops in
     let ptuple = ptupleexpr plogop <|> plogop in
-    choice [  pfunction pexpr; pfunexpr pexpr; pletexpr pexpr;  pifexpr pexpr; pmatch pexpr;] <|> ptuple)
-
-  ;;
+    choice
+      [ pfunction pexpr; pfunexpr pexpr; pletexpr pexpr; pifexpr pexpr; pmatch pexpr ]
+    <|> ptuple)
+;;
 
 (*
    |  ____     _____    ____      _   _    ____   _____    _   _    ____    U _____ u
