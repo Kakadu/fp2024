@@ -65,7 +65,7 @@ type expression =
   | EUnary of op_un * expression
   | EBinary of op_bin * expression * expression
   | ETuple of expression * expression * expression list
-  | EList of expression * expression list
+  | EList of expression list
   | EOption of expression option
   (* | EMatch of expression * case * case list (* match *) *)
   | EIf of expression * expression * expression option (* if x then false else true *)
@@ -80,9 +80,9 @@ type expression =
 (* and case = pattern * expression [@@deriving show { with_path = false }] *)
 and value_binding = pattern * expression [@@deriving show { with_path = false }]
 
-type structure_item =
-  | SValue of rec_flag * value_binding * value_binding list (* let f x = x;; *)
-  | SEval of expression (* (fun x -> x * 2) 10;; *)
-[@@deriving show { with_path = false }]
+(* type structure_item =
+   | SValue of rec_flag * value_binding * value_binding list (* let f x = x *)
+   | SEval of expression (* (fun x -> x * 2) 10 *)
+   [@@deriving show { with_path = false }] *)
 
 type program = expression list [@@deriving show { with_path = false }]
