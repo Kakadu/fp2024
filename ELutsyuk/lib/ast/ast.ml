@@ -2,23 +2,15 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-type id = string (* expression identifier *) [@@deriving show { with_path = false }]
+(** Expression identifier *)
+type id = string [@@deriving show { with_path = false }]
 
 (** Represents constant values. *)
 type const =
   | Int of int (** Integer constants, e.g. [-1], [ 2], [0]. *)
-  | Str of string (** String constants, e.g. [{|meow|}], [{|miniML|}]. *)
+  | Str of string (** String constants, e.g. [{|meow|}], ["miniML"]. *)
   | Bool of bool (** Boolean constants, e.g. [true], [false]. *)
   | Unit (** [()] *)
-[@@deriving show { with_path = false }]
-
-(** Represents basic types in the language. *)
-type typ =
-  | TypInt (** Integer type, e.g. [int]. *)
-  | TypStr (** String type, e.g. [string]. *)
-  | TypBool (** Boolean type, e.g. [bool]. *)
-  | TypUnit (** Unit type, e.g. [unit]. *)
-  | TypList of typ (** List type, e.g. [int list], [string list]. *)
 [@@deriving show { with_path = false }]
 
 (** Represents binary operators, such as arithmetic or logical operations. *)
@@ -39,10 +31,11 @@ type binop =
 
 (** Represents patterns for matching values in expressions. *)
 type pat =
+  | PatAny (** Matches any value without binding it, e.g. [_]. *)
   | PatConst of const (** Matches a constant value, e.g. [42], [true]. *)
   | PatVar of id (** Matches any value and binds it to a variable, e.g. [x]. *)
-  | PatAny (** Matches any value without binding it, e.g. [_]. *)
   | PatTup of pat * pat * pat list (** Matches tuples, e.g. [(x, y)], [(a, b, c)]. *)
+  | PatOption of pat option
 [@@deriving show { with_path = false }]
 
 (** Indicates whether a [let] binding is recursive or non-recursive. *)
@@ -58,39 +51,39 @@ type expr =
   | BinOp of binop * expr * expr (** Binary operation, e.g. [x + y], [a >= b]. *)
   | Option of expr option
   (* todo: взаимная рекурсия *)
-  | Let of let_binding * expr (** [let] expression, e.g. [let x = 5 in e]. *)
+  | Let of rec_state * let_binding * let_binding list * expr
+  (** [let] expression, e.g. [let x = 5 in e]. *)
   | App of expr * expr (** Function application, e.g. [e1 e2], [(fun x -> x) 42]. *)
   | Fun of pat * expr (** Function definition, e.g. [fun p -> e]. *)
   | Branch of expr * expr * expr
   (** Conditional expression, e.g. [if e1 then e2 else e3]. *)
   | Tup of expr * expr * expr list (** Tuple expression, e.g. [(e1, e2)], [(x, y, z)]. *)
   | List of expr list (** List expression, e.g. [[]], [[e1; e2; e3]]. *)
-  | Match of expr * match_case * match_case list
-  (** Pattern matching, e.g. [match x with | 0 -> "zero" | _ -> "nonzero"]. *)
+    (* | Match of expr * match_case * match_case list
+       Pattern matching, e.g. [match x with | 0 -> "zero" | _ -> "nonzero"]. *)
 [@@deriving show { with_path = false }]
 
 (** Represents a binding in a [let] expression. *)
 and let_binding =
-  { is_rec : rec_state (** Whether the binding is recursive or non-recursive. *)
-  ; pat : pat (** The pattern being bound, e.g. [x], [(a, b)]. *)
+  { pat : pat (** The pattern being bound, e.g. [x], [(a, b)]. *)
   ; expr : expr (** The expression being assigned, e.g. [42], [fun x -> x + 1]. *)
   }
 [@@deriving show { with_path = false }]
 
-(** Represents a single case in a [match] expression. *)
+(* Represents a single case in a [match] expression. 
 and match_case =
   { match_pat : pat (** The pattern to match, e.g. [0], [_], [(x, y)]. *)
   ; match_expr : expr (** The expression to evaluate if the pattern matches. *)
   }
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }] *)
 
 (** Represents a top-level item in a program. *)
-type top_level_item =
+type structure_item =
   | EvalExpr of expr
   (** An expression to be evaluated but not bound, e.g. [1 + 2], [print_endline "Hi"]. *)
-  | Binding of let_binding
+  | Binding of rec_state * let_binding * let_binding list
   (** A value or function binding, e.g. [let x = 5], [let rec fact n = ...]. *)
 [@@deriving show { with_path = false }]
 
 (** Represents an entire program as a list of top-level items. *)
-type program = top_level_item list [@@deriving show { with_path = false }]
+type program = structure_item list [@@deriving show { with_path = false }]
