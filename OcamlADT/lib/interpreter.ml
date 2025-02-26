@@ -6,7 +6,7 @@ open Ast
 
 type error =
   | DivisionByZero
-  | TypeMismatch
+  | TypeMismatch (* just a stub for interp unit tests + some below *)
   | UnboundVariable of string
   | PatternMismatch
   | RecursionError
@@ -16,7 +16,6 @@ type error =
   | NotAnADT of string
   | NotAnADTVariant of string
   | UndefinedConstructor of string
-  | InvalidConstructorArguments of string
 
 type value =
   | VInt of int
@@ -526,12 +525,12 @@ module Interpreter (M : Error_monad) = struct
                   then
                     let* evaluated_args = eval_expr env provided_args in
                     return (VAdt (evaluated_args, targs, ctor_name, constr))
-                  else fail (InvalidConstructorArguments ctor_name)
+                  else fail (UndefinedConstructor ctor_name)
                 | None ->
                   (* If no arguments are provided, ensure the constructor expects none *)
                   if List.length ctor_arg_types = 0
                   then return (VAdt (VUnit, targs, ctor_name, constr))
-                  else fail (InvalidConstructorArguments ctor_name))
+                  else fail (UndefinedConstructor ctor_name))
              | None -> fail (UndefinedConstructor ctor_name))
           | _ -> fail (NotAnADT adt_name))
        | VBool _ -> E.lookup env ctor_name
@@ -754,8 +753,6 @@ module PPrinter = struct
     | ParserError -> fprintf fmt "Parser Error"
     | NotAnADT s -> fprintf fmt "Interpreter error: %s is not an ADT" s
     | NotAnADTVariant s -> fprintf fmt "Interpreter error: %s is not an ADT's variant" s
-    | InvalidConstructorArguments s ->
-      fprintf fmt "Interpreter error: Invalid arguments at %s" s
     | UndefinedConstructor s ->
       fprintf fmt "Interpreter error: Undefined constructor %s" s
   ;;

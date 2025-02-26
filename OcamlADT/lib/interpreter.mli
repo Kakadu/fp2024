@@ -17,7 +17,6 @@ type error =
   | NotAnADT of string
   | NotAnADTVariant of string
   | UndefinedConstructor of string
-  | InvalidConstructorArguments of string
 
 (** Runtime value type *)
 type value =

@@ -1,7 +1,7 @@
 open Format
 open Ast.TypeExpr
-
 open Stdlib
+
 type binder = int [@@deriving show { with_path = false }]
 
 module VarSet = struct
@@ -21,8 +21,8 @@ open Base
 
 let binder_to_list args =
   let args = VarSet.elements args in
-    Base.List.sort (Base.List.map args ~f:int_of_string) ~compare:Stdlib.Int.compare
-  
+  Base.List.sort (Base.List.map args ~f:int_of_string) ~compare:Stdlib.Int.compare
+;;
 
 let minimizer dargs =
   let counter = 0 in
@@ -61,14 +61,13 @@ let rec pprint_type_tuple ?(m = Map.empty (module String)) fmt = function
      | _ -> fprintf fmt "%a * %a" (pprint_type ~m) h (pprint_type_tuple ~m) tl)
 
 and pprint_type ?(m = Map.empty (module String)) fmt = function
-  | Type_var num -> 
+  | Type_var num ->
     (* let _ =  Base.Map.iteri m ~f:(fun ~key ~data ->
-      Format.fprintf fmt "Key: %s, Value: %s\n" key data) in *)
-      (* let _ = printf  "Key %s\n" num  in *)
+       Format.fprintf fmt "Key: %s, Value: %s\n" key data) in *)
+    (* let _ = printf  "Key %s\n" num  in *)
     (match Map.find m num with
-    | Some k ->  fprintf fmt "'%s" k
-    | None -> fprintf fmt "'%s" num )
-   
+     | Some k -> fprintf fmt "'%s" k
+     | None -> fprintf fmt "'%s" num)
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
      | Type_arrow (_, _), _ ->
@@ -113,39 +112,51 @@ type error =
   | `Wrong_rec
   ]
 
-  let collect_type_vars typ =
-    let rec aux acc = function
-      | Type_var num -> num :: acc
-      | Type_arrow (t1, t2) -> aux (aux acc t1) t2
-      | Type_tuple (t1, t2, tl) -> List.fold_left ~f:aux ~init:(aux (aux acc t1) t2) tl
-      | Type_construct (_, ty_list) -> List.fold_left ~f:aux ~init:acc ty_list
-    in
-    aux [] typ
-  ;;
+let collect_type_vars typ =
+  let rec aux acc = function
+    | Type_var num -> num :: acc
+    | Type_arrow (t1, t2) -> aux (aux acc t1) t2
+    | Type_tuple (t1, t2, tl) -> List.fold_left ~f:aux ~init:(aux (aux acc t1) t2) tl
+    | Type_construct (_, ty_list) -> List.fold_left ~f:aux ~init:acc ty_list
+  in
+  aux [] typ
+;;
 
-  let collect_vars_from_error = function
-    | `Occurs_check (str, typ) -> str :: collect_type_vars typ 
-    | `Unification_failed (t1, t2) -> collect_type_vars t1 @ collect_type_vars t2
-    | _ -> []
-  ;;
+let collect_vars_from_error = function
+  | `Occurs_check (str, typ) -> str :: collect_type_vars typ
+  | `Unification_failed (t1, t2) -> collect_type_vars t1 @ collect_type_vars t2
+  | _ -> []
+;;
 
-  let pp_inf_err fmt err =
-    let type_vars = collect_vars_from_error err in
-    let var_map, _, _ = minimizer (List.map type_vars ~f:Stdlib.int_of_string) in
-    match err with
-    | `Occurs_check (str, t) ->
-      fprintf fmt "Occurs_check: %a and %a\n" (pprint_type ~m:var_map) (Type_var str) (pprint_type ~m:var_map) t
-    | `Unification_failed (typ1, typ2) ->
-      fprintf fmt "Unification_failed: %a # %a" (pprint_type ~m:var_map) typ1 (pprint_type ~m:var_map) typ2
-    | `Wrong_exp -> fprintf fmt "Wrong_exp"
-    | `Wrong_type -> fprintf fmt "Wrong_type"
-    | `Wrong_Const -> fprintf fmt "Wrong_const"
-    | `Wrong_stritem -> fprintf fmt "Wrong_stritem"
-    | `Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
-    | `Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
-    | `Pattern_matching_failed -> fprintf fmt "Pattern_matching_failed"
-    | `Arity_mismatch -> fprintf fmt "Arity_mismatch"
-    | `Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
-    | `Not_supported -> fprintf fmt "Not supported syntax"
-    | `Wrong_rec -> fprintf fmt "Wrong rec"
-  ;;
+let pp_inf_err fmt err =
+  let type_vars = collect_vars_from_error err in
+  let var_map, _, _ = minimizer (List.map type_vars ~f:Stdlib.int_of_string) in
+  match err with
+  | `Occurs_check (str, t) ->
+    fprintf
+      fmt
+      "Occurs_check: %a and %a\n"
+      (pprint_type ~m:var_map)
+      (Type_var str)
+      (pprint_type ~m:var_map)
+      t
+  | `Unification_failed (typ1, typ2) ->
+    fprintf
+      fmt
+      "Unification_failed: %a # %a"
+      (pprint_type ~m:var_map)
+      typ1
+      (pprint_type ~m:var_map)
+      typ2
+  | `Wrong_exp -> fprintf fmt "Wrong_exp"
+  | `Wrong_type -> fprintf fmt "Wrong_type"
+  | `Wrong_Const -> fprintf fmt "Wrong_const"
+  | `Wrong_stritem -> fprintf fmt "Wrong_stritem"
+  | `Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
+  | `Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
+  | `Pattern_matching_failed -> fprintf fmt "Pattern_matching_failed"
+  | `Arity_mismatch -> fprintf fmt "Arity_mismatch"
+  | `Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
+  | `Not_supported -> fprintf fmt "Not supported syntax"
+  | `Wrong_rec -> fprintf fmt "Wrong rec"
+;;

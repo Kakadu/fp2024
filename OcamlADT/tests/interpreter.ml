@@ -179,7 +179,6 @@ let%expect_test "multiple let bool assignments" =
 let%expect_test "fun assignment with bool operators" =
   pp_parse_demo {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
   [%expect {| false |}]
-
 ;;
 
 let%expect_test "fun assignment with bool operators (tuple arg)" =
@@ -491,7 +490,7 @@ type shape = Point of int
   | Rect of int * int * int 
 ;;
 |};
-  [%expect{||}]
+  [%expect {||}]
 ;;
 
 (*we dont support regular custom types*)
@@ -527,7 +526,7 @@ print_int y
 ;;
 
   |};
-  [%expect{|
+  [%expect {|
     3
     val area = <fun> |}]
 ;;
@@ -550,7 +549,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect{|
+  [%expect {|
     10
     val area = <fun> |}]
 ;;
@@ -573,7 +572,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect{|
+  [%expect {|
     10
     val area = <fun> |}]
 ;;
@@ -596,7 +595,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect{|
+  [%expect {|
     50
     val area = <fun> |}]
 ;;
@@ -612,7 +611,7 @@ type shape = Circle of int
 let x = Chto 5
 ;;
   |};
-  [%expect{| Intepreter error: Unbound value Chto |}]
+  [%expect {| Intepreter error: Unbound value Chto |}]
 ;;
 
 let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
@@ -633,7 +632,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect{|
+  [%expect {|
     10
     val area = <fun> |}]
 ;;
@@ -648,7 +647,7 @@ type shape = Circle of int
 let x = Cir 5 in 
 print_int area x;;
   |};
-  [%expect{| Intepreter error: Unbound value Cir |}]
+  [%expect {| Intepreter error: Unbound value Cir |}]
 ;;
 
 (* good, needs a initialization check + infer print(see next tests)*)
@@ -658,7 +657,7 @@ type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
   |};
-  [%expect{||}]
+  [%expect {||}]
 ;;
 
 let%expect_test "poly adt tree (dumb insert)" =
@@ -686,7 +685,8 @@ let rec tree_size t =
 let () = print_int (tree_size tree1)
 
   |};
-  [%expect{|
+  [%expect
+    {|
     1
     val insert = <fun>
     val tree1 = <ADT>: Node
@@ -716,7 +716,8 @@ let rec tree_size t =
 let () = print_int (tree_size tree2)
 
   |};
-  [%expect{|
+  [%expect
+    {|
     0
     val insert = <fun>
     val tree2 = <ADT>: Leaf
@@ -751,7 +752,8 @@ let rec tree_size t =
 let () = print_int (tree_size tree)
 
   |};
-  [%expect{|
+  [%expect
+    {|
     4
     val insert = <fun>
     val tree = <ADT>: Node
@@ -780,7 +782,7 @@ let rec tree_size t =
 let () = print_int (tree_size tree)
 
   |};
-  [%expect{|
+  [%expect {|
     4
     val tree = <ADT>: Node
     val tree_size = <fun> |}]
@@ -1070,8 +1072,7 @@ let temp =
   [%expect {| val temp = (1, true) |}]
 ;;
 
-(*
-   let%expect_test "010sukharev" =
+let%expect_test "010sukharev" =
   pp_parse_demo
     {|
   let _1 = fun x y (a, _) -> (x + y - a) = 1
@@ -1153,8 +1154,20 @@ let main =
   let (even,odd) = tie in
   0
 |};
-  [%expect {| 20 |}]
-;;*)
+  [%expect
+    {|
+    1
+    1
+    val fix = <fun>
+    val map = <fun>
+    val fixpoly = <fun>
+    val feven = <fun>
+    val fodd = <fun>
+    val tie = (<fun>, <fun>)
+    val meven = <fun>
+    val modd = <fun>
+    val main = 0 |}]
+;;
 
 let%expect_test "fix_factorial" =
   pp_parse_demo

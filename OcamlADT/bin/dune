@@ -2,7 +2,7 @@
  (name interpret)
  (public_name interpret)
  (modules interpret)
- (libraries ocamladt_lib)
+ (libraries ocamladt_lib ocamladt_tests)
  (instrumentation
   (backend bisect_ppx)))
 

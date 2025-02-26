@@ -1231,12 +1231,17 @@ let y = Circle x
 let (z: int shape) = Rectangle (2,5)
 let q = Square 34985734895
 |};
+<<<<<<< HEAD
   [%expect
     {|
     val q : 'a shape
     val x : int
     val y : 'a shape
     val z : int shape |}]
+=======
+  [%expect {|
+    val x : int |}]
+>>>>>>> 0b9cc1d (feat: add infer to the interpreter)
 ;;
 
 let%expect_test "ADT with poly2" =
@@ -1256,8 +1261,7 @@ let%expect_test "ADT with poly3" =
   | Square of int * 'a * 'a
 ;;
 |};
-  [%expect
-    {| |}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "ADT with poly constraint" =
@@ -1297,8 +1301,7 @@ let y = Circle 5;;
 let (x: char shape) = y;;
 let z g = g;;
 |};
-  [%expect
-    {|
+  [%expect {|
     val x : char shape
     val y : 'a shape
     val z : 'a -> 'a |}]
