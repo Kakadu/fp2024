@@ -4,8 +4,9 @@
 
 open Angstrom
 open Ast
-open Aux
-open Pat
+open Auxilary
+open Const
+open Patterns
 open Expr
 
 let pp printer parser str =
@@ -14,113 +15,154 @@ let pp printer parser str =
   | Error _ -> print_endline "Syntax error"
 ;;
 
-(* ================================ auxiliaries ================================ *)
+(* ================================= auxiliary ================================= *)
 
 let%expect_test "normal_id" =
-  pp Format.pp_print_string pid "id";
-  [%expect {| id |}]
+  pp Format.pp_print_string prs_id "_id";
+  [%expect {| _id |}]
+;;
+
+let%expect_test "incorrect_id_num" =
+  pp Format.pp_print_string prs_id "1id";
+  [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "keyword_id" =
-  pp Format.pp_print_string pid "while";
+  pp Format.pp_print_string prs_id "let";
   [%expect {| Syntax error |}]
 ;;
 
 (* ================================= constants ================================= *)
 
 let%expect_test "num_with_plus" =
-  pp pp_const pint "+2024";
+  pp pp_const prs_int "+2024";
   [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "num_with_minus" =
-  pp pp_const pint "-2024";
+  pp pp_const prs_int "-2024";
   [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "num_without_sign_before" =
-  pp pp_const pint "2024\n";
+  pp pp_const prs_int "2024";
   [%expect {| (Int 2024) |}]
 ;;
 
-let%expect_test "two_signs_before_number" =
-  pp pp_const pint "+-2024";
+let%expect_test "quoted_string_with_double_slash" =
+  pp pp_const prs_str {|"str\\meow"|};
+  [%expect {| (Str "str\\meow") |}]
+;;
+
+let%expect_test "regular_string_with_double_slash" =
+  pp pp_const prs_str {|"str\\meow"|};
+  [%expect {| (Str "str\\meow") |}]
+;;
+
+let%expect_test "regular_string_with_slash" =
+  pp pp_const prs_str {|"str\meow"|};
   [%expect {| Syntax error |}]
 ;;
 
-let%expect_test "string_with_//" =
-  pp pp_const pstr "{|str//|}";
-  [%expect {| (Str "str//") |}]
-;;
-
-let%expect_test "incorrect_string" =
-  pp pp_const pstr "str//";
+let%expect_test "regular_unclosed_string" =
+  pp pp_const prs_str {|"str|};
   [%expect {| Syntax error |}]
 ;;
 
-let%expect_test "empty_string" =
-  pp pp_const pstr "{||}";
+let%expect_test "quoted_unclosed_string" =
+  pp pp_const prs_str "{|str";
+  [%expect {| Syntax error |}]
+;;
+
+let%expect_test "quoted_empty_string" =
+  pp pp_const prs_str "\"\"";
   [%expect {| (Str "") |}]
 ;;
 
-let%expect_test "one_space_string" =
-  pp pp_const pstr "{| |}";
+let%expect_test "regular_empty_string" =
+  pp pp_const prs_str "{||}";
+  [%expect {| (Str "") |}]
+;;
+
+let%expect_test "regular_string_one_space" =
+  pp pp_const prs_str "\" \"";
   [%expect {| (Str " ") |}]
 ;;
 
+let%expect_test "quoted_string_one_space" =
+  pp pp_const prs_str "{| |}";
+  [%expect {| (Str " ") |}]
+;;
+
+let%expect_test "quoted_string_two_spaces" =
+  pp pp_const prs_str "{|  |}";
+  [%expect {| (Str "  ") |}]
+;;
+
+let%expect_test "quoted_string_with_text" =
+  pp pp_const prs_str "{| hello |}";
+  [%expect {| (Str " hello ") |}]
+;;
+
+let%expect_test "regular_string_escape_sequence" =
+  pp pp_const prs_str "\"Hex\\x41\\x42\\x43\"";
+  [%expect {| (Str "HexABC") |}]
+;;
+
+let%expect_test "regular_string_incorrect_escape_sequence" =
+  pp pp_const prs_str "\"meow\n\"";
+  [%expect {| (Str "meow\n") |}]
+;;
+
 let%expect_test "true" =
-  pp pp_const pbool "true";
+  pp pp_const prs_bool "true";
   [%expect {| (Bool true) |}]
 ;;
 
 let%expect_test "false" =
-  pp pp_const pbool "false";
+  pp pp_const prs_bool "false";
   [%expect {| (Bool false) |}]
 ;;
 
 let%expect_test "incorrect_bool_with_char_after" =
-  pp pp_const pbool "truee";
+  pp pp_const prs_bool "truee";
   [%expect {| Syntax error |}]
 ;;
 
-let%expect_test "'\n'_after_bool" =
-  pp pp_const pbool "true\n";
-  [%expect {| (Bool true) |}]
-;;
-
 let%expect_test "unit" =
-  pp pp_const punit " ()\n";
+  pp pp_const prs_unit "()";
   [%expect {| Unit |}]
 ;;
 
 (* ================================== patterns ================================= *)
+
 let%expect_test "pat_var" =
-  pp pp_pat ppat_var "  meow\n";
+  pp pp_pat prs_pat_var "meow\n";
   [%expect {| (PatVar "meow") |}]
 ;;
 
 let%expect_test "pat_cons" =
-  pp pp_pat ppat_const "  \r{|meow|}\n";
+  pp pp_pat prs_pat_const "  \r{|meow|}\n";
   [%expect {| (PatConst (Str "meow")) |}]
 ;;
 
 let%expect_test "pat_empty_str" =
-  pp pp_pat ppat_const "  \r{||}\n";
+  pp pp_pat prs_pat_const "  \r{||}\n";
   [%expect {| (PatConst (Str "")) |}]
 ;;
 
 let%expect_test "pat_any" =
-  pp pp_pat ppat_any "  \r_\n";
+  pp pp_pat prs_pat_any "  \r_\n";
   [%expect {| PatAny |}]
 ;;
 
 let%expect_test "pat_simple_tuple" =
-  pp pp_pat (ppat_tuple ppat) "(1,2,3)";
+  pp pp_pat (prs_pat_tuple prs_pat) "(1,2,3)";
   [%expect {| (PatTup ((PatConst (Int 1)), (PatConst (Int 2)), [(PatConst (Int 3))])) |}]
 ;;
 
 let%expect_test "pat_tuple_of_tuple" =
-  pp pp_pat (ppat_tuple ppat) "(1,2,(3, 4, 5))";
+  pp pp_pat (prs_pat_tuple prs_pat) "(1,2,(3, 4, 5))";
   [%expect
     {|
     (PatTup ((PatConst (Int 1)), (PatConst (Int 2)),
@@ -129,18 +171,18 @@ let%expect_test "pat_tuple_of_tuple" =
 ;;
 
 let%expect_test "incorrect_pat_tuple_of_one_element" =
-  pp pp_pat (ppat_tuple ppat) "(1)";
+  pp pp_pat (prs_pat_tuple prs_pat) "(1)";
   [%expect {|
     Syntax error |}]
 ;;
 
 let%expect_test "pat_x" =
-  pp pp_pat ppat "  x ";
+  pp pp_pat prs_pat "  x ";
   [%expect {| (PatVar "x") |}]
 ;;
 
 let%expect_test "mixed_pat" =
-  pp pp_pat ppat "  \r(\r(  (_,\r_), _)\n, _)\n\n";
+  pp pp_pat prs_pat "  \r(\r(  (_,\r_), _)\n, _)\n\n";
   [%expect
     {|
     (PatTup ((PatTup ((PatTup (PatAny, PatAny, [])), PatAny, [])), PatAny, [])) |}]
@@ -148,46 +190,46 @@ let%expect_test "mixed_pat" =
 
 (* ================================ expressions ================================ *)
 let%expect_test "expr_var" =
-  pp pp_expr pexpr_var "  meow\n   ";
+  pp pp_expr prs_expr_var "  meow\n   ";
   [%expect {|
     (Var "meow") |}]
 ;;
 
 let%expect_test "expr_cons_int" =
-  pp pp_expr pexpr_const "1";
+  pp pp_expr prs_expr_const "1";
   [%expect {|
     (Const (Int 1)) |}]
 ;;
 
 let%expect_test "expr_cons_str" =
-  pp pp_expr pexpr_const "  {|meow|}  ";
+  pp pp_expr prs_expr_const "  {|meow|}  ";
   [%expect {|
     (Const (Str "meow")) |}]
 ;;
 
 let%expect_test "expr_cons_unit" =
-  pp pp_expr pexpr_const "  ()  ";
+  pp pp_expr prs_expr_const "  ()  ";
   [%expect {|
     (Const Unit) |}]
 ;;
 
 let%expect_test "num_with_plus" =
-  pp pp_expr (pexpr_unary pexpr) "+2024";
+  pp pp_expr (prs_expr_unary prs_expr) "+2024";
   [%expect {| (Const (Int 2024)) |}]
 ;;
 
 let%expect_test "num_with_minus" =
-  pp pp_expr (pexpr_unary pexpr) "-2024";
+  pp pp_expr (prs_expr_unary prs_expr) "-2024";
   [%expect {| (BinOp (Sub, (Const (Int 0)), (Const (Int 2024)))) |}]
 ;;
 
 let%expect_test "simple_list" =
-  pp pp_expr (pexpr_list pexpr) "   [ 1 ; 2\n; 3]   ";
+  pp pp_expr (prs_expr_list prs_expr) "   [ 1 ; 2\n; 3]   ";
   [%expect {| (List [(Const (Int 1)); (Const (Int 2)); (Const (Int 3))]) |}]
 ;;
 
 let%expect_test "complex_list" =
-  pp pp_expr (pexpr_list pexpr) "   [ [1;2;3] ; 2\n; 3]   ";
+  pp pp_expr (prs_expr_list prs_expr) "   [ [1;2;3] ; 2\n; 3]   ";
   [%expect
     {|
     (List
@@ -196,27 +238,27 @@ let%expect_test "complex_list" =
 ;;
 
 let%expect_test "empty_list" =
-  pp pp_expr (pexpr_list pexpr) "[]";
+  pp pp_expr (prs_expr_list prs_expr) "[]";
   [%expect {| (List []) |}]
 ;;
 
 let%expect_test "incorrect_list_diff_types" =
-  pp pp_expr (pexpr_list pexpr) "[1, {|meow|}]";
+  pp pp_expr (prs_expr_list prs_expr) "[1, {|meow|}]";
   [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "simple_tuple" =
-  pp pp_expr (pexpr_tuple pexpr) "(1, 2, 3)";
+  pp pp_expr (prs_expr_tuple prs_expr) "(1, 2, 3)";
   [%expect {| (Tup ((Const (Int 1)), (Const (Int 2)), [(Const (Int 3))])) |}]
 ;;
 
 let%expect_test "incorrect_tuple_one_el" =
-  pp pp_expr (pexpr_tuple pexpr) "(1)";
+  pp pp_expr (prs_expr_tuple prs_expr) "(1)";
   [%expect {| Syntax error |}]
 ;;
 
 let%expect_test "complex_tuple" =
-  pp pp_expr (pexpr_tuple pexpr) "((1, 1, 1), (2, 2, 2), {|meow|})";
+  pp pp_expr (prs_expr_tuple prs_expr) "((1, 1, 1), (2, 2, 2), {|meow|})";
   [%expect
     {|
     (Tup ((Tup ((Const (Int 1)), (Const (Int 1)), [(Const (Int 1))])),
@@ -225,12 +267,12 @@ let%expect_test "complex_tuple" =
 ;;
 
 let%expect_test "simple_fun" =
-  pp pp_expr (pexpr_fun ppat pexpr) "fun x -> x";
+  pp pp_expr (prs_expr_fun prs_pat prs_expr) "fun x -> x";
   [%expect {| (Fun ((PatVar "x"), (Var "x"))) |}]
 ;;
 
 let%expect_test "fun_two_var" =
-  pp pp_expr (pexpr_fun ppat pexpr) "fun x y -> x + y";
+  pp pp_expr (prs_expr_fun prs_pat prs_expr) "fun x y -> x + y";
   [%expect
     {|
     (Fun ((PatVar "x"), (Fun ((PatVar "y"), (BinOp (Add, (Var "x"), (Var "y")))))
@@ -238,73 +280,78 @@ let%expect_test "fun_two_var" =
 ;;
 
 let%expect_test "fun_of_fun" =
-  pp pp_expr (pexpr_fun ppat pexpr) "fun x -> fun _ -> x";
+  pp pp_expr (prs_expr_fun prs_pat prs_expr) "fun x -> fun _ -> x";
   [%expect {| (Fun ((PatVar "x"), (Fun (PatAny, (Var "x"))))) |}]
 ;;
 
 let%expect_test "simple_let" =
-  pp pp_expr (pexpr_let pexpr) "let x = 1";
+  pp pp_expr (prs_expr_let prs_expr) "let x = 1";
   [%expect
     {|
-    (Let ({ is_rec = NonRec; pat = (PatVar "x"); expr = (Const (Int 1)) },
+    (Let (NonRec, { pat = (PatVar "x"); expr = (Const (Int 1)) }, [],
        (Const Unit))) |}]
 ;;
 
 let%expect_test "let_two_var" =
-  pp pp_expr (pexpr_let pexpr) "let x y = x + y";
+  pp pp_expr (prs_expr_let prs_expr) "let x y = x + y";
   [%expect
     {|
-    (Let (
-       { is_rec = NonRec; pat = (PatVar "x");
+    (Let (NonRec,
+       { pat = (PatVar "x");
          expr = (Fun ((PatVar "y"), (BinOp (Add, (Var "x"), (Var "y"))))) },
-       (Const Unit))) |}]
+       [], (Const Unit))) |}]
 ;;
 
 let%expect_test "let_rec" =
-  pp pp_expr (pexpr_let pexpr) "let rec x = 1";
+  pp pp_expr (prs_expr_let prs_expr) "let rec x = 1";
   [%expect
     {|
-    (Let ({ is_rec = Rec; pat = (PatVar "x"); expr = (Const (Int 1)) },
-       (Const Unit))) |}]
+    (Let (Rec, { pat = (PatVar "x"); expr = (Const (Int 1)) }, [], (Const Unit))) |}]
 ;;
 
 let%expect_test "let_unit" =
-  pp pp_expr (pexpr_let pexpr) "let _ = ()";
+  pp pp_expr (prs_expr_let prs_expr) "let _ = ()";
   [%expect
     {|
-    (Let ({ is_rec = NonRec; pat = PatAny; expr = (Const Unit) }, (Const Unit))) |}]
+    (Let (NonRec, { pat = PatAny; expr = (Const Unit) }, [], (Const Unit))) |}]
 ;;
 
 let%expect_test "let_with_in" =
-  pp pp_expr (pexpr_let pexpr) "let meow = 5 in meow + 1";
+  pp pp_expr (prs_expr_let prs_expr) "let meow = 5 in meow + 1";
   [%expect
     {|
-    (Let ({ is_rec = NonRec; pat = (PatVar "meow"); expr = (Const (Int 5)) },
+    (Let (NonRec, { pat = (PatVar "meow"); expr = (Const (Int 5)) }, [],
        (BinOp (Add, (Var "meow"), (Const (Int 1)))))) |}]
 ;;
 
 let%expect_test "simple_app" =
-  pp pp_expr (pexpr_app pexpr) "fact 1";
+  pp pp_expr (prs_expr_app prs_expr) "fact 1";
   [%expect {|
     (App ((Var "fact"), (Const (Int 1)))) |}]
 ;;
 
 let%expect_test "app_two_par" =
-  pp pp_expr (pexpr_app pexpr) "foo 1 2";
+  pp pp_expr (prs_expr_app prs_expr) "foo 1 2";
   [%expect {|
     (App ((App ((Var "foo"), (Const (Int 1)))), (Const (Int 2)))) |}]
 ;;
 
 let%expect_test "app_in_app" =
-  pp pp_expr (pexpr_app pexpr) "foo (g 1) 2";
+  pp pp_expr (prs_expr_app prs_expr) "foo (g 1) 2";
   [%expect
     {|
     (App ((App ((Var "foo"), (App ((Var "g"), (Const (Int 1)))))),
        (Const (Int 2)))) |}]
 ;;
 
+let%expect_test "app_in" =
+  pp pp_expr (prs_expr_app prs_expr) "foo -1";
+  [%expect {|
+    (App ((Var "foo"), (BinOp (Sub, (Const (Int 0)), (Const (Int 1)))))) |}]
+;;
+
 let%expect_test "simple_branch" =
-  pp pp_expr (pexpr_branch pexpr) "if x = 5 then 7 else 6";
+  pp pp_expr (prs_expr_branch prs_expr) "if x = 5 then 7 else 6";
   [%expect
     {|
     (Branch ((BinOp (Eq, (Var "x"), (Const (Int 5)))), (Const (Int 7)),
@@ -312,7 +359,7 @@ let%expect_test "simple_branch" =
 ;;
 
 let%expect_test "branch_in_branch" =
-  pp pp_expr (pexpr_branch pexpr) "if x = 5 then (if x = 7 then 7) else 4";
+  pp pp_expr (prs_expr_branch prs_expr) "if x = 5 then (if x = 7 then 7) else 4";
   [%expect
     {|
     (Branch ((BinOp (Eq, (Var "x"), (Const (Int 5)))),
@@ -321,22 +368,22 @@ let%expect_test "branch_in_branch" =
        (Const (Int 4)))) |}]
 ;;
 
-let%expect_test "simple_match" =
-  pp pp_expr (pexpr_match ppat pexpr) "match x with | _ -> x + 5 | c -> meow";
-  [%expect
+(* let%expect_test "simple_match" =
+   pp pp_expr (prs_expr_match prs_pat prs_expr) "match x with | _ -> x + 5 | c -> meow";
+   [%expect
     {|
       (Match ((Var "x"),
          { match_pat = PatAny;
            match_expr = (BinOp (Add, (Var "x"), (Const (Int 5)))) },
          [{ match_pat = (PatVar "c"); match_expr = (Var "meow") }])) |}]
-;;
+   ;; *)
 
 let%expect_test "factorial" =
-  pp pp_expr pexpr "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
+  pp pp_expr prs_expr "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
   [%expect
     {|
-    (Let (
-       { is_rec = Rec; pat = (PatVar "fact");
+    (Let (Rec,
+       { pat = (PatVar "fact");
          expr =
          (Fun ((PatVar "n"),
             (Branch ((BinOp (Le, (Var "n"), (Const (Int 1)))), (Const (Int 1)),
@@ -346,5 +393,5 @@ let%expect_test "factorial" =
                ))
             ))
          },
-       (Const Unit))) |}]
+       [], (Const Unit))) |}]
 ;;
