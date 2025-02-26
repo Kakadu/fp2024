@@ -9,8 +9,8 @@ open Const
 open Patterns
 
 let prs_expr_var =
-  trim
-  @@
+  (* trim
+  @@ *)
   let+ parsed = prs_id in
   Var parsed
 ;;
@@ -67,6 +67,8 @@ let prs_let_binding prs_expr =
 ;;
 
 let prs_expr_let prs_expr =
+  trim
+  @@
   let* _ = token "let" in
   let* is_rec = token "rec" *> return Rec <|> return NonRec in
   let* binding = prs_let_binding prs_expr in
@@ -107,39 +109,43 @@ let prs_bin_op l_exp binop =
 
 let prs_rel =
   choice
-    [ token "=" *> return Eq
-    ; token "<>" *> return Ne
-    ; token "<=" *> return Le
-    ; token ">=" *> return Ge
-    ; token "<" *> return Lt
-    ; token ">" *> return Gt
+    [ string "=" *> return Eq
+    ; string "<>" *> return Ne
+    ; string "<=" *> return Le
+    ; string ">=" *> return Ge
+    ; string "<" *> return Lt
+    ; string ">" *> return Gt
     ]
 ;;
 
-let prs_logical = choice [ token "&&" *> return And; token "||" *> return Or ]
-let prs_mul = token "*" *> return Mul
-let prs_add = token "+" *> return Add
-let prs_sub = token "-" *> return Sub
-let prs_div = token "/" *> return Div
+let prs_logical = choice [ string "&&" *> return And; string "||" *> return Or ]
+let prs_mul = string "*" *> return Mul
+let prs_add = string "+" *> return Add
+let prs_sub = string "-" *> return Sub
+let prs_div = string "/" *> return Div
 
 let prs_expr_app expr =
+  trim
+  @@
   let app = return @@ fun exp1 exp2 -> App (exp1, exp2) in
   chainl1 expr app
 ;;
 
 let prs_expr_unary prs_expr =
-  let not_followed_by_space p =
-    let* c = p in
-    let* next = peek_char in
-    match next with
-    | Some (' ' | '\t' | '\n') -> fail "Unexpected space after unary operator"
-    | _ -> return c
+  let check_spaces p_sign =
+    let* before_space = take_while Base.Char.is_whitespace in
+    let* sign = p_sign in
+    let* after_space = take_while Base.Char.is_whitespace in
+    match before_space, after_space with
+    | "", "" -> fail "It is a binary operator"
+    | "", _ -> fail "It is a binary operator"
+    | _, "" -> return sign
+    | _, _ -> fail "It is a binary operator"
   in
   let p_minus =
-    not_followed_by_space (char '-')
-    *> return (fun exp -> BinOp (Sub, Const (Int 0), exp))
+    check_spaces (char '-') *> return (fun exp -> BinOp (Sub, Const (Int 0), exp))
   in
-  let p_plus = not_followed_by_space (char '+') *> return (fun exp -> exp) in
+  let p_plus = check_spaces (char '+') *> return (fun exp -> exp) in
   choice [ p_minus <*> prs_expr; p_plus <*> prs_expr; prs_expr ]
 ;;
 
@@ -149,9 +155,9 @@ let prs_expr =
   let atomary = choice [ round_par expr; prs_expr_const; prs_expr_var ] in
   let unary = prs_expr_unary atomary <|> atomary in
   let apply = prs_expr_app unary <|> unary in
-  let mul = prs_bin_op apply (prs_mul <|> prs_div) in
-  let add = prs_bin_op mul (prs_add <|> prs_sub) in
-  let compr = prs_bin_op add (prs_rel <|> prs_logical) in
+  let mul = prs_bin_op apply (prs_mul <|> prs_div) <|> apply in
+  let add = prs_bin_op mul (prs_add <|> prs_sub) <|> mul in
+  let compr = prs_bin_op add (prs_rel <|> prs_logical) <|> add in
   let branch = prs_expr_branch compr <|> compr in
   (* let match_exp = prs_expr_match prs_pat branch <|> branch in *)
   let tup = prs_expr_tuple branch <|> branch in

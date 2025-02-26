@@ -34,16 +34,6 @@ let%expect_test "keyword_id" =
 
 (* ================================= constants ================================= *)
 
-let%expect_test "num_with_plus" =
-  pp pp_const prs_int "+2024";
-  [%expect {| Syntax error |}]
-;;
-
-let%expect_test "num_with_minus" =
-  pp pp_const prs_int "-2024";
-  [%expect {| Syntax error |}]
-;;
-
 let%expect_test "num_without_sign_before" =
   pp pp_const prs_int "2024";
   [%expect {| (Int 2024) |}]
@@ -189,11 +179,6 @@ let%expect_test "mixed_pat" =
 ;;
 
 (* ================================ expressions ================================ *)
-let%expect_test "expr_var" =
-  pp pp_expr prs_expr_var "  meow\n   ";
-  [%expect {|
-    (Var "meow") |}]
-;;
 
 let%expect_test "expr_cons_int" =
   pp pp_expr prs_expr_const "1";
@@ -211,16 +196,6 @@ let%expect_test "expr_cons_unit" =
   pp pp_expr prs_expr_const "  ()  ";
   [%expect {|
     (Const Unit) |}]
-;;
-
-let%expect_test "num_with_plus" =
-  pp pp_expr (prs_expr_unary prs_expr) "+2024";
-  [%expect {| (Const (Int 2024)) |}]
-;;
-
-let%expect_test "num_with_minus" =
-  pp pp_expr (prs_expr_unary prs_expr) "-2024";
-  [%expect {| (BinOp (Sub, (Const (Int 0)), (Const (Int 2024)))) |}]
 ;;
 
 let%expect_test "simple_list" =

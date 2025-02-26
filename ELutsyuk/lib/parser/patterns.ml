@@ -24,8 +24,11 @@ let prs_pat_const =
 let prs_pat_any =
   trim
   @@
-  let+ _ = token "_" in
-  PatAny
+  let* _ = token "_" in
+  let* rest = take_while Base.Char.is_alphanum in
+  match rest with
+  | "" -> return PatAny
+  | _ -> fail "Not any pattern"
 ;;
 
 let prs_pat_tuple prs_pat =
