@@ -377,6 +377,19 @@ module Interpreter (M : Error_monad) = struct
       in
       let* final_env_opt = mapM2 eval_pattern env2 ps vs in
       return final_env_opt
+    | Pattern.Pat_construct ("Some", Some p), VConstruct ("Some", Some v) ->
+      eval_pattern p v env
+    | Pattern.Pat_construct ("None", None), VConstruct ("None", None) -> return (Some env)
+    | Pattern.Pat_construct ("()", None), _ -> return (Some env)
+    | ( Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (p_hd, p_tl, [])))
+      , VAdt (VTuple (v_hd, v_tl, []), _, "::", _) ) ->
+      let* env1_opt = eval_pattern p_hd v_hd env in
+      let* env1 =
+        match env1_opt with
+        | Some env -> return env
+        | None -> fail PatternMismatch
+      in
+      eval_pattern p_tl v_tl env1
     | Pattern.Pat_construct (cname, Some pat), VAdt (args, _, tname, _) ->
       if String.equal cname tname
       then (
@@ -399,12 +412,23 @@ module Interpreter (M : Error_monad) = struct
              let* final_env_opt = mapM2 eval_pattern env2 ps vs in
              return final_env_opt
            | _ -> fail PatternMismatch)
+        | VAdt (VUnit, _, "[]", _) ->
+          (match pat with
+           | Pattern.Pat_construct ("[]", None) -> return (Some env)
+           | _ -> fail PatternMismatch)
+        | VAdt (VTuple (head, tail, []), _, "::", _) ->
+          (match pat with
+           | Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (ph, pt, []))) ->
+             let* env1_opt = eval_pattern ph head env in
+             let* env1 =
+               match env1_opt with
+               | Some env -> return env
+               | None -> fail PatternMismatch
+             in
+             eval_pattern pt tail env1
+           | _ -> fail PatternMismatch)
         | _ -> eval_pattern pat args env)
       else return None
-    | Pattern.Pat_construct ("Some", Some p), VConstruct ("Some", Some v) ->
-      eval_pattern p v env
-    | Pattern.Pat_construct ("None", None), VConstruct ("None", None) -> return (Some env)
-    | Pattern.Pat_construct ("()", None), _ -> return (Some env)
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
     | Pattern.Pat_construct (ctor, None), VAdt (_, _, tname, _) ->
@@ -439,9 +463,9 @@ module Interpreter (M : Error_monad) = struct
          if String.equal cname s then eval_pattern p v env else fail PatternMismatch
        | VConstruct (_, None) -> eval_pattern p v env
        | VInt _ -> eval_pattern p v env
+       | VUnit -> return (Some env)
        | _ -> fail PatternMismatch)
-    | Pattern.Pat_constraint (pat, _), v ->
-      eval_pattern pat v env (* idk, haven't thought yet *)
+    | Pattern.Pat_constraint (pat, _), v -> eval_pattern pat v env
     | _ -> fail PatternMismatch
   ;;
 
@@ -528,6 +552,7 @@ module Interpreter (M : Error_monad) = struct
       let* v = eval_expr env e in
       return (VConstruct ("Some", Some v))
     | Expression.Exp_construct ("None", None) -> return (VConstruct ("None", None))
+    | Expression.Exp_construct ("()", None) -> return VUnit
     | Expression.Exp_construct (ctor_name, args) ->
       let* type_def = E.lookup env ctor_name in
       (match type_def with
@@ -757,12 +782,10 @@ module PPrinter = struct
     | VAdt (VUnit, _, "[]", _) -> fprintf fmt "[]"
     (* Recursively format list elements *)
     | VAdt (VTuple (head, tail, []), _, "::", _) ->
-      (* Распаковываем элементы из конструкции списка *)
       let rec extract_list acc = function
         | VAdt (VTuple (hd, tl, []), _, "::", _) -> extract_list (hd :: acc) tl
         | VAdt (VUnit, _, "[]", _) -> List.rev acc
         | v -> List.rev (v :: acc)
-        (* Обработка неожиданных значений *)
       in
       let elements = extract_list [ head ] tail in
       fprintf
@@ -776,6 +799,7 @@ module PPrinter = struct
       fprintf fmt "%s" ct;
       pp_value fmt v
     | VConstruct (ct, None) -> fprintf fmt "%s" ct
+    | VUnit -> fprintf fmt "unit"
     | _ -> fprintf fmt "Intepreter error: Value error"
   ;;
 
