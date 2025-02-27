@@ -520,37 +520,24 @@ let store_memory_int state address value size =
     | _ -> fail "Unsupported store size"
   in
   match Int64Map.find_opt address state.memory_writable with
-  | Some false ->
-    fail
-      "Store failed: Address is not writable, either an instruction address or points to \
-       the middle of the data"
+  | Some false -> fail "Store failed: Address is not writable"
   | _ ->
     let memory_int = Int64Map.add address stored_value state.memory_int in
     let memory_str = Int64Map.add address "" state.memory_str in
     let* memory_writable =
       match size with
       | 1 ->
-        let memory_writable =
-          state.memory_writable
-          |> Int64Map.add address true
-          |> Int64Map.add (Int64.add address 1L) true
-          |> Int64Map.add (Int64.add address 2L) true
-          |> Int64Map.add (Int64.add address 3L) true
-        in
-        return memory_writable
+        return state.memory_writable
+        (* address of this byte is already writable, and we don't touch other addreses *)
       | 2 ->
         let memory_writable =
-          state.memory_writable
-          |> Int64Map.add address true
-          |> Int64Map.add (Int64.add address 1L) false
-          |> Int64Map.add (Int64.add address 2L) true
-          |> Int64Map.add (Int64.add address 3L) true
+          state.memory_writable |> Int64Map.add (Int64.add address 1L) false
+          (* address of first byte is already writable, and we make next one not writable *)
         in
         return memory_writable
       | 4 ->
         let memory_writable =
           state.memory_writable
-          |> Int64Map.add address true
           |> Int64Map.add (Int64.add address 1L) false
           |> Int64Map.add (Int64.add address 2L) false
           |> Int64Map.add (Int64.add address 3L) false
@@ -576,12 +563,12 @@ let execute_load_int state program rd rs1 imm size signed =
 
 let execute_store_int state program rs1 rs2 imm size =
   let base_address = get_register_value state rs1 in
-  let* offset =
+  let offset =
     match get_address12_value program imm with
-    | Immediate imm_value -> return (Int64.of_int imm_value)
-    | Label label -> return label
+    | Immediate imm_value -> Int64.of_int imm_value
+    | Label label -> label
   in
-  let address = Int64.add base_address offset in
+  let address = Int64.add base_address (sext offset) in
   let value = get_register_value state rs2 in
   let* new_state = store_memory_int state address value size in
   return new_state
@@ -985,21 +972,96 @@ let show_memory_writable state =
 ;;
 
 let show_state state =
+  let registers_order =
+    [ "X0"
+    ; "X1"
+    ; "X2"
+    ; "X3"
+    ; "X4"
+    ; "X5"
+    ; "X6"
+    ; "X7"
+    ; "X8"
+    ; "X9"
+    ; "X10"
+    ; "X11"
+    ; "X12"
+    ; "X13"
+    ; "X14"
+    ; "X15"
+    ; "X16"
+    ; "X17"
+    ; "X18"
+    ; "X19"
+    ; "X20"
+    ; "X21"
+    ; "X22"
+    ; "X23"
+    ; "X24"
+    ; "X25"
+    ; "X26"
+    ; "X27"
+    ; "X28"
+    ; "X29"
+    ; "X30"
+    ; "X31"
+    ]
+  in
   let registers_str =
-    StringMap.fold
-      (fun reg value acc -> acc ^ Printf.sprintf "%s: %Ld\n" reg value)
-      state.registers
+    List.fold_left
+      (fun acc reg ->
+        let value = StringMap.find_opt reg state.registers |> Option.value ~default:0L in
+        acc ^ Printf.sprintf "%s: %Ld\n" reg value)
       ""
+      registers_order
+  in
+  let vector_registers_order =
+    [ "V0"
+    ; "V1"
+    ; "V2"
+    ; "V3"
+    ; "V4"
+    ; "V5"
+    ; "V6"
+    ; "V7"
+    ; "V8"
+    ; "V9"
+    ; "V10"
+    ; "V11"
+    ; "V12"
+    ; "V13"
+    ; "V14"
+    ; "V15"
+    ; "V16"
+    ; "V17"
+    ; "V18"
+    ; "V19"
+    ; "V20"
+    ; "V21"
+    ; "V22"
+    ; "V23"
+    ; "V24"
+    ; "V25"
+    ; "V26"
+    ; "V27"
+    ; "V28"
+    ; "V29"
+    ; "V30"
+    ; "V31"
+    ]
   in
   let vector_registers_str =
-    StringMap.fold
-      (fun vreg values acc ->
+    List.fold_left
+      (fun acc vreg ->
+        let values =
+          StringMap.find_opt vreg state.vector_registers |> Option.value ~default:[||]
+        in
         let values_str =
           Array.fold_left (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
         in
         acc ^ Printf.sprintf "%s: [%s]\n" vreg values_str)
-      state.vector_registers
       ""
+      vector_registers_order
   in
   let memory_int_string = show_memory_int state in
   let memory_str_string = show_memory_str state in
@@ -1035,6 +1097,14 @@ let%expect_test "test_factorial" =
       {|
       X0: 0
       X1: 0
+      X2: 0
+      X3: 0
+      X4: 0
+      X5: 0
+      X6: 120
+      X7: 0
+      X8: 0
+      X9: 0
       X10: 0
       X11: 0
       X12: 0
@@ -1045,7 +1115,6 @@ let%expect_test "test_factorial" =
       X17: 0
       X18: 0
       X19: 0
-      X2: 0
       X20: 0
       X21: 0
       X22: 0
@@ -1056,17 +1125,18 @@ let%expect_test "test_factorial" =
       X27: 0
       X28: 0
       X29: 0
-      X3: 0
       X30: 0
       X31: 0
-      X4: 0
-      X5: 0
-      X6: 120
-      X7: 0
-      X8: 0
-      X9: 0
       V0: [0 0 0 0 ]
       V1: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
       V10: [0 0 0 0 ]
       V11: [0 0 0 0 ]
       V12: [0 0 0 0 ]
@@ -1077,7 +1147,6 @@ let%expect_test "test_factorial" =
       V17: [0 0 0 0 ]
       V18: [0 0 0 0 ]
       V19: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
       V20: [0 0 0 0 ]
       V21: [0 0 0 0 ]
       V22: [0 0 0 0 ]
@@ -1088,15 +1157,8 @@ let%expect_test "test_factorial" =
       V27: [0 0 0 0 ]
       V28: [0 0 0 0 ]
       V29: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
       V30: [0 0 0 0 ]
       V31: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
       Integer memory:
       String memory:
       Writable:
@@ -1168,6 +1230,14 @@ let%expect_test "test_vector_program_execution" =
       {|
       X0: 0
       X1: 0
+      X2: 0
+      X3: 10
+      X4: 0
+      X5: 4
+      X6: 0
+      X7: 0
+      X8: 0
+      X9: 0
       X10: 0
       X11: 0
       X12: 0
@@ -1178,7 +1248,6 @@ let%expect_test "test_vector_program_execution" =
       X17: 0
       X18: 0
       X19: 0
-      X2: 0
       X20: 0
       X21: 0
       X22: 0
@@ -1189,17 +1258,18 @@ let%expect_test "test_vector_program_execution" =
       X27: 0
       X28: 4
       X29: 52
-      X3: 10
       X30: 36
       X31: 0
-      X4: 0
-      X5: 4
-      X6: 0
-      X7: 0
-      X8: 0
-      X9: 0
       V0: [1 2 3 4 ]
       V1: [2 3 4 5 ]
+      V2: [3 5 7 9 ]
+      V3: [11 12 13 14 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
       V10: [0 0 0 0 ]
       V11: [0 0 0 0 ]
       V12: [0 0 0 0 ]
@@ -1210,7 +1280,6 @@ let%expect_test "test_vector_program_execution" =
       V17: [0 0 0 0 ]
       V18: [0 0 0 0 ]
       V19: [0 0 0 0 ]
-      V2: [3 5 7 9 ]
       V20: [0 0 0 0 ]
       V21: [0 0 0 0 ]
       V22: [0 0 0 0 ]
@@ -1221,15 +1290,8 @@ let%expect_test "test_vector_program_execution" =
       V27: [0 0 0 0 ]
       V28: [0 0 0 0 ]
       V29: [0 0 0 0 ]
-      V3: [11 12 13 14 ]
       V30: [0 0 0 0 ]
       V31: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
       Integer memory:
       0: 1
       4: 2
