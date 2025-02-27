@@ -1169,6 +1169,83 @@ let main =
     val main = 0 |}]
 ;;
 
+let%expect_test "016lists" =
+  pp_parse_demo
+    {|
+let rec length xs =
+  match xs with
+  | [] -> 0
+  | h::tl -> 1 + length tl
+
+let length_tail =
+  let rec helper acc xs =
+  match xs with
+  | [] -> acc
+  | h::tl -> helper (acc + 1) tl
+  in
+  helper 0
+
+let rec map f xs =
+  match xs with
+  | [] -> []
+  | a::[] -> [f a]
+  | a::b::[] -> [f a; f b]
+  | a::b::c::[] -> [f a; f b; f c]
+  | a::b::c::d::tl -> f a :: f b :: f c :: f d :: map f tl
+
+let rec append xs ys = match xs with [] -> ys | x::xs -> x::(append xs ys)
+
+let concat =
+  let rec helper xs =
+    match xs with
+    | [] -> []
+    | h::tl -> append h (helper tl)
+  in helper
+
+let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter f tl
+
+let rec cartesian xs ys =
+  match xs with
+  | [] -> []
+  | h::tl -> append (map (fun a -> (h,a)) ys) (cartesian tl ys)
+
+let main =
+  let () = iter print_int [1;2;3] in
+  let () = print_int (length (cartesian [1;2] [1;2;3;4])) in
+  0
+|};
+  [%expect
+    {|
+    1
+    1
+    val fix = <fun>
+    val map = <fun>
+    val fixpoly = <fun>
+    val feven = <fun>
+    val fodd = <fun>
+    val tie = (<fun>, <fun>)
+    val meven = <fun>
+    val modd = <fun>
+    val main = 0 |}]
+;;
+
+let%expect_test "list_basic" =
+  pp_parse_demo "let lst = 1 :: 2 :: 3 :: [] in lst";
+  [%expect {| _ = [1; 2; 3] |}]
+;;
+
+let%expect_test "list_match" =
+  pp_parse_demo "match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h";
+  [%expect {| _ = 1 |}]
+;;
+
+let%expect_test "list_append" =
+  pp_parse_demo
+    "let append xs ys = match xs with | [] -> ys | h :: t -> h :: append t ys in append \
+     [1; 2] [3; 4]";
+  [%expect {| _ = [1; 2; 3; 4] |}]
+;;
+
 let%expect_test "fix_factorial" =
   pp_parse_demo
     {|

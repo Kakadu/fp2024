@@ -86,6 +86,25 @@ module Env (M : Error_monad) = struct
       ; "char", VType (TypeExpr.Type_var "char", None)
       ; "string", VType (TypeExpr.Type_var "string", None)
       ; "bool", VType (TypeExpr.Type_var "bool", None)
+      ; "list", VType (TypeExpr.Type_var "list", Some "list")
+      ]
+  ;;
+
+  let builtin_lists =
+    let list_type = VType (TypeExpr.Type_var "list", Some "list_adt") in
+    let list_adt =
+      VAdt
+        ( VUnit
+        , [ "a" ] (* Type parameter for polymorphic lists *)
+        , "list"
+        , (("[]", []), [ "::", [ TypeExpr.Type_var "a"; TypeExpr.Type_var "list" ] ]) )
+    in
+    Base.Map.of_alist_exn
+      (module Base.String)
+      [ "list", list_type (* Register the list type *)
+      ; "[]", VType (TypeExpr.Type_var "[]", Some "list_adt")
+      ; "::", VType (TypeExpr.Type_var "::", Some "list_adt")
+      ; "list_adt", list_adt (* Actual ADT definition *)
       ]
   ;;
 
@@ -223,6 +242,7 @@ module Env (M : Error_monad) = struct
         ; Base.Map.to_alist builtin_functions
         ; Base.Map.to_alist builtin_types
         ; Base.Map.to_alist builtin_bools
+        ; Base.Map.to_alist builtin_lists
         ]
     in
     Base.Map.of_alist_reduce (module Base.String) all_bindings ~f:(fun v _ -> v)
@@ -734,6 +754,23 @@ module PPrinter = struct
     | VFun _ -> fprintf fmt "<fun>"
     | VFunction _ -> fprintf fmt "<function>"
     | VBuiltin_print _ -> fprintf fmt "<builtin>"
+    | VAdt (VUnit, _, "[]", _) -> fprintf fmt "[]"
+    (* Recursively format list elements *)
+    | VAdt (VTuple (head, tail, []), _, "::", _) ->
+      (* Распаковываем элементы из конструкции списка *)
+      let rec extract_list acc = function
+        | VAdt (VTuple (hd, tl, []), _, "::", _) -> extract_list (hd :: acc) tl
+        | VAdt (VUnit, _, "[]", _) -> List.rev acc
+        | v -> List.rev (v :: acc)
+        (* Обработка неожиданных значений *)
+      in
+      let elements = extract_list [ head ] tail in
+      fprintf
+        fmt
+        "[%a]"
+        (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") pp_value)
+        elements
+    | VAdt (_, _, "::", _) -> fprintf fmt "hahah pizdec"
     | VAdt (_, _, name, _) -> fprintf fmt "<ADT>: %s" name
     | VConstruct (ct, Some v) ->
       fprintf fmt "%s" ct;

@@ -3448,3 +3448,34 @@ let main =
          ))
       ] |}]
 ;;
+
+let%expect_test "list6" =
+  test_program "(1 :: 2) :: []";
+  [%expect
+    {| [(Str_eval (Exp_construct ("::", Some (Exp_tuple [(Exp_construct ("::", Some (Exp_tuple [(Exp_constant (Const_integer 1)), (Exp_constant (Const_integer 2))])))), (Exp_construct ("[]", None))]))))] |}]
+;;
+
+let%expect_test "list5" =
+  test_program
+    "let concat = let rec helper xs = match xs with | [] -> [] | h::tl -> append h \
+     (helper tl) in helper";
+  [%expect
+    {| [(Str_value (Nonrecursive, ({ pat = (Pat_var "concat"); expr = (Exp_let (Recursive, ({ pat = (Pat_var "helper"); expr = (Exp_fun (((Pat_var "xs"), []), (Exp_match ((Exp_ident "xs"), ({ first = (Pat_construct ("[]", None)); second = (Exp_construct ("[]", None)) }, [{ first = (Pat_construct ("::", Some (Pat_tuple [(Pat_var "h"), (Pat_var "tl")]))); second = (Exp_apply ((Exp_apply ((Exp_ident "append"), (Exp_ident "h"))), (Exp_apply ((Exp_ident "helper"), (Exp_ident "tl"))))) }]))))) }, []), (Exp_ident "helper"))) }, [])))] |}]
+;;
+
+let%expect_test "list_basic" =
+  test_program "let lst = 1 :: 2 :: 3 :: [] in lst";
+  [%expect {| _ = [1; 2; 3] |}]
+;;
+
+let%expect_test "list_match" =
+  test_program "match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h";
+  [%expect {| _ = 1 |}]
+;;
+
+let%expect_test "list_append" =
+  test_program
+    "let append xs ys = match xs with | [] -> ys | h :: t -> h :: append t ys in append \
+     [1; 2] [3; 4]";
+  [%expect {| _ = [1; 2; 3; 4] |}]
+;;
