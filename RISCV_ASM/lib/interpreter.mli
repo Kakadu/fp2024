@@ -18,17 +18,23 @@ type state =
   ; pc : int64
   }
 
-module ErrorMonad : sig
-  type 'a t = ('a, string) result
+(* Combined monad for errors and state *)
+module type COMBINED_MONAD = sig
+  type ('s, 'a) t
 
-  val return : 'a -> 'a t
-  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  val fail : string -> 'a t
+  val return : 'a -> ('s, 'a) t
+  val ( >>= ) : ('s, 'a) t -> ('a -> ('s, 'b) t) -> ('s, 'b) t
+  val fail : string -> ('s, 'a) t
+  val read : ('s, 's) t
+  val write : 's -> ('s, unit) t
+  val run : ('s, 'a) t -> 's -> ('s * 'a, string) result
 
   module Syntax : sig
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+    val ( let* ) : ('s, 'a) t -> ('a -> ('s, 'b) t) -> ('s, 'b) t
   end
 end
 
-val interpret : ast -> state ErrorMonad.t
+module CombinedMonad : COMBINED_MONAD
+
+val interpret : ast -> (state * state, label) result
 val show_state : state -> string
