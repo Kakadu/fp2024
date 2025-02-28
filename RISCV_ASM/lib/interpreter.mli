@@ -30,5 +30,5 @@ module ErrorMonad : sig
   end
 end
 
-val interpret : state -> ast -> state ErrorMonad.t
+val interpret : ast -> state ErrorMonad.t
 val show_state : state -> string
