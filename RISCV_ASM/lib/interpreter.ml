@@ -328,6 +328,7 @@ let set_vector_register_value state vreg value =
 ;;
 
 let nth_opt_int64 l n =
+  (* we make steps by 4L because in our interpreter PC is built RISC-V-like and one expr is 4 bytes *)
   match n with
   | x when x < 0 -> fail "Index cannot be negative"
   | _ ->
@@ -680,17 +681,7 @@ let handle_syscall state =
   | _ -> fail "Unsupported syscall"
 ;;
 
-let rec interpret state program =
-  let* instr_opt = nth_opt_int64 program (Int64.to_int state.pc) in
-  match instr_opt with
-  | None -> return state
-  | Some (InstructionExpr instr) ->
-    let* new_state = execute_instruction state instr program in
-    interpret (increment_pc new_state) program
-  | Some (LabelExpr _) -> interpret (increment_pc state) program
-  | Some (DirectiveExpr _) -> interpret (increment_pc state) program
-
-and execute_instruction state instr program =
+let execute_instruction state instr program =
   match instr with
   | Add (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add false
   | Sub (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub false
@@ -941,6 +932,21 @@ and execute_instruction state instr program =
   | _ -> return state
 ;;
 
+let interpret program =
+  let rec traverse_program state =
+    let* expr_opt = nth_opt_int64 program (Int64.to_int state.pc) in
+    match expr_opt with
+    | None -> return state
+    | Some (InstructionExpr instr) ->
+      let* new_state = execute_instruction state instr program in
+      traverse_program (increment_pc new_state)
+    | Some (LabelExpr _) -> traverse_program (increment_pc state)
+    | Some (DirectiveExpr _) -> traverse_program (increment_pc state)
+  in
+  let new_state = init_state program in
+  traverse_program new_state
+;;
+
 let show_memory_int state =
   let memory_int_string =
     Int64Map.fold
@@ -1088,8 +1094,7 @@ let%expect_test "test_factorial" =
     ; LabelExpr "exit"
     ]
   in
-  let initial_state = init_state program in
-  match interpret initial_state program with
+  match interpret program with
   | Ok final_state ->
     let state_str = show_state final_state in
     print_string state_str;
@@ -1221,8 +1226,7 @@ let%expect_test "test_vector_program_execution" =
     ; InstructionExpr (Vaddvx (V3, V0, X3))
     ]
   in
-  let initial_state = init_state program in
-  match interpret initial_state program with
+  match interpret program with
   | Ok final_state ->
     let state_str = show_state final_state in
     print_string state_str;
