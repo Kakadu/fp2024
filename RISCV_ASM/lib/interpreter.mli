@@ -7,7 +7,8 @@ module StringMap : Map.S with type key = string
 module Int64Map : Map.S with type key = Int64.t
 
 type state =
-  { registers : int64 StringMap.t
+  { program : ast
+  ; registers : int64 StringMap.t
   ; vector_registers : int64 array StringMap.t
   ; max_vector_length : int
   ; vector_element_length : int
