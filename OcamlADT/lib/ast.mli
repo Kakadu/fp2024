@@ -154,7 +154,7 @@ module Structure : sig
   type structure_item =
     | Str_eval of Expression.t
     | Str_value of Expression.rec_flag * Expression.t Expression.value_binding List1.t
-    | Str_adt of ident list * ident * (ident * TypeExpr.t list) List1.t
+    | Str_adt of ident list * ident * (ident * TypeExpr.t option) List1.t
 
   val equal_structure_item : structure_item -> structure_item -> bool
   val pp_structure_item : Format.formatter -> structure_item -> unit

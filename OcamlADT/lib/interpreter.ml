@@ -26,7 +26,7 @@ type value =
   | VFun of Pattern.t List1.t * Expression.t * environment * Expression.rec_flag
   | VFunction of Expression.t Expression.case List1.t * environment
   | VConstruct of ident * value option
-  | VAdt of (value * ident list * ident * (ident * TypeExpr.t list) List1.t)
+  | VAdt of (value * ident list * ident * (ident * TypeExpr.t option) List1.t)
   (* ident list is being left for type printing *)
   | VUnit
   | VType of TypeExpr.t * ident option (* ident - adt type name *)
@@ -53,6 +53,11 @@ let make_list1 lst =
   match lst with
   | [] -> None
   | x :: xs -> Some (x, xs)
+;;
+
+let lst list2 =
+  match list2 with
+  | x, y, xs -> x :: y :: xs
 ;;
 
 let to_bool = function
@@ -97,7 +102,12 @@ module Env (M : Error_monad) = struct
         ( VUnit
         , [ "a" ] (* Type parameter for polymorphic lists *)
         , "list"
-        , (("[]", []), [ "::", [ TypeExpr.Type_var "a"; TypeExpr.Type_var "list" ] ]) )
+        , ( ("[]", None)
+          , [ ( "::"
+              , Some
+                  (TypeExpr.Type_tuple
+                     (TypeExpr.Type_var "a", TypeExpr.Type_var "list", [])) )
+            ] ) )
     in
     Base.Map.of_alist_exn
       (module Base.String)
@@ -563,19 +573,21 @@ module Interpreter (M : Error_monad) = struct
             let c1, cl = constr in
             (* Searching for a constructor with ctor_name in the ADT definition *)
             (match Base.List.Assoc.find (c1 :: cl) ~equal:String.equal ctor_name with
-             | Some ctor_arg_types ->
+             | Some (Some (Type_tuple (t1, t2, tl))) ->
+               let list_args = t1 :: t2 :: tl in
                (match args with
                 | Some provided_args ->
-                  if List.length ctor_arg_types != 0
+                  if List.length list_args != 0
                   then
                     let* evaluated_args = eval_expr env provided_args in
                     return (VAdt (evaluated_args, targs, ctor_name, constr))
                   else fail (UndefinedConstructor ctor_name)
                 | None ->
                   (* If no arguments are provided, ensure the constructor expects none *)
-                  if List.length ctor_arg_types = 0
+                  if List.length list_args = 0
                   then return (VAdt (VUnit, targs, ctor_name, constr))
                   else fail (UndefinedConstructor ctor_name))
+             | Some _ -> fail (UndefinedConstructor ctor_name)
              | None -> fail (UndefinedConstructor ctor_name))
           | _ -> fail (NotAnADT adt_name))
        | VBool _ -> E.lookup env ctor_name
@@ -625,6 +637,15 @@ module Interpreter (M : Error_monad) = struct
            | Some extended_env -> return extended_env
            | None -> fail PatternMismatch))
       value_binding_list
+  ;;
+
+  let unwrap_typeexpr_list (t : (ident * TypeExpr.t option) list)
+    : (ident * TypeExpr.t list) list
+    =
+    List.map
+      (fun (id, t_opt) ->
+        id, Option.value ~default:[] (Option.map (fun t -> [ t ]) t_opt))
+      t
   ;;
 
   let eval_str_item (env : environment) olist =
@@ -704,7 +725,7 @@ module Interpreter (M : Error_monad) = struct
             in
             return (E.extend acc_env ctor_name (VType (ctor_type, Some type_name))))
           new_env
-          (c1 :: cl)
+          (unwrap_typeexpr_list (c1 :: cl))
       in
       return (neww_env, olist)
   ;;

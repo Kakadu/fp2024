@@ -1328,8 +1328,7 @@ let%expect_test "adt list with pair" =
     [(Str_adt (["a"; "b"], "pair_list",
         (("Nil", []),
          [("Cons",
-           [(Type_construct ("",
-               [(Type_tuple ((Type_var "a"), (Type_var "b"), []))]));
+           [(Type_tuple ((Type_var "a"), (Type_var "b"), []));
              (Type_construct ("pair_list", [(Type_var "a"); (Type_var "b")]))])
            ])
         ))
@@ -1398,12 +1397,8 @@ print_int y
     [(Str_adt ([], "shape",
         (("Circle", [(Type_construct ("int", []))]),
          [("Rectangle",
-           [(Type_construct ("",
-               [(Type_tuple
-                   ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                    []))
-                 ]
-               ));
+           [(Type_tuple
+               ((Type_construct ("int", [])), (Type_construct ("int", [])), []));
              (Type_construct ("int", []))]);
            ("Square", [(Type_construct ("int", []))])])
         ));
@@ -4184,4 +4179,23 @@ let main =
       ]
 
     |}]
+;;
+
+let%expect_test "simple adt with pattern matching function (else case) + printing" =
+  test_program {|
+type shape = Circle of int
+  | Rectangle of (int*int) * int
+;;
+  |};
+  [%expect
+    {|
+    [(Str_adt ([], "shape",
+        (("Circle", [(Type_construct ("int", []))]),
+         [("Rectangle",
+           [(Type_tuple
+               ((Type_construct ("int", [])), (Type_construct ("int", [])), []));
+             (Type_construct ("int", []))])
+           ])
+        ))
+      ] |}]
 ;;

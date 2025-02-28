@@ -28,7 +28,7 @@ type value =
   | VFun of Pattern.t List1.t * Expression.t * environment * Expression.rec_flag
   | VFunction of Expression.t Expression.case List1.t * environment
   | VConstruct of ident * value option
-  | VAdt of (value * ident list * ident * (ident * TypeExpr.t list) List1.t)
+  | VAdt of (value * ident list * ident * (ident * TypeExpr.t option) List1.t)
   | VUnit
   | VType of TypeExpr.t * ident option
   | VBuiltin_binop of (value -> value -> (value, error) Result.t)

@@ -6,6 +6,7 @@ open Ast
 open Angstrom
 open Base
 open Char
+open Stdio
 
 (*
    |    _       _   _  __  __               _                    _       ____     __   __
@@ -183,11 +184,16 @@ let ptypeconstr =
         (let* name = pass_ws *> pident_lc in
          return (Some name))
     in
+    let get_first lst =
+      match lst with
+      | x :: _ -> x
+      | _ -> failwith "Not enough elements"
+    in
     match tname, tparams with
     | Some "", [] | None, [] | None, [ TypeExpr.Type_var _ ] ->
       fail "Type constructor cannot have a single type parameter without a name"
     | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
-    | None, _ -> return (TypeExpr.Type_construct ("", tparams)))
+    | None, _ -> return (get_first tparams))
 ;;
 
 let ptypeconstr_app =
@@ -199,7 +205,7 @@ let ptypeconstr_app =
     (match base with
      | TypeExpr.Type_construct (name, args) ->
        return (TypeExpr.Type_construct (name, args @ extra_args))
-     | _ -> failwith "hahahah")
+     | _ -> failwith "Expected a type constructor, but found an incompatible expression")
 ;;
 
 let ptype =
@@ -571,6 +577,12 @@ let pstrlet =
   return (Structure.Str_value (recflag, (bindingfs, bindingtl)))
 ;;
 
+let list2_value lst =
+  match lst with
+  | x :: y :: xs -> x, y, xs
+  | _ -> failwith "Not enough elements"
+;;
+
 let pstradt =
   let* _ = token "type" in
   let* type_param =
@@ -582,8 +594,8 @@ let pstradt =
   let* type_name = pass_ws *> pident_lc in
   let var =
     let* cname = pass_ws *> pident_cap in
-    let* ctype = option [] (token "of" *> sep_by (token "*") ptype_adt) in
-    return (cname, ctype)
+    let* ctype = token "of" *> sep_by (token "*") ptype_adt in
+    return (cname, Some (TypeExpr.Type_tuple (list2_value ctype)))
   in
   let* fvar = token "=" *> var in
   let* varl = many (token "|" *> var) in

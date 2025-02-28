@@ -1337,3 +1337,14 @@ let f q w e r t y u i o p a s d g h j k l z x c v b n m qq ww ee rr tt yy uu ii 
     {|
     val f : 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h -> 'i -> 'j -> 'k -> 'l -> 'm -> 'n -> 'o -> 'p -> 'q -> 'r -> 's -> 't -> 'u -> 'v -> 'w -> 'x -> 'y -> 'z -> 'aa -> 'bb -> 'cc -> 'dd -> 'ee -> 'ff -> 'gg -> 'hh -> 'ii -> 'jj -> 'kk -> 'll -> 'mm -> 'nn -> 'oo -> 'pp -> 'qq -> 'rr -> 'ss -> 'tt -> 'uu -> 'vv -> int |}]
 ;;
+
+let%expect_test "simple adt with pattern matching function (else case) + printing" =
+  parse_and_infer_result
+    {|
+type shape = Circle of int
+  | Rectangle of (int * int) * int
+;;
+  |};
+  [%expect {|
+    Not supported syntax |}]
+;;
