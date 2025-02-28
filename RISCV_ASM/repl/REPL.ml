@@ -40,21 +40,9 @@ let () =
   match parse_string ~consume:All parse_ast input with
   | Ok ast ->
     if opts.dump_parse_tree then print_endline (show_ast ast);
-    let state =
-      { registers = StringMap.empty
-      ; vector_registers = StringMap.empty
-      ; max_vector_length = 0
-      ; vector_element_length = 0
-      ; vector_length = 0
-      ; memory_int = Int64Map.empty
-      ; memory_str = Int64Map.empty
-      ; memory_writable = Int64Map.empty
-      ; pc = Int64.zero
-      }
-    in
     if opts.eval
     then (
-      match interpret state ast with
+      match interpret ast with
       | Ok final_state -> print_endline (show_state final_state)
       | Error msg -> failwith (sprintf "Interpretation error: %s" msg))
   | Error msg -> failwith (sprintf "Failed to parse file: %s" msg)
