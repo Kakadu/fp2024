@@ -15,8 +15,43 @@ type opts =
   ; mutable dump_inferprogram : bool
   }
 
+module REPL_monad = struct
+  open Base
+
+  type 'a t = ('a, string) Result.t
+
+  let fail = Result.fail
+  let return = Result.return
+
+  let ( >>= ) (monad : 'a t) (f : 'a -> 'b t) : 'b t =
+    match monad with
+    | Ok result -> f result
+    | Error x when String.( <> ) x "" ->
+      Format.printf "Error: %s\n" x;
+      fail ""
+    | _ -> fail ""
+  ;;
+
+  let ( let* ) = ( >>= )
+end
+
 let run_single opts =
+  let open REPL_monad in
   let text = In_channel.(input_all stdin) |> String.trim in
+  if not
+       (opts.dump_inferprogram
+        || opts.dump_inference
+        || opts.dump_parsetree
+        || opts.dump_parseprogram)
+  then (
+    let _ =
+      let* structure = Parser.parse text in
+      let* _ = Infer.run_structure_inferencer_exn structure in
+      let* value = Interpreter.run_interpret_exn structure in
+      Format.printf "Value: %a\n" Interpreter.pp_value value;
+      return value
+    in
+    ());
   if opts.dump_inferprogram
   then (
     let ast = Parser.parse_program text in

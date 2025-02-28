@@ -1,7 +1,7 @@
 (library
  (name lib)
  (libraries angstrom config)
- (modules ast parser types infer infer_print)
+ (modules ast parser types infer infer_print interpreter)
  (inline_tests)
  (preprocess
   (pps ppx_deriving.show ppx_inline_test ppx_expect))

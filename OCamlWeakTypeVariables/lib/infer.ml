@@ -782,6 +782,18 @@ let run_structure_inferencer ?(env = defaultEnv) structure =
   run (infer_structure env structure) (List.length TypeEnv.operators)
 ;;
 
+let run_structure_inferencer_exn ?(env = defaultEnv) structure =
+  match run (infer_structure env structure) (List.length TypeEnv.operators) with
+  | Error e -> Error (Format.asprintf "%a" Infer_print.pp_error_my e)
+  | Ok x -> Ok x
+;;
+
 let run_program_inferencer ?(env = defaultEnv) program =
   run (infer_program env program) (List.length TypeEnv.operators)
+;;
+
+let run_program_inferencer_exn ?(env = defaultEnv) program =
+  match run (infer_program env program) (List.length TypeEnv.operators) with
+  | Error e -> Error (Format.asprintf "%a" Infer_print.pp_error_my e)
+  | Ok x -> Ok x
 ;;
