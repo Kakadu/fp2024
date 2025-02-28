@@ -18,38 +18,44 @@ type state =
   ; pc : int64
   }
 
-module type MONADERROR = sig
-  type 'a t
+module type COMBINED_MONAD = sig
+  type ('s, 'a) t
 
-  val return : 'a -> 'a t
-  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
-  val fail : string -> 'a t
+  val return : 'a -> ('s, 'a) t
+  val ( >>= ) : ('s, 'a) t -> ('a -> ('s, 'b) t) -> ('s, 'b) t
+  val fail : string -> ('s, 'a) t
+  val read : ('s, 's) t
+  val write : 's -> ('s, unit) t
+  val run : ('s, 'a) t -> 's -> ('s * 'a, string) result
 
   module Syntax : sig
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+    val ( let* ) : ('s, 'a) t -> ('a -> ('s, 'b) t) -> ('s, 'b) t
   end
 end
 
-module ErrorMonad : MONADERROR with type 'a t = ('a, string) result = struct
-  type 'a t = ('a, string) result
+module CombinedMonad : COMBINED_MONAD = struct
+  type ('s, 'a) t = 's -> ('s * 'a, string) result
 
-  let return x = Ok x
+  let return x s = Ok (s, x)
 
-  let ( >>= ) m f =
-    match m with
-    | Ok x -> f x
+  let ( >>= ) m f s =
+    match m s with
+    | Ok (s', x) -> f x s'
     | Error e -> Error e
   ;;
 
-  let fail e = Error e
+  let fail e _ = Error e
+  let read s = Ok (s, s)
+  let write s _ = Ok (s, ())
+  let run m s = m s
 
   module Syntax = struct
     let ( let* ) = ( >>= )
   end
 end
 
-open ErrorMonad
-open ErrorMonad.Syntax
+open CombinedMonad
+open CombinedMonad.Syntax
 
 let handle_alternative_names = function
   | Zero -> X0
@@ -300,51 +306,59 @@ let init_state program =
   }
 ;;
 
-let get_register_value state reg =
-  StringMap.find_opt (show_register (handle_alternative_names reg)) state.registers
-  |> Option.value ~default:0L
+let get_register_value reg =
+  let* state = read in
+  return
+    (StringMap.find_opt (show_register (handle_alternative_names reg)) state.registers
+     |> Option.value ~default:0L)
 ;;
 
-let set_register_value state reg value =
-  match reg with
-  | X0 -> state
-  | _ ->
+let set_register_value reg value =
+  let* state = read in
+  let new_state =
+    match reg with
+    | X0 -> state
+    | _ ->
+      { state with
+        registers =
+          StringMap.add
+            (show_register (handle_alternative_names reg))
+            value
+            state.registers
+      }
+  in
+  write new_state
+;;
+
+let get_vector_register_value vreg =
+  let* state = read in
+  return
+    (StringMap.find_opt (show_vector_register vreg) state.vector_registers
+     |> Option.value ~default:(Array.make state.vector_length 0L))
+;;
+
+let set_vector_register_value vreg value =
+  let* state = read in
+  let new_state =
     { state with
-      registers =
-        StringMap.add (show_register (handle_alternative_names reg)) value state.registers
+      vector_registers =
+        StringMap.add (show_vector_register vreg) value state.vector_registers
     }
+  in
+  write new_state
 ;;
 
-let get_vector_register_value state vreg =
-  StringMap.find_opt (show_vector_register vreg) state.vector_registers
-  |> Option.value ~default:(Array.make state.vector_length 0L)
+let set_pc new_pc =
+  let* state = read in
+  let new_state = { state with pc = new_pc } in
+  write new_state
 ;;
 
-let set_vector_register_value state vreg value =
-  { state with
-    vector_registers =
-      StringMap.add (show_vector_register vreg) value state.vector_registers
-  }
+let increment_pc () =
+  let* state = read in
+  let new_state = { state with pc = Int64.add state.pc 4L } in
+  write new_state
 ;;
-
-let nth_opt_int64 l n =
-  (* we make steps by 4L because in our interpreter PC is built RISC-V-like and one expr is 4 bytes *)
-  match n with
-  | x when x < 0 -> fail "Index cannot be negative"
-  | _ ->
-    let rec nth_aux l n =
-      match l with
-      | [] -> return None
-      | a :: l ->
-        (match n with
-         | 0L -> return (Some a)
-         | _ -> nth_aux l (Int64.sub n 4L))
-    in
-    nth_aux l (Int64.of_int n)
-;;
-
-let set_pc state new_pc = { state with pc = new_pc }
-let increment_pc state = { state with pc = Int64.add state.pc 4L }
 
 (* Get index from including directives and labels to excluding *)
 let resolve_address_incl_to_excl program immediate64_value =
@@ -387,12 +401,13 @@ let resolve_address_excl_to_incl program immediate64_value =
   traverse_program 0L immediate64_value program
 ;;
 
-let handle_branch_condition state program rs1 rs2 label_or_imm_value comparison_fn =
-  let val_rs1 = get_register_value state rs1 in
-  let val_rs2 =
+let handle_branch_condition program rs1 rs2 label_or_imm_value comparison_fn =
+  let* state = read in
+  let* val_rs1 = get_register_value rs1 in
+  let* val_rs2 =
     match rs2 with
-    | Some rs -> get_register_value state rs
-    | None -> 0L
+    | Some rs -> get_register_value rs
+    | None -> return 0L
   in
   let address_info = get_address12_value program label_or_imm_value in
   let* new_pc =
@@ -413,7 +428,7 @@ let handle_branch_condition state program rs1 rs2 label_or_imm_value comparison_
       return (Int64.sub target_pc 4L)
     | Label _ -> return state.pc
   in
-  return (set_pc state new_pc)
+  set_pc new_pc
 ;;
 
 let sext x = Int64.shift_right (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
@@ -422,39 +437,30 @@ let zext x =
   Int64.shift_right_logical (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
 ;;
 
-let execute_arithmetic_op state rd rs1 rs2 op to_sext =
-  let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
+let execute_arithmetic_op rd rs1 rs2 op to_sext =
+  let* val1 = get_register_value rs1 in
+  let* val2 = get_register_value rs2 in
   let result = op val1 val2 in
-  let result_final =
-    match to_sext with
-    | true -> sext result
-    | false -> result
-  in
-  return (set_register_value state rd result_final)
+  let result_final = if to_sext then sext result else result in
+  set_register_value rd result_final
 ;;
 
-let execute_shift_op state rd rs1 rs2 op =
-  let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
+let execute_shift_op rd rs1 rs2 op =
+  let* val1 = get_register_value rs1 in
+  let* val2 = get_register_value rs2 in
   let val2_lower_5bits = Int64.logand val2 0x1FL in
   let result = op val1 (Int64.to_int val2_lower_5bits) in
-  return (set_register_value state rd result)
+  set_register_value rd result
+;;
+let execute_comparison_op rd rs1 rs2 compare_fn =
+  let* val1 = get_register_value rs1 in
+  let* val2 = get_register_value rs2 in
+  let result = if compare_fn val1 val2 then 1L else 0L in
+  set_register_value rd result
 ;;
 
-let execute_comparison_op state rd rs1 rs2 compare_fn =
-  let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
-  let result =
-    match compare_fn val1 val2 with
-    | true -> 1L
-    | false -> 0L
-  in
-  return (set_register_value state rd result)
-;;
-
-let execute_immediate_op state program rd rs1 imm op to_sext =
-  let val1 = get_register_value state rs1 in
+let execute_immediate_op program rd rs1 imm op to_sext =
+  let* val1 = get_register_value rs1 in
   let address_info = get_address12_value program imm in
   let imm_value =
     match address_info with
@@ -463,11 +469,11 @@ let execute_immediate_op state program rd rs1 imm op to_sext =
   in
   let result = op val1 (sext imm_value) in
   let result_final = if to_sext then sext result else result in
-  return (set_register_value state rd result_final)
+  set_register_value rd result_final
 ;;
 
-let execute_shift_immediate_op state program rd rs1 imm op =
-  let val1 = get_register_value state rs1 in
+let execute_shift_immediate_op program rd rs1 imm op =
+  let* val1 = get_register_value rs1 in
   let imm_value =
     match get_address12_value program imm with
     | Immediate imm_value -> Int64.of_int imm_value
@@ -475,23 +481,21 @@ let execute_shift_immediate_op state program rd rs1 imm op =
   in
   let imm_lower_6bits = Int64.to_int (Int64.logand imm_value 0x3FL) in
   let result = op val1 imm_lower_6bits in
-  return (set_register_value state rd result)
-;;
-let execute_shnadd state rd rs1 rs2 n to_zext =
-  let val1 = get_register_value state rs1 in
-  let val2 = get_register_value state rs2 in
-  let arg2 =
-    match to_zext with
-    | true -> zext val2
-    | false -> val2
-  in
-  let result = Int64.add val1 (Int64.shift_left arg2 n) in
-  return (set_register_value state rd result)
+  set_register_value rd result
 ;;
 
-let load_memory_int state address = function
-  | (1 | 2 | 4) as size ->
-    (* Check if writable. If not, it is either an instruction, or partial data, which we do not support. *)
+let execute_shnadd rd rs1 rs2 n to_zext =
+  let* val1 = get_register_value rs1 in
+  let* val2 = get_register_value rs2 in
+  let arg2 = if to_zext then zext val2 else val2 in
+  let result = Int64.add val1 (Int64.shift_left arg2 n) in
+  set_register_value rd result
+;;
+
+let load_memory_int address size =
+  let* state = read in
+  match size with
+  | 1 | 2 | 4 ->
     (match Int64Map.find_opt address state.memory_writable with
      | Some false ->
        fail
@@ -512,7 +516,8 @@ let load_memory_int state address = function
   | _ -> fail "Unsupported load size"
 ;;
 
-let store_memory_int state address value size =
+let store_memory_int address value size =
+  let* state = read in
   let* stored_value =
     match size with
     | 1 -> return (Int64.logand value 0xFFL)
@@ -546,99 +551,99 @@ let store_memory_int state address value size =
         return memory_writable
       | _ -> fail "Unsupported store size"
     in
-    return { state with memory_int; memory_str; memory_writable }
+    let new_state = { state with memory_int; memory_str; memory_writable } in
+    write new_state
 ;;
 
-let execute_load_int state program rd rs1 imm size signed =
-  let base_address = get_register_value state rs1 in
+let execute_load_int program rd rs1 imm size signed =
+  let* base_address = get_register_value rs1 in
   let offset =
     match get_address12_value program imm with
     | Immediate imm_value -> Int64.of_int imm_value
     | Label label -> label
   in
   let address = Int64.add base_address (sext offset) in
-  let* value = load_memory_int state address size in
+  let* value = load_memory_int address size in
   let result = if signed then sext value else zext value in
-  return (set_register_value state rd result)
+  set_register_value rd result
 ;;
 
-let execute_store_int state program rs1 rs2 imm size =
-  let base_address = get_register_value state rs1 in
+let execute_store_int program rs1 rs2 imm size =
+  let* base_address = get_register_value rs1 in
   let offset =
     match get_address12_value program imm with
     | Immediate imm_value -> Int64.of_int imm_value
     | Label label -> label
   in
   let address = Int64.add base_address (sext offset) in
-  let value = get_register_value state rs2 in
-  let* new_state = store_memory_int state address value size in
-  return new_state
+  let* value = get_register_value rs2 in
+  store_memory_int address value size
 ;;
 
-let execute_vle32v state program vd rs1 imm =
-  let base_address = get_register_value state rs1 in
-  let* offset =
+let execute_vle32v program vd rs1 imm =
+  let* state = read in
+  let* base_address = get_register_value rs1 in
+  let offset =
     match get_address12_value program imm with
-    | Immediate imm_value -> return (Int64.of_int imm_value)
-    | Label label -> return label
+    | Immediate imm_value -> Int64.of_int imm_value
+    | Label label -> label
   in
   let address = Int64.add base_address offset in
   let vector_length = state.vector_length in
   let rec load_values address i acc =
     if i < vector_length
     then
-      let* value = load_memory_int state address 4 in
+      let* value = load_memory_int address 4 in
       let next_address = Int64.add address (Int64.of_int 4) in
       load_values next_address (i + 1) (Array.append acc [| value |])
     else return acc
   in
   let* vector_values = load_values address 0 [||] in
-  return (set_vector_register_value state vd vector_values)
+  set_vector_register_value vd vector_values
 ;;
 
-let execute_vstore state program vs rs1 imm =
-  let base_address = get_register_value state rs1 in
-  let* offset =
+let execute_vstore program vs rs1 imm =
+  let* base_address = get_register_value rs1 in
+  let offset =
     match get_address12_value program imm with
-    | Immediate imm_value -> return (Int64.of_int imm_value)
-    | Label label -> return label
+    | Immediate imm_value -> Int64.of_int imm_value
+    | Label label -> label
   in
   let address = Int64.add base_address offset in
-  let vector_value = get_vector_register_value state vs in
-  let rec store_elements i addr state =
+  let* vector_value = get_vector_register_value vs in
+  let rec store_elements i addr =
+    let* state = read in
     if i >= state.vector_length
-    then return state
+    then return ()
     else (
       let element = vector_value.(i) in
-      let* new_state = store_memory_int state addr element 4 in
-      store_elements (i + 1) (Int64.add addr 4L) new_state)
+      let* () = store_memory_int addr element state.vector_element_length in
+      store_elements (i + 1) (Int64.add addr 4L))
   in
-  store_elements 0 address state
+  store_elements 0 address
 ;;
 
-let execute_vector_arithmetic state vd vs1 vs2 op =
-  let vec1 = get_vector_register_value state vs1 in
-  let vec2 = get_vector_register_value state vs2 in
+let execute_vector_arithmetic vd vs1 vs2 op =
+  let* state = read in
+  let* vec1 = get_vector_register_value vs1 in
+  let* vec2 = get_vector_register_value vs2 in
   let result = Array.init state.vector_length (fun i -> op vec1.(i) vec2.(i)) in
-  return (set_vector_register_value state vd result)
+  set_vector_register_value vd result
 ;;
 
-let execute_vector_set_imm state vd imm =
-  let result = Array.make state.vector_length imm in
-  return (set_vector_register_value state vd result)
-;;
-
-let execute_vector_imm state vd vs1 rs2 op =
-  let vec = get_vector_register_value state vs1 in
-  let scalar = get_register_value state rs2 in
+let execute_vector_imm vd vs1 rs2 op =
+  let* state = read in
+  let* vec = get_vector_register_value vs1 in
+  let* scalar = get_register_value rs2 in
   let result = Array.init state.vector_length (fun i -> op vec.(i) scalar) in
-  return (set_vector_register_value state vd result)
+  set_vector_register_value vd result
 ;;
 
-let handle_syscall state =
-  let syscall_number = get_register_value state A7 in
-  let arg1 = get_register_value state A0 in
-  let arg2 = get_register_value state A1 in
+let handle_syscall =
+  let* state = read in
+  let* syscall_number = get_register_value A7 in
+  let* arg1 = get_register_value A0 in
+  let* arg2 = get_register_value A1 in
   match syscall_number with
   | 93L ->
     let exit_code = Int64.to_int arg1 in
@@ -654,12 +659,9 @@ let handle_syscall state =
        in
        if str = ""
        then
-         let* int_value = load_memory_int state address 4 in
-         let _ = Printf.printf "%Ld\n" int_value in
-         return state
-       else (
-         let _ = Printf.printf "%s\n" str in
-         return state)
+         let* int_value = load_memory_int address 4 in
+         return (Printf.printf "%Ld\n" int_value)
+       else return (Printf.printf "%s\n" str)
      | _ -> fail "Unsupported file descriptor for write syscall")
   | 63L ->
     let fd = Int64.to_int arg1 in
@@ -676,41 +678,38 @@ let handle_syscall state =
            memory_writable
            (List.init (String.length str - 1) (fun i -> Int64.of_int (i + 1)))
        in
-       return { state with memory_int; memory_str; memory_writable }
+       let new_state = { state with memory_int; memory_str; memory_writable } in
+       write new_state
      | _ -> fail "Unsupported file descriptor for read syscall")
   | _ -> fail "Unsupported syscall"
 ;;
 
-let execute_instruction state instr program =
+let execute_instruction instr program =
+  let* state = read in
   match instr with
-  | Add (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add false
-  | Sub (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub false
-  | Xor (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logxor false
-  | Or (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logor false
-  | And (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.logand false
-  | Sll (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_left
-  | Srl (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right_logical
-  | Sra (rd, rs1, rs2) -> execute_shift_op state rd rs1 rs2 Int64.shift_right
+  | Add (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.add false
+  | Sub (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.sub false
+  | Xor (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.logxor false
+  | Or (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.logor false
+  | And (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.logand false
+  | Sll (rd, rs1, rs2) -> execute_shift_op rd rs1 rs2 Int64.shift_left
+  | Srl (rd, rs1, rs2) -> execute_shift_op rd rs1 rs2 Int64.shift_right_logical
+  | Sra (rd, rs1, rs2) -> execute_shift_op rd rs1 rs2 Int64.shift_right
   | Slt (rd, rs1, rs2) ->
-    execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 -> Int64.compare arg1 arg2 < 0)
+    execute_comparison_op rd rs1 rs2 (fun arg1 arg2 -> Int64.compare arg1 arg2 < 0)
   | Sltu (rd, rs1, rs2) ->
-    execute_comparison_op state rd rs1 rs2 (fun arg1 arg2 ->
+    execute_comparison_op rd rs1 rs2 (fun arg1 arg2 ->
       Int64.unsigned_compare arg1 arg2 < 0)
-  | Addi (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add false
-  | Xori (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm Int64.logxor false
-  | Ori (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.logor false
-  | Andi (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm Int64.logand false
-  | Slli (rd, rs1, imm) ->
-    execute_shift_immediate_op state program rd rs1 imm Int64.shift_left
+  | Addi (rd, rs1, imm) -> execute_immediate_op program rd rs1 imm Int64.add false
+  | Xori (rd, rs1, imm) -> execute_immediate_op program rd rs1 imm Int64.logxor false
+  | Ori (rd, rs1, imm) -> execute_immediate_op program rd rs1 imm Int64.logor false
+  | Andi (rd, rs1, imm) -> execute_immediate_op program rd rs1 imm Int64.logand false
+  | Slli (rd, rs1, imm) -> execute_shift_immediate_op program rd rs1 imm Int64.shift_left
   | Srli (rd, rs1, imm) ->
-    execute_shift_immediate_op state program rd rs1 imm Int64.shift_right_logical
-  | Srai (rd, rs1, imm) ->
-    execute_shift_immediate_op state program rd rs1 imm Int64.shift_right
+    execute_shift_immediate_op program rd rs1 imm Int64.shift_right_logical
+  | Srai (rd, rs1, imm) -> execute_shift_immediate_op program rd rs1 imm Int64.shift_right
   | Slti (rd, rs1, imm) ->
     execute_immediate_op
-      state
       program
       rd
       rs1
@@ -721,51 +720,44 @@ let execute_instruction state instr program =
         | _ -> 0L)
       false
   | Sltiu (rd, rs1, imm) ->
-    execute_immediate_op state program rd rs1 imm (fun arg1 imm_value ->
-      match Int64.unsigned_compare arg1 imm_value with
-      | x when x < 0 -> 1L
-      | _ -> 0L) false
-  | Lb (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 1 true
-  | Lh (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 2 true
-  | Lw (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 true
-  | Lbu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 1 false
-  | Lhu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 2 false
-  | Sb (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 1
-  | Sh (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 2
-  | Sw (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 4
+    execute_immediate_op
+      program
+      rd
+      rs1
+      imm
+      (fun arg1 imm_value ->
+        match Int64.unsigned_compare arg1 imm_value with
+        | x when x < 0 -> 1L
+        | _ -> 0L)
+      false
+  | Lb (rd, rs1, imm) -> execute_load_int program rd rs1 imm 1 true
+  | Lh (rd, rs1, imm) -> execute_load_int program rd rs1 imm 2 true
+  | Lw (rd, rs1, imm) -> execute_load_int program rd rs1 imm 4 true
+  | Lbu (rd, rs1, imm) -> execute_load_int program rd rs1 imm 1 false
+  | Lhu (rd, rs1, imm) -> execute_load_int program rd rs1 imm 2 false
+  | Sb (rs1, rs2, imm) -> execute_store_int program rs1 rs2 imm 1
+  | Sh (rs1, rs2, imm) -> execute_store_int program rs1 rs2 imm 2
+  | Sw (rs1, rs2, imm) -> execute_store_int program rs1 rs2 imm 4
   | Beq (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 = arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
-  | Beqz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 = arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value ( = )
+  | Beqz (rs1, imm_value) -> handle_branch_condition program rs1 None imm_value ( = )
   | Bne (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 <> arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
-  | Bnez (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 <> arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value ( <> )
+  | Bnez (rs1, imm_value) -> handle_branch_condition program rs1 None imm_value ( <> )
   | Blt (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 < arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
-  | Bltz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 < arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value ( < )
+  | Bltz (rs1, imm_value) -> handle_branch_condition program rs1 None imm_value ( < )
   | Bgt (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 > arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
-  | Bgtz (rs1, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 > arg2 in
-    handle_branch_condition state program rs1 None imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value ( > )
+  | Bgtz (rs1, imm_value) -> handle_branch_condition program rs1 None imm_value ( > )
   | Bge (rs1, rs2, imm_value) ->
-    let comparison_fn arg1 arg2 = arg1 >= arg2 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value ( >= )
   | Bltu (rs1, rs2, imm_value) ->
     let comparison_fn arg1 arg2 = Int64.unsigned_compare arg1 arg2 < 0 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value comparison_fn
   | Bgeu (rs1, rs2, imm_value) ->
     let comparison_fn arg1 arg2 = Int64.unsigned_compare arg1 arg2 >= 0 in
-    handle_branch_condition state program rs1 (Some rs2) imm_value comparison_fn
+    handle_branch_condition program rs1 (Some rs2) imm_value comparison_fn
   | Jal (rd, imm_value) ->
     let address_info = get_address20_value program imm_value in
     let* new_pc =
@@ -781,10 +773,10 @@ let execute_instruction state instr program =
           program
           (Int64.add excluding_directives_label_offset current_pc_excl)
     in
-    let new_state = set_register_value state rd (Int64.add state.pc 4L) in
-    return (set_pc new_state (Int64.sub new_pc 4L))
+    let* () = set_register_value rd (Int64.add state.pc 4L) in
+    set_pc (Int64.sub new_pc 4L)
   | Jalr (rd, rs1, imm) ->
-    let val_rs1 = get_register_value state rs1 in
+    let* val_rs1 = get_register_value rs1 in
     let address_info = get_address12_value program imm in
     let* new_pc =
       match address_info with
@@ -795,12 +787,12 @@ let execute_instruction state instr program =
           program
           (Int64.add excluding_directives_label_offset val_rs1)
     in
-    let new_state = set_register_value state rd (Int64.add state.pc 4L) in
-    return (set_pc new_state (Int64.sub new_pc 4L))
+    let* () = set_register_value rd (Int64.add state.pc 4L) in
+    set_pc (Int64.sub new_pc 4L)
   | Jr rs1 ->
-    let val_rs1 = get_register_value state rs1 in
+    let* val_rs1 = get_register_value rs1 in
     let* new_pc = resolve_address_excl_to_incl program val_rs1 in
-    return (set_pc state (Int64.sub new_pc 4L))
+    set_pc (Int64.sub new_pc 4L)
   | J imm_value ->
     let address_info = get_address20_value program imm_value in
     let* new_pc =
@@ -819,7 +811,7 @@ let execute_instruction state instr program =
         in
         return resolved_pc
     in
-    return (set_pc state (Int64.sub new_pc 4L))
+    set_pc (Int64.sub new_pc 4L)
   | Lui (rd, imm) ->
     let imm_value =
       match imm with
@@ -828,7 +820,7 @@ let execute_instruction state instr program =
         let label_offset = resolve_label_excluding_directives program label in
         Int64.shift_left label_offset 12
     in
-    return (set_register_value state rd imm_value)
+    set_register_value rd imm_value
   | Auipc (rd, imm) ->
     let imm_value =
       match imm with
@@ -838,29 +830,29 @@ let execute_instruction state instr program =
         Int64.shift_left label_offset 12
     in
     let new_value = Int64.add state.pc imm_value in
-    return (set_register_value state rd new_value)
-  | Ecall -> handle_syscall state
-  | Mul (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul false
-  | Div (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.div false
-  | Rem (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.rem false
+    set_register_value rd new_value
+  | Ecall -> handle_syscall
+  | Mul (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.mul false
+  | Div (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.div false
+  | Rem (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.rem false
   | Mv (rd, rs) ->
-    execute_immediate_op state program rd rs (ImmediateAddress12 0) Int64.add false
+    execute_immediate_op program rd rs (ImmediateAddress12 0) Int64.add false
   | Li (rd, imm) ->
     let imm_value =
       match imm with
       | ImmediateAddress32 value -> Int64.of_int value
       | LabelAddress32 label -> resolve_label_excluding_directives program label
     in
-    return (set_register_value state rd imm_value)
-  | Addiw (rd, rs1, imm) -> execute_immediate_op state program rd rs1 imm Int64.add true
-  | Mulw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.mul true
-  | Addw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.add true
-  | Subw (rd, rs1, rs2) -> execute_arithmetic_op state rd rs1 rs2 Int64.sub true
+    set_register_value rd imm_value
+  | Addiw (rd, rs1, imm) -> execute_immediate_op program rd rs1 imm Int64.add true
+  | Mulw (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.mul true
+  | Addw (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.add true
+  | Subw (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.sub true
   | Ret ->
-    let val_rs1 = get_register_value state X1 in
+    let* val_rs1 = get_register_value X1 in
     let* new_pc = resolve_address_excl_to_incl program val_rs1 in
-    let new_state = set_register_value state X0 (Int64.add state.pc 1L) in
-    return (set_pc new_state new_pc)
+    let* () = set_register_value X0 (Int64.add state.pc 1L) in
+    set_pc new_pc
   | La (rd, imm) ->
     let address_info = get_address32_value program imm in
     let* new_address =
@@ -877,74 +869,95 @@ let execute_instruction state instr program =
         let resolved_address = excluding_directives_label_offset in
         return resolved_address
     in
-    return (set_register_value state rd new_address)
+    set_register_value rd new_address
   | Adduw (rd, rs1, rs2) ->
-    let val1 = get_register_value state rs1 in
-    let val2 = get_register_value state rs2 in
+    let* val1 = get_register_value rs1 in
+    let* val2 = get_register_value rs2 in
     let result = Int64.add val1 val2 in
     let result_final = zext result in
-    return (set_register_value state rd result_final)
-  | Sh1add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 1 false
-  | Sh1adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 1 true
-  | Sh2add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 false
-  | Sh2adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 2 true
-  | Sh3add (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 false
-  | Sh3adduw (rd, rs1, rs2) -> execute_shnadd state rd rs1 rs2 3 true
+    set_register_value rd result_final
+  | Sh1add (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 1 false
+  | Sh1adduw (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 1 true
+  | Sh2add (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 2 false
+  | Sh2adduw (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 2 true
+  | Sh3add (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 3 false
+  | Sh3adduw (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 3 true
   | Andn (rd, rs1, rs2) ->
-    let val1 = get_register_value state rs1 in
-    let val2 = get_register_value state rs2 in
+    let* val1 = get_register_value rs1 in
+    let* val2 = get_register_value rs2 in
     let result = Int64.logand val1 (Int64.lognot val2) in
-    return (set_register_value state rd result)
+    set_register_value rd result
   | Orn (rd, rs1, rs2) ->
-    let val1 = get_register_value state rs1 in
-    let val2 = get_register_value state rs2 in
+    let* val1 = get_register_value rs1 in
+    let* val2 = get_register_value rs2 in
     let result = Int64.logor val1 (Int64.lognot val2) in
-    return (set_register_value state rd result)
+    set_register_value rd result
   | Xnor (rd, rs1, rs2) ->
-    let val1 = get_register_value state rs1 in
-    let val2 = get_register_value state rs2 in
+    let* val1 = get_register_value rs1 in
+    let* val2 = get_register_value rs2 in
     let result = Int64.logxor val1 val2 in
     let result_final = Int64.lognot result in
-    return (set_register_value state rd result_final)
-  | Lwu (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 4 false
-  | Ld (rd, rs1, imm) -> execute_load_int state program rd rs1 imm 8 true
-  | Sd (rs1, rs2, imm) -> execute_store_int state program rs1 rs2 imm 8
-  | Vaddvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.add
-  | Vaddvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.add
-  | Vsubvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.sub
-  | Vsubvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.sub
-  | Vmulvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.mul
-  | Vmulvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.mul
-  | Vdivvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.div
-  | Vdivvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.div
-  | Vandvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logand
-  | Vandvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logand
-  | Vorvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logor
-  | Vorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logor
-  | Vxorvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.logxor
-  | Vxorvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.logxor
-  | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic state vd vs1 vs2 Int64.min
-  | Vminvx (vd, vs1, rs2) -> execute_vector_imm state vd vs1 rs2 Int64.min
+    set_register_value rd result_final
+  | Lwu (rd, rs1, imm) -> execute_load_int program rd rs1 imm 4 false
+  | Ld (rd, rs1, imm) -> execute_load_int program rd rs1 imm 8 true
+  | Sd (rs1, rs2, imm) -> execute_store_int program rs1 rs2 imm 8
+  | Vle32v (vd, rs1, imm) -> execute_vle32v program vd rs1 imm
+  | Vse32v (vs, rs1, imm) -> execute_vstore program vs rs1 imm
+  | Vaddvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.add
+  | Vaddvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.add
+  | Vsubvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.sub
+  | Vsubvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.sub
+  | Vmulvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.mul
+  | Vmulvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.mul
+  | Vdivvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.div
+  | Vdivvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.div
+  | Vandvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.logand
+  | Vandvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.logand
+  | Vorvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.logor
+  | Vorvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.logor
+  | Vxorvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.logxor
+  | Vxorvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.logxor
+  | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.min
+  | Vminvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.min
   | Vmseqvv (vd, vs1, vs2) ->
-    execute_vector_arithmetic state vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
+    execute_vector_arithmetic vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
   | Vmseqvx (vd, vs1, rs2) ->
-    execute_vector_imm state vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
-  | _ -> return state
+    execute_vector_imm vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
+  | _ -> return ()
+;;
+
+let nth_opt_int64 l n =
+  (* we make steps by 4L because in our interpreter PC is built RISC-V-like and one expr is 4 bytes *)
+  match n with
+  | x when x < 0 -> fail "Index cannot be negative"
+  | _ ->
+    let rec nth_aux l n =
+      match l with
+      | [] -> return None
+      | a :: l ->
+        (match n with
+         | 0L -> return (Some a)
+         | _ -> nth_aux l (Int64.sub n 4L))
+    in
+    nth_aux l (Int64.of_int n)
 ;;
 
 let interpret program =
-  let rec traverse_program state =
+  let rec traverse_program () =
+    let* state = read in
     let* expr_opt = nth_opt_int64 program (Int64.to_int state.pc) in
     match expr_opt with
     | None -> return state
     | Some (InstructionExpr instr) ->
-      let* new_state = execute_instruction state instr program in
-      traverse_program (increment_pc new_state)
-    | Some (LabelExpr _) -> traverse_program (increment_pc state)
-    | Some (DirectiveExpr _) -> traverse_program (increment_pc state)
+      let* () = execute_instruction instr program in
+      let* () = increment_pc () in
+      traverse_program ()
+    | Some (LabelExpr _) | Some (DirectiveExpr _) ->
+      let* () = increment_pc () in
+      traverse_program ()
   in
-  let new_state = init_state program in
-  traverse_program new_state
+  let initial_state = init_state program in
+  run (traverse_program ()) initial_state
 ;;
 
 let show_memory_int state =
@@ -1095,7 +1108,7 @@ let%expect_test "test_factorial" =
     ]
   in
   match interpret program with
-  | Ok final_state ->
+  | Ok (_, final_state) ->
     let state_str = show_state final_state in
     print_string state_str;
     [%expect
@@ -1227,7 +1240,7 @@ let%expect_test "test_vector_program_execution" =
     ]
   in
   match interpret program with
-  | Ok final_state ->
+  | Ok (_, final_state) ->
     let state_str = show_state final_state in
     print_string state_str;
     [%expect

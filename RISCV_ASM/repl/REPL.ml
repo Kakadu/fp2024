@@ -43,7 +43,7 @@ let () =
     if opts.eval
     then (
       match interpret ast with
-      | Ok final_state -> print_endline (show_state final_state)
+      | Ok (_, final_state) -> print_endline (show_state final_state)
       | Error msg -> failwith (sprintf "Interpretation error: %s" msg))
   | Error msg -> failwith (sprintf "Failed to parse file: %s" msg)
 ;;
