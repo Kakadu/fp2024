@@ -3,8 +3,8 @@
 (** SPDX-License-Identifier: MIT *)
 
   $ ../bin/printAst.exe
-  [(Binding
-      { is_rec = Rec; pat = (PatVar "fact");
+  [(Binding (Rec,
+      { pat = (PatVar "fact");
         expr =
         (Fun ((PatVar "n"),
            (Branch ((BinOp (Le, (Var "n"), (Const (Int 1)))), (Const (Int 1)),
@@ -14,5 +14,6 @@
                  ))
               ))
            ))
-        })
+        },
+      []))
     ]

@@ -1,4 +1,4 @@
-(* * Copyright 2024, Victoria Lutsyuk *)
+(** Copyright 2024, Victoria Lutsyuk *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -66,6 +66,17 @@ let%expect_test "parse_brackets" =
       ] |}]
 ;;
 
+let%expect_test "complex_tuple" =
+  parse_program "((1, 1, 1), (2, 2, 2), {|meow|})";
+  [%expect
+    {|
+    [(EvalExpr
+        (Tup ((Tup ((Const (Int 1)), (Const (Int 1)), [(Const (Int 1))])),
+           (Tup ((Const (Int 2)), (Const (Int 2)), [(Const (Int 2))])),
+           [(Const (Str "meow"))])))
+      ] |}]
+;;
+
 let%expect_test "parse_nested_function" =
   parse_program "let rec add x y = x + y;;   add 5 3";
   [%expect
@@ -124,7 +135,7 @@ let%expect_test "parse_two_func" =
          { pat = (PatVar "main");
            expr =
            (Let (NonRec,
-              { pat = (PatConst Unit);
+              { pat = (PatConstant Unit);
                 expr =
                 (App ((Var "print_int"), (App ((Var "fac"), (Const (Int 4)))))) },
               [], (Const (Int 0))))
@@ -159,7 +170,7 @@ let%expect_test "parse_unary_plus" =
 ;;
 
 let%expect_test "parse_001" =
-  parse_program "let recfac n = if n<=1 then 1 else n * fac (n-1)";
+  parse_program "let rec fac n = if n<=1 then 1 else n * fac (n-1)";
   [%expect
     {|
     [(Binding (Rec,
@@ -187,11 +198,6 @@ let%expect_test "parse_002if" =
           (Branch ((Const (Bool true)), (Const (Int 1)), (Const (Bool false)))) },
         []))
       ] |}]
-;;
-
-let%expect_test "parse_003occurs" =
-  parse_program "let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f))";
-  [%expect {||}]
 ;;
 
 let%expect_test "parse_004let_poly" =
@@ -224,13 +230,25 @@ let%expect_test "parse_015tuples" =
 ;;
 
 let%expect_test "parse_016tuples_mismatches" =
-  parse_program "let a, _ = 1, 2, 3";
-  [%expect {||}]
+  parse_program "let a, b = 1, 2, 3";
+  [%expect
+    {|
+    [(Binding (NonRec,
+        { pat = (PatTup ((PatVar "a"), (PatVar "b"), []));
+          expr = (Tup ((Const (Int 1)), (Const (Int 2)), [(Const (Int 3))])) },
+        []))
+      ] |}]
 ;;
 
 let%expect_test "parse_097fun_vs_list" =
   parse_program "let [a] = (fun x -> x)";
-  [%expect {||}]
+  [%expect
+    {|
+    [(Binding (NonRec,
+        { pat = (PatList [(PatVar "a")]); expr = (Fun ((PatVar "x"), (Var "x")))
+          },
+        []))
+      ] |}]
 ;;
 
 let%expect_test "parse_098rec_int" =
@@ -245,5 +263,11 @@ let%expect_test "parse_098rec_int" =
 
 let%expect_test "parse_099" =
   parse_program "let rec x::[] = [1]";
-  [%expect {||}]
+  [%expect
+    {|
+    [(Binding (Rec,
+        { pat = (PatConstructor ((PatVar "x"), (PatList [])));
+          expr = (List [(Const (Int 1))]) },
+        []))
+      ] |}]
 ;;

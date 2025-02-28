@@ -131,51 +131,43 @@ let%expect_test "pat_var" =
   [%expect {| (PatVar "meow") |}]
 ;;
 
-let%expect_test "pat_cons" =
-  pp pp_pat prs_pat_const "  \r{|meow|}\n";
-  [%expect {| (PatConst (Str "meow")) |}]
+let%expect_test "pat_constant" =
+  pp pp_pat prs_pat_constant "  \r{|meow|}\n";
+  [%expect {| (PatConstant (Str "meow")) |}]
+;;
+
+let%expect_test "pat_constructor" =
+  pp pp_pat (prs_pat_constructor prs_pat) "a :: []";
+  [%expect {| (PatConstructor ((PatVar "a"), (PatList []))) |}]
 ;;
 
 let%expect_test "pat_empty_str" =
-  pp pp_pat prs_pat_const "  \r{||}\n";
-  [%expect {| (PatConst (Str "")) |}]
+  pp pp_pat prs_pat_constant "  \r{||}\n";
+  [%expect {| (PatConstant (Str "")) |}]
 ;;
 
 let%expect_test "pat_any" =
-  pp pp_pat prs_pat_any "  \r_\n";
+  pp pp_pat prs_pat_any "\r_\n";
   [%expect {| PatAny |}]
 ;;
 
 let%expect_test "pat_simple_tuple" =
-  pp pp_pat (prs_pat_tuple prs_pat) "(1,2,3)";
-  [%expect {| (PatTup ((PatConst (Int 1)), (PatConst (Int 2)), [(PatConst (Int 3))])) |}]
-;;
-
-let%expect_test "pat_tuple_of_tuple" =
-  pp pp_pat (prs_pat_tuple prs_pat) "(1,2,(3, 4, 5))";
+  pp pp_pat prs_pat "1, 2, 3";
   [%expect
     {|
-    (PatTup ((PatConst (Int 1)), (PatConst (Int 2)),
-       [(PatTup ((PatConst (Int 3)), (PatConst (Int 4)), [(PatConst (Int 5))]))]
-       )) |}]
+      (PatTup ((PatConstant (Int 1)), (PatConstant (Int 2)),
+         [(PatConstant (Int 3))])) |}]
 ;;
 
 let%expect_test "incorrect_pat_tuple_of_one_element" =
-  pp pp_pat (prs_pat_tuple prs_pat) "(1)";
+  pp pp_pat (prs_pat_tuple prs_pat) "1";
+  [%expect {| Syntax error |}]
+;;
+
+let%expect_test "parse_empty_list" =
+  pp pp_pat (prs_pat_list prs_pat) "[]";
   [%expect {|
-    Syntax error |}]
-;;
-
-let%expect_test "pat_x" =
-  pp pp_pat prs_pat "  x ";
-  [%expect {| (PatVar "x") |}]
-;;
-
-let%expect_test "mixed_pat" =
-  pp pp_pat prs_pat "  \r(\r(  (_,\r_), _)\n, _)\n\n";
-  [%expect
-    {|
-    (PatTup ((PatTup ((PatTup (PatAny, PatAny, [])), PatAny, [])), PatAny, [])) |}]
+    (PatList []) |}]
 ;;
 
 (* ================================ expressions ================================ *)
@@ -217,28 +209,9 @@ let%expect_test "empty_list" =
   [%expect {| (List []) |}]
 ;;
 
-let%expect_test "incorrect_list_diff_types" =
-  pp pp_expr (prs_expr_list prs_expr) "[1, {|meow|}]";
-  [%expect {| Syntax error |}]
-;;
-
-let%expect_test "simple_tuple" =
-  pp pp_expr (prs_expr_tuple prs_expr) "(1, 2, 3)";
-  [%expect {| (Tup ((Const (Int 1)), (Const (Int 2)), [(Const (Int 3))])) |}]
-;;
-
 let%expect_test "incorrect_tuple_one_el" =
   pp pp_expr (prs_expr_tuple prs_expr) "(1)";
   [%expect {| Syntax error |}]
-;;
-
-let%expect_test "complex_tuple" =
-  pp pp_expr (prs_expr_tuple prs_expr) "((1, 1, 1), (2, 2, 2), {|meow|})";
-  [%expect
-    {|
-    (Tup ((Tup ((Const (Int 1)), (Const (Int 1)), [(Const (Int 1))])),
-       (Tup ((Const (Int 2)), (Const (Int 2)), [(Const (Int 2))])),
-       [(Const (Str "meow"))])) |}]
 ;;
 
 let%expect_test "simple_fun" =

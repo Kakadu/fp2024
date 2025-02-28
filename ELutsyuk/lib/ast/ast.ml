@@ -32,10 +32,11 @@ type binop =
 (** Represents patterns for matching values in expressions. *)
 type pat =
   | PatAny (** Matches any value without binding it, e.g. [_]. *)
-  | PatConst of const (** Matches a constant value, e.g. [42], [true]. *)
+  | PatConstant of const (** Matches a constant value, e.g. [42], [true]. *)
+  | PatConstructor of pat * pat (**  *)
   | PatVar of id (** Matches any value and binds it to a variable, e.g. [x]. *)
-  | PatTup of pat * pat * pat list (** Matches tuples, e.g. [(x, y)], [(a, b, c)]. *)
-  | PatOption of pat option
+  | PatTup of pat * pat * pat list (** Matches tuples, e.g. [x, y], [a, b, c]. *)
+  | PatList of pat list
 [@@deriving show { with_path = false }]
 
 (** Indicates whether a [let] binding is recursive or non-recursive. *)

@@ -23,17 +23,13 @@ let prs_expr_const =
 ;;
 
 let prs_expr_list prs_expr =
-  token "[]" *> (return @@ List [])
-  <|> square_par
-      @@
-      let* el1 = prs_expr in
-      let+ rest = many (token ";" *> prs_expr) in
-      List (el1 :: rest)
+  square_par
+  @@
+  let+ parsed = sep_by (token ";") prs_expr in
+  List parsed
 ;;
 
 let prs_expr_tuple prs_expr =
-  round_par
-  @@
   let* el1 = prs_expr in
   let* el2 = token "," *> prs_expr in
   let+ rest = many (token "," *> prs_expr) in
@@ -152,7 +148,7 @@ let prs_expr_unary prs_expr =
 let prs_expr =
   fix
   @@ fun expr ->
-  let atomary = choice [ round_par expr; prs_expr_const; prs_expr_var ] in
+  let atomary = choice [ prs_expr_const; prs_expr_var; round_par expr ] in
   let unary = prs_expr_unary atomary <|> atomary in
   let apply = prs_expr_app unary <|> unary in
   let mul = prs_bin_op apply (prs_mul <|> prs_div) <|> apply in
@@ -160,9 +156,9 @@ let prs_expr =
   let compr = prs_bin_op add (prs_rel <|> prs_logical) <|> add in
   let branch = prs_expr_branch compr <|> compr in
   (* let match_exp = prs_expr_match prs_pat branch <|> branch in *)
-  let tup = prs_expr_tuple branch <|> branch in
-  let list = prs_expr_list tup <|> tup in
-  let fun_exp = prs_expr_fun prs_pat list <|> list in
+  let list = prs_expr_list branch <|> branch in
+  let tup = prs_expr_tuple list <|> list in
+  let fun_exp = prs_expr_fun prs_pat tup <|> tup in
   let let_exp = prs_expr_let fun_exp <|> fun_exp in
   let_exp
 ;;
