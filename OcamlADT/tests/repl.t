@@ -118,4 +118,8 @@
 
   $ ../bin/interpret.exe manytests/typed/016lists.ml
   Running... 
+<<<<<<< HEAD
   Intepreter error: Unbound value ::
+=======
+  Interpreter error: Undefined constructor []
+>>>>>>> 2e9a8f1 (refactor: adt on tuples in infer)

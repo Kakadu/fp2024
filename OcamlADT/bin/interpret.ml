@@ -82,26 +82,27 @@ let process_input options ast =
     print_endline "\nAST dump:";
     print_endline (show_program ast);
     print_newline ());
-  let typecheck_result =
-    match run_infer_program ast env_with_print_funs with
-    | Ok _ -> "passed"
-    | Error err -> "error - " ^ Format.asprintf "%a" pp_inf_err err
-  in
-  if options.run_typecheck then print_endline ("Typecheck: " ^ typecheck_result);
-  (match typecheck_result with
-   | "passed" ->
-     (match run_interpreter ast with
-      | Ok olist ->
-        List.iter
-          (fun (tag, v) ->
-            match tag with
-            | Some id -> Format.printf "val %s = %a\n" id PPrinter.pp_value v
-            | None -> if v <> VString "" then Format.printf "_ = %a\n" PPrinter.pp_value v)
-          olist
-      | Error e -> pp_error Format.std_formatter e)
-   | _ -> if options.run_typecheck then print_endline ("Typecheck: " ^ typecheck_result));
-  flush stdout;
-  Format.pp_print_flush Format.std_formatter ()
+  let tcr = run_infer_program ast env_with_things in
+  match tcr with
+  | Error err -> Format.printf "Type error: %a\n" pp_inf_err err
+  | Ok env ->
+    (match run_interpreter ast with
+     | Error e -> pp_error Format.std_formatter e
+     | Ok olist ->
+       List.iter
+         (fun (tag, v) ->
+           match tag with
+           | Some id ->
+             (match Base.Map.find env id with
+              | Some (Forall (args, typ)) ->
+                let m, _, _ = minimizer (binder_to_list args) in
+                let type_str = Format.asprintf "%a" (pprint_type ~m) typ in
+                Format.printf "val %s : %s = %a\n" id type_str PPrinter.pp_value v
+              | None -> Format.printf "val %s = %a\n" id PPrinter.pp_value v)
+           | None -> if v <> VString "" then Format.printf "_ = %a\n" PPrinter.pp_value v)
+         olist);
+    flush stdout;
+    Format.pp_print_flush Format.std_formatter ()
 ;;
 
 let run_repl options =
