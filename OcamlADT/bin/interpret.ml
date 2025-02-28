@@ -89,7 +89,7 @@ let process_input options ast =
   | Error err ->
     Format.printf
       "Type error: %a\n"
-      (pp_inf_err ~m:(Base.Map.empty (module Base.String)))
+      (pp_inf_err)
       err
   | Ok env ->
     (match run_interpreter ast with
@@ -101,7 +101,7 @@ let process_input options ast =
            | Some id ->
              (match Base.Map.find env id with
               | Some (Forall (args, typ)) ->
-                let m, _, _ = minimizer args in
+                let m, _, _ = minimizer (binder_to_list args) in
                 let type_str = Format.asprintf "%a" (pprint_type ~m) typ in
                 Format.printf "val %s : %s = %a\n" id type_str PPrinter.pp_value v
               | None -> Format.printf "val %s = %a\n" id PPrinter.pp_value v)

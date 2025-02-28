@@ -1077,86 +1077,152 @@ let%expect_test "not keyword" =
 
 let%expect_test "adt v0" =
   test_program {|type shape = Circle;;|};
-  [%expect {| [(Str_adt ([], "shape", (("Circle", []), [])))] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1079, characters 2-40
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt v1" =
   test_program {|type shape = Circle | Square of int;;|};
-  [%expect
-    {|
-    [(Str_adt ([], "shape",
-        (("Circle", []), [("Square", [(Type_construct ("int", []))])])))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1094, characters 2-56
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt v2" =
   test_program {|type shape = Circle | Square;;|};
-  [%expect {|
-    [(Str_adt ([], "shape", (("Circle", []), [("Square", [])])))] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1109, characters 2-49
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt v3" =
   test_program {|type shape = Circle | Square of int * int;;|};
-  [%expect
-    {|
-    [(Str_adt ([], "shape",
-        (("Circle", []),
-         [("Square", [(Type_construct ("int", [])); (Type_construct ("int", []))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1124, characters 2-62
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt with poly" =
   test_program {|type 'a shape = Circle | Square of 'a * 'a ;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"], "shape",
-        (("Circle", []), [("Square", [(Type_var "a"); (Type_var "a")])])))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1139, characters 2-64
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "bad adt with poly (wrong types)" =
   test_program {|type 'a shape = Circle | Square of 'b;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"], "shape", (("Circle", []), [("Square", [(Type_var "b")])])))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1154, characters 2-58
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt with poly (not poly in variant)" =
   test_program {|type 'a shape = Circle | Square of int;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"], "shape",
-        (("Circle", []), [("Square", [(Type_construct ("int", []))])])))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1169, characters 2-59
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt with poly v.easy" =
   test_program {|type 'a shape = Circle;;|};
-  [%expect {| [(Str_adt (["a"], "shape", (("Circle", []), [])))] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1184, characters 2-43
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt with multiple poly v1" =
   test_program {|type ('a, 'b) shape = Circle | Square of 'a;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"; "b"], "shape",
-        (("Circle", []), [("Square", [(Type_var "a")])])))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1199, characters 2-64
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt with multiple poly v2" =
   test_program {|type ('a, 'b) shape = Circle | Square of ('a,'b) shape;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"; "b"], "shape",
-        (("Circle", []),
-         [("Square",
-           [(Type_construct ("shape", [(Type_var "a"); (Type_var "b")]))])])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1214, characters 2-75
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "just let (char)" =
@@ -1224,39 +1290,49 @@ let%expect_test "match case" =
 
 let%expect_test "adt with tuple in variant" =
   test_program {|type shape = Circle | Square of int * int ;;|};
-  [%expect
-    {|
-    [(Str_adt ([], "shape",
-        (("Circle", []),
-         [("Square", [(Type_construct ("int", [])); (Type_construct ("int", []))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1292, characters 2-63
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt with recursive poly variant" =
   test_program {|type ('a, 'b) shape = Circle | Square of 'a shape;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"; "b"], "shape",
-        (("Circle", []),
-         [("Square", [(Type_construct ("shape", [(Type_var "a")]))])])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1307, characters 2-70
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt list" =
   test_program {|
 type 'a my_list = Nil | Cons of 'a * 'a my_list;;
 |};
-  [%expect
-    {|
-    [(Str_adt (["a"], "my_list",
-        (("Nil", []),
-         [("Cons",
-           [(Type_var "a"); (Type_construct ("my_list", [(Type_var "a")]))])])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1322, characters 2-70
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt nested type_construct in args" =
@@ -1267,15 +1343,17 @@ type 'a nested_list = Nil
 | List of 'a nested_list;;
 
 |};
-  [%expect
-    {|
-    [(Str_adt (["a"], "nested_list",
-        (("Nil", []),
-         [("Cons",
-           [(Type_var "a"); (Type_construct ("nested_list", [(Type_var "a")]))]);
-           ("List", [(Type_construct ("nested_list", [(Type_var "a")]))])])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1339, characters 2-110
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt nested type_construct in args" =
@@ -1285,19 +1363,17 @@ type 'a nested_list = Nil
 | Cons of 'a * 'a nested_list 
 | List of 'a nested_list nested_list;;
 |};
-  [%expect
-    {|
-    [(Str_adt (["a"], "nested_list",
-        (("Nil", []),
-         [("Cons",
-           [(Type_var "a"); (Type_construct ("nested_list", [(Type_var "a")]))]);
-           ("List",
-            [(Type_construct ("nested_list",
-                [(Type_var "a"); (Type_construct ("nested_list", []))]))
-              ])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1360, characters 2-121
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "poly adt (tree)" =
@@ -1306,16 +1382,17 @@ type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
   |};
-  [%expect
-    {|
-    [(Str_adt (["a"], "tree",
-        (("Leaf", []),
-         [("Node",
-           [(Type_var "a"); (Type_construct ("tree", [(Type_var "a")]));
-             (Type_construct ("tree", [(Type_var "a")]))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1380, characters 2-80
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt list with pair" =
@@ -1323,16 +1400,17 @@ let%expect_test "adt list with pair" =
     {| type ('a, 'b) pair_list = Nil 
     | Cons of ('a * 'b) * ('a, 'b) pair_list;;
 |};
-  [%expect
-    {|
-    [(Str_adt (["a"; "b"], "pair_list",
-        (("Nil", []),
-         [("Cons",
-           [(Type_tuple ((Type_var "a"), (Type_var "b"), []));
-             (Type_construct ("pair_list", [(Type_var "a"); (Type_var "b")]))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1399, characters 2-102
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt list with 2 el in node" =
@@ -1340,16 +1418,17 @@ let%expect_test "adt list with 2 el in node" =
     {| type ('a, 'b) pair_list = Nil 
     | Cons of 'a * 'b * ('a, 'b) pair_list;;
 |};
-  [%expect
-    {|
-    [(Str_adt (["a"; "b"], "pair_list",
-        (("Nil", []),
-         [("Cons",
-           [(Type_var "a"); (Type_var "b");
-             (Type_construct ("pair_list", [(Type_var "a"); (Type_var "b")]))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1417, characters 2-100
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "adt" =
@@ -1360,17 +1439,22 @@ type shape = Point of int
   | Rect of int * int * int 
 ;;
 |};
-  [%expect
-    {|
-    [(Str_adt ([], "shape",
-        (("Point", [(Type_construct ("int", []))]),
-         [("Circle", [(Type_construct ("int", [])); (Type_construct ("int", []))]);
-           ("Rect",
-            [(Type_construct ("int", [])); (Type_construct ("int", []));
-              (Type_construct ("int", []))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure "Not enough elements")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
+  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 612, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 613, characters 20-29
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1435, characters 2-108
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "simple adt with pattern matching function (else case) + printing" =
@@ -1392,49 +1476,22 @@ print_int y
 ;;
 
   |};
-  [%expect
-    {|
-    [(Str_adt ([], "shape",
-        (("Circle", [(Type_construct ("int", []))]),
-         [("Rectangle",
-           [(Type_tuple
-               ((Type_construct ("int", [])), (Type_construct ("int", [])), []));
-             (Type_construct ("int", []))]);
-           ("Square", [(Type_construct ("int", []))])])
-        ));
-      (Str_value (Nonrecursive,
-         ({ pat = (Pat_var "area");
-            expr =
-            (Exp_fun (((Pat_var "s"), []),
-               (Exp_match ((Exp_ident "s"),
-                  ({ first = (Pat_construct ("Square", (Some (Pat_var "c"))));
-                     second = (Exp_constant (Const_integer 0)) },
-                   [{ first = (Pat_construct ("Circle", (Some (Pat_var "c"))));
-                      second = (Exp_constant (Const_integer 3)) };
-                     { first =
-                       (Pat_construct ("Rectangle", (Some (Pat_var "c"))));
-                       second = (Exp_constant (Const_integer 10)) }
-                     ])
-                  ))
-               ))
-            },
-          [])
-         ));
-      (Str_eval
-         (Exp_let (Nonrecursive,
-            ({ pat = (Pat_var "x");
-               expr =
-               (Exp_construct ("Square", (Some (Exp_constant (Const_integer 5)))
-                  ))
-               },
-             []),
-            (Exp_let (Nonrecursive,
-               ({ pat = (Pat_var "y");
-                  expr = (Exp_apply ((Exp_ident "area"), (Exp_ident "x"))) },
-                []),
-               (Exp_apply ((Exp_ident "print_int"), (Exp_ident "y")))))
-            )))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure "Not enough elements")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
+  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 612, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 613, characters 20-29
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1461, characters 2-262
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "rec fun (pow)" =
@@ -1642,55 +1699,22 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect
-    {|
-    [(Str_adt (["a"], "shape",
-        (("Circle", [(Type_construct ("int", []))]),
-         [("Rectangle",
-           [(Type_construct ("int", [])); (Type_construct ("int", []))]);
-           ("Square", [(Type_construct ("int", []))])])
-        ));
-      (Str_value (Nonrecursive,
-         ({ pat = (Pat_var "area");
-            expr =
-            (Exp_fun (((Pat_var "s"), []),
-               (Exp_match ((Exp_ident "s"),
-                  ({ first = (Pat_construct ("Circle", (Some (Pat_var "c"))));
-                     second = (Exp_constant (Const_integer 3)) },
-                   [{ first = (Pat_construct ("Square", (Some (Pat_var "c"))));
-                      second = (Exp_constant (Const_integer 0)) };
-                     { first =
-                       (Pat_construct ("Rectangle",
-                          (Some (Pat_tuple ((Pat_var "c1"), (Pat_var "c2"), [])))
-                          ));
-                       second =
-                       (Exp_apply ((Exp_ident "*"),
-                          (Exp_tuple ((Exp_ident "c1"), (Exp_ident "c2"), []))))
-                       }
-                     ])
-                  ))
-               ))
-            },
-          [])
-         ));
-      (Str_eval
-         (Exp_let (Nonrecursive,
-            ({ pat = (Pat_var "x");
-               expr =
-               (Exp_construct ("Rectangle",
-                  (Some (Exp_tuple
-                           ((Exp_constant (Const_integer 5)),
-                            (Exp_constant (Const_integer 10)), [])))
-                  ))
-               },
-             []),
-            (Exp_let (Nonrecursive,
-               ({ pat = (Pat_var "y");
-                  expr = (Exp_apply ((Exp_ident "area"), (Exp_ident "x"))) },
-                []),
-               (Exp_apply ((Exp_ident "print_int"), (Exp_ident "y")))))
-            )))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure "Not enough elements")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
+  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 612, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 613, characters 20-29
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1685, characters 2-278
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "simple adt with pattern matching function + printing v3" =
@@ -1701,15 +1725,22 @@ type ('a,'b) shape = Circle of int
   | Square of 'a * 'b
 ;;
   |};
-  [%expect
-    {|
-    [(Str_adt (["a"; "b"], "shape",
-        (("Circle", [(Type_construct ("int", []))]),
-         [("Rectangle",
-           [(Type_construct ("int", [])); (Type_construct ("int", []))]);
-           ("Square", [(Type_var "a"); (Type_var "b")])])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure "Not enough elements")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
+  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 612, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 613, characters 20-29
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1721, characters 2-113
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "function assignment with bool operators" =
@@ -1943,10 +1974,17 @@ let fodd p n =
 let%expect_test "keyword" =
   test_program {|type 'a foo = Foo;;
 type bar = Bar of foo;; |};
-  [%expect
-    {|
-        [(Str_adt (["a"], "foo", (("Foo", []), [])));
-          (Str_adt ([], "bar", (("Bar", [(Type_construct ("foo", []))]), [])))] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 1975, characters 2-63
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "keyword" =
@@ -2521,13 +2559,17 @@ let%expect_test "list9" =
   test_program {|type 'a list = 
     Cons of 'a * 'a list 
     | Nil;;|};
-  [%expect
-    {|
-    [(Str_adt (["a"], "list",
-        (("Cons", [(Type_var "a"); (Type_construct ("list", [(Type_var "a")]))]),
-         [("Nil", [])])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure ": end_of_input")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 2559, characters 2-72
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;
 
 let%expect_test "list9" =
@@ -4187,15 +4229,20 @@ type shape = Circle of int
   | Rectangle of (int*int) * int
 ;;
   |};
-  [%expect
-    {|
-    [(Str_adt ([], "shape",
-        (("Circle", [(Type_construct ("int", []))]),
-         [("Rectangle",
-           [(Type_tuple
-               ((Type_construct ("int", [])), (Type_construct ("int", [])), []));
-             (Type_construct ("int", []))])
-           ])
-        ))
-      ] |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  (Failure "Not enough elements")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
+  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
+  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
+  Called from Ocamladt_lib__Parser.parse in file "lib/parser.ml" (inlined), line 612, characters 16-56
+  Called from Ocamladt_lib__Parser.parse_str in file "lib/parser.ml", line 613, characters 20-29
+  Called from Ocamladt_tests__Parser.test_program in file "tests/parser.ml", line 9, characters 51-66
+  Called from Ocamladt_tests__Parser.(fun) in file "tests/parser.ml", line 4227, characters 2-85
+  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
 ;;

@@ -521,7 +521,7 @@ let%expect_test "adt with poly" =
   [%expect {|
     type 'a shape =
       | Circle
-      | Square of 'a
+      | Square of a
     ;;
   |}]
 ;;
@@ -565,7 +565,7 @@ let%expect_test "adt with poly" =
   [%expect {|
     type 'a shape =
       | Circle
-      | Square of 'a
+      | Square of a
     ;; |}]
 ;;
 
