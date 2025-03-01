@@ -205,7 +205,7 @@ module Inter = struct
         | [] -> return acc
       in
       let+ values = helper [] exprs in
-      Val_tuple values
+      Val_tuple (List.rev values)
     | Pexp_construct ("Some", Some expr) ->
       let+ value = eval_expr env expr in
       Val_construct ("Some", Some value)
