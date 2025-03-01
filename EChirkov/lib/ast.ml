@@ -11,10 +11,10 @@ type const =
   | CString of string
 [@@deriving show { with_path = false }]
 
-type op_un =
-  | Neg (* - *)
-  | Pos (* + *)
-[@@deriving show { with_path = false }]
+(* type op_un =
+   | Neg (* - *)
+   | Pos (* + *)
+   [@@deriving show { with_path = false }] *)
 
 type rec_flag =
   | Recursive
@@ -62,7 +62,7 @@ type pattern =
 type expression =
   | EConst of const
   | EVar of id
-  | EUnary of op_un * expression
+  (* | EUnary of op_un * expression *)
   | EBinary of op_bin * expression * expression
   | ETuple of expression * expression * expression list
   | EList of expression list
