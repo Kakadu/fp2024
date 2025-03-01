@@ -1213,6 +1213,7 @@ let x = 10;;
 let Circle (5,5) = Circle x;;
 |};
   [%expect{| Not supported syntax |}]
+
 ;;
 
 let%expect_test "ADT with poly" =
@@ -1247,6 +1248,7 @@ let%expect_test "ADT with poly3" =
 ;;
 |};
   [%expect{| Not supported syntax |}]
+
 ;;
 
 let%expect_test "ADT with poly constraint" =

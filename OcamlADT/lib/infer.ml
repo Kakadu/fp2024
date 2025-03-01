@@ -856,6 +856,7 @@ let infer_structure_item ~debug env item marity =
                    env_acc
                    constr_name
                    (Forall (varset, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type)))) *)
+
           in
           (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
           return new_env)
