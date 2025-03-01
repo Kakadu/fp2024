@@ -32,11 +32,11 @@ type binop =
 (** Represents patterns for matching values in expressions. *)
 type pat =
   | PatAny (** Matches any value without binding it, e.g. [_]. *)
-  | PatConstant of const (** Matches a constant value, e.g. [42], [true]. *)
-  | PatConstructor of pat * pat (**  *)
+  | PatConst of const (** Matches a constant value, e.g. [42], [true]. *)
+  | PatListCons of pat * pat (** Matches a cons pattern for lists, e.g. [x::y]. *)
   | PatVar of id (** Matches any value and binds it to a variable, e.g. [x]. *)
   | PatTup of pat * pat * pat list (** Matches tuples, e.g. [x, y], [a, b, c]. *)
-  | PatList of pat list
+  | PatList of pat list (**  *)
 [@@deriving show { with_path = false }]
 
 (** Indicates whether a [let] binding is recursive or non-recursive. *)
@@ -50,8 +50,7 @@ type expr =
   | Var of id (** Variable reference, e.g. [x], [my_var]. *)
   | Const of const (** Constant value, e.g. [42], ["hello"], [true]. *)
   | BinOp of binop * expr * expr (** Binary operation, e.g. [x + y], [a >= b]. *)
-  | Option of expr option
-  (* todo: взаимная рекурсия *)
+  | Option of expr option (** Options, e.g. [Some("meow"), None]. *)
   | Let of rec_state * let_binding * let_binding list * expr
   (** [let] expression, e.g. [let x = 5 in e]. *)
   | App of expr * expr (** Function application, e.g. [e1 e2], [(fun x -> x) 42]. *)
