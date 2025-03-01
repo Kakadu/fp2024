@@ -55,11 +55,6 @@ let make_list1 lst =
   | x :: xs -> Some (x, xs)
 ;;
 
-let lst list2 =
-  match list2 with
-  | x, y, xs -> x :: y :: xs
-;;
-
 let to_bool = function
   | VBool b -> b
   | VInt n -> n <> 0
@@ -600,12 +595,10 @@ module Interpreter (M : Error_monad) = struct
                   if List.length argsl = 0
                   then return (VAdt (VUnit, targs, ctor_name, constr))
                   else fail (UndefinedConstructor ctor_name))
-             | None | Some None -> return (VAdt (VUnit, targs, ctor_name, constr))
+             | None | Some None | Some (Some (Type_var _)) ->
+               return (VAdt (VUnit, targs, ctor_name, constr))
              | Some (Some (Type_arrow _)) ->
-               failwith "Unexpected function type in constructor"
-             | Some (Some (Type_var _)) ->
-               failwith "Unexpected type variable in constructor"
-             | _ -> fail (UndefinedConstructor ctor_name))
+               failwith "Unexpected function type in constructor")
             (*nada*)
           | _ -> fail (NotAnADT adt_name))
        | VBool _ -> E.lookup env ctor_name

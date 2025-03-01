@@ -42,7 +42,7 @@ let rec pprint_type fmt =
   let open TypeExpr in
   function
   | Type_arrow (tye1, tye2) -> fprintf fmt "(%a -> %a)" pprint_type tye1 pprint_type tye2
-  | Type_var id -> fprintf fmt "%s" id
+  | Type_var id -> fprintf fmt "'%s" id
   | Type_tuple (tye1, tye2, tyel) ->
     fprintf
       fmt

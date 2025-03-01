@@ -6,7 +6,6 @@ open Ast
 open Angstrom
 open Base
 open Char
-open Stdio
 
 (*
    |    _       _   _  __  __               _                    _       ____     __   __
@@ -181,7 +180,7 @@ let ptypeconstr =
     let* tname =
       option
         None
-        (let* name = pass_ws *> pident_lc in
+        (let* name = pass_ws *> (pident_lc <|> pident_cap) in
          return (Some name))
     in
     match tname, tparams with
@@ -575,13 +574,6 @@ let pstrlet =
   return (Structure.Str_value (recflag, (bindingfs, bindingtl)))
 ;;
 
-let list2_value lst =
-  match lst with
-  | x :: y :: xs -> TypeExpr.Type_tuple (x, y, xs)
-  | [ x ] -> x
-  | [] -> failwith "Not enough elements"
-;;
-
 let pstradt =
   let* _ = token "type" in
   let* type_param =
@@ -605,9 +597,16 @@ let pstradt =
     in
     return (cname, ctype)
   in
-  let* fvar = token "=" *> var in
+  let* _ = token "=" in
+  let* fvar =
+    option
+      None
+      (option None (token "|" *> return None) *> (var >>= fun v -> return (Some v)))
+  in
   let* varl = many (token "|" *> var) in
-  return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
+  match fvar with
+  | Some fvar -> return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
+  | None -> fail "Expected at least one variant"
 ;;
 
 let pstr_item = pseval <|> pstrlet <|> pstradt

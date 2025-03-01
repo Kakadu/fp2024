@@ -631,8 +631,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {|
-    Intepreter error: Pattern mismatch |}]
+  [%expect {| Intepreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue Cir)" =
@@ -1363,7 +1362,6 @@ let%expect_test "debug_cartesian" =
   [%expect {|
     _ = [(1, 1); (1, 2); (1, 3); (1, 4); (2, 1); (2, 2); (2, 3); (2, 4)] |}]
 ;;
-
 
 let%expect_test "fix_factorial" =
   pp_parse_demo

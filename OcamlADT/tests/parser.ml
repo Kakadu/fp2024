@@ -4237,3 +4237,89 @@ type shape = Circle of int
         ))
       ] |}]
 ;;
+
+let%expect_test "one arg adt v2" =
+  test_program {|
+type ('a) shape = Circle of int
+  | Rectangle of (int*int) * int
+;;
+  |};
+  [%expect
+    {|
+    [(Str_adt (["a"], "shape",
+        (("Circle", (Some (Type_construct ("int", [])))),
+         [("Rectangle",
+           (Some (Type_tuple
+                    ((Type_tuple
+                        ((Type_construct ("int", [])),
+                         (Type_construct ("int", [])), [])),
+                     (Type_construct ("int", [])), []))))
+           ])
+        ))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v2" =
+  test_program {|
+   type ('a, 'b) s9CG0K = 
+   | R
+  | F
+  | H of f
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["a"; "b"], "s9CG0K",
+        (("R", None), [("F", None); ("H", (Some (Type_construct ("f", []))))])))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v3" =
+  test_program {|
+   type ('a, 'b, 'c, 'd) s9CG0K = 
+   | R
+  | F
+  | H of f
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["a"; "b"; "c"; "d"], "s9CG0K",
+        (("R", None), [("F", None); ("H", (Some (Type_construct ("f", []))))])))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v4" =
+  test_program {|
+   type '_3d f =
+  | J of _f
+  | K
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["_3d"], "f",
+        (("J", (Some (Type_construct ("_f", [])))), [("K", None)])))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v4 (capitalized idents in constr_args)" =
+  test_program
+    {|
+   type ('ot, '_a, 't, '_v) i_ =
+  | L_ of Z
+  | Dl of _f
+  | G of uG_
+  | Egd of _a
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["ot"; "_a"; "t"; "_v"], "i_",
+        (("L_", (Some (Type_construct ("Z", [])))),
+         [("Dl", (Some (Type_construct ("_f", []))));
+           ("G", (Some (Type_construct ("uG_", []))));
+           ("Egd", (Some (Type_construct ("_a", []))))])
+        ))
+      ] |}]
+;;
