@@ -8,7 +8,12 @@ open Angstrom
 
 (* let r = parse "let x = 23" *)
 
-let r = parse_string ~consume:All p_program "let a n = 23"
+let r =
+  parse_string
+    ~consume:All
+    p_program
+    "let rec factorial n = if n < 2 then 1 else n * factorial(n - 1)"
+;;
 
 let () =
   match r with
