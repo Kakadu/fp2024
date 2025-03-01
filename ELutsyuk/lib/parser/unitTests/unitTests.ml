@@ -133,17 +133,17 @@ let%expect_test "pat_var" =
 
 let%expect_test "pat_constant" =
   pp pp_pat prs_pat_constant "  \r{|meow|}\n";
-  [%expect {| (PatConstant (Str "meow")) |}]
+  [%expect {| (PatConst (Str "meow")) |}]
 ;;
 
 let%expect_test "pat_constructor" =
-  pp pp_pat (prs_pat_constructor prs_pat) "a :: []";
-  [%expect {| (PatConstructor ((PatVar "a"), (PatList []))) |}]
+  pp pp_pat (prs_pat_cons prs_pat) "a :: []";
+  [%expect {| (PatListCons ((PatVar "a"), (PatList []))) |}]
 ;;
 
 let%expect_test "pat_empty_str" =
   pp pp_pat prs_pat_constant "  \r{||}\n";
-  [%expect {| (PatConstant (Str "")) |}]
+  [%expect {| (PatConst (Str "")) |}]
 ;;
 
 let%expect_test "pat_any" =
@@ -155,8 +155,7 @@ let%expect_test "pat_simple_tuple" =
   pp pp_pat prs_pat "1, 2, 3";
   [%expect
     {|
-      (PatTup ((PatConstant (Int 1)), (PatConstant (Int 2)),
-         [(PatConstant (Int 3))])) |}]
+      (PatTup ((PatConst (Int 1)), (PatConst (Int 2)), [(PatConst (Int 3))])) |}]
 ;;
 
 let%expect_test "incorrect_pat_tuple_of_one_element" =

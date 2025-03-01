@@ -18,7 +18,7 @@ let prs_pat_constant =
   trim
   @@
   let+ parsed = prs_const in
-  PatConstant parsed
+  PatConst parsed
 ;;
 
 let prs_pat_any =
@@ -40,7 +40,7 @@ let prs_pat_tuple prs_pat =
   PatTup (el1, el2, rest)
 ;;
 
-let prs_pat_constructor prs_pat =
+let prs_pat_cons prs_pat =
   trim
   @@
   let* el1 = prs_pat in
@@ -48,7 +48,7 @@ let prs_pat_constructor prs_pat =
   let rec helper = function
     | [] -> el1
     | [ el2 ] -> el2
-    | el2 :: rest -> PatConstructor (el2, helper rest)
+    | el2 :: rest -> PatListCons (el2, helper rest)
   in
   return (helper (el1 :: rest))
 ;;
@@ -72,7 +72,7 @@ let prs_pat =
       ; prs_pat_list prs_pat
       ]
   in
-  let constructor = prs_pat_constructor atomary in
+  let constructor = prs_pat_cons atomary in
   let tuple = prs_pat_tuple atomary <|> constructor in
   tuple
 ;;

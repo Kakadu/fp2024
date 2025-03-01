@@ -135,7 +135,7 @@ let%expect_test "parse_two_func" =
          { pat = (PatVar "main");
            expr =
            (Let (NonRec,
-              { pat = (PatConstant Unit);
+              { pat = (PatConst Unit);
                 expr =
                 (App ((Var "print_int"), (App ((Var "fac"), (Const (Int 4)))))) },
               [], (Const (Int 0))))
@@ -266,7 +266,7 @@ let%expect_test "parse_099" =
   [%expect
     {|
     [(Binding (Rec,
-        { pat = (PatConstructor ((PatVar "x"), (PatList [])));
+        { pat = (PatListCons ((PatVar "x"), (PatList [])));
           expr = (List [(Const (Int 1))]) },
         []))
       ] |}]
