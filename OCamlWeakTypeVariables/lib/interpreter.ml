@@ -222,7 +222,42 @@ module Inter = struct
   let eval_structure env = function
     | Pstr_eval expr ->
       let* value = eval_expr env expr in
-      return value
+      return env
+    | Pstr_value (NonRecursive, vbs) ->
+      let* homka_env =
+        Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
+          let* env = env in
+          let* homka_expr = eval_expr env vb.pvb_expr in
+          match_pattern env (vb.pvb_pat, homka_expr))
+      in
+      return homka_env
+    | Pstr_value (Recursive, vbs) ->
+      let* homka_env =
+        Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
+          let* env = env in
+          let* homka_expr = eval_expr env vb.pvb_expr in
+          let* homka_expr =
+            match vb.pvb_pat with
+            | Ppat_var name ->
+              (match homka_expr with
+               | Val_fun _ as v -> return (Val_rec_fun (name, v))
+               | v -> return v)
+            | _ -> fail Type_error
+          in
+          match_pattern env (vb.pvb_pat, homka_expr))
+      in
+      return homka_env
+  ;;
+
+  let eval_program env program =
+    let rec helper env = function
+      | hd :: tl ->
+        let* env = eval_structure env hd in
+        helper env tl
+      | [] -> return env
+    in
+    let* res = helper env program in
+    return res
   ;;
 
   let run expr =
