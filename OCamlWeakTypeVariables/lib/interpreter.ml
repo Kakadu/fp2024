@@ -137,6 +137,24 @@ module Inter = struct
     eval_expr homka_env expr
   ;;
 
+  let eval_rec_let eval_expr env (Recursive, vbs, expr) =
+    let* homka_env =
+      Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
+        let* env = env in
+        let* homka_expr = eval_expr env vb.pvb_expr in
+        let* homka_expr =
+          match vb.pvb_pat with
+          | Ppat_var name ->
+            (match homka_expr with
+             | Val_fun _ as v -> return (Val_rec_fun (name, v))
+             | v -> return v)
+          | _ -> fail Type_error
+        in
+        match_pattern env (vb.pvb_pat, homka_expr))
+    in
+    eval_expr homka_env expr
+  ;;
+
   let rec eval_expr env = function
     | Pexp_ident id -> find_exn env id
     | Pexp_constant const -> eval_const const
@@ -165,6 +183,7 @@ module Inter = struct
       helper value0 es
     | Pexp_let (NonRecursive, vbs, expr) ->
       eval_non_rec_let eval_expr env (NonRecursive, vbs, expr)
+    | Pexp_let (Recursive, vbs, expr) -> eval_rec_let eval_expr env (Recursive, vbs, expr)
     | Pexp_ifthenelse (e0, _, None) ->
       let* value_e0 = eval_expr env e0 in
       (* Without else branch return type must be unit *)
