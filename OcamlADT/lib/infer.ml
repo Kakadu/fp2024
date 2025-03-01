@@ -121,7 +121,7 @@ module Substitution = struct
     | a, Type_var b when String.equal a b -> return (Base.Map.empty (module Base.String))
     | _ ->
       if Type.occurs_check k v
-      then fail (`Occurs_check (k, v))
+      then fail (Occurs_check (k, v))
       else return (Base.Map.singleton (module Base.String) k v)
   ;;
 
@@ -168,7 +168,7 @@ module Substitution = struct
              compose sub1 sub2)
        with
        | Ok sub -> sub
-       | _ -> fail (`Unification_failed (l, r)))
+       | _ -> fail (Unification_failed (l, r)))
     | Type_construct (id1, ty1), Type_construct (id2, ty2) when String.equal id1 id2 ->
       let* subs =
         match
@@ -178,10 +178,10 @@ module Substitution = struct
             compose sub1 sub2)
         with
         | Ok sub -> sub
-        | _ -> fail (`Unification_failed (l, r))
+        | _ -> fail (Unification_failed (l, r))
       in
       return subs
-    | _ -> fail (`Unification_failed (l, r))
+    | _ -> fail (Unification_failed (l, r))
 
   and extend k v s =
     (*maybe rework*)
@@ -320,7 +320,7 @@ let rec infer_pat ~debug pat env =
       | Some el ->
         let* typ = instantiate el in
         return (Substitution.empty, typ)
-      | None -> fail (`Unbound_variable name)
+      | None -> fail (Unbound_variable name)
     in
     return (env, typ)
   | Pat_construct (name, Some pat) ->
@@ -329,7 +329,7 @@ let rec infer_pat ~debug pat env =
       | Some el ->
         let* typ = instantiate el in
         return (Substitution.empty, typ)
-      | None -> fail (`Unbound_variable name)
+      | None -> fail (Unbound_variable name)
     in
     let* env, typ =
       match typ with
@@ -374,7 +374,7 @@ let add_names_rec env vb_list =
         let* fresh = fresh_var in
         let env_acc = TypeEnv.extend env_acc name (Forall (VarSet.empty, fresh)) in
         return (env_acc, fresh :: fresh_acc)
-      | _ -> fail `Not_supported)
+      | _ -> fail Not_supported)
     vb_list
     ~init:(return (env, []))
 ;;
@@ -416,7 +416,7 @@ let rec infer_exp ~debug exp env =
   match exp with
   | Exp_ident varname ->
     (match TypeEnv.find varname env with
-     | None -> fail (`Unbound_variable varname)
+     | None -> fail (Unbound_variable varname)
      | Some x ->
        let* typ = instantiate x in
        return (Substitution.empty, typ))
@@ -438,7 +438,7 @@ let rec infer_exp ~debug exp env =
            let* fresh = fresh_var in
            return (fresh, Type_construct ("bool", []))
          | "&&" | "||" -> return (Type_construct ("bool", []), Type_construct ("bool", []))
-         | _ -> fail `Not_supported
+         | _ -> fail Not_supported
        in
        let* unif_sub1 = Substitution.unify (Substitution.apply sub2 typ1) arg_typ in
        let* unif_sub2 = Substitution.unify (Substitution.apply unif_sub1 typ2) arg_typ in
@@ -719,14 +719,14 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
              | Type_arrow (_, _) ->
                let new_fresh = Substitution.apply sub_acc fresh in
                if typexpr = new_fresh
-               then fail `Wrong_rec
+               then fail Wrong_rec
                else
                  let* res_env, res_sub =
                    infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
                  in
                  return (res_env, res_sub)
-             | _ -> fail `Wrong_rec)
-          | _ -> fail `Wrong_rec)
+             | _ -> fail Wrong_rec)
+          | _ -> fail Wrong_rec)
     with
     | Ok result -> result
     | Unequal_lengths -> failwith "Lists have unequal lengths"
@@ -738,16 +738,16 @@ open Ast.Structure
 
 let rec check_poly_types ~debug typ_list marity = function
   | Type_var var when Base.List.mem typ_list var ~equal:String.equal -> return ()
-  | Type_var name -> fail (`Unbound_variable name)
+  | Type_var name -> fail (Unbound_variable name)
   | Type_construct (name, args) ->
     let* arity =
       Base.Map.find marity name
-      |> Base.Option.value_map ~f:return ~default:(fail (`Undeclared_type name))
+      |> Base.Option.value_map ~f:return ~default:(fail (Undeclared_type name))
     in
     if arity = Base.List.length args
     then check_many ~debug typ_list marity args
-    else fail `Arity_mismatch
-  | _ -> fail `Not_supported
+    else fail Arity_mismatch
+  | _ -> fail Not_supported
 
 and check_many ~debug typ_list marity args =
   let rec iter args =
@@ -762,7 +762,7 @@ and check_many ~debug typ_list marity args =
 
 let get_names_adt env poly_list =
   RList.fold_right
-    ~f:(fun poly acc ->
+    ~f:(fun _ acc ->
       let* env_acc, fresh_acc = return acc in
       let* fresh = fresh_var in
       (* let env_acc = TypeEnv.extend env_acc poly (Forall (VarSet.empty, fresh)) in *)
@@ -840,23 +840,6 @@ let infer_structure_item ~debug env item marity =
                    env_acc
                    constr_name
                    (Forall (varset, Type_arrow (typ, adt_type))))
-            (* | [ hd; tl ] ->
-              let* _ = RList.map [ hd; tl ] ~f:(check_poly_types ~debug poly arity_map) in
-              return
-                (TypeEnv.extend
-                   env_acc
-                   constr_name
-                   (Forall (varset, Type_arrow (Type_tuple (hd, tl, []), adt_type))))
-            | hd :: tl1 :: tl2 ->
-              let* _ =
-                RList.map (hd :: tl1 :: tl2) ~f:(check_poly_types ~debug poly arity_map)
-              in
-              return
-                (TypeEnv.extend
-                   env_acc
-                   constr_name
-                   (Forall (varset, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type)))) *)
-
           in
           (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
           return new_env)

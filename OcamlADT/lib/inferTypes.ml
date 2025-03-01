@@ -95,22 +95,17 @@ and pprint_type_with_parens_if_tuple ?(m = Map.empty (module String)) fmt ty =
 ;;
 
 (*errors*)
-
 type error =
-  [ `Occurs_check of string * t
-  | `Unification_failed of t * t
-  | `Wrong_exp
-  | `Wrong_type
-  | `Wrong_Const
-  | `Wrong_stritem
-  | `Unbound_adt_type of string
-  | `Unbound_variable of string
-  | `Pattern_matching_failed
-  | `Arity_mismatch
-  | `Undeclared_type of string
-  | `Not_supported
-  | `Wrong_rec
-  ]
+Occurs_check of string * Ast.TypeExpr.t
+| Unification_failed of Ast.TypeExpr.t * Ast.TypeExpr.t
+| Unbound_adt_type of string
+| Unbound_variable of string
+| Arity_mismatch
+| Undeclared_type of string
+| Not_supported
+| Wrong_rec
+
+
 
 let collect_type_vars typ =
   let rec aux acc = function
@@ -123,8 +118,8 @@ let collect_type_vars typ =
 ;;
 
 let collect_vars_from_error = function
-  | `Occurs_check (str, typ) -> str :: collect_type_vars typ
-  | `Unification_failed (t1, t2) -> collect_type_vars t1 @ collect_type_vars t2
+  | Occurs_check (str, typ) -> str :: collect_type_vars typ
+  | Unification_failed (t1, t2) -> collect_type_vars t1 @ collect_type_vars t2
   | _ -> []
 ;;
 
@@ -132,7 +127,7 @@ let pp_inf_err fmt err =
   let type_vars = collect_vars_from_error err in
   let var_map, _, _ = minimizer (List.map type_vars ~f:Stdlib.int_of_string) in
   match err with
-  | `Occurs_check (str, t) ->
+  | Occurs_check (str, t) ->
     fprintf
       fmt
       "Occurs_check: %a and %a\n"
@@ -140,7 +135,7 @@ let pp_inf_err fmt err =
       (Type_var str)
       (pprint_type ~m:var_map)
       t
-  | `Unification_failed (typ1, typ2) ->
+  | Unification_failed (typ1, typ2) ->
     fprintf
       fmt
       "Unification_failed: %a # %a"
@@ -148,15 +143,10 @@ let pp_inf_err fmt err =
       typ1
       (pprint_type ~m:var_map)
       typ2
-  | `Wrong_exp -> fprintf fmt "Wrong_exp"
-  | `Wrong_type -> fprintf fmt "Wrong_type"
-  | `Wrong_Const -> fprintf fmt "Wrong_const"
-  | `Wrong_stritem -> fprintf fmt "Wrong_stritem"
-  | `Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
-  | `Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
-  | `Pattern_matching_failed -> fprintf fmt "Pattern_matching_failed"
-  | `Arity_mismatch -> fprintf fmt "Arity_mismatch"
-  | `Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
-  | `Not_supported -> fprintf fmt "Not supported syntax"
-  | `Wrong_rec -> fprintf fmt "Wrong rec"
+  | Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
+  | Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
+  | Arity_mismatch -> fprintf fmt "Arity_mismatch"
+  | Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
+  | Not_supported -> fprintf fmt "Not supported syntax"
+  | Wrong_rec -> fprintf fmt "Wrong rec"
 ;;
