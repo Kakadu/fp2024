@@ -18,5 +18,19 @@ let%expect_test "parse simple let" =
 
 let%expect_test "parse factorial function" =
   test_parser "let rec factorial n = if n < 2 then 1 else n * factorial(n - 1)";
-  [%expect {|[(SValue (Nonrecursive, ((PVar "x"), (EConst (CInt 23))), []))]|}]
+  [%expect
+    {|
+  [(SValue (Recursive,
+      ((PVar "factorial"),
+       (EFun ((PVar "n"),
+          (EIf ((EBinary (Lt, (EVar "n"), (EConst (CInt 2)))),
+             (EConst (CInt 1)),
+             (Some (EBinary (Mul, (EVar "n"),
+                      (EApply ((EVar "factorial"),
+                         (EBinary (Sub, (EVar "n"), (EConst (CInt 1))))))
+                      )))
+             ))
+          ))),
+      []))
+    ]|}]
 ;;

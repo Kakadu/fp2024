@@ -71,7 +71,7 @@ let p_string =
   token "\"" *> take_till (Char.equal '\"') <* token "\"" >>| fun s -> CString s
 ;;
 
-let p_integer = lift2 (fun s n -> CInt (Int.of_string (s ^ n))) p_sign p_digits
+let p_integer = ws *> lift2 (fun s n -> CInt (Int.of_string (s ^ n))) p_sign p_digits
 
 let p_boolean =
   let t = token "true" *> return (CBool true) in
@@ -80,6 +80,7 @@ let p_boolean =
 ;;
 
 let p_unit = token "()" *> return CUnit
+let p_any = token "_" *> return PAny
 
 let p_const =
   choice
@@ -105,7 +106,7 @@ let p_variable =
 let p_pattern =
   fix
   @@ fun p ->
-  choice [ (p_variable >>| fun v -> PVar v); (p_unit >>| fun _ -> PUnit); return PAny ]
+  choice [ (p_variable >>| fun v -> PVar v); (p_unit >>| fun _ -> PUnit); p_any ]
 ;;
 
 (* ========== exprs ========== *)
@@ -113,15 +114,14 @@ let p_pattern =
 let p_list e = token "[" *> sep_by (token ";" *> ws) e <* token "]" >>| fun es -> EList es
 
 let p_branch e =
-  fix (fun p_branch ->
-    lift3
-      (fun ei et ee -> EIf (ei, et, ee))
-      (token "if" *> (p_branch <|> e))
-      (token "then" *> (p_branch <|> e))
-      (option None (token "else" *> (p_branch <|> e) >>| Option.some)))
+  lift3
+    (fun ei et ee -> EIf (ei, et, ee))
+    (token "if" *> e)
+    (token "then" *> e)
+    (option None (token "else" *> e >>| fun ee -> Some ee))
 ;;
 
-let p_binop tkn binop = token tkn *> return (fun el er -> EBinary (binop, el, er))
+let p_binop tkn binop = token tkn *> return (fun el er -> EBinary (binop, el, er)) <* ws
 
 let p_expression =
   fix
@@ -157,7 +157,15 @@ let p_expression =
 
 (* ========== top level ========== *)
 
-let p_binding = lift2 (fun p e -> p, e) p_pattern (token "=" *> ws *> p_expression)
+let p_binding =
+  let* p = p_pattern in
+  let* ps = many p_pattern <* token "=" <* ws in
+  let+ e = p_expression in
+  (* add expr with annotation later here *)
+  p, List.fold_right ps ~init:e ~f:(fun p e -> EFun (p, e))
+;;
+
+(* lift2 (fun ps e ->  (List.fold_right ~f:(fun p e -> EFun (p, e)) ~init:e) , e) (many1 p_pattern) (token "=" *> ws *> p_expression) *)
 
 let p_structure_item =
   lift3
