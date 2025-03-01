@@ -8,7 +8,6 @@ open Ocamladt_lib.Interpreter
 open Ocamladt_lib.Interpreter.PPrinter
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
-open Ocamladt_tests.Infer
 open Format
 open Angstrom
 
@@ -29,7 +28,6 @@ let usage_msg =
    Usage (repl mode): dune exec ./bin/interpret.exe <options>\n\n\
    Options:\n\
    --ast        Dump abstract syntax tree of a program\n\
-   --typecheck  Typecheck the program and print result\n\n\
    REPL commands:\n\
    help         Display usage message\n\
    quit         Quit the REPL mode\n"
@@ -131,11 +129,7 @@ let run_file options string =
 
 let () =
   let options = { show_ast = false; run_typecheck = false; file_string = None } in
-  let arg_list =
-    [ "--ast", Arg.Unit (fun () -> options.show_ast <- true), "Dump AST"
-    ; "--typecheck", Arg.Unit (fun () -> options.run_typecheck <- true), "Run typecheck"
-    ]
-  in
+  let arg_list = [ "--ast", Arg.Unit (fun () -> options.show_ast <- true), "Dump AST" ] in
   let read_file path =
     if Sys.file_exists path
     then (

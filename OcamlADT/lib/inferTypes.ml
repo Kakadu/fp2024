@@ -96,16 +96,14 @@ and pprint_type_with_parens_if_tuple ?(m = Map.empty (module String)) fmt ty =
 
 (*errors*)
 type error =
-Occurs_check of string * Ast.TypeExpr.t
-| Unification_failed of Ast.TypeExpr.t * Ast.TypeExpr.t
-| Unbound_adt_type of string
-| Unbound_variable of string
-| Arity_mismatch
-| Undeclared_type of string
-| Not_supported
-| Wrong_rec
-
-
+  | Occurs_check of string * Ast.TypeExpr.t
+  | Unification_failed of Ast.TypeExpr.t * Ast.TypeExpr.t
+  | Unbound_adt_type of string
+  | Unbound_variable of string
+  | Arity_mismatch
+  | Undeclared_type of string
+  | Not_supported
+  | Wrong_rec
 
 let collect_type_vars typ =
   let rec aux acc = function

@@ -6,7 +6,6 @@ open Ast
 open Angstrom
 open Base
 open Char
-open Stdio
 
 (*
    |    _       _   _  __  __               _                    _       ____     __   __
@@ -573,13 +572,6 @@ let pseval = lift (fun expr -> Structure.Str_eval expr) pexpr
 let pstrlet =
   let* recflag, bindingfs, bindingtl = plethelper pexpr in
   return (Structure.Str_value (recflag, (bindingfs, bindingtl)))
-;;
-
-let list2_value lst =
-  match lst with
-  | x :: y :: xs -> TypeExpr.Type_tuple (x, y, xs)
-  | [ x ] -> x
-  | [] -> failwith "Not enough elements"
 ;;
 
 let pstradt =
