@@ -1,3 +1,9 @@
-(cram
- (applies_to factorial_ast)
- (deps ../bin/main.exe))
+(library
+ (name tests)
+ (public_name MiniML.Tests)
+ (libraries MiniML)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
