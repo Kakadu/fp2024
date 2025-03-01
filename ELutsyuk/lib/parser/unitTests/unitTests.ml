@@ -342,3 +342,27 @@ let%expect_test "factorial" =
          },
        [], (Const Unit))) |}]
 ;;
+
+let%expect_test "prs_some" =
+  pp pp_expr (prs_option prs_expr) "Some (n - 1) ";
+  [%expect {|
+    (Option (Some (BinOp (Sub, (Var "n"), (Const (Int 1)))))) |}]
+;;
+
+let%expect_test "prs_none" =
+  pp pp_expr (prs_option prs_expr) "None ";
+  [%expect {|
+    (Option None) |}]
+;;
+
+let%expect_test "prs_expr_binop_with_some" =
+  pp pp_expr prs_expr "Some n - 1 ";
+  [%expect {|
+    (BinOp (Sub, (Option (Some (Var "n"))), (Const (Int 1)))) |}]
+;;
+
+let%expect_test "prs_expr_some" =
+  pp pp_expr prs_expr "Some  (n - 1) ";
+  [%expect {|
+    (Option (Some (BinOp (Sub, (Var "n"), (Const (Int 1)))))) |}]
+;;

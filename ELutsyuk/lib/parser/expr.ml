@@ -120,6 +120,20 @@ let prs_add = string "+" *> return Add
 let prs_sub = string "-" *> return Sub
 let prs_div = string "/" *> return Div
 
+let prs_option prs_expr =
+  trim
+  @@
+  let p_some_expr =
+    token "Some"
+    *>
+    let* p_expr = round_par prs_expr <|> prs_expr in
+    return (Some p_expr)
+  in
+  let p_none = token "None" *> return None in
+  let+ parsed = p_some_expr <|> p_none in
+  Option parsed
+;;
+
 let prs_expr_app expr =
   trim
   @@
@@ -151,7 +165,8 @@ let prs_expr =
   let atomary = choice [ prs_expr_const; prs_expr_var; round_par expr ] in
   let unary = prs_expr_unary atomary <|> atomary in
   let apply = prs_expr_app unary <|> unary in
-  let mul = prs_bin_op apply (prs_mul <|> prs_div) <|> apply in
+  let opt = prs_option apply <|> apply in
+  let mul = prs_bin_op opt (prs_mul <|> prs_div) <|> opt in
   let add = prs_bin_op mul (prs_add <|> prs_sub) <|> mul in
   let compr = prs_bin_op add (prs_rel <|> prs_logical) <|> add in
   let branch = prs_expr_branch compr <|> compr in

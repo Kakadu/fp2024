@@ -18,4 +18,5 @@ val prs_expr_let : expr t -> expr t
 val prs_let_binding : expr t -> let_binding t
 val prs_expr_unary : expr t -> expr t
 val prs_bin_op : expr t -> binop t -> expr t
+val prs_option : expr t -> expr t
 val prs_expr : expr t
