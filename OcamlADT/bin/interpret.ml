@@ -86,11 +86,7 @@ let process_input options ast =
     print_newline ());
   let tcr = run_infer_program ast env_with_things in
   match tcr with
-  | Error err ->
-    Format.printf
-      "Type error: %a\n"
-      (pp_inf_err)
-      err
+  | Error err -> Format.printf "Type error: %a\n" pp_inf_err err
   | Ok env ->
     (match run_interpreter ast with
      | Error e -> pp_error Format.std_formatter e

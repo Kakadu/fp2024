@@ -181,13 +181,16 @@ let ptypeconstr =
     let* tname =
       option
         None
-        (let* name = pass_ws *> pident_lc in
+        (let* name = pass_ws *> (pident_lc <|> pident_cap) in
          return (Some name))
     in
     match tname, tparams with
     | Some "", [] | None, [] | None, [ TypeExpr.Type_var _ ] ->
       fail "Type constructor cannot have a single type parameter without a name"
-    | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
+    | Some name, tp ->
+      (match List.length tp with
+       | 0 -> return (TypeExpr.Type_var name)
+       | _ -> return (TypeExpr.Type_construct (name, tparams)))
     | None, _ ->
       (match tparams with
        | x :: _ -> return x
@@ -605,9 +608,16 @@ let pstradt =
     in
     return (cname, ctype)
   in
-  let* fvar = token "=" *> var in
+  let* _ = token "=" in
+  let* fvar =
+    option
+      None
+      (option None (token "|" *> return None) *> (var >>= fun v -> return (Some v)))
+  in
   let* varl = many (token "|" *> var) in
-  return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
+  match fvar with
+  | Some fvar -> return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
+  | None -> fail "Expected at least one variant"
 ;;
 
 let pstr_item = pseval <|> pstrlet <|> pstradt

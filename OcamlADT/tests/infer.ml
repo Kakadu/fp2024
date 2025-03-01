@@ -24,7 +24,7 @@ let parse_and_infer_result program =
     (match run_infer_program str env_with_things with
      | Ok env -> pprint_result env env_with_things
      (* | Ok env -> printf "%a\n" TypeEnv.pp_env env *)
-     | Error err -> printf "%a" (pp_inf_err) err)
+     | Error err -> printf "%a" pp_inf_err err)
 ;;
 
 (*
@@ -131,8 +131,7 @@ let%expect_test "098" =
 let%expect_test "001fact without builtin" =
   parse_and_infer_result {|
 let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
-  [%expect
-    {|
+  [%expect {|
     val fac : int -> int |}]
 ;;
 
@@ -144,8 +143,7 @@ let rec fac n = if n<=1 then 1 else n * fac (n-1);;
  let main =
   let () = print_int (fac 4) in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val fac : int -> int
     val main : int |}]
 ;;
@@ -157,8 +155,7 @@ let%expect_test "002fact without builtin" =
 let rec fac_cps n k =
   if n=1 then k 1 else
   fac_cps (n-1) (fun p -> k (p*n));;|};
-  [%expect
-    {|
+  [%expect {|
     val fac_cps : int -> (int -> 'a) -> 'a |}]
 ;;
 
@@ -171,8 +168,7 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));; let main =
   let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val fac_cps : int -> (int -> 'a) -> 'a
     val main : int |}]
 ;;
@@ -191,8 +187,7 @@ let rec fib_acc a b n =
   if n<2
   then n
   else fib (n - 1) + fib (n - 2);;|};
-  [%expect
-    {|
+  [%expect {|
     val fib : int -> int
     val fib_acc : int -> int -> int -> int |}]
 ;;
@@ -291,8 +286,7 @@ let%expect_test "006" =
     let main =
   let () = print_int (foo 11) in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val foo : int -> int
     val main : int |}]
 ;;
@@ -312,8 +306,7 @@ let main =
   let foo = foo 3 in
   let () = print_int foo in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val foo : int -> int -> int -> int
     val main : int |}]
 ;;
@@ -329,8 +322,7 @@ let%expect_test "006.3" =
 let main =
   let () = foo 4 8 9 in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val foo : int -> int -> int -> unit
     val main : int |}]
 ;;
@@ -371,8 +363,7 @@ let%expect_test "009" =
 let temp =
   let f = fun x -> x in
   (f 1, f true);;|};
-  [%expect
-    {|
+  [%expect {|
     val temp : int * bool |}]
 ;;
 
@@ -380,8 +371,7 @@ let temp =
 let%expect_test "001fact without builtin" =
   parse_and_infer_result {|
 let rec fac n = if n<=1 then 1 else n * fac (n-1);;|};
-  [%expect
-    {|
+  [%expect {|
     val fac : int -> int |}]
 ;;
 
@@ -393,8 +383,7 @@ let rec fac n = if n<=1 then 1 else n * fac (n-1);;
  let main =
   let () = print_int (fac 4) in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val fac : int -> int
     val main : int |}]
 ;;
@@ -406,8 +395,7 @@ let%expect_test "002fact without builtin" =
 let rec fac_cps n k =
   if n=1 then k 1 else
   fac_cps (n-1) (fun p -> k (p*n));;|};
-  [%expect
-    {|
+  [%expect {|
     val fac_cps : int -> (int -> 'a) -> 'a |}]
 ;;
 
@@ -420,8 +408,7 @@ let rec fac_cps n k =
   fac_cps (n-1) (fun p -> k (p*n));; let main =
   let () = print_int (fac_cps 4 (fun print_int -> print_int)) in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val fac_cps : int -> (int -> 'a) -> 'a
     val main : int |}]
 ;;
@@ -440,8 +427,7 @@ let rec fib_acc a b n =
   if n<2
   then n
   else fib (n - 1) + fib (n - 2);;|};
-  [%expect
-    {|
+  [%expect {|
     val fib : int -> int
     val fib_acc : int -> int -> int -> int |}]
 ;;
@@ -540,8 +526,7 @@ let%expect_test "006" =
     let main =
   let () = print_int (foo 11) in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val foo : int -> int
     val main : int |}]
 ;;
@@ -561,8 +546,7 @@ let main =
   let foo = foo 3 in
   let () = print_int foo in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val foo : int -> int -> int -> int
     val main : int |}]
 ;;
@@ -578,8 +562,7 @@ let%expect_test "006.3" =
 let main =
   let () = foo 4 8 9 in
   0;;|};
-  [%expect
-    {|
+  [%expect {|
     val foo : int -> int -> int -> unit
     val main : int |}]
 ;;
@@ -620,8 +603,7 @@ let%expect_test "009" =
 let temp =
   let f = fun x -> x in
   (f 1, f true);;|};
-  [%expect
-    {|
+  [%expect {|
     val temp : int * bool |}]
 ;;
 
@@ -794,71 +776,61 @@ let main =
 
 let%expect_test "zero" =
   parse_and_infer_result {|5+5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5/5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5-5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5*5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>=5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<=5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|true || false;;|};
-  [%expect
-    {|
+  [%expect {|
     - : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|false && false;;|};
-  [%expect
-    {|
+  [%expect {|
     - : bool |}]
 ;;
 
@@ -868,22 +840,19 @@ let%expect_test "zero" =
 let homka = Some id in
 match homka with
 | Some f -> f 42, f "42";;|};
-  [%expect
-    {|
+  [%expect {|
     - : int * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|function 5 -> 'c';;|};
-  [%expect
-    {|
+  [%expect {|
     - : int -> char |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|function 5 -> 'c' | 22 -> 'k';;|};
-  [%expect
-    {|
+  [%expect {|
     - : int -> char |}]
 ;;
 
@@ -903,22 +872,19 @@ let%expect_test "zero" =
 let homkaOBOLTUS = id in
 match homkaOBOLTUS with
 |  f -> f 42, f "42";;|};
-  [%expect
-    {|
+  [%expect {|
     - : int * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then 1 else 5;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|if 5=5 then "aboba";;|};
-  [%expect
-    {|
+  [%expect {|
     - : string |}]
 ;;
 
@@ -936,22 +902,19 @@ let%expect_test "zero" =
 
 let%expect_test "zero" =
   parse_and_infer_result {|(5,6,7);;|};
-  [%expect
-    {|
+  [%expect {|
     - : int * int * int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|(5,7);;|};
-  [%expect
-    {|
+  [%expect {|
     - : int * int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|('c',7,false,"andreichik");;|};
-  [%expect
-    {|
+  [%expect {|
     - : char * int * bool * string |}]
 ;;
 
@@ -963,8 +926,7 @@ let%expect_test "zero" =
 | 68 -> 'h' 
 | 69 -> 's' 
 | 89 -> 'a';;|};
-  [%expect
-    {|
+  [%expect {|
     - : int -> char |}]
 ;;
 
@@ -979,22 +941,19 @@ let%expect_test "zero" =
 |7 -> 1
 | _ -> 3
 ;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> fun y -> y+x;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int -> int -> int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|fun x -> fun y -> fun z -> fun w -> y + x * z / w;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int -> int -> int -> int -> int |}]
 ;;
 
@@ -1012,8 +971,7 @@ let%expect_test "zero" =
   parse_and_infer_result {|let x = 1
 let y = 2
 let z = 3|};
-  [%expect
-    {|
+  [%expect {|
     val x : int
     val y : int
     val z : int |}]
@@ -1021,22 +979,19 @@ let z = 3|};
 
 let%expect_test "zero" =
   parse_and_infer_result {|let y = 5|};
-  [%expect
-    {|
+  [%expect {|
     val y : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let _ = (2,5) and y = ("a","b")|};
-  [%expect
-    {|
+  [%expect {|
     val y : string * string |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = (2,5) and y = ("a","b")|};
-  [%expect
-    {|
+  [%expect {|
     val x : int * int
     val y : string * string |}]
 ;;
@@ -1054,44 +1009,38 @@ let%expect_test "zero" =
 
 let%expect_test "zero" =
   parse_and_infer_result {|let (x,y) = (2,'c');;|};
-  [%expect
-    {|
+  [%expect {|
     val x : int
     val y : char |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = 5=5;;|};
-  [%expect
-    {|
+  [%expect {|
     val x : bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let rec g () = g ();;|};
-  [%expect
-    {|
+  [%expect {|
     val g : unit -> 'a |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let x = 6 and y = 6 in x + y;;|};
-  [%expect
-    {|
+  [%expect {|
     - : int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let rec f x = f x;;|};
-  [%expect
-    {|
+  [%expect {|
     val f : 'a -> 'b |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|let f = fun x -> x;;|};
-  [%expect
-    {|
+  [%expect {|
     val f : 'a -> 'a |}]
 ;;
 
@@ -1099,8 +1048,7 @@ let%expect_test "zero" =
   parse_and_infer_result {|
 let x = 5;;
 let 5 = x;;|};
-  [%expect
-    {|
+  [%expect {|
     val x : int |}]
 ;;
 
@@ -1113,8 +1061,7 @@ let x = (6: char);;|};
 let%expect_test "zero" =
   parse_and_infer_result {|
 let x = ()|};
-  [%expect
-    {|
+  [%expect {|
     val x : unit |}]
 ;;
 
@@ -1123,8 +1070,7 @@ let%expect_test "zero" =
     {|
 let square x = x * x;;
 let id = fun x -> x in (id square) (id 123);;|};
-  [%expect
-    {|
+  [%expect {|
     - : int
     val square : int -> int |}]
 ;;
@@ -1135,23 +1081,20 @@ let%expect_test "zero" =
 let rec meven n = if n = 0 then 1 else modd (n - 1)
    and modd n = if n = 0 then 1 else meven (n - 1)
 ;;|};
-  [%expect
-    {|
+  [%expect {|
     val meven : int -> int
     val modd : int -> int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {| let f (x: int) = x + x;;|};
-  [%expect
-    {|
+  [%expect {|
     val f : int -> int |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {| let f (x: int)(y: int) = x + y;;|};
-  [%expect
-    {|
+  [%expect {|
     val f : int -> int -> int |}]
 ;;
 
@@ -1162,15 +1105,13 @@ let%expect_test "zero" =
 
 let%expect_test "zero" =
   parse_and_infer_result {| let f (x: int) = function 5 -> true | 6 -> false;;|};
-  [%expect
-    {|
+  [%expect {|
     val f : int -> int -> bool |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {| let (f: int -> bool) = function 5 -> true | 6 -> false;;|};
-  [%expect
-    {|
+  [%expect {|
     val f : int -> bool |}]
 ;;
 
@@ -1188,7 +1129,7 @@ let%expect_test "Simplest ADT" =
   type shape = Circle 
   let x = Circle
 |};
-  [%expect{| val x : shape |}]
+  [%expect {| val x : shape |}]
 ;;
 
 let%expect_test "ADT of" =
@@ -1198,7 +1139,7 @@ let%expect_test "ADT of" =
   type 'a koka = Circle of int ;;
   let x = Circle 5
 |};
-  [%expect{| val x : 'a koka |}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT of few" =
@@ -1212,8 +1153,7 @@ let%expect_test "ADT of few" =
 let x = 10;;
 let Circle (5,5) = Circle x;;
 |};
-  [%expect{| Not supported syntax |}]
-
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT with poly" =
@@ -1228,7 +1168,7 @@ let y = Circle x
 let (z: int shape) = Rectangle (2,5)
 let q = Square 34985734895
 |};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT with poly2" =
@@ -1236,7 +1176,7 @@ let%expect_test "ADT with poly2" =
   type 'a shape = 
    Square of int;;
 |};
-  [%expect{||}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT with poly3" =
@@ -1247,8 +1187,7 @@ let%expect_test "ADT with poly3" =
   | Square of int * 'a * 'a
 ;;
 |};
-  [%expect{| Not supported syntax |}]
-
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT with poly constraint" =
@@ -1260,7 +1199,7 @@ let%expect_test "ADT with poly constraint" =
 ;;
 let (x: shape) = Circle 5;;
 |};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT with constraint" =
@@ -1272,7 +1211,7 @@ let%expect_test "ADT with constraint" =
 ;;
 let (x: (int,int) shape) = Circle 5;;
 |};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT with constraint exp" =
@@ -1286,7 +1225,7 @@ let y = Circle 5;;
 let (x: char shape) = y;;
 let z g = g;;
 |};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;
 
 let%expect_test "ADT arity" =
@@ -1295,7 +1234,7 @@ type 'a foo = Foo
 type bar = Bar of foo
 
 |};
-  [%expect{| Arity_mismatch |}]
+  [%expect {| Unbound_variable: "foo" |}]
 ;;
 
 let%expect_test "ADT arity" =
@@ -1305,7 +1244,7 @@ type 'a foo = Foo
 type 'a bar = Bar of 'a foo
 let x = Bar Foo
 |};
-  [%expect{| val x : 'a bar |}]
+  [%expect {| val x : 'a bar |}]
 ;;
 
 let%expect_test "alot" =
@@ -1324,5 +1263,5 @@ type shape = Circle of int
   | Rectangle of (int * int) * int
 ;;
   |};
-  [%expect{| Not supported syntax |}]
+  [%expect {| Unbound_variable: "int" |}]
 ;;

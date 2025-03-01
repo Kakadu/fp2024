@@ -1085,7 +1085,7 @@ let%expect_test "adt v1" =
   [%expect
     {|
     [(Str_adt ([], "shape",
-        (("Circle", None), [("Square", (Some (Type_construct ("int", []))))])))
+        (("Circle", None), [("Square", (Some (Type_var "int")))])))
       ] |}]
 ;;
 
@@ -1100,10 +1100,7 @@ let%expect_test "adt v3" =
     {|
     [(Str_adt ([], "shape",
         (("Circle", None),
-         [("Square",
-           (Some (Type_tuple
-                    ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                     []))))
+         [("Square", (Some (Type_tuple ((Type_var "int"), (Type_var "int"), []))))
            ])
         ))
       ] |}]
@@ -1134,7 +1131,7 @@ let%expect_test "adt with poly (not poly in variant)" =
   [%expect
     {|
     [(Str_adt (["a"], "shape",
-        (("Circle", None), [("Square", (Some (Type_construct ("int", []))))])))
+        (("Circle", None), [("Square", (Some (Type_var "int")))])))
       ] |}]
 ;;
 
@@ -1233,10 +1230,7 @@ let%expect_test "adt with tuple in variant" =
     {|
     [(Str_adt ([], "shape",
         (("Circle", None),
-         [("Square",
-           (Some (Type_tuple
-                    ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                     []))))
+         [("Square", (Some (Type_tuple ((Type_var "int"), (Type_var "int"), []))))
            ])
         ))
       ] |}]
@@ -1310,7 +1304,7 @@ type 'a nested_list = Nil
                      []))));
            ("List",
             (Some (Type_construct ("nested_list",
-                     [(Type_var "a"); (Type_construct ("nested_list", []))]))))
+                     [(Type_var "a"); (Type_var "nested_list")]))))
            ])
         ))
       ] |}]
@@ -1386,15 +1380,11 @@ type shape = Point of int
   [%expect
     {|
     [(Str_adt ([], "shape",
-        (("Point", (Some (Type_construct ("int", [])))),
-         [("Circle",
-           (Some (Type_tuple
-                    ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                     []))));
+        (("Point", (Some (Type_var "int"))),
+         [("Circle", (Some (Type_tuple ((Type_var "int"), (Type_var "int"), []))));
            ("Rect",
             (Some (Type_tuple
-                     ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                      [(Type_construct ("int", []))]))))
+                     ((Type_var "int"), (Type_var "int"), [(Type_var "int")]))))
            ])
         ))
       ] |}]
@@ -1422,14 +1412,12 @@ print_int y
   [%expect
     {|
     [(Str_adt ([], "shape",
-        (("Circle", (Some (Type_construct ("int", [])))),
+        (("Circle", (Some (Type_var "int"))),
          [("Rectangle",
            (Some (Type_tuple
-                    ((Type_tuple
-                        ((Type_construct ("int", [])),
-                         (Type_construct ("int", [])), [])),
-                     (Type_construct ("int", [])), []))));
-           ("Square", (Some (Type_construct ("int", []))))])
+                    ((Type_tuple ((Type_var "int"), (Type_var "int"), [])),
+                     (Type_var "int"), []))));
+           ("Square", (Some (Type_var "int")))])
         ));
       (Str_value (Nonrecursive,
          ({ pat = (Pat_var "area");
@@ -1674,12 +1662,10 @@ print_int y
   [%expect
     {|
     [(Str_adt (["a"], "shape",
-        (("Circle", (Some (Type_construct ("int", [])))),
+        (("Circle", (Some (Type_var "int"))),
          [("Rectangle",
-           (Some (Type_tuple
-                    ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                     []))));
-           ("Square", (Some (Type_construct ("int", []))))])
+           (Some (Type_tuple ((Type_var "int"), (Type_var "int"), []))));
+           ("Square", (Some (Type_var "int")))])
         ));
       (Str_value (Nonrecursive,
          ({ pat = (Pat_var "area");
@@ -1735,11 +1721,9 @@ type ('a,'b) shape = Circle of int
   [%expect
     {|
     [(Str_adt (["a"; "b"], "shape",
-        (("Circle", (Some (Type_construct ("int", [])))),
+        (("Circle", (Some (Type_var "int"))),
          [("Rectangle",
-           (Some (Type_tuple
-                    ((Type_construct ("int", [])), (Type_construct ("int", [])),
-                     []))));
+           (Some (Type_tuple ((Type_var "int"), (Type_var "int"), []))));
            ("Square", (Some (Type_tuple ((Type_var "a"), (Type_var "b"), []))))])
         ))
       ] |}]
@@ -1979,7 +1963,7 @@ type bar = Bar of foo;; |};
   [%expect
     {|
     [(Str_adt (["a"], "foo", (("Foo", None), [])));
-      (Str_adt ([], "bar", (("Bar", (Some (Type_construct ("foo", [])))), [])))] |}]
+      (Str_adt ([], "bar", (("Bar", (Some (Type_var "foo"))), [])))] |}]
 ;;
 
 let%expect_test "keyword" =
@@ -4226,14 +4210,93 @@ type shape = Circle of int
   [%expect
     {|
     [(Str_adt ([], "shape",
-        (("Circle", (Some (Type_construct ("int", [])))),
+        (("Circle", (Some (Type_var "int"))),
          [("Rectangle",
            (Some (Type_tuple
-                    ((Type_tuple
-                        ((Type_construct ("int", [])),
-                         (Type_construct ("int", [])), [])),
-                     (Type_construct ("int", [])), []))))
+                    ((Type_tuple ((Type_var "int"), (Type_var "int"), [])),
+                     (Type_var "int"), []))))
            ])
+        ))
+      ] |}]
+;;
+
+let%expect_test "one arg adt v2" =
+  test_program {|
+type ('a) shape = Circle of int
+  | Rectangle of (int*int) * int
+;;
+  |};
+  [%expect
+    {|
+    [(Str_adt (["a"], "shape",
+        (("Circle", (Some (Type_var "int"))),
+         [("Rectangle",
+           (Some (Type_tuple
+                    ((Type_tuple ((Type_var "int"), (Type_var "int"), [])),
+                     (Type_var "int"), []))))
+           ])
+        ))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v2" =
+  test_program {|
+   type ('a, 'b) s9CG0K = 
+   | R
+  | F
+  | H of f
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["a"; "b"], "s9CG0K",
+        (("R", None), [("F", None); ("H", (Some (Type_var "f")))])))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v3" =
+  test_program {|
+   type ('a, 'b, 'c, 'd) s9CG0K = 
+   | R
+  | F
+  | H of f
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["a"; "b"; "c"; "d"], "s9CG0K",
+        (("R", None), [("F", None); ("H", (Some (Type_var "f")))])))
+      ] |}]
+;;
+
+let%expect_test "multiple args adt v4" =
+  test_program {|
+   type '_3d f =
+  | J of _f
+  | K
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["_3d"], "f", (("J", (Some (Type_var "_f"))), [("K", None)])))] |}]
+;;
+
+let%expect_test "multiple args adt v4 (capitalized idents in constr_args)" =
+  test_program
+    {|
+   type ('ot, '_a, 't, '_v) i_ =
+  | L_ of Z
+  | Dl of _f
+  | G of uG_
+  | Egd of _a
+;;
+|};
+  [%expect
+    {|
+    [(Str_adt (["ot"; "_a"; "t"; "_v"], "i_",
+        (("L_", (Some (Type_var "Z"))),
+         [("Dl", (Some (Type_var "_f"))); ("G", (Some (Type_var "uG_")));
+           ("Egd", (Some (Type_var "_a")))])
         ))
       ] |}]
 ;;

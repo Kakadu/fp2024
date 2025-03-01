@@ -631,8 +631,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {|
-    Intepreter error: Pattern mismatch |}]
+  [%expect {| Intepreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue Cir)" =
