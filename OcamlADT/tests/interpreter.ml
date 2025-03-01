@@ -477,8 +477,7 @@ let%expect_test "list (shouldn't work, see tests below)" =
 let [a] = [42] ;; 
  |};
   [%expect {|
-  Interpreter error: Undefined constructor []
-  |}]
+    val a = 42 |}]
 ;;
 
 (* -------- ADT --------*)
@@ -491,20 +490,7 @@ type shape = Point of int
   | Rect of int * int * int 
 ;;
 |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 487, characters 2-109
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {||}]
 ;;
 
 (*we dont support regular types like float*)
@@ -540,20 +526,9 @@ print_int y
 ;;
 
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 525, characters 2-240
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {|
+    3
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt with pattern matching function (else case) + printing" =
@@ -574,20 +549,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 560, characters 2-242
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {|
+    10
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt with pattern matching + printing v2" =
@@ -608,20 +572,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 594, characters 2-253
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {|
+    10
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt with pattern matching + printing v3" =
@@ -642,20 +595,9 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 628, characters 2-275
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {|
+    50
+    val area = <fun> |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue)" =
@@ -669,20 +611,7 @@ type shape = Circle of int
 let x = Chto 5
 ;;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 662, characters 2-121
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {| Intepreter error: Unbound value Chto |}]
 ;;
 
 let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
@@ -696,27 +625,14 @@ let area s =
     match s with
     | Circle c -> 3 
     | Chto c -> 0
-    | _ -> 10
 ;;
 let x = Square 5 in
 let y = area x in
 print_int y
 ;;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 689, characters 2-242
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {|
+    Intepreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue Cir)" =
@@ -729,20 +645,7 @@ type shape = Circle of int
 let x = Cir 5 in 
 print_int area x;;
   |};
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-
-  (Failure "Not enough elements")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Ocamladt_lib__Parser.list2_value in file "lib/parser.ml", line 583, characters 9-39
-  Called from Angstrom__Parser.Monad.(>>=).(fun).succ' in file "lib/parser.ml", line 58, characters 38-43
-  Called from Angstrom__Parser.parse_bigstring in file "lib/parser.ml", line 43, characters 52-93
-  Called from Ocamladt_tests__Interpreter.pp_parse_demo in file "tests/interpreter.ml", line 33, characters 12-21
-  Called from Ocamladt_tests__Interpreter.(fun) in file "tests/interpreter.ml", line 723, characters 2-139
-  Called from Expect_test_collector.Make.Instance_io.exec in file "collector/expect_test_collector.ml", line 234, characters 12-19 |}]
+  [%expect {| Intepreter error: Unbound value Cir |}]
 ;;
 
 (* good, needs a initialization check + infer print(see next tests)*)
@@ -752,7 +655,7 @@ type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
   |};
-  [%expect {| Parser Error |}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "poly adt tree (dumb insert)" =
@@ -782,7 +685,10 @@ let () = print_int (tree_size tree1)
   |};
   [%expect
     {|
-    Parser Error |}]
+    1
+    val insert = <fun>
+    val tree1 = <ADT>: Node
+    val tree_size = <fun> |}]
 ;;
 
 let%expect_test "empty poly adt tree (dumb insert)" =
@@ -810,7 +716,10 @@ let () = print_int (tree_size tree2)
   |};
   [%expect
     {|
-    Parser Error |}]
+    0
+    val insert = <fun>
+    val tree2 = <ADT>: Leaf
+    val tree_size = <fun> |}]
 ;;
 
 let%expect_test "poly adt tree v2" =
@@ -843,7 +752,10 @@ let () = print_int (tree_size tree)
   |};
   [%expect
     {|
-    Parser Error |}]
+    4
+    val insert = <fun>
+    val tree = <ADT>: Node
+    val tree_size = <fun> |}]
 ;;
 
 let%expect_test "poly adt tree v2 (constructs)" =
@@ -869,7 +781,9 @@ let () = print_int (tree_size tree)
 
   |};
   [%expect {|
-    Parser Error |}]
+    4
+    val tree = <ADT>: Node
+    val tree_size = <fun> |}]
 ;;
 
 (*good*)
@@ -1300,7 +1214,18 @@ let main =
 |};
   [%expect
     {|
-    Interpreter error: Undefined constructor [] |}]
+    1
+    2
+    3
+    8
+    val length = <fun>
+    val length_tail = <fun>
+    val map = <fun>
+    val append = <fun>
+    val concat = <fun>
+    val iter = <fun>
+    val cartesian = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "debug_length" =
@@ -1322,35 +1247,38 @@ let%expect_test "debug_length" =
      let () = result in 
      length result|};
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = 8 |}]
 ;;
 
 let%expect_test "empty_list" =
   pp_parse_demo "match [] with | [] -> 1 | _ -> 0";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = 1 |}]
 ;;
 
 let%expect_test "cons_head" =
   pp_parse_demo "match [1;2;3] with | h::t -> h";
-  [%expect {| Interpreter error: Undefined constructor [] |}]
+  [%expect {|
+    _ = 1 |}]
 ;;
 
 let%expect_test "cons_tail" =
   pp_parse_demo "match [1;2;3] with | h::t -> t";
-  [%expect {| Interpreter error: Undefined constructor [] |}]
+  [%expect {|
+    _ = [2; 3] |}]
 ;;
 
 let%expect_test "tuple_cons" =
   pp_parse_demo "match [1;2;3] with | h::t -> (h, t)";
-  [%expect {| Interpreter error: Undefined constructor [] |}]
+  [%expect {|
+    _ = (1, [2; 3]) |}]
 ;;
 
 let%expect_test "length_function" =
   pp_parse_demo
     "let rec length xs = match xs with | [] -> 0 | h::t -> 1 + length t in length [1;2;3]";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = 3 |}]
 ;;
 
 let%expect_test "length_tail_function" =
@@ -1358,7 +1286,7 @@ let%expect_test "length_tail_function" =
     "let rec helper acc xs = match xs with | [] -> acc | h::t -> helper (acc+1) t in \
      helper 0 [1;2;3]";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = 3 |}]
 ;;
 
 let%expect_test "map_function" =
@@ -1366,7 +1294,7 @@ let%expect_test "map_function" =
     "let rec map f xs = match xs with | [] -> [] | h::t -> (f h)::map f t in map (fun x \
      -> x+1) [1;2;3]";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = [2; 3; 4] |}]
 ;;
 
 let%expect_test "append_function" =
@@ -1374,7 +1302,7 @@ let%expect_test "append_function" =
     "let rec append xs ys = match xs with | [] -> ys | h::t -> h::append t ys in append \
      [1;2] [3;4]";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = [1; 2; 3; 4] |}]
 ;;
 
 let%expect_test "concat_function" =
@@ -1390,7 +1318,7 @@ in
     in 
     concat [[1;2]; [3; 4]]|};
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = [1; 2; 3; 4] |}]
 ;;
 
 let%expect_test "iter_function" =
@@ -1404,13 +1332,14 @@ val iter = <fun>
 
 let%expect_test "list_basic" =
   pp_parse_demo "let lst = 1 :: 2 :: 3 :: [] in lst";
-  [%expect {| Interpreter error: Undefined constructor [] |}]
+  [%expect {|
+    _ = [1; 2; 3] |}]
 ;;
 
 let%expect_test "list_match" =
   pp_parse_demo "match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = 1 |}]
 ;;
 
 let%expect_test "list_append" =
@@ -1418,7 +1347,7 @@ let%expect_test "list_append" =
     "let append xs ys = match xs with | [] -> ys | h :: t -> h :: append t ys in append \
      [1; 2] [3; 4]";
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = [1; 2; 3; 4] |}]
 ;;
 
 let%expect_test "debug_cartesian" =
@@ -1432,7 +1361,7 @@ let%expect_test "debug_cartesian" =
      in
      cartesian [1;2] [1;2;3;4]|};
   [%expect {|
-    Interpreter error: Undefined constructor [] |}]
+    _ = [(1, 1); (1, 2); (1, 3); (1, 4); (2, 1); (2, 2); (2, 3); (2, 4)] |}]
 ;;
 
 let%expect_test "fix_factorial" =

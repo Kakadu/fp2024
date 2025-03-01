@@ -184,16 +184,14 @@ let ptypeconstr =
         (let* name = pass_ws *> pident_lc in
          return (Some name))
     in
-    let get_first lst =
-      match lst with
-      | x :: _ -> x
-      | _ -> failwith "Not enough elements"
-    in
     match tname, tparams with
     | Some "", [] | None, [] | None, [ TypeExpr.Type_var _ ] ->
       fail "Type constructor cannot have a single type parameter without a name"
     | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
-    | None, _ -> return (get_first tparams))
+    | None, _ ->
+      (match tparams with
+       | x :: _ -> return x
+       | _ -> fail "Not enough elementts"))
 ;;
 
 let ptypeconstr_app =
@@ -579,8 +577,9 @@ let pstrlet =
 
 let list2_value lst =
   match lst with
-  | x :: y :: xs -> x, y, xs
-  | _ -> failwith "Not enough elements"
+  | x :: y :: xs -> TypeExpr.Type_tuple (x, y, xs)
+  | [ x ] -> x
+  | [] -> failwith "Not enough elements"
 ;;
 
 let pstradt =
@@ -594,8 +593,17 @@ let pstradt =
   let* type_name = pass_ws *> pident_lc in
   let var =
     let* cname = pass_ws *> pident_cap in
-    let* ctype = token "of" *> sep_by (token "*") ptype_adt in
-    return (cname, Some (TypeExpr.Type_tuple (list2_value ctype)))
+    let* ctype =
+      option
+        None
+        (let* _ = token "of" in
+         let* types = sep_by (token "*") ptype_adt in
+         match types with
+         | x :: y :: xs -> return (Some (TypeExpr.Type_tuple (x, y, xs)))
+         | [ x ] -> return (Some x)
+         | [] -> return None)
+    in
+    return (cname, ctype)
   in
   let* fvar = token "=" *> var in
   let* varl = many (token "|" *> var) in

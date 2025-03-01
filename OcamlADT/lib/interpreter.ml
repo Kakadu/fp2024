@@ -587,8 +587,26 @@ module Interpreter (M : Error_monad) = struct
                   if List.length list_args = 0
                   then return (VAdt (VUnit, targs, ctor_name, constr))
                   else fail (UndefinedConstructor ctor_name))
-             | Some _ -> fail (UndefinedConstructor ctor_name)
-             | None -> fail (UndefinedConstructor ctor_name))
+             | Some (Some (TypeExpr.Type_construct (_, argsl))) ->
+               (match args with
+                | Some provided_args ->
+                  if List.length argsl != 0
+                  then
+                    let* evaluated_args = eval_expr env provided_args in
+                    return (VAdt (evaluated_args, targs, ctor_name, constr))
+                  else return (VAdt (VUnit, targs, ctor_name, constr))
+                | None ->
+                  (* If no arguments are provided, ensure the constructor expects none *)
+                  if List.length argsl = 0
+                  then return (VAdt (VUnit, targs, ctor_name, constr))
+                  else fail (UndefinedConstructor ctor_name))
+             | None | Some None -> return (VAdt (VUnit, targs, ctor_name, constr))
+             | Some (Some (Type_arrow _)) ->
+               failwith "Unexpected function type in constructor"
+             | Some (Some (Type_var _)) ->
+               failwith "Unexpected type variable in constructor"
+             | _ -> fail (UndefinedConstructor ctor_name))
+            (*nada*)
           | _ -> fail (NotAnADT adt_name))
        | VBool _ -> E.lookup env ctor_name
        | _ -> fail (NotAnADTVariant ctor_name))
