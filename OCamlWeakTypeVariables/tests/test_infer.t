@@ -5,7 +5,7 @@
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let f x y z homka damir chtooo = x y (homka + damir) chtooo
-  val f : ('a -> int -> 'b -> 'c) -> 'a -> 'd -> int -> int -> 'b -> 'c
+  val f : ('𒀀 -> int -> '𒀐 -> '𒀲) -> '𒀀 -> '𒂷 -> int -> int -> '𒀐 -> '𒀲
   
 
   $ ../bin/REPL.exe -dinference <<EOF
@@ -16,14 +16,14 @@
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec homka n = damir 4
   > and damir n = homka 5
-  val damir : int -> 'a
-  val homka : int -> 'a
+  val damir : int -> '𒀀
+  val homka : int -> '𒀀
   
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec homka n = damir 4 
   > and damir n = homka 5 in homka
-  - : int -> 'a
+  - : int -> '𒀀
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let rec x = y + 3 and y = true
@@ -32,7 +32,7 @@
 
   $ ../bin/REPL.exe -dinference <<EOF
   > let homka = fun x y -> let z = x y in z + 2
-  val homka : ('a -> int) -> 'a -> int
+  val homka : ('𒀀 -> int) -> '𒀀 -> int
   
 
   $ ../bin/REPL.exe -dinference <<EOF
