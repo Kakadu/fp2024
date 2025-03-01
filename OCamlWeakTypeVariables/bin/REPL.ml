@@ -45,10 +45,10 @@ let run_single opts =
         || opts.dump_parseprogram)
   then (
     let _ =
-      let* structure = Parser.parse text in
-      let* _ = Infer.run_structure_inferencer_exn structure in
-      let* value = Interpreter.run_interpret_exn structure in
-      Format.printf "Value: %a\n" Interpreter.pp_value value;
+      let* program = Parser.parse_program text in
+      let* _ = Infer.run_program_inferencer_exn program in
+      let* value = Interpreter.run_interpret_exn program in
+      (* Format.printf "Value: %a\n" Interpreter.pp_value value; *)
       return value
     in
     ());

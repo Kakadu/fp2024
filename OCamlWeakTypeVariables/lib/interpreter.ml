@@ -34,6 +34,7 @@ let rec pp_value ppf =
 type error =
   | Type_error
   | Pattern_error of pattern * value
+  | Eval_expr_error of expression
   | No_variable of string
 
 let pp_error ppf : error -> _ = function
@@ -46,6 +47,8 @@ let pp_error ppf : error -> _ = function
       pat
       pp_value
       value
+  | Eval_expr_error expr ->
+    Format.printf "Error while interpret expression (%a)" pp_expression expr
   | No_variable s -> Format.fprintf ppf "No variable with name %s" s
 ;;
 
@@ -187,9 +190,15 @@ module Inter = struct
     | Pexp_construct ("Some", Some expr) ->
       let+ value = eval_expr env expr in
       Val_construct ("Some", Some value)
+    | Pexp_construct ("Some", None) -> fail Type_error
     | Pexp_construct ("None", None) -> return (Val_construct ("None", None))
-    | _ -> failwith "homka"
+    | Pexp_construct ("None", Some _) -> fail Type_error
+    | Pexp_construct (name, expr) -> fail Type_error
+    | Pexp_constraint (expr, _) -> eval_expr env expr
+    | e -> fail (Eval_expr_error e)
   ;;
+
+  (* | _ -> failwith "homka" *)
 
   let eval_structure env = function
     | Pstr_eval expr ->
@@ -215,7 +224,7 @@ module Inter = struct
 end
 
 let empty_env = EvalEnv.empty
-let interpret = Inter.eval_structure
+let interpret = Inter.eval_program
 let run_interpret = interpret empty_env
 
 let run_interpret_exn str =
