@@ -6,7 +6,7 @@ open Ast
 
 type error =
   | DivisionByZero
-  | TypeMismatch
+  | TypeMismatch (* just a stub for interp unit tests + some below *)
   | UnboundVariable of string
   | PatternMismatch
   | RecursionError
@@ -16,7 +16,6 @@ type error =
   | NotAnADT of string
   | NotAnADTVariant of string
   | UndefinedConstructor of string
-  | InvalidConstructorArguments of string
 
 type value =
   | VInt of int
@@ -27,7 +26,7 @@ type value =
   | VFun of Pattern.t List1.t * Expression.t * environment * Expression.rec_flag
   | VFunction of Expression.t Expression.case List1.t * environment
   | VConstruct of ident * value option
-  | VAdt of (value * ident list * ident * (ident * TypeExpr.t list) List1.t)
+  | VAdt of (value * ident list * ident * (ident * TypeExpr.t option) List1.t)
   (* ident list is being left for type printing *)
   | VUnit
   | VType of TypeExpr.t * ident option (* ident - adt type name *)
@@ -54,6 +53,11 @@ let make_list1 lst =
   match lst with
   | [] -> None
   | x :: xs -> Some (x, xs)
+;;
+
+let lst list2 =
+  match list2 with
+  | x, y, xs -> x :: y :: xs
 ;;
 
 let to_bool = function
@@ -87,6 +91,30 @@ module Env (M : Error_monad) = struct
       ; "char", VType (TypeExpr.Type_var "char", None)
       ; "string", VType (TypeExpr.Type_var "string", None)
       ; "bool", VType (TypeExpr.Type_var "bool", None)
+      ; "list", VType (TypeExpr.Type_var "list", Some "list")
+      ]
+  ;;
+
+  let builtin_lists =
+    let list_type = VType (TypeExpr.Type_var "list", Some "list_adt") in
+    let list_adt =
+      VAdt
+        ( VUnit
+        , [ "a" ] (* Type parameter for polymorphic lists *)
+        , "list"
+        , ( ("[]", None)
+          , [ ( "::"
+              , Some
+                  (TypeExpr.Type_tuple
+                     (TypeExpr.Type_var "a", TypeExpr.Type_var "list", [])) )
+            ] ) )
+    in
+    Base.Map.of_alist_exn
+      (module Base.String)
+      [ "list", list_type (* Register the list type *)
+      ; "[]", VType (TypeExpr.Type_var "[]", Some "list_adt")
+      ; "::", VType (TypeExpr.Type_var "::", Some "list_adt")
+      ; "list_adt", list_adt (* Actual ADT definition *)
       ]
   ;;
 
@@ -224,6 +252,7 @@ module Env (M : Error_monad) = struct
         ; Base.Map.to_alist builtin_functions
         ; Base.Map.to_alist builtin_types
         ; Base.Map.to_alist builtin_bools
+        ; Base.Map.to_alist builtin_lists
         ]
     in
     Base.Map.of_alist_reduce (module Base.String) all_bindings ~f:(fun v _ -> v)
@@ -358,6 +387,19 @@ module Interpreter (M : Error_monad) = struct
       in
       let* final_env_opt = mapM2 eval_pattern env2 ps vs in
       return final_env_opt
+    | Pattern.Pat_construct ("Some", Some p), VConstruct ("Some", Some v) ->
+      eval_pattern p v env
+    | Pattern.Pat_construct ("None", None), VConstruct ("None", None) -> return (Some env)
+    | Pattern.Pat_construct ("()", None), _ -> return (Some env)
+    | ( Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (p_hd, p_tl, [])))
+      , VAdt (VTuple (v_hd, v_tl, []), _, "::", _) ) ->
+      let* env1_opt = eval_pattern p_hd v_hd env in
+      let* env1 =
+        match env1_opt with
+        | Some env -> return env
+        | None -> fail PatternMismatch
+      in
+      eval_pattern p_tl v_tl env1
     | Pattern.Pat_construct (cname, Some pat), VAdt (args, _, tname, _) ->
       if String.equal cname tname
       then (
@@ -380,12 +422,23 @@ module Interpreter (M : Error_monad) = struct
              let* final_env_opt = mapM2 eval_pattern env2 ps vs in
              return final_env_opt
            | _ -> fail PatternMismatch)
+        | VAdt (VUnit, _, "[]", _) ->
+          (match pat with
+           | Pattern.Pat_construct ("[]", None) -> return (Some env)
+           | _ -> fail PatternMismatch)
+        | VAdt (VTuple (head, tail, []), _, "::", _) ->
+          (match pat with
+           | Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (ph, pt, []))) ->
+             let* env1_opt = eval_pattern ph head env in
+             let* env1 =
+               match env1_opt with
+               | Some env -> return env
+               | None -> fail PatternMismatch
+             in
+             eval_pattern pt tail env1
+           | _ -> fail PatternMismatch)
         | _ -> eval_pattern pat args env)
       else return None
-    | Pattern.Pat_construct ("Some", Some p), VConstruct ("Some", Some v) ->
-      eval_pattern p v env
-    | Pattern.Pat_construct ("None", None), VConstruct ("None", None) -> return (Some env)
-    | Pattern.Pat_construct ("()", None), _ -> return (Some env)
     | Pattern.Pat_construct (ctor, None), VString s ->
       if String.equal ctor s then return (Some env) else fail PatternMismatch
     | Pattern.Pat_construct (ctor, None), VAdt (_, _, tname, _) ->
@@ -420,9 +473,9 @@ module Interpreter (M : Error_monad) = struct
          if String.equal cname s then eval_pattern p v env else fail PatternMismatch
        | VConstruct (_, None) -> eval_pattern p v env
        | VInt _ -> eval_pattern p v env
+       | VUnit -> return (Some env)
        | _ -> fail PatternMismatch)
-    | Pattern.Pat_constraint (pat, _), v ->
-      eval_pattern pat v env (* idk, haven't thought yet *)
+    | Pattern.Pat_constraint (pat, _), v -> eval_pattern pat v env
     | _ -> fail PatternMismatch
   ;;
 
@@ -509,6 +562,7 @@ module Interpreter (M : Error_monad) = struct
       let* v = eval_expr env e in
       return (VConstruct ("Some", Some v))
     | Expression.Exp_construct ("None", None) -> return (VConstruct ("None", None))
+    | Expression.Exp_construct ("()", None) -> return VUnit
     | Expression.Exp_construct (ctor_name, args) ->
       let* type_def = E.lookup env ctor_name in
       (match type_def with
@@ -519,20 +573,40 @@ module Interpreter (M : Error_monad) = struct
             let c1, cl = constr in
             (* Searching for a constructor with ctor_name in the ADT definition *)
             (match Base.List.Assoc.find (c1 :: cl) ~equal:String.equal ctor_name with
-             | Some ctor_arg_types ->
+             | Some (Some (Type_tuple (t1, t2, tl))) ->
+               let list_args = t1 :: t2 :: tl in
                (match args with
                 | Some provided_args ->
-                  if List.length ctor_arg_types != 0
+                  if List.length list_args != 0
                   then
                     let* evaluated_args = eval_expr env provided_args in
                     return (VAdt (evaluated_args, targs, ctor_name, constr))
-                  else fail (InvalidConstructorArguments ctor_name)
+                  else fail (UndefinedConstructor ctor_name)
                 | None ->
                   (* If no arguments are provided, ensure the constructor expects none *)
-                  if List.length ctor_arg_types = 0
+                  if List.length list_args = 0
                   then return (VAdt (VUnit, targs, ctor_name, constr))
-                  else fail (InvalidConstructorArguments ctor_name))
-             | None -> fail (UndefinedConstructor ctor_name))
+                  else fail (UndefinedConstructor ctor_name))
+             | Some (Some (TypeExpr.Type_construct (_, argsl))) ->
+               (match args with
+                | Some provided_args ->
+                  if List.length argsl != 0
+                  then
+                    let* evaluated_args = eval_expr env provided_args in
+                    return (VAdt (evaluated_args, targs, ctor_name, constr))
+                  else return (VAdt (VUnit, targs, ctor_name, constr))
+                | None ->
+                  (* If no arguments are provided, ensure the constructor expects none *)
+                  if List.length argsl = 0
+                  then return (VAdt (VUnit, targs, ctor_name, constr))
+                  else fail (UndefinedConstructor ctor_name))
+             | None | Some None -> return (VAdt (VUnit, targs, ctor_name, constr))
+             | Some (Some (Type_arrow _)) ->
+               failwith "Unexpected function type in constructor"
+             | Some (Some (Type_var _)) ->
+               failwith "Unexpected type variable in constructor"
+             | _ -> fail (UndefinedConstructor ctor_name))
+            (*nada*)
           | _ -> fail (NotAnADT adt_name))
        | VBool _ -> E.lookup env ctor_name
        | _ -> fail (NotAnADTVariant ctor_name))
@@ -581,6 +655,15 @@ module Interpreter (M : Error_monad) = struct
            | Some extended_env -> return extended_env
            | None -> fail PatternMismatch))
       value_binding_list
+  ;;
+
+  let unwrap_typeexpr_list (t : (ident * TypeExpr.t option) list)
+    : (ident * TypeExpr.t list) list
+    =
+    List.map
+      (fun (id, t_opt) ->
+        id, Option.value ~default:[] (Option.map (fun t -> [ t ]) t_opt))
+      t
   ;;
 
   let eval_str_item (env : environment) olist =
@@ -660,7 +743,7 @@ module Interpreter (M : Error_monad) = struct
             in
             return (E.extend acc_env ctor_name (VType (ctor_type, Some type_name))))
           new_env
-          (c1 :: cl)
+          (unwrap_typeexpr_list (c1 :: cl))
       in
       return (neww_env, olist)
   ;;
@@ -735,11 +818,27 @@ module PPrinter = struct
     | VFun _ -> fprintf fmt "<fun>"
     | VFunction _ -> fprintf fmt "<function>"
     | VBuiltin_print _ -> fprintf fmt "<builtin>"
+    | VAdt (VUnit, _, "[]", _) -> fprintf fmt "[]"
+    (* Recursively format list elements *)
+    | VAdt (VTuple (head, tail, []), _, "::", _) ->
+      let rec extract_list acc = function
+        | VAdt (VTuple (hd, tl, []), _, "::", _) -> extract_list (hd :: acc) tl
+        | VAdt (VUnit, _, "[]", _) -> List.rev acc
+        | v -> List.rev (v :: acc)
+      in
+      let elements = extract_list [ head ] tail in
+      fprintf
+        fmt
+        "[%a]"
+        (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") pp_value)
+        elements
+    | VAdt (_, _, "::", _) -> fprintf fmt "hahah pizdec"
     | VAdt (_, _, name, _) -> fprintf fmt "<ADT>: %s" name
     | VConstruct (ct, Some v) ->
       fprintf fmt "%s" ct;
       pp_value fmt v
     | VConstruct (ct, None) -> fprintf fmt "%s" ct
+    | VUnit -> fprintf fmt "unit"
     | _ -> fprintf fmt "Intepreter error: Value error"
   ;;
 
@@ -754,8 +853,6 @@ module PPrinter = struct
     | ParserError -> fprintf fmt "Parser Error"
     | NotAnADT s -> fprintf fmt "Interpreter error: %s is not an ADT" s
     | NotAnADTVariant s -> fprintf fmt "Interpreter error: %s is not an ADT's variant" s
-    | InvalidConstructorArguments s ->
-      fprintf fmt "Interpreter error: Invalid arguments at %s" s
     | UndefinedConstructor s ->
       fprintf fmt "Interpreter error: Undefined constructor %s" s
   ;;

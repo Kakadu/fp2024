@@ -841,24 +841,22 @@ let infer_structure_item ~debug env item marity =
                    constr_name
                    (Forall (varset, Type_arrow (typ, adt_type))))
             (* | [ hd; tl ] ->
-               let* _ = RList.map [ hd; tl ] ~f:(check_poly_types ~debug poly arity_map) in
-               return
-               (TypeEnv.extend
-               env_acc
-               constr_name
-               (Forall
-               ( varset
-               , Type_arrow (Type_tuple (hd, tl, []), adt_type) )))
-               | hd :: tl1 :: tl2 ->
-               let* _ =
-               RList.map (hd :: tl1 :: tl2) ~f:(check_poly_types ~debug poly arity_map)
-               in
-               return
-               (TypeEnv.extend
-               env_acc
-               constr_name
+              let* _ = RList.map [ hd; tl ] ~f:(check_poly_types ~debug poly arity_map) in
+              return
+                (TypeEnv.extend
+                   env_acc
+                   constr_name
+                   (Forall (varset, Type_arrow (Type_tuple (hd, tl, []), adt_type))))
+            | hd :: tl1 :: tl2 ->
+              let* _ =
+                RList.map (hd :: tl1 :: tl2) ~f:(check_poly_types ~debug poly arity_map)
+              in
+              return
+                (TypeEnv.extend
+                   env_acc
+                   constr_name
+                   (Forall (varset, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type)))) *)
 
-               (Forall (varset, Type_arrow (Type_tuple (hd, tl1, tl2), adt_type)))) *)
           in
           (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
           return new_env)

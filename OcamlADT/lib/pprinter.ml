@@ -57,8 +57,11 @@ let rec pprint_type fmt =
         (List.map tyel ~f:(fun t ->
            match t with
            | Type_var tye -> asprintf "'%s" tye
-           | _ -> ""))
-      (*todo: i guess it shouldn't be presented in ast -> add error*)
+           | Type_tuple (t1, t2, rest) ->
+             let tuple_types = t1 :: t2 :: rest in
+             let tuple_str = String.concat ~sep:" * " (List.map tuple_types ~f:show) in
+             "(" ^ tuple_str ^ ")"
+           | _ -> show t))
     in
     let tyel_strf =
       match List.length tyel with
@@ -263,14 +266,6 @@ let pprint_structure_item fmt n =
         ^ String.concat ~sep:", '" (List.map tparam ~f:(fun param -> asprintf "%s" param))
         ^ ") "
     in
-    let tyl_str typ =
-      String.concat
-        ~sep:" * "
-        (List.map typ ~f:(fun tye ->
-           match tye with
-           | TypeExpr.Type_var _ -> asprintf "'%a" pprint_type tye
-           | _ -> asprintf "%a" pprint_type tye))
-    in
     let var_t_str =
       match constr1 :: constrl with
       | [] -> failwith "No variants in type after eq sign\n"
@@ -280,8 +275,8 @@ let pprint_structure_item fmt n =
             ~sep:"\n  | "
             (List.map (constr1 :: constrl) ~f:(fun (id, typ) ->
                match typ with
-               | [] -> id
-               | _ -> asprintf "%s of %s" id (tyl_str typ)))
+               | Some t -> asprintf "%s of %a" id pprint_type t
+               | None -> asprintf "%s" id))
     in
     fprintf fmt "type %s%s =\n%s\n;;\n\n" tparam_ident_str id var_t_str
 ;;
