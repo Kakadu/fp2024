@@ -187,10 +187,7 @@ let ptypeconstr =
     match tname, tparams with
     | Some "", [] | None, [] | None, [ TypeExpr.Type_var _ ] ->
       fail "Type constructor cannot have a single type parameter without a name"
-    | Some name, tp ->
-      (match List.length tp with
-       | 0 -> return (TypeExpr.Type_var name)
-       | _ -> return (TypeExpr.Type_construct (name, tparams)))
+    | Some name, _ -> return (TypeExpr.Type_construct (name, tparams))
     | None, _ ->
       (match tparams with
        | x :: _ -> return x

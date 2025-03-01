@@ -1139,7 +1139,7 @@ let%expect_test "ADT of" =
   type 'a koka = Circle of int ;;
   let x = Circle 5
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| val x : 'a koka |}]
 ;;
 
 let%expect_test "ADT of few" =
@@ -1153,7 +1153,7 @@ let%expect_test "ADT of few" =
 let x = 10;;
 let Circle (5,5) = Circle x;;
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 let%expect_test "ADT with poly" =
@@ -1168,7 +1168,7 @@ let y = Circle x
 let (z: int shape) = Rectangle (2,5)
 let q = Square 34985734895
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 let%expect_test "ADT with poly2" =
@@ -1176,7 +1176,7 @@ let%expect_test "ADT with poly2" =
   type 'a shape = 
    Square of int;;
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "ADT with poly3" =
@@ -1187,7 +1187,7 @@ let%expect_test "ADT with poly3" =
   | Square of int * 'a * 'a
 ;;
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 let%expect_test "ADT with poly constraint" =
@@ -1199,7 +1199,7 @@ let%expect_test "ADT with poly constraint" =
 ;;
 let (x: shape) = Circle 5;;
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 let%expect_test "ADT with constraint" =
@@ -1211,7 +1211,7 @@ let%expect_test "ADT with constraint" =
 ;;
 let (x: (int,int) shape) = Circle 5;;
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 let%expect_test "ADT with constraint exp" =
@@ -1225,7 +1225,7 @@ let y = Circle 5;;
 let (x: char shape) = y;;
 let z g = g;;
 |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
 
 let%expect_test "ADT arity" =
@@ -1234,7 +1234,7 @@ type 'a foo = Foo
 type bar = Bar of foo
 
 |};
-  [%expect {| Unbound_variable: "foo" |}]
+  [%expect {| Arity_mismatch |}]
 ;;
 
 let%expect_test "ADT arity" =
@@ -1263,5 +1263,5 @@ type shape = Circle of int
   | Rectangle of (int * int) * int
 ;;
   |};
-  [%expect {| Unbound_variable: "int" |}]
+  [%expect {| Not supported syntax |}]
 ;;
