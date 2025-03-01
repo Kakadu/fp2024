@@ -110,7 +110,16 @@ let p_pattern =
 
 (* ========== exprs ========== *)
 
-let p_list e = token "[" *> sep_by (token ";") e <* token "]" >>| fun es -> EList es
+let p_list e = token "[" *> sep_by (token ";" *> ws) e <* token "]" >>| fun es -> EList es
+
+let p_branch e =
+  fix (fun p_branch ->
+    lift3
+      (fun ei et ee -> EIf (ei, et, ee))
+      (token "if" *> (p_branch <|> e))
+      (token "then" *> (p_branch <|> e))
+      (option None (token "else" *> (p_branch <|> e) >>| Option.some)))
+;;
 
 let p_expression =
   fix
@@ -123,7 +132,9 @@ let p_expression =
       ; p_list e
       ]
   in
-  term
+  let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
+  let branch = p_branch e <|> apply in
+  branch
 ;;
 
 (* ========== top level ========== *)
