@@ -136,74 +136,52 @@ let get_address32_value = function
 ;;
 
 let init_data program =
-  let rec traverse_program
-    program
-    temporary_pc_counter
-    memory_int
-    memory_str
-    memory_writable
-    =
+  let rec traverse_program program temp_pc memory_int memory_str memory_writable =
     match program with
     | [] -> memory_int, memory_str, memory_writable
     | InstructionExpr _ :: rest ->
       let memory_writable =
         List.fold_left
-          (fun acc offset ->
-            Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
+          (fun acc offset -> Int64Map.add (Int64.add temp_pc offset) false acc)
           memory_writable
           [ 0L; 1L; 2L; 3L ]
       in
-      traverse_program
-        rest
-        (Int64.add temporary_pc_counter 4L)
-        memory_int
-        memory_str
-        memory_writable
+      traverse_program rest (Int64.add temp_pc 4L) memory_int memory_str memory_writable
     | DirectiveExpr (Word integer) :: rest ->
-      let memory_int =
-        Int64Map.add temporary_pc_counter (Int64.of_int integer) memory_int
-      in
-      let memory_writable = Int64Map.add temporary_pc_counter true memory_writable in
+      let memory_int = Int64Map.add temp_pc (Int64.of_int integer) memory_int in
+      let memory_writable = Int64Map.add temp_pc true memory_writable in
       let memory_writable =
         List.fold_left
-          (fun acc offset ->
-            Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
+          (fun acc offset -> Int64Map.add (Int64.add temp_pc offset) false acc)
           memory_writable
           [ 1L; 2L; 3L ]
       in
-      traverse_program
-        rest
-        (Int64.add temporary_pc_counter 4L)
-        memory_int
-        memory_str
-        memory_writable
+      traverse_program rest (Int64.add temp_pc 4L) memory_int memory_str memory_writable
     | DirectiveExpr (Space integer) :: rest ->
       traverse_program
         rest
-        (Int64.add temporary_pc_counter (Int64.of_int integer))
+        (Int64.add temp_pc (Int64.of_int integer))
         memory_int
         memory_str
         memory_writable
     | DirectiveExpr (StringDir str) :: rest ->
-      let memory_int = Int64Map.add temporary_pc_counter 0L memory_int in
-      let memory_str = Int64Map.add temporary_pc_counter str memory_str in
+      let memory_int = Int64Map.add temp_pc 0L memory_int in
+      let memory_str = Int64Map.add temp_pc str memory_str in
       let str_length = String.length str in
-      let memory_writable = Int64Map.add temporary_pc_counter true memory_writable in
+      let memory_writable = Int64Map.add temp_pc true memory_writable in
       let memory_writable =
         List.fold_left
-          (fun acc offset ->
-            Int64Map.add (Int64.add temporary_pc_counter offset) false acc)
+          (fun acc offset -> Int64Map.add (Int64.add temp_pc offset) false acc)
           memory_writable
           (List.init (str_length - 1) (fun i -> Int64.of_int (i + 1)))
       in
       traverse_program
         rest
-        (Int64.add temporary_pc_counter (Int64.of_int str_length))
+        (Int64.add temp_pc (Int64.of_int str_length))
         memory_int
         memory_str
         memory_writable
-    | _ :: rest ->
-      traverse_program rest temporary_pc_counter memory_int memory_str memory_writable
+    | _ :: rest -> traverse_program rest temp_pc memory_int memory_str memory_writable
   in
   traverse_program program 0L Int64Map.empty Int64Map.empty Int64Map.empty
 ;;
