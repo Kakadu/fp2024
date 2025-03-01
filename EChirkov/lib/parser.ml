@@ -121,6 +121,8 @@ let p_branch e =
       (option None (token "else" *> (p_branch <|> e) >>| Option.some)))
 ;;
 
+let p_binop tkn binop = token tkn *> return (fun el er -> EBinary (binop, el, er))
+
 let p_expression =
   fix
   @@ fun e ->
@@ -134,7 +136,23 @@ let p_expression =
   in
   let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
   let branch = p_branch e <|> apply in
-  branch
+  let multiplydivide_op = chainl1 branch (p_binop "*" Mul <|> p_binop "/" Div) in
+  let plusminus_op = chainl1 multiplydivide_op (p_binop "+" Add <|> p_binop "-" Sub) in
+  let compare_op =
+    chainl1
+      plusminus_op
+      (choice
+         [ p_binop "&&" And
+         ; p_binop "||" Or
+         ; p_binop ">" Gt
+         ; p_binop "<" Lt
+         ; p_binop ">=" Gte
+         ; p_binop "<=" Lte
+         ; p_binop "=" Eq
+         ; p_binop "<>" NEq
+         ])
+  in
+  compare_op
 ;;
 
 (* ========== top level ========== *)
