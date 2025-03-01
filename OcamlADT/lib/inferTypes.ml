@@ -19,12 +19,16 @@ type scheme = Forall of binder_set * t [@@deriving show { with_path = false }]
 
 open Base
 
+(** get polymorphic type names from VarSet *)
 let binder_to_list args =
   let args = VarSet.elements args in
   Base.List.sort (Base.List.map args ~f:int_of_string) ~compare:Stdlib.Int.compare
 ;;
 
-let minimizer dargs =
+(** turn ['2, '5, '1231, ...] (value is not important, only order) list of
+    names of polymorphic types into ['a, 'b, 'c ... ]
+    when english alphabet is out, turn values into  ['aa, 'bb, ...] and etc.*)
+let minimize dargs =
   let counter = 0 in
   let coef = 0 in
   let m = Base.Map.empty (module Base.String) in
@@ -48,62 +52,62 @@ let minimizer dargs =
     Base.Map.set m ~key:el ~data:str, coef, counter)
 ;;
 
-let rec pprint_type_tuple ?(m = Map.empty (module String)) fmt = function
+let rec pprint_type_tuple ?(poly_names_map = Map.empty (module String)) fmt = function
   | [] -> ()
   | [ h ] ->
     (match h with
-     | Type_arrow (_, _) -> fprintf fmt "(%a)" (pprint_type ~m) h
-     | _ -> fprintf fmt "%a" (pprint_type ~m) h)
+     | Type_arrow (_, _) -> fprintf fmt "(%a)" (pprint_type ~poly_names_map) h
+     | _ -> fprintf fmt "%a" (pprint_type ~poly_names_map) h)
   | h :: tl ->
     (match h with
      | Type_arrow (_, _) ->
-       fprintf fmt "(%a) * %a" (pprint_type ~m) h (pprint_type_tuple ~m) tl
-     | _ -> fprintf fmt "%a * %a" (pprint_type ~m) h (pprint_type_tuple ~m) tl)
+       fprintf fmt "(%a) * %a" (pprint_type ~poly_names_map) h (pprint_type_tuple ~poly_names_map) tl
+     | _ -> fprintf fmt "%a * %a" (pprint_type ~poly_names_map) h (pprint_type_tuple ~poly_names_map) tl)
 
-and pprint_type ?(m = Map.empty (module String)) fmt = function
+and pprint_type ?(poly_names_map = Map.empty (module String)) fmt = function
   | Type_var num ->
-    (* let _ =  Base.Map.iteri m ~f:(fun ~key ~data ->
-       Format.fprintf fmt "Key: %s, Value: %s\n" key data) in *)
-    (* let _ = printf  "Key %s\n" num  in *)
-    (match Map.find m num with
+    (match Map.find poly_names_map num with
      | Some k -> fprintf fmt "'%s" k
      | None -> fprintf fmt "'%s" num)
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
      | Type_arrow (_, _), _ ->
-       fprintf fmt "(%a) -> %a" (pprint_type ~m) ty1 (pprint_type ~m) ty2
-     | _ -> fprintf fmt "%a -> %a" (pprint_type ~m) ty1 (pprint_type ~m) ty2)
+       fprintf fmt "(%a) -> %a" (pprint_type ~poly_names_map) ty1 (pprint_type ~poly_names_map) ty2
+     | _ -> fprintf fmt "%a -> %a" (pprint_type ~poly_names_map) ty1 (pprint_type ~poly_names_map) ty2)
   | Type_tuple (t1, t2, ty_lst) ->
-    fprintf fmt "%a" (pprint_type_tuple ~m) (t1 :: t2 :: ty_lst)
+    fprintf fmt "%a" (pprint_type_tuple ~poly_names_map) (t1 :: t2 :: ty_lst)
   | Type_construct (name, []) -> fprintf fmt "%s" name
   | Type_construct (name, ty_list) ->
-    fprintf fmt "%a %s" (pprint_type_list_with_parens ~m) ty_list name
+    fprintf fmt "%a %s" (pprint_type_list_with_parens ~poly_names_map) ty_list name
 
-and pprint_type_list_with_parens ?(m = Map.empty (module String)) fmt ty_list =
+and pprint_type_list_with_parens ?(poly_names_map = Map.empty (module String)) fmt ty_list =
   let rec print_types fmt = function
     | [] -> ()
-    | [ ty ] -> (pprint_type_with_parens_if_tuple ~m) fmt ty
+    | [ ty ] -> (pprint_type_with_parens_if_tuple ~poly_names_map) fmt ty
     | ty :: rest ->
-      fprintf fmt "%a %a" (pprint_type_with_parens_if_tuple ~m) ty print_types rest
+      fprintf fmt "%a %a" (pprint_type_with_parens_if_tuple ~poly_names_map) ty print_types rest
   in
   print_types fmt ty_list
 
-and pprint_type_with_parens_if_tuple ?(m = Map.empty (module String)) fmt ty =
+and pprint_type_with_parens_if_tuple ?(poly_names_map = Map.empty (module String)) fmt ty =
   match ty with
-  | Type_tuple _ -> fprintf fmt "(%a)" (pprint_type ~m) ty
-  | _ -> (pprint_type ~m) fmt ty
+  | Type_tuple _ -> fprintf fmt "(%a)" (pprint_type ~poly_names_map) ty
+  | _ -> (pprint_type ~poly_names_map) fmt ty
 ;;
 
 (*errors*)
 type error =
   | Occurs_check of string * Ast.TypeExpr.t
+  (** same polymotphic type occured while substitution apply ['a : 'a -> 'b]*)
   | Unification_failed of Ast.TypeExpr.t * Ast.TypeExpr.t
-  | Unbound_adt_type of string
   | Unbound_variable of string
   | Arity_mismatch
+  (** mismatch of types arity
+      [type 'a foo = Foo
+      type bar = Bar of foo] *)
   | Undeclared_type of string
   | Not_supported
-  | Wrong_rec
+  | Wrong_rec (** invalid right value in recursive let declaration *)
 
 let collect_type_vars typ =
   let rec aux acc = function
@@ -123,25 +127,24 @@ let collect_vars_from_error = function
 
 let pp_inf_err fmt err =
   let type_vars = collect_vars_from_error err in
-  let var_map, _, _ = minimizer (List.map type_vars ~f:Stdlib.int_of_string) in
+  let var_map, _, _ = minimize (List.map type_vars ~f:Stdlib.int_of_string) in
   match err with
   | Occurs_check (str, t) ->
     fprintf
       fmt
       "Occurs_check: %a and %a\n"
-      (pprint_type ~m:var_map)
+      (pprint_type ~poly_names_map:var_map)
       (Type_var str)
-      (pprint_type ~m:var_map)
+      (pprint_type ~poly_names_map:var_map)
       t
   | Unification_failed (typ1, typ2) ->
     fprintf
       fmt
       "Unification_failed: %a # %a"
-      (pprint_type ~m:var_map)
+      (pprint_type ~poly_names_map:var_map)
       typ1
-      (pprint_type ~m:var_map)
+      (pprint_type ~poly_names_map:var_map)
       typ2
-  | Unbound_adt_type str -> fprintf fmt "Unbound_adt_type: %S" str
   | Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
   | Arity_mismatch -> fprintf fmt "Arity_mismatch"
   | Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
