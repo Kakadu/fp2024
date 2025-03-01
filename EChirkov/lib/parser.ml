@@ -65,10 +65,6 @@ let p_rec_flag =
   choice [ take_while1 is_ws *> token "rec" *> return Recursive; return Nonrecursive ]
 ;;
 
-(* ========== patterns ========== *)
-
-let p_pattern = fix @@ fun p -> return PAny
-
 (* ========== consts ========== *)
 
 let p_string =
@@ -104,6 +100,14 @@ let p_variable =
   | _ -> fail (UnexpectedToken "Expected an identifier" |> pp_error)
 ;;
 
+(* ========== patterns ========== *)
+
+let p_pattern =
+  fix
+  @@ fun p ->
+  choice [ (p_variable >>| fun v -> PVar v); (p_unit >>| fun _ -> PUnit); return PAny ]
+;;
+
 (* ========== exprs ========== *)
 
 let p_list e = token "[" *> sep_by (token ";") e <* token "]" >>| fun es -> EList es
@@ -122,12 +126,9 @@ let p_expression =
   term
 ;;
 
-(* let p_e_apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2)))
-   in p_e_apply *)
-
 (* ========== top level ========== *)
 
-let p_binding = lift2 (fun p e -> p, e) p_pattern (token "=" *> p_expression)
+let p_binding = lift2 (fun p e -> p, e) p_pattern (token "=" *> ws *> p_expression)
 
 let p_structure_item =
   lift3
@@ -137,7 +138,7 @@ let p_structure_item =
     (many (token "and" *> p_binding))
 ;;
 
-let p_program = many p_structure_item <* end_of_input
+let p_program = many p_structure_item <* ws
 
 (* actuall parser function *)
 
