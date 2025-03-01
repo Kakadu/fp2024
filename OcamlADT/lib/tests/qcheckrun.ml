@@ -18,7 +18,7 @@ let arbitrary =
 let test_round_trip2 =
   QCheck.Test.make
     ~name:"round-trip parsing and pretty printing"
-    ~count:0
+    ~count:5
     arbitrary
     (fun program ->
        let program_ast = show_program program in

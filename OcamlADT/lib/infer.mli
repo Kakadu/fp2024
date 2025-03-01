@@ -38,3 +38,4 @@ val run_infer_program
   -> Ast.program
   -> TypeEnv.t
   -> (TypeEnv.t, InferTypes.error) Result.t
+
