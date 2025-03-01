@@ -80,7 +80,7 @@ module Type = struct
     | Type_tuple (t1, t2, t) ->
       List.fold_left (fun acc h -> acc || occurs_check tvar h) false (t1 :: t2 :: t)
     | Type_construct (_, ty) ->
-      List.fold_left (fun acc h -> acc || occurs_check tvar h) false ty (*maybe rework*)
+      List.fold_left (fun acc h -> acc || occurs_check tvar h) false ty
   ;;
 
   let free_vars =
@@ -90,7 +90,7 @@ module Type = struct
       | Type_tuple (t1, t2, t) ->
         List.fold_left (fun acc h -> helper acc h) acc (t1 :: t2 :: t)
       | Type_construct (_, ty) ->
-        List.fold_left (fun acc h -> helper acc h) acc ty (*maybe rework*)
+        List.fold_left (fun acc h -> helper acc h) acc ty
     in
     helper VarSet.empty
   ;;
@@ -108,7 +108,7 @@ module Substitution = struct
         ppf
         "%s <-> %a @@ "
         str
-        (pprint_type ~m:(Base.Map.empty (module Base.String)))
+        (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
         ty);
     Stdlib.Format.fprintf ppf "\n"
   ;;
@@ -221,14 +221,14 @@ module Scheme = struct
     | Forall (st, typ) ->
       if VarSet.is_empty st
       then
-        Format.fprintf fmt "%a" (pprint_type ~m:(Base.Map.empty (module Base.String))) typ
+        Format.fprintf fmt "%a" (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String))) typ
       else
         Format.fprintf
           fmt
           "%a. %a"
           VarSet.pp
           st
-          (pprint_type ~m:(Base.Map.empty (module Base.String)))
+          (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
           typ
   ;;
 end
@@ -475,7 +475,7 @@ let rec infer_exp ~debug exp env =
          then
            Stdlib.Format.printf
              "DEBUG: &&&&&&&%a\n"
-             (pprint_type ~m:(Base.Map.empty (module Base.String)))
+             (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
              fresh;
          Substitution.unify (Substitution.apply sub2 typ1) (Type_arrow (typ2, fresh))
        in
@@ -595,7 +595,7 @@ let rec infer_exp ~debug exp env =
     then
       Stdlib.Format.printf
         "DEBUG: AFTER EXPR%a\n"
-        (pprint_type ~m:(Base.Map.empty (module Base.String)))
+        (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
         typp;
     let* comp_sub = Substitution.compose sub subb in
     return (comp_sub, typp)
@@ -641,7 +641,7 @@ and infer_value_binding_list ~debug vb_list env sub =
           then
             Stdlib.Format.printf
               "DEBUG: type of expr in vb:%a\n"
-              (pprint_type ~m:(Base.Map.empty (module Base.String)))
+              (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
               typ;
           let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
           if debug
@@ -668,7 +668,7 @@ and infer_value_binding_list ~debug vb_list env sub =
           then
             Stdlib.Format.printf
               "DEBUG: type of expr in vb:%a\n"
-              (pprint_type ~m:(Base.Map.empty (module Base.String)))
+              (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
               typ;
           let* res_env, res_sub = infer_rest_vb ~debug env_acc sub_acc sub typ pat in
           if debug

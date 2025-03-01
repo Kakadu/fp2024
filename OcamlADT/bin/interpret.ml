@@ -101,8 +101,8 @@ let process_input options ast =
            | Some id ->
              (match Base.Map.find env id with
               | Some (Forall (args, typ)) ->
-                let m, _, _ = minimizer (binder_to_list args) in
-                let type_str = Format.asprintf "%a" (pprint_type ~m) typ in
+                let m, _, _ = minimize (binder_to_list args) in
+                let type_str = Format.asprintf "%a" (pprint_type ~poly_names_map:m) typ in
                 Format.printf "val %s : %s = %a\n" id type_str PPrinter.pp_value v
               | None -> Format.printf "val %s = %a\n" id PPrinter.pp_value v)
            | None -> if v <> VString "" then Format.printf "_ = %a\n" PPrinter.pp_value v)

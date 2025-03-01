@@ -11,11 +11,11 @@ let pprint_result env utils =
       (match data with
        | Forall (args, typ) ->
          (* let _ = printf "NAME %a\n" (pprint_type ~m:(Base.Map.empty (module Base.String))) typ in *)
-         let m, _, _ = minimizer (binder_to_list args) in
+         let m, _, _ = minimize (binder_to_list args) in
          (match key with
           | x when x.[0] >= 'A' && x.[0] <= 'Z' -> printf ""
-          | "-" -> printf "%s : %a\n" key (pprint_type ~m) typ
-          | _ -> printf "val %s : %a\n" key (pprint_type ~m) typ)))
+          | "-" -> printf "%s : %a\n" key (pprint_type ~poly_names_map:m) typ
+          | _ -> printf "val %s : %a\n" key (pprint_type ~poly_names_map:m) typ)))
 ;;
 
 let parse_and_infer_result program =

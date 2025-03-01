@@ -30,7 +30,6 @@ module TypeEnv : sig
   val pp_env : Format.formatter -> t -> unit
 end
 
-val empty_env : TypeEnv.t
 val env_with_things : TypeEnv.t
 
 val run_infer_program
