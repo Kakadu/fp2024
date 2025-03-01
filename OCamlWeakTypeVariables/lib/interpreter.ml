@@ -158,6 +158,58 @@ module Inter = struct
   let rec eval_expr env = function
     | Pexp_ident id -> find_exn env id
     | Pexp_constant const -> eval_const const
+    | Pexp_apply (Pexp_ident "print_int", [ e1 ]) ->
+      let* value = eval_expr env e1 in
+      (match value with
+       | Val_integer i ->
+         (* There is must no be newline, but without that manytests work poorly *)
+         Format.printf "%d\n" i;
+         return (Val_construct ("()", None))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "+", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_integer (f + s))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "-", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_integer (f - s))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "*", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_integer (f * s))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "/", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_integer (f / s))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "<=", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_boolean (f <= s))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "<", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_boolean (f < s))
+       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident "=", [ e1; e2 ]) ->
+      let* first = eval_expr env e1 in
+      let* second = eval_expr env e2 in
+      (match first, second with
+       | Val_integer f, Val_integer s -> return (Val_boolean (f = s))
+       | Val_boolean f, Val_boolean s -> return (Val_boolean (f = s))
+       | Val_string f, Val_string s -> return (Val_boolean (f = s))
+       | _ -> fail Type_error)
     | Pexp_apply (e0, es) ->
       let rec helper value0 es =
         match es with

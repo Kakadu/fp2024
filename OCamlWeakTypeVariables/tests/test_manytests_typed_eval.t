@@ -1,48 +1,87 @@
   $ ../bin/REPL.exe <<EOF
   > (fun x -> x) (fun x -> x) (fun x -> x) 5
-  Value: 5
+
   $ ../bin/REPL.exe < manytests/typed/001fac.ml
-  Error: : end_of_input
+  24
 
   $ ../bin/REPL.exe < manytests/typed/002fac.ml
-  Error: : end_of_input
+  24
 
   $ ../bin/REPL.exe < manytests/typed/003fib.ml
-  Error: : end_of_input
+  3
+  3
 
   $ ../bin/REPL.exe < manytests/typed/004manyargs.ml
-  Error: : end_of_input
+  1111111111
+  1
+  10
+  100
 
   $ ../bin/REPL.exe < manytests/typed/005fix.ml
-  Error: : end_of_input
-
-  $ ../bin/REPL.exe < manytests/typed/006partial2.ml
-  Error: : end_of_input
-
-  $ ../bin/REPL.exe < manytests/typed/006partial3.ml
-  Error: : end_of_input
+  720
 
   $ ../bin/REPL.exe < manytests/typed/006partial.ml
-  Error: : end_of_input
+  1122
 
+  $ ../bin/REPL.exe < manytests/typed/006partial2.ml
+  1
+  2
+  3
+  7
+
+  $ ../bin/REPL.exe < manytests/typed/006partial3.ml
+  4
+  8
+  9
+
+Argument eval order is undefined in OCaml, so in my language that also undefined 😼
   $ ../bin/REPL.exe < manytests/typed/007order.ml
-  Error: : end_of_input
+  1
+  2
+  4
+  -1
+  103
+  -555555
+  10000
 
   $ ../bin/REPL.exe < manytests/typed/008ascription.ml
-  Error: : end_of_input
+  8
 
   $ ../bin/REPL.exe < manytests/typed/009let_poly.ml
-  Fatal error: exception "Match_failure lib/interpreter.ml:185:27"
-  Raised at Lib__Interpreter.Inter.eval_structure in file "lib/interpreter.ml", line 185, characters 27-119
-  Called from Lib__Interpreter.run_interpret_exn in file "lib/interpreter.ml", line 213, characters 8-31
-  Called from Dune__exe__REPL.run_single in file "bin/REPL.ml", line 50, characters 19-58
-  Called from Dune__exe__REPL.run_single in file "bin/REPL.ml", line 48, characters 6-249
-  [2]
+
   $ cat manytests/typed/010sukharev.ml | ../bin/REPL.exe
-  Error: Error while interpret pattern ((Ppat_construct ("Some", (Some (Ppat_var "f"))
-                                    ))) with value (1)
+  Error while interpret expression ((Pexp_match (
+                                       (Pexp_construct ("Some",
+                                          (Some (Pexp_ident "id")))),
+                                       [{ pc_lhs =
+                                          (Ppat_construct ("Some",
+                                             (Some (Ppat_var "f"))));
+                                          pc_rhs =
+                                          (Pexp_let (NonRecursive,
+                                             [{ pvb_pat = Ppat_any;
+                                                pvb_expr =
+                                                (Pexp_apply ((Pexp_ident "f"),
+                                                   [(Pexp_constant
+                                                       (Pconst_string "42"))
+                                                     ]
+                                                   ))
+                                                }
+                                               ],
+                                             (Pexp_apply ((Pexp_ident "f"),
+                                                [(Pexp_constant (Pconst_int 42))
+                                                  ]
+                                                ))
+                                             ))
+                                          };
+                                         { pc_lhs =
+                                           (Ppat_construct ("None", None));
+                                           pc_rhs =
+                                           (Pexp_constant (Pconst_int 0)) }
+                                         ]
+                                       )))
 
   $ ../bin/REPL.exe < manytests/typed/015tuples.ml
-  Error: : end_of_input
+  1
+  Error: No variable with name modd
   $ ../bin/REPL.exe < manytests/typed/016lists.ml
-  Error: : end_of_input
+  Error: No variable with name print_int
