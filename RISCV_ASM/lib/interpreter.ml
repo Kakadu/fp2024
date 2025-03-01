@@ -511,17 +511,19 @@ let store_memory_int address value size =
     let* memory_writable =
       match size with
       | 1 ->
-        return state.memory_writable
-        (* address of this byte is already writable, and we don't touch other addreses *)
+        let memory_writable = state.memory_writable |> Int64Map.add address true in
+        return memory_writable
       | 2 ->
         let memory_writable =
-          state.memory_writable |> Int64Map.add (Int64.add address 1L) false
-          (* address of first byte is already writable, and we make next one not writable *)
+          state.memory_writable
+          |> Int64Map.add address true
+          |> Int64Map.add (Int64.add address 1L) false
         in
         return memory_writable
       | 4 ->
         let memory_writable =
           state.memory_writable
+          |> Int64Map.add address true
           |> Int64Map.add (Int64.add address 1L) false
           |> Int64Map.add (Int64.add address 2L) false
           |> Int64Map.add (Int64.add address 3L) false
