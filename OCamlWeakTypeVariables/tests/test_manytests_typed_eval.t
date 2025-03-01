@@ -39,7 +39,8 @@
   Called from Dune__exe__REPL.run_single in file "bin/REPL.ml", line 48, characters 6-249
   [2]
   $ cat manytests/typed/010sukharev.ml | ../bin/REPL.exe
-  Error: : end_of_input
+  Error: Error while interpret pattern ((Ppat_construct ("Some", (Some (Ppat_var "f"))
+                                    ))) with value (1)
 
   $ ../bin/REPL.exe < manytests/typed/015tuples.ml
   Error: : end_of_input

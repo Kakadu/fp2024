@@ -1,14 +1,5 @@
 open Ast
 
-type error =
-  | Type_error
-  | No_variable of string
-
-let pp_error ppf : error -> _ = function
-  | Type_error -> Format.fprintf ppf "Type error"
-  | No_variable s -> Format.fprintf ppf "No variable with name %s" s
-;;
-
 type value =
   | Val_integer of int
   | Val_string of string
@@ -38,6 +29,24 @@ let rec pp_value ppf =
   | Val_construct (tag, None) -> fprintf ppf "%s" tag
   | Val_construct ("Some", Some value) -> fprintf ppf "Some %a" pp_value value
   | Val_construct (tag, Some v) -> fprintf ppf "[%s] %a" tag pp_value v
+;;
+
+type error =
+  | Type_error
+  | Pattern_error of pattern * value
+  | No_variable of string
+
+let pp_error ppf : error -> _ = function
+  | Type_error -> Format.fprintf ppf "Type error"
+  | Pattern_error (pat, value) ->
+    Format.fprintf
+      ppf
+      "Error while interpret pattern (%a) with value (%a)"
+      pp_pattern
+      pat
+      pp_value
+      value
+  | No_variable s -> Format.fprintf ppf "No variable with name %s" s
 ;;
 
 module Res = struct
@@ -106,7 +115,7 @@ module Inter = struct
       when pat_name = val_name -> return env
     | Ppat_construct (pat_name, Some cnstr), Val_construct (val_name, Some value) ->
       if pat_name <> val_name then fail Type_error else match_pattern env (cnstr, value)
-    | _ -> fail Type_error
+    | o, v -> fail (Pattern_error (o, v))
   ;;
 
   let eval_const = function
