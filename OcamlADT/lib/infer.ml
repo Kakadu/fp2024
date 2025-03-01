@@ -100,6 +100,7 @@ module Substitution = struct
   open MInfer
   open MInfer.Syntax
   open Base
+  type t = (string, Type.t, Base.String.comparator_witness) Base.Map.t
 
   let pp_sub ppf (sub : (string, Type.t, Base.String.comparator_witness) Base.Map.t) =
     Stdlib.Format.fprintf ppf "\nSubst:\n";
