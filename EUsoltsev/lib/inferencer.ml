@@ -224,7 +224,6 @@ module TypeEnv = struct
   type t = (ident, scheme, String.comparator_witness) Map.t
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-  let remove = Map.remove
 
   let free_vars : t -> IntSet.t =
     Map.fold ~init:IntSet.empty ~f:(fun ~key:_ ~data:scheme acc ->

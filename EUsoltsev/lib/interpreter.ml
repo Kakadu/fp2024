@@ -26,42 +26,6 @@ and value_error =
   | PatternMatchingError
   | LHS
 
-let rec pp_value ppf = function
-  | ValueInt x -> fprintf ppf "%d" x
-  | ValueBool b -> fprintf ppf "%b" b
-  | ValueString s -> fprintf ppf "%S" s
-  | ValueUnit -> fprintf ppf "()"
-  | ValueTuple (v1, v2, vl) ->
-    fprintf
-      ppf
-      "(%a, %a%a)"
-      pp_value
-      v1
-      pp_value
-      v2
-      (fun ppf -> function
-        | [] -> ()
-        | l ->
-          fprintf
-            ppf
-            ", %a"
-            (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
-            l)
-      vl
-  | ValueList vl ->
-    fprintf
-      ppf
-      "[%a]"
-      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
-      vl
-  | ValueClosure _ -> fprintf ppf "<fun>"
-  | ValueBuiltin _ -> fprintf ppf "<builtin>"
-  | ValueOption opt ->
-    (match opt with
-     | Some v -> fprintf ppf "Some %a" pp_value v
-     | None -> fprintf ppf "None")
-;;
-
 let pp_value_error fmt = function
   | UnboundVariable ident -> fprintf fmt "UnboundVariable: %S" ident
   | TypeError -> fprintf fmt "TypeError"
