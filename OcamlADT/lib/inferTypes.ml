@@ -19,10 +19,10 @@ type scheme = Forall of binder_set * t [@@deriving show { with_path = false }]
 
 open Base
 
-(** get polymorphic type names from VarSet *)
+(* get polymorphic type names from VarSet *)
 let binder_to_list args =
   let args = VarSet.elements args in
-  Base.List.sort (Base.List.map args ~f:int_of_string) ~compare:Stdlib.Int.compare
+  List.sort (List.map args ~f:Int.of_string) ~compare:Int.compare
 ;;
 
 (** turn ['2, '5, '1231, ...] (value is not important, only order) list of
@@ -31,23 +31,19 @@ let binder_to_list args =
 let minimize dargs =
   let counter = 0 in
   let coef = 0 in
-  let m = Base.Map.empty (module Base.String) in
-  Base.List.fold_left dargs ~init:(m, coef, counter) ~f:(fun (m, coef, counter) el ->
+  let m = Map.empty (module Base.String) in
+  List.fold_left dargs ~init:(m, coef, counter) ~f:(fun (m, coef, counter) el ->
     let str =
       let rec build coef counter str =
         if coef = 0
-        then str ^ Stdlib.Char.escaped (Stdlib.Char.chr (counter + 97))
-        else
-          build
-            (coef - 1)
-            counter
-            (str ^ Stdlib.Char.escaped (Stdlib.Char.chr (counter + 97)))
+        then str ^ Char.escaped (Stdlib.Char.chr (counter + 97))
+        else build (coef - 1) counter (str ^ Char.escaped (Stdlib.Char.chr (counter + 97)))
       in
       build coef counter ""
     in
     let counter = counter + 1 in
     let coef = coef + (counter / 26) in
-    let counter = counter mod 26 in
+    let counter = counter % 26 in
     let el = Stdlib.string_of_int el in
     Base.Map.set m ~key:el ~data:str, coef, counter)
 ;;
@@ -61,8 +57,21 @@ let rec pprint_type_tuple ?(poly_names_map = Map.empty (module String)) fmt = fu
   | h :: tl ->
     (match h with
      | Type_arrow (_, _) ->
-       fprintf fmt "(%a) * %a" (pprint_type ~poly_names_map) h (pprint_type_tuple ~poly_names_map) tl
-     | _ -> fprintf fmt "%a * %a" (pprint_type ~poly_names_map) h (pprint_type_tuple ~poly_names_map) tl)
+       fprintf
+         fmt
+         "(%a) * %a"
+         (pprint_type ~poly_names_map)
+         h
+         (pprint_type_tuple ~poly_names_map)
+         tl
+     | _ ->
+       fprintf
+         fmt
+         "%a * %a"
+         (pprint_type ~poly_names_map)
+         h
+         (pprint_type_tuple ~poly_names_map)
+         tl)
 
 and pprint_type ?(poly_names_map = Map.empty (module String)) fmt = function
   | Type_var num ->
@@ -72,20 +81,40 @@ and pprint_type ?(poly_names_map = Map.empty (module String)) fmt = function
   | Type_arrow (ty1, ty2) ->
     (match ty1, ty2 with
      | Type_arrow (_, _), _ ->
-       fprintf fmt "(%a) -> %a" (pprint_type ~poly_names_map) ty1 (pprint_type ~poly_names_map) ty2
-     | _ -> fprintf fmt "%a -> %a" (pprint_type ~poly_names_map) ty1 (pprint_type ~poly_names_map) ty2)
+       fprintf
+         fmt
+         "(%a) -> %a"
+         (pprint_type ~poly_names_map)
+         ty1
+         (pprint_type ~poly_names_map)
+         ty2
+     | _ ->
+       fprintf
+         fmt
+         "%a -> %a"
+         (pprint_type ~poly_names_map)
+         ty1
+         (pprint_type ~poly_names_map)
+         ty2)
   | Type_tuple (t1, t2, ty_lst) ->
     fprintf fmt "%a" (pprint_type_tuple ~poly_names_map) (t1 :: t2 :: ty_lst)
   | Type_construct (name, []) -> fprintf fmt "%s" name
   | Type_construct (name, ty_list) ->
     fprintf fmt "%a %s" (pprint_type_list_with_parens ~poly_names_map) ty_list name
 
-and pprint_type_list_with_parens ?(poly_names_map = Map.empty (module String)) fmt ty_list =
+and pprint_type_list_with_parens ?(poly_names_map = Map.empty (module String)) fmt ty_list
+  =
   let rec print_types fmt = function
     | [] -> ()
     | [ ty ] -> (pprint_type_with_parens_if_tuple ~poly_names_map) fmt ty
     | ty :: rest ->
-      fprintf fmt "%a %a" (pprint_type_with_parens_if_tuple ~poly_names_map) ty print_types rest
+      fprintf
+        fmt
+        "%a %a"
+        (pprint_type_with_parens_if_tuple ~poly_names_map)
+        ty
+        print_types
+        rest
   in
   print_types fmt ty_list
 
@@ -110,6 +139,8 @@ type error =
   | Unreachable
   | Unsupported_operator of string
   | Wrong_consturct
+  | Wrong_poly_type_adt
+  | Incorrect_list_lengths
 
 let collect_type_vars typ =
   let rec aux acc = function
@@ -154,4 +185,6 @@ let pp_inf_err fmt err =
   | Unreachable -> fprintf fmt "Unreachable"
   | Unsupported_operator op -> fprintf fmt "Operator %s is not supported" op
   | Wrong_consturct -> fprintf fmt "Invalid construct type"
+  | Wrong_poly_type_adt -> fprintf fmt "Only type var supported in adt arguments"
+  | Incorrect_list_lengths -> fprintf fmt "Lists have unequal lengths"
 ;;

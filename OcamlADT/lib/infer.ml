@@ -48,17 +48,6 @@ module MInfer = struct
         xl
     ;;
 
-    let map xs ~f =
-      let open Syntax in
-      let rec helper acc = function
-        | x :: t ->
-          let* res = f x in
-          helper (res :: acc) t
-        | [] -> return (List.rev acc)
-      in
-      helper [] xs
-    ;;
-
     let fold_right xs ~init ~f =
       Base.List.fold_right xs ~init ~f:(fun x acc ->
         let open Syntax in
@@ -204,10 +193,6 @@ end
 
 module Scheme = struct
   type t = scheme
-
-  let occurs_check v = function
-    | Forall (xs, t) -> (not (VarSet.mem v xs)) && Type.occurs_check v t
-  ;;
 
   let free_vars = function
     | Forall (bs, t) -> VarSet.diff (Type.free_vars t) bs
@@ -726,7 +711,7 @@ and infer_rec_value_binding_list ~debug vb_list env sub fresh_vars =
           | _ -> fail Wrong_rec)
     with
     | Ok result -> result
-    | Unequal_lengths -> failwith "Lists have unequal lengths"
+    | Unequal_lengths -> fail Incorrect_list_lengths
   in
   return (res_env, res_sub, names)
 ;;
@@ -785,7 +770,7 @@ let infer_structure_item ~debug env item marity names =
   | Str_eval exp ->
     let* _, typ = infer_exp ~debug exp env in
     let new_env = TypeEnv.extend env "-" (Forall (VarSet.empty, typ)) in
-    return (new_env, marity, names)
+    return (new_env, marity, names @ [ "-" ])
   | Str_value (Nonrecursive, (value_binding, rest)) ->
     let* env, _, names =
       infer_value_binding_list ~debug (value_binding :: rest) env Substitution.empty
@@ -808,9 +793,12 @@ let infer_structure_item ~debug env item marity names =
   | Str_adt (poly, name, (variant, rest)) ->
     if debug then Format.printf "DEBUG: In ADT\n";
     let* env, poly_types = get_names_adt env poly in
-    let varset =
-      Base.List.fold_left poly_types ~init:VarSet.empty ~f:(fun acc (Type_var x) ->
-        VarSet.add x acc)
+    let* varset =
+      Base.List.fold_left poly_types ~init:(return VarSet.empty) ~f:(fun acc varr ->
+        let* acc = acc in
+        match varr with
+        | Type_var x -> return (VarSet.add x acc)
+        | _ -> fail Wrong_poly_type_adt)
     in
     let adt_type = Type_construct (name, poly_types) in
     let type_arity = List.length poly in
@@ -873,8 +861,6 @@ let infer_program ~debug program env =
       Format.printf "Key: %s, Value: %d\n" key data));
   return (env, names)
 ;;
-
-let empty_env = TypeEnv.empty
 
 let env_with_things =
   let things_list =

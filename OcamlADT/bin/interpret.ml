@@ -9,7 +9,6 @@ open Ocamladt_lib.Interpreter.PPrinter
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
 open Format
-open Angstrom
 
 (* ------------------------------- *)
 (*       Command-line Options      *)
@@ -38,18 +37,6 @@ let usage_msg =
 (* ------------------------------- *)
 
 (* A helper that parses a fixed word (like "help" or "quit") with surrounding whitespace. *)
-let parse_word word =
-  let ws = skip_while Base.Char.is_whitespace in
-  ws *> string word *> ws
-;;
-
-let parse_file filename =
-  let ic = open_in filename in
-  let len = in_channel_length ic in
-  let content = really_input_string ic len in
-  close_in ic;
-  parse_str content
-;;
 
 let rec read_repl_input inp_chan =
   match In_channel.input_line inp_chan with
@@ -85,7 +72,7 @@ let process_input options ast =
   let tcr = run_infer_program ast env_with_things in
   match tcr with
   | Error err -> Format.printf "Type error: %a\n" pp_inf_err err
-  | Ok (env,_) ->
+  | Ok (env, _) ->
     (match run_interpreter ast with
      | Error e -> pp_error Format.std_formatter e
      | Ok olist ->

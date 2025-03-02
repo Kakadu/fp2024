@@ -9,11 +9,11 @@ end
 
 module Substitution : sig
   type t = (string, Type.t, Base.String.comparator_witness) Base.Map.t
-
 end
 
 module TypeEnv : sig
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
+
   val pp_env : Format.formatter -> t -> unit
 end
 
@@ -23,4 +23,4 @@ val run_infer_program
   :  ?debug:bool
   -> Ast.program
   -> TypeEnv.t
-  -> ((TypeEnv.t * string list), InferTypes.error) Result.t 
+  -> (TypeEnv.t * string list, InferTypes.error) Result.t

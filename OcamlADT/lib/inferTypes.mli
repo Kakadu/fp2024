@@ -6,18 +6,24 @@ type binder = int [@@deriving show]
 
 module VarSet : sig
   include Set.S with type elt = string
+
   val pp : formatter -> t -> unit
 end
 
 type binder_set = VarSet.t [@@deriving show]
-
 type scheme = Forall of binder_set * t [@@deriving show]
 
 val binder_to_list : binder_set -> int list
 
-val minimize : int list -> (string, string, Base.String.comparator_witness) Base.Map.t * int * int
+val minimize
+  :  int list
+  -> (string, string, Base.String.comparator_witness) Base.Map.t * int * int
 
-val pprint_type : ?poly_names_map:(string, string, Base.String.comparator_witness) Base.Map.t -> formatter -> t -> unit
+val pprint_type
+  :  ?poly_names_map:(string, string, Base.String.comparator_witness) Base.Map.t
+  -> formatter
+  -> t
+  -> unit
 
 type error =
   | Occurs_check of string * t
@@ -29,5 +35,7 @@ type error =
   | Unreachable
   | Unsupported_operator of string
   | Wrong_consturct
+  | Wrong_poly_type_adt
+  | Incorrect_list_lengths
 
 val pp_inf_err : formatter -> error -> unit
