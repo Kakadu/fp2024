@@ -266,7 +266,7 @@ let ppatcons ppat =
 ;;
 
 let pspecials = choice [ token "()"; token "true"; token "false"; token "None" ]
-;;
+
 let ppatconst =
   let* const = pconst in
   return (Pattern.Pat_constant const)

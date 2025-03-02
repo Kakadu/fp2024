@@ -301,33 +301,21 @@ let rec infer_pat ~debug pat env =
         rest
     in
     return (env3, Type_tuple (typ1, typ2, typ3))
-  | Pat_construct (name, None) ->
-    let* _, typ =
-      match TypeEnv.find name env with
-      | Some el ->
-        let* typ = instantiate el in
-        return (Substitution.empty, typ)
-      | None -> fail (Unbound_variable name)
-    in
-    return (env, typ)
-  | Pat_construct (name, Some pat) ->
-    let* _, typ =
-      match TypeEnv.find name env with
-      | Some el ->
-        let* typ = instantiate el in
-        return (Substitution.empty, typ)
-      | None -> fail (Unbound_variable name)
-    in
-    let* env, typ =
-      match typ with
-      | Type_arrow (arg, adt) ->
-        let* patenv, typepat = infer_pat ~debug pat env in
-        let* uni_sub = Substitution.unify arg typepat in
-        let new_env = TypeEnv.apply uni_sub patenv in
-        return (new_env, Substitution.apply uni_sub adt)
-      | _ -> fail Wrong_consturct
-    in
-    return (env, typ)
+  | Pat_construct (name, pat) ->
+    (match TypeEnv.find name env with
+     | None -> fail (Unbound_variable name)
+     | Some (Forall (x, Type_arrow (arg, adt))) ->
+       let* typ = instantiate (Forall (x, Type_arrow (arg, adt))) in
+       (match pat with
+        | Some const_pat ->
+          let* patenv, typepat = infer_pat ~debug const_pat env in
+          let* uni_sub = Substitution.unify arg typepat in
+          let new_env = TypeEnv.apply uni_sub patenv in
+          return (new_env, Substitution.apply uni_sub adt)
+        | None -> return (env, typ))
+     | Some el ->
+       let* typ = instantiate el in
+       return (env, typ))
   | Pat_constraint (pat, typ) ->
     let* pat_env, pat_typ = infer_pat ~debug pat env in
     let* uni_sub = Substitution.unify pat_typ typ in
