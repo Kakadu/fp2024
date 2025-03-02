@@ -17,13 +17,13 @@
   Error: (SomeError "Only variables are allowed as left-hand side of `let rec`")
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/016tuples_mismatch.ml
-  Error: Can't unify ('a * 'b) and (int * int * int)
+  Error: Can't unify ('𒀀 * '𒀐) and (int * int * int)
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/097fun_vs_list.ml
-  Error: Can't unify ('a list) and ('a -> 'a)
+  Error: Can't unify ('𒀀 list) and ('𒀀 -> '𒀀)
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/097fun_vs_unit.ml
-  Error: Can't unify (unit) and ('a -> 'a)
+  Error: Can't unify (unit) and ('𒀀 -> '𒀀)
 
   $ ../bin/REPL.exe -dinferprogram < manytests/do_not_type/098rec_int.ml
   Error: (SomeError

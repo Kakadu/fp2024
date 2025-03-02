@@ -66,8 +66,19 @@ val run_structure_inferencer
   -> Ast.structure_item
   -> (TypeEnv.t * string list, Types.error) result
 
+val run_structure_inferencer_exn
+  :  ?env:TypeEnv.t
+  -> Ast.structure_item
+  -> (TypeEnv.t * string list, string) result
+
 (** Run inferencer to program *)
 val run_program_inferencer
   :  ?env:TypeEnv.t
   -> Ast.structure_item list
   -> (TypeEnv.t * string list, Types.error) result
+
+(** Run inferencer to program, but error is formatted *)
+val run_program_inferencer_exn
+  :  ?env:TypeEnv.t
+  -> Ast.structure_item list
+  -> (TypeEnv.t * string list, string) result

@@ -4,7 +4,7 @@ all:
 	dune build
 
 repl:
-	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dparsetree
+	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe
 
 infer:
 	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dinferprogram
@@ -12,6 +12,8 @@ infer:
 infers:
 	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dinference
 
+parsetree:
+	dune build ./bin/REPL.exe && rlwrap _build/default/bin/REPL.exe -dparsetree
 
 tests: test
 test:

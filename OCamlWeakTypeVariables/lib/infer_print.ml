@@ -42,12 +42,30 @@ let minimize_variable t =
   helper t
 ;;
 
+let get_number_digits base num =
+  let rec helper acc num =
+    if num < base then num :: acc else helper (Int.rem num base :: acc) ((num / base) - 1)
+  in
+  let digits = helper [] num in
+  digits
+;;
+
 let pp_typ_my fmt t =
   let t = if Config.vars_min then minimize_variable t else t in
   let rec helper fmt = function
     | TBase b -> pp_base_type_my fmt b
+    | TVar v when Config.vars_char && Config.use_cuneiform ->
+      let alphabet = [ "𒀀"; "𒀐"; "𒀲"; "𒂷"; "𒌧" ] in
+      let digits = get_number_digits (List.length alphabet) v in
+      let runes = List.map (fun d -> List.nth alphabet d) digits in
+      let word = String.concat "" runes in
+      Format.fprintf fmt "'%s" word
     | TVar v when Config.vars_char ->
-      Format.fprintf fmt "'%c" (Char.chr (Char.code 'a' + v))
+      (* Just represent the number in the base-26 numeral system *)
+      let digits = get_number_digits 26 v in
+      let chars = List.map (fun d -> Char.chr (d + 97)) digits in
+      let word = String.init (List.length chars) (fun i -> List.nth chars i) in
+      Format.fprintf fmt "'%s" word
     | TVar v -> Format.fprintf fmt "'%s" (string_of_int v)
     | TArrow ((TArrow (_, _) as l), r) ->
       Format.fprintf fmt "(%a) -> %a" helper l helper r
@@ -88,17 +106,17 @@ let print_typ ?(name = "typ") t = Format.printf "%s: %a\n" name pp_typ_my t
 
 let%expect_test "just type" =
   Format.printf "%a" pp_typ_my (TVar 4);
-  [%expect {| 'a |}]
+  [%expect {| '𒀀 |}]
 ;;
 
 let%expect_test "just arrow type" =
   Format.printf "%a" pp_typ_my (TArrow (TVar 4, TArrow (TVar 3, TVar 4)));
-  [%expect {| 'a -> 'b -> 'a |}]
+  [%expect {| '𒀀 -> '𒀐 -> '𒀀 |}]
 ;;
 
 let%expect_test "super arrow type" =
   Format.printf "%a" pp_typ_my (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5 ])));
-  [%expect {| 'a -> 'b * 'a * 'c |}]
+  [%expect {| '𒀀 -> '𒀐 * '𒀀 * '𒀲 |}]
 ;;
 
 let%expect_test "ultra hard arrow type" =
@@ -106,10 +124,10 @@ let%expect_test "ultra hard arrow type" =
     "%a"
     pp_typ_my
     (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5; TList (TVar 2) ])));
-  [%expect {| 'a -> 'b * 'a * 'c * ('a list) |}]
+  [%expect {| '𒀀 -> '𒀐 * '𒀀 * '𒀲 * ('𒀀 list) |}]
 ;;
 
 let%expect_test "option ." =
   Format.printf "%a" pp_typ_my (TOption (TVar 2));
-  [%expect {| 'a option |}]
+  [%expect {| '𒀀 option |}]
 ;;
