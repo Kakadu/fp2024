@@ -668,21 +668,7 @@ and check_many ~debug typ_list marity args =
   iter args
 ;;
 
-let get_names_adt env poly_list =
-  RList.fold_right
-    ~f:(fun _ acc ->
-      let* env_acc, fresh_acc = return acc in
-      let* fresh = fresh_var in
-      return (env_acc, fresh :: fresh_acc))
-    poly_list
-    ~init:(return (env, []))
-;;
-
-let ( ! ) fresh =
-  match fresh with
-  | Type_var id -> id
-  | _ -> failwith "Unreachable"
-;;
+let ( ! ) fresh = Type_var fresh
 
 let infer_structure_item ~debug env item marity names =
   match item with
@@ -707,15 +693,7 @@ let infer_structure_item ~debug env item marity names =
     in
     return (new_env, marity, names)
   | Str_adt (poly, name, (variant, rest)) ->
-    let* env, poly_types = get_names_adt env poly in
-    let* varset =
-      Base.List.fold_left poly_types ~init:(return VarSet.empty) ~f:(fun acc varr ->
-        let* acc = acc in
-        match varr with
-        | Type_var x -> return (VarSet.add x acc)
-        | _ -> fail Wrong_poly_type_adt)
-    in
-    let adt_type = Type_construct (name, poly_types) in
+    let adt_type = Type_construct (name, Base.List.map poly ~f:( ! )) in
     let type_arity = List.length poly in
     let arity_map = Base.Map.set marity ~key:name ~data:type_arity in
     let* constrs =
@@ -724,7 +702,7 @@ let infer_structure_item ~debug env item marity names =
         ~init:(return env)
         ~f:(fun acc (constr_name, constr_types) ->
           let* env_acc = return acc in
-          let* fresh = fresh_var in
+          let* fresh = fresh in
           let* new_env =
             match constr_types with
             | None ->
@@ -732,14 +710,14 @@ let infer_structure_item ~debug env item marity names =
                 (TypeEnv.extend
                    env_acc
                    constr_name
-                   (Forall (VarSet.singleton !fresh, adt_type)))
+                   (Forall (VarSet.singleton (Int.to_string fresh), adt_type)))
             | Some typ ->
               let* () = check_poly_types ~debug poly arity_map typ in
               return
                 (TypeEnv.extend
                    env_acc
                    constr_name
-                   (Forall (varset, Type_arrow (typ, adt_type))))
+                   (Forall (VarSet.of_list poly, Type_arrow (typ, adt_type))))
           in
           return new_env)
     in

@@ -891,8 +891,7 @@ let%expect_test "ADT with poly constraint" =
 ;;
 let (x: shape) = Circle 5;;
 |};
-  [%expect {|
-    Unification_failed: 'a shape # shape |}]
+  [%expect {| Unification_failed: 'a shape # shape |}]
 ;;
 
 let%expect_test "ADT with constraint" =
@@ -904,8 +903,7 @@ let%expect_test "ADT with constraint" =
 ;;
 let (x: (int,int) shape) = Circle 5;;
 |};
-  [%expect {|
-    Unification_failed: 'a shape # int int shape |}]
+  [%expect {| Unification_failed: 'a shape # int int shape |}]
 ;;
 
 let%expect_test "ADT with constraint exp" =
