@@ -55,4 +55,4 @@ Argument eval order is undefined in OCaml, so in my language that also undefined
   1
   Error: No variable with name modd
   $ ../bin/REPL.exe < manytests/typed/016lists.ml
-  Error: No variable with name print_int
+  Error: Type error

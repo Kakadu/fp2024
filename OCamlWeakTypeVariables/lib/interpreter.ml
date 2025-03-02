@@ -62,6 +62,7 @@ module rec Value : sig
     | Val_function of case list * EvalEnv.t
     | Val_tuple of value list
     | Val_construct of id * value option
+    | Val_builtin of string
 
   val pp : Format.formatter -> value -> unit
 end = struct
@@ -74,6 +75,7 @@ end = struct
     | Val_function of case list * EvalEnv.t
     | Val_tuple of value list
     | Val_construct of id * value option
+    | Val_builtin of string
 
   let rec pp ppf =
     let open Stdlib.Format in
@@ -83,7 +85,7 @@ end = struct
     | Val_string str -> fprintf ppf "%S" str
     | Val_tuple vls ->
       fprintf ppf "(%a)" (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp) vls
-    | Val_fun _ | Val_rec_fun _ -> fprintf ppf "<fun>"
+    | Val_fun _ | Val_rec_fun _ | Val_builtin _ -> fprintf ppf "<fun>"
     | Val_function _ -> fprintf ppf "<function>"
     | Val_construct (tag, None) -> fprintf ppf "%s" tag
     | Val_construct ("Some", Some value) -> fprintf ppf "Some %a" pp value
@@ -362,12 +364,16 @@ module Inter = struct
   ;;
 end
 
-let empty_env = EvalEnv.empty
+let initial_env =
+  let empty = EvalEnv.empty in
+  EvalEnv.extend empty "print_int" (Val_builtin "print_int")
+;;
+
 let interpret = Inter.eval_program
-let run_interpret = interpret empty_env
+let run_interpret = interpret initial_env
 
 let run_interpret_exn str =
-  let res = interpret empty_env str |> Res.run in
+  let res = interpret initial_env str |> Res.run in
   match res with
   | Ok v -> Ok v
   | Error e -> Error (Format.asprintf "%a" pp_error e)
