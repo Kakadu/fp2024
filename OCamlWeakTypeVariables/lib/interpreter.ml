@@ -62,6 +62,8 @@ module rec Value : sig
     | Val_function of case list * EvalEnv.t
     | Val_tuple of value list
     | Val_construct of id * value option
+
+  val pp : Format.formatter -> value -> unit
 end = struct
   type value =
     | Val_integer of int
@@ -310,7 +312,7 @@ module Inter = struct
     | Pexp_construct ("Some", None) -> fail Type_error
     | Pexp_construct ("None", None) -> return (Val_construct ("None", None))
     | Pexp_construct ("None", Some _) -> fail Type_error
-    | Pexp_construct (name, expr) -> fail Type_error
+    | Pexp_construct (_, _) -> fail Type_error
     | Pexp_constraint (expr, _) -> eval_expr env expr
     | Pexp_match (expr, cases) ->
       let* value_match = eval_expr env expr in
@@ -320,7 +322,7 @@ module Inter = struct
 
   let eval_structure env = function
     | Pstr_eval expr ->
-      let* value = eval_expr env expr in
+      let* _ = eval_expr env expr in
       return env
     | Pstr_value (NonRecursive, vbs) ->
       let* homka_env =
