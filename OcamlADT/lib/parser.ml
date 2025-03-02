@@ -266,13 +266,7 @@ let ppatcons ppat =
 ;;
 
 let pspecials = choice [ token "()"; token "true"; token "false"; token "None" ]
-
-let psome parse =
-  let* id = token "Some" in
-  let* arg = parse >>| Option.some in
-  return (id, arg)
 ;;
-
 let ppatconst =
   let* const = pconst in
   return (Pattern.Pat_constant const)
@@ -313,7 +307,6 @@ let ppattern =
              [ (pspecials >>| fun name -> Pattern.Pat_construct (name, None))
              ; ppatvar
              ; ppatconst
-             ; (psome ppattern >>| fun (name, opt) -> Pattern.Pat_construct (name, opt))
              ; ppatconstruct poprnd
              ; pparenth ppattern
              ; ppatconstraint ppattern
@@ -514,7 +507,6 @@ let pexpr =
            ; pexprconstraint pexpr
            ; (pident_cap >>| fun id -> Expression.Exp_construct (id, None))
            ; pexprconst
-           ; (psome pexpr >>| fun (name, opt) -> Expression.Exp_construct (name, opt))
            ; pfunction pexpr
            ; pfunexpr pexpr
            ; pexplist pexpr
