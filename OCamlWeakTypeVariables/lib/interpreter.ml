@@ -369,6 +369,20 @@ module Inter = struct
           in
           match_pattern env (vb.pvb_pat, homka_expr))
       in
+      let* homka_env =
+        Base.List.fold_left vbs ~init:(return homka_env) ~f:(fun env vb ->
+          let* env = env in
+          let* homka_expr = eval_expr env vb.pvb_expr in
+          let* homka_expr =
+            match vb.pvb_pat with
+            | Ppat_var name ->
+              (match homka_expr with
+               | Val_fun _ as v -> return (Val_rec_fun (name, v))
+               | v -> return v)
+            | _ -> fail Type_error
+          in
+          match_pattern env (vb.pvb_pat, homka_expr))
+      in
       return homka_env
   ;;
 

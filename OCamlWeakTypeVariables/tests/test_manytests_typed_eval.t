@@ -53,7 +53,11 @@ Argument eval order is undefined in OCaml, so in my language that also undefined
 
   $ ../bin/REPL.exe < manytests/typed/015tuples.ml
   1
-  Error: No variable with name modd
+  1
+  1
+  1
+
+
   $ ../bin/REPL.exe < manytests/typed/016lists.ml
   1
   2
