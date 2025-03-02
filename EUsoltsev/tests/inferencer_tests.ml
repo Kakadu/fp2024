@@ -62,17 +62,17 @@ let%expect_test "test_binary_oper_and_arg" =
 
 let%expect_test "test_rec" =
   pretty_printer_parse_and_infer "let rec func arg = func arg";
-  [%expect {|val func: a -> b|}]
+  [%expect {|val func: '1 -> '2|}]
 ;;
 
 let%expect_test "test_func_apply_some_args" =
   pretty_printer_parse_and_infer "let func a1 a2 a3 = a1 a2 a3";
-  [%expect {|val func: (a -> b -> c) -> a -> b -> c|}]
+  [%expect {|val func: ('1 -> '2 -> '4) -> '1 -> '2 -> '4|}]
 ;;
 
 let%expect_test "test_tuple" =
   pretty_printer_parse_and_infer_simple "fun x y z -> (x + 10, y / 2 , z)";
-  [%expect {|int -> int -> a -> (int * int * a)|}]
+  [%expect {|int -> int -> '2 -> (int * int * '2)|}]
 ;;
 
 let%expect_test "test_list" =
@@ -97,12 +97,12 @@ let%expect_test "test_factorial" =
 
 let%expect_test "test_nested_list_function" =
   pretty_printer_parse_and_infer "let f x = [ [x; x]; [x] ]";
-  [%expect {|val f: a -> a list list|}]
+  [%expect {|val f: '0 -> '0 list list|}]
 ;;
 
 let%expect_test "test_nested_option_function" =
   pretty_printer_parse_and_infer "let f x = Some x";
-  [%expect {|val f: a -> a option|}]
+  [%expect {|val f: '0 -> '0 option|}]
 ;;
 
 let%expect_test "test_fibonacci" =
