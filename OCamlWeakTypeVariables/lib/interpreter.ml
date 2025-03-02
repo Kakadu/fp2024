@@ -1,64 +1,18 @@
 open Ast
 
-type value =
-  | Val_integer of int
-  | Val_string of string
-  | Val_boolean of bool
-  | Val_fun of pattern * expression * env
-  | Val_rec_fun of id * value
-  | Val_function of case list * env
-  | Val_tuple of value list
-  | Val_construct of id * value option
-
-and env = (string, value, Base.String.comparator_witness) Base.Map.t
-
-let rec pp_value ppf =
-  let open Stdlib.Format in
-  function
-  | Val_integer int -> fprintf ppf "%i" int
-  | Val_boolean bool -> fprintf ppf "'%b'" bool
-  | Val_string str -> fprintf ppf "%S" str
-  | Val_tuple vls ->
-    fprintf
-      ppf
-      "(%a)"
-      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
-      vls
-  | Val_fun _ | Val_rec_fun _ -> fprintf ppf "<fun>"
-  | Val_function _ -> fprintf ppf "<function>"
-  | Val_construct (tag, None) -> fprintf ppf "%s" tag
-  | Val_construct ("Some", Some value) -> fprintf ppf "Some %a" pp_value value
-  | Val_construct (tag, Some v) -> fprintf ppf "[%s] %a" tag pp_value v
-;;
-
 type error =
   | Type_error
-  | Pattern_error of pattern * value
+  | Pattern_error of pattern
   | Eval_expr_error of expression
   | No_variable of string
   | Match_error
-
-let pp_error ppf : error -> _ = function
-  | Type_error -> Format.fprintf ppf "Type error"
-  | Pattern_error (pat, value) ->
-    Format.fprintf
-      ppf
-      "Error while interpret pattern (%a) with value (%a)"
-      pp_pattern
-      pat
-      pp_value
-      value
-  | Eval_expr_error expr ->
-    Format.printf "Error while interpret expression (%a)" pp_expression expr
-  | No_variable s -> Format.fprintf ppf "No variable with name %s" s
-  | Match_error -> Format.fprintf ppf "Match failure"
-;;
 
 module Res : sig
   type 'a t
 
   val fail : error -> 'a t
   val return : 'a -> 'a t
+  val run : 'a t -> ('a, error) result
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
   val ( <|> ) : 'a t -> 'a t -> 'a t
@@ -71,6 +25,7 @@ end = struct
 
   let fail = Result.fail
   let return = Result.return
+  let run m = m
 
   let ( >>= ) (monad : 'a t) (f : 'a -> 'b t) : 'b t =
     match monad with
@@ -97,18 +52,55 @@ end = struct
   let ( let+ ) = ( >>| )
 end
 
-module EvalEnv : sig
+module rec Value : sig
+  type value =
+    | Val_integer of int
+    | Val_string of string
+    | Val_boolean of bool
+    | Val_fun of pattern * expression * EvalEnv.t
+    | Val_rec_fun of id * value
+    | Val_function of case list * EvalEnv.t
+    | Val_tuple of value list
+    | Val_construct of id * value option
+end = struct
+  type value =
+    | Val_integer of int
+    | Val_string of string
+    | Val_boolean of bool
+    | Val_fun of pattern * expression * EvalEnv.t
+    | Val_rec_fun of id * value
+    | Val_function of case list * EvalEnv.t
+    | Val_tuple of value list
+    | Val_construct of id * value option
+
+  let rec pp ppf =
+    let open Stdlib.Format in
+    function
+    | Val_integer int -> fprintf ppf "%i" int
+    | Val_boolean bool -> fprintf ppf "'%b'" bool
+    | Val_string str -> fprintf ppf "%S" str
+    | Val_tuple vls ->
+      fprintf ppf "(%a)" (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp) vls
+    | Val_fun _ | Val_rec_fun _ -> fprintf ppf "<fun>"
+    | Val_function _ -> fprintf ppf "<function>"
+    | Val_construct (tag, None) -> fprintf ppf "%s" tag
+    | Val_construct ("Some", Some value) -> fprintf ppf "Some %a" pp value
+    | Val_construct (tag, Some v) -> fprintf ppf "[%s] %a" tag pp v
+  ;;
+end
+
+and EvalEnv : sig
   type t
 
   val empty : t
-  val extend : t -> string -> value -> t
+  val extend : t -> string -> Value.value -> t
   val compose : t -> t -> t
-  val find_exn : t -> string -> value Res.t
-  val find_exn1 : t -> string -> value
+  val find_exn : t -> string -> Value.value Res.t
+  val find_exn1 : t -> string -> Value.value
 end = struct
   open Base
 
-  type t = (id, value, String.comparator_witness) Map.t
+  type t = (id, Value.value, String.comparator_witness) Map.t
 
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
@@ -129,7 +121,18 @@ end = struct
   ;;
 end
 
+let pp_error ppf : error -> _ = function
+  | Type_error -> Format.fprintf ppf "Type error"
+  | Pattern_error pat ->
+    Format.fprintf ppf "Error while interpret pattern (%a)" pp_pattern pat
+  | Eval_expr_error expr ->
+    Format.printf "Error while interpret expression (%a)" pp_expression expr
+  | No_variable s -> Format.fprintf ppf "No variable with name %s" s
+  | Match_error -> Format.fprintf ppf "Match failure"
+;;
+
 module Inter = struct
+  open Value
   open Res
   open EvalEnv
 
@@ -149,7 +152,7 @@ module Inter = struct
       when pat_name = val_name -> return env
     | Ppat_construct (pat_name, Some cnstr), Val_construct (val_name, Some value) ->
       if pat_name <> val_name then fail Type_error else match_pattern env (cnstr, value)
-    | o, v -> fail (Pattern_error (o, v))
+    | o, _ -> fail (Pattern_error o)
   ;;
 
   let eval_const = function
@@ -191,9 +194,8 @@ module Inter = struct
       match cases with
       | [] -> fail Match_error
       | case :: tl ->
-        (match match_pattern env (case.pc_lhs, init_value) with
-         | Ok env -> eval_expr env case.pc_rhs
-         | _ -> helper tl)
+        let* res = match_pattern env (case.pc_lhs, init_value) <|> helper tl in
+        return res
     in
     helper cases
   ;;
@@ -274,9 +276,9 @@ module Inter = struct
                 match cases with
                 | [] -> fail Match_error
                 | case :: tl ->
-                  (match match_pattern env (case.pc_lhs, value1) with
-                   | Ok env -> eval_expr env case.pc_rhs
-                   | _ -> helper tl)
+                  (let* env = match_pattern env (case.pc_lhs, value1) in
+                   eval_expr env case.pc_rhs)
+                  <|> helper tl
               in
               helper cases
             | _ -> fail Type_error
@@ -325,9 +327,9 @@ module Inter = struct
         match cases with
         | [] -> fail Match_error
         | case :: tl ->
-          (match match_pattern env (case.pc_lhs, value_match) with
-           | Ok env -> eval_expr env case.pc_rhs
-           | _ -> helper tl)
+          (let* env = match_pattern env (case.pc_lhs, value_match) in
+           eval_expr env case.pc_rhs)
+          <|> helper tl
       in
       helper cases
     | Pexp_function cases -> return (Val_function (cases, env))
@@ -373,22 +375,6 @@ module Inter = struct
     let* res = helper env program in
     return res
   ;;
-
-  let run expr =
-    match Parser.parse expr with
-    | Ok str ->
-      (match str with
-       | Pstr_eval expr ->
-         (match eval_expr EvalEnv.empty expr with
-          | Ok v -> Format.printf "%a" pp_value v
-          | Error e -> Format.printf "%a" pp_error e))
-    | Error e -> Format.printf "AA %s" e
-  ;;
-
-  let%expect_test _ =
-    run {|let homka = (fun x -> x) (fun x -> x) (fun x -> x) 122 in homka|};
-    [%expect {| 122 |}]
-  ;;
 end
 
 let empty_env = EvalEnv.empty
@@ -396,7 +382,8 @@ let interpret = Inter.eval_program
 let run_interpret = interpret empty_env
 
 let run_interpret_exn str =
-  match interpret empty_env str with
-  | Ok value -> Ok value
+  let res = interpret empty_env str |> Res.run in
+  match res with
+  | Ok v -> Ok v
   | Error e -> Error (Format.asprintf "%a" pp_error e)
 ;;
