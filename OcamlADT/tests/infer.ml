@@ -384,7 +384,6 @@ let%expect_test "010" =
     {|
 
    let _1 = fun x y (a, _) -> (x + y - a) = 1
-   let _1 = 'c'
 
 let _2 =
     let x, Some f = 1, Some ( "p1onerka was here" )
@@ -410,7 +409,7 @@ let id1, id2 = let id x = x in (id, id)
     |};
   [%expect
     {|
-    val _1 : char
+    val _1 : int -> int -> int * 'a -> bool
     val _2 : int
     val _3 : (int * string) option
     val _4 : int -> 'a

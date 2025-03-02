@@ -91,18 +91,6 @@ module Substitution = struct
 
   type t = (string, Type.t, Base.String.comparator_witness) Base.Map.t
 
-  let pp_sub ppf (sub : (string, Type.t, Base.String.comparator_witness) Base.Map.t) =
-    Stdlib.Format.fprintf ppf "\nSubst:\n";
-    Map.iteri sub ~f:(fun ~key:str ~data:ty ->
-      Stdlib.Format.fprintf
-        ppf
-        "%s <-> %a @@ "
-        str
-        (pprint_type ~poly_names_map:(Base.Map.empty (module Base.String)))
-        ty);
-    Stdlib.Format.fprintf ppf "\n"
-  ;;
-
   let empty = Map.empty (module Base.String)
 
   let singleton k v =

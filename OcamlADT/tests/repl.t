@@ -128,3 +128,25 @@
   val iter : ('a -> unit) -> 'a list -> unit = <fun>
   val cartesian : 'a list -> 'b list -> ('a * 'b) list = <fun>
   val main : int = 0
+
+
+  $ ../bin/interpret.exe manytests/do_not_type/001.ml
+  Running... 
+  Type error: Unbound_variable: "fac"
+
+  $ ../bin/interpret.exe manytests/do_not_type/002if.ml
+  Running... 
+  Type error: Unification_failed: int # bool
+  $ ../bin/interpret.exe manytests/do_not_type/003occurs.ml
+  Running... 
+  Type error: Occurs_check: 'c and 'c -> 'b
+  
+  $ ../bin/interpret.exe  manytests/do_not_type/004let_poly.ml
+  Running... 
+  Type error: Unification_failed: int # bool
+  $ ../bin/interpret.exe manytests/do_not_type/015tuples.ml
+  Running... 
+  Type error: Wrong right value in rec
+  $ ../bin/interpret.exe  manytests/do_not_type/099.ml    
+  Running... 
+  Type error: Wrong right value in rec
