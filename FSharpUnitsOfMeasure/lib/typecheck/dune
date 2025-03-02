@@ -1,5 +1,6 @@
 (library
  (name typecheck)
+ (modules typecheck)
  (public_name FSharpUnitsOfMeasure.Typecheck)
  (libraries base ast)
  (instrumentation
