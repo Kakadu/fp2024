@@ -161,7 +161,7 @@ module Inter = struct
     | Pconst_boolean c -> return (Val_boolean c)
   ;;
 
-  let eval_non_rec_let eval_expr env (NonRecursive, vbs, expr) =
+  let eval_non_rec_let eval_expr env vbs expr =
     let* homka_env =
       Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
         let* env = env in
@@ -171,7 +171,7 @@ module Inter = struct
     eval_expr homka_env expr
   ;;
 
-  let eval_rec_let eval_expr env (Recursive, vbs, expr) =
+  let eval_rec_let eval_expr env vbs expr =
     let* homka_env =
       Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
         let* env = env in
@@ -280,9 +280,8 @@ module Inter = struct
       in
       let* value0 = eval_expr env e0 in
       helper value0 es
-    | Pexp_let (NonRecursive, vbs, expr) ->
-      eval_non_rec_let eval_expr env (NonRecursive, vbs, expr)
-    | Pexp_let (Recursive, vbs, expr) -> eval_rec_let eval_expr env (Recursive, vbs, expr)
+    | Pexp_let (NonRecursive, vbs, expr) -> eval_non_rec_let eval_expr env vbs expr
+    | Pexp_let (Recursive, vbs, expr) -> eval_rec_let eval_expr env vbs expr
     | Pexp_ifthenelse (e0, _, None) ->
       let* value_e0 = eval_expr env e0 in
       (* Without else branch return type must be unit *)
