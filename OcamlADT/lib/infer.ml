@@ -340,7 +340,7 @@ let rec infer_pat ~debug pat env =
         let* uni_sub = Substitution.unify arg typepat in
         let new_env = TypeEnv.apply uni_sub patenv in
         return (new_env, Substitution.apply uni_sub adt)
-      | _ -> fail Unreachable
+      | _ -> fail Wrong_consturct
     in
     return (env, typ)
   | Pat_constraint (pat, typ) ->

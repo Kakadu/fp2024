@@ -28,5 +28,6 @@ type error =
   | Wrong_rec
   | Unreachable
   | Unsupported_operator of string
+  | Wrong_consturct
 
 val pp_inf_err : formatter -> error -> unit

@@ -109,6 +109,7 @@ type error =
   | Wrong_rec (** invalid right value in recursive let declaration *)
   | Unreachable
   | Unsupported_operator of string
+  | Wrong_consturct
 
 let collect_type_vars typ =
   let rec aux acc = function
@@ -152,4 +153,5 @@ let pp_inf_err fmt err =
   | Wrong_rec -> fprintf fmt "Wrong right value in rec"
   | Unreachable -> fprintf fmt "Unreachable"
   | Unsupported_operator op -> fprintf fmt "Operator %s is not supported" op
+  | Wrong_consturct -> fprintf fmt "Invalid construct type"
 ;;
