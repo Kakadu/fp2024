@@ -6,7 +6,7 @@ open Ast
 
 type var_typ = int [@@deriving show { with_path = false }]
 
-type const_typ =
+type constant_typ =
   | TInt
   | TStr
   | TBool
@@ -14,7 +14,7 @@ type const_typ =
 [@@deriving show { with_path = false }]
 
 type typ =
-  | TypConst of const_typ
+  | TypConst of constant_typ
   | TypVar of var_typ
   | TypArrow of typ * typ
   | TypTuple of typ * typ * typ list
@@ -28,13 +28,15 @@ type error =
   | UnboundVariable of id
 [@@deriving show { with_path = false }]
 
+(* let equal_const_typ =  *)
 (* Type constructors *)
-let int_typ = TypConst TInt
-let bool_typ = TypConst TBool
-let string_typ = TypConst TStr
-let unit_typ = TypConst TUnit
-let var_typ x = TypVar x
-let arrow_typ left right = TypArrow (left, right)
-let tup_typ ty1 ty2 typs = TypTuple (ty1, ty2, typs)
-let list_typ x = TypList x
-(* let option_typ x = TypOption *)
+let int_cons = TypConst TInt
+let bool_cons = TypConst TBool
+let string_cons = TypConst TStr
+let unit_cons = TypConst TUnit
+let constant_cons ty = TypConst ty
+let var_cons name = TypVar name
+let arrow_cons ty1 ty2 = TypArrow (ty1, ty2)
+let tup_cons ty1 ty2 ts = TypTuple (ty1, ty2, ts)
+let list_cons ty = TypList ty
+let option_cons ty = TypOption ty
