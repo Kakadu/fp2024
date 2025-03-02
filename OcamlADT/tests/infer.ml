@@ -95,7 +95,7 @@ let _2 = function
 (*PASSED*)
 let%expect_test "015" =
   parse_and_infer_result {|let rec (a,b) = (a,b);;|};
-  [%expect {| Wrong rec |}]
+  [%expect {| Wrong right value in rec |}]
 ;;
 
 (*PASSED*)
@@ -119,13 +119,13 @@ let%expect_test "097.2" =
 (*PASSED*)
 let%expect_test "098" =
   parse_and_infer_result {|let rec x = x + 1;;|};
-  [%expect {| Wrong rec |}]
+  [%expect {| Wrong right value in rec |}]
 ;;
 
 (*PASSED*)
 let%expect_test "098" =
   parse_and_infer_result {|let rec x::[] = [1];;|};
-  [%expect {| Wrong rec |}]
+  [%expect {| Wrong right value in rec |}]
 ;;
 
 (*
@@ -551,12 +551,12 @@ let%expect_test "zero" =
 
 let%expect_test "zero" =
   parse_and_infer_result {|5>5;;|};
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "zero" =
   parse_and_infer_result {|5<5;;|};
-  [%expect {||}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "zero" =

@@ -26,5 +26,7 @@ type error =
   | Arity_mismatch
   | Undeclared_type of string
   | Wrong_rec
+  | Unreachable
+  | Unsupported_operator of string
 
 val pp_inf_err : formatter -> error -> unit
