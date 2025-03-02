@@ -96,34 +96,23 @@
   val main: unit
 
   $ ../bin/main.exe -infer -file manytests/typed/008ascription.ml
-  val addi: (c -> bool -> int) -> (c -> bool) -> c -> int
+  val addi: (a -> bool -> int) -> (a -> bool) -> a -> int
   val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/009let_poly.ml
   val temp: (int * bool)
 
   $ ../bin/main.exe -infer -file manytests/typed/015tuples.ml
-  val feven: (~ * int -> \130) -> int -> int
-  val fix: ((((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)) -> ((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)) -> ((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)
-  val fixpoly: ((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)
-  val fodd: (int -> \137 * \134) -> int -> int
+  val feven: (a * (int -> b)) -> int -> int
+  val fix: ((((((int -> int) * (int -> int)) -> int -> int) * (((int -> int) * (int -> int)) -> int -> int)) -> ((int -> int) * (int -> int))) -> ((((int -> int) * (int -> int)) -> int -> int) * (((int -> int) * (int -> int)) -> int -> int)) -> ((int -> int) * (int -> int))) -> ((((int -> int) * (int -> int)) -> int -> int) * (((int -> int) * (int -> int)) -> int -> int)) -> ((int -> int) * (int -> int))
+  val fixpoly: ((((int -> int) * (int -> int)) -> int -> int) * (((int -> int) * (int -> int)) -> int -> int)) -> ((int -> int) * (int -> int))
+  val fodd: ((int -> b) * a) -> int -> int
   val main: int
-  val map: (j -> l) -> (j * j) -> (k * l)
+  val map: (a -> c) -> (a * a) -> (b * c)
   val meven: int -> int
   val modd: int -> int
-  val tie: (int -> int * int -> int)
+  val tie: ((int -> int) * (int -> int))
 
-
-  $ ../bin/main.exe -infer -file manytests/typed/015tuples.ml
-  ~ -> \127 -> int
-  ((c -> d) -> c -> d) -> c -> d
-  m -> (x * x)
-  \132 -> \133 -> int
-  int
-  g -> h -> (k * k)
-  int -> int
-  int -> int
-  (\140 * \140)
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/001.ml
   Infer error. Unbound variable 'fac'.
@@ -132,7 +121,7 @@
   Infer error. Failed to unify types: int and bool.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/003occurs.ml
-  Infer error. Occurs check failed. Type variable '1 occurs inside b -> d.
+  Infer error. Occurs check failed. Type variable '1 occurs inside a -> b.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/004let_poly.ml
   Infer error. Failed to unify types: int and bool.
@@ -144,12 +133,11 @@
   Infer error. Failed to unify types: (a * b) and (int * int * int).
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/097fun_vs_list.ml
-  Infer error. Failed to unify types: c list and a -> a.
+  Infer error. Failed to unify types: a list and a -> a.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/097fun_vs_unit.ml
   Infer error. Failed to unify types: unit and a -> a.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/098rec_int.ml
   Infer error. Right-hand side error: Right-hand side of let rec must be a lambda expression.
-
 
