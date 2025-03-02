@@ -160,8 +160,8 @@ module Inter = struct
     | Ppat_construct ("[]", None), Val_construct ("[]", None) -> return env
     | Ppat_construct (pat_name, None), Val_construct (val_name, None)
       when pat_name = val_name -> return env
-    | Ppat_construct (pat_name, Some cnstr), Val_construct (val_name, Some value) ->
-      if pat_name <> val_name then fail Type_error else match_pattern env (cnstr, value)
+    | Ppat_construct (pat_name, Some constr), Val_construct (val_name, Some value) ->
+      if pat_name <> val_name then fail Type_error else match_pattern env (constr, value)
     | o, _ -> fail (Pattern_error o)
   ;;
 
