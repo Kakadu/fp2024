@@ -36,6 +36,7 @@ type error =
   | Pattern_error of pattern * value
   | Eval_expr_error of expression
   | No_variable of string
+  | Match_error
 
 let pp_error ppf : error -> _ = function
   | Type_error -> Format.fprintf ppf "Type error"
@@ -50,6 +51,7 @@ let pp_error ppf : error -> _ = function
   | Eval_expr_error expr ->
     Format.printf "Error while interpret expression (%a)" pp_expression expr
   | No_variable s -> Format.fprintf ppf "No variable with name %s" s
+  | Match_error -> Format.fprintf ppf "Match failure"
 ;;
 
 module Res = struct
@@ -155,6 +157,18 @@ module Inter = struct
     eval_expr homka_env expr
   ;;
 
+  let eval_cases eval_expr env cases init_value =
+    let rec helper cases =
+      match cases with
+      | [] -> fail Match_error
+      | case :: tl ->
+        (match match_pattern env (case.pc_lhs, init_value) with
+         | Ok env -> eval_expr env case.pc_rhs
+         | _ -> helper tl)
+    in
+    helper cases
+  ;;
+
   let rec eval_expr env = function
     | Pexp_ident id -> find_exn env id
     | Pexp_constant const -> eval_const const
@@ -226,6 +240,16 @@ module Inter = struct
               let* fun_env = match_pattern fun_env (fun_pat, value1) in
               let* res = eval_expr fun_env fun_expr in
               return res
+            | Val_function (cases, fun_env) ->
+              let rec helper cases =
+                match cases with
+                | [] -> fail Match_error
+                | case :: tl ->
+                  (match match_pattern env (case.pc_lhs, value1) with
+                   | Ok env -> eval_expr env case.pc_rhs
+                   | _ -> helper tl)
+              in
+              helper cases
             | _ -> fail Type_error
           in
           helper result es
@@ -266,10 +290,19 @@ module Inter = struct
     | Pexp_construct ("None", Some _) -> fail Type_error
     | Pexp_construct (name, expr) -> fail Type_error
     | Pexp_constraint (expr, _) -> eval_expr env expr
-    | e -> fail (Eval_expr_error e)
+    | Pexp_match (expr, cases) ->
+      let* value_match = eval_expr env expr in
+      let rec helper cases =
+        match cases with
+        | [] -> fail Match_error
+        | case :: tl ->
+          (match match_pattern env (case.pc_lhs, value_match) with
+           | Ok env -> eval_expr env case.pc_rhs
+           | _ -> helper tl)
+      in
+      helper cases
+    | Pexp_function cases -> return (Val_function (cases, env))
   ;;
-
-  (* | _ -> failwith "homka" *)
 
   let eval_structure env = function
     | Pstr_eval expr ->

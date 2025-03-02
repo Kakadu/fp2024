@@ -50,35 +50,6 @@ Argument eval order is undefined in OCaml, so in my language that also undefined
   $ ../bin/REPL.exe < manytests/typed/009let_poly.ml
 
   $ cat manytests/typed/010sukharev.ml | ../bin/REPL.exe
-  Error while interpret expression ((Pexp_match (
-                                       (Pexp_construct ("Some",
-                                          (Some (Pexp_ident "id")))),
-                                       [{ pc_lhs =
-                                          (Ppat_construct ("Some",
-                                             (Some (Ppat_var "f"))));
-                                          pc_rhs =
-                                          (Pexp_let (NonRecursive,
-                                             [{ pvb_pat = Ppat_any;
-                                                pvb_expr =
-                                                (Pexp_apply ((Pexp_ident "f"),
-                                                   [(Pexp_constant
-                                                       (Pconst_string "42"))
-                                                     ]
-                                                   ))
-                                                }
-                                               ],
-                                             (Pexp_apply ((Pexp_ident "f"),
-                                                [(Pexp_constant (Pconst_int 42))
-                                                  ]
-                                                ))
-                                             ))
-                                          };
-                                         { pc_lhs =
-                                           (Ppat_construct ("None", None));
-                                           pc_rhs =
-                                           (Pexp_constant (Pconst_int 0)) }
-                                         ]
-                                       )))
 
   $ ../bin/REPL.exe < manytests/typed/015tuples.ml
   1
