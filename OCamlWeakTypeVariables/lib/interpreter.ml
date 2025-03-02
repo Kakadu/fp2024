@@ -311,19 +311,10 @@ module Inter = struct
       in
       let+ values = helper [] exprs in
       Val_tuple (List.rev values)
-    | Pexp_construct ("Some", Some expr) ->
+    | Pexp_construct (name, None) -> return (Val_construct (name, None))
+    | Pexp_construct (name, Some expr) ->
       let+ value = eval_expr env expr in
-      Val_construct ("Some", Some value)
-    | Pexp_construct ("Some", None) -> fail Type_error
-    | Pexp_construct ("None", None) -> return (Val_construct ("None", None))
-    | Pexp_construct ("None", Some _) -> fail Type_error
-    | Pexp_construct ("::", Some (Pexp_tuple [ first; second ])) ->
-      let* first_value = eval_expr env first in
-      let+ second_value = eval_expr env second in
-      Val_construct ("::", Some (Val_tuple [ first_value; second_value ]))
-    | Pexp_construct ("[]", None) -> return (Val_construct ("[]", None))
-    | Pexp_construct ("()", None) -> return (Val_construct ("()", None))
-    | Pexp_construct (_, _) -> fail Type_error
+      Val_construct (name, Some value)
     | Pexp_constraint (expr, _) -> eval_expr env expr
     | Pexp_match (expr, cases) ->
       let* value_match = eval_expr env expr in
