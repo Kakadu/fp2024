@@ -143,6 +143,47 @@ let pp_error ppf : error -> _ = function
   | Match_error -> Format.fprintf ppf "Match failure"
 ;;
 
+let%expect_test "pp value" =
+  Format.printf
+    "Value: %a"
+    Value.pp
+    (Val_tuple
+       [ Val_string "Homka"
+       ; Val_integer 122
+       ; Val_boolean true
+       ; Val_fun (Ppat_var "x", Pexp_ident "homka", EvalEnv.empty)
+       ; Val_rec_fun ("damir", Val_fun (Ppat_var "x", Pexp_ident "homka", EvalEnv.empty))
+       ; Val_construct ("Some", Some (Val_integer 52))
+       ; Val_construct ("[]", None)
+       ; Val_builtin "print_int"
+       ]);
+  [%expect {| Value: ("Homka", 122, 'true', <fun>, <fun>, Some 52, [], <fun>) |}]
+;;
+
+let%expect_test "pp error" =
+  Format.printf
+    "Errors:\n %a\n %a\n %a\n %a\n %a\n"
+    pp_error
+    Type_error
+    pp_error
+    (Pattern_error Ppat_any)
+    pp_error
+    (Eval_expr_error (Pexp_ident "damir"))
+    pp_error
+    (No_variable "homka")
+    pp_error
+    Match_error;
+  [%expect
+    {|
+    Errors:
+     Type error
+     Error while interpret pattern (Ppat_any)
+     Error while interpret expression ((
+    Pexp_ident "damir"))
+     No variable with name homka
+     Match failure |}]
+;;
+
 module Inter = struct
   open Value
   open Res
