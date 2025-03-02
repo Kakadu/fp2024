@@ -15,6 +15,13 @@
   manytests/do_not_type/002if.ml
   manytests/do_not_type/003occurs.ml
   manytests/do_not_type/004let_poly.ml
+  manytests/do_not_type/005.ml
+  manytests/do_not_type/015tuples.ml
+  manytests/do_not_type/016tuples_mismatch.ml
+  manytests/do_not_type/097fun_vs_list.ml
+  manytests/do_not_type/097fun_vs_unit.ml
+  manytests/do_not_type/098rec_int.ml
+  manytests/do_not_type/099.ml
   manytests/typed/001fac.ml
   manytests/typed/002fac.ml
   manytests/typed/003fib.ml
@@ -26,4 +33,6 @@
   manytests/typed/007order.ml
   manytests/typed/008ascription.ml
   manytests/typed/009let_poly.ml
-  manytests/typed/015tuples.ml))
+  manytests/typed/010sukharev.ml
+  manytests/typed/015tuples.ml
+  manytests/typed/016lists.ml))

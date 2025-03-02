@@ -14,7 +14,9 @@ type error =
   | NoVariable of string
   | UnificationFailed of ty * ty
   | SeveralBounds of string
-  | NotImplement
+  | LHS of string
+  | RHS of string
+  | UnexpectedFunction of ty
 
 val pp_error : Stdlib.Format.formatter -> error -> unit
 
@@ -26,4 +28,5 @@ module TypeEnv : sig
   type t = (ident, Scheme.t, String.comparator_witness) Map.t
 end
 
+val infer_simple_expression : expr -> (ty, error) Result.t
 val run_infer : Ast.program -> (TypeEnv.t, error) Result.t

@@ -31,7 +31,6 @@ type const =
   | ConstInt of int (* Integer constant: Example - [21] *)
   | ConstBool of bool (* Boolean constant: Example - [true] or [false] *)
   | ConstString of string (* String constant: Example - "I like OCaml!" *)
-  | ConstUnit
 [@@deriving show { with_path = false }]
 
 type binder = int [@@deriving show { with_path = false }]
@@ -52,6 +51,8 @@ type pattern =
   | PatAny
   | PatType of pattern * ty
   | PatUnit
+  | PatList of pattern list
+  | PatOption of pattern option
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -64,35 +65,76 @@ type expr =
   | ExpList of expr list (* ExpList[x1; x2 .. xn] *)
   | ExpLambda of pattern list * expr (* ExpLambda([x;y;z], x+y+z)*)
   | ExpTypeAnnotation of expr * ty
-  | ExpOption of expr option
+  | ExpLet of is_rec * bind * bind list * expr
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
-  | ExpLet of is_rec * pattern * expr * expr option
-  | ExpLetAnd of is_rec * (pattern * expr) list * expr option
-(* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
-(* let x = 10 <=> ExpLet(false, "x", 10, None)*)
+  | ExpOption of expr option
 [@@deriving show { with_path = false }]
 
-type program = expr list [@@deriving show { with_path = false }]
+and bind = pattern * expr [@@deriving show { with_path = false }]
 
-let rec pp_ty fmt = function
-  | TyPrim x -> fprintf fmt "%s" x
-  | TyVar x -> fprintf fmt "%s" @@ Char.escaped (Char.chr (x + 97))
-  | TyArrow (l, r) ->
-    (match l, r with
-     | TyArrow _, _ -> fprintf fmt "(%a) -> %a" pp_ty l pp_ty r
-     | _, _ -> fprintf fmt "%a -> %a" pp_ty l pp_ty r)
-  | TyTuple elems ->
-    fprintf
-      fmt
-      "(%a)"
-      (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " * ") pp_ty)
-      elems
-  | TyList ty ->
-    (match ty with
-     | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) list" pp_ty ty
-     | _ -> fprintf fmt "%a list" pp_ty ty)
-  | TyOption ty ->
-    (match ty with
-     | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) option" pp_ty ty
-     | _ -> fprintf fmt "%a option" pp_ty ty)
+type structure =
+  | SEval of expr
+  | SValue of is_rec * bind * bind list
+[@@deriving show { with_path = false }]
+
+type program = structure list [@@deriving show { with_path = false }]
+
+let rec collect_vars = function
+  | TyVar x -> [ x ]
+  | TyPrim _ -> []
+  | TyArrow (l, r) -> collect_vars l @ collect_vars r
+  | TyList t -> collect_vars t
+  | TyTuple ts -> List.concat_map collect_vars ts
+  | TyOption t -> collect_vars t
+;;
+
+module IntMap = Map.Make (struct
+    type t = int
+
+    let compare = compare
+  end)
+
+let pp_ty fmt ty =
+  let vars = collect_vars ty |> List.sort_uniq compare in
+  let var_map =
+    List.mapi (fun i x -> x, Char.chr (i + 97)) vars
+    |> List.to_seq
+    |> Seq.fold_left (fun map (k, v) -> IntMap.add k v map) IntMap.empty
+  in
+  let rec pp_ty_aux fmt ty =
+    match ty with
+    | TyVar x ->
+      (match IntMap.find_opt x var_map with
+       | Some c -> fprintf fmt "%c" c
+       | None -> fprintf fmt "?")
+    | TyPrim x -> fprintf fmt "%s" x
+    | TyArrow (l, r) ->
+      let needs_parens = function
+        | TyArrow _ -> true
+        | _ -> false
+      in
+      if needs_parens l
+      then fprintf fmt "(%a) -> %a" pp_ty_aux l pp_ty_aux r
+      else fprintf fmt "%a -> %a" pp_ty_aux l pp_ty_aux r
+    | TyTuple tys ->
+      fprintf
+        fmt
+        "(%a)"
+        (pp_print_list
+           ~pp_sep:(fun fmt () -> fprintf fmt " * ")
+           (fun fmt ty ->
+             match ty with
+             | TyArrow _ -> fprintf fmt "(%a)" pp_ty_aux ty
+             | _ -> pp_ty_aux fmt ty))
+        tys
+    | TyList ty ->
+      (match ty with
+       | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) list" pp_ty_aux ty
+       | _ -> fprintf fmt "%a list" pp_ty_aux ty)
+    | TyOption ty ->
+      (match ty with
+       | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) option" pp_ty_aux ty
+       | _ -> fprintf fmt "%a option" pp_ty_aux ty)
+  in
+  pp_ty_aux fmt ty
 ;;
