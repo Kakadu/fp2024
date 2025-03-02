@@ -4244,8 +4244,7 @@ type ('a) shape = Circle of int
   | Rectangle of (int*int) * int
 ;;
   |};
-  [%expect
-    {|
+  [%expect{|
     [(Str_adt (["a"], "shape",
         (("Circle", (Some (Type_construct ("int", [])))),
          [("Rectangle",

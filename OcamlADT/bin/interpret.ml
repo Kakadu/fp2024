@@ -85,7 +85,7 @@ let process_input options ast =
   let tcr = run_infer_program ast env_with_things in
   match tcr with
   | Error err -> Format.printf "Type error: %a\n" pp_inf_err err
-  | Ok env ->
+  | Ok (env,_) ->
     (match run_interpreter ast with
      | Error e -> pp_error Format.std_formatter e
      | Ok olist ->
