@@ -152,6 +152,12 @@ module Inter = struct
         (return env)
         pts
         values
+    | ( Ppat_construct ("::", Some (Ppat_tuple [ first_pat; second_pat ]))
+      , Val_construct ("::", Some (Val_tuple [ first_val; second_val ])) ) ->
+      let* env = match_pattern env (first_pat, first_val) in
+      let* env = match_pattern env (second_pat, second_val) in
+      return env
+    | Ppat_construct ("[]", None), Val_construct ("[]", None) -> return env
     | Ppat_construct (pat_name, None), Val_construct (val_name, None)
       when pat_name = val_name -> return env
     | Ppat_construct (pat_name, Some cnstr), Val_construct (val_name, Some value) ->
@@ -199,7 +205,8 @@ module Inter = struct
       | [] -> fail Match_error
       | case :: tl ->
         (let* env = match_pattern env (case.pc_lhs, init_value) in
-         eval_expr env case.pc_rhs)
+         let* res = eval_expr env case.pc_rhs in
+         return res)
         <|> helper tl
     in
     helper cases
@@ -276,7 +283,14 @@ module Inter = struct
               let* fun_env = match_pattern fun_env (fun_pat, value1) in
               let* res = eval_expr fun_env fun_expr in
               return res
-            | Val_function (cases, _) -> eval_cases eval_expr env cases value1
+            | Val_function (cases, fun_env) -> eval_cases eval_expr fun_env cases value1
+            | Val_builtin "print_int" ->
+              (match value1 with
+               | Val_integer i ->
+                 (* There is must no be newline, but without that manytests work poorly *)
+                 Format.printf "%d\n" i;
+                 return (Val_construct ("()", None))
+               | _ -> fail Type_error)
             | _ -> fail Type_error
           in
           helper result es
@@ -314,6 +328,12 @@ module Inter = struct
     | Pexp_construct ("Some", None) -> fail Type_error
     | Pexp_construct ("None", None) -> return (Val_construct ("None", None))
     | Pexp_construct ("None", Some _) -> fail Type_error
+    | Pexp_construct ("::", Some (Pexp_tuple [ first; second ])) ->
+      let* first_value = eval_expr env first in
+      let+ second_value = eval_expr env second in
+      Val_construct ("::", Some (Val_tuple [ first_value; second_value ]))
+    | Pexp_construct ("[]", None) -> return (Val_construct ("[]", None))
+    | Pexp_construct ("()", None) -> return (Val_construct ("()", None))
     | Pexp_construct (_, _) -> fail Type_error
     | Pexp_constraint (expr, _) -> eval_expr env expr
     | Pexp_match (expr, cases) ->
