@@ -171,32 +171,33 @@ module Inter = struct
     | Pconst_boolean c -> return (Val_boolean c)
   ;;
 
-  let eval_non_rec_let eval_expr env vbs expr =
-    let* homka_env =
+  let eval_non_rec_vbs eval_expr env vbs =
+    let+ homka_env =
       Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
         let* env = env in
         let* homka_expr = eval_expr env vb.pvb_expr in
         match_pattern env (vb.pvb_pat, homka_expr))
     in
-    eval_expr homka_env expr
+    homka_env
   ;;
 
-  let eval_rec_let eval_expr env vbs expr =
-    let* homka_env =
-      Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
-        let* env = env in
-        let* homka_expr = eval_expr env vb.pvb_expr in
-        let* homka_expr =
-          match vb.pvb_pat with
-          | Ppat_var name ->
-            (match homka_expr with
-             | Val_fun _ as v -> return (Val_rec_fun (name, v))
-             | v -> return v)
-          | _ -> fail Type_error
-        in
-        match_pattern env (vb.pvb_pat, homka_expr))
+  let eval_rec_vbs eval_expr env vbs =
+    let eval_vb env vb =
+      let* env = env in
+      let* homka_expr = eval_expr env vb.pvb_expr in
+      let* homka_expr =
+        match vb.pvb_pat with
+        | Ppat_var name ->
+          (match homka_expr with
+           | Val_fun _ as v -> return (Val_rec_fun (name, v))
+           | v -> return v)
+        | _ -> fail Type_error
+      in
+      match_pattern env (vb.pvb_pat, homka_expr)
     in
-    eval_expr homka_env expr
+    let* homka_env = Base.List.fold_left vbs ~init:(return env) ~f:eval_vb in
+    let* homka_env = Base.List.fold_left vbs ~init:(return homka_env) ~f:eval_vb in
+    return homka_env
   ;;
 
   let eval_cases eval_expr env cases init_value =
@@ -298,8 +299,12 @@ module Inter = struct
       in
       let* value0 = eval_expr env e0 in
       helper value0 es
-    | Pexp_let (NonRecursive, vbs, expr) -> eval_non_rec_let eval_expr env vbs expr
-    | Pexp_let (Recursive, vbs, expr) -> eval_rec_let eval_expr env vbs expr
+    | Pexp_let (NonRecursive, vbs, expr) ->
+      let* homka_env = eval_non_rec_vbs eval_expr env vbs in
+      eval_expr homka_env expr
+    | Pexp_let (Recursive, vbs, expr) ->
+      let* homka_env = eval_rec_vbs eval_expr env vbs in
+      eval_expr homka_env expr
     | Pexp_ifthenelse (e0, _, None) ->
       let* value_e0 = eval_expr env e0 in
       (* Without else branch return type must be unit *)
@@ -346,44 +351,8 @@ module Inter = struct
     | Pstr_eval expr ->
       let* _ = eval_expr env expr in
       return env
-    | Pstr_value (NonRecursive, vbs) ->
-      let* homka_env =
-        Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
-          let* env = env in
-          let* homka_expr = eval_expr env vb.pvb_expr in
-          match_pattern env (vb.pvb_pat, homka_expr))
-      in
-      return homka_env
-    | Pstr_value (Recursive, vbs) ->
-      let* homka_env =
-        Base.List.fold_left vbs ~init:(return env) ~f:(fun env vb ->
-          let* env = env in
-          let* homka_expr = eval_expr env vb.pvb_expr in
-          let* homka_expr =
-            match vb.pvb_pat with
-            | Ppat_var name ->
-              (match homka_expr with
-               | Val_fun _ as v -> return (Val_rec_fun (name, v))
-               | v -> return v)
-            | _ -> fail Type_error
-          in
-          match_pattern env (vb.pvb_pat, homka_expr))
-      in
-      let* homka_env =
-        Base.List.fold_left vbs ~init:(return homka_env) ~f:(fun env vb ->
-          let* env = env in
-          let* homka_expr = eval_expr env vb.pvb_expr in
-          let* homka_expr =
-            match vb.pvb_pat with
-            | Ppat_var name ->
-              (match homka_expr with
-               | Val_fun _ as v -> return (Val_rec_fun (name, v))
-               | v -> return v)
-            | _ -> fail Type_error
-          in
-          match_pattern env (vb.pvb_pat, homka_expr))
-      in
-      return homka_env
+    | Pstr_value (NonRecursive, vbs) -> eval_non_rec_vbs eval_expr env vbs
+    | Pstr_value (Recursive, vbs) -> eval_rec_vbs eval_expr env vbs
   ;;
 
   let eval_program env program =
