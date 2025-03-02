@@ -296,11 +296,16 @@ module Inter = struct
     | Pexp_let (Recursive, vbs, expr) ->
       let* homka_env = eval_rec_vbs eval_expr env vbs in
       eval_expr homka_env expr
-    | Pexp_ifthenelse (e0, _, None) ->
+    | Pexp_ifthenelse (e0, e1, None) ->
       let* value_e0 = eval_expr env e0 in
-      (* Without else branch return type must be unit *)
       (match value_e0 with
-       | Val_construct ("()", None) as v -> return v
+       | Val_boolean true ->
+         let* value_e1 = eval_expr env e1 in
+         (* Without else branch return type must be unit *)
+         (match value_e1 with
+          | Val_construct ("()", None) as v -> return v
+          | _ -> fail Type_error)
+       | Val_boolean false -> return (Val_construct ("()", None))
        | _ -> fail Type_error)
     | Pexp_ifthenelse (e0, e1, Some e2) ->
       let* value_e0 = eval_expr env e0 in
