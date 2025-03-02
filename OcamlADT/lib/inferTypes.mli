@@ -32,10 +32,7 @@ type error =
   | Arity_mismatch
   | Undeclared_type of string
   | Wrong_rec
-  | Unreachable
   | Unsupported_operator of string
-  | Wrong_consturct
-  | Wrong_poly_type_adt
   | Incorrect_list_lengths
 
 val pp_inf_err : formatter -> error -> unit

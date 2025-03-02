@@ -136,10 +136,7 @@ type error =
       type bar = Bar of foo] *)
   | Undeclared_type of string
   | Wrong_rec (** invalid right value in recursive let declaration *)
-  | Unreachable
-  | Unsupported_operator of string
-  | Wrong_consturct
-  | Wrong_poly_type_adt
+  | Unsupported_operator of string (** for binary operators*)
   | Incorrect_list_lengths
 
 let collect_type_vars typ =
@@ -182,9 +179,6 @@ let pp_inf_err fmt err =
   | Arity_mismatch -> fprintf fmt "Arity_mismatch"
   | Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
   | Wrong_rec -> fprintf fmt "Wrong right value in rec"
-  | Unreachable -> fprintf fmt "Unreachable"
   | Unsupported_operator op -> fprintf fmt "Operator %s is not supported" op
-  | Wrong_consturct -> fprintf fmt "Invalid construct type"
-  | Wrong_poly_type_adt -> fprintf fmt "Only type var supported in adt arguments"
   | Incorrect_list_lengths -> fprintf fmt "Lists have unequal lengths"
 ;;
