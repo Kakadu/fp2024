@@ -25,7 +25,6 @@ type error =
   | Unbound_variable of string
   | Arity_mismatch
   | Undeclared_type of string
-  | Not_supported
   | Wrong_rec
 
 val pp_inf_err : formatter -> error -> unit

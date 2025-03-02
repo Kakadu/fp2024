@@ -23,4 +23,4 @@ val run_infer_program
   :  ?debug:bool
   -> Ast.program
   -> TypeEnv.t
-  -> (TypeEnv.t, InferTypes.error) Result.t
+  -> ((TypeEnv.t * string list), InferTypes.error) Result.t 

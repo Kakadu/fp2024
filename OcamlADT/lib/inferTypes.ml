@@ -106,7 +106,6 @@ type error =
       [type 'a foo = Foo
       type bar = Bar of foo] *)
   | Undeclared_type of string
-  | Not_supported
   | Wrong_rec (** invalid right value in recursive let declaration *)
 
 let collect_type_vars typ =
@@ -148,6 +147,5 @@ let pp_inf_err fmt err =
   | Unbound_variable str -> fprintf fmt "Unbound_variable: %S" str
   | Arity_mismatch -> fprintf fmt "Arity_mismatch"
   | Undeclared_type str -> fprintf fmt "Undeclared_type: %S" str
-  | Not_supported -> fprintf fmt "Not supported syntax"
   | Wrong_rec -> fprintf fmt "Wrong rec"
 ;;
