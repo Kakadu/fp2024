@@ -1,3 +1,11 @@
+[@@@ocaml.text "/*"]
+
+(** Copyright 2024-2025, Damir Yunusov and Ilhom Kombaev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
+
 open Ast
 
 type error =
@@ -195,8 +203,7 @@ module Inter = struct
   ;;
 
   let eval_cases eval_expr env cases init_value =
-    let rec helper cases =
-      match cases with
+    let rec helper = function
       | [] -> fail Match_error
       | case :: tl ->
         (let* env = match_pattern env (case.pc_lhs, init_value) in
