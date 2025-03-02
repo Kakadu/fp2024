@@ -1839,14 +1839,14 @@ module Type = struct
 
   let type_vars =
     let rec helper acc = function
-      | <span data-count="17308">T</span>Var n -&gt; TVarSet.add n acc
-      | <span data-count="29299">T</span>Arrow (left, right) -&gt; helper (helpe<span data-count="29299">r</span> acc left) right
-      | <span data-count="1430">T</span>List typ -&gt; helper acc typ
-      | <span data-count="1352">T</span>Option typ -&gt; helper acc typ
-      | <span data-count="486">T</span>Tuple (a, b, typ_list) -&gt; List.fold_left helper acc (a :: b :: typ_list)
-      | <span data-count="30115">T</span>Base _ -&gt; acc
+      | <span data-count="17429">T</span>Var n -&gt; TVarSet.add n acc
+      | <span data-count="29535">T</span>Arrow (left, right) -&gt; helper (helpe<span data-count="29535">r</span> acc left) right
+      | <span data-count="1434">T</span>List typ -&gt; helper acc typ
+      | <span data-count="1361">T</span>Option typ -&gt; helper acc typ
+      | <span data-count="487">T</span>Tuple (a, b, typ_list) -&gt; List.fold_left helper acc (a :: b :: typ_list)
+      | <span data-count="30367">T</span>Base _ -&gt; acc
     in
-    helpe<span data-count="98">r</span> TVarSet.empty
+    helpe<span data-count="99">r</span> TVarSet.empty
   ;;
 end
 
@@ -1867,7 +1867,7 @@ end = struct
 
   type t = (type_var, typ, Base.Int.comparator_witness) Base.Map.t
 
-  let empty = Base.Map.empt<span data-count="98">y</span> (module Base.Int)
+  let empty = Base.Map.empt<span data-count="99">y</span> (module Base.Int)
 
   let mapping k v =
     (* if debug then Format.printf "Mapping %d to %s\n" k @@ show_typ v; *)
@@ -1966,7 +1966,7 @@ end
 let print_sub ?(name = <span data-count="0">"</span>Sub") sub = <span data-count="0">F</span>ormat.printf "%s: %a\n" name Subst.pp sub
 
 module Scheme = struct
-  let free_vars (Scheme (bind_vars, ty)) = <span data-count="15858">T</span>VarSet.diff (Type.type_var<span data-count="15858">s</span> ty) bind_vars
+  let free_vars (Scheme (bind_vars, ty)) = <span data-count="15978">T</span>VarSet.diff (Type.type_var<span data-count="15978">s</span> ty) bind_vars
 
   let apply sub (Scheme (bind_vars, ty)) =
     <span data-count="24023">l</span>et sub2 = TVarSet.fold (fun sub key -&gt; <span data-count="14194">S</span>ubst.remove key sub) bind_vars sub in
@@ -1991,30 +1991,30 @@ module TypeEnv : sig
 end = struct
   type t = (string, scheme, Base.String.comparator_witness) Base.Map.t
 
-  let empty : t = Base.Map.empt<span data-count="98">y</span> (module Base.String)
+  let empty : t = Base.Map.empt<span data-count="99">y</span> (module Base.String)
 
   let free_vars (env : t) =
-    <span data-count="1780">B</span>ase.Map.fold
+    <span data-count="1796">B</span>ase.Map.fold
       ~init:TVarSet.empty
-      ~f:(fun ~key:_ ~data acc -&gt; <span data-count="15858">T</span>VarSet.union acc (Scheme.free_var<span data-count="15858">s</span> data))
+      ~f:(fun ~key:_ ~data acc -&gt; <span data-count="15978">T</span>VarSet.union acc (Scheme.free_var<span data-count="15978">s</span> data))
       env
   ;;
 
   let apply sub env = <span data-count="1168">B</span>ase.Map.map env ~f:(Scheme.appl<span data-count="1168">y</span> sub)
-  let extend env key schema = <span data-count="2205">B</span>ase.Map.update env key ~f:(fun _ -&gt; <span data-count="2205">s</span>chema)
+  let extend env key schema = <span data-count="2221">B</span>ase.Map.update env key ~f:(fun _ -&gt; <span data-count="2221">s</span>chema)
   let find = Base.Map.find
   let find_exn = Base.Map.find_exn
   let remove = Base.Map.remove
 
   let operators =
-    [ [ "+"; "-"; "*"; "/" ], TBase BInt @-<span data-count="98">&gt;</span> TBase BInt @-<span data-count="98">&gt;</span> TBase BInt
-    ; [ "print_int" ], TBase BInt @-<span data-count="98">&gt;</span> TBase BUnit
-    ; [ "&lt;="; "&lt;"; "&gt;"; "&gt;="; "="; "&lt;&gt;" ], TVar 0 @-<span data-count="98">&gt;</span> TVar 0 @-<span data-count="98">&gt;</span> TBase BBool
-    ; [ "Some" ], TVar 0 @-<span data-count="98">&gt;</span> TOption (TVar 0)
+    [ [ "+"; "-"; "*"; "/" ], TBase BInt @-<span data-count="99">&gt;</span> TBase BInt @-<span data-count="99">&gt;</span> TBase BInt
+    ; [ "print_int" ], TBase BInt @-<span data-count="99">&gt;</span> TBase BUnit
+    ; [ "&lt;="; "&lt;"; "&gt;"; "&gt;="; "="; "&lt;&gt;" ], TVar 0 @-<span data-count="99">&gt;</span> TVar 0 @-<span data-count="99">&gt;</span> TBase BBool
+    ; [ "Some" ], TVar 0 @-<span data-count="99">&gt;</span> TOption (TVar 0)
     ; [ "None" ], TOption (TVar 0)
     ; [ "()" ], TBase BUnit
     ; [ "[]" ], TList (TVar 0)
-    ; [ "::" ], TTuple (TVar 0, TList (TVar 0), []) @-<span data-count="98">&gt;</span> TList (TVar 0)
+    ; [ "::" ], TTuple (TVar 0, TList (TVar 0), []) @-<span data-count="99">&gt;</span> TList (TVar 0)
     ]
   ;;
 
@@ -2122,7 +2122,7 @@ end
 open R
 open R.Syntax
 
-let fresh_var = fresh &gt;&gt;<span data-count="98">|</span> fun name -&gt; <span data-count="1324">T</span>Var name
+let fresh_var = fresh &gt;&gt;<span data-count="99">|</span> fun name -&gt; <span data-count="1324">T</span>Var name
 
 let instantiate : scheme -&gt; typ R.t =
   fun (Scheme (bind_var, ty)) -&gt;
@@ -2138,8 +2138,8 @@ let instantiate : scheme -&gt; typ R.t =
 
 let generalize : TypeEnv.t -&gt; Type.t -&gt; scheme =
   fun env ty -&gt;
-  <span data-count="1780">l</span>et free = TVarSet.diff (Type.type_var<span data-count="1780">s</span> ty) (TypeEnv.free_var<span data-count="1780">s</span> env) in
-  <span data-count="1780">S</span>cheme (free, ty)
+  <span data-count="1796">l</span>et free = TVarSet.diff (Type.type_var<span data-count="1796">s</span> ty) (TypeEnv.free_var<span data-count="1796">s</span> env) in
+  <span data-count="1796">S</span>cheme (free, ty)
 ;;
 
 let lookup_env env name =
@@ -2467,10 +2467,10 @@ let infer_program env program =
 ;;
 
 let defaultEnv =
-  List.fold_lef<span data-count="98">t</span>
+  List.fold_lef<span data-count="99">t</span>
     (fun env (names, typ) -&gt;
-      <span data-count="784">L</span>ist.fold_left
-        (fun env_in name -&gt; <span data-count="1568">T</span>ypeEnv.extend env_in name (generaliz<span data-count="1568">e</span> env_in typ))
+      <span data-count="792">L</span>ist.fold_left
+        (fun env_in name -&gt; <span data-count="1584">T</span>ypeEnv.extend env_in name (generaliz<span data-count="1584">e</span> env_in typ))
         env
         names)
     TypeEnv.empty

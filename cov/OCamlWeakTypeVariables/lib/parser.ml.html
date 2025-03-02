@@ -862,10 +862,10 @@ let is_keyword = function
   | <span data-count="72656">_</span> -&gt; false
 ;;
 
-let ws = take_whil<span data-count="98">e</span> is_whitespace
+let ws = take_whil<span data-count="99">e</span> is_whitespace
 let wss t = <span data-count="91582">w</span>s *<span data-count="91582">&gt;</span> t &lt;* ws
-let token s = <span data-count="20462">w</span>s *<span data-count="20462">&gt;</span> strin<span data-count="20462">g</span> s &lt;* ws
-let word s = <span data-count="578">w</span>s *<span data-count="578">&gt;</span> strin<span data-count="578">g</span> s &lt;* take_while<span data-count="578">1</span> is_whitespace
+let token s = <span data-count="20475">w</span>s *<span data-count="20475">&gt;</span> strin<span data-count="20475">g</span> s &lt;* ws
+let word s = <span data-count="579">w</span>s *<span data-count="579">&gt;</span> strin<span data-count="579">g</span> s &lt;* take_while<span data-count="579">1</span> is_whitespace
 let parens t = <span data-count="175">t</span>oke<span data-count="175">n</span> "(" *<span data-count="175">&gt;</span> t &lt;* toke<span data-count="175">n</span> ")"
 
 let p_const_int =
@@ -873,7 +873,7 @@ let p_const_int =
     | <span data-count="31102">'</span>0' .. '9' -&gt; true
     | <span data-count="162292">_</span> -&gt; false
   in
-  let* sign = choic<span data-count="98">e</span> [ toke<span data-count="98">n</span> "-"; toke<span data-count="98">n</span> "+"; toke<span data-count="98">n</span> "" ] in
+  let* sign = choic<span data-count="99">e</span> [ toke<span data-count="99">n</span> "-"; toke<span data-count="99">n</span> "+"; toke<span data-count="99">n</span> "" ] in
   <span data-count="196138">l</span>et* first_digit = satisf<span data-count="196138">y</span> is_digit in
   <span data-count="31102">l</span>et+ digits =
     take_whil<span data-count="31102">e</span> (function
@@ -885,32 +885,32 @@ let p_const_int =
 
 let p_const_string =
   let+ s =
-    toke<span data-count="98">n</span> "\""
-    *<span data-count="98">&gt;</span> take_whil<span data-count="98">e</span> (function
+    toke<span data-count="99">n</span> "\""
+    *<span data-count="99">&gt;</span> take_whil<span data-count="99">e</span> (function
       | <span data-count="902">'</span>"' -&gt; false
       | <span data-count="8270">_</span> -&gt; true)
-    &lt;<span data-count="98">*</span> toke<span data-count="98">n</span> "\""
+    &lt;<span data-count="99">*</span> toke<span data-count="99">n</span> "\""
   in
   <span data-count="902">P</span>const_string s
 ;;
 
 let p_const_bool =
-  let+ bool_str = choic<span data-count="98">e</span> [ toke<span data-count="98">n</span> "true"; toke<span data-count="98">n</span> "false" ] in
+  let+ bool_str = choic<span data-count="99">e</span> [ toke<span data-count="99">n</span> "true"; toke<span data-count="99">n</span> "false" ] in
   <span data-count="644">P</span>const_boolean (bool_of_strin<span data-count="644">g</span> bool_str)
 ;;
 
 let p_const =
-  choic<span data-count="98">e</span>
+  choic<span data-count="99">e</span>
     ~failure_msg:"Error while parsing literal"
     [ p_const_int; p_const_string; p_const_bool ]
 ;;
 
-let pexpr_const = p_const &gt;&gt;<span data-count="98">|</span> fun x -&gt; <span data-count="32540">P</span>exp_constant x
+let pexpr_const = p_const &gt;&gt;<span data-count="99">|</span> fun x -&gt; <span data-count="32540">P</span>exp_constant x
 
 let capitalized_ident =
   let* first =
     ws
-    *<span data-count="98">&gt;</span> satisf<span data-count="98">y</span> (function
+    *<span data-count="99">&gt;</span> satisf<span data-count="99">y</span> (function
       | <span data-count="564">'</span>A' .. 'Z' -&gt; true
       | <span data-count="199390">_</span> -&gt; false)
   in
@@ -927,7 +927,7 @@ let capitalized_ident =
 let lowercase_ident =
   let* first =
     ws
-    *<span data-count="98">&gt;</span> satisf<span data-count="98">y</span> (function
+    *<span data-count="99">&gt;</span> satisf<span data-count="99">y</span> (function
       | <span data-count="93357">'</span>a' .. 'z' | <span data-count="1741">'</span>_' -&gt; true
       | <span data-count="65168">_</span> -&gt; false)
   in
@@ -947,7 +947,7 @@ let p_id : id t =
   <span data-count="58744">i</span>f var = "_" then <span data-count="64">f</span>ail {| Wildcard "_" not expected |} else <span data-count="58680">r</span>eturn var
 ;;
 
-let pexp_ident = p_id &gt;&gt;<span data-count="98">|</span> fun i -&gt; <span data-count="58680">P</span>exp_ident i
+let pexp_ident = p_id &gt;&gt;<span data-count="99">|</span> fun i -&gt; <span data-count="58680">P</span>exp_ident i
 
 let chain_left parse parse_fun =
   <span data-count="285">l</span>et rec go acc =
@@ -1000,10 +1000,10 @@ let p_tuple expr =
 
 let p_pattern =
   let pat_const = p_const &gt;&gt;| fun c -&gt; <span data-count="108">P</span>pat_constant c in
-  <span data-count="98">l</span>et pat_var =
+  <span data-count="99">l</span>et pat_var =
     lowercase_ident &gt;&gt;| fun var -&gt; <span data-count="13912">i</span>f var = "_" then <span data-count="225">P</span>pat_any else <span data-count="13687">P</span>pat_var var
   in
-  <span data-count="98">f</span>i<span data-count="98">x</span> (fun pattern : pattern t -&gt;
+  <span data-count="99">f</span>i<span data-count="99">x</span> (fun pattern : pattern t -&gt;
     <span data-count="78">l</span>et pat_const = choice [ paren<span data-count="78">s</span> pattern; pat_const; pat_var ] in
     <span data-count="78">l</span>et pat_construct =
       (let* name = capitalized_ident in
@@ -1065,7 +1065,7 @@ let p_apply expr =
     <span data-count="13890">P</span>exp_apply (first, second)
 ;;
 
-let p_rec_flag = wor<span data-count="98">d</span> "rec" &gt;&gt;<span data-count="98">|</span> (fun _ -&gt; <span data-count="128">R</span>ecursive) &lt;|<span data-count="98">&gt;</span> retur<span data-count="98">n</span> NonRecursive
+let p_rec_flag = wor<span data-count="99">d</span> "rec" &gt;&gt;<span data-count="99">|</span> (fun _ -&gt; <span data-count="128">R</span>ecursive) &lt;|<span data-count="99">&gt;</span> retur<span data-count="99">n</span> NonRecursive
 
 let p_value_binding expr =
   <span data-count="4016">l</span>et* pattern = p_pattern in
@@ -1100,11 +1100,11 @@ end = struct
   open Types
 
   let p_typ_base =
-    choic<span data-count="98">e</span>
-      [ (toke<span data-count="98">n</span> "int" &gt;&gt;<span data-count="98">|</span> fun _ -&gt; <span data-count="1152">T</span>Base BInt)
-      ; (toke<span data-count="98">n</span> "string" &gt;&gt;<span data-count="98">|</span> fun _ -&gt; <span data-count="0">T</span>Base BString)
-      ; (toke<span data-count="98">n</span> "unit" &gt;&gt;<span data-count="98">|</span> fun _ -&gt; <span data-count="0">T</span>Base BUnit)
-      ; (toke<span data-count="98">n</span> "bool" &gt;&gt;<span data-count="98">|</span> fun _ -&gt; <span data-count="4608">T</span>Base BBool)
+    choic<span data-count="99">e</span>
+      [ (toke<span data-count="99">n</span> "int" &gt;&gt;<span data-count="99">|</span> fun _ -&gt; <span data-count="1152">T</span>Base BInt)
+      ; (toke<span data-count="99">n</span> "string" &gt;&gt;<span data-count="99">|</span> fun _ -&gt; <span data-count="0">T</span>Base BString)
+      ; (toke<span data-count="99">n</span> "unit" &gt;&gt;<span data-count="99">|</span> fun _ -&gt; <span data-count="0">T</span>Base BUnit)
+      ; (toke<span data-count="99">n</span> "bool" &gt;&gt;<span data-count="99">|</span> fun _ -&gt; <span data-count="4608">T</span>Base BBool)
       ]
   ;;
 
@@ -1125,7 +1125,7 @@ end = struct
   ;;
 
   let p_typ =
-    fi<span data-count="98">x</span> (fun typ_all -&gt;
+    fi<span data-count="99">x</span> (fun typ_all -&gt;
       <span data-count="2">l</span>et typ = p_typ_base &lt;|&gt; paren<span data-count="2">s</span> typ_all in
       <span data-count="2">l</span>et typ = p_typ_lis<span data-count="2">t</span> typ &lt;|<span data-count="2">&gt;</span> p_typ_optio<span data-count="2">n</span> typ &lt;|&gt; typ in
       <span data-count="2">l</span>et typ = p_typ_tupl<span data-count="2">e</span> typ &lt;|&gt; typ in
@@ -1140,7 +1140,7 @@ let pexpr_constraint expr =
   <span data-count="480">P</span>exp_constraint (expr, ty)
 ;;
 
-let p_construct_unit = toke<span data-count="98">n</span> "()" *<span data-count="98">&gt;</span> retur<span data-count="98">n</span> (Pexp_construct ("()", None))
+let p_construct_unit = toke<span data-count="99">n</span> "()" *<span data-count="99">&gt;</span> retur<span data-count="99">n</span> (Pexp_construct ("()", None))
 
 let p_construct expr =
   <span data-count="95">(</span>let* name = capitalized_ident in
@@ -1182,7 +1182,7 @@ let p_list expr =
 ;;
 
 let p_expr =
-  fi<span data-count="98">x</span> (fun expr -&gt;
+  fi<span data-count="99">x</span> (fun expr -&gt;
     <span data-count="95">l</span>et expr_const =
       choice
         [ paren<span data-count="95">s</span> expr; pexpr_const; pexpr_constrain<span data-count="95">t</span> expr; pexp_ident; p_branc<span data-count="95">h</span> expr ]
@@ -1205,7 +1205,7 @@ let p_expr =
 ;;
 
 let p_str_value expr =
-  <span data-count="98">l</span>et* rec_flag = toke<span data-count="98">n</span> "let" *<span data-count="98">&gt;</span> p_rec_flag in
+  <span data-count="99">l</span>et* rec_flag = toke<span data-count="99">n</span> "let" *<span data-count="99">&gt;</span> p_rec_flag in
   <span data-count="138">l</span>et* vb = p_value_bindin<span data-count="138">g</span> expr in
   <span data-count="138">l</span>et+ value_bindings = man<span data-count="138">y</span> (toke<span data-count="138">n</span> "and" *<span data-count="138">&gt;</span> p_value_bindin<span data-count="138">g</span> expr) in
   <span data-count="138">P</span>str_value (rec_flag, vb :: value_bindings)
@@ -1213,8 +1213,8 @@ let p_str_value expr =
 
 let p_structure =
   let str_value = p_str_value p_expr in
-  <span data-count="98">l</span>et str_eval = p_expr &gt;&gt;<span data-count="98">|</span> (fun ex -&gt; <span data-count="30">P</span>str_eval ex) &lt;|&gt; str_value in
-  <span data-count="98">s</span>tr_eval
+  <span data-count="99">l</span>et str_eval = p_expr &gt;&gt;<span data-count="99">|</span> (fun ex -&gt; <span data-count="30">P</span>str_eval ex) &lt;|&gt; str_value in
+  <span data-count="99">s</span>tr_eval
 ;;
 
 let parse_expr str = <span data-count="0">p</span>arse_string ~consume:All p_expr str

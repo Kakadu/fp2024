@@ -190,7 +190,7 @@
 [@@deriving show { with_path = false }]
 
 (** identificator *)
-<span data-count="0">t</span>ype id = <span data-count="61">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype id = <span data-count="62">s</span>tring [@@deriving show { with_path = false }]
 
 <span data-count="89">t</span>ype pattern =
   | Ppat_any (** The pattern _. *)
@@ -206,7 +206,7 @@
   | NonRecursive
 [@@deriving show { with_path = false }]
 
-<span data-count="295">t</span>ype expression =
+<span data-count="297">t</span>ype expression =
   | Pexp_ident of id (** Identifiers. Ex: "homka" *)
   | Pexp_constant of constant (** Expressions constant. Ex: 5, "Homka", true *)
   | Pexp_let of rec_flag * <span data-count="18">v</span>alue_binding lis<span data-count="6">t</span> * expression

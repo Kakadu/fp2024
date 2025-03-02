@@ -410,17 +410,17 @@ let print_typ ?(name = <span data-count="0">"</span>typ") t = <span data-count="
 
 let%expect_test "just type" =
   <span data-count="1">F</span>ormat.printf "%a" pp_typ_my (TVar 4);
-  <span data-count="1">[</span>%expect {| '𒀀 |}<span data-count="197">]</span>
+  <span data-count="1">[</span>%expect {| '𒀀 |}<span data-count="199">]</span>
 ;;
 
 let%expect_test "just arrow type" =
   <span data-count="1">F</span>ormat.printf "%a" pp_typ_my (TArrow (TVar 4, TArrow (TVar 3, TVar 4)));
-  <span data-count="1">[</span>%expect {| '𒀀 -&gt; '𒀐 -&gt; '𒀀 |}<span data-count="197">]</span>
+  <span data-count="1">[</span>%expect {| '𒀀 -&gt; '𒀐 -&gt; '𒀀 |}<span data-count="199">]</span>
 ;;
 
 let%expect_test "super arrow type" =
   <span data-count="1">F</span>ormat.printf "%a" pp_typ_my (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5 ])));
-  <span data-count="1">[</span>%expect {| '𒀀 -&gt; '𒀐 * '𒀀 * '𒀲 |}<span data-count="197">]</span>
+  <span data-count="1">[</span>%expect {| '𒀀 -&gt; '𒀐 * '𒀀 * '𒀲 |}<span data-count="199">]</span>
 ;;
 
 let%expect_test "ultra hard arrow type" =
@@ -428,12 +428,12 @@ let%expect_test "ultra hard arrow type" =
     "%a"
     pp_typ_my
     (TArrow (TVar 2, TTuple (TVar 1, TVar 2, [ TVar 5; TList (TVar 2) ])));
-  <span data-count="1">[</span>%expect {| '𒀀 -&gt; '𒀐 * '𒀀 * '𒀲 * ('𒀀 list) |}<span data-count="197">]</span>
+  <span data-count="1">[</span>%expect {| '𒀀 -&gt; '𒀐 * '𒀀 * '𒀲 * ('𒀀 list) |}<span data-count="199">]</span>
 ;;
 
 let%expect_test "option ." =
   <span data-count="1">F</span>ormat.printf "%a" pp_typ_my (TOption (TVar 2));
-  <span data-count="1">[</span>%expect {| '𒀀 option |}<span data-count="197">]</span>
+  <span data-count="1">[</span>%expect {| '𒀀 option |}<span data-count="199">]</span>
 ;;
 </code></pre>
       </div>
