@@ -113,7 +113,6 @@ module Substitution = struct
       | Type_arrow (l, r) -> Type_arrow (helper l, helper r)
       | Type_tuple (t1, t2, t) -> Type_tuple (helper t1, helper t2, List.map t ~f:helper)
       | Type_construct (id, ty) -> Type_construct (id, List.map ty ~f:helper)
-      (*maybe rework*)
     in
     helper
   ;;
@@ -125,7 +124,6 @@ module Substitution = struct
   ;;
 
   let rec unify l r =
-    (* let _ = Stdlib.Format.printf "UNIFY: %a ||||| %a\n" pprint_type l pprint_type r in *)
     match l, r with
     | Type_var a, Type_var b when String.equal a b -> return empty
     | Type_var b, t | t, Type_var b -> singleton b t
@@ -161,7 +159,6 @@ module Substitution = struct
     | _ -> fail (Unification_failed (l, r))
 
   and extend k v s =
-    (*maybe rework*)
     match Map.find s k with
     | None ->
       let v = apply s v in
