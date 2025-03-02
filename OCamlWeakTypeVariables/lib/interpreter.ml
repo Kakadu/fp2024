@@ -194,8 +194,9 @@ module Inter = struct
       match cases with
       | [] -> fail Match_error
       | case :: tl ->
-        let* res = match_pattern env (case.pc_lhs, init_value) <|> helper tl in
-        return res
+        (let* env = match_pattern env (case.pc_lhs, init_value) in
+         eval_expr env case.pc_rhs)
+        <|> helper tl
     in
     helper cases
   ;;
@@ -271,16 +272,7 @@ module Inter = struct
               let* fun_env = match_pattern fun_env (fun_pat, value1) in
               let* res = eval_expr fun_env fun_expr in
               return res
-            | Val_function (cases, fun_env) ->
-              let rec helper cases =
-                match cases with
-                | [] -> fail Match_error
-                | case :: tl ->
-                  (let* env = match_pattern env (case.pc_lhs, value1) in
-                   eval_expr env case.pc_rhs)
-                  <|> helper tl
-              in
-              helper cases
+            | Val_function (cases, _) -> eval_cases eval_expr env cases value1
             | _ -> fail Type_error
           in
           helper result es
@@ -323,15 +315,7 @@ module Inter = struct
     | Pexp_constraint (expr, _) -> eval_expr env expr
     | Pexp_match (expr, cases) ->
       let* value_match = eval_expr env expr in
-      let rec helper cases =
-        match cases with
-        | [] -> fail Match_error
-        | case :: tl ->
-          (let* env = match_pattern env (case.pc_lhs, value_match) in
-           eval_expr env case.pc_rhs)
-          <|> helper tl
-      in
-      helper cases
+      eval_cases eval_expr env cases value_match
     | Pexp_function cases -> return (Val_function (cases, env))
   ;;
 
