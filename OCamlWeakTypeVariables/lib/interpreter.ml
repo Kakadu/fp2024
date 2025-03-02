@@ -97,8 +97,18 @@ end = struct
   let ( let+ ) = ( >>| )
 end
 
-module EvalEnv = struct
+module EvalEnv : sig
+  type t
+
+  val empty : t
+  val extend : t -> string -> value -> t
+  val compose : t -> t -> t
+  val find_exn : t -> string -> value Res.t
+  val find_exn1 : t -> string -> value
+end = struct
   open Base
+
+  type t = (id, value, String.comparator_witness) Map.t
 
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
