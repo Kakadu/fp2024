@@ -20,10 +20,12 @@ type error =
 
 val pp_error : Stdlib.Format.formatter -> error -> unit
 
-type scheme = S of IntSet.t * ty
+module Scheme : sig
+  type t = S of IntSet.t * ty
+end
 
 module TypeEnv : sig
-  type t = (ident, scheme, String.comparator_witness) Map.t
+  type t = (ident, Scheme.t, String.comparator_witness) Map.t
 end
 
 val infer_simple_expression : expr -> (ty, error) Result.t

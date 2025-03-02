@@ -13,9 +13,9 @@ and value =
   | ValueBool of bool
   | ValueString of string
   | ValueUnit
-  | ValueList of value list
-  | ValueTuple of value * value * value list
   | ValueClosure of is_rec * pattern * pattern list * expr * env
+  | ValueTuple of value * value * value list
+  | ValueList of value list
   | ValueOption of value option
   | ValueBuiltin of (value -> (value, value_error) Result.t)
 
@@ -34,7 +34,7 @@ let pp_value_error fmt = function
   | LHS -> fprintf fmt "LeftHandSide"
 ;;
 
-module type MONAD = sig
+module type Monad = sig
   type ('a, 'e) t
 
   val return : 'a -> ('a, 'e) t
@@ -42,7 +42,7 @@ module type MONAD = sig
   val ( let* ) : ('a, 'e) t -> ('a -> ('b, 'e) t) -> ('b, 'e) t
 end
 
-module Env (M : MONAD) = struct
+module Env (M : Monad) = struct
   open M
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
@@ -54,7 +54,7 @@ module Env (M : MONAD) = struct
   ;;
 end
 
-module Eval (M : MONAD) : sig
+module Eval (M : Monad) : sig
   val eval_structure : program -> (env, value_error) M.t
 end = struct
   open M
@@ -88,7 +88,7 @@ end = struct
            (ValueBuiltin
               (function
                 | ValueBool b ->
-                  Stdlib.print_string (if b then "true" else "false");
+                  Stdlib.print_string (Bool.to_string b);
                   Stdlib.print_newline ();
                   Result.return ValueUnit
                 | _ -> Result.fail TypeError))

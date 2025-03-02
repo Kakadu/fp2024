@@ -207,9 +207,9 @@ end = struct
   ;;
 end
 
-type scheme = S of IntSet.t * ty
-
 module Scheme = struct
+  type t = S of IntSet.t * ty
+
   let free_vars (S (vars, ty)) = IntSet.diff (Type.free_vars ty) vars
 
   let apply subst (S (vars, ty)) =
@@ -221,7 +221,7 @@ module Scheme = struct
 end
 
 module TypeEnv = struct
-  type t = (ident, scheme, String.comparator_witness) Map.t
+  type t = (ident, Scheme.t, String.comparator_witness) Map.t
 
   let extend env key value = Map.update env key ~f:(fun _ -> value)
 
@@ -238,13 +238,13 @@ module TypeEnv = struct
     empty (module String)
     |> set
          ~key:"print_int"
-         ~data:(S (IntSet.empty, TyArrow (TyPrim "int", TyPrim "unit")))
+         ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "int", TyPrim "unit")))
     |> set
          ~key:"print_endline"
-         ~data:(S (IntSet.empty, TyArrow (TyPrim "string", TyPrim "unit")))
+         ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "string", TyPrim "unit")))
     |> set
          ~key:"print_bool"
-         ~data:(S (IntSet.empty, TyArrow (TyPrim "bool", TyPrim "unit")))
+         ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "bool", TyPrim "unit")))
   ;;
 end
 
@@ -253,7 +253,7 @@ open ResultMonad.Syntax
 
 let fresh_var = fresh >>| fun n -> TyVar n
 
-let instantiate : scheme -> ty ResultMonad.t =
+let instantiate : Scheme.t -> ty ResultMonad.t =
   fun (S (vars, ty)) ->
   IntSet.fold
     (fun var typ ->
@@ -267,7 +267,7 @@ let instantiate : scheme -> ty ResultMonad.t =
 
 let generalize env ty =
   let free = IntSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
-  S (free, ty)
+  Scheme.S (free, ty)
 ;;
 
 let infer_const = function
@@ -283,7 +283,7 @@ let rec infer_pattern env = function
   | PatConst const -> return (Substitution.empty, infer_const const, env)
   | PatVariable var ->
     let* fresh = fresh_var in
-    let env = TypeEnv.extend env var (S (IntSet.empty, fresh)) in
+    let env = TypeEnv.extend env var (Scheme.S (IntSet.empty, fresh)) in
     return (Substitution.empty, fresh, env)
   | PatTuple (first_pat, second_pat, rest_pats) ->
     let* sub_first, type_first, env_first = infer_pattern env first_pat in

@@ -2,9 +2,9 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Angstrom
-open Base
 open Ast
+open Base
+open Angstrom
 
 let is_keyword = function
   | "let"
@@ -138,22 +138,24 @@ let parse_pattern_option parse_pattern =
 let parse_pattern =
   fix (fun pat ->
     let atom =
-      parse_pattern_const
-      <|> parse_pattern_var
-      <|> parse_pattern_any
-      <|> parse_pattern_empty
-      <|> parse_parens pat
+      choice
+        [ parse_pattern_var
+        ; parse_pattern_any
+        ; parse_pattern_const
+        ; parse_pattern_empty
+        ; parse_pattern_with_type pat
+        ; parse_parens pat
+        ; parse_pattern_option pat
+        ]
     in
-    let opt = parse_pattern_option atom <|> atom in
-    let tuple = parse_pattern_tuple opt <|> opt in
+    let tuple = parse_pattern_tuple atom <|> atom in
     let lst = parse_pattern_list tuple <|> tuple in
-    let a_type = parse_pattern_with_type lst <|> lst in
-    a_type)
+    lst)
 ;;
 
-let parse_left_associative parse_expr oper =
-  let rec go acc = lift2 (fun f x -> f acc x) oper parse_expr >>= go <|> return acc in
-  parse_expr >>= go
+let parse_left_associative expr oper =
+  let rec go acc = lift2 (fun f x -> f acc x) oper expr >>= go <|> return acc in
+  expr >>= go
 ;;
 
 let parse_expr_bin_oper parse_bin_op tkn =
@@ -179,7 +181,7 @@ let compare =
 let and_op = parse_expr_bin_oper And "&&"
 let or_op = parse_expr_bin_oper Or "||"
 let parse_expr_ident = parse_ident >>| fun x -> ExpIdent x
-let parse_expr_const = parse_const >>| fun x -> ExpConst x
+let parse_expr_const = parse_const >>| fun c -> ExpConst c
 
 let parse_expr_with_type parse_expr =
   let parse_annotated_type = token ":" *> parse_type in
@@ -216,8 +218,9 @@ let parse_expr_function e =
 ;;
 
 let parse_expr_lambda parse_expr =
-  token "fun" *> (take_while1 Char.is_whitespace *> many1 parse_pattern)
-  >>= fun args -> token "->" *> parse_expr >>| fun body -> ExpLambda (args, body)
+  token "fun" *> sep_by1 white_space parse_pattern
+  <* token "->"
+  >>= fun params -> parse_expr >>| fun body -> ExpLambda (params, body)
 ;;
 
 let parse_expr_tuple parse_expr =
@@ -268,16 +271,16 @@ let parse_expr =
         ; parse_parens (parse_expr_with_type expr)
         ]
     in
-    let func = parse_expr_function (term <|> term) <|> term in
+    let func = parse_expr_function term in
     let cons = parse_expr_option func <|> func in
-    let ife = parse_expr_branch (expr <|> cons) <|> cons in
+    let ife = parse_expr_branch expr <|> cons in
     let unops = parse_expr_unar_oper ife <|> ife in
     let ops1 = parse_left_associative unops (multiply <|> division) in
     let ops2 = parse_left_associative ops1 (plus <|> minus) in
     let cmp = parse_left_associative ops2 compare in
     let boolean = parse_left_associative cmp (and_op <|> or_op) in
     let tuple = parse_expr_tuple boolean <|> boolean in
-    let lambda = parse_expr_lambda tuple <|> tuple in
+    let lambda = parse_expr_lambda expr <|> tuple in
     choice [ parse_expr_let expr; parse_expr_lambda expr; lambda ])
 ;;
 
@@ -307,4 +310,4 @@ let parse_program =
   definitions_or_exprs <* white_space
 ;;
 
-let parse str = parse_string ~consume:All parse_program str
+let parse input = parse_string ~consume:All parse_program input

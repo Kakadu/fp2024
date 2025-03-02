@@ -3,9 +3,9 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open EUsoltsev_lib
-open Printf
-open Parser
 open Ast
+open Parser
+open Printf
 
 let parse_test input =
   match parse input with

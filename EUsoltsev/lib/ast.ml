@@ -37,7 +37,7 @@ type binder = int [@@deriving show { with_path = false }]
 
 type ty =
   | TyVar of binder
-  | TyPrim of ident
+  | TyPrim of string
   | TyArrow of ty * ty
   | TyList of ty
   | TyTuple of ty list
@@ -49,25 +49,25 @@ type pattern =
   | PatConst of const (* [21] or [true] or [false] *)
   | PatTuple of pattern * pattern * pattern list (* (x1; x2 ... xn) *)
   | PatAny
+  | PatType of pattern * ty
   | PatUnit
   | PatList of pattern list
   | PatOption of pattern option
-  | PatType of pattern * ty
 [@@deriving show { with_path = false }]
 
 type expr =
-  | ExpIdent of ident
-  | ExpConst of const
+  | ExpIdent of ident (* ExpIdent "x" *)
+  | ExpConst of const (* ExpConst (ConstInt 666) *)
   | ExpBranch of expr * expr * expr option
-  | ExpTuple of expr * expr * expr list
-  | ExpList of expr list
-  | ExpBinOper of bin_oper * expr * expr
-  | ExpUnarOper of unar_oper * expr
-  | ExpLet of is_rec * bind * bind list * expr
-  | ExpFunction of expr * expr
-  | ExpOption of expr option
-  | ExpLambda of pattern list * expr
+  | ExpBinOper of bin_oper * expr * expr (* ExpBinOper(Plus, 1, 2) *)
+  | ExpUnarOper of unar_oper * expr (* ExpUnarOper(not, x)*)
+  | ExpTuple of expr * expr * expr list (* ExpTuple[x1; x2 .. xn] *)
+  | ExpList of expr list (* ExpList[x1; x2 .. xn] *)
+  | ExpLambda of pattern list * expr (* ExpLambda([x;y;z], x+y+z)*)
   | ExpTypeAnnotation of expr * ty
+  | ExpLet of is_rec * bind * bind list * expr
+  | ExpFunction of expr * expr (* ExpFunction(x, y)*)
+  | ExpOption of expr option
 [@@deriving show { with_path = false }]
 
 and bind = pattern * expr [@@deriving show { with_path = false }]

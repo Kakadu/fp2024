@@ -12,9 +12,9 @@ and value =
   | ValueBool of bool
   | ValueString of string
   | ValueUnit
-  | ValueList of value list
-  | ValueTuple of value * value * value list
   | ValueClosure of is_rec * pattern * pattern list * expr * env
+  | ValueTuple of value * value * value list
+  | ValueList of value list
   | ValueOption of value option
   | ValueBuiltin of (value -> (value, value_error) Result.t)
 
