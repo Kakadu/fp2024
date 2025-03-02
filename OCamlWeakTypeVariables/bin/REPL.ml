@@ -16,17 +16,15 @@ type opts =
   }
 
 module REPL_monad = struct
-  open Base
+  type 'a t = ('a, string) Base.Result.t
 
-  type 'a t = ('a, string) Result.t
-
-  let fail = Result.fail
-  let return = Result.return
+  let fail = Base.Result.fail
+  let return = Base.Result.return
 
   let ( >>= ) (monad : 'a t) (f : 'a -> 'b t) : 'b t =
     match monad with
     | Ok result -> f result
-    | Error x when String.( <> ) x "" ->
+    | Error x when Base.String.( <> ) x "" ->
       Format.printf "Error: %s\n" x;
       fail ""
     | _ -> fail ""
