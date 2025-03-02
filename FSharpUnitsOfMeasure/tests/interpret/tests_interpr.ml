@@ -36,6 +36,125 @@ let test_interpret s =
   | Error e -> printf "Parse error: %s\n" e
 ;;
 
+(************************** manytests **************************)
+
+let%expect_test "001.ml" =
+  let _ = test_interpret {|
+      let rec fac n = if n<=1 then 1 else n * fac (n-1)
+  |} in
+  [%expect
+    {|
+    val fac : <type> = <fun> |}]
+;;
+
+let%expect_test "002if.ml" =
+  let _ = test_interpret {|
+      let main = if true then 1 else false
+  |} in
+  [%expect
+    {|
+    val main : <type> = 1 |}]
+;;
+
+let%expect_test "003occurs.ml" =
+  let _ =
+    test_interpret
+      {|
+      let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f))
+  |}
+  in
+  [%expect
+    {|
+    val fix : <type> = <fun> |}]
+;;
+
+(* DOES NOT HALT*)
+(* let%expect_test "004let_poly.ml\n" =
+  let _ = test_interpret {|
+      let _1 =
+  (fun f -> (f 1, f true)) (fun x -> x)
+  |} in
+  [%expect
+    {|
+    val a : <type> = 7
+    val b : <type> = [7]
+    val c : <type> = [7; 7]
+    val d : <type> = [7] |}]
+;; *)
+
+(* IS INCORRECT *)
+(* let%expect_test "  005.ml\n" =
+  let _ =
+    test_interpret
+      {|
+     let _2 = function
+  | Some f -> let _ = f "42" in f 42
+  | None -> 1
+  |}
+  in
+  [%expect
+    {|
+    Parse error: : end_of_input |}]
+;; *)
+
+let%expect_test "  015tuples.ml" =
+  let _ = test_interpret {|
+     let rec (a,b) = (a,b)
+  |} in
+  [%expect
+    {|
+    Interpreter error: Invalid syntax |}]
+;;
+
+let%expect_test "016tuples_mismatch.ml" =
+  let _ = test_interpret {|
+       let a, _ = 1, 2, 3
+  |} in
+  [%expect
+    {|
+    Interpreter error: Match failure |}]
+;;
+
+let%expect_test "  097fun_vs_list.ml" =
+  let _ = test_interpret {|
+       let [a] = (fun x -> x)
+  |} in
+  [%expect
+    {|
+    Interpreter error: Match failure |}]
+;;
+
+(* IS INCORRECT, CAN'T PARSE UNIT *)
+(* let%expect_test "    097fun_vs_unit.ml" =
+  let _ = test_interpret {|
+         let () = (fun x -> x)
+  |} in
+  [%expect
+    {|
+    Parse error: : end_of_input |}]
+;; *)
+
+(* ??? *)
+let%expect_test "  /098rec_int.ml" =
+  let _ = test_interpret {|
+          let rec x = x + 1
+  |} in
+  [%expect
+    {|
+    Interpreter error: Unbound identificator: x |}]
+;;
+
+let%expect_test "  099.ml" =
+  let _ = test_interpret {|
+  let rec x::[] = [1]
+  |} in
+  [%expect
+    {|
+    Parse error: : end_of_input |}]
+;;
+
+(************************** other **************************)
+
 let%expect_test _ =
   let _ = test_interpret {|
     1
@@ -97,7 +216,8 @@ let%expect_test _ =
   let b = 3;;
   let c = b :: a;;
   |} in
-  [%expect {|
+  [%expect
+    {|
     val a : <type> = [2; 1]
     val b : <type> = 3
     val c : <type> = [3; 2; 1] |}]
@@ -155,4 +275,24 @@ let%expect_test _ =
     val a : <type> = true
     val is_even : <type> = <fun>
     val is_odd : <type> = <fun> |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    test_interpret
+      {|
+      let a = 7;;
+      let b = (fun x -> [ x ]) a;;
+
+      let c = a :: b;;
+
+      let d = if false && true then c else b
+  |}
+  in
+  [%expect
+    {|
+    val a : <type> = 7
+    val b : <type> = [7]
+    val c : <type> = [7; 7]
+    val d : <type> = [7] |}]
 ;;
