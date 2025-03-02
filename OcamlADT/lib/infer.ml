@@ -94,7 +94,6 @@ module Substitution = struct
   let empty = Map.empty (module Base.String)
 
   let singleton k v =
-    (* let _ = Stdlib.Format.printf "in singleton %s:%a\n" k pprint_type v in *)
     match k, v with
     | a, Type_var b when String.equal a b -> return (Base.Map.empty (module Base.String))
     | _ ->
@@ -355,7 +354,6 @@ let infer_rest_vb ~debug env_acc sub_acc sub typ pat =
 ;;
 
 let infer_rec_rest_vb sub_acc env_acc fresh typ name new_sub =
-  (*constraint there*)
   let* uni_sub = Substitution.unify (Substitution.apply new_sub fresh) typ in
   let* comp_sub = Substitution.compose_all [ new_sub; uni_sub; sub_acc ] in
   let env_acc = TypeEnv.apply comp_sub env_acc in
@@ -678,7 +676,6 @@ let get_names_adt env poly_list =
     ~f:(fun _ acc ->
       let* env_acc, fresh_acc = return acc in
       let* fresh = fresh_var in
-      (* let env_acc = TypeEnv.extend env_acc poly (Forall (VarSet.empty, fresh)) in *)
       return (env_acc, fresh :: fresh_acc))
     poly_list
     ~init:(return (env, []))
@@ -747,7 +744,6 @@ let infer_structure_item ~debug env item marity names =
                    constr_name
                    (Forall (varset, Type_arrow (typ, adt_type))))
           in
-          (* let new_env = TypeEnv.extend env constr_name (Forall (VarSet.empty, fresh)) in *)
           return new_env)
     in
     return (constrs, arity_map, names)
