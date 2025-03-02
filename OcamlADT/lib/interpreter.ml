@@ -836,11 +836,11 @@ module PPrinter = struct
   ;;
 
   let pp_error fmt = function
-    | PatternMismatch -> fprintf fmt "Intepreter error: Pattern mismatch"
-    | DivisionByZero -> fprintf fmt "Intepreter error: Division by zero"
-    | NotImplemented -> fprintf fmt "Intepreter error: Not implemented"
-    | UnboundVariable s -> fprintf fmt "Intepreter error: Unbound value %s" s
-    | TypeMismatch -> fprintf fmt "Intepreter error: Type mismatch"
+    | PatternMismatch -> fprintf fmt "Interpreter error: Pattern mismatch"
+    | DivisionByZero -> fprintf fmt "Interpreter error: Division by zero"
+    | NotImplemented -> fprintf fmt "Interpreter error: Not implemented"
+    | UnboundVariable s -> fprintf fmt "Interpreter error: Unbound value %s" s
+    | TypeMismatch -> fprintf fmt "Interpreter error: Type mismatch"
     | RecursionError -> fprintf fmt "Interpreter error: Recursion error"
     | EmptyProgram -> fprintf fmt "Empty program"
     | ParserError -> fprintf fmt "Parser Error"

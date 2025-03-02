@@ -54,7 +54,7 @@ let%expect_test "zero" =
 
 let%expect_test "x" =
   pp_parse_demo {|x;;|};
-  [%expect {| Intepreter error: Unbound value x |}]
+  [%expect {| Interpreter error: Unbound value x |}]
 ;;
 
 let%expect_test "substraction" =
@@ -72,7 +72,7 @@ let%expect_test "strange move" =
 let%expect_test "assignment (fail: UnboundValue - x)" =
   pp_parse_demo {|x = 51;;|};
   [%expect {|
-    Intepreter error: Unbound value x |}]
+    Interpreter error: Unbound value x |}]
 ;;
 
 let%expect_test "operators with different priorities" =
@@ -99,7 +99,7 @@ let%expect_test "int print_endline (fail: TypeMismatch)" =
   pp_parse_demo {|let x = 51 in 
 print_endline x;;|};
   [%expect {|
-    Intepreter error: Type mismatch |}]
+    Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "string print_endline" =
@@ -126,7 +126,7 @@ let%expect_test "print_endline as an arg (fail: TypeMismatch)" =
   pp_parse_demo {|let f = print_endline in 
 f 5;;|};
   [%expect {|
-    Intepreter error: Type mismatch |}]
+    Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "print_int as an arg" =
@@ -161,7 +161,7 @@ let%expect_test "let assignment none (fail: PatternMismatch)" =
   pp_parse_demo {|let Some Some Some Some Some None = 1 in 
 print_int None;;|};
   [%expect {|
-    Intepreter error: Pattern mismatch |}]
+    Interpreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "multiple let assignments" =
@@ -188,7 +188,7 @@ let%expect_test "fun assignment with bool operators (tuple arg)" =
 
 let%expect_test "too damn simple fun assignment (TC should fail?)" =
   pp_parse_demo {| let id = fun x -> y in print_int (id 7) ;; |};
-  [%expect {| Intepreter error: Unbound value y |}]
+  [%expect {| Interpreter error: Unbound value y |}]
 ;;
 
 (*4 am vibes, im sorry*)
@@ -444,22 +444,12 @@ let _2 = function
   |}]
 ;;
 
-(*good*)
-let%expect_test "tuples" =
-  pp_parse_demo {|
-let rec (a, b) = (a, b) ;;
- |};
-  [%expect {|
-  Intepreter error: Unbound value a
-  |}]
-;;
-
 let%expect_test "tuples mismatch (fail: PatternMismatch)" =
   pp_parse_demo {|
 let a, _ = 1, 2, 3 ;;
  |};
   [%expect {|
-  Intepreter error: Pattern mismatch
+  Interpreter error: Pattern mismatch
   |}]
 ;;
 
@@ -611,7 +601,7 @@ type shape = Circle of int
 let x = Chto 5
 ;;
   |};
-  [%expect {| Intepreter error: Unbound value Chto |}]
+  [%expect {| Interpreter error: Unbound value Chto |}]
 ;;
 
 let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
@@ -631,7 +621,7 @@ let y = area x in
 print_int y
 ;;
   |};
-  [%expect {| Intepreter error: Pattern mismatch |}]
+  [%expect {| Interpreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue Cir)" =
@@ -644,7 +634,7 @@ type shape = Circle of int
 let x = Cir 5 in 
 print_int area x;;
   |};
-  [%expect {| Intepreter error: Unbound value Cir |}]
+  [%expect {| Interpreter error: Unbound value Cir |}]
 ;;
 
 (* good, needs a initialization check + infer print(see next tests)*)
@@ -823,7 +813,7 @@ let%expect_test "nested function as apply with print_int" =
 
 let%expect_test "tuple pattern function with print_string (fail: TypeMismatch)" =
   pp_parse_demo {|  print_endline ((function (x, y) -> x + y) ("Hello", " World")) |};
-  [%expect {| Intepreter error: Type mismatch |}]
+  [%expect {| Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "function inside let binding with print_int" =

@@ -16,7 +16,6 @@ open Format
 
 type options =
   { mutable show_ast : bool
-  ; mutable run_typecheck : bool
   ; mutable file_string : string option
   }
 
@@ -115,7 +114,7 @@ let run_file options string =
 (* ------------------------------- *)
 
 let () =
-  let options = { show_ast = false; run_typecheck = false; file_string = None } in
+  let options = { show_ast = false; file_string = None } in
   let arg_list = [ "--ast", Arg.Unit (fun () -> options.show_ast <- true), "Dump AST" ] in
   let read_file path =
     if Sys.file_exists path
