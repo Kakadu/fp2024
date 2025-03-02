@@ -27,7 +27,7 @@ module REPL_monad = struct
     match monad with
     | Ok result -> f result
     | Error x when String.( <> ) x "" ->
-      Format.printf "Error: %s\n" x;
+      Caml.Format.printf "Error: %s\n" x;
       fail ""
     | _ -> fail ""
   ;;
