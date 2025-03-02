@@ -213,61 +213,51 @@ module Inter = struct
     helper cases
   ;;
 
+  let binary_operators_int_arith = [ "+", ( + ); "-", ( - ); "*", ( * ); "/", ( / ) ]
+
+  let binary_operators_compare =
+    [ "<=", ( <= ); "<", ( < ); ">", ( > ); ">=", ( >= ); "=", ( = ); "<>", ( <> ) ]
+  ;;
+
+  let is_binary_op_int name =
+    List.exists (fun (list_op, _) -> name = list_op) binary_operators_int_arith
+  ;;
+
+  let is_binary_op_compare name =
+    List.exists (fun (list_op, _) -> name = list_op) binary_operators_compare
+  ;;
+
+  let eval_binary_op_int eval_expr env op_name e1 e2 =
+    let _, op =
+      List.find (fun (list_op, _) -> list_op = op_name) binary_operators_int_arith
+    in
+    let* first = eval_expr env e1 in
+    let* second = eval_expr env e2 in
+    match first, second with
+    | Val_integer f, Val_integer s -> return (Val_integer (op f s))
+    | _ -> fail Type_error
+  ;;
+
+  let eval_binary_op_compare eval_expr env op_name e1 e2 =
+    let get_op () =
+      snd (List.find (fun (list_op, _) -> list_op = op_name) binary_operators_compare)
+    in
+    let* first = eval_expr env e1 in
+    let* second = eval_expr env e2 in
+    match first, second with
+    | Val_integer f, Val_integer s -> return (Val_boolean ((get_op ()) f s))
+    | Val_boolean f, Val_boolean s -> return (Val_boolean ((get_op ()) f s))
+    | Val_string f, Val_string s -> return (Val_boolean ((get_op ()) f s))
+    | _ -> fail Type_error
+  ;;
+
   let rec eval_expr env = function
     | Pexp_ident id -> find_exn env id
     | Pexp_constant const -> eval_const const
-    | Pexp_apply (Pexp_ident "print_int", [ e1 ]) ->
-      let* value = eval_expr env e1 in
-      (match value with
-       | Val_integer i ->
-         (* There is must no be newline, but without that manytests work poorly *)
-         Format.printf "%d\n" i;
-         return (Val_construct ("()", None))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "+", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_integer (f + s))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "-", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_integer (f - s))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "*", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_integer (f * s))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "/", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_integer (f / s))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "<=", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_boolean (f <= s))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "<", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_boolean (f < s))
-       | _ -> fail Type_error)
-    | Pexp_apply (Pexp_ident "=", [ e1; e2 ]) ->
-      let* first = eval_expr env e1 in
-      let* second = eval_expr env e2 in
-      (match first, second with
-       | Val_integer f, Val_integer s -> return (Val_boolean (f = s))
-       | Val_boolean f, Val_boolean s -> return (Val_boolean (f = s))
-       | Val_string f, Val_string s -> return (Val_boolean (f = s))
-       | _ -> fail Type_error)
+    | Pexp_apply (Pexp_ident op_name, [ e1; e2 ]) when is_binary_op_int op_name ->
+      eval_binary_op_int eval_expr env op_name e1 e2
+    | Pexp_apply (Pexp_ident op_name, [ e1; e2 ]) when is_binary_op_compare op_name ->
+      eval_binary_op_compare eval_expr env op_name e1 e2
     | Pexp_apply (e0, es) ->
       let rec helper value0 es =
         match es with
