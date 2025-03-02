@@ -152,12 +152,6 @@ module Inter = struct
         (return env)
         pts
         values
-    | ( Ppat_construct ("::", Some (Ppat_tuple [ first_pat; second_pat ]))
-      , Val_construct ("::", Some (Val_tuple [ first_val; second_val ])) ) ->
-      let* env = match_pattern env (first_pat, first_val) in
-      let* env = match_pattern env (second_pat, second_val) in
-      return env
-    | Ppat_construct ("[]", None), Val_construct ("[]", None) -> return env
     | Ppat_construct (pat_name, None), Val_construct (val_name, None)
       when pat_name = val_name -> return env
     | Ppat_construct (pat_name, Some constr), Val_construct (val_name, Some value) ->
