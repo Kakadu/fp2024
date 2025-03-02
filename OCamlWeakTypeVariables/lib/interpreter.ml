@@ -54,7 +54,17 @@ let pp_error ppf : error -> _ = function
   | Match_error -> Format.fprintf ppf "Match failure"
 ;;
 
-module Res = struct
+module Res : sig
+  type 'a t
+
+  val fail : error -> 'a t
+  val return : 'a -> 'a t
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( >>| ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( <|> ) : 'a t -> 'a t -> 'a t
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+end = struct
   open Base
 
   type 'a t = ('a, error) Result.t
@@ -72,6 +82,15 @@ module Res = struct
     match monad with
     | Ok result -> return (f result)
     | Error x -> fail x
+  ;;
+
+  let ( <|> ) (first : 'a t) (second : 'a t) : 'a t =
+    match first with
+    | Ok result -> return result
+    | Error _ ->
+      (match second with
+       | Ok result -> return result
+       | Error e -> fail e)
   ;;
 
   let ( let* ) = ( >>= )
