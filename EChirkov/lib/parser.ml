@@ -80,7 +80,6 @@ let p_boolean =
 ;;
 
 let p_unit = token "()" *> return CUnit
-let p_any = token "_" *> return PAny
 
 let p_const =
   choice
@@ -102,6 +101,8 @@ let p_variable =
 ;;
 
 (* ========== patterns ========== *)
+
+let p_any = token "_" *> return PAny
 
 let p_pattern =
   fix
@@ -142,9 +143,7 @@ let p_expression =
     chainl1
       plusminus_op
       (choice
-         [ p_binop "&&" And
-         ; p_binop "||" Or
-         ; p_binop ">" Gt
+         [ p_binop ">" Gt
          ; p_binop "<" Lt
          ; p_binop ">=" Gte
          ; p_binop "<=" Lte
@@ -152,7 +151,8 @@ let p_expression =
          ; p_binop "<>" NEq
          ])
   in
-  compare_op
+  let bool_op = chainl1 compare_op (p_binop "&&" And <|> p_binop "||" Or) in
+  bool_op
 ;;
 
 (* ========== top level ========== *)
