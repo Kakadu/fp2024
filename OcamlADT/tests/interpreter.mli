@@ -2,6 +2,4 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocamladt_lib.Ast
-
-val test_program : ident -> unit
+val pp_interpret : Ocamladt_lib.Ast.program -> unit

@@ -7,14 +7,11 @@ open QCheck.Shrink
 open Ocamladt_lib.Ast
 
 module ShrinkQCheck = struct
-  (* Shrinker for Patterns *)
-
   let filter predicate iter =
     iter >>= fun x -> if predicate x then QCheck.Iter.return x else QCheck.Iter.empty
   ;;
 
   let shrink_list1 ~shrink_head ~shrink_tail (head, tail) =
-    Printf.printf "shrink list1\n";
     match tail with
     | [] -> shrink_head head >|= fun head' -> head', tail
     | _ ->
@@ -29,7 +26,6 @@ module ShrinkQCheck = struct
   ;;
 
   let shrink_list2 ~shrink_first ~shrink_second ~shrink_tail (first, second, tail) =
-    Printf.printf "shrink list2\n";
     match tail with
     | [] ->
       let open QCheck.Iter in
@@ -49,9 +45,7 @@ module ShrinkQCheck = struct
         | _ -> true)
   ;;
 
-  let rec shrink_pattern =
-    Printf.printf "shrink pattern\n";
-    function
+  let rec shrink_pattern = function
     | Pattern.Pat_any -> QCheck.Iter.return Pattern.Pat_any
     | Pattern.Pat_var id -> string ~shrink:char id >|= fun id' -> Pattern.Pat_var id'
     | Pattern.Pat_constant const ->
@@ -76,12 +70,8 @@ module ShrinkQCheck = struct
       shrink_pattern pat >|= fun pat' -> Pattern.Pat_construct (id, Some pat')
     | Pattern.Pat_constraint (pat, core_type) ->
       shrink_pattern pat >|= fun pat' -> Pattern.Pat_constraint (pat', core_type)
-  (* <+> shrink_type_expr core_type
-     >|= fun core_type' -> Pattern.Pat_constraint (pat, core_type') *)
 
-  and shrink_expression =
-    Printf.printf "shrink expression\n";
-    function
+  and shrink_expression = function
     | Expression.Exp_ident id ->
       string ~shrink:char id >|= fun id' -> Expression.Exp_ident id'
     | Expression.Exp_constant const ->
@@ -145,7 +135,6 @@ module ShrinkQCheck = struct
       >|= fun else_exp' -> Expression.Exp_if (cond, then_exp, Some else_exp')
 
   and shrink_value_binding value_binding =
-    Printf.printf "shrink value_binding\n";
     let open Expression in
     shrink_pattern value_binding.Expression.pat
     >>= fun pat' ->
@@ -153,7 +142,6 @@ module ShrinkQCheck = struct
     >>= fun expr' -> return { pat = pat'; expr = expr' }
 
   and shrink_case case =
-    Printf.printf "shrink case\n";
     let open Expression in
     shrink_pattern case.Expression.first
     >>= fun first' ->
@@ -161,9 +149,7 @@ module ShrinkQCheck = struct
     >>= fun second' -> return { first = first'; second = second' }
   ;;
 
-  let shrink_structure_item =
-    Printf.printf "shrink str item\n";
-    function
+  let shrink_structure_item = function
     | Structure.Str_eval expr ->
       shrink_expression expr >|= fun expr' -> Structure.Str_eval expr'
     | Structure.Str_value (rec_flag, bindings) ->
@@ -172,6 +158,7 @@ module ShrinkQCheck = struct
         ~shrink_tail:shrink_value_binding
         bindings
       >|= fun (head', tail') -> Structure.Str_value (rec_flag, (head', tail'))
+    | Structure.Str_adt (r, b, a) -> return (Structure.Str_adt (r, b, a))
   ;;
 
   let shrink_structure = list ~shrink:shrink_structure_item

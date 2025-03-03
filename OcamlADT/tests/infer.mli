@@ -2,6 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Ocamladt_lib.Ast
+open Ocamladt_lib.Infer
 
-val test_program : ident -> unit
+val pprint_result : TypeEnv.t -> string list -> unit
