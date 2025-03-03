@@ -16,6 +16,7 @@ type error =
   | NotAnADT of string
   | NotAnADTVariant of string
   | UndefinedConstructor of string
+  | UndefinedArgs
 
 type value =
   | VInt of int
@@ -43,14 +44,12 @@ let compare_values v1 v2 =
   | _ -> false
 ;;
 
-let list1_to_list2 lst =
-  match lst with
+let list1_to_list2 = function
   | el1, el2 :: ell -> Some (el1, el2, ell)
   | _ -> None
 ;;
 
-let make_list1 lst =
-  match lst with
+let make_list1 = function
   | [] -> None
   | x :: xs -> Some (x, xs)
 ;;
@@ -124,32 +123,28 @@ module Env (M : Error_monad) = struct
       (module Base.String)
       [ ( "print_endline"
         , VBuiltin_print
-            (fun v ->
-              match v with
+            (function
               | VString s ->
                 print_endline s;
                 Ok VUnit
               | _ -> Error TypeMismatch) )
       ; ( "print_int"
         , VBuiltin_print
-            (fun v ->
-              match v with
+            (function
               | VInt i ->
                 print_endline (string_of_int i);
                 Ok VUnit
               | _ -> Error TypeMismatch) )
       ; ( "print_char"
         , VBuiltin_print
-            (fun v ->
-              match v with
+            (function
               | VChar c ->
                 print_endline (String.make 1 c);
                 Ok VUnit
               | _ -> Error TypeMismatch) )
       ; ( "print_bool"
         , VBuiltin_print
-            (fun v ->
-              match v with
+            (function
               | VBool b ->
                 print_endline (string_of_bool b);
                 Ok VUnit
@@ -272,8 +267,7 @@ module Interpreter (M : Error_monad) = struct
   open M
   module E = Env (M)
 
-  let lift_result r =
-    match r with
+  let lift_result = function
     | Ok v -> return v
     | Error e -> fail e
   ;;
@@ -320,7 +314,7 @@ module Interpreter (M : Error_monad) = struct
       let* as_value = E.lookup env ident in
       (match as_value with
        | VType (type_value, _) -> return type_value
-       | _ -> failwith ("Unbound type variable: " ^ ident))
+       | _ -> fail TypeMismatch)
     | TypeExpr.Type_arrow (t1, t2) ->
       let* t1_resolved = eval_type_expr env t1 in
       let* t2_resolved = eval_type_expr env t2 in
@@ -336,27 +330,17 @@ module Interpreter (M : Error_monad) = struct
       (match as_val with
        | VType (TypeExpr.Type_construct (_, tparams), _) ->
          if List.length args <> List.length tparams
-         then
-           failwith
-             (Printf.sprintf
-                "Type constructor %s expects %d arguments, but got %d"
-                type_name
-                (List.length tparams)
-                (List.length args));
-         let* resolved_args = mapM eval_type_expr env args in
-         return (TypeExpr.Type_construct (type_name, resolved_args))
+         then fail UndefinedArgs
+         else
+           let* resolved_args = mapM eval_type_expr env args in
+           return (TypeExpr.Type_construct (type_name, resolved_args))
        | VType (TypeExpr.Type_var s, _) -> return (TypeExpr.Type_var s)
        | VAdt (_, tparams, _, _) ->
          if List.length args <> List.length tparams
-         then
-           failwith
-             (Printf.sprintf
-                "Type constructor %s expects %d arguments, but got %d"
-                type_name
-                (List.length tparams)
-                (List.length args));
-         let* resolved_args = mapM eval_type_expr env args in
-         return (TypeExpr.Type_construct (type_name, resolved_args))
+         then fail UndefinedArgs
+         else
+           let* resolved_args = mapM eval_type_expr env args in
+           return (TypeExpr.Type_construct (type_name, resolved_args))
        | _ -> fail (UndefinedConstructor type_name))
   ;;
 
@@ -579,9 +563,9 @@ module Interpreter (M : Error_monad) = struct
                   else fail (UndefinedConstructor ctor_name)
                 | None ->
                   (* If no arguments are provided, ensure the constructor expects none *)
-                  if List.length list_args = 0
-                  then return (VAdt (VUnit, targs, ctor_name, constr))
-                  else fail (UndefinedConstructor ctor_name))
+                  (match list_args with
+                   | [] -> return (VAdt (VUnit, targs, ctor_name, constr))
+                   | _ -> fail (UndefinedConstructor ctor_name)))
              | Some (Some (TypeExpr.Type_construct (_, argsl))) ->
                (match args with
                 | Some provided_args ->
@@ -592,13 +576,12 @@ module Interpreter (M : Error_monad) = struct
                   else return (VAdt (VUnit, targs, ctor_name, constr))
                 | None ->
                   (* If no arguments are provided, ensure the constructor expects none *)
-                  if List.length argsl = 0
-                  then return (VAdt (VUnit, targs, ctor_name, constr))
-                  else fail (UndefinedConstructor ctor_name))
+                  (match argsl with
+                   | [] -> return (VAdt (VUnit, targs, ctor_name, constr))
+                   | _ -> fail (UndefinedConstructor ctor_name)))
              | None | Some None | Some (Some (Type_var _)) ->
                return (VAdt (VUnit, targs, ctor_name, constr))
-             | Some (Some (Type_arrow _)) ->
-               failwith "Unexpected function type in constructor")
+             | Some (Some (Type_arrow _)) -> fail TypeMismatch)
             (*nada*)
           | _ -> fail (NotAnADT adt_name))
        | VBool _ -> E.lookup env ctor_name
@@ -848,6 +831,7 @@ module PPrinter = struct
     | NotAnADTVariant s -> fprintf fmt "Interpreter error: %s is not an ADT's variant" s
     | UndefinedConstructor s ->
       fprintf fmt "Interpreter error: Undefined constructor %s" s
+    | UndefinedArgs -> fprintf fmt "InterpreterError: Undefined arguments"
   ;;
 
   let print_error = printf "%a" pp_error

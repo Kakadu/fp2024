@@ -202,7 +202,7 @@ let ptypeconstr_app =
     (match base with
      | TypeExpr.Type_construct (name, args) ->
        return (TypeExpr.Type_construct (name, args @ extra_args))
-     | _ -> failwith "Expected a type constructor, but found an incompatible expression")
+     | _ -> fail "Expected a type constructor, but found an incompatible expression")
 ;;
 
 let ptype =

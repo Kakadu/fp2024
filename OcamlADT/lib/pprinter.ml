@@ -268,7 +268,7 @@ let pprint_structure_item fmt n =
     in
     let var_t_str =
       match constr1 :: constrl with
-      | [] -> failwith "No variants in type after eq sign\n"
+      | [] -> ""
       | _ ->
         "  | "
         ^ String.concat
