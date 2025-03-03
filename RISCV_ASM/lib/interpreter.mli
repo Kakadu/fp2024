@@ -1,22 +1,23 @@
-(** Copyright 2024, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
+(** Copyright 2024-2025, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-module StringMap : Map.S with type key = string
-module Int64Map : Map.S with type key = Int64.t
+module StringMap : Map.S with type key = string (* used to organize string memory *)
+module Int64Map : Map.S with type key = Int64.t (* used to organize int64 memory *)
 
 type state =
   { program : ast
   ; registers : int64 StringMap.t
-  ; vector_registers : int64 array StringMap.t
+  ; vregisters : int64 array StringMap.t
   ; max_vector_length : int
   ; vector_element_length : int
   ; vector_length : int
   ; memory_int : int64 Int64Map.t
   ; memory_str : string Int64Map.t
   ; memory_writable : bool Int64Map.t
-  ; pc : int64
+  ; program_idx : int64
+  (* index of current expr in program, used as analogy of Program Counter, each expr step is 4 *)
   }
 
 (* Combined monad for errors and state *)
