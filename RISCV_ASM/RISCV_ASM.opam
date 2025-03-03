@@ -3,7 +3,7 @@ opam-version: "2.0"
 version: "0.1"
 synopsis: "An interpreter for mini-language similiar to RISC-V ASM"
 description:
-  "An interpreter for mini-language similiar to RISC-V ASM. Bitmanip and RVV supported (TODO)."
+  "An interpreter for mini-language similiar to RISC-V ASM. Bitmanip and RVV subsets supported."
 maintainer: [
   "Vyacheslav Kochergin vyacheslav.kochergin1@gmail.com, Roman Mukovenkov roman.mukovenkov@gmail.com, Yuliana Ementyan ementyan.yuliana@gmail.com"
 ]
