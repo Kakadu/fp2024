@@ -1278,8 +1278,8 @@ open Char
 *)
 
 let is_whitespace = function
-  | <span data-count="16329291">'</span> ' | <span data-count="0">'</span>\t' | <span data-count="4241632">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
-  | <span data-count="130738263">_</span> -&gt; false
+  | <span data-count="16325115">'</span> ' | <span data-count="0">'</span>\t' | <span data-count="4238572">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
+  | <span data-count="130729326">_</span> -&gt; false
 ;;
 
 let pass_ws = skip_whil<span data-count="30">e</span> is_whitespace
@@ -1287,38 +1287,38 @@ let pass_ws = skip_whil<span data-count="30">e</span> is_whitespace
 (** Parser that matches string literals an 's' skipping all whitespaces before *)
 let pass_ws1 = ski<span data-count="30">p</span> is_whitespace *<span data-count="30">&gt;</span> pass_ws
 
-let token s = <span data-count="5602738">p</span>ass_ws *&gt; strin<span data-count="5602738">g</span> s
-let pparenth stmt = <span data-count="292">t</span>oke<span data-count="292">n</span> "(" *<span data-count="292">&gt;</span> stmt &lt;* toke<span data-count="292">n</span> ")"
+let token s = <span data-count="5601737">p</span>ass_ws *&gt; strin<span data-count="5601737">g</span> s
+let pparenth stmt = <span data-count="264">t</span>oke<span data-count="264">n</span> "(" *<span data-count="264">&gt;</span> stmt &lt;* toke<span data-count="264">n</span> ")"
 
 let ptowhitespace = function
-  | <span data-count="4893010">'</span>a' .. 'z' | <span data-count="31977">'</span>A' .. 'Z' | <span data-count="87262">'</span>0' .. '9' | <span data-count="176607">'</span>_' -&gt; true
-  | <span data-count="2018173">_</span> -&gt; false
+  | <span data-count="4886429">'</span>a' .. 'z' | <span data-count="25950">'</span>A' .. 'Z' | <span data-count="81021">'</span>0' .. '9' | <span data-count="170905">'</span>_' -&gt; true
+  | <span data-count="2016469">_</span> -&gt; false
 ;;
 
 let pident_cap =
   let first_char_str =
     satisfy (function
-      | <span data-count="21767">'</span>A' .. 'Z' -&gt; true
-      | <span data-count="5288169">_</span> -&gt; false)
+      | <span data-count="21082">'</span>A' .. 'Z' -&gt; true
+      | <span data-count="5287593">_</span> -&gt; false)
   in
-  <span data-count="30">l</span>ift<span data-count="30">2</span> (fun fc rs -&gt; <span data-count="21767">S</span>tring.mak<span data-count="21767">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="30">e</span> ptowhitespace)
+  <span data-count="30">l</span>ift<span data-count="30">2</span> (fun fc rs -&gt; <span data-count="21082">S</span>tring.mak<span data-count="21082">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="30">e</span> ptowhitespace)
   &gt;&gt;<span data-count="30">=</span> fun ident -&gt;
-  <span data-count="21767">i</span>f Ast.is_not_keyword ident
-  then <span data-count="21767">r</span>eturn ident
+  <span data-count="21082">i</span>f Ast.is_not_keyword ident
+  then <span data-count="21082">r</span>eturn ident
   else <span data-count="0">f</span>ail "Found a keyword instead of an identifier"
 ;;
 
 let pident_lc =
   let first_char_str =
     satisfy (function
-      | <span data-count="1960581">'</span>a' .. 'z' | <span data-count="35919">'</span>_' -&gt; true
-      | <span data-count="4629618">_</span> -&gt; false)
+      | <span data-count="1959958">'</span>a' .. 'z' | <span data-count="35523">'</span>_' -&gt; true
+      | <span data-count="4629006">_</span> -&gt; false)
   in
-  <span data-count="30">l</span>ift<span data-count="30">2</span> (fun fc rs -&gt; <span data-count="1996500">S</span>tring.mak<span data-count="1996500">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="30">e</span> ptowhitespace)
+  <span data-count="30">l</span>ift<span data-count="30">2</span> (fun fc rs -&gt; <span data-count="1995481">S</span>tring.mak<span data-count="1995481">e</span> 1 fc ^ rs) first_char_str (take_whil<span data-count="30">e</span> ptowhitespace)
   &gt;&gt;<span data-count="30">=</span> fun ident -&gt;
-  <span data-count="1996500">i</span>f Ast.is_not_keyword ident
-  then <span data-count="1632919">r</span>eturn ident
-  else <span data-count="363581">f</span>ail "Found a keyword instead of an identifier"
+  <span data-count="1995481">i</span>f Ast.is_not_keyword ident
+  then <span data-count="1632124">r</span>eturn ident
+  else <span data-count="363357">f</span>ail "Found a keyword instead of an identifier"
 ;;
 
 (*
@@ -1411,7 +1411,7 @@ let pmultiargsapp pty =
 
 let ptypevar =
   let* id = toke<span data-count="30">n</span> "'" *<span data-count="30">&gt;</span> (pident_lc &lt;|<span data-count="30">&gt;</span> pident_cap) in
-  <span data-count="3658">r</span>eturn (TypeExpr.Type_var id)
+  <span data-count="2954">r</span>eturn (TypeExpr.Type_var id)
 ;;
 
 let ptypetuple ptype =
@@ -1430,21 +1430,21 @@ let ptypeconstr =
            []
            (pparent<span data-count="7">h</span> (sep_b<span data-count="7">y</span> (toke<span data-count="7">n</span> ",") ptypevar)
             &lt;|<span data-count="7">&gt;</span> (let* typevar = ptypevar in
-                 <span data-count="1835">r</span>eturn [ typevar ])
+                 <span data-count="1483">r</span>eturn [ typevar ])
             &lt;|<span data-count="7">&gt;</span> (let* ctuple = pparent<span data-count="7">h</span> (ptypetupl<span data-count="7">e</span> ptconstr) in
                  <span data-count="3">r</span>eturn [ ctuple ])
             &lt;|<span data-count="7">&gt;</span>
             let* ttuple = pparent<span data-count="7">h</span> (ptypetupl<span data-count="7">e</span> ptypevar) in
             <span data-count="1">r</span>eturn [ ttuple ])
     in
-    <span data-count="2053">l</span>et* tname =
-      optio<span data-count="2053">n</span>
+    <span data-count="1701">l</span>et* tname =
+      optio<span data-count="1701">n</span>
         None
-        (let* name = pass_ws *<span data-count="2053">&gt;</span> (pident_lc &lt;|<span data-count="2053">&gt;</span> pident_cap) in
+        (let* name = pass_ws *<span data-count="1701">&gt;</span> (pident_lc &lt;|<span data-count="1701">&gt;</span> pident_cap) in
          <span data-count="119">r</span>eturn (Some name))
     in
-    <span data-count="2053">m</span>atch tname, tparams with
-    | <span data-count="0">S</span>ome "", [] | <span data-count="115">N</span>one, [] | <span data-count="1815">N</span>one, [ TypeExpr.Type_var _ ] -&gt;
+    <span data-count="1701">m</span>atch tname, tparams with
+    | <span data-count="0">S</span>ome "", [] | <span data-count="115">N</span>one, [] | <span data-count="1463">N</span>one, [ TypeExpr.Type_var _ ] -&gt;
       fail "Type constructor cannot have a single type parameter without a name"
     | <span data-count="119">S</span>ome name, _ -&gt; return (TypeExpr.Type_construct (name, tparams))
     | <span data-count="4">N</span>one, _ -&gt;
@@ -1828,36 +1828,36 @@ let pstrlet =
 
 let pstradt =
   let* _ = toke<span data-count="30">n</span> "type" in
-  <span data-count="186">l</span>et* type_param =
-    optio<span data-count="186">n</span>
+  <span data-count="158">l</span>et* type_param =
+    optio<span data-count="158">n</span>
       []
-      (pparent<span data-count="186">h</span> (sep_b<span data-count="186">y</span> (toke<span data-count="186">n</span> ",") (toke<span data-count="186">n</span> "'" *<span data-count="186">&gt;</span> pident_lc))
-       &lt;|<span data-count="186">&gt;</span> man<span data-count="186">y</span> (toke<span data-count="186">n</span> "'" *<span data-count="186">&gt;</span> pident_lc))
+      (pparent<span data-count="158">h</span> (sep_b<span data-count="158">y</span> (toke<span data-count="158">n</span> ",") (toke<span data-count="158">n</span> "'" *<span data-count="158">&gt;</span> pident_lc))
+       &lt;|<span data-count="158">&gt;</span> man<span data-count="158">y</span> (toke<span data-count="158">n</span> "'" *<span data-count="158">&gt;</span> pident_lc))
   in
-  <span data-count="186">l</span>et* type_name = pass_ws *<span data-count="186">&gt;</span> pident_lc in
-  <span data-count="186">l</span>et var =
-    let* cname = pass_ws *<span data-count="186">&gt;</span> pident_cap in
-    <span data-count="2230">l</span>et* ctype =
-      optio<span data-count="2230">n</span>
+  <span data-count="158">l</span>et* type_name = pass_ws *<span data-count="158">&gt;</span> pident_lc in
+  <span data-count="158">l</span>et var =
+    let* cname = pass_ws *<span data-count="158">&gt;</span> pident_cap in
+    <span data-count="1805">l</span>et* ctype =
+      optio<span data-count="1805">n</span>
         None
-        (let* _ = toke<span data-count="2230">n</span> "of" in
-         <span data-count="1880">l</span>et* types = sep_b<span data-count="1880">y</span> (toke<span data-count="1880">n</span> "*") ptype_adt in
-         <span data-count="1880">m</span>atch types with
+        (let* _ = toke<span data-count="1805">n</span> "of" in
+         <span data-count="1528">l</span>et* types = sep_b<span data-count="1528">y</span> (toke<span data-count="1528">n</span> "*") ptype_adt in
+         <span data-count="1528">m</span>atch types with
          | <span data-count="38">x</span> :: y :: xs -&gt; return (Some (TypeExpr.Type_tuple (x, y, xs)))
-         | <span data-count="1842">[</span> x ] -&gt; return (Some x)
+         | <span data-count="1490">[</span> x ] -&gt; return (Some x)
          | <span data-count="0">[</span>] -&gt; return None)
     in
-    <span data-count="2230">r</span>eturn (cname, ctype)
+    <span data-count="1805">r</span>eturn (cname, ctype)
   in
-  let* _ = toke<span data-count="186">n</span> "=" in
-  <span data-count="186">l</span>et* fvar =
-    optio<span data-count="186">n</span>
+  let* _ = toke<span data-count="158">n</span> "=" in
+  <span data-count="158">l</span>et* fvar =
+    optio<span data-count="158">n</span>
       None
-      (optio<span data-count="186">n</span> None (toke<span data-count="186">n</span> "|" *<span data-count="186">&gt;</span> retur<span data-count="186">n</span> None) *<span data-count="186">&gt;</span> (var &gt;&gt;<span data-count="186">=</span> fun v -&gt; <span data-count="185">r</span>eturn (Some v)))
+      (optio<span data-count="158">n</span> None (toke<span data-count="158">n</span> "|" *<span data-count="158">&gt;</span> retur<span data-count="158">n</span> None) *<span data-count="158">&gt;</span> (var &gt;&gt;<span data-count="158">=</span> fun v -&gt; <span data-count="157">r</span>eturn (Some v)))
   in
-  <span data-count="186">l</span>et* varl = man<span data-count="186">y</span> (toke<span data-count="186">n</span> "|" *<span data-count="186">&gt;</span> var) in
-  <span data-count="186">m</span>atch fvar with
-  | <span data-count="185">S</span>ome fvar -&gt; return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
+  <span data-count="158">l</span>et* varl = man<span data-count="158">y</span> (toke<span data-count="158">n</span> "|" *<span data-count="158">&gt;</span> var) in
+  <span data-count="158">m</span>atch fvar with
+  | <span data-count="157">S</span>ome fvar -&gt; return (Structure.Str_adt (type_param, type_name, (fvar, varl)))
   | <span data-count="1">N</span>one -&gt; fail "Expected at least one variant"
 ;;
 
@@ -1868,7 +1868,7 @@ let pstructure =
   <span data-count="30">s</span>ep_b<span data-count="30">y</span> psemicolon pstr_item &lt;<span data-count="30">*</span> psemicolon &lt;<span data-count="30">*</span> pass_ws
 ;;
 
-let parse str = <span data-count="388">p</span>arse_string ~consume:All pstructure str
+let parse str = <span data-count="386">p</span>arse_string ~consume:All pstructure str
 let parse_str str = <span data-count="225">p</span>arse str |&gt; <span data-count="225">R</span>esult.ok_or_failwith
 </code></pre>
       </div>
