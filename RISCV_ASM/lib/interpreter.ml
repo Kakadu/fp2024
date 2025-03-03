@@ -352,8 +352,20 @@ let resolve_address_incl_to_excl immediate64_value =
             directives to excluding")
     | InstructionExpr _ :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (Space _) :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (StringDir _) :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: rest | InstructionExpr _ :: rest ->
       traverse_program (Int64.add index 4L) (Int64.sub remaining_value 4L) rest
+    | DirectiveExpr (Space integer) :: rest ->
+      traverse_program
+        (Int64.add index 4L)
+        (Int64.sub remaining_value (Int64.of_int integer))
+        rest
+    | DirectiveExpr (StringDir str) :: rest ->
+      traverse_program
+        (Int64.add index 4L)
+        (Int64.sub remaining_value (Int64.of_int (String.length str)))
+        rest
     | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
       traverse_program index (Int64.sub remaining_value 4L) rest
   in
@@ -374,8 +386,19 @@ let resolve_address_excl_to_incl immediate64_value =
     | InstructionExpr _ :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Space _) :: _ when remaining_value = 0L -> return index
+    | DirectiveExpr (StringDir _) :: _ when remaining_value = 0L -> return index
     | DirectiveExpr (Word _) :: rest | InstructionExpr _ :: rest ->
       traverse_program (Int64.add index 4L) (Int64.sub remaining_value 4L) rest
+    | DirectiveExpr (Space integer) :: rest ->
+      traverse_program
+        (Int64.add index 4L)
+        (Int64.sub remaining_value (Int64.of_int integer))
+        rest
+    | DirectiveExpr (StringDir str) :: rest ->
+      traverse_program
+        (Int64.add index 4L)
+        (Int64.sub remaining_value (Int64.of_int (String.length str)))
+        rest
     | DirectiveExpr _ :: rest | LabelExpr _ :: rest ->
       traverse_program (Int64.add index 4L) remaining_value rest
   in
@@ -668,6 +691,24 @@ let handle_syscall =
   | _ -> fail "Unsupported syscall"
 ;;
 
+let execute_j imm_value =
+  let* state = read in
+  let* address_info = get_address20_value imm_value in
+  let* new_pc =
+    match address_info with
+    | Immediate imm_value ->
+      let* current_pc_excl = resolve_address_incl_to_excl state.pc in
+      let* resolved_pc =
+        resolve_address_excl_to_incl (Int64.add (Int64.of_int imm_value) current_pc_excl)
+      in
+      return resolved_pc
+    | Label excluding_directives_label_offset ->
+      let* resolved_pc = resolve_address_excl_to_incl excluding_directives_label_offset in
+      return resolved_pc
+  in
+  set_pc (Int64.sub new_pc 4L)
+;;
+
 let execute_instruction instr =
   let* state = read in
   match instr with
@@ -764,24 +805,7 @@ let execute_instruction instr =
     let* val_rs1 = get_register_value rs1 in
     let* new_pc = resolve_address_excl_to_incl val_rs1 in
     set_pc (Int64.sub new_pc 4L)
-  | J imm_value ->
-    let* address_info = get_address20_value imm_value in
-    let* new_pc =
-      match address_info with
-      | Immediate imm_value ->
-        let* current_pc_excl = resolve_address_incl_to_excl state.pc in
-        let* resolved_pc =
-          resolve_address_excl_to_incl
-            (Int64.add (Int64.of_int imm_value) current_pc_excl)
-        in
-        return resolved_pc
-      | Label excluding_directives_label_offset ->
-        let* resolved_pc =
-          resolve_address_excl_to_incl excluding_directives_label_offset
-        in
-        return resolved_pc
-    in
-    set_pc (Int64.sub new_pc 4L)
+  | J imm_value -> execute_j imm_value
   | Lui (rd, imm) ->
     let* imm_value =
       match imm with
@@ -834,8 +858,7 @@ let execute_instruction instr =
         in
         return resolved_address
       | Label excluding_directives_label_offset ->
-        let resolved_address = excluding_directives_label_offset in
-        return resolved_address
+        return excluding_directives_label_offset
     in
     set_register_value rd new_address
   | Adduw (rd, rs1, rs2) ->
@@ -910,20 +933,25 @@ let nth_opt_int64 l n =
     nth_aux l (Int64.of_int n)
 ;;
 
-let interpret program =
-  let rec traverse_program () =
+let traverse_program () =
+  let rec prog_trav_helper () =
     let* state = read in
-    let* expr_opt = nth_opt_int64 program (Int64.to_int state.pc) in
+    let* expr_opt = nth_opt_int64 state.program (Int64.to_int state.pc) in
     match expr_opt with
     | None -> return state
     | Some (InstructionExpr instr) ->
       let* () = execute_instruction instr in
       let* () = increment_pc () in
-      traverse_program ()
+      prog_trav_helper ()
     | Some (LabelExpr _) | Some (DirectiveExpr _) ->
       let* () = increment_pc () in
-      traverse_program ()
+      prog_trav_helper ()
   in
+  let* () = execute_j (LabelAddress20 "_start") in
+  prog_trav_helper ()
+;;
+
+let interpret program =
   let initial_state = init_state program in
   run (traverse_program ()) initial_state
 ;;
@@ -1065,7 +1093,8 @@ let show_state state =
 
 let%expect_test "test_factorial" =
   let program =
-    [ InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
+    [ LabelExpr "_start"
+    ; InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
     ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
     ; LabelExpr "loop"
     ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
@@ -1172,7 +1201,7 @@ let%expect_test "test_factorial" =
       21: false
       22: false
       23: false
-      PC: 32
+      PC: 36
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
@@ -1191,6 +1220,7 @@ let%expect_test "test_vector_program_execution" =
     ; DirectiveExpr (Space 16)
     ; LabelExpr "vector_sum"
     ; DirectiveExpr (Space 16)
+    ; LabelExpr "_start"
     ; InstructionExpr (Addi (T0, X0, ImmediateAddress12 4))
     ; InstructionExpr (La (T2, LabelAddress32 "vector_data"))
     ; InstructionExpr (Vle32v (V0, T2, ImmediateAddress12 0))
@@ -1433,7 +1463,7 @@ let%expect_test "test_vector_program_execution" =
       121: false
       122: false
       123: false
-      PC: 104
+      PC: 108
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
