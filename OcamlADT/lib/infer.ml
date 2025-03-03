@@ -662,8 +662,7 @@ let rec check_poly_types ~debug typ_list marity = function
     check_many ~debug typ_list marity rest
 
 and check_many ~debug typ_list marity args =
-  let rec iter args =
-    match args with
+  let rec iter = function
     | [] -> return ()
     | arg :: rest ->
       let* () = check_poly_types ~debug typ_list marity arg in
