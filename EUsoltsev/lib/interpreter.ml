@@ -117,20 +117,17 @@ end = struct
              with
              | Ok result -> result
              | Unequal_lengths -> None)))
-    | PatList patterns, ValueList values ->
-      if List.length patterns <> List.length values
-      then None
-      else (
-        let rec match_lists env pat_list val_list =
-          match pat_list, val_list with
-          | [], [] -> Some env
-          | p :: ps, v :: vs ->
-            (match check_match env (p, v) with
-             | Some new_env -> match_lists new_env ps vs
-             | None -> None)
-          | _ -> None
-        in
-        match_lists env patterns values)
+    | PatList patterns, ValueList values when List.length patterns = List.length values ->
+      let rec match_lists env pat_list val_list =
+        match pat_list, val_list with
+        | [], [] -> Some env
+        | p :: ps, v :: vs ->
+          (match check_match env (p, v) with
+           | Some new_env -> match_lists new_env ps vs
+           | None -> None)
+        | _ -> None
+      in
+      match_lists env patterns values
     | PatOption p, ValueOption v ->
       (match p, v with
        | Some p, Some v -> check_match env (p, v)
@@ -224,30 +221,27 @@ end = struct
          | Some env' -> eval_expr env' e2
          | None -> fail PatternMatchingError)
     | ExpLet (true, (pat, e1), [], e2) ->
-      if not
-           (match pat with
-            | PatVariable _ -> true
-            | _ -> false)
-      then fail LHS
-      else
-        let* v = eval_expr env e1 in
-        let* rec_env =
-          match check_match env (pat, v) with
-          | Some new_env -> return new_env
-          | None -> fail PatternMatchingError
-        in
-        let* recursive_value =
-          match v with
-          | ValueClosure (_, p, pl, e, _) ->
-            return (ValueClosure (true, p, pl, e, rec_env))
-          | _ -> fail TypeError
-        in
-        let* final_env =
-          match check_match env (pat, recursive_value) with
-          | Some updated_env -> return updated_env
-          | None -> fail PatternMatchingError
-        in
-        eval_expr final_env e2
+      (match pat with
+       | PatVariable _ ->
+         let* v = eval_expr env e1 in
+         let* rec_env =
+           match check_match env (pat, v) with
+           | Some new_env -> return new_env
+           | None -> fail PatternMatchingError
+         in
+         let* recursive_value =
+           match v with
+           | ValueClosure (_, p, pl, e, _) ->
+             return (ValueClosure (true, p, pl, e, rec_env))
+           | _ -> fail TypeError
+         in
+         let* final_env =
+           match check_match env (pat, recursive_value) with
+           | Some updated_env -> return updated_env
+           | None -> fail PatternMatchingError
+         in
+         eval_expr final_env e2
+       | _ -> fail LHS)
     | ExpLet (true, value_binding, value_bindings, e2) ->
       let bindings = List.map ~f:(fun (p, e) -> p, e) (value_binding :: value_bindings) in
       let rec update_env acc_env = function
@@ -364,31 +358,26 @@ end = struct
         (match check_match env (pattern, v) with
          | Some env' -> return env'
          | None -> fail PatternMatchingError)
-    | SValue (true, (pattern, expr), []) ->
-      if not
-           (match pattern with
-            | PatVariable _ -> true
-            | _ -> false)
-      then fail LHS
-      else
-        let* v = eval_expr env expr in
-        let* rec_env =
-          match check_match env (pattern, v) with
-          | Some new_env -> return new_env
-          | None -> fail PatternMatchingError
-        in
-        let* recursive_value =
-          match v with
-          | ValueClosure (_, p, pl, expr, _) ->
-            return (ValueClosure (true, p, pl, expr, rec_env))
-          | _ -> fail TypeError
-        in
-        let* final_env =
-          match check_match env (pattern, recursive_value) with
-          | Some updated_env -> return updated_env
-          | None -> fail PatternMatchingError
-        in
-        return final_env
+    | SValue (true, ((PatVariable _ as pattern), expr), []) ->
+      let* v = eval_expr env expr in
+      let* rec_env =
+        match check_match env (pattern, v) with
+        | Some new_env -> return new_env
+        | None -> fail PatternMatchingError
+      in
+      let* recursive_value =
+        match v with
+        | ValueClosure (_, p, pl, expr, _) ->
+          return (ValueClosure (true, p, pl, expr, rec_env))
+        | _ -> fail TypeError
+      in
+      let* final_env =
+        match check_match env (pattern, recursive_value) with
+        | Some updated_env -> return updated_env
+        | None -> fail PatternMatchingError
+      in
+      return final_env
+    | SValue (true, _, []) -> fail LHS
     | SValue (true, value_binding, value_bindings) ->
       let bindings = value_binding :: value_bindings in
       let rec update_env acc_env = function
