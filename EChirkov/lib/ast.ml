@@ -7,8 +7,9 @@ type id = string [@@deriving show { with_path = false }]
 type const =
   | CInt of int
   | CBool of bool
-  | CUnit (* () *)
-  | CString of string
+  | CUnit
+(* () *)
+(* | CString of string *)
 [@@deriving show { with_path = false }]
 
 (* type op_un =

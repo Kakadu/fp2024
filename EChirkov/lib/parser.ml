@@ -67,9 +67,9 @@ let p_rec_flag =
 
 (* ========== consts ========== *)
 
-let p_string =
-  token "\"" *> take_till (Char.equal '\"') <* token "\"" >>| fun s -> CString s
-;;
+(* let p_string =
+   token "\"" *> take_till (Char.equal '\"') <* token "\"" >>| fun s -> CString s
+   ;; *)
 
 let p_integer = ws *> lift2 (fun s n -> CInt (Int.of_string (s ^ n))) p_sign p_digits
 
@@ -84,7 +84,7 @@ let p_unit = token "()" *> return CUnit
 let p_const =
   choice
     ~failure_msg:(Expected "a constant (integer, string, boolean, unit)" |> pp_error)
-    [ p_integer; p_string; p_boolean; p_unit ]
+    [ p_integer; (*p_string;*) p_boolean; p_unit ]
 ;;
 
 let p_variable =
@@ -124,6 +124,25 @@ let p_branch e =
 
 let p_binop tkn binop = token tkn *> return (fun el er -> EBinary (binop, el, er)) <* ws
 
+let p_tuple e =
+  let tuple =
+    lift3
+      (fun e1 e2 rest -> ETuple (e1, e2, rest))
+      (e <* token ",")
+      e
+      (many (token "," *> e))
+    <* ws
+  in
+  parens tuple <|> tuple
+;;
+
+let p_option e =
+  choice
+    [ token "None" *> return (EOption None)
+    ; (token "Some" *> choice [ parens e; e ] >>| fun e -> EOption (Some e))
+    ]
+;;
+
 let p_expression =
   fix
   @@ fun e ->
@@ -136,23 +155,25 @@ let p_expression =
       ]
   in
   let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
-  let branch = p_branch e <|> apply in
+  let opt = p_option apply <|> apply in
+  let branch = p_branch e <|> opt in
   let multiplydivide_op = chainl1 branch (p_binop "*" Mul <|> p_binop "/" Div) in
   let plusminus_op = chainl1 multiplydivide_op (p_binop "+" Add <|> p_binop "-" Sub) in
   let compare_op =
     chainl1
       plusminus_op
       (choice
-         [ p_binop ">" Gt
+         [ p_binop "=" Eq
+         ; p_binop "<>" NEq
+         ; p_binop "<=" Lte
          ; p_binop "<" Lt
          ; p_binop ">=" Gte
-         ; p_binop "<=" Lte
-         ; p_binop "=" Eq
-         ; p_binop "<>" NEq
+         ; p_binop ">" Gt
          ])
   in
   let bool_op = chainl1 compare_op (p_binop "&&" And <|> p_binop "||" Or) in
-  bool_op
+  let tuples = p_tuple bool_op <|> bool_op in
+  tuples
 ;;
 
 (* ========== top level ========== *)
