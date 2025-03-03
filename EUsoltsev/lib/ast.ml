@@ -31,7 +31,6 @@ type const =
   | ConstInt of int (* Integer constant: Example - [21] *)
   | ConstBool of bool (* Boolean constant: Example - [true] or [false] *)
   | ConstString of string (* String constant: Example - "I like OCaml!" *)
-  | ConstUnit
 [@@deriving show { with_path = false }]
 
 type binder = int [@@deriving show { with_path = false }]
@@ -52,6 +51,8 @@ type pattern =
   | PatAny
   | PatType of pattern * ty
   | PatUnit
+  | PatList of pattern list
+  | PatOption of pattern option
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -64,19 +65,23 @@ type expr =
   | ExpList of expr list (* ExpList[x1; x2 .. xn] *)
   | ExpLambda of pattern list * expr (* ExpLambda([x;y;z], x+y+z)*)
   | ExpTypeAnnotation of expr * ty
-  | ExpOption of expr option
+  | ExpLet of is_rec * bind * bind list * expr
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
-  | ExpLet of is_rec * pattern * expr * expr option
-  | ExpLetAnd of is_rec * (pattern * expr) list * expr option
-(* let x = 10 in x + 5 <=> ExpLet(false, "x", 10, x + 5) *)
-(* let x = 10 <=> ExpLet(false, "x", 10, None)*)
+  | ExpOption of expr option
 [@@deriving show { with_path = false }]
 
-type program = expr list [@@deriving show { with_path = false }]
+and bind = pattern * expr [@@deriving show { with_path = false }]
+
+type structure =
+  | SEval of expr
+  | SValue of is_rec * bind * bind list
+[@@deriving show { with_path = false }]
+
+type program = structure list [@@deriving show { with_path = false }]
 
 let rec pp_ty fmt = function
   | TyPrim x -> fprintf fmt "%s" x
-  | TyVar x -> fprintf fmt "%s" @@ Char.escaped (Char.chr (x + 97))
+  | TyVar x -> fprintf fmt "'%d" x
   | TyArrow (l, r) ->
     (match l, r with
      | TyArrow _, _ -> fprintf fmt "(%a) -> %a" pp_ty l pp_ty r

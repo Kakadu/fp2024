@@ -108,28 +108,49 @@ let parse_pattern_const = parse_const >>| fun c -> PatConst c
 let parse_pattern_any = token "_" *> return PatAny
 
 let parse_pattern_tuple parse_pattern =
-  parse_parens (sep_by1 (token ",") parse_pattern)
-  >>= function
-  | [ single ] -> return single
-  | first :: second :: rest -> return (PatTuple (first, second, rest))
-  | [] -> fail "Empty tuple pattern not allowed"
+  let parse_unparenthesized =
+    lift3
+      (fun p1 p2 rest -> PatTuple (p1, p2, rest))
+      parse_pattern
+      (token "," *> parse_pattern)
+      (many (token "," *> parse_pattern))
+    <* white_space
+  in
+  parse_parens parse_unparenthesized <|> parse_unparenthesized
+;;
+
+let parse_pattern_list parse_pattern =
+  let semicols = token ";" in
+  token "[" *> (sep_by semicols parse_pattern >>| fun patterns -> PatList patterns)
+  <* token "]"
 ;;
 
 let parse_pattern_empty = token "()" *> return PatUnit
 
+let parse_pattern_option parse_pattern =
+  lift
+    (fun e -> PatOption e)
+    (token "Some" *> parse_pattern
+     >>| (fun e -> Some e)
+     <|> (token "None" >>| fun _ -> None))
+;;
+
 let parse_pattern =
   fix (fun pat ->
-    let pat =
+    let atom =
       choice
         [ parse_pattern_var
         ; parse_pattern_any
         ; parse_pattern_const
-        ; parse_pattern_tuple pat
-        ; parse_pattern_with_type pat
         ; parse_pattern_empty
+        ; parse_pattern_with_type pat
+        ; parse_parens pat
+        ; parse_pattern_option pat
         ]
     in
-    pat)
+    let tuple = parse_pattern_tuple atom <|> atom in
+    let lst = parse_pattern_list tuple <|> tuple in
+    lst)
 ;;
 
 let parse_left_associative expr oper =
@@ -162,6 +183,11 @@ let or_op = parse_expr_bin_oper Or "||"
 let parse_expr_ident = parse_ident >>| fun x -> ExpIdent x
 let parse_expr_const = parse_const >>| fun c -> ExpConst c
 
+let parse_expr_with_type parse_expr =
+  let parse_annotated_type = token ":" *> parse_type in
+  lift2 (fun expr t -> ExpTypeAnnotation (expr, t)) parse_expr parse_annotated_type
+;;
+
 let parse_expr_branch parse_expr =
   lift3
     (fun cond t f -> ExpBranch (cond, t, f))
@@ -170,14 +196,10 @@ let parse_expr_branch parse_expr =
     (option None (token "else" *> parse_expr >>| Option.some))
 ;;
 
-let parse_expr_option expr =
+let parse_expr_option parse_expr =
   choice
     [ token "None" *> return (ExpOption None)
-    ; (token "Some"
-       *> choice
-            [ parse_parens expr (* Парсинг выражения в скобках *)
-            ; expr (* Парсинг выражения без скобок *)
-            ]
+    ; (token "Some" *> choice [ parse_parens parse_expr; parse_expr ]
        >>| fun e -> ExpOption (Some e))
     ]
 ;;
@@ -186,9 +208,13 @@ let parse_expr_unar_oper parse_expr =
   parse_unar_oper >>= fun op -> parse_expr >>= fun expr -> return (ExpUnarOper (op, expr))
 ;;
 
-let parse_expr_list expr =
-  let parse_elements = sep_by (token ";") expr in
+let parse_expr_list parse_expr =
+  let parse_elements = sep_by (token ";") parse_expr in
   token "[" *> parse_elements <* token "]" >>| fun elements -> ExpList elements
+;;
+
+let parse_expr_function e =
+  parse_left_associative e (return (fun e1 e2 -> ExpFunction (e1, e2)))
 ;;
 
 let parse_expr_lambda parse_expr =
@@ -197,92 +223,41 @@ let parse_expr_lambda parse_expr =
   >>= fun params -> parse_expr >>| fun body -> ExpLambda (params, body)
 ;;
 
-let parse_expr_with_type parse_expr =
-  let* expr = white_space *> token "(" *> parse_expr in
-  let* constr =
-    white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")"
+let parse_expr_tuple parse_expr =
+  let commas = token "," in
+  let tuple =
+    lift3
+      (fun e1 e2 rest -> ExpTuple (e1, e2, rest))
+      (parse_expr <* commas)
+      parse_expr
+      (many (commas *> parse_expr))
+    <* white_space
   in
-  return (ExpTypeAnnotation (expr, constr))
+  parse_parens tuple <|> tuple
 ;;
 
-let parse_lambda_params () = sep_by1 white_space parse_pattern
+let parse_body parse_expr =
+  many1 parse_pattern
+  >>= fun patterns -> token "=" *> parse_expr >>| fun body -> ExpLambda (patterns, body)
+;;
 
 let parse_expr_let parse_expr =
-  let parse_body parse_expr =
-    parse_lambda_params ()
-    >>= fun params -> token "=" *> parse_expr >>| fun body -> ExpLambda (params, body)
-  in
-  let parse_rec_flag =
-    token "rec"
-    *> (peek_char
-        >>= function
-        | Some c when Char.is_whitespace c -> return true
-        | _ -> return false)
-    <|> return false
-  in
   token "let"
   *> lift4
-       (fun is_rec pat e1 e2 -> ExpLet (is_rec, pat, e1, e2))
-       parse_rec_flag
-       (parse_parens parse_pattern <|> parse_pattern)
-       (token "=" *> parse_expr <|> parse_body parse_expr)
-       (token "in" *> parse_expr >>| Option.some <|> return None)
-;;
-
-let parse_expr_tuple expr =
-  parse_parens (sep_by1 (token ",") expr)
-  >>= function
-  | [ single ] -> return single
-  | first :: second :: rest -> return (ExpTuple (first, second, rest))
-  | [] -> fail "Empty tuple"
-;;
-
-let parse_expr_function parse_expr =
-  let parse_application left right = lift2 (fun f x -> ExpFunction (f, x)) left right in
-  let rec go acc =
-    parse_application (return acc) (parse_expr_tuple parse_expr <|> parse_expr)
-    >>= go
-    <|> return acc
-  in
-  parse_expr >>= go
-;;
-
-let parse_let_and_binding parse_expr =
-  let parse_single_binding =
-    let _ =
-      lift2
-        (fun pat expr -> pat, expr)
-        (parse_parens parse_pattern <|> parse_pattern)
-        (token "=" *> parse_expr)
-    in
-    parse_pattern
-    >>= fun pat ->
-    token "=" *> parse_expr
-    >>| (fun expr -> pat, expr)
-    <|> (parse_lambda_params ()
-         >>= fun params ->
-         token "=" *> parse_expr >>| fun body -> pat, ExpLambda (params, body))
-  in
-  parse_single_binding
-  >>= fun first ->
-  many1 (token "and" *> parse_single_binding) >>| fun rest -> first :: rest
-;;
-
-let parse_expr_let_and parse_expr =
-  let parse_rec_flag =
-    token "rec"
-    *> (peek_char
-        >>= function
-        | Some c when Char.is_whitespace c -> return true
-        | _ -> return false)
-    <|> return false
-  in
-  token "let"
-  *> lift3
-       (fun is_rec bindings body -> ExpLetAnd (is_rec, bindings, body))
-       parse_rec_flag
-       (parse_let_and_binding parse_expr)
-       (token "in" *> parse_expr >>| Option.some <|> return None)
+       (fun rec_flag value_bindings and_bindings body ->
+         ExpLet (rec_flag, value_bindings, and_bindings, body))
+       (token "rec" *> (take_while1 Char.is_whitespace *> return true) <|> return false)
+       (lift2
+          (fun pat expr -> pat, expr)
+          parse_pattern
+          (token "=" *> parse_expr <|> parse_body parse_expr))
+       (many
+          (token "and"
+           *> lift2
+                (fun pat expr -> pat, expr)
+                parse_pattern
+                (token "=" *> parse_expr <|> parse_body parse_expr)))
+       (token "in" *> parse_expr)
 ;;
 
 let parse_expr =
@@ -293,7 +268,7 @@ let parse_expr =
         ; parse_expr_const
         ; parse_expr_list expr
         ; parse_parens expr
-        ; parse_expr_with_type expr
+        ; parse_parens (parse_expr_with_type expr)
         ]
     in
     let func = parse_expr_function term in
@@ -309,12 +284,29 @@ let parse_expr =
     choice [ parse_expr_let expr; parse_expr_lambda expr; lambda ])
 ;;
 
-let parse_program =
-  let definitions_or_exprs =
-    many
-      (choice [ parse_expr_let_and parse_expr; parse_expr_let parse_expr; parse_expr ]
-       <* option () (token ";;" >>| ignore))
+let parse_structure =
+  let parse_eval = parse_expr >>| fun e -> SEval e in
+  let parse_value =
+    token "let"
+    *> lift3
+         (fun r id id_list -> SValue (r, id, id_list))
+         (token "rec" *> (take_while1 Char.is_whitespace *> return true) <|> return false)
+         (lift2
+            (fun pat expr -> pat, expr)
+            parse_pattern
+            (token "=" *> parse_expr <|> parse_body parse_expr))
+         (many
+            (token "and"
+             *> lift2
+                  (fun pat expr -> pat, expr)
+                  parse_pattern
+                  (token "=" *> parse_expr <|> parse_body parse_expr)))
   in
+  choice [ parse_eval; parse_value ]
+;;
+
+let parse_program =
+  let definitions_or_exprs = many parse_structure <* option () (token ";;" >>| ignore) in
   definitions_or_exprs <* white_space
 ;;
 

@@ -12,17 +12,18 @@ and value =
   | ValueBool of bool
   | ValueString of string
   | ValueUnit
-  | ValueClosure of pattern * is_rec * expr * env
+  | ValueClosure of is_rec * pattern * pattern list * expr * env
   | ValueTuple of value * value * value list
   | ValueList of value list
+  | ValueOption of value option
   | ValueBuiltin of (value -> (value, value_error) Result.t)
 
 and value_error =
   | UnboundVariable of ident
-  | TypeError of value
+  | TypeError
   | DivisionByZeroError
   | PatternMatchingError
-  | NotImplemented
+  | LHS
 
 val pp_value_error : Stdlib.Format.formatter -> value_error -> unit
 

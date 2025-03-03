@@ -49,63 +49,70 @@
 
   $ ../bin/main.exe -interpret -file manytests/typed/009let_poly.ml
 
+  $ ../bin/main.exe -interpret -file manytests/typed/015tuples.ml
+  1
+  1
+  1
+  1
+
   $ ../bin/main.exe -infer -file manytests/typed/001fac.ml
-  int -> int
-  int
+  val fac: int -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/002fac.ml
-  int -> (int -> f) -> f
-  int
+  val fac_cps: int -> (int -> int) -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/003fib.ml
-  int -> int
-  int -> int -> int -> int
-  int
+  val fib: int -> int
+  val fib_acc: int -> int -> int -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/004manyargs.ml
-  int
-  i -> j -> k -> l -> m -> n -> o -> p -> q -> r -> int
-  c -> d -> e -> int
-  a -> a
+  val main: int
+  val test10: int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int
+  val test3: int -> int -> int -> int
+  val wrap: '0 -> '0
 
   $ ../bin/main.exe -infer -file manytests/typed/005fix.ml
-  g -> h -> int
-  ((c -> d) -> c -> d) -> c -> d
-  int
+  val fac: (int -> int) -> int -> int
+  val fix: ((int -> int) -> int -> int) -> int -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/006partial.ml
-  d -> int
-  int
+  val foo: int -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/006partial2.ml
-  a -> b -> c -> int
-  int
+  val foo: int -> int -> int -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/006partial3.ml
-  a -> c -> e -> unit
-  int
+  val foo: int -> int -> int -> unit
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/007order.ml
-  unit -> unit -> a -> unit -> b -> c -> unit -> d -> e -> int
-  unit
+  val _start: unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int
+  val main: unit
 
   $ ../bin/main.exe -infer -file manytests/typed/008ascription.ml
-  a -> b -> c -> int
-  int
+  val addi: ('2 -> bool -> int) -> ('2 -> bool) -> '2 -> int
+  val main: int
 
   $ ../bin/main.exe -infer -file manytests/typed/009let_poly.ml
-  (int * bool)
+  val temp: (int * bool)
 
   $ ../bin/main.exe -infer -file manytests/typed/015tuples.ml
-  ~ -> \127 -> int
-  ((c -> d) -> c -> d) -> c -> d
-  m -> (x * x)
-  \132 -> \133 -> int
-  int
-  g -> h -> (k * k)
-  int -> int
-  int -> int
-  (\140 * \140)
+  val feven: ('29 * int -> '33) -> int -> int
+  val fix: ((((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)) -> ((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)) -> ((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)
+  val fixpoly: ((int -> int * int -> int) -> int -> int * (int -> int * int -> int) -> int -> int) -> (int -> int * int -> int)
+  val fodd: (int -> '40 * '37) -> int -> int
+  val main: int
+  val map: ('9 -> '11) -> ('9 * '9) -> ('10 * '11)
+  val meven: int -> int
+  val modd: int -> int
+  val tie: (int -> int * int -> int)
+
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/001.ml
   Infer error. Unbound variable 'fac'.
@@ -114,8 +121,23 @@
   Infer error. Failed to unify types: int and bool.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/003occurs.ml
-  Infer error. Occurs check failed. Type variable '2 occurs inside c -> g.
+  Infer error. Occurs check failed. Type variable '1 occurs inside '1 -> '3.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/004let_poly.ml
-  Infer error. Failed to unify types: bool and int.
+  Infer error. Failed to unify types: int and bool.
+
+  $ ../bin/main.exe -infer -file manytests/do_not_type/015tuples.ml
+  Infer error. Left-hand side error: Only variables are allowed on the left-hand side of let rec.
+
+  $ ../bin/main.exe -infer -file manytests/do_not_type/016tuples_mismatch.ml
+  Infer error. Failed to unify types: ('0 * '1) and (int * int * int).
+
+  $ ../bin/main.exe -infer -file manytests/do_not_type/097fun_vs_list.ml
+  Infer error. Failed to unify types: '2 list and '0 -> '0.
+
+  $ ../bin/main.exe -infer -file manytests/do_not_type/097fun_vs_unit.ml
+  Infer error. Failed to unify types: unit and '0 -> '0.
+
+  $ ../bin/main.exe -infer -file manytests/do_not_type/098rec_int.ml
+  Infer error. Right-hand side error: Right-hand side of let rec must be a lambda expression.
 
