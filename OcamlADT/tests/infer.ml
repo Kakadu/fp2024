@@ -1,8 +1,8 @@
 (** Copyright 2024-2025, Rodion Suvorov, Mikhail Gavrilenko *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
-open Ocamladt_lib.Parser
 
+open Ocamladt_lib.Parser
 open Format
 open Ocamladt_lib.Infer
 open Ocamladt_lib.InferTypes
