@@ -6,18 +6,7 @@ open Ocamladt_lib.Interpreter
 open Ocamladt_lib.Interpreter.PPrinter
 open Ocamladt_lib.Parser
 
-(* Full verison with TC
-   let pp_interpret ast =
-   match run_inference ast with
-   | Ok _ ->
-   (match run_interpreter ast with
-   | Ok value -> print_value
-   | Error e -> print_error e)
-   | Error e -> print_type_error e (* to be implemented in TC*)
-   ;;
-*)
-
-let pp_interpret_demo ast =
+let pp_interpret ast =
   match run_interpreter ast with
   | Ok olist ->
     List.iter
@@ -29,177 +18,177 @@ let pp_interpret_demo ast =
   | Error e -> print_error e
 ;;
 
-let pp_parse_demo str =
+let pp_parse str =
   let ast = parse str in
   match ast with
-  | Ok ast -> pp_interpret_demo ast
+  | Ok ast -> pp_interpret ast
   | Error _ -> print_error ParserError
 ;;
 
 let%expect_test "empty program (fail: EmptyProgram)" =
-  pp_parse_demo {||};
+  pp_parse {||};
   [%expect {| Empty program |}]
 ;;
 
 let%expect_test "negative int constant" =
-  pp_parse_demo {|-1;;|};
+  pp_parse {|-1;;|};
   [%expect {|
     _ = -1 |}]
 ;;
 
 let%expect_test "zero" =
-  pp_parse_demo {|0;;|};
+  pp_parse {|0;;|};
   [%expect {| _ = 0 |}]
 ;;
 
 let%expect_test "x" =
-  pp_parse_demo {|x;;|};
+  pp_parse {|x;;|};
   [%expect {| Interpreter error: Unbound value x |}]
 ;;
 
 let%expect_test "substraction" =
-  pp_parse_demo {|5-11;;|};
+  pp_parse {|5-11;;|};
   [%expect {|
     _ = -6 |}]
 ;;
 
 let%expect_test "strange move" =
-  pp_parse_demo {|5=5;;|};
+  pp_parse {|5=5;;|};
   [%expect {|
     _ = true |}]
 ;;
 
 let%expect_test "assignment (fail: UnboundValue - x)" =
-  pp_parse_demo {|x = 51;;|};
+  pp_parse {|x = 51;;|};
   [%expect {|
     Interpreter error: Unbound value x |}]
 ;;
 
 let%expect_test "operators with different priorities" =
-  pp_parse_demo {|5-5*1;;|};
+  pp_parse {|5-5*1;;|};
   [%expect {| _ = 0 |}]
 ;;
 
 let%expect_test "just let (int)" =
-  pp_parse_demo {|let x = 51;;|};
+  pp_parse {|let x = 51;;|};
   [%expect {| val x = 51 |}]
 ;;
 
 let%expect_test "just let (string)" =
-  pp_parse_demo {|let x = "51";;|};
+  pp_parse {|let x = "51";;|};
   [%expect {| val x = "51" |}]
 ;;
 
 let%expect_test "just let (char)" =
-  pp_parse_demo {|let x = '5';;|};
+  pp_parse {|let x = '5';;|};
   [%expect {| val x = '5' |}]
 ;;
 
 let%expect_test "int print_endline (fail: TypeMismatch)" =
-  pp_parse_demo {|let x = 51 in 
+  pp_parse {|let x = 51 in 
 print_endline x;;|};
   [%expect {|
     Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "string print_endline" =
-  pp_parse_demo {|let x = "51" in 
+  pp_parse {|let x = "51" in 
 print_endline x;;|};
   [%expect {|
     51 |}]
 ;;
 
 let%expect_test "print_endline" =
-  pp_parse_demo {|print_endline "51";;|};
+  pp_parse {|print_endline "51";;|};
   [%expect {|
     51 |}]
 ;;
 
 let%expect_test "print_endline as an arg" =
-  pp_parse_demo {|let f = print_endline in 
+  pp_parse {|let f = print_endline in 
 f "Hello";;|};
   [%expect {|
     Hello |}]
 ;;
 
 let%expect_test "print_endline as an arg (fail: TypeMismatch)" =
-  pp_parse_demo {|let f = print_endline in 
+  pp_parse {|let f = print_endline in 
 f 5;;|};
   [%expect {|
     Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "print_int as an arg" =
-  pp_parse_demo {|let f = print_int in 
+  pp_parse {|let f = print_int in 
 f 51;;|};
   [%expect {|
     51 |}]
 ;;
 
 let%expect_test "print_int let assignment" =
-  pp_parse_demo {|let reca = 51 in 
+  pp_parse {|let reca = 51 in 
 print_int reca;;|};
   [%expect {|
     51 |}]
 ;;
 
 let%expect_test "print_char as an arg" =
-  pp_parse_demo {|let f = print_char in 
+  pp_parse {|let f = print_char in 
 f '5';;|};
   [%expect {|
     5 |}]
 ;;
 
 let%expect_test "print_char let assignment" =
-  pp_parse_demo {|let reca = '5' in 
+  pp_parse {|let reca = '5' in 
 print_char reca;;|};
   [%expect {|
     5 |}]
 ;;
 
 let%expect_test "let assignment none (fail: PatternMismatch)" =
-  pp_parse_demo {|let Some Some Some Some Some None = 1 in 
+  pp_parse {|let Some Some Some Some Some None = 1 in 
 print_int None;;|};
   [%expect {|
     Interpreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "multiple let assignments" =
-  pp_parse_demo {| let x = 3 in let y = 4 in print_int (x + y) ;; |};
+  pp_parse {| let x = 3 in let y = 4 in print_int (x + y) ;; |};
   [%expect {|
     7 |}]
 ;;
 
 let%expect_test "multiple let bool assignments" =
-  pp_parse_demo {| let x = 5 = 5 in let y = 4 = 5 in print_bool (x && y) ;; |};
+  pp_parse {| let x = 5 = 5 in let y = 4 = 5 in print_bool (x && y) ;; |};
   [%expect {|
     false |}]
 ;;
 
 let%expect_test "fun assignment with bool operators" =
-  pp_parse_demo {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
+  pp_parse {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
   [%expect {| false |}]
 ;;
 
 let%expect_test "fun assignment with bool operators (tuple arg)" =
-  pp_parse_demo {| let id = fun (x, y) -> x && y in print_bool (id (true,false)) ;; |};
+  pp_parse {| let id = fun (x, y) -> x && y in print_bool (id (true,false)) ;; |};
   [%expect {| false |}]
 ;;
 
 let%expect_test "too damn simple fun assignment (TC should fail?)" =
-  pp_parse_demo {| let id = fun x -> y in print_int (id 7) ;; |};
+  pp_parse {| let id = fun x -> y in print_int (id 7) ;; |};
   [%expect {| Interpreter error: Unbound value y |}]
 ;;
 
 (*4 am vibes, im sorry*)
 let%expect_test "not too damn simple fun assignment" =
-  pp_parse_demo {| let id = fun x -> x * x in print_int (id 7) ;; |};
+  pp_parse {| let id = fun x -> x * x in print_int (id 7) ;; |};
   [%expect {|
     49 |}]
 ;;
 
 let%expect_test "match case (_ case)" =
-  pp_parse_demo
+  pp_parse
     {|
 let classify n = 
   match n with
@@ -213,7 +202,7 @@ print_endline (classify 2);; |};
 ;;
 
 let%expect_test "match case (specific pattern case)" =
-  pp_parse_demo
+  pp_parse
     {|
 let classify n = 
   match n with
@@ -227,7 +216,7 @@ print_int (classify "1");; |};
 ;;
 
 let%expect_test "if then case" =
-  pp_parse_demo
+  pp_parse
     {| let x = 10 in
 if x > 5 then print_endline "> 5"
 else print_endline "<= 5";;
@@ -237,7 +226,7 @@ else print_endline "<= 5";;
 ;;
 
 let%expect_test "if then case (else)" =
-  pp_parse_demo
+  pp_parse
     {| let check_number n =
   if n = 0 then
     print_endline "Zero"
@@ -253,7 +242,7 @@ check_number 5
 ;;
 
 let%expect_test "if then case (then)" =
-  pp_parse_demo
+  pp_parse
     {| let check_number n =
   if n = 0 then
     print_endline "Zero"
@@ -269,7 +258,7 @@ check_number 0
 ;;
 
 let%expect_test "if then case (else if)" =
-  pp_parse_demo
+  pp_parse
     {| let check_number n =
   if n = 0 then
     print_endline "Zero"
@@ -285,7 +274,7 @@ check_number 1
 ;;
 
 let%expect_test "if then case (else if) v2" =
-  pp_parse_demo
+  pp_parse
     {| let check_number n =
   if n >= 0 then
     print_endline "Zero"
@@ -301,7 +290,7 @@ check_number 1
 ;;
 
 let%expect_test "nested assignments" =
-  pp_parse_demo
+  pp_parse
     {| 
     let x = 
       let y = 
@@ -316,7 +305,7 @@ let%expect_test "nested assignments" =
 ;;
 
 let%expect_test "factorial" =
-  pp_parse_demo
+  pp_parse
     {| 
 let rec fact n = if n = 0 then 1 else n * fact(n-1) in 
 print_int (fact 5)
@@ -328,14 +317,14 @@ print_int (fact 5)
 (*i just wanna km*)
 (*upd: dont mind. fixed :\ .*)
 let%expect_test "recursive function (nested apply - multiple args)" =
-  pp_parse_demo
+  pp_parse
     {| let rec pow x y = if y = 0 then 1 else x * pow x (y - 1) in print_int (pow 5 6);;|};
   [%expect {|
     15625 |}]
 ;;
 
 let%expect_test "factorial (multiple structure items)" =
-  pp_parse_demo
+  pp_parse
     {| 
 let rec fact n = if n = 0 then 1 else n * fact(n-1);; 
 let x = fact 6 in print_int x ;; |};
@@ -345,7 +334,7 @@ let x = fact 6 in print_int x ;; |};
 ;;
 
 let%expect_test "not y.dev" =
-  pp_parse_demo
+  pp_parse
     {| let arith x y = (x * y, x / y, x + y, x - y);;
     let prod x y = 
         let fst (a, _, _, _) = a in
@@ -360,12 +349,12 @@ let%expect_test "not y.dev" =
 ;;
 
 let%expect_test "wrong input (fail: ParserError)" =
-  pp_parse_demo {|let = ;;|};
+  pp_parse {|let = ;;|};
   [%expect {| Parser Error |}]
 ;;
 
 let%expect_test "eval simple let binding" =
-  pp_parse_demo {| let a = -(4 + 4) and b = true;; |};
+  pp_parse {| let a = -(4 + 4) and b = true;; |};
   [%expect {|
   val a = -8
   val b = true
@@ -373,8 +362,7 @@ let%expect_test "eval simple let binding" =
 ;;
 
 let%expect_test "multiple nested let's" =
-  pp_parse_demo
-    {|
+  pp_parse {|
   let f =
     let x = "fowl" in
     let y = "51" in
@@ -385,21 +373,21 @@ let%expect_test "multiple nested let's" =
 ;;
 
 let%expect_test "tuple assignment" =
-  pp_parse_demo {| let test1 = (1, "hello", 314);; |};
+  pp_parse {| let test1 = (1, "hello", 314);; |};
   [%expect {|
   val test1 = (1, "hello", 314)
   |}]
 ;;
 
 let%expect_test "tuple (no assignment)" =
-  pp_parse_demo {| (1, "hello", 314);; |};
+  pp_parse {| (1, "hello", 314);; |};
   [%expect {|
   _ = (1, "hello", 314)
   |}]
 ;;
 
 let%expect_test "tuple assignment v2" =
-  pp_parse_demo {| let swap (x, y) = (y, x);;
+  pp_parse {| let swap (x, y) = (y, x);;
 let test = swap (1, "ocaml");; |};
   [%expect {|
   val swap = <fun>
@@ -408,7 +396,7 @@ let test = swap (1, "ocaml");; |};
 ;;
 
 let%expect_test "()" =
-  pp_parse_demo
+  pp_parse
     {|
     let a =
       let b = 
@@ -423,7 +411,7 @@ let%expect_test "()" =
 ;;
 
 let%expect_test "multiple funs (+ nested)" =
-  pp_parse_demo
+  pp_parse
     {| let fix f = (fun x -> f (fun f -> x x f))  (fun x -> f (fun f -> x x f)) ;;
  |};
   [%expect {|
@@ -432,8 +420,7 @@ let%expect_test "multiple funs (+ nested)" =
 ;;
 
 let%expect_test "option type match" =
-  pp_parse_demo
-    {|
+  pp_parse {|
 let _2 = function
   | Some f -> let _ = f "42" in f 42
   | None -> 1
@@ -445,7 +432,7 @@ let _2 = function
 ;;
 
 let%expect_test "tuples mismatch (fail: PatternMismatch)" =
-  pp_parse_demo {|
+  pp_parse {|
 let a, _ = 1, 2, 3 ;;
  |};
   [%expect {|
@@ -454,7 +441,7 @@ let a, _ = 1, 2, 3 ;;
 ;;
 
 let%expect_test "just fun assignment" =
-  pp_parse_demo {|
+  pp_parse {|
 let a = (fun x -> x) ;; 
  |};
   [%expect {|
@@ -463,7 +450,7 @@ let a = (fun x -> x) ;;
 ;;
 
 let%expect_test "list (shouldn't work, see tests below)" =
-  pp_parse_demo {|
+  pp_parse {|
 let [a] = [42] ;; 
  |};
   [%expect {|
@@ -473,7 +460,7 @@ let [a] = [42] ;;
 (* -------- ADT --------*)
 
 let%expect_test "adt" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Point of int 
   | Circle of int * int 
@@ -485,7 +472,7 @@ type shape = Point of int
 
 (*we dont support regular types like float*)
 let%expect_test "adt (fail: ParserError)" =
-  pp_parse_demo
+  pp_parse
     {|
 type point = float * float ;;
 type shape = Point of point
@@ -498,7 +485,7 @@ type shape = Point of point
 ;;
 
 let%expect_test "simple adt with pattern matching + printing" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int 
@@ -522,7 +509,7 @@ print_int y
 ;;
 
 let%expect_test "simple adt with pattern matching function (else case) + printing" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int 
@@ -545,7 +532,7 @@ print_int y
 ;;
 
 let%expect_test "simple adt with pattern matching + printing v2" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int * int
@@ -568,7 +555,7 @@ print_int y
 ;;
 
 let%expect_test "simple adt with pattern matching + printing v3" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int * int
@@ -591,7 +578,7 @@ print_int y
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue)" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int * int
@@ -605,7 +592,7 @@ let x = Chto 5
 ;;
 
 let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int * int
@@ -625,7 +612,7 @@ print_int y
 ;;
 
 let%expect_test "simple adt (fail: UnboundValue Cir)" =
-  pp_parse_demo
+  pp_parse
     {|
 type shape = Circle of int
   | Rectangle of int * int
@@ -639,7 +626,7 @@ print_int area x;;
 
 (* good, needs a initialization check + infer print(see next tests)*)
 let%expect_test "poly adt tree" =
-  pp_parse_demo {|
+  pp_parse {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
 ;;
@@ -648,7 +635,7 @@ type 'a tree = Leaf
 ;;
 
 let%expect_test "poly adt tree (dumb insert)" =
-  pp_parse_demo
+  pp_parse
     {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
@@ -681,7 +668,7 @@ let () = print_int (tree_size tree1)
 ;;
 
 let%expect_test "empty poly adt tree (dumb insert)" =
-  pp_parse_demo
+  pp_parse
     {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
@@ -712,7 +699,7 @@ let () = print_int (tree_size tree2)
 ;;
 
 let%expect_test "poly adt tree v2" =
-  pp_parse_demo
+  pp_parse
     {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
@@ -748,7 +735,7 @@ let () = print_int (tree_size tree)
 ;;
 
 let%expect_test "poly adt tree v2 (constructs)" =
-  pp_parse_demo
+  pp_parse
     {|
 type 'a tree = Leaf
   | Node of 'a * 'a tree * 'a tree
@@ -777,19 +764,19 @@ let () = print_int (tree_size tree)
 
 (*good*)
 let%expect_test "poly adt" =
-  pp_parse_demo {|
+  pp_parse {|
 let () = print_int 5;;
   |};
   [%expect {| 5 |}]
 ;;
 
 let%expect_test "empty program (no ;;) (fail: emptyprogram)" =
-  pp_parse_demo {||};
+  pp_parse {||};
   [%expect {| Empty program |}]
 ;;
 
 let%expect_test "function" =
-  pp_parse_demo
+  pp_parse
     {|
      let f = function
         | 5 -> 5
@@ -801,28 +788,28 @@ let%expect_test "function" =
 ;;
 
 let%expect_test "pattern matching function with print_int" =
-  pp_parse_demo {| let f = function 0 -> 42 | _ -> 99 in 
+  pp_parse {| let f = function 0 -> 42 | _ -> 99 in 
 print_int (f 0)|};
   [%expect {| 42 |}]
 ;;
 
 let%expect_test "nested function as apply with print_int" =
-  pp_parse_demo {| print_int ((function x -> function y -> x + y) 3 4);; |};
+  pp_parse {| print_int ((function x -> function y -> x + y) 3 4);; |};
   [%expect {| 7 |}]
 ;;
 
 let%expect_test "tuple pattern function with print_string (fail: TypeMismatch)" =
-  pp_parse_demo {|  print_endline ((function (x, y) -> x + y) ("Hello", " World")) |};
+  pp_parse {|  print_endline ((function (x, y) -> x + y) ("Hello", " World")) |};
   [%expect {| Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "function inside let binding with print_int" =
-  pp_parse_demo {| let f = function x -> x * 2 in print_int (f 10) |};
+  pp_parse {| let f = function x -> x * 2 in print_int (f 10) |};
   [%expect {| 20 |}]
 ;;
 
 let%expect_test "some" =
-  pp_parse_demo
+  pp_parse
     {|
  let f = function
         | Some x -> x
@@ -836,7 +823,7 @@ let%expect_test "some" =
 (*aka manytests*)
 
 let%expect_test "001fac" =
-  pp_parse_demo
+  pp_parse
     {| 
 let rec fac n = if n<=1 then 1 else n * fac (n-1)
 
@@ -851,7 +838,7 @@ let main =
 ;;
 
 let%expect_test "002fac" =
-  pp_parse_demo
+  pp_parse
     {| 
 let rec fac_cps n k =
   if n=1 then k 1 else
@@ -868,7 +855,7 @@ let main =
 ;;
 
 let%expect_test "003fac" =
-  pp_parse_demo
+  pp_parse
     {| 
 let rec fib_acc a b n =
   if n=1 then b
@@ -896,7 +883,7 @@ let main =
 ;;
 
 let%expect_test "004manyargs" =
-  pp_parse_demo
+  pp_parse
     {|
 
 let wrap f = if 1 = 1 then f else f
@@ -931,7 +918,7 @@ let main =
 ;;
 
 let%expect_test "005fix" =
-  pp_parse_demo
+  pp_parse
     {|
 let rec fix f x = f (fix f) x
 
@@ -949,7 +936,7 @@ let main =
 ;;
 
 let%expect_test "006partial" =
-  pp_parse_demo
+  pp_parse
     {|
 let foo a b c =
   let () = print_int a in
@@ -974,7 +961,7 @@ let main =
 ;;
 
 let%expect_test "006partial2" =
-  pp_parse_demo
+  pp_parse
     {|
 let foo b = if b then (fun foo -> foo+2) else (fun foo -> foo*10)
 
@@ -990,7 +977,7 @@ let main =
 ;;
 
 let%expect_test "006partial3" =
-  pp_parse_demo
+  pp_parse
     {|
 
 let foo a =
@@ -1011,7 +998,7 @@ let main =
 ;;
 
 let%expect_test "007order" =
-  pp_parse_demo
+  pp_parse
     {|
 let _start () () a () b _c () d __ =
   let () = print_int (a+b) in
@@ -1036,7 +1023,7 @@ let main =
 ;;
 
 let%expect_test "008ascription" =
-  pp_parse_demo
+  pp_parse
     {|
 let addi = fun f g x -> (f x (g x: bool) : int)
 
@@ -1051,7 +1038,7 @@ let main =
 ;;
 
 let%expect_test "009let_poly" =
-  pp_parse_demo {|
+  pp_parse {|
 let temp =
   let f = fun x -> x in
   (f 1, f true)
@@ -1060,7 +1047,7 @@ let temp =
 ;;
 
 let%expect_test "010sukharev" =
-  pp_parse_demo
+  pp_parse
     {|
   let _1 = fun x y (a, _) -> (x + y - a) = 1
 
@@ -1091,7 +1078,7 @@ let int_of_option = function Some x -> x | None -> 0
 ;;
 
 let%expect_test "011sukharev" =
-  pp_parse_demo {|
+  pp_parse {|
 let id1, id2 = let id x = x in (id, id)
 
 |};
@@ -1102,7 +1089,7 @@ let id1, id2 = let id x = x in (id, id)
 ;;
 
 let%expect_test "012sukharev" =
-  pp_parse_demo {|
+  pp_parse {|
 let _6 = fun arg -> match arg with Some x -> let y = x in y
 
 |};
@@ -1110,7 +1097,7 @@ let _6 = fun arg -> match arg with Some x -> let y = x in y
 ;;
 
 let%expect_test "013sukharev" =
-  pp_parse_demo {|
+  pp_parse {|
 
 let _42 = function 42 -> true | _ -> false
 |};
@@ -1118,7 +1105,7 @@ let _42 = function 42 -> true | _ -> false
 ;;
 
 let%expect_test "015tuples" =
-  pp_parse_demo
+  pp_parse
     {|
 
 let rec fix f x = f (fix f) x
@@ -1157,7 +1144,7 @@ let main =
 ;;
 
 let%expect_test "016lists" =
-  pp_parse_demo
+  pp_parse
     {|
 let rec length xs =
   match xs with
@@ -1218,7 +1205,7 @@ let main =
 ;;
 
 let%expect_test "debug_length" =
-  pp_parse_demo
+  pp_parse
     {|
     let rec map f xs = match xs with | [] -> [] | h::t -> (f h)::map f t in
      let rec append xs ys = match xs with [] -> ys | h::t -> h::append t ys in
@@ -1240,38 +1227,38 @@ let%expect_test "debug_length" =
 ;;
 
 let%expect_test "empty_list" =
-  pp_parse_demo "match [] with | [] -> 1 | _ -> 0";
+  pp_parse "match [] with | [] -> 1 | _ -> 0";
   [%expect {|
     _ = 1 |}]
 ;;
 
 let%expect_test "cons_head" =
-  pp_parse_demo "match [1;2;3] with | h::t -> h";
+  pp_parse "match [1;2;3] with | h::t -> h";
   [%expect {|
     _ = 1 |}]
 ;;
 
 let%expect_test "cons_tail" =
-  pp_parse_demo "match [1;2;3] with | h::t -> t";
+  pp_parse "match [1;2;3] with | h::t -> t";
   [%expect {|
     _ = [2; 3] |}]
 ;;
 
 let%expect_test "tuple_cons" =
-  pp_parse_demo "match [1;2;3] with | h::t -> (h, t)";
+  pp_parse "match [1;2;3] with | h::t -> (h, t)";
   [%expect {|
     _ = (1, [2; 3]) |}]
 ;;
 
 let%expect_test "length_function" =
-  pp_parse_demo
+  pp_parse
     "let rec length xs = match xs with | [] -> 0 | h::t -> 1 + length t in length [1;2;3]";
   [%expect {|
     _ = 3 |}]
 ;;
 
 let%expect_test "length_tail_function" =
-  pp_parse_demo
+  pp_parse
     "let rec helper acc xs = match xs with | [] -> acc | h::t -> helper (acc+1) t in \
      helper 0 [1;2;3]";
   [%expect {|
@@ -1279,7 +1266,7 @@ let%expect_test "length_tail_function" =
 ;;
 
 let%expect_test "map_function" =
-  pp_parse_demo
+  pp_parse
     "let rec map f xs = match xs with | [] -> [] | h::t -> (f h)::map f t in map (fun x \
      -> x+1) [1;2;3]";
   [%expect {|
@@ -1287,7 +1274,7 @@ let%expect_test "map_function" =
 ;;
 
 let%expect_test "append_function" =
-  pp_parse_demo
+  pp_parse
     "let rec append xs ys = match xs with | [] -> ys | h::t -> h::append t ys in append \
      [1;2] [3;4]";
   [%expect {|
@@ -1295,7 +1282,7 @@ let%expect_test "append_function" =
 ;;
 
 let%expect_test "concat_function" =
-  pp_parse_demo
+  pp_parse
     {|let rec append xs ys = match xs with [] -> ys | x::xs -> x::(append xs ys)
 in 
     let rec concat xs =
@@ -1311,7 +1298,7 @@ in
 ;;
 
 let%expect_test "iter_function" =
-  pp_parse_demo
+  pp_parse
     "let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter \
      print_int [1;2;3]";
   [%expect {|
@@ -1320,19 +1307,19 @@ val iter = <fun>
 ;;
 
 let%expect_test "list_basic" =
-  pp_parse_demo "let lst = 1 :: 2 :: 3 :: [] in lst";
+  pp_parse "let lst = 1 :: 2 :: 3 :: [] in lst";
   [%expect {|
     _ = [1; 2; 3] |}]
 ;;
 
 let%expect_test "list_match" =
-  pp_parse_demo "match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h";
+  pp_parse "match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h";
   [%expect {|
     _ = 1 |}]
 ;;
 
 let%expect_test "list_append" =
-  pp_parse_demo
+  pp_parse
     "let append xs ys = match xs with | [] -> ys | h :: t -> h :: append t ys in append \
      [1; 2] [3; 4]";
   [%expect {|
@@ -1340,7 +1327,7 @@ let%expect_test "list_append" =
 ;;
 
 let%expect_test "debug_cartesian" =
-  pp_parse_demo
+  pp_parse
     {|let rec map f xs = match xs with | [] -> [] | h::t -> (f h)::map f t in
      let rec append xs ys = match xs with | [] -> ys | h::t -> h::append t ys in
      let rec cartesian xs ys =
@@ -1354,7 +1341,7 @@ let%expect_test "debug_cartesian" =
 ;;
 
 let%expect_test "fix_factorial" =
-  pp_parse_demo
+  pp_parse
     {|
 let rec fix f x = f (fix f) x in
 let factorial f n =
@@ -1367,7 +1354,7 @@ factorial_fn 5
 ;;
 
 let%expect_test "map_increment" =
-  pp_parse_demo
+  pp_parse
     {|
 let map f p = let (a,b) = p in (f a, f b) in
 let pair = (1, 2) in
@@ -1377,7 +1364,7 @@ map (fun x -> x + 1) pair
 ;;
 
 let%expect_test "meven_modd" =
-  pp_parse_demo
+  pp_parse
     {|
 let rec meven n = if n = 0 then 1 else modd (n - 1)
 and modd n = if n = 0 then 1 else meven (n - 1)
