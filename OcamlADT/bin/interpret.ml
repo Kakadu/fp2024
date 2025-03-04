@@ -41,22 +41,18 @@ let rec read_repl_input inp_chan =
   match In_channel.input_line inp_chan with
   | None -> None
   | Some input ->
-    if input = "help"
-    then (
-      print_endline usage_msg;
-      flush stdout;
-      read_repl_input inp_chan)
-    else if input = "quit"
-    then None
-    else (
-      match parse input with
-      | Error _ ->
-        print_endline "Syntax error";
-        read_repl_input inp_chan
-      | Ok ast ->
-        if ast = []
-        then read_repl_input inp_chan (* Empty input is handled by interpreter/parser *)
-        else Some ast)
+    (match input with
+     | "help" ->
+       print_endline usage_msg;
+       flush stdout;
+       read_repl_input inp_chan
+     | "quit" -> None
+     | _ ->
+       (match parse input with
+        | Error _ ->
+          print_endline "Syntax error";
+          read_repl_input inp_chan
+        | Ok ast -> if ast = [] then read_repl_input inp_chan else Some ast))
 ;;
 
 (* Read an entire input and process it *)
