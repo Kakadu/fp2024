@@ -12,7 +12,8 @@ open Units_of_measure
 
 let puconst =
   choice
-    [ (pchar >>| fun c -> Const_char c)
+    [ (punit >>| fun _ -> Const_unit)
+    ; (pchar >>| fun c -> Const_char c)
     ; (pstring >>| fun s -> Const_string s)
     ; (pbool >>| fun b -> Const_bool b)
     ; (puom >>| fun m -> Const_unit_of_measure m)
@@ -23,7 +24,8 @@ let puconst =
 
 let psconst =
   choice
-    [ (pchar >>| fun c -> Const_char c)
+    [ (punit >>| fun _ -> Const_unit)
+    ; (pchar >>| fun c -> Const_char c)
     ; (pstring >>| fun s -> Const_string s)
     ; (pbool >>| fun b -> Const_bool b)
     ; (puom >>| fun m -> Const_unit_of_measure m)

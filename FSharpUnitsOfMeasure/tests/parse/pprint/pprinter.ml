@@ -57,6 +57,7 @@ let pprint_const = function
   | Const_string s -> asprintf "%S" s
   | Const_float f -> asprintf "%F" f
   | Const_unit_of_measure u -> asprintf "%s" (pprint_uom u)
+  | Const_unit -> asprintf "()"
 ;;
 
 let rec pprint_type = function
