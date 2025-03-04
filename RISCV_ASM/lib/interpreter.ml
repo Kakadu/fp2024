@@ -120,25 +120,25 @@ let resolve_label_address label =
 
 (** Information about some address can be stored in 2 variants *)
 type address_info =
-  | Immediate of int (** Immediate value *)
+  | Immediate of int64 (** Immediate value *)
   | LabelAddress of int64 (** Label (resolved in terms of addresses) *)
 
 let get_address12_value = function
-  | ImmediateAddress12 value -> return (Immediate value)
+  | ImmediateAddress12 value -> return (Immediate (Int64.of_int value))
   | LabelAddress12 label ->
     let* label_address = resolve_label_address label in
     return (LabelAddress label_address)
 ;;
 
 let get_address20_value = function
-  | ImmediateAddress20 value -> return (Immediate value)
+  | ImmediateAddress20 value -> return (Immediate (Int64.of_int value))
   | LabelAddress20 label ->
     let* label_address = resolve_label_address label in
     return (LabelAddress label_address)
 ;;
 
 let get_address32_value = function
-  | ImmediateAddress32 value -> return (Immediate value)
+  | ImmediateAddress32 value -> return (Immediate (Int64.of_int value))
   | LabelAddress32 label ->
     let* label_address = resolve_label_address label in
     return (LabelAddress label_address)
@@ -420,6 +420,12 @@ let translate_address_to_index immediate64_value =
   traverse_program 0L immediate64_value state.program
 ;;
 
+let sext x = Int64.shift_right (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
+
+let zext x =
+  Int64.shift_right_logical (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
+;;
+
 let handle_branch_condition rs1 rs2 address_value comparison_fn =
   let* state = read in
   let* val_rs1 = get_register_value rs1 in
@@ -434,22 +440,15 @@ let handle_branch_condition rs1 rs2 address_value comparison_fn =
     | Immediate imm_value when comparison_fn val_rs1 val_rs2 ->
       let* current_address = translate_index_to_address state.program_idx in
       let* target_index =
-        translate_address_to_index (Int64.add (Int64.of_int imm_value) current_address)
+        translate_address_to_index (Int64.add imm_value (sext current_address))
       in
       return (Int64.sub target_index 4L)
-    | Immediate _ -> return state.program_idx
     | LabelAddress label_address when comparison_fn val_rs1 val_rs2 ->
       let* target_index = translate_address_to_index label_address in
       return (Int64.sub target_index 4L)
-    | LabelAddress _ -> return state.program_idx
+    | _ -> return state.program_idx
   in
   set_program_idx new_program_idx
-;;
-
-let sext x = Int64.shift_right (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
-
-let zext x =
-  Int64.shift_right_logical (Int64.shift_left (Int64.logand x 0xFFFFFFFFL) 32) 32
 ;;
 
 let execute_arithmetic_op rd rs1 rs2 op to_sext =
@@ -479,7 +478,7 @@ let execute_immediate_op rd rs1 imm op to_sext =
   let* address_info = get_address12_value imm in
   let address_value =
     match address_info with
-    | Immediate imm_value -> Int64.of_int imm_value
+    | Immediate imm_value -> imm_value
     | LabelAddress label_address -> label_address
   in
   let result = op val1 (sext address_value) in
@@ -492,7 +491,7 @@ let execute_shift_immediate_op rd rs1 imm op =
   let* address_info = get_address12_value imm in
   let shamt =
     match address_info with
-    | Immediate imm_value -> Int64.of_int imm_value
+    | Immediate imm_value -> imm_value
     | LabelAddress label_address -> label_address
   in
   let shamt = Int64.to_int (Int64.logand shamt 0x3FL) in
@@ -579,7 +578,7 @@ let execute_load_int rd rs1 imm size is_signed =
   let* address_info = get_address12_value imm in
   let offset =
     match address_info with
-    | Immediate imm_value -> Int64.of_int imm_value
+    | Immediate imm_value -> imm_value
     | LabelAddress label_address -> label_address
   in
   let address = Int64.add base_address (sext offset) in
@@ -593,7 +592,7 @@ let execute_store_int rs1 rs2 imm size =
   let* address_info = get_address12_value imm in
   let offset =
     match address_info with
-    | Immediate imm_value -> Int64.of_int imm_value
+    | Immediate imm_value -> imm_value
     | LabelAddress label_address -> label_address
   in
   let address = Int64.add base_address (sext offset) in
@@ -607,7 +606,7 @@ let execute_vle32v vd rs1 imm =
   let* address_info = get_address12_value imm in
   let offset =
     match address_info with
-    | Immediate imm_value -> Int64.of_int imm_value
+    | Immediate imm_value -> imm_value
     | LabelAddress label_address -> label_address
   in
   let address = Int64.add base_address offset in
@@ -629,7 +628,7 @@ let execute_vstore vs rs1 imm =
   let* address_info = get_address12_value imm in
   let offset =
     match address_info with
-    | Immediate imm_value -> Int64.of_int imm_value
+    | Immediate imm_value -> imm_value
     | LabelAddress label_address -> label_address
   in
   let address = Int64.add base_address offset in
@@ -713,19 +712,41 @@ let handle_syscall =
 let execute_j imm_value =
   let* state = read in
   let* address_info = get_address20_value imm_value in
-  let* new_pc =
+  let* new_program_idx =
     match address_info with
     | Immediate imm_value ->
-      let* current_pc_excl = translate_index_to_address state.program_idx in
-      let* resolved_pc =
-        translate_address_to_index (Int64.add (Int64.of_int imm_value) current_pc_excl)
+      let* current_address = translate_index_to_address state.program_idx in
+      let* target_index =
+        translate_address_to_index (Int64.add (sext imm_value) current_address)
       in
-      return resolved_pc
-    | LabelAddress excluding_directives_label_offset ->
-      let* resolved_pc = translate_address_to_index excluding_directives_label_offset in
-      return resolved_pc
+      return target_index
+    | LabelAddress label_address ->
+      let* target_index = translate_address_to_index label_address in
+      return target_index
   in
-  set_program_idx (Int64.sub new_pc 4L)
+  set_program_idx (Int64.sub new_program_idx 4L)
+;;
+
+let execute_jalr rd rs1 imm =
+  let* state = read in
+  let* val_rs1 = get_register_value rs1 in
+  let* address_info = get_address12_value imm in
+  let* target_idx =
+    match address_info with
+    | Immediate imm_value -> translate_address_to_index (Int64.add val_rs1 imm_value)
+    | LabelAddress label_address -> translate_address_to_index label_address
+  in
+  let* () = set_register_value rd (Int64.add state.program_idx 4L) in
+  (* last bit of result is set 0 according to specification *)
+  let new_program_idx = Int64.logand (Int64.sub target_idx 4L) (Int64.neg 1L) in
+  set_program_idx new_program_idx
+;;
+
+let get_upper_immediate = function
+  | ImmediateAddress20 value -> return (Int64.shift_left (Int64.of_int value) 12)
+  | LabelAddress20 label ->
+    let* label_address = resolve_label_address label in
+    return (sext (Int64.shift_left label_address 12))
 ;;
 
 let execute_instruction instr =
@@ -796,52 +817,26 @@ let execute_instruction instr =
     handle_branch_condition rs1 (Some rs2) imm_value comparison_fn
   | Jal (rd, imm_value) ->
     let* address_info = get_address20_value imm_value in
-    let* new_pc =
+    let* target_idx =
       match address_info with
       | Immediate imm_value ->
-        let* current_pc_excl = translate_index_to_address state.program_idx in
-        translate_address_to_index (Int64.add (Int64.of_int imm_value) current_pc_excl)
-      | LabelAddress excluding_directives_label_offset ->
-        let* current_pc_excl = translate_index_to_address state.program_idx in
-        translate_address_to_index
-          (Int64.add excluding_directives_label_offset current_pc_excl)
+        let* current_address = translate_index_to_address state.program_idx in
+        translate_address_to_index (Int64.add imm_value (sext current_address))
+      | LabelAddress label_address -> translate_address_to_index label_address
     in
     let* () = set_register_value rd (Int64.add state.program_idx 4L) in
-    set_program_idx (Int64.sub new_pc 4L)
-  | Jalr (rd, rs1, imm) ->
-    let* val_rs1 = get_register_value rs1 in
-    let* address_info = get_address12_value imm in
-    let* new_pc =
-      match address_info with
-      | Immediate imm_value ->
-        translate_address_to_index (Int64.add val_rs1 (Int64.of_int imm_value))
-      | LabelAddress excluding_directives_label_offset ->
-        translate_address_to_index (Int64.add excluding_directives_label_offset val_rs1)
-    in
-    let* () = set_register_value rd (Int64.add state.program_idx 4L) in
-    set_program_idx (Int64.sub new_pc 4L)
+    set_program_idx (Int64.sub target_idx 4L)
+  | Jalr (rd, rs1, imm) -> execute_jalr rd rs1 imm
   | Jr rs1 ->
     let* val_rs1 = get_register_value rs1 in
-    let* new_pc = translate_address_to_index val_rs1 in
-    set_program_idx (Int64.sub new_pc 4L)
+    let* target_idx = translate_address_to_index val_rs1 in
+    set_program_idx (Int64.sub target_idx 4L)
   | J imm_value -> execute_j imm_value
   | Lui (rd, imm) ->
-    let* imm_value =
-      match imm with
-      | ImmediateAddress20 value -> return (Int64.shift_left (Int64.of_int value) 12)
-      | LabelAddress20 label ->
-        let* label_offset = resolve_label_address label in
-        return (Int64.shift_left label_offset 12)
-    in
+    let* imm_value = get_upper_immediate imm in
     set_register_value rd imm_value
   | Auipc (rd, imm) ->
-    let* imm_value =
-      match imm with
-      | ImmediateAddress20 value -> return (Int64.shift_left (Int64.of_int value) 12)
-      | LabelAddress20 label ->
-        let* label_offset = resolve_label_address label in
-        return (Int64.shift_left label_offset 12)
-    in
+    let* imm_value = get_upper_immediate imm in
     let new_value = Int64.add state.program_idx imm_value in
     set_register_value rd new_value
   | Ecall -> handle_syscall
@@ -855,36 +850,31 @@ let execute_instruction instr =
       | ImmediateAddress32 value -> return (Int64.of_int value)
       | LabelAddress32 label -> resolve_label_address label
     in
-    set_register_value rd imm_value
+    set_register_value rd (sext imm_value)
   | Addiw (rd, rs1, imm) -> execute_immediate_op rd rs1 imm Int64.add true
   | Mulw (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.mul true
   | Addw (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.add true
   | Subw (rd, rs1, rs2) -> execute_arithmetic_op rd rs1 rs2 Int64.sub true
-  | Ret ->
-    let* val_rs1 = get_register_value X1 in
-    let* new_pc = translate_address_to_index val_rs1 in
-    let* () = set_register_value X0 (Int64.add state.program_idx 1L) in
-    set_program_idx new_pc
+  | Ret -> execute_jalr X0 X1 (ImmediateAddress12 0)
   | La (rd, imm) ->
     let* address_info = get_address32_value imm in
     let* new_address =
       match address_info with
       | Immediate imm_value ->
-        let* current_pc_excl = translate_index_to_address state.program_idx in
+        let* current_address = translate_index_to_address state.program_idx in
         let* resolved_address =
-          translate_address_to_index (Int64.add (Int64.of_int imm_value) current_pc_excl)
+          translate_address_to_index (Int64.add imm_value current_address)
         in
         return resolved_address
-      | LabelAddress excluding_directives_label_offset ->
-        return excluding_directives_label_offset
+      | LabelAddress label_address -> return label_address
     in
     set_register_value rd new_address
   | Adduw (rd, rs1, rs2) ->
     let* val1 = get_register_value rs1 in
     let* val2 = get_register_value rs2 in
     let result = Int64.add val1 val2 in
-    let result_final = zext result in
-    set_register_value rd result_final
+    let result = zext result in
+    set_register_value rd result
   | Sh1add (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 1 false
   | Sh1adduw (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 1 true
   | Sh2add (rd, rs1, rs2) -> execute_shnadd rd rs1 rs2 2 false
@@ -930,7 +920,7 @@ let execute_instruction instr =
     execute_vector_arithmetic vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
   | Vmseqvx (vd, vs1, rs2) ->
     execute_vector_imm vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
-  | _ -> return ()
+  | _ -> fail "Unsupported instruction"
 ;;
 
 let nth_opt_int64 l n =
