@@ -2,270 +2,294 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(* Template: https://gitlab.com/Kakadu/fp2020course-materials/-/tree/master/code/miniml?ref_type=heads*)
+open TypTree
+open InfAuxilary
+open InfAuxilary.FreshResult
+open InfAuxilary.FreshResult.SyntSugar
 
-open Base
-open Typ
-open Ast
+let fresh_var =
+  let* fresh = fresh in
+  return @@ var_typ fresh
+;;
 
-type var_type = int
+(* Makes type scheme copy *)
+let instantiate (Scheme (sch, ty)) =
+  VarSet.fold
+    (fun old_var ty ->
+      let* ty = ty in
+      let* fresh_var = fresh_var in
+      let* sub = Subst.singleton old_var fresh_var in
+      return @@ Subst.apply sub ty)
+    sch
+    (return ty)
+;;
 
-module Res = struct
-  (* тип int выражает состояние *)
-  type ('a, 'error) t = int -> int * ('a, 'error) Result.t
+let generalize env typ =
+  let scheme_vars = VarSet.diff (Type.type_vars typ) (TypeEnv.free_in_context env) in
+  Scheme (scheme_vars, typ)
+;;
 
-  (* функция для создания Ok-монады из значения *)
-  let return : 'a -> ('a, 'error) t = fun x st -> st, Result.Ok x
+let generalize_rec env ty x =
+  let env = TypeEnv.remove x env in
+  generalize env ty
+;;
 
-  (* функция для создания Error-монады из значения *)
-  let fail : 'error -> ('a, 'error) t = fun err state -> state, Result.Error err
+let inf_constant token =
+  return
+  @@ ( Subst.empty
+     , match token with
+       | Ast.Int _ -> int_typ
+       | Ast.Bool _ -> bool_typ
+       | Ast.Str _ -> string_typ
+       | Ast.Unit -> unit_typ )
+;;
 
-  (* блин оч странно, зачем нужна анонимная функци, если можно просто прописать
-     [let fail err state = state, Result.Error err] *)
-  let fresh_num old_var = old_var + 1, Result.Ok old_var
+let lookup_typ env id =
+  match TypeEnv.find env id with
+  | Some sch -> instantiate sch
+  | None -> fail @@ UnboundVariable id
+;;
 
-  (* функция для связывания двух вычислительных операторов *)
-  let ( >>= ) : ('a, 'error) t -> ('a -> ('b, 'error) t) -> ('b, 'error) t =
-    fun first_operator sec_operator state ->
-    let state, res = first_operator state in
-    match res with
-    | Result.Ok value -> sec_operator value state
-    | Result.Error error -> fail error state
-  ;;
+let inf_id env id =
+  match id with
+  | "_" ->
+    let* ty_var = fresh_var in
+    return (Subst.empty, ty_var)
+  | _ ->
+    let* ty = lookup_typ env id in
+    return (Subst.empty, ty)
+;;
 
-  module SyntSugar = struct
-    let ( let* ) = ( >>= )
-  end
-
-  (* берём результат применения оератора к нулю (то есть второе значение) *)
-  let run operator = snd (operator 0)
-end
-
-(* эт чоооо, выходит, мы переменные чисто нумеруем... имена нас ВАЩЕ не волнуют *)
-(* тип множества целых чисел с функциональностью из Base *)
-(* отсюда вопрос... почему не взять тупо сразу Base.Set, а через определение своего типа?
-   ответ: так можно сделать удобный интерфейс для взаимодействия с модулем *)
-module VarSet = struct
-  include Set
-  (* неверно писать [open Base.Set], [open] делает видимым содержимое модуля
-     при [include] текущий модуль наследует всё содержимое инклюднутого модуля *)
-
-  (* тип *)
-  type t = (var_type, Int.comparator_witness) Set.t
-
-  (* если не объявить отдеально, каждый раз придётся передавать тип компаратора... не удобно *)
-  let empty = Set.empty (module Int)
-end
-
-module Type = struct
-  (* проверяет, встречается ли эта переменная в типе... гпт пишет, что это нужно для предотвращения
-     циклических зависимостей при попытке вывести тип переменной *)
-  let rec occurs_var var = function
-    | TypConst _ -> false
-    | TypVar x -> x = var
-    | TypArrow (l, r) -> occurs_var var l || occurs_var var r
-    | TypTuple (typ1, typ2, typs) ->
-      List.exists (typ1 :: typ2 :: typs) ~f:(occurs_var var)
-    | TypList typ -> occurs_var var typ
-    | TypOption typ -> occurs_var var typ
-  ;;
-
-  (* возвращает множество свободных переменных в типе (важно для схемы)
-     свободные переменные -- те, которые не связаны с конкретными значениями *)
-  let free_vars typ =
-    let rec helper acc = function
-      | TypConst _ -> acc
-      | TypVar typ -> VarSet.add acc typ
-      | TypArrow (l, r) ->
-        let left_vars = helper acc l in
-        helper left_vars r
-      | TypTuple (typ1, typ2, typs) ->
-        let typ_list = typ1 :: typ2 :: typs in
-        let collect_free_vars acc typ = VarSet.union acc (helper VarSet.empty typ) in
-        List.fold typ_list ~init:acc ~f:(fun acc typ -> collect_free_vars acc typ)
-      | TypList typ -> helper acc typ
-      | TypOption typ -> helper acc typ
+let rec inf_pat env = function
+  | Ast.PatAny ->
+    let* ty_var = fresh_var in
+    return (env, ty_var)
+  | Ast.PatConst pat ->
+    let* _, ty = inf_constant pat in
+    return (env, ty)
+  | Ast.PatVar pat ->
+    let* ty_var = fresh_var in
+    let sch = Scheme (VarSet.empty, ty_var) in
+    let env = TypeEnv.extend env pat sch in
+    return (env, ty_var)
+  | Ast.PatTup (pat1, pat2, pats) ->
+    let pats = pat1 :: pat2 :: pats in
+    let* env, ty =
+      List.fold_left
+        (fun acc pat ->
+          let* env1, tys = acc in
+          let* env_upd, ty1 = inf_pat env1 pat in
+          return (env_upd, ty1 :: tys))
+        (return (env, []))
+        pats
     in
-    helper VarSet.empty typ
-  ;;
-
-  (* сравнивает два типа на равенство
-     для базовых типов сравниваем их совпадения, для var возращаем true, для стрелочных
-     рекурсивно сравниваем их части *)
-  let equal =
-    let rec cmp l r =
-      match l, r with
-      | TypConst l, TypConst r -> String.equal l r
-      | TypVar _, TypVar _ -> true
-      | TypArrow (l1, r1), TypArrow (l2, r2) -> cmp l1 l2 && cmp r1 r2
-      | TypTuple (l1, l2, ls), TypTuple (r1, r2, rs) ->
-        let cmp_base = cmp l1 r1 && cmp l2 r2 in
-        let cmp_lists =
-          match List.fold2 ls rs ~init:true ~f:(fun acc l r -> acc && cmp l r) with
-          | Ok res -> res
-          | Unequal_lengths -> false
-        in
-        cmp_base && cmp_lists
-      | TypList l, TypList r -> cmp l r
-      | TypOption l, TypOption r -> cmp l r
-      | _ -> false
+    return (env, tup_typ ty)
+  | Ast.PatListCons (pat1, pat2) ->
+    let* env1, ty1 = inf_pat env pat1 in
+    let* env2, ty2 = inf_pat env1 pat2 in
+    let* subst = Subst.unify (list_typ ty1) ty2 in
+    let env = TypeEnv.apply subst env2 in
+    return (env, Subst.apply subst ty2)
+  | Ast.PatList [] ->
+    let* ty_var = fresh_var in
+    return (env, list_typ ty_var)
+  | Ast.PatList (pat1 :: pats) ->
+    let* env_start, ty_start = inf_pat env pat1 in
+    let* env, ty =
+      List.fold_left
+        (fun acc pat ->
+          let* env_acc, _ = acc in
+          let* env_next, t_next = inf_pat env_acc pat in
+          let* subst = Subst.unify ty_start t_next in
+          let env_updated = TypeEnv.apply subst env_next in
+          return (env_updated, Subst.apply subst ty_start))
+        (return (env_start, list_typ ty_start))
+        pats
     in
-    cmp
-  ;;
-end
+    return (env, ty)
+;;
 
-module Substitutions = struct
-  open Res
-  open Res.SyntSugar
+(* Returns operands type and result type *)
+let binop_signature = function
+  | Ast.Eq | Ast.Ne | Ast.Lt | Ast.Le | Ast.Gt | Ast.Ge ->
+    let* ty_var = fresh_var in
+    return (ty_var, bool_typ)
+  | Ast.Mul | Ast.Div | Ast.Add | Ast.Sub -> return (int_typ, int_typ)
+  | Ast.And | Ast.Or -> return (bool_typ, bool_typ)
+;;
 
-  (* тип монады -- мапа из свободных переменных в типчики *)
-  type t = (var_type, typ, Int.comparator_witness) Map.t
-
-  (* пустое замещение *)
-  let empty : t = Map.empty (module Int)
-
-  (* замещение с одной заменой *)
-  (* важно, что input -- это кортеж *)
-  let singleton (var, typ) =
-    if Type.occurs_var var typ
-    then fail (OccursCheckFailed (var, typ))
-    else return (Map.singleton (module Int) var typ)
-  ;;
-
-  let apply subst =
-    let rec try_apply_to = function
-      | TypConst x -> TypConst x (* потому что нет свободных переменных *)
-      | TypVar var ->
-        (* ищем такой ключ (как содержимое нашего типа) в подстановке *)
-        (match Map.find subst var with
-         | Some typ -> typ
-         | None -> TypVar var)
-      | TypArrow (l, r) -> TypArrow (try_apply_to l, try_apply_to r)
-      | TypTuple (typ1, typ2, typs) ->
-        let applyed_list = List.map typs ~f:try_apply_to in
-        TypTuple (try_apply_to typ1, try_apply_to typ2, applyed_list)
-      | TypList typ -> TypList (try_apply_to typ)
-      | TypOption typ -> TypOption (try_apply_to typ)
+let rec inf_expr env = function
+  | Ast.Var exp -> inf_id env exp
+  | Ast.Const exp -> inf_constant exp
+  | Ast.BinOp (op, exp1, exp2) ->
+    let* args_ty, res_ty = binop_signature op in
+    let* sub1, ty1 = inf_expr env exp1 in
+    let* sub2, ty2 = inf_expr env exp2 in
+    let* sub3 = Subst.unify ty1 args_ty in
+    let* sub4 = Subst.unify (Subst.apply sub1 ty2) args_ty in
+    let* final_sub = Subst.compose_many_sub [ sub1; sub2; sub3; sub4 ] in
+    return (final_sub, res_ty)
+  | Ast.App (fun_exp, arg_exp) ->
+    let* sub1, fun_ty = inf_expr env fun_exp in
+    let upd_env = TypeEnv.apply sub1 env in
+    let* sub2, arg_ty = inf_expr upd_env arg_exp in
+    let* res_typ = fresh_var in
+    let ty1 = Subst.apply sub2 fun_ty in
+    let ty2 = arrow_typ arg_ty res_typ in
+    let* sub3 = Subst.unify ty1 ty2 in
+    let* subst = Subst.compose_many_sub [ sub1; sub2; sub3 ] in
+    let ty = Subst.apply subst res_typ in
+    return (subst, ty)
+  | Ast.Fun (pat, exp) ->
+    let* env1, pat_ty = inf_pat env pat in
+    let* subst, exp_ty = inf_expr env1 exp in
+    let ty = arrow_typ pat_ty exp_ty in
+    let res_ty = Subst.apply subst ty in
+    return (subst, res_ty)
+  | Ast.Branch (cond, br1, br2) ->
+    let* sub1, ty1 = inf_expr env cond in
+    let* sub2, ty2 = inf_expr env br1 in
+    let* sub3, ty3 = inf_expr env br2 in
+    let* sub4 = Subst.unify ty1 bool_typ in
+    let* sub5 = Subst.unify ty2 ty3 in
+    let* final_sub = Subst.compose_many_sub [ sub1; sub2; sub3; sub4; sub5 ] in
+    let ty = Subst.apply final_sub ty3 in
+    return (final_sub, ty)
+  | Ast.List exp_list ->
+    let* ty_var = fresh_var in
+    let rec inf_list acc = function
+      | [] -> return (acc, list_typ ty_var)
+      | exp1 :: rest ->
+        let* sub1, ty1 = inf_expr env exp1 in
+        let* sub2 = Subst.unify ty1 ty_var in
+        let* sub = Subst.compose sub1 sub2 in
+        inf_list (sub :: acc) rest
     in
-    try_apply_to
-  ;;
+    let* sub, ty = inf_list [] exp_list in
+    let* sub = Subst.compose_many_sub sub in
+    let ty = Subst.apply sub ty in
+    return (sub, ty)
+  | Ast.Let (NonRec, bind, binds, exp) ->
+    let bindings = bind :: binds in
+    let* env2 = inf_non_rec_binding_list env bindings in
+    let* subst, ty = inf_expr env2 exp in
+    return (subst, ty)
+  | Ast.Let (Rec, bind, binds, exp) ->
+    let bindings = bind :: binds in
+    let* env2 = inf_rec_binding_list env bindings in
+    let* subst, ty = inf_expr env2 exp in
+    return (subst, ty)
+  | Ast.Option (Some exp) ->
+    let* subst, ty = inf_expr env exp in
+    return (subst, option_typ ty)
+  | Ast.Option None ->
+    let* ty_var = fresh_var in
+    return (Subst.empty, option_typ ty_var)
+  | _ -> return (Subst.empty, TypConst TUnit)
 
-  (* возвращает substitution, если типы не совпадают *)
-  let rec unify l r =
-    match l, r with
-    | TypConst typ1, TypConst typ2 when String.equal typ1 typ2 -> return empty
-    | TypConst _, TypConst _ -> fail (UnificationFailed (l, r))
-    | TypVar l, TypVar r when l = r -> return empty
-    | TypVar var, typ | typ, TypVar var -> singleton (var, typ)
-    | TypArrow (l1, r1), TypArrow (l2, r2) ->
-      let* subst1 = unify l1 l2 in
-      (* как в статье, для общей подстановки S1 применяем к S2, затем наоборот и комбинируем *)
-      let* subst2 = unify (apply subst1 r1) (apply subst1 r2) in
-      compose subst1 subst2
-    | TypTuple (l1, l2, ls), TypTuple (r1, r2, rs) ->
-      if List.length ls <> List.length rs
-      then fail (UnificationFailed (l, r))
-      else
-        Base.List.fold_left
-          (Base.List.zip_exn (l1 :: l2 :: ls) (r1 :: r2 :: rs))
-          ~f:(fun subst (l, r) ->
-            let* new_subst = unify l r in
-            let* curr_subst = subst in
-            compose curr_subst new_subst)
-          ~init:(return empty)
-    | TypList l, TypList r -> unify l r
-    | TypOption l, TypOption r -> unify l r
-    | _ -> fail (UnificationFailed (l, r))
+and inf_non_rec_binding_list env binding_list =
+  let* env2 =
+    List.fold_left
+      (fun env binding ->
+        let* env = env in
+        let Ast.{ pat : pat; expr : expr } = binding in
+        match pat with
+        | Ast.PatVar var ->
+          let* subst, ty = inf_expr env expr in
+          let env = TypeEnv.apply subst env in
+          let sch = generalize env ty in
+          let env = TypeEnv.extend env var sch in
+          return env
+        | Ast.PatConst Unit ->
+          let* _, ty1 = inf_pat env pat in
+          let* _, ty2 = inf_expr env expr in
+          let* sub = Subst.unify ty1 ty2 in
+          let env = TypeEnv.apply sub env in
+          return env
+        | Ast.PatAny ->
+          let* _, _ = inf_expr env expr in
+          return env
+        | Ast.PatTup _ ->
+          let* _, ty1 = inf_pat env pat in
+          let* _, ty2 = inf_expr env expr in
+          let* subst = Subst.unify ty1 ty2 in
+          let env = TypeEnv.apply subst env in
+          return env
+        | _ -> return env)
+      (return env)
+      binding_list
+  in
+  return env2
 
-  and extend subst (new_var, new_typ) =
-    match Map.find subst new_var with
-    (* если нашлась такая переменная, то нужно применить новую замену *)
-    | Some typ ->
-      let* new_subst = unify new_typ typ in
-      compose subst new_subst
-    (* чтобы применить compose, нужно обязательно перед этим сделать binding *)
-    (* если не нашлась такая замена, то нужно всё равно применить и ещё и добавить её к мапе существующих *)
-    | None ->
-      let new_typ = apply subst new_typ in
-      let* new_subst = singleton (new_var, new_typ) in
-      Map.fold subst ~init:(return new_subst) ~f:(fun ~key:next_var ~data:next_typ map ->
-        let next_typ = apply new_subst next_typ in
-        (* проверка ниже нужна по той же причине, по которой мы её проводит, когда создаём новую подстановку *)
-        (* выходит, что новую подстановку добавляем только через унификацию *)
-        if Type.occurs_var next_var next_typ
-        then fail (OccursCheckFailed (next_var, next_typ))
-        else
-          let* map = map in
-          return (Map.set map ~key:next_var ~data:next_typ))
-
-  and compose subst1 subst2 =
-    Map.fold subst1 ~init:(return subst2) ~f:(fun ~key:next_var ~data:next_typ map ->
-      let* map = map in
-      extend map (next_var, next_typ))
-  ;;
-
-  let compose_all subst_map =
-    List.fold_left subst_map ~init:(return empty) ~f:(fun acc subst ->
-      let* acc = acc in
-      compose acc subst)
-  ;;
-end
-
-module Scheme = struct
-  (* то есть получается.. тип схемы -- это S(мн-во, его_тип) *)
-  type t = S of VarSet.t * typ
-
-  (* возвращаем список свободных переменных, то есть уже определённых *)
-  let free_vars (S (var_list, ty)) = VarSet.diff (Type.free_vars ty) var_list
-
-  let apply (S (s, ty)) subst =
-    let subst2 = VarSet.fold s ~init:subst ~f:(fun acc k -> Base.Map.remove acc k) in
-    S (s, Substitutions.apply subst2 ty)
-  ;;
-
-  let equal (S (s1, ty1)) (S (s2, ty2)) = VarSet.equal s1 s2 && Type.equal ty1 ty2
-end
-
-module TypeEnv = struct
-  include Base.Map
-
-  type t = (id, Scheme.t, Base.String.comparator_witness) Base.Map.t
-
-  let empty = Base.Map.empty (module Base.String)
-
-  (* собирает все свободные переменные среды *)
-  let free_vars env =
-    Base.Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data:sch acc ->
-      VarSet.union acc (Scheme.free_vars sch))
-  ;;
-
-  let apply env subst = Base.Map.map env ~f:(fun sch -> Scheme.apply sch subst)
-  let extend env (id, sch) = Base.Map.set env ~key:id ~data:sch
-  let equal = Base.Map.equal Scheme.equal
-
-  (* Returns list of variable id's which occur only in one of two enviroments *)
-  let vars_diff : t -> t -> id list =
-    fun env1 env2 ->
-    Base.Map.fold2 env1 env2 ~init:[] ~f:(fun ~key:id ~data:v acc ->
-      match v with
-      | `Left _ | `Right _ -> id :: acc
-      | `Both _ -> acc)
-  ;;
-
-  (* Returns list of variables with different type schemes in two enviroments *)
-  let schemes_diff env1 env2 =
-    Base.Map.fold2 env1 env2 ~init:[] ~f:(fun ~key:id ~data:v acc ->
-      match v with
-      | `Both (l, r) when not (Scheme.equal l r) -> (id, l, r) :: acc
-      | _ -> acc)
-  ;;
-
-  (* Returns list of variables with different types in two enviroments *)
-  let types_diff env1 env2 =
+and inf_rec_binding_list env binding_list =
+  let* env2 =
     Base.List.fold_left
-      (schemes_diff env1 env2)
-      ~init:[]
-      ~f:(fun acc (id, S (_, ty1), S (_, ty2)) ->
-        if Type.equal ty1 ty2 then acc else (id, ty1, ty2) :: acc)
-  ;;
-end
+      binding_list
+      ~init:(return env)
+      ~f:(fun env Ast.{ pat : pat; expr : expr } ->
+        let* env = env in
+        match pat with
+        | PatVar var ->
+          let* ty_var = fresh_var in
+          let sch = Scheme (VarSet.empty, ty_var) in
+          let env = TypeEnv.extend env var sch in
+          let* sub1, ty1 = inf_expr env expr in
+          let* sub2 = Subst.unify ty1 ty_var in
+          let* sub3 = Subst.compose sub1 sub2 in
+          let env = TypeEnv.apply sub3 env in
+          let ty2 = Subst.apply sub3 ty1 in
+          let sch = generalize_rec var ty2 env in
+          let env = TypeEnv.extend env var sch in
+          return env
+        | _ -> fail InvalidRecursivePattern)
+  in
+  return env2
+;;
+
+let inf_structure_item env = function
+  | Ast.EvalExpr exp ->
+    let* _ = inf_expr env exp in
+    return env
+  | Ast.Binding (Rec, bind, binds) ->
+    let bindings = bind :: binds in
+    inf_rec_binding_list env bindings
+  | Ast.Binding (NonRec, bind, binds) ->
+    let bindings = bind :: binds in
+    inf_non_rec_binding_list env bindings
+;;
+
+let inf_program program =
+  let env =
+    TypeEnv.extend
+      TypeEnv.empty
+      "print_int"
+      (Scheme (VarSet.empty, arrow_typ int_typ unit_typ))
+  in
+  let env =
+    TypeEnv.extend
+      env
+      "print_endline"
+      (Scheme (VarSet.empty, arrow_typ string_typ unit_typ))
+  in
+  List.fold_left
+    (fun acc item ->
+      let* env = acc in
+      let* env = inf_structure_item env item in
+      return env)
+    (return env)
+    program
+;;
+
+let run_infer program =
+  match Parse.parse program with
+  | Ok tree ->
+    let result = run (inf_program tree) in
+    (match result with
+     | Ok env ->
+       Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
+         if String.equal key "print_int" || String.equal key "print_endline"
+         then ()
+         else Stdlib.Format.printf "val %s : %a\n" key pp_typ ty)
+     | Error msg -> Stdlib.Format.printf "Infer error: %a\n" pp_error msg)
+  | Error msg -> Stdlib.Format.printf "Parsing error: %s\n" msg
+;;
