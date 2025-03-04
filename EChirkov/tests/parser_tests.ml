@@ -8,7 +8,7 @@ open MiniML.Ast
 let test_parser s =
   match parse s with
   | Ok s -> print_endline (show_program s)
-  | Error e -> print_endline e
+  | Error e -> print_endline "Parsing error"
 ;;
 
 let%expect_test "parse simple let" =
@@ -242,4 +242,51 @@ let%expect_test "parse option none" =
   test_parser "let () = None";
   [%expect {|
     [(SValue (Nonrecursive, (PUnit, (EOption None)), []))]|}]
+;;
+
+(* ========== vars ========== *)
+
+let%expect_test "parse var simple" =
+  test_parser "let () = asd";
+  [%expect {|
+    [(SValue (Nonrecursive, (PUnit, (EVar "asd")), []))]|}]
+;;
+
+let%expect_test "parse var start underscore" =
+  test_parser "let () = _asd";
+  [%expect {|
+    [(SValue (Nonrecursive, (PUnit, (EVar "_asd")), []))]|}]
+;;
+
+let%expect_test "parse var underscore fail" =
+  test_parser "let () = _";
+  [%expect {|
+    Parsing error|}]
+;;
+
+let%expect_test "parse var double underscore not fail" =
+  test_parser "let () = __";
+  [%expect {|
+    [(SValue (Nonrecursive, (PUnit, (EVar "__")), []))]|}]
+;;
+
+let%expect_test "parse underscore number" =
+  test_parser "let () = _0kajsndf";
+  [%expect {|
+    [(SValue (Nonrecursive, (PUnit, (EVar "_0kajsndf")), []))]|}]
+;;
+
+let%expect_test "parse number" =
+  test_parser "let () = 0kajsndf";
+  [%expect {|
+    Parsing error|}]
+;;
+
+(* ========== fun ========== *)
+
+let%expect_test "parse fun simple" =
+  test_parser "let () = fun x -> y";
+  [%expect
+    {|
+    [(SValue (Nonrecursive, (PUnit, (EFun ((PVar "x"), (EVar "y")))), []))]|}]
 ;;

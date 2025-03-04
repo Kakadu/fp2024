@@ -71,7 +71,13 @@ let p_rec_flag =
    token "\"" *> take_till (Char.equal '\"') <* token "\"" >>| fun s -> CString s
    ;; *)
 
-let p_integer = ws *> lift2 (fun s n -> CInt (Int.of_string (s ^ n))) p_sign p_digits
+let p_integer =
+  let* num = ws *> lift2 (fun s n -> CInt (Int.of_string (s ^ n))) p_sign p_digits in
+  let* next = peek_char in
+  match next with
+  | Some ('a' .. 'z' | '_') -> fail "unexpected character after number"
+  | _ -> return num
+;;
 
 let p_boolean =
   let t = token "true" *> return (CBool true) in
@@ -94,10 +100,10 @@ let p_variable =
   | 'a' .. 'z' | '_' ->
     let* name = take_while is_id in
     (match name with
-     | "_" -> fail (WildcardUsed |> pp_error)
-     | name when is_keyword name -> fail (ReservedKeyword name |> pp_error)
+     | "_" -> fail (pp_error WildcardUsed)
+     | name when is_keyword name -> fail (pp_error (ReservedKeyword name))
      | name -> return name)
-  | _ -> fail (UnexpectedToken "Expected an identifier" |> pp_error)
+  | _ -> fail (pp_error (UnexpectedToken "Expected an identifier"))
 ;;
 
 (* ========== patterns ========== *)
@@ -152,14 +158,10 @@ let p_fun e =
 let p_expression =
   fix
   @@ fun e ->
-  let term =
-    choice
-      [ parens e
-      ; (p_variable >>| fun v -> EVar v)
-      ; (p_const >>| fun e -> EConst e)
-      ; p_list e
-      ]
-  in
+  let term = parens e in
+  let term = p_const >>| (fun e -> EConst e) <|> term in
+  let term = p_variable >>| (fun v -> EVar v) <|> term in
+  let term = p_list e <|> term in
   let lambda = p_fun term <|> term in
   let apply = chainl1 lambda (return (fun e1 e2 -> EApply (e1, e2))) in
   let opt = p_option apply <|> apply in
