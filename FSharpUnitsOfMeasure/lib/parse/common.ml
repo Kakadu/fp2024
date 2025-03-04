@@ -67,6 +67,7 @@ let pid_or_op =
   return ident_or_op
 ;;
 
+let punit = string "()" *> return ()
 let pchar = char '\'' *> any_char <* char '\''
 
 (* Can't parse strings with '\' char *)

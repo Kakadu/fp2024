@@ -39,6 +39,9 @@ val pid : string t
 (** [pid_or_op] parses identificator or an operator inside parentheses and returns it. *)
 val pid_or_op : string t
 
+(** [punit] parses (). *)
+val punit : unit t
+
 (** [pchar] parses char with single quotes and returns it. Cannot parse surrouning whitespaces. *)
 val pchar : char t
 

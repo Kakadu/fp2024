@@ -44,6 +44,7 @@ end = struct
     | Const_bool b -> return (VBool b)
     | Const_char c -> return (VChar c)
     | Const_string s -> return (VString s)
+    | Const_unit -> return (VUnit)
     | _ -> fail Match_failure
   ;;
 
@@ -57,6 +58,7 @@ end = struct
        | Const_bool b1, VBool b2 when Bool.equal b1 b2 -> Some env
        | Const_char c1, VChar c2 when Char.equal c1 c2 -> Some env
        | Const_string s1, VString s2 when String.equal s1 s2 -> Some env
+       | Const_unit, VUnit -> Some env (* ? *)
        | _ -> None)
     | Pattern_ident_or_op id, v -> Some (extend env id v)
     | Pattern_typed (p, _), v -> eval_pat env p v
