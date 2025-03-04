@@ -34,6 +34,15 @@ let ppat_or ppat =
   chainl ppat ppipe
 ;;
 
+let ppat_opt ppat =
+  let* opt =
+    skip_token "Some" *> ppat
+    >>| (fun e -> Some e)
+    <|> (skip_token "None" >>| fun _ -> None)
+  in
+  return (Pattern_option opt)
+;;
+
 let ppat_typed ppat =
   let* pat = ppat in
   let* core_type = skip_token ":" *> ptype in
@@ -43,7 +52,14 @@ let ppat_typed ppat =
 let ppat =
   fix (fun ppat ->
     let ppat =
-      choice [ ppat_paren ppat; ppat_list ppat; ppat_const; ppat_id_or_op; ppat_wild ]
+      choice
+        [ ppat_paren ppat
+        ; ppat_list ppat
+        ; ppat_const
+        ; ppat_id_or_op
+        ; ppat_wild
+        ; ppat_opt ppat
+        ]
     in
     let ppat = ppat_tuple ppat <|> ppat in
     let ppat = ppat_or ppat <|> ppat in

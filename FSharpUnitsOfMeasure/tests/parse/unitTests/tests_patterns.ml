@@ -152,6 +152,38 @@ let%expect_test "parse OR pattern of ident and tuple patterns" =
     (x, y) | z |}]
 ;;
 
+(************************** Option patterns **************************)
+
+let%expect_test "parse None" =
+  pp pprint_pat ppat {| None |};
+  [%expect {|
+    None  |}]
+;;
+
+let%expect_test "parse Some x" =
+  pp pprint_pat ppat {| Some x |};
+  [%expect {|
+    Some x  |}]
+;;
+
+let%expect_test "parse Some should fail" =
+  pp pprint_pat ppat {| Some |};
+  [%expect {|
+    : no more choices  |}]
+;;
+
+let%expect_test "parse Some None" =
+  pp pprint_pat ppat {| Some None |};
+  [%expect {|
+    Some None  |}]
+;;
+
+let%expect_test "parse Some (Some x)" =
+  pp pprint_pat ppat {| Some (Some x) |};
+  [%expect {|
+  Some (Some x)  |}]
+;;
+
 (************************** Typed patterns **************************)
 
 let%expect_test "parse pattern with builtin type" =

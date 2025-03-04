@@ -84,7 +84,11 @@ let rec pprint_pat = function
   | Pattern_option opt ->
     (match opt with
      | None -> asprintf "None"
-     | Some x -> asprintf "Some %s" (pprint_pat x))
+     | Some x ->
+       (match x with
+        | Pattern_list _ | Pattern_or _ | Pattern_option (Some _) ->
+          asprintf "Some (%s)" (pprint_pat x)
+        | _ -> asprintf "Some %s" (pprint_pat x)))
 ;;
 
 (* Prints let f x = y in e as let f = fun x -> y in e *)
