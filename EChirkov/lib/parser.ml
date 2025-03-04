@@ -143,6 +143,12 @@ let p_option e =
     ]
 ;;
 
+let p_fun e =
+  let* ps = token "fun" *> many1 p_pattern in
+  let+ e = token "->" *> e in
+  List.fold_right ps ~init:e ~f:(fun p e -> EFun (p, e))
+;;
+
 let p_expression =
   fix
   @@ fun e ->
@@ -154,7 +160,8 @@ let p_expression =
       ; p_list e
       ]
   in
-  let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
+  let lambda = p_fun term <|> term in
+  let apply = chainl1 lambda (return (fun e1 e2 -> EApply (e1, e2))) in
   let opt = p_option apply <|> apply in
   let branch = p_branch e <|> opt in
   let multiplydivide_op = chainl1 branch (p_binop "*" Mul <|> p_binop "/" Div) in
