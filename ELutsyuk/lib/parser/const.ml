@@ -5,7 +5,7 @@
 open Angstrom
 open Ast
 open Base
-open Auxilary
+open PrsAuxilary
 
 (* https://ocaml.org/manual/5.3/lex.html#sss:character-literals *)
 

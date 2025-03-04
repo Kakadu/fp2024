@@ -5,7 +5,7 @@
 open Angstrom
 open Ast
 open Const
-open Auxilary
+open PrsAuxilary
 
 let prs_pat_var =
   trim

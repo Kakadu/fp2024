@@ -4,7 +4,7 @@
 
 open Angstrom
 open Ast
-open Auxilary
+open PrsAuxilary
 open Expr
 
 let prs_program =
