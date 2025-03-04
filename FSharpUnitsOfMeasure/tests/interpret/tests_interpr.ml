@@ -83,7 +83,7 @@ let%expect_test "003occurs.ml" =
 ;; *)
 
 (* IS INCORRECT *)
-(* let%expect_test "  005.ml\n" =
+let%expect_test "  005.ml\n" =
   let _ =
     test_interpret
       {|
@@ -94,8 +94,8 @@ let%expect_test "003occurs.ml" =
   in
   [%expect
     {|
-    Parse error: : end_of_input |}]
-;; *)
+    val _2 : <type> = <fun> |}]
+;;
 
 let%expect_test "  015tuples.ml" =
   let _ = test_interpret {|
