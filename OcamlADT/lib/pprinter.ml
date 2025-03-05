@@ -42,22 +42,34 @@ let rec pprint_type fmt =
   let open TypeExpr in
   function
   | Type_arrow (tye1, tye2) -> fprintf fmt "(%a -> %a)" pprint_type tye1 pprint_type tye2
-  | Type_var id -> fprintf fmt "%s" id
+  | Type_var id -> fprintf fmt "'%s" id
   | Type_tuple (tye1, tye2, tyel) ->
     fprintf
       fmt
-      "(%a * %a%s)"
-      pprint_type
-      tye1
-      pprint_type
-      tye2
-      (if List.is_empty tyel
-       then ""
-       else
-         " * "
-         ^ String.concat
-             ~sep:" * "
-             (List.map tyel ~f:(fun t -> asprintf "%a" pprint_type t)))
+      "(%s)"
+      (String.concat
+         ~sep:" * "
+         (List.map (tye1 :: tye2 :: tyel) ~f:(fun t -> asprintf "%a" pprint_type t)))
+  | Type_construct (id, tyel) ->
+    let tyel_str =
+      String.concat
+        ~sep:", "
+        (List.map tyel ~f:(fun t ->
+           match t with
+           | Type_var tye -> asprintf "'%s" tye
+           | Type_tuple (t1, t2, rest) ->
+             let tuple_types = t1 :: t2 :: rest in
+             let tuple_str = String.concat ~sep:" * " (List.map tuple_types ~f:show) in
+             "(" ^ tuple_str ^ ")"
+           | _ -> show t))
+    in
+    let tyel_strf =
+      match List.length tyel with
+      | 0 -> ""
+      | 1 -> tyel_str ^ " "
+      | _ -> "(" ^ tyel_str ^ ") "
+    in
+    fprintf fmt "%s%s" tyel_strf id
 ;;
 
 let rec pprint_pattern fmt =
@@ -70,18 +82,10 @@ let rec pprint_pattern fmt =
   | Pat_tuple (p1, p2, pl) ->
     fprintf
       fmt
-      "(%a, %a%s)"
-      pprint_pattern
-      p1
-      pprint_pattern
-      p2
-      (if List.is_empty pl
-       then ""
-       else
-         ", "
-         ^ String.concat
-             ~sep:", "
-             (List.map pl ~f:(fun p -> asprintf "%a" pprint_pattern p)))
+      "(%s)"
+      (String.concat
+         ~sep:", "
+         (List.map (p1 :: p2 :: pl) ~f:(fun p -> asprintf "%a" pprint_pattern p)))
   | Pat_construct (id, None) -> fprintf fmt "(%s)" id
   | Pat_construct (id, Some p) ->
     (match p with
@@ -96,113 +100,74 @@ let pprint_rec fmt =
   | Recursive -> fprintf fmt "rec "
 ;;
 
-let rec pprint_expression fmt (n : int) =
+let rec pprint_expression fmt n =
   let open Expression in
   function
   | Exp_ident id -> fprintf fmt "%s" id
   | Exp_constant ct -> pprint_constant fmt ct
   | Exp_tuple (ex1, ex2, exl) ->
-    let op_pr1 = get_op_pr ex1 in
-    let op_pr2 = get_op_pr ex2 in
     fprintf
       fmt
-      "(%a, %a%s)"
-      (fun fmt -> pprint_expression fmt (op_pr1 + 1))
-      ex1
-      (fun fmt -> pprint_expression fmt (op_pr2 + 1))
-      ex2
-      (if List.is_empty exl
-       then ""
-       else
-         ", "
-         ^ String.concat
-             ~sep:", "
-             (List.map exl ~f:(fun ex ->
-                let op_pr_t = get_op_pr ex in
-                asprintf "%a" (fun fmt -> pprint_expression fmt (op_pr_t + 1)) ex)))
+      "(%s)"
+      (String.concat
+         ~sep:", "
+         (List.map (ex1 :: ex2 :: exl) ~f:(fun ex ->
+            let op_pr_t = get_op_pr ex in
+            asprintf "%a" (fun fmt -> pprint_expression fmt (op_pr_t + 1)) ex)))
   | Exp_function (cs1, csl) when n > 0 ->
     fprintf fmt "(%a)" pprint_function_with_cases (cs1, csl, n + 1)
   | Exp_function (cs1, csl) ->
     fprintf fmt "%a" pprint_function_with_cases (cs1, csl, n + 1)
-  | Exp_fun (ptl1, exp) ->
-    let pt1, ptl = ptl1 in
+  | Exp_fun ((pt1, ptl), exp) ->
     let if_string =
       asprintf
-        "fun %a%s -> %a"
-        pprint_pattern
-        pt1
+        "fun%s -> %a"
         (String.concat
            ~sep:""
-           (List.map ptl ~f:(fun p -> asprintf " %a" pprint_pattern p)))
+           (List.map (pt1 :: ptl) ~f:(fun p -> asprintf " %a" pprint_pattern p)))
         (fun fmt -> pprint_expression fmt n)
         exp
     in
     if n > 0 then fprintf fmt "(%s)" if_string else fprintf fmt "%s" if_string
   | Exp_apply (ex1, ex2) ->
     let op_pr = get_op_pr ex1 in
-    (match op_pr with
-     | 2 | 3 ->
-       (match ex2 with
-        | Expression.Exp_tuple (first, second, _) ->
-          let apply_binop_r_string =
-            asprintf
-              "%a %a %a"
-              (fun fmt -> pprint_expression fmt (op_pr + 1))
-              first
-              (fun fmt -> pprint_expression fmt (op_pr + 1))
-              ex1
-              (fun fmt -> pprint_expression fmt op_pr)
-              second
-          in
-          if n > op_pr
-          then fprintf fmt "(%s)" apply_binop_r_string
-          else fprintf fmt "%s" apply_binop_r_string
-        | _ -> fprintf fmt "not covered\n")
-     | 5 | 6 | 4 ->
-       (match ex2 with
-        | Expression.Exp_tuple (first, second, _) ->
-          let apply_binop_l_string =
-            asprintf
-              "%a %a %a"
-              (fun fmt -> pprint_expression fmt op_pr)
-              first
-              (fun fmt -> pprint_expression fmt (op_pr + 1))
-              ex1
-              (fun fmt -> pprint_expression fmt (op_pr + 1))
-              second
-          in
-          if n > op_pr
-          then fprintf fmt "(%s)" apply_binop_l_string
-          else fprintf fmt "%s" apply_binop_l_string
-        | _ -> fprintf fmt "not covered\n")
-     | _ ->
-       let apply_string =
-         asprintf
-           "%a %a"
-           (fun fmt -> pprint_expression fmt (op_pr + 1))
-           ex1
-           (fun fmt -> pprint_expression fmt (op_pr + 1))
-           ex2
-       in
-       fprintf fmt "(%s)" apply_string)
-  | Exp_match (ex, csl1) ->
-    let cs, csl = csl1 in
+    let format_apply =
+      match ex2 with
+      | Expression.Exp_tuple (first, second, _)
+        when List.mem [ 2; 3; 4; 5; 6 ] op_pr ~equal:Int.equal ->
+        let left_pr, right_pr =
+          if List.mem [ 2; 3 ] op_pr ~equal:Int.equal
+          then op_pr + 1, op_pr
+          else op_pr, op_pr + 1
+        in
+        asprintf
+          "%a %a %a"
+          (fun fmt -> pprint_expression fmt left_pr)
+          first
+          (fun fmt -> pprint_expression fmt op_pr)
+          ex1
+          (fun fmt -> pprint_expression fmt right_pr)
+          second
+      | _ ->
+        asprintf
+          "%a %a"
+          (fun fmt -> pprint_expression fmt (op_pr + 1))
+          ex1
+          (fun fmt -> pprint_expression fmt (op_pr + 1))
+          ex2
+    in
+    if n > op_pr then fprintf fmt "(%s)" format_apply else fprintf fmt "%s" format_apply
+  | Exp_match (ex, (cs, csl)) ->
     let op_pr1 = get_op_pr ex in
     let match_string =
       asprintf
-        "match %a with\n  | %a%s"
+        "match %a with\n  | %s"
         (fun fmt -> pprint_expression fmt (op_pr1 + 1))
         ex
-        (fun fmt -> pprint_case fmt n)
-        cs
-        (if List.is_empty csl
-         then ""
-         else
-           " | "
-           ^ String.concat
-               ~sep:"\n  | "
-               (List.map csl ~f:(fun cs ->
-                  asprintf "%a" (fun fmt -> pprint_case fmt n) cs)))
+        (String.concat
+           ~sep:"\n  | "
+           (List.map (cs :: csl) ~f:(fun cs ->
+              asprintf "%a" (fun fmt -> pprint_case fmt n) cs)))
     in
     if n > 0 then fprintf fmt "(%s)" match_string else fprintf fmt "%s" match_string
   | Exp_constraint (ex, tye) ->
@@ -229,23 +194,16 @@ let rec pprint_expression fmt (n : int) =
         ex3
     in
     if n > 0 then fprintf fmt "(%s)" if_string else fprintf fmt "%s" if_string
-  | Exp_let (rec_fl, vbindl1, ex) ->
-    let vbind1, vbindl = vbindl1 in
+  | Exp_let (rec_fl, (vbind1, vbindl), ex) ->
     let let_string =
       asprintf
-        "let %a%a%s in %a"
+        "let %a%s in %a"
         pprint_rec
         rec_fl
-        (fun fmt -> pprint_value_binding fmt n)
-        vbind1
-        (if List.is_empty vbindl
-         then ""
-         else
-           " and "
-           ^ String.concat
-               ~sep:" and "
-               (List.map vbindl ~f:(fun vb ->
-                  asprintf "%a" (fun fmt -> pprint_value_binding fmt n) vb)))
+        (String.concat
+           ~sep:" and "
+           (List.map (vbind1 :: vbindl) ~f:(fun vb ->
+              asprintf "%a" (fun fmt -> pprint_value_binding fmt n) vb)))
         (fun fmt -> pprint_expression fmt (n + 1))
         ex
     in
@@ -277,44 +235,51 @@ and pprint_case fmt n case =
 and pprint_function_with_cases fmt (cs, csl, n) =
   fprintf
     fmt
-    "function \n  | %a%s"
-    (fun fmt -> pprint_case fmt n)
-    cs
+    "function %s"
     (String.concat
-       (List.map csl ~f:(fun c -> asprintf "\n  | %a" (fun fmt -> pprint_case fmt n) c)))
+       (List.map (cs :: csl) ~f:(fun c ->
+          asprintf "\n  | %a" (fun fmt -> pprint_case fmt n) c)))
 ;;
 
 let pprint_structure_item fmt n =
   let open Structure in
   function
   | Str_eval exp -> fprintf fmt "%a ;;\n" (fun fmt -> pprint_expression fmt n) exp
-  | Str_value (rec_flag, vbindl1) ->
-    let vbind1, vbindl = vbindl1 in
+  | Str_value (rec_flag, (vbind1, vbindl)) ->
     let bindings_str =
-      match vbindl with
+      match vbind1 :: vbindl with
       | [] -> ""
       | _ ->
-        " and "
-        ^ String.concat
-            ~sep:" and\n  "
-            (List.map vbindl ~f:(fun vb ->
-               asprintf "%a" (fun fmt -> pprint_value_binding fmt n) vb))
+        String.concat
+          ~sep:" and\n  "
+          (List.map (vbind1 :: vbindl) ~f:(fun vb ->
+             asprintf "%a" (fun fmt -> pprint_value_binding fmt n) vb))
     in
-    fprintf
-      fmt
-      "let %a %a%s;;\n\n"
-      pprint_rec
-      rec_flag
-      (fun fmt -> pprint_value_binding fmt n)
-      vbind1
-      bindings_str
+    fprintf fmt "let %a%s;;\n\n" pprint_rec rec_flag bindings_str
+  | Str_adt (tparam, id, (constr1, constrl)) ->
+    let tparam_ident_str =
+      match List.length tparam with
+      | 0 -> ""
+      | 1 -> asprintf "'%s " (List.hd_exn tparam)
+      | _ ->
+        "('"
+        ^ String.concat ~sep:", '" (List.map tparam ~f:(fun param -> asprintf "%s" param))
+        ^ ") "
+    in
+    let var_t_str =
+      match constr1 :: constrl with
+      | [] -> ""
+      | _ ->
+        "  | "
+        ^ String.concat
+            ~sep:"\n  | "
+            (List.map (constr1 :: constrl) ~f:(fun (id, typ) ->
+               match typ with
+               | Some t -> asprintf "%s of %a" id pprint_type t
+               | None -> asprintf "%s" id))
+    in
+    fprintf fmt "type %s%s =\n%s\n;;\n\n" tparam_ident_str id var_t_str
 ;;
-
-(* | Str_adt (id, id_t_l) ->
-   (* Stub: just using the variables id and id_t_l (ftm) *)
-   let _ = id in
-   let _ = id_t_l in
-   () *)
 
 let pprint_program fmt = List.iter ~f:(pprint_structure_item fmt 0)
 
