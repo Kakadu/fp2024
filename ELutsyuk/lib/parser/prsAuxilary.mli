@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Angstrom
-open Ast
+open Forest.Ast
 
 val skip_ws : unit t
 val trim : 'a t -> 'a t

@@ -3,8 +3,8 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Angstrom
-open Ast
-open Const
+open Forest.Ast
+open Constants
 open PrsAuxilary
 
 let prs_pat_var =

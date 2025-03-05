@@ -2,7 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open TypTree
+open Forest.Ast
+open Forest.TypesTree
 open InfAuxilary
 open InfAuxilary.FreshResult
 open InfAuxilary.FreshResult.SyntSugar
@@ -38,10 +39,10 @@ let inf_constant token =
   return
   @@ ( Subst.empty
      , match token with
-       | Ast.Int _ -> int_typ
-       | Ast.Bool _ -> bool_typ
-       | Ast.Str _ -> string_typ
-       | Ast.Unit -> unit_typ )
+       | Int _ -> int_typ
+       | Bool _ -> bool_typ
+       | Str _ -> string_typ
+       | Unit -> unit_typ )
 ;;
 
 let lookup_typ env id =
@@ -61,18 +62,18 @@ let inf_id env id =
 ;;
 
 let rec inf_pat env = function
-  | Ast.PatAny ->
+  | PatAny ->
     let* ty_var = fresh_var in
     return (env, ty_var)
-  | Ast.PatConst pat ->
+  | PatConst pat ->
     let* _, ty = inf_constant pat in
     return (env, ty)
-  | Ast.PatVar pat ->
+  | PatVar pat ->
     let* ty_var = fresh_var in
     let sch = Scheme (VarSet.empty, ty_var) in
     let env = TypeEnv.extend env pat sch in
     return (env, ty_var)
-  | Ast.PatTup (pat1, pat2, pats) ->
+  | PatTup (pat1, pat2, pats) ->
     let pats = pat1 :: pat2 :: pats in
     let* env, ty =
       List.fold_left
@@ -84,16 +85,16 @@ let rec inf_pat env = function
         pats
     in
     return (env, tup_typ ty)
-  | Ast.PatListCons (pat1, pat2) ->
+  | PatListCons (pat1, pat2) ->
     let* env1, ty1 = inf_pat env pat1 in
     let* env2, ty2 = inf_pat env1 pat2 in
     let* subst = Subst.unify (list_typ ty1) ty2 in
     let env = TypeEnv.apply subst env2 in
     return (env, Subst.apply subst ty2)
-  | Ast.PatList [] ->
+  | PatList [] ->
     let* ty_var = fresh_var in
     return (env, list_typ ty_var)
-  | Ast.PatList (pat1 :: pats) ->
+  | PatList (pat1 :: pats) ->
     let* env_start, ty_start = inf_pat env pat1 in
     let* env, ty =
       List.fold_left
@@ -111,17 +112,17 @@ let rec inf_pat env = function
 
 (* Returns operands type and result type *)
 let binop_signature = function
-  | Ast.Eq | Ast.Ne | Ast.Lt | Ast.Le | Ast.Gt | Ast.Ge ->
+  | Eq | Ne | Lt | Le | Gt | Ge ->
     let* ty_var = fresh_var in
     return (ty_var, bool_typ)
-  | Ast.Mul | Ast.Div | Ast.Add | Ast.Sub -> return (int_typ, int_typ)
-  | Ast.And | Ast.Or -> return (bool_typ, bool_typ)
+  | Mul | Div | Add | Sub -> return (int_typ, int_typ)
+  | And | Or -> return (bool_typ, bool_typ)
 ;;
 
 let rec inf_expr env = function
-  | Ast.Var exp -> inf_id env exp
-  | Ast.Const exp -> inf_constant exp
-  | Ast.BinOp (op, exp1, exp2) ->
+  | Var exp -> inf_id env exp
+  | Const exp -> inf_constant exp
+  | BinOp (op, exp1, exp2) ->
     let* args_ty, res_ty = binop_signature op in
     let* sub1, ty1 = inf_expr env exp1 in
     let* sub2, ty2 = inf_expr env exp2 in
@@ -129,7 +130,7 @@ let rec inf_expr env = function
     let* sub4 = Subst.unify (Subst.apply sub1 ty2) args_ty in
     let* final_sub = Subst.compose_many_sub [ sub1; sub2; sub3; sub4 ] in
     return (final_sub, res_ty)
-  | Ast.App (fun_exp, arg_exp) ->
+  | App (fun_exp, arg_exp) ->
     let* sub1, fun_ty = inf_expr env fun_exp in
     let upd_env = TypeEnv.apply sub1 env in
     let* sub2, arg_ty = inf_expr upd_env arg_exp in
@@ -140,13 +141,13 @@ let rec inf_expr env = function
     let* subst = Subst.compose_many_sub [ sub1; sub2; sub3 ] in
     let ty = Subst.apply subst res_typ in
     return (subst, ty)
-  | Ast.Fun (pat, exp) ->
+  | Fun (pat, exp) ->
     let* env1, pat_ty = inf_pat env pat in
     let* subst, exp_ty = inf_expr env1 exp in
     let ty = arrow_typ pat_ty exp_ty in
     let res_ty = Subst.apply subst ty in
     return (subst, res_ty)
-  | Ast.Branch (cond, br1, br2) ->
+  | Branch (cond, br1, br2) ->
     let* sub1, ty1 = inf_expr env cond in
     let* sub2, ty2 = inf_expr env br1 in
     let* sub3, ty3 = inf_expr env br2 in
@@ -155,7 +156,7 @@ let rec inf_expr env = function
     let* final_sub = Subst.compose_many_sub [ sub1; sub2; sub3; sub4; sub5 ] in
     let ty = Subst.apply final_sub ty3 in
     return (final_sub, ty)
-  | Ast.List exp_list ->
+  | List exp_list ->
     let* ty_var = fresh_var in
     let rec inf_list acc = function
       | [] -> return (acc, list_typ ty_var)
@@ -169,20 +170,20 @@ let rec inf_expr env = function
     let* sub = Subst.compose_many_sub sub in
     let ty = Subst.apply sub ty in
     return (sub, ty)
-  | Ast.Let (NonRec, bind, binds, exp) ->
+  | Let (NonRec, bind, binds, exp) ->
     let bindings = bind :: binds in
     let* env2 = inf_non_rec_binding_list env bindings in
     let* subst, ty = inf_expr env2 exp in
     return (subst, ty)
-  | Ast.Let (Rec, bind, binds, exp) ->
+  | Let (Rec, bind, binds, exp) ->
     let bindings = bind :: binds in
     let* env2 = inf_rec_binding_list env bindings in
     let* subst, ty = inf_expr env2 exp in
     return (subst, ty)
-  | Ast.Option (Some exp) ->
+  | Option (Some exp) ->
     let* subst, ty = inf_expr env exp in
     return (subst, option_typ ty)
-  | Ast.Option None ->
+  | Option None ->
     let* ty_var = fresh_var in
     return (Subst.empty, option_typ ty_var)
   | _ -> return (Subst.empty, TypConst TUnit)
@@ -192,24 +193,24 @@ and inf_non_rec_binding_list env binding_list =
     List.fold_left
       (fun env binding ->
         let* env = env in
-        let Ast.{ pat : pat; expr : expr } = binding in
+        let { pat : pat; expr : expr } = binding in
         match pat with
-        | Ast.PatVar var ->
+        | PatVar var ->
           let* subst, ty = inf_expr env expr in
           let env = TypeEnv.apply subst env in
           let sch = generalize env ty in
           let env = TypeEnv.extend env var sch in
           return env
-        | Ast.PatConst Unit ->
+        | PatConst Unit ->
           let* _, ty1 = inf_pat env pat in
           let* _, ty2 = inf_expr env expr in
           let* sub = Subst.unify ty1 ty2 in
           let env = TypeEnv.apply sub env in
           return env
-        | Ast.PatAny ->
+        | PatAny ->
           let* _, _ = inf_expr env expr in
           return env
-        | Ast.PatTup _ ->
+        | PatTup _ ->
           let* _, ty1 = inf_pat env pat in
           let* _, ty2 = inf_expr env expr in
           let* subst = Subst.unify ty1 ty2 in
@@ -226,7 +227,7 @@ and inf_rec_binding_list env binding_list =
     Base.List.fold_left
       binding_list
       ~init:(return env)
-      ~f:(fun env Ast.{ pat : pat; expr : expr } ->
+      ~f:(fun env { pat : pat; expr : expr } ->
         let* env = env in
         match pat with
         | PatVar var ->
@@ -247,13 +248,13 @@ and inf_rec_binding_list env binding_list =
 ;;
 
 let inf_structure_item env = function
-  | Ast.EvalExpr exp ->
+  | EvalExpr exp ->
     let* _ = inf_expr env exp in
     return env
-  | Ast.Binding (Rec, bind, binds) ->
+  | Binding (Rec, bind, binds) ->
     let bindings = bind :: binds in
     inf_rec_binding_list env bindings
-  | Ast.Binding (NonRec, bind, binds) ->
+  | Binding (NonRec, bind, binds) ->
     let bindings = bind :: binds in
     inf_non_rec_binding_list env bindings
 ;;

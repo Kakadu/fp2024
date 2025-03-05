@@ -2,8 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Ast
-open TypTree
+open Forest.Ast
+open Forest.TypesTree
 open InfAuxilary
 
 val run_expr_inf : expr -> (typ, error) result

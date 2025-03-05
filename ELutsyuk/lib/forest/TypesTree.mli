@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Ast
-
 type var = int
 
 type constant =
@@ -23,7 +21,7 @@ type typ =
 type error =
   | OccursCheckFailed of int * typ
   | UnificationFailed of typ * typ
-  | UnboundVariable of id
+  | UnboundVariable of string
   | InvalidRecursivePattern
 
 val int_typ : typ

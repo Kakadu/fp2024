@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Ast
+open InfPrinter
 
 type var = int [@@deriving show { with_path = false }]
 
@@ -25,7 +25,7 @@ type typ =
 type error =
   | OccursCheckFailed of int * typ
   | UnificationFailed of typ * typ
-  | UnboundVariable of id
+  | UnboundVariable of string
   | InvalidRecursivePattern
 [@@deriving show { with_path = false }]
 

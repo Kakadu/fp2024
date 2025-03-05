@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Ast
+open Forest.Ast
 
 val parse : string -> (program, string) result
 val parse_program : string -> unit

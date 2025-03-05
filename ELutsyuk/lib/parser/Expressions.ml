@@ -3,10 +3,11 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Angstrom
-open Ast
+open Forest.Ast
 open PrsAuxilary
-open Const
+open Constants
 open Patterns
+open Types
 
 let prs_expr_var =
   let+ parsed = prs_id in
@@ -157,10 +158,21 @@ let prs_expr_unary prs_expr =
   choice [ p_minus <*> prs_expr; p_plus <*> prs_expr; prs_expr ]
 ;;
 
+let prs_expr_type prs_expr =
+  round_par
+  @@
+  let* exp = prs_expr in
+  let* _ = token ":" in
+  let+ typ = prs_typ in
+  Type (exp, typ)
+;;
+
 let prs_expr =
   fix
   @@ fun expr ->
-  let atomary = choice [ prs_expr_const; prs_expr_var; round_par expr ] in
+  let atomary =
+    choice [ prs_expr_const; prs_expr_var; prs_expr_type expr; round_par expr ]
+  in
   let unary = prs_expr_unary atomary <|> atomary in
   let apply = prs_expr_app unary <|> unary in
   let opt = prs_option apply <|> apply in

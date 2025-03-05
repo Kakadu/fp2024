@@ -3,7 +3,7 @@
 (library
  (name parser)
  (public_name ELutsyuk.MiniML_Parser)
- (libraries base angstrom ast inferencer)
+ (libraries base angstrom forest)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)

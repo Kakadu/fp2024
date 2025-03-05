@@ -2,7 +2,8 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open TypTree
+open Forest.Ast
+open Forest.TypesTree
 
 module FreshResult : sig
   type 'a t
@@ -48,12 +49,12 @@ end
 type scheme = Scheme of VarSet.t * typ
 
 module TypeEnv : sig
-  type t = (Ast.id, scheme, Base.String.comparator_witness) Base.Map.t
+  type t = (id, scheme, Base.String.comparator_witness) Base.Map.t
 
   val empty : t
   val free_in_context : t -> VarSet.t
   val apply : Subst.t -> t -> t
-  val extend : t -> Ast.id -> scheme -> t
-  val find : t -> Ast.id -> scheme option
-  val remove : t -> Ast.id -> t
+  val extend : t -> id -> scheme -> t
+  val find : t -> id -> scheme option
+  val remove : t -> id -> t
 end

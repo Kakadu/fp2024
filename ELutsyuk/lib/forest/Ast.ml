@@ -2,6 +2,9 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open TypesTree
+open InfPrinter
+
 (** Expression identifier *)
 type id = string [@@deriving show { with_path = false }]
 
@@ -52,15 +55,14 @@ type expr =
   | BinOp of binop * expr * expr (** Binary operation, e.g. [x + y], [a >= b]. *)
   | Option of expr option (** Options, e.g. [Some("meow"), None]. *)
   | Let of rec_state * let_binding * let_binding list * expr
-  (** [let] expression, e.g. [let x = 5 in e]. *)
+  (** [let] expression, e.g. [let x = 5 in e] *)
   | App of expr * expr (** Function application, e.g. [e1 e2], [(fun x -> x) 42]. *)
   | Fun of pat * expr (** Function definition, e.g. [fun p -> e]. *)
   | Branch of expr * expr * expr
   (** Conditional expression, e.g. [if e1 then e2 else e3]. *)
   | Tup of expr * expr * expr list (** Tuple expression, e.g. [(e1, e2)], [(x, y, z)]. *)
   | List of expr list (** List expression, e.g. [[]], [[e1; e2; e3]]. *)
-    (* | Match of expr * match_case * match_case list
-       Pattern matching, e.g. [match x with | 0 -> "zero" | _ -> "nonzero"]. *)
+  | Type of expr * typ
 [@@deriving show { with_path = false }]
 
 (** Represents a binding in a [let] expression. *)

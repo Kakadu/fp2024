@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Angstrom
-open Ast
+open Forest.Ast
 
 val prs_pat_var : pat t
 val prs_pat_constant : pat t
