@@ -9,7 +9,7 @@ module Int64Map = Map.Make (Int64)
 type state =
   { program : ast
   ; registers : int64 StringMap.t
-  ; vregisters : int64 array StringMap.t
+  ; vregisters : int64 CCImmutArray.t StringMap.t
   ; max_vector_length : int
   ; vector_element_length : int
   ; vector_length : int
@@ -242,7 +242,7 @@ let init_registers =
 let init_vregisters vector_length =
   List.fold_left
     (fun acc reg ->
-      StringMap.add (show_vector_register reg) (Array.make vector_length 0L) acc)
+      StringMap.add (show_vector_register reg) (CCImmutArray.make vector_length 0L) acc)
     StringMap.empty
     [ V0
     ; V1
@@ -329,7 +329,7 @@ let get_vregister_value vreg =
   let* state = read in
   return
     (StringMap.find_opt (show_vector_register vreg) state.vregisters
-     |> Option.value ~default:(Array.make state.vector_length 0L))
+     |> Option.value ~default:(CCImmutArray.make state.vector_length 0L))
 ;;
 
 let set_vregister_value vreg value =
@@ -616,14 +616,15 @@ let execute_vle32v vd rs1 imm =
     then
       let* value = load_memory_int address state.vector_element_length in
       let next_address = Int64.add address (Int64.of_int state.vector_element_length) in
-      load_values next_address (element_idx + 1) (Array.append acc [| value |])
+      load_values next_address (element_idx + 1) (CCImmutArray.set acc element_idx value)
     else return acc
   in
-  let* vector_values = load_values address 0 [||] in
+  let initial_array = CCImmutArray.init vector_length (fun _ -> 0L) in
+  let* vector_values = load_values address 0 initial_array in
   set_vregister_value vd vector_values
 ;;
 
-let execute_vstore vs rs1 imm =
+let execute_vse32v vs rs1 imm =
   let* base_address = get_register_value rs1 in
   let* address_info = get_address12_value imm in
   let offset =
@@ -637,7 +638,7 @@ let execute_vstore vs rs1 imm =
     let* state = read in
     if element_idx < state.vector_length
     then (
-      let element = vector_value.(element_idx) in
+      let element = CCImmutArray.get vector_value element_idx in
       let* () = store_memory_int addr element state.vector_element_length in
       store_values (element_idx + 1) (Int64.add addr 4L))
     else return ()
@@ -649,15 +650,20 @@ let execute_vector_arithmetic vd vs1 vs2 op =
   let* state = read in
   let* vec1 = get_vregister_value vs1 in
   let* vec2 = get_vregister_value vs2 in
-  let result = Array.init state.vector_length (fun i -> op vec1.(i) vec2.(i)) in
+  let result =
+    CCImmutArray.init state.vector_length (fun i ->
+      op (CCImmutArray.get vec1 i) (CCImmutArray.get vec2 i))
+  in
   set_vregister_value vd result
 ;;
 
-let execute_vector_imm vd vs1 rs2 op =
+let execute_vector_scalar vd vs1 rs2 op =
   let* state = read in
   let* vec = get_vregister_value vs1 in
   let* scalar = get_register_value rs2 in
-  let result = Array.init state.vector_length (fun i -> op vec.(i) scalar) in
+  let result =
+    CCImmutArray.init state.vector_length (fun i -> op (CCImmutArray.get vec i) scalar)
+  in
   set_vregister_value vd result
 ;;
 
@@ -899,32 +905,32 @@ let execute_instruction instr =
     set_register_value rd result_final
   | Lwu (rd, rs1, imm) -> execute_load_int rd rs1 imm 4 false
   | Vle32v (vd, rs1, imm) -> execute_vle32v vd rs1 imm
-  | Vse32v (vs, rs1, imm) -> execute_vstore vs rs1 imm
+  | Vse32v (vs, rs1, imm) -> execute_vse32v vs rs1 imm
   | Vaddvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.add
-  | Vaddvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.add
+  | Vaddvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.add
   | Vsubvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.sub
-  | Vsubvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.sub
+  | Vsubvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.sub
   | Vmulvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.mul
-  | Vmulvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.mul
+  | Vmulvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.mul
   | Vdivvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.div
-  | Vdivvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.div
+  | Vdivvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.div
   | Vandvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.logand
-  | Vandvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.logand
+  | Vandvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.logand
   | Vorvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.logor
-  | Vorvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.logor
+  | Vorvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.logor
   | Vxorvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.logxor
-  | Vxorvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.logxor
+  | Vxorvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.logxor
   | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.min
-  | Vminvx (vd, vs1, rs2) -> execute_vector_imm vd vs1 rs2 Int64.min
+  | Vminvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.min
   | Vmseqvv (vd, vs1, vs2) ->
     execute_vector_arithmetic vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
   | Vmseqvx (vd, vs1, rs2) ->
-    execute_vector_imm vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
+    execute_vector_scalar vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
   | _ -> fail "Unsupported instruction"
 ;;
 
 let nth_opt_int64 l n =
-  (* we make steps by 4L because in our interpreter PC is built RISC-V-like and one expr is 4 bytes *)
+  (* similar to List.nth_opt function, but we make steps of 4L *)
   match n with
   | x when x < 0 -> fail "Index cannot be negative"
   | _ ->
@@ -1075,10 +1081,11 @@ let show_state state =
     List.fold_left
       (fun acc vreg ->
         let values =
-          StringMap.find_opt vreg state.vregisters |> Option.value ~default:[||]
+          StringMap.find_opt vreg state.vregisters
+          |> Option.value ~default:CCImmutArray.empty
         in
         let values_str =
-          Array.fold_left (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
+          CCImmutArray.fold (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
         in
         acc ^ Printf.sprintf "%s: [%s]\n" vreg values_str)
       ""
@@ -1087,13 +1094,13 @@ let show_state state =
   let memory_int_string = show_memory_int state in
   let memory_str_string = show_memory_str state in
   let memory_writable_str = show_memory_writable state in
-  let pc_str = Printf.sprintf "PC: %Ld" state.program_idx in
+  let program_idx_str = Printf.sprintf "Program index: %Ld" state.program_idx in
   let result = registers_str in
   let result = result ^ vector_registers_str in
   let result = result ^ memory_int_string in
   let result = result ^ memory_str_string in
   let result = result ^ memory_writable_str in
-  let result = result ^ pc_str in
+  let result = result ^ program_idx_str in
   result
 ;;
 
@@ -1207,7 +1214,7 @@ let%expect_test "test_factorial" =
       21: false
       22: false
       23: false
-      PC: 36
+      Program index: 36
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
@@ -1469,7 +1476,7 @@ let%expect_test "test_vector_program_execution" =
       121: false
       122: false
       123: false
-      PC: 108
+      Program index: 108
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
