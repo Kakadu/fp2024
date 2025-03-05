@@ -29,12 +29,15 @@ let prs_program =
   <* end_of_input
 ;;
 
-(* many (skip_ws *> (p_struct_binding <|> p_struct_eval)) *)
-
 let parse str = parse_string ~consume:All prs_program str
 
-let parse_to_string input =
+let parse_program input =
   match parse input with
-  | Ok program -> show_program program
-  | Error err -> err
+  | Ok program -> Stdlib.Format.printf "%s\n" (show_program program)
+  | Error err -> Stdlib.Format.printf "%s\n" err
 ;;
+(* let parse_to_string input =
+   match parse input with
+   | Ok program -> show_program program
+   | Error err -> err
+   ;; *)
