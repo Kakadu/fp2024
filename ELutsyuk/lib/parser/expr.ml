@@ -9,8 +9,6 @@ open Const
 open Patterns
 
 let prs_expr_var =
-  (* trim
-  @@ *)
   let+ parsed = prs_id in
   Var parsed
 ;;
@@ -170,7 +168,6 @@ let prs_expr =
   let add = prs_bin_op mul (prs_add <|> prs_sub) <|> mul in
   let compr = prs_bin_op add (prs_rel <|> prs_logical) <|> add in
   let branch = prs_expr_branch compr <|> compr in
-  (* let match_exp = prs_expr_match prs_pat branch <|> branch in *)
   let list = prs_expr_list branch <|> branch in
   let tup = prs_expr_tuple list <|> list in
   let fun_exp = prs_expr_fun prs_pat tup <|> tup in
