@@ -8,7 +8,12 @@ open Angstrom
 
 (* let r = parse "let x = 23" *)
 
-let r = parse_string ~consume:All p_program "let n = print_int 23"
+let r =
+  parse_string
+    ~consume:All
+    p_program
+    "let main =\n  let () = print_int (fac_cps 4 (fun print_int -> print_int)) in\n  0\n"
+;;
 
 let () =
   match r with
