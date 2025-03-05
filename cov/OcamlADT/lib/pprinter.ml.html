@@ -684,10 +684,10 @@ let pprint_constant fmt =
 ;;
 
 let rec pprint_type fmt =
-  <span data-count="1935">l</span>et open TypeExpr in
+  <span data-count="1868">l</span>et open TypeExpr in
   function
   | <span data-count="0">T</span>ype_arrow (tye1, tye2) -&gt; fprintf fmt "(%a -&gt; %a)" pprint_type tye1 pprint_type tye2
-  | <span data-count="1929">T</span>ype_var id -&gt; fprintf fmt "'%s" id
+  | <span data-count="1862">T</span>ype_var id -&gt; fprintf fmt "'%s" id
   | <span data-count="1">T</span>ype_tuple (tye1, tye2, tyel) -&gt;
     fprintf
       fmt
@@ -887,7 +887,7 @@ and pprint_function_with_cases fmt (cs, csl, n) =
 ;;
 
 let pprint_structure_item fmt n =
-  <span data-count="53">l</span>et open Structure in
+  <span data-count="50">l</span>et open Structure in
   function
   | <span data-count="7">S</span>tr_eval exp -&gt; fprintf fmt "%a ;;\n" (fun fmt -&gt; <span data-count="7">p</span>print_expression fmt n) exp
   | <span data-count="1">S</span>tr_value (rec_flag, (vbind1, vbindl)) -&gt;
@@ -901,32 +901,32 @@ let pprint_structure_item fmt n =
              <span data-count="1">a</span>sprintf "%a" (fun fmt -&gt; <span data-count="1">p</span>print_value_binding fmt n) vb))
     in
     fprintf fmt "let %a%s;;\n\n" pprint_rec rec_flag bindings_str
-  | <span data-count="137">S</span>tr_adt (tparam, id, (constr1, constrl)) -&gt;
+  | <span data-count="120">S</span>tr_adt (tparam, id, (constr1, constrl)) -&gt;
     let tparam_ident_str =
       match List.length tparam with
-      | <span data-count="14">0</span> -&gt; ""
-      | <span data-count="16">1</span> -&gt; asprint<span data-count="16">f</span> "'%s " (List.hd_ex<span data-count="16">n</span> tparam)
-      | <span data-count="107">_</span> -&gt;
+      | <span data-count="11">0</span> -&gt; ""
+      | <span data-count="11">1</span> -&gt; asprint<span data-count="11">f</span> "'%s " (List.hd_ex<span data-count="11">n</span> tparam)
+      | <span data-count="98">_</span> -&gt;
         "('"
-        ^ String.conca<span data-count="107">t</span> ~sep:", '" (List.ma<span data-count="107">p</span> tparam ~f:(fun param -&gt; <span data-count="2520">a</span>sprintf "%s" param))
+        ^ String.conca<span data-count="98">t</span> ~sep:", '" (List.ma<span data-count="98">p</span> tparam ~f:(fun param -&gt; <span data-count="1662">a</span>sprintf "%s" param))
         ^ ") "
     in
     let var_t_str =
       match constr1 :: constrl with
       | <span data-count="0">[</span>] -&gt; ""
-      | <span data-count="137">_</span> -&gt;
+      | <span data-count="120">_</span> -&gt;
         "  | "
-        ^ String.conca<span data-count="137">t</span>
+        ^ String.conca<span data-count="120">t</span>
             ~sep:"\n  | "
-            (List.ma<span data-count="137">p</span> (constr1 :: constrl) ~f:(fun (id, typ) -&gt;
-               <span data-count="2312">m</span>atch typ with
-               | <span data-count="1933">S</span>ome t -&gt; asprintf "%s of %a" id pprint_type t
-               | <span data-count="379">N</span>one -&gt; asprintf "%s" id))
+            (List.ma<span data-count="120">p</span> (constr1 :: constrl) ~f:(fun (id, typ) -&gt;
+               <span data-count="2191">m</span>atch typ with
+               | <span data-count="1866">S</span>ome t -&gt; asprintf "%s of %a" id pprint_type t
+               | <span data-count="325">N</span>one -&gt; asprintf "%s" id))
     in
     fprintf fmt "type %s%s =\n%s\n;;\n\n" tparam_ident_str id var_t_str
 ;;
 
-let pprint_program fmt = <span data-count="53">L</span>ist.iter ~f:(pprint_structure_ite<span data-count="53">m</span> fmt 0)
+let pprint_program fmt = <span data-count="50">L</span>ist.iter ~f:(pprint_structure_ite<span data-count="50">m</span> fmt 0)
 
 let pp printer parser str =
   <span data-count="0">m</span>atch parse_string ~consume:Angstrom.Consume.All parser str with
