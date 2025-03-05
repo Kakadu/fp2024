@@ -72,11 +72,11 @@ let p_rec_flag =
    ;; *)
 
 let p_integer =
-  let* num = ws *> lift2 (fun s n -> CInt (Int.of_string (s ^ n))) p_sign p_digits in
+  let* num = ws *> p_digits in
   let* next = peek_char in
   match next with
   | Some ('a' .. 'z' | '_') -> fail "unexpected character after number"
-  | _ -> return num
+  | _ -> return (CInt (Int.of_string num))
 ;;
 
 let p_boolean =
@@ -130,6 +130,13 @@ let p_branch e =
 
 let p_binop tkn binop = token tkn *> return (fun el er -> EBinary (binop, el, er)) <* ws
 
+let p_unop e =
+  lift2
+    (fun unop e -> EUnary (unop, e))
+    (choice [ token "-" *> return Neg <* ws; token "+" *> return Pos <* ws ])
+    e
+;;
+
 let p_tuple e =
   let tuple =
     lift3
@@ -182,7 +189,8 @@ let p_expression =
   let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
   let opt = p_option apply <|> apply in
   let branch = p_branch e <|> opt in
-  let multiplydivide_op = chainl1 branch (p_binop "*" Mul <|> p_binop "/" Div) in
+  let unary_op = branch <|> p_unop branch in
+  let multiplydivide_op = chainl1 unary_op (p_binop "*" Mul <|> p_binop "/" Div) in
   let plusminus_op = chainl1 multiplydivide_op (p_binop "+" Add <|> p_binop "-" Sub) in
   let compare_op =
     chainl1

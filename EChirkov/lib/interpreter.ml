@@ -65,7 +65,7 @@ module Evaluate (M : Monad) = struct
   open M
   open Environment (M)
 
-  (* (* let eval_nonrec_bs env bl =
+  (* let eval_nonrec_bs env bl =
 
      let eval_rec_bs env bl =
      let* env2 =
@@ -85,7 +85,7 @@ module Evaluate (M : Monad) = struct
      in
      return env2 *)
 
-     let eval_structure_item env = function
+  (* let eval_structure_item env = function
      | SValue (Nonrecursive, b, bl) -> eval_nonrec_bs env (b :: bl)
      | SValue (Recursive, b, bl) -> eval_rec_bs env (b :: bl)
      ;;

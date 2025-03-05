@@ -131,6 +131,37 @@ let%expect_test "parse compare or" =
       ]|}]
 ;;
 
+(* ========== unop ========== *)
+
+let%expect_test "parse neg" =
+  test_parser "let () = (-1)";
+  [%expect
+    {|
+    [(SValue (Nonrecursive, (PUnit, (EUnary (Neg, (EConst (CInt 1))))), []))]|}]
+;;
+
+let%expect_test "parse neg apply" =
+  test_parser "let () = asd (-1)";
+  [%expect
+    {|
+    [(SValue (Nonrecursive,
+        (PUnit, (EApply ((EVar "asd"), (EUnary (Neg, (EConst (CInt 1))))))),
+        []))
+      ]|}]
+;;
+
+let%expect_test "parse neg pos" =
+  test_parser "let () = (-1) + (+5)";
+  [%expect
+    {|
+    [(SValue (Nonrecursive,
+        (PUnit,
+         (EBinary (Add, (EUnary (Neg, (EConst (CInt 1)))),
+            (EUnary (Pos, (EConst (CInt 5))))))),
+        []))
+      ]|}]
+;;
+
 (* ========== tuples ========== *)
 
 let%expect_test "parse tuple 2" =
