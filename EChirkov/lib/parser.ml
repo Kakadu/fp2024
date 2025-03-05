@@ -155,6 +155,23 @@ let p_fun e =
   List.fold_right ps ~init:e ~f:(fun p e -> EFun (p, e))
 ;;
 
+let p_binding expr =
+  let* p = p_pattern in
+  let* ps = many p_pattern <* token "=" <* ws in
+  let+ e = expr in
+  (* add expr with annotation later here *)
+  p, List.fold_right ps ~init:e ~f:(fun p e -> EFun (p, e))
+;;
+
+let p_let expr =
+  lift4
+    (fun rf b bl e -> ELet (rf, b, bl, e))
+    (token "let" *> p_rec_flag)
+    (p_binding expr)
+    (many (token "and" *> p_binding expr))
+    (token "in" *> expr)
+;;
+
 let p_expression =
   fix
   @@ fun e ->
@@ -182,18 +199,11 @@ let p_expression =
   in
   let bool_op = chainl1 compare_op (p_binop "&&" And <|> p_binop "||" Or) in
   let tuples = p_tuple bool_op <|> bool_op in
-  tuples
+  let closure = p_let tuples <|> tuples in
+  closure
 ;;
 
 (* ========== top level ========== *)
-
-let p_binding =
-  let* p = p_pattern in
-  let* ps = many p_pattern <* token "=" <* ws in
-  let+ e = p_expression in
-  (* add expr with annotation later here *)
-  p, List.fold_right ps ~init:e ~f:(fun p e -> EFun (p, e))
-;;
 
 (* lift2 (fun ps e ->  (List.fold_right ~f:(fun p e -> EFun (p, e)) ~init:e) , e) (many1 p_pattern) (token "=" *> ws *> p_expression) *)
 
@@ -201,8 +211,8 @@ let p_structure_item =
   lift3
     (fun rf b bl -> SValue (rf, b, bl))
     (token "let" *> p_rec_flag)
-    p_binding
-    (many (token "and" *> p_binding))
+    (p_binding p_expression)
+    (many (token "and" *> p_binding p_expression))
 ;;
 
 let p_program = many p_structure_item <* ws
