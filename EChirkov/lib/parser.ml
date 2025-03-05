@@ -110,10 +110,31 @@ let p_variable =
 
 let p_any = token "_" *> return PAny
 
+let p_ptuple e =
+  let tuple =
+    lift3
+      (fun e1 e2 rest -> PTuple (e1, e2, rest))
+      (e <* token ",")
+      e
+      (many (token "," *> e))
+    <* ws
+  in
+  parens tuple <|> tuple
+;;
+
+let p_plist e =
+  token "[" *> sep_by (token ";" *> ws) e <* token "]" >>| fun es -> PList es
+;;
+
 let p_pattern =
   fix
   @@ fun p ->
-  choice [ (p_variable >>| fun v -> PVar v); (p_unit >>| fun _ -> PUnit); p_any ]
+  let term =
+    choice
+      [ (p_variable >>| fun v -> PVar v); (p_unit >>| fun _ -> PUnit); p_plist p; p_any ]
+  in
+  let tuples = p_ptuple term <|> term in
+  tuples
 ;;
 
 (* ========== exprs ========== *)

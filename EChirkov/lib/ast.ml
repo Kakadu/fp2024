@@ -54,7 +54,7 @@ type pattern =
   | PUnit (* () *)
   | PTuple of pattern * pattern * pattern list
   (* | PCons of pattern * pattern (* h :: t *) *)
-  (* | PList of pattern list (* [23; 34] *) *)
+  | PList of pattern list (* [23; 34] *)
   | PConst of const (* 23 *)
   (* | POption of pattern option *)
   | PType of pattern * core_type
