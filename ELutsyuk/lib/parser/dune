@@ -1,9 +1,9 @@
 (include_subdirs qualified)
 
 (library
- (name parse)
- (public_name ELutsyuk.MiniML_Parse)
- (libraries base angstrom ast)
+ (name parser)
+ (public_name ELutsyuk.MiniML_Parser)
+ (libraries base angstrom ast inferencer)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
  (inline_tests)

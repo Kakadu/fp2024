@@ -258,19 +258,7 @@ let inf_structure_item env = function
     inf_non_rec_binding_list env bindings
 ;;
 
-let inf_program program =
-  let env =
-    TypeEnv.extend
-      TypeEnv.empty
-      "print_int"
-      (Scheme (VarSet.empty, arrow_typ int_typ unit_typ))
-  in
-  let env =
-    TypeEnv.extend
-      env
-      "print_endline"
-      (Scheme (VarSet.empty, arrow_typ string_typ unit_typ))
-  in
+let inf_program env program =
   List.fold_left
     (fun acc item ->
       let* env = acc in
@@ -280,16 +268,21 @@ let inf_program program =
     program
 ;;
 
-let run_infer program =
-  match Parse.parse program with
-  | Ok tree ->
-    let result = run (inf_program tree) in
-    (match result with
-     | Ok env ->
-       Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
-         if String.equal key "print_int" || String.equal key "print_endline"
-         then ()
-         else Stdlib.Format.printf "val %s : %a\n" key pp_typ ty)
-     | Error msg -> Stdlib.Format.printf "Infer error: %a\n" pp_error msg)
-  | Error msg -> Stdlib.Format.printf "Parsing error: %s\n" msg
+let start_env =
+  let print_env =
+    TypeEnv.extend
+      TypeEnv.empty
+      "print_int"
+      (Scheme (VarSet.empty, arrow_typ int_typ unit_typ))
+  in
+  let env =
+    TypeEnv.extend
+      print_env
+      "print_endline"
+      (Scheme (VarSet.empty, arrow_typ string_typ unit_typ))
+  in
+  env
 ;;
+
+let run_expr_inf exp = Result.map snd (run (inf_expr start_env exp))
+let run_program_inf tree = run (inf_program start_env tree)

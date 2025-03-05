@@ -4,7 +4,7 @@
 
 open Angstrom
 open Ast
-open Auxilary
+open PrsAuxilary
 open Const
 open Patterns
 open Expr

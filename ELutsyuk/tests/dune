@@ -1,9 +1,9 @@
-(include_subdirs no)
+(include_subdirs qualified)
 
 (library
  (name tests)
  (public_name ELutsyuk.Tests)
- (libraries ast parse)
+ (libraries ast parser)
  (preprocess
   (pps ppx_expect))
  (inline_tests)

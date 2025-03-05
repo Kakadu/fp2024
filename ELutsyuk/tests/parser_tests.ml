@@ -2,14 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Ast
-open Parse
-
-let parse_program input =
-  match parse input with
-  | Ok program -> Stdlib.Format.printf "%s\n" (show_program program)
-  | Error err -> Stdlib.Format.printf "%s\n" err
-;;
+open Parser.Parse
 
 let%expect_test "parse_arithmetic" =
   parse_program "1 + 2 * 3";

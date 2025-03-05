@@ -5,7 +5,6 @@
 open TypTree
 open Base
 open Ast
-open Parse
 
 module FreshResult : sig
   type 'a t
@@ -49,8 +48,6 @@ module Type : sig
   val has_type_var : int -> typ -> bool
   val type_vars : typ -> VarSet.t
 end = struct
-  type t = typ
-
   let rec has_type_var var = function
     | TypConst _ -> false
     | TypVar ty -> ty = var
@@ -183,11 +180,12 @@ end
 module TypeEnv : sig
   type t = (Ast.id, scheme, Base.String.comparator_witness) Base.Map.t
 
-  val empty : (string, 'a, Base.String.comparator_witness) Base.Map.t
+  val empty : t
   val free_in_context : t -> VarSet.t
-  val apply : Subst.t -> ('a, scheme, 'b) Base.Map.t -> ('a, scheme, 'b) Base.Map.t
-  val extend : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b -> ('a, 'b, 'c) Base.Map.t
-  val find : ('a, 'b, 'c) Base.Map.t -> 'a -> 'b option
+  val apply : Subst.t -> t -> t
+  val extend : t -> Ast.id -> scheme -> t
+  val find : t -> Ast.id -> scheme option
+  val remove : t -> Ast.id -> t
 end = struct
   type t = (id, scheme, String.comparator_witness) Map.t
 
@@ -202,5 +200,4 @@ end = struct
   let extend env id scheme = Map.update env id ~f:(fun _ -> scheme)
   let find env id = Map.find env id
   let remove = Map.remove
-  (* let iteri env foo = Map.iteri env ~f:foo *)
 end

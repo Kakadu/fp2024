@@ -1,8 +1,0 @@
-(library
- (name infer)
- (public_name ELutsyuk.MiniML_Infer)
- (libraries base angstrom ast parse)
- (preprocess
-  (pps ppx_deriving.show))
- (instrumentation
-  (backend bisect_ppx)))

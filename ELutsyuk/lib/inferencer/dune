@@ -1,0 +1,10 @@
+(include_subdirs qualified)
+
+(library
+ (name inferencer)
+ (public_name ELutsyuk.MiniML_Inferencer)
+ (libraries base angstrom ast)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))

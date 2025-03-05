@@ -32,12 +32,12 @@ module Subst : sig
 end
 
 module VarSet : sig
-  type element = int
+  type elt = int
   type t = Set.Make(Base.Int).t
 
   val empty : t
   val diff : t -> t -> t
-  val fold : (element -> 'a -> 'a) -> t -> 'a -> 'a
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 end
 
 module Type : sig
@@ -53,7 +53,7 @@ module TypeEnv : sig
   val empty : t
   val free_in_context : t -> VarSet.t
   val apply : Subst.t -> t -> t
-  val extend : t -> 'a -> 'b -> t
-  val find : t -> 'a -> 'b option
-  val remove : t -> 'a -> t
+  val extend : t -> Ast.id -> scheme -> t
+  val find : t -> Ast.id -> scheme option
+  val remove : t -> Ast.id -> t
 end
