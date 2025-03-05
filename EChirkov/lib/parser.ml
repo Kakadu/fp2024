@@ -179,8 +179,7 @@ let p_expression =
   let term = p_const >>| (fun e -> EConst e) <|> term in
   let term = p_variable >>| (fun v -> EVar v) <|> term in
   let term = p_list e <|> term in
-  let lambda = p_fun term <|> term in
-  let apply = chainl1 lambda (return (fun e1 e2 -> EApply (e1, e2))) in
+  let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
   let opt = p_option apply <|> apply in
   let branch = p_branch e <|> opt in
   let multiplydivide_op = chainl1 branch (p_binop "*" Mul <|> p_binop "/" Div) in
@@ -199,13 +198,10 @@ let p_expression =
   in
   let bool_op = chainl1 compare_op (p_binop "&&" And <|> p_binop "||" Or) in
   let tuples = p_tuple bool_op <|> bool_op in
-  let closure = p_let tuples <|> tuples in
-  closure
+  choice [ tuples; p_let e; p_fun e ]
 ;;
 
 (* ========== top level ========== *)
-
-(* lift2 (fun ps e ->  (List.fold_right ~f:(fun p e -> EFun (p, e)) ~init:e) , e) (many1 p_pattern) (token "=" *> ws *> p_expression) *)
 
 let p_structure_item =
   lift3

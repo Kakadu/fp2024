@@ -290,3 +290,19 @@ let%expect_test "parse fun simple" =
     {|
     [(SValue (Nonrecursive, (PUnit, (EFun ((PVar "x"), (EVar "y")))), []))]|}]
 ;;
+
+(* ========== let ========== *)
+
+let%expect_test "parse fun simple" =
+  test_parser "let () = let x = 5 in let y = 2 in x + y";
+  [%expect
+    {|
+    [(SValue (Nonrecursive,
+        (PUnit,
+         (ELet (Nonrecursive, ((PVar "x"), (EConst (CInt 5))), [],
+            (ELet (Nonrecursive, ((PVar "y"), (EConst (CInt 2))), [],
+               (EBinary (Add, (EVar "x"), (EVar "y")))))
+            ))),
+        []))
+      ]|}]
+;;
