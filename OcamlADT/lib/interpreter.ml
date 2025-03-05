@@ -259,13 +259,6 @@ module Interpreter (M : Error_monad) = struct
     aux [] env (lst, lst2)
   ;;
 
-  let rec foldM f acc = function
-    | [] -> return acc
-    | x :: xs ->
-      let* acc' = f acc x in
-      foldM f acc' xs
-  ;;
-
   let eval_const = function
     | Constant.Const_integer i -> return (VInt i)
     | Constant.Const_char c -> return (VChar c)

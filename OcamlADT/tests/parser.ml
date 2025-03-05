@@ -4384,7 +4384,8 @@ let main =
   let () = print_int (foo 11) in
   0
 |};
-  [%expect {|
+  [%expect
+    {|
     [(Str_value (Nonrecursive,
         ({ pat = (Pat_var "foo");
            expr =

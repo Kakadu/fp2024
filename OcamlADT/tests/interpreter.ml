@@ -1187,11 +1187,20 @@ let main =
   let () = print_int (length (cartesian [1;2] [1;2;3;4])) in
   0
 |};
-  [%expect {|
+  [%expect
+    {|
     1
     2
     3
-    Interpreter error: Pattern mismatch |}]
+    8
+    val length = <fun>
+    val length_tail = <fun>
+    val map = <fun>
+    val append = <fun>
+    val concat = <fun>
+    val iter = <fun>
+    val cartesian = <fun>
+    val main = 0 |}]
 ;;
 
 let%expect_test "debug_length" =
