@@ -8,12 +8,10 @@ open Angstrom
 
 (* let r = parse "let x = 23" *)
 
-let r = parse_string ~consume:All p_program "let () = (-1)"
+let r = parse_string ~consume:All p_program "let [a] = [6]"
 
 let () =
   match r with
   | Ok s -> print_endline (show_program s)
   | Error e -> print_endline e
 ;;
-
-let () = print_int (-1)

@@ -221,6 +221,16 @@ let%expect_test "parse tuple inn" =
       ]|}]
 ;;
 
+let%expect_test "parse tuple pat" =
+  test_parser "let (a, b) = (6, 9)";
+  [%expect {|
+    [(SValue (Nonrecursive,
+        ((PTuple ((PVar "a"), (PVar "b"), [])),
+         (ETuple ((EConst (CInt 6)), (EConst (CInt 9)), []))),
+        []))
+      ]|}]
+;;
+
 (* ========== list ========== *)
 
 let%expect_test "parse list empty" =
@@ -251,6 +261,14 @@ let%expect_test "parse list list" =
     [(SValue (Nonrecursive,
         (PUnit,
          (EList [(EList [(EConst (CInt 234)); (EConst (CInt 456))]); (EList [])])),
+        []))
+      ]|}]
+;;
+
+let%expect_test "parse list pat" =
+  test_parser "let [a] = [6]";
+  [%expect {|
+    [(SValue (Nonrecursive, ((PList [(PVar "a")]), (EList [(EConst (CInt 6))])),
         []))
       ]|}]
 ;;
