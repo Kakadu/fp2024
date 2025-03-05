@@ -11,7 +11,6 @@ type error =
   | UnboundVariable of string
   | PatternMismatch
   | RecursionError
-  | NotImplemented
   | EmptyProgram
   | ParserError
   | NotAnADT of string

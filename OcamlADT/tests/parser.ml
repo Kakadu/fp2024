@@ -4340,3 +4340,113 @@ type point = int * int;;
     ]
   |}]
 ;;
+
+let%expect_test "adt match case (pat_any)" =
+  test_program
+    {|
+let area s = 
+    match s with
+    | Square c -> 0
+    | Circle c -> 3 
+    | _ -> 10
+;;
+|};
+  [%expect
+    {|
+  [(Str_value (Nonrecursive,
+      ({ pat = (Pat_var "area");
+         expr =
+         (Exp_fun (((Pat_var "s"), []),
+            (Exp_match ((Exp_ident "s"),
+               ({ first = (Pat_construct ("Square", (Some (Pat_var "c"))));
+                  second = (Exp_constant (Const_integer 0)) },
+                [{ first = (Pat_construct ("Circle", (Some (Pat_var "c"))));
+                   second = (Exp_constant (Const_integer 3)) };
+                  { first = Pat_any; second = (Exp_constant (Const_integer 10))
+                    }
+                  ])
+               ))
+            ))
+         },
+       [])
+      ))
+    ]
+  |}]
+;;
+
+let%expect_test "006partial2" =
+  test_program
+    {|
+let foo b = if b then (fun foo -> foo+2) else (fun foo -> foo*10)
+
+let foo x = foo true (foo false (foo true (foo false x)))
+let main =
+  let () = print_int (foo 11) in
+  0
+|};
+  [%expect {|
+    [(Str_value (Nonrecursive,
+        ({ pat = (Pat_var "foo");
+           expr =
+           (Exp_fun (((Pat_var "b"), []),
+              (Exp_if ((Exp_ident "b"),
+                 (Exp_fun (((Pat_var "foo"), []),
+                    (Exp_apply ((Exp_ident "+"),
+                       (Exp_tuple
+                          ((Exp_ident "foo"), (Exp_constant (Const_integer 2)),
+                           []))
+                       ))
+                    )),
+                 (Some (Exp_fun (((Pat_var "foo"), []),
+                          (Exp_apply ((Exp_ident "*"),
+                             (Exp_tuple
+                                ((Exp_ident "foo"),
+                                 (Exp_constant (Const_integer 10)), []))
+                             ))
+                          )))
+                 ))
+              ))
+           },
+         [])
+        ));
+      (Str_value (Nonrecursive,
+         ({ pat = (Pat_var "foo");
+            expr =
+            (Exp_fun (((Pat_var "x"), []),
+               (Exp_apply (
+                  (Exp_apply ((Exp_ident "foo"), (Exp_construct ("true", None)))),
+                  (Exp_apply (
+                     (Exp_apply ((Exp_ident "foo"),
+                        (Exp_construct ("false", None)))),
+                     (Exp_apply (
+                        (Exp_apply ((Exp_ident "foo"),
+                           (Exp_construct ("true", None)))),
+                        (Exp_apply (
+                           (Exp_apply ((Exp_ident "foo"),
+                              (Exp_construct ("false", None)))),
+                           (Exp_ident "x")))
+                        ))
+                     ))
+                  ))
+               ))
+            },
+          [])
+         ));
+      (Str_value (Nonrecursive,
+         ({ pat = (Pat_var "main");
+            expr =
+            (Exp_let (Nonrecursive,
+               ({ pat = (Pat_construct ("()", None));
+                  expr =
+                  (Exp_apply ((Exp_ident "print_int"),
+                     (Exp_apply ((Exp_ident "foo"),
+                        (Exp_constant (Const_integer 11))))
+                     ))
+                  },
+                []),
+               (Exp_constant (Const_integer 0))))
+            },
+          [])
+         ))
+      ] |}]
+;;

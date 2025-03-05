@@ -10,7 +10,6 @@ type error =
   | UnboundVariable of string
   | PatternMismatch
   | RecursionError
-  | NotImplemented
   | EmptyProgram
   | ParserError
   | NotAnADT of string
@@ -77,40 +76,6 @@ module Env (M : Error_monad) = struct
     It is treated like an abstract mapping (a lil different from one in TypeInf)*)
 
   open M
-
-  let builtin_types =
-    Base.Map.of_alist_exn
-      (module Base.String)
-      [ "int", VType (TypeExpr.Type_var "int", None)
-      ; "char", VType (TypeExpr.Type_var "char", None)
-      ; "string", VType (TypeExpr.Type_var "string", None)
-      ; "bool", VType (TypeExpr.Type_var "bool", None)
-      ; "list", VType (TypeExpr.Type_var "list", Some "list")
-      ]
-  ;;
-
-  let builtin_lists =
-    let list_type = VType (TypeExpr.Type_var "list", Some "list_adt") in
-    let list_adt =
-      VAdt
-        ( VUnit
-        , [ "a" ] (* Type parameter for polymorphic lists *)
-        , "list"
-        , ( ("[]", None)
-          , [ ( "::"
-              , Some
-                  (TypeExpr.Type_tuple
-                     (TypeExpr.Type_var "a", TypeExpr.Type_var "list", [])) )
-            ] ) )
-    in
-    Base.Map.of_alist_exn
-      (module Base.String)
-      [ "list", list_type (* Register the list type *)
-      ; "[]", VType (TypeExpr.Type_var "[]", Some "list_adt")
-      ; "::", VType (TypeExpr.Type_var "::", Some "list_adt")
-      ; "list_adt", list_adt (* Actual ADT definition *)
-      ]
-  ;;
 
   let builtin_bools =
     Base.Map.of_alist_exn
@@ -240,9 +205,7 @@ module Env (M : Error_monad) = struct
       List.concat
         [ Base.Map.to_alist builtin_binops
         ; Base.Map.to_alist builtin_functions
-        ; Base.Map.to_alist builtin_types
         ; Base.Map.to_alist builtin_bools
-        ; Base.Map.to_alist builtin_lists
         ]
     in
     Base.Map.of_alist_reduce (module Base.String) all_bindings ~f:(fun v _ -> v)
@@ -309,40 +272,40 @@ module Interpreter (M : Error_monad) = struct
     | Constant.Const_string s -> return (VString s)
   ;;
 
-  let rec eval_type_expr env = function
-    | TypeExpr.Type_var ident ->
-      let* as_value = E.lookup env ident in
-      (match as_value with
-       | VType (type_value, _) -> return type_value
-       | _ -> fail TypeMismatch)
-    | TypeExpr.Type_arrow (t1, t2) ->
-      let* t1_resolved = eval_type_expr env t1 in
-      let* t2_resolved = eval_type_expr env t2 in
-      return (TypeExpr.Type_arrow (t1_resolved, t2_resolved))
-    | TypeExpr.Type_tuple types ->
-      let t1, t2, tl = types in
-      let* rt1 = eval_type_expr env t1 in
-      let* rt2 = eval_type_expr env t2 in
-      let* rtl = mapM eval_type_expr env tl in
-      return (TypeExpr.Type_tuple (rt1, rt2, rtl))
-    | TypeExpr.Type_construct (type_name, args) ->
-      let* as_val = E.lookup env type_name in
-      (match as_val with
-       | VType (TypeExpr.Type_construct (_, tparams), _) ->
-         if List.length args <> List.length tparams
-         then fail UndefinedArgs
-         else
-           let* resolved_args = mapM eval_type_expr env args in
-           return (TypeExpr.Type_construct (type_name, resolved_args))
-       | VType (TypeExpr.Type_var s, _) -> return (TypeExpr.Type_var s)
-       | VAdt (_, tparams, _, _) ->
-         if List.length args <> List.length tparams
-         then fail UndefinedArgs
-         else
-           let* resolved_args = mapM eval_type_expr env args in
-           return (TypeExpr.Type_construct (type_name, resolved_args))
-       | _ -> fail (UndefinedConstructor type_name))
-  ;;
+  (* let rec eval_type_expr env = function
+     | TypeExpr.Type_var ident ->
+     let* as_value = E.lookup env ident in
+     (match as_value with
+     | VType (type_value, _) -> return type_value
+     | _ -> fail TypeMismatch)
+     | TypeExpr.Type_arrow (t1, t2) ->
+     let* t1_resolved = eval_type_expr env t1 in
+     let* t2_resolved = eval_type_expr env t2 in
+     return (TypeExpr.Type_arrow (t1_resolved, t2_resolved))
+     | TypeExpr.Type_tuple types ->
+     let t1, t2, tl = types in
+     let* rt1 = eval_type_expr env t1 in
+     let* rt2 = eval_type_expr env t2 in
+     let* rtl = mapM eval_type_expr env tl in
+     return (TypeExpr.Type_tuple (rt1, rt2, rtl))
+     | TypeExpr.Type_construct (type_name, args) ->
+     let* as_val = E.lookup env type_name in
+     (match as_val with
+     | VType (TypeExpr.Type_construct (_, tparams), _) ->
+     if List.length args <> List.length tparams
+     then fail UndefinedArgs
+     else
+     let* resolved_args = mapM eval_type_expr env args in
+     return (TypeExpr.Type_construct (type_name, resolved_args))
+     | VType (TypeExpr.Type_var s, _) -> return (TypeExpr.Type_var s)
+     | VAdt (_, tparams, _, _) ->
+     if List.length args <> List.length tparams
+     then fail UndefinedArgs
+     else
+     let* resolved_args = mapM eval_type_expr env args in
+     return (TypeExpr.Type_construct (type_name, resolved_args))
+     | _ -> fail (UndefinedConstructor type_name))
+     ;; *)
 
   let rec eval_pattern pattern value env =
     match pattern, value with
@@ -371,7 +334,7 @@ module Interpreter (M : Error_monad) = struct
     | Pattern.Pat_construct ("None", None), VConstruct ("None", None) -> return (Some env)
     | Pattern.Pat_construct ("()", None), _ -> return (Some env)
     | ( Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (p_hd, p_tl, [])))
-      , VAdt (VTuple (v_hd, v_tl, []), _, "::", _) ) ->
+      , VConstruct ("::", Some (VTuple (v_hd, v_tl, []))) ) ->
       let* env1_opt = eval_pattern p_hd v_hd env in
       let* env1 =
         match env1_opt with
@@ -401,11 +364,11 @@ module Interpreter (M : Error_monad) = struct
              let* final_env_opt = mapM2 eval_pattern env2 ps vs in
              return final_env_opt
            | _ -> fail PatternMismatch)
-        | VAdt (VUnit, _, "[]", _) ->
+        | VConstruct ("[]", None) ->
           (match pat with
            | Pattern.Pat_construct ("[]", None) -> return (Some env)
            | _ -> fail PatternMismatch)
-        | VAdt (VTuple (head, tail, []), _, "::", _) ->
+        | VConstruct ("::", Some (VTuple (head, tail, []))) ->
           (match pat with
            | Pattern.Pat_construct ("::", Some (Pattern.Pat_tuple (ph, pt, []))) ->
              let* env1_opt = eval_pattern ph head env in
@@ -448,11 +411,17 @@ module Interpreter (M : Error_monad) = struct
               | _ -> fail PatternMismatch)
            | _ -> eval_pattern p args env)
          else return None
-       | VString s ->
-         if String.equal cname s then eval_pattern p v env else fail PatternMismatch
-       | VConstruct (_, None) -> eval_pattern p v env
-       | VInt _ -> eval_pattern p v env
+       | VConstruct (_, None) | VInt _ -> eval_pattern p v env
        | VUnit -> return (Some env)
+       | VConstruct (name, Some value) ->
+         if String.equal cname name then eval_pattern p value env else return None
+       | _ -> fail PatternMismatch)
+    | Pattern.Pat_construct (cname, None), v ->
+      (match v with
+       | VConstruct (name, Some _) ->
+         if String.equal cname name then return (Some env) else return None
+       | VUnit -> return (Some env)
+       | VConstruct (_, None) | VInt _ -> return (Some env)
        | _ -> fail PatternMismatch)
     | Pattern.Pat_constraint (pat, _), v -> eval_pattern pat v env
     | _ -> fail PatternMismatch
@@ -528,7 +497,12 @@ module Interpreter (M : Error_monad) = struct
           | Some else_expr -> eval_expr env else_expr
           | None -> fail PatternMismatch)
        | VBool true -> eval_expr env then_expr
-       | _ -> fail TypeMismatch)
+       | VConstruct ("true", None) -> eval_expr env then_expr
+       | VConstruct ("false", None) ->
+         (match else_expr_opt with
+          | Some else_expr -> eval_expr env else_expr
+          | None -> fail PatternMismatch)
+       | _ -> fail PatternMismatch)
     | Expression.Exp_let (Nonrecursive, (b1, bl), body) ->
       (* Non-recursive bindings: evaluate and extend one by one *)
       let* env = eval_value_binding_list env (b1 :: bl) in
@@ -543,49 +517,11 @@ module Interpreter (M : Error_monad) = struct
     | Expression.Exp_construct ("None", None) -> return (VConstruct ("None", None))
     | Expression.Exp_construct ("()", None) -> return VUnit
     | Expression.Exp_construct (ctor_name, args) ->
-      let* type_def = E.lookup env ctor_name in
-      (match type_def with
-       | VType (_, Some adt_name) ->
-         let* adt_def = E.lookup env adt_name in
-         (match adt_def with
-          | VAdt (_, targs, _, constr) ->
-            let c1, cl = constr in
-            (* Searching for a constructor with ctor_name in the ADT definition *)
-            (match Base.List.Assoc.find (c1 :: cl) ~equal:String.equal ctor_name with
-             | Some (Some (Type_tuple (t1, t2, tl))) ->
-               let list_args = t1 :: t2 :: tl in
-               (match args with
-                | Some provided_args ->
-                  if List.length list_args != 0
-                  then
-                    let* evaluated_args = eval_expr env provided_args in
-                    return (VAdt (evaluated_args, targs, ctor_name, constr))
-                  else fail (UndefinedConstructor ctor_name)
-                | None ->
-                  (* If no arguments are provided, ensure the constructor expects none *)
-                  (match list_args with
-                   | [] -> return (VAdt (VUnit, targs, ctor_name, constr))
-                   | _ -> fail (UndefinedConstructor ctor_name)))
-             | Some (Some (TypeExpr.Type_construct (_, argsl))) ->
-               (match args with
-                | Some provided_args ->
-                  if List.length argsl != 0
-                  then
-                    let* evaluated_args = eval_expr env provided_args in
-                    return (VAdt (evaluated_args, targs, ctor_name, constr))
-                  else return (VAdt (VUnit, targs, ctor_name, constr))
-                | None ->
-                  (* If no arguments are provided, ensure the constructor expects none *)
-                  (match argsl with
-                   | [] -> return (VAdt (VUnit, targs, ctor_name, constr))
-                   | _ -> fail (UndefinedConstructor ctor_name)))
-             | None | Some None | Some (Some (Type_var _)) ->
-               return (VAdt (VUnit, targs, ctor_name, constr))
-             | Some (Some (Type_arrow _)) -> fail TypeMismatch)
-            (*nada*)
-          | _ -> fail (NotAnADT adt_name))
-       | VBool _ -> E.lookup env ctor_name
-       | _ -> fail (NotAnADTVariant ctor_name))
+      (match args with
+       | Some provided_args ->
+         let* evaluated_args = eval_expr env provided_args in
+         return (VConstruct (ctor_name, Some evaluated_args))
+       | None -> return (VConstruct (ctor_name, None)))
     | Expression.Exp_constraint (expr, _type_expr) -> eval_expr env expr
 
   and eval_cases env value = function
@@ -631,15 +567,6 @@ module Interpreter (M : Error_monad) = struct
            | Some extended_env -> return extended_env
            | None -> fail PatternMismatch))
       value_binding_list
-  ;;
-
-  let unwrap_typeexpr_list (t : (ident * TypeExpr.t option) list)
-    : (ident * TypeExpr.t list) list
-    =
-    List.map
-      (fun (id, t_opt) ->
-        id, Option.value ~default:[] (Option.map (fun t -> [ t ]) t_opt))
-      t
   ;;
 
   let eval_str_item (env : environment) olist =
@@ -694,34 +621,7 @@ module Interpreter (M : Error_monad) = struct
       let new_env =
         E.extend env type_name (VAdt (VUnit, targs, type_name, constructors))
       in
-      (* Add each constructor to the environment *)
-      let c1, cl = constructors in
-      let* neww_env =
-        foldM
-          (fun acc_env (ctor_name, param_types) ->
-            let extended_env =
-              List.fold_left
-                (fun env tvar ->
-                  E.extend env tvar (VType (TypeExpr.Type_var tvar, Some type_name)))
-                acc_env
-                targs
-            in
-            let* resolved_param_types = mapM eval_type_expr extended_env param_types in
-            let adt_type =
-              TypeExpr.Type_construct
-                (type_name, List.map (fun t -> TypeExpr.Type_var t) targs)
-            in
-            let ctor_type =
-              List.fold_right
-                (fun param_type acc -> TypeExpr.Type_arrow (param_type, acc))
-                resolved_param_types
-                adt_type
-            in
-            return (E.extend acc_env ctor_name (VType (ctor_type, Some type_name))))
-          new_env
-          (unwrap_typeexpr_list (c1 :: cl))
-      in
-      return (neww_env, olist)
+      return (new_env, olist)
   ;;
 
   let remove_duplicates out_list =
@@ -794,12 +694,11 @@ module PPrinter = struct
     | VFun _ -> fprintf fmt "<fun>"
     | VFunction _ -> fprintf fmt "<function>"
     | VBuiltin_print _ -> fprintf fmt "<builtin>"
-    | VAdt (VUnit, _, "[]", _) -> fprintf fmt "[]"
     (* Recursively format list elements *)
-    | VAdt (VTuple (head, tail, []), _, "::", _) ->
+    | VConstruct ("::", Some (VTuple (head, tail, []))) ->
       let rec extract_list acc = function
-        | VAdt (VTuple (hd, tl, []), _, "::", _) -> extract_list (hd :: acc) tl
-        | VAdt (VUnit, _, "[]", _) -> List.rev acc
+        | VConstruct ("::", Some (VTuple (hd, tl, []))) -> extract_list (hd :: acc) tl
+        | VConstruct ("[]", None) -> List.rev acc
         | v -> List.rev (v :: acc)
       in
       let elements = extract_list [ head ] tail in
@@ -808,10 +707,10 @@ module PPrinter = struct
         "[%a]"
         (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") pp_value)
         elements
-    | VAdt (_, _, "::", _) -> fprintf fmt "hahah pizdec"
     | VAdt (_, _, name, _) -> fprintf fmt "<ADT>: %s" name
+    | VConstruct ("[]", _) -> fprintf fmt "[]"
     | VConstruct (ct, Some v) ->
-      fprintf fmt "%s" ct;
+      fprintf fmt "%s " ct;
       pp_value fmt v
     | VConstruct (ct, None) -> fprintf fmt "%s" ct
     | VUnit -> fprintf fmt "unit"
@@ -821,7 +720,6 @@ module PPrinter = struct
   let pp_error fmt = function
     | PatternMismatch -> fprintf fmt "Interpreter error: Pattern mismatch"
     | DivisionByZero -> fprintf fmt "Interpreter error: Division by zero"
-    | NotImplemented -> fprintf fmt "Interpreter error: Not implemented"
     | UnboundVariable s -> fprintf fmt "Interpreter error: Unbound value %s" s
     | TypeMismatch -> fprintf fmt "Interpreter error: Type mismatch"
     | RecursionError -> fprintf fmt "Interpreter error: Recursion error"

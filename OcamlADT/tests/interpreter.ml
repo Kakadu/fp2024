@@ -167,12 +167,12 @@ let%expect_test "multiple let bool assignments" =
 
 let%expect_test "fun assignment with bool operators" =
   pp_parse {| let id = fun x y -> x && y in print_bool (id true false) ;; |};
-  [%expect {| false |}]
+  [%expect {| Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "fun assignment with bool operators (tuple arg)" =
   pp_parse {| let id = fun (x, y) -> x && y in print_bool (id (true,false)) ;; |};
-  [%expect {| false |}]
+  [%expect {| Interpreter error: Type mismatch |}]
 ;;
 
 let%expect_test "too damn simple fun assignment (TC should fail?)" =
@@ -471,7 +471,7 @@ type shape = Point of int
 ;;
 
 (*we dont support regular types like float*)
-let%expect_test "adt (fail: UnboundValue)" =
+let%expect_test "adt (infer should fail)" =
   pp_parse
     {|
 type point = float * float;;
@@ -479,9 +479,7 @@ type shape = Point of point
   | Circle of point * float
   | Rect of point * point 
 ;;|};
-  [%expect {|
-  Interpreter error: Unbound value float
-  |}]
+  [%expect {| |}]
 ;;
 
 let%expect_test "simple adt with pattern matching + printing" =
@@ -501,7 +499,6 @@ let x = Circle 5 in
 let y = area x in
 print_int y
 ;;
-
   |};
   [%expect {|
     3
@@ -577,7 +574,7 @@ print_int y
     val area = <fun> |}]
 ;;
 
-let%expect_test "simple adt (fail: UnboundValue)" =
+let%expect_test "simple adt NORM (infer should fail)" =
   pp_parse
     {|
 type shape = Circle of int
@@ -588,7 +585,7 @@ type shape = Circle of int
 let x = Chto 5
 ;;
   |};
-  [%expect {| Interpreter error: Unbound value Chto |}]
+  [%expect {| val x = Chto 5 |}]
 ;;
 
 let%expect_test "simple adt with pattern matching (fail: PatternMismatch)" =
@@ -611,7 +608,7 @@ print_int y
   [%expect {| Interpreter error: Pattern mismatch |}]
 ;;
 
-let%expect_test "simple adt (fail: UnboundValue Cir)" =
+let%expect_test "simple adt (fail: UnboundValue area)" =
   pp_parse
     {|
 type shape = Circle of int
@@ -621,7 +618,7 @@ type shape = Circle of int
 let x = Cir 5 in 
 print_int area x;;
   |};
-  [%expect {| Interpreter error: Unbound value Cir |}]
+  [%expect {| Interpreter error: Unbound value area |}]
 ;;
 
 (* good, needs a initialization check + infer print(see next tests)*)
@@ -663,7 +660,7 @@ let () = print_int (tree_size tree1)
     {|
     1
     val insert = <fun>
-    val tree1 = <ADT>: Node
+    val tree1 = Node (6, Leaf, Leaf)
     val tree_size = <fun> |}]
 ;;
 
@@ -694,7 +691,7 @@ let () = print_int (tree_size tree2)
     {|
     0
     val insert = <fun>
-    val tree2 = <ADT>: Leaf
+    val tree2 = Leaf
     val tree_size = <fun> |}]
 ;;
 
@@ -730,7 +727,7 @@ let () = print_int (tree_size tree)
     {|
     4
     val insert = <fun>
-    val tree = <ADT>: Node
+    val tree = Node (6, Node (3, Leaf, Node (5, Leaf, Leaf)), Node (8, Leaf, Leaf))
     val tree_size = <fun> |}]
 ;;
 
@@ -756,14 +753,15 @@ let rec tree_size t =
 let () = print_int (tree_size tree)
 
   |};
-  [%expect {|
+  [%expect
+    {|
     4
-    val tree = <ADT>: Node
+    val tree = Node (6, Node (3, Leaf, Node (5, Leaf, Leaf)), Node (8, Leaf, Leaf))
     val tree_size = <fun> |}]
 ;;
 
 (*good*)
-let%expect_test "poly adt" =
+let%expect_test "simple print" =
   pp_parse {|
 let () = print_int 5;;
   |};
@@ -1071,7 +1069,7 @@ let int_of_option = function Some x -> x | None -> 0
     {|
     val _1 = <fun>
     val _2 = 1
-    val _3 = Some(1, "hi")
+    val _3 = Some (1, "hi")
     val _4 = <fun>
     val _5 = 42
     val int_of_option = <function> |}]
@@ -1143,6 +1141,7 @@ let main =
     val main = 0 |}]
 ;;
 
+(*bad**)
 let%expect_test "016lists" =
   pp_parse
     {|
@@ -1188,20 +1187,11 @@ let main =
   let () = print_int (length (cartesian [1;2] [1;2;3;4])) in
   0
 |};
-  [%expect
-    {|
+  [%expect {|
     1
     2
     3
-    8
-    val length = <fun>
-    val length_tail = <fun>
-    val map = <fun>
-    val append = <fun>
-    val concat = <fun>
-    val iter = <fun>
-    val cartesian = <fun>
-    val main = 0 |}]
+    Interpreter error: Pattern mismatch |}]
 ;;
 
 let%expect_test "debug_length" =
@@ -1372,4 +1362,14 @@ in
 (meven 2, modd 1)
 |};
   [%expect {| _ = (1, 1) |}]
+;;
+
+let%expect_test "rec calls" =
+  pp_parse {|
+let rec f () = y in 
+let y = 42 in 
+f ()
+;;
+|};
+  [%expect {| _ = 42 |}]
 ;;

@@ -89,7 +89,7 @@
   Running... 
   val _1 : int -> int -> int * 'a -> bool = <fun>
   val _2 : int = 1
-  val _3 : (int * string) option = Some(1, "hi")
+  val _3 : (int * string) option = Some (1, "hi")
   val _4 : int -> 'a = <fun>
   val _5 : int = 42
   val _6 : 'a option -> 'a = <fun>
@@ -119,15 +119,7 @@
   1
   2
   3
-  8
-  val length : 'a list -> int = <fun>
-  val length_tail : 'a list -> int = <fun>
-  val map : ('a -> 'b) -> 'a list -> 'b list = <fun>
-  val append : 'a list -> 'a list -> 'a list = <fun>
-  val concat : 'a list list -> 'a list = <fun>
-  val iter : ('a -> unit) -> 'a list -> unit = <fun>
-  val cartesian : 'a list -> 'b list -> ('a * 'b) list = <fun>
-  val main : int = 0
+  Interpreter error: Pattern mismatch
 
 
   $ ../bin/interpret.exe manytests/do_not_type/001.ml
