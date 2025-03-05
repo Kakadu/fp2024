@@ -4323,3 +4323,20 @@ let%expect_test "multiple args adt v4 (capitalized idents in constr_args)" =
         ))
       ] |}]
 ;;
+
+let%expect_test "adt from default types" =
+  test_program {|
+type point = int * int;;
+|};
+  [%expect
+    {|
+  [(Str_adt ([], "point",
+      (("",
+        (Some (Type_tuple
+                 ((Type_construct ("int", [])), (Type_construct ("int", [])),
+                  [])))),
+       [])
+      ))
+    ]
+  |}]
+;;

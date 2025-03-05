@@ -471,16 +471,16 @@ type shape = Point of int
 ;;
 
 (*we dont support regular types like float*)
-let%expect_test "adt (fail: ParserError)" =
+let%expect_test "adt (fail: UnboundValue)" =
   pp_parse
     {|
-type point = float * float ;;
+type point = float * float;;
 type shape = Point of point
   | Circle of point * float
   | Rect of point * point 
 ;;|};
   [%expect {|
-  Parser Error
+  Interpreter error: Unbound value float
   |}]
 ;;
 
@@ -1227,13 +1227,13 @@ let%expect_test "debug_length" =
 ;;
 
 let%expect_test "empty_list" =
-  pp_parse "match [] with | [] -> 1 | _ -> 0";
+  pp_parse {|match [] with | [] -> 1 | _ -> 0|};
   [%expect {|
     _ = 1 |}]
 ;;
 
 let%expect_test "cons_head" =
-  pp_parse "match [1;2;3] with | h::t -> h";
+  pp_parse {| match [1;2;3] with | h::t -> h |};
   [%expect {|
     _ = 1 |}]
 ;;
@@ -1245,38 +1245,38 @@ let%expect_test "cons_tail" =
 ;;
 
 let%expect_test "tuple_cons" =
-  pp_parse "match [1;2;3] with | h::t -> (h, t)";
+  pp_parse {| match [1;2;3] with | h::t -> (h, t) |};
   [%expect {|
     _ = (1, [2; 3]) |}]
 ;;
 
 let%expect_test "length_function" =
   pp_parse
-    "let rec length xs = match xs with | [] -> 0 | h::t -> 1 + length t in length [1;2;3]";
+    {|let rec length xs = match xs with | [] -> 0 | h::t -> 1 + length t in length [1;2;3]|};
   [%expect {|
     _ = 3 |}]
 ;;
 
 let%expect_test "length_tail_function" =
   pp_parse
-    "let rec helper acc xs = match xs with | [] -> acc | h::t -> helper (acc+1) t in \
-     helper 0 [1;2;3]";
+    {| let rec helper acc xs = match xs with | [] -> acc | h::t -> helper (acc+1) t in
+     helper 0 [1;2;3] |};
   [%expect {|
     _ = 3 |}]
 ;;
 
 let%expect_test "map_function" =
   pp_parse
-    "let rec map f xs = match xs with | [] -> [] | h::t -> (f h)::map f t in map (fun x \
-     -> x+1) [1;2;3]";
+    {| let rec map f xs = match xs with | [] -> [] | h::t -> (f h)::map f t in map (fun x
+     -> x+1) [1;2;3] |};
   [%expect {|
     _ = [2; 3; 4] |}]
 ;;
 
 let%expect_test "append_function" =
   pp_parse
-    "let rec append xs ys = match xs with | [] -> ys | h::t -> h::append t ys in append \
-     [1;2] [3;4]";
+    {|let rec append xs ys = match xs with | [] -> ys | h::t -> h::append t ys in append
+     [1;2] [3;4] |};
   [%expect {|
     _ = [1; 2; 3; 4] |}]
 ;;
@@ -1299,29 +1299,29 @@ in
 
 let%expect_test "iter_function" =
   pp_parse
-    "let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter \
-     print_int [1;2;3]";
+    {| let rec iter f xs = match xs with [] -> () | h::tl -> let () = f h in iter
+     print_int [1;2;3]|};
   [%expect {|
 val iter = <fun>
 |}]
 ;;
 
 let%expect_test "list_basic" =
-  pp_parse "let lst = 1 :: 2 :: 3 :: [] in lst";
+  pp_parse {|let lst = 1 :: 2 :: 3 :: [] in lst|};
   [%expect {|
     _ = [1; 2; 3] |}]
 ;;
 
 let%expect_test "list_match" =
-  pp_parse "match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h";
+  pp_parse {|match 1 :: 2 :: 3 :: [] with | [] -> 0 | h :: _ -> h|};
   [%expect {|
     _ = 1 |}]
 ;;
 
 let%expect_test "list_append" =
   pp_parse
-    "let append xs ys = match xs with | [] -> ys | h :: t -> h :: append t ys in append \
-     [1; 2] [3; 4]";
+    {|let append xs ys = match xs with | [] -> ys | h :: t -> h :: append t ys in append
+     [1; 2] [3; 4]|};
   [%expect {|
     _ = [1; 2; 3; 4] |}]
 ;;

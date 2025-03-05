@@ -576,18 +576,31 @@ let pstradt =
   in
   let* type_name = pass_ws *> pident_lc in
   let var =
-    let* cname = pass_ws *> pident_cap in
-    let* ctype =
-      option
-        None
-        (let* _ = token "of" in
-         let* types = sep_by (token "*") ptype_adt in
-         match types with
-         | x :: y :: xs -> return (Some (TypeExpr.Type_tuple (x, y, xs)))
-         | [ x ] -> return (Some x)
-         | [] -> return None)
-    in
-    return (cname, ctype)
+    let* name = option None (pass_ws *> pident_cap >>= fun n -> return (Some n)) in
+    match name with
+    | Some x ->
+      (* Constructor case: Can have "of" *)
+      let* ctype =
+        option
+          None
+          (token "of"
+           *> let* types = sep_by (token "*") ptype_adt in
+              match types with
+              | x :: y :: xs -> return (Some (TypeExpr.Type_tuple (x, y, xs)))
+              | [ x ] -> return (Some x)
+              | [] -> fail "Expected type after 'of'")
+      in
+      return (x, ctype)
+    | None ->
+      (* Lowercase type alias case: Must have a type expression *)
+      let* ctype =
+        let* types = sep_by (token "*") ptype_adt in
+        match types with
+        | x :: y :: xs -> return (Some (TypeExpr.Type_tuple (x, y, xs))) (* Tuple case *)
+        | [ x ] -> return (Some x) (* Single type *)
+        | [] -> fail "Expected type definition"
+      in
+      return ("", ctype)
   in
   let* _ = token "=" in
   let* fvar =
