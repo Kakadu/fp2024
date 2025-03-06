@@ -74,6 +74,7 @@ type expression =
   (* | EFunction of case * case list (* function *) *)
   | EApply of expression * expression (* f x *)
   | ELet of rec_flag * value_binding * value_binding list * expression
+  | EType of expression * core_type
 (* let x = 23 in x *)
 (* | ECons of expression * expression *)
 [@@deriving show { with_path = false }]

@@ -8,7 +8,7 @@ open MiniML.Ast
 let test_parser s =
   match parse s with
   | Ok s -> print_endline (show_program s)
-  | Error e -> print_endline "Parsing error"
+  | Error _ -> print_endline "Parsing error"
 ;;
 
 let%expect_test "parse simple let" =
@@ -223,7 +223,8 @@ let%expect_test "parse tuple inn" =
 
 let%expect_test "parse tuple pat" =
   test_parser "let (a, b) = (6, 9)";
-  [%expect {|
+  [%expect
+    {|
     [(SValue (Nonrecursive,
         ((PTuple ((PVar "a"), (PVar "b"), [])),
          (ETuple ((EConst (CInt 6)), (EConst (CInt 9)), []))),
@@ -267,7 +268,8 @@ let%expect_test "parse list list" =
 
 let%expect_test "parse list pat" =
   test_parser "let [a] = [6]";
-  [%expect {|
+  [%expect
+    {|
     [(SValue (Nonrecursive, ((PList [(PVar "a")]), (EList [(EConst (CInt 6))])),
         []))
       ]|}]
