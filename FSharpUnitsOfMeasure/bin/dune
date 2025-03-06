@@ -1,9 +1,0 @@
-(executable
- (name main)
- (public_name main)
- (libraries ast)
- (instrumentation
-  (backend bisect_ppx)))
-
-(cram
- (deps ./main.exe %{bin:main}))
