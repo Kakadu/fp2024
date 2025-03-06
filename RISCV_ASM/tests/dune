@@ -5,3 +5,7 @@
 (cram
  (applies_to qc)
  (deps ../quickcheck/quickcheck.exe))
+
+(cram
+ (applies_to io_test)
+ (deps ../repl/REPL.exe ../examples/io/io.s))
