@@ -3,6 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
+open Base
 
 (* ========== errors ========== *)
 
@@ -24,7 +25,8 @@ type value =
   | VString of string
   | VBool of bool
   | VTuple of value * value * value list
-  | VFun of rec_flag * pattern * pattern list * expression * environment
+  | VFun of rec_flag * pattern * expression * environment
+  | VFunMutual of rec_flag * pattern * expression * environment
   | VList of value list
   | VOption of value option
   | VUnit
@@ -65,41 +67,216 @@ module Evaluate (M : Monad) = struct
   open M
   open Environment (M)
 
-  (* let eval_nonrec_bs env bl =
+  let rec match_pattern env = function
+    | PAny, _ -> Some env
+    | PConst (CInt i1), VInt i2 when i1 = i2 -> Some env
+    | PConst (CBool b1), VBool b2 when Bool.equal b1 b2 -> Some env
+    | PConst CUnit, VUnit -> Some env
+    | PVar x, v -> Some (extend env x v)
+    | PTuple (p1, p2, prest), VTuple (v1, v2, vrest) ->
+      match_pattern_list env (p1 :: p2 :: prest) (v1 :: v2 :: vrest)
+    | PList pl, VList vl -> match_pattern_list env pl vl
+    | _ -> None
 
-     let eval_rec_bs env bl =
-     let* env2 =
-     Base.List.fold_left
-     ~f:(fun env b ->
-     let* env = env in
-     let p, e = b in
-     match p with
-     | PVar name ->
-     (match e with
-     | EFun (p1, e1) ->
-     return (extend env name (VFun (p1, Rec, e1, env)))
-     | _ -> return env)
-     | _ -> return env)
-     ~init:(return env)
-     bl
-     in
-     return env2 *)
+  and match_pattern_list env patterns values =
+    if List.length patterns <> List.length values
+    then None
+    else (
+      let f1 acc (p, v) =
+        match acc with
+        | None -> None
+        | Some env' -> match_pattern env' (p, v)
+      in
+      let rec zip l1 l2 =
+        match l1, l2 with
+        | [], [] -> []
+        | x :: xs, y :: ys -> (x, y) :: zip xs ys
+        | _ -> failwith ""
+      in
+      List.fold_left ~f:f1 ~init:(Some env) (zip patterns values))
+  ;;
 
-  (* let eval_structure_item env = function
-     | SValue (Nonrecursive, b, bl) -> eval_nonrec_bs env (b :: bl)
-     | SValue (Recursive, b, bl) -> eval_rec_bs env (b :: bl)
-     ;;
+  let rec eval_expression env = function
+    | EConst c ->
+      (match c with
+       | CInt i -> return (VInt i)
+       | CBool b -> return (VBool b)
+       | CUnit -> return VUnit)
+    | EVar x ->
+      let* v = find env x in
+      let v =
+        match v with
+        | VFun (Recursive, p, e, env) -> VFun (Recursive, p, e, extend env x v)
+        | _ -> v
+      in
+      return v
+    | EBinary (op, e1, e2) ->
+      let* v1 = eval_expression env e1 in
+      let* v2 = eval_expression env e2 in
+      (match op, v1, v2 with
+       | Add, VInt x, VInt y -> return (VInt (x + y))
+       | Sub, VInt x, VInt y -> return (VInt (x - y))
+       | Mul, VInt x, VInt y -> return (VInt (x * y))
+       | Div, VInt x, VInt y -> return (VInt (x / y))
+       | Lt, VInt x, VInt y -> return (VBool (x < y))
+       | Gt, VInt x, VInt y -> return (VBool (x > y))
+       | Eq, VInt x, VInt y -> return (VBool (x = y))
+       | NEq, VInt x, VInt y -> return (VBool (x <> y))
+       | Lte, VInt x, VInt y -> return (VBool (x <= y))
+       | Gte, VInt x, VInt y -> return (VBool (x >= y))
+       | And, VBool x, VBool y -> return (VBool (x && y))
+       | Or, VBool x, VBool y -> return (VBool (x || y))
+       | _ -> fail TypeMissmatch)
+    | EUnary (op, e) ->
+      let* v = eval_expression env e in
+      (match op, v with
+       | Pos, VInt x -> return (VInt (+x))
+       | Neg, VInt x -> return (VInt (-x))
+       | _ -> fail TypeMissmatch)
+    | EIf (i, t, e) ->
+      let* cv = eval_expression env i in
+      (match cv with
+       | VBool true -> eval_expression env t
+       | VBool false ->
+         (match e with
+          | Some e -> eval_expression env e
+          | None -> return VUnit)
+       | _ -> fail TypeMissmatch)
+    | ELet (Nonrecursive, b, bl, e) ->
+      let bindings = b :: bl in
+      let* env2 = eval_nonrec_bs env bindings in
+      eval_expression env2 e
+    | ELet (Recursive, (PVar x, e1), [], e) ->
+      let* v = eval_expression env e1 in
+      let env1 = extend env x v in
+      let v =
+        match v with
+        | VFun (_, p, e, _) -> VFun (Recursive, p, e, env1)
+        | _ -> v
+      in
+      let env2 = extend env x v in
+      eval_expression env2 e
+    | ELet (Recursive, b, bl, e) ->
+      let bindings = b :: bl in
+      let* env2 = eval_rec_bs env bindings in
+      eval_expression env2 e
+    | EFun (p, e) -> return (VFun (Nonrecursive, p, e, env))
+    | EApply (e1, e2) ->
+      let* v1 = eval_expression env e1 in
+      let* v2 = eval_expression env e2 in
+      (match v1 with
+       | VFun (_, p, e, env) ->
+         let* env' =
+           match match_pattern env (p, v2) with
+           | Some env -> return env
+           | None -> fail TypeMissmatch
+         in
+         eval_expression env' e
+       | VFunMutual (_, p, e, _) ->
+         let* env' =
+           match match_pattern env (p, v2) with
+           | Some env -> return env
+           | None -> fail TypeMissmatch
+         in
+         eval_expression env' e
+       | VPrintInt ->
+         (match v1 with
+          | VInt i ->
+            print_int i;
+            return VUnit
+          | _ -> fail TypeMissmatch)
+       | _ -> fail TypeMissmatch)
+    | ETuple (e1, e2, el) ->
+      let* v1 = eval_expression env e1 in
+      let* v2 = eval_expression env e2 in
+      let* vl =
+        Base.List.fold_left
+          ~f:(fun acc e ->
+            let* acc = acc in
+            let* v = eval_expression env e in
+            return (v :: acc))
+          ~init:(return [])
+          el
+      in
+      return (VTuple (v1, v2, List.rev vl))
+    | EList el ->
+      let rec eval_list_elements env = function
+        | [] -> return []
+        | e :: es ->
+          let* v = eval_expression env e in
+          let* vs = eval_list_elements env es in
+          return (v :: vs)
+      in
+      let* vl = eval_list_elements env el in
+      return (VList vl)
+    | EOption opt_expr ->
+      (match opt_expr with
+       | None -> return (VOption None)
+       | Some e ->
+         let* v = eval_expression env e in
+         return (VOption (Some v)))
+    | EType (e, _) -> eval_expression env e
 
-     let eval_program (p : program) =
-     List.fold_left
-     ~f:(fun env structure_item ->
-     let* env = env in
-     let* env = eval_structure_item env structure_item in
-     return env)
-     ~init:(return empty)
-     p
-     ;; *)
+  and eval_rec_bs env bl =
+    let* env2 =
+      Base.List.fold_left
+        ~f:(fun env b ->
+          let* env = env in
+          let p, e = b in
+          match p with
+          | PVar name ->
+            (match e with
+             | EFun (p1, e1) ->
+               return (extend env name (VFunMutual (Recursive, p1, e1, env)))
+             | _ -> return env)
+          | _ -> return env)
+        ~init:(return env)
+        bl
+    in
+    return env2
+
+  and eval_nonrec_bs env bl =
+    let* env2 =
+      List.fold_left
+        ~f:(fun env b ->
+          let* env = env in
+          let p, e = b in
+          match p with
+          | PVar name ->
+            let* v = eval_expression env e in
+            return (extend env name v)
+          | PType (PVar name, _) ->
+            let* v = eval_expression env e in
+            return (extend env name v)
+          | PAny ->
+            let _ = eval_expression env e in
+            return env
+          | PConst CUnit ->
+            let _ = eval_expression env e in
+            return env
+          | PTuple (p1, p2, pl) -> return env (* TODO *)
+          | _ -> return env)
+        ~init:(return env)
+        bl
+    in
+    return env2
+  ;;
+
+  let eval_structure_item env = function
+    | SValue (Nonrecursive, b, bl) -> eval_nonrec_bs env (b :: bl)
+    | SValue (Recursive, b, bl) -> eval_rec_bs env (b :: bl)
+  ;;
+
+  let eval_program (p : program) =
+    List.fold_left
+      ~f:(fun env structure_item ->
+        let* env = env in
+        let* env = eval_structure_item env structure_item in
+        return env)
+      ~init:(return empty)
+      p
+  ;;
 end
-(*
-   let initial_environment = Environment.extend Environment.empty "print_int" VPrintInt
-   let interpret_structure_item = Evaluate.eval_structure_item initial_environment *)
+
+let initial_environment = Environment.extend Environment.empty "print_int" VPrintInt
+let interpret_structure_item = Evaluate.eval_structure_item initial_environment
