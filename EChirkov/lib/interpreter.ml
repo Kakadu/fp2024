@@ -180,7 +180,7 @@ module Evaluate (M : Monad) = struct
          in
          eval_expression env' e
        | VPrintInt ->
-         (match v1 with
+         (match v2 with
           | VInt i ->
             print_int i;
             return VUnit
@@ -251,7 +251,7 @@ module Evaluate (M : Monad) = struct
           | PAny ->
             let _ = eval_expression env e in
             return env
-          | PConst CUnit ->
+          | PConst CUnit | PUnit ->
             let _ = eval_expression env e in
             return env
           | PTuple (p1, p2, pl) -> return env (* TODO *)
@@ -262,7 +262,9 @@ module Evaluate (M : Monad) = struct
     return env2
   ;;
 
-  let eval_structure_item env = function
+  let eval_structure_item env s =
+    let env = extend env "print_int" VPrintInt in
+    match s with
     | SValue (Nonrecursive, b, bl) -> eval_nonrec_bs env (b :: bl)
     | SValue (Recursive, b, bl) -> eval_rec_bs env (b :: bl)
   ;;
@@ -278,5 +280,10 @@ module Evaluate (M : Monad) = struct
   ;;
 end
 
-let initial_environment = Environment.extend Environment.empty "print_int" VPrintInt
-let interpret_structure_item = Evaluate.eval_structure_item initial_environment
+module Interpret = Evaluate (struct
+    include Result
+
+    let ( let* ) m f = bind m ~f
+  end)
+
+let interpret = Interpret.eval_program
