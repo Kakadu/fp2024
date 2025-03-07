@@ -131,7 +131,11 @@ let p_pattern =
   @@ fun p ->
   let term =
     choice
-      [ (p_variable >>| fun v -> PVar v); (p_unit >>| fun _ -> PUnit); p_plist p; p_any ]
+      [ (p_variable >>| fun v -> PVar v)
+      ; (p_unit >>| fun _ -> PConst CUnit)
+      ; p_plist p
+      ; p_any
+      ]
   in
   let tuples = p_ptuple term <|> term in
   tuples

@@ -39,17 +39,17 @@ let%expect_test "parse factorial function" =
 
 let%expect_test "parse int" =
   test_parser "let () = 23";
-  [%expect {|[(SValue (Nonrecursive, (PUnit, (EConst (CInt 23))), []))]|}]
+  [%expect {|[(SValue (Nonrecursive, ((PConst CUnit), (EConst (CInt 23))), []))]|}]
 ;;
 
 let%expect_test "parse bool t" =
   test_parser "let () = true";
-  [%expect {|[(SValue (Nonrecursive, (PUnit, (EConst (CBool true))), []))]|}]
+  [%expect {|[(SValue (Nonrecursive, ((PConst CUnit), (EConst (CBool true))), []))]|}]
 ;;
 
 let%expect_test "parse bool f" =
   test_parser "let () = false";
-  [%expect {|[(SValue (Nonrecursive, (PUnit, (EConst (CBool false))), []))]|}]
+  [%expect {|[(SValue (Nonrecursive, ((PConst CUnit), (EConst (CBool false))), []))]|}]
 ;;
 
 (* ========== bop ========== *)
@@ -59,7 +59,8 @@ let%expect_test "parse compare int" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (Gt, (EConst (CInt 2)), (EConst (CInt 56))))), []))
+        ((PConst CUnit), (EBinary (Gt, (EConst (CInt 2)), (EConst (CInt 56))))),
+        []))
       ]|}]
 ;;
 
@@ -68,7 +69,8 @@ let%expect_test "parse compare int" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (Lt, (EConst (CInt 2)), (EConst (CInt 56))))), []))
+        ((PConst CUnit), (EBinary (Lt, (EConst (CInt 2)), (EConst (CInt 56))))),
+        []))
       ]|}]
 ;;
 
@@ -77,7 +79,7 @@ let%expect_test "parse compare int" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (Gte, (EConst (CInt 2)), (EConst (CInt 56))))),
+        ((PConst CUnit), (EBinary (Gte, (EConst (CInt 2)), (EConst (CInt 56))))),
         []))
       ]|}]
 ;;
@@ -87,7 +89,7 @@ let%expect_test "parse compare int" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (Lte, (EConst (CInt 2)), (EConst (CInt 56))))),
+        ((PConst CUnit), (EBinary (Lte, (EConst (CInt 2)), (EConst (CInt 56))))),
         []))
       ]|}]
 ;;
@@ -97,7 +99,8 @@ let%expect_test "parse compare int" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (Eq, (EConst (CInt 2)), (EConst (CInt 56))))), []))
+        ((PConst CUnit), (EBinary (Eq, (EConst (CInt 2)), (EConst (CInt 56))))),
+        []))
       ]|}]
 ;;
 
@@ -106,7 +109,7 @@ let%expect_test "parse compare int" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (NEq, (EConst (CInt 2)), (EConst (CInt 56))))),
+        ((PConst CUnit), (EBinary (NEq, (EConst (CInt 2)), (EConst (CInt 56))))),
         []))
       ]|}]
 ;;
@@ -116,7 +119,8 @@ let%expect_test "parse compare and" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (And, (EConst (CBool true)), (EConst (CBool false))))),
+        ((PConst CUnit),
+         (EBinary (And, (EConst (CBool true)), (EConst (CBool false))))),
         []))
       ]|}]
 ;;
@@ -126,7 +130,8 @@ let%expect_test "parse compare or" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EBinary (Or, (EConst (CBool false)), (EConst (CBool true))))),
+        ((PConst CUnit),
+         (EBinary (Or, (EConst (CBool false)), (EConst (CBool true))))),
         []))
       ]|}]
 ;;
@@ -137,7 +142,9 @@ let%expect_test "parse neg" =
   test_parser "let () = (-1)";
   [%expect
     {|
-    [(SValue (Nonrecursive, (PUnit, (EUnary (Neg, (EConst (CInt 1))))), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EUnary (Neg, (EConst (CInt 1))))),
+        []))
+      ]|}]
 ;;
 
 let%expect_test "parse neg apply" =
@@ -145,7 +152,8 @@ let%expect_test "parse neg apply" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EApply ((EVar "asd"), (EUnary (Neg, (EConst (CInt 1))))))),
+        ((PConst CUnit),
+         (EApply ((EVar "asd"), (EUnary (Neg, (EConst (CInt 1))))))),
         []))
       ]|}]
 ;;
@@ -155,7 +163,7 @@ let%expect_test "parse neg pos" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit,
+        ((PConst CUnit),
          (EBinary (Add, (EUnary (Neg, (EConst (CInt 1)))),
             (EUnary (Pos, (EConst (CInt 5))))))),
         []))
@@ -169,7 +177,8 @@ let%expect_test "parse tuple 2" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (ETuple ((EConst (CInt 12)), (EConst (CInt 23)), []))), []))
+        ((PConst CUnit), (ETuple ((EConst (CInt 12)), (EConst (CInt 23)), []))),
+        []))
       ]|}]
 ;;
 
@@ -178,7 +187,7 @@ let%expect_test "parse tuple 3" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit,
+        ((PConst CUnit),
          (ETuple ((EConst (CInt 12)), (EConst (CInt 23)), [(EConst (CInt 45))]))),
         []))
       ]|}]
@@ -189,7 +198,7 @@ let%expect_test "parse tuple 2 d" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (ETuple ((EConst (CInt 12)), (EConst (CBool true)), []))),
+        ((PConst CUnit), (ETuple ((EConst (CInt 12)), (EConst (CBool true)), []))),
         []))
       ]|}]
 ;;
@@ -199,7 +208,7 @@ let%expect_test "parse tuple 3 d" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit,
+        ((PConst CUnit),
          (ETuple ((EConst (CInt 12)), (EConst (CBool true)), [(EConst CUnit)]))),
         []))
       ]|}]
@@ -210,7 +219,7 @@ let%expect_test "parse tuple inn" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit,
+        ((PConst CUnit),
          (ETuple ((ETuple ((EConst (CInt 12)), (EConst (CInt 23)), [])),
             (EConst (CInt 45)),
             [(ETuple ((EConst (CInt 345)), (EConst (CBool false)),
@@ -237,13 +246,13 @@ let%expect_test "parse tuple pat" =
 let%expect_test "parse list empty" =
   test_parser "let () = []";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EList [])), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EList [])), []))]|}]
 ;;
 
 let%expect_test "parse list 1" =
   test_parser "let () = [23]";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EList [(EConst (CInt 23))])), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EList [(EConst (CInt 23))])), []))]|}]
 ;;
 
 let%expect_test "parse list 2" =
@@ -251,7 +260,8 @@ let%expect_test "parse list 2" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit, (EList [(EConst (CInt 23)); (EConst (CInt 45))])), []))
+        ((PConst CUnit), (EList [(EConst (CInt 23)); (EConst (CInt 45))])),
+        []))
       ]|}]
 ;;
 
@@ -260,7 +270,7 @@ let%expect_test "parse list list" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit,
+        ((PConst CUnit),
          (EList [(EList [(EConst (CInt 234)); (EConst (CInt 456))]); (EList [])])),
         []))
       ]|}]
@@ -280,19 +290,19 @@ let%expect_test "parse list pat" =
 let%expect_test "parse option var" =
   test_parser "let () = Some x";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EOption (Some (EVar "x")))), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EOption (Some (EVar "x")))), []))]|}]
 ;;
 
 let%expect_test "parse option p var" =
   test_parser "let () = Some (x)";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EOption (Some (EVar "x")))), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EOption (Some (EVar "x")))), []))]|}]
 ;;
 
 let%expect_test "parse option none" =
   test_parser "let () = None";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EOption None)), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EOption None)), []))]|}]
 ;;
 
 (* ========== vars ========== *)
@@ -300,13 +310,13 @@ let%expect_test "parse option none" =
 let%expect_test "parse var simple" =
   test_parser "let () = asd";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EVar "asd")), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EVar "asd")), []))]|}]
 ;;
 
 let%expect_test "parse var start underscore" =
   test_parser "let () = _asd";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EVar "_asd")), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EVar "_asd")), []))]|}]
 ;;
 
 let%expect_test "parse var underscore fail" =
@@ -318,13 +328,13 @@ let%expect_test "parse var underscore fail" =
 let%expect_test "parse var double underscore not fail" =
   test_parser "let () = __";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EVar "__")), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EVar "__")), []))]|}]
 ;;
 
 let%expect_test "parse underscore number" =
   test_parser "let () = _0kajsndf";
   [%expect {|
-    [(SValue (Nonrecursive, (PUnit, (EVar "_0kajsndf")), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EVar "_0kajsndf")), []))]|}]
 ;;
 
 let%expect_test "parse number" =
@@ -339,7 +349,9 @@ let%expect_test "parse fun simple" =
   test_parser "let () = fun x -> y";
   [%expect
     {|
-    [(SValue (Nonrecursive, (PUnit, (EFun ((PVar "x"), (EVar "y")))), []))]|}]
+    [(SValue (Nonrecursive, ((PConst CUnit), (EFun ((PVar "x"), (EVar "y")))),
+        []))
+      ]|}]
 ;;
 
 (* ========== let ========== *)
@@ -349,7 +361,7 @@ let%expect_test "parse fun simple" =
   [%expect
     {|
     [(SValue (Nonrecursive,
-        (PUnit,
+        ((PConst CUnit),
          (ELet (Nonrecursive, ((PVar "x"), (EConst (CInt 5))), [],
             (ELet (Nonrecursive, ((PVar "y"), (EConst (CInt 2))), [],
                (EBinary (Add, (EVar "x"), (EVar "y")))))

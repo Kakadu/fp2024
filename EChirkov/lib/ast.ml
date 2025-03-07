@@ -51,7 +51,7 @@ type core_type =
 type pattern =
   | PAny (* _ *)
   | PVar of id
-  | PUnit (* () *)
+  (* | PUnit *)
   | PTuple of pattern * pattern * pattern list
   (* | PCons of pattern * pattern (* h :: t *) *)
   | PList of pattern list (* [23; 34] *)
