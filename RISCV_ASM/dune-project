@@ -31,6 +31,7 @@
   ppx_deriving_qcheck
   (odoc :with-doc)
   (ocamlformat :build)
+  containers-data
   ; base
   ; After adding dependencies to 'dune' files and the same dependecies here too
   ))
