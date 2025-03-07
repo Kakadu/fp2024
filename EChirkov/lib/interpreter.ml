@@ -117,7 +117,10 @@ module Evaluate (M : Monad) = struct
        | Add, VInt x, VInt y -> return (VInt (x + y))
        | Sub, VInt x, VInt y -> return (VInt (x - y))
        | Mul, VInt x, VInt y -> return (VInt (x * y))
-       | Div, VInt x, VInt y -> return (VInt (x / y))
+       | Div, VInt x, VInt y ->
+         (match y with
+          | 0 -> fail DivisionByZero
+          | _ -> return (VInt (x / y)))
        | Lt, VInt x, VInt y -> return (VBool (x < y))
        | Gt, VInt x, VInt y -> return (VBool (x > y))
        | Eq, VInt x, VInt y -> return (VBool (x = y))
@@ -249,10 +252,10 @@ module Evaluate (M : Monad) = struct
             let* v = eval_expression env e in
             return (extend env name v)
           | PAny ->
-            let _ = eval_expression env e in
+            let* _ = eval_expression env e in
             return env
-          | PConst CUnit | PUnit ->
-            let _ = eval_expression env e in
+          | PConst CUnit ->
+            let* _ = eval_expression env e in
             return env
           | PTuple (p1, p2, pl) -> return env (* TODO *)
           | _ -> return env)
