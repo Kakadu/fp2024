@@ -21,7 +21,7 @@ type state =
   }
 
 (* Combined monad for errors and state *)
-module type COMBINED_MONAD = sig
+module type CombinedMonadType = sig
   type ('s, 'a) t
 
   val return : 'a -> ('s, 'a) t
@@ -36,7 +36,7 @@ module type COMBINED_MONAD = sig
   end
 end
 
-module CombinedMonad : COMBINED_MONAD
+module CombinedMonad : CombinedMonadType
 
 val interpret : ast -> (state * state, label) result
 val show_state : state -> string
