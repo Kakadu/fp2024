@@ -19,7 +19,7 @@ type state =
   ; program_idx : int64
   }
 
-module type COMBINED_MONAD = sig
+module type CombinedMonadType = sig
   type ('s, 'a) t
 
   val return : 'a -> ('s, 'a) t
@@ -34,7 +34,7 @@ module type COMBINED_MONAD = sig
   end
 end
 
-module CombinedMonad : COMBINED_MONAD = struct
+module CombinedMonad : CombinedMonadType = struct
   type ('s, 'a) t = 's -> ('s * 'a, string) result
 
   let return x s = Ok (s, x)
@@ -1219,7 +1219,115 @@ let%expect_test "test_factorial" =
   | Error e -> print_string ("Error: " ^ e)
 ;;
 
-let%expect_test "test_vector_program_execution" =
+let%expect_test "test_bitmanip" =
+  let program =
+    [ LabelExpr "_start"
+    ; InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
+    ; InstructionExpr (Li (X11, ImmediateAddress32 3))
+    ; InstructionExpr (Sh3add (X12, X10, X11))
+    ; InstructionExpr (Andn (X13, X10, X11))
+    ; InstructionExpr (Adduw (X14, X10, X11))
+    ]
+  in
+  match interpret program with
+  | Ok (_, final_state) ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+      X0: 0
+      X1: 0
+      X2: 0
+      X3: 0
+      X4: 0
+      X5: 0
+      X6: 0
+      X7: 0
+      X8: 0
+      X9: 0
+      X10: 5
+      X11: 3
+      X12: 29
+      X13: 4
+      X14: 8
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 0
+      X29: 0
+      X30: 0
+      X31: 0
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      Integer memory:
+      String memory:
+      Writable:
+      0: false
+      1: false
+      2: false
+      3: false
+      4: false
+      5: false
+      6: false
+      7: false
+      8: false
+      9: false
+      10: false
+      11: false
+      12: false
+      13: false
+      14: false
+      15: false
+      16: false
+      17: false
+      18: false
+      19: false
+      Program index: 24
+    |}]
+  | Error e -> print_string ("Error: " ^ e)
+;;
+
+let%expect_test "test_rvv" =
   let program =
     [ LabelExpr "vector_data"
     ; DirectiveExpr (Word 1)
