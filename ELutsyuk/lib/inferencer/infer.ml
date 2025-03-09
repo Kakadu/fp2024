@@ -108,6 +108,11 @@ let rec inf_pat env = function
         pats
     in
     return (env, ty)
+  | PatType (pat, ty) ->
+    let* env1, ty1 = inf_pat env pat in
+    let* subst = Subst.unify ty1 ty in
+    let env = TypeEnv.apply subst env1 in
+    return (env, Subst.apply subst ty1)
 ;;
 
 (* Returns operands type and result type *)
