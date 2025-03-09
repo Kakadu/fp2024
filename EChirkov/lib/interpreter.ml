@@ -123,6 +123,17 @@ module Evaluate (M : Monad) = struct
           | _ -> return (VInt (x / y)))
        | Lt, VInt x, VInt y -> return (VBool (x < y))
        | Gt, VInt x, VInt y -> return (VBool (x > y))
+       | Eq, VList x, VList y ->
+         let rec eq_list lst1 lst2 =
+           match lst1, lst2 with
+           | [], [] -> true
+           | VInt a :: t1, VInt b :: t2 -> a = b && eq_list t1 t2
+           | VBool a :: t1, VBool b :: t2 ->
+             ((a && b) || ((not a) && not b)) && eq_list t1 t2
+           | VList a :: t1, VList b :: t2 -> eq_list a b && eq_list t1 t2
+           | _ -> false
+         in
+         return (VBool (eq_list x y))
        | Eq, VInt x, VInt y -> return (VBool (x = y))
        | NEq, VInt x, VInt y -> return (VBool (x <> y))
        | Lte, VInt x, VInt y -> return (VBool (x <= y))
