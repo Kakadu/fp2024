@@ -1,4 +1,4 @@
-(** Copyright 2024, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
+(** Copyright 2024-2025, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -438,12 +438,6 @@ let parse_instruction =
        ; parse_string_with_spaces "addi"
          *> lift3
               (fun r1 r2 addr12 -> InstructionExpr (Addi (r1, r2, addr12)))
-              parse_register
-              (char ',' *> parse_register)
-              (char ',' *> parse_address12)
-       ; parse_string_with_spaces "subi"
-         *> lift3
-              (fun r1 r2 addr12 -> InstructionExpr (Subi (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_address12)
@@ -1193,6 +1187,24 @@ let parse_instruction =
        ; parse_string_with_spaces "sh3add.uw"
          *> lift3
               (fun r1 r2 r3 -> InstructionExpr (Sh3adduw (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "andn"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Andn (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "orn"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Orn (r1, r2, r3)))
+              parse_register
+              (char ',' *> parse_register)
+              (char ',' *> parse_register)
+       ; parse_string_with_spaces "xnor"
+         *> lift3
+              (fun r1 r2 r3 -> InstructionExpr (Xnor (r1, r2, r3)))
               parse_register
               (char ',' *> parse_register)
               (char ',' *> parse_register)

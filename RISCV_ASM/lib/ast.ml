@@ -1,4 +1,4 @@
-(** Copyright 2024, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
+(** Copyright 2024-2025, Vyacheslav Kochergin, Roman Mukovenkov, Yuliana Ementyan *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -212,8 +212,6 @@ type instruction =
   | Slt of register * register * register (** Set Less Than. rd = (rs1 < rs2) ? 1 : 0 *)
   | Sltu of register * register * register (** Set Less Than (Unsigned) *)
   | Addi of register * register * address12 (** Addition of Immediate. rd = rs1 + imm *)
-  | Subi of register * register * address12
-  (** Subtraction of Immediate. rd = rs1 - imm *)
   | Xori of register * register * address12 (** XOR with Immediate. rd = rs1 ^ imm *)
   | Ori of register * register * address12 (** OR with Immediate. rd = rs1 | imm *)
   | Andi of register * register * address12 (** AND with Immediate. rd = rs1 & imm *)
@@ -440,6 +438,10 @@ type instruction =
   (** Shift left by 3 and add. rd = rs2 + (rs1 << 3) *)
   | Sh3adduw of register * register * register
   (** Shift unsigned word left by 3 and add. rd = rs2 + (ZEXT(rs1) << 3) *)
+  | Andn of register * register * register
+  (** AND with inverted operand. rd = rs1 & ~rs2 *)
+  | Orn of register * register * register (** OR with inverted operand. rd = rs1 | ~rs2 *)
+  | Xnor of register * register * register (** Exclusive NOR. ~(rs1 ^ rs2) *)
   | Vle32v of vector_register * register * address12
   (** Load Vector from Memory. vle32.v vd, (rs1) *)
   | Vse32v of vector_register * register * address12
