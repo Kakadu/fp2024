@@ -135,6 +135,7 @@ module Evaluate (M : Monad) = struct
          in
          return (VBool (eq_list x y))
        | Eq, VInt x, VInt y -> return (VBool (x = y))
+       | Eq, VBool x, VBool y -> return (VBool ((x && y) || ((not x) && not y)))
        | NEq, VInt x, VInt y -> return (VBool (x <> y))
        | Lte, VInt x, VInt y -> return (VBool (x <= y))
        | Gte, VInt x, VInt y -> return (VBool (x >= y))
