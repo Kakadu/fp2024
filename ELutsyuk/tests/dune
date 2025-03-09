@@ -12,4 +12,4 @@
 
 (cram
  (applies_to testAst)
- (deps ../bin/printAst.exe))
+ (deps ../bin/printFactorialAst.exe))

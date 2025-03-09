@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-  $ ../bin/printAst.exe
+  $ ../bin/printFactorialAst.exe
   [(Binding (Rec,
       { pat = (PatVar "fact");
         expr =

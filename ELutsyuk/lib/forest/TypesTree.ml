@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open InfPrinter
-
 type var = int [@@deriving show { with_path = false }]
 
 type constant =

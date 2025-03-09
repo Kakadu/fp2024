@@ -4,10 +4,12 @@
 
 open Angstrom
 open Forest.Ast
+open Forest.TypesTree
 open PrsAuxilary
 open Constants
 open Patterns
 open Expressions
+open Types
 
 let pp printer parser str =
   match parse_string ~consume:Angstrom.Consume.All parser str with
@@ -365,4 +367,72 @@ let%expect_test "prs_expr_some" =
   pp pp_expr prs_expr "Some  (n - 1) ";
   [%expect {|
     (Option (Some (BinOp (Sub, (Var "n"), (Const (Int 1)))))) |}]
+;;
+
+(* =================================== types =================================== *)
+
+let%expect_test "prs_typ_constant_int" =
+  pp pp_typ prs_typ_constant "int";
+  [%expect {| (TypConst TInt) |}]
+;;
+
+let%expect_test "prs_typ_constant_string" =
+  pp pp_typ prs_typ_constant "string";
+  [%expect {| (TypConst TStr) |}]
+;;
+
+let%expect_test "prs_typ_arrow_simple" =
+  pp pp_typ (prs_typ_arrow prs_typ_constant) "int -> string";
+  [%expect {| (TypArrow ((TypConst TInt), (TypConst TStr))) |}]
+;;
+
+let%expect_test "prs_typ_arrow_nested" =
+  pp pp_typ (prs_typ_arrow prs_typ_constant) "int -> string -> bool";
+  [%expect {| (TypArrow ((TypConst TInt), (TypArrow ((TypConst TStr), (TypConst TBool))))) |}]
+;;
+
+let%expect_test "prs_typ_tup_pair" =
+  pp pp_typ (prs_typ_tup prs_typ_constant) "int * string";
+  [%expect {| (TypTuple [(TypConst TInt); (TypConst TStr)]) |}]
+;;
+
+let%expect_test "prs_typ_tup_triple" =
+  pp pp_typ (prs_typ_tup prs_typ_constant) "int * string * bool";
+  [%expect {| (TypTuple [(TypConst TInt); (TypConst TStr); (TypConst TBool)]) |}]
+;;
+
+let%expect_test "prs_typ_list" =
+  pp pp_typ (prs_typ_list prs_typ_constant) "int list";
+  [%expect {| (TypList (TypConst TInt)) |}]
+;;
+
+let%expect_test "prs_typ_list_nested" =
+  pp pp_typ (prs_typ_list prs_typ_constant) "int list list";
+  [%expect {| (TypList (TypList (TypConst TInt))) |}]
+;;
+
+let%expect_test "prs_typ_option" =
+  pp pp_typ (prs_typ_option prs_typ_constant) "int option";
+  [%expect {| (TypOption (TypConst TInt)) |}]
+;;
+
+let%expect_test "prs_typ_option_nested" =
+  pp pp_typ (prs_typ_option prs_typ_constant) "int option option";
+  [%expect {| (TypOption (TypOption (TypConst TInt))) |}]
+;;
+
+let%expect_test "test_annotate_type_1" =
+  pp pp_expr prs_expr "let sum (x:int) (y:int) = x + y";
+  [%expect
+    {|
+(Let (NonRec,
+   { pat = (PatVar "sum");
+     expr =
+     (Fun ((PatType ((PatVar "x"), (TypConst TInt))),
+        (Fun ((PatType ((PatVar "y"), (TypConst TInt))),
+           (BinOp (Add, (Var "x"), (Var "y")))))
+        ))
+     },
+   [], (Const Unit)))
+|}]
 ;;

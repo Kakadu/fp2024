@@ -4,6 +4,7 @@
 
 open Angstrom
 open Forest.Ast
+open Types
 open Constants
 open PrsAuxilary
 
@@ -60,19 +61,29 @@ let prs_pat_list prs_pat =
   PatList parsed
 ;;
 
+let prs_pat_type prs_pat =
+  round_par
+  @@
+  let* pat = prs_pat in
+  let* _ = token ":" in
+  let+ typ = prs_typ in
+  PatType (pat, typ)
+;;
+
 let prs_pat =
   fix
-  @@ fun prs_pat ->
+  @@ fun pat ->
   let atomary =
     choice
       [ prs_pat_any
       ; prs_pat_var
       ; prs_pat_constant
-      ; round_par prs_pat
-      ; prs_pat_list prs_pat
+      ; round_par pat
+      ; prs_pat_type pat
+      ; prs_pat_list pat
       ]
   in
-  let constructor = prs_pat_cons atomary in
-  let tuple = prs_pat_tuple atomary <|> constructor in
+  let cons = prs_pat_cons atomary in
+  let tuple = prs_pat_tuple atomary <|> cons in
   tuple
 ;;

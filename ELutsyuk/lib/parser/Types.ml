@@ -27,16 +27,16 @@ let prs_typ_tup prs_typ =
   TypTuple (ty1 :: tys)
 ;;
 
-let prs_typ_list prs_typ =
+let rec prs_typ_list prs_typ =
   let* ty = prs_typ in
-  let+ _ = token "list" in
-  TypList ty
+  let* _ = token "list" in
+  prs_typ_list (return (TypList ty)) <|> return (TypList ty)
 ;;
 
-let prs_typ_option prs_typ =
+let rec prs_typ_option prs_typ =
   let* ty = prs_typ in
-  let+ _ = token "option" in
-  TypList ty
+  let* _ = token "option" in
+  prs_typ_option (return (TypOption ty)) <|> return (TypOption ty)
 ;;
 
 let prs_typ =

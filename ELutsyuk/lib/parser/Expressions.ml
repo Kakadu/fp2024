@@ -171,7 +171,7 @@ let prs_expr =
   fix
   @@ fun expr ->
   let atomary =
-    choice [ prs_expr_const; prs_expr_var; prs_expr_type expr; round_par expr ]
+    choice [ prs_expr_const; prs_expr_type expr; prs_expr_var; round_par expr ]
   in
   let unary = prs_expr_unary atomary <|> atomary in
   let apply = prs_expr_app unary <|> unary in

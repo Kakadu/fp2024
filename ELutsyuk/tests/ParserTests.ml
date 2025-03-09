@@ -264,3 +264,15 @@ let%expect_test "parse_099" =
         []))
       ] |}]
 ;;
+
+let%expect_test "test_annotate_type_2" =
+  parse_program "let (a : int list) = 5";
+  [%expect
+    {|
+[(Binding (NonRec,
+    { pat = (PatType ((PatVar "a"), (TypList (TypConst TInt))));
+      expr = (Const (Int 5)) },
+    []))
+  ]
+|}]
+;;

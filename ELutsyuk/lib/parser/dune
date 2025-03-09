@@ -5,7 +5,7 @@
  (public_name ELutsyuk.MiniML_Parser)
  (libraries base angstrom forest)
  (preprocess
-  (pps ppx_expect ppx_deriving.show))
+  (pps ppx_expect))
  (inline_tests)
  (instrumentation
   (backend bisect_ppx)))

@@ -39,6 +39,7 @@ type pat =
   | PatVar of id (** Matches any value and binds it to a variable, e.g. [x]. *)
   | PatTup of pat * pat * pat list (** Matches tuples, e.g. [x, y], [a, b, c]. *)
   | PatList of pat list (**  *)
+  | PatType of pat * typ
 [@@deriving show { with_path = false }]
 
 (** Indicates whether a [let] binding is recursive or non-recursive. *)
