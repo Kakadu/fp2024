@@ -40,3 +40,7 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+
+depexts: [
+  [ "gcc-riscv64-unknown-elf" "qemu-user" ] {os-distribution = "ubuntu"}
+]
