@@ -41,5 +41,5 @@ build: [
   ]
 ]
 depexts: [
-  [ "gcc-riscv64-unknowm-elf" "qemu-user" ] {os-distribution = "ubuntu"}
+  [ "gcc-riscv64-unknown-elf" "qemu-user" ] {os-distribution = "ubuntu"}
 ]
