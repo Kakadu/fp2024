@@ -114,6 +114,9 @@ module Evaluate (M : Monad) = struct
     | VInt x, VInt y -> Some (VBool (x = y))
     | VBool x, VBool y -> Some (VBool ((x && y) || ((not x) && not y)))
     | VOption (Some x), VOption (Some y) -> eq_value x y
+    | VOption None, VOption None
+    | VOption None, VOption (Some _)
+    | VOption (Some _), VOption None -> Some (VBool false)
     | _ -> None
   ;;
 
