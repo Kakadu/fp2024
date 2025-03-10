@@ -98,6 +98,25 @@ module Evaluate (M : Monad) = struct
       List.fold_left ~f:f1 ~init:(Some env) (zip patterns values))
   ;;
 
+  let rec eq_value v1 v2 =
+    match v1, v2 with
+    | VList x, VList y ->
+      let rec eq_list lst1 lst2 =
+        match lst1, lst2 with
+        | [], [] -> true
+        | VInt a :: t1, VInt b :: t2 -> a = b && eq_list t1 t2
+        | VBool a :: t1, VBool b :: t2 ->
+          ((a && b) || ((not a) && not b)) && eq_list t1 t2
+        | VList a :: t1, VList b :: t2 -> eq_list a b && eq_list t1 t2
+        | _ -> false
+      in
+      Some (VBool (eq_list x y))
+    | VInt x, VInt y -> Some (VBool (x = y))
+    | VBool x, VBool y -> Some (VBool ((x && y) || ((not x) && not y)))
+    | VOption (Some x), VOption (Some y) -> eq_value x y
+    | _ -> None
+  ;;
+
   let rec eval_expression env = function
     | EConst c ->
       (match c with
@@ -125,20 +144,17 @@ module Evaluate (M : Monad) = struct
           | _ -> return (VInt (x / y)))
        | Lt, VInt x, VInt y -> return (VBool (x < y))
        | Gt, VInt x, VInt y -> return (VBool (x > y))
-       | Eq, VList x, VList y ->
-         let rec eq_list lst1 lst2 =
-           match lst1, lst2 with
-           | [], [] -> true
-           | VInt a :: t1, VInt b :: t2 -> a = b && eq_list t1 t2
-           | VBool a :: t1, VBool b :: t2 ->
-             ((a && b) || ((not a) && not b)) && eq_list t1 t2
-           | VList a :: t1, VList b :: t2 -> eq_list a b && eq_list t1 t2
-           | _ -> false
-         in
-         return (VBool (eq_list x y))
-       | Eq, VInt x, VInt y -> return (VBool (x = y))
-       | Eq, VBool x, VBool y -> return (VBool ((x && y) || ((not x) && not y)))
-       | NEq, VInt x, VInt y -> return (VBool (x <> y))
+       | Eq, x, y ->
+         (match eq_value x y with
+          | Some v -> return v
+          | None -> fail TypeMissmatch)
+       | NEq, x, y ->
+         (match eq_value x y with
+          | Some v ->
+            (match v with
+             | VBool v -> return (VBool (not v))
+             | _ -> fail TypeMissmatch)
+          | None -> fail TypeMissmatch)
        | Lte, VInt x, VInt y -> return (VBool (x <= y))
        | Gte, VInt x, VInt y -> return (VBool (x >= y))
        | And, VBool x, VBool y -> return (VBool (x && y))
