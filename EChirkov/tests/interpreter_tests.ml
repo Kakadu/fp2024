@@ -101,6 +101,24 @@ let%expect_test "interpret tuple fst" =
     23|}]
 ;;
 
+let%expect_test "interpret tuple multiple patterns" =
+  test_interpreter
+    {|
+    let () =
+    let a, b = 23, 34 in
+    let c, d = a, b in
+    let _ = print_int a in
+    let _ = print_int b in
+    let _ = print_int c in
+    print_int d
+  |};
+  [%expect {|
+    23
+    34
+    23
+    34|}]
+;;
+
 (* ========== list ========== *)
 
 let%expect_test "interpret list empty" =
@@ -111,12 +129,27 @@ let%expect_test "interpret list empty" =
 
 let%expect_test "interpret list 1" =
   test_interpreter "let () = let [a] = [23] in print_int a";
-  [%expect
-    {|
+  [%expect {|
     23|}]
 ;;
 
 (* ========== option ========== *)
+
+let%expect_test "interpret var simple" =
+  test_interpreter
+    {|
+    let x = None 
+    let y = Some 23
+    let z = Some 34
+    let w = Some 23
+    let () = print_int (if y = z then 1 else 0)
+    let () = print_int (if x = y then 1 else 0)
+    let () = print_int (if y = w then 1 else 0)
+    let () = print_int (if x = w then 1 else 0)
+  |};
+  [%expect {|
+    23|}]
+;;
 
 (* ========== vars ========== *)
 
