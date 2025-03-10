@@ -11,11 +11,13 @@ type error =
   | UnboundVariable of string
   | TypeMissmatch
   | DivisionByZero
+  | InvalidPattern
 
 let pp_error = function
   | UnboundVariable s -> "Unbound variable: " ^ s
   | TypeMissmatch -> "Type error"
   | DivisionByZero -> "Division by zero"
+  | InvalidPattern -> "Invalid pattern"
 ;;
 
 (* ========== values ========== *)
@@ -91,7 +93,7 @@ module Evaluate (M : Monad) = struct
         match l1, l2 with
         | [], [] -> []
         | x :: xs, y :: ys -> (x, y) :: zip xs ys
-        | _ -> failwith ""
+        | _ -> failwith "unreachable"
       in
       List.fold_left ~f:f1 ~init:(Some env) (zip patterns values))
   ;;
@@ -171,6 +173,11 @@ module Evaluate (M : Monad) = struct
       in
       let env2 = extend env x v in
       eval_expression env2 e
+      (*  | ELet (Recursive, (p, e1), [], e2) ->
+          let* v = eval_expression env e1 in
+          (match match_pattern env (p, v) with
+          | Some env2 -> eval_expression env2 e2
+          | None -> fail InvalidPattern) *)
     | ELet (Recursive, b, bl, e) ->
       let bindings = b :: bl in
       let* env2 = eval_rec_bs env bindings in
@@ -198,6 +205,8 @@ module Evaluate (M : Monad) = struct
          (match v2 with
           | VInt i ->
             print_int i;
+            print_endline "";
+            (* TODO: think *)
             return VUnit
           | _ -> fail TypeMissmatch)
        | _ -> fail TypeMissmatch)
@@ -256,21 +265,10 @@ module Evaluate (M : Monad) = struct
         ~f:(fun env b ->
           let* env = env in
           let p, e = b in
-          match p with
-          | PVar name ->
-            let* v = eval_expression env e in
-            return (extend env name v)
-          | PType (PVar name, _) ->
-            let* v = eval_expression env e in
-            return (extend env name v)
-          | PAny ->
-            let* _ = eval_expression env e in
-            return env
-          | PConst CUnit ->
-            let* _ = eval_expression env e in
-            return env
-          | PTuple (p1, p2, pl) -> return env (* TODO *)
-          | _ -> return env)
+          let* v = eval_expression env e in
+          match match_pattern env (p, v) with
+          | Some env2 -> return env2
+          | None -> return env)
         ~init:(return env)
         bl
     in
