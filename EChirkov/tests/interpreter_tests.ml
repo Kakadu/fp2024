@@ -148,7 +148,10 @@ let%expect_test "interpret var simple" =
     let () = print_int (if x = w then 1 else 0)
   |};
   [%expect {|
-    23|}]
+    0
+    0
+    1
+    0|}]
 ;;
 
 (* ========== vars ========== *)
