@@ -15,6 +15,8 @@ module VarSet = struct
   ;;
 end
 
+(* let binder_to_alpha (b : fresh) TODO *)
+
 type error =
   | OccursCheck of binder * core_type
   | NoVariable of id
@@ -22,16 +24,15 @@ type error =
   | InvalidLeftHandSide
   | InvalidRightHandSide
 
-let pp_error ppf : error -> _ =
-  let open Stdlib.Format in
-  function
-  | OccursCheck (v, t) -> fprintf ppf "Occurs check: " (* TODO *)
-  | NoVariable s -> fprintf ppf "Undefined variable '%s'" s
+let pp_error = function
+  | OccursCheck (v, t) -> "Occurs check: " (* TODO *)
+  | NoVariable s -> "Undefined variable '" ^ s ^ "'"
   | UnificationFailed (l, r) ->
     (* TODO *)
-    fprintf ppf "unification failed on _ and _" (* pp_ty l pp_ty r *)
-  | InvalidLeftHandSide -> fprintf ppf "Invalid left hand side"
-  | InvalidRightHandSide -> fprintf ppf "Invalid right hand side"
+    "unification failed on _ and _"
+    (* pp_ty l pp_ty r *)
+  | InvalidLeftHandSide -> "Invalid left hand side"
+  | InvalidRightHandSide -> "Invalid right hand side"
 ;;
 
 module Result : sig
@@ -590,8 +591,6 @@ let infer_program p =
 
 (* ========== print ========== *)
 
-(* let binder_to_alpha (b : fresh) TODO *)
-
 let rec pp_ty fmt = function
   | TPrim s -> Format.fprintf fmt "%s" s
   | TVar v -> Format.fprintf fmt "'%d" v
@@ -610,7 +609,7 @@ let rec pp_ty fmt = function
   | TList l -> Format.fprintf fmt "%a list" pp_ty l
 ;;
 
-let pp_env env =
+let print_env env =
   Base.Map.iteri env ~f:(fun ~key ~data:(Scheme.S (_, ty)) ->
     if String.equal key "print_int"
     then ()

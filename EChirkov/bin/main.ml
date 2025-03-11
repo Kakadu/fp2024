@@ -7,7 +7,7 @@ open Stdio
 open MiniML.Ast
 open MiniML.Parser
 open MiniML.Interpreter
-(* open MiniML.Inferencer *)
+open MiniML.Inferencer
 
 let usage () =
   printf "Usage: miniML [--interpret | --dump-ast | --infer] <file.ml>\n";
@@ -34,10 +34,12 @@ let () =
      | "--interpret" ->
        (match interpret ast with
         | Ok _ -> ()
-        | Error err -> printf "Interpretation error: %s\n" (pp_error err))
-     (* | "--infer" ->
-        (match inference ast with
-        | Ok _ -> printf "Type inference successful\n"
-        | Error msg -> printf "Type inference error: %s\n" msg) *)
+        | Error err ->
+          printf "Interpretation error: %s\n" (MiniML.Interpreter.pp_error err))
+     | "--infer" ->
+       (match inference ast with
+        | Ok env -> MiniML.Inferencer.print_env env
+        | Error msg ->
+          printf "Type inference error: %s\n" (MiniML.Inferencer.pp_error msg))
      | _ -> usage ())
 ;;
