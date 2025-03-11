@@ -234,8 +234,7 @@ let p_fun e =
 let p_binding expr =
   let* p = p_pattern in
   let* ps = many p_pattern <* token "=" <* ws in
-  let+ e = expr in
-  (* add expr with annotation later here *)
+  let+ e = p_etype expr <|> expr in
   p, List.fold_right ps ~init:e ~f:(fun p e -> EFun (p, e))
 ;;
 
