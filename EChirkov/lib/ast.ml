@@ -56,7 +56,7 @@ type pattern =
   (* | PCons of pattern * pattern (* h :: t *) *)
   | PList of pattern list (* [23; 34] *)
   | PConst of const (* 23 *)
-  (* | POption of pattern option *)
+  | POption of pattern option
   | PType of pattern * core_type
 [@@deriving show { with_path = false }]
 
