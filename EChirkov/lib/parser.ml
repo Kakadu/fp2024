@@ -106,6 +106,41 @@ let p_variable =
   | _ -> fail (pp_error (UnexpectedToken "Expected an identifier"))
 ;;
 
+(* ========== type anonotaions ========== *)
+
+let rec p_tlist t =
+  let* t = t in
+  let* _ = token "list" in
+  p_tlist (return (ty_list t)) <|> return (ty_list t)
+;;
+
+let p_toption t =
+  let* t = t in
+  let* _ = token "option" in
+  return (ty_option t)
+;;
+
+let p_type =
+  let types =
+    choice
+      [ token "int" *> return ty_int
+      ; token "bool" *> return ty_bool
+      ; token "unit" *> return ty_unit
+      ]
+  in
+  let t_list = p_tlist types <|> types in
+  let t_opt = p_toption t_list <|> t_list in
+  t_opt
+;;
+
+let p_ptype p =
+  let* pat = ws *> token "(" *> p in
+  let* annot = ws *> token ":" *> ws *> p_type <* ws <* token ")" in
+  return (PType (pat, annot))
+;;
+
+let p_etype e = lift2 (fun e a -> EType (e, a)) (e <* token ":") p_type
+
 (* ========== patterns ========== *)
 
 let p_any = token "_" *> return PAny
@@ -140,13 +175,14 @@ let p_pattern =
     choice
       [ (p_variable >>| fun v -> PVar v)
       ; (p_unit >>| fun _ -> PConst CUnit)
+      ; p_poption p
+      ; p_ptype p
       ; p_plist p
       ; p_any
       ]
   in
   let tuples = p_ptuple term <|> term in
-  let opt = p_poption tuples <|> tuples in
-  opt
+  tuples
 ;;
 
 (* ========== exprs ========== *)
@@ -220,7 +256,8 @@ let p_expression =
   let term = p_variable >>| (fun v -> EVar v) <|> term in
   let term = p_list e <|> term in
   let apply = chainl1 term (return (fun e1 e2 -> EApply (e1, e2))) in
-  let opt = p_option apply <|> apply in
+  let apply_typed = p_etype apply <|> apply in
+  let opt = p_option apply_typed <|> apply_typed in
   let branch = p_branch e <|> opt in
   let unary_op = branch <|> p_unop branch in
   let multiplydivide_op = chainl1 unary_op (p_binop "*" Mul <|> p_binop "/" Div) in
