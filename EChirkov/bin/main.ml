@@ -40,6 +40,6 @@ let () =
        (match inference ast with
         | Ok env -> MiniML.Inferencer.print_env env
         | Error msg ->
-          printf "Type inference error: %s\n" (MiniML.Inferencer.pp_error msg))
+          Format.printf "Type inference error: %a\n" MiniML.Inferencer.pp_error msg)
      | _ -> usage ())
 ;;
