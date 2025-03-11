@@ -126,6 +126,13 @@ let p_plist e =
   token "[" *> sep_by (token ";" *> ws) e <* token "]" >>| fun es -> PList es
 ;;
 
+let p_poption e =
+  choice
+    [ token "None" *> return (POption None)
+    ; (token "Some" *> choice [ parens e; e ] >>| fun e -> POption (Some e))
+    ]
+;;
+
 let p_pattern =
   fix
   @@ fun p ->
@@ -138,7 +145,8 @@ let p_pattern =
       ]
   in
   let tuples = p_ptuple term <|> term in
-  tuples
+  let opt = p_poption tuples <|> tuples in
+  opt
 ;;
 
 (* ========== exprs ========== *)
