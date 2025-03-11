@@ -9,7 +9,7 @@ module Int64Map : Map.S with type key = Int64.t (* used to organize int64 memory
 type state =
   { program : ast
   ; registers : int64 StringMap.t
-  ; vregisters : int64 CCImmutArray.t StringMap.t
+  ; vregisters : int64 list StringMap.t
   ; max_vector_length : int
   ; vector_element_length : int
   ; vector_length : int
