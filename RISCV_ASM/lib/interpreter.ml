@@ -9,7 +9,7 @@ module Int64Map = Map.Make (Int64)
 type state =
   { program : ast
   ; registers : int64 StringMap.t
-  ; vregisters : int64 CCImmutArray.t StringMap.t
+  ; vregisters : int64 list StringMap.t
   ; max_vector_length : int
   ; vector_element_length : int
   ; vector_length : int
@@ -242,7 +242,7 @@ let init_registers =
 let init_vregisters vector_length =
   List.fold_left
     (fun acc reg ->
-      StringMap.add (show_vector_register reg) (CCImmutArray.make vector_length 0L) acc)
+      StringMap.add (show_vector_register reg) (List.init vector_length (fun _ -> 0L)) acc)
     StringMap.empty
     [ V0
     ; V1
@@ -329,7 +329,7 @@ let get_vregister_value vreg =
   let* state = read in
   return
     (StringMap.find_opt (show_vector_register vreg) state.vregisters
-     |> Option.value ~default:(CCImmutArray.make state.vector_length 0L))
+     |> Option.value ~default:(List.init state.vector_length (fun _ -> 0L)))
 ;;
 
 let set_vregister_value vreg value =
@@ -600,6 +600,8 @@ let execute_store_int rs1 rs2 imm size =
   store_memory_int address value size
 ;;
 
+let replace lst idx new_elem = List.mapi (fun i x -> if i = idx then new_elem else x) lst
+
 let execute_vle32v vd rs1 imm =
   let* state = read in
   let* base_address = get_register_value rs1 in
@@ -616,10 +618,10 @@ let execute_vle32v vd rs1 imm =
     then
       let* value = load_memory_int address state.vector_element_length in
       let next_address = Int64.add address (Int64.of_int state.vector_element_length) in
-      load_values next_address (element_idx + 1) (CCImmutArray.set acc element_idx value)
+      load_values next_address (element_idx + 1) (replace acc element_idx value)
     else return acc
   in
-  let initial_array = CCImmutArray.init vector_length (fun _ -> 0L) in
+  let initial_array = List.init vector_length (fun _ -> 0L) in
   let* vector_values = load_values address 0 initial_array in
   set_vregister_value vd vector_values
 ;;
@@ -638,7 +640,7 @@ let execute_vse32v vs rs1 imm =
     let* state = read in
     if element_idx < state.vector_length
     then (
-      let element = CCImmutArray.get vector_value element_idx in
+      let element = List.nth vector_value element_idx in
       let* () = store_memory_int addr element state.vector_element_length in
       store_values (element_idx + 1) (Int64.add addr 4L))
     else return ()
@@ -651,8 +653,7 @@ let execute_vector_arithmetic vd vs1 vs2 op =
   let* vec1 = get_vregister_value vs1 in
   let* vec2 = get_vregister_value vs2 in
   let result =
-    CCImmutArray.init state.vector_length (fun i ->
-      op (CCImmutArray.get vec1 i) (CCImmutArray.get vec2 i))
+    List.init state.vector_length (fun i -> op (List.nth vec1 i) (List.nth vec2 i))
   in
   set_vregister_value vd result
 ;;
@@ -661,9 +662,7 @@ let execute_vector_scalar vd vs1 rs2 op =
   let* state = read in
   let* vec = get_vregister_value vs1 in
   let* scalar = get_register_value rs2 in
-  let result =
-    CCImmutArray.init state.vector_length (fun i -> op (CCImmutArray.get vec i) scalar)
-  in
+  let result = List.init state.vector_length (fun i -> op (List.nth vec i) scalar) in
   set_vregister_value vd result
 ;;
 
@@ -1081,11 +1080,10 @@ let show_state state =
     List.fold_left
       (fun acc vreg ->
         let values =
-          StringMap.find_opt vreg state.vregisters
-          |> Option.value ~default:CCImmutArray.empty
+          StringMap.find_opt vreg state.vregisters |> Option.value ~default:[]
         in
         let values_str =
-          CCImmutArray.fold (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
+          List.fold_left (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
         in
         acc ^ Printf.sprintf "%s: [%s]\n" vreg values_str)
       ""
