@@ -367,6 +367,12 @@ let rec infer_pattern env = function
     let* sub = Subst.unify t1 t in
     let env = TypeEnv.apply sub env1 in
     return (env, Subst.apply sub t1)
+  | POption (Some p) ->
+    let* env1, t1 = infer_pattern env p in
+    return (env1, ty_option t1)
+  | POption None ->
+    let* fresh = fresh_var in
+    return (env, ty_option fresh)
 ;;
 
 let rec infer_expression env = function
@@ -504,7 +510,23 @@ and infer_nonrec_bs env bl =
           let* sub = Subst.unify t1 t2 in
           let env = TypeEnv.apply sub env in
           return env
-        (* TODO: add pattern for options *)
+        | POption (Some (PVar x)) ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          (match t2 with
+           | TOption t ->
+             let sc = generalize env t in
+             let env = TypeEnv.extend env x sc in
+             return env
+           | _ -> return env)
+        | POption None ->
+          let* _, t1 = infer_pattern env p in
+          let* _, t2 = infer_expression env e in
+          let* sub = Subst.unify t1 t2 in
+          let env = TypeEnv.apply sub env in
+          return env
         | PAny ->
           let* s1, _ = infer_expression env e in
           let env = TypeEnv.apply s1 env in
