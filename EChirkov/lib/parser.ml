@@ -290,6 +290,6 @@ let p_structure_item =
 
 let p_program = many p_structure_item <* ws
 
-(* actuall parser function *)
+(* parse *)
 
 let parse s = parse_string ~consume:All p_program s

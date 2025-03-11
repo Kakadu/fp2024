@@ -324,4 +324,6 @@ module Interpret = Evaluate (struct
     let ( let* ) m f = bind m ~f
   end)
 
+(* interpret *)
+
 let interpret = Interpret.eval_program
