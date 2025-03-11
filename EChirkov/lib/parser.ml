@@ -62,7 +62,7 @@ let chainl1 e op =
 ;;
 
 let p_rec_flag =
-  choice [ take_while1 is_ws *> token "rec" *> return Recursive; return Nonrecursive ]
+  choice [ token "rec" *> take_while1 is_ws *> return Recursive; return Nonrecursive ]
 ;;
 
 (* ========== consts ========== *)
