@@ -78,6 +78,12 @@ module Evaluate (M : Monad) = struct
     | PTuple (p1, p2, prest), VTuple (v1, v2, vrest) ->
       match_pattern_list env (p1 :: p2 :: prest) (v1 :: v2 :: vrest)
     | PList pl, VList vl -> match_pattern_list env pl vl
+    | POption None, VOption None -> Some env
+    | POption (Some p), VOption (Some v) ->
+      let env = match_pattern env (p, v) in
+      (match env with
+       | Some env -> Some env
+       | None -> None)
     | _ -> None
 
   and match_pattern_list env patterns values =
