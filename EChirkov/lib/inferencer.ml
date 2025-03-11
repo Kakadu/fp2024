@@ -15,15 +15,6 @@ module VarSet = struct
   ;;
 end
 
-let ty_int = TPrim "int"
-let ty_bool = TPrim "bool"
-let ty_unit = TPrim "unit"
-let ty_arrow (l, r) = TArrow (l, r)
-let ty_var v = TVar v
-let ty_tuple (t1, t2, tl) = TTuple (t1, t2, tl)
-let ty_list l = TList l
-let ty_option o = TOption o
-
 (* let rec pp_ty fmt = function
    | TypeIdentifier s -> Format.fprintf fmt "%s" s
    | TypeVariable v -> Format.fprintf fmt "'%d" v

@@ -48,6 +48,15 @@ type core_type =
   | TOption of core_type
 [@@deriving show { with_path = false }]
 
+let ty_int = TPrim "int"
+let ty_bool = TPrim "bool"
+let ty_unit = TPrim "unit"
+let ty_arrow (l, r) = TArrow (l, r)
+let ty_var v = TVar v
+let ty_tuple (t1, t2, tl) = TTuple (t1, t2, tl)
+let ty_list l = TList l
+let ty_option o = TOption o
+
 type pattern =
   | PAny (* _ *)
   | PVar of id
