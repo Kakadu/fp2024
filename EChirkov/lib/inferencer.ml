@@ -15,32 +15,6 @@ module VarSet = struct
   ;;
 end
 
-(* let rec pp_ty fmt = function
-   | TypeIdentifier s -> Format.fprintf fmt "%s" s
-   | TypeVariable v -> Format.fprintf fmt "'%d" v
-   | ArrowType (l, r) -> Format.fprintf fmt "(%a -> %a)" pp_ty l pp_ty r
-   | TupleType (t1, t2, tl) ->
-   Format.fprintf
-   fmt
-   "(%a * %a%a)"
-   pp_ty
-   t1
-   pp_ty
-   t2
-   (Format.pp_print_list ~pp_sep:(fun _ _ -> Format.fprintf fmt " * ") pp_ty)
-   tl
-   | TypeConstructor (n, t) ->
-   Format.fprintf
-   fmt
-   "%a %s"
-   (fun ppf ty ->
-   match ty with
-   | ArrowType _ -> Format.fprintf ppf "(%a)" pp_ty ty
-   | _ -> Format.fprintf ppf "%a" pp_ty ty)
-   t
-   n
-   ;; *)
-
 type error =
   | OccursCheck of binder * core_type
   | NoVariable of id
@@ -614,4 +588,35 @@ let infer_program p =
     p
 ;;
 
-let inference = infer_program
+(* ========== print ========== *)
+
+(* let binder_to_alpha (b : fresh) TODO *)
+
+let rec pp_ty fmt = function
+  | TPrim s -> Format.fprintf fmt "%s" s
+  | TVar v -> Format.fprintf fmt "'%d" v
+  | TArrow (l, r) -> Format.fprintf fmt "(%a -> %a)" pp_ty l pp_ty r
+  | TTuple (t1, t2, tl) ->
+    Format.fprintf
+      fmt
+      "(%a * %a%a)"
+      pp_ty
+      t1
+      pp_ty
+      t2
+      (Format.pp_print_list ~pp_sep:(fun _ _ -> Format.fprintf fmt " * ") pp_ty)
+      tl
+  | TOption o -> Format.fprintf fmt "%a option" pp_ty o
+  | TList l -> Format.fprintf fmt "%a list" pp_ty l
+;;
+
+let pp_env env =
+  Base.Map.iteri env ~f:(fun ~key ~data:(Scheme.S (_, ty)) ->
+    if String.equal key "print_int"
+    then ()
+    else Stdlib.Format.printf "val %s : %a\n" key pp_ty ty)
+;;
+
+(* inference *)
+
+let inference p = run (infer_program p)
