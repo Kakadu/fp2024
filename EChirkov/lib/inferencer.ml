@@ -319,57 +319,54 @@ let generalize_rec env ty x =
   generalize env ty
 ;;
 
-let infer_pattern =
-  let rec helper env = function
-    | PAny ->
-      let* fresh = fresh_var in
-      return (env, fresh)
-    | PConst c ->
-      (match c with
-       | CInt _ -> return (env, ty_int)
-       | CBool _ -> return (env, ty_bool)
-       | CUnit -> return (env, ty_unit))
-    | PVar x ->
-      let* fresh = fresh_var in
-      let env = TypeEnv.extend env x (Scheme.S (VarSet.empty, fresh)) in
-      return (env, fresh)
-    | PTuple (t1, t2, tl) ->
-      let* _, t1' = helper env t1 in
-      let* _, t2' = helper env t2 in
-      let* tl' =
-        List.fold_right
-          ~f:(fun p acc ->
-            let* acc = acc in
-            let* _, t = helper env p in
-            return (t :: acc))
-          ~init:(return [])
-          tl
-      in
-      return (env, ty_tuple (t1', t2', tl'))
-    | PList [] ->
-      let* fresh = fresh_var in
-      return (env, ty_list fresh)
-    | PList (p1 :: rest) ->
-      let* env1, t1 = helper env p1 in
-      let* env2, t_list =
-        List.fold_left
-          ~f:(fun acc pat ->
-            let* env_acc, _ = acc in
-            let* env_next, t_next = helper env_acc pat in
-            let* sub = Subst.unify t1 t_next in
-            let env_updated = TypeEnv.apply sub env_next in
-            return (env_updated, Subst.apply sub t1))
-          ~init:(return (env1, ty_list t1))
-          rest
-      in
-      return (env2, t_list)
-    | PType (p, t) ->
-      let* env1, t1 = helper env p in
-      let* sub = Subst.unify t1 t in
-      let env = TypeEnv.apply sub env1 in
-      return (env, Subst.apply sub t1)
-  in
-  helper
+let rec infer_pattern env = function
+  | PAny ->
+    let* fresh = fresh_var in
+    return (env, fresh)
+  | PConst c ->
+    (match c with
+     | CInt _ -> return (env, ty_int)
+     | CBool _ -> return (env, ty_bool)
+     | CUnit -> return (env, ty_unit))
+  | PVar x ->
+    let* fresh = fresh_var in
+    let env = TypeEnv.extend env x (Scheme.S (VarSet.empty, fresh)) in
+    return (env, fresh)
+  | PTuple (t1, t2, tl) ->
+    let* _, t1' = infer_pattern env t1 in
+    let* _, t2' = infer_pattern env t2 in
+    let* tl' =
+      List.fold_right
+        ~f:(fun p acc ->
+          let* acc = acc in
+          let* _, t = infer_pattern env p in
+          return (t :: acc))
+        ~init:(return [])
+        tl
+    in
+    return (env, ty_tuple (t1', t2', tl'))
+  | PList [] ->
+    let* fresh = fresh_var in
+    return (env, ty_list fresh)
+  | PList (p1 :: rest) ->
+    let* env1, t1 = infer_pattern env p1 in
+    let* env2, t_list =
+      List.fold_left
+        ~f:(fun acc pat ->
+          let* env_acc, _ = acc in
+          let* env_next, t_next = infer_pattern env_acc pat in
+          let* sub = Subst.unify t1 t_next in
+          let env_updated = TypeEnv.apply sub env_next in
+          return (env_updated, Subst.apply sub t1))
+        ~init:(return (env1, ty_list t1))
+        rest
+    in
+    return (env2, t_list)
+  | PType (p, t) ->
+    let* env1, t1 = infer_pattern env p in
+    let* sub = Subst.unify t1 t in
+    let env = TypeEnv.apply sub env1 in
+    return (env, Subst.apply sub t1)
 ;;
 
 let rec infer_expression env = function
