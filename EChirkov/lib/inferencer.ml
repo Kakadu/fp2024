@@ -15,7 +15,27 @@ module VarSet = struct
   ;;
 end
 
-(* let binder_to_alpha (b : fresh) TODO *)
+type fresh = int
+
+let binder_to_alpha (b : fresh) = Int.to_string b (* TODO *)
+
+let rec pp_ty fmt = function
+  | TPrim s -> Format.fprintf fmt "%s" s
+  | TVar v -> Format.fprintf fmt "'%s" (binder_to_alpha v)
+  | TArrow (l, r) -> Format.fprintf fmt "(%a -> %a)" pp_ty l pp_ty r
+  | TTuple (t1, t2, tl) ->
+    Format.fprintf
+      fmt
+      "(%a * %a%a)"
+      pp_ty
+      t1
+      pp_ty
+      t2
+      (Format.pp_print_list ~pp_sep:(fun _ _ -> Format.fprintf fmt " * ") pp_ty)
+      tl
+  | TOption o -> Format.fprintf fmt "%a option" pp_ty o
+  | TList l -> Format.fprintf fmt "%a list" pp_ty l
+;;
 
 type error =
   | OccursCheck of binder * core_type
@@ -24,15 +44,14 @@ type error =
   | InvalidLeftHandSide
   | InvalidRightHandSide
 
-let pp_error = function
-  | OccursCheck (v, t) -> "Occurs check: " (* TODO *)
-  | NoVariable s -> "Undefined variable '" ^ s ^ "'"
+let pp_error fmt = function
+  | OccursCheck (v, t) ->
+    Format.fprintf fmt "Occurs check: '%s in %a" (binder_to_alpha v) pp_ty t
+  | NoVariable s -> Format.fprintf fmt "Undefined variable '%s'" s
   | UnificationFailed (l, r) ->
-    (* TODO *)
-    "unification failed on _ and _"
-    (* pp_ty l pp_ty r *)
-  | InvalidLeftHandSide -> "Invalid left hand side"
-  | InvalidRightHandSide -> "Invalid right hand side"
+    Format.fprintf fmt "Unification failed: on %a and %a" pp_ty l pp_ty r
+  | InvalidLeftHandSide -> Format.fprintf fmt "Invalid left hand side"
+  | InvalidRightHandSide -> Format.fprintf fmt "Invalid right hand side"
 ;;
 
 module Result : sig
@@ -100,8 +119,6 @@ end = struct
   let fresh : int t = fun last -> last + 1, Result.Ok last
   let run m = snd (m 0)
 end
-
-type fresh = int
 
 module Type = struct
   let rec occurs_in v = function
@@ -590,24 +607,6 @@ let infer_program p =
 ;;
 
 (* ========== print ========== *)
-
-let rec pp_ty fmt = function
-  | TPrim s -> Format.fprintf fmt "%s" s
-  | TVar v -> Format.fprintf fmt "'%d" v
-  | TArrow (l, r) -> Format.fprintf fmt "(%a -> %a)" pp_ty l pp_ty r
-  | TTuple (t1, t2, tl) ->
-    Format.fprintf
-      fmt
-      "(%a * %a%a)"
-      pp_ty
-      t1
-      pp_ty
-      t2
-      (Format.pp_print_list ~pp_sep:(fun _ _ -> Format.fprintf fmt " * ") pp_ty)
-      tl
-  | TOption o -> Format.fprintf fmt "%a option" pp_ty o
-  | TList l -> Format.fprintf fmt "%a list" pp_ty l
-;;
 
 let print_env env =
   Base.Map.iteri env ~f:(fun ~key ~data:(Scheme.S (_, ty)) ->
