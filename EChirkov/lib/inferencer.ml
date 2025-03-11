@@ -186,7 +186,7 @@ end = struct
       | TTuple (t1, t2, tl) -> ty_tuple (helper t1, helper t2, List.map ~f:helper tl)
       | TOption t -> ty_option (helper t)
       | TList t -> ty_list (helper t)
-      | TPrim _ as ty -> ty
+      | TPrim s -> TPrim s
     in
     helper
   ;;
@@ -205,20 +205,18 @@ end = struct
       if List.length t1l <> List.length t2l
       then fail (UnificationFailed (l, r))
       else (
-        let tls = List.zip_exn (t11 :: t12 :: t1l) (t21 :: t22 :: t2l) in
-        let* s =
-          List.fold
-            tls
-            ~f:(fun acc (l, r) ->
-              let* acc = acc in
-              let* u = unify l r in
-              return (u :: acc))
-            ~init:(return [])
+        let rec unify_tuples subst types1 types2 =
+          match types1, types2 with
+          | [], [] -> return subst
+          | t1 :: rest1, t2 :: rest2 ->
+            let* s2 = unify (apply subst t1) (apply subst t2) in
+            let* composed_subst = compose subst s2 in
+            unify_tuples composed_subst rest1 rest2
+          | _, _ -> fail (UnificationFailed (l, r))
         in
-        let composed_tl = compose_all s in
-        composed_tl)
+        unify_tuples empty (t11 :: t12 :: t1l) (t21 :: t22 :: t2l))
     | TOption t1, TOption t2 -> unify t1 t2
-    | _, _ -> fail (UnificationFailed (l, r))
+    | _ -> fail (UnificationFailed (l, r))
 
   and extend k v s =
     match find s k with
@@ -595,7 +593,7 @@ let infer_program p =
     TypeEnv.extend
       TypeEnv.empty
       "print_int"
-      (Scheme.S (VarSet.empty, ty_arrow (ty_int, ty_int)))
+      (Scheme.S (VarSet.empty, ty_arrow (ty_int, ty_unit)))
   in
   List.fold_left
     ~f:(fun acc item ->
