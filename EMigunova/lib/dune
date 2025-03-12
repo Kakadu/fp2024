@@ -1,7 +1,7 @@
 (library
  (name EMigunova_lib)
  (public_name EMigunova.Lib)
- (modules Ast Parse)
+ (modules Ast Parse Inference)
  (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))

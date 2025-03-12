@@ -18,8 +18,12 @@ type ttype =
   | Type_char
   | Type_string
   | Type_unit
+  | Type_var of ident
+  | Type_option of ttype option
   | Type_list of ttype
   | Type_tuple of ttype list
+  | Type_arrow of ttype * ttype
+[@@deriving show { with_path = false }]
 
 type pattern =
   | Pattern_any (** The pattern [ _ ]. *)
@@ -73,6 +77,7 @@ and let_declaration =
 and let_binding =
   | Let_binding of rec_flag * let_declaration * expression
   | Let_rec_and_binding of let_binding list
+[@@deriving show { with_path = false }]
 
 type structure = Structure_items of let_binding list
 [@@deriving show { with_path = false }]
