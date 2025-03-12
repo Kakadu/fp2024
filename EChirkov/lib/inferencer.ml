@@ -4,6 +4,7 @@
 
 open Ast
 open Base
+open List
 
 module VarSet = struct
   include Stdlib.Set.Make (Int)
@@ -78,6 +79,7 @@ module Result : sig
   module RList : sig
     val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
     val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
+    val map : 'a list -> f:('a -> 'b t) -> 'b list t
   end
 
   (** Creation of a fresh name from internal state *)
@@ -134,6 +136,17 @@ end = struct
       Base.List.fold_right xs ~init ~f:(fun x acc ->
         let* acc = acc in
         f x acc)
+    ;;
+
+    let map xs ~f =
+      let open Syntax in
+      let rec helper acc = function
+        | x :: t ->
+          let* res = f x in
+          helper (res :: acc) t
+        | [] -> return (List.rev acc)
+      in
+      helper [] xs
     ;;
   end
 
@@ -428,31 +441,23 @@ let rec infer_expression env = function
     return (sub, t)
   | ELet (Recursive, b, bl, e) ->
     let bindings = b :: bl in
-    let* env2 = infer_rec_bs env bindings in
+    let* env2, s1 = infer_rec_bs env bindings in
     let* s, t = infer_expression env2 e in
-    return (s, t)
+    let* sub = Subst.compose s1 s in
+    return (sub, t)
   | EFun (p, e) ->
     let* _, env, t = infer_pattern env p in
     let* sub, t1 = infer_expression env e in
     return (sub, Subst.apply sub (ty_arrow (t, t1)))
-  | ETuple (t1, t2, tl) ->
-    let* s1, t1 = infer_expression env t1 in
-    let* s2, t2 = infer_expression env t2 in
-    let* s3, t3 =
-      List.fold_right
-        ~f:(fun expr acc ->
-          let* sacc, tacc = acc in
-          let* s, t = infer_expression env expr in
-          let* sacc = Subst.compose sacc s in
-          return (sacc, t :: tacc))
-        ~init:(return (Subst.empty, []))
-        tl
+  | ETuple (e0, e1, exps) ->
+    let* sub0, t0 = infer_expression env e0 in
+    let* sub1, t1 = infer_expression env e1 in
+    let* subs, ts =
+      RList.map exps ~f:(fun e -> infer_expression env e)
+      >>| List.fold_right ~f:(fun (p, e) (ps, es) -> p :: ps, e :: es) ~init:([], [])
     in
-    let* composed_sl = Subst.compose_all [ s1; s2; s3 ] in
-    let t1 = Subst.apply composed_sl t1 in
-    let t2 = Subst.apply composed_sl t2 in
-    let t3 = List.map t3 ~f:(fun t -> Subst.apply s3 t) in
-    return (s3, ty_tuple (t1, t2, t3))
+    let* sub = Subst.compose_all (sub0 :: sub1 :: subs) in
+    return (sub, TTuple (t0, t1, ts))
   | EApply (e1, e2) ->
     let* fresh = fresh_var in
     let* s1, t1 = infer_expression env e1 in
@@ -557,7 +562,7 @@ and infer_rec_bs env bl =
       ~init:(return env0)
       bl
   in
-  return env2
+  return (env2, Subst.empty)
 ;;
 
 let infer_structure_item env = function
@@ -567,7 +572,8 @@ let infer_structure_item env = function
     return env
   | SValue (Recursive, b, bl) ->
     let bindings = b :: bl in
-    infer_rec_bs env bindings
+    let* env, _ = infer_rec_bs env bindings in
+    return env
 ;;
 
 let infer_program p =
