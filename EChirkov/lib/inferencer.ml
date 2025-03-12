@@ -75,6 +75,11 @@ module Result : sig
       -> 'b t
   end
 
+  module RList : sig
+    val fold_left : 'a list -> init:'b t -> f:('b -> 'a -> 'b t) -> 'b t
+    val fold_right : 'a list -> init:'b t -> f:('a -> 'b -> 'b t) -> 'b t
+  end
+
   (** Creation of a fresh name from internal state *)
   val fresh : int t
 
@@ -113,6 +118,22 @@ end = struct
         let open Syntax in
         let* acc = acc in
         f key data acc)
+    ;;
+  end
+
+  module RList = struct
+    let fold_left xs ~init ~f =
+      Base.List.fold_left xs ~init ~f:(fun acc x ->
+        let open Syntax in
+        let* acc = acc in
+        f acc x)
+    ;;
+
+    let fold_right xs ~init ~f =
+      let open Syntax in
+      Base.List.fold_right xs ~init ~f:(fun x acc ->
+        let* acc = acc in
+        f x acc)
     ;;
   end
 
@@ -303,57 +324,60 @@ let generalize_rec env ty x =
 let rec infer_pattern env = function
   | PAny ->
     let* fresh = fresh_var in
-    return (env, fresh)
+    return (Subst.empty, env, fresh)
   | PConst c ->
     (match c with
-     | CInt _ -> return (env, ty_int)
-     | CBool _ -> return (env, ty_bool)
-     | CUnit -> return (env, ty_unit))
+     | CInt _ -> return (Subst.empty, env, ty_int)
+     | CBool _ -> return (Subst.empty, env, ty_bool)
+     | CUnit -> return (Subst.empty, env, ty_unit))
   | PVar x ->
     let* fresh = fresh_var in
     let env = TypeEnv.extend env x (Scheme.S (VarSet.empty, fresh)) in
-    return (env, fresh)
+    return (Subst.empty, env, fresh)
   | PTuple (t1, t2, tl) ->
-    let* _, t1' = infer_pattern env t1 in
-    let* _, t2' = infer_pattern env t2 in
-    let* tl' =
-      List.fold_right
+    let* s1, env1, t1' = infer_pattern env t1 in
+    let* s2, env2, t2' = infer_pattern (TypeEnv.apply s1 env1) t2 in
+    let* sub, tl', env =
+      RList.fold_right
         ~f:(fun p acc ->
-          let* acc = acc in
-          let* _, t = infer_pattern env p in
-          return (t :: acc))
-        ~init:(return [])
+          let sub_prev, acc, env = acc in
+          let* sub_cur, env, t = infer_pattern env p in
+          let* sub = Subst.compose sub_prev sub_cur in
+          return (sub, t :: acc, env))
+        ~init:(return (s2, [], env2))
         tl
     in
-    return (env, ty_tuple (t1', t2', tl'))
+    return (sub, env, ty_tuple (t1', t2', tl'))
   | PList [] ->
     let* fresh = fresh_var in
-    return (env, ty_list fresh)
-  | PList (p1 :: rest) ->
-    let* env1, t1 = infer_pattern env p1 in
-    let* env2, t_list =
-      List.fold_left
-        ~f:(fun acc pat ->
-          let* env_acc, _ = acc in
-          let* env_next, t_next = infer_pattern env_acc pat in
-          let* sub = Subst.unify t1 t_next in
-          let env_updated = TypeEnv.apply sub env_next in
-          return (env_updated, Subst.apply sub t1))
-        ~init:(return (env1, ty_list t1))
-        rest
+    return (Subst.empty, env, ty_list fresh)
+  | PList pl ->
+    let* fresh_el_type = fresh_var in
+    let* final_sub, final_env =
+      RList.fold_left
+        pl
+        ~init:(return (Subst.empty, env))
+        ~f:(fun (sub_acc, env_acc) pat ->
+          let* sub_cur, env_cur, t = infer_pattern env_acc pat in
+          let* unified_sub = Subst.compose sub_acc sub_cur in
+          let* final_sub = Subst.unify (Subst.apply sub_cur fresh_el_type) t in
+          let combined_sub = Subst.compose unified_sub final_sub in
+          let* combined_sub = combined_sub in
+          return (combined_sub, TypeEnv.apply final_sub env_cur))
     in
-    return (env2, t_list)
+    return (final_sub, final_env, TList (Subst.apply final_sub fresh_el_type))
   | PType (p, t) ->
-    let* env1, t1 = infer_pattern env p in
-    let* sub = Subst.unify t1 t in
+    let* s1, env1, t1 = infer_pattern env p in
+    let t = Subst.apply s1 t in
+    let* sub = Subst.unify t t1 in
     let env = TypeEnv.apply sub env1 in
-    return (env, Subst.apply sub t1)
+    return (sub, env, Subst.apply sub t1)
   | POption (Some p) ->
-    let* env1, t1 = infer_pattern env p in
-    return (env1, ty_option t1)
+    let* sub, env1, t1 = infer_pattern env p in
+    return (sub, env1, ty_option t1)
   | POption None ->
     let* fresh = fresh_var in
-    return (env, ty_option fresh)
+    return (Subst.empty, env, ty_option fresh)
 ;;
 
 let rec infer_expression env = function
@@ -404,16 +428,17 @@ let rec infer_expression env = function
     return (sub, Subst.apply sub t2)
   | ELet (Nonrecursive, b, bl, e) ->
     let bindings = b :: bl in
-    let* env2 = infer_nonrec_bs env bindings in
-    let* s, t = infer_expression env2 e in
-    return (s, t)
+    let* env2, s1 = infer_nonrec_bs env bindings in
+    let* s2, t = infer_expression env2 e in
+    let* sub = Subst.compose s1 s2 in
+    return (sub, t)
   | ELet (Recursive, b, bl, e) ->
     let bindings = b :: bl in
     let* env2 = infer_rec_bs env bindings in
     let* s, t = infer_expression env2 e in
     return (s, t)
   | EFun (p, e) ->
-    let* env, t = infer_pattern env p in
+    let* _, env, t = infer_pattern env p in
     let* sub, t1 = infer_expression env e in
     return (sub, Subst.apply sub (ty_arrow (t, t1)))
   | ETuple (t1, t2, tl) ->
@@ -473,67 +498,28 @@ let rec infer_expression env = function
     return (s2, Subst.apply s1 t1)
 
 and infer_nonrec_bs env bl =
-  let* env2 =
+  let* env2, sub2 =
     Base.List.fold_left
-      ~f:(fun env b ->
-        let* env = env in
+      ~f:(fun acc b ->
+        let* env, sub = acc in
         let p, e = b in
-        match p with
-        | PVar x ->
-          let* s, t = infer_expression env e in
-          let env = TypeEnv.apply s env in
-          let sc = generalize env t in
-          let env = TypeEnv.extend env x sc in
-          return env
-        | PConst CUnit ->
-          let* _, t1 = infer_pattern env p in
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t1 t2 in
-          let env = TypeEnv.apply sub env in
-          return env
-        | POption (Some (PVar x)) ->
-          let* _, t1 = infer_pattern env p in
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t1 t2 in
-          let env = TypeEnv.apply sub env in
-          (match t2 with
-           | TOption t ->
-             let sc = generalize env t in
-             let env = TypeEnv.extend env x sc in
-             return env
-           | _ -> return env)
-        | POption None ->
-          let* _, t1 = infer_pattern env p in
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t1 t2 in
-          let env = TypeEnv.apply sub env in
-          return env
-        | PAny ->
-          let* s1, _ = infer_expression env e in
-          let env = TypeEnv.apply s1 env in
-          return env
-        | PTuple _ ->
-          let* _, t1 = infer_pattern env p in
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t1 t2 in
-          let env = TypeEnv.apply sub env in
-          return env
-        | PList _ ->
-          let* _, t1 = infer_pattern env p in
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t1 t2 in
-          let env = TypeEnv.apply sub env in
-          return env
-        | PType (_, t) ->
-          let* _, t2 = infer_expression env e in
-          let* sub = Subst.unify t t2 in
-          let env = TypeEnv.apply sub env in
-          return env
-        | _ -> return env)
-      ~init:(return env)
+        let* s, t = infer_expression env e in
+        let* sub = Subst.compose s sub in
+        let env = TypeEnv.apply sub env in
+        let* env, sub =
+          match p with
+          | PVar x -> return (TypeEnv.extend env x (generalize env t), sub)
+          | _ ->
+            let* _, env, t' = infer_pattern env p in
+            let* sub' = Subst.unify t' t in
+            let* sub = Subst.compose_all [ sub'; sub ] in
+            return (TypeEnv.apply sub env, sub)
+        in
+        return (env, sub))
+      ~init:(return (env, Subst.empty))
       bl
   in
-  return env2
+  return (env2, sub2)
 
 and infer_rec_bs env bl =
   let* env0 =
@@ -580,12 +566,13 @@ and infer_rec_bs env bl =
 ;;
 
 let infer_structure_item env = function
+  | SValue (Nonrecursive, b, bl) ->
+    let bindings = b :: bl in
+    let* env, _ = infer_nonrec_bs env bindings in
+    return env
   | SValue (Recursive, b, bl) ->
     let bindings = b :: bl in
     infer_rec_bs env bindings
-  | SValue (Nonrecursive, b, bl) ->
-    let bindings = b :: bl in
-    infer_nonrec_bs env bindings
 ;;
 
 let infer_program p =
