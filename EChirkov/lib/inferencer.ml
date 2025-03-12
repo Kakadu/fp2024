@@ -366,12 +366,6 @@ let rec infer_pattern env = function
           return (combined_sub, TypeEnv.apply final_sub env_cur))
     in
     return (final_sub, final_env, TList (Subst.apply final_sub fresh_el_type))
-  | PType (p, t) ->
-    let* s1, env1, t1 = infer_pattern env p in
-    let t = Subst.apply s1 t in
-    let* sub = Subst.unify t t1 in
-    let env = TypeEnv.apply sub env1 in
-    return (sub, env, Subst.apply sub t1)
   | POption (Some p) ->
     let* sub, env1, t1 = infer_pattern env p in
     return (sub, env1, ty_option t1)
@@ -494,8 +488,9 @@ let rec infer_expression env = function
     return (Subst.empty, ty_option t)
   | EType (e, t) ->
     let* s1, t1 = infer_expression env e in
-    let* s2 = Subst.unify t t1 in
-    return (s2, Subst.apply s1 t1)
+    let* s2 = Subst.unify t1 t in
+    let* s1 = Subst.compose s2 s1 in
+    return (s1, t1)
 
 and infer_nonrec_bs env bl =
   let* env2, sub2 =
