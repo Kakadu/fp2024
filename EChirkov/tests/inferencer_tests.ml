@@ -4,7 +4,6 @@
 
 open MiniML.Parser
 open MiniML.Inferencer
-open MiniML.Ast
 
 let test_inferencer s =
   match parse s with

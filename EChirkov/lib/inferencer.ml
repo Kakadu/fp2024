@@ -4,7 +4,6 @@
 
 open Ast
 open Base
-open List
 
 module VarSet = struct
   include Stdlib.Set.Make (Int)
