@@ -50,7 +50,7 @@ let%expect_test "inference bop add sub mul div" =
 let%expect_test "inference tuple fst" =
   test_inferencer "let f t = let (x, y) = t in x";
   [%expect {|
-    val f : (('1 * '2) -> '1)|}]
+    val f : ((🍏 * 🍎) -> 🍏)|}]
 ;;
 
 let%expect_test "inference tuple 2" =
@@ -96,10 +96,11 @@ let%expect_test "2+2" =
   let four = plus two two 
   let x = four (fun x -> x + 1) 0
   |};
-  [%expect {|
-    val four : (('15 -> '15) -> ('15 -> '15))
-    val plus : (('6 -> ('10 -> '8)) -> (('6 -> ('7 -> '10)) -> ('6 -> ('7 -> '8))))
-    val two : (('1 -> '1) -> ('1 -> '1))
+  [%expect
+    {|
+    val four : ((🍏 -> 🍏) -> (🍏 -> 🍏))
+    val plus : ((🍏 -> (🍎 -> 🍐)) -> ((🍏 -> (🍊 -> 🍎)) -> (🍏 -> (🍊 -> 🍐))))
+    val two : ((🍏 -> 🍏) -> (🍏 -> 🍏))
     val x : int|}]
 ;;
 
@@ -111,9 +112,10 @@ let%expect_test "2*2" =
   let four = mul two two 
   let x = four (fun x -> x + 1) 0
   |};
-  [%expect {|
-    val four : (('15 -> '15) -> ('15 -> '15))
-    val mul : (('10 -> ('7 -> '8)) -> (('6 -> '10) -> ('6 -> ('7 -> '8))))
-    val two : (('1 -> '1) -> ('1 -> '1))
+  [%expect
+    {|
+    val four : ((🍏 -> 🍏) -> (🍏 -> 🍏))
+    val mul : ((🍏 -> (🍎 -> 🍐)) -> ((🍊 -> 🍏) -> (🍊 -> (🍎 -> 🍐))))
+    val two : ((🍏 -> 🍏) -> (🍏 -> 🍏))
     val x : int|}]
 ;;
