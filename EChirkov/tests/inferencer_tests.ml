@@ -24,17 +24,17 @@ let%expect_test "inference factorial function" =
 
 let%expect_test "inference int" =
   test_inferencer "let x = 2";
-  [%expect {|val factorial : (int -> int)|}]
+  [%expect {|val x : int|}]
 ;;
 
 let%expect_test "inference bool" =
   test_inferencer "let x = true";
-  [%expect {|val factorial : (int -> int)|}]
+  [%expect {|val x : bool|}]
 ;;
 
 let%expect_test "inference unit" =
   test_inferencer "let x = ()";
-  [%expect {|val factorial : (int -> int)|}]
+  [%expect {|val x : unit|}]
 ;;
 
 (* ========== bop ========== *)
@@ -42,7 +42,7 @@ let%expect_test "inference unit" =
 let%expect_test "inference bop add sub mul div" =
   test_inferencer "let x = 23 + 23 - 45 - (2 * 345) / (-98)";
   [%expect {|
-    46|}]
+    val x : int|}]
 ;;
 
 (* ========== tuples ========== *)
@@ -50,19 +50,22 @@ let%expect_test "inference bop add sub mul div" =
 let%expect_test "inference tuple fst" =
   test_inferencer "let f t = let (x, y) = t in x";
   [%expect {|
-    23|}]
+    val f : (('1 * '2) -> '1)|}]
 ;;
 
 let%expect_test "inference tuple 2" =
   test_inferencer "let (x, y) = (23, 12)";
   [%expect {|
-    23|}]
+    val x : int
+    val y : int|}]
 ;;
 
 let%expect_test "inference tuple 3" =
   test_inferencer "let (x, y, z) = (23, 12, true)";
   [%expect {|
-    23|}]
+    val x : int
+    val y : int
+    val z : bool|}]
 ;;
 
 (* ========== list ========== *)
@@ -70,7 +73,7 @@ let%expect_test "inference tuple 3" =
 let%expect_test "inference list pat" =
   test_inferencer "let [a] = [false]";
   [%expect {|
-    1|}]
+    val a : bool|}]
 ;;
 
 (* ========== vars ========== *)
@@ -78,7 +81,9 @@ let%expect_test "inference list pat" =
 let%expect_test "inference var simple" =
   test_inferencer "let a = 23 let b = a let c = b";
   [%expect {|
-    23|}]
+    val a : int
+    val b : int
+    val c : int|}]
 ;;
 
 (* ========== fun ========== *)
@@ -92,7 +97,10 @@ let%expect_test "2+2" =
   let x = four (fun x -> x + 1) 0
   |};
   [%expect {|
-    46|}]
+    val four : (('15 -> '15) -> ('15 -> '15))
+    val plus : (('6 -> ('10 -> '8)) -> (('6 -> ('7 -> '10)) -> ('6 -> ('7 -> '8))))
+    val two : (('1 -> '1) -> ('1 -> '1))
+    val x : int|}]
 ;;
 
 let%expect_test "2*2" =
@@ -104,5 +112,8 @@ let%expect_test "2*2" =
   let x = four (fun x -> x + 1) 0
   |};
   [%expect {|
-    46|}]
+    val four : (('15 -> '15) -> ('15 -> '15))
+    val mul : (('10 -> ('7 -> '8)) -> (('6 -> '10) -> ('6 -> ('7 -> '8))))
+    val two : (('1 -> '1) -> ('1 -> '1))
+    val x : int|}]
 ;;

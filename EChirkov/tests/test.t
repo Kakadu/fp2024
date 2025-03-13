@@ -100,15 +100,15 @@
   val temp : (int * bool)
 
   $ ../bin/main.exe --infer manytests/typed/015tuples.ml
-  val feven : (('31 * (int -> int)) -> (int -> int))
+  val feven : (('31 * ((int -> int))) -> (int -> int))
   val fix : ((('3 -> '4) -> ('3 -> '4)) -> ('3 -> '4))
-  val fixpoly : ((((('25 -> '26) * ('25 -> '26)) -> ('25 -> '26)) * ((('25 -> '26) * ('25 -> '26)) -> ('25 -> '26))) -> (('25 -> '26) * ('25 -> '26)))
-  val fodd : (((int -> int) * '38) -> (int -> int))
+  val fixpoly : ((((((('25 -> '26)) * (('25 -> '26))) -> ('25 -> '26))) * ((((('25 -> '26)) * (('25 -> '26))) -> ('25 -> '26)))) -> ((('25 -> '26)) * (('25 -> '26))))
+  val fodd : ((((int -> int)) * '38) -> (int -> int))
   val main : int
   val map : (('9 -> '11) -> (('9 * '9) -> ('11 * '11)))
   val meven : (int -> int)
   val modd : (int -> int)
-  val tie : ((int -> int) * (int -> int))
+  val tie : (((int -> int)) * ((int -> int)))
 
 
   $ ../bin/main.exe --infer manytests/do_not_type/001.ml
@@ -127,7 +127,7 @@
   Type inference error: Invalid left hand side
 
   $ ../bin/main.exe --infer manytests/do_not_type/016tuples_mismatch.ml
-  Type inference error: Unification failed on ('0 * '1) and (int * intint)
+  Type inference error: Unification failed on ('0 * '1) and (int * int * int)
 
   $ ../bin/main.exe --infer manytests/do_not_type/097fun_vs_list.ml
   Type inference error: Unification failed on '2 list and ('0 -> '0)
