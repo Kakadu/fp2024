@@ -17,25 +17,43 @@ end
 
 type fresh = int
 
-let binder_to_alpha (b : fresh) = Int.to_string b (* TODO *)
+module IntMap = Stdlib.Map.Make (Int)
 
-let rec pp_ty fmt = function
-  | TPrim s -> Format.fprintf fmt "%s" s
-  | TVar v -> Format.fprintf fmt "'%s" (binder_to_alpha v)
-  | TArrow (l, r) -> Format.fprintf fmt "(%a -> %a)" pp_ty l pp_ty r
-  | TTuple (t1, t2, tl) ->
-    Format.fprintf
-      fmt
-      "(%a)"
-      (Format.pp_print_list
-         ~pp_sep:(fun _ _ -> Format.printf " * ")
-         (fun fmt ty ->
-           match ty with
-           | TPrim _ | TVar _ -> Format.fprintf fmt "%a" pp_ty ty
-           | _ -> Format.fprintf fmt "(%a)" pp_ty ty))
-      (t1 :: t2 :: tl)
-  | TOption o -> Format.fprintf fmt "%a option" pp_ty o
-  | TList l -> Format.fprintf fmt "%a list" pp_ty l
+let rec binder_to_alpha b = Int.to_string b
+
+let rec pp_ty fmt ty =
+  let compute_var_mapping =
+    let rec collect_vars acc = function
+      | TPrim _ -> acc
+      | TVar v -> if IntMap.mem v acc then acc else IntMap.add v (IntMap.cardinal acc) acc
+      | TArrow (l, r) -> collect_vars (collect_vars acc l) r
+      | TTuple (t1, t2, tl) ->
+        List.fold_left ~f:collect_vars ~init:(collect_vars (collect_vars acc t1) t2) tl
+      | TOption t -> collect_vars acc t
+      | TList t -> collect_vars acc t
+    in
+    collect_vars IntMap.empty ty
+  in
+  let rec helper var_mappings fmt = function
+    | TPrim s -> Format.fprintf fmt "%s" s
+    | TVar v -> Format.fprintf fmt "'%d" (IntMap.find v var_mappings)
+    | TArrow (l, r) ->
+      Format.fprintf fmt "(%a -> %a)" (helper var_mappings) l (helper var_mappings) r
+    | TTuple (t1, t2, tl) ->
+      Format.fprintf
+        fmt
+        "(%a)"
+        (Format.pp_print_list
+           ~pp_sep:(fun _ _ -> Format.printf " * ")
+           (fun fmt ty ->
+             match ty with
+             | TPrim _ | TVar _ -> Format.fprintf fmt "%a" pp_ty ty
+             | _ -> Format.fprintf fmt "(%a)" pp_ty ty))
+        (t1 :: t2 :: tl)
+    | TOption o -> Format.fprintf fmt "%a option" pp_ty o
+    | TList l -> Format.fprintf fmt "%a list" pp_ty l
+  in
+  helper compute_var_mapping fmt ty
 ;;
 
 type error =
