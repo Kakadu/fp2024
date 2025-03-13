@@ -80,13 +80,8 @@ let%expect_test "interpret neg" =
     Interpretation error: Type error|}]
 ;;
 
-let%expect_test "interpret neg add" =
-  test_interpreter "let () = print_int ((-500) + (+100))";
-  [%expect {|
-    -400|}]
-;;
 
-let%expect_test "interpret neg add no parentheses" =
+let%expect_test "interpret neg add" =
   test_interpreter "let () = print_int (-500 + +100)";
   [%expect {|
     -400|}]
@@ -180,8 +175,26 @@ let%expect_test "interpret fun list" =
 
 (* ========== let ========== *)
 
-let%expect_test "interpret fun simple" =
+let%expect_test "interpret let simple" =
   test_interpreter "let () = let x = 5 in let y = 2 in print_int (x + y)";
   [%expect {|
     7|}]
+;;
+
+let%expect_test "interpret let unbound" =
+  test_interpreter "let () = print_int a";
+  [%expect {|
+    Interpretation error: Unbound variable: a|}]
+;;
+
+let%expect_test "interpret let types" =
+  test_interpreter "let a = 23 and () = print_int (a + false)";
+  [%expect {|
+    Interpretation error: Type error|}]
+;;
+
+let%expect_test "interpret let zero" =
+  test_interpreter "let () = print_int (23 / 0)";
+  [%expect {|
+    Interpretation error: Division by zero|}]
 ;;

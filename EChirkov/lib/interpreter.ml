@@ -11,13 +11,11 @@ type error =
   | UnboundVariable of string
   | TypeMissmatch
   | DivisionByZero
-  | InvalidPattern
 
 let pp_error = function
   | UnboundVariable s -> "Unbound variable: " ^ s
   | TypeMissmatch -> "Type error"
   | DivisionByZero -> "Division by zero"
-  | InvalidPattern -> "Invalid pattern"
 ;;
 
 (* ========== values ========== *)
@@ -198,11 +196,6 @@ module Evaluate (M : Monad) = struct
       in
       let env2 = extend env x v in
       eval_expression env2 e
-      (*  | ELet (Recursive, (p, e1), [], e2) ->
-          let* v = eval_expression env e1 in
-          (match match_pattern env (p, v) with
-          | Some env2 -> eval_expression env2 e2
-          | None -> fail InvalidPattern) *)
     | ELet (Recursive, b, bl, e) ->
       let bindings = b :: bl in
       let* env2 = eval_rec_bs env bindings in
