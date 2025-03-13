@@ -40,7 +40,7 @@ let binder_to_alpha b =
     if n < 0
     then ""
     else (
-      let rem = n mod List.length alph in
+      let rem = Stdlib.( mod ) n (List.length alph) in
       let char =
         match List.nth alph rem with
         | Some c -> c
@@ -66,23 +66,30 @@ let pp_ty fmt ty =
     collect_vars IntMap.empty ty
   in
   let rec helper var_mappings fmt = function
-    | TPrim s -> Format.fprintf fmt "%s" s
-    | TVar v -> Format.fprintf fmt "%s" (binder_to_alpha (IntMap.find v var_mappings))
+    | TPrim s -> Stdlib.Format.fprintf fmt "%s" s
+    | TVar v ->
+      Stdlib.Format.fprintf fmt "%s" (binder_to_alpha (IntMap.find v var_mappings))
     | TArrow (l, r) ->
-      Format.fprintf fmt "(%a -> %a)" (helper var_mappings) l (helper var_mappings) r
+      Stdlib.Format.fprintf
+        fmt
+        "(%a -> %a)"
+        (helper var_mappings)
+        l
+        (helper var_mappings)
+        r
     | TTuple (t1, t2, tl) ->
-      Format.fprintf
+      Stdlib.Format.fprintf
         fmt
         "(%a)"
-        (Format.pp_print_list
-           ~pp_sep:(fun _ _ -> Format.printf " * ")
+        (Stdlib.Format.pp_print_list
+           ~pp_sep:(fun _ _ -> Stdlib.Format.printf " * ")
            (fun fmt ty ->
              match ty with
-             | TPrim _ | TVar _ -> Format.fprintf fmt "%a" (helper var_mappings) ty
-             | _ -> Format.fprintf fmt "(%a)" (helper var_mappings) ty))
+             | TPrim _ | TVar _ -> Stdlib.Format.fprintf fmt "%a" (helper var_mappings) ty
+             | _ -> Stdlib.Format.fprintf fmt "(%a)" (helper var_mappings) ty))
         (t1 :: t2 :: tl)
-    | TOption o -> Format.fprintf fmt "%a option" (helper var_mappings) o
-    | TList l -> Format.fprintf fmt "%a list" (helper var_mappings) l
+    | TOption o -> Stdlib.Format.fprintf fmt "%a option" (helper var_mappings) o
+    | TList l -> Stdlib.Format.fprintf fmt "%a list" (helper var_mappings) l
   in
   helper compute_var_mapping fmt ty
 ;;
@@ -96,24 +103,23 @@ type error =
 
 let pp_error fmt = function
   | OccursCheck (v, t) ->
-    Format.fprintf
+    Stdlib.Format.fprintf
       fmt
       "Cannot construct type: %a appears within %a"
       pp_ty
       (ty_var v)
       pp_ty
       t
-  | NoVariable s -> Format.fprintf fmt "Undefined variable '%s'" s
+  | NoVariable s -> Stdlib.Format.fprintf fmt "Undefined variable '%s'" s
   | UnificationFailed (l, r) ->
-    Format.fprintf fmt "Unification failed on %a and %a" pp_ty l pp_ty r
-  | InvalidLeftHandSide -> Format.fprintf fmt "Invalid left hand side"
-  | InvalidRightHandSide -> Format.fprintf fmt "Invalid right hand side"
+    Stdlib.Format.fprintf fmt "Unification failed on %a and %a" pp_ty l pp_ty r
+  | InvalidLeftHandSide -> Stdlib.Format.fprintf fmt "Invalid left hand side"
+  | InvalidRightHandSide -> Stdlib.Format.fprintf fmt "Invalid right hand side"
 ;;
 
 module Result : sig
   type 'a t
 
-  val bind : 'a t -> f:('a -> 'b t) -> 'b t
   val return : 'a -> 'a t
   val fail : error -> 'a t
 
@@ -242,7 +248,6 @@ module Subst : sig
 
   val empty : t
   val singleton : fresh -> core_type -> t Result.t
-  val find : t -> fresh -> core_type option
   val remove : t -> fresh -> t
   val apply : t -> core_type -> core_type
   val unify : core_type -> core_type -> t Result.t
@@ -335,7 +340,6 @@ module Scheme = struct
   type binder_set = VarSet.t
   type t = S of binder_set * core_type
 
-  let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t
   let free_vars (S (xs, t)) = VarSet.diff (Type.free_vars t) xs
 
   let apply s (S (xs, t)) =

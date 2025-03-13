@@ -2,7 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open Base
 open Stdio
 open EChirkov.Ast
 open EChirkov.Parser
@@ -11,20 +10,20 @@ open EChirkov.Inferencer
 
 let usage () =
   printf "Usage: miniML [--interpret | --dump-ast | --infer] <file.ml>\n";
-  exit 1
+  Stdlib.exit 1
 ;;
 
 let read_file filename =
   try In_channel.read_all filename with
   | Sys_error err ->
     printf "Error: %s\n" err;
-    exit 1
+    Stdlib.exit 1
 ;;
 
 let () =
-  if Array.length Sys.argv <> 3 then usage ();
-  let mode = Sys.argv.(1) in
-  let filename = Sys.argv.(2) in
+  if Array.length Stdlib.Sys.argv <> 3 then usage ();
+  let mode = Stdlib.Sys.argv.(1) in
+  let filename = Stdlib.Sys.argv.(2) in
   let source_code = read_file filename in
   match parse source_code with
   | Error msg -> printf "Parsing error: %s\n" msg
@@ -40,6 +39,9 @@ let () =
        (match inference ast with
         | Ok env -> EChirkov.Inferencer.print_env env
         | Error msg ->
-          Format.printf "Type inference error: %a\n" EChirkov.Inferencer.pp_error msg)
+          Stdlib.Format.printf
+            "Type inference error: %a\n"
+            EChirkov.Inferencer.pp_error
+            msg)
      | _ -> usage ())
 ;;

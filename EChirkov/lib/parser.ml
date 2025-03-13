@@ -43,17 +43,7 @@ let is_keyword = function
 
 let is_id c = Char.is_alphanum c || Char.equal c '_' || Char.equal c '\''
 let token str = ws *> string str
-let p_sign = option "+" (token "-" <|> token "+")
 let parens s = token "(" *> s <* token ")"
-
-let newline =
-  skip_while (function
-    | ' ' | '\t' -> true
-    | _ -> false)
-  *> char '\n'
-;;
-
-let newlines = skip_many1 newline
 let p_digits = take_while1 is_digit
 
 let chainl1 e op =
