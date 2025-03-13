@@ -17,9 +17,47 @@ end
 
 type fresh = int
 
+let option_get = function
+  | Some v -> v
+  | None -> failwith "Option.get: None"
+;;
+
+let alph =
+  [ "🍏"
+  ; "🍎"
+  ; "🍐"
+  ; "🍊"
+  ; "🍋"
+  ; "🍋‍🟩"
+  ; "🍌"
+  ; "🍉"
+  ; "🍇"
+  ; "🍓"
+  ; "🫐"
+  ; "🍈"
+  ; "🍒"
+  ; "🍑"
+  ; "🥭"
+  ; "🍍"
+  ; "🥥"
+  ; "🥝"
+  ]
+;;
+
 module IntMap = Stdlib.Map.Make (Int)
 
-let rec binder_to_alpha b = Int.to_string b
+let binder_to_alpha b =
+  let rec to_string n =
+    if n < 0
+    then ""
+    else (
+      let rem = n mod List.length alph in
+      let char = List.nth alph rem |> option_get in
+      let rest = to_string ((n / List.length alph) - 1) in
+      rest ^ char)
+  in
+  to_string b
+;;
 
 let rec pp_ty fmt ty =
   let compute_var_mapping =
@@ -36,7 +74,7 @@ let rec pp_ty fmt ty =
   in
   let rec helper var_mappings fmt = function
     | TPrim s -> Format.fprintf fmt "%s" s
-    | TVar v -> Format.fprintf fmt "'%d" (IntMap.find v var_mappings)
+    | TVar v -> Format.fprintf fmt "%s" (binder_to_alpha (IntMap.find v var_mappings))
     | TArrow (l, r) ->
       Format.fprintf fmt "(%a -> %a)" (helper var_mappings) l (helper var_mappings) r
     | TTuple (t1, t2, tl) ->
@@ -47,11 +85,11 @@ let rec pp_ty fmt ty =
            ~pp_sep:(fun _ _ -> Format.printf " * ")
            (fun fmt ty ->
              match ty with
-             | TPrim _ | TVar _ -> Format.fprintf fmt "%a" pp_ty ty
-             | _ -> Format.fprintf fmt "(%a)" pp_ty ty))
+             | TPrim _ | TVar _ -> Format.fprintf fmt "%a" (helper var_mappings) ty
+             | _ -> Format.fprintf fmt "(%a)" (helper var_mappings) ty))
         (t1 :: t2 :: tl)
-    | TOption o -> Format.fprintf fmt "%a option" pp_ty o
-    | TList l -> Format.fprintf fmt "%a list" pp_ty l
+    | TOption o -> Format.fprintf fmt "%a option" (helper var_mappings) o
+    | TList l -> Format.fprintf fmt "%a list" (helper var_mappings) l
   in
   helper compute_var_mapping fmt ty
 ;;
@@ -67,8 +105,9 @@ let pp_error fmt = function
   | OccursCheck (v, t) ->
     Format.fprintf
       fmt
-      "Cannot construct type: '%s appears within %a"
-      (binder_to_alpha v)
+      "Cannot construct type: %a appears within %a"
+      pp_ty
+      (ty_var v)
       pp_ty
       t
   | NoVariable s -> Format.fprintf fmt "Undefined variable '%s'" s
