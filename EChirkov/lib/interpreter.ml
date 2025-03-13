@@ -170,7 +170,7 @@ module Evaluate (M : Monad) = struct
     | EUnary (op, e) ->
       let* v = eval_expression env e in
       (match op, v with
-       | Pos, VInt x -> return (VInt (+x))
+       | Pos, VInt x -> return (VInt x)
        | Neg, VInt x -> return (VInt (-x))
        | _ -> fail TypeMissmatch)
     | EIf (i, t, e) ->
@@ -222,10 +222,8 @@ module Evaluate (M : Monad) = struct
        | VPrintInt ->
          (match v2 with
           | VInt i ->
-            print_int i;
-            print_endline "";
-            (* TODO: think *)
-            return VUnit
+            Stdlib.Format.printf "%d\n" i;
+            (* TODO: think *) return VUnit
           | _ -> fail TypeMissmatch)
        | _ -> fail TypeMissmatch)
     | ETuple (e1, e2, el) ->
