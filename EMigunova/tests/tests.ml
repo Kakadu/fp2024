@@ -1,13 +1,13 @@
 let rec fac n = if n <= 1 then 1 else n * fac (n - 1)
 
-(*let infer str =
+(*
+   let infer str =
   match Parse.parse str with
   | Ok ast ->
     (match Inference.run_inferencer ast with
      | Ok result -> result
-     | Error _ -> [])
-  | Error _ -> []
-;;*)
+     | Error e -> [(error_to_string e, Type_option None)])
+  | Error e -> [];;*)
 
 let main =
   let () = print_int (fac 4) in

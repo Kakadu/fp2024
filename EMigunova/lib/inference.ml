@@ -39,6 +39,17 @@ type error =
   | `Unexpected_type of ttype
   ]
 
+let error_to_string (e : error) =
+  match e with
+  | `No_variable_rec -> "No_variable_rec"
+  | `No_arg_rec -> "No_arg_rec"
+  | `Bound_several_times _ -> "Bound_several_times "
+  | `Occurs_check _ -> "Occurs_check "
+  | `No_variable _ -> "No_variable "
+  | `Unification_failed _ -> "Unification_failed "
+  | `Unexpected_type _ -> "Unexpected_type"
+;;
+
 (*let pp_error ppf : error -> _ = function
   | `No_variable_rec ->
     Format.fprintf ppf "Only variables are allowed as left-hand side of `let rec'"
@@ -124,14 +135,13 @@ end
 module VarSet = struct
   include Set.Make (String)
 
-  let pp ppf set =
+  (*let pp ppf set =
     Format.fprintf ppf "[ ";
     iter (Format.fprintf ppf "%s; ") set;
     Format.fprintf ppf "]"
-  ;;
+  ;;*)
 end
 
-type structure = let_binding list
 type scheme = Scheme of VarSet.t * ttype
 
 (*let pp_scheme ppf = function
@@ -777,34 +787,40 @@ module Infer = struct
     in
     return (cases_sub, final_ty)
 
-  and infer_value_non_rec_binding env let_bind =
-    let infer_vb new_sub env ty pat pat_types_list pattern_list =
-      let env = TypeEnv.apply new_sub env in
-      let let_bind_ty =
+  and infer_value_non_rec_binding env = function
+    | Let_binding (Non_recursive, Let_fun (id, pattern_list), expr) ->
+      let* env, _ = extend_env_with_args env pattern_list in
+      let* expr_sub, expr_ty = infer_expression env expr in
+      let env = TypeEnv.apply expr_sub env in
+      let* let_bind_ty =
         let rec build_arrow_chain = function
-          | single_ty :: [] -> Type_arrow (single_ty, ty)
+          | single_ty :: [] -> Type_arrow (single_ty, expr_ty)
           | first_ty :: rest -> Type_arrow (first_ty, build_arrow_chain rest)
-          | _ -> ty
+          | _ -> expr_ty
         in
-        build_arrow_chain pat_types_list
+        let* pat_types =
+          RList.fold_right pattern_list ~init:(return []) ~f:(fun pat pat_ty_list ->
+            let pat_ty = get_pat_type_from_env env pat in
+            return (pat_ty :: pat_ty_list))
+        in
+        return (build_arrow_chain pat_types)
       in
       let* env = remove_patterns_from_env env pattern_list in
-      let generalized_let_bind_ty = generalize env (Subst.apply new_sub let_bind_ty) in
-      let* env, pat_ty = infer_pattern env pat in
-      let env = TypeEnv.extend_with_pattern env pat generalized_let_bind_ty in
-      let* unified_sub = unify "non rec let biding" let_bind_ty pat_ty in
-      let* final_sub = Subst.compose new_sub unified_sub in
-      let env = TypeEnv.apply final_sub env in
-      return (env, final_sub)
-    in
-    match let_bind with
-    | Let_binding (Non_recursive, Let_fun (id, pattern_list), expr) ->
-      let* env, pat_types_list = extend_env_with_args env pattern_list in
-      let* expr_sub, expr_ty = infer_expression env expr in
-      infer_vb expr_sub env expr_ty (Pattern_var id) pat_types_list pattern_list
+      let generalized_let_bind_ty = generalize env let_bind_ty in
+      let env = TypeEnv.extend env id generalized_let_bind_ty in
+      return (env, expr_sub)
     | Let_binding (Non_recursive, Let_pattern pat, expr) ->
       let* expr_sub, expr_ty = infer_expression env expr in
-      infer_vb expr_sub env expr_ty pat [] []
+      let env = TypeEnv.apply expr_sub env in
+      let* _, pat_ty = infer_pattern env pat in
+      let* unified_sub = unify "" expr_ty pat_ty in
+      let let_pat_ty_sch = generalize env (Subst.apply unified_sub expr_ty) in
+      let (Scheme (_, let_pat_ty)) = let_pat_ty_sch in
+      let* env, init_pat_ty = infer_pattern env pat in
+      let* unified_sub = unify "" init_pat_ty let_pat_ty in
+      let env = TypeEnv.apply unified_sub env in
+      let env = TypeEnv.extend_with_pattern env pat let_pat_ty_sch in
+      return (env, expr_sub)
     | Let_binding (Recursive, _, _) | Let_rec_and_binding _ -> return (env, Subst.empty)
 
   and infer_rec_value_binding_list env sub let_binds =

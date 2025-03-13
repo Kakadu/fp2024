@@ -4,7 +4,6 @@
 
 open Angstrom
 open Ast
-open Printf
 
 let is_char = function
   (* to recognize char, char -> bool *)
