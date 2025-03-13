@@ -7,20 +7,9 @@ open Base
 
 module VarSet = struct
   include Stdlib.Set.Make (Int)
-
-  let pp fmt s =
-    Format.fprintf fmt "[ ";
-    iter (Format.fprintf fmt "%d; ") s;
-    Format.fprintf fmt "]"
-  ;;
 end
 
 type fresh = int
-
-let option_get = function
-  | Some v -> v
-  | None -> failwith "Option.get: None"
-;;
 
 let alph =
   [ "🍏"
@@ -52,14 +41,18 @@ let binder_to_alpha b =
     then ""
     else (
       let rem = n mod List.length alph in
-      let char = List.nth alph rem |> option_get in
+      let char =
+        match List.nth alph rem with
+        | Some c -> c
+        | None -> Int.to_string b
+      in
       let rest = to_string ((n / List.length alph) - 1) in
       rest ^ char)
   in
   to_string b
 ;;
 
-let rec pp_ty fmt ty =
+let pp_ty fmt ty =
   let compute_var_mapping =
     let rec collect_vars acc = function
       | TPrim _ -> acc
@@ -339,8 +332,8 @@ end
 (* ========== Scheme ========== *)
 
 module Scheme = struct
-  type binder_set = VarSet.t [@@deriving show { with_path = false }]
-  type t = S of binder_set * core_type [@@deriving show { with_path = false }]
+  type binder_set = VarSet.t
+  type t = S of binder_set * core_type
 
   let occurs_in v (S (xs, t)) = (not (VarSet.mem v xs)) && Type.occurs_in v t
   let free_vars (S (xs, t)) = VarSet.diff (Type.free_vars t) xs
@@ -658,9 +651,9 @@ let infer_program p =
 
 let print_env env =
   Base.Map.iteri env ~f:(fun ~key ~data:(Scheme.S (_, ty)) ->
-    if String.equal key "print_int"
-    then ()
-    else Stdlib.Format.printf "val %s : %a\n" key pp_ty ty)
+    match key with
+    | key when String.equal key "print_int" -> ()
+    | key -> Stdlib.Format.printf "val %s : %a\n" key pp_ty ty)
 ;;
 
 (* inference *)

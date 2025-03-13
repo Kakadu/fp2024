@@ -251,7 +251,8 @@ let%expect_test "parse list empty" =
 
 let%expect_test "parse list 1" =
   test_parser "let () = [23]";
-  [%expect {|
+  [%expect
+    {|
     [(SValue (Nonrecursive, ((PConst CUnit), (EList [(EConst (CInt 23))])), []))]|}]
 ;;
 
@@ -289,13 +290,15 @@ let%expect_test "parse list pat" =
 
 let%expect_test "parse option var" =
   test_parser "let () = Some x";
-  [%expect {|
+  [%expect
+    {|
     [(SValue (Nonrecursive, ((PConst CUnit), (EOption (Some (EVar "x")))), []))]|}]
 ;;
 
 let%expect_test "parse option p var" =
   test_parser "let () = Some (x)";
-  [%expect {|
+  [%expect
+    {|
     [(SValue (Nonrecursive, ((PConst CUnit), (EOption (Some (EVar "x")))), []))]|}]
 ;;
 
