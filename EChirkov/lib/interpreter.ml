@@ -99,7 +99,7 @@ module Evaluate (M : Monad) = struct
         match l1, l2 with
         | [], [] -> []
         | x :: xs, y :: ys -> (x, y) :: zip xs ys
-        | _ -> failwith "unreachable"
+        | _ -> []
       in
       List.fold_left ~f:f1 ~init:(Some env) (zip patterns values))
   ;;
