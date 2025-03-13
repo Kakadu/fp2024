@@ -57,7 +57,7 @@
   val main : int
 
   $ ../bin/main.exe --infer manytests/typed/002fac.ml
-  val fac_cps : (int -> ((int -> '6) -> '6))
+  val fac_cps : (int -> ((int -> 🍏) -> 🍏))
   val main : int
 
   $ ../bin/main.exe --infer manytests/typed/003fib.ml
@@ -69,11 +69,11 @@
   val main : int
   val test10 : (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> int))))))))))
   val test3 : (int -> (int -> (int -> int)))
-  val wrap : ('0 -> '0)
+  val wrap : (🍏 -> 🍏)
 
   $ ../bin/main.exe --infer manytests/typed/005fix.ml
   val fac : ((int -> int) -> (int -> int))
-  val fix : ((('3 -> '4) -> ('3 -> '4)) -> ('3 -> '4))
+  val fix : (((🍏 -> 🍎) -> (🍏 -> 🍎)) -> (🍏 -> 🍎))
   val main : int
 
   $ ../bin/main.exe --infer manytests/typed/006partial.ml
@@ -93,19 +93,19 @@
   val main : unit
 
   $ ../bin/main.exe --infer manytests/typed/008ascription.ml
-  val addi : (('2 -> (bool -> int)) -> (('2 -> bool) -> ('2 -> int)))
+  val addi : ((🍏 -> (bool -> int)) -> ((🍏 -> bool) -> (🍏 -> int)))
   val main : int
 
   $ ../bin/main.exe --infer manytests/typed/009let_poly.ml
   val temp : (int * bool)
 
   $ ../bin/main.exe --infer manytests/typed/015tuples.ml
-  val feven : (('31 * ((int -> int))) -> (int -> int))
-  val fix : ((('3 -> '4) -> ('3 -> '4)) -> ('3 -> '4))
-  val fixpoly : ((((((('25 -> '26)) * (('25 -> '26))) -> ('25 -> '26))) * ((((('25 -> '26)) * (('25 -> '26))) -> ('25 -> '26)))) -> ((('25 -> '26)) * (('25 -> '26))))
-  val fodd : ((((int -> int)) * '38) -> (int -> int))
+  val feven : ((🍏 * ((int -> int))) -> (int -> int))
+  val fix : (((🍏 -> 🍎) -> (🍏 -> 🍎)) -> (🍏 -> 🍎))
+  val fixpoly : (((((((🍏 -> 🍎)) * ((🍏 -> 🍎))) -> (🍏 -> 🍎))) * (((((🍏 -> 🍎)) * ((🍏 -> 🍎))) -> (🍏 -> 🍎)))) -> (((🍏 -> 🍎)) * ((🍏 -> 🍎))))
+  val fodd : ((((int -> int)) * 🍏) -> (int -> int))
   val main : int
-  val map : (('9 -> '11) -> (('9 * '9) -> ('11 * '11)))
+  val map : ((🍏 -> 🍎) -> ((🍏 * 🍏) -> (🍎 * 🍎)))
   val meven : (int -> int)
   val modd : (int -> int)
   val tie : (((int -> int)) * ((int -> int)))
@@ -118,7 +118,7 @@
   Type inference error: Unification failed on int and bool
 
   $ ../bin/main.exe --infer manytests/do_not_type/003occurs.ml
-  Type inference error: Cannot construct type: '2 appears within ('2 -> '6)
+  Type inference error: Cannot construct type: 🍏 appears within (🍏 -> 🍎)
 
   $ ../bin/main.exe --infer manytests/do_not_type/004let_poly.ml
   Type inference error: Unification failed on bool and int
@@ -127,13 +127,13 @@
   Type inference error: Invalid left hand side
 
   $ ../bin/main.exe --infer manytests/do_not_type/016tuples_mismatch.ml
-  Type inference error: Unification failed on ('0 * '1) and (int * int * int)
+  Type inference error: Unification failed on (🍏 * 🍎) and (int * int * int)
 
   $ ../bin/main.exe --infer manytests/do_not_type/097fun_vs_list.ml
-  Type inference error: Unification failed on '2 list and ('0 -> '0)
+  Type inference error: Unification failed on 🍏 list and (🍏 -> 🍏)
 
   $ ../bin/main.exe --infer manytests/do_not_type/097fun_vs_unit.ml
-  Type inference error: Unification failed on unit and ('0 -> '0)
+  Type inference error: Unification failed on unit and (🍏 -> 🍏)
 
   $ ../bin/main.exe --infer manytests/do_not_type/098rec_int.ml
   Type inference error: Invalid right hand side
