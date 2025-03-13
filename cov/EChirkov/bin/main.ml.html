@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>main.ml &mdash; Coverage report</title>
+    <meta name="description" content="48.39% coverage in bin/main.ml">
+    <link rel="stylesheet" href="../coverage.css"/>
+    <script src="../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../index.html">
+          <span class="dirname">bin/</span>main.ml
+        </a>
+      </h1>
+      <h2>48.39%</h2>
+    </div>
+    <div id="navbar">
+      <span class="unvisited" style="top:25.53%"></span>
+      <span class="unvisited" style="top:27.66%"></span>
+      <span class="unvisited" style="top:38.30%"></span>
+      <span class="unvisited" style="top:42.55%"></span>
+      <span class="some-visited" style="bottom:48.94%"></span>
+      <span class="unvisited" style="bottom:38.30%"></span>
+      <span class="unvisited" style="bottom:31.91%"></span>
+      <span class="unvisited" style="bottom:23.40%"></span>
+      <span class="unvisited" style="bottom:21.28%"></span>
+      <span class="unvisited" style="bottom:2.13%"></span>
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span > </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span > </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span class="unvisited"> </span>
+<a id="L13"></a><span class="unvisited"> </span>
+<a id="L14"></a><span > </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span > </span>
+<a id="L17"></a><span class="visited"> </span>
+<a id="L18"></a><span class="unvisited"> </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span class="unvisited"> </span>
+<a id="L21"></a><span > </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span class="some-visited"> </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span class="visited"> </span>
+<a id="L27"></a><span class="visited"> </span>
+<a id="L28"></a><span class="visited"> </span>
+<a id="L29"></a><span class="unvisited"> </span>
+<a id="L30"></a><span class="visited"> </span>
+<a id="L31"></a><span > </span>
+<a id="L32"></a><span class="unvisited"> </span>
+<a id="L33"></a><span class="visited"> </span>
+<a id="L34"></a><span > </span>
+<a id="L35"></a><span class="visited"> </span>
+<a id="L36"></a><span class="unvisited"> </span>
+<a id="L37"></a><span class="unvisited"> </span>
+<a id="L38"></a><span class="visited"> </span>
+<a id="L39"></a><span > </span>
+<a id="L40"></a><span class="visited"> </span>
+<a id="L41"></a><span class="visited"> </span>
+<a id="L42"></a><span class="visited"> </span>
+<a id="L43"></a><span > </span>
+<a id="L44"></a><span > </span>
+<a id="L45"></a><span > </span>
+<a id="L46"></a><span class="unvisited"> </span>
+<a id="L47"></a><span > </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+<a href="#L32">32</a>
+<a href="#L33">33</a>
+<a href="#L34">34</a>
+<a href="#L35">35</a>
+<a href="#L36">36</a>
+<a href="#L37">37</a>
+<a href="#L38">38</a>
+<a href="#L39">39</a>
+<a href="#L40">40</a>
+<a href="#L41">41</a>
+<a href="#L42">42</a>
+<a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
+<a href="#L46">46</a>
+<a href="#L47">47</a>
+</pre>
+<pre><code class="ocaml">(** Copyright 2024, Dmitri Chirkov*)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+open Stdio
+open EChirkov.Ast
+open EChirkov.Parser
+open EChirkov.Interpreter
+open EChirkov.Inferencer
+
+let usage () =
+  <span data-count="0">p</span>rintf "Usage: miniML [--interpret | --dump-ast | --infer] &lt;file.ml&gt;\n";
+  <span data-count="0">S</span>tdlib.exit 1
+;;
+
+let read_file filename =
+  <span data-count="32">t</span>ry In_channel.read_al<span data-count="32">l</span> filename with
+  | <span data-count="0">S</span>ys_error err -&gt;
+    printf "Error: %s\n" err;
+    <span data-count="0">S</span>tdlib.exit 1
+;;
+
+let () =
+  if Array.lengt<span data-count="32">h</span> Stdlib.Sys.argv &lt;&gt; 3 then <span data-count="0">u</span>sag<span data-count="0">e</span> ();
+  <span data-count="32">l</span>et mode = Stdlib.Sys.argv.(1) in
+  <span data-count="32">l</span>et filename = Stdlib.Sys.argv.(2) in
+  <span data-count="32">l</span>et source_code = read_file filename in
+  <span data-count="32">m</span>atch parse source_code with
+  | <span data-count="0">E</span>rror msg -&gt; print<span data-count="0">f</span> "Parsing error: %s\n" msg
+  | <span data-count="32">O</span>k ast -&gt;
+    (match mode with
+     | <span data-count="0">"</span>--dump-ast" -&gt; print<span data-count="0">f</span> "AST:\n%s\n" (show_progra<span data-count="0">m</span> ast)
+     | <span data-count="11">"</span>--interpret" -&gt;
+       (match interpret ast with
+        | <span data-count="11">O</span>k _ -&gt; ()
+        | <span data-count="0">E</span>rror err -&gt;
+          print<span data-count="0">f</span> "Interpretation error: %s\n" (EChirkov.Interpreter.pp_erro<span data-count="0">r</span> err))
+     | <span data-count="21">"</span>--infer" -&gt;
+       (match inference ast with
+        | <span data-count="12">O</span>k env -&gt; EChirkov.Inferencer.print_en<span data-count="12">v</span> env
+        | <span data-count="9">E</span>rror msg -&gt;
+          Stdlib.Format.print<span data-count="9">f</span>
+            "Type inference error: %a\n"
+            EChirkov.Inferencer.pp_error
+            msg)
+     | <span data-count="0">_</span> -&gt; usag<span data-count="0">e</span> ())
+;;
+</code></pre>
+      </div>
+    </div>
+    <script src="../coverage.js"></script>
+  </body>
+</html>
