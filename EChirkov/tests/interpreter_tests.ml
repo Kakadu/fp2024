@@ -80,7 +80,6 @@ let%expect_test "interpret neg" =
     Interpretation error: Type error|}]
 ;;
 
-
 let%expect_test "interpret neg add" =
   test_interpreter "let () = print_int (-500 + +100)";
   [%expect {|
