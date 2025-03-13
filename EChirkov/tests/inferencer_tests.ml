@@ -81,7 +81,8 @@ let%expect_test "inference tuple 3" =
 ;;
 
 let%expect_test "inference tuples" =
-  test_inferencer {|
+  test_inferencer
+    {|
     let rec fix f x = f (fix f) x
     let map f p = let (a,b) = p in (f a, f b)
     let fixpoly l =
@@ -104,7 +105,8 @@ let%expect_test "inference tuples" =
       let () = print_int (even 4) in
       0
   |};
-  [%expect {|
+  [%expect
+    {|
     val feven : ((🍏 * ((int -> int))) -> (int -> int))
     val fix : (((🍏 -> 🍎) -> (🍏 -> 🍎)) -> (🍏 -> 🍎))
     val fixpoly : (((((((🍏 -> 🍎)) * ((🍏 -> 🍎))) -> (🍏 -> 🍎))) * (((((🍏 -> 🍎)) * ((🍏 -> 🍎))) -> (🍏 -> 🍎)))) -> (((🍏 -> 🍎)) * ((🍏 -> 🍎))))
@@ -115,7 +117,6 @@ let%expect_test "inference tuples" =
     val modd : (int -> int)
     val tie : (((int -> int)) * ((int -> int))) |}]
 ;;
-
 
 (* ========== list ========== *)
 
@@ -145,7 +146,6 @@ let%expect_test "inference var no" =
   [%expect {|
     Type inference error: Undefined variable 'd'|}]
 ;;
-
 
 (* ========== fun ========== *)
 
@@ -197,7 +197,6 @@ let%expect_test "inference higher-order" =
   test_inferencer "let apply = fun f -> fun x -> f x";
   [%expect {| val apply : ((🍏 -> 🍎) -> (🍏 -> 🍎)) |}]
 ;;
-
 
 let%expect_test "inference pattern on tuples" =
   test_inferencer "let fst = fun p -> let (x, y) = p in x";
