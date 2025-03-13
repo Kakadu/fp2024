@@ -4,10 +4,10 @@
 
 open Base
 open Stdio
-open MiniML.Ast
-open MiniML.Parser
-open MiniML.Interpreter
-open MiniML.Inferencer
+open EChirkov.Ast
+open EChirkov.Parser
+open EChirkov.Interpreter
+open EChirkov.Inferencer
 
 let usage () =
   printf "Usage: miniML [--interpret | --dump-ast | --infer] <file.ml>\n";
@@ -35,11 +35,11 @@ let () =
        (match interpret ast with
         | Ok _ -> ()
         | Error err ->
-          printf "Interpretation error: %s\n" (MiniML.Interpreter.pp_error err))
+          printf "Interpretation error: %s\n" (EChirkov.Interpreter.pp_error err))
      | "--infer" ->
        (match inference ast with
-        | Ok env -> MiniML.Inferencer.print_env env
+        | Ok env -> EChirkov.Inferencer.print_env env
         | Error msg ->
-          Format.printf "Type inference error: %a\n" MiniML.Inferencer.pp_error msg)
+          Format.printf "Type inference error: %a\n" EChirkov.Inferencer.pp_error msg)
      | _ -> usage ())
 ;;

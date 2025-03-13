@@ -2,8 +2,8 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open MiniML.Parser
-open MiniML.Interpreter
+open EChirkov.Parser
+open EChirkov.Interpreter
 
 let test_interpreter s =
   match parse s with
