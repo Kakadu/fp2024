@@ -47,10 +47,15 @@ type error =
 
 let pp_error fmt = function
   | OccursCheck (v, t) ->
-    Format.fprintf fmt "Occurs check: '%s in %a" (binder_to_alpha v) pp_ty t
+    Format.fprintf
+      fmt
+      "Cannot construct type: '%s appears within %a"
+      (binder_to_alpha v)
+      pp_ty
+      t
   | NoVariable s -> Format.fprintf fmt "Undefined variable '%s'" s
   | UnificationFailed (l, r) ->
-    Format.fprintf fmt "Unification failed: on %a and %a" pp_ty l pp_ty r
+    Format.fprintf fmt "Unification failed on %a and %a" pp_ty l pp_ty r
   | InvalidLeftHandSide -> Format.fprintf fmt "Invalid left hand side"
   | InvalidRightHandSide -> Format.fprintf fmt "Invalid right hand side"
 ;;
