@@ -63,6 +63,8 @@ let parse_id =
   let id = p_first ^ p_rest in
   if is_keyword id
   then fail "Error! parse_id: id must not match the keyword."
+  else if id = "_"
+  then fail "wildcard \"_\" not expected"
   else return @@ id
 ;;
 
@@ -100,7 +102,7 @@ let parse_const = choice [ parse_int; parse_char; parse_str; parse_bool; parse_u
 (* -------parse patterns------ *)
 
 let parse_any_pattern =
-  let* _ = trim @@ take_while1 (fun ch -> Char.equal '_' ch) in
+  let* _ = trim @@ satisfy (fun ch -> Char.equal '_' ch) in
   return @@ Pattern_any
 ;;
 
@@ -118,7 +120,7 @@ let parse_const_pattern =
 ;;
 
 let parse_base_pattern =
-  choice [ parse_any_pattern; parse_var_pattern; parse_const_pattern ]
+  choice [ parse_var_pattern; parse_any_pattern; parse_const_pattern ]
 ;;
 
 let parse_list_sugar_case_pattern parse_pattern =

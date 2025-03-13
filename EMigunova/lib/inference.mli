@@ -28,6 +28,8 @@ module VarSet : sig
   type t = Set.Make(String).t
 end
 
+val error_to_string : error -> ident
+
 type scheme = Scheme of VarSet.t * ttype
 
 module TypeEnv : sig

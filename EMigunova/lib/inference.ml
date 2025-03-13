@@ -437,17 +437,6 @@ module Infer = struct
     extract_names_from_pat StringSet.add_id StringSet.empty pat
   ;;
 
-  let rec get_pat_type_from_env env = function
-    | Pattern_var id -> TypeEnv.find_type_exn env id
-    | Pattern_option (Some pat) -> Type_option (Some (get_pat_type_from_env env pat))
-    | Pattern_tuple pat_list ->
-      Type_tuple (List.map (fun pat -> get_pat_type_from_env env pat) pat_list)
-    | Pattern_list_sugar_case (first_pat :: _)
-    | Pattern_list_constructor_case (first_pat :: _) ->
-      Type_list (get_pat_type_from_env env first_pat)
-    | _ -> Type_option None
-  ;;
-
   let rec infer_pattern env pat =
     let* _ = check_names_from_pat pat in
     match pat with
@@ -496,6 +485,33 @@ module Infer = struct
       let list_element_type = Subst.apply sub list_element_type_var in
       let env = TypeEnv.apply sub env in
       return (env, Type_list list_element_type)
+  ;;
+
+  let rec get_pat_type_from_env env = function
+    | Pattern_var id -> return (TypeEnv.find_type_exn env id)
+    | Pattern_any -> fresh_var
+    | Pattern_const const ->
+      (match const with
+       | Const_int _ -> return Type_int
+       | Const_string _ -> return Type_string
+       | Const_char _ -> return Type_char
+       | Const_bool _ -> return Type_bool
+       | Const_unit -> return Type_unit)
+    | Pattern_option (Some pat) ->
+      let* ty = get_pat_type_from_env env pat in
+      return (Type_option (Some ty))
+    | Pattern_tuple pat_list ->
+      let* ty_list =
+        RList.fold_left pat_list ~init:(return []) ~f:(fun acc_list pat ->
+          let* ty = get_pat_type_from_env env pat in
+          return (acc_list @ [ ty ]))
+      in
+      return (Type_tuple ty_list)
+    | Pattern_list_sugar_case (first_pat :: _)
+    | Pattern_list_constructor_case (first_pat :: _) ->
+      let* ty = get_pat_type_from_env env first_pat in
+      return (Type_list ty)
+    | _ -> return (Type_option None)
   ;;
 
   let extend_env_with_args env args_list =
@@ -799,9 +815,9 @@ module Infer = struct
           | _ -> expr_ty
         in
         let* pat_types =
-          RList.fold_right pattern_list ~init:(return []) ~f:(fun pat pat_ty_list ->
-            let pat_ty = get_pat_type_from_env env pat in
-            return (pat_ty :: pat_ty_list))
+          RList.fold_left pattern_list ~init:(return []) ~f:(fun acc_list pat ->
+            let* pat_ty = get_pat_type_from_env env pat in
+            return (acc_list @ [ pat_ty ]))
         in
         return (build_arrow_chain pat_types)
       in
@@ -837,7 +853,7 @@ module Infer = struct
         in
         let* pat_types =
           RList.fold_right pattern_list ~init:(return []) ~f:(fun pat pat_ty_list ->
-            let pat_ty = get_pat_type_from_env env pat in
+            let* pat_ty = get_pat_type_from_env env pat in
             return (pat_ty :: pat_ty_list))
         in
         return (build_arrow_chain pat_types)

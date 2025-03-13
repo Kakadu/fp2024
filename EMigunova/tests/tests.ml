@@ -58,6 +58,15 @@ let main =
   0
 ;;
 
+(*5*)
+let rec fix f x = f (fix f) x
+let fac self n = if n <= 1 then 1 else n * self (n - 1)
+
+let main =
+  let () = print_int (fix fac 6) in
+  0
+;;
+
 let foo b = if b then fun foo -> foo + 2 else fun foo -> foo * 10
 let foo x = foo true (foo false (foo true (foo false x)))
 
@@ -66,6 +75,37 @@ let main =
   0
 ;;
 
+(*06partial2*)
+
+let foo a b c =
+  let () = print_int a in
+  let () = print_int b in
+  let () = print_int c in
+  a + (b * c)
+;;
+
+let main =
+  let foo = foo 1 in
+  let foo = foo 2 in
+  let foo = foo 3 in
+  let () = print_int foo in
+  0
+;;
+
+(*06partial3*)
+let foo a =
+  let () = print_int a in
+  fun b ->
+    let () = print_int b in
+    fun c -> print_int c
+;;
+
+let main =
+  let () = foo 4 8 9 in
+  0
+;;
+
+(*007order*)
 let _start () () a () b _c () d __ =
   let () = print_int (a + b) in
   let () = print_int __ in
@@ -86,40 +126,7 @@ let main =
        (-555555))
 ;;
 
-let foo b = if b then fun foo -> foo + 2 else fun foo -> foo * 10
-let foo x = foo true (foo false (foo true (foo false x)))
-
-let main =
-  let () = print_int (foo 11) in
-  0
-;;
-
-let foo a b c =
-  let () = print_int a in
-  let () = print_int b in
-  let () = print_int c in
-  a + (b * c)
-;;
-
-let main =
-  let foo = foo 1 in
-  let foo = foo 2 in
-  let foo = foo 3 in
-  let () = print_int foo in
-  0
-;;
-
-let foo a =
-  let () = print_int a in
-  fun b ->
-    let () = print_int b in
-    fun c -> print_int c
-;;
-
-let main =
-  let () = foo 4 8 9 in
-  0
-;;
+(*008*)
 
 let addi = fun f g x -> (f x (g x : bool) : int)
 
@@ -131,10 +138,16 @@ let main =
   0
 ;;
 
+(*009*)
+
 let temp =
   let f = fun x -> x in
   f 1, f true
 ;;
+
+(*_____________all tests until 010 are done_______*)
+
+(*010*)
 
 let _1 = fun x y (a, _) -> x + y - a = 1
 
@@ -156,7 +169,7 @@ let _5 =
   | Some f ->
     let _ = f "42" in
     f 42
-  | None -> 0
+  | None -> 0 (*no*)
 ;;
 
 let _6 =
@@ -169,7 +182,7 @@ let _6 =
 
 let int_of_option = function
   | Some x -> x
-  | None -> 0
+  | None -> 0 (*no*)
 ;;
 
 let _42 = function
@@ -189,12 +202,16 @@ let map f p =
   f a, f b
 ;;
 
-let fixpoly l = fix (fun self l -> map (fun li x -> li (self l) x) l) l
+(*no, exists result, but incorrect*)
+
+let fixpoly l = fix (fun self l -> map (fun li x -> li (self l) x) l) l (*no variable*)
 
 let feven p n =
   let e, o = p in
   if n = 0 then 1 else o (n - 1)
 ;;
+
+(*stopped here*)
 
 let fodd p n =
   let e, o = p in
@@ -212,64 +229,5 @@ let main =
   let even, odd = tie in
   let () = print_int (odd 3) in
   let () = print_int (even 4) in
-  0
-;;
-
-let rec length xs =
-  match xs with
-  | [] -> 0
-  | h :: tl -> 1 + length tl
-;;
-
-let length_tail =
-  let rec helper acc xs =
-    match xs with
-    | [] -> acc
-    | h :: tl -> helper (acc + 1) tl
-  in
-  helper 0
-;;
-
-let rec map f xs =
-  match xs with
-  | [] -> []
-  | a :: [] -> [ f a ]
-  | [ a; b ] -> [ f a; f b ]
-  | [ a; b; c ] -> [ f a; f b; f c ]
-  | a :: b :: c :: d :: tl -> f a :: f b :: f c :: f d :: map f tl
-;;
-
-let rec append xs ys =
-  match xs with
-  | [] -> ys
-  | x :: xs -> x :: append xs ys
-;;
-
-let concat =
-  let rec helper xs =
-    match xs with
-    | [] -> []
-    | h :: tl -> append h (helper tl)
-  in
-  helper
-;;
-
-let rec iter f xs =
-  match xs with
-  | [] -> ()
-  | h :: tl ->
-    let () = f h in
-    iter f tl
-;;
-
-let rec cartesian xs ys =
-  match xs with
-  | [] -> []
-  | h :: tl -> append (map (fun a -> h, a) ys) (cartesian tl ys)
-;;
-
-let main =
-  let () = iter print_int [ 1; 2; 3 ] in
-  let () = print_int (length (cartesian [ 1; 2 ] [ 1; 2; 3; 4 ])) in
   0
 ;;
