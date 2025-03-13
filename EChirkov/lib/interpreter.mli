@@ -8,7 +8,6 @@ type error =
   | UnboundVariable of string
   | TypeMissmatch
   | DivisionByZero
-  | InvalidPattern
 
 type value =
   | VInt of int
