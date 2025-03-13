@@ -4,7 +4,6 @@
 
 open MiniML.Parser
 open MiniML.Interpreter
-open MiniML.Ast
 
 let test_interpreter s =
   match parse s with
