@@ -2,7 +2,7 @@
  (name main)
  (public_name main)
  (modules main)
- (libraries MiniML angstrom stdio base)
+ (libraries EChirkov angstrom stdio base)
  (instrumentation
   (backend bisect_ppx)))
 

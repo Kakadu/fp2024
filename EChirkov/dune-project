@@ -15,7 +15,7 @@
 (homepage "https://github.com/kinokotakenoko9/MiniMl")
 
 (package
- (name MiniML)
+ (name EChirkov)
  (synopsis "An interpreter for miniml")
  (description "An interpreter for miniml")
  (version 0.1)
