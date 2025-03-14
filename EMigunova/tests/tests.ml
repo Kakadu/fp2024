@@ -169,7 +169,7 @@ let _5 =
   | Some f ->
     let _ = f "42" in
     f 42
-  | None -> 0 (*no*)
+  | None -> 0
 ;;
 
 let _6 =
@@ -182,7 +182,7 @@ let _6 =
 
 let int_of_option = function
   | Some x -> x
-  | None -> 0 (*no*)
+  | None -> 0
 ;;
 
 let _42 = function
@@ -195,6 +195,7 @@ let id1, id2 =
   id, id
 ;;
 
+(*015*)
 let rec fix f x = f (fix f) x
 
 let map f p =
@@ -202,16 +203,12 @@ let map f p =
   f a, f b
 ;;
 
-(*no, exists result, but incorrect*)
-
-let fixpoly l = fix (fun self l -> map (fun li x -> li (self l) x) l) l (*no variable*)
+let fixpoly l = fix (fun self l -> map (fun li x -> li (self l) x) l) l
 
 let feven p n =
   let e, o = p in
   if n = 0 then 1 else o (n - 1)
 ;;
-
-(*stopped here*)
 
 let fodd p n =
   let e, o = p in
@@ -222,6 +219,9 @@ let tie = fixpoly (feven, fodd)
 
 let rec meven n = if n = 0 then 1 else modd (n - 1)
 and modd n = if n = 0 then 1 else meven (n - 1)
+(*stopped here: no_variable*)
+(*скорее всего ошибка в некорректном добавлении идентификатороы в окружение, 
+  нужно их одновременно добавить в окружение, а не поочередности, как это сделала я*)
 
 let main =
   let () = print_int (modd 1) in

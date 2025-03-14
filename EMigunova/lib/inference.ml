@@ -7,7 +7,7 @@ let rec print_type (ty : ttype) =
   | Type_char -> Printf.printf "char"
   | Type_string -> Printf.printf "string"
   | Type_unit -> Printf.printf "unit"
-  | Type_var ident -> Printf.printf "type_var( %s )" ident
+  | Type_var ident -> Printf.printf " %s " ident
   | Type_option (Some ty) ->
     print_type ty;
     Printf.printf " option"
@@ -24,9 +24,11 @@ let rec print_type (ty : ttype) =
      | single :: [] -> print_type single
      | _ -> ())
   | Type_arrow (ty1, ty2) ->
+    Printf.printf " ( ";
     print_type ty1;
     Printf.printf " -> ";
-    print_type ty2
+    print_type ty2;
+    Printf.printf " ) "
 ;;
 
 type error =
@@ -177,9 +179,12 @@ module Subst = struct
   (*get some ident and core_type and checks if an identifier doesn't occur in a type (bad case of infinite loop)
     and returns a state monad*)
   let singleton key value =
-    if Type.occurs_in key value
-    then fail (`Occurs_check (key, value))
-    else return (Map.singleton (module String) key value)
+    match value with
+    | Type_var id when String.equal key id -> return empty
+    | _ ->
+      if Type.occurs_in key value
+      then fail (`Occurs_check (key, value))
+      else return (Map.singleton (module String) key value)
   ;;
 
   let remove = Map.remove
@@ -285,7 +290,28 @@ module Scheme = struct
 
   let apply sub (Scheme (bind_set, ty)) =
     let new_sub = VarSet.fold (fun key sub -> Subst.remove sub key) bind_set sub in
-    Scheme (bind_set, Subst.apply new_sub ty)
+    let new_ty = Subst.apply new_sub ty in
+    let is_generalized_type_var id =
+      if Base.String.is_prefix ~prefix:"'ty" id then false else true
+    in
+    let rec extract_id_from_ty acc_set = function
+      | Type_var id -> VarSet.add id acc_set
+      | Type_option (Some ty) -> extract_id_from_ty acc_set ty
+      | Type_tuple ty_list ->
+        Base.List.fold_left ty_list ~init:acc_set ~f:(fun acc_set ty ->
+          extract_id_from_ty acc_set ty)
+      | Type_list ty -> extract_id_from_ty acc_set ty
+      | Type_arrow (ty1, ty2) -> extract_id_from_ty (extract_id_from_ty acc_set ty1) ty2
+      | _ -> acc_set
+    in
+    let new_bind_set =
+      VarSet.fold
+        (fun id new_bind_set ->
+           if is_generalized_type_var id then VarSet.add id new_bind_set else new_bind_set)
+        (extract_id_from_ty VarSet.empty new_ty)
+        VarSet.empty
+    in
+    Scheme (new_bind_set, new_ty)
   ;;
 end
 
@@ -301,10 +327,7 @@ module TypeEnv = struct
   let rec extend_with_pattern env_acc pat (Scheme (bind_set, ty) as scheme) =
     match pat, ty with
     | Pattern_var id, _ -> extend env_acc id scheme
-    | ( ( Pattern_tuple pat_list
-        | Pattern_list_constructor_case pat_list
-        | Pattern_list_sugar_case pat_list )
-      , Type_tuple ty_list ) ->
+    | Pattern_tuple pat_list, Type_tuple ty_list ->
       (match pat_list, ty_list with
        | first_pat :: pat_rest, first_ty :: ty_rest ->
          let new_acc_env =
@@ -315,6 +338,19 @@ module TypeEnv = struct
            (Pattern_tuple pat_rest)
            (Scheme (bind_set, Type_tuple ty_rest))
        | _ -> env_acc)
+    | Pattern_list_sugar_case pat_list, Type_list ty ->
+      Base.List.fold_left pat_list ~init:env_acc ~f:(fun env_acc pat ->
+        extend_with_pattern env_acc pat (Scheme (bind_set, ty)))
+    | Pattern_list_constructor_case pat_list, Type_list ty ->
+      (match pat_list with
+       | single_pat :: [] ->
+         extend_with_pattern env_acc single_pat (Scheme (bind_set, Type_list ty))
+       | first :: rest ->
+         extend_with_pattern
+           (extend_with_pattern env_acc first (Scheme (bind_set, ty)))
+           (Pattern_list_constructor_case rest)
+           (Scheme (bind_set, Type_list ty))
+       | [] -> env_acc)
     | Pattern_option (Some pat), Type_option (Some ty) ->
       extend_with_pattern env_acc pat (Scheme (bind_set, ty))
     | _ -> env_acc
@@ -326,6 +362,12 @@ module TypeEnv = struct
   ;;
 
   let apply sub env = Map.map env ~f:(Scheme.apply sub)
+  (*необходимо написать вспомогательную функция 'update_env_schemes', которая 
+    итеративно проходится по env, залезвет в каждую схему и делает следующее: 
+    если в схеме используются обобщенные переменные типов, то необходимо добавть
+    эти переменные в bind_set этой схемы.
+    Реализовать функцию is_generalized_type_var и с помощью нее вносить в bind_set неоюходимые идентификаторы*)
+
   let find = Map.find
 
   let find_type_exn env key =
@@ -462,7 +504,7 @@ module Infer = struct
     | Pattern_option (Some pat) ->
       let* env, type_of_pat = infer_pattern env pat in
       return (env, Type_option (Some type_of_pat))
-    | Pattern_list_sugar_case pat_list | Pattern_list_constructor_case pat_list ->
+    | Pattern_list_sugar_case pat_list ->
       let* list_element_type_var = fresh_var in
       let* env, sub =
         RList.fold_left
@@ -479,6 +521,25 @@ module Infer = struct
       let list_element_type = Subst.apply sub list_element_type_var in
       let env = TypeEnv.apply sub env in
       return (env, Type_list list_element_type)
+    | Pattern_list_constructor_case pat_list ->
+      let* fresh = fresh_var in
+      let rec helper env sub_acc rest =
+        match rest with
+        | [] -> return (env, sub_acc)
+        | single :: [] ->
+          let* env, ty = infer_pattern env single in
+          let* unified_sub = unify "" (Type_list fresh) ty in
+          let* composed_sub = Subst.compose sub_acc unified_sub in
+          helper env composed_sub []
+        | first :: rest ->
+          let* env, ty = infer_pattern env first in
+          let* unified_sub = unify "" fresh ty in
+          let* composed_sub = Subst.compose sub_acc unified_sub in
+          helper env composed_sub rest
+      in
+      let* env, sub = helper env Subst.empty pat_list in
+      let result_ty = Subst.apply sub fresh in
+      return (env, Type_list result_ty)
   ;;
 
   let rec get_pat_type_from_env env = function
@@ -522,8 +583,7 @@ module Infer = struct
   let extend_env_with_bind_names env let_binding_list =
     RList.fold_left let_binding_list ~init:(return env) ~f:(fun env let_bind ->
       match let_bind with
-      | Let_binding (_, Let_fun (id, pattern_list), _) ->
-        let* env, _ = extend_env_with_args env pattern_list in
+      | Let_binding (_, Let_fun (id, _), _) ->
         let* fresh = fresh_var in
         let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
         return env
@@ -592,9 +652,7 @@ module Infer = struct
     | Expr_construct_in (let_binding, expression) ->
       (match let_binding with
        | Let_binding (Non_recursive, _, _) ->
-         let* env, sub =
-           infer_value_non_rec_binding ~with_generalization:false env let_binding
-         in
+         let* env, sub = infer_value_non_rec_binding env let_binding in
          let* expr_sub, expr_ty = infer_expression env expression in
          let* composed_sub = Subst.compose sub expr_sub in
          return (composed_sub, expr_ty)
@@ -605,13 +663,7 @@ module Infer = struct
            | _ -> let_binding :: []
          in
          let* env = extend_env_with_bind_names env let_binding_list in
-         let* env, sub1 =
-           infer_rec_value_binding_list
-             ~with_generalization:false
-             env
-             Subst.empty
-             let_binding_list
-         in
+         let* env, sub1 = infer_rec_value_binding_list env Subst.empty let_binding_list in
          let* sub2, ty2 = infer_expression env expression in
          let* composed_sub = Subst.compose sub2 sub1 in
          return (composed_sub, ty2))
@@ -703,20 +755,10 @@ module Infer = struct
       let rec infer_list_constract env acc_sub = function
         | [] -> return (Subst.empty, Type_option None)
         | end_element :: [] ->
-          (match end_element with
-           | Expr_list_sugar expr_list ->
-             let* sub, ty = infer_expression env (Expr_list_sugar expr_list) in
-             let ty =
-               match ty with
-               | Type_list ty -> ty
-               | _ -> ty
-             in
-             let* unified_sub = unify "expr list construct end" ty fresh in
-             let* composed_sub = Subst.compose_all [ sub; unified_sub; acc_sub ] in
-             return (composed_sub, Subst.apply composed_sub fresh)
-           | invalid_last_element ->
-             let* _, ty = infer_expression env invalid_last_element in
-             fail (`Unexpected_type ty))
+          let* expr_sub, expr_ty = infer_expression env end_element in
+          let* unified_sub = unify "expr list construct end" expr_ty (Type_list fresh) in
+          let* composed_sub = Subst.compose_all [ expr_sub; unified_sub; acc_sub ] in
+          return (composed_sub, Type_list (Subst.apply composed_sub fresh))
         | expr_element :: expr_rest ->
           let* expr_sub, expr_ty = infer_expression env expr_element in
           let* unified_sub = unify "expr list construct element" expr_ty fresh in
@@ -770,18 +812,24 @@ module Infer = struct
         ~init:(return (match_exp_sub, result_ty))
         ~f:(fun (sub_acc, ty_acc) (pat, case_exp) ->
           let* env, pat_sub =
-            let* new_env, pat_ty = infer_pattern env pat in
+            let* env, pat_ty = infer_pattern env pat in
+            let _ = print_env env in
             let* unified_sub1 =
               unify "infer_match_exp, match expression" pat_ty match_exp_ty
             in
+            let env = TypeEnv.apply unified_sub1 env in
             if with_exp
-            then (
-              let generalized_pat_ty_sch =
-                generalize env (Subst.apply unified_sub1 pat_ty)
+            then
+              let* pat_ty = get_pat_type_from_env env pat in
+              let* env = remove_patterns_from_env env [ pat ] in
+              let gen_pat_ty_sch = generalize env pat_ty in
+              let env = TypeEnv.extend_with_pattern env pat gen_pat_ty_sch in
+              let _ =
+                Printf.printf "dfrjferiu";
+                print_env env
               in
-              let env = TypeEnv.extend_with_pattern env pat generalized_pat_ty_sch in
-              return (TypeEnv.apply unified_sub1 env, unified_sub1))
-            else return (new_env, unified_sub1)
+              return (env, unified_sub1)
+            else return (env, unified_sub1)
           in
           let* composed_sub1 = Subst.compose sub_acc pat_sub in
           let* case_exp_sub, case_exp_ty =
@@ -802,7 +850,7 @@ module Infer = struct
     in
     return (cases_sub, final_ty)
 
-  and infer_value_non_rec_binding ~with_generalization env = function
+  and infer_value_non_rec_binding env = function
     | Let_binding (Non_recursive, Let_fun (id, pattern_list), expr) ->
       let* env, _ = extend_env_with_args env pattern_list in
       let* expr_sub, expr_ty = infer_expression env expr in
@@ -820,40 +868,30 @@ module Infer = struct
         in
         return (build_arrow_chain pat_types)
       in
-      if with_generalization
-      then
-        let* env = remove_patterns_from_env env pattern_list in
-        let generalized_let_bind_ty = generalize env let_bind_ty in
-        let env = TypeEnv.extend env id generalized_let_bind_ty in
-        return (env, expr_sub)
-      else (
-        let env = TypeEnv.extend env id (Scheme (VarSet.empty, let_bind_ty)) in
-        return (env, expr_sub))
+      let* env = remove_patterns_from_env env pattern_list in
+      let generalized_let_bind_ty = generalize env let_bind_ty in
+      let env = TypeEnv.extend env id generalized_let_bind_ty in
+      let _ = print_env env in
+      (*debug*)
+      return (env, expr_sub)
     | Let_binding (Non_recursive, Let_pattern pat, expr) ->
       let* expr_sub, expr_ty = infer_expression env expr in
       let env = TypeEnv.apply expr_sub env in
-      if with_generalization
-      then
-        let* _, pat_ty = infer_pattern env pat in
-        let* unified_sub1 = unify "" expr_ty pat_ty in
-        let let_pat_ty_sch = generalize env (Subst.apply unified_sub1 expr_ty) in
-        let (Scheme (_, let_pat_ty)) = let_pat_ty_sch in
-        let* env, init_pat_ty = infer_pattern env pat in
-        let* unified_sub2 = unify "" init_pat_ty let_pat_ty in
-        let env = TypeEnv.apply unified_sub1 env in
-        let env = TypeEnv.extend_with_pattern env pat let_pat_ty_sch in
-        let* composed_sub = Subst.compose_all [ unified_sub1; unified_sub2; expr_sub ] in
-        return (env, composed_sub)
-      else
-        let* env, pat_ty = infer_pattern env pat in
-        let* unified_sub = unify "" pat_ty expr_ty in
-        let env = TypeEnv.apply unified_sub env in
-        let* compose_sub = Subst.compose_all [ expr_sub; unified_sub ] in
-        return (env, compose_sub)
+      let* _, pat_ty = infer_pattern env pat in
+      let* unified_sub1 = unify "" expr_ty pat_ty in
+      let env = TypeEnv.apply unified_sub1 env in
+      let let_pat_ty_sch = generalize env (Subst.apply unified_sub1 expr_ty) in
+      let (Scheme (_, let_pat_ty)) = let_pat_ty_sch in
+      let* env, init_pat_ty = infer_pattern env pat in
+      let* unified_sub2 = unify "" init_pat_ty let_pat_ty in
+      let env = TypeEnv.apply unified_sub1 env in
+      let env = TypeEnv.extend_with_pattern env pat let_pat_ty_sch in
+      let* composed_sub = Subst.compose_all [ unified_sub1; unified_sub2; expr_sub ] in
+      return (env, composed_sub)
     | Let_binding (Recursive, _, _) | Let_rec_and_binding _ -> return (env, Subst.empty)
 
-  and infer_rec_value_binding_list ~with_generalization env sub let_binds =
-    let infer_rec_vb new_sub ty id pattern_list rest =
+  and infer_rec_value_binding_list env sub let_binds =
+    let infer_rec_vb env new_sub ty id pattern_list rest =
       let env = TypeEnv.apply new_sub env in
       let infered_let_bind_type = TypeEnv.find_type_exn env id in
       (*this type was infered during infering RSH of rec let_biding*)
@@ -875,25 +913,12 @@ module Infer = struct
         unify "rec let binding" manual_let_bind_ty infered_let_bind_type
       in
       let* composed_sub = Subst.compose_all [ new_sub; unified_sub; sub ] in
-      if with_generalization
-      then
-        let* env = remove_patterns_from_env env (Pattern_var id :: pattern_list) in
-        let generalized_let_bind_sch =
-          generalize env (Subst.apply composed_sub manual_let_bind_ty)
-        in
-        let env = TypeEnv.extend env id generalized_let_bind_sch in
-        infer_rec_value_binding_list
-          ~with_generalization
-          (TypeEnv.apply composed_sub env)
-          composed_sub
-          rest
-      else (
-        let env = TypeEnv.extend env id (Scheme (VarSet.empty, manual_let_bind_ty)) in
-        infer_rec_value_binding_list
-          ~with_generalization
-          (TypeEnv.apply composed_sub env)
-          composed_sub
-          rest)
+      let* env = remove_patterns_from_env env (Pattern_var id :: pattern_list) in
+      let generalized_let_bind_sch =
+        generalize env (Subst.apply composed_sub manual_let_bind_ty)
+      in
+      let env = TypeEnv.extend env id generalized_let_bind_sch in
+      infer_rec_value_binding_list (TypeEnv.apply composed_sub env) composed_sub rest
     in
     match let_binds with
     | [] -> return (env, sub)
@@ -903,18 +928,17 @@ module Infer = struct
         , ((Expr_anonym_fun (_, _) | Expr_function_fun _) as expr) )
       :: rest ->
       let* new_sub, ty = infer_expression env expr in
-      infer_rec_vb new_sub ty id [] rest
+      infer_rec_vb env new_sub ty id [] rest
     | Let_binding (Recursive, Let_fun (id, pattern_list), expr) :: rest ->
+      let* env, _ = extend_env_with_args env pattern_list in
       let* expr_sub, ty = infer_expression env expr in
-      infer_rec_vb expr_sub ty id pattern_list rest
+      infer_rec_vb env expr_sub ty id pattern_list rest
     | _ -> fail `No_variable_rec
 
   and infer_let_biding (env, out_list) let_binding =
     match let_binding with
     | Let_binding (Non_recursive, _, _) ->
-      let* env, _ =
-        infer_value_non_rec_binding ~with_generalization:true env let_binding
-      in
+      let* env, _ = infer_value_non_rec_binding env let_binding in
       let* id_list = get_names_from_let_bind env let_binding in
       (*if debug then TypeEnv.pp Format.std_formatter env;*)
       return (env, out_list @ id_list)
@@ -925,13 +949,7 @@ module Infer = struct
         Printf.printf "(init) ";
         print_env env
       in
-      let* env, sub =
-        infer_rec_value_binding_list
-          ~with_generalization:true
-          env
-          Subst.empty
-          (let_binding :: [])
-      in
+      let* env, sub = infer_rec_value_binding_list env Subst.empty (let_binding :: []) in
       let _ =
         print_sub sub;
         Printf.printf "(result) ";
@@ -943,9 +961,7 @@ module Infer = struct
     | Let_rec_and_binding biding_list ->
       let* _ = check_names_from_let_binds biding_list in
       let* env = extend_env_with_bind_names env biding_list in
-      let* env, _ =
-        infer_rec_value_binding_list ~with_generalization:true env Subst.empty biding_list
-      in
+      let* env, _ = infer_rec_value_binding_list env Subst.empty biding_list in
       let* id_list =
         RList.fold_left biding_list ~init:(return []) ~f:(fun result_list let_binding ->
           let* last_element = get_names_from_let_bind env let_binding in
