@@ -758,6 +758,10 @@ module Infer = struct
           let* expr_sub, expr_ty = infer_expression env end_element in
           let* unified_sub = unify "expr list construct end" expr_ty (Type_list fresh) in
           let* composed_sub = Subst.compose_all [ expr_sub; unified_sub; acc_sub ] in
+          let _ =
+            print_sub composed_sub;
+            Printf.printf "for case_expr"
+          in
           return (composed_sub, Type_list (Subst.apply composed_sub fresh))
         | expr_element :: expr_rest ->
           let* expr_sub, expr_ty = infer_expression env expr_element in
@@ -812,24 +816,28 @@ module Infer = struct
         ~init:(return (match_exp_sub, result_ty))
         ~f:(fun (sub_acc, ty_acc) (pat, case_exp) ->
           let* env, pat_sub =
-            let* env, pat_ty = infer_pattern env pat in
-            let _ = print_env env in
-            let* unified_sub1 =
-              unify "infer_match_exp, match expression" pat_ty match_exp_ty
-            in
-            let env = TypeEnv.apply unified_sub1 env in
             if with_exp
-            then
-              let* pat_ty = get_pat_type_from_env env pat in
-              let* env = remove_patterns_from_env env [ pat ] in
-              let gen_pat_ty_sch = generalize env pat_ty in
+            then (
+              let env = TypeEnv.apply sub_acc env in
+              let* _, pat_ty = infer_pattern env pat in
+              let* unified_sub1 =
+                unify
+                  "infer_match_exp, match expression"
+                  pat_ty
+                  (Subst.apply sub_acc match_exp_ty)
+              in
+              let gen_pat_ty_sch = generalize env (Subst.apply unified_sub1 pat_ty) in
               let env = TypeEnv.extend_with_pattern env pat gen_pat_ty_sch in
               let _ =
-                Printf.printf "dfrjferiu";
-                print_env env
+                print_env env;
+                Printf.printf "  vgvghbgvf"
               in
+              return (env, unified_sub1))
+            else
+              let* env, pat_ty = infer_pattern env pat in
+              let* unified_sub1 = unify "" pat_ty match_exp_ty in
+              let env = TypeEnv.apply unified_sub1 env in
               return (env, unified_sub1)
-            else return (env, unified_sub1)
           in
           let* composed_sub1 = Subst.compose sub_acc pat_sub in
           let* case_exp_sub, case_exp_ty =
@@ -841,6 +849,12 @@ module Infer = struct
           let* composed_sub2 =
             Subst.compose_all [ composed_sub1; case_exp_sub; unified_sub2 ]
           in
+          let _ =
+            Printf.printf "Sub : \n";
+            print_sub composed_sub2
+          in
+          let _ = print_env (TypeEnv.apply composed_sub2 env) in
+          let _ = print_type (Subst.apply composed_sub2 ty_acc) in
           return (composed_sub2, Subst.apply composed_sub2 ty_acc))
     in
     let final_ty =
@@ -931,6 +945,10 @@ module Infer = struct
       infer_rec_vb env new_sub ty id [] rest
     | Let_binding (Recursive, Let_fun (id, pattern_list), expr) :: rest ->
       let* env, _ = extend_env_with_args env pattern_list in
+      let _ =
+        Printf.printf "(init) ";
+        print_env env
+      in
       let* expr_sub, ty = infer_expression env expr in
       infer_rec_vb env expr_sub ty id pattern_list rest
     | _ -> fail `No_variable_rec

@@ -172,6 +172,11 @@ let _5 =
   | None -> 0
 ;;
 
+let map f p =
+  let a, b = p in
+  f a, f b
+;;
+
 let _6 =
   fun arg ->
   match arg with
@@ -197,12 +202,6 @@ let id1, id2 =
 
 (*015*)
 let rec fix f x = f (fix f) x
-
-let map f p =
-  let a, b = p in
-  f a, f b
-;;
-
 let fixpoly l = fix (fun self l -> map (fun li x -> li (self l) x) l) l
 
 let feven p n =
@@ -219,9 +218,6 @@ let tie = fixpoly (feven, fodd)
 
 let rec meven n = if n = 0 then 1 else modd (n - 1)
 and modd n = if n = 0 then 1 else meven (n - 1)
-(*stopped here: no_variable*)
-(*скорее всего ошибка в некорректном добавлении идентификатороы в окружение, 
-  нужно их одновременно добавить в окружение, а не поочередности, как это сделала я*)
 
 let main =
   let () = print_int (modd 1) in
@@ -229,5 +225,68 @@ let main =
   let even, odd = tie in
   let () = print_int (odd 3) in
   let () = print_int (even 4) in
+  0
+;;
+
+(*016*)
+
+let rec length xs =
+  match xs with
+  | [] -> 0
+  | h :: tl -> 1 + length tl
+;;
+
+let length_tail =
+  let rec helper acc xs =
+    match xs with
+    | [] -> acc
+    | h :: tl -> helper (acc + 1) tl
+  in
+  helper 0
+;;
+
+let rec map f xs =
+  match xs with
+  | [] -> []
+  | a :: [] -> [ f a ]
+  | [ a; b ] -> [ f a; f b ]
+  | [ a; b; c ] -> [ f a; f b; f c ]
+  | a :: b :: c :: d :: tl -> f a :: f b :: f c :: f d :: map f tl
+;;
+
+(*stopped here*)
+
+let rec append xs ys =
+  match xs with
+  | [] -> ys
+  | x :: xs -> x :: append xs ys
+;;
+
+let concat =
+  let rec helper xs =
+    match xs with
+    | [] -> []
+    | h :: tl -> append h (helper tl)
+  in
+  helper
+;;
+
+let rec iter f xs =
+  match xs with
+  | [] -> ()
+  | h :: tl ->
+    let () = f h in
+    iter f tl
+;;
+
+let rec cartesian xs ys =
+  match xs with
+  | [] -> []
+  | h :: tl -> append (map (fun a -> h, a) ys) (cartesian tl ys)
+;;
+
+let main =
+  let () = iter print_int [ 1; 2; 3 ] in
+  let () = print_int (length (cartesian [ 1; 2 ] [ 1; 2; 3; 4 ])) in
   0
 ;;
