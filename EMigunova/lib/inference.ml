@@ -401,11 +401,16 @@ module Infer = struct
   let unify = Subst.unify
   let fresh_var = fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n)
 
+  let fresh_var_instantiate id =
+    (*exp: 'ty3instantiate_'a *)
+    fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n ^ "instantiate_" ^ id)
+  ;;
+
   let instantiate (Scheme (bind_set, ty)) =
     VarSet.fold
       (fun name ty ->
          let* ty = ty in
-         let* fresh = fresh_var in
+         let* fresh = fresh_var_instantiate name in
          let* sub = Subst.singleton name fresh in
          return (Subst.apply sub ty))
       bind_set
@@ -419,11 +424,16 @@ module Infer = struct
         (fun str (temp_free, temp_ty, n) ->
            let degree = n / 26 in
            let new_str =
-             (* 97 - is number 'a' in ASCII-table *)
-             Printf.sprintf
-               "'%c%s"
-               (Char.chr (97 + (n mod 26)))
-               (if degree = 0 then "" else Int.to_string degree)
+             if Base.String.is_substring ~substring:"instantiate" str
+             then (
+               let index = String.index str '_' in
+               String.sub str (index + 1) (String.length str - (index + 1)))
+             else
+               (* 97 - is number 'a' in ASCII-table *)
+               Printf.sprintf
+                 "'%c%s"
+                 (Char.chr (97 + (n mod 26)))
+                 (if degree = 0 then "" else Int.to_string degree)
              (*new_str : 'a, ... ,'z, 'a1, ... ,'z1, ...*)
            in
            let sub = Subst.singleton1 str (Type_var new_str) in
