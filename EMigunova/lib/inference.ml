@@ -7,28 +7,52 @@ let rec print_type (ty : ttype) =
   | Type_char -> Printf.printf "char"
   | Type_string -> Printf.printf "string"
   | Type_unit -> Printf.printf "unit"
-  | Type_var ident -> Printf.printf " %s " ident
+  | Type_var ident -> Printf.printf "%s" ident
   | Type_option (Some ty) ->
-    print_type ty;
+    (match ty with
+     | Type_tuple _ ->
+       Printf.printf "(";
+       print_type ty;
+       Printf.printf ")"
+     | _ -> print_type ty);
     Printf.printf " option"
   | Type_option None -> ()
   | Type_list ty ->
-    print_type ty;
+    (match ty with
+     | Type_tuple _ ->
+       Printf.printf "(";
+       print_type ty;
+       Printf.printf ")"
+     | _ -> print_type ty);
     Printf.printf " list"
   | Type_tuple ty_list ->
     (match ty_list with
      | first :: second :: rest ->
-       print_type first;
-       Printf.printf " * ";
+       (match first with
+        | Type_arrow _ ->
+          Printf.printf "(";
+          print_type first;
+          Printf.printf ")"
+        | _ -> print_type first);
+       Printf.printf "*";
        print_type (Type_tuple (second :: rest))
-     | single :: [] -> print_type single
+     | single :: [] ->
+       (match single with
+        | Type_arrow _ ->
+          Printf.printf "(";
+          print_type single;
+          Printf.printf ")"
+        | _ -> print_type single)
      | _ -> ())
   | Type_arrow (ty1, ty2) ->
-    Printf.printf " ( ";
-    print_type ty1;
-    Printf.printf " -> ";
-    print_type ty2;
-    Printf.printf " ) "
+    (match ty1 with
+     | Type_arrow _ ->
+       Printf.printf "(";
+       print_type ty1;
+       Printf.printf ")"
+     | _ -> print_type ty1);
+    Printf.printf "->";
+    print_type ty2
 ;;
 
 type error =
@@ -38,46 +62,33 @@ type error =
   | `Occurs_check of string * ttype (* * core_type *)
   | `No_variable of string
   | `Unification_failed of string * ttype * ttype (* of core_type * core_type *)
-  | `Unexpected_type of ttype
   ]
 
-let error_to_string (e : error) =
+let print_error (e : error) =
   match e with
-  | `No_variable_rec -> "No_variable_rec"
-  | `No_arg_rec -> "No_arg_rec"
-  | `Bound_several_times _ -> "Bound_several_times "
-  | `Occurs_check _ -> "Occurs_check "
-  | `No_variable _ -> "No_variable "
-  | `Unification_failed _ -> "Unification_failed "
-  | `Unexpected_type _ -> "Unexpected_type"
-;;
-
-(*let pp_error ppf : error -> _ = function
   | `No_variable_rec ->
-    Format.fprintf ppf "Only variables are allowed as left-hand side of `let rec'"
+    Printf.printf
+      "recursive binding failed: a function was expected as the RHS. Recursive binding \
+       is impossible for that variable. It would lead to infinite recursion."
   | `No_arg_rec ->
-    Format.fprintf
-      ppf
-      "This kind of expression is not allowed as right-hand side of `let rec'"
+    Printf.printf
+      "recursive binding failed: the LHS of the recursive binding must not be a composed \
+       pattern (e.g. tuple, list, etc.). A variable is required."
   | `Bound_several_times id ->
-    Format.fprintf ppf "Variable '%s' is bound several times in the matching" id
-  | `Occurs_check (id, ty) ->
-    Format.fprintf
-      ppf
-      "Occurs check failed: the type variable %s occurs inside %a"
+    Printf.printf
+      "Binding faild: simultaneous binding of one identifier to several values. The \
+       identifier that was bound several times: '%s'."
       id
-      Pprinter.pp_core_type
-      ty
-  | `No_variable id -> Format.fprintf ppf "Undefined variable '%s'" id
-  | `Unification_failed (l, r) ->
-    Format.fprintf
-      ppf
-      "Unification failed on %a and %a"
-      Pprinter.pp_core_type
-      l
-      Pprinter.pp_core_type
-      r
-;;*)
+  | `Occurs_check (id, ty) ->
+    Printf.printf "Occurs check failed: the type variable '%s' occurs inside" id;
+    print_type ty
+  | `No_variable id -> Printf.printf "Undefined variable '%s'" id
+  | `Unification_failed (id, ty1, ty2) ->
+    Printf.printf "Unification failed in %s for following unifiable types: " id;
+    print_type ty1;
+    Printf.printf " and ";
+    print_type ty2
+;;
 
 module State = struct
   open Base
@@ -276,14 +287,14 @@ module Subst = struct
   ;;*)
 end
 
-let print_sub sub =
+(*let print_sub sub =
   Printf.printf "Substitution table: \n";
   Base.Map.iteri sub ~f:(fun ~key ~data ->
     Printf.printf "%s   <--->   " key;
     print_type data;
     Printf.printf "\n");
   Printf.printf "\n"
-;;
+;;*)
 
 module Scheme = struct
   let free_vars (Scheme (bind_set, ty)) = VarSet.diff (Type.free_vars ty) bind_set
@@ -383,7 +394,7 @@ module TypeEnv = struct
   ;;*)
 end
 
-let print_env env =
+(*let print_env env =
   Printf.printf "Type enviroment: \n";
   Base.Map.iteri env ~f:(fun ~key ~data ->
     Printf.printf "val %s : " key;
@@ -391,7 +402,7 @@ let print_env env =
     print_type ty;
     Printf.printf "\n");
   Printf.printf "\n"
-;;
+;;*)
 
 module Infer = struct
   open Ast
@@ -602,8 +613,8 @@ module Infer = struct
         let* fresh = fresh_var in
         let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
         return env
-      | Let_binding (_, Let_pattern (Pattern_var _), _) -> fail `No_arg_rec
-      | _ -> fail `No_variable_rec)
+      | Let_binding (_, Let_pattern (Pattern_var _), _) -> fail `No_variable_rec
+      | _ -> fail `No_arg_rec)
   ;;
 
   (*let x = ... - for my parser it's a Pat_var, therefore any Let_fun has at least 1 argument*)
@@ -768,10 +779,10 @@ module Infer = struct
           let* expr_sub, expr_ty = infer_expression env end_element in
           let* unified_sub = unify "expr list construct end" expr_ty (Type_list fresh) in
           let* composed_sub = Subst.compose_all [ expr_sub; unified_sub; acc_sub ] in
-          let _ =
+          (*let _ =
             print_sub composed_sub;
             Printf.printf "for case_expr"
-          in
+          in*)
           return (composed_sub, Type_list (Subst.apply composed_sub fresh))
         | expr_element :: expr_rest ->
           let* expr_sub, expr_ty = infer_expression env expr_element in
@@ -838,10 +849,10 @@ module Infer = struct
               in
               let gen_pat_ty_sch = generalize env (Subst.apply unified_sub1 pat_ty) in
               let env = TypeEnv.extend_with_pattern env pat gen_pat_ty_sch in
-              let _ =
+              (*let _ =
                 print_env env;
                 Printf.printf "  vgvghbgvf"
-              in
+              in*)
               return (env, unified_sub1))
             else
               let* env, pat_ty = infer_pattern env pat in
@@ -859,12 +870,12 @@ module Infer = struct
           let* composed_sub2 =
             Subst.compose_all [ composed_sub1; case_exp_sub; unified_sub2 ]
           in
-          let _ =
+          (*let _ =
             Printf.printf "Sub : \n";
             print_sub composed_sub2
-          in
-          let _ = print_env (TypeEnv.apply composed_sub2 env) in
-          let _ = print_type (Subst.apply composed_sub2 ty_acc) in
+          in*)
+          (*let _ = print_env (TypeEnv.apply composed_sub2 env) in
+          let _ = print_type (Subst.apply composed_sub2 ty_acc) in*)
           return (composed_sub2, Subst.apply composed_sub2 ty_acc))
     in
     let final_ty =
@@ -895,7 +906,7 @@ module Infer = struct
       let* env = remove_patterns_from_env env pattern_list in
       let generalized_let_bind_ty = generalize env let_bind_ty in
       let env = TypeEnv.extend env id generalized_let_bind_ty in
-      let _ = print_env env in
+      (*let _ = print_env env in*)
       (*debug*)
       return (env, expr_sub)
     | Let_binding (Non_recursive, Let_pattern pat, expr) ->
@@ -955,10 +966,10 @@ module Infer = struct
       infer_rec_vb env new_sub ty id [] rest
     | Let_binding (Recursive, Let_fun (id, pattern_list), expr) :: rest ->
       let* env, _ = extend_env_with_args env pattern_list in
-      let _ =
+      (*let _ =
         Printf.printf "(init) ";
         print_env env
-      in
+      in*)
       let* expr_sub, ty = infer_expression env expr in
       infer_rec_vb env expr_sub ty id pattern_list rest
     | _ -> fail `No_variable_rec
@@ -973,16 +984,16 @@ module Infer = struct
     | Let_binding (Recursive, _, _) ->
       let* env = extend_env_with_bind_names env (let_binding :: []) in
       (*debug*)
-      let _ =
+      (*let _ =
         Printf.printf "(init) ";
         print_env env
-      in
-      let* env, sub = infer_rec_value_binding_list env Subst.empty (let_binding :: []) in
-      let _ =
+      in*)
+      let* env, _ = infer_rec_value_binding_list env Subst.empty (let_binding :: []) in
+      (*let _ =
         print_sub sub;
         Printf.printf "(result) ";
         print_env env
-      in
+      in*)
       let* id_list = get_names_from_let_bind env let_binding in
       (*if debug then TypeEnv.pp Format.std_formatter env;*)
       return (env, out_list @ id_list)
@@ -1034,4 +1045,54 @@ let env_with_print_funs =
 
 let run_inferencer (*?(debug = false)*) ast =
   State.run (Infer.infer_srtucture (*~debug*) env_with_print_funs ast)
+;;
+
+(*-------------------for debug-------------------*)
+let infer str =
+  match Parse.parse str with
+  | Ok ast ->
+    (match run_inferencer ast with
+     | Ok result ->
+       Base.List.map result ~f:(fun (name, ty) ->
+         Printf.printf "val %s : " name;
+         print_type ty;
+         Printf.printf "\n")
+     | Error e -> [ print_error e ])
+  | Error _ -> [ () ]
+;;
+
+let from_file filename =
+  let in_channel =
+    open_in ("/home/anastasia/Documents/repositories/fp2024/manytests/typed/" ^ filename)
+  in
+  try
+    let content = really_input_string in_channel (in_channel_length in_channel) in
+    close_in in_channel;
+    infer content
+  with
+  | e ->
+    close_in_noerr in_channel;
+    raise e
+;;
+
+let run_infer from_file =
+  Base.List.map
+    [ "001fac.ml"
+    ; "002fac.ml"
+    ; "003fib.ml"
+    ; "004manyargs.ml"
+    ; "005fix.ml"
+    ; "006partial2.ml"
+    ; "006partial3.ml"
+    ; "006partial.ml"
+    ; "007order.ml"
+    ; "008ascription.ml"
+    ; "009let_poly.ml"
+    ; "010sukharev.ml"
+    ; "015tuples.ml"
+    ; "016lists.ml"
+    ]
+    ~f:(fun name ->
+      Printf.printf "\nResult of %s: \n" name;
+      from_file name)
 ;;

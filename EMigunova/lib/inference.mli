@@ -19,7 +19,6 @@ type error =
   | `Unification_failed of string * ttype * ttype
     (** Represents that type unification has failed.
         This occurs when two types cannot made equivalent during type inference. *)
-  | `Unexpected_type of ttype
   ]
 
 (*val pp_error : Format.formatter -> error -> unit*)
@@ -27,8 +26,6 @@ type error =
 module VarSet : sig
   type t = Set.Make(String).t
 end
-
-val error_to_string : error -> ident
 
 type scheme = Scheme of VarSet.t * ttype
 
@@ -42,3 +39,7 @@ val env_with_print_funs : TypeEnv.t
 (*type structure = let_binding list*)
 
 val run_inferencer : let_binding list -> ((ident * ttype) list, error) result
+
+(*for debug*)
+val infer : ident -> unit list
+val run_infer : (ident -> 'a) -> 'a list

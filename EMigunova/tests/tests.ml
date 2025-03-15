@@ -1,14 +1,5 @@
 let rec fac n = if n <= 1 then 1 else n * fac (n - 1)
 
-(*
-   let infer str =
-  match Parse.parse str with
-  | Ok ast ->
-    (match Inference.run_inferencer ast with
-     | Ok result -> result
-     | Error e -> [(error_to_string e, Type_option None)])
-  | Error e -> [];;*)
-
 let main =
   let () = print_int (fac 4) in
   0
@@ -67,6 +58,7 @@ let main =
   0
 ;;
 
+(*06partial*)
 let foo b = if b then fun foo -> foo + 2 else fun foo -> foo * 10
 let foo x = foo true (foo false (foo true (foo false x)))
 
@@ -172,11 +164,6 @@ let _5 =
   | None -> 0
 ;;
 
-let map f p =
-  let a, b = p in
-  f a, f b
-;;
-
 let _6 =
   fun arg ->
   match arg with
@@ -202,6 +189,12 @@ let id1, id2 =
 
 (*015*)
 let rec fix f x = f (fix f) x
+
+let map f p =
+  let a, b = p in
+  f a, f b
+;;
+
 let fixpoly l = fix (fun self l -> map (fun li x -> li (self l) x) l) l
 
 let feven p n =
@@ -253,8 +246,6 @@ let rec map f xs =
   | [ a; b; c ] -> [ f a; f b; f c ]
   | a :: b :: c :: d :: tl -> f a :: f b :: f c :: f d :: map f tl
 ;;
-
-(*stopped here*)
 
 let rec append xs ys =
   match xs with
