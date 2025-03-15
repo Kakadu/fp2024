@@ -354,6 +354,10 @@ let increment_program_idx () =
   write new_state
 ;;
 
+(* index is expr index in ast (expr list) *)
+(* address is a kind of expression physical address (but all instructions are considered 4-byte, even compressed (for convenience)) *)
+
+(* translates expr index in ast to its "physical address" *)
 let translate_index_to_address immediate64_value =
   let* state = read in
   let rec traverse_program address remaining_value = function
@@ -387,6 +391,7 @@ let translate_index_to_address immediate64_value =
   traverse_program 0L immediate64_value state.program
 ;;
 
+(* translates expr "physical address" to its index in ast *)
 let translate_address_to_index immediate64_value =
   let* state = read in
   let rec traverse_program index remaining_value = function
