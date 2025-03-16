@@ -522,19 +522,19 @@ let parse_instruction =
               (char '(' *> parse_register <* char ')')
        ; parse_string_with_spaces "sb"
          *> lift3
-              (fun r1 r2 addr12 -> InstructionExpr (Sb (r1, addr12, r2)))
+              (fun r1 addr12 r2 -> InstructionExpr (Sb (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; parse_string_with_spaces "sh"
          *> lift3
-              (fun r1 r2 addr12 -> InstructionExpr (Sh (r1, addr12, r2)))
+              (fun r1 addr12 r2 -> InstructionExpr (Sh (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
        ; parse_string_with_spaces "sw"
          *> lift3
-              (fun r1 r2 addr12 -> InstructionExpr (Sw (r1, addr12, r2)))
+              (fun r1 addr12 r2 -> InstructionExpr (Sw (r1, r2, addr12)))
               parse_register
               (char ',' *> parse_address12)
               (char '(' *> parse_register <* char ')')
