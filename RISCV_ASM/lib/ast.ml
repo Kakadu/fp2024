@@ -529,7 +529,7 @@ type directive =
   (** .cfi_restore int *)
   | Ident of (string[@gen Generators.gen_my_string]) (** .ident string *)
   | CfiRestoreState (** .cfi_restore_state *)
-  | Word of int (** .word stores data in memory*)
+  | Word of Int32.t (** .word stores data in memory*)
   | Space of int (** .space allocates unitialized space for data in memory *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
