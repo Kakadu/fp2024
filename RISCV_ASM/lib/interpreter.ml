@@ -545,7 +545,7 @@ let execute_load_int rd rs1 imm size is_signed =
 ;;
 
 let execute_store_int rs1 rs2 imm size =
-  let* base_address = get_register_value rs1 in
+  let* base_address = get_register_value rs2 in
   let* address_info = get_address12_value imm in
   let offset =
     match address_info with
@@ -553,7 +553,7 @@ let execute_store_int rs1 rs2 imm size =
     | LabelAddress label_address -> label_address
   in
   let address = Int64.add base_address (sext offset) in
-  let* value = get_register_value rs2 in
+  let* value = get_register_value rs1 in
   store_in_memory address value size
 ;;
 
@@ -953,8 +953,6 @@ let traverse_program () =
     match expr_opt with
     | None -> return state
     | Some (InstructionExpr instr) ->
-      (*let () = pp_instruction Format.std_formatter instr in
-        let () = print_string (show_state state) in*)
       let* () = execute_instruction instr in
       let* () = increment_program_idx () in
       prog_trav_helper ()
