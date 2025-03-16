@@ -581,7 +581,7 @@ let pp_directive ppf = function
   | CfiRestore imm -> Format.fprintf ppf ".cfi_restore %d" imm
   | Ident str -> Format.fprintf ppf ".ident %S" str
   | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
-  | Word imm -> Format.fprintf ppf ".word %d" imm
+  | Word imm -> Format.fprintf ppf ".word %d" (Int32.to_int imm)
   | Space imm -> Format.fprintf ppf ".space %d" imm
 ;;
 
