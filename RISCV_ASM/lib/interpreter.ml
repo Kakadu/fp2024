@@ -575,11 +575,10 @@ let execute_vle32v vd rs1 imm =
     then
       let* value = load_from_memory address state.vector_element_length in
       let next_address = Int64.add address (Int64.of_int state.vector_element_length) in
-      load_values next_address (element_idx + 1) (replace acc element_idx value)
-    else return acc
+      load_values next_address (element_idx + 1) (value :: acc)
+    else return (List.rev acc)
   in
-  let initial_list = List.init vector_length (fun _ -> 0L) in
-  let* vector_values = load_values address 0 initial_list in
+  let* vector_values = load_values address 0 [] in
   set_vregister_value vd vector_values
 ;;
 
@@ -606,20 +605,16 @@ let execute_vse32v vs rs1 imm =
 ;;
 
 let execute_vector_arithmetic vd vs1 vs2 op =
-  let* state = read in
   let* vec1 = get_vregister_value vs1 in
   let* vec2 = get_vregister_value vs2 in
-  let result =
-    List.init state.vector_length (fun i -> op (List.nth vec1 i) (List.nth vec2 i))
-  in
+  let result = List.map2 op vec1 vec2 in
   set_vregister_value vd result
 ;;
 
 let execute_vector_scalar vd vs1 rs2 op =
-  let* state = read in
   let* vec = get_vregister_value vs1 in
   let* scalar = get_register_value rs2 in
-  let result = List.init state.vector_length (fun i -> op (List.nth vec i) scalar) in
+  let result = List.map (fun x -> op x scalar) vec in
   set_vregister_value vd result
 ;;
 
@@ -915,96 +910,32 @@ let show_memory state =
 ;;
 
 let show_state state =
-  let registers_order =
-    [ "X0"
-    ; "X1"
-    ; "X2"
-    ; "X3"
-    ; "X4"
-    ; "X5"
-    ; "X6"
-    ; "X7"
-    ; "X8"
-    ; "X9"
-    ; "X10"
-    ; "X11"
-    ; "X12"
-    ; "X13"
-    ; "X14"
-    ; "X15"
-    ; "X16"
-    ; "X17"
-    ; "X18"
-    ; "X19"
-    ; "X20"
-    ; "X21"
-    ; "X22"
-    ; "X23"
-    ; "X24"
-    ; "X25"
-    ; "X26"
-    ; "X27"
-    ; "X28"
-    ; "X29"
-    ; "X30"
-    ; "X31"
-    ]
-  in
   let registers_str =
-    List.fold_left
-      (fun acc reg ->
+    let rec loop acc i =
+      if i > 31
+      then acc
+      else (
+        let reg = "X" ^ string_of_int i in
         let value = StringMap.find_opt reg state.registers |> Option.value ~default:0L in
-        acc ^ Printf.sprintf "%s: %Ld\n" reg value)
-      ""
-      registers_order
-  in
-  let vector_registers_order =
-    [ "V0"
-    ; "V1"
-    ; "V2"
-    ; "V3"
-    ; "V4"
-    ; "V5"
-    ; "V6"
-    ; "V7"
-    ; "V8"
-    ; "V9"
-    ; "V10"
-    ; "V11"
-    ; "V12"
-    ; "V13"
-    ; "V14"
-    ; "V15"
-    ; "V16"
-    ; "V17"
-    ; "V18"
-    ; "V19"
-    ; "V20"
-    ; "V21"
-    ; "V22"
-    ; "V23"
-    ; "V24"
-    ; "V25"
-    ; "V26"
-    ; "V27"
-    ; "V28"
-    ; "V29"
-    ; "V30"
-    ; "V31"
-    ]
+        loop (acc ^ Printf.sprintf "%s: %Ld\n" reg value) (i + 1))
+    in
+    loop "" 0
   in
   let vector_registers_str =
-    List.fold_left
-      (fun acc vreg ->
+    let rec loop acc i =
+      if i > 31
+      then acc
+      else (
+        let vreg = "V" ^ string_of_int i in
         let values =
           StringMap.find_opt vreg state.vregisters |> Option.value ~default:[]
         in
         let values_str =
           List.fold_left (fun acc value -> acc ^ Printf.sprintf "%Ld " value) "" values
         in
-        acc ^ Printf.sprintf "%s: [%s]\n" vreg values_str)
-      ""
-      vector_registers_order
+        loop (acc ^ Printf.sprintf "%s: [%s]\n" vreg values_str) (i + 1))
+    in
+    loop "" 0
   in
   let memory_str = show_memory state in
   let program_idx_str = Printf.sprintf "Program index: %Ld" state.program_idx in
