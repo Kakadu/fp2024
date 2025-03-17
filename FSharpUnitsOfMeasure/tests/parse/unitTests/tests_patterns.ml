@@ -6,7 +6,7 @@ open Pprint.Pp
 open Parse.Patterns
 open Pprint.Pprinter
 
-let run = pp pprint_pat ppat 
+let run = pp pprint_pat ppat
 
 (************************** Idents **************************)
 
