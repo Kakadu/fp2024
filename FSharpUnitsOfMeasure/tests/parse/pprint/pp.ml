@@ -6,12 +6,12 @@ open Base
 
 let pp printer parser str =
   match Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
-  | Ok res -> print_endline (printer res)
-  | Error res -> print_endline res
+  | Ok res -> Stdlib.print_endline (printer res)
+  | Error res -> Stdlib.print_endline res
 ;;
 
 let pp2 printer parser str =
   match Angstrom.parse_string ~consume:Angstrom.Consume.All parser str with
-  | Ok res -> printer Format.std_formatter res
-  | Error res -> print_endline res
+  | Ok res -> printer Stdlib.Format.std_formatter res
+  | Error res -> Stdlib.print_endline res
 ;;

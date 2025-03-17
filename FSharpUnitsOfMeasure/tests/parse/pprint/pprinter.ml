@@ -14,7 +14,6 @@ let pprint_sep_nl = asprintf "\n\n"
 let pprint_sep_comma = asprintf ", "
 let pprint_sep_and = asprintf " and "
 let pprint_sep_or = asprintf " | "
-let pprint_sep_by pprint_alpha sep_by = pp_print_list pprint_alpha ~pp_sep:sep_by
 
 let pprint_sep_by print sep list =
   let rec helper acc = function

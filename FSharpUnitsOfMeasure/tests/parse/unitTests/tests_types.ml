@@ -2,29 +2,30 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Base
 open Pprint.Pp
 open Parse.Types
 open Pprint.Pprinter
+
+let run = pp pprint_type ptype
 
 (************************** Builtin types **************************)
 
 (************************** Idents **************************)
 
 let%expect_test "parse basic type identificator" =
-  pp pprint_type ptype {| int |};
+  run {| int |};
   [%expect {| int |}]
 ;;
 
 (************************** Functions **************************)
 
 let%expect_test "parse function type of 2 builtin types" =
-  pp pprint_type ptype {| int -> int |};
+  run {| int -> int |};
   [%expect {| int -> int |}]
 ;;
 
 let%expect_test "parse function type of 3 builtin types" =
-  pp pprint_type ptype {| int -> int -> int |};
+  run {| int -> int -> int |};
   [%expect {|
     int -> int -> int |}]
 ;;
@@ -32,17 +33,17 @@ let%expect_test "parse function type of 3 builtin types" =
 (************************** Tuples **************************)
 
 let%expect_test "parse tuple type of 2 builtin types" =
-  pp pprint_type ptype {| int * int |};
+  run {| int * int |};
   [%expect {| int * int |}]
 ;;
 
 let%expect_test "parse tuple type of 3 builtin types" =
-  pp pprint_type ptype {| int * int * int |};
+  run {| int * int * int |};
   [%expect {| int * int * int |}]
 ;;
 
 let%expect_test "parse tuple type of 5 builtin types" =
-  pp pprint_type ptype {| int * int * int * int * int |};
+  run {| int * int * int * int * int |};
   [%expect {|
     int * int * int * int * int |}]
 ;;
@@ -50,53 +51,53 @@ let%expect_test "parse tuple type of 5 builtin types" =
 (************************** Parentheses **************************)
 
 let%expect_test "parse builtin type in parentheses" =
-  pp pprint_type ptype {| (int) |};
+  run {| (int) |};
   [%expect {| int |}]
 ;;
 
 let%expect_test "parse 2-builtin-types-tuple in parentheses" =
-  pp pprint_type ptype {| (int * int) |};
+  run {| (int * int) |};
   [%expect {| int * int |}]
 ;;
 
 let%expect_test "parse tuple of tuple and int " =
-  pp pprint_type ptype {| (int * int) * int |};
+  run {| (int * int) * int |};
   [%expect {|
     int * int * int |}]
 ;;
 
 let%expect_test "parse tuple of int and tuple " =
-  pp pprint_type ptype {| int * (int * int) |};
+  run {| int * (int * int) |};
   [%expect {|
     int * int * int |}]
 ;;
 
 let%expect_test "parse tuple of int, tuple and int" =
-  pp pprint_type ptype {| int * (int * int) * int |};
+  run {| int * (int * int) * int |};
   [%expect {|
     int * int * int * int |}]
 ;;
 
 let%expect_test "parse function taking function and returning int" =
-  pp pprint_type ptype {| (int -> int) -> int |};
+  run {| (int -> int) -> int |};
   [%expect {|
     (int -> int) -> int |}]
 ;;
 
 let%expect_test "parse function taking int and returning function" =
-  pp pprint_type ptype {| int -> (int -> int) |};
+  run {| int -> (int -> int) |};
   [%expect {|
     int -> int -> int |}]
 ;;
 
 let%expect_test "parse function taking int and function and returning int" =
-  pp pprint_type ptype {| int -> (int -> int) -> int |};
+  run {| int -> (int -> int) -> int |};
   [%expect {|
     int -> (int -> int) -> int |}]
 ;;
 
 let%expect_test "parse function taking tuple and returning function" =
-  pp pprint_type ptype {| (int * int) -> (int -> int) |};
+  run {| (int * int) -> (int -> int) |};
   [%expect {|
     int * int -> int -> int |}]
 ;;
