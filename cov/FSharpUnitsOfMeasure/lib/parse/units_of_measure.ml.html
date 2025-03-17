@@ -184,8 +184,8 @@ let pm_pow pm_atom =
   let* m = pm_atom in
   <span data-count="1713134">l</span>et* exp = optio<span data-count="1713134">n</span> 1 p_expo in
   <span data-count="1713134">m</span>atch exp with
-  | <span data-count="0">0</span> -&gt; return @@ Measure_dimless
-  | <span data-count="1659812">1</span> -&gt; return @@ m
+  | <span data-count="0">0</span> -&gt; return Measure_dimless
+  | <span data-count="1659812">1</span> -&gt; return m
   | <span data-count="15">-</span>1 -&gt; return @@ Measure_div (Measure_dimless, m)
   | <span data-count="53307">p</span> when p &gt; 1 -&gt; <span data-count="53293">r</span>eturn @@ Measure_pow (m, exp)
   | <span data-count="14">n</span> when n &lt; -1 -&gt;

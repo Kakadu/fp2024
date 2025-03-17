@@ -18,13 +18,13 @@
       <h2>66.67%</h2>
     </div>
     <div id="navbar">
-      <span class="unvisited" style="top:41.18%"></span>
-      <span class="unvisited" style="bottom:44.12%"></span>
-      <span class="unvisited" style="bottom:41.18%"></span>
-      <span class="unvisited" style="bottom:32.35%"></span>
-      <span class="unvisited" style="bottom:23.53%"></span>
-      <span class="some-visited" style="bottom:5.88%"></span>
-      <span class="unvisited" style="bottom:2.94%"></span>
+      <span class="unvisited" style="top:40.62%"></span>
+      <span class="unvisited" style="bottom:43.75%"></span>
+      <span class="unvisited" style="bottom:40.62%"></span>
+      <span class="unvisited" style="bottom:31.25%"></span>
+      <span class="unvisited" style="bottom:21.88%"></span>
+      <span class="some-visited" style="bottom:6.25%"></span>
+      <span class="unvisited" style="bottom:3.12%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -37,32 +37,30 @@
 <a id="L6"></a><span > </span>
 <a id="L7"></a><span > </span>
 <a id="L8"></a><span > </span>
-<a id="L9"></a><span > </span>
+<a id="L9"></a><span class="visited"> </span>
 <a id="L10"></a><span class="visited"> </span>
 <a id="L11"></a><span class="visited"> </span>
 <a id="L12"></a><span class="visited"> </span>
-<a id="L13"></a><span class="visited"> </span>
-<a id="L14"></a><span class="unvisited"> </span>
+<a id="L13"></a><span class="unvisited"> </span>
+<a id="L14"></a><span class="visited"> </span>
 <a id="L15"></a><span class="visited"> </span>
 <a id="L16"></a><span class="visited"> </span>
 <a id="L17"></a><span class="visited"> </span>
-<a id="L18"></a><span class="visited"> </span>
+<a id="L18"></a><span class="unvisited"> </span>
 <a id="L19"></a><span class="unvisited"> </span>
-<a id="L20"></a><span class="unvisited"> </span>
+<a id="L20"></a><span class="visited"> </span>
 <a id="L21"></a><span class="visited"> </span>
-<a id="L22"></a><span class="visited"> </span>
-<a id="L23"></a><span class="unvisited"> </span>
+<a id="L22"></a><span class="unvisited"> </span>
+<a id="L23"></a><span class="visited"> </span>
 <a id="L24"></a><span class="visited"> </span>
-<a id="L25"></a><span class="visited"> </span>
-<a id="L26"></a><span class="unvisited"> </span>
-<a id="L27"></a><span class="visited"> </span>
+<a id="L25"></a><span class="unvisited"> </span>
+<a id="L26"></a><span class="visited"> </span>
+<a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
 <a id="L29"></a><span > </span>
-<a id="L30"></a><span > </span>
-<a id="L31"></a><span > </span>
-<a id="L32"></a><span class="some-visited"> </span>
-<a id="L33"></a><span class="unvisited"> </span>
-<a id="L34"></a><span > </span>
+<a id="L30"></a><span class="some-visited"> </span>
+<a id="L31"></a><span class="unvisited"> </span>
+<a id="L32"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -99,8 +97,6 @@
 <a href="#L30">30</a>
 <a href="#L31">31</a>
 <a href="#L32">32</a>
-<a href="#L33">33</a>
-<a href="#L34">34</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Vlasenco Daniel and Kudrya Alexandr *)
 
@@ -109,7 +105,6 @@
 (** This file contains a subset of keywords of F# 4.1, taken from
     https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf, page 25 *)
 
-(** [is_keyword s] returns true if [s] is a keyword of F#. *)
 let is_keyword = function
   | <span data-count="27816">"</span>and"
   | <span data-count="12104">"</span>else"
@@ -131,7 +126,6 @@ let is_keyword = function
   | <span data-count="8051777">_</span> -&gt; false
 ;;
 
-(** [is_builtin_type t] returns true if [t] is a builtin type of F#. *)
 let is_builtin_type = function
   | <span data-count="783">"</span>int" | <span data-count="0">"</span>bool" | <span data-count="0">"</span>float" | <span data-count="578">"</span>char" | <span data-count="1">"</span>string" -&gt; true
   | <span data-count="0">_</span> -&gt; false
