@@ -7,7 +7,7 @@ open Parse.Patterns
 open Pprint.Pprinter
 
 let run = pp pprint_pat ppat
-
+let _ = run
 (************************** Idents **************************)
 
 let%expect_test "single underscore should be parsed as a wildcard" =

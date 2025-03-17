@@ -7,7 +7,7 @@ open Parse.Units_of_measure
 open Pprint.Pprinter
 
 let run = pp pprint_measure pm
-
+let _ = run
 (************************** Measure powers **************************)
 
 let%expect_test "parse measure ident" =

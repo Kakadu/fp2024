@@ -7,7 +7,7 @@ open Parse.Types
 open Pprint.Pprinter
 
 let run = pp pprint_type ptype
-
+let _ = run
 (************************** Builtin types **************************)
 
 (************************** Idents **************************)
