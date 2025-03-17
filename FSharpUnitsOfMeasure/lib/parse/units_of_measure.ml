@@ -26,8 +26,8 @@ let pm_pow pm_atom =
   let* m = pm_atom in
   let* exp = option 1 p_expo in
   match exp with
-  | 0 -> return @@ Measure_dimless
-  | 1 -> return @@ m
+  | 0 -> return Measure_dimless
+  | 1 -> return m
   | -1 -> return @@ Measure_div (Measure_dimless, m)
   | p when p > 1 -> return @@ Measure_pow (m, exp)
   | n when n < -1 ->
