@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Parse.Structure
-open Angstrom
 open Stdlib.Format
 open Interp.Interpret
 open Interp.Misc
@@ -68,21 +67,16 @@ let%expect_test "003occurs.ml" =
     val fix : <type> = <fun> |}]
 ;;
 
-(* DOES NOT HALT*)
-(* let%expect_test "004let_poly.ml\n" =
+let%expect_test "004let_poly.ml\n" =
   let _ = test_interpret {|
       let _1 =
   (fun f -> (f 1, f true)) (fun x -> x)
   |} in
   [%expect
     {|
-    val a : <type> = 7
-    val b : <type> = [7]
-    val c : <type> = [7; 7]
-    val d : <type> = [7] |}]
-;; *)
+    val _1 : <type> = (1, true) |}]
+;;
 
-(* IS INCORRECT *)
 let%expect_test "  005.ml\n" =
   let _ =
     test_interpret

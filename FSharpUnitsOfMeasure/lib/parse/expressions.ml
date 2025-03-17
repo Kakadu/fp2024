@@ -198,8 +198,10 @@ let pexpr =
   fix (fun pexpr ->
     let pexpr =
       choice
-        [ pexpr_paren (pexpr_typed pexpr)
+        [ pexpr_id_or_op
+        ; pexpr_const
         ; pexpr_paren pexpr
+        ; pexpr_paren (pexpr_typed pexpr)
         ; pexpr_letin pexpr
         ; pexpr_opt pexpr
         ; pexpr_list pexpr
@@ -207,12 +209,11 @@ let pexpr =
         ; pexpr_match pexpr
         ; pexpr_function pexpr
         ; pexpr_lam pexpr
-        ; pexpr_id_or_op
-        ; pexpr_const
         ]
     in
     let pexpr = pexpr_paren pexpr <|> pexpr in
-    let pexpr = pexpr_tuple pexpr <|> pexpr_app_un pexpr <|> pexpr_app pexpr <|> pexpr in
-    let pexpr = pexpr_app_un pexpr <|> pexpr in
+    let pexpr = pexpr_app_un pexpr <|> pexpr_app pexpr <|> pexpr in
+    (* *<* *)
+    let pexpr = pexpr_tuple pexpr <|> pexpr in
     skip_ws *> pexpr <* skip_ws_no_nl)
 ;;
