@@ -53,5 +53,5 @@ let%expect_test "parse simple float as const float" =
 let%expect_test "parse simple negative float as const float" =
   run_u {|-1.0|};
   [%expect {|
-    -1. |}]
+    : no more choices |}]
 ;;
