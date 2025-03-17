@@ -873,6 +873,8 @@ let execute_instruction instr =
   | Vxorvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.logxor
   | Vminvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.min
   | Vminvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.min
+  | Vmaxvv (vd, vs1, vs2) -> execute_vector_arithmetic vd vs1 vs2 Int64.max
+  | Vmaxvx (vd, vs1, rs2) -> execute_vector_scalar vd vs1 rs2 Int64.max
   | Vmseqvv (vd, vs1, vs2) ->
     execute_vector_arithmetic vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
   | Vmseqvx (vd, vs1, rs2) ->
