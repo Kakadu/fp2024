@@ -879,6 +879,17 @@ let execute_instruction instr =
     execute_vector_arithmetic vd vs1 vs2 (fun x y -> if x = y then 1L else 0L)
   | Vmseqvx (vd, vs1, rs2) ->
     execute_vector_scalar vd vs1 rs2 (fun x y -> if x = y then 1L else 0L)
+  | Vsetvli _ -> return ()
+  | Vredsumvs (vd, vs1, vs2) ->
+    let* vec1 = get_vregister_value vs1 in
+    let* vec2 = get_vregister_value vs2 in
+    let* vecd = get_vregister_value vd in
+    let vec1_first = List.hd vec1 in
+    let vec2_sum = List.fold_left Int64.add 0L vec2 in
+    let result_first = Int64.add vec2_sum vec1_first in
+    let result_rest = List.tl vecd in
+    let result = result_first :: result_rest in
+    set_vregister_value vd result
   | _ -> fail "Unsupported instruction"
 ;;
 
@@ -969,35 +980,14 @@ let interpret program =
   run (traverse_program ()) initial_state
 ;;
 
-let%expect_test "test_rvv" =
+let%expect_test "test_jalr" =
   let program =
-    [ LabelExpr "vector_data"
-    ; DirectiveExpr (Word (Int32.of_int 1))
-    ; DirectiveExpr (Word (Int32.of_int 2))
-    ; DirectiveExpr (Word (Int32.of_int 3))
-    ; DirectiveExpr (Word (Int32.of_int 4))
-    ; DirectiveExpr (Word (Int32.of_int 5))
-    ; LabelExpr "vector_a"
-    ; DirectiveExpr (Space 16)
-    ; LabelExpr "vector_b"
-    ; DirectiveExpr (Space 16)
-    ; LabelExpr "vector_sum"
-    ; DirectiveExpr (Space 16)
-    ; LabelExpr "_start"
-    ; InstructionExpr (Addi (T0, X0, ImmediateAddress12 4))
-    ; InstructionExpr (La (T2, LabelAddress32 "vector_data"))
-    ; InstructionExpr (Vle32v (V0, T2, ImmediateAddress12 0))
-    ; InstructionExpr (Addi (T3, T2, ImmediateAddress12 4))
-    ; InstructionExpr (Vle32v (V1, T3, ImmediateAddress12 0))
-    ; InstructionExpr (La (T4, LabelAddress32 "vector_a"))
-    ; InstructionExpr (Vse32v (V0, T4, ImmediateAddress12 0))
-    ; InstructionExpr (La (T5, LabelAddress32 "vector_b"))
-    ; InstructionExpr (Vse32v (V1, T5, ImmediateAddress12 0))
-    ; InstructionExpr (Vaddvv (V2, V0, V1))
-    ; InstructionExpr (La (T4, LabelAddress32 "vector_sum"))
-    ; InstructionExpr (Vse32v (V2, T4, ImmediateAddress12 0))
-    ; InstructionExpr (Addi (X3, X0, ImmediateAddress12 10))
-    ; InstructionExpr (Vaddvx (V3, V0, X3))
+    [ LabelExpr "_start"
+    ; InstructionExpr (Li (Ra, ImmediateAddress32 4))
+    ; InstructionExpr (Jalr (Sp, X1, ImmediateAddress12 8))
+    ; InstructionExpr (Li (Gp, ImmediateAddress32 10))
+    ; LabelExpr "target"
+    ; InstructionExpr (Li (Tp, ImmediateAddress32 20))
     ]
   in
   match interpret program with
@@ -1007,11 +997,11 @@ let%expect_test "test_rvv" =
     [%expect
       {|
       X0: 0
-      X1: 0
-      X2: 0
-      X3: 10
-      X4: 0
-      X5: 4
+      X1: 4
+      X2: 12
+      X3: 0
+      X4: 20
+      X5: 0
       X6: 0
       X7: 0
       X8: 0
@@ -1034,14 +1024,14 @@ let%expect_test "test_rvv" =
       X25: 0
       X26: 0
       X27: 0
-      X28: 4
-      X29: 52
-      X30: 36
+      X28: 0
+      X29: 0
+      X30: 0
       X31: 0
-      V0: [1 2 3 4 ]
-      V1: [2 3 4 5 ]
-      V2: [3 5 7 9 ]
-      V3: [11 12 13 14 ]
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
       V4: [0 0 0 0 ]
       V5: [0 0 0 0 ]
       V6: [0 0 0 0 ]
@@ -1071,75 +1061,176 @@ let%expect_test "test_rvv" =
       V30: [0 0 0 0 ]
       V31: [0 0 0 0 ]
       Memory:
-      0: 1
-      1: 0
-      2: 0
-      3: 0
-      4: 2
-      5: 0
-      6: 0
-      7: 0
-      8: 3
-      9: 0
-      10: 0
-      11: 0
-      12: 4
-      13: 0
-      14: 0
-      15: 0
-      16: 5
-      17: 0
-      18: 0
-      19: 0
-      20: 1
-      21: 0
-      22: 0
-      23: 0
-      24: 2
-      25: 0
-      26: 0
-      27: 0
-      28: 3
-      29: 0
-      30: 0
-      31: 0
-      32: 4
-      33: 0
-      34: 0
-      35: 0
-      36: 2
-      37: 0
-      38: 0
-      39: 0
-      40: 3
-      41: 0
-      42: 0
-      43: 0
-      44: 4
-      45: 0
-      46: 0
-      47: 0
-      48: 5
-      49: 0
-      50: 0
-      51: 0
-      52: 3
-      53: 0
-      54: 0
-      55: 0
-      56: 5
-      57: 0
-      58: 0
-      59: 0
-      60: 7
-      61: 0
-      62: 0
-      63: 0
-      64: 9
-      65: 0
-      66: 0
-      67: 0
-      Program index: 108
+      Program index: 24
+    |}]
+  | Error e -> print_string ("Error: " ^ e)
+;;
+
+let%expect_test "test_jal" =
+  let program =
+    [ LabelExpr "_start"
+    ; InstructionExpr (Jal (T0, LabelAddress20 "target"))
+    ; InstructionExpr (Li (T1, ImmediateAddress32 10))
+    ; LabelExpr "target"
+    ; InstructionExpr (Li (T2, ImmediateAddress32 20))
+    ]
+  in
+  match interpret program with
+  | Ok (_, final_state) ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+      X0: 0
+      X1: 0
+      X2: 0
+      X3: 0
+      X4: 0
+      X5: 8
+      X6: 0
+      X7: 20
+      X8: 0
+      X9: 0
+      X10: 0
+      X11: 0
+      X12: 0
+      X13: 0
+      X14: 0
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 0
+      X29: 0
+      X30: 0
+      X31: 0
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      Memory:
+      Program index: 20
+    |}]
+  | Error e -> print_string ("Error: " ^ e)
+;;
+
+let%expect_test "test_j_immediate" =
+  let program =
+    [ LabelExpr "_start"
+    ; InstructionExpr (J (ImmediateAddress20 8))
+    ; InstructionExpr (Li (S0, ImmediateAddress32 10))
+    ; InstructionExpr (Li (S1, ImmediateAddress32 20))
+    ]
+  in
+  match interpret program with
+  | Ok (_, final_state) ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+      X0: 0
+      X1: 0
+      X2: 0
+      X3: 0
+      X4: 0
+      X5: 0
+      X6: 0
+      X7: 0
+      X8: 0
+      X9: 20
+      X10: 0
+      X11: 0
+      X12: 0
+      X13: 0
+      X14: 0
+      X15: 0
+      X16: 0
+      X17: 0
+      X18: 0
+      X19: 0
+      X20: 0
+      X21: 0
+      X22: 0
+      X23: 0
+      X24: 0
+      X25: 0
+      X26: 0
+      X27: 0
+      X28: 0
+      X29: 0
+      X30: 0
+      X31: 0
+      V0: [0 0 0 0 ]
+      V1: [0 0 0 0 ]
+      V2: [0 0 0 0 ]
+      V3: [0 0 0 0 ]
+      V4: [0 0 0 0 ]
+      V5: [0 0 0 0 ]
+      V6: [0 0 0 0 ]
+      V7: [0 0 0 0 ]
+      V8: [0 0 0 0 ]
+      V9: [0 0 0 0 ]
+      V10: [0 0 0 0 ]
+      V11: [0 0 0 0 ]
+      V12: [0 0 0 0 ]
+      V13: [0 0 0 0 ]
+      V14: [0 0 0 0 ]
+      V15: [0 0 0 0 ]
+      V16: [0 0 0 0 ]
+      V17: [0 0 0 0 ]
+      V18: [0 0 0 0 ]
+      V19: [0 0 0 0 ]
+      V20: [0 0 0 0 ]
+      V21: [0 0 0 0 ]
+      V22: [0 0 0 0 ]
+      V23: [0 0 0 0 ]
+      V24: [0 0 0 0 ]
+      V25: [0 0 0 0 ]
+      V26: [0 0 0 0 ]
+      V27: [0 0 0 0 ]
+      V28: [0 0 0 0 ]
+      V29: [0 0 0 0 ]
+      V30: [0 0 0 0 ]
+      V31: [0 0 0 0 ]
+      Memory:
+      Program index: 16
     |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;

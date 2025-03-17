@@ -487,6 +487,10 @@ type instruction =
   (** Vector Equals. Vmseq.vv vd, vs1, vs2 *)
   | Vmseqvx of vector_register * vector_register * register
   (** Vector Equals with Scalar. vmseq.vx vd, vs1, rs2 *)
+  | Vsetvli of register * register
+  (** RVV Configuration. rd = new vl, rs1 = AVL (application vector length) *)
+  | Vredsumvs of vector_register * vector_register * vector_register
+  (** vd[0] =  sum( vs1[0] , vs2[*] ), where [*] denotes all active elements *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Attribute can either take in a string or an int as its value *)
