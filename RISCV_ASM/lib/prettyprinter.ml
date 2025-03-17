@@ -545,6 +545,9 @@ let pp_instruction ppf = function
   | Vmaxvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmax.vx" vd vs1 rs2
   | Vmseqvv (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vmseq.vv" vd vs1 vs2
   | Vmseqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmseq.vx" vd vs1 rs2
+  | Vsetvli (r1, r2) ->
+    Format.fprintf ppf "vsetvli %a,%a, e32" pp_register r1 pp_register r2
+  | Vredsumvs (vd, vs1, vs2) -> pp_instruction_3vreg_helper ppf "vredsum.vs" vd vs1 vs2
 ;;
 
 let pp_type_dir ppf = function

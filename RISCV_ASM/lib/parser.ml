@@ -1296,6 +1296,18 @@ let parse_instruction =
               parse_vector_register
               (char ',' *> parse_vector_register)
               (char ',' *> parse_register)
+       ; parse_string_with_spaces "vsetvli"
+         *> lift3
+              (fun r1 r2 _ -> InstructionExpr (Vsetvli (r1, r2)))
+              parse_register
+              (char ',' *> parse_register)
+              (string ", e32" *> return ())
+       ; parse_string_with_spaces "vredsum.vs"
+         *> lift3
+              (fun vd vs1 rs2 -> InstructionExpr (Vredsumvs (vd, vs1, rs2)))
+              parse_vector_register
+              (char ',' *> parse_vector_register)
+              (char ',' *> parse_vector_register)
        ])
 ;;
 
