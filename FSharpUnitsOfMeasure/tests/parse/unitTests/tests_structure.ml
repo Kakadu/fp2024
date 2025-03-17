@@ -8,7 +8,7 @@ open Pprint.Pprinter
 
 let run_si = pp pprint_struct_item pstritem
 let run_prog = pp pprint_program pprog
-
+let _, _ = run_si, run_prog
 (************************** Structure items **************************)
 
 let%expect_test "parse structure item which is single expression" =

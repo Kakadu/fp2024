@@ -5,5 +5,4 @@
 open Base
 
 val pp : ('a -> string) -> 'a Angstrom.t -> string -> unit
-
-val pp2 : (Format.formatter -> 'a -> unit) -> 'a Angstrom.t -> string -> unit
+val pp2 : (Stdlib.Format.formatter -> 'a -> unit) -> 'a Angstrom.t -> string -> unit

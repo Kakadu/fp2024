@@ -8,6 +8,7 @@ open Pprint.Pprinter
 
 let run_s const = pp pprint_const psconst const
 let run_u const = pp pprint_const puconst const
+let _, _ = run_s, run_u
 
 let%expect_test "parse int as const int" =
   run_u {|5|};

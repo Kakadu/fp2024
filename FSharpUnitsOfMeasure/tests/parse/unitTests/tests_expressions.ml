@@ -9,6 +9,7 @@ open Pprint.Pprinter
 
 let run expr = pp pprint_expr pexpr expr
 let run2 expr = pp2 pp_expression pexpr expr
+let _, _ = run, run2
 
 (************************** Identificators **************************)
 
