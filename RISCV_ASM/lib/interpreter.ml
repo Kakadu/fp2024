@@ -491,8 +491,8 @@ let execute_shift_immediate_op rd rs1 imm op =
 let execute_shnadd rd rs1 rs2 n to_zext =
   let* val1 = get_register_value rs1 in
   let* val2 = get_register_value rs2 in
-  let arg2 = if to_zext then zext val2 else val2 in
-  let result = Int64.add val1 (Int64.shift_left arg2 n) in
+  let arg1 = if to_zext then zext val1 else val1 in
+  let result = Int64.add val2 (Int64.shift_left arg1 n) in
   set_register_value rd result
 ;;
 
@@ -556,8 +556,6 @@ let execute_store_int rs1 rs2 imm size =
   let* value = get_register_value rs1 in
   store_in_memory address value size
 ;;
-
-let replace lst idx new_elem = List.mapi (fun i x -> if i = idx then new_elem else x) lst
 
 let execute_vle32v vd rs1 imm =
   let* state = read in
@@ -967,181 +965,6 @@ let traverse_program () =
 let interpret program =
   let initial_state = init_state program in
   run (traverse_program ()) initial_state
-;;
-
-let%expect_test "test_factorial" =
-  let program =
-    [ LabelExpr "_start"
-    ; InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
-    ; InstructionExpr (Addi (X6, X0, ImmediateAddress12 1))
-    ; LabelExpr "loop"
-    ; InstructionExpr (Beqz (X10, LabelAddress12 "exit"))
-    ; InstructionExpr (Mul (X6, X6, X10))
-    ; InstructionExpr (Addi (X10, X10, ImmediateAddress12 (-1)))
-    ; InstructionExpr (J (LabelAddress20 "loop"))
-    ; LabelExpr "exit"
-    ]
-  in
-  match interpret program with
-  | Ok (_, final_state) ->
-    let state_str = show_state final_state in
-    print_string state_str;
-    [%expect
-      {|
-      X0: 0
-      X1: 0
-      X2: 0
-      X3: 0
-      X4: 0
-      X5: 0
-      X6: 120
-      X7: 0
-      X8: 0
-      X9: 0
-      X10: 0
-      X11: 0
-      X12: 0
-      X13: 0
-      X14: 0
-      X15: 0
-      X16: 0
-      X17: 0
-      X18: 0
-      X19: 0
-      X20: 0
-      X21: 0
-      X22: 0
-      X23: 0
-      X24: 0
-      X25: 0
-      X26: 0
-      X27: 0
-      X28: 0
-      X29: 0
-      X30: 0
-      X31: 0
-      V0: [0 0 0 0 ]
-      V1: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
-      V10: [0 0 0 0 ]
-      V11: [0 0 0 0 ]
-      V12: [0 0 0 0 ]
-      V13: [0 0 0 0 ]
-      V14: [0 0 0 0 ]
-      V15: [0 0 0 0 ]
-      V16: [0 0 0 0 ]
-      V17: [0 0 0 0 ]
-      V18: [0 0 0 0 ]
-      V19: [0 0 0 0 ]
-      V20: [0 0 0 0 ]
-      V21: [0 0 0 0 ]
-      V22: [0 0 0 0 ]
-      V23: [0 0 0 0 ]
-      V24: [0 0 0 0 ]
-      V25: [0 0 0 0 ]
-      V26: [0 0 0 0 ]
-      V27: [0 0 0 0 ]
-      V28: [0 0 0 0 ]
-      V29: [0 0 0 0 ]
-      V30: [0 0 0 0 ]
-      V31: [0 0 0 0 ]
-      Memory:
-      Program index: 36
-    |}]
-  | Error e -> print_string ("Error: " ^ e)
-;;
-
-let%expect_test "test_bitmanip" =
-  let program =
-    [ LabelExpr "_start"
-    ; InstructionExpr (Addi (X10, X0, ImmediateAddress12 5))
-    ; InstructionExpr (Li (X11, ImmediateAddress32 3))
-    ; InstructionExpr (Sh3add (X12, X10, X11))
-    ; InstructionExpr (Andn (X13, X10, X11))
-    ; InstructionExpr (Adduw (X14, X10, X11))
-    ]
-  in
-  match interpret program with
-  | Ok (_, final_state) ->
-    let state_str = show_state final_state in
-    print_string state_str;
-    [%expect
-      {|
-      X0: 0
-      X1: 0
-      X2: 0
-      X3: 0
-      X4: 0
-      X5: 0
-      X6: 0
-      X7: 0
-      X8: 0
-      X9: 0
-      X10: 5
-      X11: 3
-      X12: 29
-      X13: 4
-      X14: 8
-      X15: 0
-      X16: 0
-      X17: 0
-      X18: 0
-      X19: 0
-      X20: 0
-      X21: 0
-      X22: 0
-      X23: 0
-      X24: 0
-      X25: 0
-      X26: 0
-      X27: 0
-      X28: 0
-      X29: 0
-      X30: 0
-      X31: 0
-      V0: [0 0 0 0 ]
-      V1: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
-      V10: [0 0 0 0 ]
-      V11: [0 0 0 0 ]
-      V12: [0 0 0 0 ]
-      V13: [0 0 0 0 ]
-      V14: [0 0 0 0 ]
-      V15: [0 0 0 0 ]
-      V16: [0 0 0 0 ]
-      V17: [0 0 0 0 ]
-      V18: [0 0 0 0 ]
-      V19: [0 0 0 0 ]
-      V20: [0 0 0 0 ]
-      V21: [0 0 0 0 ]
-      V22: [0 0 0 0 ]
-      V23: [0 0 0 0 ]
-      V24: [0 0 0 0 ]
-      V25: [0 0 0 0 ]
-      V26: [0 0 0 0 ]
-      V27: [0 0 0 0 ]
-      V28: [0 0 0 0 ]
-      V29: [0 0 0 0 ]
-      V30: [0 0 0 0 ]
-      V31: [0 0 0 0 ]
-      Memory:
-      Program index: 24
-    |}]
-  | Error e -> print_string ("Error: " ^ e)
 ;;
 
 let%expect_test "test_rvv" =

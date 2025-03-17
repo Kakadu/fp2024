@@ -9,3 +9,7 @@
 (cram
  (applies_to io_test)
  (deps ../repl/REPL.exe ../examples/io/io.s))
+
+(cram
+ (applies_to bitmanip_test)
+ (deps ../repl/REPL.exe ../examples/bitmanip/bitmanip.s))
