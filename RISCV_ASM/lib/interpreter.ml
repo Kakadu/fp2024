@@ -980,14 +980,21 @@ let interpret program =
   run (traverse_program ()) initial_state
 ;;
 
-let%expect_test "test_jalr" =
+let%expect_test "test_arithmetic" =
   let program =
     [ LabelExpr "_start"
-    ; InstructionExpr (Li (Ra, ImmediateAddress32 4))
-    ; InstructionExpr (Jalr (Sp, X1, ImmediateAddress12 8))
-    ; InstructionExpr (Li (Gp, ImmediateAddress32 10))
-    ; LabelExpr "target"
-    ; InstructionExpr (Li (Tp, ImmediateAddress32 20))
+    ; InstructionExpr (Li (A0, ImmediateAddress32 0b1010))
+    ; InstructionExpr (Li (A1, ImmediateAddress32 0b1100))
+    ; InstructionExpr (Sll (A2, A0, A1))
+    ; InstructionExpr (Srl (A3, A2, A1))
+    ; InstructionExpr (Sra (A4, A2, A1))
+    ; InstructionExpr (Slli (A5, A0, ImmediateAddress12 2))
+    ; InstructionExpr (Srli (A6, A5, ImmediateAddress12 2))
+    ; InstructionExpr (Srai (A7, A5, ImmediateAddress12 2))
+    ; InstructionExpr (Sub (S2, A1, A0))
+    ; InstructionExpr (Xor (S3, A0, A1))
+    ; InstructionExpr (Or (S4, A0, A1))
+    ; InstructionExpr (And (S5, A0, A1))
     ]
   in
   match interpret program with
@@ -997,27 +1004,27 @@ let%expect_test "test_jalr" =
     [%expect
       {|
       X0: 0
-      X1: 4
-      X2: 12
+      X1: 0
+      X2: 0
       X3: 0
-      X4: 20
+      X4: 0
       X5: 0
       X6: 0
       X7: 0
       X8: 0
       X9: 0
-      X10: 0
-      X11: 0
-      X12: 0
-      X13: 0
-      X14: 0
-      X15: 0
-      X16: 0
-      X17: 0
-      X18: 0
-      X19: 0
-      X20: 0
-      X21: 0
+      X10: 10
+      X11: 12
+      X12: 40960
+      X13: 10
+      X14: 10
+      X15: 40
+      X16: 10
+      X17: 10
+      X18: 2
+      X19: 6
+      X20: 14
+      X21: 8
       X22: 0
       X23: 0
       X24: 0
@@ -1061,8 +1068,94 @@ let%expect_test "test_jalr" =
       V30: [0 0 0 0 ]
       V31: [0 0 0 0 ]
       Memory:
-      Program index: 24
+      Program index: 52
     |}]
+  | Error e -> print_string ("Error: " ^ e)
+;;
+
+let%expect_test "test_jalr" =
+  let program =
+    [ LabelExpr "_start"
+    ; InstructionExpr (Li (Ra, ImmediateAddress32 4))
+    ; InstructionExpr (Jalr (Sp, X1, ImmediateAddress12 8))
+    ; InstructionExpr (Li (Gp, ImmediateAddress32 10))
+    ; LabelExpr "target"
+    ; InstructionExpr (Li (Tp, ImmediateAddress32 20))
+    ]
+  in
+  match interpret program with
+  | Ok (_, final_state) ->
+    let state_str = show_state final_state in
+    print_string state_str;
+    [%expect
+      {|
+        X0: 0
+        X1: 4
+        X2: 12
+        X3: 0
+        X4: 20
+        X5: 0
+        X6: 0
+        X7: 0
+        X8: 0
+        X9: 0
+        X10: 0
+        X11: 0
+        X12: 0
+        X13: 0
+        X14: 0
+        X15: 0
+        X16: 0
+        X17: 0
+        X18: 0
+        X19: 0
+        X20: 0
+        X21: 0
+        X22: 0
+        X23: 0
+        X24: 0
+        X25: 0
+        X26: 0
+        X27: 0
+        X28: 0
+        X29: 0
+        X30: 0
+        X31: 0
+        V0: [0 0 0 0 ]
+        V1: [0 0 0 0 ]
+        V2: [0 0 0 0 ]
+        V3: [0 0 0 0 ]
+        V4: [0 0 0 0 ]
+        V5: [0 0 0 0 ]
+        V6: [0 0 0 0 ]
+        V7: [0 0 0 0 ]
+        V8: [0 0 0 0 ]
+        V9: [0 0 0 0 ]
+        V10: [0 0 0 0 ]
+        V11: [0 0 0 0 ]
+        V12: [0 0 0 0 ]
+        V13: [0 0 0 0 ]
+        V14: [0 0 0 0 ]
+        V15: [0 0 0 0 ]
+        V16: [0 0 0 0 ]
+        V17: [0 0 0 0 ]
+        V18: [0 0 0 0 ]
+        V19: [0 0 0 0 ]
+        V20: [0 0 0 0 ]
+        V21: [0 0 0 0 ]
+        V22: [0 0 0 0 ]
+        V23: [0 0 0 0 ]
+        V24: [0 0 0 0 ]
+        V25: [0 0 0 0 ]
+        V26: [0 0 0 0 ]
+        V27: [0 0 0 0 ]
+        V28: [0 0 0 0 ]
+        V29: [0 0 0 0 ]
+        V30: [0 0 0 0 ]
+        V31: [0 0 0 0 ]
+        Memory:
+        Program index: 24
+      |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
 
@@ -1081,79 +1174,82 @@ let%expect_test "test_jal" =
     print_string state_str;
     [%expect
       {|
-      X0: 0
-      X1: 0
-      X2: 0
-      X3: 0
-      X4: 0
-      X5: 8
-      X6: 0
-      X7: 20
-      X8: 0
-      X9: 0
-      X10: 0
-      X11: 0
-      X12: 0
-      X13: 0
-      X14: 0
-      X15: 0
-      X16: 0
-      X17: 0
-      X18: 0
-      X19: 0
-      X20: 0
-      X21: 0
-      X22: 0
-      X23: 0
-      X24: 0
-      X25: 0
-      X26: 0
-      X27: 0
-      X28: 0
-      X29: 0
-      X30: 0
-      X31: 0
-      V0: [0 0 0 0 ]
-      V1: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
-      V10: [0 0 0 0 ]
-      V11: [0 0 0 0 ]
-      V12: [0 0 0 0 ]
-      V13: [0 0 0 0 ]
-      V14: [0 0 0 0 ]
-      V15: [0 0 0 0 ]
-      V16: [0 0 0 0 ]
-      V17: [0 0 0 0 ]
-      V18: [0 0 0 0 ]
-      V19: [0 0 0 0 ]
-      V20: [0 0 0 0 ]
-      V21: [0 0 0 0 ]
-      V22: [0 0 0 0 ]
-      V23: [0 0 0 0 ]
-      V24: [0 0 0 0 ]
-      V25: [0 0 0 0 ]
-      V26: [0 0 0 0 ]
-      V27: [0 0 0 0 ]
-      V28: [0 0 0 0 ]
-      V29: [0 0 0 0 ]
-      V30: [0 0 0 0 ]
-      V31: [0 0 0 0 ]
-      Memory:
-      Program index: 20
-    |}]
+        X0: 0
+        X1: 0
+        X2: 0
+        X3: 0
+        X4: 0
+        X5: 8
+        X6: 0
+        X7: 20
+        X8: 0
+        X9: 0
+        X10: 0
+        X11: 0
+        X12: 0
+        X13: 0
+        X14: 0
+        X15: 0
+        X16: 0
+        X17: 0
+        X18: 0
+        X19: 0
+        X20: 0
+        X21: 0
+        X22: 0
+        X23: 0
+        X24: 0
+        X25: 0
+        X26: 0
+        X27: 0
+        X28: 0
+        X29: 0
+        X30: 0
+        X31: 0
+        V0: [0 0 0 0 ]
+        V1: [0 0 0 0 ]
+        V2: [0 0 0 0 ]
+        V3: [0 0 0 0 ]
+        V4: [0 0 0 0 ]
+        V5: [0 0 0 0 ]
+        V6: [0 0 0 0 ]
+        V7: [0 0 0 0 ]
+        V8: [0 0 0 0 ]
+        V9: [0 0 0 0 ]
+        V10: [0 0 0 0 ]
+        V11: [0 0 0 0 ]
+        V12: [0 0 0 0 ]
+        V13: [0 0 0 0 ]
+        V14: [0 0 0 0 ]
+        V15: [0 0 0 0 ]
+        V16: [0 0 0 0 ]
+        V17: [0 0 0 0 ]
+        V18: [0 0 0 0 ]
+        V19: [0 0 0 0 ]
+        V20: [0 0 0 0 ]
+        V21: [0 0 0 0 ]
+        V22: [0 0 0 0 ]
+        V23: [0 0 0 0 ]
+        V24: [0 0 0 0 ]
+        V25: [0 0 0 0 ]
+        V26: [0 0 0 0 ]
+        V27: [0 0 0 0 ]
+        V28: [0 0 0 0 ]
+        V29: [0 0 0 0 ]
+        V30: [0 0 0 0 ]
+        V31: [0 0 0 0 ]
+        Memory:
+        Program index: 20
+      |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;
 
 let%expect_test "test_j_immediate" =
   let program =
-    [ LabelExpr "_start"
+    [ DirectiveExpr (Word 1l)
+    ; DirectiveExpr (StringDir "abcd")
+    ; DirectiveExpr (Space 4)
+    ; LabelExpr "_start"
     ; InstructionExpr (J (ImmediateAddress20 8))
     ; InstructionExpr (Li (S0, ImmediateAddress32 10))
     ; InstructionExpr (Li (S1, ImmediateAddress32 20))
@@ -1165,72 +1261,80 @@ let%expect_test "test_j_immediate" =
     print_string state_str;
     [%expect
       {|
-      X0: 0
-      X1: 0
-      X2: 0
-      X3: 0
-      X4: 0
-      X5: 0
-      X6: 0
-      X7: 0
-      X8: 0
-      X9: 20
-      X10: 0
-      X11: 0
-      X12: 0
-      X13: 0
-      X14: 0
-      X15: 0
-      X16: 0
-      X17: 0
-      X18: 0
-      X19: 0
-      X20: 0
-      X21: 0
-      X22: 0
-      X23: 0
-      X24: 0
-      X25: 0
-      X26: 0
-      X27: 0
-      X28: 0
-      X29: 0
-      X30: 0
-      X31: 0
-      V0: [0 0 0 0 ]
-      V1: [0 0 0 0 ]
-      V2: [0 0 0 0 ]
-      V3: [0 0 0 0 ]
-      V4: [0 0 0 0 ]
-      V5: [0 0 0 0 ]
-      V6: [0 0 0 0 ]
-      V7: [0 0 0 0 ]
-      V8: [0 0 0 0 ]
-      V9: [0 0 0 0 ]
-      V10: [0 0 0 0 ]
-      V11: [0 0 0 0 ]
-      V12: [0 0 0 0 ]
-      V13: [0 0 0 0 ]
-      V14: [0 0 0 0 ]
-      V15: [0 0 0 0 ]
-      V16: [0 0 0 0 ]
-      V17: [0 0 0 0 ]
-      V18: [0 0 0 0 ]
-      V19: [0 0 0 0 ]
-      V20: [0 0 0 0 ]
-      V21: [0 0 0 0 ]
-      V22: [0 0 0 0 ]
-      V23: [0 0 0 0 ]
-      V24: [0 0 0 0 ]
-      V25: [0 0 0 0 ]
-      V26: [0 0 0 0 ]
-      V27: [0 0 0 0 ]
-      V28: [0 0 0 0 ]
-      V29: [0 0 0 0 ]
-      V30: [0 0 0 0 ]
-      V31: [0 0 0 0 ]
-      Memory:
-      Program index: 16
-    |}]
+        X0: 0
+        X1: 0
+        X2: 0
+        X3: 0
+        X4: 0
+        X5: 0
+        X6: 0
+        X7: 0
+        X8: 0
+        X9: 20
+        X10: 0
+        X11: 0
+        X12: 0
+        X13: 0
+        X14: 0
+        X15: 0
+        X16: 0
+        X17: 0
+        X18: 0
+        X19: 0
+        X20: 0
+        X21: 0
+        X22: 0
+        X23: 0
+        X24: 0
+        X25: 0
+        X26: 0
+        X27: 0
+        X28: 0
+        X29: 0
+        X30: 0
+        X31: 0
+        V0: [0 0 0 0 ]
+        V1: [0 0 0 0 ]
+        V2: [0 0 0 0 ]
+        V3: [0 0 0 0 ]
+        V4: [0 0 0 0 ]
+        V5: [0 0 0 0 ]
+        V6: [0 0 0 0 ]
+        V7: [0 0 0 0 ]
+        V8: [0 0 0 0 ]
+        V9: [0 0 0 0 ]
+        V10: [0 0 0 0 ]
+        V11: [0 0 0 0 ]
+        V12: [0 0 0 0 ]
+        V13: [0 0 0 0 ]
+        V14: [0 0 0 0 ]
+        V15: [0 0 0 0 ]
+        V16: [0 0 0 0 ]
+        V17: [0 0 0 0 ]
+        V18: [0 0 0 0 ]
+        V19: [0 0 0 0 ]
+        V20: [0 0 0 0 ]
+        V21: [0 0 0 0 ]
+        V22: [0 0 0 0 ]
+        V23: [0 0 0 0 ]
+        V24: [0 0 0 0 ]
+        V25: [0 0 0 0 ]
+        V26: [0 0 0 0 ]
+        V27: [0 0 0 0 ]
+        V28: [0 0 0 0 ]
+        V29: [0 0 0 0 ]
+        V30: [0 0 0 0 ]
+        V31: [0 0 0 0 ]
+        Memory:
+        0: 1
+        1: 0
+        2: 0
+        3: 0
+        4: 97
+        5: 98
+        6: 99
+        7: 100
+        Program index: 28
+      |}]
   | Error e -> print_string ("Error: " ^ e)
 ;;

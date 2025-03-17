@@ -20,6 +20,20 @@ _start:
     vadd.vv v2, v0, v1
     la t4, buffer
     vse32.v v2, 0(t4)
+    li t6, 4
+    vadd.vv v0, v0, v0
+    vadd.vx v0, v0, t6
+    li t6, 1
+    vsub.vx v0, v0, t6
+    vmul.vv v0, v0, v0
+    li t6, 4
+    vmul.vx v0, v0, t6
+    li t6, 2
+    vdiv.vx v0, v0, t6
+    li t6, 55
+    vor.vx v0, v0, t6
+    li t6, 12
+    vxor.vx v0, v0, t6
     vredsum.vs v3, v0, v0
     la t5, buffer
     vse32.v v3, 0(t5)

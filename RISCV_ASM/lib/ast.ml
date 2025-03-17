@@ -68,7 +68,7 @@ type register =
   | T3 (** a.k.a. X28 *)
   | T4 (** a.k.a. X29 *)
   | T5 (** a.k.a. X30 *)
-  | T6 (** a.k.a. X31s *)
+  | T6 (** a.k.a. X31 *)
 [@@deriving eq, show { with_path = false }, qcheck]
 
 (** Vector Registers *)
