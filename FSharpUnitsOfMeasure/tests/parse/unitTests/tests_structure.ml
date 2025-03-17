@@ -71,13 +71,15 @@ let%expect_test "parse measure type definition" =
 
 let%expect_test "parse measure type definition with binding" =
   run_si {|[<Measure>] type a = m^3|};
-  [%expect {|
+  [%expect
+    {|
     [<Measure>] type a = m ^ 3|}]
 ;;
 
 let%expect_test "parse measure type definition with hard binding" =
   run_si {|[<Measure>] type a = m^3 * s / cm^-1|};
-  [%expect {|
+  [%expect
+    {|
     [<Measure>] type a = ((m ^ 3) * s) / (1 / cm)|}]
 ;;
 
@@ -256,6 +258,7 @@ let%expect_test "parse example 10 program" =
   [%expect
     {|
     let 267742048371772592 = match Some a with 0. -> a | -28986.9328323<1> -> bsV and _ = 0 |}]
+<<<<<<< HEAD
 ;;
 
 let%expect_test _ =
@@ -271,4 +274,6 @@ let%expect_test _ =
   [<Measure>] type o_ = ((1 * 1) * td) * 1
 
   [<Measure>] type iq1 = (1 / 1) ^ 56 |}]
+=======
+>>>>>>> 4cc33b9 (fix: merge conflict)
 ;;
