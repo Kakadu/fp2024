@@ -89,7 +89,6 @@ let pchar = char '\'' *> any_char <* char '\''
 
 (* Can't parse strings with '\' char *)
 let pstring = char '"' *> take_till (Char.equal '"') <* char '"'
-
 let pbool = string "true" <|> string "false" >>| Bool.of_string
 
 (* Parses unsigned ints *)

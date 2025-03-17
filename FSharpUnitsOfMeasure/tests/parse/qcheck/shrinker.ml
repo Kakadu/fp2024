@@ -151,7 +151,7 @@ let rec shexp = function
     shexp e
     >|= (fun e' -> Expr_typed (e', t))
     <+> (shtype t >|= fun t' -> Expr_typed (e, t'))
-    | Expr_option None -> return (Expr_option None)
+  | Expr_option None -> return (Expr_option None)
   | Expr_option (Some exp) -> shexp exp >|= fun exp' -> Expr_option (Some exp')
 
 and shbind = function
