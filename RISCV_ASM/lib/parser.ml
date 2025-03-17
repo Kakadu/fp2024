@@ -48,14 +48,6 @@ let parse_quoted_string =
 
 let parse_type = char '@' *> parse_string >>= fun str -> return (Type str)
 
-let parse_number_or_quoted_string =
-  peek_char
-  >>= function
-  | Some '"' -> parse_quoted_string >>= fun str -> return (StrValue str)
-  | Some '0' .. '9' | Some '-' -> parse_number >>= fun num -> return (IntValue num)
-  | _ -> fail "Expected number or quoted string"
-;;
-
 let parse_label_string =
   take_while1 (function
     | ' ' | '\t' | '\n' | '\r' | ',' | ':' | '(' -> false
@@ -316,19 +308,7 @@ let parse_section =
 let parse_directive =
   ws_opt
     (choice
-       [ parse_string_with_spaces ".file"
-         *> ws_opt (lift (fun str -> DirectiveExpr (File str)) parse_quoted_string)
-       ; parse_string_with_spaces ".option"
-         *> ws_opt (lift (fun str -> DirectiveExpr (Option str)) parse_string)
-       ; parse_string_with_spaces ".attribute"
-         *> ws_opt
-              (lift2
-                 (fun tag value -> DirectiveExpr (Attribute (tag, value)))
-                 parse_string
-                 (ws_opt (char ',') *> parse_number_or_quoted_string))
-       ; parse_string_with_spaces ".text" *> return (DirectiveExpr Text)
-       ; parse_string_with_spaces ".align"
-         *> ws_opt (lift (fun int -> DirectiveExpr (Align int)) parse_number)
+       [ parse_string_with_spaces ".text" *> return (DirectiveExpr Text)
        ; parse_string_with_spaces ".globl"
          *> ws_opt (lift (fun label -> DirectiveExpr (Globl label)) parse_address12)
        ; parse_string_with_spaces ".type"
@@ -337,34 +317,9 @@ let parse_directive =
                  (fun str type_str -> DirectiveExpr (TypeDir (str, type_str)))
                  parse_string
                  (ws_opt (char ',') *> parse_type))
-       ; parse_string_with_spaces ".cfi_startproc" *> return (DirectiveExpr CfiStartproc)
-       ; parse_string_with_spaces ".cfi_endproc" *> return (DirectiveExpr CfiEndproc)
-       ; parse_string_with_spaces ".cfi_remember_state"
-         *> return (DirectiveExpr CfiRememberState)
-       ; parse_string_with_spaces ".cfi_restore_state"
-         *> return (DirectiveExpr CfiRestoreState)
-       ; parse_string_with_spaces ".size"
-         *> ws_opt
-              (lift2
-                 (fun label size -> DirectiveExpr (Size (label, size)))
-                 (* FIXME: Size can actually be an expression with +, -, * and operands, . (dot) is current address*)
-                 parse_address12
-                 (ws_opt (char ',') *> parse_string))
        ; parse_section
        ; parse_string_with_spaces ".string"
          *> ws_opt (lift (fun str -> DirectiveExpr (StringDir str)) parse_quoted_string)
-       ; parse_string_with_spaces ".cfi_def_cfa_offset"
-         *> ws_opt (lift (fun int -> DirectiveExpr (CfiDefCfaOffset int)) parse_number)
-       ; parse_string_with_spaces ".cfi_offset"
-         *> ws_opt
-              (lift2
-                 (fun int1 int2 -> DirectiveExpr (CfiOffset (int1, int2)))
-                 parse_number
-                 (ws_opt (char ',') *> ws_opt parse_number))
-       ; parse_string_with_spaces ".cfi_restore"
-         *> ws_opt (lift (fun int -> DirectiveExpr (CfiRestore int)) parse_number)
-       ; parse_string_with_spaces ".ident"
-         *> ws_opt (lift (fun str -> DirectiveExpr (Ident str)) parse_quoted_string)
        ; parse_string_with_spaces ".word"
          *> ws_opt
               (lift (fun int -> DirectiveExpr (Word (Int32.of_int int))) parse_number)

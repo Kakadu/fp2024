@@ -547,27 +547,14 @@ let pp_instruction ppf = function
   | Vmseqvx (vd, vs1, rs2) -> pp_instruction_2vreg_1reg_helper ppf "vmseq.vx" vd vs1 rs2
 ;;
 
-let pp_str_or_int ppf = function
-  | StrValue str -> Format.fprintf ppf "%S" str
-  | IntValue imm -> Format.fprintf ppf "%d" imm
-;;
-
 let pp_type_dir ppf = function
   | Type str -> Format.fprintf ppf "%s" str
 ;;
 
 let pp_directive ppf = function
-  | File str -> Format.fprintf ppf ".file %S" str
-  | Option str -> Format.fprintf ppf ".option %s" str
-  | Attribute (str, str_or_int) ->
-    Format.fprintf ppf ".attribute %s, %a" str pp_str_or_int str_or_int
   | Text -> Format.fprintf ppf ".text"
-  | Align imm -> Format.fprintf ppf ".align %d" imm
   | Globl imm -> Format.fprintf ppf ".globl %a" pp_address (Address12 imm)
   | TypeDir (str, str_type) -> Format.fprintf ppf ".type %s,@%a" str pp_type_dir str_type
-  | CfiStartproc -> Format.fprintf ppf ".cfi_startproc"
-  | CfiEndproc -> Format.fprintf ppf ".cfi_endproc"
-  | Size (imm, str) -> Format.fprintf ppf ".size %a,%s" pp_address (Address12 imm) str
   | Section (str1, None) -> Format.fprintf ppf ".section %s" str1
   | Section (str1, Some (str2, None)) -> Format.fprintf ppf ".section %s,%S" str1 str2
   | Section (str1, Some (str2, Some (typ, None))) ->
@@ -575,12 +562,6 @@ let pp_directive ppf = function
   | Section (str1, Some (str2, Some (typ, Some i))) ->
     Format.fprintf ppf ".section %s,%S,@%a,%d" str1 str2 pp_type_dir typ i
   | StringDir str -> Format.fprintf ppf ".string %S" (String.escaped str)
-  | CfiDefCfaOffset imm -> Format.fprintf ppf ".cfi_def_cfa_offset %d" imm
-  | CfiOffset (imm1, imm2) -> Format.fprintf ppf ".cfi_offset %d,%d" imm1 imm2
-  | CfiRememberState -> Format.fprintf ppf ".cfi_remember_state"
-  | CfiRestore imm -> Format.fprintf ppf ".cfi_restore %d" imm
-  | Ident str -> Format.fprintf ppf ".ident %S" str
-  | CfiRestoreState -> Format.fprintf ppf ".cfi_restore_state"
   | Word imm -> Format.fprintf ppf ".word %d" (Int32.to_int imm)
   | Space imm -> Format.fprintf ppf ".space %d" imm
 ;;
