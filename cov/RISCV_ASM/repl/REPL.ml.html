@@ -150,25 +150,25 @@ let () =
     Arg.parse
       [ "-dparsetree", Arg.Unit (fun () -&gt; <span data-count="1">o</span>pts.dump_parse_tree &lt;- true), "Dump AST\n"
       ; ( "-filepath"
-        , Arg.String (fun file_path -&gt; <span data-count="2">o</span>pts.file_path &lt;- Some file_path)
+        , Arg.String (fun file_path -&gt; <span data-count="5">o</span>pts.file_path &lt;- Some file_path)
         , "Input code in file\n" )
-      ; "-eval", Arg.Unit (fun () -&gt; <span data-count="1">o</span>pts.eval &lt;- true), "Run interpreter\n"
+      ; "-eval", Arg.Unit (fun () -&gt; <span data-count="4">o</span>pts.eval &lt;- true), "Run interpreter\n"
       ]
       (fun _ -&gt;
         <span data-count="0">S</span>tdlib.Format.eprintf "Wrong arguments\n";
         <span data-count="0">S</span>tdlib.exit 1)
       "Read-Eval-Print-Loop for RISC-V 64 ASM\n"
   in
-  <span data-count="2">l</span>et input =
+  <span data-count="5">l</span>et input =
     match opts.file_path with
     | <span data-count="0">N</span>one -&gt; In_channel.(input_al<span data-count="0">l</span> stdin) |&gt; String.tri<span data-count="0">m</span>
-    | <span data-count="2">S</span>ome path -&gt; In_channel.read_all path |&gt; <span data-count="2">S</span>tring.tri<span data-count="2">m</span>
+    | <span data-count="5">S</span>ome path -&gt; In_channel.read_all path |&gt; <span data-count="5">S</span>tring.tri<span data-count="5">m</span>
   in
   match parse_string ~consume:All parse_ast input with
-  | <span data-count="2">O</span>k ast -&gt;
+  | <span data-count="5">O</span>k ast -&gt;
     if opts.dump_parse_tree then <span data-count="1">p</span>rint_endlin<span data-count="1">e</span> (show_as<span data-count="1">t</span> ast);
-    <span data-count="2">i</span>f opts.eval
-    then <span data-count="1">(</span>
+    <span data-count="5">i</span>f opts.eval
+    then <span data-count="4">(</span>
       match interpret ast with
       | <span data-count="0">O</span>k (_, final_state) -&gt; print_endlin<span data-count="0">e</span> (show_stat<span data-count="0">e</span> final_state)
       | <span data-count="0">E</span>rror msg -&gt; failwith (sprint<span data-count="0">f</span> "Interpretation error: %s" msg))
