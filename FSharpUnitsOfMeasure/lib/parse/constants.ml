@@ -10,8 +10,6 @@ open Ast
 open Common
 open Units_of_measure
 
-(** [puconst] parses any (unsigned) constant and returns it as a constant type.
-    Should be used for expression parsing. Cannot parse surrouning whitespaces. *)
 let puconst =
   choice
     [ (pchar >>| fun c -> Const_char c)
@@ -22,9 +20,6 @@ let puconst =
     ; (pfloat >>| fun f -> Const_float f)
     ]
 ;;
-
-(** [psconst] parses any (probably signed) constant and returns it as a constant type.
-    Should be used for pattern parsing. Cannot parse surrouning whitespaces. *)
 let psconst =
   choice
     [ (pchar >>| fun c -> Const_char c)
