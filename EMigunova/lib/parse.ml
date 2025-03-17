@@ -630,12 +630,23 @@ let parse_expression =
 (* ---parser of MiniML--- *)
 (*---parse list of bidings---*)
 
-let parse_structure =
-  let* parse_let_bindings =
-    many1
-      (parse_let_rec_and_binding parse_expression <|> parse_let_biding parse_expression)
+let parse_structure_item =
+  let parse_eval =
+    let* expr = parse_expression in
+    return @@ Struct_eval expr
   in
-  return @@ parse_let_bindings
+  let parse_value =
+    let* value =
+      parse_let_rec_and_binding parse_expression <|> parse_let_biding parse_expression
+    in
+    return @@ Struct_value value
+  in
+  parse_eval <|> parse_value
+;;
+
+let parse_structure =
+  let* item_list = many1 parse_structure_item in
+  return @@ item_list
 ;;
 
 let parse = parse_string ~consume:All parse_structure

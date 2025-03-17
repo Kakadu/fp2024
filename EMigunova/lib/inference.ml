@@ -1,3 +1,7 @@
+(** Copyright 2024, Migunova Anastasia *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ast
 
 let rec print_type (ty : ttype) =
@@ -635,12 +639,12 @@ module Infer = struct
     (*на момент использования этой функции идентификаторы всех связок должны быть уже занескеы в env*)
     | Let_binding (_, Let_pattern pat, _) ->
       extract_names_from_pat
-        (fun acc id -> return (acc @ [ id, TypeEnv.find_type_exn env id ]))
+        (fun acc id -> return (acc @ [ Some id, TypeEnv.find_type_exn env id ]))
         []
         pat
     | Let_binding (_, Let_fun (id, _), _) ->
       extract_names_from_pat
-        (fun acc id -> return (acc @ [ id, TypeEnv.find_type_exn env id ]))
+        (fun acc id -> return (acc @ [ Some id, TypeEnv.find_type_exn env id ]))
         []
         (Pattern_var id)
     | Let_rec_and_binding let_binding_list ->
@@ -1008,16 +1012,24 @@ module Infer = struct
       in
       (*if debug then TypeEnv.pp Format.std_formatter env;*)
       return (env, out_list @ id_list)
+
+  and infer_structure_item (env, out_list) structure_item =
+    match structure_item with
+    | Struct_eval expr ->
+      let* _, ty = infer_expression env expr in
+      return (env, out_list @ [ None, ty ])
+    | Struct_value value -> infer_let_biding (env, out_list) value
   ;;
 
-  let infer_srtucture (*~debug*) env ast =
+  let infer_srtucture env ast =
     let* _, out_list =
-      RList.fold_left ast ~init:(return (env, [])) ~f:infer_let_biding (*~debug*)
+      RList.fold_left ast ~init:(return (env, [])) ~f:infer_structure_item (*~debug*)
     in
     let rec remove_duplicates =
       let fun_equal el1 el2 =
         match el1, el2 with
-        | (id1, _), (id2, _) -> String.equal id1 id2
+        | (Some id1, _), (Some id2, _) -> String.equal id1 id2
+        | _ -> false
       in
       function
       | x :: xs when not (Base.List.mem xs x ~equal:fun_equal) ->
@@ -1054,7 +1066,9 @@ let infer str =
     (match run_inferencer ast with
      | Ok result ->
        Base.List.map result ~f:(fun (name, ty) ->
-         Printf.printf "val %s : " name;
+         (match name with
+          | Some name -> Printf.printf "val %s : " name
+          | None -> Printf.printf "- : ");
          print_type ty;
          Printf.printf "\n")
      | Error e -> [ print_error e ])

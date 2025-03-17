@@ -79,5 +79,9 @@ and let_binding =
   | Let_rec_and_binding of let_binding list
 [@@deriving show { with_path = false }]
 
-type structure = Structure_items of let_binding list
+type structure_item =
+  | Struct_eval of expression
+  | Struct_value of let_binding
 [@@deriving show { with_path = false }]
+
+type structure = structure_item list [@@deriving show { with_path = false }]

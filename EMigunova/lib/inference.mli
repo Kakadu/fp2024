@@ -1,3 +1,7 @@
+(** Copyright 2024, Migunova Anastasia *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ast
 
 type error =
@@ -38,7 +42,7 @@ val env_with_print_funs : TypeEnv.t
 
 (*type structure = let_binding list*)
 
-val run_inferencer : let_binding list -> ((ident * ttype) list, error) result
+val run_inferencer : structure_item list -> ((ident option * ttype) list, error) result
 
 (*for debug*)
 val infer : ident -> unit list
