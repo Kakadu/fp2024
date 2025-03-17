@@ -66,28 +66,21 @@ let%expect_test "parse factorial" =
 let%expect_test "parse measure type definition" =
   run_si {|[<Measure>] type aasdf |};
   [%expect {|
-    (Str_item_type_def (Measure_type_def ("aasdf", None)))|}]
+    [<Measure>] type aasdf|}]
 ;;
 
 let%expect_test "parse measure type definition with binding" =
   run_si {|[<Measure>] type a = m^3|};
   [%expect
     {|
-    (Str_item_type_def
-       (Measure_type_def ("a", (Some (Measure_pow ((Measure_ident "m"), 3))))))|}]
+    [<Measure>] type a = m ^ 3|}]
 ;;
 
 let%expect_test "parse measure type definition with hard binding" =
   run_si {|[<Measure>] type a = m^3 * s / cm^-1|};
   [%expect
     {|
-    (Str_item_type_def
-       (Measure_type_def ("a",
-          (Some (Measure_div (
-                   (Measure_prod ((Measure_pow ((Measure_ident "m"), 3)),
-                      (Measure_ident "s"))),
-                   (Measure_div (Measure_dimless, (Measure_ident "cm"))))))
-          )))|}]
+    [<Measure>] type a = ((m ^ 3) * s) / (1 / cm)|}]
 ;;
 
 let%expect_test "don't parse strange idents as measure type def" =
@@ -236,25 +229,7 @@ let%expect_test "parse example 8 program" =
  |};
   [%expect
     {|
-    [(Str_item_eval
-        (Expr_match ((Expr_ident_or_op "a"),
-           (Rule ((Pattern_const (Const_float 0.)),
-              (Expr_const (Const_int -1312004488025042530)))),
-           [(Rule (Pattern_wild,
-               (Expr_tuple ((Expr_const (Const_string "")),
-                  (Expr_match ((Expr_ident_or_op "a"),
-                     (Rule ((Pattern_ident_or_op "a"), (Expr_ident_or_op "a"))),
-                     [(Rule ((Pattern_ident_or_op "a"),
-                         (Expr_tuple ((Expr_ident_or_op "a"),
-                            (Expr_ident_or_op "a"), []))
-                         ))
-                       ]
-                     )),
-                  []))
-               ))
-             ]
-           )))
-      ] |}]
+    match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a)) |}]
 ;;
 
 let%expect_test "parse example 8 program" =
@@ -263,25 +238,7 @@ let%expect_test "parse example 8 program" =
 match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a));; |};
   [%expect
     {|
-    [(Str_item_eval
-        (Expr_match ((Expr_ident_or_op "a"),
-           (Rule ((Pattern_const (Const_float 0.)),
-              (Expr_const (Const_int -1312004488025042530)))),
-           [(Rule (Pattern_wild,
-               (Expr_tuple ((Expr_const (Const_string "")),
-                  (Expr_match ((Expr_ident_or_op "a"),
-                     (Rule ((Pattern_ident_or_op "a"), (Expr_ident_or_op "a"))),
-                     [(Rule ((Pattern_ident_or_op "a"),
-                         (Expr_tuple ((Expr_ident_or_op "a"),
-                            (Expr_ident_or_op "a"), []))
-                         ))
-                       ]
-                     )),
-                  []))
-               ))
-             ]
-           )))
-      ] |}]
+    match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a)) |}]
 ;;
 
 let%expect_test "parse example 9 program" =
@@ -290,27 +247,7 @@ let%expect_test "parse example 9 program" =
 let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S then fun eLm -> ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3";; |};
   [%expect
     {|
-    [(Str_item_def (Nonrecursive,
-        (Bind ((Pattern_const (Const_bool false)),
-           (Expr_const (Const_int 3092098660336030153)))),
-        [(Bind ((Pattern_ident_or_op "a"),
-            (Expr_ifthenelse (
-               (Expr_ifthenelse (
-                  (Expr_const
-                     (Const_unit_of_measure
-                        (Unit_of_measure ((Mnum_int -885480591476070376),
-                           (Measure_ident "a"))))),
-                  (Expr_ident_or_op "u7A_S"), None)),
-               (Expr_lam ((Pattern_ident_or_op "eLm"),
-                  (Expr_const
-                     (Const_string
-                        ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3"))
-                  )),
-               None))
-            ))
-          ]
-        ))
-      ] |}]
+    let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S then fun eLm -> ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3" |}]
 ;;
 
 let%expect_test "parse example 10 program" =
@@ -320,21 +257,7 @@ let%expect_test "parse example 10 program" =
 |};
   [%expect
     {|
-    [(Str_item_def (Nonrecursive,
-        (Bind ((Pattern_const (Const_int 267742048371772592)),
-           (Expr_match ((Expr_option (Some (Expr_ident_or_op "a"))),
-              (Rule ((Pattern_const (Const_float 0.)), (Expr_ident_or_op "a"))),
-              [(Rule (
-                  (Pattern_const
-                     (Const_unit_of_measure
-                        (Unit_of_measure ((Mnum_float -28986.9328323),
-                           Measure_dimless)))),
-                  (Expr_ident_or_op "bsV")))
-                ]
-              ))
-           )),
-        [(Bind (Pattern_wild, (Expr_const (Const_int 0))))]))
-      ] |}]
+    let 267742048371772592 = match Some a with 0. -> a | -28986.9328323<1> -> bsV and _ = 0 |}]
 ;;
 
 (* doesn't parse '\n' between two definitions *)
@@ -348,18 +271,7 @@ let%expect_test _ =
 |};
   [%expect
     {|
-  [(Str_item_type_def
-      (Measure_type_def ("o_",
-         (Some (Measure_prod (
-                  (Measure_prod (
-                     (Measure_prod (Measure_dimless, Measure_dimless)),
-                     (Measure_ident "td"))),
-                  Measure_dimless)))
-         )));
-    (Str_item_type_def
-       (Measure_type_def ("iq1",
-          (Some (Measure_pow ((Measure_div (Measure_dimless, Measure_dimless)),
-                   56)))
-          )))
-    ] |}]
+  [<Measure>] type o_ = ((1 * 1) * td) * 1
+
+  [<Measure>] type iq1 = (1 / 1) ^ 56 |}]
 ;;
