@@ -44,7 +44,7 @@ end = struct
     | Const_bool b -> return (VBool b)
     | Const_char c -> return (VChar c)
     | Const_string s -> return (VString s)
-    | Const_unit -> return (VUnit)
+    | Const_unit -> return VUnit
     | _ -> fail Match_failure
   ;;
 
@@ -178,11 +178,9 @@ end = struct
             (match expr with
              | Expr_lam (pat', expr') ->
                return (VFun (Nonrecursive, pat', expr', ext_env))
-               (* there is a possibility we need to turn every expr' into value *)
              | _ -> eval_expr ext_env expr)
           | None -> fail Match_failure)
-       | _ -> fail Type_mismatch)
-      (* TODO: builtin functions *)
+       | _ -> fail Match_failure)
     | Expr_let (Recursive, bhd, btl, e) ->
       let* env' = eval_rec_binds env (bhd :: btl) in
       eval_expr env' e
@@ -201,7 +199,6 @@ end = struct
        | Some env'' -> eval_expr env'' e)
     | [] -> fail Match_failure
 
-  (* not sure if this works for rec bind too *)
   and eval_bind env = function
     | Bind (pat, expr) ->
       let* v = eval_expr env expr in
@@ -253,8 +250,8 @@ end = struct
          | Some ext_env -> return ext_env
          | None -> fail Match_failure)
     | Str_item_def (Recursive, bhd, btl) -> eval_rec_binds env (bhd :: btl)
-    | Str_item_type_def (Measure_type_def (id, Some m)) -> fail Not_implemented
-    | Str_item_type_def (Measure_type_def (id, None)) -> fail Not_implemented
+    | Str_item_type_def (Measure_type_def (_, Some _)) -> fail Not_implemented
+    | Str_item_type_def (Measure_type_def (_, None)) -> fail Not_implemented
   ;;
 
   let eval_program (prog : program) =
