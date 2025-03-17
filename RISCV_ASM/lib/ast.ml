@@ -501,34 +501,15 @@ type type_dir = Type of (string[@gen Generators.gen_my_string])
 
 (** Compiler directive (most of them are not needed while interpreting) *)
 type directive =
-  | File of (string[@gen Generators.gen_my_string]) (** .file string *)
-  | Option of (string[@gen Generators.gen_my_string]) (** .option argument *)
-  | Attribute of (string[@gen Generators.gen_my_string]) * string_or_int_value
-  (** .attribute tag, value *)
   | Text (** .text subsection *)
-  | Align of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
-  (** .align abs-expr, abs-expr, abs-expr *)
   | Globl of address12 (** .globl symbol *)
   | TypeDir of (string[@gen Generators.gen_my_string]) * type_dir
   (** .type assigns type to a symbol *)
-  | CfiStartproc (** .cfi_startproc *)
-  | CfiEndproc (** .cfi_endproc *)
-  | Size of address12 * (string[@gen Generators.gen_my_string]) (** .size *)
   | Section of
       (string[@gen Generators.gen_my_string])
       * ((string[@gen Generators.gen_my_string]) * (type_dir * int option) option) option
   (** .section name *)
   | StringDir of (string[@gen Generators.gen_my_string]) (** .string "str" *)
-  | CfiDefCfaOffset of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
-  (** .cfi_def_cfa_offset int*)
-  | CfiOffset of
-      (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
-      * (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)]) (** .cfi_offset int, int *)
-  | CfiRememberState (** .cfi_remember_state *)
-  | CfiRestore of (int[@gen QCheck.Gen.(-2147483648 -- 2147483647)])
-  (** .cfi_restore int *)
-  | Ident of (string[@gen Generators.gen_my_string]) (** .ident string *)
-  | CfiRestoreState (** .cfi_restore_state *)
   | Word of Int32.t (** .word stores data in memory*)
   | Space of int (** .space allocates unitialized space for data in memory *)
 [@@deriving eq, show { with_path = false }, qcheck]
