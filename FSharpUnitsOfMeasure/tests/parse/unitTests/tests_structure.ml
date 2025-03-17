@@ -2,41 +2,39 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Base
-open Ast
 open Pprint.Pp
 open Parse.Structure
 open Pprint.Pprinter
 
+let run_si = pp pprint_struct_item pstritem
+let run_prog = pp pprint_program pprog
+
 (************************** Structure items **************************)
 
 let%expect_test "parse structure item which is single expression" =
-  pp pprint_struct_item pstritem {| a |};
+  run_si {| a |};
   [%expect {| a |}]
 ;;
 
 let%expect_test "parse structure item which is do expr" =
-  pp pprint_struct_item pstritem {| do a |};
+  run_si {| do a |};
   [%expect {| a |}]
 ;;
 
 let%expect_test "parse structure item which is single let binding" =
-  pp pprint_struct_item pstritem {| let x = y |};
+  run_si {| let x = y |};
   [%expect {|
     let x = y |}]
 ;;
 
 let%expect_test "parse structure item which is single rec let binding" =
-  pp pprint_struct_item pstritem {| let rec x = x |};
+  run_si {| let rec x = x |};
   [%expect {|
     let rec x = x |}]
 ;;
 
 let%expect_test "parse structure item which is multiple let bindings" =
-  pp
-    pprint_struct_item
-    pstritem
-    {|let a = b
+  run_si {|let a = b
       and c = d
       and e = f
       and i = j|};
@@ -45,9 +43,7 @@ let%expect_test "parse structure item which is multiple let bindings" =
 ;;
 
 let%expect_test "parse structure item which is nested let bindings" =
-  pp
-    pprint_struct_item
-    pstritem
+  run_si
     {| let a = f in
          let b = g in
          let c = h in
@@ -58,9 +54,7 @@ let%expect_test "parse structure item which is nested let bindings" =
 ;;
 
 let%expect_test "parse factorial" =
-  pp
-    pprint_struct_item
-    pstritem
+  run_si
     {|let rec factorial n =
         if (n < 2) then 1
         else n * factorial (n - 1) |};
@@ -70,13 +64,13 @@ let%expect_test "parse factorial" =
 ;;
 
 let%expect_test "parse measure type definition" =
-  pp2 pp_structure_item pstritem {|[<Measure>] type aasdf |};
+  run_si {|[<Measure>] type aasdf |};
   [%expect {|
     (Str_item_type_def (Measure_type_def ("aasdf", None)))|}]
 ;;
 
 let%expect_test "parse measure type definition with binding" =
-  pp2 pp_structure_item pstritem {|[<Measure>] type a = m^3|};
+  run_si {|[<Measure>] type a = m^3|};
   [%expect
     {|
     (Str_item_type_def
@@ -84,7 +78,7 @@ let%expect_test "parse measure type definition with binding" =
 ;;
 
 let%expect_test "parse measure type definition with hard binding" =
-  pp2 pp_structure_item pstritem {|[<Measure>] type a = m^3 * s / cm^-1|};
+  run_si {|[<Measure>] type a = m^3 * s / cm^-1|};
   [%expect
     {|
     (Str_item_type_def
@@ -97,13 +91,13 @@ let%expect_test "parse measure type definition with hard binding" =
 ;;
 
 let%expect_test "don't parse strange idents as measure type def" =
-  pp2 pp_structure_item pstritem {| [<Measure>] type + = m^3 |};
+  run_si {| [<Measure>] type + = m^3 |};
   [%expect {|
     : no more choices|}]
 ;;
 
 let%expect_test "don't parse strange measure type defs" =
-  pp2 pp_structure_item pstritem {| [<Mejure>] typchik |};
+  run_si {| [<Mejure>] typchik |};
   [%expect {|
     : no more choices|}]
 ;;
@@ -111,13 +105,13 @@ let%expect_test "don't parse strange measure type defs" =
 (************************** Programs **************************)
 
 let%expect_test "parse simple binding as a program" =
-  pp pprint_program pprog {| let x = y |};
+  run_prog {| let x = y |};
   [%expect {|
     let x = y |}]
 ;;
 
 let%expect_test "parse program of bindings separated by ;;" =
-  pp pprint_program pprog {|
+  run_prog {|
      let x = y;; let z = 5000
      |};
   [%expect {|
@@ -129,7 +123,7 @@ let%expect_test "parse program of bindings separated by ;;" =
 (* works even without '\n'.
    see pprog *)
 let%expect_test "parse program of bindings separated by newline" =
-  pp pprint_program pprog {|
+  run_prog {|
     let x = y
     let z = w
     |};
@@ -140,7 +134,7 @@ let%expect_test "parse program of bindings separated by newline" =
 ;;
 
 let%expect_test "parse example 1 program" =
-  pp pprint_program pprog {| '_' [];; |};
+  run_prog {| '_' [];; |};
   [%expect {|
     '_' [] |}]
 ;;
@@ -217,7 +211,7 @@ let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
 ;;
 
 let%expect_test "parse example 7 program" =
-  pp pprint_program pprog {|
+  run_prog {|
   let 1.04931758405<1 * _5q1> = x1DZ';; |};
   [%expect {|
     let 1.04931758405<1 * _5q1> = x1DZ' |}]
@@ -236,9 +230,7 @@ let%expect_test "parse example 8 program" =
 ;;
 
 let%expect_test "parse example 8 program" =
-  pp2
-    pp_program
-    pprog
+  run_prog
     {|
     (match a with 0. -> -1312004488025042530 | _ -> "", match a with a -> a | a -> a, a);;
  |};
@@ -266,9 +258,7 @@ let%expect_test "parse example 8 program" =
 ;;
 
 let%expect_test "parse example 8 program" =
-  pp2
-    pp_program
-    pprog
+  run_prog
     {|
 match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a));; |};
   [%expect
@@ -295,9 +285,7 @@ match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (
 ;;
 
 let%expect_test "parse example 9 program" =
-  pp2
-    pp_program
-    pprog
+  run_prog
     {|
 let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S then fun eLm -> ";2MYS8)[D7[7X1t(3lL}W<D-CUbv@eV?X*QnM G|t+:O/na3";; |};
   [%expect
@@ -326,9 +314,7 @@ let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S 
 ;;
 
 let%expect_test "parse example 10 program" =
-  pp2
-    pp_program
-    pprog
+  run_prog
     {|
   let 267742048371772592 = match Some a with 0. -> a | -28986.9328323<1> -> bsV and _ = 0;;
 |};
@@ -353,9 +339,7 @@ let%expect_test "parse example 10 program" =
 
 (* doesn't parse '\n' between two definitions *)
 let%expect_test _ =
-  pp2
-    pp_program
-    pprog
+  run_prog
     {|
 [<Measure>] type o_ = ((1 * 1) * td) * 1
 

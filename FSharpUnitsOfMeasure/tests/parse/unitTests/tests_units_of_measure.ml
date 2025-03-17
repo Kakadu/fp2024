@@ -2,55 +2,56 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Base
 open Pprint.Pp
 open Parse.Units_of_measure
 open Pprint.Pprinter
 
+let run = pp pprint_measure pm
+
 (************************** Measure powers **************************)
 
 let%expect_test "parse measure ident" =
-  pp pprint_measure pm {| kg |};
+  run {| kg |};
   [%expect {| kg |}]
 ;;
 
 let%expect_test "parse measure ident to the 3 power" =
-  pp pprint_measure pm {|kg^3|};
+  run {|kg^3|};
   [%expect {| kg ^ 3 |}]
 ;;
 
 let%expect_test "parse measure ident to the negative 3 power" =
-  pp pprint_measure pm {|kg^-3|};
+  run {|kg^-3|};
   [%expect {| 1 / (kg ^ 3) |}]
 ;;
 
 let%expect_test "parse measure ident to the 3 power with whitespaces between everything" =
-  pp pprint_measure pm {|kg      ^      -    3|};
+  run {|kg      ^      -    3|};
   [%expect {| 1 / (kg ^ 3) |}]
 ;;
 
 (************************** Measure power sequences **************************)
 
 let%expect_test "parse two measure powers in sequence as product" =
-  pp pprint_measure pm {| kg^3 cm^3 |};
+  run {| kg^3 cm^3 |};
   [%expect {|
     (kg ^ 3) * (cm ^ 3) |}]
 ;;
 
 let%expect_test "parse three measure powers in sequence" =
-  pp pprint_measure pm {| kg^3 cm^3 lb^3 |};
+  run {| kg^3 cm^3 lb^3 |};
   [%expect {|
     ((kg ^ 3) * (cm ^ 3)) * (lb ^ 3) |}]
 ;;
 
 let%expect_test "parse two measure powers and measure id in sequence " =
-  pp pprint_measure pm {| kg^3 cm^3 lb |};
+  run {| kg^3 cm^3 lb |};
   [%expect {|
     ((kg ^ 3) * (cm ^ 3)) * lb |}]
 ;;
 
 let%expect_test "parse many measure powers in sequence as product" =
-  pp pprint_measure pm {| kg cm^3 N^-3 v v^4 |};
+  run {| kg cm^3 N^-3 v v^4 |};
   [%expect {|
     (((kg * (cm ^ 3)) * (1 / (N ^ 3))) * v) * (v ^ 4) |}]
 ;;
@@ -58,31 +59,31 @@ let%expect_test "parse many measure powers in sequence as product" =
 (************************** Measure product **************************)
 
 let%expect_test "parse product of two measure idents" =
-  pp pprint_measure pm {| kg * m |};
+  run {| kg * m |};
   [%expect {|
     kg * m |}]
 ;;
 
 let%expect_test "parse product of three measure idents" =
-  pp pprint_measure pm {| kg * m * s |};
+  run {| kg * m * s |};
   [%expect {|
     (kg * m) * s |}]
 ;;
 
 let%expect_test "parse product of two measure powers" =
-  pp pprint_measure pm {| kg^2 * m^2 |};
+  run {| kg^2 * m^2 |};
   [%expect {|
     (kg ^ 2) * (m ^ 2) |}]
 ;;
 
 let%expect_test "parse product of three measure powers" =
-  pp pprint_measure pm {| kg^2 * m^2 * s^2 |};
+  run {| kg^2 * m^2 * s^2 |};
   [%expect {|
     ((kg ^ 2) * (m ^ 2)) * (s ^ 2) |}]
 ;;
 
 let%expect_test "parse product of mixed measures" =
-  pp pprint_measure pm {| kg^2 * m |};
+  run {| kg^2 * m |};
   [%expect {|
     (kg ^ 2) * m |}]
 ;;
@@ -90,31 +91,31 @@ let%expect_test "parse product of mixed measures" =
 (************************** Measure division **************************)
 
 let%expect_test "parse division of two measure idents" =
-  pp pprint_measure pm {| kg / m |};
+  run {| kg / m |};
   [%expect {|
     kg / m |}]
 ;;
 
 let%expect_test "parse division of three measure idents" =
-  pp pprint_measure pm {| kg / m / s |};
+  run {| kg / m / s |};
   [%expect {|
     (kg / m) / s |}]
 ;;
 
 let%expect_test "parse division of two measure powers" =
-  pp pprint_measure pm {| kg^2 / m^2 |};
+  run {| kg^2 / m^2 |};
   [%expect {|
     (kg ^ 2) / (m ^ 2) |}]
 ;;
 
 let%expect_test "parse division of three measure powers" =
-  pp pprint_measure pm {| kg^2 / m^2 / s^2 |};
+  run {| kg^2 / m^2 / s^2 |};
   [%expect {|
     ((kg ^ 2) / (m ^ 2)) / (s ^ 2)  |}]
 ;;
 
 let%expect_test "parse division of mixed measures" =
-  pp pprint_measure pm {| kg^2 / m |};
+  run {| kg^2 / m |};
   [%expect {|
     (kg ^ 2) / m |}]
 ;;
@@ -122,31 +123,31 @@ let%expect_test "parse division of mixed measures" =
 (************************** Parentheses **************************)
 
 let%expect_test "parse sequence of idents with parentheses RA" =
-  pp pprint_measure pm {| kg (cm s g) |};
+  run {| kg (cm s g) |};
   [%expect {|
     kg * ((cm * s) * g) |}]
 ;;
 
 let%expect_test "parse sequence of idents and powers with parentheses" =
-  pp pprint_measure pm {| kg (cm s^2 g^-1) |};
+  run {| kg (cm s^2 g^-1) |};
   [%expect {|
     kg * ((cm * (s ^ 2)) * (1 / g)) |}]
 ;;
 
 let%expect_test "parse sequence of idents with parentheses LA" =
-  pp pprint_measure pm {| (kg cm s) g |};
+  run {| (kg cm s) g |};
   [%expect {|
     ((kg * cm) * s) * g |}]
 ;;
 
 let%expect_test "parse RA product" =
-  pp pprint_measure pm {| kg * (cm * s) |};
+  run {| kg * (cm * s) |};
   [%expect {|
     kg * (cm * s) |}]
 ;;
 
 let%expect_test "parse RA division" =
-  pp pprint_measure pm {| kg / (cm / s) |};
+  run {| kg / (cm / s) |};
   [%expect {|
     kg / (cm / s) |}]
 ;;
@@ -154,13 +155,13 @@ let%expect_test "parse RA division" =
 (************************** Other **************************)
 
 let%expect_test "parse 1 as measure" =
-  pp pprint_measure pm {| 1 |};
+  run {| 1 |};
   [%expect {|
     1 |}]
 ;;
 
 let%expect_test "parse inverse as measure" =
-  pp pprint_measure pm {| 1 / m |};
+  run {| 1 / m |};
   [%expect {|
     1 / m |}]
 ;;
@@ -176,7 +177,7 @@ let%expect_test "parse something strange" =
 ;;
 
 let%expect_test "parse something strange" =
-  pp pprint_measure pm {| (kg * cm^3 / (s^-1 / y^2))|};
+  run {| (kg * cm^3 / (s^-1 / y^2))|};
   [%expect {|
     (kg * (cm ^ 3)) / ((1 / s) / (y ^ 2)) |}]
 ;;

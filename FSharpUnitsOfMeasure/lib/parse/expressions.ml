@@ -15,7 +15,6 @@ open Types
 
 let pexpr_id_or_op = pid_or_op >>| fun i -> Expr_ident_or_op i
 let pexpr_const = puconst >>| fun c -> Expr_const c
-let pexpr_sconst = psconst >>| fun c -> Expr_const c
 
 let pexpr_ite pexp =
   let* cond = skip_ws *> string "if" *> skip_ws *> pexp in
