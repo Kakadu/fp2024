@@ -72,8 +72,7 @@ let%expect_test "004let_poly.ml\n" =
       let _1 =
   (fun f -> (f 1, f true)) (fun x -> x)
   |} in
-  [%expect
-    {|
+  [%expect {|
     val _1 : <type> = (1, true) |}]
 ;;
 
@@ -86,8 +85,7 @@ let%expect_test "  005.ml\n" =
   | None -> 1
   |}
   in
-  [%expect
-    {|
+  [%expect {|
     val _2 : <type> = <fun> |}]
 ;;
 

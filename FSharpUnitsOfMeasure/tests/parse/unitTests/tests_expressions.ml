@@ -180,7 +180,7 @@ let%expect_test "parse application of function to 1 argument" =
 ;;
 
 let%expect_test "parse application of id lambda" =
-  pp2 pp_expression pexpr {| (fun x -> x) y |};
+  run {| (fun x -> x) y |};
   [%expect
     {|
     (Expr_apply ((Expr_lam ((Pattern_ident_or_op "x"), (Expr_ident_or_op "x"))),
@@ -531,7 +531,7 @@ let%expect_test "parse Some (Some x)" =
 ;;
 
 let%expect_test "parse option pattern matching" =
-  pp2 pp_expression pexpr {|
+  run {|
   match x with
   | None -> 1
   | Some f -> 2 |};

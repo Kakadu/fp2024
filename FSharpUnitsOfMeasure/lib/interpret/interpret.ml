@@ -45,7 +45,7 @@ end = struct
     | Const_char c -> return (VChar c)
     | Const_string s -> return (VString s)
     | Const_unit -> return VUnit
-    | _ -> fail Match_failure
+    | _ -> fail Misc.Match_failure
   ;;
 
   let rec eval_pat env p v =
@@ -95,12 +95,12 @@ end = struct
     | "-", VInt i1, VInt i2 -> return (VInt (i1 - i2))
     | "*", VInt i1, VInt i2 -> return (VInt (i1 * i2))
     | "/", VInt i1, VInt i2 when i2 <> 0 -> return (VInt (i1 / i2))
-    | "/", VInt _, VInt _ -> fail Division_by_zero
+    | "/", VInt _, VInt _ -> fail Misc.Division_by_zero
     | "+.", VFloat f1, VFloat f2 -> return (VFloat (f1 +. f2))
     | "-.", VFloat f1, VFloat f2 -> return (VFloat (f1 -. f2))
     | "*.", VFloat f1, VFloat f2 -> return (VFloat (f1 *. f2))
     | "/.", VFloat f1, VFloat f2 when f2 <> 0.0 -> return (VFloat (f1 /. f2))
-    | "/.", VFloat _, VFloat _ -> fail Division_by_zero
+    | "/.", VFloat _, VFloat _ -> fail Misc.Division_by_zero
     | "<=", VInt i1, VInt i2 -> return (VBool (i1 <= i2))
     | "<", VInt i1, VInt i2 -> return (VBool (i1 < i2))
     | ">=", VInt i1, VInt i2 -> return (VBool (i1 >= i2))
@@ -179,8 +179,8 @@ end = struct
              | Expr_lam (pat', expr') ->
                return (VFun (Nonrecursive, pat', expr', ext_env))
              | _ -> eval_expr ext_env expr)
-          | None -> fail Match_failure)
-       | _ -> fail Match_failure)
+          | None -> fail Misc.Match_failure)
+       | _ -> fail Misc.Match_failure)
     | Expr_let (Recursive, bhd, btl, e) ->
       let* env' = eval_rec_binds env (bhd :: btl) in
       eval_expr env' e
@@ -197,7 +197,7 @@ end = struct
       (match env' with
        | None -> eval_rules env v tl
        | Some env'' -> eval_expr env'' e)
-    | [] -> fail Match_failure
+    | [] -> fail Misc.Match_failure
 
   and eval_bind env = function
     | Bind (pat, expr) ->
@@ -208,7 +208,7 @@ end = struct
          let env' = eval_pat env pat v in
          (match env' with
           | Some ext_env -> return ext_env
-          | None -> fail Match_failure))
+          | None -> fail Misc.Match_failure))
 
   and eval_rec_binds env binds =
     let rec update_env acc_env = function
@@ -248,7 +248,7 @@ end = struct
         let* v = eval_expr env expr in
         (match eval_pat env pat v with
          | Some ext_env -> return ext_env
-         | None -> fail Match_failure)
+         | None -> fail Misc.Match_failure)
     | Str_item_def (Recursive, bhd, btl) -> eval_rec_binds env (bhd :: btl)
     | Str_item_type_def (Measure_type_def (_, Some _)) -> fail Not_implemented
     | Str_item_type_def (Measure_type_def (_, None)) -> fail Not_implemented

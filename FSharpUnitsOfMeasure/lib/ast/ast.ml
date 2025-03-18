@@ -70,8 +70,8 @@ type constant =
   | Const_bool of bool (** Boolean constants [true] and [false] *)
   | Const_char of (char[@gen printable]) (** Char constants: ['a'] *)
   | Const_string of (string[@gen small_string ~gen:printable])
-  | Const_unit (** Unit [()] *)
   (** String constants: ["foo"] *)
+  | Const_unit (** Unit [()] *)
   | Const_unit_of_measure of unit_of_measure
   (** Units of measure constants: [5.0<cm>], [3<kg>] *)
 [@@deriving qcheck, show { with_path = false }]
