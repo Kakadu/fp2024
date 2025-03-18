@@ -1,0 +1,6 @@
+(executable
+ (public_name repl)
+ (libraries ast parse interp checks))
+
+(cram
+ (deps ./repl.exe %{bin:interpret}))
