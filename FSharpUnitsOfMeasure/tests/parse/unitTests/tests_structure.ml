@@ -258,7 +258,6 @@ let%expect_test "parse example 10 program" =
   [%expect
     {|
     let 267742048371772592 = match Some a with 0. -> a | -28986.9328323<1> -> bsV and _ = 0 |}]
-<<<<<<< HEAD
 ;;
 
 let%expect_test _ =
@@ -274,6 +273,4 @@ let%expect_test _ =
   [<Measure>] type o_ = ((1 * 1) * td) * 1
 
   [<Measure>] type iq1 = (1 / 1) ^ 56 |}]
-=======
->>>>>>> 4cc33b9 (fix: merge conflict)
 ;;
