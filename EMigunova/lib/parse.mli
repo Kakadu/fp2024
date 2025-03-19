@@ -33,4 +33,4 @@ val parse_in_construction : expression t -> expression t
 val parse_anonymouse_fun : expression t -> expression t
 val parse_function_fun : expression t -> expression t
 val parse_expression : expression t
-val parse : ident -> (structure_item list, ident) result
+val parse : ident -> (let_binding list, ident) result

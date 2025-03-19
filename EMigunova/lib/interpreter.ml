@@ -55,7 +55,22 @@ let rec print_value = function
      | single :: [] -> print_value single
      | [] -> ());
     Printf.printf ")"
-  | Val_fun _ -> Printf.printf "<fun>"
+  | Val_fun (_, ident, pat_list, _, _) ->
+    (*Printf.printf "<fun>"*)
+    let pat_list_to_string pat_list =
+      Base.List.fold_left pat_list ~init:"" ~f:(fun acc_string pat ->
+        match pat with
+        | Pattern_var id -> acc_string ^ " " ^ id
+        | _ -> acc_string ^ " redo print fun for this case")
+    in
+    let ident_to_string = function
+      | Some id -> id
+      | None -> "anonym"
+    in
+    Printf.printf
+      " %s function: ( fun%s -> some function ) \n"
+      (ident_to_string ident)
+      (pat_list_to_string pat_list)
   | Val_function _ -> Printf.printf "<function>"
   | Val_list val_list ->
     Printf.printf "[";
@@ -74,9 +89,8 @@ let rec print_value = function
        print_value value
      | None -> Printf.printf "None")
   | Val_builtin _ -> Printf.printf "<builtin>"
-;;
 
-let print_env env =
+and print_env env =
   Printf.printf "Type enviroment: \n";
   Base.Map.iteri env ~f:(fun ~key ~data ->
     Printf.printf "val %s : " key;
@@ -261,45 +275,67 @@ module Inter = struct
       eval_bin_op (op, value1, value2)
     | Expr_application (exp, expr_list) ->
       let* fun_val = eval_expression env exp in
+      let val_list = Base.List.map expr_list ~f:(fun expr -> eval_expression env expr) in
       (*let _ = print_env env in*)
       (*let _ = print_value fun_val in*)
-      (match fun_val with
-       | Val_fun (_, _, pat_list, expr, _) ->
-         let rec helper pat_list expr_list fun_env =
-           match pat_list, expr_list with
-           | _ :: _, [] -> return fun_val
-           | first_pat :: rest_pat, first_expr :: rest_expr ->
-             let* arg_val = eval_expression fun_env first_expr in
-             let new_env = match_pattern fun_env (first_pat, arg_val) in
-             (match new_env with
-              | Some new_env -> helper rest_pat rest_expr new_env
-              | None -> fail `Match_failure)
-           | [], _ :: _ -> fail `Too_many_args_for_anonym_fun
-           | [], [] -> eval_expression fun_env expr
-         in
-         helper pat_list expr_list env
-       | Val_function (case_list, env) ->
-         (match expr_list with
-          | [] -> return fun_val
-          | single :: [] ->
-            let* arg_val = eval_expression env single in
-            find_and_eval_case env arg_val case_list
-          | _ -> fail `Too_many_args_for_anonym_fun)
-       | Val_builtin builtin ->
-         (match expr_list with
-          | [] -> return fun_val
-          | single :: [] ->
-            let* arg_val = eval_expression env single in
-            (match builtin, arg_val with
-             | "print_int", Val_integer integer ->
-               print_int integer;
-               return Val_unit
-             | "print_endline", Val_string str ->
-               print_endline str;
-               return Val_unit
-             | _ -> fail `Type_error)
-          | _ -> fail (`Too_many_args_for_fun builtin))
-       | _ -> fail `Type_error)
+      let rec help_fun val_list = function
+        | Val_fun (rec_flag, ident, pat_list, expr, fun_env) ->
+          let fun_env =
+            match ident, rec_flag with
+            | Some ident, Recursive -> EvalEnv.extend fun_env ident fun_val
+            | _ -> fun_env
+          in
+          let rec helper pat_list val_list fun_env =
+            match pat_list, val_list with
+            | _ :: _, [] ->
+              return (Val_fun (Non_recursive, ident, pat_list, expr, fun_env))
+              (*case of partial application*)
+            | first_pat :: rest_pat, first_val :: rest_val ->
+              let* arg_val = first_val in
+              let new_fun_env = match_pattern fun_env (first_pat, arg_val) in
+              (match new_fun_env with
+               | Some new_fun_env -> helper rest_pat rest_val new_fun_env
+               | None -> fail `Match_failure)
+            | [], _ :: _ ->
+              let* partial_application_val = eval_expression fun_env expr in
+              help_fun val_list partial_application_val
+            | [], [] ->
+              let ident1 =
+                match ident with
+                | Some ident -> ident
+                | _ -> "no_ident"
+              in
+              let _ =
+                Printf.printf "Fun_enviroment for fun '%s'" ident1;
+                print_env fun_env
+              in
+              eval_expression fun_env expr
+          in
+          helper pat_list val_list fun_env
+        | Val_function (case_list, env) ->
+          (match expr_list with
+           | [] -> return fun_val
+           | single :: [] ->
+             let* arg_val = eval_expression env single in
+             find_and_eval_case env arg_val case_list
+           | _ -> fail `Too_many_args_for_anonym_fun)
+        | Val_builtin builtin ->
+          (match expr_list with
+           | [] -> return fun_val
+           | single :: [] ->
+             let* arg_val = eval_expression env single in
+             (match builtin, arg_val with
+              | "print_int", Val_integer integer ->
+                print_int integer;
+                return Val_unit
+              | "print_endline", Val_string str ->
+                print_endline str;
+                return Val_unit
+              | _ -> fail `Type_error)
+           | _ -> fail (`Too_many_args_for_fun builtin))
+        | _ -> fail `Type_error
+      in
+      help_fun val_list fun_val
     | Expr_function_fun case_list -> return (Val_function (case_list, env))
     | Expr_match_with (expr, case_list) ->
       let* match_value = eval_expression env expr in
@@ -380,12 +416,11 @@ module Inter = struct
           let env = extend env id (Val_fun (Recursive, Some id, pat_list, expr, env)) in
           return env
         | Let_binding (Recursive, Let_pattern (Pattern_var id), expr) ->
-          let* value = eval_expression env expr in
           let value =
-            match value with
-            | Val_fun (_, _, pat_list, expr, env) ->
-              Val_fun (Recursive, Some id, pat_list, expr, env)
-            | other -> other
+            match expr with
+            | Expr_anonym_fun (pattern_list, expr) ->
+              Val_fun (Recursive, Some id, pattern_list, expr, env)
+            | _ -> Val_option None
           in
           let env = extend env id value in
           return env
@@ -396,7 +431,7 @@ module Inter = struct
 
   let eval_let_bind env out_list value_binding =
     let rec extract_names_from_pat env acc = function
-      | Pattern_var id -> acc @ [ Some id, EvalEnv.find_exn1 env id ]
+      | Pattern_var id -> acc @ [ id, EvalEnv.find_exn1 env id ]
       | Pattern_tuple pat_list
       | Pattern_list_sugar_case pat_list
       | Pattern_list_constructor_case pat_list ->
@@ -427,19 +462,12 @@ module Inter = struct
       return (env, out_list @ eval_list)
   ;;
 
-  let eval_structure_item env out_list = function
-    | Struct_eval expr ->
-      let* value = eval_expression env expr in
-      return (env, out_list @ [ None, value ])
-    | Struct_value value -> eval_let_bind env out_list value
-  ;;
-
   let eval_structure env ast =
     let* _, out_list =
       Base.List.fold_left
-        ~f:(fun acc structure_item ->
+        ~f:(fun acc let_bind ->
           let* env, out_list = acc in
-          let* env, out_list = eval_structure_item env out_list structure_item in
+          let* env, out_list = eval_let_bind env out_list let_bind in
           return (env, out_list))
         ~init:(return (env, []))
         ast
@@ -447,8 +475,7 @@ module Inter = struct
     let rec remove_duplicates =
       let fun_equal el1 el2 =
         match el1, el2 with
-        | (Some id1, _), (Some id2, _) -> String.equal id1 id2
-        | _ -> false
+        | (id1, _), (id2, _) -> String.equal id1 id2
       in
       function
       | x :: xs when not (Base.List.mem xs x ~equal:fun_equal) ->
@@ -475,9 +502,7 @@ let inter str =
     (match run_interpreter ast with
      | Ok result ->
        Base.List.map result ~f:(fun (name, value) ->
-         (match name with
-          | Some name -> Printf.printf "val %s : " name
-          | None -> Printf.printf "- : ");
+         Printf.printf "val %s : " name;
          print_value value;
          Printf.printf "\n")
      | Error e -> [ print_error e ])
