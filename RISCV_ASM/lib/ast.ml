@@ -306,7 +306,6 @@ type instruction =
   | Li of register * address32
   (** Load Immediate. lui rd, immediate20; addi rd, rd, immediate12 *)
   | Ret (** Return. Jalr x0, x1, 0 *)
-  (** Store Vector to Memory. vse32.v vs, (rs1) *)
   | FmaddS of float_register * float_register * float_register * float_register
   (** Fused Mul-Add Single precision. rd = rs1 * rs2 + rs3 *)
   | FmsubS of float_register * float_register * float_register * float_register
