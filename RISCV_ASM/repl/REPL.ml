@@ -15,8 +15,6 @@ type opts =
   ; mutable eval : bool
   }
 
-let initial_state = ref None
-
 let () =
   let opts = { dump_parse_tree = false; file_path = None; eval = false } in
   let _ =

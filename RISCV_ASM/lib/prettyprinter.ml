@@ -196,15 +196,6 @@ let pp_instruction_3vreg_helper ppf mnemonic v1 v2 v3 =
     v3
 ;;
 
-let pp_address ppf = function
-  | Address12 (LabelAddress12 str) -> Format.fprintf ppf "%s" str
-  | Address20 (LabelAddress20 str) -> Format.fprintf ppf "%s" str
-  | Address32 (LabelAddress32 str) -> Format.fprintf ppf "%s" str
-  | Address12 (ImmediateAddress12 imm) -> Format.fprintf ppf "%d" imm
-  | Address20 (ImmediateAddress20 imm) -> Format.fprintf ppf "%d" imm
-  | Address32 (ImmediateAddress32 imm) -> Format.fprintf ppf "%d" imm
-;;
-
 let pp_instruction_3f_reg_helper ppf mnemonic r1 r2 r3 =
   Format.fprintf
     ppf

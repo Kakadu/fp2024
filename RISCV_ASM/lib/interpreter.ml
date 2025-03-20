@@ -455,6 +455,7 @@ let execute_shift_op rd rs1 rs2 op =
   let result = op val1 (Int64.to_int val2_lower_5bits) in
   set_register_value rd result
 ;;
+
 let execute_comparison_op rd rs1 rs2 compare_fn =
   let* val1 = get_register_value rs1 in
   let* val2 = get_register_value rs2 in
