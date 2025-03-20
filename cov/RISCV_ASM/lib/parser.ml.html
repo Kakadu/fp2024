@@ -195,10 +195,10 @@
 <a id="L162"></a><span class="visited"> </span>
 <a id="L163"></a><span class="visited"> </span>
 <a id="L164"></a><span class="visited"> </span>
-<a id="L165"></a><span > </span>
-<a id="L166"></a><span > </span>
-<a id="L167"></a><span > </span>
-<a id="L168"></a><span > </span>
+<a id="L165"></a><span class="visited"> </span>
+<a id="L166"></a><span class="visited"> </span>
+<a id="L167"></a><span class="visited"> </span>
+<a id="L168"></a><span class="visited"> </span>
 <a id="L169"></a><span class="visited"> </span>
 <a id="L170"></a><span class="visited"> </span>
 <a id="L171"></a><span class="visited"> </span>
@@ -227,10 +227,10 @@
 <a id="L194"></a><span class="visited"> </span>
 <a id="L195"></a><span class="visited"> </span>
 <a id="L196"></a><span class="visited"> </span>
-<a id="L197"></a><span class="visited"> </span>
-<a id="L198"></a><span class="visited"> </span>
-<a id="L199"></a><span class="visited"> </span>
-<a id="L200"></a><span class="visited"> </span>
+<a id="L197"></a><span > </span>
+<a id="L198"></a><span > </span>
+<a id="L199"></a><span > </span>
+<a id="L200"></a><span > </span>
 <a id="L201"></a><span class="visited"> </span>
 <a id="L202"></a><span class="visited"> </span>
 <a id="L203"></a><span class="visited"> </span>
@@ -2817,44 +2817,6 @@ let parse_register =
        ])
 ;;
 
-let parse_vector_register =
-  ws_op<span data-count="8">t</span>
-    (choic<span data-count="8">e</span>
-       [ strin<span data-count="8">g</span> "v10" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V10
-       ; strin<span data-count="8">g</span> "v11" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V11
-       ; strin<span data-count="8">g</span> "v12" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V12
-       ; strin<span data-count="8">g</span> "v13" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V13
-       ; strin<span data-count="8">g</span> "v14" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V14
-       ; strin<span data-count="8">g</span> "v15" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V15
-       ; strin<span data-count="8">g</span> "v16" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V16
-       ; strin<span data-count="8">g</span> "v17" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V17
-       ; strin<span data-count="8">g</span> "v18" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V18
-       ; strin<span data-count="8">g</span> "v19" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V19
-       ; strin<span data-count="8">g</span> "v20" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V20
-       ; strin<span data-count="8">g</span> "v21" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V21
-       ; strin<span data-count="8">g</span> "v22" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V22
-       ; strin<span data-count="8">g</span> "v23" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V23
-       ; strin<span data-count="8">g</span> "v24" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V24
-       ; strin<span data-count="8">g</span> "v25" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V25
-       ; strin<span data-count="8">g</span> "v26" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V26
-       ; strin<span data-count="8">g</span> "v27" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V27
-       ; strin<span data-count="8">g</span> "v28" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V28
-       ; strin<span data-count="8">g</span> "v29" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V29
-       ; strin<span data-count="8">g</span> "v30" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V30
-       ; strin<span data-count="8">g</span> "v31" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V31
-       ; strin<span data-count="8">g</span> "v0" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V0
-       ; strin<span data-count="8">g</span> "v1" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V1
-       ; strin<span data-count="8">g</span> "v2" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V2
-       ; strin<span data-count="8">g</span> "v3" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V3
-       ; strin<span data-count="8">g</span> "v4" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V4
-       ; strin<span data-count="8">g</span> "v5" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V5
-       ; strin<span data-count="8">g</span> "v6" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V6
-       ; strin<span data-count="8">g</span> "v7" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V7
-       ; strin<span data-count="8">g</span> "v8" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V8
-       ; strin<span data-count="8">g</span> "v9" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V9
-       ])
-;;
-
 let parse_float_register =
   ws_op<span data-count="8">t</span>
     (choic<span data-count="8">e</span>
@@ -2922,6 +2884,44 @@ let parse_float_register =
        ; strin<span data-count="8">g</span> "fs7" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> Fs7
        ; strin<span data-count="8">g</span> "fs8" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> Fs8
        ; strin<span data-count="8">g</span> "fs9" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> Fs9
+       ])
+;;
+
+let parse_vector_register =
+  ws_op<span data-count="8">t</span>
+    (choic<span data-count="8">e</span>
+       [ strin<span data-count="8">g</span> "v10" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V10
+       ; strin<span data-count="8">g</span> "v11" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V11
+       ; strin<span data-count="8">g</span> "v12" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V12
+       ; strin<span data-count="8">g</span> "v13" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V13
+       ; strin<span data-count="8">g</span> "v14" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V14
+       ; strin<span data-count="8">g</span> "v15" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V15
+       ; strin<span data-count="8">g</span> "v16" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V16
+       ; strin<span data-count="8">g</span> "v17" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V17
+       ; strin<span data-count="8">g</span> "v18" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V18
+       ; strin<span data-count="8">g</span> "v19" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V19
+       ; strin<span data-count="8">g</span> "v20" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V20
+       ; strin<span data-count="8">g</span> "v21" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V21
+       ; strin<span data-count="8">g</span> "v22" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V22
+       ; strin<span data-count="8">g</span> "v23" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V23
+       ; strin<span data-count="8">g</span> "v24" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V24
+       ; strin<span data-count="8">g</span> "v25" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V25
+       ; strin<span data-count="8">g</span> "v26" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V26
+       ; strin<span data-count="8">g</span> "v27" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V27
+       ; strin<span data-count="8">g</span> "v28" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V28
+       ; strin<span data-count="8">g</span> "v29" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V29
+       ; strin<span data-count="8">g</span> "v30" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V30
+       ; strin<span data-count="8">g</span> "v31" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V31
+       ; strin<span data-count="8">g</span> "v0" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V0
+       ; strin<span data-count="8">g</span> "v1" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V1
+       ; strin<span data-count="8">g</span> "v2" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V2
+       ; strin<span data-count="8">g</span> "v3" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V3
+       ; strin<span data-count="8">g</span> "v4" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V4
+       ; strin<span data-count="8">g</span> "v5" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V5
+       ; strin<span data-count="8">g</span> "v6" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V6
+       ; strin<span data-count="8">g</span> "v7" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V7
+       ; strin<span data-count="8">g</span> "v8" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V8
+       ; strin<span data-count="8">g</span> "v9" *<span data-count="8">&gt;</span> retur<span data-count="8">n</span> V9
        ])
 ;;
 
