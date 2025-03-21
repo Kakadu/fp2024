@@ -1,7 +1,3 @@
-(executable
- (public_name repl)
- (libraries ast parse interp checks))
-
 (cram
  (applies_to repl)
  (deps
@@ -24,5 +20,10 @@
   manytests/do_not_type/002if.ml
   manytests/do_not_type/003occurs.ml
   manytests/do_not_type/004let_poly.ml
+  manytests/do_not_type/005.ml
   manytests/do_not_type/015tuples.ml
+  manytests/do_not_type/016tuples_mismatch.ml
+  manytests/do_not_type/097fun_vs_list.ml
+  manytests/do_not_type/097fun_vs_unit.ml
+  manytests/do_not_type/098rec_int.ml
   manytests/do_not_type/099.ml))
