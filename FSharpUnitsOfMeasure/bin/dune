@@ -3,4 +3,4 @@
  (libraries ast parse interp checks))
 
 (cram
- (deps ./repl.exe %{bin:interpret}))
+ (deps ./repl.exe))
