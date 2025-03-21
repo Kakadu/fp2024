@@ -133,8 +133,7 @@ let%expect_test "parse example 1 program" =
 ;;
 
 let%expect_test "parse example 2 program" =
-  run_prog
-    {| let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |};
+  run_prog {| let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5>;; |};
   [%expect {|
     let _Sy = "<X&D(" and _QQf = tOWs and _ = -3625.090462<b9o'5> |}]
 ;;
@@ -159,8 +158,7 @@ let%expect_test "parse example 5 program" =
 ;;
 
 let%expect_test "parse example 6 program" =
-  run_prog
-    {|
+  run_prog {|
 let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)>;;   |};
   [%expect {|
     let rec true = -4534607695307062870<((v / 1) ^ 5) * ((_L0 * m) ^ 7)> |}]

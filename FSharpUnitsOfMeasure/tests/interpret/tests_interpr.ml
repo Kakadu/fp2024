@@ -164,7 +164,8 @@ let%expect_test _ =
   let b = 3;;
   let c = b :: a;;
   |} in
-  [%expect {|
+  [%expect
+    {|
     val a : <type> = [2; 1]
     val b : <type> = 3
     val c : <type> = [3; 2; 1] |}]
