@@ -55,6 +55,7 @@ let run_single options =
   let run text =
     match pprog text with
     | Error _ -> print_endline (Format.asprintf "Syntax error");
+    print_endline hori_line
     (* env *)
     | Ok ast ->
       (* Infer *)
@@ -79,9 +80,9 @@ let run_single options =
         | Some line ->
           if String.ends_with ~suffix: ";;" line
           then (
-          let _ = run (lines ^ line) in
+          let _ = run (lines  ^ "\n" ^ line) in
           input_lines "")
-          else input_lines (lines ^ line)
+          else input_lines (lines  ^ "\n" ^ line)
         | None -> ()
       in
       let _ = input_lines "" in ()
