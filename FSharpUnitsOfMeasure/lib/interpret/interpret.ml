@@ -32,9 +32,7 @@ module Env (M : ERROR_MONAD) = struct
   ;;
 end
 
-module Eval (M : ERROR_MONAD) : sig
-  val eval_program : program -> (environment, error) M.t
-end = struct
+module Eval (M : ERROR_MONAD) = struct
   open M
   open Env (M)
 
@@ -227,7 +225,7 @@ end = struct
     return final_env
   ;;
 
-  let eval_str_item env =
+  let eval_str_item env out_lst =
     let print_bool b = print_endline (Bool.to_string b) in
     let env = extend env "print_int" (VBuiltin_fun (Print_int print_int, env)) in
     let env = extend env "print_string" (VBuiltin_fun (Print_string print_string, env)) in
@@ -239,17 +237,19 @@ end = struct
     in
     function
     | Str_item_eval e ->
-      let _ = eval_expr env e in
-      return env
+      let v = eval_expr env e in
+      return (env, out_lst @ [v])
     | Str_item_def (Nonrecursive, Bind (pat, expr), btl) ->
       if btl <> []
       then fail Invalid_syntax
       else
         let* v = eval_expr env expr in
         (match eval_pat env pat v with
-         | Some ext_env -> return ext_env
+         | Some ext_env -> return (ext_env, out_lst)
          | None -> fail Misc.Match_failure)
-    | Str_item_def (Recursive, bhd, btl) -> eval_rec_binds env (bhd :: btl)
+    | Str_item_def (Recursive, bhd, btl) ->
+      let* env = eval_rec_binds env (bhd :: btl) in
+      return (env, out_lst)
     | Str_item_type_def (Measure_type_def (_, Some _)) -> fail Not_implemented
     | Str_item_type_def (Measure_type_def (_, None)) -> fail Not_implemented
   ;;
@@ -257,10 +257,10 @@ end = struct
   let eval_program (prog : program) =
     List.fold_left
       (fun env str_it ->
-        let* env = env in
-        let* env = eval_str_item env str_it in
-        return env)
-      (return empty)
+        let* env, out_lst = env in
+        let* env, out_lst = eval_str_item env out_lst str_it in
+        return (env, out_lst))
+      (return (empty, []))
       prog
   ;;
 end
