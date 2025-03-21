@@ -535,7 +535,8 @@ let%expect_test "parse option pattern matching" =
   match x with
   | None -> 1
   | Some f -> 2 |};
-  [%expect {|
+  [%expect
+    {|
   (Expr_match ((Expr_ident_or_op "x"),
      (Rule ((Pattern_option None), (Expr_const (Const_int 1)))),
      [(Rule ((Pattern_option (Some (Pattern_ident_or_op "f"))),

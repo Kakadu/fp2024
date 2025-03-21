@@ -238,7 +238,7 @@ module Eval (M : ERROR_MONAD) = struct
     function
     | Str_item_eval e ->
       let v = eval_expr env e in
-      return (env, out_lst @ [v])
+      return (env, out_lst @ [ v ])
     | Str_item_def (Nonrecursive, Bind (pat, expr), btl) ->
       if btl <> []
       then fail Invalid_syntax
