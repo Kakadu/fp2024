@@ -71,15 +71,13 @@ let%expect_test "parse measure type definition" =
 
 let%expect_test "parse measure type definition with binding" =
   run_si {|[<Measure>] type a = m^3|};
-  [%expect
-    {|
+  [%expect {|
     [<Measure>] type a = m ^ 3|}]
 ;;
 
 let%expect_test "parse measure type definition with hard binding" =
   run_si {|[<Measure>] type a = m^3 * s / cm^-1|};
-  [%expect
-    {|
+  [%expect {|
     [<Measure>] type a = ((m ^ 3) * s) / (1 / cm)|}]
 ;;
 

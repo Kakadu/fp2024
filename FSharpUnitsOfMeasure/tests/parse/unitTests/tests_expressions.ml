@@ -183,8 +183,7 @@ let%expect_test "parse application of id lambda" =
   run {| (fun x -> x) y |};
   [%expect
     {|
-    (Expr_apply ((Expr_lam ((Pattern_ident_or_op "x"), (Expr_ident_or_op "x"))),
-       (Expr_ident_or_op "y"))) |}]
+    (fun x -> x) y |}]
 ;;
 
 (* Should omit parentheses *)
@@ -196,16 +195,9 @@ let%expect_test "parse application of function to 2 arguments" =
 
 let%expect_test "parse application of function to 5 arguments" =
   run {| f a b c d e |};
-  [%expect {|
-(Expr_apply (
-   (Expr_apply (
-      (Expr_apply (
-         (Expr_apply (
-            (Expr_apply ((Expr_ident_or_op "f"), (Expr_ident_or_op "a"))),
-            (Expr_ident_or_op "b"))),
-         (Expr_ident_or_op "c"))),
-      (Expr_ident_or_op "d"))),
-   (Expr_ident_or_op "e"))) |}]
+  [%expect
+    {|
+((((f a) b) c) d) e |}]
 ;;
 
 let%expect_test "parse if a then b else c d" =
@@ -264,25 +256,18 @@ let%expect_test "parse unary minuses w/o parentheses should fail" =
 
 let%expect_test "parse unary minuses with parentheses" =
   run {| -(-(-a)) |};
-  [%expect {|
-    (Expr_apply ((Expr_ident_or_op "-"),
-       (Expr_apply ((Expr_ident_or_op "-"),
-          (Expr_apply ((Expr_ident_or_op "-"), (Expr_ident_or_op "a")))))
-       )) |}]
+  [%expect
+    {|
+    - (- (- a)) |}]
 ;;
 
 (************************** Binary operations **************************)
 
 let%expect_test "parse a+b" =
   run {| a+b |};
-  [%expect {|
-    (Expr_apply (
-       (Expr_apply ((Expr_ident_or_op "+"),
-          (Expr_apply (
-             (Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
-             (Expr_ident_or_op "b")))
-          )),
-       (Expr_ident_or_op "c"))) |}]
+  [%expect
+    {|
+    a + b |}]
 ;;
 
 let%expect_test " parse a + + should fail " =
@@ -311,12 +296,9 @@ let%expect_test "parse n-1 " =
 
 let%expect_test "parse a+b*c" =
   run {| a+b*c |};
-  [%expect {|
-      (Expr_apply ((Expr_apply ((Expr_ident_or_op "+"), (Expr_ident_or_op "a"))),
-         (Expr_apply (
-            (Expr_apply ((Expr_ident_or_op "*"), (Expr_ident_or_op "b"))),
-            (Expr_ident_or_op "c")))
-         )) |}]
+  [%expect
+    {|
+      a + (b * c) |}]
 ;;
 
 let%expect_test "parse a <= b <= c" =
@@ -327,22 +309,16 @@ let%expect_test "parse a <= b <= c" =
 
 let%expect_test "parse a || b || c" =
   run {| a || b || c |};
-  [%expect {|
-      (Expr_apply ((Expr_apply ((Expr_ident_or_op "||"), (Expr_ident_or_op "a"))),
-         (Expr_apply (
-            (Expr_apply ((Expr_ident_or_op "||"), (Expr_ident_or_op "b"))),
-            (Expr_ident_or_op "c")))
-         )) |}]
+  [%expect
+    {|
+      a || (b || c) |}]
 ;;
 
 let%expect_test "parse a && b && c" =
   run {| a && b && c |};
-  [%expect {|
-      (Expr_apply ((Expr_apply ((Expr_ident_or_op "&&"), (Expr_ident_or_op "a"))),
-         (Expr_apply (
-            (Expr_apply ((Expr_ident_or_op "&&"), (Expr_ident_or_op "b"))),
-            (Expr_ident_or_op "c")))
-         )) |}]
+  [%expect
+    {|
+      a && (b && c) |}]
 ;;
 
 let%expect_test "parse a :: b" =
@@ -537,12 +513,7 @@ let%expect_test "parse option pattern matching" =
   | Some f -> 2 |};
   [%expect
     {|
-  (Expr_match ((Expr_ident_or_op "x"),
-     (Rule ((Pattern_option None), (Expr_const (Const_int 1)))),
-     [(Rule ((Pattern_option (Some (Pattern_ident_or_op "f"))),
-         (Expr_const (Const_int 2))))
-       ]
-     ))  |}]
+  match x with None -> 1 | Some f -> 2  |}]
 ;;
 
 (************************** Typed **************************)
