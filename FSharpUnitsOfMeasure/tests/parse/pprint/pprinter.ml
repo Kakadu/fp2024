@@ -81,6 +81,7 @@ let rec pprint_pat = function
     asprintf "(%s)" (pprint_sep_by pprint_pat pprint_sep_comma list)
   | Pattern_list list -> asprintf "[%s]" (pprint_sep_by pprint_pat pprint_sep_colon list)
   | Pattern_or (p1, p2) -> asprintf "%s | %s" (pprint_pat p1) (pprint_pat p2)
+  | Pattern_cons (p1, p2) -> asprintf "%s :: %s" (pprint_pat p1) (pprint_pat p2)
   | Pattern_option opt ->
     (match opt with
      | None -> asprintf "None"

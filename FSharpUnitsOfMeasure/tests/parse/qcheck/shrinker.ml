@@ -106,6 +106,10 @@ let rec shpat = function
     shpat p1
     >|= (fun p1' -> Pattern_or (p1', p2))
     <+> (shpat p2 >|= fun p2' -> Pattern_or (p1, p2'))
+  | Pattern_cons (p1, p2) ->
+    shpat p2
+    >|= (fun p2' -> Pattern_cons (p1, p2'))
+    <+> (shpat p1 >|= fun p1' -> Pattern_cons (p1', p2))
   | Pattern_option None -> return (Pattern_option None)
   | Pattern_option (Some pat) -> shpat pat >|= fun pat' -> Pattern_option (Some pat')
 ;;
