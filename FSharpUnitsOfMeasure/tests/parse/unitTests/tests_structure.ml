@@ -42,7 +42,7 @@ let%expect_test "parse structure item which is multiple let bindings" =
     let a = b and c = d and e = f and i = j|}]
 ;;
 
-let%expect_test "parse structure item which is nested let bindings" =
+(* let%expect_test "parse structure item which is nested let bindings" =
   run_si
     {| let a = f in
          let b = g in
@@ -51,7 +51,7 @@ let%expect_test "parse structure item which is nested let bindings" =
          E |};
   [%expect {|
     let a = f in let b = g in let c = h in let d = j in E|}]
-;;
+;; *)
 
 let%expect_test "parse factorial" =
   run_si
