@@ -34,6 +34,11 @@ let ppat_or ppat =
   chainl ppat ppipe
 ;;
 
+let ppat_cons ppat =
+  let ppcolons = skip_ws *> string "::" *> return (fun p1 p2 -> Pattern_cons (p1, p2)) in
+  chainr ppat ppcolons
+;;
+
 let ppat_opt ppat =
   let* opt =
     skip_token "Some" *> ppat
@@ -53,16 +58,17 @@ let ppat =
   fix (fun ppat ->
     let ppat =
       choice
-        [ ppat_paren ppat
-        ; ppat_list ppat
+        [ ppat_id_or_op
         ; ppat_const
-        ; ppat_id_or_op
         ; ppat_wild
+        ; ppat_paren ppat
+        ; ppat_list ppat
         ; ppat_opt ppat
         ]
     in
     let ppat = ppat_tuple ppat <|> ppat in
     let ppat = ppat_or ppat <|> ppat in
+    let ppat = ppat_cons ppat <|> ppat in
     let ppat = ppat_typed ppat <|> ppat in
     skip_ws *> ppat <* skip_ws_no_nl)
 ;;
