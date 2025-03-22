@@ -35,6 +35,8 @@ let test_interpret s =
   | Error e -> printf "Parse error: %s\n" e
 ;;
 
+let _ = test_interpret
+
 let%expect_test _ =
   let _ = test_interpret {|
     1
