@@ -95,14 +95,14 @@ let psint =
 
 (* Parses unsigned floats. Used for expressions.
    Floats can be in following forms:
-   [0-9]+ . [0-9]* [f|F]
-   [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
+   [0-9]+ . [0-9]+ [f|F]
+   [0-9]+ (. [0-9]+ )? (e|E) (+|-)? [0-9]+ [f|F] *)
 let pfloat =
   let* int_part = take_while1 Char.is_digit in
   let* dot = option "" (string ".") in
   let* fract_part =
     match dot with
-    | "." -> take_while Char.is_digit
+    | "." -> take_while1 Char.is_digit
     | _ -> return ""
   in
   let* e =
