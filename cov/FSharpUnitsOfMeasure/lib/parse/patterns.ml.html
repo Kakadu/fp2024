@@ -61,19 +61,41 @@
 <a id="L37"></a><span > </span>
 <a id="L38"></a><span class="visited"> </span>
 <a id="L39"></a><span class="visited"> </span>
-<a id="L40"></a><span class="visited"> </span>
+<a id="L40"></a><span > </span>
 <a id="L41"></a><span > </span>
 <a id="L42"></a><span > </span>
-<a id="L43"></a><span > </span>
+<a id="L43"></a><span class="visited"> </span>
 <a id="L44"></a><span class="visited"> </span>
 <a id="L45"></a><span class="visited"> </span>
 <a id="L46"></a><span class="visited"> </span>
 <a id="L47"></a><span > </span>
 <a id="L48"></a><span class="visited"> </span>
-<a id="L49"></a><span class="visited"> </span>
-<a id="L50"></a><span class="visited"> </span>
-<a id="L51"></a><span class="visited"> </span>
-<a id="L52"></a><span > </span>
+<a id="L49"></a><span > </span>
+<a id="L50"></a><span > </span>
+<a id="L51"></a><span > </span>
+<a id="L52"></a><span class="visited"> </span>
+<a id="L53"></a><span class="visited"> </span>
+<a id="L54"></a><span class="visited"> </span>
+<a id="L55"></a><span > </span>
+<a id="L56"></a><span > </span>
+<a id="L57"></a><span > </span>
+<a id="L58"></a><span class="visited"> </span>
+<a id="L59"></a><span class="visited"> </span>
+<a id="L60"></a><span > </span>
+<a id="L61"></a><span > </span>
+<a id="L62"></a><span > </span>
+<a id="L63"></a><span > </span>
+<a id="L64"></a><span class="visited"> </span>
+<a id="L65"></a><span class="visited"> </span>
+<a id="L66"></a><span class="visited"> </span>
+<a id="L67"></a><span > </span>
+<a id="L68"></a><span > </span>
+<a id="L69"></a><span class="visited"> </span>
+<a id="L70"></a><span class="visited"> </span>
+<a id="L71"></a><span class="visited"> </span>
+<a id="L72"></a><span class="visited"> </span>
+<a id="L73"></a><span class="visited"> </span>
+<a id="L74"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -130,6 +152,28 @@
 <a href="#L50">50</a>
 <a href="#L51">51</a>
 <a href="#L52">52</a>
+<a href="#L53">53</a>
+<a href="#L54">54</a>
+<a href="#L55">55</a>
+<a href="#L56">56</a>
+<a href="#L57">57</a>
+<a href="#L58">58</a>
+<a href="#L59">59</a>
+<a href="#L60">60</a>
+<a href="#L61">61</a>
+<a href="#L62">62</a>
+<a href="#L63">63</a>
+<a href="#L64">64</a>
+<a href="#L65">65</a>
+<a href="#L66">66</a>
+<a href="#L67">67</a>
+<a href="#L68">68</a>
+<a href="#L69">69</a>
+<a href="#L70">70</a>
+<a href="#L71">71</a>
+<a href="#L72">72</a>
+<a href="#L73">73</a>
+<a href="#L74">74</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Vlasenco Daniel and Kudrya Alexandr *)
 
@@ -144,44 +188,66 @@ open Common
 open Constants
 open Types
 
-let ppat_wild = cha<span data-count="10">r</span> '_' *<span data-count="10">&gt;</span> retur<span data-count="10">n</span> Pattern_wild
-let ppat_id_or_op = pid_or_op &gt;&gt;<span data-count="10">|</span> fun i -&gt; <span data-count="1613576">P</span>attern_ident_or_op i
-let ppat_const = psconst &gt;&gt;<span data-count="10">|</span> fun c -&gt; <span data-count="33680">P</span>attern_const c
-let ppat_paren ppat = <span data-count="3">s</span>trin<span data-count="3">g</span> "(" *<span data-count="3">&gt;</span> skip_ws *<span data-count="3">&gt;</span> ppat &lt;<span data-count="3">*</span> skip_ws &lt;* strin<span data-count="3">g</span> ")"
+let ppat_wild = cha<span data-count="35">r</span> '_' *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> Pattern_wild
+let ppat_id_or_op = pid_or_op &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="889633">P</span>attern_ident_or_op i
+let ppat_const = psconst &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="16008">P</span>attern_const c
+let ppat_paren ppat = <span data-count="28">s</span>trin<span data-count="28">g</span> "(" *<span data-count="28">&gt;</span> skip_ws *<span data-count="28">&gt;</span> ppat &lt;<span data-count="28">*</span> skip_ws &lt;* strin<span data-count="28">g</span> ")"
 
 (* Parses tuple without parentheses *)
 let ppat_tuple ppat =
-  <span data-count="3">l</span>et* t1 = skip_ws *<span data-count="3">&gt;</span> ppat &lt;<span data-count="3">*</span> skip_ws &lt;<span data-count="3">*</span> cha<span data-count="3">r</span> ',' in
-  <span data-count="224">l</span>et* t2 = skip_ws *<span data-count="224">&gt;</span> ppat &lt;<span data-count="224">*</span> skip_ws in
-  <span data-count="220">l</span>et* trest = man<span data-count="220">y</span> (skip_toke<span data-count="220">n</span> "," *<span data-count="220">&gt;</span> ppat) in
-  <span data-count="220">r</span>eturn (Pattern_tuple (t1, t2, trest))
+  <span data-count="28">l</span>et* t1 = skip_ws *<span data-count="28">&gt;</span> ppat &lt;<span data-count="28">*</span> skip_ws &lt;<span data-count="28">*</span> cha<span data-count="28">r</span> ',' in
+  <span data-count="7684">l</span>et* t2 = skip_ws *<span data-count="7684">&gt;</span> ppat &lt;<span data-count="7684">*</span> skip_ws in
+  <span data-count="7680">l</span>et* trest = man<span data-count="7680">y</span> (skip_toke<span data-count="7680">n</span> "," *<span data-count="7680">&gt;</span> ppat) in
+  <span data-count="7680">r</span>eturn (Pattern_tuple (t1, t2, trest))
 ;;
 
 let ppat_list ppat =
-  <span data-count="3">l</span>et* list = cha<span data-count="3">r</span> '[' *<span data-count="3">&gt;</span> sep_b<span data-count="3">y</span> (cha<span data-count="3">r</span> ';') (skip_ws *<span data-count="3">&gt;</span> ppat &lt;<span data-count="3">*</span> skip_ws) &lt;<span data-count="3">*</span> cha<span data-count="3">r</span> ']' in
-  <span data-count="232">r</span>eturn (Pattern_list list)
+  <span data-count="28">l</span>et* list = cha<span data-count="28">r</span> '[' *<span data-count="28">&gt;</span> sep_b<span data-count="28">y</span> (cha<span data-count="28">r</span> ';') (skip_ws *<span data-count="28">&gt;</span> ppat &lt;<span data-count="28">*</span> skip_ws) &lt;<span data-count="28">*</span> cha<span data-count="28">r</span> ']' in
+  <span data-count="328">r</span>eturn (Pattern_list list)
 ;;
 
 let ppat_or ppat =
-  <span data-count="3">l</span>et ppipe = skip_ws *<span data-count="3">&gt;</span> strin<span data-count="3">g</span> "|" *&gt; retur<span data-count="3">n</span> (fun p1 p2 -&gt; <span data-count="146">P</span>attern_or (p1, p2)) in
-  <span data-count="3">c</span>hainl ppat ppipe
+  <span data-count="28">l</span>et ppipe = skip_ws *<span data-count="28">&gt;</span> strin<span data-count="28">g</span> "|" *&gt; retur<span data-count="28">n</span> (fun p1 p2 -&gt; <span data-count="266">P</span>attern_or (p1, p2)) in
+  <span data-count="28">c</span>hainl ppat ppipe
+;;
+
+let ppat_cons ppat =
+  <span data-count="28">l</span>et ppcolons = skip_ws *<span data-count="28">&gt;</span> strin<span data-count="28">g</span> "::" *&gt; retur<span data-count="28">n</span> (fun p1 p2 -&gt; <span data-count="12">P</span>attern_cons (p1, p2)) in
+  <span data-count="28">c</span>hainr ppat ppcolons
+;;
+
+let ppat_opt ppat =
+  <span data-count="28">l</span>et* opt =
+    skip_toke<span data-count="28">n</span> "Some" *<span data-count="28">&gt;</span> ppat
+    &gt;&gt;<span data-count="28">|</span> (fun e -&gt; <span data-count="54316">S</span>ome e)
+    &lt;|<span data-count="28">&gt;</span> (skip_toke<span data-count="28">n</span> "None" &gt;&gt;<span data-count="28">|</span> fun _ -&gt; <span data-count="4680">N</span>one)
+  in
+  <span data-count="58996">r</span>eturn (Pattern_option opt)
 ;;
 
 let ppat_typed ppat =
-  <span data-count="3">l</span>et* pat = ppat in
-  <span data-count="206568">l</span>et* core_type = skip_toke<span data-count="206568">n</span> ":" *<span data-count="206568">&gt;</span> ptype in
-  <span data-count="10">r</span>eturn (Pattern_typed (pat, core_type))
+  <span data-count="28">l</span>et* pat = ppat in
+  <span data-count="122195">l</span>et* core_type = skip_toke<span data-count="122195">n</span> ":" *<span data-count="122195">&gt;</span> ptype in
+  <span data-count="18">r</span>eturn (Pattern_typed (pat, core_type))
 ;;
 
 let ppat =
-  fi<span data-count="10">x</span> (fun ppat -&gt;
-    <span data-count="3">l</span>et ppat =
-      choice [ ppat_pare<span data-count="3">n</span> ppat; ppat_lis<span data-count="3">t</span> ppat; ppat_const; ppat_id_or_op; ppat_wild ]
+  fi<span data-count="35">x</span> (fun ppat -&gt;
+    <span data-count="28">l</span>et ppat =
+      choice
+        [ ppat_id_or_op
+        ; ppat_const
+        ; ppat_wild
+        ; ppat_pare<span data-count="28">n</span> ppat
+        ; ppat_lis<span data-count="28">t</span> ppat
+        ; ppat_op<span data-count="28">t</span> ppat
+        ]
     in
-    <span data-count="3">l</span>et ppat = ppat_tupl<span data-count="3">e</span> ppat &lt;|&gt; ppat in
-    <span data-count="3">l</span>et ppat = ppat_o<span data-count="3">r</span> ppat &lt;|&gt; ppat in
-    <span data-count="3">l</span>et ppat = ppat_type<span data-count="3">d</span> ppat &lt;|&gt; ppat in
-    <span data-count="3">s</span>kip_ws *<span data-count="3">&gt;</span> ppat &lt;* skip_ws_no_nl)
+    <span data-count="28">l</span>et ppat = ppat_tupl<span data-count="28">e</span> ppat &lt;|&gt; ppat in
+    <span data-count="28">l</span>et ppat = ppat_o<span data-count="28">r</span> ppat &lt;|&gt; ppat in
+    <span data-count="28">l</span>et ppat = ppat_con<span data-count="28">s</span> ppat &lt;|&gt; ppat in
+    <span data-count="28">l</span>et ppat = ppat_type<span data-count="28">d</span> ppat &lt;|&gt; ppat in
+    <span data-count="28">s</span>kip_ws *<span data-count="28">&gt;</span> ppat &lt;* skip_ws_no_nl)
 ;;
 </code></pre>
       </div>

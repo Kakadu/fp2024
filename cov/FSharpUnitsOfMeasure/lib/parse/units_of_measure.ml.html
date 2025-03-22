@@ -168,26 +168,26 @@ open Angstrom
 open Ast
 open Common
 
-let pm_num_int = psint &gt;&gt;<span data-count="10">|</span> fun i -&gt; <span data-count="2315734">M</span>num_int i
-let pm_num_float = psfloat &gt;&gt;<span data-count="10">|</span> fun f -&gt; <span data-count="37378">M</span>num_float f
-let pm_num = pm_num_int &lt;|<span data-count="10">&gt;</span> pm_num_float
-let pm_id = pid &gt;&gt;<span data-count="10">|</span> fun id -&gt; <span data-count="707581">M</span>easure_ident id
-let pm_diml = skip_toke<span data-count="10">n</span> "1" *<span data-count="10">&gt;</span> retur<span data-count="10">n</span> Measure_dimless
+let pm_num_int = psint &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="6123732">M</span>num_int i
+let pm_num_float = psfloat &gt;&gt;<span data-count="35">|</span> fun f -&gt; <span data-count="3617">M</span>num_float f
+let pm_num = pm_num_int &lt;|<span data-count="35">&gt;</span> pm_num_float
+let pm_id = pid &gt;&gt;<span data-count="35">|</span> fun id -&gt; <span data-count="25151">M</span>easure_ident id
+let pm_diml = skip_toke<span data-count="35">n</span> "1" *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> Measure_dimless
 let pm_atom pm = <span data-count="3">c</span>hoice [ skip_toke<span data-count="3">n</span> "(" *<span data-count="3">&gt;</span> pm &lt;<span data-count="3">*</span> skip_toke<span data-count="3">n</span> ")"; pm_id; pm_diml ]
 
 let pm_pow pm_atom =
   <span data-count="6">l</span>et p_expo =
     let* sign = skip_toke<span data-count="6">n</span> "^" *<span data-count="6">&gt;</span> optio<span data-count="6">n</span> "" (strin<span data-count="6">g</span> "-") in
-    <span data-count="53322">l</span>et* num = skip_ws *<span data-count="53322">&gt;</span> pint in
-    <span data-count="53322">r</span>eturn (if String.( = ) sign "-" then <span data-count="58">-</span>num else <span data-count="53293">n</span>um)
+    <span data-count="652">l</span>et* num = skip_ws *<span data-count="652">&gt;</span> pint in
+    <span data-count="652">r</span>eturn (if String.( = ) sign "-" then <span data-count="58">-</span>num else <span data-count="623">n</span>um)
   in
   let* m = pm_atom in
-  <span data-count="1713134">l</span>et* exp = optio<span data-count="1713134">n</span> 1 p_expo in
-  <span data-count="1713134">m</span>atch exp with
+  <span data-count="61086">l</span>et* exp = optio<span data-count="61086">n</span> 1 p_expo in
+  <span data-count="61086">m</span>atch exp with
   | <span data-count="0">0</span> -&gt; return Measure_dimless
-  | <span data-count="1659812">1</span> -&gt; return m
+  | <span data-count="60434">1</span> -&gt; return m
   | <span data-count="15">-</span>1 -&gt; return @@ Measure_div (Measure_dimless, m)
-  | <span data-count="53307">p</span> when p &gt; 1 -&gt; <span data-count="53293">r</span>eturn @@ Measure_pow (m, exp)
+  | <span data-count="637">p</span> when p &gt; 1 -&gt; <span data-count="623">r</span>eturn @@ Measure_pow (m, exp)
   | <span data-count="14">n</span> when n &lt; -1 -&gt;
     <span data-count="14">l</span>et exp = -exp in
     <span data-count="14">r</span>eturn @@ Measure_div (Measure_dimless, Measure_pow (m, exp))
@@ -196,18 +196,18 @@ let pm_pow pm_atom =
 
 let pm_pow_seq pm_p =
   <span data-count="3">l</span>et* seq = many<span data-count="3">1</span> (skip_ws *<span data-count="3">&gt;</span> pm_po<span data-count="3">w</span> pm_p) in
-  <span data-count="856495">l</span>et wrap = function
-    | <span data-count="856495">h</span> :: tl -&gt; return @@ List.fol<span data-count="856495">d</span> tl ~init:h ~f:(fun x y -&gt; <span data-count="72">M</span>easure_prod (x, y))
+  <span data-count="30471">l</span>et wrap = function
+    | <span data-count="30471">h</span> :: tl -&gt; return @@ List.fol<span data-count="30471">d</span> tl ~init:h ~f:(fun x y -&gt; <span data-count="72">M</span>easure_prod (x, y))
     | <span data-count="0">_</span> -&gt; fail "Cannot parse measure sequence"
   in
   wrap seq
 ;;
 
-let pm_prod = skip_toke<span data-count="10">n</span> "*" *<span data-count="10">&gt;</span> retur<span data-count="10">n</span> (fun m1 m2 -&gt; <span data-count="32670">M</span>easure_prod (m1, m2))
-let pm_div = skip_toke<span data-count="10">n</span> "/" *<span data-count="10">&gt;</span> retur<span data-count="10">n</span> (fun m1 m2 -&gt; <span data-count="29385">M</span>easure_div (m1, m2))
+let pm_prod = skip_toke<span data-count="35">n</span> "*" *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> (fun m1 m2 -&gt; <span data-count="653">M</span>easure_prod (m1, m2))
+let pm_div = skip_toke<span data-count="35">n</span> "/" *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> (fun m1 m2 -&gt; <span data-count="447">M</span>easure_div (m1, m2))
 
 let pm =
-  fi<span data-count="10">x</span> (fun pm -&gt;
+  fi<span data-count="35">x</span> (fun pm -&gt;
     <span data-count="3">l</span>et pm = pm_pow_seq (pm_po<span data-count="3">w</span> (pm_ato<span data-count="3">m</span> pm)) in
     (* let pm = pm_diml &lt;|&gt; pm in *)
     <span data-count="3">l</span>et pm = chain<span data-count="3">l</span> pm (pm_prod &lt;|<span data-count="3">&gt;</span> pm_div) &lt;|&gt; pm in
@@ -215,9 +215,9 @@ let pm =
 ;;
 
 let puom =
-  let* num = skip_ws *<span data-count="10">&gt;</span> pm_num in
-  <span data-count="2353112">l</span>et* measure = strin<span data-count="2353112">g</span> "&lt;" *<span data-count="2353112">&gt;</span> pm &lt;<span data-count="2353112">*</span> skip_ws &lt;<span data-count="2353112">*</span> strin<span data-count="2353112">g</span> "&gt;" in
-  <span data-count="342913">r</span>eturn (Unit_of_measure (num, measure))
+  let* num = skip_ws *<span data-count="35">&gt;</span> pm_num in
+  <span data-count="6127349">l</span>et* measure = strin<span data-count="6127349">g</span> "&lt;" *<span data-count="6127349">&gt;</span> pm &lt;<span data-count="6127349">*</span> skip_ws &lt;<span data-count="6127349">*</span> strin<span data-count="6127349">g</span> "&gt;" in
+  <span data-count="13949">r</span>eturn (Unit_of_measure (num, measure))
 ;;
 </code></pre>
       </div>

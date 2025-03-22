@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>constants.ml &mdash; Coverage report</title>
-    <meta name="description" content="100.00% coverage in lib/parse/constants.ml">
+    <meta name="description" content="93.33% coverage in lib/parse/constants.ml">
     <link rel="stylesheet" href="../../coverage.css"/>
     <script src="../../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,9 +15,11 @@
           <span class="dirname">lib/parse/</span>constants.ml
         </a>
       </h1>
-      <h2>100.00%</h2>
+      <h2>93.33%</h2>
     </div>
     <div id="navbar">
+      <span class="some-visited" style="top:42.86%"></span>
+      <span class="some-visited" style="bottom:20.00%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -36,25 +38,27 @@
 <a id="L12"></a><span > </span>
 <a id="L13"></a><span > </span>
 <a id="L14"></a><span class="visited"> </span>
-<a id="L15"></a><span class="visited"> </span>
+<a id="L15"></a><span class="some-visited"> </span>
 <a id="L16"></a><span class="visited"> </span>
 <a id="L17"></a><span class="visited"> </span>
 <a id="L18"></a><span class="visited"> </span>
 <a id="L19"></a><span class="visited"> </span>
 <a id="L20"></a><span class="visited"> </span>
-<a id="L21"></a><span > </span>
+<a id="L21"></a><span class="visited"> </span>
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span > </span>
-<a id="L25"></a><span class="visited"> </span>
+<a id="L25"></a><span > </span>
 <a id="L26"></a><span class="visited"> </span>
 <a id="L27"></a><span class="visited"> </span>
-<a id="L28"></a><span class="visited"> </span>
+<a id="L28"></a><span class="some-visited"> </span>
 <a id="L29"></a><span class="visited"> </span>
 <a id="L30"></a><span class="visited"> </span>
 <a id="L31"></a><span class="visited"> </span>
-<a id="L32"></a><span > </span>
-<a id="L33"></a><span > </span>
+<a id="L32"></a><span class="visited"> </span>
+<a id="L33"></a><span class="visited"> </span>
+<a id="L34"></a><span > </span>
+<a id="L35"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -92,6 +96,8 @@
 <a href="#L31">31</a>
 <a href="#L32">32</a>
 <a href="#L33">33</a>
+<a href="#L34">34</a>
+<a href="#L35">35</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2024, Vlasenco Daniel and Kudrya Alexandr *)
 
@@ -106,24 +112,26 @@ open Common
 open Units_of_measure
 
 let puconst =
-  choic<span data-count="10">e</span>
-    [ (pchar &gt;&gt;<span data-count="10">|</span> fun c -&gt; <span data-count="7507">C</span>onst_char c)
-    ; (pstring &gt;&gt;<span data-count="10">|</span> fun s -&gt; <span data-count="332963">C</span>onst_string s)
-    ; (pbool &gt;&gt;<span data-count="10">|</span> fun b -&gt; <span data-count="19926">C</span>onst_bool b)
-    ; (puom &gt;&gt;<span data-count="10">|</span> fun m -&gt; <span data-count="332588">C</span>onst_unit_of_measure m)
-    ; (pint &gt;&gt;<span data-count="10">|</span> fun i -&gt; <span data-count="1941063">C</span>onst_int i)
-    ; (pfloat &gt;&gt;<span data-count="10">|</span> fun f -&gt; <span data-count="15658">C</span>onst_float f)
+  choic<span data-count="35">e</span>
+    [ (punit &gt;&gt;<span data-count="35">|</span> fun _ -&gt; <span data-count="0">C</span>onst_unit)
+    ; (pchar &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="33841">C</span>onst_char c)
+    ; (pstring &gt;&gt;<span data-count="35">|</span> fun s -&gt; <span data-count="402177">C</span>onst_string s)
+    ; (pbool &gt;&gt;<span data-count="35">|</span> fun b -&gt; <span data-count="3463010">C</span>onst_bool b)
+    ; (puom &gt;&gt;<span data-count="35">|</span> fun m -&gt; <span data-count="12312">C</span>onst_unit_of_measure m)
+    ; (pint &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="5526363">C</span>onst_int i)
+    ; (pfloat &gt;&gt;<span data-count="35">|</span> fun f -&gt; <span data-count="227">C</span>onst_float f)
     ]
 ;;
 
 let psconst =
-  choic<span data-count="10">e</span>
-    [ (pchar &gt;&gt;<span data-count="10">|</span> fun c -&gt; <span data-count="536">C</span>onst_char c)
-    ; (pstring &gt;&gt;<span data-count="10">|</span> fun s -&gt; <span data-count="1208">C</span>onst_string s)
-    ; (pbool &gt;&gt;<span data-count="10">|</span> fun b -&gt; <span data-count="4592">C</span>onst_bool b)
-    ; (puom &gt;&gt;<span data-count="10">|</span> fun m -&gt; <span data-count="10320">C</span>onst_unit_of_measure m)
-    ; (psint &gt;&gt;<span data-count="10">|</span> fun i -&gt; <span data-count="7369">C</span>onst_int i)
-    ; (psfloat &gt;&gt;<span data-count="10">|</span> fun f -&gt; <span data-count="9656">C</span>onst_float f)
+  choic<span data-count="35">e</span>
+    [ (punit &gt;&gt;<span data-count="35">|</span> fun _ -&gt; <span data-count="2296">C</span>onst_unit)
+    ; (pchar &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="0">C</span>onst_char c)
+    ; (pstring &gt;&gt;<span data-count="35">|</span> fun s -&gt; <span data-count="256">C</span>onst_string s)
+    ; (pbool &gt;&gt;<span data-count="35">|</span> fun b -&gt; <span data-count="3168">C</span>onst_bool b)
+    ; (puom &gt;&gt;<span data-count="35">|</span> fun m -&gt; <span data-count="1632">C</span>onst_unit_of_measure m)
+    ; (psint &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="6865">C</span>onst_int i)
+    ; (psfloat &gt;&gt;<span data-count="35">|</span> fun f -&gt; <span data-count="1792">C</span>onst_float f)
     ]
 ;;
 </code></pre>

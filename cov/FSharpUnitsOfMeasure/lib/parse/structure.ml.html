@@ -135,38 +135,38 @@ open Expressions
 open Units_of_measure
 
 let pstritem_exp =
-  (skip_toke<span data-count="10">n</span> "do" &lt;|<span data-count="10">&gt;</span> skip_ws)
-  *<span data-count="10">&gt;</span>
+  (skip_toke<span data-count="35">n</span> "do" &lt;|<span data-count="35">&gt;</span> skip_ws)
+  *<span data-count="35">&gt;</span>
   let* expr = pexpr in
-  <span data-count="10">r</span>eturn (Str_item_eval expr)
+  <span data-count="9">r</span>eturn (Str_item_eval expr)
 ;;
 
 let pstritem_def =
-  skip_toke<span data-count="10">n</span> "let"
-  *<span data-count="10">&gt;</span>
-  let* rec_flag = optio<span data-count="10">n</span> Nonrecursive (strin<span data-count="10">g</span> "rec" *<span data-count="10">&gt;</span> skip_ws *<span data-count="10">&gt;</span> retur<span data-count="10">n</span> Recursive) in
-  <span data-count="18">l</span>et* binding_fst = pbin<span data-count="18">d</span> pexpr in
-  <span data-count="18">l</span>et* binding_rest = man<span data-count="18">y</span> (skip_toke<span data-count="18">n</span> "and" *<span data-count="18">&gt;</span> pbin<span data-count="18">d</span> pexpr) in
-  <span data-count="18">r</span>eturn (Str_item_def (rec_flag, binding_fst, binding_rest))
+  skip_toke<span data-count="35">n</span> "let"
+  *<span data-count="35">&gt;</span>
+  let* rec_flag = optio<span data-count="35">n</span> Nonrecursive (strin<span data-count="35">g</span> "rec" *<span data-count="35">&gt;</span> skip_ws *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> Recursive) in
+  <span data-count="96">l</span>et* binding_fst = pbin<span data-count="96">d</span> pexpr in
+  <span data-count="96">l</span>et* binding_rest = man<span data-count="96">y</span> (skip_toke<span data-count="96">n</span> "and" *<span data-count="96">&gt;</span> pbin<span data-count="96">d</span> pexpr) in
+  <span data-count="96">r</span>eturn (Str_item_def (rec_flag, binding_fst, binding_rest))
 ;;
 
 let pstritem_type =
   let pstritem_mtd =
-    skip_toke<span data-count="10">n</span> "[&lt;Measure&gt;]"
-    *<span data-count="10">&gt;</span> skip_toke<span data-count="10">n</span> "type"
+    skip_toke<span data-count="35">n</span> "[&lt;Measure&gt;]"
+    *<span data-count="35">&gt;</span> skip_toke<span data-count="35">n</span> "type"
     *&gt;
-    let* name = pid &lt;<span data-count="10">*</span> skip_ws in
+    let* name = pid &lt;<span data-count="35">*</span> skip_ws in
     <span data-count="8">l</span>et* rhs = optio<span data-count="8">n</span> None (skip_toke<span data-count="8">n</span> "=" *<span data-count="8">&gt;</span> pm &gt;&gt;<span data-count="8">|</span> fun m -&gt; <span data-count="7">S</span>ome m) in
     <span data-count="8">r</span>eturn (Str_item_type_def (Measure_type_def (name, rhs)))
   in
-  <span data-count="10">p</span>stritem_mtd
+  <span data-count="35">p</span>stritem_mtd
 ;;
 
-let pstritem = choic<span data-count="10">e</span> [ pstritem_exp; pstritem_def; pstritem_type ]
+let pstritem = choic<span data-count="35">e</span> [ pstritem_exp; pstritem_def; pstritem_type ]
 
 let pprog =
-  let semicolons = many (skip_toke<span data-count="10">n</span> ";;") in
-  <span data-count="10">s</span>ep_b<span data-count="10">y</span> semicolons pstritem &lt;<span data-count="10">*</span> semicolons &lt;<span data-count="10">*</span> skip_ws
+  let semicolons = many (skip_toke<span data-count="35">n</span> ";;") in
+  <span data-count="35">s</span>ep_b<span data-count="35">y</span> semicolons pstritem &lt;<span data-count="35">*</span> semicolons &lt;<span data-count="35">*</span> skip_ws
 ;;
 </code></pre>
       </div>

@@ -118,35 +118,35 @@
 open Angstrom
 open Ast
 open Common
-open Keywords
+open Checks
 
 let ptype_builtin =
   let* id = pid in
-  <span data-count="1362">m</span>atch id with
-  | <span data-count="1362">t</span> when is_builtin_typ<span data-count="1362">e</span> t -&gt; <span data-count="1362">r</span>eturn (Type_ident t)
+  <span data-count="213304">m</span>atch id with
+  | <span data-count="213304">t</span> when is_builtin_typ<span data-count="213304">e</span> t -&gt; <span data-count="213304">r</span>eturn (Type_ident t)
   | <span data-count="0">_</span> -&gt; fail "Failed to parse built-in type"
 ;;
 
 let ptype_tuple ptype =
-  <span data-count="4">l</span>et* t1 = skip_ws *<span data-count="4">&gt;</span> ptype &lt;<span data-count="4">*</span> skip_ws &lt;<span data-count="4">*</span> cha<span data-count="4">r</span> '*' in
+  <span data-count="5">l</span>et* t1 = skip_ws *<span data-count="5">&gt;</span> ptype &lt;<span data-count="5">*</span> skip_ws &lt;<span data-count="5">*</span> cha<span data-count="5">r</span> '*' in
   <span data-count="14">l</span>et* t2 = skip_ws *<span data-count="14">&gt;</span> ptype &lt;<span data-count="14">*</span> skip_ws in
   <span data-count="14">l</span>et* trest = man<span data-count="14">y</span> (skip_toke<span data-count="14">n</span> "*" *<span data-count="14">&gt;</span> ptype) in
   <span data-count="14">r</span>eturn (Type_tuple (t1, t2, trest))
 ;;
 
-let ptype_paren ptype = <span data-count="4">s</span>trin<span data-count="4">g</span> "(" *<span data-count="4">&gt;</span> skip_ws *<span data-count="4">&gt;</span> ptype &lt;<span data-count="4">*</span> skip_ws &lt;* strin<span data-count="4">g</span> ")"
+let ptype_paren ptype = <span data-count="5">s</span>trin<span data-count="5">g</span> "(" *<span data-count="5">&gt;</span> skip_ws *<span data-count="5">&gt;</span> ptype &lt;<span data-count="5">*</span> skip_ws &lt;* strin<span data-count="5">g</span> ")"
 
 let ptype_func ptype =
-  <span data-count="4">l</span>et parr = skip_ws *<span data-count="4">&gt;</span> strin<span data-count="4">g</span> "-&gt;" *&gt; retur<span data-count="4">n</span> (fun t1 t2 -&gt; <span data-count="16">T</span>ype_func (t1, t2)) in
-  <span data-count="4">c</span>hainr ptype parr
+  <span data-count="5">l</span>et parr = skip_ws *<span data-count="5">&gt;</span> strin<span data-count="5">g</span> "-&gt;" *&gt; retur<span data-count="5">n</span> (fun t1 t2 -&gt; <span data-count="16">T</span>ype_func (t1, t2)) in
+  <span data-count="5">c</span>hainr ptype parr
 ;;
 
 let ptype =
-  fi<span data-count="10">x</span> (fun ptype -&gt;
-    <span data-count="4">l</span>et ptype = ptype_pare<span data-count="4">n</span> ptype &lt;|&gt; ptype_builtin in
-    <span data-count="4">l</span>et ptype = ptype_tupl<span data-count="4">e</span> ptype &lt;|&gt; ptype in
-    <span data-count="4">l</span>et ptype = ptype_fun<span data-count="4">c</span> ptype &lt;|&gt; ptype in
-    <span data-count="4">s</span>kip_ws *<span data-count="4">&gt;</span> ptype &lt;* skip_ws_no_nl)
+  fi<span data-count="35">x</span> (fun ptype -&gt;
+    <span data-count="5">l</span>et ptype = ptype_pare<span data-count="5">n</span> ptype &lt;|&gt; ptype_builtin in
+    <span data-count="5">l</span>et ptype = ptype_tupl<span data-count="5">e</span> ptype &lt;|&gt; ptype in
+    <span data-count="5">l</span>et ptype = ptype_fun<span data-count="5">c</span> ptype &lt;|&gt; ptype in
+    <span data-count="5">s</span>kip_ws *<span data-count="5">&gt;</span> ptype &lt;* skip_ws_no_nl)
 ;;
 </code></pre>
       </div>
