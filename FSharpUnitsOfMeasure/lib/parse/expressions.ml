@@ -129,12 +129,12 @@ let pbind pexpr = pbind_val pexpr <|> pbind_fun pexpr
 let pexpr_letin pexpr =
   skip_token "let"
   *>
-  let* rec_flag = option Nonrecursive (skip_token "rec" *> return Recursive) in
+  let* rec_flag = (skip_token "rec" *> return Recursive) <|> return Nonrecursive in
   let* binding_fst = pbind pexpr in
-  let* binding_rest =
-    match rec_flag with
+  let* binding_rest = many (skip_token "and" *> pbind pexpr)
+    (* match rec_flag with
     | Recursive -> many (skip_token "and" *> pbind pexpr)
-    | Nonrecursive -> return []
+    | Nonrecursive -> return [] *)
   in
   skip_token "in"
   *>
@@ -200,20 +200,27 @@ let pexpr =
       choice
         [ pexpr_id_or_op
         ; pexpr_const
-        ; pexpr_paren pexpr
         ; pexpr_paren (pexpr_typed pexpr)
-        ; pexpr_letin pexpr
+        (* ; pexpr_letin pexpr *)
         ; pexpr_opt pexpr
         ; pexpr_list pexpr
         ; pexpr_ite pexpr
         ; pexpr_match pexpr
         ; pexpr_function pexpr
         ; pexpr_lam pexpr
+        ; pexpr_paren pexpr
         ]
     in
     let pexpr = pexpr_paren pexpr <|> pexpr in
     let pexpr = pexpr_app_un pexpr <|> pexpr_app pexpr <|> pexpr in
-    (* *<* *)
     let pexpr = pexpr_tuple pexpr <|> pexpr in
+    (* Парсится и если раскоментить pexpr_letin в choice выше,
+    но почему-то очень очень долго. Я долго медитировал на код, но
+    не смог понять, в чем проблема. Сделал так, чтобы тесты быстрее шли. *)
+    let pexpr = pexpr_letin pexpr <|> pexpr in
+    let pexpr = pexpr_letin pexpr <|> pexpr in
+    let pexpr = pexpr_letin pexpr <|> pexpr in
+    let pexpr = pexpr_letin pexpr <|> pexpr in
+    let pexpr = pexpr_letin pexpr <|> pexpr in
     skip_ws *> pexpr <* skip_ws_no_nl)
 ;;
