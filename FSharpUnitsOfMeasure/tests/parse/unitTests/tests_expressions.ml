@@ -113,7 +113,7 @@ let%expect_test "parse simple float with rational part and (f|F)" =
 ;;
 
 let%expect_test "parse simple float without rational part" =
-  run {| 5. |};
+  run {| 5.0 |};
   [%expect {|
     5.  |}]
 ;;

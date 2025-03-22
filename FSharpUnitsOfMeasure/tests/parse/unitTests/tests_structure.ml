@@ -172,27 +172,8 @@ let%expect_test "parse example 7 program" =
 let%expect_test "parse example 8 program" =
   run_prog
     {|
-    (match a with 0. -> -1312004488025042530 | _ -> "", match a with a -> a | a -> a, a);;
+    (match a with 0.0 -> -1312004488025042530 | _ -> "", match a with a -> a | a -> a, a);;
  |};
-  [%expect
-    {|
-    match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a)) |}]
-;;
-
-let%expect_test "parse example 8 program" =
-  run_prog
-    {|
-    (match a with 0. -> -1312004488025042530 | _ -> "", match a with a -> a | a -> a, a);;
- |};
-  [%expect
-    {|
-    match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a)) |}]
-;;
-
-let%expect_test "parse example 8 program" =
-  run_prog
-    {|
-match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a));; |};
   [%expect
     {|
     match a with 0. -> -1312004488025042530 | _ -> ("", match a with a -> a | a -> (a, a)) |}]
@@ -210,7 +191,7 @@ let false = 3092098660336030153 and a = if if -885480591476070376<a> then u7A_S 
 let%expect_test "parse example 10 program" =
   run_prog
     {|
-  let 267742048371772592 = match Some a with 0. -> a | -28986.9328323<1> -> bsV and _ = 0;;
+  let 267742048371772592 = match Some a with 0.0 -> a | -28986.9328323<1> -> bsV and _ = 0;;
 |};
   [%expect
     {|
