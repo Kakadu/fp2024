@@ -181,8 +181,7 @@ let%expect_test "parse application of function to 1 argument" =
 
 let%expect_test "parse application of id lambda" =
   run {| (fun x -> x) y |};
-  [%expect
-    {|
+  [%expect {|
     (fun x -> x) y |}]
 ;;
 
@@ -195,8 +194,7 @@ let%expect_test "parse application of function to 2 arguments" =
 
 let%expect_test "parse application of function to 5 arguments" =
   run {| f a b c d e |};
-  [%expect
-    {|
+  [%expect {|
 ((((f a) b) c) d) e |}]
 ;;
 
@@ -256,8 +254,7 @@ let%expect_test "parse unary minuses w/o parentheses should fail" =
 
 let%expect_test "parse unary minuses with parentheses" =
   run {| -(-(-a)) |};
-  [%expect
-    {|
+  [%expect {|
     - (- (- a)) |}]
 ;;
 
@@ -265,8 +262,7 @@ let%expect_test "parse unary minuses with parentheses" =
 
 let%expect_test "parse a+b" =
   run {| a+b |};
-  [%expect
-    {|
+  [%expect {|
     a + b |}]
 ;;
 
@@ -296,8 +292,7 @@ let%expect_test "parse n-1 " =
 
 let%expect_test "parse a+b*c" =
   run {| a+b*c |};
-  [%expect
-    {|
+  [%expect {|
       a + (b * c) |}]
 ;;
 
@@ -309,15 +304,13 @@ let%expect_test "parse a <= b <= c" =
 
 let%expect_test "parse a || b || c" =
   run {| a || b || c |};
-  [%expect
-    {|
+  [%expect {|
       a || (b || c) |}]
 ;;
 
 let%expect_test "parse a && b && c" =
   run {| a && b && c |};
-  [%expect
-    {|
+  [%expect {|
       a && (b && c) |}]
 ;;
 
@@ -511,8 +504,7 @@ let%expect_test "parse option pattern matching" =
   match x with
   | None -> 1
   | Some f -> 2 |};
-  [%expect
-    {|
+  [%expect {|
   match x with None -> 1 | Some f -> 2  |}]
 ;;
 

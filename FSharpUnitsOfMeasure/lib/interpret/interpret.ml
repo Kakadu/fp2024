@@ -173,14 +173,26 @@ module Eval (M : ERROR_MONAD) = struct
       (match v1 with
        | VFunction (rhd, rtl) -> eval_rules env v2 (rhd :: rtl)
        | VBuiltin_fun (builtin, _) ->
-        (match builtin, v2 with
-        | Print_int _, VInt i -> print_endline (Int.to_string i); return VUnit
-        | Print_bool _, VBool b -> print_endline (Bool.to_string b); return VUnit
-        | Print_float _, VFloat f -> print_endline (Float.to_string f); return VUnit
-        | Print_string _, VString s -> print_endline s; return VUnit
-        | Print_char _, VChar c -> print_endline (Char.escaped c); return VUnit
-        | Print_endline _, VString s -> print_endline s; return VUnit
-        | _ -> fail Type_mismatch)
+         (match builtin, v2 with
+          | Print_int _, VInt i ->
+            print_endline (Int.to_string i);
+            return VUnit
+          | Print_bool _, VBool b ->
+            print_endline (Bool.to_string b);
+            return VUnit
+          | Print_float _, VFloat f ->
+            print_endline (Float.to_string f);
+            return VUnit
+          | Print_string _, VString s ->
+            print_endline s;
+            return VUnit
+          | Print_char _, VChar c ->
+            print_endline (Char.escaped c);
+            return VUnit
+          | Print_endline _, VString s ->
+            print_endline s;
+            return VUnit
+          | _ -> fail Type_mismatch)
        | VFun (_, pat, expr, fun_env) ->
          (match eval_pat fun_env pat v2 with
           | Some env' ->
