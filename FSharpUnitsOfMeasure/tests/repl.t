@@ -151,6 +151,6 @@
   val meven : <type> = <fun>
   val modd : <type> = <fun>
   val tie : <type> = (<fun>, <fun>)
-
+  
 $ ../bin/repl.exe --no-hi --file manytests/typed/016lists.ml
 

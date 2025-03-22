@@ -104,8 +104,7 @@ type pattern =
   (** List patterns: [P1, ..., Pn] *)
   | Pattern_or of pattern * pattern
   (** OR patterns represent multiple satisfying patterns in pattern matching: [P1 | P2] *)
-  | Pattern_cons of pattern * pattern
-  (** CONS patterns as in [ x :: xs ] *)
+  | Pattern_cons of pattern * pattern (** CONS patterns as in [ x :: xs ] *)
   | Pattern_option of pattern option (** [Some p] or [None] *)
 [@@deriving qcheck, show { with_path = false }]
 
