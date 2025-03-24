@@ -1,6 +1,5 @@
 open C_sharp_strange_lib.Ast
 open C_sharp_strange_lib.Parser
-open C_sharp_strange_lib.Prettyprinter
 
 let%test "Parse one integer" = apply_parser parse_int {|1|} = Ok (ValInt 1)
 let%test "Parse one char" = apply_parser parse_char {|'c'|} = Ok (ValChar 'c')
