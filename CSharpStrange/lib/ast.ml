@@ -2,91 +2,105 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
+(** Values types *)
 type val_type =
   | ValInt of int (** Int value *)
   | ValChar of char (** Char value *)
   | ValNull (** Null *)
   | ValBool of bool (** Bool value *)
+  | ValArray of val_type list (** TODO: array value *)
+  | ValString of string (** TODO: string value *)
 [@@deriving eq, show { with_path = false }]
 
 (** Identidicator *)
 type ident = Id of string [@@deriving eq, show { with_path = false }]
 
-(** Basic types *)
+(** Basic types declarations *)
 type base_type =
   | TypeInt (** Declaration of int *)
   | TypeChar (** Declaration of char *)
-  | TypeVoid (** Declaration of void *)
   | TypeBool (** Declaration of bool *)
+  | TypeVoid (** Declaration of void TODO: remove by specification?? *)
 [@@deriving eq, show { with_path = false }]
+(* TODO: declaration of strings?? *)
 
 (** Type delcaration *)
 type _type =
   | TypeBase of base_type (** Declaration of basic type *)
-  | TypeArray of base_type (** Declaration of array of basic type *)
+  | TypeArray of base_type (** Declaration of array of basic type TODO: rank *)
+  | TypeString (** Declaration of string TODO*)
 [@@deriving eq, show { with_path = false }]
+(* TODO: records for arrays?? *)
+(* TODO: strings "" *)
+
+(** Variable *)
+type var_type = TypeVar of _type [@@deriving eq, show { with_path = false }]
 
 (** Modifiers *)
 type modifier =
-  | Public (** Public modifier *)
-  | Static (** Static modifier, used for main() method only *)
-  | Const (** Const modifier *)
-  | Async (** Async modifier *)
+  | MPublic (** Public modifier, used for main() method only  *)
+  | MStatic (** Static modifier, used for main() method only *)
+  | MConst (** Const modifier *) (* TODO *)
+  | MAsync (** Async modifier *)
 [@@deriving eq, show { with_path = false }]
+
+type var_decl = Var of var_type * ident [@@deriving eq, show { with_path = false }]
+and params = Params of var_decl list [@@deriving eq, show { with_path = false }]
 
 (** Binary operations *)
 type bin_op =
-  | Add (** Sum: a [+] b *)
-  | Sub (** a [-] b *)
-  | Mul (** a [*] b *)
-  | Div (** a [/] b in integers *)
-  | Mod (** a [%] b *)
-  | Equal (** a [==] b *)
-  | NonEqual (** a [!=] b *)
-  | Less (** a [<] b *)
-  | More (** a [>] b *)
-  | LessEqual (** a [<=] b *)
-  | MoreEqual (** a [>=] b *)
-  | And (** a [&&] b *)
-  | Or (** a [||] b *)
+  | OpAdd (** Sum: a [+] b *)
+  | OpSub (** a [-] b *)
+  | OpMul (** a [*] b *)
+  | OpDiv (** a [/] b in integers *)
+  | OpMod (** a [%] b *)
+  | OpEqual (** a [==] b *)
+  | OpNonEqual (** a [!=] b *)
+  | OpLess (** a [<] b *)
+  | OpMore (** a [>] b *)
+  | OpLessEqual (** a [<=] b *)
+  | OpMoreEqual (** a [>=] b *)
+  | OpAnd (** a [&&] b *)
+  | OpOr (** a [||] b *)
+  | OpAssign (** a [=] b *)
 [@@deriving eq, show { with_path = false }]
 
 (** Unary operations *)
 type un_op =
-  | Inc (** [++] a or [++] a *)
-  | Dec (** [--] a or [--] a *)
-  | Not (** [!] a *)
+  | OpInc (** [++] a or [++] a *) (* TODO remove?? *)
+  | OpDec (** [--] a or [--] a *) (* TODO remove?? *)
+  | OpNot (** [!] a *)
+  | OpNew (** [new] a *)
 [@@deriving eq, show { with_path = false }]
 
 (** Language expressions *)
 type expr =
-  | Value of val_type (** Some value *)
-  | BinOp of bin_op * expr * expr (** Binary operation *)
-  | UnOp of un_op * expr (** Unary operation *)
-  | Assign of expr * expr (** a [=] b *)
-  | New of expr (** [new] a *)
-  | ConstExpr of val_type (** Const expression *)
-  | IdExpr of ident (** Identificator expression *)
-  | ArrayAccess of expr * expr (** Array access: a = arr[i] *)
-  | FuncCall of ident * expr list (** Call of function: name(arguments) *)
-  | Lambda of expr * stmt (** Lambda expressions *)
-  | Await of expr (** Await expression *)
-  | LinqQuery of linq_query (** from identifier in expr select expr *)
+  | EValue of val_type (** Some value *)
+  | EBinOp of bin_op * expr * expr (** Binary operation *)
+  | EUnOp of un_op * expr (** Unary operation *)
+  | EConst of val_type (** Const expression TODO change for modifiers?? *)
+  | EId of ident (** Identificator expression *)
+  | EArrayAccess of expr * expr (** Array access: a = arr[i] *)
+  | EFuncCall of expr * expr list
+  (** Call of function: name(arguments) TODO: Program.x() *)
+  | ELambda of expr * stmt (** Lambda expressions *)
+  | EAwait of expr (** Await expression *)
+  | ELinqQuery of linq_query (** from identifier in expr select expr *)
 [@@deriving eq, show { with_path = false }]
 
 (** Language statements *)
 and stmt =
-  | For of stmt option * expr option * expr option * stmt
+  | SFor of stmt option * expr option * expr option * stmt
   (** For cycle: [for] (int i = 0, j = 3; i < 4; i++, j--) \{\} *)
-  | If of expr * stmt * stmt option
+  | SIf of expr * stmt * stmt option
   (** If condition: [if] (a) [then] \{ b \} ([else] \{ c \} ) *)
-  | While of expr * stmt (** While cycle: [while] (a) \{ \} *)
-  | Return of expr (** Return: return (a) *)
-  | StmtsBlock of stmt list (** Block of statements: \{ a \}; could be empty: \{\} *)
-  | Break (** Cycle break *)
-  | Continue (** Cycle continue *)
-  | Expr of expr (** Another expression *)
-  | VarDeclare of _type * ident * expr option (** Var declaration *)
+  | SWhile of expr * stmt (** While cycle: [while] (a) \{ \} *)
+  | SReturn of expr option (** Return: return (a) *)
+  | SBlock of stmt list (** Block of statements: \{ a \}; could be empty: \{\} *)
+  | SBreak (** Cycle break *)
+  | SContinue (** Cycle continue *)
+  | SExpr of expr (** Another expression *)
+  | SDecl of var_decl * expr option (** Var declaration *)
 [@@deriving eq, show { with_path = false }]
 
 (** From clauses *)
@@ -98,14 +112,14 @@ and select_clause = SelectClause of expr [@@deriving eq, show { with_path = fals
 
 (** LINQ query *)
 and linq_query =
-  | Query of from_clause * select_clause (** from identifier in identifier select expr *)
+  | SQuery of from_clause * select_clause (** from identifier in identifier select expr *)
 [@@deriving eq, show { with_path = false }]
 
 (** C Sharp class fields *)
 type field =
-  | VarField of modifier list * _type * ident * expr option (** Class field *)
-  | Method of modifier list * _type * ident * (_type * string) list * stmt
-  (** Class method *)
+  | VarField of modifier list * _type * ident * expr
+  (** Class field - always initialized *)
+  | Method of modifier list * _type * ident * params * stmt (** Class method *)
 [@@deriving eq, show { with_path = false }]
 
 (** C Sharp class *)
@@ -115,3 +129,5 @@ type c_sharp_class =
 
 (** Program AST *)
 type program = Program of c_sharp_class [@@deriving eq, show { with_path = false }]
+
+(* TODO: read specification!! + write factorial parser from scratch *)
