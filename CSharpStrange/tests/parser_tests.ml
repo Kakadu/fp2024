@@ -245,15 +245,3 @@ let%test "Parse if" =
 ;;
 *)
 let () = print_endline "Done!"
-
-let () =
-  print_pp_stmt
-    parse_block
-    {|{if (x == 5) 
-    x=1;
-      else if (x == 2)
-  { 
-    x=2;
-  }
-    }|}
-;;

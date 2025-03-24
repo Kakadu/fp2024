@@ -35,6 +35,7 @@ type _type =
 
 (** Variable *)
 type var_type = TypeVar of _type [@@deriving eq, show { with_path = false }]
+(* TODO: remove if needed - not implementing custom classes *)
 
 (** Modifiers *)
 type modifier =
@@ -117,9 +118,9 @@ and linq_query =
 
 (** C Sharp class fields *)
 type field =
-  | VarField of modifier list * _type * ident * expr
+  | VarField of modifier list * var_type * ident * expr option
   (** Class field - always initialized *)
-  | Method of modifier list * _type * ident * params * stmt (** Class method *)
+  | Method of modifier list * var_type * ident * params * stmt (** Class method *)
 [@@deriving eq, show { with_path = false }]
 
 (** C Sharp class *)

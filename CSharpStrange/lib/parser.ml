@@ -134,10 +134,10 @@ let parse_type_word =
   (* TODO REMOVE AST!!!! *)
   take_while is_token_sym
   >>= function
-  | "int" -> return @@ Ast.TypeBase Ast.TypeInt
-  | "char" -> return @@ Ast.TypeBase Ast.TypeChar
-  | "bool" -> return @@ Ast.TypeBase Ast.TypeBool
-  | "string" -> return @@ Ast.TypeString
+  | "int" -> return @@ TypeBase TypeInt
+  | "char" -> return @@ TypeBase TypeChar
+  | "bool" -> return @@ TypeBase TypeBool
+  | "string" -> return @@ TypeString
   | _ -> fail "Wrong type word"
 ;;
 
@@ -313,7 +313,7 @@ let parse_field_sign =
   let f_value = skip_spaces *> char '=' *> get_opt parse_ops in
   lift4
     (fun f_modif f_type f_id f_val -> f_modif, f_type, f_id, f_val)
-    (option None (skip_spaces *> get_opt parse_modifiers))
+    (skip_spaces *> parse_modifiers)
     (skip_spaces *> parse_var_type)
     (skip_spaces *> parse_id)
     (option None f_value)
@@ -322,12 +322,12 @@ let parse_field_sign =
 
 let parse_method_type =
   (* TODO Fix!! *)
-  choice
-    [ (parse_type_word >>= fun x -> return @@ x)
-    ; (take_while is_token_sym
-       >>= fun x ->
-       if String.( = ) x "void" then return @@ TypeBase TypeVoid else fail "Not a type")
-    ]
+  let parse_void =
+    take_while is_token_sym
+    >>= fun x ->
+    if String.( = ) x "void" then return @@ TypeBase TypeVoid else fail "Not a type"
+  in
+  choice [ (parse_type_word >>= fun x -> return @@ x); parse_void ]
 ;;
 
 let parse_method_sign =
@@ -338,16 +338,21 @@ let parse_method_sign =
   lift4
     (fun m_modif m_type m_id m_params -> m_modif, m_type, m_id, m_params)
     (skip_spaces *> parse_modifiers)
-    (skip_spaces *> parse_method_type)
+    (skip_spaces *> parse_var_type)
     (skip_spaces *> parse_id)
     parse_args
 ;;
 
 let parse_method_member =
-  lift2 (fun (mds, t, id, ps) bd -> Method (mds, t, id, ps, bd)) parse_method_sign parse_block
+  lift2
+    (fun (mds, tp, id, ps) bd -> Method (mds, tp, id, ps, bd))
+    parse_method_sign
+    parse_block
 ;;
 
-let parse_field_member = parse_field_sign >>| fun (a, b, c, d) -> VarField (a, b, c, d)
+let parse_field_member =
+  parse_field_sign >>| fun (mds, tp, id, ex) -> VarField (mds, tp, id, ex)
+;;
 
 let parse_class_members =
   let member = choice [ parse_method_member; parse_field_member ] in
