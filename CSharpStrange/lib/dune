@@ -1,7 +1,7 @@
 (library
  (name c_sharp_strange_lib)
  (public_name CSharpStrange.Lib)
- (modules Ast Parser Prettyprinter Mlparser)
+ (modules Ast Parser)
  (libraries angstrom base)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq ppx_expect ppx_inline_test))
