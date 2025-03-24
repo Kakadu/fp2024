@@ -12,12 +12,12 @@ let fact_ast =
     (Class
        ( [ MPublic ]
        , Id "Program"
-       , [ Method ([ MPublic; MStatic ], TypeBase TypeVoid, Id "Main", [], SBlock [])
+       , [ Method ([ MPublic; MStatic ], TypeVar (TypeBase TypeVoid), Id "Main", Params [], SBlock [])
          ; Method
              ( [ MPublic ]
-             , TypeBase TypeInt
+             , TypeVar (TypeBase TypeInt)
              , Id "Factorial"
-             , [ TypeBase TypeInt, "n" ]
+             , Params [ Var (TypeVar (TypeBase TypeInt), Id "n") ]
              , SBlock
                  [ SIf
                      ( EBinOp (OpEqual, EId (Id "n"), EValue (ValInt 0))
