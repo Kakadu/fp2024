@@ -21,14 +21,14 @@ type base_type =
   | TypeChar (** Declaration of char *)
   | TypeBool (** Declaration of bool *)
   | TypeVoid (** Declaration of void TODO: remove by specification?? *)
+  | TypeString (** Declaration of string TODO*)
 [@@deriving eq, show { with_path = false }]
 (* TODO: declaration of strings?? *)
 
 (** Type delcaration *)
 type _type =
   | TypeBase of base_type (** Declaration of basic type *)
-  | TypeArray of base_type (** Declaration of array of basic type TODO: rank *)
-  | TypeString (** Declaration of string TODO*)
+  | TypeArray of base_type (** Declaration of array of basic type TODO: ranks & think about base_type *)
 [@@deriving eq, show { with_path = false }]
 (* TODO: records for arrays?? *)
 (* TODO: strings "" *)

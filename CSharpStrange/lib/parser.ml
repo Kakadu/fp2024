@@ -95,8 +95,37 @@ let parse_val_string =
 
 let parse_null = string "null" *> return ValNull <|> fail "Not a null"
 
-(* TODO: parse_array *)
-let parse_array = fail "Not implemented"
+(* Modifiers *)
+
+let parse_modifiers =
+  many
+    (choice
+       [ string "public" *> skip_spaces *> return MPublic
+       ; string "static" *> skip_spaces *> return MStatic
+       ; string "const" *> skip_spaces *> return MConst
+       ; string "async" *> skip_spaces *> return MAsync
+       ])
+;;
+
+(* Type words *)
+let parse_type_word =
+  take_while is_token_sym
+  >>= function
+  | "int" -> return @@ TypeInt
+  | "char" -> return @@ TypeChar
+  | "bool" -> return @@ TypeBool
+  | "string" -> return @@ TypeString
+  | _ -> fail "Wrong type word"
+;;
+
+let parse_base_type = parse_type_word >>= fun tp -> return @@ TypeBase tp
+
+(* TODO: parse_divs properly *)
+let parse_array_type =
+  let parse_divs = option None (parse_int >>= fun n -> return @@ Some n) in
+  lift2 (fun tp _ -> TypeArray tp) parse_type_word (brackets parse_divs)
+;;
+
 let val_to_expr p = skip_spaces *> p >>| fun x -> EValue x
 
 let parse_value =
@@ -117,35 +146,12 @@ let parse_id =
   | _ -> fail "Not an identifier"
 ;;
 
-(* Modifiers *)
-
-let parse_modifiers =
-  many
-    (choice
-       [ string "public" *> skip_spaces *> return MPublic
-       ; string "static" *> skip_spaces *> return MStatic
-       ; string "const" *> skip_spaces *> return MConst
-       ; string "async" *> skip_spaces *> return MAsync
-       ])
-;;
-
-(* Type words *)
-let parse_type_word =
-  (* TODO REMOVE AST!!!! *)
-  take_while is_token_sym
-  >>= function
-  | "int" -> return @@ TypeBase TypeInt
-  | "char" -> return @@ TypeBase TypeChar
-  | "bool" -> return @@ TypeBase TypeBool
-  | "string" -> return @@ TypeString
-  | _ -> fail "Wrong type word"
-;;
-
 (* Expressions *)
 
 (* Variables && functions *)
 let parse_var_type =
-  parse_type_word >>= fun x -> return (TypeVar x) <|> fail "Incorrect type"
+  choice ?failure_msg:(Some "Incorrect type") [ parse_array_type; parse_base_type ]
+  >>= fun x -> return (TypeVar x)
 ;;
 
 let parse_var =
@@ -196,6 +202,7 @@ let parse_un_op op typ = parse_op op typ >>| fun t a -> EUnOp (t, a)
 let ( ^!^ ) = parse_un_op "!" OpNot
 let parse_new = parse_un_op "new" OpNew
 
+(* TODO: parse arrays *)
 let parse_ops =
   fix (fun expr ->
     let lv1 = choice [ parens expr; parse_value; parse_call_expr expr; parse_id_expr ] in
@@ -327,7 +334,7 @@ let parse_method_type =
     >>= fun x ->
     if String.( = ) x "void" then return @@ TypeBase TypeVoid else fail "Not a type"
   in
-  choice [ (parse_type_word >>= fun x -> return @@ x); parse_void ]
+  choice [ parse_array_type; parse_base_type; parse_void ]
 ;;
 
 let parse_method_sign =
