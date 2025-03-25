@@ -119,6 +119,11 @@ let%test "Parse multiple var declarations" =
                 , EBinOp (OpAssign, EId (Id "z"), EValue (ValInt 1)) )) ))
 ;;
 
+let%test "Parse array declaration" =
+  apply_parser parse_decl {|int[] x|}
+  = Ok (SDecl (Var (TypeVar (TypeArray TypeInt), Id "x"), None))
+;;
+
 let%test "Parse return 1" =
   apply_parser parse_return {|return 5|} = Ok (SReturn (Some (EValue (ValInt 5))))
 ;;
