@@ -9,7 +9,6 @@ type error =
   | Type_mismatch
   | Unbound_identificator of string
   | Unsupported_operation of string
-  | Invalid_syntax
   | Match_failure
   | Not_implemented
 
@@ -54,7 +53,6 @@ let pp_error ppf : error -> unit =
   | Type_mismatch -> fprintf ppf "Type mismatch"
   | Unbound_identificator s -> fprintf ppf "Unbound identificator: %s" s
   | Unsupported_operation s -> fprintf ppf "Unsupported operation: %s" s
-  | Invalid_syntax -> fprintf ppf "Invalid syntax"
   | Match_failure -> fprintf ppf "Match failure"
   | Not_implemented -> fprintf ppf "Not implemented"
 ;;

@@ -9,7 +9,6 @@ type error =
   | Type_mismatch
   | Unbound_identificator of string
   | Unsupported_operation of string
-  | Invalid_syntax
   | Match_failure
   | Not_implemented
 
