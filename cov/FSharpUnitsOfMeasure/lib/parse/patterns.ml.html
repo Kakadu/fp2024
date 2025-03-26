@@ -189,7 +189,7 @@ open Constants
 open Types
 
 let ppat_wild = cha<span data-count="35">r</span> '_' *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> Pattern_wild
-let ppat_id_or_op = pid_or_op &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="889633">P</span>attern_ident_or_op i
+let ppat_id_or_op = pid_or_op &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="889537">P</span>attern_ident_or_op i
 let ppat_const = psconst &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="16008">P</span>attern_const c
 let ppat_paren ppat = <span data-count="28">s</span>trin<span data-count="28">g</span> "(" *<span data-count="28">&gt;</span> skip_ws *<span data-count="28">&gt;</span> ppat &lt;<span data-count="28">*</span> skip_ws &lt;* strin<span data-count="28">g</span> ")"
 
@@ -227,7 +227,7 @@ let ppat_opt ppat =
 
 let ppat_typed ppat =
   <span data-count="28">l</span>et* pat = ppat in
-  <span data-count="122195">l</span>et* core_type = skip_toke<span data-count="122195">n</span> ":" *<span data-count="122195">&gt;</span> ptype in
+  <span data-count="122183">l</span>et* core_type = skip_toke<span data-count="122183">n</span> ":" *<span data-count="122183">&gt;</span> ptype in
   <span data-count="18">r</span>eturn (Pattern_typed (pat, core_type))
 ;;
 

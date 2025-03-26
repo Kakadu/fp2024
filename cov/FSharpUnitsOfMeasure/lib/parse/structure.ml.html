@@ -145,9 +145,9 @@ let pstritem_def =
   skip_toke<span data-count="35">n</span> "let"
   *<span data-count="35">&gt;</span>
   let* rec_flag = optio<span data-count="35">n</span> Nonrecursive (strin<span data-count="35">g</span> "rec" *<span data-count="35">&gt;</span> skip_ws *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> Recursive) in
-  <span data-count="96">l</span>et* binding_fst = pbin<span data-count="96">d</span> pexpr in
-  <span data-count="96">l</span>et* binding_rest = man<span data-count="96">y</span> (skip_toke<span data-count="96">n</span> "and" *<span data-count="96">&gt;</span> pbin<span data-count="96">d</span> pexpr) in
-  <span data-count="96">r</span>eturn (Str_item_def (rec_flag, binding_fst, binding_rest))
+  <span data-count="95">l</span>et* binding_fst = pbin<span data-count="95">d</span> pexpr in
+  <span data-count="95">l</span>et* binding_rest = man<span data-count="95">y</span> (skip_toke<span data-count="95">n</span> "and" *<span data-count="95">&gt;</span> pbin<span data-count="95">d</span> pexpr) in
+  <span data-count="95">r</span>eturn (Str_item_def (rec_flag, binding_fst, binding_rest))
 ;;
 
 let pstritem_type =

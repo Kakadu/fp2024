@@ -497,25 +497,25 @@ open Patterns
 open Constants
 open Types
 
-let pexpr_id_or_op = pid_or_op &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="24783796">E</span>xpr_ident_or_op i
-let pexpr_const = puconst &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="9437924">E</span>xpr_const c
+let pexpr_id_or_op = pid_or_op &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="24841780">E</span>xpr_ident_or_op i
+let pexpr_const = puconst &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="9484004">E</span>xpr_const c
 
 let pexpr_ite pexp =
   <span data-count="28">l</span>et* cond = skip_ws *<span data-count="28">&gt;</span> strin<span data-count="28">g</span> "if" *<span data-count="28">&gt;</span> skip_ws *<span data-count="28">&gt;</span> pexp in
-  <span data-count="93826">l</span>et* branch1 = skip_ws *<span data-count="93826">&gt;</span> strin<span data-count="93826">g</span> "then" *<span data-count="93826">&gt;</span> skip_ws *<span data-count="93826">&gt;</span> pexp in
-  <span data-count="93696">l</span>et* branch2 =
-    optio<span data-count="93696">n</span> None (skip_ws *<span data-count="93696">&gt;</span> strin<span data-count="93696">g</span> "else" *<span data-count="93696">&gt;</span> skip_ws *<span data-count="93696">&gt;</span> pexp &gt;&gt;<span data-count="93696">|</span> fun e -&gt; <span data-count="86304">S</span>ome e)
+  <span data-count="94018">l</span>et* branch1 = skip_ws *<span data-count="94018">&gt;</span> strin<span data-count="94018">g</span> "then" *<span data-count="94018">&gt;</span> skip_ws *<span data-count="94018">&gt;</span> pexp in
+  <span data-count="93888">l</span>et* branch2 =
+    optio<span data-count="93888">n</span> None (skip_ws *<span data-count="93888">&gt;</span> strin<span data-count="93888">g</span> "else" *<span data-count="93888">&gt;</span> skip_ws *<span data-count="93888">&gt;</span> pexp &gt;&gt;<span data-count="93888">|</span> fun e -&gt; <span data-count="86496">S</span>ome e)
   in
-  <span data-count="93696">r</span>eturn (Expr_ifthenelse (cond, branch1, branch2))
+  <span data-count="93888">r</span>eturn (Expr_ifthenelse (cond, branch1, branch2))
 ;;
 
 let pexpr_paren pexp = <span data-count="84">s</span>trin<span data-count="84">g</span> "(" *<span data-count="84">&gt;</span> skip_ws *<span data-count="84">&gt;</span> pexp &lt;<span data-count="84">*</span> skip_ws &lt;* strin<span data-count="84">g</span> ")"
-let parse_prefix_app = skip_ws_no_nl *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> (fun e1 e2 -&gt; <span data-count="10200112">E</span>xpr_apply (e1, e2))
+let parse_prefix_app = skip_ws_no_nl *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> (fun e1 e2 -&gt; <span data-count="10201840">E</span>xpr_apply (e1, e2))
 
 let parse_infix_app op =
   <span data-count="476">s</span>kip_ws
   *<span data-count="476">&gt;</span> strin<span data-count="476">g</span> op
-  *&gt; retur<span data-count="476">n</span> (fun e1 e2 -&gt; <span data-count="2185270">E</span>xpr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
+  *&gt; retur<span data-count="476">n</span> (fun e1 e2 -&gt; <span data-count="2199442">E</span>xpr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
 ;;
 
 let pexpr_app pexpr =
@@ -588,40 +588,40 @@ let pexpr_lam pexpr =
 ;;
 
 let pbind_val pexpr =
-  <span data-count="15583">l</span>et* name = ppat in
-  <span data-count="7867">s</span>kip_toke<span data-count="7867">n</span> "="
+  <span data-count="15571">l</span>et* name = ppat in
+  <span data-count="7861">s</span>kip_toke<span data-count="7861">n</span> "="
   *&gt;
   let* expr = pexpr in
-  <span data-count="7658">r</span>eturn (Bind (name, expr))
+  <span data-count="7652">r</span>eturn (Bind (name, expr))
 ;;
 
 let pbind_fun pexpr =
-  <span data-count="15583">l</span>et* name = ppat_id_or_op in
+  <span data-count="15571">l</span>et* name = ppat_id_or_op in
   <span data-count="209">l</span>et* args = many<span data-count="209">1</span> (skip_ws *<span data-count="209">&gt;</span> ppat) in
   <span data-count="184">s</span>kip_toke<span data-count="184">n</span> "="
   *&gt;
   let* expr = pexpr in
   <span data-count="172">l</span>et rec wrap = function
-    | <span data-count="335">h</span> :: tl -&gt; Expr_lam (h, wra<span data-count="335">p</span> tl)
+    | <span data-count="329">h</span> :: tl -&gt; Expr_lam (h, wra<span data-count="329">p</span> tl)
     | <span data-count="172">[</span>] -&gt; expr
   in
   return (Bind (name, wra<span data-count="172">p</span> args))
 ;;
 
-let pbind pexpr = <span data-count="15583">p</span>bind_va<span data-count="15583">l</span> pexpr &lt;|&gt; pbind_fu<span data-count="15583">n</span> pexpr
+let pbind pexpr = <span data-count="15571">p</span>bind_va<span data-count="15571">l</span> pexpr &lt;|&gt; pbind_fu<span data-count="15571">n</span> pexpr
 
 let pexpr_letin pexpr =
   <span data-count="140">s</span>kip_toke<span data-count="140">n</span> "let"
   *&gt;
   let* rec_flag = skip_toke<span data-count="140">n</span> "rec" *<span data-count="140">&gt;</span> retur<span data-count="140">n</span> Recursive &lt;|<span data-count="140">&gt;</span> retur<span data-count="140">n</span> Nonrecursive in
-  <span data-count="7714">l</span>et* binding_fst = pbin<span data-count="7714">d</span> pexpr in
-  <span data-count="7677">l</span>et* binding_rest =
-    man<span data-count="7677">y</span> (skip_toke<span data-count="7677">n</span> "and" *<span data-count="7677">&gt;</span> pbin<span data-count="7677">d</span> pexpr)
+  <span data-count="7709">l</span>et* binding_fst = pbin<span data-count="7709">d</span> pexpr in
+  <span data-count="7672">l</span>et* binding_rest =
+    man<span data-count="7672">y</span> (skip_toke<span data-count="7672">n</span> "and" *<span data-count="7672">&gt;</span> pbin<span data-count="7672">d</span> pexpr)
     (* match rec_flag with
        | Recursive -&gt; many (skip_token "and" *&gt; pbind pexpr)
        | Nonrecursive -&gt; return [] *)
   in
-  <span data-count="7677">s</span>kip_toke<span data-count="7677">n</span> "in"
+  <span data-count="7672">s</span>kip_toke<span data-count="7672">n</span> "in"
   *&gt;
   let* last_expr = pexpr in
   <span data-count="7178">r</span>eturn (Expr_let (rec_flag, binding_fst, binding_rest, last_expr))
@@ -637,7 +637,7 @@ let pexpr_tuple pexpr =
 
 let pexpr_list pexpr =
   <span data-count="28">l</span>et* list = cha<span data-count="28">r</span> '[' *<span data-count="28">&gt;</span> sep_b<span data-count="28">y</span> (cha<span data-count="28">r</span> ';') (skip_ws *<span data-count="28">&gt;</span> pexpr &lt;<span data-count="28">*</span> skip_ws) &lt;<span data-count="28">*</span> cha<span data-count="28">r</span> ']' in
-  <span data-count="6928">r</span>eturn (Expr_list list)
+  <span data-count="6736">r</span>eturn (Expr_list list)
 ;;
 
 let prules pexpr =

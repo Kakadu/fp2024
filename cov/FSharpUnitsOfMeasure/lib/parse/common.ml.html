@@ -347,60 +347,60 @@ open Checks
 
 (* F# compiler forbids tabs by default *)
 let is_whitespace = function
-  | <span data-count="19128886">'</span> ' | <span data-count="2574289">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
-  | <span data-count="335080611">_</span> -&gt; false
+  | <span data-count="19370264">'</span> ' | <span data-count="2620899">'</span>\n' | <span data-count="0">'</span>\r' -&gt; true
+  | <span data-count="336229983">_</span> -&gt; false
 ;;
 
 let is_ws_no_nl = function
-  | <span data-count="13967924">'</span> ' | <span data-count="0">'</span>\r' -&gt; true
-  | <span data-count="26817406">_</span> -&gt; false
+  | <span data-count="13974302">'</span> ' | <span data-count="0">'</span>\r' -&gt; true
+  | <span data-count="26874417">_</span> -&gt; false
 ;;
 
 let skip_ws = skip_whil<span data-count="35">e</span> is_whitespace
 let skip_ws_no_nl = skip_whil<span data-count="35">e</span> is_ws_no_nl
 let skip_ws_nl = skip_ws_no_nl *<span data-count="35">&gt;</span> cha<span data-count="35">r</span> '\n' *<span data-count="35">&gt;</span> skip_ws
 let skip_ws1 = satisf<span data-count="35">y</span> is_whitespace *<span data-count="35">&gt;</span> skip_ws
-let skip_token str = <span data-count="240038">s</span>kip_ws *<span data-count="240038">&gt;</span> strin<span data-count="240038">g</span> str &lt;<span data-count="240038">*</span> skip_ws &gt;&gt;= fun _ -&gt; <span data-count="778893">r</span>eturn ()
+let skip_token str = <span data-count="240009">s</span>kip_ws *<span data-count="240009">&gt;</span> strin<span data-count="240009">g</span> str &lt;<span data-count="240009">*</span> skip_ws &gt;&gt;= fun _ -&gt; <span data-count="780310">r</span>eturn ()
 
 let is_op_char = function
-  | <span data-count="220">'</span>+' | <span data-count="101506">'</span>-' | <span data-count="0">'</span>*' | <span data-count="0">'</span>/' | <span data-count="0">'</span>&lt;' | <span data-count="0">'</span>&gt;' | <span data-count="0">'</span>=' | <span data-count="0">'</span>|' | <span data-count="56">'</span>.' -&gt; true
-  | <span data-count="455276">_</span> -&gt; false
+  | <span data-count="166">'</span>+' | <span data-count="101506">'</span>-' | <span data-count="0">'</span>*' | <span data-count="0">'</span>/' | <span data-count="0">'</span>&lt;' | <span data-count="0">'</span>&gt;' | <span data-count="0">'</span>=' | <span data-count="0">'</span>|' | <span data-count="56">'</span>.' -&gt; true
+  | <span data-count="456758">_</span> -&gt; false
 ;;
 
 let is_id_char = function
-  | <span data-count="809310">'</span>_' | <span data-count="37967773">'</span>a' .. 'z' | <span data-count="450409">'</span>A' .. 'Z' | <span data-count="233714">'</span>0' .. '9' | <span data-count="762">'</span>\'' -&gt; true
-  | <span data-count="44159919">_</span> -&gt; false
+  | <span data-count="809310">'</span>_' | <span data-count="37999241">'</span>a' .. 'z' | <span data-count="450409">'</span>A' .. 'Z' | <span data-count="233714">'</span>0' .. '9' | <span data-count="762">'</span>\'' -&gt; true
+  | <span data-count="44340995">_</span> -&gt; false
 ;;
 
 let is_id_stchar = function
-  | <span data-count="57811">'</span>_' | <span data-count="32380293">'</span>a' .. 'z' | <span data-count="85912">'</span>A' .. 'Z' -&gt; true
-  | <span data-count="19781041">_</span> -&gt; false
+  | <span data-count="57811">'</span>_' | <span data-count="32444633">'</span>a' .. 'z' | <span data-count="85912">'</span>A' .. 'Z' -&gt; true
+  | <span data-count="19874059">_</span> -&gt; false
 ;;
 
 let pid =
   let* first = satisf<span data-count="35">y</span> is_id_stchar &gt;&gt;<span data-count="35">|</span> String.of_char in
-  <span data-count="32524016">l</span>et* rest =
+  <span data-count="32588356">l</span>et* rest =
     match first with
     | <span data-count="57811">"</span>_" -&gt; take_while<span data-count="57811">1</span> is_id_char
-    | <span data-count="32466205">_</span> -&gt; take_whil<span data-count="32466205">e</span> is_id_char
+    | <span data-count="32530545">_</span> -&gt; take_whil<span data-count="32530545">e</span> is_id_char
   in
-  <span data-count="32512750">l</span>et ident = first ^ rest in
+  <span data-count="32577090">l</span>et ident = first ^ rest in
   if is_keyword ident
-  then <span data-count="6601078">f</span>ail "Keywords cannot be used as identificators"
-  else <span data-count="25911672">r</span>eturn ident
+  then <span data-count="6607476">f</span>ail "Keywords cannot be used as identificators"
+  else <span data-count="25969614">r</span>eturn ident
 ;;
 
 let pbuiltin_op =
   let* op = take_whil<span data-count="35">e</span> is_op_char in
-  <span data-count="455276">m</span>atch op with
-  | <span data-count="455276">o</span>p when is_builtin_o<span data-count="455276">p</span> op -&gt; <span data-count="101726">r</span>eturn op
-  | <span data-count="353550">_</span> -&gt; fail "Failed to parse builtin op"
+  <span data-count="456758">m</span>atch op with
+  | <span data-count="456758">o</span>p when is_builtin_o<span data-count="456758">p</span> op -&gt; <span data-count="101672">r</span>eturn op
+  | <span data-count="355086">_</span> -&gt; fail "Failed to parse builtin op"
 ;;
 
 let pid_or_op =
   let parse_op = skip_toke<span data-count="35">n</span> "(" *<span data-count="35">&gt;</span> pbuiltin_op &lt;* skip_toke<span data-count="35">n</span> ")" in
   <span data-count="35">l</span>et* ident_or_op = pid &lt;|<span data-count="35">&gt;</span> parse_op in
-  <span data-count="25673429">r</span>eturn ident_or_op
+  <span data-count="25731317">r</span>eturn ident_or_op
 ;;
 
 let punit = strin<span data-count="35">g</span> "()" *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> ()
@@ -413,20 +413,20 @@ let pbool = strin<span data-count="35">g</span> "true" &lt;|<span data-count="35
 (* Parses unsigned ints *)
 let pint =
   let* int = take_while<span data-count="35">1</span> Char.is_digit &gt;&gt;<span data-count="35">|</span> Int.of_string in
-  <span data-count="11663770">l</span>et* next_char = peek_char in
-  <span data-count="11663770">m</span>atch next_char with
-  | <span data-count="11648461">S</span>ome x when Char.equa<span data-count="11648461">l</span> x '.' -&gt; <span data-count="5832">f</span>ail "Cannot parse int, met float"
-  | <span data-count="11642629">S</span>ome x when is_id_cha<span data-count="11642629">r</span> x -&gt; <span data-count="326">f</span>ail "Cannot parse int, met ident"
-  | <span data-count="11657612">_</span> -&gt; return int
+  <span data-count="11780506">l</span>et* next_char = peek_char in
+  <span data-count="11780506">m</span>atch next_char with
+  | <span data-count="11765197">S</span>ome x when Char.equa<span data-count="11765197">l</span> x '.' -&gt; <span data-count="5832">f</span>ail "Cannot parse int, met float"
+  | <span data-count="11759365">S</span>ome x when is_id_cha<span data-count="11759365">r</span> x -&gt; <span data-count="326">f</span>ail "Cannot parse int, met ident"
+  | <span data-count="11774348">_</span> -&gt; return int
 ;;
 
 (* Parses signed ints *)
 let psint =
   let* sign = optio<span data-count="35">n</span> "" (skip_ws *<span data-count="35">&gt;</span> strin<span data-count="35">g</span> "-" &lt;<span data-count="35">*</span> skip_ws) in
-  <span data-count="23285902">l</span>et* int = pint in
-  <span data-count="6130597">m</span>atch sign with
-  | <span data-count="578203">"</span>-" -&gt; return (<span data-count="578203">-</span>int)
-  | <span data-count="5552394">_</span> -&gt; return int
+  <span data-count="23385290">l</span>et* int = pint in
+  <span data-count="6201253">m</span>atch sign with
+  | <span data-count="602779">"</span>-" -&gt; return (<span data-count="602779">-</span>int)
+  | <span data-count="5598474">_</span> -&gt; return int
 ;;
 
 (* Parses unsigned floats. Used for expressions.
@@ -467,7 +467,7 @@ let pfloat =
    (+|-)? [0-9]+ (. [0-9]* )? (e|E) (+|-)? [0-9]+ [f|F] *)
 let psfloat =
   let* sign = optio<span data-count="35">n</span> "" (skip_ws *<span data-count="35">&gt;</span> strin<span data-count="35">g</span> "-" &lt;<span data-count="35">*</span> skip_ws) in
-  <span data-count="17155305">l</span>et* float = pfloat in
+  <span data-count="17184037">l</span>et* float = pfloat in
   <span data-count="5409">m</span>atch sign with
   | <span data-count="1537">"</span>-" -&gt; return (Float.ne<span data-count="1537">g</span> float)
   | <span data-count="3872">_</span> -&gt; return float
@@ -475,16 +475,16 @@ let psfloat =
 
 let chainl pa psep =
   <span data-count="143">l</span>et rec wrap a1 =
-    <span data-count="41255745">l</span>et* sep = psep in
-    <span data-count="27654806">l</span>et* a2 = skip_ws *<span data-count="27654806">&gt;</span> pa in
-    <span data-count="12386314">l</span>et binop = sep a1 a2 in
-    <span data-count="12386314">w</span>ra<span data-count="12386314">p</span> binop &lt;|&gt; retur<span data-count="12386314">n</span> binop
+    <span data-count="41369193">l</span>et* sep = psep in
+    <span data-count="27722750">l</span>et* a2 = skip_ws *<span data-count="27722750">&gt;</span> pa in
+    <span data-count="12402226">l</span>et binop = sep a1 a2 in
+    <span data-count="12402226">w</span>ra<span data-count="12402226">p</span> binop &lt;|&gt; retur<span data-count="12402226">n</span> binop
   in
-  skip_ws *<span data-count="143">&gt;</span> pa &gt;&gt;= fun init -&gt; <span data-count="28869431">w</span>rap init
+  skip_ws *<span data-count="143">&gt;</span> pa &gt;&gt;= fun init -&gt; <span data-count="28966967">w</span>rap init
 ;;
 
 let rec chainr pa psep =
-  <span data-count="551">p</span>a &gt;&gt;= fun a -&gt; <span data-count="4155730">p</span>sep &gt;&gt;<span data-count="4155730">=</span> (fun f -&gt; <span data-count="462">c</span>hain<span data-count="462">r</span> (skip_ws *<span data-count="462">&gt;</span> pa) psep &gt;&gt;| <span data-count="462">f</span> a) &lt;|&gt; retur<span data-count="4155730">n</span> a
+  <span data-count="539">p</span>a &gt;&gt;= fun a -&gt; <span data-count="4168726">p</span>sep &gt;&gt;<span data-count="4168726">=</span> (fun f -&gt; <span data-count="450">c</span>hain<span data-count="450">r</span> (skip_ws *<span data-count="450">&gt;</span> pa) psep &gt;&gt;| <span data-count="450">f</span> a) &lt;|&gt; retur<span data-count="4168726">n</span> a
 ;;
 </code></pre>
       </div>

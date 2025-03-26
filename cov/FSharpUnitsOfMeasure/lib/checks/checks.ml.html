@@ -152,23 +152,23 @@
 
 let is_keyword = function
   | <span data-count="10128">"</span>and"
-  | <span data-count="725504">"</span>else"
+  | <span data-count="728576">"</span>else"
   | <span data-count="3182160">"</span>false"
   | <span data-count="42034">"</span>fun"
   | <span data-count="640">"</span>function"
-  | <span data-count="93826">"</span>if"
+  | <span data-count="94018">"</span>if"
   | <span data-count="116392">"</span>in"
-  | <span data-count="253998">"</span>let"
+  | <span data-count="255596">"</span>let"
   | <span data-count="7554">"</span>match"
   | <span data-count="0">"</span>or"
   | <span data-count="0">"</span>rec"
-  | <span data-count="1496064">"</span>then"
+  | <span data-count="1497600">"</span>then"
   | <span data-count="284016">"</span>true"
   | <span data-count="0">"</span>type"
   | <span data-count="315908">"</span>with"
   | <span data-count="67118">"</span>Some"
   | <span data-count="5736">"</span>None" -&gt; true
-  | <span data-count="25911676">_</span> -&gt; false
+  | <span data-count="25969618">_</span> -&gt; false
 ;;
 
 let is_builtin_type = function
@@ -178,11 +178,11 @@ let is_builtin_type = function
 
 (** [is_builtin_op op] returns true if [s] is a builtin operation of F#. *)
 let is_builtin_op = function
-  | <span data-count="199">"</span>+"
-  | <span data-count="101544">"</span>-"
-  | <span data-count="19">"</span>*"
+  | <span data-count="144">"</span>+"
+  | <span data-count="101549">"</span>-"
+  | <span data-count="24">"</span>*"
   | <span data-count="2">"</span>/"
-  | <span data-count="12">"</span>&lt;="
+  | <span data-count="19">"</span>&lt;="
   | <span data-count="10">"</span>&lt;"
   | <span data-count="0">"</span>&gt;="
   | <span data-count="0">"</span>&gt;"
@@ -194,8 +194,8 @@ let is_builtin_op = function
   | <span data-count="0">"</span>-."
   | <span data-count="0">"</span>*."
   | <span data-count="0">"</span>/."
-  | <span data-count="3">"</span>::" -&gt; true
-  | <span data-count="353682">_</span> -&gt; false
+  | <span data-count="2">"</span>::" -&gt; true
+  | <span data-count="355218">_</span> -&gt; false
 ;;
 </code></pre>
       </div>

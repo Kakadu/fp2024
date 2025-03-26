@@ -168,7 +168,7 @@ open Angstrom
 open Ast
 open Common
 
-let pm_num_int = psint &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="6123732">M</span>num_int i
+let pm_num_int = psint &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="6194388">M</span>num_int i
 let pm_num_float = psfloat &gt;&gt;<span data-count="35">|</span> fun f -&gt; <span data-count="3617">M</span>num_float f
 let pm_num = pm_num_int &lt;|<span data-count="35">&gt;</span> pm_num_float
 let pm_id = pid &gt;&gt;<span data-count="35">|</span> fun id -&gt; <span data-count="25151">M</span>easure_ident id
@@ -216,7 +216,7 @@ let pm =
 
 let puom =
   let* num = skip_ws *<span data-count="35">&gt;</span> pm_num in
-  <span data-count="6127349">l</span>et* measure = strin<span data-count="6127349">g</span> "&lt;" *<span data-count="6127349">&gt;</span> pm &lt;<span data-count="6127349">*</span> skip_ws &lt;<span data-count="6127349">*</span> strin<span data-count="6127349">g</span> "&gt;" in
+  <span data-count="6198005">l</span>et* measure = strin<span data-count="6198005">g</span> "&lt;" *<span data-count="6198005">&gt;</span> pm &lt;<span data-count="6198005">*</span> skip_ws &lt;<span data-count="6198005">*</span> strin<span data-count="6198005">g</span> "&gt;" in
   <span data-count="13949">r</span>eturn (Unit_of_measure (num, measure))
 ;;
 </code></pre>
