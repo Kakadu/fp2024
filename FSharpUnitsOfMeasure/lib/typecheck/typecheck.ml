@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Ast
-
 module Types = struct
   open Ast
 
@@ -14,6 +12,7 @@ module Types = struct
     | TBool
     | TChar
     | TString
+    | TUnit
     | TFun of ty * ty
     | TTuple of ty list
     | TList of ty
@@ -104,9 +103,10 @@ module Types = struct
     | TBool -> "bool"
     | TChar -> "char"
     | TString -> "string"
+    | TUnit -> "unit"
     | TFun (t1, t2) -> Printf.sprintf "(%s -> %s)" (string_of_ty t1) (string_of_ty t2)
     | TTuple ts -> "(" ^ String.concat " * " (List.map string_of_ty ts) ^ ")"
-    | TList t' -> Printf.sprintf "list<%s>" (string_of_ty t')
+    | TList t' -> Printf.sprintf "%s list" (string_of_ty t')
     | TMeasure (t', Some m) ->
       Printf.sprintf "%s<%s>" (string_of_ty t') (string_of_measure m)
     | TMeasure (t', None) -> Printf.sprintf "%s<\x5F>" (string_of_ty t')
@@ -220,6 +220,7 @@ module Inference = struct
     | Type_ident "bool" -> TBool
     | Type_ident "char" -> TChar
     | Type_ident "string" -> TString
+    | Type_ident "unit" -> TUnit
     | Type_ident other -> failwith ("Unknown type: " ^ other)
     | Type_func (t1, t2) -> TFun (core_type_to_ty t1, core_type_to_ty t2)
     | Type_tuple (t1, t2, ts) -> TTuple (List.map core_type_to_ty (t1 :: t2 :: ts))
@@ -237,6 +238,7 @@ module Inference = struct
         | Const_bool _ -> TBool
         | Const_char _ -> TChar
         | Const_string _ -> TString
+        | Const_unit -> TUnit
         | Const_unit_of_measure u ->
           (match u with
            | Unit_of_measure (Mnum_int _, m) -> TMeasure (TInt, Some m)
@@ -337,7 +339,7 @@ module Inference = struct
            List.fold_left
              (fun (s, cnt) (Ast.Bind (p, e)) ->
                let id = extract_id p in
-               let s_e, t_e, cnt' = infer_expr extended_env e cnt in
+               let _, t_e, cnt' = infer_expr extended_env e cnt in
                let (Scheme (_, tv)) = List.assoc id rec_env in
                let s_u = unify (apply_subst s tv) t_e in
                compose_subst s_u s, cnt')
@@ -408,7 +410,7 @@ module Inference = struct
       let tFinal = apply_subst sFinal tMatch in
       sFinal, tFinal, counter4
     | Expr_function (rule, rules) ->
-      let tv, counter1 = fresh_ty_var counter in
+      let _, counter1 = fresh_ty_var counter in
       let arg = Expr_ident_or_op "x" in
       let match_expr = Expr_match (arg, rule, rules) in
       let lam_expr = Expr_lam (Pattern_ident_or_op "x", match_expr) in
@@ -471,6 +473,11 @@ module Inference = struct
       in
       compose_subst sU s, env_ext, TList tv, counter2
     | Pattern_or (p1, p2) ->
+      let s1, env1, t1, counter1 = infer_pattern env p1 counter in
+      let s2, env2, t2, counter2 = infer_pattern env p2 counter1 in
+      let sU = unify (apply_subst s1 t1) t2 in
+      compose_subst sU (compose_subst s2 s1), env1 @ env2, t1, counter2
+    | Pattern_cons (p1, p2) ->
       let s1, env1, t1, counter1 = infer_pattern env p1 counter in
       let s2, env2, t2, counter2 = infer_pattern env p2 counter1 in
       let sU = unify (apply_subst s1 t1) t2 in

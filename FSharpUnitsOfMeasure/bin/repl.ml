@@ -17,7 +17,7 @@ type config =
 let pprog = Angstrom.parse_string ~consume:Angstrom.Consume.All pprog
 
 let greetings_msg =
-{|
+  {|
 ───────────────────────────────┬───────────────────────────────────────────┬───────────────────────────────
                                │ Welcome to MiniF# interpreter version 1.0!│
                                └───────────────────────────────────────────┘
@@ -25,7 +25,7 @@ let greetings_msg =
 ;;
 
 let hori_line =
-"───────────────────────────────────────────────────────────────────────────────────────────────────────────"
+  "───────────────────────────────────────────────────────────────────────────────────────────────────────────"
 ;;
 
 let pp_env env =
@@ -67,9 +67,8 @@ let run_single options =
              | _ -> ())
            out_lst;
          pp_env env
-       | Error e ->
-         print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
-         if options.greet_user then print_endline hori_line else print_endline ""
+       | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
+      if options.greet_user then print_endline hori_line else print_endline ""
   in
   let open In_channel in
   match options.file_path with
