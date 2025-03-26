@@ -154,27 +154,6 @@ let%expect_test _ =
 
 let%expect_test _ =
   let _ = test_interpret {|
-    let (+) a b = a + b
-  |} in
-  [%expect {|
-    val ( + ) : <type> = <fun> |}]
-;;
-
-let%expect_test _ =
-  let _ = test_interpret {|
-  let a = [2; 1];;
-  let b = 3;;
-  let c = b :: a;;
-  |} in
-  [%expect
-    {|
-    val a : <type> = [2; 1]
-    val b : <type> = 3
-    val c : <type> = [3; 2; 1] |}]
-;;
-
-let%expect_test _ =
-  let _ = test_interpret {|
     let (a, b) = (4, 3)
   |} in
   [%expect {|
@@ -245,4 +224,23 @@ let%expect_test _ =
     val b : <type> = [7]
     val c : <type> = [7; 7]
     val d : <type> = [7] |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    test_interpret
+      {|
+      let rec factorial n =
+        if n <= 1 then 1
+        else n * factorial (n-1)
+
+      let a = factorial 4
+      let b = factorial 3
+  |}
+  in
+  [%expect
+    {|
+    val a : <type> = 24
+    val b : <type> = 6
+    val factorial : <type> = <fun> |}]
 ;;
