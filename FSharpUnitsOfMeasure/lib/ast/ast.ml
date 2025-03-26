@@ -34,6 +34,7 @@ let gen_type_ident =
       ; 1, return "float"
       ; 1, return "char"
       ; 1, return "string"
+      ; 1, return "unit"
       ]
   in
   gen_builtin_type_ident

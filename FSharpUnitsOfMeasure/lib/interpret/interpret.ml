@@ -24,7 +24,7 @@ module Env (M : ERROR_MONAD) = struct
     | None -> fail (Unbound_identificator id)
   ;;
 
-  let extend env key value = Base.Map.set env ~key:key ~data:value
+  let extend env key value = Base.Map.set env ~key ~data:value
 
   (* update env1 with values of env2 *)
   let update_env env1 env2 =
@@ -84,9 +84,10 @@ module Eval (M : ERROR_MONAD) = struct
       | None -> None
       | Some env' -> eval_pat env' p v
     in
-    match Base.List.fold2 ~f:f ~init:(Some env) pl vl with
+    match Base.List.fold2 ~f ~init:(Some env) pl vl with
     | Ok env' -> env'
     | Unequal_lengths -> None
+  ;;
 
   let eval_binop f v1 v2 =
     match f, v1, v2 with
@@ -170,7 +171,7 @@ module Eval (M : ERROR_MONAD) = struct
       let* v2 = eval_expr env arg in
       (match v1 with
        | VFunction (rhd, rtl) -> eval_rules env v2 (rhd :: rtl)
-       | VBuiltin_fun (builtin) ->
+       | VBuiltin_fun builtin ->
          (match builtin, v2 with
           | Print_int _, VInt i ->
             print_endline (Int.to_string i);
@@ -234,14 +235,15 @@ module Eval (M : ERROR_MONAD) = struct
 
   and eval_nonrec_binds env binds =
     List.fold_left
-    (fun env (Bind(pat, expr))->
-    let* env = env in
-    let* v = eval_expr env expr in
-    match eval_pat env pat v with
-    | Some new_env -> return new_env
-    | None -> fail Misc.Match_failure)
-    (return env)
-    binds
+      (fun env (Bind (pat, expr)) ->
+        let* env = env in
+        let* v = eval_expr env expr in
+        match eval_pat env pat v with
+        | Some new_env -> return new_env
+        | None -> fail Misc.Match_failure)
+      (return env)
+      binds
+  ;;
 
   let eval_str_item env out_lst =
     let print_bool b = print_endline (Bool.to_string b) in
@@ -250,9 +252,7 @@ module Eval (M : ERROR_MONAD) = struct
     let env = extend env "print_float" (VBuiltin_fun (Print_float print_float)) in
     let env = extend env "print_char" (VBuiltin_fun (Print_char print_char)) in
     let env = extend env "print_bool" (VBuiltin_fun (Print_bool print_bool)) in
-    let env =
-      extend env "print_endline" (VBuiltin_fun (Print_endline print_endline))
-    in
+    let env = extend env "print_endline" (VBuiltin_fun (Print_endline print_endline)) in
     function
     | Str_item_eval e ->
       let v = eval_expr env e in

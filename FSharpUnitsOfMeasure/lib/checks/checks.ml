@@ -26,7 +26,7 @@ let is_keyword = function
 ;;
 
 let is_builtin_type = function
-  | "int" | "bool" | "float" | "char" | "string" -> true
+  | "int" | "bool" | "float" | "char" | "string" | "unit" -> true
   | _ -> false
 ;;
 
