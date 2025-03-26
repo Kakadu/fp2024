@@ -9,9 +9,6 @@ open Ast
 let reset_typevar_counter () =
   typevar_counter := 0
 
-(* Определяем встроенное окружение для операторов,
-  чтобы тестовые выражения (например, для факториала или Фибоначчи)
-  могли использовать арифметические и логические операции *)
   let builtins = [
   ("=", Scheme([0], TFun(TVar 0, TFun(TVar 0, TBool))));
   ("-", Scheme([], TFun(TInt, TFun(TInt, TInt))));
@@ -19,11 +16,9 @@ let reset_typevar_counter () =
   ("+", Scheme([], TFun(TInt, TFun(TInt, TInt))));
   ("<", Scheme([], TFun(TInt, TFun(TInt, TBool))));
 ]
-(* Начальное окружение состоит из встроенных операторов.
-    initial_env из модуля Inference изначально пустое. *)
+
 let env = builtins @ initial_env
 
-(* Простой тест: функция-идентичность: fun x -> x *)
 let id_expr = Expr_lam (Pattern_ident_or_op "x", Expr_ident_or_op "x")
 let (_sId, tId) = infer_expr env id_expr
 
@@ -34,7 +29,6 @@ let%expect_test "Identity function" =
     Inferred type for identity: ('a0 -> 'a0)
   |}];;
 
-(* Простой тест: функция, возвращающая константу: fun x -> 1 *)
 let const_expr = Expr_lam (Pattern_ident_or_op "x", Expr_const (Const_int 1))
 let (_sConst, tConst) = infer_expr env const_expr
 
@@ -45,7 +39,6 @@ let%expect_test "Constant function" =
     Inferred type for constant function: ('a0 -> int)
   |}];;
 
-(* Тест: функция факториала (let rec fact = fun n -> if n < 1 then 1 else n * fact (n - 1) in fact) *)
 let fact_expr =
   Expr_let (Recursive,
     Bind (Pattern_ident_or_op "fact",
@@ -85,7 +78,7 @@ let%expect_test "Factorial function" =
     Inferred type for factorial: (int -> int)
   |}];;
 
-(* Тест: функция Фибоначчи (let rec fib = fun n -> if n < 2 then n else fib (n - 1) + fib (n - 2) in fib) *)
+(* let rec fib = fun n -> if n < 2 then n else fib (n - 1) + fib (n - 2) in fib) *)
 let fib_expr =
   Expr_let (Recursive,
     Ast.Bind (Pattern_ident_or_op "fib",
@@ -130,7 +123,6 @@ let%expect_test "Fibonacci function" =
   [%expect {| Inferred type for fibonacci: (int -> int)
     |}];;
 
-(* Тест: константа с единицей измерения: 5.0<cm> *)
 let unit_expr =
   Expr_const (Const_unit_of_measure (Unit_of_measure (Mnum_float 5.0, Measure_ident "cm")))
 let (_sUnit, tUnit) = infer_expr env unit_expr
@@ -142,7 +134,6 @@ let%expect_test "Unit of measure constant" =
     Inferred type for unit constant: float<cm>
   |}];;
 
-(* Тест: списковое выражение: [1; 2; 3] *)
 let list_expr =
   Expr_list [Expr_const (Const_int 1); Expr_const (Const_int 2); Expr_const (Const_int 3)]
 let (_sList, tList) = infer_expr env list_expr
@@ -154,7 +145,7 @@ let%expect_test "List literal" =
     Inferred type for list: list<int>
   |}];;
 
-(* Тест: let–связывание (не рекурсивное): let x = 1 and y = 2 in x *)
+(* let x = 1 and y = 2 in x *)
 let let_expr =
   Expr_let (Nonrecursive,
     Ast.Bind (Pattern_ident_or_op "x", Expr_const (Const_int 1)),

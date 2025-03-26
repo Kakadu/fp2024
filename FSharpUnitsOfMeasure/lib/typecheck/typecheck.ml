@@ -225,7 +225,6 @@ module Inference = struct
     | Type_tuple (t1, t2, ts) -> TTuple (List.map core_type_to_ty (t1 :: t2 :: ts))
   ;;
 
-  (* Основная функция инференса по выражению *)
   let rec infer_expr (env : type_env) (expr : expression) (counter : int)
     : subst * ty * int
     =
@@ -421,8 +420,6 @@ module Inference = struct
       let s, t_inner, counter1 = infer_expr env e_inner counter in
       s, TOption t_inner, counter1
 
-  (* Инференс типов для паттернов.
-     Возвращает: подстановку, расширение окружения (ассоциации имя → схема) и тип паттерна. *)
   and infer_pattern (env : type_env) (p : Ast.pattern) (counter : int)
     : subst * (string * scheme) list * ty * int
     =
@@ -485,7 +482,6 @@ module Inference = struct
       let s, env_ext, t_inner, counter1 = infer_pattern env p_inner counter in
       s, env_ext, TOption t_inner, counter1
 
-  (* Для let–связей допускается только простой идентификатор *)
   and pattern_name (p : Ast.pattern) : string =
     match p with
     | Pattern_ident_or_op name -> name
