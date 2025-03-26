@@ -31,7 +31,7 @@ type value =
   | VTuple of value * value * value list
   | VOption of value option
   | VFunction of rule * rule list
-  | VBuiltin_fun of builtin_fun * environment
+  | VBuiltin_fun of builtin_fun
   | VUnit
 
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
