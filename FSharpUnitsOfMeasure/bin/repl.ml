@@ -16,26 +16,16 @@ type config =
 
 let pprog = Angstrom.parse_string ~consume:Angstrom.Consume.All pprog
 
-let help_msg =
-  "  F# with units of measure interpreter version 1.0\n\n\
-  \  REPL: dune exec ./bin/repl.exe <options>\n\
-  \  Read and interpret file: dune exec ./bin/repl.exe <options> --file <filepath>\n\n\
-  \  options:\n\
-  \   --do-not-type: turn off inference\n\
-  \   --no-hi: turn off greeting message and line separators\n\
-  \   --help: show this message"
-;;
-
 let greetings_msg =
-  "───────────────────────────────┬──────────────────────────────────────────────────────────────┬───────────────────────────────\n\
-  \                               │ Welcome to F# with units of measure interpreter \
-   version 1.0! │                                \n\
-  \                               \
-   └──────────────────────────────────────────────────────────────┘                                "
+{|
+───────────────────────────────┬───────────────────────────────────────────┬───────────────────────────────
+                               │ Welcome to MiniF# interpreter version 1.0!│
+                               └───────────────────────────────────────────┘
+|}
 ;;
 
 let hori_line =
-  "───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+"───────────────────────────────────────────────────────────────────────────────────────────────────────────"
 ;;
 
 let pp_env env =
@@ -72,15 +62,14 @@ let run_single options =
       (match eval ast with
        | Ok (env, out_lst) ->
          List.iter
-           (fun v ->
-             match v with
+           (function
              | Ok v' -> print_endline (Format.asprintf "- : %s = %a" "<type>" pp_value v')
              | _ -> ())
            out_lst;
          pp_env env
        | Error e ->
-         print_endline (Format.asprintf "Interpreter error: %a" pp_error e);
-         if options.greet_user then print_endline hori_line else print_endline "")
+         print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
+         if options.greet_user then print_endline hori_line else print_endline ""
   in
   let open In_channel in
   match options.file_path with
@@ -117,10 +106,9 @@ let () =
       ; ( "--no-hi"
         , Unit (fun () -> options.greet_user <- false)
         , "Turn off greetings message" )
-      ; "--help", Unit (fun () -> print_endline help_msg), "Show help message"
       ]
       (fun _ -> exit 1)
-      "REPL"
+      "MiniF# interpreter version 1.0"
   in
   if options.greet_user then print_endline greetings_msg;
   run_single options
