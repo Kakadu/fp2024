@@ -214,7 +214,7 @@ module Eval (M : ERROR_MONAD) = struct
       (match env' with
        | None -> eval_rules env v tl
        | Some env'' -> eval_expr env'' e)
-    | [] -> fail Misc.Match_failure
+    | [] -> fail Misc.Not_implemented
 
   and eval_rec_binds env binds =
     let rec update_env acc_env = function
