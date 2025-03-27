@@ -51,3 +51,14 @@ let is_builtin_op = function
   | "::" -> true
   | _ -> false
 ;;
+
+(** [is_builtin_fun s] returns true if [s] is a builtin function of F#. *)
+let is_builtin_fun = function
+  | "print_int"
+  | "print_bool"
+  | "print_float"
+  | "print_string"
+  | "print_char"
+  | "print_endline" -> true
+  | _ -> false
+;;
