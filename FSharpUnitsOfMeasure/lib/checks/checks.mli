@@ -10,3 +10,6 @@ val is_builtin_type : string -> bool
 
 (** [is_builtin_op s] returns true if [s] is a builtin operator of F#. *)
 val is_builtin_op : string -> bool
+
+(** [is_builtin_fun s] returns true if [s] is a builtin function of F#. *)
+val is_builtin_fun : string -> bool

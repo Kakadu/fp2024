@@ -36,6 +36,5 @@ type value =
 
 and environment = (string, value, Base.String.comparator_witness) Base.Map.t
 
-val is_builtin_fun : string -> bool
 val pp_error : Format.formatter -> error -> unit
 val pp_value : Format.formatter -> value -> unit

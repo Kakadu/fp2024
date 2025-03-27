@@ -20,6 +20,7 @@ module Types = struct
     | TOption of ty
 
   type scheme = Scheme of int list * ty
+  type type_env = (string * scheme) list
 
   module IntMap = Map.Make (struct
       type t = int
@@ -72,12 +73,12 @@ module Types = struct
   let ftv_set t = List.sort_uniq compare (ftv t)
   let ftv_scheme (Scheme (vars, t)) = List.filter (fun n -> not (List.mem n vars)) (ftv t)
 
-  let ftv_env (env : (string * scheme) list) =
+  let ftv_env (env : type_env) =
     List.fold_left (fun acc (_, sch) -> acc @ ftv_scheme sch) [] env
     |> List.sort_uniq compare
   ;;
 
-  let generalize (env : (string * scheme) list) (t : ty) : scheme =
+  let generalize (env : type_env) (t : ty) : scheme =
     let env_ftv = ftv_env env in
     let t_ftv = ftv t in
     let vars = List.filter (fun v -> not (List.mem v env_ftv)) t_ftv in
@@ -104,7 +105,12 @@ module Types = struct
     | TChar -> "char"
     | TString -> "string"
     | TUnit -> "unit"
-    | TFun (TFun (t1, t2), t3) -> Printf.sprintf "(%s -> %s) -> %s" (string_of_ty t1) (string_of_ty t2) (string_of_ty t3)
+    | TFun (TFun (t1, t2), t3) ->
+      Printf.sprintf
+        "(%s -> %s) -> %s"
+        (string_of_ty t1)
+        (string_of_ty t2)
+        (string_of_ty t3)
     | TFun (t1, t2) -> Printf.sprintf "%s -> %s" (string_of_ty t1) (string_of_ty t2)
     | TTuple ts -> "(" ^ String.concat " * " (List.map string_of_ty ts) ^ ")"
     | TList t' -> Printf.sprintf "%s list" (string_of_ty t')
@@ -133,7 +139,7 @@ module Types = struct
     vars_str ^ string_of_ty t
   ;;
 
-  let string_of_env (env : (string * scheme) list) : string =
+  let string_of_env (env : type_env) : string =
     List.fold_left
       (fun acc (name, sch) -> acc ^ Printf.sprintf "%s: %s\n" name (string_of_scheme sch))
       ""
@@ -192,13 +198,42 @@ module Inference = struct
 
   exception TypeError of string
 
-  type type_env = (string * scheme) list
-
   let apply_subst_env (s : subst) (env : type_env) : type_env =
     List.map (fun (name, sch) -> name, apply_subst_scheme s sch) env
   ;;
 
-  let initial_env : type_env = []
+  let initial_env =
+    [ "=", Scheme ([], TFun (TInt, TFun (TInt, TBool)))
+    ; "<", Scheme ([], TFun (TInt, TFun (TInt, TBool)))
+    ; "<=", Scheme ([], TFun (TInt, TFun (TInt, TBool)))
+    ; ">", Scheme ([], TFun (TInt, TFun (TInt, TBool)))
+    ; ">=", Scheme ([], TFun (TInt, TFun (TInt, TBool)))
+    ; "<>", Scheme ([], TFun (TInt, TFun (TInt, TBool)))
+    ; "=", Scheme ([], TFun (TFloat, TFun (TFloat, TBool)))
+    ; "<", Scheme ([], TFun (TFloat, TFun (TFloat, TBool)))
+    ; "<=", Scheme ([], TFun (TFloat, TFun (TFloat, TBool)))
+    ; ">", Scheme ([], TFun (TFloat, TFun (TFloat, TBool)))
+    ; ">=", Scheme ([], TFun (TFloat, TFun (TFloat, TBool)))
+    ; "<>", Scheme ([], TFun (TFloat, TFun (TFloat, TBool)))
+    ; "+", Scheme ([], TFun (TInt, TFun (TInt, TInt)))
+    ; "-", Scheme ([], TFun (TInt, TFun (TInt, TInt)))
+    ; "*", Scheme ([], TFun (TInt, TFun (TInt, TInt)))
+    ; "/", Scheme ([], TFun (TInt, TFun (TInt, TInt)))
+    ; "+.", Scheme ([], TFun (TFloat, TFun (TFloat, TFloat)))
+    ; "-.", Scheme ([], TFun (TFloat, TFun (TFloat, TFloat)))
+    ; "*.", Scheme ([], TFun (TFloat, TFun (TFloat, TFloat)))
+    ; "/.", Scheme ([], TFun (TFloat, TFun (TFloat, TFloat)))
+    ; "||", Scheme ([], TFun (TBool, TFun (TBool, TBool)))
+    ; "&&", Scheme ([], TFun (TBool, TFun (TBool, TBool)))
+    ; "::", Scheme ([ 0 ], TFun (TVar 0, TFun (TList (TVar 0), TList (TVar 0))))
+    ; "print_string", Scheme ([], TFun (TString, TUnit))
+    ; "print_endline", Scheme ([], TFun (TString, TUnit))
+    ; "print_int", Scheme ([], TFun (TInt, TUnit))
+    ; "print_float", Scheme ([], TFun (TFloat, TUnit))
+    ; "print_char", Scheme ([], TFun (TChar, TUnit))
+    ; "print_bool", Scheme ([], TFun (TBool, TUnit))
+    ]
+  ;;
 
   module IntMap = Types.IntMap
 
@@ -325,7 +360,7 @@ module Inference = struct
          let extract_id p =
            match p with
            | Pattern_ident_or_op name -> name
-           | _ -> failwith "Only simple identifier allowed in let rec binding"
+           | _ -> failwith "Only simple identifiers are allowed in let rec binding"
          in
          let rec_env, counter1 =
            List.fold_left
@@ -493,11 +528,113 @@ module Inference = struct
   and pattern_name (p : Ast.pattern) : string =
     match p with
     | Pattern_ident_or_op name -> name
-    | _ -> failwith "Only simple identifier allowed in let-binding"
+    | _ -> failwith "Only simple identifiers are allowed in let-binding"
   ;;
 
-  let infer env expr =
-    let _s, t, _ = infer_expr env expr 0 in
-    _s, t
+  let infer_structure_item env si counter =
+    match si with
+    | Str_item_eval expr -> infer_expr env expr counter
+    | Str_item_def (flag, bind, binds) ->
+      (match flag with
+       | Nonrecursive ->
+         let s1, t1, counter1 =
+           infer_expr
+             env
+             (match bind with
+              | Ast.Bind (_, e) -> e)
+             counter
+         in
+         let sch = generalize env (apply_subst s1 t1) in
+         let var =
+           pattern_name
+             (match bind with
+              | Ast.Bind (p, _) -> p)
+         in
+         let env' = (var, sch) :: env in
+         let sBinds, env'', counter2 =
+           List.fold_left
+             (fun (sAcc, envAcc, cnt) (Ast.Bind (p, e)) ->
+               let sE, tE, cnt' = infer_expr envAcc e cnt in
+               let schE = generalize envAcc (apply_subst sE tE) in
+               compose_subst sE sAcc, (pattern_name p, schE) :: envAcc, cnt')
+             (s1, env', counter1)
+             binds
+         in
+         let s2, t2, counter3 =
+           infer_expr
+             env''
+             (match bind with
+              | Ast.Bind (_, e) -> e)
+             counter2
+         in
+         let final_s = compose_subst s2 sBinds in
+         final_s, apply_subst final_s t2, counter3
+       | Recursive ->
+         let all_bindings = bind :: binds in
+         let extract_id p =
+           match p with
+           | Pattern_ident_or_op name -> name
+           | _ -> failwith "Only simple identifiers are allowed in let rec binding"
+         in
+         let rec_env, counter1 =
+           List.fold_left
+             (fun (envAcc, cnt) (Ast.Bind (p, _)) ->
+               let tv, cnt' = fresh_ty_var cnt in
+               (extract_id p, Scheme ([], tv)) :: envAcc, cnt')
+             ([], counter)
+             all_bindings
+         in
+         let extended_env = rec_env @ env in
+         let s_rec, counter2 =
+           List.fold_left
+             (fun (s, cnt) (Ast.Bind (p, e)) ->
+               let id = extract_id p in
+               let _, t_e, cnt' = infer_expr extended_env e cnt in
+               let (Scheme (_, tv)) = List.assoc id rec_env in
+               let s_u = unify (apply_subst s tv) t_e in
+               compose_subst s_u s, cnt')
+             (empty_subst, counter1)
+             all_bindings
+         in
+         let rec_env' =
+           List.map
+             (fun (id, _) ->
+               let (Scheme (_, tv)) = List.assoc id rec_env in
+               id, generalize extended_env (apply_subst s_rec tv))
+             rec_env
+         in
+         let final_env = rec_env' @ env in
+         let s_body, t_body, counter3 =
+           infer_expr
+             final_env
+             (match bind with
+              | Ast.Bind (_, e) -> e)
+             counter2
+         in
+         let final_s = compose_subst s_body s_rec in
+         final_s, apply_subst final_s t_body, counter3)
+    | Str_item_type_def _ -> failwith "Not implemented"
+  ;;
+
+  let infer_program env program counter =
+    List.fold_left
+      (fun (env_acc, cnt) si ->
+        let subst, ty, cnt' = infer_structure_item env_acc si cnt in
+        let new_env =
+          match si with
+          | Str_item_eval _ -> env_acc
+          | Str_item_def (_, Ast.Bind (p, _), _) ->
+            let var_name = pattern_name p in
+            (var_name, Scheme ([], apply_subst subst ty)) :: env_acc
+          | Str_item_type_def _ -> env_acc
+        in
+        new_env, cnt')
+      (env, counter)
+      program
+  ;;
+
+  let infer prog =
+    let env', _ = infer_program initial_env prog 0 in
+    env'
   ;;
 end

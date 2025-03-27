@@ -20,16 +20,6 @@ type builtin_fun =
   | Print_bool of (bool -> unit)
   | Print_endline of (string -> unit)
 
-let is_builtin_fun = function
-  | "print_int"
-  | "print_bool"
-  | "print_float"
-  | "print_string"
-  | "print_char"
-  | "print_endline" -> true
-  | _ -> false
-;;
-
 type value =
   | VInt of int
   | VFloat of float
