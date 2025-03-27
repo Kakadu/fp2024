@@ -104,7 +104,8 @@ module Types = struct
     | TChar -> "char"
     | TString -> "string"
     | TUnit -> "unit"
-    | TFun (t1, t2) -> Printf.sprintf "(%s -> %s)" (string_of_ty t1) (string_of_ty t2)
+    | TFun (TFun (t1, t2), t3) -> Printf.sprintf "(%s -> %s) -> %s" (string_of_ty t1) (string_of_ty t2) (string_of_ty t3)
+    | TFun (t1, t2) -> Printf.sprintf "%s -> %s" (string_of_ty t1) (string_of_ty t2)
     | TTuple ts -> "(" ^ String.concat " * " (List.map string_of_ty ts) ^ ")"
     | TList t' -> Printf.sprintf "%s list" (string_of_ty t')
     | TMeasure (t', Some m) ->
