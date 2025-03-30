@@ -46,76 +46,78 @@
 (************************** typed **************************)
 
   $ ../bin/repl.exe --no-hi --file manytests/typed/001fac.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   24
-  val fac : <type> = <fun>
-  val main : <type> = 0
+  val fac : int -> int = <fun>
+  val main : int = 0
   
   
+(* should unify 'a28 'a29 *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/002fac.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   24
-  val fac_cps : <type> = <fun>
-  val main : <type> = 0
+  val fac_cps : int -> (int -> 'a28) -> 'a29 = <fun>
+  val main : int = 0
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/003fib.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   3
   3
-  val fib : <type> = <fun>
-  val fib_acc : <type> = <fun>
-  val main : <type> = 0
+  val fib : int -> int = <fun>
+  val fib_acc : int -> int -> int -> int = <fun>
+  val main : int = 0
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/004manyargs.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   1111111111
   1
   10
   100
-  val main : <type> = 0
-  val test10 : <type> = <fun>
-  val test3 : <type> = <fun>
-  val wrap : <type> = <fun>
+  val main : int = 0
+  val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int = <fun>
+  val test3 : int -> int -> int -> int = <fun>
+  val wrap : 'a4 -> 'a4 = <fun>
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/005fix.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   720
-  val fac : <type> = <fun>
-  val fix : <type> = <fun>
-  val main : <type> = 0
+  val fac : (int -> int) -> int -> int = <fun>
+  val fix : ('a8 -> 'a16 -> 'a8 -> 'a16) -> 'a8 -> 'a16 = <fun>
+  val main : int = 0
   
   
+(* error probably because of name shadowing *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/006partial.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
-  1122
-  val foo : <type> = <fun>
-  val main : <type> = 0
-  
-  
+  Fatal error: exception Type.Unification.UnificationError("Cannot unify types: int and bool")
+  Raised at Type.Unification.unify in file "lib/type/type.ml", line 185, characters 6-176
+  Called from Type.Unification.unify in file "lib/type/type.ml", line 166, characters 15-26
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 415, characters 15-56
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 411, characters 29-54
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 326, characters 32-58
+  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 567, characters 11-130
+  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 625, characters 30-65
+  Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
+  Called from Type.Inference.infer in file "lib/type/type.ml", line 640, characters 18-50
+  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 82, characters 22-31
+  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 111, characters 12-20
+  [2]
   $ ../bin/repl.exe --no-hi --file manytests/typed/006partial2.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   1
   2
   3
   7
-  val foo : <type> = <fun>
-  val main : <type> = 0
+  val foo : int -> int -> int -> int = <fun>
+  val main : int = 0
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/006partial3.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   4
   8
   9
-  val foo : <type> = <fun>
-  val main : <type> = 0
+  val foo : int -> int -> int -> unit = <fun>
+  val main : int = 0
   
   
+
   $ ../bin/repl.exe --no-hi --file manytests/typed/007order.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   1
   2
   4
@@ -123,51 +125,47 @@
   103
   -555555
   10000
-  val _start : <type> = <fun>
-  val main : <type> = ()
+  val _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int = <fun>
+  val main : unit = ()
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/008ascription.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
   8
-  val addi : <type> = <fun>
-  val main : <type> = 0
+  val addi : ('a9 -> bool -> int) -> ('a9 -> bool) -> 'a9 -> int = <fun>
+  val main : int = 0
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/009let_poly.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
-  val temp : <type> = (1, true)
+  val temp : (int * bool) = (1, true)
   
   
+(* fix types *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/010sukharev.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
-  val _1 : <type> = <fun>
-  val _2 : <type> = 1
-  val _3 : <type> = Some (1, "hi")
-  val _4 : <type> = <fun>
-  val _42 : <type> = <fun>
-  val _5 : <type> = 42
-  val _6 : <type> = <fun>
-  val id1 : <type> = <fun>
-  val id2 : <type> = <fun>
-  val int_of_option : <type> = <fun>
-  
-  
+  Fatal error: exception Failure("Only simple identifiers are allowed in let-binding")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 341, characters 11-91
+  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 544, characters 11-127
+  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 625, characters 30-65
+  Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
+  Called from Type.Inference.infer in file "lib/type/type.ml", line 640, characters 18-50
+  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 82, characters 22-31
+  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 111, characters 12-20
+  [2]
+
+(* fix types *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/015tuples.ml
-  Inference can't be done. To turn off this message, run REPL with --do-not-type option
-  1
-  1
-  1
-  1
-  val feven : <type> = <fun>
-  val fix : <type> = <fun>
-  val fixpoly : <type> = <fun>
-  val fodd : <type> = <fun>
-  val main : <type> = 0
-  val map : <type> = <fun>
-  val meven : <type> = <fun>
-  val modd : <type> = <fun>
-  val tie : <type> = (<fun>, <fun>)
-  
-  
+  Fatal error: exception Failure("Only simple identifiers are allowed in let-binding")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 341, characters 11-91
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 326, characters 32-58
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 326, characters 32-58
+  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 544, characters 11-127
+  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 625, characters 30-65
+  Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
+  Called from Type.Inference.infer in file "lib/type/type.ml", line 640, characters 18-50
+  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 82, characters 22-31
+  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 111, characters 12-20
+  [2]
+
+(* fix interp *)
 $ ../bin/repl.exe --no-hi --file manytests/typed/016lists.ml

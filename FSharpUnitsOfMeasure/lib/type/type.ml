@@ -179,7 +179,7 @@ module Unification = struct
       if m1 = m2 then unify t1 t2 else raise (UnificationError "Mismatched measures")
     | TOption t1', TOption t2' -> unify t1' t2'
     | TVar n, t | t, TVar n -> bind n t
-    | TInt, TInt | TFloat, TFloat | TBool, TBool | TChar, TChar | TString, TString ->
+    | TInt, TInt | TFloat, TFloat | TBool, TBool | TChar, TChar | TString, TString | TUnit, TUnit ->
       empty_subst
     | _ ->
       raise
@@ -634,7 +634,7 @@ module Inference = struct
   ;;
 
   let infer prog =
-    let env', _ = infer_program initial_env prog 0 in
+    let env', _ = infer_program initial_env prog 1 in
     env'
   ;;
 end
