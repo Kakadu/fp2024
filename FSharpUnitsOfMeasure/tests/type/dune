@@ -1,7 +1,7 @@
 (library
- (name tests_typecheck)
+ (name tests_type)
  (inline_tests)
- (libraries typecheck parse pprint checks)
+ (libraries type parse pprint checks)
  (preprocess
   (pps ppx_expect ppx_inline_test))
  (instrumentation

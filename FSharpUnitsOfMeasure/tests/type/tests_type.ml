@@ -2,9 +2,9 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Typecheck.Unification
-open Typecheck.Inference
-open Typecheck.Types
+open Type.Unification
+open Type.Inference
+open Type.Types
 open Parse.Structure
 open Parse.Expressions
 
@@ -39,7 +39,7 @@ let test_infer_expr s =
   | Ok parsed ->
     print_endline
       (try
-         let _, t, _ = infer_expr initial_env parsed 0 in
+         let _, t, _ = infer_expr initial_env parsed 1 in
          string_of_ty t
        with
        | TypeError s -> s
@@ -54,19 +54,19 @@ let _, _ = test_infer, test_infer_expr
 
 let%expect_test _ =
   test_infer_expr "fun x -> x";
-  [%expect {| 'a0 -> 'a0 |}]
+  [%expect {| 'a1 -> 'a1 |}]
 ;;
 
 let%expect_test _ =
   test_infer_expr "fun x -> 1";
   [%expect {|
-    'a0 -> int
+    'a1 -> int
   |}]
 ;;
 
 let%expect_test _ =
   test_infer_expr "fun x y -> x";
-  [%expect {| 'a0 -> 'a1 -> 'a0 |}]
+  [%expect {| 'a1 -> 'a2 -> 'a1 |}]
 ;;
 
 let%expect_test _ =
@@ -161,11 +161,14 @@ let%expect_test _ =
      let d = [1; 2; 3]
      let e = 0 :: d
      let f x y z = x + y + z
-     let o x = x;;
+     let o x = x
+
+     let e' x y = x :: y
       |};
   [%expect
     {|
-    o : 'a23 -> 'a23
+    e' : 'a30 -> 'a30 list -> 'a30 list
+    o : 'a24 -> 'a24
     f : int -> int -> int -> int
     e : int list
     d : int list
@@ -175,21 +178,10 @@ let%expect_test _ =
   |}]
 ;;
 
-(* Cons is not working as expected *)
-let%expect_test _ =
-  test_infer {|
-     let p x = match x with
-     | hd :: tl -> hd + 1
-     | _ -> 0
-  |};
-  [%expect {|
-    p : 'a13 -> int |}]
-;;
-
 let%expect_test _ =
   test_infer
     {|
-    let not x = match x with
+    let not = function
     | true -> false
     | false -> true
     
@@ -197,4 +189,38 @@ let%expect_test _ =
   [%expect {|
     a : bool
     not : bool -> bool |}]
+;;
+
+let%expect_test _ =
+  test_infer
+    {|
+    let a = "string"
+    let b = print_string a
+    let c = print_endline a
+    let d = print_int (1 + 2)
+    let e = print_char 'c'
+    let f = print_bool (if true then true else false)
+    let r = print_float 1.0|};
+  [%expect
+    {|
+    r : unit
+    f : unit
+    e : unit
+    d : unit
+    c : unit
+    b : unit
+    a : string |}]
+;;
+
+(* Match is not typed as expected.
+   Gets type of last rule's expression.
+   Argument is also not typed correctly. *)
+let%expect_test _ =
+  test_infer {|
+     let p x = match x with
+     | hd :: tl -> hd + 1
+     | _ -> -1
+  |};
+  [%expect {|
+    p : 'a14 -> int |}]
 ;;

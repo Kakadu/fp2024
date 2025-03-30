@@ -1,6 +1,6 @@
 (executable
  (public_name repl)
- (libraries ast parse interp checks))
+ (libraries ast parse interp checks type))
 
 (cram
  (applies_to repl)

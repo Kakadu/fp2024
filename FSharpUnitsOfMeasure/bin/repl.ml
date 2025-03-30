@@ -7,6 +7,8 @@ open Checks
 open Interp.Interpret
 open Interp.Misc
 open Format
+open Type.Inference
+open Type.Types
 
 type config =
   { mutable file_path : string option
@@ -46,6 +48,28 @@ let pp_env env =
   printf "\n"
 ;;
 
+
+let pp_envs env type_env =
+  Base.Map.iteri
+    ~f:(fun ~key ~data ->
+      match Base.Map.find env key with
+      | Some _ ->
+        let _, (Scheme (_, ttype)) = List.find
+    (fun (name, _) -> name = key) type_env in
+    let strtype = string_of_ty ttype in
+        if not (is_builtin_fun key)
+        then
+          if is_builtin_op key
+          then
+            print_endline
+              (Format.asprintf "val ( %s ) : %s = %a" key strtype pp_value data)
+          else
+            print_endline (Format.asprintf "val %s : %s = %a" key strtype pp_value data)
+      | None -> ())
+    env;
+  printf "\n"
+;;
+
 let run_single options =
   (* let run text env = *)
   let run text =
@@ -53,20 +77,30 @@ let run_single options =
     | Error _ -> print_endline (Format.asprintf "Syntax error")
     (* env *)
     | Ok ast ->
-      (* Infer *)
-      if options.do_not_type = false
+      if not options.do_not_type
       then
-        print_endline
-          "Inference can't be done. To turn off this message, run REPL with \
-           --do-not-type option";
+      (let type_env = infer ast in
+      (* match type_env with *)
       (match eval ast with
        | Ok (env, out_lst) ->
-         List.iter
+         (List.iter
            (function
-             | Ok v' -> print_endline (Format.asprintf "- : %s = %a" "<type>" pp_value v')
+             | Ok v' ->
+              print_endline (Format.asprintf "- = %a" pp_value v')
              | _ -> ())
            out_lst;
-         pp_env env
+          pp_envs env type_env)
+          | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));)
+      else
+      (match eval ast with
+            | Ok (env, out_lst) ->
+              (List.iter
+                (function
+                  | Ok v' ->
+                   print_endline (Format.asprintf "- = %a" pp_value v')
+                  | _ -> ())
+                out_lst;
+              pp_env env)
        | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
       if options.greet_user then print_endline hori_line else print_endline ""
   in

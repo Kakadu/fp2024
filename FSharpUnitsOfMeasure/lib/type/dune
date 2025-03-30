@@ -1,0 +1,7 @@
+(library
+ (name type)
+ (modules type)
+ (public_name FSharpUnitsOfMeasure.Type)
+ (libraries base ast)
+ (instrumentation
+  (backend bisect_ppx)))
