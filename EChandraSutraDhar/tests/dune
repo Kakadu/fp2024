@@ -1,0 +1,14 @@
+(library
+ (name tests)
+ (libraries EChandraSutraDhar_lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
+
+(cram
+ (applies_to tests)
+ (deps
+  ../bin/main.exe
+  ))
