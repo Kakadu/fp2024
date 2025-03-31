@@ -105,19 +105,20 @@ module Types = struct
     | TChar -> "char"
     | TString -> "string"
     | TUnit -> "unit"
-    | TFun (TFun (t1, t2), t3) ->
-      Printf.sprintf
-        "(%s -> %s) -> %s"
-        (string_of_ty t1)
-        (string_of_ty t2)
-        (string_of_ty t3)
-    | TFun (t1, t2) -> Printf.sprintf "%s -> %s" (string_of_ty t1) (string_of_ty t2)
-    | TTuple ts -> "(" ^ String.concat " * " (List.map string_of_ty ts) ^ ")"
+    (* | TFun (TFun (t1, t2), t3) ->
+       Printf.sprintf
+       "(%s -> %s) -> %s"
+       (string_of_ty t1)
+       (string_of_ty t2)
+       (string_of_ty t3) *)
+    | TFun (t1, t2) -> Printf.sprintf "(%s -> %s)" (string_of_ty t1) (string_of_ty t2)
+    | TTuple ts ->
+      "(" ^ String.concat " * " (List.map string_of_ty ts) ^ ")" (* should wrap funs *)
     | TList t' -> Printf.sprintf "%s list" (string_of_ty t')
     | TMeasure (t', Some m) ->
       Printf.sprintf "%s<%s>" (string_of_ty t') (string_of_measure m)
     | TMeasure (t', None) -> Printf.sprintf "%s<\x5F>" (string_of_ty t')
-    | TOption t' -> Printf.sprintf "option<%s>" (string_of_ty t')
+    | TOption t' -> Printf.sprintf "%s option" (string_of_ty t')
   ;;
 
   let string_of_subst (s : subst) : string =
@@ -179,8 +180,12 @@ module Unification = struct
       if m1 = m2 then unify t1 t2 else raise (UnificationError "Mismatched measures")
     | TOption t1', TOption t2' -> unify t1' t2'
     | TVar n, t | t, TVar n -> bind n t
-    | TInt, TInt | TFloat, TFloat | TBool, TBool | TChar, TChar | TString, TString | TUnit, TUnit ->
-      empty_subst
+    | TInt, TInt
+    | TFloat, TFloat
+    | TBool, TBool
+    | TChar, TChar
+    | TString, TString
+    | TUnit, TUnit -> empty_subst
     | _ ->
       raise
         (UnificationError
@@ -337,18 +342,22 @@ module Inference = struct
              counter
          in
          let sch = generalize env (apply_subst s1 t1) in
-         let var =
+         let vars =
            pattern_name
              (match bind with
               | Ast.Bind (p, _) -> p)
          in
-         let env' = (var, sch) :: env in
+         let env' = List.fold_left (fun acc var -> (var, sch) :: acc) env vars in
          let sBinds, env'', counter2 =
            List.fold_left
              (fun (sAcc, envAcc, cnt) (Ast.Bind (p, e)) ->
                let sE, tE, cnt' = infer_expr envAcc e cnt in
                let schE = generalize envAcc (apply_subst sE tE) in
-               compose_subst sE sAcc, (pattern_name p, schE) :: envAcc, cnt')
+               let varsE = pattern_name p in
+               let envAcc' =
+                 List.fold_left (fun acc var -> (var, schE) :: acc) envAcc varsE
+               in
+               compose_subst sE sAcc, envAcc', cnt')
              (s1, env', counter1)
              binds
          in
@@ -525,10 +534,17 @@ module Inference = struct
       let s, env_ext, t_inner, counter1 = infer_pattern env p_inner counter in
       s, env_ext, TOption t_inner, counter1
 
-  and pattern_name (p : Ast.pattern) : string =
+  and pattern_name p : string list =
     match p with
-    | Pattern_ident_or_op name -> name
-    | _ -> failwith "Only simple identifiers are allowed in let-binding"
+    | Pattern_ident_or_op name -> [ name ]
+    | Pattern_typed (p, _) -> pattern_name p
+    | Pattern_tuple (p1, p2, prest) ->
+      pattern_name p1 @ pattern_name p2 @ List.flatten (List.map pattern_name prest)
+    | Pattern_list pl -> List.flatten (List.map pattern_name pl)
+    | Pattern_or (p1, p2) -> pattern_name p1 @ pattern_name p2
+    | Pattern_cons (p1, p2) -> pattern_name p1 @ pattern_name p2
+    | Pattern_option (Some p) -> pattern_name p
+    | _ -> []
   ;;
 
   let infer_structure_item env si counter =
@@ -545,18 +561,22 @@ module Inference = struct
              counter
          in
          let sch = generalize env (apply_subst s1 t1) in
-         let var =
+         let vars =
            pattern_name
              (match bind with
               | Ast.Bind (p, _) -> p)
          in
-         let env' = (var, sch) :: env in
+         let env' = List.fold_left (fun acc var -> (var, sch) :: acc) env vars in
          let sBinds, env'', counter2 =
            List.fold_left
              (fun (sAcc, envAcc, cnt) (Ast.Bind (p, e)) ->
                let sE, tE, cnt' = infer_expr envAcc e cnt in
                let schE = generalize envAcc (apply_subst sE tE) in
-               compose_subst sE sAcc, (pattern_name p, schE) :: envAcc, cnt')
+               let varsE = pattern_name p in
+               let envAcc' =
+                 List.fold_left (fun acc var -> (var, schE) :: acc) envAcc varsE
+               in
+               compose_subst sE sAcc, envAcc', cnt')
              (s1, env', counter1)
              binds
          in
@@ -624,8 +644,13 @@ module Inference = struct
           match si with
           | Str_item_eval _ -> env_acc
           | Str_item_def (_, Ast.Bind (p, _), _) ->
-            let var_name = pattern_name p in
-            (var_name, Scheme ([], apply_subst subst ty)) :: env_acc
+            let var_names = pattern_name p in
+            let new_env_entries =
+              List.map
+                (fun var_name -> var_name, Scheme ([], apply_subst subst ty))
+                var_names
+            in
+            List.fold_left (fun acc entry -> entry :: acc) env_acc new_env_entries
           | Str_item_type_def _ -> env_acc
         in
         new_env, cnt')

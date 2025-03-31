@@ -48,15 +48,13 @@ let pp_env env =
   printf "\n"
 ;;
 
-
 let pp_envs env type_env =
   Base.Map.iteri
     ~f:(fun ~key ~data ->
       match Base.Map.find env key with
       | Some _ ->
-        let _, (Scheme (_, ttype)) = List.find
-    (fun (name, _) -> name = key) type_env in
-    let strtype = string_of_ty ttype in
+        let _, Scheme (_, ttype) = List.find (fun (name, _) -> name = key) type_env in
+        let strtype = string_of_ty ttype in
         if not (is_builtin_fun key)
         then
           if is_builtin_op key
@@ -78,30 +76,28 @@ let run_single options =
     (* env *)
     | Ok ast ->
       if not options.do_not_type
-      then
-      (let type_env = infer ast in
-      (* match type_env with *)
-      (match eval ast with
-       | Ok (env, out_lst) ->
-         (List.iter
-           (function
-             | Ok v' ->
-              print_endline (Format.asprintf "- = %a" pp_value v')
-             | _ -> ())
-           out_lst;
-          pp_envs env type_env)
-          | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));)
-      else
-      (match eval ast with
-            | Ok (env, out_lst) ->
-              (List.iter
-                (function
-                  | Ok v' ->
-                   print_endline (Format.asprintf "- = %a" pp_value v')
-                  | _ -> ())
-                out_lst;
-              pp_env env)
-       | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
+      then (
+        let type_env = infer ast in
+        (* match type_env with *)
+        match eval ast with
+        | Ok (env, out_lst) ->
+          List.iter
+            (function
+              | Ok v' -> print_endline (Format.asprintf "- = %a" pp_value v')
+              | _ -> ())
+            out_lst;
+          pp_envs env type_env
+        | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e))
+      else (
+        match eval ast with
+        | Ok (env, out_lst) ->
+          List.iter
+            (function
+              | Ok v' -> print_endline (Format.asprintf "- = %a" pp_value v')
+              | _ -> ())
+            out_lst;
+          pp_env env
+        | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
       if options.greet_user then print_endline hori_line else print_endline ""
   in
   let open In_channel in
