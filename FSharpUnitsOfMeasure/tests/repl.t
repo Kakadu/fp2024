@@ -47,22 +47,22 @@
 
   $ ../bin/repl.exe --no-hi --file manytests/typed/001fac.ml
   24
-  val fac : int -> int = <fun>
+  val fac : (int -> int) = <fun>
   val main : int = 0
   
   
 (* should unify 'a28 'a29 *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/002fac.ml
   24
-  val fac_cps : int -> (int -> 'a28) -> 'a29 = <fun>
+  val fac_cps : (int -> ((int -> 'a28) -> 'a29)) = <fun>
   val main : int = 0
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/003fib.ml
   3
   3
-  val fib : int -> int = <fun>
-  val fib_acc : int -> int -> int -> int = <fun>
+  val fib : (int -> int) = <fun>
+  val fib_acc : (int -> (int -> (int -> int))) = <fun>
   val main : int = 0
   
   
@@ -72,39 +72,38 @@
   10
   100
   val main : int = 0
-  val test10 : int -> int -> int -> int -> int -> int -> int -> int -> int -> int -> int = <fun>
-  val test3 : int -> int -> int -> int = <fun>
-  val wrap : 'a4 -> 'a4 = <fun>
+  val test10 : (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> (int -> int)))))))))) = <fun>
+  val test3 : (int -> (int -> (int -> int))) = <fun>
+  val wrap : ('a4 -> 'a4) = <fun>
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/005fix.ml
   720
-  val fac : (int -> int) -> int -> int = <fun>
-  val fix : ('a8 -> 'a16 -> 'a8 -> 'a16) -> 'a8 -> 'a16 = <fun>
+  val fac : ((int -> int) -> (int -> int)) = <fun>
+  val fix : ((('a8 -> 'a16) -> ('a8 -> 'a16)) -> ('a8 -> 'a16)) = <fun>
   val main : int = 0
   
   
-(* error probably because of name shadowing *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/006partial.ml
   Fatal error: exception Type.Unification.UnificationError("Cannot unify types: int and bool")
-  Raised at Type.Unification.unify in file "lib/type/type.ml", line 185, characters 6-176
-  Called from Type.Unification.unify in file "lib/type/type.ml", line 166, characters 15-26
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 415, characters 15-56
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 411, characters 29-54
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 326, characters 32-58
-  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 567, characters 11-130
-  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 625, characters 30-65
+  Raised at Type.Unification.unify in file "lib/type/type.ml", line 190, characters 6-176
+  Called from Type.Unification.unify in file "lib/type/type.ml", line 167, characters 15-26
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 424, characters 15-56
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 420, characters 29-54
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 331, characters 32-58
+  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 584, characters 11-130
+  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 642, characters 30-65
   Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
-  Called from Type.Inference.infer in file "lib/type/type.ml", line 640, characters 18-50
-  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 82, characters 22-31
-  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 111, characters 12-20
+  Called from Type.Inference.infer in file "lib/type/type.ml" (inlined), line 662, characters 18-50
+  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 80, characters 23-32
+  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 107, characters 12-20
   [2]
   $ ../bin/repl.exe --no-hi --file manytests/typed/006partial2.ml
   1
   2
   3
   7
-  val foo : int -> int -> int -> int = <fun>
+  val foo : (int -> (int -> (int -> int))) = <fun>
   val main : int = 0
   
   
@@ -112,7 +111,7 @@
   4
   8
   9
-  val foo : int -> int -> int -> unit = <fun>
+  val foo : (int -> (int -> (int -> unit))) = <fun>
   val main : int = 0
   
   
@@ -125,13 +124,13 @@
   103
   -555555
   10000
-  val _start : unit -> unit -> int -> unit -> int -> int -> unit -> int -> int -> int = <fun>
+  val _start : (unit -> (unit -> (int -> (unit -> (int -> (int -> (unit -> (int -> (int -> int))))))))) = <fun>
   val main : unit = ()
   
   
   $ ../bin/repl.exe --no-hi --file manytests/typed/008ascription.ml
   8
-  val addi : ('a9 -> bool -> int) -> ('a9 -> bool) -> 'a9 -> int = <fun>
+  val addi : (('a9 -> (bool -> int)) -> (('a9 -> bool) -> ('a9 -> int))) = <fun>
   val main : int = 0
   
   
@@ -139,32 +138,38 @@
   val temp : (int * bool) = (1, true)
   
   
-(* fix types *)
+(*  _2 should be int
+(*  _4 should be int -> 'a
+(*  _42 should be int -> bool
+(*  int_of_option int option -> int     problem is in matching
+(*  id1, id2 should be 'a -> 'a both
+
   $ ../bin/repl.exe --no-hi --file manytests/typed/010sukharev.ml
-  Fatal error: exception Failure("Only simple identifiers are allowed in let-binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 341, characters 11-91
-  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 544, characters 11-127
-  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 625, characters 30-65
-  Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
-  Called from Type.Inference.infer in file "lib/type/type.ml", line 640, characters 18-50
-  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 82, characters 22-31
-  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 111, characters 12-20
-  [2]
+  val _1 : (int -> (int -> ((int * 'a14) -> bool))) = <fun>
+  val _2 : (int * string option) = 1
+  val _3 : (int * string) option = Some (1, "hi")
+  val _4 : ('a29 -> 'a30) = <fun>
+  val _42 : ('a70 -> bool) = <fun>
+  val _5 : int = 42
+  val _6 : ('a51 option -> 'a51) = <fun>
+  val id1 : (('a78 -> 'a78) * ('a80 -> 'a80)) = <fun>
+  val id2 : (('a78 -> 'a78) * ('a80 -> 'a80)) = <fun>
+  val int_of_option : ('a62 option -> int) = <fun>
+  
+  
 
 (* fix types *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/015tuples.ml
-  Fatal error: exception Failure("Only simple identifiers are allowed in let-binding")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 341, characters 11-91
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 326, characters 32-58
-  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 326, characters 32-58
-  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 544, characters 11-127
-  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 625, characters 30-65
+  Fatal error: exception Type.Unification.UnificationError("Cannot unify types: ((('a41 -> 'a44) * ('a41 -> 'a44)) -> ('a41 -> 'a44)) and (((int -> int) -> (int -> int)) * ((int -> int) -> (int -> int)))")
+  Raised at Type.Unification.unify in file "lib/type/type.ml", line 190, characters 6-176
+  Called from Type.Unification.unify in file "lib/type/type.ml", line 167, characters 15-26
+  Called from Type.Inference.infer_expr in file "lib/type/type.ml", line 424, characters 15-56
+  Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 557, characters 11-127
+  Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 642, characters 30-65
   Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
-  Called from Type.Inference.infer in file "lib/type/type.ml", line 640, characters 18-50
-  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 82, characters 22-31
-  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 111, characters 12-20
+  Called from Type.Inference.infer in file "lib/type/type.ml" (inlined), line 662, characters 18-50
+  Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 80, characters 23-32
+  Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 107, characters 12-20
   [2]
 
 (* fix interp *)
