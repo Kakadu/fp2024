@@ -172,5 +172,5 @@
   Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 107, characters 12-20
   [2]
 
-(* fix interp *)
-$ ../bin/repl.exe --no-hi --file manytests/typed/016lists.ml
+(* fix types *)
+  $ ../bin/repl.exe --do-not-type --no-hi --file manytests/typed/016lists.ml
