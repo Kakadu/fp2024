@@ -25,11 +25,6 @@ let is_keyword = function
   | _ -> false
 ;;
 
-let is_builtin_type = function
-  | "int" | "bool" | "float" | "char" | "string" | "unit" -> true
-  | _ -> false
-;;
-
 (** [is_builtin_op op] returns true if [s] is a builtin operation of F#. *)
 let is_builtin_op = function
   | "+"
