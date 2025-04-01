@@ -26,24 +26,17 @@ let gen_ident =
   loop gen_name
 ;;
 
-let gen_type_ident =
-  let gen_builtin_type_ident =
-    frequency
-      [ 1, return "int"
-      ; 1, return "bool"
-      ; 1, return "float"
-      ; 1, return "char"
-      ; 1, return "string"
-      ; 1, return "unit"
-      ]
-  in
-  gen_builtin_type_ident
-;;
-
 (* Small positive integers (1 < |a| < 100) *)
 let gen_posint =
   let rec loop gen = gen >>= fun n -> if n > 1 then return n else loop gen in
   loop small_nat
+;;
+
+let gen_type_var =
+  let gen_type_var =
+    map2 (fun fst num -> Printf.sprintf "%c%d" fst num) (char_range 'a' 'z') gen_posint
+  in
+  gen_type_var >>= fun type_var -> return ("'" ^ type_var)
 ;;
 
 type measure_num =
@@ -78,7 +71,15 @@ type constant =
 [@@deriving qcheck, show { with_path = false }]
 
 type core_type =
-  | Type_ident of (string[@gen gen_type_ident]) (** Type identificator, such as [int] *)
+  | Type_int
+  | Type_float
+  | Type_bool
+  | Type_char
+  | Type_string
+  | Type_unit
+  | Type_var of (string[@gen gen_type_var])
+  | Type_option of core_type
+  | Type_list of core_type
   | Type_func of core_type * core_type (** Function type: [T1 -> T2] *)
   | Type_tuple of
       core_type

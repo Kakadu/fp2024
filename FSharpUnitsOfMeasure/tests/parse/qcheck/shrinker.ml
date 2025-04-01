@@ -80,7 +80,10 @@ let shconst = function
 ;;
 
 let rec shtype = function
-  | Type_ident _ -> empty
+  | Type_int | Type_float | Type_bool | Type_char | Type_string | Type_unit | Type_var _
+    -> empty
+  | Type_option t -> shtype t >|= fun t' -> Type_option t'
+  | Type_list t -> shtype t >|= fun t' -> Type_list t'
   | Type_func (t1, t2) ->
     shtype t1
     >|= (fun t1' -> Type_func (t1', t2))

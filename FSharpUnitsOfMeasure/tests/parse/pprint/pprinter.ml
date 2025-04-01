@@ -61,7 +61,41 @@ let pprint_const = function
 ;;
 
 let rec pprint_type = function
-  | Type_ident t -> asprintf "%s" t
+  | Type_int -> asprintf "int"
+  | Type_float -> asprintf "float"
+  | Type_bool -> asprintf "bool"
+  | Type_char -> asprintf "char"
+  | Type_string -> asprintf "string"
+  | Type_unit -> asprintf "unit"
+  | Type_var t -> asprintf "%s" t
+  | Type_option t ->
+    let ttag =
+      match t with
+      | Type_int
+      | Type_float
+      | Type_bool
+      | Type_char
+      | Type_string
+      | Type_unit
+      | Type_option _
+      | Type_list _ -> pprint_type t
+      | _ -> "(" ^ pprint_type t ^ ")"
+    in
+    asprintf "%s option" ttag
+  | Type_list t ->
+    let ttag =
+      match t with
+      | Type_int
+      | Type_float
+      | Type_bool
+      | Type_char
+      | Type_string
+      | Type_unit
+      | Type_option _
+      | Type_list _ -> pprint_type t
+      | _ -> "(" ^ pprint_type t ^ ")"
+    in
+    asprintf "%s list" ttag
   | Type_func (arg, ret) ->
     (match arg with
      | Type_func _ -> asprintf "(%s) -> %s" (pprint_type arg) (pprint_type ret)
