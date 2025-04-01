@@ -84,6 +84,7 @@
   val main : int = 0
   
   
+(* fix types *)
   $ ../bin/repl.exe --no-hi --file manytests/typed/006partial.ml
   Fatal error: exception Type.Unification.UnificationError("Cannot unify types: int and bool")
   Raised at Type.Unification.unify in file "lib/type/type.ml", line 190, characters 6-176
@@ -94,7 +95,7 @@
   Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 584, characters 11-130
   Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 642, characters 30-65
   Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
-  Called from Type.Inference.infer in file "lib/type/type.ml" (inlined), line 662, characters 18-50
+  Called from Type.Inference.infer in file "lib/type/type.ml", line 662, characters 18-50
   Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 80, characters 23-32
   Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 107, characters 12-20
   [2]
@@ -138,11 +139,11 @@
   val temp : (int * bool) = (1, true)
   
   
-(*  _2 should be int
+(*  _2 should be int                    problem is in matching
 (*  _4 should be int -> 'a
 (*  _42 should be int -> bool
 (*  int_of_option int option -> int     problem is in matching
-(*  id1, id2 should be 'a -> 'a both
+(*  id1, id2 should be 'a -> 'a both    problem is in tuples
 
   $ ../bin/repl.exe --no-hi --file manytests/typed/010sukharev.ml
   val _1 : (int -> (int -> ((int * 'a14) -> bool))) = <fun>
@@ -167,10 +168,20 @@
   Called from Type.Inference.infer_structure_item in file "lib/type/type.ml", line 557, characters 11-127
   Called from Type.Inference.infer_program.(fun) in file "lib/type/type.ml", line 642, characters 30-65
   Called from Stdlib__List.fold_left in file "list.ml", line 121, characters 24-34
-  Called from Type.Inference.infer in file "lib/type/type.ml" (inlined), line 662, characters 18-50
+  Called from Type.Inference.infer in file "lib/type/type.ml", line 662, characters 18-50
   Called from Dune__exe__Repl.run_single.run in file "bin/repl.ml", line 80, characters 23-32
   Called from Dune__exe__Repl.run_single in file "bin/repl.ml", line 107, characters 12-20
   [2]
 
 (* fix types *)
   $ ../bin/repl.exe --do-not-type --no-hi --file manytests/typed/016lists.ml
+  val append : <type> = <fun>
+  val cartesian : <type> = <fun>
+  val concat : <type> = <fun>
+  val iter : <type> = <fun>
+  val length : <type> = <fun>
+  val length_tail : <type> = <fun>
+  val main : <type> = 0
+  val map : <type> = <fun>
+  
+  

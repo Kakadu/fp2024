@@ -54,31 +54,31 @@ let _, _ = test_infer, test_infer_expr
 
 let%expect_test _ =
   test_infer_expr "fun x -> x";
-  [%expect {| 'a1 -> 'a1 |}]
+  [%expect {| ('a1 -> 'a1) |}]
 ;;
 
 let%expect_test _ =
   test_infer_expr "fun x -> 1";
   [%expect {|
-    'a1 -> int
+    ('a1 -> int)
   |}]
 ;;
 
 let%expect_test _ =
   test_infer_expr "fun x y -> x";
-  [%expect {| 'a1 -> 'a2 -> 'a1 |}]
+  [%expect {| ('a1 -> ('a2 -> 'a1)) |}]
 ;;
 
 let%expect_test _ =
   test_infer_expr "let rec fact n = if n <= 1 then 1 else n * fact (n-1) in fact";
   [%expect {|
-    int -> int
+    (int -> int)
   |}]
 ;;
 
 let%expect_test _ =
   test_infer_expr "let rec fib n = if n < 2 then n else fib (n - 1) + fib (n - 2) in fib";
-  [%expect {| int -> int
+  [%expect {| (int -> int)
     |}]
 ;;
 
@@ -106,7 +106,7 @@ let%expect_test _ =
 let%expect_test _ =
   test_infer_expr "fun (x : int) -> x + 1";
   [%expect {|
-  int -> int
+  (int -> int)
 |}]
 ;;
 
@@ -118,7 +118,7 @@ let%expect_test _ =
        | [x] -> x
        | [x; y] -> x + y |};
   [%expect {|
-      int list -> int
+      (int list -> int)
     |}]
 ;;
 
@@ -131,7 +131,7 @@ let%expect_test _ =
   test_infer_expr
     "let rec sumList = fun xs -> match xs with [] -> 0 | [x] -> x | [x; y] -> x + y in \
      sumList";
-  [%expect {| int list -> int |}]
+  [%expect {| (int list -> int) |}]
 ;;
 
 let%expect_test _ =
@@ -167,9 +167,9 @@ let%expect_test _ =
       |};
   [%expect
     {|
-    e' : 'a30 -> 'a30 list -> 'a30 list
-    o : 'a24 -> 'a24
-    f : int -> int -> int -> int
+    e' : ('a30 -> ('a30 list -> 'a30 list))
+    o : ('a24 -> 'a24)
+    f : (int -> (int -> (int -> int)))
     e : int list
     d : int list
     c : int
@@ -188,7 +188,7 @@ let%expect_test _ =
     let a = not false|};
   [%expect {|
     a : bool
-    not : bool -> bool |}]
+    not : (bool -> bool) |}]
 ;;
 
 let%expect_test _ =
@@ -222,5 +222,5 @@ let%expect_test _ =
      | _ -> -1
   |};
   [%expect {|
-    p : 'a14 -> int |}]
+    p : ('a14 -> int) |}]
 ;;
