@@ -571,4 +571,3 @@ let%expect_test "print measure type definition with binding" =
   [%expect {|
     [<Measure>] type l = dm ^ 3;; |}]
 ;;
-
