@@ -1,7 +1,6 @@
 (library
- (name type)
- (modules type)
- (public_name FSharpUnitsOfMeasure.Type)
+ (name inference)
+ (public_name FSharpUnitsOfMeasure.Inference)
  (libraries base ast)
  (instrumentation
   (backend bisect_ppx)))
