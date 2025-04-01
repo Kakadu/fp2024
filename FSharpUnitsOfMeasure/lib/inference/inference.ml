@@ -4,16 +4,14 @@
 
 open Ast
 
-module Errors = struct
+module State = struct
+  open Base
+  open Result
+
   type error =
     | Unification_failed of core_type * core_type
     | Unbound_variable of string
-end
-
-module State = struct
-  open Errors
-  open Base
-  open Result
+    | Occurs_check of string * core_type
 
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -63,4 +61,63 @@ module State = struct
 
   let fresh state = state + 1, Ok state
   let run m = snd (m 0)
+end
+
+module VarSet = struct
+  include Set.Make (String)
+
+  let pp ppf set =
+    Format.fprintf ppf "[ ";
+    iter (Format.fprintf ppf "%s; ") set;
+    Format.fprintf ppf "]"
+  ;;
+end
+
+module Type = struct
+  let rec occurs tvar = function
+  | Type_var t -> t = tvar
+  | Type_option t | Type_list t -> occurs tvar t
+  | Type_func (t1, t2) -> occurs tvar t1 || occurs tvar t2
+  | Type_tuple (t1, t2, trest) ->
+    List.exists (occurs tvar) (t1 :: t2 :: trest)
+  | _ -> false
+
+  let free_vars =
+    let rec helper acc = function
+    | Type_var name -> VarSet.add name acc
+    | Type_option t | Type_list t -> helper acc t
+    | Type_func (t1, t2) -> helper (helper acc t1) t2
+    | Type_tuple (t1, t2, trest) ->
+      List.fold_left helper acc (t1 :: t2 :: trest)
+    | _ -> acc
+    in
+    helper VarSet.empty
+end
+
+module Subst = struct
+  open State
+  open Base
+
+  let empty = Map.empty (module String)
+
+  let singleton k v =
+    if Type.occurs k v then fail (Occurs_check (k, v))
+    else return (Map.singleton (module String) k v)
+
+  let remove = Map.remove
+
+  let apply subst =
+    let rec helper = function
+    | Type_var name ->
+      (match Map.find subst name with
+      | Some name' -> name'
+      | None -> (Type_var name))
+    | Type_option t -> Type_option (helper t)
+    | Type_list t -> Type_list (helper t)
+    | Type_func (t1, t2) -> Type_func (helper t1, helper t2)
+    | Type_tuple (t1, t2, trest) ->
+      Type_tuple (helper t1, helper t2, List.map ~f:helper trest)
+    | t -> t
+    in
+    helper
 end
