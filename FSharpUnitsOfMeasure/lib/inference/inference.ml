@@ -187,8 +187,30 @@ module TypeEnv = struct
 
   let free_vars (env : t) : VarSet.t = Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data acc ->
     VarSet.union acc (Scheme.free_vars data))
-  
+
   let apply subst env = Map.map env ~f:(Scheme.apply subst)
 
   let find name env = Map.find env name
+end
+
+module Infer = struct
+  open Ast
+  open State
+  open Scheme
+
+  let fresh_var = fresh >>| fun n -> Type_var (Int.to_string n)
+
+  let instantiate (Scheme (binds, ty)) =
+    VarSet.fold
+    (fun name ty ->
+      let* ty = ty in
+      let* fresh = fresh_var in
+      let* subst = Subst.singleton name fresh in
+      return (Subst.apply subst ty))
+      binds
+    (return ty)
+
+  let generalize env ty =
+    let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
+    Scheme (free, ty)
 end
