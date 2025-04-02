@@ -251,7 +251,7 @@ module Infer = struct
     return (env_rest, Type_tuple (ty1, ty2, tyrest))
   | Pattern_typed (p, ty) ->
     let* penv, pty = infer_pat env p in
-    let* unif_subst = unify pty ty in
+    let* unif_subst = unify ty pty in
     let new_env = TypeEnv.apply unif_subst penv in
     return (new_env, Subst.apply unif_subst pty)
   | Pattern_list [] ->
@@ -341,7 +341,25 @@ module Infer = struct
         ~init:(return (subst1, ty1))
     in
     return (subst_unify, Type_list typ_unified)
-  | Expr_tuple (e1, e2, el) -> fail TODO
+  | Expr_tuple (e1, e2, el) ->
+    let* sub1, ty1 = infer_expr env e1 in
+    let* sub2, ty2 = infer_expr (TypeEnv.apply sub1 env) e2 in
+    let env = TypeEnv.apply sub2 env in
+    let* sub_rest, ty_list =
+        RList.fold_right
+          ~f:(fun exp acc ->
+            let* sub_acc, ty_list = return acc in
+            let* sub, ty = infer_expr (TypeEnv.apply sub_acc env) exp in
+            let* sub_acc = Subst.compose sub_acc sub in
+            return (sub_acc, ty :: ty_list))
+          ~init:(return (Subst.empty, []))
+          el
+      in
+      let* sub_result = Subst.compose_all [ sub1; sub2; sub_rest ] in
+      let ty1 = Subst.apply sub_result ty1 in
+      let ty2 = Subst.apply sub_result ty2 in
+      let ty_list = List.map (fun ty -> Subst.apply sub_result ty) ty_list in
+      return (sub_result, Type_tuple (ty1, ty2, ty_list))
   | Expr_lam (pat, expr) -> fail TODO
   | Expr_let (flag, vb1, vbtl, expr) -> fail TODO
   | Expr_ifthenelse (eif, ethen, eelse) ->
@@ -358,10 +376,15 @@ module Infer = struct
       let* uni_sub2 = Subst.unify ty2 ty3 in
       let* comp_sub = Subst.compose_all [sub1; uni_sub1; sub2; sub3; uni_sub2] in
       return (comp_sub, ty3))
+  | Expr_option None ->
+    let* fresh = fresh_var in
+    return (Subst.empty, Type_option fresh)
+  | Expr_option (Some e) ->
+    let* sub, ty = infer_expr env e in
+    return (sub, Type_option ty)
   | Expr_apply (efun, earg) -> fail TODO
   | Expr_match (e, rl1, rtl) -> fail TODO
   | Expr_function (rl1, rtl) -> fail TODO
-  | _ -> fail TODO
 
   let initial_env =
       let prints =

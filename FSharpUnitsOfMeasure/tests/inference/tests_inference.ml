@@ -9,6 +9,7 @@ open Inference.Type
 open Inference.TypeEnv
 open Parse.Structure
 open Parse.Patterns
+open Parse.Expressions
 open Ast
 
 (* todo: pprint_type, pprint_error *)
@@ -31,6 +32,17 @@ let run_pat s =
     | Error e -> printf "Inference error\n"
     | Ok (res, _) -> print_env res
 ;;
+(* 
+let run_expr s =
+  let open Format in
+  match Angstrom.parse_string ~consume:Angstrom.Consume.All pexpr s with
+  | Error e -> printf "Parse error: %s\n" e
+  | Ok parsed ->
+    let open Inference.State in
+    match run (infer_expr Inference.Infer.initial_env parsed) with
+    | Error e -> printf "Inference error\n"
+    | Ok (res, _) -> print_env res
+;; *)
 
 (************************** Patterns **************************)
 
@@ -55,7 +67,7 @@ run_pat {|true|};
 [%expect {| |}]
 
 let%expect_test _ =
-run_pat {|"killme"|};
+run_pat {|"str"|};
 [%expect {| |}]
 
 let%expect_test _ =
@@ -87,6 +99,11 @@ run_pat {|( (a, b), (c, d) )|};
 let%expect_test _ =
 run_pat {|(a : int)|};
 [%expect {| a : Type_int |}]
+
+let%expect_test _ =
+run_pat {|(1 : string)|};
+[%expect {| Inference error |}]
+
 
 let%expect_test _ =
 run_pat {|[]|};
