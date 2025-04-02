@@ -120,4 +120,47 @@ module Subst = struct
     | t -> t
     in
     helper
+
+  let rec unify l r = match l, r with
+  | Type_var a, Type_var b when String.equal a b -> return empty
+  | Type_var a, t | t, Type_var a -> singleton a t
+  | Type_list t1, Type_list t2 -> unify t1 t2
+  | Type_option t1, Type_option t2 -> unify t1 t2
+  | Type_tuple (ta1, ta2, tarest), Type_tuple (tb1, tb2, tbrest) ->
+    (match
+    List.fold2
+    (ta1 :: ta2 :: tarest)
+    (tb1 :: tb2 :: tbrest)
+    ~init: (return empty)
+    ~f:(fun acc t1 t2 ->
+      let* subst_acc = acc in
+      let* subst' = unify (apply subst_acc t1) (apply subst_acc t2) in
+      compose subst_acc subst')
+    with
+    | Ok res -> res
+    | _ -> fail (Unification_failed (l, r)))
+  | Type_func (ta1, ta2), Type_func (tb1, tb2) ->
+    let* subst1 = unify ta1 tb1 in
+    let* subst2 = unify (apply subst1 ta2) (apply subst1 tb2) in
+    compose subst1 subst2
+  | Type_int, Type_int | Type_float, Type_float| Type_bool, Type_bool
+  | Type_char, Type_char | Type_string, Type_string | Type_unit, Type_unit -> return empty
+  | _ -> fail (Unification_failed (l, r))
+
+    and extend k v subst =
+      match Map.find subst k with
+      | None ->
+        let v' = apply subst v in
+        let* subst' = singleton k v' in
+        Map.fold subst ~init:(return subst') ~f:(fun ~key ~data acc ->
+          let* acc = acc in
+          let data' = apply subst' data in
+          return (Map.update acc key ~f:(fun _ -> data')))
+      | Some old_v ->
+        let* subst' = unify v old_v in
+        compose subst subst'
+
+    and compose subst1 subst2 = RMap.fold subst2 ~init:(return subst1) ~f:extend
+
+    and compose_all subst_lst = RList.fold_left subst_lst ~init:(return empty) ~f:compose
 end
