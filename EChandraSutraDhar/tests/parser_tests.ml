@@ -106,8 +106,6 @@ let%expect_test "test_list" =
 |}]
 ;;
 
-
-
 let%expect_test "test_sum_two_args" =
   parse_test "let sum x y = x + y";
   [%expect
@@ -150,7 +148,7 @@ let%expect_test "test_annotate_type_2" =
 let%expect_test "test_minus" =
   parse_test "-1 -2 - (-1) -(3)";
   [%expect
-{|
+    {|
   [(SEval
       (ExpBinOper (Minus,
          (ExpBinOper (Minus,
