@@ -360,11 +360,13 @@ module Infer = struct
       let ty2 = Subst.apply sub_result ty2 in
       let ty_list = List.map (fun ty -> Subst.apply sub_result ty) ty_list in
       return (sub_result, Type_tuple (ty1, ty2, ty_list))
-  | Expr_lam (pat, expr) -> fail TODO
-  | Expr_let (flag, vb1, vbtl, expr) -> fail TODO
-  | Expr_ifthenelse (eif, ethen, eelse) ->
-    let* sub1, ty1 = infer_expr env eif in
-    let* uni_sub1 = Subst.unify ty1 (Type_bool) in
+  | Expr_lam (pat, expr) ->
+    let* env, ty1 = infer_pat env pat in
+    let* sub, ty2 = infer_expr env expr in
+    return (sub, Type_func (Subst.apply sub ty1, ty2))
+    | Expr_ifthenelse (eif, ethen, eelse) ->
+      let* sub1, ty1 = infer_expr env eif in
+      let* uni_sub1 = Subst.unify ty1 (Type_bool) in
     let* sub2, ty2 = infer_expr env ethen in
     (match eelse with
     | None ->
@@ -376,19 +378,50 @@ module Infer = struct
       let* uni_sub2 = Subst.unify ty2 ty3 in
       let* comp_sub = Subst.compose_all [sub1; uni_sub1; sub2; sub3; uni_sub2] in
       return (comp_sub, ty3))
-  | Expr_option None ->
-    let* fresh = fresh_var in
-    return (Subst.empty, Type_option fresh)
+      | Expr_option None ->
+        let* fresh = fresh_var in
+        return (Subst.empty, Type_option fresh)
   | Expr_option (Some e) ->
     let* sub, ty = infer_expr env e in
     return (sub, Type_option ty)
-  | Expr_apply (efun, earg) -> fail TODO
+  | Expr_apply (Expr_apply (Expr_ident_or_op f, e1), e2) when Checks.is_builtin_op f ->
+    let* sub1, ty1 = infer_expr env e1 in
+    let* sub2, ty2 = infer_expr (TypeEnv.apply sub1 env) e2 in
+    let* arg1_ty, arg2_ty, res_ty =
+    match f with
+    | "+" | "-" | "*" | "/" -> return (Type_int, Type_int, Type_int)
+    | "+." | "-." | "*." | "/." -> return (Type_float, Type_float, Type_float)
+    | "||" | "&&" -> return (Type_bool, Type_bool, Type_bool)
+    | "<=" | "<" | ">=" | ">" | "=" | "<>" ->
+      let* fresh = fresh_var in
+      return (fresh, fresh, Type_bool)
+    | "::" ->
+      let* fresh = fresh_var in
+      return (fresh, Type_list fresh, Type_list fresh)
+    | op -> fail (Unbound_variable op)
+    in
+    let* unif_subst1 = Subst.unify (Subst.apply sub2 ty1) arg1_ty in
+    let* unif_subst2 = Subst.unify (Subst.apply unif_subst1 ty2) arg2_ty in
+    let* subst_res = Subst.compose_all [sub1; sub2; unif_subst1; unif_subst2] in
+    return (subst_res, Subst.apply subst_res res_ty)
+  | Expr_apply (e1, e2) ->
+    let* subst1, ty1 = infer_expr env e1 in
+    let* subst2, ty2 = infer_expr (TypeEnv.apply subst1 env) e2 in
+    let ty1 = Subst.apply subst2 ty1 in
+    let* fresh = fresh_var in
+    let* subst3 = unify ty1 (Type_func (ty2, fresh)) in
+    let* subst_res = Subst.compose_all [subst1; subst2; subst3] in
+    return (subst_res, Subst.apply subst3 fresh)
   | Expr_match (e, rl1, rtl) -> fail TODO
   | Expr_function (rl1, rtl) -> fail TODO
+  | Expr_let (Nonrecursive, vb1, vbtl, expr) -> fail TODO
+  | Expr_let (Recursive, vb1, vbtl, expr) -> fail TODO
 
+
+  
   let initial_env =
-      let prints =
-        [ "print_int", Scheme (empty, Type_func (Type_int, Type_unit))
+    let prints =
+      [ "print_int", Scheme (empty, Type_func (Type_int, Type_unit))
         ; (* etc *)
         ]
       in
