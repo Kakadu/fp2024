@@ -115,14 +115,20 @@ let%expect_test _ =
 run_pat {|a :: b|};
 [%expect {|
   a : (Type_var "0")
-  b : (Type_var "0") |}]
+  b : (Type_list (Type_var "0")) |}]
+
+  let%expect_test _ =
+  run_pat {|a :: []|};
+  [%expect {|
+    a : (Type_var "0") |}]
+  
 
 let%expect_test _ =
 run_pat {|a :: b :: c|};
 [%expect {|
   a : (Type_var "0")
   b : (Type_var "0")
-  c : (Type_var "0") |}]
+  c : (Type_list (Type_var "0")) |}]
 
 let%expect_test _ =
 run_pat {|Some a|};
