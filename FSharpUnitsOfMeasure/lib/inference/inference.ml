@@ -12,6 +12,7 @@ module State = struct
     | Unification_failed of core_type * core_type
     | Unbound_variable of string
     | Occurs_check of string * core_type
+    | Measure_not_implemented
 
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -198,6 +199,7 @@ module Infer = struct
   open State
   open Scheme
 
+  let unify = Subst.unify
   let fresh_var = fresh >>| fun n -> Type_var (Int.to_string n)
 
   let instantiate (Scheme (binds, ty)) =
@@ -213,4 +215,79 @@ module Infer = struct
   let generalize env ty =
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
     Scheme (free, ty)
+
+  let rec infer_pat env = function
+  | Pattern_wild ->
+    let* fresh = fresh_var in
+    return (env, fresh)
+  | Pattern_ident_or_op id ->
+    let* fresh = fresh_var in
+    let env' = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
+    return (env', fresh)
+  | Pattern_const c ->
+    (match c with
+    | Const_int _ -> return (env, Type_int)
+    | Const_float _ -> return (env, Type_float)
+    | Const_bool _ -> return (env, Type_bool)
+    | Const_char _ -> return (env, Type_char)
+    | Const_string _ -> return (env, Type_string)
+    | Const_unit -> return (env, Type_unit)
+    | Const_unit_of_measure _ -> fail Measure_not_implemented)
+  | Pattern_tuple (p1, p2, prest) ->
+    let* env1, ty1 = infer_pat env p1 in
+    let* env2, ty2 = infer_pat env1 p2 in
+    let* env_rest, tyrest =
+    RList.fold_right
+    ~f:(fun pat acc ->
+      let* env_acc, ty_list = return acc in
+      let* env', ty = infer_pat env_acc pat in
+      return (env', ty :: ty_list))
+      ~init:(return (env2, []))
+      prest
+    in
+    return (env_rest, Type_tuple (ty1, ty2, tyrest))
+  | Pattern_typed (p, ty) ->
+    let* penv, pty = infer_pat env p in
+    let* unif_subst = unify pty ty in
+    let new_env = TypeEnv.apply unif_subst penv in
+    return (new_env, Subst.apply unif_subst pty)
+  | Pattern_list [] ->
+    let* fresh = fresh_var in
+    return (env, Type_list fresh)
+  | Pattern_list (p1 :: ptl) ->
+    let* fresh = fresh_var in
+    let* env', ty = infer_pat env p1 in
+    let* unified_sub = unify ty fresh in
+    let env'' = TypeEnv.apply unified_sub env' in
+    let rec infer_tail env sub_acc cur_pat =
+      let helper required_ty pat =
+        let* env, type_of_pat = infer_pat env pat in
+        let* unified_sub = unify required_ty type_of_pat in
+        return (TypeEnv.apply unified_sub env, unified_sub)
+      in
+      match cur_pat with
+      | x :: xs ->
+        let* env, sub = helper fresh x in
+        let* env, final_sub = infer_tail env (sub :: sub_acc) xs in
+        return (env, final_sub)
+      | _ -> return (env, sub_acc)
+    in
+    let* new_env, sub_list = infer_tail env'' [unified_sub] ptl in
+    let* final_sub = Subst.compose_all sub_list in 
+    return (TypeEnv.apply final_sub new_env, Subst.apply final_sub (Type_list fresh))
+  | Pattern_or (p1, p2) | Pattern_cons (p1, p2) ->
+    let* fresh = fresh_var in
+    let* env1, ty1 = infer_pat env p1 in
+    let* subst1 = unify ty1 fresh in
+    let env' = TypeEnv.apply subst1 env1 in
+    let* env2, ty2 = infer_pat env' p2 in
+    let* subst2 = unify ty2 ty1 in
+    let* final_sub = Subst.compose subst1 subst2 in
+    return (TypeEnv.apply final_sub env2, Subst.apply final_sub fresh) (* not sure here about fresh*)
+  | Pattern_option (Some p) ->
+    let* env', ty = infer_pat env p in
+    return (env', Type_option ty)
+  | Pattern_option (None) ->
+    let* fresh = fresh_var in
+    return (env, Type_option fresh)
 end
