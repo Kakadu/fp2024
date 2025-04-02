@@ -183,8 +183,8 @@ module TypeEnv = struct
 
   type t = (string, scheme, String.comparator_witness) Map.t
 
-  let extend env name scheme = Map.set env ~key:name ~data:scheme
   let empty = Map.empty (module String)
+  let extend env name scheme = Map.set env ~key:name ~data:scheme
 
   let free_vars (env : t) : VarSet.t = Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data acc ->
     VarSet.union acc (Scheme.free_vars data))
@@ -198,6 +198,8 @@ module Infer = struct
   open Ast
   open State
   open Scheme
+  open TypeEnv
+  open VarSet
 
   let unify = Subst.unify
   let fresh_var = fresh >>| fun n -> Type_var (Int.to_string n)
@@ -290,4 +292,15 @@ module Infer = struct
   | Pattern_option (None) ->
     let* fresh = fresh_var in
     return (env, Type_option fresh)
+
+  let initial_env =
+      let prints =
+        [ "print_int", Scheme (empty, Type_func (Type_int, Type_unit))
+        ; (* etc *)
+        ]
+      in
+      List.fold_left
+      (fun env (id, scheme) -> extend env id scheme)
+      TypeEnv.empty
+      prints
 end
