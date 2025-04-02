@@ -75,20 +75,20 @@ end
 
 module Type = struct
   let rec occurs tvar = function
-  | Type_var t -> t = tvar
-  | Type_option t | Type_list t -> occurs tvar t
-  | Type_func (t1, t2) -> occurs tvar t1 || occurs tvar t2
-  | Type_tuple (t1, t2, trest) ->
-    List.exists (occurs tvar) (t1 :: t2 :: trest)
+  | Type_var ty -> ty = tvar
+  | Type_option ty | Type_list ty -> occurs tvar ty
+  | Type_func (ty1, ty2) -> occurs tvar ty1 || occurs tvar ty2
+  | Type_tuple (ty1, ty2, tyrest) ->
+    List.exists (occurs tvar) (ty1 :: ty2 :: tyrest)
   | _ -> false
 
   let free_vars =
     let rec helper acc = function
     | Type_var name -> VarSet.add name acc
-    | Type_option t | Type_list t -> helper acc t
-    | Type_func (t1, t2) -> helper (helper acc t1) t2
-    | Type_tuple (t1, t2, trest) ->
-      List.fold_left helper acc (t1 :: t2 :: trest)
+    | Type_option ty | Type_list ty -> helper acc ty
+    | Type_func (ty1, ty2) -> helper (helper acc ty1) ty2
+    | Type_tuple (ty1, ty2, tyrest) ->
+      List.fold_left helper acc (ty1 :: ty2 :: tyrest)
     | _ -> acc
     in
     helper VarSet.empty
@@ -112,29 +112,29 @@ module Subst = struct
       (match Map.find subst name with
       | Some name' -> name'
       | None -> (Type_var name))
-    | Type_option t -> Type_option (helper t)
-    | Type_list t -> Type_list (helper t)
-    | Type_func (t1, t2) -> Type_func (helper t1, helper t2)
-    | Type_tuple (t1, t2, trest) ->
-      Type_tuple (helper t1, helper t2, List.map ~f:helper trest)
-    | t -> t
+    | Type_option ty -> Type_option (helper ty)
+    | Type_list ty -> Type_list (helper ty)
+    | Type_func (ty1, ty2) -> Type_func (helper ty1, helper ty2)
+    | Type_tuple (ty1, ty2, tyrest) ->
+      Type_tuple (helper ty1, helper ty2, List.map ~f:helper tyrest)
+    | ty -> ty
     in
     helper
 
   let rec unify l r = match l, r with
   | Type_var a, Type_var b when String.equal a b -> return empty
-  | Type_var a, t | t, Type_var a -> singleton a t
-  | Type_list t1, Type_list t2 -> unify t1 t2
-  | Type_option t1, Type_option t2 -> unify t1 t2
+  | Type_var a, ty | ty, Type_var a -> singleton a ty
+  | Type_list ty1, Type_list ty2 -> unify ty1 ty2
+  | Type_option ty1, Type_option ty2 -> unify ty1 ty2
   | Type_tuple (ta1, ta2, tarest), Type_tuple (tb1, tb2, tbrest) ->
     (match
     List.fold2
     (ta1 :: ta2 :: tarest)
     (tb1 :: tb2 :: tbrest)
     ~init: (return empty)
-    ~f:(fun acc t1 t2 ->
+    ~f:(fun acc ty1 ty2 ->
       let* subst_acc = acc in
-      let* subst' = unify (apply subst_acc t1) (apply subst_acc t2) in
+      let* subst' = unify (apply subst_acc ty1) (apply subst_acc ty2) in
       compose subst_acc subst')
     with
     | Ok res -> res
@@ -163,4 +163,10 @@ module Subst = struct
     and compose subst1 subst2 = RMap.fold subst2 ~init:(return subst1) ~f:extend
 
     and compose_all subst_lst = RList.fold_left subst_lst ~init:(return empty) ~f:compose
+end
+
+module Scheme = struct
+  type scheme = Scheme of VarSet.t * core_type
+  
+  let free_vars (Scheme (binds, ty)) = VarSet.diff (Type.free_vars ty) binds
 end
