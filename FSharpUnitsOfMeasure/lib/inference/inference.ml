@@ -174,3 +174,21 @@ module Scheme = struct
     let subst' = VarSet.fold (fun key sub -> Subst.remove sub key) binds subst in
     Scheme (binds, Subst.apply subst' ty)
 end
+
+module TypeEnv = struct
+  open Base
+  open Scheme
+  open Subst
+
+  type t = (string, scheme, String.comparator_witness) Map.t
+
+  let extend env name scheme = Map.set env ~key:name ~data:scheme
+  let empty = Map.empty (module String)
+
+  let free_vars (env : t) : VarSet.t = Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data acc ->
+    VarSet.union acc (Scheme.free_vars data))
+  
+  let apply subst env = Map.map env ~f:(Scheme.apply subst)
+
+  let find name env = Map.find env name
+end
