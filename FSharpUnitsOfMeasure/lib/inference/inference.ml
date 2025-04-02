@@ -13,6 +13,7 @@ module State = struct
     | Unbound_variable of string
     | Occurs_check of string * core_type
     | Measure_not_implemented
+    | TODO
 
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -298,6 +299,69 @@ module Infer = struct
   | Pattern_option (None) ->
     let* fresh = fresh_var in
     return (env, Type_option fresh)
+
+
+  let rec infer_expr env = function
+  | Expr_ident_or_op id ->
+    (match TypeEnv.find id env with
+    | None -> fail (Unbound_variable id)
+    | Some s ->
+      let* ty = instantiate s in
+      return (Subst.empty, ty))
+  | Expr_const c ->
+    (match c with
+    | Const_int _ -> return (Subst.empty, Type_int)
+    | Const_float _ -> return (Subst.empty, Type_float)
+    | Const_bool _ -> return (Subst.empty, Type_bool)
+    | Const_char _ -> return (Subst.empty, Type_char)
+    | Const_string _ -> return (Subst.empty, Type_string)
+    | Const_unit -> return (Subst.empty, Type_unit)
+    | Const_unit_of_measure _ -> fail Measure_not_implemented)
+  | Expr_typed (e, req_ty) ->
+    let* sub, ty1 = infer_expr env e in
+    let* unif_subst = unify ty1 req_ty in
+    let* new_sub = Subst.compose sub unif_subst in
+    return (new_sub, ty1)
+  | Expr_list [] ->
+    let* fresh = fresh_var in
+    return (Subst.empty, Type_list fresh)
+  | Expr_list (hd :: tl) ->
+    let* subst1, ty1 = infer_expr env hd in
+    let ty1 = Subst.apply subst1 ty1 in
+    let* subst_unify, typ_unified =
+      Base.List.fold
+        tl
+        ~f:(fun acc e ->
+          let* subst_acc, typ_acc = acc in
+          let* subst, typ = infer_expr env e in
+          let* subst_unify = unify typ_acc typ in
+          let typ_acc = Subst.apply subst_unify typ_acc in
+          let* subst_acc = Subst.compose_all [ subst; subst_acc; subst_unify ] in
+          return (subst_acc, typ_acc))
+        ~init:(return (subst1, ty1))
+    in
+    return (subst_unify, Type_list typ_unified)
+  | Expr_tuple (e1, e2, el) -> fail TODO
+  | Expr_lam (pat, expr) -> fail TODO
+  | Expr_let (flag, vb1, vbtl, expr) -> fail TODO
+  | Expr_ifthenelse (eif, ethen, eelse) ->
+    let* sub1, ty1 = infer_expr env eif in
+    let* uni_sub1 = Subst.unify ty1 (Type_bool) in
+    let* sub2, ty2 = infer_expr env ethen in
+    (match eelse with
+    | None ->
+      let* uni_sub2 = Subst.unify ty2 (Type_unit) in
+      let* comp_sub = Subst.compose_all [sub1; uni_sub1; sub2; uni_sub2] in
+      return (comp_sub, ty2)
+    | Some exp ->
+      let* sub3, ty3 = infer_expr env exp in
+      let* uni_sub2 = Subst.unify ty2 ty3 in
+      let* comp_sub = Subst.compose_all [sub1; uni_sub1; sub2; sub3; uni_sub2] in
+      return (comp_sub, ty3))
+  | Expr_apply (efun, earg) -> fail TODO
+  | Expr_match (e, rl1, rtl) -> fail TODO
+  | Expr_function (rl1, rtl) -> fail TODO
+  | _ -> fail TODO
 
   let initial_env =
       let prints =
