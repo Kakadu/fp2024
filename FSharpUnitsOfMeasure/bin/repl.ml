@@ -7,8 +7,6 @@ open Checks
 open Interp.Interpret
 open Interp.Misc
 open Format
-open Type.Inference
-open Type.Types
 
 type config =
   { mutable file_path : string option

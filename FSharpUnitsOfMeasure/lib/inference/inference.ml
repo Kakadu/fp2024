@@ -277,7 +277,7 @@ module Infer = struct
     let* new_env, sub_list = infer_tail env'' [unified_sub] ptl in
     let* final_sub = Subst.compose_all sub_list in 
     return (TypeEnv.apply final_sub new_env, Subst.apply final_sub (Type_list fresh))
-  | Pattern_or (p1, p2) | Pattern_cons (p1, p2) ->
+  | Pattern_or (p1, p2) ->
     let* fresh = fresh_var in
     let* env1, ty1 = infer_pat env p1 in
     let* subst1 = unify ty1 fresh in
@@ -285,7 +285,13 @@ module Infer = struct
     let* env2, ty2 = infer_pat env' p2 in
     let* subst2 = unify ty2 ty1 in
     let* final_sub = Subst.compose subst1 subst2 in
-    return (TypeEnv.apply final_sub env2, Subst.apply final_sub fresh) (* not sure here about fresh*)
+    return (TypeEnv.apply final_sub env2, Subst.apply final_sub fresh)
+  | Pattern_cons (p1, p2) ->
+    let* env, typ1 = infer_pat env p1 in
+    let* env, typ2 = infer_pat env p2  in
+    let* subst = Subst.unify typ2 (Type_list typ1) in
+    let env = TypeEnv.apply subst env in
+    return (env, Subst.apply subst typ2)
   | Pattern_option (Some p) ->
     let* env', ty = infer_pat env p in
     return (env', Type_option ty)
