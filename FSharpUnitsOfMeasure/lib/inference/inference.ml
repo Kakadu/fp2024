@@ -169,4 +169,8 @@ module Scheme = struct
   type scheme = Scheme of VarSet.t * core_type
   
   let free_vars (Scheme (binds, ty)) = VarSet.diff (Type.free_vars ty) binds
+
+  let apply subst (Scheme (binds, ty)) =
+    let subst' = VarSet.fold (fun key sub -> Subst.remove sub key) binds subst in
+    Scheme (binds, Subst.apply subst' ty)
 end
