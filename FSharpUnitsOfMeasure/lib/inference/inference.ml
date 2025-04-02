@@ -11,11 +11,11 @@ module State = struct
   type error =
     | Unification_failed of core_type * core_type
     | Unbound_variable of string
+    | Multiple_bounds of string
     | Occurs_check of string * core_type
-    | Not_implemented
     | Unequal_list_lengths
     | Let_rec_invalid_rvalue
-    | TODO
+    | Not_implemented
 
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -341,6 +341,14 @@ module Infer = struct
     | _ -> env
   ;;
 
+  module StringSet = struct
+    include Set.Make (String)
+
+    let add_id set value =
+      if mem value set then fail (Multiple_bounds value) else return (add value set)
+    ;;
+  end
+
   let infer_rest_vb env_acc sub_acc sub typ pat =
     let* comp_sub = Subst.compose sub_acc sub in
     let new_env = TypeEnv.apply comp_sub env_acc in
@@ -365,7 +373,7 @@ module Infer = struct
 
   let rec get_pat_names acc pat =
     match pat with
-    | Pattern_const id -> id :: acc
+    | Pattern_ident_or_op id -> id :: acc
     | Pattern_tuple (p1, p2, prest) ->
       Base.List.fold_left ~f:get_pat_names ~init:acc (p1 :: p2 :: prest)
     | Pattern_option (Some pat) -> get_pat_names acc pat
@@ -385,6 +393,24 @@ module Infer = struct
         | _ -> fail Let_rec_invalid_rvalue)
       vb_list
       ~init:(return (env, []))
+  ;;
+
+  let rec extract_names_from_pat func acc = function
+    | Pattern_ident_or_op id -> func acc id
+    | Pattern_tuple (p1, p2, prest) ->
+      RList.fold_left
+        (p1 :: p2 :: prest)
+        ~init:(return acc)
+        ~f:(extract_names_from_pat func)
+    (* |  Pattern_cons ->
+      (match exp with
+       | Pat_tuple (head, tail, []) ->
+         let* acc = extract_names_from_pat func acc head in
+         extract_names_from_pat func acc tail
+       | _ -> return acc) *)
+    | Pattern_option (Some pat) -> extract_names_from_pat func acc pat
+    | Pattern_typed (pat, _) -> extract_names_from_pat func acc pat
+    | _ -> return acc
   ;;
 
   let rec infer_expr env = function
@@ -499,16 +525,57 @@ module Infer = struct
       let* subst_res = Subst.compose_all [ subst1; subst2; subst3 ] in
       return (subst_res, Subst.apply subst3 fresh)
     | Expr_match (e, rl1, rtl) ->
-      let* subst, e_ty = infer_expr env e in
+      let* subst, ety = infer_expr env e in
       let env = TypeEnv.apply subst env in
       let* fresh = fresh_var in
-      (* infer cases*)
-      fail TODO
+      let* res_sub, res_typ =
+      RList.fold_left
+        (rl1 :: rtl)
+        ~init:(return (subst, fresh))
+        ~f:(fun acc (Rule (fst, snd)) ->
+          let* sub, typ = return acc in
+          let pat_names = get_pat_names [] fst in
+          let* pat_env, pat_typ = infer_pat env fst in
+          let* unif_subst = Subst.unify pat_typ ety in
+          let* comp_sub = Subst.compose sub unif_subst in
+          let pat_env =
+            Base.List.fold_left
+              ~f:(fun env name ->
+                (match TypeEnv.find name env with
+                | None -> env
+                | Some (Scheme (_, typ)) ->
+                let env = Subst.remove env name in
+                TypeEnv.extend env name (generalize env typ)))
+              ~init:(TypeEnv.apply unif_subst pat_env)
+              pat_names
+          in
+          let* subexpr, typexpr =
+            infer_expr (TypeEnv.apply comp_sub pat_env) snd
+          in
+          let* uni_sub2 = Subst.unify typexpr typ in
+          let* res_sub = Subst.compose_all [ uni_sub2; subexpr; comp_sub ] in
+          return (res_sub, Subst.apply res_sub typ))
+    in
+    return (res_sub, res_typ)
     | Expr_function (rl1, rtl) ->
       let* fresh1 = fresh_var in
       let* fresh2 = fresh_var in
-      (* infer cases *)
-      fail TODO
+      let* res_sub, res_typ =
+      RList.fold_left
+      (rl1 :: rtl)
+        ~init:(return (Subst.empty, fresh2))
+        ~f:(fun acc (Rule (fst, snd)) ->
+          let* sub, typ = return acc in
+          let* pat_env, pat_typ = infer_pat env fst in
+          let* uni_sub1 = Subst.unify pat_typ fresh1 in
+          let* sub1 = Subst.compose uni_sub1 sub in
+          let new_env = TypeEnv.apply sub1 pat_env in
+          let* subexpr, typexpr = infer_expr new_env snd in
+          let* uni_sub2 = Subst.unify typ typexpr in
+          let* comp_sub = Subst.compose_all [ uni_sub2; subexpr; sub1 ] in
+          return (comp_sub, Subst.apply comp_sub typ))
+    in
+    return (res_sub, Type_func (Subst.apply res_sub fresh1, res_typ))
     | Expr_let (Nonrecursive, vb1, vbtl, expr) ->
       let* new_env, sub, _ = infer_vb_list (vb1 :: vbtl) env Subst.empty in
       let* subst, ty = infer_expr new_env expr in
@@ -602,7 +669,6 @@ module Infer = struct
       | Unequal_lengths -> fail Unequal_list_lengths
     in
     return (res_env, res_sub, names)
-  ;;
 
   let initial_env =
     let prints =
