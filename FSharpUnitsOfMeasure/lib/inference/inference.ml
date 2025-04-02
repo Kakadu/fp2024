@@ -200,7 +200,6 @@ end
 module TypeEnv = struct
   open Base
   open Scheme
-  open Subst
 
   type t = (string, scheme, String.comparator_witness) Map.t
 
@@ -670,10 +669,80 @@ module Infer = struct
     in
     return (res_env, res_sub, names)
 
-  let initial_env =
+    let infer_structure_item env marity names = function
+      | Str_item_eval exp ->
+        let* _, typ = infer_expr env exp in
+        let new_env = TypeEnv.extend env "-" (Scheme (VarSet.empty, typ)) in
+        return (new_env, marity, names @ [ "-" ])
+      | Str_item_def (Nonrecursive, vb1, vbtl) ->
+        let* env, _, names =
+          infer_vb_list (vb1 :: vbtl) env Subst.empty
+        in
+        return (env, marity, names)
+      | Str_item_def (Recursive, vb1, vbtl) ->
+        let* new_env, fresh_vars = add_names_rec env (vb1 :: vbtl) in
+        let* new_env, _, names =
+          infer_rec_vb_list
+            (vb1 :: vbtl)
+            new_env
+            Subst.empty
+            fresh_vars
+        in
+        return (new_env, marity, names)
+      | _ -> fail Not_implemented
+
+      let infer_program env program =
+        let marity = Base.Map.empty (module Base.String) in
+        let marity = Base.Map.add_exn marity ~key:"int" ~data:0 in
+        let marity = Base.Map.add_exn marity ~key:"char" ~data:0 in
+        let marity = Base.Map.add_exn marity ~key:"string" ~data:0 in
+        let marity = Base.Map.add_exn marity ~key:"bool" ~data:0 in
+        let marity = Base.Map.add_exn marity ~key:"unit" ~data:0 in
+        let marity = Base.Map.add_exn marity ~key:"float" ~data:0 in
+        let* env, _, names =
+          RList.fold_left
+            program
+            ~init:(return (env, marity, []))
+            ~f:(fun acc item ->
+              let* env_acc, arr_acc, names = return acc in
+              let* env, arr, name = infer_structure_item env_acc arr_acc names item in
+              return (env, arr, names @ name))
+        in
+        return (env, names)
+      ;;
+
+  let builtin_env =
     let prints =
-      [ "print_int", Scheme (empty, Type_func (Type_int, Type_unit)) (* etc *) ]
+      [ "print_int", Scheme (empty, Type_func (Type_int, Type_unit))
+      ; "print_string", Scheme (empty, Type_func (Type_string, Type_unit))
+      ; "print_float", Scheme (empty, Type_func (Type_float, Type_unit))
+      ; "print_char", Scheme (empty, Type_func (Type_char, Type_unit))
+      ; "print_bool", Scheme (empty, Type_func (Type_bool, Type_unit))
+      ; "print_endline", Scheme (empty, Type_func (Type_string, Type_unit))
+      ]
     in
-    List.fold_left (fun env (id, scheme) -> extend env id scheme) TypeEnv.empty prints
+    let ops =
+      [ "+", Scheme (empty, Type_func (Type_func (Type_int, Type_int), Type_int))
+      ; "-", Scheme (empty, Type_func (Type_func (Type_int, Type_int), Type_int))
+      ; "*", Scheme (empty, Type_func (Type_func (Type_int, Type_int), Type_int))
+      ; "/", Scheme (empty, Type_func (Type_func (Type_int, Type_int), Type_int))
+      ; "+.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
+      ; "-.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
+      ; "*.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
+      ; "/.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
+      ; "<=", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; "<", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; ">=", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; ">", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; "=", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; "<>", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; "||", Scheme (empty, Type_func (Type_func (Type_bool, Type_bool), Type_bool))
+      ; "&&", Scheme (empty, Type_func (Type_func (Type_bool, Type_bool), Type_bool))
+      ; "::", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_list (Type_var "a")), Type_list (Type_var "a")))
+      ] in
+    List.fold_left (fun env (id, scheme) -> extend env id scheme) TypeEnv.empty (prints @ ops)
   ;;
 end
+
+let infer env ast =
+  State.run (Infer.infer_program env ast)
