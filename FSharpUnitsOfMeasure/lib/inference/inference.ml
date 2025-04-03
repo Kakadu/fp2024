@@ -11,7 +11,6 @@ module State = struct
   type error =
     | Unification_failed of core_type * core_type
     | Unbound_variable of string
-    | Multiple_bounds of string
     | Unequal_list_lengths
     | Let_rec_invalid_rvalue
     | Not_implemented
@@ -26,7 +25,6 @@ module State = struct
     | Let_rec_invalid_rvalue ->
       asprintf "This kind of expression is not allowed as right-hand side of 'let rec'"
     | Unbound_variable var -> asprintf "Unbound variable: %s" var
-    | Multiple_bounds var -> asprintf "Name %s is bound several times" var
     | Not_implemented -> asprintf "Not implemented"
     | Unification_failed (t1, t2) ->
       asprintf
@@ -97,23 +95,9 @@ end
 
 module VarSet = struct
   include Set.Make (String)
-
-  let pp ppf set =
-    Format.fprintf ppf "[ ";
-    iter (Format.fprintf ppf "%s; ") set;
-    Format.fprintf ppf "]"
-  ;;
 end
 
 module Type = struct
-  let rec occurs tvar = function
-    | Type_var ty -> ty = tvar
-    | Type_option ty | Type_list ty -> occurs tvar ty
-    | Type_func (ty1, ty2) -> occurs tvar ty1 || occurs tvar ty2
-    | Type_tuple (ty1, ty2, tyrest) -> List.exists (occurs tvar) (ty1 :: ty2 :: tyrest)
-    | _ -> false
-  ;;
-
   let free_vars =
     let rec helper acc = function
       | Type_var name -> VarSet.add name acc
@@ -352,14 +336,6 @@ module Infer = struct
     | _ -> env
   ;;
 
-  module StringSet = struct
-    include Set.Make (String)
-
-    let add_id set value =
-      if mem value set then fail (Multiple_bounds value) else return (add value set)
-    ;;
-  end
-
   let infer_rest_vb env_acc sub_acc sub typ pat =
     let* comp_sub = Subst.compose sub_acc sub in
     let new_env = TypeEnv.apply comp_sub env_acc in
@@ -405,24 +381,6 @@ module Infer = struct
         | _ -> fail Let_rec_invalid_rvalue)
       vb_list
       ~init:(return (env, []))
-  ;;
-
-  let rec extract_names_from_pat func acc = function
-    | Pattern_ident_or_op id -> func acc id
-    | Pattern_tuple (p1, p2, prest) ->
-      RList.fold_left
-        (p1 :: p2 :: prest)
-        ~init:(return acc)
-        ~f:(extract_names_from_pat func)
-    (* |  Pattern_cons ->
-       (match exp with
-       | Pat_tuple (head, tail, []) ->
-       let* acc = extract_names_from_pat func acc head in
-       extract_names_from_pat func acc tail
-       | _ -> return acc) *)
-    | Pattern_option (Some pat) -> extract_names_from_pat func acc pat
-    | Pattern_typed (pat, _) -> extract_names_from_pat func acc pat
-    | _ -> return acc
   ;;
 
   let rec infer_expr env = function
