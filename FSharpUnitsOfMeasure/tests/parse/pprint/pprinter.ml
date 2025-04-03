@@ -80,7 +80,7 @@ let rec pprint_type = function
       | Type_option _
       | Type_list _
       | Type_var _ -> pprint_type t
-      | _ -> "(" ^ pprint_type t ^ ")"
+      | _ -> String.concat "" [ "("; pprint_type t; ")" ]
     in
     asprintf "%s option" ttag
   | Type_list t ->
@@ -95,7 +95,7 @@ let rec pprint_type = function
       | Type_option _
       | Type_list _
       | Type_var _ -> pprint_type t
-      | _ -> "(" ^ pprint_type t ^ ")"
+      | _ -> String.concat "" [ "("; pprint_type t; ")" ]
     in
     asprintf "%s list" ttag
   | Type_func (arg, ret) ->
