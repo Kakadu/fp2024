@@ -19,7 +19,7 @@ module State = struct
   let pp_core_type = Pprint.Pprinter.pprint_type
 
   let pp_error =
-    let open Format in
+    let open Stdlib.Format in
     function
     | Unequal_list_lengths ->
       asprintf "Fresh vars list and value binding list have different length in 'let rec'"

@@ -3,16 +3,11 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Inference
-open Inference.Infer
 open Inference.Scheme
-open Inference.Subst
-open Inference.Type
 open Inference.TypeEnv
 open Inference.Infer
 open Parse.Structure
 open Parse.Patterns
-open Parse.Expressions
-open Ast
 
 let print_env env =
   let open Format in
@@ -37,29 +32,6 @@ let run_pat s =
      | Ok (res, _) -> print_env res)
 ;;
 
-(*
-   let run_expr s =
-   let open Format in
-   match Angstrom.parse_string ~consume:Angstrom.Consume.All pexpr s with
-   | Error e -> printf "Parse error: %s\n" e
-   | Ok parsed ->
-   let open Inference.State in
-   match run (infer_expr Inference.Infer.initial_env parsed) with
-   | Error e -> printf "Inference error\n"
-   | Ok (res, _) -> print_env res
-   ;; *)
-
-let run s =
-  let open Format in
-  match Angstrom.parse_string ~consume:Angstrom.Consume.All pprog s with
-  | Error e -> printf "Parse error: %s\n" e
-  | Ok parsed ->
-    let open Inference.State in
-    (match infer builtin_env parsed with
-     | Error e -> printf "%s" (pp_error e)
-     | Ok (res, _) -> print_env res)
-;;
-
 let run s =
   match Angstrom.parse_string ~consume:Angstrom.Consume.All pprog s with
   | Ok ast ->
@@ -68,6 +40,8 @@ let run s =
      | Error e -> Format.printf "Inferencer error: %s\n" (State.pp_error e))
   | Error e -> Format.printf "Parse error: %s\n" e
 ;;
+
+let _ = run, run_pat
 
 (************************** Patterns **************************)
 

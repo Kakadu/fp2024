@@ -49,18 +49,6 @@ let pp_val_env env =
   printf "\n"
 ;;
 
-let pp_type_env env =
-  let open Format in
-  let () =
-    Base.Map.iteri
-      ~f:(fun ~key:name ~data:(Scheme (_, ty)) ->
-        if (not (Checks.is_builtin_op name)) && not (Checks.is_builtin_fun name)
-        then printf "%s : %s\n" name (State.pp_core_type ty))
-      env
-  in
-  ()
-;;
-
 let pp_envs val_env type_env =
   Base.Map.iteri
     ~f:(fun ~key ~data ->
