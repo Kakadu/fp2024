@@ -12,10 +12,28 @@ module State = struct
     | Unification_failed of core_type * core_type
     | Unbound_variable of string
     | Multiple_bounds of string
-    | Occurs_check of string * core_type
     | Unequal_list_lengths
     | Let_rec_invalid_rvalue
     | Not_implemented
+
+  let pp_core_type = Pprint.Pprinter.pprint_type
+
+  let pp_error =
+    let open Format in
+    function
+    | Unequal_list_lengths ->
+      asprintf "Fresh vars list and value binding list have different length in 'let rec'"
+    | Let_rec_invalid_rvalue ->
+      asprintf "This kind of expression is not allowed as right-hand side of 'let rec'"
+    | Unbound_variable var -> asprintf "Unbound variable: %s" var
+    | Multiple_bounds var -> asprintf "Name %s is bound several times" var
+    | Not_implemented -> asprintf "Not implemented"
+    | Unification_failed (t1, t2) ->
+      asprintf
+        "Unification failed for types %s and %s"
+        (pp_core_type t1)
+        (pp_core_type t2)
+  ;;
 
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -113,13 +131,7 @@ module Subst = struct
   open Base
 
   let empty = Map.empty (module String)
-
-  let singleton k v =
-    if Type.occurs k v
-    then fail (Occurs_check (k, v))
-    else return (Map.singleton (module String) k v)
-  ;;
-
+  let singleton k v = return (Map.singleton (module String) k v)
   let remove = Map.remove
 
   let apply subst =
@@ -384,7 +396,8 @@ module Infer = struct
     RList.fold_right
       ~f:(fun vb acc ->
         match vb with
-        | Bind( Pattern_ident_or_op name, _ ) | Bind (Pattern_typed (Pattern_ident_or_op name, _), _ ) ->
+        | Bind (Pattern_ident_or_op name, _)
+        | Bind (Pattern_typed (Pattern_ident_or_op name, _), _) ->
           let* env_acc, fresh_acc = return acc in
           let* fresh = fresh_var in
           let env_acc = TypeEnv.extend env_acc name (Scheme (VarSet.empty, fresh)) in
@@ -402,10 +415,10 @@ module Infer = struct
         ~init:(return acc)
         ~f:(extract_names_from_pat func)
     (* |  Pattern_cons ->
-      (match exp with
+       (match exp with
        | Pat_tuple (head, tail, []) ->
-         let* acc = extract_names_from_pat func acc head in
-         extract_names_from_pat func acc tail
+       let* acc = extract_names_from_pat func acc head in
+       extract_names_from_pat func acc tail
        | _ -> return acc) *)
     | Pattern_option (Some pat) -> extract_names_from_pat func acc pat
     | Pattern_typed (pat, _) -> extract_names_from_pat func acc pat
@@ -528,53 +541,51 @@ module Infer = struct
       let env = TypeEnv.apply subst env in
       let* fresh = fresh_var in
       let* res_sub, res_typ =
-      RList.fold_left
-        (rl1 :: rtl)
-        ~init:(return (subst, fresh))
-        ~f:(fun acc (Rule (fst, snd)) ->
-          let* sub, typ = return acc in
-          let pat_names = get_pat_names [] fst in
-          let* pat_env, pat_typ = infer_pat env fst in
-          let* unif_subst = Subst.unify pat_typ ety in
-          let* comp_sub = Subst.compose sub unif_subst in
-          let pat_env =
-            Base.List.fold_left
-              ~f:(fun env name ->
-                (match TypeEnv.find name env with
-                | None -> env
-                | Some (Scheme (_, typ)) ->
-                let env = Subst.remove env name in
-                TypeEnv.extend env name (generalize env typ)))
-              ~init:(TypeEnv.apply unif_subst pat_env)
-              pat_names
-          in
-          let* subexpr, typexpr =
-            infer_expr (TypeEnv.apply comp_sub pat_env) snd
-          in
-          let* uni_sub2 = Subst.unify typexpr typ in
-          let* res_sub = Subst.compose_all [ uni_sub2; subexpr; comp_sub ] in
-          return (res_sub, Subst.apply res_sub typ))
-    in
-    return (res_sub, res_typ)
+        RList.fold_left
+          (rl1 :: rtl)
+          ~init:(return (subst, fresh))
+          ~f:(fun acc (Rule (fst, snd)) ->
+            let* sub, typ = return acc in
+            let pat_names = get_pat_names [] fst in
+            let* pat_env, pat_typ = infer_pat env fst in
+            let* unif_subst = Subst.unify pat_typ ety in
+            let* comp_sub = Subst.compose sub unif_subst in
+            let pat_env =
+              Base.List.fold_left
+                ~f:(fun env name ->
+                  match TypeEnv.find name env with
+                  | None -> env
+                  | Some (Scheme (_, typ)) ->
+                    let env = Subst.remove env name in
+                    TypeEnv.extend env name (generalize env typ))
+                ~init:(TypeEnv.apply unif_subst pat_env)
+                pat_names
+            in
+            let* subexpr, typexpr = infer_expr (TypeEnv.apply comp_sub pat_env) snd in
+            let* uni_sub2 = Subst.unify typexpr typ in
+            let* res_sub = Subst.compose_all [ uni_sub2; subexpr; comp_sub ] in
+            return (res_sub, Subst.apply res_sub typ))
+      in
+      return (res_sub, res_typ)
     | Expr_function (rl1, rtl) ->
       let* fresh1 = fresh_var in
       let* fresh2 = fresh_var in
       let* res_sub, res_typ =
-      RList.fold_left
-      (rl1 :: rtl)
-        ~init:(return (Subst.empty, fresh2))
-        ~f:(fun acc (Rule (fst, snd)) ->
-          let* sub, typ = return acc in
-          let* pat_env, pat_typ = infer_pat env fst in
-          let* uni_sub1 = Subst.unify pat_typ fresh1 in
-          let* sub1 = Subst.compose uni_sub1 sub in
-          let new_env = TypeEnv.apply sub1 pat_env in
-          let* subexpr, typexpr = infer_expr new_env snd in
-          let* uni_sub2 = Subst.unify typ typexpr in
-          let* comp_sub = Subst.compose_all [ uni_sub2; subexpr; sub1 ] in
-          return (comp_sub, Subst.apply comp_sub typ))
-    in
-    return (res_sub, Type_func (Subst.apply res_sub fresh1, res_typ))
+        RList.fold_left
+          (rl1 :: rtl)
+          ~init:(return (Subst.empty, fresh2))
+          ~f:(fun acc (Rule (fst, snd)) ->
+            let* sub, typ = return acc in
+            let* pat_env, pat_typ = infer_pat env fst in
+            let* uni_sub1 = Subst.unify pat_typ fresh1 in
+            let* sub1 = Subst.compose uni_sub1 sub in
+            let new_env = TypeEnv.apply sub1 pat_env in
+            let* subexpr, typexpr = infer_expr new_env snd in
+            let* uni_sub2 = Subst.unify typ typexpr in
+            let* comp_sub = Subst.compose_all [ uni_sub2; subexpr; sub1 ] in
+            return (comp_sub, Subst.apply comp_sub typ))
+      in
+      return (res_sub, Type_func (Subst.apply res_sub fresh1, res_typ))
     | Expr_let (Nonrecursive, vb1, vbtl, expr) ->
       let* new_env, sub, _ = infer_vb_list (vb1 :: vbtl) env Subst.empty in
       let* subst, ty = infer_expr new_env expr in
@@ -582,7 +593,7 @@ module Infer = struct
       return (final_sub, ty)
     | Expr_let (Recursive, vb1, vbtl, expr) ->
       let* env, fresh_vars = add_names_rec env (vb1 :: vbtl) in
-      let* env', subst1, _ = infer_rec_vb_list (vb1:: vbtl) env Subst.empty fresh_vars in
+      let* env', subst1, _ = infer_rec_vb_list (vb1 :: vbtl) env Subst.empty fresh_vars in
       let* subst2, ty = infer_expr env' expr in
       let* final_sub = Subst.compose subst1 subst2 in
       return (final_sub, ty)
@@ -639,11 +650,11 @@ module Infer = struct
                 infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
               in
               return (res_env, res_sub, names @ [ name ])
-            | Bind (Pattern_typed (Pattern_ident_or_op name, ty1), Expr_lam (pat2, expr2)), fresh ->
+            | ( Bind
+                  (Pattern_typed (Pattern_ident_or_op name, ty1), Expr_lam (pat2, expr2))
+              , fresh ) ->
               let* subexpr, typexpr =
-                infer_expr
-                env
-                (Expr_lam (pat2, Expr_typed (expr2, ty1)))
+                infer_expr env (Expr_lam (pat2, Expr_typed (expr2, ty1)))
               in
               let* res_env, res_sub =
                 infer_rec_rest_vb sub_acc env_acc fresh typexpr name subexpr
@@ -668,48 +679,37 @@ module Infer = struct
       | Unequal_lengths -> fail Unequal_list_lengths
     in
     return (res_env, res_sub, names)
+  ;;
 
-    let infer_structure_item env marity names = function
-      | Str_item_eval exp ->
-        let* _, typ = infer_expr env exp in
-        let new_env = TypeEnv.extend env "-" (Scheme (VarSet.empty, typ)) in
-        return (new_env, marity, names @ [ "-" ])
-      | Str_item_def (Nonrecursive, vb1, vbtl) ->
-        let* env, _, names =
-          infer_vb_list (vb1 :: vbtl) env Subst.empty
-        in
-        return (env, marity, names)
-      | Str_item_def (Recursive, vb1, vbtl) ->
-        let* new_env, fresh_vars = add_names_rec env (vb1 :: vbtl) in
-        let* new_env, _, names =
-          infer_rec_vb_list
-            (vb1 :: vbtl)
-            new_env
-            Subst.empty
-            fresh_vars
-        in
-        return (new_env, marity, names)
-      | _ -> fail Not_implemented
+  let infer_structure_item env names = function
+    | Str_item_eval exp ->
+      let* _, typ = infer_expr env exp in
+      let new_env = TypeEnv.extend env "-" (Scheme (VarSet.empty, typ)) in
+      return (new_env, names @ [ "-" ])
+    | Str_item_def (Nonrecursive, vb1, vbtl) ->
+      let* env, _, names = infer_vb_list (vb1 :: vbtl) env Subst.empty in
+      return (env, names)
+    | Str_item_def (Recursive, vb1, vbtl) ->
+      let* new_env, fresh_vars = add_names_rec env (vb1 :: vbtl) in
+      let* new_env, _, names =
+        infer_rec_vb_list (vb1 :: vbtl) new_env Subst.empty fresh_vars
+      in
+      return (new_env, names)
+    | _ -> fail Not_implemented
+  ;;
 
-      let infer_program env program =
-        let marity = Base.Map.empty (module Base.String) in
-        let marity = Base.Map.add_exn marity ~key:"int" ~data:0 in
-        let marity = Base.Map.add_exn marity ~key:"char" ~data:0 in
-        let marity = Base.Map.add_exn marity ~key:"string" ~data:0 in
-        let marity = Base.Map.add_exn marity ~key:"bool" ~data:0 in
-        let marity = Base.Map.add_exn marity ~key:"unit" ~data:0 in
-        let marity = Base.Map.add_exn marity ~key:"float" ~data:0 in
-        let* env, _, names =
-          RList.fold_left
-            program
-            ~init:(return (env, marity, []))
-            ~f:(fun acc item ->
-              let* env_acc, arr_acc, names = return acc in
-              let* env, arr, name = infer_structure_item env_acc arr_acc names item in
-              return (env, arr, names @ name))
-        in
-        return (env, names)
-      ;;
+  let infer_program env program =
+    let* env, names =
+      RList.fold_left
+        program
+        ~init:(return (env, []))
+        ~f:(fun acc item ->
+          let* env_acc, names = return acc in
+          let* env, name = infer_structure_item env_acc names item in
+          return (env, names @ name))
+    in
+    return (env, names)
+  ;;
 
   let builtin_env =
     let prints =
@@ -730,19 +730,45 @@ module Infer = struct
       ; "-.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
       ; "*.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
       ; "/.", Scheme (empty, Type_func (Type_func (Type_float, Type_float), Type_float))
-      ; "<=", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
-      ; "<", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
-      ; ">=", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
-      ; ">", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
-      ; "=", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
-      ; "<>", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool))
+      ; ( "<="
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool) ) )
+      ; ( "<"
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool) ) )
+      ; ( ">="
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool) ) )
+      ; ( ">"
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool) ) )
+      ; ( "="
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool) ) )
+      ; ( "<>"
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func (Type_func (Type_var "a", Type_var "a"), Type_bool) ) )
       ; "||", Scheme (empty, Type_func (Type_func (Type_bool, Type_bool), Type_bool))
       ; "&&", Scheme (empty, Type_func (Type_func (Type_bool, Type_bool), Type_bool))
-      ; "::", Scheme (VarSet.singleton "a", Type_func (Type_func (Type_var "a", Type_list (Type_var "a")), Type_list (Type_var "a")))
-      ] in
-    List.fold_left (fun env (id, scheme) -> extend env id scheme) TypeEnv.empty (prints @ ops)
+      ; ( "::"
+        , Scheme
+            ( VarSet.singleton "a"
+            , Type_func
+                ( Type_func (Type_var "a", Type_list (Type_var "a"))
+                , Type_list (Type_var "a") ) ) )
+      ]
+    in
+    List.fold_left
+      (fun env (id, scheme) -> extend env id scheme)
+      TypeEnv.empty
+      (prints @ ops)
   ;;
 end
 
-let infer env ast =
-  State.run (Infer.infer_program env ast)
+let infer env ast = State.run (Infer.infer_program env ast)
