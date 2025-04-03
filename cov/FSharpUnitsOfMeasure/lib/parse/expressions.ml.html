@@ -497,11 +497,11 @@ open Patterns
 open Constants
 open Types
 
-let pexpr_id_or_op = pid_or_op &gt;&gt;<span data-count="35">|</span> fun i -&gt; <span data-count="24841780">E</span>xpr_ident_or_op i
-let pexpr_const = puconst &gt;&gt;<span data-count="35">|</span> fun c -&gt; <span data-count="9484004">E</span>xpr_const c
+let pexpr_id_or_op = pid_or_op &gt;&gt;<span data-count="38">|</span> fun i -&gt; <span data-count="439222868">E</span>xpr_ident_or_op i
+let pexpr_const = puconst &gt;&gt;<span data-count="38">|</span> fun c -&gt; <span data-count="34860356">E</span>xpr_const c
 
 let pexpr_ite pexp =
-  <span data-count="28">l</span>et* cond = skip_ws *<span data-count="28">&gt;</span> strin<span data-count="28">g</span> "if" *<span data-count="28">&gt;</span> skip_ws *<span data-count="28">&gt;</span> pexp in
+  <span data-count="30">l</span>et* cond = skip_ws *<span data-count="30">&gt;</span> strin<span data-count="30">g</span> "if" *<span data-count="30">&gt;</span> skip_ws *<span data-count="30">&gt;</span> pexp in
   <span data-count="94018">l</span>et* branch1 = skip_ws *<span data-count="94018">&gt;</span> strin<span data-count="94018">g</span> "then" *<span data-count="94018">&gt;</span> skip_ws *<span data-count="94018">&gt;</span> pexp in
   <span data-count="93888">l</span>et* branch2 =
     optio<span data-count="93888">n</span> None (skip_ws *<span data-count="93888">&gt;</span> strin<span data-count="93888">g</span> "else" *<span data-count="93888">&gt;</span> skip_ws *<span data-count="93888">&gt;</span> pexp &gt;&gt;<span data-count="93888">|</span> fun e -&gt; <span data-count="86496">S</span>ome e)
@@ -509,54 +509,54 @@ let pexpr_ite pexp =
   <span data-count="93888">r</span>eturn (Expr_ifthenelse (cond, branch1, branch2))
 ;;
 
-let pexpr_paren pexp = <span data-count="84">s</span>trin<span data-count="84">g</span> "(" *<span data-count="84">&gt;</span> skip_ws *<span data-count="84">&gt;</span> pexp &lt;<span data-count="84">*</span> skip_ws &lt;* strin<span data-count="84">g</span> ")"
-let parse_prefix_app = skip_ws_no_nl *<span data-count="35">&gt;</span> retur<span data-count="35">n</span> (fun e1 e2 -&gt; <span data-count="10201840">E</span>xpr_apply (e1, e2))
+let pexpr_paren pexp = <span data-count="90">s</span>trin<span data-count="90">g</span> "(" *<span data-count="90">&gt;</span> skip_ws *<span data-count="90">&gt;</span> pexp &lt;<span data-count="90">*</span> skip_ws &lt;* strin<span data-count="90">g</span> ")"
+let parse_prefix_app = skip_ws_no_nl *<span data-count="38">&gt;</span> retur<span data-count="38">n</span> (fun e1 e2 -&gt; <span data-count="13476176">E</span>xpr_apply (e1, e2))
 
 let parse_infix_app op =
-  <span data-count="476">s</span>kip_ws
-  *<span data-count="476">&gt;</span> strin<span data-count="476">g</span> op
-  *&gt; retur<span data-count="476">n</span> (fun e1 e2 -&gt; <span data-count="2199442">E</span>xpr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
+  <span data-count="510">s</span>kip_ws
+  *<span data-count="510">&gt;</span> strin<span data-count="510">g</span> op
+  *&gt; retur<span data-count="510">n</span> (fun e1 e2 -&gt; <span data-count="2245778">E</span>xpr_apply (Expr_apply (Expr_ident_or_op op, e1), e2))
 ;;
 
 let pexpr_app pexpr =
-  <span data-count="28">l</span>et app = chain<span data-count="28">l</span> pexpr parse_prefix_app &lt;|&gt; pexpr in
-  <span data-count="28">l</span>et app =
-    chain<span data-count="28">l</span>
+  <span data-count="30">l</span>et app = chain<span data-count="30">l</span> pexpr parse_prefix_app &lt;|&gt; pexpr in
+  <span data-count="30">l</span>et app =
+    chain<span data-count="30">l</span>
       app
-      (parse_infix_ap<span data-count="28">p</span> "*."
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "/."
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "*"
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "/")
+      (parse_infix_ap<span data-count="30">p</span> "*."
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "/."
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "*"
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "/")
     &lt;|&gt; app
   in
-  <span data-count="28">l</span>et app =
-    chain<span data-count="28">l</span>
+  <span data-count="30">l</span>et app =
+    chain<span data-count="30">l</span>
       app
-      (parse_infix_ap<span data-count="28">p</span> "+."
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "-."
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "+"
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "-")
+      (parse_infix_ap<span data-count="30">p</span> "+."
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "-."
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "+"
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "-")
     &lt;|&gt; app
   in
-  <span data-count="28">l</span>et app =
-    chain<span data-count="28">l</span>
+  <span data-count="30">l</span>et app =
+    chain<span data-count="30">l</span>
       app
-      (parse_infix_ap<span data-count="28">p</span> "&lt;="
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "&lt;"
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "&gt;="
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "&gt;"
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "&lt;&gt;"
-       &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "=")
+      (parse_infix_ap<span data-count="30">p</span> "&lt;="
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "&lt;"
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "&gt;="
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "&gt;"
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "&lt;&gt;"
+       &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "=")
     &lt;|&gt; app
   in
-  <span data-count="28">l</span>et app = chain<span data-count="28">r</span> app (parse_infix_ap<span data-count="28">p</span> "::") &lt;|&gt; app in
-  <span data-count="28">l</span>et app = chain<span data-count="28">r</span> app (parse_infix_ap<span data-count="28">p</span> "||" &lt;|<span data-count="28">&gt;</span> parse_infix_ap<span data-count="28">p</span> "&amp;&amp;") &lt;|&gt; app in
-  <span data-count="28">a</span>pp
+  <span data-count="30">l</span>et app = chain<span data-count="30">r</span> app (parse_infix_ap<span data-count="30">p</span> "::") &lt;|&gt; app in
+  <span data-count="30">l</span>et app = chain<span data-count="30">r</span> app (parse_infix_ap<span data-count="30">p</span> "||" &lt;|<span data-count="30">&gt;</span> parse_infix_ap<span data-count="30">p</span> "&amp;&amp;") &lt;|&gt; app in
+  <span data-count="30">a</span>pp
 ;;
 
 (* Makes sense only for + and - for now *)
 let pexpr_app_un pexpr =
-  <span data-count="28">l</span>et* op = skip_ws *<span data-count="28">&gt;</span> strin<span data-count="28">g</span> "-" &lt;|<span data-count="28">&gt;</span> strin<span data-count="28">g</span> "+" &lt;<span data-count="28">*</span> skip_ws in
+  <span data-count="30">l</span>et* op = skip_ws *<span data-count="30">&gt;</span> strin<span data-count="30">g</span> "-" &lt;|<span data-count="30">&gt;</span> strin<span data-count="30">g</span> "+" &lt;<span data-count="30">*</span> skip_ws in
   <span data-count="418458">l</span>et* e = pexpr in
   <span data-count="418456">m</span>atch op with
   | <span data-count="0">"</span>+" -&gt; return e
@@ -574,139 +574,139 @@ let pexpr_app_un pexpr =
 ;;
 
 let pexpr_lam pexpr =
-  <span data-count="28">s</span>kip_toke<span data-count="28">n</span> "fun"
+  <span data-count="30">s</span>kip_toke<span data-count="30">n</span> "fun"
   *&gt;
-  let* args = many<span data-count="28">1</span> ppat in
-  <span data-count="41904">s</span>kip_toke<span data-count="41904">n</span> "-&gt;"
+  let* args = many<span data-count="30">1</span> ppat in
+  <span data-count="238512">s</span>kip_toke<span data-count="238512">n</span> "-&gt;"
   *&gt;
   let* expr = pexpr in
-  <span data-count="41904">l</span>et rec wrap = function
-    | <span data-count="46896">h</span> :: tl -&gt; Expr_lam (h, wra<span data-count="46896">p</span> tl)
-    | <span data-count="41904">[</span>] -&gt; expr
+  <span data-count="238512">l</span>et rec wrap = function
+    | <span data-count="243504">h</span> :: tl -&gt; Expr_lam (h, wra<span data-count="243504">p</span> tl)
+    | <span data-count="238512">[</span>] -&gt; expr
   in
-  return (wra<span data-count="41904">p</span> args)
+  return (wra<span data-count="238512">p</span> args)
 ;;
 
 let pbind_val pexpr =
-  <span data-count="15571">l</span>et* name = ppat in
-  <span data-count="7861">s</span>kip_toke<span data-count="7861">n</span> "="
+  <span data-count="16611">l</span>et* name = ppat in
+  <span data-count="8385">s</span>kip_toke<span data-count="8385">n</span> "="
   *&gt;
   let* expr = pexpr in
-  <span data-count="7652">r</span>eturn (Bind (name, expr))
+  <span data-count="8088">r</span>eturn (Bind (name, expr))
 ;;
 
 let pbind_fun pexpr =
-  <span data-count="15571">l</span>et* name = ppat_id_or_op in
-  <span data-count="209">l</span>et* args = many<span data-count="209">1</span> (skip_ws *<span data-count="209">&gt;</span> ppat) in
-  <span data-count="184">s</span>kip_toke<span data-count="184">n</span> "="
+  <span data-count="16611">l</span>et* name = ppat_id_or_op in
+  <span data-count="297">l</span>et* args = many<span data-count="297">1</span> (skip_ws *<span data-count="297">&gt;</span> ppat) in
+  <span data-count="264">s</span>kip_toke<span data-count="264">n</span> "="
   *&gt;
   let* expr = pexpr in
-  <span data-count="172">l</span>et rec wrap = function
-    | <span data-count="329">h</span> :: tl -&gt; Expr_lam (h, wra<span data-count="329">p</span> tl)
-    | <span data-count="172">[</span>] -&gt; expr
+  <span data-count="252">l</span>et rec wrap = function
+    | <span data-count="467">h</span> :: tl -&gt; Expr_lam (h, wra<span data-count="467">p</span> tl)
+    | <span data-count="252">[</span>] -&gt; expr
   in
-  return (Bind (name, wra<span data-count="172">p</span> args))
+  return (Bind (name, wra<span data-count="252">p</span> args))
 ;;
 
-let pbind pexpr = <span data-count="15571">p</span>bind_va<span data-count="15571">l</span> pexpr &lt;|&gt; pbind_fu<span data-count="15571">n</span> pexpr
+let pbind pexpr = <span data-count="16611">p</span>bind_va<span data-count="16611">l</span> pexpr &lt;|&gt; pbind_fu<span data-count="16611">n</span> pexpr
 
 let pexpr_letin pexpr =
-  <span data-count="140">s</span>kip_toke<span data-count="140">n</span> "let"
+  <span data-count="150">s</span>kip_toke<span data-count="150">n</span> "let"
   *&gt;
-  let* rec_flag = skip_toke<span data-count="140">n</span> "rec" *<span data-count="140">&gt;</span> retur<span data-count="140">n</span> Recursive &lt;|<span data-count="140">&gt;</span> retur<span data-count="140">n</span> Nonrecursive in
-  <span data-count="7709">l</span>et* binding_fst = pbin<span data-count="7709">d</span> pexpr in
-  <span data-count="7672">l</span>et* binding_rest =
-    man<span data-count="7672">y</span> (skip_toke<span data-count="7672">n</span> "and" *<span data-count="7672">&gt;</span> pbin<span data-count="7672">d</span> pexpr)
+  let* rec_flag = skip_toke<span data-count="150">n</span> "rec" *<span data-count="150">&gt;</span> retur<span data-count="150">n</span> Recursive &lt;|<span data-count="150">&gt;</span> retur<span data-count="150">n</span> Nonrecursive in
+  <span data-count="8216">l</span>et* binding_fst = pbin<span data-count="8216">d</span> pexpr in
+  <span data-count="8171">l</span>et* binding_rest =
+    man<span data-count="8171">y</span> (skip_toke<span data-count="8171">n</span> "and" *<span data-count="8171">&gt;</span> pbin<span data-count="8171">d</span> pexpr)
     (* match rec_flag with
        | Recursive -&gt; many (skip_token "and" *&gt; pbind pexpr)
        | Nonrecursive -&gt; return [] *)
   in
-  <span data-count="7672">s</span>kip_toke<span data-count="7672">n</span> "in"
+  <span data-count="8171">s</span>kip_toke<span data-count="8171">n</span> "in"
   *&gt;
   let* last_expr = pexpr in
-  <span data-count="7178">r</span>eturn (Expr_let (rec_flag, binding_fst, binding_rest, last_expr))
+  <span data-count="7598">r</span>eturn (Expr_let (rec_flag, binding_fst, binding_rest, last_expr))
 ;;
 
 (* Parses tuple without parentheses *)
 let pexpr_tuple pexpr =
-  <span data-count="28">l</span>et* tuple_fst = skip_ws *<span data-count="28">&gt;</span> pexpr &lt;<span data-count="28">*</span> skip_ws &lt;<span data-count="28">*</span> cha<span data-count="28">r</span> ',' in
-  <span data-count="21487">l</span>et* tuple_snd = skip_ws *<span data-count="21487">&gt;</span> pexpr in
-  <span data-count="21486">l</span>et* tuple_rest = skip_ws *<span data-count="21486">&gt;</span> man<span data-count="21486">y</span> (skip_toke<span data-count="21486">n</span> "," *<span data-count="21486">&gt;</span> pexpr) in
-  <span data-count="21486">r</span>eturn (Expr_tuple (tuple_fst, tuple_snd, tuple_rest))
+  <span data-count="30">l</span>et* tuple_fst = skip_ws *<span data-count="30">&gt;</span> pexpr &lt;<span data-count="30">*</span> skip_ws &lt;<span data-count="30">*</span> cha<span data-count="30">r</span> ',' in
+  <span data-count="12604399">l</span>et* tuple_snd = skip_ws *<span data-count="12604399">&gt;</span> pexpr in
+  <span data-count="12604398">l</span>et* tuple_rest = skip_ws *<span data-count="12604398">&gt;</span> man<span data-count="12604398">y</span> (skip_toke<span data-count="12604398">n</span> "," *<span data-count="12604398">&gt;</span> pexpr) in
+  <span data-count="12604398">r</span>eturn (Expr_tuple (tuple_fst, tuple_snd, tuple_rest))
 ;;
 
 let pexpr_list pexpr =
-  <span data-count="28">l</span>et* list = cha<span data-count="28">r</span> '[' *<span data-count="28">&gt;</span> sep_b<span data-count="28">y</span> (cha<span data-count="28">r</span> ';') (skip_ws *<span data-count="28">&gt;</span> pexpr &lt;<span data-count="28">*</span> skip_ws) &lt;<span data-count="28">*</span> cha<span data-count="28">r</span> ']' in
-  <span data-count="6736">r</span>eturn (Expr_list list)
+  <span data-count="30">l</span>et* list = cha<span data-count="30">r</span> '[' *<span data-count="30">&gt;</span> sep_b<span data-count="30">y</span> (cha<span data-count="30">r</span> ';') (skip_ws *<span data-count="30">&gt;</span> pexpr &lt;<span data-count="30">*</span> skip_ws) &lt;<span data-count="30">*</span> cha<span data-count="30">r</span> ']' in
+  <span data-count="340720">r</span>eturn (Expr_list list)
 ;;
 
 let prules pexpr =
-  <span data-count="7452">l</span>et parse_rule =
-    let* pat = ppat &lt;<span data-count="7452">*</span> skip_toke<span data-count="7452">n</span> "-&gt;" in
-    <span data-count="10048">l</span>et* expr = pexpr in
-    <span data-count="10048">r</span>eturn (Rule (pat, expr))
+  <span data-count="10014">l</span>et parse_rule =
+    let* pat = ppat &lt;<span data-count="10014">*</span> skip_toke<span data-count="10014">n</span> "-&gt;" in
+    <span data-count="16320">l</span>et* expr = pexpr in
+    <span data-count="16320">r</span>eturn (Rule (pat, expr))
   in
-  (skip_toke<span data-count="7452">n</span> "|" &lt;|<span data-count="7452">&gt;</span> skip_ws) *&gt; sep_by<span data-count="7452">1</span> (skip_toke<span data-count="7452">n</span> "|") parse_rule
+  (skip_toke<span data-count="10014">n</span> "|" &lt;|<span data-count="10014">&gt;</span> skip_ws) *&gt; sep_by<span data-count="10014">1</span> (skip_toke<span data-count="10014">n</span> "|") parse_rule
 ;;
 
 let pexpr_match pexpr =
-  <span data-count="28">l</span>et* expr = skip_toke<span data-count="28">n</span> "match" *<span data-count="28">&gt;</span> pexpr &lt;<span data-count="28">*</span> skip_toke<span data-count="28">n</span> "with" in
-  <span data-count="7424">l</span>et* rules = prule<span data-count="7424">s</span> pexpr in
-  <span data-count="7424">m</span>atch rules with
-  | <span data-count="7424">h</span> :: tl -&gt; return (Expr_match (expr, h, tl))
+  <span data-count="30">l</span>et* expr = skip_toke<span data-count="30">n</span> "match" *<span data-count="30">&gt;</span> pexpr &lt;<span data-count="30">*</span> skip_toke<span data-count="30">n</span> "with" in
+  <span data-count="9984">l</span>et* rules = prule<span data-count="9984">s</span> pexpr in
+  <span data-count="9984">m</span>atch rules with
+  | <span data-count="9984">h</span> :: tl -&gt; return (Expr_match (expr, h, tl))
   | <span data-count="0">_</span> -&gt; fail "Failed to parse match expression"
 ;;
 
 let pexpr_function pexpr =
-  <span data-count="28">l</span>et* rules = skip_toke<span data-count="28">n</span> "function" *<span data-count="28">&gt;</span> prule<span data-count="28">s</span> pexpr in
+  <span data-count="30">l</span>et* rules = skip_toke<span data-count="30">n</span> "function" *<span data-count="30">&gt;</span> prule<span data-count="30">s</span> pexpr in
   <span data-count="640">m</span>atch rules with
   | <span data-count="640">h</span> :: tl -&gt; return (Expr_function (h, tl))
   | <span data-count="0">_</span> -&gt; fail "Failed to parse function expression"
 ;;
 
 let pexpr_opt pexpr =
-  <span data-count="28">l</span>et* opt =
-    skip_toke<span data-count="28">n</span> "Some" *<span data-count="28">&gt;</span> pexpr
-    &gt;&gt;<span data-count="28">|</span> (fun e -&gt; <span data-count="12656">S</span>ome e)
-    &lt;|<span data-count="28">&gt;</span> (skip_toke<span data-count="28">n</span> "None" &gt;&gt;<span data-count="28">|</span> fun _ -&gt; <span data-count="1056">N</span>one)
+  <span data-count="30">l</span>et* opt =
+    skip_toke<span data-count="30">n</span> "Some" *<span data-count="30">&gt;</span> pexpr
+    &gt;&gt;<span data-count="30">|</span> (fun e -&gt; <span data-count="12656">S</span>ome e)
+    &lt;|<span data-count="30">&gt;</span> (skip_toke<span data-count="30">n</span> "None" &gt;&gt;<span data-count="30">|</span> fun _ -&gt; <span data-count="1056">N</span>one)
   in
   <span data-count="13712">r</span>eturn (Expr_option opt)
 ;;
 
 let pexpr_typed pexpr =
-  <span data-count="28">l</span>et* expr = pexpr &lt;<span data-count="28">*</span> skip_toke<span data-count="28">n</span> ":" in
+  <span data-count="30">l</span>et* expr = pexpr &lt;<span data-count="30">*</span> skip_toke<span data-count="30">n</span> ":" in
   <span data-count="106592">l</span>et* core_type = ptype in
   <span data-count="106592">r</span>eturn (Expr_typed (expr, core_type))
 ;;
 
 let pexpr =
-  fi<span data-count="35">x</span> (fun pexpr -&gt;
-    <span data-count="28">l</span>et pexpr =
+  fi<span data-count="38">x</span> (fun pexpr -&gt;
+    <span data-count="30">l</span>et pexpr =
       choice
         [ pexpr_id_or_op
         ; pexpr_const
-        ; pexpr_pare<span data-count="28">n</span> (pexpr_type<span data-count="28">d</span> pexpr) (* ; pexpr_letin pexpr *)
-        ; pexpr_op<span data-count="28">t</span> pexpr
-        ; pexpr_lis<span data-count="28">t</span> pexpr
-        ; pexpr_it<span data-count="28">e</span> pexpr
-        ; pexpr_matc<span data-count="28">h</span> pexpr
-        ; pexpr_functio<span data-count="28">n</span> pexpr
-        ; pexpr_la<span data-count="28">m</span> pexpr
-        ; pexpr_pare<span data-count="28">n</span> pexpr
+        ; pexpr_pare<span data-count="30">n</span> (pexpr_type<span data-count="30">d</span> pexpr) (* ; pexpr_letin pexpr *)
+        ; pexpr_op<span data-count="30">t</span> pexpr
+        ; pexpr_lis<span data-count="30">t</span> pexpr
+        ; pexpr_it<span data-count="30">e</span> pexpr
+        ; pexpr_matc<span data-count="30">h</span> pexpr
+        ; pexpr_functio<span data-count="30">n</span> pexpr
+        ; pexpr_la<span data-count="30">m</span> pexpr
+        ; pexpr_pare<span data-count="30">n</span> pexpr
         ]
     in
-    <span data-count="28">l</span>et pexpr = pexpr_pare<span data-count="28">n</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">l</span>et pexpr = pexpr_app_u<span data-count="28">n</span> pexpr &lt;|<span data-count="28">&gt;</span> pexpr_ap<span data-count="28">p</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">l</span>et pexpr = pexpr_tupl<span data-count="28">e</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_pare<span data-count="30">n</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_app_u<span data-count="30">n</span> pexpr &lt;|<span data-count="30">&gt;</span> pexpr_ap<span data-count="30">p</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_tupl<span data-count="30">e</span> pexpr &lt;|&gt; pexpr in
     (* Парсится и если раскоментить pexpr_letin в choice выше,
        но почему-то очень очень долго. Я долго медитировал на код, но
        не смог понять, в чем проблема. Сделал так, чтобы тесты быстрее шли. *)
-    <span data-count="28">l</span>et pexpr = pexpr_leti<span data-count="28">n</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">l</span>et pexpr = pexpr_leti<span data-count="28">n</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">l</span>et pexpr = pexpr_leti<span data-count="28">n</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">l</span>et pexpr = pexpr_leti<span data-count="28">n</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">l</span>et pexpr = pexpr_leti<span data-count="28">n</span> pexpr &lt;|&gt; pexpr in
-    <span data-count="28">s</span>kip_ws *<span data-count="28">&gt;</span> pexpr &lt;* skip_ws_no_nl)
+    <span data-count="30">l</span>et pexpr = pexpr_leti<span data-count="30">n</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_leti<span data-count="30">n</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_leti<span data-count="30">n</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_leti<span data-count="30">n</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">l</span>et pexpr = pexpr_leti<span data-count="30">n</span> pexpr &lt;|&gt; pexpr in
+    <span data-count="30">s</span>kip_ws *<span data-count="30">&gt;</span> pexpr &lt;* skip_ws_no_nl)
 ;;
 </code></pre>
       </div>
