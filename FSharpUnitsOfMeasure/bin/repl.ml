@@ -7,6 +7,9 @@ open Checks
 open Interp.Interpret
 open Interp.Misc
 open Format
+open Inference
+open Inference.Scheme
+open Inference.Infer
 
 type config =
   { mutable file_path : string option
@@ -28,7 +31,7 @@ let hori_line =
   "───────────────────────────────────────────────────────────────────────────────────────────────────────────"
 ;;
 
-let pp_env env =
+let pp_val_env env =
   Base.Map.iteri
     ~f:(fun ~key ~data ->
       match Base.Map.find env key with
@@ -46,46 +49,63 @@ let pp_env env =
   printf "\n"
 ;;
 
-let pp_envs env type_env =
+let pp_type_env env =
+  let open Format in
+  let () =
+    Base.Map.iteri
+      ~f:(fun ~key:name ~data:(Scheme (_, ty)) ->
+        if (not (Checks.is_builtin_op name)) && not (Checks.is_builtin_fun name)
+        then printf "%s : %s\n" name (State.pp_core_type ty))
+      env
+  in
+  ()
+;;
+
+let pp_envs val_env type_env =
   Base.Map.iteri
     ~f:(fun ~key ~data ->
-      match Base.Map.find env key with
+      match Base.Map.find val_env key with
       | Some _ ->
-        let _, Scheme (_, ttype) = List.find (fun (name, _) -> name = key) type_env in
-        let strtype = string_of_ty ttype in
-        if not (is_builtin_fun key)
-        then
-          if is_builtin_op key
-          then
-            print_endline
-              (Format.asprintf "val ( %s ) : %s = %a" key strtype pp_value data)
-          else
-            print_endline (Format.asprintf "val %s : %s = %a" key strtype pp_value data)
+        (match Base.Map.find type_env key with
+         | None -> Format.printf "-: %a\n" pp_value data
+         | Some (Scheme (_, ttype)) ->
+           let strtype = State.pp_core_type ttype in
+           if not (is_builtin_fun key)
+           then
+             if is_builtin_op key
+             then
+               print_endline
+                 (Format.asprintf "val ( %s ) : %s = %a" key strtype pp_value data)
+             else
+               print_endline
+                 (Format.asprintf "val %s : %s = %a" key strtype pp_value data))
       | None -> ())
-    env;
+    val_env;
   printf "\n"
 ;;
 
 let run_single options =
-  (* let run text env = *)
   let run text =
     match pprog text with
-    | Error _ -> print_endline (Format.asprintf "Syntax error")
-    (* env *)
+    | Error e -> print_endline (Format.asprintf "Syntax error: %s" e)
     | Ok ast ->
       if not options.do_not_type
       then (
-        let type_env = infer ast in
-        (* match type_env with *)
-        match eval ast with
-        | Ok (env, out_lst) ->
-          List.iter
-            (function
-              | Ok v' -> print_endline (Format.asprintf "- = %a" pp_value v')
-              | _ -> ())
-            out_lst;
-          pp_envs env type_env
-        | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e))
+        let type_env = infer builtin_env ast in
+        match type_env with
+        | Error e -> printf "%s" (State.pp_error e)
+        | Ok (type_env, _) ->
+          (match eval ast with
+           | Ok (env, out_lst) ->
+             List.iter
+               (function
+                 | Ok v' -> print_endline (Format.asprintf "- = %a" pp_value v')
+                 | _ -> ())
+               out_lst;
+             pp_envs env type_env
+           | Error e ->
+             Format.printf "Interpreter error: ";
+             Interp.Misc.pp_error std_formatter e))
       else (
         match eval ast with
         | Ok (env, out_lst) ->
@@ -94,8 +114,10 @@ let run_single options =
               | Ok v' -> print_endline (Format.asprintf "- = %a" pp_value v')
               | _ -> ())
             out_lst;
-          pp_env env
-        | Error e -> print_endline (Format.asprintf "Interpreter error: %a" pp_error e));
+          pp_val_env env
+        | Error e ->
+          Format.printf "Interpreter error: ";
+          Interp.Misc.pp_error std_formatter e);
       if options.greet_user then print_endline hori_line else print_endline ""
   in
   let open In_channel in

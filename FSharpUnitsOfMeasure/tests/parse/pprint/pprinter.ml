@@ -67,7 +67,7 @@ let rec pprint_type = function
   | Type_char -> asprintf "char"
   | Type_string -> asprintf "string"
   | Type_unit -> asprintf "unit"
-  | Type_var t -> asprintf "%s" t
+  | Type_var t -> asprintf "'a%s" t
   | Type_option t ->
     let ttag =
       match t with
@@ -78,7 +78,8 @@ let rec pprint_type = function
       | Type_string
       | Type_unit
       | Type_option _
-      | Type_list _ -> pprint_type t
+      | Type_list _
+      | Type_var _ -> pprint_type t
       | _ -> "(" ^ pprint_type t ^ ")"
     in
     asprintf "%s option" ttag
@@ -92,7 +93,8 @@ let rec pprint_type = function
       | Type_string
       | Type_unit
       | Type_option _
-      | Type_list _ -> pprint_type t
+      | Type_list _
+      | Type_var _ -> pprint_type t
       | _ -> "(" ^ pprint_type t ^ ")"
     in
     asprintf "%s list" ttag
