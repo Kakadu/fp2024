@@ -2,25 +2,29 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Inference
 open Inference.Infer
 open Inference.Scheme
 open Inference.Subst
 open Inference.Type
 open Inference.TypeEnv
+open Inference.Infer
 open Parse.Structure
 open Parse.Patterns
 open Parse.Expressions
 open Ast
 
-(* todo: pprint_type, pprint_error *)
-
-let print_env (env) =
+let print_env env =
   let open Format in
-  let () = Base.Map.iteri
-  ~f:(fun ~key:name ~data:(Scheme (_, ty)) ->
-    if (not (Checks.is_builtin_op name) && not (Checks.is_builtin_fun name))
-    then (printf "%s : " name; pp_core_type std_formatter ty; printf "\n"))
-  env in ()
+  let () =
+    Base.Map.iteri
+      ~f:(fun ~key:name ~data:(Scheme (_, ty)) ->
+        if (not (Checks.is_builtin_op name)) && not (Checks.is_builtin_fun name)
+        then printf "%s : %s\n" name (State.pp_core_type ty))
+      env
+  in
+  ()
+;;
 
 let run_pat s =
   let open Format in
@@ -28,131 +32,177 @@ let run_pat s =
   | Error e -> printf "Parse error: %s\n" e
   | Ok parsed ->
     let open Inference.State in
-    match run (infer_pat Inference.Infer.initial_env parsed) with
-    | Error e -> printf "Inference error\n"
-    | Ok (res, _) -> print_env res
+    (match run (infer_pat builtin_env parsed) with
+     | Error e -> printf "%s" (pp_error e)
+     | Ok (res, _) -> print_env res)
 ;;
-(* 
-let run_expr s =
+
+(*
+   let run_expr s =
+   let open Format in
+   match Angstrom.parse_string ~consume:Angstrom.Consume.All pexpr s with
+   | Error e -> printf "Parse error: %s\n" e
+   | Ok parsed ->
+   let open Inference.State in
+   match run (infer_expr Inference.Infer.initial_env parsed) with
+   | Error e -> printf "Inference error\n"
+   | Ok (res, _) -> print_env res
+   ;; *)
+
+let run s =
   let open Format in
-  match Angstrom.parse_string ~consume:Angstrom.Consume.All pexpr s with
+  match Angstrom.parse_string ~consume:Angstrom.Consume.All pprog s with
   | Error e -> printf "Parse error: %s\n" e
   | Ok parsed ->
     let open Inference.State in
-    match run (infer_expr Inference.Infer.initial_env parsed) with
-    | Error e -> printf "Inference error\n"
-    | Ok (res, _) -> print_env res
-;; *)
+    (match infer builtin_env parsed with
+     | Error e -> printf "%s" (pp_error e)
+     | Ok (res, _) -> print_env res)
+;;
+
+let run s =
+  match Angstrom.parse_string ~consume:Angstrom.Consume.All pprog s with
+  | Ok ast ->
+    (match infer empty ast with
+     | Ok (type_env, _) -> print_env type_env
+     | Error e -> Format.printf "Inferencer error: %s\n" (State.pp_error e))
+  | Error e -> Format.printf "Parse error: %s\n" e
+;;
 
 (************************** Patterns **************************)
 
 let%expect_test _ =
-run_pat {|_|};
-[%expect {| |}]
+  run_pat {|_|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|a|};
-[%expect {| a : (Type_var "0") |}]
+  run_pat {|a|};
+  [%expect {| a : 'a0 |}]
+;;
 
 let%expect_test _ =
-run_pat {|1|};
-[%expect {| |}]
+  run_pat {|1|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|1.0|};
-[%expect {| |}]
+  run_pat {|1.0|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|true|};
-[%expect {| |}]
+  run_pat {|true|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|"str"|};
-[%expect {| |}]
+  run_pat {|"str"|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|'a'|};
-[%expect {| |}]
+  run_pat {|'a'|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|()|};
-[%expect {| |}]
+  run_pat {|()|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|1.0<bip>|};
-[%expect {| Inference error |}]
+  run_pat {|1.0<bip>|};
+  [%expect {| Not implemented |}]
+;;
 
 let%expect_test _ =
-run_pat {|(a, b)|};
-[%expect {|
-  a : (Type_var "0")
-  b : (Type_var "1") |}]
+  run_pat {|(a, b)|};
+  [%expect {|
+  a : 'a0
+  b : 'a1 |}]
+;;
 
 let%expect_test _ =
-run_pat {|( (a, b), (c, d) )|};
-[%expect {|
-  a : (Type_var "0")
-  b : (Type_var "1")
-  c : (Type_var "2")
-  d : (Type_var "3") |}]
+  run_pat {|( (a, b), (c, d) )|};
+  [%expect {|
+  a : 'a0
+  b : 'a1
+  c : 'a2
+  d : 'a3 |}]
+;;
 
 let%expect_test _ =
-run_pat {|(a : int)|};
-[%expect {| a : Type_int |}]
+  run_pat {|(a : int)|};
+  [%expect {| a : int |}]
+;;
 
 let%expect_test _ =
-run_pat {|(1 : string)|};
-[%expect {| Inference error |}]
-
-
-let%expect_test _ =
-run_pat {|[]|};
-[%expect {| |}]
+  run_pat {|(1 : string)|};
+  [%expect {| Unification failed for types string and int |}]
+;;
 
 let%expect_test _ =
-run_pat {|[a; b]|};
-[%expect {|
-  a : (Type_var "2")
-  b : (Type_var "2") |}]
+  run_pat {|[]|};
+  [%expect {| |}]
+;;
 
 let%expect_test _ =
-run_pat {|a | b|};
-[%expect {|
-  a : (Type_var "0")
-  b : (Type_var "0") |}]
+  run_pat {|[a; b]|};
+  [%expect {|
+  a : 'a2
+  b : 'a2 |}]
+;;
 
 let%expect_test _ =
-run_pat {|a | b | c|};
-[%expect {|
-  a : (Type_var "0")
-  b : (Type_var "0")
-  c : (Type_var "0") |}]
+  run_pat {|a | b|};
+  [%expect {|
+  a : 'a0
+  b : 'a0 |}]
+;;
 
 let%expect_test _ =
-run_pat {|a :: b|};
-[%expect {|
-  a : (Type_var "0")
-  b : (Type_list (Type_var "0")) |}]
+  run_pat {|a | b | c|};
+  [%expect {|
+  a : 'a0
+  b : 'a0
+  c : 'a0 |}]
+;;
 
-  let%expect_test _ =
+let%expect_test _ =
+  run_pat {|a :: b|};
+  [%expect {|
+  a : 'a0
+  b : 'a0 list |}]
+;;
+
+let%expect_test _ =
   run_pat {|a :: []|};
   [%expect {|
-    a : (Type_var "0") |}]
-  
+    a : 'a0 |}]
+;;
 
 let%expect_test _ =
-run_pat {|a :: b :: c|};
-[%expect {|
-  a : (Type_var "0")
-  b : (Type_var "0")
-  c : (Type_list (Type_var "0")) |}]
+  run_pat {|a :: b :: c|};
+  [%expect {|
+  a : 'a0
+  b : 'a0
+  c : 'a0 list |}]
+;;
 
 let%expect_test _ =
-run_pat {|Some a|};
-[%expect {| a : (Type_var "0") |}]
+  run_pat {|Some a|};
+  [%expect {| a : 'a0 |}]
+;;
 
 let%expect_test _ =
-run_pat {|None|};
-[%expect {| |}]
+  run_pat {|None|};
+  [%expect {| |}]
+;;
 
-(************************** Expressions **************************)
+(************************** Programs **************************)
+
+let%expect_test _ =
+  run {| let hello = "world" |};
+  [%expect {| hello : string |}]
+;;
