@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (public_name ETenyaeva)
+ (libraries ETenyaeva_lib)
+ (instrumentation
+  (backend bisect_ppx)))
