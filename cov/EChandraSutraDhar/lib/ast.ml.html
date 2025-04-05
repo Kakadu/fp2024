@@ -329,17 +329,17 @@ open Format
 <span data-count="10">t</span>ype program = <span data-count="50">s</span>tructure lis<span data-count="10">t</span> [@@deriving show { with_path = false }]
 
 let rec pp_ty fmt = function
-  | <span data-count="31">T</span>yPrim x -&gt; fprintf fmt "%s" x
+  | <span data-count="37">T</span>yPrim x -&gt; fprintf fmt "%s" x
   | <span data-count="14">T</span>yVar x -&gt; fprintf fmt "'%d" x
   | <span data-count="20">T</span>yArrow (l, r) -&gt;
     (match l, r with
      | <span data-count="1">T</span>yArrow _, _ -&gt; fprintf fmt "(%a) -&gt; %a" pp_ty l pp_ty r
      | <span data-count="19">_</span>, _ -&gt; fprintf fmt "%a -&gt; %a" pp_ty l pp_ty r)
-  | <span data-count="1">T</span>yTuple elems -&gt;
+  | <span data-count="2">T</span>yTuple elems -&gt;
     fprintf
       fmt
       "(%a)"
-      (pp_print_lis<span data-count="1">t</span> ~pp_sep:(fun fmt () -&gt; <span data-count="2">f</span>printf fmt " * ") pp_ty)
+      (pp_print_lis<span data-count="2">t</span> ~pp_sep:(fun fmt () -&gt; <span data-count="4">f</span>printf fmt " * ") pp_ty)
       elems
   | <span data-count="3">T</span>yList ty -&gt;
     (match ty with
