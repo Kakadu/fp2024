@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
-open Base
 open Stdlib.Format
 
 let rec pp_type fmt = function
@@ -54,6 +53,7 @@ let pp_error fmt = function
   ;;
 
 module State = struct
+  open Base
   type 'a t = int -> int * ('a, error) Result.t
 
   let return x state = state, Result.return x
@@ -111,6 +111,7 @@ end
 type scheme = Scheme of VarSet.t * typ
 
 module Type = struct
+  open Base
   (** gets a variable var and type ty, and checks whether the
    variable is contained in the set of free variables of this type*)
   let rec occurs_in var = function
@@ -137,6 +138,7 @@ end
 
 module Subst = struct
   open State
+  open Base
   open State.Syntax
 
   let empty = Map.empty (module String)
@@ -224,7 +226,7 @@ end
 
 (** map from id and schema*)
 module TypeEnv = struct
-
+  open Base
   type t = (id, scheme, String.comparator_witness) Map.t
 
   let empty = Map.empty (module String)
@@ -292,7 +294,7 @@ module Infer = struct
   let generalize env ty ~remove_from_env id =
     let env =
       match remove_from_env, id with
-      | true, Some id ->Map.remove env id
+      | true, Some id ->Base.Map.remove env id
       | _ -> env
     in
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
@@ -467,7 +469,7 @@ module Infer = struct
       let* sub_result = Subst.compose_all [ sub1; sub2; sub_rest ] in
       let ty1 = Subst.apply sub_result ty1 in
       let ty2 = Subst.apply sub_result ty2 in
-      let ty_list = List.map ~f:(fun ty -> Subst.apply sub_result ty) ty_list in
+      let ty_list = Base.List.map ~f:(fun ty -> Subst.apply sub_result ty) ty_list in
       return (sub_result, TypTuple (ty1, ty2, ty_list))
     | ExpIfThenElse (if_exp, then_exp, None) ->
       let* sub1, ty1 = infer_expression env if_exp in
@@ -551,29 +553,29 @@ module Infer = struct
       let* env, ty1 = infer_pattern env pat in
       let* sub, ty2 = infer_expression env expr in
       return (sub, TypArrow (Subst.apply sub ty1, ty2))
-    | _ -> failwith "lol"
-    (* | ExpLet (let_binding, expression) ->
-      let { is_rec; pat; expr } = let_binding in
-      match is_rec with
-      | Rec->
-        let let_binding_list = [let_binding] in
-        let* env = extend_env_with_bind_names env let_binding_list in
-        let* env, sub1 = infer_rec_value_binding_list env Subst.empty let_binding_list in
-        let* sub2, ty2 = infer_expression env expression in
-        let* composed_sub = Subst.compose sub2 sub1 in
-        return (composed_sub, ty2)
-      | NonRec ->
-        let* env, sub = infer_value_binding_list env let_binding in
-        let* expr_sub, expr_ty = infer_expression env expression in
-        let* composed_sub = Subst.compose sub expr_sub in
-        return (composed_sub, expr_ty) *)
-
-  (** Перебирает список случаев.
-    Для каждого случая извлекает паттерн и выражение.
-    Выполняет инференцию типов для паттерна и выражения.
-    Обрабатывает обобщенные схемы, если это необходимо.
-    Устанавливает совместимость типов через унификацию.
-    Формирует окончательный тип для всего выражения сопоставления.*)
+    | ExpLet (NonRec, value_binding, value_binding_list, exp) ->
+      let* _ = check_names_from_let_binds (value_binding :: value_binding_list) in
+      let* env, sub1 =
+        infer_value_binding_list env Subst.empty (value_binding :: value_binding_list)
+      in
+      let* sub2, ty2 = infer_expression env exp in
+      let* composed_sub = Subst.compose sub2 sub1 in
+      return (composed_sub, ty2)
+    | ExpLet (Rec, value_binding, value_binding_list, exp) ->
+      let* env, fresh_acc =
+        extend_env_with_bind_names env (value_binding :: value_binding_list)
+      in
+      let* env, sub1 =
+        infer_rec_value_binding_list
+          env
+          fresh_acc
+          Subst.empty
+          (value_binding :: value_binding_list)
+      in
+      let* sub2, ty2 = infer_expression env exp in
+      let* composed_sub = Subst.compose sub2 sub1 in
+      return (composed_sub, ty2)
+    
   and infer_match_exp env ~with_exp match_exp_sub match_exp_ty result_ty case_list =
     let* cases_sub, case_ty =
       RList.fold_left
@@ -592,7 +594,7 @@ module Infer = struct
             then (
               let env = TypeEnv.apply unified_sub1 env in
               let generalized_schemes =
-                List.map pat_names ~f:(fun name ->
+                Base.List.map pat_names ~f:(fun name ->
                   let ty = TypeEnv.find_type_exn env name in
                   let generalized_ty =
                     generalize env ty ~remove_from_env:true (Some name)
@@ -600,7 +602,7 @@ module Infer = struct
                   name, generalized_ty)
               in
               let env =
-                List.fold generalized_schemes ~init:env ~f:(fun env (key, value) ->
+                Base.List.fold generalized_schemes ~init:env ~f:(fun env (key, value) ->
                   TypeEnv.extend env key value)
               in
               return (env, unified_sub1))
@@ -622,8 +624,8 @@ module Infer = struct
       else TypArrow (Subst.apply cases_sub match_exp_ty, case_ty)
     in
     return (cases_sub, final_ty)
-
-  (* and infer_value_binding_list env sub let_binds =
+    
+  and infer_value_binding_list env sub let_binds =
     let infer_vb new_sub env ty pat rest =
       let* composed_sub = Subst.compose sub new_sub in
       let env = TypeEnv.apply composed_sub env in
@@ -639,20 +641,17 @@ module Infer = struct
     in
     match let_binds with
     | [] -> return (env, sub)
-    | { pat = Pat_constraint (pat, pat_ty); exp = Exp_fun (e_pat, e_pat_list, exp) }
+    | { pat = PatWithTyp (pat_ty, pat); expr = ExpFun (e_pat, expr) }
       :: rest ->
       let* new_sub, ty =
-        infer_expression env (Exp_fun (e_pat, e_pat_list, Exp_constraint (exp, pat_ty)))
+        infer_expression env (ExpFun (e_pat, ExpWithTyp (pat_ty, expr)))
       in
       infer_vb new_sub env ty pat rest
-    | { pat = Pat_constraint (pat, pat_ty); exp = Exp_function _ as exp } :: rest ->
-      let* new_sub, ty = infer_expression env (Exp_constraint (exp, pat_ty)) in
+    | { pat; expr } :: rest ->
+      let* new_sub, ty = infer_expression env expr in
       infer_vb new_sub env ty pat rest
-    | { pat; exp } :: rest ->
-      let* new_sub, ty = infer_expression env exp in
-      infer_vb new_sub env ty pat rest *)
 
-  (* and infer_rec_value_binding_list ?(debug = false) env fresh_acc sub let_binds =
+  and infer_rec_value_binding_list env fresh_acc sub let_binds =
     let infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty =
       let* new_sub =
         match required_ty with
@@ -663,46 +662,40 @@ module Infer = struct
       in
       let* unified_sub = unify (Subst.apply new_sub fresh) ty in
       let* composed_sub = Subst.compose_all [ new_sub; unified_sub; sub ] in
-      if debug then Subst.pp std_formatter composed_sub;
       let env = TypeEnv.apply composed_sub env in
       let generalized_ty =
         generalize env (Subst.apply composed_sub fresh) ~remove_from_env:true (Some id)
       in
-      if debug then pp_scheme std_formatter generalized_ty;
       let env = TypeEnv.extend env id generalized_ty in
-      infer_rec_value_binding_list ~debug env fresh_acc composed_sub rest
+      infer_rec_value_binding_list env fresh_acc composed_sub rest
     in
     match let_binds, fresh_acc with
     | [], _ -> return (env, sub)
-    | ( { pat = Pat_var id; exp = (Exp_fun _ | Exp_function _) as exp } :: rest
+    | ( { pat = PatVar id; expr = (ExpFun _ ) as exp } :: rest
       , fresh :: fresh_acc ) ->
       let* new_sub, ty = infer_expression env exp in
       infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
-    | ( { pat = Pat_constraint (Pat_var id, pat_ty); exp = Exp_fun (pat, pat_list, exp) }
+    | ( { pat = PatWithTyp (pat_ty, PatVar id); expr = ExpFun (pat, expr) }
         :: rest
       , fresh :: fresh_acc ) ->
       let* new_sub, ty =
-        infer_expression env (Exp_fun (pat, pat_list, Exp_constraint (exp, pat_ty)))
+        infer_expression env (ExpFun (pat, ExpWithTyp (pat_ty, expr)))
       in
       infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
-    | ( { pat = Pat_constraint (Pat_var id, pat_ty); exp = Exp_function _ as exp } :: rest
-      , fresh :: fresh_acc ) ->
-      let* new_sub, ty = infer_expression env (Exp_constraint (exp, pat_ty)) in
-      infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
-    | { pat = Pat_var id; exp } :: rest, fresh :: fresh_acc ->
-      let* new_sub, ty = infer_expression env exp in
+    | { pat = PatVar id; expr } :: rest, fresh :: fresh_acc ->
+      let* new_sub, ty = infer_expression env expr in
       let update_fresh = Subst.apply new_sub fresh in
       if ty = update_fresh
-      then fail `No_arg_rec
+      then fail NoArgRec
       else infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
-    | { pat = Pat_constraint (Pat_var id, pat_ty); exp } :: rest, fresh :: fresh_acc ->
-      let* new_sub, ty = infer_expression env exp in
+    | { pat = PatWithTyp (pat_ty, PatVar id); expr } :: rest, fresh :: fresh_acc ->
+      let* new_sub, ty = infer_expression env expr in
       let update_fresh = Subst.apply new_sub fresh in
       if ty = update_fresh
-      then fail `No_arg_rec
+      then fail NoArgRec
       else infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:(Some pat_ty)
-    | _ -> fail `No_variable_rec
-  ;; *)
+    | _ -> fail NoVariableRec
+  ;;
 
   let infer_structure_item (**~debug*) (env, out_list) =
     let get_names_from_let_binds env =
@@ -716,23 +709,20 @@ module Infer = struct
     | EvalExp exp ->
       let* _, ty = infer_expression env exp in
       return (env, out_list @ [ None, ty ])
-    | _ -> failwith "loh"
-    (* | Binding { is_rec = NonRec; _; _}->
+    | Binding (NonRec, value_binding, value_binding_list) ->
       let value_binding_list = value_binding :: value_binding_list in
       let* _ = check_names_from_let_binds value_binding_list in
       let* env, _ = infer_value_binding_list env Subst.empty value_binding_list in
       let* id_list = get_names_from_let_binds env value_binding_list in
-      if debug then TypeEnv.pp std_formatter env;
       return (env, out_list @ id_list)
-    | Binding { is_rec = Rec; _; _} ->
+    | Binding (Rec, value_binding, value_binding_list) ->
       let value_binding_list = value_binding :: value_binding_list in
       let* env, fresh_acc = extend_env_with_bind_names env value_binding_list in
       let* env, _ =
         infer_rec_value_binding_list env fresh_acc Subst.empty value_binding_list
       in
       let* id_list = get_names_from_let_binds env value_binding_list in
-      if debug then TypeEnv.pp std_formatter env;
-      return (env, out_list @ id_list) *)
+      return (env, out_list @ id_list)
   ;;
 
   let infer_srtucture (**~debug*) env ast =
@@ -746,7 +736,7 @@ module Infer = struct
         | _ -> false
       in
       function
-      | x :: xs when not (List.mem xs x ~equal:fun_equal) -> x :: xs
+      | x :: xs when not (Base.List.mem xs x ~equal:fun_equal) -> x :: xs
       | _ :: xs -> xs
       | [] -> []
     in
@@ -762,7 +752,7 @@ let env_with_print_funs =
     ; "print_endline", Scheme (VarSet.empty, TypArrow (TypStr, TypUnit))
     ]
   in
-  List.fold_left 
+  Base.List.fold_left 
     ~f: (fun env (id, sch) -> TypeEnv.extend env id sch)
     ~init: TypeEnv.empty
     print_fun_list
