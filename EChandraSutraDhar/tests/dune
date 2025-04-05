@@ -1,6 +1,5 @@
 (library
  (name tests)
- (modules_without_implementation ast_tests)
  (libraries EChandraSutraDhar_lib)
  (preprocess
   (pps ppx_expect ppx_deriving.show))
