@@ -10,3 +10,4 @@
 (cram
  (applies_to tests)
  (deps ../bin/main.exe))
+
