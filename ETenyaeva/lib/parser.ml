@@ -419,25 +419,26 @@ let parse_exp_option parse_exp =
     ]
 ;;
 
-let parse_let_binding parse_exp =
-  let* is_rec = token "rec" *> return Rec <|> return NonRec in
-  let* let_pat = parse_pattern in
-  let* params = many parse_pattern in
-  let* body_expr = token "=" *> parse_exp in
-  let expr =
-    match params with
-    | [] -> body_expr
-    | _ -> List.fold_right ~f: (fun par acc -> ExpFun (par, acc)) params ~init: body_expr
-  in
-  return (is_rec, let_pat, expr)
+let parse_binding parse_exp =
+  let* pattern = parse_pattern in
+  let* xs = many parse_pattern in
+  let+ parse_exp = token "=" *> parse_exp  in
+  { pat = pattern
+  ; expr =
+      (match xs with
+       | [] -> parse_exp
+       | _ -> List.fold_right ~f: (fun f p -> ExpFun (f, p)) xs ~init: parse_exp )
+  }
 ;;
 
 let parse_exp_let parse_exp =
   token "let"
   *> 
-  let* is_rec, pat, expr = parse_let_binding parse_exp in
-  let* in_expr = token "in" *> parse_exp <|> return (ExpConst Unit) in
-  return (ExpLet ({ is_rec; pat; expr }, in_expr))
+  let* rec_flag = token "rec" *> return Rec <|> return NonRec in
+  let* vb = parse_binding parse_exp in
+  let* value_bindings = many (token "and" *> parse_binding parse_exp) in
+  let+ expr = token "in" *> parse_exp in
+  ExpLet (rec_flag, vb, value_bindings, expr)
 ;;
 
 let parse_exp_apply parse_exp =
@@ -475,18 +476,22 @@ let parse_expression =
 
 (* ==================== structure ==================== *)
 
+let parse_structure_value parse_exp =
+  keyword "let"
+  *>
+  let* rec_flag = token "rec" *> return Rec <|> return NonRec in
+  let* vb = parse_binding parse_exp in
+  let+ value_bindings = many (token "and" *> parse_binding parse_exp) in
+  Binding (rec_flag, vb, value_bindings)
+;;
+
 let parse_structure =
-  let parse_binding =
-    let* _ = token "let" in
-    let* is_rec, pat, expr = parse_let_binding parse_expression in
-    return (Binding { is_rec; pat; expr })
-  in
-  let parse_eval =
-    let* eval = parse_expression in
-    return (EvalExp eval)
-  in
+  ws
+  *>
+  let str_value = parse_structure_value parse_expression in
+  let str_eval = str_value <|> (parse_expression >>| (fun ex -> EvalExp ex)) in
   let semicolons = many (token ";;") in
-  sep_by semicolons (parse_binding <|> parse_eval )<* semicolons <* ws
+  sep_by semicolons str_eval <* semicolons <* ws
 ;;
 
 (* ==================== execute ==================== *)
