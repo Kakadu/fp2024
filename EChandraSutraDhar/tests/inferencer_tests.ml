@@ -35,6 +35,27 @@ let pretty_printer_parse_and_infer_simple s =
   | Error e -> Format.printf "Parsing error. %s\n" e
 ;;
 
+let%expect_test "int literal" =
+  pretty_printer_parse_and_infer_simple "42";
+  [%expect {| int |}]
+;;
+
+let%expect_test "bool literal" =
+  pretty_printer_parse_and_infer_simple "true";
+  [%expect {| bool |}]
+;;
+
+(* Variables and let bindings *)
+let%expect_test "simple let" =
+  pretty_printer_parse_and_infer "let x = 5";
+  [%expect {| val x: int |}]
+;;
+
+let%expect_test "tuple creation" =
+  pretty_printer_parse_and_infer_simple "(1, true, \"hello\")";
+  [%expect {| (int * bool * string) |}]
+;;
+
 let%expect_test "test_binary_oper" =
   pretty_printer_parse_and_infer_simple "10/2 + 56*2 - 10 / 10 / 20 + 666 - 777 + 1";
   [%expect {|int|}]
