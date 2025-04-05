@@ -15,6 +15,55 @@ let test_interpret s =
   | Error e -> printf "Parsing error: %s\n" e
 ;;
 
+let%expect_test "integer literals" =
+  test_interpret "let() = print_int(42)";
+  [%expect {| 42 |}];
+  test_interpret "let() = print_int(-17)";
+  [%expect {| -17 |}]
+;;
+
+let%expect_test "boolean literals" =
+  test_interpret "let() = print_bool(true)";
+  [%expect {| true |}];
+  test_interpret "let() = print_bool(false)";
+  [%expect {| false |}]
+;;
+
+let%expect_test "basic arithmetic" =
+  test_interpret "let() = print_int(1 + 2 * 3)";
+  [%expect {| 7 |}];
+  test_interpret "let() = print_int((1 + 2) * 3)";
+  [%expect {| 9 |}];
+  test_interpret "let() = print_int(10 / 2)";
+  [%expect {| 5 |}]
+;;
+
+let%expect_test "division by zero" =
+  test_interpret "1 / 0";
+  [%expect {| Interpreter error: DivisionByZeroError |}]
+;;
+
+let%expect_test "if expressions" =
+  test_interpret "let () = print_int(if true then 1 else 2)";
+  [%expect {| 1 |}];
+  test_interpret "let () = print_int(if false then 1 else 2)";
+  [%expect {| 2 |}]
+;;
+
+let%expect_test "logical operators" =
+  test_interpret "let () = print_bool(true && false)";
+  [%expect {| false |}];
+  test_interpret "print_bool(true || false)";
+  [%expect {| true |}];
+  test_interpret "print_bool(not true)";
+  [%expect {| false |}]
+;;
+
+let%expect_test "pattern matching" =
+  test_interpret "match None with Some x -> x";
+  [%expect {| Parsing error: : end_of_input |}]
+;;
+
 let%expect_test "test_unit" =
   test_interpret "let () = print_int(10 / 10 + 2 * 50 + 89 - 89)";
   [%expect {|101|}]
