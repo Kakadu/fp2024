@@ -30,7 +30,9 @@ type scheme = Scheme of VarSet.t * Ast.typ
 module TypeEnv : sig
   type t = (Ast.id, scheme, Base.String.comparator_witness) Base.Map.t
 end
+
 val empty_env : TypeEnv.t
+val env_with_print_funs : TypeEnv.t
 
 val run_inferencer
   :  TypeEnv.t
