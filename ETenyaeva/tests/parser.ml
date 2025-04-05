@@ -15,11 +15,12 @@ let%expect_test "parse_multiple_bindings" =
   run "let x = 10;; let y = x + 5;;";
   [%expect
     {|
-    [(Binding { is_rec = NonRec; pat = (PatVar "x"); expr = (ExpConst (Int 10)) });
-      (Binding
-         { is_rec = NonRec; pat = (PatVar "y");
-           expr = (ExpBinOper (Add, (ExpVar "x"), (ExpConst (Int 5)))) })
-      ] |}]
+  [(Binding (NonRec, { pat = (PatVar "x"); expr = (ExpConst (Int 10)) }, []));
+    (Binding (NonRec,
+       { pat = (PatVar "y");
+         expr = (ExpBinOper (Add, (ExpVar "x"), (ExpConst (Int 5)))) },
+       []))
+    ]|}]
 ;;
 
 let%expect_test "parse_list_construct_case" =
@@ -100,8 +101,8 @@ let%expect_test "parse_factorial" =
   run "let rec fact n = if n <= 1 then 1 else n * fact (n - 1);;";
   [%expect
     {|
-    [(Binding
-        { is_rec = Rec; pat = (PatVar "fact");
+    [(Binding (Rec,
+        { pat = (PatVar "fact");
           expr =
           (ExpFun ((PatVar "n"),
              (ExpIfThenElse (
@@ -114,7 +115,8 @@ let%expect_test "parse_factorial" =
                          )))
                 ))
              ))
-          })
+          },
+        []))
       ] |}]
 ;;
 
@@ -132,15 +134,16 @@ let%expect_test "parse_ifthen" =
   run "let ifthen n = if n > 0 then 1";
   [%expect
     {|
-  [(Binding
-      { is_rec = NonRec; pat = (PatVar "ifthen");
+  [(Binding (NonRec,
+      { pat = (PatVar "ifthen");
         expr =
         (ExpFun ((PatVar "n"),
            (ExpIfThenElse (
               (ExpBinOper (GreaterThan, (ExpVar "n"), (ExpConst (Int 0)))),
               (ExpConst (Int 1)), None))
            ))
-        })
+        },
+      []))
     ] |}]
 ;; 
 
@@ -159,11 +162,12 @@ let%expect_test "parse_list" =
   run "let lst = [1; 2; 3]";
   [%expect
     {|
-  [(Binding
-      { is_rec = NonRec; pat = (PatVar "lst");
+  [(Binding (NonRec,
+      { pat = (PatVar "lst");
         expr =
         (ExpList [(ExpConst (Int 1)); (ExpConst (Int 2)); (ExpConst (Int 3))])
-        })
+        },
+      []))
     ] |}]
 ;;
 
@@ -171,9 +175,9 @@ let%expect_test "parse_with_type" =
   run "let (x : int) = 5;;";
   [%expect
     {|
-  [(Binding
-      { is_rec = NonRec; pat = (PatWithTyp (TypInt, (PatVar "x")));
-        expr = (ExpConst (Int 5)) })
+  [(Binding (NonRec,
+      { pat = (PatWithTyp (TypInt, (PatVar "x"))); expr = (ExpConst (Int 5)) },
+      []))
     ] |}]
 ;;
 
@@ -182,14 +186,15 @@ let%expect_test "parse_with_type2" =
   a + b;;";
   [%expect
     {|
-  [(Binding
-      { is_rec = NonRec; pat = (PatVar "add");
+  [(Binding (NonRec,
+      { pat = (PatVar "add");
         expr =
         (ExpFun ((PatWithTyp (TypInt, (PatVar "a"))),
            (ExpFun ((PatWithTyp (TypInt, (PatVar "b"))),
               (ExpBinOper (Add, (ExpVar "a"), (ExpVar "b")))))
            ))
-        })
+        },
+      []))
     ] |}]
 ;;
 
@@ -197,8 +202,8 @@ let%expect_test "fibonacci" =
   run "let rec fibo n = if n < 2 then 1 else fibo(n - 1) + fibo(n - 2) ;;";
   [%expect
     {|
-  [(Binding
-      { is_rec = Rec; pat = (PatVar "fibo");
+  [(Binding (Rec,
+      { pat = (PatVar "fibo");
         expr =
         (ExpFun ((PatVar "n"),
            (ExpIfThenElse (
@@ -214,7 +219,8 @@ let%expect_test "fibonacci" =
                        )))
               ))
            ))
-        })
+        },
+      []))
     ]
 |}]
 ;;
@@ -223,14 +229,15 @@ let%expect_test "lambda_test" =
   run "let add x = fun y -> x + y;;";
   [%expect
     {|
-  [(Binding
-      { is_rec = NonRec; pat = (PatVar "add");
+  [(Binding (NonRec,
+      { pat = (PatVar "add");
         expr =
         (ExpFun ((PatVar "x"),
            (ExpFun ((PatVar "y"),
               (ExpBinOper (Add, (ExpVar "x"), (ExpVar "y")))))
            ))
-        })
+        },
+      []))
     ]
 |}]
 ;;
@@ -239,12 +246,13 @@ let%expect_test "test_tuple" =
   run "let x = (1, 2, true);;";
   [%expect
     {|
-  [(Binding
-      { is_rec = NonRec; pat = (PatVar "x");
+  [(Binding (NonRec,
+      { pat = (PatVar "x");
         expr =
         (ExpTup ((ExpConst (Int 1)), (ExpConst (Int 2)),
            [(ExpConst (Bool true))]))
-        })
+        },
+      []))
     ]
 |}]
 ;;
@@ -253,9 +261,9 @@ let%expect_test "test_annotate_type" =
   run "let (a : int list) = [] ";
   [%expect
     {|
-[(Binding
-    { is_rec = NonRec; pat = (PatWithTyp (TypInt, (PatVar "a")));
-      expr = (ExpList []) })
+[(Binding (NonRec,
+    { pat = (PatWithTyp (TypInt, (PatVar "a"))); expr = (ExpList []) },
+    []))
   ]
 |}]
 ;;
@@ -284,26 +292,28 @@ let%expect_test "test_let-match" =
       | None -> 0";
   [%expect
     {|
-[(Binding
-    { is_rec = NonRec; pat = (PatVar "_5");
+[(Binding (NonRec,
+    { pat = (PatVar "_5");
       expr =
-      (ExpLet (
-         { is_rec = NonRec; pat = (PatVar "id");
-           expr = (ExpFun ((PatVar "x"), (ExpVar "x"))) },
+      (ExpLet (NonRec,
+         { pat = (PatVar "id"); expr = (ExpFun ((PatVar "x"), (ExpVar "x")))
+           },
+         [],
          (ExpMatch ((ExpOption (Some (ExpVar "id"))),
             { match_pat = (PatOption (Some (PatVar "f")));
               match_expr =
-              (ExpLet (
-                 { is_rec = NonRec; pat = PatAny;
+              (ExpLet (NonRec,
+                 { pat = PatAny;
                    expr = (ExpApp ((ExpVar "f"), (ExpConst (String "42")))) },
-                 (ExpApp ((ExpVar "f"), (ExpConst (Int 42))))))
+                 [], (ExpApp ((ExpVar "f"), (ExpConst (Int 42))))))
               },
             [{ match_pat = (PatOption None); match_expr = (ExpConst (Int 0))
                }
               ]
             ))
          ))
-      })
+      },
+    []))
   ]
  |}]
 ;;
@@ -315,8 +325,8 @@ let%expect_test "test_fib" =
   else fib (n - 1) + fib (n - 2)";
   [%expect
     {|
-[(Binding
-    { is_rec = Rec; pat = (PatVar "fib");
+[(Binding (Rec,
+    { pat = (PatVar "fib");
       expr =
       (ExpFun ((PatVar "n"),
          (ExpIfThenElse (
@@ -332,7 +342,8 @@ let%expect_test "test_fib" =
                      )))
             ))
          ))
-      })
+      },
+    []))
   ]
  |}]
 ;;
@@ -345,22 +356,25 @@ let%expect_test "test_partial" =
   a + b * c";
   [%expect
     {|
-[(Binding
-    { is_rec = NonRec; pat = (PatVar "foo");
+[(Binding (NonRec,
+    { pat = (PatVar "foo");
       expr =
       (ExpFun ((PatVar "a"),
          (ExpFun ((PatVar "b"),
             (ExpFun ((PatVar "c"),
-               (ExpLet (
-                  { is_rec = NonRec; pat = (PatConst Unit);
+               (ExpLet (NonRec,
+                  { pat = (PatConst Unit);
                     expr = (ExpApp ((ExpVar "print_int"), (ExpVar "a"))) },
-                  (ExpLet (
-                     { is_rec = NonRec; pat = (PatConst Unit);
+                  [],
+                  (ExpLet (NonRec,
+                     { pat = (PatConst Unit);
                        expr = (ExpApp ((ExpVar "print_int"), (ExpVar "b"))) },
-                     (ExpLet (
-                        { is_rec = NonRec; pat = (PatConst Unit);
+                     [],
+                     (ExpLet (NonRec,
+                        { pat = (PatConst Unit);
                           expr =
                           (ExpApp ((ExpVar "print_int"), (ExpVar "c"))) },
+                        [],  
                         (ExpBinOper (Add, (ExpVar "a"),
                            (ExpBinOper (Mult, (ExpVar "b"), (ExpVar "c")))))
                         ))
@@ -369,7 +383,8 @@ let%expect_test "test_partial" =
                ))
             ))
          ))
-      })
+      },
+    []))
   ]
  |}]
 ;;
