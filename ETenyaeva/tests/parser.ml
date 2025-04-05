@@ -388,3 +388,28 @@ let%expect_test "test_partial" =
   ]
  |}]
 ;;
+
+let%expect_test "parse_let_and" =
+  run {|
+  let x = 10 and y = 3 + 5 and z = (1, true, Some x, [1; 2; 3], ("katya", "nastya"));;
+  |};
+  [%expect
+    {|
+    [(Binding (NonRec, { pat = (PatVar "x"); expr = (ExpConst (Int 10)) },
+        [{ pat = (PatVar "y");
+           expr = (ExpBinOper (Add, (ExpConst (Int 3)), (ExpConst (Int 5)))) };
+          { pat = (PatVar "z");
+            expr =
+            (ExpTup ((ExpConst (Int 1)), (ExpConst (Bool true)),
+               [(ExpOption (Some (ExpVar "x")));
+                 (ExpList
+                    [(ExpConst (Int 1)); (ExpConst (Int 2)); (ExpConst (Int 3))]);
+                 (ExpTup ((ExpConst (String "katya")),
+                    (ExpConst (String "nastya")), []))
+                 ]
+               ))
+            }
+          ]
+        ))
+      ] |}]
+;;
