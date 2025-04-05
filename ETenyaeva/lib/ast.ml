@@ -68,7 +68,7 @@ type expr =
   | ExpBinOper of binary_oper * expr * expr (** binary operation, e.g. 1 + 5*)
   | ExpUnOper of unary_oper * expr (** unary operation, e.g. -7 *)
   | ExpList of expr list (** list expression, e.g. [1, "string", 2, (1 + 7)] *)
-  | ExpLet of let_binding * expr (** let, e.g. let x = 5 *)
+  | ExpLet of rec_flag * let_binding * let_binding list * expr (** let, e.g. let x = 5 *)
   | ExpApp of expr * expr (** application, e.g. (fun (x, y) -> x + y) (1, 2) *)
   | ExpTup of expr * expr * expr list (** tuple expression, e.g. (e1, e2), (x, y, z) *)
   | ExpMatch of expr * match_case * match_case list (** pattern matching, e.g. match x with | 0 -> "zero" | _ -> "nonzero" *)
@@ -77,8 +77,7 @@ type expr =
 [@@deriving show { with_path = false }]
 
 and let_binding =
-  { is_rec : rec_flag (** whether the binding is recursive or non-recursive *)
-  ; pat : pattern (** the pattern being bound, e.g. x, (a, b) *)
+  { pat : pattern (** the pattern being bound, e.g. x, (a, b) *)
   ; expr : expr (** the expression being assigned, e.g. 42, fun x -> x + 1 *)
   }
 [@@deriving show { with_path = false }]
@@ -92,7 +91,7 @@ and match_case =
 type structure_item =
   | EvalExp of expr
   (** an expression to be evaluated but not bound, e.g. 1 + 2*)
-  | Binding of let_binding
+  | Binding of rec_flag * let_binding * let_binding list
   (** a value or function binding, e.g. let x = 1*)
 [@@deriving show { with_path = false }]
 
