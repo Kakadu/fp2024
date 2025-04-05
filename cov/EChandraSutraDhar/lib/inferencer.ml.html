@@ -1639,7 +1639,7 @@ module Type = struct
       | <span data-count="4">T</span>yOption ty -&gt; helper acc ty
       | <span data-count="113">T</span>yPrim _ -&gt; acc
     in
-    helpe<span data-count="6">r</span> IntSet.empty
+    helpe<span data-count="7">r</span> IntSet.empty
   ;;
 end
 
@@ -1659,7 +1659,7 @@ end = struct
 
   type t = (int, ty, Int.comparator_witness) Map.t
 
-  let empty = Map.empt<span data-count="6">y</span> (module Int)
+  let empty = Map.empt<span data-count="7">y</span> (module Int)
 
   let mapping key value =
     <span data-count="237">i</span>f Type.occurs_in key value
@@ -1734,7 +1734,7 @@ end = struct
   and compose subst1 subst2 = <span data-count="257">R</span>Map.fold subst2 ~init:(retur<span data-count="257">n</span> subst1) ~f:extend
 
   let compose_all =
-    List.fold_left ~init:(retur<span data-count="6">n</span> empty) ~f:(fun acc subst -&gt;
+    List.fold_left ~init:(retur<span data-count="7">n</span> empty) ~f:(fun acc subst -&gt;
       <span data-count="225">l</span>et* acc = acc in
       <span data-count="225">c</span>ompose acc subst)
   ;;
@@ -1769,13 +1769,13 @@ module TypeEnv = struct
   let initial_env =
     let open Base.Map in
     empty (module String)
-    |&gt; <span data-count="6">s</span>et
+    |&gt; <span data-count="7">s</span>et
          ~key:"print_int"
          ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "int", TyPrim "unit")))
-    |&gt; <span data-count="6">s</span>et
+    |&gt; <span data-count="7">s</span>et
          ~key:"print_endline"
          ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "string", TyPrim "unit")))
-    |&gt; <span data-count="6">s</span>e<span data-count="6">t</span>
+    |&gt; <span data-count="7">s</span>e<span data-count="7">t</span>
          ~key:"print_bool"
          ~data:(Scheme.S (IntSet.empty, TyArrow (TyPrim "bool", TyPrim "unit")))
   ;;
@@ -1784,7 +1784,7 @@ end
 open ResultMonad
 open ResultMonad.Syntax
 
-let fresh_var = fresh &gt;&gt;<span data-count="6">|</span> fun n -&gt; <span data-count="46">T</span>yVar n
+let fresh_var = fresh &gt;&gt;<span data-count="7">|</span> fun n -&gt; <span data-count="46">T</span>yVar n
 
 let instantiate : Scheme.t -&gt; ty ResultMonad.t =
   fun (S (vars, ty)) -&gt;

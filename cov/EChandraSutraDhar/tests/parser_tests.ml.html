@@ -409,7 +409,7 @@ let%expect_test "factorial" =
               ))),
           []))
         ]
-    |}<span data-count="9">]</span>
+    |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "fibonacci" =
@@ -436,7 +436,7 @@ let%expect_test "fibonacci" =
           ))),
       []))
     ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "lambda_test" =
@@ -451,7 +451,7 @@ let%expect_test "lambda_test" =
             ))),
         []))
       ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_tuple" =
@@ -465,7 +465,7 @@ let%expect_test "test_tuple" =
              [(ExpConst (ConstBool true))]))),
          [], (ExpIdent "x"))))
     ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_list" =
@@ -479,7 +479,7 @@ let%expect_test "test_list" =
             (ExpConst (ConstBool true))])),
       []))
     ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_sum_two_args" =
@@ -492,7 +492,7 @@ let%expect_test "test_sum_two_args" =
           (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))),
       []))
     ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_annotate_type_1" =
@@ -507,7 +507,7 @@ let%expect_test "test_annotate_type_1" =
           (ExpBinOper (Plus, (ExpIdent "x"), (ExpIdent "y")))))),
       []))
     ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_annotate_type_2" =
@@ -518,7 +518,7 @@ let%expect_test "test_annotate_type_2" =
       ((PatType ((PatVariable "a"), (TyList (TyPrim "int")))), (ExpList [])),
       []))
     ]
-|}<span data-count="9">]</span>
+|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_minus" =
@@ -534,7 +534,7 @@ let%expect_test "test_minus" =
             (ExpUnarOper (Negative, (ExpConst (ConstInt 1)))))),
          (ExpConst (ConstInt 3)))))
     ]
- |}<span data-count="9">]</span>
+ |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_unit" =
@@ -545,7 +545,7 @@ let%expect_test "test_unit" =
       (PatUnit, (ExpFunction ((ExpIdent "print_int"), (ExpConst (ConstInt 5))))),
       []))
     ]
- |}<span data-count="9">]</span>
+ |}<span data-count="11">]</span>
 ;;
 </code></pre>
       </div>

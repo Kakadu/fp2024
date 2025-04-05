@@ -1066,7 +1066,7 @@ end = struct
   let initial_env =
     let open Base.Map in
     empty (module String)
-    |&gt; <span data-count="6">s</span>et
+    |&gt; <span data-count="7">s</span>et
          ~key:"print_int"
          ~data:
            (ValueBuiltin
@@ -1076,7 +1076,7 @@ end = struct
                   <span data-count="18">S</span>tdlib.print_newline ();
                   <span data-count="18">R</span>esult.return ValueUnit
                 | <span data-count="0">_</span> -&gt; Result.fail TypeError))
-    |&gt; <span data-count="6">s</span>et
+    |&gt; <span data-count="7">s</span>et
          ~key:"print_endline"
          ~data:
            (ValueBuiltin
@@ -1085,7 +1085,7 @@ end = struct
                   Stdlib.print_endline s;
                   <span data-count="1">R</span>esult.return ValueUnit
                 | <span data-count="0">_</span> -&gt; Result.fail TypeError))
-    |&gt; <span data-count="6">s</span>e<span data-count="6">t</span>
+    |&gt; <span data-count="7">s</span>e<span data-count="7">t</span>
          ~key:"print_bool"
          ~data:
            (ValueBuiltin

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>ast.ml &mdash; Coverage report</title>
-    <meta name="description" content="65.52% coverage in lib/ast.ml">
+    <meta name="description" content="81.03% coverage in lib/ast.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,23 +15,18 @@
           <span class="dirname">lib/</span>ast.ml
         </a>
       </h1>
-      <h2>65.52%</h2>
+      <h2>81.03%</h2>
     </div>
     <div id="navbar">
       <span class="some-visited" style="top:6.80%"></span>
       <span class="some-visited" style="top:7.77%"></span>
-      <span class="unvisited" style="top:9.71%"></span>
-      <span class="unvisited" style="top:24.27%"></span>
-      <span class="unvisited" style="top:32.04%"></span>
       <span class="unvisited" style="top:34.95%"></span>
       <span class="unvisited" style="top:41.75%"></span>
-      <span class="unvisited" style="top:48.54%"></span>
-      <span class="unvisited" style="bottom:47.57%"></span>
       <span class="unvisited" style="bottom:46.60%"></span>
       <span class="unvisited" style="bottom:32.04%"></span>
       <span class="some-visited" style="bottom:29.13%"></span>
-      <span class="unvisited" style="bottom:5.83%"></span>
-      <span class="unvisited" style="bottom:1.94%"></span>
+      <span class="some-visited" style="bottom:5.83%"></span>
+      <span class="some-visited" style="bottom:1.94%"></span>
     </div>
     <div id="report">
       <div id="lines-layer">
@@ -45,7 +40,7 @@
 <a id="L7"></a><span class="some-visited"> </span>
 <a id="L8"></a><span class="some-visited"> </span>
 <a id="L9"></a><span > </span>
-<a id="L10"></a><span class="unvisited"> </span>
+<a id="L10"></a><span class="visited"> </span>
 <a id="L11"></a><span > </span>
 <a id="L12"></a><span > </span>
 <a id="L13"></a><span > </span>
@@ -60,7 +55,7 @@
 <a id="L22"></a><span > </span>
 <a id="L23"></a><span > </span>
 <a id="L24"></a><span > </span>
-<a id="L25"></a><span class="unvisited"> </span>
+<a id="L25"></a><span class="visited"> </span>
 <a id="L26"></a><span > </span>
 <a id="L27"></a><span > </span>
 <a id="L28"></a><span > </span>
@@ -68,7 +63,7 @@
 <a id="L30"></a><span class="visited"> </span>
 <a id="L31"></a><span class="visited"> </span>
 <a id="L32"></a><span class="visited"> </span>
-<a id="L33"></a><span class="unvisited"> </span>
+<a id="L33"></a><span class="visited"> </span>
 <a id="L34"></a><span > </span>
 <a id="L35"></a><span > </span>
 <a id="L36"></a><span class="unvisited"> </span>
@@ -85,11 +80,11 @@
 <a id="L47"></a><span class="visited"> </span>
 <a id="L48"></a><span > </span>
 <a id="L49"></a><span > </span>
-<a id="L50"></a><span class="unvisited"> </span>
+<a id="L50"></a><span class="visited"> </span>
 <a id="L51"></a><span > </span>
 <a id="L52"></a><span > </span>
 <a id="L53"></a><span > </span>
-<a id="L54"></a><span class="unvisited"> </span>
+<a id="L54"></a><span class="visited"> </span>
 <a id="L55"></a><span class="unvisited"> </span>
 <a id="L56"></a><span > </span>
 <a id="L57"></a><span > </span>
@@ -132,11 +127,11 @@
 <a id="L94"></a><span > </span>
 <a id="L95"></a><span class="visited"> </span>
 <a id="L96"></a><span > </span>
-<a id="L97"></a><span class="unvisited"> </span>
+<a id="L97"></a><span class="some-visited"> </span>
 <a id="L98"></a><span class="visited"> </span>
 <a id="L99"></a><span class="visited"> </span>
 <a id="L100"></a><span > </span>
-<a id="L101"></a><span class="unvisited"> </span>
+<a id="L101"></a><span class="some-visited"> </span>
 <a id="L102"></a><span class="visited"> </span>
 <a id="L103"></a><span > </span>
 </pre>
@@ -253,10 +248,10 @@
 
 open Format
 
-<span data-count="0">t</span>ype ident = <span data-count="33">s</span>tring [@@deriving show { with_path = false }]
+<span data-count="0">t</span>ype ident = <span data-count="42">s</span>tring [@@deriving show { with_path = false }]
 <span data-count="0">t</span>ype is_rec = <span data-count="9">b</span>ool [@@deriving show { with_path = false }]
 
-<span data-count="0">t</span>ype bin_oper =
+<span data-count="3">t</span>ype bin_oper =
   | Plus (* [+] *)
   | Minus (* [-] *)
   | Multiply (* [*] *)
@@ -271,40 +266,40 @@ open Format
   | NotEqual (* [&lt;&gt;] *)
 [@@deriving show { with_path = false }]
 
-<span data-count="0">t</span>ype unar_oper =
+<span data-count="2">t</span>ype unar_oper =
   | Negative (* [-x] *)
   | Not (* [not x]*)
 [@@deriving show { with_path = false }]
 
-<span data-count="36">t</span>ype const =
-  | ConstInt of in<span data-count="16">t</span> (* Integer constant: Example - [21] *)
-  | ConstBool of boo<span data-count="2">l</span> (* Boolean constant: Example - [true] or [false] *)
-  | ConstString of strin<span data-count="0">g</span> (* String constant: Example - "I like OCaml!" *)
+<span data-count="53">t</span>ype const =
+  | ConstInt of in<span data-count="21">t</span> (* Integer constant: Example - [21] *)
+  | ConstBool of boo<span data-count="3">l</span> (* Boolean constant: Example - [true] or [false] *)
+  | ConstString of strin<span data-count="1">g</span> (* String constant: Example - "I like OCaml!" *)
 [@@deriving show { with_path = false }]
 
 <span data-count="0">t</span>ype binder = <span data-count="0">i</span>nt [@@deriving show { with_path = false }]
 
-<span data-count="8">t</span>ype ty =
+<span data-count="10">t</span>ype ty =
   | TyVar of binder
-  | TyPrim of strin<span data-count="3">g</span>
+  | TyPrim of strin<span data-count="4">g</span>
   | TyArrow of ty * ty
   | TyList of ty
   | TyTuple of <span data-count="0">t</span>y lis<span data-count="0">t</span>
   | TyOption of ty
 [@@deriving show { with_path = false }]
 
-<span data-count="35">t</span>ype pattern =
+<span data-count="63">t</span>ype pattern =
   | PatVariable of ident (* [x] *)
   | PatConst of const (* [21] or [true] or [false] *)
-  | PatTuple of pattern * pattern * <span data-count="0">p</span>attern lis<span data-count="0">t</span> (* (x1; x2 ... xn) *)
+  | PatTuple of pattern * pattern * <span data-count="6">p</span>attern lis<span data-count="2">t</span> (* (x1; x2 ... xn) *)
   | PatAny
   | PatType of pattern * ty
   | PatUnit
-  | PatList of <span data-count="0">p</span>attern lis<span data-count="0">t</span>
+  | PatList of <span data-count="9">p</span>attern lis<span data-count="2">t</span>
   | PatOption of <span data-count="0">p</span>attern option
 [@@deriving show { with_path = false }]
 
-<span data-count="103">t</span>ype expr =
+<span data-count="116">t</span>ype expr =
   | ExpIdent of ident (* ExpIdent "x" *)
   | ExpConst of const (* ExpConst (ConstInt 666) *)
   | ExpBranch of expr * expr * <span data-count="8">e</span>xpr optio<span data-count="2">n</span>
@@ -312,7 +307,7 @@ open Format
   | ExpUnarOper of unar_oper * expr (* ExpUnarOper(not, x)*)
   | ExpTuple of expr * expr * <span data-count="6">e</span>xpr lis<span data-count="2">t</span> (* ExpTuple[x1; x2 .. xn] *)
   | ExpList of <span data-count="15">e</span>xpr lis<span data-count="4">t</span> (* ExpList[x1; x2 .. xn] *)
-  | ExpLambda of <span data-count="38">p</span>attern lis<span data-count="8">t</span> * expr (* ExpLambda([x;y;z], x+y+z)*)
+  | ExpLambda of <span data-count="43">p</span>attern lis<span data-count="9">t</span> * expr (* ExpLambda([x;y;z], x+y+z)*)
   | ExpTypeAnnotation of expr * ty
   | ExpLet of is_rec * bind * <span data-count="3">b</span>ind lis<span data-count="2">t</span> * expr
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
@@ -329,25 +324,25 @@ open Format
 <span data-count="10">t</span>ype program = <span data-count="50">s</span>tructure lis<span data-count="10">t</span> [@@deriving show { with_path = false }]
 
 let rec pp_ty fmt = function
-  | <span data-count="37">T</span>yPrim x -&gt; fprintf fmt "%s" x
-  | <span data-count="14">T</span>yVar x -&gt; fprintf fmt "'%d" x
-  | <span data-count="20">T</span>yArrow (l, r) -&gt;
+  | <span data-count="49">T</span>yPrim x -&gt; fprintf fmt "%s" x
+  | <span data-count="15">T</span>yVar x -&gt; fprintf fmt "'%d" x
+  | <span data-count="24">T</span>yArrow (l, r) -&gt;
     (match l, r with
-     | <span data-count="1">T</span>yArrow _, _ -&gt; fprintf fmt "(%a) -&gt; %a" pp_ty l pp_ty r
-     | <span data-count="19">_</span>, _ -&gt; fprintf fmt "%a -&gt; %a" pp_ty l pp_ty r)
-  | <span data-count="2">T</span>yTuple elems -&gt;
+     | <span data-count="2">T</span>yArrow _, _ -&gt; fprintf fmt "(%a) -&gt; %a" pp_ty l pp_ty r
+     | <span data-count="22">_</span>, _ -&gt; fprintf fmt "%a -&gt; %a" pp_ty l pp_ty r)
+  | <span data-count="4">T</span>yTuple elems -&gt;
     fprintf
       fmt
       "(%a)"
-      (pp_print_lis<span data-count="2">t</span> ~pp_sep:(fun fmt () -&gt; <span data-count="4">f</span>printf fmt " * ") pp_ty)
+      (pp_print_lis<span data-count="4">t</span> ~pp_sep:(fun fmt () -&gt; <span data-count="6">f</span>printf fmt " * ") pp_ty)
       elems
-  | <span data-count="3">T</span>yList ty -&gt;
+  | <span data-count="4">T</span>yList ty -&gt;
     (match ty with
-     | <span data-count="0">T</span>yArrow _ | <span data-count="0">T</span>yTuple _ -&gt; fprintf fmt "(%a) list" pp_ty ty
+     | <span data-count="1">T</span>yArrow _ | <span data-count="0">T</span>yTuple _ -&gt; fprintf fmt "(%a) list" pp_ty ty
      | <span data-count="3">_</span> -&gt; fprintf fmt "%a list" pp_ty ty)
-  | <span data-count="2">T</span>yOption ty -&gt;
+  | <span data-count="3">T</span>yOption ty -&gt;
     (match ty with
-     | <span data-count="0">T</span>yArrow _ | <span data-count="0">T</span>yTuple _ -&gt; fprintf fmt "(%a) option" pp_ty ty
+     | <span data-count="0">T</span>yArrow _ | <span data-count="1">T</span>yTuple _ -&gt; fprintf fmt "(%a) option" pp_ty ty
      | <span data-count="2">_</span> -&gt; fprintf fmt "%a option" pp_ty ty)
 ;;
 </code></pre>

@@ -402,132 +402,132 @@ let pretty_printer_parse_and_infer_simple s =
 
 let%expect_test "int literal" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "42";
-  <span data-count="1">[</span>%expect {| int |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| int |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "bool literal" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "true";
-  <span data-count="1">[</span>%expect {| bool |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| bool |}<span data-count="11">]</span>
 ;;
 
 (* Variables and let bindings *)
 let%expect_test "simple let" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let x = 5";
-  <span data-count="1">[</span>%expect {| val x: int |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| val x: int |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "tuple creation" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "(1, true, \"hello\")";
-  <span data-count="1">[</span>%expect {| (int * bool * string) |}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {| (int * bool * string) |}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_binary_oper" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "10/2 + 56*2 - 10 / 10 / 20 + 666 - 777 + 1";
-  <span data-count="1">[</span>%expect {|int|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|int|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_bool" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "false";
-  <span data-count="1">[</span>%expect {|bool|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|bool|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_string" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "\"I like OCaml\" ";
-  <span data-count="1">[</span>%expect {|string|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|string|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_option" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "Some 10";
-  <span data-count="1">[</span>%expect {|int option|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|int option|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_binary_oper_and_arg" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "fun x -&gt; x * 69 + 100 - 201 / 777";
-  <span data-count="1">[</span>%expect {|int -&gt; int|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|int -&gt; int|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_rec" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let rec func arg = func arg";
-  <span data-count="1">[</span>%expect {|val func: '1 -&gt; '2|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val func: '1 -&gt; '2|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_func_apply_some_args" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let func a1 a2 a3 = a1 a2 a3";
-  <span data-count="1">[</span>%expect {|val func: ('1 -&gt; '2 -&gt; '4) -&gt; '1 -&gt; '2 -&gt; '4|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val func: ('1 -&gt; '2 -&gt; '4) -&gt; '1 -&gt; '2 -&gt; '4|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_tuple" =
   <span data-count="1">p</span>retty_printer_parse_and_infer_simple "fun x y z -&gt; (x + 10, y / 2 , z)";
-  <span data-count="1">[</span>%expect {|int -&gt; int -&gt; '2 -&gt; (int * int * '2)|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|int -&gt; int -&gt; '2 -&gt; (int * int * '2)|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_list" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let arr = [1;2;3]";
-  <span data-count="1">[</span>%expect {|val arr: int list|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val arr: int list|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_binary_oper" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let is_above_10 x = if x &gt; 10 then true else false ";
-  <span data-count="1">[</span>%expect {|val is_above_10: int -&gt; bool|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val is_above_10: int -&gt; bool|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_binary_oper" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let is_above_10 x = x &gt; 10";
-  <span data-count="1">[</span>%expect {|val is_above_10: int -&gt; bool|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val is_above_10: int -&gt; bool|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_factorial" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let rec fac n = if n &lt; 2 then 1 else n * fac (n - 1)";
-  <span data-count="1">[</span>%expect {|val fac: int -&gt; int|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val fac: int -&gt; int|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_nested_list_function" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let f x = [ [x; x]; [x] ]";
-  <span data-count="1">[</span>%expect {|val f: '0 -&gt; '0 list list|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val f: '0 -&gt; '0 list list|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_nested_option_function" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let f x = Some x";
-  <span data-count="1">[</span>%expect {|val f: '0 -&gt; '0 option|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val f: '0 -&gt; '0 option|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_fibonacci" =
   <span data-count="1">p</span>retty_printer_parse_and_infer
     "let rec fibo n = if n &lt; 2 then 1 else fibo(n - 1) + fibo(n - 2)";
-  <span data-count="1">[</span>%expect {|val fibo: int -&gt; int|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val fibo: int -&gt; int|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_unbound_var" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let f = x";
-  <span data-count="1">[</span>%expect {|Infer error. Unbound variable 'x'.|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|Infer error. Unbound variable 'x'.|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_annotate" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let sum = fun (x : int) (y : int) -&gt; x + y";
-  <span data-count="1">[</span>%expect {|val sum: int -&gt; int -&gt; int|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val sum: int -&gt; int -&gt; int|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_annotate_fac" =
   <span data-count="1">p</span>retty_printer_parse_and_infer
     "let rec fac = fun (n : int) (acc : int) -&gt; if n &lt; 2 then acc else fac (n-1) (acc * \
      n);;";
-  <span data-count="1">[</span>%expect {|val fac: int -&gt; int -&gt; int|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|val fac: int -&gt; int -&gt; int|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_annotate_error" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "let sum (x : int) (y : string) = x + y";
-  <span data-count="1">[</span>%expect {|Infer error. Failed to unify types: string and int.|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|Infer error. Failed to unify types: string and int.|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_unification_types" =
   <span data-count="1">p</span>retty_printer_parse_and_infer "fun x -&gt; x + true";
-  <span data-count="1">[</span>%expect {|Infer error. Failed to unify types: bool and int.|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|Infer error. Failed to unify types: bool and int.|}<span data-count="11">]</span>
 ;;
 
 let%expect_test "test_option_type_error" =
   <span data-count="1">p</span>retty_printer_parse_and_infer
     "let f x = Some (x + 1) in let g y = Some (y &amp;&amp; true) in f = g";
-  <span data-count="1">[</span>%expect {|Infer error. Failed to unify types: bool and int.|}<span data-count="9">]</span>
+  <span data-count="1">[</span>%expect {|Infer error. Failed to unify types: bool and int.|}<span data-count="11">]</span>
 ;;
 </code></pre>
       </div>
