@@ -246,7 +246,7 @@ let parse_pattern_option parse_pat =
 let parse_list_construct_case_pattern parse_pat =
   let* first = parse_pat in
   let* rest = many1 @@ (token "::" *> parse_pat) in
-  return (PatList (first :: rest))
+  return (PatListConstructor (first :: rest))
 ;;
 
 let parse_pattern_list parse_pat =
@@ -343,7 +343,7 @@ let parse_exp_tuple parse_exp =
 let parse_list_construct_case_exp parse_exp =
   let* first = parse_exp in
   let* rest = many1 (token "::" *> parse_exp) in
-  return (ExpList (first :: rest))
+  return (ExpListConstructor (first :: rest))
 ;;
 
 let parse_exp_list parse_exp =

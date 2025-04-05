@@ -253,6 +253,16 @@ module TypeEnv = struct
       (match env with
        | Ok env -> env
        | _ -> env_acc)
+     | PatListConstructor pat_list, TypList ty ->
+      (match pat_list with
+       | single_pat :: [] ->
+         extend_with_pattern env_acc single_pat (Scheme (bind_set, TypList ty))
+       | first :: rest ->
+         extend_with_pattern
+           (extend_with_pattern env_acc first (Scheme (bind_set, ty)))
+           (PatListConstructor rest)
+           (Scheme (bind_set, TypList ty))
+       | [] -> env_acc)
     | PatList pat_list, TypList ty ->
       List.fold_left pat_list ~init:env_acc ~f:(fun env_acc pat ->
         extend_with_pattern env_acc pat (Scheme (bind_set, ty)))
@@ -355,6 +365,25 @@ module Infer = struct
     | PatOption (Some pat) ->
       let* env, ty = infer_pattern env pat in
       return (env, TypOption ty)
+    | PatListConstructor pat_list ->
+      let* fresh = fresh_var in
+      let rec helper env sub_acc rest =
+        match rest with
+        | [] -> return (env, sub_acc)
+        | single :: [] ->
+          let* env, ty = infer_pattern env single in
+          let* unified_sub = unify (TypList fresh) ty in
+          let* composed_sub = Subst.compose sub_acc unified_sub in
+          helper env composed_sub []
+        | first :: rest ->
+          let* env, ty = infer_pattern env first in
+          let* unified_sub = unify fresh ty in
+          let* composed_sub = Subst.compose sub_acc unified_sub in
+          helper env composed_sub rest
+      in
+      let* env, sub = helper env Subst.empty pat_list in
+      let result_ty = Subst.apply sub fresh in
+      return (env, TypList result_ty)
     | PatList pat_list ->
       let* list_element_type_var = fresh_var in
       let* env, sub =
@@ -403,6 +432,7 @@ module Infer = struct
         ~init:(return acc)
         ~f:(extract_names_from_pat func)
     | PatOption (Some pat) -> extract_names_from_pat func acc pat
+    | PatListConstructor pat_list
     | PatList pat_list ->
       (match pat_list with
        | [] -> return acc
@@ -541,6 +571,24 @@ module Infer = struct
         (match tys with
           | [] -> fail (SeveralBounds "inferred empty list type")
           | ty :: _ -> return (total_subst, TypList ty)))
+    | ExpListConstructor expr_list ->
+      let* fresh = fresh_var in
+      let rec infer_list_constract env acc_sub = function
+        | [] -> return (Subst.empty, TypOption TypUnit)
+        | end_element :: [] ->
+          let* expr_sub, expr_ty = infer_expression env end_element in
+          let* unified_sub = unify expr_ty (TypList fresh) in
+          let* composed_sub = Subst.compose_all [ expr_sub; unified_sub; acc_sub ] in
+          return (composed_sub, TypList (Subst.apply composed_sub fresh))
+        | expr_element :: expr_rest ->
+          let* expr_sub, expr_ty = infer_expression env expr_element in
+          let* unified_sub = unify expr_ty fresh in
+          let* composed_sub = Subst.compose_all [ expr_sub; unified_sub; acc_sub ] in
+          let env = TypeEnv.apply composed_sub env in
+          let* sub, ty = infer_list_constract env composed_sub expr_rest in
+          return (sub, ty)
+      in
+      infer_list_constract env Subst.empty expr_list
     | ExpOption None -> return (Subst.empty, TypOption TypUnit)
     | ExpOption (Some expr) ->
       let* sub, ty = infer_expression env expr in
