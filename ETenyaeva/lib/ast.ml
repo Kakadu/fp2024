@@ -56,6 +56,7 @@ type pattern =
   | PatAny (** matches any value without binding it - [_] *)
   | PatTup of pattern * pattern * pattern list (** matches tuples, e.g. (x, y), (a, b, c) *)
   | PatList of pattern list (** matches lists of patterns, e.g. [y; x] *)
+  | PatListConstructor of pattern list (** matches lists of patterns, e.g. a::b::[] *)
   | PatOption of pattern option (** matches an optional pattern, e.g. Some x or None *)
   | PatWithTyp of typ * pattern (** typed pattern, e.g. a: int *)
 [@@deriving show { with_path = false }]
@@ -68,6 +69,7 @@ type expr =
   | ExpBinOper of binary_oper * expr * expr (** binary operation, e.g. 1 + 5*)
   | ExpUnOper of unary_oper * expr (** unary operation, e.g. -7 *)
   | ExpList of expr list (** list expression, e.g. [1, "string", 2, (1 + 7)] *)
+  | ExpListConstructor of expr list (** list expression, e.g. 1::2::[] *)
   | ExpLet of rec_flag * let_binding * let_binding list * expr (** let, e.g. let x = 5 *)
   | ExpApp of expr * expr (** application, e.g. (fun (x, y) -> x + y) (1, 2) *)
   | ExpTup of expr * expr * expr list (** tuple expression, e.g. (e1, e2), (x, y, z) *)
