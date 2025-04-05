@@ -354,7 +354,7 @@ let parse_exp_list parse_exp =
   let list_parser =
     let* _ = token "[" in
     let* first = parse_exp in
-    let* rest = many1 (token ";" *> parse_exp) in
+    let* rest = many (token ";" *> parse_exp) in
     let* _ = token "]" in
     return (ExpList (first :: rest))
   in
