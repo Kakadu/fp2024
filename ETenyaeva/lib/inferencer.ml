@@ -224,7 +224,6 @@ module Scheme = struct
   ;;
 end
 
-(** map from id and schema*)
 module TypeEnv = struct
   open Base
   type t = (id, scheme, String.comparator_witness) Map.t
@@ -275,9 +274,7 @@ module Infer = struct
 
   let unify = Subst.unify
   let fresh_var = fresh >>| fun n -> TypVar ("'ty" ^ Int.to_string n)
-  (** a' -> b' -> a' --> ty1 -> ty2 -> ty1*)
-  (** allows you to create concrete types from schemas,
-   ensuring variable uniqueness and preventing conflicts*)
+
   let instantiate (Scheme (bind_set, ty)) =
     VarSet.fold
       (fun name ty ->
@@ -303,7 +300,6 @@ module Infer = struct
         (fun str (temp_free, temp_ty, n) ->
           let degree = n / 26 in
           let new_str =
-            (* 97 - is number 'a' in ASCII-table *)
             Printf.sprintf
               "'%c%s"
               (Stdlib.Char.chr (97 + (n mod 26)))
@@ -697,7 +693,7 @@ module Infer = struct
     | _ -> fail NoVariableRec
   ;;
 
-  let infer_structure_item (**~debug*) (env, out_list) =
+  let infer_structure_item (env, out_list) =
     let get_names_from_let_binds env =
       RList.fold_left ~init:(return []) ~f:(fun acc { pat; _ } ->
         extract_names_from_pat
@@ -725,9 +721,9 @@ module Infer = struct
       return (env, out_list @ id_list)
   ;;
 
-  let infer_srtucture (**~debug*) env ast =
+  let infer_srtucture env ast =
     let* env, out_list =
-      RList.fold_left ast ~init: (return (env, [])) ~f:infer_structure_item (**~debug*)
+      RList.fold_left ast ~init: (return (env, [])) ~f:infer_structure_item
     in
     let remove_duplicates =
       let fun_equal el1 el2 =
@@ -758,6 +754,6 @@ let env_with_print_funs =
     print_fun_list
 ;;
 
-let run_inferencer (*?(debug = false)*) env ast =
-  State.run (Infer.infer_srtucture (*~debug*) env ast)
+let run_inferencer env ast =
+  State.run (Infer.infer_srtucture env ast)
 ;;
