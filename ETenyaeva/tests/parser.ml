@@ -27,7 +27,9 @@ let%expect_test "parse_list_construct_case" =
   run "a::b::c::[];;";
   [%expect
     {|
-  [(EvalExp (ExpList [(ExpVar "a"); (ExpVar "b"); (ExpVar "c"); (ExpList [])]))
+  [(EvalExp
+      (ExpListConstructor
+         [(ExpVar "a"); (ExpVar "b"); (ExpVar "c"); (ExpList [])]))
     ]
 |}]
 ;;
