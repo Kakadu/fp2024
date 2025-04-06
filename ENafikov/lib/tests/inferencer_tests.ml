@@ -57,3 +57,74 @@ let%expect_test _ =
   in
   [%expect {| (int -> int) |}]
 ;;
+
+(* Additional inferencer tests for type errors and pattern matching *)
+let%expect_test _ =
+  let _ =
+    let e =
+      [ Expression
+          (Expr_bin_op (Add, Expr_const (Const_int 1), Expr_const (Const_bool true)))
+      ]
+    in
+    check_types e |> run_infer
+  in
+  [%expect {| Error: Typechecker error: unification failed on bool and int |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    let e = [ Expression (Expr_var "x") ] in
+    check_types e |> run_infer
+  in
+  [%expect {| Error: Typechecker error: undefined variable 'x' |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    let e = [] in
+    check_types e |> run_infer
+  in
+  [%expect {| Error: empty program |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    let e =
+      [ Expression (Expr_fun (Pattern_id "y", Expr_app (Expr_var "y", Expr_var "y"))) ]
+    in
+    check_types e |> run_infer
+  in
+  [%expect {| Error: Typechecker error: occurs check failed |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    let e =
+      [ Expression
+          (Expr_match
+             ( Expr_const (Const_int 1)
+             , [ Pattern_const (Const_int 0), Expr_const (Const_string "zero")
+               ; Pattern_wild, Expr_const (Const_string "nonzero")
+               ] ))
+      ]
+    in
+    check_types e |> run_infer
+  in
+  [%expect {| string |}]
+;;
+
+let%expect_test _ =
+  let _ =
+    let e =
+      [ Expression
+          (Expr_match
+             ( Expr_const (Const_int 1)
+             , [ Pattern_const (Const_int 0), Expr_const (Const_int 0)
+               ; Pattern_wild, Expr_const (Const_string "nonzero")
+               ] ))
+      ]
+    in
+    check_types e |> run_infer
+  in
+  [%expect {| Error: Typechecker error: unification failed on int and string |}]
+;;

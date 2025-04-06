@@ -163,6 +163,8 @@ module Interpret (M : MonadFail) = struct
        | Neq, VInt l, VInt r -> return @@ VBool (l <> r)
        | Con, h, VList tl -> return @@ VList (h :: tl)
        | Con, h, VNil -> return @@ VList (h :: [])
+       | And, VBool lb, VBool rb -> return (VBool (lb && rb))
+       | Or, VBool lb, VBool rb -> return (VBool (lb || rb))
        | _ -> fail TypeError)
     | Expr_var id -> find_val env id
     | Expr_list (h, t) ->

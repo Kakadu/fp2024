@@ -69,12 +69,12 @@ let parse_int =
   take_while1 (function
     | '0' .. '9' -> true
     | _ -> false)
-  >>= fun digits -> return (Const_int (int_of_string digits))
+  >>= fun digits -> return (Const_int (Int.of_string digits))
 ;;
 
 let parse_string =
   (fun strk -> Const_string strk)
-  <$> (char '"' *> take_while1 (fun a -> a != '"') <* char '"')
+  <$> (char '"' *> take_while1 (fun a -> not (phys_equal a '"')) <* char '"')
 ;;
 
 let parse_const = parse_bool <|> parse_int <|> parse_string
@@ -82,7 +82,7 @@ let parse_const = parse_bool <|> parse_int <|> parse_string
 let check_var cond =
   parse_white_space *> take_while1 cond
   >>= fun v ->
-  if String.length v == 0
+  if String.length v |> phys_equal 0
   then fail "Not identifier"
   else if is_keyword v
   then fail ("You can not use" ^ v ^ "keywords as vars")
@@ -141,8 +141,6 @@ let parse_pattern =
   choice [ con; tuple; value ]
 ;;
 
-(* Parse expression *)
-
 (* Parse expr *)
 
 let p_op char_op op = pstrtoken char_op *> return (fun e1 e2 -> Expr_bin_op (op, e1, e2))
@@ -159,7 +157,7 @@ let parse_econst = (fun v -> Expr_const v) <$> parse_const
 let parse_evar = (fun v -> Expr_var v) <$> parse_var
 
 let parse_cons_semicolon_expr parser constructor =
-  constructor <$> (pstrtoken "[" *> sep_by1 (pstrtoken ";") parser <* pstrtoken "]")
+  constructor <$> (pstrtoken "[" *> sep_by (pstrtoken ";") parser <* pstrtoken "]")
 ;;
 
 let parse_tuple_expr parser =

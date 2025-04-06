@@ -115,7 +115,6 @@ val lookup_env
 val infer : TypeEnv.t -> Ast.struct_prog -> (Subst.t * Ty.typ) R.t
 val empty : environment
 val check_type : TypeEnv.t -> Ast.struct_prog -> (TypeEnv.t * Ty.typ) R.t
-val check_types : TypeEnv.t -> Ast.struct_prog list -> (TypeEnv.t * Ty.typ) R.t
 
 val check_types
   :  ?env:environment
