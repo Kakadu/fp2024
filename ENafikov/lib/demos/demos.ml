@@ -15,4 +15,4 @@ let run input =
   | Error e -> Stdlib.Format.printf "(Error while parsing): %s" e
 ;;
 
-let () = run (Stdio.In_channel.input_all Caml.stdin)
+let () = run (Stdio.In_channel.input_all Stdlib.stdin)
