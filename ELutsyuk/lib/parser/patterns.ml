@@ -32,20 +32,20 @@ let prs_pat_any =
   | _ -> fail "Not any pattern"
 ;;
 
-let prs_pat_tuple prs_pat =
-  skip_ws
-  *>
-  let* el1 = prs_pat in
-  let* el2 = token "," *> prs_pat in
-  let+ rest = many (token "," *> prs_pat) in
+let prs_pat_tuple pat =
+  trim
+  @@
+  let* el1 = pat in
+  let* el2 = token "," *> pat in
+  let+ rest = many (token "," *> pat) in
   PatTup (el1, el2, rest)
 ;;
 
-let prs_pat_cons prs_pat =
+let prs_pat_cons pat =
   trim
   @@
-  let* el1 = prs_pat in
-  let* rest = many (token "::" *> prs_pat) in
+  let* el1 = pat in
+  let* rest = many (token "::" *> pat) in
   let rec helper = function
     | [] -> el1
     | [ el2 ] -> el2
@@ -54,17 +54,17 @@ let prs_pat_cons prs_pat =
   return (helper (el1 :: rest))
 ;;
 
-let prs_pat_list prs_pat =
+let prs_pat_list pat =
   square_par
   @@
-  let+ parsed = sep_by (token ";") prs_pat in
+  let+ parsed = sep_by (token ";") pat in
   PatList parsed
 ;;
 
-let prs_pat_type prs_pat =
+let prs_pat_type pat =
   round_par
   @@
-  let* pat = prs_pat in
+  let* pat = pat in
   let* _ = token ":" in
   let+ typ = prs_typ in
   PatType (pat, typ)

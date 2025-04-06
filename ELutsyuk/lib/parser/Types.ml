@@ -41,9 +41,9 @@ let rec prs_typ_option prs_typ =
 
 let prs_typ =
   fix (fun typ ->
-    let typ = prs_typ_constant <|> round_par typ in
-    let typ = prs_typ_list typ <|> prs_typ_option typ <|> typ in
-    let typ = prs_typ_tup typ <|> typ in
-    let typ = prs_typ_arrow typ <|> typ in
-    typ)
+    let atom = prs_typ_constant <|> round_par typ in
+    let list_or_option = prs_typ_list atom <|> prs_typ_option atom <|> atom in
+    let tuple = prs_typ_tup list_or_option <|> list_or_option in
+    let arrow = prs_typ_arrow tuple <|> tuple in
+    arrow)
 ;;

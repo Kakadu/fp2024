@@ -7,37 +7,20 @@ open Forest.Ast
 open PrsAuxilary
 open Expressions
 
-let prs_program =
+let prs_structure =
   let p_struct_binding =
     let* _ = token "let" in
     let* rec_state = choice [ token "rec" *> return Rec; return NonRec ] in
     let* binding = prs_let_binding prs_expr in
     let+ bindings_list = many (token "and" *> prs_let_binding prs_expr) in
-    Binding (rec_state, binding, bindings_list)
+    Value (rec_state, binding, bindings_list)
   in
   let p_struct_eval =
     let+ eval = prs_expr in
-    EvalExpr eval
+    Eval eval
   in
-  trim
-  @@ many
-       (p_struct_binding
-        <|> p_struct_eval
-        <* token ";;"
-        <* skip_ws
-        <|> (p_struct_binding <|> p_struct_eval <* skip_ws))
-  <* end_of_input
+  p_struct_binding <|> p_struct_eval
 ;;
 
-let parse str = parse_string ~consume:All prs_program str
-
-let parse_program input =
-  match parse input with
-  | Ok program -> Stdlib.Format.printf "%s\n" (show_program program)
-  | Error err -> Stdlib.Format.printf "%s\n" err
-;;
-(* let parse_to_string input =
-   match parse input with
-   | Ok program -> show_program program
-   | Error err -> err
-   ;; *)
+let prs_program = sep_by (many (token ";;")) prs_structure <* many (token ";;") <* skip_ws
+let parse_program str = parse_string ~consume:All (prs_program <* end_of_input) str

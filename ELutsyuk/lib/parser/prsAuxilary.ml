@@ -33,6 +33,8 @@ let square_par p = token "[" *> p <* token "]"
 
 (** Parses first letter then try parse the rest of id *)
 let prs_id =
+  trim
+  @@
   let is_first_letter ch =
     Char.is_lowercase ch || Char.is_uppercase ch || Char.equal '_' ch
   in

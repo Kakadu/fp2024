@@ -2,8 +2,10 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Angstrom
 open Forest.Ast
 
-val parse : string -> (program, string) result
-val parse_program : string -> unit
-(* val parse_to_string : string -> string *)
+val prs_program : program t
+
+(* val parse_program : program t *)
+val parse_program : id -> (program, string) result

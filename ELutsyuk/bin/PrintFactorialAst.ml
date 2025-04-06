@@ -10,20 +10,20 @@ open Forest.Ast
 
 let () =
   let fact : program =
-    [ Binding
+    [ Value
         ( Rec
-        , { pat = PatVar "fact"
-          ; expr =
-              Fun
+        , Binding
+            ( PatVar "fact"
+            , Fun
                 ( PatVar "n"
+                , []
                 , Branch
                     ( BinOp (Le, Var "n", Const (Int 1))
                     , Const (Int 1)
                     , BinOp
                         ( Mul
                         , Var "n"
-                        , App (Var "fact", BinOp (Sub, Var "n", Const (Int 1))) ) ) )
-          }
+                        , App (Var "fact", BinOp (Sub, Var "n", Const (Int 1))) ) ) ) )
         , [] )
     ]
   in

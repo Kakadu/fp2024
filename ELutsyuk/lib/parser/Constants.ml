@@ -68,8 +68,8 @@ let prs_str =
 ;;
 
 let prs_int =
-  (* trim
-  @@ *)
+  trim
+  @@
   let+ parsed = take_while1 Char.is_digit >>| Int.of_string in
   Int parsed
 ;;

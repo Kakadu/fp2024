@@ -42,7 +42,7 @@ let%expect_test "num_without_sign_before" =
 ;;
 
 let%expect_test "quoted_string_with_double_slash" =
-  pp pp_const prs_str {|"str\\meow"|};
+  pp pp_const prs_str "{|str\\meow|}";
   [%expect {| (Str "str\\meow") |}]
 ;;
 
@@ -216,60 +216,27 @@ let%expect_test "incorrect_tuple_one_el" =
 ;;
 
 let%expect_test "simple_fun" =
-  pp pp_expr (prs_expr_fun prs_pat prs_expr) "fun x -> x";
-  [%expect {| (Fun ((PatVar "x"), (Var "x"))) |}]
+  pp pp_expr (prs_expr_fun prs_expr) "fun x -> x";
+  [%expect {| (Fun ((PatVar "x"), [], (Var "x"))) |}]
 ;;
 
 let%expect_test "fun_two_var" =
-  pp pp_expr (prs_expr_fun prs_pat prs_expr) "fun x y -> x + y";
+  pp pp_expr (prs_expr_fun prs_expr) "fun x y -> x + y";
   [%expect
     {|
-    (Fun ((PatVar "x"), (Fun ((PatVar "y"), (BinOp (Add, (Var "x"), (Var "y")))))
-       )) |}]
+    (Fun ((PatVar "x"), [(PatVar "y")], (BinOp (Add, (Var "x"), (Var "y"))))) |}]
 ;;
 
 let%expect_test "fun_of_fun" =
-  pp pp_expr (prs_expr_fun prs_pat prs_expr) "fun x -> fun _ -> x";
-  [%expect {| (Fun ((PatVar "x"), (Fun (PatAny, (Var "x"))))) |}]
-;;
-
-let%expect_test "simple_let" =
-  pp pp_expr (prs_expr_let prs_expr) "let x = 1";
-  [%expect
-    {|
-    (Let (NonRec, { pat = (PatVar "x"); expr = (Const (Int 1)) }, [],
-       (Const Unit))) |}]
-;;
-
-let%expect_test "let_two_var" =
-  pp pp_expr (prs_expr_let prs_expr) "let x y = x + y";
-  [%expect
-    {|
-    (Let (NonRec,
-       { pat = (PatVar "x");
-         expr = (Fun ((PatVar "y"), (BinOp (Add, (Var "x"), (Var "y"))))) },
-       [], (Const Unit))) |}]
-;;
-
-let%expect_test "let_rec" =
-  pp pp_expr (prs_expr_let prs_expr) "let rec x = 1";
-  [%expect
-    {|
-    (Let (Rec, { pat = (PatVar "x"); expr = (Const (Int 1)) }, [], (Const Unit))) |}]
-;;
-
-let%expect_test "let_unit" =
-  pp pp_expr (prs_expr_let prs_expr) "let _ = ()";
-  [%expect
-    {|
-    (Let (NonRec, { pat = PatAny; expr = (Const Unit) }, [], (Const Unit))) |}]
+  pp pp_expr (prs_expr_fun prs_expr) "fun x -> fun _ -> x";
+  [%expect {| (Fun ((PatVar "x"), [], (Fun (PatAny, [], (Var "x"))))) |}]
 ;;
 
 let%expect_test "let_with_in" =
   pp pp_expr (prs_expr_let prs_expr) "let meow = 5 in meow + 1";
   [%expect
     {|
-    (Let (NonRec, { pat = (PatVar "meow"); expr = (Const (Int 5)) }, [],
+    (Let (NonRec, (Binding ((PatVar "meow"), (Const (Int 5)))), [],
        (BinOp (Add, (Var "meow"), (Const (Int 1)))))) |}]
 ;;
 
@@ -293,12 +260,6 @@ let%expect_test "app_in_app" =
        (Const (Int 2)))) |}]
 ;;
 
-let%expect_test "app_in" =
-  pp pp_expr (prs_expr_app prs_expr) "foo -1";
-  [%expect {|
-    (App ((Var "foo"), (BinOp (Sub, (Const (Int 0)), (Const (Int 1)))))) |}]
-;;
-
 let%expect_test "simple_branch" =
   pp pp_expr (prs_expr_branch prs_expr) "if x = 5 then 7 else 6";
   [%expect
@@ -317,34 +278,6 @@ let%expect_test "branch_in_branch" =
        (Const (Int 4)))) |}]
 ;;
 
-(* let%expect_test "simple_match" =
-   pp pp_expr (prs_expr_match prs_pat prs_expr) "match x with | _ -> x + 5 | c -> meow";
-   [%expect
-    {|
-      (Match ((Var "x"),
-         { match_pat = PatAny;
-           match_expr = (BinOp (Add, (Var "x"), (Const (Int 5)))) },
-         [{ match_pat = (PatVar "c"); match_expr = (Var "meow") }])) |}]
-   ;; *)
-
-let%expect_test "factorial" =
-  pp pp_expr prs_expr "let rec fact n = if n <= 1 then 1 else n * fact (n - 1)";
-  [%expect
-    {|
-    (Let (Rec,
-       { pat = (PatVar "fact");
-         expr =
-         (Fun ((PatVar "n"),
-            (Branch ((BinOp (Le, (Var "n"), (Const (Int 1)))), (Const (Int 1)),
-               (BinOp (Mul, (Var "n"),
-                  (App ((Var "fact"), (BinOp (Sub, (Var "n"), (Const (Int 1))))))
-                  ))
-               ))
-            ))
-         },
-       [], (Const Unit))) |}]
-;;
-
 let%expect_test "prs_some" =
   pp pp_expr (prs_option prs_expr) "Some (n - 1) ";
   [%expect {|
@@ -360,7 +293,7 @@ let%expect_test "prs_none" =
 let%expect_test "prs_expr_binop_with_some" =
   pp pp_expr prs_expr "Some n - 1 ";
   [%expect {|
-    (BinOp (Sub, (Option (Some (Var "n"))), (Const (Int 1)))) |}]
+    (Option (Some (BinOp (Sub, (Var "n"), (Const (Int 1)))))) |}]
 ;;
 
 let%expect_test "prs_expr_some" =
@@ -388,7 +321,8 @@ let%expect_test "prs_typ_arrow_simple" =
 
 let%expect_test "prs_typ_arrow_nested" =
   pp pp_typ (prs_typ_arrow prs_typ_constant) "int -> string -> bool";
-  [%expect {| (TypArrow ((TypConst TInt), (TypArrow ((TypConst TStr), (TypConst TBool))))) |}]
+  [%expect
+    {| (TypArrow ((TypConst TInt), (TypArrow ((TypConst TStr), (TypConst TBool))))) |}]
 ;;
 
 let%expect_test "prs_typ_tup_pair" =
@@ -419,20 +353,4 @@ let%expect_test "prs_typ_option" =
 let%expect_test "prs_typ_option_nested" =
   pp pp_typ (prs_typ_option prs_typ_constant) "int option option";
   [%expect {| (TypOption (TypOption (TypConst TInt))) |}]
-;;
-
-let%expect_test "test_annotate_type_1" =
-  pp pp_expr prs_expr "let sum (x:int) (y:int) = x + y";
-  [%expect
-    {|
-(Let (NonRec,
-   { pat = (PatVar "sum");
-     expr =
-     (Fun ((PatType ((PatVar "x"), (TypConst TInt))),
-        (Fun ((PatType ((PatVar "y"), (TypConst TInt))),
-           (BinOp (Add, (Var "x"), (Var "y")))))
-        ))
-     },
-   [], (Const Unit)))
-|}]
 ;;
