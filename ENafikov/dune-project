@@ -15,7 +15,7 @@
 (homepage "https://github.com/SecretPersona5/fp2024")
 
 (package
- (name ENafikov) ; FIXME and regenerate .opam file using 'dune build @install'
+ (name ENafikov)
  (synopsis "An interpreter for miniML")
  (description
   "An interpreter for a subset of the ML language (WIP)")

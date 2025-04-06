@@ -1,6 +1,6 @@
 (** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX_License-Identifier: LGPL-3.0 -or-later *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Ast
 open Base
@@ -19,17 +19,20 @@ type error_inter =
   | NotImplemented
 
 let pp_error_inter fmt = function
-  | DivisionByZero -> Format.fprintf fmt "Exception: Division_by_zero."
-  | UnboundValue s -> Format.fprintf fmt "Error: Unbound value %s" s
-  | UnboundConstructor s -> Format.fprintf fmt "Error: Unbound constructor %s" s
+  | DivisionByZero -> Stdlib.Format.fprintf fmt "Exception: Division_by_zero."
+  | UnboundValue s -> Stdlib.Format.fprintf fmt "Error: Unbound value %s" s
+  | UnboundConstructor s -> Stdlib.Format.fprintf fmt "Error: Unbound constructor %s" s
   | MatchFailure ->
-    Format.fprintf fmt "Exception: this pattern-matching is not exhaustive."
-  | EmptyProgram -> Format.fprintf fmt "the program was not provided or was empty"
-  | TypeError -> Format.fprintf fmt "Error: type mismatch, a different type was expected"
+    Stdlib.Format.fprintf fmt "Exception: this pattern-matching is not exhaustive."
+  | EmptyProgram -> Stdlib.Format.fprintf fmt "the program was not provided or was empty"
+  | TypeError ->
+    Stdlib.Format.fprintf fmt "Error: type mismatch, a different type was expected"
   | Unreachable ->
-    Format.fprintf fmt "Error: Unreachable error... Something went wrong..."
-  | StringOfLengthZero name -> Format.fprintf fmt "It must not be of length zero: %s" name
-  | NotImplemented -> Format.fprintf fmt "This feature has not yet been implemented"
+    Stdlib.Format.fprintf fmt "Error: Unreachable error... Something went wrong..."
+  | StringOfLengthZero name ->
+    Stdlib.Format.fprintf fmt "It must not be of length zero: %s" name
+  | NotImplemented ->
+    Stdlib.Format.fprintf fmt "This feature has not yet been implemented"
 ;;
 
 type value =

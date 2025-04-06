@@ -1,11 +1,11 @@
 (** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX_License-Identifier: LGPL-3.0 -or-later *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 type id = string [@@deriving show { with_path = false }]
 
 module VarSetInit = struct
-  include Caml.Set.Make (Int)
+  include Stdlib.Set.Make (Int)
 
   let pp ppf s =
     Format.fprintf ppf "[ ";

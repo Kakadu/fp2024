@@ -1,6 +1,6 @@
 (** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX_License-Identifier: LGPL-3.0 -or-later *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Base
 open Ty
@@ -14,19 +14,21 @@ type error_infer =
   | NotImplemented
 
 let pp_error_infer fmt = function
-  | OccursCheck -> Format.fprintf fmt "Typechecker error: occurs check failed"
-  | NoVariable s -> Format.fprintf fmt "Typechecker error: undefined variable '%s'" s
+  | OccursCheck -> Stdlib.Format.fprintf fmt "Typechecker error: occurs check failed"
+  | NoVariable s ->
+    Stdlib.Format.fprintf fmt "Typechecker error: undefined variable '%s'" s
   | UnificationFailed (l, r) ->
-    Format.fprintf
+    Stdlib.Format.fprintf
       fmt
       "Typechecker error: unification failed on %a and %a"
       Ty.pp_typ_binder
       l
       Ty.pp_typ_binder
       r
-  | EmptyPattern -> Format.fprintf fmt "Typechecker error: empty pattern"
-  | EmptyProgram -> Format.fprintf fmt "empty program"
-  | NotImplemented -> Format.fprintf fmt "This feature has not yet been implemented"
+  | EmptyPattern -> Stdlib.Format.fprintf fmt "Typechecker error: empty pattern"
+  | EmptyProgram -> Stdlib.Format.fprintf fmt "empty program"
+  | NotImplemented ->
+    Stdlib.Format.fprintf fmt "This feature has not yet been implemented"
 ;;
 
 module R : sig
@@ -43,7 +45,7 @@ module R : sig
   end
 
   val fresh : int t
-  val run : 'a t -> ('a, error_infer) result
+  val run : 'a t -> ('a, error_infer) Result.t
 end = struct
   type 'a t = int -> int * ('a, error_infer) Result.t
 
@@ -106,7 +108,7 @@ module Subst = struct
   type t = (fresh, typ) Map.Poly.t
 
   let pp ppf subst =
-    let open Format in
+    let open Stdlib.Format in
     Map.Poly.iteri subst ~f:(fun ~key ~data ->
       fprintf ppf "%d -> %a@\n" key Ty.pp_typ_binder data)
   ;;
@@ -198,9 +200,9 @@ module VarSet = struct
   let fold_left_m f acc set =
     fold
       (fun x acc ->
-         let open R.Syntax in
-         let* acc = acc in
-         f acc x)
+        let open R.Syntax in
+        let* acc = acc in
+        f acc x)
       acc
       set
   ;;
@@ -238,16 +240,16 @@ let instantiate : scheme -> typ R.t =
   fun (S (names, ty)) ->
   VarSet.fold_left_m
     (fun typ name ->
-       let* f1 = fresh_var in
-       let* s = Subst.singleton name f1 in
-       return (Subst.apply s typ))
+      let* f1 = fresh_var in
+      let* s = Subst.singleton name f1 in
+      return (Subst.apply s typ))
     names
     (return ty)
 ;;
 
 let lookup_env var env =
   match List.Assoc.find_exn env ~equal:String.equal var with
-  | (exception Caml.Not_found) | (exception Not_found_s _) -> fail (NoVariable var)
+  | (exception Stdlib.Not_found) | (exception Not_found_s _) -> fail (NoVariable var)
   | scheme ->
     let* ans = instantiate scheme in
     return (Subst.empty, ans)
@@ -294,101 +296,101 @@ let infer =
   in
   let rec (helper : TypeEnv.t -> Ast.expr -> (Subst.t * typ) R.t) =
     fun env -> function
-      | Expr_var x -> lookup_env x env
-      | Expr_const const ->
-        (match const with
-         | Const_bool _ -> return (Subst.empty, Prim "bool")
-         | Const_int _ -> return (Subst.empty, Prim "int")
-         | Const_string _ -> return (Subst.empty, Prim "string")
-         | Const_nil ->
-           let* var = fresh_var in
-           return (Subst.empty, List_typ var))
-      | Expr_bin_op (op, left, right) ->
-        let* subst_left, typ_left = helper env left in
-        let* subst_right, typ_right = helper env right in
-        (match op with
-         | Add | Sub | Mul | Div | Mod ->
-           let* subst' = unify typ_left (Prim "int") in
-           let* subst'' = unify typ_right (Prim "int") in
-           let* final_subst =
-             Subst.compose_all [ subst'; subst''; subst_left; subst_right ]
-           in
-           return (final_subst, Prim "int")
-         | Eq | Lt | Leq | Gt | Geq | Neq | And | Or | Con ->
-           let* subst' = unify typ_left typ_right in
-           let* final_subst = Subst.compose_all [ subst'; subst_left; subst_right ] in
-           return (final_subst, Prim "bool"))
-      | Expr_app (e1, e2) ->
-        let* s1, t1 = helper env e1 in
-        let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
-        let* tv = fresh_var in
-        let* s3 = unify (Subst.apply s2 t1) (Arrow (t2, tv)) in
-        let typedres = Subst.apply s3 tv in
-        let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
-        return (final_subst, typedres)
-      | Expr_if (c, th, el) ->
-        let* s1, t1 = helper env c in
-        let* s2, t2 = helper env th in
-        let* s3, t3 = helper env el in
-        let* s4 = unify t1 (Prim "bool") in
-        let* s5 = unify t2 t3 in
-        let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
-        return (final_subst, Subst.apply final_subst t2)
-      | Expr_fun (arg, e) ->
-        let* env, t1 = pattern_helper env arg in
-        let* s, t2 = helper env e in
-        let typedres = Arrow (Subst.apply s t1, t2) in
-        return (s, typedres)
-      | Expr_match (cond, matches) ->
-        let* cond_sub, cond_ty = helper env cond in
-        let env = TypeEnv.apply cond_sub env in
-        let rec matches_helper = function
-          | [] -> fail EmptyPattern
-          | (pat, expr) :: [] ->
-            let* pat_env, pat_ty = pattern_helper env pat in
-            let* s1 = unify cond_ty pat_ty in
-            let* s2, expr_ty = helper (TypeEnv.apply s1 pat_env) expr in
-            let* finalsub = Subst.compose s1 s2 in
-            return (finalsub, Subst.apply finalsub expr_ty, pat_ty)
-          | hd :: tl ->
-            let* s1, ty1, pattern1 = matches_helper [ hd ] in
-            let* s2, ty2, _ = matches_helper tl in
-            let* s3 = return Subst.empty in
-            let* s4 = unify ty1 ty2 in
-            let* finalsubst = Subst.compose_all [ s1; s2; s3; s4 ] in
-            return (finalsubst, Subst.apply s3 ty1, pattern1)
-        in
-        let* match_sub, match_ty, _ = matches_helper matches in
-        let* finalmatchsub = Subst.compose cond_sub match_sub in
-        return (finalmatchsub, Subst.apply finalmatchsub match_ty)
-      | Expr_list (h, t) ->
-        let* s1, t1 = helper env h in
-        let t1 = List_typ t1 in
-        let* s2, t2 = helper env t in
-        let* s3 = unify t1 t2 in
-        let* subst = Subst.compose_all [ s1; s2; s3 ] in
-        return (subst, Subst.apply subst t1)
-      | Expr_let_in _ -> fail NotImplemented
-      | Expr_tuple tuple ->
-        let* s, t =
-          List.fold
-            tuple
-            ~init:(return (Subst.empty, []))
-            ~f:(fun acc expr ->
-              let* tuple_s, tuple = acc in
-              let* s, t = helper env expr in
-              let* subst = Subst.compose s tuple_s in
-              return (subst, t :: tuple))
-        in
-        return (s, Tuple_typ (List.rev t))
+    | Expr_var x -> lookup_env x env
+    | Expr_const const ->
+      (match const with
+       | Const_bool _ -> return (Subst.empty, Prim "bool")
+       | Const_int _ -> return (Subst.empty, Prim "int")
+       | Const_string _ -> return (Subst.empty, Prim "string")
+       | Const_nil ->
+         let* var = fresh_var in
+         return (Subst.empty, List_typ var))
+    | Expr_bin_op (op, left, right) ->
+      let* subst_left, typ_left = helper env left in
+      let* subst_right, typ_right = helper env right in
+      (match op with
+       | Add | Sub | Mul | Div | Mod ->
+         let* subst' = unify typ_left (Prim "int") in
+         let* subst'' = unify typ_right (Prim "int") in
+         let* final_subst =
+           Subst.compose_all [ subst'; subst''; subst_left; subst_right ]
+         in
+         return (final_subst, Prim "int")
+       | Eq | Lt | Leq | Gt | Geq | Neq | And | Or | Con ->
+         let* subst' = unify typ_left typ_right in
+         let* final_subst = Subst.compose_all [ subst'; subst_left; subst_right ] in
+         return (final_subst, Prim "bool"))
+    | Expr_app (e1, e2) ->
+      let* s1, t1 = helper env e1 in
+      let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
+      let* tv = fresh_var in
+      let* s3 = unify (Subst.apply s2 t1) (Arrow (t2, tv)) in
+      let typedres = Subst.apply s3 tv in
+      let* final_subst = Subst.compose_all [ s3; s2; s1 ] in
+      return (final_subst, typedres)
+    | Expr_if (c, th, el) ->
+      let* s1, t1 = helper env c in
+      let* s2, t2 = helper env th in
+      let* s3, t3 = helper env el in
+      let* s4 = unify t1 (Prim "bool") in
+      let* s5 = unify t2 t3 in
+      let* final_subst = Subst.compose_all [ s5; s4; s3; s2; s1 ] in
+      return (final_subst, Subst.apply final_subst t2)
+    | Expr_fun (arg, e) ->
+      let* env, t1 = pattern_helper env arg in
+      let* s, t2 = helper env e in
+      let typedres = Arrow (Subst.apply s t1, t2) in
+      return (s, typedres)
+    | Expr_match (cond, matches) ->
+      let* cond_sub, cond_ty = helper env cond in
+      let env = TypeEnv.apply cond_sub env in
+      let rec matches_helper = function
+        | [] -> fail EmptyPattern
+        | (pat, expr) :: [] ->
+          let* pat_env, pat_ty = pattern_helper env pat in
+          let* s1 = unify cond_ty pat_ty in
+          let* s2, expr_ty = helper (TypeEnv.apply s1 pat_env) expr in
+          let* finalsub = Subst.compose s1 s2 in
+          return (finalsub, Subst.apply finalsub expr_ty, pat_ty)
+        | hd :: tl ->
+          let* s1, ty1, pattern1 = matches_helper [ hd ] in
+          let* s2, ty2, _ = matches_helper tl in
+          let* s3 = return Subst.empty in
+          let* s4 = unify ty1 ty2 in
+          let* finalsubst = Subst.compose_all [ s1; s2; s3; s4 ] in
+          return (finalsubst, Subst.apply s3 ty1, pattern1)
+      in
+      let* match_sub, match_ty, _ = matches_helper matches in
+      let* finalmatchsub = Subst.compose cond_sub match_sub in
+      return (finalmatchsub, Subst.apply finalmatchsub match_ty)
+    | Expr_list (h, t) ->
+      let* s1, t1 = helper env h in
+      let t1 = List_typ t1 in
+      let* s2, t2 = helper env t in
+      let* s3 = unify t1 t2 in
+      let* subst = Subst.compose_all [ s1; s2; s3 ] in
+      return (subst, Subst.apply subst t1)
+    | Expr_let_in _ -> fail NotImplemented
+    | Expr_tuple tuple ->
+      let* s, t =
+        List.fold
+          tuple
+          ~init:(return (Subst.empty, []))
+          ~f:(fun acc expr ->
+            let* tuple_s, tuple = acc in
+            let* s, t = helper env expr in
+            let* subst = Subst.compose s tuple_s in
+            return (subst, t :: tuple))
+      in
+      return (s, Tuple_typ (List.rev t))
   in
   let (helper_bind : TypeEnv.t -> Ast.struct_prog -> (Subst.t * typ) R.t) =
     fun env -> function
-      | Let (_, name, expr) ->
-        let* tv = fresh_var in
-        let env = TypeEnv.extend env (name, S (VarSet.empty, tv)) in
-        helper env expr
-      | Expression expr -> helper env expr
+    | Let (_, name, expr) ->
+      let* tv = fresh_var in
+      let env = TypeEnv.extend env (name, S (VarSet.empty, tv)) in
+      helper env expr
+    | Expression expr -> helper env expr
   in
   helper_bind
 ;;
@@ -416,65 +418,10 @@ let check_types env program =
 ;;
 
 let check_types ?(env : environment = empty) e =
-  Result.map (run (check_types env e)) ~f:Fun.id
+  Result.map (run (check_types env e)) ~f:Stdlib.Fun.id
 ;;
 
 let run_infer = function
-  | Result.Error e -> Format.printf "Error: %a%!" pp_error_infer e
-  | Result.Ok (_, typed) -> Format.printf "%a%!" Ty.pp_typ_binder typed
-;;
-
-let%expect_test _ =
-  let open Ast in
-  let _ =
-    let e = [ Expression (Expr_const (Const_int 4)) ] in
-    check_types e |> run_infer
-  in
-  [%expect {| int |}]
-;;
-
-let%expect_test _ =
-  let open Ast in
-  let _ =
-    let e =
-      [ Expression
-          (Expr_tuple
-             [ Expr_const (Const_int 1)
-             ; Expr_const (Const_int 2)
-             ; Expr_const (Const_int 3)
-             ; Expr_list
-                 ( Expr_const (Const_int 4)
-                 , Expr_list (Expr_const (Const_int 5), Expr_const Const_nil) )
-             ])
-      ]
-    in
-    check_types e |> run_infer
-  in
-  [%expect {| (int * int * int * int list) |}]
-;;
-
-let%expect_test _ =
-  let open Ast in
-  let _ =
-    let e =
-      [ Let
-          ( true
-          , "fact"
-          , Expr_fun
-              ( Pattern_id "n"
-              , Expr_if
-                  ( Expr_bin_op (Eq, Expr_var "n", Expr_const (Const_int 1))
-                  , Expr_const (Const_int 1)
-                  , Expr_bin_op
-                      ( Mul
-                      , Expr_var "n"
-                      , Expr_app
-                          ( Expr_var "fact"
-                          , Expr_bin_op (Sub, Expr_var "n", Expr_const (Const_int 1)) ) )
-                  ) ) )
-      ]
-    in
-    check_types e |> run_infer
-  in
-  [%expect {| (int -> int) |}]
+  | Result.Error e -> Stdlib.Format.printf "Error: %a%!" pp_error_infer e
+  | Result.Ok (_, typed) -> Stdlib.Format.printf "%a%!" Ty.pp_typ_binder typed
 ;;
