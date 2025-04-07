@@ -29,3 +29,17 @@ and match_list_pat env pats vals =
   | Ok res -> res
   | _ -> None
 ;;
+
+let eval_const = function
+  | Int v -> return @@ ValInt v
+  | Str v -> return @@ ValStr v
+  | Bool v -> return @@ ValBool v
+  | Unit -> return @@ ValUnit
+;;
+
+let eval_uo_op = function
+  | Minus, ValInt v -> return @@ ValInt (-v)
+  | Plus, ValInt v -> return @@ ValInt v
+  | Not, ValBool v -> return @@ ValBool (not v)
+  | _ -> fail TypeError
+;;
