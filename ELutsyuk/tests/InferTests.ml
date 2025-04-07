@@ -1,4 +1,4 @@
-(* Copyright 2024, Victoria Lutsyuk *)
+(** Copyright 2024, Victoria Lutsyuk *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -13,8 +13,8 @@ let test_inference str =
        Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, typ)) ->
          if String.equal key "print_int" || String.equal key "print_endline"
          then ()
-         else Stdlib.Format.printf "val %s : %a\n" key Forest.InfPrinter.pp_typ typ)
-     | Error e -> printf "Infer error: %a\n" Forest.InfPrinter.pp_error e)
+         else Stdlib.Format.printf "val %s : %a\n" key Forest.TypesTree.pp_typ typ)
+     | Error e -> printf "Infer error: %a\n" Forest.TypesTree.pp_error e)
   | Error e -> printf "Parsing error: %s\n" e
 ;;
 

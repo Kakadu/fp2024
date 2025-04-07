@@ -37,3 +37,5 @@ val arrow_typ : typ -> typ -> typ
 val tup_typ : typ list -> typ
 val list_typ : typ -> typ
 val option_typ : typ -> typ
+val pp_typ : Format.formatter -> typ -> unit
+val pp_error : Format.formatter -> error -> unit
