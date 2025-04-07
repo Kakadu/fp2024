@@ -107,7 +107,7 @@ let prs_rel =
 let prs_unary op sign = trim @@ (token sign *> return (fun exp -> Unary (op, exp)))
 let prs_minus = prs_unary Minus "-"
 let prs_plus = prs_unary Plus "+"
-let prs_not = trim @@ prs_unary Not "not"
+let prs_not = prs_unary Not "not" <* skip_ws
 
 let prs_option expr =
   let p_some_expr =
