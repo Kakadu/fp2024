@@ -10,8 +10,6 @@ open Forest.Ast
 let rec match_pattern env = function
   | PatAny, _ -> Some env
   | PatConst _, _ -> Some env
-  | PatConst Unit, ValUnit -> Some env
-  (* | PatListCons (p1, p2), ValList (v1::v2) -> *)
   | PatList pats, ValList vals -> match_list_pat env pats vals
   | PatTup (p1, p2, ps), ValTup (v1, v2, vs) ->
     match_list_pat env (p1 :: p2 :: ps) (v1 :: v2 :: vs)
