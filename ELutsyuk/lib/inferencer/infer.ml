@@ -6,7 +6,6 @@ open Forest.Ast
 open Forest.TypesTree
 open InfAuxilary
 open InfAuxilary.FreshResult
-open InfAuxilary.FreshResult.SyntSugar
 
 let fresh_var =
   let* fresh = fresh in

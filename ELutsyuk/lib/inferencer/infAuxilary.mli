@@ -13,10 +13,7 @@ module FreshResult : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   val fresh : int t
   val run : 'a t -> ('a, error) Result.t
-
-  module SyntSugar : sig
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  end
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 end
 
 module Subst : sig

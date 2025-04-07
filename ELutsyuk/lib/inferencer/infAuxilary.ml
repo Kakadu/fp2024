@@ -14,10 +14,7 @@ module FreshResult : sig
   val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   val fresh : int t
   val run : 'a t -> ('a, error) Result.t
-
-  module SyntSugar : sig
-    val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
-  end
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 end = struct
   type 'a t = int -> int * ('a, error) Result.t
 
@@ -33,10 +30,7 @@ end = struct
   (* let bind value f = value >>= f *)
   let fresh state = return state (state + 1)
   let run monad = snd (monad 0)
-
-  module SyntSugar = struct
-    let ( let* ) = ( >>= )
-  end
+  let ( let* ) = ( >>= )
 end
 
 module VarSet = struct
@@ -86,7 +80,6 @@ module Subst : sig
   val compose : t -> t -> t FreshResult.t
 end = struct
   open FreshResult
-  open FreshResult.SyntSugar
 
   type t = (var, typ, Int.comparator_witness) Map.t
 
