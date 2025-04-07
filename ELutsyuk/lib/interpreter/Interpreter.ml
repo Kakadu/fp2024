@@ -225,3 +225,33 @@ and eval_let_bindings env binding_list =
   let* env = update_env env bindings in
   return env
 ;;
+
+let eval_structure_item env = function
+  | Eval exp ->
+    let* _ = eval_expr env exp in
+    return env
+  | Value (NonRec, Binding (pat, exp), _) ->
+    let* v = eval_expr env exp in
+    (match match_pattern env (pat, v) with
+     | Some env -> return env
+     | None -> fail PatternMatchingFail)
+  | Value (Rec, binding, binding_list) ->
+    let* env = eval_let_bindings env (binding :: binding_list) in
+    return env
+;;
+
+let start_env =
+  let print_env = extend empty "print_int" (ValBuiltIn "print_int") in
+  let env = extend print_env "print_endline" (ValBuiltIn "print_endline") in
+  env
+;;
+
+let interpret_program tree =
+  List.fold_left
+    (fun env str_item ->
+      let* env = env in
+      let* env = eval_structure_item env str_item in
+      return env)
+    (return start_env)
+    tree
+;;

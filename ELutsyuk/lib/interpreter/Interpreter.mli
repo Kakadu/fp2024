@@ -3,7 +3,6 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Forest.ValuesTree
-open IntAuxilary
 open Forest.Ast
 
-val eval_expr : expr -> (env, error) Res.t
+val interpret_program : program -> (env, error) result
