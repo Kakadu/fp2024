@@ -2,6 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
+open Base
 open Stdlib.Format
 open Ast
 
@@ -9,14 +10,18 @@ type value =
   | ValInt of int
   | ValStr of string
   | ValBool of bool
-  | ValFun of pat * pat list * expr
-  | ValTup of value list
+  | ValUnit
+  | ValList of value list
+  | ValTup of value * value * value list
+  | ValFun of rec_state * pat * pat list * expr * env
   | ValBuiltIn of string
-  | ValOption of id * value option
+  | ValOption of value option
+
+and env = (id, value, String.comparator_witness) Map.t
 
 type error =
   | NoVariable of string
   | TypeError
 
-val pp_value : Format.formatter -> value -> unit
-val pp_error : Format.formatter -> error -> unit
+val pp_value : formatter -> value -> unit
+val pp_error : formatter -> error -> unit
