@@ -43,3 +43,47 @@ let eval_uo_op = function
   | Not, ValBool v -> return @@ ValBool (not v)
   | _ -> fail TypeError
 ;;
+
+(* thanks to Homka122 for such beautiful bin_op evaluation *)
+let arithmetic_operators = [ "*", ( * ); "/", ( / ); "+", ( + ); "-", ( - ) ]
+
+let comparison_operators =
+  [ "=", ( = ); "<=", ( <= ); "<", ( < ); ">", ( > ); ">=", ( >= ); "<>", ( <> ) ]
+;;
+
+let logical_operators = [ "&&", ( && ); "||", ( || ) ]
+
+let eval_arithmetic_binop eval_expr env op_name exp1 exp2 =
+  let operator =
+    snd (List.find (fun (op_list, _) -> op_list = op_name) arithmetic_operators)
+  in
+  let* operand1 = eval_expr env exp1 in
+  let* operand2 = eval_expr env exp2 in
+  match operand1, operand2 with
+  | ValInt v1, ValInt v2 -> return @@ ValInt (operator v1 v2)
+  | _ -> fail TypeError
+;;
+
+let eval_comparison_binop eval_expr env op_name exp1 exp2 =
+  let operator () =
+    snd (List.find (fun (op_list, _) -> op_list = op_name) comparison_operators)
+  in
+  let* operand1 = eval_expr env exp1 in
+  let* operand2 = eval_expr env exp2 in
+  match operand1, operand2 with
+  | ValInt v1, ValInt v2 -> return @@ ValBool (operator () v1 v2)
+  | ValStr v1, ValStr v2 -> return @@ ValBool (operator () v1 v2)
+  | ValBool v1, ValBool v2 -> return @@ ValBool (operator () v1 v2)
+  | _ -> fail TypeError
+;;
+
+let eval_logical_binop eval_expr env op_name exp1 exp2 =
+  let operator =
+    snd (List.find (fun (op_list, _) -> op_list = op_name) logical_operators)
+  in
+  let* operand1 = eval_expr env exp1 in
+  let* operand2 = eval_expr env exp2 in
+  match operand1, operand2 with
+  | ValBool v1, ValBool v2 -> return @@ ValBool (operator v1 v2)
+  | _ -> fail TypeError
+;;
