@@ -114,7 +114,7 @@ let eval_logical_binop op_name v1 v2 =
   | _ -> fail TypeError
 ;;
 
-let rec eval_expr env = function
+let rec eval_expr (env : env) = function
   | Var name -> find_val env name
   | Const exp -> eval_const exp
   | Unary (op, exp) ->
@@ -132,6 +132,7 @@ let rec eval_expr env = function
     let* v1 = eval_expr env exp1 in
     let* v2 = eval_expr env exp2 in
     eval_logical_binop op v1 v2
+  | BinOp (_, _, _) -> fail TypeError
   | Option (Some exp) ->
     let* v = eval_expr env exp in
     return (ValOption (Some v))
@@ -141,11 +142,86 @@ let rec eval_expr env = function
     (match match_pattern env (pat, v) with
      | Some env -> eval_expr env exp_in
      | None -> fail PatternMatchingFail)
-  | _ -> 
+  | Let (Rec, binding, bindings, exp_in) ->
+    let* env = eval_let_bindings env (binding :: bindings) in
+    eval_expr env exp_in
+  | App (exp1, exp2) ->
+    let* v1 = eval_expr env exp1 in
+    let* v2 = eval_expr env exp2 in
+    (match v1 with
+     | ValFun (_, pat, pats, body, func_env) ->
+       (* attempt to match the argument against the pattern *)
+       (match match_pattern func_env (pat, v2) with
+        | Some extended_env ->
+          let env' = compose env extended_env in
+          (match pats with
+           | [] ->
+             eval_expr
+               env'
+               body (* evaluate the function body with the updated environment *)
+           | p :: pl -> return (ValFun (NonRec, p, pl, body, env')))
+        | None -> fail PatternMatchingFail)
+     | ValBuiltIn "print_int" ->
+       (match v2 with
+        | ValInt v ->
+          Format.printf "%d\n" v;
+          return ValUnit
+        | _ -> fail TypeError)
+     | _ -> fail TypeError)
+  | Fun (pat, pats, exp) -> return (ValFun (NonRec, pat, pats, exp, env))
+  | Branch (cond, _then, Const Unit) ->
+    let* v_cond = eval_expr env cond in
+    (match v_cond with
+     | ValBool true -> eval_expr env _then
+     | ValBool false -> return ValUnit
+     | _ -> fail TypeError)
+  | Branch (cond, _then, _else) ->
+    let* v_cond = eval_expr env cond in
+    (match v_cond with
+     | ValBool true -> eval_expr env _then
+     | ValBool false -> eval_expr env _else
+     | _ -> fail TypeError)
+  | Tup (exp1, exp2, exps) ->
+    let* v1 = eval_expr env exp1 in
+    let* v2 = eval_expr env exp2 in
+    let* vs =
+      List.fold_left
+        (fun acc exp ->
+          let* acc = acc in
+          let* v = eval_expr env exp in
+          return (v :: acc))
+        (return [])
+        exps
+    in
+    return (ValTup (v1, v2, List.rev vs))
+  | List exp ->
+    let* vl =
+      List.fold_left
+        (fun acc e ->
+          let* acc = acc in
+          let* v = eval_expr env e in
+          return (v :: acc))
+        (return [])
+        exp
+    in
+    return (ValList (List.rev vl))
+  | Type (exp, _) -> eval_expr env exp
+
+and eval_let_bindings env binding_list =
+  let bindings = List.map (fun (Binding (pat, exp)) -> pat, exp) binding_list in
+  let rec update_env acc_env = function
+    | [] -> return acc_env
+    | (PatVar id, exp) :: list_rest ->
+      let* value =
+        match exp with
+        | Fun (pat, pats, exp) -> return (ValFun (Rec, pat, pats, exp, acc_env))
+        | _ -> eval_expr acc_env exp
+      in
+      (* update env so all names in mutual recursion correspond to their real values *)
+      let upd_env = extend acc_env id value in
+      update_env upd_env list_rest
+    | _ -> fail TypeError
+  in
+  let* env = update_env env bindings in
+  return env
 ;;
-(* | App
-   | Fun
-   | Branch
-   | Tup
-   | List
-   | Type *)

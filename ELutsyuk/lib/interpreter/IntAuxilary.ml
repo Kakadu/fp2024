@@ -24,14 +24,14 @@ module Res = struct
 end
 
 module EvalEnv : sig
-  type t
+  type t = env
 
   val empty : t
   val extend : t -> string -> value -> t
   val compose : t -> t -> t
   val find_val : t -> string -> value Res.t
 end = struct
-  type t = (id, value, String.comparator_witness) Map.t
+  type t = env
 
   let empty = Map.empty (module String)
   let extend env id value = Map.update env id ~f:(fun _ -> value)
