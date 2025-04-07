@@ -22,6 +22,7 @@ and env = (id, value, String.comparator_witness) Map.t
 type error =
   | NoVariable of string
   | TypeError
+  | PatternMatchingFail
 
 val pp_value : formatter -> value -> unit
 val pp_error : formatter -> error -> unit

@@ -22,6 +22,7 @@ and env = (id, value, String.comparator_witness) Map.t
 type error =
   | NoVariable of string
   | TypeError
+  | PatternMatchingFail
 
 let rec pp_value ppf =
   let open Stdlib.Format in
@@ -59,4 +60,5 @@ let rec pp_value ppf =
 let pp_error ppf = function
   | NoVariable str -> fprintf ppf "No variable with name %S" str
   | TypeError -> fprintf ppf "Type error"
+  | PatternMatchingFail -> fprintf ppf "Pattern-matching failure"
 ;;
