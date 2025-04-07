@@ -45,7 +45,7 @@ let eval_uo_op = function
 ;;
 
 (* thanks to Homka122 for such beautiful bin_op evaluation *)
-let arithmetic_operators = [ "*", ( * ); "/", ( / ); "+", ( + ); "-", ( - ) ]
+let arithmetic_int_operators = [ "*", ( * ); "/", ( / ); "+", ( + ); "-", ( - ) ]
 
 let comparison_operators =
   [ "=", ( = ); "<=", ( <= ); "<", ( < ); ">", ( > ); ">=", ( >= ); "<>", ( <> ) ]
@@ -53,27 +53,59 @@ let comparison_operators =
 
 let logical_operators = [ "&&", ( && ); "||", ( || ) ]
 
-let eval_arithmetic_binop eval_expr env op_name exp1 exp2 =
+let is_arithmetic_operator name =
+  List.exists (fun (list_op, _) -> name = list_op) arithmetic_int_operators
+;;
+
+let is_comparison_operator name =
+  List.exists (fun (list_op, _) -> name = list_op) comparison_operators
+;;
+
+let is_logical_operator name =
+  List.exists (fun (list_op, _) -> name = list_op) logical_operators
+;;
+
+let eval_arithmetic_int_binop eval_expr env op_name exp1 exp2 =
   let operator =
-    snd (List.find (fun (op_list, _) -> op_list = op_name) arithmetic_operators)
+    snd (List.find (fun (op_list, _) -> op_list = op_name) arithmetic_int_operators)
   in
-  let* operand1 = eval_expr env exp1 in
-  let* operand2 = eval_expr env exp2 in
-  match operand1, operand2 with
-  | ValInt v1, ValInt v2 -> return @@ ValInt (operator v1 v2)
+  let* v1 = eval_expr env exp1 in
+  let* v2 = eval_expr env exp2 in
+  match v1, v2 with
+  | ValInt v1, ValInt v2 -> return (ValInt (operator v1 v2))
   | _ -> fail TypeError
 ;;
 
-let eval_comparison_binop eval_expr env op_name exp1 exp2 =
+let rec eval_comparison_binop eval_expr env op_name exp1 exp2 =
   let operator () =
     snd (List.find (fun (op_list, _) -> op_list = op_name) comparison_operators)
   in
-  let* operand1 = eval_expr env exp1 in
-  let* operand2 = eval_expr env exp2 in
-  match operand1, operand2 with
-  | ValInt v1, ValInt v2 -> return @@ ValBool (operator () v1 v2)
-  | ValStr v1, ValStr v2 -> return @@ ValBool (operator () v1 v2)
-  | ValBool v1, ValBool v2 -> return @@ ValBool (operator () v1 v2)
+  let rec eval_list_comparison list1 list2 =
+    match list1, list2 with
+    | [], [] -> return (ValBool true)
+    | l :: ls, r :: rs ->
+      let* res = eval_comparison_binop eval_expr env op_name l r in
+      (match res with
+       | ValBool false -> return (ValBool false)
+       | ValBool true -> eval_list_comparison ls rs
+       | _ -> fail TypeError)
+    | _, _ -> return (ValBool false)
+  in
+  let* v1 = eval_expr env exp1 in
+  let* v2 = eval_expr env exp2 in
+  match v1, v2 with
+  | ValInt v1, ValInt v2 -> return (ValBool ((operator ()) v1 v2))
+  | ValStr v1, ValStr v2 -> return (ValBool ((operator ()) v1 v2))
+  | ValBool v1, ValBool v2 -> return (ValBool ((operator ()) v1 v2))
+  | ValUnit, ValUnit -> return (ValBool ((operator ()) () ()))
+  | ValList v1, ValList v2 -> eval_list_comparison v1 v2
+  | ValTup (l1, l2, ls), ValTup (r1, r2, rs) ->
+    eval_list_comparison (l1 :: l2 :: ls) (r1 :: r2 :: rs)
+  | ValOption v1, ValOption v2 ->
+    (match v1, v2 with
+     | Some v1, Some v2 -> eval_comparison_binop eval_expr env op_name v1 v2
+     | None, None -> return (ValBool ((operator ()) None None))
+     | _ -> return (ValBool false))
   | _ -> fail TypeError
 ;;
 
@@ -81,9 +113,9 @@ let eval_logical_binop eval_expr env op_name exp1 exp2 =
   let operator =
     snd (List.find (fun (op_list, _) -> op_list = op_name) logical_operators)
   in
-  let* operand1 = eval_expr env exp1 in
-  let* operand2 = eval_expr env exp2 in
-  match operand1, operand2 with
-  | ValBool v1, ValBool v2 -> return @@ ValBool (operator v1 v2)
+  let* v1 = eval_expr env exp1 in
+  let* v2 = eval_expr env exp2 in
+  match v1, v2 with
+  | ValBool v1, ValBool v2 -> return (ValBool (operator v1 v2))
   | _ -> fail TypeError
 ;;
