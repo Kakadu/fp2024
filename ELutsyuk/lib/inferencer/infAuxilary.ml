@@ -43,11 +43,11 @@ module VarSet = struct
   include Stdlib.Set.Make (Int)
 end
 
-(* нужна или нет сигнатура *)
 module Type : sig
   val has_type_var : int -> typ -> bool
   val type_vars : typ -> VarSet.t
 end = struct
+  (* Checks whether the given type contains a specific type variable. *)
   let rec has_type_var var = function
     | TypConst _ -> false
     | TypVar ty -> ty = var
@@ -57,6 +57,7 @@ end = struct
     | TypOption ty -> has_type_var var ty
   ;;
 
+  (* Collects all free type variables occurring in the given type. *)
   let type_vars typ =
     let rec collect_vars acc = function
       | TypConst _ -> acc
@@ -100,6 +101,7 @@ end = struct
   let find sub var = Map.find sub var
   let remove sub var = Map.remove sub var
 
+  (* Applies a substitutions to a type, recursively replacing all matching type variables. *)
   let apply sub_map =
     let rec upd_typ = function
       | TypConst ty -> constant_typ ty
@@ -115,7 +117,8 @@ end = struct
     upd_typ
   ;;
 
-  let rec unify typ1 typ2 : t FreshResult.t =
+  (* Tries to unify two types, returning a substitution that makes them equal, or fails. *)
+  let rec unify typ1 typ2 =
     match typ1, typ2 with
     | TypConst ty1, TypConst ty2 when Poly.(ty1 = ty2) -> return empty
     | TypVar a, TypVar b when a = b -> return empty
@@ -137,6 +140,7 @@ end = struct
     | TypOption a, TypOption b -> unify a b
     | _ -> fail @@ UnificationFailed (typ1, typ2)
 
+  (* Extends an existing substitution with a new variable binding, applying substitution recursively to maintain consistency. *)
   and extend sub_map new_var new_typ =
     match find sub_map new_var with
     | None ->
@@ -150,13 +154,14 @@ end = struct
       let* new_sub = unify new_typ existed_typ in
       compose sub_map new_sub
 
+  (* Composes two substitutions, applying the second to the first and merging them. *)
   and compose sub_map1 sub_map2 =
     Map.fold sub_map1 ~init:(return sub_map2) ~f:(fun ~key:var ~data:typ acc ->
       let* acc = acc in
       extend acc var typ)
   ;;
 
-  (* Composition of several substitutions *)
+  (* Composition of several substitutions. *)
   let compose_many_sub sub_list =
     List.fold_left sub_list ~init:(return empty) ~f:(fun acc sub ->
       let* acc = acc in
@@ -167,10 +172,12 @@ end
 type scheme = Scheme of VarSet.t * typ
 
 module Scheme = struct
-  let free_in_context = function
+  (* Returns the set of free type variables in a type scheme, excluding the bound ones. *)
+  let free = function
     | Scheme (bind_vars, ty) -> VarSet.diff (Type.type_vars ty) bind_vars
   ;;
 
+  (* Applies a substitution to a type scheme, skipping its bound variables. *)
   let apply sub (Scheme (bind_vars, ty)) =
     let subst = VarSet.fold (fun var sub -> Subst.remove sub var) bind_vars sub in
     Scheme (bind_vars, Subst.apply subst ty)
@@ -178,10 +185,10 @@ module Scheme = struct
 end
 
 module TypeEnv : sig
-  type t = (id, scheme, Base.String.comparator_witness) Base.Map.t
+  type t = (id, scheme, String.comparator_witness) Map.t
 
   val empty : t
-  val free_in_context : t -> VarSet.t
+  val free : t -> VarSet.t
   val apply : Subst.t -> t -> t
   val extend : t -> id -> scheme -> t
   val find : t -> id -> scheme option
@@ -191,9 +198,10 @@ end = struct
 
   let empty = Map.empty (module String)
 
-  let free_in_context env =
+  (* Returns the set of free type variables in a type scheme, excluding the bound variables that are part of the environment. *)
+  let free env =
     Map.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data:sch acc ->
-      VarSet.union acc (Scheme.free_in_context sch))
+      VarSet.union acc (Scheme.free sch))
   ;;
 
   let apply sub env = Map.map env ~f:(Scheme.apply sub)

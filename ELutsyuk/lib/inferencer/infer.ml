@@ -13,36 +13,38 @@ let fresh_var =
   return @@ var_typ fresh
 ;;
 
-(* Makes type scheme copy *)
-let instantiate (Scheme (sch, ty)) =
+(* Makes type scheme copy. *)
+let instantiate (Scheme (vars, ty)) =
   VarSet.fold
     (fun old_var ty ->
       let* ty = ty in
       let* fresh_var = fresh_var in
       let* sub = Subst.singleton old_var fresh_var in
       return @@ Subst.apply sub ty)
-    sch
+    vars
     (return ty)
 ;;
 
+(* Generalizes a type by quantifying over its free variables that are not bound in the environment. *)
 let generalize env typ =
-  let scheme_vars = VarSet.diff (Type.type_vars typ) (TypeEnv.free_in_context env) in
-  Scheme (scheme_vars, typ)
+  let vars = VarSet.diff (Type.type_vars typ) (TypeEnv.free env) in
+  Scheme (vars, typ)
 ;;
 
-let generalize_rec env ty x =
+(* Generalizes a type by quantifying over its free variables not bound in the environment, after removing a specific variable from the environment. *)
+let generalize_rec env typ x =
   let env = TypeEnv.remove x env in
-  generalize env ty
+  generalize env typ
 ;;
 
 let inf_constant token =
   return
-  @@ ( Subst.empty
-     , match token with
-       | Int _ -> int_typ
-       | Bool _ -> bool_typ
-       | Str _ -> string_typ
-       | Unit -> unit_typ )
+    ( Subst.empty
+    , match token with
+      | Int _ -> int_typ
+      | Bool _ -> bool_typ
+      | Str _ -> string_typ
+      | Unit -> unit_typ )
 ;;
 
 let lookup_typ env id =
@@ -146,12 +148,24 @@ let rec inf_expr env = function
     let* subst = Subst.compose_many_sub [ sub1; sub2; sub3 ] in
     let ty = Subst.apply subst res_typ in
     return (subst, ty)
-  | Fun (pat, exp) ->
-    let* env1, pat_ty = inf_pat env pat in
-    let* subst, exp_ty = inf_expr env1 exp in
-    let ty = arrow_typ pat_ty exp_ty in
-    let res_ty = Subst.apply subst ty in
-    return (subst, res_ty)
+  | Fun (pat, pats, exp) ->
+    let* env, tys =
+      List.fold_left
+        (fun acc pat ->
+          let* env, pat_types = acc in
+          let* env, typ = inf_pat env pat in
+          return (env, typ :: pat_types))
+        (return (env, []))
+        (pat :: pats)
+    in
+    let* subst, ty = inf_expr env exp in
+    let arrow_type =
+      List.fold_right
+        (fun pat_type acc -> TypArrow (Subst.apply subst pat_type, acc))
+        (List.rev tys)
+        ty
+    in
+    return (subst, arrow_type)
   | Branch (cond, br1, br2) ->
     let* sub1, ty1 = inf_expr env cond in
     let* sub2, ty2 = inf_expr env br1 in
@@ -191,6 +205,18 @@ let rec inf_expr env = function
   | Option None ->
     let* ty_var = fresh_var in
     return (Subst.empty, option_typ ty_var)
+  | Tup (el1, el2, els) ->
+    let* subst, ty =
+      List.fold_left
+        (fun acc expr ->
+          let* sub, ty = acc in
+          let* sub1, ty1 = inf_expr env expr in
+          let* sub2 = Subst.compose sub sub1 in
+          return (sub2, ty1 :: ty))
+        (return (Subst.empty, []))
+        (el1 :: el2 :: els)
+    in
+    return (subst, tup_typ (List.rev_map (Subst.apply subst) ty))
   | _ -> return (Subst.empty, TypConst TUnit)
 
 and inf_non_rec_binding_list env binding_list =
@@ -198,7 +224,7 @@ and inf_non_rec_binding_list env binding_list =
     List.fold_left
       (fun env binding ->
         let* env = env in
-        let { pat : pat; expr : expr } = binding in
+        let (Binding (pat, expr)) = binding in
         match pat with
         | PatVar var ->
           let* subst, ty = inf_expr env expr in
@@ -229,49 +255,48 @@ and inf_non_rec_binding_list env binding_list =
 
 and inf_rec_binding_list env binding_list =
   let* env2 =
-    Base.List.fold_left
-      binding_list
-      ~init:(return env)
-      ~f:(fun env { pat : pat; expr : expr } ->
-        let* env = env in
-        match pat with
-        | PatVar var ->
-          let* ty_var = fresh_var in
-          let sch = Scheme (VarSet.empty, ty_var) in
-          let env = TypeEnv.extend env var sch in
-          let* sub1, ty1 = inf_expr env expr in
-          let* sub2 = Subst.unify ty1 ty_var in
-          let* sub3 = Subst.compose sub1 sub2 in
-          let env = TypeEnv.apply sub3 env in
-          let ty2 = Subst.apply sub3 ty1 in
-          let sch = generalize_rec var ty2 env in
-          let env = TypeEnv.extend env var sch in
-          return env
-        | _ -> fail InvalidRecursivePattern)
+    Base.List.fold_left binding_list ~init:(return env) ~f:(fun env binding ->
+      let (Binding (pat, expr)) = binding in
+      let* env = env in
+      match pat with
+      | PatVar var ->
+        let* ty_var = fresh_var in
+        let sch = Scheme (VarSet.empty, ty_var) in
+        let env = TypeEnv.extend env var sch in
+        let* sub1, ty1 = inf_expr env expr in
+        let* sub2 = Subst.unify ty1 ty_var in
+        let* sub3 = Subst.compose sub1 sub2 in
+        let env = TypeEnv.apply sub3 env in
+        let ty2 = Subst.apply sub3 ty1 in
+        let sch = generalize_rec var ty2 env in
+        let env = TypeEnv.extend env var sch in
+        return env
+      | _ -> fail InvalidRecursivePattern)
   in
   return env2
 ;;
 
 let inf_structure_item env = function
-  | EvalExpr exp ->
+  | Eval exp ->
     let* _ = inf_expr env exp in
     return env
-  | Binding (Rec, bind, binds) ->
+  | Value (Rec, bind, binds) ->
     let bindings = bind :: binds in
     inf_rec_binding_list env bindings
-  | Binding (NonRec, bind, binds) ->
+  | Value (NonRec, bind, binds) ->
     let bindings = bind :: binds in
     inf_non_rec_binding_list env bindings
 ;;
 
-let inf_program env program =
-  List.fold_left
-    (fun acc item ->
-      let* env = acc in
-      let* env = inf_structure_item env item in
-      return env)
-    (return env)
-    program
+let inf_program env = function
+  | tree ->
+    List.fold_left
+      (fun acc item ->
+        let* env = acc in
+        let* env = inf_structure_item env item in
+        return env)
+      (return env)
+      tree
 ;;
 
 let start_env =
@@ -290,5 +315,4 @@ let start_env =
   env
 ;;
 
-let run_expr_inf exp = Result.map snd (run (inf_expr start_env exp))
-let run_program_inf tree = run (inf_program start_env tree)
+let inference_program tree = run (inf_program start_env tree)

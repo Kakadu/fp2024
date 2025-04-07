@@ -52,7 +52,7 @@ module TypeEnv : sig
   type t = (id, scheme, Base.String.comparator_witness) Base.Map.t
 
   val empty : t
-  val free_in_context : t -> VarSet.t
+  val free : t -> VarSet.t
   val apply : Subst.t -> t -> t
   val extend : t -> id -> scheme -> t
   val find : t -> id -> scheme option
