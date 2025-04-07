@@ -240,11 +240,7 @@ let eval_structure_item env = function
     return env
 ;;
 
-let start_env =
-  let print_env = extend empty "print_int" (ValBuiltIn "print_int") in
-  let env = extend print_env "print_endline" (ValBuiltIn "print_endline") in
-  env
-;;
+let start_env = extend empty "print_int" (ValBuiltIn "print_int")
 
 let interpret_program tree =
   List.fold_left

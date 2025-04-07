@@ -3,7 +3,7 @@
 (library
  (name tests)
  (public_name ELutsyuk.Tests)
- (libraries forest parser inferencer)
+ (libraries forest parser inferencer interpreter)
  (preprocess
   (pps ppx_expect))
  (inline_tests)

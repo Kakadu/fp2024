@@ -14,8 +14,8 @@ let test_inference str =
          if String.equal key "print_int" || String.equal key "print_endline"
          then ()
          else Stdlib.Format.printf "val %s : %a\n" key Forest.TypesTree.pp_typ typ)
-     | Error e -> printf "Infer error: %a\n" Forest.TypesTree.pp_error e)
-  | Error e -> printf "Parsing error: %s\n" e
+     | Error err -> printf "Infer error: %a\n" Forest.TypesTree.pp_error err)
+  | Error err -> printf "Parsing error: %s\n" err
 ;;
 
 let%expect_test "inference_arithmetic" =
