@@ -362,6 +362,11 @@ module Inter = struct
           (fst_pat :: snd_pat :: pat_list)
           ~init:acc
           ~f:(extract_names_from_pat env)
+      | PatList (pat_list) ->
+        Base.List.fold_left
+          (pat_list)
+          ~init:acc
+          ~f:(extract_names_from_pat env)
       | PatWithTyp (_, pat) -> extract_names_from_pat env acc pat
       | _ -> acc
     in
