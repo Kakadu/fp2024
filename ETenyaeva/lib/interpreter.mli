@@ -21,6 +21,7 @@ type value =
   | ValUnit
   | ValBool of bool
   | ValFun of Ast.rec_flag * Ast.pattern * Ast.expr * env
+  | ValFunction of Ast.match_case list * env
   | ValTuple of value * value * value list
   | ValList of value list
   | ValOption of value option

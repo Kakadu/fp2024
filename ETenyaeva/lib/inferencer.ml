@@ -517,6 +517,16 @@ module Infer = struct
       let* unified_sub = unify ty c_ty in
       let* final_sub = Subst.compose unified_sub sub in
       return (final_sub, Subst.apply unified_sub ty)
+    | ExpFunction (case, case_list) ->
+      let* fresh_for_matching = fresh_var in
+      let* fresh_for_result = fresh_var in
+      infer_match_exp
+        env
+        ~with_exp:false
+        Subst.empty
+        fresh_for_matching
+        fresh_for_result
+        (case :: case_list)
     | ExpMatch (exp, case, case_list) ->
       let* exp_sub, exp_ty = infer_expression env exp in
       let env = TypeEnv.apply exp_sub env in
@@ -691,6 +701,9 @@ module Infer = struct
         infer_expression env (ExpFun (e_pat, ExpWithTyp (pat_ty, expr)))
       in
       infer_vb new_sub env ty pat rest
+    | { pat = PatWithTyp (pat_ty, pat); expr = ExpFunction _ as expr } :: rest ->
+      let* new_sub, ty = infer_expression env (ExpWithTyp (pat_ty, expr)) in
+      infer_vb new_sub env ty pat rest
     | { pat; expr } :: rest ->
       let* new_sub, ty = infer_expression env expr in
       infer_vb new_sub env ty pat rest
@@ -715,7 +728,7 @@ module Infer = struct
     in
     match let_binds, fresh_acc with
     | [], _ -> return (env, sub)
-    | ( { pat = PatVar id; expr = (ExpFun _ ) as exp } :: rest
+    | ( { pat = PatVar id; expr = (ExpFun _ | ExpFunction _) as exp } :: rest
       , fresh :: fresh_acc ) ->
       let* new_sub, ty = infer_expression env exp in
       infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
@@ -725,6 +738,10 @@ module Infer = struct
       let* new_sub, ty =
         infer_expression env (ExpFun (pat, ExpWithTyp (pat_ty, expr)))
       in
+      infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
+    | ( { pat = PatWithTyp (pat_ty, PatVar id); expr = ExpFunction _ as expr } :: rest
+      , fresh :: fresh_acc ) ->
+      let* new_sub, ty = infer_expression env (ExpWithTyp (pat_ty, expr)) in
       infer_rec_vb new_sub fresh ty id fresh_acc rest ~required_ty:None
     | { pat = PatVar id; expr } :: rest, fresh :: fresh_acc ->
       let* new_sub, ty = infer_expression env expr in

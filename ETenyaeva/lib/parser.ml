@@ -400,6 +400,13 @@ let parse_exp_match parse_exp =
   return (ExpMatch (exp, List.hd_exn case_list, safe_tl case_list))
 ;;
 
+let parse_exp_function parse_exp =
+  keyword "function"
+  *>
+  let* case_list = sep_by1 (token "|") (parse_match_case parse_exp) in
+  return (ExpFunction (List.hd_exn case_list, safe_tl case_list))
+;;
+
 let parse_exp_bin_op parse_exp =
   let parse_exp = parse_left_bin_op parse_exp mult_div in
   let parse_exp = parse_left_bin_op parse_exp add_sub in
@@ -462,6 +469,7 @@ let parse_expression =
     in
     let parse_exp = parse_exp_option parse_exp <|> parse_exp in
     let parse_exp = parse_exp_fun parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_function parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply parse_exp <|> parse_exp in
     let parse_exp = parse_exp_bin_op parse_exp <|> parse_exp in
     let parse_exp = parse_exp_un_oper parse_exp <|> parse_exp in

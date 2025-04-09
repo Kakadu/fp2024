@@ -66,6 +66,7 @@ type expr =
   | ExpConst of const (** constant, e.g. 10*)
   | ExpIfThenElse of expr * expr * expr option (** conditional expression, e.g. if a then b else c*)
   | ExpFun of pattern * expr (** function, e.g. fun (x, y) -> x + y *)
+  | ExpFunction of match_case * match_case list (** function, e.g. function x | 0 -> "zero" | _ -> "nonzero" *)
   | ExpBinOper of binary_oper * expr * expr (** binary operation, e.g. 1 + 5*)
   | ExpUnOper of unary_oper * expr (** unary operation, e.g. -7 *)
   | ExpList of expr list (** list expression, e.g. [1, "string", 2, (1 + 7)] *)

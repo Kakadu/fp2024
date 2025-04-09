@@ -24,6 +24,7 @@ type value =
   | ValUnit
   | ValBool of bool
   | ValFun of rec_flag * pattern * expr * env
+  | ValFunction of match_case list * env
   | ValTuple of value * value * value list
   | ValList of value list
   | ValOption of value option
@@ -50,6 +51,7 @@ let rec pp_value ppf =
       (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
       (fst_val :: snd_val :: val_list)
   | ValFun _ -> fprintf ppf "<fun>"
+  | ValFunction _ -> fprintf ppf "<function>"
   | ValBuiltin _ -> fprintf ppf "<builtin>"
 ;;
 
@@ -228,6 +230,7 @@ module Inter = struct
       eval_expression env exp
     | ExpFun (pat, exp) ->
       return (ValFun (NonRec, pat, exp, env))
+    | ExpFunction (case, case_list) -> return (ValFunction (case :: case_list, env))
     | ExpMatch (exp, case, case_list) ->
       let* match_value = eval_expression env exp in
       find_and_eval_case env match_value (case :: case_list)
@@ -262,6 +265,7 @@ module Inter = struct
               | _, None -> fail MatchFailure
             in
             eval_expression new_env exp
+          | ValFunction (case_list, env) -> find_and_eval_case env arg_val case_list
           | ValBuiltin builtin ->
             (match builtin, arg_val with
              | "print_int", ValInt integer ->
