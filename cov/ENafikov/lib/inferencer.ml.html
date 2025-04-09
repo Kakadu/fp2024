@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8"/>
     <title>inferencer.ml &mdash; Coverage report</title>
-    <meta name="description" content="72.56% coverage in lib/inferencer.ml">
+    <meta name="description" content="72.78% coverage in lib/inferencer.ml">
     <link rel="stylesheet" href="../coverage.css"/>
     <script src="../highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
@@ -15,7 +15,7 @@
           <span class="dirname">lib/</span>inferencer.ml
         </a>
       </h1>
-      <h2>72.56%</h2>
+      <h2>72.78%</h2>
     </div>
     <div id="navbar">
       <span class="unvisited" style="top:6.56%"></span>
@@ -26,7 +26,6 @@
       <span class="unvisited" style="top:21.55%"></span>
       <span class="unvisited" style="top:26.00%"></span>
       <span class="unvisited" style="top:26.46%"></span>
-      <span class="unvisited" style="top:29.04%"></span>
       <span class="unvisited" style="top:29.98%"></span>
       <span class="unvisited" style="top:31.85%"></span>
       <span class="unvisited" style="top:33.72%"></span>
@@ -209,7 +208,7 @@
 <a id="L121"></a><span class="visited"> </span>
 <a id="L122"></a><span > </span>
 <a id="L123"></a><span > </span>
-<a id="L124"></a><span class="unvisited"> </span>
+<a id="L124"></a><span > </span>
 <a id="L125"></a><span > </span>
 <a id="L126"></a><span > </span>
 <a id="L127"></a><span class="visited"> </span>
@@ -1068,7 +1067,7 @@ module Subst = struct
     <span data-count="22">r</span>eturn @@ Map.Poly.singleto<span data-count="22">n</span> f t
   ;;
 
-  let remove m f = <span data-count="0">M</span>ap.Poly.remove m f
+  let remove = Map.Poly.remove
 
   let apply subst =
     <span data-count="37">l</span>et rec helper =

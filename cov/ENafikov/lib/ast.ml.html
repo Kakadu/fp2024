@@ -173,13 +173,13 @@
 </pre>
 <pre><code class="ocaml">(** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX_License-Identifier: LGPL-3.0-or-later *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-<span data-count="0">t</span>ype ident = <span data-count="30">s</span>tring [@@deriving eq, show { with_path = false }]
+<span data-count="0">t</span>ype ident = <span data-count="72">s</span>tring [@@deriving eq, show { with_path = false }]
 
-<span data-count="78">t</span>ype const =
+<span data-count="94">t</span>ype const =
   <span data-count="0">|</span> Const_bool of boo<span data-count="7">l</span> (** Boolean constants *)
-  <span data-count="0">|</span> Const_int of in<span data-count="28">t</span> (** Integer constants *)
+  <span data-count="0">|</span> Const_int of in<span data-count="36">t</span> (** Integer constants *)
   <span data-count="0">|</span> Const_string of strin<span data-count="2">g</span> (** String constants *)
   <span data-count="0">|</span> Const_nil (** [] *)
 [@@deriving eq, show { with_path = false }]
@@ -201,7 +201,7 @@
   <span data-count="0">|</span> And (** Logical AND: true &amp;&amp; false *)
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="56">t</span>ype pattern =
+<span data-count="64">t</span>ype pattern =
   <span data-count="0">|</span> Pattern_id of ident
   <span data-count="0">|</span> Pattern_const of const
   <span data-count="0">|</span> Pattern_list of pattern * patter<span data-count="0">n</span>
@@ -209,21 +209,21 @@
   <span data-count="0">|</span> Pattern_wild (** _ *)
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="109">t</span>ype expr =
+<span data-count="244">t</span>ype expr =
   <span data-count="4">|</span> Expr_const of const (** Represents constant type (string, bool, or int) *)
   <span data-count="0">|</span> Expr_var of ident (** Variable *)
   <span data-count="0">|</span> Expr_fun of pattern * exp<span data-count="0">r</span> (** Function with pattern and type *)
   <span data-count="0">|</span> Expr_app of expr * exp<span data-count="0">r</span> (** Function application *)
   <span data-count="0">|</span> Expr_if of expr * expr * exp<span data-count="0">r</span> (** Conditional operator *)
-  <span data-count="0">|</span> Expr_let_in of boo<span data-count="1">l</span> * ident * expr * exp<span data-count="0">r</span> (** Let binding with in clause *)
+  <span data-count="0">|</span> Expr_let_in of boo<span data-count="2">l</span> * ident * expr * exp<span data-count="0">r</span> (** Let binding with in clause *)
   <span data-count="0">|</span> Expr_bin_op of bin_op * expr * exp<span data-count="0">r</span> (** Binary operation, e.g., 2 + 2 - 3 *)
   <span data-count="0">|</span> Expr_match of expr * <span data-count="10">(</span><span data-count="4">p</span>attern * expr) lis<span data-count="3">t</span> (** match x_1 with | x_2   -&gt; ... *)
   <span data-count="0">|</span> Expr_list of expr * exp<span data-count="0">r</span> (** [1;2;3]*)
   <span data-count="0">|</span> Expr_tuple of <span data-count="35">e</span>xpr lis<span data-count="8">t</span> (** (1,2,3)*)
 [@@deriving eq, show { with_path = false }]
 
-<span data-count="35">t</span>ype struct_prog =
-  | Let of boo<span data-count="4">l</span> * ident * expr
+<span data-count="37">t</span>ype struct_prog =
+  | Let of boo<span data-count="5">l</span> * ident * expr
   | Expression of expr
 [@@deriving show { with_path = false }]
 </code></pre>
