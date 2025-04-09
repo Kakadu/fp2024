@@ -24,7 +24,7 @@ type value =
   | ValUnit
   | ValBool of bool
   | ValFun of rec_flag * pattern * expr * env
-  | ValFunction of match_case list * env
+  | ValFunction of case_expr list * env
   | ValTuple of value * value * value list
   | ValList of value list
   | ValOption of value option
@@ -313,10 +313,10 @@ module Inter = struct
 
   and find_and_eval_case env value = function
     | [] -> fail MatchFailure
-    | { match_pat; match_expr } :: tail ->
-      let env_temp = match_pattern env (match_pat, value) in
+    | { case_pat; case_expr } :: tail ->
+      let env_temp = match_pattern env (case_pat, value) in
       (match env_temp with
-       | Some env -> eval_expression env match_expr
+       | Some env -> eval_expression env case_expr
        | None -> find_and_eval_case env value tail)
 
   and eval_value_binding_list env value_binding_list =

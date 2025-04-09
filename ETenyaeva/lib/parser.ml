@@ -391,7 +391,7 @@ let parse_match_case parse_exp =
   *>
   let* pat = parse_pattern in
   let* exp = token "->" *> parse_exp in
-  return { match_pat = pat; match_expr = exp }
+  return { case_pat = pat; case_expr = exp }
 ;;
 
 let parse_exp_match parse_exp =

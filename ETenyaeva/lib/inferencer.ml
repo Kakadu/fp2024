@@ -635,7 +635,7 @@ module Infer = struct
       RList.fold_left
         case_list
         ~init:(return (match_exp_sub, result_ty))
-        ~f:(fun acc { match_pat = pat; match_expr = case_exp } ->
+        ~f:(fun acc { case_pat = pat; case_expr = case_exp } ->
           let* sub_acc, ty_acc = return acc in
           let* env, pat_sub =
             let* env, pat_ty = infer_pattern env pat in

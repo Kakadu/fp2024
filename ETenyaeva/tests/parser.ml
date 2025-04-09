@@ -52,16 +52,16 @@ let%expect_test "parse_multiple_evaluations" =
       (EvalExp (ExpBinOper (Add, (ExpConst (Int 2)), (ExpConst (Int 2)))))] |}]
 ;;
 
-let%expect_test "parse_match_expression" =
+let%expect_test "parse_case_expression" =
   run "match x with | 1 -> \"one\" | 2 -> \"two\";;";
   [%expect
     {|
     [(EvalExp
         (ExpMatch ((ExpVar "x"),
-           { match_pat = (PatConst (Int 1));
-             match_expr = (ExpConst (String "one")) },
-           [{ match_pat = (PatConst (Int 2));
-              match_expr = (ExpConst (String "two")) }
+           { case_pat = (PatConst (Int 1)); case_expr = (ExpConst (String "one"))
+             },
+           [{ case_pat = (PatConst (Int 2));
+              case_expr = (ExpConst (String "two")) }
              ]
            )))
       ] |}]
@@ -335,16 +335,14 @@ let%expect_test "test_let-match" =
            },
          [],
          (ExpMatch ((ExpOption (Some (ExpVar "id"))),
-            { match_pat = (PatOption (Some (PatVar "f")));
-              match_expr =
+            { case_pat = (PatOption (Some (PatVar "f")));
+              case_expr =
               (ExpLet (NonRec,
                  { pat = PatAny;
                    expr = (ExpApp ((ExpVar "f"), (ExpConst (String "42")))) },
                  [], (ExpApp ((ExpVar "f"), (ExpConst (Int 42))))))
               },
-            [{ match_pat = (PatOption None); match_expr = (ExpConst (Int 0))
-               }
-              ]
+            [{ case_pat = (PatOption None); case_expr = (ExpConst (Int 0)) }]
             ))
          ))
       },

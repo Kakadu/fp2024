@@ -66,7 +66,7 @@ type expr =
   | ExpConst of const (** constant, e.g. 10*)
   | ExpIfThenElse of expr * expr * expr option (** conditional expression, e.g. if a then b else c*)
   | ExpFun of pattern * expr (** function, e.g. fun (x, y) -> x + y *)
-  | ExpFunction of match_case * match_case list (** function, e.g. function x | 0 -> "zero" | _ -> "nonzero" *)
+  | ExpFunction of case_expr * case_expr list (** function, e.g. function x | 0 -> "zero" | _ -> "nonzero" *)
   | ExpBinOper of binary_oper * expr * expr (** binary operation, e.g. 1 + 5*)
   | ExpUnOper of unary_oper * expr (** unary operation, e.g. -7 *)
   | ExpList of expr list (** list expression, e.g. [1, "string", 2, (1 + 7)] *)
@@ -74,7 +74,7 @@ type expr =
   | ExpLet of rec_flag * let_binding * let_binding list * expr (** let, e.g. let x = 5 *)
   | ExpApp of expr * expr (** application, e.g. (fun (x, y) -> x + y) (1, 2) *)
   | ExpTup of expr * expr * expr list (** tuple expression, e.g. (e1, e2), (x, y, z) *)
-  | ExpMatch of expr * match_case * match_case list (** pattern matching, e.g. match x with | 0 -> "zero" | _ -> "nonzero" *)
+  | ExpMatch of expr * case_expr * case_expr list (** pattern matching, e.g. match x with | 0 -> "zero" | _ -> "nonzero" *)
   | ExpOption of expr option (** optonal expression, e.g. Some x*)
   | ExpWithTyp of typ * expr (** typed expression, e.g. a: int *)
 [@@deriving show { with_path = false }]
@@ -85,9 +85,9 @@ and let_binding =
   }
 [@@deriving show { with_path = false }]
 
-and match_case =
-  { match_pat : pattern (** the pattern to match, e.g. x, _ *)
-  ; match_expr : expr (** the expression to evaluate if the pattern matches *)
+and case_expr =
+  { case_pat : pattern (** the pattern to match, e.g. x, _ *)
+  ; case_expr : expr (** the expression to evaluate if the pattern matches *)
   }
 [@@deriving show { with_path = false }]
 
