@@ -241,7 +241,19 @@ module Inter = struct
     | ExpUnOper (op, e) ->
       let* v = eval_expression env e in
       eval_un_op (op, v)
-    | ExpListConstructor expr_list
+    | ExpListConstructor expr_list ->
+      let* val_list =
+        Base.List.fold_right
+          ~f:(fun exp acc ->
+            let* acc = acc in
+            let* value = eval_expression env exp in
+            match value with
+          | ValList lst -> return (lst @ acc)
+          | _ -> return (value :: acc))  
+          ~init:(return [])
+          expr_list
+      in
+      return (ValList val_list)
     | ExpList expr_list ->
       let* val_list =
         Base.List.fold_right
