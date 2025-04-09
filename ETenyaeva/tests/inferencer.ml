@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open ETenyaeva_lib.Parser
-open ETenyaeva_lib.Ast
+(* open ETenyaeva_lib.Ast *)
 open ETenyaeva_lib.Inferencer
 
 let run input =
@@ -63,5 +63,79 @@ let%expect_test "unary oper with const" =
   [%expect {|
   - : bool
   - : int
+  |}]
+;;
+
+let%expect_test "match" =
+  run {|
+  match 1 + 2 with
+  | 3 -> 4
+  | _ -> 3
+  ;;
+  |};
+  [%expect {|
+  - : int
+  |}]
+;;
+
+let%expect_test "type check negative expression" =
+  run {|
+  let f a q = -(if a then q else -q)
+  |};
+  [%expect {|
+  val f : bool -> int -> int
+  |}]
+;;
+
+let%expect_test "type check definition tuple" =
+  run {|
+  let (a, b) = (1, 2);;
+  |};
+  [%expect {|
+  val a : int
+  val b : int
+  |}]
+;;
+
+let%expect_test "type check several definition variable" =
+  run {|
+  let f = 1 and r = "qwe";; let q = 2
+  |};
+  [%expect {|
+  val f : int
+  val r : string
+  val q : int
+  |}]
+;;
+
+let%expect_test "type check several recursive definition" =
+  run {|
+  let rec f1 a = a + 1 and f2 b = f1 b;;
+  |};
+  [%expect {|
+  val f1 : int -> int
+  val f2 : int -> int
+  |}]
+;;
+
+let%expect_test "type check lenght" =
+  run {|
+  let rec length xs =
+  match xs with
+  | [] -> 0
+  | h::tl -> 1 + length tl
+  |};
+  [%expect {|
+  val length : 'a list -> int
+  |}]
+;;
+
+let%expect_test "type check let and" =
+  run {|
+  let rec f1 a = a + 1 and f2 b = f1 b;;
+  |};
+  [%expect {|
+  val f1 : int -> int
+  val f2 : int -> int
   |}]
 ;;
