@@ -461,6 +461,7 @@ let parse_expression =
         ]
     in
     let parse_exp = parse_exp_option parse_exp <|> parse_exp in
+    let parse_exp = parse_exp_fun parse_exp <|> parse_exp in
     let parse_exp = parse_exp_apply parse_exp <|> parse_exp in
     let parse_exp = parse_exp_bin_op parse_exp <|> parse_exp in
     let parse_exp = parse_exp_un_oper parse_exp <|> parse_exp in
@@ -470,7 +471,6 @@ let parse_expression =
     let parse_exp = parse_exp_ifthenelse parse_exp <|> parse_exp in
     let parse_exp = parse_exp_tuple parse_exp <|> parse_exp in
     let parse_exp = parse_list_construct_case_exp parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_fun parse_exp <|> parse_exp in
     parse_exp)
 ;;
 

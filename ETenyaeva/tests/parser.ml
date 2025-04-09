@@ -228,7 +228,7 @@ let%expect_test "fibonacci" =
 ;;
 
 let%expect_test "lambda_test" =
-  run "let add x = fun y -> x + y;;";
+  run "let add x = fun y -> (x + y);;";
   [%expect
     {|
   [(Binding (NonRec,
@@ -237,6 +237,39 @@ let%expect_test "lambda_test" =
         (ExpFun ((PatVar "x"),
            (ExpFun ((PatVar "y"),
               (ExpBinOper (Add, (ExpVar "x"), (ExpVar "y")))))
+           ))
+        },
+      []))
+    ]
+|}]
+;;
+
+let%expect_test "lambda_test_2" =
+  run "let foo a =
+  let () = print_int a in fun b ->
+  let () = print_int b in fun c ->
+  print_int c
+";
+  [%expect
+    {|
+  [(Binding (NonRec,
+      { pat = (PatVar "foo");
+        expr =
+        (ExpFun ((PatVar "a"),
+           (ExpLet (NonRec,
+              { pat = (PatConst Unit);
+                expr = (ExpApp ((ExpVar "print_int"), (ExpVar "a"))) },
+              [],
+              (ExpFun ((PatVar "b"),
+                 (ExpLet (NonRec,
+                    { pat = (PatConst Unit);
+                      expr = (ExpApp ((ExpVar "print_int"), (ExpVar "b"))) },
+                    [],
+                    (ExpApp ((ExpFun ((PatVar "c"), (ExpVar "print_int"))),
+                       (ExpVar "c")))
+                    ))
+                 ))
+              ))
            ))
         },
       []))
