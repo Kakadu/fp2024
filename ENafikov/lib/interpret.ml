@@ -194,23 +194,37 @@ module Interpret (M : MonadFail) = struct
        | _ -> fail TypeError)
     | Expr_fun (pat, expr) -> return @@ VFun (pat, expr, Map.to_alist env)
     | Expr_app (func, arg) ->
-      let* fun_to_apply = eval func env in
-      let* evaled_arg = eval arg env in
-      (match fun_to_apply with
-       | VFun (pat, expr, fun_env) ->
-         let* res = bind_fun_params ~env (pat, evaled_arg) in
-         eval expr (add_binds (add_binds empty fun_env) res)
-       | VLetWAPat (name, VFun (pat, expr, fun_env)) ->
-         let* res = bind_fun_params ~env (pat, evaled_arg) in
-         eval
-           expr
-           (add_binds
-              (add_bind
-                 (add_binds empty fun_env)
-                 name
-                 (VLetWAPat (name, VFun (pat, expr, fun_env))))
-              res)
-       | _ -> fail TypeError)
+      (match func with
+       | Expr_var name when String.equal name "print_int" ->
+         let* evaled_arg = eval arg env in
+         Stdlib.Format.printf "%s" (show_value evaled_arg);
+         return VNil
+       | _ ->
+         let* evaled_arg = eval arg env in
+         let* fun_to_apply = eval func env in
+         let* () =
+           if String.equal (show_expr func) "print_int"
+           then (
+             Stdlib.Format.printf "%s" (show_value evaled_arg);
+             return ())
+           else return ()
+         in
+         let* evaled_arg = eval arg env in
+         (match fun_to_apply with
+          | VFun (pat, expr, fun_env) ->
+            let* res = bind_fun_params ~env (pat, evaled_arg) in
+            eval expr (add_binds (add_binds empty fun_env) res)
+          | VLetWAPat (name, VFun (pat, expr, fun_env)) ->
+            let* res = bind_fun_params ~env (pat, evaled_arg) in
+            eval
+              expr
+              (add_binds
+                 (add_bind
+                    (add_binds empty fun_env)
+                    name
+                    (VLetWAPat (name, VFun (pat, expr, fun_env))))
+                 res)
+          | _ -> fail TypeError))
     | Expr_match (expr_match, cases) ->
       let* val_match = eval expr_match env in
       let rec eval_match = function

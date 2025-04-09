@@ -121,7 +121,7 @@ module Subst = struct
     return @@ Map.Poly.singleton f t
   ;;
 
-  let remove m f = Map.Poly.remove m f
+  let remove = Map.Poly.remove
 
   let apply subst =
     let rec helper =

@@ -1,6 +1,6 @@
 (** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX_License-Identifier: LGPL-3.0-or-later *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 val start_parsing : 'a Angstrom.t -> string -> ('a, string) result
 val is_char : char -> bool

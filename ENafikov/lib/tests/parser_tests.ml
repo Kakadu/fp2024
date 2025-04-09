@@ -239,3 +239,26 @@ let%expect_test _ =
   start_test parse_bind show_struct_prog test;
   [%expect {| (Expression (Expr_const Const_nil)) |}]
 ;;
+
+let%expect_test _ =
+  let test = "     let main =\n      let () = print_int (fac 4) in\n      0" in
+  start_test parse_bind show_struct_prog test;
+  [%expect
+    {|
+    (Let (false, "main",
+       (Expr_let_in (false, "()",
+          (Expr_app ((Expr_var "print_int"),
+             (Expr_app ((Expr_var "fac"), (Expr_const (Const_int 4)))))),
+          (Expr_const (Const_int 0))))
+       )) |}]
+;;
+
+Let
+  ( false
+  , "main"
+  , Expr_let_in
+      ( false
+      , "()"
+      , Expr_app
+          (Expr_var "print_int", Expr_app (Expr_var "fac", Expr_const (Const_int 4)))
+      , Expr_const (Const_int 0) ) )

@@ -1,6 +1,6 @@
 (** Copyright 2024-2025, Ruslan Nafikov *)
 
-(** SPDX_License-Identifier: LGPL-3.0-or-later *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open Angstrom
 open Ast
@@ -44,7 +44,7 @@ let is_underscore = function
 
 let chainl1 e op =
   let rec go acc = lift2 (fun f x -> f acc x) op e >>= go <|> return acc in
-  e >>= fun init -> go init
+  e >>= go
 ;;
 
 (* Simple parsers *)
@@ -78,6 +78,7 @@ let parse_string =
 ;;
 
 let parse_const = parse_bool <|> parse_int <|> parse_string
+let parse_someeee = parse_white_space *> string "()" *> return "()"
 
 let check_var cond =
   parse_white_space *> take_while1 cond
@@ -92,6 +93,8 @@ let check_var cond =
 ;;
 
 let parse_var =
+  parse_someeee
+  <|>
   let is_entry = function
     | c -> is_char c || is_underscore c || is_digit c
   in
