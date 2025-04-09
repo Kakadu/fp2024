@@ -228,7 +228,7 @@ let%expect_test "fibonacci" =
 ;;
 
 let%expect_test "lambda_test" =
-  run "let add x = fun y -> (x + y);;";
+  run "let add x = fun y -> x + y;;";
   [%expect
     {|
   [(Binding (NonRec,
@@ -245,6 +245,21 @@ let%expect_test "lambda_test" =
 ;;
 
 let%expect_test "lambda_test_2" =
+  run "let add x = fun y -> y b;;";
+  [%expect
+    {|
+  [(Binding (NonRec,
+      { pat = (PatVar "add");
+        expr =
+        (ExpFun ((PatVar "x"),
+           (ExpFun ((PatVar "y"), (ExpApp ((ExpVar "y"), (ExpVar "b")))))))
+        },
+      []))
+    ]
+|}]
+;;
+
+let%expect_test "lambda_test_3" =
   run "let foo a =
   let () = print_int a in fun b ->
   let () = print_int b in fun c ->
@@ -265,8 +280,8 @@ let%expect_test "lambda_test_2" =
                     { pat = (PatConst Unit);
                       expr = (ExpApp ((ExpVar "print_int"), (ExpVar "b"))) },
                     [],
-                    (ExpApp ((ExpFun ((PatVar "c"), (ExpVar "print_int"))),
-                       (ExpVar "c")))
+                    (ExpFun ((PatVar "c"),
+                       (ExpApp ((ExpVar "print_int"), (ExpVar "c")))))
                     ))
                  ))
               ))
@@ -424,7 +439,7 @@ let%expect_test "test_partial" =
 
 let%expect_test "parse_let_and" =
   run {|
-  let x = 10 and y = 3 + 5 and z = (1, true, Some x, [1; 2; 3], ("katya", "nastya"));;
+  let x = 10 and y = 3 + 5 and z = (1, true, Some [x;y], [1; 2; 3], ("katya", "nastya"));;
   |};
   [%expect
     {|
