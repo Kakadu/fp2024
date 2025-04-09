@@ -456,31 +456,25 @@ let parse_exp_apply parse_exp =
 
 let parse_expression =
   ws
-  *> fix (fun parse_full_exp ->
-    let parse_exp =
+  *> 
+  fix (fun expr ->
+    let expr_const =
       choice
-        [ parse_exp_ident
-        ; parse_exp_with_type parse_full_exp
-        ; parse_exp_constant
-        ; parse_exp_list parse_full_exp  
-        ; skip_round_par parse_full_exp
-        ; parse_exp_let parse_full_exp
-        ]
+        [ skip_round_par expr; parse_exp_constant; parse_exp_with_type expr; parse_exp_ident; parse_exp_ifthenelse expr ]
     in
-    let parse_exp = parse_exp_option parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_fun parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_function parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_apply parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_bin_op parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_un_oper parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_list parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_match parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_let parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_ifthenelse parse_exp <|> parse_exp in
-    let parse_exp = parse_exp_tuple parse_exp <|> parse_exp in
-    let parse_exp = parse_list_construct_case_exp parse_exp <|> parse_exp in
-    parse_exp)
-;;
+    let expr_construct = parse_exp_option expr <|> expr_const in
+    let expr_fun = parse_exp_fun expr <|> expr_construct in
+    let expr_list = parse_exp_list expr <|> expr_fun in
+    let expr_apply = parse_exp_apply expr_list <|> expr_list in
+    let expr_bin_op = parse_exp_bin_op expr_apply <|> expr_apply in
+    let expr_un_op = parse_exp_un_oper expr_bin_op <|> expr_bin_op in
+    let expr_cons = parse_list_construct_case_exp expr_un_op <|> expr_un_op in
+    let expr_let_in = parse_exp_let expr <|> expr_cons in
+    let expr_function = parse_exp_function expr <|> expr_let_in in
+    let expr_match = parse_exp_match expr <|> expr_function in
+    let expr_tuple = parse_exp_tuple expr_match <|> expr_match in
+    expr_tuple)
+  ;;
 
 (* ==================== structure ==================== *)
 
