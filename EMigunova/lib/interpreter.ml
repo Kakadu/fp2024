@@ -30,7 +30,7 @@ type value =
   | Val_string of string
   | Val_unit
   | Val_bool of bool
-  | Val_fun of rec_flag * ident option * pattern list * expression * env
+  | Val_fun of rec_flag * ident list option * pattern list * expression * env
   | Val_function of (pattern * expression) list * env
   | Val_tuple of value list
   | Val_list of value list
@@ -64,8 +64,9 @@ let rec print_value = function
         | _ -> acc_string ^ " redo print fun for this case")
     in
     let ident_to_string = function
-      | Some id -> id
-      | None -> "anonym"
+      | Some (first :: []) -> first
+      | Some _ -> "several_idents"
+      | _ -> "anonym"
     in
     Printf.printf
       " %s function: ( fun%s -> some function ) \n"
@@ -257,16 +258,8 @@ module Inter = struct
        | Const_bool bool -> return (Val_bool bool)
        | Const_unit -> return Val_unit)
     | Expr_construct_in (let_binding, expr) ->
-      (match let_binding with
-       | Let_binding (Non_recursive, _, _) ->
-         let* env = eval_value_binding env let_binding in
-         eval_expression env expr
-       | Let_binding (Recursive, _, _) ->
-         let* env = eval_value_binding env let_binding in
-         eval_expression env expr
-       | Let_rec_and_binding let_binding_list ->
-         let* env = eval_rec_value_binding_list env let_binding_list in
-         eval_expression env expr)
+      let* env = eval_value_binding env let_binding in
+      eval_expression env expr
     | Expr_anonym_fun (pat_list, expr) ->
       return (Val_fun (Non_recursive, None, pat_list, expr, env))
     | Expr_binary_op (op, exp1, exp2) ->
@@ -280,9 +273,18 @@ module Inter = struct
       (*let _ = print_value fun_val in*)
       let rec help_fun val_list = function
         | Val_fun (rec_flag, ident, pat_list, expr, fun_env) ->
+          (*let _ = Printf.printf "Loooooooooooooooook!!!!\n" in
+          let _ =
+            match ident with
+            | Some ident_list ->
+              Base.List.map ident_list ~f:(fun ident -> Printf.printf "%s" ident)
+            | _ -> [ () ]
+          in*)
           let fun_env =
             match ident, rec_flag with
-            | Some ident, Recursive -> EvalEnv.extend fun_env ident fun_val
+            | Some ident_list, Recursive ->
+              Base.List.fold_left ident_list ~init:fun_env ~f:(fun acc_env ident ->
+                EvalEnv.extend acc_env ident (EvalEnv.find_exn1 env ident))
             | _ -> fun_env
           in
           let rec helper pat_list val_list fun_env =
@@ -300,15 +302,16 @@ module Inter = struct
               let* partial_application_val = eval_expression fun_env expr in
               help_fun val_list partial_application_val
             | [], [] ->
-              let ident1 =
+              let _ =
                 match ident with
-                | Some ident -> ident
+                | Some (first :: []) -> first
+                | Some _ -> "several_idents"
                 | _ -> "no_ident"
               in
-              let _ =
+              (*let _ =
                 Printf.printf "Fun_enviroment for fun '%s'" ident1;
                 print_env fun_env
-              in
+              in*)
               eval_expression fun_env expr
           in
           helper pat_list val_list fun_env
@@ -383,50 +386,44 @@ module Inter = struct
        | None -> find_and_eval_case env value rest_cases)
 
   and eval_value_binding env = function
-    | Let_binding (Non_recursive, Let_fun (id, []), expr) ->
-      (match expr with
-       | Expr_anonym_fun (pat_list, expr) ->
-         let env =
-           extend env id (Val_fun (Non_recursive, Some id, pat_list, expr, env))
-         in
+    | Let_binding (rec_flag, Let_fun (id, pat_list), expr) ->
+      (match pat_list with
+       | _ :: _ ->
+         let env = extend env id (Val_fun (rec_flag, Some [ id ], pat_list, expr, env)) in
          return env
-       | Expr_function_fun cases_list ->
-         let env = extend env id (Val_function (cases_list, env)) in
-         return env
-       | _ ->
+       | [] ->
          let* value = eval_expression env expr in
-         let* env = extend_names_from_pat env (Pattern_var id, value) in
+         let env = extend env id value in
          return env)
-    | Let_binding (Non_recursive, Let_fun (id, pat_list), expr) ->
-      let env = extend env id (Val_fun (Non_recursive, Some id, pat_list, expr, env)) in
-      (*let _ = print_env env in*)
-      return env
-    | Let_binding (Non_recursive, Let_pattern pat, expr) ->
+    | Let_binding (_, Let_pattern pat, expr) ->
       let* value = eval_expression env expr in
       let* env = extend_names_from_pat env (pat, value) in
       return env
-    | _ -> return env
-
-  and eval_rec_value_binding_list env value_binding_list =
-    Base.List.fold_left
-      ~f:(fun acc rec_let_binding ->
-        let* env = acc in
-        match rec_let_binding with
-        | Let_binding (Recursive, Let_fun (id, pat_list), expr) ->
-          let env = extend env id (Val_fun (Recursive, Some id, pat_list, expr, env)) in
-          return env
-        | Let_binding (Recursive, Let_pattern (Pattern_var id), expr) ->
-          let value =
-            match expr with
-            | Expr_anonym_fun (pattern_list, expr) ->
-              Val_fun (Recursive, Some id, pattern_list, expr, env)
-            | _ -> Val_option None
-          in
-          let env = extend env id value in
-          return env
-        | _ -> fail `Type_error)
-      ~init:(return env)
-      value_binding_list
+    | Let_rec_and_binding binding_list ->
+      let list_of_names =
+        Base.List.fold_left binding_list ~init:[] ~f:(fun acc_list let_binding ->
+          match let_binding with
+          | Let_binding (_, Let_fun (id, _), _) -> acc_list @ [ id ]
+          | _ -> acc_list)
+      in
+      Base.List.fold_left binding_list ~init:(return env) ~f:(fun acc_env let_binding ->
+        let* env = acc_env in
+        let* env = eval_value_binding env let_binding in
+        match let_binding with
+        | Let_binding (_, Let_fun (id, _), _) ->
+          let added_value = EvalEnv.find_exn1 env id in
+          (match added_value with
+           | Val_fun (Recursive, Some _, pat_list, expr, fun_env) ->
+             let env =
+               extend
+                 env
+                 id
+                 (Val_fun (Recursive, Some list_of_names, pat_list, expr, fun_env))
+             in
+             let _ = print_env in
+             return env
+           | _ -> return env)
+        | _ -> return env)
   ;;
 
   let eval_let_bind env out_list value_binding =
@@ -439,27 +436,16 @@ module Inter = struct
       | Pattern_option (Some pat) -> extract_names_from_pat env acc pat
       | _ -> acc
     in
-    let rec get_names_from_let_binds env =
-      Base.List.fold_left ~init:[] ~f:(fun acc let_bind ->
-        match let_bind with
-        | Let_binding (_, Let_fun (id, _), _) ->
-          extract_names_from_pat env acc (Pattern_var id)
-        | Let_binding (_, Let_pattern pat, _) -> extract_names_from_pat env acc pat
-        | Let_rec_and_binding binding_list -> get_names_from_let_binds env binding_list)
+    let rec get_names_from_let_binds env = function
+      | Let_binding (_, Let_fun (id, _), _) -> [ id, EvalEnv.find_exn1 env id ]
+      | Let_binding (_, Let_pattern pat, _) -> extract_names_from_pat env [] pat
+      | Let_rec_and_binding binding_list ->
+        Base.List.fold_left binding_list ~init:[] ~f:(fun acc_list let_binding ->
+          acc_list @ get_names_from_let_binds env let_binding)
     in
-    match value_binding with
-    | Let_binding (Non_recursive, _, _) ->
-      let* env = eval_value_binding env value_binding in
-      let eval_list = get_names_from_let_binds env (value_binding :: []) in
-      return (env, out_list @ eval_list)
-    | Let_binding (Recursive, _, _) ->
-      let* env = eval_rec_value_binding_list env (value_binding :: []) in
-      let eval_list = get_names_from_let_binds env (value_binding :: []) in
-      return (env, out_list @ eval_list)
-    | Let_rec_and_binding value_binding_list ->
-      let* env = eval_rec_value_binding_list env value_binding_list in
-      let eval_list = get_names_from_let_binds env value_binding_list in
-      return (env, out_list @ eval_list)
+    let* env = eval_value_binding env value_binding in
+    let eval_list = get_names_from_let_binds env value_binding in
+    return (env, out_list @ eval_list)
   ;;
 
   let eval_structure env ast =

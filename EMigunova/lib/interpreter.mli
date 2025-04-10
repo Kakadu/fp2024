@@ -19,7 +19,7 @@ type value =
   | Val_string of string
   | Val_unit
   | Val_bool of bool
-  | Val_fun of rec_flag * ident option * pattern list * expression * env
+  | Val_fun of rec_flag * ident list option * pattern list * expression * env
   | Val_function of (pattern * expression) list * env
   | Val_tuple of value list
   | Val_list of value list
