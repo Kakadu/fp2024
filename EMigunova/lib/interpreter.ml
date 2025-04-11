@@ -113,10 +113,6 @@ module EvalEnv = struct
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
 
-  let compose env1 env2 =
-    Map.fold env2 ~f:(fun ~key ~data env_acc -> extend env_acc key data) ~init:env1
-  ;;
-
   let find_exn env key =
     match Map.find env key with
     | Some value -> Res.return value
