@@ -387,10 +387,10 @@ module Inter = struct
       return env
     | Let_rec_and_binding binding_list ->
       let list_of_names =
-        Base.List.fold_left binding_list ~init:[] ~f:(fun acc_list let_binding ->
-          match let_binding with
-          | Let_binding (_, Let_fun (id, _), _) -> acc_list @ [ id ]
-          | _ -> acc_list)
+        Base.List.fold_left binding_list ~init:[] ~f:(fun acc_list ->
+            function
+            | Let_binding (_, Let_fun (id, _), _) -> acc_list @ [ id ]
+            | _ -> acc_list)
       in
       Base.List.fold_left binding_list ~init:(return env) ~f:(fun acc_env let_binding ->
         let* env = acc_env in

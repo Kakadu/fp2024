@@ -184,7 +184,7 @@ let parse_pattern =
          ; parse_option_pattern parse_option_argument
          ; parse_list_sugar_case_pattern parse_pattern
          ]
-    <|> round_par_many1 @@ parse_pattern
+    <|> round_par_many1 parse_pattern
   in
   let parse_tuple_element =
     round_par_many
@@ -562,7 +562,7 @@ let parse_expression_without_tuple_list parse_expression =
 let parse_expr_list_construct parse_expression =
   let parse_element =
     round_par_many @@ parse_expression_without_tuple_list parse_expression
-    <|> round_par_many1 @@ parse_expression
+    <|> round_par_many1 parse_expression
   in
   let* first = parse_element in
   let* rest = many1 @@ (token "::" *> parse_element) in
@@ -576,7 +576,7 @@ let parse_expr_tuple parse_expression =
          [ parse_expr_list_construct parse_expression
          ; parse_expression_without_tuple_list parse_expression
          ]
-    <|> round_par_many1 @@ parse_expression
+    <|> round_par_many1 parse_expression
   in
   let* first = parse_element in
   let* rest = many1 @@ (token "," *> parse_element) in
@@ -598,7 +598,7 @@ let parse_structure =
     many1
       (parse_let_rec_and_binding parse_expression <|> parse_let_biding parse_expression)
   in
-  return @@ parse_let_bindings
+  return parse_let_bindings
 ;;
 
 let parse = parse_string ~consume:All parse_structure
