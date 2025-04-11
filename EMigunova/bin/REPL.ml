@@ -64,8 +64,8 @@ let () =
         , "Eval and display type inference info" )
       ]
       (fun _ ->
-         Stdlib.Format.eprintf "Anonymous arguments are not supported\n";
-         Stdlib.exit 1)
+        Stdlib.Format.eprintf "Anonymous arguments are not supported\n";
+        Stdlib.exit 1)
       "Read-Eval-Print-Loop for MiniML Calculus"
   in
   run_single options.dump_parsetree options.dump_inference

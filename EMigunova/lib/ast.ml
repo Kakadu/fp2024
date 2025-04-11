@@ -83,7 +83,7 @@ and rec_flag =
   | Non_recursive
 
 (** LHS of let binding comes in two forms: (1) let [ pattern ] = ... ;
-                                           (2) let [ fun_id arg1 arg2 ] = ... *)
+    (2) let [ fun_id arg1 arg2 ] = ... *)
 and let_declaration =
   | Let_pattern of pattern
   | Let_fun of ident * pattern list

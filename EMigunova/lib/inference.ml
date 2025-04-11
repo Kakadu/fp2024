@@ -288,7 +288,7 @@ module Scheme = struct
     let new_bind_set =
       VarSet.fold
         (fun id new_bind_set ->
-           if is_generalized_type_var id then VarSet.add id new_bind_set else new_bind_set)
+          if is_generalized_type_var id then VarSet.add id new_bind_set else new_bind_set)
         (extract_id_from_ty VarSet.empty new_ty)
         VarSet.empty
     in
@@ -366,10 +366,10 @@ module Infer = struct
   let instantiate (Scheme (bind_set, ty)) =
     VarSet.fold
       (fun name ty ->
-         let* ty = ty in
-         let* fresh = fresh_var_instantiate name in
-         let* sub = Subst.singleton name fresh in
-         return (Subst.apply sub ty))
+        let* ty = ty in
+        let* fresh = fresh_var_instantiate name in
+        let* sub = Subst.singleton name fresh in
+        return (Subst.apply sub ty))
       bind_set
       (return ty)
   ;;
@@ -379,24 +379,24 @@ module Infer = struct
     let new_free, new_ty, _ =
       VarSet.fold
         (fun str (temp_free, temp_ty, n) ->
-           let degree = n / 26 in
-           let new_str =
-             if Base.String.is_substring ~substring:"instantiate" str
-             then (
-               let index = String.index str '_' in
-               String.sub str (index + 1) (String.length str - (index + 1)))
-             else
-               (* 97 - is number 'a' in ASCII-table *)
-               Printf.sprintf
-                 "'%c%s"
-                 (Char.chr (97 + (n mod 26)))
-                 (if degree = 0 then "" else Int.to_string degree)
-             (*new_str : 'a, ... ,'z, 'a1, ... ,'z1, ...*)
-           in
-           let sub = Subst.singleton1 str (Type_var new_str) in
-           let new_free = VarSet.add new_str temp_free in
-           let new_ty = Subst.apply sub temp_ty in
-           new_free, new_ty, n + 1)
+          let degree = n / 26 in
+          let new_str =
+            if Base.String.is_substring ~substring:"instantiate" str
+            then (
+              let index = String.index str '_' in
+              String.sub str (index + 1) (String.length str - (index + 1)))
+            else
+              (* 97 - is number 'a' in ASCII-table *)
+              Printf.sprintf
+                "'%c%s"
+                (Char.chr (97 + (n mod 26)))
+                (if degree = 0 then "" else Int.to_string degree)
+            (*new_str : 'a, ... ,'z, 'a1, ... ,'z1, ...*)
+          in
+          let sub = Subst.singleton1 str (Type_var new_str) in
+          let new_free = VarSet.add new_str temp_free in
+          let new_ty = Subst.apply sub temp_ty in
+          new_free, new_ty, n + 1)
         free
         (VarSet.empty, ty, 0)
     in
@@ -543,7 +543,7 @@ module Infer = struct
         return (env, pat_ty :: pat_ty_list))
   ;;
 
-  (*this function is called when we deal with recursive bindings. 
+  (*this function is called when we deal with recursive bindings.
     And our language forbids recursive values*)
   let extend_env_with_bind_names env let_binding_list =
     RList.fold_left let_binding_list ~init:(return env) ~f:(fun env let_bind ->

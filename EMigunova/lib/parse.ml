@@ -486,8 +486,7 @@ let parse_bin_op_expression parse_expression =
   in
   let parse_expr_mul_div =
     let* first_operand = parse_expr_base in
-    let rec parse_mul_div_chain =
-      fun left_expression ->
+    let rec parse_mul_div_chain left_expression =
       (let* operator = parse_bin_op_T5 in
        let* right_expression = parse_expr_base in
        parse_mul_div_chain @@ Expr_binary_op (operator, left_expression, right_expression))
@@ -497,8 +496,7 @@ let parse_bin_op_expression parse_expression =
     parse_mul_div_chain first_operand
   in
   let parse_expr_add_sub =
-    let rec parse_add_sub_chain =
-      fun left_expression ->
+    let rec parse_add_sub_chain left_expression =
       (let* operator = parse_bin_op_T4 in
        let* right_expression = parse_expr_mul_div in
        parse_add_sub_chain @@ Expr_binary_op (operator, left_expression, right_expression))
@@ -515,8 +513,7 @@ let parse_bin_op_expression parse_expression =
   in
   let parse_expr_compare =
     let* first_operand = parse_expr_add_sub in
-    let rec parse_compare_chain =
-      fun left_expression ->
+    let rec parse_compare_chain left_expression =
       (let* operator = parse_bin_op_T3 in
        let* right_expression = parse_expr_add_sub in
        parse_compare_chain @@ Expr_binary_op (operator, left_expression, right_expression))
@@ -526,8 +523,7 @@ let parse_bin_op_expression parse_expression =
   in
   let parse_expr_and =
     let* first_operand = parse_expr_compare in
-    let rec parse_and_chain =
-      fun left_expression ->
+    let rec parse_and_chain left_expression =
       (let* operator = parse_bin_op_T2 in
        let* right_expression = parse_expr_compare in
        parse_and_chain @@ Expr_binary_op (operator, left_expression, right_expression))
@@ -538,8 +534,7 @@ let parse_bin_op_expression parse_expression =
   in
   let parse_expr_or =
     let* first_operand = parse_expr_and in
-    let rec parse_or_chain =
-      fun left_expression ->
+    let rec parse_or_chain left_expression =
       (let* operator = parse_bin_op_T1 in
        let* right_expression = parse_expr_and in
        parse_or_chain @@ Expr_binary_op (operator, left_expression, right_expression))
