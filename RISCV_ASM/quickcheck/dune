@@ -1,4 +1,6 @@
 (executable
  (name quickcheck)
  (public_name RISCV_ASM.Quickcheck)
- (libraries RISCV_ASM.Lib qcheck-core qcheck-core.runner))
+ (libraries RISCV_ASM.Lib qcheck-core qcheck-core.runner)
+ (instrumentation
+  (backend bisect_ppx)))

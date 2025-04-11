@@ -319,56 +319,58 @@ let%expect_test "fac" =
   Format.printf
     "%a"
     Haskell_lib.Pprintast.pp_binding
-    (FunDef
-       ( Ident "fac"
-       , ([], PIdentificator (Ident "n"), [])
-       , []
-       , OrdBody
-           ( IfThenEsle
-               ( ( Binop
-                     ( (Identificator (Ident "n"), [])
-                     , Less
-                     , Haskell_lib.Pprintast.i_const 0 )
-                 , [] )
-               , (ENothing, [])
-               , ( FunctionApply
-                     ( (EJust, [])
-                     , ( FunctionApply
-                           ( (Identificator (Ident "save_fac"), [])
-                           , (Identificator (Ident "n"), [])
+    (Def
+       (FunDef
+          ( Ident "fac"
+          , ([], PIdentificator (Ident "n"), [])
+          , []
+          , OrdBody
+              ( IfThenEsle
+                  ( ( Binop
+                        ( (Identificator (Ident "n"), [])
+                        , Less
+                        , Haskell_lib.Pprintast.i_const 0 )
+                    , [] )
+                  , (ENothing, [])
+                  , ( FunctionApply
+                        ( (EJust, [])
+                        , ( FunctionApply
+                              ( (Identificator (Ident "save_fac"), [])
+                              , (Identificator (Ident "n"), [])
+                              , [] )
+                          , [] )
+                        , [] )
+                    , [] ) )
+              , [] )
+          , [ Def
+                (FunDef
+                   ( Ident "save_fac"
+                   , ([], PIdentificator (Ident "y"), [])
+                   , []
+                   , Guards
+                       ( ( ( Binop
+                               ( (Identificator (Ident "y"), [])
+                               , Equality
+                               , Haskell_lib.Pprintast.i_const 0 )
                            , [] )
-                       , [] )
-                     , [] )
-                 , [] ) )
-           , [] )
-       , [ FunDef
-             ( Ident "save_fac"
-             , ([], PIdentificator (Ident "y"), [])
-             , []
-             , Guards
-                 ( ( ( Binop
-                         ( (Identificator (Ident "y"), [])
-                         , Equality
-                         , Haskell_lib.Pprintast.i_const 0 )
-                     , [] )
-                   , Haskell_lib.Pprintast.i_const 1 )
-                 , [ ( (Identificator (Ident "otherwise"), [])
-                     , ( Binop
-                           ( (Identificator (Ident "y"), [])
-                           , Multiply
-                           , ( FunctionApply
-                                 ( (Identificator (Ident "save_fac"), [])
-                                 , ( Binop
-                                       ( (Identificator (Ident "y"), [])
-                                       , Minus
-                                       , Haskell_lib.Pprintast.i_const 1 )
-                                   , [] )
-                                 , [] )
+                         , Haskell_lib.Pprintast.i_const 1 )
+                       , [ ( (Identificator (Ident "otherwise"), [])
+                           , ( Binop
+                                 ( (Identificator (Ident "y"), [])
+                                 , Multiply
+                                 , ( FunctionApply
+                                       ( (Identificator (Ident "save_fac"), [])
+                                       , ( Binop
+                                             ( (Identificator (Ident "y"), [])
+                                             , Minus
+                                             , Haskell_lib.Pprintast.i_const 1 )
+                                         , [] )
+                                       , [] )
+                                   , [] ) )
                              , [] ) )
-                       , [] ) )
-                   ] )
-             , [] )
-         ] ));
+                         ] )
+                   , [] ))
+            ] )));
   [%expect
     {|
       fac n = (if n < 0 then Nothing else Just (save_fac n)) where save_fac y | y == 0 = 1 | otherwise = y * save_fac (y - 1) |}]

@@ -1,10 +1,10 @@
 (executable
- (name main)
- (public_name main)
- (modules main)
- (libraries ocamladt_lib)
+ (name interpret)
+ (public_name interpret)
+ (modules interpret)
+ (libraries ocamladt_lib ocamladt_tests)
  (instrumentation
   (backend bisect_ppx)))
 
 (cram
- (deps ./main.exe %{bin:main}))
+ (deps ./interpret.exe %{bin:interpret}))

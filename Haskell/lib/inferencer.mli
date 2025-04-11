@@ -8,6 +8,7 @@ open Typedtree
 type typeenv
 
 val typeenv_print_int : typeenv
+val initial_env : typeenv
 val typeenv_empty : typeenv
 val pp_some_typeenv : Format.formatter -> string list * typeenv -> unit
 

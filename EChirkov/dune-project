@@ -1,0 +1,32 @@
+(lang dune 3.7)
+
+(generate_opam_files true)
+
+(cram enable)
+
+(license LGPL-3.0-or-later)
+
+(authors "Dmitri Chirkov <chdmitry2@gmail.com>")
+
+(maintainers "Dmitri Chirkov")
+
+(bug_reports "https://github.com/kinokotakenoko9/MiniMl")
+
+(homepage "https://github.com/kinokotakenoko9/MiniMl")
+
+(package
+ (name EChirkov)
+ (synopsis "An interpreter for miniml")
+ (description "An interpreter for miniml")
+ (version 0.1)
+ (depends
+  dune
+  (ppx_inline_test :with-test)
+  ppx_expect
+  ppx_deriving
+  bisect_ppx
+  (odoc :with-doc)
+  (ocamlformat :build)
+  ; base
+  ; After adding dependencies to 'dune' files and the same dependecies here too
+  ))

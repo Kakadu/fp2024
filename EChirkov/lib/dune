@@ -1,0 +1,9 @@
+(library
+ (name EChirkov)
+ (public_name EChirkov.Lib)
+ (modules Ast Parser Inferencer Interpreter)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))

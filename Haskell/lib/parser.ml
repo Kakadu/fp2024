@@ -553,9 +553,9 @@ let bnd e bnd =
   (let** ident = ident in
    let** pt = pattern Ban_p Ban_t in
    let* pts = many (ws *> pattern Ban_p Ban_t) in
-   return (fun bb where_binds -> FunDef (ident, pt, pts, bb, where_binds)))
+   return (fun bb where_binds -> Def (FunDef (ident, pt, pts, bb, where_binds))))
   <|> (let** pt = pattern Allow_p Allow_t in
-       return (fun bb where_binds -> VarsDef (pt, bb, where_binds)))
+       return (fun bb where_binds -> Def (VarsDef (pt, bb, where_binds))))
   <**> defbody e (oper "=")
   <**> option [] @@ (word "where" **> sep_by (ws *> char ';' *> ws) bnd)
   <|> let** ident = ident in
@@ -690,24 +690,24 @@ let case e =
 
 let list_e e =
   list_enum e (fun l -> return (ListBld (OrdList (IncomprehensionlList l)), []))
-  <|>
-  let condition = return (fun exp -> Condition exp) <*> e in
-  let generator =
-    return (fun (pat, exp) -> Generator (pat, exp))
-    <*> both (pattern Allow_p Allow_t <* ws <* oper "<-" <* ws) e
-  in
-  (let** ex1 = e in
-   choice
-     [ (oper "|" **> sep_by1 (ws *> char ',' *> ws) (generator <|> condition)
+  <|> (* let condition = return (fun exp -> Condition exp) <*> e in
+         let generator =
+         return (fun (pat, exp) -> Generator (pat, exp))
+         <*> both (pattern Allow_p Allow_t <* ws <* oper "<-" <* ws) e
+         in *)
+  ((let** ex1 = e in
+    choice
+      [ (* [ (oper "|" **> sep_by1 (ws *> char ',' *> ws) (generator <|> condition)
         >>= function
         | [] -> fail ""
         | hd :: tl -> return (OrdList (ComprehensionList (ex1, hd, tl))))
-     ; (let option_ex f = option None (f >>| fun x -> Some x) in
-        both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
-        >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
-     ]
-   >>| fun l -> ListBld l, [])
-  |> sq_brackets
+     ;  *)
+        (let option_ex f = option None (f >>| fun x -> Some x) in
+         both (option_ex (char ',' **> e)) (oper ".." **> option_ex e)
+         >>| fun (ex2, ex3) -> LazyList (ex1, ex2, ex3))
+      ]
+    >>| fun l -> ListBld l, [])
+   |> sq_brackets)
 ;;
 
 let tuple_or_parensed_item_e e =
@@ -1039,9 +1039,9 @@ let%expect_test "expr_list_incomprehensional" =
        []) |}]
 ;;
 
-let%expect_test "expr_list_comprehensional_cond" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "[ x | x > 2]";
-  [%expect
+(* let%expect_test "expr_list_comprehensional_cond" =
+   prs_and_prnt_ln (expr Allow_t) show_expr "[ x | x > 2]";
+   [%expect
     {|
       ((ListBld
           (OrdList
@@ -1052,11 +1052,11 @@ let%expect_test "expr_list_comprehensional_cond" =
                     [])),
                 [])))),
        []) |}]
-;;
+   ;;
 
-let%expect_test "expr_list_comprehensional_gen" =
-  prs_and_prnt_ln (expr Allow_t) show_expr "[ x | x <- [1, 2, 3]]";
-  [%expect
+   let%expect_test "expr_list_comprehensional_gen" =
+   prs_and_prnt_ln (expr Allow_t) show_expr "[ x | x <- [1, 2, 3]]";
+   [%expect
     {|
       ((ListBld
           (OrdList
@@ -1071,7 +1071,7 @@ let%expect_test "expr_list_comprehensional_gen" =
                      []))),
                 [])))),
        []) |}]
-;;
+   ;; *)
 
 let%expect_test "expr_list_lazy_valid" =
   List.iter
@@ -1120,61 +1120,69 @@ let%expect_test "var_binding_simple" =
   prs_and_prnt_ln binding show_binding "x = 1";
   [%expect
     {|
-      (VarsDef (([], (PIdentificator (Ident "x")), []),
-         (OrdBody ((Const (Int 1)), [])), [])) |}]
+      (Def
+         (VarsDef (([], (PIdentificator (Ident "x")), []),
+            (OrdBody ((Const (Int 1)), [])), []))) |}]
 ;;
 
 let%expect_test "var_binding_with_where" =
   prs_and_prnt_ln binding show_binding "x = y where y = 1; k = 2 ";
   [%expect
     {|
-      (VarsDef (([], (PIdentificator (Ident "x")), []),
-         (OrdBody ((Identificator (Ident "y")), [])),
-         [(VarsDef (([], (PIdentificator (Ident "y")), []),
-             (OrdBody ((Const (Int 1)), [])), []));
-           (VarsDef (([], (PIdentificator (Ident "k")), []),
-              (OrdBody ((Const (Int 2)), [])), []))
-           ]
-         )) |}]
+      (Def
+         (VarsDef (([], (PIdentificator (Ident "x")), []),
+            (OrdBody ((Identificator (Ident "y")), [])),
+            [(Def
+                (VarsDef (([], (PIdentificator (Ident "y")), []),
+                   (OrdBody ((Const (Int 1)), [])), [])));
+              (Def
+                 (VarsDef (([], (PIdentificator (Ident "k")), []),
+                    (OrdBody ((Const (Int 2)), [])), [])))
+              ]
+            ))) |}]
 ;;
 
 let%expect_test "fun_binding_simple" =
   prs_and_prnt_ln binding show_binding "f x = x + 1";
   [%expect
     {|
-      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
-         (OrdBody
-            ((Binop (((Identificator (Ident "x")), []), Plus, ((Const (Int 1)), [])
-                )),
-             [])),
-         [])) |}]
+      (Def
+         (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
+            (OrdBody
+               ((Binop (((Identificator (Ident "x")), []), Plus,
+                   ((Const (Int 1)), []))),
+                [])),
+            []))) |}]
 ;;
 
 let%expect_test "fun_binding_simple_strange_but_valid1" =
   prs_and_prnt_ln binding show_binding "f(x)y = x + y";
   [%expect
     {|
-      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []),
-         [([], (PIdentificator (Ident "y")), [])],
-         (OrdBody
-            ((Binop (((Identificator (Ident "x")), []), Plus,
-                ((Identificator (Ident "y")), []))),
-             [])),
-         [])) |}]
+      (Def
+         (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []),
+            [([], (PIdentificator (Ident "y")), [])],
+            (OrdBody
+               ((Binop (((Identificator (Ident "x")), []), Plus,
+                   ((Identificator (Ident "y")), []))),
+                [])),
+            []))) |}]
 ;;
 
 let%expect_test "fun_binding_guards" =
   prs_and_prnt_ln binding show_binding "f x |x > 1 = 0 | otherwise = 1";
   [%expect
     {|
-      (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
-         (Guards (
-            (((Binop (((Identificator (Ident "x")), []), Greater,
-                 ((Const (Int 1)), []))),
-              []),
-             ((Const (Int 0)), [])),
-            [(((Identificator (Ident "otherwise")), []), ((Const (Int 1)), []))])),
-         [])) |}]
+      (Def
+         (FunDef ((Ident "f"), ([], (PIdentificator (Ident "x")), []), [],
+            (Guards (
+               (((Binop (((Identificator (Ident "x")), []), Greater,
+                    ((Const (Int 1)), []))),
+                 []),
+                ((Const (Int 0)), [])),
+               [(((Identificator (Ident "otherwise")), []), ((Const (Int 1)), []))]
+               )),
+            []))) |}]
 ;;
 
 let%expect_test "decl" =
