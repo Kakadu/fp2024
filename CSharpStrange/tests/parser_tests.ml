@@ -1,3 +1,7 @@
+(** Copyright 2024, Dmitrii Kuznetsov *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open C_sharp_strange_lib.Ast
 open C_sharp_strange_lib.Parser
 
@@ -131,7 +135,8 @@ let%test "Parse return 1" =
 let%test "Parse return 2" = apply_parser parse_return {|return|} = Ok (SReturn None)
 let%test "Parse break" = apply_parser parse_break {|break|} = Ok SBreak
 let%test "Parse continue" = apply_parser parse_continue {|continue|} = Ok SContinue
-let%test "Parse empty block" = apply_parser parse_block {|{;;;;}|} = Ok (SBlock [])
+let%test "Parse empty block 1" = apply_parser parse_block {|{}|} = Ok (SBlock [])
+let%test "Parse empty block 2" = apply_parser parse_block {|{;;;;}|} = Ok (SBlock [])
 
 let%test "Parse block 1" =
   apply_parser parse_block {|{return 5;}|}
@@ -233,19 +238,194 @@ let%test "Parse if" =
          ])
 ;;
 
-(*
-   let xx =
-  print_endline
-  @@ show_stmt
-  @@ Result.get_ok
-  @@ apply_parser
-       testttt
-       {|if (x == 5) 
-    x=1;
-      else if (x == 2)
-  { 
-    x=2;
-  }|}
+let%test "Parse field 1" =
+  apply_parser parse_field_member {|public int X;|}
+  = Ok (VarField ([ MPublic ], TypeVar (TypeBase TypeInt), Id "X", None))
 ;;
-*)
-let () = print_endline "Done!"
+
+let%test "Parse field 2" =
+  apply_parser parse_field_member {|public int X = 1;|}
+  = Ok
+      (VarField
+         ( [ MPublic ]
+         , TypeVar (TypeBase TypeInt)
+         , Id "X"
+         , Some (EBinOp (OpAssign, EId (Id "X"), EValue (ValInt 1))) ))
+;;
+
+let%test "Parse method 1" =
+  apply_parser parse_method_member {|public int Func() {}|}
+  = Ok (Method ([ MPublic ], TypeBase TypeInt, Id "Func", Params [], SBlock []))
+;;
+
+let%test "Parse method 2" =
+  apply_parser
+    parse_method_member
+    {|public int Func() 
+  {
+    return 2;
+  }|}
+  = Ok
+      (Method
+         ( [ MPublic ]
+         , TypeBase TypeInt
+         , Id "Func"
+         , Params []
+         , SBlock [ SReturn (Some (EValue (ValInt 2))) ] ))
+;;
+
+let%test "Parse method 3" =
+  apply_parser
+    parse_method_member
+    {|public int Factorial(int n) 
+    {
+        if (n == 0)
+        {
+            return 1;
+        }
+        else
+        {
+            return n * Factorial(n - 1);
+        }
+    }|}
+  = Ok
+      (Method
+         ( [ MPublic ]
+         , TypeBase TypeInt
+         , Id "Factorial"
+         , Params [ Var (TypeVar (TypeBase TypeInt), Id "n") ]
+         , SBlock
+             [ SIf
+                 ( EBinOp (OpEqual, EId (Id "n"), EValue (ValInt 0))
+                 , SBlock [ SReturn (Some (EValue (ValInt 1))) ]
+                 , Some
+                     (SBlock
+                        [ SReturn
+                            (Some
+                               (EBinOp
+                                  ( OpMul
+                                  , EId (Id "n")
+                                  , EFuncCall
+                                      ( EId (Id "Factorial")
+                                      , [ EBinOp (OpSub, EId (Id "n"), EValue (ValInt 1))
+                                        ] ) )))
+                        ]) )
+             ] ))
+;;
+
+let%test "Parse class 1" =
+  apply_parser
+    parse_class
+    {|
+  public class Sample {}|}
+  = Ok (Class ([ MPublic ], Id "Sample", []))
+;;
+
+let%test "Parse class 2" =
+  apply_parser
+    parse_class
+    {|
+  public class Sample {
+      public int X;
+      public int Y = 1;
+  }|}
+  = Ok
+      (Class
+         ( [ MPublic ]
+         , Id "Sample"
+         , [ VarField ([ MPublic ], TypeVar (TypeBase TypeInt), Id "X", None)
+           ; VarField
+               ( [ MPublic ]
+               , TypeVar (TypeBase TypeInt)
+               , Id "Y"
+               , Some (EBinOp (OpAssign, EId (Id "Y"), EValue (ValInt 1))) )
+           ] ))
+;;
+
+let%test "Parse class 3" =
+  apply_parser
+    parse_class
+    {|
+  public class Sample {
+  
+      public int X;
+
+      public int add(int x) {
+          X = X + x;
+      }
+  }|}
+  = Ok
+      (Class
+         ( [ MPublic ]
+         , Id "Sample"
+         , [ VarField ([ MPublic ], TypeVar (TypeBase TypeInt), Id "X", None)
+           ; Method
+               ( [ MPublic ]
+               , TypeBase TypeInt
+               , Id "add"
+               , Params [ Var (TypeVar (TypeBase TypeInt), Id "x") ]
+               , SBlock
+                   [ SExpr
+                       (EBinOp
+                          ( OpAssign
+                          , EId (Id "X")
+                          , EBinOp (OpAdd, EId (Id "X"), EId (Id "x")) ))
+                   ] )
+           ] ))
+;;
+
+let%test "Parse factorial" =
+  apply_parser
+    parse_prog
+    {|
+  public class Program
+  {
+    public static void Main() {}
+
+    public int Factorial(int n) 
+    {
+        if (n == 0)
+        {
+            return 1;
+        }
+        else
+        {
+            return n * Factorial(n - 1);
+        }
+    }
+  }
+    
+  |}
+  = Ok
+      (Program
+         (Class
+            ( [ MPublic ]
+            , Id "Program"
+            , [ Method ([ MPublic; MStatic ], TypeVoid, Id "Main", Params [], SBlock [])
+              ; Method
+                  ( [ MPublic ]
+                  , TypeBase TypeInt
+                  , Id "Factorial"
+                  , Params [ Var (TypeVar (TypeBase TypeInt), Id "n") ]
+                  , SBlock
+                      [ SIf
+                          ( EBinOp (OpEqual, EId (Id "n"), EValue (ValInt 0))
+                          , SBlock [ SReturn (Some (EValue (ValInt 1))) ]
+                          , Some
+                              (SBlock
+                                 [ SReturn
+                                     (Some
+                                        (EBinOp
+                                           ( OpMul
+                                           , EId (Id "n")
+                                           , EFuncCall
+                                               ( EId (Id "Factorial")
+                                               , [ EBinOp
+                                                     ( OpSub
+                                                     , EId (Id "n")
+                                                     , EValue (ValInt 1) )
+                                                 ] ) )))
+                                 ]) )
+                      ] )
+              ] )))
+;;

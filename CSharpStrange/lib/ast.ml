@@ -20,7 +20,6 @@ type base_type =
   | TypeInt (** Declaration of int *)
   | TypeChar (** Declaration of char *)
   | TypeBool (** Declaration of bool *)
-  | TypeVoid (** Declaration of void TODO: remove by specification?? *)
   | TypeString (** Declaration of string TODO*)
 [@@deriving eq, show { with_path = false }]
 (* TODO: declaration of strings?? *)
@@ -28,7 +27,9 @@ type base_type =
 (** Type delcaration *)
 type _type =
   | TypeBase of base_type (** Declaration of basic type *)
-  | TypeArray of base_type (** Declaration of array of basic type TODO: ranks & think about base_type *)
+  | TypeArray of base_type
+  | TypeVoid (** Declaration of void TODO: remove by specification?? *)
+  (** Declaration of array of basic type TODO: ranks & think about base_type *)
 [@@deriving eq, show { with_path = false }]
 (* TODO: records for arrays?? *)
 (* TODO: strings "" *)
@@ -46,7 +47,7 @@ type modifier =
 [@@deriving eq, show { with_path = false }]
 
 type var_decl = Var of var_type * ident [@@deriving eq, show { with_path = false }]
-and params = Params of var_decl list [@@deriving eq, show { with_path = false }]
+type params = Params of var_decl list [@@deriving eq, show { with_path = false }]
 
 (** Binary operations *)
 type bin_op =
@@ -72,6 +73,10 @@ type un_op =
   | OpDec (** [--] a or [--] a *) (* TODO remove?? *)
   | OpNot (** [!] a *)
   | OpNew (** [new] a *)
+[@@deriving eq, show { with_path = false }]
+
+(** From clauses *)
+type from_clause = FromClause of string * ident
 [@@deriving eq, show { with_path = false }]
 
 (** Language expressions *)
@@ -104,10 +109,6 @@ and stmt =
   | SDecl of var_decl * expr option (** Var declaration *)
 [@@deriving eq, show { with_path = false }]
 
-(** From clauses *)
-and from_clause = FromClause of string * ident
-[@@deriving eq, show { with_path = false }]
-
 (** Select clause *)
 and select_clause = SelectClause of expr [@@deriving eq, show { with_path = false }]
 
@@ -120,7 +121,7 @@ and linq_query =
 type field =
   | VarField of modifier list * var_type * ident * expr option
   (** Class field - always initialized *)
-  | Method of modifier list * var_type * ident * params * stmt (** Class method *)
+  | Method of modifier list * _type * ident * params * stmt (** Class method *)
 [@@deriving eq, show { with_path = false }]
 
 (** C Sharp class *)

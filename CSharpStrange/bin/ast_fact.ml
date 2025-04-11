@@ -1,4 +1,4 @@
-(** Copyright 2024, Dmitrii Kuznetsov *)
+(** Copyright 2025, Dmitrii Kuznetsov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -12,10 +12,10 @@ let fact_ast =
     (Class
        ( [ MPublic ]
        , Id "Program"
-       , [ Method ([ MPublic; MStatic ], TypeVar (TypeBase TypeVoid), Id "Main", Params [], SBlock [])
+       , [ Method ([ MPublic; MStatic ], TypeVoid, Id "Main", Params [], SBlock [])
          ; Method
              ( [ MPublic ]
-             , TypeVar (TypeBase TypeInt)
+             , TypeBase TypeInt
              , Id "Factorial"
              , Params [ Var (TypeVar (TypeBase TypeInt), Id "n") ]
              , SBlock
@@ -30,8 +30,7 @@ let fact_ast =
                                   , EId (Id "n")
                                   , EFuncCall
                                       ( EId (Id "Factorial")
-                                      , [ EBinOp
-                                            (OpSub, EId (Id "n"), EValue (ValInt 1))
+                                      , [ EBinOp (OpSub, EId (Id "n"), EValue (ValInt 1))
                                         ] ) )))) )
                  ] )
          ] ))

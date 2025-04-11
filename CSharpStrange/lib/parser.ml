@@ -1,18 +1,21 @@
+(** Copyright 2024, Dmitrii Kuznetsov *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
 open Ast
 open Angstrom
 open Base
 
 (* Chain functions *)
-let chainl0 expr op = op >>= (fun op1 -> expr >>| fun exp -> op1 exp) <|> expr
+let chainl0 expr op = op >>= (fun op1 -> expr >>| op1) <|> expr
 
 let chainl1 expr op =
   let rec pars e1 = lift2 (fun op1 e2 -> op1 e1 e2) op expr >>= pars <|> return e1 in
-  expr >>= fun init -> pars init
+  expr >>= pars
 ;;
 
 let chainr1 expr op =
-  fix (fun x ->
-    lift2 (fun op1 e2 -> op1 e2) (lift2 (fun e1 op2 -> op2 e1) expr op) x <|> expr)
+  fix (fun x -> lift2 (fun op1 -> op1) (lift2 (fun e1 op2 -> op2 e1) expr op) x <|> expr)
 ;;
 
 (* Special functions *)
@@ -57,9 +60,25 @@ let is_token_sym = function
 ;;
 
 let skip_spaces = skip_while is_space
-let parens p = skip_spaces *> char '(' *> p <* skip_spaces <* char ')'
-let braces p = skip_spaces *> char '{' *> p <* skip_spaces <* char '}'
-let brackets p = skip_spaces *> char '[' *> p <* skip_spaces <* char ']'
+
+let parens p =
+  skip_spaces *> (char '(' <|> fail "<(> error)") *> p
+  <* skip_spaces
+  <* (char ')' <|> fail "<)> error)")
+;;
+
+let braces p =
+  skip_spaces *> (char '{' <|> fail "<{> error)") *> p
+  <* skip_spaces
+  <* (char '}' <|> fail "<}> error)")
+;;
+
+let brackets p =
+  skip_spaces *> (char '[' <|> fail "<[> error)") *> p
+  <* skip_spaces
+  <* (char ']' <|> fail "<]> error)")
+;;
+
 let skip_semicolons = fix (fun f -> skip_spaces *> char ';' *> f <|> return "")
 let skip_semicolons1 = skip_spaces *> char ';' *> skip_semicolons
 
@@ -67,7 +86,7 @@ let skip_semicolons1 = skip_spaces *> char ';' *> skip_semicolons
 
 let parse_int =
   take_while1 Char.is_digit
-  >>= fun num -> return @@ ValInt (int_of_string num) <|> fail "Not an int"
+  >>= fun num -> return @@ ValInt (Int.of_string num) <|> fail "Not an int"
 ;;
 
 let parse_char =
@@ -105,16 +124,17 @@ let parse_modifiers =
        ; string "const" *> skip_spaces *> return MConst
        ; string "async" *> skip_spaces *> return MAsync
        ])
+  <|> fail "Modifier error"
 ;;
 
 (* Type words *)
 let parse_type_word =
   take_while is_token_sym
   >>= function
-  | "int" -> return @@ TypeInt
-  | "char" -> return @@ TypeChar
-  | "bool" -> return @@ TypeBool
-  | "string" -> return @@ TypeString
+  | "int" -> return TypeInt
+  | "char" -> return TypeChar
+  | "bool" -> return TypeBool
+  | "string" -> return TypeString
   | _ -> fail "Wrong type word"
 ;;
 
@@ -136,6 +156,7 @@ let parse_value =
     ; val_to_expr parse_null
     ; val_to_expr parse_val_string
     ]
+  <|> fail "Value error"
 ;;
 
 let parse_id =
@@ -161,13 +182,9 @@ let parse_var =
   skip_spaces *> parse_var_type >>= parse_decl_id
 ;;
 
-let parse_id_expr = skip_spaces *> parse_id >>= fun x -> return @@ EId x
+let parse_id_expr = skip_spaces *> (parse_id >>| fun x -> EId x) <* skip_spaces
 let parse_call_id = parse_id_expr (* TODO Program.x *)
-
-let parse_args_list arg =
-  let args = arg <* skip_spaces *> char ',' <|> arg in
-  parens @@ many args
-;;
+let parse_args_list arg = parens @@ sep_by (skip_spaces *> char ',') arg
 
 let parse_call_args id arg =
   parse_args_list arg >>= fun args -> return @@ EFuncCall (id, args)
@@ -214,9 +231,12 @@ let parse_ops =
     let lv7 = chainl1 lv6 (choice [ ( ^&&^ ) ]) in
     let lv8 = chainl1 lv7 (choice [ ( ^||^ ) ]) in
     chainr1 lv8 (choice [ ( ^=^ ) ]))
+  <|> fail "Expr error"
 ;;
 
-let parse_assign = lift3 (fun id eq ex -> eq id ex) parse_id_expr ( ^=^ ) parse_ops
+let parse_assign =
+  lift3 (fun id eq ex -> eq id ex) parse_id_expr ( ^=^ ) parse_ops <|> fail "Assign error"
+;;
 
 (* Statements + LINQ *)
 
@@ -248,6 +268,7 @@ let parse_if_else f_if_body =
       parse_if_cond
       parse_body
       parse_else_body)
+  <|> fail "If error"
 ;;
 
 (* TODO: Check block contains *)
@@ -270,14 +291,14 @@ let parse_for body =
             p_for_expr)
       p_body
   in
-  string "for" *> p_for
+  string "for" *> p_for <|> fail "For error"
 ;;
 
 let parse_while body =
   let p_body = body <|> skip_semicolons1 *> parse_stmt_ops in
   let p_cond = parens parse_ops in
   let p_while = string "while" *> skip_spaces *> p_cond in
-  lift2 (fun cond body -> SWhile (cond, body)) p_while p_body
+  lift2 (fun cond body -> SWhile (cond, body)) p_while p_body <|> fail "While error"
 ;;
 
 let parse_return =
@@ -285,10 +306,14 @@ let parse_return =
     (fun _ expr -> SReturn expr)
     (string "return")
     (parse_ops >>= (fun ret -> return (Some ret)) <|> return None)
+  <|> fail "Return error"
 ;;
 
-let parse_break = skip_spaces *> string "break" *> return SBreak
-let parse_continue = skip_spaces *> string "continue" *> return SContinue
+let parse_break = skip_spaces *> string "break" *> return SBreak <|> fail "Break error"
+
+let parse_continue =
+  skip_spaces *> string "continue" *> return SContinue <|> fail "Continue error"
+;;
 
 (* {{}} TODO ??*)
 
@@ -316,6 +341,7 @@ let parse_block =
 (* Program class functions *)
 (* TODO - tests!! *)
 
+(* Rewrite with lift3 lift2 *)
 let parse_field_sign =
   let f_value = skip_spaces *> char '=' *> get_opt parse_ops in
   lift4
@@ -328,26 +354,23 @@ let parse_field_sign =
 ;;
 
 let parse_method_type =
-  (* TODO Fix!! *)
-  let parse_void =
-    take_while is_token_sym
-    >>= fun x ->
-    if String.( = ) x "void" then return @@ TypeBase TypeVoid else fail "Not a type"
-  in
-  choice [ parse_array_type; parse_base_type; parse_void ]
+  let parse_void = string "void" *> (return TypeVoid) in
+  choice
+    ?failure_msg:(Some "Not a method type")
+    [ parse_array_type; parse_base_type; parse_void ]
 ;;
 
 let parse_method_sign =
   let parse_args =
-    parens @@ many @@ (skip_spaces *> parse_var <* skip_spaces <* char ',')
+    parens @@ sep_by (skip_spaces *> char ',' <* skip_spaces) parse_var
     >>= fun exp -> return (Params exp)
   in
   lift4
     (fun m_modif m_type m_id m_params -> m_modif, m_type, m_id, m_params)
     (skip_spaces *> parse_modifiers)
-    (skip_spaces *> parse_var_type)
+    (skip_spaces *> parse_method_type)
     (skip_spaces *> parse_id)
-    parse_args
+    (skip_spaces *> parse_args)
 ;;
 
 let parse_method_member =
@@ -358,32 +381,38 @@ let parse_method_member =
 ;;
 
 let parse_field_member =
-  parse_field_sign >>| fun (mds, tp, id, ex) -> VarField (mds, tp, id, ex)
+  parse_field_sign
+  >>| function
+  | mds, tp, id, Some ex -> VarField (mds, tp, id, Some (EBinOp (OpAssign, EId id, ex)))
+  | mds, tp, id, None -> VarField (mds, tp, id, None)
 ;;
 
 let parse_class_members =
-  let member = choice [ parse_method_member; parse_field_member ] in
-  braces @@ many member
+  let member =
+    choice ?failure_msg:(Some "Method error") [ parse_method_member; parse_field_member ]
+  in
+  braces @@ sep_by skip_spaces member
 ;;
 
-let parse_one_class1 =
-  let class_id = skip_spaces *> string "class" *> skip_spaces *> parse_id in
+let parse_class =
+  let class_id =
+    skip_spaces *> string "class" *> skip_spaces *> parse_id <|> fail "Class sign error"
+  in
   lift3
-    (fun cl_modif cl_id cl_membs -> Class (cl_modif, cl_id, cl_membs))
+    (fun cl_mdf cl_id cl_mbs -> Class (cl_mdf, cl_id, cl_mbs))
     (skip_spaces *> parse_modifiers)
     class_id
     parse_class_members
 ;;
 
-let parse_one_class = return (Class ([], Id "Not implemented", []))
-let parse_prog : program t = parse_one_class <* skip_spaces >>| fun prog -> Program prog
+let parse_prog : program t = parse_class <* skip_spaces >>| fun prog -> Program prog
 
 (* Main functions *)
 
+let apply_parser parser = parse_string ~consume:Consume.All parser
+
 let parse_option p str =
-  match parse_string p ~consume:Angstrom.Consume.All str with
+  match apply_parser p str with
   | Ok x -> Some x
   | Error _ -> None
 ;;
-
-let apply_parser parser = parse_string ~consume:Consume.All parser
