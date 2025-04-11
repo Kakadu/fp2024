@@ -1442,7 +1442,7 @@ let parse_pattern =
          ; parse_option_patter<span data-count="27">n</span> parse_option_argument
          ; parse_list_sugar_case_patter<span data-count="27">n</span> parse_pattern
          ]
-    &lt;|&gt; round_par_many<span data-count="27">1</span> @@ parse_pattern
+    &lt;|&gt; round_par_many<span data-count="27">1</span> parse_pattern
   in
   <span data-count="27">l</span>et parse_tuple_element =
     round_par_man<span data-count="27">y</span>
@@ -1820,7 +1820,7 @@ let parse_expression_without_tuple_list parse_expression =
 let parse_expr_list_construct parse_expression =
   <span data-count="54">l</span>et parse_element =
     round_par_man<span data-count="54">y</span> @@ parse_expression_without_tuple_lis<span data-count="54">t</span> parse_expression
-    &lt;|&gt; round_par_many<span data-count="54">1</span> @@ parse_expression
+    &lt;|&gt; round_par_many<span data-count="54">1</span> parse_expression
   in
   <span data-count="54">l</span>et* first = parse_element in
   <span data-count="63223">l</span>et* rest = many<span data-count="63223">1</span> @@ (toke<span data-count="63223">n</span> "::" *<span data-count="63223">&gt;</span> parse_element) in
@@ -1834,7 +1834,7 @@ let parse_expr_tuple parse_expression =
          [ parse_expr_list_construc<span data-count="27">t</span> parse_expression
          ; parse_expression_without_tuple_lis<span data-count="27">t</span> parse_expression
          ]
-    &lt;|&gt; round_par_many<span data-count="27">1</span> @@ parse_expression
+    &lt;|&gt; round_par_many<span data-count="27">1</span> parse_expression
   in
   <span data-count="27">l</span>et* first = parse_element in
   <span data-count="31611">l</span>et* rest = many<span data-count="31611">1</span> @@ (toke<span data-count="31611">n</span> "," *<span data-count="31611">&gt;</span> parse_element) in
@@ -1856,7 +1856,7 @@ let parse_structure =
     many<span data-count="28">1</span>
       (parse_let_rec_and_bindin<span data-count="28">g</span> parse_expression &lt;|<span data-count="28">&gt;</span> parse_let_bidin<span data-count="28">g</span> parse_expression)
   in
-  <span data-count="27">r</span>eturn @@ parse_let_bindings
+  <span data-count="27">r</span>eturn parse_let_bindings
 ;;
 
 let parse = parse_strin<span data-count="28">g</span> ~consume:All parse_structure
