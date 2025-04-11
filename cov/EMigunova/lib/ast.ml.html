@@ -330,7 +330,7 @@
   | Non_recursive
 
 (** LHS of let binding comes in two forms: (1) let [ pattern ] = ... ;
-                                           (2) let [ fun_id arg1 arg2 ] = ... *)
+    (2) let [ fun_id arg1 arg2 ] = ... *)
 <span data-count="1">a</span>nd let_declaration =
   | Let_pattern of pattern
   | Let_fun of ident * <span data-count="6">p</span>attern lis<span data-count="2">t</span>

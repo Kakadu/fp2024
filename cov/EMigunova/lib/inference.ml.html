@@ -2276,7 +2276,7 @@ module Scheme = struct
     let new_bind_set =
       VarSet.fold
         (fun id new_bind_set -&gt;
-           <span data-count="2277">i</span>f is_generalized_type_var id then <span data-count="1345">V</span>arSet.add id new_bind_set else <span data-count="932">n</span>ew_bind_set)
+          <span data-count="2277">i</span>f is_generalized_type_var id then <span data-count="1345">V</span>arSet.add id new_bind_set else <span data-count="932">n</span>ew_bind_set)
         (extract_id_from_t<span data-count="3686">y</span> VarSet.empty new_ty)
         VarSet.empty
     in
@@ -2354,10 +2354,10 @@ module Infer = struct
   let instantiate (Scheme (bind_set, ty)) =
     <span data-count="273">V</span>arSet.fold
       (fun name ty -&gt;
-         <span data-count="34">l</span>et* ty = ty in
-         <span data-count="34">l</span>et* fresh = fresh_var_instantiat<span data-count="34">e</span> name in
-         <span data-count="34">l</span>et* sub = Subst.singleto<span data-count="34">n</span> name fresh in
-         <span data-count="34">r</span>eturn (Subst.appl<span data-count="34">y</span> sub ty))
+        <span data-count="34">l</span>et* ty = ty in
+        <span data-count="34">l</span>et* fresh = fresh_var_instantiat<span data-count="34">e</span> name in
+        <span data-count="34">l</span>et* sub = Subst.singleto<span data-count="34">n</span> name fresh in
+        <span data-count="34">r</span>eturn (Subst.appl<span data-count="34">y</span> sub ty))
       bind_set
       (retur<span data-count="273">n</span> ty)
   ;;
@@ -2367,24 +2367,24 @@ module Infer = struct
     <span data-count="123">l</span>et new_free, new_ty, _ =
       VarSet.fold
         (fun str (temp_free, temp_ty, n) -&gt;
-           <span data-count="44">l</span>et degree = n / 26 in
-           let new_str =
-             if Base.String.is_substring ~substring:"instantiate" str
-             then <span data-count="9">(</span>
-               let index = String.index str '_' in
-               <span data-count="9">S</span>tring.su<span data-count="9">b</span> str (index + 1) (String.lengt<span data-count="9">h</span> str - (index + 1)))
-             else
-               (* 97 - is number 'a' in ASCII-table *)
-               <span data-count="35">P</span>rintf.sprint<span data-count="35">f</span>
-                 "'%c%s"
-                 (Char.ch<span data-count="35">r</span> (97 + (n mod 26)))
-                 (if degree = 0 then <span data-count="35">"</span>" else <span data-count="0">I</span>nt.to_strin<span data-count="0">g</span> degree)
-             (*new_str : 'a, ... ,'z, 'a1, ... ,'z1, ...*)
-           in
-           let sub = Subst.singleton1 str (Type_var new_str) in
-           <span data-count="44">l</span>et new_free = VarSet.add new_str temp_free in
-           <span data-count="44">l</span>et new_ty = Subst.apply sub temp_ty in
-           <span data-count="44">n</span>ew_free, new_ty, n + 1)
+          <span data-count="44">l</span>et degree = n / 26 in
+          let new_str =
+            if Base.String.is_substring ~substring:"instantiate" str
+            then <span data-count="9">(</span>
+              let index = String.index str '_' in
+              <span data-count="9">S</span>tring.su<span data-count="9">b</span> str (index + 1) (String.lengt<span data-count="9">h</span> str - (index + 1)))
+            else
+              (* 97 - is number 'a' in ASCII-table *)
+              <span data-count="35">P</span>rintf.sprint<span data-count="35">f</span>
+                "'%c%s"
+                (Char.ch<span data-count="35">r</span> (97 + (n mod 26)))
+                (if degree = 0 then <span data-count="35">"</span>" else <span data-count="0">I</span>nt.to_strin<span data-count="0">g</span> degree)
+            (*new_str : 'a, ... ,'z, 'a1, ... ,'z1, ...*)
+          in
+          let sub = Subst.singleton1 str (Type_var new_str) in
+          <span data-count="44">l</span>et new_free = VarSet.add new_str temp_free in
+          <span data-count="44">l</span>et new_ty = Subst.apply sub temp_ty in
+          <span data-count="44">n</span>ew_free, new_ty, n + 1)
         free
         (VarSet.empty, ty, 0)
     in
@@ -2531,7 +2531,7 @@ module Infer = struct
         <span data-count="69">r</span>eturn (env, pat_ty :: pat_ty_list))
   ;;
 
-  (*this function is called when we deal with recursive bindings. 
+  (*this function is called when we deal with recursive bindings.
     And our language forbids recursive values*)
   let extend_env_with_bind_names env let_binding_list =
     <span data-count="19">R</span>List.fold_left let_binding_list ~init:(retur<span data-count="19">n</span> env) ~f:(fun env let_bind -&gt;
