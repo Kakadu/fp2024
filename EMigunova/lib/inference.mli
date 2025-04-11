@@ -41,12 +41,7 @@ module TypeEnv : sig
   type t = (ident, scheme, Base.String.comparator_witness) Base.Map.t
 end
 
-(*val empty_env : TypeEnv.t*)
 val env_with_print_funs : TypeEnv.t
 val print_error : error -> unit
 val print_type : ttype -> unit
 val run_inferencer : let_binding list -> ((ident * ttype) list, error) result
-
-(*for debug*)
-val infer : ident -> unit list
-val run_infer : (ident -> 'a) -> 'a list

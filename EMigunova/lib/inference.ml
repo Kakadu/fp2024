@@ -155,20 +155,9 @@ end
 
 module VarSet = struct
   include Set.Make (String)
-
-  (*let pp ppf set =
-    Format.fprintf ppf "[ ";
-    iter (Format.fprintf ppf "%s; ") set;
-    Format.fprintf ppf "]"
-  ;;*)
 end
 
 type scheme = Scheme of VarSet.t * ttype
-
-(*let pp_scheme ppf = function
-  | Scheme (varset, ty) ->
-    Format.fprintf ppf "{ %a : %a }" VarSet.pp varset Pprinter.pp_core_type ty
-;;*)
 
 module Type = struct
   (*gets type_core and returns set of idents of all type_core's type variables *)
@@ -195,8 +184,8 @@ module Subst = struct
   let empty = Map.empty (module String)
   let singleton1 = Map.singleton (module String)
 
-  (*get some ident and core_type and checks if an identifier doesn't occur in a type (bad case of infinite loop)
-    and returns a state monad*)
+  (*gets some name of type variable and core_type and checks if an name doesn't occur in a type (bad case of infinite loop)
+    and returns wrapped sub*)
   let singleton key value =
     match value with
     | Type_var id when String.equal key id -> return empty
@@ -224,17 +213,6 @@ module Subst = struct
     helper
   ;;
 
-  (*let concretize sub_map =
-    RMap.fold sub_map ~init:(return sub_map) ~f:(fun id1 id_sub1 sub_map_acc1 ->
-      RMap.fold
-        sub_map_acc1
-        ~init:(return sub_map_acc1)
-        ~f:(fun id2 id_sub2 sub_map_acc2 ->
-          let new_id_sub2 = apply (singleton1 id1 id_sub1) id_sub2 in
-          let new_sub_map2 = Map.update sub_map_acc2 id2 ~f:(fun _ -> new_id_sub2) in
-          return new_sub_map2))
-  ;;*)
-
   let rec unify (debug_info : string) (l : ttype) (r : ttype) =
     match l, r with
     | Type_unit, Type_unit
@@ -259,7 +237,7 @@ module Subst = struct
           helper (compose acc_sub unified_sub) (rest1, rest2)
         | [], [] -> acc
         | _ -> fail (`Unification_failed (debug_info, l, r))
-        (*consider case when list1 and list2 have different lengths*)
+        (*considering case when list1 and list2 have different lengths*)
       in
       helper (return empty) (list1, list2)
     | Type_arrow (arg1, res1), Type_arrow (arg2, res2) ->
@@ -286,23 +264,7 @@ module Subst = struct
   and compose sub1 sub2 = RMap.fold sub2 ~init:(return sub1) ~f:extend
 
   let compose_all sub_list = RList.fold_left sub_list ~init:(return empty) ~f:compose
-
-  (*let pp ppf sub =
-    Stdlib.Format.fprintf ppf "Subst:\n";
-    Map.iteri sub ~f:(fun ~key:str ~data:ty ->
-      Stdlib.Format.fprintf ppf "%s <-> %a; " str Pprinter.pp_core_type ty);
-    Stdlib.Format.fprintf ppf "\n"
-  ;;*)
 end
-
-(*let print_sub sub =
-  Printf.printf "Substitution table: \n";
-  Base.Map.iteri sub ~f:(fun ~key ~data ->
-    Printf.printf "%s   <--->   " key;
-    print_type data;
-    Printf.printf "\n");
-  Printf.printf "\n"
-;;*)
 
 module Scheme = struct
   let free_vars (Scheme (bind_set, ty)) = VarSet.diff (Type.free_vars ty) bind_set
@@ -341,7 +303,6 @@ module TypeEnv = struct
 
   let empty = Map.empty (module String)
   let extend env key value = Map.update env key ~f:(fun _ -> value)
-  (*this function adds a pair (identifier of variable, type scheme of type of variable) to the variable environment*)
 
   let rec extend_with_pattern env_acc pat (Scheme (bind_set, ty) as scheme) =
     match pat, ty with
@@ -381,36 +342,13 @@ module TypeEnv = struct
   ;;
 
   let apply sub env = Map.map env ~f:(Scheme.apply sub)
-  (*необходимо написать вспомогательную функция 'update_env_schemes', которая 
-    итеративно проходится по env, залезвет в каждую схему и делает следующее: 
-    если в схеме используются обобщенные переменные типов, то необходимо добавть
-    эти переменные в bind_set этой схемы.
-    Реализовать функцию is_generalized_type_var и с помощью нее вносить в bind_set неоюходимые идентификаторы*)
-
   let find = Map.find
 
   let find_type_exn env key =
     let (Scheme (_, ty)) = Map.find_exn env key in
     ty
   ;;
-
-  (*let pp ppf env =
-    Stdlib.Format.fprintf ppf "TypeEnv:\n";
-    Map.iteri env ~f:(fun ~key:str ~data:sch ->
-      Stdlib.Format.fprintf ppf "%s -> %a; " str pp_scheme sch);
-    Stdlib.Format.fprintf ppf "\n"
-  ;;*)
 end
-
-(*let print_env env =
-  Printf.printf "Type enviroment: \n";
-  Base.Map.iteri env ~f:(fun ~key ~data ->
-    Printf.printf "val %s : " key;
-    let (Scheme (_, ty)) = data in
-    print_type ty;
-    Printf.printf "\n");
-  Printf.printf "\n"
-;;*)
 
 module Infer = struct
   open Ast
@@ -478,8 +416,6 @@ module Infer = struct
          extract_names_from_pat f acc (Pattern_tuple rest_pats))
     | _ -> return acc
   ;;
-
-  (*cases of patterns that don't contain any identifiers like any pattern? constants and None*)
 
   module StringSet = struct
     include Set.Make (String)
@@ -625,8 +561,6 @@ module Infer = struct
       | _ -> fail `No_arg_rec)
   ;;
 
-  (*let x = ... - for my parser it's a Pat_var, therefore any Let_fun has at least 1 argument*)
-
   let rec check_names_from_let_binds =
     RList.fold_left ~init:(return StringSet.empty) ~f:(fun set_acc let_binding ->
       match let_binding with
@@ -640,7 +574,6 @@ module Infer = struct
   ;;
 
   let rec get_names_from_let_bind env = function
-    (*на момент использования этой функции идентификаторы всех связок должны быть уже занескеы в env*)
     | Let_binding (_, Let_pattern pat, _) ->
       extract_names_from_pat
         (fun acc id -> return (acc @ [ id, TypeEnv.find_type_exn env id ]))
@@ -669,7 +602,6 @@ module Infer = struct
   ;;
 
   let rec infer_expression env = function
-    (*return (substitution, expr_type)*)
     | Expr_var id -> lookup_env id env
     | Expr_const const ->
       (match const with
@@ -722,7 +654,6 @@ module Infer = struct
         Subst.unify "expr binary op2" required_arg_ty (Subst.apply unified_sub1 ty2)
       in
       let* composed_sub = Subst.compose_all [ sub1; sub2; unified_sub1; unified_sub2 ] in
-      (*following subs for case when required_arg_ty is 'fresh'*)
       let* sub_expr1_type = unify "" ty1 (Subst.apply composed_sub required_arg_ty) in
       let* sub_expr2_type = unify "" ty2 (Subst.apply composed_sub required_arg_ty) in
       let* composed_sub =
@@ -742,7 +673,6 @@ module Infer = struct
           let* composed_sub = Subst.compose sub1 sub2 in
           return (composed_sub, Subst.apply composed_sub (Type_arrow (ty2, ty1)))
         | [] -> return (Subst.empty, Type_option None)
-        (*this case is impossible becase parser requires non empty list of args*)
       in
       let* args_sub, required_ty = build_arrow_chain expr_list in
       let* expr_sub, expr_ty = infer_expression (TypeEnv.apply args_sub env) expr in
@@ -787,10 +717,6 @@ module Infer = struct
           let* expr_sub, expr_ty = infer_expression env end_element in
           let* unified_sub = unify "expr list construct end" expr_ty (Type_list fresh) in
           let* composed_sub = Subst.compose_all [ expr_sub; unified_sub; acc_sub ] in
-          (*let _ =
-            print_sub composed_sub;
-            Printf.printf "for case_expr"
-          in*)
           return (composed_sub, Type_list (Subst.apply composed_sub fresh))
         | expr_element :: expr_rest ->
           let* expr_sub, expr_ty = infer_expression env expr_element in
@@ -857,10 +783,6 @@ module Infer = struct
               in
               let gen_pat_ty_sch = generalize env (Subst.apply unified_sub1 pat_ty) in
               let env = TypeEnv.extend_with_pattern env pat gen_pat_ty_sch in
-              (*let _ =
-                print_env env;
-                Printf.printf "  vgvghbgvf"
-              in*)
               return (env, unified_sub1))
             else
               let* env, pat_ty = infer_pattern env pat in
@@ -878,12 +800,6 @@ module Infer = struct
           let* composed_sub2 =
             Subst.compose_all [ composed_sub1; case_exp_sub; unified_sub2 ]
           in
-          (*let _ =
-            Printf.printf "Sub : \n";
-            print_sub composed_sub2
-          in*)
-          (*let _ = print_env (TypeEnv.apply composed_sub2 env) in
-          let _ = print_type (Subst.apply composed_sub2 ty_acc) in*)
           return (composed_sub2, Subst.apply composed_sub2 ty_acc))
     in
     let final_ty =
@@ -914,8 +830,6 @@ module Infer = struct
       let* env = remove_patterns_from_env env pattern_list in
       let generalized_let_bind_ty = generalize env let_bind_ty in
       let env = TypeEnv.extend env id generalized_let_bind_ty in
-      (*let _ = print_env env in*)
-      (*debug*)
       return (env, expr_sub)
     | Let_binding (Non_recursive, Let_pattern pat, expr) ->
       let* expr_sub, expr_ty = infer_expression env expr in
@@ -975,10 +889,6 @@ module Infer = struct
     | Let_binding (Recursive, Let_fun (_, []), _) :: _ -> fail `No_variable_rec
     | Let_binding (Recursive, Let_fun (id, pattern_list), expr) :: rest ->
       let* env, _ = extend_env_with_args env pattern_list in
-      (*let _ =
-        Printf.printf "(init) ";
-        print_env env
-      in*)
       let* expr_sub, ty = infer_expression env expr in
       infer_rec_vb env expr_sub ty id pattern_list rest
     | _ -> fail `No_variable_rec
@@ -988,23 +898,11 @@ module Infer = struct
     | Let_binding (Non_recursive, _, _) ->
       let* env, _ = infer_value_non_rec_binding env let_binding in
       let* id_list = get_names_from_let_bind env let_binding in
-      (*if debug then TypeEnv.pp Format.std_formatter env;*)
       return (env, out_list @ id_list)
     | Let_binding (Recursive, _, _) ->
       let* env = extend_env_with_bind_names env (let_binding :: []) in
-      (*debug*)
-      (*let _ =
-        Printf.printf "(init) ";
-        print_env env
-      in*)
       let* env, _ = infer_rec_value_binding_list env Subst.empty (let_binding :: []) in
-      (*let _ =
-        print_sub sub;
-        Printf.printf "(result) ";
-        print_env env
-      in*)
       let* id_list = get_names_from_let_bind env let_binding in
-      (*if debug then TypeEnv.pp Format.std_formatter env;*)
       return (env, out_list @ id_list)
     | Let_rec_and_binding biding_list ->
       let* _ = check_names_from_let_binds biding_list in
@@ -1015,14 +913,11 @@ module Infer = struct
           let* last_element = get_names_from_let_bind env let_binding in
           return (result_list @ last_element))
       in
-      (*if debug then TypeEnv.pp Format.std_formatter env;*)
       return (env, out_list @ id_list)
   ;;
 
-  let infer_srtucture (*~debug*) env ast =
-    let* _, out_list =
-      RList.fold_left ast ~init:(return (env, [])) ~f:infer_let_biding (*~debug*)
-    in
+  let infer_srtucture env ast =
+    let* _, out_list = RList.fold_left ast ~init:(return (env, [])) ~f:infer_let_biding in
     let rec remove_duplicates =
       let fun_equal el1 el2 =
         match el1, el2 with
@@ -1038,8 +933,6 @@ module Infer = struct
   ;;
 end
 
-(*let empty_env = TypeEnv.empty*)
-
 let env_with_print_funs =
   let print_fun_list =
     [ "print_int", Scheme (VarSet.empty, Type_arrow (Type_int, Type_unit))
@@ -1052,56 +945,4 @@ let env_with_print_funs =
     print_fun_list
 ;;
 
-let run_inferencer (*?(debug = false)*) ast =
-  State.run (Infer.infer_srtucture (*~debug*) env_with_print_funs ast)
-;;
-
-(*-------------------for debug-------------------*)
-let infer str =
-  match Parse.parse str with
-  | Ok ast ->
-    (match run_inferencer ast with
-     | Ok result ->
-       Base.List.map result ~f:(fun (name, ty) ->
-         Printf.printf "val %s : " name;
-         print_type ty;
-         Printf.printf "\n")
-     | Error e -> [ print_error e ])
-  | Error _ -> [ () ]
-;;
-
-let from_file filename =
-  let in_channel =
-    open_in ("/home/anastasia/Documents/repositories/fp2024/manytests/typed/" ^ filename)
-  in
-  try
-    let content = really_input_string in_channel (in_channel_length in_channel) in
-    close_in in_channel;
-    infer content
-  with
-  | e ->
-    close_in_noerr in_channel;
-    raise e
-;;
-
-let run_infer from_file =
-  Base.List.map
-    [ "001fac.ml"
-    ; "002fac.ml"
-    ; "003fib.ml"
-    ; "004manyargs.ml"
-    ; "005fix.ml"
-    ; "006partial2.ml"
-    ; "006partial3.ml"
-    ; "006partial.ml"
-    ; "007order.ml"
-    ; "008ascription.ml"
-    ; "009let_poly.ml"
-    ; "010sukharev.ml"
-    ; "015tuples.ml"
-    ; "016lists.ml"
-    ]
-    ~f:(fun name ->
-      Printf.printf "\nResult of %s: \n" name;
-      from_file name)
-;;
+let run_inferencer ast = State.run (Infer.infer_srtucture env_with_print_funs ast)

@@ -310,7 +310,7 @@ module Inter = struct
               | "print_int", Val_integer integer ->
                 print_int integer;
                 Printf.printf "\n";
-                (*to make the test results readable*)
+                (*to make the manytests results readable*)
                 return Val_unit
               | "print_endline", Val_string str ->
                 print_endline str;
@@ -475,86 +475,3 @@ let env_with_print_funs =
 ;;
 
 let run_interpreter ast = Inter.eval_structure env_with_print_funs ast
-
-let inter str =
-  match Parse.parse str with
-  | Ok ast ->
-    (match run_interpreter ast with
-     | Ok result ->
-       Base.List.map result ~f:(fun (name, value) ->
-         Printf.printf "val %s : " name;
-         print_value value;
-         Printf.printf "\n")
-     | Error e -> [ print_error e ])
-  | Error _ -> [ () ]
-;;
-
-let from_file1 filename =
-  let in_channel =
-    open_in ("/home/anastasia/Documents/repositories/fp2024/manytests/typed/" ^ filename)
-  in
-  try
-    let content = really_input_string in_channel (in_channel_length in_channel) in
-    close_in in_channel;
-    inter content
-  with
-  | e ->
-    close_in_noerr in_channel;
-    raise e
-;;
-
-let from_file2 filename =
-  let in_channel =
-    open_in
-      ("/home/anastasia/Documents/repositories/fp2024/manytests/do_not_type/" ^ filename)
-  in
-  try
-    let content = really_input_string in_channel (in_channel_length in_channel) in
-    close_in in_channel;
-    inter content
-  with
-  | e ->
-    close_in_noerr in_channel;
-    raise e
-;;
-
-let run_inter1 from_file =
-  Base.List.map
-    [ "001fac.ml"
-    ; "002fac.ml"
-    ; "003fib.ml"
-    ; "004manyargs.ml"
-    ; "005fix.ml"
-    ; "006partial2.ml"
-    ; "006partial3.ml"
-    ; "006partial.ml"
-    ; "007order.ml"
-    ; "008ascription.ml"
-    ; "009let_poly.ml"
-    ; "010sukharev.ml"
-    ; "015tuples.ml"
-    ; "016lists.ml"
-    ]
-    ~f:(fun name ->
-      Printf.printf "\nResult of %s: \n" name;
-      from_file name)
-;;
-
-let run_inter2 from_file =
-  Base.List.map
-    [ "001.ml"
-    ; "002if.ml"
-    ; "003occurs.ml"
-    ; "004let_poly.ml"
-    ; "005.ml"
-    ; "015tuples.ml"
-    ; "016tuples_mismatch.ml"
-    ; "097fun_vs_list.ml"
-    ; "097fun_vs_unit.ml"
-    ; "098rec_int.ml"
-    ; "099.ml"
-    ]
-    ~f:(fun name ->
-      Printf.printf "\nResult of %s: \n" name;
-      from_file name)
-;;
