@@ -1,10 +1,6 @@
-[@@@ocaml.text "/*"]
-
 (** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
-
-[@@@ocaml.text "/*"]
 
 open Ast
 

@@ -1,10 +1,6 @@
-[@@@ocaml.text "/*"]
-
 (** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
-
-[@@@ocaml.text "/*"]
 
 open Ast
 
@@ -272,9 +268,7 @@ module Scheme = struct
   let apply sub (Scheme (bind_set, ty)) =
     let new_sub = VarSet.fold (fun key sub -> Subst.remove sub key) bind_set sub in
     let new_ty = Subst.apply new_sub ty in
-    let is_generalized_type_var id =
-      if Base.String.is_prefix ~prefix:"'ty" id then false else true
-    in
+    let is_generalized_type_var id = not (Base.String.is_prefix ~prefix:"'ty" id) in
     let rec extract_id_from_ty acc_set = function
       | Type_var id -> VarSet.add id acc_set
       | Type_option (Some ty) -> extract_id_from_ty acc_set ty
@@ -360,7 +354,7 @@ module Infer = struct
 
   let fresh_var_instantiate id =
     (*e.g. 'ty3instantiate_'a *)
-    fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n ^ "instantiate_" ^ id)
+    fresh >>| fun n -> Type_var (Printf.sprintf "%s%dinstantiate_%s" "'ty" n id)
   ;;
 
   let instantiate (Scheme (bind_set, ty)) =
@@ -546,31 +540,31 @@ module Infer = struct
   (*this function is called when we deal with recursive bindings.
     And our language forbids recursive values*)
   let extend_env_with_bind_names env let_binding_list =
-    RList.fold_left let_binding_list ~init:(return env) ~f:(fun env let_bind ->
-      match let_bind with
-      | Let_binding (_, Let_fun (id, _), _) ->
-        let* fresh = fresh_var in
-        let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
-        return env
-      | Let_binding (_, Let_pattern (Pattern_var id), Expr_anonym_fun (_, _))
-      | Let_binding (_, Let_pattern (Pattern_var id), Expr_function_fun _) ->
-        let* fresh = fresh_var in
-        let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
-        return env
-      | Let_binding (_, Let_pattern (Pattern_var _), _) -> fail `No_variable_rec
-      | _ -> fail `No_arg_rec)
+    RList.fold_left let_binding_list ~init:(return env) ~f:(fun env ->
+        function
+        | Let_binding (_, Let_fun (id, _), _) ->
+          let* fresh = fresh_var in
+          let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
+          return env
+        | Let_binding (_, Let_pattern (Pattern_var id), Expr_anonym_fun (_, _))
+        | Let_binding (_, Let_pattern (Pattern_var id), Expr_function_fun _) ->
+          let* fresh = fresh_var in
+          let env = TypeEnv.extend env id (Scheme (VarSet.empty, fresh)) in
+          return env
+        | Let_binding (_, Let_pattern (Pattern_var _), _) -> fail `No_variable_rec
+        | _ -> fail `No_arg_rec)
   ;;
 
   let rec check_names_from_let_binds =
-    RList.fold_left ~init:(return StringSet.empty) ~f:(fun set_acc let_binding ->
-      match let_binding with
-      | Let_binding (_, Let_fun (fun_identifier, _), _) ->
-        StringSet.add_id set_acc fun_identifier
-      | Let_binding (_, Let_pattern pat, _) ->
-        extract_names_from_pat StringSet.add_id set_acc pat
-      | Let_rec_and_binding let_binding_list ->
-        let* let_rec_and_acc = check_names_from_let_binds let_binding_list in
-        return (StringSet.union set_acc let_rec_and_acc))
+    RList.fold_left ~init:(return StringSet.empty) ~f:(fun set_acc ->
+        function
+        | Let_binding (_, Let_fun (fun_identifier, _), _) ->
+          StringSet.add_id set_acc fun_identifier
+        | Let_binding (_, Let_pattern pat, _) ->
+          extract_names_from_pat StringSet.add_id set_acc pat
+        | Let_rec_and_binding let_binding_list ->
+          let* let_rec_and_acc = check_names_from_let_binds let_binding_list in
+          return (StringSet.union set_acc let_rec_and_acc))
   ;;
 
   let rec get_names_from_let_bind env = function

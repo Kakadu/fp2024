@@ -1,10 +1,6 @@
-[@@@ocaml.text "/*"]
-
 (** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
-
-[@@@ocaml.text "/*"]
 
 open Angstrom
 open Ast
@@ -51,8 +47,8 @@ let trim t = skip_sep *> t <* skip_sep
 let token t = skip_sep *> string t <* skip_sep
 let round_par p = token "(" *> p <* token ")"
 let square_par p = token "[" *> p <* token "]"
-let round_par_many t = fix @@ fun p -> trim @@ t <|> round_par @@ p
-let round_par_many1 t = round_par_many @@ round_par @@ t
+let round_par_many t = fix (fun p -> trim t <|> round_par p)
+let round_par_many1 t = round_par_many (round_par t)
 
 let parse_id =
   let* p_first = satisfy is_char <|> satisfy (Char.equal '_') >>| Char.escaped in
@@ -64,7 +60,7 @@ let parse_id =
   then fail "Error! parse_id: id must not match the keyword."
   else if id = "_"
   then fail "wildcard \"_\" not expected"
-  else return @@ id
+  else return id
 ;;
 
 let parse_int = trim @@ take_while1 is_digit >>| fun x -> Const_int (int_of_string x)
@@ -106,7 +102,7 @@ let parse_any_pattern =
 ;;
 
 let parse_var_pattern =
-  let* var = trim @@ parse_id in
+  let* var = trim parse_id in
   return @@ Pattern_var var
 ;;
 
@@ -179,7 +175,7 @@ let parse_pattern =
          ; parse_option_pattern parse_option_argument
          ; parse_list_sugar_case_pattern parse_pattern
          ]
-    <|> round_par_many1 @@ parse_pattern
+    <|> round_par_many1 parse_pattern
   in
   let parse_list_construct_element =
     round_par_many
@@ -198,7 +194,7 @@ let parse_pattern =
          ; parse_option_pattern parse_option_argument
          ; parse_list_sugar_case_pattern parse_pattern
          ]
-    <|> round_par_many1 @@ parse_pattern
+    <|> round_par_many1 parse_pattern
   in
   round_par_many
   @@ choice
@@ -282,10 +278,10 @@ let parse_type =
     @@
     let* first = parser_tuple_element_type in
     let* rest = many1 @@ (token "*" *> parser_tuple_element_type) in
-    return @@ Type_tuple (first :: rest)
+    return (Type_tuple (first :: rest))
   in
   let parser_tuple_element_type =
-    round_par_many @@ base_type_parser <|> round_par_many1 @@ parse_type
+    round_par_many (base_type_parser <|> round_par_many1 parse_type)
   in
   let list_type_parser =
     fix
@@ -299,8 +295,8 @@ let parse_type =
     in
     let rec list_type_parser element_type =
       (let* _ = token "list" in
-       list_type_parser @@ Type_list element_type)
-      <|> return @@ element_type
+       list_type_parser (Type_list element_type))
+      <|> return element_type
     in
     list_type_parser element_type
   in
@@ -314,7 +310,7 @@ let type_annotation expression_parser =
    let* expression = expression_parser in
    let* ttype = token ":" *> parse_type in
    return @@ Typed_expression (ttype, expression))
-  <|> round_par_many @@ expression_parser
+  <|> round_par_many expression_parser
 ;;
 
 let type_annotation1 expression_parser =
@@ -396,7 +392,7 @@ let parse_let_rec_and_binding parse_expression =
     return @@ Let_binding (Recursive, let_declaration, let_definition)
   in
   let* first = parse_first in
-  let* rest = many1 @@ parse_one_of_rest in
+  let* rest = many1 parse_one_of_rest in
   return @@ Let_rec_and_binding (first :: rest)
 ;;
 
@@ -418,10 +414,10 @@ let parse_anonymouse_fun parse_expression =
        ; parse_list_sugar_case_pattern parse_pattern
        ; token "None" *> (return @@ Pattern_option None)
        ]
-    <|> round_par_many1 @@ parse_pattern
+    <|> round_par_many1 parse_pattern
   in
-  let* list_of_arguments = token "fun" *> (many1 @@ parse_argument) in
-  let* parse_expression = token "->" *> (round_par_many @@ parse_expression) in
+  let* list_of_arguments = token "fun" *> many1 parse_argument in
+  let* parse_expression = token "->" *> round_par_many parse_expression in
   return @@ Expr_anonym_fun (list_of_arguments, parse_expression)
 ;;
 
@@ -449,11 +445,11 @@ let parse_application parse_expression =
     round_par_many
     @@ choice
     @@ [ parse_expr_const; parse_expr_var; parse_expr_list_sugar parse_expression ]
-    <|> round_par_many1 @@ parse_expression
-    <|> type_annotation1 @@ parse_expression
+    <|> round_par_many1 parse_expression
+    <|> type_annotation1 parse_expression
   in
   let* first = parse_application_element in
-  let* rest = many1 @@ parse_application_element in
+  let* rest = many1 parse_application_element in
   return @@ Expr_application (first, rest)
 ;;
 
@@ -480,8 +476,8 @@ let parse_bin_op_expression parse_expression =
   let parse_expr_base =
     parse_application parse_expression
     <|> parse_expr_base_elements parse_expression
-    <|> round_par_many1 @@ parse_expression
-    <|> type_annotation1 @@ parse_expression
+    <|> round_par_many1 parse_expression
+    <|> type_annotation1 parse_expression
     >>= fun result -> return result <?> "base"
   in
   let parse_expr_mul_div =
@@ -490,7 +486,7 @@ let parse_bin_op_expression parse_expression =
       (let* operator = parse_bin_op_T5 in
        let* right_expression = parse_expr_base in
        parse_mul_div_chain @@ Expr_binary_op (operator, left_expression, right_expression))
-      <|> return @@ left_expression
+      <|> return left_expression
       <?> "mul div"
     in
     parse_mul_div_chain first_operand
@@ -500,7 +496,7 @@ let parse_bin_op_expression parse_expression =
       (let* operator = parse_bin_op_T4 in
        let* right_expression = parse_expr_mul_div in
        parse_add_sub_chain @@ Expr_binary_op (operator, left_expression, right_expression))
-      <|> return @@ left_expression
+      <|> return left_expression
     in
     (let* first_operand = parse_expr_mul_div in
      parse_add_sub_chain first_operand)
@@ -517,7 +513,7 @@ let parse_bin_op_expression parse_expression =
       (let* operator = parse_bin_op_T3 in
        let* right_expression = parse_expr_add_sub in
        parse_compare_chain @@ Expr_binary_op (operator, left_expression, right_expression))
-      <|> return @@ left_expression
+      <|> return left_expression
     in
     parse_compare_chain first_operand
   in
@@ -527,7 +523,7 @@ let parse_bin_op_expression parse_expression =
       (let* operator = parse_bin_op_T2 in
        let* right_expression = parse_expr_compare in
        parse_and_chain @@ Expr_binary_op (operator, left_expression, right_expression))
-      <|> return @@ left_expression
+      <|> return left_expression
       <?> "and"
     in
     parse_and_chain first_operand
@@ -538,7 +534,7 @@ let parse_bin_op_expression parse_expression =
       (let* operator = parse_bin_op_T1 in
        let* right_expression = parse_expr_and in
        parse_or_chain @@ Expr_binary_op (operator, left_expression, right_expression))
-      <|> return @@ left_expression
+      <|> return left_expression
       <?> "or"
     in
     parse_or_chain first_operand
