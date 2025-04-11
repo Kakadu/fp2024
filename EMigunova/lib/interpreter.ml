@@ -1,6 +1,10 @@
-(** Copyright 2024, Migunova Anastasia *)
+[@@@ocaml.text "/*"]
+
+(** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
 
 open Ast
 
@@ -47,31 +51,17 @@ let rec print_value = function
   | Val_bool bool -> Printf.printf "%b" bool
   | Val_tuple val_list ->
     Printf.printf "(";
-    (match val_list with
-     | first :: second :: rest ->
-       print_value first;
-       Printf.printf ", ";
-       print_value (Val_tuple (second :: rest))
-     | single :: [] -> print_value single
-     | [] -> ());
+    let rec help = function
+      | first :: [] -> print_value first
+      | first :: rest ->
+        print_value first;
+        Printf.printf ", ";
+        help rest
+      | _ -> ()
+    in
+    help val_list;
     Printf.printf ")"
-  | Val_fun (_, ident, pat_list, _, _) ->
-    (*Printf.printf "<fun>"*)
-    let pat_list_to_string pat_list =
-      Base.List.fold_left pat_list ~init:"" ~f:(fun acc_string pat ->
-        match pat with
-        | Pattern_var id -> acc_string ^ " " ^ id
-        | _ -> acc_string ^ " redo print fun for this case")
-    in
-    let ident_to_string = function
-      | Some (first :: []) -> first
-      | Some _ -> "several_idents"
-      | _ -> "anonym"
-    in
-    Printf.printf
-      " %s function: ( fun%s -> some function ) \n"
-      (ident_to_string ident)
-      (pat_list_to_string pat_list)
+  | Val_fun _ -> Printf.printf "<fun>"
   | Val_function _ -> Printf.printf "<function>"
   | Val_list val_list ->
     Printf.printf "[";
@@ -190,22 +180,25 @@ module Inter = struct
        | _ -> None)
     | Pattern_list_sugar_case pat_list, Val_list val_list ->
       (match pat_list, val_list with
+       | [], [] -> Some env
        | first_pat :: rest_pat, first_val :: rest_val ->
          let env = match_pattern env (first_pat, first_val) in
          (match env with
           | Some env ->
             match_pattern env (Pattern_list_sugar_case rest_pat, Val_list rest_val)
           | None -> None)
-       | _, _ -> Some env)
+       | _ -> None)
     | Pattern_list_constructor_case pat_list, Val_list val_list ->
       (match pat_list, val_list with
+       | single_pat :: [], val_list -> match_pattern env (single_pat, Val_list val_list)
+       | _ :: _ :: _, [] -> None
        | first_pat :: rest_pat, first_val :: rest_val ->
          let env = match_pattern env (first_pat, first_val) in
          (match env with
           | Some env ->
             match_pattern env (Pattern_list_constructor_case rest_pat, Val_list rest_val)
           | None -> None)
-       | _, _ -> Some env)
+       | _ -> None)
     | Pattern_option (Some pat), Val_option (Some value) -> match_pattern env (pat, value)
     | _ -> None
   ;;
@@ -269,17 +262,8 @@ module Inter = struct
     | Expr_application (exp, expr_list) ->
       let* fun_val = eval_expression env exp in
       let val_list = Base.List.map expr_list ~f:(fun expr -> eval_expression env expr) in
-      (*let _ = print_env env in*)
-      (*let _ = print_value fun_val in*)
       let rec help_fun val_list = function
         | Val_fun (rec_flag, ident, pat_list, expr, fun_env) ->
-          (*let _ = Printf.printf "Loooooooooooooooook!!!!\n" in
-          let _ =
-            match ident with
-            | Some ident_list ->
-              Base.List.map ident_list ~f:(fun ident -> Printf.printf "%s" ident)
-            | _ -> [ () ]
-          in*)
           let fun_env =
             match ident, rec_flag with
             | Some ident_list, Recursive ->
@@ -291,7 +275,6 @@ module Inter = struct
             match pat_list, val_list with
             | _ :: _, [] ->
               return (Val_fun (Non_recursive, ident, pat_list, expr, fun_env))
-              (*case of partial application*)
             | first_pat :: rest_pat, first_val :: rest_val ->
               let* arg_val = first_val in
               let new_fun_env = match_pattern fun_env (first_pat, arg_val) in
@@ -308,10 +291,6 @@ module Inter = struct
                 | Some _ -> "several_idents"
                 | _ -> "no_ident"
               in
-              (*let _ =
-                Printf.printf "Fun_enviroment for fun '%s'" ident1;
-                print_env fun_env
-              in*)
               eval_expression fun_env expr
           in
           helper pat_list val_list fun_env
@@ -323,13 +302,15 @@ module Inter = struct
              find_and_eval_case env arg_val case_list
            | _ -> fail `Too_many_args_for_anonym_fun)
         | Val_builtin builtin ->
-          (match expr_list with
+          (match val_list with
            | [] -> return fun_val
            | single :: [] ->
-             let* arg_val = eval_expression env single in
+             let* arg_val = single in
              (match builtin, arg_val with
               | "print_int", Val_integer integer ->
                 print_int integer;
+                Printf.printf "\n";
+                (*to make the test results readable*)
                 return Val_unit
               | "print_endline", Val_string str ->
                 print_endline str;
@@ -354,7 +335,7 @@ module Inter = struct
           expr_list
       in
       return (Val_tuple val_list)
-    | Expr_list_sugar expr_list | Expr_list_construct expr_list ->
+    | Expr_list_sugar expr_list ->
       let* val_list =
         Base.List.fold_right
           ~f:(fun exp acc ->
@@ -365,6 +346,19 @@ module Inter = struct
           expr_list
       in
       return (Val_list val_list)
+    | Expr_list_construct expr_list ->
+      let rec helper acc_list = function
+        | [] -> eval_expression env (Expr_list_sugar [])
+        | single_expr :: [] ->
+          let* value = eval_expression env single_expr in
+          (match value with
+           | Val_list val_list -> return (Val_list (acc_list @ val_list))
+           | _ -> return (Val_list []))
+        | first_expr :: rest_exprs ->
+          let* value = eval_expression env first_expr in
+          helper (acc_list @ [ value ]) rest_exprs
+      in
+      helper [] expr_list
     | Expr_option (Some expr) ->
       let* value = eval_expression env expr in
       return (Val_option (Some value))
@@ -495,7 +489,7 @@ let inter str =
   | Error _ -> [ () ]
 ;;
 
-let from_file filename =
+let from_file1 filename =
   let in_channel =
     open_in ("/home/anastasia/Documents/repositories/fp2024/manytests/typed/" ^ filename)
   in
@@ -509,7 +503,22 @@ let from_file filename =
     raise e
 ;;
 
-let run_inter from_file =
+let from_file2 filename =
+  let in_channel =
+    open_in
+      ("/home/anastasia/Documents/repositories/fp2024/manytests/do_not_type/" ^ filename)
+  in
+  try
+    let content = really_input_string in_channel (in_channel_length in_channel) in
+    close_in in_channel;
+    inter content
+  with
+  | e ->
+    close_in_noerr in_channel;
+    raise e
+;;
+
+let run_inter1 from_file =
   Base.List.map
     [ "001fac.ml"
     ; "002fac.ml"
@@ -525,6 +534,25 @@ let run_inter from_file =
     ; "010sukharev.ml"
     ; "015tuples.ml"
     ; "016lists.ml"
+    ]
+    ~f:(fun name ->
+      Printf.printf "\nResult of %s: \n" name;
+      from_file name)
+;;
+
+let run_inter2 from_file =
+  Base.List.map
+    [ "001.ml"
+    ; "002if.ml"
+    ; "003occurs.ml"
+    ; "004let_poly.ml"
+    ; "005.ml"
+    ; "015tuples.ml"
+    ; "016tuples_mismatch.ml"
+    ; "097fun_vs_list.ml"
+    ; "097fun_vs_unit.ml"
+    ; "098rec_int.ml"
+    ; "099.ml"
     ]
     ~f:(fun name ->
       Printf.printf "\nResult of %s: \n" name;

@@ -1,6 +1,10 @@
-(** Copyright 2024, Migunova Anastasia *)
+[@@@ocaml.text "/*"]
+
+(** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
 
 open Ast
 
@@ -28,7 +32,11 @@ type value =
 
 and env = (string, value, Base.String.comparator_witness) Base.Map.t
 
+val print_value : value -> unit
+val print_error : error -> unit
 val run_interpreter : let_binding list -> ((ident * value) list, error) result
 val inter : ident -> unit list
-val run_inter : (ident -> 'a) -> 'a list
-val from_file : ident -> unit list
+val run_inter1 : (ident -> 'a) -> 'a list
+val run_inter2 : (ident -> 'a) -> 'a list
+val from_file1 : ident -> unit list
+val from_file2 : ident -> unit list

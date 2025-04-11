@@ -1,6 +1,10 @@
-(** Copyright 2024, Migunova Anastasia *)
+[@@@ocaml.text "/*"]
+
+(** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
 
 open Ast
 
@@ -72,11 +76,11 @@ let print_error (e : error) =
   match e with
   | `No_variable_rec ->
     Printf.printf
-      "recursive binding failed: a function was expected as the RHS. Recursive binding \
+      "Recursive binding failed: a function was expected as the RHS. Recursive binding \
        is impossible for that variable. It would lead to infinite recursion."
   | `No_arg_rec ->
     Printf.printf
-      "recursive binding failed: the LHS of the recursive binding must not be a composed \
+      "Recursive binding failed: the LHS of the recursive binding must not be a composed \
        pattern (e.g. tuple, list, etc.). A variable is required."
   | `Bound_several_times id ->
     Printf.printf
@@ -84,11 +88,11 @@ let print_error (e : error) =
        identifier that was bound several times: '%s'."
       id
   | `Occurs_check (id, ty) ->
-    Printf.printf "Occurs check failed: the type variable '%s' occurs inside" id;
+    Printf.printf "Occurs check failed: the type variable %s occurs inside" id;
     print_type ty
   | `No_variable id -> Printf.printf "Undefined variable '%s'" id
   | `Unification_failed (id, ty1, ty2) ->
-    Printf.printf "Unification failed in %s for following unifiable types: " id;
+    Printf.printf "Unification( %s ) failed for following unifiable types: " id;
     print_type ty1;
     Printf.printf " and ";
     print_type ty2
@@ -259,7 +263,7 @@ module Subst = struct
       in
       helper (return empty) (list1, list2)
     | Type_arrow (arg1, res1), Type_arrow (arg2, res2) ->
-      let* unified_sub1 = unify "arrow_unify_arg" arg1 arg2 in
+      let* unified_sub1 = unify "([type1] -> [...]) and ([type2] -> [...])" arg1 arg2 in
       let* unified_sub2 =
         unify "arrow_unify_result" (apply unified_sub1 res1) (apply unified_sub1 res2)
       in
@@ -417,7 +421,7 @@ module Infer = struct
   let fresh_var = fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n)
 
   let fresh_var_instantiate id =
-    (*exp: 'ty3instantiate_'a *)
+    (*e.g. 'ty3instantiate_'a *)
     fresh >>| fun n -> Type_var ("'ty" ^ Int.to_string n ^ "instantiate_" ^ id)
   ;;
 
@@ -824,7 +828,7 @@ module Infer = struct
         infer_expression (TypeEnv.apply sub2 (TypeEnv.apply sub1 env)) else_expr
       in
       let* sub4 = unify "if (here) then else" ty1 Type_bool in
-      let* sub5 = unify "if then (here) else (here)" ty2 ty3 in
+      let* sub5 = unify "if _ then [first type] else [second type]" ty2 ty3 in
       let* final_sub = Subst.compose_all [ sub5; sub4; sub3; sub2; sub1 ] in
       return (final_sub, Subst.apply final_sub ty2)
     | Typed_expression (ty, expr) ->
@@ -917,7 +921,7 @@ module Infer = struct
       let* expr_sub, expr_ty = infer_expression env expr in
       let env = TypeEnv.apply expr_sub env in
       let* _, pat_ty = infer_pattern env pat in
-      let* unified_sub1 = unify "" expr_ty pat_ty in
+      let* unified_sub1 = unify "let binding with pattern" expr_ty pat_ty in
       let env = TypeEnv.apply unified_sub1 env in
       let let_pat_ty_sch = generalize env (Subst.apply unified_sub1 expr_ty) in
       let (Scheme (_, let_pat_ty)) = let_pat_ty_sch in
@@ -963,11 +967,12 @@ module Infer = struct
     | [] -> return (env, sub)
     | Let_binding
         ( Recursive
-        , Let_pattern (Pattern_var id)
+        , Let_fun (id, [])
         , ((Expr_anonym_fun (_, _) | Expr_function_fun _) as expr) )
       :: rest ->
       let* new_sub, ty = infer_expression env expr in
       infer_rec_vb env new_sub ty id [] rest
+    | Let_binding (Recursive, Let_fun (_, []), _) :: _ -> fail `No_variable_rec
     | Let_binding (Recursive, Let_fun (id, pattern_list), expr) :: rest ->
       let* env, _ = extend_env_with_args env pattern_list in
       (*let _ =

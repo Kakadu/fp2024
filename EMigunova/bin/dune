@@ -1,10 +1,7 @@
 (executable
- (name print_ast)
- (libraries EMigunova_lib angstrom)
- (preprocess
-  (pps ppx_deriving.show))
- (instrumentation
-  (backend bisect_ppx)))
+ (name REPL)
+ (public_name REPL)
+ (libraries EMigunova_lib))
 
 (cram
  (deps ./REPL.exe %{bin:REPL}))

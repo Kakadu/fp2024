@@ -1,5 +1,6 @@
 let rec fac n = if n <= 1 then 1 else n * fac (n - 1)
 
+(*~/Documents/repositories/fp2024/EMigunova/_build/default/bin/REPL.exe --dinference < /home/anastasia/Documents/repositories/fp2024/manytests/do_not_type/001.ml*)
 let main =
   let () = print_int (fac 4) in
   0

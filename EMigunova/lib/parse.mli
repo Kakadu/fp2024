@@ -1,6 +1,10 @@
-(** Copyright 2024, Migunova Anastasia *)
+[@@@ocaml.text "/*"]
+
+(** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
 
 open Angstrom
 open Ast
@@ -19,8 +23,6 @@ val parse_tuple_pattern : pattern t -> pattern t
 val parse_pattern : pattern t
 val parse_expr_var : expression t
 val parse_expr_const : expression t
-
-(*val parse_expr_tuple : expression t -> expression t*)
 val parse_expr_list_sugar : expression t -> expression t
 val parse_expr_base_elements : expression t -> expression t
 val parse_bin_op_expression : expression t -> expression t
@@ -28,8 +30,6 @@ val parse_if_when_else : expression t -> expression t
 val parse_match_with : expression t -> expression t
 val parse_let_biding : expression t -> let_binding t
 val parse_in_construction : expression t -> expression t
-
-(*val parse_application : expression t -> expression t*)
 val parse_anonymouse_fun : expression t -> expression t
 val parse_function_fun : expression t -> expression t
 val parse_expression : expression t

@@ -1,6 +1,10 @@
-(** Copyright 2024, Migunova Anastasia *)
+[@@@ocaml.text "/*"]
+
+(** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
 
 open Ast
 
@@ -39,9 +43,8 @@ end
 
 (*val empty_env : TypeEnv.t*)
 val env_with_print_funs : TypeEnv.t
-
-(*type structure = let_binding list*)
-
+val print_error : error -> unit
+val print_type : ttype -> unit
 val run_inferencer : let_binding list -> ((ident * ttype) list, error) result
 
 (*for debug*)

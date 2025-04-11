@@ -1,30 +1,30 @@
-(** Copyright 2024, Migunova Anastasia *)
+[@@@ocaml.text "/*"]
+
+(** Copyright 2025, Migunova Anastasia *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+[@@@ocaml.text "/*"]
 
 open Angstrom
 open Ast
 
 let is_char = function
-  (* to recognize char, char -> bool *)
   | 'A' .. 'Z' | 'a' .. 'z' -> true
   | _ -> false
 ;;
 
 let is_digit = function
-  (* to recognize digit, char -> bool *)
   | '0' .. '9' -> true
   | _ -> false
 ;;
 
 let is_sep = function
-  (* to recognize seperatator, char -> bool *)
   | ' ' | '\t' | '\n' | '\r' -> true
   | _ -> false
 ;;
 
 let is_keyword = function
-  (* to recognize keyword, char list -> bool *)
   | "let"
   | "rec"
   | "and"
@@ -54,7 +54,6 @@ let square_par p = token "[" *> p <* token "]"
 let round_par_many t = fix @@ fun p -> trim @@ t <|> round_par @@ p
 let round_par_many1 t = round_par_many @@ round_par @@ t
 
-(* Parse first letter then try parse the rest of id *)
 let parse_id =
   let* p_first = satisfy is_char <|> satisfy (Char.equal '_') >>| Char.escaped in
   let* p_rest =
@@ -128,6 +127,10 @@ let parse_list_sugar_case_pattern parse_pattern =
     let* _ = token "[" *> token "]" in
     return @@ Pattern_list_sugar_case []
   in
+  let list_single_parser =
+    let* pat = token "[" *> parse_pattern <* token "]" in
+    return @@ Pattern_list_sugar_case [ pat ]
+  in
   let list_parser =
     let* _ = token "[" in
     let* first = parse_pattern in
@@ -135,7 +138,7 @@ let parse_list_sugar_case_pattern parse_pattern =
     let* _ = token "]" in
     return @@ Pattern_list_sugar_case (first :: rest)
   in
-  empty_list_parser <|> list_parser
+  empty_list_parser <|> list_single_parser <|> list_parser
 ;;
 
 let parse_list_construct_case_pattern parse_pattern =
@@ -207,18 +210,6 @@ let parse_pattern =
        ]
 ;;
 
-(* parse expression cases :
-
-  | Expr_var of ident 
-  | Expr_const of constant 
-  | Expr_tuple of expression list
-  | Expr_binary_op of binary_op * expression * expression
-  | Expr_if_then_else of expression * expression * expression
-  | Expr_match_with of pattern * ( (pattern * expression)  list )
-  | Expr_construct_in of let_binding * expression
-  | Expr_application of ident * ( expression list )
-  | Expr_anonym_fun of pattern * expression         *)
-
 let parse_expr_var =
   let* var = parse_id in
   return @@ Expr_var var
@@ -261,7 +252,6 @@ let parse_expr_option parse_expression =
   parse_some <|> parse_none
 ;;
 
-(* parsing of constants, vars, lists and tuples of constants and vars *)
 let parse_expr_base_elements parse_expression =
   round_par_many
   @@ choice
@@ -318,16 +308,6 @@ let parse_type =
     [ list_type_parser; tuple_type_parser parser_tuple_element_type; base_type_parser ]
 ;;
 
-(*let parse_expression_without_tuple_list =
-  (*now we can parse expressions with type annotations, but still can't parse tuple and list_constructor_case constructions*)
-  round_par_many @@ parse_expression_without_type_annotation
-  <|> round_par_many1
-      @@
-      let* expression = parse_expression_without_type_annotation in
-      let* ttype = token ":" *> parse_type in
-      return @@ Typed_expression (ttype, expression)
-;;*)
-
 let type_annotation expression_parser =
   (round_par_many1
    @@
@@ -356,9 +336,6 @@ let parse_if_when_else parse_expression =
   return @@ Expr_if_then_else (if_condition, then_expression, else_expression)
 ;;
 
-(* in case, where else branch doesn't exist [if (...) then (...)] the else_expression
-   of Expr_if_then_else constructor has value = Const_unit *)
-
 (* --- match with parser --- *)
 
 let parse_match_with parse_expression =
@@ -379,8 +356,8 @@ let parse_match_with parse_expression =
 (* ---let-binding parser--- *)
 
 let parse_rec_flag =
-  let recursive = token "let" *> token "rec" >>= fun _ -> return Recursive in
-  let non_recursive = token "let" >>= fun _ -> return Non_recursive in
+  let recursive = token "let " *> token "rec " >>= fun _ -> return Recursive in
+  let non_recursive = token "let " >>= fun _ -> return Non_recursive in
   recursive <|> non_recursive
 ;;
 
@@ -431,7 +408,7 @@ let parse_in_construction parse_expression =
   return @@ Expr_construct_in (parse_let_biding, parse_expression)
 ;;
 
-(* ---anonymous function with keyword "fun"--- *)
+(* ---anonymous function with keyword "fun" parser--- *)
 
 let parse_anonymouse_fun parse_expression =
   let parse_argument =
@@ -448,7 +425,7 @@ let parse_anonymouse_fun parse_expression =
   return @@ Expr_anonym_fun (list_of_arguments, parse_expression)
 ;;
 
-(* ---anonymous function with keyword "function"--- *)
+(* ---anonymous function with keyword "function" parser--- *)
 
 let parse_function_fun parse_expression =
   let* _ = token "function" in
@@ -480,7 +457,6 @@ let parse_application parse_expression =
   return @@ Expr_application (first, rest)
 ;;
 
-(* operator prioritisation based on grammar *)
 let parse_bin_op_T1 = token "||" *> return Or
 let parse_bin_op_T2 = token "&&" *> return And
 
@@ -504,8 +480,7 @@ let parse_bin_op_expression parse_expression =
   let parse_expr_base =
     parse_application parse_expression
     <|> parse_expr_base_elements parse_expression
-    <|> round_par_many1
-        @@ parse_expression (*съедаются скобки, из-за чего мы не можем потом распарсить *)
+    <|> round_par_many1 @@ parse_expression
     <|> type_annotation1 @@ parse_expression
     >>= fun result -> return result <?> "base"
   in
@@ -626,9 +601,6 @@ let parse_expression =
     ; parse_expression_without_tuple_list parse_expression
     ]
 ;;
-
-(* ---parser of MiniML--- *)
-(*---parse list of bidings---*)
 
 let parse_structure =
   let* parse_let_bindings =

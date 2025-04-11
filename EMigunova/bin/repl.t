@@ -1,12 +1,9 @@
+(** Copyright 2025, Migunova Anastasia *)
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
   $ ./REPL.exe -help
-  Read-Eval-Print-Loop for Utyped Lambda Calculus
-    -cbv Call-by-value strategy
-    -cbn Call-by-name strategy
-    -no Normal Order strategy
-    -ao Applicative Order strategy
-    -small Small-step strategy kind (default is big-step)
-    -big Small-step strategy kind (default is big-step)
-    -dparsetree Dump parse tree, don't eval enything
+  Read-Eval-Print-Loop for MiniML Calculus
+    --dparsetree Dump parse tree, don't eval enything
+    --dinference Eval and display type inference info
     -help  Display this list of options
     --help  Display this list of options
