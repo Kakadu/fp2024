@@ -7,15 +7,25 @@ open IntAuxilary.Res
 open Forest.ValuesTree
 open Forest.Ast
 
+let print_env env =
+  Format.printf "\nDEBUG environment:\n";
+  Base.Map.iteri ~f:(fun ~key ~data -> Format.printf "%s = %a\n" key pp_value data) env
+;;
+
 let rec match_pattern env = function
   | PatAny, _ -> Some env
-  | PatConst _, _ -> Some env
+  | PatConst (Int x), ValInt v when x = v -> Some env
+  | PatConst (Bool x), ValBool v when x = v -> Some env
+  | PatConst (Str x), ValStr v when x = v -> Some env
+  | PatConst Unit, ValUnit -> Some env
+  | PatVar x, v -> Some (extend env x v)
   | PatList pats, ValList vals -> match_list_pat env pats vals
   | PatTup (p1, p2, ps), ValTup (v1, v2, vs) ->
     match_list_pat env (p1 :: p2 :: ps) (v1 :: v2 :: vs)
-  | PatListCons (p1, p2), ValList (v1 :: v2) ->
-    (match match_pattern env (p1, v1) with
-     | Some env1 -> match_pattern env1 (p2, ValList v2)
+  | PatListCons (p1, p2), ValList (v :: vs) ->
+    let env = match_pattern env (p2, ValList vs) in
+    (match env with
+     | Some env -> match_pattern env (p1, v)
      | None -> None)
   | _ -> None
 

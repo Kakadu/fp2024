@@ -3,7 +3,7 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Forest.Ast
-open Parser.Parse
+open Parser
 
 let test_parse str =
   match parse_program str with
@@ -266,8 +266,7 @@ let%expect_test "typed_0" =
   [%expect
     {|
 [(Value (NonRec,
-    (Binding ((PatType ((PatVar "a"), (TypList (TypConst TInt)))),
-       (Const (Int 5)))),
+    (Binding ((PatType ((PatVar "a"), int list)), (Const (Int 5)))),
     []))
   ]
 |}]
@@ -824,8 +823,8 @@ let%expect_test "typed_008ascription" =
            (Fun ((PatVar "f"), [(PatVar "g"); (PatVar "x")],
               (Type (
                  (App ((App ((Var "f"), (Var "x"))),
-                    (Type ((App ((Var "g"), (Var "x"))), (TypConst TBool))))),
-                 (TypConst TInt)))
+                    (Type ((App ((Var "g"), (Var "x"))), bool)))),
+                 int))
               ))
            )),
         []));

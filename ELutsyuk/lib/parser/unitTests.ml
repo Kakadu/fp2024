@@ -306,51 +306,51 @@ let%expect_test "prs_expr_some" =
 
 let%expect_test "prs_typ_constant_int" =
   pp pp_typ prs_typ_constant "int";
-  [%expect {| (TypConst TInt) |}]
+  [%expect {| int |}]
 ;;
 
 let%expect_test "prs_typ_constant_string" =
   pp pp_typ prs_typ_constant "string";
-  [%expect {| (TypConst TStr) |}]
+  [%expect {| string |}]
 ;;
 
 let%expect_test "prs_typ_arrow_simple" =
   pp pp_typ (prs_typ_arrow prs_typ_constant) "int -> string";
-  [%expect {| (TypArrow ((TypConst TInt), (TypConst TStr))) |}]
+  [%expect {| int -> string |}]
 ;;
 
 let%expect_test "prs_typ_arrow_nested" =
   pp pp_typ (prs_typ_arrow prs_typ_constant) "int -> string -> bool";
   [%expect
-    {| (TypArrow ((TypConst TInt), (TypArrow ((TypConst TStr), (TypConst TBool))))) |}]
+    {| int -> string -> bool |}]
 ;;
 
 let%expect_test "prs_typ_tup_pair" =
   pp pp_typ (prs_typ_tup prs_typ_constant) "int * string";
-  [%expect {| (TypTuple [(TypConst TInt); (TypConst TStr)]) |}]
+  [%expect {| (int * string) |}]
 ;;
 
 let%expect_test "prs_typ_tup_triple" =
   pp pp_typ (prs_typ_tup prs_typ_constant) "int * string * bool";
-  [%expect {| (TypTuple [(TypConst TInt); (TypConst TStr); (TypConst TBool)]) |}]
+  [%expect {| (int * string * bool) |}]
 ;;
 
 let%expect_test "prs_typ_list" =
   pp pp_typ (prs_typ_list prs_typ_constant) "int list";
-  [%expect {| (TypList (TypConst TInt)) |}]
+  [%expect {| int list |}]
 ;;
 
 let%expect_test "prs_typ_list_nested" =
   pp pp_typ (prs_typ_list prs_typ_constant) "int list list";
-  [%expect {| (TypList (TypList (TypConst TInt))) |}]
+  [%expect {| int list list |}]
 ;;
 
 let%expect_test "prs_typ_option" =
   pp pp_typ (prs_typ_option prs_typ_constant) "int option";
-  [%expect {| (TypOption (TypConst TInt)) |}]
+  [%expect {| int option |}]
 ;;
 
 let%expect_test "prs_typ_option_nested" =
   pp pp_typ (prs_typ_option prs_typ_constant) "int option option";
-  [%expect {| (TypOption (TypOption (TypConst TInt))) |}]
+  [%expect {| int option option |}]
 ;;
