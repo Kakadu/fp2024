@@ -257,7 +257,7 @@ let parse_pattern_list parse_pat =
   let list_parser =
     let* _ = token "[" in
     let* first = parse_pat in
-    let* rest = many1 (token ";" *> parse_pat) in
+    let* rest = many (token ";" *> parse_pat) in
     let* _ = token "]" in
     return (PatList (first :: rest))
   in
