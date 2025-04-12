@@ -2,81 +2,93 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-(* open *)
-open Inferencer
-open Interpreter
 open Forest
 open Parser
-open Printf
+open Inferencer.InfAuxilary
+open Inferencer.Inference
+open Interpreter.Interpret
+open Stdlib.Format
 
-let run_inferencer str =
-  match parse_program str with
-  | Ok parsed ->
-    (match inference_program parsed with
+let run_infer input =
+  match parse input with
+  | Ok program ->
+    (match inference program with
      | Ok env ->
-       let filtered_env =
-         Base.Map.filter_keys env ~f:(fun key ->
-           not (List.mem key [ "print_int"; "print_endline" ]))
+       (* Getting the environment without builtin *)
+       let remove_builtins env =
+         let env = TypeEnv.remove env "print_int" in
+         TypeEnv.remove env "print_endline"
        in
-       Base.Map.iteri filtered_env ~f:(fun ~key ~data:(Scheme (_, ty)) ->
-         Format.printf "val %s: %a\n" key TypesTree.pp_typ ty)
-     | Error err -> Format.printf "Infer error. %a\n" TypesTree.pp_error err)
-  | Error err -> Format.printf "Parsing error. %s\n" err
+       Base.Map.iteri (remove_builtins env) ~f:(fun ~key ~data:(Scheme (_, ty)) ->
+         printf "val %s: %a\n" key TypesTree.pp_typ ty)
+     | Error err -> printf "Inferencing error: %a\n." TypesTree.pp_error err)
+  | Error err -> printf "Parsing error: %s\n." err
 ;;
 
-let run_interpreter str =
-  let open Stdlib.Format in
-  match parse_program str with
-  | Ok parsed ->
-    (match interpret_program parsed with
+let run_eval input =
+  match parse input with
+  | Ok program ->
+    (match interpret program with
      | Ok _ -> ()
-     | Error err -> printf "Interpreter error: %a\n" ValuesTree.pp_error err)
-  | Error err -> printf "Parsing error: %s\n" err
+     | Error err -> printf "Interpretation error: %a\n." ValuesTree.pp_error err)
+  | Error err -> printf "Parsing error: %s\n." err
 ;;
 
-let read_file filename =
+let get_input filename =
   let channel = open_in filename in
-  let content = really_input_string channel (in_channel_length channel) in
+  let input = really_input_string channel (in_channel_length channel) in
   close_in channel;
-  content
+  input
 ;;
 
 type config =
-  { infer_flag : bool
-  ; interpret_flag : bool
+  { is_infer : bool
+  ; is_eval : bool
   ; file : string option
   ; input : string option
   }
 
-let parse_arguments () =
-  let rec parse_args args config =
+let parse_args () =
+  let rec prs_args args flags =
     match args with
-    | [] -> config
-    | "-infer" :: rest -> parse_args rest { config with infer_flag = true }
-    | "-interpret" :: rest -> parse_args rest { config with interpret_flag = true }
-    | "-file" :: filename :: rest -> parse_args rest { config with file = Some filename }
-    | arg :: rest -> parse_args rest { config with input = Some arg }
+    | [] -> flags
+    | "-infer" :: rest -> prs_args rest { flags with is_infer = true }
+    | "-eval" :: rest -> prs_args rest { flags with is_eval = true }
+    | "-file" :: filename :: rest -> prs_args rest { flags with file = Some filename }
+    | arg :: rest -> prs_args rest { flags with input = Some arg }
   in
-  parse_args
-    (Array.to_list Sys.argv |> List.tl)
-    { infer_flag = false; interpret_flag = false; file = None; input = None }
+  let default_flags = { is_infer = false; is_eval = false; file = None; input = None } in
+  let args =
+    match Array.to_list Sys.argv with
+    | _ :: list -> list
+    | _ -> []
+  in
+  prs_args args default_flags
 ;;
 
 let main () =
-  let config = parse_arguments () in
-  let input_content =
+  let config = parse_args () in
+  let input =
     match config.file with
-    | Some filename -> read_file filename
+    | Some filename -> get_input filename
     | None ->
       (match config.input with
        | Some s -> s
        | None -> "")
   in
-  if config.infer_flag
-  then run_inferencer input_content
-  else if config.interpret_flag
-  then run_interpreter input_content
-  else Format.printf "Please specify either -infer or -interpret flag.\n"
+  if config.is_infer
+  then run_infer input
+  else if config.is_eval
+  then run_eval input
+  else if config.is_infer && config.is_eval
+  then (
+    let _ = run_infer input in
+    let _ = run_eval input in
+    ())
+  else
+    printf
+      "Error: Could not parse arguments: Please restart program and put -infer or -eval \
+       flag.\n"
 ;;
 
 let () = main ()
