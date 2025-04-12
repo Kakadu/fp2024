@@ -147,24 +147,27 @@ module Inter = struct
       (match env with
        | Ok env -> env
        | _ -> None)
-     | PatListConstructor pat_list, ValList val_list ->
+    | PatListConstructor pat_list, ValList val_list ->
       (match pat_list, val_list with
+       | single_pat :: [], val_list -> match_pattern env (single_pat, ValList val_list)
+       | _ :: _ :: _, [] -> None
        | first_pat :: rest_pat, first_val :: rest_val ->
          let env = match_pattern env (first_pat, first_val) in
          (match env with
           | Some env ->
             match_pattern env (PatListConstructor rest_pat, ValList rest_val)
           | None -> None)
-       | _, _ -> Some env)
+       | _ -> None)
     | PatList pat_list, ValList val_list ->
       (match pat_list, val_list with
+       | [], [] -> Some env
        | first_pat :: rest_pat, first_val :: rest_val ->
          let env = match_pattern env (first_pat, first_val) in
          (match env with
           | Some env ->
             match_pattern env (PatList rest_pat, ValList rest_val)
           | None -> None)
-       | _, _ -> Some env)
+       | _ -> None)
     | PatWithTyp (_, pat), value -> match_pattern env (pat, value)
     | PatOption None, ValOption None -> Some env
     | PatOption (Some pat), ValOption (Some value) -> match_pattern env (pat, value)
