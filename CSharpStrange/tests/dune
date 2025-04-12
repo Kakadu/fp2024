@@ -1,7 +1,7 @@
 (library
  (name tests)
  (public_name CSharpStrange.Lib.Tests)
- (modules Parser_tests)
+ (modules Parser_tests Pp_tests)
  (libraries angstrom c_sharp_strange_lib)
  (inline_tests)
  (instrumentation
@@ -11,6 +11,4 @@
 
 (cram
  (applies_to ast_fact)
- (deps 
-  ../bin/ast_fact.exe
-  ../bin/factorial.cs))
+ (deps ../bin/ast_fact.exe ../bin/factorial.cs))

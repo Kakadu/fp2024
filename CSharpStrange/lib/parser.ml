@@ -1,4 +1,4 @@
-(** Copyright 2024, Dmitrii Kuznetsov *)
+(** Copyright 2025, Dmitrii Kuznetsov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -354,7 +354,7 @@ let parse_field_sign =
 ;;
 
 let parse_method_type =
-  let parse_void = string "void" *> (return TypeVoid) in
+  let parse_void = string "void" *> return TypeVoid in
   choice
     ?failure_msg:(Some "Not a method type")
     [ parse_array_type; parse_base_type; parse_void ]

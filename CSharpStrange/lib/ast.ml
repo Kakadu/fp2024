@@ -1,4 +1,4 @@
-(** Copyright 2024, Dmitrii Kuznetsov *)
+(** Copyright 2025, Dmitrii Kuznetsov *)
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
@@ -29,7 +29,7 @@ type _type =
   | TypeBase of base_type (** Declaration of basic type *)
   | TypeArray of base_type
   | TypeVoid (** Declaration of void TODO: remove by specification?? *)
-  (** Declaration of array of basic type TODO: ranks & think about base_type *)
+    (* Declaration of array of basic type TODO: ranks & think about base_type *)
 [@@deriving eq, show { with_path = false }]
 (* TODO: records for arrays?? *)
 (* TODO: strings "" *)
