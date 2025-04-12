@@ -3,9 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open C_sharp_strange_lib.Ast
-open C_sharp_strange_lib.Parser
-open Angstrom
-open Printf
 
 let fact_ast =
   Program

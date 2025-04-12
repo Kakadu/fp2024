@@ -1,6 +1,6 @@
 public class Program
 {
-    public int Factorial(int n) 
+    public int Factorial(int n)
     {
         if (n == 0)
         {
@@ -12,5 +12,8 @@ public class Program
         }
     }
 
-    public static void Main() {}
+    public static void Main()
+    {
+
+    }
 }
