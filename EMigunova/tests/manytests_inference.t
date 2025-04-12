@@ -1,3 +1,12 @@
+  $ ../bin/REPL.exe --dinference <<EOF
+  >
+  > let c = 'x'
+  > let s = "asv"
+  >
+  > let cons2 a b xs = a::b::xs
+  > let x = cons2 1 2 [3]
+  > let xxx = (1,2,3,(4,5))
+
 
   $ ../bin/REPL.exe --dinference < manytests/typed/001fac.ml
   24
@@ -137,7 +146,7 @@
   $ ../bin/REPL.exe --dinference < manytests/do_not_type/016tuples_mismatch.ml
   Type inference error: Unification( let binding with pattern ) failed for following unifiable types: int*int*int and 'ty1*'ty0
 
-  $ ../bin/REPL.exe --dinference < manytests/do_not_type/097fun_vs_list.ml 
+  $ ../bin/REPL.exe --dinference < manytests/do_not_type/097fun_vs_list.ml
   Type inference error: Unification( let binding with pattern ) failed for following unifiable types: 'ty0->'ty0 and 'ty2 list
 
   $ ../bin/REPL.exe --dinference < manytests/do_not_type/097fun_vs_unit.ml
