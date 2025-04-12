@@ -33,7 +33,7 @@ let rec print_type (ty : ttype) =
     (match ty_list with
      | first :: second :: rest ->
        (match first with
-        | Type_arrow _ ->
+        | Type_arrow _ | Type_tuple _ ->
           Printf.printf "(";
           print_type first;
           Printf.printf ")"
@@ -42,7 +42,7 @@ let rec print_type (ty : ttype) =
        print_type (Type_tuple (second :: rest))
      | single :: [] ->
        (match single with
-        | Type_arrow _ ->
+        | Type_arrow _ | Type_tuple _ ->
           Printf.printf "(";
           print_type single;
           Printf.printf ")"

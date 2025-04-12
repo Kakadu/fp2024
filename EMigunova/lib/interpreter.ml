@@ -60,14 +60,16 @@ let rec print_value = function
   | Val_fun _ -> Printf.printf "<fun>"
   | Val_function _ -> Printf.printf "<function>"
   | Val_list val_list ->
+    let rec help = function
+      | [] -> ()
+      | single :: [] -> print_value single
+      | first :: rest ->
+        print_value first;
+        Printf.printf "; ";
+        help rest
+    in
     Printf.printf "[";
-    (match val_list with
-     | first :: second :: rest ->
-       print_value first;
-       Printf.printf "; ";
-       print_value (Val_list (second :: rest))
-     | single :: [] -> print_value single
-     | [] -> ());
+    help val_list;
     Printf.printf "]"
   | Val_option value ->
     (match value with

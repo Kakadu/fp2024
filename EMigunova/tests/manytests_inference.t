@@ -1,12 +1,16 @@
   $ ../bin/REPL.exe --dinference <<EOF
-  >
+  > 
   > let c = 'x'
   > let s = "asv"
-  >
+  > 
   > let cons2 a b xs = a::b::xs
   > let x = cons2 1 2 [3]
   > let xxx = (1,2,3,(4,5))
-
+  val c : char = 'x'
+  val s : string = "asv"
+  val cons2 : 'a->'a->'a list->'a list = <fun>
+  val x : int list = [1; 2; 3]
+  val xxx : int*int*int*(int*int) = (1, 2, 3, (4, 5))
 
   $ ../bin/REPL.exe --dinference < manytests/typed/001fac.ml
   24
