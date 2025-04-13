@@ -22,10 +22,11 @@
  (version 0.1)
  (depends
   dune
-  (ppx_inline_test :with-test)
   angstrom
+  (ppx_inline_test :with-test)
   ppx_expect
   ppx_deriving
   bisect_ppx
   (odoc :with-doc)
-  (ocamlformat :build)))
+  (ocamlformat :build)
+  base))

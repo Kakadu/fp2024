@@ -23,4 +23,4 @@ let prs_structure =
 ;;
 
 let prs_program = sep_by (many (token ";;")) prs_structure <* many (token ";;") <* skip_ws
-let parse str = parse_string ~consume:All (prs_program <* end_of_input) str
+let parse str = parse_string ~consume:All prs_program str

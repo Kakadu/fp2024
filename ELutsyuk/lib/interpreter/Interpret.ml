@@ -7,11 +7,6 @@ open IntAuxilary.Res
 open Forest.ValuesTree
 open Forest.Ast
 
-let print_env env =
-  Format.printf "\nDEBUG environment:\n";
-  Base.Map.iteri ~f:(fun ~key ~data -> Format.printf "%s = %a\n" key pp_value data) env
-;;
-
 let rec match_pattern env = function
   | PatAny, _ -> Some env
   | PatConst (Int x), ValInt v when x = v -> Some env
@@ -160,15 +155,11 @@ let rec eval_expr (env : env) = function
     let* v2 = eval_expr env exp2 in
     (match v1 with
      | ValFun (_, pat, pats, body, func_env) ->
-       (* attempt to match the argument against the pattern *)
        (match match_pattern func_env (pat, v2) with
         | Some extended_env ->
           let env' = compose env extended_env in
           (match pats with
-           | [] ->
-             eval_expr
-               env'
-               body (* evaluate the function body with the updated environment *)
+           | [] -> eval_expr env' body
            | p :: pl -> return (ValFun (NonRec, p, pl, body, env')))
         | None -> fail PatternMatchingFail)
      | ValBuiltIn "print_int" ->
@@ -227,7 +218,6 @@ and eval_let_bindings env binding_list =
         | Fun (pat, pats, exp) -> return (ValFun (Rec, pat, pats, exp, acc_env))
         | _ -> eval_expr acc_env exp
       in
-      (* update env so all names in mutual recursion correspond to their real values *)
       let upd_env = extend acc_env id value in
       update_env upd_env list_rest
     | _ -> fail TypeError
@@ -252,7 +242,7 @@ let eval_structure_item env = function
 
 let start_env = extend empty "print_int" (ValBuiltIn "print_int")
 
-let interpret_program tree =
+let interpret tree =
   List.fold_left
     (fun env str_item ->
       let* env = env in

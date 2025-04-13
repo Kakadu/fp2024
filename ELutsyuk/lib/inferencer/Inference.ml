@@ -30,14 +30,6 @@ let generalize env typ =
   Scheme (vars, typ)
 ;;
 
-let lookup_typ env id =
-  match TypeEnv.find env id with
-  | Some sch ->
-    let* ty = instantiate sch in
-    return (Subst.empty, ty)
-  | None -> fail @@ UnboundVariable id
-;;
-
 let inf_const = function
   | Int _ -> int_typ
   | Bool _ -> bool_typ
@@ -123,7 +115,12 @@ let check_rec_rhs expr =
 ;;
 
 let rec inf_expr env = function
-  | Var name -> lookup_typ env name
+  | Var name ->
+    (match TypeEnv.find env name with
+     | Some sch ->
+       let* ty = instantiate sch in
+       return (Subst.empty, ty)
+     | None -> fail @@ UnboundVariable name)
   | Const exp -> return (Subst.empty, inf_const exp)
   | Unary (op, exp) ->
     let* sub1, exp_ty = inf_expr env exp in

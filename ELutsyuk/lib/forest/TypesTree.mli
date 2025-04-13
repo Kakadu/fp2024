@@ -18,14 +18,15 @@ type typ =
   | TypTuple of typ list
   | TypList of typ
   | TypOption of typ
-[@@deriving show { with_path = false }]
 
 type error =
   | OccursCheckFailed of int * typ
   | UnificationFailed of typ * typ
   | UnboundVariable of string
   | InvalidRecursivePattern
-[@@deriving show { with_path = false }]
+  | UnexpectedFuncType of typ
+  | IllegalLHS
+  | IllegalRHS
 
 val int_typ : typ
 val bool_typ : typ

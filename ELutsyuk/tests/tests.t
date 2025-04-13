@@ -122,32 +122,31 @@
  
 
 
-
   $ ../bin/main.exe -infer -file manytests/do_not_type/001.ml
-  Inferencing error: Unbound variable: fac.
+  Inferencing error: unbound variable: 'fac' is not defined in the current scope.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/002if.ml
-  Inferencing error: Unification failed: cannot unify int and bool.
+  Inferencing error: type unification failed: cannot unify types int and bool.
  
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/003occurs.ml
-  Inferencing error: Occurs check failed: variable '1 appears in '1 -> '3..
+  Inferencing error: occurs check failed: variable '1' cannot appear in its own type '1 -> '3.
  
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/004let_poly.ml
-  Inferencing error: Unification failed: cannot unify int and bool.
+  Inferencing error: type unification failed: cannot unify types int and bool.
  
   $ ../bin/main.exe -infer -file manytests/do_not_type/015tuples.ml
-  Inferencing error: .
+  Inferencing error: illegal left-hand side: only variables can appear on the left-hand side of a 'let' binding.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/016tuples_mismatch.ml
-  Inferencing error: Unification failed: cannot unify ('1 * '0) and (int * int * int).
+  Inferencing error: type unification failed: cannot unify types ('1 * '0) and (int * int * int).
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/097fun_vs_list.ml
-  Inferencing error: Unification failed: cannot unify '2 list and '0 -> '0.
+  Inferencing error: type unification failed: cannot unify types '2 list and '0 -> '0.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/097fun_vs_unit.ml
-  Inferencing error: Unification failed: cannot unify unit and '0 -> '0.
+  Inferencing error: type unification failed: cannot unify types unit and '0 -> '0.
 
   $ ../bin/main.exe -infer -file manytests/do_not_type/098rec_int.ml
-  Inferencing error: .
+  Inferencing error: illegal right-hand side: the right-hand side of a 'let' binding must be an expression, not a pattern.

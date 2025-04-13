@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Forest.ValuesTree
 open Forest.Ast
+open Forest.ValuesTree
 
-val interpret_program : program -> (env, error) result
+val interpret : program -> env IntAuxilary.Res.t

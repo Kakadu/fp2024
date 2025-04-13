@@ -20,14 +20,15 @@ type typ =
   | TypTuple of typ list
   | TypList of typ
   | TypOption of typ
-[@@deriving show { with_path = false }]
 
 type error =
   | OccursCheckFailed of int * typ
   | UnificationFailed of typ * typ
   | UnboundVariable of string
   | InvalidRecursivePattern
-[@@deriving show { with_path = false }]
+  | UnexpectedFuncType of typ
+  | IllegalLHS
+  | IllegalRHS
 
 (* Type constructors *)
 let int_typ = TypConst TInt
@@ -59,9 +60,34 @@ let rec pp_typ ppf = function
 
 let pp_error ppf = function
   | OccursCheckFailed (id, ty) ->
-    fprintf ppf "Occurs check failed: variable '%d appears in %a." id pp_typ ty
+    fprintf
+      ppf
+      "occurs check failed: variable '%d' cannot appear in its own type %a"
+      id
+      pp_typ
+      ty
   | UnificationFailed (t1, t2) ->
-    fprintf ppf "Unification failed: cannot unify %a and %a" pp_typ t1 pp_typ t2
-  | UnboundVariable name -> fprintf ppf "Unbound variable: %s" name
-  | InvalidRecursivePattern -> fprintf ppf "Invalid recursive pattern"
+    fprintf
+      ppf
+      "type unification failed: cannot unify types %a and %a"
+      pp_typ
+      t1
+      pp_typ
+      t2
+  | UnboundVariable name ->
+    fprintf ppf "unbound variable: '%s' is not defined in the current scope" name
+  | InvalidRecursivePattern ->
+    fprintf ppf "invalid recursive pattern: recursive patterns can only be variables"
+  | UnexpectedFuncType ty ->
+    fprintf ppf "unexpected function type: expected a function type but got %a" pp_typ ty
+  | IllegalLHS ->
+    fprintf
+      ppf
+      "illegal left-hand side: only variables can appear on the left-hand side of a \
+       'let' binding"
+  | IllegalRHS ->
+    fprintf
+      ppf
+      "illegal right-hand side: the right-hand side of a 'let' binding must be an \
+       expression, not a pattern"
 ;;

@@ -3,15 +3,21 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Base
-open Forest.Ast
-open Stdlib.Format
 open Forest.ValuesTree
 
-module Res = struct
+module Res : sig
+  type 'a t
+
+  val return : 'a -> 'a t
+  val fail : error -> 'a t
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+  val run : 'a t -> ('a, error) Result.t
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
+end = struct
   type 'a t = ('a, error) Result.t
 
-  let fail = Result.fail
   let return = Result.return
+  let fail = Result.fail
   let run m = m
 
   let ( >>= ) monad func =

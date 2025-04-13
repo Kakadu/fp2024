@@ -24,9 +24,7 @@ type error =
   | TypeError
   | PatternMatchingFail
 
-let rec pp_value ppf =
-  let open Stdlib.Format in
-  function
+let rec pp_value ppf = function
   | ValInt v -> fprintf ppf "%i" v
   | ValBool v -> fprintf ppf "'%b'" v
   | ValStr v -> fprintf ppf "%S" v
@@ -58,7 +56,11 @@ let rec pp_value ppf =
 ;;
 
 let pp_error ppf = function
-  | NoVariable str -> fprintf ppf "No variable with name %S" str
-  | TypeError -> fprintf ppf "Type error"
-  | PatternMatchingFail -> fprintf ppf "Pattern-matching failure"
+  | NoVariable str -> fprintf ppf "Variable '%S' is not defined in the current scope" str
+  | TypeError ->
+    fprintf ppf "type error: the types do not match or an invalid type was encountered"
+  | PatternMatchingFail ->
+    fprintf
+      ppf
+      "pattern matching failed: no matching pattern was found for the given input"
 ;;

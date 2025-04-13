@@ -13,7 +13,7 @@ let run_infer input =
   match parse input with
   | Ok program ->
     (match inference program with
-     | Ok env ->
+     | Ok (_, env) ->
        (* Getting the environment without builtin *)
        let remove_builtins env =
          let env = TypeEnv.remove env "print_int" in
@@ -21,17 +21,17 @@ let run_infer input =
        in
        Base.Map.iteri (remove_builtins env) ~f:(fun ~key ~data:(Scheme (_, ty)) ->
          printf "val %s: %a\n" key TypesTree.pp_typ ty)
-     | Error err -> printf "Inferencing error: %a\n." TypesTree.pp_error err)
-  | Error err -> printf "Parsing error: %s\n." err
+     | Error err -> printf "Inferencing error: %a.\n" TypesTree.pp_error err)
+  | Error err -> printf "Parsing error: %s.\n" err
 ;;
 
 let run_eval input =
   match parse input with
   | Ok program ->
-    (match interpret program with
+    (match Interpreter.IntAuxilary.Res.run (interpret program) with
      | Ok _ -> ()
-     | Error err -> printf "Interpretation error: %a\n." ValuesTree.pp_error err)
-  | Error err -> printf "Parsing error: %s\n." err
+     | Error err -> printf "Interpretation error: %a.\n" ValuesTree.pp_error err)
+  | Error err -> printf "Parsing error: %s.\n" err
 ;;
 
 let get_input filename =

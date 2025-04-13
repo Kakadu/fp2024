@@ -54,8 +54,9 @@ let%expect_test "inference_fun_with_tuple_argument" =
 
 let%expect_test "inference_unbound_variable" =
   test_inference {| let foo x = x + a |};
-  [%expect {|
-    Infer error: Unbound variable: a |}]
+  [%expect
+    {|
+    Infer error: unbound variable: 'a' is not defined in the current scope |}]
 ;;
 
 let%expect_test "inference_many_fun" =
@@ -71,10 +72,10 @@ let%expect_test "inference_unit" =
 ;;
 
 let%expect_test "inference_tuple" =
-  test_inference {| let meow = 5;; let x = (1, "a", meow ) |};
+  test_inference {| let meow = ();; let x = (1, "a", meow ) |};
   [%expect {|
-    val meow : int
-    val x : (int * string * int) |}]
+    val meow : unit
+    val x : (int * string * unit) |}]
 ;;
 
 let%expect_test "inference_combined_type" =
