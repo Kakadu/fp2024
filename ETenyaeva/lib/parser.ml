@@ -238,9 +238,9 @@ let parse_pat_tuple parse_pat =
 let parse_pattern_option parse_pat =
   lift
     (fun e -> PatOption e)
-    (token "Some" *> parse_pat
+    (keyword "Some" *> parse_pat
      >>| (fun e -> Some e)
-     <|> (token "None" >>| fun _ -> None))
+     <|> (keyword "None" >>| fun _ -> None))
 ;;
 
 let parse_list_construct_case_pattern parse_pat =
@@ -320,7 +320,7 @@ let bin_op chain1 parse_exp parse_fun_op =
 let parse_left_bin_op = bin_op parse_chain_left_associative
 let parse_right_bin_op = bin_op parse_chain_right_associative
 
-let parse_un_oper = choice [ token "-" *> return Neg; token "not" *> return Not ]
+let parse_un_oper = choice [ token "-" *> return Neg; keyword "not" *> return Not ]
 
 (* -------------------- expression -------------------- *)
 
@@ -380,9 +380,9 @@ let parse_exp_fun parse_exp =
 let parse_exp_ifthenelse parse_expr =
   lift3
     (fun cond t f -> ExpIfThenElse (cond, t, f))
-    (token "if" *> parse_expr)
-    (token "then" *> parse_expr)
-    (option None (token "else" *> parse_expr >>| Option.some))
+    (keyword "if" *> parse_expr)
+    (keyword "then" *> parse_expr)
+    (option None (keyword "else" *> parse_expr >>| Option.some))
 ;;
 
 let parse_match_case parse_exp =
@@ -420,8 +420,8 @@ let parse_exp_un_oper parse_exp =
 
 let parse_exp_option parse_exp =
   choice
-    [ token "None" *> return (ExpOption None)
-    ; (token "Some" *> choice [ skip_round_par parse_exp; parse_exp ]
+    [ keyword "None" *> return (ExpOption None)
+    ; (keyword "Some" *> choice [ skip_round_par parse_exp; parse_exp ]
        >>| fun e -> ExpOption (Some e))
     ]
 ;;
@@ -439,12 +439,12 @@ let parse_binding parse_exp =
 ;;
 
 let parse_exp_let parse_exp =
-  token "let"
+  keyword "let"
   *> 
-  let* rec_flag = token "rec" *> return Rec <|> return NonRec in
+  let* rec_flag = keyword "rec" *> return Rec <|> return NonRec in
   let* vb = parse_binding parse_exp in
-  let* value_bindings = many (token "and" *> parse_binding parse_exp) in
-  let+ expr = token "in" *> parse_exp in
+  let* value_bindings = many (keyword "and" *> parse_binding parse_exp) in
+  let+ expr = keyword "in" *> parse_exp in
   ExpLet (rec_flag, vb, value_bindings, expr)
 ;;
 
@@ -480,9 +480,9 @@ let parse_expression =
 let parse_structure_value parse_exp =
   keyword "let"
   *>
-  let* rec_flag = token "rec" *> return Rec <|> return NonRec in
+  let* rec_flag = keyword "rec" *> return Rec <|> return NonRec in
   let* vb = parse_binding parse_exp in
-  let+ value_bindings = many (token "and" *> parse_binding parse_exp) in
+  let+ value_bindings = many (keyword "and" *> parse_binding parse_exp) in
   Binding (rec_flag, vb, value_bindings)
 ;;
 
