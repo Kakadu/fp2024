@@ -1,8 +1,8 @@
   $ ../bin/REPL.exe --dinference <<EOF
-  >
+  > 
   > let c = 'x'
   > let s = "asv"
-  >
+  > 
   > let cons2 a b xs = a::b::xs
   > let x = cons2 1 2 [3]
   > let xxx = (1,2,3,(4,5))
@@ -13,12 +13,11 @@
   val xxx : int*int*int*(int*int) = (1, 2, 3, (4, 5))
 
   $ ../bin/REPL.exe --dinference <<EOF
-  >
+  > 
   > let f xs = match xs with
   > | [x] -> [x]
-  >
-  val f : 'a list->'b list = <fun>
-  This type looks wrong
+  > 
+  val f : 'a list->'a list = <fun>
 
   $ ../bin/REPL.exe --dinference < manytests/typed/001fac.ml
   24

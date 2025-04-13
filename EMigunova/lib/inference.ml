@@ -368,7 +368,7 @@ module Infer = struct
       (return ty)
   ;;
 
-  let generalize env ty =
+  let generalize ~only_instantiated env ty =
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in
     let new_free, new_ty, _ =
       VarSet.fold
@@ -379,6 +379,8 @@ module Infer = struct
             then (
               let index = String.index str '_' in
               String.sub str (index + 1) (String.length str - (index + 1)))
+            else if only_instantiated
+            then str
             else
               (* 97 - is number 'a' in ASCII-table *)
               Printf.sprintf
@@ -775,7 +777,9 @@ module Infer = struct
                   pat_ty
                   (Subst.apply sub_acc match_exp_ty)
               in
-              let gen_pat_ty_sch = generalize env (Subst.apply unified_sub1 pat_ty) in
+              let gen_pat_ty_sch =
+                generalize ~only_instantiated:true env (Subst.apply unified_sub1 pat_ty)
+              in
               let env = TypeEnv.extend_with_pattern env pat gen_pat_ty_sch in
               return (env, unified_sub1))
             else
@@ -822,7 +826,7 @@ module Infer = struct
         return (build_arrow_chain pat_types)
       in
       let* env = remove_patterns_from_env env pattern_list in
-      let generalized_let_bind_ty = generalize env let_bind_ty in
+      let generalized_let_bind_ty = generalize ~only_instantiated:false env let_bind_ty in
       let env = TypeEnv.extend env id generalized_let_bind_ty in
       return (env, expr_sub)
     | Let_binding (Non_recursive, Let_pattern pat, expr) ->
@@ -831,7 +835,9 @@ module Infer = struct
       let* _, pat_ty = infer_pattern env pat in
       let* unified_sub1 = unify "let binding with pattern" expr_ty pat_ty in
       let env = TypeEnv.apply unified_sub1 env in
-      let let_pat_ty_sch = generalize env (Subst.apply unified_sub1 expr_ty) in
+      let let_pat_ty_sch =
+        generalize ~only_instantiated:false env (Subst.apply unified_sub1 expr_ty)
+      in
       let (Scheme (_, let_pat_ty)) = let_pat_ty_sch in
       let* env, init_pat_ty = infer_pattern env pat in
       let* unified_sub2 = unify "" init_pat_ty let_pat_ty in
@@ -866,7 +872,10 @@ module Infer = struct
       let* composed_sub = Subst.compose_all [ new_sub; unified_sub; sub ] in
       let* env = remove_patterns_from_env env (Pattern_var id :: pattern_list) in
       let generalized_let_bind_sch =
-        generalize env (Subst.apply composed_sub manual_let_bind_ty)
+        generalize
+          ~only_instantiated:false
+          env
+          (Subst.apply composed_sub manual_let_bind_ty)
       in
       let env = TypeEnv.extend env id generalized_let_bind_sch in
       infer_rec_value_binding_list (TypeEnv.apply composed_sub env) composed_sub rest
