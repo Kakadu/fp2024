@@ -1118,7 +1118,7 @@ let rec print_value = function
     in
     help val_list;
     <span data-count="5">P</span>rintf.printf ")"
-  | <span data-count="37">V</span>al_fun _ -&gt; Printf.printf "&lt;fun&gt;"
+  | <span data-count="38">V</span>al_fun _ -&gt; Printf.printf "&lt;fun&gt;"
   | <span data-count="2">V</span>al_function _ -&gt; Printf.printf "&lt;function&gt;"
   | <span data-count="1">V</span>al_list val_list -&gt;
     let rec help = function
@@ -1158,8 +1158,8 @@ module Res = struct
   let return = Result.return
 
   let ( &gt;&gt;= ) (monad : 'a t) (f : 'a -&gt; 'b t) : 'b t =
-    <span data-count="1551">m</span>atch monad with
-    | <span data-count="1551">O</span>k result -&gt; f result
+    <span data-count="1555">m</span>atch monad with
+    | <span data-count="1555">O</span>k result -&gt; f result
     | <span data-count="0">E</span>rror x -&gt; fail x
   ;;
 
@@ -1169,8 +1169,8 @@ end
 module EvalEnv = struct
   open Base
 
-  let empty = Map.empt<span data-count="29">y</span> (module String)
-  let extend env key value = <span data-count="619">M</span>ap.update env key ~f:(fun _ -&gt; <span data-count="619">v</span>alue)
+  let empty = Map.empt<span data-count="30">y</span> (module String)
+  let extend env key value = <span data-count="622">M</span>ap.update env key ~f:(fun _ -&gt; <span data-count="622">v</span>alue)
 
   let find_exn env key =
     <span data-count="617">m</span>atch Map.find env key with
@@ -1179,8 +1179,8 @@ module EvalEnv = struct
   ;;
 
   let find_exn1 env key =
-    <span data-count="146">l</span>et val' = Map.find_exn env key in
-    <span data-count="146">v</span>al'
+    <span data-count="147">l</span>et val' = Map.find_exn env key in
+    <span data-count="147">v</span>al'
   ;;
 end
 
@@ -1435,11 +1435,11 @@ module Inter = struct
        | <span data-count="29">N</span>one -&gt; find_and_eval_case env value rest_cases)
 
   and eval_value_binding env = function
-    | <span data-count="78">L</span>et_binding (rec_flag, Let_fun (id, pat_list), expr) -&gt;
+    | <span data-count="79">L</span>et_binding (rec_flag, Let_fun (id, pat_list), expr) -&gt;
       (match pat_list with
-       | <span data-count="33">_</span> :: _ -&gt;
+       | <span data-count="34">_</span> :: _ -&gt;
          let env = extend env id (Val_fun (rec_flag, Some [ id ], pat_list, expr, env)) in
-         <span data-count="33">r</span>eturn env
+         <span data-count="34">r</span>eturn env
        | <span data-count="45">[</span>] -&gt;
          let* value = eval_expressio<span data-count="45">n</span> env expr in
          <span data-count="45">l</span>et env = extend env id value in
@@ -1476,7 +1476,7 @@ module Inter = struct
   ;;
 
   let eval_let_bind env out_list value_binding =
-    <span data-count="58">l</span>et rec extract_names_from_pat env acc = function
+    <span data-count="59">l</span>et rec extract_names_from_pat env acc = function
       | <span data-count="2">P</span>attern_var id -&gt; acc @ [ id, EvalEnv.find_exn<span data-count="2">1</span> env id ]
       | <span data-count="1">P</span>attern_tuple pat_list
       | <span data-count="0">P</span>attern_list_sugar_case pat_list
@@ -1486,39 +1486,39 @@ module Inter = struct
       | <span data-count="0">_</span> -&gt; acc
     in
     let rec get_names_from_let_binds env = function
-      | <span data-count="58">L</span>et_binding (_, Let_fun (id, _), _) -&gt; [ id, EvalEnv.find_exn<span data-count="58">1</span> env id ]
+      | <span data-count="59">L</span>et_binding (_, Let_fun (id, _), _) -&gt; [ id, EvalEnv.find_exn<span data-count="59">1</span> env id ]
       | <span data-count="1">L</span>et_binding (_, Let_pattern pat, _) -&gt; extract_names_from_pat env [] pat
       | <span data-count="1">L</span>et_rec_and_binding binding_list -&gt;
         Base.List.fold_left binding_list ~init:[] ~f:(fun acc_list let_binding -&gt;
           <span data-count="2">a</span>cc_list @ get_names_from_let_bind<span data-count="2">s</span> env let_binding)
     in
-    let* env = eval_value_bindin<span data-count="58">g</span> env value_binding in
-    <span data-count="58">l</span>et eval_list = get_names_from_let_binds env value_binding in
-    <span data-count="58">r</span>eturn (env, out_list @ eval_list)
+    let* env = eval_value_bindin<span data-count="59">g</span> env value_binding in
+    <span data-count="59">l</span>et eval_list = get_names_from_let_binds env value_binding in
+    <span data-count="59">r</span>eturn (env, out_list @ eval_list)
   ;;
 
   let eval_structure env ast =
-    <span data-count="16">l</span>et* _, out_list =
-      Base.List.fold_lef<span data-count="16">t</span>
+    <span data-count="17">l</span>et* _, out_list =
+      Base.List.fold_lef<span data-count="17">t</span>
         ~f:(fun acc let_bind -&gt;
-          <span data-count="58">l</span>et* env, out_list = acc in
-          <span data-count="58">l</span>et* env, out_list = eval_let_bin<span data-count="58">d</span> env out_list let_bind in
-          <span data-count="58">r</span>eturn (env, out_list))
-        ~init:(retur<span data-count="16">n</span> (env, []))
+          <span data-count="59">l</span>et* env, out_list = acc in
+          <span data-count="59">l</span>et* env, out_list = eval_let_bin<span data-count="59">d</span> env out_list let_bind in
+          <span data-count="59">r</span>eturn (env, out_list))
+        ~init:(retur<span data-count="17">n</span> (env, []))
         ast
     in
-    <span data-count="16">l</span>et rec remove_duplicates =
+    <span data-count="17">l</span>et rec remove_duplicates =
       let fun_equal el1 el2 =
         <span data-count="140">m</span>atch el1, el2 with
         | <span data-count="140">(</span>id1, _), (id2, _) -&gt; String.equal id1 id2
       in
       function
-      | <span data-count="60">x</span> :: xs when not (Base.List.me<span data-count="60">m</span> xs x ~equal:fun_equal) -&gt;
-        <span data-count="59">x</span> :: remove_duplicate<span data-count="59">s</span> xs
+      | <span data-count="61">x</span> :: xs when not (Base.List.me<span data-count="61">m</span> xs x ~equal:fun_equal) -&gt;
+        <span data-count="60">x</span> :: remove_duplicate<span data-count="60">s</span> xs
       | <span data-count="1">_</span> :: xs -&gt; remove_duplicates xs
-      | <span data-count="16">[</span>] -&gt; []
+      | <span data-count="17">[</span>] -&gt; []
     in
-    return (remove_duplicate<span data-count="16">s</span> out_list)
+    return (remove_duplicate<span data-count="17">s</span> out_list)
   ;;
 end
 
@@ -1526,10 +1526,10 @@ let empty_env = EvalEnv.empty
 
 let env_with_print_funs =
   let env = EvalEnv.extend empty_env "print_int" (Val_builtin "print_int") in
-  <span data-count="29">E</span>valEnv.exten<span data-count="29">d</span> env "print_endline" (Val_builtin "print_endline")
+  <span data-count="30">E</span>valEnv.exten<span data-count="30">d</span> env "print_endline" (Val_builtin "print_endline")
 ;;
 
-let run_interpreter ast = <span data-count="16">I</span>nter.eval_structure env_with_print_funs ast
+let run_interpreter ast = <span data-count="17">I</span>nter.eval_structure env_with_print_funs ast
 </code></pre>
       </div>
     </div>
