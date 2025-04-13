@@ -231,8 +231,8 @@ let parse_tuple parse tuple =
 ;;
 
 let parse_pat_tuple parse_pat =
-  parse_tuple parse_pat (fun (fst_pat, snd_pat, pat_list) ->
-    PatTup (fst_pat, snd_pat, pat_list))
+  token "(" *> parse_tuple parse_pat (fun (fst_pat, snd_pat, pat_list) ->
+    PatTup (fst_pat, snd_pat, pat_list)) <* token ")"
 ;;
 
 let parse_pattern_option parse_pat =
@@ -275,12 +275,12 @@ let parse_pattern =
         ; parse_pat_constant
         ; parse_pattern_list parse_full_pat  
         ; skip_round_par parse_full_pat
+        ; parse_pattern_option parse_full_pat
         ]
     in
     let parse_pat = parse_pat_tuple parse_pat <|> parse_pat in
     let parse_pat = parse_pattern_list parse_pat <|> parse_pat in
     let parse_pat = parse_list_construct_case_pattern parse_pat <|> parse_pat in
-    let parse_pat = parse_pattern_option parse_pat <|> parse_pat in
     parse_pat)
 ;;
 
@@ -336,8 +336,8 @@ let parse_exp_ident = parse_ident >>| fun id -> ExpVar id
 let parse_exp_constant = parse_constant >>| fun const -> ExpConst const
 
 let parse_exp_tuple parse_exp =
-  parse_tuple parse_exp (fun (fst_exp, snd_exp, exp_list) ->
-    ExpTup (fst_exp, snd_exp, exp_list))
+  token "(" *> parse_tuple parse_exp (fun (fst_exp, snd_exp, exp_list) ->
+    ExpTup (fst_exp, snd_exp, exp_list)) <* token ")"
 ;;
 
 let parse_list_construct_case_exp parse_exp =
@@ -429,7 +429,7 @@ let parse_exp_option parse_exp =
 let parse_binding parse_exp =
   let* pattern = parse_pattern in
   let* xs = many parse_pattern in
-  let+ parse_exp = token "=" *> parse_exp  in
+  let+ parse_exp = token "=" *> parse_exp in
   { pat = pattern
   ; expr =
       (match xs with
@@ -460,10 +460,9 @@ let parse_expression =
   fix (fun expr ->
     let expr_const =
       choice
-        [ skip_round_par expr; parse_exp_constant; parse_exp_with_type expr; parse_exp_ident; parse_exp_ifthenelse expr ]
+        [ skip_round_par expr; parse_exp_option expr; parse_exp_constant; parse_exp_with_type expr; parse_exp_ident; parse_exp_ifthenelse expr ]
     in
-    let expr_construct = parse_exp_option expr <|> expr_const in
-    let expr_fun = parse_exp_fun expr <|> expr_construct in
+    let expr_fun = parse_exp_fun expr <|> expr_const in
     let expr_list = parse_exp_list expr <|> expr_fun in
     let expr_apply = parse_exp_apply expr_list <|> expr_list in
     let expr_bin_op = parse_exp_bin_op expr_apply <|> expr_apply in
