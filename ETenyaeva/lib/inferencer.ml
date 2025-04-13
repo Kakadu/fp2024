@@ -114,12 +114,18 @@ module Type = struct
   open Base
   (** gets a variable var and type ty, and checks whether the
    variable is contained in the set of free variables of this type*)
-  let rec occurs_in var = function
-    | TypOption ty | TypList ty -> occurs_in var ty
-    | TypTuple (fst_ty, snd_ty, ty_list) ->
-      List.exists ~f: (occurs_in var) (fst_ty :: snd_ty :: ty_list)
-    | TypArrow (l, r) -> occurs_in var l || occurs_in var r
-    | _ -> false
+  let rec occurs_in var ty = 
+    let rec helper ty =
+      (match ty with
+        | TypOption ty | TypList ty -> helper ty
+        | TypVar name -> String.equal name var
+        | TypTuple (fst_ty, snd_ty, ty_list) ->
+          List.exists ~f: (helper ) (fst_ty :: snd_ty :: ty_list)
+        | TypArrow (l, r) -> helper l || helper r
+        | _ -> false) in
+    match ty with
+    | TypVar _ -> false
+    | _ -> helper ty
   ;;
 
   let free_vars =
