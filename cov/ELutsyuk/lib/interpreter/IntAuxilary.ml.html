@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>IntAuxilary.ml &mdash; Coverage report</title>
+    <meta name="description" content="83.33% coverage in lib/interpreter/IntAuxilary.ml">
+    <link rel="stylesheet" href="../../coverage.css"/>
+    <script src="../../highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </head>
+  <body>
+    <div id="header">
+      <h1>
+        <a href="../../index.html">
+          <span class="dirname">lib/interpreter/</span>IntAuxilary.ml
+        </a>
+      </h1>
+      <h2>83.33%</h2>
+    </div>
+    <div id="navbar">
+      <span class="unvisited" style="top:48.15%"></span>
+      <span class="unvisited" style="bottom:3.70%"></span>
+    </div>
+    <div id="report">
+      <div id="lines-layer">
+        <pre>
+<a id="L1"></a><span > </span>
+<a id="L2"></a><span > </span>
+<a id="L3"></a><span > </span>
+<a id="L4"></a><span > </span>
+<a id="L5"></a><span > </span>
+<a id="L6"></a><span > </span>
+<a id="L7"></a><span > </span>
+<a id="L8"></a><span > </span>
+<a id="L9"></a><span > </span>
+<a id="L10"></a><span > </span>
+<a id="L11"></a><span > </span>
+<a id="L12"></a><span > </span>
+<a id="L13"></a><span > </span>
+<a id="L14"></a><span > </span>
+<a id="L15"></a><span > </span>
+<a id="L16"></a><span > </span>
+<a id="L17"></a><span > </span>
+<a id="L18"></a><span > </span>
+<a id="L19"></a><span > </span>
+<a id="L20"></a><span > </span>
+<a id="L21"></a><span class="visited"> </span>
+<a id="L22"></a><span > </span>
+<a id="L23"></a><span > </span>
+<a id="L24"></a><span class="visited"> </span>
+<a id="L25"></a><span class="visited"> </span>
+<a id="L26"></a><span class="unvisited"> </span>
+<a id="L27"></a><span > </span>
+<a id="L28"></a><span > </span>
+<a id="L29"></a><span > </span>
+<a id="L30"></a><span > </span>
+<a id="L31"></a><span > </span>
+<a id="L32"></a><span > </span>
+<a id="L33"></a><span > </span>
+<a id="L34"></a><span > </span>
+<a id="L35"></a><span > </span>
+<a id="L36"></a><span > </span>
+<a id="L37"></a><span > </span>
+<a id="L38"></a><span > </span>
+<a id="L39"></a><span > </span>
+<a id="L40"></a><span > </span>
+<a id="L41"></a><span > </span>
+<a id="L42"></a><span class="visited"> </span>
+<a id="L43"></a><span class="visited"> </span>
+<a id="L44"></a><span > </span>
+<a id="L45"></a><span > </span>
+<a id="L46"></a><span class="visited"> </span>
+<a id="L47"></a><span > </span>
+<a id="L48"></a><span > </span>
+<a id="L49"></a><span > </span>
+<a id="L50"></a><span class="visited"> </span>
+<a id="L51"></a><span class="visited"> </span>
+<a id="L52"></a><span class="unvisited"> </span>
+<a id="L53"></a><span > </span>
+<a id="L54"></a><span > </span>
+</pre>
+      </div>
+      <div id="text-layer">
+        <pre id="line-numbers">
+<a href="#L1"> 1</a>
+<a href="#L2"> 2</a>
+<a href="#L3"> 3</a>
+<a href="#L4"> 4</a>
+<a href="#L5"> 5</a>
+<a href="#L6"> 6</a>
+<a href="#L7"> 7</a>
+<a href="#L8"> 8</a>
+<a href="#L9"> 9</a>
+<a href="#L10">10</a>
+<a href="#L11">11</a>
+<a href="#L12">12</a>
+<a href="#L13">13</a>
+<a href="#L14">14</a>
+<a href="#L15">15</a>
+<a href="#L16">16</a>
+<a href="#L17">17</a>
+<a href="#L18">18</a>
+<a href="#L19">19</a>
+<a href="#L20">20</a>
+<a href="#L21">21</a>
+<a href="#L22">22</a>
+<a href="#L23">23</a>
+<a href="#L24">24</a>
+<a href="#L25">25</a>
+<a href="#L26">26</a>
+<a href="#L27">27</a>
+<a href="#L28">28</a>
+<a href="#L29">29</a>
+<a href="#L30">30</a>
+<a href="#L31">31</a>
+<a href="#L32">32</a>
+<a href="#L33">33</a>
+<a href="#L34">34</a>
+<a href="#L35">35</a>
+<a href="#L36">36</a>
+<a href="#L37">37</a>
+<a href="#L38">38</a>
+<a href="#L39">39</a>
+<a href="#L40">40</a>
+<a href="#L41">41</a>
+<a href="#L42">42</a>
+<a href="#L43">43</a>
+<a href="#L44">44</a>
+<a href="#L45">45</a>
+<a href="#L46">46</a>
+<a href="#L47">47</a>
+<a href="#L48">48</a>
+<a href="#L49">49</a>
+<a href="#L50">50</a>
+<a href="#L51">51</a>
+<a href="#L52">52</a>
+<a href="#L53">53</a>
+<a href="#L54">54</a>
+</pre>
+<pre><code class="ocaml">(** Copyright 2024, Victoria Lutsyuk *)
+
+(** SPDX-License-Identifier: MIT *)
+
+open Base
+open Forest.ValuesTree
+
+module Res : sig
+  type 'a t
+
+  val return : 'a -&gt; 'a t
+  val fail : error -&gt; 'a t
+  val ( &gt;&gt;= ) : 'a t -&gt; ('a -&gt; 'b t) -&gt; 'b t
+  val run : 'a t -&gt; ('a, error) Result.t
+  val ( let* ) : 'a t -&gt; ('a -&gt; 'b t) -&gt; 'b t
+end = struct
+  type 'a t = ('a, error) Result.t
+
+  let return = Result.return
+  let fail = Result.fail
+  let run m = <span data-count="12">m</span>
+
+  let ( &gt;&gt;= ) monad func =
+    <span data-count="993">m</span>atch monad with
+    | <span data-count="993">O</span>k res -&gt; func res
+    | <span data-count="0">E</span>rror err -&gt; fail err
+  ;;
+
+  let ( let* ) = ( &gt;&gt;= )
+end
+
+module EvalEnv : sig
+  type t = env
+
+  val empty : t
+  val extend : t -&gt; string -&gt; value -&gt; t
+  val compose : t -&gt; t -&gt; t
+  val find_val : t -&gt; string -&gt; value Res.t
+end = struct
+  type t = env
+
+  let empty = Map.empt<span data-count="36">y</span> (module String)
+  let extend env id value = <span data-count="2411">M</span>ap.update env id ~f:(fun _ -&gt; <span data-count="2411">v</span>alue)
+
+  let compose env1 env2 =
+    <span data-count="223">M</span>ap.fold env2 ~f:(fun ~key ~data acc -&gt; <span data-count="2066">e</span>xtend acc key data) ~init:env1
+  ;;
+
+  let find_val env id =
+    <span data-count="437">m</span>atch Map.find env id with
+    | <span data-count="437">S</span>ome value -&gt; Res.return value
+    | <span data-count="0">N</span>one -&gt; Res.fail (NoVariable id)
+  ;;
+end
+</code></pre>
+      </div>
+    </div>
+    <script src="../../coverage.js"></script>
+  </body>
+</html>
