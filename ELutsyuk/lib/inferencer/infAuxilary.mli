@@ -54,4 +54,5 @@ module TypeEnv : sig
   val extend : t -> id -> scheme -> t
   val find : t -> id -> scheme option
   val remove : t -> id -> t
+  val merge_envs : Subst.t -> t -> t -> t
 end

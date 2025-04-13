@@ -6,4 +6,4 @@ open Forest.Ast
 open Forest.TypesTree
 open InfAuxilary
 
-val inference_program : structure_item list -> (TypeEnv.t, error) result
+val inference : structure_item list -> (Subst.t * TypeEnv.t, error) result

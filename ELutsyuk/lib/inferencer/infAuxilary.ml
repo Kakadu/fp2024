@@ -117,18 +117,22 @@ end = struct
     | TypVar a, TypVar b when a = b -> return empty
     | TypVar var, typ | typ, TypVar var -> singleton var typ
     | TypArrow (a1, a2), TypArrow (b1, b2) ->
-      let* sub_map1 = unify a1 b1 in
-      let* sub_map2 = unify a2 b2 in
-      compose sub_map1 sub_map2
+      let* sub1 = unify a1 b1 in
+      let* sub2 = unify a2 b2 in
+      compose sub1 sub2
     | TypTuple ty1, TypTuple ty2 ->
-      (match
-         List.fold2 ty1 ty2 ~init:(return empty) ~f:(fun acc item1 item2 ->
-           let* subst1 = acc in
-           let* subst2 = unify (apply subst1 item1) (apply subst1 item2) in
-           compose subst1 subst2)
-       with
-       | Ok res -> res
-       | _ -> fail @@ UnificationFailed (typ1, typ2))
+      let rec unify_tup sub = function
+        | [], [] -> return sub
+        | t1 :: ts1, t2 :: ts2 ->
+          if List.length ts1 <> List.length ts2
+          then fail @@ UnificationFailed (typ1, typ2)
+          else
+            let* sub1 = unify (apply sub t1) (apply sub t2) in
+            let* final_sub = compose sub sub1 in
+            unify_tup final_sub (ts1, ts2)
+        | _, _ -> fail @@ UnificationFailed (typ1, typ2)
+      in
+      unify_tup empty (ty1, ty2)
     | TypList a, TypList b -> unify a b
     | TypOption a, TypOption b -> unify a b
     | _ -> fail @@ UnificationFailed (typ1, typ2)
@@ -143,8 +147,8 @@ end = struct
         let* acc = acc in
         let new_typ = apply new_sub new_typ in
         return (Map.set acc ~key:new_var ~data:new_typ))
-    | Some existed_typ ->
-      let* new_sub = unify new_typ existed_typ in
+    | Some ty ->
+      let* new_sub = unify new_typ ty in
       compose sub_map new_sub
 
   (* Composes two substitutions, applying the second to the first and merging them. *)
@@ -186,6 +190,7 @@ module TypeEnv : sig
   val extend : t -> id -> scheme -> t
   val find : t -> id -> scheme option
   val remove : t -> id -> t
+  val merge_envs : Subst.t -> t -> t -> t
 end = struct
   type t = (id, scheme, String.comparator_witness) Map.t
 
@@ -201,4 +206,10 @@ end = struct
   let extend env id scheme = Map.update env id ~f:(fun _ -> scheme)
   let find env id = Map.find env id
   let remove = Map.remove
+
+  let merge_envs subst acc_env env_pat =
+    let acc_env = apply subst acc_env in
+    let env_pat = apply subst env_pat in
+    Map.fold env_pat ~init:acc_env ~f:(fun ~key ~data acc_env -> extend acc_env key data)
+  ;;
 end
