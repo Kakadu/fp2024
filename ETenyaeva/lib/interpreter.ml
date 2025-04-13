@@ -284,7 +284,7 @@ module Inter = struct
           | ValBuiltin builtin ->
             (match builtin, arg_val with
              | "print_int", ValInt integer ->
-               print_int integer;
+               Format.printf "%d\n" integer;
                return (ValUnit)
              | "print_endline", ValString str ->
                print_endline str;
