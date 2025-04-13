@@ -8,4 +8,4 @@ open Forest.Ast
 val prs_program : program t
 
 (* val parse_program : program t *)
-val parse_program : id -> (program, string) result
+val parse : id -> (program, string) result

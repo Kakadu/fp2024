@@ -11,8 +11,8 @@ open PrsAuxilary
 let prs_pat_var =
   trim
   @@
-  let+ parsed = prs_id in
-  PatVar parsed
+  let* parsed = prs_id in
+  if String.equal parsed "_" then fail @@ "Any pattern" else return @@ PatVar parsed
 ;;
 
 let prs_pat_constant =
@@ -75,8 +75,8 @@ let prs_pat =
   @@ fun pat ->
   let atomary =
     choice
-      [ prs_pat_any
-      ; prs_pat_var
+      [ prs_pat_var
+      ; prs_pat_any
       ; prs_pat_constant
       ; round_par pat
       ; prs_pat_type pat
