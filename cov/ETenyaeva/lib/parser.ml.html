@@ -1220,7 +1220,7 @@ let parse_tuple_type parse_type =
 let parse_list_type parse_type =
   <span data-count="3">l</span>et f acc_ty = function
     | <span data-count="8">"</span>list" -&gt; TypList acc_ty
-    | <span data-count="0">_</span> -&gt; failwith "Expected 'list'"
+    | <span data-count="0">_</span> -&gt; TypUnit
   in
   let rec go acc_ty =
     <span data-count="616">l</span>et* ty = keywor<span data-count="616">d</span> "list" in
