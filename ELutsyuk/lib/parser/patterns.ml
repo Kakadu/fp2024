@@ -12,7 +12,7 @@ let prs_pat_var =
   trim
   @@
   let* parsed = prs_id in
-  if String.equal parsed "_" then fail @@ "Any pattern" else return @@ PatVar parsed
+  if String.equal parsed "_" then fail "Any pattern" else return @@ PatVar parsed
 ;;
 
 let prs_pat_constant =
