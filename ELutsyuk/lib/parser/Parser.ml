@@ -10,7 +10,7 @@ open Expressions
 let prs_structure =
   let p_struct_binding =
     let* _ = token "let" in
-    let* rec_state = choice [ token "rec" *> return Rec; return NonRec ] in
+    let* rec_state = choice [ string "rec " *> return Rec; return NonRec ] in
     let* binding = prs_let_binding prs_expr in
     let+ bindings_list = many (token "and" *> prs_let_binding prs_expr) in
     Value (rec_state, binding, bindings_list)

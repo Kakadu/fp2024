@@ -2,14 +2,15 @@
 
 (** SPDX-License-Identifier: MIT *)
 
-open Inferencer
-open Stdlib.Format
+open Inferencer.Inference
+open Parser
 
 let test_inference str =
-  match Parser.parse_program str with
+  let open Stdlib.Format in
+  match parse str with
   | Ok parsed ->
-    (match inference_program parsed with
-     | Ok env ->
+    (match inference parsed with
+     | Ok (_, env) ->
        Base.Map.iteri env ~f:(fun ~key ~data:(Scheme (_, typ)) ->
          if String.equal key "print_int" || String.equal key "print_endline"
          then ()

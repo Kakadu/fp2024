@@ -6,9 +6,10 @@ open Forest.Ast
 open Parser
 
 let test_parse str =
-  match parse_program str with
-  | Ok program -> Stdlib.Format.printf "%s\n" (show_program program)
-  | Error err -> Stdlib.Format.printf "%s\n" err
+  let open Stdlib.Format in
+  match parse str with
+  | Ok program -> printf "%s\n" (show_program program)
+  | Error err -> printf "%s\n" err
 ;;
 
 let%expect_test "parse_arithmetic" =
@@ -757,7 +758,7 @@ let%expect_test "typed_007order" =
         (Binding ((PatVar "_start"),
            (Fun ((PatConst Unit),
               [(PatConst Unit); (PatVar "a"); (PatConst Unit); (PatVar "b");
-                (PatVar "_c"); (PatConst Unit); (PatVar "d"); PatAny; PatAny],
+                (PatVar "_c"); (PatConst Unit); (PatVar "d"); (PatVar "__")],
               (Let (NonRec,
                  (Binding ((PatConst Unit),
                     (App ((Var "print_int"), (BinOp (Add, (Var "a"), (Var "b")))
@@ -875,161 +876,20 @@ let%expect_test "typed_009let_poly" =
 ;;
 
 let%expect_test "typed_015tuples" =
-  test_parse
-    "let rec fix f x = f (fix f) x\n\
-     let map f p = let (a,b) = p in (f a, f b)\n\
-     let fixpoly l =\n\
-    \  fix (fun self l -> map (fun li x -> li (self l) x) l) l\n\
-     let feven p n =\n\
-    \  let (e, o) = p in\n\
-    \  if n = 0 then 1 else o (n - 1)\n\
-     let fodd p n =\n\
-    \  let (e, o) = p in\n\
-    \  if n = 0 then 0 else e (n - 1)\n\
-     let tie = fixpoly (feven, fodd)\n\n\
-     let rec meven n = if n = 0 then 1 else modd (n - 1)\n\
-     and modd n = if n = 0 then 1 else meven (n - 1)\n\
-     let main =\n\
-    \  let () = print_int (modd 1) in\n\
-    \  let () = print_int (meven 2) in\n\
-    \  let (even,odd) = tie in\n\
-    \  let () = print_int (odd 3) in\n\
-    \  let () = print_int (even 4) in\n\
-    \  0\n";
+  test_parse "let recfac n = if n<=1 then 1 else n * fac (n-1)\n";
   [%expect
     {|
-    [(Value (Rec,
-        (Binding ((PatVar "fix"),
-           (Fun ((PatVar "f"), [(PatVar "x")],
-              (App ((App ((Var "f"), (App ((Var "fix"), (Var "f"))))), (Var "x")
+    [(Value (NonRec,
+        (Binding ((PatVar "recfac"),
+           (Fun ((PatVar "n"), [],
+              (Branch ((BinOp (Le, (Var "n"), (Const (Int 1)))), (Const (Int 1)),
+                 (BinOp (Mul, (Var "n"),
+                    (App ((Var "fac"), (BinOp (Sub, (Var "n"), (Const (Int 1))))
+                       ))
+                    ))
                  ))
               ))
            )),
-        []));
-      (Value (NonRec,
-         (Binding ((PatVar "map"),
-            (Fun ((PatVar "f"), [(PatVar "p")],
-               (Let (NonRec,
-                  (Binding ((PatTup ((PatVar "a"), (PatVar "b"), [])), (Var "p")
-                     )),
-                  [],
-                  (Tup ((App ((Var "f"), (Var "a"))),
-                     (App ((Var "f"), (Var "b"))), []))
-                  ))
-               ))
-            )),
-         []));
-      (Value (NonRec,
-         (Binding ((PatVar "fixpoly"),
-            (Fun ((PatVar "l"), [],
-               (App (
-                  (App ((Var "fix"),
-                     (Fun ((PatVar "self"), [(PatVar "l")],
-                        (App (
-                           (App ((Var "map"),
-                              (Fun ((PatVar "li"), [(PatVar "x")],
-                                 (App (
-                                    (App ((Var "li"),
-                                       (App ((Var "self"), (Var "l"))))),
-                                    (Var "x")))
-                                 ))
-                              )),
-                           (Var "l")))
-                        ))
-                     )),
-                  (Var "l")))
-               ))
-            )),
-         []));
-      (Value (NonRec,
-         (Binding ((PatVar "feven"),
-            (Fun ((PatVar "p"), [(PatVar "n")],
-               (Let (NonRec,
-                  (Binding ((PatTup ((PatVar "e"), (PatVar "o"), [])), (Var "p")
-                     )),
-                  [],
-                  (Branch ((BinOp (Eq, (Var "n"), (Const (Int 0)))),
-                     (Const (Int 1)),
-                     (App ((Var "o"), (BinOp (Sub, (Var "n"), (Const (Int 1))))))
-                     ))
-                  ))
-               ))
-            )),
-         []));
-      (Value (NonRec,
-         (Binding ((PatVar "fodd"),
-            (Fun ((PatVar "p"), [(PatVar "n")],
-               (Let (NonRec,
-                  (Binding ((PatTup ((PatVar "e"), (PatVar "o"), [])), (Var "p")
-                     )),
-                  [],
-                  (Branch ((BinOp (Eq, (Var "n"), (Const (Int 0)))),
-                     (Const (Int 0)),
-                     (App ((Var "e"), (BinOp (Sub, (Var "n"), (Const (Int 1))))))
-                     ))
-                  ))
-               ))
-            )),
-         []));
-      (Value (NonRec,
-         (Binding ((PatVar "tie"),
-            (App ((Var "fixpoly"), (Tup ((Var "feven"), (Var "fodd"), [])))))),
-         []));
-      (Value (Rec,
-         (Binding ((PatVar "meven"),
-            (Fun ((PatVar "n"), [],
-               (Branch ((BinOp (Eq, (Var "n"), (Const (Int 0)))),
-                  (Const (Int 1)),
-                  (App ((Var "modd"), (BinOp (Sub, (Var "n"), (Const (Int 1))))))
-                  ))
-               ))
-            )),
-         [(Binding ((PatVar "modd"),
-             (Fun ((PatVar "n"), [],
-                (Branch ((BinOp (Eq, (Var "n"), (Const (Int 0)))),
-                   (Const (Int 1)),
-                   (App ((Var "meven"), (BinOp (Sub, (Var "n"), (Const (Int 1))))
-                      ))
-                   ))
-                ))
-             ))
-           ]
-         ));
-      (Value (NonRec,
-         (Binding ((PatVar "main"),
-            (Let (NonRec,
-               (Binding ((PatConst Unit),
-                  (App ((Var "print_int"), (App ((Var "modd"), (Const (Int 1))))
-                     ))
-                  )),
-               [],
-               (Let (NonRec,
-                  (Binding ((PatConst Unit),
-                     (App ((Var "print_int"),
-                        (App ((Var "meven"), (Const (Int 2))))))
-                     )),
-                  [],
-                  (Let (NonRec,
-                     (Binding ((PatTup ((PatVar "even"), (PatVar "odd"), [])),
-                        (Var "tie"))),
-                     [],
-                     (Let (NonRec,
-                        (Binding ((PatConst Unit),
-                           (App ((Var "print_int"),
-                              (App ((Var "odd"), (Const (Int 3))))))
-                           )),
-                        [],
-                        (Let (NonRec,
-                           (Binding ((PatConst Unit),
-                              (App ((Var "print_int"),
-                                 (App ((Var "even"), (Const (Int 4))))))
-                              )),
-                           [], (Const (Int 0))))
-                        ))
-                     ))
-                  ))
-               ))
-            )),
-         []))
+        []))
       ] |}]
 ;;

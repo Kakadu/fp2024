@@ -42,5 +42,5 @@ let prs_id =
   let* p_first = satisfy is_first_letter >>| Char.escaped in
   let* p_rest = take_while is_rest_letter in
   let id = p_first ^ p_rest in
-  if is_keyword id then fail "Error! parse_id: id match the keyword." else return id
+  if is_keyword id then fail "Error: parse_id: id match the keyword." else return id
 ;;

@@ -6,7 +6,7 @@
   ELutsyuk.MiniML_Interpreter
   ELutsyuk.MiniML_Inferencer)
  (preprocess
-  (pps ppx_expect))
+  (pps ppx_expect ppx_deriving.show))
  (inline_tests)
  (instrumentation
   (backend bisect_ppx)))
