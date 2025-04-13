@@ -43,13 +43,13 @@ type error =
 
 let pp_error fmt = function
   | OccursCheck (id, typ) ->
-    fprintf fmt "Occurs check failed. Type variable '%s occurs inside %a\n" id pp_type typ
-  | NoVariable name -> fprintf fmt "Unbound variable '%s'." name
+    fprintf fmt "Occurs check failed. Type variable %s occurs inside %a\n" id pp_type typ
+  | NoVariable name -> fprintf fmt "Unbound variable %s'." name
   | NoVariableRec -> fprintf fmt "Only variables are allowed as left-hand side of `let rec'"
   | UnificationFailed (ty1, ty2) ->
     fprintf fmt "Failed to unify types: %a and %a\n" pp_type ty1 pp_type ty2
   | NoArgRec -> fprintf fmt "This kind of expression is not allowed as right-hand side of `let rec'"
-  | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
+  | SeveralBounds name -> fprintf fmt "Multiple bounds for variable %s'." name
   ;;
 
 module State = struct
@@ -114,7 +114,7 @@ module Type = struct
   open Base
   (** gets a variable var and type ty, and checks whether the
    variable is contained in the set of free variables of this type*)
-  let rec occurs_in var ty = 
+  let occurs_in var ty = 
     let rec helper ty =
       (match ty with
         | TypOption ty | TypList ty -> helper ty
