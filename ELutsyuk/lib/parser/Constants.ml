@@ -12,7 +12,7 @@ open PrsAuxilary
 let prs_escape_sequence =
   let p_ascii =
     choice
-      [ (let* num_opt = take_while1 Char.is_digit >>| Caml.int_of_string_opt in
+      [ (let* num_opt = take_while1 Char.is_digit >>| Stdlib.int_of_string_opt in
          match num_opt with
          | Some char_code when char_code >= 0 && char_code <= 255 ->
            return @@ Char.of_int_exn char_code
@@ -24,7 +24,7 @@ let prs_escape_sequence =
              | '0' .. '9' | 'A' .. 'F' | 'a' .. 'f' -> true
              | _ -> false)
          in
-         let num_opt = Caml.int_of_string_opt ("0x" ^ scanned) in
+         let num_opt = Stdlib.int_of_string_opt ("0x" ^ scanned) in
          match num_opt with
          | Some char_code when char_code >= 0 && char_code <= 255 ->
            return @@ Char.of_int_exn char_code
@@ -32,7 +32,7 @@ let prs_escape_sequence =
       ; (char 'o'
          *>
          let* scanned = take 3 in
-         let num_opt = Caml.int_of_string_opt ("0o" ^ scanned) in
+         let num_opt = Stdlib.int_of_string_opt ("0o" ^ scanned) in
          match num_opt with
          | Some char_code when char_code >= 0 && char_code <= 255 ->
            return @@ Char.of_int_exn char_code
