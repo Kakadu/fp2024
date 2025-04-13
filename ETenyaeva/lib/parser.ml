@@ -187,7 +187,7 @@ let parse_tuple_type parse_type =
 let parse_list_type parse_type =
   let f acc_ty = function
     | "list" -> TypList acc_ty
-    | _ -> failwith "Expected 'list'"
+    | _ -> TypUnit
   in
   let rec go acc_ty =
     let* ty = keyword "list" in
