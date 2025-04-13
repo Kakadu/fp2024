@@ -4,13 +4,13 @@
 
 type error =
   | TypeError
-    (** Represents a type error that occurs when a type mismatch is detected in an expression. *)
+  (** Represents a type error that occurs when a type mismatch is detected in an expression. *)
   | DivisionByZero
-    (** Represents the error that occurs when attempting to perform a division by zero operation. *)
+  (** Represents the error that occurs when attempting to perform a division by zero operation. *)
   | MatchFailure
-    (** Represents a match error occurs when a pattern matching attempt fails. *)
+  (** Represents a match error occurs when a pattern matching attempt fails. *)
   | NoVariable of Ast.id
-    (** Represents an error that occurs when attempting to use a variable that has not been declared or initialized. *)
+  (** Represents an error that occurs when attempting to use a variable that has not been declared or initialized. *)
 
 val pp_error : Format.formatter -> error -> unit
 

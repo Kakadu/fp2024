@@ -1,7 +1,7 @@
 (library
  (name ETenyaeva_lib)
  (public_name ETenyaeva.lib)
- (libraries base angstrom )
+ (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))
  (instrumentation

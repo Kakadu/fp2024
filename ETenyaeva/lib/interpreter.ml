@@ -45,9 +45,15 @@ let rec pp_value ppf =
      | Some value -> fprintf ppf "Some %a" pp_value value
      | None -> fprintf ppf "None")
   | ValList vls ->
-      fprintf ppf "[%a]" (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value) vls
+    fprintf
+      ppf
+      "[%a]"
+      (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf "; ") pp_value)
+      vls
   | ValTuple (fst_val, snd_val, val_list) ->
-    fprintf ppf "(%a)"
+    fprintf
+      ppf
+      "(%a)"
       (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ", ") pp_value)
       (fst_val :: snd_val :: val_list)
   | ValFun _ -> fprintf ppf "<fun>"
@@ -102,7 +108,7 @@ module Inter = struct
   let eval_eq opr val1 val2 = return (ValBool (opr val1 val2))
   let eval_bool opr val1 val2 = return (ValBool (opr val1 val2))
 
-   let eval_un_op = function
+  let eval_un_op = function
     | Neg, ValInt val1 -> return (ValInt (-val1))
     | Not, ValBool val1 -> return (ValBool (not val1))
     | _ -> fail TypeError
@@ -154,8 +160,7 @@ module Inter = struct
        | first_pat :: rest_pat, first_val :: rest_val ->
          let env = match_pattern env (first_pat, first_val) in
          (match env with
-          | Some env ->
-            match_pattern env (PatListConstructor rest_pat, ValList rest_val)
+          | Some env -> match_pattern env (PatListConstructor rest_pat, ValList rest_val)
           | None -> None)
        | _ -> None)
     | PatList pat_list, ValList val_list ->
@@ -164,8 +169,7 @@ module Inter = struct
        | first_pat :: rest_pat, first_val :: rest_val ->
          let env = match_pattern env (first_pat, first_val) in
          (match env with
-          | Some env ->
-            match_pattern env (PatList rest_pat, ValList rest_val)
+          | Some env -> match_pattern env (PatList rest_pat, ValList rest_val)
           | None -> None)
        | _ -> None)
     | PatWithTyp (_, pat), value -> match_pattern env (pat, value)
@@ -195,9 +199,7 @@ module Inter = struct
       (match pat_list, val_list with
        | first_pat :: rest_pat, first_val :: rest_val ->
          let* env = extend_names_from_pat env (first_pat, first_val) in
-         let* env =
-           extend_names_from_pat env (PatList rest_pat, ValList rest_val)
-         in
+         let* env = extend_names_from_pat env (PatList rest_pat, ValList rest_val) in
          return env
        | _, _ -> return env)
     | PatListConstructor pat_list, ValList val_list ->
@@ -205,9 +207,7 @@ module Inter = struct
        | first_pat :: rest_pat, first_val :: rest_val ->
          let* env = extend_names_from_pat env (first_pat, first_val) in
          let* env =
-           extend_names_from_pat
-             env
-             (PatListConstructor rest_pat, ValList rest_val)
+           extend_names_from_pat env (PatListConstructor rest_pat, ValList rest_val)
          in
          return env
        | _, _ -> return env)
@@ -231,8 +231,7 @@ module Inter = struct
     | ExpLet (Rec, value_binding, value_binding_list, exp) ->
       let* env = eval_rec_value_binding_list env (value_binding :: value_binding_list) in
       eval_expression env exp
-    | ExpFun (pat, exp) ->
-      return (ValFun (NonRec, pat, exp, env))
+    | ExpFun (pat, exp) -> return (ValFun (NonRec, pat, exp, env))
     | ExpFunction (case, case_list) -> return (ValFunction (case :: case_list, env))
     | ExpMatch (exp, case, case_list) ->
       let* match_value = eval_expression env exp in
@@ -251,8 +250,8 @@ module Inter = struct
             let* acc = acc in
             let* value = eval_expression env exp in
             match value with
-          | ValList lst -> return (lst @ acc)
-          | _ -> return (value :: acc))  
+            | ValList lst -> return (lst @ acc)
+            | _ -> return (value :: acc))
           ~init:(return [])
           expr_list
       in
@@ -271,26 +270,26 @@ module Inter = struct
     | ExpApp (exp1, exp2) ->
       let* fun_val = eval_expression env exp1 in
       let* arg_val = eval_expression env exp2 in
-        (match fun_val with
-          | ValFun (rec_flag, pat, exp, fun_env) ->
-            let* new_env =
-              match rec_flag, match_pattern fun_env (pat, arg_val) with
-              | Rec, Some extended_env -> return (compose env extended_env)
-              | NonRec, Some extended_env -> return extended_env
-              | _, None -> fail MatchFailure
-            in
-            eval_expression new_env exp
-          | ValFunction (case_list, env) -> find_and_eval_case env arg_val case_list
-          | ValBuiltin builtin ->
-            (match builtin, arg_val with
-             | "print_int", ValInt integer ->
-               Format.printf "%d\n" integer;
-               return (ValUnit)
-             | "print_endline", ValString str ->
-               print_endline str;
-               return (ValUnit)
-             | _ -> fail TypeError)
+      (match fun_val with
+       | ValFun (rec_flag, pat, exp, fun_env) ->
+         let* new_env =
+           match rec_flag, match_pattern fun_env (pat, arg_val) with
+           | Rec, Some extended_env -> return (compose env extended_env)
+           | NonRec, Some extended_env -> return extended_env
+           | _, None -> fail MatchFailure
+         in
+         eval_expression new_env exp
+       | ValFunction (case_list, env) -> find_and_eval_case env arg_val case_list
+       | ValBuiltin builtin ->
+         (match builtin, arg_val with
+          | "print_int", ValInt integer ->
+            Format.printf "%d\n" integer;
+            return ValUnit
+          | "print_endline", ValString str ->
+            print_endline str;
+            return ValUnit
           | _ -> fail TypeError)
+       | _ -> fail TypeError)
     | ExpOption None -> return (ValOption None)
     | ExpOption (Some expr) ->
       let* value = eval_expression env expr in
@@ -358,8 +357,7 @@ module Inter = struct
         | PatVar name | PatWithTyp (_, PatVar name) ->
           let value =
             match value with
-            | ValFun (_, pat, expr, env) ->
-              ValFun (Rec, pat, expr, env)
+            | ValFun (_, pat, expr, env) -> ValFun (Rec, pat, expr, env)
             | other -> other
           in
           let env = extend env name value in
@@ -377,11 +375,8 @@ module Inter = struct
           (fst_pat :: snd_pat :: pat_list)
           ~init:acc
           ~f:(extract_names_from_pat env)
-      | PatList (pat_list) ->
-        Base.List.fold_left
-          (pat_list)
-          ~init:acc
-          ~f:(extract_names_from_pat env)
+      | PatList pat_list ->
+        Base.List.fold_left pat_list ~init:acc ~f:(extract_names_from_pat env)
       | PatWithTyp (_, pat) -> extract_names_from_pat env acc pat
       | _ -> acc
     in

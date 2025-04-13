@@ -1,7 +1,7 @@
 (include_subdirs no)
 
 (library
- (name tests )
+ (name tests)
  (libraries ETenyaeva_lib)
  (preprocess
   (pps ppx_expect ppx_deriving.show))

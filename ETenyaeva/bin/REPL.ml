@@ -2,8 +2,6 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-open ETenyaeva_lib
-
 type options =
   { mutable dump_parsetree : bool
   ; mutable dump_inference : bool
@@ -18,30 +16,48 @@ let run_single dump_parsetree dump_inference =
     if dump_parsetree then Format.printf "%a\n" ETenyaeva_lib.Ast.pp_structure ast;
     if dump_inference
     then (
-      let infer = ETenyaeva_lib.Inferencer.run_inferencer ETenyaeva_lib.Inferencer.env_with_print_funs ast in
+      let infer =
+        ETenyaeva_lib.Inferencer.run_inferencer
+          ETenyaeva_lib.Inferencer.env_with_print_funs
+          ast
+      in
       match infer with
-      | Error e -> Format.printf "Inferencer error: %a\n" ETenyaeva_lib.Inferencer.pp_error e
+      | Error e ->
+        Format.printf "Inferencer error: %a\n" ETenyaeva_lib.Inferencer.pp_error e
       | Result.Ok (_, infer_out_list) ->
-            List.iter
-              (function
-                | Some id, ty -> Format.printf "val %s : %a\n" id ETenyaeva_lib.Inferencer.pp_type ty
-                | None, ty -> Format.printf "- : %a\n" ETenyaeva_lib.Inferencer.pp_type ty)
-              infer_out_list);
+        List.iter
+          (function
+            | Some id, ty ->
+              Format.printf "val %s : %a\n" id ETenyaeva_lib.Inferencer.pp_type ty
+            | None, ty -> Format.printf "- : %a\n" ETenyaeva_lib.Inferencer.pp_type ty)
+          infer_out_list);
     if not (dump_inference || dump_parsetree)
     then (
-      let infer = ETenyaeva_lib.Inferencer.run_inferencer ETenyaeva_lib.Inferencer.env_with_print_funs ast in
+      let infer =
+        ETenyaeva_lib.Inferencer.run_inferencer
+          ETenyaeva_lib.Inferencer.env_with_print_funs
+          ast
+      in
       match infer with
-      | Error e -> Format.printf "Inferencer error: %a\n" ETenyaeva_lib.Inferencer.pp_error e
+      | Error e ->
+        Format.printf "Inferencer error: %a\n" ETenyaeva_lib.Inferencer.pp_error e
       | Result.Ok (_, _) ->
-        let inter = ETenyaeva_lib.Interpreter.run_interpreter ETenyaeva_lib.Interpreter.env_with_print_funs ast in
+        let inter =
+          ETenyaeva_lib.Interpreter.run_interpreter
+            ETenyaeva_lib.Interpreter.env_with_print_funs
+            ast
+        in
         (match inter with
-          | Error e -> Format.printf "Interpreter error: %a\n" ETenyaeva_lib.Interpreter.pp_error e
-          | Result.Ok (_, inter_out_list) ->
-              List.iter
-                (function
-                  | Some id, val' -> Format.printf "val %s = %a\n" id ETenyaeva_lib.Interpreter.pp_value val'
-                  | None, val' -> Format.printf "- = %a\n" ETenyaeva_lib.Interpreter.pp_value val')
-                inter_out_list));
+         | Error e ->
+           Format.printf "Interpreter error: %a\n" ETenyaeva_lib.Interpreter.pp_error e
+         | Result.Ok (_, inter_out_list) ->
+           List.iter
+             (function
+               | Some id, val' ->
+                 Format.printf "val %s = %a\n" id ETenyaeva_lib.Interpreter.pp_value val'
+               | None, val' ->
+                 Format.printf "- = %a\n" ETenyaeva_lib.Interpreter.pp_value val')
+             inter_out_list))
 ;;
 
 let () =

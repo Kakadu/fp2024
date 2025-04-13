@@ -78,7 +78,8 @@ let%expect_test "parse_tuple" =
 
 let%expect_test "parse_eval;;" =
   run "1 + 1";
-  [%expect {|
+  [%expect
+    {|
     [(EvalExp (ExpBinOper (Add, (ExpConst (Int 1)), (ExpConst (Int 1)))))] |}]
 ;;
 
@@ -147,7 +148,7 @@ let%expect_test "parse_ifthen" =
         },
       []))
     ] |}]
-;; 
+;;
 
 let%expect_test "parse_ifthen_without_else" =
   run "if x > 0 then x + 4 ";
@@ -184,8 +185,7 @@ let%expect_test "parse_with_type" =
 ;;
 
 let%expect_test "parse_with_type2" =
-  run "let add (a : int) (b : int) =
-  a + b;;";
+  run "let add (a : int) (b : int) =\n  a + b;;";
   [%expect
     {|
   [(Binding (NonRec,
@@ -260,11 +260,11 @@ let%expect_test "lambda_test_2" =
 ;;
 
 let%expect_test "lambda_test_3" =
-  run "let foo a =
-  let () = print_int a in fun b ->
-  let () = print_int b in fun c ->
-  print_int c
-";
+  run
+    "let foo a =\n\
+    \  let () = print_int a in fun b ->\n\
+    \  let () = print_int b in fun c ->\n\
+    \  print_int c\n";
   [%expect
     {|
   [(Binding (NonRec,
@@ -335,11 +335,12 @@ let%expect_test "test_arithmetic2" =
 ;;
 
 let%expect_test "test_let-match" =
-  run "let _5 =
-    let id x = x in
-    match Some id with
-      | Some f -> let _ = f \"42\" in f 42
-      | None -> 0";
+  run
+    "let _5 =\n\
+    \    let id x = x in\n\
+    \    match Some id with\n\
+    \      | Some f -> let _ = f \"42\" in f 42\n\
+    \      | None -> 0";
   [%expect
     {|
 [(Binding (NonRec,
@@ -367,10 +368,7 @@ let%expect_test "test_let-match" =
 ;;
 
 let%expect_test "test_fib" =
-  run "let rec fib n =
-  if n<2
-  then n
-  else fib (n - 1) + fib (n - 2)";
+  run "let rec fib n =\n  if n<2\n  then n\n  else fib (n - 1) + fib (n - 2)";
   [%expect
     {|
 [(Binding (Rec,
@@ -397,11 +395,12 @@ let%expect_test "test_fib" =
 ;;
 
 let%expect_test "test_partial" =
-  run "let foo a b c =
-  let () = print_int a in
-  let () = print_int b in
-  let () = print_int c in
-  a + b * c";
+  run
+    "let foo a b c =\n\
+    \  let () = print_int a in\n\
+    \  let () = print_int b in\n\
+    \  let () = print_int c in\n\
+    \  a + b * c";
   [%expect
     {|
 [(Binding (NonRec,

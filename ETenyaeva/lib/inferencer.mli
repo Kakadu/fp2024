@@ -15,6 +15,7 @@ val pp_error : Format.formatter -> error -> unit
 
 module VarSet : sig
   type t
+
   val empty : t
   val add : string -> t -> t
   val remove : string -> t -> t

@@ -3,12 +3,13 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open ETenyaeva_lib.Parser
+
 (* open ETenyaeva_lib.Ast *)
 open ETenyaeva_lib.Inferencer
 
 let run input =
   match parse input with
-  | Ok ast -> 
+  | Ok ast ->
     (match run_inferencer empty_env ast with
      | Ok (_, out_list) ->
        List.iter

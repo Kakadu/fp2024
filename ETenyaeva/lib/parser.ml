@@ -19,7 +19,7 @@ let skip_round_par parse =
   token "(" *> parse <* (token ")" <|> fail "There is no closing bracket.")
 ;;
 
-let skip_square_par parse = 
+let skip_square_par parse =
   token "[" *> parse <* (token "]" <|> fail "There is no closing bracket.")
 ;;
 
@@ -129,23 +129,28 @@ let parse_const_char =
 ;;
 
 let parse_const_string =
-  choice [string "\"" *> take_till (Char.equal '\"')
-  <* string "\""; string "{|" *> take_till (Char.equal '|')
-  <* string "|}"]
+  choice
+    [ string "\"" *> take_till (Char.equal '\"') <* string "\""
+    ; string "{|" *> take_till (Char.equal '|') <* string "|}"
+    ]
   >>| fun str_value -> String str_value
 ;;
 
-let parse_const_unit =
-  string "()" >>| fun _ -> Unit
-;;
+let parse_const_unit = string "()" >>| fun _ -> Unit
 
 let parse_const_bool =
-  (string "true" >>| fun _ -> Bool true)
-  <|> (string "false" >>| fun _ -> Bool false)
+  string "true" >>| (fun _ -> Bool true) <|> (string "false" >>| fun _ -> Bool false)
 ;;
 
 let parse_constant =
-  ws *> choice [ parse_const_int; parse_const_char; parse_const_string; parse_const_bool; parse_const_unit ]
+  ws
+  *> choice
+       [ parse_const_int
+       ; parse_const_char
+       ; parse_const_string
+       ; parse_const_bool
+       ; parse_const_unit
+       ]
 ;;
 
 (* ==================== ident ==================== *)
@@ -194,8 +199,7 @@ let parse_list_type parse_type =
   in
   let rec go acc_ty =
     let* ty = keyword "list" in
-    go (f acc_ty ty)
-    <|> return acc_ty
+    go (f acc_ty ty) <|> return acc_ty
   in
   let* fst_ty = parse_type in
   go fst_ty
@@ -213,9 +217,7 @@ let parse_core_type =
 
 let parse_pat_with_type parse_pat =
   let* pat = ws *> token "(" *> parse_pat in
-  let* constr =
-    ws *> token ":" *> ws *> parse_core_type <* ws <* token ")"
-  in
+  let* constr = ws *> token ":" *> ws *> parse_core_type <* ws <* token ")" in
   return (PatWithTyp (constr, pat))
 ;;
 
@@ -270,10 +272,10 @@ let parse_pattern =
     let parse_pat =
       choice
         [ parse_pat_var
-        ; parse_pat_with_type parse_full_pat  
+        ; parse_pat_with_type parse_full_pat
         ; parse_pat_any
         ; parse_pat_constant
-        ; parse_pattern_list parse_full_pat  
+        ; parse_pattern_list parse_full_pat
         ; skip_round_par parse_full_pat
         ; parse_pattern_option parse_full_pat
         ]
@@ -293,42 +295,27 @@ let cmp =
     ; token "<=" *> return LessEquals
     ; token ">=" *> return GreaterEquals
     ; token "<" *> return LessThan
-    ; token ">" *> return GreaterThan 
+    ; token ">" *> return GreaterThan
     ]
 ;;
 
 let logical = choice [ token "&&" *> return And; token "||" *> return Or ]
-
-let add_sub = choice
-    [ token "+" *> return Add
-    ; token "-" *> return Sub
-    ]
-;;
-
-let mult_div = choice
-    [ token "/" *> return Div
-    ; token "*" *> return Mult
-    ]
-;;
+let add_sub = choice [ token "+" *> return Add; token "-" *> return Sub ]
+let mult_div = choice [ token "/" *> return Div; token "*" *> return Mult ]
 
 let bin_op chain1 parse_exp parse_fun_op =
-  chain1
-    parse_exp
-    (parse_fun_op >>| fun opr exp1 exp2 -> ExpBinOper (opr, exp1, exp2))
+  chain1 parse_exp (parse_fun_op >>| fun opr exp1 exp2 -> ExpBinOper (opr, exp1, exp2))
 ;;
 
 let parse_left_bin_op = bin_op parse_chain_left_associative
 let parse_right_bin_op = bin_op parse_chain_right_associative
-
 let parse_un_oper = choice [ token "-" *> return Neg; keyword "not" *> return Not ]
 
 (* -------------------- expression -------------------- *)
 
 let parse_exp_with_type parse_exp =
   let* expr = ws *> token "(" *> parse_exp in
-  let* constr =
-    ws *> token ":" *> ws *> parse_core_type <* ws <* token ")"
-  in
+  let* constr = ws *> token ":" *> ws *> parse_core_type <* ws <* token ")" in
   return (ExpWithTyp (constr, expr))
 ;;
 
@@ -372,7 +359,7 @@ let parse_exp_fun parse_exp =
   let exp =
     match params with
     | [] -> body_exp
-    | _ -> List.fold_right ~f: (fun par acc -> ExpFun (par, acc)) params ~init: body_exp
+    | _ -> List.fold_right ~f:(fun par acc -> ExpFun (par, acc)) params ~init:body_exp
   in
   return (ExpFun (pat, exp))
 ;;
@@ -434,13 +421,13 @@ let parse_binding parse_exp =
   ; expr =
       (match xs with
        | [] -> parse_exp
-       | _ -> List.fold_right ~f: (fun f p -> ExpFun (f, p)) xs ~init: parse_exp )
+       | _ -> List.fold_right ~f:(fun f p -> ExpFun (f, p)) xs ~init:parse_exp)
   }
 ;;
 
 let parse_exp_let parse_exp =
   keyword "let"
-  *> 
+  *>
   let* rec_flag = keyword "rec" *> return Rec <|> return NonRec in
   let* vb = parse_binding parse_exp in
   let* value_bindings = many (keyword "and" *> parse_binding parse_exp) in
@@ -449,18 +436,21 @@ let parse_exp_let parse_exp =
 ;;
 
 let parse_exp_apply parse_exp =
-  parse_chain_left_associative
-    parse_exp
-    (return (fun exp1 exp2 -> ExpApp (exp1, exp2)))
+  parse_chain_left_associative parse_exp (return (fun exp1 exp2 -> ExpApp (exp1, exp2)))
 ;;
 
 let parse_expression =
   ws
-  *> 
-  fix (fun expr ->
+  *> fix (fun expr ->
     let expr_const =
       choice
-        [ skip_round_par expr; parse_exp_option expr; parse_exp_constant; parse_exp_with_type expr; parse_exp_ident; parse_exp_ifthenelse expr ]
+        [ skip_round_par expr
+        ; parse_exp_option expr
+        ; parse_exp_constant
+        ; parse_exp_with_type expr
+        ; parse_exp_ident
+        ; parse_exp_ifthenelse expr
+        ]
     in
     let expr_fun = parse_exp_fun expr <|> expr_const in
     let expr_list = parse_exp_list expr <|> expr_fun in
@@ -473,7 +463,7 @@ let parse_expression =
     let expr_match = parse_exp_match expr <|> expr_function in
     let expr_tuple = parse_exp_tuple expr_match <|> expr_match in
     expr_tuple)
-  ;;
+;;
 
 (* ==================== structure ==================== *)
 
@@ -490,7 +480,7 @@ let parse_structure =
   ws
   *>
   let str_value = parse_structure_value parse_expression in
-  let str_eval = str_value <|> (parse_expression >>| (fun ex -> EvalExp ex)) in
+  let str_eval = str_value <|> (parse_expression >>| fun ex -> EvalExp ex) in
   let semicolons = many (token ";;") in
   sep_by semicolons str_eval <* semicolons <* ws
 ;;

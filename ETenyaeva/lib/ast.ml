@@ -2,7 +2,7 @@
 
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
-type id = string (** identifier *) [@@deriving show { with_path = false }]
+type id = string (* identifier *) [@@deriving show { with_path = false }]
 
 type rec_flag =
   | Rec (** recursive *)
@@ -15,7 +15,7 @@ type const =
   | String of string (** string, e.g. "string" *)
   | Char of char (** char, e.g. 'a' *)
   | Unit (** [()] *)
-[@@deriving show { with_path = false }] 
+[@@deriving show { with_path = false }]
 
 type typ =
   | TypInt (** integer type - [int] *)
@@ -34,7 +34,7 @@ type binary_oper =
   | Add (** [+] *)
   | Sub (** [-] *)
   | Mult (* [*] *)
-  | Div (** [/] *) 
+  | Div (** [/] *)
   | And (** [&&] *)
   | Or (** [||] *)
   | Equals (** [=] *)
@@ -54,7 +54,8 @@ type pattern =
   | PatConst of const (** matches a constant value, e.g. 42, true *)
   | PatVar of id (** matches any value and binds it to a variable, e.g. x *)
   | PatAny (** matches any value without binding it - [_] *)
-  | PatTup of pattern * pattern * pattern list (** matches tuples, e.g. (x, y), (a, b, c) *)
+  | PatTup of pattern * pattern * pattern list
+  (** matches tuples, e.g. (x, y), (a, b, c) *)
   | PatList of pattern list (** matches lists of patterns, e.g. [y; x] *)
   | PatListConstructor of pattern list (** matches lists of patterns, e.g. a::b::[] *)
   | PatOption of pattern option (** matches an optional pattern, e.g. Some x or None *)
@@ -64,9 +65,11 @@ type pattern =
 type expr =
   | ExpVar of id (** variable, e.g. x *)
   | ExpConst of const (** constant, e.g. 10*)
-  | ExpIfThenElse of expr * expr * expr option (** conditional expression, e.g. if a then b else c*)
+  | ExpIfThenElse of expr * expr * expr option
+  (** conditional expression, e.g. if a then b else c*)
   | ExpFun of pattern * expr (** function, e.g. fun (x, y) -> x + y *)
-  | ExpFunction of case_expr * case_expr list (** function, e.g. function x | 0 -> "zero" | _ -> "nonzero" *)
+  | ExpFunction of case_expr * case_expr list
+  (** function, e.g. function x | 0 -> "zero" | _ -> "nonzero" *)
   | ExpBinOper of binary_oper * expr * expr (** binary operation, e.g. 1 + 5*)
   | ExpUnOper of unary_oper * expr (** unary operation, e.g. -7 *)
   | ExpList of expr list (** list expression, e.g. [1, "string", 2, (1 + 7)] *)
@@ -74,7 +77,8 @@ type expr =
   | ExpLet of rec_flag * let_binding * let_binding list * expr (** let, e.g. let x = 5 *)
   | ExpApp of expr * expr (** application, e.g. (fun (x, y) -> x + y) (1, 2) *)
   | ExpTup of expr * expr * expr list (** tuple expression, e.g. (e1, e2), (x, y, z) *)
-  | ExpMatch of expr * case_expr * case_expr list (** pattern matching, e.g. match x with | 0 -> "zero" | _ -> "nonzero" *)
+  | ExpMatch of expr * case_expr * case_expr list
+  (** pattern matching, e.g. match x with | 0 -> "zero" | _ -> "nonzero" *)
   | ExpOption of expr option (** optonal expression, e.g. Some x*)
   | ExpWithTyp of typ * expr (** typed expression, e.g. a: int *)
 [@@deriving show { with_path = false }]
@@ -92,8 +96,7 @@ and case_expr =
 [@@deriving show { with_path = false }]
 
 type structure_item =
-  | EvalExp of expr
-  (** an expression to be evaluated but not bound, e.g. 1 + 2*)
+  | EvalExp of expr (** an expression to be evaluated but not bound, e.g. 1 + 2*)
   | Binding of rec_flag * let_binding * let_binding list
   (** a value or function binding, e.g. let x = 1*)
 [@@deriving show { with_path = false }]
