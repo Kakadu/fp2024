@@ -1,0 +1,9 @@
+(library
+ (name interp)
+ (inline_tests)
+ (public_name FSharpUnitsOfMeasure.Interp)
+ (libraries base ast checks)
+ (preprocess
+  (pps ppx_expect ppx_inline_test ppx_deriving.show ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx)))

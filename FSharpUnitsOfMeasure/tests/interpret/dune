@@ -1,0 +1,8 @@
+(library
+ (name interp_tests)
+ (inline_tests)
+ (libraries ast angstrom parse interp)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+ (instrumentation
+  (backend bisect_ppx)))

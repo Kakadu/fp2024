@@ -1,0 +1,8 @@
+(library
+ (name tests_inference)
+ (inline_tests)
+ (libraries inference parse pprint checks)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+ (instrumentation
+  (backend bisect_ppx)))
