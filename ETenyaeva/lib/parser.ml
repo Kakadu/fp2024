@@ -231,8 +231,8 @@ let parse_tuple parse tuple =
 ;;
 
 let parse_pat_tuple parse_pat =
-  token "(" *> parse_tuple parse_pat (fun (fst_pat, snd_pat, pat_list) ->
-    PatTup (fst_pat, snd_pat, pat_list)) <* token ")"
+  parse_tuple parse_pat (fun (fst_pat, snd_pat, pat_list) ->
+    PatTup (fst_pat, snd_pat, pat_list))
 ;;
 
 let parse_pattern_option parse_pat =
@@ -336,8 +336,8 @@ let parse_exp_ident = parse_ident >>| fun id -> ExpVar id
 let parse_exp_constant = parse_constant >>| fun const -> ExpConst const
 
 let parse_exp_tuple parse_exp =
-  token "(" *> parse_tuple parse_exp (fun (fst_exp, snd_exp, exp_list) ->
-    ExpTup (fst_exp, snd_exp, exp_list)) <* token ")"
+  parse_tuple parse_exp (fun (fst_exp, snd_exp, exp_list) ->
+    ExpTup (fst_exp, snd_exp, exp_list))
 ;;
 
 let parse_list_construct_case_exp parse_exp =
