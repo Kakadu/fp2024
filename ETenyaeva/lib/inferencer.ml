@@ -116,7 +116,6 @@ module Type = struct
    variable is contained in the set of free variables of this type*)
   let rec occurs_in var = function
     | TypOption ty | TypList ty -> occurs_in var ty
-    | TypVar name -> String.equal name var
     | TypTuple (fst_ty, snd_ty, ty_list) ->
       List.exists ~f: (occurs_in var) (fst_ty :: snd_ty :: ty_list)
     | TypArrow (l, r) -> occurs_in var l || occurs_in var r
@@ -361,7 +360,7 @@ module Infer = struct
           pat_list
       in
       return (env_rest, TypTuple (ty1, ty2, ty_list))
-    | PatOption None -> return (env, TypOption TypUnit)
+    | PatOption None -> (let* fresh = fresh_var in return (env, TypOption (fresh)))
     | PatOption (Some pat) ->
       let* env, ty = infer_pattern env pat in
       return (env, TypOption ty)
@@ -584,7 +583,7 @@ module Infer = struct
     | ExpListConstructor expr_list ->
       let* fresh = fresh_var in
       let rec infer_list_constract env acc_sub = function
-        | [] -> return (Subst.empty, TypOption TypUnit)
+        | [] -> (let* fresh1 = fresh_var in return (Subst.empty, TypOption fresh1))
         | end_element :: [] ->
           let* expr_sub, expr_ty = infer_expression env end_element in
           let* unified_sub = unify expr_ty (TypList fresh) in
@@ -599,7 +598,7 @@ module Infer = struct
           return (sub, ty)
       in
       infer_list_constract env Subst.empty expr_list
-    | ExpOption None -> return (Subst.empty, TypOption TypUnit)
+    | ExpOption None -> (let* fresh = fresh_var in return (Subst.empty, TypOption fresh ))
     | ExpOption (Some expr) ->
       let* sub, ty = infer_expression env expr in
       return (sub, TypOption ty)
