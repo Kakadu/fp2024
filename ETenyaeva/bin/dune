@@ -1,6 +1,7 @@
 (executable
- (name main)
- (public_name ETenyaeva)
- (libraries ETenyaeva_lib)
- (instrumentation
-  (backend bisect_ppx)))
+ (name REPL)
+ (public_name REPL)
+ (libraries ETenyaeva_lib))
+
+(cram
+ (deps ./REPL.exe %{bin:REPL}))
