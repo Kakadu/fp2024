@@ -321,8 +321,7 @@ let%expect_test "prs_typ_arrow_simple" =
 
 let%expect_test "prs_typ_arrow_nested" =
   pp pp_typ (prs_typ_arrow prs_typ_constant) "int -> string -> bool";
-  [%expect
-    {| int -> string -> bool |}]
+  [%expect {| int -> string -> bool |}]
 ;;
 
 let%expect_test "prs_typ_tup_pair" =
