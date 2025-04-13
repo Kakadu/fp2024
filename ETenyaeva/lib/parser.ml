@@ -19,10 +19,6 @@ let skip_round_par parse =
   token "(" *> parse <* (token ")" <|> fail "There is no closing bracket.")
 ;;
 
-let skip_square_par parse =
-  token "[" *> parse <* (token "]" <|> fail "There is no closing bracket.")
-;;
-
 let is_keyword = function
   | "let"
   | "rec"
@@ -113,10 +109,6 @@ let parse_chain_right_associative parse parse_fun =
   let* elem = parse in
   go elem
 ;;
-
-(* ================= recursion flag ================= *)
-
-let parse_rec_flag = ws *> option NonRec (keyword "rec" *> return Rec)
 
 (* ==================== constant ==================== *)
 
