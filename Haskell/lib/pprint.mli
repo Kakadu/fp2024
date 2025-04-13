@@ -6,3 +6,4 @@ open Typedtree
 
 val pp_ty : Format.formatter -> ty -> unit
 val pp_error : Format.formatter -> error -> unit
+val pp_eval_err : Format.formatter -> Eval.crit_err -> unit

@@ -1,4 +1,4 @@
-(** Copyright 2024, Karim Shakirov, Alexei Dmitrievtsev *)
+(** Copyright 2024-2025, Karim Shakirov, Alexei Dmitrievtsev *)
 
 (** SPDX-License-Identifier: MIT *)
 
@@ -30,10 +30,8 @@ let rec shrink_type = function
          >|= fun new_arg_types -> Type_func (new_arg_types, return_types))
     <+> (list ~shrink:shrink_type return_types
          >|= fun new_return_types -> Type_func (arg_types, new_return_types))
-  | Type_chan (chan_dir, type') ->
-    return Type_int
-    <+> (shrink_type type' >|= fun t -> Type_chan (chan_dir, t))
-    <+> return type'
+  | Type_chan type' ->
+    return Type_int <+> (shrink_type type' >|= fun t -> Type_chan t) <+> return type'
 ;;
 
 let shrink_id_and_type id_and_t =
@@ -410,21 +408,21 @@ let shrink_if_for_init shblock = function
         return (Init_receive new_chan)
 ;;
 
-let rec shrink_if shblock if' =
-  let { init; cond; if_body; else_body } = if' in
-  return { init = None; cond = Expr_ident "a"; if_body = []; else_body = None }
+let rec shrink_if shblock { if_init; if_cond; if_body; else_body } =
+  return { if_init = None; if_cond = Expr_ident "a"; if_body = []; else_body = None }
   <+> (let* new_init =
          return None
          <+>
-         match init with
-         | Some init -> return None <+> (shrink_if_for_init shblock init >|= Option.some)
+         match if_init with
+         | Some if_init ->
+           return None <+> (shrink_if_for_init shblock if_init >|= Option.some)
          | None -> empty
        in
-       return { init = new_init; cond; if_body; else_body })
-  <+> (let* new_cond = shrink_expr shblock (shrink_args shblock) cond in
-       return { init; cond = new_cond; if_body; else_body })
+       return { if_init = new_init; if_cond; if_body; else_body })
+  <+> (let* new_cond = shrink_expr shblock (shrink_args shblock) if_cond in
+       return { if_init; if_cond = new_cond; if_body; else_body })
   <+> (let* new_if_body = shblock if_body in
-       return { init; cond; if_body = new_if_body; else_body })
+       return { if_init; if_cond; if_body = new_if_body; else_body })
   <+> let* new_else_body =
         return None
         <+>
@@ -435,7 +433,7 @@ let rec shrink_if shblock if' =
           return None <+> (shrink_if shblock if' >|= fun if' -> Some (Else_if if'))
         | None -> empty
       in
-      return { init; cond; if_body; else_body = new_else_body }
+      return { if_init; if_cond; if_body; else_body = new_else_body }
 ;;
 
 let shrink_stmt shblock = function
@@ -484,37 +482,39 @@ let shrink_stmt shblock = function
     <+> (list ~shrink:(shrink_expr shblock (shrink_args shblock)) exprs
          >|= fun exprs -> Stmt_return exprs)
   | Stmt_if if' -> return Stmt_break <+> (shrink_if shblock if' >|= fun if' -> Stmt_if if')
-  | Stmt_for { init; cond; post; body } ->
+  | Stmt_for { for_init; for_cond; for_post; for_body } ->
     return Stmt_break
     <+> (let* new_init =
            return None
            <+>
-           match init with
-           | Some init -> return None <+> (shrink_if_for_init shblock init >|= Option.some)
+           match for_init with
+           | Some if_init ->
+             return None <+> (shrink_if_for_init shblock if_init >|= Option.some)
            | None -> empty
          in
-         return (Stmt_for { init = new_init; cond; post; body }))
+         return (Stmt_for { for_init = new_init; for_cond; for_post; for_body }))
     <+> (let* new_cond =
            return None
            <+>
-           match cond with
-           | Some cond ->
+           match for_cond with
+           | Some if_cond ->
              return None
-             <+> (shrink_expr shblock (shrink_args shblock) cond >|= Option.some)
+             <+> (shrink_expr shblock (shrink_args shblock) if_cond >|= Option.some)
            | None -> empty
          in
-         return (Stmt_for { init; cond = new_cond; post; body }))
+         return (Stmt_for { for_init; for_cond = new_cond; for_post; for_body }))
     <+> (let* new_post =
            return None
            <+>
-           match post with
-           | Some post -> return None <+> (shrink_if_for_init shblock post >|= Option.some)
+           match for_post with
+           | Some for_post ->
+             return None <+> (shrink_if_for_init shblock for_post >|= Option.some)
            | None -> empty
          in
-         return (Stmt_for { init; cond; post = new_post; body }))
+         return (Stmt_for { for_init; for_cond; for_post = new_post; for_body }))
     <+>
-    let* new_body = shblock body in
-    return (Stmt_for { init; cond; post; body = new_body })
+    let* new_body = shblock for_body in
+    return (Stmt_for { for_init; for_cond; for_post; for_body = new_body })
   | Stmt_block block ->
     return Stmt_break <+> (shblock block >|= fun block -> Stmt_block block)
 ;;

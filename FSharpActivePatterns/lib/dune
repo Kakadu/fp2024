@@ -9,7 +9,10 @@
   KeywordChecker
   Inferencer
   TypedTree
-  TypesPp)
+  TypesPp
+  Interpreter
+  ExtractIdents
+  REPLUtils)
  (libraries angstrom base)
  (preprocess
   (pps ppx_deriving_qcheck ppx_deriving.show))

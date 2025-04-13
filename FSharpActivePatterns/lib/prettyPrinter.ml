@@ -57,6 +57,7 @@ let rec pp_pattern fmt = function
      | None -> fprintf fmt "None "
      | Some p -> fprintf fmt "Some (%a) " pp_pattern p)
   | PConstraint (p, t) -> fprintf fmt "(%a : %a) " pp_pattern p pp_typ t
+  | PActive (Ident name, p) -> fprintf fmt "%s %a" name pp_pattern p
 
 and pp_expr fmt expr =
   match expr with
@@ -117,6 +118,9 @@ and pp_expr fmt expr =
      | None -> fprintf fmt "None "
      | Some e -> fprintf fmt "Some (%a)" pp_expr e)
   | EConstraint (e, t) -> fprintf fmt "(%a : %a) " pp_expr e pp_typ t
+  | ActPatConstructor (Ident name, e) ->
+    fprintf fmt " %s " name;
+    fprintf fmt "(%a)" pp_expr e
 
 and pp_args fmt args =
   let open Format in
@@ -140,6 +144,17 @@ let pp_statement fmt = function
       pp_let_bind
       fmt
       (let_bind :: let_bind_list)
+  | ActPat (Ident name, names, args, expr) ->
+    fprintf fmt "let (|%s|" name;
+    pp_print_list
+      ~pp_sep:(fun fmt () -> fprintf fmt "|")
+      (fun fmt (Ident name) -> fprintf fmt "%s" name)
+      fmt
+      names;
+    fprintf fmt "|) ";
+    pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt " ") pp_pattern fmt args;
+    fprintf fmt " =\n";
+    pp_expr fmt expr
 ;;
 
 let pp_construction fmt = function

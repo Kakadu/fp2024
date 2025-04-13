@@ -5,15 +5,6 @@
 open Ocaml_printf_lib.Qchecker
 
 let () =
-  let _ : int =
-    run_gen ~show_passed:true "the manual generator" TestQCheckManual.gen_structure
-  in
-  ()
-;;
-
-let () =
-  let _ : int =
-    run_gen ~show_shrinker:true "the auto generator" Ocaml_printf_lib.Ast.gen_structure
-  in
+  let _ : int = run_gen ~show_passed:false ~show_shrinker:false ~count:10 in
   ()
 ;;

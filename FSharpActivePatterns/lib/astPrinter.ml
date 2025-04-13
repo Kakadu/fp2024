@@ -64,6 +64,11 @@ let rec print_pattern indent fmt = function
     print_pattern (indent + 2) fmt p;
     fprintf fmt "%sType:\n" (String.make (indent + 2) ' ');
     fprintf fmt "%s| %a\n" (String.make (indent + 2) '-') pp_typ t
+  | PActive (Ident name, p) ->
+    fprintf fmt "%s| PActive\n" (String.make indent ' ');
+    fprintf fmt "%sName: %s \n" (String.make (indent + 2) ' ') name;
+    fprintf fmt "%sPattern:\n" (String.make (indent + 2) ' ');
+    print_pattern (indent + 2) fmt p
 ;;
 
 let print_unary_op indent fmt = function
@@ -171,6 +176,11 @@ and print_expr indent fmt expr =
     print_expr (indent + 2) fmt e;
     fprintf fmt "%sType:\n" (String.make (indent + 2) ' ');
     fprintf fmt "%s| %a\n" (String.make (indent + 2) '-') pp_typ t
+  | ActPatConstructor (Ident name, e) ->
+    fprintf fmt "%s| EActPatConstructor\n" (String.make indent ' ');
+    fprintf fmt "%s| %s\n" (String.make (indent + 2) ' ') name;
+    fprintf fmt "%sExpr:\n" (String.make (indent + 2) ' ');
+    print_expr (indent + 2) fmt e
 ;;
 
 let print_statement indent fmt = function
@@ -184,15 +194,17 @@ let print_statement indent fmt = function
        | Rec -> "Rec ");
     fprintf fmt "%s Let_binds\n" (String.make (indent + 2) ' ');
     List.iter (print_let_bind (indent + 2) fmt) (let_bind :: let_bind_list)
+  | ActPat (Ident name, name_list, args, expr) ->
+    fprintf fmt "%s| Active Pattern\n" (String.make indent '-');
+    fprintf fmt "%s| %s\n" (String.make (indent + 2) ' ') name;
+    List.iter
+      (fun (Ident name) -> fprintf fmt "%s| %s\n" (String.make (indent + 2) ' ') name)
+      name_list;
+    fprintf fmt "%s| ARGS\n" (String.make indent '-');
+    List.iter (fun pat -> print_pattern (indent + 2) fmt pat) args;
+    fprintf fmt "%s| BODY\n" (String.make indent '-');
+    print_expr (indent + 2) fmt expr
 ;;
-
-(* | ActivePattern (patterns, expr) ->
-   fprintf fmt "%s| ActivePattern:\n" (String.make indent '-');
-   List.iter
-   (fun (Ident (param, _)) ->
-   fprintf fmt "%s- %s\n" (String.make (indent + 2) '-') param)
-   patterns;
-   print_expr (indent + 2) fmt expr *)
 
 let print_construction fmt = function
   | Expr e -> print_expr 0 fmt e

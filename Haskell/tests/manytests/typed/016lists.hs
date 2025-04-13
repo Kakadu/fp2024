@@ -8,8 +8,8 @@ append xs ys = case xs of [] -> ys; x:xs -> x:(append xs ys)
 
 concat = let helper xs = case xs of [] -> []; h:tl -> append h (helper tl) in helper
 
-iter f xs = case xs of [] -> (); h:tl -> let () = f h in iter f tl
+iter f xs = case xs of [] -> (); h:tl -> seq (f h) (iter f tl)
 
 cartesian xs ys = case xs of [] -> []; h:tl -> append (map (\a -> (h,a)) ys) (cartesian tl ys)
 
-main = let () = iter print_int [1,2,3] in let () = print_int (length (cartesian [1,2] [1,2,3,4])) in 0
+main = seq (iter print_int [1,2,3]) (seq (print_int (length (cartesian [1,2] [1,2,3,4]))) 0)

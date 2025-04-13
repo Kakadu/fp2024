@@ -8,13 +8,17 @@ open TypesPp
 
 type ident = Ident of string (** identifier *) [@@deriving show { with_path = false }]
 
-let gen_varname =
+let gen_char_of_range l r =
+  QCheck.Gen.(map Char.chr (int_range (Char.code l) (Char.code r)))
+;;
+
+let gen_varname ~uppercase =
   let open QCheck.Gen in
   let loop =
-    let gen_char_of_range l r = map Char.chr (int_range (Char.code l) (Char.code r)) in
     let gen_first_char =
-      frequency
-        [ 26, gen_char_of_range 'a' 'z'; 26, gen_char_of_range 'A' 'Z'; 1, return '_' ]
+      if uppercase
+      then frequency [ 26, gen_char_of_range 'A' 'Z'; 1, return '_' ]
+      else frequency [ 26, gen_char_of_range 'a' 'z'; 1, return '_' ]
     in
     let gen_next_char =
       frequency [ 26 + 26 + 1, gen_first_char; 10, gen_char_of_range '0' '9' ]
@@ -27,8 +31,8 @@ let gen_varname =
   loop >>= fun name -> if is_keyword name then loop else return name
 ;;
 
-let gen_ident = QCheck.Gen.map (fun s -> Ident s) gen_varname
-(* let gen_ident_small_list = QCheck.Gen.(list_size (0 -- 3) gen_ident) *)
+let gen_ident = QCheck.Gen.map (fun s -> Ident s) (gen_varname ~uppercase:false)
+let gen_ident_uppercase = QCheck.Gen.map (fun s -> Ident s) (gen_varname ~uppercase:true)
 
 let gen_escape_sequence =
   let open QCheck.Gen in
@@ -101,6 +105,8 @@ type pattern =
   | POption of pattern option
   (*| Variant of (ident list[@gen gen_ident_small_list]) (** | [Blue, Green, Yellow] -> *) *)
   | PConstraint of pattern * (typ[@gen gen_typ_primitive])
+  | PActive of (ident[@gen gen_ident_uppercase]) * pattern
+  (** | Email str -> _ | Phone [(num, country)] -> _ *)
 [@@deriving show { with_path = false }, qcheck]
 
 type is_recursive =
@@ -151,6 +157,9 @@ and expr =
       * expr (** [let rec f x = if (x <= 0) then x else g x and g x = f (x-2) in f 3] *)
   | Option of expr option (** [int option] *)
   | EConstraint of expr * (typ[@gen gen_typ_primitive])
+  | ActPatConstructor of
+      (ident[@gen gen_ident_uppercase]) * (expr[@gen gen_expr_sized (n / 4)])
+  (** return Phone [(num, country)] *)
 [@@deriving show { with_path = false }, qcheck]
 
 and let_bind =
@@ -178,8 +187,11 @@ type statement =
       * let_bind
       * (let_bind list[@gen QCheck.Gen.(list_size (0 -- 2) gen_let_bind)])
   (** [let name = expr] *)
-(*| ActivePattern of (ident list[@gen gen_ident_small_list]) * expr
-  (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)*)
+  | ActPat of
+      (ident[@gen gen_ident_uppercase])
+      * (ident list[@gen QCheck.Gen.(list_size (0 -- 3) gen_ident_uppercase)])
+      * (pattern list[@gen QCheck.Gen.(list_size (0 -- 2) gen_pattern)])
+      * expr (** [let (|Even|Odd|) input = if input % 2 = 0 then Even else Odd] *)
 [@@deriving show { with_path = false }, qcheck]
 
 type construction =

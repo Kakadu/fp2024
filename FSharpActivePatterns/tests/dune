@@ -3,7 +3,7 @@
  (deps ../lib/tests/run_qcheck.exe))
 
 (cram
- (applies_to inference)
+ (applies_to interpret_manytests)
  (deps
   ../bin/REPL.exe
   manytests/do_not_type/001.ml
@@ -26,3 +26,14 @@
   manytests/typed/010sukharev.ml
   manytests/typed/015tuples.ml
   manytests/typed/016lists.ml))
+
+(cram
+ (applies_to activePatterns)
+ (deps ../bin/REPL.exe activepatterns/choices.fs activepatterns/simple.fs))
+
+(cram
+ (applies_to interpret)
+ (deps
+  ../bin/REPL.exe
+  interpreter_tests/rev_list.fs
+  interpreter_tests/fmap.fs))

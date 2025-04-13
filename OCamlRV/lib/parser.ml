@@ -27,7 +27,14 @@ let is_keyword = function
   | _ -> false
 ;;
 
-let ws = take_while Char.is_whitespace
+let skip_comment =
+  take_while Char.is_whitespace
+  *> string "(*"
+  *> many_till any_char (string "*)")
+  *> return ()
+;;
+
+let ws = many skip_comment *> take_while Char.is_whitespace
 let token s = ws *> string s
 
 let chainl1 e op =
@@ -38,9 +45,8 @@ let chainl1 e op =
 (*--------------------------- Constants ---------------------------*)
 
 let integer =
-  let* sign = choice [ token "-"; token "+"; token "" ] in
-  let* digits = take_while1 Char.is_digit in
-  return (Int.of_string (sign ^ digits))
+  let* digits = ws *> take_while1 Char.is_digit in
+  return (Int.of_string digits)
 ;;
 
 let pinteger = integer >>| fun i -> CInt i
@@ -51,13 +57,22 @@ let pbool =
   choice [ t; f ]
 ;;
 
-let pstring =
-  token "\""
-  *> take_while (function
+let escaped_char =
+  char '\\'
+  *> choice [ char 'n' *> return '\n'; char '\\' *> return '\\'; char '"' *> return '"' ]
+;;
+
+let regular_char =
+  satisfy (function
     | '"' -> false
+    | '\\' -> false
     | _ -> true)
+;;
+
+let pstring =
+  token "\"" *> many (escaped_char <|> regular_char)
   <* char '"'
-  >>| fun s -> CString s
+  >>| fun s -> CString (String.of_char_list s)
 ;;
 
 let punit = token "()" *> return CUnit
@@ -68,8 +83,14 @@ let pconstant = choice [ pinteger; pbool; pstring; punit; pnil ]
 
 let rec annot_list t =
   let* base = t in
-  let* _ = ws *> string "list" in
+  let* _ = token "list" in
   annot_list (return (AList base)) <|> return (AList base)
+;;
+
+let annot_option t =
+  let* base = t in
+  let* _ = token "option" in
+  return (AOption base)
 ;;
 
 let annot_alone =
@@ -84,7 +105,8 @@ let annot_alone =
 let parse_type_annotation =
   let alone = annot_alone in
   let list_type = annot_list alone <|> alone in
-  list_type
+  let opt_type = annot_option list_type <|> list_type in
+  opt_type
 ;;
 
 let pattern_with_type ppat =
@@ -99,17 +121,15 @@ let ppany = token "_" *> return PAny
 let ppconstant = pconstant >>| fun a -> PConstant a
 
 let variable =
-  let* fst =
-    ws
-    *> satisfy (function
-      | 'a' .. 'z' | '_' -> true
-      | _ -> false)
-  in
-  let* rest = take_while is_id in
-  match String.of_char fst ^ rest with
-  | "_" -> fail "Wildcard can't be used as indetifier"
-  | s when is_keyword s -> fail "Keyword can't be used as identifier"
-  | name -> return name
+  let* fst = ws *> peek_char_fail in
+  match fst with
+  | 'a' .. 'z' | '_' ->
+    let* rest = take_while is_id in
+    (match rest with
+     | "_" -> fail "Wildcard can't be used as indetifier"
+     | s when is_keyword s -> fail "Keyword can't be used as identifier"
+     | name -> return name)
+  | _ -> fail "Invalid literal"
 ;;
 
 let ppvariable = variable >>| fun v -> PVar v
@@ -138,16 +158,25 @@ let ppcons pe =
   return (helper (e1 :: rest))
 ;;
 
+let pplist pe =
+  brackets @@ sep_by1 (token ";") pe
+  >>| function
+  | [] -> PConstant CNil
+  | [ x ] -> PList (x, [])
+  | x :: xs -> PList (x, xs)
+;;
+
 let pattern =
   fix (fun pat ->
     let term =
       choice
-        [ ppany
+        [ ppvariable
+        ; ppany
         ; ppconstant
-        ; ppvariable
         ; pparens pat
         ; pp_option pat
         ; pattern_with_type pat
+        ; pplist pat
         ]
     in
     let cons = ppcons term in
@@ -181,6 +210,18 @@ let pematch pe =
   let pexpr = token "match" *> pe <* token "with" <* option "" grd in
   let pcase = lift2 (fun p e -> p, e) (pattern <* token "->") pe in
   lift2 ematch pexpr (sep_by1 grd pcase)
+;;
+
+let efunction = function
+  | [] -> ExprOption None (* unreachable *)
+  | [ x ] -> ExprFunction (x, [])
+  | x :: xs -> ExprFunction (x, xs)
+;;
+
+let pefunction pe =
+  let* _ = token "function" <* option "" grd in
+  let pcase = lift2 (fun p e -> p, e) (pattern <* token "->") pe in
+  lift efunction (sep_by1 grd pcase)
 ;;
 
 let petuple pe =
@@ -237,8 +278,15 @@ let parse_rec_flag =
   if is_rec then return Rec else return NonRec
 ;;
 
+let annot_expr pe =
+  lift2 (fun expr annot -> ExprType (expr, annot)) (pe <* token ":") parse_type_annotation
+;;
+
 let efunf ps e = List.fold_right ps ~f:efun ~init:e
-let pbinding pe = both pattern (lift2 efunf (many pattern <* token "=") pe)
+
+let pbinding pe =
+  both pattern (lift2 efunf (many pattern <* token "=") (annot_expr pe <|> pe))
+;;
 
 let pelet pe =
   lift4
@@ -270,15 +318,16 @@ let expr =
   fix (fun expr ->
     let term = choice [ pevar; peconstant; pelist expr; pparens expr ] in
     let apply = chainl1 term (return eapply) in
-    let cons = pecons apply in
+    let apply_with_annot = annot_expr apply <|> apply in
+    let cons = pecons apply_with_annot in
     let ife = peif expr <|> cons in
     let opt = p_option ife <|> ife in
-    let ops1 = chainl1 opt (pmul <|> pdiv) in
+    let unops = opt <|> peunop opt in
+    let ops1 = chainl1 unops (pmul <|> pdiv) in
     let ops2 = chainl1 ops1 (padd <|> psub) in
-    let unops = ops2 <|> peunop ops2 in
-    let cmp = chainl1 unops pcmp in
+    let cmp = chainl1 ops2 pcmp in
     let tuple = petuple cmp <|> cmp in
-    choice [ tuple; pelet expr; pematch expr; pefun expr ])
+    choice [ pefunction expr; tuple; pelet expr; pematch expr; pefun expr ])
 ;;
 
 (*--------------------------- Structure ---------------------------*)
@@ -297,7 +346,7 @@ let pstructure =
 
 let structure =
   let psemicolon = token ";;" in
-  many (pstructure <* psemicolon <* ws)
+  many (pstructure <* psemicolon <* ws <|> (pstructure <* ws))
 ;;
 
 let parse s = parse_string ~consume:All structure s

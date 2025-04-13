@@ -1,6 +1,7 @@
 (executable
- (name factorial_ast)
- (public_name factorial_ast)
- (libraries lib)
- (instrumentation
-  (backend bisect_ppx)))
+ (name REPL)
+ (public_name REPL)
+ (libraries lib))
+
+(cram
+ (deps ./REPL.exe %{bin:REPL}))
