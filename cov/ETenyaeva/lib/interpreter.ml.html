@@ -1062,8 +1062,8 @@ end
 module EvalEnv = struct
   open Base
 
-  let empty = Map.empt<span data-count="55">y</span> (module String)
-  let extend env key value = <span data-count="960">M</span>ap.update env key ~f:(fun _ -&gt; <span data-count="960">v</span>alue)
+  let empty = Map.empt<span data-count="44">y</span> (module String)
+  let extend env key value = <span data-count="938">M</span>ap.update env key ~f:(fun _ -&gt; <span data-count="938">v</span>alue)
 
   let compose env1 env2 =
     <span data-count="80">M</span>ap.fold env2 ~f:(fun ~key ~data env_acc -&gt; <span data-count="358">e</span>xtend env_acc key data) ~init:env1
@@ -1410,7 +1410,7 @@ let empty_env = EvalEnv.empty
 
 let env_with_print_funs =
   let env = EvalEnv.extend empty_env "print_int" (ValBuiltin "print_int") in
-  <span data-count="55">E</span>valEnv.exten<span data-count="55">d</span> env "print_endline" (ValBuiltin "print_endline")
+  <span data-count="44">E</span>valEnv.exten<span data-count="44">d</span> env "print_endline" (ValBuiltin "print_endline")
 ;;
 
 let run_interpreter = Inter.eval_structure
