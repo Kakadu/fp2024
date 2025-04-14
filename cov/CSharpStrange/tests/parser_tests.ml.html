@@ -292,9 +292,9 @@
 <a id="L268"></a><span > </span>
 <a id="L269"></a><span > </span>
 <a id="L270"></a><span > </span>
-<a id="L271"></a><span > </span>
+<a id="L271"></a><span class="visited"> </span>
 <a id="L272"></a><span > </span>
-<a id="L273"></a><span class="visited"> </span>
+<a id="L273"></a><span > </span>
 <a id="L274"></a><span > </span>
 <a id="L275"></a><span > </span>
 <a id="L276"></a><span > </span>
@@ -331,17 +331,17 @@
 <a id="L307"></a><span > </span>
 <a id="L308"></a><span > </span>
 <a id="L309"></a><span > </span>
-<a id="L310"></a><span > </span>
+<a id="L310"></a><span class="visited"> </span>
 <a id="L311"></a><span > </span>
-<a id="L312"></a><span class="visited"> </span>
+<a id="L312"></a><span > </span>
 <a id="L313"></a><span > </span>
 <a id="L314"></a><span > </span>
 <a id="L315"></a><span > </span>
-<a id="L316"></a><span > </span>
+<a id="L316"></a><span class="visited"> </span>
 <a id="L317"></a><span > </span>
 <a id="L318"></a><span > </span>
 <a id="L319"></a><span > </span>
-<a id="L320"></a><span class="visited"> </span>
+<a id="L320"></a><span > </span>
 <a id="L321"></a><span > </span>
 <a id="L322"></a><span > </span>
 <a id="L323"></a><span > </span>
@@ -358,11 +358,11 @@
 <a id="L334"></a><span > </span>
 <a id="L335"></a><span > </span>
 <a id="L336"></a><span > </span>
-<a id="L337"></a><span > </span>
+<a id="L337"></a><span class="visited"> </span>
 <a id="L338"></a><span > </span>
 <a id="L339"></a><span > </span>
 <a id="L340"></a><span > </span>
-<a id="L341"></a><span class="visited"> </span>
+<a id="L341"></a><span > </span>
 <a id="L342"></a><span > </span>
 <a id="L343"></a><span > </span>
 <a id="L344"></a><span > </span>
@@ -390,11 +390,11 @@
 <a id="L366"></a><span > </span>
 <a id="L367"></a><span > </span>
 <a id="L368"></a><span > </span>
-<a id="L369"></a><span > </span>
+<a id="L369"></a><span class="visited"> </span>
 <a id="L370"></a><span > </span>
 <a id="L371"></a><span > </span>
 <a id="L372"></a><span > </span>
-<a id="L373"></a><span class="visited"> </span>
+<a id="L373"></a><span > </span>
 <a id="L374"></a><span > </span>
 <a id="L375"></a><span > </span>
 <a id="L376"></a><span > </span>
@@ -444,10 +444,6 @@
 <a id="L420"></a><span > </span>
 <a id="L421"></a><span > </span>
 <a id="L422"></a><span > </span>
-<a id="L423"></a><span > </span>
-<a id="L424"></a><span > </span>
-<a id="L425"></a><span > </span>
-<a id="L426"></a><span > </span>
 </pre>
       </div>
       <div id="text-layer">
@@ -874,10 +870,6 @@
 <a href="#L420">420</a>
 <a href="#L421">421</a>
 <a href="#L422">422</a>
-<a href="#L423">423</a>
-<a href="#L424">424</a>
-<a href="#L425">425</a>
-<a href="#L426">426</a>
 </pre>
 <pre><code class="ocaml">(** Copyright 2025, Dmitrii Kuznetsov *)
 
@@ -1135,9 +1127,7 @@ let%test "Parse method 1" =
 ;;
 
 let%test "Parse method 2" =
-  <span data-count="1">a</span>pply_parse<span data-count="1">r</span>
-    parse_method_member
-    {|public int Func() 
+  <span data-count="1">a</span>pply_parse<span data-count="1">r</span> parse_method_member {|public int Func() 
   {
     return 2;
   }|}
@@ -1190,9 +1180,7 @@ let%test "Parse method 3" =
 ;;
 
 let%test "Parse class 1" =
-  <span data-count="1">a</span>pply_parse<span data-count="1">r</span>
-    parse_class
-    {|
+  <span data-count="1">a</span>pply_parse<span data-count="1">r</span> parse_class {|
   public class Sample {}|}
   = Ok (Class ([ MPublic ], Id "Sample", []))
 ;;
