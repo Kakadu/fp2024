@@ -3,15 +3,11 @@
 (** SPDX-License-Identifier: MIT *)
 
 open Angstrom
-open Ast
+open Forest.Ast
 
+val skip_ws : unit t
 val trim : 'a t -> 'a t
-val token : id -> id t
+val token : string -> string t
 val round_par : 'a t -> 'a t
 val square_par : 'a t -> 'a t
-val pid : id t
-val pint : const t
-val pstr : const t
-val pbool : const t
-val punit : const t
-val pconst : const t
+val prs_id : id t

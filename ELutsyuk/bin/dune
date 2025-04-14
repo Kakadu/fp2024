@@ -1,6 +1,10 @@
 (executable
- (name printAst)
- (public_name ELutsyuk.MiniML_printAst)
- (libraries parse ast)
+ (name main)
+ (public_name main)
+ (libraries
+  ELutsyuk.MiniML_Forest
+  ELutsyuk.MiniML_Parser
+  ELutsyuk.MiniML_Inferencer
+  ELutsyuk.MiniML_Interpreter)
  (instrumentation
   (backend bisect_ppx)))

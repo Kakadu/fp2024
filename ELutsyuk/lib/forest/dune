@@ -1,6 +1,8 @@
+(include_subdirs qualified)
+
 (library
- (name ast)
- (public_name ELutsyuk.MiniML_Ast)
+ (name forest)
+ (public_name ELutsyuk.MiniML_Forest)
  (libraries base angstrom)
  (preprocess
   (pps ppx_deriving.show))
