@@ -33,7 +33,7 @@ type var_type = TypeVar of _type [@@deriving eq, show { with_path = false }]
 
 (** Modifiers *)
 type modifier =
-  | MPublic (** Public modifier, used for main() method only  *)
+  | MPublic (** Public modifier, used for main() method only *)
   | MStatic (** Static modifier, used for main() method only *)
   | MAsync (** Async modifier *)
 [@@deriving eq, show { with_path = false }]

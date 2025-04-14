@@ -264,7 +264,7 @@ let parse_for body =
   let p_for =
     lift2
       (fun (f_init_p, f_cond_p, f_iter_p) f_body ->
-         SFor (f_init_p, f_cond_p, f_iter_p, f_body))
+        SFor (f_init_p, f_cond_p, f_iter_p, f_body))
       (parens
        @@ lift3
             (fun init cond incr -> init, cond, incr)

@@ -16,8 +16,8 @@ let () =
       ; "-filepath", Arg.String (fun file_path -> opts.file_path <- Some file_path), "\n"
       ]
       (fun _ ->
-         Stdlib.Format.eprintf "Something got wrong\n";
-         Stdlib.exit 1)
+        Stdlib.Format.eprintf "Something got wrong\n";
+        Stdlib.exit 1)
       "\n"
   in
   let path =
