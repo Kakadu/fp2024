@@ -48,7 +48,13 @@ let pp_modifier fmt = function
 let pp_var_decl fmt (Var (vt, id)) = fprintf fmt "%a %a" pp_var_type vt pp_ident id
 
 let pp_bin_op fmt = function
-  | OpAdd -> f -> fprintf fmt "!="
+  | OpAdd -> fprintf fmt "+"
+  | OpSub -> fprintf fmt "-"
+  | OpMul -> fprintf fmt "*"
+  | OpDiv -> fprintf fmt "/"
+  | OpMod -> fprintf fmt "%%"
+  | OpEqual -> fprintf fmt "=="
+  | OpNonEqual -> fprintf fmt "!="
   | OpLess -> fprintf fmt "<"
   | OpMore -> fprintf fmt ">"
   | OpLessEqual -> fprintf fmt "<="
