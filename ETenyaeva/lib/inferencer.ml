@@ -17,8 +17,9 @@ let rec pp_type fmt = function
   | TypArrow (ty1, ty2) -> fprintf fmt "%a -> %a" pp_type ty1 pp_type ty2
   | TypList ty ->
     (match ty with
-     | TypTuple _ -> fprintf fmt "(%a) list" pp_type ty
-     | _ -> fprintf fmt "%a list" pp_type ty)
+     | TypInt | TypBool | TypUnit | TypStr | TypVar _ | TypChar ->
+       fprintf fmt "%a list" pp_type ty
+     | _ -> fprintf fmt "(%a) list" pp_type ty)
   | TypTuple (f, s, xs) ->
     fprintf
       fmt
@@ -27,14 +28,15 @@ let rec pp_type fmt = function
          ~pp_sep:(fun _ _ -> printf " * ")
          (fun fmt ty ->
            match ty with
-           | TypTuple _ -> fprintf fmt "(%a)" pp_type ty
-           | _ -> pp_type fmt ty))
+           | TypInt | TypBool | TypUnit | TypStr | TypVar _ | TypChar -> pp_type fmt ty
+           | _ -> fprintf fmt "(%a)" pp_type ty))
       (f :: s :: xs)
   | TypOption TypUnit -> ()
   | TypOption ty ->
     (match ty with
-     | TypTuple _ -> fprintf fmt "(%a) option" pp_type ty
-     | _ -> fprintf fmt "%a option" pp_type ty)
+     | TypInt | TypBool | TypUnit | TypStr | TypVar _ | TypChar ->
+       fprintf fmt "%a option" pp_type ty
+     | _ -> fprintf fmt "(%a) option" pp_type ty)
 ;;
 
 type error =

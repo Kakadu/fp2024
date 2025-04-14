@@ -60,10 +60,10 @@
   $ cat manytests/typed/015tuples.ml | ../bin/REPL.exe --dinference
   val fix : (('a -> 'b) -> 'a -> 'b) -> 'a -> 'b
   val map : ('b -> 'a) -> 'b * 'b -> 'a * 'a
-  val fixpoly : 'a -> 'b * 'a -> 'b -> 'a -> 'b * 'a -> 'b * 'a -> 'b -> 'a -> 'b -> 'a -> 'b * 'a -> 'b
-  val feven : 'a * int -> int -> int -> int
-  val fodd : int -> int * 'a -> int -> int
-  val tie : int -> int * int -> int
+  val fixpoly : (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) * (('a -> 'b) * ('a -> 'b) -> 'a -> 'b) -> ('a -> 'b) * ('a -> 'b)
+  val feven : 'a * (int -> int) -> int -> int
+  val fodd : (int -> int) * 'a -> int -> int
+  val tie : (int -> int) * (int -> int)
   val meven : int -> int
   val modd : int -> int
   val main : int
@@ -73,7 +73,7 @@
   val length_tail : 'a list -> int
   val map : ('a -> 'b) -> 'a list -> 'b list
   val append : 'a list -> 'b list -> 'b list
-  val concat : 'a list list -> 'b list
+  val concat : ('a list) list -> 'b list
   val iter : ('a -> unit) -> 'a list -> unit
   val cartesian : 'a list -> 'c list -> 'b list
   val main : int
