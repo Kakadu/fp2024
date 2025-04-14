@@ -1,0 +1,10 @@
+#require "base";;
+#require "angstrom";;
+#load "parse.cmo";;
+#load "inference.cmo";;
+#load "interpreter.cmo";;
+open Ast;;
+open Parse;;
+open Inference;;
+open Interpreter;;
+
