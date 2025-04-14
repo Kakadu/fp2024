@@ -27,7 +27,6 @@ let reserved =
   ; "while"
   ; "public"
   ; "static"
-  ; "const"
   ; "void"
   ; "string"
   ; "char"
@@ -42,8 +41,6 @@ let reserved =
   ; "class"
   ; "async"
   ; "await"
-  ; "select"
-  ; "from"
   ]
 ;;
 
@@ -121,7 +118,6 @@ let parse_modifiers =
     (choice
        [ string "public" *> skip_spaces *> return MPublic
        ; string "static" *> skip_spaces *> return MStatic
-       ; string "const" *> skip_spaces *> return MConst
        ; string "async" *> skip_spaces *> return MAsync
        ])
   <|> fail "Modifier error"
@@ -139,13 +135,6 @@ let parse_type_word =
 ;;
 
 let parse_base_type = parse_type_word >>= fun tp -> return @@ TypeBase tp
-
-(* TODO: parse_divs properly *)
-let parse_array_type =
-  let parse_divs = option None (parse_int >>= fun n -> return @@ Some n) in
-  lift2 (fun tp _ -> TypeArray tp) parse_type_word (brackets parse_divs)
-;;
-
 let val_to_expr p = skip_spaces *> p >>| fun x -> EValue x
 
 let parse_value =
@@ -171,7 +160,7 @@ let parse_id =
 
 (* Variables && functions *)
 let parse_var_type =
-  choice ?failure_msg:(Some "Incorrect type") [ parse_array_type; parse_base_type ]
+  choice ?failure_msg:(Some "Incorrect type") [ parse_base_type ]
   >>= fun x -> return (TypeVar x)
 ;;
 
@@ -183,7 +172,7 @@ let parse_var =
 ;;
 
 let parse_id_expr = skip_spaces *> (parse_id >>| fun x -> EId x) <* skip_spaces
-let parse_call_id = parse_id_expr (* TODO Program.x *)
+let parse_call_id = parse_id_expr
 let parse_args_list arg = parens @@ sep_by (skip_spaces *> char ',') arg
 
 let parse_call_args id arg =
@@ -214,16 +203,12 @@ let ( ^=^ ) = parse_bin_op "=" OpAssign
 
 (* Unary operations *)
 let parse_un_op op typ = parse_op op typ >>| fun t a -> EUnOp (t, a)
-
-(*TODO: check for increment/decrement ??*)
 let ( ^!^ ) = parse_un_op "!" OpNot
-let parse_new = parse_un_op "new" OpNew
 
-(* TODO: parse arrays *)
 let parse_ops =
   fix (fun expr ->
     let lv1 = choice [ parens expr; parse_value; parse_call_expr expr; parse_id_expr ] in
-    let lv2 = chainl0 lv1 (choice [ parse_new; ( ^!^ ) ]) in
+    let lv2 = chainl0 lv1 (choice [ ( ^!^ ) ]) in
     let lv3 = chainl1 lv2 (choice [ ( ^*^ ); ( ^/^ ); ( ^%^ ) ]) in
     let lv4 = chainl1 lv3 (choice [ ( ^+^ ); ( ^-^ ) ]) in
     let lv5 = chainl1 lv4 (choice [ ( ^<=^ ); ( ^>=^ ); ( ^<^ ); ( ^>^ ) ]) in
@@ -238,7 +223,7 @@ let parse_assign =
   lift3 (fun id eq ex -> eq id ex) parse_id_expr ( ^=^ ) parse_ops <|> fail "Assign error"
 ;;
 
-(* Statements + LINQ *)
+(* Statements *)
 
 let get_opt p = p >>| fun x -> Some x
 
@@ -249,11 +234,9 @@ let parse_decl =
     (option None (skip_spaces *> char '=' *> parse_ops >>| fun e -> Some e))
 ;;
 
-(* TODO: check other return "" *)
 let expr_to_stmt expr = expr >>| fun x -> SExpr x
 let parse_stmt_ops = expr_to_stmt @@ choice [ parse_assign; parse_call_expr parse_ops ]
 
-(* TODO: Check block contains (esp. other ifs) *)
 let parse_if_else f_if_body =
   let parse_if_cond = string "if" *> skip_spaces *> parens parse_ops in
   let parse_else_cond ifls body =
@@ -271,7 +254,6 @@ let parse_if_else f_if_body =
   <|> fail "If error"
 ;;
 
-(* TODO: Check block contains *)
 let parse_for body =
   let expr_to_option_stmt expr = get_opt @@ expr_to_stmt expr in
   let p_body = body <|> (parse_stmt_ops <* skip_semicolons1) in
@@ -315,8 +297,6 @@ let parse_continue =
   skip_spaces *> string "continue" *> return SContinue <|> fail "Continue error"
 ;;
 
-(* {{}} TODO ??*)
-
 let parse_block =
   fix (fun block ->
     let sc p = p <* skip_semicolons1 in
@@ -339,9 +319,6 @@ let parse_block =
 ;;
 
 (* Program class functions *)
-(* TODO - tests!! *)
-
-(* Rewrite with lift3 lift2 *)
 let parse_field_sign =
   let f_value = skip_spaces *> char '=' *> get_opt parse_ops in
   lift4
@@ -355,9 +332,7 @@ let parse_field_sign =
 
 let parse_method_type =
   let parse_void = string "void" *> return TypeVoid in
-  choice
-    ?failure_msg:(Some "Not a method type")
-    [ parse_array_type; parse_base_type; parse_void ]
+  choice ?failure_msg:(Some "Not a method type") [ parse_base_type; parse_void ]
 ;;
 
 let parse_method_sign =

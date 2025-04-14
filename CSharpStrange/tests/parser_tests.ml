@@ -21,7 +21,7 @@ let%test "Parse one modifier 1" = apply_parser parse_modifiers {|static|} = Ok [
 let%test "Parse one modifier 2" = apply_parser parse_modifiers {|public|} = Ok [ MPublic ]
 
 let%test "Parse two modifiers" =
-  apply_parser parse_modifiers {|const async|} = Ok [ MConst; MAsync ]
+  apply_parser parse_modifiers {|public async|} = Ok [ MPublic; MAsync ]
 ;;
 
 let%test "Parse add 1" =
@@ -121,11 +121,6 @@ let%test "Parse multiple var declarations" =
                 ( OpAssign
                 , EId (Id "y")
                 , EBinOp (OpAssign, EId (Id "z"), EValue (ValInt 1)) )) ))
-;;
-
-let%test "Parse array declaration" =
-  apply_parser parse_decl {|int[] x|}
-  = Ok (SDecl (Var (TypeVar (TypeArray TypeInt), Id "x"), None))
 ;;
 
 let%test "Parse return 1" =

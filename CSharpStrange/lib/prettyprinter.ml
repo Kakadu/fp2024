@@ -32,7 +32,6 @@ let pp_base_type fmt = function
 
 let pp_type fmt = function
   | TypeBase bt -> pp_base_type fmt bt
-  | TypeArray bt -> fprintf fmt "%a[]" pp_base_type bt
   | TypeVoid -> fprintf fmt "void"
 ;;
 
@@ -41,7 +40,6 @@ let pp_var_type fmt (TypeVar t) = pp_type fmt t
 let pp_modifier fmt = function
   | MPublic -> fprintf fmt "public"
   | MStatic -> fprintf fmt "static"
-  | MConst -> fprintf fmt "const"
   | MAsync -> fprintf fmt "async"
 ;;
 
@@ -65,10 +63,7 @@ let pp_bin_op fmt = function
 ;;
 
 let pp_un_op fmt = function
-  | OpInc -> fprintf fmt "++"
-  | OpDec -> fprintf fmt "--"
   | OpNot -> fprintf fmt "!"
-  | OpNew -> fprintf fmt "new"
 ;;
 
 let rec pp_val_type fmt = function
@@ -76,7 +71,6 @@ let rec pp_val_type fmt = function
   | ValChar c -> fprintf fmt "'%c'" c
   | ValNull -> fprintf fmt "null"
   | ValBool b -> fprintf fmt "%b" b
-  | ValArray vs -> fprintf fmt "[|%a|]" (pp_list pp_val_type "; ") vs
   | ValString s -> fprintf fmt {|%S|} s
 ;;
 
@@ -84,19 +78,10 @@ let rec pp_expr fmt = function
   | EValue v -> pp_val_type fmt v
   | EBinOp (op, e1, e2) -> fprintf fmt "(%a %a %a)" pp_expr e1 pp_bin_op op pp_expr e2
   | EUnOp (op, e) -> fprintf fmt "(%a%a)" pp_un_op op pp_expr e
-  | EConst v -> fprintf fmt "const %a" pp_val_type v
   | EId id -> pp_ident fmt id
   | EArrayAccess (e1, e2) -> fprintf fmt "%a[%a]" pp_expr e1 pp_expr e2
   | EFuncCall (e, args) -> fprintf fmt "%a(%a)" pp_expr e (pp_list pp_expr ", ") args
-  | ELambda (e, s) -> fprintf fmt "(%a => %a)" pp_expr e pp_stmt s
   | EAwait e -> fprintf fmt "await %a" pp_expr e
-  | ELinqQuery q -> pp_linq_query fmt q
-
-and pp_from_clause fmt (FromClause (s, id)) = fprintf fmt "from %a in %s" pp_ident id s
-and pp_select_clause fmt (SelectClause e) = fprintf fmt "select %a" pp_expr e
-
-and pp_linq_query fmt (SQuery (fc, sc)) =
-  fprintf fmt "%a %a" pp_from_clause fc pp_select_clause sc
 ;;
 
 let rec pp_stmt fmt = function

@@ -8,8 +8,7 @@ type val_type =
   | ValChar of char (** Char value *)
   | ValNull (** Null *)
   | ValBool of bool (** Bool value *)
-  | ValArray of val_type list (** TODO: array value *)
-  | ValString of string (** TODO: string value *)
+  | ValString of string (** string value *)
 [@@deriving eq, show { with_path = false }]
 
 (** Identidicator *)
@@ -20,29 +19,22 @@ type base_type =
   | TypeInt (** Declaration of int *)
   | TypeChar (** Declaration of char *)
   | TypeBool (** Declaration of bool *)
-  | TypeString (** Declaration of string TODO*)
+  | TypeString (** Declaration of string *)
 [@@deriving eq, show { with_path = false }]
-(* TODO: declaration of strings?? *)
 
 (** Type delcaration *)
 type _type =
   | TypeBase of base_type (** Declaration of basic type *)
-  | TypeArray of base_type
-  | TypeVoid (** Declaration of void TODO: remove by specification?? *)
-    (* Declaration of array of basic type TODO: ranks & think about base_type *)
+  | TypeVoid (** Declaration of void *)
 [@@deriving eq, show { with_path = false }]
-(* TODO: records for arrays?? *)
-(* TODO: strings "" *)
 
 (** Variable *)
 type var_type = TypeVar of _type [@@deriving eq, show { with_path = false }]
-(* TODO: remove if needed - not implementing custom classes *)
 
 (** Modifiers *)
 type modifier =
   | MPublic (** Public modifier, used for main() method only  *)
   | MStatic (** Static modifier, used for main() method only *)
-  | MConst (** Const modifier *) (* TODO *)
   | MAsync (** Async modifier *)
 [@@deriving eq, show { with_path = false }]
 
@@ -68,12 +60,7 @@ type bin_op =
 [@@deriving eq, show { with_path = false }]
 
 (** Unary operations *)
-type un_op =
-  | OpInc (** [++] a or [++] a *) (* TODO remove?? *)
-  | OpDec (** [--] a or [--] a *) (* TODO remove?? *)
-  | OpNot (** [!] a *)
-  | OpNew (** [new] a *)
-[@@deriving eq, show { with_path = false }]
+type un_op = OpNot (** [!] a *) [@@deriving eq, show { with_path = false }]
 
 (** From clauses *)
 type from_clause = FromClause of string * ident
@@ -84,14 +71,10 @@ type expr =
   | EValue of val_type (** Some value *)
   | EBinOp of bin_op * expr * expr (** Binary operation *)
   | EUnOp of un_op * expr (** Unary operation *)
-  | EConst of val_type (** Const expression TODO change for modifiers?? *)
   | EId of ident (** Identificator expression *)
   | EArrayAccess of expr * expr (** Array access: a = arr[i] *)
-  | EFuncCall of expr * expr list
-  (** Call of function: name(arguments) TODO: Program.x() *)
-  | ELambda of expr * stmt (** Lambda expressions *)
-  | EAwait of expr (** Await expression *)
-  | ELinqQuery of linq_query (** from identifier in expr select expr *)
+  | EFuncCall of expr * expr list (** Call of function: name(arguments) *)
+  | EAwait of expr (** [Await] expression *)
 [@@deriving eq, show { with_path = false }]
 
 (** Language statements *)
@@ -101,20 +84,12 @@ and stmt =
   | SIf of expr * stmt * stmt option
   (** If condition: [if] (a) [then] \{ b \} ([else] \{ c \} ) *)
   | SWhile of expr * stmt (** While cycle: [while] (a) \{ \} *)
-  | SReturn of expr option (** Return: return (a) *)
+  | SReturn of expr option (** Return: [return] (a) *)
   | SBlock of stmt list (** Block of statements: \{ a \}; could be empty: \{\} *)
-  | SBreak (** Cycle break *)
-  | SContinue (** Cycle continue *)
+  | SBreak (** Cycle [break] *)
+  | SContinue (** Cycle [continue] *)
   | SExpr of expr (** Another expression *)
   | SDecl of var_decl * expr option (** Var declaration *)
-[@@deriving eq, show { with_path = false }]
-
-(** Select clause *)
-and select_clause = SelectClause of expr [@@deriving eq, show { with_path = false }]
-
-(** LINQ query *)
-and linq_query =
-  | SQuery of from_clause * select_clause (** from identifier in identifier select expr *)
 [@@deriving eq, show { with_path = false }]
 
 (** C Sharp class fields *)
@@ -131,5 +106,3 @@ type c_sharp_class =
 
 (** Program AST *)
 type program = Program of c_sharp_class [@@deriving eq, show { with_path = false }]
-
-(* TODO: read specification!! + write factorial parser from scratch *)
