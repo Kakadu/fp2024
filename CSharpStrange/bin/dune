@@ -1,7 +1,7 @@
 (executable
- (name ast_fact)
- (public_name ast_fact)
- (modules ast_fact)
- (libraries c_sharp_strange_lib)
+ (name REPL)
+ (public_name REPL)
+ (modules REPL)
+ (libraries c_sharp_strange_lib stdio)
  (instrumentation
   (backend bisect_ppx)))

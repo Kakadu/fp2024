@@ -11,4 +11,4 @@
 
 (cram
  (applies_to ast_fact)
- (deps ../bin/ast_fact.exe ../bin/factorial.cs))
+ (deps ../bin/ast_fact.exe ../bin/REPL.exe ../bin/factorial.cs))
