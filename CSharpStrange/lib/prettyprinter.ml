@@ -66,7 +66,7 @@ let pp_un_op fmt = function
   | OpNot -> fprintf fmt "!"
 ;;
 
-let rec pp_val_type fmt = function
+let pp_val_type fmt = function
   | ValInt n -> fprintf fmt "%d" n
   | ValChar c -> fprintf fmt "'%c'" c
   | ValNull -> fprintf fmt "null"

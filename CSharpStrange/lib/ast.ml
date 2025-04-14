@@ -78,7 +78,7 @@ type expr =
 [@@deriving eq, show { with_path = false }]
 
 (** Language statements *)
-and stmt =
+type stmt =
   | SFor of stmt option * expr option * expr option * stmt
   (** For cycle: [for] (int i = 0, j = 3; i < 4; i++, j--) \{\} *)
   | SIf of expr * stmt * stmt option
