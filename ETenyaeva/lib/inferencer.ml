@@ -12,6 +12,7 @@ let rec pp_type fmt = function
   | TypStr -> fprintf fmt "string"
   | TypChar -> fprintf fmt "char"
   | TypVar id -> fprintf fmt "%s" id
+  | TypArrow (TypArrow (_, _) as ty1, ty2) -> fprintf fmt "(%a) -> %a" pp_type ty1 pp_type ty2
   | TypArrow (ty1, ty2) -> fprintf fmt "%a -> %a" pp_type ty1 pp_type ty2
   | TypList ty ->
     (match ty with
