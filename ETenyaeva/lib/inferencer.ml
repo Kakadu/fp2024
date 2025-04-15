@@ -319,8 +319,8 @@ module Infer = struct
       evaluating free variables, creating new names for them, and returning a new generic schema*)
   let generalize env ty ~remove_from_env id =
     let env =
-      match remove_from_env, id with
-      | true, Some id -> Base.Map.remove env id
+      match remove_from_env, id, ty with
+      | true, Some id, TypArrow _ -> Base.Map.remove env id
       | _ -> env
     in
     let free = VarSet.diff (Type.free_vars ty) (TypeEnv.free_vars env) in

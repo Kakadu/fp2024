@@ -72,8 +72,8 @@
   val length : 'a list -> int
   val length_tail : 'a list -> int
   val map : ('a -> 'b) -> 'a list -> 'b list
-  val append : 'a list -> 'b list -> 'b list
-  val concat : ('a list) list -> 'b list
+  val append : 'a list -> 'a list -> 'a list
+  val concat : ('a list) list -> 'a list
   val iter : ('a -> unit) -> 'a list -> unit
-  val cartesian : 'a list -> 'c list -> 'b list
+  val cartesian : 'b list -> 'a list -> ('b * 'a) list
   val main : int
