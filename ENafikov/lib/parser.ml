@@ -9,7 +9,7 @@ open Base
 let start_parsing parser string = parse_string ~consume:All parser string
 
 let is_char = function
-  | 'a' .. 'z' -> true
+  | 'a' .. 'z' | 'A' .. 'Z' | '_' -> true
   | _ -> false
 ;;
 
@@ -66,10 +66,14 @@ let parse_bool =
 ;;
 
 let parse_int =
-  take_while1 (function
-    | '0' .. '9' -> true
-    | _ -> false)
-  >>= fun digits -> return (Const_int (Int.of_string digits))
+  let parse_sign = option '+' (char '-') in
+  parse_sign
+  >>= fun sign ->
+  take_while1 is_digit
+  >>= fun digits ->
+  let number = Int.of_string digits in
+  let value = if Char.equal sign '-' then -number else number in
+  return (Const_int value)
 ;;
 
 let parse_string =
@@ -321,5 +325,11 @@ let let_e parse =
 
 let expr_main = (fun expr -> Expression expr) <$> parse_expression
 let parse_bind = choice [ let_e parse_expression; expr_main ]
-let program = many1 (parse_token parse_bind <* parse_token (many1 (pstrtoken ";;")))
+
+let program =
+  many (parse_bind <* option () (pstrtoken ";;" >>| ignore))
+  <* parse_white_space
+  <* end_of_input
+;;
+
 let main_parse str = start_parsing program (String.strip str)

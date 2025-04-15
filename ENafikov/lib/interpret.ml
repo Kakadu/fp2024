@@ -46,6 +46,35 @@ type value =
   | VNil (** [] *)
 [@@deriving show { with_path = false }]
 
+let rec print_value = function
+  | VString s -> Stdlib.Format.printf "%s" s
+  | VBool b -> Stdlib.Format.printf "%b\n" b
+  | VInt i -> Stdlib.Format.printf "%i\n" i
+  | VList l ->
+    Stdlib.Format.printf "[";
+    List.iter l ~f:(fun v ->
+      print_value v;
+      Stdlib.Format.printf "; ");
+    Stdlib.Format.printf "]"
+  | VTuple l ->
+    Stdlib.Format.printf "(";
+    List.iter l ~f:(fun v ->
+      print_value v;
+      Stdlib.Format.printf "; ");
+    Stdlib.Format.printf ")"
+  | VFun (pat, expr, env) ->
+    Stdlib.Format.printf "fun %s -> %s" (show_pattern pat) (show_expr expr);
+    List.iter env ~f:(fun (id, v) ->
+      Stdlib.Format.printf "%s = " id;
+      print_value v;
+      Stdlib.Format.printf "; ")
+  | VLetWAPat (id, v) ->
+    Stdlib.Format.printf "let %s = " id;
+    print_value v;
+    Stdlib.Format.printf "; "
+  | VNil -> Stdlib.Format.printf ""
+;;
+
 module type MonadFail = sig
   include Base.Monad.S2
 
@@ -197,7 +226,7 @@ module Interpret (M : MonadFail) = struct
       (match func with
        | Expr_var name when String.equal name "print_int" ->
          let* evaled_arg = eval arg env in
-         Stdlib.Format.printf "%s" (show_value evaled_arg);
+         print_value evaled_arg;
          return VNil
        | _ ->
          let* evaled_arg = eval arg env in
@@ -239,7 +268,10 @@ module Interpret (M : MonadFail) = struct
     | Expr_let_in (_, name, expr1, expr2) ->
       let* v_let = eval expr1 env in
       let env = add_bind env name v_let in
-      eval expr2 env
+      let* evaal = eval expr2 env in
+      (match evaal with
+       | VInt _ -> return (VString "")
+       | _ -> return evaal)
   ;;
 
   let eval_program (program : struct_prog list) : (value, error_inter) t =

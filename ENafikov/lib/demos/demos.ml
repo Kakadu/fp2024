@@ -10,9 +10,18 @@ let run input =
   match main_parse input with
   | Ok ast ->
     (match InterpretResult.eval_program ast with
-     | Ok res -> Stdlib.Format.printf "%s" (show_value res)
+     | Ok res -> print_value res
      | Error e -> Stdlib.Format.printf "(Error while interpreting): %a" pp_error_inter e)
   | Error e -> Stdlib.Format.printf "(Error while parsing): %s" e
 ;;
 
-let () = run (Stdio.In_channel.input_all Stdlib.stdin)
+let () =
+  let filename =
+    try Sys.argv.(1) with
+    | _ ->
+      prerr_endline "Usage: ./demos.exe <file.ml>";
+      exit 1
+  in
+  let input = Stdio.In_channel.read_all filename in
+  run input
+;;

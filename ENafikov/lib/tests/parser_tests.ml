@@ -253,12 +253,6 @@ let%expect_test _ =
        )) |}]
 ;;
 
-Let
-  ( false
-  , "main"
-  , Expr_let_in
-      ( false
-      , "()"
-      , Expr_app
-          (Expr_var "print_int", Expr_app (Expr_var "fac", Expr_const (Const_int 4)))
-      , Expr_const (Const_int 0) ) )
+
+
+

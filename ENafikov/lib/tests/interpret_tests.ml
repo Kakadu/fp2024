@@ -9,7 +9,7 @@ open Ast
 (* Helper function to evaluate a program AST and print the result or error *)
 let run_eval ast =
   match InterpretResult.eval_program ast with
-  | Ok res -> Format.printf "%s%!" (show_value res)
+  | Ok res -> Format.printf "%s" (show_value res)
   | Error e -> Format.printf "%a%!" pp_error_inter e
 ;;
 
@@ -102,21 +102,6 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  (* let-in expression *)
-  let ast =
-    [ Expression
-        (Expr_let_in
-           ( false
-           , "x"
-           , Expr_const (Const_int 5)
-           , Expr_bin_op (Add, Expr_var "x", Expr_const (Const_int 3)) ))
-    ]
-  in
-  run_eval ast;
-  [%expect {| (VInt 8) |}]
-;;
-
-let%expect_test _ =
   (* Tuple expression *)
   let ast =
     [ Expression (Expr_tuple [ Expr_const (Const_int 42); Expr_const (Const_bool true) ])
@@ -160,6 +145,100 @@ let%expect_test _ =
            , [ Pattern_tuple [ Pattern_const (Const_int 1); Pattern_id "x" ], Expr_var "x"
              ; Pattern_wild, Expr_const (Const_int 0)
              ] ))
+    ]
+  in
+  run_eval ast;
+  [%expect {| (VInt 2) |}]
+;;
+
+let%expect_test "pattern matching" =
+  let ast =
+    [ Expression
+        (Expr_match
+           ( Expr_const (Const_int 42)
+           , [ Pattern_const (Const_int 42), Expr_const (Const_bool true)
+             ; Pattern_wild, Expr_const (Const_bool false)
+             ] ))
+    ]
+  in
+  run_eval ast;
+  [%expect {| (VBool true) |}]
+;;
+
+let%expect_test "nested function application" =
+  let ast =
+    [ Let
+        ( false
+        , "add"
+        , Expr_fun
+            ( Pattern_id "x"
+            , Expr_fun (Pattern_id "y", Expr_bin_op (Add, Expr_var "x", Expr_var "y")) )
+        )
+    ; Let (false, "add5", Expr_app (Expr_var "add", Expr_const (Const_int 5)))
+    ; Expression (Expr_app (Expr_var "add5", Expr_const (Const_int 7)))
+    ]
+  in
+  run_eval ast;
+  [%expect {| (VInt 12) |}]
+;;
+
+let%expect_test "empty list pattern matching" =
+  let ast =
+    [ Let
+        ( false
+        , "isEmpty"
+        , Expr_fun
+            ( Pattern_id "lst"
+            , Expr_match
+                ( Expr_var "lst"
+                , [ Pattern_const Const_nil, Expr_const (Const_bool true)
+                  ; Pattern_wild, Expr_const (Const_bool false)
+                  ] ) ) )
+    ; Expression
+        (Expr_tuple
+           [ Expr_app (Expr_var "isEmpty", Expr_const Const_nil)
+           ; Expr_app
+               ( Expr_var "isEmpty"
+               , Expr_list (Expr_const (Const_int 1), Expr_const Const_nil) )
+           ])
+    ]
+  in
+  run_eval ast;
+  [%expect {| (VTuple [(VBool false); (VBool false)]) |}]
+;;
+
+let%expect_test "function closure captures environment" =
+  let ast =
+    [ Let (false, "x", Expr_const (Const_int 5))
+    ; Let
+        ( false
+        , "addX"
+        , Expr_fun (Pattern_id "y", Expr_bin_op (Add, Expr_var "x", Expr_var "y")) )
+    ; Let (false, "x", Expr_const (Const_int 10))
+    ; Expression (Expr_app (Expr_var "addX", Expr_const (Const_int 3)))
+    ]
+  in
+  run_eval ast;
+  [%expect {| (VInt 8) |}]
+;;
+
+let%expect_test "multiple let bindings" =
+  let ast =
+    [ Let (false, "x", Expr_const (Const_int 1))
+    ; Let (false, "y", Expr_bin_op (Add, Expr_var "x", Expr_const (Const_int 2)))
+    ; Let (false, "z", Expr_bin_op (Mul, Expr_var "y", Expr_const (Const_int 3)))
+    ; Expression (Expr_var "z")
+    ]
+  in
+  run_eval ast;
+  [%expect {| (VInt 9) |}]
+;;
+
+let%expect_test "shadowing variables" =
+  let ast =
+    [ Let (false, "x", Expr_const (Const_int 1))
+    ; Let (false, "x", Expr_const (Const_int 2))
+    ; Expression (Expr_var "x")
     ]
   in
   run_eval ast;

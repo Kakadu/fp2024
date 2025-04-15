@@ -24,7 +24,7 @@ type value =
   | VFun of Ast.pattern * Ast.expr * (string * value) list
   | VLetWAPat of string * value
   | VNil
-
+val print_value : value -> unit
 val pp_value : Format.formatter -> value -> unit
 val show_value : value -> string
 
