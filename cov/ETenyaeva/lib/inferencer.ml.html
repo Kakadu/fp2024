@@ -1786,24 +1786,24 @@ let rec pp_type fmt = function
   | <span data-count="9">T</span>ypUnit -&gt; fprintf fmt "unit"
   | <span data-count="3">T</span>ypStr -&gt; fprintf fmt "string"
   | <span data-count="0">T</span>ypChar -&gt; fprintf fmt "char"
-  | <span data-count="77">T</span>ypVar id -&gt; fprintf fmt "%s" id
+  | <span data-count="78">T</span>ypVar id -&gt; fprintf fmt "%s" id
   | <span data-count="11">T</span>ypArrow ((TypArrow (_, _) as ty1), ty2) -&gt;
     fprintf fmt "(%a) -&gt; %a" pp_type ty1 pp_type ty2
   | <span data-count="102">T</span>ypArrow (ty1, ty2) -&gt; fprintf fmt "%a -&gt; %a" pp_type ty1 pp_type ty2
   | <span data-count="17">T</span>ypList ty -&gt;
     (match ty with
-     | <span data-count="1">T</span>ypInt | <span data-count="0">T</span>ypBool | <span data-count="0">T</span>ypUnit | <span data-count="0">T</span>ypStr | <span data-count="15">T</span>ypVar _ | <span data-count="0">T</span>ypChar -&gt;
+     | <span data-count="1">T</span>ypInt | <span data-count="0">T</span>ypBool | <span data-count="0">T</span>ypUnit | <span data-count="0">T</span>ypStr | <span data-count="14">T</span>ypVar _ | <span data-count="0">T</span>ypChar -&gt;
        fprintf fmt "%a list" pp_type ty
-     | <span data-count="1">_</span> -&gt; fprintf fmt "(%a) list" pp_type ty)
-  | <span data-count="14">T</span>ypTuple (f, s, xs) -&gt;
+     | <span data-count="2">_</span> -&gt; fprintf fmt "(%a) list" pp_type ty)
+  | <span data-count="15">T</span>ypTuple (f, s, xs) -&gt;
     fprintf
       fmt
       "%a"
-      (pp_print_lis<span data-count="14">t</span>
-         ~pp_sep:(fun _ _ -&gt; <span data-count="15">p</span>rintf " * ")
+      (pp_print_lis<span data-count="15">t</span>
+         ~pp_sep:(fun _ _ -&gt; <span data-count="16">p</span>rintf " * ")
          (fun fmt ty -&gt;
-           <span data-count="29">m</span>atch ty with
-           | <span data-count="6">T</span>ypInt | <span data-count="1">T</span>ypBool | <span data-count="0">T</span>ypUnit | <span data-count="1">T</span>ypStr | <span data-count="9">T</span>ypVar _ | <span data-count="0">T</span>ypChar -&gt; pp_type fmt ty
+           <span data-count="31">m</span>atch ty with
+           | <span data-count="6">T</span>ypInt | <span data-count="1">T</span>ypBool | <span data-count="0">T</span>ypUnit | <span data-count="1">T</span>ypStr | <span data-count="11">T</span>ypVar _ | <span data-count="0">T</span>ypChar -&gt; pp_type fmt ty
            | <span data-count="12">_</span> -&gt; fprintf fmt "(%a)" pp_type ty))
       (f :: s :: xs)
   | <span data-count="0">T</span>ypOption TypUnit -&gt; ()
@@ -1840,13 +1840,13 @@ module State = struct
 
   type 'a t = int -&gt; int * ('a, error) Result.t
 
-  let return x state = <span data-count="29281">s</span>tate, Result.retur<span data-count="29281">n</span> x
+  let return x state = <span data-count="29178">s</span>tate, Result.retur<span data-count="29178">n</span> x
   let fail e state = <span data-count="64">s</span>tate, Result.fai<span data-count="64">l</span> e
 
   let ( &gt;&gt;= ) (monad : 'a t) (f : 'a -&gt; 'b t) : 'b t =
-    <span data-count="29217">f</span>un state -&gt;
-    <span data-count="29217">m</span>atch monad state with
-    | <span data-count="29164">s</span>tate, Result.Ok result -&gt; f result state
+    <span data-count="29114">f</span>un state -&gt;
+    <span data-count="29114">m</span>atch monad state with
+    | <span data-count="29061">s</span>tate, Result.Ok result -&gt; f result state
     | <span data-count="53">s</span>tate, Result.Error e -&gt; fail e state
   ;;
 
@@ -1856,8 +1856,8 @@ module State = struct
 
   let ( &gt;&gt;| ) (monad : 'a t) (f : 'a -&gt; 'b) : 'b t =
     <span data-count="122">f</span>un state -&gt;
-    <span data-count="1037">m</span>atch monad state with
-    | <span data-count="1037">s</span>tate, Result.Ok result -&gt; return (<span data-count="1037">f</span> result) state
+    <span data-count="1000">m</span>atch monad state with
+    | <span data-count="1000">s</span>tate, Result.Ok result -&gt; return (<span data-count="1000">f</span> result) state
     | <span data-count="0">s</span>tate, Result.Error e -&gt; fail e state
   ;;
 
@@ -1879,14 +1879,14 @@ module State = struct
 
   module RMap = struct
     let fold map ~init ~f =
-      <span data-count="2976">M</span>ap.fold map ~init ~f:(fun ~key ~data acc -&gt;
+      <span data-count="2980">M</span>ap.fold map ~init ~f:(fun ~key ~data acc -&gt;
         <span data-count="3737">l</span>et open Syntax in
         let* acc = acc in
         <span data-count="3737">f</span> key data acc)
     ;;
   end
 
-  let fresh state = <span data-count="959">s</span>tate + 1, Result.Ok state
+  let fresh state = <span data-count="922">s</span>tate + 1, Result.Ok state
   let run monad = <span data-count="50">s</span>nd (mona<span data-count="50">d</span> 0)
 end
 
@@ -1902,25 +1902,25 @@ module Type = struct
   (* gets a variable var and type ty, and checks whether the
      variable is contained in the set of free variables of this type*)
   let occurs_in var ty =
-    <span data-count="4707">l</span>et rec helper ty =
-      <span data-count="14638">m</span>atch ty with
+    <span data-count="4670">l</span>et rec helper ty =
+      <span data-count="14872">m</span>atch ty with
       | <span data-count="34">T</span>ypOption ty | <span data-count="600">T</span>ypList ty -&gt; helper ty
-      | <span data-count="2574">T</span>ypVar name -&gt; String.equal name var
-      | <span data-count="352">T</span>ypTuple (fst_ty, snd_ty, ty_list) -&gt;
+      | <span data-count="2614">T</span>ypVar name -&gt; String.equal name var
+      | <span data-count="460">T</span>ypTuple (fst_ty, snd_ty, ty_list) -&gt;
         List.exists ~f:helper (fst_ty :: snd_ty :: ty_list)
       | <span data-count="4681">T</span>ypArrow (l, r) -&gt; helpe<span data-count="4681">r</span> <span data-count="1">l</span> || helper r
-      | <span data-count="6397">_</span> -&gt; false
+      | <span data-count="6483">_</span> -&gt; false
     in
     match ty with
-    | <span data-count="768">T</span>ypVar _ -&gt; false
-    | <span data-count="3939">_</span> -&gt; helper ty
+    | <span data-count="713">T</span>ypVar _ -&gt; false
+    | <span data-count="3957">_</span> -&gt; helper ty
   ;;
 
   let free_vars =
     let rec helper acc = function
       | <span data-count="52">T</span>ypOption ty | <span data-count="449">T</span>ypList ty -&gt; helper acc ty
-      | <span data-count="1915">T</span>ypVar name -&gt; VarSet.add name acc
-      | <span data-count="306">T</span>ypTuple (fst_ty, snd_ty, ty_list) -&gt;
+      | <span data-count="1973">T</span>ypVar name -&gt; VarSet.add name acc
+      | <span data-count="314">T</span>ypTuple (fst_ty, snd_ty, ty_list) -&gt;
         List.fold_left ~f:helper ~init:acc (fst_ty :: snd_ty :: ty_list)
       | <span data-count="2260">T</span>ypArrow (l, r) -&gt; helper (helpe<span data-count="2260">r</span> acc l) r
       | <span data-count="2394">_</span> -&gt; acc
@@ -1938,51 +1938,51 @@ module Subst = struct
   let singleton1 = Map.singleto<span data-count="44">n</span> (module String)
 
   let singleton key value =
-    <span data-count="4707">i</span>f Type.occurs_in key value
+    <span data-count="4670">i</span>f Type.occurs_in key value
     then <span data-count="1">f</span>ail (OccursCheck (key, value))
-    else <span data-count="4706">r</span>eturn (Map.singleto<span data-count="4706">n</span> (module String) key value)
+    else <span data-count="4669">r</span>eturn (Map.singleto<span data-count="4669">n</span> (module String) key value)
   ;;
 
   let remove = Map.remove
 
   let apply sub =
-    <span data-count="24462">l</span>et rec helper = function
-      | <span data-count="23905">T</span>ypVar name as ty -&gt;
+    <span data-count="24396">l</span>et rec helper = function
+      | <span data-count="24135">T</span>ypVar name as ty -&gt;
         (match Map.find sub name with
-         | <span data-count="1826">S</span>ome name -&gt; name
-         | <span data-count="22079">N</span>one -&gt; ty)
+         | <span data-count="1798">S</span>ome name -&gt; name
+         | <span data-count="22337">N</span>one -&gt; ty)
       | <span data-count="201">T</span>ypOption ty -&gt; TypOption (helpe<span data-count="201">r</span> ty)
-      | <span data-count="4395">T</span>ypList ty -&gt; TypList (helpe<span data-count="4395">r</span> ty)
-      | <span data-count="2896">T</span>ypTuple (fst_ty, snd_ty, ty_list) -&gt;
-        TypTuple (helpe<span data-count="2896">r</span> fst_ty, helpe<span data-count="2896">r</span> snd_ty, List.ma<span data-count="2896">p</span> ty_list ~f:helper)
-      | <span data-count="32425">T</span>ypArrow (l, r) -&gt; TypArrow (helpe<span data-count="32425">r</span> l, helpe<span data-count="32425">r</span> r)
-      | <span data-count="35879">t</span>y -&gt; ty
+      | <span data-count="4345">T</span>ypList ty -&gt; TypList (helpe<span data-count="4345">r</span> ty)
+      | <span data-count="3492">T</span>ypTuple (fst_ty, snd_ty, ty_list) -&gt;
+        TypTuple (helpe<span data-count="3492">r</span> fst_ty, helpe<span data-count="3492">r</span> snd_ty, List.ma<span data-count="3492">p</span> ty_list ~f:helper)
+      | <span data-count="32439">T</span>ypArrow (l, r) -&gt; TypArrow (helpe<span data-count="32439">r</span> l, helpe<span data-count="32439">r</span> r)
+      | <span data-count="36193">t</span>y -&gt; ty
     in
     helper
   ;;
 
   let rec unify l r =
-    <span data-count="1893">m</span>atch l, r with
+    <span data-count="1897">m</span>atch l, r with
     | <span data-count="60">T</span>ypUnit, TypUnit
     | <span data-count="327">T</span>ypInt, TypInt
     | <span data-count="0">T</span>ypChar, TypChar
     | <span data-count="0">T</span>ypStr, TypStr
     | <span data-count="36">T</span>ypBool, TypBool -&gt; return empty
-    | <span data-count="261">T</span>ypVar l, TypVar r when String.equa<span data-count="261">l</span> l r -&gt; <span data-count="66">r</span>eturn empty
+    | <span data-count="259">T</span>ypVar l, TypVar r when String.equa<span data-count="259">l</span> l r -&gt; <span data-count="68">r</span>eturn empty
     | <span data-count="520">T</span>ypVar name, ty | <span data-count="443">t</span>y, TypVar name -&gt; singleton name ty
     | <span data-count="61">T</span>ypList ty1, TypList ty2 | <span data-count="8">T</span>ypOption ty1, TypOption ty2 -&gt; unify ty1 ty2
-    | <span data-count="16">T</span>ypTuple (fst1, snd1, list1), TypTuple (fst2, snd2, list2) -&gt;
+    | <span data-count="18">T</span>ypTuple (fst1, snd1, list1), TypTuple (fst2, snd2, list2) -&gt;
       (match
          List.fold2
            (fst1 :: snd1 :: list1)
            (fst2 :: snd2 :: list2)
-           ~init:(retur<span data-count="16">n</span> empty)
+           ~init:(retur<span data-count="18">n</span> empty)
            ~f:(fun acc ty1 ty2 -&gt;
-             <span data-count="30">l</span>et* sub_acc = acc in
-             <span data-count="30">l</span>et* unified_sub = unif<span data-count="30">y</span> (appl<span data-count="30">y</span> sub_acc ty1) (appl<span data-count="30">y</span> sub_acc ty2) in
-             <span data-count="30">c</span>ompose sub_acc unified_sub)
+             <span data-count="34">l</span>et* sub_acc = acc in
+             <span data-count="34">l</span>et* unified_sub = unif<span data-count="34">y</span> (appl<span data-count="34">y</span> sub_acc ty1) (appl<span data-count="34">y</span> sub_acc ty2) in
+             <span data-count="34">c</span>ompose sub_acc unified_sub)
        with
-       | <span data-count="15">O</span>k res -&gt; res
+       | <span data-count="17">O</span>k res -&gt; res
        | <span data-count="1">_</span> -&gt; fail (UnificationFailed (l, r)))
     | <span data-count="351">T</span>ypArrow (l1, r1), TypArrow (l2, r2) -&gt;
       let* sub1 = unif<span data-count="351">y</span> l1 l2 in
@@ -2003,16 +2003,16 @@ module Subst = struct
       let* new_sub = unif<span data-count="94">y</span> value existing_value in
       <span data-count="94">c</span>ompose sub new_sub
 
-  and compose sub1 sub2 = <span data-count="2976">R</span>Map.fold sub2 ~init:(retur<span data-count="2976">n</span> sub1) ~f:extend
+  and compose sub1 sub2 = <span data-count="2980">R</span>Map.fold sub2 ~init:(retur<span data-count="2980">n</span> sub1) ~f:extend
 
   let compose_all sub_list = <span data-count="600">R</span>List.fold_left sub_list ~init:(retur<span data-count="600">n</span> empty) ~f:compose
 end
 
 module Scheme = struct
-  let free_vars (Scheme (bind_set, ty)) = <span data-count="1478">V</span>arSet.diff (Type.free_var<span data-count="1478">s</span> ty) bind_set
+  let free_vars (Scheme (bind_set, ty)) = <span data-count="1528">V</span>arSet.diff (Type.free_var<span data-count="1528">s</span> ty) bind_set
 
   let apply sub (Scheme (bind_set, ty)) =
-    <span data-count="6905">l</span>et new_sub = VarSet.fold (fun key sub -&gt; <span data-count="2965">S</span>ubst.remove sub key) bind_set sub in
+    <span data-count="6905">l</span>et new_sub = VarSet.fold (fun key sub -&gt; <span data-count="2508">S</span>ubst.remove sub key) bind_set sub in
     <span data-count="6905">S</span>cheme (bind_set, Subst.appl<span data-count="6905">y</span> new_sub ty)
   ;;
 end
@@ -2027,7 +2027,7 @@ module TypeEnv = struct
 
   let free_vars env =
     <span data-count="264">M</span>ap.fold env ~init:VarSet.empty ~f:(fun ~key:_ ~data acc -&gt;
-      <span data-count="1478">V</span>arSet.union acc (Scheme.free_var<span data-count="1478">s</span> data))
+      <span data-count="1528">V</span>arSet.union acc (Scheme.free_var<span data-count="1528">s</span> data))
   ;;
 
   let apply sub env = <span data-count="1095">M</span>ap.map env ~f:(Scheme.appl<span data-count="1095">y</span> sub)
@@ -2077,15 +2077,15 @@ module Infer = struct
   open State.Syntax
 
   let unify = Subst.unify
-  let fresh_var = fresh &gt;&gt;<span data-count="44">|</span> fun n -&gt; <span data-count="959">T</span>ypVar ("'ty" ^ Int.to_strin<span data-count="959">g</span> n)
+  let fresh_var = fresh &gt;&gt;<span data-count="44">|</span> fun n -&gt; <span data-count="922">T</span>ypVar ("'ty" ^ Int.to_strin<span data-count="922">g</span> n)
 
   let instantiate (Scheme (bind_set, ty)) =
     <span data-count="532">V</span>arSet.fold
       (fun name ty -&gt;
-        <span data-count="101">l</span>et* ty = ty in
-        <span data-count="101">l</span>et* fresh = fresh_var in
-        <span data-count="101">l</span>et* sub = Subst.singleto<span data-count="101">n</span> name fresh in
-        <span data-count="101">r</span>eturn (Subst.appl<span data-count="101">y</span> sub ty))
+        <span data-count="64">l</span>et* ty = ty in
+        <span data-count="64">l</span>et* fresh = fresh_var in
+        <span data-count="64">l</span>et* sub = Subst.singleto<span data-count="64">n</span> name fresh in
+        <span data-count="64">r</span>eturn (Subst.appl<span data-count="64">y</span> sub ty))
       bind_set
       (retur<span data-count="532">n</span> ty)
   ;;
@@ -2094,25 +2094,25 @@ module Infer = struct
       evaluating free variables, creating new names for them, and returning a new generic schema*)
   let generalize env ty ~remove_from_env id =
     <span data-count="264">l</span>et env =
-      match remove_from_env, id with
-      | <span data-count="89">t</span>rue, Some id -&gt; Base.Map.remov<span data-count="89">e</span> env id
-      | <span data-count="175">_</span> -&gt; env
+      match remove_from_env, id, ty with
+      | <span data-count="39">t</span>rue, Some id, TypArrow _ -&gt; Base.Map.remov<span data-count="39">e</span> env id
+      | <span data-count="225">_</span> -&gt; env
     in
     let free = VarSet.diff (Type.free_var<span data-count="264">s</span> ty) (TypeEnv.free_var<span data-count="264">s</span> env) in
     <span data-count="264">l</span>et new_free, new_ty, _ =
       VarSet.fold
         (fun str (temp_free, temp_ty, n) -&gt;
-          <span data-count="108">l</span>et degree = n / 26 in
+          <span data-count="71">l</span>et degree = n / 26 in
           let new_str =
             Printf.sprintf
               "'%c%s"
-              (Stdlib.Char.ch<span data-count="108">r</span> (97 + (n mod 26)))
-              (if degree = 0 then <span data-count="108">"</span>" else <span data-count="0">I</span>nt.to_strin<span data-count="0">g</span> degree)
+              (Stdlib.Char.ch<span data-count="71">r</span> (97 + (n mod 26)))
+              (if degree = 0 then <span data-count="71">"</span>" else <span data-count="0">I</span>nt.to_strin<span data-count="0">g</span> degree)
           in
-          <span data-count="108">l</span>et sub = Subst.singleton1 str (TypVar new_str) in
-          <span data-count="108">l</span>et new_free = VarSet.add new_str temp_free in
-          <span data-count="108">l</span>et new_ty = Subst.apply sub temp_ty in
-          <span data-count="108">n</span>ew_free, new_ty, n + 1)
+          <span data-count="71">l</span>et sub = Subst.singleton1 str (TypVar new_str) in
+          <span data-count="71">l</span>et new_free = VarSet.add new_str temp_free in
+          <span data-count="71">l</span>et new_ty = Subst.apply sub temp_ty in
+          <span data-count="71">n</span>ew_free, new_ty, n + 1)
         free
         (VarSet.empty, ty, 0)
     in
