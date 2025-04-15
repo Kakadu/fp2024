@@ -11,6 +11,7 @@ homepage: "https://github.com/f1i3g3/fp2024"
 bug-reports: "https://github.com/f1i3g3/fp2024"
 depends: [
   "dune" {>= "3.7"}
+  "angstrom"
   "ppx_inline_test" {with-test}
   "ppx_expect"
   "ppx_deriving"
