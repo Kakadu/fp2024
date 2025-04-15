@@ -1,0 +1,18 @@
+(library
+ (name ETenyaeva_lib)
+ (public_name ETenyaeva.lib)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show))
+ (instrumentation
+  (backend bisect_ppx)))
+
+; (library
+;  (name tests)
+;  (modules tests)
+;  (libraries ETenyaeva_lib)
+;  (preprocess
+;   (pps ppx_expect ppx_deriving.show))
+;  (instrumentation
+;   (backend bisect_ppx))
+;  (inline_tests))
