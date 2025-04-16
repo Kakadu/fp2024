@@ -7,4 +7,11 @@
 (cram
  (deps
   ./demos.exe
-  (source_tree manytests/typed)))
+  ./manytests/typed/001fac.ml
+  ./manytests/typed/002fac.ml
+  ./manytests/typed/003fib.ml
+  ./manytests/typed/004manyargs.ml
+  ./manytests/typed/005fix.ml
+  ./manytests/typed/006partial.ml
+  ./manytests/typed/006partial2.ml
+  ./manytests/typed/006partial3.ml))
