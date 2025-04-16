@@ -1,0 +1,13 @@
+(rule
+ (alias runtest)
+ (deps
+  001fac.ml
+  002fac.ml
+  003fib.ml
+  004manyargs.ml
+  005fix.ml
+  006partial.ml
+  006partial2.ml
+  006partial3.ml)
+ (action
+  (echo "")))
