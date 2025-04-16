@@ -1,0 +1,10 @@
+(library
+ (name ENafikov_lib)
+ (public_name ENafikov.Lib)
+ (modules Ast Parser Ty Inferencer Interpret)
+ (libraries base angstrom)
+ (preprocess
+  (pps ppx_deriving.show ppx_expect ppx_deriving.eq))
+ (instrumentation
+  (backend bisect_ppx))
+ (inline_tests))
