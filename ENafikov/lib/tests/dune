@@ -1,0 +1,9 @@
+(library
+ (name tests)
+ (public_name ENafikov.Tests)
+ (libraries ENafikov_lib)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests)
+ (instrumentation
+  (backend bisect_ppx)))
